@@ -46,7 +46,8 @@ def main(argv=None):
         from . import checkpoint_zen
         if not args.read_only:
             checkpoint_zen.export(ctx)
-        key = checkpoint_store.capture(ctx, steps, store, allow_seed=args.release,
+        print("checkpoint capture: validating existing results, then copying verified outputs; no build requested", flush=True)
+        key = checkpoint_store.capture(ctx, steps, store, echo=lambda message: print(message, flush=True), allow_seed=args.release,
                                        candidate_only=args.read_only, scratch=args.report / 'capture-hashes.sqlite3' if args.read_only else None)
         if args.release and not args.read_only and ctx.uproject and 'unreal.cook' not in store.load(key)['stamps']:
             print('Retained compatible incremental workspace state without inventing producer tool proof', flush=True)

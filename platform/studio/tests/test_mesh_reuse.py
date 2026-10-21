@@ -102,14 +102,14 @@ def test_saved_input_identity_recovers_named_and_legacy_history_without_executio
 
 
 def pending_fixture(tmp_path, monkeypatch):
-    from atelier import checkpoint_store
+    from atelier import native_protocol
     ctx = SimpleNamespace(out=tmp_path / 'build', uproject=tmp_path / 'game/unreal/Game.uproject')
     ctx.out.mkdir(); ctx.uproject.parent.mkdir(parents=True)
     source = ctx.out / 'source.glb'; source.write_bytes(b'original source')
     package = ctx.uproject.parent / 'Content/Region/Mesh.uasset'
     package.parent.mkdir(parents=True); package.write_bytes(b'geometry before finishing')
     current = {'engine': 'engine', 'sdk': 'sdk'}
-    monkeypatch.setattr(checkpoint_store, 'context', lambda _: current)
+    monkeypatch.setattr(native_protocol, 'context', lambda _: current)
     nonce = 'a' * 24
     record = dict(key='b' * 64, packages=['/Game/Region/Mesh'], native_source_validated=True,
                   provenance={'kind': 'compatibility-only', 'historical_task': 'c' * 64},
@@ -222,3 +222,13 @@ def test_known_prior_environment_cannot_become_unknown(tmp_path):
     for observed in (None, 'b' * 64, 'a' * 64):
         packet['observed_context'] = observed; target.write_text(json.dumps(packet))
         assert (reuse.prior_stamp(ctx, 'task', nonce, str(target)) is not None) == (observed == 'a' * 64)
+
+
+@pytest.mark.parametrize('definition', [
+    "class Setup:\n T.update({'a':1})",
+    'def other(x=s()): pass',
+    'def other(x:s()): pass',
+    '@s()\ndef other(): pass'])
+def test_policy_refuses_definition_time_execution(definition):
+    with pytest.raises(ValueError, match='initialization|definition expressions'):
+        reuse.policy("T={}\ndef s(): T['a']=1\n" + definition + '\ndef build(): return T\n', ('build',))

@@ -7,7 +7,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from atelier import checkpoint_candidates, mesh_reuse, paths, unreal_mesh_reuse as native
+from atelier import native_candidates as checkpoint_candidates, mesh_reuse, paths, unreal_mesh_reuse as native
 
 
 @pytest.fixture
@@ -20,8 +20,8 @@ def scene(tmp_path, monkeypatch):
     script = repo / 'import.py'; script.write_text('def build(): return 1\n')
     current = {'engine': 'engine', 'sdk': 'sdk'}
     monkeypatch.setattr(native, 'context', lambda _: current)
-    from atelier import checkpoint_store
-    monkeypatch.setattr(checkpoint_store, 'context', lambda _: current)
+    from atelier import native_protocol
+    monkeypatch.setattr(native_protocol, 'context', lambda _: current)
     monkeypatch.setenv('ATELIER_MESH_REUSE_NONCE', 'e' * 24)
     monkeypatch.setattr(mesh_reuse, 'revision_source', lambda *a: script.read_text())
     source = ctx.out / 'mesh.glb'; source.write_bytes(b'expected mesh source')
@@ -164,7 +164,7 @@ def test_matching_property_does_not_dirty_asset():
 
 
 def test_material_group_publishes_only_after_parent_and_preserves_unchanged_bytes(tmp_path, monkeypatch):
-    from atelier import checkpoint_store
+    from atelier import native_protocol
     repo = tmp_path.resolve(); monkeypatch.setattr(paths, 'REPO', repo)
     ctx = SimpleNamespace(out=repo / 'build/game', uproject=repo / 'games/game/unreal/Game.uproject')
     script = ctx.uproject.parent / 'Scripts/importer.py'; script.parent.mkdir(parents=True)
@@ -173,7 +173,7 @@ def test_material_group_publishes_only_after_parent_and_preserves_unchanged_byte
     content = ctx.uproject.parent / 'Content/Region/Material.uasset'
     content.parent.mkdir(parents=True); content.write_bytes(b'saved native material')
     monkeypatch.setattr(native, 'context', lambda _: {})
-    monkeypatch.setattr(checkpoint_store, 'context', lambda _: {})
+    monkeypatch.setattr(native_protocol, 'context', lambda _: {})
     monkeypatch.setenv('ATELIER_MESH_REUSE_NONCE', 'a' * 24)
     saves = []
     monkeypatch.setitem(sys.modules, 'unreal', SimpleNamespace(load_asset=lambda p: p,
@@ -196,3 +196,38 @@ def test_malformed_receiving_environment_is_a_miss(tmp_path, saved):
     file = tmp_path / 'native-imports/environment.json'; file.parent.mkdir()
     file.write_text(json.dumps(saved))
     assert not native.observed_environment(ctx, {})
+
+
+@pytest.mark.parametrize('shared', [False, True])
+def test_current_common_receipt_binds_owner_finishing_and_support(scene, monkeypatch, shared):
+    owner = scene.ctx.uproject.parent / 'Scripts/owner.py'; owner.parent.mkdir()
+    helper = paths.REPO / 'platform/shared/finishing.py' if shared else owner.with_name('finishing.py')
+    helper.parent.mkdir(parents=True, exist_ok=True); helper.write_text('SETTING=1\n')
+    owner.write_text('from finishing import SETTING\ndef main(): return SETTING\n')
+    script = paths.REPO / 'import.py'
+    monkeypatch.setattr(mesh_reuse, 'revision_source', lambda repo, revision, name: (repo / name).read_text())
+    def adapter():
+        return native.MeshReuse(scene.ctx, 'unreal.region', script, ('build',), owner_script=owner, owner_roots=(helper.parent,))
+    first = adapter(); assert acquire(scene, first)
+    first.validated('Mesh'); mesh_reuse.finalize_pending(scene.ctx, 'unreal.region', 'e' * 24)
+    assert acquire(scene, adapter())
+    helper.write_text('SETTING=2\n')
+    assert acquire(scene, adapter()) is None
+    helper.write_text('SETTING=1\n'); owner.write_text('from finishing import SETTING\ndef main(): return SETTING+1\n')
+    assert acquire(scene, adapter()) is None
+
+
+def test_unsupported_material_policy_runs_builder_without_publishing_receipt(tmp_path, monkeypatch):
+    ctx = SimpleNamespace(out=tmp_path / 'build/game', uproject=tmp_path / 'games/game/unreal/Game.uproject')
+    script = ctx.uproject.parent / 'Scripts/importer.py'; script.parent.mkdir(parents=True)
+    script.write_text('class Unsupported: pass\ndef materials(): return 1\n')
+    monkeypatch.setattr(native, 'context', lambda _: {})
+    monkeypatch.setenv('ATELIER_MESH_REUSE_NONCE', 'a' * 24)
+    saves = []
+    monkeypatch.setitem(sys.modules, 'unreal', SimpleNamespace(load_asset=lambda p: p,
+        EditorAssetLibrary=SimpleNamespace(save_loaded_asset=lambda asset, **kw: saves.append(asset) or True)))
+    group = native.AssetGroup(ctx, 'unreal.region', script, ('materials',), parameters={})
+    assert not group.matches(['/Game/Region/Material'])
+    group.validated(['/Game/Region/Material'])
+    assert saves == ['/Game/Region/Material']
+    assert not group.book.path.exists() and not (ctx.out / '.state/mesh-import-pending').exists()

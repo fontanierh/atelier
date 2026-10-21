@@ -221,7 +221,7 @@ def protect(ctx, step, *, estimate=None, echo=print):
                                          estimated_seconds=known)) + '\n')
 
 
-def capture_local(source, game, *, read_only=False):
+def capture_local(source, game, *, read_only=False, deadline_seconds=900):
     """@cc [owner:fontanierh,label:correctness] retain-existing-build-work
     Local retention MUST copy only existing generated work through the normal checkpoint guard.
     It MUST NOT build, cook, change source or manufacture stamps for the merge revision. A failed
@@ -229,6 +229,8 @@ def capture_local(source, game, *, read_only=False):
     independent of the PR or Git merge commit. No remote repository is required or uploaded here.
     """
     source = Path(source).resolve()
+    if read_only and (type(deadline_seconds) is not int or not 60 <= deadline_seconds <= 900):
+        raise CheckpointError('Read-only capture deadline must be 60–900 seconds including queue and cleanup')
     import subprocess
     from . import provenance
     def clean_revision():
@@ -262,11 +264,11 @@ def capture_local(source, game, *, read_only=False):
                      'assert all(__import__("pathlib").Path(m.__file__).parent == '
                      '__import__("pathlib").Path(worker.__file__).parent for m in modules), "Foreign capture implementation"; '
                      'worker.main()')
-    argv = [sys.executable, *(['-B'] if read_only else []), '-c', bootstrap, str(source / 'platform/studio/atelier'), 'capture', game, str(folder),
+    argv = [sys.executable, *(['-u', '-B'] if read_only else []), '-c', bootstrap, str(source / 'platform/studio/atelier'), 'capture', game, str(folder),
             '--source', str(source), '--release']
     if read_only:
         argv.append('--read-only')
-    if guarded.run(argv, folder, aggregate_tree=True, timeout=900 if read_only else 3600, progress=25,
+    if guarded.run(argv, folder, aggregate_tree=True, timeout=deadline_seconds if read_only else 3600, progress=25,
                    kind='job', purpose='retain existing build artifacts'):
         raise CheckpointError('Local checkpoint capture failed; preserve producer outputs and retry')
     key = read_json(folder / 'result.json')['key']

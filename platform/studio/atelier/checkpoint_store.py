@@ -6,64 +6,21 @@ or compiler-action-cache claim is made. Certificates are recomputed by the recei
 """
 from contextlib import contextmanager
 import fcntl
-import hashlib
 import json
 import os
-from pathlib import Path, PurePosixPath
-import re
+from pathlib import Path
 import shutil
 import stat
 import tempfile
 import time
-import unicodedata
 
 from . import build_products, paths
 from .build_cache import atomic_json, copy_file
+from .native_protocol import (SCHEMA, MAX_MANIFEST, MAX_FILES, MAX_BYTES, HEX, IGNORED, CheckpointError,
+                              canonical, identity, read_json, relative, context, excluded, safe_destination, validate)
 from .build_hashes import HashIndex, signature
 
-SCHEMA = 1
-MAX_MANIFEST = 64 * 1024**2
-MAX_FILES = 500000
-MAX_BYTES = 512 * 1024**3
-HEX = re.compile(r'[0-9a-f]{64}')
 JOURNAL = '.checkpoint-in-progress.json'
-IGNORED = {'logs', 'stamps', '.state', '.DS_Store', '__pycache__', '.git', '.env',
-           'release-publish', 'checkpoint-publish'}
-
-
-class CheckpointError(RuntimeError):
-    pass
-
-
-def canonical(value):
-    return json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
-
-
-def identity(value):
-    return hashlib.sha256(canonical(value)).hexdigest()
-
-
-def read_json(path):
-    if path.is_symlink() or path.stat().st_size > MAX_MANIFEST:
-        raise CheckpointError('Checkpoint metadata is linked or exceeds its size limit')
-    def unique(pairs):
-        result = {}
-        for key, value in pairs:
-            if key in result:
-                raise CheckpointError('Duplicate checkpoint metadata key')
-            result[key] = value
-        return result
-    return json.loads(path.read_bytes(), object_pairs_hook=unique)
-
-
-def relative(value):
-    if (not isinstance(value, str) or not value or '\\' in value
-            or any(ord(c) < 32 for c in value)):
-        raise CheckpointError('Invalid checkpoint member path')
-    path = PurePosixPath(value)
-    if path.is_absolute() or str(path) != value or any(p in ('.', '..') for p in path.parts):
-        raise CheckpointError('Checkpoint members must be canonical relative paths')
-    return path
 
 
 def roots(ctx):
@@ -85,39 +42,6 @@ def roots(ctx):
     return result
 
 
-def context(ctx):
-    """Engine identity is independent of game HEAD; native ABI identity is mandatory."""
-    import platform
-    engine = getattr(ctx, 'unreal_root', None)
-    files = {}
-    if engine is not None:
-        for name in ('Engine/Build/Build.version', 'Engine/Binaries/Mac/UnrealEditor.modules'):
-            path = engine / name
-            if not path.is_file():
-                raise CheckpointError('Checkpoint requires the installed engine version and module identity')
-            files[name] = build_products.file_digest(path)
-    toolchain = {}
-    if engine is not None and platform.system() == 'Darwin':
-        import subprocess
-        developer = Path(subprocess.check_output(['xcode-select', '-p'], timeout=10, text=True).strip())
-        for name, path in {
-            'xcode': developer.parent / 'Info.plist',
-            'toolchain': developer / 'Toolchains/XcodeDefault.xctoolchain/ToolchainInfo.plist',
-            'sdk': developer / 'Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/SDKSettings.json',
-        }.items():
-            if not path.is_file():
-                raise CheckpointError('Checkpoint requires the selected Xcode/toolchain/SDK identity')
-            toolchain[name] = build_products.file_digest(path)
-    return dict(system=platform.system(), machine=platform.machine(), engine=files, toolchain=toolchain,
-                engine_location=identity(str(engine.resolve())) if engine else None)
-
-
-def excluded(path):
-    return any(p in IGNORED or p.startswith('.env.') or p.endswith('.guard')
-               or p.startswith(('.restore-', '.checkpoint-', '.reuse-', '.portable-snapshot-'))
-               for p in path.parts)
-
-
 def members(root):
     if root.is_symlink():
         raise CheckpointError('Checkpoint roots must not be symlinks')
@@ -130,20 +54,6 @@ def members(root):
             path = base / name
             if not excluded(path.relative_to(root)):
                 yield path
-
-
-def safe_destination(root, member):
-    relative(member)
-    path = root.joinpath(*PurePosixPath(member).parts)
-    for parent in path.parents:
-        if parent.is_symlink():
-            raise CheckpointError('Checkpoint destination has a linked ancestor')
-        if parent == root:
-            break
-    # Resolve every ancestor, including parents of an absent root.
-    if root.resolve() != root.absolute():
-        raise CheckpointError('Checkpoint destination root has a linked ancestor')
-    return path
 
 
 class Store:
@@ -202,55 +112,6 @@ class Store:
     def latest(self):
         candidates = sorted(self.manifests.glob('*.json'), key=lambda p: p.stat().st_mtime_ns, reverse=True)
         return [(p.stem, self.load(p.stem)) for p in candidates]
-
-
-def validate(manifest, game):
-    """@cc [owner:fontanierh,label:security] bounded-checkpoint-paths
-    A checkpoint MUST contain only canonical, bounded, uniquely owned member paths and valid
-    content digests. Case/Unicode aliases, linked parents, special files and credential paths MUST
-    be refused. Downloaded root labels MUST NOT grant authority to write arbitrary paths.
-    """
-    if (type(manifest) is not dict or manifest.get('schema') != SCHEMA or manifest.get('game') != game
-            or type(manifest.get('files')) is not dict or len(manifest['files']) > MAX_FILES
-            or type(manifest.get('stamps')) is not dict or type(manifest.get('context')) is not dict
-            or not HEX.fullmatch(manifest.get('checkout', ''))):
-        raise CheckpointError('Invalid checkpoint manifest')
-    aliases, total = set(), 0
-    for name, entry in manifest['files'].items():
-        path = relative(name)
-        alias = unicodedata.normalize('NFC', name).casefold()
-        if alias in aliases or excluded(PurePosixPath(*path.parts[1:])) or len(path.parts) < 2:
-            raise CheckpointError('Aliased or excluded checkpoint member')
-        aliases.add(alias)
-        if type(entry) is not dict or entry.get('kind') not in ('file', 'link', 'directory'):
-            raise CheckpointError('Invalid checkpoint file kind')
-        if type(entry.get('mode')) is not int or not 0 <= entry['mode'] <= 0o777:
-            raise CheckpointError('Invalid checkpoint file permissions')
-        if type(entry.get('mtime_ns')) is not int or entry['mtime_ns'] < 0:
-            raise CheckpointError('Invalid checkpoint timestamp')
-        if entry['kind'] == 'file':
-            if (type(entry.get('size')) is not int or not 0 <= entry['size'] <= MAX_BYTES
-                    or not isinstance(entry.get('sha256'), str) or not HEX.fullmatch(entry['sha256'])):
-                raise CheckpointError('Invalid checkpoint file identity')
-            total += entry['size']
-        elif entry['kind'] == 'link':
-            target = entry.get('target')
-            if not isinstance(target, str) or not target.startswith(('member:', 'engine:')):
-                raise CheckpointError('Invalid checkpoint link target')
-            relative(target.partition(':')[2])
-    leaves = {unicodedata.normalize('NFC', n).casefold() for n, e in manifest['files'].items() if e['kind'] != 'directory'}
-    for name in aliases:
-        if any(str(p) in leaves for p in PurePosixPath(name).parents if str(p) != '.'):
-            raise CheckpointError('Checkpoint file is another member\'s parent')
-    if total > MAX_BYTES or len(canonical(manifest)) > MAX_MANIFEST:
-        raise CheckpointError('Checkpoint exceeds its size limit')
-    incremental = manifest.get('incremental_stamps', {})
-    if type(incremental) is not dict or set(incremental) & set(manifest['stamps']):
-        raise CheckpointError('Invalid incremental checkpoint state')
-    for name, stamp in {**manifest['stamps'], **incremental}.items():
-        if (not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]*', name) or type(stamp) is not dict
-                or not HEX.fullmatch(stamp.get('fingerprint', '')) or stamp.get('touched')):
-            raise CheckpointError('Checkpoint contains an invalid or touched certificate')
 
 
 def certificates(ctx, steps, *, include_incremental=False):

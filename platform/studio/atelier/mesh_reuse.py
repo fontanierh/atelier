@@ -10,8 +10,8 @@ from pathlib import Path
 import re
 import subprocess
 
-from .build_cache import atomic_json
-from .checkpoint_store import CheckpointError, canonical, read_json, relative, safe_destination
+from .native_protocol import (atomic_json, CheckpointError, canonical, read_json, relative, safe_destination,
+                              ReadStore, entry_path, validate_action, context)
 
 
 def digest(path, algorithm='sha256'):
@@ -33,6 +33,19 @@ def policy(source, functions, resolve_import=None):
     a geometry policy. Missing or ambiguous declarations cannot establish it.
     """
     tree = ast.parse(source)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ClassDef):
+            raise ValueError('Class initialization cannot establish a geometry policy')
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
+            annotations = ([node.returns] if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.returns else [])
+            annotations += [arg.annotation for arg in (*node.args.posonlyargs, *node.args.args, *node.args.kwonlyargs,
+                                                        *([node.args.vararg] if node.args.vararg else []),
+                                                        *([node.args.kwarg] if node.args.kwarg else []))
+                            if arg.annotation]
+            evaluated = [*node.args.defaults, *(value for value in node.args.kw_defaults if value), *annotations]
+            if (getattr(node, 'decorator_list', ()) or
+                    any(isinstance(part, ast.Call) for value in evaluated for part in ast.walk(value))):
+                raise ValueError('Dynamic definition expressions cannot establish a geometry policy')
     if any(isinstance(node, ast.ImportFrom) and any(alias.name == '*' for alias in node.names)
            for node in ast.walk(tree)):
         raise ValueError('Wildcard imports cannot establish a geometry policy')
@@ -124,8 +137,8 @@ def policy(source, functions, resolve_import=None):
 
 def native_policy(source, functions, script, *, revision=None, inputs=None):
     """Bind selected repository imports without executing historical Python."""
-    from . import build_inputs, paths
-    scanner = build_inputs.ImportScanner()
+    from . import source_imports, paths
+    scanner = source_imports.ImportScanner()
     repo, script = paths.REPO.resolve(), Path(script).resolve()
     search = list(dict.fromkeys([script.parent, *(p for p in script.parents if p.is_relative_to(repo)), paths.STUDIO]))
     search = [p for p in search if p.is_relative_to(repo)]
@@ -264,10 +277,8 @@ def historical_packages_match(ctx, task, stamp, packages):
         current = package_inventory(ctx.uproject.parent / 'Content', packages)
         key = stamp.get('checkpoint_key')
         if key:
-            from . import checkpoint_actions
-            from .checkpoint_store import Store
-            store = Store(ctx.game)
-            entry = checkpoint_actions.validate(read_json(checkpoint_actions.entry_path(store, key)), store, key)
+            store = ReadStore(ctx.game)
+            entry = validate_action(read_json(entry_path(store, key)), store, key)
             if (entry['task'] != task or entry['fingerprint'] != stamp['fingerprint']
                     or entry['stamp']['checkpoint_inventory'] != stamp['checkpoint_inventory']):
                 return False
@@ -335,7 +346,7 @@ def _finalize_pending(ctx, task, nonce):
     target = pending_path(ctx, task, nonce)
     if not target.exists():
         return
-    from .checkpoint_store import context
+    from .native_protocol import context
     packet = read_json(target)
     if (not isinstance(packet, dict) or packet.get('schema') != 1 or packet.get('task') != task or packet.get('nonce') != nonce
             or packet.get('context') != context(ctx) or not isinstance(packet.get('entries'), dict)

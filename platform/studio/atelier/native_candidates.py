@@ -1,0 +1,120 @@
+"""Read-only candidate admission inside native imports; no controller or guard dependencies."""
+import re
+import stat
+from .build_hashes import digest_file
+from .native_protocol import (CheckpointError, HEX, ReadStore as Store, context, identity, read_json,
+                              relative, safe_destination, validate)
+
+def task_name(value):
+    if not isinstance(value, str) or not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]*', value) or '..' in value:
+        raise CheckpointError('Invalid candidate task name')
+    return value
+
+
+def root(ctx):
+    return safe_destination(ctx.out, '.state/import-candidates')
+
+
+def original(store, key):
+    if not HEX.fullmatch(key):
+        raise CheckpointError('Invalid candidate checkpoint key')
+    try:
+        return store.load(key)
+    except FileNotFoundError:
+        value = read_json(store.directory / 'candidate-sources' / (key + '.json'))
+        validate(value, store.game)
+        if identity(value) != key:
+            raise CheckpointError('Candidate source manifest identity differs')
+        return value
+
+
+def inventory(ctx, key, task):
+    """Original immutable member inventory and historical compatibility evidence, without copies."""
+    task_name(task)
+    saved = original(Store(ctx.game), key)
+    stamp = {**saved['stamps'], **saved.get('incremental_stamps', {})}.get(task)
+    revision = saved.get('source_revision', '')
+    if (saved['context'] != context(ctx) or not stamp or stamp.get('touched')
+            or not re.fullmatch(r'[0-9a-f]{40}', revision)):
+        raise CheckpointError('Candidate needs compatible engine/platform, clean source revision and historical task proof')
+    return dict(schema=1, checkpoint=key, donor_task=task, donor_fingerprint=stamp['fingerprint'],
+                source_revision=revision, context=saved['context'], provenance='compatibility-only', files=saved['files'])
+
+
+def checked_file(directory, member, entry):
+    relative(member)
+    if not isinstance(entry, dict) or entry.get('path') != 'files/' + member or not HEX.fullmatch(entry.get('sha256', '')):
+        raise CheckpointError('Invalid staged candidate member')
+    path = safe_destination(directory, entry['path'])
+    if (path.is_symlink() or not path.is_file() or path.stat().st_size != entry['size']
+            or stat.S_IMODE(path.stat().st_mode) != entry['mode']
+            or digest_file(path) != entry['sha256']):
+        raise CheckpointError('Staged candidate bytes changed')
+    return path
+
+
+class Bundle(dict):
+    """Loaded once per importer; each member access verifies only that member's actual bytes."""
+    def __init__(self, value, directory, receiver):
+        super().__init__(value)
+        self.directory = directory
+        self.receiver = receiver
+
+    def member_path(self, member):
+        entry = self['files'].get(member)
+        return checked_file(self.directory, member, entry) if entry is not None else None
+
+
+def completion(ctx, value, directory, *, verify_files=True):
+    if (not isinstance(value, dict) or value.get('schema') != 1 or value.get('provenance') != 'compatibility-only'
+            or value.get('context') != context(ctx) or not HEX.fullmatch(value.get('checkpoint', ''))
+            or not HEX.fullmatch(value.get('donor_fingerprint', ''))
+            or not re.fullmatch(r'[0-9a-f]{40}', value.get('source_revision', ''))
+            or not isinstance(value.get('files'), dict) or not value['files']):
+        raise CheckpointError('Invalid or incompatible candidate completion')
+    task_name(value['donor_task'])
+    proof = inventory(ctx, value['checkpoint'], value['donor_task'])
+    if any(value.get(k) != proof[k] for k in ('source_revision', 'context', 'donor_fingerprint')):
+        raise CheckpointError('Candidate completion differs from immutable donor evidence')
+    for member, entry in value['files'].items():
+        original_entry = proof['files'].get(member)
+        if not isinstance(entry, dict) or original_entry is None or original_entry['kind'] != 'file' or any(
+                entry.get(k) != original_entry[k] for k in ('sha256', 'size', 'mode')):
+            raise CheckpointError('Candidate completion contains unproved donor members')
+    bundle = Bundle(value, directory, (ctx.game, root(ctx)))
+    if verify_files:
+        for member in value['files']:
+            bundle.member_path(member)
+    return bundle
+
+
+def load(ctx, task):
+    """@cc [owner:fontanierh,label:correctness] compatibility-candidates-are-not-success
+    A candidate pointer MUST stay within ignored receiving staging. Load MUST verify engine/
+    platform context and staged file integrity. It MUST NOT publish a receiving stamp or claim
+    current importer compatibility. A failed check MUST yield a normal cache miss. Reuse of
+    native assets requires the native owner's current source/policy/material/collision proof.
+    """
+    try:
+        pointer = read_json(root(ctx) / (task_name(task) + '.json'))
+        if not isinstance(pointer, dict) or pointer.get('schema') != 1:
+            return None
+        manifest = safe_destination(root(ctx), pointer['manifest'])
+        bundle = completion(ctx, read_json(manifest), manifest.parent)
+        if bundle.get('receiver_task') != task:
+            return None
+        return bundle
+    except (OSError, ValueError, KeyError, TypeError, CheckpointError):
+        return None
+
+
+def member_path(ctx, task, member, *, bundle=None):
+    """Pass the Bundle from load() to avoid rehashing the bundle on each member access."""
+    try:
+        bundle = bundle if bundle is not None else load(ctx, task)
+        if bundle is not None and (bundle.get('receiver_task') != task or bundle.receiver != (ctx.game, root(ctx))):
+            return None
+        return bundle.member_path(member) if bundle is not None else None
+    except (OSError, ValueError, KeyError, TypeError, CheckpointError):
+        return None
+

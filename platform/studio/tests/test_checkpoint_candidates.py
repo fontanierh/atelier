@@ -16,6 +16,8 @@ def donor(fixture, monkeypatch):
     key = cp.capture(ctx, steps, fixture.store, echo=lambda _: None)
     key = fixture.store.save(dict(fixture.store.load(key), source_revision='a' * 40))
     monkeypatch.setattr(candidates, 'Store', lambda _: fixture.store)
+    from atelier import native_candidates
+    monkeypatch.setattr(native_candidates, 'Store', lambda _: fixture.store)
     def guard(ctx, operation, request_id):
         assert operation == 'stage-candidates'
         return candidates.stage_worker(ctx, request_id)
@@ -48,7 +50,7 @@ def test_stale_engine_pointer_is_a_miss(fixture, donor, monkeypatch):
     key, _ = donor
     ctx, _ = fixture.checkout('receiver')
     candidates.stage(ctx, key, 'tree', ['generated/tree/asset.bin'])
-    monkeypatch.setattr(candidates, 'context', lambda ctx: dict(engine='different'))
+    monkeypatch.setattr(__import__('atelier.native_candidates', fromlist=['context']), 'context', lambda ctx: dict(engine='different'))
     assert candidates.load(ctx, 'tree') is None
 
 
@@ -127,12 +129,13 @@ def test_bundle_accessor_hashes_only_requested_member(fixture, donor, monkeypatc
     ctx, _ = fixture.checkout('receiver')
     candidates.stage(ctx, key, 'tree', ['generated/tree/asset.bin', 'generated/house/asset.bin'])
     bundle = candidates.load(ctx, 'tree')
-    original = candidates.build_products.file_digest
+    from atelier import native_candidates
+    original = native_candidates.digest_file
     seen = []
     def digest(path):
         seen.append(path)
         return original(path)
-    monkeypatch.setattr(candidates.build_products, 'file_digest', digest)
+    monkeypatch.setattr(native_candidates, 'digest_file', digest)
     assert candidates.member_path(ctx, 'tree', 'generated/tree/asset.bin', bundle=bundle).read_bytes() == b'tree'
     assert len(seen) == 1 and seen[0].name == 'asset.bin'
 

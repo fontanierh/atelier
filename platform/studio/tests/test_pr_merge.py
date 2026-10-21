@@ -11,7 +11,8 @@ from test_checkpoints import fixture
 REAL_RETAIN = build_checkpoints.retain
 
 
-def test_read_only_capture_uses_original_fingerprints_and_current_capture_code(tmp_path, monkeypatch):
+@pytest.mark.parametrize('deadline', [600, 900])
+def test_read_only_capture_uses_original_fingerprints_and_current_capture_code(tmp_path, monkeypatch, deadline):
     import hashlib
     import subprocess
     from atelier import build, checkpoint_candidates
@@ -53,12 +54,12 @@ class Context:
     monkeypatch.setenv('ATELIER_CACHE', str(tmp_path / 'cache'))
     monkeypatch.setattr(paths, 'build_root', lambda: tmp_path / 'controller/build')
     def guard(argv, folder, **kwargs):
-        assert kwargs['aggregate_tree'] and kwargs['timeout'] == 900 and '-B' in argv
+        assert kwargs['aggregate_tree'] and kwargs['timeout'] == deadline and '-B' in argv and '-u' in argv
         completed = subprocess.run(argv, text=True, capture_output=True, timeout=20)
         assert completed.returncode == 0, completed.stdout + completed.stderr
         return 0
     monkeypatch.setattr(guarded, 'run', guard)
-    key = build_checkpoints.capture_local(source, 'fixture', read_only=True)
+    key = build_checkpoints.capture_local(source, 'fixture', read_only=True, deadline_seconds=deadline)
     saved = checkpoint_candidates.original(checkpoint_candidates.Store('fixture'), key)
     assert saved['candidate_only'] and saved['stamps'] == {}
     assert saved['incremental_stamps']['mesh']['fingerprint'] == 'a' * 64
@@ -228,3 +229,9 @@ def test_local_capture_uses_guard_and_publishes_to_normal_restore_store(fixture,
         stamps = cp.restore(receiver, current, fixture.store, key, echo=lambda _: None)
         assert set(stamps) == {'tree', 'house'}
     assert before == steps[0].outputs[0].read_bytes()
+
+
+@pytest.mark.parametrize('deadline', [True, 59, 901, 60.5])
+def test_candidate_deadline_refuses_outside_bounded_handoff(tmp_path, deadline):
+    with pytest.raises(CheckpointError, match='deadline'):
+        build_checkpoints.capture_local(tmp_path, 'fixture', read_only=True, deadline_seconds=deadline)
