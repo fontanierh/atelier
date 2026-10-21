@@ -47,7 +47,9 @@ def matches(mesh, source, replacements, canopies, triangles, screens, geometry, 
         for index, (name, material) in enumerate(zip(('CanopyNear', 'CanopyFar'), canopies), len(originals)):
             if str(slots[index].get_editor_property('material_slot_name')) != name or mesh.get_material(index) != material:
                 return miss("canopy material binding")
-        for key, value in (('bAutoComputeLODScreenSize', False), ('bGenerateMeshDistanceField', False),
+        if mesh.is_lod_screen_size_auto_computed():
+            return miss("automatic LOD screens")
+        for key, value in (('bGenerateMeshDistanceField', False),
                            ('LightMapCoordinateIndex', 0)):
             if mesh.get_editor_property(key) != value:
                 return miss("mesh setting: " + key)
