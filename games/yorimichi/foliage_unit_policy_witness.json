@@ -10,8 +10,8 @@
     "games/yorimichi/unreal/Source/Yorimichi/Dev/FoliageGeometryReader.h": "1fda42157ec4096218bcb89ab93abda79b37e37c13ca0c34fa9d62c92f81b11d",
     "games/yorimichi/unreal/Source/Yorimichi/Dev/FoliageSourceWriter.cpp": "f7b5c26347b947806fd470ac2e47fe1dff8edf2d2ad842ef15d2452cf7f19f86",
     "games/yorimichi/unreal/Source/Yorimichi/Dev/FoliageSourceWriter.h": "4cc6586a01573a4c99d3b124dda689c4b2a2258a06884bb20d1c532694f8197c",
-    "games/yorimichi/unreal/Source/Yorimichi/FoliageSystem.cpp": "7961d93dfc37983dd79346469913667897dd21aea303d534fc7bd7f111fa8872",
-    "games/yorimichi/unreal/Source/Yorimichi/FoliageSystem.h": "9b1cb51aff4f95d6eba8cec1a848a9eab85d62af6e26b4cfa2c3d41e3cbe3b47",
+    "games/yorimichi/unreal/Source/Yorimichi/FoliageSystem.cpp": "c823c473f601a4f1ec9ab8cb38f7e356057fc839f1035a728fb7841bcaaae56b",
+    "games/yorimichi/unreal/Source/Yorimichi/FoliageSystem.h": "04627bf6600ae247767a7811f6bc809500834ccfe9550775f2b5cef8cc3dfa00",
     "games/yorimichi/unreal/Source/Yorimichi/Yorimichi.Build.cs": "87ca815d699ba0117fe51c222e9894b1ef3e762b7e54f2d465b9d0f49b406648",
     "games/yorimichi/unreal/Source/YorimichiImport/FoliageBuilder.cpp": "4bba4b2c56f7e44ce1fa0ae29ae451fe1d4fe79d1ddf446d6e3a6c8a289a877a",
     "games/yorimichi/unreal/Source/YorimichiImport/FoliageBuilder.h": "055928322ad2d98b745901ced303ecd79801e58aab3ab088548c35523b7ee6b0",
@@ -29,7 +29,6 @@
     "platform/studio/atelier/source_imports.py": "b0b70fd764f52f5ced29308041edbf3b6176e34f4e391ba6c4af3474972008f6",
     "platform/studio/atelier/unreal_mesh_reuse.py": "a40864e3d6b0e16d31c6c863b5c2cf59626360c395055945806b0cc3cc157eb4"
   },
-  "current_revision": "b96c5d68de7e333bc79d7fd34a43d3105d22757c",
   "policies": [
     [
       {
@@ -98,18 +97,18 @@
         "sha256": "1fda42157ec4096218bcb89ab93abda79b37e37c13ca0c34fa9d62c92f81b11d"
       },
       {
-        "module_record": "{\n \"module\": \"Yorimichi\",\n \"digest\": \"b2846ec605532673e352defd8f35e38d4bda4d2efd4d24b6f5c094e2611f9b1b\",\n \"files\": {\n  \"<config>/Config/DefaultEditor.ini\": \"f3305471478a279247fd2ea399bbd9c26a59f71d05fa274f8d837ef790f340b1\",\n  \"<config>/Config/DefaultEngine.ini\": \"7f565fdad03f16f15b024427b32b212c18036cb10397301d768e3ef0d8256ec0\",\n  \"<config>/Config/DefaultGame.ini\": \"dc21057702c730616140a14b887f046184c6202f8221c38ca0749e82e6d831bf\",\n  \"<config>/Config/DefaultInput.ini\": \"b6291c25af27ca545d77d198950ff33b423a1ac069ac12005a273778e1e358a2\",\n  \"<config>/Config/Mac/MacEngine.ini\": \"249df24ba47ed6bcdbb02fd3408654a19989866e248f3536a30d017ebc784f34\",\n  \"AtelierAnimation.uplugin\": \"27499ca1d91f0becf2a7e5f2b9e3dada1356a294986f51b125f69ba5613c69de\",\n  \"AtelierCore.uplugin\": \"fdec935bb29838b514292b544e6e30025d7d548f1ca7577b6bcc15f23db31fc0\",\n  \"AtelierFX.uplugin\": \"7b14e99ef17205d17e44255bedc83bc1a60b2116a0601b7ce7393a6201bfeaec\",\n  \"AtelierStream.uplugin\": \"e6f9a6cc074aea8beadd1780bcc6fd1729ec2b98263a133821c83f1df91cc621\",\n  \"Driving.uplugin\": \"85f553c3e9f566d45d7d221f9a8226ab5289f44edf8ad34ec3d4467eee20c23b\",\n  \"LiveBridge.uplugin\": \"cf7a093898725d77829e8c1ea0bb487d6fd1a51d6e88a568fd3ae57e23314e17\",\n  \"Skate.uplugin\": \"188dead3dabd5eaa7036f6ea110088bc6b8c9aa13ffc3bf824e5075c64ae7941\",\n  \"Yorimichi.uproject\": \"46ac8b869ccabd457aaf1585fc4219d68fa7034692679521d5975ea3ea904004\",\n  \"libUnrealEditor-AtelierAnimation.dylib\": \"aedaea1ad167e163c96eb4960ee142604bc5ac902039a0a77ec5c98b573cfd03\",\n  \"libUnrealEditor-AtelierCore.dylib\": \"59cec11bce220ccffcd0b4bdb2889a8841109bafdf8d0502eb90d7bf9a3846b4\",\n  \"libUnrealEditor-AtelierDriving.dylib\": \"3fc68c6da84eee3352e5342e2f2f3b971910ca95c28b8c4b30de05a484d0deda\",\n  \"libUnrealEditor-AtelierFX.dylib\": \"eb0686b848b34ce90906ddb488f1df7b7c0d15112da69994870dc269ece7ea20\",\n  \"libUnrealEditor-AtelierLive.dylib\": \"186935c4dc1ded55783803d4ddd749afa77a0e90ae7a29d36ee4ecf225f9b9a3\",\n  \"libUnrealEditor-AtelierSkate.dylib\": \"c6bd28120bdbc515af0e09dd6d9af5802a3e0b6f82b640fc0480509c36eac611\",\n  \"libUnrealEditor-AtelierStream.dylib\": \"40318c282f598b2e5a2c4f8f7420ce8b4d7ccdd4116decb7fb8912bf0b6999ae\",\n  \"libUnrealEditor-Yorimichi.dylib\": \"12bba19edd07d66a58149ab8bf0dd958888bb6e886c6593cfa63bcfd0e42dc1f\",\n  \"libUnrealEditor-YorimichiAssets.dylib\": \"68259ea5500db9e8fe6632c7296a26e5ce4da0a09e5704e5aa21cc03da96cd82\"\n }\n}\n",
-        "sha256": "368124ea2522e1793c2f3562fde6f2e9d892e38a18a81fdeb6e2217b5f8281c0"
+        "module_record": "{\n \"module\": \"Yorimichi\",\n \"digest\": \"02a6d35c00867cb88365d9646a5b4ffc2dd399ae572c4e720a56b7019e4410c2\",\n \"files\": {\n  \"<config>/Config/DefaultEditor.ini\": \"f3305471478a279247fd2ea399bbd9c26a59f71d05fa274f8d837ef790f340b1\",\n  \"<config>/Config/DefaultEngine.ini\": \"7f565fdad03f16f15b024427b32b212c18036cb10397301d768e3ef0d8256ec0\",\n  \"<config>/Config/DefaultGame.ini\": \"dc21057702c730616140a14b887f046184c6202f8221c38ca0749e82e6d831bf\",\n  \"<config>/Config/DefaultInput.ini\": \"b6291c25af27ca545d77d198950ff33b423a1ac069ac12005a273778e1e358a2\",\n  \"<config>/Config/Mac/MacEngine.ini\": \"249df24ba47ed6bcdbb02fd3408654a19989866e248f3536a30d017ebc784f34\",\n  \"AtelierAnimation.uplugin\": \"27499ca1d91f0becf2a7e5f2b9e3dada1356a294986f51b125f69ba5613c69de\",\n  \"AtelierCore.uplugin\": \"fdec935bb29838b514292b544e6e30025d7d548f1ca7577b6bcc15f23db31fc0\",\n  \"AtelierFX.uplugin\": \"7b14e99ef17205d17e44255bedc83bc1a60b2116a0601b7ce7393a6201bfeaec\",\n  \"AtelierStream.uplugin\": \"e6f9a6cc074aea8beadd1780bcc6fd1729ec2b98263a133821c83f1df91cc621\",\n  \"Driving.uplugin\": \"85f553c3e9f566d45d7d221f9a8226ab5289f44edf8ad34ec3d4467eee20c23b\",\n  \"LiveBridge.uplugin\": \"cf7a093898725d77829e8c1ea0bb487d6fd1a51d6e88a568fd3ae57e23314e17\",\n  \"Skate.uplugin\": \"188dead3dabd5eaa7036f6ea110088bc6b8c9aa13ffc3bf824e5075c64ae7941\",\n  \"Yorimichi.uproject\": \"46ac8b869ccabd457aaf1585fc4219d68fa7034692679521d5975ea3ea904004\",\n  \"libUnrealEditor-AtelierAnimation.dylib\": \"aedaea1ad167e163c96eb4960ee142604bc5ac902039a0a77ec5c98b573cfd03\",\n  \"libUnrealEditor-AtelierCore.dylib\": \"59cec11bce220ccffcd0b4bdb2889a8841109bafdf8d0502eb90d7bf9a3846b4\",\n  \"libUnrealEditor-AtelierDriving.dylib\": \"3fc68c6da84eee3352e5342e2f2f3b971910ca95c28b8c4b30de05a484d0deda\",\n  \"libUnrealEditor-AtelierFX.dylib\": \"eb0686b848b34ce90906ddb488f1df7b7c0d15112da69994870dc269ece7ea20\",\n  \"libUnrealEditor-AtelierLive.dylib\": \"186935c4dc1ded55783803d4ddd749afa77a0e90ae7a29d36ee4ecf225f9b9a3\",\n  \"libUnrealEditor-AtelierSkate.dylib\": \"c6bd28120bdbc515af0e09dd6d9af5802a3e0b6f82b640fc0480509c36eac611\",\n  \"libUnrealEditor-AtelierStream.dylib\": \"40318c282f598b2e5a2c4f8f7420ce8b4d7ccdd4116decb7fb8912bf0b6999ae\",\n  \"libUnrealEditor-Yorimichi.dylib\": \"f589f03fac6b1b5dfbfdb142b0b3c15194ff28c2a91857818a8dab22d1b5d751\",\n  \"libUnrealEditor-YorimichiAssets.dylib\": \"68259ea5500db9e8fe6632c7296a26e5ce4da0a09e5704e5aa21cc03da96cd82\"\n }\n}\n",
+        "sha256": "0b5731f182b3c18ed78bbcd48c5bc07d2524742c584a44cc0ce85e3e82a4c127"
       },
       {
-        "blob": "1d5ca19143cc3232170619de8f9f182ae2f95fc7",
+        "blob": "a2b436493c3bb233ed1bb2c5ef9ed2471ffde920",
         "path": "games/yorimichi/foliage_unit_policy.py",
-        "sha256": "15ba6a2571bf165f63fbe452e4849ca25513eda807992257f6095d4371085605"
+        "sha256": "8d4be18ad77c25b9f05408b000f00b92ae00575f391909d608202f63ff3f725a"
       },
       {
-        "blob": "916d0fb3266392c8b0308c6b593f1a6c6e490a74",
+        "blob": "56a6b3d6f53c2c1ab272aa4ecaad2f665c0922e3",
         "path": "games/yorimichi/foliage_unit_policy_witness.json",
-        "sha256": "a4cc1ffc6d3e9fe6d23f51674041d5a22103616df2ae75a5cd0c3f66a5af86c8"
+        "sha256": "bbf2639bcced1ba169009dd9adf801a77598024ff49454a17946f6afaedc5539"
       },
       {
         "blob": "5e700ab2aaabe6e510fd2834473e17f2b480ec14",
@@ -173,9 +172,5 @@
       }
     ]
   ],
-  "previous_revisions": [
-    "ad09a4c8"
-  ],
-  "schema": 2,
-  "scope": "All696 current saved units use a17. The only reviewed receiving delta drains initial RHI uploads and reports memory; geometry generation, transport, native snapshots, settings, source and material admission remain unchanged. Hints never certify a parent task."
+  "schema": 2
 }

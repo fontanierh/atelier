@@ -6,7 +6,7 @@ import re
 import subprocess
 
 
-WITNESS_SHA256 = 'bbf2639bcced1ba169009dd9adf801a77598024ff49454a17946f6afaedc5539'
+WITNESS_SHA256 = '680e47d85761cf64fe3509c9be26e1f403ebf981fcea7f3fca3e1c689b902116'
 MAX_SOURCE = 8 * 1024 * 1024
 USED_SLOT_PREPASS = '    // Imported meshes can retain unused seed-material slots. They still belong\n    // in the slot table, but no exported corner samples their palette.\n    TSet<int32> UsedSlots;\n    for (const FTriangleID Triangle : Description.Triangles().GetElementIDs())\n    {\n        const FName Name=SlotNames[Description.GetTrianglePolygonGroup(Triangle)];\n        int32 Used=Source->GetMaterialIndex(Name);\n        if (Used==INDEX_NONE)\n            for (int32 I=0;I<Source->GetStaticMaterials().Num();++I)\n                if (Source->GetStaticMaterials()[I].ImportedMaterialSlotName==Name) { Used=I;break; }\n        if (!Source->GetStaticMaterials().IsValidIndex(Used)) return false;\n        UsedSlots.Add(Used);\n    }\n'
 
@@ -100,8 +100,11 @@ def _transport(root):
 def legacy_policies(game_root, *, engine_version, environment, runtime):
     """@cc [owner:fontanierh,label:correctness] reviewed-unit-transport-equivalence
     Only these immutable reviewed source pairs MAY reproduce historical unit policies.
-    The reviewed startup upload drain/telemetry MAY change resource lifetime only;
-    geometry generation, snapshots, source/settings/material admission MUST stay unchanged.
+    The reviewed startup upload drain/telemetry and CPU vertex-copy release MAY change
+    only resource lifetime for owned prepared render-only variants in an uncooked game.
+    Originals, collision, indices, GPU handles/counts and runtime query ownership MUST
+    remain intact; geometry generation, snapshots and current source/settings/material
+    admission MUST stay unchanged.
     The reviewed unused-slot prepass MAY avoid palette work only for slots referenced
     by no exported triangle; it MUST preserve every emitted corner/sample.
     Every current source pin, ordered original Git byte, exact retained compiled-module
