@@ -6,6 +6,7 @@ import math
 from pathlib import Path
 
 from atelier import mesh_geometry
+from atelier.gltf import glb_parts
 
 GAME = Path(__file__).resolve().parent
 ROOT = '/Game/FoliageResident'
@@ -71,6 +72,41 @@ def authored_spec(source):
     return entry
 
 
+def authored_structural_slots(source, names, imported_names):
+    """@cc [owner:fontanierh,label:correctness] authored-retained-slot-identity
+    Structural ownership MUST follow the committed GLB's ordered retained source
+    indices, as the normal Belmonte producer does. Both native slot tables MUST
+    match its exact imported names; suffix guessing, reordered slots and changed
+    committed bytes MUST refuse. Current source/material certification remains
+    independently required by the caller.
+    """
+    entry = authored_spec(source)
+    file = GAME / 'assets/belmonte' / entry['path']
+    data = file.read_bytes()
+    if file.is_symlink() or hashlib.sha256(data).hexdigest() != entry['sha256']:
+        raise ValueError('Changed authored structural source: ' + source)
+    doc, _ = glb_parts(data)
+    retained = []
+    expected = []
+    for material in doc['materials']:
+        name = material['name']
+        # The normal producer uses this embedded source index because glTF
+        # omits unused source slots. Bind the complete committed name, including
+        # Blender's suffix; Interchange replaces its periods with underscores.
+        parts = name.split('_', 2)
+        if len(parts) != 3 or parts[0] != 'BM' or not parts[1].isdigit() or not re.fullmatch(r'[A-Za-z0-9_.]+', name):
+            raise ValueError('Unsupported authored GLB slot identity: ' + name)
+        index = int(parts[1])
+        if index >= len(entry['slots']) or index in retained:
+            raise ValueError('Invalid authored retained source indices: ' + source)
+        retained.append(index)
+        expected.append(name.replace('.', '_'))
+    if not expected or imported_names != expected or names != ['FoliageAuthored_' + name for name in expected]:
+        raise ValueError(f'Authored structural material order differs: {source}; '
+                         f'slots={names!r}; imported={imported_names!r}; expected={expected!r}')
+    return {i for i, index in enumerate(retained) if entry['slots'][index] in {'M_wood', 'M_iron', 'M_ashlar'}}
+
+
 def assets(row):
     result = [row[key].split('.')[0] for key in ('optimized', 'shadow', 'patch')]
     if row['rigid']:
@@ -124,7 +160,8 @@ def step(ctx):
                         ctx.out / 'foliage_system/report.json', content / 'FoliageSystem',
                         content / 'Data/foliage_system/registry.json',
                         *(ctx.out / 'foliage' / name / 'manifest.json' for name in species()),
-                        GAME.parents[1] / 'platform/studio/atelier/mesh_geometry.py'],
+                        GAME.parents[1] / 'platform/studio/atelier/mesh_geometry.py',
+                        GAME.parents[1] / 'platform/studio/atelier/gltf.py'],
                 deferred_inputs=[DeferredInputs('residency-current-packages', dependency_inputs,
                     (content, ctx.out / 'foliage_system/report.json'), support=(GAME / 'foliage_residency_build.py',))],
                 after=['unreal.foliage_system'], needs=unreal_modules.needs(('Yorimichi', 'YorimichiImport')),
@@ -156,6 +193,8 @@ def dependency_inputs(content, report_path):
         if row['source'].startswith('/Game/Belmonte/Meshes/'):
             entry = next((e for e in json.loads((GAME / 'assets/belmonte/source.json').read_text())['meshes']
                           if e['name'] == row['source'].rsplit('/', 1)[-1].split('.')[0]), {})
+            if row['rigid_triangles'] == 0 and entry and not entry.get('collision'):
+                witness_files.append(GAME / 'assets/belmonte' / entry['path'])
             if row['rigid_triangles'] == 0 and entry.get('collision'):
                 witness_files.append(GAME / 'assets/belmonte' / entry['collision']['path'])
                 packages.add(row['source'].split('.')[0] + '_Collision')
