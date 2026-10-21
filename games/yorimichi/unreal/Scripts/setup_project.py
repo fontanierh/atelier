@@ -11,6 +11,8 @@ import os, glob, sys, unreal
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+sys.path.insert(0, str(yori.GAME))
+from city_tile_products import streets_owned_package
 from asset_catalog import FOLIAGE, independently_owned, material_bindings
 from material_assets import opt, instance
 from forest_ground import material as forest_ground_material
@@ -66,7 +68,7 @@ def purge():
     order = {"AnimSequence": 0, "SkeletalMesh": 1, "PhysicsAsset": 2, "Skeleton": 3}
     assets.sort(key=lambda a: order.get(str(a.asset_class_path.asset_name), 5))
     for a in assets:
-        if independently_owned(str(a.package_name)):
+        if independently_owned(str(a.package_name)) or streets_owned_package(str(a.package_name)):
             continue
         try:
             EAL.delete_asset(str(a.package_name))

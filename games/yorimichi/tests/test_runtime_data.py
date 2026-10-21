@@ -1,6 +1,7 @@
-"""The staged runtime files retain their source bytes."""
+"""Staging preserves source bytes except the explicit production piece projection."""
 from dataclasses import replace
 import io
+import json
 import os
 from types import SimpleNamespace
 
@@ -32,6 +33,19 @@ def test_staging_copies_required_sources_and_preserves_unrelated_data(tmp_path, 
         expected[rel] = course_bytes if rel == 'racing/belmonte_courses.json' else rel.encode()
         source.write_bytes(expected[rel])
         os.utime(source, ns=(1_000_000_000, 2_000_000_000))
+    city = dict(instances=dict(HD_Streets=[[0,0,0,0,1]]), roads=[])
+    (ctx.out/'hidamari/city.json').write_text(json.dumps(city))
+    tile_name = 'HD_Streets_cell_0_0'
+    tile = dict(name=tile_name, triangles=1, sha256='a'*64, min=[0,0,0], max=[1,1,1])
+    partition = dict(complete=True,tag='v1_128m',triangle_limit=32768,
+                     sources=dict(HD_Terrain={},HD_Square={},HD_Streets=dict(
+                         source_slots=['HDS_road'],source_collision_boxes=0,source_triangles=1,
+                         source_min=[0,0,0],source_max=[1,1,1],tiles=[tile])))
+    expected['city_surface_tiles/v1_128m/manifest.json'] = json.dumps(partition).encode()
+    partition_path = ctx.out/'city_surface_tiles/v1_128m/manifest.json'
+    partition_path.write_bytes(expected['city_surface_tiles/v1_128m/manifest.json'])
+    os.utime(partition_path, ns=(1_000_000_000,2_000_000_000))
+    expected['hidamari/city.json'] = (json.dumps(dict(instances={tile_name:[[0,0,0,0,1]]},roads=[]),indent=2)+'\n').encode()
     # The committed skatepark source wins over any similarly named generated file.
     (ctx.out / 'skatepark').mkdir(exist_ok=True)
     (ctx.out / 'skatepark/park.json').write_bytes(b'wrong generated park')
@@ -45,7 +59,8 @@ def test_staging_copies_required_sources_and_preserves_unrelated_data(tmp_path, 
     for rel, content in expected.items():
         target = destination / rel
         assert target.read_bytes() == content
-        assert target.stat().st_mtime_ns == 2_000_000_000
+        if rel != 'hidamari/city.json':
+            assert target.stat().st_mtime_ns == 2_000_000_000
     assert retained.read_bytes() == b'keep source data'
     assert log.getvalue().splitlines() == [f'staged {rel}' for rel in data.staged(ctx.out)]
 

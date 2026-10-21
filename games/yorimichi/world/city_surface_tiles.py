@@ -51,6 +51,7 @@ def partition(source, folder, size, expected):
                for layer in mesh.color_attributes]
     assert len(normals) == len(mesh.loops) and uvs and colours, source
     assert sum(counts - 2) == expected['triangles'], (source, 'source FBX differs from production triangle count')
+    assert {material.name for material in mesh.materials} == {'HDS_'+slug for slug in expected['slots']}, (source, 'source material membership')
     assert np.isfinite(positions).all() and np.isfinite(normals).all()
     # Existing exports are in metres. Validate their world bounds against the
     # production export receipt before assigning metre-sized visibility cells.
@@ -118,6 +119,9 @@ def partition(source, folder, size, expected):
     assert total_polygons == len(mesh.polygons) and total_triangles == expected['triangles']
     result = dict(source_fbx_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
                   source_triangles=total_triangles, source_polygons=total_polygons,
+                  source_min=expected['min'], source_max=expected['max'],
+                  source_slots=[material.name for material in mesh.materials],
+                  source_collision_boxes=expected['collision_boxes'],
                   source_matrix=matrix.tolist(), tiles=tiles,
                   attributes_verified=['positions', 'corner_normals', 'all_uvs', 'all_vertex_colours'])
     for ob in imported:

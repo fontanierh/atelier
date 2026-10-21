@@ -1,5 +1,6 @@
 """Yorimichi runtime data: required files, source paths and staging into Content/Data."""
 import importlib.util
+import json
 import shutil
 from pathlib import Path
 
@@ -13,6 +14,9 @@ RACING_VALIDATOR = GAME / 'world/racing/courses.py'
 _courses_spec = importlib.util.spec_from_file_location('racing_courses', RACING_VALIDATOR)
 courses = importlib.util.module_from_spec(_courses_spec)
 _courses_spec.loader.exec_module(courses)
+_city_spec = importlib.util.spec_from_file_location('city_tile_products', GAME / 'city_tile_products.py')
+city_tiles = importlib.util.module_from_spec(_city_spec)
+_city_spec.loader.exec_module(city_tiles)
 _spec = importlib.util.spec_from_file_location('character_definition', ASSETS / 'characters/pipeline/definition.py')
 definition = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(definition)
@@ -59,6 +63,13 @@ def stage_data(ctx, log):
     for rel in staged(ctx.out):
         dst = data / rel
         dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(staged_source(ctx.out, rel), dst)
+        if rel == 'hidamari/city.json':
+            # Offline source queries keep their whole authored surface. Actual
+            # runtime instances load only the native pieces with identical placement.
+            city = json.loads(staged_source(ctx.out, rel).read_text())
+            manifest = json.loads((ctx.out/'city_surface_tiles/v1_128m/manifest.json').read_text())
+            dst.write_text(json.dumps(city_tiles.streets_instances(city, manifest), indent=2)+'\n')
+        else:
+            shutil.copy2(staged_source(ctx.out, rel), dst)
         log.write(f'staged {rel}\n')
 

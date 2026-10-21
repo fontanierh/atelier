@@ -18,6 +18,8 @@ def city_build(tmp_path, monkeypatch):
     generator.write_text('1')
     names = (*RECIPE.city_inputs.TILES, *RECIPE.city_inputs.TREES, 'HD_NorthMountains')
     state = {name: dict(triangles=1, min=[0, 0, 0], max=[1, 1, 1], unused='metadata') for name in names}
+    for name in RECIPE.city_inputs.TILES:
+        state[name].update(slots={'asphalt':1}, collision_boxes=0)
     meshes = {name: name.encode() for name in names}
     generated, exported, messages = [], [], []
     folder = out / 'hidamari'
@@ -95,6 +97,15 @@ def test_unused_manifest_fields_do_not_regenerate_city_outputs(city_build):
     for value in p.state.values():
         value['unused'] = 'changed'
     assert p.run(edited=True) == 0 and p.generated == []
+
+
+@pytest.mark.parametrize('field', ['slots', 'collision_boxes'])
+def test_city_surface_material_and_collision_reads_are_inside_the_cutoff(city_build, field):
+    p = city_build
+    entry = p.state['HD_Streets']
+    if field == 'slots': entry['slots']['stone'] = 1
+    else: entry['collision_boxes'] = 1
+    assert p.run(edited=True) == 0 and p.generated == ['tiles']
 
 
 def test_generated_mesh_mutation_without_source_edit_is_not_a_hit(city_build):

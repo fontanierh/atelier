@@ -155,3 +155,13 @@ never for the state first observed (a late joiner). There is one transport bank,
 @cc [owner:fontanierh,label:correctness] racing-hud-venue
 The race HUD banner MUST be English and MUST appear only inside a venue's grounds near track height.
 The broad runner-rendering proximity radius MUST NOT enable the HUD banner.
+
+@cc [owner:fontanierh,label:correctness] bounded-city-surface-ownership
+A city surface migrated to production pieces MUST instantiate its complete published piece roster at
+the original placements, with the original material/UV/vegetation semantics, shadow policy and actual
+walkable collision. A hidden whole parent MUST NOT remain as a collision or all-content preparation
+fallback. Source query meshes MAY remain whole without becoming native render assets. Native parent
+retirement MUST follow complete current piece validation/saves and external-reference preflight;
+incomplete membership or failed retirement MUST prevent successful readiness.
+Visibility experiments MUST only validate production pieces and MUST NOT unhide their raw render
+components over a foliage system's optimized representation or change its visibility ownership.

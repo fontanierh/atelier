@@ -87,6 +87,18 @@ Set by the launcher (`desktop_preview.py`):
 | `r.Shadow.CSMCaching` | 0 | caching saved −0.18 / +0.11 / −0.14 ms in three fullscreen spawn pairs, with no consistent tail gain: not worth its shadow differences |
 | `r.RHISetGPUCaptureOptions` | 0 | Metal's per-frame GPU-capture labels otherwise accumulate in a development build |
 
+`HD_Streets` is a production piece library, bounded to 32,768 triangles per mesh.
+The independent `unreal.city_streets` owner runs after the world import and validates
+and saves every piece with its original surface
+materials, full precision UVs and complex collision before retiring the old native
+parent and obsolete pieces. Runtime staging expands the original city placements
+into that exact library; the source city JSON and whole FBX remain available to
+offline queries. No hidden Streets collider or name-based vegetation exemption is
+retained. The desktop command validates those existing collision-owning groups;
+the terrain and square still use their existing visibility experiment. Native
+completion reports live outside the generator's source folder so they cannot
+invalidate its mesh digest.
+
 It also sets `r.Shadow.CSMSlopeScaleDepthBias 3` and runs `japan.PreviewInfo`, which logs the viewport for the check above.
 
 Set by the game's preferences with `desktop=1` and `performance=1` (`JapanPreferences.cpp`):

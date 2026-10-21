@@ -97,3 +97,24 @@ def test_delete_failure_is_not_success():
     with pytest.raises(ValueError, match='Could not retire'):
         M.retire(e, {OLD}, [PREFIX+'Piece0'], ROOT, PREFIX)
     assert paths == {OLD, CURRENT} and deleted == []
+
+
+def test_signed_spatial_names_require_the_explicit_strict_owner_check():
+    name = PREFIX+'Cell_-2_0'
+    current = ROOT+'/'+name
+    e, paths, deleted = editor([OLD, current])
+    with pytest.raises(ValueError): M.retire(e, {OLD}, [name], ROOT, PREFIX)
+    assert deleted == []
+    check = lambda value: value in {PREFIX+'Old', name}
+    assert M.retire(e, {OLD}, [name], ROOT, PREFIX, name_check=check) == [OLD]
+    assert paths == {current}
+
+
+@pytest.mark.parametrize('name', [PREFIX+'../Old', PREFIX+'Cell_--2_0', 'Foreign', PREFIX+'Cell_-2_0.Other'])
+def test_spatial_checker_cannot_admit_foreign_paths_or_noncanonical_names(name):
+    current = ROOT+'/'+name
+    e, paths, deleted = editor([OLD, current])
+    with pytest.raises(ValueError):
+        M.retire(e, {OLD}, [name], ROOT, PREFIX,
+                 name_check=lambda value: value in {PREFIX+'Old', PREFIX+'Cell_-2_0'})
+    assert deleted == [] and OLD in paths

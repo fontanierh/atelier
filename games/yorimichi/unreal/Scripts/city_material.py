@@ -119,6 +119,15 @@ def materials():
     return mis
 
 
+def load_surface_materials(names):
+    """Read the existing world owner's exact surface bindings, without rebuilding its graphs/textures."""
+    result = {name: E.load_asset('/Game/Japan/Materials/MI_Road' if name == 'road' else f'{MAT}/MI_HD_{name}')
+              for name in names}
+    if not all(result.values()):
+        raise ValueError('Build the world surface materials before city pieces')
+    return result
+
+
 def prop_materials(par, report):
     """MI_HD_P_<slug> for every fitted Tripo prop (world/regions/hidamari/props.py): its own texture, at Tile 1 on its
     atlas UVs, at its gain (the material doubles the texture, as for a detail map)."""

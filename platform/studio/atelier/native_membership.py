@@ -2,10 +2,11 @@
 import re
 
 
-def package_path(destination, prefix, name):
+def package_path(destination, prefix, name, *, name_check=None):
     if (not isinstance(destination, str) or not re.fullmatch(r'/Game/(?:[A-Za-z0-9_]+/)+[A-Za-z0-9_]+', destination)
             or not isinstance(prefix, str) or not re.fullmatch(r'[A-Za-z][A-Za-z0-9_]*_', prefix)
-            or not isinstance(name, str) or not re.fullmatch(re.escape(prefix)+r'[A-Za-z0-9_]+', name)):
+            or not isinstance(name, str) or not re.fullmatch(re.escape(prefix)+(r'[A-Za-z0-9_-]+' if name_check is not None else r'[A-Za-z0-9_]+'), name)
+            or (name_check is not None and (not callable(name_check) or name_check(name) is not True))):
         raise ValueError('Invalid generated native package ownership')
     return destination+'/'+name
 
@@ -30,21 +31,24 @@ def inventory(editor, destination, prefix):
     return found
 
 
-def retire(editor, previous, names, destination, prefix):
+def retire(editor, previous, names, destination, prefix, *, name_check=None):
     """@cc [owner:fontanierh,label:correctness] retire-only-completed-native-membership
     The caller MUST validate and save EVERY current model before invoking retirement.
     Only inventoried generated packages in this exclusive owner folder MAY retire.
     Current packages and any package referenced from outside the retirement set MUST
     never be deleted. The full deletion plan MUST pass ownership, existence and external
     reference checks before any deletion; failures MUST prevent task completion.
+    A caller-specific name checker MAY admit signed spatial IDs only inside the
+    same bounded basename alphabet/prefix; it MUST restrict membership to its
+    canonical generated names and MUST NOT grant authority over arbitrary paths.
     """
     if not isinstance(previous, set) or not isinstance(names, (list, tuple)) or not names:
         raise ValueError('Native retirement requires complete current membership')
-    current = {package_path(destination, prefix, name) for name in names}
+    current = {package_path(destination, prefix, name, name_check=name_check) for name in names}
     if len(current) != len(names):
         raise ValueError('Duplicate current native package')
     for package in previous:
-        if not isinstance(package, str) or package_path(destination, prefix, package.rsplit('/', 1)[-1]) != package:
+        if not isinstance(package, str) or package_path(destination, prefix, package.rsplit('/', 1)[-1], name_check=name_check) != package:
             raise ValueError('Native retirement escaped its owner folder')
     if any(not editor.does_asset_exist(package) for package in current):
         raise ValueError('Current native membership is incomplete')

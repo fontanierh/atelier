@@ -17,6 +17,7 @@ def snapshot(out, names):
     """@cc [owner:fontanierh,label:correctness] city-generator-consumed-inputs
     The cutoff MUST cover each selected mesh's triangles/min/max and exact FBX bytes, including raw
     hashes emitted by the generators. Missing selected data MUST refuse, never preserve a cache hit.
+    City surface tiles additionally consume exact material-slot membership and authored collision count.
     Unselected manifest entries and unused fields MUST NOT invalidate the selected generator.
     Generator code and transitive helpers MUST remain separate recipe inputs.
     """
@@ -25,6 +26,8 @@ def snapshot(out, names):
     result = {}
     for name, mesh in zip(names, meshes):
         entry = manifest[name]
-        result[name] = {'receipt': {key: entry[key] for key in ('triangles', 'min', 'max')},
+        fields = ('triangles', 'min', 'max', 'slots', 'collision_boxes') if name in TILES else ('triangles', 'min', 'max')
+        receipt = {key: sorted(entry[key]) if key == 'slots' else entry[key] for key in fields}
+        result[name] = {'receipt': receipt,
                         'fbx': hashlib.sha256(mesh.read_bytes()).hexdigest()}
     return result

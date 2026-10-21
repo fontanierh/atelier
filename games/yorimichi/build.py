@@ -19,6 +19,7 @@ from pathlib import Path
 from atelier.build import Product, Step, DeferredInputs, Python, Blender, UnrealScript, UnrealCompile, UnrealPackage, Call, Batch
 from atelier.checkpoint_candidates import CandidateScope
 from atelier import build_inputs, paths, unreal_modules
+from atelier.mesh_geometry import package_inventory as native_package_inventory
 
 GAME = Path(__file__).resolve().parent
 WORLD = GAME / 'world'
@@ -1406,6 +1407,15 @@ def unreal_steps(ctx):
              needs=['world.hidamari_ferry_cut', 'world.textures', 'world.layout', 'world.props', 'world.hidamari.city', 'world.hidamari_textures', 'world.hidamari_props.import',
                     'world.zeppelin.meshes', 'world.terrain.meshes', 'world.village.import', 'world.sailboat', 'characters.wanderer'],
              heavy=True, about='legacy world assets and level; preserves independent materials and foliage'),
+        Step('unreal.city_streets', [UnrealScript(SCRIPTS / 'import_city_streets.py', 'CITY STREETS IMPORT COMPLETE')],
+             inputs=[SCRIPTS / 'import_city_streets.py', GAME / 'city_tile_products.py',
+                     paths.STUDIO / 'atelier/native_membership.py', paths.STUDIO / 'atelier/mesh_geometry.py',
+                     paths.STUDIO / 'atelier/conventions.py'],
+             needs=['unreal.world', 'world.city_tiles.meshes'],
+             outputs=[out / 'native-city-streets.json'],
+             verify=lambda: runtime_data.city_tiles.streets_present(out, GAME / 'unreal/Content', inventory=native_package_inventory),
+             candidate_scope=CandidateScope(directories=(GAME / 'unreal/Content/Japan/Assets',)),
+             heavy=True, about='bounded Streets render/collision pieces and complete native membership; retires old parent'),
         # The volcano: its meshes, M_NorthMountains with the rock and snow mask textures, M_NorthGate. The world import
         # purges /Game/Japan and makes the textures and MPC these materials use, so this reruns after it.
         Step('unreal.north', [UnrealScript(SCRIPTS / 'import_hidamari.py', 'HIDAMARI IMPORT COMPLETE', env=(('HIDAMARI_ASSETS', 'HD_North*'),))],
@@ -1546,10 +1556,12 @@ def unreal_steps(ctx):
         Step('unreal.desktop', [
                 UnrealScript(SCRIPTS / 'import_city_surface_tiles.py', 'CITY SURFACE TILE IMPORT COMPLETE', env=(('CITY_SURFACE_TILES_TAG', 'v1_128m'),)),
                 UnrealScript(SCRIPTS / 'import_city_tree_lods.py', 'CITY TREE LODS IMPORT COMPLETE', env=(('CITY_TREE_LODS_TAG', 'v4'),))],
-             inputs=[SCRIPTS / 'import_city_surface_tiles.py', GAME / 'city_tile_products.py',
+             inputs=[SCRIPTS / 'import_city_surface_tiles.py', SCRIPTS / 'import_city_streets.py',
+                     GAME / 'city_tile_products.py', out / 'native-city-streets.json',
                      paths.STUDIO / 'atelier/conventions.py',
                      SCRIPTS / 'import_city_tree_lods.py', SCRIPTS / 'experiment_mesh_import.py'],
-             needs=['unreal.city_tree_cpu_access', 'world.city_tiles.meshes', 'world.city_trees.meshes'], heavy=True,
+             needs=['unreal.city_tree_cpu_access', 'unreal.city_streets', 'world.city_tiles.meshes', 'world.city_trees.meshes'], heavy=True,
+             outputs=[out / 'city_surface_tiles-native-import-report.json'],
              about='desktop profile: city tiles and tree LODs (/Game/Experiments)'),
         # The Ride skating clips: the simulation rig and every simulation clip as Unreal assets (/Game/SkateRide), the manifest
         # the Ride runtime reads, and the measurement of the compressed poses against the simulation data. Both scripts
@@ -1589,7 +1601,8 @@ def staging_steps(ctx):
     out = ctx.out
     return [
         Step('data.stage', [Call('stage_data', stage_data)],
-             inputs=[GAME / 'runtime_data.py', REGIONS / 'skatepark' / 'park.json', ASSETS / 'ui/fonts/atlas-serif.ttf',
+             inputs=[GAME / 'runtime_data.py', GAME / 'city_tile_products.py', paths.STUDIO / 'atelier/conventions.py',
+                     REGIONS / 'skatepark' / 'park.json', ASSETS / 'ui/fonts/atlas-serif.ttf',
                      runtime_data.RACING_COURSES, runtime_data.RACING_VALIDATOR, ASSETS / 'belmonte/source.json',
                      *runtime_data.courses.surface_inputs(),
                      *build_inputs.local_imports(runtime_data.courses.SOURCE_READER),

@@ -16,6 +16,7 @@ sys.path.insert(0, str(yori.GAME))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from import_village import import_mesh
 from city_tile_products import obsolete_assets, owned_tiles, require_sources, native_bounds
+from import_city_streets import verified_streets
 
 
 def main():
@@ -35,6 +36,9 @@ def main():
     unreal.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX 0')
     report = {}
     for name, source in manifest['sources'].items():
+        if name == 'HD_Streets':
+            report[name] = verified_streets(ROOT)
+            continue
         assert source['tiles'], ('Missing city surface pieces', name)
         original = unreal.EditorAssetLibrary.load_asset('/Game/Japan/Assets/' + name)
         assert original and original.get_num_triangles(0) == source['source_triangles'], name
@@ -75,13 +79,14 @@ def main():
     assert after == before, 'Production Content/Japan changed during isolated import'
     # Current membership is complete before the previous owner's exact packages
     # retire. Unknown names and other tags never enter the deletion list.
-    retired = obsolete_assets(previous, report, destination)
+    retired = obsolete_assets(previous, {name: tiles for name, tiles in report.items() if name != 'HD_Streets'}, destination)
     for asset in retired:
         if unreal.EditorAssetLibrary.does_asset_exist(asset):
             assert unreal.EditorAssetLibrary.delete_asset(asset), ('Superseded city tile', asset)
     if retired:
         assert {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in production.rglob('*') if p.is_file()} == before, 'Production Content/Japan changed during tile retirement'
-    (folder / 'import-report.json').write_text(json.dumps(report, indent=2) + '\n')
+    # Native completion is not a source-generator output or a geometry input.
+    (ROOT / 'city_surface_tiles-native-import-report.json').write_text(json.dumps(report, indent=2) + '\n')
     unreal.log('CITY SURFACE TILE IMPORT COMPLETE ' + tag)
 
 

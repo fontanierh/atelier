@@ -15,10 +15,10 @@
 #include "AssetCompilingManager.h"
 #endif
 
-// Keep original collision and all original geometry/attributes. Only visibility
-// bounds change. Assets are deliberately isolated and never loaded in normal play.
+// Streets uses production pieces for rendering AND collision. The remaining
+// surfaces retain their existing visibility experiment and original collision.
 static FAutoConsoleCommandWithWorldAndArgs CitySurfaceTilesCommand(TEXT("japan.CitySurfaceTiles"),
-    TEXT("TAG 0|1: original city surfaces or full-detail visibility tiles (diagnostic only)."),
+    TEXT("TAG 0|1: validate production Streets and toggle the remaining city visibility tiles."),
     FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args,UWorld* Game)
     {
         if (!Game || Args.Num()!=2 || (Args[1]!=TEXT("0") && Args[1]!=TEXT("1"))) return;
@@ -47,15 +47,49 @@ static FAutoConsoleCommandWithWorldAndArgs CitySurfaceTilesCommand(TEXT("japan.C
                     if (Group->ComponentHasTag(TileTag)) Tiles.Add(Group);
                 }
             bool Valid=true;
+            const bool ExistingExperimentTiles=!Tiles.IsEmpty();
+            int32 ProductionSources=0;
+            int32 ProductionTiles=0;
             for (const auto& Pair:Manifest->GetObjectField(TEXT("sources"))->Values)
             {
                 const FString SourceName(Pair.Key);
+                if (SourceName==TEXT("HD_Streets"))
+                {
+                    // The whole Streets mesh is retired. Its bounded pieces
+                    // are instantiated normally from staged hidamari/city.json.
+                    const auto& SourceTiles=Pair.Value->AsObject()->GetArrayField(TEXT("tiles"));
+                    if (SourceTiles.IsEmpty()) { Valid=false; break; }
+                    for (auto* Group:World->Groups)
+                        if (Group && Group->GetStaticMesh() && Group->GetStaticMesh()->GetName()==SourceName)
+                            Valid=false;
+                    for (const auto& Item:SourceTiles)
+                    {
+                        const FString Name=Item->AsObject()->GetStringField(TEXT("name"));
+                        UHierarchicalInstancedStaticMeshComponent* Found=nullptr;
+                        for (auto* Group:World->Groups)
+                            if (Group && Group->GetStaticMesh() && Group->GetStaticMesh()->GetName()==Name)
+                            {
+                                if (Found) { Valid=false; break; }
+                                Found=Group;
+                            }
+                        if (!Found || Found->GetInstanceCount()<1 ||
+                            Found->GetStaticMesh()->GetPathName()!=FString::Printf(TEXT("/Game/Japan/Assets/%s.%s"),*Name,*Name) ||
+                            Found->GetCollisionEnabled()!=ECollisionEnabled::QueryOnly)
+                        { Valid=false; break; }
+                        // Foliage may hide this raw render component while
+                        // retaining its collision. This command only validates
+                        // production pieces; never override their visibility.
+                        ++ProductionTiles;
+                    }
+                    ++ProductionSources;
+                    continue;
+                }
                 UHierarchicalInstancedStaticMeshComponent* Source=nullptr;
                 for (auto* Group:World->Groups)
                     if (Group && Group->GetStaticMesh() && Group->GetStaticMesh()->GetName()==SourceName) Source=Group;
                 if (!Source || Source->GetInstanceCount()!=1) { Valid=false; break; }
                 Originals.Add(Source);
-                if (Enabled && Tiles.IsEmpty())
+                if (Enabled && !ExistingExperimentTiles)
                     for (const auto& Tile:Pair.Value->AsObject()->GetArrayField(TEXT("tiles")))
                     {
                         const FString Name=Tile->AsObject()->GetStringField(TEXT("name"));
@@ -110,6 +144,6 @@ static FAutoConsoleCommandWithWorldAndArgs CitySurfaceTilesCommand(TEXT("japan.C
                     UE_LOG(LogTemp,Display,TEXT("CITY TILES refreshed startup sky captures=%d"),Count);
                 }),2.f,false);
             }
-            UE_LOG(LogTemp,Display,TEXT("CITY TILES tag=%s enabled=%d originals=%d tiles=%d"),*Tag,Enabled,Originals.Num(),Tiles.Num());
+            UE_LOG(LogTemp,Display,TEXT("CITY TILES tag=%s enabled=%d originals=%d tiles=%d"),*Tag,Enabled,Originals.Num()+ProductionSources,Tiles.Num()+ProductionTiles);
         }
     }));
