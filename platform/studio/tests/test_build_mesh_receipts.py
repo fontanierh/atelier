@@ -21,7 +21,7 @@ def test_standalone_receipt_is_bound_to_successful_invocation(tmp_path, monkeypa
     def guard(argv, folder, **kwargs):
         env = kwargs['env']; invocations.append(env)
         packet = cp.read_json(Path(env['ATELIER_BUILD_PRIOR_STAMP']))
-        assert packet == dict(schema=1, task=step.name, nonce=env['ATELIER_MESH_REUSE_NONCE'], stamp=old)
+        assert packet == dict(schema=1, task=step.name, nonce=env['ATELIER_MESH_REUSE_NONCE'], stamp=old, observed_context=None)
         assert env['ATELIER_BUILD_SCRIPT'] == str(command.script)
         folder.mkdir(parents=True, exist_ok=True)
         (folder / 'stdout.log').write_text('no marker' if failure == 'marker' else 'IMPORT_OK')

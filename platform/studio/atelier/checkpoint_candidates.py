@@ -34,7 +34,8 @@ def save_prior(ctx, task, nonce, stamp):
     path = safe_destination(ctx.out, '.state/mesh-import-prior/' + task + '/' + nonce + '.json')
     if os.path.lexists(path):
         raise CheckpointError('Prior native invocation evidence already exists')
-    atomic_json(path, dict(schema=1, task=task, nonce=nonce, stamp=stamp))
+    atomic_json(path, dict(schema=1, task=task, nonce=nonce, stamp=stamp,
+                           observed_context=getattr(ctx, 'checkpoint_observed_context', None)))
     return path
 
 

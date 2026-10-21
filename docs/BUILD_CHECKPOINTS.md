@@ -58,6 +58,15 @@ current result. A whole-task miss can therefore reuse unchanged meshes without a
 validation or overwriting unrelated completed receiver work. Importers must integrate this shared
 protocol and declare their real artifact boundaries; arbitrary existing importers are not inferred.
 
+Existing local imports made before package inventories can follow a bounded incremental transition:
+their recovered source/import policy and receiving environment must agree, their package files must
+predate the old successful task without later modification/replacement, and Unreal must confirm the
+stored source MD5 plus current import options and native validation. Known environment mismatches
+are refused. When prior byte inventories exist they must match; a failed per-mesh receipt cannot
+fall back to weaker evidence. This is compatibility-only continuity, not proof of canonical vertex
+identity or a newly produced action result. It avoids reconstructing intact older local assets;
+it does not authorize arbitrary existing packages or manual stamp adoption.
+
 For an agreed read-only handoff from a clean, fully stopped older producer, use
 `atelier cache retain-candidates GAME --source CHECKOUT`. It writes capture scratch/logs in the
 controller and immutable files in the machine cache. It never writes producer `.state`, stamps,
