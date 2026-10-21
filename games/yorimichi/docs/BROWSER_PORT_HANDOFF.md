@@ -1,6 +1,7 @@
 # Yorimichi browser port handoff
 
 Prepared on 2026-10-20 for continuing the investigation on another machine.
+Checkpoint workflow guidance updated on 2026-10-21 against main `7a73248b`.
 
 The goal is to run Yorimichi locally in a player's browser, with WebAssembly
 executing the game and WebGPU rendering on the player's GPU. The preferred next
@@ -377,12 +378,29 @@ Use a current main Atelier baseline for the launcher and capacity client, with a
 task branch for later implementation changes. This handoff was written on a
 documentation branch; it does not introduce a browser build command.
 
-`atelier reuse` verifies clean matching sources and engine build IDs. It cannot
-legitimately transplant compiled 5.8.2 products into this 5.8.3 fork. Never force
-reuse, share mutable Content/Binaries/Intermediate trees or manufacture stamps.
-Portable art inputs and independently verified products may be reusable through
-their normal dependency graph. Different engine cooks and binaries need their
-own provenance and validation.
+Use normal `atelier build` in fresh and warm worktrees. Current main checks
+reusable task results by actual input, product, command, tool and engine
+identities, locally and in configured private checkpoints. Matching Git
+revisions are not required, and the separate exact-revision transfer command
+has been removed. Follow the [build checkpoint workflow][atelier-checkpoints]
+for machine-local private storage configuration and restore behavior. Keep the
+configured repository identity outside tracked source and documentation.
+
+Checkpoint reuse still requires compatible engine and tool identities. Existing
+compiled 5.8.2 products cannot certify this 5.8.3 fork's binaries or cooks. The
+current checkpoint implementation targets the installed macOS toolchain; it
+does not supply an Atelier browser build backend. Portable art inputs and
+independently verified products may be reusable through their normal dependency
+graph. Different engine products need their own provenance and validation.
+
+Inspect normal build misses with `--plan --explain`. Unknown or expensive native
+misses stop before admission; fix cache access or input declarations first and
+use a specific `--rebuild-reason` only for necessary work. Do not clear caches,
+force whole graphs, share mutable Content/Binaries/Intermediate trees or
+manufacture stamps. Preserve completed producers and generated products until
+checkpoint upload, verification and a receiving restore are accepted. Integrate
+main and run `uv sync` only after the checkout's enclosing caller and all native
+children have stopped.
 
 ## 10 Atelier admission and guarded execution
 
@@ -1133,12 +1151,14 @@ Atelier references:
 
 - [Repository working rules](../../../AGENTS.md), [architecture](../../../ARCHITECTURE.md),
   [capacity admission](../../../docs/BUILD_CAPACITY.md),
+  [build checkpoint workflow][atelier-checkpoints],
   [board guide](../../../docs/AGENT_BOARD.md),
   [contracts and review](../../../docs/CODE_CONTRACTS.md).
 - [Game packaging](PACKAGING.md), [desktop performance](DESKTOP_PERFORMANCE.md),
   [build recipe](../build.py), [game manifest](../game.toml).
 
 [simply-home]: https://simplystream.com/
+[atelier-checkpoints]: https://github.com/fontanierh/atelier/blob/7a73248b/docs/BUILD_CHECKPOINTS.md
 [simply-pricing]: https://simplystream.com/pricing
 [simply-build]: https://simplystream.com/docs/build-guides
 [simply-faq]: https://simplystream.com/docs/troubleshooting
