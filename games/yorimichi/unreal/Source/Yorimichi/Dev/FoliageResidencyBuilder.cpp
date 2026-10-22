@@ -200,6 +200,55 @@ bool Split(UStaticMesh* Input,int32 Level,UStaticMesh* Source,int32 SourceLevel,
     return Canopy.Triangles().Num()>0 || Refuse(TEXT("empty canopy"));
 }
 
+
+// Reuse the original's complete authored chain, including its far material slots.
+// Geometry comes from the same stored-description/render-LOD path as ExportSource.
+bool OriginalParts(UStaticMesh* Source,int32 Level,const FString& Mode,const TSet<int32>& LeafSlots,
+    const TArray<FStaticMaterial>& Materials,int32 Channels,FMeshDescription& Leaves,FMeshDescription* Rigid)
+{
+    const auto Refuse=[&](const TCHAR* Reason)
+    { UE_LOG(LogTemp,Warning,TEXT("FOLIAGE RESIDENCY authored source refused %s LOD%d: %s"),*Source->GetPathName(),Level,Reason);return false; };
+    const FMeshDescription* Original=Source->GetMeshDescription(Level);FMeshDescription RenderOriginal;
+    if (!Original && Source->GetRenderData() && Source->GetRenderData()->LODResources.IsValidIndex(Level))
+    { Source->ExportStaticMeshLOD(Source->GetRenderData()->LODResources[Level],RenderOriginal);Original=&RenderOriginal; }
+    if (!Original || GeometryHash(*Original).IsEmpty()) return Refuse(TEXT("invalid source description/render LOD"));
+    FStaticMeshConstAttributes A(*Original);auto P=A.GetVertexPositions();auto Names=A.GetPolygonGroupMaterialSlotNames();
+    const auto OriginalUV=A.GetVertexInstanceUVs();
+    if (!OriginalUV.IsValid() || OriginalUV.GetNumChannels()<1 || OriginalUV.GetNumChannels()>8) return Refuse(TEXT("invalid source UV channels"));
+    // A far authored material may use more channels than LOD0. Preserve those
+    // channels; only missing receiving channels use the reviewed UV0 fallback.
+    Channels=FMath::Max(Channels,OriginalUV.GetNumChannels());
+    if (!Names.IsValid() || Channels<1 || Channels>8 || Materials.Num()!=Source->GetStaticMaterials().Num())
+        return Refuse(TEXT("invalid source material/channel table"));
+    FBox3f Bounds(ForceInit);for (auto T:Original->Triangles().GetElementIDs())
+        for (auto I:Original->GetTriangleVertexInstances(T)) Bounds+=P[Original->GetVertexInstanceVertex(I)];
+    if (!Bounds.IsValid) return Refuse(TEXT("empty source bounds"));
+    TMap<FPolygonGroupID,int32> Slots;
+    for (auto G:Original->PolygonGroups().GetElementIDs())
+    {
+        const FName Name=Names[G];int32 Slot=Source->GetMaterialIndex(Name);
+        if (Slot==INDEX_NONE) for (int32 I=0;I<Source->GetStaticMaterials().Num();++I)
+            if (Source->GetStaticMaterials()[I].ImportedMaterialSlotName==Name) { Slot=I;break; }
+        if (!Materials.IsValidIndex(Slot)) return Refuse(TEXT("unbound source material group"));Slots.Add(G,Slot);
+    }
+    Initialize(Leaves,Materials,Channels);if (Rigid) Initialize(*Rigid,Source->GetStaticMaterials(),Channels);
+    for (auto T:Original->Triangles().GetElementIDs())
+    {
+        const int32 Slot=Slots.FindChecked(Original->GetTrianglePolygonGroup(T));bool Leaf;
+        if (!IsLeaf(*Original,T,Slot,Source->GetStaticMaterials().Num(),Mode,LeafSlots,
+            double(Bounds.Min.Z)+(double(Bounds.Max.Z)-double(Bounds.Min.Z))*.4,Leaf)) return Refuse(TEXT("invalid source face classification"));
+        if (Leaf && !CopyTriangle(*Original,T,Slot,Leaves)) return Refuse(TEXT("leaf corner copy"));
+        if (!Leaf && Rigid && !CopyTriangle(*Original,T,Slot,*Rigid)) return Refuse(TEXT("rigid corner copy"));
+    }
+    // Empty distant leaves are intentional only when this exact source has none.
+    // Polygon groups are real material bindings even when no face survives.
+    // UE IsEmpty checks every element container; retain this table so an empty
+    // face set is a custom LOD rather than an absent/generated LOD. Build still
+    // requires an actual zero-triangle render resource, including after reload.
+    if (Leaves.IsEmpty() || (Rigid && Rigid->IsEmpty())) return Refuse(TEXT("lost material groups"));
+    Source->ClearMeshDescription(Level);return Level>0 || Leaves.Triangles().Num()>0;
+}
+
 struct FLeafPart
 {
     int32 Slot=0;
@@ -372,7 +421,8 @@ UStaticMesh* Build(const FString& Destination,TArray<FMeshDescription>& Descript
     {
         const auto* D=Mesh->GetMeshDescription(L);
         if (!D || GeometryHash(*D)!=Expected[L] ||
-            Mesh->GetRenderData()->LODResources[L].GetNumTriangles()!=uint32(Descriptions[L].Triangles().Num())) return nullptr;
+            Mesh->GetRenderData()->LODResources[L].GetNumTriangles()!=uint32(Descriptions[L].Triangles().Num()) ||
+            Mesh->GetRenderData()->ScreenSize[L].GetValue()!=Screens[L]) return nullptr;
     }
     if (Mesh->GetNavCollision() || Mesh->ComplexCollisionMesh!=CollisionProxy || Body!=Mesh->GetBodySetup() ||
         Body->BuildScale3D!=FVector::OneVector || Body->bNeverNeedsCookedCollisionData!=(Collision==ECollision::None) ||
@@ -444,8 +494,34 @@ FString UYorimichiFoliageResidencyBuilder::Compact(UStaticMesh* Source,UStaticMe
     // Authored leaves use the original opacity/texture/wind wrappers; the old
     // volume material is intentionally unused by this representation.
     static_cast<void>(NearInteraction);
-    FString ReducerVersion;
-    if (!LeafLevels(AuthoredNear,CanopyMaterials,Canopies,ReducerVersion)) return {};
+    FString ReducerVersion;TArray<float> RigidScreens=Screens;TArray<int32> LeafSources,OriginalLeafCounts;
+    const auto* Render=Source->GetRenderData();const int32 SourceCount=Source->GetNumSourceModels();
+    if (!Render || SourceCount<1 || SourceCount>8 || Render->LODResources.Num()!=SourceCount) return {};
+    if (SourceCount>1)
+    {
+        const int32 Channels=FStaticMeshConstAttributes(AuthoredNear).GetVertexInstanceUVs().GetNumChannels();
+        Canopies.Reset();Canopies.SetNum(SourceCount);Screens.Reset();
+        if (SimpleTrunk && RigidCount) { Rigid.Reset();Rigid.SetNum(SourceCount); }
+        for (int32 L=0;L<SourceCount;++L)
+        {
+            const float Screen=Render->ScreenSize[L].GetValue();
+            if (!FMath::IsFinite(Screen) || Screen<0.f || Screen>1.f || (L==0 && Screen<=0.f) ||
+                (L>0 && Screen>Screens.Last())) return {};
+            if (!OriginalParts(Source,L,Classification,Slots,CanopyMaterials,Channels,Canopies[L],
+                SimpleTrunk && RigidCount?&Rigid[L]:nullptr)) return {};
+            if (L==0 && GeometryHash(Canopies[L])!=GeometryHash(AuthoredNear)) return {};
+            for (auto T:Canopies[L].Triangles().GetElementIDs())
+            { bool Tagged;FVector2f Role;if (!LeafRole(Canopies[L],T,Tagged,Role)) return {}; }
+            Screens.Add(Screen);LeafSources.Add(L);OriginalLeafCounts.Add(Canopies[L].Triangles().Num());
+        }
+        if (SimpleTrunk && RigidCount) { TrunkLODs=true;RigidScreens=Screens; }
+        ReducerVersion=TEXT("authored-source-lods");
+    }
+    else
+    {
+        if (!LeafLevels(AuthoredNear,CanopyMaterials,Canopies,ReducerVersion)) return {};
+        LeafSources.Init(0,Canopies.Num());OriginalLeafCounts.Add(AuthoredNear.Triangles().Num());
+    }
     Counts.Reset();for (const auto& D:Canopies) Counts.Add(D.Triangles().Num());
     FKAggregateGeom Trunk;
     if (SimpleTrunk)
@@ -477,7 +553,7 @@ FString UYorimichiFoliageResidencyBuilder::Compact(UStaticMesh* Source,UStaticMe
     }
     const FString Base=Directory/Source->GetName();
     UStaticMesh* Carrier=nullptr;
-    if (RigidCount) Carrier=Build(Base,Rigid,Source->GetStaticMaterials(),TrunkLODs?Screens:TArray<float>{1.f},Passable?ECollision::None:(SimpleTrunk?ECollision::SimpleTrunk:ECollision::Rigid),Trunk,Source->GetBodySetup());
+    if (RigidCount) Carrier=Build(Base,Rigid,Source->GetStaticMaterials(),TrunkLODs?RigidScreens:TArray<float>{1.f},Passable?ECollision::None:(SimpleTrunk?ECollision::SimpleTrunk:ECollision::Rigid),Trunk,Source->GetBodySetup());
     UStaticMesh* Proxy=Classification==TEXT("authored")?Source->ComplexCollisionMesh.Get():nullptr;
     if (Proxy && (Proxy==Source || Proxy==Prepared || Proxy==PreparedShadow || Proxy->ComplexCollisionMesh)) return {};
     if (Proxy) FStaticMeshCompilingManager::Get().FinishCompilation({Proxy});
@@ -489,6 +565,12 @@ FString UYorimichiFoliageResidencyBuilder::Compact(UStaticMesh* Source,UStaticMe
     Row->SetNumberField(TEXT("rigid_triangles"),RigidCount);
     TArray<TSharedPtr<FJsonValue>> RigidCounts;if (Carrier) for (const auto& D:Rigid)
         RigidCounts.Add(MakeShared<FJsonValueNumber>(D.Triangles().Num()));
+    TArray<TSharedPtr<FJsonValue>> LeafScreens,LeafSourceRows,SourceLeafRows;
+    for (float Value:Screens) LeafScreens.Add(MakeShared<FJsonValueNumber>(Value));
+    for (int32 Value:LeafSources) LeafSourceRows.Add(MakeShared<FJsonValueNumber>(Value));
+    for (int32 Value:OriginalLeafCounts) SourceLeafRows.Add(MakeShared<FJsonValueNumber>(Value));
+    Row->SetArrayField(TEXT("leaf_screens"),LeafScreens);Row->SetArrayField(TEXT("leaf_source_lods"),LeafSourceRows);
+    Row->SetArrayField(TEXT("source_leaf_lod_triangles"),SourceLeafRows);
     Row->SetArrayField(TEXT("rigid_lod_triangles"),RigidCounts);Row->SetBoolField(TEXT("simple_trunk"),SimpleTrunk);Row->SetBoolField(TEXT("passable"),Passable);
     Row->SetStringField(TEXT("collision"),Proxy?Proxy->GetPathName():TEXT(""));
     Row->SetStringField(TEXT("optimized"),Canopy->GetPathName());Row->SetStringField(TEXT("shadow"),ShadowMesh->GetPathName());
@@ -618,13 +700,16 @@ bool UYorimichiFoliageResidencyBuilder::SelfTest()
     }
     if (Passed)
     {
-        Source->SetNumSourceModels(2);Source->CreateMeshDescription(1,Levels[0]);Source->CommitMeshDescription(1);
+        TArray<FMeshDescription> TwoLevels;TwoLevels.Init(Levels[0],2);
+        Source=Build(Directory/TEXT("FixtureTree"),TwoLevels,Source->GetStaticMaterials(),{1.f,.13f},ECollision::None,Empty);
+        if (!Source) return false;
         const FString Row=Compact(Source,Input,InputShadow,TEXT("roles"),{},1,true,{0,0,1,1},
             {2.f,0.f,0.f,0.f,0.f,0.f,10.f},Directory/TEXT("TrunkLODs"),nullptr);
         auto* Carrier=LoadObject<UStaticMesh>(nullptr,*(Directory/TEXT("TrunkLODs/FixtureTree.FixtureTree")));
         auto* Canopy=LoadObject<UStaticMesh>(nullptr,*(Directory/TEXT("TrunkLODs/FixtureTree_Canopy.FixtureTree_Canopy")));
         auto* Shade=LoadObject<UStaticMesh>(nullptr,*(Directory/TEXT("TrunkLODs/FixtureTree_Shadow.FixtureTree_Shadow")));
-        Objects.Append({Carrier,Canopy,Shade});Passed=!Row.IsEmpty() && Carrier && Carrier->GetNumSourceModels()==4;
+        Objects.Append({Carrier,Canopy,Shade});Passed=!Row.IsEmpty() && Carrier && Canopy && Carrier->GetNumSourceModels()==2 &&
+            Canopy->GetNumSourceModels()==2 && Canopy->GetRenderData()->ScreenSize[1].GetValue()==.13f;
     }
     if (Passed)
     {
@@ -670,6 +755,49 @@ bool UYorimichiFoliageResidencyBuilder::SelfTest()
                 Objects.Add(LoadObject<UStaticMesh>(nullptr,*(Asset+TEXT(".")+FPackageName::GetLongPackageAssetName(Asset))));
             }
             Passed=Passed && !Row.IsEmpty();
+        }
+    }
+    if (Passed)
+    {
+        // Five real authored levels retain their fifth transition and far leaf
+        // shape. A second pass proves an intentionally empty far leaf level.
+        TArray<FMeshDescription> Chain;Chain.Init(Levels[0],5);
+        auto FarPositions=FStaticMeshAttributes(Chain[4]).GetVertexPositions();
+        for (auto I:Chain[4].GetTriangleVertexInstances(FTriangleID(1)))
+            FarPositions[Chain[4].GetVertexInstanceVertex(I)].X+=25.f;
+        auto FarUV=FStaticMeshAttributes(Chain[4]).GetVertexInstanceUVs();FarUV.SetNumChannels(8);
+        for (auto I:Chain[4].VertexInstances().GetElementIDs())
+        { FarUV.Set(I,6,FVector2f(.321f,.654f));FarUV.Set(I,7,FVector2f(.246f,.135f)); }
+        const TArray<float> AuthoredScreens={1.f,.31f,.12f,.04f,.009f};
+        for (bool EmptyFar:{false,true})
+        {
+            if (!Passed) break;
+            if (EmptyFar)
+            {
+                FMeshDescription RigidOnly;Initialize(RigidOnly,Source->GetStaticMaterials(),6);
+                if (!CopyTriangle(Levels[0],FTriangleID(0),0,RigidOnly)) return false;
+                Chain[4]=MoveTemp(RigidOnly);
+            }
+            auto* Authored=Build(Directory/TEXT("AuthoredTree"),Chain,Source->GetStaticMaterials(),AuthoredScreens,ECollision::None,Empty);
+            Objects.Add(Authored);if (!Authored) { Passed=false;break; }
+            const FString Scope=Directory/(EmptyFar?TEXT("EmptyFar"):TEXT("AuthoredFive"));
+            const FString Row=Compact(Authored,Input,InputShadow,TEXT("roles"),{},1,true,{0,1,3,4},
+                {2.f,0.f,0.f,0.f,0.f,0.f,10.f},Scope,nullptr);
+            auto* Leaves=LoadObject<UStaticMesh>(nullptr,*(Scope/TEXT("AuthoredTree_Canopy.AuthoredTree_Canopy")));
+            auto* RigidMesh=LoadObject<UStaticMesh>(nullptr,*(Scope/TEXT("AuthoredTree.AuthoredTree")));
+            auto* ShadowMesh=LoadObject<UStaticMesh>(nullptr,*(Scope/TEXT("AuthoredTree_Shadow.AuthoredTree_Shadow")));
+            Objects.Append({Leaves,RigidMesh,ShadowMesh});
+            Passed=!Row.IsEmpty() && Leaves && RigidMesh && Leaves->GetNumSourceModels()==5 && RigidMesh->GetNumSourceModels()==5;
+            if (Passed) for (int32 L=0;L<5;++L)
+                Passed=Passed && Leaves->GetRenderData()->ScreenSize[L].GetValue()==AuthoredScreens[L] &&
+                    RigidMesh->GetRenderData()->ScreenSize[L].GetValue()==AuthoredScreens[L] &&
+                    Leaves->GetRenderData()->LODResources[L].GetNumTriangles()==uint32(EmptyFar && L==4?0:1);
+            if (Passed && !EmptyFar)
+            {
+                const auto* Far=Leaves->GetMeshDescription(4);
+                Passed=Far && FStaticMeshConstAttributes(*Far).GetVertexInstanceUVs().GetNumChannels()==8 &&
+                    TriangleKey(*Far,FTriangleID(0),1)==TriangleKey(Chain[4],FTriangleID(1),1);
+            }
         }
     }
     for (auto* Object:Objects) if (Object)

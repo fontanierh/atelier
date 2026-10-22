@@ -13,20 +13,37 @@ TREE_WORDS = frozenset({'tree', 'palm', 'pine', 'maple', 'ginkgo'})
 
 def authored_leaf_row(old, result):
     """@cc [owner:fontanierh,label:correctness] authored-leaf-lod-publication
-    A newly native-validated leaf row MUST bind a nonempty reducer identity and exact original
-    leaf LOD0 count. Four nonempty nonincreasing canopy levels MUST be present. Opaque coverage
-    patches MUST remain disabled and MUST NOT be loaded or rendered as a replacement for leaves.
-    These schema/count checks MUST NOT replace current native source/corner/material/reduction proof.
+    Fresh native results MUST bind every actual authored leaf level, screen threshold,
+    original level index and exact classified count, including an empty distant leaf
+    level only when its original contains no leaf faces. LOD0 MUST remain positive/exact.
+    Only a single-level original MAY use four nonempty nonincreasing reduced levels with
+    the actual reducer identity. Native geometry/material/settings proof remains required.
+    Opaque coverage patches MUST stay disabled; inherited old counts MUST NOT certify output.
     """
     row = dict(old, **result)
     levels = result.get('triangles')
+    screens = result.get('leaf_screens')
+    sources = result.get('leaf_source_lods')
+    originals = result.get('source_leaf_lod_triangles')
     expected = old['source_triangles'] - old['rigid_triangles']
     if (not isinstance(result.get('leaf_reducer'), str) or not result['leaf_reducer'].strip()
             or type(result.get('source_leaf_triangles')) is not int or result['source_leaf_triangles'] != expected
-            or not isinstance(levels, list) or len(levels) != 4
-            or any(type(n) is not int or n < 1 for n in levels)
-            or levels[0] != expected or any(a < b for a, b in zip(levels, levels[1:]))):
-        raise ValueError('Invalid authored leaf LOD provenance/counts')
+            or not isinstance(levels, list) or not 1 <= len(levels) <= 8
+            or any(type(n) is not int or n < 0 for n in levels) or levels[0] != expected or expected < 1
+            or not isinstance(screens, list) or len(screens) != len(levels)
+            or any(type(v) not in (int, float) or not math.isfinite(v) or not 0 <= v <= 1 for v in screens)
+            or screens[0] <= 0 or any(a < b for a, b in zip(screens, screens[1:]))
+            or not isinstance(sources, list) or len(sources) != len(levels)
+            or any(type(n) is not int or not 0 <= n < 8 for n in sources)
+            or not isinstance(originals, list) or not originals
+            or any(type(n) is not int or n < 0 for n in originals) or originals[0] != expected):
+        raise ValueError('Invalid authored leaf LOD provenance/counts/screens')
+    if result['leaf_reducer'] == 'authored-source-lods':
+        if not (2 <= len(levels) <= 8 and sources == list(range(len(levels))) and originals == levels):
+            raise ValueError('Authored source LOD chain differs')
+    elif (len(levels) != 4 or sources != [0, 0, 0, 0] or originals != [expected]
+            or any(n < 1 for n in levels) or any(a < b for a, b in zip(levels, levels[1:]))):
+        raise ValueError('Invalid single-source reduced leaf chain')
     row['aggregate'] = False
     row['coverage'] = []
     return row
