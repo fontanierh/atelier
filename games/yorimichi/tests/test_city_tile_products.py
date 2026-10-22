@@ -265,3 +265,16 @@ def test_assembly_never_publishes_without_every_current_fbx(tmp_path):
     with pytest.raises(ValueError, match='Missing completed'):
         P.assemble(tmp_path, lambda message: None)
     assert not (tmp_path/'manifest.json').exists() and old.read_bytes()==b'old'
+
+
+@pytest.mark.parametrize('source', ['HD_CivicGardens', 'HD_Park'])
+def test_added_family_is_mandatory_and_its_parent_sidecars_must_retire(tmp_path, source):
+    manifest = production_manifest()
+    assert source in P.production_groups(manifest)
+    del manifest['sources'][source]
+    with pytest.raises(ValueError, match='all five'):
+        P.production_groups(manifest)
+    root = tmp_path/'Japan/Assets'
+    root.mkdir(parents=True)
+    (root/(source+'.ubulk')).write_bytes(b'old whole parent bulk')
+    assert not P.parents_retired(tmp_path)

@@ -1,4 +1,5 @@
 """Owner equivalence must prove only the reviewed source-membership handoff."""
+import ast
 import importlib.util
 from pathlib import Path
 
@@ -67,3 +68,55 @@ def test_removed_upfront_purge_never_hides_other_world_changes(change):
     if change == 'extra_call': old[P.SETUP] = old[P.SETUP].replace('    purge()', '    purge()\n    purge()')
     if change == 'wrong_location': old[P.SETUP] = old[P.SETUP].replace('    purge()\n    import_world()', '    import_world()\n    purge()')
     assert P.excluded_packages(old, current) is None
+
+
+def product_sources():
+    current = (Path(__file__).parents[1]/'city_tile_products.py').read_text()
+    previous = current.replace(repr(P.PARENTS), repr(P.ORIGINAL_PARENTS)).replace(
+        'requires all five production surfaces', 'requires all three production surfaces')
+    assert previous != current
+    return {P.PRODUCTS: previous}, {P.PRODUCTS: current}
+
+
+def test_literal_five_family_extension_preserves_other_product_logic():
+    old, current = product_sources()
+    assert P.excluded_packages(old, current) == tuple('/Game/Japan/Assets/'+name for name in P.PARENTS)
+    assert P.excluded_packages(current, old) is None
+
+
+@pytest.mark.parametrize('bad', ['finishing', 'limit', 'destination', 'import', 'extra_source', 'diagnostic'])
+def test_family_extension_cannot_hide_changed_finishing_or_membership(bad):
+    old, current = product_sources()
+    text = current[P.PRODUCTS]
+    if bad == 'finishing': text = text.replace("slug == 'road'", "slug == 'paving'")
+    if bad == 'limit': text = text.replace('TRIANGLE_LIMIT = 32768', 'TRIANGLE_LIMIT = 65536')
+    if bad == 'destination': text = text.replace('v1_128m', 'v2_128m')
+    if bad == 'import': text += '\nimport unexpected_owner\n'
+    if bad == 'extra_source': text = text.replace("'HD_Park')", "'HD_Park', 'HD_Harbor')")
+    if bad == 'diagnostic': text = text.replace('all five production', 'some production')
+    current[P.PRODUCTS] = text
+    assert P.excluded_packages(old, current) is None
+
+
+@pytest.mark.parametrize('previous_count', [0, 3])
+def test_original_and_three_family_importer_can_delegate_exactly_five(previous_count):
+    old, current = sources()
+    current[P.CATALOG] = old[P.CATALOG]
+    current[P.IMPORTER] = current[P.IMPORTER].replace(repr(P.ORIGINAL_PARENTS), repr(P.PARENTS))
+    if previous_count == 3:
+        old[P.IMPORTER] = current[P.IMPORTER].replace(repr(P.PARENTS), repr(P.ORIGINAL_PARENTS))
+    assert P.excluded_packages(old, current)
+    assert P.excluded_packages(current, old) is None
+
+
+def test_actual_world_dispatch_is_not_mistaken_for_static_finisher_coverage():
+    from atelier import source_imports
+    game = Path(__file__).parents[1]
+    script = game/'unreal/Scripts/setup_project.py'
+    members = source_imports.local_imports(script, (game/'world', game/'world/regions'))
+    assert script in members
+    assert game/'unreal/Scripts/import_hidamari.py' not in members
+    assert any(isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+               and isinstance(node.func.value, ast.Name) and node.func.value.id == 'runpy'
+               and node.func.attr == 'run_path' and 'import_hidamari.py' in ast.unparse(node)
+               for node in ast.walk(ast.parse(script.read_text())))

@@ -8,6 +8,7 @@ import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_
 import argparse
 import hashlib
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -20,7 +21,6 @@ from atelier.atomic_files import atomic_json
 from mesh_pieces import capture, subset, create_mesh
 
 ROOT = yori.WORLD
-SOURCES = ('HD_Terrain', 'HD_Streets', 'HD_Square')
 TRIANGLE_LIMIT = 32768
 
 
@@ -131,12 +131,17 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--tag', required=True)
     parser.add_argument('--size', type=float, default=128)
-    parser.add_argument('--sources', nargs='+', choices=SOURCES, default=list(SOURCES))
+    parser.add_argument('--sources', nargs='+', required=True)
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else [])
     assert args.tag.replace('_', '').isalnum() and 32 <= args.size <= 256
     root = yori.OUT / 'city_surface_tiles' / args.tag
-    bpy.ops.wm.read_factory_settings(use_empty=True)
     expected = json.loads((yori.OUT / 'hidamari/manifest.json').read_text())
+    # Roster changes belong to recipe/product admission. This generic selected
+    # splitter must not change its key whenever a sibling source is added.
+    assert all(re.fullmatch(r'HD_[A-Za-z0-9_]+', source) for source in args.sources), 'Invalid city source name'
+    assert len({source.casefold() for source in args.sources}) == len(args.sources), 'Duplicate city source'
+    assert all(source in expected for source in args.sources), 'Missing selected city source'
+    bpy.ops.wm.read_factory_settings(use_empty=True)
     for source in args.sources:
         folder = root / source
         # This source exclusively owns this generated folder. Check all lexical

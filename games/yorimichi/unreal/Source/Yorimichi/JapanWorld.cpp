@@ -511,8 +511,8 @@ void AJapanWorld::Load()
     }
     if (PiecesReady)
     {
-        const int32 ExpectedPieces=CityPieces.FindChecked(TEXT("HD_Terrain")).Num()+
-            CityPieces.FindChecked(TEXT("HD_Streets")).Num()+CityPieces.FindChecked(TEXT("HD_Square")).Num();
+        int32 ExpectedPieces=0;
+        for (const auto& Group:CityPieces) ExpectedPieces+=Group.Value.Num();
         if (LoadedCityPieces.Num()==ExpectedPieces)
         {
             UE_LOG(LogTemp,Display,TEXT("CITY PIECES production parents=%d pieces=%d hidden_parents=0"),CityPieces.Num(),ExpectedPieces);

@@ -174,7 +174,7 @@ def test_normal_recipe_declares_complete_piece_products_native_owner_and_runtime
     assert recipe.WORLD / 'mesh_pieces.py' in steps['world.skatepark'].inputs
     # City pieces now use the same exact copier; their cutoffs and unrelated
     # producers still do not consume it merely because their outputs feed pieces.
-    for source in ('HD_Terrain', 'HD_Streets', 'HD_Square'):
+    for source in recipe.city_inputs.TILES:
         assert recipe.WORLD / 'mesh_pieces.py' in steps['world.city_tiles.' + source].inputs
         assert recipe.WORLD / 'mesh_pieces.py' not in steps['world.hidamari.tiles.' + source].inputs
     for name in ('world.hidamari', 'world.city_tiles', 'world.city_trees'):

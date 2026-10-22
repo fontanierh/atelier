@@ -7,7 +7,7 @@ from atelier.model_files import regular_files
 from atelier.atomic_files import atomic_json
 import json
 
-SOURCES = ('HD_Terrain', 'HD_Streets', 'HD_Square')
+SOURCES = ('HD_Terrain', 'HD_Streets', 'HD_Square', 'HD_CivicGardens', 'HD_Park')
 CELL = r'(?:0|-?[1-9][0-9]*)'
 DESTINATION = '/Game/Experiments/CitySurfaces/v1_128m'
 TRIANGLE_LIMIT = 32768
@@ -15,7 +15,7 @@ TRIANGLE_LIMIT = 32768
 
 def require_sources(sources):
     if not isinstance(sources, dict) or set(sources) != set(SOURCES):
-        raise ValueError('City tile import requires all three production surfaces')
+        raise ValueError('City tile import requires all five production surfaces')
 
 
 def native_bounds(tile):

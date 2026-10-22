@@ -161,7 +161,7 @@ City surface tile components MUST retain their own mesh material table. Parent m
 MUST NOT be copied onto tiles: a tile may omit unused parent slots and compact their order.
 
 @cc [owner:fontanierh,label:correctness;performance] production-city-pieces-own-the-whole-surface
-HD_Terrain, HD_Streets and HD_Square MUST load only their complete validated bounded
+HD_Terrain, HD_Streets, HD_Square, HD_CivicGardens and HD_Park MUST load only their complete validated bounded
 piece sets. Their original logical keys MUST retain placements, visibility, camera,
 shadow and collision policies. Every source face MUST have one rendered piece owner;
 every authored whole collision hull MUST have one component owner, while every piece

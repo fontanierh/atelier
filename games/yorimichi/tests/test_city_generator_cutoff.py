@@ -63,9 +63,12 @@ def test_cutoff_selections_match_the_actual_generators():
                     and any(isinstance(t, ast.Name) and t.id == 'BUILDERS' for t in node.targets))
     assert tuple(ast.literal_eval(key) for key in builders.keys) == RECIPE.city_inputs.TREES
     tree = ast.parse((RECIPE.WORLD/'city_surface_tiles.py').read_text())
-    sources = next(node.value for node in tree.body if isinstance(node, ast.Assign)
-                   and any(isinstance(t, ast.Name) and t.id == 'SOURCES' for t in node.targets))
-    assert ast.literal_eval(sources) == RECIPE.city_inputs.TILES
+    selection = next(node for node in ast.walk(tree) if isinstance(node, ast.Call)
+                     and isinstance(node.func, ast.Attribute) and node.func.attr == 'add_argument'
+                     and node.args and isinstance(node.args[0], ast.Constant) and node.args[0].value == '--sources')
+    options = {kw.arg: ast.literal_eval(kw.value) for kw in selection.keywords}
+    assert options == {'nargs': '+', 'required': True}
+    assert not any(isinstance(node, ast.Name) and node.id == 'SOURCES' for node in ast.walk(tree))
 
 
 def test_ordinary_rebuild_skips_both_generators_after_unrelated_producer_change(city_build):
@@ -187,3 +190,42 @@ def test_source_specific_cutoffs_rebuild_only_the_changed_city_parent(tmp_path, 
     (folder/'manifest.json').write_text(json.dumps(manifest))
     assert build.build('yorimichi',targets,echo=lambda message:None)==0
     assert runs==['HD_Square']
+
+
+def test_new_large_hds_families_share_existing_independent_source_owners(tmp_path):
+    steps = {s.name:s for s in RECIPE.steps(SimpleNamespace(out=tmp_path, uproject=None))}
+    names = ('HD_Terrain', 'HD_Streets', 'HD_Square', 'HD_CivicGardens', 'HD_Park')
+    assert RECIPE.city_inputs.TILES == names
+    assert RECIPE.city_products.SOURCES == names
+    for source in names:
+        step = steps['world.city_tiles.'+source]
+        assert step.commands[0].args[-1] == source
+        assert step.needs == ['world.hidamari.tiles.'+source]
+    assert 'HD_Harbor' not in names  # requires its post-ferry-cut source/lighting owner
+
+
+@pytest.mark.parametrize('selection', [[], ['../HD_Park'], ['HD_Ｐark'],
+    ['HD_Park', 'HD_Park'], ['HD_Park', 'HD_park'], ['HD_Park', 'HD_Missing']])
+def test_splitter_refuses_bad_complete_selection_before_any_output_mutation(tmp_path, monkeypatch, selection):
+    import argparse
+    import hashlib
+    import re
+    import sys
+    script = RECIPE.WORLD/'city_surface_tiles.py'
+    main = next(node for node in ast.parse(script.read_text()).body
+                if isinstance(node, ast.FunctionDef) and node.name == 'main')
+    root = tmp_path/'hidamari'
+    root.mkdir()
+    (root/'manifest.json').write_text(json.dumps({'HD_Park': {}, 'HD_park': {}}))
+    touched = []
+    namespace = dict(argparse=argparse, hashlib=hashlib, json=json, re=re, sys=sys,
+        yori=SimpleNamespace(OUT=tmp_path),
+        bpy=SimpleNamespace(ops=SimpleNamespace(wm=SimpleNamespace(read_factory_settings=lambda **kw:touched.append('reset')))))
+    exec(compile(ast.Module(body=[main], type_ignores=[]), str(script), 'exec'), namespace)
+    argv = ['splitter', '--', '--tag', 'v1_128m']
+    if selection: argv += ['--sources', *selection]
+    monkeypatch.setattr(sys, 'argv', argv)
+    with pytest.raises((SystemExit, AssertionError)):
+        namespace['main']()
+    assert touched == []
+    assert not (tmp_path/'city_surface_tiles').exists()

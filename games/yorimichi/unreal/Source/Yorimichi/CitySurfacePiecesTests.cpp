@@ -15,7 +15,7 @@ bool FCitySurfaceMembershipTest::RunTest(const FString&)
     Root->SetBoolField(TEXT("complete"),true);Root->SetStringField(TEXT("tag"),TEXT("v1_128m"));
     Root->SetNumberField(TEXT("triangle_limit"),32768);
     auto Sources=MakeShared<FJsonObject>();Root->SetObjectField(TEXT("sources"),Sources);
-    for(const TCHAR* Name:{TEXT("HD_Terrain"),TEXT("HD_Streets"),TEXT("HD_Square")})
+    for(const TCHAR* Name:{TEXT("HD_Terrain"),TEXT("HD_Streets"),TEXT("HD_Square"),TEXT("HD_CivicGardens"),TEXT("HD_Park")})
     {
         auto Source=MakeShared<FJsonObject>();Sources->SetObjectField(Name,Source);
         Source->SetNumberField(TEXT("source_triangles"),2);Source->SetNumberField(TEXT("source_collision_hulls"),1);
@@ -31,7 +31,7 @@ bool FCitySurfaceMembershipTest::RunTest(const FString&)
     }
     TMap<FString,TArray<FString>> Paths;
     TestTrue(TEXT("Complete bounded union loads signed cells"),JapanCityPieces::Read(Root,Paths));
-    TestEqual(TEXT("All logical placements retained"),Paths.Num(),3);
+    TestEqual(TEXT("All logical placements retained"),Paths.Num(),5);
     const auto Streets=Sources->GetObjectField(TEXT("HD_Streets"));
     Streets->SetNumberField(TEXT("source_triangles"),3);
     TestFalse(TEXT("Missing face refuses whole membership"),JapanCityPieces::Read(Root,Paths));
@@ -39,6 +39,16 @@ bool FCitySurfaceMembershipTest::RunTest(const FString&)
     Streets->SetNumberField(TEXT("source_triangles"),2);
     Streets->GetArrayField(TEXT("tiles"))[1]->AsObject()->SetNumberField(TEXT("collision_hulls"),1);
     TestFalse(TEXT("Duplicated whole collision refuses"),JapanCityPieces::Read(Root,Paths));
+    Streets->GetArrayField(TEXT("tiles"))[1]->AsObject()->SetNumberField(TEXT("collision_hulls"),0);
+    const auto Park=Sources->GetObjectField(TEXT("HD_Park"));
+    Sources->RemoveField(TEXT("HD_Park"));
+    TestFalse(TEXT("Missing new park family refuses readiness"),JapanCityPieces::Read(Root,Paths));
+    TestTrue(TEXT("Missing new family leaves no partial paths"),Paths.IsEmpty());
+    Sources->SetObjectField(TEXT("HD_Park"),Park);
+    Sources->SetObjectField(TEXT("HD_Harbor"),Park);
+    TestFalse(TEXT("Unowned Harbor cannot enter this family handoff"),JapanCityPieces::Read(Root,Paths));
+    Sources->RemoveField(TEXT("HD_Harbor"));
+    TestTrue(TEXT("Restored exact five families load"),JapanCityPieces::Read(Root,Paths));
     return true;
 }
 

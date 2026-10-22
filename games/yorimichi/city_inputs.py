@@ -1,9 +1,9 @@
-"""The city LOD/tile generators consume six meshes, not every Hidamari export."""
+"""The city LOD/tile generators consume selected meshes, not every Hidamari export."""
 import hashlib
 import json
 from pathlib import Path
 
-TILES = ('HD_Terrain', 'HD_Streets', 'HD_Square')
+TILES = ('HD_Terrain', 'HD_Streets', 'HD_Square', 'HD_CivicGardens', 'HD_Park')
 TREES = ('HD_ArcadeTree', 'HD_PlazaTreeGold', 'HD_PlazaTreeOrange')
 
 
