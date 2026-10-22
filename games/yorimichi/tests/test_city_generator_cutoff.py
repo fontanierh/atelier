@@ -143,6 +143,7 @@ def test_recipe_keeps_generator_code_and_existing_unreal_cutoffs(tmp_path):
         assert cutoff.cutoff and cutoff.needs == ['world.hidamari']
         assert piece.needs == [cutoff.name]
         assert piece.cache and piece.products[0].name == 'city.tiles.'+name
+        assert piece.commands[0].factory_startup is True
         assert piece.commands[0].script in piece.inputs
         closure = set(build_inputs.local_imports(piece.commands[0].script, (RECIPE.WORLD, RECIPE.REGIONS)))
         assert closure <= set(piece.inputs)
