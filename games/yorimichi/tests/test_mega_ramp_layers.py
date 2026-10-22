@@ -145,7 +145,7 @@ def changed_by(edited, tmp_path, monkeypatch, *, stable_products=()):
     if not custom:
         key = _env_signature()
         if key not in _BASELINE_CACHE:
-            base_out = Path(tempfile.mkdtemp(prefix='atelier-changed-by-'))
+            base_out = Path(tempfile.mkdtemp(prefix='atelier-changed-by-')).resolve()
             _BASELINE_CACHE[key] = _build_state(base_out)
         base_out, steps, observations, step_inputs, before = _BASELINE_CACHE[key]
         if edited == tmp_path or tmp_path in edited.parents:
