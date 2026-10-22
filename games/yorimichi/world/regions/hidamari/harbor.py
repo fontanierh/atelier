@@ -208,5 +208,5 @@ def dress_harbor(m,height):
         with m.at((x,y,z),r.uniform(0,360)):
             s=r.uniform(.07,.16)
             outline=[(-.3,-1),(-.55,-.38),(-1,-.32),(-.65,.15),(-.85,.72),(-.25,.56),(0,1.12),(.27,.53),(.83,.71),(.62,.14),(1,-.3),(.45,-.35),(.3,-1)]
-            for a,b in zip(outline,outline[1:]+outline[:1]):m.poly([(0,0,.015),(b[0]*s,b[1]*s,0),(a[0]*s,a[1]*s,0)],'h_leaf')
+            for a,b in zip(outline,outline[1:]+outline[:1]):m.poly([(0,0,.015),(b[0]*s,b[1]*s,0),(a[0]*s,a[1]*s,0)],'h_leaf');m.foliage_roles[len(m.faces)-1]='foliage_litter'
     return m

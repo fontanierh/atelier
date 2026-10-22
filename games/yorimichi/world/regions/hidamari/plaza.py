@@ -250,7 +250,7 @@ def floor(height):
         z=float(height(x,y))+.145
         size=r.uniform(.065,.15)
         with m.at((x,y,z),r.random()*360):
-            m.poly([(a*size,b*size,0) for a,b in [(-1,0),(-.5,-.35),(-.6,-.8),(0,-.5),(.6,-1),(.5,-.3),(1,0),(.5,.3),(.6,1),(0,.5),(-.6,.8),(-.5,.35)]],r.choice(['sq_leaf','arc_bloom','clay']))
+            m.poly([(a*size,b*size,0) for a,b in [(-1,0),(-.5,-.35),(-.6,-.8),(0,-.5),(.6,-1),(.5,-.3),(1,0),(.5,.3),(.6,1),(0,.5),(-.6,.8),(-.5,.35)]],r.choice(['sq_leaf','arc_bloom','clay']));m.foliage_roles[len(m.faces)-1]='foliage_litter'
     return m
 
 

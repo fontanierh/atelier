@@ -265,7 +265,7 @@ def build(name,variant,lettering):
     for i in range(16):
         xx=r.uniform(-3.3,3.3);yy=r.uniform(-5.8,-1.2);zz=.34 if yy>-3.5 else (.23 if yy>-3.9 else (.13 if yy>-4.28 else .012))
         a=r.random()*math.tau
-        m.poly([(xx+math.cos(a+k*2.1)*.09,yy+math.sin(a+k*2.1)*.09,zz) for k in range(3)],'arc_leaf')
+        m.poly([(xx+math.cos(a+k*2.1)*.09,yy+math.sin(a+k*2.1)*.09,zz) for k in range(3)],'arc_leaf');m.foliage_roles[len(m.faces)-1]='foliage_litter'
     # ---- raised timber floor on vermilion posts over a dark slatted underfloor skirt.
     m.box((0,1.05,.65),(5.5,3.7,.66),'shr_under')
     for k in range(5):

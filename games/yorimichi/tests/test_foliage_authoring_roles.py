@@ -284,3 +284,34 @@ def test_arcade_floor_litter_roles_do_not_depend_on_the_visible_paint():
     assert roles[paving:]==[2]*1700
     assert set(mesh.keys[paving:])=={'arc_leaf','clay','arc_bloom'}
     assert set(mesh.foliage_roles)==set(range(paving,len(mesh.faces)))
+
+
+@pytest.mark.parametrize('path,count,paint,minimum',[
+    ('plaza.py',3300,{'sq_leaf','arc_bloom','clay'},3300),
+    ('harbor.py',1000,{'h_leaf'},10000),
+    ('civic_gardens.py',280,{'arc_leaf'},200),
+    ('kit/shrine.py',16,{'arc_leaf'},16),
+])
+def test_ground_scatter_emitters_preserve_paint_and_emit_only_thin_litter(path,count,paint,minimum):
+    # Execute the actual scatter loop, avoiding unrelated architecture/Blender
+    # helpers. Select its authored iteration count and real paint expression.
+    source=WORLD/'regions/hidamari'/path
+    tree=ast.parse(source.read_text())
+    loops=[node for node in ast.walk(tree) if isinstance(node,ast.For)
+           and isinstance(node.iter,ast.Call) and isinstance(node.iter.func,ast.Name)
+           and node.iter.func.id=='range' and len(node.iter.args)==1
+           and isinstance(node.iter.args[0],ast.Constant) and node.iter.args[0].value==count
+           and any(isinstance(n,ast.Constant) and n.value in paint for n in ast.walk(node)
+                   if isinstance(n,ast.Constant) and isinstance(n.value,str))]
+    assert len(loops)==1
+    public=ast.parse((WORLD/'regions/hidamari/public_spaces.py').read_text())
+    gardens=next(ast.literal_eval(n.value) for n in public.body if isinstance(n,ast.Assign)
+                 and any(isinstance(t,ast.Name) and t.id=='PLAZA_GARDENS' for t in n.targets))
+    mesh=Faces()
+    scope={'m':mesh,'r':random.Random(690),'rng':random.Random(41),'math':math,
+           'height':lambda x,y:0.,'local_height':lambda x,y:0.,'PLAZA_GARDENS':gardens}
+    exec(compile(ast.Module(body=loops,type_ignores=[]),str(source),'exec'),scope)
+    assert minimum<=len(mesh.faces)
+    assert set(mesh.keys)==paint
+    assert [R.key_role(key) for key in R.face_keys(mesh)]==[2]*len(mesh.faces)
+    assert set(mesh.foliage_roles)==set(range(len(mesh.faces)))
