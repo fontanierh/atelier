@@ -82,6 +82,8 @@ def importer(monkeypatch, tmp_path):
         AssetImportTask=SimpleNamespace,
         FbxImportUI=lambda: SimpleNamespace(static_mesh_import_data=ImportData()),
         FbxStaticMeshImportData=ImportData,
+        AssetRegistryHelpers=SimpleNamespace(create_asset_data=lambda mesh: SimpleNamespace(
+            get_tag_value=lambda name: 'True' if mesh.values.get('nanite_enabled', False) else 'False')),
         FBXImportType=SimpleNamespace(FBXIT_STATIC_MESH='static'),
         VertexColorImportOption=SimpleNamespace(REPLACE='replace'),
         FBXNormalImportMethod=SimpleNamespace(FBXNIM_IMPORT_NORMALS='normals'),
@@ -541,3 +543,44 @@ def test_non_fbx_migration_uses_source_twice_and_clears_migration_palette(import
     assert [name for name, _, _ in p.calls] == ['mesh.fbx', 'mesh.fbx']
     assert [size for _, _, size in p.calls] == [12., 1200.]
     assert isinstance(mesh.get_editor_property('asset_import_data'), ImportData)
+
+
+def test_reimport_corrects_stored_nanite_drift_before_receipt(importer):
+    p = importer
+    mesh = p.module.import_mesh(p.source, '/Game/Owned', 'Mesh')
+    mesh.values['asset_import_data'].values['build_nanite'] = True
+    assert not p.module.legacy_options_match(mesh)
+    assert p.module.import_mesh(p.source, '/Game/Owned', 'Mesh') is mesh
+    assert mesh.values['asset_import_data'].values['build_nanite'] is False
+    assert p.module.legacy_options_match(mesh)
+
+
+def test_failed_final_options_cannot_certify_or_queue_receipt(importer, monkeypatch):
+    p = importer
+    mesh = p.module.import_mesh(p.source, '/Game/Owned', 'Mesh')
+    mesh.values['asset_import_data'].values['build_nanite'] = True
+    events = []
+    monkeypatch.setattr(p.module, 'common_fbx_mesh', lambda *a, **kw: (None, SimpleNamespace(
+        imported=lambda _: events.append('imported'), defer_validated=lambda _: events.append('pending'))))
+    monkeypatch.setattr(p.module, '_source_mesh', lambda *a: mesh)
+    p.unreal.YorimichiFoliageBuilder.stamp_source_roles = lambda _: events.append('roles') or True
+    p.unreal.EditorAssetLibrary.save_loaded_asset = lambda _: events.append('save') or True
+    with pytest.raises(RuntimeError, match='declared options'):
+        p.module.import_mesh(p.source, '/Game/Owned', 'Mesh')
+    assert events == ['imported']
+
+
+def test_actual_nanite_drift_cannot_hide_behind_correct_stored_import_options(importer, monkeypatch):
+    p = importer
+    mesh = p.module.import_mesh(p.source, '/Game/Owned', 'Mesh')
+    mesh.values['nanite_enabled'] = True
+    assert mesh.values['asset_import_data'].values['build_nanite'] is False
+    assert not p.module.legacy_options_match(mesh)
+    events = []
+    monkeypatch.setattr(p.module, 'common_fbx_mesh', lambda *a, **kw: (None, SimpleNamespace(
+        imported=lambda _: events.append('imported'), defer_validated=lambda _: events.append('pending'))))
+    p.unreal.YorimichiFoliageBuilder.stamp_source_roles = lambda _: events.append('roles') or True
+    p.unreal.EditorAssetLibrary.save_loaded_asset = lambda _: events.append('save') or True
+    with pytest.raises(RuntimeError, match='declared options'):
+        p.module.import_mesh(p.source, '/Game/Owned', 'Mesh')
+    assert events == ['imported']

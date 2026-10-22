@@ -29,6 +29,8 @@ def import_mesh(path, dest, name, *, seed=None, fresh_slots=False):
         mesh = _source_mesh(path, dest, name, fresh_slots)
         if reuse is not None:
             reuse.imported(dest + '/' + name)
+    if not legacy_options_match(mesh):
+        raise RuntimeError('FBX import did not preserve declared options: ' + name)
     imported = time.perf_counter()
     unreal.load_module('YorimichiImport')
     if not unreal.YorimichiFoliageBuilder.stamp_source_roles(mesh):
@@ -68,7 +70,10 @@ def legacy_options_match(mesh):
         convert_scene=True, convert_scene_unit=True, import_uniform_scale=1.0, build_nanite=False,
         one_convex_hull_per_ucx=True, vertex_color_import_option=unreal.VertexColorImportOption.REPLACE,
         normal_import_method=unreal.FBXNormalImportMethod.FBXNIM_IMPORT_NORMALS)
-    return all(data.get_editor_property(key) == value for key, value in settings.items())
+    # ReimportRestrict can preserve an existing mesh's actual Nanite state even
+    # when stored import data says false. The live asset tag includes force-enable.
+    actual_nanite = unreal.AssetRegistryHelpers.create_asset_data(mesh).get_tag_value('NaniteEnabled')
+    return actual_nanite == 'False' and all(data.get_editor_property(key) == value for key, value in settings.items())
 
 
 def _import_mesh(path, dest, name, fresh_slots=False):
@@ -102,10 +107,8 @@ def _import_mesh(path, dest, name, fresh_slots=False):
     if existing:
         prior = existing.get_editor_property('asset_import_data')
         if isinstance(prior, unreal.FbxStaticMeshImportData):
-            for key in ('combine_meshes', 'generate_lightmap_u_vs', 'auto_generate_collision', 'convert_scene',
-                        'convert_scene_unit', 'import_uniform_scale', 'one_convex_hull_per_ucx',
-                        'vertex_color_import_option', 'normal_import_method'):
-                prior.set_editor_property(key, data.get_editor_property(key))
+            for key, value in settings.items():
+                prior.set_editor_property(key, value)
         if fresh_slots:
             existing.set_editor_property('static_materials', [])
     task.options = ui
