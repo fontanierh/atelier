@@ -142,3 +142,11 @@ def test_each_tree_product_owns_its_crown_material(importer):
         # import_foliage.py passes the tree's own LOD folder; the native product retains that folder whole.
         path = importer.crown_path({'slot': name + '_Crown'}, '/Game/Japan/FoliageLODs/' + name)
         assert catalog.independently_owned(path), path
+
+
+def test_forest_rebuilds_when_the_crown_helper_changes(tmp_path):
+    from types import SimpleNamespace
+    from atelier import build
+    steps = build.load_recipe('yorimichi').steps(SimpleNamespace(game='yorimichi', out=tmp_path, uproject=None))
+    forest = next(step for step in steps if step.name == 'world.forest')
+    assert Path(__file__).resolve().parents[1] / 'world/far_crown.py' in [Path(p).resolve() for p in forest.inputs]
