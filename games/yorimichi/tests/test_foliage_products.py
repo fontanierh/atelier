@@ -55,9 +55,9 @@ def test_package_repair_code_invalidates_native_owners_without_reexporting_geome
     changed = changed_by(source, tmp_path, monkeypatch)
     native = {name for name in changed if name.startswith('unreal.foliage.')}
     assert len(native) == 18
-    # Preflight is also a direct support input of the compact native owner.
-    compact = {'unreal.foliage_residency'} if source.name == 'unreal_preflight.py' else set()
-    assert changed == native | ASSEMBLY | compact
+    # Only the raw imports run ATELIER_UNREAL_PREFLIGHT. Residency executes its
+    # own native fixture and must not hash an unused launcher/controller closure.
+    assert changed == native | ASSEMBLY
 
 
 def test_alpha_texture_is_an_input_only_of_foliage_that_reads_it(tmp_path, monkeypatch):

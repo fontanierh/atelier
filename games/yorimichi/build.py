@@ -1853,7 +1853,7 @@ def steps(ctx):
     # The derivative foliage owner sees their final material graphs and meshes.
     result.append(foliage_build.system_step(ctx,
         [s.name for s in result if s.name.startswith('unreal.') and not s.explicit] + ['data.stage']))
-    result.append(foliage_residency_build.step(ctx))
+    result.append(foliage_build.residency_step(ctx))
     content = GAME / 'unreal' / 'Content'
     policy_spec = importlib.util.spec_from_file_location('yorimichi_content_policy', GAME / 'content_policy.py')
     policy = importlib.util.module_from_spec(policy_spec)

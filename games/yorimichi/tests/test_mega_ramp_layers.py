@@ -9,8 +9,11 @@ MEGA = Path(__file__).resolve().parents[1] / 'world' / 'regions' / 'mega'
 
 
 def changed_by(edited, tmp_path, monkeypatch, *, stable_products=()):
-    """Steps whose fingerprint changes when `edited` changes. Inputs hash by name, and an input that is or contains
+    """Action dependencies whose fingerprint changes when `edited` changes. Inputs hash by name, and an input that is or contains
     `edited` hashes differently afterwards, so the test reads the recipe's dependencies and needs no built files."""
+    # Preparation observes actual saved package bytes after importer ordering.
+    # These action-key stand-ins deliberately do not fabricate changed native packages.
+    # Real package-byte invalidation is covered by test_foliage_preparation_module.
     editing = False
 
     def stand_in(digest, path):
@@ -62,7 +65,7 @@ def changed_by(edited, tmp_path, monkeypatch, *, stable_products=()):
 def test_ramp_shape_rebuilds_only_the_ramp_and_the_map(tmp_path, monkeypatch):
     # The package certifies and cooks every changed import before assembling its download.
     assert changed_by(MEGA/'ramp.py', tmp_path, monkeypatch) == {'world.mega', 'world.map', 'unreal.mega', 'data.stage',
-                                                             'unreal.foliage_system', 'data.content', 'data.network', 'unreal.cook', 'unreal.package'}
+                                                             'data.content', 'data.network', 'unreal.cook', 'unreal.package'}
 
 
 def test_ramp_place_still_reshapes_the_terrain(tmp_path, monkeypatch):

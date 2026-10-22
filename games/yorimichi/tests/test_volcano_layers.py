@@ -12,7 +12,7 @@ from test_mega_ramp_layers import changed_by
 
 RECIPE = build.load_recipe('yorimichi')
 DIGEST = RECIPE.export_digest
-LATER = {'unreal.foliage_system', 'data.content', 'data.network', 'unreal.cook', 'unreal.package'}
+LATER = {'data.content', 'data.network', 'unreal.cook', 'unreal.package'}
 
 
 def records(items, at):

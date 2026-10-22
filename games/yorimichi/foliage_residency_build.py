@@ -175,42 +175,6 @@ def verify(content, report_path):
         return False
 
 
-def step(ctx):
-    """@cc [owner:fontanierh,label:correctness;performance] foliage-residency-owner
-    Residency MUST consume the successful current preparation and all authored
-    trunk manifests, preserve corner/material identity and keep rigid geometry
-    once. Only exact saved package groups MAY enter the receiving registry.
-    A partial unit MUST NOT publish whole-task success. New packages MUST remain
-    outside original discovery; runtime readiness MUST require this owner.
-    """
-    from atelier import build_inputs, unreal_modules
-    from atelier.build import DeferredInputs, Step, UnrealScript
-    scripts = GAME / 'unreal/Scripts'
-    script = scripts / 'prepare_foliage_residency.py'
-    command = UnrealScript(script, 'FOLIAGE RESIDENCY COMPLETE', modules=('YorimichiFoliagePreparation',),
-                           null_rhi=True, memory_gib=10,
-                           args=('-ForceDPCVars=r.GenerateMeshDistanceFields=0,r.MeshCardRepresentation=0',))
-    command.timeout = 7200
-    command.progress = 25
-    content = GAME / 'unreal/Content'
-    return Step('unreal.foliage_residency', [command],
-                inputs=[*build_inputs.local_imports(script, (GAME, GAME / 'world', scripts)),
-                        GAME / 'foliage_residency_build.py',
-                        GAME / 'unreal/Source/YorimichiFoliagePreparation/FoliageResidencyBuilder.cpp',
-                        GAME / 'unreal/Source/YorimichiFoliagePreparation/FoliageResidencyBuilder.h',
-                        ctx.out / 'foliage_system/report.json', content / 'FoliageSystem',
-                        content / 'Data/foliage_system/registry.json',
-                        *(ctx.out / 'foliage' / name / 'manifest.json' for name in species()),
-                        GAME.parents[1] / 'platform/studio/atelier/mesh_geometry.py'],
-                deferred_inputs=[DeferredInputs('residency-current-packages', dependency_inputs,
-                    (content, ctx.out / 'foliage_system/report.json'), support=(GAME / 'foliage_residency_build.py',))],
-                after=['unreal.foliage_system'], needs=unreal_modules.needs(('YorimichiFoliagePreparation',)),
-                outputs=[content / 'FoliageResident', content / 'Data/foliage_residency/registry.json',
-                         ctx.out / 'foliage_residency/report.json'],
-                verify=lambda: verify(content, ctx.out / 'foliage_residency/report.json'), heavy=True,
-                about='compact certified foliage: rigid once, leaf-only LODs, authored trunk collision')
-
-
 def species():
     # The actual source manifest roster is committed; each selected manifest is declared.
     return sorted(p.stem for p in (GAME / 'assets/foliage').glob('*.json'))

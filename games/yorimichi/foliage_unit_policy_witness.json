@@ -1,8 +1,8 @@
 {
   "current": {
     "games/yorimichi/content_policy.py": "f3d7e8fc2c0abdf70632840cc5d0958ce64ebcd7ab76600f4a0a8cd3f11bb01b",
-    "games/yorimichi/foliage_build.py": "a761e83acd29a8d754c51857cb77b81b6153ca30672145a420c3510002233147",
-    "games/yorimichi/foliage_residency_build.py": "2c0e809963c63fb264b1157b2b2516330b9f9da93c5f9cf8d05be280d08edc5b",
+    "games/yorimichi/foliage_build.py": "24b042e316145f1b6cfb98c7d36cb8d8b344a150ca182c473d0102b5b0d32f2c",
+    "games/yorimichi/foliage_residency_build.py": "7faa428c3c7685b7bbc65b9627867b3c026da711c45ef7ec04114c0f139dbd08",
     "games/yorimichi/foliage_system.py": "606c695cade6025d61f3a4cdf94cc54612d953aa7f0df07d760aaaba443949bd",
     "games/yorimichi/unreal/Scripts/atmosphere.py": "b59478df43df83b8c7386e7ff7c097f32faf647716fdacb804f3cf0c99336ebf",
     "games/yorimichi/unreal/Scripts/build_foliage_system.py": "275cc508742b804319f64b2ea39318ddf0c6a329ae8622c813ad9bb4fa019217",
@@ -24,6 +24,7 @@
     "games/yorimichi/unreal/Source/Yorimichi/Hippodrome.cpp": "cada21b803535672de6533322e289b2e083d968dabc5e2cb0aef1c3a17076954",
     "games/yorimichi/unreal/Source/Yorimichi/JapanPreferences.cpp": "0ea1c9271dfd2cc7bcc597db1226bcb8eae9a9683122eb5772ff88c57b9136ca",
     "games/yorimichi/unreal/Source/Yorimichi/JapanWorld.cpp": "a9fe613ed3d719e400644ec1e40373af924096dbf8df3ca850c722b484623dfb",
+    "games/yorimichi/unreal/Source/Yorimichi/JapanWorld.h": "b3a164d0fe08802ec1958fd0bb9e64aedc9d52b47ae7b78d47a8ece9bfe59d5f",
     "games/yorimichi/unreal/Source/Yorimichi/SkatePark.cpp": "235c13d93f8adaa34feb1b378ade2f7e4cecaecedf1a31119ed0e9dd4cfa183a",
     "games/yorimichi/unreal/Source/Yorimichi/SuperUltraMegaPark.cpp": "bba24fcf896ad2807a6a0a2499aab6f669255c780e4a61e1ee4202cbdbbe90a3",
     "games/yorimichi/unreal/Source/Yorimichi/Yorimichi.Build.cs": "5d2e25908b8ccc96b0e1396e77899abe40597ab9476411ac47468a0025b99bf8",
@@ -53,8 +54,7 @@
     "platform/studio/atelier/native_protocol.py": "eeb9f18d563cb13059c4c96a834a3490ed83decfc0a195a6d3d38415bb8f7d82",
     "platform/studio/atelier/paths.py": "2176891c3779c90215db409bd4d31e9fca34d45642cdfc38972aa5e688f28924",
     "platform/studio/atelier/source_imports.py": "b0b70fd764f52f5ced29308041edbf3b6176e34f4e391ba6c4af3474972008f6",
-    "platform/studio/atelier/unreal_mesh_reuse.py": "11eaa02d6c8fc2179edb2b2561159956297763168157bee79eed5f9dbcb7e777",
-    "games/yorimichi/unreal/Source/Yorimichi/JapanWorld.h": "b3a164d0fe08802ec1958fd0bb9e64aedc9d52b47ae7b78d47a8ece9bfe59d5f"
+    "platform/studio/atelier/unreal_mesh_reuse.py": "11eaa02d6c8fc2179edb2b2561159956297763168157bee79eed5f9dbcb7e777"
   },
   "policies": [
     [

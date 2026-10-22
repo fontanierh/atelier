@@ -187,7 +187,7 @@ def test_instanced_component_creation_is_owned_by_shared_system():
     root = GAME/'unreal/Source/Yorimichi'
     offenders = []
     for path in root.rglob('*.cpp'):
-        if path.name == 'FoliageSystem.cpp': continue
+        if path.name in {'FoliageSystem.cpp', 'FoliageSystemTests.cpp'}: continue
         if 'NewObject<UHierarchicalInstancedStaticMeshComponent>' in path.read_text():
             offenders.append(str(path.relative_to(GAME)))
     assert not offenders, f'Use UYorimichiFoliageSubsystem::NewInstances: {offenders}'
@@ -198,7 +198,8 @@ def test_cook_registry_and_normal_graph_are_not_optional():
     assert 'result.append(foliage_build.system_step(ctx,' in recipe
     assert '"/Game/FoliageSystem"' in (GAME/'unreal/Config/DefaultGame.ini').read_text()
     runtime=(GAME/'unreal/Source/Yorimichi/FoliageSystem.cpp').read_text()
-    assert 'foliage_system/registry.json' in runtime
+    assert 'foliage_residency/registry.json' in runtime
+    assert 'result.append(foliage_build.residency_step(ctx))' in recipe
     assert 'Uncertified or stale foliage:' in runtime
 
 
