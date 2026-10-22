@@ -43,6 +43,18 @@ class Mesh(Properties):
         return 1
 
 
+def _real_module(name):
+    spec = importlib.util.spec_from_file_location(name, Path(__file__).resolve().parents[1] / f'unreal/Scripts/{name}.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _prior(owner, **report):
+    owner.report.parent.mkdir(parents=True, exist_ok=True)
+    owner.report.write_text(json.dumps(report))
+
+
 @pytest.fixture
 def owner(monkeypatch, tmp_path):
     mutations, logs = [], []
@@ -107,6 +119,7 @@ def owner(monkeypatch, tmp_path):
         'import_foliage_lods': SimpleNamespace(apply_lods=apply_lods,
                                                crown_path=lambda crown, folder: folder + '/MI_' + crown['slot']),
         'foliage_package_repair': SimpleNamespace(require_valid_or_missing=lambda *args, **kwargs: None),
+        'foliage_slots': _real_module('foliage_slots'),
     }.items():
         monkeypatch.setitem(sys.modules, name, module)
     monkeypatch.setattr(sys, 'path', list(sys.path))
@@ -305,6 +318,7 @@ def test_reimport_keeps_the_current_crown_material_and_retires_the_rest(owner, m
     if crowned:
         owner.data['crown'] = {'slot': 'Tree_Test_Crown'}
     owner.write_manifest()
+    _prior(owner, packages=[lod, crown, stale])
     deleted = []
     editor = sys.modules['unreal'].EditorAssetLibrary
     monkeypatch.setattr(editor, 'list_assets', lambda *args, **kwargs: [p + '.' + p.rsplit('/', 1)[1] for p in (lod, crown, stale)],
@@ -319,6 +333,7 @@ def test_reimport_keeps_the_current_crown_material_and_retires_the_rest(owner, m
     assert deleted == ([stale] if crowned else [crown, stale])
     # Retirement follows the validated, saved replacement.
     assert owner.mutations.index(('save', owner.imported)) < owner.mutations.index(('delete', stale))
+    assert json.loads(owner.report.read_text())['packages'] == sorted([lod, crown] if crowned else [lod])
 
 
 def test_failed_replacement_retires_nothing(owner, monkeypatch):
@@ -330,6 +345,7 @@ def test_failed_replacement_retires_nothing(owner, monkeypatch):
     monkeypatch.setattr(editor, 'delete_asset', lambda asset: deleted.append(asset) or True, raising=False)
     owner.data['triangles'] = [7]   # the replacement fails validation
     owner.write_manifest()
+    _prior(owner, packages=[folder + '/MI_Tree_Test_Crown'])
     with pytest.raises(AssertionError):
         owner.run()
     assert deleted == []
@@ -344,14 +360,17 @@ def test_obsolete_package_still_used_elsewhere_is_kept(owner, monkeypatch):
     monkeypatch.setattr(editor, 'delete_asset', lambda asset: deleted.append(asset) or True, raising=False)
     monkeypatch.setattr(editor, 'find_package_referencers_for_asset', lambda asset, load: ['/Game/Japan/Other'],
                         raising=False)
+    _prior(owner, packages=[folder + '/MI_Tree_Test_Crown'])
     with pytest.raises(RuntimeError, match='still referenced'):
         owner.run()
     assert deleted == []
 
 
-def test_unknown_packages_in_the_folder_are_never_retired(owner, monkeypatch):
+def test_packages_the_previous_import_did_not_record_are_never_retired(owner, monkeypatch):
     folder = '/Game/Japan/FoliageLODs/Tree_Test'
-    unknown = [folder + '/Notes', folder + '/Tree_Test_LOD1_Backup', folder + '/MI_Tree_Other_Crown', folder + '/Sub/Tree_Test_LOD2']
+    unknown = [folder + '/Notes', folder + '/Tree_Test_LOD1_Backup', folder + '/MI_Tree_Other_Crown', folder + '/Sub/Tree_Test_LOD2',
+               folder + '/Tree_Test_LOD999', folder + '/MI_Tree_Test_Crown']
+    _prior(owner, packages=[folder + '/Tree_Test_LOD3'])   # recorded, but no longer present
     deleted = []
     editor = sys.modules['unreal'].EditorAssetLibrary
     monkeypatch.setattr(editor, 'list_assets', lambda *args, **kwargs: [p + '.' + p.rsplit('/', 1)[1] for p in unknown],
@@ -379,3 +398,21 @@ def test_crown_slot_before_authored_slots_is_refused(owner):
                                                  for key in ('Tree_Test_Crown', 'Bark')]
     with pytest.raises(RuntimeError, match='not after the authored'):
         owner.run()
+
+
+def test_reports_from_before_membership_was_recorded_still_name_their_outputs(owner):
+    folder = '/Game/Japan/FoliageLODs/Tree_Test'
+    crown = folder + '/MI_Tree_Test_Crown'
+    _prior(owner, screen_sizes=[1., .5, .2], materials_by_lod=[['/Game/Japan/Materials/MI_Bark.MI_Bark'], [], [crown + '.MI_Tree_Test_Crown']])
+    assert owner.run.__globals__['recorded_packages'](owner.report, folder, 'Tree_Test') == {
+        folder + '/Tree_Test_LOD1', folder + '/Tree_Test_LOD2', crown}
+
+
+def test_no_previous_report_retires_nothing(owner, monkeypatch):
+    folder = '/Game/Japan/FoliageLODs/Tree_Test'
+    deleted = []
+    editor = sys.modules['unreal'].EditorAssetLibrary
+    monkeypatch.setattr(editor, 'list_assets', lambda *args, **kwargs: [folder + '/Tree_Test_LOD2.Tree_Test_LOD2'], raising=False)
+    monkeypatch.setattr(editor, 'delete_asset', lambda asset: deleted.append(asset) or True, raising=False)
+    owner.run()
+    assert deleted == []

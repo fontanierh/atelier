@@ -150,3 +150,44 @@ def test_forest_rebuilds_when_the_crown_helper_changes(tmp_path):
     steps = build.load_recipe('yorimichi').steps(SimpleNamespace(game='yorimichi', out=tmp_path, uproject=None))
     forest = next(step for step in steps if step.name == 'world.forest')
     assert Path(__file__).resolve().parents[1] / 'world/far_crown.py' in [Path(p).resolve() for p in forest.inputs]
+
+
+class SlotMesh:
+    def __init__(self, keys):
+        self.slots = [type('Slot', (), {'get_editor_property': lambda self, k, key=key: key})() for key in keys]
+        self.models = None
+
+    def get_editor_property(self, key):
+        return self.slots
+
+    def set_editor_property(self, key, value):
+        self.slots = value
+
+    def set_num_source_models(self, count):
+        self.models = count
+
+
+def _slots_module():
+    spec = importlib.util.spec_from_file_location('foliage_slots_under_test',
+                                                  Path(__file__).resolve().parents[1] / 'unreal/Scripts/foliage_slots.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_a_reused_forest_base_drops_its_crown_slot_and_assembled_levels():
+    mesh = SlotMesh(['Bark', 'LeafPine', 'Tree_Forest_Pine_Impostor', 'Tree_Forest_Pine_Crown'])
+    assert _slots_module().restore_authored_slots(mesh, 'Tree_Forest_Pine')
+    assert [s.get_editor_property('x') for s in mesh.slots] == ['Bark', 'LeafPine', 'Tree_Forest_Pine_Impostor']
+    assert mesh.models == 1
+
+
+def test_an_uncrowned_base_is_untouched():
+    mesh = SlotMesh(['Bark', 'LeafPine'])
+    assert not _slots_module().restore_authored_slots(mesh, 'Tree_Forest_Pine')
+    assert mesh.models is None and len(mesh.slots) == 2
+
+
+def test_forest_import_restores_slots_before_binding():
+    source = (Path(__file__).resolve().parents[1] / 'unreal/Scripts/import_forest.py').read_text()
+    assert source.index('restore_authored_slots(mesh,name)') < source.index("E.load_asset('/Game/Japan/Materials/MI_'+key)")

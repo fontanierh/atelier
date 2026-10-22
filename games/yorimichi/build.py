@@ -1626,7 +1626,8 @@ def unreal_steps(ctx):
              heavy=True, about='the woodland lake and cabin'),
         Step('unreal.forest', [UnrealScript(SCRIPTS / 'import_forest.py', 'FOREST IMPORT COMPLETE', null_rhi=True,
                                            modules=IMPORT_CODE)],
-             inputs=[SCRIPTS / 'import_forest.py', SCRIPTS / 'forest_impostor_material.py', SCRIPTS / 'import_foliage_lods.py', SCRIPTS / 'foliage_material.py', SCRIPTS / 'import_village.py', SCRIPTS / 'atmosphere.py'],
+             inputs=[SCRIPTS / 'import_forest.py', SCRIPTS / 'forest_impostor_material.py', SCRIPTS / 'import_foliage_lods.py', SCRIPTS / 'foliage_material.py', SCRIPTS / 'import_village.py', SCRIPTS / 'atmosphere.py',
+                     SCRIPTS / 'foliage_slots.py'],
              needs=['unreal.world', 'world.forest', *unreal_modules.needs(IMPORT_CODE)], heavy=True,
              outputs=[out / 'forest/import-report.json'],
              # The legacy owner assembles source LOD packages outside Assets.
