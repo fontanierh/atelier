@@ -1,5 +1,6 @@
 """Selected editor-build inputs, excluding agent contract prose rather than native sources."""
 from pathlib import Path
+import stat
 
 from atelier import build_inputs
 
@@ -14,17 +15,26 @@ def files(roots):
     """
     result = []
 
-    def visit(path):
-        if path.is_symlink():
-            raise ValueError(f'Linked editor compile input: {path}')
-        if path.is_dir():
-            for child in sorted(path.iterdir()):
-                if (child.name not in build_inputs.SKIP_PARTS and child.name != 'CONTRACTS'
-                        and child.suffix not in build_inputs.SKIP_SUFFIXES):
-                    visit(child)
-        else:
+    def visit(path, member=False):
+        try:
+            info = path.lstat()
+        except FileNotFoundError:
+            if member:
+                raise
             # Keep missing roots explicit, matching the old directory input's missing identity.
             result.append(path)
+            return
+        if stat.S_ISLNK(info.st_mode):
+            raise ValueError(f'Linked editor compile input: {path}')
+        if stat.S_ISDIR(info.st_mode):
+            for child in sorted(path.iterdir()):
+                if child.name not in build_inputs.SKIP_PARTS:
+                    visit(child, member=True)
+        elif stat.S_ISREG(info.st_mode):
+            if not member or (path.name != 'CONTRACTS' and path.suffix not in build_inputs.SKIP_SUFFIXES):
+                result.append(path)
+        else:
+            raise ValueError(f'Non-regular editor compile input: {path}')
 
     for root in roots:
         visit(Path(root))

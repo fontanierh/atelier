@@ -1,5 +1,6 @@
 """Contract prose must leave compilation current without hiding a real native build edit."""
 from pathlib import Path
+import os
 from types import SimpleNamespace
 
 import pytest
@@ -78,3 +79,31 @@ def test_recipe_selects_all_original_compile_roots_and_keeps_build_prerequisite(
 def test_missing_root_remains_an_explicit_compile_input(tmp_path):
     missing = tmp_path / 'missing'
     assert RECIPE.compile_inputs.files((missing,)) == [missing]
+
+
+@pytest.mark.parametrize('name', ['Native.md', 'CONTRACTS'])
+def test_documentation_named_directory_keeps_native_descendants(tmp_path, name):
+    folder = tmp_path / name; folder.mkdir()
+    code = folder / 'Actor.cpp'; code.write_text('native')
+    assert RECIPE.compile_inputs.files((tmp_path,)) == [code]
+    step = compile_step(tmp_path)
+    before = build.fingerprint(step, {})
+    code.write_text('changed')
+    assert build.fingerprint(step, {}) != before
+
+
+def test_special_members_and_unreadable_trees_refuse(tmp_path, monkeypatch):
+    special = tmp_path / 'input.pipe'; os.mkfifo(special)
+    with pytest.raises(ValueError, match='Non-regular editor compile input'):
+        RECIPE.compile_inputs.files((tmp_path,))
+    special.unlink()
+    original = Path.iterdir
+
+    def unreadable(path):
+        if path == tmp_path:
+            raise PermissionError('unreadable source tree')
+        return original(path)
+
+    monkeypatch.setattr(Path, 'iterdir', unreadable)
+    with pytest.raises(PermissionError, match='unreadable source tree'):
+        RECIPE.compile_inputs.files((tmp_path,))
