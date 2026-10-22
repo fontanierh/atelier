@@ -11,6 +11,7 @@
 #include "Engine/StaticMesh.h"
 #include "Materials/MaterialInterface.h"
 #include "StaticMeshResources.h"
+#include "StaticMeshComponentLODInfo.h"
 #include "UObject/UObjectIterator.h"
 #include "Dom/JsonObject.h"
 #include "HAL/IConsoleManager.h"
