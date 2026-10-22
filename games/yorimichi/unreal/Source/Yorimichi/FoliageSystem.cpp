@@ -145,7 +145,8 @@ bool UYorimichiFoliageSubsystem::ReadRegistry(const TSharedPtr<FJsonObject>& Reg
             (Asset.Kind!=TEXT("tree") && Asset.Kind!=TEXT("shrub") && Asset.Kind!=TEXT("groundcover")) ||
             !PositiveInteger(Row,TEXT("source_triangles"),Asset.Triangles) ||
             !PositiveInteger(Row,TEXT("shadow_triangles"),Asset.ShadowTriangles) ||
-            !Row->TryGetArrayField(TEXT("triangles"),Counts) || Counts->Num()!=4 ||
+            !Row->TryGetArrayField(TEXT("triangles"),Counts) ||
+                (Version==1?Counts->Num()!=4:(Counts->IsEmpty() || Counts->Num()>8)) ||
             !Row->TryGetArrayField(TEXT("canopy_bounds"),Bounds) || Bounds->Num()!=2) return Invalid();
         if (Version==2)
         {
@@ -161,7 +162,7 @@ bool UYorimichiFoliageSubsystem::ReadRegistry(const TSharedPtr<FJsonObject>& Reg
                 !Row->TryGetArrayField(TEXT("source_materials"),Materials) || Materials->IsEmpty() ||
                 !Row->TryGetArrayField(TEXT("rigid_lod_triangles"),RigidCounts) ||
                 (Rigid==0 && !RigidCounts->IsEmpty()) ||
-                (Rigid>0 && RigidCounts->Num()!=1 && RigidCounts->Num()!=4)) return Invalid();
+                (Rigid>0 && RigidCounts->Num()!=1 && RigidCounts->Num()!=Counts->Num())) return Invalid();
             Asset.RigidTriangles=int32(Rigid);
             for (const auto& Count:*RigidCounts)
             {
@@ -185,7 +186,8 @@ bool UYorimichiFoliageSubsystem::ReadRegistry(const TSharedPtr<FJsonObject>& Reg
         }
         for (const auto& Count:*Counts)
         {
-            if (!Count || Count->Type!=EJson::Number || Count->AsNumber()<=0 ||
+            if (!Count || Count->Type!=EJson::Number || !FMath::IsFinite(Count->AsNumber()) ||
+                Count->AsNumber()<0 || ((Version==1 || Asset.LODTriangles.IsEmpty()) && Count->AsNumber()==0) ||
                 Count->AsNumber()>MAX_int32 || Count->AsNumber()!=FMath::FloorToDouble(Count->AsNumber())) return Invalid();
             Asset.LODTriangles.Add(int32(Count->AsNumber()));
         }

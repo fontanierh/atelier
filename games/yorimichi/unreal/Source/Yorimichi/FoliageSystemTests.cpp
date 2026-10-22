@@ -330,6 +330,19 @@ bool FYorimichiFoliageRegistryTest::RunTest(const FString&)
     TestFalse(TEXT("Negative distant rigid count refuses"),Read(Distant.Replace(TEXT("[4,3,2,0]"),TEXT("[4,3,2,-1]"))));
     TestFalse(TEXT("Empty rigid LOD0 cannot match a positive carrier"),Read(Distant.Replace(TEXT("[4,3,2,0]"),TEXT("[0,3,2,0]"))));
     TestFalse(TEXT("Fractional distant rigid count refuses"),Read(Distant.Replace(TEXT("[4,3,2,0]"),TEXT("[4,3,2,0.5]"))));
+    const FString Five=Resident.Replace(TEXT("[416,160,64,32]"),TEXT("[416,160,64,32,14]"))
+        .Replace(TEXT("\"rigid_lod_triangles\":[4]"),TEXT("\"rigid_lod_triangles\":[4,3,2,1,0]"));
+    TestTrue(TEXT("Complete five-level authored chain retains its far impostor"),Read(Five));
+    TestFalse(TEXT("Rigid chain must match canopy chain or use one mixed carrier level"),
+        Read(Five.Replace(TEXT("[4,3,2,1,0]"),TEXT("[4,3,2,0]"))));
+    TestTrue(TEXT("One-level authored canopy accepted"),Read(Resident.Replace(TEXT("[416,160,64,32]"),TEXT("[416]"))));
+    TestTrue(TEXT("Eight-level authored canopy accepted"),Read(Resident.Replace(TEXT("[416,160,64,32]"),TEXT("[416,160,64,32,16,8,4,0]"))));
+    TestFalse(TEXT("Unbounded authored chain refuses"),Read(Resident.Replace(TEXT("[416,160,64,32]"),TEXT("[416,160,64,32,16,8,4,2,1]"))));
+    TestFalse(TEXT("Missing canopy chain refuses"),Read(Resident.Replace(TEXT("[416,160,64,32]"),TEXT("[]"))));
+    TestFalse(TEXT("Empty canopy LOD0 refuses"),Read(Resident.Replace(TEXT("[416,160,64,32]"),TEXT("[0,0]"))));
+    TestTrue(TEXT("Exactly certified empty distant canopy accepted"),Read(Resident.Replace(TEXT("[416,160,64,32]"),TEXT("[416,0]"))));
+    TestFalse(TEXT("Fractional distant canopy refuses"),Read(Resident.Replace(TEXT("[416,160,64,32]"),TEXT("[416,0.5]"))));
+    TestFalse(TEXT("Legacy registry retains four-level schema"),Read(Valid.Replace(TEXT("[416,160,64,32]"),TEXT("[416,160,64,32,14]"))));
     TestFalse(TEXT("Absent rigid path cannot claim rigid geometry"),Read(Resident.Replace(TEXT("/Game/FoliageResident/Tree.Tree"),TEXT(""))));
     TestFalse(TEXT("Source material proof is required"),Read(Resident.Replace(TEXT("\"source_materials\""),TEXT("\"missing_materials\""))));
     const FString PublishedPath=AtelierDataPath(TEXT("foliage_residency/registry.json"));
