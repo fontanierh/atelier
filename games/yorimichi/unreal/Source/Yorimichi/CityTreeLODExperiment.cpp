@@ -155,6 +155,15 @@ bool AJapanWorld::ApplyTreeOptimization(bool bEnabled,int32 LODMode,float Distan
     return true;
 }
 
+// Replay the remembered request when foliage returns ownership of city trees.
+bool AJapanWorld::ReapplyTreeOptimization()
+{
+    if (AppliedTreeOptimization<0) return true;
+    const bool Enabled=AppliedTreeOptimization!=0;
+    AppliedTreeOptimization=-1;
+    return ApplyTreeOptimization(Enabled,AppliedTreeLODMode,AppliedTreeDistanceScale);
+}
+
 // Keep forced-LOD experiments available without changing a player's saved setting.
 static FAutoConsoleCommandWithWorldAndArgs CityTreeLODCommand(TEXT("japan.CityTreeLODs"),
     TEXT("TAG 0|1: original or leaf-outline LODs. Optional forced LOD: 0 auto, 1 full, 2 medium, 3 far."),

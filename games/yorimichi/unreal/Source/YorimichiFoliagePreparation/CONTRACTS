@@ -31,6 +31,8 @@ remain exact; this MUST NOT normalize emitted corners or their saved-output hash
 
 @cc [owner:fontanierh,label:correctness] prepared-foliage-collision-ownership
 Mixed scenery MUST retain exact rigid-only complex collision; a district/crown box is forbidden.
+The compound HD_ArcadeTree and its v4 source MUST retain their exact rigid planter/trunk carrier;
+planter bounds MUST NOT become a taller simple trunk capsule. Their foliage chain remains authored.
 A standalone semantic tree/palm MAY use a finite positive authored radius/endpoints manifest converted
 from metres to Unreal centimetres with Y reflection, or a bounded capsule from its classified lower
 rigid trunk. An existing source simple shape alone MUST NOT certify trunk provenance. Bushes and

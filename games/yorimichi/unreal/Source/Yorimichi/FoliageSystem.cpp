@@ -467,6 +467,8 @@ bool UYorimichiFoliageSubsystem::Register(UStaticMeshComponent* Component)
     Entry.DistanceField=Component->bAffectDistanceFieldLighting;Entry.EvaluateWPO=Component->bEvaluateWorldPositionOffset;
     Entry.CullDistance=Component->LDMaxDrawDistance;
     Entry.WPODisableDistance=Component->GetWorldPositionOffsetDisableDistance();
+    Entry.ForcedLOD=Component->ForcedLodModel;Entry.MinimumLOD=Component->MinLOD;
+    Entry.OverrideMinimumLOD=Component->bOverrideMinLOD;
     if (const auto* Instances=Cast<UInstancedStaticMeshComponent>(Component))
     { Entry.InstanceCount=Instances->GetInstanceCount();Entry.StartCullDistance=Instances->InstanceStartCullDistance;
       Entry.EndCullDistance=Instances->InstanceEndCullDistance;Entry.LODDistanceScale=Instances->GetLODDistanceScale(); }
@@ -633,6 +635,10 @@ void UYorimichiFoliageSubsystem::Restore(FYorimichiFoliageSource& Entry,bool Res
     {
         Entry.Original->SetEvaluateWorldPositionOffset(Entry.EvaluateWPO);
         Entry.Original->SetWorldPositionOffsetDisableDistance(Entry.WPODisableDistance);
+        Entry.Original->SetForcedLodModel(Entry.ForcedLOD);
+        if (Entry.Original->MinLOD!=Entry.MinimumLOD || bool(Entry.Original->bOverrideMinLOD)!=Entry.OverrideMinimumLOD)
+        { Entry.Original->MinLOD=Entry.MinimumLOD;Entry.Original->bOverrideMinLOD=Entry.OverrideMinimumLOD;
+          Entry.Original->MarkRenderStateDirty(); }
         if (auto* Group=Cast<UInstancedStaticMeshComponent>(Entry.Original))
         { Group->SetCullDistances(Entry.StartCullDistance,Entry.EndCullDistance);Group->SetLODDistanceScale(Entry.LODDistanceScale); }
         else Entry.Original->SetCullDistance(Entry.CullDistance);
@@ -685,6 +691,9 @@ void UYorimichiFoliageSubsystem::Apply(FYorimichiFoliageSource& Entry)
 {
     if (!bEnabled) { Restore(Entry,false);ApplyCollision(Entry);return; }
     ApplyCollision(Entry);
+    Entry.Original->SetForcedLodModel(0);
+    if (Entry.Original->bOverrideMinLOD || Entry.Original->MinLOD!=0)
+    { Entry.Original->bOverrideMinLOD=false;Entry.Original->MinLOD=0;Entry.Original->MarkRenderStateDirty(); }
     Entry.Original->SetVisibility(Entry.HasRigid && Entry.Visible,false);
     Entry.Original->SetHiddenInGame(Entry.Hidden,false);
     Entry.Original->SetCastShadow(Entry.HasRigid && Entry.CastShadow);
@@ -929,7 +938,12 @@ bool UYorimichiFoliageSubsystem::ReloadMode(bool Enabled)
         // Restored authored values can predate a graphics change made while
         // prepared mode was active. Reapply the current legacy settings once.
         if (!Target) for (TActorIterator<AJapanWorld> It(GetWorld());It;++It)
+        {
             It->ApplyPerformanceSettings(bPerformance,Sway,Detail,ShadowDistance,true);
+            if (!It->ReapplyTreeOptimization())
+            { Error=TEXT("Could not restore the saved city-tree settings.");return false; }
+        }
+        if (!Target && !Refresh()) return false;
         JapanGameplayCollision::Install(GetWorld());
         if (Target && GIsRHIInitialized) DrainUploads();
         return true;

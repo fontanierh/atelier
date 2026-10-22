@@ -31,6 +31,8 @@ struct FYorimichiFoliageSource
     FString Kind;
     int32 InstanceCount=0;
     int32 StartCullDistance=0,EndCullDistance=0,WPODisableDistance=0;
+    int32 ForcedLOD=0,MinimumLOD=0;
+    bool OverrideMinimumLOD=false;
     float CullDistance=0.f,LODDistanceScale=1.f;
 };
 
@@ -102,6 +104,7 @@ private:
     friend class FYorimichiFoliageCollisionPolicyTest;
     friend class FYorimichiFoliageBindingTest;
     friend class FYorimichiFoliagePerformanceSettingsTest;
+    friend class FYorimichiFoliageCityPreferenceTest;
     static bool OrdinaryAuthoredProp(const TArray<FStaticMaterial>& Slots,int32 Triangles);
     bool RequiresRegistration(UStaticMeshComponent* Component) const;
     bool CachedRequiresRegistration(UStaticMeshComponent* Component);

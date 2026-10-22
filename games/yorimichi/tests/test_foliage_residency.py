@@ -18,6 +18,15 @@ def test_authored_trunk_uses_exact_unreal_endpoints_and_radius():
     assert R.trunk_bounds(None) == []
 
 
+def test_arcade_planter_tree_uses_existing_compound_rigid_collision():
+    for path in ('/Game/Japan/Assets/HD_ArcadeTree.HD_ArcadeTree',
+                 '/Game/Experiments/CityTrees/v4/HD_ArcadeTree_v4.HD_ArcadeTree_v4'):
+        assert R.compound_tree(path)
+        assert not R.compound_tree(path + '_Other')
+        assert not R.compound_tree(path.replace('/Game/', '/Game/Other/'))
+    assert not R.compound_tree('/Game/Japan/Assets/HD_PlazaTreeGold.HD_PlazaTreeGold')
+
+
 def test_authored_leaf_publication_preserves_other_owners_and_disables_opaque_patch():
     old = dict(source_triangles=100, rigid_triangles=30, aggregate=True, coverage=[['opaque']], rigid='unchanged')
     result = dict(leaf_reducer='actual installed reducer', source_leaf_triangles=70, triangles=[70, 35, 18, 7],
@@ -172,7 +181,8 @@ def test_explicit_bounded_authored_props_are_ordinary_in_every_namespace(names, 
 
 
 @pytest.mark.parametrize('old_report', [True, False])
-def test_owner_skips_old_authored_rows_before_classifier_or_derived_loads(tmp_path, old_report):
+@pytest.mark.parametrize('compound', [False, True])
+def test_owner_skips_old_authored_rows_before_classifier_or_derived_loads(tmp_path, old_report, compound):
     path = GAME / 'unreal/Scripts/prepare_foliage_residency.py'
     function = next(n for n in ast.parse(path.read_text()).body if isinstance(n, ast.FunctionDef) and n.name == 'main')
     content, out = tmp_path / 'Content', tmp_path / 'build'
@@ -182,11 +192,13 @@ def test_owner_skips_old_authored_rows_before_classifier_or_derived_loads(tmp_pa
             return [SimpleNamespace(get_editor_property=lambda key: 'FoliageAuthored_Prop' if self.authored else 'FoliageRoles_Bush')]
         def get_num_triangles(self, level): return 100
         def get_num_lods(self): return 1
-        def get_name(self): return 'Prop' if self.authored else 'Bush_Test'
+        def get_name(self): return 'Prop' if self.authored else ('HD_ArcadeTree' if compound else 'Bush_Test')
         def get_material(self, index): return SimpleNamespace(get_path_name=lambda: '/Game/Material.Material')
     authored, bush = Mesh(True), Mesh()
     normal = dict(source='/Game/Bush.Bush', optimized='/Game/Old', shadow='/Game/OldShadow', patch='/Game/Patch',
                   source_sha256='d', identity='i', source_triangles=100, rigid_triangles=0)
+    if compound:
+        normal['source'] = '/Game/Japan/Assets/HD_ArcadeTree.HD_ArcadeTree'
     ordinary = dict(normal, source='/Game/Prop.Prop', optimized='/Game/UnusedProp', shadow='/Game/UnusedPropShadow')
     report = dict(version=1, assets=[ordinary, normal] if old_report else [normal], packages={'proof':'p'}, words=[], materials=[])
     for file in (out / 'foliage_system/report.json', content / 'Data/foliage_system/registry.json'):
@@ -211,9 +223,9 @@ def test_owner_skips_old_authored_rows_before_classifier_or_derived_loads(tmp_pa
         E=SimpleNamespace(load_asset=load, save_loaded_asset=lambda mesh, dirty: saved.append(mesh) or True),
         G=SimpleNamespace(package_inventory=lambda *a: {'proof':'p'}),
         F=SimpleNamespace(package_inventory=lambda *a: {'proof':'p'}, asset_id=lambda p: p.split('/')[-1], vegetation=lambda n: True,
-            roles=SimpleNamespace(plant_words=lambda n: {'bush'}, semantic_tokens=lambda n: {'bush'})),
+            roles=SimpleNamespace(plant_words=lambda n: {'tree'} if compound else {'bush'}, semantic_tokens=lambda n: {'tree'} if compound else {'bush'})),
         R=SimpleNamespace(ROOT=R.ROOT, excluded_authored=R.excluded_authored, TREE_WORDS=R.TREE_WORDS,
-            passable_plant=R.passable_plant, species=lambda: [], source_lods=R.source_lods, assets=R.assets,
+            passable_plant=R.passable_plant, compound_tree=R.compound_tree, species=lambda: [], source_lods=R.source_lods, assets=R.assets,
             authored_leaf_row=R.authored_leaf_row, inventory=lambda *a: {'proof':'p'}),
         owner=SimpleNamespace(digest=lambda p: 'd', source_identity=lambda *a: 'i', classify=classify),
         U=SimpleNamespace(AssetRegistryHelpers=SimpleNamespace(get_asset_registry=lambda: object()), log=lambda text: None,
@@ -227,6 +239,7 @@ def test_owner_skips_old_authored_rows_before_classifier_or_derived_loads(tmp_pa
     assert final['assets'][0]['aggregate'] is False and final['assets'][0]['coverage'] == []
     assert len(classified) == len(compacted) == 1 and saved
     assert compacted[0][10] is None  # Authored leaf wrappers own opacity/wind/player push.
+    assert compacted[0][6] is False  # A compound planter never takes the simple trunk branch.
 
 
 def test_residency_graph_has_no_unused_interaction_builder_dependency():

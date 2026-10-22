@@ -227,3 +227,6 @@ push and MUST remain authored-enabled when tree sway distance is zero. The separ
 strength control remains independent of player push; tree wind culling MUST NOT disable bush WPO.
 Legacy Apply MUST NOT overwrite current graphics settings with registration snapshots. A mode
 reload into legacy MUST reapply the current world performance settings despite unchanged setting guards.
+Saved city-tree optimization requests MUST be replayed on return to legacy, including disabled and
+forced-LOD selections. Prepared carriers MUST use their automatic authored chain; legacy forced/minimum
+LOD overrides MUST be restored only on removal. Replayed mesh bindings MUST pass current registration.

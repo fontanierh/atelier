@@ -2,23 +2,23 @@
   "current": {
     "games/yorimichi/content_policy.py": "f3d7e8fc2c0abdf70632840cc5d0958ce64ebcd7ab76600f4a0a8cd3f11bb01b",
     "games/yorimichi/foliage_build.py": "a761e83acd29a8d754c51857cb77b81b6153ca30672145a420c3510002233147",
-    "games/yorimichi/foliage_residency_build.py": "155bea3df151982aa64aa81f4d9e4862627cf1e43a7b547c1fa246997c293b15",
+    "games/yorimichi/foliage_residency_build.py": "2c0e809963c63fb264b1157b2b2516330b9f9da93c5f9cf8d05be280d08edc5b",
     "games/yorimichi/foliage_system.py": "606c695cade6025d61f3a4cdf94cc54612d953aa7f0df07d760aaaba443949bd",
     "games/yorimichi/unreal/Scripts/atmosphere.py": "b59478df43df83b8c7386e7ff7c097f32faf647716fdacb804f3cf0c99336ebf",
     "games/yorimichi/unreal/Scripts/build_foliage_system.py": "275cc508742b804319f64b2ea39318ddf0c6a329ae8622c813ad9bb4fa019217",
     "games/yorimichi/unreal/Scripts/foliage_material.py": "70fbd4b6ad988d7192b78b227711c6ccb30fe40928301d98a4c18288b338249a",
     "games/yorimichi/unreal/Scripts/foliage_variant_validation.py": "0d8a31524b9382e87a59e41e8b05c2f454388cb2756d09d16c186843825d10d5",
-    "games/yorimichi/unreal/Scripts/prepare_foliage_residency.py": "51ae065d394cbfec098ad5c566294e4e87eeb35778acb4b458679530689494b8",
+    "games/yorimichi/unreal/Scripts/prepare_foliage_residency.py": "f20fa9175f89b2288be990854980c2f9c2752050254324c4a405a1b95070851e",
     "games/yorimichi/unreal/Scripts/see_through.py": "63b00530ffa4a60c1b9b576fa8d32f8fbbe82be2dbcd5a726e4bcacc8bd7b734",
     "games/yorimichi/unreal/Source/Yorimichi/BelmonteRegion.cpp": "298792fa6f7449313d8285c04029331134a3d7df277d75788fb48a5e5f373b9c",
     "games/yorimichi/unreal/Source/Yorimichi/BelmonteTrack.cpp": "28447bed222f99420f34faadecaa1a0025e88fe67a45655323da43b247f05681",
     "games/yorimichi/unreal/Source/Yorimichi/BelmonteTrainService.cpp": "48e823b3ca646931e19bba4026b5ec014c4a7b4ce73ac7baf80df80145949199",
     "games/yorimichi/unreal/Source/Yorimichi/CitySurfaceTilesExperiment.cpp": "780a8cdc309924f8c08f25f6540b2703c7dfe574c6a68849b20d306009a6abba",
-    "games/yorimichi/unreal/Source/Yorimichi/CityTreeLODExperiment.cpp": "85463d45b2e0b2473036a0617fa82ab78708cfc884832ba1a4596237d2cda10f",
+    "games/yorimichi/unreal/Source/Yorimichi/CityTreeLODExperiment.cpp": "03fb34fb84bb1cc0fd4626e60b6c0d21cec784143eb2680f9880a439bc3d39a6",
     "games/yorimichi/unreal/Source/Yorimichi/Dev/JapanTrailer.cpp": "b74c47898b331b5b672b500511b611a343d9df15d1e3d98af31742c0cd4dd5dc",
     "games/yorimichi/unreal/Source/Yorimichi/FerryService.cpp": "f799ad8667ccb913a35265e1a473f6016d934d863a69d96026ef315e1a9459ec",
-    "games/yorimichi/unreal/Source/Yorimichi/FoliageSystem.cpp": "acdf05e5e4a13f847bffde13dd59ea29c259832370ce5f5481a3241a8285f682",
-    "games/yorimichi/unreal/Source/Yorimichi/FoliageSystem.h": "0285acb480fe2af165dc5a79432ce7a10dcedc0a682232751f481dfa643c91cc",
+    "games/yorimichi/unreal/Source/Yorimichi/FoliageSystem.cpp": "e880573f3f2bb915e58cc7b5a6d75188a5145e06db42cfc7bcb7ce1e44c03610",
+    "games/yorimichi/unreal/Source/Yorimichi/FoliageSystem.h": "15045c2618adb58e8864226774a42f5796c7568da7f714ad42552399e6853870",
     "games/yorimichi/unreal/Source/Yorimichi/GondolaService.cpp": "46e86bb34de6a67060313099a1e28ed18e5ff9e68fa8272d281d3cb0e167ea7a",
     "games/yorimichi/unreal/Source/Yorimichi/HidamariStable.cpp": "3083091601846abdd8a75035f80fade8f561ae2e1954651c65c20049f4075b27",
     "games/yorimichi/unreal/Source/Yorimichi/Hippodrome.cpp": "cada21b803535672de6533322e289b2e083d968dabc5e2cb0aef1c3a17076954",
@@ -54,7 +54,7 @@
     "platform/studio/atelier/paths.py": "2176891c3779c90215db409bd4d31e9fca34d45642cdfc38972aa5e688f28924",
     "platform/studio/atelier/source_imports.py": "b0b70fd764f52f5ced29308041edbf3b6176e34f4e391ba6c4af3474972008f6",
     "platform/studio/atelier/unreal_mesh_reuse.py": "11eaa02d6c8fc2179edb2b2561159956297763168157bee79eed5f9dbcb7e777",
-    "games/yorimichi/unreal/Source/Yorimichi/JapanWorld.h": "10ae4e899da7e3353ec06970f6ecea908d474d9b6dcb2043b288b6a0e7d01cb7"
+    "games/yorimichi/unreal/Source/Yorimichi/JapanWorld.h": "b3a164d0fe08802ec1958fd0bb9e64aedc9d52b47ae7b78d47a8ece9bfe59d5f"
   },
   "policies": [
     [

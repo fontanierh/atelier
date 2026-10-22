@@ -177,6 +177,7 @@ bool FYorimichiFoliageToggleTest::RunTest(const FString&)
     Source->SetEvaluateWorldPositionOffset(true);
     Source->SetCullDistances(30000,36000);Source->SetLODDistanceScale(1.7f);
     Source->SetWorldPositionOffsetDisableDistance(1234);
+    Source->SetForcedLodModel(2);Source->bOverrideMinLOD=true;Source->MinLOD=1;
     const FTransform Placement(FRotator(0,31,0),FVector(300,400,50),FVector(1,2,3));
     Source->AddInstance(Placement);Source->AddInstance(FTransform(FVector(900,200,0)));
     TestTrue(TEXT("Legacy mode registers without loading prepared copies"),System->Refresh());
@@ -191,6 +192,8 @@ bool FYorimichiFoliageToggleTest::RunTest(const FString&)
         TestFalse(TEXT("Authored hidden state survives reload"),Source->IsVisible());
         System->SetSourceVisibility(Source,true);
         TestTrue(TEXT("Prepared mesh renders"),Source->IsVisible());
+        TestEqual(TEXT("Prepared mode uses its automatic authored chain"),Source->ForcedLodModel,0);
+        TestFalse(TEXT("Prepared mode drops the legacy minimum override"),bool(Source->bOverrideMinLOD));
         System->SetDistances(true,.4f,0.f,80.f);
         TestTrue(TEXT("Zero tree sway retains bush player-push WPO"),bool(Source->bEvaluateWorldPositionOffset));
         TestEqual(TEXT("Zero tree sway retains authored bush WPO reach"),Source->GetWorldPositionOffsetDisableDistance(),1234);
@@ -212,6 +215,9 @@ bool FYorimichiFoliageToggleTest::RunTest(const FString&)
         TestEqual(TEXT("Legacy LOD distance scale restored"),Source->GetLODDistanceScale(),1.7f);
         TestTrue(TEXT("Legacy WPO restored"),bool(Source->bEvaluateWorldPositionOffset));
         TestEqual(TEXT("Legacy WPO reach restored"),Source->GetWorldPositionOffsetDisableDistance(),1234);
+        TestEqual(TEXT("Legacy forced LOD restored"),Source->ForcedLodModel,2);
+        TestTrue(TEXT("Legacy minimum LOD override restored"),bool(Source->bOverrideMinLOD));
+        TestEqual(TEXT("Legacy minimum LOD restored"),int32(Source->MinLOD),1);
     }
     TStrongObjectPtr<UJapanPreferences> KeepPreferences(NewObject<UJapanPreferences>());
     auto* Preferences=KeepPreferences.Get();
@@ -274,6 +280,48 @@ bool FYorimichiFoliagePerformanceSettingsTest::RunTest(const FString&)
         TestEqual(TEXT("Reload reapplies unchanged bush WPO reach"),Bush->GetWorldPositionOffsetDisableDistance(),FMath::RoundToInt(Sway*100.f));
     }
     System->Sources.Reset();World->DestroyWorld(false);return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FYorimichiFoliageCityPreferenceTest,"Yorimichi.Foliage.CityTreePreferences",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FYorimichiFoliageCityPreferenceTest::RunTest(const FString&)
+{
+    const auto Init=UWorld::InitializationValues().AllowAudioPlayback(false).CreatePhysicsScene(false);
+    auto* World=UWorld::CreateWorld(EWorldType::Game,false,NAME_None,nullptr,true,ERHIFeatureLevel::Num,&Init);
+    if (!TestNotNull(TEXT("Isolated city preference world"),World)) return false;
+    auto* System=World->GetSubsystem<UYorimichiFoliageSubsystem>();
+    auto* Map=World->SpawnActor<AJapanWorld>();Map->bLoaded=true;System->bEnabled=true;
+    const TArray<FString> Names={TEXT("HD_ArcadeTree"),TEXT("HD_PlazaTreeGold"),TEXT("HD_PlazaTreeOrange")};
+    for (const auto& Name:Names)
+    {
+        const FString Path=TEXT("/Game/Japan/Assets/")+Name+TEXT(".")+Name;
+        auto* Mesh=LoadObject<UStaticMesh>(nullptr,*Path);
+        if (!TestNotNull(TEXT("Current city source required for integration fixture"),Mesh))
+        { World->DestroyWorld(false);return false; }
+        auto* Group=NewObject<UHierarchicalInstancedStaticMeshComponent>(Map);
+        Group->SetStaticMesh(Mesh);Group->AddInstance(FTransform::Identity);Map->Groups.Add(Group);
+    }
+    TestTrue(TEXT("Prepared mode remembers the city setting without loading it"),Map->ApplyTreeOptimization(true,3,1.3f));
+    for (int32 I=0;I<Names.Num();++I) TestEqual(TEXT("Prepared no-op keeps the source"),Map->Groups[I]->GetStaticMesh()->GetName(),Names[I]);
+    System->bEnabled=false;
+    TestTrue(TEXT("Legacy replay applies the remembered city variant"),Map->ReapplyTreeOptimization());
+    for (int32 I=0;I<Names.Num();++I)
+    {
+        TestEqual(TEXT("City variant restored"),Map->Groups[I]->GetStaticMesh()->GetName(),Names[I]+TEXT("_v4"));
+        TestEqual(TEXT("Saved city forced LOD restored"),Map->Groups[I]->ForcedLodModel,2);
+        TestEqual(TEXT("Saved city distance restored"),Map->Groups[I]->GetLODDistanceScale(),1.3f);
+    }
+    System->bEnabled=true;
+    TestTrue(TEXT("Prepared mode remembers disabled city optimization"),Map->ApplyTreeOptimization(false,0,1.f));
+    System->bEnabled=false;
+    TestTrue(TEXT("Legacy replay also restores disabled city optimization"),Map->ReapplyTreeOptimization());
+    for (int32 I=0;I<Names.Num();++I)
+    {
+        TestEqual(TEXT("Canonical city source restored"),Map->Groups[I]->GetStaticMesh()->GetName(),Names[I]);
+        TestEqual(TEXT("Canonical city automatic LOD restored"),Map->Groups[I]->ForcedLodModel,0);
+    }
+    World->DestroyWorld(false);return true;
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FYorimichiFoliageCollisionPolicyTest,"Yorimichi.Foliage.CollisionPolicy",

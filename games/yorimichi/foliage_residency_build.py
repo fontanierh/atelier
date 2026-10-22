@@ -71,6 +71,18 @@ def source_lods(count, standalone):
 
 
 
+def compound_tree(path):
+    """@cc [owner:fontanierh,label:correctness] compound-tree-collision
+    The exact arcade source and its certified v4 derivative MUST use rigid-only
+    collision for both planter and trunk, never a capsule based on planter width.
+    Source LOD selection and authored leaf geometry MUST remain unchanged.
+    """
+    return path in {
+        '/Game/Japan/Assets/HD_ArcadeTree.HD_ArcadeTree',
+        '/Game/Experiments/CityTrees/v4/HD_ArcadeTree_v4.HD_ArcadeTree_v4',
+    }
+
+
 def caldera_trunk_bounds(path):
     """@cc [owner:fontanierh,label:correctness] caldera-authored-trunk-policy
     Only the four exact committed Caldera tree sources and their authored PropLOD

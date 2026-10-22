@@ -68,8 +68,9 @@ def main():
         shadow = E.load_asset(old['shadow'])
         if not prepared or not shadow:
             raise ValueError('Missing certified preparation: ' + old['source'])
+        compound = R.compound_tree(old['source'])
         standalone = F.vegetation(source.get_name())
-        simple = bool(set(F.roles.plant_words(source.get_name())) & R.TREE_WORDS) and classification != 'authored'
+        simple = bool(set(F.roles.plant_words(source.get_name())) & R.TREE_WORDS) and classification != 'authored' and not compound
         passable = R.passable_plant(source.get_name(), F.roles.plant_words(source.get_name()),
                                      F.roles.semantic_tokens(source.get_name())) and classification != 'authored'
         authored = []
