@@ -9,9 +9,24 @@ import unreal as U
 
 import yori
 from asset_catalog import FOLIAGE
-from import_foliage_lods import apply_lods
+from import_foliage_lods import apply_lods, crown_path
 from mesh_import import import_mesh
 from foliage_package_repair import require_valid_or_missing
+from foliage_slots import restore_authored_slots
+
+
+def recorded_packages(report_path, folder, name):
+    """The owned LOD-folder packages this tree's previous successful import emitted (none without its report)."""
+    if not report_path.is_file():
+        return set()
+    prior = json.loads(report_path.read_text())
+    if 'packages' in prior:
+        return set(prior['packages'])
+    # Reports from before membership was recorded: its LOD chain, and any owned material its levels bound.
+    found = {folder + f'/{name}_LOD{i}' for i in range(1, len(prior.get('screen_sizes', [])))}
+    for palette in prior.get('materials_by_lod', []):
+        found.update(m.split('.')[0] for m in palette if m.startswith(folder + '/'))
+    return found
 
 
 def verify_bounds(mesh, authored):
@@ -45,7 +60,12 @@ def main():
     path = '/Game/Japan/Assets/' + name
     folder = '/Game/Japan/FoliageLODs/' + name
     expected = {folder + f'/{name}_LOD{i}' for i in range(1, len(data['screen_sizes']))}
+    # The far crown's material lives with the LODs; it is retired only when the manifest drops the crown.
+    if data.get('crown'):
+        expected.add(crown_path(data['crown'], folder))
     require_valid_or_missing(yori.GAME / 'unreal/Content', name)
+    report_path = yori.OUT / 'imports/foliage' / (name + '.json')
+    previous = recorded_packages(report_path, folder, name)
     def prepare_import():
         if editor.does_asset_exist(path):
             previous = editor.load_asset(path)
@@ -62,6 +82,7 @@ def main():
     # A saved base may still contain the previous longer assembled chain.
     # Trim it only after admission, then build and validate the current manifest.
     mesh.set_num_source_models(1)
+    restore_authored_slots(mesh, name)
     verify_bounds(mesh, data['bounds'])
     palette = []
     for index, slot in enumerate(mesh.get_editor_property('static_materials')):
@@ -82,10 +103,6 @@ def main():
         raise RuntimeError('Missing body setup: ' + name)
     flag = {'complex': U.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE, 'default': U.CollisionTraceFlag.CTF_USE_DEFAULT}
     body.set_editor_property('collision_trace_flag', flag[data['collision']])
-    for asset in editor.list_assets(folder, recursive=True):
-        package = asset.split('.')[0]
-        if package not in expected and not editor.delete_asset(asset):
-            raise RuntimeError('Cannot retire owned LOD: ' + asset)
     report = apply_lods(mesh, data, source, meshes, seed=seed, folder=folder, interface=interface,
                         reuse_validator=reusable_collision)
     report['triangles'] = [mesh.get_num_triangles(i) for i in range(mesh.get_num_lods())]
@@ -106,7 +123,23 @@ def main():
         assert mesh.get_editor_property(key) == value, (name, key, value)
     if not editor.save_loaded_asset(mesh, False):
         raise RuntimeError('Could not save foliage package: ' + path)
-    report_path = yori.OUT / 'imports/foliage' / (name + '.json')
+    # Only now, with the replacement chain validated and saved, retire this tree's obsolete LODs and dropped crown
+    # material, and only when nothing outside that obsolete set still uses them. Obsolete means recorded by this
+    # producer's previous report and not current; anything else in the folder is left alone.
+    packages = [(asset, asset.split('.')[0]) for asset in editor.list_assets(folder, recursive=True)]
+    stale = [asset for asset, package in packages if package in previous and package not in expected]
+    for asset, package in packages:
+        if package not in previous and package not in expected:
+            U.log('FOLIAGE IMPORT keeps unrecorded package ' + asset)
+    obsolete = {asset.split('.')[0] for asset in stale}
+    for asset in stale:
+        users = set(editor.find_package_referencers_for_asset(asset, False)) - obsolete
+        if users:
+            raise RuntimeError('Obsolete owned LOD still referenced: ' + asset + ' by ' + ', '.join(sorted(users)))
+    for asset in stale:
+        if not editor.delete_asset(asset):
+            raise RuntimeError('Cannot retire owned LOD: ' + asset)
+    report['packages'] = sorted(expected)
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, indent=2) + '\n')
     U.log('FOLIAGE IMPORT COMPLETE ' + name + ': ' + json.dumps(report))

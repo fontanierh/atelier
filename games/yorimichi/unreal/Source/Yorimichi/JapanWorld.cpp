@@ -16,6 +16,7 @@
 #include "Engine/DirectionalLight.h"
 #include "Components/LightComponent.h"
 #include "EngineUtils.h"
+#include "UObject/UObjectIterator.h"
 #include "Engine/StaticMesh.h"
 #if WITH_EDITOR
 #include "StaticMeshCompiler.h"
@@ -877,6 +878,7 @@ void AJapanWorld::ApplyGroupDiagnostics()
             {
                 Group->SetCullDistances(Cull > 0.f ? FMath::RoundToInt(Cull*.8f) : 0,
                                         Cull > 0.f ? FMath::RoundToInt(Cull) : 0);
+                ForgetScreenSizeCull(Group);
                 ++Touched;
             }
         UE_LOG(LogTemp,Display,TEXT("DIAGNOSTIC backdrop cull %.0f cm on %d groups"),Cull,Touched);
@@ -901,6 +903,90 @@ void AJapanWorld::ApplyGroupDiagnostics()
            *Wanted,Hidden,Groups.Num());
 }
 
+// Every static mesh and instanced group stops drawing at this multiple of its bounds radius: at 1000 an object is
+// about 4 px across at 1440p and a 70 degree FOV. Distant props and trees below that size cost depth, base and shadow
+// work for no visible detail (view 1: 0.7 ms of 18.8 on an M1 Max). Large meshes (ground, sea, mountains) get
+// distances far past the world, so nothing near or large changes. 0 restores each component's own distances.
+static TAutoConsoleVariable<float> CVarScreenSizeCull(TEXT("japan.ScreenSizeCull"),1000.f,
+    TEXT("Cull static meshes beyond this multiple of their bounds radius (0 = off)."),ECVF_Default);
+
+void AJapanWorld::ApplyScreenSizeCull()
+{
+    const float Multiple = FMath::Max(0.f,CVarScreenSizeCull.GetValueOnGameThread());
+    if (!bLoaded) return;
+    // A changed multiple or an owned writer (profile, diagnostics) revisits at once; otherwise a scan every few seconds
+    // picks up spawned components and distances other code has set since.
+    const bool bChanged = !FMath::IsNearlyEqual(Multiple,AppliedScreenSizeCull);
+    const double Now = FPlatformTime::Seconds();
+    if (!bChanged && !bScreenSizeCullDirty && Now < NextScreenSizeCullScan) return;
+    if (Multiple <= 0.f && !bChanged && ScreenSizeCullStates.IsEmpty()) return;
+    AppliedScreenSizeCull = Multiple;
+    bScreenSizeCullDirty = false;
+    NextScreenSizeCullScan = Now + 5.;
+    int32 Touched = 0;
+    for (TObjectIterator<UStaticMeshComponent> It; It; ++It)
+    {
+        UStaticMeshComponent* Component = *It;
+        if (!IsValid(Component) || Component->GetWorld() != GetWorld() || !Component->GetStaticMesh()) continue;
+        auto* Instanced = Cast<UInstancedStaticMeshComponent>(Component);
+        const FIntPoint Current = Instanced
+            ? FIntPoint(Instanced->InstanceStartCullDistance,Instanced->InstanceEndCullDistance)
+            : FIntPoint(0,FMath::RoundToInt(Component->LDMaxDrawDistance));
+        FScreenSizeCullState* State = ScreenSizeCullStates.Find(Component);
+        if (!State)
+        {
+            if (Multiple <= 0.f) continue;
+            State = &ScreenSizeCullStates.Add(Component,FScreenSizeCullState{Current,Current});
+        }
+        // Distances someone else wrote since (a profile, a diagnostic, a spawner) become the uncapped base.
+        else if (Current != State->Written) State->Base = Current;
+        FIntPoint Target = State->Base;
+        if (Multiple > 0.f)
+        {
+            // An instanced group's cull is one absolute distance for every instance, and each instance carries its own
+            // authored scale: cap at the largest instance, so none vanishes before it is a few pixels across.
+            const int32 Count = Instanced ? Instanced->GetInstanceCount() : 1;
+            if (State->Radius <= 0.f || State->Instances != Count)
+            {
+                float Scale = 1.f;
+                if (Instanced)
+                {
+                    Scale = 0.f;
+                    for (const FInstancedStaticMeshInstanceData& Data : Instanced->PerInstanceSMData)
+                        Scale = FMath::Max(Scale,Data.Transform.GetScaleVector().GetAbsMax());
+                }
+                State->Radius = Component->GetStaticMesh()->GetBounds().SphereRadius*Scale;
+                State->Instances = Count;
+            }
+            // A group with no instances yet keeps its distances until the scan that sees them.
+            const float Radius = State->Radius*Component->GetComponentScale().GetAbsMax();
+            if (Radius > 0.f)
+            {
+                const int32 Limit = FMath::Clamp(FMath::RoundToInt(Multiple*Radius),1,MAX_int32/2);
+                Target.Y = State->Base.Y > 0 ? FMath::Min(State->Base.Y,Limit) : Limit;
+                if (Instanced && Target.Y != State->Base.Y) Target.X = FMath::Min(State->Base.X,FMath::RoundToInt(Target.Y*.8f));
+            }
+        }
+        if (Target != Current)
+        {
+            if (Instanced) Instanced->SetCullDistances(Target.X,Target.Y);
+            else Component->SetCullDistance(float(Target.Y));
+            ++Touched;
+        }
+        State->Written = Target;
+    }
+    // Off: every component is back on its current uncapped distances and nothing more is tracked.
+    if (Multiple <= 0.f) ScreenSizeCullStates.Empty();
+    if (bChanged || Touched) UE_LOG(LogTemp,Display,TEXT("SCREEN SIZE CULL %.0f x radius on %d components"),Multiple,Touched);
+}
+
+void AJapanWorld::ForgetScreenSizeCull(UStaticMeshComponent* Component)
+{
+    // Its owner just wrote new uncapped distances: the next pass takes them as the base and caps them again.
+    ScreenSizeCullStates.Remove(Component);
+    bScreenSizeCullDirty = true;
+}
+
 void AJapanWorld::ApplyPerformanceSettings(bool bPerformance, float TreeSwayMetres, float ForestDetail, float TreeShadowMetres)
 {
     if (!bLoaded || (AppliedPerformanceMode == int32(bPerformance) && AppliedTreeSway == TreeSwayMetres && AppliedForestDetail == ForestDetail &&
@@ -909,7 +995,10 @@ void AJapanWorld::ApplyPerformanceSettings(bool bPerformance, float TreeSwayMetr
     {
         const FString Name = Group->GetStaticMesh()->GetName();
         if (Name.StartsWith(TEXT("Grass")))
+        {
             Group->SetCullDistances(bPerformance ? 3500 : 6000,bPerformance ? 5000 : 8000);
+            ForgetScreenSizeCull(Group);
+        }
         // A swaying tree is drawn again into the velocity pass and with its full vertex work into the
         // depth and shadow passes; past this distance its sway is under a pixel or two.
         if (Name.StartsWith(TEXT("Tree")) || Name.StartsWith(TEXT("Bush")))
@@ -927,6 +1016,7 @@ void AJapanWorld::ApplyPerformanceSettings(bool bPerformance, float TreeSwayMetr
         Twin->SetWorldPositionOffsetDisableDistance(FMath::RoundToInt(TreeSwayMetres*100.f));
         Twin->SetLODDistanceScale(ForestDetail);
         Twin->SetCullDistances(FMath::RoundToInt(TreeShadowMetres*90.f),FMath::RoundToInt(TreeShadowMetres*100.f));
+        ForgetScreenSizeCull(Twin);
     }
     AppliedForestDetail = ForestDetail;
     AppliedTreeShadow = TreeShadowMetres;
@@ -1056,6 +1146,7 @@ void AJapanWorld::Tick(float Dt)
     UpdateFogDensity(Dt);
     UpdateNorthAerialGrade(Dt);
     ApplyGroupDiagnostics();
+    ApplyScreenSizeCull();
     if (!WindMPC) return;
     UMaterialParameterCollectionInstance* I = GetWorld()->GetParameterCollectionInstance(WindMPC);
     if (!I) return;
