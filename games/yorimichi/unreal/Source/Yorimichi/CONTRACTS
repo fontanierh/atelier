@@ -167,11 +167,15 @@ of a startup memory improvement.
 
 @cc [owner:fontanierh,label:correctness;performance] foliage-game-vertex-residency
 An uncooked non-editor game MAY release CPU vertex copies only for owned prepared render-only
-foliage variants after their completed GPU upload. Active collision carriers, index arrays, saved packages,
-vertex/UV/section metadata and GPU resources MUST remain intact. Editor/PIE, commandlets, CPU-access,
+foliage variants after their completed GPU upload. Carrier position/index CPU data, saved packages,
+vertex/UV/section metadata, collision/navigation data and GPU resources MUST remain intact.
+Owned prepared carriers MAY release only tangent/UV/colour CPU copies when physical-material masks,
+hit-result UV queries, static-mesh Niagara samplers and component override vertex colours are absent.
+Pending geometry builds/collision cooks or unready collision MUST defer release. CPU shading readers
+MUST test GetAllowCPUAccess and use cooked collision or refuse rather than dereference cached pointers. Editor/PIE, commandlets, CPU-access,
 streamable, compiling, pending-upload, Nanite and ray-traced meshes MUST NOT use this path. Later CPU
-geometry readers or resource rebuilds MUST NOT use a released variant; use the unchanged original or
-the build-time preparation process. Actual physical memory and rendered/toggled gameplay MUST establish
+readers MUST NOT use released buffers; positions retained on carriers MAY serve geometry queries.
+Resource rebuilds MUST use the unchanged original or the build-time preparation process. Actual physical memory and rendered/toggled gameplay MUST establish
 the effect; resource size estimates alone are insufficient.
 
 @cc [owner:fontanierh,label:correctness;performance] foliage-render-only-collision-residency
@@ -189,7 +193,8 @@ collision. Source identity MUST remain a string across mode reloads. The selecte
 MUST preserve placements and scene queries, use simple trunk collision with passable leaves/bushes,
 and preserve rigid ground/building collision in mixed meshes. A mode change MUST detach/destroy the
 inactive mesh bindings and complete their release before loading the next mode, including rollback.
-Render-only CPU/physics cleanup MUST NOT touch an active collision carrier. Bush player interaction,
+Render-only physics cleanup MUST NOT touch an active collision carrier. Carrier CPU shading-copy cleanup
+MUST preserve position/index data and follow foliage-game-vertex-residency. Bush player interaction,
 see-through custom primitive data and rigid cloth motion MUST survive replacement.
 
 @cc [owner:fontanierh,label:correctness] city-tile-material-ownership

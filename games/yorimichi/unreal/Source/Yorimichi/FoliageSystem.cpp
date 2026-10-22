@@ -24,6 +24,10 @@
 #include "UObject/GarbageCollection.h"
 #if WITH_EDITOR
 #include "StaticMeshCompiler.h"
+#include "DistanceFieldAtlas.h"
+#include "MeshCardBuild.h"
+#include "PhysicsEngine/PhysicsSettings.h"
+#include "UObject/UObjectHash.h"
 #endif
 
 void UYorimichiFoliageSubsystem::Initialize(FSubsystemCollectionBase& Collection)
@@ -478,7 +482,7 @@ bool UYorimichiFoliageSubsystem::Register(UStaticMeshComponent* Component)
     Sources.Add(Entry);Apply(Sources.Last());
 #if WITH_EDITOR
     if (!GIsEditor && !IsRunningCommandlet() && !bStartupCompleted)
-        for (UStaticMesh* Value:{Optimized,Shadow,Patch}) if (Value && Value!=Mesh) StartupVertexCopies.Add(Value);
+        for (UStaticMesh* Value:{Mesh,Optimized,Shadow,Patch}) if (Value) StartupVertexCopies.Add(Value);
 #endif
     return true;
 }
@@ -487,19 +491,25 @@ void UYorimichiFoliageSubsystem::ReleaseStartupVertexCopies()
 {
 #if WITH_EDITOR
     // These copies exist because uncooked -game retains editor CPU arrays.
-    // Only our render-only assets qualify; active carriers still own collision and
-    // CPU queries. The caller has completed GPU upload before entering here.
+    // Carriers keep CPU positions/indices and all physics/navigation; only their
+    // shading copies may go. Render-only copies can also release CPU positions.
+    // The caller has completed GPU upload before entering here.
     if (GIsEditor || IsRunningCommandlet() || GetWorld()->WorldType!=EWorldType::Game || IsRayTracingEnabled()) return;
     check(IsInGameThread());
     int32 Released=0;TMap<FString,int32> Refusals;
     TSet<UStaticMesh*> Carriers;
     for (const auto& Entry:Sources) if (IsValid(Entry.Original)) Carriers.Add(Entry.Original->GetStaticMesh());
+    TArray<UObject*> NiagaraSamplers;
+    if (const auto* Type=FindObject<UClass>(nullptr,TEXT("/Script/Niagara.NiagaraDataInterfaceStaticMesh")))
+        GetObjectsOfClass(Type,NiagaraSamplers,true,RF_ClassDefaultObject|RF_ArchetypeObject);
     for (auto It=StartupVertexCopies.CreateIterator();It;++It)
     {
         UStaticMesh* Mesh=It->Get();
         if (!Mesh) { It.RemoveCurrent();continue; }
-        if (Carriers.Contains(Mesh))
-        { ++Refusals.FindOrAdd(TEXT("carrier_mesh"));It.RemoveCurrent();continue; }
+        const bool Carrier=Carriers.Contains(Mesh);
+        if (Carrier && (!Mesh->GetPathName().StartsWith(TEXT("/Game/FoliageResident/")) ||
+            Mesh->bSupportPhysicalMaterialMasks || UPhysicsSettings::Get()->bSupportUVFromHitResults || !NiagaraSamplers.IsEmpty()))
+        { ++Refusals.FindOrAdd(TEXT("carrier_cpu_consumer"));It.RemoveCurrent();continue; }
         auto* Render=Mesh->GetRenderData();
         const TCHAR* Refusal=!(Mesh->GetPathName().StartsWith(TEXT("/Game/FoliageSystem/")) ||
             Mesh->GetPathName().StartsWith(TEXT("/Game/FoliageResident/")))?TEXT("ownership"):
@@ -509,6 +519,9 @@ void UYorimichiFoliageSubsystem::ReleaseStartupVertexCopies()
         if (Refusal) { ++Refusals.FindOrAdd(Refusal);It.RemoveCurrent();continue; }
         if (Mesh->IsCompiling() || Mesh->HasPendingInitOrStreaming() || !Render->IsInitialized())
         { ++Refusals.FindOrAdd(TEXT("pending_initialization"));continue; }
+        if ((GDistanceFieldAsyncQueue && GDistanceFieldAsyncQueue->GetNumOutstandingTasks(Mesh)>0) ||
+            (GCardRepresentationAsyncQueue && GCardRepresentationAsyncQueue->GetNumOutstandingTasks(Mesh)>0))
+        { ++Refusals.FindOrAdd(TEXT("pending_geometry_build"));continue; }
         bool Ready=true;
         for (auto& LOD:Render->LODResources)
             if (LOD.GetNumVertices()>0 && (!LOD.VertexBuffers.StaticMeshVertexBuffer.IsValid() ||
@@ -521,9 +534,23 @@ void UYorimichiFoliageSubsystem::ReleaseStartupVertexCopies()
         { ++Refusals.FindOrAdd(TEXT("shared_collision_owner"));It.RemoveCurrent();continue; }
         if (Body && Body->CurrentCookHelper)
         { ++Refusals.FindOrAdd(TEXT("pending_physics_cook"));continue; }
+        if (Carrier)
+        {
+            bool ConsumersReady=true;
+            for (const auto& Entry:Sources)
+                if (IsValid(Entry.Original) && Entry.Original->GetStaticMesh()==Mesh)
+                {
+                    for (const auto& LOD:Entry.Original->LODData) if (LOD.OverrideVertexColors) ConsumersReady=false;
+                    if (Entry.Original->IsCollisionEnabled() && (!Body || !Body->bCreatedPhysicsMeshes || Body->bFailedToCreatePhysicsMeshes ||
+                        (Body->GetCollisionTraceFlag()==CTF_UseComplexAsSimple?Body->TriMeshGeometries.IsEmpty():Body->AggGeom.GetElementCount()==0))) ConsumersReady=false;
+                }
+            if (!ConsumersReady)
+            { ++Refusals.FindOrAdd(TEXT("carrier_pending_collision_or_override_colours"));continue; }
+        }
         const uint64 Before=FPlatformMemory::GetStats().UsedPhysical;
+        const uint64 CPUBefore=Render->GetCPUAccessMemoryOverhead();
         uint64 NavigationBytes=0;
-        if (Navigation)
+        if (!Carrier && Navigation)
         {
             auto& Triangles=Navigation->GetMutableTriMeshCollision();
             auto& Convex=Navigation->GetMutableConvexCollision();
@@ -532,9 +559,9 @@ void UYorimichiFoliageSubsystem::ReleaseStartupVertexCopies()
             Triangles.VertexBuffer.Empty();Triangles.IndexBuffer.Empty();
             Convex.VertexBuffer.Empty();Convex.IndexBuffer.Empty();
         }
-        Mesh->MarkAsNotHavingNavigationData();
+        if (!Carrier) Mesh->MarkAsNotHavingNavigationData();
         const int32 PhysicsMeshes=Body?Body->TriMeshGeometries.Num():0;
-        if (Body)
+        if (!Carrier && Body)
         {
             // No managed render copy owns physics or navigation. Never touch
             // the source/shared BodySetup, or cook/save a replacement here.
@@ -548,21 +575,23 @@ void UYorimichiFoliageSubsystem::ReleaseStartupVertexCopies()
             const uint32 Vertices=Buffers.StaticMeshVertexBuffer.GetNumVertices();
             const uint32 Channels=Buffers.StaticMeshVertexBuffer.GetNumTexCoords();
             const auto PositionRHI=Buffers.PositionVertexBuffer.VertexBufferRHI;
+            const auto* PositionCPU=Buffers.PositionVertexBuffer.GetVertexData();
             const auto TangentRHI=Buffers.StaticMeshVertexBuffer.TangentsVertexBuffer.VertexBufferRHI;
             const auto UVRHI=Buffers.StaticMeshVertexBuffer.TexCoordVertexBuffer.VertexBufferRHI;
             Buffers.StaticMeshVertexBuffer.CleanUp();
-            Buffers.PositionVertexBuffer.CleanUp();
+            if (!Carrier) Buffers.PositionVertexBuffer.CleanUp();
             Buffers.ColorVertexBuffer.CleanUp();
             check(!Buffers.StaticMeshVertexBuffer.GetAllowCPUAccess() &&
-                !Buffers.PositionVertexBuffer.GetAllowCPUAccess() && !Buffers.ColorVertexBuffer.GetAllowCPUAccess());
+                !Buffers.ColorVertexBuffer.GetAllowCPUAccess());
+            check(Carrier?PositionCPU==Buffers.PositionVertexBuffer.GetVertexData():!Buffers.PositionVertexBuffer.GetAllowCPUAccess());
             check(Vertices==Buffers.StaticMeshVertexBuffer.GetNumVertices() && Channels==Buffers.StaticMeshVertexBuffer.GetNumTexCoords());
             check(PositionRHI==Buffers.PositionVertexBuffer.VertexBufferRHI &&
                 TangentRHI==Buffers.StaticMeshVertexBuffer.TangentsVertexBuffer.VertexBufferRHI &&
                 UVRHI==Buffers.StaticMeshVertexBuffer.TexCoordVertexBuffer.VertexBufferRHI);
         }
-        UE_LOG(LogTemp,Display,TEXT("FOLIAGE STARTUP VERTEX RELEASE %s process_mib_before=%.1f process_mib_after=%.1f"),
-            *Mesh->GetPathName(),Before/1048576.,FPlatformMemory::GetStats().UsedPhysical/1048576.);
-        UE_LOG(LogTemp,Display,TEXT("FOLIAGE STARTUP UNUSED COLLISION %s physics_meshes=%d nav_mib=%.3f"),
+        UE_LOG(LogTemp,Display,TEXT("FOLIAGE STARTUP VERTEX RELEASE %s carrier=%d cpu_mib_before=%.3f cpu_mib_after=%.3f process_mib_before=%.1f process_mib_after=%.1f"),
+            *Mesh->GetPathName(),Carrier,CPUBefore/1048576.,Render->GetCPUAccessMemoryOverhead()/1048576.,Before/1048576.,FPlatformMemory::GetStats().UsedPhysical/1048576.);
+        if (!Carrier) UE_LOG(LogTemp,Display,TEXT("FOLIAGE STARTUP UNUSED COLLISION %s physics_meshes=%d nav_mib=%.3f"),
             *Mesh->GetPathName(),PhysicsMeshes,NavigationBytes/1048576.);
         ++Released;It.RemoveCurrent();
     }
@@ -802,9 +831,12 @@ bool UYorimichiFoliageSubsystem::ReloadMode(bool Enabled)
             TSet<UStaticMesh*> Carriers;
             for (const auto& Entry:Sources) if (IsValid(Entry.Original)) Carriers.Add(Entry.Original->GetStaticMesh());
             for (const auto& Entry:Sources)
+            {
+                if (IsValid(Entry.Original)) StartupVertexCopies.Add(Entry.Original->GetStaticMesh());
                 for (auto* Renderer:{Entry.Visual.Get(),Entry.NearVisual.Get(),Entry.Patches.Get(),Entry.Shadow.Get()})
                     if (Renderer && Renderer->GetStaticMesh() && !Carriers.Contains(Renderer->GetStaticMesh()))
                         StartupVertexCopies.Add(Renderer->GetStaticMesh());
+            }
             ENQUEUE_RENDER_COMMAND(FoliageModeUpload)([](FRHICommandListImmediate& RHICmdList)
             { RHICmdList.SubmitAndBlockUntilGPUIdle(true); });
             FlushRenderingCommands();ReleaseStartupVertexCopies();

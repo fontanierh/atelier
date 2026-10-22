@@ -57,7 +57,9 @@ static bool ApplyCityTreeLODs(AJapanWorld* Landscape,const FString& Tag,bool Ena
         if (!OriginalData || OriginalData->LODResources.Num()==0) return false;
         const auto& A=OriginalData->LODResources[0];const auto& B=Data->LODResources[0];
         const auto& AP=A.VertexBuffers.PositionVertexBuffer;const auto& BP=B.VertexBuffers.PositionVertexBuffer;
-        if (!AP.GetVertexData() || !BP.GetVertexData() ||
+        if (!AP.GetAllowCPUAccess() || !BP.GetAllowCPUAccess() ||
+            !A.VertexBuffers.StaticMeshVertexBuffer.GetAllowCPUAccess() || !B.VertexBuffers.StaticMeshVertexBuffer.GetAllowCPUAccess() ||
+            !AP.GetVertexData() || !BP.GetVertexData() ||
             !A.VertexBuffers.StaticMeshVertexBuffer.GetTangentData() || !B.VertexBuffers.StaticMeshVertexBuffer.GetTangentData() ||
             AP.GetNumVertices()!=BP.GetNumVertices() ||
             A.GetNumTriangles()!=B.GetNumTriangles() || Original->GetMaterial(0)!=Pair.Value->GetMaterial(0))
@@ -73,7 +75,7 @@ static bool ApplyCityTreeLODs(AJapanWorld* Landscape,const FString& Tag,bool Ena
         {
             FBox3f Bounds(ForceInit);
             const auto& Positions=LOD.VertexBuffers.PositionVertexBuffer;
-            if (!Positions.GetVertexData() || Positions.GetNumVertices()==0 || Expected<=0.)
+            if (!Positions.GetAllowCPUAccess() || !Positions.GetVertexData() || Positions.GetNumVertices()==0 || Expected<=0.)
             { UE_LOG(LogTemp,Error,TEXT("Experiment LOD has no CPU positions for unit validation; refusing swap")); return false; }
             for (uint32 V=0;V<Positions.GetNumVertices();++V) Bounds+=Positions.VertexPosition(V);
             const double Ratio=Bounds.GetExtent().Size()/Expected;
