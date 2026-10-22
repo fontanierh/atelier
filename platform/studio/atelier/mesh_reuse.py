@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import time
 
 from .native_protocol import (atomic_json, CheckpointError, canonical, read_json, relative, safe_destination,
                               ReadStore, entry_path, validate_action, context)
@@ -164,21 +165,26 @@ def native_policy(source, functions, script, *, revision=None, inputs=None):
     return policy(source, functions, resolve)
 
 
-def revision_source(repo, revision, filename):
+def revision_source(repo, revision, filename, *, timeout=10):
     """Read a captured clean revision without executing donor code or fetching."""
     if not isinstance(revision, str) or not re.fullmatch('[0-9a-f]{40}', revision):
         return None
     name = relative(filename).as_posix()
     try:
         result = subprocess.run(['git', 'show', revision + ':' + name], cwd=repo,
-                                capture_output=True, timeout=10)
+                                capture_output=True, timeout=timeout)
         return result.stdout.decode() if result.returncode == 0 else None
     except (OSError, subprocess.SubprocessError, UnicodeError):
         return None
 
 
 def saved_source(repo, filename, recorded):
-    """Resolve a saved per-file input identity to existing immutable Git bytes.
+    """@cc [owner:fontanierh,label:correctness] recorded-local-source-discovery
+    Source bytes MUST match the recorded legacy or Merkle file identity. Search
+    current-HEAD path history first; only on miss MAY bounded local-ref discovery
+    inspect at most 64 additional unique revisions within a ten-second fallback
+    budget. Ref names MUST NOT establish compatibility. Never fetch or execute
+    historical source, and never persist negative evidence across new local refs.
 
     Recognizes the published legacy basename+bytes and single-file Merkle
     algorithms. This recovers evidence without rewriting a successful stamp.
@@ -193,15 +199,44 @@ def saved_source(repo, filename, recorded):
         return None
     if revisions.returncode:
         return None
-    for revision in revisions.stdout.splitlines():
+    seen = set()
+    def matches(source):
+        if source is None:
+            return False
+        raw = source.encode()
+        old = hashlib.sha256(Path(name).name.encode() + raw).hexdigest()
+        merkle = identity({'schema': 1, 'files': {'0/.': {
+            'kind': 'file', 'size': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}}})
+        return recorded in (old, merkle)
+    for revision in revisions.stdout.splitlines()[:64]:
+        if revision in seen or not re.fullmatch('[0-9a-f]{40}', revision):
+            continue
+        seen.add(revision)
         source = revision_source(repo, revision, name)
-        if source is not None:
-            raw = source.encode()
-            old = hashlib.sha256(Path(name).name.encode() + raw).hexdigest()
-            merkle = identity({'schema': 1, 'files': {'0/.': {
-                'kind': 'file', 'size': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}}})
-            if recorded in (old, merkle):
-                return source
+        if matches(source):
+            return source
+    # A stopped producer may have committed its exact source on another local
+    # branch. Ref names discover bytes; only the recorded file identity admits them.
+    deadline = time.monotonic() + 10
+    try:
+        revisions = subprocess.run(['git', 'log', '--all', '-n', '128', '--format=%H', '--', name],
+                                   cwd=repo, capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.SubprocessError, UnicodeError):
+        return None
+    if revisions.returncode:
+        return None
+    additional = 0
+    for revision in revisions.stdout.splitlines()[:128]:
+        if revision in seen or not re.fullmatch('[0-9a-f]{40}', revision):
+            continue
+        remaining = deadline - time.monotonic()
+        if additional == 64 or remaining <= 0:
+            break
+        seen.add(revision)
+        additional += 1
+        source = revision_source(repo, revision, name, timeout=remaining)
+        if matches(source) and time.monotonic() < deadline:
+            return source
     return None
 
 
@@ -421,17 +456,35 @@ class Receipts:
         self.content = Path(content)
         self.header = dict(schema=1, context=context, policy=import_policy)
         self.records = {}
+        self.previous = None
         if self.path.exists():
             try:
                 saved = read_json(self.path)
                 if (isinstance(saved, dict) and isinstance(saved.get('meshes'), dict)
-                        and all(saved.get(key) == value for key, value in self.header.items())):
-                    self.records = saved['meshes']
+                        and saved.get('schema') == self.header['schema'] and saved.get('context') == context):
+                    self.previous = saved
+                    if saved.get('policy') == import_policy:
+                        self.records = saved['meshes']
             except (OSError, ValueError, CheckpointError):
                 pass
 
     def matches(self, name, key, packages):
-        old = self.records.get(name)
+        return self._matches(self.records.get(name), key, packages)
+
+    def matches_previous(self, name, key, packages, policies):
+        """@cc [owner:fontanierh,label:correctness] unchanged-production-before-revalidation
+        A previous receipt MAY supply saved byte proof only under its exact reproduced
+        historical policy and unchanged engine context. The caller MUST separately prove
+        current raw-geometry/owner compatibility and run current native validation. Every
+        source identity and saved package sidecar MUST still match; this MUST NOT publish
+        a current receipt or treat a validator-only change as a geometry change.
+        """
+        if (self.previous is None or not isinstance(self.previous.get('policy'), str)
+                or self.previous['policy'] not in policies):
+            return False
+        return self._matches(self.previous['meshes'].get(name), key, packages)
+
+    def _matches(self, old, key, packages):
         if not isinstance(old, dict) or old.get('identity') != key:
             return False
         try:

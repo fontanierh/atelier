@@ -57,6 +57,8 @@ def test_normal_belmonte_producer_retires_superseded_glbs_without_touching_sourc
     script = RECIPE.REGIONS / 'belmonte/build.py'
     spec = importlib.util.spec_from_file_location('retired_model_pieces', script.with_name('model_pieces.py'))
     pieces = importlib.util.module_from_spec(spec); spec.loader.exec_module(pieces)
+    spec = importlib.util.spec_from_file_location('retired_ground_pieces', script.with_name('ground_pieces.py'))
+    ground = importlib.util.module_from_spec(spec); spec.loader.exec_module(ground)
     main = next(node for node in ast.parse(script.read_text()).body if isinstance(node, ast.FunctionDef) and node.name == 'main')
     scope = dict(OUT=out / 'belmonte', json=json, shutil=shutil, source=SimpleNamespace(
         LIBRARY=library, manifest=manifest, sha=sha, triangles=lambda _: [], Surface=lambda _: None,
@@ -65,7 +67,7 @@ def test_normal_belmonte_producer_retires_superseded_glbs_without_touching_sourc
         surroundings=surroundings, np=np, planting=SimpleNamespace(replacements=lambda *a: ({}, {}), woodland=lambda _: {}),
         clear_railway=lambda _: {}, L=SimpleNamespace(ORIGIN=[0, 0, 0], native_origin=lambda: [0, 0, 0],
             BOUNDS=[0, 0, 10, 10], RAILWAY={}), map_zones=lambda _: [], tv_spots=lambda _: [],
-        source_records=model_files.source_records, retain_files=model_files.retain_files, model_pieces=pieces, Path=Path)
+        source_records=model_files.source_records, retain_files=model_files.retain_files, model_pieces=pieces, ground_pieces=ground, Path=Path)
     exec(compile(ast.Module(body=[main], type_ignores=[]), str(script), 'exec'), scope)
     producer = replace(RECIPE.belmonte_steps(out)[0], commands=[build.Call('real producer', lambda ctx, log: scope['main']())],
                        inputs=[settings, library, script], needs=[], heavy=False)

@@ -1,5 +1,6 @@
 #include "JapanFootsteps.h"
 #if WITH_DEV_AUTOMATION_TESTS
+#include "HAL/PlatformMisc.h"
 #include "Misc/AutomationTest.h"
 #include "Sound/SoundWave.h"
 
@@ -44,6 +45,25 @@ bool FJapanFootstepShuffleTest::RunTest(const FString&)
     }
     TestTrue(TEXT("An unknown surface falls back to the default surface's samples"),
         Pool.Steps.Contains(Foot->DrawStep(TEXT("unmapped"))));
+    // The opt-in receiving canary saves this fixture with the old module before
+    // changing source. Keep the ordinary shuffle unit test independent of assets.
+    const FString SavedPath=FPlatformMisc::GetEnvironmentVariable(TEXT("ATELIER_AUDIO_TYPE_FIXTURE"));
+    if (!SavedPath.IsEmpty())
+    {
+        auto* Saved=LoadObject<UJapanFootstepSet>(nullptr,*SavedPath);
+        if (!TestNotNull(TEXT("Previously serialized footstep library loads"),Saved)) return false;
+        TestEqual(TEXT("Saved class resolves to its new module"),Saved->GetClass()->GetPathName(),
+            FString(TEXT("/Script/YorimichiAssets.JapanFootstepSet")));
+        TestNotNull(TEXT("Saved attenuation survives the redirect"),Saved->Attenuation.Get());
+        Foot->Set=Saved;
+        Foot->Bags.Reset();
+        auto* Restored=Foot->DrawStep(Saved->DefaultSurface);
+        if (!TestNotNull(TEXT("Runtime consumer draws a saved imported sample"),Restored)) return false;
+        TestTrue(TEXT("Saved sample retains positive duration"),Restored->Duration>0.f);
+        TestEqual(TEXT("Saved default bank supplies unknown surfaces"),
+            Foot->DrawStep(TEXT("compatibility_unmapped")),Restored);
+        UE_LOG(LogTemp,Display,TEXT("SAVED FOOTSTEP MODULE REDIRECT consumer verified"));
+    }
     return true;
 }
 #endif

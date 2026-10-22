@@ -43,9 +43,9 @@ def main():
     origin=np.asarray(before['belmonte_ground']['origin_cm'])/np.array([100.,-100.,100.])
     valley=[]
     for group in before['belmonte_ground']['groups']:
-        name=group['asset'].rsplit('/',1)[-1].split('.')[0]
+        name=group['name']
         print('GONDOLA GROUND:',name,flush=True)
-        triangles=clipped(source.triangles(build/'belmonte/glb'/f'{name}.glb')+origin,GROUND_BOUNDS)
+        triangles=clipped(source.triangles(build/'belmonte'/group['path'])+origin,GROUND_BOUNDS)
         if name=='SM_BM_NorthApron':
             surfaces['apron']=triangles
         else:

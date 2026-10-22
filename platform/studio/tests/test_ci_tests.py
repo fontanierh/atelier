@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import xml.etree.ElementTree as ET
 
 import pytest
 
@@ -16,7 +17,7 @@ def run_group(root, group):
     report = root / f'{group}.json'
     result = subprocess.run(
         [sys.executable, str(RUNNER), group, '--collection-report', str(report), '-q'],
-        cwd=root, env={**os.environ, 'PYTEST_DISABLE_PLUGIN_AUTOLOAD': '1', 'PYTEST_ADDOPTS': ''},
+        cwd=root, env={**os.environ, 'ATELIER_CI_WORKERS': '1', 'PYTEST_DISABLE_PLUGIN_AUTOLOAD': '1', 'PYTEST_ADDOPTS': ''},
         capture_output=True, text=True, timeout=20)
     return result, json.loads(report.read_text()) if report.exists() else None
 
@@ -61,3 +62,24 @@ def test_pytest_failures_still_fail(tmp_path, source, group, exit_code):
     (tmp_path / 'test_case.py').write_text(source)
     result, _ = run_group(tmp_path, group)
     assert result.returncode == exit_code, result.stdout + result.stderr
+
+
+def test_multi_worker_shards_preserve_collection_and_merge_junit(tmp_path):
+    (tmp_path / 'pytest.ini').write_text('[pytest]\ntestpaths = games\n')
+    for idx in range(3):
+        path = tmp_path / f'games/new/tests/test_part_{idx}.py'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f'def test_case_{idx}():\n    assert {idx} >= 0\n')
+    report = tmp_path / 'games.json'
+    junit = tmp_path / 'results.xml'
+    result = subprocess.run(
+        [sys.executable, str(RUNNER), 'games',
+         '--collection-report', str(report), f'--junitxml={junit}', '-q'],
+        cwd=tmp_path, env={**os.environ, 'ATELIER_CI_WORKERS': '2', 'PYTEST_DISABLE_PLUGIN_AUTOLOAD': '1', 'PYTEST_ADDOPTS': ''},
+        capture_output=True, text=True, timeout=20)
+    assert result.returncode == 0, result.stdout + result.stderr
+    data = json.loads(report.read_text())
+    assert len(data['selected']) == 3
+    tree = ET.parse(junit)
+    names = {tc.attrib['name'] for tc in tree.iter('testcase')}
+    assert names == {'test_case_0', 'test_case_1', 'test_case_2'}

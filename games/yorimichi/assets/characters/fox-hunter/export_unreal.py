@@ -108,10 +108,11 @@ def main(args):
 
     common = dict(use_selection=True, apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL', axis_forward='-Y', axis_up='Z', add_leaf_bones=False,
                   use_armature_deform_only=False, bake_anim_use_nla_strips=False, bake_anim_use_all_actions=False, bake_anim_simplify_factor=0,
-                  bake_anim_step=1, mesh_smooth_type='FACE', use_mesh_modifiers=False, path_mode='ABSOLUTE')
+                  bake_anim_step=1, mesh_smooth_type='FACE', use_mesh_modifiers=False, path_mode='RELATIVE')
     if not args.clips_only:
         select([arm, body])
-        bpy.ops.export_scene.fbx(filepath=str(OUT / 'fbx/FoxHunter.fbx'), object_types={'ARMATURE', 'MESH'}, bake_anim=False, **common)
+        from atelier.blender.fbx import export_fbx as export_scene_fbx
+        export_scene_fbx(filepath=str(OUT / 'fbx/FoxHunter.fbx'), object_types={'ARMATURE', 'MESH'}, bake_anim=False, **common)
     arm.data.pose_position = 'POSE'
     wanted = args.clips.split(',') if args.clips else None
     clips = {}
@@ -156,7 +157,8 @@ def main(args):
         scene.frame_start, scene.frame_end = 0, last
         scene.frame_set(0)
         select([arm, body])
-        bpy.ops.export_scene.fbx(filepath=str(OUT / 'fbx' / f'A_Fox{name}.fbx'), object_types={'ARMATURE', 'MESH'}, bake_anim=True, **common)
+        from atelier.blender.fbx import export_fbx as export_scene_fbx
+        export_scene_fbx(filepath=str(OUT / 'fbx' / f'A_Fox{name}.fbx'), object_types={'ARMATURE', 'MESH'}, bake_anim=True, **common)
         clips[name] = entry
         print('FOX_CLIP_EXPORTED', name, entry['duration'], 'travel', entry['travel_cm'], 'yaw', entry['yaw_degrees'], flush=True)
     arm.animation_data.action = None

@@ -89,29 +89,33 @@ def _refine(V, N, F, mask, parent):
     """Split the faces in `mask` with an edge longer than FINE at their edges' midpoints (shared, so neighbours stay
     joined), again until none is; the T-junctions left against the faces not split are split later
     (tjunction.fix_tjunctions)."""
-    V, N = list(V), list(N)
+    V, N = np.asarray(V, 'f8'), np.asarray(N, 'f8')
     for _ in range(6):
-        P = np.asarray(V)
-        e = np.linalg.norm(P[F] - P[np.roll(F, -1, 1)], axis=2).max(1)
+        e = np.linalg.norm(V[F] - V[np.roll(F, -1, 1)], axis=2).max(1)
         split = mask & (e > FINE)
         if not split.any():
             break
+        n0 = len(V)
+        new_V, new_N = [], []
         mid, out, owner = {}, [], []
 
         def m(a, b):
             key = (min(a, b), max(a, b))
             if key not in mid:
-                V.append((V[a] + V[b]) / 2); N.append((N[a] + N[b]) / 2); mid[key] = len(V) - 1
+                new_V.append((V[a] + V[b]) / 2); new_N.append((N[a] + N[b]) / 2); mid[key] = n0 + len(new_V) - 1
             return mid[key]
         for f in np.flatnonzero(split):
-            a, b, c = F[f]
+            a, b, c = int(F[f, 0]), int(F[f, 1]), int(F[f, 2])
             ab, bc, ca = m(a, b), m(b, c), m(c, a)
             out += [[a, ab, ca], [ab, b, bc], [ca, bc, c], [ab, bc, ca]]
             owner += [parent[f]] * 4
+        if new_V:
+            V = np.concatenate([V, np.array(new_V, 'f8')])
+            N = np.concatenate([N, np.array(new_N, 'f8')])
         F = np.concatenate([F[~split], np.array(out, 'i8')])
         parent = np.concatenate([parent[~split], np.array(owner, 'i8')])
         mask = np.r_[mask[~split], np.ones(len(out), bool)]
-    return np.array(V), np.array(N), F, parent
+    return V, N, F, parent
 
 
 def _level(V, F, flat):
@@ -181,9 +185,12 @@ def plan(V, N, F, cls, ride=0):
     best = None
     for along in (0, 1):
         n = (np.array(BOX if along == 0 else BOX[::-1]) / GRID).astype(int)
-        cells = [(dj, di) for dj in range(n[1] + 1) for di in range(n[0] + 1)]
-        c = _window(np.where(np.isfinite(hi_y), clear, -np.inf), cells, np.minimum)
-        flat_box = _window(hi_y, cells, np.maximum) - _window(lo_y, cells, np.minimum) <= LEVEL
+        rows = [(dj, 0) for dj in range(n[1] + 1)]
+        cols = [(0, di) for di in range(n[0] + 1)]
+        c = _window(_window(np.where(np.isfinite(hi_y), clear, -np.inf), rows, np.minimum), cols, np.minimum)
+        box_hi = _window(_window(hi_y, rows, np.maximum), cols, np.maximum)
+        box_lo = _window(_window(lo_y, rows, np.minimum), cols, np.minimum)
+        flat_box = box_hi - box_lo <= LEVEL
         step = int(TILE / GRID)
         c = np.where(flat_box, c, -np.inf)[::step, ::step]       # origins on the tiles
         jb, ib = np.unravel_index(c.argmax(), c.shape)

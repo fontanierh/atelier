@@ -24,9 +24,11 @@ class Mesh(Properties):
         super().__init__(body_setup=Properties(collision_trace_flag=None), static_materials=[])
         self.mutations = mutations
         self.primitives, self.convex = 0, 1
+        self.lod_count = 4
 
     def set_num_source_models(self, count):
         self.mutations.append(('reset-lods', self, count))
+        self.lod_count = count
 
     def get_name(self):
         return 'Tree_Test'
@@ -35,10 +37,22 @@ class Mesh(Properties):
         return SimpleNamespace(min=SimpleNamespace(x=0, y=0, z=0), max=SimpleNamespace(x=100, y=200, z=300))
 
     def get_num_lods(self):
-        return 1
+        return self.lod_count
 
     def get_num_triangles(self, level):
         return 1
+
+
+def _real_module(name):
+    spec = importlib.util.spec_from_file_location(name, Path(__file__).resolve().parents[1] / f'unreal/Scripts/{name}.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _prior(owner, **report):
+    owner.report.parent.mkdir(parents=True, exist_ok=True)
+    owner.report.write_text(json.dumps(report))
 
 
 @pytest.fixture
@@ -47,7 +61,7 @@ def owner(monkeypatch, tmp_path):
     previous, imported = Mesh(mutations), Mesh(mutations)
     state = SimpleNamespace(previous=previous, imported=imported, mutations=mutations, logs=logs,
                             original_body=imported.values['body_setup'], fail_removal=False,
-                            after_lods=lambda mesh: None)
+                            after_lods=lambda mesh: None, reused=False)
     data = dict(bounds=[[0, 0, 0], [1, 2, 3]], triangles=[1], screen_sizes=[1.0], materials=[],
                 collision='complex', trunk_collision=[.6, 0, 0, -.25, 0, 0, 2], import_trunk_collision=False)
     manifest = tmp_path / 'foliage/Tree_Test/manifest.json'
@@ -69,11 +83,19 @@ def owner(monkeypatch, tmp_path):
         return True
 
     def import_mesh(*args, **kwargs):
-        mutations.append(('import', imported))
+        mutations.append(('admission', imported))
+        state.base_predicate = kwargs['reuse_validator']
+        reusable = state.reused and kwargs['reuse_validator'](imported)
+        if not reusable:
+            kwargs['before_import']()
+            mutations.append(('import', imported))
+            imported.convex = 1
         return imported
 
     def apply_lods(mesh, *args, **kwargs):
         mutations.append(('lods', mesh))
+        state.lod_predicate = kwargs['reuse_validator']
+        mesh.lod_count = max(mesh.lod_count, len(data['screen_sizes']))
         state.after_lods(mesh)
         return {}
 
@@ -94,8 +116,10 @@ def owner(monkeypatch, tmp_path):
         'unreal': unreal, 'yori': SimpleNamespace(OUT=tmp_path, GAME=tmp_path / 'game'),
         'asset_catalog': SimpleNamespace(FOLIAGE=('Tree_Test',)),
         'mesh_import': SimpleNamespace(import_mesh=import_mesh),
-        'import_foliage_lods': SimpleNamespace(apply_lods=apply_lods),
+        'import_foliage_lods': SimpleNamespace(apply_lods=apply_lods,
+                                               crown_path=lambda crown, folder: folder + '/MI_' + crown['slot']),
         'foliage_package_repair': SimpleNamespace(require_valid_or_missing=lambda *args, **kwargs: None),
+        'foliage_slots': _real_module('foliage_slots'),
     }.items():
         monkeypatch.setitem(sys.modules, name, module)
     monkeypatch.setattr(sys, 'path', list(sys.path))
@@ -227,3 +251,168 @@ def test_collision_counts_and_trace_policy_are_checked_after_lod_assembly(owner,
         owner.run()
     assert ('lods', owner.imported) in owner.mutations
     assert_uncertified(owner)
+
+
+@pytest.mark.parametrize('reused', [False, True])
+def test_saved_package_admission_precedes_any_destructive_reset(owner, reused):
+    owner.reused = reused
+    owner.run()
+    assert owner.mutations[0][0] == 'admission'
+    resets = [event for event in owner.mutations if event[1] is owner.previous and event[0] in ('reset-lods', 'remove')]
+    assert bool(resets) is not reused
+    if not reused:
+        assert owner.mutations.index(resets[-1]) < next(i for i,e in enumerate(owner.mutations) if e[0] == 'import')
+    assert ('lods', owner.imported) in owner.mutations
+    assert owner.report.is_file()
+
+
+def test_reuse_hit_trims_the_previous_longer_lod_chain_before_current_assembly(owner):
+    owner.reused = True
+    assert owner.imported.get_num_lods() == 4
+    assert len(owner.data['screen_sizes']) == 1
+    owner.run()
+    assert owner.imported.get_num_lods() == 1
+    assert json.loads(owner.report.read_text())['triangles'] == [1]
+    admission = next(i for i,event in enumerate(owner.mutations) if event[0] == 'admission')
+    trim = owner.mutations.index(('reset-lods', owner.imported, 1))
+    assembly = owner.mutations.index(('lods', owner.imported))
+    assert admission < trim < assembly
+    assert ('remove', owner.previous) not in owner.mutations
+
+
+def test_enabling_authored_trunk_after_a_hull_free_saved_base_requires_raw_import(owner):
+    owner.reused = True
+    owner.data.update(import_trunk_collision=True, collision='default')
+    owner.write_manifest()
+    owner.imported.convex = 0
+    owner.run()
+    assert ('import', owner.imported) in owner.mutations
+    assert owner.imported.convex == 1
+    assert json.loads(owner.report.read_text())['convex_collisions'] == 1
+
+
+def test_unchanged_enabled_trunk_keeps_the_admitted_authored_hull(owner):
+    owner.reused = True
+    owner.data.update(import_trunk_collision=True, collision='default')
+    owner.write_manifest()
+    owner.run()
+    assert ('import', owner.imported) not in owner.mutations
+    assert not any(event[0] == 'remove' for event in owner.mutations)
+    assert owner.imported.convex == 1
+
+
+def test_actual_owner_passes_one_policy_to_base_and_lod_sources(owner):
+    owner.data.update(import_trunk_collision=True, collision='default')
+    owner.write_manifest()
+    owner.run()
+    assert owner.base_predicate is owner.lod_predicate
+    # Source LODs do not own the base's trunk collision and must still be reusable.
+    assert owner.lod_predicate(SimpleNamespace(get_name=lambda: 'Tree_Test_LOD1'))
+
+
+@pytest.mark.parametrize('crowned', [True, False])
+def test_reimport_keeps_the_current_crown_material_and_retires_the_rest(owner, monkeypatch, crowned):
+    folder = '/Game/Japan/FoliageLODs/Tree_Test'
+    lod, crown, stale = (folder + '/Tree_Test_LOD1', folder + '/MI_Tree_Test_Crown', folder + '/Tree_Test_LOD2')
+    owner.data.update(screen_sizes=[1.0, .1], triangles=[1, 1])
+    if crowned:
+        owner.data['crown'] = {'slot': 'Tree_Test_Crown'}
+    owner.write_manifest()
+    _prior(owner, packages=[lod, crown, stale])
+    deleted = []
+    editor = sys.modules['unreal'].EditorAssetLibrary
+    monkeypatch.setattr(editor, 'list_assets', lambda *args, **kwargs: [p + '.' + p.rsplit('/', 1)[1] for p in (lod, crown, stale)],
+                        raising=False)
+    def delete(asset):
+        deleted.append(asset.split('.')[0])
+        owner.mutations.append(('delete', asset.split('.')[0]))
+        return True
+    monkeypatch.setattr(editor, 'delete_asset', delete, raising=False)
+    monkeypatch.setattr(editor, 'find_package_referencers_for_asset', lambda asset, load: [], raising=False)
+    owner.run()
+    assert deleted == ([stale] if crowned else [crown, stale])
+    # Retirement follows the validated, saved replacement.
+    assert owner.mutations.index(('save', owner.imported)) < owner.mutations.index(('delete', stale))
+    assert json.loads(owner.report.read_text())['packages'] == sorted([lod, crown] if crowned else [lod])
+
+
+def test_failed_replacement_retires_nothing(owner, monkeypatch):
+    folder = '/Game/Japan/FoliageLODs/Tree_Test'
+    deleted = []
+    editor = sys.modules['unreal'].EditorAssetLibrary
+    monkeypatch.setattr(editor, 'list_assets', lambda *args, **kwargs: [folder + '/MI_Tree_Test_Crown.MI_Tree_Test_Crown'],
+                        raising=False)
+    monkeypatch.setattr(editor, 'delete_asset', lambda asset: deleted.append(asset) or True, raising=False)
+    owner.data['triangles'] = [7]   # the replacement fails validation
+    owner.write_manifest()
+    _prior(owner, packages=[folder + '/MI_Tree_Test_Crown'])
+    with pytest.raises(AssertionError):
+        owner.run()
+    assert deleted == []
+
+
+def test_obsolete_package_still_used_elsewhere_is_kept(owner, monkeypatch):
+    folder = '/Game/Japan/FoliageLODs/Tree_Test'
+    deleted = []
+    editor = sys.modules['unreal'].EditorAssetLibrary
+    monkeypatch.setattr(editor, 'list_assets', lambda *args, **kwargs: [folder + '/MI_Tree_Test_Crown.MI_Tree_Test_Crown'],
+                        raising=False)
+    monkeypatch.setattr(editor, 'delete_asset', lambda asset: deleted.append(asset) or True, raising=False)
+    monkeypatch.setattr(editor, 'find_package_referencers_for_asset', lambda asset, load: ['/Game/Japan/Other'],
+                        raising=False)
+    _prior(owner, packages=[folder + '/MI_Tree_Test_Crown'])
+    with pytest.raises(RuntimeError, match='still referenced'):
+        owner.run()
+    assert deleted == []
+
+
+def test_packages_the_previous_import_did_not_record_are_never_retired(owner, monkeypatch):
+    folder = '/Game/Japan/FoliageLODs/Tree_Test'
+    unknown = [folder + '/Notes', folder + '/Tree_Test_LOD1_Backup', folder + '/MI_Tree_Other_Crown', folder + '/Sub/Tree_Test_LOD2',
+               folder + '/Tree_Test_LOD999', folder + '/MI_Tree_Test_Crown']
+    _prior(owner, packages=[folder + '/Tree_Test_LOD3'])   # recorded, but no longer present
+    deleted = []
+    editor = sys.modules['unreal'].EditorAssetLibrary
+    monkeypatch.setattr(editor, 'list_assets', lambda *args, **kwargs: [p + '.' + p.rsplit('/', 1)[1] for p in unknown],
+                        raising=False)
+    monkeypatch.setattr(editor, 'delete_asset', lambda asset: deleted.append(asset) or True, raising=False)
+    monkeypatch.setattr(editor, 'find_package_referencers_for_asset', lambda asset, load: [], raising=False)
+    owner.run()
+    assert deleted == []
+
+
+def test_reused_base_drops_the_crown_slot_before_binding_the_shared_palette(owner):
+    slots = [Properties(imported_material_slot_name=key) for key in ('Bark', 'LeafPine', 'Tree_Test_Crown')]
+    owner.imported.values['static_materials'] = slots
+    bound = []
+    owner.imported.set_material = lambda index, material: bound.append(index)
+    owner.data['materials'] = ['Bark', 'LeafPine']
+    owner.write_manifest()
+    owner.run()
+    assert owner.imported.values['static_materials'] == slots[:2]
+    assert bound == [0, 1]
+
+
+def test_crown_slot_before_authored_slots_is_refused(owner):
+    owner.imported.values['static_materials'] = [Properties(imported_material_slot_name=key)
+                                                 for key in ('Tree_Test_Crown', 'Bark')]
+    with pytest.raises(RuntimeError, match='not after the authored'):
+        owner.run()
+
+
+def test_reports_from_before_membership_was_recorded_still_name_their_outputs(owner):
+    folder = '/Game/Japan/FoliageLODs/Tree_Test'
+    crown = folder + '/MI_Tree_Test_Crown'
+    _prior(owner, screen_sizes=[1., .5, .2], materials_by_lod=[['/Game/Japan/Materials/MI_Bark.MI_Bark'], [], [crown + '.MI_Tree_Test_Crown']])
+    assert owner.run.__globals__['recorded_packages'](owner.report, folder, 'Tree_Test') == {
+        folder + '/Tree_Test_LOD1', folder + '/Tree_Test_LOD2', crown}
+
+
+def test_no_previous_report_retires_nothing(owner, monkeypatch):
+    folder = '/Game/Japan/FoliageLODs/Tree_Test'
+    deleted = []
+    editor = sys.modules['unreal'].EditorAssetLibrary
+    monkeypatch.setattr(editor, 'list_assets', lambda *args, **kwargs: [folder + '/Tree_Test_LOD2.Tree_Test_LOD2'], raising=False)
+    monkeypatch.setattr(editor, 'delete_asset', lambda asset: deleted.append(asset) or True, raising=False)
+    owner.run()
+    assert deleted == []

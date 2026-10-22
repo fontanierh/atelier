@@ -135,14 +135,16 @@ def main():
             axis_forward='-Y',axis_up='Z',add_leaf_bones=False,use_armature_deform_only=True,
             bake_anim_use_nla_strips=False,bake_anim_use_all_actions=False,bake_anim_simplify_factor=0,
             mesh_smooth_type='FACE',colors_type='SRGB')
-        bpy.ops.export_scene.fbx(filepath=str(folder/'Wanderer.fbx'),object_types={'ARMATURE','MESH'},bake_anim=False,**common)
+        from atelier.blender.fbx import export_fbx as export_scene_fbx
+        export_scene_fbx(filepath=str(folder/'Wanderer.fbx'),object_types={'ARMATURE','MESH'},bake_anim=False,**common)
         if opt.animations:
             body.select_set(False)
             for name,settings in animate.ACTIONS.items():
                 arm.animation_data.action=bpy.data.actions[name]
                 sc.frame_start,sc.frame_end=1,settings['frames']
                 sc.frame_set(1)
-                bpy.ops.export_scene.fbx(filepath=str(folder/(name+'.fbx')),object_types={'ARMATURE'},bake_anim=True,**common)
+                from atelier.blender.fbx import export_fbx as export_scene_fbx
+                export_scene_fbx(filepath=str(folder/(name+'.fbx')),object_types={'ARMATURE'},bake_anim=True,**common)
         if arm.animation_data: arm.animation_data.action=active
     # Store reference images inside the native file as images, so the model remains reviewable.
     for name in ('design-sheet','motion-sheet'):
