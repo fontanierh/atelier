@@ -14,7 +14,7 @@ import math
 from mathutils import Vector
 
 from checks import TOWER_BODY_MARGIN
-from solid import (BOLT, CONCRETE, IRON, STEEL, STONE, TIMBER, Mesh, proxy_box)
+from solid import (CONCRETE, IRON, STEEL, STONE, TIMBER, Mesh, proxy_box)
 
 LEG = 0.30
 HX_TOP, HY_TOP = 0.85, 0.62        # leg centreline half-widths at the cap
@@ -111,7 +111,7 @@ class Tower:
                         m.beam(a - d * 0.04, b + d * 0.04, BRACE_W, BRACE_D, TIMBER, up=up)
 
     def straps(self, m):
-        """Dark steel gusset straps on both outer faces of every leg at every girt level, each with two bolts."""
+        """Dark steel gusset straps on both outer faces of every leg at every girt level."""
         for i, z in enumerate(self.levels):
             zc = z - GIRT_H / 2 if i == 0 else z
             for sx in (-1, 1):
@@ -127,7 +127,6 @@ class Tower:
                         V = Vector((0, 0, 1)); V = (V - nrm * V.dot(nrm)).normalized(); U = V.cross(nrm)
                         with m.frame(base, U, V, nrm):
                             m.box((0, 0, 0.006), (LEG - 0.03, 0.44, 0.012), IRON)
-                            m.box((0, 0.1 if axis == 'x' else -0.1, 0.018), (0.05, 0.05, 0.02), BOLT)
 
     # ---------------------------------------------------------------- foundation
     def foundation(self, m):
@@ -145,17 +144,16 @@ class Tower:
                 with m.tagged('pedestal'):
                     m.loft(rings, CONCRETE)
                 with m.tagged('shoe'):
-                    m.box((c.x, c.y, 0.66), (0.46, 0.46, 0.08), IRON, bevel=0.01)
+                    m.box((c.x, c.y, 0.66), (0.46, 0.46, 0.08), IRON)
                 for u in (-1, 1):
                     for v in (-1, 1):
-                        m.box((c.x + u * 0.17, c.y + v * 0.17, 0.71), (0.045, 0.045, 0.022), BOLT)
                         self.seat('leg shoe', c.x + u * 0.2, c.y + v * 0.2, 0.62, on=('pedestal',))
                         self.seat('leg foot', c.x + u * (LEG / 2 - 0.02), c.y + v * (LEG / 2 - 0.02), LEG_FOOT, on=('shoe',))
                 # Rubble stones round the pedestal, half buried (ground datum z = 0).
                 for k in range(3):
                     a = math.radians(45 * (sx + 2) + 120 * k + 17 * sy); r = 0.8
                     size = (0.26 + 0.05 * ((k * 7) % 3), 0.22 + 0.04 * (k % 2), 0.2)
-                    m.rock((c.x + r * math.cos(a), c.y + r * math.sin(a), self.ground_z(c.x+r*math.cos(a),c.y+r*math.sin(a)) + 0.04), size, STONE, seed=int(100 * self.H) + 10 * k + 3 * sx + sy, n=6, m=4)
+                    m.rock((c.x + r * math.cos(a), c.y + r * math.sin(a), self.ground_z(c.x+r*math.cos(a),c.y+r*math.sin(a)) + 0.04), size, STONE, seed=int(100 * self.H) + 10 * k + 3 * sx + sy, n=4, m=3)
 
     def guys(self, m):
         """Four guy wires along the line from the legs to concrete anchors, with turnbuckles."""
@@ -175,17 +173,17 @@ class Tower:
                 eye = Vector((ax, ay, ground+0.53))
                 m.box((ax, ay, ground+0.47), (0.2, 0.08, 0.04), IRON)
                 self.seat('guy anchor plate', ax, ay, ground+0.45, on=('anchor',))
-                m.lathe((ax, ay, ground+0.49), [(0, 0.03), (0.08, 0.03)], IRON, n=6)
+                m.lathe((ax, ay, ground+0.49), [(0, 0.03), (0.08, 0.03)], IRON, n=4)
                 d = (top - eye).normalized()
                 tb0 = eye + d * 0.5; tb1 = eye + d * 0.95
-                m.tube([eye, tb0], 0.014, IRON, n=6)
-                m.tube([tb0 - d * 0.02, tb1 + d * 0.02], [0.03, 0.03], IRON, n=6)
-                m.tube([tb1, top], 0.012, IRON, n=6)
+                m.tube([eye, tb0], 0.014, IRON, n=4)
+                m.tube([tb0 - d * 0.02, tb1 + d * 0.02], [0.03, 0.03], IRON, n=4)
+                m.tube([tb1, top], 0.012, IRON, n=4)
                 # Lug on the leg.
                 with m.frame(top - Vector((sx * 0.015, 0, 0)), Vector((0, sx, 0)), Vector((0, 0, 1)), Vector((sx, 0, 0))):
                     m.box((0, 0, 0.01), (0.14, 0.2, 0.02), IRON)
                 for k, (dx, dy) in enumerate(((0.55, 0.2), (-0.45, -0.4))):
-                    m.rock((ax + dx, ay + dy, self.ground_z(ax+dx,ay+dy)+0.03), (0.2, 0.17, 0.16), STONE, seed=int(10 * self.H) + 50 + k + 7 * sx + 3 * sy, n=6, m=4)
+                    m.rock((ax + dx, ay + dy, self.ground_z(ax+dx,ay+dy)+0.03), (0.2, 0.17, 0.16), STONE, seed=int(10 * self.H) + 50 + k + 7 * sx + 3 * sy, n=5, m=3)
 
     # ---------------------------------------------------------------- head
     def head(self, m):
@@ -193,7 +191,7 @@ class Tower:
         ya = g / 2 - 0.12                      # crossarm ends stay inside the hanger's path
         with m.tagged('crossarm'):
             for s in (-1, 1):
-                m.box((s * 0.32, 0, zc + 0.17), (0.24, 2 * ya, 0.34), TIMBER, bevel=0.015)
+                m.box((s * 0.32, 0, zc + 0.17), (0.24, 2 * ya, 0.34), TIMBER)
                 for sy in (-1, 1):
                     for dx in (-0.08, 0.08):
                         self.seat('crossarm on cap girt', s * 0.32 + dx, sy * self.hy(zc - GIRT_H / 2), zc, on=('girt',))
@@ -236,7 +234,10 @@ class Tower:
             def carrier_z(x):
                 return max(saddle_z(x) - (self.rr + SHEAVE_R), H - 0.375)
             with m.tagged('carrier'):
-                knots = sorted(set([-train_half, *sheaves, train_half]))
+                # 1.2 m chords hold the beam clear of the rope on the tightest
+                # saddle; one piece per sheaf would be several times the cost.
+                segments = max(1, math.ceil(2 * train_half / 1.2))
+                knots = [-train_half + 2 * train_half * k / segments for k in range(segments + 1)]
                 for a, b in zip(knots, knots[1:]):
                     m.beam((a, yc, carrier_z(a)), (b, yc, carrier_z(b)), 0.1, 0.35, TIMBER, up=(0, 0, 1))
             for x in (-train_half, train_half):
@@ -247,8 +248,8 @@ class Tower:
                 with m.tagged('carrier'):
                     m.beam((-train_half, yc, self.z_cap + 0.05), (train_half, yc, self.z_cap + 0.05),
                            0.12, 0.15, TIMBER, up=(0, 0, 1))
-                for x in sheaves:
-                    if abs(x) > 1.6:
+                for x in knots:
+                    if abs(x) > 1.6 + 1e-9:
                         m.box((x, yc, (self.z_cap + 0.05 + carrier_z(x) - 0.175) / 2),
                               (0.12, 0.12, carrier_z(x) - 0.175 - self.z_cap - 0.05), TIMBER)
             for x in (-0.32, 0.32):
@@ -265,15 +266,15 @@ class Tower:
                 groove = [(f * rr, SHEAVE_R + rr - math.sqrt(rg * rg - (f * rr) ** 2)) for f in (-0.9, -0.45, 0.0, 0.45, 0.9)]
                 prof = [(-hw, rf)] + groove + [(hw, rf)]
                 with m.tagged('sheave'):            # the rope's intentional contact (rope clearance report)
-                    m.lathe(tuple(c + Vector((0, -hw, 0))), [(a + hw, r) for a, r in prof], STEEL, n=12, axis=(0, 1, 0))
-                m.lathe(tuple(c + Vector((0, -0.07, 0))), [(0, 0.07), (0.14, 0.07)], IRON, n=8, axis=(0, 1, 0))
-                m.lathe(tuple(c), [(0, 0.035), (0.1, 0.035)], IRON, n=6, axis=(0, -s, 0))
+                    # Nine sides with a vertex at the top keep the exact seat.
+                    m.lathe(tuple(c + Vector((0, -hw, 0))), [(a + hw, r) for a, r in prof], STEEL,
+                            n=9, axis=(0, 1, 0), phase=math.pi / 2)
             # Head posts above the crossarm, inside the rope line, tied by a head beam along the line.
             for x in (-0.32, 0.32):
-                m.box((x, s * (g / 2 - 0.5), H - 0.55 + 0.425), (0.22, 0.22, 0.85), TIMBER, bevel=0.012)
+                m.box((x, s * (g / 2 - 0.5), H - 0.55 + 0.425), (0.22, 0.22, 0.85), TIMBER)
                 self.seat('head post', x, s * (g / 2 - 0.5), H - 0.55, on=('crossarm',))
                 m.box((x, s * (g / 2 - 0.5), H + 0.315), (0.26, 0.26, 0.03), IRON)
-            m.box((0, s * (g / 2 - 0.5), H + 0.16), (1.1, 0.18, 0.2), TIMBER, bevel=0.01)
+            m.box((0, s * (g / 2 - 0.5), H + 0.16), (1.1, 0.18, 0.2), TIMBER)
 
     def ladder(self, m):
         """Steel ladder up the -x face (outside the bracing) through a hatch in a railed timber landing that rests
@@ -284,10 +285,10 @@ class Tower:
             return -(self.hx(z) + off)
         for y in (-0.22, 0.22):
             m.tube([(xl(z0), y, z0), (xl(z_land + 1.05), y, z_land + 1.05)], 0.025, IRON, n=6)
-        n = int((z_land - z0) / 0.3)
+        n = int((z_land - z0) / 0.5)
         for k in range(1, n + 1):
             z = z0 + k * (z_land - z0) / (n + 0.35)
-            m.tube([(xl(z), -0.21, z), (xl(z), 0.21, z)], 0.014, IRON, n=4)
+            m.tube([(xl(z), -0.21, z), (xl(z), 0.21, z)], 0.014, IRON, n=3)
         for z in self.levels[2:]:
             if z0 < z < z_land:
                 for y in (-0.22, 0.22):
