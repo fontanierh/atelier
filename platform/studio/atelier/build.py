@@ -227,8 +227,22 @@ def module_step(module):
     return f'unreal.module.{module}'
 
 
+def check_source_launch(steps):
+    """@cc [owner:fontanierh,label:correctness] recipe-launch-preflight
+    Cached Blender actions MUST declare factory startup. Invalid declarations
+    MUST refuse before checkpoint restoration, prerequisite execution or installed
+    tool-context inventory. This declaration check MUST NOT add fingerprint
+    fields or change command representations.
+    """
+    for step in steps:
+        for command in step.commands:
+            if step.cache and isinstance(command, Blender) and not command.factory_startup:
+                raise ValueError(f'{step.name}: cached Blender commands require factory_startup=True')
+
+
 def check_modules(steps):
     """A script that declares game modules must need their module steps, so their digests feed its fingerprint."""
+    check_source_launch(steps)
     from .mesh_export_contract import check_steps
     check_steps(steps, Blender)
     for step in steps:
@@ -726,6 +740,7 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, veri
         if force and not ctx.rebuild_reason:
             raise SystemExit('--force requires --rebuild-reason for checkpoint builds; normal builds restore matching results.')
         checkpoint_steps = load_recipe(game).steps(ctx)
+        check_source_launch(checkpoint_steps)
         if force and (len(wanted) != 1 or wanted[0] not in {s.name for s in checkpoint_steps}):
             raise SystemExit('--force requires one exact task and --rebuild-reason; broad forced rebuilds are retired.')
         ctx.checkpoint_force_task = wanted[0] if force else None
