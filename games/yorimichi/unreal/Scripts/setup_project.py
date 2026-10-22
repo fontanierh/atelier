@@ -179,7 +179,9 @@ def main():
         raise RuntimeError('JAPAN_ONLY is retired; select unreal.materials or unreal.foliage.<asset>')
     import json
     W = json.load(open(os.path.join(OUT, "world.json")))
-    purge()
+    # Preserve receiving packages for per-source native validation/reuse.
+    # Explicit owners retire proven obsolete members after replacements succeed;
+    # an upfront namespace purge destroys that evidence and foreign owners.
     MI = {name: EAL.load_asset(path) for name, path in material_bindings().items()}
     if not all(MI.values()):
         raise RuntimeError('Build unreal.materials before importing the world')

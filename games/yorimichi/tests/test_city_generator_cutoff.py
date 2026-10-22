@@ -17,7 +17,7 @@ def city_build(tmp_path, monkeypatch):
     generator = tmp_path / 'generator.py'
     generator.write_text('1')
     names = (*RECIPE.city_inputs.TILES, *RECIPE.city_inputs.TREES, 'HD_NorthMountains')
-    state = {name: dict(triangles=1, min=[0, 0, 0], max=[1, 1, 1], unused='metadata') for name in names}
+    state = {name: dict(triangles=1, min=[0, 0, 0], max=[1, 1, 1], collision_boxes=0, unused='metadata') for name in names}
     meshes = {name: name.encode() for name in names}
     generated, exported, messages = [], [], []
     folder = out / 'hidamari'
@@ -129,15 +129,59 @@ def test_missing_selected_receipt_cannot_hide_behind_a_cutoff(city_build, missin
 def test_recipe_keeps_generator_code_and_existing_unreal_cutoffs(tmp_path):
     ctx = SimpleNamespace(out=tmp_path, uproject=None)
     steps = {s.name: s for s in RECIPE.steps(ctx)}
+    consumer = steps['world.city_trees']
+    cutoff = steps['world.hidamari.trees']
+    assert cutoff.cutoff and not cutoff.heavy and cutoff.needs == ['world.hidamari']
+    assert cutoff.name in consumer.needs and 'world.hidamari' not in consumer.needs
+    assert consumer.commands[0].script in consumer.inputs
+    for name in RECIPE.city_inputs.TILES:
+        cutoff = steps['world.hidamari.tiles.'+name]
+        piece = steps['world.city_tiles.'+name]
+        assert cutoff.cutoff and cutoff.needs == ['world.hidamari']
+        assert piece.needs == [cutoff.name]
+        assert piece.cache and piece.products[0].name == 'city.tiles.'+name
+        assert piece.commands[0].script in piece.inputs
+        closure = set(build_inputs.local_imports(piece.commands[0].script, (RECIPE.WORLD, RECIPE.REGIONS)))
+        assert closure <= set(piece.inputs)
+    assert steps['world.city_tiles'].reads == ['city.tiles.'+name for name in RECIPE.city_inputs.TILES]
     for part in ('tiles', 'trees'):
-        cutoff = steps['world.hidamari.' + part]
-        consumer = steps['world.city_' + part]
-        assert cutoff.cutoff and not cutoff.heavy and cutoff.needs == ['world.hidamari']
-        assert 'world.hidamari' not in consumer.needs and cutoff.name in consumer.needs
-        assert consumer.commands[0].script in consumer.inputs
-        closure = set(build_inputs.local_imports(consumer.commands[0].script, (RECIPE.WORLD, RECIPE.REGIONS)))
-        assert closure <= set(consumer.inputs)  # Test the assembled recipe, after its ImportScanner pass.
-        assert steps[consumer.name + '.meshes'].needs == [consumer.name]
-    assert RECIPE.REGIONS/'hidamari/arcade.py' in steps['world.city_trees'].inputs
-    assert RECIPE.REGIONS/'hidamari/plaza.py' in steps['world.city_trees'].inputs
-    assert RECIPE.REGIONS/'village/build.py' in steps['world.city_trees'].inputs
+        assert steps['world.city_'+part+'.meshes'].needs == ['world.city_'+part]
+    assert RECIPE.REGIONS/'hidamari/arcade.py' in consumer.inputs
+    assert RECIPE.REGIONS/'hidamari/plaza.py' in consumer.inputs
+    assert RECIPE.REGIONS/'village/build.py' in consumer.inputs
+
+
+def test_source_specific_cutoffs_rebuild_only_the_changed_city_parent(tmp_path, monkeypatch):
+    out = tmp_path/'build'
+    folder = out/'hidamari'
+    (folder/'assets').mkdir(parents=True)
+    names = RECIPE.city_inputs.TILES
+    manifest = {name:dict(triangles=1,min=[0,0,0],max=[1,1,1],collision_boxes=0) for name in names}
+    (folder/'manifest.json').write_text(json.dumps(manifest))
+    for name in names: (folder/'assets'/ (name+'.fbx')).write_bytes(name.encode())
+    runs = []
+    products = []
+    for name in names:
+        output = out/(name+'.json')
+        def export(ctx, log, name=name, output=output):
+            runs.append(name)
+            output.write_text(json.dumps(RECIPE.city_inputs.snapshot(out,(name,))))
+        products += [RECIPE.city_input_step(out,'tiles',(name,)),
+                     build.Step('piece.'+name,[build.Call('source '+name,export)],
+                                needs=['world.hidamari.tiles.'+name],outputs=[output])]
+    steps = [build.Step('world.hidamari',[],outputs=[folder/'manifest.json']), *products]
+    ctx = SimpleNamespace(game='yorimichi',out=out,logs=out/'logs',stamps=out/'stamps',uproject=None)
+    monkeypatch.setattr(build,'Context',lambda game:ctx)
+    monkeypatch.setattr(build,'load_recipe',lambda game:SimpleNamespace(steps=lambda context:steps))
+    targets = ['piece.'+name for name in names]
+    assert build.build('yorimichi',targets,echo=lambda message:None)==0
+    assert set(runs)==set(names)
+    runs.clear()
+    (folder/'assets/HD_Streets.fbx').write_bytes(b'changed streets')
+    assert build.build('yorimichi',targets,echo=lambda message:None)==0
+    assert runs==['HD_Streets']
+    runs.clear()
+    manifest['HD_Square']['collision_boxes'] = 1
+    (folder/'manifest.json').write_text(json.dumps(manifest))
+    assert build.build('yorimichi',targets,echo=lambda message:None)==0
+    assert runs==['HD_Square']

@@ -107,6 +107,10 @@ def material_bindings():
 
 def independently_owned(package):
     """What the legacy world purge must preserve after these owners have run."""
+    # The bounded city owner retires these generated parents only after complete
+    # receiving validation of their replacements. A world purge must not do so.
+    if package in {'/Game/Japan/Assets/'+name for name in ('HD_Terrain', 'HD_Streets', 'HD_Square')}:
+        return True
     if package in shared_packages() or package in {'/Game/Japan/Assets/' + name for name in FOLIAGE}:
         return True
     return any(package.startswith('/Game/Japan/FoliageLODs/' + name + '/') for name in FOLIAGE)

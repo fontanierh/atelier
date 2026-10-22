@@ -1,4 +1,5 @@
 #include "JapanWorld.h"
+#include "CitySurfacePieces.h"
 #include "JapanGameplayCollision.h"
 #include "AtelierData.h"
 #include "HarborLook.h"
@@ -61,7 +62,8 @@ void AJapanWorld::BeginPlay()
 
 static UStaticMesh* LoadMesh(const FString& Name)
 {
-    const FString Path = FString::Printf(TEXT("/Game/Japan/Assets/%s.%s"), *Name, *Name);
+    const FString Path = Name.StartsWith(TEXT("/Game/"))?Name:
+        FString::Printf(TEXT("/Game/Japan/Assets/%s.%s"), *Name, *Name);
     return LoadObject<UStaticMesh>(nullptr, *Path);
 }
 
@@ -375,117 +377,145 @@ void AJapanWorld::Load()
     ABelmonteRegion::Clear(Root, AtelierDataPath(TEXT("brinecove/runtime.json")));
     ABelmonteRegion::Clear(Root, AtelierDataPath(TEXT("gondola/runtime.json")));
     const TSharedPtr<FJsonObject>* Inst = nullptr;
+    TMap<FString,TArray<FString>> CityPieces;
+    TSet<FString> LoadedCityPieces;
+    const bool PiecesReady=JapanCityPieces::Read(
+        AtelierReadJson(AtelierDataPath(TEXT("city_surface_tiles/v1_128m/manifest.json"))),CityPieces);
+    if (!PiecesReady) Incomplete.Add(TEXT("complete production city pieces"));
     if (Root->TryGetObjectField(TEXT("instances"), Inst))
     {
         for (const auto& Pair : (*Inst)->Values)
         {
             const FString Key(Pair.Key);
-            UStaticMesh* Mesh = LoadMesh(Key);
-            if (!Mesh) { Incomplete.Add(TEXT("mesh ") + Key); UE_LOG(LogTemp, Warning, TEXT("missing mesh asset %s"), *Key); continue; }
-            const bool bGrass = Key.StartsWith(TEXT("Grass"));
-            const bool bBush = Key.StartsWith(TEXT("Bush"));
-            const bool bTree = Key.StartsWith(TEXT("Tree"));
-            const bool bLitter = Key == TEXT("Litter");
-            TArray<FTransform> Near, Distant;
-            Near.Reserve(Pair.Value->AsArray().Num());
-            for (const TSharedPtr<FJsonValue>& V : Pair.Value->AsArray())
+            TArray<FString> MeshPaths;
+            if (JapanCityPieces::IsParent(Key))
             {
-                const TArray<TSharedPtr<FJsonValue>>& A = V->AsArray();
-                if (A.Num() < 5) continue;
-                const double Sc = A[4]->AsNumber();
-                const FVector Position = ToUE(A[0]->AsNumber(), A[1]->AsNumber(), A[2]->AsNumber());
-                if (!ParkClearance.IsEmpty() && (bTree || bBush || bGrass || bLitter || Key.StartsWith(TEXT("Rock"))) && ASkatePark::Inside(ParkClearance, FVector2D(Position))) { ++Cleared; continue; }
-                // The far-hill backdrop is outside the playable square. Keep its
-                // silhouettes, but do not build thousands of useless physics bodies.
-                const bool bCityTree=City.IsValid() && Position.X>30000 && Position.X<142000 && Position.Y>-50000 && Position.Y<30000;
-                // The new trail is playable: nearby trunks cast shadows and
-                // keep collision, while the distant summit forest stays cheap.
-                const bool bNorthTrailTree=City.IsValid() && Position.X>85000 && Position.X<130000 && Position.Y>-125000 && Position.Y<=-50000;
-                const bool bNearTree = Key.StartsWith(TEXT("Tree")) && NearTrees.ContainsByPredicate([&](const FBox2D& B) { return B.IsInside(FVector2D(Position)); });
-                const bool bBackdrop = bTree && !bCityTree && !bNorthTrailTree && !bNearTree && FMath::Max(FMath::Abs(Position.X), FMath::Abs(Position.Y)) > GroundSize * 0.75f;
-                (bBackdrop ? Distant : Near).Add(FTransform(FRotator(0, -A[3]->AsNumber(), 0), Position, FVector(Sc)));
+                const auto* Paths=CityPieces.Find(Key);
+                if (!Paths) { Incomplete.Add(TEXT("city pieces ")+Key);continue; }
+                MeshPaths=*Paths;
             }
-            auto AddGroup = [&](const TArray<FTransform>& Xs, bool bBackdrop)
+            else MeshPaths.Add(Key);
+            // Logical parent keys still own placements, visibility and gameplay
+            // policy. Each selected child owns its render and collision geometry.
+            for (const FString& MeshPath:MeshPaths)
             {
-                if (Xs.IsEmpty()) return;
-                UHierarchicalInstancedStaticMeshComponent* H = NewObject<UHierarchicalInstancedStaticMeshComponent>(this);
-                H->SetStaticMesh(Mesh); H->SetupAttachment(RootComponent);
-                H->SetMobility(EComponentMobility::Static);
-                if (Key==TEXT("HD_Harbor") || Key==TEXT("HD_Boat") || Key==TEXT("HD_Sea") || Key==TEXT("HD_Bollard"))
-                    H->SetLightingChannels(true, true, false);
-                H->SetCanEverAffectNavigation(false);
-                const bool bWater=Key==TEXT("HD_Sea") || Key==TEXT("HD_InlandWater") || Key==TEXT("Lake_Water");
-                // The city's overhead wires (HD_Wires, 10 m up) never stop a jump or the camera, and cast no shimmering lines.
-                const bool bWires=Key==TEXT("HD_Wires");
-                H->SetCollisionEnabled(bGrass || bBush || bLitter || bBackdrop || bWater || bWires || Key==TEXT("Lake_Plants") || Key==TEXT("HD_Boat") || (Key==TEXT("HD_ArcadeRoof") || Key==TEXT("HD_ArcadeLanterns") || Key==TEXT("HD_PlazaWater")) ? ECollisionEnabled::NoCollision : ECollisionEnabled::QueryOnly);
-                // Camera see-through (docs/CAMERA.md): solid things stop the chase camera. Thin things (trees, bushes,
-                // poles, lanterns, the torii, the tree house's props and thin pieces) let it through and fade whole
-                // where they hide Cairo; the materials read how in custom primitive data 0. The far backdrop never
-                // comes between, so it skips the fade's vertex work.
-                const int32 Fade = bBackdrop ? JapanSeeThrough::FadeSolid : JapanSeeThrough::FadeMode(Key, Mesh);
-                if (Fade != JapanSeeThrough::FadeSolid)
+                UStaticMesh* Mesh = LoadMesh(MeshPath);
+                if (!Mesh) { Incomplete.Add(TEXT("mesh ") + Key); UE_LOG(LogTemp, Warning, TEXT("missing mesh asset %s"), *Key); continue; }
+                if (JapanCityPieces::IsParent(Key)) LoadedCityPieces.Add(MeshPath);
+                const bool bGrass = Key.StartsWith(TEXT("Grass"));
+                const bool bBush = Key.StartsWith(TEXT("Bush"));
+                const bool bTree = Key.StartsWith(TEXT("Tree"));
+                const bool bLitter = Key == TEXT("Litter");
+                TArray<FTransform> Near, Distant;
+                Near.Reserve(Pair.Value->AsArray().Num());
+                for (const TSharedPtr<FJsonValue>& V : Pair.Value->AsArray())
                 {
-                    H->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
-                    H->SetCustomPrimitiveDataFloat(0, float(Fade));
+                    const TArray<TSharedPtr<FJsonValue>>& A = V->AsArray();
+                    if (A.Num() < 5) continue;
+                    const double Sc = A[4]->AsNumber();
+                    const FVector Position = ToUE(A[0]->AsNumber(), A[1]->AsNumber(), A[2]->AsNumber());
+                    if (!ParkClearance.IsEmpty() && (bTree || bBush || bGrass || bLitter || Key.StartsWith(TEXT("Rock"))) && ASkatePark::Inside(ParkClearance, FVector2D(Position))) { ++Cleared; continue; }
+                    // The far-hill backdrop is outside the playable square. Keep its
+                    // silhouettes, but do not build thousands of useless physics bodies.
+                    const bool bCityTree=City.IsValid() && Position.X>30000 && Position.X<142000 && Position.Y>-50000 && Position.Y<30000;
+                    // The new trail is playable: nearby trunks cast shadows and
+                    // keep collision, while the distant summit forest stays cheap.
+                    const bool bNorthTrailTree=City.IsValid() && Position.X>85000 && Position.X<130000 && Position.Y>-125000 && Position.Y<=-50000;
+                    const bool bNearTree = Key.StartsWith(TEXT("Tree")) && NearTrees.ContainsByPredicate([&](const FBox2D& B) { return B.IsInside(FVector2D(Position)); });
+                    const bool bBackdrop = bTree && !bCityTree && !bNorthTrailTree && !bNearTree && FMath::Max(FMath::Abs(Position.X), FMath::Abs(Position.Y)) > GroundSize * 0.75f;
+                    (bBackdrop ? Distant : Near).Add(FTransform(FRotator(0, -A[3]->AsNumber(), 0), Position, FVector(Sc)));
                 }
-                if (Key == TEXT("TH_Frame") || Key == TEXT("TH_Dressing"))
-                    UE_LOG(LogTemp, Display, TEXT("SEE-THROUGH %s: %s (%d uv channels)"), *Key,
-                        Fade == JapanSeeThrough::FadePieces ? TEXT("fades piece by piece") : TEXT("fades at the lens only, no piece bake"),
-                        Mesh->GetNumTexCoords(0));
-                H->SetCastShadow(!bGrass && !bLitter && !bBackdrop && !bWater && !bWires && Key!=TEXT("HD_ArcadeRoof") && Key!=TEXT("HD_ArcadeLanterns") && Key!=TEXT("HD_PlazaWater"));
-                if (bGrass || bLitter || bBackdrop) H->bAffectDistanceFieldLighting = false;
-                if (bGrass) H->SetCullDistances(6000, 8000);
-                // The caldera's wild thicket (Bush_HD_Autumn, only there) is what the rim and air views look across.
-                else if (Key == TEXT("Bush_HD_Autumn")) H->SetCullDistances(55000, 60000);
-                else if (bBush) H->SetCullDistances(30000, 36000);
-                else if (bLitter) H->SetCullDistances(7000, 9000);
-                if (bTree || bBush) H->SetWorldPositionOffsetDisableDistance(18000);
-                // Walkers meet a tree's leaves; the skateboard meets only its trunk (SkateRuntimeDetail CollectWorld).
-                if (bTree) H->ComponentTags.Add(TEXT("SkateSimpleCollision"));
-                // The tree house: the camera arm keeps above the floor Cairo stands on there, and in hole mode its probe
-                // passes the house (SetSeeThroughProbe). Its door curtains swing up to 60 cm out of their rest pose.
-                if (Key.StartsWith(TEXT("TH_")))
+                auto AddGroup = [&](const TArray<FTransform>& Xs, bool bBackdrop)
                 {
-                    H->ComponentTags.Add(JapanSeeThrough::Tag);
-                    SeeThroughGroups.Add(H);
-                    if (Key == TEXT("TH_Dressing")) H->SetBoundsScale(1.05f);
-                }
-                H->bAutoRebuildTreeOnInstanceChanges = false;
-                H->RegisterComponent();
-                H->AddInstances(Xs, false, false, false);
-                H->BuildTreeIfOutdated(true, true);
-                H->bAutoRebuildTreeOnInstanceChanges = true;
-                TotalInstances += Xs.Num(); Groups.Add(H);
-                if (bBackdrop) BackdropGroups.Add(H);
-                // Every in-map tree is one instanced group per species across the whole map, so the engine cannot leave
-                // distant trees out of the shadow pass on its own: they made the forest's shadows its largest cost. A
-                // hidden twin casts the group's shadow instead, and its per-instance cull distance (measured from the
-                // camera in shadow passes too) ends tree shadows at the menu's tree shadow distance.
-                if (bTree && !bBackdrop)
-                {
-                    UHierarchicalInstancedStaticMeshComponent* S = NewObject<UHierarchicalInstancedStaticMeshComponent>(this);
-                    S->SetStaticMesh(Mesh); S->SetupAttachment(RootComponent);
-                    S->SetMobility(EComponentMobility::Static);
-                    S->SetCanEverAffectNavigation(false);
-                    S->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-                    S->SetHiddenInGame(true); S->bCastHiddenShadow = true; S->SetCastShadow(true);
-                    S->bAffectIndirectLightingWhileHidden = true;
-                    if (Fade != JapanSeeThrough::FadeSolid) S->SetCustomPrimitiveDataFloat(0, float(Fade));
-                    S->SetWorldPositionOffsetDisableDistance(18000);
-                    S->bAutoRebuildTreeOnInstanceChanges = false;
-                    S->RegisterComponent();
-                    S->AddInstances(Xs, false, false, false);
-                    S->BuildTreeIfOutdated(true, true);
-                    S->bAutoRebuildTreeOnInstanceChanges = true;
-                    // The twin also carries the group's distance field (for shadows and, while hidden, sky
-                    // occlusion), so Quality mode still darkens the forest beyond the cascades; the scene holds each
-                    // tree's field once.
-                    H->SetCastShadow(false); H->bAffectDistanceFieldLighting = false;
-                    ShadowTwins.Add(S);
-                }
-            };
-            AddGroup(Near, false); AddGroup(Distant, true);
+                    if (Xs.IsEmpty()) return;
+                    UHierarchicalInstancedStaticMeshComponent* H = NewObject<UHierarchicalInstancedStaticMeshComponent>(this);
+                    H->SetStaticMesh(Mesh); H->SetupAttachment(RootComponent);
+                    if (JapanCityPieces::IsParent(Key)) H->ComponentTags.Add(FName(*(TEXT("CitySurface:")+Key)));
+                    H->SetMobility(EComponentMobility::Static);
+                    if (Key==TEXT("HD_Harbor") || Key==TEXT("HD_Boat") || Key==TEXT("HD_Sea") || Key==TEXT("HD_Bollard"))
+                        H->SetLightingChannels(true, true, false);
+                    H->SetCanEverAffectNavigation(false);
+                    const bool bWater=Key==TEXT("HD_Sea") || Key==TEXT("HD_InlandWater") || Key==TEXT("Lake_Water");
+                    // The city's overhead wires (HD_Wires, 10 m up) never stop a jump or the camera, and cast no shimmering lines.
+                    const bool bWires=Key==TEXT("HD_Wires");
+                    H->SetCollisionEnabled(bGrass || bBush || bLitter || bBackdrop || bWater || bWires || Key==TEXT("Lake_Plants") || Key==TEXT("HD_Boat") || (Key==TEXT("HD_ArcadeRoof") || Key==TEXT("HD_ArcadeLanterns") || Key==TEXT("HD_PlazaWater")) ? ECollisionEnabled::NoCollision : ECollisionEnabled::QueryOnly);
+                    // Camera see-through (docs/CAMERA.md): solid things stop the chase camera. Thin things (trees, bushes,
+                    // poles, lanterns, the torii, the tree house's props and thin pieces) let it through and fade whole
+                    // where they hide Cairo; the materials read how in custom primitive data 0. The far backdrop never
+                    // comes between, so it skips the fade's vertex work.
+                    const int32 Fade = bBackdrop ? JapanSeeThrough::FadeSolid : JapanSeeThrough::FadeMode(Key, Mesh);
+                    if (Fade != JapanSeeThrough::FadeSolid)
+                    {
+                        H->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+                        H->SetCustomPrimitiveDataFloat(0, float(Fade));
+                    }
+                    if (Key == TEXT("TH_Frame") || Key == TEXT("TH_Dressing"))
+                        UE_LOG(LogTemp, Display, TEXT("SEE-THROUGH %s: %s (%d uv channels)"), *Key,
+                            Fade == JapanSeeThrough::FadePieces ? TEXT("fades piece by piece") : TEXT("fades at the lens only, no piece bake"),
+                            Mesh->GetNumTexCoords(0));
+                    H->SetCastShadow(!bGrass && !bLitter && !bBackdrop && !bWater && !bWires && Key!=TEXT("HD_ArcadeRoof") && Key!=TEXT("HD_ArcadeLanterns") && Key!=TEXT("HD_PlazaWater"));
+                    if (bGrass || bLitter || bBackdrop) H->bAffectDistanceFieldLighting = false;
+                    if (bGrass) H->SetCullDistances(6000, 8000);
+                    // The caldera's wild thicket (Bush_HD_Autumn, only there) is what the rim and air views look across.
+                    else if (Key == TEXT("Bush_HD_Autumn")) H->SetCullDistances(55000, 60000);
+                    else if (bBush) H->SetCullDistances(30000, 36000);
+                    else if (bLitter) H->SetCullDistances(7000, 9000);
+                    if (bTree || bBush) H->SetWorldPositionOffsetDisableDistance(18000);
+                    // Walkers meet a tree's leaves; the skateboard meets only its trunk (SkateRuntimeDetail CollectWorld).
+                    if (bTree) H->ComponentTags.Add(TEXT("SkateSimpleCollision"));
+                    // The tree house: the camera arm keeps above the floor Cairo stands on there, and in hole mode its probe
+                    // passes the house (SetSeeThroughProbe). Its door curtains swing up to 60 cm out of their rest pose.
+                    if (Key.StartsWith(TEXT("TH_")))
+                    {
+                        H->ComponentTags.Add(JapanSeeThrough::Tag);
+                        SeeThroughGroups.Add(H);
+                        if (Key == TEXT("TH_Dressing")) H->SetBoundsScale(1.05f);
+                    }
+                    H->bAutoRebuildTreeOnInstanceChanges = false;
+                    H->RegisterComponent();
+                    H->AddInstances(Xs, false, false, false);
+                    H->BuildTreeIfOutdated(true, true);
+                    H->bAutoRebuildTreeOnInstanceChanges = true;
+                    TotalInstances += Xs.Num(); Groups.Add(H);
+                    if (bBackdrop) BackdropGroups.Add(H);
+                    // Every in-map tree is one instanced group per species across the whole map, so the engine cannot leave
+                    // distant trees out of the shadow pass on its own: they made the forest's shadows its largest cost. A
+                    // hidden twin casts the group's shadow instead, and its per-instance cull distance (measured from the
+                    // camera in shadow passes too) ends tree shadows at the menu's tree shadow distance.
+                    if (bTree && !bBackdrop)
+                    {
+                        UHierarchicalInstancedStaticMeshComponent* S = NewObject<UHierarchicalInstancedStaticMeshComponent>(this);
+                        S->SetStaticMesh(Mesh); S->SetupAttachment(RootComponent);
+                        S->SetMobility(EComponentMobility::Static);
+                        S->SetCanEverAffectNavigation(false);
+                        S->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+                        S->SetHiddenInGame(true); S->bCastHiddenShadow = true; S->SetCastShadow(true);
+                        S->bAffectIndirectLightingWhileHidden = true;
+                        if (Fade != JapanSeeThrough::FadeSolid) S->SetCustomPrimitiveDataFloat(0, float(Fade));
+                        S->SetWorldPositionOffsetDisableDistance(18000);
+                        S->bAutoRebuildTreeOnInstanceChanges = false;
+                        S->RegisterComponent();
+                        S->AddInstances(Xs, false, false, false);
+                        S->BuildTreeIfOutdated(true, true);
+                        S->bAutoRebuildTreeOnInstanceChanges = true;
+                        // The twin also carries the group's distance field (for shadows and, while hidden, sky
+                        // occlusion), so Quality mode still darkens the forest beyond the cascades; the scene holds each
+                        // tree's field once.
+                        H->SetCastShadow(false); H->bAffectDistanceFieldLighting = false;
+                        ShadowTwins.Add(S);
+                    }
+                };
+                AddGroup(Near, false); AddGroup(Distant, true);
+            }
         }
+    }
+    if (PiecesReady)
+    {
+        const int32 ExpectedPieces=CityPieces.FindChecked(TEXT("HD_Terrain")).Num()+
+            CityPieces.FindChecked(TEXT("HD_Streets")).Num()+CityPieces.FindChecked(TEXT("HD_Square")).Num();
+        if (LoadedCityPieces.Num()==ExpectedPieces)
+            UE_LOG(LogTemp,Display,TEXT("CITY PIECES production parents=%d pieces=%d hidden_parents=0"),CityPieces.Num(),ExpectedPieces);
+        else Incomplete.Add(TEXT("loaded production city pieces"));
     }
     if (UStaticMesh* Dome = LoadMesh(TEXT("SkyDome")))
     {

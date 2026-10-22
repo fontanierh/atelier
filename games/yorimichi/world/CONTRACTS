@@ -1,0 +1,8 @@
+@cc [owner:fontanierh,label:correctness;performance] independent-city-surface-piece-products
+The three production city surface splits MUST export independently from their exact
+source bytes and consumed triangle/bounds/collision metadata. A source change MUST
+NOT regenerate or retire a sibling source's output. Source subdivision MUST preserve
+every corner/normal/UV/colour/material and placement frame. Every emitted render piece
+MUST contain at most 32768 triangles, and each whole authored UCX hull MUST have one
+piece owner. Complete assembly MUST precede native parent retirement; partitioning
+MUST NOT introduce a second layer of duplicate city tiles.

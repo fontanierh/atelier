@@ -92,7 +92,7 @@ def command(ctx, folder, baseline=False, windowed=False, shared_settings=False, 
         profile += ';' + settings
     profile += f';renderer={int(lumen)}'
     commands = COMMON.replace('r.ScreenPercentage 100,', '') if shared_settings else COMMON
-    commands += ',japan.CitySurfaceTiles ' + TILE_TAG + ' 1,'
+    commands += ','
     commands += 'r.SkylightIntensityMultiplier 1' if lumen else CANDIDATE
     return [str(ctx.unreal_app), str(ctx.uproject), '-game', '-windowed' if windowed else '-fullscreen', '-ForceRes',
             '-resx=2560', '-resy=1440', '-desktopnative1440', '-previewcapture=' + str(folder / 'ready.png'),
@@ -152,7 +152,7 @@ def packaged_launcher(startup_seconds=20):
     """`Play Yorimichi.command` beside the packaged .app: this profile's shared-settings launch, without the repository,
     Python or the guard. It honours saved settings like --shared-settings, except the renderer: the package is cooked
     for forward shading only (the project's r.ForwardShading), so it always starts Forward."""
-    commands = COMMON.replace('r.ScreenPercentage 100,', '') + ',japan.CitySurfaceTiles ' + TILE_TAG + ' 1,'
+    commands = COMMON.replace('r.ScreenPercentage 100,', '') + ','
     return (LAUNCHER.replace('@FORWARD@', ' '.join(map(shlex.quote, renderer_arguments(False, desktop_viewport=True))))
             .replace('@FORWARD_COMMANDS@', shlex.quote(commands + CANDIDATE))
             .replace('@STARTUP_SECONDS@', str(int(startup_seconds))))
@@ -192,7 +192,7 @@ def parse_ready(log, baseline=False, windowed=False, tile_manifest=None, tree_op
     if not re.search(r'r\.ForwardShading = "' + ('0' if baseline else '1') + '"', log):
         raise ValueError('requested renderer not verified')
     originals, tiles = tile_counts(tile_manifest or PROJECT / 'Content' / 'Data' / 'city_surface_tiles' / TILE_TAG / 'manifest.json')
-    markers = [f'CITY TILES tag={TILE_TAG} enabled=1 originals={originals} tiles={tiles}']
+    markers = [f'CITY PIECES production parents={originals} pieces={tiles} hidden_parents=0']
     trees = re.findall(re.escape(f'CITY TREE LODS tag={TREE_TAG} enabled={int(tree_optimization)} forced={tree_lod_mode} groups=') + r'(\d+)(?=\s|$)', log)
     if not trees or int(trees[-1]) < 3:
         raise ValueError('desktop profile did not load: CITY TREE LODS requires at least the three city tree groups')

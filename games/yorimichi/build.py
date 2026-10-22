@@ -231,22 +231,51 @@ _digest_spec.loader.exec_module(export_digest)
 _city_spec = importlib.util.spec_from_file_location('yorimichi_city_inputs', GAME / 'city_inputs.py')
 city_inputs = importlib.util.module_from_spec(_city_spec)
 _city_spec.loader.exec_module(city_inputs)
+_city_products_spec = importlib.util.spec_from_file_location('yorimichi_city_products', GAME / 'city_tile_products.py')
+city_products = importlib.util.module_from_spec(_city_products_spec)
+_city_products_spec.loader.exec_module(city_products)
 _registry_spec = importlib.util.spec_from_file_location('yorimichi_source_registry', WORLD / 'source_registry.py')
 source_registry = importlib.util.module_from_spec(_registry_spec)
 _registry_spec.loader.exec_module(source_registry)
 
 
-def city_input_step(out, part):
+def city_input_step(out, part, names=None):
     """Fingerprint the selected generator's receipt fields and exact source FBXs after Hidamari."""
-    names = {'tiles': city_inputs.TILES, 'trees': city_inputs.TREES}[part]
-    output = out / 'digests' / f'world.hidamari.{part}.json'
+    names = tuple(names) if names is not None else {'tiles': city_inputs.TILES, 'trees': city_inputs.TREES}[part]
+    key = part + ('.'+names[0] if len(names) == 1 else '')
+    output = out / 'digests' / f'world.hidamari.{key}.json'
     helper = GAME / 'city_inputs.py'
-    return Step(f'world.hidamari.{part}',
+    return Step(f'world.hidamari.{key}',
                 [Call(f'city {part} inputs', lambda ctx, log:
                       export_digest.record(output, city_inputs.snapshot(out, names), log))],
                 inputs=[helper, GAME / 'export_digest.py'], needs=['world.hidamari'],
                 deferred_inputs=[DeferredInputs('city-inputs', city_inputs.paths, (out, names), support=(helper,))],
-                outputs=[output], cutoff=True, about=f'the three city {part} inputs, independent of other city exports')
+                outputs=[output], cutoff=True, about=f'the selected city {key} inputs, independent of other city exports')
+
+
+def city_tile_steps(out):
+    """Independent bounded source exports; assembly does not rerun siblings."""
+    root = out / 'city_surface_tiles/v1_128m'
+    result = []
+    for name in city_inputs.TILES:
+        result += [city_input_step(out, 'tiles', (name,)),
+                   Step('world.city_tiles.'+name,
+                        [Blender(WORLD / 'city_surface_tiles.py',
+                                 ('--tag', 'v1_128m', '--sources', name), threads=3)],
+                        inputs=[WORLD / 'city_surface_tiles.py', paths.STUDIO / 'atelier/mesh_cells.py',
+                                paths.STUDIO / 'atelier/mesh_partition.py', paths.STUDIO / 'atelier/conventions.py',
+                                paths.STUDIO / 'atelier/model_files.py', paths.STUDIO / 'atelier/atomic_files.py'],
+                        needs=['world.hidamari.tiles.'+name],
+                        products=[Product('city.tiles.'+name, (root / name,))],
+                        cache=True, heavy=True, about='bounded city surface '+name)]
+    result.append(Step('world.city_tiles',
+                       [Call('assemble city pieces', lambda ctx, log: city_products.assemble(root, log))],
+                       inputs=[GAME / 'city_tile_products.py', paths.STUDIO / 'atelier/atomic_files.py',
+                               paths.STUDIO / 'atelier/conventions.py', paths.STUDIO / 'atelier/model_files.py'],
+                       reads=['city.tiles.'+name for name in city_inputs.TILES],
+                       outputs=[root / 'manifest.json'],
+                       about='complete production city piece membership'))
+    return result
 
 
 def digest_step(out, export, part, about, root=None, names=(), north=None):
@@ -1249,11 +1278,7 @@ def world_steps(ctx):
                                                                      'northern_foothills', 'volcanic_highlands', 'haras_valley',
                                                                      'brinecove'))],
              heavy=True, about='map zones and label-free regional atlas'),
-        city_input_step(out, 'tiles'),
-        Step('world.city_tiles', [Blender(WORLD / 'city_surface_tiles.py', ('--tag', 'v1_128m'), threads=3)],
-             inputs=[WORLD / 'city_surface_tiles.py', paths.STUDIO / 'atelier/mesh_cells.py',
-                     paths.STUDIO / 'atelier/mesh_partition.py'], needs=['world.hidamari.tiles'],
-             outputs=[out / 'city_surface_tiles' / 'v1_128m' / 'manifest.json'], about='desktop profile: city surfaces in 128 m tiles', heavy=True),
+        *city_tile_steps(out),
         digest_step(out, 'world.city_tiles', 'meshes', 'the city tiles unreal.desktop reads', out / 'city_surface_tiles', ['v1_128m']),
         city_input_step(out, 'trees'),
         Step('world.city_trees', [Blender(WORLD / 'city_tree_lods.py', ('--tag', 'v4'), threads=3)],
@@ -1407,7 +1432,7 @@ def unreal_steps(ctx):
              deferred_inputs=[native_source_inputs()],
              needs=['skate.runtime'], heavy=True,
              about='the Yorimichi C++ modules (editor target)'),
-        *unreal_modules.steps(ctx, IMPORT_CODE + SAVED_TYPES + CONTACT_TYPES),
+        *unreal_modules.steps(ctx, IMPORT_CODE + SAVED_TYPES + CONTACT_TYPES + ('Yorimichi',)),
         *foliage_build.unreal_steps(ctx, IMPORT_CODE, engine_version(ctx)),
         Step('unreal.world', [UnrealScript(SCRIPTS / 'setup_project.py', 'level saved')],
              # The city's arcade and harbor materials read the region's committed paintings.
@@ -1561,14 +1586,29 @@ def unreal_steps(ctx):
              outputs=[out / 'city_tree_lods' / 'production-cpu-access.json'],
              verify=lambda: city_tree_cpu_access_present(ctx),
              about='retain cooked CPU buffers for the three production trees used by runtime LOD validation'),
+        Step('unreal.city_tree_lods', [
+                UnrealScript(SCRIPTS / 'import_city_tree_lods.py', 'CITY TREE LODS IMPORT COMPLETE',
+                             env=(('CITY_TREE_LODS_TAG', 'v4'),))],
+             inputs=[SCRIPTS / 'import_city_tree_lods.py', SCRIPTS / 'experiment_mesh_import.py'],
+             needs=['unreal.city_tree_cpu_access', 'world.city_trees.meshes'], heavy=True,
+             products=[Product('city.native_tree_lods', (GAME / 'unreal/Content/Experiments/CityTrees/v4',)),
+                       Product('city.native_tree_report', (out / 'city_tree_lods/v4/import-report.json',))],
+             candidate_scope=CandidateScope(directories=(GAME / 'unreal/Content/Experiments/CityTrees/v4',)),
+             about='independent existing city tree LOD owner'),
         Step('unreal.desktop', [
-                UnrealScript(SCRIPTS / 'import_city_surface_tiles.py', 'CITY SURFACE TILE IMPORT COMPLETE', env=(('CITY_SURFACE_TILES_TAG', 'v1_128m'),)),
-                UnrealScript(SCRIPTS / 'import_city_tree_lods.py', 'CITY TREE LODS IMPORT COMPLETE', env=(('CITY_TREE_LODS_TAG', 'v4'),))],
+                UnrealScript(SCRIPTS / 'import_city_surface_tiles.py', 'CITY SURFACE TILE IMPORT COMPLETE',
+                             env=(('CITY_SURFACE_TILES_TAG', 'v1_128m'),), modules=IMPORT_CODE+('Yorimichi',))],
              inputs=[SCRIPTS / 'import_city_surface_tiles.py', GAME / 'city_tile_products.py',
-                     paths.STUDIO / 'atelier/conventions.py',
-                     SCRIPTS / 'import_city_tree_lods.py', SCRIPTS / 'experiment_mesh_import.py'],
-             needs=['unreal.city_tree_cpu_access', 'world.city_tiles.meshes', 'world.city_trees.meshes'], heavy=True,
-             about='desktop profile: city tiles and tree LODs (/Game/Experiments)'),
+                     paths.STUDIO / 'atelier/conventions.py'],
+             needs=['unreal.world', 'world.city_tiles.meshes', *unreal_modules.needs(('Yorimichi',))],
+             # Preserve the old targeted desktop entrypoint, without deriving
+             # piece identity from unrelated tree LOD bytes.
+             after=['unreal.city_tree_lods'], heavy=True,
+             verify=lambda: city_products.parents_retired(GAME / 'unreal/Content'),
+             products=[Product('city.native_pieces', (GAME / 'unreal/Content/Experiments/CitySurfaces/v1_128m',)),
+                       Product('city.native_piece_report', (out / 'city_surface_tiles/v1_128m/import-report.json',))],
+             candidate_scope=CandidateScope(directories=(GAME / 'unreal/Content/Experiments/CitySurfaces/v1_128m',)),
+             about='production city pieces with complete collision; superseded parents retired'),
         # The Ride skating clips: the simulation rig and every simulation clip as Unreal assets (/Game/SkateRide), the manifest
         # the Ride runtime reads, and the measurement of the compressed poses against the simulation data. Both scripts
         # run in batches that resume where a failed run stopped (unreal/Scripts/skate_ride/README.md).
