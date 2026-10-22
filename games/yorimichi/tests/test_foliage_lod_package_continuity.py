@@ -80,7 +80,7 @@ def owner(monkeypatch, tmp_path):
                                  seed=tmp_path / 'seed.fbx', folder='/Game/Owned')
 
     return SimpleNamespace(run=run, source=source, target=target, calls=calls, material=material,
-                           validations=validations, editor=editor)
+                           validations=validations, editor=editor, module=module, meshes=meshes)
 
 
 def test_reused_lod_source_keeps_package_bytes_on_repeated_owner_finishing(owner):
@@ -134,3 +134,15 @@ def test_missing_current_material_cannot_be_certified(owner):
         owner.run()
     assert owner.source.saves == 0
     assert not owner.validations
+
+
+def test_every_lod_uses_the_base_tasks_current_admission_policy(owner, monkeypatch, tmp_path):
+    predicates = []
+    predicate = lambda mesh: True
+    def acquire(*args, **kwargs):
+        predicates.append(kwargs['reuse_validator'])
+        return owner.source
+    monkeypatch.setitem(owner.module.apply_lods.__globals__, 'import_mesh', acquire)
+    owner.module.apply_lods(owner.target, {'screen_sizes':[1.,.1,.01]}, tmp_path, owner.meshes,
+                            seed=tmp_path/'seed.fbx', folder='/Game/Owned', reuse_validator=predicate)
+    assert predicates == [predicate,predicate]

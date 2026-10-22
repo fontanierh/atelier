@@ -7,9 +7,10 @@ from types import SimpleNamespace
 import pytest
 
 
+@pytest.mark.parametrize('scratch_failure', [False, True])
 @pytest.mark.parametrize('with_hull', [False, True])
 @pytest.mark.parametrize('with_obsolete', [False, True])
-def test_import_disables_distance_fields_only_on_separate_physics_hull(tmp_path, with_hull, with_obsolete):
+def test_import_disables_distance_fields_only_on_separate_physics_hull(tmp_path, with_hull, with_obsolete, scratch_failure):
     writes, bindings = [], []
     class Properties:
         def __init__(self, **values): self.values = values
@@ -58,7 +59,7 @@ def test_import_disables_distance_fields_only_on_separate_physics_hull(tmp_path,
     # The actual native loop must not reopen the placement runtime or broad report.
     (out / 'build-report.json').write_text('unconsumed broad report')
     (out / 'runtime.json').write_text('unconsumed placement runtime')
-    assets = SimpleNamespace(make_directory=lambda *_: None,
+    assets = SimpleNamespace(make_directory=lambda *_: None, does_directory_exist=lambda _: scratch_failure,
         list_assets=lambda root, **_: [root+'/'+name+'.'+name for name in meshes],
         does_asset_exist=lambda path: path.rsplit('/', 1)[-1] in meshes,
         find_package_referencers_for_asset=lambda path, **k: [
@@ -85,6 +86,11 @@ def test_import_disables_distance_fields_only_on_separate_physics_hull(tmp_path,
         MeshReuse=lambda *a, **k: SimpleNamespace(donor={}, acquire=lambda name, *a, **k: meshes.get(name), imported=lambda *a: None,
                                                 validated=lambda _: None, finish=lambda: None))
     exec(compile(ast.Module(body=[function], type_ignores=[]), str(script), 'exec'), namespace)
+    if scratch_failure:
+        with pytest.raises(RuntimeError, match='temporary import packages'):
+            namespace['main']()
+        assert not (out/'import-report.json').exists() and tv_imports == []
+        return
     namespace['main']()
     assert tv_imports == [script.with_name('racing_tv_material.py')]
     assert not any(name.startswith('SM_BM_Obsolete') for name in meshes)
