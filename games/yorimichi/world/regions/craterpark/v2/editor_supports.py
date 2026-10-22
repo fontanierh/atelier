@@ -211,44 +211,38 @@ def _rand(*key):
 def _rings(b, material, rings, normals=None):
     """Loft through closed cross-sections (each (k, 3)), with end caps: flat faces outward, or the given per-ring
     vertex normals (each (k, 3)) on the sides for a smooth (rounded) surface."""
-    R_arr = np.asarray(rings, 'f8')
-    A, B = R_arr[:-1], R_arr[1:]
-    k = R_arr.shape[1]
-    Q = np.stack([A, np.roll(A, -1, axis=1), np.roll(B, -1, axis=1), B], axis=2).reshape(-1, 4, 3)
-    mid = np.repeat(0.5 * (A.mean(axis=1) + B.mean(axis=1)), k, axis=0)
-    n_vec = np.cross(Q[:, 1] - Q[:, 0], Q[:, 2] - Q[:, 0]) + np.cross(Q[:, 2] - Q[:, 0], Q[:, 3] - Q[:, 0])
-    size = np.linalg.norm(n_vec, axis=1)
-    keep = size >= 1e-6
-    Q = Q[keep]
-    n_vec = n_vec[keep] / size[keep, None]
-    flip = ((Q.mean(axis=1) - mid[keep]) * n_vec).sum(axis=1) < 0
-    n_vec[flip] = -n_vec[flip]
-    m_kept = len(Q)
-    V_parts = [Q.reshape(-1, 3)] if m_kept else []
-    if normals is not None:
-        N_arr = np.asarray(normals, 'f8')
-        NA, NB = N_arr[:-1], N_arr[1:]
-        NQ = np.stack([NA, np.roll(NA, -1, axis=1), np.roll(NB, -1, axis=1), NB], axis=2).reshape(-1, 4, 3)[keep]
-        N_parts = [NQ.reshape(-1, 3)] if m_kept else []
-    else:
-        N_parts = [np.repeat(n_vec, 4, axis=0)] if m_kept else []
-    if m_kept:
-        base = (np.arange(m_kept, dtype='i8') * 4)[:, None]
-        F_parts = [np.hstack([base + [0, 1, 2], base + [0, 2, 3]]).reshape(-1, 3)]
-    else:
-        F_parts = []
-    o = m_kept * 4
+    V, F, N = [], [], []
+    for i in range(len(rings) - 1):
+        A, B = rings[i], rings[i + 1]
+        mid = np.concatenate([A, B]).mean(0)
+        k = len(A)
+        for e in range(k):
+            q = np.array([A[e], A[(e + 1) % k], B[(e + 1) % k], B[e]])
+            n = np.cross(q[1] - q[0], q[2] - q[0]) + np.cross(q[2] - q[0], q[3] - q[0])
+            size = np.linalg.norm(n)
+            if size < 1e-6:
+                continue
+            n = n / size
+            if n @ (q.mean(0) - mid) < 0:
+                n = -n
+            o = len(V)
+            V.extend(q)
+            if normals is not None:
+                N.extend([normals[i][e], normals[i][(e + 1) % k], normals[i + 1][(e + 1) % k], normals[i + 1][e]])
+            else:
+                N.extend([n] * 4)
+            F.extend([(o, o + 1, o + 2), (o, o + 2, o + 3)])
     for R, other in ((rings[0], rings[1]), (rings[-1], rings[-2])):
         out = R.mean(0) - other.mean(0)
         size = np.linalg.norm(out)
         if size < 1e-9:
             continue
-        V_parts.append(np.vstack([R.mean(0)[None], R]))
-        N_parts.append(np.repeat((out / size)[None], len(R) + 1, axis=0))
-        F_parts.append(np.array([(o, o + 1 + e, o + 1 + (e + 1) % len(R)) for e in range(len(R))], 'i8'))
-        o += len(R) + 1
-    if F_parts:
-        b.add(material, (np.concatenate(V_parts), np.concatenate(F_parts), np.concatenate(N_parts)))
+        o = len(V)
+        V.extend([R.mean(0)] + list(R))
+        N.extend([out / size] * (len(R) + 1))
+        F.extend([(o, o + 1 + e, o + 1 + (e + 1) % len(R)) for e in range(len(R))])
+    if F:
+        b.add(material, (np.array(V, 'f8'), np.array(F, 'i8'), np.array(N, 'f8')))
 
 
 def _rounded(c, fwd, acr, a, w, y, r=CORNER, seg=3):
@@ -464,35 +458,18 @@ def _loft(b, rows):
         V.extend(q), N.extend([nn] * 4), F.extend([(o, o + 1, o + 2), (o, o + 2, o + 3)])
 
     for i in range(len(rows) - 1):
-        pass
-    C_arr = np.asarray(corners, 'f8')
-    A_all, B_all = C_arr[:-1], C_arr[1:]
-    Q_all = np.stack([A_all, np.roll(A_all, -1, axis=1), np.roll(B_all, -1, axis=1), B_all], axis=2)
-    out_list = []
-    for i in range(len(rows) - 1):
+        A, B = corners[i], corners[i + 1]
         fwd = np.array([*(rows[i + 1][0].c - rows[i][0].c)])[[0, 0, 1]] * [1, 0, 1]
-        if np.linalg.norm(fwd) < 1e-9:
+        if np.linalg.norm(fwd) < 1e-9:                       # a pier face: both sections at one sample
             s = rows[i][0]
             fwd = np.array([-s.across[1], 0., s.across[0]]) * (1 if rows[i + 1][1] > rows[i][1] else -1)
-            out_list.append(np.repeat(fwd[None], k, axis=0))
-        else:
-            mid = 0.5 * (A_all[i].mean(0) + B_all[i].mean(0))
-            out_list.append(Q_all[i].mean(axis=1) - mid)
-    if out_list:
-        Q_flat = Q_all.reshape(-1, 4, 3)
-        out_flat = np.concatenate(out_list, axis=0)
-        nn_vec = np.cross(Q_flat[:, 1] - Q_flat[:, 0], Q_flat[:, 2] - Q_flat[:, 0]) + np.cross(Q_flat[:, 2] - Q_flat[:, 0], Q_flat[:, 3] - Q_flat[:, 0])
-        sz = np.linalg.norm(nn_vec, axis=1)
-        keep = sz >= 1e-6
-        Q_kept = Q_flat[keep]
-        nn_kept = nn_vec[keep] / sz[keep, None]
-        flip = (nn_kept * out_flat[keep]).sum(axis=1) < 0
-        nn_kept[flip] = -nn_kept[flip]
-        V.extend(Q_kept.reshape(-1, 3))
-        N.extend(np.repeat(nn_kept, 4, axis=0))
-        for m_i in range(len(Q_kept)):
-            o = m_i * 4
-            F.extend([(o, o + 1, o + 2), (o, o + 2, o + 3)])
+            for e in range(k):
+                quad(np.array([A[e], A[(e + 1) % k], B[(e + 1) % k], B[e]]), fwd)
+            continue
+        mid = np.concatenate([A, B]).mean(0)
+        for e in range(k):
+            q = np.array([A[e], A[(e + 1) % k], B[(e + 1) % k], B[e]])
+            quad(q, q.mean(0) - mid)
     for C, sign, j in ((corners[0], -1, 0), (corners[-1], 1, -1)):   # end caps: fans
         s = rows[j][0]
         out = sign * np.array([-s.across[1], 0., s.across[0]])
