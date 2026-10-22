@@ -98,6 +98,14 @@ def test_world_selector_includes_native_references_without_reading_their_bytes(t
     expected['belmonte.ground'] = 'world.belmonte.ground'
     expected.update({f'belmonte.native_{part}': 'unreal.belmonte'
                      for part in ('meshes', 'materials', 'tv', 'report')})
+    expected.update({f'brinecove.native_{part}': 'unreal.brinecove'
+                     for part in ('meshes', 'materials', 'report')})
+    expected.update({f'city.tiles.{source}': f'world.city_tiles.{source}'
+                     for source in ('HD_Terrain', 'HD_Streets', 'HD_Square')})
+    expected.update({f'city.native_{part}': 'unreal.city_tree_lods'
+                     for part in ('tree_lods', 'tree_report')})
+    expected.update({f'city.native_{part}': 'unreal.desktop'
+                     for part in ('pieces', 'piece_report')})
     assert graph.owners == expected
     assert all(not graph.by_name[owner].cache for product, owner in expected.items()
                if any(isinstance(command, (build.UnrealScript, build.UnrealCompile, build.UnrealPackage))

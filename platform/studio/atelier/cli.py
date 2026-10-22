@@ -122,6 +122,7 @@ def lint(staged=False):
     listing = ['git', 'diff', '--cached', '--name-only', '--diff-filter=ACMR'] if staged else ['git', 'ls-files']
     tracked = subprocess.run(listing, cwd=paths.REPO, capture_output=True, text=True).stdout.split()
     problems = []
+    from .mesh_export_contract import violations
     games = sorted(p.name for p in paths.GAMES.iterdir() if p.is_dir())
     for rel in tracked:
         path = paths.REPO / rel
@@ -137,6 +138,8 @@ def lint(staged=False):
                 text = path.read_text(errors='ignore')
         except OSError:
             continue
+        if path.suffix == '.py':
+            problems.extend(violations(path, text))
         for pattern, what, literals in PERSONAL:
             if not any(literal in text for literal in literals):
                 continue

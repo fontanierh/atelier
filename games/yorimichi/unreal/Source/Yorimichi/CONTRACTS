@@ -155,3 +155,17 @@ never for the state first observed (a late joiner). There is one transport bank,
 @cc [owner:fontanierh,label:correctness] racing-hud-venue
 The race HUD banner MUST be English and MUST appear only inside a venue's grounds near track height.
 The broad runner-rendering proximity radius MUST NOT enable the HUD banner.
+
+@cc [owner:fontanierh,label:correctness] city-tile-material-ownership
+City surface tile components MUST retain their own mesh material table. Parent material slot indices
+MUST NOT be copied onto tiles: a tile may omit unused parent slots and compact their order.
+
+@cc [owner:fontanierh,label:correctness;performance] production-city-pieces-own-the-whole-surface
+HD_Terrain, HD_Streets and HD_Square MUST load only their complete validated bounded
+piece sets. Their original logical keys MUST retain placements, visibility, camera,
+shadow and collision policies. Every source face MUST have one rendered piece owner;
+every authored whole collision hull MUST have one component owner, while every piece
+retains its exact complex query surface. A hidden monolithic collision parent MUST NOT
+remain loaded. Missing membership MUST fail readiness rather than load a parent.
+Canonical terrain-only diagnostic queries MUST inspect the complete tagged terrain
+piece union, preserving their original trace semantics.

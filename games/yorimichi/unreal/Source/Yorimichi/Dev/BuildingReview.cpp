@@ -60,7 +60,7 @@ static int32 RunBuildingProbes(UWorld* World,AActor* Pawn,const TSharedPtr<FJson
   for(auto* C:Components)if(C->GetStaticMesh())
   {
    const FString N=C->GetStaticMesh()->GetName();
-   if(N==TEXT("Terrain")||N==TEXT("HD_Terrain")||N==TEXT("SW_Island")||N==TEXT("HD_NorthMountains"))Terrain.Add(C);
+   if(N==TEXT("Terrain")||C->ComponentHasTag(TEXT("CitySurface:HD_Terrain"))||N==TEXT("SW_Island")||N==TEXT("HD_NorthMountains"))Terrain.Add(C);
   }
  }
  FCollisionQueryParams Q(SCENE_QUERY_STAT(BuildingSemanticProbe),true,Pawn);

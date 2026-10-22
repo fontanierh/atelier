@@ -448,7 +448,8 @@ def main(args):
         scene.frame_start, scene.frame_end = 0, info['frames'] - 1
         scene.frame_set(0)
         bpy.ops.object.select_all(action='DESELECT'); arm.select_set(True); bpy.context.view_layer.objects.active = arm
-        bpy.ops.export_scene.fbx(filepath=str(OUT / 'fbx' / f'A_{name}.fbx'), object_types={'ARMATURE'}, bake_anim=True, **module.FBX)
+        from atelier.blender.fbx import export_fbx as export_scene_fbx
+        export_scene_fbx(filepath=str(OUT / 'fbx' / f'A_{name}.fbx'), object_types={'ARMATURE'}, bake_anim=True, **module.FBX)
         report['clips'][name] = info
         print(args.character.upper(), 'BIKE CLIP', name, info['frames'], json.dumps(info['reach_error_cm']), flush=True)
     (OUT / ('export.json' if wanted == set(CLIPS) else 'export-partial.json')).write_text(json.dumps(report, indent=1) + '\n')
