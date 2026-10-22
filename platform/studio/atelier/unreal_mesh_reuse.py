@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import stat
 import tempfile
 
 from . import mesh_reuse, paths
@@ -50,6 +51,81 @@ def packages_clean(packages):
         dirty = {package.get_name() for package in unreal.EditorLoadingAndSavingUtils.get_dirty_content_packages()}
         return not dirty.intersection(packages)
     except (AttributeError, TypeError, RuntimeError):
+        return False
+
+
+def native_group(package, sources, validator):
+    """Load and validate one group without publishing any receipt or count."""
+    import unreal
+    loaded = {}
+    try:
+        for target, _, _ in sources:
+            loaded[target] = unreal.load_asset(target)
+    except Exception:
+        return loaded, 'candidate_load_failed'
+    if not packages_clean([target for target, _, _ in sources]):
+        return loaded, 'dirty_loaded_package'
+    try:
+        if any(not loaded[target] or not imported_source_matches(loaded[target], source)
+               for target, source, _ in sources):
+            return loaded, 'recorded_source_mismatch'
+    except Exception:
+        return loaded, 'recorded_source_mismatch'
+    if validator is not None:
+        try:
+            if not validator(loaded[package]):
+                return loaded, 'current_validator_rejected'
+        except Exception:
+            return loaded, 'current_validator_exception'
+    return loaded, None
+
+
+def retire_candidate_attempt(content, packages, selected, loaded):
+    """@cc [owner:fontanierh,label:safety] retire-only-unadmitted-candidate-attempt
+    Retry MAY remove only the exact unchanged regular files installed by this attempt into
+    previously absent packages. Dirty packages, surviving loaded assets or changed files MUST
+    refuse cleanup. Only supported clean-package unloading MAY run; never force-delete assets,
+    save packages, alter source/donors, or remove pre-existing receiving files. Failure MUST
+    stop the import rather than return a miss that could overwrite uncertain receiving state.
+    """
+    import unreal
+    def unchanged():
+        installed = {path for _, path, _ in selected}
+        for name in packages:
+            for member in mesh_reuse.package_members(name):
+                path = safe_destination(content, member.removeprefix('content/'))
+                if path not in installed and os.path.lexists(path):
+                    return False
+        for _, path, expected in selected:
+            safe_destination(content, path.relative_to(content).as_posix())
+            info = path.lstat()
+            if (not stat.S_ISREG(info.st_mode) or info.st_size != expected['size']
+                    or stat.S_IMODE(info.st_mode) != expected['mode']
+                    or mesh_reuse.digest(path) != expected['sha256']):
+                return False
+        return True
+    try:
+        if not packages_clean(packages) or not unchanged():
+            return False
+        loaded.clear()  # Release this attempt's Python references before supported unloading.
+        objects = [unreal.find_object(None, name) for name in packages]
+        objects = [value for value in objects if value is not None]
+        if any(value.get_name() not in packages for value in objects):
+            return False
+        if objects:
+            unreal.EditorLoadingAndSavingUtils.unload_packages(objects)
+        # Unload's boolean means "any", not "all". Verify every actual asset is gone.
+        if any(unreal.find_object(None, name + '.' + name.rsplit('/', 1)[1]) is not None for name in packages):
+            return False
+        if not packages_clean(packages) or not unchanged():
+            return False
+        for _, path, _ in selected:
+            path.unlink()
+        # This targeted API removes registry entries for the now-absent package files.
+        unreal.AssetRegistryHelpers.get_asset_registry().scan_modified_asset_files(
+            [str(path) for _, path, _ in selected if path.suffix == '.uasset'])
+        return not any(unreal.EditorAssetLibrary.does_asset_exist(name) for name in packages)
+    except (OSError, ValueError, TypeError, AttributeError, RuntimeError):
         return False
 
 
@@ -204,13 +280,17 @@ class MeshReuse:
                 self.pending[name]['provenance'] = dict(kind='compatibility-only', historical_task=self.previous_fingerprint)
                 historical = True
         copied = False
+        loaded = {}
         if not local:
             if not self.compatible:
                 reason = ('saved_receipt_mismatch' if self.receipts.path.exists() else
                           'local_package_history_mismatch' if self.local_compatible else
                           'no_compatible_package_history')
                 return self.miss(reason)
-            if any(unreal.EditorAssetLibrary.does_asset_exist(target) for target in packages):
+            if any(unreal.EditorAssetLibrary.does_asset_exist(target)
+                   or unreal.find_object(None, target) is not None
+                   or unreal.find_object(None, target + '.' + target.rsplit('/', 1)[1]) is not None
+                   for target in packages):
                 # A candidate never replaces an unproved existing receiving scope.
                 return self.miss('unproved_existing_package')
             if any(os.path.lexists(safe_destination(self.content, member.removeprefix('content/')))
@@ -218,6 +298,7 @@ class MeshReuse:
                 return self.miss('unproved_disk_sidecar')
             bundle, selected = None, []
             geometry_matches, member_failed = False, False
+            native_failure = None
             for candidate, report, compatible in self.histories:
                 if not compatible:
                     continue
@@ -255,6 +336,7 @@ class MeshReuse:
                         for index, (source, destination, expected) in enumerate(trial):
                             temporary_file = Path(temporary) / str(index)
                             shutil.copyfile(source, temporary_file)
+                            os.chmod(temporary_file, expected['mode'])
                             if (temporary_file.stat().st_size != expected['size']
                                     or mesh_reuse.digest(temporary_file) != expected['sha256']):
                                 raise ValueError('Candidate copy changed')
@@ -265,29 +347,40 @@ class MeshReuse:
                     for temporary_file, destination in prepared:
                         destination.parent.mkdir(parents=True, exist_ok=True)
                         os.replace(temporary_file, destination)
-                bundle, selected = candidate, trial
+                selected = trial
+                registry = unreal.AssetRegistryHelpers.get_asset_registry()
+                try:
+                    registry.scan_files_synchronous(
+                        [str(path) for _, path, _ in selected if path.suffix == '.uasset'], True)
+                    # Registry tags are disk metadata: reject old sources before loading or GC.
+                    registry_matches = all(mesh_reuse.recorded_source_matches(
+                        unreal.EditorAssetLibrary.find_asset_data(target).get_tag_value('AssetImportData'), source)
+                        for target, source, _ in sources)
+                except Exception:
+                    registry_matches = False
+                if registry_matches:
+                    loaded, native_failure = native_group(package, sources, validator)
+                else:
+                    loaded, native_failure = {}, 'recorded_source_mismatch'
+                if native_failure is not None:
+                    if not retire_candidate_attempt(self.content, packages, selected, loaded):
+                        # Returning an ordinary miss would let an importer overwrite uncertain
+                        # live/dirty packages. Stop this task rather than grant that permission.
+                        raise RuntimeError('Candidate cleanup refused; receiving packages require inspection')
+                    continue
+                bundle = candidate
                 break
             if bundle is None:
-                return self.miss('candidate_member_missing' if member_failed else
-                                 'candidate_package_missing' if geometry_matches else 'candidate_geometry_mismatch')
-            unreal.AssetRegistryHelpers.get_asset_registry().scan_files_synchronous(
-                [str(destination) for _, destination, _ in selected if destination.suffix == '.uasset'], True)
+                return self.miss(native_failure or ('candidate_member_missing' if member_failed else
+                                 'candidate_package_missing' if geometry_matches else 'candidate_geometry_mismatch'))
             copied = True
             self.pending[name]['provenance'] = dict(kind='compatibility-only',
                 checkpoint=bundle['checkpoint'], donor_task=bundle['donor_task'],
                 donor_fingerprint=bundle['donor_fingerprint'], source_revision=bundle['source_revision'])
-        loaded = {target: unreal.load_asset(target) for target in packages}
-        if not packages_clean(packages):
-            return self.miss('dirty_loaded_package')
-        if any(not loaded[target] or not imported_source_matches(loaded[target], source)
-               for target, source, _ in sources):
-            return self.miss('recorded_source_mismatch')
-        if validator is not None:
-            try:
-                if not validator(loaded[package]):
-                    return self.miss('current_validator_rejected')
-            except Exception:
-                return self.miss('current_validator_exception')
+        if local:
+            loaded, failure = native_group(package, sources, validator)
+            if failure is not None:
+                return self.miss(failure)
         self.counts['reused_candidate' if copied else 'reused_local'] += 1
         if historical:
             print('NATIVE MESH HISTORICAL COMPATIBILITY ' + json.dumps(dict(task=self.task,

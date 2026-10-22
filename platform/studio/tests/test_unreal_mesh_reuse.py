@@ -48,26 +48,44 @@ def scene(tmp_path, monkeypatch):
     content = ctx.uproject.parent / 'Content'
     tags = {package: json.dumps([{'FileMD5': hashlib.md5(file.read_bytes()).hexdigest()}])
             for package, file in zip(packages, (source, hull))}
-    scans = []
+    scans, removals, unloads = [], [], []
+    objects, registered = {}, set()
+    def scan(names, force):
+        scans.append(names)
+        registered.update(packages)
+    def rescan(names):
+        removals.append(names)
+        registered.difference_update(p for p in packages
+            if not (content / mesh_reuse.package_members(p)[0].removeprefix('content/')).exists())
+    def unload(values):
+        unloads.append([v.get_name() for v in values])
+        objects.clear()
+    def asset_data(package):
+        return SimpleNamespace(get_tag_value=lambda name: tags[package] if name == 'AssetImportData' else None)
+    registry = SimpleNamespace(scan_files_synchronous=scan, scan_modified_asset_files=rescan)
     def load(package):
         for required in packages:
             assert (content / mesh_reuse.package_members(required)[0].removeprefix('content/')).exists()
-        return SimpleNamespace(package=package)
+        mesh = SimpleNamespace(package=package)
+        objects[package] = SimpleNamespace(get_name=lambda: package)
+        objects[package + '.' + package.rsplit('/', 1)[1]] = mesh
+        return mesh
     unreal = SimpleNamespace(
-        EditorLoadingAndSavingUtils=SimpleNamespace(get_dirty_content_packages=lambda: []),
-        EditorAssetLibrary=SimpleNamespace(does_asset_exist=lambda p:
-            (content / mesh_reuse.package_members(p)[0].removeprefix('content/')).exists()),
+        EditorLoadingAndSavingUtils=SimpleNamespace(get_dirty_content_packages=lambda: [], unload_packages=unload),
+        EditorAssetLibrary=SimpleNamespace(find_asset_data=asset_data, does_asset_exist=lambda p:
+            p in registered or (content / mesh_reuse.package_members(p)[0].removeprefix('content/')).exists()),
         AssetRegistryHelpers=SimpleNamespace(
             create_asset_data=lambda mesh: SimpleNamespace(
                 get_tag_value=lambda name: tags[mesh.package] if name == 'AssetImportData' else None),
-            get_asset_registry=lambda: SimpleNamespace(scan_files_synchronous=lambda names, force: scans.append(names))),
-        load_asset=load)
+            get_asset_registry=lambda: registry),
+        find_object=lambda outer, name: objects.get(name), load_asset=load)
     monkeypatch.setitem(sys.modules, 'unreal', unreal)
     def adapter():
         return native.MeshReuse(ctx, 'unreal.region', script, ('build',), report_member='generated/report.json')
     sources = [(packages[0], source, mesh_reuse.digest(source)), (packages[1], hull, mesh_reuse.digest(hull))]
     return SimpleNamespace(ctx=ctx, adapter=adapter, sources=sources, package=packages[0], tags=tags,
-                           staged=staged, content=content, scans=scans, bundle=bundle)
+                           staged=staged, content=content, scans=scans, bundle=bundle, unreal=unreal,
+                           objects=objects, unloads=unloads, removals=removals, registered=registered)
 
 
 def acquire(scene, adapter, **kwargs):
@@ -196,10 +214,12 @@ def test_late_copy_corruption_tries_next_donor_before_any_package_install(scene,
     assert (scene.content / 'Region/Mesh.uasset').read_bytes() == scene.staged['content/Region/Mesh.uasset'].read_bytes()
 
 
-def test_missing_native_import_hash_never_certifies_captured_bytes(scene):
+def test_missing_native_import_hash_never_certifies_captured_bytes(scene, monkeypatch):
     scene.tags[scene.package] = '[]'
     adapter = scene.adapter()
     assert acquire(scene, adapter) is None
+    assert not list(scene.content.glob('Region/*'))
+    monkeypatch.setattr(scene.unreal, 'load_asset', lambda _: None)
     adapter.validated('Mesh')
     assert not adapter.receipts.path.exists()
     assert adapter.counts['reused_candidate'] == 0
@@ -521,3 +541,98 @@ def test_successful_candidate_has_no_miss_diagnostic(scene):
     mesh_reuse.finalize_pending(scene.ctx, 'unreal.region', 'e' * 24)
     value = json.loads((adapter.receipts.path.parent / 'summary.json').read_text())
     assert value['counts']['reused_candidate'] == 1 and value['miss_reasons'] == {}
+
+
+def two_donors(scene, monkeypatch):
+    from copy import deepcopy
+    first = deepcopy(scene.bundle)
+    first['checkpoint'] = '1' * 64
+    monkeypatch.setattr(checkpoint_candidates, 'load_all', lambda *_: [first, scene.bundle])
+    return first
+
+
+def test_registry_source_rejection_retries_without_loading_or_unloading(scene, monkeypatch):
+    two_donors(scene, monkeypatch)
+    real = scene.unreal.EditorAssetLibrary.find_asset_data
+    monkeypatch.setattr(scene.unreal.EditorAssetLibrary, 'find_asset_data', lambda p:
+        SimpleNamespace(get_tag_value=lambda _: '[]') if len(scene.scans) == 1 else real(p))
+    adapter = scene.adapter()
+    assert acquire(scene, adapter)
+    assert adapter.pending['Mesh']['provenance']['checkpoint'] == scene.bundle['checkpoint']
+    assert len(scene.scans) == 2 and len(scene.removals) == 1 and scene.unloads == []
+    assert adapter.counts['reused_candidate'] == 1 and not adapter.receipts.path.exists()
+
+
+@pytest.mark.parametrize('failure', ['load_null', 'load_exception', 'source', 'validator', 'validator_exception'])
+def test_native_rejection_unloads_only_attempt_then_admits_later_donor(scene, monkeypatch, failure):
+    two_donors(scene, monkeypatch)
+    real = scene.unreal.load_asset
+    def load(package):
+        value = real(package)  # Model an asset loaded even when its wrapper fails.
+        if len(scene.scans) == 1 and package == scene.package:
+            if failure == 'load_null':
+                return None
+            if failure == 'load_exception':
+                raise RuntimeError('native failed')
+        return value
+    monkeypatch.setattr(scene.unreal, 'load_asset', load)
+    original = native.imported_source_matches
+    monkeypatch.setattr(native, 'imported_source_matches', lambda mesh, source:
+        False if failure == 'source' and len(scene.scans) == 1 else original(mesh, source))
+    def validate(mesh):
+        if len(scene.scans) == 1 and failure == 'validator_exception':
+            raise RuntimeError('validator failed')
+        return not (len(scene.scans) == 1 and failure == 'validator')
+    adapter = scene.adapter()
+    assert acquire(scene, adapter, validator=validate)
+    assert adapter.pending['Mesh']['provenance']['checkpoint'] == scene.bundle['checkpoint']
+    assert len(scene.unloads) == 1 and set(scene.unloads[0]) <= {p for p, _, _ in scene.sources}
+    assert len(scene.removals) == 1 and len(scene.scans) == 2
+    assert adapter.counts == dict(reused_local=0, reused_candidate=1, imported=0)
+    assert not adapter.receipts.path.exists()
+
+
+@pytest.mark.parametrize('refusal', ['dirty', 'changed', 'retained', 'registry', 'new_sidecar'])
+def test_uncertain_attempt_cleanup_stops_import_without_overwrite_or_receipt(scene, monkeypatch, refusal):
+    two_donors(scene, monkeypatch)
+    target = scene.content / 'Region/Mesh.uasset'
+    def validate(mesh):
+        if refusal == 'dirty':
+            monkeypatch.setattr(scene.unreal.EditorLoadingAndSavingUtils, 'get_dirty_content_packages',
+                lambda: [SimpleNamespace(get_name=lambda: scene.package)])
+        if refusal == 'changed':
+            target.write_bytes(b'owner-modified package')
+        if refusal == 'new_sidecar':
+            target.with_suffix('.upayload').write_bytes(b'new owner output')
+        return False
+    if refusal == 'retained':
+        monkeypatch.setattr(scene.unreal.EditorLoadingAndSavingUtils, 'unload_packages', lambda _: True)
+    if refusal == 'registry':
+        registry = scene.unreal.AssetRegistryHelpers.get_asset_registry()
+        monkeypatch.setattr(registry, 'scan_modified_asset_files', lambda _: None)
+    adapter = scene.adapter()
+    with pytest.raises(RuntimeError, match='cleanup refused'):
+        acquire(scene, adapter, validator=validate)
+    assert len(scene.scans) == 1
+    assert adapter.counts['reused_candidate'] == 0 and not adapter.receipts.path.exists()
+    if refusal != 'registry':
+        assert target.exists()
+    if refusal == 'changed':
+        assert target.read_bytes() == b'owner-modified package'
+    assert scene.staged['content/Region/Mesh.uasset'].read_bytes().startswith(b'candidate:')
+
+
+def test_live_registry_invisible_asset_is_not_replaced(scene):
+    scene.objects[scene.package + '.Mesh'] = SimpleNamespace(package=scene.package)
+    adapter = scene.adapter()
+    assert acquire(scene, adapter) is None
+    assert not scene.content.exists() and scene.scans == []
+
+
+def test_all_native_rejections_leave_no_registry_or_disk_scope_for_ordinary_import(scene):
+    adapter = scene.adapter()
+    assert acquire(scene, adapter, validator=lambda _: False) is None
+    assert scene.registered == set() and scene.objects == {}
+    assert not list(scene.content.glob('Region/*'))
+    assert adapter.pending['Mesh']['provenance'] == {'kind': 'current-native-import'}
+    assert adapter.counts['reused_candidate'] == 0

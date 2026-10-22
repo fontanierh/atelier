@@ -51,6 +51,10 @@ copies each distinct selected (SHA256, mode) object once while retaining all ori
 each fresh verification pass hashes that union once, and later member accesses verify again. Metadata
 work still scales with retained catalogue membership; distinct historical byte versions still consume
 their actual staging bytes. Each mesh still needs current native admission from one complete group.
+Native rejection tries the next compatible donor after retiring only that attempt's unchanged package
+files and clean loaded objects. Registry source metadata rejects mismatches before loading; supported
+package unloading is limited to native failures. Dirty, changed or retained receiving state stops the
+task rather than allowing an importer to overwrite it. Existing receiving packages are never retired.
 Mixed local/remote discovery and real cross-machine receiving acceptance remain separate work.
 Local global-store/workspace
 garbage collection is not implemented by the remote collection rule or a coordinated manual sweep.
