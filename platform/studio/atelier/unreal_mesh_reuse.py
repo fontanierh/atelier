@@ -4,6 +4,7 @@ The owning recipe stages immutable candidates. This adapter only admits matching
 geometry; callers still apply and validate current materials, roles and physics.
 No guard, task stamp, donor checkout access or engine launch is performed here.
 """
+import ast
 import json
 import os
 from pathlib import Path
@@ -129,6 +130,38 @@ def retire_candidate_attempt(content, packages, selected, loaded):
         return False
 
 
+def historical_validator_functions(source, task, functions):
+    """Recover one literal declaration from the original recorded importer, never guess names."""
+    tree = ast.parse(source)
+    bindings = {alias.asname or alias.name for node in tree.body
+                if isinstance(node, ast.ImportFrom) and node.module == 'atelier.unreal_mesh_reuse'
+                for alias in node.names if alias.name == 'MeshReuse'}
+    matches = []
+    for call in ast.walk(tree):
+        if not (isinstance(call, ast.Call) and isinstance(call.func, ast.Name)
+                and call.func.id in bindings and len(call.args) == 4):
+            continue
+        try:
+            if (ast.literal_eval(call.args[1]) != task
+                    or not isinstance(call.args[2], ast.Name) or call.args[2].id != '__file__'
+                    or tuple(ast.literal_eval(call.args[3])) != tuple(functions)):
+                continue
+            keywords = {item.arg: item.value for item in call.keywords}
+            # An explicit external script needs its own proven historical path;
+            # unknown/computed declarations remain misses, never guessed aliases.
+            if None in keywords or 'validation_script' in keywords:
+                raise ValueError('Unsupported original validation declaration')
+            names = ast.literal_eval(keywords['validation_functions'])
+            if not isinstance(names, (tuple, list)) or not names or not all(isinstance(n, str) for n in names):
+                raise ValueError('Nonliteral original validator roots')
+            matches.append(tuple(names))
+        except (ValueError, TypeError, KeyError):
+            raise ValueError('Ambiguous original validation declaration') from None
+    if len(matches) != 1:
+        raise ValueError('No unique original validation declaration')
+    return matches[0]
+
+
 class MeshReuse:
     """@cc [owner:fontanierh,label:correctness] native-mesh-candidate-admission
     Candidate reuse MUST require matching source/geometry policy and engine context,
@@ -223,10 +256,20 @@ class MeshReuse:
                             validator.relative_to(paths.REPO).as_posix(),
                             inputs.get('<repo>/' + validator.relative_to(paths.REPO).as_posix()))
                         if previous_validator is not None:
-                            previous_validation_policy = mesh_reuse.native_policy(previous_validator,
-                                validation_functions, validator, inputs=inputs)
-                            self.previous_receipt_policies.add(mesh_reuse.identity(dict(
-                                import_policy=geometry_receipt_policy, validation=previous_validation_policy)))
+                            selectors = [validation_functions]
+                            if validator == self.script:
+                                try:
+                                    selectors.append(historical_validator_functions(previous, task, functions))
+                                except ValueError:
+                                    pass
+                            for selector in selectors:
+                                try:
+                                    previous_validation_policy = mesh_reuse.native_policy(previous_validator,
+                                        selector, validator, inputs=inputs)
+                                    self.previous_receipt_policies.add(mesh_reuse.identity(dict(
+                                        import_policy=geometry_receipt_policy, validation=previous_validation_policy)))
+                                except (ValueError, KeyError, TypeError, SyntaxError):
+                                    continue
                     except (OSError, ValueError, KeyError, TypeError, SyntaxError):
                         pass  # Unknown old validation code cannot reproduce a combined receipt.
         except (OSError, ValueError, KeyError, TypeError, SyntaxError):

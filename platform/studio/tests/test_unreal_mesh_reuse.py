@@ -478,6 +478,32 @@ def test_validator_change_revalidates_unchanged_receipt_without_import_or_early_
     assert saved['meshes']['Mesh']['provenance']['historical_task'] == 'f' * 64
 
 
+@pytest.mark.parametrize('declaration', ['valid', 'wrong_task', 'wrong_raw', 'ambiguous', 'dynamic', 'external'])
+def test_validator_rename_recovers_only_unique_recorded_declaration(scene, monkeypatch, declaration):
+    make = validation_scene(scene, monkeypatch)
+    script = paths.REPO / 'import.py'
+    call = "MeshReuse(None, 'unreal.region', __file__, ('build',), validation_functions=('validate',))"
+    if declaration == 'wrong_task': call = call.replace('unreal.region', 'unreal.other')
+    if declaration == 'wrong_raw': call = call.replace("('build',)", "('other',)")
+    if declaration == 'dynamic': call = call.replace("('validate',)", 'computed_names')
+    if declaration == 'external': call = call[:-1] + ", validation_script='other.py')"
+    script.write_text('from atelier.unreal_mesh_reuse import MeshReuse\n'
+                      'def build(): return 1\ndef validate(mesh): return bool(mesh)\n'
+                      'def setup():\n    ' + call + '\n'
+                      + ('    ' + call + '\n' if declaration == 'ambiguous' else ''))
+    previous = script.read_text()
+    first = make(); assert acquire(scene, first, validator=lambda _: True)
+    first.validated('Mesh'); mesh_reuse.finalize_pending(scene.ctx, 'unreal.region', 'e' * 24)
+    monkeypatch.setattr(mesh_reuse, 'saved_source', lambda *a: previous)
+    script.write_text(previous.replace('def validate(mesh)', 'def validate_current(mesh)'))
+    second = native.MeshReuse(scene.ctx, 'unreal.region', script, ('build',),
+                              validation_functions=('validate_current',))
+    checked = []
+    result = acquire(scene, second, validator=lambda mesh: checked.append(mesh) or True)
+    assert bool(result) == (declaration == 'valid')
+    assert len(checked) == (1 if declaration == 'valid' else 0)
+
+
 def test_real_recorded_helper_change_revalidates_with_original_git_policy(scene, monkeypatch):
     make = validation_scene(scene, monkeypatch)
     script = paths.REPO / 'import.py'
