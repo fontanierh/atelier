@@ -1473,7 +1473,7 @@ def unreal_steps(ctx):
              about='the Yorimichi C++ modules (editor target)'),
         *unreal_modules.steps(ctx, IMPORT_CODE + SAVED_TYPES + CONTACT_TYPES + ('Yorimichi',)),
         *foliage_build.unreal_steps(ctx, IMPORT_CODE, engine_version(ctx)),
-        Step('unreal.world', [UnrealScript(SCRIPTS / 'setup_project.py', 'level saved')],
+        Step('unreal.world', [UnrealScript(SCRIPTS / 'setup_project.py', 'level saved', memory_gib=14)],
              # The city's arcade and harbor materials read the region's committed paintings.
              inputs=[WORLD / 'asset_catalog.py', WORLD / 'coast_water.py', REGIONS / 'hidamari' / 'textures',
                      REGIONS / 'hidamari/ferry_source.py',
