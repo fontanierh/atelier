@@ -85,10 +85,6 @@ def main():
         raise RuntimeError('Missing body setup: ' + name)
     flag = {'complex': U.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE, 'default': U.CollisionTraceFlag.CTF_USE_DEFAULT}
     body.set_editor_property('collision_trace_flag', flag[data['collision']])
-    for asset in editor.list_assets(folder, recursive=True):
-        package = asset.split('.')[0]
-        if package not in expected and not editor.delete_asset(asset):
-            raise RuntimeError('Cannot retire owned LOD: ' + asset)
     report = apply_lods(mesh, data, source, meshes, seed=seed, folder=folder, interface=interface,
                         reuse_validator=reusable_collision)
     report['triangles'] = [mesh.get_num_triangles(i) for i in range(mesh.get_num_lods())]
@@ -109,6 +105,17 @@ def main():
         assert mesh.get_editor_property(key) == value, (name, key, value)
     if not editor.save_loaded_asset(mesh, False):
         raise RuntimeError('Could not save foliage package: ' + path)
+    # Only now, with the replacement chain validated and saved, retire this tree's obsolete LODs and dropped crown
+    # material, and only when nothing outside that obsolete set still uses them.
+    stale = [asset for asset in editor.list_assets(folder, recursive=True) if asset.split('.')[0] not in expected]
+    obsolete = {asset.split('.')[0] for asset in stale}
+    for asset in stale:
+        users = set(editor.find_package_referencers_for_asset(asset, False)) - obsolete
+        if users:
+            raise RuntimeError('Obsolete owned LOD still referenced: ' + asset + ' by ' + ', '.join(sorted(users)))
+    for asset in stale:
+        if not editor.delete_asset(asset):
+            raise RuntimeError('Cannot retire owned LOD: ' + asset)
     report_path = yori.OUT / 'imports/foliage' / (name + '.json')
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, indent=2) + '\n')

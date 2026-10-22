@@ -309,6 +309,41 @@ def test_reimport_keeps_the_current_crown_material_and_retires_the_rest(owner, m
     editor = sys.modules['unreal'].EditorAssetLibrary
     monkeypatch.setattr(editor, 'list_assets', lambda *args, **kwargs: [p + '.' + p.rsplit('/', 1)[1] for p in (lod, crown, stale)],
                         raising=False)
-    monkeypatch.setattr(editor, 'delete_asset', lambda asset: deleted.append(asset.split('.')[0]) or True, raising=False)
+    def delete(asset):
+        deleted.append(asset.split('.')[0])
+        owner.mutations.append(('delete', asset.split('.')[0]))
+        return True
+    monkeypatch.setattr(editor, 'delete_asset', delete, raising=False)
+    monkeypatch.setattr(editor, 'find_package_referencers_for_asset', lambda asset, load: [], raising=False)
     owner.run()
     assert deleted == ([stale] if crowned else [crown, stale])
+    # Retirement follows the validated, saved replacement.
+    assert owner.mutations.index(('save', owner.imported)) < owner.mutations.index(('delete', stale))
+
+
+def test_failed_replacement_retires_nothing(owner, monkeypatch):
+    folder = '/Game/Japan/FoliageLODs/Tree_Test'
+    deleted = []
+    editor = sys.modules['unreal'].EditorAssetLibrary
+    monkeypatch.setattr(editor, 'list_assets', lambda *args, **kwargs: [folder + '/MI_Tree_Test_Crown.MI_Tree_Test_Crown'],
+                        raising=False)
+    monkeypatch.setattr(editor, 'delete_asset', lambda asset: deleted.append(asset) or True, raising=False)
+    owner.data['triangles'] = [7]   # the replacement fails validation
+    owner.write_manifest()
+    with pytest.raises(AssertionError):
+        owner.run()
+    assert deleted == []
+
+
+def test_obsolete_package_still_used_elsewhere_is_kept(owner, monkeypatch):
+    folder = '/Game/Japan/FoliageLODs/Tree_Test'
+    deleted = []
+    editor = sys.modules['unreal'].EditorAssetLibrary
+    monkeypatch.setattr(editor, 'list_assets', lambda *args, **kwargs: [folder + '/MI_Tree_Test_Crown.MI_Tree_Test_Crown'],
+                        raising=False)
+    monkeypatch.setattr(editor, 'delete_asset', lambda asset: deleted.append(asset) or True, raising=False)
+    monkeypatch.setattr(editor, 'find_package_referencers_for_asset', lambda asset, load: ['/Game/Japan/Other'],
+                        raising=False)
+    with pytest.raises(RuntimeError, match='still referenced'):
+        owner.run()
+    assert deleted == []
