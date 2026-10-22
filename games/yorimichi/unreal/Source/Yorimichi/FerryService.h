@@ -137,6 +137,8 @@ private:
         TArray<TObjectPtr<UStaticMeshComponent>> GateVisuals;
         TArray<float> GateYaw;
         bool bGatesPlaced = false;
+        TObjectPtr<UStaticMeshComponent> Wake;
+        TObjectPtr<UMaterialInstanceDynamic> WakeMaterial;
         TObjectPtr<UFerryAudioComponent> Audio;
         FTransform Previous = FTransform::Identity;
         bool bMoved = false, bPlaced = false;

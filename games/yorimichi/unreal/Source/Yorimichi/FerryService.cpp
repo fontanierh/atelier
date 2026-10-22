@@ -385,6 +385,17 @@ bool AFerryService::Initialize(const FString& Path)
             else { Visual->SetRelativeLocation(GateSpecs[G].Hinge); Visual->RegisterComponent(); }
             Ship.GateVisuals.Add(Visual); Ship.GateYaw.Add(0.f);
         }
+        Ship.Wake = MeshPart(Name + TEXT("_Wake"), TEXT("/Game/Ferry/Ship/FY_Wake.FY_Wake"), Ship.Body, false, true);
+        if (Ship.Wake)
+        {
+            Ship.Wake->SetRelativeLocation(FVector(-2600.f, 0.f, 4.f));
+            Ship.Wake->SetRelativeScale3D(FVector(136.f, 32.f, 1.f));
+            Ship.Wake->SetCastShadow(false);
+            Ship.Wake->SetReceivesDecals(false);
+            Ship.Wake->SetVisibility(false);
+            Ship.Wake->RegisterComponent();
+            Ship.WakeMaterial = Ship.Wake->CreateDynamicMaterialInstance(0);
+        }
         if (GetNetMode() != NM_DedicatedServer)
         {
             Ship.Audio = NewObject<UFerryAudioComponent>(this, *(Name + TEXT("_Audio")));
@@ -574,10 +585,21 @@ void AFerryService::UpdateAudio()
 {
     for (FShip& Ship : Ships)
     {
+        const float SpeedCmPerS = float(Ship.State.Velocity.Size2D());
+        if (Ship.Wake)
+        {
+            const float WakeFade = FMath::SmoothStep(100.f, 260.f, SpeedCmPerS);
+            Ship.Wake->SetVisibility(WakeFade > 0.005f);
+            if (Ship.WakeMaterial)
+            {
+                Ship.WakeMaterial->SetScalarParameterValue(TEXT("SpeedCmPerS"), SpeedCmPerS);
+                Ship.WakeMaterial->SetScalarParameterValue(TEXT("WakeFade"), WakeFade);
+            }
+        }
         if (!Ship.Audio) continue;
         Ship.Audio->SetPhase(Ship.State.Phase);
         Ship.Audio->SetThrottle(Ship.State.Throttle);
-        Ship.Audio->SetSpeed(float(Ship.State.Velocity.Size2D()));
+        Ship.Audio->SetSpeed(SpeedCmPerS);
         Ship.Audio->SetThruster(Ship.State.Thruster);
     }
 }

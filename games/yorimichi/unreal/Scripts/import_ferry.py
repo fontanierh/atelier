@@ -48,6 +48,92 @@ def material_parent():
     return mat
 
 
+def wake_material():
+    """M_FerryWake: translucent unlit Kelvin V-wake, hull foam collar and stern prop-wash ribbon; fades to zero below ~100 cm/s."""
+    path = '/Game/Ferry/Materials/M_FerryWake'
+    mat = E.load_asset(path) if E.does_asset_exist(path) else TOOLS.create_asset(
+        'M_FerryWake', '/Game/Ferry/Materials', unreal.Material, unreal.MaterialFactoryNew())
+    M.delete_all_material_expressions(mat)
+    mat.set_editor_property('blend_mode', unreal.BlendMode.BLEND_TRANSLUCENT)
+    mat.set_editor_property('shading_model', unreal.MaterialShadingModel.MSM_UNLIT)
+    mat.set_editor_property('two_sided', True)
+    mat.set_editor_property('compute_fog_per_pixel', True)
+    uv = M.create_material_expression(mat, unreal.MaterialExpressionTextureCoordinate, -600, -100)
+    time = M.create_material_expression(mat, unreal.MaterialExpressionTime, -600, 50)
+    pos = M.create_material_expression(mat, unreal.MaterialExpressionWorldPosition, -600, 200)
+    speed = M.create_material_expression(mat, unreal.MaterialExpressionScalarParameter, -600, 350)
+    speed.set_editor_property('parameter_name', 'SpeedCmPerS')
+    speed.set_editor_property('default_value', 0.0)
+    fade = M.create_material_expression(mat, unreal.MaterialExpressionScalarParameter, -600, 500)
+    fade.set_editor_property('parameter_name', 'WakeFade')
+    fade.set_editor_property('default_value', 0.0)
+
+    def custom_node(code, inputs, out_type, y):
+        node = M.create_material_expression(mat, unreal.MaterialExpressionCustom, -200, y)
+        node.set_editor_property('code', code)
+        node.set_editor_property('output_type', out_type)
+        args = []
+        for key, _ in inputs:
+            arg = unreal.CustomInput()
+            arg.set_editor_property('input_name', key)
+            args.append(arg)
+        node.set_editor_property('inputs', args)
+        for key, src in inputs:
+            M.connect_material_expressions(src, '', node, key)
+        return node
+
+    col_code = '''
+float xm = -94.0 + 136.0 * UV.x;
+float ym = (UV.y - 0.5) * 32.0;
+float2 wp = P.xy * 0.01;
+float rip = 0.5 + 0.5 * sin(wp.x * 1.7 + wp.y * 1.3 - T * 2.4) * cos(xm * 0.65 - ym * 0.9 + T * 3.1);
+float core = smoothstep(-50.0, -36.0, xm) * exp(-pow(ym / 2.6, 2.0));
+return lerp(float3(0.58, 0.82, 0.86), float3(1.18, 1.24, 1.30), saturate(0.45 + 0.35 * rip + 0.35 * core));
+'''
+    col = custom_node(col_code, [('UV', uv), ('P', pos), ('T', time)], unreal.CustomMaterialOutputType.CMOT_FLOAT3, -60)
+    M.connect_material_property(col, '', unreal.MaterialProperty.MP_EMISSIVE_COLOR)
+
+    op_code = '''
+float spd_gate = smoothstep(95.0, 240.0, S) * saturate(F);
+if (spd_gate <= 0.0001) return 0.0;
+float xm = -94.0 + 136.0 * UV.x;
+float ym = (UV.y - 0.5) * 32.0;
+float ay = abs(ym);
+float dx = max(0.0, 36.5 - xm);
+float y_arm = 1.2 + 0.34 * dx;
+float w_arm = 0.65 + 0.025 * dx;
+float v_arm = exp(-pow((ay - y_arm) / w_arm, 2.0)) * smoothstep(37.0, 31.0, xm) * smoothstep(-92.0, -25.0, xm);
+float hw = 5.6 * saturate((37.0 - abs(xm)) / 18.0);
+float collar = exp(-pow((ay - hw - 0.45) / 0.75, 2.0)) * smoothstep(-40.0, -32.0, xm) * smoothstep(37.5, 32.0, xm);
+float aft = max(0.0, -34.0 - xm);
+float w_prop = 2.2 + 0.08 * aft;
+float prop_wash = exp(-pow(ym / w_prop, 2.0)) * smoothstep(-32.0, -39.0, xm) * smoothstep(-94.0, -48.0, xm);
+float turb = 0.65 + 0.35 * sin(xm * 0.55 + T * 4.2 + ay * 0.8) * cos(ym * 1.15 - T * 2.9);
+float edge_fade = smoothstep(0.0, 0.06, UV.x) * smoothstep(1.0, 0.94, UV.x) * smoothstep(0.0, 0.06, UV.y) * smoothstep(1.0, 0.94, UV.y);
+return saturate((0.75 * v_arm + 0.65 * collar + 0.85 * prop_wash) * turb) * edge_fade * spd_gate * 0.82;
+'''
+    op = custom_node(op_code, [('UV', uv), ('T', time), ('S', speed), ('F', fade)], unreal.CustomMaterialOutputType.CMOT_FLOAT1, 180)
+    M.connect_material_property(op, '', unreal.MaterialProperty.MP_OPACITY)
+    M.recompile_material(mat)
+    E.save_loaded_asset(mat)
+    return mat
+
+
+def wake_mesh(mat):
+    """FY_Wake: single flat wake ribbon mesh in /Game/Ferry/Ship assigned M_FerryWake with collision disabled."""
+    dest = '/Game/Ferry/Ship/FY_Wake'
+    mesh = E.load_asset(dest) if E.does_asset_exist(dest) else E.duplicate_asset('/Engine/BasicShapes/Plane', dest)
+    if mesh is None:
+        raise RuntimeError('Failed to create /Game/Ferry/Ship/FY_Wake from /Engine/BasicShapes/Plane')
+    mesh.set_material(0, mat)
+    body = mesh.get_editor_property('body_setup')
+    if body:
+        body.set_editor_property('collision_trace_flag', unreal.CollisionTraceFlag.CTF_USE_DEFAULT)
+    EDITOR.remove_collisions(mesh)
+    E.save_loaded_asset(mesh)
+    return mesh
+
+
 def materials(parent, entries):
     result = {}
     for name, (rgb, roughness, metallic) in entries.items():
@@ -71,6 +157,10 @@ parent = material_parent()
 ship = json.loads((ROOT / 'manifest.json').read_text())
 terminals = json.loads((ROOT / 'terminals/manifest.json').read_text())
 report = {}
+wake_mat = wake_material()
+wake = wake_mesh(wake_mat)
+report['FY_Wake'] = {'triangles': wake.get_num_triangles(0), 'convex_hulls': 0, 'material': wake_mat.get_path_name()}
+unreal.log(f'FERRY IMPORT FY_Wake: {report["FY_Wake"]}')
 for folder, dest, entries, palette in (
         (ROOT, '/Game/Ferry/Ship', ship['meshes'], ship['materials']),
         (ROOT / 'terminals', '/Game/Ferry/Terminals',
