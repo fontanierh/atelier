@@ -26,7 +26,7 @@ def test_authored_leaf_publication_preserves_other_owners_and_disables_opaque_pa
     assert old['aggregate'] is True and old['coverage'] == [['opaque']]
 
 
-@pytest.mark.parametrize('damage', ['missing-reducer', 'wrong-source', 'bool-count', 'empty-level', 'increasing', 'missing-level'])
+@pytest.mark.parametrize('damage', ['missing-reducer', 'wrong-source', 'bool-count', 'empty-level', 'increasing', 'missing-level', 'inherited-levels'])
 def test_invalid_authored_leaf_lod_provenance_refuses(damage):
     old = dict(source_triangles=100, rigid_triangles=30)
     result = dict(leaf_reducer='actual installed reducer', source_leaf_triangles=70, triangles=[70, 35, 18, 7])
@@ -35,7 +35,8 @@ def test_invalid_authored_leaf_lod_provenance_refuses(damage):
     elif damage == 'bool-count': result['source_leaf_triangles'] = True
     elif damage == 'empty-level': result['triangles'][-1] = 0
     elif damage == 'increasing': result['triangles'] = [70, 30, 40, 7]
-    else: result['triangles'].pop()
+    elif damage == 'missing-level': result['triangles'].pop()
+    else: old['triangles'] = result.pop('triangles')
     with pytest.raises(ValueError):
         R.authored_leaf_row(old, result)
 

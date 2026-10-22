@@ -8,6 +8,7 @@ from atelier import mesh_geometry
 
 GAME = Path(__file__).resolve().parent
 ROOT = '/Game/FoliageResident'
+TREE_WORDS = frozenset({'tree', 'palm', 'pine', 'maple', 'ginkgo'})
 
 
 def authored_leaf_row(old, result):
@@ -18,7 +19,7 @@ def authored_leaf_row(old, result):
     These schema/count checks MUST NOT replace current native source/corner/material/reduction proof.
     """
     row = dict(old, **result)
-    levels = row.get('triangles')
+    levels = result.get('triangles')
     expected = old['source_triangles'] - old['rigid_triangles']
     if (not isinstance(result.get('leaf_reducer'), str) or not result['leaf_reducer'].strip()
             or type(result.get('source_leaf_triangles')) is not int or result['source_leaf_triangles'] != expected
@@ -29,7 +30,6 @@ def authored_leaf_row(old, result):
     row['aggregate'] = False
     row['coverage'] = []
     return row
-TREE_WORDS = frozenset({'tree', 'palm', 'pine', 'maple', 'ginkgo'})
 
 
 def trunk_bounds(values):
