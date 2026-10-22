@@ -543,7 +543,8 @@ void UYorimichiFoliageSubsystem::ReleaseStartupVertexCopies()
                 {
                     for (const auto& LOD:Entry.Original->LODData) if (LOD.OverrideVertexColors) ConsumersReady=false;
                     if (Entry.Original->IsCollisionEnabled() && (!Body || !Body->bCreatedPhysicsMeshes || Body->bFailedToCreatePhysicsMeshes ||
-                        (Body->GetCollisionTraceFlag()==CTF_UseComplexAsSimple?Body->TriMeshGeometries.IsEmpty():Body->AggGeom.GetElementCount()==0))) ConsumersReady=false;
+                        (Body->CollisionTraceFlag==CTF_UseComplexAsSimple?Body->TriMeshGeometries.IsEmpty():
+                         Body->CollisionTraceFlag!=CTF_UseSimpleAsComplex || Body->AggGeom.GetElementCount()==0))) ConsumersReady=false;
                 }
             if (!ConsumersReady)
             { ++Refusals.FindOrAdd(TEXT("carrier_pending_collision_or_override_colours"));continue; }
