@@ -247,7 +247,7 @@ bool FYorimichiFoliagePerformanceSettingsTest::RunTest(const FString&)
     for (const TCHAR* Name:{TEXT("Tree_Settings"),TEXT("Bush_Settings"),TEXT("Grass_Settings")})
     {
         auto* Group=NewObject<UHierarchicalInstancedStaticMeshComponent>(Map);
-        Group->SetStaticMesh(NewObject<UStaticMesh>(Map,FName(Name)));
+        Group->SetStaticMesh(NewObject<UStaticMesh>(GetTransientPackage(),FName(Name)));
         Group->SetCullDistances(6000,8000);Group->SetLODDistanceScale(1.7f);
         Group->SetWorldPositionOffsetDisableDistance(1234);Group->SetEvaluateWorldPositionOffset(true);
         Map->Groups.Add(Group);
