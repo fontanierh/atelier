@@ -347,3 +347,16 @@ def test_obsolete_package_still_used_elsewhere_is_kept(owner, monkeypatch):
     with pytest.raises(RuntimeError, match='still referenced'):
         owner.run()
     assert deleted == []
+
+
+def test_unknown_packages_in_the_folder_are_never_retired(owner, monkeypatch):
+    folder = '/Game/Japan/FoliageLODs/Tree_Test'
+    unknown = [folder + '/Notes', folder + '/Tree_Test_LOD1_Backup', folder + '/MI_Tree_Other_Crown', folder + '/Sub/Tree_Test_LOD2']
+    deleted = []
+    editor = sys.modules['unreal'].EditorAssetLibrary
+    monkeypatch.setattr(editor, 'list_assets', lambda *args, **kwargs: [p + '.' + p.rsplit('/', 1)[1] for p in unknown],
+                        raising=False)
+    monkeypatch.setattr(editor, 'delete_asset', lambda asset: deleted.append(asset) or True, raising=False)
+    monkeypatch.setattr(editor, 'find_package_referencers_for_asset', lambda asset, load: [], raising=False)
+    owner.run()
+    assert deleted == []

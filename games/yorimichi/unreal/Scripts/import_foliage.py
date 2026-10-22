@@ -5,6 +5,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'world'))
 
 import json
 import os
+import re
 import unreal as U
 
 import yori
@@ -106,8 +107,14 @@ def main():
     if not editor.save_loaded_asset(mesh, False):
         raise RuntimeError('Could not save foliage package: ' + path)
     # Only now, with the replacement chain validated and saved, retire this tree's obsolete LODs and dropped crown
-    # material, and only when nothing outside that obsolete set still uses them.
-    stale = [asset for asset in editor.list_assets(folder, recursive=True) if asset.split('.')[0] not in expected]
+    # material, and only when nothing outside that obsolete set still uses them. Only packages this producer emits
+    # (its LOD sources and its crown material) can be obsolete; anything else in the folder is left alone.
+    emitted = re.compile(re.escape(folder) + '/(' + re.escape(name) + r'_LOD[1-9][0-9]*|MI_' + re.escape(name) + '_Crown)')
+    packages = [(asset, asset.split('.')[0]) for asset in editor.list_assets(folder, recursive=True)]
+    stale = [asset for asset, package in packages if package not in expected and emitted.fullmatch(package)]
+    for asset, package in packages:
+        if package not in expected and not emitted.fullmatch(package):
+            U.log('FOLIAGE IMPORT keeps unknown package ' + asset)
     obsolete = {asset.split('.')[0] for asset in stale}
     for asset in stale:
         users = set(editor.find_package_referencers_for_asset(asset, False)) - obsolete
