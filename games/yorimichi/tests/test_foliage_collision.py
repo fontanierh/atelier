@@ -24,9 +24,11 @@ class Mesh(Properties):
         super().__init__(body_setup=Properties(collision_trace_flag=None), static_materials=[])
         self.mutations = mutations
         self.primitives, self.convex = 0, 1
+        self.lod_count = 4
 
     def set_num_source_models(self, count):
         self.mutations.append(('reset-lods', self, count))
+        self.lod_count = count
 
     def get_name(self):
         return 'Tree_Test'
@@ -35,7 +37,7 @@ class Mesh(Properties):
         return SimpleNamespace(min=SimpleNamespace(x=0, y=0, z=0), max=SimpleNamespace(x=100, y=200, z=300))
 
     def get_num_lods(self):
-        return 1
+        return self.lod_count
 
     def get_num_triangles(self, level):
         return 1
@@ -47,7 +49,7 @@ def owner(monkeypatch, tmp_path):
     previous, imported = Mesh(mutations), Mesh(mutations)
     state = SimpleNamespace(previous=previous, imported=imported, mutations=mutations, logs=logs,
                             original_body=imported.values['body_setup'], fail_removal=False,
-                            after_lods=lambda mesh: None)
+                            after_lods=lambda mesh: None, reused=False)
     data = dict(bounds=[[0, 0, 0], [1, 2, 3]], triangles=[1], screen_sizes=[1.0], materials=[],
                 collision='complex', trunk_collision=[.6, 0, 0, -.25, 0, 0, 2], import_trunk_collision=False)
     manifest = tmp_path / 'foliage/Tree_Test/manifest.json'
@@ -69,11 +71,19 @@ def owner(monkeypatch, tmp_path):
         return True
 
     def import_mesh(*args, **kwargs):
-        mutations.append(('import', imported))
+        mutations.append(('admission', imported))
+        state.base_predicate = kwargs['reuse_validator']
+        reusable = state.reused and kwargs['reuse_validator'](imported)
+        if not reusable:
+            kwargs['before_import']()
+            mutations.append(('import', imported))
+            imported.convex = 1
         return imported
 
     def apply_lods(mesh, *args, **kwargs):
         mutations.append(('lods', mesh))
+        state.lod_predicate = kwargs['reuse_validator']
+        mesh.lod_count = max(mesh.lod_count, len(data['screen_sizes']))
         state.after_lods(mesh)
         return {}
 
@@ -227,3 +237,60 @@ def test_collision_counts_and_trace_policy_are_checked_after_lod_assembly(owner,
         owner.run()
     assert ('lods', owner.imported) in owner.mutations
     assert_uncertified(owner)
+
+
+@pytest.mark.parametrize('reused', [False, True])
+def test_saved_package_admission_precedes_any_destructive_reset(owner, reused):
+    owner.reused = reused
+    owner.run()
+    assert owner.mutations[0][0] == 'admission'
+    resets = [event for event in owner.mutations if event[1] is owner.previous and event[0] in ('reset-lods', 'remove')]
+    assert bool(resets) is not reused
+    if not reused:
+        assert owner.mutations.index(resets[-1]) < next(i for i,e in enumerate(owner.mutations) if e[0] == 'import')
+    assert ('lods', owner.imported) in owner.mutations
+    assert owner.report.is_file()
+
+
+def test_reuse_hit_trims_the_previous_longer_lod_chain_before_current_assembly(owner):
+    owner.reused = True
+    assert owner.imported.get_num_lods() == 4
+    assert len(owner.data['screen_sizes']) == 1
+    owner.run()
+    assert owner.imported.get_num_lods() == 1
+    assert json.loads(owner.report.read_text())['triangles'] == [1]
+    admission = next(i for i,event in enumerate(owner.mutations) if event[0] == 'admission')
+    trim = owner.mutations.index(('reset-lods', owner.imported, 1))
+    assembly = owner.mutations.index(('lods', owner.imported))
+    assert admission < trim < assembly
+    assert ('remove', owner.previous) not in owner.mutations
+
+
+def test_enabling_authored_trunk_after_a_hull_free_saved_base_requires_raw_import(owner):
+    owner.reused = True
+    owner.data.update(import_trunk_collision=True, collision='default')
+    owner.write_manifest()
+    owner.imported.convex = 0
+    owner.run()
+    assert ('import', owner.imported) in owner.mutations
+    assert owner.imported.convex == 1
+    assert json.loads(owner.report.read_text())['convex_collisions'] == 1
+
+
+def test_unchanged_enabled_trunk_keeps_the_admitted_authored_hull(owner):
+    owner.reused = True
+    owner.data.update(import_trunk_collision=True, collision='default')
+    owner.write_manifest()
+    owner.run()
+    assert ('import', owner.imported) not in owner.mutations
+    assert not any(event[0] == 'remove' for event in owner.mutations)
+    assert owner.imported.convex == 1
+
+
+def test_actual_owner_passes_one_policy_to_base_and_lod_sources(owner):
+    owner.data.update(import_trunk_collision=True, collision='default')
+    owner.write_manifest()
+    owner.run()
+    assert owner.base_predicate is owner.lod_predicate
+    # Source LODs do not own the base's trunk collision and must still be reusable.
+    assert owner.lod_predicate(SimpleNamespace(get_name=lambda: 'Tree_Test_LOD1'))

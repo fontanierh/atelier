@@ -46,14 +46,22 @@ def main():
     folder = '/Game/Japan/FoliageLODs/' + name
     expected = {folder + f'/{name}_LOD{i}' for i in range(1, len(data['screen_sizes']))}
     require_valid_or_missing(yori.GAME / 'unreal/Content', name)
-    if editor.does_asset_exist(path):
-        previous = editor.load_asset(path)
-        if previous is not None:
-            # Reimport must also remove a deleted LOD or a collision hull, not just add new data.
-            previous.set_num_source_models(1)
-            meshes.remove_collisions(previous)
+    def prepare_import():
+        if editor.does_asset_exist(path):
+            previous = editor.load_asset(path)
+            if previous is not None:
+                # Reimport must remove deleted LODs/hulls, after saved-byte admission misses.
+                previous.set_num_source_models(1)
+                meshes.remove_collisions(previous)
+    def reusable_collision(mesh):
+        return mesh.get_name() != name or not import_trunk or (meshes.get_simple_collision_count(mesh) == 0
+                                    and meshes.get_convex_collision_count(mesh) == 1)
     seed = source / (name + '_Seed.fbx')
-    mesh = import_mesh(source / (name + '.fbx'), '/Game/Japan/Assets', name, seed=seed, fresh_slots=True)
+    mesh = import_mesh(source / (name + '.fbx'), '/Game/Japan/Assets', name, seed=seed,
+                       fresh_slots=True, before_import=prepare_import, reuse_validator=reusable_collision)
+    # A saved base may still contain the previous longer assembled chain.
+    # Trim it only after admission, then build and validate the current manifest.
+    mesh.set_num_source_models(1)
     verify_bounds(mesh, data['bounds'])
     palette = []
     for index, slot in enumerate(mesh.get_editor_property('static_materials')):
@@ -78,7 +86,8 @@ def main():
         package = asset.split('.')[0]
         if package not in expected and not editor.delete_asset(asset):
             raise RuntimeError('Cannot retire owned LOD: ' + asset)
-    report = apply_lods(mesh, data, source, meshes, seed=seed, folder=folder, interface=interface)
+    report = apply_lods(mesh, data, source, meshes, seed=seed, folder=folder, interface=interface,
+                        reuse_validator=reusable_collision)
     report['triangles'] = [mesh.get_num_triangles(i) for i in range(mesh.get_num_lods())]
     assert report['triangles'] == data['triangles'], (name, 'triangles', report['triangles'], data['triangles'])
     verify_bounds(mesh, data['bounds'])

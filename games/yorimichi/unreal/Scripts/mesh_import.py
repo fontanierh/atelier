@@ -7,23 +7,31 @@ EAL = unreal.EditorAssetLibrary
 AT = unreal.AssetToolsHelpers.get_asset_tools()
 
 
-def import_mesh(path, dest, name, *, seed=None, fresh_slots=False):
+def import_mesh(path, dest, name, *, seed=None, fresh_slots=False, before_import=None, reuse_validator=None):
     """@cc [owner:fontanierh,label:correctness] legacy-fbx-migration-before-reimport
     Non-FBX packages MUST establish legacy FBX import data from their own source before the final source pass.
     Existing package identity MUST stay stable, and the final pass MUST apply the declared unit settings.
     Reuse MUST verify current source/options and defer receipts until the owning guarded script succeeds.
+    Owner preparation MUST run only after admission misses, before the first actual source pass;
+    it MUST NOT dirty a package before saved-byte admission or run on a validated reuse hit.
+    A supplied current owner reuse requirement MUST run with legacy option validation before
+    admission; failed requirements MUST use ordinary import and current finishing.
 
     The obsolete seed keyword is accepted for existing callers but is never read or imported.
     UE converts Interchange import data to legacy FBX defaults before applying task options.
     That first pass must establish FBX data so the final pass can synchronize unit settings.
     """
     from city_parent_transition import excluded_packages
+    validator = legacy_options_match if reuse_validator is None else lambda mesh: _reuse_matches(mesh, reuse_validator)
+    validation_functions = ('legacy_options_match',) if reuse_validator is None else ('legacy_options_match', '_reuse_matches')
     mesh, reuse = common_fbx_mesh(path, dest, name, fresh_slots=fresh_slots,
-                                  script=__file__, functions=('_source_mesh',), validator=legacy_options_match,
-                                  validation_functions=('legacy_options_match',), owner_transition=excluded_packages,
+                                  script=__file__, functions=('_source_mesh',), validator=validator,
+                                  validation_functions=validation_functions, owner_transition=excluded_packages,
                                   owner_roots=(Path(__file__).resolve().parents[2] / 'world',
                                                Path(__file__).resolve().parents[2] / 'world/regions'))
     if mesh is None:
+        if before_import is not None:
+            before_import()
         mesh = _source_mesh(path, dest, name, fresh_slots)
         if reuse is not None:
             reuse.imported(dest + '/' + name)
@@ -60,6 +68,11 @@ def legacy_options_match(mesh):
     # when stored import data says false. The live asset tag includes force-enable.
     actual_nanite = unreal.AssetRegistryHelpers.create_asset_data(mesh).get_tag_value('NaniteEnabled')
     return actual_nanite == 'False' and all(data.get_editor_property(key) == value for key, value in settings.items())
+
+
+def _reuse_matches(mesh, owner_check):
+    """The full owner source closure binds its current read-only requirement."""
+    return legacy_options_match(mesh) and owner_check(mesh)
 
 
 def _import_mesh(path, dest, name, fresh_slots=False):
