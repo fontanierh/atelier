@@ -514,7 +514,9 @@ void AJapanWorld::Load()
         const int32 ExpectedPieces=CityPieces.FindChecked(TEXT("HD_Terrain")).Num()+
             CityPieces.FindChecked(TEXT("HD_Streets")).Num()+CityPieces.FindChecked(TEXT("HD_Square")).Num();
         if (LoadedCityPieces.Num()==ExpectedPieces)
+        {
             UE_LOG(LogTemp,Display,TEXT("CITY PIECES production parents=%d pieces=%d hidden_parents=0"),CityPieces.Num(),ExpectedPieces);
+        }
         else Incomplete.Add(TEXT("loaded production city pieces"));
     }
     if (UStaticMesh* Dome = LoadMesh(TEXT("SkyDome")))
