@@ -27,3 +27,12 @@ reference; the original render mesh MUST NOT become its collider. An authored pr
 MAY partition only affirmative structural material slots from its manifest, preserving every other
 surface; it MUST refuse unknown structural ownership. Original/shared packages MUST remain unchanged.
 A receiving native fixture MUST cover rigid-only mixed collision and nonblocking canopy/trunk separation.
+
+@cc [owner:fontanierh,label:correctness] whole-textured-caldera-trunk
+The exact committed four Caldera tree sources and their authored PropLOD paths MAY
+receive the explicit simple-trunk capsule policy despite zero classified rigid faces.
+Current source proof and unchanged declared fitted heights MUST precede dispatch.
+The authored radius MUST be 40cm, local XY axis zero, and endpoints -15cm to 10% of
+fitted height. Broad root/ground bounds MUST NOT determine collision. All certified
+canopy corners and the existing exact native capsule physics checks MUST remain.
+Other whole-textured sources MUST refuse without their own explicit trunk witness.
