@@ -67,6 +67,11 @@ def wake_material():
     fade = M.create_material_expression(mat, unreal.MaterialExpressionScalarParameter, -600, 500)
     fade.set_editor_property('parameter_name', 'WakeFade')
     fade.set_editor_property('default_value', 0.0)
+    scene_depth = M.create_material_expression(mat, unreal.MaterialExpressionSceneDepth, -600, 620)
+    pixel_depth = M.create_material_expression(mat, unreal.MaterialExpressionPixelDepth, -600, 720)
+    depth_gap = M.create_material_expression(mat, unreal.MaterialExpressionSubtract, -420, 660)
+    M.connect_material_expressions(scene_depth, '', depth_gap, 'A')
+    M.connect_material_expressions(pixel_depth, '', depth_gap, 'B')
 
     def custom_node(code, inputs, out_type, y):
         node = M.create_material_expression(mat, unreal.MaterialExpressionCustom, -200, y)
@@ -112,7 +117,8 @@ float turb = 0.65 + 0.35 * sin(xm * 0.55 + T * 4.2 + ay * 0.8) * cos(ym * 1.15 -
 float edge_fade = smoothstep(0.0, 0.06, UV.x) * smoothstep(1.0, 0.94, UV.x) * smoothstep(0.0, 0.06, UV.y) * smoothstep(1.0, 0.94, UV.y);
 return saturate((0.75 * v_arm + 0.65 * collar + 0.85 * prop_wash) * turb) * edge_fade * spd_gate * 0.82;
 '''
-    op = custom_node(op_code, [('UV', uv), ('T', time), ('S', speed), ('F', fade)], unreal.CustomMaterialOutputType.CMOT_FLOAT1, 180)
+    op_code = op_code.replace('spd_gate * 0.82;', 'spd_gate * saturate(D / 15.0) * 0.82;')
+    op = custom_node(op_code, [('UV', uv), ('T', time), ('S', speed), ('F', fade), ('D', depth_gap)], unreal.CustomMaterialOutputType.CMOT_FLOAT1, 180)
     M.connect_material_property(op, '', unreal.MaterialProperty.MP_OPACITY)
     M.recompile_material(mat)
     E.save_loaded_asset(mat)
