@@ -1,5 +1,6 @@
 #include "JapanWorld.h"
 #include "CitySurfacePieces.h"
+#include "TreehousePieces.h"
 #include "JapanGameplayCollision.h"
 #include "AtelierData.h"
 #include "HarborLook.h"
@@ -382,6 +383,11 @@ void AJapanWorld::Load()
     const bool PiecesReady=JapanCityPieces::Read(
         AtelierReadJson(AtelierDataPath(TEXT("city_surface_tiles/v1_128m/manifest.json"))),CityPieces);
     if (!PiecesReady) Incomplete.Add(TEXT("complete production city pieces"));
+    TArray<FString> DressingPieces;
+    TSet<FString> LoadedDressingPieces;
+    const bool DressingReady=JapanTreehousePieces::Read(
+        AtelierReadJson(AtelierDataPath(TEXT("treehouse/pieces.json"))),DressingPieces);
+    if (!DressingReady) Incomplete.Add(TEXT("complete treehouse dressing pieces"));
     if (Root->TryGetObjectField(TEXT("instances"), Inst))
     {
         for (const auto& Pair : (*Inst)->Values)
@@ -394,6 +400,11 @@ void AJapanWorld::Load()
                 if (!Paths) { Incomplete.Add(TEXT("city pieces ")+Key);continue; }
                 MeshPaths=*Paths;
             }
+            else if (Key==TEXT("TH_Dressing"))
+            {
+                if (!DressingReady) continue;
+                MeshPaths=DressingPieces;
+            }
             else MeshPaths.Add(Key);
             // Logical parent keys still own placements, visibility and gameplay
             // policy. Each selected child owns its render and collision geometry.
@@ -402,6 +413,7 @@ void AJapanWorld::Load()
                 UStaticMesh* Mesh = LoadMesh(MeshPath);
                 if (!Mesh) { Incomplete.Add(TEXT("mesh ") + Key); UE_LOG(LogTemp, Warning, TEXT("missing mesh asset %s"), *Key); continue; }
                 if (JapanCityPieces::IsParent(Key)) LoadedCityPieces.Add(MeshPath);
+                if (Key==TEXT("TH_Dressing")) LoadedDressingPieces.Add(MeshPath);
                 const bool bGrass = Key.StartsWith(TEXT("Grass"));
                 const bool bBush = Key.StartsWith(TEXT("Bush"));
                 const bool bTree = Key.StartsWith(TEXT("Tree"));
@@ -431,6 +443,7 @@ void AJapanWorld::Load()
                     UHierarchicalInstancedStaticMeshComponent* H = NewObject<UHierarchicalInstancedStaticMeshComponent>(this);
                     H->SetStaticMesh(Mesh); H->SetupAttachment(RootComponent);
                     if (JapanCityPieces::IsParent(Key)) H->ComponentTags.Add(FName(*(TEXT("CitySurface:")+Key)));
+                    if (Key==TEXT("TH_Dressing")) H->ComponentTags.Add(TEXT("TreehouseDressing"));
                     H->SetMobility(EComponentMobility::Static);
                     if (Key==TEXT("HD_Harbor") || Key==TEXT("HD_Boat") || Key==TEXT("HD_Sea") || Key==TEXT("HD_Bollard"))
                         H->SetLightingChannels(true, true, false);
@@ -438,7 +451,7 @@ void AJapanWorld::Load()
                     const bool bWater=Key==TEXT("HD_Sea") || Key==TEXT("HD_InlandWater") || Key==TEXT("Lake_Water");
                     // The city's overhead wires (HD_Wires, 10 m up) never stop a jump or the camera, and cast no shimmering lines.
                     const bool bWires=Key==TEXT("HD_Wires");
-                    H->SetCollisionEnabled(bGrass || bBush || bLitter || bBackdrop || bWater || bWires || Key==TEXT("Lake_Plants") || Key==TEXT("HD_Boat") || (Key==TEXT("HD_ArcadeRoof") || Key==TEXT("HD_ArcadeLanterns") || Key==TEXT("HD_PlazaWater")) ? ECollisionEnabled::NoCollision : ECollisionEnabled::QueryOnly);
+                    H->SetCollisionEnabled(bGrass || bBush || bLitter || bBackdrop || bWater || bWires || Key==TEXT("TH_Dressing") || Key==TEXT("Lake_Plants") || Key==TEXT("HD_Boat") || (Key==TEXT("HD_ArcadeRoof") || Key==TEXT("HD_ArcadeLanterns") || Key==TEXT("HD_PlazaWater")) ? ECollisionEnabled::NoCollision : ECollisionEnabled::QueryOnly);
                     // Camera see-through (docs/CAMERA.md): solid things stop the chase camera. Thin things (trees, bushes,
                     // poles, lanterns, the torii, the tree house's props and thin pieces) let it through and fade whole
                     // where they hide Cairo; the materials read how in custom primitive data 0. The far backdrop never
@@ -519,6 +532,8 @@ void AJapanWorld::Load()
         }
         else Incomplete.Add(TEXT("loaded production city pieces"));
     }
+    if (DressingReady && LoadedDressingPieces.Num()!=DressingPieces.Num())
+        Incomplete.Add(TEXT("loaded treehouse dressing pieces"));
     if (UStaticMesh* Dome = LoadMesh(TEXT("SkyDome")))
     {
         SkyDome = NewObject<UStaticMeshComponent>(this, TEXT("SkyDome"));

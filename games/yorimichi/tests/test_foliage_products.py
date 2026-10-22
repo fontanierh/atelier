@@ -110,6 +110,8 @@ def test_world_selector_includes_native_references_without_reading_their_bytes(t
                      for part in ('tree_lods', 'tree_report')})
     expected.update({f'city.native_{part}': 'unreal.desktop'
                      for part in ('pieces', 'piece_report')})
+    expected.update({f'treehouse.{part}': 'world.treehouse' for part in ('meshes', 'runtime')})
+    expected.update({f'treehouse.native_{part}': 'unreal.treehouse' for part in ('assets', 'report')})
     assert graph.owners == expected
     assert all(not graph.by_name[owner].cache for product, owner in expected.items()
                if any(isinstance(command, (build.UnrealScript, build.UnrealCompile, build.UnrealPackage))

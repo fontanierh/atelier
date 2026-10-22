@@ -172,3 +172,11 @@ piece union, preserving their original trace semantics.
 Park shore-footing diagnostics MUST likewise trace the complete tagged park piece
 union, select the nearest hit along the original ray, and retain the original
 height comparison and eight-centimetre acceptance bound.
+
+@cc [owner:fontanierh,label:correctness;performance] bounded-treehouse-dressing
+TH_Dressing MUST load only its complete bounded render piece membership, never
+the superseded whole parent. Its logical placement, material/fade grouping,
+five original baked UV channels, shadow policy and curtain bounds expansion
+MUST survive subdivision. Dressing MUST remain nonblocking; Frame and other
+treehouse collision owners MUST remain unchanged. Missing or partial dressing
+membership MUST fail readiness instead of loading a parent fallback.

@@ -2379,7 +2379,7 @@ def main():
     entry_way(m, fr, d, pl)
     panes(d); report = {'windows': len(WINDOWS)}
     for mesh in (m, fr, trunks, d):
-        _, report[mesh.name] = export(mesh, mats, OUT/'assets')
+        _, report[mesh.name] = export(mesh, mats, OUT/'assets', split_dressing=mesh is d)
     report['props'] = {k: len(v) for k, v in PLACED.items()}
     runtime = dict(instances=PLACED, lights=LIGHTS, rooms=ROOMS, room_grade=ROOM_GRADE)
     (OUT/'runtime.json').write_text(json.dumps(runtime)+'\n'); report['lights'] = len(LIGHTS); report['rooms'] = len(ROOMS)

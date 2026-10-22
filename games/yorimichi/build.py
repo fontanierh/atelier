@@ -61,6 +61,9 @@ _compile_inputs_spec.loader.exec_module(compile_inputs)
 _skatepark_build_spec = importlib.util.spec_from_file_location('yorimichi_skatepark_build', GAME / 'skatepark_build.py')
 skatepark_build = importlib.util.module_from_spec(_skatepark_build_spec)
 _skatepark_build_spec.loader.exec_module(skatepark_build)
+_treehouse_pieces_spec = importlib.util.spec_from_file_location('yorimichi_treehouse_pieces', GAME / 'treehouse_pieces.py')
+treehouse_pieces = importlib.util.module_from_spec(_treehouse_pieces_spec)
+_treehouse_pieces_spec.loader.exec_module(treehouse_pieces)
 
 _brinecove_library_spec = importlib.util.spec_from_file_location('brinecove_foliage_library', REGIONS / 'brinecove/foliage_names.py')
 brinecove_library = importlib.util.module_from_spec(_brinecove_library_spec)
@@ -1065,8 +1068,14 @@ def world_steps(ctx):
              inputs=[TREEHOUSE / 'props.py', TOOLS / 'treehouse_props.py', ASSETS / 'treehouse' / 'props'],
              outputs=[out / 'treehouse' / 'props' / 'props.json'], about='the 13 Tripo props fitted to their sizes', heavy=True),
         Step('world.treehouse', [Blender(TREEHOUSE / 'build.py', threads=4)],
-             inputs=[TREEHOUSE / 'build.py', TREEHOUSE / 'tmesh.py', REGIONS / 'village' / 'build.py', *TREEHOUSE_LAYOUT, *VILLAGE_LAYOUT],
-             needs=['world.layout', 'world.treehouse_trees'], outputs=[out / 'treehouse' / 'manifest.json', out / 'treehouse' / 'runtime.json'],
+             inputs=[TREEHOUSE / 'build.py', TREEHOUSE / 'tmesh.py', TREEHOUSE / 'dressing.py', GAME / 'treehouse_pieces.py',
+                     WORLD / 'mesh_pieces.py', paths.STUDIO / 'atelier/mesh_cells.py',
+                     paths.STUDIO / 'atelier/mesh_partition.py', REGIONS / 'village' / 'build.py', *TREEHOUSE_LAYOUT, *VILLAGE_LAYOUT],
+             needs=['world.layout', 'world.treehouse_trees'],
+             outputs=[out / 'treehouse' / 'manifest.json', out / 'treehouse' / 'runtime.json', out / 'treehouse/pieces.json'],
+             products=[Product('treehouse.meshes', (out / 'treehouse/assets', out / 'treehouse/manifest.json', out / 'treehouse/pieces.json')),
+                       Product('treehouse.runtime', (out / 'treehouse/runtime.json',))],
+             verify=lambda: treehouse_pieces.sources_present(out),
              about='the tree house: ten places, bridges, rooms and their dressing, lights, sunbeams', heavy=True),
         Step('world.terrain', [Blender(WORLD / 'build_terrain.py')],
              inputs=[WORLD / 'build_terrain.py', WORLD / 'farhills_surface.py', WORLD / 'terrain_product.py',
@@ -1575,9 +1584,18 @@ def unreal_steps(ctx):
              candidate_scope=CandidateScope(directories=(GAME / 'unreal/Content/Japan/Assets',
                                                         GAME / 'unreal/Content/Japan/FoliageLODs')),
              about='current detailed Mediterranean trees with matching HISM LODs'),
-        Step('unreal.treehouse', [UnrealScript(SCRIPTS / 'import_treehouse.py', 'TREEHOUSE IMPORT COMPLETE')],
-             inputs=[SCRIPTS / 'import_treehouse.py', SCRIPTS / 'see_through.py'],
-             needs=['unreal.world', 'world.treehouse', 'world.treehouse_trees', 'world.treehouse_props', 'world.treehouse_textures'],
+        Step('unreal.treehouse', [UnrealScript(SCRIPTS / 'import_treehouse.py', 'TREEHOUSE IMPORT COMPLETE', modules=IMPORT_CODE)],
+             inputs=[SCRIPTS / 'import_treehouse.py', SCRIPTS / 'import_treehouse_pieces.py',
+                     SCRIPTS / 'see_through.py', GAME / 'treehouse_pieces.py',
+                     paths.STUDIO / 'atelier/native_membership.py', paths.STUDIO / 'atelier/native_packages.py',
+                     paths.STUDIO / 'atelier/mesh_geometry.py'],
+             needs=['unreal.world', 'world.treehouse_trees', 'world.treehouse_props', 'world.treehouse_textures',
+                    *unreal_modules.needs(IMPORT_CODE)], reads=['treehouse.meshes'],
+             outputs=[out / 'treehouse/import-report.json'],
+             products=[Product('treehouse.native_assets', treehouse_pieces.native_outputs(GAME / 'unreal/Content')[0],
+                               optional_paths=treehouse_pieces.native_outputs(GAME / 'unreal/Content')[1]),
+                       Product('treehouse.native_report', (out / 'treehouse/import-report.json',))],
+             verify=lambda: treehouse_pieces.present(out, GAME / 'unreal/Content'),
              heavy=True, about='the tree house meshes, textures, props and canopy trees'),
         Step('unreal.skatepark', [UnrealScript(SCRIPTS / 'import_skatepark.py', 'SKATEPARK IMPORT COMPLETE', modules=IMPORT_CODE)],
              inputs=[SCRIPTS / 'import_skatepark.py', REGIONS / 'skatepark' / 'park.json', GAME / 'skatepark_build.py',
