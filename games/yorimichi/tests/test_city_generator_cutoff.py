@@ -144,6 +144,8 @@ def test_recipe_keeps_generator_code_and_existing_unreal_cutoffs(tmp_path):
         closure = set(build_inputs.local_imports(piece.commands[0].script, (RECIPE.WORLD, RECIPE.REGIONS)))
         assert closure <= set(piece.inputs)
     assert steps['world.city_tiles'].reads == ['city.tiles.'+name for name in RECIPE.city_inputs.TILES]
+    desktop = steps['unreal.desktop']
+    assert set(RECIPE.unreal_modules.needs(RECIPE.IMPORT_CODE+('Yorimichi',))) <= set(desktop.needs)
     for part in ('tiles', 'trees'):
         assert steps['world.city_'+part+'.meshes'].needs == ['world.city_'+part]
     assert RECIPE.REGIONS/'hidamari/arcade.py' in consumer.inputs

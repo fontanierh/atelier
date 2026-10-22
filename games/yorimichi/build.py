@@ -1600,7 +1600,7 @@ def unreal_steps(ctx):
                              env=(('CITY_SURFACE_TILES_TAG', 'v1_128m'),), modules=IMPORT_CODE+('Yorimichi',))],
              inputs=[SCRIPTS / 'import_city_surface_tiles.py', GAME / 'city_tile_products.py',
                      paths.STUDIO / 'atelier/conventions.py'],
-             needs=['unreal.world', 'world.city_tiles.meshes', *unreal_modules.needs(('Yorimichi',))],
+             needs=['unreal.world', 'world.city_tiles.meshes', *unreal_modules.needs(IMPORT_CODE+('Yorimichi',))],
              # Preserve the old targeted desktop entrypoint, without deriving
              # piece identity from unrelated tree LOD bytes.
              after=['unreal.city_tree_lods'], heavy=True,
