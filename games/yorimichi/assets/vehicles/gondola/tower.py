@@ -224,21 +224,38 @@ class Tower:
 
         for s in (-1, 1):
             yc = s * (g / 2 - 0.11)
+            train_half = self.saddle.get('half', 1.6) if self.saddle else 1.6
+            sheaves = list(SHEAVE_X)
+            extra = 1.35 + 0.75
+            while extra <= train_half - 0.25 + 1e-9:
+                sheaves += [-extra, extra]
+                extra += 0.75
+            sheaves = sorted(sheaves)
             # Timber carrier along the rope, following the saddle and resting
             # on both crossarm beams, with steel end straps.
             def carrier_z(x):
                 return max(saddle_z(x) - (self.rr + SHEAVE_R), H - 0.375)
             with m.tagged('carrier'):
-                knots = (-1.6, -1.35, -0.6, 0.6, 1.35, 1.6)
+                knots = sorted(set([-train_half, *sheaves, train_half]))
                 for a, b in zip(knots, knots[1:]):
                     m.beam((a, yc, carrier_z(a)), (b, yc, carrier_z(b)), 0.1, 0.35, TIMBER, up=(0, 0, 1))
-            for x in (-1.6, 1.6):
+            for x in (-train_half, train_half):
                 m.box((x, yc - s * 0.055, carrier_z(x)), (0.16, 0.012, 0.37), IRON)
+            if train_half > 1.6:
+                # A long train needs its own beam and posts; they stay above
+                # the passing cabin roof (z_cap is below the hanger line).
+                with m.tagged('carrier'):
+                    m.beam((-train_half, yc, self.z_cap + 0.05), (train_half, yc, self.z_cap + 0.05),
+                           0.12, 0.15, TIMBER, up=(0, 0, 1))
+                for x in sheaves:
+                    if abs(x) > 1.6:
+                        m.box((x, yc, (self.z_cap + 0.05 + carrier_z(x) - 0.175) / 2),
+                              (0.12, 0.12, carrier_z(x) - 0.175 - self.z_cap - 0.05), TIMBER)
             for x in (-0.32, 0.32):
                 self.seat('sheave carrier', x, yc, H - 0.55, on=('crossarm',))
             # Sheaves under the rope: each centre offset along the local rope
             # normal, so the groove stays concentric with a tilted rope.
-            for x in SHEAVE_X:
+            for x in sheaves:
                 theta = math.atan(saddle_slope(x))
                 reach = self.rr + SHEAVE_R
                 c = Vector((x + reach * math.sin(theta), s * g / 2, saddle_z(x) - reach * math.cos(theta)))
