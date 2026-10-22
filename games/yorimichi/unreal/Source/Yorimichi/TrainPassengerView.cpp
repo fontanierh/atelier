@@ -15,12 +15,12 @@ bool FTrainPassengerView::Toggle(bool bPassenger, bool& bPreference)
     return true;
 }
 
-void FTrainPassengerView::Update(bool bPassenger, bool bPreference, float DeltaSeconds)
+void FTrainPassengerView::Update(bool bPassenger, bool bPreference, float DeltaSeconds, float Rate)
 {
     if (!bPassenger) bFirstPerson = false;
     else if (!bWasPassenger) bFirstPerson = bPreference;
     bWasPassenger = bPassenger;
-    Blend = FMath::FInterpConstantTo(Blend, bFirstPerson ? 1.f : 0.f, DeltaSeconds, 4.f);
+    Blend = FMath::FInterpConstantTo(Blend, bFirstPerson ? 1.f : 0.f, DeltaSeconds, Rate);
     if (Blend <= 0.f) Eye = FVector::ZeroVector;
 }
 
@@ -33,7 +33,15 @@ void FTrainPassengerView::Apply(const AWandererCharacter& Rider, float DeltaSeco
     if (Rider.GetMesh() && Rider.GetMesh()->DoesSocketExist(Bone)) Head = Rider.GetMesh()->GetSocketLocation(Bone) + FVector(0, 0, 8.f);
     const FVector Local = Actor.InverseTransformPositionNoScale(Head);
     Eye = Eye.IsZero() ? Local : FMath::VInterpTo(Eye, Local, DeltaSeconds, 12.f);
-    const FRotator Look = Rider.GetController() ? Rider.GetController()->GetControlRotation() : View.Rotation;
+    FRotator Look = Rider.GetController() ? Rider.GetController()->GetControlRotation() : View.Rotation;
+    if (Rider.IsGondolaSeated())
+    {
+        const float BaseYaw = float(Actor.Rotator().Yaw);
+        const float RelYaw = FMath::Clamp(float(FRotator::NormalizeAxis(Look.Yaw - BaseYaw)), -100.f, 100.f);
+        const float ClampedPitch = FMath::Clamp(float(FRotator::NormalizeAxis(Look.Pitch)), -60.f, 60.f);
+        Look = FRotator(ClampedPitch, FRotator::NormalizeAxis(BaseYaw + RelYaw), 0.f);
+        if (Rider.GetController()) Rider.GetController()->SetControlRotation(Look);
+    }
     const FVector Where = Actor.TransformPositionNoScale(Eye) + FRotator(0, Look.Yaw, 0).Vector() * 10.f;
     const float Weight = FMath::SmoothStep(0.f, 1.f, Blend);
     View.Location = FMath::Lerp(View.Location, Where, Weight);

@@ -43,6 +43,7 @@ struct FGondolaPassenger
     GENERATED_BODY()
     UPROPERTY() TObjectPtr<AWandererCharacter> Rider;
     UPROPERTY() int16 Cabin=INDEX_NONE;
+    UPROPERTY() int16 Seat=INDEX_NONE;
 };
 USTRUCT()
 struct FGondolaNetworkState
@@ -71,8 +72,13 @@ public:
     virtual void EndPlay(const EEndPlayReason::Type Reason) override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out) const override;
     bool GoTo(const FString& Station);
+    static bool TryInteract(AWandererCharacter* Character);
+    bool SitPlayer(AWandererCharacter* Character,int32 PreferredSeat=INDEX_NONE);
+    bool StandPlayer(AWandererCharacter* Character);
     FString StateJson() const;
     FVector Point(const FString& What) const;
+    struct FSeat { FString Id; FVector Location=FVector::ZeroVector; float Yaw=0.f; };
+    static void BuildCabinSeats(const FVector& CabinSize,float CabinFloorZ,TArray<FSeat>& OutSeats);
 private:
     struct FCabin
     {
@@ -87,6 +93,15 @@ private:
         FGondolaPose Pose;
         double LastTime=0.;
         bool bPrimed=false;
+        TArray<uint8> SeatTaken;
+    };
+    struct FRiderSeat
+    {
+        TWeakObjectPtr<AWandererCharacter> Character;
+        int32 Cabin=INDEX_NONE, Seat=INDEX_NONE;
+        float Seated=0.f;
+        bool bSailed=false, bManualStand=false;
+        FVector SeatedAt=FVector::ZeroVector;
     };
     struct FStation
     {
@@ -98,7 +113,12 @@ private:
     bool Initialize(const FString& Path);
     UStaticMeshComponent* MeshPart(const FString& Name,const FString& Path,bool Collision,bool Movable);
     void Place(double Time,bool First=false);
-    void UpdateRiders();
+    void UpdateRiders(float Dt);
+    FRiderSeat& SeatFor(AWandererCharacter* Character);
+    const FRiderSeat* FindSeat(const AWandererCharacter* Character) const;
+    int32 NearestFreeSeat(int32 CabinIndex,const FVector& WorldFeet) const;
+    void SitDown(FTransportRider& R,FRiderSeat& S,int32 CabinIndex,int32 SeatIndex);
+    void StandUp(FTransportRider& R,FRiderSeat& S);
     void Publish();
     void ApplyRemote();
     double ServiceTime() const;
@@ -110,6 +130,8 @@ private:
     TArray<FStation> Stations;
     TArray<FRope> Ropes;
     TArray<FTransportRider> Riders;
+    TArray<FRiderSeat> SeatsByRider;
+    TArray<FSeat> Seats;
     FVector Pivot=FVector::ZeroVector, DoorCentre=FVector::ZeroVector, Size=FVector::ZeroVector;
     float FloorZ=0.f, DoorWidth=0.f, DoorHeight=0.f;
     double Offset=0.;
@@ -126,4 +148,6 @@ public:
     UFUNCTION(BlueprintCallable,Category="Live") static FString GondolaState();
     UFUNCTION(BlueprintCallable,Category="Live") static bool GondolaGo(const FString& Station);
     UFUNCTION(BlueprintCallable,Category="Live") static FVector GondolaPoint(const FString& What);
+    UFUNCTION(BlueprintCallable,Category="Live") static bool GondolaSit(int32 SeatIndex=-1);
+    UFUNCTION(BlueprintCallable,Category="Live") static bool GondolaStand();
 };

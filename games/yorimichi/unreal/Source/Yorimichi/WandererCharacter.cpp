@@ -1,5 +1,6 @@
 #include "WandererCharacter.h"
 #include "BelmonteTrainService.h"
+#include "GondolaService.h"
 #include "CraterParkTower.h"
 #include "AtelierExit.h"
 #include "JapanCombatResolver.h"
@@ -1158,6 +1159,7 @@ void AWandererCharacter::Interact(const FInputActionValue&) {
   return;
  }
  if(bReady&&!bMenuOpen&&IsLocallyControlled()&&!SkateRide->IsRiding()&&!OnVehicle()&&!IsZeppelinPassenger()&&ABelmonteTrainService::TryInteract(this))return;
+ if(bReady&&!bMenuOpen&&IsLocallyControlled()&&!SkateRide->IsRiding()&&!OnVehicle()&&!IsZeppelinPassenger()&&AGondolaService::TryInteract(this))return;
  // In the saddle nothing is used (online the host refuses boarding off foot, ServerZeppelinInput).
  if(SkateRide->IsRiding()||Horse->IsEquipped()||!bReady||bMenuOpen)return;
  auto* Ship=GetZeppelin();
@@ -1894,7 +1896,9 @@ void AWandererCharacter::CalcCamera(float DeltaTime, FMinimalViewInfo& OutResult
         if (bFixedView || bCinematic) TrainView = FTrainPassengerView();
         else
         {
-            TrainView.Update(IsTrainPassenger(), PC->bPreferTrainFirstPerson, DeltaTime);
+            const bool bGondolaFP = IsGondolaSeated();
+            const bool bSlowBlend = bGondolaFP || AboardVehicle == ETransportVehicle::Gondola;
+            TrainView.Update(IsTrainPassenger() || bGondolaFP, bGondolaFP ? true : PC->bPreferTrainFirstPerson, DeltaTime, bSlowBlend ? 2.5f : 4.f);
             TrainView.Apply(*this, DeltaTime, OutResult);
         }
     }

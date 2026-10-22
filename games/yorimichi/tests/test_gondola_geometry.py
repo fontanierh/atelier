@@ -397,3 +397,88 @@ def test_sloped_slab_on_a_flat_hull_fails():
     """MUST FAIL: a ramp whose hull is flat at the ramp's top: most of the ramp has no floor at its height."""
     ramp = lambda x, y: -0.08 * (y + 20.0)
     assert C.floor_support_failures([('ramp', PLAZA, ramp)], [floor_hull(PLAZA, top=0.0)])
+
+
+# ------------------------------------------------------------------ cabin bench seats and first-person look clamp
+def test_gondola_bench_seats_lie_on_cabin_benches_face_inward_and_clear_walls():
+    """Verify every C++ bench seat in AGondolaService::BuildCabinSeats lies on a cabin.py bench top (+-2 cm),
+    faces into the cabin, and keeps the seated rider body capsule clear of all cabin walls and the ceiling."""
+    from pathlib import Path
+    import re
+
+    p = KIT.params.DEFAULTS
+    d = KIT.params.derived(p)
+    with gondola_modules('cabin', pure=False) as kit:
+        cab = kit.cabin.Cabin(p, d)
+        layout = cab.layout()
+        wall_t_cm = kit.cabin.T * 100.0
+        seat_d_cm = kit.cabin.SEAT_D * 100.0
+        seat_h_cm = kit.cabin.SEAT_H * 100.0
+        wall_top_cm = kit.cabin.WALL_TOP * 100.0
+
+    cpp = (Path(__file__).resolve().parents[1] / 'unreal/Source/Yorimichi/GondolaService.cpp').read_text()
+    assert 'const float WallT=7.5f,BenchD=40.f,BenchH=46.f;' in cpp
+    assert wall_t_cm == pytest.approx(7.5)
+    assert seat_d_cm == pytest.approx(40.0)
+    assert seat_h_cm == pytest.approx(46.0)
+
+    size_x_cm = p['cabin_length'] * 100.0
+    size_y_cm = p['cabin_width'] * 100.0
+    floor_z_cm = layout['floor_z'] * 100.0
+    xi = size_x_cm * 0.5 - wall_t_cm
+    yi = size_y_cm * 0.5 - wall_t_cm
+    seat_z = floor_z_cm + seat_h_cm
+    seats = [
+        ('back_left', (-28.0, -(yi - 0.5 * seat_d_cm), seat_z), 90.0, 'back'),
+        ('back_right', (28.0, -(yi - 0.5 * seat_d_cm), seat_z), 90.0, 'back'),
+        ('west', (-(xi - 0.5 * seat_d_cm), 0.0, seat_z), 0.0, 'west'),
+        ('east', (xi - 0.5 * seat_d_cm, 0.0, seat_z), 180.0, 'east'),
+    ]
+    expected_cpp_lines = [
+        'OutSeats.Add({TEXT("back_left"),FVector(-28.f,-(Yi-0.5f*BenchD),SeatZ),90.f});',
+        'OutSeats.Add({TEXT("back_right"),FVector(28.f,-(Yi-0.5f*BenchD),SeatZ),90.f});',
+        'OutSeats.Add({TEXT("west"),FVector(-(Xi-0.5f*BenchD),0.f,SeatZ),0.f});',
+        'OutSeats.Add({TEXT("east"),FVector(Xi-0.5f*BenchD,0.f,SeatZ),180.f});',
+    ]
+    for line in expected_cpp_lines:
+        assert line in cpp, line
+
+    benches = layout['benches']
+    expected_top_cm = (layout['floor_z'] + benches['seat_height']) * 100.0
+    for name, (x_ue, y_ue, z_ue), yaw_deg, which in seats:
+        # Convert Unreal cm (y_ue = -y_m * 100) back to cabin.py metres (x_m, y_m).
+        x_m, y_m = x_ue / 100.0, -y_ue / 100.0
+        assert abs(z_ue - expected_top_cm) <= 2.0, (name, z_ue, expected_top_cm)
+        if which == 'back':
+            y0, y1 = benches['back_y']
+            assert y0 <= y_m <= y1 and benches['west'][1] <= x_m <= benches['east'][0]
+            inward_ue = (0.0, 1.0)
+        elif which == 'west':
+            x0, x1 = benches['west']
+            assert x0 <= x_m <= x1 and -yi / 100.0 <= y_m <= yi / 100.0
+            inward_ue = (1.0, 0.0)
+        else:
+            x0, x1 = benches['east']
+            assert x0 <= x_m <= x1 and -yi / 100.0 <= y_m <= yi / 100.0
+            inward_ue = (-1.0, 0.0)
+        facing_ue = (math.cos(math.radians(yaw_deg)), math.sin(math.radians(yaw_deg)))
+        assert facing_ue[0] * inward_ue[0] + facing_ue[1] * inward_ue[1] == pytest.approx(1.0), name
+        # Seated body cylinder (r = 18 cm) clears the cabin interior walls (xi, yi) and ceiling (wall_top_cm).
+        radius_cm = 18.0
+        assert xi - abs(x_ue) - radius_cm > 0.0, name
+        assert yi - abs(y_ue) - radius_cm > 0.0, name
+        assert (floor_z_cm + wall_top_cm) - (z_ue + 95.0) > 0.0, name
+
+
+def test_gondola_seat_scenario_and_first_person_clamp_contract():
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1]
+    view_cpp = (root / 'unreal/Source/Yorimichi/TrainPassengerView.cpp').read_text()
+    char_cpp = (root / 'unreal/Source/Yorimichi/WandererCharacter.cpp').read_text()
+    scen = (root / 'scenarios/gondola_seat.py').read_text()
+    assert 'FMath::Clamp(float(FRotator::NormalizeAxis(Look.Yaw - BaseYaw)), -100.f, 100.f)' in view_cpp
+    assert 'FMath::Clamp(float(FRotator::NormalizeAxis(Look.Pitch)), -60.f, 60.f)' in view_cpp
+    assert 'bSlowBlend ? 2.5f : 4.f' in char_cpp
+    for key in ('seated_on_board', 'first_person_active', 'head_hidden', 'look_clamped_pos',
+                'look_clamped_neg', 'cabin_plumb', 'no_wall_clip', 'stood_on_arrival', 'third_person_restored'):
+        assert key in scen
