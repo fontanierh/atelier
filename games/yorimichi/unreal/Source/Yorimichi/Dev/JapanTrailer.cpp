@@ -83,7 +83,7 @@ static bool ValidateVillage(UWorld* World,AActor* Player,const FString& Director
         {
             ++Walls;
             const auto& Buffer=Mesh->GetStaticMesh()->GetRenderData()->LODResources[0].VertexBuffers.ColorVertexBuffer;
-            if (Buffer.GetVertexData() && Buffer.GetNumVertices()>0)
+            if (Buffer.GetAllowCPUAccess() && Buffer.GetVertexData() && Buffer.GetNumVertices()>0)
             {
                 const FColor C=Buffer.VertexColor(0);
                 Colours.Add(MakeShared<FJsonValueString>(FString::Printf(TEXT("%s: %d,%d,%d, count %u"),*B->GetStringField(TEXT("asset")),C.R,C.G,C.B,Buffer.GetNumVertices())));

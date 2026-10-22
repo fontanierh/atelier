@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "parent": "54d22703f11f2750f7f014c881cb36cc1175bbf4",
+  "review_scope": "Saved footstep types move to YorimichiAssets. Every runtime component method and the moved Find body remain byte-identical. Serialized fields/defaults are unchanged; redirects require native old-library load/playback validation. This records source equivalence only, with no new listening claim.",
+  "sources": [
+    {
+      "source": "games/yorimichi/unreal/Source/Yorimichi/JapanFootsteps.cpp",
+      "owner": "UJapanFootstepComponent",
+      "before_sha256": "08df0472b8cac0db829b5e6602934321a2b10eceb4802ba6999b22c7c1cd512d",
+      "after_sha256": "f1751a5236e2882c14a8ebf1e4bc2819b3e0d3fcc51661ec85f11d988ad915e1",
+      "unchanged_function_bodies": {
+        "ApplyVoicePreferences": "08a4e5e222998f2334fce99577929dd2c182012c147fc89de3db7f7be48bc29c",
+        "BeginPlay": "ec48295ac381ed48cb955578a9c826955af42155284e404c566c841149bd477f",
+        "DrawStep": "fd845993c683214f853bc112ca470e44fae00482af1350e338dcd4a2582c7178",
+        "EndPlay": "357fdf366d68eb3c9cf1b8996dad349e44c46cda5e3a2067ab4c7067698fcc82",
+        "Hoof": "caa3f0112c08f70d0980c8a38cb21f5c309bdac5eb9b0d93bc14de8ca8a29e54",
+        "Land": "7c205ea6ecf3a016614739aadaf3997b5046b4b5fb1a710b3257b17e6fcab3b7",
+        "Plant": "6454c3a4ce0c815241f3d512621b3fdec8a1eb1514fe2d1f22eed8179d1e81ef",
+        "Play": "490754f45cc7ef203183cc7a3a4fb3301bc4f6b6e0137c00e9bdca281b481c14",
+        "PlayFootstepVoice": "1cd7a480e7df8fcb46c62388958219b495e1def9e0f784a716130d040a8b6bce",
+        "SetAudioPreferences": "e32247da8c66ba67acd609a5e9e5ad9c1b5aba36040385f2d48de9b392788fa0",
+        "StopFootstepVoices": "6932d35bc93f30c7d77a007162c95a88e741b8787d441aea9c498cf1da6082c8",
+        "SurfaceAt": "4dc1f264811acbb0e3a5205bafb343e443f1b90f87459bd6747528f2eda2f4ad",
+        "TickComponent": "e139bd083254dbf7442fbfc257972cc7eef309f5e3ecc36231215aa757582542",
+        "UJapanFootstepComponent": "9e2c9446765616fc5bdafec26867a31374011089eed42cf722e6aa522f3602d7"
+      },
+      "changed_function_bodies": {}
+    }
+  ],
+  "moved_definition": {
+    "source": "games/yorimichi/unreal/Source/YorimichiAssets/Private/JapanFootstepSet.cpp",
+    "owner": "UJapanFootstepSet",
+    "function": "Find",
+    "sha256": "c927faf94260e79dae1d2d793bbd61fcc08493d1d6ff4a601a1bf71b38b84ca2",
+    "body_sha256": "31a955de53ff793d97fa6455a9b349d5073ec042627a0bf8a8b438f4fa33b685"
+  },
+  "serialized_header": {
+    "source": "games/yorimichi/unreal/Source/YorimichiAssets/Public/JapanFootstepSet.h",
+    "sha256": "d91eb9ec346656d9bd65877ebb4d54ecda717b11b23568ea905bb0677291c95e"
+  }
+}

@@ -3,7 +3,7 @@
   "character": "nox",
   "model_sha256": "4c1a1c9883c3d20f7388c2a0871ce509244ec9296dccd887088653847ad6b9f4",
   "bind_sha256": "fab0bb2edee2c0245d09923e89f9b3f24d40099a23bbd133a48e03e912b52fe0",
-  "source_sha256": "5a9019e1e2b4990c9072e27a31ebc9008fbc17843902fbd7caf30b58457595d8",
+  "source_sha256": "d4e3f1ae95dfbe75f25f99f7eb2bb3ac04b74224f5473923ef1b16d754e2f458",
   "scale": 1.1335296646408517,
   "seated_world": {
     "pelvis": [

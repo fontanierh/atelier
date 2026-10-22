@@ -26,14 +26,6 @@ static TAutoConsoleVariable<int32> CVarFootstepDebug(TEXT("japan.FootstepDebug")
 
 static const TCHAR* FootBone(int32 Side){ return Side ? TEXT("foot_R") : TEXT("foot_L"); }
 
-const FJapanFootstepBank* UJapanFootstepSet::Find(FName Surface) const
-{
-    const FJapanFootstepBank* Bank=Surfaces.Find(Surface);
-    if(Bank && Bank->Steps.Num()) return Bank;
-    Bank=Surfaces.Find(DefaultSurface);
-    return Bank && Bank->Steps.Num() ? Bank : nullptr;
-}
-
 UJapanFootstepComponent::UJapanFootstepComponent()
 {
     PrimaryComponentTick.bCanEverTick=true;

@@ -208,7 +208,8 @@ def main():
     for o in [terrain, road, wires, hills] + ([rail] if rail else []) + ([lane] if lane else []): o.select_set(True)
     bpy.context.view_layer.objects.active = terrain
     path = os.path.join(OUT, "terrain.fbx")
-    bpy.ops.export_scene.fbx(filepath=path, use_selection=True, apply_unit_scale=True, apply_scale_options="FBX_SCALE_ALL", axis_forward="-Y", axis_up="Z",
+    from atelier.blender.fbx import export_fbx as export_scene_fbx
+    export_scene_fbx(filepath=path, use_selection=True, apply_unit_scale=True, apply_scale_options="FBX_SCALE_ALL", axis_forward="-Y", axis_up="Z",
                              object_types={"MESH"}, mesh_smooth_type="FACE", bake_anim=False, path_mode="COPY", embed_textures=False)
     print("terrain:", len(terrain.data.polygons), "faces, road", len(road.data.polygons), "wires", len(wires.data.polygons), "->", path)
     # sea plane (separate asset, no collision)
@@ -219,7 +220,8 @@ def main():
     sea = obj("Sea", sea_vertices, sea_faces, water, uvs=lambda co: (co.x / 24.0, co.y / 24.0), smooth=False)
     bpy.ops.object.select_all(action="DESELECT"); sea.select_set(True); bpy.context.view_layer.objects.active = sea
     os.makedirs(os.path.join(OUT, "assets"), exist_ok=True)
-    bpy.ops.export_scene.fbx(filepath=os.path.join(OUT, "assets", "Sea.fbx"), use_selection=True, apply_unit_scale=True, apply_scale_options="FBX_SCALE_ALL", axis_forward="-Y", axis_up="Z",
+    from atelier.blender.fbx import export_fbx as export_scene_fbx
+    export_scene_fbx(filepath=os.path.join(OUT, "assets", "Sea.fbx"), use_selection=True, apply_unit_scale=True, apply_scale_options="FBX_SCALE_ALL", axis_forward="-Y", axis_up="Z",
                              object_types={"MESH"}, mesh_smooth_type="FACE", bake_anim=False, path_mode="COPY", embed_textures=False)
     print("sea exported")
 

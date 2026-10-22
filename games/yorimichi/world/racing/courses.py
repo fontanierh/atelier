@@ -24,8 +24,18 @@ def number(value):
         return False
 
 
+from functools import lru_cache
+
+
+@lru_cache(maxsize=4)
+def _scene_manifest(path, mtime_ns, size):
+    return json.loads(Path(path).read_text())
+
+
 def venue(scene):
-    manifest = json.loads(Path(scene).read_text())
+    scene_path = Path(scene)
+    st = scene_path.stat()
+    manifest = _scene_manifest(scene_path, st.st_mtime_ns, st.st_size)
     models = [m for m in manifest['meshes'] if m['name'] == 'SM_BM_BHip_Course']
     if len(models) != 1:
         raise ValueError('Racing venue must contain exactly one course mesh')

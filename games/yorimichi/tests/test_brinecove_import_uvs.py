@@ -40,7 +40,7 @@ def test_half_precision_uvs_flatten_the_grand_stair_nosings():
     assert sum(np.ptp(v.astype(np.float16)) == 0 for v in tops) > len(tops) // 4  # many sample one texel row
 
 
-def run_import(tmp_path, meshes, *, retired=None, save_failure=False):
+def run_import(tmp_path, meshes, *, retired=None, save_failure=False, scratch_failure=False):
     """Execute import_brinecove.main with Unreal faked; returns the build settings each mesh ends with."""
     class Properties:
         def __init__(self, **values): self.values = values
@@ -93,7 +93,7 @@ def run_import(tmp_path, meshes, *, retired=None, save_failure=False):
     unreal = SimpleNamespace(StaticMeshEditorSubsystem=object(), load_module=loaded.add,
         get_editor_subsystem=lambda _: editor if 'StaticMeshEditor' in loaded else None,
         CollisionTraceFlag=SimpleNamespace(CTF_USE_COMPLEX_AS_SIMPLE='complex-as-simple'), log=lambda *_: None)
-    assets = SimpleNamespace(make_directory=lambda *_: None,
+    assets = SimpleNamespace(make_directory=lambda *_: None, does_directory_exist=lambda _: scratch_failure,
         list_assets=lambda root, **_: [root+'/'+name+'.'+name for name in built],
         does_asset_exist=lambda path: path.rsplit('/', 1)[-1] in built,
         find_package_referencers_for_asset=lambda *a, **k: [],
@@ -164,3 +164,11 @@ def test_native_membership_helper_is_in_the_real_import_input_closure(tmp_path, 
                           stamps=tmp_path/'stamps', uproject=None)
     step = next(step for step in build.load_recipe('yorimichi').steps(ctx) if step.name == 'unreal.'+region)
     assert Path(native_membership.__file__) in step.inputs
+
+
+def test_temporary_import_cleanup_failure_cannot_publish_success(tmp_path):
+    entry = dict(name='SM_BC_Town_Piece0', path='glb/piece.glb', slots=['stone'],
+                 triangles=1, bounds_m=[[0, 0, 0], [1, 1, 1]], collision=True, lods=False)
+    with pytest.raises(RuntimeError, match='temporary import packages'):
+        run_import(tmp_path, [entry], scratch_failure=True)
+    assert not (tmp_path/'import-report.json').exists()

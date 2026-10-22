@@ -3,7 +3,7 @@
   "character": "modori",
   "model_sha256": "e9f578fa5690e1be055b55c3b234f5c45ebda3433daa94003ba04d9f73d57e63",
   "bind_sha256": "5278847ae8ec020591846980265a8d72fc9b030795113c275a0dd152dd474198",
-  "source_sha256": "cca40aab6ca40acaeed25012787ddfc81cc2af75e9d36f3549542fe76e2a3f1d",
+  "source_sha256": "132fb49da016dc3ccf179f55fa1fe5274b2f2ca17dd5047a10c0c29afc0f0d71",
   "scale": 1.0808708425737112,
   "seated_world": {
     "pelvis": [

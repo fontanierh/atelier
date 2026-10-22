@@ -106,6 +106,8 @@ def test_ready_notifications_preserve_exact_contact_and_skate_profile_bodies():
         # Each later witness starts exactly where the previous one ended.
         chain = [row] + ([follow] if row['source'] == follow['source'] else []) + [later[row['source']]]
         chain += [original[row['source']]] if row['source'] in original else []
+        module = json.loads((game / 'assets/audio/profile/asset-module-revalidation.json').read_text())
+        chain += [record for record in module['sources'] if record['source'] == row['source']]
         bodies = dict(row['unchanged_function_bodies'])
         for previous, record in zip(chain, chain[1:]):
             assert previous['after_sha256'] == record['before_sha256'] and previous['owner'] == record['owner']
@@ -133,12 +135,32 @@ def test_original_only_revalidation_witness():
     assert set(row['unchanged_function_bodies']) == {'SurfaceAt', 'Plant', 'Land', 'TickComponent', 'Hoof',
                                                      'ApplyVoicePreferences'}
     path = sequences.REPO / row['source']
-    assert row['after_sha256'] == sequences.RUNTIME[row['source']] == sequences.digest(path)
+    module = json.loads((game / 'assets/audio/profile/asset-module-revalidation.json').read_text())
+    assert row['after_sha256'] == module['sources'][0]['before_sha256']
+    assert module['sources'][0]['after_sha256'] == sequences.RUNTIME[row['source']] == sequences.digest(path)
     text = path.read_text()
     bodies = dict(row['unchanged_function_bodies'])
     bodies.update({name: value['after_sha256'] for name, value in row['changed_function_bodies'].items()})
     for name, expected in bodies.items():
         assert _body_digest(text, row['owner'], name) == expected
+
+
+def test_saved_type_move_preserves_all_runtime_bodies_and_pins_the_moved_lookup():
+    game = SOURCE.parents[1]
+    witness = json.loads((game / 'assets/audio/profile/asset-module-revalidation.json').read_text())
+    row, = witness['sources']
+    assert witness['version'] == 1 and row['changed_function_bodies'] == {}
+    assert row['after_sha256'] == sequences.RUNTIME[row['source']] == sequences.digest(sequences.REPO / row['source'])
+    text = (sequences.REPO / row['source']).read_text()
+    import re
+    assert set(row['unchanged_function_bodies']) == set(re.findall(r'UJapanFootstepComponent::(\w+)\(', text))
+    for name, expected in row['unchanged_function_bodies'].items():
+        assert _body_digest(text, row['owner'], name) == expected
+    moved = witness['moved_definition']
+    assert moved['sha256'] == sequences.RUNTIME[moved['source']] == sequences.digest(sequences.REPO / moved['source'])
+    assert _body_digest((sequences.REPO / moved['source']).read_text(), moved['owner'], moved['function']) == moved['body_sha256']
+    header = witness['serialized_header']
+    assert header['sha256'] == sequences.RUNTIME[header['source']] == sequences.digest(sequences.REPO / header['source'])
 
 
 def test_skate_preferences_revalidation_witness():

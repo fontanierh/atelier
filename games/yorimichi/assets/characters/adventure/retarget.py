@@ -424,7 +424,8 @@ def export_clip(scene, arm, out, name, frames, retarget, module, fps):
     bpy.ops.object.select_all(action='DESELECT')
     arm.select_set(True)
     bpy.context.view_layer.objects.active = arm
-    bpy.ops.export_scene.fbx(filepath=str(out / 'fbx' / f'A_{name}.fbx'), object_types={'ARMATURE'}, bake_anim=True, **module.FBX)
+    from atelier.blender.fbx import export_fbx as export_scene_fbx
+    export_scene_fbx(filepath=str(out / 'fbx' / f'A_{name}.fbx'), object_types={'ARMATURE'}, bake_anim=True, **module.FBX)
     bpy.data.actions.remove(action)
     print('ADVENTURE CLIP', name, json.dumps(checks), flush=True)
     return checks
