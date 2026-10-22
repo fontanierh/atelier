@@ -678,3 +678,41 @@ def test_snapshot_records_one_native_selection_for_roots_and_link_owners(sample)
     captured = recovery.read(attempt / 'prepared.json')['snapshot']
     assert captured['native_selection'] == {'sdk': 'original'}
     assert captured['link_owners'] == [str(sample.content)]
+
+
+def test_recorded_cook_uses_one_real_deferred_source_selection_and_rechecks_membership(sample):
+    path = Path(__file__).parents[1] / 'compile_inputs.py'
+    spec = importlib.util.spec_from_file_location('native_source_inputs_for_recovery', path)
+    helper = importlib.util.module_from_spec(spec); spec.loader.exec_module(helper)
+    root = sample.source.parent / 'Source'; root.mkdir()
+    source = root / 'Actor.cpp'; source.write_text('native')
+    prose = root / 'CONTRACTS'; prose.write_text('agent guidance')
+    calls = []
+
+    def collect(roots):
+        calls.append(roots)
+        return helper.files(roots)
+
+    sample.step.inputs = []
+    sample.step.deferred_inputs = [build.DeferredInputs(
+        'native-source-files', collect, ((root,),),
+        support=(Path(__file__), path, Path(helper.build_inputs.__file__)))]
+    before = recovery.snapshot(sample.ctx, sample.step, ['mock UAT'], sample.ctx.env())
+    assert calls == [(root,)]
+    assert str(source) in before['declared_members'] and str(prose) not in before['declared_members']
+    prose.write_text('revised guidance')
+    calls.clear()
+    assert recovery.snapshot(sample.ctx, sample.step, ['mock UAT'], sample.ctx.env()) == before
+    assert calls == [(root,)]
+    header = root / 'New.h'; header.write_text('new native member')
+    after = recovery.snapshot(sample.ctx, sample.step, ['mock UAT'], sample.ctx.env())
+    assert str(header) in after['declared_members']
+    assert after['action_fingerprint'] != before['action_fingerprint']
+    with pytest.raises(RuntimeError, match='changed native source membership'):
+        recovery.require_snapshot(sample.ctx, sample.step, ['mock UAT'], before,
+                                  'changed native source membership')
+    # Exercise record-cook adapter preparation, execution proof and final certification together.
+    assert sample.run() == 0
+    attempt = next((sample.ctx.out / 'cook-attempts').iterdir())
+    captured = recovery.read(attempt / 'prepared.json')['snapshot']
+    assert str(header) in captured['declared_members']
