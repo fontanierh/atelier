@@ -872,7 +872,8 @@ def export_fbx_and_glb(proc: ProcMesh, mat, fbx_name=None, glb_name=None):
             o.select_set(True)
         bpy.context.view_layer.objects.active = obj
         FBX_DIR.mkdir(parents=True, exist_ok=True)
-        bpy.ops.export_scene.fbx(
+        from atelier.blender.fbx import export_fbx as export_scene_fbx
+        export_scene_fbx(
             filepath=str(FBX_DIR / f'{fbx_name}.fbx'),
             use_selection=True,
             apply_unit_scale=True,

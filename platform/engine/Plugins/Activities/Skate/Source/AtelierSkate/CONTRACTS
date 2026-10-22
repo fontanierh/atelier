@@ -18,3 +18,8 @@ and filters untouched. Softening and gain MUST update current and future loops a
 every sound set, using per-voice filtering and gain, without changing shared waves, envelopes,
 pitch, attenuation, timing, simulation or network state. One-shot voices MUST auto-destroy;
 EndPlay MUST stop and release only the owned one-shot voices.
+
+@cc [owner:fontanierh,label:correctness] cpu-shading-buffer-lifetime
+MeshSurface MUST require actual CPU position and tangent/UV storage before reading render vertices
+and normals. Cached raw pointers MUST NOT establish availability after buffer cleanup. When storage
+is absent, use the existing cooked-collision surface path and retain material face ownership.

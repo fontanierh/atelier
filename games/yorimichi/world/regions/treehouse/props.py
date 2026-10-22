@@ -97,7 +97,8 @@ def fit(slug, glb, key, size, turn, target, solid, out, upright=False):
     bpy.ops.object.select_all(action='DESELECT')
     for o in objs: o.select_set(True)
     bpy.context.view_layer.objects.active = obj
-    bpy.ops.export_scene.fbx(filepath=str(out/f'{key}.fbx'), use_selection=True, apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL',
+    from atelier.blender.fbx import export_fbx as export_scene_fbx
+    export_scene_fbx(filepath=str(out/f'{key}.fbx'), use_selection=True, apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL',
                              axis_forward='-Y', axis_up='Z', object_types={'MESH'}, mesh_smooth_type='FACE', bake_anim=False,
                              use_custom_props=False, path_mode='STRIP')
     info = dict(gain=round(target/max(lum, 1e-4), 4), surface_luminance=round(lum, 4), triangles=sum(len(p.vertices)-2 for p in me.polygons),

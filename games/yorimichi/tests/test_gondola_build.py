@@ -29,7 +29,7 @@ def test_ground_query_is_narrow_and_keeps_region_layout_edits_out_of_exporters(t
     query=rows['world.gondola_ground_inputs']
     assert 'world.gondola_ground' in {s.name for s in build.order(list(rows.values()),['world.gondola_ground'])}
     assert query.cutoff
-    assert set(query.needs)=={'world.hidamari','world.terrain.meshes','world.belmonte'}
+    assert set(query.needs)=={'world.hidamari','world.terrain.meshes','world.belmonte.ground'}
     assert rows['world.gondola_ground'].needs==['world.gondola_ground_inputs']
     for name in ('world.hidamari','world.belmonte'):
         assert all(Path(p).name!='gondola.py' for p in rows[name].inputs)

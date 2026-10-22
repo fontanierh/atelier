@@ -167,6 +167,7 @@ def trees():
     return out
 
 
+@lru_cache(maxsize=2)
 def replacements(seed=11):
     """One island plant for each original but those on the roll-in (DROP): {mesh: [[x, y, z, yaw, scale], ...]} with
     x, y, z the native trunk foot in metres (y up)."""
@@ -189,6 +190,7 @@ def replacements(seed=11):
     return out
 
 
+@lru_cache(maxsize=2)
 def _surfaces(seam=False):
     """(natural, built): natural up-facing triangles as (kind, triangle, up) lists, and points on every other opaque
     surface, all native metres (y up). The natural ones are the kept park's, or with `seam` the seam's
@@ -289,14 +291,27 @@ def seam(seed=13):
 
 def _clearance(built):
     """clear(q): metres from native point q to the nearest `built` point, 99 beyond 6 m or so."""
-    grid = {}
-    for q in built:
-        grid.setdefault(tuple(np.floor(q / 6.).astype(int)), []).append(q)
+    buckets = {}
+    if len(built):
+        keys = np.floor(built / 6.).astype(int)
+        order = np.lexsort((keys[:, 2], keys[:, 1], keys[:, 0]))
+        uniq, starts = np.unique(keys[order], axis=0, return_index=True)
+        for uk, s0, s1 in zip(uniq, starts, np.r_[starts[1:], len(order)]):
+            buckets[(int(uk[0]), int(uk[1]), int(uk[2]))] = built[order[s0:s1]]
     def clear(q):
-        k = np.floor(q / 6.).astype(int)
-        near = [o for dx in (-1, 0, 1) for dy in (-1, 0, 1) for dz in (-1, 0, 1)
-                for o in grid.get((k[0] + dx, k[1] + dy, k[2] + dz), ())]
-        return float(np.linalg.norm(np.asarray(near) - q, axis=1).min()) if near else 99.
+        kx, ky, kz = int(math.floor(q[0] / 6.)), int(math.floor(q[1] / 6.)), int(math.floor(q[2] / 6.))
+        best = 99. * 99.
+        found = False
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                for dz in (-1, 0, 1):
+                    arr = buckets.get((kx + dx, ky + dy, kz + dz))
+                    if arr is not None:
+                        found = True
+                        d2 = float(((arr - q) ** 2).sum(1).min())
+                        if d2 < best:
+                            best = d2
+        return math.sqrt(best) if found else 99.
     return clear
 
 
@@ -304,15 +319,25 @@ def _plant(natural, built, rng, taken):
     """Plant `natural` [(kind, triangle, up)] clear of the `built` points and of `taken` [(plan point, gap)]."""
     clear = _clearance(built)
     placed = ({}, {})              # trees, shrubs: plan cell -> [(point, gap)]
+    taken_grid = {}
+    for o, g in taken:
+        ox, oz = float(o[0]), float(o[1])
+        taken_grid.setdefault((math.floor(ox / 4), math.floor(oz / 4)), []).append((ox, oz, float(g)))
     out = {}
     def free(q, gap, tree):
         # Trees keep their spacing from trees, shrubs theirs from shrubs and a metre from any trunk.
-        k = (math.floor(q[0] / 4), math.floor(q[2] / 4))
-        near = lambda cells, g0: all(np.hypot(*(q[[0, 2]] - o)) >= g0(g) for dx in (-1, 0, 1) for dy in (-1, 0, 1)
+        qx, qz = float(q[0]), float(q[2])
+        k = (math.floor(qx / 4), math.floor(qz / 4))
+        near = lambda cells, g0: all(math.hypot(qx - float(o[0]), qz - float(o[1])) >= g0(g)
+                                     for dx in (-1, 0, 1) for dy in (-1, 0, 1)
                                      for o, g in cells.get((k[0] + dx, k[1] + dy), ()))
-        return (near(placed[0], lambda g: max(gap, g)) if tree else
-                near(placed[1], lambda g: max(gap, g)) and near(placed[0], lambda g: 1.)) and \
-            all(np.hypot(*(q[[0, 2]] - o)) >= g for o, g in taken)
+        ok_placed = (near(placed[0], lambda g: max(gap, g)) if tree else
+                     near(placed[1], lambda g: max(gap, g)) and near(placed[0], lambda g: 1.))
+        if not ok_placed:
+            return False
+        return all(math.hypot(qx - ox, qz - oz) >= g
+                   for dx in (-1, 0, 1) for dy in (-1, 0, 1)
+                   for ox, oz, g in taken_grid.get((k[0] + dx, k[1] + dy), ()))
     def put(name, q, scale, gap, sink, tree):
         out.setdefault(name, []).append([round(float(q[0]), 3), round(float(q[1]) - sink, 3), round(float(q[2]), 3),
                                          round(float(rng.uniform(0, 360)), 1), round(float(scale), 3)])
