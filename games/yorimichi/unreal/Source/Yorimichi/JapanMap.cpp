@@ -178,16 +178,8 @@ void UJapanMap::Initialize(AWandererCharacter* Pawn)
         {
             const auto S=V->AsObject();const auto& Walk=S->GetArrayField(TEXT("walk_cm"));if(Walk.IsEmpty())continue;
             const auto& P=Walk.Last()->AsArray();FJapanMapZone Zone;
-            const FString StationId = S->GetStringField(TEXT("id"));
-            const FString StationName =
-                StationId == TEXT("hidamari") ? FString(TEXT("Hidamari — Southeast Rim")) :
-                StationId == TEXT("southeast") ? FString(TEXT("Southeast Rim — Hidamari")) :
-                StationId == TEXT("belmonte") ? FString(TEXT("Belmonte — Northwest Rim")) :
-                StationId == TEXT("northwest") ? FString(TEXT("Northwest Rim — Belmonte")) :
-                StationId == TEXT("floor") ? FString(TEXT("Crater Floor")) :
-                StationId == TEXT("floor_rim") ? FString(TEXT("Southeast Rim — Crater")) :
-                S->GetStringField(TEXT("name"));
-            Zone.Key=TEXT("gondola_")+StationId;Zone.Name=TEXT("Gondola — ")+StationName;
+            Zone.Key=TEXT("gondola_")+S->GetStringField(TEXT("id"));
+            Zone.Name=TEXT("Gondola — ")+S->GetStringField(TEXT("name"));
             Zone.Hint=TEXT("Climb the stairs and wait for a cabin at the platform.");
             Zone.Location=FVector(P[0]->AsNumber(),P[1]->AsNumber(),P[2]->AsNumber());
             Zone.Yaw=S->GetNumberField(TEXT("yaw"));Zone.Above=150.f;

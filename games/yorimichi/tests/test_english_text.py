@@ -1,8 +1,8 @@
 """The game is in English (operator 593): no French in displayed text.
 
 This checks the strings that reach the screen: C++ TEXT() literals in the game
-module, Python display literals in the world and tools, the phone page, runtime
-JSON labels, and the Belmonte sign map. It does not police comments, asset
+module, racing horse names, Python display literals in the world and tools, the
+phone page, runtime JSON labels, and the Belmonte sign map. It does not police comments, asset
 source labels that the build translates, or identifiers.
 """
 import ast
@@ -84,6 +84,14 @@ def test_game_module_display_literals_are_english():
                 if french_hits(literal):
                     findings.append(f'{path.relative_to(GAME)}:{number}: {literal!r}')
     assert not findings, 'French in displayed C++ text:\n' + '\n'.join(findings)
+
+
+def test_racing_horse_names_are_english():
+    path = GAME / 'unreal/Plugins/HorseRacing/Source/AtelierHorseRacing/Private/HRNames.inl'
+    names = re.findall(r'TEXT\("((?:[^"\\]|\\.)*)"\)', path.read_text())
+    assert names, 'the horse-name vocabulary must not be empty'
+    findings = [name for name in names if french_hits(name)]
+    assert not findings, 'French in the racing horse-name pool:\n' + '\n'.join(findings)
 
 
 def test_world_and_tool_display_literals_are_english():
