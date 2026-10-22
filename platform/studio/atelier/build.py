@@ -613,6 +613,10 @@ def run_argv(ctx, step, command, argv, env, log, request, slots, *, pass_fds=())
         attempt = None
         if isinstance(command, UnrealPackage) and step.cook_recovery is not None and getattr(ctx, 'record_cook_recovery', False):
             from . import build_cook_recovery
+            from atelier.harness.safety.launch_ownership import prepare
+            launch_context = prepare(env)
+            env = dict(launch_context.environment)
+            inherited['launch_context'] = launch_context
             attempt = build_cook_recovery.begin(ctx, step, command, argv, env)
             argv = attempt[1]
             inherited.update(invocation_id=attempt[0].name, completion_path=attempt[0] / 'guarded-success.json')
