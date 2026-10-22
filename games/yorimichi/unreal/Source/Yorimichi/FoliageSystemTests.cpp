@@ -2,6 +2,7 @@
 #include "FoliagePatchCoverage.h"
 #if WITH_DEV_AUTOMATION_TESTS
 #include "JapanPreferences.h"
+#include "JapanWorld.h"
 #include "WandererCharacter.h"
 #include "AtelierSettings.h"
 #include "AtelierData.h"
@@ -230,6 +231,48 @@ bool FYorimichiFoliageToggleTest::RunTest(const FString&)
     TestTrue(TEXT("Prepared mode restored after failed save"),System->IsEnabled());
     TestEqual(TEXT("Rollback reloads the prepared mesh"),Source->GetStaticMesh()->GetPathName(),Prepared);
     IFileManager::Get().DeleteDirectory(*Directory,false,true);
+    System->Sources.Reset();World->DestroyWorld(false);return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FYorimichiFoliagePerformanceSettingsTest,"Yorimichi.Foliage.PerformanceSettings",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FYorimichiFoliagePerformanceSettingsTest::RunTest(const FString&)
+{
+    const auto Init=UWorld::InitializationValues().AllowAudioPlayback(false).CreatePhysicsScene(false);
+    auto* World=UWorld::CreateWorld(EWorldType::Game,false,NAME_None,nullptr,true,ERHIFeatureLevel::Num,&Init);
+    if (!TestNotNull(TEXT("Isolated settings world"),World)) return false;
+    auto* System=World->GetSubsystem<UYorimichiFoliageSubsystem>();
+    auto* Map=World->SpawnActor<AJapanWorld>();Map->bLoaded=true;System->bEnabled=false;
+    for (const TCHAR* Name:{TEXT("Tree_Settings"),TEXT("Bush_Settings"),TEXT("Grass_Settings")})
+    {
+        auto* Group=NewObject<UHierarchicalInstancedStaticMeshComponent>(Map);
+        Group->SetStaticMesh(NewObject<UStaticMesh>(Map,FName(Name)));
+        Group->SetCullDistances(6000,8000);Group->SetLODDistanceScale(1.7f);
+        Group->SetWorldPositionOffsetDisableDistance(1234);Group->SetEvaluateWorldPositionOffset(true);
+        Map->Groups.Add(Group);
+        FYorimichiFoliageSource Entry;Entry.Original=Group;Entry.EvaluateWPO=true;
+        Entry.StartCullDistance=6000;Entry.EndCullDistance=8000;Entry.LODDistanceScale=1.7f;Entry.WPODisableDistance=1234;
+        System->Sources.Add(Entry);
+    }
+    auto* Tree=Map->Groups[0];auto* Bush=Map->Groups[1];auto* Grass=Map->Groups[2];
+    for (bool Performance:{true,false})
+    {
+        const float Sway=Performance?25.f:35.f,Detail=Performance?.3f:.6f;
+        Map->ApplyPerformanceSettings(Performance,Sway,Detail,80.f);
+        System->SetDistances(Performance,Detail,Sway,80.f);
+        TestEqual(TEXT("Legacy Apply retains current grass setting"),Grass->InstanceEndCullDistance,Performance?5000:8000);
+        TestEqual(TEXT("Legacy Apply retains current tree detail"),Tree->GetLODDistanceScale(),Detail);
+        TestEqual(TEXT("Legacy Apply retains current bush WPO reach"),Bush->GetWorldPositionOffsetDisableDistance(),FMath::RoundToInt(Sway*100.f));
+        // Reproduce a mode removal restoring older authored values, without a
+        // settings value change to invalidate JapanWorld's cached guard.
+        Grass->SetCullDistances(6000,8000);Tree->SetLODDistanceScale(1.7f);
+        Bush->SetWorldPositionOffsetDisableDistance(1234);
+        Map->ApplyPerformanceSettings(Performance,Sway,Detail,80.f,true);
+        TestEqual(TEXT("Reload reapplies unchanged grass setting"),Grass->InstanceEndCullDistance,Performance?5000:8000);
+        TestEqual(TEXT("Reload reapplies unchanged tree detail"),Tree->GetLODDistanceScale(),Detail);
+        TestEqual(TEXT("Reload reapplies unchanged bush WPO reach"),Bush->GetWorldPositionOffsetDisableDistance(),FMath::RoundToInt(Sway*100.f));
+    }
     System->Sources.Reset();World->DestroyWorld(false);return true;
 }
 

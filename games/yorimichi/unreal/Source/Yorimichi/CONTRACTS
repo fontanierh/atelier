@@ -225,3 +225,5 @@ Mode removal and reload MUST restore authored instance culling, LOD scale, WPO e
 WPO disable distance before registering the other mode. Bush/groundcover WPO carries player
 push and MUST remain authored-enabled when tree sway distance is zero. The separate wind
 strength control remains independent of player push; tree wind culling MUST NOT disable bush WPO.
+Legacy Apply MUST NOT overwrite current graphics settings with registration snapshots. A mode
+reload into legacy MUST reapply the current world performance settings despite unchanged setting guards.

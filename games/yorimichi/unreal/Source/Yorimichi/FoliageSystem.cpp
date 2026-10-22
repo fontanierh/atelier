@@ -629,11 +629,14 @@ void UYorimichiFoliageSubsystem::Restore(FYorimichiFoliageSource& Entry,bool Res
     }
     Entry.Original->SetVisibility(Entry.Visible,false);Entry.Original->SetHiddenInGame(Entry.Hidden,false);
     Entry.Original->SetCastShadow(Entry.CastShadow);Entry.Original->bAffectDistanceFieldLighting=Entry.DistanceField;
-    Entry.Original->SetEvaluateWorldPositionOffset(Entry.EvaluateWPO);
-    Entry.Original->SetWorldPositionOffsetDisableDistance(Entry.WPODisableDistance);
-    if (auto* Group=Cast<UInstancedStaticMeshComponent>(Entry.Original))
-    { Group->SetCullDistances(Entry.StartCullDistance,Entry.EndCullDistance);Group->SetLODDistanceScale(Entry.LODDistanceScale); }
-    else Entry.Original->SetCullDistance(Entry.CullDistance);
+    if (bEnabled)
+    {
+        Entry.Original->SetEvaluateWorldPositionOffset(Entry.EvaluateWPO);
+        Entry.Original->SetWorldPositionOffsetDisableDistance(Entry.WPODisableDistance);
+        if (auto* Group=Cast<UInstancedStaticMeshComponent>(Entry.Original))
+        { Group->SetCullDistances(Entry.StartCullDistance,Entry.EndCullDistance);Group->SetLODDistanceScale(Entry.LODDistanceScale); }
+        else Entry.Original->SetCullDistance(Entry.CullDistance);
+    }
     if (Entry.Visual && Entry.Visual!=Entry.Original) { Entry.Visual->SetVisibility(false,false);Entry.Visual->SetCastShadow(false); }
     if (Entry.NearVisual) Entry.NearVisual->SetVisibility(false,false);
     if (Entry.Patches) Entry.Patches->SetVisibility(false,false);
@@ -923,6 +926,10 @@ bool UYorimichiFoliageSubsystem::ReloadMode(bool Enabled)
                 ++UploadTotal;if (++UploadBatch==8) DrainUploads();
             }
         }
+        // Restored authored values can predate a graphics change made while
+        // prepared mode was active. Reapply the current legacy settings once.
+        if (!Target) for (TActorIterator<AJapanWorld> It(GetWorld());It;++It)
+            It->ApplyPerformanceSettings(bPerformance,Sway,Detail,ShadowDistance,true);
         JapanGameplayCollision::Install(GetWorld());
         if (Target && GIsRHIInitialized) DrainUploads();
         return true;

@@ -17,13 +17,13 @@
     "games/yorimichi/unreal/Source/Yorimichi/CityTreeLODExperiment.cpp": "85463d45b2e0b2473036a0617fa82ab78708cfc884832ba1a4596237d2cda10f",
     "games/yorimichi/unreal/Source/Yorimichi/Dev/JapanTrailer.cpp": "b74c47898b331b5b672b500511b611a343d9df15d1e3d98af31742c0cd4dd5dc",
     "games/yorimichi/unreal/Source/Yorimichi/FerryService.cpp": "f799ad8667ccb913a35265e1a473f6016d934d863a69d96026ef315e1a9459ec",
-    "games/yorimichi/unreal/Source/Yorimichi/FoliageSystem.cpp": "653d0bed49268474150e2a08c367d3988218fcf383bb717cd548e10a604d5640",
-    "games/yorimichi/unreal/Source/Yorimichi/FoliageSystem.h": "fb073a6d3195f4abd52ef3c9fab84fe8d0865c1cdcb85c17cfa0ad2997fafc8e",
+    "games/yorimichi/unreal/Source/Yorimichi/FoliageSystem.cpp": "acdf05e5e4a13f847bffde13dd59ea29c259832370ce5f5481a3241a8285f682",
+    "games/yorimichi/unreal/Source/Yorimichi/FoliageSystem.h": "0285acb480fe2af165dc5a79432ce7a10dcedc0a682232751f481dfa643c91cc",
     "games/yorimichi/unreal/Source/Yorimichi/GondolaService.cpp": "46e86bb34de6a67060313099a1e28ed18e5ff9e68fa8272d281d3cb0e167ea7a",
     "games/yorimichi/unreal/Source/Yorimichi/HidamariStable.cpp": "3083091601846abdd8a75035f80fade8f561ae2e1954651c65c20049f4075b27",
     "games/yorimichi/unreal/Source/Yorimichi/Hippodrome.cpp": "cada21b803535672de6533322e289b2e083d968dabc5e2cb0aef1c3a17076954",
     "games/yorimichi/unreal/Source/Yorimichi/JapanPreferences.cpp": "0ea1c9271dfd2cc7bcc597db1226bcb8eae9a9683122eb5772ff88c57b9136ca",
-    "games/yorimichi/unreal/Source/Yorimichi/JapanWorld.cpp": "93a83a0eba11fb97a412d2f58698cfd6c69cac03235719d55d9093a7bae58c0b",
+    "games/yorimichi/unreal/Source/Yorimichi/JapanWorld.cpp": "a9fe613ed3d719e400644ec1e40373af924096dbf8df3ca850c722b484623dfb",
     "games/yorimichi/unreal/Source/Yorimichi/SkatePark.cpp": "235c13d93f8adaa34feb1b378ade2f7e4cecaecedf1a31119ed0e9dd4cfa183a",
     "games/yorimichi/unreal/Source/Yorimichi/SuperUltraMegaPark.cpp": "bba24fcf896ad2807a6a0a2499aab6f669255c780e4a61e1ee4202cbdbbe90a3",
     "games/yorimichi/unreal/Source/Yorimichi/Yorimichi.Build.cs": "5d2e25908b8ccc96b0e1396e77899abe40597ab9476411ac47468a0025b99bf8",
@@ -53,7 +53,8 @@
     "platform/studio/atelier/native_protocol.py": "eeb9f18d563cb13059c4c96a834a3490ed83decfc0a195a6d3d38415bb8f7d82",
     "platform/studio/atelier/paths.py": "2176891c3779c90215db409bd4d31e9fca34d45642cdfc38972aa5e688f28924",
     "platform/studio/atelier/source_imports.py": "b0b70fd764f52f5ced29308041edbf3b6176e34f4e391ba6c4af3474972008f6",
-    "platform/studio/atelier/unreal_mesh_reuse.py": "11eaa02d6c8fc2179edb2b2561159956297763168157bee79eed5f9dbcb7e777"
+    "platform/studio/atelier/unreal_mesh_reuse.py": "11eaa02d6c8fc2179edb2b2561159956297763168157bee79eed5f9dbcb7e777",
+    "games/yorimichi/unreal/Source/Yorimichi/JapanWorld.h": "10ae4e899da7e3353ec06970f6ecea908d474d9b6dcb2043b288b6a0e7d01cb7"
   },
   "policies": [
     [

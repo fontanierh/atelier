@@ -101,6 +101,7 @@ private:
     friend class FYorimichiFoliageClassificationTest;
     friend class FYorimichiFoliageCollisionPolicyTest;
     friend class FYorimichiFoliageBindingTest;
+    friend class FYorimichiFoliagePerformanceSettingsTest;
     static bool OrdinaryAuthoredProp(const TArray<FStaticMaterial>& Slots,int32 Triangles);
     bool RequiresRegistration(UStaticMeshComponent* Component) const;
     bool CachedRequiresRegistration(UStaticMeshComponent* Component);

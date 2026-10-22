@@ -859,9 +859,9 @@ void AJapanWorld::ApplyGroupDiagnostics()
            *Wanted,Hidden,Groups.Num());
 }
 
-void AJapanWorld::ApplyPerformanceSettings(bool bPerformance, float TreeSwayMetres, float ForestDetail, float TreeShadowMetres)
+void AJapanWorld::ApplyPerformanceSettings(bool bPerformance, float TreeSwayMetres, float ForestDetail, float TreeShadowMetres, bool Force)
 {
-    if (!bLoaded || (AppliedPerformanceMode == int32(bPerformance) && AppliedTreeSway == TreeSwayMetres && AppliedForestDetail == ForestDetail &&
+    if (!bLoaded || (!Force && AppliedPerformanceMode == int32(bPerformance) && AppliedTreeSway == TreeSwayMetres && AppliedForestDetail == ForestDetail &&
         AppliedTreeShadow == TreeShadowMetres)) return;
     for (auto* Group : Groups)
     {
