@@ -70,16 +70,17 @@ def verify_lods(target,screen_sizes,meshes,impostor=None,bark='Bark',interface=N
     for level in range(count):
         palettes.append(sorted({target.get_material(meshes.get_lod_material_slot(target,level,section)).get_path_name()
                                 for section in range(target.get_num_sections(level))}))
+    # A far crown is one extra level after the authored chain (and after the impostor, when there is one).
+    authored=palettes[:-1] if crown else palettes
     if crown:
-        assert all(p==palettes[0] for p in palettes[:-1]),(name,'leaf LOD changes palette',palettes)
         expected=[CROWN_FOLDER+'/MI_'+crown['slot']+'.MI_'+crown['slot']]
         assert palettes[-1]==expected,(name,'crown material contract',palettes[-1],expected)
-    elif impostor:
-        assert all(p==palettes[0] for p in palettes[:-1]),(name,'leaf LOD changes palette',palettes)
+    if impostor:
+        assert all(p==authored[0] for p in authored[:-1]),(name,'leaf LOD changes palette',palettes)
         expected=sorted(['/Game/Japan/Materials/MI_'+bark+'.MI_'+bark,
                          '/Game/Japan/Materials/MI_'+impostor+'.MI_'+impostor])
-        assert palettes[-1]==expected,(name,'impostor material contract',palettes[-1],expected)
-    else:assert all(p==palettes[0] for p in palettes),(name,'LOD changes the source palette',palettes)
+        assert authored[-1]==expected,(name,'impostor material contract',authored[-1],expected)
+    else:assert all(p==authored[0] for p in authored),(name,'LOD changes the source palette',palettes)
     return {'vertices':[meshes.get_number_verts(target,i) for i in range(count)],
             'screen_sizes':actual,'materials_by_lod':palettes,'all_slots_blend':True}
 

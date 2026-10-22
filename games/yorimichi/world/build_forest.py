@@ -15,9 +15,10 @@ from asset_catalog import check_material_namespace
 import far_crown
 import forest_impostors
 
-# Trees whose farthest LOD is the opaque flat12 crown (far_crown.py) instead of the 4-card impostor. The impostor is
-# still baked, so import_forest's atlas and instance contract is unchanged.
-FAR_CROWN = set()
+# Past the 4-card impostor, every forest tree ends in one more level: the opaque flat12 crown (far_crown.py). At the
+# default forest detail (.4) it starts 0.9-2 km out at a 70 degree FOV, where a tree is a few pixels; nearer trees
+# keep every authored level. Culling all trees past that distance measured within .2 ms of the crowns' saving.
+FAR_CROWN_SCREEN_SIZE = .0054
 
 
 def main():
@@ -66,19 +67,18 @@ def main():
         proxy=forest_impostors.bake(base,output)
         bark='BarkOlive' if args[0]=='olive' else 'BarkTuscan' if name in TUSCAN else 'Bark'
         A.Mesh=original
-        if name in FAR_CROWN:
-            # LOD0's cards give the crown its shape and colour; the level keeps only the crown.
-            obj=tree(f'{name}_LOD3',*args,library=A)
-            crown=far_crown.replace(obj,A.MATS[args[-1]],A.mat(far_crown.slot(name),color=(1.,1.,1.)),
-                                    (maximum-minimum).length,far_crown.LEAF_TINTS.get(args[-1],(1.,1.,1.)))
-            contract={'crown':crown}
-        else:
-            obj=forest_impostors.mesh(name,proxy,A.MATS[bark])
-            contract={'impostor_slot':name+'_Impostor','impostor_bark':bark}
+        obj=forest_impostors.mesh(name,proxy,A.MATS[bark])
         counts.append(sum(len(p.vertices)-2 for p in obj.data.polygons));A.export(obj,obj.name)
         bpy.data.objects.remove(obj,do_unlink=True)
-        report[name]={**dimensions,'leaf':args[-1],'triangles':counts,'screen_sizes':[1.,.24,.075,.018],
-                      'impostor':proxy,**contract}
+        # LOD0's cards give the crown its shape and colour; the level keeps only the crown.
+        obj=tree(f'{name}_LOD4',*args,library=A)
+        crown=far_crown.replace(obj,A.MATS[args[-1]],A.mat(far_crown.slot(name),color=(1.,1.,1.)),
+                                (maximum-minimum).length,far_crown.LEAF_TINTS.get(args[-1],(1.,1.,1.)))
+        counts.append(sum(len(p.vertices)-2 for p in obj.data.polygons));A.export(obj,obj.name)
+        bpy.data.objects.remove(obj,do_unlink=True)
+        report[name]={**dimensions,'leaf':args[-1],'triangles':counts,
+                      'screen_sizes':[1.,.24,.075,.018,FAR_CROWN_SCREEN_SIZE],'impostor':proxy,
+                      'impostor_slot':name+'_Impostor','impostor_bark':bark,'crown':crown}
         bpy.data.objects.remove(base,do_unlink=True)
         print('FOREST CROWN COMPLETE',name,counts,flush=True)
     A.Mesh=original
