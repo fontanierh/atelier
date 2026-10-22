@@ -1,12 +1,10 @@
 """Normal-build ownership and verification for compact foliage residency packages."""
 import json
 import re
-import hashlib
 import math
 from pathlib import Path
 
 from atelier import mesh_geometry
-from atelier.gltf import glb_parts
 
 GAME = Path(__file__).resolve().parent
 ROOT = '/Game/FoliageResident'
@@ -54,57 +52,28 @@ def passable_plant(name, words, tokens):
     return bool(set(words) & positive) and not set(words) & TREE_WORDS and not original & structural
 
 
-def authored_spec(source):
-    """Bind the explicitly authored prop and its committed collision witness."""
-    path = GAME / 'assets/belmonte/source.json'
-    entries = json.loads(path.read_text())['meshes']
-    name = source.rsplit('/', 1)[-1].split('.')[0]
-    if source.split('.')[0] != '/Game/Belmonte/Meshes/' + name:
-        raise ValueError('Authored prop has no declared source owner')
-    entry = next((row for row in entries if row['name'] == name), None)
-    if entry is None:
-        raise ValueError('Missing authored source manifest')
-    collision = entry.get('collision')
-    if collision:
-        file = path.parent / collision['path']
-        if file.is_symlink() or hashlib.sha256(file.read_bytes()).hexdigest() != collision['sha256']:
-            raise ValueError('Changed authored collision source')
-    return entry
-
-
-def authored_structural_slots(source, names, imported_names):
-    """@cc [owner:fontanierh,label:correctness] authored-retained-slot-identity
-    Structural ownership MUST follow the committed GLB's ordered retained source
-    indices, as the normal Belmonte producer does. Both native slot tables MUST
-    match its exact imported names; suffix guessing, reordered slots and changed
-    committed bytes MUST refuse. Current source/material certification remains
-    independently required by the caller.
+def excluded_authored(names, triangles):
+    """@cc [owner:fontanierh,label:correctness;performance] ordinary-authored-props
+    Only the complete explicit FoliageAuthored_ slot table and positive whole-mesh
+    triangle budget <=12288 MAY exclude an indivisible authored prop from foliage
+    residency. Region/name guesses, partial tags and oversized objects MUST NOT
+    exempt dense or embedded vegetation. The caller MUST first validate current
+    source bytes/material identity and actual triangle count against its report.
     """
-    entry = authored_spec(source)
-    file = GAME / 'assets/belmonte' / entry['path']
-    data = file.read_bytes()
-    if file.is_symlink() or hashlib.sha256(data).hexdigest() != entry['sha256']:
-        raise ValueError('Changed authored structural source: ' + source)
-    doc, _ = glb_parts(data)
-    retained = []
-    expected = []
-    for material in doc['materials']:
-        name = material['name']
-        # The normal producer uses this embedded source index because glTF
-        # omits unused source slots. Bind the complete committed name, including
-        # Blender's suffix; Interchange replaces its periods with underscores.
-        parts = name.split('_', 2)
-        if len(parts) != 3 or parts[0] != 'BM' or not parts[1].isdigit() or not re.fullmatch(r'[A-Za-z0-9_.]+', name):
-            raise ValueError('Unsupported authored GLB slot identity: ' + name)
-        index = int(parts[1])
-        if index >= len(entry['slots']) or index in retained:
-            raise ValueError('Invalid authored retained source indices: ' + source)
-        retained.append(index)
-        expected.append(name.replace('.', '_'))
-    if not expected or imported_names != expected or names != ['FoliageAuthored_' + name for name in expected]:
-        raise ValueError(f'Authored structural material order differs: {source}; '
-                         f'slots={names!r}; imported={imported_names!r}; expected={expected!r}')
-    return {i for i, index in enumerate(retained) if entry['slots'][index] in {'M_wood', 'M_iron', 'M_ashlar'}}
+    return (type(triangles) is int and 0 < triangles <= 12288 and bool(names) and
+            all(isinstance(name, str) and name.startswith('FoliageAuthored_') for name in names))
+
+
+def owned_resident_mesh(package):
+    """@cc [owner:fontanierh,label:correctness] residency-material-referencer-ownership
+    Only canonical mesh outputs in this producer's exclusive root MAY count as
+    owned referencers when refreshing its interaction material. Retired ordinary
+    prop derivatives MAY retain references, but external/lookalike paths MUST
+    refuse. This MUST NOT authorize mesh deletion or certify geometry/task success.
+
+    The caller MUST additionally check the current registry asset class is StaticMesh.
+    """
+    return re.fullmatch(re.escape(ROOT) + r'/(?P<name>[A-Za-z0-9_]+)_[0-9a-f]{16}/(?P=name)(?:_Canopy|_Shadow)?', package) is not None
 
 
 def assets(row):
@@ -154,14 +123,13 @@ def step(ctx):
     content = GAME / 'unreal/Content'
     return Step('unreal.foliage_residency', [command],
                 inputs=[*build_inputs.local_imports(script, (GAME, GAME / 'world', scripts)),
-                        GAME / 'foliage_residency_build.py', GAME / 'assets/belmonte/source.json',
+                        GAME / 'foliage_residency_build.py',
                         GAME / 'unreal/Source/Yorimichi/Dev/FoliageResidencyBuilder.cpp',
                         GAME / 'unreal/Source/Yorimichi/Dev/FoliageResidencyBuilder.h',
                         ctx.out / 'foliage_system/report.json', content / 'FoliageSystem',
                         content / 'Data/foliage_system/registry.json',
                         *(ctx.out / 'foliage' / name / 'manifest.json' for name in species()),
-                        GAME.parents[1] / 'platform/studio/atelier/mesh_geometry.py',
-                        GAME.parents[1] / 'platform/studio/atelier/gltf.py'],
+                        GAME.parents[1] / 'platform/studio/atelier/mesh_geometry.py'],
                 deferred_inputs=[DeferredInputs('residency-current-packages', dependency_inputs,
                     (content, ctx.out / 'foliage_system/report.json'), support=(GAME / 'foliage_residency_build.py',))],
                 after=['unreal.foliage_system'], needs=unreal_modules.needs(('Yorimichi', 'YorimichiImport')),
@@ -187,17 +155,8 @@ def dependency_inputs(content, report_path):
         return [report_path]
     report = json.loads(report_path.read_text())
     packages = {'/Game/Japan/Materials/MPC_Wind'}
-    witness_files = []
     for row in report['assets']:
         packages.update(row[key].split('.')[0] for key in ('source', 'optimized', 'shadow', 'patch'))
-        if row['source'].startswith('/Game/Belmonte/Meshes/'):
-            entry = next((e for e in json.loads((GAME / 'assets/belmonte/source.json').read_text())['meshes']
-                          if e['name'] == row['source'].rsplit('/', 1)[-1].split('.')[0]), {})
-            if row['rigid_triangles'] == 0 and entry and not entry.get('collision'):
-                witness_files.append(GAME / 'assets/belmonte' / entry['path'])
-            if row['rigid_triangles'] == 0 and entry.get('collision'):
-                witness_files.append(GAME / 'assets/belmonte' / entry['collision']['path'])
-                packages.add(row['source'].split('.')[0] + '_Collision')
         packages.update(path.split('.')[0] for path in row['leaf_materials'] if path.startswith('/Game/'))
     files = mesh_geometry.package_inventory(content, sorted(packages))
-    return sorted([*(Path(content) / path for path in files), *witness_files])
+    return sorted(Path(content) / path for path in files)
