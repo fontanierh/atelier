@@ -191,3 +191,8 @@ and preserve rigid ground/building collision in mixed meshes. A mode change MUST
 inactive mesh bindings and complete their release before loading the next mode, including rollback.
 Render-only CPU/physics cleanup MUST NOT touch an active collision carrier. Bush player interaction,
 see-through custom primitive data and rigid cloth motion MUST survive replacement.
+
+@cc [owner:fontanierh,label:correctness] city-tile-material-ownership
+City surface tile components MUST retain their own certified mesh material table. Parent material slot
+indices MUST NOT be copied onto tiles: a tile may omit unused parent slots and compact their order.
+Prepared and legacy tile modes MUST preserve the same logical face-to-material bindings.
