@@ -3,7 +3,6 @@ flat polygons, tubes; per-corner base colours with a surface tag; later a shadin
 (noise, paint wear, baked ambient occlusion) and export through bpy."""
 import math
 import numpy as np
-import foliage_roles
 
 # Linear albedo. The game's exposure turns pale colours white: stay near 0.05-0.35.
 PAL = {
@@ -33,11 +32,6 @@ class MeshData:
     def __init__(self, name):
         self.name = name
         self.verts = []; self.faces = []; self.colors = []; self.smooth = []; self.tags = []; self.uv = {}
-
-    @property
-    def keys(self):
-        # Tags carry author intent independently of the pier's texture selection.
-        return self.tags
 
     # --- primitives -------------------------------------------------------------------
     def vert(self, p):
@@ -364,7 +358,6 @@ def to_object(m, material, colors=None):
     data.update()
     obj = bpy.data.objects.new(m.name, data)
     bpy.context.scene.collection.objects.link(obj)
-    foliage_roles.export_roles(obj, m)
     return obj
 
 
@@ -372,6 +365,7 @@ def export_fbx(obj, path):
     import bpy
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True); bpy.context.view_layer.objects.active = obj
-    bpy.ops.export_scene.fbx(filepath=str(path), use_selection=True, apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL',
+    from atelier.blender.fbx import export_fbx as export_scene_fbx
+    export_scene_fbx(filepath=str(path), use_selection=True, apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL',
                              axis_forward='-Y', axis_up='Z', object_types={'MESH'}, mesh_smooth_type='FACE', bake_anim=False,
                              use_custom_props=False, colors_type='SRGB')

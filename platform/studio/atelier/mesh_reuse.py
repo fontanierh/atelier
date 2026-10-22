@@ -421,17 +421,35 @@ class Receipts:
         self.content = Path(content)
         self.header = dict(schema=1, context=context, policy=import_policy)
         self.records = {}
+        self.previous = None
         if self.path.exists():
             try:
                 saved = read_json(self.path)
                 if (isinstance(saved, dict) and isinstance(saved.get('meshes'), dict)
-                        and all(saved.get(key) == value for key, value in self.header.items())):
-                    self.records = saved['meshes']
+                        and saved.get('schema') == self.header['schema'] and saved.get('context') == context):
+                    self.previous = saved
+                    if saved.get('policy') == import_policy:
+                        self.records = saved['meshes']
             except (OSError, ValueError, CheckpointError):
                 pass
 
     def matches(self, name, key, packages):
-        old = self.records.get(name)
+        return self._matches(self.records.get(name), key, packages)
+
+    def matches_previous(self, name, key, packages, policies):
+        """@cc [owner:fontanierh,label:correctness] unchanged-production-before-revalidation
+        A previous receipt MAY supply saved byte proof only under its exact reproduced
+        historical policy and unchanged engine context. The caller MUST separately prove
+        current raw-geometry/owner compatibility and run current native validation. Every
+        source identity and saved package sidecar MUST still match; this MUST NOT publish
+        a current receipt or treat a validator-only change as a geometry change.
+        """
+        if (self.previous is None or not isinstance(self.previous.get('policy'), str)
+                or self.previous['policy'] not in policies):
+            return False
+        return self._matches(self.previous['meshes'].get(name), key, packages)
+
+    def _matches(self, old, key, packages):
         if not isinstance(old, dict) or old.get('identity') != key:
             return False
         try:

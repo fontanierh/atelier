@@ -1,5 +1,4 @@
 #include "Hippodrome.h"
-#include "FoliageSystem.h"
 #include "AtelierData.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
@@ -91,7 +90,7 @@ bool AHippodrome::Initialize(const FString& Path)
     {
         const TSharedPtr<FJsonObject>& M = Entry->AsObject();
         const FString Name = M->GetStringField(TEXT("name"));
-        UStaticMesh* Mesh = UYorimichiFoliageSubsystem::LoadMesh(GetWorld(), FString::Printf(TEXT("%s/%s.%s"), *AssetRoot, *Name, *Name));
+        UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("%s/%s.%s"), *AssetRoot, *Name, *Name));
         if (!Mesh) { UE_LOG(LogTemp, Warning, TEXT("Hippodrome: mesh %s is not imported"), *Name); continue; }
         const FVector At = HorseJsonVector(M->GetArrayField(TEXT("at")));
         bool bBlocks = true; M->TryGetBoolField(TEXT("blocks"), bBlocks);

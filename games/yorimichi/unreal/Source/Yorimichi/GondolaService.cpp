@@ -1,5 +1,4 @@
 #include "GondolaService.h"
-#include "FoliageSystem.h"
 #include "AtelierData.h"
 #include "JapanNetwork.h"
 #include "LiveLibrary.h"
@@ -134,7 +133,7 @@ void AGondolaService::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 UStaticMeshComponent* AGondolaService::MeshPart(const FString& Name,const FString& Path,bool Collision,bool Movable)
 {
-    auto* Mesh=UYorimichiFoliageSubsystem::LoadMesh(GetWorld(),Path);if(!Mesh){UE_LOG(LogTemp,Error,TEXT("GONDOLA missing mesh %s"),*Path);return nullptr;}
+    auto* Mesh=LoadObject<UStaticMesh>(nullptr,*Path);if(!Mesh){UE_LOG(LogTemp,Error,TEXT("GONDOLA missing mesh %s"),*Path);return nullptr;}
     auto* C=NewObject<UStaticMeshComponent>(this,*Name);C->SetupAttachment(RootComponent);
     C->SetMobility(Movable?EComponentMobility::Movable:EComponentMobility::Static);C->SetStaticMesh(Mesh);
     C->SetCollisionEnabled(Collision?ECollisionEnabled::QueryAndPhysics:ECollisionEnabled::NoCollision);

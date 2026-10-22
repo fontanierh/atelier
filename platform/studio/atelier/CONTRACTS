@@ -31,6 +31,9 @@ A supported native geometry policy MUST bind the executed owner/helper closure a
 code required by that policy. Unsupported definition-time execution, unresolved local support or
 ambiguous historical evidence MUST disable reuse. Historical raw-geometry comparison and current
 validator identity MUST remain distinct, so adding a validator cannot silently weaken old geometry proof.
+An unchanged raw-geometry/owner policy MAY reuse a prior receipt's complete unchanged package bytes
+under its reproduced historical policy, but MUST run current source/settings/native validation before
+fresh admission. A validator-only policy change MUST NOT by itself require raw mesh reimport.
 
 @cc [owner:fontanierh,label:correctness] finalized-reuse-is-the-success-metric
 Reported native reuse hits MUST follow successful source/package/current-validator admission and the
@@ -93,3 +96,19 @@ metadata and exact deletion inventory outside the collected store, recompute ret
 exclusion, and refuse changed identities or new references before deleting only authorized obsolete data.
 Metadata/blob/workspace removal and observed free-space gain MUST be reported separately: APFS clones
 can retain underlying blocks after one pathname is removed. Logical sizes MUST NOT imply physical reclaim.
+
+@cc [owner:fontanierh,label:correctness;performance] stable-production-mesh-exports
+Production FBX generators MUST use the shared deterministic exporter. Wall time, process hash seeds,
+prior exports and checkout-local authoring/media paths MUST NOT alter otherwise identical outputs.
+Geometry, connection structure, material/UV/colour/collision/skeleton/animation data and declared
+transform options MUST remain significant. Unsupported exporter layouts MUST refuse rather than
+silently claim stability. Lint and normal Blender action admission MUST enforce this boundary, and
+consuming source actions MUST declare the exporter implementation as an input.
+
+@cc [owner:fontanierh,label:correctness;performance] owned-material-mesh-imports
+A static mesh importer that binds a complete authored material table MUST use the shared
+geometry-only Interchange path: no generated placeholder materials/textures and no temporary
+mesh rename. Source slot names/order and actual geometry options MUST remain significant.
+Current native source, role, material, collision and LOD validation MUST still precede reuse
+finalization. Failure to import the exact requested object or retire obsolete owned scratch
+packages MUST fail the owner, never publish a successful import report.

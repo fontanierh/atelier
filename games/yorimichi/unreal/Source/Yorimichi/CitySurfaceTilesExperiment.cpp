@@ -1,5 +1,4 @@
 #include "JapanWorld.h"
-#include "FoliageSystem.h"
 #include "AtelierData.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
@@ -53,7 +52,7 @@ static FAutoConsoleCommandWithWorldAndArgs CitySurfaceTilesCommand(TEXT("japan.C
                 const FString SourceName(Pair.Key);
                 UHierarchicalInstancedStaticMeshComponent* Source=nullptr;
                 for (auto* Group:World->Groups)
-                    if (Group && Group->GetStaticMesh() && UYorimichiFoliageSubsystem::SourceName(Group->GetStaticMesh())==SourceName) Source=Group;
+                    if (Group && Group->GetStaticMesh() && Group->GetStaticMesh()->GetName()==SourceName) Source=Group;
                 if (!Source || Source->GetInstanceCount()!=1) { Valid=false; break; }
                 Originals.Add(Source);
                 if (Enabled && Tiles.IsEmpty())
@@ -61,7 +60,7 @@ static FAutoConsoleCommandWithWorldAndArgs CitySurfaceTilesCommand(TEXT("japan.C
                     {
                         const FString Name=Tile->AsObject()->GetStringField(TEXT("name"));
                         const FString Path=FString::Printf(TEXT("/Game/Experiments/CitySurfaces/%s/%s.%s"),*Tag,*Name,*Name);
-                        UStaticMesh* Mesh=UYorimichiFoliageSubsystem::LoadMesh(Game,Path);
+                        UStaticMesh* Mesh=LoadObject<UStaticMesh>(nullptr,*Path);
                         if (!Mesh) { Valid=false; break; }
                         Pending.Emplace(Source,Mesh);
                     }
@@ -77,11 +76,11 @@ static FAutoConsoleCommandWithWorldAndArgs CitySurfaceTilesCommand(TEXT("japan.C
             for (const auto& Pair:Pending)
             {
                 auto* Source=Pair.Key;
-                auto* Tile=UYorimichiFoliageSubsystem::NewInstances(World);
+                auto* Tile=NewObject<UHierarchicalInstancedStaticMeshComponent>(World);
                 Tile->SetupAttachment(World->GetRootComponent());
                 Tile->SetMobility(EComponentMobility::Static);
                 Tile->SetStaticMesh(Pair.Value);
-                // Each tile owns a compacted slot table; parent slot indices are not interchangeable.
+                // Imported tiles own their name-bound material table; parent indices can differ.
                 Tile->ComponentTags.Add(TileTag);
                 Tile->SetLightingChannels(Source->LightingChannels.bChannel0,Source->LightingChannels.bChannel1,Source->LightingChannels.bChannel2);
                 Tile->SetCastShadow(Source->CastShadow);
@@ -93,11 +92,8 @@ static FAutoConsoleCommandWithWorldAndArgs CitySurfaceTilesCommand(TEXT("japan.C
                 Tile->AddInstance(Transform,true);
                 World->Groups.Add(Tile); Tiles.Add(Tile);
             }
-            auto* Foliage=Game->GetSubsystem<UYorimichiFoliageSubsystem>();
-            for (auto* Original:Originals)
-                if (Foliage) Foliage->SetSourceVisibility(Original,!Enabled);else Original->SetVisibility(!Enabled);
-            for (auto* Tile:Tiles)
-                if (Foliage) Foliage->SetSourceVisibility(Tile,Enabled);else Tile->SetVisibility(Enabled);
+            for (auto* Original:Originals) Original->SetVisibility(!Enabled);
+            for (auto* Tile:Tiles) Tile->SetVisibility(Enabled);
             if (!Pending.IsEmpty())
             {
                 // Synchronous first-load compilation can let the non-realtime

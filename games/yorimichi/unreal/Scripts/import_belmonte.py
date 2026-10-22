@@ -189,31 +189,8 @@ def surfaces(report, master, images):
 
 
 def import_mesh(path, name):
-    generic = unreal.InterchangeGenericAssetsPipeline()
-    pipeline = generic.get_editor_property('mesh_pipeline')
-    pipeline.set_editor_property('import_static_meshes', True)
-    pipeline.set_editor_property('import_skeletal_meshes', False)
-    pipeline.set_editor_property('combine_static_meshes_behavior', unreal.InterchangeCombineStaticMeshesBehavior.ALL)
-    pipeline.set_editor_property('build_nanite', False)
-    generic.get_editor_property('animation_pipeline').set_editor_property('import_animations', False)
-    stack = unreal.InterchangePipelineStackOverride()
-    stack.add_pipeline(generic)
-    stack.add_pipeline(unreal.InterchangeGLTFPipeline())
-    folder = ROOT + '/Import/' + name
-    task = unreal.AssetImportTask()
-    task.filename = str(path)
-    task.destination_path = folder
-    task.options = stack
-    task.automated = True
-    task.replace_existing = True
-    task.save = True
-    AT.import_asset_tasks([task])
-    found = [str(asset.package_name) for asset in REGISTRY.get_assets_by_path(folder, recursive=True)
-             if str(asset.asset_class_path.asset_name) == 'StaticMesh']
-    assert len(found) == 1, (name, found)
-    target = ROOT + '/Meshes/' + name
-    assert E.rename_asset(found[0], target), target
-    return E.load_asset(target)
+    from atelier.interchange_mesh import import_static_mesh
+    return import_static_mesh(path, ROOT + '/Meshes', name)
 
 
 def generate_terrain_lods(mesh):
@@ -296,12 +273,6 @@ def main():
                 assert E.delete_asset(target), target
             mesh = import_mesh(OUT / entry['path'], name)
             reuse.imported(name)
-        unreal.load_module('YorimichiImport')
-        assert unreal.YorimichiFoliageBuilder.stamp_source_roles(mesh), name
-        if entry.get('foliage') == 'authored':
-            assert unreal.YorimichiFoliageBuilder.stamp_source_roles(mesh), name
-            assert all(str(slot.get_editor_property('material_slot_name')).startswith('FoliageAuthored_')
-                       for slot in mesh.get_editor_property('static_materials')), name
         assert len(mesh.get_editor_property('static_materials')) == len(defaults[name]), (name, 'material slots')
         for slot, path in enumerate(defaults[name]):
             material = E.load_asset(path)
@@ -367,11 +338,13 @@ def main():
                      ([entry['name'], entry['name'] + '_Collision'] if entry.get('collision') else [entry['name']])]
     retired = native_membership.retire(E, previous_meshes, current_names, ROOT + '/Meshes', 'SM_BM_')
     unreal.log(f'NATIVE MEMBERSHIP RETIRED: {len(retired)} superseded packages')
-    (OUT / 'import-report.json').write_text(json.dumps(imported, indent=1) + '\n')
     # Both render and collision assets now reference only the region's materials.
     # Drop Interchange's placeholder materials and rename redirectors.
-    E.delete_directory(ROOT + '/Import')
+    if E.does_directory_exist(ROOT + '/Import'):
+        if not E.delete_directory(ROOT + '/Import'):
+            raise RuntimeError('Could not retire previous temporary import packages')
     runpy.run_path(str(Path(__file__).with_name('racing_tv_material.py')))
+    (OUT / 'import-report.json').write_text(json.dumps(imported, indent=1) + '\n')
     reuse.finish()
     unreal.log(f'BELMONTE IMPORT COMPLETE: {len(imported)} meshes')
 

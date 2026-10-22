@@ -30,12 +30,12 @@ ASSET_ROOTS = frozenset({
     'Adventure', 'AtelierValidation', 'Audio', 'Belmonte', 'Collections', 'CraterPark', 'Data', 'Developers',
     'Experiments', 'FX', 'FoxHunter', 'Hippodrome', 'Horses', 'Japan', 'MegaPark', 'SeeThrough', 'SkateMotion', 'SkatePark',
     'SkateRide', 'SkateRuntime', 'SwordCamp', 'Wanderer',
-    'Gondola', 'Ferry', 'BelmonteTrack', 'BelmonteTrain', 'Brinecove', 'HidamariStable', 'Racing', 'FoliageSystem', 'FoliageResident',
+    'Gondola', 'Ferry', 'BelmonteTrack', 'BelmonteTrain', 'Brinecove', 'HidamariStable', 'Racing',
 } | CHARACTER_ROOTS)
 DATA_ROOTS = frozenset({
     'Network', 'SkateRide', 'adventure', 'belmonte', 'bike', 'city_surface_tiles', 'craterpark', 'heightmap.bin',
     'hidamari', 'hippodrome', 'horses', 'kart', 'map', 'megapark', 'skatepark', 'treehouse', 'world.json',
-    'gondola', 'ferry', 'belmonte_track', 'belmonte_train', 'brinecove', 'hidamari_stable', 'racing', 'foliage_system', 'foliage_residency',
+    'gondola', 'ferry', 'belmonte_track', 'belmonte_train', 'brinecove', 'hidamari_stable', 'racing',
 } | {c.id for c in MOVERS})
 # Each mover's runtime data: its move record, its readiness record, bike report if playable, and its posed grips if
 # committed; and the runtime data of the imports that write their own (unreal.hippodrome, unreal.horses).

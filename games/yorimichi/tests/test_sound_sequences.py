@@ -102,13 +102,10 @@ def test_ready_notifications_preserve_exact_contact_and_skate_profile_bodies():
         (game / 'assets/audio/profile/skate-preferences-revalidation.json').read_text())['sources']}
     original = {row['source']: row for row in json.loads(
         (game / 'assets/audio/profile/original-only-revalidation.json').read_text())['sources']}
-    cache = {row['source']: row for row in json.loads(
-        (game / 'assets/audio/profile/foliage-cache-revalidation.json').read_text())['sources']}
     for row in witness['sources']:
         # Each later witness starts exactly where the previous one ended.
         chain = [row] + ([follow] if row['source'] == follow['source'] else []) + [later[row['source']]]
         chain += [original[row['source']]] if row['source'] in original else []
-        chain += [cache[row['source']]] if row['source'] in cache else []
         bodies = dict(row['unchanged_function_bodies'])
         for previous, record in zip(chain, chain[1:]):
             assert previous['after_sha256'] == record['before_sha256'] and previous['owner'] == record['owner']
@@ -153,8 +150,6 @@ def test_skate_preferences_revalidation_witness():
     # A later witness takes over where this one ended (the chain test above follows it to the current source).
     later = {row['source']: row for row in json.loads(
         (game / 'assets/audio/profile/original-only-revalidation.json').read_text())['sources']}
-    later.update({row['source']: row for row in json.loads(
-        (game / 'assets/audio/profile/foliage-cache-revalidation.json').read_text())['sources']})
     for row in witness['sources']:
         if row['source'] in later:
             assert row['after_sha256'] == later[row['source']]['before_sha256']
@@ -227,11 +222,3 @@ def test_real_aac_duration_signal_and_size_budget(tmp_path):
     assert details['seconds'] == 8
     assert .05 < details['decoded_rms'] < .2
     assert details['bytes'] <= 160 * 1024
-
-
-def test_foliage_cache_revalidation_preserves_the_sound_runtime_body():
-    witness = json.loads((SOURCE.parents[1] / 'assets/audio/profile/foliage-cache-revalidation.json').read_text())
-    row, = witness['sources']
-    assert witness['version'] == 1 and not row['changed_function_bodies']
-    assert row['after_sha256'] == sequences.RUNTIME[row['source']] == sequences.digest(sequences.REPO / row['source'])
-    assert _body_digest((sequences.REPO / row['source']).read_text(), row['owner'], 'EndPlay') == row['unchanged_function_bodies']['EndPlay']

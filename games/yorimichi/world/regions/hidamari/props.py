@@ -97,7 +97,8 @@ def lods(key, info):
         low = min(v.co.z for v in obj.data.vertices)
         assert low < caldera.FLOAT, (key, n, 'stands', low, 'above the ground')
         obj.select_set(True); bpy.context.view_layer.objects.active = obj
-        bpy.ops.export_scene.fbx(filepath=str(OUT/f'{obj.name}.fbx'), use_selection=True, apply_unit_scale=True,
+        from atelier.blender.fbx import export_fbx as export_scene_fbx
+        export_scene_fbx(filepath=str(OUT/f'{obj.name}.fbx'), use_selection=True, apply_unit_scale=True,
                                  apply_scale_options='FBX_SCALE_ALL', axis_forward='-Y', axis_up='Z', object_types={'MESH'},
                                  mesh_smooth_type='FACE', bake_anim=False, use_custom_props=False, path_mode='STRIP')
         out.append([tris(obj), screen]); objs.append(obj)
@@ -130,7 +131,7 @@ def main():
     for slug, (_, size) in PROPS.items():
         glb = SRC/slug/f'{slug}.glb'
         if not glb.exists(): continue
-        key, info = kit.fit(slug, glb, f'HD_P_{slug}', size, TURN.get(slug, 0.), TARGET.get(slug, .07), slug in SOLID, OUT, foliage=slug in {'planter_box','bonsai_shelf','potted_plants'})
+        key, info = kit.fit(slug, glb, f'HD_P_{slug}', size, TURN.get(slug, 0.), TARGET.get(slug, .07), slug in SOLID, OUT)
         report[key] = info; print(key, info, flush=True)
     for key, (folder, _, height, crown) in caldera.TREES.items():
         key, info = kit.fit(folder, caldera.source(key), key, height, 0., caldera.TARGET, False, OUT, upright=True)

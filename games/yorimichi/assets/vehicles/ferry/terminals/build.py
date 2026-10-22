@@ -68,9 +68,7 @@ def col_seg(a, b, t, z0, z1):
 TIMBER, TIMBER_DARK, PLANK, PLASTER, KAWARA, RIDGE = 'FT_Timber', 'FT_TimberDark', 'FT_Plank', 'FT_Plaster', 'FT_Kawara', 'FT_KawaraRidge'
 STONE, BLACK, IRON, WHITE, GLASS, PAPER = 'FT_Stone', 'FT_FenderBlack', 'FT_Iron', 'FT_WhitePaint', 'FT_Glass', 'FT_Paper'
 ROPE, NET, FLOAT, CRATE, BRASS, GLOW, INK, TERRACOTTA, MOSS = ('FT_Rope', 'FT_Net', 'FT_Float', 'FT_Crate', 'FT_Brass',
-                                                             'FT_LanternGlow', 'FT_Ink', 'FT_Terracotta', 'FT_ShrubLeaves')
-# MOSS paints only the modeled plants in the two terminal planters. Its material
-# name exposes those surfaces to the shared foliage owner in their mixed meshes.
+                                                             'FT_LanternGlow', 'FT_Ink', 'FT_Terracotta', 'FT_Moss')
 MATERIALS = {
     TIMBER: ((132, 88, 52), .7, 0.), TIMBER_DARK: ((84, 58, 40), .75, 0.), PLANK: ((168, 126, 84), .8, 0.),
     PLASTER: ((236, 230, 216), .85, 0.), KAWARA: ((74, 78, 90), .55, .1), RIDGE: ((56, 59, 70), .5, .1),
@@ -597,7 +595,8 @@ def fbx(path, objs, smooth='EDGE'):
     for o in objs:
         o.select_set(True)
     bpy.context.view_layer.objects.active = objs[0]
-    bpy.ops.export_scene.fbx(filepath=str(path), use_selection=True, apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL',
+    from atelier.blender.fbx import export_fbx as export_scene_fbx
+    export_scene_fbx(filepath=str(path), use_selection=True, apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL',
                              axis_forward='-Y', axis_up='Z', object_types={'MESH'}, mesh_smooth_type=smooth, bake_anim=False,
                              use_custom_props=False)
 

@@ -248,8 +248,7 @@ def persimmon(m,x,y,seed):
         if lx>12.3 or ly<-8.3:continue
         with m.at((lx,ly,.012),r.random()*360):
             p=[(0,-.15,0),(.10,0,0),(0,.15,0),(-.10,0,0)]
-            with v.foliage_roles.surfaces(m,'groundcover_leaf'):
-                m.poly(p,'kura_fallen');m.poly(p[::-1],'kura_fallen')
+            m.poly(p,'kura_fallen');m.poly(p[::-1],'kura_fallen')
 
 
 def shelf_items(m,x,y,z,w,variant,seed):

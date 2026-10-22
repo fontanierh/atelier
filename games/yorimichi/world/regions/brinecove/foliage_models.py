@@ -1,7 +1,6 @@
 """Pure local foliage model geometry; never imports terrain or placement code."""
 import math
 import random
-from foliage_roles import SurfaceKey
 
 from brinecove.geom import Builder
 from brinecove.foliage_atlas import LEAF_CELLS, PALM_CELLS, cell_uvs
@@ -192,7 +191,7 @@ def flowering(seed, radius):
         e = rng.uniform(0.1, 1.2)
         r = radius * rng.uniform(0.8, 1.05)
         p = (math.cos(a) * r * math.cos(e), math.sin(a) * r * math.cos(e), radius * 0.6 + r * 0.7 * math.sin(e))
-        b.sphere(p, radius * rng.uniform(0.1, 0.16), SurfaceKey(('blossom', 'blossom_pale', 'blossom')[rng.randrange(3)], 'flower'),
+        b.sphere(p, radius * rng.uniform(0.1, 0.16), ('blossom', 'blossom_pale', 'blossom')[rng.randrange(3)],
                  subdiv=0)
     return b
 

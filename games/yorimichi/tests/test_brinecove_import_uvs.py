@@ -40,7 +40,7 @@ def test_half_precision_uvs_flatten_the_grand_stair_nosings():
     assert sum(np.ptp(v.astype(np.float16)) == 0 for v in tops) > len(tops) // 4  # many sample one texel row
 
 
-def run_import(tmp_path, meshes, *, role_transport=True, retired=None, save_failure=False):
+def run_import(tmp_path, meshes, *, retired=None, save_failure=False, scratch_failure=False):
     """Execute import_brinecove.main with Unreal faked; returns the build settings each mesh ends with."""
     class Properties:
         def __init__(self, **values): self.values = values
@@ -90,18 +90,10 @@ def run_import(tmp_path, meshes, *, role_transport=True, retired=None, save_fail
     (tmp_path / 'build-report.json').write_text(json.dumps(dict(meshes=meshes, materials=materials)))
     editor = SimpleNamespace(get_lod_build_settings=get_settings, set_lod_build_settings=set_settings)
     loaded = set()                                   # like the commandlet: no subsystem until its module is loaded
-    def stamp_roles(mesh):
-        assert 'YorimichiImport' in loaded
-        if mesh.entry.get('foliage_roles') and role_transport:
-            for slot in mesh.values['static_materials']:
-                if not slot.get_editor_property('material_slot_name').startswith('FoliageRoles_'):
-                    slot.set_editor_property('material_slot_name','FoliageRoles_'+slot.get_editor_property('material_slot_name'))
-        return True
     unreal = SimpleNamespace(StaticMeshEditorSubsystem=object(), load_module=loaded.add,
-        YorimichiFoliageBuilder=SimpleNamespace(stamp_source_roles=stamp_roles),
         get_editor_subsystem=lambda _: editor if 'StaticMeshEditor' in loaded else None,
         CollisionTraceFlag=SimpleNamespace(CTF_USE_COMPLEX_AS_SIMPLE='complex-as-simple'), log=lambda *_: None)
-    assets = SimpleNamespace(make_directory=lambda *_: None,
+    assets = SimpleNamespace(make_directory=lambda *_: None, does_directory_exist=lambda _: scratch_failure,
         list_assets=lambda root, **_: [root+'/'+name+'.'+name for name in built],
         does_asset_exist=lambda path: path.rsplit('/', 1)[-1] in built,
         find_package_referencers_for_asset=lambda *a, **k: [],
@@ -150,14 +142,6 @@ def test_every_uv_textured_brinecove_mesh_imports_full_precision_uvs(tmp_path):
     assert not builds['SM_BC_Plant_Palm0']['use_full_precision_u_vs']   # atlas cells within 0-1
 
 
-def test_source_import_refuses_roles_lost_by_interchange(tmp_path):
-    meshes=[dict(name='SM_BC_Plant',path='glb/a.glb',slots=['leaf'],triangles=10,
-                 bounds_m=[[0,0,0],[1,1,1]],collision=False,foliage_roles=True)]
-    with pytest.raises(AssertionError,match='foliage UV5 lost across source import'):
-        run_import(tmp_path,meshes,role_transport=False)
-    assert run_import(tmp_path,meshes)['SM_BC_Plant']['use_full_precision_u_vs']
-
-
 @pytest.mark.parametrize('save_failure', [False, True])
 def test_superseded_parent_retires_only_after_all_current_meshes_save(tmp_path, save_failure):
     entry = dict(name='SM_BC_Town_Piece0', path='glb/piece.glb', slots=['stone'],
@@ -180,3 +164,11 @@ def test_native_membership_helper_is_in_the_real_import_input_closure(tmp_path, 
                           stamps=tmp_path/'stamps', uproject=None)
     step = next(step for step in build.load_recipe('yorimichi').steps(ctx) if step.name == 'unreal.'+region)
     assert Path(native_membership.__file__) in step.inputs
+
+
+def test_temporary_import_cleanup_failure_cannot_publish_success(tmp_path):
+    entry = dict(name='SM_BC_Town_Piece0', path='glb/piece.glb', slots=['stone'],
+                 triangles=1, bounds_m=[[0, 0, 0], [1, 1, 1]], collision=True, lods=False)
+    with pytest.raises(RuntimeError, match='temporary import packages'):
+        run_import(tmp_path, [entry], scratch_failure=True)
+    assert not (tmp_path/'import-report.json').exists()

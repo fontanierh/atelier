@@ -13,7 +13,6 @@ lantern with its cord, a noren), and object() bakes each vertex's piece into the
 import math, random
 from contextlib import contextmanager
 import bpy
-import foliage_roles
 import numpy as np
 from mathutils import Vector
 from village.build import Mesh, PALETTE
@@ -170,7 +169,7 @@ class TMesh(Mesh):
 
 def export(m, materials, out):
     """Like village.build.export, with one material slot per texture slug."""
-    obj = m.object(materials);foliage_roles.export_roles(obj,m); objs = [obj]
+    obj = m.object(materials); objs = [obj]
     for i, (c, s, rotation) in enumerate(m.colliders):
         bpy.ops.mesh.primitive_cube_add(size=1, location=c, rotation=rotation)
         ob = bpy.context.object; ob.name = f'UCX_{m.name}_{i:02d}'; ob.scale = s
@@ -178,7 +177,8 @@ def export(m, materials, out):
     bpy.ops.object.select_all(action='DESELECT')
     for ob in objs: ob.select_set(True)
     bpy.context.view_layer.objects.active = obj
-    bpy.ops.export_scene.fbx(filepath=str(out/f'{m.name}.fbx'), use_selection=True, apply_unit_scale=True,
+    from atelier.blender.fbx import export_fbx as export_scene_fbx
+    export_scene_fbx(filepath=str(out/f'{m.name}.fbx'), use_selection=True, apply_unit_scale=True,
                              apply_scale_options='FBX_SCALE_ALL', axis_forward='-Y', axis_up='Z', object_types={'MESH'},
                              mesh_smooth_type='FACE', bake_anim=False, use_custom_props=False)
     b = np.array(m.vertices)

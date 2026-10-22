@@ -117,7 +117,7 @@ def instance(name, par, tex, gain, glow=0.):
 def assign(mesh, mis, report):
     slots = list(mesh.get_editor_property('static_materials')); used = []
     for i, s in enumerate(slots):
-        key = str(s.get_editor_property('imported_material_slot_name')).removeprefix('TH_')
+        key = str(s.get_editor_property('material_slot_name')).removeprefix('TH_')
         mi = mis.get(key)
         if mi is None: report.setdefault('missing_slots', []).append(f'{mesh.get_name()}:{key}'); continue
         mesh.set_material(i, mi); used.append(key)
@@ -278,7 +278,7 @@ def main():
         # start the asset afresh whenever the build's slots changed.
         path = f'/Game/Japan/Assets/{name}'
         if E.does_asset_exist(path):
-            old = sorted(str(s.get_editor_property('imported_material_slot_name')).removeprefix('TH_')
+            old = sorted(str(s.get_editor_property('material_slot_name')).removeprefix('TH_')
                          for s in E.load_asset(path).get_editor_property('static_materials'))
             if old != sorted(manifest[name]['slots']):
                 E.delete_asset(path); report.setdefault('fresh', []).append(name)

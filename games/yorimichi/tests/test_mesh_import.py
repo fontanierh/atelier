@@ -73,15 +73,14 @@ def importer(monkeypatch, tmp_path):
             task.imported_object_paths = [package]
 
     fake = SimpleNamespace(
-        load_module=lambda name: None,
-        YorimichiFoliageBuilder=SimpleNamespace(stamp_source_roles=lambda mesh: True, collect_unused=lambda: None),
-        EditorAssetLibrary=SimpleNamespace(save_loaded_asset=lambda mesh: True,
-                                          does_asset_exist=lambda path: path in assets,
+        EditorAssetLibrary=SimpleNamespace(does_asset_exist=lambda path: path in assets,
                                           load_asset=lambda path: assets.get(path)),
         AssetToolsHelpers=SimpleNamespace(get_asset_tools=lambda: SimpleNamespace(import_asset_tasks=execute)),
         AssetImportTask=SimpleNamespace,
         FbxImportUI=lambda: SimpleNamespace(static_mesh_import_data=ImportData()),
         FbxStaticMeshImportData=ImportData,
+        AssetRegistryHelpers=SimpleNamespace(create_asset_data=lambda mesh: SimpleNamespace(
+            get_tag_value=lambda name: 'True' if mesh.values.get('nanite_enabled', False) else 'False')),
         FBXImportType=SimpleNamespace(FBXIT_STATIC_MESH='static'),
         VertexColorImportOption=SimpleNamespace(REPLACE='replace'),
         FBXNormalImportMethod=SimpleNamespace(FBXNIM_IMPORT_NORMALS='normals'),
@@ -107,8 +106,8 @@ def test_import_units_are_correct_for_new_migrated_and_repeated_packages(importe
     unrelated = p.assets['/Game/Other/Mesh'] = Mesh(object())
     mesh = p.module.import_mesh(source, '/Game/Owned', 'Mesh', seed=p.seed, fresh_slots=True)
     assert mesh.centimetres == expected_size
-    needs_seed = initial == 'interchange' or (initial == 'new' and not source_is_seed)
-    assert [name for name, _, _ in p.calls] == (['seed.fbx'] if needs_seed else []) + [source.name]
+    needs_seed = initial == 'interchange'
+    assert [name for name, _, _ in p.calls] == ([source.name] if needs_seed else []) + [source.name]
     if previous is not None:
         assert mesh is previous
     if initial != 'new' or needs_seed:
@@ -119,13 +118,14 @@ def test_import_units_are_correct_for_new_migrated_and_repeated_packages(importe
     assert p.calls == [(source.name, p.package, expected_size)]
 
 
-def test_failed_seed_cannot_continue_to_the_final_source(importer, monkeypatch):
+def test_failed_source_migration_cannot_continue_to_final_pass(importer, monkeypatch):
     p = importer
+    p.assets[p.package] = Mesh(object())
     calls = []
     monkeypatch.setattr(p.module, '_import_mesh', lambda *args: calls.append(args) or Mesh(object()))
     with pytest.raises(RuntimeError, match='establish legacy import data'):
         p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', seed=p.seed)
-    assert len(calls) == 1 and calls[0][0] == p.seed
+    assert len(calls) == 1 and calls[0][0] == p.source
 
 
 @pytest.mark.parametrize('initial', ['new', 'interchange', 'legacy'])
@@ -181,7 +181,7 @@ def test_hidamari_terrain_reimport_replaces_seed_slots_and_keeps_terrain_materia
         p.assets[terrain_package].values['body_setup'] = SimpleNamespace(set_editor_property=collision.__setitem__)
     p.module.AT.import_asset_tasks = execute
     p.unreal.AssetToolsHelpers.get_asset_tools = lambda: SimpleNamespace(import_asset_tasks=execute)
-    p.unreal.EditorAssetLibrary.save_loaded_asset = lambda mesh: saved.append(mesh) or True
+    p.unreal.EditorAssetLibrary.save_loaded_asset = saved.append
     p.unreal.MaterialEditingLibrary = SimpleNamespace()
     p.unreal.SystemLibrary = SimpleNamespace(execute_console_command=lambda *args: None)
     p.unreal.CollisionTraceFlag = SimpleNamespace(CTF_USE_COMPLEX_AS_SIMPLE='complex')
@@ -247,7 +247,7 @@ def test_hidamari_terrain_reimport_replaces_seed_slots_and_keeps_terrain_materia
         assert saved[-1] is mesh
     if previous is not None:
         assert mesh is previous
-    assert [name for name, _, _ in p.calls] == ([] if initial == 'legacy' else ['Village_Sign.fbx']) + ['terrain.fbx'] * 2
+    assert [name for name, _, _ in p.calls] == ['terrain.fbx'] * (3 if initial == 'interchange' else 2)
     assert collision == {'collision_trace_flag': 'complex'}
     assert p.assets['/Game/Other/Mesh'] is unrelated and unrelated.centimetres is None
     assert json.loads((tmp_path / 'hidamari/import-report.json').read_text()) == {}
@@ -327,7 +327,7 @@ def test_treehouse_trees_seed_from_existing_fbx_before_reimport(importer, monkey
     p.unreal.AssetToolsHelpers.get_asset_tools = lambda: p.module.AT
     p.unreal.EditorAssetLibrary.duplicate_asset = duplicate_asset
     p.unreal.EditorAssetLibrary.delete_asset = lambda path: deleted.append(path) or p.assets.pop(path)
-    p.unreal.EditorAssetLibrary.save_loaded_asset = lambda mesh: saved.append(mesh) or True
+    p.unreal.EditorAssetLibrary.save_loaded_asset = saved.append
     p.unreal.MaterialEditingLibrary = SimpleNamespace(**{name: lambda *args: None for name in (
         'set_material_instance_parent', 'set_material_instance_texture_parameter_value', 'update_material_instance')})
     p.unreal.SystemLibrary = SimpleNamespace(execute_console_command=lambda *args: None)
@@ -418,68 +418,6 @@ def test_world_without_city_retains_terrain_import_binding_and_collision(tmp_pat
     assert collision == {'collision_trace_flag': 'complex'}
 
 
-def test_source_role_certification_is_required_at_final_import_boundary(importer):
-    p=importer
-    stamped=[]
-    p.unreal.YorimichiFoliageBuilder.stamp_source_roles=lambda mesh: stamped.append(mesh) or False
-    with pytest.raises(RuntimeError,match='Invalid foliage face roles'):
-        p.module.import_mesh(p.source,'/Game/Owned','Mesh',seed=p.seed)
-    assert stamped==[p.assets[p.package]]
-    assert [name for name,_,_ in p.calls]==['seed.fbx','mesh.fbx']
-
-
-@pytest.mark.parametrize('valid_roles,saved', [(True, True), (False, True), (True, False)])
-def test_import_cleanup_requires_certified_saved_mesh(importer, valid_roles, saved):
-    p = importer
-    events = []
-    p.unreal.YorimichiFoliageBuilder.stamp_source_roles = lambda mesh: events.append(('stamp', mesh)) or valid_roles
-    p.unreal.EditorAssetLibrary.save_loaded_asset = lambda mesh: events.append(('save', mesh)) or saved
-    p.unreal.YorimichiFoliageBuilder.collect_unused = lambda: events.append(('collect', p.assets[p.package]))
-    if valid_roles and saved:
-        mesh = p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', seed=p.seed)
-        assert events == [('stamp', mesh), ('save', mesh), ('collect', mesh)]
-    else:
-        with pytest.raises(RuntimeError, match='Could not save' if valid_roles else 'Invalid foliage'):
-            p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', seed=p.seed)
-        assert [event for event, _ in events] == (['stamp', 'save'] if valid_roles else ['stamp'])
-
-
-def test_treehouse_binding_uses_import_identity_despite_cooked_foliage_roles():
-    script=Path(__file__).resolve().parents[1]/'unreal/Scripts/import_treehouse.py'
-    function=next(node for node in ast.parse(script.read_text()).body if isinstance(node,ast.FunctionDef) and node.name=='assign')
-    bindings=[]
-    slots=[SimpleNamespace(get_editor_property=lambda name,key=key:
-                           'FoliageRoles_TH_'+key if name=='material_slot_name' else 'TH_'+key)
-           for key in ('bark','leaf')]
-    mesh=SimpleNamespace(get_editor_property=lambda name:slots,set_material=lambda i,m:bindings.append((i,m)))
-    owner={}
-    exec(compile(ast.Module(body=[function],type_ignores=[]),str(script),'exec'),owner)
-    report={}
-    assert owner['assign'](mesh,dict(bark='BarkMaterial',leaf='LeafMaterial'),report)==['bark','leaf']
-    assert bindings==[(0,'BarkMaterial'),(1,'LeafMaterial')] and report=={}
-
-
-@pytest.mark.parametrize('roles,saved', [(True, True), (False, True), (True, False)])
-def test_verified_reuse_still_requires_current_roles_save_and_deferred_receipt(importer, monkeypatch, roles, saved):
-    p = importer
-    mesh = p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', seed=p.seed)
-    assert p.module.legacy_options_match(mesh)
-    p.calls.clear()
-    deferred = []
-    reuse = SimpleNamespace(defer_validated=deferred.append)
-    monkeypatch.setattr(p.module, 'common_fbx_mesh', lambda *a, **k: (mesh, reuse))
-    p.unreal.YorimichiFoliageBuilder.stamp_source_roles = lambda _: roles
-    p.unreal.EditorAssetLibrary.save_loaded_asset = lambda _: saved
-    if roles and saved:
-        assert p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', seed=p.seed) is mesh
-        assert deferred == ['/Game/Owned/Mesh']
-    else:
-        with pytest.raises(RuntimeError, match='Could not save' if roles else 'Invalid foliage'):
-            p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', seed=p.seed)
-        assert deferred == []
-    assert p.calls == []  # verified reuse does not invoke raw geometry import again
-
-
 def test_verified_default_reuse_skips_geometry_and_defers_receipt(importer, monkeypatch):
     p = importer
     mesh = p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', seed=p.seed)
@@ -499,7 +437,7 @@ def test_default_reuse_miss_preserves_seed_migration(importer, monkeypatch):
                             defer_validated=lambda name: events.append(('pending', name)))
     monkeypatch.setattr(p.module, 'common_fbx_mesh', lambda *a, **k: (None, reuse))
     p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', seed=p.seed)
-    assert [name for name, _, _ in p.calls] == ['seed.fbx', 'mesh.fbx']
+    assert [name for name, _, _ in p.calls] == ['mesh.fbx']
     assert events == [('imported', p.package), ('pending', p.package)]
 
 
@@ -522,3 +460,58 @@ def test_reuse_validator_refuses_legacy_option_drift(importer, key, value):
     mesh = p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', seed=p.seed)
     mesh.values['asset_import_data'].values[key] = value
     assert not p.module.legacy_options_match(mesh)
+
+
+def test_unrelated_seed_is_not_read_or_imported_even_when_missing(importer):
+    p = importer
+    class UnreadableSeed:
+        def __fspath__(self): raise AssertionError('Unrelated bootstrap file was consumed')
+    assert p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', seed=UnreadableSeed()) is p.assets[p.package]
+    assert [name for name, _, _ in p.calls] == ['mesh.fbx']
+
+
+def test_non_fbx_migration_uses_source_twice_and_clears_migration_palette(importer):
+    p = importer
+    p.assets[p.package] = Mesh(object())
+    p.source_slots['mesh.fbx'] = []
+    mesh = p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', seed=p.seed)
+    assert [name for name, _, _ in p.calls] == ['mesh.fbx', 'mesh.fbx']
+    assert [size for _, _, size in p.calls] == [12., 1200.]
+    assert isinstance(mesh.get_editor_property('asset_import_data'), ImportData)
+
+
+def test_reimport_corrects_stored_nanite_drift_before_receipt(importer):
+    p = importer
+    mesh = p.module.import_mesh(p.source, '/Game/Owned', 'Mesh')
+    mesh.values['asset_import_data'].values['build_nanite'] = True
+    assert not p.module.legacy_options_match(mesh)
+    assert p.module.import_mesh(p.source, '/Game/Owned', 'Mesh') is mesh
+    assert mesh.values['asset_import_data'].values['build_nanite'] is False
+    assert p.module.legacy_options_match(mesh)
+
+
+def test_failed_final_options_cannot_certify_or_queue_receipt(importer, monkeypatch):
+    p = importer
+    mesh = p.module.import_mesh(p.source, '/Game/Owned', 'Mesh')
+    mesh.values['asset_import_data'].values['build_nanite'] = True
+    events = []
+    monkeypatch.setattr(p.module, 'common_fbx_mesh', lambda *a, **kw: (None, SimpleNamespace(
+        imported=lambda _: events.append('imported'), defer_validated=lambda _: events.append('pending'))))
+    monkeypatch.setattr(p.module, '_source_mesh', lambda *a: mesh)
+    with pytest.raises(RuntimeError, match='declared options'):
+        p.module.import_mesh(p.source, '/Game/Owned', 'Mesh')
+    assert events == ['imported']
+
+
+def test_actual_nanite_drift_cannot_hide_behind_correct_stored_import_options(importer, monkeypatch):
+    p = importer
+    mesh = p.module.import_mesh(p.source, '/Game/Owned', 'Mesh')
+    mesh.values['nanite_enabled'] = True
+    assert mesh.values['asset_import_data'].values['build_nanite'] is False
+    assert not p.module.legacy_options_match(mesh)
+    events = []
+    monkeypatch.setattr(p.module, 'common_fbx_mesh', lambda *a, **kw: (None, SimpleNamespace(
+        imported=lambda _: events.append('imported'), defer_validated=lambda _: events.append('pending'))))
+    with pytest.raises(RuntimeError, match='declared options'):
+        p.module.import_mesh(p.source, '/Game/Owned', 'Mesh')
+    assert events == ['imported']

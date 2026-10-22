@@ -179,11 +179,8 @@ def flowerbed(m,x,y,z,w=1.6,d=1.2):
             xx=x-w/2+.25+i*(w-.5)/max(1,int(w/.4)-1)
             yy=y-d/2+.25+j*(d-.5)/max(1,int(d/.45)-1)
             zz=z+.66+.06*math.sin(i*3+j)
-            with v.foliage_roles.surfaces(m,'groundcover_leaf'):
-                m.lathe((xx,yy,zz),[(0,.13),(.18,.28),(.38,.12),(.43,0)],'green',6)
-            with v.foliage_roles.surfaces(m,'groundcover_leaf'):
-                m.lathe((xx+.04,yy,zz+.32),[(0,.04),(.09,.16),(.14,.13),(.17,0)],'paper' if (i+j)%3 else 'rust',6)
-
+            m.lathe((xx,yy,zz),[(0,.13),(.18,.28),(.38,.12),(.43,0)],'green',6)
+            m.lathe((xx+.04,yy,zz+.32),[(0,.04),(.09,.16),(.14,.13),(.17,0)],'paper' if (i+j)%3 else 'rust',6)
 
 def prop(name):
     m=M(name)

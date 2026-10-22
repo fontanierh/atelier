@@ -250,10 +250,6 @@ def test_shipped_network_declaration_does_not_scan_content(monkeypatch):
                  'adventure_steps', 'hippodrome_steps', 'belmonte_steps', 'brinecove_steps', 'ferry_steps', 'gondola_steps', 'fit_steps', 'pawn_steps'):
         monkeypatch.setattr(recipe, name, lambda *args: [])
     monkeypatch.setattr(recipe, 'staging_steps', lambda *args: [Step('data.stage', [])])
-    monkeypatch.setattr(recipe.foliage_build, 'system_step',
-                        lambda ctx, prerequisites: Step('unreal.foliage_system', [], needs=['data.stage']))
-    monkeypatch.setattr(recipe.foliage_build, 'residency_step',
-                        lambda ctx: Step('unreal.foliage_residency', [], needs=['unreal.foliage_system']))
     monkeypatch.setattr(recipe, 'cook_step', lambda *args: Step('cook', []))
     monkeypatch.setattr(recipe, 'package_step', lambda *args: Step('package', []))
     def forbidden(*args):

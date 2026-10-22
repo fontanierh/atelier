@@ -11,7 +11,6 @@ import json
 import math
 import sys
 from pathlib import Path
-from types import SimpleNamespace
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[1]))        # world/regions
@@ -19,8 +18,7 @@ sys.path.insert(0, str(HERE.parents[2]))        # world
 
 import numpy as np  # noqa: E402
 
-from craterpark.v2 import dsl, v4_config, editor_floor  # noqa: E402
-import foliage_roles  # noqa: E402
+from craterpark.v2 import dsl, v4_config  # noqa: E402
 
 MESH_ROOT = '/Game/CraterPark/Meshes'
 FOLDED = 2e-7           # square metres (twice a face's area): a face flatter than this is never exported
@@ -101,12 +99,11 @@ def export_mesh(out, name, vertices, faces, materials, face_materials, uvs=None,
         data.normals_split_custom_set_from_vertices(native_to_blender(normals).tolist())
     obj = bpy.data.objects.new(name, data)
     bpy.context.collection.objects.link(obj)
-    foliage_roles.export_roles(obj, SimpleNamespace(name=name, faces=faces,
-        keys=[editor_floor.FOLIAGE_ROLES.get(materials[int(i)], 'rigid') for i in face_materials]))
     bpy.context.view_layer.objects.active = obj
     obj.select_set(True)
     path = Path(out) / 'fbx' / f'{name}.fbx'
-    bpy.ops.export_scene.fbx(filepath=str(path), use_selection=True, object_types={'MESH'},
+    from atelier.blender.fbx import export_fbx as export_scene_fbx
+    export_scene_fbx(filepath=str(path), use_selection=True, object_types={'MESH'},
                              apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL', global_scale=1.,
                              axis_forward='-Z', axis_up='Y', use_mesh_modifiers=False, mesh_smooth_type='FACE',
                              use_tspace=uvs is not None, bake_anim=False, add_leaf_bones=False, path_mode='STRIP',

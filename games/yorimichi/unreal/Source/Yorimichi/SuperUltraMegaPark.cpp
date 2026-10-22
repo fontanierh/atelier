@@ -1,5 +1,4 @@
 #include "SuperUltraMegaPark.h"
-#include "FoliageSystem.h"
 #include "PlayableCharacter.h"
 #include "WandererCharacter.h"
 #include "JapanHUD.h"
@@ -69,7 +68,7 @@ ASuperUltraMegaPark* ASuperUltraMegaPark::Spawn(UWorld* World, const FString& Pa
         {
             const TSharedPtr<FJsonObject> Entry = Value->AsObject();
             const FString Name = Entry->GetStringField(TEXT("name"));
-            UStaticMesh* Mesh = UYorimichiFoliageSubsystem::LoadMesh(World, FString::Printf(TEXT("%s/%s.%s"), *MeshRoot, *Name, *Name));
+            UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("%s/%s.%s"), *MeshRoot, *Name, *Name));
             if (!Mesh) { ++Missing; continue; }
             auto* C = NewObject<UStaticMeshComponent>(Park, *Name);
             C->SetStaticMesh(Mesh); C->SetMobility(EComponentMobility::Static); C->SetupAttachment(Park->GetRootComponent());
@@ -131,7 +130,7 @@ ASuperUltraMegaPark* ASuperUltraMegaPark::Spawn(UWorld* World, const FString& Pa
         for (const auto& Pair : (*TreeGroups)->Values)
         {
             const FString Key(Pair.Key);
-            UStaticMesh* Mesh = UYorimichiFoliageSubsystem::LoadMesh(World, FString::Printf(TEXT("/Game/Japan/Assets/%s.%s"), *Key, *Key));
+            UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("/Game/Japan/Assets/%s.%s"), *Key, *Key));
             if (!Mesh) { UE_LOG(LogTemp, Warning, TEXT("MEGAPARK: missing tree mesh %s"), *Key); continue; }
             TArray<FTransform> Xs;
             for (const TSharedPtr<FJsonValue>& Value : Pair.Value->AsArray())
@@ -141,7 +140,7 @@ ASuperUltraMegaPark* ASuperUltraMegaPark::Spawn(UWorld* World, const FString& Pa
                 Xs.Add(FTransform(FRotator(0., A[3]->AsNumber(), 0.), FVector(A[0]->AsNumber(), A[1]->AsNumber(), A[2]->AsNumber()),
                     FVector(A[4]->AsNumber())));
             }
-            auto* H = UYorimichiFoliageSubsystem::NewInstances(Park, *Key);
+            auto* H = NewObject<UHierarchicalInstancedStaticMeshComponent>(Park, *Key);
             H->SetStaticMesh(Mesh); H->SetMobility(EComponentMobility::Static); H->SetupAttachment(Park->GetRootComponent());
             H->SetCanEverAffectNavigation(false);
             H->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -163,7 +162,7 @@ ASuperUltraMegaPark* ASuperUltraMegaPark::Spawn(UWorld* World, const FString& Pa
         {
             const TSharedPtr<FJsonObject> Entry = Value->AsObject();
             const FString Name = Entry->GetStringField(TEXT("mesh"));
-            UStaticMesh* Mesh = UYorimichiFoliageSubsystem::LoadMesh(World, FString::Printf(TEXT("/Game/Japan/Assets/%s.%s"), *Name, *Name));
+            UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("/Game/Japan/Assets/%s.%s"), *Name, *Name));
             if (!Mesh) { ++Missing; UE_LOG(LogTemp, Warning, TEXT("MEGAPARK: missing prop mesh %s"), *Name); continue; }
             const FMatrix Basis = FRotationMatrix::MakeFromXZ(JsonVector(Entry->GetArrayField(TEXT("forward"))),
                                                                JsonVector(Entry->GetArrayField(TEXT("up"))));
