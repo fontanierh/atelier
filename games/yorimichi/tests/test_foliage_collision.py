@@ -104,7 +104,8 @@ def owner(monkeypatch, tmp_path):
         'unreal': unreal, 'yori': SimpleNamespace(OUT=tmp_path, GAME=tmp_path / 'game'),
         'asset_catalog': SimpleNamespace(FOLIAGE=('Tree_Test',)),
         'mesh_import': SimpleNamespace(import_mesh=import_mesh),
-        'import_foliage_lods': SimpleNamespace(apply_lods=apply_lods),
+        'import_foliage_lods': SimpleNamespace(apply_lods=apply_lods,
+                                               crown_path=lambda crown, folder: folder + '/MI_' + crown['slot']),
         'foliage_package_repair': SimpleNamespace(require_valid_or_missing=lambda *args, **kwargs: None),
     }.items():
         monkeypatch.setitem(sys.modules, name, module)
@@ -294,3 +295,20 @@ def test_actual_owner_passes_one_policy_to_base_and_lod_sources(owner):
     assert owner.base_predicate is owner.lod_predicate
     # Source LODs do not own the base's trunk collision and must still be reusable.
     assert owner.lod_predicate(SimpleNamespace(get_name=lambda: 'Tree_Test_LOD1'))
+
+
+@pytest.mark.parametrize('crowned', [True, False])
+def test_reimport_keeps_the_current_crown_material_and_retires_the_rest(owner, monkeypatch, crowned):
+    folder = '/Game/Japan/FoliageLODs/Tree_Test'
+    lod, crown, stale = (folder + '/Tree_Test_LOD1', folder + '/MI_Tree_Test_Crown', folder + '/Tree_Test_LOD2')
+    owner.data.update(screen_sizes=[1.0, .1], triangles=[1, 1])
+    if crowned:
+        owner.data['crown'] = {'slot': 'Tree_Test_Crown'}
+    owner.write_manifest()
+    deleted = []
+    editor = sys.modules['unreal'].EditorAssetLibrary
+    monkeypatch.setattr(editor, 'list_assets', lambda *args, **kwargs: [p + '.' + p.rsplit('/', 1)[1] for p in (lod, crown, stale)],
+                        raising=False)
+    monkeypatch.setattr(editor, 'delete_asset', lambda asset: deleted.append(asset.split('.')[0]) or True, raising=False)
+    owner.run()
+    assert deleted == ([stale] if crowned else [crown, stale])

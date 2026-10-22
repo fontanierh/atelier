@@ -9,7 +9,7 @@ import unreal as U
 
 import yori
 from asset_catalog import FOLIAGE
-from import_foliage_lods import apply_lods
+from import_foliage_lods import apply_lods, crown_path
 from mesh_import import import_mesh
 from foliage_package_repair import require_valid_or_missing
 
@@ -45,6 +45,9 @@ def main():
     path = '/Game/Japan/Assets/' + name
     folder = '/Game/Japan/FoliageLODs/' + name
     expected = {folder + f'/{name}_LOD{i}' for i in range(1, len(data['screen_sizes']))}
+    # The far crown's material lives with the LODs; it is retired only when the manifest drops the crown.
+    if data.get('crown'):
+        expected.add(crown_path(data['crown'], folder))
     require_valid_or_missing(yori.GAME / 'unreal/Content', name)
     def prepare_import():
         if editor.does_asset_exist(path):
