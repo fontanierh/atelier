@@ -99,6 +99,9 @@ public:
     void ApplyVolumetricFog(bool bOn, const FVolumetricFogLook& Look);
     // Diagnosis only: honours japan.HideGroups so one foliage family can be priced at a time.
     void ApplyGroupDiagnostics();
+    /** japan.ScreenSizeCull: every static mesh and instanced group in the world stops drawing at that multiple of its
+     *  bounds radius (a few pixels), keeping any nearer cull it already had; 0 restores the recorded distances. */
+    void ApplyScreenSizeCull();
 
     // Camera see-through (SeeThrough.h, docs/CAMERA.md): the tree house's instance groups (tagged
     // JapanSeeThrough::Tag) and its rooms from treehouse/runtime.json.
@@ -119,6 +122,10 @@ private:
     float GroundSize = 0.f;
     FString AppliedHideGroups;
     float AppliedBackdropCull = 0.f;
+    float AppliedScreenSizeCull = 0.f;
+    double NextScreenSizeCullScan = 0.;
+    // Each component's own cull distances before japan.ScreenSizeCull (start and end; a plain mesh has only the end).
+    TMap<TWeakObjectPtr<UStaticMeshComponent>, FIntPoint> ScreenSizeCullOriginals;
     int32 AppliedPerformanceMode = -1;
     float AppliedTreeSway = -1.f;
     float AppliedForestDetail = -1.f;

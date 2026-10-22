@@ -527,16 +527,18 @@ void UJapanPreferences::Apply()
     // 1440p tests save ~1 ms in forest/harbor, with original resolution and TAA.
     // Keep FloatRGBA for the phone and full-quality mode; no saved setting changes.
     Set(TEXT("r.SceneColorFormat"),LightFrame ? 2.f : 4.f);
-    // UE 5.8's lighter input filter retains anti-ghosting. Native 1440p paired
-    // captures save ~0.3 ms; sprint/double-jump frames retain character edges.
-    Set(TEXT("r.TemporalAA.Quality"),LightFrame ? 3.f : 2.f);
+    // The light frame's TAA uses the engine's medium filter: the operator view's
+    // paired uncapped captures save a further 0.25 ms over the lighter input
+    // filter (3), which itself saved ~0.3 ms at native 1440p over 2.
+    Set(TEXT("r.TemporalAA.Quality"),LightFrame ? 1.f : 2.f);
     const int32 ShadowProfile = PerformanceMode + (Laptop ? 1 : 0);
     if (AppliedPerformanceMode != ShadowProfile)
     {
         // Use the engine's original medium irradiance-volume lighting in the
         // performance profile. The user reverted the screen-probe lighting change.
         Set(TEXT("sg.GlobalIlluminationQuality"),PerformanceMode ? 1.f : 3.f);
-        Set(TEXT("r.Shadow.CSM.MaxCascades"),Laptop ? 1.f : PerformanceMode ? 2.f : 10.f);
+        // One cascade over the performance profile's halved shadow distance: 0.5 ms at the operator view.
+        Set(TEXT("r.Shadow.CSM.MaxCascades"),PerformanceMode ? 1.f : 10.f);
         Set(TEXT("r.Shadow.MaxCSMResolution"),PerformanceMode ? 1024.f : 2048.f);
         Set(TEXT("r.Shadow.DistanceScale"),PerformanceMode ? .5f : 1.5f);
         Set(TEXT("r.DistanceFieldShadowing"),PerformanceMode ? 0.f : 1.f);
@@ -545,7 +547,8 @@ void UJapanPreferences::Apply()
     }
     // Keep character edges near native resolution. The cheaper grass LODs leave
     // room for a higher floor; still respect a manually chosen lower ceiling.
-    Set(TEXT("r.DynamicRes.MinScreenPercentage"),FMath::Min(Laptop ? 50.f : 85.f,Get(TEXT("render_scale"))));
+    // The desktop performance profile may drop to 75% (1.4 ms at the operator view) before missing 60 fps.
+    Set(TEXT("r.DynamicRes.MinScreenPercentage"),FMath::Min(Laptop ? 50.f : PerformanceMode ? 75.f : 85.f,Get(TEXT("render_scale"))));
     Set(TEXT("r.DynamicRes.MaxScreenPercentage"),Get(TEXT("render_scale")));
     Set(TEXT("r.DynamicRes.FrameTimeBudget"),1000.f/60.f);
     Set(TEXT("r.DynamicRes.TargetedGPUHeadRoomPercentage"),10.f);

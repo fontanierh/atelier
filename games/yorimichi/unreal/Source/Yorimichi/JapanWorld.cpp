@@ -16,6 +16,7 @@
 #include "Engine/DirectionalLight.h"
 #include "Components/LightComponent.h"
 #include "EngineUtils.h"
+#include "UObject/UObjectIterator.h"
 #include "Engine/StaticMesh.h"
 #if WITH_EDITOR
 #include "StaticMeshCompiler.h"
@@ -901,6 +902,53 @@ void AJapanWorld::ApplyGroupDiagnostics()
            *Wanted,Hidden,Groups.Num());
 }
 
+// Every static mesh and instanced group stops drawing at this multiple of its bounds radius: at 1000 an object is
+// about 4 px across at 1440p and a 70 degree FOV. Distant props and trees below that size cost depth, base and shadow
+// work for no visible detail (view 1: 0.7 ms of 18.8 on an M1 Max). Large meshes (ground, sea, mountains) get
+// distances far past the world, so nothing near or large changes. 0 restores each component's own distances.
+static TAutoConsoleVariable<float> CVarScreenSizeCull(TEXT("japan.ScreenSizeCull"),1000.f,
+    TEXT("Cull static meshes beyond this multiple of their bounds radius (0 = off)."),ECVF_Default);
+
+void AJapanWorld::ApplyScreenSizeCull()
+{
+    const float Multiple = FMath::Max(0.f,CVarScreenSizeCull.GetValueOnGameThread());
+    if (!bLoaded) return;
+    // A changed multiple revisits everything; otherwise a scan every few seconds picks up components spawned since.
+    const bool bChanged = !FMath::IsNearlyEqual(Multiple,AppliedScreenSizeCull);
+    const double Now = FPlatformTime::Seconds();
+    if (!bChanged && (Multiple <= 0.f || Now < NextScreenSizeCullScan)) return;
+    AppliedScreenSizeCull = Multiple;
+    NextScreenSizeCullScan = Now + 5.;
+    int32 Touched = 0;
+    for (TObjectIterator<UStaticMeshComponent> It; It; ++It)
+    {
+        UStaticMeshComponent* Component = *It;
+        if (!IsValid(Component) || Component->GetWorld() != GetWorld() || !Component->GetStaticMesh()) continue;
+        if (!bChanged && ScreenSizeCullOriginals.Contains(Component)) continue;
+        auto* Instanced = Cast<UInstancedStaticMeshComponent>(Component);
+        const FIntPoint& Original = ScreenSizeCullOriginals.FindOrAdd(Component,Instanced
+            ? FIntPoint(Instanced->InstanceStartCullDistance,Instanced->InstanceEndCullDistance)
+            : FIntPoint(0,FMath::RoundToInt(Component->LDMaxDrawDistance)));
+        int32 End = Original.Y;
+        if (Multiple > 0.f)
+        {
+            const float Radius = Component->GetStaticMesh()->GetBounds().SphereRadius*Component->GetComponentScale().GetAbsMax();
+            const int32 Limit = FMath::Clamp(FMath::RoundToInt(Multiple*Radius),1,MAX_int32/2);
+            End = Original.Y > 0 ? FMath::Min(Original.Y,Limit) : Limit;
+        }
+        if (Instanced)
+        {
+            const int32 Start = End == Original.Y ? Original.X : FMath::Min(Original.X,FMath::RoundToInt(End*.8f));
+            if (Instanced->InstanceStartCullDistance != Start || Instanced->InstanceEndCullDistance != End)
+                Instanced->SetCullDistances(Start,End);
+        }
+        else if (!FMath::IsNearlyEqual(Component->LDMaxDrawDistance,float(End)))
+            Component->SetCullDistance(float(End));
+        ++Touched;
+    }
+    if (bChanged || Touched) UE_LOG(LogTemp,Display,TEXT("SCREEN SIZE CULL %.0f x radius on %d components"),Multiple,Touched);
+}
+
 void AJapanWorld::ApplyPerformanceSettings(bool bPerformance, float TreeSwayMetres, float ForestDetail, float TreeShadowMetres)
 {
     if (!bLoaded || (AppliedPerformanceMode == int32(bPerformance) && AppliedTreeSway == TreeSwayMetres && AppliedForestDetail == ForestDetail &&
@@ -1056,6 +1104,7 @@ void AJapanWorld::Tick(float Dt)
     UpdateFogDensity(Dt);
     UpdateNorthAerialGrade(Dt);
     ApplyGroupDiagnostics();
+    ApplyScreenSizeCull();
     if (!WindMPC) return;
     UMaterialParameterCollectionInstance* I = GetWorld()->GetParameterCollectionInstance(WindMPC);
     if (!I) return;
