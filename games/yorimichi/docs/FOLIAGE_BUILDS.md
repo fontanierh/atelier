@@ -155,8 +155,10 @@ maintenance after retaining needed evidence. They are excluded from whole-build 
 
 ## Proof before enabling caches
 
-The portable FBX adapter fixes timestamps and generated IDs and removes texture file references from the exported
-material slots. It is included in action inputs. Exporter/tool changes invalidate source results. Geometry, vertex
+Every production FBX export uses the shared adapter for stable timestamps/IDs and checkout-independent metadata.
+Lint and normal build admission reject raw exporter calls, and each exporting action declares the adapter as an input.
+The foliage portable-resource option additionally removes texture file references from exported material slots;
+metadata determinism applies to both resource modes. Exporter/tool changes invalidate source results. Geometry, vertex
 and polygon order, material slot order and collision remain significant; deterministic metadata cannot conceal a
 change to them.
 

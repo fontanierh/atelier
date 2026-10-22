@@ -9,6 +9,7 @@ import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_
 import json
 from pathlib import Path
 import unreal as U
+from atelier.native_packages import save as save_native_package
 
 ROOT = yori.OUT
 SOURCE = ROOT / 'audio/skate'
@@ -32,7 +33,7 @@ for task in tasks:
         if not isinstance(wave, U.SoundWave): continue
         loop = wave.get_name().rsplit('_', 1)[0] in LOOPS
         wave.set_editor_property('looping', loop)
-        E.save_loaded_asset(wave)
+        save_native_package(wave, E, yori.GAME / "unreal/Content")
         imported[wave.get_name()] = {'path': wave.get_path_name(), 'duration': wave.get_editor_property('duration'), 'looping': loop}
 missing = sorted({p.stem for p in files} - set(imported))
 (ROOT / 'skate_audio_import.json').write_text(json.dumps({'imported': imported, 'missing': missing}, indent=2) + '\n')

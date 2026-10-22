@@ -167,9 +167,18 @@ class TMesh(Mesh):
         return obj
 
 
-def export(m, materials, out):
+def export(m, materials, out, *, split_dressing=False):
     """Like village.build.export, with one material slot per texture slug."""
     obj = m.object(materials); objs = [obj]
+    if split_dressing:
+        assert m.name == 'TH_Dressing' and not m.colliders
+        from treehouse.dressing import export as export_dressing
+        pieces = export_dressing(obj, out)
+        info = dict(triangles=pieces['source_triangles'], vertices=len(m.vertices),
+                    slots=sorted(set(m.kinds)), collision_boxes=0,
+                    min=pieces['min'], max=pieces['max'], piece_bake=m.baked,
+                    render_pieces=[row['name'] for row in pieces['pieces']])
+        return obj, info
     for i, (c, s, rotation) in enumerate(m.colliders):
         bpy.ops.mesh.primitive_cube_add(size=1, location=c, rotation=rotation)
         ob = bpy.context.object; ob.name = f'UCX_{m.name}_{i:02d}'; ob.scale = s
@@ -177,7 +186,8 @@ def export(m, materials, out):
     bpy.ops.object.select_all(action='DESELECT')
     for ob in objs: ob.select_set(True)
     bpy.context.view_layer.objects.active = obj
-    bpy.ops.export_scene.fbx(filepath=str(out/f'{m.name}.fbx'), use_selection=True, apply_unit_scale=True,
+    from atelier.blender.fbx import export_fbx as export_scene_fbx
+    export_scene_fbx(filepath=str(out/f'{m.name}.fbx'), use_selection=True, apply_unit_scale=True,
                              apply_scale_options='FBX_SCALE_ALL', axis_forward='-Y', axis_up='Z', object_types={'MESH'},
                              mesh_smooth_type='FACE', bake_anim=False, use_custom_props=False)
     b = np.array(m.vertices)

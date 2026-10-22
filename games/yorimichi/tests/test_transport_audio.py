@@ -61,7 +61,7 @@ def test_bank_has_exactly_the_cues_the_runtime_plays():
 def test_build_runs_the_bank_and_imports_it():
     build = (GAME / 'build.py').read_text()
     assert "Step('audio.transport', [Python(AUDIO / 'transport' / 'make.py')]" in build
-    assert "UnrealScript(SCRIPTS / 'import_transport_audio.py', 'TRANSPORT AUDIO IMPORT COMPLETE')" in build
+    assert "UnrealScript(SCRIPTS / 'import_transport_audio.py', 'TRANSPORT AUDIO IMPORT COMPLETE', modules=SAVED_TYPES)" in build
     assert "'audio.bike', 'audio.transport'], heavy=True" in build
     bank = tomllib.loads((BANK / 'bank.toml').read_text())
     assert bank == {'id': 'transport', 'needs': ['combat'], 'build': 'make.py',

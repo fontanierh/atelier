@@ -242,7 +242,11 @@ class Section:
 
     def __init__(self, floor, parts):
         self.floor = float(floor)
-        pts, ang, q = [np.zeros(2)], [0.], [0.]
+        xy_parts = [np.zeros((1, 2), 'f8')]
+        ang_parts = [np.zeros(1, 'f8')]
+        q_parts = [np.zeros(1, 'f8')]
+        last_xy = np.zeros(2, 'f8')
+        last_q = 0.
         a = 0.
         for p in parts:
             if p[0] == 'arc':
@@ -252,11 +256,12 @@ class Section:
                 n = max(8, int(math.ceil(abs(math.degrees(to - a)) / .25)))
                 th = np.linspace(a, to, n + 1)[1:]
                 sg = 1. if to > a else -1.
-                c = pts[-1] + sg * R * np.array([-math.sin(a), math.cos(a)])
-                for t in th:
-                    pts.append(c + sg * R * np.array([math.sin(t), -math.cos(t)]))
-                    ang.append(t)
-                    q.append(q[-1] + abs(th[1] - th[0] if len(th) > 1 else to - a) * (1 + R / ELL))
+                c = last_xy + sg * R * np.array([-math.sin(a), math.cos(a)])
+                seg_xy = c + sg * R * np.c_[np.sin(th), -np.cos(th)]
+                dq = abs(th[1] - th[0] if len(th) > 1 else to - a) * (1 + R / ELL)
+                seg_q = last_q + dq * np.arange(1, len(th) + 1, dtype='f8')
+                xy_parts.append(seg_xy); ang_parts.append(th); q_parts.append(seg_q)
+                last_xy = seg_xy[-1]; last_q = float(seg_q[-1])
                 a = to
             else:
                 L = p[1]
@@ -264,10 +269,12 @@ class Section:
                     continue
                 n = max(2, int(math.ceil(L / .05)))
                 d = np.array([math.cos(a), math.sin(a)])
-                base = pts[-1]
-                for i in range(1, n + 1):
-                    pts.append(base + d * L * i / n); ang.append(a); q.append(q[-1] + L / n / ELL)
-        self.xy = np.asarray(pts); self.ang = np.asarray(ang); self.q = np.asarray(q)
+                idx = np.arange(1, n + 1, dtype='f8')
+                seg_xy = last_xy + (idx * (L / n))[:, None] * d
+                seg_q = last_q + idx * (L / n / ELL)
+                xy_parts.append(seg_xy); ang_parts.append(np.full(n, a, 'f8')); q_parts.append(seg_q)
+                last_xy = seg_xy[-1]; last_q = float(seg_q[-1])
+        self.xy = np.concatenate(xy_parts); self.ang = np.concatenate(ang_parts); self.q = np.concatenate(q_parts)
         self.reach = float(self.xy[-1, 0]); self.height = float(self.xy[-1, 1])
         self.top_deg = math.degrees(a)
         self.arcs = [p[1] for p in parts if p[0] == 'arc' and p[1] > 0]
@@ -680,16 +687,23 @@ def _row_section(pl, loop, t, zones, w, k):
     return wall, port, v
 
 
-def _ring_rows(pl, loop, zones, t, N):
+def _ring_rows(pl, loop, zones, t, N, _cache=None):
     w, which = _port_weight(loop, zones, t)
     u = np.linspace(0., 1., N)
     rows, verts, secs = [], [], []
     for ti, wi, ki in zip(t, w, which, strict=True):
-        wall, port, v = _row_section(pl, loop, ti, zones, wi, ki)
-        dy = wall.at(u)
-        if port is not None:
-            dy = (1 - wi) * dy + wi * port.at(u)
-        rows.append(dy); verts.append(v); secs.append((wall, port))
+        t_key = float(ti)
+        if _cache is not None and t_key in _cache:
+            dy, v, sec = _cache[t_key]
+        else:
+            wall, port, v = _row_section(pl, loop, ti, zones, wi, ki)
+            dy = wall.at(u)
+            if port is not None:
+                dy = (1 - wi) * dy + wi * port.at(u)
+            sec = (wall, port)
+            if _cache is not None:
+                _cache[t_key] = (dy, v, sec)
+        rows.append(dy); verts.append(v); secs.append(sec)
     D = np.asarray(rows)                                  # (rows, N, 2): inward distance, height
     L = loop.point(t); n = loop.inward(t)
     P = np.stack([L[:, None, 0] + D[..., 0] * n[:, None, 0], D[..., 1], L[:, None, 1] + D[..., 0] * n[:, None, 1]], -1)
@@ -736,8 +750,9 @@ def ring(pl, loop, zones, N, max_rounds=12):
     t = np.unique(np.concatenate([t, lock]))
     t = t[np.r_[True, np.diff(t) > .02]]
     lockset = np.asarray(sorted(lock))
+    row_cache = {}
     for _ in range(max_rounds):
-        P, w, verts, _ = _ring_rows(pl, loop, zones, t, N)
+        P, w, verts, _ = _ring_rows(pl, loop, zones, t, N, _cache=row_cache)
         _put_ports(P, t, loop, zones)
         qn = _quad_normals(np.concatenate([P, P[:1]]))
         ang = _angle(qn[1:], qn[:-1]).max(1)                     # across row i+1 (between quads i and i+1)
@@ -760,8 +775,9 @@ def ring(pl, loop, zones, N, max_rounds=12):
         if not add:
             break
         t = np.unique(np.concatenate([t, add]))
-    P, w, verts, secs = _ring_rows(pl, loop, zones, t, N)
-    _put_ports(P, t, loop, zones)
+    else:
+        P, w, verts, secs = _ring_rows(pl, loop, zones, t, N, _cache=row_cache)
+        _put_ports(P, t, loop, zones)
     is_lock = np.isin(np.round(t, 9), np.round(lockset, 9))
     bowl = pl.bowl_of(loop.point(t))
     return Ring(loop, t, P, _normals(np.concatenate([P[-1:], P, P[:1]]))[1:-1], w, bowl, verts, is_lock)

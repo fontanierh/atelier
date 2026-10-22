@@ -51,7 +51,7 @@ prints `verified: {...}` or `not verified: ...` (exit code 1):
 
 - the viewport is 1440 high, 1600 to 3840 wide, in the requested window mode;
 - the log reports the selected renderer (`r.ForwardShading = "1"` for forward, `"0"` for Lumen);
-- `CITY TILES` reports exactly the source and tile counts in the completed staged
+- `CITY PIECES production` reports exactly the logical parent and piece counts, with `hidden_parents=0`, in the completed staged
   `Content/Data/city_surface_tiles/v1_128m/manifest.json`, rather than a historical fixed count;
 - `CITY TREE LODS tag=v4 enabled=0|1 forced=0..3 groups=3` (or more groups) matches the tree optimization and tree
   detail the game starts in: the `--set` value, else the saved one, else the release default (optimization on,
@@ -80,7 +80,7 @@ Set by the launcher (`desktop_preview.py`):
 | `-desktopnative1440`, `DesktopPreviewViewportClient` | | a separate scene target fixed at 1440 high and the window's aspect, independent of macOS's scaled window drawable |
 | `r.SkylightIntensityMultiplier` | 0.33 | forward has no Lumen bounce; the full sky light washes out the ambient and the water |
 | `japan.ForwardHarborFill` | 3 (lux) | a warm, shadowless spot light standing in for the harbor's second directional fill, which forward cannot render |
-| `japan.CitySurfaceTiles` | `v1_128m 1` | the city surfaces split into 128 m visibility tiles, with every polygon and attribute kept; count follows the current manifest |
+| Production city pieces | always loaded from complete `v1_128m` membership | bounded surfaces own rendering and collision; monolithic parents are retired after native validation |
 | `tree_optimization` (native preference) | 1 by default | city-tree LOD1/2 that keep every leaf and simplify only the leaf outlines; the menu can restore original trees |
 | `r.DynamicRes.OperationMode`, render scale | 0, 100% by default | native resolution without dynamic resolution; saved render scale remains in effect |
 | `t.MaxFPS`, `r.VSync` | 60, 1 | the 60 fps cap |
@@ -134,7 +134,7 @@ uv run python games/yorimichi/tools/benchmark.py desktop-spawn-01 --desktop-full
   --view spawn --width 2228 --height 1440 --seconds 25 \
   --settings 'desktop=1;performance=1;render_scale=100' \
   --ini '[/Script/Engine.RendererSettings]:r.ForwardShading=True' \
-  --commands 'r.DynamicRes.OperationMode 0,r.ScreenPercentage 100,r.RHISetGPUCaptureOptions 0,r.Shadow.CSMCaching 0,r.Shadow.CSMSlopeScaleDepthBias 3,r.SkylightIntensityMultiplier .33,japan.CitySurfaceTiles v1_128m 1,japan.CityTreeLODs v4 1,japan.ForwardHarborFill 3' \
+  --commands 'r.DynamicRes.OperationMode 0,r.ScreenPercentage 100,r.RHISetGPUCaptureOptions 0,r.Shadow.CSMCaching 0,r.Shadow.CSMSlopeScaleDepthBias 3,r.SkylightIntensityMultiplier .33,japan.CityTreeLODs v4 1,japan.ForwardHarborFill 3' \
   --launch-arg=-noshaderworker
 
 # Running along a scripted route, offscreen at 1920x1080.

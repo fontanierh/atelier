@@ -134,7 +134,8 @@ def test_the_packaged_launcher_carries_the_desktop_profile_and_saved_settings(tm
     assert '-llm' not in args   # tried and dropped: the retry below covers the startup crash (docs/PACKAGING.md)
     assert '-set=desktop=1;performance=1;render_scale=100;renderer=0' in args
     assert any('r.ForwardShading=True' in a and 'DesktopPreviewViewportClient' in a for a in args)
-    assert any(a.startswith('-ExecCmds=') and 'japan.CitySurfaceTiles v1_128m 1' in a for a in args)
+    assert any(a.startswith('-ExecCmds=') for a in args)
+    assert not any('japan.CitySurfaceTiles' in a for a in args)
     # Saved choices win, except the renderer: the package is cooked for forward shading, so a saved Lumen choice still
     # starts Forward.
     settings.write_text('performance=0\nrender_scale=80\nrenderer=1\n')

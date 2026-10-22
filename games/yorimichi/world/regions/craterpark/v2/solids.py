@@ -26,9 +26,13 @@ RING_SPACING = 2.5   # metres between a tube's rings at most
 
 def edge_report(F):
     """Undirected edges used once (open) or more than twice (non-manifold), directed edges used twice (a flipped face)."""
-    d = np.concatenate([F[:, [0, 1]], F[:, [1, 2]], F[:, [2, 0]]])
-    _, cu = np.unique(np.sort(d, axis=1), axis=0, return_counts=True)
-    _, cd = np.unique(d, axis=0, return_counts=True)
+    if not len(F):
+        return {'open': 0, 'nonmanifold': 0, 'flipped': 0}
+    d = np.concatenate([F[:, [0, 1]], F[:, [1, 2]], F[:, [2, 0]]]).astype('i8')
+    u0 = np.minimum(d[:, 0], d[:, 1])
+    u1 = np.maximum(d[:, 0], d[:, 1])
+    _, cu = np.unique((u0 << 32) | u1, return_counts=True)
+    _, cd = np.unique((d[:, 0] << 32) | d[:, 1], return_counts=True)
     return {'open': int((cu == 1).sum()), 'nonmanifold': int((cu > 2).sum()), 'flipped': int((cd > 1).sum())}
 
 
@@ -65,8 +69,10 @@ def check_open(mesh, name=None, min_area=1e-9):
     r = edge_report(F)
     if r['nonmanifold'] or r['flipped']:
         raise ValueError(f'{name}: not manifold {r}')
-    d = np.concatenate([F[:, [0, 1]], F[:, [1, 2]], F[:, [2, 0]]])
-    _, inv, cu = np.unique(np.sort(d, axis=1), axis=0, return_inverse=True, return_counts=True)
+    d = np.concatenate([F[:, [0, 1]], F[:, [1, 2]], F[:, [2, 0]]]).astype('i8')
+    u0 = np.minimum(d[:, 0], d[:, 1])
+    u1 = np.maximum(d[:, 0], d[:, 1])
+    _, inv, cu = np.unique((u0 << 32) | u1, return_inverse=True, return_counts=True)
     open_ = d[cu[inv.ravel()] == 1]
     nxt = {}
     for u, v in open_:
@@ -138,9 +144,14 @@ def thickness(mesh, role='side', reach=50., facing=-.5):
     t = mesh.triangles(); n = mesh.face_normals()
     best = np.inf
     for chunk in np.array_split(sel, max(1, len(sel) * len(t) // 2_000_000 + 1)):
-        dist = ray_hits(t[chunk].mean(1) - 1e-6 * n[chunk], -n[chunk], t)
-        dist[np.arange(len(chunk)), chunk] = np.inf
-        dist[(n[chunk] @ n.T) > facing] = np.inf
+        opp = ((n[chunk] @ n.T) <= facing).any(0)
+        if not opp.any():
+            continue
+        sub_idx = np.flatnonzero(opp)
+        dist = ray_hits(t[chunk].mean(1) - 1e-6 * n[chunk], -n[chunk], t[sub_idx])
+        dist[(n[chunk] @ n[sub_idx].T) > facing] = np.inf
+        same = chunk[:, None] == sub_idx[None, :]
+        dist[same] = np.inf
         best = min(best, float(dist.min()))
     return min(best, reach)
 

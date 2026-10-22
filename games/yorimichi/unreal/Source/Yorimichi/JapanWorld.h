@@ -99,6 +99,12 @@ public:
     void ApplyVolumetricFog(bool bOn, const FVolumetricFogLook& Look);
     // Diagnosis only: honours japan.HideGroups so one foliage family can be priced at a time.
     void ApplyGroupDiagnostics();
+    /** japan.ScreenSizeCull: every static mesh and instanced group in the world stops drawing at that multiple of its
+     *  largest instance's bounds radius (a few pixels), keeping any nearer cull its current distances have; 0 restores
+     *  the current uncapped distances. */
+    void ApplyScreenSizeCull();
+    /** An owner rewrote Component's cull distances: take them as its new uncapped base on the next pass. */
+    void ForgetScreenSizeCull(UStaticMeshComponent* Component);
 
     // Camera see-through (SeeThrough.h, docs/CAMERA.md): the tree house's instance groups (tagged
     // JapanSeeThrough::Tag) and its rooms from treehouse/runtime.json.
@@ -119,6 +125,13 @@ private:
     float GroundSize = 0.f;
     FString AppliedHideGroups;
     float AppliedBackdropCull = 0.f;
+    float AppliedScreenSizeCull = 0.f;
+    double NextScreenSizeCullScan = 0.;
+    bool bScreenSizeCullDirty = false;
+    // Per component under japan.ScreenSizeCull: its uncapped cull distances (start and end; a plain mesh has only the
+    // end), what the cap last wrote, and its largest instance's mesh radius for the instance count it was measured at.
+    struct FScreenSizeCullState { FIntPoint Base; FIntPoint Written; float Radius = 0.f; int32 Instances = 0; };
+    TMap<TWeakObjectPtr<UStaticMeshComponent>, FScreenSizeCullState> ScreenSizeCullStates;
     int32 AppliedPerformanceMode = -1;
     float AppliedTreeSway = -1.f;
     float AppliedForestDetail = -1.f;

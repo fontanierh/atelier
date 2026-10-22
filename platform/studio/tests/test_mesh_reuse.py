@@ -343,3 +343,61 @@ def test_platform_support_source_resolves_read_only_and_detects_changed_bytes(tm
     support.unlink(); support.symlink_to(tmp_path / 'missing')
     with pytest.raises(ValueError):
         reuse.resolve_source(ctx, member)
+
+
+@pytest.mark.parametrize('algorithm', ['legacy', 'merkle'])
+def test_saved_source_can_recover_exact_producing_bytes_from_another_local_branch(tmp_path, algorithm):
+    import subprocess
+    def git(*args):
+        return subprocess.check_output(['git','-c','user.name=Fixture','-c','user.email=fixture@example.invalid',*args],
+                                       cwd=tmp_path,text=True).strip()
+    git('init','-q')
+    file = tmp_path/'owner.py'
+    file.write_text('BASE = True\n')
+    git('add','owner.py'); git('commit','-qm','base')
+    base = git('rev-parse','HEAD')
+    original = 'raise RuntimeError("Historical bytes must never execute")\n'
+    raw = original.encode()
+    key = hashlib.sha256(b'owner.py'+raw).hexdigest() if algorithm == 'legacy' else reuse.identity(
+        {'schema':1,'files':{'0/.':{'kind':'file','size':len(raw),'sha256':hashlib.sha256(raw).hexdigest()}}})
+    assert reuse.saved_source(tmp_path,'owner.py',key) is None
+    git('checkout','-qb','producing-evidence')
+    file.write_text(original)
+    git('commit','-qam','original producer source')
+    producing = git('rev-parse','HEAD')
+    git('checkout','-qb','receiving',base)
+    file.write_text('CURRENT = True\n'); git('commit','-qam','current source')
+    assert subprocess.run(['git','merge-base','--is-ancestor',producing,'HEAD'],cwd=tmp_path).returncode == 1
+    assert reuse.saved_source(tmp_path,'owner.py',key) == original
+    assert reuse.saved_source(tmp_path,'owner.py','f'*64) is None
+    assert file.read_text() == 'CURRENT = True\n'
+
+
+def test_local_ref_fallback_deduplicates_and_limits_additional_source_reads(monkeypatch, tmp_path):
+    heads = [f'{n:040x}' for n in range(2)]
+    extras = [f'{n:040x}' for n in range(2,130)]
+    reads = []
+    def git(args, **kwargs):
+        assert args[1] == 'log' and kwargs['timeout'] <= 10
+        rows = [*heads,heads[0],'invalid',*extras] if '--all' in args else heads
+        return SimpleNamespace(returncode=0,stdout='\n'.join(rows))
+    monkeypatch.setattr(reuse.subprocess,'run',git)
+    monkeypatch.setattr(reuse.time,'monotonic',lambda:0.)
+    monkeypatch.setattr(reuse,'revision_source',lambda repo,revision,name,**kwargs: reads.append(revision) or 'different')
+    assert reuse.saved_source(tmp_path,'owner.py','f'*64) is None
+    assert reads[:2] == heads and len(reads) == 66 and len(set(reads)) == 66
+
+
+def test_local_ref_fallback_has_one_total_time_budget(monkeypatch, tmp_path):
+    clock = iter([0.,0.,0.,11.])
+    monkeypatch.setattr(reuse.time,'monotonic',lambda:next(clock))
+    monkeypatch.setattr(reuse.subprocess,'run',lambda args,**kwargs: SimpleNamespace(returncode=0,
+        stdout='\n'.join(f'{i:040x}' for i in range(100)) if '--all' in args else ''))
+    reads = []
+    def read(repo,revision,name,**kwargs):
+        assert 0 < kwargs['timeout'] <= 10
+        reads.append(revision)
+        return 'different'
+    monkeypatch.setattr(reuse,'revision_source',read)
+    assert reuse.saved_source(tmp_path,'owner.py','f'*64) is None
+    assert len(reads) == 2
