@@ -11,12 +11,13 @@ from atelier import build, build_audit, build_cache, build_deferred, build_input
 MEGA = Path(__file__).resolve().parents[1] / 'world' / 'regions' / 'mega'
 _BASELINE_CACHE = {}
 _BELMONTE_RUNTIME_JSON = None
+_BELMONTE_GROUND_JSON = None
 _BELMONTE_REPORT_JSON = '{"meshes": [], "materials": {}}'
 
 
 def _belmonte_runtime_payload():
-    global _BELMONTE_RUNTIME_JSON
-    if _BELMONTE_RUNTIME_JSON is None:
+    global _BELMONTE_RUNTIME_JSON, _BELMONTE_GROUND_JSON
+    if _BELMONTE_RUNTIME_JSON is None or _BELMONTE_GROUND_JSON is None:
         library = json.loads((build.paths.game_dir('yorimichi') / 'assets/belmonte/source.json').read_text())
         names = [row['name'] for row in library['meshes'] if row['name'].startswith('SM_BM_BT_Terrain_')]
         names.append('SM_BM_NorthApron')
@@ -26,27 +27,41 @@ def _belmonte_runtime_payload():
             'groups': [{'asset': f'/Game/{name}.{name}', 'transforms': [transform],
                         'plant': False, 'collision': True} for name in names],
         })
-    return _BELMONTE_RUNTIME_JSON
+        entries = {row['name']: row for row in library['meshes'] if row['name'] in names}
+        surfaces = [dict(name=name, path='ground/glb/' + name + '.glb', bounds_m=entries[name]['bounds_m']
+                         if name in entries else [[0, 0, 0], [100, 100, 1]]) for name in [*names, 'SM_BM_NorthCountry']]
+        _BELMONTE_GROUND_JSON = json.dumps(dict(schema=1, origin_cm=[55000., -450000., 21000.], surfaces=surfaces))
+    return _BELMONTE_RUNTIME_JSON, _BELMONTE_GROUND_JSON
 
 
 def _write_belmonte_fixture(out_dir):
+    runtime_json, ground_json = _belmonte_runtime_payload()
     registry = out_dir / 'belmonte/runtime.json'
     if not registry.is_file():
         registry.parent.mkdir(parents=True, exist_ok=True)
-        registry.write_text(_belmonte_runtime_payload())
+        registry.write_text(runtime_json)
         (registry.parent / 'build-report.json').write_text(_BELMONTE_REPORT_JSON)
+    ground = out_dir / 'products/belmonte/ground.json'
+    if not ground.is_file():
+        ground.parent.mkdir(parents=True, exist_ok=True)
+        ground.write_text(ground_json)
 
 
 def _has_custom_files(tmp_path):
     if not tmp_path.exists():
         return False
     for child in tmp_path.iterdir():
-        if child.name != 'belmonte':
+        if child.name not in ('belmonte', 'products'):
             return True
     belmonte = tmp_path / 'belmonte'
     if belmonte.is_dir():
         for child in belmonte.iterdir():
             if child.name not in ('runtime.json', 'build-report.json'):
+                return True
+    products = tmp_path / 'products'
+    if products.is_dir():
+        for child in products.rglob('*'):
+            if child.is_file() and child.relative_to(products) != Path('belmonte/ground.json'):
                 return True
     return False
 

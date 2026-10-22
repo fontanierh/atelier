@@ -96,8 +96,11 @@ def test_world_selector_includes_native_references_without_reading_their_bytes(t
                      for definition in recipe.brinecove_library.definitions()})
     expected.update({f'belmonte.{part}': 'world.belmonte.meshes'
                      for part in ('geometry', 'materials', 'runtime')})
+    expected['belmonte.ground'] = 'world.belmonte.ground'
     expected.update({f'belmonte.native_{part}': 'unreal.belmonte'
                      for part in ('meshes', 'materials', 'tv', 'report')})
+    expected.update({f'skatepark.{part}': 'world.skatepark' for part in ('meshes', 'runtime', 'queries')})
+    expected['skatepark.textures'] = 'world.skatepark_textures'
     expected.update({f'brinecove.native_{part}': 'unreal.brinecove'
                      for part in ('meshes', 'materials', 'report')})
     expected['audio.native'] = 'unreal.sounds'

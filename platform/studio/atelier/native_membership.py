@@ -3,7 +3,7 @@ import re
 
 
 def package_path(destination, prefix, name):
-    if (not isinstance(destination, str) or not re.fullmatch(r'/Game/(?:[A-Za-z0-9_]+/)+[A-Za-z0-9_]+', destination)
+    if (not isinstance(destination, str) or not re.fullmatch(r'/Game/[A-Za-z0-9_]+(?:/[A-Za-z0-9_]+)*', destination)
             or not isinstance(prefix, str) or not re.fullmatch(r'[A-Za-z][A-Za-z0-9_]*_', prefix)
             or not isinstance(name, str) or not re.fullmatch(re.escape(prefix)+r'[A-Za-z0-9_]+', name)):
         raise ValueError('Invalid generated native package ownership')

@@ -102,6 +102,9 @@ _foliage_spec.loader.exec_module(foliage_build)
 _compile_inputs_spec = importlib.util.spec_from_file_location('yorimichi_compile_inputs', GAME / 'compile_inputs.py')
 compile_inputs = importlib.util.module_from_spec(_compile_inputs_spec)
 _compile_inputs_spec.loader.exec_module(compile_inputs)
+_skatepark_build_spec = importlib.util.spec_from_file_location('yorimichi_skatepark_build', GAME / 'skatepark_build.py')
+skatepark_build = importlib.util.module_from_spec(_skatepark_build_spec)
+_skatepark_build_spec.loader.exec_module(skatepark_build)
 
 _brinecove_library_spec = importlib.util.spec_from_file_location('brinecove_foliage_library', REGIONS / 'brinecove/foliage_names.py')
 brinecove_library = importlib.util.module_from_spec(_brinecove_library_spec)
@@ -902,7 +905,8 @@ def belmonte_steps(out):
                      REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari_stable' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK, YORI, *NORTH_LAYOUT, *belmonte_train_corridor(out)],
              needs=['world.layout', 'world.treehouse_trees'], heavy=True,
              outputs=[out / 'belmonte' / 'runtime.json', out / 'belmonte' / 'build-report.json',
-                      out / 'belmonte' / 'natural' / 'SM_BM_NorthApron.glb', out / 'belmonte' / 'natural' / 'SM_BM_NorthCountry.glb'],
+                      out / 'belmonte' / 'natural' / 'SM_BM_NorthApron.glb', out / 'belmonte' / 'natural' / 'SM_BM_NorthCountry.glb',
+                      out / 'belmonte/ground/membership.json'],
              about='Belmonte environment: committed models, northern terrain join and island flora'),
         Step('world.belmonte.meshes',
              [Python(GAME / 'region_products.py', (str(out / 'belmonte'), str(out / 'products/belmonte'),
@@ -913,6 +917,11 @@ def belmonte_steps(out):
              products=[Product('belmonte.' + name, (out / f'products/belmonte/{name}.json',))
                        for name in ('geometry', 'materials', 'runtime')],
              cache=True, audit=True, about='independent Belmonte mesh/collision, material-binding and runtime views'),
+        Step('world.belmonte.ground',
+             [Python(region / 'ground_pieces.py', (str(out / 'belmonte'), str(out / 'products/belmonte/ground.json')))],
+             inputs=[*build_inputs.local_imports(region / 'ground_pieces.py'), out / 'belmonte/ground'],
+             needs=['world.belmonte'], products=[Product('belmonte.ground', (out / 'products/belmonte/ground.json',))],
+             cache=True, audit=True, about='complete whole final query surfaces, independent of native render pieces'),
         # Keep derived-mesh workers out of material sections while the importer edits them.
         Step('unreal.belmonte', [UnrealScript(SCRIPTS / 'import_belmonte.py', 'BELMONTE IMPORT COMPLETE',
                                              null_rhi=True, modules=IMPORT_CODE,
@@ -922,7 +931,7 @@ def belmonte_steps(out):
              needs=['unreal.world', *unreal_modules.needs(IMPORT_CODE)],
              reads=['belmonte.geometry', 'belmonte.materials'],
              after=['unreal.forest'], heavy=True,
-             outputs=[out / 'belmonte' / 'import-report.json', GAME / 'unreal' / 'Content' / 'Belmonte' / 'Meshes' / 'SM_BM_NorthApron.uasset',
+             outputs=[out / 'belmonte' / 'import-report.json',
                       GAME / 'unreal' / 'Content' / 'Racing' / 'M_RacingTv.uasset'],
              products=region_native_products(out, 'belmonte'),
              about='/Game/Belmonte: environment meshes, collision and painterly surfaces'),
@@ -1054,7 +1063,7 @@ def world_steps(ctx):
              about='the city: layout (city.json), building kit, harbor, plaza, arcade, mountains', heavy=True),
         digest_step(out, 'world.hidamari', 'city', 'the Hidamari meshes unreal.world reads (all but the volcano)', north=False),
         digest_step(out, 'world.hidamari', 'north', "the volcano's meshes unreal.north reads (HD_North*)", north=True),
-        *belmonte_steps(out)[:2],
+        *belmonte_steps(out)[:3],
         brinecove_source_step(out),
         *brinecove_model_steps(out),
         *brinecove_steps(out)[:2],
@@ -1154,14 +1163,21 @@ def world_steps(ctx):
              about="Crater Park's lenticular cap cloud: its nested lens shells and their look (numpy)"),
         Step('world.lake', [Blender(REGIONS / 'forest_lake' / 'build.py')], inputs=[REGIONS / 'forest_lake', REGIONS / 'village' / 'build.py', *VILLAGE_LAYOUT],
              needs=['world.layout'], outputs=[out / 'forest_lake' / 'manifest.json'], about='the woodland lake and cabin', heavy=True),
-        Step('world.skatepark_textures', [Python(TOOLS / 'pier_textures.py', ('finish',))],
-             inputs=[TOOLS / 'pier_textures.py', ASSETS / 'skatepark' / 'textures', ASSETS / 'megapark' / 'restyle' / 'stone_cut.jpg'],
-             outputs=[out / 'skatepark' / 'textures' / 'textures.json'], about='Sunburst pier material maps (offline; no paid calls)'),
-        Step('world.skatepark', [Blender(REGIONS / 'skatepark' / 'build.py')],
-             inputs=[*sorted((REGIONS / 'skatepark').glob('*.py')), ASSETS / 'skatepark' / 'modules.json',
-                     ASSETS / 'skatepark' / 'modules', *VILLAGE_LAYOUT],
-             needs=['world.layout', 'world.skatepark_textures'],
-             outputs=[out / 'skatepark' / 'build-report.json'], heavy=True, about='the skate pier, its rails and the trick board (park.json)'),
+        Step('world.skatepark_textures', [Python(TOOLS / 'pier_texture_finish.py')],
+             inputs=[*local_imports(TOOLS / 'pier_texture_finish.py', (TOOLS,)),
+                     ASSETS / 'skatepark' / 'textures', ASSETS / 'megapark' / 'restyle' / 'stone_cut.jpg'],
+             products=[Product('skatepark.textures', (out / 'skatepark/textures',))], cache=True,
+             about='Sunburst pier material maps (offline; no paid calls)'),
+        Step('world.skatepark', [Blender(REGIONS / 'skatepark' / 'build.py', threads=3)],
+             inputs=[*sorted((REGIONS / 'skatepark').glob('*.py')), REGIONS / 'skatepark/park.json', ASSETS / 'skatepark' / 'modules.json',
+                     ASSETS / 'skatepark' / 'modules', WORLD / 'mesh_pieces.py',
+                     paths.STUDIO / 'atelier/mesh_cells.py', paths.STUDIO / 'atelier/mesh_partition.py', *VILLAGE_LAYOUT],
+             needs=['world.layout'], reads=['skatepark.textures'],
+             products=[Product('skatepark.meshes', (out / 'skatepark/assets', out / 'skatepark/board',
+                                                  out / 'skatepark/build-report.json')),
+                       Product('skatepark.runtime', (out / 'skatepark/runtime-park.json',)),
+                       Product('skatepark.queries', (out / 'skatepark/collision.json',))],
+             heavy=True, about='bounded skate pier meshes, complete logical riding queries and board'),
         Step('world.sailboat', [Blender(ASSETS / 'vehicles' / 'sailboat' / 'build.py', threads=4)],
              inputs=[ASSETS / 'vehicles' / 'sailboat', REGIONS / 'village' / 'build.py'],
              outputs=[out / 'sailboat' / 'manifest.json'], about='the dinghy', heavy=True),
@@ -1311,7 +1327,7 @@ def world_steps(ctx):
                                                     'SM_BM_BVV_Farm_', 'SM_BM_BC_Water_', 'SM_BM_BC_Pave', 'SM_BM_BC_Ponte')))],
              needs=['world.layout', 'world.hidamari', 'world.skatepark', 'world.zeppelin', 'world.belmonte',
                     *crater_geometry],
-             reads=['brinecove.map'],
+             reads=['brinecove.map', 'belmonte.ground'],
              outputs=[out / 'map' / 'map.json', out / 'map' / 'map.png',
                       *(out / 'map' / 'atlas' / f'{key}.png' for key in ('world', 'momiji_coast', 'momiji_woods', 'hidamari', 'temple_island',
                                                                      'northern_foothills', 'volcanic_highlands', 'haras_valley',
@@ -1600,8 +1616,15 @@ def unreal_steps(ctx):
              inputs=[SCRIPTS / 'import_treehouse.py', SCRIPTS / 'see_through.py'],
              needs=['unreal.world', 'world.treehouse', 'world.treehouse_trees', 'world.treehouse_props', 'world.treehouse_textures'],
              heavy=True, about='the tree house meshes, textures, props and canopy trees'),
-        Step('unreal.skatepark', [UnrealScript(SCRIPTS / 'import_skatepark.py', 'SKATEPARK IMPORT COMPLETE')],
-             inputs=[SCRIPTS / 'import_skatepark.py', REGIONS / 'skatepark' / 'park.json'], needs=['unreal.world', 'world.skatepark'],
+        Step('unreal.skatepark', [UnrealScript(SCRIPTS / 'import_skatepark.py', 'SKATEPARK IMPORT COMPLETE', modules=IMPORT_CODE)],
+             inputs=[SCRIPTS / 'import_skatepark.py', REGIONS / 'skatepark' / 'park.json', GAME / 'skatepark_build.py',
+                     REGIONS / 'skatepark/pieces.py', paths.STUDIO / 'atelier/native_membership.py',
+                     paths.STUDIO / 'atelier/mesh_geometry.py'],
+             needs=['unreal.world', *unreal_modules.needs(IMPORT_CODE)],
+             reads=['skatepark.meshes', 'skatepark.runtime', 'skatepark.textures'],
+             outputs=[out / 'skatepark/import-report.json'],
+             verify=lambda: skatepark_build.present(out, GAME / 'unreal/Content'),
+             candidate_scope=CandidateScope(directories=(GAME / 'unreal/Content/SkatePark',)),
              heavy=True, about='the skate pier and the board (/Game/SkatePark)'),
         Step('unreal.skate_board', [UnrealScript(SCRIPTS / 'board_dissolve_material.py', 'BOARD DISSOLVE MATERIAL COMPLETE')],
              inputs=[SCRIPTS / 'board_dissolve_material.py'], after=['unreal.compile'],
@@ -1718,7 +1741,7 @@ def staging_steps(ctx):
              needs=['world.ferry_service', 'world.gondola_service', 'world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark', 'world.craterpark', 'world.crater_cloud', 'world.bike',
                     *[f'characters.{key(c)}_{kind}' for c in definition.movers() for kind, wanted in
                       (('bike', c.playable), ('grips', (GRIPS / c.id).is_dir())) if wanted]],
-             reads=['brinecove.runtime', 'belmonte.runtime'],
+             reads=['brinecove.runtime', 'belmonte.runtime', 'skatepark.runtime'],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / rel for rel in staged(out)], about='runtime files into unreal/Content/Data'),
         racing_assets_step(out),
     ]
@@ -1759,8 +1782,9 @@ def gondola_steps(ctx):
     result += [Step('world.gondola_ground_inputs',
                     [Call('ropeway final ground inputs', lambda ctx, log:
                           export_digest.record(digest, queries.snapshot(ctx.out), log))],
-                    inputs=[*queries.CODE.values(), ASSETS / 'belmonte/source.json'],
-                    needs=['world.hidamari', 'world.terrain.meshes', 'world.belmonte'],
+                    inputs=[*queries.CODE.values()],
+                    # Deferred legacy collectors bind the selected product file explicitly.
+                    needs=['world.hidamari', 'world.terrain.meshes', 'world.belmonte.ground'],
                     deferred_inputs=[DeferredInputs('gondola-ground', queries.paths, (ctx.out,), support=(query,))],
                     outputs=[digest], cutoff=True,
                     about='only final terrain, North Trail and corridor-selected Belmonte ground'),
@@ -1880,7 +1904,7 @@ def steps(ctx):
     result = (world_steps(ctx) + character_steps(ctx) + sound_effect_steps(ctx)
               + [step for step in ferry if not step.name.startswith('unreal.')]
               + [step for step in gondola if not step.name.startswith('unreal.')]
-              + unreal_steps(ctx) + staging_steps(ctx) + adventure_steps(ctx.out) + hippodrome_steps(ctx.out) + belmonte_steps(ctx.out)[2:]
+              + unreal_steps(ctx) + staging_steps(ctx) + adventure_steps(ctx.out) + hippodrome_steps(ctx.out) + belmonte_steps(ctx.out)[3:]
               + brinecove_steps(ctx.out)[2:] + [step for step in ferry if step.name.startswith('unreal.')]
               + [step for step in gondola if step.name.startswith('unreal.')])
     result += fit_steps(ctx.out, result)

@@ -31,3 +31,11 @@ model/hull MUST be complete before retirement, and links, escapes, special files
 MUST refuse before deletion. Committed sources and another owner's outputs MUST remain untouched.
 Native retirement additionally requires successful current validation/saves and complete existence and
 external-reference preflight; a deletion failure MUST prevent a successful import report.
+
+@cc [owner:fontanierh,label:correctness] bounded-pier-runtime-and-riding-ownership
+The pier's generated runtime roster MUST replace an oversized parent with its complete bounded children.
+It MUST NOT load both the whole parent and those children for rendering or collision. Whole logical riding
+queries, rails, placement transforms, collision flags and source face ownership MUST remain preserved.
+Every native blocking child MUST use its own current LOD0 collision, without a stale whole-parent override.
+The native owner MUST validate every current child and all package sidecars before retiring old members.
+Source checks do not replace guarded native collision, seam, traversal and packaged-root acceptance.

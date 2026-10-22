@@ -35,6 +35,22 @@ def test_native_array_inventory_and_superseded_parent_retire_keep_current_and_fo
     assert paths == {CURRENT, ROOT+'/HandAuthored'} and deleted == [OLD]
 
 
+def test_single_folder_game_owner_inventory_and_retirement():
+    root = '/Game/SkatePark'; parent = root + '/SM_SkatePier'; piece = root + '/SM_SkatePier_Pieceabc'
+    e, paths, deleted = editor([parent, piece, root + '/HandAuthored'])
+    previous = M.inventory(e, root, 'SM_')
+    assert previous == {parent, piece}
+    assert M.retire(e, previous, ['SM_SkatePier_Pieceabc'], root, 'SM_') == [parent]
+    assert paths == {piece, root + '/HandAuthored'} and deleted == [parent]
+
+
+@pytest.mark.parametrize('root', ['/Game', '/Game/', '/Game//SkatePark', '/Game/../SkatePark',
+                                 '/Game/SkatePark/', '/Other/SkatePark', '/Game/SkatéPark'])
+def test_invalid_owner_root_still_refuses(root):
+    with pytest.raises(ValueError):
+        M.package_path(root, 'SM_', 'SM_Pier')
+
+
 @pytest.mark.parametrize('bad', ['empty', 'missing', 'duplicate', 'escape', 'foreign', 'object', 'unicode'])
 def test_incomplete_or_invalid_current_membership_cannot_delete(bad):
     e, paths, deleted = editor([OLD, CURRENT])
