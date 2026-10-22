@@ -209,7 +209,7 @@ class TreeMonitor:
 
 
 @contextmanager
-def attach_tree(pid, report, duration, limit_gib=10., expected_start=None):
+def attach_tree(pid, report, duration, limit_gib=10., expected_start=None, launch_nonce=None):
     """Attach while the gated launcher waits. Call ready() after entering; reap its tree before leaving.
 
     Readiness is deliberately outside __enter__, so a readiness failure still leaves the monitor
@@ -226,7 +226,13 @@ def attach_tree(pid, report, duration, limit_gib=10., expected_start=None):
                '--controller-pid', str(os.getpid()), '--controller-start', str(usage(os.getpid()).started)]
     if duration is not None:
         command += ['--duration', str(duration)]
-    process = subprocess.Popen(command, start_new_session=True)
+    if launch_nonce is None:
+        process = subprocess.Popen(command, start_new_session=True)
+    else:
+        from .launch_ownership import private_pipe
+        with private_pipe(launch_nonce) as descriptor:
+            process = subprocess.Popen([*command, '--launch-context-fd', str(descriptor)],
+                                       start_new_session=True, pass_fds=(descriptor,))
     monitor = TreeMonitor(process, pid, started, report)
     try:
         yield monitor
