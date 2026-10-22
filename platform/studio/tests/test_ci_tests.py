@@ -17,7 +17,7 @@ def run_group(root, group):
     report = root / f'{group}.json'
     result = subprocess.run(
         [sys.executable, str(RUNNER), group, '--collection-report', str(report), '-q'],
-        cwd=root, env={**os.environ, 'PYTEST_DISABLE_PLUGIN_AUTOLOAD': '1', 'PYTEST_ADDOPTS': ''},
+        cwd=root, env={**os.environ, 'ATELIER_CI_WORKERS': '1', 'PYTEST_DISABLE_PLUGIN_AUTOLOAD': '1', 'PYTEST_ADDOPTS': ''},
         capture_output=True, text=True, timeout=20)
     return result, json.loads(report.read_text()) if report.exists() else None
 
@@ -73,9 +73,9 @@ def test_multi_worker_shards_preserve_collection_and_merge_junit(tmp_path):
     report = tmp_path / 'games.json'
     junit = tmp_path / 'results.xml'
     result = subprocess.run(
-        [sys.executable, str(RUNNER), 'games', '--workers', '2',
+        [sys.executable, str(RUNNER), 'games',
          '--collection-report', str(report), f'--junitxml={junit}', '-q'],
-        cwd=tmp_path, env={**os.environ, 'PYTEST_DISABLE_PLUGIN_AUTOLOAD': '1', 'PYTEST_ADDOPTS': ''},
+        cwd=tmp_path, env={**os.environ, 'ATELIER_CI_WORKERS': '2', 'PYTEST_DISABLE_PLUGIN_AUTOLOAD': '1', 'PYTEST_ADDOPTS': ''},
         capture_output=True, text=True, timeout=20)
     assert result.returncode == 0, result.stdout + result.stderr
     data = json.loads(report.read_text())

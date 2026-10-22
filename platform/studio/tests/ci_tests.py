@@ -117,7 +117,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('group', choices=GROUPS)
     parser.add_argument('--collection-report', type=Path)
-    parser.add_argument('--workers', default='1')
+    parser.add_argument('--workers', default=os.environ.get('ATELIER_CI_WORKERS', '1'))
     parser.add_argument('--worker-index', type=int, default=0)
     parser.add_argument('--worker-count', type=int, default=1)
     args, pytest_args = parser.parse_known_args()
