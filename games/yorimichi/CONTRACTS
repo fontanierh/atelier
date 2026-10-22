@@ -26,6 +26,8 @@ legacy meshes MUST load only when explicitly selected. Switching MAY reload asse
 inactive mesh set before loading its replacement, preserving placements, camera visibility and gameplay
 without a restart. Prepared trees MUST provide simple trunk collision with passable foliage; mixed
 meshes MUST preserve solid ground/building collision. Bush interaction MUST remain active.
+Certified distant rigid LODs MAY contain zero faces; the runtime reader MUST accept them while
+requiring positive LOD0 exactly matching the carrier and refusing negative or fractional counts.
 Small authored plant props with a complete FoliageAuthored_ slot table and 1–12,288
 LOD0 triangles MUST stay on the ordinary prop path in both graphics modes, preserving
 their existing rendering and collision without replacement meshes. This explicit

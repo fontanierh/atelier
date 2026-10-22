@@ -159,7 +159,7 @@ bool UYorimichiFoliageSubsystem::ReadRegistry(const TSharedPtr<FJsonObject>& Reg
             for (const auto& Count:*RigidCounts)
             {
                 if (!Count || Count->Type!=EJson::Number || !FMath::IsFinite(Count->AsNumber()) ||
-                    Count->AsNumber()<=0 || Count->AsNumber()>MAX_int32 || Count->AsNumber()!=FMath::FloorToDouble(Count->AsNumber())) return Invalid();
+                    Count->AsNumber()<0 || Count->AsNumber()>MAX_int32 || Count->AsNumber()!=FMath::FloorToDouble(Count->AsNumber())) return Invalid();
                 Asset.RigidLODTriangles.Add(int32(Count->AsNumber()));
             }
             if (Rigid>0 && Asset.RigidLODTriangles[0]!=Asset.RigidTriangles) return Invalid();

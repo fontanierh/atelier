@@ -4,6 +4,7 @@
 #include "JapanPreferences.h"
 #include "WandererCharacter.h"
 #include "AtelierSettings.h"
+#include "AtelierData.h"
 #include "HAL/FileManager.h"
 #include "Misc/Paths.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
@@ -254,8 +255,19 @@ bool FYorimichiFoliageRegistryTest::RunTest(const FString&)
         .Replace(TEXT("\"kind\":\"tree\""),TEXT("\"rigid\":\"/Game/FoliageResident/Tree.Tree\",\"rigid_triangles\":4,\"rigid_lod_triangles\":[4],\"source_materials\":[\"/Engine/EngineMaterials/DefaultMaterial.DefaultMaterial\"],\"kind\":\"tree\""));
     TestTrue(TEXT("Resident registry retains source identity without source loading"),Read(Resident));
     TestEqual(TEXT("Carrier resolves to canonical source"),System->ResidentSources.FindRef(TEXT("/Game/FoliageResident/Tree.Tree")),FString(TEXT("/Game/Test/Tree.Tree")));
+    const FString Distant=Resident.Replace(TEXT("\"rigid_lod_triangles\":[4]"),TEXT("\"rigid_lod_triangles\":[4,3,2,0]"));
+    TestTrue(TEXT("Certified distant rigid LOD may be empty"),Read(Distant));
+    TestFalse(TEXT("Negative distant rigid count refuses"),Read(Distant.Replace(TEXT("[4,3,2,0]"),TEXT("[4,3,2,-1]"))));
+    TestFalse(TEXT("Empty rigid LOD0 cannot match a positive carrier"),Read(Distant.Replace(TEXT("[4,3,2,0]"),TEXT("[0,3,2,0]"))));
+    TestFalse(TEXT("Fractional distant rigid count refuses"),Read(Distant.Replace(TEXT("[4,3,2,0]"),TEXT("[4,3,2,0.5]"))));
     TestFalse(TEXT("Absent rigid path cannot claim rigid geometry"),Read(Resident.Replace(TEXT("/Game/FoliageResident/Tree.Tree"),TEXT(""))));
     TestFalse(TEXT("Source material proof is required"),Read(Resident.Replace(TEXT("\"source_materials\""),TEXT("\"missing_materials\""))));
+    const FString PublishedPath=AtelierDataPath(TEXT("foliage_residency/registry.json"));
+    if (IFileManager::Get().FileExists(*PublishedPath))
+    {
+        System->bRegistryLoaded=false;
+        TestTrue(TEXT("Current published residency registry passes the actual runtime loader"),System->LoadRegistry());
+    }
     return true;
 }
 #endif
