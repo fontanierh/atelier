@@ -108,7 +108,7 @@
   const TYPES = {
     run: {
       label: 'Runway', ride: true,
-      defaults: { len: 40, turn: 0, slope: -5, vR: 80, ease_end: false, end_slope: 0, bank: 0, width: 18, width_end: null, wl: { ...WALL }, wr: { ...WALL }, deck: 1.5, wall_blend: 12, dig: false },
+      defaults: { len: 40, turn: 0, slope: -5, vR: 80, ease_end: false, end_slope: 0, entry_rise: 0, entry_crest: 0, entry_drop: 0, bank: 0, width: 18, width_end: null, wl: { ...WALL }, wr: { ...WALL }, deck: 1.5, wall_blend: 12, dig: false },
       params: [
         P('len', 'Length', 'm', 1, 400, 0.5, 'Plan length along the centreline.'),
         P('turn', 'Turn', '°', -200, 200, 1, 'Plan turn over the piece. + right, − left. 0 = straight.'),
@@ -116,6 +116,9 @@
         P('ease_end', 'Ease to an end slope', '', 0, 1, 1, '', { kind: 'bool' }),
         P('end_slope', 'End slope', '°', -45, 30, 0.1, 'Slope at the end (used when easing).', { showIf: 'ease_end' }),
         P('vR', 'Vertical ease radius', 'm', 5, 400, 1, 'How gently the slope changes (80 m is comfortable at 25 m/s).'),
+        P('entry_rise', 'Entry knuckle rise', 'm', 0, 20, 0.01, 'Raises the first metres to a landing knuckle (0: flat entry).'),
+        P('entry_crest', 'Entry knuckle distance', 'm', 0, 60, 0.5, 'Where the entry rise crests; the landing slope runs down from it.'),
+        P('entry_drop', 'Entry landing slope', '°', 0, 45, 0.1, 'Downslope from the entry knuckle back to the floor.'),
         P('bank', 'Bank', '°', -35, 35, 0.5, 'Tilts the floor across: + raises the rider’s left side (for right turns).'),
         P('width', 'Floor width', 'm', 4, 80, 0.5, 'Flat floor between the walls (18 m standard).'),
         P('width_end', 'Floor width at end', 'm', 4, 80, 0.5, 'Leave empty for constant width (use for flared mouths).', { nullable: true }),
