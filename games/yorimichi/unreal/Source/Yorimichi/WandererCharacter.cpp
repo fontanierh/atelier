@@ -424,6 +424,7 @@ void AWandererCharacter::ConfigureCar()
     }
     else UE_LOG(LogTemp, Error, TEXT("Kart cockpit data missing: build the kart and stage runtime data"));
     Car->RequireAuthoredGrips(true);
+    Car->SetAutoRight(true);
     ReadKartGrip(this, Car);
 }
 
@@ -573,10 +574,10 @@ void AWandererCharacter::BuildInput()
         FEnhancedActionKeyMapping& Hold = Mapping->MapKey(Axis(TEXT("HorsePad"),EInputActionValueType::Boolean),EKeys::Gamepad_RightShoulder);
         auto* HoldTrigger = NewObject<UInputTriggerHold>(Mapping); HoldTrigger->HoldTimeThreshold = .4f; HoldTrigger->bIsOneShot = true; Hold.Triggers.Add(HoldTrigger);
     }
-    // The kart: a 0.4 s hold of the left bumper, free on foot (it is the train view and flight speed only aboard those).
+    // The kart: a tap (0.15 s) of the left bumper, free on foot (it is the train view and flight speed only aboard those).
     {
         FEnhancedActionKeyMapping& Hold = Mapping->MapKey(Axis(TEXT("CarPad"),EInputActionValueType::Boolean),EKeys::Gamepad_LeftShoulder);
-        auto* HoldTrigger = NewObject<UInputTriggerHold>(Mapping); HoldTrigger->HoldTimeThreshold = .4f; HoldTrigger->bIsOneShot = true; Hold.Triggers.Add(HoldTrigger);
+        auto* HoldTrigger = NewObject<UInputTriggerHold>(Mapping); HoldTrigger->HoldTimeThreshold = .15f; HoldTrigger->bIsOneShot = true; Hold.Triggers.Add(HoldTrigger);
     }
     Key(Axis(TEXT("HorseRandomPad"),EInputActionValueType::Boolean),EKeys::Gamepad_FaceButton_Left);
     Key(Axis(TEXT("HorseBreedPad"),EInputActionValueType::Boolean),EKeys::Gamepad_DPad_Up);

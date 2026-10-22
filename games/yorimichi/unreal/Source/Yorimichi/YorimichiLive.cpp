@@ -207,6 +207,13 @@ FString UYorimichiLive::CarLoops()
     return C ? C->GetAudioState() : FString();
 }
 
+bool UYorimichiLive::CarFlip()
+{
+    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
+    UDrivingComponent* C = P ? P->GetCar() : nullptr;
+    return C && C->ForceInvertedForQA();
+}
+
 FString UYorimichiLive::CarRide()
 {
     const AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player()); const UDrivingComponent* C = P ? P->GetCar() : nullptr;

@@ -143,25 +143,40 @@ void Vehicle::update_drift(float dt, float speed, Vec3 angular_velocity)
     const float slip = body_slip;
     const float yaw = dot(body.rotation().y_axis, angular_velocity);
     const Controls c = controls_;
-    const float threshold = 12.0f * DEG_TO_RAD;
-    const bool fast = speed > mph_to_ms(30.0f);
+    const float threshold = spec.drift_assist_min_slip;
+    const bool fast = speed > spec.drift_assist_min_speed;
+    const bool requested = c.handbrake > 0.5f;
+    const bool may_drift = !spec.drift_requires_request || requested;
+    if (spec.drift_requires_request && !requested)
+    {
+        d.phase = Drift::Phase::Out;
+    }
     if (d.phase == Drift::Phase::In || d.phase == Drift::Phase::Exit)
     {
-        const bool sustaining = yaw * slip < 0.0f && std::fabs(slip) <= SIM_PI * 0.5f && fast &&
+        const bool sustaining = may_drift && yaw * slip < 0.0f && std::fabs(slip) <= SIM_PI * 0.5f && fast &&
                                 steering.average_input() * slip <= 0.0f && std::fabs(slip) > threshold;
-        const bool sustaining_or_power = sustaining || (c.gas * c.steering * slip > threshold && fast);
-        const bool power = c.gas * std::fabs(slip) > threshold;
+        const bool sustaining_or_power = sustaining || (may_drift && c.gas * c.steering * slip > threshold && fast);
+        const bool power = may_drift && c.gas * std::fabs(slip) > threshold;
         d.phase = sustaining_or_power ? Drift::Phase::In : (power ? Drift::Phase::Enter : Drift::Phase::Exit);
     }
-    else if (fast && (c.handbrake > 0.5f || std::fabs(slip) > threshold))
+    else if (fast && may_drift && (requested || std::fabs(slip) > threshold))
     {
         d.phase = Drift::Phase::Enter;
+    }
+    if (spec.stability_assist && fast && std::fabs(slip) > threshold && yaw * slip < 0.0f &&
+        wheels_on_ground_prev_ >= 2)
+    {
+        // A kart keeps its rear under control from walking pace. This torque is independent of the drift state:
+        // steering alone never lowers rear grip, but it does get the early stabilizer.
+        const float gain = graph(STABILIZER, 7, std::fabs(slip) * RAD_TO_DEG);
+        const float torque = -yaw * gain * 4.0f * body.inertia().y * spec.stability_gain;
+        body.apply_torque(body.rotation().y_axis * torque);
     }
     if (d.value <= 0.0f)
     {
         return;
     }
-    if (yaw * slip < 0.0f && wheels_on_ground_prev_ >= 2)
+    if (!spec.stability_assist && yaw * slip < 0.0f && wheels_on_ground_prev_ >= 2)
     {
         const float gain = graph(STABILIZER, 7, std::fabs(slip) * RAD_TO_DEG);
         const float torque = d.value * -yaw * gain * 4.0f * body.inertia().y;
@@ -223,8 +238,15 @@ void Vehicle::distribute_drive(float torque, const std::array<float, 4>& av, con
         }
         bool wheel_traction[2] = {grounded[a], grounded[a + 1]};
         float wheel_omega[2] = {av[a], av[a + 1]};
-        const std::array<float, 2> split =
+        std::array<float, 2> split =
             calc_split(bias, trans.differential[axle], locked, wheel_traction, wheel_omega);
+        if (trans.solid_axle[axle])
+        {
+            // A locked axle still turns both wheels together; when one is in the air the other takes the axle torque.
+            const int loaded = (wheel_traction[0] ? 1 : 0) + (wheel_traction[1] ? 1 : 0);
+            split = {loaded && wheel_traction[0] ? 1.0f / float(loaded) : 0.0f,
+                     loaded && wheel_traction[1] ? 1.0f / float(loaded) : 0.0f};
+        }
         for (int i = 0; i < 2; ++i)
         {
             if (!grounded[a + i])

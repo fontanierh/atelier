@@ -53,6 +53,8 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Live") static FString BikeState();
     /** The car's state while it is out: speed, gear, wheels on the ground, hint and chassis pose (UDrivingComponent). */
     UFUNCTION(BlueprintCallable, Category = "Live") static FString CarState();
+    /** QA only: roll the equipped kart onto its back so the flip scenario can prove recovery. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool CarFlip();
     /** Chassis height/vertical speed, pitch/roll and each wheel's compression, height and contact (UDrivingComponent). */
     UFUNCTION(BlueprintCallable, Category = "Live") static FString CarRide();
     UFUNCTION(BlueprintCallable, Category = "Live") static FString CarLoops();

@@ -133,6 +133,25 @@ Vehicle::WheelOutput Vehicle::wheel_forces(float dt, const Ground& ground, Vec3 
     {
         wheels_on_ground_ += l ? 1 : 0;
     }
+    if (spec.wheel_ground_reference && wheels_on_ground_ > 0)
+    {
+        // Keep the last contact plane for the airborne alignment assist. It stays valid after the wheels unload
+        // until the vehicle is reset or lands again.
+        Vec3 normal = VEC3_ZERO;
+        float contacts_y = 0.0f;
+        for (int i = 0; i < 4; ++i)
+        {
+            if (!loaded_[i])
+            {
+                continue;
+            }
+            normal += contacts_[i].normal;
+            contacts_y += contacts_[i].point.y;
+        }
+        ground_reference.normal = length_squared(normal) > 1e-8f ? normalize(normal) : VEC3_Y;
+        ground_reference.separation = contacts_y / float(wheels_on_ground_) - body.position.y;
+        has_ground_reference = true;
+    }
     return out;
 }
 
@@ -140,9 +159,15 @@ int Vehicle::collide_body_with_ground(const Ground& ground)
 {
     const Vec3 half = body.dimension() + body.spec().collision_box_pad;
     std::vector<GroundContact> found;
+    const float raise = body.spec().collision_bottom_raise;
     for (const Vec3& corner : BOX_CORNERS)
     {
-        const Vec3 point = body.position + body.rotation() * (half * corner);
+        Vec3 local = half * corner;
+        if (corner.y < 0.0f && raise > 0.0f)
+        {
+            local.y += raise;
+        }
+        const Vec3 point = body.position + body.rotation() * local;
         GroundContact c;
         if (body.ground_contact(point, ground, FIXED_STEP, c))
         {

@@ -83,6 +83,13 @@ struct SteeringInput
     float forward_speed = 0.0f;
     float tire_steering = 1.0f;
     float tuning = 0.0f;
+    bool has_lock_curve = false;
+    float lock_angle_low = 0.0f;
+    float lock_angle_high = 0.0f;
+    float lock_speed_low = 0.0f;
+    float lock_speed_high = 0.0f;
+    float lock_ramp_time = 0.0f;
+    float lock_center_rate = 1.5f;
     SteeringDevice device = SteeringDevice::Pad;
     float rear_slip_deg[2] = {0.0f, 0.0f};
 };

@@ -280,7 +280,7 @@ void AJapanHUD::DrawHUD()
     else if (const UDrivingComponent* Car = Pawn->GetCar(); Car && Car->IsEquipped())
     {
         Controls = bController
-            ? FString::Printf(TEXT("%s throttle   %s brake   Left stick steer   %s handbrake   Hold %s step out (stopped)      %s   %.0f km/h"),Pad.Attack,Pad.Parry,Pad.Roll,Pad.LeftBumper,*Car->GetStatus(),Car->GetSpeedKph())
+            ? FString::Printf(TEXT("%s throttle   %s brake   Left stick steer   %s handbrake   Tap %s step out (stopped)      %s   %.0f km/h"),Pad.Attack,Pad.Parry,Pad.Roll,Pad.LeftBumper,*Car->GetStatus(),Car->GetSpeedKph())
             : FString::Printf(TEXT("W throttle   S brake   A / D steer   Space handbrake   L step out (stopped)      %s   %.0f km/h"),*Car->GetStatus(),Car->GetSpeedKph());
         Secondary = bController ? FString::Printf(TEXT("Right stick look   %s map (hold: places)   %s settings"),Pad.Map,Pad.Menu)
             : TEXT("Mouse look   M map & travel   Esc settings");
@@ -291,7 +291,12 @@ void AJapanHUD::DrawHUD()
         if (Bike && Bike->IsAvailable())
             Secondary += bController ? FString::Printf(TEXT("   Hold %s bike"),Pad.Skate) : TEXT("   V bike");
         if (const UDrivingComponent* ParkedCar = Pawn->GetCar(); ParkedCar && !ParkedCar->IsEquipped())
-            Secondary += bController ? FString::Printf(TEXT("   Hold %s kart"),Pad.LeftBumper) : TEXT("   L kart");
+        {
+            Secondary += bController ? FString::Printf(TEXT("   Tap %s kart"),Pad.LeftBumper) : TEXT("   L kart");
+            const FString CarHint = ParkedCar->GetStatus();
+            if (!CarHint.IsEmpty() && CarHint != TEXT("Parked") && CarHint != TEXT("Driving"))
+                Secondary += FString::Printf(TEXT("   %s"), *CarHint);
+        }
         // Only to a character with horse clips; a shared game offers it while its host allows vehicles
         // (AWandererCharacter::RequestNetworkHorse).
         const AJapanGameState* Rules = GetWorld()->GetGameState<AJapanGameState>();

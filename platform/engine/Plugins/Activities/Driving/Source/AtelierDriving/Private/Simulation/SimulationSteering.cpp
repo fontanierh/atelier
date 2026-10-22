@@ -11,6 +11,26 @@ float Steering::update(const SteeringInput& i)
         return prev_angle;
     }
     const float v = i.forward_speed;
+    if (i.has_lock_curve)
+    {
+        // Kart-style absolute lock curve: tight at walking pace, calmer at speed, with a finite ramp in and a
+        // faster return to centre. Cars without the curve keep the shared tables below unchanged.
+        const float span = std::fmax(i.lock_speed_high - i.lock_speed_low, 1e-3f);
+        const float t = clamp((v - i.lock_speed_low) / span, 0.0f, 1.0f);
+        const float smooth = t * t * (3.0f - 2.0f * t);
+        const float angle = i.lock_angle_low + (i.lock_angle_high - i.lock_angle_low) * smooth;
+        const float target = clamp(u, -1.0f, 1.0f) * angle;
+        const float rate_angle = std::fmax(std::fabs(angle), std::fmax(std::fabs(i.lock_angle_low),
+                                                                      std::fabs(i.lock_angle_high)));
+        const float rate = rate_angle / std::fmax(i.lock_ramp_time, 1e-3f);
+        const bool centering = std::fabs(target) < std::fabs(prev_angle);
+        const float step = rate * (centering ? std::fmax(i.lock_center_rate, 1.0f) : 1.0f) * i.dt;
+        prev_angle = clamp(target, prev_angle - step, prev_angle + step);
+        last_max = angle;
+        last_input = u;
+        avg_input.push(u);
+        return prev_angle;
+    }
     collision_timer = std::fmax(collision_timer - i.dt, 0.0f);
     const float avg = std::fabs(avg_input.mean());
 
