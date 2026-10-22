@@ -538,7 +538,8 @@ void UJapanPreferences::Apply()
         // performance profile. The user reverted the screen-probe lighting change.
         Set(TEXT("sg.GlobalIlluminationQuality"),PerformanceMode ? 1.f : 3.f);
         // One cascade over the performance profile's halved shadow distance: 0.5 ms at the operator view.
-        Set(TEXT("r.Shadow.CSM.MaxCascades"),PerformanceMode ? 1.f : 10.f);
+        // Laptops keep their single cascade in every profile.
+        Set(TEXT("r.Shadow.CSM.MaxCascades"),Laptop || PerformanceMode ? 1.f : 10.f);
         Set(TEXT("r.Shadow.MaxCSMResolution"),PerformanceMode ? 1024.f : 2048.f);
         Set(TEXT("r.Shadow.DistanceScale"),PerformanceMode ? .5f : 1.5f);
         Set(TEXT("r.DistanceFieldShadowing"),PerformanceMode ? 0.f : 1.f);

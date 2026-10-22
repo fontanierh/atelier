@@ -110,7 +110,7 @@ def importer(monkeypatch):
 LEAF = ['/Game/Japan/Materials/MI_Bark.MI_Bark', '/Game/Japan/Materials/MI_LeafPine.MI_LeafPine']
 IMPOSTOR = sorted(['/Game/Japan/Materials/MI_Bark.MI_Bark',
                    '/Game/Japan/Materials/MI_Tree_Forest_Pine_Impostor.MI_Tree_Forest_Pine_Impostor'])
-CROWN = ['/Game/Japan/FoliageLODs/Crowns/MI_Tree_Forest_Pine_Crown.MI_Tree_Forest_Pine_Crown']
+CROWN = ['/Game/Japan/FoliageLODs/MI_Tree_Forest_Pine_Crown.MI_Tree_Forest_Pine_Crown']
 
 
 @pytest.mark.parametrize('palettes,impostor', [([LEAF, LEAF, LEAF, IMPOSTOR, CROWN], 'Tree_Forest_Pine_Impostor'),
@@ -118,7 +118,7 @@ CROWN = ['/Game/Japan/FoliageLODs/Crowns/MI_Tree_Forest_Pine_Crown.MI_Tree_Fores
 def test_crown_is_one_extra_level_after_the_authored_chain(importer, palettes, impostor):
     sizes = [1., .5, .2, .1, .05, .01][:len(palettes)]
     report = importer.verify_lods(FakeTarget(palettes), sizes, FakeMeshes(palettes, sizes), impostor,
-                                  crown={'slot': 'Tree_Forest_Pine_Crown'})
+                                  crown={'slot': 'Tree_Forest_Pine_Crown'}, folder='/Game/Japan/FoliageLODs')
     assert report['materials_by_lod'][-1] == CROWN
 
 
@@ -127,4 +127,18 @@ def test_crown_must_follow_the_impostor(importer, palettes):
     sizes = [1., .5, .2, .1, .05]
     with pytest.raises(AssertionError):
         importer.verify_lods(FakeTarget(palettes), sizes, FakeMeshes(palettes, sizes), 'Tree_Forest_Pine_Impostor',
-                             crown={'slot': 'Tree_Forest_Pine_Crown'})
+                             crown={'slot': 'Tree_Forest_Pine_Crown'}, folder='/Game/Japan/FoliageLODs')
+
+
+def test_each_tree_product_owns_its_crown_material(importer):
+    import json
+    from atelier import build
+    catalog = build.load_recipe('yorimichi').foliage_build.catalog
+    specs = Path(__file__).resolve().parents[1] / 'assets/foliage'
+    crowned = [name for name in catalog.FOLIAGE
+               if (specs / (name + '.json')).exists() and 'far_crown' in json.loads((specs / (name + '.json')).read_text())]
+    assert crowned
+    for name in crowned:
+        # import_foliage.py passes the tree's own LOD folder; the native product retains that folder whole.
+        path = importer.crown_path({'slot': name + '_Crown'}, '/Game/Japan/FoliageLODs/' + name)
+        assert catalog.independently_owned(path), path

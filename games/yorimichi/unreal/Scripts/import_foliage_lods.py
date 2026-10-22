@@ -12,20 +12,22 @@ from mesh_import import import_mesh
 
 # A far crown (world/far_crown.py) is the one slot of a tree's last LOD: an instance of the opaque, already
 # compiled M_Painted with the crown's colour and the dithered LOD blending HISM needs (as on MI_Bark), so no shared
-# material and no new shader permutation. The tree's import step owns it, outside the per-tree LOD folders.
-CROWN_FOLDER = '/Game/Japan/FoliageLODs/Crowns'
+# material and no new shader permutation. It lives in the tree's own LOD folder, so the product that owns that
+# folder (a tree's import step, or the forest's) retains, restores and inventories it with the LODs.
+def crown_path(crown, folder):
+    return folder + '/MI_' + crown['slot']
 
 
-def crown_material(crown):
+def crown_material(crown, folder):
     from foliage_material import enable_bark_lod_blend
     editor = U.EditorAssetLibrary
     name = 'MI_' + crown['slot']
-    path = CROWN_FOLDER + '/' + name
+    path = crown_path(crown, folder)
     if editor.does_asset_exist(path):
         material = editor.load_asset(path)
     else:
         material = U.AssetToolsHelpers.get_asset_tools().create_asset(
-            name, CROWN_FOLDER, U.MaterialInstanceConstant, U.MaterialInstanceConstantFactoryNew())
+            name, folder, U.MaterialInstanceConstant, U.MaterialInstanceConstantFactoryNew())
     parent = editor.load_asset('/Game/Japan/Materials/M_Painted')
     white = editor.load_asset('/Game/Japan/Textures/T_white')
     if not (material and parent and white):
@@ -49,7 +51,7 @@ def crown_material(crown):
     return material
 
 
-def verify_lods(target,screen_sizes,meshes,impostor=None,bark='Bark',interface=None,crown=None):
+def verify_lods(target,screen_sizes,meshes,impostor=None,bark='Bark',interface=None,crown=None,folder=None):
     name=target.get_name()
     count=target.get_num_lods()
     assert count==len(screen_sizes),(name,'missing LOD')
@@ -62,7 +64,7 @@ def verify_lods(target,screen_sizes,meshes,impostor=None,bark='Bark',interface=N
         if interface is None:  # legacy forest imports read the shared native material product
             return supports_lod_blend(material)
         path = material.get_path_name().split('.')[0]
-        if crown is not None and path.startswith(CROWN_FOLDER + '/'):
+        if crown is not None and path == crown_path(crown, folder):
             return supports_lod_blend(material)   # owned here, not a shared-material product
         return interface[path]['lod_blend']
     assert all(blends(m) for m in slots),(name,'a material disables HISM blending')
@@ -73,7 +75,7 @@ def verify_lods(target,screen_sizes,meshes,impostor=None,bark='Bark',interface=N
     # A far crown is one extra level after the authored chain (and after the impostor, when there is one).
     authored=palettes[:-1] if crown else palettes
     if crown:
-        expected=[CROWN_FOLDER+'/MI_'+crown['slot']+'.MI_'+crown['slot']]
+        expected=[crown_path(crown,folder)+'.MI_'+crown['slot']]
         assert palettes[-1]==expected,(name,'crown material contract',palettes[-1],expected)
     if impostor:
         assert all(p==authored[0] for p in authored[:-1]),(name,'leaf LOD changes palette',palettes)
@@ -108,7 +110,7 @@ def apply_lods(target, data, output, meshes, *, seed, folder, interface=None, re
             key = str(slot.get_editor_property('imported_material_slot_name')).split('.')[0]
             crown = data.get('crown')
             if crown and key == crown['slot']:
-                material = crown_material(crown)
+                material = crown_material(crown, folder)
             else:
                 material = editor.load_asset('/Game/Japan/Materials/MI_' + key)
             if not material:
@@ -125,7 +127,7 @@ def apply_lods(target, data, output, meshes, *, seed, folder, interface=None, re
     if not editor.save_loaded_asset(target):
         raise RuntimeError('Could not save foliage LOD chain: ' + target.get_path_name())
     return verify_lods(target, data['screen_sizes'], meshes, data.get('impostor_slot'), data.get('impostor_bark', 'Bark'),
-                       interface=interface, crown=data.get('crown'))
+                       interface=interface, crown=data.get('crown'), folder=folder)
 
 
 def main(output, manifest_file='trees.json'):
