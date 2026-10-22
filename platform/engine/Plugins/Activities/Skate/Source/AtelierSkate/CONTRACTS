@@ -23,3 +23,11 @@ EndPlay MUST stop and release only the owned one-shot voices.
 MeshSurface MUST require actual CPU position and tangent/UV storage before reading render vertices
 and normals. Cached raw pointers MUST NOT establish availability after buffer cleanup. When storage
 is absent, use the existing cooked-collision surface path and retain material face ownership.
+
+@cc [owner:fontanierh,label:correctness] copied-collision-cache-lifetime
+The game-thread mesh-surface cache MUST NOT keep copied triangle arrays for collected mesh UObjects.
+The module MUST prune invalid object keys after garbage collection, before replacement assets load,
+and remove its callback on shutdown. Pruning MUST drop only cache ownership: active gather jobs retain
+immutable shared references, with identical points, normals and material slots until their own release.
+Removed cache array bytes MUST be reported separately from actual physical-memory changes; externally
+held job data MUST NOT be claimed as reclaimed. Geometry and collision-snapshot semantics stay unchanged.
