@@ -87,10 +87,23 @@ def fix_tjunctions(P, F, others=None, tol=1e-6, rounds=8, attrs=None, atol=1e-3)
         keep = first[~mine & (first >= len(P))] - len(P)         # each other position once, none of this mesh's own
         others = others[np.sort(keep)]
     for _ in range(rounds):
-        e = np.concatenate([F[:, [0, 1]], F[:, [1, 2]], F[:, [2, 0]]]); fid = np.tile(np.arange(len(F)), 3)
+        nF = len(F)
+        if not nF:
+            break
+        e = np.concatenate([F[:, [0, 1]], F[:, [1, 2]], F[:, [2, 0]]])
+        u0 = np.minimum(e[:, 0], e[:, 1]).astype('i8')
+        u1 = np.maximum(e[:, 0], e[:, 1]).astype('i8')
+        _, ui, uc = np.unique((u0 << 32) | u1, return_inverse=True, return_counts=True)
+        is_open = (uc[ui.ravel()] == 1)
+        if not is_open.any():
+            break
+        open_face = is_open[:nF] | is_open[nF:2 * nF] | is_open[2 * nF:]
+        sub_edges = np.flatnonzero(np.tile(open_face, 3))
+        fid = np.tile(np.arange(nF), 3)
         a, b = P[e[:, 0]], P[e[:, 1]]
         pts = P if others is None else np.concatenate([P, others])
-        cand, which, t = _edge_hits(a, b, pts, tol)
+        sub_cand, which, t = _edge_hits(a[sub_edges], b[sub_edges], pts, tol)
+        cand = sub_edges[sub_cand]
         # a face's own corner (a sliver's apex), or any point at a corner's position (its UV seam twin), never
         # splits its edges
         own = (np.linalg.norm(P[F[fid[cand]]] - pts[which][:, None], axis=2) <= tol).any(1)
@@ -104,8 +117,7 @@ def fix_tjunctions(P, F, others=None, tol=1e-6, rounds=8, attrs=None, atol=1e-3)
         first = np.r_[True, (fid[cand][o][1:] != fid[cand][o][:-1]) | (which[o][1:] != which[o][:-1])]
         o = o[first]; cand, which, t = cand[o], which[o], t[o]
         # and only an open edge (one face's): a crack opens only there; an edge two faces share already conforms
-        ue = np.sort(e, 1); _, ui, uc = np.unique(ue, axis=0, return_inverse=True, return_counts=True)
-        op = uc[ui.ravel()][cand] == 1
+        op = is_open[cand]
         cand, which, t = cand[op], which[op], t[op]
         if not len(cand):
             break
@@ -166,10 +178,23 @@ def find(P, F, tol=TOL):
     a point at its nearest edge of a face, never a face's own corner). Weld creases and UV seams first (Mesh.welded):
     there a split vertex is not a T-junction."""
     P = np.asarray(P, 'f8'); F = np.asarray(F, 'i8').reshape(-1, 3)
-    e = np.concatenate([F[:, [0, 1]], F[:, [1, 2]], F[:, [2, 0]]]); fid = np.tile(np.arange(len(F)), 3)
-    a, b = P[e[:, 0]], P[e[:, 1]]
-    cand, which, t = _edge_hits(a, b, P, tol)
     empty = (np.zeros(0, 'i8'),) * 3 + (np.zeros(0),) * 2
+    nF = len(F)
+    if not nF:
+        return empty
+    e = np.concatenate([F[:, [0, 1]], F[:, [1, 2]], F[:, [2, 0]]])
+    u0 = np.minimum(e[:, 0], e[:, 1]).astype('i8')
+    u1 = np.maximum(e[:, 0], e[:, 1]).astype('i8')
+    _, ui, uc = np.unique((u0 << 32) | u1, return_inverse=True, return_counts=True)
+    is_open = (uc[ui.ravel()] == 1)
+    if not is_open.any():
+        return empty
+    open_face = is_open[:nF] | is_open[nF:2 * nF] | is_open[2 * nF:]
+    sub_edges = np.flatnonzero(np.tile(open_face, 3))
+    fid = np.tile(np.arange(nF), 3)
+    a, b = P[e[:, 0]], P[e[:, 1]]
+    sub_cand, which, t = _edge_hits(a[sub_edges], b[sub_edges], P, tol)
+    cand = sub_edges[sub_cand]
     if not len(cand):
         return empty
     own = (np.linalg.norm(P[F[fid[cand]]] - P[which][:, None], axis=2) <= tol).any(1)
@@ -181,10 +206,9 @@ def find(P, F, tol=TOL):
     o = np.lexsort((dist, which, fid[cand]))
     first = np.r_[True, (fid[cand][o][1:] != fid[cand][o][:-1]) | (which[o][1:] != which[o][:-1])]
     o = o[first]; cand, which, t, dist = cand[o], which[o], t[o], dist[o]
-    ue = np.sort(e, 1); _, ui, uc = np.unique(ue, axis=0, return_inverse=True, return_counts=True)
-    op = uc[ui.ravel()][cand] == 1
+    op = is_open[cand]
     cand, which, t, dist = cand[op], which[op], t[op], dist[op]
-    return fid[cand], cand // len(F), which, t, dist
+    return fid[cand], cand // nF, which, t, dist
 
 
 def check(mesh, tol=TOL, examples=10):

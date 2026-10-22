@@ -22,5 +22,9 @@
     "Bark",
     "LeafGinkgo"
   ],
-  "import_trunk_collision": false
+  "import_trunk_collision": false,
+  "far_crown": {
+    "shape": "flat12",
+    "screen_size": 0.0036
+  }
 }

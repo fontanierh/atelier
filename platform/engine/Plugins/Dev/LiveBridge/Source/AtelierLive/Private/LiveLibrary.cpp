@@ -367,7 +367,7 @@ TArray<FVector> ULiveLibrary::StaticVertices(UStaticMeshComponent* Mesh)
     const FStaticMeshRenderData* Render = Asset ? Asset->GetRenderData() : nullptr;
     if (!Render || !Render->LODResources.Num()) return Out;
     const FPositionVertexBuffer& Buffer = Render->LODResources[0].VertexBuffers.PositionVertexBuffer;
-    if (!Buffer.GetVertexData()) return Out;   // no CPU copy
+    if (!Buffer.GetAllowCPUAccess() || !Buffer.GetVertexData()) return Out;   // no owned CPU copy
     const FTransform& ToWorld = Mesh->GetComponentTransform();
     for (uint32 V = 0; V < Buffer.GetNumVertices(); ++V) Out.Add(ToWorld.TransformPosition(FVector(Buffer.VertexPosition(V))));
     return Out;

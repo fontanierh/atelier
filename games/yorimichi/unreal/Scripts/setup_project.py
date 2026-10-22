@@ -111,11 +111,12 @@ def assign(mesh_path, MI):
 
 # ------------------------------------------------------------------ level
 def build_level(terrain_mesh, W, MI):
-    les = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
     eas = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
     map_path = "/Game/Japan/Maps/Slice"
+    world = unreal.EditorLoadingAndSavingUtils.new_blank_map(False)
+    if world is None:
+        raise RuntimeError("Failed to create the replacement Slice world")
     if True:
-        les.new_level(map_path)
         t = eas.spawn_actor_from_class(unreal.StaticMeshActor, unreal.Vector(0, 0, 0))
         t.set_actor_label("Terrain"); t.static_mesh_component.set_static_mesh(terrain_mesh); t.set_mobility(unreal.ComponentMobility.STATIC)
         sun = eas.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 3000))
@@ -162,7 +163,6 @@ def build_level(terrain_mesh, W, MI):
         ps = W["player_start"]
         p = eas.spawn_actor_from_class(unreal.PlayerStart, unreal.Vector(ps[0] * 100, -ps[1] * 100, ps[2] * 100 + 100))
         p.set_actor_rotation(unreal.Rotator(roll=0.0, pitch=0.0, yaw=-ps[3]), False)
-    world = unreal.EditorLevelLibrary.get_editor_world()
     ok = unreal.EditorLoadingAndSavingUtils.save_map(world, map_path)
     if not ok:
         raise RuntimeError(f"Failed to save {map_path}")
@@ -179,7 +179,9 @@ def main():
         raise RuntimeError('JAPAN_ONLY is retired; select unreal.materials or unreal.foliage.<asset>')
     import json
     W = json.load(open(os.path.join(OUT, "world.json")))
-    purge()
+    # Preserve receiving packages for per-source native validation/reuse.
+    # Explicit owners retire proven obsolete members after replacements succeed;
+    # an upfront namespace purge destroys that evidence and foreign owners.
     MI = {name: EAL.load_asset(path) for name, path in material_bindings().items()}
     if not all(MI.values()):
         raise RuntimeError('Build unreal.materials before importing the world')

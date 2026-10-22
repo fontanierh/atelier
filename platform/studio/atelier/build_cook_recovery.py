@@ -42,6 +42,9 @@ def identity(value):
 
 
 SESSION_ENVIRONMENT = frozenset({
+    # Prepared before the exact launch binding; bookkeeping is not a reusable cook input.
+    'ATELIER_OWNED_LAUNCH_NONCE',
+    'ATELIER_OWNED_LAUNCH_ANCESTORS',
     'TERM_SESSION_ID', 'TERM_PROGRAM_SESSION_ID', 'ITERM_SESSION_ID', 'SSH_AUTH_SOCK',
     'SHLVL', 'OLDPWD', 'PWD', '_', 'ATELIER_AGENT', 'CODEX_THREAD_ID', 'CODEX_SESSION_ID',
     'CODEX_TOOL_CALL_ID', 'CLAUDE_SESSION_ID', 'CLAUDE_CODE_SESSION_ID', 'CLAUDE_PID',
@@ -206,6 +209,11 @@ def inventory(roots, *, hashes, hasher=None, link_owners=(), repeat_chmod_files=
 
 
 def snapshot(ctx, step, argv, environment):
+    """@cc [owner:fontanierh,label:correctness] deferred-cook-source-observation
+    A cook capture MUST use the same selected deferred observation for its declared source
+    inventory and action fingerprint. Each new capture MUST observe membership afresh so recovery
+    still refuses changed inputs; deferred declarations MUST NOT prevent recording a normal cook.
+    """
     from .build import load_recipe, fingerprint, outputs_present, result
     from .build_products import records, feed_results
     from .build_plan import read_stamp
@@ -237,12 +245,14 @@ def snapshot(ctx, step, argv, environment):
     source_status = provenance.status()
     require(not any(line.startswith('??') for line in source_status.splitlines()), 'untracked source must be recorded first')
     from .build import required_inputs
+    from .build_deferred import observe
     from .build_inputs import SKIP_PARTS, SKIP_SUFFIXES
+    observation = observe(step)
     # Pin source leaves with the established source/output boundary. UAT may legitimately
     # write Binaries/Intermediate under a declared plugin source root. Consumed editor and
     # ThirdParty native inputs are selected separately by the recipe's native policy.
     declared = []
-    for root in map(Path, required_inputs(step)):
+    for root in map(Path, required_inputs(step, observation=observation)):
         if root.is_dir():
             declared.extend(p for p in sorted(root.rglob('*'))
                             if not SKIP_PARTS.intersection(p.relative_to(root).parts)
@@ -279,7 +289,7 @@ def snapshot(ctx, step, argv, environment):
     return dict(schema=2, checkout=str(paths.REPO.resolve()), cwd=str(Path.cwd().resolve()), game=ctx.game, step=step.name,
                 source=step.cook_recovery.snapshot(ctx), revision=provenance.head(),
                 patch_sha256=hashlib.sha256(provenance.git('diff', '--binary', 'HEAD').encode()).hexdigest(),
-                action_fingerprint=fingerprint(step, done), argv=argv, environment=consumed_environment(environment),
+                action_fingerprint=fingerprint(step, done, observation=observation), argv=argv, environment=consumed_environment(environment),
                 roots=list(map(str, roots)), link_owners=list(map(str, owners)), native_selection=selection,
                 repeat_chmod_files=list(map(str, repeat_chmod_files)),
                 inputs=inputs, declared_members=list(map(str, declared)), declared_inputs=declared_inputs)

@@ -165,6 +165,7 @@ class Catalogue:
         self.owners = {}
         owned_paths = []
         resolved_paths = {}
+        resolved_parts = {}
 
         def resolve(path):
             # Shared scripts/support files appear in many actions. Reuse only within this
@@ -173,6 +174,12 @@ class Catalogue:
             if path not in resolved_paths:
                 resolved_paths[path] = path.resolve()
             return resolved_paths[path]
+
+        def resolve_parts(path):
+            resolved = resolve(path)
+            if resolved not in resolved_parts:
+                resolved_parts[resolved] = tuple(p.casefold() for p in resolved.parts)
+            return resolved_parts[resolved]
 
         for step in self.steps:
             build_deferred.validate(step)
@@ -189,8 +196,7 @@ class Catalogue:
             if step.name in self.by_name:
                 raise ValueError(f'Duplicate step: {step.name}')
             self.by_name[step.name] = step
-            sources = [tuple(p.casefold() for p in resolve(source).parts)
-                       for source in declared_inputs(step)] if step.products else []
+            sources = [resolve_parts(source) for source in declared_inputs(step)] if step.products else []
             for product in step.products:
                 if not product.name or product.name in self.owners:
                     raise ValueError(f'Duplicate or empty product name: {product.name!r}')
@@ -199,7 +205,7 @@ class Catalogue:
                 self.owners[product.name] = step.name
                 for path in product.roots():
                     output = resolve(Path(os.path.abspath(path)))
-                    parts = tuple(p.casefold() for p in output.parts)
+                    parts = resolve_parts(output)
                     for source in sources:
                         if source[:len(parts)] == parts or parts[:len(source)] == source:
                             raise ValueError(f'{step.name}: input overlaps its own product {product.name}')
@@ -207,8 +213,7 @@ class Catalogue:
         # Sorting path components puts every ancestor immediately before its first descendant.
         # Case-folded comparisons also reject aliases on case-insensitive worktree filesystems.
         previous = None
-        for path, owner in sorted((tuple(p.casefold() for p in path.parts), owner)
-                                  for path, owner in owned_paths):
+        for path, owner in sorted((resolve_parts(path), owner) for path, owner in owned_paths):
             if previous is not None:
                 other, other_owner = previous
                 if path[:len(other)] == other:
@@ -216,13 +221,25 @@ class Catalogue:
             previous = path, owner
         # Legacy declarations still reserve their paths. Product restoration and audited rebuilds
         # replace whole roots, so those roots cannot contain (or sit inside) another step's outputs.
-        legacy_paths = [(step.name, tuple(p.casefold() for p in resolve(path).parts))
+        legacy_paths = [(step.name, resolve_parts(path))
                         for step in self.steps for path in (*step.outputs, *step.pool_roots)]
+        legacy_exact = {}
+        legacy_prefixes = {}
+        for step_name, other in legacy_paths:
+            legacy_exact.setdefault(other, set()).add(step_name)
+            for k in range(1, len(other) + 1):
+                legacy_prefixes.setdefault(other[:k], set()).add(step_name)
         for path, product in owned_paths:
-            parts = tuple(p.casefold() for p in path.parts)
-            for step_name, other in legacy_paths:
-                if self.owners[product] != step_name and (parts[:len(other)] == other or other[:len(parts)] == parts):
-                    raise ValueError(f'Product {product} overlaps legacy outputs of {step_name}')
+            parts = resolve_parts(path)
+            owner_step = self.owners[product]
+            candidates = set(legacy_prefixes.get(parts, ()))
+            for k in range(1, len(parts) + 1):
+                candidates.update(legacy_exact.get(parts[:k], ()))
+            candidates.discard(owner_step)
+            if candidates:
+                for step_name, other in legacy_paths:
+                    if owner_step != step_name and (parts[:len(other)] == other or other[:len(parts)] == parts):
+                        raise ValueError(f'Product {product} overlaps legacy outputs of {step_name}')
 
     def validate_dependencies(self, step):
         """Check both explicit and resolved edges against these current declarations."""

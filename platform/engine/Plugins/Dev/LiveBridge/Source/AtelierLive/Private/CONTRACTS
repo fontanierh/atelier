@@ -1,0 +1,4 @@
+@cc [owner:fontanierh,label:correctness] static-vertex-inspection-cpu-ownership
+StaticVertices MUST refuse position buffers without owned CPU storage, even if a cached data
+pointer remains non-null after cleanup. GetAllowCPUAccess and the data pointer MUST both be checked
+before reading any position. Available positions MUST retain their component world transform.
