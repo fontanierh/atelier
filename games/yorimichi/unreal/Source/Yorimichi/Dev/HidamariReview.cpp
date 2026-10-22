@@ -41,8 +41,7 @@ bool ValidateHidamari(UWorld* World,AActor* Player,const FString& Directory)
     // hidden inside a stale collider. Probe their actual pawn support separately.
     int32 KitPads=0,KitGroundChecks=0,KitSweeps=0,KitEntranceGroundChecks=0,KitEntranceSweeps=0;
     double MaxKitError=0.;int32 KitCornerChecks=0,PropPads=0;
-    TArray<UStaticMeshComponent*> Terrain;
-    UStaticMeshComponent* Park=nullptr;int32 ShoreFootingChecks=0;
+    TArray<UStaticMeshComponent*> Terrain,Park;int32 ShoreFootingChecks=0;
     for(TActorIterator<AJapanWorld> It(World);It;++It)
     {
         TArray<UStaticMeshComponent*> Components;It->GetComponents(Components);
@@ -50,7 +49,7 @@ bool ValidateHidamari(UWorld* World,AActor* Player,const FString& Directory)
             if(Component->GetStaticMesh())
             {
                 if(Component->ComponentHasTag(TEXT("CitySurface:HD_Terrain"))) Terrain.Add(Component);
-                if(Component->GetStaticMesh()->GetName()==TEXT("HD_Park")) Park=Component;
+                if(Component->ComponentHasTag(TEXT("CitySurface:HD_Park"))) Park.Add(Component);
             }
     }
     auto KitGround=[&](const FString& Label,const FVector& Q,bool bEntrance=false,bool bTerrainOnly=false,bool bShoreFooting=false)
@@ -70,12 +69,18 @@ bool ValidateHidamari(UWorld* World,AActor* Player,const FString& Directory)
         }
         else Ground=World->LineTraceSingleByChannel(Hit,Q+FVector(0,0,120),Q-FVector(0,0,150),ECC_Pawn,Params);
         // A declared shore footing replaces excavated terrain under one
-        // pavilion corner. Trace its actual park mesh; roofs, props and water
+        // pavilion corner. Trace its complete park piece union; roofs, props and water
         // cannot satisfy this fallback, and the same 8 cm height limit applies.
         if(bShoreFooting)
         {
-            ++ShoreFootingChecks;FHitResult ShoreHit;
-            if(Park && Park->LineTraceComponent(ShoreHit,Q+FVector(0,0,120),Q-FVector(0,0,150),TerrainParams) &&
+            ++ShoreFootingChecks;FHitResult ShoreHit;bool ShoreGround=false;
+            for(auto* Surface:Park)
+            {
+                FHitResult Candidate;
+                if(Surface->LineTraceComponent(Candidate,Q+FVector(0,0,120),Q-FVector(0,0,150),TerrainParams) &&
+                   (!ShoreGround || Candidate.Distance<ShoreHit.Distance)) {ShoreHit=Candidate;ShoreGround=true;}
+            }
+            if(ShoreGround &&
                (!Ground || FMath::Abs(ShoreHit.ImpactPoint.Z-Q.Z)<FMath::Abs(Hit.ImpactPoint.Z-Q.Z)))
             {Hit=ShoreHit;Ground=true;}
         }

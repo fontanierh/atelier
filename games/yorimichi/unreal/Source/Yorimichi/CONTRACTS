@@ -169,3 +169,6 @@ retains its exact complex query surface. A hidden monolithic collision parent MU
 remain loaded. Missing membership MUST fail readiness rather than load a parent.
 Canonical terrain-only diagnostic queries MUST inspect the complete tagged terrain
 piece union, preserving their original trace semantics.
+Park shore-footing diagnostics MUST likewise trace the complete tagged park piece
+union, select the nearest hit along the original ray, and retain the original
+height comparison and eight-centimetre acceptance bound.

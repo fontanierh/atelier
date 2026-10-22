@@ -239,7 +239,7 @@ CITY = {'world.hidamari', 'world.hidamari.city', 'world.hidamari.north', 'world.
         'world.city_trees', 'world.city_trees.meshes', 'world.gondola_ground_inputs', 'world.gondola_ground',
         'world.gondola_site', 'world.gondola_service', 'unreal.gondola', 'data.stage',
         'world.gondola_structure_inputs'} | {f'world.hidamari.tiles.{source}'
-                                          for source in ('HD_Terrain', 'HD_Streets', 'HD_Square')} | LATER
+                                          for source in ('HD_Terrain', 'HD_Streets', 'HD_Square', 'HD_CivicGardens', 'HD_Park')} | LATER
 # The regions and early FarHills producer conservatively read mountains.py and
 # hidamari/layout.py; the main layout and final Belmonte ground remain cutoff steps.
 NORTHERN = {'world.layout', 'world.farhills', 'world.belmonte', 'world.belmonte.ground', 'world.belmonte.textures', 'world.belmonte.meshes', 'world.hippodrome', 'world.hippodrome.meshes',
