@@ -60,9 +60,13 @@ def scene(tmp_path, monkeypatch):
     def unload(values):
         unloads.append([v.get_name() for v in values])
         objects.clear()
-    def asset_data(package):
+    def asset_data(object_path, disk_only):
+        assert disk_only is True and '.' in object_path
+        package, object_name = object_path.rsplit('.', 1)
+        assert object_name == package.rsplit('/', 1)[1]
         return SimpleNamespace(get_tag_value=lambda name: tags[package] if name == 'AssetImportData' else None)
-    registry = SimpleNamespace(scan_files_synchronous=scan, scan_modified_asset_files=rescan)
+    registry = SimpleNamespace(scan_files_synchronous=scan, scan_modified_asset_files=rescan,
+                               k2_get_asset_by_object_path=asset_data)
     def load(package):
         for required in packages:
             assert (content / mesh_reuse.package_members(required)[0].removeprefix('content/')).exists()
@@ -72,13 +76,13 @@ def scene(tmp_path, monkeypatch):
         return mesh
     unreal = SimpleNamespace(
         EditorLoadingAndSavingUtils=SimpleNamespace(get_dirty_content_packages=lambda: [], unload_packages=unload),
-        EditorAssetLibrary=SimpleNamespace(find_asset_data=asset_data, does_asset_exist=lambda p:
+        EditorAssetLibrary=SimpleNamespace(does_asset_exist=lambda p:
             p in registered or (content / mesh_reuse.package_members(p)[0].removeprefix('content/')).exists()),
         AssetRegistryHelpers=SimpleNamespace(
             create_asset_data=lambda mesh: SimpleNamespace(
                 get_tag_value=lambda name: tags[mesh.package] if name == 'AssetImportData' else None),
             get_asset_registry=lambda: registry),
-        find_object=lambda outer, name: objects.get(name), load_asset=load)
+        SoftObjectPath=lambda value: value, find_object=lambda outer, name: objects.get(name), load_asset=load)
     monkeypatch.setitem(sys.modules, 'unreal', unreal)
     def adapter():
         return native.MeshReuse(ctx, 'unreal.region', script, ('build',), report_member='generated/report.json')
@@ -553,9 +557,10 @@ def two_donors(scene, monkeypatch):
 
 def test_registry_source_rejection_retries_without_loading_or_unloading(scene, monkeypatch):
     two_donors(scene, monkeypatch)
-    real = scene.unreal.EditorAssetLibrary.find_asset_data
-    monkeypatch.setattr(scene.unreal.EditorAssetLibrary, 'find_asset_data', lambda p:
-        SimpleNamespace(get_tag_value=lambda _: '[]') if len(scene.scans) == 1 else real(p))
+    registry = scene.unreal.AssetRegistryHelpers.get_asset_registry()
+    real = registry.k2_get_asset_by_object_path
+    monkeypatch.setattr(registry, 'k2_get_asset_by_object_path', lambda p, disk:
+        SimpleNamespace(get_tag_value=lambda _: None) if len(scene.scans) == 1 else real(p, disk))
     adapter = scene.adapter()
     assert acquire(scene, adapter)
     assert adapter.pending['Mesh']['provenance']['checkpoint'] == scene.bundle['checkpoint']

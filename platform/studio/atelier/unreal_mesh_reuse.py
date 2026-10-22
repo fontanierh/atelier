@@ -354,7 +354,9 @@ class MeshReuse:
                         [str(path) for _, path, _ in selected if path.suffix == '.uasset'], True)
                     # Registry tags are disk metadata: reject old sources before loading or GC.
                     registry_matches = all(mesh_reuse.recorded_source_matches(
-                        unreal.EditorAssetLibrary.find_asset_data(target).get_tag_value('AssetImportData'), source)
+                        registry.k2_get_asset_by_object_path(
+                            unreal.SoftObjectPath(target + '.' + target.rsplit('/', 1)[1]), True
+                        ).get_tag_value('AssetImportData'), source)
                         for target, source, _ in sources)
                 except Exception:
                     registry_matches = False
