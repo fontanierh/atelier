@@ -147,6 +147,55 @@ def test_two_partial_donors_cannot_invent_complete_collision_group(scene, monkey
     assert not scene.content.exists()
 
 
+def test_donor_corruption_after_constructor_does_not_hide_other_complete_group(scene, monkeypatch, tmp_path):
+    from copy import deepcopy
+    primary = deepcopy(scene.bundle)
+    primary['checkpoint'] = '1' * 64
+    copies = {}
+    for member, source in scene.staged.items():
+        path = tmp_path / 'first' / member
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(source.read_bytes())
+        copies[member] = path
+    monkeypatch.setattr(checkpoint_candidates, 'load_all', lambda *_: [primary, scene.bundle])
+    original = checkpoint_candidates.member_path
+    def member(*args, bundle=None):
+        if bundle is primary:
+            path = copies.get(args[2])
+            expected = primary['files'].get(args[2])
+            if expected and mesh_reuse.digest(path) != expected['sha256']:
+                return None
+            return path
+        return original(*args, bundle=bundle)
+    monkeypatch.setattr(checkpoint_candidates, 'member_path', member)
+    adapter = scene.adapter()
+    copies['content/Region/Mesh.uasset'].write_bytes(b'late corruption')
+    assert acquire(scene, adapter)
+    assert adapter.pending['Mesh']['provenance']['checkpoint'] == scene.bundle['checkpoint']
+    assert (scene.content / 'Region/Mesh.uasset').read_bytes() == scene.staged['content/Region/Mesh.uasset'].read_bytes()
+
+
+def test_late_copy_corruption_tries_next_donor_before_any_package_install(scene, monkeypatch):
+    from copy import deepcopy
+    primary = deepcopy(scene.bundle)
+    primary['checkpoint'] = '1' * 64
+    monkeypatch.setattr(checkpoint_candidates, 'load_all', lambda *_: [primary, scene.bundle])
+    adapter = scene.adapter()
+    copy = native.shutil.copyfile
+    calls = []
+    def corrupted_once(source, target):
+        calls.append(source)
+        if len(calls) == 1:
+            assert not list(scene.content.glob('Region/*'))
+            Path(target).write_bytes(b'changed during copy')
+        else:
+            return copy(source, target)
+    monkeypatch.setattr(native.shutil, 'copyfile', corrupted_once)
+    assert acquire(scene, adapter)
+    assert adapter.pending['Mesh']['provenance']['checkpoint'] == scene.bundle['checkpoint']
+    assert (scene.content / 'Region/Mesh.uasset').read_bytes() == scene.staged['content/Region/Mesh.uasset'].read_bytes()
+
+
 def test_missing_native_import_hash_never_certifies_captured_bytes(scene):
     scene.tags[scene.package] = '[]'
     adapter = scene.adapter()

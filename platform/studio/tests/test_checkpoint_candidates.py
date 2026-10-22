@@ -91,6 +91,56 @@ def test_composition_rechecks_all_donors_before_publishing_pointer(fixture, dono
     assert not (candidates.root(ctx) / 'tree.json').exists()
 
 
+def test_late_corrupt_donor_does_not_prevent_other_pointer_publication(fixture, donor):
+    key, _ = donor
+    ctx, _ = fixture.checkout('receiver')
+    first = candidates.stage(ctx, key, 'tree', ['generated/tree/asset.bin'], publish=False)
+    second = candidates.stage(ctx, key, 'tree', ['generated/house/asset.bin'], publish=False)
+    value = json.loads(first.read_text())
+    (first.parent / value['files']['generated/tree/asset.bin']['path']).write_bytes(b'bad')
+    assert candidates.publish_bundles(ctx, 'tree', [first, second]) == second
+    assert candidates.load(ctx, 'tree').member_path('generated/house/asset.bin').read_bytes() == b'house'
+
+
+def test_many_original_proofs_share_one_guard_copy_and_fresh_hash_per_unique_object(fixture, donor, monkeypatch):
+    from copy import deepcopy
+    from atelier import native_candidates
+    key, saved = donor
+    keys = []
+    for i in range(10):
+        value = deepcopy(saved)
+        value['files'] = {'generated/tree/asset.bin': saved['files']['generated/tree/asset.bin']}
+        value['stamps']['tree']['fingerprint'] = str(i) * 64
+        keys.append(fixture.store.save(value))
+    fixture.store.manifests.joinpath(key + '.json').unlink()
+    ctx, steps = fixture.checkout('receiver')
+    step = replace(steps[0], candidate_scope=candidates.CandidateScope(directories=(ctx.out / 'tree',)))
+    copied, guards = [], []
+    copy = candidates.copy_file
+    def copy_once(source, target):
+        copied.append(target)
+        return copy(source, target)
+    def guard(ctx, operation, request_id):
+        guards.append(request_id)
+        return candidates.stage_worker(ctx, request_id)
+    monkeypatch.setattr(candidates, 'copy_file', copy_once)
+    monkeypatch.setattr(build_checkpoints, '_guard', guard)
+    assert candidates.prepare(ctx, step, echo=lambda _: None)
+    assert len(guards) == len(copied) == 1
+    hashed = []
+    digest = native_candidates.digest_file
+    def fresh(path):
+        hashed.append(path)
+        return digest(path)
+    monkeypatch.setattr(native_candidates, 'digest_file', fresh)
+    bundles = native_candidates.load_all(ctx, 'tree')
+    assert {b['checkpoint'] for b in bundles} == set(keys)
+    assert len(hashed) == 1
+    # A later native consumer never reuses the pass-local verification cache.
+    assert bundles[0].member_path('generated/tree/asset.bin').read_bytes() == b'tree'
+    assert len(hashed) == 2
+
+
 def test_remote_discovery_keeps_both_independent_partial_histories(fixture, donor, monkeypatch):
     from copy import deepcopy
     from atelier import checkpoint_github, native_candidates

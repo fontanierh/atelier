@@ -210,8 +210,14 @@ class MeshReuse:
                           'local_package_history_mismatch' if self.local_compatible else
                           'no_compatible_package_history')
                 return self.miss(reason)
-            bundle = None
-            geometry_matches = False
+            if any(unreal.EditorAssetLibrary.does_asset_exist(target) for target in packages):
+                # A candidate never replaces an unproved existing receiving scope.
+                return self.miss('unproved_existing_package')
+            if any(os.path.lexists(safe_destination(self.content, member.removeprefix('content/')))
+                   for target in packages for member in mesh_reuse.package_members(target)):
+                return self.miss('unproved_disk_sidecar')
+            bundle, selected = None, []
+            geometry_matches, member_failed = False, False
             for candidate, report, compatible in self.histories:
                 if not compatible:
                     continue
@@ -222,45 +228,48 @@ class MeshReuse:
                 if previous is None or geometry != previous:
                     continue
                 geometry_matches = True
-                if all(mesh_reuse.package_members(target)[0] in candidate['files'] for target in packages):
-                    bundle = candidate
-                    break
-            if bundle is None:
-                return self.miss('candidate_package_missing' if geometry_matches else 'candidate_geometry_mismatch')
-            if any(unreal.EditorAssetLibrary.does_asset_exist(target) for target in packages):
-                # An unproven existing package belongs to the normal importer;
-                # candidate staging never replaces another completed scope.
-                return self.miss('unproved_existing_package')
-            selected = []
-            for target in packages:
-                members = mesh_reuse.package_members(target)
-                if any(os.path.lexists(safe_destination(self.content, member.removeprefix('content/')))
-                       for member in members):
-                    return self.miss('unproved_disk_sidecar')
-                if members[0] not in bundle['files']:
-                    return self.miss('candidate_package_missing')
-                for member in members:
-                    if member not in bundle['files']:
+                if not all(mesh_reuse.package_members(target)[0] in candidate['files'] for target in packages):
+                    continue
+                trial = []
+                for target in packages:
+                    for member in mesh_reuse.package_members(target):
+                        if member not in candidate['files']:
+                            continue
+                        source = self.candidates.member_path(self.ctx, self.task, member, bundle=candidate)
+                        if source is None:
+                            member_failed = True
+                            trial = None
+                            break
+                        destination = safe_destination(self.content, member.removeprefix('content/'))
+                        trial.append((source, destination, candidate['files'][member]))
+                    if trial is None:
+                        break
+                if trial is None:
+                    continue
+                # Prepare a whole group before installing anything. A late copy/read failure
+                # rejects only this donor; the next compatible complete group can still be used.
+                self.content.mkdir(parents=True, exist_ok=True)
+                with tempfile.TemporaryDirectory(prefix='.mesh-import-', dir=self.content) as temporary:
+                    prepared = []
+                    try:
+                        for index, (source, destination, expected) in enumerate(trial):
+                            temporary_file = Path(temporary) / str(index)
+                            shutil.copyfile(source, temporary_file)
+                            if (temporary_file.stat().st_size != expected['size']
+                                    or mesh_reuse.digest(temporary_file) != expected['sha256']):
+                                raise ValueError('Candidate copy changed')
+                            prepared.append((temporary_file, destination))
+                    except (OSError, ValueError):
+                        member_failed = True
                         continue
-                    source = self.candidates.member_path(self.ctx, self.task, member, bundle=bundle)
-                    if source is None:
-                        return self.miss('candidate_member_missing')
-                    destination = safe_destination(self.content, member.removeprefix('content/'))
-                    selected.append((source, destination, bundle['files'][member]))
-            # Prepare all sidecars and collision packages before any mesh load.
-            self.content.mkdir(parents=True, exist_ok=True)
-            with tempfile.TemporaryDirectory(prefix='.mesh-import-', dir=self.content) as temporary:
-                prepared = []
-                for index, (source, destination, expected) in enumerate(selected):
-                    temporary_file = Path(temporary) / str(index)
-                    shutil.copyfile(source, temporary_file)
-                    if (temporary_file.stat().st_size != expected['size']
-                            or mesh_reuse.digest(temporary_file) != expected['sha256']):
-                        return self.miss('candidate_copy_mismatch')
-                    prepared.append((temporary_file, destination))
-                for temporary_file, destination in prepared:
-                    destination.parent.mkdir(parents=True, exist_ok=True)
-                    os.replace(temporary_file, destination)
+                    for temporary_file, destination in prepared:
+                        destination.parent.mkdir(parents=True, exist_ok=True)
+                        os.replace(temporary_file, destination)
+                bundle, selected = candidate, trial
+                break
+            if bundle is None:
+                return self.miss('candidate_member_missing' if member_failed else
+                                 'candidate_package_missing' if geometry_matches else 'candidate_geometry_mismatch')
             unreal.AssetRegistryHelpers.get_asset_registry().scan_files_synchronous(
                 [str(destination) for _, destination, _ in selected if destination.suffix == '.uasset'], True)
             copied = True

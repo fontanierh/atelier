@@ -1,7 +1,7 @@
 """Read-only candidate admission inside native imports; no controller or guard dependencies."""
 import re
 import stat
-from .build_hashes import digest_file
+from .build_hashes import digest_file, signature
 from .native_protocol import (CheckpointError, HEX, ReadStore as Store, context, identity, read_json,
                               relative, safe_destination, validate)
 
@@ -41,15 +41,30 @@ def inventory(ctx, key, task):
                 source_revision=revision, donor_stamp=stamp, context=saved['context'], provenance='compatibility-only', files=saved['files'])
 
 
-def checked_file(directory, member, entry):
+def object_path(entry):
+    return 'objects/' + entry['sha256'] + '-' + format(entry['mode'], '03o')
+
+
+def checked_file(directory, member, entry, *, shared=False, verified=None):
     relative(member)
-    if not isinstance(entry, dict) or entry.get('path') != 'files/' + member or not HEX.fullmatch(entry.get('sha256', '')):
+    if not isinstance(entry, dict) or not HEX.fullmatch(entry.get('sha256', '')):
+        raise CheckpointError('Invalid staged candidate member')
+    expected_path = object_path(entry) if shared else 'files/' + member
+    if entry.get('path') != expected_path:
         raise CheckpointError('Invalid staged candidate member')
     path = safe_destination(directory, entry['path'])
-    if (path.is_symlink() or not path.is_file() or path.stat().st_size != entry['size']
-            or stat.S_IMODE(path.stat().st_mode) != entry['mode']
-            or digest_file(path) != entry['sha256']):
+    before = path.lstat()
+    if (not stat.S_ISREG(before.st_mode) or before.st_size != entry['size']
+            or stat.S_IMODE(before.st_mode) != entry['mode']):
         raise CheckpointError('Staged candidate bytes changed')
+    # One fresh verification pass hashes each shared object once. This cache is never persisted
+    # or carried into a later member access; a changed stat identity forces another hash.
+    key = (str(path), signature(before), entry['sha256'])
+    if ((verified is None or key not in verified) and digest_file(path) != entry['sha256']
+            or signature(path.lstat()) != signature(before)):
+        raise CheckpointError('Staged candidate bytes changed')
+    if verified is not None:
+        verified.add(key)
     return path
 
 
@@ -62,11 +77,11 @@ class Bundle(dict):
 
     def member_path(self, member):
         entry = self['files'].get(member)
-        return checked_file(self.directory, member, entry) if entry is not None else None
+        return checked_file(self.directory, member, entry, shared=self['schema'] == 2) if entry is not None else None
 
 
-def completion(ctx, value, directory, *, verify_files=True):
-    if (not isinstance(value, dict) or value.get('schema') != 1 or value.get('provenance') != 'compatibility-only'
+def completion(ctx, value, directory, *, verify_files=True, verified=None):
+    if (not isinstance(value, dict) or value.get('schema') not in (1, 2) or value.get('provenance') != 'compatibility-only'
             or value.get('context') != context(ctx) or not HEX.fullmatch(value.get('checkpoint', ''))
             or not HEX.fullmatch(value.get('donor_fingerprint', ''))
             or not re.fullmatch(r'[0-9a-f]{40}', value.get('source_revision', ''))
@@ -84,7 +99,7 @@ def completion(ctx, value, directory, *, verify_files=True):
     bundle = Bundle(value, directory, (ctx.game, root(ctx)))
     if verify_files:
         for member in value['files']:
-            bundle.member_path(member)
+            checked_file(directory, member, value['files'][member], shared=value['schema'] == 2, verified=verified)
     return bundle
 
 
@@ -104,11 +119,11 @@ def load_all(ctx, task):
         if (not isinstance(manifests, list) or not manifests
                 or any(not isinstance(p, str) for p in manifests) or len(set(manifests)) != len(manifests)):
             return []
-        bundles = []
+        bundles, verified = [], set()
         for member in manifests:
             try:
                 manifest = safe_destination(root(ctx), member)
-                bundle = completion(ctx, read_json(manifest), manifest.parent)
+                bundle = completion(ctx, read_json(manifest), manifest.parent, verified=verified)
                 if bundle.get('receiver_task') == task:
                     bundles.append(bundle)
             except (OSError, ValueError, KeyError, TypeError, CheckpointError):

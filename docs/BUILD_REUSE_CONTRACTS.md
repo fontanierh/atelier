@@ -46,9 +46,13 @@ pieces are landed; generated ground and the independent Streets native owner ret
 receiving gates, and remaining regions still need producer/consumer integration. The shared binary
 geometry writer and automatic native-candidate retention are landed, but neither proves whole-game
 reuse or global retention of failed preparation units. Candidate discovery can retain multiple independent
-local donors, or multiple remote donors when local discovery misses; each mesh still needs current native
-admission from one complete group. Mixed local/remote discovery and real cross-machine receiving acceptance
-remain separate work. Local global-store/workspace
+local donors, or multiple remote donors when local discovery misses. One guarded staging invocation
+copies each distinct selected (SHA256, mode) object once while retaining all original donor proofs;
+each fresh verification pass hashes that union once, and later member accesses verify again. Metadata
+work still scales with retained catalogue membership; distinct historical byte versions still consume
+their actual staging bytes. Each mesh still needs current native admission from one complete group.
+Mixed local/remote discovery and real cross-machine receiving acceptance remain separate work.
+Local global-store/workspace
 garbage collection is not implemented by the remote collection rule or a coordinated manual sweep.
 Native audio type-move and preparation-module adoption gates must not be inferred from this
 documentation or source approval.
