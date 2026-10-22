@@ -85,7 +85,8 @@ def test_world_selector_includes_native_references_without_reading_their_bytes(t
                      for stage in ('natural', 'final', 'provenance')})
     expected.update({f'terrain.HD_NorthMountains.{stage}': 'world.hidamari'
                      for stage in ('natural', 'final', 'provenance')})
-    expected.update({name: name for name in ('audio.footsteps', 'audio.skate')})
+    expected.update({name: name for name in ('audio.footsteps', 'audio.skate', 'audio.combat', 'audio.bike',
+                                            'audio.transport', 'audio.kart')})
     expected.update({f'terrain.HD_Terrain.{stage}': 'world.hidamari'
                      for stage in ('natural', 'final', 'provenance')})
     expected['gondola.kit']='world.gondola_kit'
@@ -101,6 +102,7 @@ def test_world_selector_includes_native_references_without_reading_their_bytes(t
     expected['skatepark.textures'] = 'world.skatepark_textures'
     expected.update({f'brinecove.native_{part}': 'unreal.brinecove'
                      for part in ('meshes', 'materials', 'report')})
+    expected['audio.native'] = 'unreal.sounds'
     expected.update({f'city.tiles.{source}': f'world.city_tiles.{source}'
                      for source in ('HD_Terrain', 'HD_Streets', 'HD_Square')})
     expected.update({f'city.native_{part}': 'unreal.city_tree_lods'

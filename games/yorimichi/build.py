@@ -1388,21 +1388,25 @@ def sound_effect_steps(ctx):
              products=[Product('audio.footsteps', (out / 'audio' / 'footsteps',))],
              about='531 footstep one-shots (needs `atelier fetch`)'),
         Step('audio.combat', [Python(AUDIO / 'combat' / 'slice.py')], inputs=[AUDIO / 'combat', paths.cache_dir('sonniss', 'combat', create=False)],
-             outputs=[out / 'audio' / 'combat' / 'manifest.json'], about='combat cues and the countryside ambience'),
+             outputs=[out / 'audio' / 'combat' / 'manifest.json'],
+             products=[Product('audio.combat', (out / 'audio' / 'combat',))], about='combat cues and the countryside ambience'),
         Step('audio.skate', [Python(AUDIO / 'skate' / 'make.py')], inputs=[AUDIO / 'skate', paths.cache_dir('sonniss', 'combat', create=False)],
              outputs=[out / 'audio' / 'skate' / 'manifest.json'],
              products=[Product('audio.skate', (out / 'audio' / 'skate',))], about='board loops and cues'),
         Step('audio.bike', [Python(AUDIO / 'bike' / 'make.py')], inputs=[AUDIO / 'bike', AUDIO / 'skate' / 'make.py', paths.cache_dir('sonniss', 'combat', create=False)],
-             outputs=[out / 'audio' / 'bike' / 'manifest.json'], about="the bike's tyres, freewheel, chain, wind, bell and knocks"),
+             outputs=[out / 'audio' / 'bike' / 'manifest.json'],
+             products=[Product('audio.bike', (out / 'audio' / 'bike',))], about="the bike's tyres, freewheel, chain, wind, bell and knocks"),
         # Only what make.py reads: itself, the skate and bike DSP helpers, the combat fetch list (for the manifest's
         # md5s) and the four combat masters it layers (TRANSPORT_MASTERS).
         Step('audio.transport', [Python(AUDIO / 'transport' / 'make.py')],
              inputs=[AUDIO / 'transport' / 'make.py', AUDIO / 'skate' / 'make.py', AUDIO / 'bike' / 'make.py', AUDIO / 'combat' / 'fetch.py',
                      *(paths.cache_dir('sonniss', 'combat', create=False) / name for name in TRANSPORT_MASTERS)],
              outputs=[out / 'audio' / 'transport' / 'manifest.json'],
+             products=[Product('audio.transport', (out / 'audio' / 'transport',))],
              about="the ferry's, gondolas' and zeppelin's engines, wash, wind, horns, bells, gates and doors"),
         Step('audio.kart', [Python(AUDIO / 'kart' / 'make.py')], inputs=[AUDIO / 'kart', AUDIO / 'skate' / 'make.py'],
-             outputs=[out / 'audio' / 'kart' / 'manifest.json'], about="the kart's engine, tyres, skid, wind, impacts and suspension knocks"),
+             outputs=[out / 'audio' / 'kart' / 'manifest.json'],
+             products=[Product('audio.kart', (out / 'audio' / 'kart',))], about="the kart's engine, tyres, skid, wind, impacts and suspension knocks"),
         # The Suno library is optional: naming `audio.music` or `unreal.music` selects
         # only the tracks requested by YORIMICHI_MUSIC_* selectors. A plain build
         # never downloads or imports the large release.
@@ -1418,6 +1422,23 @@ def sound_effect_steps(ctx):
         Step('fx.textures', [Python(ASSETS / 'fx' / 'gen_textures.py')], inputs=[ASSETS / 'fx'],
              outputs=[out / 'combat_fx' / 'T_FX_Glow.png'], about='glow, spark, ring, dust and trail sprites'),
     ]
+
+
+def sound_native_products(out):
+    """@cc [owner:fontanierh,label:correctness] complete-native-audio-inventory
+    The native audio owner MUST inventory every saved wave, its typed footstep library,
+    attenuation, supported sidecars and all six import reports. A world import MUST NOT
+    delete those independent packages. These native products MUST NOT use portable caching.
+    """
+    content = GAME / 'unreal/Content'
+    fixed = [content / f'Japan/Audio/{name}.uasset' for name in ('A_Footstep', 'DA_Footsteps')]
+    return [Product('audio.native', (
+        content / 'Japan/Audio/Footsteps', *fixed,
+        *(content / 'Audio' / name for name in ('Combat', 'Skate', 'Bike', 'Transport', 'Driving')),
+        *(out / f'{name}_import.json' for name in
+          ('footsteps', 'combat_audio', 'skate_audio', 'bike_audio', 'transport_audio', 'driving_audio')),
+    ), optional_paths=tuple(path.with_suffix(suffix) for path in fixed
+                            for suffix in ('.uexp', '.ubulk', '.uptnl', '.m.ubulk', '.upayload')))]
 
 
 def unreal_steps(ctx):
@@ -1569,16 +1590,19 @@ def unreal_steps(ctx):
              outputs=[GAME / 'unreal' / 'Content' / 'CraterPark' / 'Cloud' / f'{name}.uasset' for name in ('M_CraterCloud', 'M_CraterCloudVeil')],
              heavy=True, about="the cap cloud's translucent materials, plain and blurring veil (/Game/CraterPark/Cloud)"),
         Step('unreal.sounds', [
-                UnrealScript(SCRIPTS / 'import_footsteps.py', 'FOOTSTEP IMPORT COMPLETE'),
-                UnrealScript(SCRIPTS / 'import_combat_audio.py', 'COMBAT AUDIO IMPORT COMPLETE'),
-                UnrealScript(SCRIPTS / 'import_skate_audio.py', 'SKATE AUDIO IMPORT COMPLETE'),
-                UnrealScript(SCRIPTS / 'import_bike_audio.py', 'BIKE AUDIO IMPORT COMPLETE'),
-                UnrealScript(SCRIPTS / 'import_transport_audio.py', 'TRANSPORT AUDIO IMPORT COMPLETE'),
-                UnrealScript(SCRIPTS / 'import_driving_audio.py', 'DRIVING AUDIO IMPORT COMPLETE')],
-             inputs=[SCRIPTS / 'import_footsteps.py', SCRIPTS / 'import_combat_audio.py', SCRIPTS / 'import_skate_audio.py', SCRIPTS / 'import_bike_audio.py',
+                UnrealScript(SCRIPTS / 'import_footsteps.py', 'FOOTSTEP IMPORT COMPLETE', modules=SAVED_TYPES),
+                UnrealScript(SCRIPTS / 'import_combat_audio.py', 'COMBAT AUDIO IMPORT COMPLETE', modules=SAVED_TYPES),
+                UnrealScript(SCRIPTS / 'import_skate_audio.py', 'SKATE AUDIO IMPORT COMPLETE', modules=SAVED_TYPES),
+                UnrealScript(SCRIPTS / 'import_bike_audio.py', 'BIKE AUDIO IMPORT COMPLETE', modules=SAVED_TYPES),
+                UnrealScript(SCRIPTS / 'import_transport_audio.py', 'TRANSPORT AUDIO IMPORT COMPLETE', modules=SAVED_TYPES),
+                UnrealScript(SCRIPTS / 'import_driving_audio.py', 'DRIVING AUDIO IMPORT COMPLETE', modules=SAVED_TYPES)],
+             inputs=[YORI, paths.STUDIO / 'atelier/native_packages.py', SCRIPTS / 'import_footsteps.py', SCRIPTS / 'import_combat_audio.py', SCRIPTS / 'import_skate_audio.py', SCRIPTS / 'import_bike_audio.py',
                      SCRIPTS / 'import_transport_audio.py', SCRIPTS / 'import_driving_audio.py'],
-             # The footstep library lives in /Game/Japan, which the world import clears, so a world import reruns this.
-             needs=['unreal.world', 'audio.footsteps', 'audio.combat', 'audio.skate', 'audio.kart', 'audio.bike', 'audio.transport'], heavy=True,
+             # Footsteps have their own package owner; the world must preserve them.
+             # The persisted library type lives in the small saved-type module.
+             needs=unreal_modules.needs(SAVED_TYPES),
+             reads=['audio.footsteps', 'audio.combat', 'audio.skate', 'audio.kart', 'audio.bike', 'audio.transport'], heavy=True,
+             products=sound_native_products(out),
              about='footstep library, combat, skate, bike, transport and driving sounds'),
         Step('unreal.music', [UnrealScript(SCRIPTS / 'import_music.py', 'MUSIC IMPORT COMPLETE', null_rhi=True)],
              inputs=[SCRIPTS / 'import_music.py', SCRIPTS / 'music_inventory.py', AUDIO / 'music' / 'prepare.py'],

@@ -16,6 +16,7 @@ import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_
 import json
 from pathlib import Path
 import unreal as U
+from atelier.native_packages import save as save_native_package
 
 ROOT = yori.OUT
 SOURCE = ROOT / 'audio' / 'footsteps'
@@ -80,7 +81,7 @@ def import_surface(surface, files):
                     wave.set_editor_property(key, value)
                 except Exception:
                     pass
-            E.save_loaded_asset(wave, only_if_is_dirty=False)
+            save_native_package(wave, E, yori.GAME / "unreal/Content")
             waves.append(wave)
     return waves
 
@@ -101,7 +102,7 @@ def build_attenuation():
         except Exception as error:
             log(f'  attenuation {key} skipped: {error}')
     attenuation.set_editor_property('attenuation', settings)
-    E.save_loaded_asset(attenuation)
+    save_native_package(attenuation, E, yori.GAME / "unreal/Content")
     return attenuation
 
 
@@ -134,7 +135,7 @@ def main():
                            default_surface=U.Name('grass'),
                            canopy_surface=U.Name('leaves')).items():
         library.set_editor_property(key, value)
-    E.save_loaded_asset(library)
+    save_native_package(library, E, yori.GAME / "unreal/Content")
 
     (ROOT / 'footsteps_import.json').write_text(
         json.dumps({'surfaces': report, 'total': sum(report.values()),

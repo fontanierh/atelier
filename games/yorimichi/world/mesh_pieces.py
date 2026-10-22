@@ -71,7 +71,11 @@ def subset(source, members):
 
 
 def create_mesh(name, piece):
-    """Create and read back the actual child; caller owns its object, placement, export and disposal."""
+    """@cc [owner:fontanierh,label:correctness] exact-static-piece-corner-normals
+    Captured float32 normals MUST remain bitwise identical in the child corner stream.
+    Use Blender's FLOAT_VECTOR CORNER custom_normal attribute; the convenience setter
+    encodes short2 fan-space normals and MUST NOT silently quantize this source boundary.
+    """
     import bpy
     data = bpy.data.meshes.new(name)
     data.from_pydata(piece['positions'].tolist(), [], piece['faces'])
@@ -80,13 +84,17 @@ def create_mesh(name, piece):
         data.materials.append(material)
     data.polygons.foreach_set('material_index', piece['materials'])
     data.polygons.foreach_set('use_smooth', piece['smooth'])
-    data.normals_split_custom_set(piece['normals'].tolist())
+    normals = data.attributes.new(name='custom_normal', type='FLOAT_VECTOR', domain='CORNER')
+    if (normals.name != 'custom_normal' or normals.data_type != 'FLOAT_VECTOR'
+            or normals.domain != 'CORNER' or len(normals.data) != len(piece['normals'])):
+        raise ValueError('Missing exact static mesh corner normal storage')
+    normals.data.foreach_set('vector', piece['normals'].ravel())
     for name, uv in piece['uvs']:
         data.uv_layers.new(name=name).data.foreach_set('uv', uv.ravel())
     for name, domain, kind, colour in piece['colours']:
         data.color_attributes.new(name=name, type=kind, domain=domain).data.foreach_set('color', colour.ravel())
     if (not np.array_equal(values(data.vertices, 'co', 3), piece['positions'])
-            or not np.allclose(values(data.corner_normals, 'vector', 3), piece['normals'], atol=2e-5, rtol=0)
+            or values(data.corner_normals, 'vector', 3).tobytes() != piece['normals'].tobytes()
             or not np.array_equal(values(data.polygons, 'material_index', 1, np.int32), piece['materials'])
             or not np.array_equal(values(data.polygons, 'use_smooth', 1, np.bool_), piece['smooth'])):
         raise ValueError('Static mesh piece geometry/material/normal readback differs')
