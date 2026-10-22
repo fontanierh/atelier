@@ -182,12 +182,12 @@ void UZeppelinAudioComponent::Evaluate(float Dt)
 }
 
 // --------------------------------------------------------------------------------------------- ferry
-namespace { enum { FerryEngine, FerryThruster, FerryWash, FerryMoorings }; }
+namespace { enum { FerryEngineIdle, FerryEngine, FerryThruster, FerryWash, FerryMoorings }; }
 
 UTransportAudioComponent::FBankSpec UFerryAudioComponent::Bank() const
 {
  FBankSpec S;
- S.Loops={{TEXT("ferry_engine"),.8f,.5f},{TEXT("ferry_thruster"),2.f,1.f},{TEXT("ferry_wash"),1.f,.7f},{TEXT("ferry_moorings"),.5f,.6f}};
+ S.Loops={{TEXT("ferry_engine_idle"),.8f,.5f},{TEXT("ferry_engine"),.8f,.5f},{TEXT("ferry_thruster"),2.f,1.f},{TEXT("ferry_wash"),1.f,.7f},{TEXT("ferry_moorings"),.5f,.6f}};
  S.Cues={TEXT("ferry_horn_depart"),TEXT("ferry_horn_arrive"),TEXT("ferry_brow_open"),TEXT("ferry_brow_close"),TEXT("ferry_fender")};
  // A ship some 60 m long: full volume along her side, and the horn carries across the harbour.
  S.InnerRadius=2500.f;S.Falloff=18000.f;S.Far=3.f;
@@ -211,10 +211,14 @@ void UFerryAudioComponent::Evaluate(float Dt)
 {
  if(!bPrimed)return;
  const bool bBerthed=Phase==EFerryAudioPhase::Berthed;
- // Idle .62, manoeuvring about .77, cruise 1 (the loop is the cruise); at berth only a low idle thrum.
- SetLoop(FerryEngine,bBerthed?.18f:.3f+.6f*Throttle01,.62f+.38f*FMath::Pow(Throttle01,.8f));
+ // Equal-power crossfade from the slow 6-cylinder idle chug to the loaded cruise diesel as throttle rises.
+ const float Spool=FMath::SmoothStep(0.08f,0.65f,Throttle01);
+ const float IdleGain=bBerthed?.26f:.65f*FMath::Cos(Spool*HALF_PI);
+ const float CruiseGain=bBerthed?0.f:(.35f+.55f*Throttle01)*FMath::Sin(Spool*HALF_PI);
+ SetLoop(FerryEngineIdle,IdleGain,bBerthed?.96f:.98f+.14f*Throttle01);
+ SetLoop(FerryEngine,CruiseGain,.88f+.20f*FMath::Pow(Throttle01,.8f));
  SetLoop(FerryThruster,.8f*Thruster,.85f+.3f*Thruster);
- const float Wash=FMath::Clamp((WaterSpeed>=0.f?WaterSpeed:GetMeasuredSpeed())/800.f,0.f,1.f);
+ const float Wash=FMath::Clamp((WaterSpeed>=0.f?WaterSpeed:GetMeasuredSpeed())/1200.f,0.f,1.f);
  SetLoop(FerryWash,.85f*Wash,.8f+.3f*Wash);
  SetLoop(FerryMoorings,bBerthed?.6f:0.f);
 }
