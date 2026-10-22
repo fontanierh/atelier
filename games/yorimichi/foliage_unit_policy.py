@@ -6,7 +6,7 @@ import re
 import subprocess
 
 
-WITNESS_SHA256 = '4fcffaa5557389929857fdc81bce616fe34efb10d3a1288eeb9be6574da0b424'
+WITNESS_SHA256 = '7961fb2a001bcf2d24e317f7824019822c42686af4600c0432f1d02ca1d78c5f'
 MAX_SOURCE = 8 * 1024 * 1024
 USED_SLOT_PREPASS = '    // Imported meshes can retain unused seed-material slots. They still belong\n    // in the slot table, but no exported corner samples their palette.\n    TSet<int32> UsedSlots;\n    for (const FTriangleID Triangle : Description.Triangles().GetElementIDs())\n    {\n        const FName Name=SlotNames[Description.GetTrianglePolygonGroup(Triangle)];\n        int32 Used=Source->GetMaterialIndex(Name);\n        if (Used==INDEX_NONE)\n            for (int32 I=0;I<Source->GetStaticMaterials().Num();++I)\n                if (Source->GetStaticMaterials()[I].ImportedMaterialSlotName==Name) { Used=I;break; }\n        if (!Source->GetStaticMaterials().IsValidIndex(Used)) return false;\n        UsedSlots.Add(Used);\n    }\n'
 
@@ -124,6 +124,10 @@ def legacy_policies(game_root, *, engine_version, environment, runtime):
     and every native admission check MUST stay unchanged.
     The reviewed unused-slot prepass MAY avoid palette work only for slots referenced
     by no exported triangle; it MUST preserve every emitted corner/sample.
+    Reviewed screen replay MAY apply the declared current LOD screens through the
+    public editor setter after build, material binding and triangle readiness, before
+    save and unchanged strict native validation. It MUST NOT change geometry, material
+    bindings or relax the requested screen thresholds/readback.
     Every current source pin, ordered original Git byte, exact retained compiled-module
     record and current engine/runtime context MUST match; missing evidence MUST miss.
     The independent preparation module MUST retain the paired original palette and
