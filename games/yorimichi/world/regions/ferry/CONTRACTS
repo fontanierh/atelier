@@ -4,3 +4,11 @@ arrival/departure manoeuvres, boarding endpoints and world cuts MUST come from t
 data checked against the final exported world. Missing seabed, failed audits and stale source or
 export identities MUST refuse production generation and import. The normal build and packaging graph
 MUST include the preparation, access cut, import and runtime staging.
+
+@cc [owner:fontanierh,label:correctness] ferry-natural-motion
+Production ferry manoeuvres and sea crossings MUST sail continuous boat trajectories with no pivoting
+in place (yaw rate <= 3 deg/s and zero yaw while |speed| < 0.5 m/s), lateral drift speed <= 0.3 m/s
+everywhere (<= 0.5 m/s within 10 m of a berth), turn radius >= 3 hull lengths (240 m) at sea and >= 1
+hull length (80 m) at <= 2.0 m/s in harbour, curved astern legs at <= 1.5 m/s for at most 1.5 hull
+lengths (120 m) separated from ahead legs by a full stop with zero yaw, and a straight aligned final
+approach of at least 15 m into each berth.

@@ -73,4 +73,4 @@ def crossing(start, end, spec):
 
 def length(moves):
     """Metres sailed along the moves (ahead and arc)."""
-    return sum(abs(m[1]) if m[0] == 'ahead' else abs(m[1] * math.radians(m[2])) for m in moves)
+    return sum(abs(m[1]) if m[0] in ('ahead', 'berth') else abs(m[1] * math.radians(m[2])) for m in moves)

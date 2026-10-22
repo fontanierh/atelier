@@ -213,3 +213,77 @@ def test_hidamari_landing_waypoints_match_the_two_flight_stair(quay):
     assert route[7][2] == pytest.approx(landing_cm, abs=.005)
     assert abs(route[6][1] - route[7][1]) == pytest.approx(120.)
     assert list(reversed(route))[6][2] == pytest.approx(landing_cm, abs=.005)
+
+
+def test_harbour_and_sea_paths_obey_natural_motion_constraints(site):
+    """Pin the natural boat-motion rules for Hidamari, Brinecove and both sea crossings."""
+    hull_length = 80.0
+    berths = {'hidamari': (855., -145., 180.), 'brinecove': (-251.2, 10., 90.)}
+    origins = {'hidamari': (0., 0.), 'brinecove': (-1500., -120.)}
+    move_fns = {'hidamari': site.hidamari_moves, 'brinecove': site.brinecove_moves}
+    harbours = {}
+    for name, fn in move_fns.items():
+        (arr_start, arr_moves), (dep_start, dep_moves) = fn(berths[name])
+        arr_end = site.poses(arr_start, arr_moves)[-1]
+        dep_end = site.poses(dep_start, dep_moves)[-1]
+        harbours[name] = {
+            'origin_m': list(origins[name]),
+            'arrival': {'start': list(arr_start), 'moves': arr_moves,
+                        'end': [arr_end[0], arr_end[1], math.degrees(arr_end[2])]},
+            'departure': {'start': list(dep_start), 'moves': dep_moves,
+                          'end': [dep_end[0], dep_end[1], math.degrees(dep_end[2])]},
+        }
+        # No pivoting in place or pure sideways moves; final approach is >= 15 m straight and aligned.
+        for mv in arr_moves + dep_moves:
+            assert mv[0] in ('ahead', 'arc', 'berth')
+            if mv[0] == 'berth':
+                assert len(mv) == 3 and abs(mv[1]) >= 15.0
+            if mv[0] == 'arc':
+                assert abs(mv[1]) >= hull_length
+        assert arr_moves[-1][0] == 'berth' and arr_moves[-1][1] >= 15.0
+        # Astern portion is <= 1.5 hull lengths (120 m) and includes a curved arc.
+        astern_legs = [mv for mv in dep_moves if mv[1] < 0]
+        astern_len = route.length(astern_legs)
+        assert 0.0 < astern_len <= 1.5 * hull_length
+        assert any(mv[0] == 'arc' for mv in astern_legs)
+
+    crossings = {}
+    for cname, spec in route.CROSSINGS.items():
+        frm, to = spec['from'], spec['to']
+        oa, ob = origins[frm], origins[to]
+        de = harbours[frm]['departure']['end']
+        as_ = harbours[to]['arrival']['start']
+        start = (de[0] + oa[0], de[1] + oa[1], de[2])
+        end = (as_[0] + ob[0], as_[1] + ob[1], as_[2])
+        pose, c_moves = route.crossing(start, end, spec)
+        for mv in c_moves:
+            if mv[0] == 'arc':
+                assert abs(mv[1]) >= 3.0 * hull_length
+        crossings[cname] = {'start': list(pose), 'moves': c_moves, 'end': list(end), 'pass': True}
+
+    cycle = service.cycle_from({**harbours, 'crossings': crossings})
+    _, states = TT.sample(cycle, 0.25)
+    prev_long = 0.0
+    stopped_since_astern = True
+    for s in states:
+        h_rad = math.radians(s['h'])
+        v_long = s['vx'] * math.cos(h_rad) + s['vy'] * math.sin(h_rad)
+        v_lat = -s['vx'] * math.sin(h_rad) + s['vy'] * math.cos(h_rad)
+        # Yaw rate <= 3 deg/s everywhere, and no yaw while |speed| < 0.5 m/s.
+        assert abs(s['w']) <= 3.0 + 1e-6
+        if abs(s['speed']) < 0.5:
+            assert abs(s['w']) == pytest.approx(0.0, abs=1e-6)
+        # Lateral (crab) speed <= 0.3 m/s everywhere (and <= 0.5 m/s in the last 10 m).
+        assert abs(v_lat) <= 0.3 + 1e-6
+        # Harbour speed <= 2.0 m/s; astern speed <= 1.5 m/s.
+        if s['phase'] in ('departing', 'approach'):
+            assert s['speed'] <= 2.0 + 1e-6
+        if v_long < -1e-6:
+            assert abs(v_long) <= 1.5 + 1e-6
+            stopped_since_astern = False
+        if s['speed'] == 0.0 and s['w'] == 0.0:
+            stopped_since_astern = True
+        if v_long > 1e-6 and prev_long < -1e-6:
+            assert stopped_since_astern
+        if abs(v_long) > 1e-6:
+            prev_long = v_long

@@ -87,17 +87,25 @@ def place(poly, x, y, heading):
 
 def poses(start, moves):
     """start (x, y, heading deg; heading 0 = east, 90 = north). Moves: ('ahead', m) (negative = astern),
-    ('crab', m) (positive = to port), ('berth', m) (a crab onto or off the berth), ('pivot', deg) (positive = to port), ('arc', radius, deg) (ahead, port +),
+    ('crab', m) (positive = to port), ('berth', m) or ('berth', ahead_m, drift_m), ('pivot', deg) (positive = to port),
+    ('arc', radius, deg[, drift_m]) (ahead if radius > 0 else astern, port +),
     ('move', dx, dy) (a world-frame glide on engines and thrusters, heading held)."""
     x, y, h = start[0], start[1], math.radians(start[2])
     out = [(x, y, h, 'start')]
     for mv in moves:
         kind = mv[0]
         if kind in ('ahead', 'crab', 'berth'):
-            d = mv[1]; n = max(1, int(abs(d) / 0.5))
-            ux, uy = (math.cos(h), math.sin(h)) if kind == 'ahead' else (-math.sin(h), math.cos(h))
+            if kind in ('crab', 'berth') and len(mv) == 2:
+                ds, dl = 0.0, float(mv[1])
+            else:
+                ds = float(mv[1])
+                dl = float(mv[2]) if len(mv) > 2 else 0.0
+            L = max(abs(ds), abs(dl))
+            n = max(1, int(L / 0.5))
+            ch, sh = math.cos(h), math.sin(h)
             for k in range(1, n + 1):
-                out.append((x + ux * d * k / n, y + uy * d * k / n, h, kind))
+                u = k / n
+                out.append((x + (ds * ch - dl * sh) * u, y + (ds * sh + dl * ch) * u, h, kind))
             x, y = out[-1][:2]
         elif kind == 'move':
             n = max(1, int(math.hypot(mv[1], mv[2]) / 0.5))
@@ -110,12 +118,21 @@ def poses(start, moves):
                 out.append((x, y, h0 + math.radians(mv[1]) * k / n, kind))
             h = out[-1][2]
         elif kind == 'arc':
-            R, deg = mv[1], mv[2]; sgn = 1 if deg > 0 else -1
-            cx, cy = x - sgn * R * math.sin(h), y + sgn * R * math.cos(h)
-            n = max(1, int(abs(R * math.radians(deg)) / 0.5)); h0 = h
+            R, deg = float(mv[1]), float(mv[2])
+            dl = float(mv[3]) if len(mv) > 3 else 0.0
+            s_dir = 1.0 if R >= 0.0 else -1.0
+            L = abs(R * math.radians(deg))
+            curv = math.radians(deg) / L
+            dr = dl / L if L > 0 else 0.0
+            n = max(1, int(L / 0.5))
+            x0, y0, h0 = x, y, h
+            sh0, ch0 = math.sin(h0), math.cos(h0)
             for k in range(1, n + 1):
-                hk = h0 + math.radians(deg) * k / n
-                out.append((cx + sgn * R * math.sin(hk), cy - sgn * R * math.cos(hk), hk, kind))
+                a = L * k / n
+                hk = h0 + curv * a
+                ic = (math.sin(hk) - sh0) / curv
+                is_ = (ch0 - math.cos(hk)) / curv
+                out.append((x0 + s_dir * ic - dr * is_, y0 + s_dir * is_ + dr * ic, hk, kind))
             x, y, h = out[-1][:3]
         else:
             raise ValueError(kind)
