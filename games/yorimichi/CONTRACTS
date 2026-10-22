@@ -1,0 +1,6 @@
+@cc [owner:fontanierh,label:correctness;performance] world-import-preserves-reuse-evidence
+A normal world import MUST NOT delete its receiving namespace before current source,
+settings and native validation can decide per-package reuse. Existing or unknown assets
+MUST NOT be mistaken for certified current outputs merely because they are preserved.
+Retirement MUST be restricted to an explicit owning producer's complete known obsolete
+membership after successful replacement validation and external-reference preflight.

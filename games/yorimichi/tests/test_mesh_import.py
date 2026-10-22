@@ -87,6 +87,7 @@ def importer(monkeypatch, tmp_path):
     )
     monkeypatch.setitem(sys.modules, 'unreal', fake)
     script = Path(__file__).resolve().parents[1] / 'unreal/Scripts/mesh_import.py'
+    monkeypatch.syspath_prepend(str(script.parent))
     spec = importlib.util.spec_from_file_location('fixture_mesh_import', script)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -221,7 +222,7 @@ def test_hidamari_terrain_reimport_replaces_seed_slots_and_keeps_terrain_materia
         generic = []
         owner = dict(__file__=str(script), OUT=str(tmp_path), os=os, glob=glob,
                      EAL=p.unreal.EditorAssetLibrary, unreal=p.unreal, FOLIAGE=set(),
-                     purge=lambda: None, material_bindings=lambda: {},
+                     purge=lambda: pytest.fail("Upfront purge would destroy reusable packages"), material_bindings=lambda: {},
                      instance=lambda *args: forest, forest_ground_material=lambda: object(),
                      import_fbx=lambda *args: generic.append(args), assign=lambda *args: None,
                      build_level=lambda mesh, *args: built.append(mesh))
@@ -404,7 +405,7 @@ def test_world_without_city_retains_terrain_import_binding_and_collision(tmp_pat
     monkeypatch.setattr(runpy, 'run_path', lambda *args, **kwargs: {})
     owner = dict(__file__=str(script), OUT=str(tmp_path), os=os,
                  glob=SimpleNamespace(glob=lambda pattern: []), EAL=library, unreal=unreal, FOLIAGE=set(),
-                 purge=lambda: None, material_bindings=lambda: {}, instance=lambda *args: forest,
+                 purge=lambda: pytest.fail("Upfront purge would destroy reusable packages"), material_bindings=lambda: {}, instance=lambda *args: forest,
                  forest_ground_material=lambda: object(),
                  import_fbx=lambda *args: calls.append(('import', *args)),
                  assign=lambda *args: calls.append(('bind', *args)),

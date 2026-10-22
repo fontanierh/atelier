@@ -17,9 +17,10 @@ def import_mesh(path, dest, name, *, seed=None, fresh_slots=False):
     UE converts Interchange import data to legacy FBX defaults before applying task options.
     That first pass must establish FBX data so the final pass can synchronize unit settings.
     """
+    from city_parent_transition import excluded_packages
     mesh, reuse = common_fbx_mesh(path, dest, name, fresh_slots=fresh_slots,
                                   script=__file__, functions=('_source_mesh',), validator=legacy_options_match,
-                                  validation_functions=('legacy_options_match',),
+                                  validation_functions=('legacy_options_match',), owner_transition=excluded_packages,
                                   owner_roots=(Path(__file__).resolve().parents[2] / 'world',
                                                Path(__file__).resolve().parents[2] / 'world/regions'))
     if mesh is None:

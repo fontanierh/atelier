@@ -2,7 +2,7 @@
 
     "$UE/Engine/Binaries/Mac/UnrealEditor-Cmd" "$PROJ/Yorimichi.uproject" -run=pythonscript -script="$PROJ/Scripts/setup_project.py" -unattended -nop4 -nosplash
 
-- replaces legacy /Game/Japan assets, preserving independent material, foliage and footstep owners
+- replaces legacy /Game/Japan assets, preserving independent material and foliage owners
 - imports props, terrain, sea and the traveler, and binds the shared materials by stable path
 - builds the level /Game/Japan/Maps/Slice: terrain, sun, sky light, fog, post-process, player start
 """
@@ -72,7 +72,7 @@ def purge():
             EAL.delete_asset(str(a.package_name))
         except Exception as e:
             LOG(f"  purge failed for {a.package_name}: {e}")
-    LOG("purged legacy world packages; preserved independent material, foliage and footstep owners")
+    LOG("purged legacy world packages; preserved independent material and foliage owners")
 
 
 
@@ -179,7 +179,9 @@ def main():
         raise RuntimeError('JAPAN_ONLY is retired; select unreal.materials or unreal.foliage.<asset>')
     import json
     W = json.load(open(os.path.join(OUT, "world.json")))
-    purge()
+    # Preserve receiving packages for per-source native validation/reuse.
+    # Explicit owners retire proven obsolete members after replacements succeed;
+    # an upfront namespace purge destroys that evidence and foreign owners.
     MI = {name: EAL.load_asset(path) for name, path in material_bindings().items()}
     if not all(MI.values()):
         raise RuntimeError('Build unreal.materials before importing the world')

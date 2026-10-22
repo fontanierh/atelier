@@ -1,0 +1,83 @@
+"""Exact membership-only compatibility proof for the city parent handoff.
+
+This does not certify geometry or packages. The native adapter must separately
+reproduce the original receipt policy, source bytes, sidecars and current checks.
+"""
+import ast
+
+PARENTS = ('HD_Terrain', 'HD_Streets', 'HD_Square')
+IMPORTER = 'games/yorimichi/unreal/Scripts/import_hidamari.py'
+CATALOG = 'games/yorimichi/world/asset_catalog.py'
+SETUP = 'games/yorimichi/unreal/Scripts/setup_project.py'
+
+
+def _remove_current_branch(tree, path):
+    """Remove exactly one known delegation statement, with its exact location."""
+    if path == IMPORTER:
+        blocks = [node.body for node in tree.body if isinstance(node, ast.For)
+                  and ast.dump(node.target) == ast.dump(ast.parse('for name, entry in manifest.items(): pass').body[0].target)
+                  and ast.dump(node.iter) == ast.dump(ast.parse('manifest.items()', mode='eval').body)]
+        expected = ast.parse("if name in ('HD_Terrain', 'HD_Streets', 'HD_Square'):\n    continue").body[0]
+        # It must follow the original selection filter, before source import.
+        index = 1
+    elif path == CATALOG:
+        blocks = [node.body for node in tree.body if isinstance(node, ast.FunctionDef)
+                  and node.name == 'independently_owned']
+        expected = ast.parse("if package in {'/Game/Japan/Assets/'+name for name in "
+                             "('HD_Terrain', 'HD_Streets', 'HD_Square')}:\n    return True").body[0]
+        index = 1  # the original function docstring still occupies the first slot
+    else:
+        return False
+    if len(blocks) != 1 or len(blocks[0]) <= index or ast.dump(blocks[0][index]) != ast.dump(expected):
+        return False
+    del blocks[0][index]
+    return True
+
+
+def _remove_previous_purge(tree):
+    """Normalize only the removed upfront namespace deletion, never imports."""
+    owners = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == 'main']
+    expected = ast.dump(ast.parse('purge()').body[0])
+    if len(owners) != 1:
+        return False
+    indices = [i for i, node in enumerate(owners[0].body) if ast.dump(node) == expected]
+    source_load = ast.parse("W = json.load(open(os.path.join(OUT, 'world.json')))").body[0]
+    if indices != [4] or ast.dump(owners[0].body[3]) != ast.dump(source_load):
+        return False
+    del owners[0].body[4]
+    return True
+
+
+def excluded_packages(previous, current):
+    """@cc [owner:fontanierh,label:correctness] exact-city-delegation-owner-transition
+    Original source texts MUST come from the invocation-bound producing inputs.
+    Recovered member projections MUST have identical keys. An exact ORIGINAL
+    local receipt header MUST independently prove full historical closure membership;
+    receiptless bootstrap and donor transitions MUST remain disabled. Only
+    the exact three-parent skip/delegation statements and removal of the upfront
+    main() purge call MAY differ; imports and finishing MUST remain identical; every remaining AST MUST agree. These three generated
+    parent packages MUST be excluded from historical admission. No other source,
+    owner finishing, native validator or byte evidence MAY be relaxed. Unsupported
+    history MUST refuse and use the ordinary import path.
+    """
+    if (not isinstance(previous, dict) or not isinstance(current, dict)
+            or not previous or set(previous) != set(current)):
+        return None
+    changed = False
+    try:
+        for path in previous:
+            old = ast.parse(previous[path])
+            new = ast.parse(current[path])
+            if ast.dump(old) == ast.dump(new):
+                continue
+            if path == SETUP:
+                if not _remove_previous_purge(old):
+                    return None
+            elif path not in (IMPORTER, CATALOG) or not _remove_current_branch(new, path):
+                return None
+            if ast.dump(old) != ast.dump(new):
+                return None
+            changed = True
+    except (ValueError, TypeError, SyntaxError):
+        return None
+    return tuple('/Game/Japan/Assets/'+name for name in PARENTS) if changed else None

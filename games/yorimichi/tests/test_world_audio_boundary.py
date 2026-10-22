@@ -1,6 +1,4 @@
 """A world rebuild must preserve the independent footstep owner and its true type boundary."""
-import ast
-import importlib.util
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -11,32 +9,6 @@ from atelier import build, build_cache, build_products
 
 GAME = Path(__file__).resolve().parents[1]
 
-
-def catalog():
-    spec = importlib.util.spec_from_file_location('world_audio_catalog', GAME / 'world/asset_catalog.py')
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-def test_actual_world_purge_preserves_audio_bytes_and_keeps_legacy_cleanup():
-    owned = {'/Game/Japan/Audio/A_Footstep', '/Game/Japan/Audio/DA_Footsteps',
-             '/Game/Japan/Audio/Footsteps/wood/step_00', '/Game/Japan/Assets/Tree_Broad_A'}
-    legacy = {'/Game/Japan/Audio/UnknownLegacy', '/Game/Japan/Audio/FootstepsOld/step',
-              '/Game/Japan/Assets/OldProp'}
-    packages = {name: b'original saved package' for name in owned | legacy}
-    assets = [SimpleNamespace(package_name=name, asset_class_path=SimpleNamespace(asset_name='SoundWave'))
-              for name in packages]
-    registry = SimpleNamespace(get_assets_by_path=lambda *a, **k: assets)
-    unreal = SimpleNamespace(AssetRegistryHelpers=SimpleNamespace(get_asset_registry=lambda: registry))
-    script = GAME / 'unreal/Scripts/setup_project.py'
-    body = [node for node in ast.parse(script.read_text()).body
-            if isinstance(node, ast.FunctionDef) and node.name == 'purge']
-    namespace = {'unreal': unreal, 'independently_owned': catalog().independently_owned,
-                 'EAL': SimpleNamespace(delete_asset=lambda path: packages.pop(path)), 'LOG': lambda value: None}
-    exec(compile(ast.Module(body=body, type_ignores=[]), str(script), 'exec'), namespace)
-    namespace['purge']()
-    assert packages == {name: b'original saved package' for name in owned}
 
 
 def test_sound_key_uses_its_saved_type_and_audio_instead_of_the_world(tmp_path, monkeypatch):

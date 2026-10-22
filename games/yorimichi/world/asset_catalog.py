@@ -106,15 +106,7 @@ def material_bindings():
 
 
 def independently_owned(package):
-    """@cc [owner:fontanierh,label:correctness] independent-world-package-owners
-    The world purge MUST preserve independently produced shared materials, current foliage
-    and the footstep library, attenuation and surface waves. It MUST NOT claim similarly
-    named legacy siblings. Audio MUST have its own source and persisted-type dependencies.
-    """
-    if package in ('/Game/Japan/Audio/A_Footstep', '/Game/Japan/Audio/DA_Footsteps'):
-        return True
-    if package.startswith('/Game/Japan/Audio/Footsteps/'):
-        return True
+    """What the legacy world purge must preserve after these owners have run."""
     if package in shared_packages() or package in {'/Game/Japan/Assets/' + name for name in FOLIAGE}:
         return True
     return any(package.startswith('/Game/Japan/FoliageLODs/' + name + '/') for name in FOLIAGE)

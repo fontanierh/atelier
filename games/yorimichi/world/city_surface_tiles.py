@@ -14,6 +14,9 @@ from pathlib import Path
 import bpy
 import numpy as np
 from atelier.mesh_cells import cell_face_groups
+from atelier.conventions import to_unreal
+from atelier.model_files import regular_files, retain_files
+from atelier.atomic_files import atomic_json
 
 ROOT = yori.WORLD
 SOURCES = ('HD_Terrain', 'HD_Streets', 'HD_Square')
@@ -33,6 +36,11 @@ def partition(source, folder, size, expected):
     imported = [ob for ob in bpy.data.objects if ob not in before]
     meshes = [ob for ob in imported if ob.type == 'MESH' and not ob.name.startswith('UCX_')]
     assert len(meshes) == 1, (source, [ob.name for ob in meshes])
+    collision = [ob for ob in imported if ob.type == 'MESH' and ob.name.startswith('UCX_')]
+    assert len(collision) == expected['collision_boxes'], (source, 'authored collision membership')
+    assert len(meshes) + len(collision) == len(imported), (source, 'unsupported source object')
+    collision_vertices = [sorted([list(to_unreal(tuple(hull.matrix_world @ vertex.co)))
+                                  for vertex in hull.data.vertices]) for hull in collision]
     original = meshes[0]
     mesh = original.data
     # The sources share surface materials: a later import names its copies X.001, which would export as slot X_001.
@@ -64,8 +72,11 @@ def partition(source, folder, size, expected):
                              locations=centers[:, :2].tolist())
     tiles = []
     total_polygons = total_triangles = 0
+    face_owners = np.zeros(len(mesh.polygons), dtype=np.int32)
     for cx, cy, suffix, members in pieces:
         selected = np.asarray(members, dtype=np.int32)
+        assert len(selected) and (selected >= 0).all() and (selected < len(mesh.polygons)).all()
+        np.add.at(face_owners, selected, 1)
         loop_map = np.concatenate([np.arange(starts[i], starts[i] + counts[i]) for i in selected])
         used, remapped = np.unique(vertex_indices[loop_map], return_inverse=True)
         lengths = counts[selected]
@@ -100,25 +111,43 @@ def partition(source, folder, size, expected):
         ob.matrix_world = original.matrix_world.copy()
         bpy.ops.object.select_all(action='DESELECT')
         ob.select_set(True)
+        # Whole authored UCX belongs to one component. Other pieces still own
+        # their exact complex surface; no hidden render parent supplies physics.
+        collision_names = []
+        if not tiles:
+            for index, hull in enumerate(collision):
+                collision_names.append(hull.name)
+                hull.name = f'UCX_{name}_{index:02d}'
+                hull.select_set(True)
         bpy.context.view_layer.objects.active = ob
         destination = folder / (name + '.fbx')
         from atelier.blender.fbx import export_fbx as export_scene_fbx
-        export_scene_fbx(filepath=str(destination), use_selection=True,
-            apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL', axis_forward='-Y', axis_up='Z',
-            object_types={'MESH'}, mesh_smooth_type='FACE', bake_anim=False, use_custom_props=False)
+        try:
+            export_scene_fbx(filepath=str(destination), use_selection=True,
+                apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL', axis_forward='-Y', axis_up='Z',
+                object_types={'MESH'}, mesh_smooth_type='FACE', bake_anim=False, use_custom_props=False)
+        finally:
+            for hull, old_name in zip(collision, collision_names):
+                hull.name = old_name
         tri = int(sum(lengths - 2))
         assert tri <= TRIANGLE_LIMIT, (name, tri)
         bounds = world_positions[used]
         tiles.append(dict(name=name, polygons=len(selected), triangles=tri,
+                          collision_hulls=len(collision) if not tiles else 0,
                           min=bounds.min(axis=0).tolist(), max=bounds.max(axis=0).tolist(),
                           sha256=hashlib.sha256(destination.read_bytes()).hexdigest()))
         total_polygons += len(selected)
         total_triangles += tri
         bpy.data.objects.remove(ob, do_unlink=True)
         bpy.data.meshes.remove(data)
+    assert (face_owners == 1).all(), (source, 'every original face must have exactly one owner')
     assert total_polygons == len(mesh.polygons) and total_triangles == expected['triangles']
     result = dict(source_fbx_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
                   source_triangles=total_triangles, source_polygons=total_polygons,
+                  source_collision_hulls=len(collision),
+                  source_collision_vertices=collision_vertices,
+                  source_material_slots=[material.name for material in mesh.materials],
+                  source_bounds=dict(min=expected['min'],max=expected['max']),
                   source_matrix=matrix.tolist(), tiles=tiles,
                   attributes_verified=['positions', 'corner_normals', 'all_uvs', 'all_vertex_colours'])
     for ob in imported:
@@ -136,20 +165,26 @@ def main():
     parser.add_argument('--sources', nargs='+', choices=SOURCES, default=list(SOURCES))
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else [])
     assert args.tag.replace('_', '').isalnum() and 32 <= args.size <= 256
-    folder = yori.OUT / 'city_surface_tiles' / args.tag
-    if folder.exists():   # a rebuild replaces this tag's previous output
-        __import__('shutil').rmtree(folder)
-    folder.mkdir(parents=True, exist_ok=False)
+    root = yori.OUT / 'city_surface_tiles' / args.tag
     bpy.ops.wm.read_factory_settings(use_empty=True)
     expected = json.loads((yori.OUT / 'hidamari/manifest.json').read_text())
-    report = dict(tag=args.tag, cell_metres=args.size, triangle_limit=TRIANGLE_LIMIT, sources={})
     for source in args.sources:
-        report['sources'][source] = partition(source, folder, args.size, expected[source])
-        (folder / 'manifest.json').write_text(json.dumps(report, indent=2) + '\n')
-    report['complete'] = True
-    (folder / 'manifest.json').write_text(json.dumps(report, indent=2) + '\n')
-    print('CITY SURFACE TILES COMPLETE', args.tag,
-          sum(len(s['tiles']) for s in report['sources'].values()), flush=True)
+        folder = root / source
+        # This source exclusively owns this generated folder. Check all lexical
+        # ancestors and existing members before any write or retirement.
+        absolute = folder.absolute()
+        if any(path.is_symlink() for path in (absolute, *absolute.parents)):
+            raise ValueError('Linked city piece export root')
+        if folder.exists():
+            regular_files(folder)
+        folder.mkdir(parents=True, exist_ok=True)
+        row = partition(source, folder, args.size, expected[source])
+        report = dict(version=2, complete=True, tag=args.tag, cell_metres=args.size,
+                      triangle_limit=TRIANGLE_LIMIT, sources={source: row})
+        atomic_json(folder / 'manifest.json', report)
+        retain_files(folder, {'manifest.json', *(tile['name']+'.fbx' for tile in row['tiles'])})
+        print('CITY SURFACE SOURCE COMPLETE', source, len(row['tiles']), flush=True)
+    print('CITY SURFACE TILES COMPLETE', args.tag, flush=True)
 
 
 if __name__ == '__main__':
