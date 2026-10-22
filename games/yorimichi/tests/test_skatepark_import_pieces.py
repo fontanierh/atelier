@@ -2,10 +2,20 @@
 import ast
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import MagicMock
+import hashlib
+import json
 
 import pytest
 
 SCRIPT = Path(__file__).parents[1] / 'unreal/Scripts/import_skatepark.py'
+
+
+def function(name, namespace):
+    tree = ast.parse(SCRIPT.read_text())
+    node = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == name)
+    exec(compile(ast.Module(body=[node], type_ignores=[]), str(SCRIPT), 'exec'), namespace)
+    return namespace[name]
 
 
 class Properties:
@@ -95,3 +105,29 @@ def test_native_piece_refusal_stops_before_the_next_import_or_a_complete_report(
         exec(code, namespace)
     assert len(imports) == 1
     assert report['park'] == {}
+
+
+def test_failed_warm_texture_save_refuses_even_when_old_package_exists(tmp_path):
+    textures = tmp_path / 'textures'; textures.mkdir(); file = textures / 'concrete-albedo.png'
+    file.write_bytes(b'current texture source')
+    sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
+    texture = Properties()
+    namespace = dict(OUT=tmp_path, owned_textures=set(), sha=sha,
+                     E=SimpleNamespace(load_asset=lambda path: texture, does_asset_exist=lambda path: True,
+                                       get_metadata_tag=lambda *args: sha(file), save_loaded_asset=lambda value: False),
+                     unreal=SimpleNamespace(TextureCompressionSettings=SimpleNamespace(TC_NORMALMAP=1, TC_DEFAULT=2)))
+    with pytest.raises(AssertionError, match='texture save failed'):
+        function('texture', namespace)(file.name, 'T_Pier_concrete_albedo', 'albedo')
+
+
+def test_failed_warm_material_save_refuses_even_when_old_package_exists(tmp_path):
+    textures = tmp_path / 'textures'; textures.mkdir()
+    (textures / 'textures.json').write_text(json.dumps({'steel': {'maps': {'albedo': 'steel.png'}, 'metallic': 1.}}))
+    editing = MagicMock(); editing.connect_material_expressions.return_value = True
+    editing.connect_material_property.return_value = True
+    namespace = dict(OUT=tmp_path, json=json, unreal=MagicMock(), MEL=editing,
+                     texture=lambda *args: object(),
+                     E=SimpleNamespace(load_asset=lambda path: MagicMock(), does_asset_exist=lambda path: True,
+                                       save_loaded_asset=lambda value: False))
+    with pytest.raises(AssertionError, match='material save failed'):
+        function('materials', namespace)()

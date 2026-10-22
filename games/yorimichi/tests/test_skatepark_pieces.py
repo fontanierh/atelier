@@ -124,6 +124,20 @@ def test_export_failure_preserves_every_old_owned_file(tmp_path, damage):
     assert stale.read_bytes() == b'old complete'
 
 
+def test_linked_output_ancestor_refuses_before_writes_or_retirement(tmp_path):
+    external = tmp_path / 'external'; assets = external / 'assets'; assets.mkdir(parents=True)
+    rows = exports(assets); old = assets / (P.PARENTS[0] + '_Piece' + 'a' * 16 + '.fbx')
+    old.write_bytes(b'protected external file')
+    link = tmp_path / 'skatepark'; link.symlink_to(external, target_is_directory=True)
+    before = {p.name: p.read_bytes() for p in assets.iterdir()}
+    with pytest.raises(ValueError, match='ancestor'):
+        P.preflight_tree(link / 'new-directory')
+    with pytest.raises(ValueError, match='ancestor'):
+        P.retire_exports(link / 'assets', rows)
+    assert not (external / 'new-directory').exists()
+    assert {p.name: p.read_bytes() for p in assets.iterdir()} == before
+
+
 def test_native_presence_requires_every_package_and_optional_sidecar(tmp_path):
     out = tmp_path / 'build'; root = out / 'skatepark'; root.mkdir(parents=True)
     content = tmp_path / 'Content'; content.mkdir()
@@ -161,3 +175,13 @@ def test_normal_recipe_declares_complete_piece_products_native_owner_and_runtime
     assert recipe.WORLD / 'mesh_pieces.py' in steps['world.city_tiles'].inputs
     assert steps['unreal.skatepark'].commands[0].modules == recipe.IMPORT_CODE
     assert recipe.runtime_data.staged_source(tmp_path, 'skatepark/park.json') == tmp_path / 'skatepark/runtime-park.json'
+
+
+def test_real_portable_texture_fingerprint_has_complete_offline_closure(tmp_path):
+    recipe = build.load_recipe('yorimichi')
+    steps = {s.name: s for s in recipe.steps(SimpleNamespace(out=tmp_path, uproject=None))}
+    step = steps['world.skatepark_textures']
+    assert step.commands[0].script.name == 'pier_texture_finish.py'
+    assert not any('treehouse_art' in str(p) or '/atelier/ai/' in str(p) for p in step.inputs)
+    # Exercise named-product source admission, not only the visible graph metadata.
+    assert len(build.fingerprint(step, {})) == 64

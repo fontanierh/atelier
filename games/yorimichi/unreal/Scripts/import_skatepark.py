@@ -84,7 +84,7 @@ def texture(file, name, role):
     tex.set_editor_property('srgb', role == 'albedo')
     tex.set_editor_property('compression_settings', unreal.TextureCompressionSettings.TC_NORMALMAP if role == 'normal'
                             else unreal.TextureCompressionSettings.TC_DEFAULT)
-    E.save_loaded_asset(tex)
+    assert E.save_loaded_asset(tex), (name, 'texture save failed')
     return tex
 
 
@@ -127,7 +127,8 @@ def materials():
         MEL.connect_material_property(metal, '', unreal.MaterialProperty.MP_METALLIC)
         fill = node(unreal.MaterialExpressionMultiply, const_b=.035)
         link(colour, colour_output, fill, 'A'); MEL.connect_material_property(fill, '', unreal.MaterialProperty.MP_EMISSIVE_COLOR)
-        MEL.layout_material_expressions(m); MEL.recompile_material(m); E.save_loaded_asset(m)
+        MEL.layout_material_expressions(m); MEL.recompile_material(m)
+        assert E.save_loaded_asset(m), (name, 'material save failed')
         result['Pier_' + key] = m
     return result
 

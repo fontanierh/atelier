@@ -362,6 +362,7 @@ def park_json(pl, rails):
 def main():
     t0 = time.time()
     review = '--review' in sys.argv
+    pieces.preflight_tree(OUT)
     OUT.mkdir(parents=True, exist_ok=True); (OUT / 'assets').mkdir(exist_ok=True); (OUT / 'board').mkdir(exist_ok=True)
     pieces.preflight_root(OUT / 'assets')
     bpy.ops.wm.read_factory_settings(use_empty=True)

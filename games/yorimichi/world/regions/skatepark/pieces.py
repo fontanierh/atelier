@@ -29,9 +29,22 @@ def owned_name(name):
                                          for parent in PARENTS)
 
 
+def preflight_tree(folder):
+    """Reject links/special ancestors before creating, exporting or retiring generated files."""
+    folder = Path(folder).absolute()
+    for path in (*reversed(folder.parents), folder):
+        try:
+            mode = path.lstat().st_mode
+        except FileNotFoundError:
+            continue
+        if not stat.S_ISDIR(mode):
+            raise ValueError('Linked or non-directory generated pier ancestor: ' + str(path))
+
+
 def preflight_root(folder):
     """Refuse foreign/link outputs before an exporter can overwrite a prior path."""
     folder = Path(folder)
+    preflight_tree(folder)
     if folder.is_symlink() or not folder.is_dir():
         raise ValueError('Invalid generated pier export root')
     for path in folder.iterdir():
