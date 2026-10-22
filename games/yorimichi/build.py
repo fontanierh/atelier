@@ -180,7 +180,7 @@ def horse_import_inputs():
     manifest, the coat masks and variants, and each breed's GLBs."""
     variants = json.loads((HORSE_VARIANTS / 'manifest.json').read_text())['variants']
     return [SCRIPTS / 'import_horses.py', SCRIPTS / 'horse_data.py', SCRIPTS / 'animation_compression.py', YORI,
-            paths.STUDIO / 'atelier' / 'gltf.py',
+            paths.STUDIO / 'atelier' / 'gltf.py', paths.STUDIO / 'atelier/blender/__init__.py',
             HORSES / 'manifest.json', HORSE_VARIANTS / 'manifest.json',
             *(HORSES / 'coats' / f'T_Coat_{mask}_Mask.png' for mask in HORSE_LIBRARY['coat_masks']),
             *(HORSE_VARIANTS / v['file'] for v in variants),
@@ -1701,7 +1701,8 @@ def gondola_steps(ctx):
     result.append(Step('world.gondola_site',
                        [Blender(REGIONS / 'gondola/site.py',threads=3,factory_startup=True)],
                        inputs=[*validation.SITE_CODE, *[kit/name for name in parameters.BUILD_SOURCES],
-                               WORLD / 'solid_mesh.py', query, *craterpark_v4.input_paths(), YORI],
+                               WORLD / 'solid_mesh.py', query, *craterpark_v4.input_paths(), YORI,
+                               paths.STUDIO / 'atelier/blender/__init__.py', paths.STUDIO / 'atelier/blender/fbx.py'],
                        needs=['world.gondola_kit','world.gondola_ground','world.gondola_structures','world.craterpark_geometry','world.zeppelin'],
                        outputs=[folder/'world/site.json',*(folder/'world/assets'/f'{name}.fbx' for name in names)],
                        heavy=True,about='final station supports/access, exact rope paths and actual fitted-span contact gates'))
@@ -1804,8 +1805,9 @@ def steps(ctx):
             if isinstance(command, Blender):
                 # Exporter implementation bytes belong only to mesh-export actions.
                 fbx_helper = paths.STUDIO / 'atelier' / 'blender' / 'fbx.py'
-                if fbx_helper in scanner.local_imports(command.script) and fbx_helper not in step.inputs:
-                    step.inputs.append(fbx_helper)
+                if fbx_helper in scanner.local_imports(command.script):
+                    step.inputs += [path for path in (fbx_helper.parent / '__init__.py', fbx_helper)
+                                    if path not in step.inputs]
             if isinstance(command, (Python, Blender)) and WORLD in Path(command.script).parents:
                 step.inputs += [f for f in scanner.local_imports(command.script, (WORLD, REGIONS)) if f not in step.inputs]
         # The shared FBX boundary certifies cooked foliage roles using the import

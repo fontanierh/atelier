@@ -24,6 +24,8 @@ def test_raw_operator_rejected_before_execution(tmp_path, code):
 
 def test_strings_and_comments_are_not_export_operators(tmp_path):
     assert contract.violations(tmp_path / 'safe.py', '# bpy.ops.export_scene.fbx()\ns="export_scene.fbx"') == []
+    assert contract.violations(tmp_path / 'reader.py', 'from io_scene_fbx import parse_fbx') == []
+    assert contract.violations(tmp_path / 'reader.py', 'from io_scene_fbx.parse_fbx import parse') == []
 
 
 def test_exporter_input_required_from_nested_import_and_fresh_closure(tmp_path):

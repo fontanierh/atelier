@@ -48,6 +48,10 @@ def stable_export():
                         for entry in properties.elems:
                             if (entry.id == b'P' and entry.props
                                     and entry.props[0][4:] == b'Original|ApplicationNativeFile'):
+                                value = entry.props[-1]
+                                if (entry.props_type[0] != ord('S') or entry.props_type[-1] != ord('S')
+                                        or len(value) < 4 or struct.unpack('<I', value[:4])[0] != len(value)-4):
+                                    raise ValueError('Unsupported FBX authoring-file metadata layout')
                                 entry.props[-1] = struct.pack('<I', 0)
                                 normalized += 1
         if normalized != 1:

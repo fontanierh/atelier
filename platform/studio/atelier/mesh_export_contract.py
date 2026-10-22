@@ -33,7 +33,9 @@ def raw_fbx_lines(text):
                  or (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
                      and node.func.id == 'getattr' and len(node.args) >= 2 and namespace(node.args[0])
                      and isinstance(node.args[1], ast.Constant) and node.args[1].value == 'fbx')
-                 or (isinstance(node, ast.ImportFrom) and ((node.module or '').split('.')[0] == 'io_scene_fbx'
+                 or (isinstance(node, ast.ImportFrom) and (((node.module or '').split('.')[0] == 'io_scene_fbx'
+                         and not (node.module == 'io_scene_fbx.parse_fbx'
+                             or node.module == 'io_scene_fbx' and all(a.name == 'parse_fbx' for a in node.names)))
                      or node.module == 'bpy.ops.export_scene' and any(a.name == 'fbx' for a in node.names)))
                  or (isinstance(node, ast.Import) and any(alias.name.split('.')[0] == 'io_scene_fbx' for alias in node.names))}))
 

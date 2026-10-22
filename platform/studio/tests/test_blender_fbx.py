@@ -49,7 +49,7 @@ def test_adapter_is_scoped_and_clears_history_even_after_failure(monkeypatch):
 
 
 def node(name, children=(), props=()):
-    return SimpleNamespace(id=name, elems=list(children), props=list(props))
+    return SimpleNamespace(id=name, elems=list(children), props=list(props), props_type=b'S'*len(props))
 
 
 def string(value):
@@ -106,3 +106,14 @@ def test_unknown_exporter_header_layout_refuses(monkeypatch):
     monkeypatch.setitem(sys.modules, 'io_scene_fbx', SimpleNamespace(export_fbx_bin=exporter, fbx_utils=utils))
     with stable_export(), pytest.raises(ValueError, match='metadata layout'):
         exporter.fbx_header_elements(node(b''), None)
+
+
+def test_changed_metadata_property_type_refuses(monkeypatch):
+    entry = node(b'P', props=[string('Original|ApplicationNativeFile'), string('author.blend')])
+    entry.props_type = b'SI'
+    root = node(b'', [node(b'FBXHeaderExtension', [node(b'SceneInfo', [node(b'Properties70', [entry])])])])
+    exporter = SimpleNamespace(fbx_header_elements=lambda *a, **kw: None, _gen_vid_path=lambda *a: ('', ''))
+    utils = SimpleNamespace(_key_to_uuid=None, UUID=int, _keys_to_uuids={}, _uuids_to_keys={})
+    monkeypatch.setitem(sys.modules, 'io_scene_fbx', SimpleNamespace(export_fbx_bin=exporter, fbx_utils=utils))
+    with stable_export(), pytest.raises(ValueError, match='metadata layout'):
+        exporter.fbx_header_elements(root, None)

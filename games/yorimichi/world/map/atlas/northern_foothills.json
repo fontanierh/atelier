@@ -76,7 +76,7 @@
     "kind": "terrain-reference-revalidation",
     "geography": {
       "world/gen_world.py": "9763dfffa7b4c2e9c186d469124289fad26510254a7c16e15d6a1604ed26c4ef",
-      "world/build_terrain.py": "2a810d3a4698765c24044379e053f67e56817b90ab871b78814a2233d9515a09",
+      "world/build_terrain.py": "c00634b7dadc6ff98fe87ee4759f3a471dbe24cdf4c0c3d935fa835f6f9d6108",
       "world/farhills_surface.py": "4b2e2ab9cb3f8410a6725554de2c40a926da3091f89671af422de0884c69b3dc",
       "world/farhills_grid.py": "6451e5894c63e3eedcded121cef2f477a9615c36b1dd61715d16938ab53228c4",
       "world/terrain_product.py": "6d9dc77173d8edb5a5486154e0cc1004d7b649f9ed87b1f7e3aa4c5655ed84bd",
