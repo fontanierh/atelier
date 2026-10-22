@@ -248,7 +248,7 @@ def floor(height):
     for k in range(1700):
         x=r.uniform(600,720);y=r.uniform(61,89);z=float(height(x,y))+.084;a=r.random()*math.tau
         with m.at((x,y,z),math.degrees(a)):
-            m.poly([(-.105,0,0),(-.07,-.035,0),(-.075,-.07,0),(-.015,-.06,0),(.035,-.1,0),(.055,-.04,0),(.12,0,0),(.055,.04,0),(.035,.1,0),(-.015,.06,0),(-.075,.07,0),(-.07,.035,0)],r.choice(['arc_leaf','clay','arc_bloom']))
+            m.poly([(-.105,0,0),(-.07,-.035,0),(-.075,-.07,0),(-.015,-.06,0),(.035,-.1,0),(.055,-.04,0),(.12,0,0),(.055,.04,0),(.035,.1,0),(-.015,.06,0),(-.075,.07,0),(-.07,.035,0)],r.choice(['arc_leaf','clay','arc_bloom']));m.foliage_roles[len(m.faces)-1]='foliage_litter'
     return m
 
 

@@ -270,3 +270,17 @@ def test_belmonte_current_authored_sources_keep_all_original_data(tmp_path,monke
                 view=prepared['bufferViews'][a['bufferView']]
                 uv=np.frombuffer(binary,dtype='<f4',count=a['count']*2,offset=view['byteOffset']).reshape(-1,2)
                 assert np.all(uv==[3.,R.MARKER])
+
+
+def test_arcade_floor_litter_roles_do_not_depend_on_the_visible_paint():
+    mesh=Faces()
+    owner=functions(Path('regions/hidamari/arcade.py'),['floor','palette'])
+    owner['v'].Mesh=lambda name:mesh
+    owner['floor'](lambda x,y:0.)
+    paving=123*28
+    assert len(mesh.faces)==paving+1700
+    roles=[R.key_role(key) for key in R.face_keys(mesh)]
+    assert roles[:paving]==[0]*paving
+    assert roles[paving:]==[2]*1700
+    assert set(mesh.keys[paving:])=={'arc_leaf','clay','arc_bloom'}
+    assert set(mesh.foliage_roles)==set(range(paving,len(mesh.faces)))
