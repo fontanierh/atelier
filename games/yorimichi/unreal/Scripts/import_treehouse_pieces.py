@@ -7,11 +7,21 @@ from pathlib import Path
 import unreal
 from atelier import native_membership
 from atelier.mesh_geometry import package_inventory
-from atelier.native_packages import save
 from mesh_import import import_mesh
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from treehouse_pieces import DESTINATION, PARENT, NAME, UVS, members, parent_absent, source_files, expected_assets  # noqa: E402
+
+
+def save_piece(mesh, editor, content):
+    """Save dirty current children and require their regular on-disk primary/sidecars."""
+    name = mesh.get_name()
+    package = DESTINATION + '/' + name
+    assert NAME.fullmatch(name) and mesh.get_path_name() == package + '.' + name
+    primary = content / (package.removeprefix('/Game/') + '.uasset')
+    assert all(not part.is_symlink() for part in (primary, *primary.parents)), 'Linked dressing package'
+    assert editor.save_loaded_asset(mesh, only_if_is_dirty=True), 'Dressing package save failed'
+    package_inventory(content, [package])
 
 
 def import_dressing(out, materials, report):
@@ -89,7 +99,7 @@ def _import_dressing(out, materials, report):
         native = ((low[0]*100, -high[1]*100, low[2]*100), (high[0]*100, -low[1]*100, high[2]*100))
         assert all(abs(getattr(point, axis)-want[i]) < .2
                    for point, want in zip((box.min, box.max), native) for i, axis in enumerate(('x','y','z'))), name
-        save(mesh, editor, Path(__file__).resolve().parents[1] / 'Content')
+        save_piece(mesh, editor, Path(__file__).resolve().parents[1] / 'Content')
         current.append(DESTINATION + '/' + name)
         mesh = body = None
     # These exact bytes are also the complete declared transfer scope. Refuse

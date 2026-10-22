@@ -1606,7 +1606,7 @@ def unreal_steps(ctx):
         Step('unreal.treehouse', [UnrealScript(SCRIPTS / 'import_treehouse.py', 'TREEHOUSE IMPORT COMPLETE', modules=IMPORT_CODE)],
              inputs=[SCRIPTS / 'import_treehouse.py', SCRIPTS / 'import_treehouse_pieces.py',
                      SCRIPTS / 'see_through.py', GAME / 'treehouse_pieces.py',
-                     paths.STUDIO / 'atelier/native_membership.py', paths.STUDIO / 'atelier/native_packages.py',
+                     paths.STUDIO / 'atelier/native_membership.py',
                      paths.STUDIO / 'atelier/mesh_geometry.py'],
              needs=['unreal.world', 'world.treehouse_trees', 'world.treehouse_props', 'world.treehouse_textures',
                     *unreal_modules.needs(IMPORT_CODE)], reads=['treehouse.meshes'],

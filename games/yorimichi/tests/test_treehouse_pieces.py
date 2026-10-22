@@ -1,16 +1,50 @@
 """Complete dressing ownership, exact receiving inventories and normal recipe wiring."""
 import copy
+import ast
 import hashlib
 import importlib.util
 import json
 from pathlib import Path
 
 import pytest
+from types import SimpleNamespace
 
 GAME = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('treehouse_piece_test', GAME / 'treehouse_pieces.py')
 P = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(P)
+
+
+@pytest.mark.parametrize('dirty', [False, True])
+def test_piece_save_keeps_clean_bytes_and_saves_changed_current_finishing(tmp_path, dirty):
+    source = GAME / 'unreal/Scripts/import_treehouse_pieces.py'
+    function = next(n for n in ast.parse(source.read_text()).body if isinstance(n, ast.FunctionDef) and n.name == 'save_piece')
+    scope = dict(DESTINATION=P.DESTINATION, NAME=P.NAME, package_inventory=P.package_inventory)
+    exec(compile(ast.Module(body=[function], type_ignores=[]), str(source), 'exec'), scope)
+    name = 'TH_Dressing_cell_-1_0'
+    package = P.DESTINATION + '/' + name
+    primary = tmp_path / (package.removeprefix('/Game/') + '.uasset')
+    primary.parent.mkdir(parents=True)
+    primary.write_bytes(b'prior')
+    prior = primary.stat().st_mtime_ns
+    calls = []
+    def save(mesh, *, only_if_is_dirty):
+        calls.append(only_if_is_dirty)
+        if dirty or not only_if_is_dirty:
+            primary.write_bytes(b'finished')
+        return True
+    mesh = SimpleNamespace(get_name=lambda: name, get_path_name=lambda: package + '.' + name)
+    scope['save_piece'](mesh, SimpleNamespace(save_loaded_asset=save), tmp_path)
+    assert calls == [True]
+    assert primary.read_bytes() == (b'finished' if dirty else b'prior')
+    if not dirty:
+        assert primary.stat().st_mtime_ns == prior
+    primary.unlink()
+    with pytest.raises((ValueError, OSError)):
+        scope['save_piece'](mesh, SimpleNamespace(save_loaded_asset=lambda *a, **k: True), tmp_path)
+    primary.symlink_to(tmp_path / 'external')
+    with pytest.raises(AssertionError, match='Linked'):
+        scope['save_piece'](mesh, SimpleNamespace(save_loaded_asset=lambda *a, **k: pytest.fail('must refuse before save')), tmp_path)
 
 
 def manifest():
