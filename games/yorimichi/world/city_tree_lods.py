@@ -85,7 +85,8 @@ def main():
             obj.select_set(True)
             bpy.context.view_layer.objects.active = obj
             path = folder/f'{mesh.name}.fbx'
-            bpy.ops.export_scene.fbx(filepath=str(path), use_selection=True,
+            from atelier.blender.fbx import export_fbx as export_scene_fbx
+            export_scene_fbx(filepath=str(path), use_selection=True,
                 apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL', axis_forward='-Y', axis_up='Z',
                 object_types={'MESH'}, mesh_smooth_type='FACE', bake_anim=False, use_custom_props=False)
             entry['lods'].append(dict(level=level, file=path.name, leaves=leaves,

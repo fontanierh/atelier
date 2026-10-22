@@ -106,7 +106,8 @@ def export_mesh(out, name, vertices, faces, materials, face_materials, uvs=None,
     bpy.context.view_layer.objects.active = obj
     obj.select_set(True)
     path = Path(out) / 'fbx' / f'{name}.fbx'
-    bpy.ops.export_scene.fbx(filepath=str(path), use_selection=True, object_types={'MESH'},
+    from atelier.blender.fbx import export_fbx as export_scene_fbx
+    export_scene_fbx(filepath=str(path), use_selection=True, object_types={'MESH'},
                              apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL', global_scale=1.,
                              axis_forward='-Z', axis_up='Y', use_mesh_modifiers=False, mesh_smooth_type='FACE',
                              use_tspace=uvs is not None, bake_anim=False, add_leaf_bones=False, path_mode='STRIP',

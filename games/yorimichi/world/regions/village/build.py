@@ -548,7 +548,8 @@ def export(m,mat):
     for ob in objs:ob.select_set(True)
     bpy.context.view_layer.objects.active=obj
     path=OUT/'assets'/f'{m.name}.fbx'
-    bpy.ops.export_scene.fbx(filepath=str(path),use_selection=True,apply_unit_scale=True,apply_scale_options='FBX_SCALE_ALL',axis_forward='-Y',axis_up='Z',object_types={'MESH'},mesh_smooth_type='FACE',bake_anim=False,use_custom_props=False)
+    from atelier.blender.fbx import export_fbx as export_scene_fbx
+    export_scene_fbx(filepath=str(path),use_selection=True,apply_unit_scale=True,apply_scale_options='FBX_SCALE_ALL',axis_forward='-Y',axis_up='Z',object_types={'MESH'},mesh_smooth_type='FACE',bake_anim=False,use_custom_props=False)
     tri=sum(len(f)-2 for f in m.faces)
     bounds=np.array(m.vertices)
     info={'triangles':tri,'vertices':len(m.vertices),'materials':1,'collision_boxes':len(m.colliders),'min':bounds.min(axis=0).round(4).tolist(),'max':bounds.max(axis=0).round(4).tolist()}

@@ -711,7 +711,8 @@ def export(m, mats, shade=None):
     bpy.ops.object.select_all(action='DESELECT')
     for ob in objs: ob.select_set(True)
     bpy.context.view_layer.objects.active = obj
-    bpy.ops.export_scene.fbx(filepath=str(OUT / 'assets' / f'{m.name}.fbx'), use_selection=True, apply_unit_scale=True,
+    from atelier.blender.fbx import export_fbx as export_scene_fbx
+    export_scene_fbx(filepath=str(OUT / 'assets' / f'{m.name}.fbx'), use_selection=True, apply_unit_scale=True,
                              apply_scale_options='FBX_SCALE_ALL', axis_forward='-Y', axis_up='Z', object_types={'MESH'},
                              mesh_smooth_type='FACE', bake_anim=False, use_custom_props=False)
     for ob in objs[1:]: bpy.data.objects.remove(ob, do_unlink=True)

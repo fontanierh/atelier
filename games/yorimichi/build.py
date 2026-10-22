@@ -1801,6 +1801,11 @@ def steps(ctx):
     scanner = build_inputs.ImportScanner()
     for step in result:
         for command in step.commands:
+            if isinstance(command, Blender):
+                # Exporter implementation bytes belong only to mesh-export actions.
+                fbx_helper = paths.STUDIO / 'atelier' / 'blender' / 'fbx.py'
+                if fbx_helper in scanner.local_imports(command.script) and fbx_helper not in step.inputs:
+                    step.inputs.append(fbx_helper)
             if isinstance(command, (Python, Blender)) and WORLD in Path(command.script).parents:
                 step.inputs += [f for f in scanner.local_imports(command.script, (WORLD, REGIONS)) if f not in step.inputs]
         # The shared FBX boundary certifies cooked foliage roles using the import

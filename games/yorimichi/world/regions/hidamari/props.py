@@ -97,7 +97,8 @@ def lods(key, info):
         low = min(v.co.z for v in obj.data.vertices)
         assert low < caldera.FLOAT, (key, n, 'stands', low, 'above the ground')
         obj.select_set(True); bpy.context.view_layer.objects.active = obj
-        bpy.ops.export_scene.fbx(filepath=str(OUT/f'{obj.name}.fbx'), use_selection=True, apply_unit_scale=True,
+        from atelier.blender.fbx import export_fbx as export_scene_fbx
+        export_scene_fbx(filepath=str(OUT/f'{obj.name}.fbx'), use_selection=True, apply_unit_scale=True,
                                  apply_scale_options='FBX_SCALE_ALL', axis_forward='-Y', axis_up='Z', object_types={'MESH'},
                                  mesh_smooth_type='FACE', bake_anim=False, use_custom_props=False, path_mode='STRIP')
         out.append([tris(obj), screen]); objs.append(obj)
