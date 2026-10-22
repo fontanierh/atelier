@@ -66,6 +66,17 @@ def main():
     # A saved base may still contain the previous longer assembled chain.
     # Trim it only after admission, then build and validate the current manifest.
     mesh.set_num_source_models(1)
+    # The far crown level appended its own <tree>_Crown slot after LOD0's; a reused base keeps it after the trim.
+    # Restore LOD0's authored table so the shared palette binds, and the chain re-adds the crown's slot.
+    slots = list(mesh.get_editor_property('static_materials'))
+    keys = [str(slot.get_editor_property('imported_material_slot_name')).split('.')[0] for slot in slots]
+    authored = len(keys)
+    while authored and keys[authored - 1] == name + '_Crown':
+        authored -= 1
+    if name + '_Crown' in keys[:authored]:
+        raise RuntimeError('Crown slot is not after the authored slots: ' + name)
+    if authored < len(slots):
+        mesh.set_editor_property('static_materials', slots[:authored])
     verify_bounds(mesh, data['bounds'])
     palette = []
     for index, slot in enumerate(mesh.get_editor_property('static_materials')):

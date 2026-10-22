@@ -360,3 +360,22 @@ def test_unknown_packages_in_the_folder_are_never_retired(owner, monkeypatch):
     monkeypatch.setattr(editor, 'find_package_referencers_for_asset', lambda asset, load: [], raising=False)
     owner.run()
     assert deleted == []
+
+
+def test_reused_base_drops_the_crown_slot_before_binding_the_shared_palette(owner):
+    slots = [Properties(imported_material_slot_name=key) for key in ('Bark', 'LeafPine', 'Tree_Test_Crown')]
+    owner.imported.values['static_materials'] = slots
+    bound = []
+    owner.imported.set_material = lambda index, material: bound.append(index)
+    owner.data['materials'] = ['Bark', 'LeafPine']
+    owner.write_manifest()
+    owner.run()
+    assert owner.imported.values['static_materials'] == slots[:2]
+    assert bound == [0, 1]
+
+
+def test_crown_slot_before_authored_slots_is_refused(owner):
+    owner.imported.values['static_materials'] = [Properties(imported_material_slot_name=key)
+                                                 for key in ('Tree_Test_Crown', 'Bark')]
+    with pytest.raises(RuntimeError, match='not after the authored'):
+        owner.run()
