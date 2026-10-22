@@ -334,10 +334,10 @@ bool FYorimichiFoliageRegistryTest::RunTest(const FString&)
         .Replace(TEXT("/Game/FoliageSystem/Tree.Tree"),TEXT("/Game/FoliageResident/Tree_Canopy.Tree_Canopy"))
         .Replace(TEXT("/Game/FoliageSystem/Tree_Shadow.Tree_Shadow"),TEXT("/Game/FoliageResident/Tree_Shadow.Tree_Shadow"))
         .Replace(TEXT("\"kind\":\"tree\""),TEXT("\"simple_trunk\":false,\"passable\":false,\"rigid\":\"/Game/FoliageResident/Tree.Tree\",\"rigid_triangles\":4,\"rigid_lod_triangles\":[4],\"source_materials\":[\"/Engine/EngineMaterials/DefaultMaterial.DefaultMaterial\"],\"kind\":\"tree\""));
-    TestTrue(TEXT("Resident registry retains source identity without source loading"),Read(Resident));
     TestTrue(TEXT("Certified empty resident shadow accepted"),Read(Resident.Replace(TEXT("\"shadow_triangles\":32"),TEXT("\"shadow_triangles\":0"))));
     TestFalse(TEXT("Negative resident shadow refuses"),Read(Resident.Replace(TEXT("\"shadow_triangles\":32"),TEXT("\"shadow_triangles\":-1"))));
     TestFalse(TEXT("Legacy shadow schema stays positive"),Read(Valid.Replace(TEXT("\"shadow_triangles\":32"),TEXT("\"shadow_triangles\":0"))));
+    TestTrue(TEXT("Resident registry retains source identity without source loading"),Read(Resident));
     TestEqual(TEXT("Carrier resolves to canonical source"),System->ResidentSources.FindRef(TEXT("/Game/FoliageResident/Tree.Tree")),FString(TEXT("/Game/Test/Tree.Tree")));
     TestFalse(TEXT("Missing trunk policy refuses"),Read(Resident.Replace(TEXT("\"simple_trunk\":false"),TEXT("\"missing_trunk\":false"))));
     TestFalse(TEXT("Contradictory collision policy refuses"),Read(Resident.Replace(TEXT("\"simple_trunk\":false,\"passable\":false"),TEXT("\"simple_trunk\":true,\"passable\":true"))));
