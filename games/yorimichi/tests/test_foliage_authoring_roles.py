@@ -315,3 +315,39 @@ def test_ground_scatter_emitters_preserve_paint_and_emit_only_thin_litter(path,c
     assert set(mesh.keys)==paint
     assert [R.key_role(key) for key in R.face_keys(mesh)]==[2]*len(mesh.faces)
     assert set(mesh.foliage_roles)==set(range(len(mesh.faces)))
+
+
+def test_street_garden_crowns_with_literal_paint_are_foliage_and_keep_the_wood_rigid(monkeypatch):
+    import sys
+    class Rotation:
+        def __matmul__(self,point):return point
+    monkeypatch.setitem(sys.modules,'mathutils',S(Euler=lambda _:S(to_matrix=Rotation),Vector=lambda p:p))
+    owner=functions(Path('regions/hidamari/living_streets.py'),['tree'])
+    mesh=Faces();owner['tree'](mesh,0.,0.,0.,41)
+    roles=[R.key_role(key) for key in R.face_keys(mesh)]
+    assert roles==[0]+([0]+[1]*160)*7
+    assert len(mesh.foliage_roles)==1120
+    assert all(mesh.keys[i] is None for i in mesh.foliage_roles)
+
+
+@pytest.mark.parametrize('x,y',[(-10.,-3.2),(-1.7,-5.4),(10.,-6.5)])
+def test_zeppelin_border_plants_keep_wood_and_tag_literal_leaf_and_flower_paint(x,y):
+    source=WORLD/'regions/zeppelin/build.py'
+    tree=ast.parse(source.read_text())
+    loops=[node for node in ast.walk(tree) if isinstance(node,ast.For)
+           and isinstance(node.iter,ast.Call) and isinstance(node.iter.func,ast.Name)
+           and node.iter.func.id=='range' and len(node.iter.args)==1
+           and isinstance(node.iter.args[0],ast.Constant) and node.iter.args[0].value==7
+           and any(isinstance(n,ast.Name) and n.id=='SAGE' for n in ast.walk(node))]
+    assert len(loops)==1
+    palette={n.targets[0].id:ast.literal_eval(n.value) for n in tree.body
+             if isinstance(n,ast.Assign) and isinstance(n.targets[0],ast.Name)
+             and n.targets[0].id in {'SAGE','GOLD','CREAM'}}
+    mesh=Faces()
+    owner=functions(Path('regions/zeppelin/build.py'),['cylinder'],
+                    m=mesh,x=x,y=y,**palette)
+    owner['R']=random.Random(980)
+    exec(compile(ast.Module(body=loops,type_ignores=[]),str(source),'exec'),owner)
+    assert [R.key_role(key) for key in R.face_keys(mesh)]==([0]+[1]*8+[2])*7
+    assert len(mesh.foliage_roles)==63
+    assert all(mesh.keys[i] is None for i in mesh.foliage_roles)

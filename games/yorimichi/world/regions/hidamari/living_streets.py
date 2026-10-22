@@ -25,7 +25,7 @@ def tree(m,x,y,z,seed):
                 from mathutils import Euler, Vector
                 rotation=Euler((tilt_x,tilt_y,0)).to_matrix()
                 pts=[rotation@Vector(p) for p in pts]
-                m.poly(pts,col);m.poly(pts[::-1],col)
+                m.poly(pts,col);m.poly(pts[::-1],col);m.foliage_roles.update({len(m.faces)-2:'foliage_leaf',len(m.faces)-1:'foliage_leaf'})
 
 
 def garden(m,x,y,side,height,seed):
