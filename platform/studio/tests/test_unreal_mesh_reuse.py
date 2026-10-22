@@ -2,6 +2,7 @@
 import hashlib
 import json
 from pathlib import Path
+import subprocess
 import sys
 from types import SimpleNamespace
 
@@ -12,6 +13,7 @@ from atelier import native_candidates as checkpoint_candidates, mesh_reuse, path
 
 @pytest.fixture
 def scene(tmp_path, monkeypatch):
+    original_saved_source, original_revision_source = mesh_reuse.saved_source, mesh_reuse.revision_source
     repo = tmp_path / 'repo'; repo.mkdir()
     monkeypatch.setattr(paths, 'REPO', repo)
     ctx = SimpleNamespace(out=repo / 'build/game', uproject=repo / 'games/game/unreal/Game.uproject',
@@ -41,33 +43,56 @@ def scene(tmp_path, monkeypatch):
     bundle = dict(checkpoint='a' * 64, donor_task='unreal.region', donor_fingerprint='b' * 64,
                   source_revision='c' * 40, provenance='compatibility-only', files=files,
                   donor_stamp={'fingerprint': 'b' * 64, 'input_state': {'inputs': {'<repo>/import.py': 'd' * 64}}})
-    monkeypatch.setattr(checkpoint_candidates, 'load', lambda *a: bundle)
+    monkeypatch.setattr(checkpoint_candidates, 'load_all', lambda *a: [bundle])
     def member(*args, bundle=None):
         return staged.get(args[2])
     monkeypatch.setattr(checkpoint_candidates, 'member_path', member)
     content = ctx.uproject.parent / 'Content'
     tags = {package: json.dumps([{'FileMD5': hashlib.md5(file.read_bytes()).hexdigest()}])
             for package, file in zip(packages, (source, hull))}
-    scans = []
+    scans, removals, unloads = [], [], []
+    objects, registered = {}, set()
+    def scan(names, force):
+        scans.append(names)
+        registered.update(packages)
+    def rescan(names):
+        removals.append(names)
+        registered.difference_update(p for p in packages
+            if not (content / mesh_reuse.package_members(p)[0].removeprefix('content/')).exists())
+    def unload(values):
+        unloads.append([v.get_name() for v in values])
+        objects.clear()
+    def asset_data(object_path, disk_only):
+        assert disk_only is True and '.' in object_path
+        package, object_name = object_path.rsplit('.', 1)
+        assert object_name == package.rsplit('/', 1)[1]
+        return SimpleNamespace(get_tag_value=lambda name: tags[package] if name == 'AssetImportData' else None)
+    registry = SimpleNamespace(scan_files_synchronous=scan, scan_modified_asset_files=rescan,
+                               k2_get_asset_by_object_path=asset_data)
     def load(package):
         for required in packages:
             assert (content / mesh_reuse.package_members(required)[0].removeprefix('content/')).exists()
-        return SimpleNamespace(package=package)
+        mesh = SimpleNamespace(package=package)
+        objects[package] = SimpleNamespace(get_name=lambda: package)
+        objects[package + '.' + package.rsplit('/', 1)[1]] = mesh
+        return mesh
     unreal = SimpleNamespace(
-        EditorLoadingAndSavingUtils=SimpleNamespace(get_dirty_content_packages=lambda: []),
+        EditorLoadingAndSavingUtils=SimpleNamespace(get_dirty_content_packages=lambda: [], unload_packages=unload),
         EditorAssetLibrary=SimpleNamespace(does_asset_exist=lambda p:
-            (content / mesh_reuse.package_members(p)[0].removeprefix('content/')).exists()),
+            p in registered or (content / mesh_reuse.package_members(p)[0].removeprefix('content/')).exists()),
         AssetRegistryHelpers=SimpleNamespace(
             create_asset_data=lambda mesh: SimpleNamespace(
                 get_tag_value=lambda name: tags[mesh.package] if name == 'AssetImportData' else None),
-            get_asset_registry=lambda: SimpleNamespace(scan_files_synchronous=lambda names, force: scans.append(names))),
-        load_asset=load)
+            get_asset_registry=lambda: registry),
+        SoftObjectPath=lambda value: value, find_object=lambda outer, name: objects.get(name), load_asset=load)
     monkeypatch.setitem(sys.modules, 'unreal', unreal)
     def adapter():
         return native.MeshReuse(ctx, 'unreal.region', script, ('build',), report_member='generated/report.json')
     sources = [(packages[0], source, mesh_reuse.digest(source)), (packages[1], hull, mesh_reuse.digest(hull))]
     return SimpleNamespace(ctx=ctx, adapter=adapter, sources=sources, package=packages[0], tags=tags,
-                           staged=staged, content=content, scans=scans, bundle=bundle)
+                           staged=staged, content=content, scans=scans, bundle=bundle, unreal=unreal,
+                           objects=objects, unloads=unloads, removals=removals, registered=registered,
+                           saved_source=original_saved_source, revision_source=original_revision_source)
 
 
 def acquire(scene, adapter, **kwargs):
@@ -97,10 +122,111 @@ def test_different_geometry_is_ordinary_import_without_content_copy(scene):
     assert not scene.content.exists() and not adapter.receipts.path.exists()
 
 
-def test_missing_native_import_hash_never_certifies_captured_bytes(scene):
+def test_chooses_complete_group_from_second_donor_with_its_own_report_and_provenance(scene, monkeypatch):
+    from copy import deepcopy
+    primary = deepcopy(scene.bundle)
+    primary['checkpoint'] = '1' * 64
+    primary['files'] = {n: e for n, e in primary['files'].items() if '/Hull.' not in n}
+    monkeypatch.setattr(checkpoint_candidates, 'load_all', lambda *_: [primary, scene.bundle])
+    adapter = scene.adapter()
+    # The preferred donor is incomplete for this source + collision group.
+    assert acquire(scene, adapter, donor_geometry=lambda report: {'source': 'same'})
+    assert adapter.pending['Mesh']['provenance']['checkpoint'] == scene.bundle['checkpoint']
+    assert len(scene.scans[0]) == 2
+    adapter.validated('Mesh')
+    mesh_reuse.finalize_pending(scene.ctx, 'unreal.region', 'e' * 24)
+    record = json.loads(adapter.receipts.path.read_text())['meshes']['Mesh']
+    assert record['provenance']['checkpoint'] == scene.bundle['checkpoint']
+    assert len(record['packages']) == 6
+
+
+def test_reports_are_projected_independently_without_splicing_package_groups(scene, monkeypatch):
+    from copy import deepcopy
+    primary = deepcopy(scene.bundle)
+    primary['checkpoint'] = '1' * 64
+    monkeypatch.setattr(checkpoint_candidates, 'load_all', lambda *_: [primary, scene.bundle])
+    first_report = scene.ctx.out / 'old-report.json'
+    first_report.write_text('{"source":"old"}')
+    second_report = scene.ctx.out / 'new-report.json'
+    second_report.write_text('{"source":"same"}')
+    original = checkpoint_candidates.member_path
+    def member(*args, bundle=None):
+        if args[2] == 'generated/report.json':
+            return first_report if bundle is primary else second_report
+        return original(*args, bundle=bundle)
+    monkeypatch.setattr(checkpoint_candidates, 'member_path', member)
+    adapter = scene.adapter()
+    assert acquire(scene, adapter, donor_geometry=lambda report: report)
+    assert adapter.pending['Mesh']['provenance']['checkpoint'] == scene.bundle['checkpoint']
+
+
+def test_two_partial_donors_cannot_invent_complete_collision_group(scene, monkeypatch):
+    from copy import deepcopy
+    primary, secondary = deepcopy(scene.bundle), deepcopy(scene.bundle)
+    primary['files'] = {n: e for n, e in primary['files'].items() if '/Hull.' not in n}
+    secondary['files'] = {n: e for n, e in secondary['files'].items() if '/Mesh.' not in n}
+    monkeypatch.setattr(checkpoint_candidates, 'load_all', lambda *_: [primary, secondary])
+    adapter = scene.adapter()
+    assert acquire(scene, adapter) is None
+    assert adapter.miss_reasons == {'candidate_package_missing': 1}
+    assert not scene.content.exists()
+
+
+def test_donor_corruption_after_constructor_does_not_hide_other_complete_group(scene, monkeypatch, tmp_path):
+    from copy import deepcopy
+    primary = deepcopy(scene.bundle)
+    primary['checkpoint'] = '1' * 64
+    copies = {}
+    for member, source in scene.staged.items():
+        path = tmp_path / 'first' / member
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(source.read_bytes())
+        copies[member] = path
+    monkeypatch.setattr(checkpoint_candidates, 'load_all', lambda *_: [primary, scene.bundle])
+    original = checkpoint_candidates.member_path
+    def member(*args, bundle=None):
+        if bundle is primary:
+            path = copies.get(args[2])
+            expected = primary['files'].get(args[2])
+            if expected and mesh_reuse.digest(path) != expected['sha256']:
+                return None
+            return path
+        return original(*args, bundle=bundle)
+    monkeypatch.setattr(checkpoint_candidates, 'member_path', member)
+    adapter = scene.adapter()
+    copies['content/Region/Mesh.uasset'].write_bytes(b'late corruption')
+    assert acquire(scene, adapter)
+    assert adapter.pending['Mesh']['provenance']['checkpoint'] == scene.bundle['checkpoint']
+    assert (scene.content / 'Region/Mesh.uasset').read_bytes() == scene.staged['content/Region/Mesh.uasset'].read_bytes()
+
+
+def test_late_copy_corruption_tries_next_donor_before_any_package_install(scene, monkeypatch):
+    from copy import deepcopy
+    primary = deepcopy(scene.bundle)
+    primary['checkpoint'] = '1' * 64
+    monkeypatch.setattr(checkpoint_candidates, 'load_all', lambda *_: [primary, scene.bundle])
+    adapter = scene.adapter()
+    copy = native.shutil.copyfile
+    calls = []
+    def corrupted_once(source, target):
+        calls.append(source)
+        if len(calls) == 1:
+            assert not list(scene.content.glob('Region/*'))
+            Path(target).write_bytes(b'changed during copy')
+        else:
+            return copy(source, target)
+    monkeypatch.setattr(native.shutil, 'copyfile', corrupted_once)
+    assert acquire(scene, adapter)
+    assert adapter.pending['Mesh']['provenance']['checkpoint'] == scene.bundle['checkpoint']
+    assert (scene.content / 'Region/Mesh.uasset').read_bytes() == scene.staged['content/Region/Mesh.uasset'].read_bytes()
+
+
+def test_missing_native_import_hash_never_certifies_captured_bytes(scene, monkeypatch):
     scene.tags[scene.package] = '[]'
     adapter = scene.adapter()
     assert acquire(scene, adapter) is None
+    assert not list(scene.content.glob('Region/*'))
+    monkeypatch.setattr(scene.unreal, 'load_asset', lambda _: None)
     adapter.validated('Mesh')
     assert not adapter.receipts.path.exists()
     assert adapter.counts['reused_candidate'] == 0
@@ -323,16 +449,130 @@ def test_separate_current_validator_never_weakens_historical_geometry_equality(s
     assert acquire(scene, adapter, validator=lambda mesh: True) is None
 
 
-def test_validator_change_rekeys_current_receipts_without_changing_geometry_policy(scene, monkeypatch):
+def validator_transition(scene, monkeypatch):
     make = validation_scene(scene, monkeypatch)
     first = make(); assert acquire(scene, first, validator=lambda mesh: True)
     first.validated('Mesh'); mesh_reuse.finalize_pending(scene.ctx, 'unreal.region', 'e' * 24)
     script = paths.REPO / 'import.py'
+    previous = script.read_text()
+    monkeypatch.setattr(mesh_reuse, 'saved_source', lambda *a: previous)
     script.write_text('def build(): return 1\ndef validate(mesh): return mesh is not None\n')
+    return make, first
+
+
+def test_validator_change_revalidates_unchanged_receipt_without_import_or_early_publication(scene, monkeypatch):
+    make, first = validator_transition(scene, monkeypatch)
+    old_receipt = first.receipts.path.read_bytes()
     second = make()
     assert second.policy == first.policy
     assert second.receipts.header['policy'] != first.receipts.header['policy']
-    assert acquire(scene, second, validator=lambda mesh: True) is None
+    checked = []
+    assert acquire(scene, second, validator=lambda mesh: checked.append(mesh) or True)
+    assert len(checked) == 1 and second.counts == dict(reused_local=1, reused_candidate=0, imported=0)
+    assert second.receipts.path.read_bytes() == old_receipt
+    second.validated('Mesh')
+    assert second.receipts.path.read_bytes() == old_receipt
+    mesh_reuse.finalize_pending(scene.ctx, 'unreal.region', 'e' * 24)
+    saved = json.loads(second.receipts.path.read_text())
+    assert saved['policy'] == second.receipts.header['policy']
+    assert saved['meshes']['Mesh']['provenance']['historical_task'] == 'f' * 64
+
+
+@pytest.mark.parametrize('declaration', ['valid', 'wrong_task', 'wrong_raw', 'ambiguous', 'dynamic', 'external'])
+def test_validator_rename_recovers_only_unique_recorded_declaration(scene, monkeypatch, declaration):
+    make = validation_scene(scene, monkeypatch)
+    script = paths.REPO / 'import.py'
+    call = "MeshReuse(None, 'unreal.region', __file__, ('build',), validation_functions=('validate',))"
+    if declaration == 'wrong_task': call = call.replace('unreal.region', 'unreal.other')
+    if declaration == 'wrong_raw': call = call.replace("('build',)", "('other',)")
+    if declaration == 'dynamic': call = call.replace("('validate',)", 'computed_names')
+    if declaration == 'external': call = call[:-1] + ", validation_script='other.py')"
+    script.write_text('from atelier.unreal_mesh_reuse import MeshReuse\n'
+                      'def build(): return 1\ndef validate(mesh): return bool(mesh)\n'
+                      'def setup():\n    ' + call + '\n'
+                      + ('    ' + call + '\n' if declaration == 'ambiguous' else ''))
+    previous = script.read_text()
+    first = make(); assert acquire(scene, first, validator=lambda _: True)
+    first.validated('Mesh'); mesh_reuse.finalize_pending(scene.ctx, 'unreal.region', 'e' * 24)
+    monkeypatch.setattr(mesh_reuse, 'saved_source', lambda *a: previous)
+    script.write_text(previous.replace('def validate(mesh)', 'def validate_current(mesh)'))
+    second = native.MeshReuse(scene.ctx, 'unreal.region', script, ('build',),
+                              validation_functions=('validate_current',))
+    checked = []
+    result = acquire(scene, second, validator=lambda mesh: checked.append(mesh) or True)
+    assert bool(result) == (declaration == 'valid')
+    assert len(checked) == (1 if declaration == 'valid' else 0)
+
+
+def test_real_recorded_helper_change_revalidates_with_original_git_policy(scene, monkeypatch):
+    make = validation_scene(scene, monkeypatch)
+    script = paths.REPO / 'import.py'
+    helper = paths.REPO / 'validator_support.py'
+    script.write_text('import validator_support\ndef build(): return 1\n'
+                      'def validate(mesh): return validator_support.check(mesh)\n')
+    helper.write_text('def check(mesh): return bool(mesh)\nBOOKKEEPING=1\n')
+    def git(*args):
+        subprocess.run(['git', '-c', 'gc.auto=0', '-c', 'maintenance.auto=false',
+                        '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', *args],
+                       cwd=paths.REPO, check=True, capture_output=True)
+    git('init'); git('add', 'import.py', 'validator_support.py'); git('commit', '-m', 'original producer')
+    previous = dict(fingerprint='f' * 64, time=1., input_state={'inputs': {
+        '<repo>/' + p.name: hashlib.sha256(p.name.encode() + p.read_bytes()).hexdigest()
+        for p in (script, helper)}})
+    monkeypatch.setattr(mesh_reuse, 'saved_source', scene.saved_source)
+    monkeypatch.setattr(mesh_reuse, 'revision_source', scene.revision_source)
+    monkeypatch.setattr(mesh_reuse, 'prior_stamp', lambda *a: previous)
+    monkeypatch.setattr(checkpoint_candidates, 'load_all', lambda *a: [])
+    first = make()
+    assert acquire(scene, first, validator=lambda mesh: True)
+    first.validated('Mesh'); mesh_reuse.finalize_pending(scene.ctx, 'unreal.region', 'e' * 24)
+    old = first.receipts.path.read_bytes()
+    helper.write_text('def check(mesh): return bool(mesh)\nBOOKKEEPING=2\n')
+    second = make()
+    assert second.policy == first.policy and second.receipts.header != first.receipts.header
+    assert first.receipts.header['policy'] in second.previous_receipt_policies
+    checks = []
+    assert acquire(scene, second, validator=lambda mesh: checks.append(mesh) or True)
+    assert len(checks) == 1 and second.counts['reused_local'] == 1 and second.counts['imported'] == 0
+    assert second.receipts.path.read_bytes() == old
+
+
+@pytest.mark.parametrize('failure', ['geometry_policy', 'source', 'modified_sidecar', 'missing_sidecar',
+    'new_sidecar', 'context', 'unknown_policy', 'malformed_policy', 'missing_old_code', 'dirty',
+    'validator_false', 'validator_exception', 'validator_missing'])
+def test_validator_transition_keeps_production_proof_and_current_checks_mandatory(scene, monkeypatch, failure):
+    make, first = validator_transition(scene, monkeypatch)
+    if failure == 'geometry_policy':
+        (paths.REPO / 'import.py').write_text('def build(): return 2\ndef validate(mesh): return bool(mesh)\n')
+    elif failure == 'source':
+        source = scene.sources[0][1]; source.write_bytes(b'changed geometry source')
+        scene.sources[0] = (scene.package, source, mesh_reuse.digest(source))
+    elif failure == 'modified_sidecar':
+        (scene.content / 'Region/Mesh.ubulk').write_bytes(b'changed native geometry')
+    elif failure == 'missing_sidecar':
+        (scene.content / 'Region/Hull.uexp').unlink()
+    elif failure == 'new_sidecar':
+        (scene.content / 'Region/Mesh.upayload').write_bytes(b'new native payload')
+    elif failure == 'context':
+        monkeypatch.setattr(native, 'context', lambda _: {'engine': 'different', 'sdk': 'sdk'})
+    elif failure in ('unknown_policy', 'malformed_policy'):
+        value = json.loads(first.receipts.path.read_text())
+        value['policy'] = '1' * 64 if failure == 'unknown_policy' else []
+        first.receipts.path.write_text(json.dumps(value))
+    elif failure == 'missing_old_code':
+        monkeypatch.setattr(mesh_reuse, 'saved_source', lambda *a: None)
+    elif failure == 'dirty':
+        scene.unreal.EditorLoadingAndSavingUtils.get_dirty_content_packages = lambda: [
+            SimpleNamespace(get_name=lambda: scene.package)]
+    before = first.receipts.path.read_bytes()
+    second = make()
+    def validator(mesh):
+        if failure == 'validator_exception':
+            raise RuntimeError('current check failed')
+        return failure != 'validator_false'
+    assert acquire(scene, second, validator=None if failure == 'validator_missing' else validator) is None
+    assert second.counts == dict(reused_local=0, reused_candidate=0, imported=0)
+    assert second.receipts.path.read_bytes() == before
 
 
 @pytest.mark.parametrize('failure', ['false', 'exception', 'missing'])
@@ -422,3 +662,226 @@ def test_successful_candidate_has_no_miss_diagnostic(scene):
     mesh_reuse.finalize_pending(scene.ctx, 'unreal.region', 'e' * 24)
     value = json.loads((adapter.receipts.path.parent / 'summary.json').read_text())
     assert value['counts']['reused_candidate'] == 1 and value['miss_reasons'] == {}
+
+
+def two_donors(scene, monkeypatch):
+    from copy import deepcopy
+    first = deepcopy(scene.bundle)
+    first['checkpoint'] = '1' * 64
+    monkeypatch.setattr(checkpoint_candidates, 'load_all', lambda *_: [first, scene.bundle])
+    return first
+
+
+def test_registry_source_rejection_retries_without_loading_or_unloading(scene, monkeypatch):
+    two_donors(scene, monkeypatch)
+    registry = scene.unreal.AssetRegistryHelpers.get_asset_registry()
+    real = registry.k2_get_asset_by_object_path
+    monkeypatch.setattr(registry, 'k2_get_asset_by_object_path', lambda p, disk:
+        SimpleNamespace(get_tag_value=lambda _: None) if len(scene.scans) == 1 else real(p, disk))
+    adapter = scene.adapter()
+    assert acquire(scene, adapter)
+    assert adapter.pending['Mesh']['provenance']['checkpoint'] == scene.bundle['checkpoint']
+    assert len(scene.scans) == 2 and len(scene.removals) == 1 and scene.unloads == []
+    assert adapter.counts['reused_candidate'] == 1 and not adapter.receipts.path.exists()
+
+
+@pytest.mark.parametrize('failure', ['load_null', 'load_exception', 'source', 'validator', 'validator_exception'])
+def test_native_rejection_unloads_only_attempt_then_admits_later_donor(scene, monkeypatch, failure):
+    two_donors(scene, monkeypatch)
+    real = scene.unreal.load_asset
+    def load(package):
+        value = real(package)  # Model an asset loaded even when its wrapper fails.
+        if len(scene.scans) == 1 and package == scene.package:
+            if failure == 'load_null':
+                return None
+            if failure == 'load_exception':
+                raise RuntimeError('native failed')
+        return value
+    monkeypatch.setattr(scene.unreal, 'load_asset', load)
+    original = native.imported_source_matches
+    monkeypatch.setattr(native, 'imported_source_matches', lambda mesh, source:
+        False if failure == 'source' and len(scene.scans) == 1 else original(mesh, source))
+    def validate(mesh):
+        if len(scene.scans) == 1 and failure == 'validator_exception':
+            raise RuntimeError('validator failed')
+        return not (len(scene.scans) == 1 and failure == 'validator')
+    adapter = scene.adapter()
+    assert acquire(scene, adapter, validator=validate)
+    assert adapter.pending['Mesh']['provenance']['checkpoint'] == scene.bundle['checkpoint']
+    assert len(scene.unloads) == 1 and set(scene.unloads[0]) <= {p for p, _, _ in scene.sources}
+    assert len(scene.removals) == 1 and len(scene.scans) == 2
+    assert adapter.counts == dict(reused_local=0, reused_candidate=1, imported=0)
+    assert not adapter.receipts.path.exists()
+
+
+@pytest.mark.parametrize('refusal', ['dirty', 'changed', 'retained', 'registry', 'new_sidecar'])
+def test_uncertain_attempt_cleanup_stops_import_without_overwrite_or_receipt(scene, monkeypatch, refusal):
+    two_donors(scene, monkeypatch)
+    target = scene.content / 'Region/Mesh.uasset'
+    def validate(mesh):
+        if refusal == 'dirty':
+            monkeypatch.setattr(scene.unreal.EditorLoadingAndSavingUtils, 'get_dirty_content_packages',
+                lambda: [SimpleNamespace(get_name=lambda: scene.package)])
+        if refusal == 'changed':
+            target.write_bytes(b'owner-modified package')
+        if refusal == 'new_sidecar':
+            target.with_suffix('.upayload').write_bytes(b'new owner output')
+        return False
+    if refusal == 'retained':
+        monkeypatch.setattr(scene.unreal.EditorLoadingAndSavingUtils, 'unload_packages', lambda _: True)
+    if refusal == 'registry':
+        registry = scene.unreal.AssetRegistryHelpers.get_asset_registry()
+        monkeypatch.setattr(registry, 'scan_modified_asset_files', lambda _: None)
+    adapter = scene.adapter()
+    with pytest.raises(RuntimeError, match='cleanup refused'):
+        acquire(scene, adapter, validator=validate)
+    assert len(scene.scans) == 1
+    assert adapter.counts['reused_candidate'] == 0 and not adapter.receipts.path.exists()
+    if refusal != 'registry':
+        assert target.exists()
+    if refusal == 'changed':
+        assert target.read_bytes() == b'owner-modified package'
+    assert scene.staged['content/Region/Mesh.uasset'].read_bytes().startswith(b'candidate:')
+
+
+def test_live_registry_invisible_asset_is_not_replaced(scene):
+    scene.objects[scene.package + '.Mesh'] = SimpleNamespace(package=scene.package)
+    adapter = scene.adapter()
+    assert acquire(scene, adapter) is None
+    assert not scene.content.exists() and scene.scans == []
+
+
+def test_all_native_rejections_leave_no_registry_or_disk_scope_for_ordinary_import(scene):
+    adapter = scene.adapter()
+    assert acquire(scene, adapter, validator=lambda _: False) is None
+    assert scene.registered == set() and scene.objects == {}
+    assert not list(scene.content.glob('Region/*'))
+    assert adapter.pending['Mesh']['provenance'] == {'kind': 'current-native-import'}
+    assert adapter.counts['reused_candidate'] == 0
+
+
+def test_common_fbx_identity_ignores_unrelated_bootstrap_file(tmp_path, monkeypatch):
+    calls = []
+    adapter = SimpleNamespace(acquire=lambda *a, **kw: calls.append(kw), policy='policy')
+    monkeypatch.setattr(native, 'MeshReuse', lambda *a, **kw: adapter)
+    monkeypatch.setattr(native, 'native_context', lambda _: object())
+    monkeypatch.setattr(native, '_COMMON_FBX', {})
+    for name, value in dict(ATELIER_BUILD_TASK='unreal.region', ATELIER_BUILD_GAME='game',
+                            ATELIER_BUILD_SCRIPT=str(tmp_path/'owner.py'), ATELIER_MESH_REUSE_NONCE='a'*24).items():
+        monkeypatch.setenv(name, value)
+    source = tmp_path/'mesh.fbx'; source.write_bytes(b'actual current mesh')
+    seed = tmp_path/'unrelated.fbx'
+    validator = lambda _: True
+    for data in (None, b'first unrelated export', b'changed timestamp and IDs'):
+        if data is not None: seed.write_bytes(data)
+        native.common_fbx_mesh(source, '/Game/Owned', 'Mesh', fresh_slots=False, functions=('build',), validation_functions=('validate',),
+                               script=tmp_path/'import.py', validator=validator)
+    assert len(calls) == 3 and calls[0] == calls[1] == calls[2]
+    source.write_bytes(b'changed real geometry')
+    native.common_fbx_mesh(source, '/Game/Owned', 'Mesh', fresh_slots=False, functions=('build',), validation_functions=('validate',),
+                           script=tmp_path/'import.py', validator=validator)
+    assert calls[3]['sources'] != calls[2]['sources']
+
+
+def owner_transition_scene(scene, monkeypatch, *, excluded='/Game/Retired/Parent'):
+    import importlib.util
+    make = validation_scene(scene, monkeypatch)
+    script = paths.REPO/'import.py'
+    owner = paths.REPO/'owner.py'
+    old_owner = 'ROUTED_PARENT=True\ndef finish(mesh): return mesh\n'
+    current_owner = 'ROUTED_PARENT=False\ndef finish(mesh): return mesh\n'
+    owner.write_text(old_owner)
+    original = {'import.py':script.read_text(), 'owner.py':old_owner}
+    recorded = {name:hashlib.sha256((name+text).encode()).hexdigest() for name,text in original.items()}
+    monkeypatch.setattr(mesh_reuse,'saved_source',lambda repo,name,record:
+                        original.get(name) if record is not None and record==recorded.get(name) else None)
+    monkeypatch.setattr(mesh_reuse,'prior_stamp',lambda *args:dict(fingerprint='f'*64,time=1.,
+        input_state={'inputs':{'<repo>/'+name:value for name,value in recorded.items()}}))
+    first = make(owner_script=owner,owner_roots=(paths.REPO,))
+    assert acquire(scene,first,validator=lambda mesh:True)
+    first.validated('Mesh');mesh_reuse.finalize_pending(scene.ctx,'unreal.region','e'*24)
+    owner.write_text(current_owner)
+    support = paths.REPO/'membership_transition.py'
+    support.write_text('def excluded_packages(previous,current):\n'
+        f'    if previous == {{"owner.py":{old_owner!r}}} and current == {{"owner.py":{current_owner!r}}}:\n'
+        f'        return ({excluded!r},)\n'
+        '    return None\n')
+    spec = importlib.util.spec_from_file_location('fixture_membership_transition',support)
+    module = importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    return (lambda:make(owner_script=owner,owner_roots=(paths.REPO,),owner_transition=module.excluded_packages)),first,owner,original
+
+
+def test_exact_membership_transition_replays_original_header_without_reimport(scene,monkeypatch):
+    make,first,owner,original = owner_transition_scene(scene,monkeypatch)
+    before = first.receipts.path.read_bytes()
+    second = make()
+    assert second.local_compatible
+    assert first.receipts.header['policy'] in second.previous_receipt_policies
+    assert first.receipts.header['policy'] != second.receipts.header['policy']
+    checks = []
+    assert acquire(scene,second,validator=lambda mesh:checks.append(mesh) or True)
+    assert len(checks)==1 and second.counts==dict(reused_local=1,reused_candidate=0,imported=0)
+    assert second.receipts.path.read_bytes()==before
+    second.validated('Mesh');mesh_reuse.finalize_pending(scene.ctx,'unreal.region','e'*24)
+    assert json.loads(second.receipts.path.read_text())['policy']==second.receipts.header['policy']
+
+
+@pytest.mark.parametrize('failure',['owner_geometry','missing_original','sidecar','source','validator','retired_target','unknown_header'])
+def test_owner_transition_preserves_all_package_and_current_validation_gates(scene,monkeypatch,failure):
+    make,first,owner,original = owner_transition_scene(scene,monkeypatch,
+        excluded=scene.package if failure=='retired_target' else '/Game/Retired/Parent')
+    if failure=='owner_geometry': owner.write_text(owner.read_text().replace('return mesh','return reshape(mesh)'))
+    if failure=='missing_original': original.pop('owner.py')
+    if failure=='sidecar': (scene.content/'Region/Mesh.uexp').write_bytes(b'changed')
+    if failure=='source': scene.tags[scene.package] = None
+    if failure=='unknown_header':
+        data=json.loads(first.receipts.path.read_text());data['policy']='0'*64
+        first.receipts.path.write_text(json.dumps(data))
+    second=make()
+    assert acquire(scene,second,validator=lambda mesh:failure!='validator') is None
+    assert second.counts['reused_local']==0 and second.counts['reused_candidate']==0
+
+
+@pytest.mark.parametrize('history', ['receiptless', 'donor', 'removed_member'])
+def test_owner_membership_transition_requires_original_complete_local_receipt(scene, monkeypatch, history):
+    make, first, owner, original = owner_transition_scene(scene, monkeypatch)
+    if history == 'removed_member':
+        # An old member absent from today's closure must make header replay fail.
+        header = json.loads(first.receipts.path.read_text())
+        owner_map = {'owner.py': native.ast_dump(original['owner.py']),
+                     'removed_helper.py': native.ast_dump('def geometry(): return 1\n')}
+        old_import_policy = mesh_reuse.identity(dict(geometry=first.policy, owner=owner_map))
+        validation = mesh_reuse.native_policy(original['import.py'], ('validate',), paths.REPO/'import.py')
+        header['policy'] = mesh_reuse.identity(dict(import_policy=old_import_policy, validation=validation))
+        first.receipts.path.write_text(json.dumps(header))
+    else:
+        first.receipts.path.unlink()
+    if history == 'donor':
+        old = mesh_reuse.prior_stamp(None, None)
+        scene.bundle['donor_stamp'] = old
+        for file in scene.content.rglob('*'):
+            if file.is_file(): file.unlink()
+        scene.objects.clear()
+    second = make()
+    assert second.previous_owner_transition
+    assert acquire(scene, second, validator=lambda mesh: True) is None
+    assert second.counts['reused_local'] == second.counts['reused_candidate'] == 0
+    if history == 'donor':
+        assert not second.compatible and not scene.scans
+
+
+def test_source_discovery_runtime_changes_leave_raw_and_receipt_owner_policy_unchanged(scene, monkeypatch):
+    from atelier import native_protocol, build_cache
+    assert Path(mesh_reuse.__file__).resolve() in native_protocol.runtime_files()
+    assert 'mesh_reuse.py' not in build_cache.TOOL_SUPPORT
+    make = validation_scene(scene, monkeypatch)
+    owner = paths.REPO/'owner.py'
+    runtime = paths.REPO/'history_runtime.py'
+    owner.write_text('import history_runtime\ndef finish(mesh): return mesh\n')
+    runtime.write_text('LOOKUP = 1\n')
+    monkeypatch.setattr(native,'runtime_files',lambda:(runtime,))
+    first = make(owner_script=owner,owner_roots=(paths.REPO,))
+    runtime.write_text('LOOKUP = 2\n')
+    current = make(owner_script=owner,owner_roots=(paths.REPO,))
+    assert 'history_runtime.py' not in first.owner_sources
+    assert current.policy == first.policy and current.receipts.header == first.receipts.header

@@ -1,7 +1,13 @@
 """Independent foliage exports and native package owners for the Yorimichi recipe."""
 import importlib.util
 import json
+from functools import lru_cache
 from pathlib import Path
+
+
+@lru_cache(maxsize=64)
+def _read_spec(path, mtime_ns, size):
+    return json.loads(Path(path).read_text())
 
 from atelier import build_inputs, unreal_modules
 from atelier.build import Batch, Blender, Product, Step, UnrealScript
@@ -35,7 +41,8 @@ def world_steps(ctx):
     steps = []
     for name in catalog.FOLIAGE:
         spec_path = catalog.SPEC_ROOT / (name + '.json')
-        spec = json.loads(spec_path.read_text())
+        st = spec_path.stat()
+        spec = _read_spec(spec_path, st.st_mtime_ns, st.st_size)
         textures = sorted({material_specs.MATERIALS[slot]['texture'] for slot in spec['materials']
                            if 'texture' in material_specs.MATERIALS[slot]})
         steps.append(Step(

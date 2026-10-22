@@ -92,7 +92,7 @@ class Terrain(unittest.TestCase):
         x = np.linspace(L.BOUNDS[0], L.BOUNDS[2], 51)
         expected_north = source.terrain().height(x - L.ORIGIN[0], np.full_like(x, L.SOURCE_BOUNDS[1])) + L.ORIGIN[2]
         self.assertTrue(np.isfinite(expected_north).all())
-        path = yori.OUT / 'belmonte/glb/SM_BM_NorthApron.glb'
+        path = yori.OUT / 'belmonte/ground/glb/SM_BM_NorthApron.glb'
         if path.is_file():
             mesh = source.Surface(source.triangles(path))
             north = mesh.height(x - L.ORIGIN[0], np.full_like(x, L.BOUNDS[1] - L.ORIGIN[1])) + L.ORIGIN[2]
@@ -101,7 +101,7 @@ class Terrain(unittest.TestCase):
             np.testing.assert_allclose(south, H.north_height(x, np.full_like(x, L.SOUTH_JOIN)), atol=.02)
 
     def test_country_and_collar_keep_the_full_rim_closed(self):
-        path = yori.OUT / 'belmonte/glb/SM_BM_NorthApron.glb'
+        path = yori.OUT / 'belmonte/ground/glb/SM_BM_NorthApron.glb'
         if not path.is_file():
             self.skipTest('Generated mesh is checked after world.belmonte')
         mesh = source.Surface(source.triangles(path))
@@ -114,7 +114,7 @@ class Terrain(unittest.TestCase):
             actual = mesh.height(x - L.ORIGIN[0], y - L.ORIGIN[1]) + L.ORIGIN[2]
             expected = source.terrain().height(x - L.ORIGIN[0], y - L.ORIGIN[1]) + L.ORIGIN[2]
             np.testing.assert_allclose(actual, expected, atol=.002)
-        outside = source.Surface(source.triangles(yori.OUT / 'belmonte/glb/SM_BM_NorthCountry.glb'))
+        outside = source.Surface(source.triangles(yori.OUT / 'belmonte/ground/glb/SM_BM_NorthCountry.glb'))
         for x, y in [(np.full(61, terrain.OUTER[0]), np.linspace(terrain.OUTER[1], terrain.OUTER[3], 61)),
                      (np.full(61, terrain.OUTER[2]), np.linspace(terrain.OUTER[1], terrain.OUTER[3], 61)),
                      (np.linspace(terrain.OUTER[0], terrain.OUTER[2], 61), np.full(61, terrain.OUTER[3]))]:
@@ -123,7 +123,7 @@ class Terrain(unittest.TestCase):
             np.testing.assert_allclose(a, b, atol=.002)
 
     def test_country_sinks_under_the_foothills_north_of_the_far_hills(self):
-        path = yori.OUT / 'belmonte/glb/SM_BM_NorthCountry.glb'
+        path = yori.OUT / 'belmonte/ground/glb/SM_BM_NorthCountry.glb'
         if not path.is_file():
             self.skipTest('Generated country checked after world.belmonte')
         mesh = source.Surface(source.triangles(path))

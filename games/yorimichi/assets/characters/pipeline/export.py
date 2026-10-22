@@ -112,7 +112,8 @@ def clips(c, prepared, out, wanted):
         rig.select([arm, *keyed], arm, reveal=True)
         rows = [r for r in roles if r['clip'] == action_name]
         sample_rate = max((r.get('export_sample_rate', c.fps) for r in rows), default=c.fps)
-        bpy.ops.export_scene.fbx(filepath=str(out / 'fbx' / ('A_' + name + '.fbx')), object_types={'ARMATURE', 'MESH'},
+        from atelier.blender.fbx import export_fbx as export_scene_fbx
+        export_scene_fbx(filepath=str(out / 'fbx' / ('A_' + name + '.fbx')), object_types={'ARMATURE', 'MESH'},
                                  bake_anim=True, **dict(rig.FBX, bake_anim_step=c.fps / sample_rate))
         entry = {'action': action_name, 'frames': scene.frame_end - scene.frame_start + 1, 'fps': c.fps,
                  'duration': (scene.frame_end - scene.frame_start) / c.fps, 'sample_rate': sample_rate,
@@ -164,7 +165,8 @@ def main(args):
     if not args.clips_only:
         rest(prepared)
         rig.select([arm, *meshes], arm, reveal=True)
-        bpy.ops.export_scene.fbx(filepath=str(out / 'fbx' / (c.name + '.fbx')), object_types={'ARMATURE', 'MESH'}, bake_anim=False,
+        from atelier.blender.fbx import export_fbx as export_scene_fbx
+        export_scene_fbx(filepath=str(out / 'fbx' / (c.name + '.fbx')), object_types={'ARMATURE', 'MESH'}, bake_anim=False,
                                  **dict(rig.FBX, **c.export['fbx']))
         arm.data.pose_position = 'POSE'
     # The donor's default is the clips the merged move set takes from it (adventure.toml [donor]); otherwise all of them.

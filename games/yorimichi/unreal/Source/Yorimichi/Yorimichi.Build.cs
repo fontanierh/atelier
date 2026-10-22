@@ -62,6 +62,7 @@ public class Yorimichi : ModuleRules
         PrivateDependencyModuleNames.AddRange(new string[] { "MediaAssets", "AudioMixer" });   // the soundtrack (JapanMusic)
         PrivateDependencyModuleNames.Add("RHI");
         PrivateDependencyModuleNames.Add("GeometryCore");
+        if (Target.bBuildEditor) PrivateDependencyModuleNames.Add("Chaos");
         PrivateDependencyModuleNames.Add("AIModule");
         PrivateDependencyModuleNames.Add("ImageCore");
         PrivateDependencyModuleNames.Add("ApplicationCore");

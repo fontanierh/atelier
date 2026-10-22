@@ -101,16 +101,17 @@ def _cut(V, F, X, parent, field, crossing, faces=None):
         split &= faces
     if not split.any():
         return V, F, X, parent
-    V, X = list(V), list(X)
+    n0 = len(V)
+    new_V, new_X = [], []
     made, out, owner = {}, [], []
 
     def cut(a, b):
         key = (min(a, b), max(a, b))
         if key not in made:
             t = crossing(*key)
-            V.append(V[key[0]] + t * (V[key[1]] - V[key[0]]))
-            X.append(X[key[0]] + t * (X[key[1]] - X[key[0]]))
-            made[key] = len(V) - 1
+            new_V.append(V[key[0]] + t * (V[key[1]] - V[key[0]]))
+            new_X.append(X[key[0]] + t * (X[key[1]] - X[key[0]]))
+            made[key] = n0 + len(new_V) - 1
         return made[key]
 
     for f in np.flatnonzero(split):
@@ -125,9 +126,12 @@ def _cut(V, F, X, parent, field, crossing, faces=None):
                     poly.append(cut(a, b))
             out += [[poly[0], poly[j], poly[j + 1]] for j in range(1, len(poly) - 1)]
             owner += [parent[f]] * (len(poly) - 2)
+    if new_V:
+        V = np.concatenate([V, np.array(new_V, V.dtype)])
+        X = np.concatenate([X, np.array(new_X, X.dtype)])
     F = np.concatenate([F[~split], np.array(out, 'i8').reshape(-1, 3)])
     parent = np.concatenate([parent[~split], np.array(owner, 'i8')])
-    return np.array(V), F, np.array(X), parent
+    return V, F, X, parent
 
 
 def _line(V, F, X, parent, centre, angle, faces=None):
@@ -181,8 +185,12 @@ def paint(piece, V, N, F, classes, ride=0, rays=RAYS, centre=None):
     rays, fine = _angles(sun)
     for a in rays:
         V, F, N, parent = _line(V, F, N, parent, centre, a)
+    r2_limit = (radius + NEAR) ** 2
     for a in fine:
-        near = (np.linalg.norm(V[F][:, :, [0, 2]] - centre, axis=2) < radius + NEAR).any(1)
+        dx = V[:, 0] - centre[0]
+        dz = V[:, 2] - centre[1]
+        v_near = (dx * dx + dz * dz) < r2_limit
+        near = v_near[F[:, 0]] | v_near[F[:, 1]] | v_near[F[:, 2]]
         V, F, N, parent = _line(V, F, N, parent, centre, a, near)
     for r in (radius - RING, radius):
         V, F, N, parent = _ring(V, F, N, parent, centre, r)

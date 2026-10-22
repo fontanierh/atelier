@@ -21,8 +21,9 @@ def validated_harbor(build, repo):
     """@cc [owner:fontanierh,label:correctness] hidamari-ferry-package-source
     Refuse missing/failed cuts or changed cut code, base mesh, sweep proof and final bytes.
 
-    The normal Hidamari importer is the sole writer of HD_Harbor. Reimporting the world MUST
-    select this same validated opening; a later transport import MUST NOT patch the package.
+    The bounded city owner MUST select this same validated opening for every Harbor piece.
+    Reimporting the world MUST NOT recreate the retired parent; a later transport import
+    MUST NOT patch the parent or piece packages.
     """
     build, repo = Path(build), Path(repo)
     target = build / 'hidamari/ferry/HD_Harbor.fbx'

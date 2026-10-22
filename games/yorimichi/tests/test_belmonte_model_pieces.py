@@ -126,9 +126,17 @@ def test_actual_region_main_preserves_shared_instances_materials_parent_cull_and
                              Surface=lambda *a: None)
     prepare = PIECES.prepare
     monkeypatch.setattr(PIECES, 'prepare', lambda entry, path: prepare(entry, path, triangle_limit=100))
+    from test_belmonte_ground_pieces import GROUND, model as ground_model
+    def surroundings():
+        raw=ground_model(); result=[]
+        for name in sorted(GROUND.NORTH):
+            path=out/'glb'/(name+'.glb'); path.write_bytes(raw)
+            result.append(dict(name=name,path='glb/'+path.name,sha256=hashlib.sha256(raw).hexdigest(),
+                               triangles=4,bounds_m=[[0.,0.,0.],[20.,20.,0.]],slots=['Ground']))
+        return result,{}
     namespace = dict(OUT=out, source=source, finish_surfaces=lambda data: deepcopy(material_values),
                      terrain=SimpleNamespace(VALLEY_CARVED_TILES=set(), OUTER=[0., 0., 10., 10.]),
-                     model_pieces=PIECES, surroundings=lambda: ([], {}),
+                     model_pieces=PIECES, ground_pieces=GROUND, surroundings=surroundings,
                      planting=SimpleNamespace(replacements=lambda *a: ({}, {}), woodland=lambda *a: {}),
                      clear_railway=lambda *a: {}, map_zones=lambda *a: [], tv_spots=lambda *a: [],
                      L=SimpleNamespace(ORIGIN=[0., 0., 0.], BOUNDS=[0., 0., 10., 10.], RAILWAY={}, native_origin=lambda: [0., 0., 0.]),
@@ -141,11 +149,13 @@ def test_actual_region_main_preserves_shared_instances_materials_parent_cull_and
     runtime = json.loads((out / 'runtime.json').read_text())
     report = json.loads((out / 'build-report.json').read_text())
     assert len(report['meshes']) > 1
-    groups = runtime['groups']
-    assert len(groups) == len(report['meshes'])
+    groups = [group for group in runtime['groups'] if group['asset'].rsplit('.',1)[-1].startswith(entry['name']+'_Piece')]
+    models = [row for row in report['meshes'] if row['name'].startswith(entry['name']+'_Piece')]
+    assert len(groups) == len(models)
+    assert len(json.loads((out/'ground/membership.json').read_text())['surfaces']) == 2
     assert all(group['transforms'] == transforms for group in groups)
     assert sum(group['collision'] for group in groups) == (1 if hull else len(groups))
-    for group, model in zip(groups, report['meshes']):
+    for group, model in zip(groups, models):
         doc, _ = glb_parts((out / model['path']).read_bytes())
         expected = [f'/Game/Belmonte/Materials/MI_paint{int(material["name"].split("_")[1])}.MI_paint{int(material["name"].split("_")[1])}'
                     for material in doc['materials']]
