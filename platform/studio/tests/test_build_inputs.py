@@ -89,3 +89,16 @@ def test_statement_suites_cover_nested_imports_and_fresh_scans_find_new_modules(
     assert set(build_inputs.local_imports(script)) == before | {added}
     added.unlink()
     assert set(build_inputs.local_imports(script)) == before
+
+
+def test_a_retargeted_link_is_rediscovered_between_scans(tmp_path, monkeypatch):
+    """A cached closure must revalidate where each import path points, not just the bytes it
+    already resolved: retargeting a link leaves every recorded file untouched."""
+    monkeypatch.setattr(paths, 'REPO', tmp_path)
+    one = tmp_path / 'one.py'; one.write_text('VALUE = 1\n')
+    two = tmp_path / 'two.py'; two.write_text('VALUE = 2\n')
+    link = tmp_path / 'helper.py'; link.symlink_to(one)
+    script = tmp_path / 'run.py'; script.write_text('import helper\n')
+    assert set(build_inputs.local_imports(script)) == {script, one}
+    link.unlink(); link.symlink_to(two)
+    assert set(build_inputs.local_imports(script)) == {script, two}

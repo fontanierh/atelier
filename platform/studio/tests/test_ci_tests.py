@@ -8,7 +8,7 @@ import xml.etree.ElementTree as ET
 
 import pytest
 
-from ci_tests import GROUPS
+from ci_tests import GROUPS, CollectionGroup
 
 RUNNER = Path(__file__).with_name('ci_tests.py')
 
@@ -83,3 +83,38 @@ def test_multi_worker_shards_preserve_collection_and_merge_junit(tmp_path):
     tree = ET.parse(junit)
     names = {tc.attrib['name'] for tc in tree.iter('testcase')}
     assert names == {'test_case_0', 'test_case_1', 'test_case_2'}
+
+
+class _Item:
+    def __init__(self, nodeid):
+        self.nodeid = nodeid
+
+
+class _Config:
+    class hook:
+        @staticmethod
+        def pytest_deselected(items):
+            pass
+
+
+def _shard(group, index, count, nodeids):
+    items = [_Item(nodeid) for nodeid in nodeids]
+    CollectionGroup(group, None, index, count).pytest_collection_modifyitems(_Config(), items)
+    return [item.nodeid for item in items]
+
+
+def test_machine_wide_render_tests_stay_on_one_worker_and_cover_every_node_once():
+    """Harness tests create or observe Blender/UnrealEditor processes; another worker scanning the
+    process table would see them as foreign. They must stay on one shard, and every node must still
+    run exactly once."""
+    nodeids = ([f'platform/harness/tests/test_capacity_{i}.py::test_{i}' for i in range(4)]
+               + [f'platform/harness/tests/test_board_like.py::test_{i}' for i in range(2)]
+               + [f'platform/studio/tests/test_plain_{i}.py::test_{i}' for i in range(9)]
+               + [f'games/x/tests/test_game_{i}.py::test_{i}' for i in range(3)])
+    shards = [_shard('studio', index, 3, nodeids) for index in range(3)]
+    flat = [node for shard in shards for node in shard]
+    assert sorted(flat) == sorted(set(flat)), 'a node ran on more than one shard'
+    expected = {n for n in nodeids if 'harness/tests/test_board_like' not in n and not n.startswith('games/')}
+    assert set(flat) == expected
+    assert all(node.startswith('platform/harness/') is False for shard in shards[1:] for node in shard)
+    assert any(node.startswith('platform/harness/') for node in shards[0])

@@ -174,10 +174,11 @@ class _FastImportScanner(source_imports.ImportScanner):
             return list(self._closures[closure_key])
         cached = _CLOSURE_CACHE.get(closure_key)
         if cached is not None:
-            cached_result, cached_tokens, cached_missed = cached
+            cached_result, cached_tokens, cached_missed, cached_bindings = cached
             try:
                 if (all(self._token(f) == tok for f, tok in cached_tokens)
-                        and self._missed_clear(cached_missed)):
+                        and self._missed_clear(cached_missed)
+                        and all(raw.resolve() == target for raw, target in cached_bindings)):
                     self._closures[closure_key] = cached_result
                     self._call_cache[raw_key] = cached_result
                     return list(cached_result)
@@ -185,8 +186,12 @@ class _FastImportScanner(source_imports.ImportScanner):
                 pass
         seen, todo = set(), [script]
         all_missed = set()
+        bindings = {}
         while todo:
-            source = self._realpath(todo.pop())
+            raw = todo.pop()
+            source = self._realpath(raw)
+            if raw != source:
+                bindings[raw] = source
             if source in seen:
                 continue
             seen.add(source)
@@ -222,6 +227,7 @@ class _FastImportScanner(source_imports.ImportScanner):
             result,
             tuple((f, self._token(f)) for f in result),
             tuple(sorted(all_missed)),
+            tuple(sorted(bindings.items())),
         )
         return list(result)
 

@@ -11,6 +11,15 @@ import pytest
 
 GROUPS = ('board', 'studio', 'games')
 
+# Tests that observe or create machine-wide render processes stay on one worker: a process
+# named Blender or UnrealEditor created by one worker is visible to another worker's scan.
+SERIAL_PREFIXES = ('platform/harness/tests/',)
+SERIAL_FILES = frozenset({'platform/studio/tests/test_artifact_snapshot.py'})
+
+
+def serial_file(path):
+    return path in SERIAL_FILES or path.startswith(SERIAL_PREFIXES)
+
 
 def group_for(nodeid):
     """@cc [owner:fontanierh,label:correctness] complete-ci-partition
@@ -47,11 +56,16 @@ class CollectionGroup:
             by_file = {}
             for item in selected:
                 by_file.setdefault(item.nodeid.split('::', 1)[0], []).append(item)
+            # Serial files may only run on worker 0; their cost is charged there first so the
+            # remaining files still spread evenly over the free workers.
             loads = [0] * self.worker_count
             assigned_files = set()
-            for file_key, file_items in sorted(by_file.items(), key=lambda kv: (-len(kv[1]), kv[0])):
-                target = min(range(self.worker_count), key=loads.__getitem__)
-                loads[target] += max(len(file_items), 1)
+            for file_key in sorted(by_file, key=lambda k: (not serial_file(k), -len(by_file[k]), k)):
+                if serial_file(file_key):
+                    target = 0
+                else:
+                    target = min(range(self.worker_count), key=loads.__getitem__)
+                loads[target] += max(len(by_file[file_key]), 1)
                 if target == self.worker_index:
                     assigned_files.add(file_key)
             shard_selected = []
