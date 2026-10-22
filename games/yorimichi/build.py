@@ -55,6 +55,9 @@ _kart_identity_spec.loader.exec_module(kart_source_identity)
 _foliage_spec = importlib.util.spec_from_file_location('yorimichi_foliage_build', GAME / 'foliage_build.py')
 foliage_build = importlib.util.module_from_spec(_foliage_spec)
 _foliage_spec.loader.exec_module(foliage_build)
+_compile_inputs_spec = importlib.util.spec_from_file_location('yorimichi_compile_inputs', GAME / 'compile_inputs.py')
+compile_inputs = importlib.util.module_from_spec(_compile_inputs_spec)
+_compile_inputs_spec.loader.exec_module(compile_inputs)
 
 _brinecove_library_spec = importlib.util.spec_from_file_location('brinecove_foliage_library', REGIONS / 'brinecove/foliage_names.py')
 brinecove_library = importlib.util.module_from_spec(_brinecove_library_spec)
@@ -1387,7 +1390,11 @@ def unreal_steps(ctx):
                      SKATE_DATA],
              outputs=[out / 'skate-simulation/verification.json', out / 'skate-simulation/package' / 'package-manifest.json'],
              about="assemble the Skate plugin's simulation package and verify every payload"),
-        Step('unreal.compile', [UnrealCompile('YorimichiEditor')], inputs=[SOURCE, ctx.uproject, GAME / 'unreal/Config', GAME / 'unreal/Plugins', paths.ENGINE_PLUGINS], needs=['skate.runtime'], heavy=True,
+        Step('unreal.compile', [UnrealCompile('YorimichiEditor')], inputs=[ctx.uproject],
+             deferred_inputs=[DeferredInputs('editor-source-files', compile_inputs.files,
+                                            ((SOURCE, GAME / 'unreal/Config', GAME / 'unreal/Plugins', paths.ENGINE_PLUGINS),),
+                                            support=(GAME / 'compile_inputs.py', Path(build_inputs.__file__)))],
+             needs=['skate.runtime'], heavy=True,
              about='the Yorimichi C++ modules (editor target)'),
         *unreal_modules.steps(ctx, IMPORT_CODE + SAVED_TYPES + CONTACT_TYPES),
         *foliage_build.unreal_steps(ctx, IMPORT_CODE, engine_version(ctx)),
