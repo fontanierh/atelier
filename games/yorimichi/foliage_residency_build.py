@@ -32,6 +32,35 @@ def source_lods(count, standalone):
     return [round(i * (count - 1) / 3) if standalone else 0 for i in range(4)]
 
 
+
+def caldera_trunk_bounds(path):
+    """@cc [owner:fontanierh,label:correctness] caldera-authored-trunk-policy
+    Only the four exact committed Caldera tree sources and their authored PropLOD
+    package paths MAY use this positive simple-trunk approximation. The upright
+    producer anchors their trunk axis at local XY zero and ground at Z zero.
+    A 40cm-radius capsule from -15cm to 10% of declared fitted height MUST remain
+    independent of the model's broad root/ground skirt and canopy. Other paths
+    MUST return no witness. Current source bytes/materials MUST already match the
+    certified preparation; existing native capsule physics checks MUST still run.
+    """
+    from regions.craterpark.v2 import trees
+    # Exact authored scope, pinned to the producer's current declared fit heights.
+    heights = {'Tree_Caldera_BlackPine_A': 8., 'Tree_Caldera_BlackPine_B': 8.,
+               'Tree_Caldera_Cedar_A': 12., 'Tree_Caldera_Cedar_B': 12.}
+    for name, height in heights.items():
+        base = '/Game/Japan/Assets/' + name
+        paths = {base + '.' + name}
+        for level in range(1, 4):
+            asset = name + '_LOD' + str(level)
+            package = '/Game/Japan/Hidamari/PropLODs/' + name + '/' + asset
+            paths.add(package + '.' + asset)
+        if path in paths:
+            if name not in trees.TREES or trees.TREES[name][2] != height:
+                raise ValueError('Caldera authored trunk fit changed: ' + name)
+            return trunk_bounds([.4, 0., 0., -.15, 0., 0., height*.1])
+    return None
+
+
 def passable_plant(name, words, tokens):
     """Only positive non-tree plant semantics may disable a plant carrier's collision.
 

@@ -156,6 +156,10 @@ def main():
         if source.get_name() in R.species():
             manifest = json.loads((yori.OUT / 'foliage' / source.get_name() / 'manifest.json').read_text())
             authored = R.trunk_bounds(manifest['trunk_collision']) if simple else []
+        if simple and not authored and old['rigid_triangles'] == 0:
+            authored = R.caldera_trunk_bounds(old['source'])
+            if authored is None:
+                raise ValueError('No declared whole-textured trunk source: ' + old['source'])
         expected_rigid = old['rigid_triangles']
         before = owner.digest(old['source'])
         directory = R.ROOT + '/' + F.asset_id(old['source'])

@@ -33,6 +33,32 @@ def test_same_lod_selection_as_original_owner_including_bankers_rounding():
     assert len(R.species()) == 18 and 'Tree_Broad_A' in R.species()
 
 
+
+def test_caldera_trunk_dispatch_covers_only_all_sixteen_committed_paths(monkeypatch):
+    monkeypatch.syspath_prepend(str(GAME / 'world'))
+    from regions.craterpark.v2 import trees
+    accepted = []
+    for name in trees.TREES:
+        accepted.append('/Game/Japan/Assets/' + name + '.' + name)
+        for lod in range(1, 4):
+            asset = f'{name}_LOD{lod}'
+            accepted.append(f'/Game/Japan/Hidamari/PropLODs/{name}/{asset}.{asset}')
+    for path in accepted:
+        bounds = R.caldera_trunk_bounds(path)
+        assert bounds[:6] == [40., 0., -0., -15., 0., -0.]
+        assert bounds[6] == pytest.approx(120. if 'Cedar' in path else 80.)
+    assert len(accepted) == 16 and all(R.caldera_trunk_bounds(p) for p in accepted)
+    for path in accepted:
+        assert not R.caldera_trunk_bounds(path.replace('/Game/', '/Game/Other/'))
+        assert not R.caldera_trunk_bounds(path + '_Other')
+    name = next(iter(trees.TREES))
+    assert not R.caldera_trunk_bounds(f'/Game/Japan/Hidamari/PropLODs/{name}/{name}_LOD4.{name}_LOD4')
+    assert not R.caldera_trunk_bounds('/Game/Japan/Assets/Tree_Unknown.Tree_Unknown')
+    monkeypatch.setitem(trees.TREES, name, ('changed', 'pine', 9., 4.3))
+    with pytest.raises(ValueError, match='fit changed'):
+        R.caldera_trunk_bounds(f'/Game/Japan/Assets/{name}.{name}')
+
+
 def test_registry_proof_covers_carrier_canopy_shadow_old_patch_and_material_sidecars(tmp_path):
     row = dict(rigid=R.ROOT + '/id/Tree.Tree', optimized=R.ROOT + '/id/Tree_Canopy.Tree_Canopy',
                shadow=R.ROOT + '/id/Tree_Shadow.Tree_Shadow', patch='/Game/FoliageSystem/old_Patch.old_Patch')
