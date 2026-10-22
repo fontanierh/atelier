@@ -131,44 +131,80 @@ def test_container_plural_tree_alias_and_unknown_semantics_preserve_collision(na
     assert not R.passable_plant(name, words, tokens)
 
 
-def test_declared_authored_hull_and_structural_material_witnesses():
-    barrel=R.authored_spec('/Game/Belmonte/Meshes/SM_BM_BP_BarrelPlanter.SM_BM_BP_BarrelPlanter')
-    assert barrel['collision']['path'].endswith('_Collision.glb')
-    stand=R.authored_spec('/Game/Belmonte/Meshes/SM_BM_BP_FlowerStand.SM_BM_BP_FlowerStand')
-    assert not stand.get('collision') and stand['slots']==['M_wood','M_vcol']
-    with pytest.raises(ValueError):
-        R.authored_spec('/Game/Other/SM_BM_BP_BarrelPlanter.SM_BM_BP_BarrelPlanter')
+
+@pytest.mark.parametrize('names,triangles,excluded', [
+    (['FoliageAuthored_BM_000_M_wood_017', 'FoliageAuthored_BM_001_M_vcol_007'], 576, True),
+    (['FoliageAuthored_HD_P_bonsai_shelf'], 9684, True),
+    (['FoliageAuthored_HD_P_planter_box'], 9006, True),
+    (['FoliageAuthored_HD_P_potted_plants'], 10814, True),
+    (['FoliageAuthored_TH_P_planter', 'FoliageAuthored_VillagePalette'], 5823, True),
+    (['FoliageAuthored_Small'], 12288, True),
+    (['FoliageAuthored_Large'], 12289, False),
+    (['FoliageRoles_Leaf'], 100, False),
+    (['FoliageAuthored_One', 'Unmarked'], 100, False),
+    (['FoliageAuthored_Empty'], 0, False), ([], 100, False),
+    (['FoliageAuthored_Boolean'], True, False)])
+def test_explicit_bounded_authored_props_are_ordinary_in_every_namespace(names, triangles, excluded):
+    assert R.excluded_authored(names, triangles) is excluded
 
 
-def test_actual_flower_stand_retained_glb_slots_preserve_order_and_source_indices():
-    source = '/Game/Belmonte/Meshes/SM_BM_BP_FlowerStand.SM_BM_BP_FlowerStand'
-    imported = ['BM_000_M_wood_017', 'BM_001_M_vcol_007']
-    names = ['FoliageAuthored_' + name for name in imported]
-    assert R.authored_structural_slots(source, names, imported) == {0}
-    for actual, original in ((names[::-1], imported), (names, imported[::-1]),
-                             (names[:1], imported[:1]), (['FoliageAuthored_M_wood', names[1]], imported)):
-        with pytest.raises(ValueError, match='slots=.*imported=.*expected='):
-            R.authored_structural_slots(source, actual, original)
+def test_only_canonical_owned_mesh_packages_may_refer_to_retired_interaction_material():
+    for suffix in ('', '_Canopy', '_Shadow'):
+        assert R.owned_resident_mesh(R.ROOT + '/Planter_0123456789abcdef/Planter' + suffix)
+    for path in (R.ROOT + '/Materials/Planter', R.ROOT + '/Planter_0123456789abcdef/Other',
+                 R.ROOT + '/Planter_0123456789abcdef/Planter_CanopyExtra',
+                 R.ROOT + '/Planter_0123456789abcde/Planter', '/Game/Other/Planter_0123456789abcdef/Planter'):
+        assert not R.owned_resident_mesh(path)
 
 
-def test_authored_structural_slots_refuse_changed_committed_glb(tmp_path, monkeypatch):
-    source = '/Game/Belmonte/Meshes/SM_BM_BP_FlowerStand.SM_BM_BP_FlowerStand'
-    entry = R.authored_spec(source)
-    library = tmp_path / 'assets/belmonte'
-    file = library / entry['path']
-    file.parent.mkdir(parents=True)
-    file.write_bytes((GAME / 'assets/belmonte' / entry['path']).read_bytes() + b'changed')
-    (library / 'source.json').write_text(json.dumps(dict(meshes=[entry])))
-    monkeypatch.setattr(R, 'GAME', tmp_path)
-    with pytest.raises(ValueError, match='Changed authored structural source'):
-        R.authored_structural_slots(source, [], [])
-
-
-def test_authored_structural_glb_is_a_declared_dependency(tmp_path, monkeypatch):
-    source = '/Game/Belmonte/Meshes/SM_BM_BP_FlowerStand.SM_BM_BP_FlowerStand'
-    entry = R.authored_spec(source)
-    report = tmp_path / 'report.json'
-    report.write_text(json.dumps(dict(assets=[dict(source=source, optimized='/Game/Prepared',
-        shadow='/Game/Shadow', patch='/Game/Patch', rigid_triangles=0, leaf_materials=[])])))
-    monkeypatch.setattr(R.mesh_geometry, 'package_inventory', lambda *_: {})
-    assert GAME / 'assets/belmonte' / entry['path'] in R.dependency_inputs(tmp_path, report)
+@pytest.mark.parametrize('old_report', [True, False])
+def test_owner_skips_old_authored_rows_before_classifier_or_derived_loads(tmp_path, old_report):
+    path = GAME / 'unreal/Scripts/prepare_foliage_residency.py'
+    function = next(n for n in ast.parse(path.read_text()).body if isinstance(n, ast.FunctionDef) and n.name == 'main')
+    content, out = tmp_path / 'Content', tmp_path / 'build'
+    class Mesh:
+        def __init__(self, authored=False): self.authored = authored
+        def get_editor_property(self, name):
+            return [SimpleNamespace(get_editor_property=lambda key: 'FoliageAuthored_Prop' if self.authored else 'FoliageRoles_Bush')]
+        def get_num_triangles(self, level): return 100
+        def get_num_lods(self): return 1
+        def get_name(self): return 'Prop' if self.authored else 'Bush_Test'
+        def get_material(self, index): return SimpleNamespace(get_path_name=lambda: '/Game/Material.Material')
+    authored, bush = Mesh(True), Mesh()
+    normal = dict(source='/Game/Bush.Bush', optimized='/Game/Old', shadow='/Game/OldShadow', patch='/Game/Patch',
+                  source_sha256='d', identity='i', source_triangles=100, rigid_triangles=0)
+    ordinary = dict(normal, source='/Game/Prop.Prop', optimized='/Game/UnusedProp', shadow='/Game/UnusedPropShadow')
+    report = dict(version=1, assets=[ordinary, normal] if old_report else [normal], packages={'proof':'p'}, words=[], materials=[])
+    for file in (out / 'foliage_system/report.json', content / 'Data/foliage_system/registry.json'):
+        file.parent.mkdir(parents=True, exist_ok=True); file.write_text(json.dumps(report))
+    loads, classified, compacted, saved = [], [], [], []
+    def load(asset):
+        loads.append(asset)
+        assert 'UnusedProp' not in asset
+        return authored if asset == ordinary['source'] else bush
+    def classify(mesh, registry):
+        assert mesh is not authored
+        classified.append(mesh); return [], 'roles'
+    result = dict(rigid='', rigid_triangles=0, rigid_lod_triangles=[], optimized=R.ROOT+'/Bush_Canopy',
+                  shadow=R.ROOT+'/Bush_Shadow', triangles=[100]*4, shadow_triangles=100)
+    def compact(*args):
+        compacted.append(args); return json.dumps(result)
+    values = {}
+    env = dict(OUT=out/'foliage_residency', CONTENT=content, json=json,
+        yori=SimpleNamespace(OUT=out), interaction_material=lambda: object(),
+        E=SimpleNamespace(load_asset=load, save_loaded_asset=lambda mesh, dirty: saved.append(mesh) or True),
+        G=SimpleNamespace(package_inventory=lambda *a: {'proof':'p'}),
+        F=SimpleNamespace(package_inventory=lambda *a: {'proof':'p'}, asset_id=lambda p: p.split('/')[-1], vegetation=lambda n: True,
+            roles=SimpleNamespace(plant_words=lambda n: {'bush'}, semantic_tokens=lambda n: {'bush'})),
+        R=SimpleNamespace(ROOT=R.ROOT, excluded_authored=R.excluded_authored, TREE_WORDS=R.TREE_WORDS,
+            passable_plant=R.passable_plant, species=lambda: [], source_lods=R.source_lods, assets=R.assets, inventory=lambda *a: {'proof':'p'}),
+        owner=SimpleNamespace(digest=lambda p: 'd', source_identity=lambda *a: 'i', classify=classify),
+        U=SimpleNamespace(AssetRegistryHelpers=SimpleNamespace(get_asset_registry=lambda: object()), log=lambda text: None,
+            YorimichiFoliageBuilder=SimpleNamespace(collect_unused=lambda: None),
+            YorimichiFoliageResidencyBuilder=SimpleNamespace(self_test=lambda: True, compact=compact)),
+        atomic_json=lambda file, value: values.__setitem__(str(file), value))
+    exec(compile(ast.Module(body=[function], type_ignores=[]), str(path), 'exec'), env)
+    env['main']()
+    final = values[str(out/'foliage_residency/report.json')]
+    assert [row['source'] for row in final['assets']] == [normal['source']]
+    assert len(classified) == len(compacted) == 1 and saved

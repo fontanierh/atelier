@@ -59,8 +59,8 @@ def interaction_material():
                 return material
     except (OSError, ValueError):
         pass
-    # Force deletion may clear references: refuse every owner outside this exact
-    # complete receiving roster before touching the owned derivative.
+    # Force deletion may clear references: current and retired canonical outputs
+    # in this producer's exclusive namespace are owned; external assets refuse.
     if E.does_asset_exist(path):
         report = json.loads((yori.OUT / 'foliage_system/report.json').read_text())
         allowed = {R.ROOT + '/' + F.asset_id(row['source']) + '/' +
@@ -68,8 +68,14 @@ def interaction_material():
                    for row in report['assets'] for suffix in ('', '_Canopy', '_Shadow')}
         registry = U.AssetRegistryHelpers.get_asset_registry()
         refs = {str(p) for p in registry.get_referencers(path, U.AssetRegistryDependencyOptions())}
-        if refs - allowed:
-            raise ValueError('Interaction material has external owners: ' + ', '.join(sorted(refs - allowed)))
+        foreign = set()
+        for package in refs - allowed:
+            assets = registry.get_assets_by_package_name(package)
+            if (not R.owned_resident_mesh(package) or len(assets) != 1 or
+                    str(assets[0].asset_class_path.asset_name) != 'StaticMesh'):
+                foreign.add(package)
+        if foreign:
+            raise ValueError('Interaction material has external owners: ' + ', '.join(sorted(foreign)))
         if not E.delete_asset(path):
             raise RuntimeError('Cannot replace owned interaction material')
     before = G.package_inventory(CONTENT, [source, mpc_path])
@@ -102,6 +108,9 @@ def main():
     corner membership, all output corners/materials/settings and cooked collision
     before save/inventory/publication. Failed partial outputs MUST remain hints;
     no parent success stamp or legacy/source mutation may be manufactured.
+    Small whole-mesh authored props MUST remain ordinary single meshes, excluded
+    only by their complete explicit native role tag and shared 12288-triangle
+    budget after current source identity checks, before any compaction or save.
     """
     OUT.mkdir(parents=True, exist_ok=True)
     report = json.loads((yori.OUT / 'foliage_system/report.json').read_text())
@@ -116,16 +125,29 @@ def main():
     records = []
     for index, old in enumerate(report['assets']):
         source = E.load_asset(old['source'])
-        prepared = E.load_asset(old['optimized'])
-        shadow = E.load_asset(old['shadow'])
-        if not source or not prepared or not shadow or owner.digest(old['source']) != old['source_sha256']:
+        if not source or owner.digest(old['source']) != old['source_sha256']:
             raise ValueError('Missing or changed certified source: ' + old['source'])
         if owner.source_identity(source, registry) != old['identity']:
             raise ValueError('Certified material/source dependency changed: ' + old['source'])
+        names = [str(slot.get_editor_property('material_slot_name')) for slot in source.get_editor_property('static_materials')]
+        triangles = source.get_num_triangles(0)
+        if R.excluded_authored(names, triangles):
+            if triangles != old['source_triangles']:
+                raise ValueError('Authored ordinary-prop triangle count changed: ' + old['source'])
+            U.log('FOLIAGE RESIDENCY excluded ordinary authored prop: ' + old['source'])
+            source = None
+            U.YorimichiFoliageBuilder.collect_unused()
+            continue
         policy = owner.classify(source, registry)
         if policy is None:
             raise ValueError('Certified source lost foliage semantics: ' + old['source'])
         leaf_slots, classification = policy
+        if classification == 'authored':
+            raise ValueError('Invalid authored ordinary-prop exclusion: ' + old['source'])
+        prepared = E.load_asset(old['optimized'])
+        shadow = E.load_asset(old['shadow'])
+        if not prepared or not shadow:
+            raise ValueError('Missing certified preparation: ' + old['source'])
         standalone = F.vegetation(source.get_name())
         simple = bool(set(F.roles.plant_words(source.get_name())) & R.TREE_WORDS) and classification != 'authored'
         passable = R.passable_plant(source.get_name(), F.roles.plant_words(source.get_name()),
@@ -135,24 +157,6 @@ def main():
             manifest = json.loads((yori.OUT / 'foliage' / source.get_name() / 'manifest.json').read_text())
             authored = R.trunk_bounds(manifest['trunk_collision']) if simple else []
         expected_rigid = old['rigid_triangles']
-        collision = source.get_editor_property('complex_collision_mesh')
-        if classification == 'authored':
-            entry = R.authored_spec(old['source'])
-            if entry.get('collision'):
-                if not collision or collision.get_path_name().split('.')[0] != old['source'].split('.')[0] + '_Collision':
-                    raise ValueError('Missing current declared authored collision hull')
-            else:
-                if collision:
-                    raise ValueError('Undeclared authored collision hull')
-                slots = source.get_editor_property('static_materials')
-                names = [str(s.get_editor_property('material_slot_name')) for s in slots]
-                imported = [str(s.get_editor_property('imported_material_slot_name')) for s in slots]
-                rigid_slots = R.authored_structural_slots(old['source'], names, imported)
-                if not rigid_slots:
-                    raise ValueError('Authored structure has neither collision hull nor explicit rigid materials')
-                leaf_slots = [i for i in range(len(names)) if i not in rigid_slots]
-                classification = 'authored-material'
-                expected_rigid = -1
         before = owner.digest(old['source'])
         directory = R.ROOT + '/' + F.asset_id(old['source'])
         result = U.YorimichiFoliageResidencyBuilder.compact(source, prepared, shadow,
