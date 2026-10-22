@@ -237,6 +237,25 @@
       L = Math.max(0.5, q('len'));
       const end = getp(p, 'ease_end') ? q('end_slope') : null;
       prof = runProfile(pose.y, pose.a, L, q('slope'), Math.max(1, q('vR')), end);
+      // a landing roller at the entry: a rise to a crest, then a straight
+      // landing slope down to the original floor. The kicker lands on the
+      // crest and the contact projects the rider down the run (fakie).
+      const rise = q('entry_rise'), crest = q('entry_crest'), drop = q('entry_drop');
+      if (rise > 0 && crest > 0 && drop > 0 && crest < L) {
+        const endD = Math.min(L, crest + rise / Math.tan(drop * D2R));
+        const t = Math.tan(drop * D2R), A = (-t - 2 * rise / crest) / (crest * crest), B = rise / (crest * crest) - A * crest;
+        for (const point of prof) {
+          const d = point[0];
+          if (d > endD) continue;
+          if (d <= crest) {
+            point[1] += A * d * d * d + B * d * d;
+            point[2] = Math.atan(3 * A * d * d + 2 * B * d) / D2R;
+          } else {
+            point[1] += rise - (d - crest) * Math.tan(drop * D2R);
+            point[2] = -drop;
+          }
+        }
+      }
       plan = planPath(pose, L, q('turn'));
       const w0 = q('width'), w1 = getp(p, 'width_end') === null || getp(p, 'width_end') === undefined || getp(p, 'width_end') === '' ? w0 : q('width_end');
       const W = walls(), inh = pose.walls && pose.walls.wl ? pose.walls : null, Lb = Math.min(q('wall_blend'), L);
@@ -1094,7 +1113,11 @@
             if (Math.abs(along) > 0.8 || Math.abs(lat) > s.w / 2 + 0.5) continue;
             if (y <= s.y + 0.05) {
               const vyt = vy - G * t, b = s.a * D2R, c = Math.cos(hs - hh);
-              const vh = vx * c;          // horizontal velocity along the target's heading
+              let vh = vx * c;            // horizontal velocity along the target's heading
+              // a run landing fakie: the runtime's contact projects the
+              // velocity along the run, so the surface, not the flight, sets
+              // the sign of the tangential speed.
+              if (vh < 0 && tb.type === 'run') vh = -vh;
               const vt = vh * Math.cos(b) + vyt * Math.sin(b), vn = Math.abs(-vh * Math.sin(b) + vyt * Math.cos(b));
               return { target: tb.id, idx: i, air: dx, impact: vn, vt: Math.max(0.5, vt), x, z, y };
             }

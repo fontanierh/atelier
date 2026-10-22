@@ -2174,14 +2174,17 @@
      "R": 3.5
     },
     "wr": {
-     "h": 4,
+     "h": 9,
      "R": 3.5
     },
     "len": 41,
     "turn": -72,
     "slope": 0,
     "vR": 10,
-    "ease_end": false
+    "ease_end": false,
+    "entry_rise": 4.68,
+    "entry_crest": 15.0,
+    "entry_drop": 26.0
    }
   },
   {
