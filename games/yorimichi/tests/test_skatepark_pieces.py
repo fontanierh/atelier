@@ -172,9 +172,13 @@ def test_normal_recipe_declares_complete_piece_products_native_owner_and_runtime
     assert 'skatepark.meshes' not in steps['data.stage'].reads
     assert 'skatepark.textures' in steps['unreal.skatepark'].reads
     assert recipe.WORLD / 'mesh_pieces.py' in steps['world.skatepark'].inputs
-    # Pier's copier must not invalidate independent city source exports.
+    # City pieces now use the same exact copier; their cutoffs and unrelated
+    # producers still do not consume it merely because their outputs feed pieces.
     for source in ('HD_Terrain', 'HD_Streets', 'HD_Square'):
-        assert recipe.WORLD / 'mesh_pieces.py' not in steps['world.city_tiles.' + source].inputs
+        assert recipe.WORLD / 'mesh_pieces.py' in steps['world.city_tiles.' + source].inputs
+        assert recipe.WORLD / 'mesh_pieces.py' not in steps['world.hidamari.tiles.' + source].inputs
+    for name in ('world.hidamari', 'world.city_tiles', 'world.city_trees'):
+        assert recipe.WORLD / 'mesh_pieces.py' not in steps[name].inputs
     assert steps['unreal.skatepark'].commands[0].modules == recipe.IMPORT_CODE
     assert recipe.runtime_data.staged_source(tmp_path, 'skatepark/park.json') == tmp_path / 'skatepark/runtime-park.json'
 

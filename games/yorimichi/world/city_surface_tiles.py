@@ -17,19 +17,19 @@ from atelier.mesh_cells import cell_face_groups
 from atelier.conventions import to_unreal
 from atelier.model_files import regular_files, retain_files
 from atelier.atomic_files import atomic_json
+from mesh_pieces import capture, subset, create_mesh
 
 ROOT = yori.WORLD
 SOURCES = ('HD_Terrain', 'HD_Streets', 'HD_Square')
 TRIANGLE_LIMIT = 32768
 
 
-def values(collection, property_name, width, dtype=np.float32):
-    data = np.empty(len(collection) * width, dtype=dtype)
-    collection.foreach_get(property_name, data)
-    return data.reshape(-1, width) if width > 1 else data
-
-
 def partition(source, folder, size, expected):
+    """@cc [owner:fontanierh,label:correctness] city-pieces-share-complete-corner-copy
+    City subdivision MUST use the common complete-corner copier. Captured imported-source
+    float32 normals MUST remain bitwise identical in each child; source smoothing, material
+    bindings and every UV/colour layer and colour type MUST survive the same face mapping.
+    """
     path = yori.OUT / 'hidamari/assets' / (source + '.fbx')
     before = set(bpy.data.objects)
     bpy.ops.import_scene.fbx(filepath=str(path), use_anim=False, use_custom_normals=True)
@@ -48,18 +48,12 @@ def partition(source, folder, size, expected):
         base = slot and slot.name.rpartition('.')[0]
         if base and slot.name.rpartition('.')[2].isdigit() and base in bpy.data.materials:
             mesh.materials[i] = bpy.data.materials[base]
-    positions = values(mesh.vertices, 'co', 3)
-    starts = values(mesh.polygons, 'loop_start', 1, np.int32)
-    counts = values(mesh.polygons, 'loop_total', 1, np.int32)
-    vertex_indices = values(mesh.loops, 'vertex_index', 1, np.int32)
-    normals = values(mesh.corner_normals, 'vector', 3)
-    materials = values(mesh.polygons, 'material_index', 1, np.int32)
-    uvs = [(layer.name, values(layer.data, 'uv', 2)) for layer in mesh.uv_layers]
-    colours = [(layer.name, layer.domain, values(layer.data, 'color', 4))
-               for layer in mesh.color_attributes]
-    assert len(normals) == len(mesh.loops) and uvs and colours, source
+    source_data = capture(mesh)
+    positions = source_data['positions']
+    starts, counts = source_data['starts'], source_data['counts']
+    vertex_indices = source_data['vertex_indices']
+    assert source_data['uvs'] and source_data['colours'], source
     assert sum(counts - 2) == expected['triangles'], (source, 'source FBX differs from production triangle count')
-    assert np.isfinite(positions).all() and np.isfinite(normals).all()
     # Existing exports are in metres. Validate their world bounds against the
     # production export receipt before assigning metre-sized visibility cells.
     matrix = np.array(original.matrix_world, dtype=np.float64)
@@ -77,35 +71,10 @@ def partition(source, folder, size, expected):
         selected = np.asarray(members, dtype=np.int32)
         assert len(selected) and (selected >= 0).all() and (selected < len(mesh.polygons)).all()
         np.add.at(face_owners, selected, 1)
-        loop_map = np.concatenate([np.arange(starts[i], starts[i] + counts[i]) for i in selected])
-        used, remapped = np.unique(vertex_indices[loop_map], return_inverse=True)
-        lengths = counts[selected]
-        ends = np.cumsum(lengths)
-        faces = np.split(remapped, ends[:-1])
         name = f'{source}_cell_{cx}_{cy}' + ('_Piece' + suffix if suffix else '')
-        data = bpy.data.meshes.new(name)
-        data.from_pydata(positions[used].tolist(), [], [face.tolist() for face in faces])
-        data.update()
-        for material in mesh.materials:
-            data.materials.append(material)
-        data.polygons.foreach_set('material_index', materials[selected])
-        data.polygons.foreach_set('use_smooth', np.ones(len(selected), dtype=np.bool_))
-        data.normals_split_custom_set(normals[loop_map].tolist())
-        for layer_name, uv in uvs:
-            layer = data.uv_layers.new(name=layer_name)
-            layer.data.foreach_set('uv', uv[loop_map].ravel())
-        for layer_name, domain, colour in colours:
-            assert domain in ('POINT', 'CORNER'), domain
-            layer = data.color_attributes.new(name=layer_name, type='FLOAT_COLOR', domain=domain)
-            layer.data.foreach_set('color', colour[used if domain == 'POINT' else loop_map].ravel())
-        # Verify the attributes in the actual new mesh, not just the partition math.
-        assert np.array_equal(values(data.vertices, 'co', 3), positions[used])
-        assert np.allclose(values(data.corner_normals, 'vector', 3), normals[loop_map], atol=2e-5)
-        for layer_name, uv in uvs:
-            assert np.array_equal(values(data.uv_layers[layer_name].data, 'uv', 2), uv[loop_map])
-        for layer_name, domain, colour in colours:
-            assert np.allclose(values(data.color_attributes[layer_name].data, 'color', 4),
-                               colour[used if domain == 'POINT' else loop_map], atol=1e-7)
+        piece = subset(source_data, members)
+        used = piece['used']
+        data = create_mesh(name, piece)
         ob = bpy.data.objects.new(name, data)
         bpy.context.collection.objects.link(ob)
         ob.matrix_world = original.matrix_world.copy()
@@ -129,7 +98,7 @@ def partition(source, folder, size, expected):
         finally:
             for hull, old_name in zip(collision, collision_names):
                 hull.name = old_name
-        tri = int(sum(lengths - 2))
+        tri = piece['triangles']
         assert tri <= TRIANGLE_LIMIT, (name, tri)
         bounds = world_positions[used]
         tiles.append(dict(name=name, polygons=len(selected), triangles=tri,
