@@ -175,6 +175,7 @@ class MeshReuse:
                 if file != self.script and file not in runtime_files() and file.is_relative_to(paths.REPO)}
         receipt_policy = (mesh_reuse.identity(dict(geometry=self.policy, owner=self.owner_sources))
                           if owner_script else self.policy)
+        geometry_receipt_policy = receipt_policy
         if validation_policy is not None:
             receipt_policy = mesh_reuse.identity(dict(import_policy=receipt_policy, validation=validation_policy))
         current_context = context(ctx)
@@ -188,6 +189,7 @@ class MeshReuse:
         self.miss_reasons = {}
         self.compatible = False
         self.local_compatible = False
+        self.previous_receipt_policies = set()
         try:
             if not self.enabled:
                 raise ValueError('Unsupported native import policy')
@@ -210,6 +212,23 @@ class MeshReuse:
                                          and observed_environment(ctx, current_context))
             self.previous_fingerprint = old.get('fingerprint')
             self.previous_stamp = old
+            if (self.local_compatible and self.receipts.previous is not None
+                    and self.receipts.previous.get('policy') != self.receipts.header['policy']):
+                # A receipt from before a validator was declared still proves its original
+                # production policy. A newer validator must run before any current admission.
+                self.previous_receipt_policies.add(geometry_receipt_policy)
+                if self.requires_validator:
+                    try:
+                        previous_validator = mesh_reuse.saved_source(paths.REPO,
+                            validator.relative_to(paths.REPO).as_posix(),
+                            inputs.get('<repo>/' + validator.relative_to(paths.REPO).as_posix()))
+                        if previous_validator is not None:
+                            previous_validation_policy = mesh_reuse.native_policy(previous_validator,
+                                validation_functions, validator, inputs=inputs)
+                            self.previous_receipt_policies.add(mesh_reuse.identity(dict(
+                                import_policy=geometry_receipt_policy, validation=previous_validation_policy)))
+                    except (OSError, ValueError, KeyError, TypeError, SyntaxError):
+                        pass  # Unknown old validation code cannot reproduce a combined receipt.
         except (OSError, ValueError, KeyError, TypeError, SyntaxError):
             pass
         for bundle in self.bundles:
@@ -273,6 +292,11 @@ class MeshReuse:
         historical = False
         if local:
             self.pending[name]['provenance'] = self.receipts.records[name].get('provenance', {'kind': 'compatibility-only'})
+        if (not local and self.local_compatible and validator is not None
+                and self.receipts.matches_previous(name, key, packages, self.previous_receipt_policies)):
+            local = True
+            historical = True
+            self.pending[name]['provenance'] = dict(kind='compatibility-only', historical_task=self.previous_fingerprint)
         if not local and not self.receipts.path.exists() and self.local_compatible and validator is not None:
             local = (all(unreal.EditorAssetLibrary.does_asset_exist(target) for target in packages)
                      and mesh_reuse.historical_packages_match(self.ctx, self.task, self.previous_stamp, packages))
