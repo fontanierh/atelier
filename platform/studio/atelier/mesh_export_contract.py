@@ -14,18 +14,27 @@ def raw_fbx_lines(text):
     if not any(name in text for name in ('export_scene', 'getattr', 'io_scene_fbx')):
         return ()
     tree = ast.parse(text)
-    namespaces = {target.id for node in ast.walk(tree) if isinstance(node, ast.Assign)
-                  and isinstance(node.value, ast.Attribute) and node.value.attr == 'export_scene'
-                  for target in node.targets if isinstance(target, ast.Name)}
+    nodes = list(ast.walk(tree))
+    namespaces = {alias.asname or alias.name for node in nodes
+                  if isinstance(node, ast.ImportFrom) and node.module == 'bpy.ops'
+                  for alias in node.names if alias.name == 'export_scene'}
     def namespace(node):
         return (isinstance(node, ast.Attribute) and node.attr == 'export_scene'
                 or isinstance(node, ast.Name) and node.id in namespaces)
+    # Follow ordinary local aliases to a fixed point, including nested functions.
+    while True:
+        aliases = {target.id for node in nodes if isinstance(node, ast.Assign) and namespace(node.value)
+                   for target in node.targets if isinstance(target, ast.Name)}
+        if aliases <= namespaces:
+            break
+        namespaces.update(aliases)
     return tuple(sorted({node.lineno for node in ast.walk(tree)
                  if (isinstance(node, ast.Attribute) and node.attr == 'fbx' and namespace(node.value))
                  or (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
                      and node.func.id == 'getattr' and len(node.args) >= 2 and namespace(node.args[0])
                      and isinstance(node.args[1], ast.Constant) and node.args[1].value == 'fbx')
-                 or (isinstance(node, ast.ImportFrom) and (node.module or '').split('.')[0] == 'io_scene_fbx')
+                 or (isinstance(node, ast.ImportFrom) and ((node.module or '').split('.')[0] == 'io_scene_fbx'
+                     or node.module == 'bpy.ops.export_scene' and any(a.name == 'fbx' for a in node.names)))
                  or (isinstance(node, ast.Import) and any(alias.name.split('.')[0] == 'io_scene_fbx' for alias in node.names))}))
 
 

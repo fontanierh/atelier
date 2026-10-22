@@ -10,6 +10,9 @@ from atelier import build, mesh_export_contract as contract, paths
     'operation = getattr(bpy.ops.export_scene, "fbx")',
     'scene = bpy.ops.export_scene; scene.fbx()',
     'from io_scene_fbx import export_fbx_bin',
+    'from bpy.ops import export_scene as scene; scene.fbx()',
+    'from bpy.ops.export_scene import fbx as export; export()',
+    'scene = bpy.ops.export_scene; alias = scene; alias.fbx()',
 ])
 def test_raw_operator_rejected_before_execution(tmp_path, code):
     source = tmp_path / 'export.py'; source.write_text(code)
