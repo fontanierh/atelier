@@ -85,7 +85,7 @@ def test_caldera_trunk_dispatch_covers_only_all_sixteen_committed_paths(monkeypa
 def test_registry_proof_covers_carrier_canopy_shadow_old_patch_and_material_sidecars(tmp_path):
     row = dict(rigid=R.ROOT + '/id/Tree.Tree', optimized=R.ROOT + '/id/Tree_Canopy.Tree_Canopy',
                shadow=R.ROOT + '/id/Tree_Shadow.Tree_Shadow', patch='/Game/FoliageSystem/old_Patch.old_Patch')
-    paths = R.assets(row) + [R.ROOT + '/Materials/M_CanopyNearInteraction']
+    paths = R.assets(row)
     for package in paths:
         file = tmp_path / (package.removeprefix('/Game/') + '.uasset')
         file.parent.mkdir(parents=True, exist_ok=True)
@@ -98,48 +98,20 @@ def test_registry_proof_covers_carrier_canopy_shadow_old_patch_and_material_side
     registry.write_text(json.dumps(report))
     proof = tmp_path / 'report.json'
     proof.write_text(json.dumps(report))
+    # A fresh authored-leaf build never creates the former solid-volume material.
+    ghost = tmp_path / 'FoliageResident/Materials/M_CanopyNearInteraction.uasset'
+    assert not ghost.exists()
+    assert R.verify(tmp_path, proof)
+    # Existing receivers may retain it; its bytes are neither consumed nor deleted.
+    ghost.parent.mkdir(parents=True)
+    ghost.write_bytes(b'old unused material')
+    assert R.verify(tmp_path, proof) and ghost.read_bytes() == b'old unused material'
+    ghost.write_bytes(b'changed unused material')
     assert R.verify(tmp_path, proof)
     sidecar.write_bytes(b'changed')
     assert not R.verify(tmp_path, proof)
     sidecar.unlink()
     assert not R.verify(tmp_path, proof)
-
-
-def interaction_function():
-    path = GAME / 'unreal/Scripts/prepare_foliage_residency.py'
-    function = next(n for n in ast.parse(path.read_text()).body if isinstance(n, ast.FunctionDef) and n.name == 'interaction_material')
-    return compile(ast.Module(body=[function], type_ignores=[]), str(path), 'exec')
-
-
-def test_owned_material_preserves_old_graph_adds_push_and_correct_cut_scale(tmp_path):
-    import hashlib
-    values = {}
-    class Parameter:
-        def get_editor_property(self, name):
-            return 'CutScale'
-        def set_editor_property(self, name, value):
-            values[name] = value
-    original = '/Game/FoliageSystem/Materials/M_CanopyNear'
-    target = R.ROOT + '/Materials/M_CanopyNearInteraction'
-    mpc = '/Game/Japan/Materials/MPC_Wind'
-    writes, pushed = [], []
-    digest = lambda path: {'near': 'a', 'mpc': 'b'}.get(path, path)
-    material = object()
-    editor = SimpleNamespace(does_asset_exist=lambda path: False,
-        duplicate_asset=lambda source, destination: writes.append((source, destination)) or material,
-        load_asset=lambda path: mpc, save_loaded_asset=lambda asset, dirty: True)
-    graph = SimpleNamespace(get_material_expressions=lambda asset: [Parameter()], recompile_material=lambda asset: None)
-    shared = SimpleNamespace(__file__=__file__, node=lambda: None, link=lambda: None, wind_graph=lambda asset, collection: pushed.append((asset, collection)))
-    env = dict(Path=Path, hashlib=hashlib, json=json, __file__=__file__, OUT=tmp_path, CONTENT=tmp_path, R=R,
-               G=SimpleNamespace(__file__=__file__, package_inventory=lambda *args: {'source': 'proof'}),
-               F=SimpleNamespace(ROOT='/Game/FoliageSystem'), owner=SimpleNamespace(digest=digest),
-               E=editor, M=graph, shared_materials=shared, interaction_current=lambda *args: True,
-               U=SimpleNamespace(MaterialExpressionVectorParameter=Parameter, LinearColor=lambda *v: v),
-               atomic_json=lambda path, value: path.write_text(json.dumps(value)))
-    exec(interaction_function(), env)
-    assert env['interaction_material']() is material
-    assert writes == [(original, target)] and pushed == [(material, mpc)]
-    assert values['default_value'] == (1., 1., 2., 1.)
 
 
 def test_owner_imports_isolated_without_editable_site_or_controller_modules(tmp_path):
@@ -197,15 +169,6 @@ def test_explicit_bounded_authored_props_are_ordinary_in_every_namespace(names, 
     assert R.excluded_authored(names, triangles) is excluded
 
 
-def test_only_canonical_owned_mesh_packages_may_refer_to_retired_interaction_material():
-    for suffix in ('', '_Canopy', '_Shadow'):
-        assert R.owned_resident_mesh(R.ROOT + '/Planter_0123456789abcdef/Planter' + suffix)
-    for path in (R.ROOT + '/Materials/Planter', R.ROOT + '/Planter_0123456789abcdef/Other',
-                 R.ROOT + '/Planter_0123456789abcdef/Planter_CanopyExtra',
-                 R.ROOT + '/Planter_0123456789abcde/Planter', '/Game/Other/Planter_0123456789abcdef/Planter'):
-        assert not R.owned_resident_mesh(path)
-
-
 @pytest.mark.parametrize('old_report', [True, False])
 def test_owner_skips_old_authored_rows_before_classifier_or_derived_loads(tmp_path, old_report):
     path = GAME / 'unreal/Scripts/prepare_foliage_residency.py'
@@ -260,3 +223,13 @@ def test_owner_skips_old_authored_rows_before_classifier_or_derived_loads(tmp_pa
     assert [row['source'] for row in final['assets']] == [normal['source']]
     assert final['assets'][0]['aggregate'] is False and final['assets'][0]['coverage'] == []
     assert len(classified) == len(compacted) == 1 and saved
+    assert compacted[0][10] is None  # Authored leaf wrappers own opacity/wind/player push.
+
+
+def test_residency_graph_has_no_unused_interaction_builder_dependency():
+    from atelier import build_inputs
+    script = GAME / 'unreal/Scripts/prepare_foliage_residency.py'
+    closure = build_inputs.local_imports(script, (GAME, GAME / 'world', script.parent))
+    assert script in closure
+    assert script.with_name('shared_materials.py') not in closure
+    assert script.with_name('foliage_material.py') in closure  # Current source wrappers still validate.

@@ -114,18 +114,6 @@ def excluded_authored(names, triangles):
             all(isinstance(name, str) and name.startswith('FoliageAuthored_') for name in names))
 
 
-def owned_resident_mesh(package):
-    """@cc [owner:fontanierh,label:correctness] residency-material-referencer-ownership
-    Only canonical mesh outputs in this producer's exclusive root MAY count as
-    owned referencers when refreshing its interaction material. Retired ordinary
-    prop derivatives MAY retain references, but external/lookalike paths MUST
-    refuse. This MUST NOT authorize mesh deletion or certify geometry/task success.
-
-    The caller MUST additionally check the current registry asset class is StaticMesh.
-    """
-    return re.fullmatch(re.escape(ROOT) + r'/(?P<name>[A-Za-z0-9_]+)_[0-9a-f]{16}/(?P=name)(?:_Canopy|_Shadow)?', package) is not None
-
-
 def assets(row):
     result = [row[key].split('.')[0] for key in ('optimized', 'shadow', 'patch')]
     if row['rigid']:
@@ -138,8 +126,13 @@ def assets(row):
 
 
 def inventory(content, rows):
-    packages = sorted({p for row in rows for p in assets(row)} |
-                      {ROOT + '/Materials/M_CanopyNearInteraction'})
+    """@cc [owner:fontanierh,label:correctness] authored-leaf-package-inventory
+    Inventory MUST cover every declared current row package and its regular sidecars.
+    Authored leaves retain their certified source material wrappers; an unused legacy
+    solid-volume interaction material MUST NOT become an output prerequisite.
+    This inventory MUST NOT substitute for native geometry/material validation.
+    """
+    packages = sorted({p for row in rows for p in assets(row)})
     return mesh_geometry.package_inventory(content, packages)
 
 
