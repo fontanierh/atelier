@@ -873,6 +873,17 @@ bool UYorimichiFoliageSubsystem::ReloadMode(bool Enabled)
         UE_LOG(LogTemp,Display,TEXT("FOLIAGE MODE UNLOAD old_meshes=%d still_resident=%d"),Retired.Num(),StillResident);
         if (StillResident) { Error=TEXT("Inactive foliage meshes are still referenced; refusing double residency.");return false; }
         bEnabled=Target;
+        int32 UploadBatch=0,UploadTotal=0;
+        const auto DrainUploads=[&]()
+        {
+            const uint64 Before=FPlatformMemory::GetStats().UsedPhysical;
+            ENQUEUE_RENDER_COMMAND(FoliageModeUpload)([](FRHICommandListImmediate& RHICmdList)
+            { RHICmdList.SubmitAndBlockUntilGPUIdle(true); });
+            FlushRenderingCommands();ReleaseStartupVertexCopies();
+            UE_LOG(LogTemp,Display,TEXT("FOLIAGE MODE UPLOAD registered=%d pending_vertex_copies=%d process_mib_before=%.1f process_mib_after=%.1f"),
+                UploadTotal,StartupVertexCopies.Num(),Before/1048576.,FPlatformMemory::GetStats().UsedPhysical/1048576.);
+            UploadBatch=0;
+        };
         for (const auto& Plan:Plans) if (IsValid(Plan.Original))
         {
             auto* Mesh=LoadMesh(GetWorld(),Plan.SourcePath);
@@ -886,24 +897,19 @@ bool UYorimichiFoliageSubsystem::ReloadMode(bool Enabled)
             if (auto* Instances=Cast<UHierarchicalInstancedStaticMeshComponent>(Plan.Original))
                 Instances->BuildTreeIfOutdated(true,true);
             if (!Register(Plan.Original)) return false;
-        }
-        JapanGameplayCollision::Install(GetWorld());
-        if (Target && GIsRHIInitialized)
-        {
-            TSet<UStaticMesh*> Carriers;
-            for (const auto& Entry:Sources) if (IsValid(Entry.Original)) Carriers.Add(Entry.Original->GetStaticMesh());
-            for (const auto& Entry:Sources)
+            if (Target && GIsRHIInitialized)
             {
+                const auto& Entry=Sources.Last();
                 if (IsValid(Entry.Original)) StartupVertexCopies.Add(Entry.Original->GetStaticMesh());
                 for (auto* Renderer:{Entry.Visual.Get(),Entry.NearVisual.Get(),Entry.Patches.Get(),Entry.Shadow.Get()})
-                    if (Renderer && Renderer->GetStaticMesh() && !Carriers.Contains(Renderer->GetStaticMesh()))
-                        StartupVertexCopies.Add(Renderer->GetStaticMesh());
+                    if (Renderer && Renderer->GetStaticMesh()) StartupVertexCopies.Add(Renderer->GetStaticMesh());
+                // Release after complete registrations, before loading the next
+                // batch. The release owner itself distinguishes live carriers.
+                ++UploadTotal;if (++UploadBatch==8) DrainUploads();
             }
-            ENQUEUE_RENDER_COMMAND(FoliageModeUpload)([](FRHICommandListImmediate& RHICmdList)
-            { RHICmdList.SubmitAndBlockUntilGPUIdle(true); });
-            FlushRenderingCommands();ReleaseStartupVertexCopies();
-            UE_LOG(LogTemp,Display,TEXT("FOLIAGE MODE UPLOAD pending_vertex_copies=%d"),StartupVertexCopies.Num());
         }
+        JapanGameplayCollision::Install(GetWorld());
+        if (Target && GIsRHIInitialized) DrainUploads();
         return true;
     };
     if (!Swap(Enabled))

@@ -161,7 +161,9 @@ Initial world population MUST bound queued foliage representation uploads after 
 A drain MAY wait for GPU completion and retire deferred resources, but MUST preserve GPU render buffers,
 source collision, geometry, materials, placements and saved packages. Once gameplay readiness has been
 observed, ordinary refreshes MUST NOT introduce GPU-idle drains. An explicit foliage-mode reload MAY
-wait for the old mesh set to unload before loading its replacement. Memory diagnostics
+wait for the old mesh set to unload before loading its replacement. Optimized reloads MUST
+bound new upload and CPU-copy lifetime after complete registration batches, rather than retaining
+every copy until the entire replacement set has loaded. Memory diagnostics
 MUST distinguish CPU resource estimates from actual process footprint; a source hypothesis is not proof
 of a startup memory improvement.
 
