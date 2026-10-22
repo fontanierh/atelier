@@ -102,6 +102,28 @@ def test_unreadable_hard_mesh_owner_fails_classification():
     with pytest.raises(ValueError,match='Cannot inspect collision owner'):classify()
 
 
+@pytest.mark.parametrize('names,triangles,expected',[
+    (['FoliageAuthored_Pot','FoliageAuthored_Leaves'],1,True),
+    (['FoliageAuthored_Pot'],12288,True),
+    (['FoliageAuthored_Pot'],12289,False),
+    (['FoliageAuthored_Pot'],0,False),
+    (['FoliageAuthored_Pot','FoliageRoles_Leaves'],100,False),
+    (['FoliageAuthored_Pot','Leaves'],100,False),
+    (['Leaves'],100,False),
+    ([],100,False),
+])
+def test_only_complete_bounded_authored_props_stay_on_normal_prop_path(names,triangles,expected):
+    script=GAME/'unreal/Scripts/build_foliage_system.py'
+    function=next(n for n in ast.parse(script.read_text()).body
+                  if isinstance(n,ast.FunctionDef) and n.name=='ordinary_authored_prop')
+    namespace=dict(F=F)
+    exec(compile(ast.Module(body=[function],type_ignores=[]),str(script),'exec'),namespace)
+    mesh=SimpleNamespace(get_editor_property=lambda key:[
+        SimpleNamespace(get_editor_property=lambda key,name=name:name) for name in names],
+        get_num_triangles=lambda lod:triangles)
+    assert namespace['ordinary_authored_prop'](mesh) is expected
+
+
 def test_real_hidamari_export_names_do_not_classify_streets_as_trees():
     tree=ast.parse((GAME/'world/regions/hidamari/build.py').read_text())
     names={node.value for node in ast.walk(tree) if isinstance(node,ast.Constant)

@@ -22,6 +22,9 @@
 #include "PhysicsEngine/BodySetup.h"
 #include "Misc/PackageName.h"
 #include "UObject/GarbageCollection.h"
+#if WITH_EDITOR
+#include "StaticMeshCompiler.h"
+#endif
 
 void UYorimichiFoliageSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -251,6 +254,14 @@ bool HasWord(const TSet<FString>& Tokens,const FString& Word)
 }
 }
 
+bool UYorimichiFoliageSubsystem::OrdinaryAuthoredProp(const TArray<FStaticMaterial>& Slots,int32 Triangles)
+{
+    if (Slots.IsEmpty() || Triangles<=0 || Triangles>12288) return false;
+    for (const auto& Slot:Slots)
+        if (!Slot.MaterialSlotName.ToString().StartsWith(TEXT("FoliageAuthored_"))) return false;
+    return true;
+}
+
 bool UYorimichiFoliageSubsystem::RequiresRegistration(UStaticMeshComponent* Component) const
 {
     UStaticMesh* Mesh=Component->GetStaticMesh();
@@ -262,6 +273,16 @@ bool UYorimichiFoliageSubsystem::RequiresRegistration(UStaticMeshComponent* Comp
     if (CertifiedRigid) return false;
     if (ResidentSources.Contains(Mesh->GetPathName()) || Mesh->GetPathName().StartsWith(TEXT("/Game/FoliageSystem/"))) return true;
     if (Assets.Contains(Mesh->GetPathName())) return true;
+    bool Authored=!Mesh->GetStaticMaterials().IsEmpty();
+    for (const auto& Slot:Mesh->GetStaticMaterials())
+        Authored&=Slot.MaterialSlotName.ToString().StartsWith(TEXT("FoliageAuthored_"));
+    if (Authored)
+    {
+#if WITH_EDITOR
+        FStaticMeshCompilingManager::Get().FinishCompilation({Mesh});
+#endif
+        if (OrdinaryAuthoredProp(Mesh->GetStaticMaterials(),Mesh->GetNumTriangles(0))) return false;
+    }
     const auto MeshWords=SemanticTokens(Mesh->GetName());
     for (const auto& Word:Words) if (HasWord(MeshWords,Word)) return true;
     for (const FStaticMaterial& Slot:Mesh->GetStaticMaterials())
@@ -288,14 +309,19 @@ bool UYorimichiFoliageSubsystem::CachedRequiresRegistration(UStaticMeshComponent
         Component->ComponentHasTag(TEXT("DetachedFoliageParticle"))) return false;
     UStaticMesh* Mesh=Component->GetStaticMesh();if (!Mesh) return false;
     const auto& Slots=Mesh->GetStaticMaterials();const int32 Count=Component->GetNumMaterials();
+    bool Authored=!Slots.IsEmpty();
+    for (const auto& Slot:Slots) Authored&=Slot.MaterialSlotName.ToString().StartsWith(TEXT("FoliageAuthored_"));
+    const int32 Triangles=Authored?Mesh->GetNumTriangles(0):0;
     auto* Cached=ClassificationCache.Find(Component);
-    bool Unchanged=Cached && Cached->Mesh==Mesh && Cached->Materials.Num()==Count && Cached->Slots.Num()==Slots.Num();
+    bool Unchanged=Cached && Cached->Mesh==Mesh && Cached->Materials.Num()==Count && Cached->Slots.Num()==Slots.Num() &&
+        Cached->Triangles==Triangles;
     if (Unchanged) for (int32 I=0;I<Count;++I)
         if (Cached->Materials[I]!=Component->GetMaterial(I)) { Unchanged=false;break; }
     if (Unchanged) for (int32 I=0;I<Slots.Num();++I)
         if (Cached->Slots[I]!=Slots[I].MaterialSlotName) { Unchanged=false;break; }
     if (Unchanged) return Cached->Required;
     FClassification Verdict;Verdict.Mesh=Mesh;Verdict.Required=RequiresRegistration(Component);
+    Verdict.Triangles=Authored?Mesh->GetNumTriangles(0):0;
     for (int32 I=0;I<Count;++I) Verdict.Materials.Add(Component->GetMaterial(I));
     for (const auto& Slot:Slots) Verdict.Slots.Add(Slot.MaterialSlotName);
     ClassificationCache.Add(Component,MoveTemp(Verdict));return ClassificationCache.FindChecked(Component).Required;

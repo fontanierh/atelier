@@ -8,6 +8,7 @@ class UHierarchicalInstancedStaticMeshComponent;
 class UStaticMesh;
 class UMaterialInterface;
 class FJsonObject;
+struct FStaticMaterial;
 
 USTRUCT()
 struct FYorimichiFoliageSource
@@ -71,6 +72,7 @@ private:
         TWeakObjectPtr<UStaticMesh> Mesh;
         TArray<TWeakObjectPtr<UMaterialInterface>> Materials;
         TArray<FName> Slots;
+        int32 Triangles=0;
         bool Required=false;
     };
     // Weak keys/values do not keep scenery alive. Reclassify only a new or
@@ -90,6 +92,7 @@ private:
     friend class FYorimichiFoliageToggleTest;
     friend class FYorimichiFoliageRegistryTest;
     friend class FYorimichiFoliageClassificationTest;
+    static bool OrdinaryAuthoredProp(const TArray<FStaticMaterial>& Slots,int32 Triangles);
     bool RequiresRegistration(UStaticMeshComponent* Component) const;
     bool CachedRequiresRegistration(UStaticMeshComponent* Component);
     bool Register(UStaticMeshComponent* Component);

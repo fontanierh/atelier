@@ -111,7 +111,10 @@ def legacy_policies(game_root, *, engine_version, environment, runtime):
     Selected-mode loading and deferred unload/reload MAY change runtime residency only.
     The new separately owned compaction step MAY create distinct packages; it MUST NOT
     change the old preparation geometry or admit them as old source inputs. Excluding
-    that derivative root from discovery MUST preserve the old source roster.
+    that derivative root from discovery MUST preserve the old source roster, except
+    complete FoliageAuthored_ props with 1–12,288 LOD0 triangles now explicitly remain
+    ordinary props. Dropped prop hints MUST remain unused; remaining mesh generation
+    and every native admission check MUST stay unchanged.
     The reviewed unused-slot prepass MAY avoid palette work only for slots referenced
     by no exported triangle; it MUST preserve every emitted corner/sample.
     Every current source pin, ordered original Git byte, exact retained compiled-module

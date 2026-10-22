@@ -110,6 +110,14 @@ def classify(mesh, registry):
     return list(range(len(mesh.get_editor_property('static_materials')))), 'material'
 
 
+def ordinary_authored_prop(mesh):
+    """Explicit whole-prop tags have a bounded ordinary-prop policy, not foliage conversion."""
+    names = [str(slot.get_editor_property('material_slot_name'))
+             for slot in mesh.get_editor_property('static_materials')]
+    triangles = mesh.get_num_triangles(0)
+    return bool(names) and all(name.startswith(F.roles.AUTHORED_PREFIX) for name in names) and 0 < triangles <= F.roles.AUTHORED_BUDGET
+
+
 def canopy_material(near, patch=False):
     name = 'M_ForestPatch' if patch else 'M_CanopyNear' if near else 'M_CanopyFar'
     path = F.ROOT + '/Materials/' + name
@@ -284,6 +292,11 @@ def main():
             U.YorimichiFoliageBuilder.collect_unused()
             continue
         slots, classification = policy
+        if classification == 'authored' and ordinary_authored_prop(mesh):
+            U.log(f'FOLIAGE SYSTEM ordinary authored prop: {path}')
+            mesh=None
+            U.YorimichiFoliageBuilder.collect_unused()
+            continue
         identity = source_identity(mesh,registry)
         old = cached.get(mesh.get_path_name())
         if old and old.get('identity') == identity and all(

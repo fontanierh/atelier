@@ -128,6 +128,16 @@ bool FYorimichiFoliageClassificationTest::RunTest(const FString&)
     TestFalse(TEXT("Owned particles never enter the scenery owner"),System->CachedRequiresRegistration(Source));
     Source->ComponentTags.Remove(TEXT("DetachedFoliageParticle"));
     TestTrue(TEXT("Removing an ownership tag resumes classification"),System->CachedRequiresRegistration(Source));
+    TArray<FStaticMaterial> PropSlots={FStaticMaterial(nullptr,TEXT("FoliageAuthored_Pot")),
+        FStaticMaterial(nullptr,TEXT("FoliageAuthored_Leaves"))};
+    TestTrue(TEXT("Explicit small authored props stay ordinary"),System->OrdinaryAuthoredProp(PropSlots,100));
+    TestTrue(TEXT("Authored prop budget is inclusive"),System->OrdinaryAuthoredProp(PropSlots,12288));
+    TestFalse(TEXT("Oversized authored props require foliage registration"),System->OrdinaryAuthoredProp(PropSlots,12289));
+    TestFalse(TEXT("Empty geometry cannot claim ordinary prop status"),System->OrdinaryAuthoredProp(PropSlots,0));
+    PropSlots[1].MaterialSlotName=TEXT("FoliageRoles_Leaves");
+    TestFalse(TEXT("Mixed explicit foliage roles cannot bypass conversion"),System->OrdinaryAuthoredProp(PropSlots,100));
+    PropSlots.Reset();
+    TestFalse(TEXT("Untagged props cannot claim the exception"),System->OrdinaryAuthoredProp(PropSlots,100));
     return true;
 }
 
