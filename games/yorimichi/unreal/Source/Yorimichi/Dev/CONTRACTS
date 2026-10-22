@@ -1,10 +1,19 @@
 @cc [owner:fontanierh,label:correctness;performance] saved-foliage-residency-compaction
-FoliageResidencyBuilder MUST consume current certified saved source/prepared descriptions, never re-export
-or regenerate them. The selected original LOD's exact classified rigid corner multiset, including slot,
+FoliageResidencyBuilder MUST consume current certified saved source/prepared descriptions without raw
+source export, F.build replay or source/legacy-package mutation. The selected original LOD's exact classified rigid corner multiset, including slot,
 normal, colour, all UVs and multiplicities, MUST control removal; original UVs MUST use the producer's
 UV0 fallback to the receiving channel count. One carrier MUST own rigid geometry, with the complete original material table.
 Mixed scenery MUST use one rigid LOD; standalone trees with distinct authored rigid source LODs MUST
-retain that simplification chain and screen sizes rather than repeating full trunk detail at distance. Canopy LODs and shadow MUST preserve every remaining corner and winding.
+retain that simplification chain and screen sizes rather than repeating full trunk detail at distance.
+Canopy LOD0 MUST retain every classified original leaf corner exactly, with the producer's UV0
+fallback/truncation and original texture/opacity/wind material wrappers. Lower leaf-only LODs MAY
+use the installed supported native reducer at explicit 50/25/10 percent targets. Reduction MUST
+remain within each material/categorical-role island, retain every channel and refuse corrupted
+role/opacity labels, material bindings, nonfinite output or increasing/empty LODs. Only <=1e-5
+roundoff on an island's proven constant categorical role UV MAY be restored to its exact source value.
+The output MUST bind the actual reducer identity and complete saved geometry/settings/material proof.
+Opaque cores and coverage patches MUST NOT substitute for visible authored leaf surfaces. Existing
+shadow-only geometry MAY remain separately validated; rigid and collision semantics MUST not change.
 Committed-corner equality MUST NOT substitute for canonical build/reduction/render and collision checks.
 A failed cook, missing rigid corner, stale package or invalid source MUST stop registry publication.
 For engine-reduced original LODs without stored descriptions, compaction MUST use
@@ -34,5 +43,5 @@ receive the explicit simple-trunk capsule policy despite zero classified rigid f
 Current source proof and unchanged declared fitted heights MUST precede dispatch.
 The authored radius MUST be 40cm, local XY axis zero, and endpoints -15cm to 10% of
 fitted height. Broad root/ground bounds MUST NOT determine collision. All certified
-canopy corners and the existing exact native capsule physics checks MUST remain.
+authored leaf LOD0 corners and the existing exact native capsule physics checks MUST remain.
 Other whole-textured sources MUST refuse without their own explicit trunk witness.

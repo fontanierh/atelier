@@ -6,8 +6,9 @@
 class UStaticMesh;
 class UMaterialInterface;
 
-/** Transform certified saved descriptions without exporting or regenerating their geometry.
- * Rigid surfaces have one owner; every canopy corner retains its original attributes.
+/** Transform certified saved descriptions without exporting original assets.
+ * Rigid surfaces have one owner; leaf LOD0 retains exact authored corners and source material wrappers.
+ * Lower leaf-only LODs use the configured native reducer within material/categorical-role islands.
  * Only manifested standalone-tree trunks or bounded classified lower-trunk
  * capsules may own tree collision; a source simple shape is not a trunk witness. Mixed
  * scenery keeps exact rigid collision; leaf/shadow geometry never owns collision.

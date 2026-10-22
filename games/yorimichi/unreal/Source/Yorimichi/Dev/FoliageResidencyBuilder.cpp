@@ -5,6 +5,12 @@
 #include "StaticMeshAttributes.h"
 #include "StaticMeshResources.h"
 #include "MeshDescription.h"
+#include "StaticMeshOperations.h"
+#include "MeshReductionSettings.h"
+#include "IMeshReductionManagerModule.h"
+#include "IMeshReductionInterfaces.h"
+#include "OverlappingCorners.h"
+#include "Modules/ModuleManager.h"
 #include "StaticMeshCompiler.h"
 #include "PhysicsEngine/BodySetup.h"
 #include "AssetRegistry/AssetRegistryModule.h"
@@ -79,7 +85,9 @@ bool CopyTriangle(const FMeshDescription& Input,FTriangleID Triangle,int32 Slot,
     {
         const auto V=Output.CreateVertex();OP[V]=P[Input.GetVertexInstanceVertex(I)];
         const auto Corner=Output.CreateVertexInstance(V);ON[Corner]=N[I];OC[Corner]=C[I];
-        for (int32 Channel=0;Channel<UV.GetNumChannels();++Channel) OU.Set(Corner,Channel,UV.Get(I,Channel));
+        if (UV.GetNumChannels()<1 || OU.GetNumChannels()<1 || OU.GetNumChannels()>8) return false;
+        for (int32 Channel=0;Channel<OU.GetNumChannels();++Channel)
+            OU.Set(Corner,Channel,UV.Get(I,Channel<UV.GetNumChannels()?Channel:0));
         Corners.Add(Corner);
     }
     if (Corners.Num()!=3) return false;
@@ -128,7 +136,8 @@ bool IsLeaf(const FMeshDescription& D,FTriangleID Triangle,int32 Slot,int32 Sour
     return false;
 }
 bool Split(UStaticMesh* Input,int32 Level,UStaticMesh* Source,int32 SourceLevel,
-    const FString& Mode,const TSet<int32>& LeafSlots,FMeshDescription& Canopy,FMeshDescription* Rigid,int32& RigidCount)
+    const FString& Mode,const TSet<int32>& LeafSlots,FMeshDescription& Canopy,FMeshDescription* Rigid,int32& RigidCount,
+    FMeshDescription* AuthoredLeaves=nullptr)
 {
     const auto Refuse=[&](const TCHAR* Reason)
     { UE_LOG(LogTemp,Warning,TEXT("FOLIAGE RESIDENCY split refused source=%s sourceLOD=%d input=%s inputLOD=%d mode=%s reason=%s"),
@@ -160,6 +169,7 @@ bool Split(UStaticMesh* Input,int32 Level,UStaticMesh* Source,int32 SourceLevel,
             if (Source->GetStaticMaterials()[I].ImportedMaterialSlotName==Name) { Slot=I;break; }
         if (!Source->GetStaticMaterials().IsValidIndex(Slot)) return Refuse(TEXT("unbound source material group"));OriginalSlots.Add(G,Slot);
     }
+    if (AuthoredLeaves) Initialize(*AuthoredLeaves,Input->GetStaticMaterials(),UV.GetNumChannels());
     TMap<FString,int32> Remaining;RigidCount=0;
     for (auto T:Original->Triangles().GetElementIDs())
     {
@@ -167,6 +177,8 @@ bool Split(UStaticMesh* Input,int32 Level,UStaticMesh* Source,int32 SourceLevel,
         if (!IsLeaf(*Original,T,Slot,Source->GetStaticMaterials().Num(),Mode,LeafSlots,
             double(Bounds.Min.Z)+(double(Bounds.Max.Z)-double(Bounds.Min.Z))*.4,Leaf)) return Refuse(TEXT("invalid source face classification"));
         if (!Leaf) { const FString Key=TriangleKey(*Original,T,Slot,UV.GetNumChannels());if (Key.IsEmpty()) return Refuse(TEXT("invalid rigid corner key"));++Remaining.FindOrAdd(Key);++RigidCount; }
+        else if (AuthoredLeaves && !CopyTriangle(*Original,T,Slot,*AuthoredLeaves))
+            return Refuse(TEXT("authored leaf corner copy failed"));
     }
     if (!Names.IsValid() || UV.GetNumChannels()<1 || UV.GetNumChannels()>8 ||
         D->PolygonGroups().Num()!=Input->GetStaticMaterials().Num()) return Refuse(TEXT("prepared UV/group/material table mismatch"));
@@ -186,6 +198,114 @@ bool Split(UStaticMesh* Input,int32 Level,UStaticMesh* Source,int32 SourceLevel,
     for (const auto& Pair:Remaining) if (Pair.Value) return Refuse(TEXT("missing exact rigid corner multiplicity"));
     Input->ClearMeshDescription(Level);Source->ClearMeshDescription(SourceLevel);
     return Canopy.Triangles().Num()>0 || Refuse(TEXT("empty canopy"));
+}
+
+struct FLeafPart
+{
+    int32 Slot=0;
+    bool Tagged=false;
+    FVector2f Role=FVector2f::ZeroVector;
+    FMeshDescription Mesh;
+};
+
+bool LeafRole(const FMeshDescription& D,FTriangleID T,bool& Tagged,FVector2f& Role)
+{
+    const auto UV=FStaticMeshConstAttributes(D).GetVertexInstanceUVs();
+    Tagged=false;Role=FVector2f::ZeroVector;
+    if (UV.GetNumChannels()<=5) return true;
+    const auto Corners=D.GetTriangleVertexInstances(T);
+    if (Corners.Num()!=3) return false;
+    int32 Tags=0;
+    for (auto I:Corners)
+    {
+        const auto V=UV.Get(I,5);
+        if (FMath::Min(FMath::Abs(V.Y-73.125f),FMath::Abs(V.Y+72.125f))>.01f) continue;
+        if (V.X!=1.f && V.X!=2.f && V.X!=3.f) return false;
+        if (Tags && V!=Role) return false;
+        Role=V;++Tags;
+    }
+    if (Tags && Tags!=3) return false;
+    Tagged=Tags==3;return true;
+}
+
+bool LeafLevels(const FMeshDescription& Near,const TArray<FStaticMaterial>& Materials,
+    TArray<FMeshDescription>& Levels,FString& Version)
+{
+    const auto Refuse=[](const TCHAR* Reason)
+    { UE_LOG(LogTemp,Error,TEXT("FOLIAGE RESIDENCY leaf LOD refusal: %s"),Reason);return false; };
+    if (Near.Triangles().Num()<1 || GeometryHash(Near).IsEmpty()) return Refuse(TEXT("invalid exact authored leaves"));
+    auto& Manager=FModuleManager::LoadModuleChecked<IMeshReductionManagerModule>(TEXT("MeshReductionInterface"));
+    IMeshReduction* Reducer=Manager.GetStaticMeshReductionInterface();
+    if (!Reducer || !Reducer->IsSupported() || Reducer->GetVersionString().IsEmpty()) return Refuse(TEXT("unsupported installed reducer"));
+    Version=Reducer->GetVersionString();
+    const int32 Channels=FStaticMeshConstAttributes(Near).GetVertexInstanceUVs().GetNumChannels();
+    TArray<FLeafPart> Parts;TMap<FString,int32> PartIndices;
+    for (auto T:Near.Triangles().GetElementIDs())
+    {
+        const int32 Slot=Near.GetTrianglePolygonGroup(T).GetValue();bool Tagged;FVector2f Role;
+        if (!Materials.IsValidIndex(Slot) || !LeafRole(Near,T,Tagged,Role)) return Refuse(TEXT("source material/role seam"));
+        const FString Key=FString::Printf(TEXT("%d/%d/%.9g/%.9g"),Slot,int32(Tagged),double(Role.X),double(Role.Y));
+        int32* Found=PartIndices.Find(Key);
+        if (!Found)
+        {
+            const int32 Index=Parts.AddDefaulted();auto& Part=Parts[Index];Part.Slot=Slot;Part.Tagged=Tagged;Part.Role=Role;
+            Initialize(Part.Mesh,Materials,Channels);PartIndices.Add(Key,Index);Found=PartIndices.Find(Key);
+        }
+        if (!CopyTriangle(Near,T,Slot,Parts[*Found].Mesh)) return Refuse(TEXT("leaf partition corner copy"));
+    }
+    // Retain the complete source wrapper table, but do not leave unused hard
+    // references to the former opaque CanopyNear/CanopyFar materials.
+    FMeshDescription Exact;Initialize(Exact,Materials,Channels);
+    for (auto T:Near.Triangles().GetElementIDs())
+        if (!CopyTriangle(Near,T,Near.GetTrianglePolygonGroup(T).GetValue(),Exact)) return Refuse(TEXT("exact leaf repack"));
+    if (GeometryHash(Exact)!=GeometryHash(Near)) return Refuse(TEXT("changed exact leaf corner multiset"));
+    Levels.Reset();Levels.Add(MoveTemp(Exact));
+    // Reduce each material/categorical-role island separately. A role channel is
+    // a label, not a continuous UV: the reducer must never blend different labels.
+    for (float Ratio:{.5f,.25f,.1f})
+    {
+        FMeshDescription Result;Initialize(Result,Materials,Channels);
+        for (const auto& Part:Parts)
+        {
+            FMeshDescription Reduced;FStaticMeshAttributes(Reduced).Register();
+            FMeshReductionSettings Settings;Settings.PercentTriangles=Ratio;Settings.BaseLODModel=0;
+            Settings.TerminationCriterion=EStaticMeshReductionTerimationCriterion::Triangles;
+            Settings.WeldingThreshold=0.f;Settings.bRecalculateNormals=false;
+            Settings.bGenerateUniqueLightmapUVs=false;Settings.bVisibilityAided=false;Settings.bCullOccluded=false;
+            Settings.SilhouetteImportance=EMeshFeatureImportance::Highest;
+            Settings.TextureImportance=EMeshFeatureImportance::Highest;
+            Settings.ShadingImportance=EMeshFeatureImportance::High;
+            Settings.VertexColorImportance=EMeshFeatureImportance::Highest;
+            FOverlappingCorners Overlap;FStaticMeshOperations::FindOverlappingCorners(Overlap,Part.Mesh,0.f);
+            float Deviation=0.f;
+            Reducer->ReduceMeshDescription(Reduced,Deviation,Part.Mesh,Overlap,Settings);
+            if (!FMath::IsFinite(Deviation) || Deviation<0.f || Reduced.Triangles().Num()<1 ||
+                Reduced.Triangles().Num()>Part.Mesh.Triangles().Num() || GeometryHash(Reduced).IsEmpty())
+                return Refuse(TEXT("invalid reduced geometry/count/deviation"));
+            FStaticMeshAttributes A(Reduced);auto UV=A.GetVertexInstanceUVs();auto Names=A.GetPolygonGroupMaterialSlotNames();
+            if (UV.GetNumChannels()!=Channels) return Refuse(TEXT("lost reduced UV channel"));
+            for (auto T:Reduced.Triangles().GetElementIDs())
+            {
+                if (Names[Reduced.GetTrianglePolygonGroup(T)]!=Materials[Part.Slot].MaterialSlotName)
+                    return Refuse(TEXT("changed reduced material binding"));
+                if (Part.Tagged) for (auto I:Reduced.GetTriangleVertexInstances(T))
+                {
+                    const auto Value=UV.Get(I,5);
+                    // Only numerical roundoff on a proven constant categorical
+                    // island may be restored. Changed labels/markers refuse.
+                    if (FMath::Abs(Value.X-Part.Role.X)>1.e-5f || FMath::Abs(Value.Y-Part.Role.Y)>1.e-5f)
+                        return Refuse(TEXT("interpolated categorical role/opacity seam"));
+                    UV.Set(I,5,Part.Role);
+                }
+                if (!CopyTriangle(Reduced,T,Part.Slot,Result)) return Refuse(TEXT("reduced leaf corner copy"));
+            }
+        }
+        if (Result.Triangles().Num()>Levels.Last().Triangles().Num()) return Refuse(TEXT("nonmonotonic leaf LODs"));
+        UE_LOG(LogTemp,Display,TEXT("FOLIAGE RESIDENCY authored leaf LOD ratio=%.2f triangles=%d source=%d reducer=%s"),
+            double(Ratio),Result.Triangles().Num(),Near.Triangles().Num(),*Version);
+        Levels.Add(MoveTemp(Result));
+    }
+    return Levels.Num()==4 && GeometryHash(Levels[0])==GeometryHash(Near);
 }
 enum class ECollision { None, SimpleTrunk, Rigid };
 FMeshBuildSettings BuildSettings()
@@ -307,10 +427,10 @@ FString UYorimichiFoliageResidencyBuilder::Compact(UStaticMesh* Source,UStaticMe
     TSet<int32> Slots;for (int32 Slot:LeafSlots) { if (!Source->GetStaticMaterials().IsValidIndex(Slot)) return {};Slots.Add(Slot); }
     bool TrunkLODs=false;for (int32 L:SourceLODs) if (SimpleTrunk && L!=SourceLODs[0]) TrunkLODs=true;
     TArray<FMeshDescription> Canopies;Canopies.SetNum(4);TArray<FMeshDescription> Rigid;Rigid.SetNum(TrunkLODs?4:1);
-    TArray<float> Screens;TArray<int32> Counts;int32 RigidCount=0;
+    TArray<float> Screens;TArray<int32> Counts;int32 RigidCount=0;FMeshDescription AuthoredNear;
     for (int32 L=0;L<4;++L)
     {
-        int32 Removed=0;if (!Split(Prepared,L,Source,SourceLODs[L],Classification,Slots,Canopies[L],TrunkLODs?&Rigid[L]:(L==0?&Rigid[0]:nullptr),Removed)) return {};
+        int32 Removed=0;if (!Split(Prepared,L,Source,SourceLODs[L],Classification,Slots,Canopies[L],TrunkLODs?&Rigid[L]:(L==0?&Rigid[0]:nullptr),Removed,L==0?&AuthoredNear:nullptr)) return {};
         if (L==0) RigidCount=Removed;Counts.Add(Canopies[L].Triangles().Num());
         Screens.Add(Prepared->GetSourceModel(L).ScreenSize.Default);
     }
@@ -319,8 +439,14 @@ FString UYorimichiFoliageResidencyBuilder::Compact(UStaticMesh* Source,UStaticMe
     TArray<FMeshDescription> Shadow;Shadow.SetNum(1);int32 Removed=0;
     if (!Split(PreparedShadow,0,Source,SourceLODs.Last(),Classification,Slots,Shadow[0],nullptr,Removed)) return {};
     TArray<FStaticMaterial> CanopyMaterials=Prepared->GetStaticMaterials();
-    if (NearInteraction) for (auto& Material:CanopyMaterials)
-        if (Material.MaterialSlotName==TEXT("CanopyNear")) Material.MaterialInterface=NearInteraction;
+    if (CanopyMaterials.Num()<Source->GetStaticMaterials().Num()) return {};
+    CanopyMaterials.SetNum(Source->GetStaticMaterials().Num());
+    // Authored leaves use the original opacity/texture/wind wrappers; the old
+    // volume material is intentionally unused by this representation.
+    static_cast<void>(NearInteraction);
+    FString ReducerVersion;
+    if (!LeafLevels(AuthoredNear,CanopyMaterials,Canopies,ReducerVersion)) return {};
+    Counts.Reset();for (const auto& D:Canopies) Counts.Add(D.Triangles().Num());
     FKAggregateGeom Trunk;
     if (SimpleTrunk)
     {
@@ -366,6 +492,7 @@ FString UYorimichiFoliageResidencyBuilder::Compact(UStaticMesh* Source,UStaticMe
     Row->SetArrayField(TEXT("rigid_lod_triangles"),RigidCounts);Row->SetBoolField(TEXT("simple_trunk"),SimpleTrunk);Row->SetBoolField(TEXT("passable"),Passable);
     Row->SetStringField(TEXT("collision"),Proxy?Proxy->GetPathName():TEXT(""));
     Row->SetStringField(TEXT("optimized"),Canopy->GetPathName());Row->SetStringField(TEXT("shadow"),ShadowMesh->GetPathName());
+    Row->SetStringField(TEXT("leaf_reducer"),ReducerVersion);Row->SetNumberField(TEXT("source_leaf_triangles"),AuthoredNear.Triangles().Num());
     Row->SetNumberField(TEXT("shadow_triangles"),Shadow[0].Triangles().Num());
     TArray<TSharedPtr<FJsonValue>> Values;for (int32 Count:Counts) Values.Add(MakeShared<FJsonValueNumber>(Count));
     Row->SetArrayField(TEXT("triangles"),Values);FString Result;
@@ -400,6 +527,37 @@ bool UYorimichiFoliageResidencyBuilder::SelfTest()
         }
         Levels[0].CreateTriangle(FPolygonGroupID(Face),Corners);
     }
+    // A real reduced leaf sheet with two categorical roles in the SAME material
+    // slot exercises UV seams independently of material-boundary preservation.
+    FMeshDescription Grid;Initialize(Grid,Materials,6);FStaticMeshAttributes GA(Grid);
+    auto GP=GA.GetVertexPositions();auto GN=GA.GetVertexInstanceNormals();auto GC=GA.GetVertexInstanceColors();auto GU=GA.GetVertexInstanceUVs();
+    for (int32 Role:{1,2}) for (int32 Y=0;Y<4;++Y) for (int32 X=0;X<4;++X)
+        for (const TArray<FIntPoint>& Points:{TArray<FIntPoint>{{0,0},{1,0},{1,1}},TArray<FIntPoint>{{0,0},{1,1},{0,1}}})
+        {
+            TArray<FVertexInstanceID> Corners;
+            for (const auto& Point:Points)
+            {
+                const auto V=Grid.CreateVertex();GP[V]=FVector3f((X+Point.X)*20.f+Role*200.f,(Y+Point.Y)*20.f,0.f);
+                const auto I=Grid.CreateVertexInstance(V);GN[I]=FVector3f(0,0,1);GC[I]=FVector4f(.2f,.4f,.6f,.8f);
+                for (int32 Channel=0;Channel<6;++Channel)
+                    GU.Set(I,Channel,Channel==5?FVector2f(float(Role),73.125f):FVector2f((X+Point.X)*.25f,(Y+Point.Y)*.25f));
+                Corners.Add(I);
+            }
+            Grid.CreateTriangle(FPolygonGroupID(1),Corners);
+        }
+    TArray<FMeshDescription> ReducedLeaves;FString ReductionVersion;
+    bool ReductionProof=LeafLevels(Grid,Materials,ReducedLeaves,ReductionVersion) && ReducedLeaves.Num()==4 &&
+        GeometryHash(Grid)==GeometryHash(ReducedLeaves[0]);
+    for (const auto& D:ReducedLeaves) for (auto T:D.Triangles().GetElementIDs())
+    {
+        bool Tagged;FVector2f Role;
+        ReductionProof=ReductionProof && D.GetTrianglePolygonGroup(T)==FPolygonGroupID(1) && LeafRole(D,T,Tagged,Role) && Tagged &&
+            (Role.X==1.f || Role.X==2.f) && Role.Y==73.125f;
+    }
+    FMeshDescription BadRole=Grid;const auto Corner=BadRole.GetTriangleVertexInstances(FTriangleID(0))[0];
+    FStaticMeshAttributes(BadRole).GetVertexInstanceUVs().Set(Corner,5,FVector2f(1.5f,73.125f));
+    bool Tagged;FVector2f Role;
+    ReductionProof=ReductionProof && !LeafRole(BadRole,FTriangleID(0),Tagged,Role);
     // Prove UV0 normalization and exact duplicate multiplicity independently of
     // physics cooking, which may legitimately deduplicate coincident triangles.
     FMeshDescription Narrow=Levels[0];FStaticMeshAttributes(Narrow).GetVertexInstanceUVs().SetNumChannels(1);
@@ -421,7 +579,7 @@ bool UYorimichiFoliageResidencyBuilder::SelfTest()
     auto* MembershipInput=NewObject<UStaticMesh>();MembershipInput->GetStaticMaterials()=Materials;
     MembershipInput->SetNumSourceModels(1);MembershipInput->CreateMeshDescription(0,Expanded);MembershipInput->CommitMeshDescription(0);
     FMeshDescription LeafProof,RigidProof;int32 Removed=0;TSet<int32> LeafSlots;LeafSlots.Add(1);
-    bool Membership=ZeroProof && Split(MembershipInput,0,MembershipSource,0,TEXT("material"),LeafSlots,LeafProof,&RigidProof,Removed) &&
+    bool Membership=ZeroProof && ReductionProof && Split(MembershipInput,0,MembershipSource,0,TEXT("material"),LeafSlots,LeafProof,&RigidProof,Removed) &&
         Removed==2 && LeafProof.Triangles().Num()==1 && RigidProof.Triangles().Num()==2;
     MembershipInput->CreateMeshDescription(0,Narrow);MembershipInput->CommitMeshDescription(0);
     FMeshDescription MissingLeaf,MissingRigid;

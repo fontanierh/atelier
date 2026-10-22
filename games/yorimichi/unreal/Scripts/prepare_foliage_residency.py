@@ -1,4 +1,4 @@
-"""Compact certified saved foliage; never export sources or rebuild canopy geometry."""
+"""Build leaf-only LODs from certified saved sources without re-exporting originals."""
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -120,7 +120,9 @@ def main():
         raise ValueError('Residency requires complete current certified foliage preparation')
     if not U.YorimichiFoliageResidencyBuilder.self_test():
         raise ValueError('Receiving native residency fixture failed')
-    near = interaction_material()
+    # Exact authored leaves already retain their source opacity/wind/player-push
+    # wrappers. Do not rebuild or bind the former solid-volume material.
+    near = None
     registry = U.AssetRegistryHelpers.get_asset_registry()
     records = []
     for index, old in enumerate(report['assets']):
@@ -168,7 +170,7 @@ def main():
             R.source_lods(source.get_num_lods(), standalone), authored, directory, near, passable)
         if not result:
             raise ValueError('Native compaction refused: ' + old['source'])
-        row = dict(old, **json.loads(result))
+        row = R.authored_leaf_row(old, json.loads(result))
         row['source_materials'] = [source.get_material(i).get_path_name()
                                    for i in range(len(source.get_editor_property('static_materials')))]
         for asset in R.assets(row):
