@@ -6,10 +6,10 @@ from pathlib import Path
 import sys
 
 _source = Path(__file__).resolve()
-for _path in (_source.parents[5] / 'platform/studio', _source.parents[1]):
+for _path in (_source.parents[5] / 'platform/studio', _source.parents[2], _source.parents[1]):
     sys.path.insert(0, str(_path))
 from brinecove import foliage_models, foliage_names  # noqa: E402
-from atelier.model_export import mesh_object, export, glb_info  # noqa: E402
+from brinecove.mesh_export import mesh_object, export, glb_info  # noqa: E402
 
 
 def main(definition, destination):

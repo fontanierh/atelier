@@ -1,0 +1,69 @@
+@cc [owner:fontanierh,label:correctness;performance] saved-foliage-residency-compaction
+FoliageResidencyBuilder MUST consume current certified saved source/prepared descriptions without raw
+source export, F.build replay or source/legacy-package mutation. The selected original LOD's exact classified rigid corner multiset, including slot,
+normal, colour, all UVs and multiplicities, MUST control removal; original UVs MUST use the producer's
+UV0 fallback to the receiving channel count. One carrier MUST own rigid geometry, with the complete original material table.
+Mixed scenery MUST use one rigid LOD; standalone trees with distinct authored rigid source LODs MUST
+retain that simplification chain and screen sizes rather than repeating full trunk detail at distance.
+Distinct certified source LOD selections MUST preserve that chain independently of simple or complex
+collision policy; the all-LOD0 mixed selection MUST retain a single rigid carrier level.
+Canopy LOD0 MUST retain every classified original leaf corner exactly, with the producer's UV0
+fallback/truncation and original texture/opacity/wind material wrappers. A multi-level original MUST retain all of its 1–8 current authored leaf levels and actual rendered
+screen thresholds, including authored far-impostor materials/geometry. Empty distant leaf levels MAY
+be emitted only when the corresponding original contains zero classified leaves; LOD0 MUST stay positive.
+Only a single-level original MAY use the installed supported native reducer at explicit 50/25/10
+percent targets. Reduction MUST
+remain within each material/categorical-role island, retain every channel and refuse corrupted
+role/opacity labels, material bindings, nonfinite output or increasing/empty LODs. Only <=1e-5
+roundoff on an island's proven constant categorical role UV MAY be restored to its exact source value.
+The output MUST bind the actual reducer identity and complete saved geometry/settings/material proof.
+Opaque cores and coverage patches MUST NOT substitute for visible authored leaf surfaces. Existing
+shadow-only geometry MAY remain separately validated; rigid and collision semantics MUST not change.
+Committed-corner equality MUST NOT substitute for canonical build/reduction/render and collision checks.
+A failed cook, missing rigid corner, stale package or invalid source MUST stop registry publication.
+For engine-reduced original LODs without stored descriptions, compaction MUST use
+the same current ExportStaticMeshLOD readback as the certified source exporter,
+without creating or committing source descriptions. Complete finite attributes,
+material/role classification and exact rigid multiplicity checks MUST still run.
+Original-to-prepared rigid keys MAY equate positive and negative numeric zero,
+because source JSON transport loses zero's sign. Every finite nonzero float MUST
+remain exact; this MUST NOT normalize emitted corners or their saved-output hashes.
+
+@cc [owner:fontanierh,label:correctness] prepared-foliage-collision-ownership
+Mixed scenery MUST retain exact rigid-only complex collision; a district/crown box is forbidden.
+The compound HD_ArcadeTree and its v4 source MUST retain their exact rigid planter/trunk carrier;
+planter bounds MUST NOT become a taller simple trunk capsule. Their foliage chain remains authored.
+A standalone semantic tree/palm MAY use a finite positive authored radius/endpoints manifest converted
+from metres to Unreal centimetres with Y reflection, or a bounded capsule from its classified lower
+rigid trunk. An existing source simple shape alone MUST NOT certify trunk provenance. Bushes and
+leaves MUST remain passable. Canopy/shadow copies MUST have no physics/navigation data except a no-rigid
+tree canopy explicitly serving as its simple-trunk carrier, or an authored prop's declared separate
+collision-only hull. A prop hull MUST match its committed source witness and actual original hard hull
+reference; the original render mesh MUST NOT become its collider. An authored prop without that witness
+MAY partition only affirmative structural material slots from its manifest, preserving every other
+surface; it MUST refuse unknown structural ownership. Original/shared packages MUST remain unchanged.
+A receiving native fixture MUST cover rigid-only mixed collision and nonblocking canopy/trunk separation.
+
+@cc [owner:fontanierh,label:correctness] whole-textured-caldera-trunk
+The exact committed four Caldera tree sources and their authored PropLOD paths MAY
+receive the explicit simple-trunk capsule policy despite zero classified rigid faces.
+Current source proof and unchanged declared fitted heights MUST precede dispatch.
+The authored radius MUST be 40cm, local XY axis zero, and endpoints -15cm to 10% of
+fitted height. Broad root/ground bounds MUST NOT determine collision. All certified
+authored leaf LOD0 corners and the existing exact native capsule physics checks MUST remain.
+Other whole-textured sources MUST refuse without their own explicit trunk witness.
+
+
+@cc [owner:fontanierh,label:architecture;performance] independent-foliage-preparation-module
+Editor foliage source transport, saved-geometry construction and residency compaction MUST bind this
+module's actual compiled identity. Source import certification MUST remain in its independent raw module. Gameplay library identity MUST
+NOT stand in for preparation code. Raw imports and runtime/game targets MUST NOT depend on this editor
+module. Moving code MUST preserve geometry/material/collision/reduction behavior and native validation.
+Historical unit lookup MAY use an independently reviewed exact source-pair witness; a moved source path
+or source digest alone MUST NOT certify compiled compatibility or receiving task success.
+
+@cc [owner:fontanierh,label:correctness] foliage-empty-distant-leaf-proof
+A certified rigid-only distant source level MAY produce an empty canopy and shadow after exact
+rigid-corner removal. Preparation MUST verify that no source leaf faces existed and that every
+rigid corner was accounted for; near canopy LOD0 MUST remain positive. Published v2 counts and
+actual native resources MUST agree exactly, including zero; legacy v1 shadow counts stay positive.

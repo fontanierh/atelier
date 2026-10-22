@@ -335,16 +335,18 @@ def tub_plant(m,x,y,kind):
     if kind=='tea':
         m.beam((x,y,.5),(x,y,1.95),.08,.08,'arc_timber')
         for k,(dx,dy,z,r,h,key) in enumerate([(.12,-.05,.9,.5,.4,'leaf'),(-.15,.1,1.15,.45,.38,'green_dark'),(.08,.12,1.42,.38,.36,'leaf'),(-.06,-.1,1.68,.28,.34,'green_dark'),(0,0,1.92,.16,.3,'leaf')]):
-            m.lathe((x+dx,y+dy,z),[(0,0),(0,r),(h*.55,r*.5),(h,.03)],key,7)
+            with v.foliage_roles.surfaces(m):
+                m.lathe((x+dx,y+dy,z),[(0,0),(0,r),(h*.55,r*.5),(h,.03)],key,7)
     else:
         rr=random.Random(5)
         for k in range(4):
             a=k*1.7;dx=math.cos(a)*.18;dy=math.sin(a)*.18
-            m.beam((x+dx,y+dy,.5),(x+dx*2,y+dy*2,2.0+.25*k),.045,.045,'green')
+            m.beam((x+dx,y+dy,.5),(x+dx*2,y+dy*2,2.0+.25*k),.045,.045,v.foliage_roles.PaletteColour(v.PALETTE['green'],'bamboo_cane'))
             for j in range(4):
                 b=a+j*1.9;zz=1.1+j*.28+.1*k;bx=x+dx*1.6;by=y+dy*1.6
                 p=[(bx,by,zz),(bx+math.cos(b)*.3,by+math.sin(b)*.3,zz+.08),(bx+math.cos(b)*.45,by+math.sin(b)*.45,zz+.02),(bx+math.cos(b)*.3,by+math.sin(b)*.3,zz-.05)]
-                m.poly(p,'green');m.poly(p[::-1],'green_dark')
+                with v.foliage_roles.surfaces(m):
+                    m.poly(p,'green');m.poly(p[::-1],'green_dark')
 
 
 def bench_flowers(m,x,y,seed):

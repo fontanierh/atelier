@@ -250,6 +250,10 @@ def test_shipped_network_declaration_does_not_scan_content(monkeypatch):
                  'adventure_steps', 'hippodrome_steps', 'belmonte_steps', 'brinecove_steps', 'ferry_steps', 'gondola_steps', 'fit_steps', 'pawn_steps'):
         monkeypatch.setattr(recipe, name, lambda *args: [])
     monkeypatch.setattr(recipe, 'staging_steps', lambda *args: [Step('data.stage', [])])
+    monkeypatch.setattr(recipe.foliage_build, 'system_step',
+                        lambda ctx, prerequisites: Step('unreal.foliage_system', [], needs=['data.stage']))
+    monkeypatch.setattr(recipe.foliage_build, 'residency_step',
+                        lambda ctx: Step('unreal.foliage_residency', [], needs=['unreal.foliage_system']))
     monkeypatch.setattr(recipe, 'cook_step', lambda *args: Step('cook', []))
     monkeypatch.setattr(recipe, 'package_step', lambda *args: Step('package', []))
     def forbidden(*args):
@@ -260,7 +264,8 @@ def test_shipped_network_declaration_does_not_scan_content(monkeypatch):
     network = next(s for s in declarations if s.name == 'data.network')
     assert network.deferred_inputs[0].settings == (recipe.GAME / 'unreal/Content',)
     assert network.deferred_inputs[0].collect.__name__ == 'content_files'
-    assert network.inputs[-1] == paths.ENGINE_PLUGINS
+    native, = [p for p in network.deferred_inputs if p.name == 'native-source-files']
+    assert paths.ENGINE_PLUGINS in native.settings[0]
     Graph(declarations)
 
 
@@ -283,7 +288,9 @@ def test_native_build_steps_track_game_owned_plugins(tmp_path):
     steps = {step.name: step for step in recipe.steps(ctx)}
     plugin = paths.game_dir('yorimichi') / 'unreal/Plugins'
     for name in ('unreal.compile', 'unreal.cook', 'data.network'):
-        assert plugin in steps[name].inputs
+        selected, = [p for p in steps[name].deferred_inputs if p.name == 'native-source-files']
+        assert plugin in selected.settings[0]
+        assert plugin / 'HorseRacing/HorseRacing.uplugin' in selected.collect(*selected.settings)
 
 
 def test_racing_plugin_is_discovered_only_from_the_game_project():

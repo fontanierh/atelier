@@ -88,7 +88,7 @@ def temple_ground(m,cx,cy,yaw,height,seed):
             xx=rng.uniform(-13,13);yy=rng.uniform(-33,-15)
             if abs(xx)<2.3:continue
             z=local_height(xx,yy)+.063
-            m.poly([(xx-.1,yy,z),(xx,yy-.08,z),(xx+.12,yy,z),(xx,yy+.13,z)],'arc_leaf')
+            m.poly([(xx-.1,yy,z),(xx,yy-.08,z),(xx+.12,yy,z),(xx,yy+.13,z)],'arc_leaf');m.foliage_roles[len(m.faces)-1]='foliage_litter'
 
 
 def map_board(m,height,city,lettering):

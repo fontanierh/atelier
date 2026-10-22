@@ -6,6 +6,7 @@ import importlib.util
 import json
 from pathlib import Path
 import shutil
+import sys
 
 import numpy as np
 import pytest
@@ -18,6 +19,9 @@ from atelier import build
 
 GAME = Path(__file__).resolve().parents[1]
 REGION = GAME / 'world/regions/belmonte'
+sys.path.insert(0, str(GAME / 'world'))
+sys.path.insert(0, str(GAME / 'world/regions'))
+from belmonte import foliage  # noqa: E402
 SPEC = importlib.util.spec_from_file_location('bounded_belmonte_models', REGION / 'model_pieces.py')
 PIECES = importlib.util.module_from_spec(SPEC); SPEC.loader.exec_module(PIECES)
 SOURCE = GAME / 'assets/belmonte'
@@ -128,7 +132,7 @@ def test_actual_region_main_preserves_shared_instances_materials_parent_cull_and
     monkeypatch.setattr(PIECES, 'prepare', lambda entry, path: prepare(entry, path, triangle_limit=100))
     namespace = dict(OUT=out, source=source, finish_surfaces=lambda data: deepcopy(material_values),
                      terrain=SimpleNamespace(VALLEY_CARVED_TILES=set(), OUTER=[0., 0., 10., 10.]),
-                     model_pieces=PIECES, surroundings=lambda: ([], {}),
+                     model_pieces=PIECES, foliage=foliage, surroundings=lambda: ([], {}),
                      planting=SimpleNamespace(replacements=lambda *a: ({}, {}), woodland=lambda *a: {}),
                      clear_railway=lambda *a: {}, map_zones=lambda *a: [], tv_spots=lambda *a: [],
                      L=SimpleNamespace(ORIGIN=[0., 0., 0.], BOUNDS=[0., 0., 10., 10.], RAILWAY={}, native_origin=lambda: [0., 0., 0.]),

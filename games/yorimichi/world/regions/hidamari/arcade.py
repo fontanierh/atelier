@@ -116,11 +116,11 @@ def flowers(m,x,y,z,seed=1,root_spread=(.40,.40)):
         m.beam((xx,yy,z),(xx,yy,zz),.025,.025,'green_dark')
         for j in range(3):
             b=a+j*2.1
-            m.poly([(xx,yy,zz-.12),(xx+math.cos(b)*.19,yy+math.sin(b)*.19,zz-.06),(xx+.06,yy+.04,zz)],'green')
+            m.poly([(xx,yy,zz-.12),(xx+math.cos(b)*.19,yy+math.sin(b)*.19,zz-.06),(xx+.06,yy+.04,zz)],'green');m.foliage_roles[len(m.faces)-1]='foliage_leaf'
         for j in range(5):
             b=j*math.tau/5
             m.poly([(xx,yy,zz+.018),(xx+math.cos(b-.4)*.11,yy+math.sin(b-.4)*.11,zz),
-                    (xx+math.cos(b+.4)*.11,yy+math.sin(b+.4)*.11,zz)],['arc_ivory','arc_rose','arc_bloom'][i%3])
+                    (xx+math.cos(b+.4)*.11,yy+math.sin(b+.4)*.11,zz)],['arc_ivory','arc_rose','arc_bloom'][i%3]);m.foliage_roles[len(m.faces)-1]='foliage_flower'
 
 
 def shelf(m,x,y,kind,seed):
@@ -248,7 +248,7 @@ def floor(height):
     for k in range(1700):
         x=r.uniform(600,720);y=r.uniform(61,89);z=float(height(x,y))+.084;a=r.random()*math.tau
         with m.at((x,y,z),math.degrees(a)):
-            m.poly([(-.105,0,0),(-.07,-.035,0),(-.075,-.07,0),(-.015,-.06,0),(.035,-.1,0),(.055,-.04,0),(.12,0,0),(.055,.04,0),(.035,.1,0),(-.015,.06,0),(-.075,.07,0),(-.07,.035,0)],r.choice(['arc_leaf','clay','arc_bloom']))
+            m.poly([(-.105,0,0),(-.07,-.035,0),(-.075,-.07,0),(-.015,-.06,0),(.035,-.1,0),(.055,-.04,0),(.12,0,0),(.055,.04,0),(.035,.1,0),(-.015,.06,0),(-.075,.07,0),(-.07,.035,0)],r.choice(['arc_leaf','clay','arc_bloom']));m.foliage_roles[len(m.faces)-1]='foliage_litter'
     return m
 
 
@@ -279,7 +279,7 @@ def tree(with_planter=True):
             with m.at((x,y,zz),r.random()*360):
                 m.transform=m.transform@Matrix.Rotation(r.uniform(-1.1,1.1),4,'X')@Matrix.Rotation(r.uniform(-.7,.7),4,'Y')
                 p=[(0,-size,0)]+[(math.cos(a)*size,math.sin(a)*size,.018) for a in [math.pi,2.75,2.4,2.05,1.7,1.45,1.1,.75,.4,0]]
-                m.poly(p,col);m.poly(p[::-1],tuple(c*.95 for c in col))
+                m.poly(p,col);m.poly(p[::-1],tuple(c*.95 for c in col));m.foliage_roles.update({len(m.faces)-2:'foliage_leaf',len(m.faces)-1:'foliage_leaf'})
     return m
 
 

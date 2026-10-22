@@ -55,6 +55,12 @@ _kart_identity_spec.loader.exec_module(kart_source_identity)
 _foliage_spec = importlib.util.spec_from_file_location('yorimichi_foliage_build', GAME / 'foliage_build.py')
 foliage_build = importlib.util.module_from_spec(_foliage_spec)
 _foliage_spec.loader.exec_module(foliage_build)
+_residency_spec = importlib.util.spec_from_file_location('yorimichi_foliage_residency_build', GAME / 'foliage_residency_build.py')
+foliage_residency_build = importlib.util.module_from_spec(_residency_spec)
+_residency_spec.loader.exec_module(foliage_residency_build)
+_compile_inputs_spec = importlib.util.spec_from_file_location('yorimichi_compile_inputs', GAME / 'compile_inputs.py')
+compile_inputs = importlib.util.module_from_spec(_compile_inputs_spec)
+_compile_inputs_spec.loader.exec_module(compile_inputs)
 
 _brinecove_library_spec = importlib.util.spec_from_file_location('brinecove_foliage_library', REGIONS / 'brinecove/foliage_names.py')
 brinecove_library = importlib.util.module_from_spec(_brinecove_library_spec)
@@ -397,6 +403,13 @@ def engine_version(ctx):
             engine / 'Engine' / 'Binaries' / 'Mac' / 'UnrealEditor.modules'] if engine else []
 
 
+def native_source_inputs():
+    """The same complete native source membership for compilation, network identity and cooking."""
+    return DeferredInputs('native-source-files', compile_inputs.files,
+                          ((SOURCE, GAME / 'unreal/Config', GAME / 'unreal/Plugins', paths.ENGINE_PLUGINS),),
+                          support=(GAME / 'compile_inputs.py', Path(build_inputs.__file__)))
+
+
 def cook_step(ctx, steps):
     from atelier.build_cook_recovery import CookRecovery
     out = ctx.out
@@ -404,7 +417,8 @@ def cook_step(ctx, steps):
     return Step('unreal.cook',
                 [Call('prepare_cook', package_cook.prepare), UnrealPackage('Yorimichi', out / 'package' / 'archive'),
                  Call('certify_cook', package_cook.finish)],
-                inputs=[SOURCE, ctx.uproject, GAME / 'unreal/Plugins', paths.ENGINE_PLUGINS, GAME / 'unreal' / 'Config', TOOLS / 'package_cook.py', *engine_inputs],
+                inputs=[ctx.uproject, TOOLS / 'package_cook.py', *engine_inputs],
+                deferred_inputs=[native_source_inputs()],
                 needs=[s.name for s in steps if s.name.startswith('unreal.') and not s.explicit] + ['data.stage', 'data.racing_assets', 'data.network'], heavy=True, explicit=True,
                 outputs=[out / 'package' / 'cook.json'], verify=lambda: package_cook.cook_present(out / 'package'),
                 checkpoint_restore=package_cook.certify_restored,
@@ -706,7 +720,7 @@ def brinecove_model_steps(out):
     """One deterministic source product per plant model; no terrain or placement inputs."""
     region = REGIONS / 'brinecove'
     script = region / 'export_foliage_model.py'
-    code = build_inputs.local_imports(script, (REGIONS,))
+    code = build_inputs.local_imports(script, (WORLD, REGIONS))
     definitions = brinecove_library.definitions()
     if not definitions:
         raise ValueError('Brinecove requires its committed plant model definitions')
@@ -1387,9 +1401,11 @@ def unreal_steps(ctx):
                      SKATE_DATA],
              outputs=[out / 'skate-simulation/verification.json', out / 'skate-simulation/package' / 'package-manifest.json'],
              about="assemble the Skate plugin's simulation package and verify every payload"),
-        Step('unreal.compile', [UnrealCompile('YorimichiEditor')], inputs=[SOURCE, ctx.uproject, GAME / 'unreal/Config', GAME / 'unreal/Plugins', paths.ENGINE_PLUGINS], needs=['skate.runtime'], heavy=True,
+        Step('unreal.compile', [UnrealCompile('YorimichiEditor')], inputs=[ctx.uproject],
+             deferred_inputs=[native_source_inputs()],
+             needs=['skate.runtime'], heavy=True,
              about='the Yorimichi C++ modules (editor target)'),
-        *unreal_modules.steps(ctx, IMPORT_CODE + SAVED_TYPES + CONTACT_TYPES),
+        *unreal_modules.steps(ctx, IMPORT_CODE + SAVED_TYPES + CONTACT_TYPES + ('YorimichiFoliagePreparation',)),
         *foliage_build.unreal_steps(ctx, IMPORT_CODE, engine_version(ctx)),
         Step('unreal.world', [UnrealScript(SCRIPTS / 'setup_project.py', 'level saved')],
              # The city's arcade and harbor materials read the region's committed paintings.
@@ -1782,7 +1798,9 @@ def steps(ctx):
         for command in step.commands:
             if isinstance(command, (Python, Blender)) and WORLD in Path(command.script).parents:
                 step.inputs += [f for f in scanner.local_imports(command.script, (WORLD, REGIONS)) if f not in step.inputs]
-        # Native geometry reuse hashes its complete native-only source closure.
+        # The shared FBX boundary certifies cooked foliage roles using the import
+        # module. Legacy run_path callers have an explicit source edge; normal
+        # imports use their static closure. Keep unrelated editor scripts outside it.
         for command in step.commands:
             if not isinstance(command, UnrealScript):
                 continue
@@ -1794,6 +1812,9 @@ def steps(ctx):
             if common_mesh or native_reuse:
                 step.inputs += [file for file in code if file not in step.inputs]
             if common_mesh:
+                step.needs += [name for name in unreal_modules.needs(IMPORT_CODE) if name not in step.needs]
+                if command.modules:
+                    command.modules = tuple(dict.fromkeys((*command.modules, *IMPORT_CODE)))
                 # Candidate staging is read-only metadata. Package adoption remains
                 # per mesh, with current source/options/native validation.
                 content_root = GAME / 'unreal' / 'Content'
@@ -1828,6 +1849,11 @@ def steps(ctx):
     identity_spec = importlib.util.spec_from_file_location('yorimichi_network_identity', GAME / 'network_identity.py')
     identity = importlib.util.module_from_spec(identity_spec)
     identity_spec.loader.exec_module(identity)
+    # Every import namespace participates, including future normal region owners.
+    # The derivative foliage owner sees their final material graphs and meshes.
+    result.append(foliage_build.system_step(ctx,
+        [s.name for s in result if s.name.startswith('unreal.') and not s.explicit] + ['data.stage']))
+    result.append(foliage_build.residency_step(ctx))
     content = GAME / 'unreal' / 'Content'
     policy_spec = importlib.util.spec_from_file_location('yorimichi_content_policy', GAME / 'content_policy.py')
     policy = importlib.util.module_from_spec(policy_spec)
@@ -1847,10 +1873,9 @@ def steps(ctx):
                        verify=lambda: not any(policy.retired(content)),
                        about='archive retired generated imports before multiplayer identity and cooking'))
     result.append(Step('data.network', [Call('network_identity', identity.stage)],
-                       inputs=[GAME / 'network_identity.py', SOURCE, ctx.uproject, GAME / 'unreal/Config', GAME / 'unreal/Plugins',
-                               paths.ENGINE_PLUGINS],
+                       inputs=[GAME / 'network_identity.py', ctx.uproject],
                        deferred_inputs=[DeferredInputs('content', identity.content_files, (content,),
-                                                       support=(GAME / 'network_identity.py',))],
+                                                       support=(GAME / 'network_identity.py',)), native_source_inputs()],
                        needs=[s.name for s in result if s.name.startswith('unreal.') and not s.explicit] + ['data.stage', 'data.content'],
                        outputs=[content / 'Data/Network/session.json'],
                        about='matching multiplayer code, imported assets and staged gameplay data'))

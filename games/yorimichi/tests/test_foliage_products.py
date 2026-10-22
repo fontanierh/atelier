@@ -12,18 +12,21 @@ GAME = Path(__file__).resolve().parents[1]
 WORLD = GAME / 'world'
 SCRIPTS = GAME / 'unreal/Scripts'
 PACKAGING = {'data.content', 'data.network', 'unreal.cook', 'unreal.package'}
+# Preparation waits for importers, then observes actual packages. Source-only
+# perturbations here do not model changed native output bytes (covered separately).
+ASSEMBLY = PACKAGING
 
 
 def test_one_tree_spec_changes_only_its_export_import_and_final_assembly(tmp_path, monkeypatch):
     assert changed_by(GAME / 'assets/foliage/Tree_Broad_A.json', tmp_path, monkeypatch) == {
-        'world.foliage.Tree_Broad_A', 'unreal.foliage.Tree_Broad_A', *PACKAGING}
+        'world.foliage.Tree_Broad_A', 'unreal.foliage.Tree_Broad_A', *ASSEMBLY}
 
 
 def test_foliage_lod_policy_does_not_reimport_world_regions_or_sounds(tmp_path, monkeypatch):
     changed = changed_by(WORLD / 'build_foliage_lods.py', tmp_path, monkeypatch)
     assert len([name for name in changed if name.startswith('world.foliage.')]) == 18
     assert len([name for name in changed if name.startswith('unreal.foliage.')]) == 18
-    assert changed - PACKAGING == {name for name in changed if '.foliage.' in name}
+    assert changed - ASSEMBLY == {name for name in changed if '.foliage.' in name}
 
 
 def test_shader_graph_changes_leave_foliage_imports_current_when_interface_is_identical(tmp_path, monkeypatch):
@@ -52,7 +55,9 @@ def test_package_repair_code_invalidates_native_owners_without_reexporting_geome
     changed = changed_by(source, tmp_path, monkeypatch)
     native = {name for name in changed if name.startswith('unreal.foliage.')}
     assert len(native) == 18
-    assert changed == native | PACKAGING
+    # Only the raw imports run ATELIER_UNREAL_PREFLIGHT. Residency executes its
+    # own native fixture and must not hash an unused launcher/controller closure.
+    assert changed == native | ASSEMBLY
 
 
 def test_alpha_texture_is_an_input_only_of_foliage_that_reads_it(tmp_path, monkeypatch):
@@ -127,3 +132,50 @@ def test_catalog_preserves_only_owned_packages_and_rejects_palette_collisions():
     catalog.check_material_namespace(['LeafOlive', 'LeafCypress'], 'forest')
     with pytest.raises(ValueError, match='shared material ownership'):
         catalog.check_material_namespace(['LeafSmall'], 'forest')
+
+
+def test_foliage_system_verifies_complete_packages_and_registry_not_just_directories(tmp_path):
+    import json
+    owner=build.load_recipe('yorimichi').foliage_build
+    content=tmp_path/'Content';root=content/'FoliageSystem'
+    mesh=root/'Meshes/Tree.uasset';material=root/'Materials/Canopy.uasset'
+    mesh.parent.mkdir(parents=True);material.parent.mkdir(parents=True)
+    mesh.write_bytes(b'mesh revision');material.write_bytes(b'material revision')
+    report_path=tmp_path/'report.json';registry=content/'Data/foliage_system/registry.json'
+    registry.parent.mkdir(parents=True)
+    report=dict(version=1,assets=[dict(source='/Game/Test/Tree.Tree')],packages=owner.system_packages(content))
+    report_path.write_text(json.dumps(report));registry.write_text(json.dumps(report))
+    assert owner.verify_system(content,report_path)
+    material.unlink()
+    assert not owner.verify_system(content,report_path)
+    material.write_bytes(b'corrupt material')
+    assert not owner.verify_system(content,report_path)
+    material.write_bytes(b'material revision')
+    assert owner.verify_system(content,report_path)
+    (root/'Meshes/Unexpected.uasset').write_bytes(b'uncertified output')
+    assert not owner.verify_system(content,report_path)
+    (root/'Meshes/Unexpected.uasset').unlink()
+    registry.write_text('{}')
+    assert not owner.verify_system(content,report_path)
+
+
+def test_role_codec_is_a_real_authoring_input_and_imports_fingerprint_the_stamp_module(tmp_path):
+    recipe=build.load_recipe('yorimichi')
+    ctx=SimpleNamespace(game='yorimichi',out=tmp_path,logs=tmp_path/'logs',stamps=tmp_path/'stamps',uproject=None)
+    steps={step.name:step for step in recipe.steps(ctx)}
+    for name in ('world.village','world.hidamari','world.treehouse','world.houses','world.mega','world.city_trees'):
+        assert WORLD/'foliage_roles.py' in steps[name].inputs,name
+    for name in ('unreal.world','unreal.north','unreal.mega','unreal.lake','unreal.houses','unreal.treehouse',
+                 'unreal.swordcamp','unreal.foliage.Tree_Broad_A'):
+        assert SCRIPTS/'mesh_import.py' in steps[name].inputs,name
+        assert set(recipe.unreal_modules.needs(recipe.IMPORT_CODE))<=set(steps[name].needs),name
+
+
+def test_default_readiness_requires_residency_after_certified_preparation(tmp_path):
+    ctx = SimpleNamespace(game='yorimichi', out=tmp_path, uproject=None)
+    graph = build_products.Graph(build.load_recipe('yorimichi').steps(ctx))
+    compact = graph.by_name['unreal.foliage_residency']
+    assert 'unreal.foliage_system' in compact.after
+    for target in ('data.content', 'data.network', 'unreal.cook'):
+        assert compact.name in {step.name for step in graph.select([target])}
+    assert GAME / 'unreal/Content/FoliageResident' in compact.outputs

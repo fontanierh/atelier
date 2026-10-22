@@ -24,6 +24,8 @@ public:
     void Apply();
     const TArray<FJapanPreference>& GetValues() const { return Values; }
     bool SetValue(const FString& Key, float Value);
+    /** Restore the saved choice if a deferred mesh reload failed. */
+    void FoliageReloadFailed(bool Enabled,const FString& Reason);
     /** Whether this launch has a renderer restart handshake with its launcher. */
     static bool CanRestartRenderer();
     /** The running shader path: 0 forward, 1 deferred/Lumen. */
@@ -51,6 +53,7 @@ public:
     // its own preferences exist.
     static float Saved(const FString& Key, float Default);
 private:
+    friend class FYorimichiFoliageToggleTest;
     UPROPERTY() TObjectPtr<AWandererCharacter> Owner;
     UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> Materials;
     TArray<FJapanPreference> Values;

@@ -18,11 +18,12 @@ import math  # noqa: E402
 import random  # noqa: E402
 import shutil  # noqa: E402
 import time  # noqa: E402
+import foliage_roles  # noqa: E402
 
 import bpy  # noqa: E402
 import numpy as np  # noqa: E402
 
-from atelier.model_export import mesh_object, export, glb_info  # noqa: E402
+from brinecove.mesh_export import mesh_object, export, glb_info, source_roles  # noqa: E402
 from atelier.mesh_partition import face_groups  # noqa: E402
 from terrain_product import load  # noqa: E402
 from brinecove import flora, foliage_library, ground, hero_assets, hero_sources, modules, region as R, rocks  # noqa: E402
@@ -168,6 +169,7 @@ def split(builder, prefix, settle, remap=None):
             part.spatial_centers = []
         normals = [builder.normals[f[k]] for k in corners] if builder.normals is not None else None
         part.face([pts[k] for k in corners], mat, [builder.uvs[f[k]] for k in corners], normals)
+        if n in builder.foliage_roles:part.foliage_roles[len(part.faces)-1]=builder.foliage_roles[n]
         part.spatial_centers.append((cx, cy))
     return bounded_parts(parts, prefix), outside, drowned, degenerate
 
@@ -431,6 +433,7 @@ def main(argv=None):
         report_degenerate[prefix] = degenerate
         for (_, _, is_soft, _), part in sorted(parts.items()):
             obj = mesh_object(part, materials)
+            has_roles=len(obj.data.uv_layers)>foliage_roles.CHANNEL
             path = OUT / 'glb' / f'{part.name}.glb'
             export(obj, path)
             bpy.data.objects.remove(obj, do_unlink=True)
@@ -440,6 +443,7 @@ def main(argv=None):
             water = getattr(part, 'parent_water',
                             all(s.startswith(('water', 'mist', 'spray', 'foam', 'waterfall')) for s in slots))
             meshes.append({'name': part.name, 'path': path.relative_to(OUT).as_posix(), 'sha256': sha(path),
+                           'foliage_roles':has_roles,
                            'triangles': triangles, 'bounds_m': bounds, 'slots': slots, 'collision': not is_soft})
             groups.append(group(part.name, slots, [IDENTITY], collision=not is_soft, shadow=not water,
                                 cull_cm=0 if prefix in ('Ground', 'Rocks') else 120000))
@@ -477,7 +481,7 @@ def main(argv=None):
             if slot not in material_entries:
                 material_entries.update(material_report({slot}))
         height = model['bounds_m'][1][2] - model['bounds_m'][0][2]
-        meshes.append({**model, 'path': path.relative_to(OUT).as_posix()})
+        meshes.append({**model, 'path': path.relative_to(OUT).as_posix(), 'foliage_roles': source_roles(path)})
         low = proto.startswith('cover_')
         if proto in placements:
             groups.append(group(model['name'], slots, placements[proto], collision=False, shadow=not low,

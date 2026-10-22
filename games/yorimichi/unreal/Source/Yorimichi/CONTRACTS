@@ -155,3 +155,78 @@ never for the state first observed (a late joiner). There is one transport bank,
 @cc [owner:fontanierh,label:correctness] racing-hud-venue
 The race HUD banner MUST be English and MUST appear only inside a venue's grounds near track height.
 The broad runner-rendering proximity radius MUST NOT enable the HUD banner.
+
+@cc [owner:fontanierh,label:correctness;performance] foliage-startup-upload-lifetime
+Initial world population MUST bound queued foliage representation uploads after complete source registrations.
+A drain MAY wait for GPU completion and retire deferred resources, but MUST preserve GPU render buffers,
+source collision, geometry, materials, placements and saved packages. Once gameplay readiness has been
+observed, ordinary refreshes MUST NOT introduce GPU-idle drains. An explicit foliage-mode reload MAY
+wait for the old mesh set to unload before loading its replacement. Optimized reloads MUST
+bound new upload and CPU-copy lifetime after complete registration batches, rather than retaining
+every copy until the entire replacement set has loaded. Memory diagnostics
+MUST distinguish CPU resource estimates from actual process footprint; a source hypothesis is not proof
+of a startup memory improvement.
+
+@cc [owner:fontanierh,label:correctness;performance] foliage-game-vertex-residency
+An uncooked non-editor game MAY release CPU vertex copies only for owned prepared render-only
+foliage variants after their completed GPU upload. Carrier position/index CPU data, saved packages,
+vertex/UV/section metadata, collision/navigation data and GPU resources MUST remain intact.
+Owned prepared carriers MAY release only tangent/UV/colour CPU copies when physical-material masks,
+hit-result UV queries, static-mesh Niagara samplers and component override vertex colours are absent.
+Pending geometry builds/collision cooks or unready collision MUST defer release. CPU shading readers
+MUST test GetAllowCPUAccess and use cooked collision or refuse rather than dereference cached pointers. Editor/PIE, commandlets, CPU-access,
+streamable, compiling, pending-upload, Nanite and ray-traced meshes MUST NOT use this path. Later CPU
+readers MUST NOT use released buffers; positions retained on carriers MAY serve geometry queries.
+Resource rebuilds MUST use the unchanged original or the build-time preparation process. Actual physical memory and rendered/toggled gameplay MUST establish
+the effect; resource size estimates alone are insufficient.
+
+@cc [owner:fontanierh,label:correctness;performance] foliage-render-only-collision-residency
+Owned prepared foliage render copies MUST NOT retain unused physics meshes or navigation triangle arrays
+in an uncooked game. Runtime release MUST require exact mesh ownership of both BodySetup and navigation
+data and no pending physics cook, leave active-carrier/shared collision and gameplay queries intact, and never
+cook, serialize or save mesh packages. Counts, directly allocated navigation bytes and physical footprint
+MAY measure this release; physics resource sizing MUST NOT serialize full meshes during startup.
+CPU corner readers MUST check GetAllowCPUAccess rather than cached raw pointer non-null after release.
+
+@cc [owner:fontanierh,label:correctness;performance] foliage-single-resident-mode
+Scenery loaders MUST resolve certified canonical source paths before opening mesh packages.
+Optimized mode MUST load prepared meshes only; legacy meshes MUST NOT be retained for invisible
+collision. Source identity MUST remain a string across mode reloads. The selected collision carrier
+MUST preserve placements and scene queries, use simple trunk collision with passable leaves/bushes,
+and preserve rigid ground/building collision in mixed meshes. A mode change MUST detach/destroy the
+inactive mesh bindings and complete their release before loading the next mode, including rollback.
+Render-only physics cleanup MUST NOT touch an active collision carrier. Carrier CPU shading-copy cleanup
+MUST preserve position/index data and follow foliage-game-vertex-residency. Bush player interaction,
+see-through custom primitive data and rigid cloth motion MUST survive replacement.
+
+@cc [owner:fontanierh,label:correctness] foliage-prepared-collision-policy
+Version-two rows MUST declare simple_trunk and passable booleans and MUST NOT claim both.
+A prepared trunk carrier MUST own validated simple shapes. Authored collision enablement and
+responses MUST remain unchanged for trunks, including intentionally nonblocking placements.
+Passable plant carriers MUST disable collision in BOTH graphics modes; backdrop and shadow-only
+placements MUST retain their authored policy. Mixed rigid collision MUST remain unchanged.
+Mode unload, rollback and owner release MUST recover authored collision state before recapturing
+the selected mode; render copies MUST remain noncolliding. Gameplay collision channels MUST be installed
+once after each registration batch or mode reload, never once per source.
+
+@cc [owner:fontanierh,label:correctness] foliage-live-binding-validation
+Registered material bindings, slot names, source WPO and collision enablement MUST remain current during refresh.
+External changes MUST require explicit RefreshSource validation rather than silently keeping stale
+renderers. Owned sway changes MUST remain valid. Binding snapshots MUST NOT retain inactive mesh
+or material objects across mode reloads.
+
+@cc [owner:fontanierh,label:correctness] city-tile-material-ownership
+City surface tile components MUST retain their own certified mesh material table. Parent material slot
+indices MUST NOT be copied onto tiles: a tile may omit unused parent slots and compact their order.
+Prepared and legacy tile modes MUST preserve the same logical face-to-material bindings.
+
+@cc [owner:fontanierh,label:correctness] foliage-authored-render-state
+Mode removal and reload MUST restore authored instance culling, LOD scale, WPO enablement and
+WPO disable distance before registering the other mode. Bush/groundcover WPO carries player
+push and MUST remain authored-enabled when tree sway distance is zero. The separate wind
+strength control remains independent of player push; tree wind culling MUST NOT disable bush WPO.
+Legacy Apply MUST NOT overwrite current graphics settings with registration snapshots. A mode
+reload into legacy MUST reapply the current world performance settings despite unchanged setting guards.
+Saved city-tree optimization requests MUST be replayed on return to legacy, including disabled and
+forced-LOD selections. Prepared carriers MUST use their automatic authored chain; legacy forced/minimum
+LOD overrides MUST be restored only on removal. Replayed mesh bindings MUST pass current registration.

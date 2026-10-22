@@ -386,16 +386,15 @@ def main():
                       ('import_mesh', 'keep_full_precision_uvs', 'generate_lods'),
                       report_member='generated/brinecove/build-report.json',
                       validation_functions=('validate_reused_mesh',))
-    donor = {entry['name']: entry for entry in reuse.donor.get('meshes', [])}
     def geometry(entry):
-        return dict(entry, lods=bool(entry.get('lods')))
+        return dict(entry, foliage_roles=bool(entry.get('foliage_roles')), lods=bool(entry.get('lods')))
     imported = {}
     for index, entry in enumerate(report['meshes']):
         name = entry['name']
         target = ROOT + '/Meshes/' + name
-        previous = donor.get(name)
         mesh = reuse.acquire(name, target, geometry=geometry(entry),
-                             donor_geometry=geometry(previous) if previous else None,
+                             donor_geometry=lambda saved: next((geometry(row) for row in saved.get('meshes', [])
+                                                                if row['name'] == name), None),
                              sources=[(target, OUT / entry['path'], entry['sha256'])],
                              validator=lambda mesh: validate_reused_mesh(mesh, entry))
         reused = mesh is not None
@@ -416,6 +415,13 @@ def main():
             if mesh.get_material(slot) != material:
                 mesh.set_material(slot, material)
             assert mesh.get_material(slot) == material, (name, 'material binding', slot)
+        # GLB/Interchange imports bypass the common FBX importer. Certify their
+        # shared UV5 face roles at this source boundary too, before reduction.
+        unreal.load_module('YorimichiImport')
+        assert unreal.YorimichiFoliageBuilder.stamp_source_roles(mesh), (name,'invalid foliage roles')
+        stamps=[str(slot.get_editor_property('material_slot_name')) for slot in mesh.get_editor_property('static_materials')]
+        has_roles=bool(stamps) and all(stamp.startswith(('FoliageRoles_','FoliageRigid_')) for stamp in stamps)
+        assert has_roles==entry.get('foliage_roles',False), (name,'foliage UV5 lost across source import')
         # Unreal drops a few degenerate slivers from the procedural kit.
         triangles = mesh.get_num_triangles(0)
         assert entry['triangles'] * .98 <= triangles <= entry['triangles'], (name, 'triangle count', triangles, entry['triangles'])

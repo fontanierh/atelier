@@ -1,5 +1,6 @@
 """Readable household vignettes and low planted borders, in metre-scale geometry."""
 import math
+import foliage_roles
 import numpy as np
 from mathutils import Vector
 
@@ -109,17 +110,17 @@ def planting(api):
             base=Vector((x,y,z));tip=base+Vector((math.cos(a)*s,math.sin(a)*s,.50*s))
             side=Vector((-math.sin(a),math.cos(a),0))*.20*s
             mid=base.lerp(tip,.60)+Vector((0,0,.18*s))
-            col=api.color_variant('leaf',.25)
+            col=foliage_roles.PaletteColour(api.color_variant('leaf',.25),'groundcover_leaf')
             m.poly([base,mid+side,tip,mid-side],col)
             m.poly([base,mid-side,tip,mid+side],col)
         if flower:
             zz=z+.6*s
             m.beam((x,y,z),(x,y,zz),.025,.025,'leaf')
-            color=R.choice([(.58,.31,.035),(.73,.67,.47),(.45,.057,.015)])
+            color=foliage_roles.PaletteColour(R.choice([(.58,.31,.035),(.73,.67,.47),(.45,.057,.015)]),'flower')
             for k in range(5):
                 a=k*math.tau/5;rr=.17*s;xx=x+rr*math.cos(a);yy=y+rr*math.sin(a)
                 m.poly([(xx+math.cos(a+j*math.tau/5)*rr,yy+math.sin(a+j*math.tau/5)*rr,zz+.035*math.sin(j)) for j in range(5)],color)
-            m.poly([(x+math.cos(k*math.tau/6)*.06*s,y+math.sin(k*math.tau/6)*.06*s,zz+.035) for k in range(6)],'paper')
+            m.poly([(x+math.cos(k*math.tau/6)*.06*s,y+math.sin(k*math.tau/6)*.06*s,zz+.035) for k in range(6)],foliage_roles.PaletteColour(api.PALETTE['paper'],'flower'))
     for cx,cy,rx,ry in beds:
         # Soil disks sit below the dense leaves, with small broken stone borders.
         for k in range(42):
@@ -147,7 +148,7 @@ def planting(api):
     def leaf(x,y,z,size,angle):
         # Concise six-vertex folded leaf keeps a dense layer affordable.
         outline=[(-.9,0),(-.25,-.65),(.2,-.42),(1,0),(.15,.65),(-.35,.48)]
-        c=R.choice(colours);ca=math.cos(angle);sa=math.sin(angle)
+        c=foliage_roles.PaletteColour(R.choice(colours),'foliage_litter');ca=math.cos(angle);sa=math.sin(angle)
         pts=[(x+(a*ca-b*sa)*size,y+(a*sa+b*ca)*size,z+.008*(i%2)) for i,(a,b) in enumerate(outline)]
         m.poly(pts,c)
     for x,y,d,take in zip(xs,ys,ds,selected):

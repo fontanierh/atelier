@@ -4,11 +4,81 @@ import json
 from pathlib import Path
 
 from atelier import build_inputs, unreal_modules
+from atelier.mesh_geometry import SIDECARS
 from atelier.build import Batch, Blender, Product, Step, UnrealScript
+from atelier.build import DeferredInputs
+from atelier.native_protocol import runtime_files as native_runtime_files
 
 GAME = Path(__file__).resolve().parent
 WORLD = GAME / 'world'
 SCRIPTS = GAME / 'unreal/Scripts'
+
+
+def system_inputs(content):
+    """Discovery is content-dependent: new regional foliage invalidates the registry.
+
+    The derivative owner's own packages and Data must never become its inputs.
+    Native source packages include their material/texture dependencies; per-asset
+    fingerprints inside the adapter avoid rebuilding unchanged representations.
+    """
+    return sorted(p for p in Path(content).rglob('*') if p.is_file()
+                  and p.name.endswith(SIDECARS)
+                  and p.relative_to(content).parts[0] not in ('FoliageSystem', 'FoliageResident', 'Data'))
+
+
+def system_packages(content):
+    spec=importlib.util.spec_from_file_location('yorimichi_foliage_system',GAME/'foliage_system.py')
+    kernel=importlib.util.module_from_spec(spec);spec.loader.exec_module(kernel)
+    return kernel.package_inventory(content)
+
+
+def verify_system(content, report_path):
+    """A directory's existence cannot certify its mesh/material packages."""
+    try:
+        report=json.loads(Path(report_path).read_text())
+        registry=json.loads((Path(content)/'Data/foliage_system/registry.json').read_text())
+        expected=report['packages']
+        return (report==registry and report['version']==1 and bool(report['assets'])
+                and bool(expected) and system_packages(content)==expected)
+    except (OSError,ValueError,KeyError,TypeError):
+        return False
+
+
+def system_step(ctx, prerequisites):
+    """@cc [owner:fontanierh,label:correctness;performance] foliage-preparation-native-boundary
+    Every current importer MUST complete before observing source package membership.
+    Fingerprints MUST bind the complete actual source packages, consumed source code,
+    configuration and compiled preparation library rather than unrelated gameplay
+    or producer action identities. Ordering-only edges MUST NOT hide a consumed product.
+    Saved outputs MUST still receive current native validation before receiving success.
+    """
+    content = GAME/'unreal/Content'
+    command = UnrealScript(SCRIPTS/'build_foliage_system.py', 'FOLIAGE SYSTEM COMPLETE',
+                           modules=('YorimichiFoliagePreparation',), null_rhi=True, memory_gib=20,
+                           args=('-ForceDPCVars=r.GenerateMeshDistanceFields=0,r.MeshCardRepresentation=0',))
+    command.timeout = 7200
+    command.progress = 25
+    return Step('unreal.foliage_system',
+                [UnrealScript(SCRIPTS/'verify_foliage_transport.py', 'FOLIAGE BINARY TRANSPORT PASS',
+                              modules=('YorimichiFoliagePreparation',), null_rhi=True), command],
+                inputs=[GAME/'foliage_system.py', GAME/'foliage_unit_policy.py', GAME/'foliage_unit_policy_witness.json',
+                        WORLD/'foliage_roles.py', SCRIPTS/'verify_foliage_transport.py', SCRIPTS/'build_foliage_system.py', SCRIPTS/'atmosphere.py',
+                        SCRIPTS/'see_through.py', SCRIPTS/'foliage_material.py', SCRIPTS/'foliage_variant_validation.py',
+                        GAME.parents[1]/'platform/studio/atelier/mesh_geometry.py', *native_runtime_files(), GAME/'unreal/Config',
+                        *(GAME/'unreal/Source/YorimichiFoliagePreparation'/name for name in
+                          ('FoliageSourceWriter.cpp','FoliageSourceWriter.h','FoliageGeometryReader.cpp','FoliageGeometryReader.h')),
+                        *(GAME/'unreal/Source/YorimichiFoliagePreparation'/name for name in
+                          ('FoliagePreparation.cpp','FoliagePreparation.h','MeshGeometrySnapshot.cpp')),
+                        *(ctx.out/'unreal-modules'/(name+'.json') for name in
+                          ('YorimichiFoliagePreparation',))],
+                deferred_inputs=[DeferredInputs('foliage-source-packages', system_inputs, (content,),
+                                                support=(GAME/'foliage_build.py', GAME.parents[1]/'platform/studio/atelier/mesh_geometry.py'))],
+                after=list(prerequisites),
+                needs=unreal_modules.needs(('YorimichiFoliagePreparation',)),
+                outputs=[content/'FoliageSystem', content/'Data/foliage_system/registry.json',
+                         ctx.out/'foliage_system/report.json', ctx.out/'foliage_system/preparation-counts.json'],
+                verify=lambda:verify_system(content,ctx.out/'foliage_system/report.json'),
+                heavy=True, about='all foliage: closed canopies, leaf fringes, shadow proxies and verified runtime registry')
 
 
 def source_module(name):
@@ -83,3 +153,45 @@ def unreal_steps(ctx, modules, engine_inputs):
             batch=Batch('foliage imports', runtime_env=('ATELIER_FOLIAGE',)),
             heavy=True, about=f'{name}: import only its package and authored LOD chain'))
     return steps
+
+
+def source_module_for_residency():
+    spec = importlib.util.spec_from_file_location('yorimichi_residency', GAME / 'foliage_residency_build.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def residency_step(ctx):
+    """@cc [owner:fontanierh,label:correctness;performance] foliage-residency-owner
+    Residency MUST consume the successful current preparation and all authored
+    trunk manifests, preserve corner/material identity and keep rigid geometry
+    once. Only exact saved package groups MAY enter the receiving registry.
+    A partial unit MUST NOT publish whole-task success. New packages MUST remain
+    outside original discovery; runtime readiness MUST require this owner.
+    """
+    residency = source_module_for_residency()
+    scripts = GAME / 'unreal/Scripts'
+    script = scripts / 'prepare_foliage_residency.py'
+    command = UnrealScript(script, 'FOLIAGE RESIDENCY COMPLETE', modules=('YorimichiFoliagePreparation',),
+                           null_rhi=True, memory_gib=10,
+                           args=('-ForceDPCVars=r.GenerateMeshDistanceFields=0,r.MeshCardRepresentation=0',))
+    command.timeout = 7200
+    command.progress = 25
+    content = GAME / 'unreal/Content'
+    return Step('unreal.foliage_residency', [command],
+                inputs=[*build_inputs.local_imports(script, (GAME, GAME / 'world', scripts)),
+                        GAME / 'foliage_residency_build.py',
+                        GAME / 'unreal/Source/YorimichiFoliagePreparation/FoliageResidencyBuilder.cpp',
+                        GAME / 'unreal/Source/YorimichiFoliagePreparation/FoliageResidencyBuilder.h',
+                        ctx.out / 'foliage_system/report.json', content / 'FoliageSystem',
+                        content / 'Data/foliage_system/registry.json',
+                        *(ctx.out / 'foliage' / name / 'manifest.json' for name in residency.species()),
+                        GAME.parents[1] / 'platform/studio/atelier/mesh_geometry.py'],
+                deferred_inputs=[DeferredInputs('residency-current-packages', residency.dependency_inputs,
+                    (content, ctx.out / 'foliage_system/report.json'), support=(GAME / 'foliage_residency_build.py',))],
+                after=['unreal.foliage_system'], needs=unreal_modules.needs(('YorimichiFoliagePreparation',)),
+                outputs=[content / 'FoliageResident', content / 'Data/foliage_residency/registry.json',
+                         ctx.out / 'foliage_residency/report.json'],
+                verify=lambda: residency.verify(content, ctx.out / 'foliage_residency/report.json'), heavy=True,
+                about='compact certified foliage: rigid once, leaf-only LODs, authored trunk collision')

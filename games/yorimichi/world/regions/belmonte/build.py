@@ -10,7 +10,7 @@ import shutil
 import numpy as np
 from PIL import Image
 from atelier.model_files import source_records, retain_files
-from belmonte import layout as L, source, planting, terrain, appearance, model_pieces
+from belmonte import layout as L, source, planting, terrain, appearance, foliage, model_pieces
 
 OUT = yori.OUT / 'belmonte'
 
@@ -235,6 +235,8 @@ def main():
         else:
             shutil.copy2(path, destination)
             entry = dict(entry, path=destination.relative_to(OUT).as_posix())
+        if entry['name'] in foliage.AUTHORED:
+            entry = dict(entry, **foliage.prepare(destination))
         prepared = model_pieces.prepare(entry, destination)
         meshes.extend(row[0] for row in prepared)
         by_asset[entry['source_asset']] = prepared

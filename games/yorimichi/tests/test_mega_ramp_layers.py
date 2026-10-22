@@ -9,8 +9,11 @@ MEGA = Path(__file__).resolve().parents[1] / 'world' / 'regions' / 'mega'
 
 
 def changed_by(edited, tmp_path, monkeypatch, *, stable_products=()):
-    """Steps whose fingerprint changes when `edited` changes. Inputs hash by name, and an input that is or contains
+    """Action dependencies whose fingerprint changes when `edited` changes. Inputs hash by name, and an input that is or contains
     `edited` hashes differently afterwards, so the test reads the recipe's dependencies and needs no built files."""
+    # Preparation observes actual saved package bytes after importer ordering.
+    # These action-key stand-ins deliberately do not fabricate changed native packages.
+    # Real package-byte invalidation is covered by test_foliage_preparation_module.
     editing = False
 
     def stand_in(digest, path):
