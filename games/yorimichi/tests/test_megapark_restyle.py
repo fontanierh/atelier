@@ -57,21 +57,23 @@ class PlantTests(unittest.TestCase):
         kinds = [shrub(name, row[4]) for name, rows in ledges.items() for row in rows]
         self.assertGreater(kinds.count(False), 200); self.assertGreater(kinds.count(True), 1000)
         _, built = plants._surfaces()
+        clear_fn = plants._clearance(built)
         for name, rows in ledges.items():
             for row in rows[::7]:
                 small = shrub(name, row[4])
                 q = np.array(row[:3]); q[1] += .15 if small else plants.SINK
                 clear = plants.BUILT_CLEAR[1 if small else 0]
-                self.assertGreater(np.linalg.norm(built - q, axis=1).min(), clear - .01, (name, q))
+                self.assertGreater(clear_fn(q), clear - .01, (name, q))
                 self.assertFalse(plants._ridden(q, 0.), (name, q))
 
 
 class ForestTests(unittest.TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         x0, y0, x1, y1 = forest.near_box()
         gx, gy = np.meshgrid(np.arange(x0 - 60, x1 + 60, 9.), np.arange(y0 - 60, y1 + 60, 9.))
-        self.xy = np.stack([gx.ravel(), gy.ravel()], 1)
-        self.d = forest.distance(self.xy[:, 0], self.xy[:, 1])
+        cls.xy = np.stack([gx.ravel(), gy.ravel()], 1)
+        cls.d = forest.distance(cls.xy[:, 0], cls.xy[:, 1])
 
     def test_distance_is_zero_on_the_park_and_grows_off_it(self):
         x, y = self.xy.T

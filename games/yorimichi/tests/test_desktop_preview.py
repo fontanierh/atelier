@@ -32,7 +32,7 @@ def manifest(desktop, count=83):
 def ready_log(lumen=False, trees=True, tiles=83, forced=2, groups=3):
     return (f'DESKTOP PREVIEW viewport=2228x1440 fullscreen=1 window_aspect=1.547\n'
             f'r.ForwardShading = "{int(not lumen)}"\n'
-            f'CITY TILES tag=v1_128m enabled=1 originals=3 tiles={tiles}\n'
+            f'CITY PIECES production parents=3 pieces={tiles} hidden_parents=0\n'
             f'CITY TREE LODS tag=v4 enabled={int(trees)} forced={forced} groups={groups} instances=900 distance_scale=1.50\n'
             'FORWARD FILL nominal_lux=3.000 lights=1\n')
 
@@ -93,7 +93,7 @@ def test_isolated_shared_preferences_use_normal_profile_without_overwriting_save
     profile = next(arg for arg in command if arg.startswith('-set='))
     assert 'desktop=1' in profile and 'renderer=0' in profile
     assert 'performance=1' not in profile and 'render_scale=100' not in profile and 'exposure=' not in profile
-    assert 'japan.CitySurfaceTiles v1_128m 1' in ' '.join(command)
+    assert 'japan.CitySurfaceTiles' not in ' '.join(command)
     assert primary.read_text() == 'renderer=1\nexposure=1.5\n'
 
 
@@ -101,9 +101,9 @@ def test_readiness_matches_current_manifest_and_rejects_partial_import(desktop):
     manifest(desktop)
     assert desktop.parse_ready(ready_log())['height'] == 1440
     assert desktop.parse_ready(ready_log(lumen=True, trees=False), True, tree_optimization=False)
-    with pytest.raises(ValueError, match='tiles=83'):
+    with pytest.raises(ValueError, match='pieces=83'):
         desktop.parse_ready(ready_log(tiles=85))
-    with pytest.raises(ValueError, match='tiles=83'):
+    with pytest.raises(ValueError, match='pieces=83'):
         desktop.parse_ready(ready_log(tiles=830))
     with pytest.raises(ValueError, match='CITY TREE LODS'):
         desktop.parse_ready(ready_log().replace('CITY TREE LODS', 'missing trees'))

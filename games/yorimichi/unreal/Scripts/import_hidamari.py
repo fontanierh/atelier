@@ -117,6 +117,10 @@ def prop_lods(mesh,name,mi,levels):
 
 for name,entry in manifest.items():
     if (only and name not in only) or (not north and name.startswith('HD_North')):continue
+    # Bounded city pieces own these complete surfaces, including collision.
+    # Their importer retires old parents only after all pieces have validated.
+    if name in ('HD_Terrain', 'HD_Streets', 'HD_Square', 'HD_CivicGardens', 'HD_Park', 'HD_Harbor'):
+        continue
     source=harbor_source if name=='HD_Harbor' else OUT/'assets'/f'{name}.fbx'
     mesh=import_mesh(source,'/Game/Japan/Assets',name,fresh_slots='slots' in entry)
     if name=='HD_NorthGate': selected=gate_mat

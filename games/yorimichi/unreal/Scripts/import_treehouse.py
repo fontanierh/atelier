@@ -18,11 +18,13 @@
 Writes build/yorimichi/treehouse/import-report.json, with each mesh's UV channel count.
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / 'world')); import yori  # noqa: E402  (build/yorimichi = yori.OUT)
-import json, runpy
+import json
 from pathlib import Path
 import unreal
 HERE = Path(__file__).resolve().parent
-helper = runpy.run_path(str(HERE/'import_village.py'))
+_sys.path.insert(0, str(HERE))
+from import_treehouse_pieces import import_dressing  # noqa: E402
+import import_village  # noqa: E402
 _sys.path.insert(0, str(HERE)); import see_through  # noqa: E402
 E = unreal.EditorAssetLibrary; MEL = unreal.MaterialEditingLibrary; AT = unreal.AssetToolsHelpers.get_asset_tools()
 unreal.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX 0')
@@ -36,8 +38,8 @@ PLACEHOLDER = yori.OUT/'village'/'assets'/'Village_Sign.fbx'
 
 
 def import_mesh(path, dest, name):
-    if not E.does_asset_exist(f'{dest}/{name}'): helper['import_mesh'](PLACEHOLDER, dest, name)
-    return helper['import_mesh'](path, dest, name)
+    if not E.does_asset_exist(f'{dest}/{name}'): import_village.import_mesh(PLACEHOLDER, dest, name)
+    return import_village.import_mesh(path, dest, name)
 
 
 def texture(path, name):
@@ -48,7 +50,7 @@ def texture(path, name):
     tex.set_editor_property('srgb', True)
     tex.set_editor_property('max_texture_size', 1024)
     tex.set_editor_property('lod_group', unreal.TextureGroup.TEXTUREGROUP_WORLD)
-    E.save_loaded_asset(tex)
+    assert E.save_loaded_asset(tex)
     return tex
 
 
@@ -99,7 +101,7 @@ def parent(default):
     assert MEL.connect_material_property(wind, '', unreal.MaterialProperty.MP_WORLD_POSITION_OFFSET)
     see_through.add_mask(m, room=True, pieces=True)
     m.set_editor_property('used_with_instanced_static_meshes', True)
-    see_through.save(m)
+    assert see_through.save(m), 'Treehouse material compilation/save failed'
     return m
 
 
@@ -110,7 +112,7 @@ def instance(name, par, tex, gain, glow=0.):
     MEL.set_material_instance_texture_parameter_value(mi, 'Tex', tex)
     MEL.set_material_instance_scalar_parameter_value(mi, 'Gain', float(gain))
     MEL.set_material_instance_scalar_parameter_value(mi, 'Glow', float(glow))
-    MEL.update_material_instance(mi); E.save_loaded_asset(mi)
+    MEL.update_material_instance(mi); assert E.save_loaded_asset(mi)
     return mi
 
 
@@ -167,14 +169,14 @@ def light_parent():
            'D': (node(unreal.MaterialExpressionPixelDepth, -800, 700), '')}
     for k, (e, o) in src.items(): assert MEL.connect_material_expressions(e, o, c, k), k
     assert MEL.connect_material_property(c, '', unreal.MaterialProperty.MP_EMISSIVE_COLOR)
-    MEL.recompile_material(m); E.save_loaded_asset(m)
+    MEL.recompile_material(m); assert E.save_loaded_asset(m)
     mis = {}
     for slot, params in LIGHT.items():
         path = f'{MAT}/MI_TH_{slot}'
         mi = E.load_asset(path) if E.does_asset_exist(path) else AT.create_asset(f'MI_TH_{slot}', MAT, unreal.MaterialInstanceConstant, unreal.MaterialInstanceConstantFactoryNew())
         MEL.set_material_instance_parent(mi, m)
         for k, v in params.items(): MEL.set_material_instance_scalar_parameter_value(mi, k, float(v))
-        MEL.update_material_instance(mi); E.save_loaded_asset(mi); mis[slot] = mi
+        MEL.update_material_instance(mi); assert E.save_loaded_asset(mi); mis[slot] = mi
     return mis
 
 
@@ -197,12 +199,12 @@ def trees(report):
         t.set_editor_property('do_scale_mips_for_alpha_coverage', True)
         t.set_editor_property('alpha_coverage_thresholds', unreal.Vector4(0, 0, 0, .4))
         t.set_editor_property('mip_gen_settings', unreal.TextureMipGenSettings.TMGS_SIMPLE_AVERAGE)
-        E.save_loaded_asset(t)
+        assert E.save_loaded_asset(t)
         path = f'/Game/Japan/Materials/MI_Leaf{colour.title()}'
         mi = E.load_asset(path) if E.does_asset_exist(path) else AT.create_asset(
             f'MI_Leaf{colour.title()}', '/Game/Japan/Materials', unreal.MaterialInstanceConstant, unreal.MaterialInstanceConstantFactoryNew())
         MEL.set_material_instance_parent(mi, foliage); MEL.set_material_instance_texture_parameter_value(mi, 'Tex', t)
-        MEL.update_material_instance(mi); E.save_loaded_asset(mi)
+        MEL.update_material_instance(mi); assert E.save_loaded_asset(mi)
     for name, d in info.items():
         # Seed a new tree with the owned placeholder, then reimport its own geometry and slots. Borrowing
         # Tree_Maple_A here made treehouse packages secretly depend on the island foliage's bytes.
@@ -214,12 +216,12 @@ def trees(report):
             # Seed a new tree from an owned FBX on disk (as the other trees above do), never the engine cube: its import
             # data names a source file that does not exist here, so the reimport asks for a file dialog and the commandlet
             # crashes (SIGSEGV in FDesktopPlatformMac::FileDialogShared).
-            helper['import_mesh'](PLACEHOLDER, '/Game/Japan/Assets', name)
-        mesh = helper['import_mesh'](src/f'{name}.fbx', '/Game/Japan/Assets', name, fresh_slots=True)
+            import_village.import_mesh(PLACEHOLDER, '/Game/Japan/Assets', name)
+        mesh = import_village.import_mesh(src/f'{name}.fbx', '/Game/Japan/Assets', name, fresh_slots=True)
         if abs(top(mesh)-d['crown_hi']) > .5:
             # A seed without FBX import data can skip the first unit
             # conversion (a tree 100 times too small); the second one finds FBX data to update and imports in metres.
-            mesh = helper['import_mesh'](src/f'{name}.fbx', '/Game/Japan/Assets', name, fresh_slots=True)
+            mesh = import_village.import_mesh(src/f'{name}.fbx', '/Game/Japan/Assets', name, fresh_slots=True)
         assert abs(top(mesh)-d['crown_hi']) < .5 and mesh.get_num_lods() == 1, (name, top(mesh), mesh.get_num_lods())
         assert slots(mesh) == want, (name, slots(mesh))
         for i, s in enumerate(mesh.get_editor_property('static_materials')):
@@ -227,7 +229,7 @@ def trees(report):
             mi = E.load_asset(f'/Game/Japan/Materials/MI_{d["leaf"] if key == d["slot"] else key}'); assert mi, key
             mesh.set_material(i, mi)
         mesh.get_editor_property('body_setup').set_editor_property('collision_trace_flag', unreal.CollisionTraceFlag.CTF_USE_SIMPLE_AS_COMPLEX)
-        E.save_loaded_asset(mesh)
+        assert E.save_loaded_asset(mesh)
         report.setdefault('trees', []).append(name)
 
 
@@ -270,9 +272,9 @@ def main():
     if 'bark' in info:
         trunk = instance('MI_TH_trunk', par, tex['bark'], info['bark']['gain'])
         MEL.set_material_instance_scalar_parameter_value(trunk, 'RoomCut', 0.)
-        MEL.update_material_instance(trunk); E.save_loaded_asset(trunk)
+        MEL.update_material_instance(trunk); assert E.save_loaded_asset(trunk)
     manifest = json.loads((OUT/'manifest.json').read_text())
-    for name, solid in (('TH_Structure', True), ('TH_Trunks', True), ('TH_Frame', True), ('TH_Dressing', False)):
+    for name, solid in (('TH_Structure', True), ('TH_Trunks', True), ('TH_Frame', True)):
         if name not in manifest: continue      # TH_Frame: only once the build splits the thin pieces out
         # A reimport keeps the old material slot list, so faces of a new material land in a stale slot:
         # start the asset afresh whenever the build's slots changed.
@@ -288,7 +290,7 @@ def main():
         mesh.get_editor_property('body_setup').set_editor_property('collision_trace_flag', flag)
         channels = uv_channels(mesh)
         if name in PIECES and channels >= 5: full_precision_uvs(mesh)
-        E.save_loaded_asset(mesh)
+        assert E.save_loaded_asset(mesh)
         report['meshes'][name] = {'slots': used, 'collision': 'complex' if solid else 'none', 'uv_channels': channels}
     props = OUT/'props/props.json'
     if props.exists():
@@ -299,8 +301,9 @@ def main():
             for i in range(len(mesh.get_editor_property('static_materials'))): mesh.set_material(i, mi)
             flag = unreal.CollisionTraceFlag.CTF_USE_SIMPLE_AS_COMPLEX
             mesh.get_editor_property('body_setup').set_editor_property('collision_trace_flag', flag)
-            E.save_loaded_asset(mesh)
+            assert E.save_loaded_asset(mesh)
             report['props'][key] = {'gain': d['gain'], 'boxes': d.get('boxes', 0)}
+    import_dressing(OUT, mis, report)
     (OUT/'import-report.json').write_text(json.dumps(report, indent=2)+'\n')
     unreal.log('TREEHOUSE IMPORT COMPLETE')
 

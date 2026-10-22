@@ -25,6 +25,7 @@ def scene(tmp_path, monkeypatch):
     class Generic(Properties):
         def __init__(self):
             super().__init__(mesh_pipeline=Properties(), animation_pipeline=Properties(),
+                material_pipeline=Properties(texture_pipeline=Properties()),
                 import_offset_translation=NS(x=0, y=0, z=0),
                 import_offset_rotation=NS(pitch=0, yaw=0, roll=0), import_offset_uniform_scale=1.)
     class GLTF(Properties): pass
@@ -49,7 +50,7 @@ def scene(tmp_path, monkeypatch):
     mesh.get_bounding_box = lambda: box
     tag = [dict(FileMD5=hashlib.md5(source.read_bytes()).hexdigest())]
     unreal = NS(InterchangeAssetImportData=Data, InterchangeGenericAssetsPipeline=Generic,
-        InterchangeGLTFPipeline=GLTF, InterchangePipelineStackOverride=Stack, AssetImportTask=NS,
+        InterchangeGLTFPipeline=GLTF, InterchangePipelineStackOverride=Stack, AssetImportTask=NS, StaticMesh=Properties,
         InterchangeCombineStaticMeshesBehavior=NS(ALL='all'),
         AssetRegistryHelpers=NS(create_asset_data=lambda _: NS(get_tag_value=lambda _: json.dumps(tag))))
     monkeypatch.setitem(sys.modules, 'unreal', unreal)
@@ -102,14 +103,17 @@ def test_each_unproved_mesh_is_a_miss(scene, defect):
 
 @pytest.mark.parametrize('script', ['import_belmonte.py', 'import_brinecove.py'])
 def test_validator_options_equal_every_raw_import_setter(scene, script):
-    """Execute the unchanged raw importer; a new/changed/removed option fails CI."""
+    """Execute each real raw importer through the shared pipeline; geometry option drift fails CI."""
     nodes = [n for n in ast.parse((SCRIPTS/script).read_text()).body
              if isinstance(n, ast.FunctionDef) and n.name == 'import_mesh']
     tasks = []
-    namespace = dict(unreal=scene.unreal, ROOT='/Game/Test',
-        AT=NS(import_asset_tasks=lambda items: tasks.extend(items)),
-        REGISTRY=NS(get_assets_by_path=lambda *a, **k: [NS(package_name='/Game/Temp', asset_class_path=NS(asset_name='StaticMesh'))]),
-        E=NS(rename_asset=lambda *a: True, load_asset=lambda _: scene.mesh))
+    def imported(items):
+        tasks.extend(items)
+        for task in items:
+            task.imported_object_paths = ['/Game/Test/Meshes/Mesh.Mesh']
+    scene.unreal.AssetToolsHelpers = NS(get_asset_tools=lambda: NS(import_asset_tasks=imported))
+    scene.unreal.EditorAssetLibrary = NS(load_asset=lambda _: scene.mesh)
+    namespace = dict(ROOT='/Game/Test')
     exec(compile(ast.Module(body=nodes, type_ignores=[]), script, 'exec'), namespace)
     assert namespace['import_mesh'](scene.source, 'Mesh') is scene.mesh
     generic, gltf = tasks[0].options.pipelines
@@ -117,7 +121,11 @@ def test_validator_options_equal_every_raw_import_setter(scene, script):
     expected = dict(scene.module.MESH_OPTIONS, combine_static_meshes_behavior=scene.unreal.InterchangeCombineStaticMeshesBehavior.ALL)
     assert generic.values['mesh_pipeline'].values == expected
     assert generic.values['animation_pipeline'].values == scene.module.ANIMATION_OPTIONS
-    assert generic.sets == []
+    assert generic.sets == [('asset_name', 'Mesh')]
+    assert generic.values['material_pipeline'].values['import_materials'] is False
+    assert generic.values['material_pipeline'].values['texture_pipeline'].values == dict(import_textures=False)
+    assert tasks[0].destination_path == '/Game/Test/Meshes'
+    assert tasks[0].destination_name == 'Mesh'
     assert gltf.sets == []
 
 

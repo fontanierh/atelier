@@ -7,6 +7,7 @@ import json
 import unreal as U
 from import_village import import_mesh
 from import_foliage_lods import main as import_lods
+from foliage_slots import restore_authored_slots
 import forest_impostor_material
 from asset_catalog import check_material_namespace
 
@@ -45,6 +46,7 @@ def main():
     for name,entry in trees.items():
         forest_impostor_material.instance(name,entry['impostor'],output,proxy_master)
         mesh=import_mesh(output/(name+'.fbx'),'/Game/Japan/Assets',name,fresh_slots=True)
+        restore_authored_slots(mesh,name)   # a reused base keeps its far crown's slot
         for i,slot in enumerate(mesh.get_editor_property('static_materials')):
             key=str(slot.get_editor_property('imported_material_slot_name')).split('.')[0]
             material=E.load_asset('/Game/Japan/Materials/MI_'+key);assert material,(name,key)

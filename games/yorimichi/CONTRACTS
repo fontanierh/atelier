@@ -1,0 +1,13 @@
+@cc [owner:fontanierh,label:correctness;performance] world-import-preserves-reuse-evidence
+A normal world import MUST NOT delete its receiving namespace before current source,
+settings and native validation can decide per-package reuse. Existing or unknown assets
+MUST NOT be mistaken for certified current outputs merely because they are preserved.
+Retirement MUST be restricted to an explicit owning producer's complete known obsolete
+membership after successful replacement validation and external-reference preflight.
+
+@cc [owner:fontanierh,label:correctness] repeatable-owned-world-map
+World assembly MUST populate a fresh unsaved Slice world before saving it to its
+owned map path, including when that map already exists. It MUST NOT delete the
+receiving asset namespace or ignore blank-world/save failure. Successful completion
+MUST require the actual populated world's save result; engine save is not an atomic
+preservation guarantee for a previous map on failure.

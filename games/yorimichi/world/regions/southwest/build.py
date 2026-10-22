@@ -40,7 +40,8 @@ def main():
             # Studio floor clearance must not become an in-game mesh offset.
             obj.location.z-=fr['lift']
             (OUT/'fbx').mkdir(exist_ok=True);bpy.ops.object.select_all(action='DESELECT');obj.select_set(True);bpy.context.view_layer.objects.active=obj
-            bpy.ops.export_scene.fbx(filepath=str(OUT/'fbx'/(obj.name+'.fbx')),use_selection=True,apply_unit_scale=True,apply_scale_options='FBX_SCALE_ALL',axis_forward='-Y',axis_up='Z',mesh_smooth_type='FACE',colors_type='SRGB',bake_anim=False)
+            from atelier.blender.fbx import export_fbx as export_scene_fbx
+            export_scene_fbx(filepath=str(OUT/'fbx'/(obj.name+'.fbx')),use_selection=True,apply_unit_scale=True,apply_scale_options='FBX_SCALE_ALL',axis_forward='-Y',axis_up='Z',mesh_smooth_type='FACE',colors_type='SRGB',bake_anim=False)
         print('MODEL',name,manifest[name],flush=True)
     (OUT/'manifest.json').write_text(json.dumps(manifest,indent=2));bpy.ops.wm.save_as_mainfile(filepath=str(OUT/'Southwest.blend'));print('SOUTHWEST BUILD COMPLETE',flush=True)
 main()
