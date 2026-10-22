@@ -4,6 +4,7 @@ The owning recipe stages immutable candidates. This adapter only admits matching
 geometry; callers still apply and validate current materials, roles and physics.
 No guard, task stamp, donor checkout access or engine launch is performed here.
 """
+import ast
 import json
 import os
 from pathlib import Path
@@ -129,6 +130,38 @@ def retire_candidate_attempt(content, packages, selected, loaded):
         return False
 
 
+def historical_validator_functions(source, task, functions):
+    """Recover one literal declaration from the original recorded importer, never guess names."""
+    tree = ast.parse(source)
+    bindings = {alias.asname or alias.name for node in tree.body
+                if isinstance(node, ast.ImportFrom) and node.module == 'atelier.unreal_mesh_reuse'
+                for alias in node.names if alias.name == 'MeshReuse'}
+    matches = []
+    for call in ast.walk(tree):
+        if not (isinstance(call, ast.Call) and isinstance(call.func, ast.Name)
+                and call.func.id in bindings and len(call.args) == 4):
+            continue
+        try:
+            if (ast.literal_eval(call.args[1]) != task
+                    or not isinstance(call.args[2], ast.Name) or call.args[2].id != '__file__'
+                    or tuple(ast.literal_eval(call.args[3])) != tuple(functions)):
+                continue
+            keywords = {item.arg: item.value for item in call.keywords}
+            # An explicit external script needs its own proven historical path;
+            # unknown/computed declarations remain misses, never guessed aliases.
+            if None in keywords or 'validation_script' in keywords:
+                raise ValueError('Unsupported original validation declaration')
+            names = ast.literal_eval(keywords['validation_functions'])
+            if not isinstance(names, (tuple, list)) or not names or not all(isinstance(n, str) for n in names):
+                raise ValueError('Nonliteral original validator roots')
+            matches.append(tuple(names))
+        except (ValueError, TypeError, KeyError):
+            raise ValueError('Ambiguous original validation declaration') from None
+    if len(matches) != 1:
+        raise ValueError('No unique original validation declaration')
+    return matches[0]
+
+
 class MeshReuse:
     """@cc [owner:fontanierh,label:correctness] native-mesh-candidate-admission
     Candidate reuse MUST require matching source/geometry policy and engine context,
@@ -175,6 +208,7 @@ class MeshReuse:
                 if file != self.script and file not in runtime_files() and file.is_relative_to(paths.REPO)}
         receipt_policy = (mesh_reuse.identity(dict(geometry=self.policy, owner=self.owner_sources))
                           if owner_script else self.policy)
+        geometry_receipt_policy = receipt_policy
         if validation_policy is not None:
             receipt_policy = mesh_reuse.identity(dict(import_policy=receipt_policy, validation=validation_policy))
         current_context = context(ctx)
@@ -188,6 +222,7 @@ class MeshReuse:
         self.miss_reasons = {}
         self.compatible = False
         self.local_compatible = False
+        self.previous_receipt_policies = set()
         try:
             if not self.enabled:
                 raise ValueError('Unsupported native import policy')
@@ -210,6 +245,33 @@ class MeshReuse:
                                          and observed_environment(ctx, current_context))
             self.previous_fingerprint = old.get('fingerprint')
             self.previous_stamp = old
+            if (self.local_compatible and self.receipts.previous is not None
+                    and self.receipts.previous.get('policy') != self.receipts.header['policy']):
+                # A receipt from before a validator was declared still proves its original
+                # production policy. A newer validator must run before any current admission.
+                self.previous_receipt_policies.add(geometry_receipt_policy)
+                if self.requires_validator:
+                    try:
+                        previous_validator = mesh_reuse.saved_source(paths.REPO,
+                            validator.relative_to(paths.REPO).as_posix(),
+                            inputs.get('<repo>/' + validator.relative_to(paths.REPO).as_posix()))
+                        if previous_validator is not None:
+                            selectors = [validation_functions]
+                            if validator == self.script:
+                                try:
+                                    selectors.append(historical_validator_functions(previous, task, functions))
+                                except ValueError:
+                                    pass
+                            for selector in selectors:
+                                try:
+                                    previous_validation_policy = mesh_reuse.native_policy(previous_validator,
+                                        selector, validator, inputs=inputs)
+                                    self.previous_receipt_policies.add(mesh_reuse.identity(dict(
+                                        import_policy=geometry_receipt_policy, validation=previous_validation_policy)))
+                                except (ValueError, KeyError, TypeError, SyntaxError):
+                                    continue
+                    except (OSError, ValueError, KeyError, TypeError, SyntaxError):
+                        pass  # Unknown old validation code cannot reproduce a combined receipt.
         except (OSError, ValueError, KeyError, TypeError, SyntaxError):
             pass
         for bundle in self.bundles:
@@ -273,6 +335,11 @@ class MeshReuse:
         historical = False
         if local:
             self.pending[name]['provenance'] = self.receipts.records[name].get('provenance', {'kind': 'compatibility-only'})
+        if (not local and self.local_compatible and validator is not None
+                and self.receipts.matches_previous(name, key, packages, self.previous_receipt_policies)):
+            local = True
+            historical = True
+            self.pending[name]['provenance'] = dict(kind='compatibility-only', historical_task=self.previous_fingerprint)
         if not local and not self.receipts.path.exists() and self.local_compatible and validator is not None:
             local = (all(unreal.EditorAssetLibrary.does_asset_exist(target) for target in packages)
                      and mesh_reuse.historical_packages_match(self.ctx, self.task, self.previous_stamp, packages))
@@ -504,19 +571,21 @@ def lods_match(mesh, plan):
 _COMMON_FBX = {}
 
 
-def common_fbx_mesh(source, destination, name, *, seed, fresh_slots, script, validator, owner_roots=()):
-    """Default shared FBX boundary; unknown owner/provenance simply imports normally."""
+def common_fbx_mesh(source, destination, name, *, fresh_slots, script, validator, functions,
+                    validation_functions, owner_roots=()):
+    """Default shared FBX boundary; bootstrap-only files never enter final-source identity."""
     task, game = os.environ.get('ATELIER_BUILD_TASK'), os.environ.get('ATELIER_BUILD_GAME')
     owner = os.environ.get('ATELIER_BUILD_SCRIPT') or os.environ.get('ATELIER_SCRIPT')
     nonce = os.environ.get('ATELIER_MESH_REUSE_NONCE')
     if not task or not game or not owner or not nonce or not Path(owner).is_absolute():
         return None, None
-    key = (task, game, owner, nonce, str(script))
+    key = (task, game, owner, nonce, str(script), tuple(functions), tuple(validation_functions))
     if key not in _COMMON_FBX:
-        _COMMON_FBX[key] = MeshReuse(native_context(game), task, script, ('_import_mesh',), owner_script=owner, owner_roots=owner_roots)
+        _COMMON_FBX[key] = MeshReuse(native_context(game), task, script, functions, owner_script=owner, owner_roots=owner_roots,
+            validation_script=script, validation_functions=validation_functions)
     reuse = _COMMON_FBX[key]
     package = destination + '/' + name
-    inputs = dict(format='fbx', fresh_slots=bool(fresh_slots), seed_sha256=mesh_reuse.digest(seed))
+    inputs = dict(format='fbx', fresh_slots=bool(fresh_slots))
     mesh = reuse.acquire(package, package, geometry=inputs, donor_geometry=inputs,
                          sources=[(package, Path(source), mesh_reuse.digest(source))], validator=validator)
     return mesh, reuse

@@ -31,6 +31,9 @@ A supported native geometry policy MUST bind the executed owner/helper closure a
 code required by that policy. Unsupported definition-time execution, unresolved local support or
 ambiguous historical evidence MUST disable reuse. Historical raw-geometry comparison and current
 validator identity MUST remain distinct, so adding a validator cannot silently weaken old geometry proof.
+An unchanged raw-geometry/owner policy MAY reuse a prior receipt's complete unchanged package bytes
+under its reproduced historical policy, but MUST run current source/settings/native validation before
+fresh admission. A validator-only policy change MUST NOT by itself require raw mesh reimport.
 
 @cc [owner:fontanierh,label:correctness] finalized-reuse-is-the-success-metric
 Reported native reuse hits MUST follow successful source/package/current-validator admission and the

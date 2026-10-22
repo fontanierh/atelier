@@ -2,6 +2,7 @@
 import hashlib
 import json
 from pathlib import Path
+import subprocess
 import sys
 from types import SimpleNamespace
 
@@ -12,6 +13,7 @@ from atelier import native_candidates as checkpoint_candidates, mesh_reuse, path
 
 @pytest.fixture
 def scene(tmp_path, monkeypatch):
+    original_saved_source, original_revision_source = mesh_reuse.saved_source, mesh_reuse.revision_source
     repo = tmp_path / 'repo'; repo.mkdir()
     monkeypatch.setattr(paths, 'REPO', repo)
     ctx = SimpleNamespace(out=repo / 'build/game', uproject=repo / 'games/game/unreal/Game.uproject',
@@ -89,7 +91,8 @@ def scene(tmp_path, monkeypatch):
     sources = [(packages[0], source, mesh_reuse.digest(source)), (packages[1], hull, mesh_reuse.digest(hull))]
     return SimpleNamespace(ctx=ctx, adapter=adapter, sources=sources, package=packages[0], tags=tags,
                            staged=staged, content=content, scans=scans, bundle=bundle, unreal=unreal,
-                           objects=objects, unloads=unloads, removals=removals, registered=registered)
+                           objects=objects, unloads=unloads, removals=removals, registered=registered,
+                           saved_source=original_saved_source, revision_source=original_revision_source)
 
 
 def acquire(scene, adapter, **kwargs):
@@ -446,16 +449,130 @@ def test_separate_current_validator_never_weakens_historical_geometry_equality(s
     assert acquire(scene, adapter, validator=lambda mesh: True) is None
 
 
-def test_validator_change_rekeys_current_receipts_without_changing_geometry_policy(scene, monkeypatch):
+def validator_transition(scene, monkeypatch):
     make = validation_scene(scene, monkeypatch)
     first = make(); assert acquire(scene, first, validator=lambda mesh: True)
     first.validated('Mesh'); mesh_reuse.finalize_pending(scene.ctx, 'unreal.region', 'e' * 24)
     script = paths.REPO / 'import.py'
+    previous = script.read_text()
+    monkeypatch.setattr(mesh_reuse, 'saved_source', lambda *a: previous)
     script.write_text('def build(): return 1\ndef validate(mesh): return mesh is not None\n')
+    return make, first
+
+
+def test_validator_change_revalidates_unchanged_receipt_without_import_or_early_publication(scene, monkeypatch):
+    make, first = validator_transition(scene, monkeypatch)
+    old_receipt = first.receipts.path.read_bytes()
     second = make()
     assert second.policy == first.policy
     assert second.receipts.header['policy'] != first.receipts.header['policy']
-    assert acquire(scene, second, validator=lambda mesh: True) is None
+    checked = []
+    assert acquire(scene, second, validator=lambda mesh: checked.append(mesh) or True)
+    assert len(checked) == 1 and second.counts == dict(reused_local=1, reused_candidate=0, imported=0)
+    assert second.receipts.path.read_bytes() == old_receipt
+    second.validated('Mesh')
+    assert second.receipts.path.read_bytes() == old_receipt
+    mesh_reuse.finalize_pending(scene.ctx, 'unreal.region', 'e' * 24)
+    saved = json.loads(second.receipts.path.read_text())
+    assert saved['policy'] == second.receipts.header['policy']
+    assert saved['meshes']['Mesh']['provenance']['historical_task'] == 'f' * 64
+
+
+@pytest.mark.parametrize('declaration', ['valid', 'wrong_task', 'wrong_raw', 'ambiguous', 'dynamic', 'external'])
+def test_validator_rename_recovers_only_unique_recorded_declaration(scene, monkeypatch, declaration):
+    make = validation_scene(scene, monkeypatch)
+    script = paths.REPO / 'import.py'
+    call = "MeshReuse(None, 'unreal.region', __file__, ('build',), validation_functions=('validate',))"
+    if declaration == 'wrong_task': call = call.replace('unreal.region', 'unreal.other')
+    if declaration == 'wrong_raw': call = call.replace("('build',)", "('other',)")
+    if declaration == 'dynamic': call = call.replace("('validate',)", 'computed_names')
+    if declaration == 'external': call = call[:-1] + ", validation_script='other.py')"
+    script.write_text('from atelier.unreal_mesh_reuse import MeshReuse\n'
+                      'def build(): return 1\ndef validate(mesh): return bool(mesh)\n'
+                      'def setup():\n    ' + call + '\n'
+                      + ('    ' + call + '\n' if declaration == 'ambiguous' else ''))
+    previous = script.read_text()
+    first = make(); assert acquire(scene, first, validator=lambda _: True)
+    first.validated('Mesh'); mesh_reuse.finalize_pending(scene.ctx, 'unreal.region', 'e' * 24)
+    monkeypatch.setattr(mesh_reuse, 'saved_source', lambda *a: previous)
+    script.write_text(previous.replace('def validate(mesh)', 'def validate_current(mesh)'))
+    second = native.MeshReuse(scene.ctx, 'unreal.region', script, ('build',),
+                              validation_functions=('validate_current',))
+    checked = []
+    result = acquire(scene, second, validator=lambda mesh: checked.append(mesh) or True)
+    assert bool(result) == (declaration == 'valid')
+    assert len(checked) == (1 if declaration == 'valid' else 0)
+
+
+def test_real_recorded_helper_change_revalidates_with_original_git_policy(scene, monkeypatch):
+    make = validation_scene(scene, monkeypatch)
+    script = paths.REPO / 'import.py'
+    helper = paths.REPO / 'validator_support.py'
+    script.write_text('import validator_support\ndef build(): return 1\n'
+                      'def validate(mesh): return validator_support.check(mesh)\n')
+    helper.write_text('def check(mesh): return bool(mesh)\nBOOKKEEPING=1\n')
+    def git(*args):
+        subprocess.run(['git', '-c', 'gc.auto=0', '-c', 'maintenance.auto=false',
+                        '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', *args],
+                       cwd=paths.REPO, check=True, capture_output=True)
+    git('init'); git('add', 'import.py', 'validator_support.py'); git('commit', '-m', 'original producer')
+    previous = dict(fingerprint='f' * 64, time=1., input_state={'inputs': {
+        '<repo>/' + p.name: hashlib.sha256(p.name.encode() + p.read_bytes()).hexdigest()
+        for p in (script, helper)}})
+    monkeypatch.setattr(mesh_reuse, 'saved_source', scene.saved_source)
+    monkeypatch.setattr(mesh_reuse, 'revision_source', scene.revision_source)
+    monkeypatch.setattr(mesh_reuse, 'prior_stamp', lambda *a: previous)
+    monkeypatch.setattr(checkpoint_candidates, 'load_all', lambda *a: [])
+    first = make()
+    assert acquire(scene, first, validator=lambda mesh: True)
+    first.validated('Mesh'); mesh_reuse.finalize_pending(scene.ctx, 'unreal.region', 'e' * 24)
+    old = first.receipts.path.read_bytes()
+    helper.write_text('def check(mesh): return bool(mesh)\nBOOKKEEPING=2\n')
+    second = make()
+    assert second.policy == first.policy and second.receipts.header != first.receipts.header
+    assert first.receipts.header['policy'] in second.previous_receipt_policies
+    checks = []
+    assert acquire(scene, second, validator=lambda mesh: checks.append(mesh) or True)
+    assert len(checks) == 1 and second.counts['reused_local'] == 1 and second.counts['imported'] == 0
+    assert second.receipts.path.read_bytes() == old
+
+
+@pytest.mark.parametrize('failure', ['geometry_policy', 'source', 'modified_sidecar', 'missing_sidecar',
+    'new_sidecar', 'context', 'unknown_policy', 'malformed_policy', 'missing_old_code', 'dirty',
+    'validator_false', 'validator_exception', 'validator_missing'])
+def test_validator_transition_keeps_production_proof_and_current_checks_mandatory(scene, monkeypatch, failure):
+    make, first = validator_transition(scene, monkeypatch)
+    if failure == 'geometry_policy':
+        (paths.REPO / 'import.py').write_text('def build(): return 2\ndef validate(mesh): return bool(mesh)\n')
+    elif failure == 'source':
+        source = scene.sources[0][1]; source.write_bytes(b'changed geometry source')
+        scene.sources[0] = (scene.package, source, mesh_reuse.digest(source))
+    elif failure == 'modified_sidecar':
+        (scene.content / 'Region/Mesh.ubulk').write_bytes(b'changed native geometry')
+    elif failure == 'missing_sidecar':
+        (scene.content / 'Region/Hull.uexp').unlink()
+    elif failure == 'new_sidecar':
+        (scene.content / 'Region/Mesh.upayload').write_bytes(b'new native payload')
+    elif failure == 'context':
+        monkeypatch.setattr(native, 'context', lambda _: {'engine': 'different', 'sdk': 'sdk'})
+    elif failure in ('unknown_policy', 'malformed_policy'):
+        value = json.loads(first.receipts.path.read_text())
+        value['policy'] = '1' * 64 if failure == 'unknown_policy' else []
+        first.receipts.path.write_text(json.dumps(value))
+    elif failure == 'missing_old_code':
+        monkeypatch.setattr(mesh_reuse, 'saved_source', lambda *a: None)
+    elif failure == 'dirty':
+        scene.unreal.EditorLoadingAndSavingUtils.get_dirty_content_packages = lambda: [
+            SimpleNamespace(get_name=lambda: scene.package)]
+    before = first.receipts.path.read_bytes()
+    second = make()
+    def validator(mesh):
+        if failure == 'validator_exception':
+            raise RuntimeError('current check failed')
+        return failure != 'validator_false'
+    assert acquire(scene, second, validator=None if failure == 'validator_missing' else validator) is None
+    assert second.counts == dict(reused_local=0, reused_candidate=0, imported=0)
+    assert second.receipts.path.read_bytes() == before
 
 
 @pytest.mark.parametrize('failure', ['false', 'exception', 'missing'])
@@ -641,3 +758,26 @@ def test_all_native_rejections_leave_no_registry_or_disk_scope_for_ordinary_impo
     assert not list(scene.content.glob('Region/*'))
     assert adapter.pending['Mesh']['provenance'] == {'kind': 'current-native-import'}
     assert adapter.counts['reused_candidate'] == 0
+
+
+def test_common_fbx_identity_ignores_unrelated_bootstrap_file(tmp_path, monkeypatch):
+    calls = []
+    adapter = SimpleNamespace(acquire=lambda *a, **kw: calls.append(kw), policy='policy')
+    monkeypatch.setattr(native, 'MeshReuse', lambda *a, **kw: adapter)
+    monkeypatch.setattr(native, 'native_context', lambda _: object())
+    monkeypatch.setattr(native, '_COMMON_FBX', {})
+    for name, value in dict(ATELIER_BUILD_TASK='unreal.region', ATELIER_BUILD_GAME='game',
+                            ATELIER_BUILD_SCRIPT=str(tmp_path/'owner.py'), ATELIER_MESH_REUSE_NONCE='a'*24).items():
+        monkeypatch.setenv(name, value)
+    source = tmp_path/'mesh.fbx'; source.write_bytes(b'actual current mesh')
+    seed = tmp_path/'unrelated.fbx'
+    validator = lambda _: True
+    for data in (None, b'first unrelated export', b'changed timestamp and IDs'):
+        if data is not None: seed.write_bytes(data)
+        native.common_fbx_mesh(source, '/Game/Owned', 'Mesh', fresh_slots=False, functions=('build',), validation_functions=('validate',),
+                               script=tmp_path/'import.py', validator=validator)
+    assert len(calls) == 3 and calls[0] == calls[1] == calls[2]
+    source.write_bytes(b'changed real geometry')
+    native.common_fbx_mesh(source, '/Game/Owned', 'Mesh', fresh_slots=False, functions=('build',), validation_functions=('validate',),
+                           script=tmp_path/'import.py', validator=validator)
+    assert calls[3]['sources'] != calls[2]['sources']
