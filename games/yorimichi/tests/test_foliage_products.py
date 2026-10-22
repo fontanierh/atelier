@@ -105,7 +105,7 @@ def test_world_selector_includes_native_references_without_reading_their_bytes(t
                      for part in ('meshes', 'materials', 'report')})
     expected['audio.native'] = 'unreal.sounds'
     expected.update({f'city.tiles.{source}': f'world.city_tiles.{source}'
-                     for source in ('HD_Terrain', 'HD_Streets', 'HD_Square', 'HD_CivicGardens', 'HD_Park')})
+                     for source in ('HD_Terrain', 'HD_Streets', 'HD_Square', 'HD_CivicGardens', 'HD_Park', 'HD_Harbor')})
     expected.update({f'city.native_{part}': 'unreal.city_tree_lods'
                      for part in ('tree_lods', 'tree_report')})
     expected.update({f'city.native_{part}': 'unreal.desktop'

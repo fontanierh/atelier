@@ -8,6 +8,7 @@ import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_
 import argparse
 import hashlib
 import json
+import math
 import re
 import sys
 from pathlib import Path
@@ -24,13 +25,13 @@ ROOT = yori.WORLD
 TRIANGLE_LIMIT = 32768
 
 
-def partition(source, folder, size, expected):
+def partition(source, folder, size, expected, *, source_path=None):
     """@cc [owner:fontanierh,label:correctness] city-pieces-share-complete-corner-copy
     City subdivision MUST use the common complete-corner copier. Captured imported-source
     float32 normals MUST remain bitwise identical in each child; source smoothing, material
     bindings and every UV/colour layer and colour type MUST survive the same face mapping.
     """
-    path = yori.OUT / 'hidamari/assets' / (source + '.fbx')
+    path = source_path if source_path is not None else yori.OUT / 'hidamari/assets' / (source + '.fbx')
     before = set(bpy.data.objects)
     bpy.ops.import_scene.fbx(filepath=str(path), use_anim=False, use_custom_normals=True)
     imported = [ob for ob in bpy.data.objects if ob not in before]
@@ -132,14 +133,43 @@ def main():
     parser.add_argument('--tag', required=True)
     parser.add_argument('--size', type=float, default=128)
     parser.add_argument('--sources', nargs='+', required=True)
+    parser.add_argument('--source-path')
+    parser.add_argument('--metadata-path')
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else [])
     assert args.tag.replace('_', '').isalnum() and 32 <= args.size <= 256
     root = yori.OUT / 'city_surface_tiles' / args.tag
-    expected = json.loads((yori.OUT / 'hidamari/manifest.json').read_text())
     # Roster changes belong to recipe/product admission. This generic selected
     # splitter must not change its key whenever a sibling source is added.
     assert all(re.fullmatch(r'HD_[A-Za-z0-9_]+', source) for source in args.sources), 'Invalid city source name'
     assert len({source.casefold() for source in args.sources}) == len(args.sources), 'Duplicate city source'
+    source_path = None
+    if args.source_path is not None or args.metadata_path is not None:
+        assert args.source_path and args.metadata_path and len(args.sources) == 1, 'One complete final source selection required'
+        selected = []
+        for value in (args.source_path, args.metadata_path):
+            relative = Path(value)
+            assert (not relative.is_absolute() and relative.as_posix() == value
+                    and '..' not in relative.parts and '\\' not in value), 'Noncanonical selected source path'
+            path = yori.OUT / relative
+            assert not any(p.is_symlink() for p in (path.absolute(), *path.absolute().parents)), 'Linked selected source'
+            assert path.is_file(), 'Missing selected source'
+            selected.append(path)
+        source_path, metadata = selected
+        assert source_path.name == args.sources[0] + '.fbx', 'Selected source basename differs'
+        row = json.loads(metadata.read_text())
+        assert isinstance(row, dict) and set(row) == {'source', 'source_path', 'source_sha256', 'triangles', 'min', 'max', 'collision_boxes'}, 'Invalid selected metadata'
+        assert row['source'] == args.sources[0], 'Selected metadata names another source'
+        assert row['source_path'] == args.source_path, 'Selected metadata names another path'
+        assert row['source_sha256'] == hashlib.sha256(source_path.read_bytes()).hexdigest(), 'Selected source bytes changed'
+        assert type(row['triangles']) is int and row['triangles'] > 0, 'Invalid selected triangle count'
+        assert type(row['collision_boxes']) is int and row['collision_boxes'] >= 0, 'Invalid selected collision count'
+        assert all(isinstance(row[key], list) and len(row[key]) == 3
+                   and all(type(v) in (int, float) and math.isfinite(v) for v in row[key])
+                   for key in ('min', 'max')), 'Invalid selected bounds'
+        assert all(a <= b for a, b in zip(row['min'], row['max'])), 'Reversed selected bounds'
+        expected = {args.sources[0]: row}
+    else:
+        expected = json.loads((yori.OUT / 'hidamari/manifest.json').read_text())
     assert all(source in expected for source in args.sources), 'Missing selected city source'
     bpy.ops.wm.read_factory_settings(use_empty=True)
     for source in args.sources:
@@ -152,7 +182,10 @@ def main():
         if folder.exists():
             regular_files(folder)
         folder.mkdir(parents=True, exist_ok=True)
-        row = partition(source, folder, args.size, expected[source])
+        if source_path is None:
+            row = partition(source, folder, args.size, expected[source])
+        else:
+            row = partition(source, folder, args.size, expected[source], source_path=source_path)
         report = dict(version=2, complete=True, tag=args.tag, cell_metres=args.size,
                       triangle_limit=TRIANGLE_LIMIT, sources={source: row})
         atomic_json(folder / 'manifest.json', report)

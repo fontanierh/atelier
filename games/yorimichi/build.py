@@ -240,6 +240,9 @@ _city_spec.loader.exec_module(city_inputs)
 _city_products_spec = importlib.util.spec_from_file_location('yorimichi_city_products', GAME / 'city_tile_products.py')
 city_products = importlib.util.module_from_spec(_city_products_spec)
 _city_products_spec.loader.exec_module(city_products)
+_harbor_inputs_spec = importlib.util.spec_from_file_location('yorimichi_city_harbor_inputs', GAME / 'city_harbor_inputs.py')
+city_harbor_inputs = importlib.util.module_from_spec(_harbor_inputs_spec)
+_harbor_inputs_spec.loader.exec_module(city_harbor_inputs)
 _registry_spec = importlib.util.spec_from_file_location('yorimichi_source_registry', WORLD / 'source_registry.py')
 source_registry = importlib.util.module_from_spec(_registry_spec)
 _registry_spec.loader.exec_module(source_registry)
@@ -263,11 +266,27 @@ def city_tile_steps(out):
     """Independent bounded source exports; assembly does not rerun siblings."""
     root = out / 'city_surface_tiles/v1_128m'
     result = []
-    for name in city_inputs.TILES:
-        result += [city_input_step(out, 'tiles', (name,)),
+    for name in city_products.SOURCES:
+        args = ('--tag', 'v1_128m', '--sources', name)
+        if name == 'HD_Harbor':
+            output = out / 'digests/world.hidamari.tiles.HD_Harbor.json'
+            helper = GAME / 'city_harbor_inputs.py'
+            result.append(Step('world.hidamari.tiles.HD_Harbor',
+                [Call('final Harbor inputs', lambda ctx, log, output=output:
+                      export_digest.record(output, city_harbor_inputs.snapshot(out, paths.REPO), log))],
+                inputs=[helper, REGIONS / 'hidamari/ferry_source.py', GAME / 'export_digest.py'],
+                needs=['world.hidamari_ferry_cut'],
+                deferred_inputs=[DeferredInputs('final-harbor-inputs', city_harbor_inputs.paths,
+                    (out, paths.REPO), support=(helper, REGIONS / 'hidamari/ferry_source.py'))],
+                outputs=[output], cutoff=True, about='verified final ferry opening consumed by Harbor pieces'))
+            args += ('--source-path', 'hidamari/ferry/HD_Harbor.fbx',
+                     '--metadata-path', 'digests/world.hidamari.tiles.HD_Harbor.json')
+        else:
+            result.append(city_input_step(out, 'tiles', (name,)))
+        result += [
                    Step('world.city_tiles.'+name,
                         [Blender(WORLD / 'city_surface_tiles.py',
-                                 ('--tag', 'v1_128m', '--sources', name), threads=3, factory_startup=True)],
+                                 args, threads=3, factory_startup=True)],
                         inputs=[WORLD / 'city_surface_tiles.py', WORLD / 'mesh_pieces.py',
                                 paths.STUDIO / 'atelier/mesh_cells.py',
                                 paths.STUDIO / 'atelier/mesh_partition.py', paths.STUDIO / 'atelier/conventions.py',
@@ -280,7 +299,7 @@ def city_tile_steps(out):
                              city_products.assemble(root, lambda line: log.write(line + '\n')))],
                        inputs=[GAME / 'city_tile_products.py', paths.STUDIO / 'atelier/atomic_files.py',
                                paths.STUDIO / 'atelier/conventions.py', paths.STUDIO / 'atelier/model_files.py'],
-                       reads=['city.tiles.'+name for name in city_inputs.TILES],
+                       reads=['city.tiles.'+name for name in city_products.SOURCES],
                        outputs=[root / 'manifest.json'],
                        about='complete production city piece membership'))
     return result

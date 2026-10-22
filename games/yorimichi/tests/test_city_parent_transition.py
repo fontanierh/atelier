@@ -1,6 +1,7 @@
 """Owner equivalence must prove only the reviewed source-membership handoff."""
 import ast
 import importlib.util
+import json
 from pathlib import Path
 
 import pytest
@@ -72,13 +73,13 @@ def test_removed_upfront_purge_never_hides_other_world_changes(change):
 
 def product_sources():
     current = (Path(__file__).parents[1]/'city_tile_products.py').read_text()
-    previous = current.replace(repr(P.PARENTS), repr(P.ORIGINAL_PARENTS)).replace(
-        'requires all five production surfaces', 'requires all three production surfaces')
+    history = json.loads((Path(__file__).parent/'fixtures/city_five_family_policy.json').read_text())
+    previous = history['sources'][P.PRODUCTS]
     assert previous != current
     return {P.PRODUCTS: previous}, {P.PRODUCTS: current}
 
 
-def test_literal_five_family_extension_preserves_other_product_logic():
+def test_literal_six_family_extension_preserves_other_product_logic():
     old, current = product_sources()
     assert P.excluded_packages(old, current) == tuple('/Game/Japan/Assets/'+name for name in P.PARENTS)
     assert P.excluded_packages(current, old) is None
@@ -92,14 +93,14 @@ def test_family_extension_cannot_hide_changed_finishing_or_membership(bad):
     if bad == 'limit': text = text.replace('TRIANGLE_LIMIT = 32768', 'TRIANGLE_LIMIT = 65536')
     if bad == 'destination': text = text.replace('v1_128m', 'v2_128m')
     if bad == 'import': text += '\nimport unexpected_owner\n'
-    if bad == 'extra_source': text = text.replace("'HD_Park')", "'HD_Park', 'HD_Harbor')")
-    if bad == 'diagnostic': text = text.replace('all five production', 'some production')
+    if bad == 'extra_source': text = text.replace("'HD_Harbor')", "'HD_Harbor', 'HD_PlazaFloor')")
+    if bad == 'diagnostic': text = text.replace('all six production', 'some production')
     current[P.PRODUCTS] = text
     assert P.excluded_packages(old, current) is None
 
 
 @pytest.mark.parametrize('previous_count', [0, 3])
-def test_original_and_three_family_importer_can_delegate_exactly_five(previous_count):
+def test_original_and_three_family_importer_can_delegate_exactly_six(previous_count):
     old, current = sources()
     current[P.CATALOG] = old[P.CATALOG]
     current[P.IMPORTER] = current[P.IMPORTER].replace(repr(P.ORIGINAL_PARENTS), repr(P.PARENTS))
@@ -107,6 +108,28 @@ def test_original_and_three_family_importer_can_delegate_exactly_five(previous_c
         old[P.IMPORTER] = current[P.IMPORTER].replace(repr(P.PARENTS), repr(P.ORIGINAL_PARENTS))
     assert P.excluded_packages(old, current)
     assert P.excluded_packages(current, old) is None
+
+
+@pytest.mark.parametrize('member', [P.PIECE_IMPORTER, P.FERRY_SOURCE])
+def test_exact_harbor_binding_and_ownership_doc_transition(member):
+    history = json.loads((Path(__file__).parent/'fixtures/city_five_family_policy.json').read_text())
+    current = (Path(__file__).parents[3]/member).read_text()
+    old = {member: history['sources'][member]}
+    assert P.excluded_packages(old, {member: current})
+    assert P.excluded_packages({member: current}, old) is None
+    if member == P.PIECE_IMPORTER:
+        changed = current.replace("piece_material_paths(name, source['source_material_slots'])",
+                                  "piece_material_paths('HD_Harbor', source['source_material_slots'])")
+    else:
+        changed = current.replace("cut.get('failures') != []", "False")
+    assert changed != current
+    assert P.excluded_packages(old, {member: changed}) is None
+
+
+def test_harbor_wrapper_cannot_certify_a_different_material_binding():
+    old, current = product_sources()
+    current[P.PRODUCTS] = current[P.PRODUCTS].replace('/Game/Japan/Materials/M_Harbor', '/Game/Foreign/M_Other')
+    assert P.excluded_packages(old, current) is None
 
 
 def test_actual_world_dispatch_is_not_mistaken_for_static_finisher_coverage():

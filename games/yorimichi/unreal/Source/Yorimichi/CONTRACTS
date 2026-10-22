@@ -161,7 +161,7 @@ City surface tile components MUST retain their own mesh material table. Parent m
 MUST NOT be copied onto tiles: a tile may omit unused parent slots and compact their order.
 
 @cc [owner:fontanierh,label:correctness;performance] production-city-pieces-own-the-whole-surface
-HD_Terrain, HD_Streets, HD_Square, HD_CivicGardens and HD_Park MUST load only their complete validated bounded
+HD_Terrain, HD_Streets, HD_Square, HD_CivicGardens, HD_Park and HD_Harbor MUST load only their complete validated bounded
 piece sets. Their original logical keys MUST retain placements, visibility, camera,
 shadow and collision policies. Every source face MUST have one rendered piece owner;
 every authored whole collision hull MUST have one component owner, while every piece
@@ -172,6 +172,8 @@ piece union, preserving their original trace semantics.
 Park shore-footing diagnostics MUST likewise trace the complete tagged park piece
 union, select the nearest hit along the original ray, and retain the original
 height comparison and eight-centimetre acceptance bound.
+Harbor pieces MUST retain the final ferry rail opening, the sole M_Harbor material
+binding and their logical parent's channel-0/channel-1 lighting policy.
 
 @cc [owner:fontanierh,label:correctness;performance] bounded-treehouse-dressing
 TH_Dressing MUST load only its complete bounded render piece membership, never

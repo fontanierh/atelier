@@ -4,7 +4,7 @@
 bool JapanCityPieces::IsParent(const FString& Name)
 {
     return Name==TEXT("HD_Terrain") || Name==TEXT("HD_Streets") || Name==TEXT("HD_Square") ||
-        Name==TEXT("HD_CivicGardens") || Name==TEXT("HD_Park");
+        Name==TEXT("HD_CivicGardens") || Name==TEXT("HD_Park") || Name==TEXT("HD_Harbor");
 }
 
 bool JapanCityPieces::Read(const TSharedPtr<FJsonObject>& Manifest,TMap<FString,TArray<FString>>& Result)
@@ -16,7 +16,7 @@ bool JapanCityPieces::Read(const TSharedPtr<FJsonObject>& Manifest,TMap<FString,
         !Manifest->TryGetBoolField(TEXT("complete"),Complete) || !Complete ||
         !Manifest->TryGetStringField(TEXT("tag"),Tag) || Tag!=TEXT("v1_128m") ||
         !Manifest->TryGetNumberField(TEXT("triangle_limit"),Limit) || Limit!=32768. ||
-        !Manifest->TryGetObjectField(TEXT("sources"),Sources) || (*Sources)->Values.Num()!=5) return false;
+        !Manifest->TryGetObjectField(TEXT("sources"),Sources) || (*Sources)->Values.Num()!=6) return false;
     TMap<FString,TArray<FString>> Pending;
     TSet<FString> Names;
     for (const auto& Pair:(*Sources)->Values)

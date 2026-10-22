@@ -15,7 +15,7 @@ bool FCitySurfaceMembershipTest::RunTest(const FString&)
     Root->SetBoolField(TEXT("complete"),true);Root->SetStringField(TEXT("tag"),TEXT("v1_128m"));
     Root->SetNumberField(TEXT("triangle_limit"),32768);
     auto Sources=MakeShared<FJsonObject>();Root->SetObjectField(TEXT("sources"),Sources);
-    for(const TCHAR* Name:{TEXT("HD_Terrain"),TEXT("HD_Streets"),TEXT("HD_Square"),TEXT("HD_CivicGardens"),TEXT("HD_Park")})
+    for(const TCHAR* Name:{TEXT("HD_Terrain"),TEXT("HD_Streets"),TEXT("HD_Square"),TEXT("HD_CivicGardens"),TEXT("HD_Park"),TEXT("HD_Harbor")})
     {
         auto Source=MakeShared<FJsonObject>();Sources->SetObjectField(Name,Source);
         Source->SetNumberField(TEXT("source_triangles"),2);Source->SetNumberField(TEXT("source_collision_hulls"),1);
@@ -31,7 +31,7 @@ bool FCitySurfaceMembershipTest::RunTest(const FString&)
     }
     TMap<FString,TArray<FString>> Paths;
     TestTrue(TEXT("Complete bounded union loads signed cells"),JapanCityPieces::Read(Root,Paths));
-    TestEqual(TEXT("All logical placements retained"),Paths.Num(),5);
+    TestEqual(TEXT("All logical placements retained"),Paths.Num(),6);
     const auto Streets=Sources->GetObjectField(TEXT("HD_Streets"));
     Streets->SetNumberField(TEXT("source_triangles"),3);
     TestFalse(TEXT("Missing face refuses whole membership"),JapanCityPieces::Read(Root,Paths));
@@ -45,10 +45,14 @@ bool FCitySurfaceMembershipTest::RunTest(const FString&)
     TestFalse(TEXT("Missing new park family refuses readiness"),JapanCityPieces::Read(Root,Paths));
     TestTrue(TEXT("Missing new family leaves no partial paths"),Paths.IsEmpty());
     Sources->SetObjectField(TEXT("HD_Park"),Park);
-    Sources->SetObjectField(TEXT("HD_Harbor"),Park);
-    TestFalse(TEXT("Unowned Harbor cannot enter this family handoff"),JapanCityPieces::Read(Root,Paths));
+    const auto Harbor=Sources->GetObjectField(TEXT("HD_Harbor"));
     Sources->RemoveField(TEXT("HD_Harbor"));
-    TestTrue(TEXT("Restored exact five families load"),JapanCityPieces::Read(Root,Paths));
+    TestFalse(TEXT("Missing final-cut Harbor refuses readiness"),JapanCityPieces::Read(Root,Paths));
+    Sources->SetObjectField(TEXT("HD_Harbor"),Harbor);
+    Sources->SetObjectField(TEXT("HD_PlazaFloor"),Park);
+    TestFalse(TEXT("Unowned plaza cannot enter this family handoff"),JapanCityPieces::Read(Root,Paths));
+    Sources->RemoveField(TEXT("HD_PlazaFloor"));
+    TestTrue(TEXT("Restored exact six families load"),JapanCityPieces::Read(Root,Paths));
     return true;
 }
 
