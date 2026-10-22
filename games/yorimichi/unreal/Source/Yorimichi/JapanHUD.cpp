@@ -16,6 +16,7 @@
 #include "SwordTrainer.h"
 #include "LiveLibrary.h"
 #include "BelmonteTrainService.h"
+#include "CraterParkTower.h"
 #include "RacingService.h"
 #include "YorimichiLive.h"
 #include "EngineUtils.h"
@@ -234,6 +235,17 @@ void AJapanHUD::DrawHUD()
     {
         const FString TrainHint=ABelmonteTrainService::Hint(Pawn);
         if(!TrainHint.IsEmpty())Controls=TrainHint.Replace(TEXT("Use"),bController?TEXT("D-pad Down"):TEXT("E"));
+        const FString HoistHint=CraterParkTower::Hint(Pawn);
+        if(!HoistHint.IsEmpty())
+        {
+            const FString Prompt=FString::Printf(TEXT("%s   %s"),bController?TEXT("D-pad Down"):TEXT("E"),*HoistHint);
+            Controls=Prompt;
+            const float Scale=Canvas->SizeY/1080.f;
+            float W=0.f,H=0.f;Canvas->StrLen(Font,Prompt,W,H);const float S=1.3f*FMath::Max(Scale,.75f);
+            const float X=Canvas->SizeX*.5f-W*S*.5f,Y=Canvas->SizeY*.7f;
+            DrawRect(FLinearColor(0,0,0,.45f),X-14,Y-8,W*S+28,H*S+16);
+            DrawText(Prompt,FLinearColor(1.f,.9f,.74f),X,Y,Font,S);
+        }
     }
     const USkateComponent* Ride=Pawn->GetSkate();
     const bool bRide=Ride && Ride->IsRiding();

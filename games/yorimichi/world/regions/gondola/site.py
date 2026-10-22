@@ -189,6 +189,251 @@ def emit_access_floor(mesh,surface,thickness=.16):
         mesh.prism(xy,lambda x,y:roof(x,y)-thickness,roof,solid.TIMBER_DARK,top=solid.DECK)
 
 
+FLOOR_RIM_LINK_Z = 701.590
+TOWER_LANDING_WORLD = (1331.50, 2494.00, 759.60)
+TOWER_PORTAL_WORLD = (1326.90, 2494.00, 759.60)
+
+CRATER_LINK_WAYPOINTS = (
+    (1230.09, 2075.43, FLOOR_RIM_LINK_Z, False),
+    (1215.00, 2092.00, 702.60, False),
+    (1185.00, 2088.00, 703.50, False),
+)
+
+CRATER_PLATFORM_LINK_WAYPOINTS = (
+    (1188.80, 2059.00, 703.68, False),
+    (1191.00, 2061.50, 703.71, False),
+)
+
+CRATER_SE_TOWER_WAYPOINTS = (
+    (1159.30, 2067.50, 701.14, False),
+    (1185.00, 2088.00, 703.50, False),
+    (1202.20, 2100.60, 704.90, False),
+    (1215.00, 2110.00, 714.74, True),
+    (1243.40, 2175.00, 719.80, False),
+    (1253.90, 2196.60, 735.97, True),
+    (1292.00, 2236.00, 739.80, False),
+    (1308.00, 2253.20, 755.48, True),
+    (1335.00, 2335.00, 756.80, False),
+    (1342.00, 2390.00, 757.60, False),
+    (1338.00, 2445.00, 758.60, False),
+    (1331.50, 2491.00, 759.60, False),
+)
+
+CRATER_NW_TOWER_WAYPOINTS = (
+    (508.26, 2765.74, 712.40, False),
+    (544.00, 2800.00, 716.30, False),
+    (612.00, 2852.00, 718.50, False),
+    (695.00, 2894.00, 721.50, False),
+    (780.00, 2912.00, 724.50, False),
+    (872.00, 2908.00, 728.00, False),
+    (960.00, 2894.00, 731.50, False),
+    (1050.00, 2884.00, 735.00, False),
+    (1132.00, 2844.00, 738.50, False),
+    (1192.00, 2774.00, 742.00, False),
+    (1248.00, 2700.00, 746.00, False),
+    (1292.00, 2620.00, 750.50, False),
+    (1322.00, 2555.00, 755.20, False),
+    (1331.50, 2497.00, 759.60, False),
+)
+
+
+def floor_rim_link_ground(G):
+    """Overlay the level link reception pad under floor_rim's short access stair."""
+    from types import SimpleNamespace
+    from gondola.products import triangle_surface
+    pad = np.array([
+        [[1226.5, 2072.0, FLOOR_RIM_LINK_Z], [1233.5, 2072.0, FLOOR_RIM_LINK_Z], [1233.5, 2079.0, FLOOR_RIM_LINK_Z]],
+        [[1226.5, 2072.0, FLOOR_RIM_LINK_Z], [1233.5, 2079.0, FLOOR_RIM_LINK_Z], [1226.5, 2079.0, FLOOR_RIM_LINK_Z]],
+    ], float)
+    tris = np.concatenate([G.trail.triangles, pad], axis=0)
+    trail = triangle_surface(tris, G.trail.owner)
+    def contact(xy):
+        xy = np.asarray(xy, float)
+        hit = trail.upper(*xy.T, require=False)
+        height, owners = np.empty(len(xy), float), np.empty(len(xy), object)
+        if (~hit.covered).any():
+            height[~hit.covered], owners[~hit.covered] = G.base(xy[~hit.covered])
+        height[hit.covered] = hit.height[hit.covered]
+        owners[hit.covered] = trail.owner
+        return height, owners
+    return SimpleNamespace(surfaces=G.surfaces, bounds=G.bounds, trail=trail, base=G.base, contact=contact)
+
+
+def emit_crater_waypoint_hub(mesh, G, frame, wx, wy, wz, radius=2.35):
+    """Level 12-gon turn hub raised 2.5 cm above adjoining spans to prevent coplanar caps."""
+    c = local_xy([[wx, wy]], frame)[0]
+    lz = wz - frame[3]
+    poly = [c + np.array([radius * math.cos(2 * math.pi * k / 12), radius * math.sin(2 * math.pi * k / 12)]) for k in range(12)]
+    with mesh.tagged('access_landing'):
+        mesh.prism(poly, lz - .255, lz + .025, solid.TIMBER_DARK, top=solid.DECK)
+    return timber_support(mesh, G, frame, c, lz - .08, .28)
+
+
+def emit_crater_path_chain(mesh, rail_layout, G, frame, waypoints, width=4.0, end_hubs=(True, True)):
+    """Build a 4 m wide terrain-supported path chain (<=8% walking ramps and stairs)."""
+    supports = []
+    for idx, (wx, wy, wz, _) in enumerate(waypoints):
+        if (idx == 0 and not end_hubs[0]) or (idx == len(waypoints) - 1 and not end_hubs[1]):
+            continue
+        sup = emit_crater_waypoint_hub(mesh, G, frame, wx, wy, wz)
+        if sup:
+            supports.append(sup)
+    rail_inset = .18
+    bearing_half_length = .08
+    support_section = .20
+    for (wx0, wy0, wz0, _), (wx1, wy1, wz1, is_stair) in zip(waypoints[:-1], waypoints[1:]):
+        p0 = local_xy([[wx0, wy0]], frame)[0]
+        p1 = local_xy([[wx1, wy1]], frame)[0]
+        z0, z1 = wz0 - frame[3], wz1 - frame[3]
+        if is_stair and z1 > z0:
+            p0, p1 = p1, p0
+            z0, z1 = z1, z0
+        delta = p1 - p0
+        full_len = float(np.linalg.norm(delta))
+        if full_len <= 3.6:
+            direction = delta / max(full_len, 1e-6)
+            across = np.array([direction[1], -direction[0]])
+            start, end = p0, p1
+            span_len = full_len
+        else:
+            direction = delta / full_len
+            across = np.array([direction[1], -direction[0]])
+            trim = 1.65
+            start = p0 + trim * direction
+            end = p1 - trim * direction
+            span_len = full_len - 2 * trim
+        if is_stair:
+            n = max(2, int(round((z0 - z1) / .24)))
+            rise = (z0 - z1) / n
+            tread = span_len / n
+            for k in range(n):
+                a, b = k * tread, (k + 1) * tread
+                h = z0 - (k + 1) * rise
+                poly = [start + a * direction - across * width / 2, start + b * direction - across * width / 2,
+                        start + b * direction + across * width / 2, start + a * direction + across * width / 2]
+                with mesh.tagged('access_floor'):
+                    emit_access_floor(mesh, {'poly': [list(p) for p in poly], 'top': h})
+                front = start + a * direction
+                with mesh.tagged('access_riser'), mesh.at((*front, 0), math.degrees(math.atan2(direction[1], direction[0]))):
+                    mesh.box((.018, 0, h + rise / 2), (.036, width - .04, rise), solid.TIMBER)
+        else:
+            rail_len = max(.6, span_len - .24)
+            n_rail = max(1, math.ceil(rail_len / 6.4))
+            bay = rail_len / n_rail
+            fl_breaks = [0., *[.12 + (j + .25) * bay for j in range(n_rail)], span_len]
+            for s_a, s_b in zip(fl_breaks[:-1], fl_breaks[1:]):
+                u0, u1 = s_a / span_len, s_b / span_len
+                ca, cb = start + s_a * direction, start + s_b * direction
+                za, zb = z0 + (z1 - z0) * u0, z0 + (z1 - z0) * u1
+                poly = [ca - across * width / 2, cb - across * width / 2,
+                        cb + across * width / 2, ca + across * width / 2]
+                surface = {'poly': [list(p) for p in poly], 'z1': [za, zb, zb, za]}
+                with mesh.tagged('access_floor'):
+                    emit_access_floor(mesh, surface)
+        def stringer_top(x, y, s0=start, d0=direction, L0=span_len, za=z0, zb=z1):
+            u = float((np.array([x, y]) - s0) @ d0 / max(L0, 1e-6))
+            return za + (zb - za) * u + .25
+        ext = .20 if full_len > 3.6 else -.05
+        rail_spacing = 3.6 if is_stair else 6.4
+        rail_len = max(.6, span_len - .24)
+        n_rail = max(1, math.ceil(rail_len / rail_spacing))
+        bay = rail_len / n_rail
+        str_breaks = [-ext, *[.12 + (j + .75) * bay for j in range(n_rail)], span_len + ext]
+        for side in (-1, 1):
+            offset = side * (width / 2 - rail_inset) * across
+            for first_s, last_s in zip(str_breaks[:-1], str_breaks[1:]):
+                h = start + offset + first_s * direction
+                t = start + offset + last_s * direction
+                spoly = [h - across * .09, t - across * .09, t + across * .09, h + across * .09]
+                with mesh.tagged('access_stringer'):
+                    mesh.prism(spoly, lambda x, y, st=stringer_top: st(x, y) - .55, stringer_top, solid.TIMBER)
+            ra = start + offset + .12 * direction
+            rb = end + offset - .12 * direction
+            if np.linalg.norm(rb - ra) >= .6:
+                railing(mesh, rail_layout, [ra, rb], 'timber', spacing=rail_spacing,
+                        z0=lambda x, y, st=stringer_top, d0=direction, a0=across: rail_bearing(mesh, x, y, d0, a0, st, bearing_half_length),
+                        on=('access_stringer',))
+        step_m = 6.0 if is_stair else 12.0
+        dists = np.linspace(.6, max(.6, span_len - .6), max(2, int(math.ceil(span_len / step_m)) + 1))
+        for dist in dists:
+            for side in (-1, 1):
+                pt = start + dist * direction + side * (width / 2 - rail_inset) * across
+                sup = timber_support(mesh, G, frame, pt, stringer_top(*pt) - .45, support_section)
+                if sup:
+                    supports.append(sup)
+    return supports
+
+
+def emit_tower_landing_and_hoist_portal(mesh, rail_layout, G, frame):
+    """Build the 6x6 m railed timber landing and 3.2x3.2x4.5 m Kiyomizu hoist portal at the tower's east foot."""
+    supports = []
+    lx0, ly0, wz = TOWER_LANDING_WORLD
+    lz = wz - frame[3]
+    def L(wx, wy):
+        return local_xy([[wx, wy]], frame)[0]
+    u_east = L(lx0 + 1., ly0) - L(lx0, ly0)
+    u_north = L(lx0, ly0 + 1.) - L(lx0, ly0)
+    yaw_east = math.degrees(math.atan2(u_east[1], u_east[0]))
+    # 1. 6x6 m railed timber landing (x=1328.5..1334.5, y=2491.0..2497.0)
+    land_poly = [L(1328.5, 2491.0), L(1334.5, 2491.0), L(1334.5, 2497.0), L(1328.5, 2497.0)]
+    with mesh.tagged('access_landing'):
+        mesh.prism(land_poly, lz - .28, lz, solid.TIMBER_DARK, top=solid.DECK)
+    for wx, wy in ((1329.1, 2491.6), (1333.9, 2491.6), (1333.9, 2496.4), (1329.1, 2496.4)):
+        sup = timber_support(mesh, G, frame, L(wx, wy), lz - .12, .28)
+        if sup:
+            supports.append(sup)
+    rail_runs = (
+        (L(1334.32, 2491.18), L(1334.32, 2496.82)),
+        (L(1328.68, 2491.18), L(1329.45, 2491.18)),
+        (L(1333.55, 2491.18), L(1334.12, 2491.18)),
+        (L(1328.68, 2496.82), L(1329.45, 2496.82)),
+        (L(1333.55, 2496.82), L(1334.12, 2496.82)),
+        (L(1328.68, 2491.38), L(1328.68, 2492.25)),
+        (L(1328.68, 2495.75), L(1328.68, 2496.62)),
+    )
+    for a, b in rail_runs:
+        railing(mesh, rail_layout, [a, b], 'timber', spacing=2.0, z0=lz, on=('access_landing',))
+    # 2. 3.2x3.2x4.5 m Kiyomizu timber hoist portal (centred at 1326.9, 2494.0)
+    px, py, _ = TOWER_PORTAL_WORLD
+    apron_poly = [L(1325.2, 2492.3), L(1328.8, 2492.3), L(1328.8, 2495.7), L(1325.2, 2495.7)]
+    with mesh.tagged('access_landing'):
+        mesh.prism(apron_poly, lz - .34, lz - .04, solid.TIMBER_DARK, top=solid.TIMBER)
+    # Visible 2.4x2.4 m lift platform inside the portal frame
+    plat_poly = [L(1325.7, 2492.8), L(1328.1, 2492.8), L(1328.1, 2495.2), L(1325.7, 2495.2)]
+    with mesh.tagged('access_floor'):
+        mesh.prism(plat_poly, lz - .12, lz + .04, solid.TIMBER_DARK, top=solid.DECK)
+    c_portal = L(px, py)
+    with mesh.at((*c_portal, lz), yaw_east), mesh.grained((0, 0, 1)):
+        for sx in (-1.45, 1.45):
+            for sy in (-1.45, 1.45):
+                mesh.box((sx, sy, 2.15), (.32, .32, 4.70), solid.TIMBER)
+        # Kiyomizu nuki tie beams with projecting tenons & iron joint plates on N, S, W faces
+        for zn in (2.55, 3.75):
+            for sy in (-1.45, 1.45):
+                mesh.box((0., sy, zn), (3.23, .20, .22), solid.TIMBER_DARK)
+                for sx in (-1.45, 1.45):
+                    mesh.box((sx, sy, zn), (.10, .33, .10), solid.IRON)
+            mesh.box((-1.45, 0., zn + .03), (.16, 3.23, .18), solid.TIMBER_DARK)
+        # Top ring beams & central hoist winch beam
+        for sy in (-1.45, 1.45):
+            mesh.box((0., sy, 4.34), (3.23, .24, .24), solid.TIMBER_DARK)
+        for sx in (-1.45, 1.45):
+            mesh.box((sx, 0., 4.37), (.22, 3.23, .20), solid.TIMBER_DARK)
+        mesh.box((0., 0., 4.33), (.26, 2.67, .18), solid.TIMBER_DARK)
+        # Winch drum, iron flanges, lift bail uprights & vertical hoist rope
+        mesh.box((0., 0., 4.105), (.32, .80, .28), solid.IRON)
+        mesh.box((0., 0., 4.105), (.33, .50, .33), solid.ROPE)
+        for sy in (-1.05, 1.05):
+            mesh.box((0., sy, 1.1025), (.12, .12, 2.135), solid.IRON)
+        mesh.box((0., 0., 2.235), (.16, 2.11, .14), solid.IRON)
+        mesh.box((0., 0., 3.1225), (.08, .08, 1.645), solid.ROPE)
+    for wx, wy in ((1325.45, 2492.55), (1328.35, 2492.55), (1328.35, 2495.45), (1325.45, 2495.45)):
+        sup = timber_support(mesh, G, frame, L(wx, wy), lz - .15, .32)
+        if sup:
+            supports.append(sup)
+    return supports
+
+
 def access_stair(key,layout,G,frame):
     access=layout['access'][0]
     edge=np.asarray(access['edge'],float);start=edge.mean(0)
@@ -277,7 +522,8 @@ def access_stair(key,layout,G,frame):
     if last_tread<W.TREAD_MIN-1e-9:
         raise ValueError(f'{key}: access fit reverses or shortens the last tread')
     route=preface
-    edge_t,edge_z=ground_edge(G,frame,end,across,width)
+    G_stair=floor_rim_link_ground(G) if key=='floor_rim' and turn==0. else G
+    edge_t,edge_z=ground_edge(G_stair,frame,end,across,width)
     bottom=float(max(edge_z))
     rise=(top-bottom)/n
     if not .10<=rise<=.30:
@@ -323,7 +569,7 @@ def access_stair(key,layout,G,frame):
         with mesh.tagged('access_floor'):
             emit_access_floor(mesh,surface)
         surfaces.append(surface);joins.append(surface)
-    walk_proof=access_walk_audit(G,frame,edge,top,landing_surfaces,treads,joins,end,direction,across,
+    walk_proof=access_walk_audit(G_stair,frame,edge,top,landing_surfaces,treads,joins,end,direction,across,
                                step_limit=W.STEP,tread_min=W.TREAD_MIN,walk_width=W.MIN_WIDTH,last_tread=last_tread,tread=tread)
     stringer_profile.append([length,bottom+.25])
     profile=np.asarray(stringer_profile)
@@ -388,6 +634,13 @@ def access_stair(key,layout,G,frame):
             support=timber_support(mesh,G,frame,point,level,support_section)
             if support:
                 supports.append(support)
+    if key=='floor_rim':
+        supports.extend(emit_crater_path_chain(mesh,rail_layout,G,frame,CRATER_PLATFORM_LINK_WAYPOINTS,width=4.0))
+        supports.extend(emit_crater_path_chain(mesh,rail_layout,G,frame,CRATER_LINK_WAYPOINTS,width=4.0))
+        supports.extend(emit_crater_path_chain(mesh,rail_layout,G,frame,CRATER_NW_TOWER_WAYPOINTS,width=4.0))
+    elif key=='southeast':
+        supports.extend(emit_crater_path_chain(mesh,rail_layout,G,frame,CRATER_SE_TOWER_WAYPOINTS,width=4.0,end_hubs=(True,False)))
+        supports.extend(emit_tower_landing_and_hoist_portal(mesh,rail_layout,G,frame))
     return mesh,{'route':route,'width':width,'risers':n,'riser':rise,'tread':tread,'flights':flights,'landing_m':landing_length,
                  'run_m':length,'join_m':join_length,'walk_proof':walk_proof,
                  'ground_proof':ground_proof,'rail_seats':rail_layout.seats,'obstacles':rail_layout.proxies,'turn_deg':turn,'ground_edge_tolerance':.0001,'ground_edge':{'t':edge_t.tolist(),'z':edge_z.tolist()},'surfaces':surfaces,'supports':supports}
@@ -403,7 +656,19 @@ def world_ground(mesh,frame,G):
     for surface in surfaces:
         tri=surface.triangles
         lo,hi=tri[:,:,:2].min(1),tri[:,:,:2].max(1)
-        tri=tri[(hi[:,0]>=low[0])&(lo[:,0]<=high[0])&(hi[:,1]>=low[1])&(lo[:,1]<=high[1])].copy()
+        keep=(hi[:,0]>=low[0])&(lo[:,0]<=high[0])&(hi[:,1]>=low[1])&(lo[:,1]<=high[1])
+        tri=tri[keep]
+        if len(tri)>4000:
+            sub_lo,sub_hi=tri[:,:,:2].min(1),tri[:,:,:2].max(1)
+            near=np.zeros(len(tri),bool)
+            for first,last,*_ in mesh.parts:
+                indices={i for face in mesh.faces[first:last] for i in face}
+                pts=world[list(indices)]
+                a,b=pts.min(0)-1.0,pts.max(0)+1.0
+                near|=(sub_hi[:,0]>=a[0])&(sub_lo[:,0]<=b[0])&(sub_hi[:,1]>=a[1])&(sub_lo[:,1]<=b[1])
+            tri=tri[near].copy()
+        else:
+            tri=tri.copy()
         if len(tri):
             xy=local_xy(tri[:,:,:2].reshape(-1,2),frame).reshape(-1,3,2)
             tri[:,:,:2]=xy;tri[:,:,2]-=frame[3]
@@ -421,11 +686,15 @@ def untouched_riding(mesh,frame,riding):
     candidates=riding[(hi[:,0]>=low[0])&(lo[:,0]<=high[0])&(hi[:,1]>=low[1])&(lo[:,1]<=high[1])]
     if not len(candidates):
         return
+    c_lo,c_hi=candidates[:,:,:2].min(1),candidates[:,:,:2].max(1)
     for first,last,*_ in mesh.parts:
         indices={i for face in mesh.faces[first:last] for i in face}
         points=xy[list(indices)];a,b=points.min(0),points.max(0)
+        part_candidates=candidates[(c_hi[:,0]>=a[0])&(c_lo[:,0]<=b[0])&(c_hi[:,1]>=a[1])&(c_lo[:,1]<=b[1])]
+        if not len(part_candidates):
+            continue
         rectangle=[a,[b[0],a[1]],b,[a[0],b[1]]]
-        for triangle in candidates:
+        for triangle in part_candidates:
             polygon=list(triangle[:,:2])
             for u,v in zip(rectangle,rectangle[1:]+rectangle[:1]):
                 polygon=solid._shared._clip(polygon,u,v)

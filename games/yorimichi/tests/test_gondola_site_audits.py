@@ -253,3 +253,91 @@ def test_access_stringers_and_posts_clear_the_adjoining_landing_post():
     assert min(np.linalg.norm(point-landing_post) for point in stair_starts)>=.13/2+.18/2+.01
     assert len(stair_starts)==2
     for rail,post in zip(stair_starts,supports[:2]):assert np.allclose(rail,post)
+
+
+def test_crater_rim_paths_link_and_hoist_portal_meet_grade_clearance_and_interact_contracts():
+    import math
+    from regions.hidamari.gondola import STATIONS
+    from regions.craterpark import placement as PARK
+
+    # 1. floor_rim dead 15m cliff stair replaced with short access onto the level link
+    floor_rim = STATIONS['floor_rim']
+    assert floor_rim['access_turn_deg'] == 0.
+    assert floor_rim['access_fit'] == {'risers': 8, 'run_m': 2.6, 'join_m': .6, 'tread_m': .25}
+
+    # 2. Extract waypoint constants from site.py without importing bpy
+    tree = ast.parse(SOURCE.read_text())
+    ns = {}
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+            if node.targets[0].id in (
+                'FLOOR_RIM_LINK_Z',
+                'TOWER_LANDING_WORLD',
+                'TOWER_PORTAL_WORLD',
+                'CRATER_LINK_WAYPOINTS',
+                'CRATER_PLATFORM_LINK_WAYPOINTS',
+                'CRATER_SE_TOWER_WAYPOINTS',
+                'CRATER_NW_TOWER_WAYPOINTS',
+            ):
+                exec(compile(ast.Module(body=[node], type_ignores=[]), str(SOURCE), 'exec'), ns)
+
+    se_wps = ns['CRATER_SE_TOWER_WAYPOINTS']
+    nw_wps = ns['CRATER_NW_TOWER_WAYPOINTS']
+    link_wps = ns['CRATER_LINK_WAYPOINTS']
+    landing = ns['TOWER_LANDING_WORLD']
+    portal = ns['TOWER_PORTAL_WORLD']
+
+    # Both rim paths end at the 6x6 m landing (x=1328.5..1334.5, y=2491.0..2497.0, z=759.60)
+    assert landing == (1331.50, 2494.00, 759.60)
+    assert portal == (1326.90, 2494.00, 759.60)
+    assert se_wps[-1][:3] == (1331.50, 2491.00, 759.60)
+    assert nw_wps[-1][:3] == (1331.50, 2497.00, 759.60)
+    assert link_wps[-1][:3] == se_wps[1][:3]
+
+    # Walking spans have grade <= 8% (0.08); steeper climbs are marked as stairs
+    for chain in (link_wps, se_wps, nw_wps):
+        for (x0, y0, z0, _), (x1, y1, z1, is_stair) in zip(chain[:-1], chain[1:]):
+            run = math.hypot(x1 - x0, y1 - y0)
+            grade = abs(z1 - z0) / run
+            if not is_stair:
+                assert grade <= 0.08 + 1e-6, f'Walking span grade {grade:.4f} exceeds 8%'
+            else:
+                assert grade > 0.08
+
+    # Path centres and 6x6m rim landing stay >= 4 m outside PARK.piece_triangles()
+    riding = PARK.piece_triangles()[:, :, :2]
+    tri_lo, tri_hi = riding.min(1), riding.max(1)
+    sample_pts = [np.array(landing[:2])]
+    for chain in (link_wps, se_wps, nw_wps):
+        for (x0, y0, *_), (x1, y1, *_) in zip(chain[:-1], chain[1:]):
+            for u in np.linspace(0., 1., 11):
+                sample_pts.append(np.array([x0 + (x1 - x0) * u, y0 + (y1 - y0) * u]))
+    for p in sample_pts:
+        near = (
+            (tri_hi[:, 0] >= p[0] - 10.) & (tri_lo[:, 0] <= p[0] + 10.) &
+            (tri_hi[:, 1] >= p[1] - 10.) & (tri_lo[:, 1] <= p[1] + 10.)
+        )
+        for tri in riding[near]:
+            for i in range(3):
+                a, b = tri[i], tri[(i + 1) % 3]
+                ab = b - a
+                t = float(np.clip((p - a) @ ab / max(float(ab @ ab), 1e-12), 0., 1.))
+                d = float(np.linalg.norm(p - (a + t * ab)))
+                assert d >= 4.0, f'Point {p} is {d:.2f} m (< 4.0 m) from PARK.piece_triangles()'
+
+    # 3. C++ interact & HUD prompt contracts + scenario
+    root = SOURCE.parents[3]
+    tower_h = (root / 'unreal/Source/Yorimichi/CraterParkTower.h').read_text()
+    tower_cpp = (root / 'unreal/Source/Yorimichi/CraterParkTower.cpp').read_text()
+    hud_cpp = (root / 'unreal/Source/Yorimichi/JapanHUD.cpp').read_text()
+    wanderer_cpp = (root / 'unreal/Source/Yorimichi/WandererCharacter.cpp').read_text()
+    scenario_py = (root / 'scenarios/crater_tower_hoist.py').read_text()
+
+    assert 'HoistInteractRadiusCm = 250.f' in tower_h
+    assert 'HoistPortalGround(132690.f, -249400.f, 75964.f)' in tower_h
+    assert 'HoistLandingGround(133150.f, -249400.f, 75960.f)' in tower_h
+    assert 'TEXT("Ride up")' in tower_cpp and 'TEXT("Ride down")' in tower_cpp
+    assert 'StartCameraFade' in tower_cpp
+    assert 'CraterParkTower::TryInteract(this)' in wanderer_cpp
+    assert 'CraterParkTower::Hint(Pawn)' in hud_cpp
+    assert '85800.0' in scenario_py and "live.press('interact')" in scenario_py

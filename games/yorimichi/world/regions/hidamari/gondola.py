@@ -11,3 +11,5 @@ STATIONS = {
                   'access_fit':{'risers':52,'run_m':21.38,'join_m':3.2,
                                 'tread_m':.28,'flights':[13,13,13,13],'landing_m':1.2}},
 }
+STATIONS['floor_rim'].update(access_turn_deg=0.,
+                             access_fit={'risers':8,'run_m':2.6,'join_m':.6,'tread_m':.25})
