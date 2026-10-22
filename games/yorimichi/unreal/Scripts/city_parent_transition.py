@@ -79,6 +79,43 @@ def _remove_previous_purge(tree):
     return True
 
 
+def _replace_map_creation(old, new):
+    """Normalize only the reviewed owned-map startup; all population/save AST remains."""
+    owners = [[node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == 'build_level']
+              for tree in (old, new)]
+    if any(len(group) != 1 for group in owners):
+        return False
+    before, after = (group[0] for group in owners)
+    old_prefix = ast.parse('''les = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
+eas = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
+map_path = "/Game/Japan/Maps/Slice"
+''').body
+    new_prefix = ast.parse('''eas = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
+map_path = "/Game/Japan/Maps/Slice"
+world = unreal.EditorLoadingAndSavingUtils.new_blank_map(False)
+if world is None:
+    raise RuntimeError("Failed to create the replacement Slice world")
+''').body
+    dump = lambda nodes: [ast.dump(node) for node in nodes]
+    if dump(before.body[:3]) != dump(old_prefix) or dump(after.body[:4]) != dump(new_prefix):
+        return False
+    if len(before.body) < 6 or len(after.body) < 6:
+        return False
+    old_block, new_block = before.body[3], after.body[4]
+    if (not isinstance(old_block, ast.If) or not isinstance(new_block, ast.If)
+            or ast.dump(old_block.test) != ast.dump(ast.Constant(True))
+            or ast.dump(new_block.test) != ast.dump(ast.Constant(True))
+            or old_block.orelse or new_block.orelse or not old_block.body):
+        return False
+    create = ast.parse('les.new_level(map_path)').body[0]
+    current_world = ast.parse('world = unreal.EditorLevelLibrary.get_editor_world()').body[0]
+    if ast.dump(old_block.body[0]) != ast.dump(create) or ast.dump(before.body[4]) != ast.dump(current_world):
+        return False
+    new_block.body.insert(0, create)
+    after.body = [*old_prefix, new_block, current_world, *after.body[5:]]
+    return True
+
+
 def excluded_packages(previous, current):
     """@cc [owner:fontanierh,label:correctness] exact-city-delegation-owner-transition
     Original source texts MUST come from the invocation-bound producing inputs.
@@ -87,7 +124,9 @@ def excluded_packages(previous, current):
     receiptless bootstrap and donor transitions MUST remain disabled. Only
     the exact original three-parent delegation, its forward extension to five,
     literal product membership with its cardinality error and removal of the upfront
-    main() purge call MAY differ; imports and finishing MUST remain identical; every remaining AST MUST agree. These five generated
+    main() purge call and exact replacement of Slice map startup with an unsaved
+    blank map MAY differ; imports, actor population and save validation MUST remain
+    identical; every remaining AST MUST agree. These five generated
     parent packages MUST be excluded from historical admission. No other source,
     owner finishing, native validator or byte evidence MAY be relaxed. Unsupported
     history MUST refuse and use the ordinary import path.
@@ -103,7 +142,9 @@ def excluded_packages(previous, current):
             if ast.dump(old) == ast.dump(new):
                 continue
             if path == SETUP:
-                if not _remove_previous_purge(old):
+                purge_removed = _remove_previous_purge(old)
+                map_replaced = _replace_map_creation(old, new)
+                if not (purge_removed or map_replaced):
                     return None
             elif path == PRODUCTS:
                 if not _extend_sources(old, new):
