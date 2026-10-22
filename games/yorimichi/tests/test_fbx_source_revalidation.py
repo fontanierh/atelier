@@ -1,6 +1,7 @@
 """Exporter metadata migration preserves independently bound art and prepared grip geometry."""
 import ast
 import hashlib
+import inspect
 import json
 from pathlib import Path
 
@@ -37,7 +38,8 @@ def geometry_ast(text, resource_path_only=False):
             return self.generic_visit(node)
     # Python 3.12 added empty type_params fields; absence and an empty list
     # represent the same non-generic declaration on supported interpreters.
-    return sha(ast.dump(Boundary().visit(ast.parse(text)), include_attributes=False)
+    options = {'show_empty': True} if 'show_empty' in inspect.signature(ast.dump).parameters else {}
+    return sha(ast.dump(Boundary().visit(ast.parse(text)), include_attributes=False, **options)
                .replace(', type_params=[]', '').encode())
 
 
@@ -69,7 +71,9 @@ def test_only_current_source_bindings_changed_in_art_and_grip_records():
                 record[name]['geography'] = previous_geography(record[name]['geography'])
         assert sha((json.dumps(record, indent=2)+'\n').encode()) == evidence['previous_record_sha256']
     for rel, evidence in PROOF['grips'].items():
-        record = json.loads((ROOT / rel).read_bytes())
+        data = (ROOT / rel).read_bytes()
+        assert sha(data) == evidence['current_record_sha256']
+        record = json.loads(data)
         assert record['source_sha256'] == evidence['current_source_sha256']
         assert record['model_sha256'] == evidence['unchanged_model_sha256']
         record['source_sha256'] = evidence['previous_source_sha256']
