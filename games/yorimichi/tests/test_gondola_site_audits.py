@@ -341,3 +341,98 @@ def test_crater_rim_paths_link_and_hoist_portal_meet_grade_clearance_and_interac
     assert 'CraterParkTower::TryInteract(this)' in wanderer_cpp
     assert 'CraterParkTower::Hint(Pawn)' in hud_cpp
     assert '85800.0' in scenario_py and "live.press('interact')" in scenario_py
+
+
+def test_coplanar_overlaps_detects_900m_slanted_pair_and_ignores_2mm_offset():
+    import math
+    import struct
+    from unittest.mock import patch
+
+    def f32(v):
+        return struct.unpack('f', struct.pack('f', float(v)))[0]
+
+    class F32Vec:
+        def __init__(self, vals):
+            self.x, self.y, self.z = (f32(vals[0]), f32(vals[1]), f32(vals[2]))
+
+        def __sub__(self, other):
+            return F32Vec((self.x - other.x, self.y - other.y, self.z - other.z))
+
+        def __add__(self, other):
+            return F32Vec((self.x + other.x, self.y + other.y, self.z + other.z))
+
+        def __mul__(self, s):
+            return F32Vec((self.x * s, self.y * s, self.z * s))
+
+        def __iter__(self):
+            yield self.x
+            yield self.y
+            yield self.z
+
+        @property
+        def length(self):
+            return f32(math.sqrt(self.x * self.x + self.y * self.y + self.z * self.z))
+
+        def normalize(self):
+            L = self.length
+            if L > 0:
+                self.x, self.y, self.z = f32(self.x / L), f32(self.y / L), f32(self.z / L)
+
+        def normalized(self):
+            v = F32Vec((self.x, self.y, self.z))
+            v.normalize()
+            return v
+
+        def dot(self, other):
+            return f32(f32(self.x * other.x) + f32(self.y * other.y) + f32(self.z * other.z))
+
+        def cross(self, other):
+            return F32Vec((
+                f32(self.y * other.z) - f32(self.z * other.y),
+                f32(self.z * other.x) - f32(self.x * other.z),
+                f32(self.x * other.y) - f32(self.y * other.x),
+            ))
+
+        def orthogonal(self):
+            if abs(self.x) < abs(self.z):
+                return F32Vec((-self.y, self.x, 0.0))
+            return F32Vec((0.0, -self.z, self.y))
+
+    class F32Mat:
+        @staticmethod
+        def Identity(_n):
+            return F32Mat()
+
+        def to_3x3(self):
+            return self
+
+        def determinant(self):
+            return 1.0
+
+        def __matmul__(self, v):
+            return v
+
+    with gondola_modules('solid', pure=False):
+        import solid_mesh
+        with patch.object(solid_mesh, 'Vector', F32Vec), patch.object(solid_mesh, 'Matrix', F32Mat):
+            U, V, N = (0.8, 0.0, -0.6), (0.0, 1.0, 0.0), (0.6, 0.0, 0.8)
+
+            def make_pair(base, offset_m=0.0, anchor_at_origin=False):
+                def pt(u, v, dn=0.0):
+                    return tuple(f32(base[i] + u * U[i] + v * V[i] + dn * N[i]) for i in range(3))
+
+                a = [pt(0, 0), pt(2, 0), pt(0, 2)]
+                b = [pt(1, 0, offset_m), pt(3, 0, offset_m), pt(1, 2, offset_m)]
+                m = solid_mesh.Mesh('pair', 'mat')
+                if anchor_at_origin:
+                    m.part([(0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)], [(0, 1, 2)], 'mat')
+                m.part(a, [(0, 1, 2)], 'mat')
+                m.part(b, [(0, 1, 2)], 'mat')
+                return m
+
+            # Positive cases: slanted pair at (900, 900, 900) both standalone and anchored at (0, 0, 0)
+            assert solid_mesh.coplanar_overlaps([make_pair((900.0, 900.0, 900.0), 0.0, False)])[0] == 1
+            assert solid_mesh.coplanar_overlaps([make_pair((900.0, 900.0, 900.0), 0.0, True)])[0] == 1
+            # Negative case: +2 mm normal separation at (900, 900, 900) gives 0 detections
+            assert solid_mesh.coplanar_overlaps([make_pair((900.0, 900.0, 900.0), 0.002, False)])[0] == 0
+            assert solid_mesh.coplanar_overlaps([make_pair((900.0, 900.0, 900.0), 0.002, True)])[0] == 0

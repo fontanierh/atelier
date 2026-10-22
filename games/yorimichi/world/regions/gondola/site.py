@@ -338,7 +338,7 @@ def emit_crater_path_chain(mesh, rail_layout, G, frame, waypoints, width=4.0, en
         rail_len = max(.6, span_len - .24)
         n_rail = max(1, math.ceil(rail_len / rail_spacing))
         bay = rail_len / n_rail
-        str_breaks = [-ext, *[.12 + (j + .75) * bay for j in range(n_rail)], span_len + ext]
+        str_breaks = [-ext, span_len + ext] if is_stair else [-ext, *[.12 + (j + .75) * bay for j in range(n_rail)], span_len + ext]
         for side in (-1, 1):
             offset = side * (width / 2 - rail_inset) * across
             for first_s, last_s in zip(str_breaks[:-1], str_breaks[1:]):
