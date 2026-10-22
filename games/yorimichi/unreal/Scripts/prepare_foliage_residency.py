@@ -6,7 +6,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'world'))
 import yori
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import hashlib
 import json
 import unreal as U
 from atelier import mesh_geometry as G
@@ -14,91 +13,10 @@ from atelier.atomic_files import atomic_json
 import foliage_system as F
 import foliage_residency_build as R
 import build_foliage_system as owner
-import shared_materials
 
 E = U.EditorAssetLibrary
-M = U.MaterialEditingLibrary
 CONTENT = yori.GAME / 'unreal/Content'
 OUT = yori.OUT / 'foliage_residency'
-
-
-def interaction_current(material, mpc):
-    if not material or not M.get_material_property_input_node(material, U.MaterialProperty.MP_WORLD_POSITION_OFFSET):
-        return False
-    cut = M.get_material_default_vector_parameter_value(material, 'CutScale')
-    if (cut.r, cut.g, cut.b, cut.a) != (1., 1., 2., 1.):
-        return False
-    parameters = {str(node.get_editor_property('parameter_name'))
-                  for node in M.get_material_expressions(material)
-                  if isinstance(node, U.MaterialExpressionCollectionParameter) and
-                  node.get_editor_property('collection') == mpc}
-    return {'Wind', 'PlayerPos'} <= parameters
-
-
-def interaction_material():
-    """@cc [owner:fontanierh,label:correctness] residency-bush-interaction
-    The owned near-material copy MUST retain the prepared opacity graph and alpha,
-    use the existing shared Wind/PlayerPos collection without writing it, preserve
-    CutScale Z=2 and add the canonical wind/player-push graph. Original prepared
-    materials and source packages MUST remain unchanged.
-    """
-    source = F.ROOT + '/Materials/M_CanopyNear'
-    path = R.ROOT + '/Materials/M_CanopyNearInteraction'
-    mpc_path = '/Game/Japan/Materials/MPC_Wind'
-    signature = hashlib.sha256(json.dumps(G.package_inventory(CONTENT, [source, mpc_path]), sort_keys=True).encode())
-    for file in sorted({Path(__file__), Path(R.__file__), Path(G.__file__),
-                        Path(shared_materials.__file__), Path(shared_materials.node.__code__.co_filename),
-                        Path(shared_materials.link.__code__.co_filename)}):
-        signature.update(file.read_bytes())
-    stamp = OUT / 'interaction.json'
-    try:
-        old = json.loads(stamp.read_text())
-        if old == dict(inputs=signature.hexdigest(), output=G.package_inventory(CONTENT, [path])):
-            material = E.load_asset(path)
-            if interaction_current(material, E.load_asset(mpc_path)):
-                return material
-    except (OSError, ValueError):
-        pass
-    # Force deletion may clear references: current and retired canonical outputs
-    # in this producer's exclusive namespace are owned; external assets refuse.
-    if E.does_asset_exist(path):
-        report = json.loads((yori.OUT / 'foliage_system/report.json').read_text())
-        allowed = {R.ROOT + '/' + F.asset_id(row['source']) + '/' +
-                   row['source'].rsplit('/', 1)[-1].split('.')[0] + suffix
-                   for row in report['assets'] for suffix in ('', '_Canopy', '_Shadow')}
-        registry = U.AssetRegistryHelpers.get_asset_registry()
-        refs = {str(p) for p in registry.get_referencers(path, U.AssetRegistryDependencyOptions())}
-        foreign = set()
-        for package in refs - allowed:
-            assets = registry.get_assets_by_package_name(package)
-            if (not R.owned_resident_mesh(package) or len(assets) != 1 or
-                    str(assets[0].asset_class_path.asset_name) != 'StaticMesh'):
-                foreign.add(package)
-        if foreign:
-            raise ValueError('Interaction material has external owners: ' + ', '.join(sorted(foreign)))
-        if not E.delete_asset(path):
-            raise RuntimeError('Cannot replace owned interaction material')
-    before = G.package_inventory(CONTENT, [source, mpc_path])
-    material = E.duplicate_asset(source, path)
-    mpc = E.load_asset(mpc_path)
-    if not material or not mpc:
-        raise RuntimeError('Missing canopy material or shared interaction collection')
-    scales = [node for node in M.get_material_expressions(material)
-              if isinstance(node, U.MaterialExpressionVectorParameter) and
-              str(node.get_editor_property('parameter_name')) == 'CutScale']
-    if len(scales) != 1:
-        raise ValueError('Prepared canopy has no unique CutScale')
-    scales[0].set_editor_property('default_value', U.LinearColor(1., 1., 2., 1.))
-    shared_materials.wind_graph(material, mpc)
-    M.recompile_material(material)
-    if not E.save_loaded_asset(material, True):
-        raise RuntimeError('Interaction material save failed')
-    if before != G.package_inventory(CONTENT, [source, mpc_path]):
-        raise ValueError('Interaction preparation changed shared source assets')
-    if not interaction_current(material, mpc):
-        raise ValueError('Interaction graph did not retain mask/push parameters')
-    atomic_json(stamp, dict(inputs=signature.hexdigest(), output=G.package_inventory(CONTENT, [path])))
-    return material
 
 
 def main():
