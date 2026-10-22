@@ -476,7 +476,9 @@ FString UYorimichiFoliageResidencyBuilder::Compact(UStaticMesh* Source,UStaticMe
     for (int32 L:SourceLODs) if (L<0 || L>=Source->GetNumSourceModels()) return {};
     FStaticMeshCompilingManager::Get().FinishCompilation({Source,Prepared,PreparedShadow});
     TSet<int32> Slots;for (int32 Slot:LeafSlots) { if (!Source->GetStaticMaterials().IsValidIndex(Slot)) return {};Slots.Add(Slot); }
-    bool TrunkLODs=false;for (int32 L:SourceLODs) if (SimpleTrunk && L!=SourceLODs[0]) TrunkLODs=true;
+    // Distinct certified source selections identify a standalone authored chain;
+    // its rigid LODs are independent of the selected collision shape policy.
+    bool TrunkLODs=false;for (int32 L:SourceLODs) if (L!=SourceLODs[0]) TrunkLODs=true;
     TArray<FMeshDescription> Canopies;Canopies.SetNum(4);TArray<FMeshDescription> Rigid;Rigid.SetNum(TrunkLODs?4:1);
     TArray<float> Screens;TArray<int32> Counts;int32 RigidCount=0;FMeshDescription AuthoredNear;
     for (int32 L=0;L<4;++L)
@@ -502,20 +504,20 @@ FString UYorimichiFoliageResidencyBuilder::Compact(UStaticMesh* Source,UStaticMe
     {
         const int32 Channels=FStaticMeshConstAttributes(AuthoredNear).GetVertexInstanceUVs().GetNumChannels();
         Canopies.Reset();Canopies.SetNum(SourceCount);Screens.Reset();
-        if (SimpleTrunk && RigidCount) { Rigid.Reset();Rigid.SetNum(SourceCount); }
+        if (TrunkLODs && RigidCount) { Rigid.Reset();Rigid.SetNum(SourceCount); }
         for (int32 L=0;L<SourceCount;++L)
         {
             const float Screen=Render->ScreenSize[L].GetValue();
             if (!FMath::IsFinite(Screen) || Screen<0.f || Screen>1.f || (L==0 && Screen<=0.f) ||
                 (L>0 && Screen>Screens.Last())) return {};
             if (!OriginalParts(Source,L,Classification,Slots,CanopyMaterials,Channels,Canopies[L],
-                SimpleTrunk && RigidCount?&Rigid[L]:nullptr)) return {};
+                TrunkLODs && RigidCount?&Rigid[L]:nullptr)) return {};
             if (L==0 && GeometryHash(Canopies[L])!=GeometryHash(AuthoredNear)) return {};
             for (auto T:Canopies[L].Triangles().GetElementIDs())
             { bool Tagged;FVector2f Role;if (!LeafRole(Canopies[L],T,Tagged,Role)) return {}; }
             Screens.Add(Screen);LeafSources.Add(L);OriginalLeafCounts.Add(Canopies[L].Triangles().Num());
         }
-        if (SimpleTrunk && RigidCount) { TrunkLODs=true;RigidScreens=Screens; }
+        if (TrunkLODs && RigidCount) RigidScreens=Screens;
         ReducerVersion=TEXT("authored-source-lods");
     }
     else
@@ -704,13 +706,20 @@ bool UYorimichiFoliageResidencyBuilder::SelfTest()
         TArray<FMeshDescription> TwoLevels;TwoLevels.Init(Levels[0],2);
         Source=Build(Directory/TEXT("FixtureTree"),TwoLevels,Source->GetStaticMaterials(),{1.f,.13f},ECollision::None,Empty);
         if (!Source) return false;
-        const FString Row=Compact(Source,Input,InputShadow,TEXT("roles"),{},1,true,{0,0,1,1},
-            {2.f,0.f,0.f,0.f,0.f,0.f,10.f},Directory/TEXT("TrunkLODs"),nullptr);
-        auto* Carrier=LoadObject<UStaticMesh>(nullptr,*(Directory/TEXT("TrunkLODs/FixtureTree.FixtureTree")));
-        auto* Canopy=LoadObject<UStaticMesh>(nullptr,*(Directory/TEXT("TrunkLODs/FixtureTree_Canopy.FixtureTree_Canopy")));
-        auto* Shade=LoadObject<UStaticMesh>(nullptr,*(Directory/TEXT("TrunkLODs/FixtureTree_Shadow.FixtureTree_Shadow")));
-        Objects.Append({Carrier,Canopy,Shade});Passed=!Row.IsEmpty() && Carrier && Canopy && Carrier->GetNumSourceModels()==2 &&
-            Canopy->GetNumSourceModels()==2 && Canopy->GetRenderData()->ScreenSize[1].GetValue()==.13f;
+        for (bool Simple:{false,true})
+        {
+            if (!Passed) break;
+            const FString Scope=Directory/(Simple?TEXT("TrunkLODs"):TEXT("RigidLODs"));
+            const FString Row=Compact(Source,Input,InputShadow,TEXT("roles"),{},1,Simple,{0,0,1,1},
+                Simple?TArray<float>{2.f,0.f,0.f,0.f,0.f,0.f,10.f}:TArray<float>{},Scope,nullptr);
+            auto* Carrier=LoadObject<UStaticMesh>(nullptr,*(Scope/TEXT("FixtureTree.FixtureTree")));
+            auto* Canopy=LoadObject<UStaticMesh>(nullptr,*(Scope/TEXT("FixtureTree_Canopy.FixtureTree_Canopy")));
+            auto* Shade=LoadObject<UStaticMesh>(nullptr,*(Scope/TEXT("FixtureTree_Shadow.FixtureTree_Shadow")));
+            Objects.Append({Carrier,Canopy,Shade});Passed=!Row.IsEmpty() && Carrier && Canopy && Carrier->GetNumSourceModels()==2 &&
+                Canopy->GetNumSourceModels()==2 && Carrier->GetRenderData()->ScreenSize[1].GetValue()==.13f &&
+                Canopy->GetRenderData()->ScreenSize[1].GetValue()==.13f &&
+                Carrier->GetBodySetup()->CollisionTraceFlag==(Simple?CTF_UseSimpleAsComplex:CTF_UseComplexAsSimple);
+        }
     }
     if (Passed)
     {

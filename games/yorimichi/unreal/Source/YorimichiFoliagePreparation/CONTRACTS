@@ -5,6 +5,8 @@ normal, colour, all UVs and multiplicities, MUST control removal; original UVs M
 UV0 fallback to the receiving channel count. One carrier MUST own rigid geometry, with the complete original material table.
 Mixed scenery MUST use one rigid LOD; standalone trees with distinct authored rigid source LODs MUST
 retain that simplification chain and screen sizes rather than repeating full trunk detail at distance.
+Distinct certified source LOD selections MUST preserve that chain independently of simple or complex
+collision policy; the all-LOD0 mixed selection MUST retain a single rigid carrier level.
 Canopy LOD0 MUST retain every classified original leaf corner exactly, with the producer's UV0
 fallback/truncation and original texture/opacity/wind material wrappers. A multi-level original MUST retain all of its 1–8 current authored leaf levels and actual rendered
 screen thresholds, including authored far-impostor materials/geometry. Empty distant leaf levels MAY
