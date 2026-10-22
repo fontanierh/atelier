@@ -13,7 +13,6 @@ and trees on it; `build()` makes the vertex-coloured mesh with one flat colour p
 a cedar grove on the crown, maple and ginkgo drifts) and `torii_points()` the gates along the stair."""
 import math, sys
 import numpy as np
-import foliage_roles
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 # local copy: the layout runs without Blender. Linear values, dark on purpose: the game's exposure lifts them.
@@ -277,9 +276,9 @@ def _pine_lean(name,seed,height,lean):
     def pad(c,r,h):
         ring=[(c[0]+math.cos(a)*r*(1+.25*math.sin(3*a+c[0])),c[1]+math.sin(a)*r*(1+.2*math.cos(2*a+c[1])),c[2]) for a in np.linspace(0,2*math.pi,10,endpoint=False)]
         top=[(c[0]*.35+q[0]*.65,c[1]*.35+q[1]*.65,c[2]+h) for q in ring]
-        m.poly(ring[::-1],foliage_roles.PaletteColour(PALETTE['pine_dark'],'leaf'))
-        for i in range(10):m.poly([ring[i],ring[(i+1)%10],top[(i+1)%10],top[i]],foliage_roles.PaletteColour(PALETTE['pine'],'leaf') if i%2 else foliage_roles.PaletteColour(PALETTE['pine_dark'],'leaf'))
-        m.poly(top,foliage_roles.PaletteColour(PALETTE['pine'],'leaf'))
+        m.poly(ring[::-1],PALETTE['pine_dark'])
+        for i in range(10):m.poly([ring[i],ring[(i+1)%10],top[(i+1)%10],top[i]],PALETTE['pine'] if i%2 else PALETTE['pine_dark'])
+        m.poly(top,PALETTE['pine'])
     for k,p in enumerate(pts[2:]):
         for j in range(2 if k<3 else 1):
             ang=rng.uniform(0,2*math.pi) if k<3 else 0.0;dist=rng.uniform(1.2,2.4)*(1-.18*k)

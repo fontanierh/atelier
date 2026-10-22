@@ -15,49 +15,13 @@ from test_volcano_layers import RECIPE
 
 @pytest.fixture
 def library(monkeypatch):
-    monkeypatch.syspath_prepend(str(RECIPE.WORLD))
     monkeypatch.syspath_prepend(str(RECIPE.REGIONS))
     from brinecove import foliage_library, foliage_models
     return foliage_library, foliage_models
 
 
 def encoded(builder):
-    # Annotation storage and the material-key alias are not rendered geometry.
-    return json.dumps({k: v for k, v in builder.__dict__.items() if k not in ('foliage_roles', 'keys')},
-                      sort_keys=True, separators=(',', ':')).encode()
-
-
-def test_independent_and_mixed_exports_keep_explicit_foliage_roles(tmp_path, monkeypatch, library):
-    from brinecove import mesh_export
-    from atelier.gltf import glb_pack
-    import foliage_roles
-    mesh = library[1].build(json.loads((RECIPE.REGIONS / 'brinecove/foliage_models/bloom_0.json').read_text()))
-    assert any(foliage_roles.key_role(key) > 0 for key in foliage_roles.face_keys(mesh))
-    assert any(key == 'flower' for key in mesh.foliage_roles.values())
-    obj = SimpleNamespace(name='Plant', data=SimpleNamespace(uv_layers=list(range(6))))
-    calls = []
-    monkeypatch.setattr(mesh_export.model_export, 'mesh_object', lambda *args: obj)
-    monkeypatch.setattr(mesh_export.foliage_roles, 'export_roles', lambda target, source: calls.append((target, source)))
-    assert mesh_export.mesh_object(mesh, {}) is obj
-    assert calls == [(obj, mesh)]
-    path = tmp_path / 'plant.glb'
-    def serialize(target, destination):
-        destination.write_bytes(glb_pack({'meshes': [{'primitives': [{'attributes': {'TEXCOORD_5': 0}}]}]}, b''))
-    monkeypatch.setattr(mesh_export.model_export, 'export', serialize)
-    mesh_export.export(obj, path)
-    assert mesh_export.source_roles(path)
-    monkeypatch.setattr(mesh_export.model_export, 'export', lambda *args: path.write_bytes(glb_pack(
-        {'meshes': [{'primitives': [{'attributes': {}}]}]}, b'')))
-    with pytest.raises(AssertionError, match='Foliage UV5 lost'):
-        mesh_export.export(obj, path)
-    assert not mesh_export.source_roles(path)
-    path.write_bytes(glb_pack({'meshes': [{'primitives': [
-        {'attributes': {}}, {'attributes': {'TEXCOORD_5': 0}}]}]}, b''))
-    with pytest.raises(ValueError, match='Incomplete foliage role transport'):
-        mesh_export.source_roles(path)
-    models = RECIPE.brinecove_model_steps(tmp_path)
-    assert all(RECIPE.WORLD / 'foliage_roles.py' in step.inputs for step in models)
-    assert all(RECIPE.REGIONS / 'brinecove/mesh_export.py' in step.inputs for step in models)
+    return json.dumps(builder.__dict__, sort_keys=True, separators=(',', ':')).encode()
 
 
 def test_every_original_prototype_keeps_vertices_faces_uvs_normals_and_materials(library):

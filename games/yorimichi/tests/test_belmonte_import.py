@@ -70,7 +70,6 @@ def test_import_disables_distance_fields_only_on_separate_physics_hull(tmp_path,
     loaded = set()                                   # like the commandlet: no subsystem until its module is loaded
     unreal = SimpleNamespace(StaticMeshEditorSubsystem=object(), load_module=loaded.add,
         get_editor_subsystem=lambda _: editor if 'StaticMeshEditor' in loaded else None,
-        YorimichiFoliageBuilder=SimpleNamespace(stamp_source_roles=lambda _: True),
         CollisionTraceFlag=SimpleNamespace(CTF_USE_COMPLEX_AS_SIMPLE='complex-as-simple'), log=lambda *_: None)
     script = Path(__file__).parents[1] / 'unreal/Scripts/import_belmonte.py'
     # Execute the actual import loop without Unreal-only module initialization/material compilation.

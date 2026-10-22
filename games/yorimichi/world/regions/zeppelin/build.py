@@ -262,9 +262,8 @@ def station(index,h):
     cylinder(m,(px,py,.43),.022,.33,SAGE,6)
     for a in np.linspace(0,math.tau,5)[:-1]:
      pts=[(px-.055*math.sin(a),py+.055*math.cos(a),.52),(px+.055*math.sin(a),py-.055*math.cos(a),.52),(px+.23*math.cos(a),py+.23*math.sin(a),.68)]
-     m.poly(pts,SAGE);m.poly(pts[::-1],SAGE);m.foliage_roles.update({len(m.faces)-2:'foliage_leaf',len(m.faces)-1:'foliage_leaf'})
-    with v.foliage_roles.surfaces(m,'flower'):
-     cylinder(m,(px,py,.73),.13,.05,R.choice([GOLD,(.44,.15,.05),CREAM]),6)
+     m.poly(pts,SAGE);m.poly(pts[::-1],SAGE)
+    cylinder(m,(px,py,.73),.13,.05,R.choice([GOLD,(.44,.15,.05),CREAM]),6)
   for x in [2,10]:
    m.box((x,-2.86,2.52),(.12,.12,1.74),WOOD)
    m.beam((x,-2.86,3.37),(x,-3.03,3.37),.08,.08,WOOD)

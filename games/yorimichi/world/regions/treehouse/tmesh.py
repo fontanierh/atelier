@@ -13,7 +13,6 @@ lantern with its cord, a noren), and object() bakes each vertex's piece into the
 import math, random
 from contextlib import contextmanager
 import bpy
-import foliage_roles
 import numpy as np
 from mathutils import Vector
 from village.build import Mesh, PALETTE
@@ -170,7 +169,7 @@ class TMesh(Mesh):
 
 def export(m, materials, out):
     """Like village.build.export, with one material slot per texture slug."""
-    obj = m.object(materials);foliage_roles.export_roles(obj,m); objs = [obj]
+    obj = m.object(materials); objs = [obj]
     for i, (c, s, rotation) in enumerate(m.colliders):
         bpy.ops.mesh.primitive_cube_add(size=1, location=c, rotation=rotation)
         ob = bpy.context.object; ob.name = f'UCX_{m.name}_{i:02d}'; ob.scale = s

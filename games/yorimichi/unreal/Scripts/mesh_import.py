@@ -1,6 +1,5 @@
 """Legacy FBX mesh import using the actual source for migration and fresh material slots."""
 from pathlib import Path
-import time
 import unreal
 from atelier.unreal_mesh_reuse import common_fbx_mesh
 
@@ -18,33 +17,19 @@ def import_mesh(path, dest, name, *, seed=None, fresh_slots=False):
     UE converts Interchange import data to legacy FBX defaults before applying task options.
     That first pass must establish FBX data so the final pass can synchronize unit settings.
     """
-    started = time.perf_counter()
     mesh, reuse = common_fbx_mesh(path, dest, name, fresh_slots=fresh_slots,
                                   script=__file__, functions=('_source_mesh',), validator=legacy_options_match,
                                   validation_functions=('legacy_options_match',),
                                   owner_roots=(Path(__file__).resolve().parents[2] / 'world',
                                                Path(__file__).resolve().parents[2] / 'world/regions'))
-    reused = mesh is not None
     if mesh is None:
         mesh = _source_mesh(path, dest, name, fresh_slots)
         if reuse is not None:
             reuse.imported(dest + '/' + name)
     if not legacy_options_match(mesh):
         raise RuntimeError('FBX import did not preserve declared options: ' + name)
-    imported = time.perf_counter()
-    unreal.load_module('YorimichiImport')
-    if not unreal.YorimichiFoliageBuilder.stamp_source_roles(mesh):
-        raise RuntimeError('Invalid foliage face roles: '+name)
-    if not EAL.save_loaded_asset(mesh):
-        raise RuntimeError('Could not save certified mesh: '+name)
     if reuse is not None:
         reuse.defer_validated(dest + '/' + name)
-    certified = time.perf_counter()
-    # Task/UI locals have gone out of scope and compilation has completed. Keep
-    # the returned mesh live, but release prior imports during blocking commandlets.
-    unreal.YorimichiFoliageBuilder.collect_unused()
-    print(f'MESH ROLE TIMING {name}: reused={int(reused)} import={imported-started:.3f}s '
-          f'certify_save={certified-imported:.3f}s collect={time.perf_counter()-certified:.3f}s', flush=True)
     return mesh
 
 

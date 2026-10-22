@@ -1,5 +1,4 @@
 #include "BelmonteTrack.h"
-#include "FoliageSystem.h"
 #include "AtelierData.h"
 #include "Components/BoxComponent.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
@@ -69,7 +68,7 @@ bool ABelmonteTrack::Initialize(const FString& Path)
     auto Load = [&](const FString& Asset) -> UStaticMesh*
     {
         UStaticMesh*& Mesh = Meshes.FindOrAdd(Asset);
-        if (!Mesh) Mesh = UYorimichiFoliageSubsystem::LoadMesh(GetWorld(), Asset);
+        if (!Mesh) Mesh = LoadObject<UStaticMesh>(nullptr, *Asset);
         if (!Mesh) { ++Missing; UE_LOG(LogTemp, Warning, TEXT("BELMONTE TRACK missing %s"), *Asset); }
         return Mesh;
     };
@@ -95,7 +94,7 @@ bool ABelmonteTrack::Initialize(const FString& Path)
         if (!Mesh) continue;
         const FString Name = FString::Printf(TEXT("%s_%s_%s"), *G->GetStringField(TEXT("kind")), *Mesh->GetName(), *G->GetStringField(TEXT("key")));
         UInstancedStaticMeshComponent* C = G->GetBoolField(TEXT("hierarchical"))
-            ? UYorimichiFoliageSubsystem::NewInstances(this, *Name) : NewObject<UInstancedStaticMeshComponent>(this, *Name);
+            ? NewObject<UHierarchicalInstancedStaticMeshComponent>(this, *Name) : NewObject<UInstancedStaticMeshComponent>(this, *Name);
         C->SetupAttachment(RootComponent);
         C->SetStaticMesh(Mesh);
         const float Distance = float(G->GetNumberField(TEXT("cull_cm")));

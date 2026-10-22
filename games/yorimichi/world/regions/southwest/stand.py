@@ -4,7 +4,6 @@ yellow-green coconuts, a string of coconuts on the post, a chalkboard easel, a s
 leaning nobori beside it and two grey boulders. Front (the counter) faces -Y; place it so -Y faces the lane.
 Footprint about 3.6 m (x) by 4.2 m (y) including the banner and boulders; the hut itself is 2.6 x 1.8 m."""
 import math, random
-import foliage_roles
 from mesh import Mesh
 R=random.Random(11)
 
@@ -15,7 +14,7 @@ STRAW=(.40,.26,.085);STRAW_LIGHT=(.52,.36,.13);STRAW_DARK=(.20,.12,.040);STRAW_E
 COCO=(.27,.34,.070);COCO_LIGHT=(.36,.42,.11);COCO_CAP=(.80,.70,.42);COCO_HUSK=(.13,.07,.025)
 BOULDER=(.062,.060,.078);BOULDER_LIGHT=(.115,.11,.135);SLAB=(.16,.15,.14)
 RUST=(.60,.13,.035);RUST_DARK=(.34,.07,.02);CHALK=(.040,.045,.040);CREAM=(.78,.66,.42);WHITE=(.85,.82,.72)
-SHOOT=foliage_roles.PaletteColour((.10,.18,.03),'groundcover_leaf');SHOOT_LIGHT=foliage_roles.PaletteColour((.17,.26,.05),'groundcover_leaf');ROPE=(.40,.28,.12)
+SHOOT=(.10,.18,.03);SHOOT_LIGHT=(.17,.26,.05);ROPE=(.40,.28,.12)
 PLANKS=[WOOD,WOOD_LIGHT,WOOD_WARM,WOOD]
 
 def coconut(m,c,r=.15,color=COCO,cap=True):

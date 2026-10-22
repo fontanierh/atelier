@@ -71,47 +71,9 @@ struct FSkateContinuation
 #include "Ride/RideLostSimulation.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "PhysicsEngine/SkeletalBodySetup.h"
-#include "HAL/PlatformMemory.h"
 
 namespace SkateRuntimeDetail
 {
-    FMeshSurfaceCache& MeshSurfaceCache()
-    {
-        check(IsInGameThread());
-        static FMeshSurfaceCache Cache;
-        return Cache;
-    }
-
-    void PruneMeshSurfaceCache()
-    {
-        // Only cache ownership is removed. A concurrent gather owns a separate
-        // immutable shared reference and can finish without any UObject reads.
-        FMeshSurfaceCache& Cache=MeshSurfaceCache();
-        int32 Removed=0,RetainedByJobs=0;
-        uint64 DroppedArrayBytes=0;
-        const uint64 Before=FPlatformMemory::GetStats().UsedPhysical;
-        for (auto It=Cache.CreateIterator();It;++It)
-        {
-            if (It.Key().ResolveObjectPtr()) continue;
-            const FMeshSurfaceRef& Surface=It.Value();
-            if (Surface)
-            {
-                DroppedArrayBytes+=Surface->Points.GetAllocatedSize()+Surface->Normals.GetAllocatedSize()+Surface->Slots.GetAllocatedSize();
-                if (Surface.GetSharedReferenceCount()>1) ++RetainedByJobs;
-            }
-            ++Removed;It.RemoveCurrent();
-        }
-        if (Removed)
-            UE_LOG(LogTemp,Display,TEXT("SKATE surface cache POST_GC removed=%d dropped_cache_array_bytes=%llu retained_by_jobs=%d remaining=%d physical_before=%llu physical_after=%llu"),
-                Removed,static_cast<unsigned long long>(DroppedArrayBytes),RetainedByJobs,Cache.Num(),
-                static_cast<unsigned long long>(Before),static_cast<unsigned long long>(FPlatformMemory::GetStats().UsedPhysical));
-    }
-
-    void ClearMeshSurfaceCache()
-    {
-        MeshSurfaceCache().Empty();
-    }
-
     TAutoConsoleVariable<FString> CVarSkateGrip(TEXT("skate.Grip"),TEXT("-.705 .94 25 75 10 40 40 15 10"),
         TEXT("Grab grip: lift out (finger widths) mcp pip dip thumbswing thumb1 thumb2 thumb3 (degrees)"));
     TAutoConsoleVariable<FString> CVarSkateGrabReach(TEXT("skate.GrabReach"),TEXT("4 20 .97 .25"),

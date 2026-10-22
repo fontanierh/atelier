@@ -1,5 +1,4 @@
 #include "FerryService.h"
-#include "FoliageSystem.h"
 #include "AtelierData.h"
 #include "JapanNetwork.h"
 #include "LiveLibrary.h"
@@ -245,7 +244,7 @@ double AFerryService::ServiceTime() const
 
 UStaticMeshComponent* AFerryService::MeshPart(const FString& Name, const FString& Asset, USceneComponent* Parent, bool bCollision, bool bMovable)
 {
-    UStaticMesh* Mesh = UYorimichiFoliageSubsystem::LoadMesh(GetWorld(), Asset);
+    UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *Asset);
     if (!Mesh) { UE_LOG(LogTemp, Warning, TEXT("FERRY SERVICE missing mesh %s"), *Asset); return nullptr; }
     auto* C = NewObject<UStaticMeshComponent>(this, *Name);
     C->SetMobility(bMovable ? EComponentMobility::Movable : EComponentMobility::Static);

@@ -1,7 +1,6 @@
 """Reusable Brinecove pieces: houses, taverns, wharf furniture, ships, palms and landmarks."""
 import math
 import random
-from foliage_roles import SurfaceKey
 from brinecove.geom import Builder
 from brinecove.foliage_atlas import LEAF_CELLS, PALM_CELLS, cell_uvs
 
@@ -93,12 +92,12 @@ def flower_box(b, cx, cy, yaw, lx, ly, z):
     b.box((x, y, z), (1.35, 0.34, 0.30), 'wood_dark', yaw)
     for i in range(2):
         px, py = local(cx, cy, yaw, lx - 0.3 + i * 0.6, ly - 0.08)
-        b.sphere((px, py, z + 0.24), 0.26, SurfaceKey('jungle' if i else 'jungle_light','leaf'),
+        b.sphere((px, py, z + 0.24), 0.26, 'jungle' if i else 'jungle_light',
                  (1.4, 0.9, 0.8), subdiv=0)
     for i in range(6):
         px, py = local(cx, cy, yaw, lx - 0.5 + i * 0.2, ly - 0.16)
         b.sphere((px, py, z + 0.36 + 0.05 * (i % 2)), 0.15,
-                 SurfaceKey(('blossom','coral','gold','blossom_pale','cream','blossom')[i % 6],'flower'),
+                 ('blossom', 'coral', 'gold', 'blossom_pale', 'cream', 'blossom')[i % 6],
                  (1.0, 0.9, 0.9), subdiv=0)
 
 
@@ -637,7 +636,7 @@ def bougainvillea(b, x, y, yaw, lx, ly, z0, z1, rng):
             # every wall not facing -y (playtest note 14).
             ox, oy = local(0, 0, yaw, rng.uniform(-0.25, 0.25), 0.0)
             b.sphere((px + ox + nx * 0.1, py + oy + ny * 0.1, pz + rng.uniform(-0.25, 0.25)), rng.uniform(0.16, 0.26),
-                     SurfaceKey(('blossom','blossom_pale','blossom')[rng.randrange(3)],'flower'), (1.0, 0.6, 1.0), subdiv=1)
+                     ('blossom', 'blossom_pale', 'blossom')[rng.randrange(3)], (1.0, 0.6, 1.0), subdiv=1)
 
 
 def barrel(b, x, y, z, s=1.0):
@@ -750,7 +749,7 @@ def market_stall(b, x, y, z, w=10, d=6, cloth='canvas', yaw=0.0):
         cx, cy, cz = P(lx, -hy + 0.75, top)
         if kind == 0:
             crate(b, cx, cy, cz, 0.6, yaw + rng.uniform(-6, 6))
-            fruit = rng.choice(('gold', 'coral', SurfaceKey('leaf_sun','rigid'), 'shutter_red', 'ochre'))
+            fruit = rng.choice(('gold', 'coral', 'leaf_sun', 'shutter_red', 'ochre'))
             for k in range(5):
                 px, py = local(cx, cy, yaw, (k % 3 - 1) * 0.17, (k // 3 - 0.5) * 0.18)
                 b.sphere((px, py, cz + 0.6 + 0.05), 0.1, fruit, subdiv=1)
@@ -833,7 +832,7 @@ def goods(b, x, y, z, yaw=0.0, rng=None):
             lx = (k - 1.5) * 0.8
             px, py = local(x, y, yaw, lx, rng.uniform(-0.2, 0.2))
             crate(b, px, py, z, 0.7, yaw + rng.uniform(-8, 8))
-            fruit = rng.choice(('gold', 'coral', SurfaceKey('leaf_sun','rigid'), 'shutter_red', 'ochre', 'cream'))
+            fruit = rng.choice(('gold', 'coral', 'leaf_sun', 'shutter_red', 'ochre', 'cream'))
             for _ in range(5):
                 b.sphere((px + rng.uniform(-0.22, 0.22), py + rng.uniform(-0.22, 0.22), z + 0.72),
                          rng.uniform(0.1, 0.15), fruit, subdiv=0)
@@ -1062,7 +1061,7 @@ def bush(b, x, y, z, yaw=0.0, scale=1.0, rng=None):
         for i in range(3):
             b.sphere((x + rng.uniform(-0.5, 0.5) * scale, y + rng.uniform(-0.5, 0.5) * scale,
                       z + (0.75 + rng.uniform(0, 0.3)) * scale), 0.16 * scale,
-                     SurfaceKey(('blossom','coral','gold')[i % 3],'flower'), subdiv=0)
+                     ('blossom', 'coral', 'gold')[i % 3], subdiv=0)
 
 
 def fern(b, x, y, z, yaw=0.0, scale=1.0, rng=None):
@@ -1094,9 +1093,9 @@ def banana(b, x, y, z, yaw=0.0, scale=1.0, rng=None):
         side = (math.cos(ang + math.pi / 2) * 0.42 * scale,
                 math.sin(ang + math.pi / 2) * 0.42 * scale, 0)
         b.quad(top, (mid[0] + side[0], mid[1] + side[1], mid[2]),
-               (tip[0] + side[0] * 0.5, tip[1] + side[1] * 0.5, tip[2]), tip, SurfaceKey('jungle_light','groundcover_leaf'))
+               (tip[0] + side[0] * 0.5, tip[1] + side[1] * 0.5, tip[2]), tip, 'jungle_light')
         b.quad(top, tip, (tip[0] - side[0] * 0.5, tip[1] - side[1] * 0.5, tip[2]),
-               (mid[0] - side[0], mid[1] - side[1], mid[2]), SurfaceKey('jungle','groundcover_leaf'))
+               (mid[0] - side[0], mid[1] - side[1], mid[2]), 'jungle')
 
 
 def grass_tuft(b, x, y, z, yaw=0.0, scale=1.0, rng=None):
@@ -1196,10 +1195,10 @@ def vine(b, x, y, z, length=8.0, rng=None):
     for _ in range(3):
         t = rng.uniform(0.2, 0.9)
         px = x + math.sin(t * 5 + x) * 0.4
-        b.sphere((px, y - 0.05, z - length * t), 0.20, SurfaceKey('jungle','groundcover_leaf'), (1.3, 0.4, 0.7), subdiv=0)
+        b.sphere((px, y - 0.05, z - length * t), 0.20, 'jungle', (1.3, 0.4, 0.7), subdiv=0)
     if rng.random() < 0.40:
         for i in range(3):
             t = rng.uniform(0.25, 0.85)
             px = x + math.sin(t * 5 + x) * 0.45
             b.sphere((px, y - 0.12, z - length * t), 0.13,
-                     SurfaceKey(('blossom','blossom_pale','coral')[i % 3],'flower'), subdiv=0)
+                     ('blossom', 'blossom_pale', 'coral')[i % 3], subdiv=0)

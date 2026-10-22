@@ -3,7 +3,6 @@ Same conventions as the village and skateboard builders: linear colours, flat fa
 import math, random
 from contextlib import contextmanager
 import bpy
-import foliage_roles
 from mathutils import Matrix, Vector
 
 PALETTE={
@@ -26,7 +25,7 @@ PALETTE={
 
 class Mesh:
     def __init__(self,name):
-        self.name=name;self.vertices=[];self.faces=[];self.colors=[];self.keys=[];self.foliage_roles={};self.transform=Matrix.Identity(4);self.colliders=[]
+        self.name=name;self.vertices=[];self.faces=[];self.colors=[];self.transform=Matrix.Identity(4);self.colliders=[]
     @contextmanager
     def at(self,position=(0,0,0),yaw=0,pitch=0,roll=0):
         old=self.transform.copy()
@@ -39,9 +38,6 @@ class Mesh:
             if not any((p-q).length_squared<1e-16 for q in clean):clean.append(p)
         if len(clean)<3:return
         if sum((clean[k]-clean[0]).cross(clean[k+1]-clean[0]).length for k in range(1,len(clean)-1))<1e-10:return
-        self.keys.append(color if isinstance(color,str) else None)
-        role=getattr(color,'foliage_key',None)
-        if role is not None:self.foliage_roles[len(self.faces)]=role
         if isinstance(color,str):color=PALETTE[color]
         i=len(self.vertices)
         self.vertices.extend(tuple(self.transform@p) for p in clean)
@@ -90,7 +86,6 @@ class Mesh:
         col=data.color_attributes.new(name='Color',type='FLOAT_COLOR',domain='POINT')
         for i,c in enumerate(self.colors):col.data[i].color=c
         obj=bpy.data.objects.new(self.name,data);bpy.context.collection.objects.link(obj)
-        foliage_roles.export_roles(obj,self)
         return obj
 
 def material():

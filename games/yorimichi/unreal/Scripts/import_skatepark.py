@@ -95,10 +95,7 @@ def materials():
             tex = texture(file, 'T_Pier_' + key + '_' + role, role)
             sampler = unreal.MaterialSamplerType.SAMPLERTYPE_NORMAL if role == 'normal' else (
                 unreal.MaterialSamplerType.SAMPLERTYPE_LINEAR_COLOR if role == 'roughness' else unreal.MaterialSamplerType.SAMPLERTYPE_COLOR)
-            # Keep the same graph and expose its albedo to the shared foliage sampler.
-            samples[role] = (node(unreal.MaterialExpressionTextureSampleParameter2D, texture=tex,
-                                  sampler_type=sampler, parameter_name='Tex') if role == 'albedo' else
-                             node(unreal.MaterialExpressionTextureSample, texture=tex, sampler_type=sampler))
+            samples[role] = node(unreal.MaterialExpressionTextureSample, texture=tex, sampler_type=sampler)
         if key == 'mural':
             colour = samples['albedo']; colour_output = 'RGB'
         else:

@@ -14,7 +14,6 @@ import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_
 import json, math, sys
 from pathlib import Path
 import numpy as np
-import foliage_roles
 sys.path.insert(0, str(yori.GAME/'tools'))
 try:
     import bpy
@@ -38,10 +37,10 @@ def lin(a):
 
 def one(slug):
     return fit(slug, SRC/slug/f'{slug}.glb', f'TH_P_{slug}', SIZE.get(slug, PROPS[slug][3]), TURN.get(slug, 0.),
-               TARGET[slug], slug in SOLID, OUT, foliage=slug=='planter')
+               TARGET[slug], slug in SOLID, OUT)
 
 
-def fit(slug, glb, key, size, turn, target, solid, out, upright=False, foliage=False):
+def fit(slug, glb, key, size, turn, target, solid, out, upright=False):
     """One Tripo GLB as a game mesh key in out (the steps above); world/regions/hidamari/props.py fits the city's.
     `upright` (a tree): its height, not its longest side, is scaled to size, and it stands centred on its trunk's base
     (the middle of its lowest 4%, the root flare), not on its footprint, so a leaning crown keeps its trunk on the spot;
@@ -90,7 +89,6 @@ def fit(slug, glb, key, size, turn, target, solid, out, upright=False, foliage=F
     col.data.foreach_set('color', np.tile([1., 1., 1., 0.], len(me.vertices)).astype(np.float32))
     obj.name = key; me.name = key
     render(slug, obj, img, v, out)
-    if foliage:foliage_roles.export_authored(obj)
     objs = [obj]
     if solid:
         lo, hi = v.min(0), v.max(0); c = (lo+hi)/2; s = (hi-lo)*[.86, .86, 1.]

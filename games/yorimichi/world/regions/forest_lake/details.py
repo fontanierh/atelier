@@ -1,7 +1,6 @@
 """Small-scale joinery and shoreline landmarks from the Sunburst reference."""
 import math,random
 import numpy as np
-import foliage_roles
 from village.build import window,pot
 WOOD=(.17,.073,.024);DARK=(.065,.029,.012);EDGE=(.23,.12,.045)
 
@@ -80,5 +79,4 @@ def islet(m,plants):
     for i in range(15):
         x=cx+.4+math.sin(i*2.4)*.4;y=cy+.15+math.cos(i*2.4)*.35
         pts=[(x-.045,y,76.3),(x+.045,y,76.3),(x+.1,y+.08,76.9+(i%3)*.08)]
-        with foliage_roles.surfaces(plants,'groundcover_leaf'):
-            plants.poly(pts,(.20,.27,.08));plants.poly(pts[::-1],(.20,.27,.08))
+        plants.poly(pts,(.20,.27,.08));plants.poly(pts[::-1],(.20,.27,.08))

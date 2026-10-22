@@ -11,6 +11,6 @@ public class YorimichiImport : ModuleRules
         PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine" });
         PrivateDependencyModuleNames.AddRange(new string[] { "UnrealEd", "AssetRegistry", "RenderCore", "RHI", "ChaosCloth",
             "ClothingSystemEditorInterface", "ClothingSystemRuntimeCommon", "ClothingSystemRuntimeInterface", "SkeletalMeshEditor",
-            "MeshUtilities", "MeshDescription", "StaticMeshDescription", "ImageCore", "Json" });
+            "MeshUtilities" });
     }
 }

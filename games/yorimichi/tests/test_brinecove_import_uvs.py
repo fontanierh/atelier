@@ -40,7 +40,7 @@ def test_half_precision_uvs_flatten_the_grand_stair_nosings():
     assert sum(np.ptp(v.astype(np.float16)) == 0 for v in tops) > len(tops) // 4  # many sample one texel row
 
 
-def run_import(tmp_path, meshes, *, role_transport=True, retired=None, save_failure=False, scratch_failure=False):
+def run_import(tmp_path, meshes, *, retired=None, save_failure=False, scratch_failure=False):
     """Execute import_brinecove.main with Unreal faked; returns the build settings each mesh ends with."""
     class Properties:
         def __init__(self, **values): self.values = values
@@ -90,15 +90,7 @@ def run_import(tmp_path, meshes, *, role_transport=True, retired=None, save_fail
     (tmp_path / 'build-report.json').write_text(json.dumps(dict(meshes=meshes, materials=materials)))
     editor = SimpleNamespace(get_lod_build_settings=get_settings, set_lod_build_settings=set_settings)
     loaded = set()                                   # like the commandlet: no subsystem until its module is loaded
-    def stamp_roles(mesh):
-        assert 'YorimichiImport' in loaded
-        if mesh.entry.get('foliage_roles') and role_transport:
-            for slot in mesh.values['static_materials']:
-                if not slot.get_editor_property('material_slot_name').startswith('FoliageRoles_'):
-                    slot.set_editor_property('material_slot_name','FoliageRoles_'+slot.get_editor_property('material_slot_name'))
-        return True
     unreal = SimpleNamespace(StaticMeshEditorSubsystem=object(), load_module=loaded.add,
-        YorimichiFoliageBuilder=SimpleNamespace(stamp_source_roles=stamp_roles),
         get_editor_subsystem=lambda _: editor if 'StaticMeshEditor' in loaded else None,
         CollisionTraceFlag=SimpleNamespace(CTF_USE_COMPLEX_AS_SIMPLE='complex-as-simple'), log=lambda *_: None)
     assets = SimpleNamespace(make_directory=lambda *_: None, does_directory_exist=lambda _: scratch_failure,
@@ -148,14 +140,6 @@ def test_every_uv_textured_brinecove_mesh_imports_full_precision_uvs(tmp_path):
     assert builds['SM_BC_Ground_3_3']['use_full_precision_u_vs']        # its paving samples world-metre UVs
     assert not builds['SM_BC_Rocks_9_9']['use_full_precision_u_vs']     # world-position material only
     assert not builds['SM_BC_Plant_Palm0']['use_full_precision_u_vs']   # atlas cells within 0-1
-
-
-def test_source_import_refuses_roles_lost_by_interchange(tmp_path):
-    meshes=[dict(name='SM_BC_Plant',path='glb/a.glb',slots=['leaf'],triangles=10,
-                 bounds_m=[[0,0,0],[1,1,1]],collision=False,foliage_roles=True)]
-    with pytest.raises(AssertionError,match='foliage UV5 lost across source import'):
-        run_import(tmp_path,meshes,role_transport=False)
-    assert run_import(tmp_path,meshes)['SM_BC_Plant']['use_full_precision_u_vs']
 
 
 @pytest.mark.parametrize('save_failure', [False, True])

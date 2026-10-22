@@ -161,8 +161,6 @@ def main():
         pts=[(x+rad*math.cos(t),y+rad*math.sin(t),WATER+.015) for t in np.linspace(.2,math.tau-.2,10)]
         plants.poly([(x,y,WATER+.016),*pts],(.17,.27,.095))
     islet(m,plants)
-    # This separate mesh contains only reeds, seed heads, litter and lily leaves.
-    plants.foliage_roles={i:'groundcover_leaf' for i in range(len(plants.faces))}
     save(m);save(plants)
     bpy.ops.wm.save_as_mainfile(filepath=str(OUT/'ForestLake.blend'))
     (OUT/'manifest.json').write_text(json.dumps(report,indent=2))

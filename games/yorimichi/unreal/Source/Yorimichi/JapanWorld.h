@@ -91,10 +91,9 @@ public:
     bool SampleGroundHeight(const FVector& Position, float& Height) const;
     /** The menu's Graphics mode (grass reach), tree sway distance in metres (trees and bushes beyond it stand still) and
      *  forest detail, the forest trees' LOD distance scale (below 1 their simpler models come nearer). */
-    void ApplyPerformanceSettings(bool bPerformance, float TreeSwayMetres, float ForestDetail, float TreeShadowMetres, bool Force = false);
+    void ApplyPerformanceSettings(bool bPerformance, float TreeSwayMetres, float ForestDetail, float TreeShadowMetres);
     /** The menu's city-tree optimization: unchanged close trees and collision, lighter distant leaf outlines. */
     bool ApplyTreeOptimization(bool bEnabled, int32 LODMode = 0, float DistanceScale = 1.5f);
-    bool ReapplyTreeOptimization();
     /** Volumetric fog (the settings menu's "fog" and its sliders, docs/VOLUMETRIC_FOG.md): ground mist lit and shadowed
      *  by the sun and the sky, inside the froxel grid around the camera. Off restores the level's fog and sun as built. */
     void ApplyVolumetricFog(bool bOn, const FVolumetricFogLook& Look);

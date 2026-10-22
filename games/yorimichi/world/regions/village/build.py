@@ -9,7 +9,6 @@ import hashlib, json, math, random, sys
 from pathlib import Path
 from contextlib import contextmanager
 import bpy
-import foliage_roles
 import numpy as np
 from mathutils import Matrix, Vector
 
@@ -34,7 +33,7 @@ R=random.Random(76)
 class Mesh:
     def __init__(self,name):
         self.name=name;self.vertices=[];self.faces=[];self.colors=[];self.transform=Matrix.Identity(4)
-        self.colliders=[];self.keys=[];self.foliage_roles={}   # keys: each face's palette key, None for a colour given as a tuple
+        self.colliders=[];self.keys=[]   # keys: each face's palette key, None for a colour given as a tuple
     @contextmanager
     def at(self,position=(0,0,0),yaw=0):
         old=self.transform.copy()
@@ -49,8 +48,6 @@ class Mesh:
         if len(clean)<3:return
         if sum((clean[k]-clean[0]).cross(clean[k+1]-clean[0]).length for k in range(1,len(clean)-1))<1e-10:return
         points=clean;self.keys.append(color if isinstance(color,str) else None)
-        role=getattr(color,'foliage_key',None)
-        if role is not None:self.foliage_roles[len(self.faces)]=role
         if isinstance(color,str):color=PALETTE[color]
         i=len(self.vertices)
         self.vertices.extend(tuple(self.transform@Vector(p)) for p in points)
@@ -118,7 +115,7 @@ class Mesh:
 
 def color_variant(key,amount=.05):
     f=R.uniform(1-amount,1+amount)
-    return foliage_roles.PaletteColour((min(1,c*f) for c in PALETTE[key]),key)
+    return tuple(min(1,c*f) for c in PALETTE[key])
 
 
 def window(m,x,y,z,w=1.45,h=1.35,glow=False):
@@ -247,7 +244,7 @@ def pot(m,x,y,z=0,scale=1,key='clay',plant=False,form='jar'):
                 a=k*2.4;zz=(.65+k*.085)*scale
                 tip=Vector((math.cos(a)*.35*scale,math.sin(a)*.35*scale,zz+.20*scale))
                 base=Vector((0,0,zz));side=Vector((-math.sin(a),math.cos(a),0))*.075*scale
-                m.poly([base,(base+tip)/2+side,tip,(base+tip)/2-side],color_variant('leaf',.16));m.foliage_roles[len(m.faces)-1]='foliage_leaf'
+                m.poly([base,(base+tip)/2+side,tip,(base+tip)/2-side],color_variant('leaf',.16))
                 m.poly([base,(base+tip)/2-side,tip,(base+tip)/2+side],'leaf')
 
 
@@ -538,7 +535,7 @@ def edges(world,h):
 
 
 def export(m,mat):
-    obj=m.object(mat);foliage_roles.export_roles(obj,m);objs=[obj]
+    obj=m.object(mat);objs=[obj]
     for i,(c,s,rotation) in enumerate(m.colliders):
         bpy.ops.mesh.primitive_cube_add(size=1,location=c,rotation=rotation)
         ob=bpy.context.object;ob.name=f'UCX_{m.name}_{i:02d}';ob.scale=s

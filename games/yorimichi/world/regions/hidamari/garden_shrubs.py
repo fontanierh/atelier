@@ -38,39 +38,38 @@ def surface(extent, p, bumps, d):
 
 def pad(m, r, centre, extent, p, leaves, colours, weights, core=CORE, leaf=1.):
     """One clipped mass about centre: the lumpy core, then its leaves."""
-    with v.foliage_roles.surfaces(m,'foliage_leaf'):
-        c0 = Vector(centre)
-        bumps = [(Vector((r.uniform(-1, 1), r.uniform(-1, 1), r.uniform(-.2, 1))).normalized(), r.uniform(.03, .08),
-                  r.uniform(.15, .4)) for _ in range(7)]
-        rings, n = 9, 16
-        def at(i, k):
-            lat = -math.pi/2*.8+i*(math.pi/2*1.8)/rings; lon = k*math.tau/n
-            d = Vector((math.cos(lat)*math.cos(lon), math.cos(lat)*math.sin(lon), math.sin(lat)))
-            return surface(extent, p, bumps, d)+c0
-        grid = [[at(i, k) for k in range(n)] for i in range(rings+1)]
-        top = surface(extent, p, bumps, Vector((0, 0, 1)))+c0
-        for i in range(rings):
-            for k in range(n):
-                q = [grid[i][k], grid[i][(k+1) % n], grid[i+1][(k+1) % n], grid[i+1][k]]
-                shade = .75+.5*max(0., min(1., i/rings))
-                m.poly(q, tuple(c*shade for c in core))
-        for k in range(n):m.poly([grid[rings][k], grid[rings][(k+1) % n], top], core)
-        m.poly([grid[0][k] for k in range(n)][::-1], core)
-        # the leaves: small pointed ovals tilted out of the skin, both faces, lighter towards the sun-facing top
-        for _ in range(leaves):
-            d = Vector((r.gauss(0, 1), r.gauss(0, 1), r.gauss(0, 1)+.25)).normalized()
-            if d.z < -.55:continue
-            s = surface(extent, p, bumps, d); normal = Vector((s.x/extent[0]**2, s.y/extent[1]**2, s.z/extent[2]**2)).normalized()
-            pos = s*(1+r.uniform(-.02, .05))+c0
-            size = r.uniform(.07, .12)*leaf
-            frame = normal.to_track_quat('Z', 'Y').to_matrix().to_4x4()
-            frame = frame@Matrix.Rotation(r.uniform(0, math.tau), 4, 'Z')@Matrix.Rotation(r.uniform(.5, 1.1), 4, 'X')
-            light = .8+.45*max(0., normal.z)+r.uniform(-.1, .1)
-            colour = tuple(min(1., c*light) for c in r.choices(colours, weights)[0])
-            pts = [(0, -size, 0), (size*.42, -size*.25, .012), (size*.3, size*.45, .02), (0, size, 0),
-                   (-size*.3, size*.45, .02), (-size*.42, -size*.25, .012)]
-            world = [Matrix.Translation(pos)@frame@Vector(q) for q in pts]
-            m.poly(world, colour); m.poly(world[::-1], tuple(c*.8 for c in colour))
+    c0 = Vector(centre)
+    bumps = [(Vector((r.uniform(-1, 1), r.uniform(-1, 1), r.uniform(-.2, 1))).normalized(), r.uniform(.03, .08),
+              r.uniform(.15, .4)) for _ in range(7)]
+    rings, n = 9, 16
+    def at(i, k):
+        lat = -math.pi/2*.8+i*(math.pi/2*1.8)/rings; lon = k*math.tau/n
+        d = Vector((math.cos(lat)*math.cos(lon), math.cos(lat)*math.sin(lon), math.sin(lat)))
+        return surface(extent, p, bumps, d)+c0
+    grid = [[at(i, k) for k in range(n)] for i in range(rings+1)]
+    top = surface(extent, p, bumps, Vector((0, 0, 1)))+c0
+    for i in range(rings):
+        for k in range(n):
+            q = [grid[i][k], grid[i][(k+1) % n], grid[i+1][(k+1) % n], grid[i+1][k]]
+            shade = .75+.5*max(0., min(1., i/rings))
+            m.poly(q, tuple(c*shade for c in core))
+    for k in range(n):m.poly([grid[rings][k], grid[rings][(k+1) % n], top], core)
+    m.poly([grid[0][k] for k in range(n)][::-1], core)
+    # the leaves: small pointed ovals tilted out of the skin, both faces, lighter towards the sun-facing top
+    for _ in range(leaves):
+        d = Vector((r.gauss(0, 1), r.gauss(0, 1), r.gauss(0, 1)+.25)).normalized()
+        if d.z < -.55:continue
+        s = surface(extent, p, bumps, d); normal = Vector((s.x/extent[0]**2, s.y/extent[1]**2, s.z/extent[2]**2)).normalized()
+        pos = s*(1+r.uniform(-.02, .05))+c0
+        size = r.uniform(.07, .12)*leaf
+        frame = normal.to_track_quat('Z', 'Y').to_matrix().to_4x4()
+        frame = frame@Matrix.Rotation(r.uniform(0, math.tau), 4, 'Z')@Matrix.Rotation(r.uniform(.5, 1.1), 4, 'X')
+        light = .8+.45*max(0., normal.z)+r.uniform(-.1, .1)
+        colour = tuple(min(1., c*light) for c in r.choices(colours, weights)[0])
+        pts = [(0, -size, 0), (size*.42, -size*.25, .012), (size*.3, size*.45, .02), (0, size, 0),
+               (-size*.3, size*.45, .02), (-size*.42, -size*.25, .012)]
+        world = [Matrix.Translation(pos)@frame@Vector(q) for q in pts]
+        m.poly(world, colour); m.poly(world[::-1], tuple(c*.8 for c in colour))
 
 
 def shrub(name):

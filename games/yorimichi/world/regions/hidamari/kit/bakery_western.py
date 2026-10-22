@@ -261,11 +261,9 @@ def bunch(m,x,y,z,seed,n=10):
         c=['arc_ivory','arc_rose','arc_bloom'][(seed+i)%3]
         for j in range(5):
             b=j*math.tau/5
-            with v.foliage_roles.surfaces(m,'flower'):
-                m.poly([(xx,yy,zz+.02),(xx+math.cos(b-.5)*.11,yy+math.sin(b-.5)*.11,zz),(xx+math.cos(b+.5)*.11,yy+math.sin(b+.5)*.11,zz)],c)
+            m.poly([(xx,yy,zz+.02),(xx+math.cos(b-.5)*.11,yy+math.sin(b-.5)*.11,zz),(xx+math.cos(b+.5)*.11,yy+math.sin(b+.5)*.11,zz)],c)
         b=a+1.3
-        with v.foliage_roles.surfaces(m,'groundcover_leaf'):
-            m.poly([(xx,yy,zz-.14),(xx+math.cos(b)*.13,yy+math.sin(b)*.13,zz-.08),(xx+.04,yy+.03,zz-.02)],'green')
+        m.poly([(xx,yy,zz-.14),(xx+math.cos(b)*.13,yy+math.sin(b)*.13,zz-.08),(xx+.04,yy+.03,zz-.02)],'green')
 
 
 def bucket(m,x,y,z,seed):
@@ -362,11 +360,8 @@ def planter(m,x,y,z,w,d,seed):
     m.box((x,y,z+.55),(w-.16,d-.16,.03),'soil')
     for j in range(int(w*d*10)):
         xx=x+r.uniform(-w*.4,w*.4);yy=y+r.uniform(-d*.35,d*.35)
-        with v.foliage_roles.surfaces(m,'groundcover_leaf'):
-            m.lathe((xx,yy,z+.55),[(0,.10),(.14,.20),(.26,.12),(.31,0)],'green_dark' if j%3 else 'green',7)
-        if j%2==0:
-            with v.foliage_roles.surfaces(m,'flower'):
-                m.lathe((xx,yy,z+.84),[(0,.02),(.03,.10),(.06,.07),(.065,0)],'arc_ivory',7)
+        m.lathe((xx,yy,z+.55),[(0,.10),(.14,.20),(.26,.12),(.31,0)],'green_dark' if j%3 else 'green',7)
+        if j%2==0:m.lathe((xx,yy,z+.84),[(0,.02),(.03,.10),(.06,.07),(.065,0)],'arc_ivory',7)
     m.collider((x,y,z+.27),(w,d,.55))
 
 

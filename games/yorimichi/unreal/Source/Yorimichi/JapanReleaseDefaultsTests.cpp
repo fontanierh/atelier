@@ -24,15 +24,11 @@ bool FJapanReleaseDefaultsTest::RunTest(const FString&)
         if (!TestNotNull(FString::Printf(TEXT("%s is a preference"), Default.Key), V)) continue;
         TestTrue(FString::Printf(TEXT("%s starts at exactly %g (table %g)"), Default.Key, Default.Value, V->Value), V->Value == Default.Value);
     }
-    // The historical preset stays exact; newer preferences retain their built-in defaults.
-    // Desktop is a launch flag, never saved.
+    // The preset covers every saved preference; desktop is a launch flag, never saved.
     for (const FJapanPreference& V : Values)
-        if (V.Key != TEXT("desktop") && V.Key != TEXT("foliage_optimization"))
+        if (V.Key != TEXT("desktop"))
             TestTrue(FString::Printf(TEXT("%s has a release default"), *V.Key),
                 JapanReleaseDefaults().ContainsByPredicate([&](const TPair<const TCHAR*, float>& D) { return V.Key == D.Key; }));
-    if (const auto* Foliage=Find(TEXT("foliage_optimization")))
-    { TestEqual(TEXT("New foliage default"),Foliage->Value,1.f);TestEqual(TEXT("Foliage can turn off"),Foliage->Minimum,0.f); }
-    else AddError(TEXT("Foliage optimization preference is missing"));
     for (const TCHAR* Retired : {TEXT("cairo_botw"), TEXT("moveset"), TEXT("shield"), TEXT("soundbank"), TEXT("light_version")})
         TestNull(FString::Printf(TEXT("%s is not a preference"), Retired), Find(Retired));
     // A few of the changed defaults, spelled out.

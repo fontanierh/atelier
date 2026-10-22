@@ -131,7 +131,7 @@ def main():
     for slug, (_, size) in PROPS.items():
         glb = SRC/slug/f'{slug}.glb'
         if not glb.exists(): continue
-        key, info = kit.fit(slug, glb, f'HD_P_{slug}', size, TURN.get(slug, 0.), TARGET.get(slug, .07), slug in SOLID, OUT, foliage=slug in {'planter_box','bonsai_shelf','potted_plants'})
+        key, info = kit.fit(slug, glb, f'HD_P_{slug}', size, TURN.get(slug, 0.), TARGET.get(slug, .07), slug in SOLID, OUT)
         report[key] = info; print(key, info, flush=True)
     for key, (folder, _, height, crown) in caldera.TREES.items():
         key, info = kit.fit(folder, caldera.source(key), key, height, 0., caldera.TARGET, False, OUT, upright=True)

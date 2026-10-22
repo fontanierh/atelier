@@ -20,7 +20,6 @@ import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_
 import hashlib, json, math, random
 from pathlib import Path
 import bpy
-import foliage_roles
 import numpy as np
 from mathutils import Vector
 from village.build import Mesh as KitMesh, PALETTE as KIT
@@ -48,7 +47,7 @@ R = random.Random(41)
 
 def variant(key, amount=.06):
     f = R.uniform(1 - amount, 1 + amount)
-    return foliage_roles.PaletteColour((min(1., c * f) for c in PAL[key]),key)
+    return tuple(min(1., c * f) for c in PAL[key])
 
 
 def smooth(t):
@@ -70,14 +69,11 @@ class Mesh(KitMesh):
         super().__init__(name); self.slots = []; self.lot = lot
 
     def poly(self, points, color, slot=0, out=None):
-        key = color if isinstance(color,str) else getattr(color,'foliage_key',None)
         if isinstance(color, str): color = PAL[color]
         if out is not None and newell([Vector(q) for q in points]).dot(Vector(out)) < 0:
             points = list(points)[::-1]
         k = len(self.faces); super().poly(points, color)
-        if len(self.faces) > k:
-            self.slots.append(slot)
-            if key is not None:self.foliage_roles[k]=key
+        if len(self.faces) > k: self.slots.append(slot)
 
     def bar(self, c, s, color):
         """A box without its back and bottom: a member standing proud of a wall that lies behind it (+y)."""
@@ -702,7 +698,7 @@ def materials():
 
 
 def export(m, mats, shade=None):
-    obj = m.object(mats, shade);foliage_roles.export_roles(obj,m); objs = [obj]
+    obj = m.object(mats, shade); objs = [obj]
     for i, (c, s, rotation) in enumerate(m.colliders):
         bpy.ops.mesh.primitive_cube_add(size=1, location=c, rotation=rotation)
         ob = bpy.context.object; ob.name = f'UCX_{m.name}_{i:02d}'; ob.scale = s
