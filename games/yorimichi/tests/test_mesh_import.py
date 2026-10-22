@@ -263,7 +263,8 @@ def test_hidamari_terrain_reimport_replaces_seed_slots_and_keeps_terrain_materia
 
 
 @pytest.mark.parametrize('initial', ['new', 'stale-slots', 'stale-lods'])
-def test_treehouse_trees_seed_from_existing_fbx_before_reimport(importer, monkeypatch, tmp_path, initial):
+@pytest.mark.parametrize('save_succeeds', [True, False])
+def test_treehouse_trees_seed_from_existing_fbx_before_reimport(importer, monkeypatch, tmp_path, initial, save_succeeds):
     """Run the real tree owner and FBX adapter, including missing-source reimport failure."""
     p = importer
     scripts = Path(__file__).resolve().parents[1] / 'unreal/Scripts'
@@ -328,7 +329,7 @@ def test_treehouse_trees_seed_from_existing_fbx_before_reimport(importer, monkey
     p.unreal.AssetToolsHelpers.get_asset_tools = lambda: p.module.AT
     p.unreal.EditorAssetLibrary.duplicate_asset = duplicate_asset
     p.unreal.EditorAssetLibrary.delete_asset = lambda path: deleted.append(path) or p.assets.pop(path)
-    p.unreal.EditorAssetLibrary.save_loaded_asset = saved.append
+    p.unreal.EditorAssetLibrary.save_loaded_asset = lambda asset: saved.append(asset) or save_succeeds
     p.unreal.MaterialEditingLibrary = SimpleNamespace(**{name: lambda *args: None for name in (
         'set_material_instance_parent', 'set_material_instance_texture_parameter_value', 'update_material_instance')})
     p.unreal.SystemLibrary = SimpleNamespace(execute_console_command=lambda *args: None)
@@ -348,6 +349,11 @@ def test_treehouse_trees_seed_from_existing_fbx_before_reimport(importer, monkey
     tree.body.pop()
     owner = {'__file__': str(script)}
     exec(compile(tree, str(script), 'exec'), owner)
+    if not save_succeeds:
+        with pytest.raises(AssertionError):
+            owner['trees']({})
+        assert saved and not p.calls  # A failed prerequisite save must stop before the mesh import.
+        return
     report = {}
     for _ in range(2):
         owner['trees'](report)
