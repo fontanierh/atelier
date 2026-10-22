@@ -20,7 +20,8 @@ def test_authored_trunk_uses_exact_unreal_endpoints_and_radius():
 
 def test_authored_leaf_publication_preserves_other_owners_and_disables_opaque_patch():
     old = dict(source_triangles=100, rigid_triangles=30, aggregate=True, coverage=[['opaque']], rigid='unchanged')
-    result = dict(leaf_reducer='actual installed reducer', source_leaf_triangles=70, triangles=[70, 35, 18, 7])
+    result = dict(leaf_reducer='actual installed reducer', source_leaf_triangles=70, triangles=[70, 35, 18, 7],
+                  leaf_screens=[1., .24, .07, .018], leaf_source_lods=[0]*4, source_leaf_lod_triangles=[70])
     row = R.authored_leaf_row(old, result)
     assert row['rigid'] == 'unchanged' and row['aggregate'] is False and row['coverage'] == []
     assert old['aggregate'] is True and old['coverage'] == [['opaque']]
@@ -29,7 +30,8 @@ def test_authored_leaf_publication_preserves_other_owners_and_disables_opaque_pa
 @pytest.mark.parametrize('damage', ['missing-reducer', 'wrong-source', 'bool-count', 'empty-level', 'increasing', 'missing-level', 'inherited-levels'])
 def test_invalid_authored_leaf_lod_provenance_refuses(damage):
     old = dict(source_triangles=100, rigid_triangles=30)
-    result = dict(leaf_reducer='actual installed reducer', source_leaf_triangles=70, triangles=[70, 35, 18, 7])
+    result = dict(leaf_reducer='actual installed reducer', source_leaf_triangles=70, triangles=[70, 35, 18, 7],
+                  leaf_screens=[1., .24, .07, .018], leaf_source_lods=[0]*4, source_leaf_lod_triangles=[70])
     if damage == 'missing-reducer': result.pop('leaf_reducer')
     elif damage == 'wrong-source': result['source_leaf_triangles'] = 71
     elif damage == 'bool-count': result['source_leaf_triangles'] = True
@@ -199,7 +201,8 @@ def test_owner_skips_old_authored_rows_before_classifier_or_derived_loads(tmp_pa
         classified.append(mesh); return [], 'roles'
     result = dict(rigid='', rigid_triangles=0, rigid_lod_triangles=[], optimized=R.ROOT+'/Bush_Canopy',
                   shadow=R.ROOT+'/Bush_Shadow', triangles=[100]*4, shadow_triangles=100,
-                  leaf_reducer='native test reducer', source_leaf_triangles=100)
+                  leaf_reducer='native test reducer', source_leaf_triangles=100,
+                  leaf_screens=[1., .24, .07, .018], leaf_source_lods=[0]*4, source_leaf_lod_triangles=[100])
     def compact(*args):
         compacted.append(args); return json.dumps(result)
     values = {}
@@ -233,3 +236,29 @@ def test_residency_graph_has_no_unused_interaction_builder_dependency():
     assert script in closure
     assert script.with_name('shared_materials.py') not in closure
     assert script.with_name('foliage_material.py') in closure  # Current source wrappers still validate.
+
+
+@pytest.mark.parametrize('count', [2, 5, 8])
+def test_actual_authored_leaf_levels_preserve_screens_and_exact_empty_far(count):
+    levels=[70]*(count-1)+[0]
+    result=dict(leaf_reducer='authored-source-lods', source_leaf_triangles=70,
+                triangles=levels, leaf_screens=[1/(i+1) for i in range(count)],
+                leaf_source_lods=list(range(count)), source_leaf_lod_triangles=levels[:])
+    row=R.authored_leaf_row(dict(source_triangles=100,rigid_triangles=30),result)
+    assert row['triangles']==levels and len(row['leaf_screens'])==count
+    result['source_leaf_lod_triangles'][-1]=1
+    with pytest.raises(ValueError): R.authored_leaf_row(dict(source_triangles=100,rigid_triangles=30),result)
+
+
+@pytest.mark.parametrize('damage', ['source-index', 'screen-nan', 'screen-bool', 'screen-count', 'screen-order', 'too-many', 'old-counts'])
+def test_authored_leaf_chain_requires_fresh_complete_native_provenance(damage):
+    result=dict(leaf_reducer='authored-source-lods',source_leaf_triangles=70,triangles=[70,30,0],
+                leaf_screens=[1.,.2,.01],leaf_source_lods=[0,1,2],source_leaf_lod_triangles=[70,30,0])
+    if damage=='source-index': result['leaf_source_lods']=[0,2,3]
+    elif damage=='screen-nan': result['leaf_screens'][1]=float('nan')
+    elif damage=='screen-bool': result['leaf_screens'][1]=True
+    elif damage=='screen-count': result['leaf_screens'].pop()
+    elif damage=='screen-order': result['leaf_screens']=[1.,.01,.2]
+    elif damage=='too-many': result['triangles']=[70]*9
+    else: result.pop('source_leaf_lod_triangles')
+    with pytest.raises(ValueError): R.authored_leaf_row(dict(source_triangles=100,rigid_triangles=30),result)

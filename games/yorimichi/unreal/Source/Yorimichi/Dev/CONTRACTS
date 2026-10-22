@@ -6,8 +6,11 @@ UV0 fallback to the receiving channel count. One carrier MUST own rigid geometry
 Mixed scenery MUST use one rigid LOD; standalone trees with distinct authored rigid source LODs MUST
 retain that simplification chain and screen sizes rather than repeating full trunk detail at distance.
 Canopy LOD0 MUST retain every classified original leaf corner exactly, with the producer's UV0
-fallback/truncation and original texture/opacity/wind material wrappers. Lower leaf-only LODs MAY
-use the installed supported native reducer at explicit 50/25/10 percent targets. Reduction MUST
+fallback/truncation and original texture/opacity/wind material wrappers. A multi-level original MUST retain all of its 1–8 current authored leaf levels and actual rendered
+screen thresholds, including authored far-impostor materials/geometry. Empty distant leaf levels MAY
+be emitted only when the corresponding original contains zero classified leaves; LOD0 MUST stay positive.
+Only a single-level original MAY use the installed supported native reducer at explicit 50/25/10
+percent targets. Reduction MUST
 remain within each material/categorical-role island, retain every channel and refuse corrupted
 role/opacity labels, material bindings, nonfinite output or increasing/empty LODs. Only <=1e-5
 roundoff on an island's proven constant categorical role UV MAY be restored to its exact source value.
