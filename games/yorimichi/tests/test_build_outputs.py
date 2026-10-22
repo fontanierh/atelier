@@ -39,3 +39,22 @@ def test_declaring_backdrop_output_keeps_completed_layout_fingerprint(tmp_path):
     layout = next(s for s in build.load_recipe('yorimichi').steps(ctx) if s.name == 'world.layout')
     previous = replace(layout, outputs=[o for o in layout.outputs if o != tmp_path/'farhills.npy'])
     assert build.fingerprint(layout, {}) == build.fingerprint(previous, {})
+
+
+def test_legacy_world_import_reserves_its_measured_memory_envelope(tmp_path):
+    ctx = SimpleNamespace(game='yorimichi', out=tmp_path, uproject=None)
+    world = next(s for s in build.load_recipe('yorimichi').steps(ctx) if s.name == 'unreal.world')
+    command, = world.commands
+    assert isinstance(command, build.UnrealScript)
+    assert command.memory_gib == 14
+    assert command.memory_limit() == 14
+
+
+def test_city_piece_import_reserves_its_measured_memory_envelope(tmp_path):
+    ctx = SimpleNamespace(game='yorimichi', out=tmp_path, uproject=None)
+    desktop = next(s for s in build.load_recipe('yorimichi').steps(ctx) if s.name == 'unreal.desktop')
+    command, = desktop.commands
+    assert isinstance(command, build.UnrealScript)
+    assert command.script.name == 'import_city_surface_tiles.py'
+    assert command.memory_gib == command.memory_limit() == 14
+    assert desktop.heavy and desktop.batch is None

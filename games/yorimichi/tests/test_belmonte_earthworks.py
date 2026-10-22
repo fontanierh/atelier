@@ -129,7 +129,7 @@ class Built(unittest.TestCase):
         for name in ('SM_BM_NorthApron', 'SM_BM_NorthCountry'):
             if not (out / 'natural' / f'{name}.glb').exists():
                 self.skipTest('Belmonte not built with its natural ground (world.belmonte)')
-            built, natural = (source.Surface(source.triangles(out / d / f'{name}.glb')) for d in ('glb', 'natural'))
+            built, natural = (source.Surface(source.triangles(out / d / f'{name}.glb')) for d in ('ground/glb', 'natural'))
             shift = lambda surface: (lambda x, y: surface.height(x - BM.ORIGIN[0], y - BM.ORIGIN[1]) + BM.ORIGIN[2])  # noqa: E731
             # Near the seam with the valley's terrain (not carved) the apron eases its carving out: the bank covers it.
             inside = (self.y > BM.SOUTH_JOIN) & (E.seam_weight(self.x, self.y, BM.BOUNDS) >= 1.)

@@ -139,7 +139,10 @@ def sample(tmp_path, monkeypatch):
         calls.append(argv)
         attempt = kwargs['completion_path'].parent
         assert not (attempt / 'prepared.json').exists(), 'no expensive inventory before guarded execution'
-        recovery.prepare_exec(attempt)
+        # A real guarded child sees the exact supplied launch environment.
+        with monkeypatch.context() as child:
+            child.setattr(os, 'environ', dict(kwargs['env']))
+            recovery.prepare_exec(attempt)
         request = recovery.read(attempt / 'launch-request.json')
         assert execs[-1] == (request['argv'][0], request['argv'], kwargs['env'])
         folder.mkdir(parents=True, exist_ok=True)
@@ -207,11 +210,19 @@ def test_interruption_during_hash_recovers_and_normal_package_consumes_without_u
 
 
 def test_recovery_accepts_a_new_shell_and_owner_but_keeps_original_guard_binding(sample, monkeypatch):
+    from atelier.harness.safety.launch_ownership import ENVIRONMENT_KEY, LINEAGE_KEY, prepare
+    reserved = {ENVIRONMENT_KEY, LINEAGE_KEY}
     for key in recovery.SESSION_ENVIRONMENT:
-        monkeypatch.setenv(key, 'original-session')
+        if key not in reserved:
+            monkeypatch.setenv(key, 'original-session')
+    for key, value in prepare({}).environment.items():
+        monkeypatch.setenv(key, value)
     attempt = interrupted(sample, monkeypatch)
     for key in recovery.SESSION_ENVIRONMENT:
-        monkeypatch.setenv(key, 'new-session')
+        if key not in reserved:
+            monkeypatch.setenv(key, 'new-session')
+    for key, value in prepare({}).environment.items():
+        monkeypatch.setenv(key, value)
     assert sample.run() == 0 and len(sample.calls) == 1
     request = recovery.read(attempt / 'launch-request.json')
     proof = recovery.read(attempt / 'guarded-success.json')
@@ -514,12 +525,46 @@ def test_guarded_adapter_refuses_changed_request_without_exec_or_completed_proof
         request = json.loads((attempt / 'launch-request.json').read_text())
         request['source']['revision'] = 'b'*40
         (attempt / 'launch-request.json').write_text(json.dumps(request))
-        recovery.prepare_exec(attempt)
-        raise AssertionError('must not return from refused adapter')
+        with monkeypatch.context() as child:
+            child.setattr(os, 'environ', dict(kwargs['env']))
+            with pytest.raises(RuntimeError, match='original source/action changed'):
+                recovery.prepare_exec(attempt)
+        raise RuntimeError('Changed request refused before native execution')
     monkeypatch.setattr(build.guarded, 'run', refused)
     assert sample.run() == 1
     attempt = next((sample.ctx.out / 'cook-attempts').iterdir())
     assert not (attempt / 'prepared.json').exists() and not (attempt / 'completed.json').exists()
+
+
+def test_launch_ownership_is_bound_before_cook_request_and_does_not_invalidate_repeat(sample, monkeypatch):
+    from atelier.harness.safety.launch_ownership import ENVIRONMENT_KEY
+    native = build.guarded.run
+    observed = []
+
+    def checked(argv, folder, **kwargs):
+        request = recovery.read(kwargs['completion_path'].parent / 'launch-request.json')
+        launch = kwargs['launch_context']
+        assert kwargs['env'][ENVIRONMENT_KEY] == launch.nonce
+        assert request['environment_sha256'] == recovery.identity(kwargs['env'])
+        assert recovery.consumed_environment(kwargs['env']) == recovery.consumed_environment(sample.ctx.env())
+        observed.append(request['environment_sha256'])
+        return native(argv, folder, **kwargs)
+
+    monkeypatch.setattr(build.guarded, 'run', checked)
+    assert sample.run() == 0 and len(observed) == 1
+    assert sample.run() == 0 and len(observed) == 1
+
+
+def test_ownership_marker_is_only_consumed_identity_exclusion_not_launch_attestation():
+    from atelier.harness.safety.launch_ownership import ENVIRONMENT_KEY, prepare
+    original = {'PATH': '/fixture/bin', 'UE_BUILD_SETTING': 'current'}
+    first, second = prepare(original), prepare(original)
+    assert recovery.consumed_environment(first.environment) == recovery.consumed_environment(second.environment)
+    assert recovery.consumed_environment(first.environment) == recovery.consumed_environment(original)
+    assert recovery.identity(dict(first.environment)) != recovery.identity(dict(second.environment))
+    changed = {**first.environment, 'UE_BUILD_SETTING': 'changed'}
+    assert recovery.consumed_environment(changed) != recovery.consumed_environment(original)
+    assert ENVIRONMENT_KEY not in recovery.consumed_environment(first.environment)
 
 
 @pytest.mark.parametrize('state', ['memory_limit', 'test_duration'])
@@ -678,3 +723,41 @@ def test_snapshot_records_one_native_selection_for_roots_and_link_owners(sample)
     captured = recovery.read(attempt / 'prepared.json')['snapshot']
     assert captured['native_selection'] == {'sdk': 'original'}
     assert captured['link_owners'] == [str(sample.content)]
+
+
+def test_recorded_cook_uses_one_real_deferred_source_selection_and_rechecks_membership(sample):
+    path = Path(__file__).parents[1] / 'compile_inputs.py'
+    spec = importlib.util.spec_from_file_location('native_source_inputs_for_recovery', path)
+    helper = importlib.util.module_from_spec(spec); spec.loader.exec_module(helper)
+    root = sample.source.parent / 'Source'; root.mkdir()
+    source = root / 'Actor.cpp'; source.write_text('native')
+    prose = root / 'CONTRACTS'; prose.write_text('agent guidance')
+    calls = []
+
+    def collect(roots):
+        calls.append(roots)
+        return helper.files(roots)
+
+    sample.step.inputs = []
+    sample.step.deferred_inputs = [build.DeferredInputs(
+        'native-source-files', collect, ((root,),),
+        support=(Path(__file__), path, Path(helper.build_inputs.__file__)))]
+    before = recovery.snapshot(sample.ctx, sample.step, ['mock UAT'], sample.ctx.env())
+    assert calls == [(root,)]
+    assert str(source) in before['declared_members'] and str(prose) not in before['declared_members']
+    prose.write_text('revised guidance')
+    calls.clear()
+    assert recovery.snapshot(sample.ctx, sample.step, ['mock UAT'], sample.ctx.env()) == before
+    assert calls == [(root,)]
+    header = root / 'New.h'; header.write_text('new native member')
+    after = recovery.snapshot(sample.ctx, sample.step, ['mock UAT'], sample.ctx.env())
+    assert str(header) in after['declared_members']
+    assert after['action_fingerprint'] != before['action_fingerprint']
+    with pytest.raises(RuntimeError, match='changed native source membership'):
+        recovery.require_snapshot(sample.ctx, sample.step, ['mock UAT'], before,
+                                  'changed native source membership')
+    # Exercise record-cook adapter preparation, execution proof and final certification together.
+    assert sample.run() == 0
+    attempt = next((sample.ctx.out / 'cook-attempts').iterdir())
+    captured = recovery.read(attempt / 'prepared.json')['snapshot']
+    assert str(header) in captured['declared_members']

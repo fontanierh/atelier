@@ -47,6 +47,9 @@ def test_all_ten_tree_specs_keep_the_current_cadence_and_extra_far_lod():
         conifer = spec['generator'] in ('tree_pine', 'tree_cedar')
         assert spec['screen_sizes'] == ([1., .18, .07, .025, .012] if conifer else [1., .22, .09, .035, .012])
         assert spec['strides'] == ([3, 8, 16, 32] if conifer else [3, 9, 27, 54])
+        # One opaque crown level past the chain, at 0.3 of the last size: at forest detail .4 it starts where
+        # culling every tree measured within .2 ms of the crowns' saving, so every nearer tree keeps its levels.
+        assert spec['far_crown'] == {'shape': 'flat12', 'screen_size': round(.3 * spec['screen_sizes'][-1], 4)}
     all_specs = [json.loads(path.read_text()) for path in (GAME / 'assets/foliage').glob('*.json')]
     assert len(all_specs) == 18 and sum(len(spec['screen_sizes']) for spec in all_specs) == 74
 

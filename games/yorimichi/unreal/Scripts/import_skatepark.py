@@ -13,6 +13,8 @@ import json
 import runpy
 from pathlib import Path
 import unreal
+from atelier import mesh_geometry, native_membership
+from skatepark import pieces
 
 HERE = Path(__file__).resolve().parent
 JAPAN = yori.OUT
@@ -23,6 +25,17 @@ helper['import_mesh'].__globals__['PLACEHOLDER'] = OUT / 'board/SM_SkateWheel.fb
 E = unreal.EditorAssetLibrary
 AT = unreal.AssetToolsHelpers.get_asset_tools()
 MEL = unreal.MaterialEditingLibrary
+def disable_import_popups():
+    """@cc [owner:fontanierh,label:correctness] unattended-pier-import-keeps-diagnostics
+    Unattended FBX import MUST retain warning/error logs without opening a Slate popup.
+    Disabling the popup MUST NOT bypass geometry, material, save or collision validation.
+    """
+    unreal.load_module('MessageLog')
+    unreal.SystemLibrary.execute_console_command(None, 'MessageLog.DisablePopup 1')
+    assert unreal.SystemLibrary.get_console_variable_bool_value('MessageLog.DisablePopup'), 'FBX popup suppression unavailable'
+
+
+disable_import_popups()
 unreal.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX 0')
 
 
@@ -31,15 +44,23 @@ def sha(p):
 
 
 build = json.loads((OUT / 'build-report.json').read_text())
+PARK = yori.REGIONS / 'skatepark' / 'park.json'   # the committed gameplay contract
+logical = json.loads(PARK.read_text())
+assert sha(PARK) == build['identity']['park_json_sha256'], 'park.json changed after the build; rebuild'
+park = json.loads((OUT / 'runtime-park.json').read_text())
+assert park == pieces.runtime_park(logical, build['pieces']['members']), 'Invalid generated pier runtime membership'
+assert sha(OUT / 'runtime-park.json') == build['identity']['runtime_park_sha256'], 'Changed pier runtime roster'
+expected_exports = {'assets/' + row['name'] + '.fbx' for row in park['meshes']}
+expected_exports.update('board/' + name + '.fbx' for name in ('SM_SkateDeck', 'SM_SkateTruck', 'SM_SkateWheel'))
+assert set(build['identity']['exports']) == expected_exports, 'Incomplete or foreign pier source exports'
 for rel, digest in build['identity']['exports'].items():
     assert sha(OUT / rel) == digest, 'Stale or incomplete skate pier export: ' + rel
-PARK = yori.REGIONS / 'skatepark' / 'park.json'   # the committed gameplay contract
-park = json.loads(PARK.read_text())
-assert sha(PARK) == build['identity']['park_json_sha256'], 'park.json changed after the build; rebuild'
 
 material = E.load_asset('/Game/Japan/Materials/M_Village')
 assert material, 'M_Village is missing: import the village first'
 E.make_directory('/Game/SkatePark'); E.make_directory('/Game/SkatePark/Board')
+previous = {path for path in native_membership.inventory(E, '/Game/SkatePark', 'SM_')
+            if pieces.owned_name(path.rsplit('/', 1)[-1])}
 
 
 def box_cm(mesh):
@@ -58,10 +79,12 @@ def check_axes(name, mesh, expect):
 
 
 report = {'park': {}, 'board': {}}
+owned_textures = set()
 
 
 def texture(file, name, role):
     dest = '/Game/SkatePark/Textures'; asset = dest + '/' + name
+    owned_textures.add(asset)
     path = OUT / 'textures' / file; digest = sha(path)
     tex = E.load_asset(asset) if E.does_asset_exist(asset) else None
     if tex is None or E.get_metadata_tag(tex, 'AtelierSourceSha256') != digest:
@@ -72,7 +95,7 @@ def texture(file, name, role):
     tex.set_editor_property('srgb', role == 'albedo')
     tex.set_editor_property('compression_settings', unreal.TextureCompressionSettings.TC_NORMALMAP if role == 'normal'
                             else unreal.TextureCompressionSettings.TC_DEFAULT)
-    E.save_loaded_asset(tex)
+    assert E.save_loaded_asset(tex), (name, 'texture save failed')
     return tex
 
 
@@ -115,7 +138,8 @@ def materials():
         MEL.connect_material_property(metal, '', unreal.MaterialProperty.MP_METALLIC)
         fill = node(unreal.MaterialExpressionMultiply, const_b=.035)
         link(colour, colour_output, fill, 'A'); MEL.connect_material_property(fill, '', unreal.MaterialProperty.MP_EMISSIVE_COLOR)
-        MEL.layout_material_expressions(m); MEL.recompile_material(m); E.save_loaded_asset(m)
+        MEL.layout_material_expressions(m); MEL.recompile_material(m)
+        assert E.save_loaded_asset(m), (name, 'material save failed')
         result['Pier_' + key] = m
     return result
 
@@ -123,27 +147,37 @@ def materials():
 surfaces = materials()
 for entry in park['meshes']:
     name = entry['name']
-    # The legacy factory needs a clean seed to avoid opening the Message Log in a commandlet. Create that seed
-    # before clearing its material slots: otherwise the first import retains the wheel's SkateParkPalette slot
-    # alongside the pier's authored surfaces. Reimports must replace the surface list too.
-    if not E.does_asset_exist('/Game/SkatePark/' + name):
-        helper['import_mesh'](OUT / 'board/SM_SkateWheel.fbx', '/Game/SkatePark', name)
-    existing = E.load_asset('/Game/SkatePark/' + name)
-    assert existing, name
-    existing.set_editor_property('static_materials', [])
-    mesh = helper['import_mesh'](OUT / 'assets' / f'{name}.fbx', '/Game/SkatePark', name)
+    # The common helper seeds/reset slots only on an actual native import miss. Clearing slots
+    # here would destroy the current package before its geometry-reuse validator can read it.
+    mesh = helper['import_mesh'](OUT / 'assets' / f'{name}.fbx', '/Game/SkatePark', name, fresh_slots=True)
     slots = list(mesh.get_editor_property('static_materials')); found = set()
     for slot in slots:
         key = str(slot.get_editor_property('imported_material_slot_name'))
         assert key in surfaces, (name, 'unknown surface', key)
-        slot.set_editor_property('material_interface', surfaces[key]); found.add(key)
-    mesh.set_editor_property('static_materials', slots)
+        found.add(key)
+    if any(slot.get_editor_property('material_interface') != surfaces[str(slot.get_editor_property('imported_material_slot_name'))]
+           for slot in slots):
+        for slot in slots:
+            slot.set_editor_property('material_interface', surfaces[str(slot.get_editor_property('imported_material_slot_name'))])
+        mesh.set_editor_property('static_materials', slots)
     assert found == set(build['material_slots'][name]), (name, found, build['material_slots'][name])
-    mesh.set_editor_property('allow_cpu_access', True)  # Simulation collision snapshots also need vertices in cooked builds.
+    if not mesh.get_editor_property('allow_cpu_access'):
+        mesh.set_editor_property('allow_cpu_access', True)  # Cooked riding snapshots need positions.
+    if mesh.get_editor_property('complex_collision_mesh') is not None:
+        mesh.set_editor_property('complex_collision_mesh', None)
+    if mesh.get_editor_property('lod_for_collision') != 0:
+        mesh.set_editor_property('lod_for_collision', 0)
     body = mesh.get_editor_property('body_setup'); assert body, name
     flag = unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE if entry['blocks'] else unreal.CollisionTraceFlag.CTF_USE_SIMPLE_AS_COMPLEX
-    body.set_editor_property('collision_trace_flag', flag)
-    E.save_loaded_asset(mesh)
+    if body.get_editor_property('collision_trace_flag') != flag:
+        body.set_editor_property('collision_trace_flag', flag)
+    assert E.save_loaded_asset(mesh), (name, 'save failed')
+    assert mesh.get_num_triangles(0) == build['meshes'][name]['triangles'], (name, 'native triangle mismatch')
+    assert mesh.get_num_triangles(0) <= pieces.TRIANGLE_LIMIT, (name, 'native piece exceeds budget')
+    assert mesh.get_editor_property('allow_cpu_access') is True
+    assert mesh.get_editor_property('complex_collision_mesh') is None
+    assert mesh.get_editor_property('lod_for_collision') == 0
+    assert body.get_editor_property('collision_trace_flag') == flag
     lo, hi = check_axes(name, mesh, build['meshes'][name])
     report['park'][name] = {'asset': entry['asset'], 'blocks': entry['blocks'], 'collision': str(flag), 'bounds_min_cm': lo, 'bounds_max_cm': hi,
                           'materials': sorted(found)}
@@ -154,7 +188,7 @@ for name in ('SM_SkateDeck', 'SM_SkateTruck', 'SM_SkateWheel'):
     mesh.set_material(0, material)
     body = mesh.get_editor_property('body_setup')
     if body: body.set_editor_property('collision_trace_flag', unreal.CollisionTraceFlag.CTF_USE_SIMPLE_AS_COMPLEX)
-    E.save_loaded_asset(mesh)
+    assert E.save_loaded_asset(mesh), (name, 'board save failed')
     lo, hi = check_axes(name, mesh, build['meshes'][name])
     report['board'][name] = {'asset': '/Game/SkatePark/Board/' + name, 'bounds_min_cm': lo, 'bounds_max_cm': hi}
 
@@ -168,5 +202,16 @@ for name, rows in park.get('trees', {}).items():
     report['trees'][name] = len(rows)
 report['materials'] = {name: m.get_path_name() for name, m in surfaces.items()}
 report['park_json_sha256'] = build['identity']['park_json_sha256']
+report['runtime_park_sha256'] = build['identity']['runtime_park_sha256']
+assets = [row['asset'] for row in park['meshes']]
+assets += ['/Game/SkatePark/Board/' + name for name in report['board']]
+assets += [value.split('.')[0] for value in report['materials'].values()]
+assets += sorted(owned_textures)
+content = yori.GAME / 'unreal/Content'
+report['assets'] = assets
+report['files'] = mesh_geometry.package_inventory(content, assets)
+report['retired'] = native_membership.retire(E, previous, [row['name'] for row in park['meshes']],
+                                            '/Game/SkatePark', 'SM_')
+assert mesh_geometry.package_inventory(content, assets) == report['files'], 'Pier packages changed during retirement'
 (OUT / 'import-report.json').write_text(json.dumps(report, indent=2) + '\n')
 unreal.log('SKATEPARK IMPORT COMPLETE')

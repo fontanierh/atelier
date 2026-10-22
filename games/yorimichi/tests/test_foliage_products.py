@@ -85,7 +85,8 @@ def test_world_selector_includes_native_references_without_reading_their_bytes(t
                      for stage in ('natural', 'final', 'provenance')})
     expected.update({f'terrain.HD_NorthMountains.{stage}': 'world.hidamari'
                      for stage in ('natural', 'final', 'provenance')})
-    expected.update({name: name for name in ('audio.footsteps', 'audio.skate')})
+    expected.update({name: name for name in ('audio.footsteps', 'audio.skate', 'audio.combat', 'audio.bike',
+                                            'audio.transport', 'audio.kart')})
     expected.update({f'terrain.HD_Terrain.{stage}': 'world.hidamari'
                      for stage in ('natural', 'final', 'provenance')})
     expected['gondola.kit']='world.gondola_kit'
@@ -95,8 +96,22 @@ def test_world_selector_includes_native_references_without_reading_their_bytes(t
                      for definition in recipe.brinecove_library.definitions()})
     expected.update({f'belmonte.{part}': 'world.belmonte.meshes'
                      for part in ('geometry', 'materials', 'runtime')})
+    expected['belmonte.ground'] = 'world.belmonte.ground'
     expected.update({f'belmonte.native_{part}': 'unreal.belmonte'
                      for part in ('meshes', 'materials', 'tv', 'report')})
+    expected.update({f'skatepark.{part}': 'world.skatepark' for part in ('meshes', 'runtime', 'queries')})
+    expected['skatepark.textures'] = 'world.skatepark_textures'
+    expected.update({f'brinecove.native_{part}': 'unreal.brinecove'
+                     for part in ('meshes', 'materials', 'report')})
+    expected['audio.native'] = 'unreal.sounds'
+    expected.update({f'city.tiles.{source}': f'world.city_tiles.{source}'
+                     for source in ('HD_Terrain', 'HD_Streets', 'HD_Square', 'HD_CivicGardens', 'HD_Park', 'HD_Harbor')})
+    expected.update({f'city.native_{part}': 'unreal.city_tree_lods'
+                     for part in ('tree_lods', 'tree_report')})
+    expected.update({f'city.native_{part}': 'unreal.desktop'
+                     for part in ('pieces', 'piece_report')})
+    expected.update({f'treehouse.{part}': 'world.treehouse' for part in ('meshes', 'runtime')})
+    expected.update({f'treehouse.native_{part}': 'unreal.treehouse' for part in ('assets', 'report')})
     assert graph.owners == expected
     assert all(not graph.by_name[owner].cache for product, owner in expected.items()
                if any(isinstance(command, (build.UnrealScript, build.UnrealCompile, build.UnrealPackage))

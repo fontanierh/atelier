@@ -16,12 +16,13 @@ SHARED = frozenset({'zenserver', 'UnrealTraceServer'})
 
 
 class OwnedTree:
-    def __init__(self, api, pid, started):
+    def __init__(self, api, pid, started, reporters=None):
         self.api = api
         self.root = (pid, started)
         self.parents = {self.root: None}
         self.depth = {self.root: 0}
         self.shared = set()
+        self.reporters = reporters
 
     def same(self, key):
         return self.api.started(key[0]) == key[1]
@@ -59,6 +60,8 @@ class OwnedTree:
                     self.depth[child] = self.depth[parent] + 1
                 if child not in excluded:
                     pending.append(child)
+        if self.reporters is not None and self.reporters.observe(self, seen):
+            self.reporters.reconcile(self)
 
     def sample(self):
         self.discover()
@@ -77,6 +80,8 @@ class OwnedTree:
         return samples
 
     def stop_owned(self, send=os.kill, exclude_pid=None):
+        if self.reporters is not None:
+            self.reporters.reconcile(self)
         # Recheck service names and pinned identities immediately before each signal. An
         # already-recorded shell may have exec'd a shared service since the last sample.
         for key in sorted(self.parents, key=self.depth.get, reverse=True):
@@ -84,6 +89,8 @@ class OwnedTree:
             if key[0] == exclude_pid or not self.same(key):
                 continue
             if key in self.excluded() or not self.same(key):
+                continue
+            if self.reporters is not None and not self.reporters.signal_allowed(key):
                 continue
             try:
                 send(key[0], signal.SIGKILL)
@@ -97,13 +104,32 @@ def write_report(path, value):
     temporary.replace(path)
 
 
-def drain_owned(tree, timeout=2.):
+def drain_owned(tree, timeout=2., exclude_pid=None):
     """Observe the retained pinned tree exit, including children found during cleanup."""
     deadline = time.monotonic() + timeout
+    empty_samples = 0
     while True:
-        tree.stop_owned()
-        if not tree.sample():
-            return True
+        try:
+            # Remember native identities before stopping their ancestors. Reconcile
+            # again after exit, including reporters spawned during the first stop.
+            observed = True
+            try:
+                tree.sample()
+            except (OSError, RuntimeError):
+                observed = False  # Still try to stop previously pinned processes.
+            if exclude_pid is None:
+                tree.stop_owned()
+            else:
+                tree.stop_owned(exclude_pid=exclude_pid)
+            remaining = [row for row in tree.sample() if row['pid'] != exclude_pid]
+            empty = observed and not remaining and (tree.reporters is None or tree.reporters.empty())
+            empty_samples = empty_samples + 1 if empty else 0
+            if empty_samples >= 2:
+                return True
+        except (OSError, RuntimeError):
+            # Telemetry loss cannot certify emptiness. Retry the existing pinned
+            # cleanup within the same bound; never infer ownership from a failed read.
+            empty_samples = 0
         if time.monotonic() >= deadline:
             return False
         time.sleep(.02)
@@ -118,7 +144,7 @@ def controller_live(pin):
     except ProcessLookupError:
         return False  # Losing controller observation stops only this guard's owned workload.
 
-def run_child(pid, started, report, duration=None, limit_gib=10., controller=None):
+def run_child(pid, started, report, duration=None, limit_gib=10., controller=None, launch_nonce=None):
     """@cc [owner:fontanierh,label:safety] owned-child-aggregate-limit
     Every sampled owned process MUST contribute to the simultaneous footprint limit except shared
     engine services and their descendants. Failure or launcher exit MUST stop the retained pinned
@@ -128,11 +154,15 @@ def run_child(pid, started, report, duration=None, limit_gib=10., controller=Non
     never successful completion. Independent guards MUST outlive the controller process group.
     """
     from atelier.harness.safety import process_tree
-    tree = OwnedTree(process_tree, pid, started)
+    from .mac_crash_reporters import Reporters
+    reporters = Reporters(launch_nonce) if launch_nonce is not None else None
+    tree = OwnedTree(process_tree, pid, started, reporters)
     report = Path(report)
     began, peak = time.monotonic(), 0
     limit = int(limit_gib * 1024**3)
     try:
+        if reporters is not None:
+            reporters.bind_root(pid, started)
         if not tree.same(tree.root):
             raise RuntimeError('The launcher is no longer the pinned owner')
         while True:
@@ -167,6 +197,9 @@ def run_child(pid, started, report, duration=None, limit_gib=10., controller=Non
                     # Keep the established offending sample for failure diagnostics.
                     value.update(cleanup_processes=remaining, cleanup_footprint_bytes=remaining_total)
                 value['cleanup_complete'] = value['cleanup_complete'] and not remaining
+                if reporters is not None:
+                    value['cleanup_complete'] = value['cleanup_complete'] and reporters.empty()
+                    value['late_reporters'] = reporters.evidence()
                 value['peak_bytes'] = max(value['peak_bytes'], remaining_total)
                 if not value['cleanup_complete']:
                     value['termination_reason'], value['state'] = state, 'cleanup_incomplete'
@@ -178,20 +211,24 @@ def run_child(pid, started, report, duration=None, limit_gib=10., controller=Non
                 return 0 if state == 'child_exited' else 1
             time.sleep(.25)
     except BaseException:
-        tree.stop_owned()
+        drain_owned(tree)
         raise
 
 
-def run(pid, started, report, duration, stop_file, limit_gib=10.):
+def run(pid, started, report, duration, stop_file, limit_gib=10., launch_nonce=None):
     from atelier.harness.safety import process_tree
-    tree = OwnedTree(process_tree, pid, started)
-    if not tree.same(tree.root):
-        raise RuntimeError('The compound job is no longer the pinned owner')
+    from .mac_crash_reporters import Reporters
+    reporters = Reporters(launch_nonce) if launch_nonce is not None else None
+    tree = OwnedTree(process_tree, pid, started, reporters)
     report = Path(report)
     report.parent.mkdir(parents=True, exist_ok=True)
     began, peak = time.monotonic(), 0
     limit = int(limit_gib * 1024**3)
     try:
+        if reporters is not None:
+            reporters.bind_root(pid, started)
+        if not tree.same(tree.root):
+            raise RuntimeError('The compound job is no longer the pinned owner')
         while True:
             samples = tree.sample()
             total = sum(p['footprint_bytes'] for p in samples)
@@ -207,20 +244,40 @@ def run(pid, started, report, duration, stop_file, limit_gib=10.):
             elif Path(stop_file).exists():
                 # The harness asks to stop only after all owned games and helpers have
                 # exited. Keep protecting the job if a game tree remains alive.
+                if reporters is not None:
+                    reporters.reconcile(tree)
+                    samples = tree.sample()
+                    total = sum(p['footprint_bytes'] for p in samples)
+                    peak = max(peak, total)
                 state = 'complete' if all(p['pid'] in {pid, os.getpid()} for p in samples) else 'children_remain'
+                if reporters is not None and not reporters.empty():
+                    state = 'cleanup_incomplete'
             value = dict(owner=pid, owner_started=started, time=time.time(), elapsed_seconds=elapsed,
                          footprint_bytes=total, peak_bytes=peak, limit_bytes=limit,
                          state=state, processes=samples)
-            write_report(report, value)
+            if reporters is not None:
+                value['late_reporters'] = reporters.evidence()
             if state == 'complete':
+                write_report(report, value)
                 return 0
             if state != 'running':
-                tree.stop_owned(exclude_pid=os.getpid())
+                value['cleanup_complete'] = drain_owned(tree, exclude_pid=os.getpid())
+                remaining = [row for row in tree.sample() if row['pid'] != os.getpid()]
+                value.update(cleanup_processes=remaining,
+                             cleanup_footprint_bytes=sum(row['footprint_bytes'] for row in remaining))
+                value['cleanup_complete'] = value['cleanup_complete'] and not remaining
+                if reporters is not None:
+                    value['cleanup_complete'] = value['cleanup_complete'] and reporters.empty()
+                    value['late_reporters'] = reporters.evidence()
+                if not value['cleanup_complete']:
+                    value.update(state='cleanup_incomplete', termination_reason=state)
+                write_report(report, value)
                 return 1
+            write_report(report, value)
             time.sleep(.25)
     except BaseException:
         # Losing telemetry must stop the owned job, even if Unreal or the harness stalls.
-        tree.stop_owned(exclude_pid=os.getpid())
+        drain_owned(tree, exclude_pid=os.getpid())
         raise
 
 
@@ -234,8 +291,15 @@ def main():
     parser.add_argument('--controller-pid', type=int)
     parser.add_argument('--controller-start', type=int)
     parser.add_argument('--child', action='store_true', help='guard an owned launcher until it exits')
+    parser.add_argument('--launch-context-fd', type=int, help='private inherited launch ownership context')
     parser.add_argument('--limit-gib', type=float, default=10.)
     args = parser.parse_args()
+    nonce = None
+    if args.launch_context_fd is not None:
+        if args.launch_context_fd < 3:
+            parser.error('private context requires a separate inherited descriptor')
+        from .launch_ownership import read_private_pipe
+        nonce = read_private_pipe(args.launch_context_fd)
     if (args.controller_pid is None) != (args.controller_start is None):
         parser.error('controller PID and start must be provided together')
     if args.controller_pid is not None and (not args.child or args.controller_pid <= 0 or args.controller_start <= 0):
@@ -244,11 +308,11 @@ def main():
         if args.stop_file is not None:
             parser.error('--child does not use --stop-file')
         return run_child(args.pid, args.expected_start, args.report, args.duration, args.limit_gib,
-                         None if args.controller_pid is None else (args.controller_pid, args.controller_start))
+                         None if args.controller_pid is None else (args.controller_pid, args.controller_start), nonce)
     if args.stop_file is None or args.duration is None or args.limit_gib != 10.:
         parser.error('compound guards require --stop-file and --duration, with the fixed 10 GiB ceiling')
     # There is deliberately no CLI switch to raise this compound job's 10 GiB ceiling.
-    return run(args.pid, args.expected_start, args.report, args.duration, args.stop_file)
+    return run(args.pid, args.expected_start, args.report, args.duration, args.stop_file, launch_nonce=nonce)
 
 
 if __name__ == '__main__':

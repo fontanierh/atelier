@@ -71,20 +71,26 @@ SINK = {'Bush': .15, 'Tree': .3, 'Grass': .08, 'Litter': -.02, 'HD_NorthRock': .
 SEED = 1300
 
 
-def distance(x, y):
-    """Metres from the park's riding footprint, 0 on it."""
+def _footprint_edge():
     fx0, fy0, cell, _, _, mask = placement.footprint()
     q = np.pad(mask, 1)
     inner = q[:-2, 1:-1] & q[2:, 1:-1] & q[1:-1, :-2] & q[1:-1, 2:]
     j, i = np.nonzero(mask & ~inner)
-    edge = np.stack([fx0 + (i + .5) * cell, fy0 + (j + .5) * cell], 1)
+    return cell, fx0 + (i + .5) * cell, fy0 + (j + .5) * cell
+
+
+def distance(x, y):
+    """Metres from the park's riding footprint, 0 on it."""
+    cell, ex, ey = _footprint_edge()
     x, y = np.broadcast_arrays(np.asarray(x, 'f8'), np.asarray(y, 'f8'))
-    p = np.stack([x.ravel(), y.ravel()], 1)
-    d = np.empty(len(p))
-    for k in range(0, len(p), 2048):
-        d[k:k + 2048] = np.hypot(*(p[k:k + 2048, None] - edge[None]).transpose(2, 0, 1)).min(1)
+    px, py = x.ravel(), y.ravel()
+    d = np.empty(len(px))
+    for k in range(0, len(px), 4096):
+        dx = px[k:k + 4096, None] - ex[None]
+        dy = py[k:k + 4096, None] - ey[None]
+        d[k:k + 4096] = np.sqrt((dx * dx + dy * dy).min(1))
     d = np.maximum(d - cell / 2, 0.)
-    d[placement.contains(p[:, 0], p[:, 1])] = 0.
+    d[placement.contains(px, py)] = 0.
     return d.reshape(x.shape)
 
 
@@ -313,15 +319,16 @@ def _grid(rng, box, spacing):
 
 def _bins(points, size):
     cell = {}
-    for q in points:
-        cell.setdefault((math.floor(q[0] / size), math.floor(q[1] / size)), []).append(q)
+    for x, y in points.tolist():
+        cell.setdefault((math.floor(x / size), math.floor(y / size)), []).append((x, y))
     return cell
 
 
 def _near(cell, q, gap, size):
-    bx, by = math.floor(q[0] / size), math.floor(q[1] / size)
-    return any(math.hypot(q[0] - o[0], q[1] - o[1]) < gap for dx in (-1, 0, 1) for dy in (-1, 0, 1)
-               for o in cell.get((bx + dx, by + dy), ()))
+    qx, qy = float(q[0]), float(q[1])
+    bx, by = math.floor(qx / size), math.floor(qy / size)
+    return any(math.hypot(qx - ox, qy - oy) < gap for dx in (-1, 0, 1) for dy in (-1, 0, 1)
+               for ox, oy in cell.get((bx + dx, by + dy), ()))
 
 
 def floor(x, y):

@@ -15,8 +15,10 @@ import bpy
 from mathutils import Vector
 
 import asset_mesh as A
+import far_crown
 import foliage_geometry as F
 from asset_catalog import FOLIAGE, SPEC_ROOT
+from material_specs import MATERIALS
 import yori
 
 
@@ -73,6 +75,10 @@ def build(name):
         raise ValueError(f'{name}: expected strictly decreasing screen sizes starting at 1')
     if not grass and len(spec['strides']) != len(sizes) - 1:
         raise ValueError(f'{name}: one stride is required for each distant LOD')
+    crown = spec.get('far_crown')
+    if crown is not None and (set(crown) != {'shape', 'screen_size'} or crown['shape'] != 'flat12'
+                              or not 0 < crown['screen_size'] < sizes[-1]):
+        raise ValueError(f'{name}: far_crown is {{"shape": "flat12", "screen_size": s}} with s below the last LOD')
     bpy.ops.wm.read_factory_settings(use_empty=True)
     A.MATS.clear()
     A.LEAF_CROPS.clear()
@@ -92,7 +98,13 @@ def build(name):
     maximum = Vector(tuple(max(v.co[i] for v in base.data.vertices) for i in range(3)))
     palette = [m.name for m in base.data.materials]
     assert set(palette) == set(spec['materials']), (name, 'undeclared material', palette)
-    report = {'triangles': [triangles(base)], 'screen_sizes': sizes, 'materials': palette,
+    if crown is not None:
+        leaves = [m for m in palette if MATERIALS[m].get('alpha')]
+        if len(leaves) != 1:
+            raise ValueError(f'{name}: a far crown needs exactly one leaf material, not {palette}')
+        crown_material = A.mat(far_crown.slot(name), color=(1., 1., 1.))
+    report = {'triangles': [triangles(base)], 'screen_sizes': sizes + ([crown['screen_size']] if crown else []),
+              'materials': palette,
               'bounds': [list(minimum), list(maximum)], 'collision': spec['collision'],
               'import_trunk_collision': import_trunk,
               'trunk_collision': list(base['trunk_collision']) if 'trunk_collision' in base else None}
@@ -105,13 +117,22 @@ def build(name):
             else:
                 A.Mesh = lod_mesh_type(original, generate, minimum, maximum, level, spec['strides'])
                 obj = generate(lod_name, *spec['arguments'])
-            count = triangles(obj)
-            assert count < report['triangles'][-1], (name, level, count)
-            assert all(math.isfinite(c) for v in obj.data.vertices for c in v.co)
-            assert {m.name for m in obj.data.materials} == set(palette), 'LOD palette changed'
-            report['triangles'].append(count)
-            A.export(obj, lod_name, portable=True)
-            bpy.data.objects.remove(obj, do_unlink=True)
+            # The far crown is one more level past the authored chain, made from the last level's cards; every
+            # authored level is unchanged. import_foliage_lods gives its slot an opaque instance and checks it.
+            for crowned in ((False, True) if crown is not None and level == len(sizes) - 1 else (False,)):
+                if crowned:
+                    lod_name = f'{name}_LOD{level + 1}'
+                    obj = generate(lod_name, *spec['arguments'])
+                    report['crown'] = far_crown.replace(obj, A.MATS[leaves[0]], crown_material, (maximum - minimum).length,
+                                                        far_crown.LEAF_TINTS.get(leaves[0], (1., 1., 1.)))
+                count = triangles(obj)
+                assert count < report['triangles'][-1], (name, lod_name, count)
+                assert all(math.isfinite(c) for v in obj.data.vertices for c in v.co)
+                expected = {crown_material.name} if crowned else set(palette)
+                assert {m.name for m in obj.data.materials} == expected, ('LOD palette changed', name, lod_name)
+                report['triangles'].append(count)
+                A.export(obj, lod_name, portable=True)
+                bpy.data.objects.remove(obj, do_unlink=True)
     finally:
         A.Mesh = original
     # UE's legacy FBX importer needs a first import before reimport applies all settings. Give

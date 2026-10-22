@@ -188,7 +188,7 @@ def test_readiness_failure_never_releases_actual_command(tmp_path, monkeypatch, 
     captured = []
 
     @contextmanager
-    def attach(pid, report, duration, limit_gib=10., expected_start=None):
+    def attach(pid, report, duration, limit_gib=10., expected_start=None, launch_nonce=None):
         captured.append((pid, expected_start))
         if failure == 'startup':
             raise RuntimeError('aggregate monitor startup failed')
@@ -244,6 +244,7 @@ def test_run_child_cleans_up_on_telemetry_failure(tmp_path, monkeypatch):
 
     class Tree:
         root = (123, 456)
+        reporters = None
 
         def same(self, key):
             return True
@@ -256,7 +257,7 @@ def test_run_child_cleans_up_on_telemetry_failure(tmp_path, monkeypatch):
     monkeypatch.setattr(tree_guard, 'OwnedTree', lambda *args: Tree())
     with pytest.raises(OSError):
         tree_guard.run_child(123, 456, tmp_path / 'tree.json')
-    assert stopped == [True]
+    assert len(stopped) > 1, 'failed telemetry still gets a bounded cleanup rescan'
 
 
 def test_child_exit_stops_leftovers_before_writing_terminal_receipt(tmp_path, monkeypatch):
@@ -264,6 +265,7 @@ def test_child_exit_stops_leftovers_before_writing_terminal_receipt(tmp_path, mo
 
     class Tree:
         root = (123, 456)
+        reporters = None
         samples = 0
 
         def same(self, key):
@@ -293,6 +295,7 @@ def test_child_exit_stops_leftovers_before_writing_terminal_receipt(tmp_path, mo
 def test_child_exit_with_undrained_member_is_not_success(tmp_path, monkeypatch):
     class Tree:
         root = (123, 456)
+        reporters = None
 
         def same(self, key):
             return True

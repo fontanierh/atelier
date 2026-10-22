@@ -2,8 +2,8 @@
 
 blender -b --threads 6 --python-exit-code 1 --python games/yorimichi/world/regions/skatepark/build.py [-- --review [--only shot,shot]]
 
-Writes build/yorimichi/skatepark/{assets,board}/*.fbx, SkatePark.blend, build-report.json and the
-committed gameplay contract games/yorimichi/world/regions/skatepark/park.json. --review also renders the review
+Writes build/yorimichi/skatepark/{assets,board}/*.fbx, SkatePark.blend, build-report.json and runtime-park.json;
+checks the committed gameplay contract games/yorimichi/world/regions/skatepark/park.json. --review renders the review
 images into build/yorimichi/skatepark/review/ (EEVEE); --only names the shots to render (review.py).
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2])); import yori  # noqa: E402,F401
@@ -23,6 +23,7 @@ import layout as L
 import geom
 import board
 import features
+import pieces
 
 OUT = yori.OUT / 'skatepark'
 PARK_MESHES = [('SM_SkatePier', True, 'concrete deck, edge beam, perimeter railing (blocks, not grindable), lamp posts'),
@@ -361,7 +362,9 @@ def park_json(pl, rails):
 def main():
     t0 = time.time()
     review = '--review' in sys.argv
+    pieces.preflight_tree(OUT)
     OUT.mkdir(parents=True, exist_ok=True); (OUT / 'assets').mkdir(exist_ok=True); (OUT / 'board').mkdir(exist_ok=True)
+    pieces.preflight_root(OUT / 'assets')
     bpy.ops.wm.read_factory_settings(use_empty=True)
     mat = material()
     surfaces = surface_materials()
@@ -420,9 +423,23 @@ def main():
     report['fbx_roundtrip'] = fbx_roundtrip([(m, OUT / 'assets' / f'{m.name}.fbx') for m in park_meshes] +
                                             [(m, OUT / 'board' / f'{m.name}.fbx') for m in (deck, truck, wheel)])
     data = park_json(pl, rails)
-    (HERE / 'park.json').write_text(json.dumps(data, indent=1) + '\n')
+    pieces.validate_logical_contract(HERE / 'park.json', data)
     report['park_json'] = {'origin': data['origin'], 'rails': len(rails), 'rail_points': sum(len(r['points']) for r in rails),
                            'meshes': [m['name'] for m in data['meshes']], 'spawns': data['spawns'], 'bytes': (HERE / 'park.json').stat().st_size}
+    # Whole-source queries/rail checks above stay logical. Only the generated native roster expands.
+    emitted, membership = [], {}
+    for name, _, _ in PARK_MESHES:
+        children = pieces.export_mesh(park[name], OUT / 'assets', geom.export_fbx)
+        emitted.extend(children)
+        membership[name] = [row['name'] for row in children]
+        for row in children:
+            report['meshes'][row['name']] = {key: row[key] for key in ('triangles', 'vertices', 'min', 'max')}
+            report['material_slots'][row['name']] = row['material_slots']
+    runtime = pieces.runtime_park(data, membership)
+    (OUT / 'runtime-park.json').write_text(json.dumps(runtime, indent=1) + '\n')
+    report['pieces'] = {'triangle_limit': pieces.TRIANGLE_LIMIT, 'cell_metres': pieces.CELL_METRES,
+                        'members': membership, 'exports': emitted,
+                        'retired_exports': pieces.retire_exports(OUT / 'assets', emitted)}
 
     # scene for review: board assembled beside the park origin
     for name in ('SM_SkateTruck', 'SM_SkateWheel'):
@@ -432,7 +449,8 @@ def main():
     report['identity'] = {'sources': {str(p.relative_to(L.JAPAN)): sha(p) for p in sorted(HERE.glob('*.py'))},
                           'world_sha256': sha(yori.OUT / 'world.json'), 'heightmap_sha256': sha(yori.OUT / 'heightmap.npy'),
                           'exports': {str(p.relative_to(OUT)): sha(p) for p in sorted(list((OUT / 'assets').glob('*.fbx')) + list((OUT / 'board').glob('*.fbx')))},
-                          'park_json_sha256': sha(HERE / 'park.json')}
+                          'park_json_sha256': sha(HERE / 'park.json'),
+                          'runtime_park_sha256': sha(OUT / 'runtime-park.json')}
     report['seconds'] = round(time.time() - t0, 1)
     (OUT / 'build-report.json').write_text(json.dumps(report, indent=1, default=float) + '\n')
     print('SKATEPARK BUILD COMPLETE', json.dumps({'triangles': {k: v['triangles'] for k, v in report['meshes'].items()},
