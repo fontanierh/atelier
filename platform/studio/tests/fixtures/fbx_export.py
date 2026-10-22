@@ -67,8 +67,10 @@ modifier.object = arm
 for name in ('Root', 'Child'):
     skin.vertex_groups.new(name=name).add(list(range(4)), .5, 'REPLACE')
 for frame, x in ((1, 0.), (20, .25)):
-    arm.pose.bones['Child'].location.x = x
-    arm.pose.bones['Child'].keyframe_insert(data_path='location', frame=frame)
+    # Blender's FBX receiver reconnects coincident child heads/tails, which
+    # locks child translation. Probe actual root motion instead.
+    arm.pose.bones['Root'].location.x = x
+    arm.pose.bones['Root'].keyframe_insert(data_path='location', frame=frame)
 scene = bpy.context.scene
 scene.frame_start, scene.frame_end = 1, 20
 # Different authoring locations and filenames must not enter exported metadata.
