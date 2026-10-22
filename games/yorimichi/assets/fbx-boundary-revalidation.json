@@ -26,43 +26,75 @@
   "atlas": {
     "games/yorimichi/world/map/atlas/momiji_coast.json": {
       "previous_record_sha256": "3c9e97ed29e12823f149d5491c2e3decfa983cd904da49373ab8c00f6bb1ab04",
-      "current_record_sha256": "44bd6cc213a7215142ab796e387a5a154f488bb6a6a7067af74f59bd2154abf1"
+      "current_record_sha256": "44bd6cc213a7215142ab796e387a5a154f488bb6a6a7067af74f59bd2154abf1",
+      "rebound_tables": [
+        "verified_geography"
+      ]
     },
     "games/yorimichi/world/map/atlas/volcanic_highlands.json": {
       "previous_record_sha256": "6111ca0182b23004db01726c0e31860e4a1a32ccc368b6dea6659665af1d54d0",
-      "current_record_sha256": "d91a4f579348cdce426366d897bc9fe3b2cc208cd5abd2eb7c1e07f72767ea22"
+      "current_record_sha256": "d91a4f579348cdce426366d897bc9fe3b2cc208cd5abd2eb7c1e07f72767ea22",
+      "rebound_tables": [
+        "verified_geography"
+      ]
     },
     "games/yorimichi/world/map/atlas/northern_foothills.json": {
       "previous_record_sha256": "7ea47a7aa7b613cc0ff9cd344876a63223deca4cbd2ce7dd2a9e9a550ef64b94",
-      "current_record_sha256": "0dda12dc09c2a07821e10c42d96f401822e0620ce505a13415ad649cd0e0a765"
+      "current_record_sha256": "0dda12dc09c2a07821e10c42d96f401822e0620ce505a13415ad649cd0e0a765",
+      "rebound_tables": [
+        "verified_geography"
+      ]
     },
     "games/yorimichi/world/map/atlas/brinecove.json": {
       "previous_record_sha256": "c5a32ea603e6dd072b341a3a444d92d1454a3a75790b6d7f20b7a34ac96f0cd5",
-      "current_record_sha256": "7ae58b2ef7bfe85701ad4c11ff509dce5d341c805d890a73d3128d337b45a93b"
+      "current_record_sha256": "7ae58b2ef7bfe85701ad4c11ff509dce5d341c805d890a73d3128d337b45a93b",
+      "rebound_tables": [
+        "verified_geography"
+      ]
     },
     "games/yorimichi/world/map/atlas/momiji_woods.json": {
       "previous_record_sha256": "d4adfc968a716a72a2fddc870467f25a3d96e40a121c764a0ab0ca86f23de3cd",
-      "current_record_sha256": "aee7e6abd7569e7335c70ccff3a03967f9bf55bde33a5c1399d487c4d8314435"
+      "current_record_sha256": "aee7e6abd7569e7335c70ccff3a03967f9bf55bde33a5c1399d487c4d8314435",
+      "rebound_tables": [
+        "verified_geography"
+      ]
     },
     "games/yorimichi/world/map/atlas/haras_valley.json": {
       "previous_record_sha256": "8a953189f38f4b0f6e0119349414b3915a3d6893299712248aa7e82c8d740549",
-      "current_record_sha256": "6f45f819ba3c12bdae1a31cd42968743a9639c3b430165b31218074f19cd2080"
+      "current_record_sha256": "6f45f819ba3c12bdae1a31cd42968743a9639c3b430165b31218074f19cd2080",
+      "rebound_tables": [
+        "verified_geography"
+      ]
     },
     "games/yorimichi/world/map/atlas/hidamari.json": {
       "previous_record_sha256": "360891c00d630a99db7d3ed5bd3d1571a2d5be10add1ae1a7ce7b622ed8c4a7d",
-      "current_record_sha256": "46151ed029c3c9ba9c0c7414c925a0cbbb3f99fc79aa8dbc1f74e2bacab78f58"
+      "current_record_sha256": "46151ed029c3c9ba9c0c7414c925a0cbbb3f99fc79aa8dbc1f74e2bacab78f58",
+      "rebound_tables": [
+        "verified_geography"
+      ]
     },
     "games/yorimichi/world/map/atlas/world.json": {
       "previous_record_sha256": "3c7dcf7b5d97dc260bed3d28a1e90243ac77decfa18d0ba44f747463f95b520e",
-      "current_record_sha256": "d7f8ae910cb9bece3cb87766a41579508739fa5bea0bc603a3659018345e6773"
+      "current_record_sha256": "d7f8ae910cb9bece3cb87766a41579508739fa5bea0bc603a3659018345e6773",
+      "rebound_tables": [
+        "geography",
+        "generation_witness",
+        "verified_geography"
+      ]
     },
     "games/yorimichi/world/map/atlas/temple_island.json": {
       "previous_record_sha256": "d693e013de353daa5c3e009e235e30132ecc25413ea0cb093d19cda2b6dacc7e",
-      "current_record_sha256": "c133d43cfd21a65c2874c15cb05123055a19fabca081fa87d02f8db283b9fb0e"
+      "current_record_sha256": "c133d43cfd21a65c2874c15cb05123055a19fabca081fa87d02f8db283b9fb0e",
+      "rebound_tables": [
+        "verified_geography"
+      ]
     },
     "games/yorimichi/world/map/atlas/coasts/source.json": {
       "previous_record_sha256": "0de743e9f283c4a2522ba925b20e087a4801f1d9e901c8d5e685ef63b8ed0abc",
-      "current_record_sha256": "c9c73a9154f8d342652c51d5f6bcb5fb8e0fddcf99d948d28878ca7dcfc1bf76"
+      "current_record_sha256": "c9c73a9154f8d342652c51d5f6bcb5fb8e0fddcf99d948d28878ca7dcfc1bf76",
+      "rebound_tables": [
+        "geography"
+      ]
     }
   },
   "grips": {
@@ -95,5 +127,15 @@
       "current_record_sha256": "a3a117267db7f2fc2b5248b032104f1f743eda510e1858476bb2fa0c2196ec41"
     }
   },
-  "exporter_sha256": "57ddda2bc2b852d2c5a1f92f1c3101397c33ea4060ce5893da1222ecc93896b1"
+  "exporter_sha256": "57ddda2bc2b852d2c5a1f92f1c3101397c33ea4060ce5893da1222ecc93896b1",
+  "atlas_source_rebindings": {
+    "games/yorimichi/world/regions/hidamari/build.py": {
+      "previous_sha256": "2737f4453bb7816016e34aef784bc094fdac7f0e3f6812a74f4c2f731f5d7165",
+      "current_sha256": "eb57e173bdc65e4c4b9b11dc9481fe71309ab691b00968f322faac09b63830a6"
+    },
+    "games/yorimichi/world/regions/southwest/island.py": {
+      "previous_sha256": "86bfbc55622a24315af34bb92b96d3004cceeb619743813e1d100deaf7704dc1",
+      "current_sha256": "977f38a49fb5eb699f8164544fee1cde5f804372ddaeb03826125242e9c7b96f"
+    }
+  }
 }

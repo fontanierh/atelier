@@ -62,8 +62,19 @@ def test_only_current_source_bindings_changed_in_art_and_grip_records():
         return {k:by_new.get(v, v) for k,v in value.items()}
     for rel, evidence in PROOF['atlas'].items():
         data = (ROOT / rel).read_bytes()
-        assert sha(data) == evidence['current_record_sha256']
         record = json.loads(data)
+        # Later source-only geography rebindings must reconstruct the exact
+        # frozen exporter migration record, including every historical field.
+        for source, binding in PROOF.get('atlas_source_rebindings', {}).items():
+            assert sha((ROOT / source).read_bytes()) == binding['current_sha256']
+            key = Path(source).relative_to(GAME.relative_to(ROOT)).as_posix()
+            tables = [record[name] if name == 'geography' else record[name]['geography']
+                      for name in evidence.get('rebound_tables', [])]
+            for table in tables:
+                if key in table:
+                    assert table[key] == binding['current_sha256']
+                    table[key] = binding['previous_sha256']
+        assert sha((json.dumps(record, indent=2)+'\n').encode()) == evidence['current_record_sha256']
         if 'geography' in record:
             record['geography'] = previous_geography(record['geography'])
         for name in ('generation_witness', 'verified_geography'):
