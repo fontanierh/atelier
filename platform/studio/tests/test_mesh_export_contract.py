@@ -46,3 +46,35 @@ def test_current_game_recipe_declares_shared_exporter_for_every_producer():
     game = next(p.name for p in paths.GAMES.iterdir() if (p / 'world/asset_mesh.py').is_file())
     steps = build.load_recipe(game).steps(build.Context(game, create=False))
     build.check_modules(steps)
+
+
+@pytest.mark.parametrize('cached,factory,refuses', [(True, False, True), (True, True, False), (False, False, False)])
+def test_cached_factory_startup_is_checked_without_an_installed_tool(tmp_path, monkeypatch, cached, factory, refuses):
+    from atelier import engine
+    source = tmp_path/'source.py'
+    source.write_text('pass\n')
+    command = build.Blender(source, factory_startup=factory)
+    step = build.Step('world.mesh', [command], cache=cached)
+    monkeypatch.setattr(engine, 'blender', lambda: pytest.fail('Recipe preflight must not inventory Blender'))
+    if refuses:
+        with pytest.raises(ValueError, match=r'world\.mesh:.*factory_startup=True'):
+            build.check_modules([step])
+    else:
+        build.check_modules([step])
+
+
+def test_invalid_cached_launch_refuses_before_checkpoint_restore(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    from atelier import build_checkpoints
+    source = tmp_path/'source.py'
+    source.write_text('pass\n')
+    out = tmp_path/'build'
+    ctx = SimpleNamespace(game='fixture', out=out)
+    step = build.Step('world.mesh', [build.Blender(source)], cache=True)
+    monkeypatch.setattr(build, 'Context', lambda *a, **kw: ctx)
+    monkeypatch.setattr(build, 'load_recipe', lambda game: SimpleNamespace(steps=lambda ctx: [step]))
+    monkeypatch.setattr(build_checkpoints, 'configured', lambda ctx: object())
+    monkeypatch.setattr(build_checkpoints, 'prepare', lambda *a, **kw: pytest.fail('Invalid recipe reached checkpoint restore'))
+    with pytest.raises(ValueError, match=r'world\.mesh:.*factory_startup=True'):
+        build.build('fixture')
+    assert not out.exists()

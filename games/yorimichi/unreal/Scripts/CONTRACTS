@@ -4,6 +4,12 @@ An already-equal source-LOD binding MUST NOT be dirtied solely to reassign it; c
 use dirty-only saves. Target assembly and its required current validation/saves MUST remain intact.
 Geometry reuse alone MUST NOT be reported as unchanged package bytes, an avoided cook or whole-build success.
 
+@cc [owner:fontanierh,label:correctness] harbor-final-piece-owner
+The city piece importer MUST own Harbor's complete validated final ferry-cut surface
+with exactly one original material slot bound to M_Harbor. The ordinary region import
+MUST preserve material creation while delegating mesh ownership; transport importers
+MUST NOT recreate the retired raw parent or patch piece packages.
+
 @cc [owner:fontanierh,label:correctness] native-source-proof-uses-real-import-data
 Native source-MD5 admission MUST read the engine's actual AssetImportData registry evidence and validate
 its supported shape and current source digest. Missing/malformed readback or a changed source MUST miss.

@@ -42,6 +42,9 @@ def identity(value):
 
 
 SESSION_ENVIRONMENT = frozenset({
+    # Prepared before the exact launch binding; bookkeeping is not a reusable cook input.
+    'ATELIER_OWNED_LAUNCH_NONCE',
+    'ATELIER_OWNED_LAUNCH_ANCESTORS',
     'TERM_SESSION_ID', 'TERM_PROGRAM_SESSION_ID', 'ITERM_SESSION_ID', 'SSH_AUTH_SOCK',
     'SHLVL', 'OLDPWD', 'PWD', '_', 'ATELIER_AGENT', 'CODEX_THREAD_ID', 'CODEX_SESSION_ID',
     'CODEX_TOOL_CALL_ID', 'CLAUDE_SESSION_ID', 'CLAUDE_CODE_SESSION_ID', 'CLAUDE_PID',

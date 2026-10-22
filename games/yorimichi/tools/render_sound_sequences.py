@@ -29,8 +29,12 @@ SECONDS = 8
 MAX_FILE = 160 * 1024
 MAX_BANK = 10 * 1024 * 1024
 RUNTIME = {
+    'games/yorimichi/unreal/Source/YorimichiAssets/Private/JapanFootstepSet.cpp':
+        'c927faf94260e79dae1d2d793bbd61fcc08493d1d6ff4a601a1bf71b38b84ca2',
+    'games/yorimichi/unreal/Source/YorimichiAssets/Public/JapanFootstepSet.h':
+        'd91eb9ec346656d9bd65877ebb4d54ecda717b11b23568ea905bb0677291c95e',
     'games/yorimichi/unreal/Source/Yorimichi/JapanFootsteps.cpp':
-        '08df0472b8cac0db829b5e6602934321a2b10eceb4802ba6999b22c7c1cd512d',
+        'f1751a5236e2882c14a8ebf1e4bc2819b3e0d3fcc51661ec85f11d988ad915e1',
     'platform/engine/Plugins/Activities/Skate/Source/AtelierSkate/Private/SkateComponent.cpp':
         '8a95e84663f16ae2df3ae2e1d57519a143c2603b7e095223d01562e89cc6ee45',
     'platform/engine/Plugins/Activities/Skate/Source/AtelierSkate/Private/SkateRuntime.cpp':

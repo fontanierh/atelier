@@ -35,6 +35,22 @@ def test_native_array_inventory_and_superseded_parent_retire_keep_current_and_fo
     assert paths == {CURRENT, ROOT+'/HandAuthored'} and deleted == [OLD]
 
 
+def test_single_folder_game_owner_inventory_and_retirement():
+    root = '/Game/SkatePark'; parent = root + '/SM_SkatePier'; piece = root + '/SM_SkatePier_Pieceabc'
+    e, paths, deleted = editor([parent, piece, root + '/HandAuthored'])
+    previous = M.inventory(e, root, 'SM_')
+    assert previous == {parent, piece}
+    assert M.retire(e, previous, ['SM_SkatePier_Pieceabc'], root, 'SM_') == [parent]
+    assert paths == {piece, root + '/HandAuthored'} and deleted == [parent]
+
+
+@pytest.mark.parametrize('root', ['/Game', '/Game/', '/Game//SkatePark', '/Game/../SkatePark',
+                                 '/Game/SkatePark/', '/Other/SkatePark', '/Game/SkatéPark'])
+def test_invalid_owner_root_still_refuses(root):
+    with pytest.raises(ValueError):
+        M.package_path(root, 'SM_', 'SM_Pier')
+
+
 @pytest.mark.parametrize('bad', ['empty', 'missing', 'duplicate', 'escape', 'foreign', 'object', 'unicode'])
 def test_incomplete_or_invalid_current_membership_cannot_delete(bad):
     e, paths, deleted = editor([OLD, CURRENT])
@@ -97,3 +113,41 @@ def test_delete_failure_is_not_success():
     with pytest.raises(ValueError, match='Could not retire'):
         M.retire(e, {OLD}, [PREFIX+'Piece0'], ROOT, PREFIX)
     assert paths == {OLD, CURRENT} and deleted == []
+
+
+def test_replacements_validate_all_sources_before_retiring_any_parent():
+    other = ROOT+'/'+PREFIX+'Other'
+    missing = ROOT+'/'+PREFIX+'Missing'
+    e, paths, deleted = editor([OLD, other, CURRENT])
+    with pytest.raises(ValueError, match='incomplete'):
+        M.retire_replaced(e, {OLD: [CURRENT], other: [missing]})
+    assert not deleted and OLD in paths and other in paths
+
+
+def test_replacements_keep_current_pieces_and_preflight_all_external_refs():
+    other = ROOT+'/'+PREFIX+'Other'
+    e, paths, deleted = editor([OLD, other, CURRENT], {other: ['/Game/Foreign/Reader']})
+    with pytest.raises(ValueError, match='external references'):
+        M.retire_replaced(e, {OLD: [CURRENT], other: [CURRENT]})
+    assert not deleted
+    e, paths, deleted = editor([OLD, CURRENT])
+    assert M.retire_replaced(e, {OLD: [CURRENT]}) == [OLD]
+    assert paths == {CURRENT}
+    assert M.retire_replaced(e, {OLD: [CURRENT]}) == []  # fresh receiver has no parent
+
+
+@pytest.mark.parametrize('replacements', [{}, {OLD: []}, {OLD: [OLD]},
+    {OLD: [CURRENT], CURRENT: [OLD]}, {OLD: [CURRENT, CURRENT]},
+    {'/Game/../Parent': [CURRENT]}, {OLD: [CURRENT+'.Wrong']}])
+def test_invalid_replacement_ownership_never_deletes(replacements):
+    e, paths, deleted = editor([OLD, CURRENT])
+    with pytest.raises(ValueError):
+        M.retire_replaced(e, replacements)
+    assert not deleted and paths == {OLD, CURRENT}
+
+
+def test_replacement_paths_allow_actual_negative_city_cells():
+    current = ROOT+'/HD_Streets_cell_-1_2_Piece03'
+    e, paths, deleted = editor([OLD, current])
+    assert M.retire_replaced(e, {OLD: [current]}) == [OLD]
+    assert paths == {current}

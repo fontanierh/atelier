@@ -12,9 +12,44 @@ Imports follow the named products or digest cutoffs they consume, so identical r
 current. Cairo's base import supplies his body and the nine authored clips used by
 the merged move set.
 """
-import importlib.util, json, os, tomllib
+import importlib.util, json, os, sys, tomllib
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
+
+_JSON_CACHE = getattr(sys, '_atelier_json_cache', None)
+if _JSON_CACHE is None:
+    _JSON_CACHE = sys._atelier_json_cache = {}
+
+
+def _load_helper_module(name, path):
+    path = Path(path)
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _read_json(path):
+    path = Path(path)
+    st = path.stat()
+    key = (path, st.st_mtime_ns, st.st_size)
+    try:
+        return _JSON_CACHE[key]
+    except KeyError:
+        data = json.loads(path.read_text())
+        _JSON_CACHE[key] = data
+        return data
+
+
+@lru_cache(maxsize=256)
+def _file_mentions_village(path, mtime_ns, size):
+    return 'import_village.py' in Path(path).read_text()
+
+
+def _mentions_import_village(path):
+    st = Path(path).stat()
+    return _file_mentions_village(Path(path), st.st_mtime_ns, st.st_size)
 
 from atelier.build import Product, Step, DeferredInputs, Python, Blender, UnrealScript, UnrealCompile, UnrealPackage, Call, Batch
 from atelier.checkpoint_candidates import CandidateScope
@@ -58,6 +93,12 @@ _foliage_spec.loader.exec_module(foliage_build)
 _compile_inputs_spec = importlib.util.spec_from_file_location('yorimichi_compile_inputs', GAME / 'compile_inputs.py')
 compile_inputs = importlib.util.module_from_spec(_compile_inputs_spec)
 _compile_inputs_spec.loader.exec_module(compile_inputs)
+_skatepark_build_spec = importlib.util.spec_from_file_location('yorimichi_skatepark_build', GAME / 'skatepark_build.py')
+skatepark_build = importlib.util.module_from_spec(_skatepark_build_spec)
+_skatepark_build_spec.loader.exec_module(skatepark_build)
+_treehouse_pieces_spec = importlib.util.spec_from_file_location('yorimichi_treehouse_pieces', GAME / 'treehouse_pieces.py')
+treehouse_pieces = importlib.util.module_from_spec(_treehouse_pieces_spec)
+_treehouse_pieces_spec.loader.exec_module(treehouse_pieces)
 
 _brinecove_library_spec = importlib.util.spec_from_file_location('brinecove_foliage_library', REGIONS / 'brinecove/foliage_names.py')
 brinecove_library = importlib.util.module_from_spec(_brinecove_library_spec)
@@ -125,7 +166,7 @@ SOUTHWEST_MODELS = ('stand,fisher_house_a,fisher_house_b,boat_shed,stairs,dock,b
 # The horse library (assets/horses/manifest.json) declares the breeds, tack sets and clips; the rider authors one clip
 # per horse clip, and the mount and dismount. RIDE_COMMON is what the bike and horse riders share.
 HORSES = ASSETS / 'horses'
-HORSE_LIBRARY = json.loads((HORSES / 'manifest.json').read_text())
+HORSE_LIBRARY = _read_json(HORSES / 'manifest.json')
 HORSE_VARIANTS = HORSES / 'coats' / 'variants'
 HORSE_RIDER_CLIPS = (*(f'Horse{clip}' for clip in HORSE_LIBRARY['clips']), 'HorseMount', 'HorseDismount')
 RIDE_COMMON = ASSETS / 'vehicles' / 'rider_common.py'
@@ -175,7 +216,7 @@ def skate_data_present(out):
 def horse_import_inputs():
     """What Scripts/import_horses.py reads: its modules (horse_data.upright_glb packs with atelier.gltf), the library
     manifest, the coat masks and variants, and each breed's GLBs."""
-    variants = json.loads((HORSE_VARIANTS / 'manifest.json').read_text())['variants']
+    variants = _read_json(HORSE_VARIANTS / 'manifest.json')['variants']
     return [SCRIPTS / 'import_horses.py', SCRIPTS / 'horse_data.py', SCRIPTS / 'animation_compression.py', YORI,
             paths.STUDIO / 'atelier' / 'gltf.py', paths.STUDIO / 'atelier/blender/__init__.py',
             HORSES / 'manifest.json', HORSE_VARIANTS / 'manifest.json',
@@ -196,8 +237,8 @@ def horses_imported_present(out):
             return False
         if set(materials) != set(horse_data.meshes(roster)) or not all(materials.values()):
             return False
-        library = json.loads((HORSES / 'manifest.json').read_text())
-        variants = json.loads((HORSE_VARIANTS / 'manifest.json').read_text())['variants']
+        library = _read_json(HORSES / 'manifest.json')
+        variants = _read_json(HORSE_VARIANTS / 'manifest.json')['variants']
         if (roster['breed_order'] != list(library['breeds']) or roster['tack_sets'] != library['tack_sets']
                 or list(roster['coat_masks']) != library['coat_masks']
                 or [v['id'] for v in roster['coat_variants']] != [v['id'] for v in variants]
@@ -231,22 +272,72 @@ _digest_spec.loader.exec_module(export_digest)
 _city_spec = importlib.util.spec_from_file_location('yorimichi_city_inputs', GAME / 'city_inputs.py')
 city_inputs = importlib.util.module_from_spec(_city_spec)
 _city_spec.loader.exec_module(city_inputs)
+_city_products_spec = importlib.util.spec_from_file_location('yorimichi_city_products', GAME / 'city_tile_products.py')
+city_products = importlib.util.module_from_spec(_city_products_spec)
+_city_products_spec.loader.exec_module(city_products)
+_harbor_inputs_spec = importlib.util.spec_from_file_location('yorimichi_city_harbor_inputs', GAME / 'city_harbor_inputs.py')
+city_harbor_inputs = importlib.util.module_from_spec(_harbor_inputs_spec)
+_harbor_inputs_spec.loader.exec_module(city_harbor_inputs)
 _registry_spec = importlib.util.spec_from_file_location('yorimichi_source_registry', WORLD / 'source_registry.py')
 source_registry = importlib.util.module_from_spec(_registry_spec)
 _registry_spec.loader.exec_module(source_registry)
 
 
-def city_input_step(out, part):
+def city_input_step(out, part, names=None):
     """Fingerprint the selected generator's receipt fields and exact source FBXs after Hidamari."""
-    names = {'tiles': city_inputs.TILES, 'trees': city_inputs.TREES}[part]
-    output = out / 'digests' / f'world.hidamari.{part}.json'
+    names = tuple(names) if names is not None else {'tiles': city_inputs.TILES, 'trees': city_inputs.TREES}[part]
+    key = part + ('.'+names[0] if len(names) == 1 else '')
+    output = out / 'digests' / f'world.hidamari.{key}.json'
     helper = GAME / 'city_inputs.py'
-    return Step(f'world.hidamari.{part}',
+    return Step(f'world.hidamari.{key}',
                 [Call(f'city {part} inputs', lambda ctx, log:
                       export_digest.record(output, city_inputs.snapshot(out, names), log))],
                 inputs=[helper, GAME / 'export_digest.py'], needs=['world.hidamari'],
                 deferred_inputs=[DeferredInputs('city-inputs', city_inputs.paths, (out, names), support=(helper,))],
-                outputs=[output], cutoff=True, about=f'the three city {part} inputs, independent of other city exports')
+                outputs=[output], cutoff=True, about=f'the selected city {key} inputs, independent of other city exports')
+
+
+def city_tile_steps(out):
+    """Independent bounded source exports; assembly does not rerun siblings."""
+    root = out / 'city_surface_tiles/v1_128m'
+    result = []
+    for name in city_products.SOURCES:
+        args = ('--tag', 'v1_128m', '--sources', name)
+        if name == 'HD_Harbor':
+            output = out / 'digests/world.hidamari.tiles.HD_Harbor.json'
+            helper = GAME / 'city_harbor_inputs.py'
+            result.append(Step('world.hidamari.tiles.HD_Harbor',
+                [Call('final Harbor inputs', lambda ctx, log, output=output:
+                      export_digest.record(output, city_harbor_inputs.snapshot(out, paths.REPO), log))],
+                inputs=[helper, REGIONS / 'hidamari/ferry_source.py', GAME / 'export_digest.py'],
+                needs=['world.hidamari_ferry_cut'],
+                deferred_inputs=[DeferredInputs('final-harbor-inputs', city_harbor_inputs.paths,
+                    (out, paths.REPO), support=(helper, REGIONS / 'hidamari/ferry_source.py'))],
+                outputs=[output], cutoff=True, about='verified final ferry opening consumed by Harbor pieces'))
+            args += ('--source-path', 'hidamari/ferry/HD_Harbor.fbx',
+                     '--metadata-path', 'digests/world.hidamari.tiles.HD_Harbor.json')
+        else:
+            result.append(city_input_step(out, 'tiles', (name,)))
+        result += [
+                   Step('world.city_tiles.'+name,
+                        [Blender(WORLD / 'city_surface_tiles.py',
+                                 args, threads=3, factory_startup=True)],
+                        inputs=[WORLD / 'city_surface_tiles.py', WORLD / 'mesh_pieces.py',
+                                paths.STUDIO / 'atelier/mesh_cells.py',
+                                paths.STUDIO / 'atelier/mesh_partition.py', paths.STUDIO / 'atelier/conventions.py',
+                                paths.STUDIO / 'atelier/model_files.py', paths.STUDIO / 'atelier/atomic_files.py'],
+                        needs=['world.hidamari.tiles.'+name],
+                        products=[Product('city.tiles.'+name, (root / name,))],
+                        cache=True, heavy=True, about='bounded city surface '+name)]
+    result.append(Step('world.city_tiles',
+                       [Call('assemble city pieces', lambda ctx, log:
+                             city_products.assemble(root, lambda line: log.write(line + '\n')))],
+                       inputs=[GAME / 'city_tile_products.py', paths.STUDIO / 'atelier/atomic_files.py',
+                               paths.STUDIO / 'atelier/conventions.py', paths.STUDIO / 'atelier/model_files.py'],
+                       reads=['city.tiles.'+name for name in city_products.SOURCES],
+                       outputs=[root / 'manifest.json'],
+                       about='complete production city piece membership'))
+    return result
 
 
 def digest_step(out, export, part, about, root=None, names=(), north=None):
@@ -437,10 +528,7 @@ def package_step(ctx, steps):
 
 def adventure_library():
     """assets/characters/adventure/library.py: whether the local adventure library is here, and the files the roster reads."""
-    spec = importlib.util.spec_from_file_location('adventure_library', CHARS / 'adventure' / 'library.py')
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    return _load_helper_module('adventure_library', CHARS / 'adventure' / 'library.py')
 
 
 def moveset_import(character):
@@ -694,7 +782,7 @@ train_bake = importlib.util.module_from_spec(_train_bake_spec)
 _train_bake_spec.loader.exec_module(train_bake)
 
 TRAIN_VEHICLES = ('locomotive', 'tender', 'baggage-van', 'restaurant', 'first-class', 'second-class', 'brake-van')
-TRAIN_FURNITURE = tuple(a['id'] for a in json.loads((ASSETS / 'vehicles/belmonte-train/planning/furniture-dimensions.json').read_text())['assets'])
+TRAIN_FURNITURE = tuple(a['id'] for a in _read_json(ASSETS / 'vehicles/belmonte-train/planning/furniture-dimensions.json')['assets'])
 def belmonte_train_corridor(out):
     """The railway corridor and earthworks (world/train/corridor.py and earthworks.py read the committed line.json):
     unconditional inputs of the terrain and planting steps."""
@@ -832,7 +920,8 @@ def belmonte_steps(out):
                      REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari_stable' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK, YORI, *NORTH_LAYOUT, *belmonte_train_corridor(out)],
              needs=['world.layout', 'world.treehouse_trees'], heavy=True,
              outputs=[out / 'belmonte' / 'runtime.json', out / 'belmonte' / 'build-report.json',
-                      out / 'belmonte' / 'natural' / 'SM_BM_NorthApron.glb', out / 'belmonte' / 'natural' / 'SM_BM_NorthCountry.glb'],
+                      out / 'belmonte' / 'natural' / 'SM_BM_NorthApron.glb', out / 'belmonte' / 'natural' / 'SM_BM_NorthCountry.glb',
+                      out / 'belmonte/ground/membership.json'],
              about='Belmonte environment: committed models, northern terrain join and island flora'),
         Step('world.belmonte.meshes',
              [Python(GAME / 'region_products.py', (str(out / 'belmonte'), str(out / 'products/belmonte'),
@@ -843,6 +932,11 @@ def belmonte_steps(out):
              products=[Product('belmonte.' + name, (out / f'products/belmonte/{name}.json',))
                        for name in ('geometry', 'materials', 'runtime')],
              cache=True, audit=True, about='independent Belmonte mesh/collision, material-binding and runtime views'),
+        Step('world.belmonte.ground',
+             [Python(region / 'ground_pieces.py', (str(out / 'belmonte'), str(out / 'products/belmonte/ground.json')))],
+             inputs=[*build_inputs.local_imports(region / 'ground_pieces.py'), out / 'belmonte/ground'],
+             needs=['world.belmonte'], products=[Product('belmonte.ground', (out / 'products/belmonte/ground.json',))],
+             cache=True, audit=True, about='complete whole final query surfaces, independent of native render pieces'),
         # Keep derived-mesh workers out of material sections while the importer edits them.
         Step('unreal.belmonte', [UnrealScript(SCRIPTS / 'import_belmonte.py', 'BELMONTE IMPORT COMPLETE',
                                              null_rhi=True, modules=IMPORT_CODE,
@@ -852,7 +946,7 @@ def belmonte_steps(out):
              needs=['unreal.world', *unreal_modules.needs(IMPORT_CODE)],
              reads=['belmonte.geometry', 'belmonte.materials'],
              after=['unreal.forest'], heavy=True,
-             outputs=[out / 'belmonte' / 'import-report.json', GAME / 'unreal' / 'Content' / 'Belmonte' / 'Meshes' / 'SM_BM_NorthApron.uasset',
+             outputs=[out / 'belmonte' / 'import-report.json',
                       GAME / 'unreal' / 'Content' / 'Racing' / 'M_RacingTv.uasset'],
              products=region_native_products(out, 'belmonte'),
              about='/Game/Belmonte: environment meshes, collision and painterly surfaces'),
@@ -882,9 +976,7 @@ def belmonte_steps(out):
 def texture_steps(ctx):
     """One exact PNG/JPEG owner per spec; the familiar aggregate consumes their byte identities."""
     from atelier.build_inputs import local_imports as action_imports
-    definition = importlib.util.spec_from_file_location('yorimichi_texture_catalog', WORLD / 'texture_catalog.py')
-    catalogue = importlib.util.module_from_spec(definition)
-    definition.loader.exec_module(catalogue)
+    catalogue = _load_helper_module('yorimichi_texture_catalog', WORLD / 'texture_catalog.py')
     script = WORLD / 'gen_textures.py'
     support = [path for path in action_imports(script) if path != script]
     steps, products = [], []
@@ -946,7 +1038,8 @@ def world_steps(ctx):
              inputs=[TOOLS / 'forest_textures.py', *sorted((ASSETS / 'environment/textures').glob('leaf-*'))],
              outputs=[out / 'forest/textures/textures.json'], about='Sunburst Mediterranean twig atlases with coverage masks'),
         Step('world.forest', [Blender(WORLD / 'build_forest.py')],
-             inputs=[WORLD / 'build_forest.py', WORLD / 'forest_impostors.py', WORLD / 'forest_trees.py', REGIONS / 'forest/specs.py', WORLD / 'asset_mesh.py'],
+             inputs=[WORLD / 'build_forest.py', WORLD / 'forest_impostors.py', WORLD / 'forest_trees.py', REGIONS / 'forest/specs.py', WORLD / 'asset_mesh.py',
+                     WORLD / 'far_crown.py'],
              needs=['world.textures', 'world.forest_textures'], heavy=True,
              outputs=[out / 'forest/trees.json'], about='Tuscan branching crowns and authored HISM detail levels'),
         Step('world.props', [Blender(WORLD / 'build_assets.py')], inputs=local_imports(WORLD / 'build_assets.py'), needs=['world.textures'],
@@ -957,7 +1050,7 @@ def world_steps(ctx):
                      WORLD / 'shorelines.py', YORI, *belmonte_train_corridor(out), REGIONS / 'brinecove' / 'region.py',
                      REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari_stable' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK,
                      *(REGIONS / 'belmonte' / name for name in ('terrain.py', 'source.py', 'layout.py')),
-                     *(ASSETS / 'belmonte' / entry['path'] for entry in json.loads((ASSETS / 'belmonte/source.json').read_text())['meshes']
+                     *(ASSETS / 'belmonte' / entry['path'] for entry in _read_json(ASSETS / 'belmonte/source.json')['meshes']
                        if entry['name'].startswith('SM_BM_BT_Terrain_')),
                      REGIONS / 'megapark' / 'placement.py', REGIONS / 'megapark' / 'trail.py', REGIONS / 'megapark' / 'gate.py',
                      out / 'world.json', out / 'heightmap.npy', out / 'farhills.npy', out / 'megapark' / 'trail.json',
@@ -986,7 +1079,7 @@ def world_steps(ctx):
              about='the city: layout (city.json), building kit, harbor, plaza, arcade, mountains', heavy=True),
         digest_step(out, 'world.hidamari', 'city', 'the Hidamari meshes unreal.world reads (all but the volcano)', north=False),
         digest_step(out, 'world.hidamari', 'north', "the volcano's meshes unreal.north reads (HD_North*)", north=True),
-        *belmonte_steps(out)[:2],
+        *belmonte_steps(out)[:3],
         brinecove_source_step(out),
         *brinecove_model_steps(out),
         *brinecove_steps(out)[:2],
@@ -998,7 +1091,7 @@ def world_steps(ctx):
                      REGIONS / 'hidamari' / 'layout.py', *belmonte_train_corridor(out),
                      REGIONS / 'belmonte' / 'layout.py', REGIONS / 'belmonte' / 'source.py', REGIONS / 'belmonte' / 'terrain.py',
                      ASSETS / 'belmonte' / 'source.json',
-                     *(ASSETS / 'belmonte' / entry['path'] for entry in json.loads((ASSETS / 'belmonte/source.json').read_text())['meshes']
+                     *(ASSETS / 'belmonte' / entry['path'] for entry in _read_json(ASSETS / 'belmonte/source.json')['meshes']
                        if entry['name'].startswith('SM_BM_BT_Terrain_')),
                      REGIONS / 'megapark' / 'gate.py', ASSETS / 'megapark' / 'map.json',
                      ASSETS / 'megapark' / 'geometry', ASSETS / 'megapark' / 'collision'],
@@ -1025,8 +1118,14 @@ def world_steps(ctx):
              inputs=[TREEHOUSE / 'props.py', TOOLS / 'treehouse_props.py', ASSETS / 'treehouse' / 'props'],
              outputs=[out / 'treehouse' / 'props' / 'props.json'], about='the 13 Tripo props fitted to their sizes', heavy=True),
         Step('world.treehouse', [Blender(TREEHOUSE / 'build.py', threads=4)],
-             inputs=[TREEHOUSE / 'build.py', TREEHOUSE / 'tmesh.py', REGIONS / 'village' / 'build.py', *TREEHOUSE_LAYOUT, *VILLAGE_LAYOUT],
-             needs=['world.layout', 'world.treehouse_trees'], outputs=[out / 'treehouse' / 'manifest.json', out / 'treehouse' / 'runtime.json'],
+             inputs=[TREEHOUSE / 'build.py', TREEHOUSE / 'tmesh.py', TREEHOUSE / 'dressing.py', GAME / 'treehouse_pieces.py',
+                     WORLD / 'mesh_pieces.py', paths.STUDIO / 'atelier/mesh_cells.py',
+                     paths.STUDIO / 'atelier/mesh_partition.py', REGIONS / 'village' / 'build.py', *TREEHOUSE_LAYOUT, *VILLAGE_LAYOUT],
+             needs=['world.layout', 'world.treehouse_trees'],
+             outputs=[out / 'treehouse' / 'manifest.json', out / 'treehouse' / 'runtime.json', out / 'treehouse/pieces.json'],
+             products=[Product('treehouse.meshes', (out / 'treehouse/assets', out / 'treehouse/manifest.json', out / 'treehouse/pieces.json')),
+                       Product('treehouse.runtime', (out / 'treehouse/runtime.json',))],
+             verify=lambda: treehouse_pieces.sources_present(out),
              about='the tree house: ten places, bridges, rooms and their dressing, lights, sunbeams', heavy=True),
         Step('world.terrain', [Blender(WORLD / 'build_terrain.py')],
              inputs=[WORLD / 'build_terrain.py', WORLD / 'farhills_surface.py', WORLD / 'terrain_product.py',
@@ -1086,14 +1185,21 @@ def world_steps(ctx):
              about="Crater Park's lenticular cap cloud: its nested lens shells and their look (numpy)"),
         Step('world.lake', [Blender(REGIONS / 'forest_lake' / 'build.py')], inputs=[REGIONS / 'forest_lake', REGIONS / 'village' / 'build.py', *VILLAGE_LAYOUT],
              needs=['world.layout'], outputs=[out / 'forest_lake' / 'manifest.json'], about='the woodland lake and cabin', heavy=True),
-        Step('world.skatepark_textures', [Python(TOOLS / 'pier_textures.py', ('finish',))],
-             inputs=[TOOLS / 'pier_textures.py', ASSETS / 'skatepark' / 'textures', ASSETS / 'megapark' / 'restyle' / 'stone_cut.jpg'],
-             outputs=[out / 'skatepark' / 'textures' / 'textures.json'], about='Sunburst pier material maps (offline; no paid calls)'),
-        Step('world.skatepark', [Blender(REGIONS / 'skatepark' / 'build.py')],
-             inputs=[*sorted((REGIONS / 'skatepark').glob('*.py')), ASSETS / 'skatepark' / 'modules.json',
-                     ASSETS / 'skatepark' / 'modules', *VILLAGE_LAYOUT],
-             needs=['world.layout', 'world.skatepark_textures'],
-             outputs=[out / 'skatepark' / 'build-report.json'], heavy=True, about='the skate pier, its rails and the trick board (park.json)'),
+        Step('world.skatepark_textures', [Python(TOOLS / 'pier_texture_finish.py')],
+             inputs=[*local_imports(TOOLS / 'pier_texture_finish.py', (TOOLS,)),
+                     ASSETS / 'skatepark' / 'textures', ASSETS / 'megapark' / 'restyle' / 'stone_cut.jpg'],
+             products=[Product('skatepark.textures', (out / 'skatepark/textures',))], cache=True,
+             about='Sunburst pier material maps (offline; no paid calls)'),
+        Step('world.skatepark', [Blender(REGIONS / 'skatepark' / 'build.py', threads=3)],
+             inputs=[*sorted((REGIONS / 'skatepark').glob('*.py')), REGIONS / 'skatepark/park.json', ASSETS / 'skatepark' / 'modules.json',
+                     ASSETS / 'skatepark' / 'modules', WORLD / 'mesh_pieces.py',
+                     paths.STUDIO / 'atelier/mesh_cells.py', paths.STUDIO / 'atelier/mesh_partition.py', *VILLAGE_LAYOUT],
+             needs=['world.layout'], reads=['skatepark.textures'],
+             products=[Product('skatepark.meshes', (out / 'skatepark/assets', out / 'skatepark/board',
+                                                  out / 'skatepark/build-report.json')),
+                       Product('skatepark.runtime', (out / 'skatepark/runtime-park.json',)),
+                       Product('skatepark.queries', (out / 'skatepark/collision.json',))],
+             heavy=True, about='bounded skate pier meshes, complete logical riding queries and board'),
         Step('world.sailboat', [Blender(ASSETS / 'vehicles' / 'sailboat' / 'build.py', threads=4)],
              inputs=[ASSETS / 'vehicles' / 'sailboat', REGIONS / 'village' / 'build.py'],
              outputs=[out / 'sailboat' / 'manifest.json'], about='the dinghy', heavy=True),
@@ -1180,7 +1286,7 @@ def world_steps(ctx):
                      REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari_stable' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py',
                      REGIONS / 'belmonte' / 'layout.py', REGIONS / 'belmonte' / 'source.py', REGIONS / 'belmonte' / 'terrain.py',
                      ASSETS / 'belmonte' / 'source.json',
-                     *(ASSETS / 'belmonte' / entry['path'] for entry in json.loads((ASSETS / 'belmonte/source.json').read_text())['meshes']
+                     *(ASSETS / 'belmonte' / entry['path'] for entry in _read_json(ASSETS / 'belmonte/source.json')['meshes']
                        if entry['name'].startswith('SM_BM_BT_Terrain_')),
                      out / 'belmonte-train' / 'route' / 'route.json', out / 'belmonte-train' / 'route' / 'line.json'],
              needs=['world.belmonte_train_route'],
@@ -1238,22 +1344,18 @@ def world_steps(ctx):
                      *belmonte_train_corridor(out),
                      ASSETS / 'belmonte' / 'source.json',
                      *(ASSETS / 'belmonte' / entry['path']
-                       for entry in json.loads((ASSETS / 'belmonte' / 'source.json').read_text())['meshes']
+                       for entry in _read_json(ASSETS / 'belmonte' / 'source.json')['meshes']
                        if entry['name'].startswith(('SM_BM_BT_Terrain_', 'SM_BM_BT_blk_', 'SM_BM_BH_', 'SM_BM_BE_', 'SM_BM_BHip_',
                                                     'SM_BM_BVV_Farm_', 'SM_BM_BC_Water_', 'SM_BM_BC_Pave', 'SM_BM_BC_Ponte')))],
              needs=['world.layout', 'world.hidamari', 'world.skatepark', 'world.zeppelin', 'world.belmonte',
                     *crater_geometry],
-             reads=['brinecove.map'],
+             reads=['brinecove.map', 'belmonte.ground'],
              outputs=[out / 'map' / 'map.json', out / 'map' / 'map.png',
                       *(out / 'map' / 'atlas' / f'{key}.png' for key in ('world', 'momiji_coast', 'momiji_woods', 'hidamari', 'temple_island',
                                                                      'northern_foothills', 'volcanic_highlands', 'haras_valley',
                                                                      'brinecove'))],
              heavy=True, about='map zones and label-free regional atlas'),
-        city_input_step(out, 'tiles'),
-        Step('world.city_tiles', [Blender(WORLD / 'city_surface_tiles.py', ('--tag', 'v1_128m'), threads=3)],
-             inputs=[WORLD / 'city_surface_tiles.py', paths.STUDIO / 'atelier/mesh_cells.py',
-                     paths.STUDIO / 'atelier/mesh_partition.py'], needs=['world.hidamari.tiles'],
-             outputs=[out / 'city_surface_tiles' / 'v1_128m' / 'manifest.json'], about='desktop profile: city surfaces in 128 m tiles', heavy=True),
+        *city_tile_steps(out),
         digest_step(out, 'world.city_tiles', 'meshes', 'the city tiles unreal.desktop reads', out / 'city_surface_tiles', ['v1_128m']),
         city_input_step(out, 'trees'),
         Step('world.city_trees', [Blender(WORLD / 'city_tree_lods.py', ('--tag', 'v4'), threads=3)],
@@ -1353,21 +1455,25 @@ def sound_effect_steps(ctx):
              products=[Product('audio.footsteps', (out / 'audio' / 'footsteps',))],
              about='531 footstep one-shots (needs `atelier fetch`)'),
         Step('audio.combat', [Python(AUDIO / 'combat' / 'slice.py')], inputs=[AUDIO / 'combat', paths.cache_dir('sonniss', 'combat', create=False)],
-             outputs=[out / 'audio' / 'combat' / 'manifest.json'], about='combat cues and the countryside ambience'),
+             outputs=[out / 'audio' / 'combat' / 'manifest.json'],
+             products=[Product('audio.combat', (out / 'audio' / 'combat',))], about='combat cues and the countryside ambience'),
         Step('audio.skate', [Python(AUDIO / 'skate' / 'make.py')], inputs=[AUDIO / 'skate', paths.cache_dir('sonniss', 'combat', create=False)],
              outputs=[out / 'audio' / 'skate' / 'manifest.json'],
              products=[Product('audio.skate', (out / 'audio' / 'skate',))], about='board loops and cues'),
         Step('audio.bike', [Python(AUDIO / 'bike' / 'make.py')], inputs=[AUDIO / 'bike', AUDIO / 'skate' / 'make.py', paths.cache_dir('sonniss', 'combat', create=False)],
-             outputs=[out / 'audio' / 'bike' / 'manifest.json'], about="the bike's tyres, freewheel, chain, wind, bell and knocks"),
+             outputs=[out / 'audio' / 'bike' / 'manifest.json'],
+             products=[Product('audio.bike', (out / 'audio' / 'bike',))], about="the bike's tyres, freewheel, chain, wind, bell and knocks"),
         # Only what make.py reads: itself, the skate and bike DSP helpers, the combat fetch list (for the manifest's
         # md5s) and the four combat masters it layers (TRANSPORT_MASTERS).
         Step('audio.transport', [Python(AUDIO / 'transport' / 'make.py')],
              inputs=[AUDIO / 'transport' / 'make.py', AUDIO / 'skate' / 'make.py', AUDIO / 'bike' / 'make.py', AUDIO / 'combat' / 'fetch.py',
                      *(paths.cache_dir('sonniss', 'combat', create=False) / name for name in TRANSPORT_MASTERS)],
              outputs=[out / 'audio' / 'transport' / 'manifest.json'],
+             products=[Product('audio.transport', (out / 'audio' / 'transport',))],
              about="the ferry's, gondolas' and zeppelin's engines, wash, wind, horns, bells, gates and doors"),
         Step('audio.kart', [Python(AUDIO / 'kart' / 'make.py')], inputs=[AUDIO / 'kart', AUDIO / 'skate' / 'make.py'],
-             outputs=[out / 'audio' / 'kart' / 'manifest.json'], about="the kart's engine, tyres, skid, wind, impacts and suspension knocks"),
+             outputs=[out / 'audio' / 'kart' / 'manifest.json'],
+             products=[Product('audio.kart', (out / 'audio' / 'kart',))], about="the kart's engine, tyres, skid, wind, impacts and suspension knocks"),
         # The Suno library is optional: naming `audio.music` or `unreal.music` selects
         # only the tracks requested by YORIMICHI_MUSIC_* selectors. A plain build
         # never downloads or imports the large release.
@@ -1383,6 +1489,23 @@ def sound_effect_steps(ctx):
         Step('fx.textures', [Python(ASSETS / 'fx' / 'gen_textures.py')], inputs=[ASSETS / 'fx'],
              outputs=[out / 'combat_fx' / 'T_FX_Glow.png'], about='glow, spark, ring, dust and trail sprites'),
     ]
+
+
+def sound_native_products(out):
+    """@cc [owner:fontanierh,label:correctness] complete-native-audio-inventory
+    The native audio owner MUST inventory every saved wave, its typed footstep library,
+    attenuation, supported sidecars and all six import reports. A world import MUST NOT
+    delete those independent packages. These native products MUST NOT use portable caching.
+    """
+    content = GAME / 'unreal/Content'
+    fixed = [content / f'Japan/Audio/{name}.uasset' for name in ('A_Footstep', 'DA_Footsteps')]
+    return [Product('audio.native', (
+        content / 'Japan/Audio/Footsteps', *fixed,
+        *(content / 'Audio' / name for name in ('Combat', 'Skate', 'Bike', 'Transport', 'Driving')),
+        *(out / f'{name}_import.json' for name in
+          ('footsteps', 'combat_audio', 'skate_audio', 'bike_audio', 'transport_audio', 'driving_audio')),
+    ), optional_paths=tuple(path.with_suffix(suffix) for path in fixed
+                            for suffix in ('.uexp', '.ubulk', '.uptnl', '.m.ubulk', '.upayload')))]
 
 
 def unreal_steps(ctx):
@@ -1407,9 +1530,9 @@ def unreal_steps(ctx):
              deferred_inputs=[native_source_inputs()],
              needs=['skate.runtime'], heavy=True,
              about='the Yorimichi C++ modules (editor target)'),
-        *unreal_modules.steps(ctx, IMPORT_CODE + SAVED_TYPES + CONTACT_TYPES),
+        *unreal_modules.steps(ctx, IMPORT_CODE + SAVED_TYPES + CONTACT_TYPES + ('Yorimichi',)),
         *foliage_build.unreal_steps(ctx, IMPORT_CODE, engine_version(ctx)),
-        Step('unreal.world', [UnrealScript(SCRIPTS / 'setup_project.py', 'level saved')],
+        Step('unreal.world', [UnrealScript(SCRIPTS / 'setup_project.py', 'level saved', memory_gib=14)],
              # The city's arcade and harbor materials read the region's committed paintings.
              inputs=[WORLD / 'asset_catalog.py', WORLD / 'coast_water.py', REGIONS / 'hidamari' / 'textures',
                      REGIONS / 'hidamari/ferry_source.py',
@@ -1503,7 +1626,8 @@ def unreal_steps(ctx):
              heavy=True, about='the woodland lake and cabin'),
         Step('unreal.forest', [UnrealScript(SCRIPTS / 'import_forest.py', 'FOREST IMPORT COMPLETE', null_rhi=True,
                                            modules=IMPORT_CODE)],
-             inputs=[SCRIPTS / 'import_forest.py', SCRIPTS / 'forest_impostor_material.py', SCRIPTS / 'import_foliage_lods.py', SCRIPTS / 'foliage_material.py', SCRIPTS / 'import_village.py', SCRIPTS / 'atmosphere.py'],
+             inputs=[SCRIPTS / 'import_forest.py', SCRIPTS / 'forest_impostor_material.py', SCRIPTS / 'import_foliage_lods.py', SCRIPTS / 'foliage_material.py', SCRIPTS / 'import_village.py', SCRIPTS / 'atmosphere.py',
+                     SCRIPTS / 'foliage_slots.py'],
              needs=['unreal.world', 'world.forest', *unreal_modules.needs(IMPORT_CODE)], heavy=True,
              outputs=[out / 'forest/import-report.json'],
              # The legacy owner assembles source LOD packages outside Assets.
@@ -1511,12 +1635,28 @@ def unreal_steps(ctx):
              candidate_scope=CandidateScope(directories=(GAME / 'unreal/Content/Japan/Assets',
                                                         GAME / 'unreal/Content/Japan/FoliageLODs')),
              about='current detailed Mediterranean trees with matching HISM LODs'),
-        Step('unreal.treehouse', [UnrealScript(SCRIPTS / 'import_treehouse.py', 'TREEHOUSE IMPORT COMPLETE')],
-             inputs=[SCRIPTS / 'import_treehouse.py', SCRIPTS / 'see_through.py'],
-             needs=['unreal.world', 'world.treehouse', 'world.treehouse_trees', 'world.treehouse_props', 'world.treehouse_textures'],
+        Step('unreal.treehouse', [UnrealScript(SCRIPTS / 'import_treehouse.py', 'TREEHOUSE IMPORT COMPLETE', modules=IMPORT_CODE)],
+             inputs=[SCRIPTS / 'import_treehouse.py', SCRIPTS / 'import_treehouse_pieces.py',
+                     SCRIPTS / 'see_through.py', GAME / 'treehouse_pieces.py',
+                     paths.STUDIO / 'atelier/native_membership.py',
+                     paths.STUDIO / 'atelier/mesh_geometry.py'],
+             needs=['unreal.world', 'world.treehouse_trees', 'world.treehouse_props', 'world.treehouse_textures',
+                    *unreal_modules.needs(IMPORT_CODE)], reads=['treehouse.meshes'],
+             outputs=[out / 'treehouse/import-report.json'],
+             products=[Product('treehouse.native_assets', treehouse_pieces.native_outputs(GAME / 'unreal/Content')[0],
+                               optional_paths=treehouse_pieces.native_outputs(GAME / 'unreal/Content')[1]),
+                       Product('treehouse.native_report', (out / 'treehouse/import-report.json',))],
+             verify=lambda: treehouse_pieces.present(out, GAME / 'unreal/Content'),
              heavy=True, about='the tree house meshes, textures, props and canopy trees'),
-        Step('unreal.skatepark', [UnrealScript(SCRIPTS / 'import_skatepark.py', 'SKATEPARK IMPORT COMPLETE')],
-             inputs=[SCRIPTS / 'import_skatepark.py', REGIONS / 'skatepark' / 'park.json'], needs=['unreal.world', 'world.skatepark'],
+        Step('unreal.skatepark', [UnrealScript(SCRIPTS / 'import_skatepark.py', 'SKATEPARK IMPORT COMPLETE', modules=IMPORT_CODE)],
+             inputs=[SCRIPTS / 'import_skatepark.py', REGIONS / 'skatepark' / 'park.json', GAME / 'skatepark_build.py',
+                     REGIONS / 'skatepark/pieces.py', paths.STUDIO / 'atelier/native_membership.py',
+                     paths.STUDIO / 'atelier/mesh_geometry.py'],
+             needs=['unreal.world', *unreal_modules.needs(IMPORT_CODE)],
+             reads=['skatepark.meshes', 'skatepark.runtime', 'skatepark.textures'],
+             outputs=[out / 'skatepark/import-report.json'],
+             verify=lambda: skatepark_build.present(out, GAME / 'unreal/Content'),
+             candidate_scope=CandidateScope(directories=(GAME / 'unreal/Content/SkatePark',)),
              heavy=True, about='the skate pier and the board (/Game/SkatePark)'),
         Step('unreal.skate_board', [UnrealScript(SCRIPTS / 'board_dissolve_material.py', 'BOARD DISSOLVE MATERIAL COMPLETE')],
              inputs=[SCRIPTS / 'board_dissolve_material.py'], after=['unreal.compile'],
@@ -1527,16 +1667,19 @@ def unreal_steps(ctx):
              outputs=[GAME / 'unreal' / 'Content' / 'CraterPark' / 'Cloud' / f'{name}.uasset' for name in ('M_CraterCloud', 'M_CraterCloudVeil')],
              heavy=True, about="the cap cloud's translucent materials, plain and blurring veil (/Game/CraterPark/Cloud)"),
         Step('unreal.sounds', [
-                UnrealScript(SCRIPTS / 'import_footsteps.py', 'FOOTSTEP IMPORT COMPLETE'),
-                UnrealScript(SCRIPTS / 'import_combat_audio.py', 'COMBAT AUDIO IMPORT COMPLETE'),
-                UnrealScript(SCRIPTS / 'import_skate_audio.py', 'SKATE AUDIO IMPORT COMPLETE'),
-                UnrealScript(SCRIPTS / 'import_bike_audio.py', 'BIKE AUDIO IMPORT COMPLETE'),
-                UnrealScript(SCRIPTS / 'import_transport_audio.py', 'TRANSPORT AUDIO IMPORT COMPLETE'),
-                UnrealScript(SCRIPTS / 'import_driving_audio.py', 'DRIVING AUDIO IMPORT COMPLETE')],
-             inputs=[SCRIPTS / 'import_footsteps.py', SCRIPTS / 'import_combat_audio.py', SCRIPTS / 'import_skate_audio.py', SCRIPTS / 'import_bike_audio.py',
+                UnrealScript(SCRIPTS / 'import_footsteps.py', 'FOOTSTEP IMPORT COMPLETE', modules=SAVED_TYPES),
+                UnrealScript(SCRIPTS / 'import_combat_audio.py', 'COMBAT AUDIO IMPORT COMPLETE', modules=SAVED_TYPES),
+                UnrealScript(SCRIPTS / 'import_skate_audio.py', 'SKATE AUDIO IMPORT COMPLETE', modules=SAVED_TYPES),
+                UnrealScript(SCRIPTS / 'import_bike_audio.py', 'BIKE AUDIO IMPORT COMPLETE', modules=SAVED_TYPES),
+                UnrealScript(SCRIPTS / 'import_transport_audio.py', 'TRANSPORT AUDIO IMPORT COMPLETE', modules=SAVED_TYPES),
+                UnrealScript(SCRIPTS / 'import_driving_audio.py', 'DRIVING AUDIO IMPORT COMPLETE', modules=SAVED_TYPES)],
+             inputs=[YORI, paths.STUDIO / 'atelier/native_packages.py', SCRIPTS / 'import_footsteps.py', SCRIPTS / 'import_combat_audio.py', SCRIPTS / 'import_skate_audio.py', SCRIPTS / 'import_bike_audio.py',
                      SCRIPTS / 'import_transport_audio.py', SCRIPTS / 'import_driving_audio.py'],
-             # The footstep library lives in /Game/Japan, which the world import clears, so a world import reruns this.
-             needs=['unreal.world', 'audio.footsteps', 'audio.combat', 'audio.skate', 'audio.kart', 'audio.bike', 'audio.transport'], heavy=True,
+             # Footsteps have their own package owner; the world must preserve them.
+             # The persisted library type lives in the small saved-type module.
+             needs=unreal_modules.needs(SAVED_TYPES),
+             reads=['audio.footsteps', 'audio.combat', 'audio.skate', 'audio.kart', 'audio.bike', 'audio.transport'], heavy=True,
+             products=sound_native_products(out),
              about='footstep library, combat, skate, bike, transport and driving sounds'),
         Step('unreal.music', [UnrealScript(SCRIPTS / 'import_music.py', 'MUSIC IMPORT COMPLETE', null_rhi=True)],
              inputs=[SCRIPTS / 'import_music.py', SCRIPTS / 'music_inventory.py', AUDIO / 'music' / 'prepare.py'],
@@ -1561,14 +1704,29 @@ def unreal_steps(ctx):
              outputs=[out / 'city_tree_lods' / 'production-cpu-access.json'],
              verify=lambda: city_tree_cpu_access_present(ctx),
              about='retain cooked CPU buffers for the three production trees used by runtime LOD validation'),
+        Step('unreal.city_tree_lods', [
+                UnrealScript(SCRIPTS / 'import_city_tree_lods.py', 'CITY TREE LODS IMPORT COMPLETE',
+                             env=(('CITY_TREE_LODS_TAG', 'v4'),))],
+             inputs=[SCRIPTS / 'import_city_tree_lods.py', SCRIPTS / 'experiment_mesh_import.py'],
+             needs=['unreal.city_tree_cpu_access', 'world.city_trees.meshes'], heavy=True,
+             products=[Product('city.native_tree_lods', (GAME / 'unreal/Content/Experiments/CityTrees/v4',)),
+                       Product('city.native_tree_report', (out / 'city_tree_lods/v4/import-report.json',))],
+             candidate_scope=CandidateScope(directories=(GAME / 'unreal/Content/Experiments/CityTrees/v4',)),
+             about='independent existing city tree LOD owner'),
         Step('unreal.desktop', [
-                UnrealScript(SCRIPTS / 'import_city_surface_tiles.py', 'CITY SURFACE TILE IMPORT COMPLETE', env=(('CITY_SURFACE_TILES_TAG', 'v1_128m'),)),
-                UnrealScript(SCRIPTS / 'import_city_tree_lods.py', 'CITY TREE LODS IMPORT COMPLETE', env=(('CITY_TREE_LODS_TAG', 'v4'),))],
+                UnrealScript(SCRIPTS / 'import_city_surface_tiles.py', 'CITY SURFACE TILE IMPORT COMPLETE', memory_gib=14,
+                             env=(('CITY_SURFACE_TILES_TAG', 'v1_128m'),), modules=IMPORT_CODE+('Yorimichi',))],
              inputs=[SCRIPTS / 'import_city_surface_tiles.py', GAME / 'city_tile_products.py',
-                     paths.STUDIO / 'atelier/conventions.py',
-                     SCRIPTS / 'import_city_tree_lods.py', SCRIPTS / 'experiment_mesh_import.py'],
-             needs=['unreal.city_tree_cpu_access', 'world.city_tiles.meshes', 'world.city_trees.meshes'], heavy=True,
-             about='desktop profile: city tiles and tree LODs (/Game/Experiments)'),
+                     paths.STUDIO / 'atelier/conventions.py'],
+             needs=['unreal.world', 'world.city_tiles.meshes', *unreal_modules.needs(IMPORT_CODE+('Yorimichi',))],
+             # Preserve the old targeted desktop entrypoint, without deriving
+             # piece identity from unrelated tree LOD bytes.
+             after=['unreal.city_tree_lods'], heavy=True,
+             verify=lambda: city_products.parents_retired(GAME / 'unreal/Content'),
+             products=[Product('city.native_pieces', (GAME / 'unreal/Content/Experiments/CitySurfaces/v1_128m',)),
+                       Product('city.native_piece_report', (out / 'city_surface_tiles/v1_128m/import-report.json',))],
+             candidate_scope=CandidateScope(directories=(GAME / 'unreal/Content/Experiments/CitySurfaces/v1_128m',)),
+             about='production city pieces with complete collision; superseded parents retired'),
         # The Ride skating clips: the simulation rig and every simulation clip as Unreal assets (/Game/SkateRide), the manifest
         # the Ride runtime reads, and the measurement of the compressed poses against the simulation data. Both scripts
         # run in batches that resume where a failed run stopped (unreal/Scripts/skate_ride/README.md).
@@ -1615,7 +1773,7 @@ def staging_steps(ctx):
              needs=['world.ferry_service', 'world.gondola_service', 'world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark', 'world.craterpark', 'world.crater_cloud', 'world.bike',
                     *[f'characters.{key(c)}_{kind}' for c in definition.movers() for kind, wanted in
                       (('bike', c.playable), ('grips', (GRIPS / c.id).is_dir())) if wanted]],
-             reads=['brinecove.runtime', 'belmonte.runtime'],
+             reads=['brinecove.runtime', 'belmonte.runtime', 'skatepark.runtime'],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / rel for rel in staged(out)], about='runtime files into unreal/Content/Data'),
         racing_assets_step(out),
     ]
@@ -1640,9 +1798,7 @@ def gondola_steps(ctx):
     MUST include every runtime mesh, collision mesh, texture and walking layout.
     """
     kit = ASSETS / 'vehicles/gondola'
-    spec = importlib.util.spec_from_file_location('gondola_parameters', kit / 'params.py')
-    parameters = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(parameters)
+    parameters = _load_helper_module('gondola_parameters', kit / 'params.py')
     folder = ctx.out / 'gondola'
     files = [folder / name for name in parameters.product_files()]
     result = [Step('world.gondola_kit', [Blender(kit / 'build.py', threads=3, factory_startup=True,
@@ -1653,15 +1809,14 @@ def gondola_steps(ctx):
                  about='ropeway cabin, all tower heights and stations: closure, contact, level-floor and walk gates')]
 
     query = WORLD / 'gondola/inputs.py'
-    query_spec = importlib.util.spec_from_file_location('gondola_world_inputs', query)
-    queries = importlib.util.module_from_spec(query_spec)
-    query_spec.loader.exec_module(queries)
+    queries = _load_helper_module('gondola_world_inputs', query)
     digest = ctx.out / 'digests/world.gondola.ground.json'
     result += [Step('world.gondola_ground_inputs',
                     [Call('ropeway final ground inputs', lambda ctx, log:
                           export_digest.record(digest, queries.snapshot(ctx.out), log))],
-                    inputs=[*queries.CODE.values(), ASSETS / 'belmonte/source.json'],
-                    needs=['world.hidamari', 'world.terrain.meshes', 'world.belmonte'],
+                    inputs=[*queries.CODE.values()],
+                    # Deferred legacy collectors bind the selected product file explicitly.
+                    needs=['world.hidamari', 'world.terrain.meshes', 'world.belmonte.ground'],
                     deferred_inputs=[DeferredInputs('gondola-ground', queries.paths, (ctx.out,), support=(query,))],
                     outputs=[digest], cutoff=True,
                     about='only final terrain, North Trail and corridor-selected Belmonte ground'),
@@ -1672,13 +1827,9 @@ def gondola_steps(ctx):
                     outputs=[folder / 'world/ground.npz', folder / 'world/ground.json'], heavy=True,
                     about='final exported trail contact and owned Belmonte terrain queries')]
     site_code = WORLD / 'gondola/validation.py'
-    site_spec = importlib.util.spec_from_file_location('gondola_site_validation', site_code)
-    validation = importlib.util.module_from_spec(site_spec)
-    site_spec.loader.exec_module(validation)
+    validation = _load_helper_module('gondola_site_validation', site_code)
     structure_code = WORLD / 'gondola/structures.py'
-    structure_spec = importlib.util.spec_from_file_location('gondola_structure_inputs', structure_code)
-    structures = importlib.util.module_from_spec(structure_spec)
-    structure_spec.loader.exec_module(structures)
+    structures = _load_helper_module('gondola_structure_inputs', structure_code)
     structure_digest = ctx.out / 'digests/world.gondola.structures.json'
     result += [Step('world.gondola_structure_inputs',
                     [Call('ropeway final structure inputs', lambda ctx, log:
@@ -1785,7 +1936,7 @@ def steps(ctx):
     result = (world_steps(ctx) + character_steps(ctx) + sound_effect_steps(ctx)
               + [step for step in ferry if not step.name.startswith('unreal.')]
               + [step for step in gondola if not step.name.startswith('unreal.')]
-              + unreal_steps(ctx) + staging_steps(ctx) + adventure_steps(ctx.out) + hippodrome_steps(ctx.out) + belmonte_steps(ctx.out)[2:]
+              + unreal_steps(ctx) + staging_steps(ctx) + adventure_steps(ctx.out) + hippodrome_steps(ctx.out) + belmonte_steps(ctx.out)[3:]
               + brinecove_steps(ctx.out)[2:] + [step for step in ferry if step.name.startswith('unreal.')]
               + [step for step in gondola if step.name.startswith('unreal.')])
     result += fit_steps(ctx.out, result)
@@ -1812,7 +1963,7 @@ def steps(ctx):
             if not isinstance(command, UnrealScript):
                 continue
             code = scanner.local_imports(command.script, (SCRIPTS, WORLD, REGIONS))
-            if any('import_village.py' in file.read_text() for file in code):
+            if any(_mentions_import_village(file) for file in code):
                 code = sorted(set(code + scanner.local_imports(SCRIPTS / 'import_village.py', (SCRIPTS, WORLD))))
             common_mesh = SCRIPTS / 'mesh_import.py' in code
             native_reuse = paths.STUDIO / 'atelier' / 'unreal_mesh_reuse.py' in code
@@ -1850,13 +2001,9 @@ def steps(ctx):
             step.inputs.append(SCRIPTS / 'mesh_import.py')
         if step.name in ('unreal.forest', 'unreal.treehouse', 'unreal.see_through'):
             step.reads.append('materials.shared')
-    identity_spec = importlib.util.spec_from_file_location('yorimichi_network_identity', GAME / 'network_identity.py')
-    identity = importlib.util.module_from_spec(identity_spec)
-    identity_spec.loader.exec_module(identity)
+    identity = _load_helper_module('yorimichi_network_identity', GAME / 'network_identity.py')
     content = GAME / 'unreal' / 'Content'
-    policy_spec = importlib.util.spec_from_file_location('yorimichi_content_policy', GAME / 'content_policy.py')
-    policy = importlib.util.module_from_spec(policy_spec)
-    policy_spec.loader.exec_module(policy)
+    policy = _load_helper_module('yorimichi_content_policy', GAME / 'content_policy.py')
     result.append(Step('data.content', [Call('archive_retired_content', policy.archive)],
                        inputs=[GAME / 'content_policy.py'],
                        deferred_inputs=[DeferredInputs(

@@ -781,3 +781,107 @@ def test_common_fbx_identity_ignores_unrelated_bootstrap_file(tmp_path, monkeypa
     native.common_fbx_mesh(source, '/Game/Owned', 'Mesh', fresh_slots=False, functions=('build',), validation_functions=('validate',),
                            script=tmp_path/'import.py', validator=validator)
     assert calls[3]['sources'] != calls[2]['sources']
+
+
+def owner_transition_scene(scene, monkeypatch, *, excluded='/Game/Retired/Parent'):
+    import importlib.util
+    make = validation_scene(scene, monkeypatch)
+    script = paths.REPO/'import.py'
+    owner = paths.REPO/'owner.py'
+    old_owner = 'ROUTED_PARENT=True\ndef finish(mesh): return mesh\n'
+    current_owner = 'ROUTED_PARENT=False\ndef finish(mesh): return mesh\n'
+    owner.write_text(old_owner)
+    original = {'import.py':script.read_text(), 'owner.py':old_owner}
+    recorded = {name:hashlib.sha256((name+text).encode()).hexdigest() for name,text in original.items()}
+    monkeypatch.setattr(mesh_reuse,'saved_source',lambda repo,name,record:
+                        original.get(name) if record is not None and record==recorded.get(name) else None)
+    monkeypatch.setattr(mesh_reuse,'prior_stamp',lambda *args:dict(fingerprint='f'*64,time=1.,
+        input_state={'inputs':{'<repo>/'+name:value for name,value in recorded.items()}}))
+    first = make(owner_script=owner,owner_roots=(paths.REPO,))
+    assert acquire(scene,first,validator=lambda mesh:True)
+    first.validated('Mesh');mesh_reuse.finalize_pending(scene.ctx,'unreal.region','e'*24)
+    owner.write_text(current_owner)
+    support = paths.REPO/'membership_transition.py'
+    support.write_text('def excluded_packages(previous,current):\n'
+        f'    if previous == {{"owner.py":{old_owner!r}}} and current == {{"owner.py":{current_owner!r}}}:\n'
+        f'        return ({excluded!r},)\n'
+        '    return None\n')
+    spec = importlib.util.spec_from_file_location('fixture_membership_transition',support)
+    module = importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    return (lambda:make(owner_script=owner,owner_roots=(paths.REPO,),owner_transition=module.excluded_packages)),first,owner,original
+
+
+def test_exact_membership_transition_replays_original_header_without_reimport(scene,monkeypatch):
+    make,first,owner,original = owner_transition_scene(scene,monkeypatch)
+    before = first.receipts.path.read_bytes()
+    second = make()
+    assert second.local_compatible
+    assert first.receipts.header['policy'] in second.previous_receipt_policies
+    assert first.receipts.header['policy'] != second.receipts.header['policy']
+    checks = []
+    assert acquire(scene,second,validator=lambda mesh:checks.append(mesh) or True)
+    assert len(checks)==1 and second.counts==dict(reused_local=1,reused_candidate=0,imported=0)
+    assert second.receipts.path.read_bytes()==before
+    second.validated('Mesh');mesh_reuse.finalize_pending(scene.ctx,'unreal.region','e'*24)
+    assert json.loads(second.receipts.path.read_text())['policy']==second.receipts.header['policy']
+
+
+@pytest.mark.parametrize('failure',['owner_geometry','missing_original','sidecar','source','validator','retired_target','unknown_header'])
+def test_owner_transition_preserves_all_package_and_current_validation_gates(scene,monkeypatch,failure):
+    make,first,owner,original = owner_transition_scene(scene,monkeypatch,
+        excluded=scene.package if failure=='retired_target' else '/Game/Retired/Parent')
+    if failure=='owner_geometry': owner.write_text(owner.read_text().replace('return mesh','return reshape(mesh)'))
+    if failure=='missing_original': original.pop('owner.py')
+    if failure=='sidecar': (scene.content/'Region/Mesh.uexp').write_bytes(b'changed')
+    if failure=='source': scene.tags[scene.package] = None
+    if failure=='unknown_header':
+        data=json.loads(first.receipts.path.read_text());data['policy']='0'*64
+        first.receipts.path.write_text(json.dumps(data))
+    second=make()
+    assert acquire(scene,second,validator=lambda mesh:failure!='validator') is None
+    assert second.counts['reused_local']==0 and second.counts['reused_candidate']==0
+
+
+@pytest.mark.parametrize('history', ['receiptless', 'donor', 'removed_member'])
+def test_owner_membership_transition_requires_original_complete_local_receipt(scene, monkeypatch, history):
+    make, first, owner, original = owner_transition_scene(scene, monkeypatch)
+    if history == 'removed_member':
+        # An old member absent from today's closure must make header replay fail.
+        header = json.loads(first.receipts.path.read_text())
+        owner_map = {'owner.py': native.ast_dump(original['owner.py']),
+                     'removed_helper.py': native.ast_dump('def geometry(): return 1\n')}
+        old_import_policy = mesh_reuse.identity(dict(geometry=first.policy, owner=owner_map))
+        validation = mesh_reuse.native_policy(original['import.py'], ('validate',), paths.REPO/'import.py')
+        header['policy'] = mesh_reuse.identity(dict(import_policy=old_import_policy, validation=validation))
+        first.receipts.path.write_text(json.dumps(header))
+    else:
+        first.receipts.path.unlink()
+    if history == 'donor':
+        old = mesh_reuse.prior_stamp(None, None)
+        scene.bundle['donor_stamp'] = old
+        for file in scene.content.rglob('*'):
+            if file.is_file(): file.unlink()
+        scene.objects.clear()
+    second = make()
+    assert second.previous_owner_transition
+    assert acquire(scene, second, validator=lambda mesh: True) is None
+    assert second.counts['reused_local'] == second.counts['reused_candidate'] == 0
+    if history == 'donor':
+        assert not second.compatible and not scene.scans
+
+
+def test_source_discovery_runtime_changes_leave_raw_and_receipt_owner_policy_unchanged(scene, monkeypatch):
+    from atelier import native_protocol, build_cache
+    assert Path(mesh_reuse.__file__).resolve() in native_protocol.runtime_files()
+    assert 'mesh_reuse.py' not in build_cache.TOOL_SUPPORT
+    make = validation_scene(scene, monkeypatch)
+    owner = paths.REPO/'owner.py'
+    runtime = paths.REPO/'history_runtime.py'
+    owner.write_text('import history_runtime\ndef finish(mesh): return mesh\n')
+    runtime.write_text('LOOKUP = 1\n')
+    monkeypatch.setattr(native,'runtime_files',lambda:(runtime,))
+    first = make(owner_script=owner,owner_roots=(paths.REPO,))
+    runtime.write_text('LOOKUP = 2\n')
+    current = make(owner_script=owner,owner_roots=(paths.REPO,))
+    assert 'history_runtime.py' not in first.owner_sources
+    assert current.policy == first.policy and current.receipts.header == first.receipts.header

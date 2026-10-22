@@ -162,6 +162,23 @@ def historical_validator_functions(source, task, functions):
     return matches[0]
 
 
+def _owner_exclusions(transition, previous, current):
+    """A declared equivalence proof cannot receive incomplete or mutable evidence."""
+    if (not previous or set(previous) != set(current)
+            or any(not isinstance(text,str) for text in (*previous.values(), *current.values()))):
+        return None
+    exclusions = transition(dict(previous),dict(current))
+    if (not isinstance(exclusions,tuple) or not exclusions
+            or any(not isinstance(package,str) for package in exclusions)
+            or len(set(exclusions)) != len(exclusions)):
+        return None
+    for package in exclusions:
+        if not isinstance(package,str):
+            return None
+        mesh_reuse.package_members(package)  # canonical /Game path, without escapes
+    return set(exclusions)
+
+
 class MeshReuse:
     """@cc [owner:fontanierh,label:correctness] native-mesh-candidate-admission
     Candidate reuse MUST require matching source/geometry policy and engine context,
@@ -172,10 +189,20 @@ class MeshReuse:
     MUST rerun from current data after reuse and validate current materials, roles and collision.
     Current validation code MAY differ from historical geometry code, but its declared closure
     MUST enter fresh receipt identity. It MUST NOT weaken historical raw-geometry equality.
+    A reviewed owner-membership transition MAY establish equivalence for unaffected
+    packages only by comparing invocation-bound original/current source texts,
+    excluding affected packages and reproducing an existing ORIGINAL local receipt
+    header and complete package bytes. That header MUST prove historical closure
+    membership; projected current member keys alone are insufficient. Receiptless
+    bootstrap and independent donors MUST NOT admit owner-membership transitions.
+    Its own closed source policy MUST enter current validation identity. Its
+    excluded source module MUST serve only this source-text proof, never supply
+    geometry/material/collision finishing routines. Such a transition MUST NOT
+    relax raw geometry, package bytes or current native checks.
     Missing evidence MUST use ordinary import, never manufacture a cache hit or task stamp.
     """
     def __init__(self, ctx, task, script, functions, *, report_member=None, owner_script=None, owner_roots=(),
-                 validation_script=None, validation_functions=()):
+                 validation_script=None, validation_functions=(), owner_transition=None):
         from . import native_candidates as checkpoint_candidates
         self.ctx, self.task = ctx, task
         self.candidates = checkpoint_candidates
@@ -198,19 +225,39 @@ class MeshReuse:
             except (OSError, ValueError, SyntaxError, TypeError):
                 self.enabled = False
         self.owner_sources = {}
+        self.owner_texts = {}
+        self.owner_transition = owner_transition
+        self.previous_owner_exclusions = set()
+        self.previous_owner_transition = False
+        transition_policy = None
+        transition_file = None
+        if owner_transition is not None:
+            if not self.requires_validator:
+                raise ValueError('Owner transitions require current native validation')
+            import inspect
+            transition_file = Path(inspect.getsourcefile(owner_transition)).resolve()
+            if not transition_file.is_relative_to(paths.REPO.resolve()):
+                raise ValueError('Owner transition must belong to the repository')
+            transition_policy = mesh_reuse.native_policy(transition_file.read_text(),
+                (owner_transition.__name__,), transition_file)
         if owner_script:
             from . import source_imports
             owner_script = Path(owner_script).resolve()
             # Game-side finishing is part of the saved asset's identity. The
             # shared FBX boundary has its separate geometry policy above.
-            self.owner_sources = {file.relative_to(paths.REPO).as_posix(): ast_dump(file.read_text())
+            self.owner_texts = {file.relative_to(paths.REPO).as_posix(): file.read_text()
                 for file in source_imports.local_imports(owner_script, owner_roots)
-                if file != self.script and file not in runtime_files() and file.is_relative_to(paths.REPO)}
+                if file not in (self.script, transition_file) and file not in runtime_files()
+                and file.is_relative_to(paths.REPO)}
+            self.owner_sources = {name: ast_dump(text) for name,text in self.owner_texts.items()}
         receipt_policy = (mesh_reuse.identity(dict(geometry=self.policy, owner=self.owner_sources))
                           if owner_script else self.policy)
         geometry_receipt_policy = receipt_policy
         if validation_policy is not None:
-            receipt_policy = mesh_reuse.identity(dict(import_policy=receipt_policy, validation=validation_policy))
+            fields = dict(import_policy=receipt_policy, validation=validation_policy)
+            if transition_policy is not None:
+                fields['owner_transition'] = transition_policy
+            receipt_policy = mesh_reuse.identity(fields)
         current_context = context(ctx)
         self.receipts = mesh_reuse.Receipts(ctx.out, task, current_context, receipt_policy, self.content)
         self.bundles = checkpoint_candidates.load_all(ctx, task) if self.enabled else []
@@ -236,10 +283,23 @@ class MeshReuse:
             relative_script = self.script.relative_to(paths.REPO).as_posix()
             previous = mesh_reuse.saved_source(paths.REPO, relative_script, inputs.get('<repo>/' + relative_script))
             owner_matches = True
+            previous_owner_texts = {}
             if owner_script:
                 for relative_owner, current in self.owner_sources.items():
                     owner = mesh_reuse.saved_source(paths.REPO, relative_owner, inputs.get('<repo>/' + relative_owner))
+                    previous_owner_texts[relative_owner] = owner
                     owner_matches &= owner is not None and ast_dump(owner) == current
+            if not owner_matches and owner_transition is not None:
+                exclusions = _owner_exclusions(owner_transition, previous_owner_texts, self.owner_texts)
+                if exclusions is not None:
+                    self.previous_owner_exclusions = exclusions
+                    self.previous_owner_transition = True
+                    owner_matches = True
+            # Receipt replay binds the original owner map, never the new map
+            # made equivalent by a reviewed membership-only transition.
+            previous_geometry_receipt_policy = (mesh_reuse.identity(dict(geometry=self.policy,
+                owner={name:ast_dump(text) for name,text in previous_owner_texts.items()}))
+                if owner_matches and owner_script else geometry_receipt_policy)
             self.local_compatible = bool(not old.get('touched') and previous and owner_matches
                                          and mesh_reuse.native_policy(previous, functions, self.script, inputs=inputs) == self.policy
                                          and observed_environment(ctx, current_context))
@@ -249,7 +309,7 @@ class MeshReuse:
                     and self.receipts.previous.get('policy') != self.receipts.header['policy']):
                 # A receipt from before a validator was declared still proves its original
                 # production policy. A newer validator must run before any current admission.
-                self.previous_receipt_policies.add(geometry_receipt_policy)
+                self.previous_receipt_policies.add(previous_geometry_receipt_policy)
                 if self.requires_validator:
                     try:
                         previous_validator = mesh_reuse.saved_source(paths.REPO,
@@ -267,7 +327,18 @@ class MeshReuse:
                                     previous_validation_policy = mesh_reuse.native_policy(previous_validator,
                                         selector, validator, inputs=inputs)
                                     self.previous_receipt_policies.add(mesh_reuse.identity(dict(
-                                        import_policy=geometry_receipt_policy, validation=previous_validation_policy)))
+                                        import_policy=previous_geometry_receipt_policy, validation=previous_validation_policy)))
+                                    if transition_file is not None:
+                                        transition_name = transition_file.relative_to(paths.REPO).as_posix()
+                                        original_transition = mesh_reuse.saved_source(paths.REPO, transition_name,
+                                            inputs.get('<repo>/'+transition_name))
+                                        if original_transition is not None:
+                                            original_transition_policy = mesh_reuse.native_policy(original_transition,
+                                                (owner_transition.__name__,), transition_file, inputs=inputs)
+                                            self.previous_receipt_policies.add(mesh_reuse.identity(dict(
+                                                import_policy=previous_geometry_receipt_policy,
+                                                validation=previous_validation_policy,
+                                                owner_transition=original_transition_policy)))
                                 except (ValueError, KeyError, TypeError, SyntaxError):
                                     continue
                     except (OSError, ValueError, KeyError, TypeError, SyntaxError):
@@ -289,10 +360,12 @@ class MeshReuse:
                     compatible = mesh_reuse.native_policy(donor_source, functions, self.script,
                                                            inputs=donor_inputs) == self.policy
                 if compatible and owner_script:
+                    owner_matches = True
                     for owner_name, current in self.owner_sources.items():
                         owner_source = mesh_reuse.saved_source(paths.REPO, owner_name,
                                                               donor_inputs.get('<repo>/' + owner_name))
-                        compatible &= owner_source is not None and ast_dump(owner_source) == current
+                        owner_matches &= owner_source is not None and ast_dump(owner_source) == current
+                    compatible = bool(owner_matches)
                 report = checkpoint_candidates.member_path(ctx, task, report_member, bundle=bundle) if report_member else None
                 if report:
                     donor = json.loads(report.read_text())
@@ -335,12 +408,14 @@ class MeshReuse:
         historical = False
         if local:
             self.pending[name]['provenance'] = self.receipts.records[name].get('provenance', {'kind': 'compatibility-only'})
-        if (not local and self.local_compatible and validator is not None
+        previous_allowed = not self.previous_owner_exclusions.intersection(packages)
+        if (not local and previous_allowed and self.local_compatible and validator is not None
                 and self.receipts.matches_previous(name, key, packages, self.previous_receipt_policies)):
             local = True
             historical = True
             self.pending[name]['provenance'] = dict(kind='compatibility-only', historical_task=self.previous_fingerprint)
-        if not local and not self.receipts.path.exists() and self.local_compatible and validator is not None:
+        if (not local and previous_allowed and not self.previous_owner_transition
+                and not self.receipts.path.exists() and self.local_compatible and validator is not None):
             local = (all(unreal.EditorAssetLibrary.does_asset_exist(target) for target in packages)
                      and mesh_reuse.historical_packages_match(self.ctx, self.task, self.previous_stamp, packages))
             if local:
@@ -572,17 +647,17 @@ _COMMON_FBX = {}
 
 
 def common_fbx_mesh(source, destination, name, *, fresh_slots, script, validator, functions,
-                    validation_functions, owner_roots=()):
+                    validation_functions, owner_roots=(), owner_transition=None):
     """Default shared FBX boundary; bootstrap-only files never enter final-source identity."""
     task, game = os.environ.get('ATELIER_BUILD_TASK'), os.environ.get('ATELIER_BUILD_GAME')
     owner = os.environ.get('ATELIER_BUILD_SCRIPT') or os.environ.get('ATELIER_SCRIPT')
     nonce = os.environ.get('ATELIER_MESH_REUSE_NONCE')
     if not task or not game or not owner or not nonce or not Path(owner).is_absolute():
         return None, None
-    key = (task, game, owner, nonce, str(script), tuple(functions), tuple(validation_functions))
+    key = (task, game, owner, nonce, str(script), tuple(functions), tuple(validation_functions), owner_transition)
     if key not in _COMMON_FBX:
         _COMMON_FBX[key] = MeshReuse(native_context(game), task, script, functions, owner_script=owner, owner_roots=owner_roots,
-            validation_script=script, validation_functions=validation_functions)
+            validation_script=script, validation_functions=validation_functions, owner_transition=owner_transition)
     reuse = _COMMON_FBX[key]
     package = destination + '/' + name
     inputs = dict(format='fbx', fresh_slots=bool(fresh_slots))

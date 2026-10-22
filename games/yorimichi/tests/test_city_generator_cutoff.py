@@ -17,7 +17,7 @@ def city_build(tmp_path, monkeypatch):
     generator = tmp_path / 'generator.py'
     generator.write_text('1')
     names = (*RECIPE.city_inputs.TILES, *RECIPE.city_inputs.TREES, 'HD_NorthMountains')
-    state = {name: dict(triangles=1, min=[0, 0, 0], max=[1, 1, 1], unused='metadata') for name in names}
+    state = {name: dict(triangles=1, min=[0, 0, 0], max=[1, 1, 1], collision_boxes=0, unused='metadata') for name in names}
     meshes = {name: name.encode() for name in names}
     generated, exported, messages = [], [], []
     folder = out / 'hidamari'
@@ -63,9 +63,30 @@ def test_cutoff_selections_match_the_actual_generators():
                     and any(isinstance(t, ast.Name) and t.id == 'BUILDERS' for t in node.targets))
     assert tuple(ast.literal_eval(key) for key in builders.keys) == RECIPE.city_inputs.TREES
     tree = ast.parse((RECIPE.WORLD/'city_surface_tiles.py').read_text())
-    sources = next(node.value for node in tree.body if isinstance(node, ast.Assign)
-                   and any(isinstance(t, ast.Name) and t.id == 'SOURCES' for t in node.targets))
-    assert ast.literal_eval(sources) == RECIPE.city_inputs.TILES
+    selection = next(node for node in ast.walk(tree) if isinstance(node, ast.Call)
+                     and isinstance(node.func, ast.Attribute) and node.func.attr == 'add_argument'
+                     and node.args and isinstance(node.args[0], ast.Constant) and node.args[0].value == '--sources')
+    options = {kw.arg: ast.literal_eval(kw.value) for kw in selection.keywords}
+    assert options == {'nargs': '+', 'required': True}
+    assert not any(isinstance(node, ast.Name) and node.id == 'SOURCES' for node in ast.walk(tree))
+
+
+def test_actual_city_assembly_recipe_accepts_build_log_file(tmp_path):
+    from test_city_tile_products import production_manifest
+    manifest = production_manifest()
+    root = tmp_path/'city_surface_tiles/v1_128m'
+    for name, row in manifest['sources'].items():
+        folder = root/name
+        folder.mkdir(parents=True)
+        (folder/'manifest.json').write_text(json.dumps({**manifest, 'sources': {name: row}}))
+        for tile in row['tiles']:
+            (folder/(tile['name']+'.fbx')).write_bytes(b'completed source')
+    assembly = RECIPE.city_tile_steps(tmp_path)[-1]
+    log_path = tmp_path/'assembly.log'
+    with log_path.open('w') as log:
+        assembly.commands[0].fn(SimpleNamespace(out=tmp_path), log)
+    assert json.loads((root/'manifest.json').read_text()) == manifest
+    assert log_path.read_text() == 'CITY PIECES assembled '+str(sum(len(row['tiles']) for row in manifest['sources'].values()))+'\n'
 
 
 def test_ordinary_rebuild_skips_both_generators_after_unrelated_producer_change(city_build):
@@ -129,15 +150,108 @@ def test_missing_selected_receipt_cannot_hide_behind_a_cutoff(city_build, missin
 def test_recipe_keeps_generator_code_and_existing_unreal_cutoffs(tmp_path):
     ctx = SimpleNamespace(out=tmp_path, uproject=None)
     steps = {s.name: s for s in RECIPE.steps(ctx)}
+    consumer = steps['world.city_trees']
+    cutoff = steps['world.hidamari.trees']
+    assert cutoff.cutoff and not cutoff.heavy and cutoff.needs == ['world.hidamari']
+    assert cutoff.name in consumer.needs and 'world.hidamari' not in consumer.needs
+    assert consumer.commands[0].script in consumer.inputs
+    for name in RECIPE.city_inputs.TILES:
+        cutoff = steps['world.hidamari.tiles.'+name]
+        piece = steps['world.city_tiles.'+name]
+        assert cutoff.cutoff and cutoff.needs == ['world.hidamari']
+        assert piece.needs == [cutoff.name]
+        assert piece.cache and piece.products[0].name == 'city.tiles.'+name
+        assert piece.commands[0].factory_startup is True
+        assert piece.commands[0].script in piece.inputs
+        closure = set(build_inputs.local_imports(piece.commands[0].script, (RECIPE.WORLD, RECIPE.REGIONS)))
+        assert closure <= set(piece.inputs)
+    assert steps['world.city_tiles'].reads == ['city.tiles.'+name for name in RECIPE.city_products.SOURCES]
+    desktop = steps['unreal.desktop']
+    assert set(RECIPE.unreal_modules.needs(RECIPE.IMPORT_CODE+('Yorimichi',))) <= set(desktop.needs)
     for part in ('tiles', 'trees'):
-        cutoff = steps['world.hidamari.' + part]
-        consumer = steps['world.city_' + part]
-        assert cutoff.cutoff and not cutoff.heavy and cutoff.needs == ['world.hidamari']
-        assert 'world.hidamari' not in consumer.needs and cutoff.name in consumer.needs
-        assert consumer.commands[0].script in consumer.inputs
-        closure = set(build_inputs.local_imports(consumer.commands[0].script, (RECIPE.WORLD, RECIPE.REGIONS)))
-        assert closure <= set(consumer.inputs)  # Test the assembled recipe, after its ImportScanner pass.
-        assert steps[consumer.name + '.meshes'].needs == [consumer.name]
-    assert RECIPE.REGIONS/'hidamari/arcade.py' in steps['world.city_trees'].inputs
-    assert RECIPE.REGIONS/'hidamari/plaza.py' in steps['world.city_trees'].inputs
-    assert RECIPE.REGIONS/'village/build.py' in steps['world.city_trees'].inputs
+        assert steps['world.city_'+part+'.meshes'].needs == ['world.city_'+part]
+    assert RECIPE.REGIONS/'hidamari/arcade.py' in consumer.inputs
+    assert RECIPE.REGIONS/'hidamari/plaza.py' in consumer.inputs
+    assert RECIPE.REGIONS/'village/build.py' in consumer.inputs
+
+
+def test_source_specific_cutoffs_rebuild_only_the_changed_city_parent(tmp_path, monkeypatch):
+    out = tmp_path/'build'
+    folder = out/'hidamari'
+    (folder/'assets').mkdir(parents=True)
+    names = RECIPE.city_inputs.TILES
+    manifest = {name:dict(triangles=1,min=[0,0,0],max=[1,1,1],collision_boxes=0) for name in names}
+    (folder/'manifest.json').write_text(json.dumps(manifest))
+    for name in names: (folder/'assets'/ (name+'.fbx')).write_bytes(name.encode())
+    runs = []
+    products = []
+    for name in names:
+        output = out/(name+'.json')
+        def export(ctx, log, name=name, output=output):
+            runs.append(name)
+            output.write_text(json.dumps(RECIPE.city_inputs.snapshot(out,(name,))))
+        products += [RECIPE.city_input_step(out,'tiles',(name,)),
+                     build.Step('piece.'+name,[build.Call('source '+name,export)],
+                                needs=['world.hidamari.tiles.'+name],outputs=[output])]
+    steps = [build.Step('world.hidamari',[],outputs=[folder/'manifest.json']), *products]
+    ctx = SimpleNamespace(game='yorimichi',out=out,logs=out/'logs',stamps=out/'stamps',uproject=None)
+    monkeypatch.setattr(build,'Context',lambda game:ctx)
+    monkeypatch.setattr(build,'load_recipe',lambda game:SimpleNamespace(steps=lambda context:steps))
+    targets = ['piece.'+name for name in names]
+    assert build.build('yorimichi',targets,echo=lambda message:None)==0
+    assert set(runs)==set(names)
+    runs.clear()
+    (folder/'assets/HD_Streets.fbx').write_bytes(b'changed streets')
+    assert build.build('yorimichi',targets,echo=lambda message:None)==0
+    assert runs==['HD_Streets']
+    runs.clear()
+    manifest['HD_Square']['collision_boxes'] = 1
+    (folder/'manifest.json').write_text(json.dumps(manifest))
+    assert build.build('yorimichi',targets,echo=lambda message:None)==0
+    assert runs==['HD_Square']
+
+
+def test_new_large_hds_families_share_existing_independent_source_owners(tmp_path):
+    steps = {s.name:s for s in RECIPE.steps(SimpleNamespace(out=tmp_path, uproject=None))}
+    names = ('HD_Terrain', 'HD_Streets', 'HD_Square', 'HD_CivicGardens', 'HD_Park')
+    assert RECIPE.city_inputs.TILES == names
+    assert RECIPE.city_products.SOURCES == (*names, 'HD_Harbor')
+    for source in names:
+        step = steps['world.city_tiles.'+source]
+        assert step.commands[0].args[-1] == source
+        assert step.needs == ['world.hidamari.tiles.'+source]
+    harbor = steps['world.hidamari.tiles.HD_Harbor']
+    assert harbor.cutoff and harbor.needs == ['world.hidamari_ferry_cut']
+    piece = steps['world.city_tiles.HD_Harbor']
+    assert piece.needs == [harbor.name]
+    assert piece.commands[0].factory_startup is True
+    assert piece.commands[0].args == ('--tag', 'v1_128m', '--sources', 'HD_Harbor',
+        '--source-path', 'hidamari/ferry/HD_Harbor.fbx',
+        '--metadata-path', 'digests/world.hidamari.tiles.HD_Harbor.json')
+
+
+@pytest.mark.parametrize('selection', [[], ['../HD_Park'], ['HD_Ｐark'],
+    ['HD_Park', 'HD_Park'], ['HD_Park', 'HD_park'], ['HD_Park', 'HD_Missing']])
+def test_splitter_refuses_bad_complete_selection_before_any_output_mutation(tmp_path, monkeypatch, selection):
+    import argparse
+    import hashlib
+    import re
+    import sys
+    script = RECIPE.WORLD/'city_surface_tiles.py'
+    main = next(node for node in ast.parse(script.read_text()).body
+                if isinstance(node, ast.FunctionDef) and node.name == 'main')
+    root = tmp_path/'hidamari'
+    root.mkdir()
+    (root/'manifest.json').write_text(json.dumps({'HD_Park': {}, 'HD_park': {}}))
+    touched = []
+    namespace = dict(argparse=argparse, hashlib=hashlib, json=json, re=re, sys=sys,
+        yori=SimpleNamespace(OUT=tmp_path),
+        bpy=SimpleNamespace(ops=SimpleNamespace(wm=SimpleNamespace(read_factory_settings=lambda **kw:touched.append('reset')))))
+    exec(compile(ast.Module(body=[main], type_ignores=[]), str(script), 'exec'), namespace)
+    argv = ['splitter', '--', '--tag', 'v1_128m']
+    if selection: argv += ['--sources', *selection]
+    monkeypatch.setattr(sys, 'argv', argv)
+    with pytest.raises((SystemExit, AssertionError)):
+        namespace['main']()
+    assert touched == []
+    assert not (tmp_path/'city_surface_tiles').exists()

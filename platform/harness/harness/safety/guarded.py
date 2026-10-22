@@ -247,7 +247,7 @@ def completion_watches(tree):
 def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gib=10., small_gib=None, kind='job',
         on_slot=None, watch=(), progress=0., track_tree=False, fitting_gib=None, pass_fds=(), aggregate_tree=False,
         on_poll=None, admission=None, performance=False, invocation_id=None, worker_binding=None,
-        completion_path=None, compile_memory_gib=None, script_memory_gib=None):
+        completion_path=None, compile_memory_gib=None, script_memory_gib=None, launch_context=None):
     """@cc [owner:fontanierh,label:correctness] diagnostic-execution-timings
     Timing diagnostics MUST NOT certify outputs or guess command execution duration. Publication
     MUST require clearing the prior report; failure to clear MUST suppress publication without
@@ -264,6 +264,18 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
     identifier = uuid.uuid4().hex if invocation_id is None else invocation_id
     if type(identifier) is not str or uuid.UUID(identifier).hex != identifier:
         raise ValueError('invocation_id must be a UUID hex string')
+    from .launch_ownership import LaunchContext, prepare
+    if launch_context is None:
+        launch_context = prepare(env)
+        env = dict(launch_context.environment)
+    if not isinstance(launch_context, LaunchContext):
+        raise ValueError('Invalid launch ownership context')
+    if env is None:
+        env = dict(launch_context.environment)
+    # Freeze the caller's supplied mapping before claiming the exact context. A
+    # concurrent caller mutation must not change the environment after validation.
+    env = dict(env)
+    launch_nonce = launch_context.claim(env)
     if completion_path is not None:
         completion_path = Path(completion_path)
         if kind != 'compile' or not lock or completion_path.exists() or completion_path.is_symlink():
@@ -292,6 +304,7 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
                     code = _run(command, folder, timeout, purpose, lock, env, limit_gib, small_gib, kind,
                                 on_slot, watch, progress, track_tree, fitting_gib, pass_fds, aggregate_tree,
                                 on_poll, admission, performance, worker_binding=worker_binding, _timings=events,
+                                _launch_nonce=launch_nonce,
                                 _requeue=previous, _queue_deadline=entered + 1800.,
                                 **({'compile_memory_gib': compile_memory_gib} if compile_memory_gib is not None else {}),
                                 **({'script_memory_gib': script_memory_gib} if script_memory_gib is not None else {}),
@@ -371,7 +384,7 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
 def _run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gib=10., small_gib=None, kind='job',
         on_slot=None, watch=(), progress=0., track_tree=False, fitting_gib=None, pass_fds=(), aggregate_tree=False,
         on_poll=None, admission=None, performance=False, *, worker_binding=None, _timings, _completion=None,
-        _requeue=None, _queue_deadline=None, compile_memory_gib=None, script_memory_gib=None):
+        _requeue=None, _queue_deadline=None, compile_memory_gib=None, script_memory_gib=None, _launch_nonce=None):
     """@cc [owner:fontanierh,label:safety] compile-tree-monitor-lifecycle
     Aggregate mode MUST release the command only after a matching monitor readiness receipt, and MUST
     require a successful matching terminal receipt proving observed tree exit before returning success.
@@ -613,7 +626,8 @@ def _run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_g
                 raise RuntimeError('the gated launcher has no process memory guard')
             aggregate = monitors.enter_context(attach_tree(child.pid, folder/'memory-health-tree.json',
                                                            duration=horizon, limit_gib=limit_gib,
-                                                           expected_start=root_start))
+                                                           expected_start=root_start,
+                                                           **({'launch_nonce': _launch_nonce} if _launch_nonce is not None else {})))
             aggregate.ready()
             if _completion is not None:
                 monitor_pins = dict(process=[monitor.pid, process_tree.started(monitor.pid)],
