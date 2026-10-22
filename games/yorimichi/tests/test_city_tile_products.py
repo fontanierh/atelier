@@ -69,7 +69,8 @@ def test_other_tag_cannot_be_deletion_destination():
 @pytest.mark.parametrize('failure', [None, 'triangles', 'save', 'bounds', 'empty', 'subset', 'collision'])
 def test_real_importer_retires_only_after_complete_current_native_validation(tmp_path, monkeypatch, failure):
     script = Path(__file__).parents[1] / 'unreal/Scripts/import_city_surface_tiles.py'
-    main = next(node for node in ast.parse(script.read_text()).body if isinstance(node, ast.FunctionDef) and node.name == 'main')
+    functions = [node for node in ast.parse(script.read_text()).body if isinstance(node, ast.FunctionDef)
+                 and node.name in ('main', 'prepare_collision_import', 'finish_empty_collision')]
     folder = tmp_path / 'city_surface_tiles/v1_128m'
     folder.mkdir(parents=True)
     old = 'HD_Streets_cell_4_1'
@@ -128,7 +129,8 @@ def test_real_importer_retires_only_after_complete_current_native_validation(tmp
                 delete_asset=remove)
     settings = NS(get_editor_property=lambda key: True)
     unreal = NS(CitySurfaceValidation=NS(validate_collision=lambda *args: failure!='collision'), load_module=lambda name: None, StaticMeshEditorSubsystem=object,
-                get_editor_subsystem=lambda cls: NS(get_lod_build_settings=lambda mesh,lod: settings),
+                get_editor_subsystem=lambda cls: NS(get_lod_build_settings=lambda mesh,lod: settings,
+                    get_simple_collision_count=lambda mesh:0, get_convex_collision_count=lambda mesh:0),
                 CollisionTraceFlag=NS(CTF_USE_COMPLEX_AS_SIMPLE='complex'),
                 EditorAssetLibrary=editor, SystemLibrary=NS(execute_console_command=lambda *args: None, collect_garbage=lambda: None),
                 log=lambda message: events.append(message))
@@ -138,7 +140,7 @@ def test_real_importer_retires_only_after_complete_current_native_validation(tmp
                      piece_material_paths=P.piece_material_paths, protected_files=lambda root: {},
                      collision_matches=lambda *args: True,
                      native_membership=native_membership)
-    exec(compile(ast.Module(body=[main], type_ignores=[]), str(script), 'exec'), namespace)
+    exec(compile(ast.Module(body=functions, type_ignores=[]), str(script), 'exec'), namespace)
     if failure:
         with pytest.raises(ValueError if failure in ('empty','subset') else AssertionError):
             namespace['main']()

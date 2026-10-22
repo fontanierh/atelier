@@ -14,10 +14,37 @@ import unreal
 ROOT = yori.OUT
 sys.path.insert(0, str(yori.GAME))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from import_village import import_mesh
+from mesh_import import import_mesh
 from atelier import native_membership
 from city_tile_products import (obsolete_assets, owned_tiles, production_groups, native_bounds,
                                 piece_material_paths, collision_matches, protected_files)
+
+
+def prepare_collision_import(destination, name, editor):
+    """Reset only a real raw-import miss, before authored FBX hulls are imported.
+
+    FBX collision import appends hulls; an FBX with no UCX does not remove saved
+    hulls. Never clear a positive owner's newly imported authored geometry.
+    """
+    library = unreal.EditorAssetLibrary
+    if library.does_asset_exist(destination + '/' + name):
+        old = library.load_asset(destination + '/' + name)
+        if editor.get_simple_collision_count(old) or editor.get_convex_collision_count(old):
+            assert editor.remove_collisions(old), (name, 'raw-import collision reset failed')
+        assert editor.get_simple_collision_count(old) == editor.get_convex_collision_count(old) == 0, (name, 'collision reset left shapes')
+
+
+def finish_empty_collision(mesh, tile, editor):
+    """@cc [owner:fontanierh,label:correctness] city-empty-hulls-are-current-finishing
+    A declared zero-hull child MUST contain no retained simple/convex collision,
+    even on a geometry reuse hit. Only that child MAY be cleared. Positive UCX
+    owners MUST retain their exact imported hull vertices for the existing
+    source comparison; complex cooked LOD0 validation MUST remain mandatory.
+    """
+    if tile['collision_hulls'] == 0:
+        if editor.get_simple_collision_count(mesh) or editor.get_convex_collision_count(mesh):
+            assert editor.remove_collisions(mesh), (tile['name'], 'stale collision removal failed')
+        assert editor.get_simple_collision_count(mesh) == editor.get_convex_collision_count(mesh) == 0, tile['name']
 
 
 def main():
@@ -36,6 +63,8 @@ def main():
     unreal.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX 0')
     unreal.SystemLibrary.execute_console_command(None, 'Editor.AsyncStaticMeshCompilation 0')
     unreal.load_module('StaticMeshEditor')
+    editor = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
+    assert editor is not None
     report = {}
     for name, source in manifest['sources'].items():
         assert source['tiles'], ('Missing city surface pieces', name)
@@ -50,7 +79,8 @@ def main():
         for index, tile in enumerate(source['tiles'], 1):
             path = folder / name / (tile['name'] + '.fbx')
             assert hashlib.sha256(path.read_bytes()).hexdigest() == tile['sha256']
-            mesh = import_mesh(path, destination, tile['name'], fresh_slots=True)   # the slots of this partition, not a previous one's
+            mesh = import_mesh(path, destination, tile['name'], fresh_slots=True,
+                before_import=lambda: prepare_collision_import(destination, tile['name'], editor))
             for i, s in enumerate(mesh.static_materials):
                 key = str(s.get_editor_property('imported_material_slot_name'))
                 assert key in slots, (tile['name'], 'unknown slot', key)
@@ -64,7 +94,6 @@ def main():
                 assert abs(getattr(box.max, axis) - expected_max[i]) < .2, (tile['name'], 'piece maximum bounds', axis)
                 lower[i] = min(lower[i], getattr(box.min, axis))
                 upper[i] = max(upper[i], getattr(box.max, axis))
-            editor = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
             settings = editor.get_lod_build_settings(mesh, 0)
             if not settings.get_editor_property('use_full_precision_u_vs'):
                 settings.set_editor_property('use_full_precision_u_vs', True)
@@ -74,6 +103,7 @@ def main():
                          else unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
             if body.get_editor_property('collision_trace_flag') != collision:
                 body.set_editor_property('collision_trace_flag', collision)
+            finish_empty_collision(mesh, tile, editor)
             assert collision_matches(mesh, source, tile), (tile['name'], 'authored UCX geometry')
             assert unreal.CitySurfaceValidation.validate_collision(mesh, tile['triangles'],
                 bool(source['source_collision_hulls'])), (tile['name'], 'current cooked query surface')
