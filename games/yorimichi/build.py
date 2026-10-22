@@ -12,9 +12,44 @@ Imports follow the named products or digest cutoffs they consume, so identical r
 current. Cairo's base import supplies his body and the nine authored clips used by
 the merged move set.
 """
-import importlib.util, json, os, tomllib
+import importlib.util, json, os, sys, tomllib
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
+
+_JSON_CACHE = getattr(sys, '_atelier_json_cache', None)
+if _JSON_CACHE is None:
+    _JSON_CACHE = sys._atelier_json_cache = {}
+
+
+def _load_helper_module(name, path):
+    path = Path(path)
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _read_json(path):
+    path = Path(path)
+    st = path.stat()
+    key = (path, st.st_mtime_ns, st.st_size)
+    try:
+        return _JSON_CACHE[key]
+    except KeyError:
+        data = json.loads(path.read_text())
+        _JSON_CACHE[key] = data
+        return data
+
+
+@lru_cache(maxsize=256)
+def _file_mentions_village(path, mtime_ns, size):
+    return 'import_village.py' in Path(path).read_text()
+
+
+def _mentions_import_village(path):
+    st = Path(path).stat()
+    return _file_mentions_village(Path(path), st.st_mtime_ns, st.st_size)
 
 from atelier.build import Product, Step, DeferredInputs, Python, Blender, UnrealScript, UnrealCompile, UnrealPackage, Call, Batch
 from atelier.checkpoint_candidates import CandidateScope
@@ -128,7 +163,7 @@ SOUTHWEST_MODELS = ('stand,fisher_house_a,fisher_house_b,boat_shed,stairs,dock,b
 # The horse library (assets/horses/manifest.json) declares the breeds, tack sets and clips; the rider authors one clip
 # per horse clip, and the mount and dismount. RIDE_COMMON is what the bike and horse riders share.
 HORSES = ASSETS / 'horses'
-HORSE_LIBRARY = json.loads((HORSES / 'manifest.json').read_text())
+HORSE_LIBRARY = _read_json(HORSES / 'manifest.json')
 HORSE_VARIANTS = HORSES / 'coats' / 'variants'
 HORSE_RIDER_CLIPS = (*(f'Horse{clip}' for clip in HORSE_LIBRARY['clips']), 'HorseMount', 'HorseDismount')
 RIDE_COMMON = ASSETS / 'vehicles' / 'rider_common.py'
@@ -178,7 +213,7 @@ def skate_data_present(out):
 def horse_import_inputs():
     """What Scripts/import_horses.py reads: its modules (horse_data.upright_glb packs with atelier.gltf), the library
     manifest, the coat masks and variants, and each breed's GLBs."""
-    variants = json.loads((HORSE_VARIANTS / 'manifest.json').read_text())['variants']
+    variants = _read_json(HORSE_VARIANTS / 'manifest.json')['variants']
     return [SCRIPTS / 'import_horses.py', SCRIPTS / 'horse_data.py', SCRIPTS / 'animation_compression.py', YORI,
             paths.STUDIO / 'atelier' / 'gltf.py', paths.STUDIO / 'atelier/blender/__init__.py',
             HORSES / 'manifest.json', HORSE_VARIANTS / 'manifest.json',
@@ -199,8 +234,8 @@ def horses_imported_present(out):
             return False
         if set(materials) != set(horse_data.meshes(roster)) or not all(materials.values()):
             return False
-        library = json.loads((HORSES / 'manifest.json').read_text())
-        variants = json.loads((HORSE_VARIANTS / 'manifest.json').read_text())['variants']
+        library = _read_json(HORSES / 'manifest.json')
+        variants = _read_json(HORSE_VARIANTS / 'manifest.json')['variants']
         if (roster['breed_order'] != list(library['breeds']) or roster['tack_sets'] != library['tack_sets']
                 or list(roster['coat_masks']) != library['coat_masks']
                 or [v['id'] for v in roster['coat_variants']] != [v['id'] for v in variants]
@@ -490,10 +525,7 @@ def package_step(ctx, steps):
 
 def adventure_library():
     """assets/characters/adventure/library.py: whether the local adventure library is here, and the files the roster reads."""
-    spec = importlib.util.spec_from_file_location('adventure_library', CHARS / 'adventure' / 'library.py')
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    return _load_helper_module('adventure_library', CHARS / 'adventure' / 'library.py')
 
 
 def moveset_import(character):
@@ -747,7 +779,7 @@ train_bake = importlib.util.module_from_spec(_train_bake_spec)
 _train_bake_spec.loader.exec_module(train_bake)
 
 TRAIN_VEHICLES = ('locomotive', 'tender', 'baggage-van', 'restaurant', 'first-class', 'second-class', 'brake-van')
-TRAIN_FURNITURE = tuple(a['id'] for a in json.loads((ASSETS / 'vehicles/belmonte-train/planning/furniture-dimensions.json').read_text())['assets'])
+TRAIN_FURNITURE = tuple(a['id'] for a in _read_json(ASSETS / 'vehicles/belmonte-train/planning/furniture-dimensions.json')['assets'])
 def belmonte_train_corridor(out):
     """The railway corridor and earthworks (world/train/corridor.py and earthworks.py read the committed line.json):
     unconditional inputs of the terrain and planting steps."""
@@ -941,9 +973,7 @@ def belmonte_steps(out):
 def texture_steps(ctx):
     """One exact PNG/JPEG owner per spec; the familiar aggregate consumes their byte identities."""
     from atelier.build_inputs import local_imports as action_imports
-    definition = importlib.util.spec_from_file_location('yorimichi_texture_catalog', WORLD / 'texture_catalog.py')
-    catalogue = importlib.util.module_from_spec(definition)
-    definition.loader.exec_module(catalogue)
+    catalogue = _load_helper_module('yorimichi_texture_catalog', WORLD / 'texture_catalog.py')
     script = WORLD / 'gen_textures.py'
     support = [path for path in action_imports(script) if path != script]
     steps, products = [], []
@@ -1016,7 +1046,7 @@ def world_steps(ctx):
                      WORLD / 'shorelines.py', YORI, *belmonte_train_corridor(out), REGIONS / 'brinecove' / 'region.py',
                      REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari_stable' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK,
                      *(REGIONS / 'belmonte' / name for name in ('terrain.py', 'source.py', 'layout.py')),
-                     *(ASSETS / 'belmonte' / entry['path'] for entry in json.loads((ASSETS / 'belmonte/source.json').read_text())['meshes']
+                     *(ASSETS / 'belmonte' / entry['path'] for entry in _read_json(ASSETS / 'belmonte/source.json')['meshes']
                        if entry['name'].startswith('SM_BM_BT_Terrain_')),
                      REGIONS / 'megapark' / 'placement.py', REGIONS / 'megapark' / 'trail.py', REGIONS / 'megapark' / 'gate.py',
                      out / 'world.json', out / 'heightmap.npy', out / 'farhills.npy', out / 'megapark' / 'trail.json',
@@ -1057,7 +1087,7 @@ def world_steps(ctx):
                      REGIONS / 'hidamari' / 'layout.py', *belmonte_train_corridor(out),
                      REGIONS / 'belmonte' / 'layout.py', REGIONS / 'belmonte' / 'source.py', REGIONS / 'belmonte' / 'terrain.py',
                      ASSETS / 'belmonte' / 'source.json',
-                     *(ASSETS / 'belmonte' / entry['path'] for entry in json.loads((ASSETS / 'belmonte/source.json').read_text())['meshes']
+                     *(ASSETS / 'belmonte' / entry['path'] for entry in _read_json(ASSETS / 'belmonte/source.json')['meshes']
                        if entry['name'].startswith('SM_BM_BT_Terrain_')),
                      REGIONS / 'megapark' / 'gate.py', ASSETS / 'megapark' / 'map.json',
                      ASSETS / 'megapark' / 'geometry', ASSETS / 'megapark' / 'collision'],
@@ -1246,7 +1276,7 @@ def world_steps(ctx):
                      REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari_stable' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py',
                      REGIONS / 'belmonte' / 'layout.py', REGIONS / 'belmonte' / 'source.py', REGIONS / 'belmonte' / 'terrain.py',
                      ASSETS / 'belmonte' / 'source.json',
-                     *(ASSETS / 'belmonte' / entry['path'] for entry in json.loads((ASSETS / 'belmonte/source.json').read_text())['meshes']
+                     *(ASSETS / 'belmonte' / entry['path'] for entry in _read_json(ASSETS / 'belmonte/source.json')['meshes']
                        if entry['name'].startswith('SM_BM_BT_Terrain_')),
                      out / 'belmonte-train' / 'route' / 'route.json', out / 'belmonte-train' / 'route' / 'line.json'],
              needs=['world.belmonte_train_route'],
@@ -1304,7 +1334,7 @@ def world_steps(ctx):
                      *belmonte_train_corridor(out),
                      ASSETS / 'belmonte' / 'source.json',
                      *(ASSETS / 'belmonte' / entry['path']
-                       for entry in json.loads((ASSETS / 'belmonte' / 'source.json').read_text())['meshes']
+                       for entry in _read_json(ASSETS / 'belmonte' / 'source.json')['meshes']
                        if entry['name'].startswith(('SM_BM_BT_Terrain_', 'SM_BM_BT_blk_', 'SM_BM_BH_', 'SM_BM_BE_', 'SM_BM_BHip_',
                                                     'SM_BM_BVV_Farm_', 'SM_BM_BC_Water_', 'SM_BM_BC_Pave', 'SM_BM_BC_Ponte')))],
              needs=['world.layout', 'world.hidamari', 'world.skatepark', 'world.zeppelin', 'world.belmonte',
@@ -1748,9 +1778,7 @@ def gondola_steps(ctx):
     MUST include every runtime mesh, collision mesh, texture and walking layout.
     """
     kit = ASSETS / 'vehicles/gondola'
-    spec = importlib.util.spec_from_file_location('gondola_parameters', kit / 'params.py')
-    parameters = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(parameters)
+    parameters = _load_helper_module('gondola_parameters', kit / 'params.py')
     folder = ctx.out / 'gondola'
     files = [folder / name for name in parameters.product_files()]
     result = [Step('world.gondola_kit', [Blender(kit / 'build.py', threads=3, factory_startup=True,
@@ -1761,9 +1789,7 @@ def gondola_steps(ctx):
                  about='ropeway cabin, all tower heights and stations: closure, contact, level-floor and walk gates')]
 
     query = WORLD / 'gondola/inputs.py'
-    query_spec = importlib.util.spec_from_file_location('gondola_world_inputs', query)
-    queries = importlib.util.module_from_spec(query_spec)
-    query_spec.loader.exec_module(queries)
+    queries = _load_helper_module('gondola_world_inputs', query)
     digest = ctx.out / 'digests/world.gondola.ground.json'
     result += [Step('world.gondola_ground_inputs',
                     [Call('ropeway final ground inputs', lambda ctx, log:
@@ -1781,13 +1807,9 @@ def gondola_steps(ctx):
                     outputs=[folder / 'world/ground.npz', folder / 'world/ground.json'], heavy=True,
                     about='final exported trail contact and owned Belmonte terrain queries')]
     site_code = WORLD / 'gondola/validation.py'
-    site_spec = importlib.util.spec_from_file_location('gondola_site_validation', site_code)
-    validation = importlib.util.module_from_spec(site_spec)
-    site_spec.loader.exec_module(validation)
+    validation = _load_helper_module('gondola_site_validation', site_code)
     structure_code = WORLD / 'gondola/structures.py'
-    structure_spec = importlib.util.spec_from_file_location('gondola_structure_inputs', structure_code)
-    structures = importlib.util.module_from_spec(structure_spec)
-    structure_spec.loader.exec_module(structures)
+    structures = _load_helper_module('gondola_structure_inputs', structure_code)
     structure_digest = ctx.out / 'digests/world.gondola.structures.json'
     result += [Step('world.gondola_structure_inputs',
                     [Call('ropeway final structure inputs', lambda ctx, log:
@@ -1921,7 +1943,7 @@ def steps(ctx):
             if not isinstance(command, UnrealScript):
                 continue
             code = scanner.local_imports(command.script, (SCRIPTS, WORLD, REGIONS))
-            if any('import_village.py' in file.read_text() for file in code):
+            if any(_mentions_import_village(file) for file in code):
                 code = sorted(set(code + scanner.local_imports(SCRIPTS / 'import_village.py', (SCRIPTS, WORLD))))
             common_mesh = SCRIPTS / 'mesh_import.py' in code
             native_reuse = paths.STUDIO / 'atelier' / 'unreal_mesh_reuse.py' in code
@@ -1959,13 +1981,9 @@ def steps(ctx):
             step.inputs.append(SCRIPTS / 'mesh_import.py')
         if step.name in ('unreal.forest', 'unreal.treehouse', 'unreal.see_through'):
             step.reads.append('materials.shared')
-    identity_spec = importlib.util.spec_from_file_location('yorimichi_network_identity', GAME / 'network_identity.py')
-    identity = importlib.util.module_from_spec(identity_spec)
-    identity_spec.loader.exec_module(identity)
+    identity = _load_helper_module('yorimichi_network_identity', GAME / 'network_identity.py')
     content = GAME / 'unreal' / 'Content'
-    policy_spec = importlib.util.spec_from_file_location('yorimichi_content_policy', GAME / 'content_policy.py')
-    policy = importlib.util.module_from_spec(policy_spec)
-    policy_spec.loader.exec_module(policy)
+    policy = _load_helper_module('yorimichi_content_policy', GAME / 'content_policy.py')
     result.append(Step('data.content', [Call('archive_retired_content', policy.archive)],
                        inputs=[GAME / 'content_policy.py'],
                        deferred_inputs=[DeferredInputs(
