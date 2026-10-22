@@ -180,7 +180,7 @@ def horse_import_inputs():
     manifest, the coat masks and variants, and each breed's GLBs."""
     variants = json.loads((HORSE_VARIANTS / 'manifest.json').read_text())['variants']
     return [SCRIPTS / 'import_horses.py', SCRIPTS / 'horse_data.py', SCRIPTS / 'animation_compression.py', YORI,
-            paths.STUDIO / 'atelier' / 'gltf.py',
+            paths.STUDIO / 'atelier' / 'gltf.py', paths.STUDIO / 'atelier/blender/__init__.py',
             HORSES / 'manifest.json', HORSE_VARIANTS / 'manifest.json',
             *(HORSES / 'coats' / f'T_Coat_{mask}_Mask.png' for mask in HORSE_LIBRARY['coat_masks']),
             *(HORSE_VARIANTS / v['file'] for v in variants),
@@ -793,25 +793,30 @@ def brinecove_steps(out):
              after=['unreal.belmonte'], heavy=True,
              outputs=[out / 'brinecove' / 'import-report.json',
                       GAME / 'unreal' / 'Content' / 'Brinecove' / 'Meshes' / 'SM_BC_Ground_0_0.uasset'],
+             products=region_native_products(out, 'brinecove'),
              about='/Game/Brinecove: meshes, collision and painterly surfaces'),
         region_texture_step(out, 'brinecove'),
     ]
 
 
-def belmonte_native_products(out):
-    """@cc [owner:fontanierh,label:correctness] complete-belmonte-native-library
-    Native ownership MUST cover complete final mesh/collision, material/texture, screen-material
-    and report outputs, including regular package sidecars. Track MUST depend on the native
-    material bytes it loads, without a reference-only edge hiding that read. These native
-    products MUST NOT opt into the portable source cache.
+def region_native_products(out, region):
+    """@cc [owner:fontanierh,label:correctness] complete-region-native-library
+    Native ownership MUST cover every final mesh/collision, material/texture and
+    report output, including all regular package sidecars. Belmonte additionally
+    owns its racing screen material. Track MUST read the native material bytes it
+    loads rather than hide them behind a reference-only edge. These native
+    products MUST NOT opt into the portable source cache. Directory inventories
+    MUST NOT substitute for current native source/material/collision validation.
     """
+    namespace = {'belmonte': 'Belmonte', 'brinecove': 'Brinecove'}[region]
     content = GAME / 'unreal/Content'
-    tv = content / 'Racing/M_RacingTv.uasset'
-    return [Product('belmonte.native_meshes', (content / 'Belmonte/Meshes',)),
-            Product('belmonte.native_materials', (content / 'Belmonte/Materials', content / 'Belmonte/Textures')),
-            Product('belmonte.native_tv', (tv,), optional_paths=tuple(tv.with_suffix(suffix)
-                    for suffix in ('.uexp', '.ubulk', '.uptnl', '.m.ubulk', '.upayload'))),
-            Product('belmonte.native_report', (out / 'belmonte/import-report.json',))]
+    owned = [Product(region + '.native_meshes', (content / namespace / 'Meshes',)),
+             Product(region + '.native_materials', (content / namespace / 'Materials', content / namespace / 'Textures'))]
+    if region == 'belmonte':
+        tv = content / 'Racing/M_RacingTv.uasset'
+        owned.append(Product('belmonte.native_tv', (tv,), optional_paths=tuple(tv.with_suffix(suffix)
+                     for suffix in ('.uexp', '.ubulk', '.uptnl', '.m.ubulk', '.upayload'))))
+    return [*owned, Product(region + '.native_report', (out / region / 'import-report.json',))]
 
 
 def belmonte_steps(out):
@@ -852,7 +857,7 @@ def belmonte_steps(out):
              after=['unreal.forest'], heavy=True,
              outputs=[out / 'belmonte' / 'import-report.json', GAME / 'unreal' / 'Content' / 'Belmonte' / 'Meshes' / 'SM_BM_NorthApron.uasset',
                       GAME / 'unreal' / 'Content' / 'Racing' / 'M_RacingTv.uasset'],
-             products=belmonte_native_products(out),
+             products=region_native_products(out, 'belmonte'),
              about='/Game/Belmonte: environment meshes, collision and painterly surfaces'),
         Step('unreal.belmonte_train', [UnrealScript(SCRIPTS / 'import_belmonte_train.py', 'BELMONTE TRAIN IMPORT COMPLETE', null_rhi=True,
                                                        args=('-ForceDPCVars=r.GenerateMeshDistanceFields=0,r.MeshCardRepresentation=0',))],
@@ -1710,7 +1715,8 @@ def gondola_steps(ctx):
     result.append(Step('world.gondola_site',
                        [Blender(REGIONS / 'gondola/site.py',threads=3,factory_startup=True)],
                        inputs=[*validation.SITE_CODE, *[kit/name for name in parameters.BUILD_SOURCES],
-                               WORLD / 'solid_mesh.py', query, *craterpark_v4.input_paths(), YORI],
+                               WORLD / 'solid_mesh.py', query, *craterpark_v4.input_paths(), YORI,
+                               paths.STUDIO / 'atelier/blender/__init__.py', paths.STUDIO / 'atelier/blender/fbx.py'],
                        needs=['world.gondola_kit','world.gondola_ground','world.gondola_structures','world.craterpark_geometry','world.zeppelin'],
                        outputs=[folder/'world/site.json',*(folder/'world/assets'/f'{name}.fbx' for name in names)],
                        heavy=True,about='final station supports/access, exact rope paths and actual fitted-span contact gates'))
@@ -1810,6 +1816,12 @@ def steps(ctx):
     scanner = build_inputs.ImportScanner()
     for step in result:
         for command in step.commands:
+            if isinstance(command, Blender):
+                # Exporter implementation bytes belong only to mesh-export actions.
+                fbx_helper = paths.STUDIO / 'atelier' / 'blender' / 'fbx.py'
+                if fbx_helper in scanner.local_imports(command.script):
+                    step.inputs += [path for path in (fbx_helper.parent / '__init__.py', fbx_helper)
+                                    if path not in step.inputs]
             if isinstance(command, (Python, Blender)) and WORLD in Path(command.script).parents:
                 step.inputs += [f for f in scanner.local_imports(command.script, (WORLD, REGIONS)) if f not in step.inputs]
         # Native geometry reuse hashes its complete native-only source closure.

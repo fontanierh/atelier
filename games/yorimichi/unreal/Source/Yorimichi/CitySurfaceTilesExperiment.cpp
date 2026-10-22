@@ -80,7 +80,7 @@ static FAutoConsoleCommandWithWorldAndArgs CitySurfaceTilesCommand(TEXT("japan.C
                 Tile->SetupAttachment(World->GetRootComponent());
                 Tile->SetMobility(EComponentMobility::Static);
                 Tile->SetStaticMesh(Pair.Value);
-                for (int32 M=0;M<Source->GetNumMaterials();++M) Tile->SetMaterial(M,Source->GetMaterial(M));
+                // Imported tiles own their name-bound material table; parent indices can differ.
                 Tile->ComponentTags.Add(TileTag);
                 Tile->SetLightingChannels(Source->LightingChannels.bChannel0,Source->LightingChannels.bChannel1,Source->LightingChannels.bChannel2);
                 Tile->SetCastShadow(Source->CastShadow);

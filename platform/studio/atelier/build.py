@@ -229,6 +229,8 @@ def module_step(module):
 
 def check_modules(steps):
     """A script that declares game modules must need their module steps, so their digests feed its fingerprint."""
+    from .mesh_export_contract import check_steps
+    check_steps(steps, Blender)
     for step in steps:
         for command in step.commands:
             if isinstance(command, UnrealScript):

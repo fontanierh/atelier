@@ -17,3 +17,11 @@ package bytes, native snapshot and current material/settings/source bindings. Mi
 bootstrapped only through the same fresh expected-geometry and native checks, never by accepting a
 package's existence or disabling a validator. Normal preparation MUST validate the complete current
 roster and publish its registry only after every required unit and owner check succeeds.
+
+@cc [owner:fontanierh,label:correctness;performance] fbx-source-only-bootstrap
+Shared legacy FBX import MUST use the actual requested source for any Interchange-to-FBX
+migration pass, then synchronize stored unit/normal/colour settings before the final pass.
+An unrelated generated seed/placeholder MUST NOT enter final-source identity, be read or supply
+material slots. Raw source-pass code and current validation MUST have distinct declared policies.
+Source changes, real import-option changes, package-byte changes and failed native checks MUST
+continue to refuse reuse. Obsolete seed keywords MAY remain accepted only without reading them.

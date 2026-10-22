@@ -223,8 +223,6 @@ def leaf_canopy(mesh, center, radii, n, size, m, rng, normal_center=None, vertic
 
 
 def export(ob, name, *, portable=False):
-    from contextlib import nullcontext
-    from atelier.blender.fbx import stable_export
     os.makedirs(OUTDIR, exist_ok=True)
     bpy.ops.object.select_all(action="DESELECT"); ob.select_set(True); bpy.context.view_layer.objects.active = ob
     hull=None
@@ -246,11 +244,11 @@ def export(ob, name, *, portable=False):
                     images.append((node, node.image))
                     node.image = None
     try:
-        with stable_export() if portable else nullcontext():
-            bpy.ops.export_scene.fbx(
-                filepath=path, use_selection=True, apply_unit_scale=True, apply_scale_options="FBX_SCALE_ALL",
-                axis_forward="-Y", axis_up="Z", object_types={"MESH"}, mesh_smooth_type="FACE", bake_anim=False,
-                path_mode="STRIP" if portable else "COPY", embed_textures=False, use_tspace=False, colors_type="SRGB")
+        from atelier.blender.fbx import export_fbx as export_scene_fbx
+        export_scene_fbx(
+            filepath=path, use_selection=True, apply_unit_scale=True, apply_scale_options="FBX_SCALE_ALL",
+            axis_forward="-Y", axis_up="Z", object_types={"MESH"}, mesh_smooth_type="FACE", bake_anim=False,
+            path_mode="STRIP" if portable else "COPY", embed_textures=False, use_tspace=False, colors_type="SRGB")
     finally:
         for node, image in images:
             node.image = image
