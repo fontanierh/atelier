@@ -23,6 +23,7 @@ SETTLE_SECONDS = 1.0
 SETTLE_LIMIT = 90.0
 LOCATION_TOLERANCE_CM = 0.5
 ANGLE_TOLERANCE_DEG = 0.1
+FOV_TOLERANCE_DEG = 0.1
 FORWARD_TOLERANCE = 0.02
 SHOT_TIMEOUT_SECONDS = 20.0
 
@@ -164,10 +165,25 @@ def _measured_camera(qa_module):
     return location, rotation
 
 
-def _pose_errors(pose, location, rotation):
+def _measured_fov(qa_module):
+    output = qa_module.py(
+        'import unreal\n'
+        'print(unreal.GameplayStatics.get_player_camera_manager(unreal.LiveLibrary.game_world(), 0).get_fov_angle())\n'
+    )
+    lines = [line.strip() for line in str(output).splitlines() if line.strip()]
+    if not lines:
+        raise ValueError('camera fov state is empty')
+    try:
+        return float(lines[-1])
+    except ValueError as error:
+        raise ValueError(f'camera fov state is not a number: {lines[-1]!r}') from error
+
+
+def _pose_errors(pose, location, rotation, fov):
     distance = math.dist(location, pose.location)
     pitch = abs(((rotation[0] - pose.pitch + 180.0) % 360.0) - 180.0)
     yaw = abs(((rotation[1] - pose.yaw + 180.0) % 360.0) - 180.0)
+    fov_error = abs(fov - pose.fov)
     errors = []
     if distance > LOCATION_TOLERANCE_CM:
         errors.append(f'camera is {distance:.2f} cm from the recorded position')
@@ -175,7 +191,9 @@ def _pose_errors(pose, location, rotation):
         errors.append(f'camera pitch is {pitch:.2f} degrees off')
     if yaw > ANGLE_TOLERANCE_DEG:
         errors.append(f'camera yaw is {yaw:.2f} degrees off')
-    return distance, pitch, yaw, errors
+    if fov_error > FOV_TOLERANCE_DEG:
+        errors.append(f'camera fov is {fov_error:.2f} degrees off')
+    return distance, pitch, yaw, fov_error, errors
 
 
 def _wait_for_shot(path, monotonic, sleep):
@@ -199,7 +217,8 @@ def capture(notes_path, out_dir, qa_module=qa, monotonic=time.monotonic, sleep=t
         'units': data.get('units', 'unreal cm'),
         'started': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
         'settle': {'minimum_fps': SETTLE_MIN_FPS, 'seconds': SETTLE_SECONDS},
-        'tolerance': {'location_cm': LOCATION_TOLERANCE_CM, 'angle_deg': ANGLE_TOLERANCE_DEG},
+        'tolerance': {'location_cm': LOCATION_TOLERANCE_CM, 'angle_deg': ANGLE_TOLERANCE_DEG,
+                      'fov_deg': FOV_TOLERANCE_DEG},
         'captures': [],
     }
     index_path = out_dir / 'index.json'
@@ -212,7 +231,8 @@ def capture(notes_path, out_dir, qa_module=qa, monotonic=time.monotonic, sleep=t
             qa_module.py(_code(pose))
             qa_module.settle(minimum=SETTLE_MIN_FPS, seconds=SETTLE_SECONDS, limit=SETTLE_LIMIT)
             location, rotation = _measured_camera(qa_module)
-            distance, pitch, yaw, errors = _pose_errors(pose, location, rotation)
+            fov = _measured_fov(qa_module)
+            distance, pitch, yaw, fov_error, errors = _pose_errors(pose, location, rotation, fov)
             qa_module.py(_capture_code(shot))
             _wait_for_shot(shot, monotonic, sleep)
             size = png_size(shot)
@@ -241,8 +261,10 @@ def capture(notes_path, out_dir, qa_module=qa, monotonic=time.monotonic, sleep=t
                     'pitch': rotation[0],
                     'yaw': rotation[1],
                     'roll': rotation[2],
+                    'fov': fov,
                 },
-                'error': {'location_cm': round(distance, 3), 'pitch_deg': round(pitch, 3), 'yaw_deg': round(yaw, 3)},
+                'error': {'location_cm': round(distance, 3), 'pitch_deg': round(pitch, 3), 'yaw_deg': round(yaw, 3),
+                          'fov_deg': round(fov_error, 3)},
                 'look_at': note.get('look_at'),
                 'look_target': note.get('look_target'),
                 'ok': not errors,

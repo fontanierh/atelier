@@ -42,13 +42,16 @@ class FakeBridge:
 
 
 class FakeQA:
-    def __init__(self, location, rotation):
+    def __init__(self, location, rotation, fov=70.0):
         self.codes = []
         self.settle_calls = []
+        self.fov = fov
         self.bridge = FakeBridge(location, rotation)
 
     def py(self, code):
         self.codes.append(code)
+        if 'get_fov_angle' in code:
+            return f'{self.fov}\n'
         if 'unreal.LiveLibrary.screenshot(' in code:
             argument = code.partition('unreal.LiveLibrary.screenshot(')[2].rsplit(')', 1)[0]
             Path(json.loads(argument)).write_bytes(PNG)
@@ -126,10 +129,11 @@ def test_capture_writes_one_numbered_still_and_a_measured_index(tmp_path):
     assert capture['before'] == 'note-001.png'
     assert capture['size'] == [2296, 1440]
     assert capture['ok'] is True and capture['errors'] == []
-    assert capture['error'] == {'location_cm': 0.0, 'pitch_deg': 0.0, 'yaw_deg': 0.0}
+    assert capture['error'] == {'location_cm': 0.0, 'pitch_deg': 0.0, 'yaw_deg': 0.0, 'fov_deg': 0.0}
+    assert capture['camera']['fov'] == 70.0
     assert fake.settle_calls == [{'minimum': 30.0, 'seconds': 1.0, 'limit': 90.0}]
     assert 'teleport_player' in fake.codes[0] and 'review_camera' in fake.codes[0]
-    assert 'screenshot' in fake.codes[1]
+    assert any('screenshot' in code for code in fake.codes)
     assert 'restore_player_camera' in fake.codes[-1]
 
 
@@ -138,13 +142,14 @@ def test_capture_reports_a_camera_that_is_not_at_the_recorded_pose(tmp_path):
     out = tmp_path / 'out'
     pose = notes_revisit.pose_from_note(note())
     fake = FakeQA((pose.location[0] + 5.0, pose.location[1], pose.location[2]),
-                  (pose.pitch, pose.yaw + 1.0, pose.roll))
+                  (pose.pitch, pose.yaw + 1.0, pose.roll), fov=69.0)
     assert notes_revisit.capture(notes, out, qa_module=fake, monotonic=lambda: 0.0, sleep=lambda _: None) == 1
     index = json.loads((out / 'index.json').read_text(encoding='utf-8'))
     assert index['ok'] is False
     assert index['captures'][0]['ok'] is False
     assert 'camera is 5.00 cm' in index['captures'][0]['errors'][0]
     assert 'camera yaw is 1.00 degrees off' in index['captures'][0]['errors'][1]
+    assert 'camera fov is 1.00 degrees off' in index['captures'][0]['errors'][2]
     assert (out / 'note-001-after.png').exists()
 
 
