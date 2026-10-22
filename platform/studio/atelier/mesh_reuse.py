@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import time
 
 from .native_protocol import (atomic_json, CheckpointError, canonical, read_json, relative, safe_destination,
                               ReadStore, entry_path, validate_action, context)
@@ -164,21 +165,26 @@ def native_policy(source, functions, script, *, revision=None, inputs=None):
     return policy(source, functions, resolve)
 
 
-def revision_source(repo, revision, filename):
+def revision_source(repo, revision, filename, *, timeout=10):
     """Read a captured clean revision without executing donor code or fetching."""
     if not isinstance(revision, str) or not re.fullmatch('[0-9a-f]{40}', revision):
         return None
     name = relative(filename).as_posix()
     try:
         result = subprocess.run(['git', 'show', revision + ':' + name], cwd=repo,
-                                capture_output=True, timeout=10)
+                                capture_output=True, timeout=timeout)
         return result.stdout.decode() if result.returncode == 0 else None
     except (OSError, subprocess.SubprocessError, UnicodeError):
         return None
 
 
 def saved_source(repo, filename, recorded):
-    """Resolve a saved per-file input identity to existing immutable Git bytes.
+    """@cc [owner:fontanierh,label:correctness] recorded-local-source-discovery
+    Source bytes MUST match the recorded legacy or Merkle file identity. Search
+    current-HEAD path history first; only on miss MAY bounded local-ref discovery
+    inspect at most 64 additional unique revisions within a ten-second fallback
+    budget. Ref names MUST NOT establish compatibility. Never fetch or execute
+    historical source, and never persist negative evidence across new local refs.
 
     Recognizes the published legacy basename+bytes and single-file Merkle
     algorithms. This recovers evidence without rewriting a successful stamp.
@@ -193,15 +199,44 @@ def saved_source(repo, filename, recorded):
         return None
     if revisions.returncode:
         return None
-    for revision in revisions.stdout.splitlines():
+    seen = set()
+    def matches(source):
+        if source is None:
+            return False
+        raw = source.encode()
+        old = hashlib.sha256(Path(name).name.encode() + raw).hexdigest()
+        merkle = identity({'schema': 1, 'files': {'0/.': {
+            'kind': 'file', 'size': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}}})
+        return recorded in (old, merkle)
+    for revision in revisions.stdout.splitlines()[:64]:
+        if revision in seen or not re.fullmatch('[0-9a-f]{40}', revision):
+            continue
+        seen.add(revision)
         source = revision_source(repo, revision, name)
-        if source is not None:
-            raw = source.encode()
-            old = hashlib.sha256(Path(name).name.encode() + raw).hexdigest()
-            merkle = identity({'schema': 1, 'files': {'0/.': {
-                'kind': 'file', 'size': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}}})
-            if recorded in (old, merkle):
-                return source
+        if matches(source):
+            return source
+    # A stopped producer may have committed its exact source on another local
+    # branch. Ref names discover bytes; only the recorded file identity admits them.
+    deadline = time.monotonic() + 10
+    try:
+        revisions = subprocess.run(['git', 'log', '--all', '-n', '128', '--format=%H', '--', name],
+                                   cwd=repo, capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.SubprocessError, UnicodeError):
+        return None
+    if revisions.returncode:
+        return None
+    additional = 0
+    for revision in revisions.stdout.splitlines()[:128]:
+        if revision in seen or not re.fullmatch('[0-9a-f]{40}', revision):
+            continue
+        remaining = deadline - time.monotonic()
+        if additional == 64 or remaining <= 0:
+            break
+        seen.add(revision)
+        additional += 1
+        source = revision_source(repo, revision, name, timeout=remaining)
+        if matches(source) and time.monotonic() < deadline:
+            return source
     return None
 
 
