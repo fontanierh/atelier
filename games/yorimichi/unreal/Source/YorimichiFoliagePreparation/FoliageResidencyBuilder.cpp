@@ -170,15 +170,16 @@ bool Split(UStaticMesh* Input,int32 Level,UStaticMesh* Source,int32 SourceLevel,
         if (!Source->GetStaticMaterials().IsValidIndex(Slot)) return Refuse(TEXT("unbound source material group"));OriginalSlots.Add(G,Slot);
     }
     if (AuthoredLeaves) Initialize(*AuthoredLeaves,Input->GetStaticMaterials(),UV.GetNumChannels());
-    TMap<FString,int32> Remaining;RigidCount=0;
+    TMap<FString,int32> Remaining;RigidCount=0;int32 SourceLeaves=0;
     for (auto T:Original->Triangles().GetElementIDs())
     {
         const int32 Slot=OriginalSlots.FindChecked(Original->GetTrianglePolygonGroup(T));bool Leaf;
         if (!IsLeaf(*Original,T,Slot,Source->GetStaticMaterials().Num(),Mode,LeafSlots,
             double(Bounds.Min.Z)+(double(Bounds.Max.Z)-double(Bounds.Min.Z))*.4,Leaf)) return Refuse(TEXT("invalid source face classification"));
         if (!Leaf) { const FString Key=TriangleKey(*Original,T,Slot,UV.GetNumChannels());if (Key.IsEmpty()) return Refuse(TEXT("invalid rigid corner key"));++Remaining.FindOrAdd(Key);++RigidCount; }
-        else if (AuthoredLeaves && !CopyTriangle(*Original,T,Slot,*AuthoredLeaves))
-            return Refuse(TEXT("authored leaf corner copy failed"));
+        else
+        { ++SourceLeaves;if (AuthoredLeaves && !CopyTriangle(*Original,T,Slot,*AuthoredLeaves))
+            return Refuse(TEXT("authored leaf corner copy failed")); }
     }
     if (!Names.IsValid() || UV.GetNumChannels()<1 || UV.GetNumChannels()>8 ||
         D->PolygonGroups().Num()!=Input->GetStaticMaterials().Num()) return Refuse(TEXT("prepared UV/group/material table mismatch"));
@@ -197,7 +198,7 @@ bool Split(UStaticMesh* Input,int32 Level,UStaticMesh* Source,int32 SourceLevel,
     }
     for (const auto& Pair:Remaining) if (Pair.Value) return Refuse(TEXT("missing exact rigid corner multiplicity"));
     Input->ClearMeshDescription(Level);Source->ClearMeshDescription(SourceLevel);
-    return Canopy.Triangles().Num()>0 || Refuse(TEXT("empty canopy"));
+    return Canopy.Triangles().Num()>0 || (SourceLevel>0 && SourceLeaves==0) || Refuse(TEXT("empty canopy"));
 }
 
 
@@ -781,13 +782,28 @@ bool UYorimichiFoliageResidencyBuilder::SelfTest()
             auto* Authored=Build(Directory/TEXT("AuthoredTree"),Chain,Source->GetStaticMaterials(),AuthoredScreens,ECollision::None,Empty);
             Objects.Add(Authored);if (!Authored) { Passed=false;break; }
             const FString Scope=Directory/(EmptyFar?TEXT("EmptyFar"):TEXT("AuthoredFive"));
-            const FString Row=Compact(Authored,Input,InputShadow,TEXT("roles"),{},1,true,{0,1,3,4},
+            auto* ChainInput=Input;auto* ChainShadow=InputShadow;
+            if (EmptyFar)
+            {
+                // Match the real old producer: the far proxy and tiny-source
+                // shadow can contain only the exact original rigid triangle.
+                TArray<FMeshDescription> Proxy=Prepared;Initialize(Proxy[3],Materials,6);
+                if (!CopyTriangle(Levels[0],FTriangleID(0),0,Proxy[3])) return false;
+                ChainInput=Build(Directory/TEXT("RigidOnlyFarInput"),Proxy,Materials,{1.f,.24f,.07f,.018f},ECollision::None,Empty);
+                TArray<FMeshDescription> RigidShadow={Proxy[3]};
+                ChainShadow=Build(Directory/TEXT("RigidOnlyShadowInput"),RigidShadow,Materials,{1.f},ECollision::None,Empty);
+                Objects.Append({ChainInput,ChainShadow});
+                if (!ChainInput || !ChainShadow) return false;
+            }
+            const FString Row=Compact(Authored,ChainInput,ChainShadow,TEXT("roles"),{},1,true,{0,1,3,4},
                 {2.f,0.f,0.f,0.f,0.f,0.f,10.f},Scope,nullptr);
             auto* Leaves=LoadObject<UStaticMesh>(nullptr,*(Scope/TEXT("AuthoredTree_Canopy.AuthoredTree_Canopy")));
             auto* RigidMesh=LoadObject<UStaticMesh>(nullptr,*(Scope/TEXT("AuthoredTree.AuthoredTree")));
             auto* ShadowMesh=LoadObject<UStaticMesh>(nullptr,*(Scope/TEXT("AuthoredTree_Shadow.AuthoredTree_Shadow")));
             Objects.Append({Leaves,RigidMesh,ShadowMesh});
             Passed=!Row.IsEmpty() && Leaves && RigidMesh && Leaves->GetNumSourceModels()==5 && RigidMesh->GetNumSourceModels()==5;
+            if (Passed && EmptyFar)
+                Passed=ShadowMesh && ShadowMesh->GetRenderData()->LODResources[0].GetNumTriangles()==0;
             if (Passed) for (int32 L=0;L<5;++L)
                 Passed=Passed && Leaves->GetRenderData()->ScreenSize[L].GetValue()==AuthoredScreens[L] &&
                     RigidMesh->GetRenderData()->ScreenSize[L].GetValue()==AuthoredScreens[L] &&

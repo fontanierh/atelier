@@ -160,7 +160,7 @@ bool FYorimichiFoliageToggleTest::RunTest(const FString&)
     auto* ShadowMesh=LoadObject<UStaticMesh>(nullptr,*Shadow);
     if (!Mesh || !Optimized || !ShadowMesh) { World->DestroyWorld(false);return false; }
     UYorimichiFoliageSubsystem::FAsset Asset;
-    Asset.Optimized=Prepared;Asset.Shadow=Shadow;Asset.Kind=TEXT("tree");
+    Asset.Optimized=Prepared;Asset.Shadow=Shadow;Asset.Kind=TEXT("shrub");
     Asset.Triangles=Mesh->GetNumTriangles(0);Asset.ShadowTriangles=ShadowMesh->GetNumTriangles(0);
     for (int32 L=0;L<Optimized->GetNumLODs();++L) Asset.LODTriangles.Add(Optimized->GetNumTriangles(L));
     for (const auto& Material:Mesh->GetStaticMaterials()) Asset.SourceMaterials.Add(Material.MaterialInterface->GetPathName());
@@ -173,6 +173,9 @@ bool FYorimichiFoliageToggleTest::RunTest(const FString&)
     Source->SetMobility(EComponentMobility::Static);
     World->SetBegunPlay(true); // Exercise SetStaticMesh's registered Static mobility refusal.
     Source->bAffectDistanceFieldLighting=true;
+    Source->SetEvaluateWorldPositionOffset(true);
+    Source->SetCullDistances(30000,36000);Source->SetLODDistanceScale(1.7f);
+    Source->SetWorldPositionOffsetDisableDistance(1234);
     const FTransform Placement(FRotator(0,31,0),FVector(300,400,50),FVector(1,2,3));
     Source->AddInstance(Placement);Source->AddInstance(FTransform(FVector(900,200,0)));
     TestTrue(TEXT("Legacy mode registers without loading prepared copies"),System->Refresh());
@@ -187,6 +190,11 @@ bool FYorimichiFoliageToggleTest::RunTest(const FString&)
         TestFalse(TEXT("Authored hidden state survives reload"),Source->IsVisible());
         System->SetSourceVisibility(Source,true);
         TestTrue(TEXT("Prepared mesh renders"),Source->IsVisible());
+        System->SetDistances(true,.4f,0.f,80.f);
+        TestTrue(TEXT("Zero tree sway retains bush player-push WPO"),bool(Source->bEvaluateWorldPositionOffset));
+        TestEqual(TEXT("Zero tree sway retains authored bush WPO reach"),Source->GetWorldPositionOffsetDisableDistance(),1234);
+        TestTrue(TEXT("Owned bush WPO setting passes the actual binding audit"),System->Refresh());
+        TestEqual(TEXT("Prepared bush has bounded culling"),Source->InstanceEndCullDistance,20000);
         TestEqual(TEXT("Collision lives on the active component"),Source->GetCollisionEnabled(),ECollisionEnabled::QueryOnly);
         TestEqual(TEXT("Placement count retained"),Source->GetInstanceCount(),2);
         FTransform Actual;Source->GetInstanceTransform(0,Actual,false);
@@ -198,6 +206,11 @@ bool FYorimichiFoliageToggleTest::RunTest(const FString&)
         TestNull(TEXT("Prepared shadow reference released"),System->Sources[0].Shadow.Get());
         TestTrue(TEXT("Legacy visibility restored"),Source->IsVisible());
         TestTrue(TEXT("Legacy shadow state restored"),bool(Source->CastShadow));
+        TestEqual(TEXT("Legacy bush start cull restored"),Source->InstanceStartCullDistance,30000);
+        TestEqual(TEXT("Legacy bush end cull restored"),Source->InstanceEndCullDistance,36000);
+        TestEqual(TEXT("Legacy LOD distance scale restored"),Source->GetLODDistanceScale(),1.7f);
+        TestTrue(TEXT("Legacy WPO restored"),bool(Source->bEvaluateWorldPositionOffset));
+        TestEqual(TEXT("Legacy WPO reach restored"),Source->GetWorldPositionOffsetDisableDistance(),1234);
     }
     TStrongObjectPtr<UJapanPreferences> KeepPreferences(NewObject<UJapanPreferences>());
     auto* Preferences=KeepPreferences.Get();
@@ -283,7 +296,7 @@ bool FYorimichiFoliageBindingTest::RunTest(const FString&)
     Source->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     TestFalse(TEXT("External collision changes require explicit revalidation"),System->BindingsCurrent(Entry));
     Source->SetCollisionEnabled(Entry.Collision);
-    Entry.Visual=Source;System->Sway=0;Source->SetEvaluateWorldPositionOffset(false);
+    Entry.Visual=Source;Entry.Kind=TEXT("tree");System->Sway=0;Source->SetEvaluateWorldPositionOffset(false);
     TestTrue(TEXT("Owned sway setting is not an external mutation"),System->BindingsCurrent(Entry));
     return true;
 }
@@ -322,6 +335,9 @@ bool FYorimichiFoliageRegistryTest::RunTest(const FString&)
         .Replace(TEXT("/Game/FoliageSystem/Tree_Shadow.Tree_Shadow"),TEXT("/Game/FoliageResident/Tree_Shadow.Tree_Shadow"))
         .Replace(TEXT("\"kind\":\"tree\""),TEXT("\"simple_trunk\":false,\"passable\":false,\"rigid\":\"/Game/FoliageResident/Tree.Tree\",\"rigid_triangles\":4,\"rigid_lod_triangles\":[4],\"source_materials\":[\"/Engine/EngineMaterials/DefaultMaterial.DefaultMaterial\"],\"kind\":\"tree\""));
     TestTrue(TEXT("Resident registry retains source identity without source loading"),Read(Resident));
+    TestTrue(TEXT("Certified empty resident shadow accepted"),Read(Resident.Replace(TEXT("\"shadow_triangles\":32"),TEXT("\"shadow_triangles\":0"))));
+    TestFalse(TEXT("Negative resident shadow refuses"),Read(Resident.Replace(TEXT("\"shadow_triangles\":32"),TEXT("\"shadow_triangles\":-1"))));
+    TestFalse(TEXT("Legacy shadow schema stays positive"),Read(Valid.Replace(TEXT("\"shadow_triangles\":32"),TEXT("\"shadow_triangles\":0"))));
     TestEqual(TEXT("Carrier resolves to canonical source"),System->ResidentSources.FindRef(TEXT("/Game/FoliageResident/Tree.Tree")),FString(TEXT("/Game/Test/Tree.Tree")));
     TestFalse(TEXT("Missing trunk policy refuses"),Read(Resident.Replace(TEXT("\"simple_trunk\":false"),TEXT("\"missing_trunk\":false"))));
     TestFalse(TEXT("Contradictory collision policy refuses"),Read(Resident.Replace(TEXT("\"simple_trunk\":false,\"passable\":false"),TEXT("\"simple_trunk\":true,\"passable\":true"))));

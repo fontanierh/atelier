@@ -219,3 +219,9 @@ or material objects across mode reloads.
 City surface tile components MUST retain their own certified mesh material table. Parent material slot
 indices MUST NOT be copied onto tiles: a tile may omit unused parent slots and compact their order.
 Prepared and legacy tile modes MUST preserve the same logical face-to-material bindings.
+
+@cc [owner:fontanierh,label:correctness] foliage-authored-render-state
+Mode removal and reload MUST restore authored instance culling, LOD scale, WPO enablement and
+WPO disable distance before registering the other mode. Bush/groundcover WPO carries player
+push and MUST remain authored-enabled when tree sway distance is zero. The separate wind
+strength control remains independent of player push; tree wind culling MUST NOT disable bush WPO.

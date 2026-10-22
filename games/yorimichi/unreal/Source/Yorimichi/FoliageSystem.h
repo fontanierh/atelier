@@ -30,6 +30,8 @@ struct FYorimichiFoliageSource
     bool ShadowOnly = false, EvaluateWPO = true;
     FString Kind;
     int32 InstanceCount=0;
+    int32 StartCullDistance=0,EndCullDistance=0,WPODisableDistance=0;
+    float CullDistance=0.f,LODDistanceScale=1.f;
 };
 
 /** Every region's vegetation shares one representation and settings owner.

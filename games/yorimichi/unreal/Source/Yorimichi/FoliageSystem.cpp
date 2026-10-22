@@ -111,11 +111,11 @@ bool UYorimichiFoliageSubsystem::ReadRegistry(const TSharedPtr<FJsonObject>& Reg
 {
     Assets.Reset();ResidentSources.Reset();Words.Reset();LeafMaterials.Reset();ClassificationCache.Reset();bRegistryLoaded=false;
     auto Invalid=[this]() { Error=TEXT("Foliage registry is missing, invalid or unsupported. Build unreal.foliage_system.");return false; };
-    const auto PositiveInteger=[](const TSharedPtr<FJsonObject>& Object,const TCHAR* Key,int32& Out)
+    const auto PositiveInteger=[](const TSharedPtr<FJsonObject>& Object,const TCHAR* Key,int32& Out,int32 Minimum=1)
     {
         double Number=0.;
         if (!Object || !Object->TryGetNumberField(Key,Number) || !FMath::IsFinite(Number) ||
-            Number<=0. || Number>MAX_int32 || Number!=FMath::FloorToDouble(Number)) return false;
+            Number<Minimum || Number>MAX_int32 || Number!=FMath::FloorToDouble(Number)) return false;
         Out=int32(Number);return true;
     };
     int32 Version=0;
@@ -144,7 +144,7 @@ bool UYorimichiFoliageSubsystem::ReadRegistry(const TSharedPtr<FJsonObject>& Reg
             !Row->TryGetStringField(TEXT("kind"),Asset.Kind) ||
             (Asset.Kind!=TEXT("tree") && Asset.Kind!=TEXT("shrub") && Asset.Kind!=TEXT("groundcover")) ||
             !PositiveInteger(Row,TEXT("source_triangles"),Asset.Triangles) ||
-            !PositiveInteger(Row,TEXT("shadow_triangles"),Asset.ShadowTriangles) ||
+            !PositiveInteger(Row,TEXT("shadow_triangles"),Asset.ShadowTriangles,Version==2?0:1) ||
             !Row->TryGetArrayField(TEXT("triangles"),Counts) ||
                 (Version==1?Counts->Num()!=4:(Counts->IsEmpty() || Counts->Num()>8)) ||
             !Row->TryGetArrayField(TEXT("canopy_bounds"),Bounds) || Bounds->Num()!=2) return Invalid();
@@ -465,7 +465,11 @@ bool UYorimichiFoliageSubsystem::Register(UStaticMeshComponent* Component)
     Entry.HasRigid=bEnabled && !Asset->Rigid.IsEmpty();Entry.Visible=Component->IsVisible();
     Entry.Hidden=Component->bHiddenInGame;Entry.CastShadow=Component->CastShadow;
     Entry.DistanceField=Component->bAffectDistanceFieldLighting;Entry.EvaluateWPO=Component->bEvaluateWorldPositionOffset;
-    if (const auto* Instances=Cast<UInstancedStaticMeshComponent>(Component)) Entry.InstanceCount=Instances->GetInstanceCount();
+    Entry.CullDistance=Component->LDMaxDrawDistance;
+    Entry.WPODisableDistance=Component->GetWorldPositionOffsetDisableDistance();
+    if (const auto* Instances=Cast<UInstancedStaticMeshComponent>(Component))
+    { Entry.InstanceCount=Instances->GetInstanceCount();Entry.StartCullDistance=Instances->InstanceStartCullDistance;
+      Entry.EndCullDistance=Instances->InstanceEndCullDistance;Entry.LODDistanceScale=Instances->GetLODDistanceScale(); }
     Entry.ShadowOnly=Entry.Hidden && Component->bCastHiddenShadow;Entry.Kind=Asset->Kind;
     if (!bEnabled) { Sources.Add(Entry);ApplyCollision(Sources.Last());return true; }
     UStaticMesh* Optimized=Asset->Rigid.IsEmpty()?Mesh:LoadObject<UStaticMesh>(nullptr,*Asset->Optimized);
@@ -625,6 +629,11 @@ void UYorimichiFoliageSubsystem::Restore(FYorimichiFoliageSource& Entry,bool Res
     }
     Entry.Original->SetVisibility(Entry.Visible,false);Entry.Original->SetHiddenInGame(Entry.Hidden,false);
     Entry.Original->SetCastShadow(Entry.CastShadow);Entry.Original->bAffectDistanceFieldLighting=Entry.DistanceField;
+    Entry.Original->SetEvaluateWorldPositionOffset(Entry.EvaluateWPO);
+    Entry.Original->SetWorldPositionOffsetDisableDistance(Entry.WPODisableDistance);
+    if (auto* Group=Cast<UInstancedStaticMeshComponent>(Entry.Original))
+    { Group->SetCullDistances(Entry.StartCullDistance,Entry.EndCullDistance);Group->SetLODDistanceScale(Entry.LODDistanceScale); }
+    else Entry.Original->SetCullDistance(Entry.CullDistance);
     if (Entry.Visual && Entry.Visual!=Entry.Original) { Entry.Visual->SetVisibility(false,false);Entry.Visual->SetCastShadow(false); }
     if (Entry.NearVisual) Entry.NearVisual->SetVisibility(false,false);
     if (Entry.Patches) Entry.Patches->SetVisibility(false,false);
@@ -661,7 +670,8 @@ bool UYorimichiFoliageSubsystem::BindingsCurrent(const FYorimichiFoliageSource& 
     if (Materials.Num()!=Entry.MaterialSlots.Num() || Materials.Num()!=Entry.MaterialBindings.Num()) return false;
     for (int32 I=0;I<Materials.Num();++I)
         if (Materials[I].MaterialSlotName!=Entry.MaterialSlots[I] || Entry.Original->GetMaterial(I)!=Entry.MaterialBindings[I]) return false;
-    const bool ExpectedWPO=bEnabled && Entry.Visual==Entry.Original?Entry.EvaluateWPO && Sway>0.f:Entry.EvaluateWPO;
+    const bool ExpectedWPO=bEnabled && Entry.Visual==Entry.Original?
+        Entry.EvaluateWPO && (Sway>0.f || Entry.Kind!=TEXT("tree")):Entry.EvaluateWPO;
     const auto* Asset=Assets.Find(Entry.SourcePath);
     const bool Passable=Asset && Asset->Passable && !Entry.ShadowOnly && !Entry.Original->ComponentHasTag(TEXT("FoliageBackdrop"));
     const auto ExpectedCollision=Passable?ECollisionEnabled::NoCollision:Entry.Collision;
@@ -682,14 +692,17 @@ void UYorimichiFoliageSubsystem::Apply(FYorimichiFoliageSource& Entry)
         Entry.Original->SetEvaluateWorldPositionOffset(Entry.EvaluateWPO);
         if (auto* Group=Cast<UHierarchicalInstancedStaticMeshComponent>(Entry.Original)) Group->SetLODDistanceScale(Detail);
     }
+    // Bush and groundcover WPO also carries player push, independently of tree sway.
+    const bool LeafWPO=Entry.EvaluateWPO && (Sway>0.f || Entry.Kind!=TEXT("tree"));
+    const int32 LeafDistance=Sway>0.f?FMath::RoundToInt(Sway*100.f):Entry.WPODisableDistance;
     if (auto* Near=Cast<UHierarchicalInstancedStaticMeshComponent>(Entry.NearVisual))
-    { Near->SetVisibility(Entry.Visible,false);Near->SetHiddenInGame(Entry.Hidden,false);Near->SetLODDistanceScale(Detail);Near->SetCullDistances(20000,25000);Near->SetWorldPositionOffsetDisableDistance(FMath::RoundToInt(Sway*100.f));Near->SetEvaluateWorldPositionOffset(Entry.EvaluateWPO && Sway>0.f); }
+    { Near->SetVisibility(Entry.Visible,false);Near->SetHiddenInGame(Entry.Hidden,false);Near->SetLODDistanceScale(Detail);Near->SetCullDistances(20000,25000);Near->SetWorldPositionOffsetDisableDistance(LeafDistance);Near->SetEvaluateWorldPositionOffset(LeafWPO); }
     if (Entry.Patches) { Entry.Patches->SetVisibility(Entry.Visible,false);Entry.Patches->SetHiddenInGame(Entry.Hidden,false); }
     if (auto* Visual=Entry.Visual.Get())
     {
         Visual->SetVisibility(Entry.Visible,false);Visual->SetHiddenInGame(Entry.Hidden,false);
-        Visual->SetEvaluateWorldPositionOffset(Entry.EvaluateWPO && Sway>0.f);
-        Visual->SetWorldPositionOffsetDisableDistance(FMath::RoundToInt(Sway*100.f));
+        Visual->SetEvaluateWorldPositionOffset(LeafWPO);
+        Visual->SetWorldPositionOffsetDisableDistance(LeafDistance);
         if (auto* Group=Cast<UHierarchicalInstancedStaticMeshComponent>(Visual))
         {
             Group->SetLODDistanceScale(Detail);

@@ -57,3 +57,9 @@ NOT stand in for preparation code. Raw imports and runtime/game targets MUST NOT
 module. Moving code MUST preserve geometry/material/collision/reduction behavior and native validation.
 Historical unit lookup MAY use an independently reviewed exact source-pair witness; a moved source path
 or source digest alone MUST NOT certify compiled compatibility or receiving task success.
+
+@cc [owner:fontanierh,label:correctness] foliage-empty-distant-leaf-proof
+A certified rigid-only distant source level MAY produce an empty canopy and shadow after exact
+rigid-corner removal. Preparation MUST verify that no source leaf faces existed and that every
+rigid corner was accounted for; near canopy LOD0 MUST remain positive. Published v2 counts and
+actual native resources MUST agree exactly, including zero; legacy v1 shadow counts stay positive.
