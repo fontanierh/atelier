@@ -203,8 +203,8 @@ def gable_roof(m, x0, y0, x1, y1, ze, pitch, axis='x', over=(0.9, 0.9, 0.9, 0.9)
             # Round eave tiles and a fascia board under the eave edge.
             e = Vector((0, yc, zr + 0.02)) + V * L
             m.beam((x0 - ow, e.y, e.z - 0.12), (x1 + oe, e.y, e.z - 0.12), 0.12, 0.22, TIMBER_DARK)
-        # Rafter ends under the overhang, their tops 3 mm into the roof slab (they carry it).
-        zt = ze + 0.02 - 0.047 * math.hypot(1.0, pitch)      # the axis, 0.047 m under the slab across the pitch
+        # Rafter ends under the overhang, their tops 5 mm into the roof slab (they carry it, 2 mm clear of the 3 mm gable infill).
+        zt = ze + 0.02 - 0.045 * math.hypot(1.0, pitch)      # the axis, 0.045 m under the slab across the pitch
         for k in range(int((x1 - x0) / 0.6) + 1):
             x = x0 + k * (x1 - x0) / int((x1 - x0) / 0.6)
             a = Vector((x, y0 if s < 0 else y1, zt)); b = Vector((x, yc + s * (D + o - 0.1), zt - (o - 0.1) * pitch))
