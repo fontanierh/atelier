@@ -16,11 +16,13 @@ from gondola.clearance import StructureClearance
 def write_triangle(path, points):
     path.parent.mkdir(parents=True,exist_ok=True)
     vertices=[(x,z,-y) for x,y,z in points]
-    binary=b''.join(struct.pack('<3f',*p) for p in vertices)
+    binary=b''.join(struct.pack('<3f',*p) for p in vertices)+struct.pack('<3H',0,1,2)
     doc={'asset':{'version':'2.0'},'buffers':[{'byteLength':len(binary)}],
-         'bufferViews':[{'buffer':0,'byteOffset':0,'byteLength':len(binary)}],
-         'accessors':[{'bufferView':0,'componentType':5126,'count':3,'type':'VEC3'}],
-         'nodes':[{'mesh':0}], 'meshes':[{'primitives':[{'attributes':{'POSITION':0}}]}]}
+         'bufferViews':[{'buffer':0,'byteOffset':0,'byteLength':36},
+                        {'buffer':0,'byteOffset':36,'byteLength':6}],
+         'accessors':[{'bufferView':0,'componentType':5126,'count':3,'type':'VEC3'},
+                      {'bufferView':1,'componentType':5123,'count':3,'type':'SCALAR'}],
+         'nodes':[{'mesh':0}], 'meshes':[{'primitives':[{'attributes':{'POSITION':0},'indices':1}]}]}
     path.write_bytes(glb_pack(doc,binary))
 
 
@@ -45,6 +47,36 @@ def test_separate_collision_source_selects_an_otherwise_distant_visual(exported)
     old=result['files'].copy()
     write_triangle(folder/'belmonte/glb/Wall_Collision.glb',[(400,4500,0),(402,4500,0),(400,4501,2)])
     assert structures.inputs(folder)['files']!=old
+
+
+def test_render_only_children_remain_in_actual_clearance_extraction_once(exported):
+    from gondola import structure_probe
+    folder, row = exported
+    row['parent_collision'] = True
+    child = dict(row, asset='/Game/Belmonte/Meshes/Second.Second', collision=False)
+    root = folder/'belmonte'
+    (root/'runtime.json').write_text(json.dumps({'origin_cm':[0,0,0],'groups':[row,child]}))
+    report = json.loads((root/'build-report.json').read_text())
+    report['meshes'].append({'name':'Second','path':'glb/Second.glb'})
+    (root/'build-report.json').write_text(json.dumps(report))
+    write_triangle(root/'glb/Second.glb',[(420,4500,0),(421,4500,0),(420,4501,1)])
+    selection = structures.selected(folder)['groups']
+    assert len(selection) == 2
+    assert sorted(sorted(group['geometry']) for group in selection) == [['collision','visual'],['visual']]
+    structure_probe.extract(folder)
+    with np.load(folder/'gondola/world/structures.npz') as arrays:
+        assert len(arrays['visual']) == 2
+        assert len(arrays['collision']) == 1
+        assert set(arrays['visual'][:,0,0]) == {420.,1000.}
+
+
+@pytest.mark.parametrize('parent', [None, 1, 'yes', False])
+def test_invalid_parent_collision_ownership_refuses(exported, parent):
+    folder, row = exported
+    row['parent_collision'] = parent
+    (folder/'belmonte/runtime.json').write_text(json.dumps({'origin_cm':[0,0,0],'groups':[row]}))
+    with pytest.raises(ValueError, match='parent collision'):
+        structures.selected(folder)
 
 
 def test_instance_rotation_scale_translation_and_region_origin():

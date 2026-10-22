@@ -12,6 +12,7 @@ import yori  # noqa: E402
 import json
 import unreal
 from atelier.native_protocol import native_context
+from atelier import native_membership
 from atelier.unreal_mesh_reuse import AssetGroup, MeshReuse, lods_match, set_if_changed
 import atmosphere
 import glb_mesh_validation
@@ -366,6 +367,7 @@ def validate_reused_mesh(mesh, entry):
 def main():
     report = json.loads((OUT / 'build-report.json').read_text())
     E.make_directory(ROOT)
+    previous_meshes = native_membership.inventory(E, ROOT + '/Meshes', 'SM_BC_')
     texture_files = {entry['texture'] for entry in report['materials'].values() if entry['texture']}
     for entry in report['materials'].values():
         texture_files |= {file for file in list(entry.get('layers', {}).values())
@@ -384,16 +386,15 @@ def main():
                       ('import_mesh', 'keep_full_precision_uvs', 'generate_lods'),
                       report_member='generated/brinecove/build-report.json',
                       validation_functions=('validate_reused_mesh',))
-    donor = {entry['name']: entry for entry in reuse.donor.get('meshes', [])}
     def geometry(entry):
         return dict(entry, foliage_roles=bool(entry.get('foliage_roles')), lods=bool(entry.get('lods')))
     imported = {}
     for index, entry in enumerate(report['meshes']):
         name = entry['name']
         target = ROOT + '/Meshes/' + name
-        previous = donor.get(name)
         mesh = reuse.acquire(name, target, geometry=geometry(entry),
-                             donor_geometry=geometry(previous) if previous else None,
+                             donor_geometry=lambda saved: next((geometry(row) for row in saved.get('meshes', [])
+                                                                if row['name'] == name), None),
                              sources=[(target, OUT / entry['path'], entry['sha256'])],
                              validator=lambda mesh: validate_reused_mesh(mesh, entry))
         reused = mesh is not None
@@ -445,6 +446,9 @@ def main():
         imported[name] = {'triangles': triangles, 'bounds_cm': actual, 'collision': entry['collision']}
         reuse.validated(name)
         unreal.log(f'BRINECOVE IMPORT {index + 1}/{len(report["meshes"])} {name} reused={int(reused)}')
+    current_names = [entry['name'] for entry in report['meshes']]
+    retired = native_membership.retire(E, previous_meshes, current_names, ROOT + '/Meshes', 'SM_BC_')
+    unreal.log(f'NATIVE MEMBERSHIP RETIRED: {len(retired)} superseded packages')
     (OUT / 'import-report.json').write_text(json.dumps(imported, indent=1) + '\n')
     E.delete_directory(ROOT + '/Import')
     reuse.finish()

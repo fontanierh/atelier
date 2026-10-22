@@ -351,29 +351,44 @@ def test_small_vault_limit_rolls_over_and_restore_follows_each_part(fixture, tmp
 
 def test_private_parallel_uploads_have_bounded_spool(fixture, tmp_path, monkeypatch):
     from atelier import checkpoint_packs as packs
-    import time
     github, store, remote = fixture
     monkeypatch.setattr(packs, 'PART_BYTES', 3)
     original = github.upload
-    active = maximum = peak_bytes = 0
+    submit = packs.Spool.submit
+    active = maximum = started = peak_bytes = 0
     mutex = threading.Lock()
+    first_window = threading.Barrier(6, timeout=5)
+    controller = threading.get_ident()
+
+    def measured_submit(spool, path, digest):
+        nonlocal peak_bytes
+        # Only the controller creates/removes spool files. Worker-side glob/stat
+        # races with its legitimate cleanup, regardless of a test-only mutex.
+        assert threading.get_ident() == controller
+        peak_bytes = max(peak_bytes, sum(p.stat().st_size for p in path.parent.glob('pack-*.bin')))
+        return submit(spool, path, digest)
+
     def slow(item, path):
-        nonlocal active, maximum, peak_bytes
+        nonlocal active, maximum, started
         if not path.name.startswith('pack-'):
             return original(item, path)
         with mutex:
             active += 1; maximum = max(maximum, active)
-            peak_bytes = max(peak_bytes, sum(p.stat().st_size for p in path.parent.glob('pack-*.bin')))
-        time.sleep(.025)
+            started += 1
+            first = started <= 6
         try:
+            if first:
+                first_window.wait()
             return original(item, path)
         finally:
             with mutex:
                 active -= 1
+    monkeypatch.setattr(packs.Spool, 'submit', measured_submit)
     monkeypatch.setattr(github, 'upload', slow)
     key = checkpoint(store, tmp_path, [bytes(range(100))])
     remote.publish(store, key, 'parallel', revision='c' * 40)
     assert maximum == 6
+    assert peak_bytes >= 6 * 3  # The sampler actually observed a populated worker window.
     assert peak_bytes <= 7 * 3  # Six in flight plus one prepared part.
     assert not list(store.directory.glob('tmp*/pack-*.bin'))
 

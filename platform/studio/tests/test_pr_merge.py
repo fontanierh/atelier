@@ -46,7 +46,10 @@ class Context:
     (generated / 'stamps/mesh.json').write_text(json.dumps(dict(fingerprint='a' * 64)))
     (source / '.gitignore').write_text('build/\n__pycache__/\n')
     for args in (['init', '-q'], ['add', '.'], ['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'source']):
-        subprocess.run(['git', '-C', str(source), *args], check=True, capture_output=True)
+        # A background Git maintenance child can remove its own lock during the
+        # full-tree read-only assertion. Keep fixture creation synchronous.
+        subprocess.run(['git', '-c', 'maintenance.auto=false', '-c', 'gc.auto=0', '-C', str(source), *args],
+                       check=True, capture_output=True)
     def observation():
         return {p.relative_to(source).as_posix(): (p.stat().st_mtime_ns, hashlib.sha256(p.read_bytes()).hexdigest())
                 for p in source.rglob('*') if p.is_file()}

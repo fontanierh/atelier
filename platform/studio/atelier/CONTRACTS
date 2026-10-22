@@ -19,3 +19,77 @@ when source fingerprints, complete workspace bytes and engine/SDK compatibility 
 original task/tool provenance MAY be unknown and MUST NOT be invented or promoted into a produced
 individual action certificate. Record the receiving observed environment locally; later tool changes
 MUST invalidate compatibility-only state. Verified action results MUST retain complete output proof.
+
+@cc [owner:fontanierh,label:correctness] historical-inputs-are-not-capture-head
+Historical native source/policy evidence MUST come from the original task's recorded input identities.
+A later checkpoint's clean Git revision identifies its capture, not necessarily the producer of every
+retained file. Missing historical source evidence MUST cause an ordinary reuse miss; it MUST NOT be
+invented from capture HEAD, current source, filenames or the presence of a saved package.
+
+@cc [owner:fontanierh,label:correctness] conservative-native-policy-closure
+A supported native geometry policy MUST bind the executed owner/helper closure and current validation
+code required by that policy. Unsupported definition-time execution, unresolved local support or
+ambiguous historical evidence MUST disable reuse. Historical raw-geometry comparison and current
+validator identity MUST remain distinct, so adding a validator cannot silently weaken old geometry proof.
+
+@cc [owner:fontanierh,label:correctness] finalized-reuse-is-the-success-metric
+Reported native reuse hits MUST follow successful source/package/current-validator admission and the
+successful guarded host finalization for that invocation. Staged candidates, preliminary compatibility
+logs and pending unit observations MUST NOT be counted as finalized hits or parent build success.
+Refusal diagnostics MUST observe the existing decision without changing admission or receipt identity.
+
+@cc [owner:fontanierh,label:correctness] detached-backup-follows-public-success
+Private checkpoint upload scheduling MUST follow verified public release success. Private preparation
+before public publication MUST be local only. Spawn, transport or private-publication failure MUST NOT
+fail or roll back an already successful public release. Retry MUST preserve the immutable retained
+request and completed packs, without requiring recapture or access to the producing checkout.
+
+@cc [owner:fontanierh,label:safety] frozen-detached-backup-lifetime
+A detached backup worker MUST use a digest-checked frozen runtime and cache working directory, with
+per-request ownership, bounded transport/deadline and durable failure state. It MUST NOT depend on a
+mutable producer checkout or mutable installed module files after detachment. Producer-free resume MUST
+verify the durable request's complete destination/source/checkpoint binding and published public readiness.
+
+@cc [owner:fontanierh,label:safety] pending-publications-protect-shared-packs
+Private collection MUST preserve every pack referenced by the newest completed checkpoint or a live
+checkpoint/publication pin, including reused packs owned by an older release. A pinned incomplete
+publication without a verifiable full reference inventory MUST defer pack deletion. Pin expiry MUST use
+the server clock; release tombstones MUST prevent stale clients from resurrecting released pins.
+
+@cc [owner:fontanierh,label:safety] uncertain-remote-mutations-keep-exclusion
+Private pack deletion and metadata consolidation MUST exclude readers and other publishers. A timed-out
+or otherwise uncertain remote mutation MUST retain the recovery barrier until its outcome is established;
+client exit, local cache presence or an unconfirmed DELETE MUST NOT grant another writer authority.
+Deletion MUST remain restricted to the configured private game-cache ownership, never public releases.
+
+@cc [owner:fontanierh,label:correctness] automatic-native-candidates-retain-original-proof
+Automatic native retention MUST follow successful guarded host and owning task finalization. It MUST
+preserve the original task input evidence and complete validated package groups as immutable candidate
+hints, without installing Content or manufacturing receiving/action success. Donor ranking metadata
+MUST remain advisory: selection and staging MUST freshly validate the descriptor and byte inventory.
+
+@cc [owner:fontanierh,label:safety] local-retirement-preserves-useful-successors
+Local checkpoint/workspace retirement MUST preserve active work and compatible outputs serving the
+current or scheduled builds, including one useful current donor and explicit live pin obligations.
+Being referenced by obsolete metadata alone MUST NOT be presented as evidence of ongoing usefulness.
+Superseded versions and redundant workspaces MAY retire after scope coverage and current-purpose proof;
+an unfinished private restore exercise alone MUST NOT extend a retention hold the operator has retired.
+Public release verification and private checkpoint restoration MUST remain separate evidence claims.
+Personal backups, shared installed tools and another owner's live outputs MUST remain outside cleanup.
+
+@cc [owner:fontanierh,label:correctness] candidate-composition-keeps-original-groups
+Candidate discovery MAY compose independently staged donor catalogues, but MUST preserve each original
+task stamp, report and package inventory. A mesh and its collision/LOD source group MUST come from one
+compatible donor, never a splice of incomplete histories. Selection MUST compare that donor's original
+geometry/owner policy and report, then retain the actual selected donor in per-mesh provenance. Current
+loaded import-source and native material/role/collision checks remain mandatory. A corrupt independent
+donor MUST miss without hiding another valid donor or creating receiving success.
+
+@cc [owner:fontanierh,label:safety] local-sweeps-exclude-readers-and-writers
+A local metadata publication mutex alone MUST NOT be treated as excluding older unleased readers.
+Collection MUST obtain reader/writer exclusion, or an explicitly coordinated quiet boundary covering
+every affected old client, without interrupting another owner's native job. It MUST save the retired
+metadata and exact deletion inventory outside the collected store, recompute retained references under
+exclusion, and refuse changed identities or new references before deleting only authorized obsolete data.
+Metadata/blob/workspace removal and observed free-space gain MUST be reported separately: APFS clones
+can retain underlying blocks after one pathname is removed. Logical sizes MUST NOT imply physical reclaim.

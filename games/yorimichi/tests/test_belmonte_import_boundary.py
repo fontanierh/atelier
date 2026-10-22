@@ -28,5 +28,6 @@ def test_targeted_belmonte_preserves_forest_reachability_and_order(tmp_path):
     names = [step.name for step in selected]
     assert names.index('unreal.forest') < names.index('unreal.belmonte')
     belmonte = next(step for step in selected if step.name == 'unreal.belmonte')
-    assert {'world.belmonte.meshes', 'unreal.world',
+    assert {'unreal.world',
             *RECIPE.unreal_modules.needs(RECIPE.IMPORT_CODE)} <= set(belmonte.needs)
+    assert set(belmonte.reads) == {'belmonte.geometry', 'belmonte.materials'}

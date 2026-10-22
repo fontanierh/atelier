@@ -150,6 +150,20 @@ def test_parent_refuses_changed_or_unproved_pending_geometry(tmp_path, monkeypat
     assert not (ctx.out / 'native-imports/unreal.region/meshes.json').exists()
 
 
+@pytest.mark.parametrize('misses', [None, [], {'source': True}, {'source': -1}, {'path/to/source': 1}])
+def test_parent_refuses_malformed_miss_diagnostics_before_receipt_publication(tmp_path, monkeypatch, misses):
+    ctx, nonce, _, _, _ = pending_fixture(tmp_path, monkeypatch)
+    path = reuse.pending_path(ctx, 'unreal.region', nonce)
+    packet = json.loads(path.read_text())
+    packet['miss_reasons'] = misses
+    path.write_text(json.dumps(packet))
+    with pytest.raises(ValueError, match='miss diagnostics'):
+        reuse.finalize_pending(ctx, 'unreal.region', nonce)
+    assert path.exists()
+    assert not (ctx.out / 'native-imports/unreal.region/meshes.json').exists()
+    assert not (ctx.out / 'native-imports/unreal.region/summary.json').exists()
+
+
 @pytest.mark.parametrize('before,after', [
     ("T = {}; T.update({'b': 2})\ndef build(): return T\n", "T = {}; T.update({'b': 3})\ndef build(): return T\n"),
     ('N=100; N+=1\ndef build(): return N\n', 'N=100; N+=5\ndef build(): return N\n'),
@@ -205,6 +219,89 @@ def test_preinventory_compatibility_refuses_package_saved_after_success(tmp_path
     file.write_bytes(b'later vertex edits retaining import-data MD5')
     os.utime(file, (100, 100))  # copying/restoring old mtimes cannot restore continuity
     assert not reuse.historical_packages_match(ctx, 'unreal.region', {'time': finished}, ['/Game/Region/Mesh'])
+
+
+@pytest.fixture
+def selected_without_inventory(tmp_path, monkeypatch):
+    from atelier.native_protocol import ReadStore
+    ctx = SimpleNamespace(game='fixture', uproject=tmp_path / 'game/unreal/Game.uproject')
+    file = ctx.uproject.parent / 'Content/Region/Mesh.uasset'
+    file.parent.mkdir(parents=True)
+    file.write_bytes(b'current source/options already validated by native caller')
+    store = ReadStore(ctx.game, tmp_path / 'store')
+    monkeypatch.setattr(reuse, 'ReadStore', lambda game: store)
+    # Ordinary build records the selected tool key even when the task has no
+    # complete output scope and therefore cannot publish an action inventory.
+    stamp = {'checkpoint_key': 'a' * 64, 'time': max(file.stat().st_ctime, file.stat().st_mtime),
+             'fingerprint': 'b' * 64}
+    return ctx, file, store, stamp
+
+
+def test_tool_selection_key_does_not_disable_preinventory_continuity(selected_without_inventory):
+    ctx, _, store, stamp = selected_without_inventory
+    assert reuse.historical_packages_match(ctx, 'unreal.region', stamp, ['/Game/Region/Mesh'])
+    assert not store.directory.exists()  # The native readback never initializes store metadata.
+
+
+def test_selection_only_still_refuses_later_package_writes(selected_without_inventory):
+    import os
+    ctx, file, _, stamp = selected_without_inventory
+    file.write_bytes(b'later geometry modification')
+    os.utime(file, (100, 100))
+    assert not reuse.historical_packages_match(ctx, 'unreal.region', stamp, ['/Game/Region/Mesh'])
+
+
+def test_complete_stored_proof_still_matches_actual_bytes(selected_without_inventory):
+    from atelier.native_protocol import inventory_identity
+    ctx, file, store, old = selected_without_inventory
+    member = 'content/Region/Mesh.uasset'
+    info = file.stat()
+    files = {member: dict(kind='file', mode=info.st_mode & 0o777, mtime_ns=info.st_mtime_ns,
+                          size=info.st_size, sha256=reuse.digest(file))}
+    roots = [dict(path=member, kind='file')]
+    stamp = dict(old, checkpoint_inventory=inventory_identity(roots, files))
+    value = dict(schema=1, game=ctx.game, key=stamp['checkpoint_key'], roots=roots, files=files,
+                 stamp=stamp, fingerprint=stamp['fingerprint'], task='unreal.region')
+    target = reuse.entry_path(store, stamp['checkpoint_key'])
+    target.parent.mkdir(parents=True)
+    target.write_text(json.dumps(value))
+    assert reuse.historical_packages_match(ctx, 'unreal.region', stamp, ['/Game/Region/Mesh'])
+    file.write_bytes(b'different geometry')
+    assert not reuse.historical_packages_match(ctx, 'unreal.region', stamp, ['/Game/Region/Mesh'])
+
+
+def test_new_sidecar_is_not_continuous_preinventory_state(selected_without_inventory):
+    ctx, file, _, stamp = selected_without_inventory
+    file.with_suffix('.ubulk').write_bytes(b'new sidecar')
+    assert not reuse.historical_packages_match(ctx, 'unreal.region', stamp, ['/Game/Region/Mesh'])
+
+
+@pytest.mark.parametrize('inventory', [None, '', 'c' * 64, {}])
+def test_explicit_output_proof_never_downgrades_to_timestamp_compatibility(selected_without_inventory, inventory):
+    ctx, _, _, stamp = selected_without_inventory
+    assert not reuse.historical_packages_match(ctx, 'unreal.region', dict(stamp, checkpoint_inventory=inventory),
+                                               ['/Game/Region/Mesh'])
+
+
+@pytest.mark.parametrize('evidence', ['action', 'conflict', 'linked-action', 'linked-conflict'])
+def test_existing_or_conflicted_action_never_downgrades_to_timestamps(selected_without_inventory, evidence):
+    ctx, _, store, stamp = selected_without_inventory
+    target = reuse.entry_path(store, stamp['checkpoint_key'])
+    if 'conflict' in evidence:
+        target = target.with_suffix('.conflict')
+    target.parent.mkdir(parents=True)
+    if evidence.startswith('linked-'):
+        target.symlink_to(target.parent / 'absent')
+    else:
+        target.write_text('{}')
+    assert not reuse.historical_packages_match(ctx, 'unreal.region', stamp, ['/Game/Region/Mesh'])
+
+
+@pytest.mark.parametrize('key', ['', 0, 'not-a-key'])
+def test_invalid_selection_key_is_not_preinventory_evidence(selected_without_inventory, key):
+    ctx, _, _, stamp = selected_without_inventory
+    assert not reuse.historical_packages_match(ctx, 'unreal.region', dict(stamp, checkpoint_key=key),
+                                               ['/Game/Region/Mesh'])
 
 
 @pytest.mark.parametrize('call', ['s()', 'if True:\n s()', 'for _ in range(1):\n s()', 'result=s()'])

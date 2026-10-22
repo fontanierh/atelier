@@ -1,0 +1,19 @@
+@cc [owner:fontanierh,label:correctness] reused-geometry-requires-current-finishing
+Geometry reuse MUST still apply and verify the current owner's material, role, collision and LOD settings.
+An already-equal source-LOD binding MUST NOT be dirtied solely to reassign it; clean source packages MUST
+use dirty-only saves. Target assembly and its required current validation/saves MUST remain intact.
+Geometry reuse alone MUST NOT be reported as unchanged package bytes, an avoided cook or whole-build success.
+
+@cc [owner:fontanierh,label:correctness] native-source-proof-uses-real-import-data
+Native source-MD5 admission MUST read the engine's actual AssetImportData registry evidence and validate
+its supported shape and current source digest. Missing/malformed readback or a changed source MUST miss.
+An obsolete tag name, a path match, serialized-string search or a staged package's presence MUST NOT
+substitute for the required current loaded-source and native validation proof.
+
+@cc [owner:fontanierh,label:correctness] partial-preparation-needs-current-owner-proof
+A saved geometry-unit hint MAY survive parent failure but MUST NOT certify that parent or its registry.
+A unit hit MUST prove current expected geometry-role closure, compiled preparation policy, complete
+package bytes, native snapshot and current material/settings/source bindings. Missing hints MAY be
+bootstrapped only through the same fresh expected-geometry and native checks, never by accepting a
+package's existence or disabling a validator. Normal preparation MUST validate the complete current
+roster and publish its registry only after every required unit and owner check succeeds.

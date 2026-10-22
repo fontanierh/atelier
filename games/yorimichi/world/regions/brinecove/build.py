@@ -1,7 +1,7 @@
 """Export Brinecove for the game: ground tiles, town and nature meshes, hero models, foliage instances,
 runtime.json and build-report.json in build/yorimichi/brinecove.
 
-    blender -b --factory-startup --python games/yorimichi/world/regions/brinecove/build.py
+    uv run atelier build yorimichi world.brinecove
 
 The ground closes onto the FarHills final product's hole (ground.py), so this step reads that product. Every mesh
 is exported in local metres around region.ORIGIN; the Unreal importer (import_brinecove.py) binds each material
@@ -23,15 +23,18 @@ import foliage_roles  # noqa: E402
 import bpy  # noqa: E402
 import numpy as np  # noqa: E402
 
-from atelier.gltf import glb_parts  # noqa: E402
+from brinecove.mesh_export import mesh_object, export, glb_info  # noqa: E402
+from atelier.mesh_partition import face_groups  # noqa: E402
 from terrain_product import load  # noqa: E402
-from brinecove import flora, ground, hero_assets, hero_sources, modules, region as R, rocks  # noqa: E402
+from brinecove import flora, foliage_library, ground, hero_assets, hero_sources, modules, region as R, rocks  # noqa: E402
 from brinecove import layout as L  # noqa: E402
 from brinecove.geom import Builder, distinct_corners  # noqa: E402
 from brinecove.paths import BUILD as OUT, TEXTURES  # noqa: E402
 
 ROOT = '/Game/Brinecove'
 TILE = 256.0
+# Bound mixed models without increasing draw calls for small existing parts.
+MIXED_TRIANGLE_LIMIT = 32768
 IDENTITY = {'translation_cm': [0., 0., 0.], 'rotation_xyzw': [0., 0., 0., 1.], 'scale': [1., 1., 1.]}
 # Surfaces a player walks through: no collision, and the translucent ones cast no shadow.
 SOFT = ('leaf_', 'palm_', 'waterfall', 'mist', 'spray', 'foam', 'water', 'vine', 'flower', 'grass', 'fern', 'cover_')
@@ -163,12 +166,49 @@ def split(builder, prefix, settle, remap=None):
         part = parts.get(key)
         if part is None:
             part = parts[key] = Builder(f'SM_BC_{prefix}_{key[0]}_{key[1]}' + ('_Soft' if key[2] else ''))
+            part.spatial_centers = []
         normals = [builder.normals[f[k]] for k in corners] if builder.normals is not None else None
         part.face([pts[k] for k in corners], mat, [builder.uvs[f[k]] for k in corners], normals)
         if n in builder.foliage_roles:part.foliage_roles[len(part.faces)-1]=builder.foliage_roles[n]
-    return parts, outside, drowned, degenerate
+        part.spatial_centers.append((cx, cy))
+    return bounded_parts(parts, prefix), outside, drowned, degenerate
 
 
+
+
+def bounded_parts(parts, prefix):
+    """Keep final ground tiles and small models intact; partition oversized mixed meshes.
+
+    Complete faces keep the same positions, UVs, normals, materials and role labels.
+    Each piece keeps the parent's identity transform and solid/soft policy. Fixed
+    child-cell names stay stable while their ancestor subdivision decisions stay the same.
+    """
+    result = {}
+    for key, part in parts.items():
+        x, y, is_soft = key
+        if prefix == 'Ground' or sum(len(face) - 2 for face in part.faces) <= MIXED_TRIANGLE_LIMIT:
+            result[(*key, '')] = part
+            continue
+        x0, y0 = R.OUTER[0] + x * TILE, R.OUTER[1] + y * TILE
+        groups = face_groups(part.verts, part.faces, (x0, y0, x0 + TILE, y0 + TILE),
+                             triangle_limit=MIXED_TRIANGLE_LIMIT, locations=getattr(part, 'spatial_centers', None))
+        parent_water = all(mat.startswith(('water', 'mist', 'spray', 'foam', 'waterfall')) for mat in part.mats)
+        roles = getattr(part, 'foliage_roles', {})
+        for suffix, indices in groups:
+            piece = Builder(part.name + '_Piece' + suffix)
+            # Splitting a mixed water/foliage parent must not change its shadow policy.
+            piece.parent_water = parent_water
+            for index in indices:
+                face = part.faces[index]
+                piece.anchor = part.anchors[index] if part.anchors is not None else None
+                normals = [part.normals[i] for i in face] if part.normals is not None else None
+                piece.face([part.verts[i] for i in face], part.mats[index], [part.uvs[i] for i in face], normals)
+                if index in roles:
+                    if not hasattr(piece, 'foliage_roles'):
+                        piece.foliage_roles = {}
+                    piece.foliage_roles[len(piece.faces) - 1] = roles[index]
+            result[(*key, suffix)] = piece
+    return result
 
 
 def under_paving(x, y):
@@ -262,64 +302,6 @@ def blender_materials():
     return result
 
 
-def mesh_object(builder, materials):
-    used = sorted(set(builder.mats))
-    index = {name: i for i, name in enumerate(used)}
-    mesh = bpy.data.meshes.new(builder.name)
-    mesh.from_pydata(builder.verts, [], builder.faces)
-    uv_layer = mesh.uv_layers.new(name='UVMap')
-    for loop in mesh.loops:
-        uv_layer.data[loop.index].uv = builder.uvs[loop.vertex_index]
-    for name in used:
-        mesh.materials.append(materials[name])
-    custom = builder.normals is not None
-    for poly, mat in zip(mesh.polygons, builder.mats):
-        poly.material_index = index[mat]
-        poly.use_smooth = custom
-    mesh.validate(verbose=False)
-    mesh.update()
-    if custom:
-        normals = list(builder.normals)
-        for poly in mesh.polygons:
-            for v in poly.vertices:
-                if normals[v] is None:
-                    normals[v] = tuple(poly.normal)
-        mesh.normals_split_custom_set_from_vertices(normals)
-    obj = bpy.data.objects.new(builder.name, mesh)
-    bpy.context.scene.collection.objects.link(obj)
-    foliage_roles.export_roles(obj,builder)
-    return obj
-
-
-def export(obj, path):
-    bpy.ops.object.select_all(action='DESELECT')
-    obj.select_set(True)
-    bpy.context.view_layer.objects.active = obj
-    bpy.ops.export_scene.gltf(filepath=str(path), export_format='GLB', use_selection=True, export_apply=True,
-                              export_yup=True, export_animations=False, export_skins=False, export_cameras=False,
-                              export_lights=False, export_extras=False, export_normals=True,
-                              export_image_format='NONE', export_materials='EXPORT')
-    if len(obj.data.uv_layers)>foliage_roles.CHANNEL:
-        doc,_=glb_parts(path.read_bytes())
-        assert all('TEXCOORD_5' in primitive['attributes'] for mesh in doc['meshes'] for primitive in mesh['primitives']), \
-            ('Foliage UV5 lost in GLB export',obj.name)
-
-
-def glb_info(path):
-    """Triangle count, material slot names and bounds (local metres, z up) of an exported GLB."""
-    doc, _ = glb_parts(path.read_bytes())
-    triangles, low, high = 0, [math.inf] * 3, [-math.inf] * 3
-    for mesh in doc['meshes']:
-        for primitive in mesh['primitives']:
-            triangles += doc['accessors'][primitive['indices']]['count'] // 3
-            accessor = doc['accessors'][primitive['attributes']['POSITION']]
-            # glTF is y up: (x, z, -y) in Blender's frame.
-            (ax, ay, az), (bx, by, bz) = accessor['min'], accessor['max']
-            for k, (lo, hi) in enumerate(((ax, bx), (-bz, -az), (ay, by))):
-                low[k], high[k] = min(low[k], lo), max(high[k], hi)
-    return triangles, [m['name'] for m in doc.get('materials', [])], [low, high]
-
-
 def material_report(names):
     (OUT / 'textures').mkdir(parents=True, exist_ok=True)
 
@@ -411,6 +393,7 @@ def main(argv=None):
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source-library', type=Path, default=hero_sources.LIBRARY)
+    parser.add_argument('--foliage-library', type=Path, default=OUT.parent / 'models/brinecove/plants')
     if argv is None:
         argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
     args = parser.parse_args(argv)
@@ -448,7 +431,7 @@ def main(argv=None):
         report_outside[prefix] = outside
         report_drowned[prefix] = drowned
         report_degenerate[prefix] = degenerate
-        for (_, _, is_soft), part in sorted(parts.items()):
+        for (_, _, is_soft, _), part in sorted(parts.items()):
             obj = mesh_object(part, materials)
             has_roles=len(obj.data.uv_layers)>foliage_roles.CHANNEL
             path = OUT / 'glb' / f'{part.name}.glb'
@@ -457,7 +440,8 @@ def main(argv=None):
             triangles, names, bounds = glb_info(path)
             slots = [n[3:] for n in names]
             used.update(slots)
-            water = all(s.startswith(('water', 'mist', 'spray', 'foam', 'waterfall')) for s in slots)
+            water = getattr(part, 'parent_water',
+                            all(s.startswith(('water', 'mist', 'spray', 'foam', 'waterfall')) for s in slots))
             meshes.append({'name': part.name, 'path': path.relative_to(OUT).as_posix(), 'sha256': sha(path),
                            'foliage_roles':has_roles,
                            'triangles': triangles, 'bounds_m': bounds, 'slots': slots, 'collision': not is_soft})
@@ -470,7 +454,7 @@ def main(argv=None):
     meshes += hero_meshes
     groups += hero_groups
     # Foliage: each species prototype once, its placements as instances.
-    protos = flora.prototypes()
+    protos = foliage_library.load(args.foliage_library)
     placements, scrub = {}, {}
     cover = flora.groundcover(rocks.ground)
     print(f'groundcover: {len(cover)} instances', flush=True)
@@ -482,30 +466,28 @@ def main(argv=None):
         if g is not None and g < 0.4:
             continue  # the eased ground is under the sea here
         placements.setdefault(proto, []).append(transform(x, y, z + dz, yaw, scale))
-    for proto, builder in protos.items():
+    unknown = (placements.keys() | scrub.keys()) - protos.keys()
+    if unknown:
+        raise ValueError('Placements require undefined foliage models: ' + ', '.join(sorted(unknown)))
+    for proto, model in protos.items():
         if proto not in placements and proto not in scrub:
             continue
-        builder.name = 'SM_BC_Plant_' + ''.join(part.title() for part in proto.split('_'))
-        obj = mesh_object(builder, materials)
-        has_roles=len(obj.data.uv_layers)>foliage_roles.CHANNEL
-        path = OUT / 'glb' / f'{builder.name}.glb'
-        export(obj, path)
-        bpy.data.objects.remove(obj, do_unlink=True)
-        triangles, names, bounds = glb_info(path)
-        slots = [n[3:] for n in names]
-        for s in slots:
-            if s not in material_entries:
-                material_entries.update(material_report({s}))
-        height = bounds[1][2] - bounds[0][2]
-        meshes.append({'name': builder.name, 'path': path.relative_to(OUT).as_posix(), 'sha256': sha(path),
-                       'foliage_roles':has_roles,
-                       'triangles': triangles, 'bounds_m': bounds, 'slots': slots, 'collision': False, 'lods': True})
+        path = OUT / 'glb' / (model['name'] + '.glb')
+        shutil.copy2(args.foliage_library / proto / 'model.glb', path)
+        if sha(path) != model['sha256']:
+            raise ValueError('Foliage library changed during staging: ' + proto)
+        slots = model['slots']
+        for slot in slots:
+            if slot not in material_entries:
+                material_entries.update(material_report({slot}))
+        height = model['bounds_m'][1][2] - model['bounds_m'][0][2]
+        meshes.append({**model, 'path': path.relative_to(OUT).as_posix(), 'foliage_roles': True})
         low = proto.startswith('cover_')
         if proto in placements:
-            groups.append(group(builder.name, slots, placements[proto], collision=False, shadow=not low,
+            groups.append(group(model['name'], slots, placements[proto], collision=False, shadow=not low,
                                 cull_cm=5000 if low else 24000 if height < 4 else 60000))
         if proto in scrub:
-            groups.append(group(builder.name, slots, scrub[proto], collision=False, shadow=False, cull_cm=9000))
+            groups.append(group(model['name'], slots, scrub[proto], collision=False, shadow=False, cull_cm=9000))
     quay_z = float(L.ground(R.QUAY_STOP[0] - R.ORIGIN[0], R.QUAY_STOP[1] - R.ORIGIN[1])) + 1.0
     runtime = {'version': 1,
                'origin_cm': [R.ORIGIN[0] * 100., -R.ORIGIN[1] * 100., R.ORIGIN[2] * 100.],

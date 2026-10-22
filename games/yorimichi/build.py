@@ -8,15 +8,15 @@ $ATELIER_BUILD_ROOT/yorimichi) and to the ignored unreal/Content. `atelier build
 
 Foliage and shared materials have independent owners. The legacy world importer preserves those packages,
 binds them by stable path and rebuilds the remaining /Game/Japan content. The volcano follows it (unreal.north).
-An import of a legacy region needs a digest step (`digest_step`) instead of an export it reads, so identical
-re-exports leave the import current. Cairo's base import supplies his body and the nine authored clips used by
+Imports follow the named products or digest cutoffs they consume, so identical re-exports leave the import
+current. Cairo's base import supplies his body and the nine authored clips used by
 the merged move set.
 """
 import importlib.util, json, os, tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
-from atelier.build import Product, Step, DeferredInputs, Python, Blender, UnrealScript, UnrealCompile, UnrealPackage, Call
+from atelier.build import Product, Step, DeferredInputs, Python, Blender, UnrealScript, UnrealCompile, UnrealPackage, Call, Batch
 from atelier.checkpoint_candidates import CandidateScope
 from atelier import build_inputs, paths, unreal_modules
 
@@ -58,6 +58,13 @@ _foliage_spec.loader.exec_module(foliage_build)
 _residency_spec = importlib.util.spec_from_file_location('yorimichi_foliage_residency_build', GAME / 'foliage_residency_build.py')
 foliage_residency_build = importlib.util.module_from_spec(_residency_spec)
 _residency_spec.loader.exec_module(foliage_residency_build)
+_compile_inputs_spec = importlib.util.spec_from_file_location('yorimichi_compile_inputs', GAME / 'compile_inputs.py')
+compile_inputs = importlib.util.module_from_spec(_compile_inputs_spec)
+_compile_inputs_spec.loader.exec_module(compile_inputs)
+
+_brinecove_library_spec = importlib.util.spec_from_file_location('brinecove_foliage_library', REGIONS / 'brinecove/foliage_names.py')
+brinecove_library = importlib.util.module_from_spec(_brinecove_library_spec)
+_brinecove_library_spec.loader.exec_module(brinecove_library)
 
 # Crater Park on the caldera floor: its block shapes the ground there (craterpark/placement.py terrain).
 _v4_spec = importlib.util.spec_from_file_location('craterpark_v4_config', REGIONS / 'craterpark' / 'v2' / 'v4_config.py')
@@ -396,6 +403,13 @@ def engine_version(ctx):
             engine / 'Engine' / 'Binaries' / 'Mac' / 'UnrealEditor.modules'] if engine else []
 
 
+def native_source_inputs():
+    """The same complete native source membership for compilation, network identity and cooking."""
+    return DeferredInputs('native-source-files', compile_inputs.files,
+                          ((SOURCE, GAME / 'unreal/Config', GAME / 'unreal/Plugins', paths.ENGINE_PLUGINS),),
+                          support=(GAME / 'compile_inputs.py', Path(build_inputs.__file__)))
+
+
 def cook_step(ctx, steps):
     from atelier.build_cook_recovery import CookRecovery
     out = ctx.out
@@ -403,7 +417,8 @@ def cook_step(ctx, steps):
     return Step('unreal.cook',
                 [Call('prepare_cook', package_cook.prepare), UnrealPackage('Yorimichi', out / 'package' / 'archive'),
                  Call('certify_cook', package_cook.finish)],
-                inputs=[SOURCE, ctx.uproject, GAME / 'unreal/Plugins', paths.ENGINE_PLUGINS, GAME / 'unreal' / 'Config', TOOLS / 'package_cook.py', *engine_inputs],
+                inputs=[ctx.uproject, TOOLS / 'package_cook.py', *engine_inputs],
+                deferred_inputs=[native_source_inputs()],
                 needs=[s.name for s in steps if s.name.startswith('unreal.') and not s.explicit] + ['data.stage', 'data.racing_assets', 'data.network'], heavy=True, explicit=True,
                 outputs=[out / 'package' / 'cook.json'], verify=lambda: package_cook.cook_present(out / 'package'),
                 checkpoint_restore=package_cook.certify_restored,
@@ -701,23 +716,71 @@ def brinecove_source_step(out):
                 about='Brinecove model membership/checksums, independent of unrelated source-library entries')
 
 
+def brinecove_model_steps(out):
+    """One deterministic source product per plant model; no terrain or placement inputs."""
+    region = REGIONS / 'brinecove'
+    script = region / 'export_foliage_model.py'
+    code = build_inputs.local_imports(script, (WORLD, REGIONS))
+    definitions = brinecove_library.definitions()
+    if not definitions:
+        raise ValueError('Brinecove requires its committed plant model definitions')
+    return [Step('world.brinecove.model.' + definition.stem,
+                 [Blender(script, (str(definition), str(out / 'models/brinecove/plants' / definition.stem)),
+                          threads=3, factory_startup=True, env=(('PYTHONHASHSEED', '0'),))],
+                 inputs=[*code, definition],
+                 products=[Product('brinecove.model.' + definition.stem,
+                                   (out / 'models/brinecove/plants' / definition.stem,))],
+                 toolchain=True, batch=Batch('Brinecove plant models'), heavy=True,
+                 about='independent Brinecove plant model ' + definition.stem)
+            for definition in definitions]
+
+
+def region_texture_step(out, region):
+    script = GAME / 'region_texture_inputs.py'
+    spec = importlib.util.spec_from_file_location('region_texture_inputs', script)
+    module = importlib.util.module_from_spec(spec)
+    # The module has only pure Python helpers; resolve its sibling projection normally.
+    import sys
+    game_path = str(GAME)
+    added = game_path not in sys.path
+    if added:
+        sys.path.insert(0, game_path)
+    try:
+        spec.loader.exec_module(module)
+    finally:
+        if added:
+            sys.path.remove(game_path)
+    folder, output = out / region, out / f'digests/{region}-textures.json'
+    return Step('world.' + region + '.textures',
+                [Python(script, (str(folder), str(output)))],
+                deferred_inputs=[DeferredInputs('selected-textures', module.members, (folder,),
+                                                support=tuple(build_inputs.local_imports(script)))],
+                needs=['world.' + region], outputs=[output], cutoff=True,
+                about='actual bytes of report-selected textures, layers and normals')
+
+
 def brinecove_steps(out):
     """Brinecove (world/regions/brinecove): the export closes its ground onto the FarHills hole, so it reads the
     final FarHills product; the import builds /Game/Brinecove, which ABelmonteRegion places from runtime.json."""
     region = REGIONS / 'brinecove'
     library = out / 'digests' / 'brinecove-source-library.json'
     return [
-        Step('world.brinecove', [Blender(region / 'build.py', ('--source-library', str(library)), threads=3)],
-             inputs=[*(p for p in region.iterdir() if p.name not in ('ferry_terminal.py', '__pycache__')), ASSETS / 'brinecove', library, WORLD / 'source_registry.py', WORLD / 'terrain_product.py', YORI],
+        Step('world.brinecove', [Blender(region / 'build.py', ('--source-library', str(library),
+                                    '--foliage-library', str(out / 'models/brinecove/plants')), threads=3)],
+             inputs=[*build_inputs.local_imports(region / 'build.py', (WORLD, REGIONS)),
+                     region / 'foliage_catalog.json', ASSETS / 'brinecove', library],
              needs=['world.brinecove.sources'],
-             reads=['terrain.FarHills.final'], heavy=True,
+             reads=['terrain.FarHills.final', *('brinecove.model.' + path.stem
+                     for path in brinecove_library.definitions())], heavy=True,
              outputs=[out / 'brinecove' / 'runtime.json', out / 'brinecove' / 'build-report.json'],
              about='Brinecove: pirate port ground joined to the far hills, town, waterfall, ships and flora'),
         Step('world.brinecove.meshes',
              [Python(GAME / 'region_products.py', (out / 'brinecove', out / 'products/brinecove',
-                                                   '--ground-prefix', 'SM_BC_Ground_', '--plant-prefix', 'SM_BC_Plant_'))],
-             inputs=[GAME / 'region_products.py', out / 'brinecove/build-report.json', out / 'brinecove/runtime.json',
-                     out / 'brinecove/glb', out / 'brinecove/textures'], needs=['world.brinecove'],
+                                                   '--ground-prefix', 'SM_BC_Ground_', '--plant-prefix', 'SM_BC_Plant_',
+                                                    '--texture-inventory', out / 'digests/brinecove-textures.json'))],
+             inputs=[*build_inputs.local_imports(GAME / 'region_products.py'), out / 'brinecove/build-report.json', out / 'brinecove/runtime.json',
+                     out / 'brinecove/glb', out / 'digests/brinecove-textures.json'],
+             needs=['world.brinecove', 'world.brinecove.textures'],
              products=[Product('brinecove.' + name, (out / f'products/brinecove/{name}.json',))
                        for name in ('geometry', 'materials', 'runtime', 'map', 'clearance')],
              cache=True, audit=True, about='independent Brinecove model, material, placement, map and clearance views'),
@@ -731,7 +794,24 @@ def brinecove_steps(out):
              outputs=[out / 'brinecove' / 'import-report.json',
                       GAME / 'unreal' / 'Content' / 'Brinecove' / 'Meshes' / 'SM_BC_Ground_0_0.uasset'],
              about='/Game/Brinecove: meshes, collision and painterly surfaces'),
+        region_texture_step(out, 'brinecove'),
     ]
+
+
+def belmonte_native_products(out):
+    """@cc [owner:fontanierh,label:correctness] complete-belmonte-native-library
+    Native ownership MUST cover complete final mesh/collision, material/texture, screen-material
+    and report outputs, including regular package sidecars. Track MUST depend on the native
+    material bytes it loads, without a reference-only edge hiding that read. These native
+    products MUST NOT opt into the portable source cache.
+    """
+    content = GAME / 'unreal/Content'
+    tv = content / 'Racing/M_RacingTv.uasset'
+    return [Product('belmonte.native_meshes', (content / 'Belmonte/Meshes',)),
+            Product('belmonte.native_materials', (content / 'Belmonte/Materials', content / 'Belmonte/Textures')),
+            Product('belmonte.native_tv', (tv,), optional_paths=tuple(tv.with_suffix(suffix)
+                    for suffix in ('.uexp', '.ubulk', '.uptnl', '.m.ubulk', '.upayload'))),
+            Product('belmonte.native_report', (out / 'belmonte/import-report.json',))]
 
 
 def belmonte_steps(out):
@@ -742,7 +822,9 @@ def belmonte_steps(out):
     region = REGIONS / 'belmonte'
     return [
         Step('world.belmonte', [Python(region / 'build.py')],
-             inputs=[*(p for p in region.iterdir() if p.name not in ('gondola.py', '__pycache__')), WORLD / 'surface_textures.py', ASSETS / 'belmonte', ASSETS / 'environment/textures/tuscan-ground.jpg',
+             inputs=[*(p for p in region.iterdir() if p.name not in ('gondola.py', '__pycache__')),
+                     *(paths.STUDIO / 'atelier' / name for name in ('model_files.py', 'gltf.py', 'gltf_partition.py', 'mesh_partition.py')),
+                     WORLD / 'surface_textures.py', ASSETS / 'belmonte', ASSETS / 'environment/textures/tuscan-ground.jpg',
                      ASSETS / 'environment/textures/tuscan-ground.provenance.json', REGIONS / 'megapark/forest.py', REGIONS / 'hippodrome' / 'build.py',
                      REGIONS / 'forest/ecotone.py', REGIONS / 'forest/specs.py',
                      REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari_stable' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK, YORI, *NORTH_LAYOUT, *belmonte_train_corridor(out)],
@@ -750,17 +832,27 @@ def belmonte_steps(out):
              outputs=[out / 'belmonte' / 'runtime.json', out / 'belmonte' / 'build-report.json',
                       out / 'belmonte' / 'natural' / 'SM_BM_NorthApron.glb', out / 'belmonte' / 'natural' / 'SM_BM_NorthCountry.glb'],
              about='Belmonte environment: committed models, northern terrain join and island flora'),
-        digest_step(out, 'world.belmonte', 'meshes', 'what unreal.belmonte reads of the environment', out, ['belmonte']),
+        Step('world.belmonte.meshes',
+             [Python(GAME / 'region_products.py', (str(out / 'belmonte'), str(out / 'products/belmonte'),
+                                                   '--mesh-library', '--texture-inventory', str(out / 'digests/belmonte-textures.json')))],
+             inputs=[*build_inputs.local_imports(GAME / 'region_products.py'), out / 'belmonte/build-report.json', out / 'belmonte/runtime.json',
+                     out / 'belmonte/glb', out / 'digests/belmonte-textures.json'],
+             needs=['world.belmonte', 'world.belmonte.textures'],
+             products=[Product('belmonte.' + name, (out / f'products/belmonte/{name}.json',))
+                       for name in ('geometry', 'materials', 'runtime')],
+             cache=True, audit=True, about='independent Belmonte mesh/collision, material-binding and runtime views'),
         # Keep derived-mesh workers out of material sections while the importer edits them.
         Step('unreal.belmonte', [UnrealScript(SCRIPTS / 'import_belmonte.py', 'BELMONTE IMPORT COMPLETE',
                                              null_rhi=True, modules=IMPORT_CODE,
                                              args=('-ForceDPCVars=r.GenerateMeshDistanceFields=0,r.MeshCardRepresentation=0',))],
              inputs=[SCRIPTS / 'import_belmonte.py', SCRIPTS / 'racing_tv_material.py', SCRIPTS / 'atmosphere.py', SCRIPTS / 'ground_grain.py', ASSETS / 'environment/textures/tuscan-ground.jpg'],
              # Reused plants are runtime references, not reads by this library importer.
-             needs=['world.belmonte.meshes', 'unreal.world', *unreal_modules.needs(IMPORT_CODE)],
+             needs=['unreal.world', *unreal_modules.needs(IMPORT_CODE)],
+             reads=['belmonte.geometry', 'belmonte.materials'],
              after=['unreal.forest'], heavy=True,
              outputs=[out / 'belmonte' / 'import-report.json', GAME / 'unreal' / 'Content' / 'Belmonte' / 'Meshes' / 'SM_BM_NorthApron.uasset',
                       GAME / 'unreal' / 'Content' / 'Racing' / 'M_RacingTv.uasset'],
+             products=belmonte_native_products(out),
              about='/Game/Belmonte: environment meshes, collision and painterly surfaces'),
         Step('unreal.belmonte_train', [UnrealScript(SCRIPTS / 'import_belmonte_train.py', 'BELMONTE TRAIN IMPORT COMPLETE', null_rhi=True,
                                                        args=('-ForceDPCVars=r.GenerateMeshDistanceFields=0,r.MeshCardRepresentation=0',))],
@@ -776,10 +868,12 @@ def belmonte_steps(out):
         Step('unreal.belmonte_track', [UnrealScript(SCRIPTS / 'import_belmonte_track.py', 'BELMONTE TRACK IMPORT COMPLETE', null_rhi=True,
                                                        args=('-ForceDPCVars=r.GenerateMeshDistanceFields=0,r.MeshCardRepresentation=0',))],
                 inputs=[SCRIPTS / 'import_belmonte_track.py'],
-                needs=['world.belmonte_track.meshes', 'world.belmonte.meshes', 'unreal.belmonte'],
+                needs=['world.belmonte_track.meshes'],
+                reads=['belmonte.materials', 'belmonte.native_materials'],
                 after=['unreal.compile'], heavy=True,
                 outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'belmonte_track' / 'track.json', out / 'belmonte-track' / 'runtime' / 'import-report.json'],
                 about='/Game/BelmonteTrack: track chunks, loop, turnouts, buffers, tunnel linings and portals, viaduct, banks, lamps'),
+        region_texture_step(out, 'belmonte'),
     ]
 
 
@@ -892,6 +986,7 @@ def world_steps(ctx):
         digest_step(out, 'world.hidamari', 'north', "the volcano's meshes unreal.north reads (HD_North*)", north=True),
         *belmonte_steps(out)[:2],
         brinecove_source_step(out),
+        *brinecove_model_steps(out),
         *brinecove_steps(out)[:2],
         # Zeppelin samples layout products and shared terrain code, not Hidamari's exported city/assets.
         # Keep the old build order; track tree metadata read by the imported treehouse layout directly.
@@ -1154,7 +1249,8 @@ def world_steps(ctx):
              heavy=True, about='map zones and label-free regional atlas'),
         city_input_step(out, 'tiles'),
         Step('world.city_tiles', [Blender(WORLD / 'city_surface_tiles.py', ('--tag', 'v1_128m'), threads=3)],
-             inputs=[WORLD / 'city_surface_tiles.py'], needs=['world.hidamari.tiles'],
+             inputs=[WORLD / 'city_surface_tiles.py', paths.STUDIO / 'atelier/mesh_cells.py',
+                     paths.STUDIO / 'atelier/mesh_partition.py'], needs=['world.hidamari.tiles'],
              outputs=[out / 'city_surface_tiles' / 'v1_128m' / 'manifest.json'], about='desktop profile: city surfaces in 128 m tiles', heavy=True),
         digest_step(out, 'world.city_tiles', 'meshes', 'the city tiles unreal.desktop reads', out / 'city_surface_tiles', ['v1_128m']),
         city_input_step(out, 'trees'),
@@ -1305,7 +1401,9 @@ def unreal_steps(ctx):
                      SKATE_DATA],
              outputs=[out / 'skate-simulation/verification.json', out / 'skate-simulation/package' / 'package-manifest.json'],
              about="assemble the Skate plugin's simulation package and verify every payload"),
-        Step('unreal.compile', [UnrealCompile('YorimichiEditor')], inputs=[SOURCE, ctx.uproject, GAME / 'unreal/Config', GAME / 'unreal/Plugins', paths.ENGINE_PLUGINS], needs=['skate.runtime'], heavy=True,
+        Step('unreal.compile', [UnrealCompile('YorimichiEditor')], inputs=[ctx.uproject],
+             deferred_inputs=[native_source_inputs()],
+             needs=['skate.runtime'], heavy=True,
              about='the Yorimichi C++ modules (editor target)'),
         *unreal_modules.steps(ctx, IMPORT_CODE + SAVED_TYPES + CONTACT_TYPES + ('YorimichiFoliagePreparation',)),
         *foliage_build.unreal_steps(ctx, IMPORT_CODE, engine_version(ctx)),
@@ -1405,7 +1503,12 @@ def unreal_steps(ctx):
                                            modules=IMPORT_CODE)],
              inputs=[SCRIPTS / 'import_forest.py', SCRIPTS / 'forest_impostor_material.py', SCRIPTS / 'import_foliage_lods.py', SCRIPTS / 'foliage_material.py', SCRIPTS / 'import_village.py', SCRIPTS / 'atmosphere.py'],
              needs=['unreal.world', 'world.forest', *unreal_modules.needs(IMPORT_CODE)], heavy=True,
-             outputs=[out / 'forest/import-report.json'], about='current detailed Mediterranean trees with matching HISM LODs'),
+             outputs=[out / 'forest/import-report.json'],
+             # The legacy owner assembles source LOD packages outside Assets.
+             # These are staging hints only; each requested mesh still needs native proof.
+             candidate_scope=CandidateScope(directories=(GAME / 'unreal/Content/Japan/Assets',
+                                                        GAME / 'unreal/Content/Japan/FoliageLODs')),
+             about='current detailed Mediterranean trees with matching HISM LODs'),
         Step('unreal.treehouse', [UnrealScript(SCRIPTS / 'import_treehouse.py', 'TREEHOUSE IMPORT COMPLETE')],
              inputs=[SCRIPTS / 'import_treehouse.py', SCRIPTS / 'see_through.py'],
              needs=['unreal.world', 'world.treehouse', 'world.treehouse_trees', 'world.treehouse_props', 'world.treehouse_textures'],
@@ -1459,7 +1562,9 @@ def unreal_steps(ctx):
         Step('unreal.desktop', [
                 UnrealScript(SCRIPTS / 'import_city_surface_tiles.py', 'CITY SURFACE TILE IMPORT COMPLETE', env=(('CITY_SURFACE_TILES_TAG', 'v1_128m'),)),
                 UnrealScript(SCRIPTS / 'import_city_tree_lods.py', 'CITY TREE LODS IMPORT COMPLETE', env=(('CITY_TREE_LODS_TAG', 'v4'),))],
-             inputs=[SCRIPTS / 'import_city_surface_tiles.py', SCRIPTS / 'import_city_tree_lods.py', SCRIPTS / 'experiment_mesh_import.py'],
+             inputs=[SCRIPTS / 'import_city_surface_tiles.py', GAME / 'city_tile_products.py',
+                     paths.STUDIO / 'atelier/conventions.py',
+                     SCRIPTS / 'import_city_tree_lods.py', SCRIPTS / 'experiment_mesh_import.py'],
              needs=['unreal.city_tree_cpu_access', 'world.city_tiles.meshes', 'world.city_trees.meshes'], heavy=True,
              about='desktop profile: city tiles and tree LODs (/Game/Experiments)'),
         # The Ride skating clips: the simulation rig and every simulation clip as Unreal assets (/Game/SkateRide), the manifest
@@ -1505,10 +1610,10 @@ def staging_steps(ctx):
                      *runtime_data.courses.surface_inputs(),
                      *build_inputs.local_imports(runtime_data.courses.SOURCE_READER),
                      *(CHARS / 'portraits' / f'{c.id}.png' for c in definition.movers() if c.playable)],
-             needs=['world.ferry_service', 'world.gondola_service', 'world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark', 'world.craterpark', 'world.crater_cloud', 'world.belmonte', 'world.bike',
+             needs=['world.ferry_service', 'world.gondola_service', 'world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark', 'world.craterpark', 'world.crater_cloud', 'world.bike',
                     *[f'characters.{key(c)}_{kind}' for c in definition.movers() for kind, wanted in
                       (('bike', c.playable), ('grips', (GRIPS / c.id).is_dir())) if wanted]],
-             reads=['brinecove.runtime'],
+             reads=['brinecove.runtime', 'belmonte.runtime'],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / rel for rel in staged(out)], about='runtime files into unreal/Content/Data'),
         racing_assets_step(out),
     ]
@@ -1718,7 +1823,7 @@ def steps(ctx):
                 if step.name in {'unreal.world', 'unreal.north', 'unreal.southwest', 'unreal.kei', 'unreal.bike', 'unreal.forest'}:
                     roots.add(content_root / 'Japan' / 'Assets')
                 roots = {root for root in roots if not any(other != root and other in root.parents for other in roots)}
-                if roots:
+                if roots and step.candidate_scope is None:
                     step.candidate_scope = CandidateScope(directories=tuple(sorted(roots)))
         if step.name in ('unreal.belmonte', 'unreal.brinecove'):
             region = step.name.removeprefix('unreal.')
@@ -1768,10 +1873,9 @@ def steps(ctx):
                        verify=lambda: not any(policy.retired(content)),
                        about='archive retired generated imports before multiplayer identity and cooking'))
     result.append(Step('data.network', [Call('network_identity', identity.stage)],
-                       inputs=[GAME / 'network_identity.py', SOURCE, ctx.uproject, GAME / 'unreal/Config', GAME / 'unreal/Plugins',
-                               paths.ENGINE_PLUGINS],
+                       inputs=[GAME / 'network_identity.py', ctx.uproject],
                        deferred_inputs=[DeferredInputs('content', identity.content_files, (content,),
-                                                       support=(GAME / 'network_identity.py',))],
+                                                       support=(GAME / 'network_identity.py',)), native_source_inputs()],
                        needs=[s.name for s in result if s.name.startswith('unreal.') and not s.explicit] + ['data.stage', 'data.content'],
                        outputs=[content / 'Data/Network/session.json'],
                        about='matching multiplayer code, imported assets and staged gameplay data'))

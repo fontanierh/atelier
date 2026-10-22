@@ -129,5 +129,9 @@ def test_every_mover_has_its_steps():
             pawn = next(s for s in steps if s.name == f'unreal.{k}_pawn')
             ready = {f'unreal.{k}_adventure', f'unreal.{k}_bike', f'characters.{k}_fit'} | ({f'characters.{k}_grips'} & set(names))
             assert ready <= set(pawn.needs) and any(str(o).endswith(f'BP_{c.name}.uasset') for o in pawn.outputs), c.id
-    for i, step in enumerate(steps):   # steps run in declaration order: each after what it needs
-        assert all(names.index(n) < i for n in step.needs if n in names), step.name
+    # Production orders the dependency graph; projection providers may be declared later.
+    from atelier.build import order
+    scheduled = order(steps, names)
+    positions = {step.name: i for i, step in enumerate(scheduled)}
+    for i, step in enumerate(scheduled):
+        assert all(positions[n] < i for n in step.needs if n in positions), step.name

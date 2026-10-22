@@ -15,6 +15,7 @@ import atmosphere
 import glb_mesh_validation
 import ground_grain
 from atelier.native_protocol import native_context
+from atelier import native_membership
 from atelier.unreal_mesh_reuse import AssetGroup, MeshReuse, lods_match, set_if_changed
 
 OUT = yori.OUT / 'belmonte'
@@ -255,13 +256,13 @@ def main():
     Separate source collision hulls MUST disable LOD0 mesh distance-field generation. This
     optimization MUST NOT change visible-mesh build settings, hull geometry or physics association.
     """
-    report = json.loads((OUT / 'build-report.json').read_text())
-    runtime = json.loads((OUT / 'runtime.json').read_text())
-    defaults = {}
-    for group in runtime['groups']:
-        if not group['plant']:
-            defaults.setdefault(group['asset'].split('.')[-1], group['materials'])
+    products = OUT.parent / 'products/belmonte'
+    geometry = json.loads((products / 'geometry.json').read_text())
+    material_view = json.loads((products / 'materials.json').read_text())
+    report = dict(meshes=geometry['meshes'], materials=material_view['materials'])
+    defaults = material_view['bindings']
     E.make_directory(ROOT)
+    previous_meshes = native_membership.inventory(E, ROOT + '/Meshes', 'SM_BM_')
     texture_files = sorted({entry['texture'] for entry in report['materials'].values() if entry['texture']})
     material_packages = sorted({ROOT + '/Materials/' + name for name in
         ['M_Belmonte', 'M_BelmonteJoin'] + [entry['name'] for entry in report['materials'].values()]}
@@ -277,7 +278,6 @@ def main():
                       ('import_mesh', 'generate_terrain_lods'),
                       report_member='generated/belmonte/build-report.json',
                       validation_functions=('validate_reused_mesh',))
-    donor = {entry['name']: entry for entry in reuse.donor.get('meshes', [])}
     imported = {}
     for index, entry in enumerate(report['meshes']):
         name = entry['name']
@@ -286,7 +286,9 @@ def main():
         if entry.get('collision'):
             sources.append((target + '_Collision', OUT / 'glb' / Path(entry['collision']['path']).name,
                             entry['collision']['sha256']))
-        mesh = reuse.acquire(name, target, geometry=entry, donor_geometry=donor.get(name), sources=sources,
+        mesh = reuse.acquire(name, target, geometry=entry, sources=sources,
+                             donor_geometry=lambda saved: next((row for row in saved.get('meshes', [])
+                                                                if row['name'] == name), None),
                              validator=lambda mesh: validate_reused_mesh(mesh, entry, len(defaults[name])))
         reused = mesh is not None
         if mesh is None:
@@ -333,6 +335,11 @@ def main():
             set_if_changed(mesh, 'complex_collision_mesh', collision)
             assert mesh.get_editor_property('complex_collision_mesh') == collision, name
             assert E.save_loaded_asset(collision, only_if_is_dirty=True), collision_name
+        else:
+            # A compatibility hit may retain a formerly separate physics hull.
+            # Current no-hull ownership must detach it before retiring that package.
+            set_if_changed(mesh, 'complex_collision_mesh', None)
+            assert mesh.get_editor_property('complex_collision_mesh') is None, name
         body = mesh.get_editor_property('body_setup')
         if name.startswith('SM_BM_BT_Terrain_'):
             set_if_changed(mesh, 'allow_cpu_access', name in {'SM_BM_BT_Terrain_0_0', 'SM_BM_BT_Terrain_4_4'})
@@ -356,6 +363,10 @@ def main():
                           'collision_hulls': bool(entry.get('collision'))}
         reuse.validated(name)
         unreal.log(f'BELMONTE IMPORT {index + 1}/{len(report["meshes"])} {name} reused={int(reused)}')
+    current_names = [name for entry in report['meshes'] for name in
+                     ([entry['name'], entry['name'] + '_Collision'] if entry.get('collision') else [entry['name']])]
+    retired = native_membership.retire(E, previous_meshes, current_names, ROOT + '/Meshes', 'SM_BM_')
+    unreal.log(f'NATIVE MEMBERSHIP RETIRED: {len(retired)} superseded packages')
     (OUT / 'import-report.json').write_text(json.dumps(imported, indent=1) + '\n')
     # Both render and collision assets now reference only the region's materials.
     # Drop Interchange's placeholder materials and rename redirectors.

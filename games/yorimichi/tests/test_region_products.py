@@ -27,7 +27,7 @@ def export(folder, config):
         raw = (name + str(config.get('ground' if 'Ground' in name else 'plant' if 'Plant' in name else 'pier', 0))).encode()
         path = 'glb/' + name + '.glb'; (folder / path).write_bytes(raw)
         meshes.append(dict(name=name, path=path, sha256=hashlib.sha256(raw).hexdigest(),
-                           bounds_m=[[0, 0, 0], [1, 1, 1]], slots=['Paint']))
+                           bounds_m=[[0, 0, 0], [1, 1, 1]], slots=['Paint'], collision='Plant' not in name))
     (folder / 'textures/paint.png').write_bytes(('paint'+str(config.get('texture', 0))).encode())
     report = dict(meshes=meshes, materials={'Paint': {'texture': 'paint.png', 'roughness': config.get('material', .5)}})
     groups = []
@@ -55,8 +55,9 @@ def pipeline(tmp_path, monkeypatch):
         executed.append('products')
         products.publish(out/'brinecove', out/'products/brinecove', ground_prefix='SM_BC_Ground_', plant_prefix='SM_BC_Plant_')
     projection = replace(real, name='products', commands=[build.Call('project consumed views', project)],
-                         needs=['export'], cache=False, audit=False)
-    steps = [producer, projection]
+                         needs=['export', 'world.brinecove.textures'], cache=False, audit=False)
+    selector = replace(RECIPE.region_texture_step(out, 'brinecove'), needs=['export'])
+    steps = [producer, selector, projection]
     def consume(name, reads, needs=()):
         destination = out/(name+'.json')
         def run(ctx, log):
@@ -121,6 +122,29 @@ def test_model_inventory_cannot_hide_missing_extra_changed_or_linked_members(tmp
     with pytest.raises(ValueError): products.views(folder,ground_prefix='SM_BC_Ground_',plant_prefix='SM_BC_Plant_')
 
 
+@pytest.mark.parametrize('collision', [True, False])
+def test_brinecove_boolean_collision_flags_do_not_declare_hull_sources(tmp_path, collision):
+    export(tmp_path, {})
+    path = tmp_path / 'build-report.json'
+    report = json.loads(path.read_text())
+    for mesh in report['meshes']: mesh['collision'] = collision
+    path.write_text(json.dumps(report))
+    view = products.views(tmp_path, ground_prefix='SM_BC_Ground_', plant_prefix='SM_BC_Plant_')
+    assert all(mesh['collision'] is collision for mesh in view['geometry']['meshes'])
+    assert set(view['geometry']['files']) == {mesh['path'] for mesh in report['meshes']}
+
+
+@pytest.mark.parametrize('collision', [0, 1, 'yes', [], {}])
+def test_invalid_collision_source_schema_refuses(tmp_path, collision):
+    export(tmp_path, {})
+    path = tmp_path / 'build-report.json'
+    report = json.loads(path.read_text())
+    report['meshes'][0]['collision'] = collision
+    path.write_text(json.dumps(report))
+    with pytest.raises(ValueError, match='collision-source'):
+        products.views(tmp_path, ground_prefix='SM_BC_Ground_', plant_prefix='SM_BC_Plant_')
+
+
 def test_recipe_consumers_follow_named_brinecove_inputs(tmp_path):
     steps=RECIPE.steps(SimpleNamespace(out=tmp_path/'out',game='yorimichi',uproject=RECIPE.GAME/'unreal/Yorimichi.uproject'))
     by_name={step.name:step for step in steps}
@@ -135,9 +159,11 @@ def test_recipe_consumers_follow_named_brinecove_inputs(tmp_path):
 def test_real_projection_runs_with_complete_audited_inputs(tmp_path, monkeypatch):
     out=tmp_path/'out'; export(out/'brinecove',{})
     ctx=SimpleNamespace(game='fixture',out=out,logs=out/'logs',stamps=out/'stamps',uproject=None)
-    step=replace(RECIPE.brinecove_steps(out)[1],needs=[])
+    selector=replace(RECIPE.region_texture_step(out,'brinecove'),needs=[])
+    step=RECIPE.brinecove_steps(out)[1]
+    step=replace(step,needs=[selector.name])
     monkeypatch.setattr(build,'Context',lambda *a,**k:ctx)
-    monkeypatch.setattr(build,'load_recipe',lambda _:SimpleNamespace(steps=lambda _:[step]))
+    monkeypatch.setattr(build,'load_recipe',lambda _:SimpleNamespace(steps=lambda _:[selector,step]))
     monkeypatch.setattr(build_checkpoints,'configured',lambda _:None)
     monkeypatch.setenv('ATELIER_CACHE',str(tmp_path/'cache'))
     assert build.build('fixture',[step.name],echo=lambda _:None)==0

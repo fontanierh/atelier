@@ -8,7 +8,8 @@ import pytest
 
 
 @pytest.mark.parametrize('with_hull', [False, True])
-def test_import_disables_distance_fields_only_on_separate_physics_hull(tmp_path, with_hull):
+@pytest.mark.parametrize('with_obsolete', [False, True])
+def test_import_disables_distance_fields_only_on_separate_physics_hull(tmp_path, with_hull, with_obsolete):
     writes, bindings = [], []
     class Properties:
         def __init__(self, **values): self.values = values
@@ -30,6 +31,8 @@ def test_import_disables_distance_fields_only_on_separate_physics_hull(tmp_path,
             return SimpleNamespace(min=SimpleNamespace(x=0, y=-200, z=0), max=SimpleNamespace(x=100, y=0, z=300))
 
     meshes, changed, saved, tv_imports = {}, [], [], []
+    if with_obsolete:
+        meshes.update({name: Mesh(name) for name in ('SM_BM_Obsolete', 'SM_BM_Obsolete_Collision')})
     def imported(path, name):
         meshes[name] = Mesh(name)
         return meshes[name]
@@ -46,10 +49,22 @@ def test_import_disables_distance_fields_only_on_separate_physics_hull(tmp_path,
     editor = SimpleNamespace(get_lod_build_settings=get_settings, set_lod_build_settings=set_settings)
     entry = dict(sha256='0'*64, name='SM_BM_House', path='glb/House.glb', triangles=1, bounds_m=[[0, 0, 0], [1, 2, 3]])
     if with_hull: entry['collision'] = dict(path='glb/House_hull.glb', sha256='0'*64)
-    (tmp_path / 'build-report.json').write_text(json.dumps(dict(meshes=[entry], materials={})))
-    (tmp_path / 'runtime.json').write_text(json.dumps(dict(groups=[dict(plant=False,
-        asset='/Game/Belmonte/Meshes/SM_BM_House.SM_BM_House', materials=['paint'])])))
-    assets = SimpleNamespace(make_directory=lambda *_: None, does_asset_exist=lambda *_: False,
+    out = tmp_path / 'belmonte'
+    out.mkdir()
+    products = tmp_path / 'products/belmonte'
+    products.mkdir(parents=True)
+    (products / 'geometry.json').write_text(json.dumps(dict(meshes=[entry])))
+    (products / 'materials.json').write_text(json.dumps(dict(materials={}, bindings={'SM_BM_House': ['paint']})))
+    # The actual native loop must not reopen the placement runtime or broad report.
+    (out / 'build-report.json').write_text('unconsumed broad report')
+    (out / 'runtime.json').write_text('unconsumed placement runtime')
+    assets = SimpleNamespace(make_directory=lambda *_: None,
+        list_assets=lambda root, **_: [root+'/'+name+'.'+name for name in meshes],
+        does_asset_exist=lambda path: path.rsplit('/', 1)[-1] in meshes,
+        find_package_referencers_for_asset=lambda path, **k: [
+            '/Game/Belmonte/Meshes/'+name for name, mesh in meshes.items()
+            if mesh.get_editor_property('complex_collision_mesh') is meshes[path.rsplit('/', 1)[-1]]],
+        delete_asset=lambda path: meshes.pop(path.rsplit('/', 1)[-1], None) is not None,
         load_asset=lambda path: meshes.get(path.rsplit('/', 1)[-1], path), save_loaded_asset=lambda asset, **_: saved.append(asset) or True, delete_directory=lambda *_: None)
     loaded = set()                                   # like the commandlet: no subsystem until its module is loaded
     unreal = SimpleNamespace(StaticMeshEditorSubsystem=object(), load_module=loaded.add,
@@ -60,11 +75,12 @@ def test_import_disables_distance_fields_only_on_separate_physics_hull(tmp_path,
     # Execute the actual import loop without Unreal-only module initialization/material compilation.
     function = next(node for node in ast.parse(script.read_text()).body
                     if isinstance(node, ast.FunctionDef) and node.name == 'main')
-    namespace = dict(OUT=tmp_path, ROOT='/Game/Belmonte', E=assets, unreal=unreal, Path=Path, json=json,
+    namespace = dict(OUT=out, ROOT='/Game/Belmonte', E=assets, unreal=unreal, Path=Path, json=json,
         __file__=str(script), runpy=SimpleNamespace(run_path=lambda path: tv_imports.append(Path(path))),
         parent=lambda: None, textures=lambda _: None, surfaces=lambda *_: None, import_mesh=imported)
+    from atelier import native_membership
     from atelier.unreal_mesh_reuse import set_if_changed
-    namespace.update(native_context=lambda _: None, yori=SimpleNamespace(GAME=SimpleNamespace(name='test')),
+    namespace.update(native_membership=native_membership, native_context=lambda _: None, yori=SimpleNamespace(GAME=SimpleNamespace(name='test')),
         atmosphere=SimpleNamespace(__file__=str(script)), ground_grain=SimpleNamespace(__file__=str(script)),
         AssetGroup=lambda *a, **k: SimpleNamespace(matches=lambda _: True), set_if_changed=set_if_changed,
         MeshReuse=lambda *a, **k: SimpleNamespace(donor={}, acquire=lambda name, *a, **k: meshes.get(name), imported=lambda *a: None,
@@ -72,6 +88,7 @@ def test_import_disables_distance_fields_only_on_separate_physics_hull(tmp_path,
     exec(compile(ast.Module(body=[function], type_ignores=[]), str(script), 'exec'), namespace)
     namespace['main']()
     assert tv_imports == [script.with_name('racing_tv_material.py')]
+    assert not any(name.startswith('SM_BM_Obsolete') for name in meshes)
     render = meshes['SM_BM_House']
     assert render.build == dict(distance_field_resolution_scale=1., use_full_precision_u_vs=True,
                                 remove_degenerates=False)
@@ -89,3 +106,13 @@ def test_import_disables_distance_fields_only_on_separate_physics_hull(tmp_path,
     writes.clear(); bindings.clear(); changed.clear()
     namespace['main']()
     assert writes == [] and bindings == [] and changed == []
+
+    if with_hull:
+        # A compatible existing render mesh can outlive removal of its source
+        # hull record. Normal finishing must detach/save it before retirement.
+        del entry['collision']
+        (products/'geometry.json').write_text(json.dumps(dict(meshes=[entry])))
+        namespace['main']()
+        assert render.get_editor_property('complex_collision_mesh') is None
+        assert 'SM_BM_House_Collision' not in meshes
+        assert (render, 'complex_collision_mesh') in writes

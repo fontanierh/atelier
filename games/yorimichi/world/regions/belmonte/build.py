@@ -9,8 +9,8 @@ import shutil
 
 import numpy as np
 from PIL import Image
-from atelier.gltf import glb_parts
-from belmonte import layout as L, source, planting, terrain, appearance, foliage
+from atelier.model_files import source_records, retain_files
+from belmonte import layout as L, source, planting, terrain, appearance, foliage, model_pieces
 
 OUT = yori.OUT / 'belmonte'
 
@@ -208,7 +208,7 @@ def main():
     (OUT / 'textures').mkdir(exist_ok=True)
     data = source.manifest()
     materials = finish_surfaces(data)
-    by_asset, meshes, retained_slots = {}, [], {}
+    by_asset, meshes = {}, []
     for entry in data['meshes']:
         path = source.LIBRARY / entry['path']
         assert source.sha(path) == entry['sha256'], path
@@ -222,10 +222,9 @@ def main():
             entry = dict(entry, path=destination.relative_to(OUT).as_posix())
         if entry['name'] in foliage.AUTHORED:
             entry = dict(entry, **foliage.prepare(destination))
-        meshes.append(entry)
-        by_asset[entry['source_asset']] = entry
-        doc, _ = glb_parts(path.read_bytes())
-        retained_slots[entry['source_asset']] = [int(material['name'].split('_')[1]) for material in doc['materials']]
+        prepared = model_pieces.prepare(entry, destination)
+        meshes.extend(row[0] for row in prepared)
+        by_asset[entry['source_asset']] = prepared
         if 'collision' in entry:
             collision = source.LIBRARY / entry['collision']['path']
             assert source.sha(collision) == entry['collision']['sha256'], collision
@@ -234,21 +233,26 @@ def main():
     meshes.extend(extra)
     grouped = {}
     for placement in data['placements']:
-        entry = by_asset[placement['asset']]
-        # glTF omits unused slots. The retained names pin their original index.
-        slots = retained_slots[placement['asset']]
-        names = [materials[placement['materials'][slot]]['name'] for slot in slots]
-        bindings = tuple(f'/Game/Belmonte/Materials/{name}.{name}' for name in names)
-        key = (entry['name'], bindings)
-        grouped.setdefault(key, []).append(placement['transform'])
+        for entry, slots, collides in by_asset[placement['asset']]:
+            # Retained glTF names pin the original material slots for every piece.
+            names = [materials[placement['materials'][slot]]['name'] for slot in slots]
+            bindings = tuple(f'/Game/Belmonte/Materials/{name}.{name}' for name in names)
+            # A child may omit a material that distinguished two original instance
+            # groups. Keep their parent grouping, including its max-scale cull policy.
+            parent_slots = entry.get('parent_material_slots', slots)
+            parent_bindings = tuple(materials[placement['materials'][slot]]['name'] for slot in parent_slots)
+            key = (entry['name'], bindings, collides, parent_bindings)
+            grouped.setdefault(key, []).append(placement['transform'])
     groups = []
-    for (name, bindings), transforms in grouped.items():
+    for (name, bindings, collides, _parent_bindings), transforms in grouped.items():
         water = any(word in name for word in ('Water', 'Foam'))
         entry = next(entry for entry in meshes if entry['name'] == name)
-        span = max(np.subtract(entry['bounds_m'][1], entry['bounds_m'][0]))
+        policy_bounds = entry.get('parent_bounds_m', entry['bounds_m'])
+        span = max(np.subtract(policy_bounds[1], policy_bounds[0]))
         span *= max(max(abs(value) for value in transform['scale']) for transform in transforms)
         groups.append({'asset': f'/Game/Belmonte/Meshes/{name}.{name}', 'materials': list(bindings),
-                       'plant': False, 'collision': not water, 'shadow': not water,
+                       'plant': False, 'collision': collides and not water, 'shadow': not water,
+                       'parent_collision': not water,
                        'cull_cm': 50000 if span < 8. else 0, 'transforms': transforms})
     material_name = 'MI_BM_Ground'
     materials['Ground'] = {'name': material_name, 'colour': [.24, .30, .12, 1.], 'tint': [1., 1., 1., 1.],
@@ -281,6 +285,13 @@ def main():
     runtime = {'version': 1, 'origin_cm': L.native_origin(), 'bounds_m': L.BOUNDS,
                'clearance_m': list(terrain.OUTER), 'groups': groups, 'signs': signs, 'railway_corridor': L.RAILWAY,
                'zones': map_zones(town_z), 'tv_spots': tv_spots(data)}
+    # Current meshes/hulls are complete now. Retire only this producer's generated
+    # model members, so a normal removal/rename cannot strand an invalid inventory.
+    expected = [Path(name).relative_to('glb').as_posix()
+                for _, name in source_records(meshes, collision_directory='glb')]
+    retired = retain_files(OUT / 'glb', expected)
+    if retired:
+        print(f'BELMONTE retired {len(retired)} superseded generated model files', flush=True)
     (OUT / 'runtime.json').write_text(json.dumps(runtime, separators=(',', ':')) + '\n')
     (OUT / 'build-report.json').write_text(json.dumps({'meshes': meshes, 'materials': materials,
                                                      'planting': plant_report, 'seam': seam}, indent=1) + '\n')

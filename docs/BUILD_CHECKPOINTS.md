@@ -61,6 +61,14 @@ current result. A whole-task miss can therefore reuse unchanged meshes without a
 validation or overwriting unrelated completed receiver work. Importers must integrate this shared
 protocol and declare their real artifact boundaries; arbitrary existing importers are not inferred.
 
+Each finalized native summary records actual imported/local/candidate counts and `miss_reasons`.
+These reasons identify the observed refusal, such as a dirty loaded package, mismatched saved receipt,
+missing compatible history, changed candidate geometry, recorded source mismatch or rejected current
+validation. They are observations, not proof that an import was avoidable. Read the exact invocation's
+`native-imports/TASK/summary.json` and require `finalized_after_native_success`; pending packets and
+staged file counts are not successful reuse. Reasons publish only after the normal successful host
+boundary, including for unsupported mesh policies that imported normally without reusable receipts.
+
 Existing local imports made before package inventories can follow a bounded incremental transition:
 their recovered source/import policy and receiving environment must agree, their package files must
 predate the old successful task without later modification/replacement, and Unreal must confirm the

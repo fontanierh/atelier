@@ -165,10 +165,10 @@ def test_brinecove_tile_split_preserves_roles_through_dropped_faces(brine):
     b.tri((0,0,0),(1,0,0),(0,1,0),R.SurfaceKey('leaf_sun','rigid'))
     b.tri((0,0,0),(0,0,0),(0,0,0),'stone') # dropped, so role indices must be remapped
     b.tri((2,0,0),(3,0,0),(2,1,0),R.SurfaceKey('jungle','groundcover_leaf'))
-    owner=functions(Path('regions/brinecove/build.py'),['split'])
+    owner=functions(Path('regions/brinecove/build.py'),['split','bounded_parts'])
     from brinecove.geom import distinct_corners
     owner.update(R=S(OUTER=(-10,-10,10,10)),Builder=Builder,TILE=256.,soft=lambda key:False,
-                 distinct_corners=distinct_corners)
+                 distinct_corners=distinct_corners,MIXED_TRIANGLE_LIMIT=32768)
     parts,_,_,degenerate=owner['split'](b,'Mixed',None)
     assert degenerate==1 and len(parts)==1
     part=next(iter(parts.values()))

@@ -5,17 +5,11 @@ the per-module GLB and the viewer's show/hide switches simple, and keeps draw ca
 """
 import math
 
-from brinecove.layout import COLORS
-
-MATERIALS = tuple(sorted(COLORS))
+from brinecove.surface_mapping import MATERIAL_SURFACE
 
 
 def _surface_scale(mat):
-    try:
-        from brinecove import surfaces
-        return surfaces.MATERIAL_SURFACE.get(mat, (None, 2.0))[1]
-    except Exception:
-        return 2.0
+    return MATERIAL_SURFACE.get(mat, (None, 2.0))[1]
 
 
 def _rot(x, y, yaw):

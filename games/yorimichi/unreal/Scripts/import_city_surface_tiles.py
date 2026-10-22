@@ -12,8 +12,10 @@ from pathlib import Path
 import unreal
 
 ROOT = yori.OUT
+sys.path.insert(0, str(yori.GAME))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from import_village import import_mesh
+from city_tile_products import obsolete_assets, owned_tiles, require_sources, native_bounds
 
 
 def main():
@@ -22,12 +24,18 @@ def main():
     folder = ROOT / 'city_surface_tiles' / tag
     manifest = json.loads((folder / 'manifest.json').read_text())
     assert manifest['complete'] and manifest['tag'] == tag
+    require_sources(manifest['sources'])
     production = yori.GAME / 'unreal/Content/Japan'
     before = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in production.rglob('*') if p.is_file()}
     destination = '/Game/Experiments/CitySurfaces/' + tag
+    # The source exporter replaces its folder; enumerate the native owner's
+    # independent output root before importing, without relying on that report.
+    previous = owned_tiles(unreal.EditorAssetLibrary.list_assets(destination, recursive=False,
+                                                                 include_folder=False), destination)
     unreal.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX 0')
     report = {}
     for name, source in manifest['sources'].items():
+        assert source['tiles'], ('Missing city surface pieces', name)
         original = unreal.EditorAssetLibrary.load_asset('/Game/Japan/Assets/' + name)
         assert original and original.get_num_triangles(0) == source['source_triangles'], name
         # The textured city meshes have one slot per surface (world/regions/hidamari/surfaces.py): match them by name.
@@ -47,11 +55,14 @@ def main():
                 mesh.set_material(i, slots[key])
             assert mesh.get_num_triangles(0) == tile['triangles'], (tile['name'], 'triangle count changed')
             box = mesh.get_bounding_box()
+            expected_min, expected_max = native_bounds(tile)
             for i, axis in enumerate(('x','y','z')):
+                assert abs(getattr(box.min, axis) - expected_min[i]) < .2, (tile['name'], 'piece minimum bounds', axis)
+                assert abs(getattr(box.max, axis) - expected_max[i]) < .2, (tile['name'], 'piece maximum bounds', axis)
                 lower[i] = min(lower[i], getattr(box.min, axis))
                 upper[i] = max(upper[i], getattr(box.max, axis))
             # Collision remains on the untouched hidden original runtime component.
-            unreal.EditorAssetLibrary.save_loaded_asset(mesh)
+            assert unreal.EditorAssetLibrary.save_loaded_asset(mesh), ('City tile save failed', tile['name'])
             imported.append(dict(name=tile['name'], triangles=mesh.get_num_triangles(0),
                                  material=material.get_path_name(), asset=mesh.get_path_name()))
         assert sum(t['triangles'] for t in imported) == source['source_triangles'], name
@@ -62,6 +73,14 @@ def main():
         report[name] = imported
     after = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in production.rglob('*') if p.is_file()}
     assert after == before, 'Production Content/Japan changed during isolated import'
+    # Current membership is complete before the previous owner's exact packages
+    # retire. Unknown names and other tags never enter the deletion list.
+    retired = obsolete_assets(previous, report, destination)
+    for asset in retired:
+        if unreal.EditorAssetLibrary.does_asset_exist(asset):
+            assert unreal.EditorAssetLibrary.delete_asset(asset), ('Superseded city tile', asset)
+    if retired:
+        assert {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in production.rglob('*') if p.is_file()} == before, 'Production Content/Japan changed during tile retirement'
     (folder / 'import-report.json').write_text(json.dumps(report, indent=2) + '\n')
     unreal.log('CITY SURFACE TILE IMPORT COMPLETE ' + tag)
 
