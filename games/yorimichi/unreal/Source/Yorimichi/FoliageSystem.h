@@ -1,5 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
+#include "Engine/EngineTypes.h"
 #include "Subsystems/WorldSubsystem.h"
 #include "FoliageSystem.generated.h"
 
@@ -21,7 +22,10 @@ struct FYorimichiFoliageSource
     UPROPERTY() TObjectPtr<UStaticMeshComponent> Patches;
     TWeakObjectPtr<UStaticMesh> SourceMesh;
     FString SourcePath;
-    bool HasRigid=false;
+    ECollisionEnabled::Type Collision=ECollisionEnabled::NoCollision;
+    TArray<FName> MaterialSlots;
+    TArray<TWeakObjectPtr<UMaterialInterface>> MaterialBindings;
+    bool HasRigid=false,CollisionPolicyApplied=false;
     bool Visible = false, Hidden = false, CastShadow = false, DistanceField = false;
     bool ShadowOnly = false, EvaluateWPO = true;
     FString Kind;
@@ -62,7 +66,8 @@ public:
     virtual void Deinitialize() override;
 private:
     struct FAsset { FString Optimized, Shadow, Patch, Rigid, Kind; int32 Triangles=0,ShadowTriangles=0,RigidTriangles=0;
-        TArray<FString> SourceMaterials;TArray<int32> LODTriangles,RigidLODTriangles;TArray<TArray<FVector>> Coverage;bool Aggregate=false;FBox Canopy; };
+        TArray<FString> SourceMaterials;TArray<int32> LODTriangles,RigidLODTriangles;TArray<TArray<FVector>> Coverage;
+        bool Aggregate=false,SimpleTrunk=false,Passable=false;FBox Canopy; };
     TMap<FString,FAsset> Assets;
     TMap<FString,FString> ResidentSources;
     TSet<FString> LeafMaterials;
@@ -92,6 +97,8 @@ private:
     friend class FYorimichiFoliageToggleTest;
     friend class FYorimichiFoliageRegistryTest;
     friend class FYorimichiFoliageClassificationTest;
+    friend class FYorimichiFoliageCollisionPolicyTest;
+    friend class FYorimichiFoliageBindingTest;
     static bool OrdinaryAuthoredProp(const TArray<FStaticMaterial>& Slots,int32 Triangles);
     bool RequiresRegistration(UStaticMeshComponent* Component) const;
     bool CachedRequiresRegistration(UStaticMeshComponent* Component);
@@ -100,5 +107,8 @@ private:
     bool ReloadMode(bool Enabled);
     void ReleaseStartupVertexCopies();
     void Apply(FYorimichiFoliageSource& Source);
-    void Restore(FYorimichiFoliageSource& Source);
+    void ApplyCollision(FYorimichiFoliageSource& Source);
+    static void CaptureBindings(FYorimichiFoliageSource& Source);
+    bool BindingsCurrent(const FYorimichiFoliageSource& Source) const;
+    void Restore(FYorimichiFoliageSource& Source,bool RestoreCollision=true);
 };

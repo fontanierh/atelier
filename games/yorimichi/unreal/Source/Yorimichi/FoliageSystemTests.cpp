@@ -220,6 +220,74 @@ bool FYorimichiFoliageToggleTest::RunTest(const FString&)
     System->Sources.Reset();World->DestroyWorld(false);return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FYorimichiFoliageCollisionPolicyTest,"Yorimichi.Foliage.CollisionPolicy",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FYorimichiFoliageCollisionPolicyTest::RunTest(const FString&)
+{
+    auto* System=NewObject<UYorimichiFoliageSubsystem>();System->bEnabled=true;
+    auto* Source=NewObject<UStaticMeshComponent>();
+    Source->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    Source->SetCollisionResponseToChannel(ECC_Camera,ECR_Block);
+    const FTransform Placement(FRotator(0,31,0),FVector(300,400,50),FVector(1,2,3));Source->SetRelativeTransform(Placement);
+    FYorimichiFoliageSource Entry;Entry.Original=Source;Entry.SourcePath=TEXT("/Game/Test/Tree.Tree");
+    Entry.Collision=Source->GetCollisionEnabled();
+    UYorimichiFoliageSubsystem::FAsset Asset;Asset.SimpleTrunk=true;System->Assets.Add(Entry.SourcePath,Asset);
+    System->ApplyCollision(Entry);
+    TestEqual(TEXT("Authored nonblocking trees remain passable"),Source->GetCollisionEnabled(),ECollisionEnabled::NoCollision);
+    TestEqual(TEXT("Authored camera response retained"),Source->GetCollisionResponseToChannel(ECC_Camera),ECR_Block);
+    TestTrue(TEXT("Collision policy preserves placement"),Source->GetRelativeTransform().Equals(Placement));
+    Source->SetCollisionEnabled(ECollisionEnabled::QueryOnly);Entry.Collision=ECollisionEnabled::QueryOnly;
+    System->ApplyCollision(Entry);
+    TestEqual(TEXT("Authored blocking tree keeps its enablement"),Source->GetCollisionEnabled(),ECollisionEnabled::QueryOnly);
+    TestEqual(TEXT("Trunk replacement does not alter camera response"),Source->GetCollisionResponseToChannel(ECC_Camera),ECR_Block);
+    System->Restore(Entry);
+    TestEqual(TEXT("Legacy collision retained"),Source->GetCollisionEnabled(),ECollisionEnabled::QueryOnly);
+    TestEqual(TEXT("Legacy camera response restored"),Source->GetCollisionResponseToChannel(ECC_Camera),ECR_Block);
+    Source->SetCollisionEnabled(ECollisionEnabled::NoCollision);Entry.Collision=ECollisionEnabled::NoCollision;
+    Source->ComponentTags.Add(TEXT("FoliageBackdrop"));System->ApplyCollision(Entry);
+    TestEqual(TEXT("Backdrop stays nonblocking"),Source->GetCollisionEnabled(),ECollisionEnabled::NoCollision);
+    Source->ComponentTags.Reset();Entry.ShadowOnly=true;System->ApplyCollision(Entry);
+    TestEqual(TEXT("Shadow-only placement stays nonblocking"),Source->GetCollisionEnabled(),ECollisionEnabled::NoCollision);
+    Entry.ShadowOnly=false;System->Assets[Entry.SourcePath].SimpleTrunk=false;System->Assets[Entry.SourcePath].Passable=true;
+    Source->SetCollisionEnabled(ECollisionEnabled::QueryOnly);Entry.Collision=ECollisionEnabled::QueryOnly;
+    System->ApplyCollision(Entry);TestEqual(TEXT("Bush stems remain passable"),Source->GetCollisionEnabled(),ECollisionEnabled::NoCollision);
+    System->bEnabled=false;System->Apply(Entry);
+    TestEqual(TEXT("Legacy graphics keeps the same passable bush policy"),Source->GetCollisionEnabled(),ECollisionEnabled::NoCollision);
+    System->Restore(Entry);TestEqual(TEXT("Releasing ownership restores authored policy"),Source->GetCollisionEnabled(),ECollisionEnabled::QueryOnly);
+    System->bEnabled=true;
+    System->Assets[Entry.SourcePath].Passable=false;System->ApplyCollision(Entry);
+    TestEqual(TEXT("Mixed rigid scenery retains collision"),Source->GetCollisionEnabled(),ECollisionEnabled::QueryOnly);
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FYorimichiFoliageBindingTest,"Yorimichi.Foliage.BindingChanges",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FYorimichiFoliageBindingTest::RunTest(const FString&)
+{
+    auto* System=NewObject<UYorimichiFoliageSubsystem>();System->bEnabled=true;
+    auto* Source=NewObject<UStaticMeshComponent>();auto* Mesh=NewObject<UStaticMesh>();
+    auto* Material=NewObject<UMaterial>();auto* Other=NewObject<UMaterial>();
+    Mesh->GetStaticMaterials().Add(FStaticMaterial(Material,TEXT("Leaves")));Source->SetStaticMesh(Mesh);
+    Source->SetEvaluateWorldPositionOffset(true);
+    FYorimichiFoliageSource Entry;Entry.Original=Source;Entry.HasRigid=true;Entry.EvaluateWPO=true;
+    Entry.Collision=Source->GetCollisionEnabled();
+    System->CaptureBindings(Entry);TestTrue(TEXT("Current binding accepted"),System->BindingsCurrent(Entry));
+    Source->SetMaterial(0,Other);TestFalse(TEXT("Live override requires explicit revalidation"),System->BindingsCurrent(Entry));
+    Source->SetMaterial(0,Material);Mesh->GetStaticMaterials()[0].MaterialSlotName=TEXT("Moved");
+    TestFalse(TEXT("Live slot mutation invalidates existing registration"),System->BindingsCurrent(Entry));
+    Mesh->GetStaticMaterials()[0].MaterialSlotName=TEXT("Leaves");Source->SetEvaluateWorldPositionOffset(false);
+    TestFalse(TEXT("Live WPO mutation invalidates existing registration"),System->BindingsCurrent(Entry));
+    Source->SetEvaluateWorldPositionOffset(true);TestTrue(TEXT("Corrected binding recovers"),System->BindingsCurrent(Entry));
+    Source->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    TestFalse(TEXT("External collision changes require explicit revalidation"),System->BindingsCurrent(Entry));
+    Source->SetCollisionEnabled(Entry.Collision);
+    Entry.Visual=Source;System->Sway=0;Source->SetEvaluateWorldPositionOffset(false);
+    TestTrue(TEXT("Owned sway setting is not an external mutation"),System->BindingsCurrent(Entry));
+    return true;
+}
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FYorimichiFoliageRegistryTest,"Yorimichi.Foliage.Registry",
     EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
 
@@ -252,9 +320,11 @@ bool FYorimichiFoliageRegistryTest::RunTest(const FString&)
     const FString Resident=Valid.Replace(TEXT("\"version\":1"),TEXT("\"version\":2"))
         .Replace(TEXT("/Game/FoliageSystem/Tree.Tree"),TEXT("/Game/FoliageResident/Tree_Canopy.Tree_Canopy"))
         .Replace(TEXT("/Game/FoliageSystem/Tree_Shadow.Tree_Shadow"),TEXT("/Game/FoliageResident/Tree_Shadow.Tree_Shadow"))
-        .Replace(TEXT("\"kind\":\"tree\""),TEXT("\"rigid\":\"/Game/FoliageResident/Tree.Tree\",\"rigid_triangles\":4,\"rigid_lod_triangles\":[4],\"source_materials\":[\"/Engine/EngineMaterials/DefaultMaterial.DefaultMaterial\"],\"kind\":\"tree\""));
+        .Replace(TEXT("\"kind\":\"tree\""),TEXT("\"simple_trunk\":false,\"passable\":false,\"rigid\":\"/Game/FoliageResident/Tree.Tree\",\"rigid_triangles\":4,\"rigid_lod_triangles\":[4],\"source_materials\":[\"/Engine/EngineMaterials/DefaultMaterial.DefaultMaterial\"],\"kind\":\"tree\""));
     TestTrue(TEXT("Resident registry retains source identity without source loading"),Read(Resident));
     TestEqual(TEXT("Carrier resolves to canonical source"),System->ResidentSources.FindRef(TEXT("/Game/FoliageResident/Tree.Tree")),FString(TEXT("/Game/Test/Tree.Tree")));
+    TestFalse(TEXT("Missing trunk policy refuses"),Read(Resident.Replace(TEXT("\"simple_trunk\":false"),TEXT("\"missing_trunk\":false"))));
+    TestFalse(TEXT("Contradictory collision policy refuses"),Read(Resident.Replace(TEXT("\"simple_trunk\":false,\"passable\":false"),TEXT("\"simple_trunk\":true,\"passable\":true"))));
     const FString Distant=Resident.Replace(TEXT("\"rigid_lod_triangles\":[4]"),TEXT("\"rigid_lod_triangles\":[4,3,2,0]"));
     TestTrue(TEXT("Certified distant rigid LOD may be empty"),Read(Distant));
     TestFalse(TEXT("Negative distant rigid count refuses"),Read(Distant.Replace(TEXT("[4,3,2,0]"),TEXT("[4,3,2,-1]"))));

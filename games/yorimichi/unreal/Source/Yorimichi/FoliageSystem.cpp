@@ -153,6 +153,8 @@ bool UYorimichiFoliageSubsystem::ReadRegistry(const TSharedPtr<FJsonObject>& Reg
             if (!Asset.Optimized.StartsWith(TEXT("/Game/FoliageResident/")) || !Asset.Shadow.StartsWith(TEXT("/Game/FoliageResident/")) ||
                 !Row->TryGetStringField(TEXT("rigid"),Asset.Rigid) ||
                 !Row->TryGetNumberField(TEXT("rigid_triangles"),Rigid) || !FMath::IsFinite(Rigid) ||
+                !Row->TryGetBoolField(TEXT("simple_trunk"),Asset.SimpleTrunk) ||
+                !Row->TryGetBoolField(TEXT("passable"),Asset.Passable) || (Asset.SimpleTrunk && Asset.Passable) ||
                 Rigid<0 || Rigid>MAX_int32 || Rigid!=FMath::FloorToDouble(Rigid) ||
                 (Rigid==0)!=Asset.Rigid.IsEmpty() ||
                 (!Asset.Rigid.IsEmpty() && !Asset.Rigid.StartsWith(TEXT("/Game/FoliageResident/"))) ||
@@ -442,6 +444,12 @@ bool UYorimichiFoliageSubsystem::Register(UStaticMeshComponent* Component)
         (!bEnabled && (!Mesh->GetRenderData() || Mesh->GetRenderData()->LODResources.IsEmpty() ||
             int32(Mesh->GetRenderData()->LODResources[0].GetNumTriangles())!=Asset->Triangles)))
     { Error=TEXT("Uncertified or stale foliage: ")+Canonical+TEXT(". Build unreal.foliage_residency.");return false; }
+    if (bEnabled && Asset->SimpleTrunk)
+    {
+        const auto* Body=Mesh->GetBodySetup();
+        if (!Body || Body->GetOuter()!=Mesh || Body->CollisionTraceFlag!=CTF_UseSimpleAsComplex || Body->AggGeom.GetElementCount()==0)
+        { Error=TEXT("Prepared tree has no certified simple trunk collision: ")+Canonical;return false; }
+    }
     for (int32 I=0;I<Asset->SourceMaterials.Num();++I)
     {
         auto* Material=Component->GetMaterial(I);
@@ -450,12 +458,14 @@ bool UYorimichiFoliageSubsystem::Register(UStaticMeshComponent* Component)
     }
     FYorimichiFoliageSource Entry;
     Entry.Original=Component;Entry.SourceMesh=Mesh;Entry.SourcePath=Canonical;
+    Entry.Collision=Component->GetCollisionEnabled();
+    CaptureBindings(Entry);
     Entry.HasRigid=bEnabled && !Asset->Rigid.IsEmpty();Entry.Visible=Component->IsVisible();
     Entry.Hidden=Component->bHiddenInGame;Entry.CastShadow=Component->CastShadow;
     Entry.DistanceField=Component->bAffectDistanceFieldLighting;Entry.EvaluateWPO=Component->bEvaluateWorldPositionOffset;
     if (const auto* Instances=Cast<UInstancedStaticMeshComponent>(Component)) Entry.InstanceCount=Instances->GetInstanceCount();
     Entry.ShadowOnly=Entry.Hidden && Component->bCastHiddenShadow;Entry.Kind=Asset->Kind;
-    if (!bEnabled) { Sources.Add(Entry);return true; }
+    if (!bEnabled) { Sources.Add(Entry);ApplyCollision(Sources.Last());return true; }
     UStaticMesh* Optimized=Asset->Rigid.IsEmpty()?Mesh:LoadObject<UStaticMesh>(nullptr,*Asset->Optimized);
     UStaticMesh* Shadow=Entry.CastShadow?LoadObject<UStaticMesh>(nullptr,*Asset->Shadow):nullptr;
     UStaticMesh* Patch=Asset->Aggregate?LoadObject<UStaticMesh>(nullptr,*Asset->Patch):nullptr;
@@ -481,6 +491,7 @@ bool UYorimichiFoliageSubsystem::Register(UStaticMeshComponent* Component)
     }
     if (Shadow) Entry.Shadow=RenderCopy(Component,Shadow);
     Sources.Add(Entry);Apply(Sources.Last());
+    CaptureBindings(Sources.Last());
 #if WITH_EDITOR
     if (!GIsEditor && !IsRunningCommandlet() && !bStartupCompleted)
         for (UStaticMesh* Value:{Mesh,Optimized,Shadow,Patch}) if (Value) StartupVertexCopies.Add(Value);
@@ -602,9 +613,14 @@ void UYorimichiFoliageSubsystem::ReleaseStartupVertexCopies()
 #endif
 }
 
-void UYorimichiFoliageSubsystem::Restore(FYorimichiFoliageSource& Entry)
+void UYorimichiFoliageSubsystem::Restore(FYorimichiFoliageSource& Entry,bool RestoreCollision)
 {
     if (!IsValid(Entry.Original)) return;
+    if (RestoreCollision && Entry.CollisionPolicyApplied)
+    {
+        Entry.Original->SetCollisionEnabled(Entry.Collision);
+        Entry.CollisionPolicyApplied=false;
+    }
     Entry.Original->SetVisibility(Entry.Visible,false);Entry.Original->SetHiddenInGame(Entry.Hidden,false);
     Entry.Original->SetCastShadow(Entry.CastShadow);Entry.Original->bAffectDistanceFieldLighting=Entry.DistanceField;
     if (Entry.Visual && Entry.Visual!=Entry.Original) { Entry.Visual->SetVisibility(false,false);Entry.Visual->SetCastShadow(false); }
@@ -613,9 +629,47 @@ void UYorimichiFoliageSubsystem::Restore(FYorimichiFoliageSource& Entry)
     if (Entry.Shadow) { Entry.Shadow->SetCastShadow(false);Entry.Shadow->SetVisibility(false,false); }
 }
 
+void UYorimichiFoliageSubsystem::ApplyCollision(FYorimichiFoliageSource& Entry)
+{
+    if (!IsValid(Entry.Original)) return;
+    auto* Component=Entry.Original.Get();
+    if (const auto* Asset=Assets.Find(Entry.SourcePath);Asset && !Entry.ShadowOnly &&
+        !Component->ComponentHasTag(TEXT("FoliageBackdrop")))
+    {
+        if (Asset->Passable)
+        { Component->SetCollisionEnabled(ECollisionEnabled::NoCollision);Entry.CollisionPolicyApplied=true; }
+        // Trunks use the prepared body's simple shape, retaining authored
+        // enablement and responses. A graphics choice must not enable obstacles.
+    }
+}
+
+void UYorimichiFoliageSubsystem::CaptureBindings(FYorimichiFoliageSource& Entry)
+{
+    Entry.MaterialSlots.Reset();Entry.MaterialBindings.Reset();
+    if (!IsValid(Entry.Original) || !Entry.Original->GetStaticMesh()) return;
+    const auto& Materials=Entry.Original->GetStaticMesh()->GetStaticMaterials();
+    for (int32 I=0;I<Materials.Num();++I)
+    { Entry.MaterialSlots.Add(Materials[I].MaterialSlotName);Entry.MaterialBindings.Add(Entry.Original->GetMaterial(I)); }
+}
+
+bool UYorimichiFoliageSubsystem::BindingsCurrent(const FYorimichiFoliageSource& Entry) const
+{
+    if (!IsValid(Entry.Original) || !Entry.Original->GetStaticMesh()) return false;
+    const auto& Materials=Entry.Original->GetStaticMesh()->GetStaticMaterials();
+    if (Materials.Num()!=Entry.MaterialSlots.Num() || Materials.Num()!=Entry.MaterialBindings.Num()) return false;
+    for (int32 I=0;I<Materials.Num();++I)
+        if (Materials[I].MaterialSlotName!=Entry.MaterialSlots[I] || Entry.Original->GetMaterial(I)!=Entry.MaterialBindings[I]) return false;
+    const bool ExpectedWPO=bEnabled && Entry.Visual==Entry.Original?Entry.EvaluateWPO && Sway>0.f:Entry.EvaluateWPO;
+    const auto* Asset=Assets.Find(Entry.SourcePath);
+    const bool Passable=Asset && Asset->Passable && !Entry.ShadowOnly && !Entry.Original->ComponentHasTag(TEXT("FoliageBackdrop"));
+    const auto ExpectedCollision=Passable?ECollisionEnabled::NoCollision:Entry.Collision;
+    return Entry.Original->bEvaluateWorldPositionOffset==ExpectedWPO && Entry.Original->GetCollisionEnabled()==ExpectedCollision;
+}
+
 void UYorimichiFoliageSubsystem::Apply(FYorimichiFoliageSource& Entry)
 {
-    if (!bEnabled) { Restore(Entry);return; }
+    if (!bEnabled) { Restore(Entry,false);ApplyCollision(Entry);return; }
+    ApplyCollision(Entry);
     Entry.Original->SetVisibility(Entry.HasRigid && Entry.Visible,false);
     Entry.Original->SetHiddenInGame(Entry.Hidden,false);
     Entry.Original->SetCastShadow(Entry.HasRigid && Entry.CastShadow);
@@ -672,6 +726,11 @@ bool UYorimichiFoliageSubsystem::Refresh()
             DestroyRenderers(Entry);
             Sources.RemoveAt(I);
         }
+        else if (!BindingsCurrent(Entry))
+        {
+            Error=TEXT("Registered foliage material/slot/WPO/collision changed; call RefreshSource for current validation: ")+Entry.Original->GetPathName();
+            UE_LOG(LogTemp,Error,TEXT("FOLIAGE SYSTEM %s"),*Error);return false;
+        }
     }
     // Finish only the initial population in bounded upload batches. Later live
     // refreshes and preference toggles must not introduce GPU-idle stalls.
@@ -713,6 +772,7 @@ bool UYorimichiFoliageSubsystem::Refresh()
         { ++StartupTotal;if (++StartupBatch==8) DrainUploads(); }
     }
     if (StartupBatch) DrainUploads();
+    if (!NewSources.IsEmpty()) JapanGameplayCollision::Install(GetWorld());
     Error.Reset();return true;
 }
 

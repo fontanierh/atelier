@@ -415,6 +415,7 @@ void AJapanWorld::Load()
                 if (Key==TEXT("HD_Harbor") || Key==TEXT("HD_Boat") || Key==TEXT("HD_Sea") || Key==TEXT("HD_Bollard"))
                     H->SetLightingChannels(true, true, false);
                 H->SetCanEverAffectNavigation(false);
+                if (bBackdrop) H->ComponentTags.Add(TEXT("FoliageBackdrop"));
                 const bool bWater=Key==TEXT("HD_Sea") || Key==TEXT("HD_InlandWater") || Key==TEXT("Lake_Water");
                 // The city's overhead wires (HD_Wires, 10 m up) never stop a jump or the camera, and cast no shimmering lines.
                 const bool bWires=Key==TEXT("HD_Wires");
@@ -441,7 +442,7 @@ void AJapanWorld::Load()
                 else if (bBush) H->SetCullDistances(30000, 36000);
                 else if (bLitter) H->SetCullDistances(7000, 9000);
                 if (bTree || bBush) H->SetWorldPositionOffsetDisableDistance(18000);
-                // Walkers meet a tree's leaves; the skateboard meets only its trunk (SkateRuntimeDetail CollectWorld).
+                // Prepared trees use their trunk; the skateboard also selects simple shapes in legacy mode.
                 if (bTree) H->ComponentTags.Add(TEXT("SkateSimpleCollision"));
                 // The tree house: the camera arm keeps above the floor Cairo stands on there, and in hole mode its probe
                 // passes the house (SetSeeThroughProbe). Its door curtains swing up to 60 cm out of their rest pose.

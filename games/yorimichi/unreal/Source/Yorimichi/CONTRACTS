@@ -197,6 +197,22 @@ Render-only physics cleanup MUST NOT touch an active collision carrier. Carrier 
 MUST preserve position/index data and follow foliage-game-vertex-residency. Bush player interaction,
 see-through custom primitive data and rigid cloth motion MUST survive replacement.
 
+@cc [owner:fontanierh,label:correctness] foliage-prepared-collision-policy
+Version-two rows MUST declare simple_trunk and passable booleans and MUST NOT claim both.
+A prepared trunk carrier MUST own validated simple shapes. Authored collision enablement and
+responses MUST remain unchanged for trunks, including intentionally nonblocking placements.
+Passable plant carriers MUST disable collision in BOTH graphics modes; backdrop and shadow-only
+placements MUST retain their authored policy. Mixed rigid collision MUST remain unchanged.
+Mode unload, rollback and owner release MUST recover authored collision state before recapturing
+the selected mode; render copies MUST remain noncolliding. Gameplay collision channels MUST be installed
+once after each registration batch or mode reload, never once per source.
+
+@cc [owner:fontanierh,label:correctness] foliage-live-binding-validation
+Registered material bindings, slot names, source WPO and collision enablement MUST remain current during refresh.
+External changes MUST require explicit RefreshSource validation rather than silently keeping stale
+renderers. Owned sway changes MUST remain valid. Binding snapshots MUST NOT retain inactive mesh
+or material objects across mode reloads.
+
 @cc [owner:fontanierh,label:correctness] city-tile-material-ownership
 City surface tile components MUST retain their own certified mesh material table. Parent material slot
 indices MUST NOT be copied onto tiles: a tile may omit unused parent slots and compact their order.
