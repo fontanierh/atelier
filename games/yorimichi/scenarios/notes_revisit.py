@@ -207,7 +207,7 @@ def _wait_for_shot(path, monotonic, sleep):
 
 def capture(notes_path, out_dir, qa_module=qa, monotonic=time.monotonic, sleep=time.sleep):
     """Re-shoot every note, writing the numbered stills and index.json. Returns 0 when every pose was reproduced."""
-    notes_path, out_dir = Path(notes_path), Path(out_dir)
+    notes_path, out_dir = Path(notes_path), Path(out_dir).resolve()
     data, notes = load_notes(notes_path)
     out_dir.mkdir(parents=True, exist_ok=True)
     index = {
