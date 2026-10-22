@@ -1,4 +1,4 @@
-"""Selected editor-build inputs, excluding agent contract prose rather than native sources."""
+"""Selected native build inputs, excluding agent contract prose rather than consumed sources."""
 from pathlib import Path
 import stat
 
@@ -6,8 +6,8 @@ from atelier import build_inputs
 
 
 def files(roots):
-    """@cc [owner:fontanierh,label:correctness] editor-compile-source-membership
-    Every selected source/config/plugin member MUST remain a compile input except the existing
+    """@cc [owner:fontanierh,label:correctness] native-build-source-membership
+    Every selected source/config/plugin member MUST remain a native build input except the existing
     legacy generated/documentation exclusions and files named CONTRACTS. CONTRACTS are agent
     guidance, never native build inputs; a future native reader MUST explicitly declare that file.
     Unknown extensions MUST remain covered. Membership MUST be observed anew for each selected

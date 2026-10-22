@@ -62,15 +62,26 @@ def test_selected_compile_keeps_legacy_generated_exclusions_and_refuses_links(tm
         RECIPE.compile_inputs.files((root,))
 
 
-def test_recipe_selects_all_original_compile_roots_and_keeps_build_prerequisite(tmp_path):
+@pytest.mark.parametrize('name', ['unreal.compile', 'unreal.cook', 'data.network'])
+def test_recipe_selects_all_original_native_roots_and_keeps_other_inputs(tmp_path, name):
     ctx = SimpleNamespace(out=tmp_path, uproject=tmp_path / 'Yorimichi.uproject')
-    step = next(s for s in RECIPE.steps(ctx) if s.name == 'unreal.compile')
-    assert step.inputs == [ctx.uproject]
-    assert step.needs == ['skate.runtime']
-    provider, = step.deferred_inputs
+    step = next(s for s in RECIPE.steps(ctx) if s.name == name)
+    assert ctx.uproject in step.inputs
+    if name == 'unreal.compile':
+        assert step.inputs == [ctx.uproject]
+        assert step.needs == ['skate.runtime']
+    elif name == 'unreal.cook':
+        assert RECIPE.TOOLS / 'package_cook.py' in step.inputs
+        assert step.cook_recovery and step.checkpoint_restore
+        assert 'data.network' in step.needs
+    else:
+        assert RECIPE.GAME / 'network_identity.py' in step.inputs
+        assert any(p.name == 'content' for p in step.deferred_inputs)
+    provider, = [p for p in step.deferred_inputs if p.name == 'native-source-files']
     assert provider.settings == ((RECIPE.SOURCE, RECIPE.GAME / 'unreal/Config',
                                   RECIPE.GAME / 'unreal/Plugins', paths.ENGINE_PLUGINS),)
-    observed = build_deferred.observe(step)
+    selected = build.Step('selection', [], deferred_inputs=[provider])
+    observed = build_deferred.observe(selected)
     assert RECIPE.SOURCE / 'Yorimichi/Yorimichi.Build.cs' in observed.paths
     assert not any(p.name == 'CONTRACTS' for p in observed.members)
     assert RECIPE.SOURCE / 'Yorimichi/Yorimichi.Build.cs' in observed.members
