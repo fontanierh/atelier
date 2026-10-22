@@ -787,7 +787,7 @@ bool UYorimichiFoliageResidencyBuilder::SelfTest()
             {
                 // Match the real old producer: the far proxy and tiny-source
                 // shadow can contain only the exact original rigid triangle.
-                TArray<FMeshDescription> Proxy=Prepared;Initialize(Proxy[3],Materials,6);
+                TArray<FMeshDescription> Proxy=Prepared;Proxy[3]=FMeshDescription();Initialize(Proxy[3],Materials,6);
                 if (!CopyTriangle(Levels[0],FTriangleID(0),0,Proxy[3])) return false;
                 ChainInput=Build(Directory/TEXT("RigidOnlyFarInput"),Proxy,Materials,{1.f,.24f,.07f,.018f},ECollision::None,Empty);
                 TArray<FMeshDescription> RigidShadow={Proxy[3]};
