@@ -41,7 +41,7 @@ def scene(tmp_path, monkeypatch):
     bundle = dict(checkpoint='a' * 64, donor_task='unreal.region', donor_fingerprint='b' * 64,
                   source_revision='c' * 40, provenance='compatibility-only', files=files,
                   donor_stamp={'fingerprint': 'b' * 64, 'input_state': {'inputs': {'<repo>/import.py': 'd' * 64}}})
-    monkeypatch.setattr(checkpoint_candidates, 'load', lambda *a: bundle)
+    monkeypatch.setattr(checkpoint_candidates, 'load_all', lambda *a: [bundle])
     def member(*args, bundle=None):
         return staged.get(args[2])
     monkeypatch.setattr(checkpoint_candidates, 'member_path', member)
@@ -95,6 +95,56 @@ def test_different_geometry_is_ordinary_import_without_content_copy(scene):
     adapter = scene.adapter()
     assert acquire(scene, adapter, donor_geometry={'source': 'changed'}) is None
     assert not scene.content.exists() and not adapter.receipts.path.exists()
+
+
+def test_chooses_complete_group_from_second_donor_with_its_own_report_and_provenance(scene, monkeypatch):
+    from copy import deepcopy
+    primary = deepcopy(scene.bundle)
+    primary['checkpoint'] = '1' * 64
+    primary['files'] = {n: e for n, e in primary['files'].items() if '/Hull.' not in n}
+    monkeypatch.setattr(checkpoint_candidates, 'load_all', lambda *_: [primary, scene.bundle])
+    adapter = scene.adapter()
+    # The preferred donor is incomplete for this source + collision group.
+    assert acquire(scene, adapter, donor_geometry=lambda report: {'source': 'same'})
+    assert adapter.pending['Mesh']['provenance']['checkpoint'] == scene.bundle['checkpoint']
+    assert len(scene.scans[0]) == 2
+    adapter.validated('Mesh')
+    mesh_reuse.finalize_pending(scene.ctx, 'unreal.region', 'e' * 24)
+    record = json.loads(adapter.receipts.path.read_text())['meshes']['Mesh']
+    assert record['provenance']['checkpoint'] == scene.bundle['checkpoint']
+    assert len(record['packages']) == 6
+
+
+def test_reports_are_projected_independently_without_splicing_package_groups(scene, monkeypatch):
+    from copy import deepcopy
+    primary = deepcopy(scene.bundle)
+    primary['checkpoint'] = '1' * 64
+    monkeypatch.setattr(checkpoint_candidates, 'load_all', lambda *_: [primary, scene.bundle])
+    first_report = scene.ctx.out / 'old-report.json'
+    first_report.write_text('{"source":"old"}')
+    second_report = scene.ctx.out / 'new-report.json'
+    second_report.write_text('{"source":"same"}')
+    original = checkpoint_candidates.member_path
+    def member(*args, bundle=None):
+        if args[2] == 'generated/report.json':
+            return first_report if bundle is primary else second_report
+        return original(*args, bundle=bundle)
+    monkeypatch.setattr(checkpoint_candidates, 'member_path', member)
+    adapter = scene.adapter()
+    assert acquire(scene, adapter, donor_geometry=lambda report: report)
+    assert adapter.pending['Mesh']['provenance']['checkpoint'] == scene.bundle['checkpoint']
+
+
+def test_two_partial_donors_cannot_invent_complete_collision_group(scene, monkeypatch):
+    from copy import deepcopy
+    primary, secondary = deepcopy(scene.bundle), deepcopy(scene.bundle)
+    primary['files'] = {n: e for n, e in primary['files'].items() if '/Hull.' not in n}
+    secondary['files'] = {n: e for n, e in secondary['files'].items() if '/Mesh.' not in n}
+    monkeypatch.setattr(checkpoint_candidates, 'load_all', lambda *_: [primary, secondary])
+    adapter = scene.adapter()
+    assert acquire(scene, adapter) is None
+    assert adapter.miss_reasons == {'candidate_package_missing': 1}
+    assert not scene.content.exists()
 
 
 def test_missing_native_import_hash_never_certifies_captured_bytes(scene):

@@ -12,6 +12,7 @@ The 21 October build work relies on these boundaries:
 | Action reuse across revisions | `platform/studio/atelier/CONTRACTS`, `checkpoint_actions.publish`: complete inputs/products/tools and output ownership; old state cannot become a produced action certificate | `test_checkpoint_actions.py`, candidate/restore tests |
 | Retained checkpoint capture and history | `checkpoint_store.capture`, `native_protocol.validate`, platform `historical-inputs-are-not-capture-head`: immutable complete bytes, bounded paths and original task evidence | Store/history/candidate tests |
 | Automatic native candidate retention | `checkpoint_native_capture.publish` and platform `automatic-native-candidates-retain-original-proof`: successful task boundary, original source proof, complete package groups; cached donor ranking never grants admission | Native-capture, donor-ranking and batch-finalization regressions |
+| Independent candidate donors | `checkpoint_candidates.publish_bundles` and platform `candidate-composition-keeps-original-groups`: independently proved reports/stamps, one complete source/collision group per donor, no receiving certificate | Disjoint catalogue, corrupt donor, per-report geometry and non-splicing regressions |
 | Native runtime isolation | `native_protocol.native_context` and `runtime_files`: standard-library protocol with an explicit complete runtime closure, excluding build/release/playtest controllers | `test_native_protocol.py`, game controller-cascade checks |
 | Current mesh admission | `unreal_mesh_reuse.MeshReuse`, `mesh_reuse.Receipts`, platform policy/history contracts: current engine/source/owner/options/validation proof; dirty packages miss; unsupported evidence imports normally | `test_mesh_reuse.py`, `test_unreal_mesh_reuse.py`, GLB adapter tests |
 | Real source tag and count reporting | Script `CONTRACTS`, `finalized-reuse-is-the-success-metric`, `MeshReuse.miss`: actual loaded `AssetImportData`, observed refusal reasons, no pending/staged counts advertised as final hits | Source-tag/validator rejection and successful host-finalization regressions |
@@ -44,7 +45,10 @@ Known remaining work must stay explicit. Bounded Brinecove, Belmonte static mode
 pieces are landed; generated ground and the independent Streets native owner retain their draft
 receiving gates, and remaining regions still need producer/consumer integration. The shared binary
 geometry writer and automatic native-candidate retention are landed, but neither proves whole-game
-reuse, cross-donor composition or global retention of failed preparation units. Local global-store/workspace
+reuse or global retention of failed preparation units. Candidate discovery can retain multiple independent
+local donors, or multiple remote donors when local discovery misses; each mesh still needs current native
+admission from one complete group. Mixed local/remote discovery and real cross-machine receiving acceptance
+remain separate work. Local global-store/workspace
 garbage collection is not implemented by the remote collection rule or a coordinated manual sweep.
 Native audio type-move and preparation-module adoption gates must not be inferred from this
 documentation or source approval.

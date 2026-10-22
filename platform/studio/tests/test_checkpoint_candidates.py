@@ -47,6 +47,90 @@ def test_stage_into_warm_receiver_preserves_content_and_stamps(fixture, donor):
     assert candidates.member_path(ctx, 'tree', 'generated/tree/asset.bin', bundle=bundle) is None
 
 
+def test_ordinary_discovery_composes_disjoint_donors_without_merging_their_proof(fixture, donor):
+    from copy import deepcopy
+    from atelier import native_candidates
+    key, saved = donor
+    first = deepcopy(saved)
+    first['files'] = {'generated/tree/asset.bin': saved['files']['generated/tree/asset.bin']}
+    first_key = fixture.store.save(first)
+    second = deepcopy(first)
+    second['source_revision'] = 'b' * 40
+    second['stamps']['tree']['fingerprint'] = 'b' * 64
+    second['files'] = {'generated/tree/other.bin': saved['files']['generated/house/asset.bin']}
+    second_key = fixture.store.save(second)
+    # Limit discovery to two genuinely partial task histories, neither a combined workspace.
+    ctx, steps = fixture.checkout('receiver')
+    step = replace(steps[0], candidate_scope=candidates.CandidateScope(directories=(ctx.out / 'tree',)))
+    fixture.store.manifests.joinpath(key + '.json').unlink()
+    assert candidates.prepare(ctx, step, fingerprint='b' * 64, echo=lambda _: None)
+    bundles = native_candidates.load_all(ctx, 'tree')
+    assert [b['checkpoint'] for b in bundles] == [second_key, first_key]
+    assert bundles[0]['source_revision'] == 'b' * 40
+    assert bundles[1]['source_revision'] == 'a' * 40
+    assert bundles[0].member_path('generated/tree/other.bin').read_bytes() == b'house'
+    assert bundles[1].member_path('generated/tree/asset.bin').read_bytes() == b'tree'
+    assert not (ctx.out / 'tree/asset.bin').exists()
+    assert not ctx.stamps.exists()
+    # Corruption of one staged donor is a miss for that donor, not the other valid history.
+    bundles[0].member_path('generated/tree/other.bin').write_bytes(b'corrupt')
+    remaining = native_candidates.load_all(ctx, 'tree')
+    assert [b['checkpoint'] for b in remaining] == [first_key]
+
+
+def test_composition_rechecks_all_donors_before_publishing_pointer(fixture, donor):
+    key, _ = donor
+    ctx, _ = fixture.checkout('receiver')
+    manifest = candidates.stage(ctx, key, 'tree', ['generated/tree/asset.bin'], publish=False)
+    assert not (candidates.root(ctx) / 'tree.json').exists()
+
+    value = json.loads(manifest.read_text())
+    (manifest.parent / value['files']['generated/tree/asset.bin']['path']).write_bytes(b'bad')
+    with pytest.raises(cp.CheckpointError, match='changed'):
+        candidates.publish_bundles(ctx, 'tree', [manifest])
+    assert not (candidates.root(ctx) / 'tree.json').exists()
+
+
+def test_remote_discovery_keeps_both_independent_partial_histories(fixture, donor, monkeypatch):
+    from copy import deepcopy
+    from atelier import checkpoint_github, native_candidates
+    _, saved = donor
+    one, two = deepcopy(saved), deepcopy(saved)
+    one['files'] = {'generated/tree/one.bin': saved['files']['generated/tree/asset.bin']}
+    two['files'] = {'generated/tree/two.bin': saved['files']['generated/house/asset.bin']}
+    two['source_revision'] = 'b' * 40
+    descriptors = {cp.identity(value): value for value in (one, two)}
+    ctx, steps = fixture.checkout('receiver')
+    step = replace(steps[0], candidate_scope=candidates.CandidateScope(directories=(ctx.out / 'tree',)))
+    monkeypatch.setattr(candidates, 'local_keys', lambda _: [])
+    monkeypatch.setattr(build_checkpoints, 'configured', lambda _: dict(repository='owner/private'))
+    fetched = []
+    class Remote:
+        def __init__(self, *a, **kw): self.owned = False
+        @contextmanager
+        def transaction(self):
+            self.owned = True
+            try: yield
+            finally: self.owned = False
+        def candidates(self):
+            assert self.owned
+            return list(descriptors)
+        def descriptor(self, item, temporary):
+            assert self.owned
+            value = descriptors[item]
+            return dict(key=item, checkpoint=value, blobs={e['sha256']: [] for e in value['files'].values()})
+        def fetch(self, item, transfer, store, *, save):
+            assert self.owned and not save
+            assert transfer['checkpoint']['files'] == descriptors[item]['files']
+            fetched.append(item)
+    monkeypatch.setattr(checkpoint_github, 'Remote', Remote)
+    assert candidates.prepare(ctx, step, echo=lambda _: None)
+    assert fetched == list(descriptors)
+    bundles = native_candidates.load_all(ctx, 'tree')
+    assert [b['checkpoint'] for b in bundles] == list(descriptors)
+    assert [list(b['files']) for b in bundles] == [['generated/tree/one.bin'], ['generated/tree/two.bin']]
+
+
 def test_stale_engine_pointer_is_a_miss(fixture, donor, monkeypatch):
     key, _ = donor
     ctx, _ = fixture.checkout('receiver')

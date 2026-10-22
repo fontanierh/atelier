@@ -88,7 +88,7 @@ def completion(ctx, value, directory, *, verify_files=True):
     return bundle
 
 
-def load(ctx, task):
+def load_all(ctx, task):
     """@cc [owner:fontanierh,label:correctness] compatibility-candidates-are-not-success
     A candidate pointer MUST stay within ignored receiving staging. Load MUST verify engine/
     platform context and staged file integrity. It MUST NOT publish a receiving stamp or claim
@@ -97,15 +97,31 @@ def load(ctx, task):
     """
     try:
         pointer = read_json(root(ctx) / (task_name(task) + '.json'))
-        if not isinstance(pointer, dict) or pointer.get('schema') != 1:
-            return None
-        manifest = safe_destination(root(ctx), pointer['manifest'])
-        bundle = completion(ctx, read_json(manifest), manifest.parent)
-        if bundle.get('receiver_task') != task:
-            return None
-        return bundle
+        if not isinstance(pointer, dict):
+            return []
+        manifests = ([pointer['manifest']] if pointer.get('schema') == 1 else
+                     pointer['manifests'] if pointer.get('schema') == 2 else [])
+        if (not isinstance(manifests, list) or not manifests
+                or any(not isinstance(p, str) for p in manifests) or len(set(manifests)) != len(manifests)):
+            return []
+        bundles = []
+        for member in manifests:
+            try:
+                manifest = safe_destination(root(ctx), member)
+                bundle = completion(ctx, read_json(manifest), manifest.parent)
+                if bundle.get('receiver_task') == task:
+                    bundles.append(bundle)
+            except (OSError, ValueError, KeyError, TypeError, CheckpointError):
+                continue  # Each donor remains independently proved; one cannot hide the rest.
+        return bundles
     except (OSError, ValueError, KeyError, TypeError, CheckpointError):
-        return None
+        return []
+
+
+def load(ctx, task):
+    """Legacy primary-donor accessor; composition-aware consumers use load_all()."""
+    bundles = load_all(ctx, task)
+    return bundles[0] if bundles else None
 
 
 def member_path(ctx, task, member, *, bundle=None):

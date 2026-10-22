@@ -103,7 +103,9 @@ class MeshReuse:
             receipt_policy = mesh_reuse.identity(dict(import_policy=receipt_policy, validation=validation_policy))
         current_context = context(ctx)
         self.receipts = mesh_reuse.Receipts(ctx.out, task, current_context, receipt_policy, self.content)
-        self.bundle = checkpoint_candidates.load(ctx, task) if self.enabled else None
+        self.bundles = checkpoint_candidates.load_all(ctx, task) if self.enabled else []
+        self.bundle = self.bundles[0] if self.bundles else None
+        self.histories = []
         self.donor = {}
         self.pending = {}
         self.counts = dict(reused_local=0, reused_candidate=0, imported=0)
@@ -134,32 +136,44 @@ class MeshReuse:
             self.previous_stamp = old
         except (OSError, ValueError, KeyError, TypeError, SyntaxError):
             pass
-        if self.bundle:
+        for bundle in self.bundles:
+            compatible, donor = False, {}
             try:
                 # Captured HEAD identifies the capture only. The original producing
                 # task's per-file identities identify the geometry/finishing policy.
-                donor_inputs = self.bundle['donor_stamp']['input_state']['inputs']
+                donor_inputs = bundle['donor_stamp']['input_state']['inputs']
                 if not isinstance(donor_inputs, dict):
                     raise ValueError('Missing original donor input evidence')
                 relative_script = self.script.relative_to(paths.REPO).as_posix()
                 donor_source = mesh_reuse.saved_source(paths.REPO, relative_script,
                                                        donor_inputs.get('<repo>/' + relative_script))
                 if donor_source:
-                    self.compatible = mesh_reuse.native_policy(donor_source, functions, self.script,
-                                                               inputs=donor_inputs) == self.policy
-                if self.compatible and owner_script:
+                    compatible = mesh_reuse.native_policy(donor_source, functions, self.script,
+                                                           inputs=donor_inputs) == self.policy
+                if compatible and owner_script:
                     for owner_name, current in self.owner_sources.items():
                         owner_source = mesh_reuse.saved_source(paths.REPO, owner_name,
                                                               donor_inputs.get('<repo>/' + owner_name))
-                        self.compatible &= owner_source is not None and ast_dump(owner_source) == current
-                report = checkpoint_candidates.member_path(ctx, task, report_member, bundle=self.bundle) if report_member else None
+                        compatible &= owner_source is not None and ast_dump(owner_source) == current
+                report = checkpoint_candidates.member_path(ctx, task, report_member, bundle=bundle) if report_member else None
                 if report:
-                    self.donor = json.loads(report.read_text())
+                    donor = json.loads(report.read_text())
+                    if not isinstance(donor, dict):
+                        raise ValueError('Malformed original donor report')
             except (OSError, ValueError, KeyError, TypeError, SyntaxError):
-                self.compatible = False
+                compatible = False
+
+            self.histories.append((bundle, donor, compatible))
+        if self.histories:
+            self.donor = self.histories[0][1]
+            self.compatible = any(item[2] for item in self.histories)
 
     def acquire(self, name, package, *, geometry, donor_geometry, sources, validator=None):
-        """sources contains (logical package, current source file, expected SHA256)."""
+        """sources contains (logical package, current source file, expected SHA256).
+
+        donor_geometry may be a report projection, evaluated separately for each independent
+        donor. A complete source/collision group is always selected from one donor, never spliced.
+        """
         import unreal
         packages = [item[0] for item in sources]
         if package not in packages or len(set(packages)) != len(packages):
@@ -196,8 +210,23 @@ class MeshReuse:
                           'local_package_history_mismatch' if self.local_compatible else
                           'no_compatible_package_history')
                 return self.miss(reason)
-            if donor_geometry is None or geometry != donor_geometry:
-                return self.miss('candidate_geometry_mismatch')
+            bundle = None
+            geometry_matches = False
+            for candidate, report, compatible in self.histories:
+                if not compatible:
+                    continue
+                try:
+                    previous = donor_geometry(report) if callable(donor_geometry) else donor_geometry
+                except (ValueError, KeyError, TypeError, IndexError):
+                    continue
+                if previous is None or geometry != previous:
+                    continue
+                geometry_matches = True
+                if all(mesh_reuse.package_members(target)[0] in candidate['files'] for target in packages):
+                    bundle = candidate
+                    break
+            if bundle is None:
+                return self.miss('candidate_package_missing' if geometry_matches else 'candidate_geometry_mismatch')
             if any(unreal.EditorAssetLibrary.does_asset_exist(target) for target in packages):
                 # An unproven existing package belongs to the normal importer;
                 # candidate staging never replaces another completed scope.
@@ -208,16 +237,16 @@ class MeshReuse:
                 if any(os.path.lexists(safe_destination(self.content, member.removeprefix('content/')))
                        for member in members):
                     return self.miss('unproved_disk_sidecar')
-                if members[0] not in self.bundle['files']:
+                if members[0] not in bundle['files']:
                     return self.miss('candidate_package_missing')
                 for member in members:
-                    if member not in self.bundle['files']:
+                    if member not in bundle['files']:
                         continue
-                    source = self.candidates.member_path(self.ctx, self.task, member, bundle=self.bundle)
+                    source = self.candidates.member_path(self.ctx, self.task, member, bundle=bundle)
                     if source is None:
                         return self.miss('candidate_member_missing')
                     destination = safe_destination(self.content, member.removeprefix('content/'))
-                    selected.append((source, destination, self.bundle['files'][member]))
+                    selected.append((source, destination, bundle['files'][member]))
             # Prepare all sidecars and collision packages before any mesh load.
             self.content.mkdir(parents=True, exist_ok=True)
             with tempfile.TemporaryDirectory(prefix='.mesh-import-', dir=self.content) as temporary:
@@ -236,8 +265,8 @@ class MeshReuse:
                 [str(destination) for _, destination, _ in selected if destination.suffix == '.uasset'], True)
             copied = True
             self.pending[name]['provenance'] = dict(kind='compatibility-only',
-                checkpoint=self.bundle['checkpoint'], donor_task=self.bundle['donor_task'],
-                donor_fingerprint=self.bundle['donor_fingerprint'], source_revision=self.bundle['source_revision'])
+                checkpoint=bundle['checkpoint'], donor_task=bundle['donor_task'],
+                donor_fingerprint=bundle['donor_fingerprint'], source_revision=bundle['source_revision'])
         loaded = {target: unreal.load_asset(target) for target in packages}
         if not packages_clean(packages):
             return self.miss('dirty_loaded_package')
@@ -294,7 +323,8 @@ class MeshReuse:
     def finish(self):
         result = dict(schema=1, task=self.task, counts=self.counts, miss_reasons=self.miss_reasons,
                       donor_checkpoint=self.bundle.get('checkpoint') if self.bundle else None,
-                      donor_provenance=self.bundle.get('provenance') if self.bundle else None)
+                      donor_provenance=self.bundle.get('provenance') if self.bundle else None,
+                      candidate_checkpoints=[bundle['checkpoint'] for bundle in self.bundles])
         atomic_json(self.ctx.out / 'native-imports' / self.task / 'summary.json', result)
         print('NATIVE MESH REUSE ' + json.dumps(result, sort_keys=True), flush=True)
 

@@ -77,6 +77,14 @@ an unfinished private restore exercise alone MUST NOT extend a retention hold th
 Public release verification and private checkpoint restoration MUST remain separate evidence claims.
 Personal backups, shared installed tools and another owner's live outputs MUST remain outside cleanup.
 
+@cc [owner:fontanierh,label:correctness] candidate-composition-keeps-original-groups
+Candidate discovery MAY compose independently staged donor catalogues, but MUST preserve each original
+task stamp, report and package inventory. A mesh and its collision/LOD source group MUST come from one
+compatible donor, never a splice of incomplete histories. Selection MUST compare that donor's original
+geometry/owner policy and report, then retain the actual selected donor in per-mesh provenance. Current
+loaded import-source and native material/role/collision checks remain mandatory. A corrupt independent
+donor MUST miss without hiding another valid donor or creating receiving success.
+
 @cc [owner:fontanierh,label:safety] local-sweeps-exclude-readers-and-writers
 A local metadata publication mutex alone MUST NOT be treated as excluding older unleased readers.
 Collection MUST obtain reader/writer exclusion, or an explicitly coordinated quiet boundary covering

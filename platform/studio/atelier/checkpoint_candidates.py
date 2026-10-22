@@ -72,7 +72,7 @@ def stage_worker(ctx, request_id):
     return dict(request=request_id, folder=folder.relative_to(root(ctx)).as_posix(), value=value)
 
 
-def stage(ctx, key, donor_task, members, *, receiver_task=None):
+def stage(ctx, key, donor_task, members, *, receiver_task=None, publish=True):
     """@cc [owner:fontanierh,label:correctness] candidate-completion-after-guard
     Staging MUST use independent copies of explicitly selected immutable regular members,
     refuse linked destinations, and publish its pointer only after successful guard cleanup
@@ -104,8 +104,35 @@ def stage(ctx, key, donor_task, members, *, receiver_task=None):
     completion(ctx, value, folder)
     target = folder / 'manifest.json'
     atomic_json(target, value)
-    atomic_json(root(ctx) / (receiver_task + '.json'), dict(schema=1, manifest=target.relative_to(root(ctx)).as_posix()))
+    if publish:
+        publish_bundles(ctx, receiver_task, [target])
     return target
+
+
+def publish_bundles(ctx, task, manifests):
+    """@cc [owner:fontanierh,label:correctness] independent-candidate-donors
+    Every donor MUST retain its own original stamp, report and complete package inventory.
+    A combined pointer MUST NOT merge files, fabricate a producer stamp, or install Content.
+    Each selected donor MUST pass fresh context and staged-byte validation before publication.
+
+    Publish independent donor manifests only after all their guarded copies complete.
+    """
+    task_name(task)
+    members = []
+    for manifest in manifests:
+        member = Path(manifest).relative_to(root(ctx)).as_posix()
+        target = safe_destination(root(ctx), member)
+        value = completion(ctx, read_json(target), target.parent)
+        if value.get('receiver_task') != task:
+            raise CheckpointError('Candidate composition contains a foreign receiver')
+        if member not in members:
+            members.append(member)
+    if not members:
+        raise CheckpointError('Candidate composition is empty')
+    value = (dict(schema=1, manifest=members[0]) if len(members) == 1 else
+             dict(schema=2, manifests=members))
+    atomic_json(root(ctx) / (task + '.json'), value)
+    return Path(manifests[0])
 
 
 def select(ctx, scope, files):
@@ -141,12 +168,21 @@ def prepare(ctx, step, *, fingerprint=None, echo=print):
     prepared.add(step.name)
     donor_task = scope.donor_task or step.name
     store = Store(ctx.game)
+    signatures = set()
+    staged = []
     def attempt(key):
         proof = inventory(ctx, key, donor_task)
         selected = select(ctx, scope, proof['files'])
         if not selected:
             return None
-        return stage(ctx, key, donor_task, selected, receiver_task=step.name)
+        signature = (proof['donor_fingerprint'], tuple((name, *(proof['files'][name][k]
+                     for k in ('sha256', 'size', 'mode'))) for name in selected))
+        if signature in signatures:
+            return None
+        result = stage(ctx, key, donor_task, selected, receiver_task=step.name, publish=False)
+        signatures.add(signature)
+        staged.append(result)
+        return result
     # Ranking hints are never admission proof. Re-read the selected immutable descriptor
     # in attempt()/stage(), even when another task has already ranked it in this build.
     from .native_candidates import original
@@ -191,10 +227,13 @@ def prepare(ctx, step, *, fingerprint=None, echo=print):
         try:
             result = attempt(key)
             if result:
-                echo(step.name + ': staged compatible local candidates; native validation still required')
-                return result
+                echo(step.name + ': staged independent local donor; native validation still required')
         except (OSError, ValueError, KeyError, TypeError, CheckpointError) as error:
             echo(step.name + ': candidate miss (' + str(error) + ')')
+    if staged:
+        result = publish_bundles(ctx, step.name, staged)
+        echo(step.name + ': published ' + str(len(staged)) + ' independent candidate donors')
+        return result
     from .build_checkpoints import configured
     settings = configured(ctx)
     if settings and settings.get('repository'):
@@ -216,10 +255,14 @@ def prepare(ctx, step, *, fingerprint=None, echo=print):
                         needed = {e['sha256'] for e in subset['files'].values()}
                         transfer = dict(data, checkpoint=subset, key=identity(subset), blobs={n: data['blobs'][n] for n in needed})
                         remote.fetch(item, transfer, store, save=False)
-                        return attempt(key)
+                        result = attempt(key)
+                        if result:
+                            echo(step.name + ': staged independent remote donor; native validation still required')
                     except (OSError, ValueError, KeyError, TypeError, RuntimeError) as error:
                         echo(step.name + ': remote donor miss (' + str(error) + ')')
         except (OSError, ValueError, KeyError, TypeError, RuntimeError) as error:
             echo(step.name + ': remote candidate miss (' + str(error) + ')')
+    if staged:
+        return publish_bundles(ctx, step.name, staged)
     echo(step.name + ': no compatible native candidates; normal import remains required')
     return None

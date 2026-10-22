@@ -278,7 +278,6 @@ def main():
                       ('import_mesh', 'generate_terrain_lods'),
                       report_member='generated/belmonte/build-report.json',
                       validation_functions=('validate_reused_mesh',))
-    donor = {entry['name']: entry for entry in reuse.donor.get('meshes', [])}
     imported = {}
     for index, entry in enumerate(report['meshes']):
         name = entry['name']
@@ -287,7 +286,9 @@ def main():
         if entry.get('collision'):
             sources.append((target + '_Collision', OUT / 'glb' / Path(entry['collision']['path']).name,
                             entry['collision']['sha256']))
-        mesh = reuse.acquire(name, target, geometry=entry, donor_geometry=donor.get(name), sources=sources,
+        mesh = reuse.acquire(name, target, geometry=entry, sources=sources,
+                             donor_geometry=lambda saved: next((row for row in saved.get('meshes', [])
+                                                                if row['name'] == name), None),
                              validator=lambda mesh: validate_reused_mesh(mesh, entry, len(defaults[name])))
         reused = mesh is not None
         if mesh is None:
