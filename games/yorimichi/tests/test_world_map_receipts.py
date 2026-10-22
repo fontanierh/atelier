@@ -24,15 +24,17 @@ _spec.loader.exec_module(_fixtures)
 scene = _fixtures.scene
 
 
-@pytest.fixture
-def map_history(scene, monkeypatch):
+@pytest.fixture(params=['original', 'local'])
+def map_history(scene, monkeypatch, request):
     with monkeypatch.context() as scan:
         scan.setattr(paths, 'REPO', REPO)
         originals = source_imports.local_imports(REPO/OWNER, (GAME/'world', GAME/'world/regions'))
     files = set(originals) | {REPO/RAW, REPO/SUPPORT}
     texts = {str(p.relative_to(REPO)):p.read_text() for p in files if p.is_relative_to(REPO)}
-    history = json.loads((GAME/'tests/fixtures/world_map_startup_policy.json').read_text())
-    assert history['source_revision'] == 'aaf54de90959c0ff52b114f1b1449025b6f57680'
+    filename = 'world_map_local_startup_policy.json' if request.param == 'local' else 'world_map_startup_policy.json'
+    history = json.loads((GAME/'tests/fixtures'/filename).read_text())
+    expected = '397e667684bbbbb5ad9d3fb21e48d170fac0cb2f' if request.param == 'local' else 'aaf54de90959c0ff52b114f1b1449025b6f57680'
+    assert history['source_revision'] == expected
     for name, text in history['sources'].items():
         assert hashlib.sha256(text.encode()).hexdigest() == history['source_sha256'][name]
         texts[name] = text

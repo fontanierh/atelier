@@ -107,11 +107,14 @@ if world is None:
             or ast.dump(new_block.test) != ast.dump(ast.Constant(True))
             or old_block.orelse or new_block.orelse or not old_block.body):
         return False
-    create = ast.parse('les.new_level(map_path)').body[0]
+    creations = [ast.parse('les.new_level(map_path)').body[0], ast.parse('''if not unreal.EditorLoadingAndSavingUtils.new_blank_map(False):
+    raise RuntimeError('Could not open a blank map for ' + map_path)
+''').body[0]]
     current_world = ast.parse('world = unreal.EditorLevelLibrary.get_editor_world()').body[0]
-    if ast.dump(old_block.body[0]) != ast.dump(create) or ast.dump(before.body[4]) != ast.dump(current_world):
+    matching = [node for node in creations if ast.dump(old_block.body[0]) == ast.dump(node)]
+    if len(matching) != 1 or ast.dump(before.body[4]) != ast.dump(current_world):
         return False
-    new_block.body.insert(0, create)
+    new_block.body.insert(0, matching[0])
     after.body = [*old_prefix, new_block, current_world, *after.body[5:]]
     return True
 
@@ -124,8 +127,8 @@ def excluded_packages(previous, current):
     receiptless bootstrap and donor transitions MUST remain disabled. Only
     the exact original three-parent delegation, its forward extension to five,
     literal product membership with its cardinality error and removal of the upfront
-    main() purge call and exact replacement of Slice map startup with an unsaved
-    blank map MAY differ; imports, actor population and save validation MUST remain
+    main() purge call and exact replacement of original or recorded alternate Slice
+    map startup with an unsaved blank map MAY differ; imports, actor population and save validation MUST remain
     identical; every remaining AST MUST agree. These five generated
     parent packages MUST be excluded from historical admission. No other source,
     owner finishing, native validator or byte evidence MAY be relaxed. Unsupported

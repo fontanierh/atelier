@@ -122,25 +122,28 @@ def test_actual_world_dispatch_is_not_mistaken_for_static_finisher_coverage():
                for node in ast.walk(ast.parse(script.read_text())))
 
 
-def map_sources():
+def map_sources(local=False):
     import hashlib
     import json
-    fixture = json.loads((Path(__file__).parent/'fixtures/world_map_startup_policy.json').read_text())
+    name = 'world_map_local_startup_policy.json' if local else 'world_map_startup_policy.json'
+    fixture = json.loads((Path(__file__).parent/'fixtures'/name).read_text())
     assert hashlib.sha256(fixture['sources'][P.SETUP].encode()).hexdigest() == fixture['source_sha256'][P.SETUP]
     current = (Path(__file__).parents[1]/'unreal/Scripts/setup_project.py').read_text()
     return {P.SETUP:fixture['sources'][P.SETUP]}, {P.SETUP:current}
 
 
-def test_exact_map_startup_transition_preserves_the_complete_remaining_world_owner():
-    old,current = map_sources()
+@pytest.mark.parametrize('local', [False, True])
+def test_exact_map_startup_transition_preserves_the_complete_remaining_world_owner(local):
+    old,current = map_sources(local)
     assert P.excluded_packages(old,current)
     assert P.excluded_packages(current,old) is None
 
 
 @pytest.mark.parametrize('change', ['map','partition','blank_failure','actor','material','save','save_failure',
                                   'import','extra_statement','old_creation','old_world'])
-def test_map_startup_transition_cannot_hide_any_other_world_change(change):
-    old,current = map_sources()
+@pytest.mark.parametrize('local', [False, True])
+def test_map_startup_transition_cannot_hide_any_other_world_change(change, local):
+    old,current = map_sources(local)
     text = current[P.SETUP]
     if change == 'map': text = text.replace('/Game/Japan/Maps/Slice','/Game/Foreign/Map')
     if change == 'partition': text = text.replace('new_blank_map(False)','new_blank_map(True)')
@@ -151,7 +154,8 @@ def test_map_startup_transition_cannot_hide_any_other_world_change(change):
     if change == 'save_failure': text = text.replace('if not ok:', 'if False:')
     if change == 'import': text = text.replace('import os, glob, sys, unreal','import os, glob, sys, unreal, other')
     if change == 'extra_statement': text = text.replace('if True:', 'other_mutation()\n    if True:',1)
-    if change == 'old_creation': old[P.SETUP] = old[P.SETUP].replace('les.new_level(map_path)','les.new_level(other_path)')
+    if change == 'old_creation':
+        old[P.SETUP] = old[P.SETUP].replace('new_blank_map(False)', 'new_blank_map(True)') if local else old[P.SETUP].replace('les.new_level(map_path)','les.new_level(other_path)')
     if change == 'old_world': old[P.SETUP] = old[P.SETUP].replace('unreal.EditorLevelLibrary.get_editor_world()','other_world()')
     current[P.SETUP] = text
     assert P.excluded_packages(old,current) is None
