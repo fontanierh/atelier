@@ -5,6 +5,7 @@ geometry; callers still apply and validate current materials, roles and physics.
 No guard, task stamp, donor checkout access or engine launch is performed here.
 """
 import ast
+from functools import lru_cache
 import json
 import os
 from pathlib import Path
@@ -575,6 +576,7 @@ class MeshReuse:
         print('NATIVE MESH REUSE ' + json.dumps(result, sort_keys=True), flush=True)
 
 
+@lru_cache(maxsize=512)
 def ast_dump(source):
     import ast
     return ast.dump(ast.parse(source), include_attributes=False)

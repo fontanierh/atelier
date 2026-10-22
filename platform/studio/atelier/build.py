@@ -15,12 +15,15 @@ completed run peaked at 3 GiB or less asks for the small slot; a compile, or a s
 one. The step's log names the slot each command used, and the summary line names it too when two slots are on.
 """
 import hashlib, importlib.util, json, math, os, subprocess, sys, time
+import ast
 from contextlib import contextmanager
 from dataclasses import dataclass, field, fields
+from functools import lru_cache
 from pathlib import Path
 
 from . import engine, paths
-from . import build_inputs, build_products, build_source
+from . import build_inputs, build_products, build_source, source_imports
+from .build_hashes import signature as _stat_signature
 from .build_source import Python, Blender
 from .build_products import Product
 from .build_deferred import DeferredInputs
@@ -32,6 +35,199 @@ from atelier.harness.safety.render_lock import GiB, slot_count
 
 SKIP_PARTS = build_inputs.SKIP_PARTS
 SKIP_SUFFIXES = build_inputs.SKIP_SUFFIXES
+
+_CLOSURE_CACHE = {}
+_SOURCE_TOKEN_IMPORTS = {}
+
+
+@lru_cache(maxsize=2048)
+def _parse_imports_text(text):
+    imports = []
+    todo = [ast.parse(text)]
+    while todo:
+        node = todo.pop()
+        for field_name in ('body', 'orelse', 'finalbody', 'handlers', 'cases'):
+            value = getattr(node, field_name, ())
+            if isinstance(value, list):
+                todo.extend(value)
+        if isinstance(node, ast.Import):
+            imports.append((0, tuple(a.name for a in node.names)))
+        elif isinstance(node, ast.ImportFrom):
+            module = node.module or ''
+            names = (module, *(f'{module}.{a.name}'.lstrip('.') for a in node.names if a.name != '*'))
+            imports.append((node.level, names))
+    return tuple(imports)
+
+
+def _fast_import_names(source, change_token):
+    key = (source, change_token)
+    cached = _SOURCE_TOKEN_IMPORTS.get(key)
+    if cached is not None:
+        return cached
+    text = source.read_text()
+    if _stat_signature(source.stat()) != change_token:
+        raise ValueError(f'Imported source changed while reading: {source}')
+    result = _parse_imports_text(text)
+    if len(_SOURCE_TOKEN_IMPORTS) > 8192:
+        _SOURCE_TOKEN_IMPORTS.clear()
+    _SOURCE_TOKEN_IMPORTS[key] = result
+    return result
+
+
+class _FastImportScanner(source_imports.ImportScanner):
+    def __init__(self):
+        super().__init__()
+        self._realpaths = {}
+        self._tokens = {}
+        self._direct = {}
+        self._closures = {}
+        self._call_cache = {}
+        self._missed = {}
+        self._checked_missed = set()
+
+    def _realpath(self, path):
+        path = Path(path)
+        try:
+            return self._realpaths[path]
+        except KeyError:
+            resolved = path.resolve()
+            self._realpaths[path] = resolved
+            self._realpaths[resolved] = resolved
+            return resolved
+
+    def _token(self, source):
+        try:
+            return self._tokens[source]
+        except KeyError:
+            token = _stat_signature(source.stat())
+            self._tokens[source] = token
+            return token
+
+    def _missed_clear(self, candidates):
+        checked = self._checked_missed
+        for candidate in candidates:
+            if candidate not in checked:
+                if candidate.is_file():
+                    return False
+                checked.add(candidate)
+        return True
+
+    def _resolve_with_missed(self, root, parts):
+        key = (root, tuple(parts))
+        if key in self.resolved:
+            return self.resolved[key], self._missed[key]
+        namespace_parents = []
+        if root == paths.STUDIO / 'atelier':
+            root, parts = paths.STUDIO, ['atelier', *parts]
+        if root == paths.STUDIO and parts and parts[0] == 'atelier':
+            namespace_parents = [paths.STUDIO / 'atelier' / '__init__.py']
+            if len(parts) > 1 and parts[1] == 'harness':
+                root, parts = paths.HARNESS, parts[1:]
+            elif len(parts) > 1 and (parts[1] in {'board', 'capacity', 'safety'}
+                                    or parts[1].startswith(('board_', 'capacity_'))):
+                root, parts = paths.HARNESS, ['harness', *parts[1:]]
+        target = root.joinpath(*parts)
+        candidates = [target / '__init__.py'] if not parts else [target.with_suffix('.py'), target / '__init__.py']
+        missed = []
+        found = None
+        for candidate in candidates:
+            if candidate.is_file():
+                found = candidate
+                break
+            missed.append(candidate)
+        if found:
+            parents = [root.joinpath(*parts[:i], '__init__.py') for i in range(1, len(parts))]
+            result = [found]
+            for parent_init in [*parents, *namespace_parents]:
+                if parent_init.is_file():
+                    result.append(parent_init)
+                else:
+                    missed.append(parent_init)
+        else:
+            result = []
+        self.resolved[key] = result
+        self._missed[key] = tuple(missed)
+        return result, self._missed[key]
+
+    def resolve(self, root, parts):
+        return self._resolve_with_missed(root, parts)[0]
+
+    def local_imports(self, script, roots=()):
+        repo = self._realpath(paths.REPO)
+        studio = self._realpath(Path(source_imports.__file__).parent.parent)
+        raw_key = (repo, studio, script, tuple(roots))
+        if raw_key in self._call_cache:
+            return list(self._call_cache[raw_key])
+        script = self._realpath(script)
+        ancestors = []
+        for parent in script.parents:
+            ancestors.append(parent)
+            if parent == repo:
+                break
+        else:
+            ancestors = [p for p in script.parents if p.is_relative_to(repo)]
+        resolved_roots = tuple(self._realpath(r) for r in roots)
+        search = tuple(dict.fromkeys([*ancestors, studio, *resolved_roots]))
+        closure_key = (repo, studio, script, search)
+        if closure_key in self._closures:
+            self._call_cache[raw_key] = self._closures[closure_key]
+            return list(self._closures[closure_key])
+        cached = _CLOSURE_CACHE.get(closure_key)
+        if cached is not None:
+            cached_result, cached_tokens, cached_missed = cached
+            try:
+                if (all(self._token(f) == tok for f, tok in cached_tokens)
+                        and self._missed_clear(cached_missed)):
+                    self._closures[closure_key] = cached_result
+                    self._call_cache[raw_key] = cached_result
+                    return list(cached_result)
+            except OSError:
+                pass
+        seen, todo = set(), [script]
+        all_missed = set()
+        while todo:
+            source = self._realpath(todo.pop())
+            if source in seen:
+                continue
+            seen.add(source)
+            direct_key = (source, search)
+            if direct_key in self._direct:
+                found_all, direct_missed = self._direct[direct_key]
+                todo.extend(found_all)
+                all_missed.update(direct_missed)
+                continue
+            found_all = []
+            direct_missed = []
+            for level, names in _fast_import_names(source, self._token(source)):
+                bases = (source.parent, *search)
+                if level:
+                    if level > len(source.parents):
+                        raise ValueError(f'Invalid relative import in {source}')
+                    bases = (source.parents[level - 1],)
+                for name in names:
+                    parts = name.split('.') if name else []
+                    for base in bases:
+                        found, missed = self._resolve_with_missed(base, parts)
+                        direct_missed.extend(missed)
+                        if found:
+                            found_all.extend(found)
+                            break
+            self._direct[direct_key] = (tuple(found_all), tuple(dict.fromkeys(direct_missed)))
+            todo.extend(found_all)
+            all_missed.update(direct_missed)
+        result = tuple(sorted(seen))
+        self._closures[closure_key] = result
+        self._call_cache[raw_key] = result
+        _CLOSURE_CACHE[closure_key] = (
+            result,
+            tuple((f, self._token(f)) for f in result),
+            tuple(sorted(all_missed)),
+        )
+        return list(result)
+
+
+source_imports.ImportScanner = _FastImportScanner
+build_inputs.ImportScanner = _FastImportScanner
 
 
 # ---------------------------------------------------------------- commands

@@ -13,21 +13,46 @@ current. Cairo's base import supplies his body and the nine authored clips used 
 the merged move set.
 """
 import importlib.util, json, os, sys, tomllib
+import copy
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
+from types import SimpleNamespace
 
 _JSON_CACHE = getattr(sys, '_atelier_json_cache', None)
 if _JSON_CACHE is None:
     _JSON_CACHE = sys._atelier_json_cache = {}
+_MODULE_CACHE = getattr(sys, '_atelier_module_cache', None)
+if _MODULE_CACHE is None:
+    _MODULE_CACHE = sys._atelier_module_cache = {}
+
+
+@lru_cache(maxsize=256)
+def _parse_toml_text(text):
+    return tomllib.loads(text)
+
+
+def _cached_toml_loads(text):
+    return copy.deepcopy(_parse_toml_text(text))
 
 
 def _load_helper_module(name, path):
     path = Path(path)
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    if name == 'yorimichi_content_policy':
+        spec = importlib.util.spec_from_file_location(name, path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+    st = path.stat()
+    key = (name, path, st.st_mtime_ns, st.st_size)
+    try:
+        return _MODULE_CACHE[key]
+    except KeyError:
+        spec = importlib.util.spec_from_file_location(name, path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        _MODULE_CACHE[key] = module
+        return module
 
 
 def _read_json(path):
@@ -83,6 +108,7 @@ FIT = CHARS / 'fit'   # the fit gate's reviewed baselines, one per character (pi
 _definition = importlib.util.spec_from_file_location('character_definition', PIPELINE / 'definition.py')
 definition = importlib.util.module_from_spec(_definition)
 _definition.loader.exec_module(definition)
+definition.tomllib = SimpleNamespace(loads=_cached_toml_loads)
 YORI = WORLD / 'yori.py'
 _kart_identity_spec = importlib.util.spec_from_file_location('kart_source_identity', TOOLS / 'kart_grip_editor/source_identity.py')
 kart_source_identity = importlib.util.module_from_spec(_kart_identity_spec)

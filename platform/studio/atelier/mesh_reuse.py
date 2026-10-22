@@ -4,6 +4,7 @@ These receipts describe geometry reuse inside a normal importer. They are not
 task/action certificates, and never replace the importer's current validation.
 """
 import ast
+from functools import lru_cache
 import hashlib
 import json
 import os
@@ -28,12 +29,8 @@ def identity(value):
     return hashlib.sha256(canonical(value)).hexdigest()
 
 
-def policy(source, functions, resolve_import=None):
-    """Hash geometry functions and their local function/global-binding closure.
-
-    Comments, formatting, and unrelated finishing/validation code do not change
-    a geometry policy. Missing or ambiguous declarations cannot establish it.
-    """
+@lru_cache(maxsize=512)
+def _parsed_policy(source, functions):
     tree = ast.parse(source)
     for node in ast.walk(tree):
         if isinstance(node, ast.ClassDef):
@@ -65,8 +62,6 @@ def policy(source, functions, resolve_import=None):
         elif isinstance(node, (ast.Import, ast.ImportFrom)):
             names = [item.asname or item.name.split('.')[0] for item in node.names]
         else:
-            # Conditional module bindings belong to their complete control-flow
-            # statement. Never silently omit a referenced global's assignment.
             for field in ('body', 'orelse', 'finalbody', 'handlers', 'cases'):
                 for child in getattr(node, field, ()):
                     register(child, owner)
@@ -80,8 +75,6 @@ def policy(source, functions, resolve_import=None):
             declarations[name] = owner
     for node in tree.body:
         register(node)
-    # Dynamic module initialization can change configuration without mentioning
-    # it at the call site. Refuse this uncommon policy rather than infer purity.
     def mutates_globals(function, seen):
         if function.name in seen:
             return False
@@ -117,7 +110,7 @@ def policy(source, functions, resolve_import=None):
         raise ValueError('Geometry policy function is missing')
     pending, selected = list(functions), {}
     effects = [node for node in tree.body if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))]
-    imports = {}
+    import_nodes = []
     while pending:
         name = pending.pop()
         if name in selected:
@@ -126,14 +119,27 @@ def policy(source, functions, resolve_import=None):
         related = [node, *(effect for effect in effects
                           if any(isinstance(part, ast.Name) and part.id == name for part in ast.walk(effect)))]
         selected[name] = [ast.dump(item, include_attributes=False) for item in related]
-        if resolve_import:
-            for item in related:
-                for part in ast.walk(item):
-                    if isinstance(part, (ast.Import, ast.ImportFrom)):
-                        imports.update(resolve_import(part))
+        for item in related:
+            for part in ast.walk(item):
+                if isinstance(part, (ast.Import, ast.ImportFrom)):
+                    import_nodes.append(part)
         pending.extend(part.id for item in related for part in ast.walk(item)
                        if isinstance(part, ast.Name) and isinstance(part.ctx, ast.Load)
                        and part.id in declarations and part.id not in selected)
+    return selected, tuple(import_nodes)
+
+
+def policy(source, functions, resolve_import=None):
+    """Hash geometry functions and their local function/global-binding closure.
+
+    Comments, formatting, and unrelated finishing/validation code do not change
+    a geometry policy. Missing or ambiguous declarations cannot establish it.
+    """
+    selected, import_nodes = _parsed_policy(source, tuple(functions) if functions else ())
+    imports = {}
+    if resolve_import:
+        for part in import_nodes:
+            imports.update(resolve_import(part))
     return identity(dict(declarations=selected, support=imports))
 
 

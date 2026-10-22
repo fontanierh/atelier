@@ -41,11 +41,16 @@ def clearance(pieces, k, parts, info):
     near = es._surface_points(plan, k, model[:, [0, 2]].mean(0), 80., y0, y1, step=.2)
     def nearest(P, Q, reach=10.):          # min plan distance from P to Q, or `reach` if nothing is that near
         Q = Q[((Q >= P.min(0) - reach) & (Q <= P.max(0) + reach)).all(1)]
-        best = reach
-        for i in range(0, len(P), 64):
-            if len(Q):
-                best = min(best, float(np.sqrt(((P[i:i + 64, None] - Q[None]) ** 2).sum(-1).min())))
-        return best
+        if not len(Q) or not len(P):
+            return reach
+        best_sq = reach * reach
+        qx, qy = Q[:, 0], Q[:, 1]
+        for i in range(0, len(P), 256):
+            chunk = P[i:i + 256]
+            dx = chunk[:, 0, None] - qx[None, :]
+            dy = chunk[:, 1, None] - qy[None, :]
+            best_sq = min(best_sq, float((dx * dx + dy * dy).min()))
+        return float(np.sqrt(best_sq))
     sub = model[::7, [0, 2]]
     runs = [a + f * (e - a) for a, e in es._runways(pieces[k], pieces, k) for f in np.linspace(0, 1, 49)]
     u0, u1, v0, v1 = info['rect_uv']
