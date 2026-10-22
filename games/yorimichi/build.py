@@ -58,6 +58,9 @@ _foliage_spec.loader.exec_module(foliage_build)
 _compile_inputs_spec = importlib.util.spec_from_file_location('yorimichi_compile_inputs', GAME / 'compile_inputs.py')
 compile_inputs = importlib.util.module_from_spec(_compile_inputs_spec)
 _compile_inputs_spec.loader.exec_module(compile_inputs)
+_skatepark_build_spec = importlib.util.spec_from_file_location('yorimichi_skatepark_build', GAME / 'skatepark_build.py')
+skatepark_build = importlib.util.module_from_spec(_skatepark_build_spec)
+_skatepark_build_spec.loader.exec_module(skatepark_build)
 
 _brinecove_library_spec = importlib.util.spec_from_file_location('brinecove_foliage_library', REGIONS / 'brinecove/foliage_names.py')
 brinecove_library = importlib.util.module_from_spec(_brinecove_library_spec)
@@ -1083,12 +1086,18 @@ def world_steps(ctx):
              needs=['world.layout'], outputs=[out / 'forest_lake' / 'manifest.json'], about='the woodland lake and cabin', heavy=True),
         Step('world.skatepark_textures', [Python(TOOLS / 'pier_textures.py', ('finish',))],
              inputs=[TOOLS / 'pier_textures.py', ASSETS / 'skatepark' / 'textures', ASSETS / 'megapark' / 'restyle' / 'stone_cut.jpg'],
-             outputs=[out / 'skatepark' / 'textures' / 'textures.json'], about='Sunburst pier material maps (offline; no paid calls)'),
-        Step('world.skatepark', [Blender(REGIONS / 'skatepark' / 'build.py')],
-             inputs=[*sorted((REGIONS / 'skatepark').glob('*.py')), ASSETS / 'skatepark' / 'modules.json',
-                     ASSETS / 'skatepark' / 'modules', *VILLAGE_LAYOUT],
-             needs=['world.layout', 'world.skatepark_textures'],
-             outputs=[out / 'skatepark' / 'build-report.json'], heavy=True, about='the skate pier, its rails and the trick board (park.json)'),
+             products=[Product('skatepark.textures', (out / 'skatepark/textures',))], cache=True,
+             about='Sunburst pier material maps (offline; no paid calls)'),
+        Step('world.skatepark', [Blender(REGIONS / 'skatepark' / 'build.py', threads=3)],
+             inputs=[*sorted((REGIONS / 'skatepark').glob('*.py')), REGIONS / 'skatepark/park.json', ASSETS / 'skatepark' / 'modules.json',
+                     ASSETS / 'skatepark' / 'modules', WORLD / 'mesh_pieces.py',
+                     paths.STUDIO / 'atelier/mesh_cells.py', paths.STUDIO / 'atelier/mesh_partition.py', *VILLAGE_LAYOUT],
+             needs=['world.layout'], reads=['skatepark.textures'],
+             products=[Product('skatepark.meshes', (out / 'skatepark/assets', out / 'skatepark/board',
+                                                  out / 'skatepark/build-report.json')),
+                       Product('skatepark.runtime', (out / 'skatepark/runtime-park.json',)),
+                       Product('skatepark.queries', (out / 'skatepark/collision.json',))],
+             heavy=True, about='bounded skate pier meshes, complete logical riding queries and board'),
         Step('world.sailboat', [Blender(ASSETS / 'vehicles' / 'sailboat' / 'build.py', threads=4)],
              inputs=[ASSETS / 'vehicles' / 'sailboat', REGIONS / 'village' / 'build.py'],
              outputs=[out / 'sailboat' / 'manifest.json'], about='the dinghy', heavy=True),
@@ -1246,7 +1255,7 @@ def world_steps(ctx):
              heavy=True, about='map zones and label-free regional atlas'),
         city_input_step(out, 'tiles'),
         Step('world.city_tiles', [Blender(WORLD / 'city_surface_tiles.py', ('--tag', 'v1_128m'), threads=3)],
-             inputs=[WORLD / 'city_surface_tiles.py', paths.STUDIO / 'atelier/mesh_cells.py',
+             inputs=[WORLD / 'city_surface_tiles.py', WORLD / 'mesh_pieces.py', paths.STUDIO / 'atelier/mesh_cells.py',
                      paths.STUDIO / 'atelier/mesh_partition.py'], needs=['world.hidamari.tiles'],
              outputs=[out / 'city_surface_tiles' / 'v1_128m' / 'manifest.json'], about='desktop profile: city surfaces in 128 m tiles', heavy=True),
         digest_step(out, 'world.city_tiles', 'meshes', 'the city tiles unreal.desktop reads', out / 'city_surface_tiles', ['v1_128m']),
@@ -1510,8 +1519,15 @@ def unreal_steps(ctx):
              inputs=[SCRIPTS / 'import_treehouse.py', SCRIPTS / 'see_through.py'],
              needs=['unreal.world', 'world.treehouse', 'world.treehouse_trees', 'world.treehouse_props', 'world.treehouse_textures'],
              heavy=True, about='the tree house meshes, textures, props and canopy trees'),
-        Step('unreal.skatepark', [UnrealScript(SCRIPTS / 'import_skatepark.py', 'SKATEPARK IMPORT COMPLETE')],
-             inputs=[SCRIPTS / 'import_skatepark.py', REGIONS / 'skatepark' / 'park.json'], needs=['unreal.world', 'world.skatepark'],
+        Step('unreal.skatepark', [UnrealScript(SCRIPTS / 'import_skatepark.py', 'SKATEPARK IMPORT COMPLETE', modules=IMPORT_CODE)],
+             inputs=[SCRIPTS / 'import_skatepark.py', REGIONS / 'skatepark' / 'park.json', GAME / 'skatepark_build.py',
+                     REGIONS / 'skatepark/pieces.py', paths.STUDIO / 'atelier/native_membership.py',
+                     paths.STUDIO / 'atelier/mesh_geometry.py'],
+             needs=['unreal.world', *unreal_modules.needs(IMPORT_CODE)],
+             reads=['skatepark.meshes', 'skatepark.runtime', 'skatepark.textures'],
+             outputs=[out / 'skatepark/import-report.json'],
+             verify=lambda: skatepark_build.present(out, GAME / 'unreal/Content'),
+             candidate_scope=CandidateScope(directories=(GAME / 'unreal/Content/SkatePark',)),
              heavy=True, about='the skate pier and the board (/Game/SkatePark)'),
         Step('unreal.skate_board', [UnrealScript(SCRIPTS / 'board_dissolve_material.py', 'BOARD DISSOLVE MATERIAL COMPLETE')],
              inputs=[SCRIPTS / 'board_dissolve_material.py'], after=['unreal.compile'],
@@ -1610,7 +1626,7 @@ def staging_steps(ctx):
              needs=['world.ferry_service', 'world.gondola_service', 'world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark', 'world.craterpark', 'world.crater_cloud', 'world.bike',
                     *[f'characters.{key(c)}_{kind}' for c in definition.movers() for kind, wanted in
                       (('bike', c.playable), ('grips', (GRIPS / c.id).is_dir())) if wanted]],
-             reads=['brinecove.runtime', 'belmonte.runtime'],
+             reads=['brinecove.runtime', 'belmonte.runtime', 'skatepark.runtime'],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / rel for rel in staged(out)], about='runtime files into unreal/Content/Data'),
         racing_assets_step(out),
     ]
