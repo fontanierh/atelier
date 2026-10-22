@@ -4,6 +4,7 @@ Standard library only: the build, Blender, Unreal's Python and the tests all rea
 merged move set has an `adventure.toml` beside it; the steps, imports and runtime records of every such character
 come from these two files (docs/PLAYABLE_CHARACTER.md).
 """
+import copy
 from pathlib import Path
 import json
 import math
@@ -11,6 +12,17 @@ import re
 import tomllib
 
 CHARS = Path(__file__).resolve().parents[1]
+_TOML_CACHE = {}
+
+
+def _load_toml(path: Path):
+    st = path.stat()
+    key = (str(path), st.st_mtime_ns, st.st_size)
+    cached = _TOML_CACHE.get(key)
+    if cached is None:
+        cached = tomllib.loads(path.read_text())
+        _TOML_CACHE[key] = cached
+    return copy.deepcopy(cached)
 
 # [export]: how the source becomes the game's body. The defaults are a Tripo model (Mixamo names, no authored clips).
 EXPORT = {
@@ -96,7 +108,7 @@ class Character:
     def __init__(self, character, chars=CHARS):
         self.id = character
         self.folder = chars / character
-        self.toml = tomllib.loads((self.folder / 'character.toml').read_text())
+        self.toml = _load_toml(self.folder / 'character.toml')
         assert self.toml['id'] == character, (character, self.toml['id'])
         self.name = self.toml.get('asset_name', asset_name(character))
         self.output = self.toml.get('output', character)   # build/<game>/<output>/
@@ -119,7 +131,7 @@ class Character:
         self.unreal_path = self.toml.get('unreal_path', '/Game/' + self.name)
         path = self.folder / 'adventure.toml'
         # adventure.toml, its layout defaulting to the character's own folder (Scripts/import_adventure_moveset.py)
-        self.adventure = {**layout(self.unreal_path, self.name), **tomllib.loads(path.read_text())} if path.exists() else None
+        self.adventure = {**layout(self.unreal_path, self.name), **_load_toml(path)} if path.exists() else None
         assert set(self.toml.get('blender', {})) <= set(BLENDER), (character, 'unknown [blender] keys')
         self.blender = {**BLENDER, **self.toml.get('blender', {})}
         self.role = self.toml.get('role', 'player')

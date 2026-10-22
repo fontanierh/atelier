@@ -20,9 +20,18 @@ CODE = {name: REPO / name for name in (
 )}
 
 
+from functools import lru_cache
+
+
+@lru_cache(maxsize=2)
+def _manifest_meshes(path, mtime_ns, size):
+    return {row['name']: row for row in json.loads(Path(path).read_text())['meshes']}
+
+
 def selected_ground(build):
     runtime=json.loads((build/'belmonte/runtime.json').read_text())
-    manifest={row['name']:row for row in json.loads(MANIFEST.read_text())['meshes']}
+    st=MANIFEST.stat()
+    manifest=_manifest_meshes(MANIFEST, st.st_mtime_ns, st.st_size)
     origin=[v/f for v,f in zip(runtime['origin_cm'],(100.,-100.,100.))]
     groups=[]
     for group in runtime['groups']:

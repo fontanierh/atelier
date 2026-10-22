@@ -1,61 +1,188 @@
 """A change to the mini-mega's shape rebuilds the ramp and the map, never the terrain or the world import."""
+import hashlib
 import json
+import os
+import tempfile
 from pathlib import Path
 from types import SimpleNamespace
 
-from atelier import build, build_cache, build_inputs, build_products
+from atelier import build, build_audit, build_cache, build_deferred, build_inputs, build_products, source_imports
 
 MEGA = Path(__file__).resolve().parents[1] / 'world' / 'regions' / 'mega'
+_BASELINE_CACHE = {}
+_BELMONTE_RUNTIME_JSON = None
+_BELMONTE_REPORT_JSON = '{"meshes": [], "materials": {}}'
+
+
+def _belmonte_runtime_payload():
+    global _BELMONTE_RUNTIME_JSON
+    if _BELMONTE_RUNTIME_JSON is None:
+        library = json.loads((build.paths.game_dir('yorimichi') / 'assets/belmonte/source.json').read_text())
+        names = [row['name'] for row in library['meshes'] if row['name'].startswith('SM_BM_BT_Terrain_')]
+        names.append('SM_BM_NorthApron')
+        transform = {'translation_cm': [0., 0., 0.], 'rotation_xyzw': [0., 0., 0., 1.], 'scale': [1., 1., 1.]}
+        _BELMONTE_RUNTIME_JSON = json.dumps({
+            'origin_cm': [55000., -450000., 21000.],
+            'groups': [{'asset': f'/Game/{name}.{name}', 'transforms': [transform],
+                        'plant': False, 'collision': True} for name in names],
+        })
+    return _BELMONTE_RUNTIME_JSON
+
+
+def _write_belmonte_fixture(out_dir):
+    registry = out_dir / 'belmonte/runtime.json'
+    if not registry.is_file():
+        registry.parent.mkdir(parents=True, exist_ok=True)
+        registry.write_text(_belmonte_runtime_payload())
+        (registry.parent / 'build-report.json').write_text(_BELMONTE_REPORT_JSON)
+
+
+def _has_custom_files(tmp_path):
+    if not tmp_path.exists():
+        return False
+    for child in tmp_path.iterdir():
+        if child.name != 'belmonte':
+            return True
+    belmonte = tmp_path / 'belmonte'
+    if belmonte.is_dir():
+        for child in belmonte.iterdir():
+            if child.name not in ('runtime.json', 'build-report.json'):
+                return True
+    return False
+
+
+def _env_signature():
+    return (
+        os.environ.get('ATELIER_CRATERPARK_EDITOR_PARK', ''),
+        os.environ.get('YORIMICHI_MUSIC_CATEGORIES', ''),
+        os.environ.get('YORIMICHI_MUSIC_STYLES', ''),
+        os.environ.get('YORIMICHI_MUSIC_GROUPS', ''),
+        os.environ.get('YORIMICHI_MUSIC_LIMIT', ''),
+    )
+
+
+def _build_state(out_dir):
+    _write_belmonte_fixture(out_dir)
+    ctx = SimpleNamespace(game='yorimichi', out=out_dir, logs=out_dir / 'logs',
+                          stamps=out_dir / 'stamps', uproject=None)
+    recipe = build.load_recipe('yorimichi').steps(ctx)
+    steps = build.order(recipe, [step.name for step in recipe])
+    observations = {}
+    step_inputs = {}
+    provider_cache = {}
+    for step in steps:
+        build_deferred.validate(step)
+        if not step.deferred_inputs:
+            obs = build_deferred.observe(step)
+        else:
+            pkey = tuple((p.name, p.collect, p.settings, p.support) for p in step.deferred_inputs)
+            if pkey not in provider_cache:
+                provider_cache[pkey] = build_deferred.observe(step)
+            cached_obs = provider_cache[pkey]
+            obs = build_deferred.InputObservation(
+                tuple([*step.inputs, Path(build_deferred.__file__), *cached_obs.paths[len(step.inputs) + 1:]]),
+                cached_obs.metadata,
+                cached_obs.members,
+            )
+        observations[step.name] = obs
+        req = build.required_inputs(step, observation=obs)
+        step_inputs[step.name] = tuple(str(p) for p in (*req, *step.optional_inputs))
+
+    def unedited_hash(digest, path):
+        digest.update(str(path).encode())
+
+    def unedited_inventory(path, **kwargs):
+        d = hashlib.sha256()
+        d.update(str(path).encode())
+        return {'source': d.hexdigest()}
+
+    orig_hp, orig_inv = build._hash_path, build_inputs.inventory
+    orig_tc, orig_atc = build_cache.tool_context, build_audit.tool_context
+    build._hash_path = unedited_hash
+    build_inputs.inventory = unedited_inventory
+    build_cache.tool_context = lambda *a, **k: {'fixture': 'unchanged tools'}
+    build_audit.tool_context = lambda *a, **k: {'fixture': 'unchanged tools'}
+    try:
+        with source_imports.scan_scope():
+            before = {}
+            for step in steps:
+                before[step.name] = build.fingerprint(
+                    step, before, observation=observations[step.name], _tool_identity='fixture'
+                )
+                for product in step.products:
+                    before['product:' + product.name] = build_products.identity((product.name, before[step.name]))
+    finally:
+        build._hash_path = orig_hp
+        build_inputs.inventory = orig_inv
+        build_cache.tool_context = orig_tc
+        build_audit.tool_context = orig_atc
+    return out_dir, steps, observations, step_inputs, before
 
 
 def changed_by(edited, tmp_path, monkeypatch, *, stable_products=()):
-    """Steps whose fingerprint changes when `edited` changes. Inputs hash by name, and an input that is or contains
-    `edited` hashes differently afterwards, so the test reads the recipe's dependencies and needs no built files."""
-    editing = False
+    """Steps whose fingerprint changes when edited changes. Inputs hash by name, and an input that is or contains
+    edited hashes differently afterwards, so the test reads the recipe's dependencies and needs no built files."""
+    tmp_path = Path(tmp_path)
+    edited = Path(edited)
+    stable_set = frozenset(stable_products)
+    custom = _has_custom_files(tmp_path)
+    _write_belmonte_fixture(tmp_path)
+
+    if not custom:
+        key = _env_signature()
+        if key not in _BASELINE_CACHE:
+            base_out = Path(tempfile.mkdtemp(prefix='atelier-changed-by-'))
+            _BASELINE_CACHE[key] = _build_state(base_out)
+        base_out, steps, observations, step_inputs, before = _BASELINE_CACHE[key]
+        if edited == tmp_path or tmp_path in edited.parents:
+            target = base_out / edited.relative_to(tmp_path)
+        else:
+            target = edited
+    else:
+        _, steps, observations, step_inputs, before = _build_state(tmp_path)
+        target = edited
+
+    target_str = str(target)
 
     def stand_in(digest, path):
-        inside = str(path) == str(edited) or str(edited).startswith(f'{path}/')
-        digest.update(str(path).encode() + (b'edited' if editing and inside else b''))
+        s = str(path)
+        inside = s == target_str or target_str.startswith(f'{s}/')
+        digest.update(s.encode() + (b'edited' if inside else b''))
 
     def inventory(path, **kwargs):
-        import hashlib
         digest = hashlib.sha256()
         stand_in(digest, path)
         return {'source': digest.hexdigest()}
-    # The real deferred ground collector needs a registry to select membership;
-    # geometry bytes still use the name-only fingerprint stand-in below.
-    library=json.loads((build.paths.game_dir('yorimichi')/'assets/belmonte/source.json').read_text())
-    names=[row['name'] for row in library['meshes'] if row['name'].startswith('SM_BM_BT_Terrain_')]
-    names.append('SM_BM_NorthApron')
-    transform={'translation_cm':[0.,0.,0.],'rotation_xyzw':[0.,0.,0.,1.],'scale':[1.,1.,1.]}
-    registry=tmp_path/'belmonte/runtime.json'
-    registry.parent.mkdir(parents=True,exist_ok=True)
-    registry.write_text(json.dumps({'origin_cm':[55000.,-450000.,21000.],
-                                   'groups':[{'asset':f'/Game/{name}.{name}','transforms':[transform],
-                                              'plant':False,'collision':True} for name in names]}))
-    # This registry contains ground only. The real structure collector still
-    # reads the region report before excluding those ground-owned groups.
-    (registry.parent/'build-report.json').write_text(json.dumps({'meshes':[], 'materials':{}}))
-    ctx = SimpleNamespace(game='yorimichi', out=tmp_path, logs=tmp_path/'logs', stamps=tmp_path/'stamps', uproject=None)
-    recipe = build.load_recipe('yorimichi').steps(ctx)
-    steps = build.order(recipe, [step.name for step in recipe])
 
-    def prints():
-        done = {}
-        for step in steps:
-            done[step.name] = build.fingerprint(step, done)
-            for product in step.products:
-                # Model changed output bytes, unless this test intentionally keeps a product
-                # identical after its producer changes (the consumer's cutoff boundary).
-                done['product:' + product.name] = build_products.identity(product.name if product.name in stable_products
-                                                                         else (product.name, done[step.name]))
-        return done
     monkeypatch.setattr(build, '_hash_path', stand_in)
     monkeypatch.setattr(build_inputs, 'inventory', inventory)
     monkeypatch.setattr(build_cache, 'tool_context', lambda *a, **k: {'fixture': 'unchanged tools'})
-    before = prints()
-    editing = True
-    after = prints()
+    monkeypatch.setattr(build_audit, 'tool_context', lambda *a, **k: {'fixture': 'unchanged tools'})
+
+    after = {}
+    with source_imports.scan_scope():
+        for step in steps:
+            inputs_changed = any(p == target_str or target_str.startswith(f'{p}/') for p in step_inputs[step.name])
+            needs_changed = any(after[n] != before[n] for n in step.needs if n in after and n in before)
+            reads_changed = any(
+                after['product:' + r] != before['product:' + r]
+                for r in step.reads if ('product:' + r) in after and ('product:' + r) in before
+            )
+            if inputs_changed or needs_changed or reads_changed:
+                # If stable_products is non-empty and any read is in stable_products, ensure before['product:'+r]
+                # matches what before used when computing before[step.name] (both use (product.name, before[owner])).
+                after[step.name] = build.fingerprint(
+                    step, after, observation=observations[step.name], _tool_identity='fixture'
+                )
+            else:
+                after[step.name] = before[step.name]
+            for product in step.products:
+                if product.name in stable_set:
+                    after['product:' + product.name] = before['product:' + product.name]
+                elif after[step.name] == before[step.name]:
+                    after['product:' + product.name] = before['product:' + product.name]
+                else:
+                    after['product:' + product.name] = build_products.identity((product.name, after[step.name]))
     return {name for name in before if not name.startswith('product:') and before[name] != after[name]}
 
 

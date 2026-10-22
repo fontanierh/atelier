@@ -293,7 +293,9 @@ def load_recipe(game):
     original_steps = module.steps
     def steps(ctx):
         from .build_cook import apply
-        return apply(ctx, original_steps(ctx))
+        from .source_imports import scan_scope
+        with scan_scope():
+            return apply(ctx, original_steps(ctx))
     module.steps = steps
     return module
 
@@ -376,8 +378,10 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, 
         digest.update(b'product-fingerprint-v2\0')
     # Checkout locations and generated Unreal outputs do not change a step's source. Keeping the command paths
     # relative to their roots also lets a verified build seed another checkout while each receiving input is revalidated.
+    build_root_str = str(paths.build_root())
+    repo_str = str(paths.REPO)
     commands = repr([c for c in step.commands])
-    commands = commands.replace(str(paths.build_root()), '<build>').replace(str(paths.REPO), '<repo>')
+    commands = commands.replace(build_root_str, '<build>').replace(repo_str, '<repo>')
     digest.update(commands.encode())
     state = {'commands': hashlib.sha256(commands.encode()).hexdigest(), 'inputs': {},
              'needs': {name: done.get(name, 'unbuilt') for name in step.needs}}
@@ -388,7 +392,7 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, 
     if observation.metadata is not None:
         def portable(value):
             if isinstance(value, str):
-                return value.replace(str(paths.build_root()), '<build>').replace(str(paths.REPO), '<repo>')
+                return value.replace(build_root_str, '<build>').replace(repo_str, '<repo>')
             if isinstance(value, list):
                 return [portable(item) for item in value]
             if isinstance(value, dict):
@@ -399,7 +403,7 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, 
         digest.update(b'deferred-inputs-v1\0' + metadata.encode())
         state['deferred_inputs'] = json.loads(metadata)
     if step.cache or step.audit:
-        build_inputs.validate_imports(step, declared_inputs(step))
+        build_inputs.validate_imports(step, [*inputs, *step.optional_inputs])
     for item in inputs:
         replacement = _input_bytes.get(Path(item)) if _input_bytes else None
         if named:
@@ -409,7 +413,7 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, 
             manifest = (dict(schema=1, files={'0/.': dict(kind='file', size=len(replacement), sha256=hashlib.sha256(replacement).hexdigest())})
                         if replacement is not None else build_inputs.inventory(item, hasher=hasher, **options) if Path(item).exists() else None)
             value = build_products.identity(manifest)
-            label = str(item).replace(str(paths.build_root()), '<build>').replace(str(paths.REPO), '<repo>')
+            label = str(item).replace(build_root_str, '<build>').replace(repo_str, '<repo>')
             digest.update(json.dumps([label, value]).encode())
             state['inputs'][label] = value
             continue
@@ -419,7 +423,7 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, 
                 recording.update(Path(item).name.encode()); recording.update(replacement)
             else:
                 _hash_path(recording, item)
-            label = str(item).replace(str(paths.build_root()), '<build>').replace(str(paths.REPO), '<repo>')
+            label = str(item).replace(build_root_str, '<build>').replace(repo_str, '<repo>')
             state['inputs'][label] = recording.local.hexdigest()
         else:
             if replacement is not None:
@@ -430,7 +434,7 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, 
         state['optional_inputs'] = {}
         for item in step.optional_inputs:
             manifest = build_inputs.optional_file(item, hasher=hasher)
-            label = str(item).replace(str(paths.build_root()), '<build>').replace(str(paths.REPO), '<repo>')
+            label = str(item).replace(build_root_str, '<build>').replace(repo_str, '<repo>')
             value = {'present': manifest['kind'] == 'file', 'identity': build_products.identity(manifest)}
             digest.update(b'optional-file-v1\0' + json.dumps([label, value], sort_keys=True).encode())
             state['optional_inputs'][label] = value
@@ -438,7 +442,7 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, 
         digest.update(done.get(need, 'unbuilt').encode())
     if step.products or step.reads or step.references:
         declarations = repr((step.products, step.reads, step.references))
-        declarations = declarations.replace(str(paths.build_root()), '<build>').replace(str(paths.REPO), '<repo>')
+        declarations = declarations.replace(build_root_str, '<build>').replace(repo_str, '<repo>')
         consumed = {name: done.get(f'product:{name}', 'unbuilt') for name in step.reads}
         digest.update(json.dumps({'products': declarations, 'reads': consumed}, sort_keys=True).encode())
         state['products'] = declarations
@@ -449,7 +453,7 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, 
     if step.queries:
         from .build_spatial import manifest
         declarations = json.dumps(manifest(step), sort_keys=True)
-        declarations = declarations.replace(str(paths.build_root()), '<build>').replace(str(paths.REPO), '<repo>')
+        declarations = declarations.replace(build_root_str, '<build>').replace(repo_str, '<repo>')
         state['queries'] = json.loads(declarations)['queries']
         digest.update(b'spatial-inputs-v1\0' + declarations.encode())
     spatial_outputs = {p.name: [p.collection, p.bounds] for p in step.products if p.collection is not None}

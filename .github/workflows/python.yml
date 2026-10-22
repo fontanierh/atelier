@@ -75,7 +75,7 @@ jobs:
       # Each runner collects the whole suite, then selects one disjoint group. Fake renderer
       # processes and board servers stay isolated, and new test locations fall into studio.
       - name: Run tests
-        run: uv run python platform/studio/tests/ci_tests.py ${{ matrix.group }} --collection-report build/ci/collection.json -q --durations=20 --junitxml=build/ci/results.xml
+        run: uv run python platform/studio/tests/ci_tests.py ${{ matrix.group }} --workers ${{ matrix.group == 'games' && 'auto' || '1' }} --collection-report build/ci/collection.json -q --durations=20 --junitxml=build/ci/results.xml
       - name: Save Rust dependencies from main
         if: matrix.group == 'board' && github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.rust-cache.outputs.cache-hit != 'true'
         continue-on-error: true
