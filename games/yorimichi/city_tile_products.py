@@ -7,7 +7,7 @@ from atelier.model_files import regular_files
 from atelier.atomic_files import atomic_json
 import json
 
-SOURCES = ('HD_Terrain', 'HD_Streets', 'HD_Square', 'HD_CivicGardens', 'HD_Park')
+SOURCES = ('HD_Terrain', 'HD_Streets', 'HD_Square', 'HD_CivicGardens', 'HD_Park', 'HD_Harbor')
 CELL = r'(?:0|-?[1-9][0-9]*)'
 DESTINATION = '/Game/Experiments/CitySurfaces/v1_128m'
 TRIANGLE_LIMIT = 32768
@@ -15,7 +15,7 @@ TRIANGLE_LIMIT = 32768
 
 def require_sources(sources):
     if not isinstance(sources, dict) or set(sources) != set(SOURCES):
-        raise ValueError('City tile import requires all five production surfaces')
+        raise ValueError('City tile import requires all six production surfaces')
 
 
 def native_bounds(tile):
@@ -62,7 +62,7 @@ def production_groups(manifest):
                 or not isinstance(row.get('tiles'), list) or not row['tiles']):
             raise ValueError('Invalid production city source metadata')
         native_bounds(row['source_bounds'])
-        material_paths(slots)
+        piece_material_paths(source, slots)
         pieces = []
         for tile in row['tiles']:
             if not isinstance(tile, dict):
@@ -94,6 +94,15 @@ def material_paths(slots):
         result[name] = ('/Game/Japan/Materials/MI_Road' if slug == 'road' else
                         '/Game/Japan/Hidamari/Materials/MI_HD_'+slug)
     return result
+
+
+def piece_material_paths(source, slots):
+    """Harbor's single authored slot retains its region-owned material."""
+    if source == 'HD_Harbor':
+        if not isinstance(slots, list) or len(slots) != 1 or not isinstance(slots[0], str) or not slots[0]:
+            raise ValueError('Harbor pieces require exactly one source material slot')
+        return {slots[0]: '/Game/Japan/Materials/M_Harbor'}
+    return material_paths(slots)
 
 
 def collision_matches(mesh, row, tile, *, read_vertices=None):

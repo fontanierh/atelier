@@ -1,5 +1,5 @@
 @cc [owner:fontanierh,label:correctness;performance] independent-city-surface-piece-products
-The five production city surface splits MUST export independently from their exact
+The six production city surface splits MUST export independently from their exact
 source bytes and consumed triangle/bounds/collision metadata. A source change MUST
 NOT regenerate or retire a sibling source's output. Source subdivision MUST preserve
 every corner/normal/UV/colour/material and placement frame. Every emitted render piece
@@ -10,3 +10,8 @@ The splitter MUST require explicit source selection, reject unsafe or case-fold
 duplicate names and check every selected manifest entry before output mutation.
 Production membership MUST remain in recipe/product/runtime admission, so adding
 a family MUST NOT change unchanged siblings' splitter code or selected digests.
+Introducing explicit generic final-source ingress has one declared splitter-code
+transition; subsequent family-roster additions MUST NOT alter that ingress code.
+Harbor MUST consume the fully verified ferry-cut source and post-cut triangle count,
+not its raw export. Proof-only changes MUST validate before an unchanged consumed
+final-source projection can stop downstream regeneration.
