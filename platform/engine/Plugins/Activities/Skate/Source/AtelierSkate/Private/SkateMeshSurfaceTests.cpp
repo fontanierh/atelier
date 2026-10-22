@@ -2,6 +2,7 @@
 #if WITH_DEV_AUTOMATION_TESTS
 #include "Misc/AutomationTest.h"
 #include "UObject/StrongObjectPtr.h"
+#include "UObject/UObjectGlobals.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSkateReleasedShadingSurfaceTest,"AtelierSkate.Ride.ReleasedShadingSurface",
     EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
@@ -36,7 +37,7 @@ bool FSkateReleasedShadingSurfaceTest::RunTest(const FString&)
     TestTrue(TEXT("Collision positions remain available"),LOD.VertexBuffers.PositionVertexBuffer.GetAllowCPUAccess());
     const int32 Previous=SkateRuntimeDetail::CVarSkateCookedSurface.GetValueOnGameThread();
     SkateRuntimeDetail::CVarSkateCookedSurface->Set(0,ECVF_SetByCode);
-    const auto Surface=SkateRuntimeDetail::MeshSurface(Mesh.Get());
+    auto Surface=SkateRuntimeDetail::MeshSurface(Mesh.Get());
     SkateRuntimeDetail::CVarSkateCookedSurface->Set(Previous,ECVF_SetByCode);
     if (!TestTrue(TEXT("Cooked surface remains available"),Surface.IsValid())) return false;
     TestEqual(TEXT("One cooked face"),Surface->Slots.Num(),1);
@@ -46,6 +47,23 @@ bool FSkateReleasedShadingSurfaceTest::RunTest(const FString&)
     TestEqual(TEXT("Material face ownership retained"),Surface->Slots[0],uint16(7));
     TestEqual(TEXT("CPU indices retained"),LOD.IndexBuffer.GetArrayView().Num(),3);
     TestEqual(TEXT("Physics mesh retained"),Body->TriMeshGeometries.Num(),1);
+    // Exercise the real module-owned post-GC callback, not a direct prune call.
+    // The gather job's plain data must outlive the UObject and cache entry.
+    const TObjectKey<UStaticMesh> Key(Mesh.Get());
+    auto JobSurface=Surface;
+    TWeakPtr<const SkateRuntimeDetail::FMeshSurface,ESPMode::ThreadSafe> Lifetime=Surface;
+    Surface.Reset();
+    TestTrue(TEXT("Cache owns the live mesh surface"),SkateRuntimeDetail::MeshSurfaceCache().Contains(Key));
+    Mesh.Reset();
+    CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS,true);
+    TestNull(TEXT("Mesh UObject collected"),Key.ResolveObjectPtr());
+    TestFalse(TEXT("Post-GC released expired cache ownership"),SkateRuntimeDetail::MeshSurfaceCache().Contains(Key));
+    TestTrue(TEXT("Active gather retains immutable surface"),Lifetime.IsValid());
+    for (int32 I=0;I<3;++I) TestTrue(TEXT("Active gather corners survive collection"),JobSurface->Points[I].Equals(Points[I]));
+    TestTrue(TEXT("Active gather normal survives collection"),JobSurface->Normals[0].Equals(FVector3f(0,0,1)));
+    TestEqual(TEXT("Active gather material survives collection"),JobSurface->Slots[0],uint16(7));
+    JobSurface.Reset();
+    TestFalse(TEXT("Last gather releases the copied arrays"),Lifetime.IsValid());
     return true;
 }
 #endif
