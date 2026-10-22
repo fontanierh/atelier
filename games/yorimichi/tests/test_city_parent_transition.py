@@ -115,6 +115,15 @@ def test_exact_harbor_binding_and_ownership_doc_transition(member):
     history = json.loads((Path(__file__).parent/'fixtures/city_five_family_policy.json').read_text())
     current = (Path(__file__).parents[3]/member).read_text()
     old = {member: history['sources'][member]}
+    if member == P.PIECE_IMPORTER:
+        # Preserve the exact historical Harbor-only positive proof separately
+        # from today's additional, intentionally incompatible collision finish.
+        assert P.excluded_packages(old, {member: current}) is None
+        assert old[member].count('material_paths') == 2
+        current = old[member].replace('material_paths', 'piece_material_paths')
+        previous_call = "piece_material_paths(source['source_material_slots'])"
+        assert current.count(previous_call) == 1
+        current = current.replace(previous_call, "piece_material_paths(name, source['source_material_slots'])")
     assert P.excluded_packages(old, {member: current})
     assert P.excluded_packages({member: current}, old) is None
     if member == P.PIECE_IMPORTER:

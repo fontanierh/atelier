@@ -48,3 +48,13 @@ def test_legacy_world_import_reserves_its_measured_memory_envelope(tmp_path):
     assert isinstance(command, build.UnrealScript)
     assert command.memory_gib == 14
     assert command.memory_limit() == 14
+
+
+def test_city_piece_import_reserves_its_measured_memory_envelope(tmp_path):
+    ctx = SimpleNamespace(game='yorimichi', out=tmp_path, uproject=None)
+    desktop = next(s for s in build.load_recipe('yorimichi').steps(ctx) if s.name == 'unreal.desktop')
+    command, = desktop.commands
+    assert isinstance(command, build.UnrealScript)
+    assert command.script.name == 'import_city_surface_tiles.py'
+    assert command.memory_gib == command.memory_limit() == 14
+    assert desktop.heavy and desktop.batch is None

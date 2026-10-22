@@ -99,10 +99,24 @@ def family_history(scene, monkeypatch, request, city_owner):
     return scene, make, first, repo, actual_owner, task
 
 
-def test_recorded_three_family_header_revalidates_unchanged_piece_without_import(family_history):
+def test_recorded_family_header_reuses_only_unchanged_owner_finishing(family_history):
     scene, make, first, repo, actual_owner, task = family_history
     saved = first.receipts.path.read_bytes()
     current = make()
+    if actual_owner == OWNER:
+        # Collision refresh is a real desktop finishing change beyond the
+        # membership/material-only proof. Do not widen historical admission.
+        assert not current.previous_owner_transition and not current.local_compatible
+        assert _fixtures.acquire(scene, current, validator=lambda mesh: True) is None
+        assert current.receipts.path.read_bytes() == saved
+        current.imported('Mesh')
+        current.validated('Mesh')
+        mesh_reuse.finalize_pending(scene.ctx, task, 'e'*24)
+        refreshed = make()
+        assert _fixtures.acquire(scene, refreshed, validator=lambda mesh: True)
+        assert refreshed.counts == dict(reused_local=1,reused_candidate=0,imported=0)
+        assert json.loads(refreshed.receipts.path.read_text())['policy'] == refreshed.receipts.header['policy']
+        return
     assert current.previous_owner_transition and current.local_compatible
     assert first.receipts.header['policy'] in current.previous_receipt_policies
     assert current.receipts.header['policy'] != first.receipts.header['policy']

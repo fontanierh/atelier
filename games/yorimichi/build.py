@@ -1664,7 +1664,7 @@ def unreal_steps(ctx):
              candidate_scope=CandidateScope(directories=(GAME / 'unreal/Content/Experiments/CityTrees/v4',)),
              about='independent existing city tree LOD owner'),
         Step('unreal.desktop', [
-                UnrealScript(SCRIPTS / 'import_city_surface_tiles.py', 'CITY SURFACE TILE IMPORT COMPLETE',
+                UnrealScript(SCRIPTS / 'import_city_surface_tiles.py', 'CITY SURFACE TILE IMPORT COMPLETE', memory_gib=14,
                              env=(('CITY_SURFACE_TILES_TAG', 'v1_128m'),), modules=IMPORT_CODE+('Yorimichi',))],
              inputs=[SCRIPTS / 'import_city_surface_tiles.py', GAME / 'city_tile_products.py',
                      paths.STUDIO / 'atelier/conventions.py'],
