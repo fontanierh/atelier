@@ -504,19 +504,21 @@ def lods_match(mesh, plan):
 _COMMON_FBX = {}
 
 
-def common_fbx_mesh(source, destination, name, *, seed, fresh_slots, script, validator, owner_roots=()):
-    """Default shared FBX boundary; unknown owner/provenance simply imports normally."""
+def common_fbx_mesh(source, destination, name, *, fresh_slots, script, validator, functions,
+                    validation_functions, owner_roots=()):
+    """Default shared FBX boundary; bootstrap-only files never enter final-source identity."""
     task, game = os.environ.get('ATELIER_BUILD_TASK'), os.environ.get('ATELIER_BUILD_GAME')
     owner = os.environ.get('ATELIER_BUILD_SCRIPT') or os.environ.get('ATELIER_SCRIPT')
     nonce = os.environ.get('ATELIER_MESH_REUSE_NONCE')
     if not task or not game or not owner or not nonce or not Path(owner).is_absolute():
         return None, None
-    key = (task, game, owner, nonce, str(script))
+    key = (task, game, owner, nonce, str(script), tuple(functions), tuple(validation_functions))
     if key not in _COMMON_FBX:
-        _COMMON_FBX[key] = MeshReuse(native_context(game), task, script, ('_import_mesh',), owner_script=owner, owner_roots=owner_roots)
+        _COMMON_FBX[key] = MeshReuse(native_context(game), task, script, functions, owner_script=owner, owner_roots=owner_roots,
+            validation_script=script, validation_functions=validation_functions)
     reuse = _COMMON_FBX[key]
     package = destination + '/' + name
-    inputs = dict(format='fbx', fresh_slots=bool(fresh_slots), seed_sha256=mesh_reuse.digest(seed))
+    inputs = dict(format='fbx', fresh_slots=bool(fresh_slots))
     mesh = reuse.acquire(package, package, geometry=inputs, donor_geometry=inputs,
                          sources=[(package, Path(source), mesh_reuse.digest(source))], validator=validator)
     return mesh, reuse

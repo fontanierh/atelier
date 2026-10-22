@@ -107,8 +107,8 @@ def test_import_units_are_correct_for_new_migrated_and_repeated_packages(importe
     unrelated = p.assets['/Game/Other/Mesh'] = Mesh(object())
     mesh = p.module.import_mesh(source, '/Game/Owned', 'Mesh', seed=p.seed, fresh_slots=True)
     assert mesh.centimetres == expected_size
-    needs_seed = initial == 'interchange' or (initial == 'new' and not source_is_seed)
-    assert [name for name, _, _ in p.calls] == (['seed.fbx'] if needs_seed else []) + [source.name]
+    needs_seed = initial == 'interchange'
+    assert [name for name, _, _ in p.calls] == ([source.name] if needs_seed else []) + [source.name]
     if previous is not None:
         assert mesh is previous
     if initial != 'new' or needs_seed:
@@ -119,13 +119,14 @@ def test_import_units_are_correct_for_new_migrated_and_repeated_packages(importe
     assert p.calls == [(source.name, p.package, expected_size)]
 
 
-def test_failed_seed_cannot_continue_to_the_final_source(importer, monkeypatch):
+def test_failed_source_migration_cannot_continue_to_final_pass(importer, monkeypatch):
     p = importer
+    p.assets[p.package] = Mesh(object())
     calls = []
     monkeypatch.setattr(p.module, '_import_mesh', lambda *args: calls.append(args) or Mesh(object()))
     with pytest.raises(RuntimeError, match='establish legacy import data'):
         p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', seed=p.seed)
-    assert len(calls) == 1 and calls[0][0] == p.seed
+    assert len(calls) == 1 and calls[0][0] == p.source
 
 
 @pytest.mark.parametrize('initial', ['new', 'interchange', 'legacy'])
@@ -247,7 +248,7 @@ def test_hidamari_terrain_reimport_replaces_seed_slots_and_keeps_terrain_materia
         assert saved[-1] is mesh
     if previous is not None:
         assert mesh is previous
-    assert [name for name, _, _ in p.calls] == ([] if initial == 'legacy' else ['Village_Sign.fbx']) + ['terrain.fbx'] * 2
+    assert [name for name, _, _ in p.calls] == ['terrain.fbx'] * (3 if initial == 'interchange' else 2)
     assert collision == {'collision_trace_flag': 'complex'}
     assert p.assets['/Game/Other/Mesh'] is unrelated and unrelated.centimetres is None
     assert json.loads((tmp_path / 'hidamari/import-report.json').read_text()) == {}
@@ -425,7 +426,7 @@ def test_source_role_certification_is_required_at_final_import_boundary(importer
     with pytest.raises(RuntimeError,match='Invalid foliage face roles'):
         p.module.import_mesh(p.source,'/Game/Owned','Mesh',seed=p.seed)
     assert stamped==[p.assets[p.package]]
-    assert [name for name,_,_ in p.calls]==['seed.fbx','mesh.fbx']
+    assert [name for name,_,_ in p.calls]==['mesh.fbx']
 
 
 @pytest.mark.parametrize('valid_roles,saved', [(True, True), (False, True), (True, False)])
@@ -499,7 +500,7 @@ def test_default_reuse_miss_preserves_seed_migration(importer, monkeypatch):
                             defer_validated=lambda name: events.append(('pending', name)))
     monkeypatch.setattr(p.module, 'common_fbx_mesh', lambda *a, **k: (None, reuse))
     p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', seed=p.seed)
-    assert [name for name, _, _ in p.calls] == ['seed.fbx', 'mesh.fbx']
+    assert [name for name, _, _ in p.calls] == ['mesh.fbx']
     assert events == [('imported', p.package), ('pending', p.package)]
 
 
@@ -522,3 +523,21 @@ def test_reuse_validator_refuses_legacy_option_drift(importer, key, value):
     mesh = p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', seed=p.seed)
     mesh.values['asset_import_data'].values[key] = value
     assert not p.module.legacy_options_match(mesh)
+
+
+def test_unrelated_seed_is_not_read_or_imported_even_when_missing(importer):
+    p = importer
+    class UnreadableSeed:
+        def __fspath__(self): raise AssertionError('Unrelated bootstrap file was consumed')
+    assert p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', seed=UnreadableSeed()) is p.assets[p.package]
+    assert [name for name, _, _ in p.calls] == ['mesh.fbx']
+
+
+def test_non_fbx_migration_uses_source_twice_and_clears_migration_palette(importer):
+    p = importer
+    p.assets[p.package] = Mesh(object())
+    p.source_slots['mesh.fbx'] = []
+    mesh = p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', seed=p.seed)
+    assert [name for name, _, _ in p.calls] == ['mesh.fbx', 'mesh.fbx']
+    assert [size for _, _, size in p.calls] == [12., 1200.]
+    assert isinstance(mesh.get_editor_property('asset_import_data'), ImportData)

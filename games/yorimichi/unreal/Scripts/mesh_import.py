@@ -1,4 +1,4 @@
-"""Legacy FBX mesh import with explicit seed ownership and fresh material slots."""
+"""Legacy FBX mesh import using the actual source for migration and fresh material slots."""
 from pathlib import Path
 import time
 import unreal
@@ -8,30 +8,25 @@ EAL = unreal.EditorAssetLibrary
 AT = unreal.AssetToolsHelpers.get_asset_tools()
 
 
-def import_mesh(path, dest, name, *, seed, fresh_slots=False):
+def import_mesh(path, dest, name, *, seed=None, fresh_slots=False):
     """@cc [owner:fontanierh,label:correctness] legacy-fbx-migration-before-reimport
-    New and non-FBX packages MUST establish legacy FBX import data before the final source pass.
+    Non-FBX packages MUST establish legacy FBX import data from their own source before the final source pass.
     Existing package identity MUST stay stable, and the final pass MUST apply the declared unit settings.
     Reuse MUST verify current source/options and defer receipts until the owning guarded script succeeds.
 
-    The caller supplies an owned seed; borrowing another region's export hides a build dependency.
+    The obsolete seed keyword is accepted for existing callers but is never read or imported.
     UE converts Interchange import data to legacy FBX defaults before applying task options.
     That first pass must establish FBX data so the final pass can synchronize unit settings.
     """
     started = time.perf_counter()
-    mesh, reuse = common_fbx_mesh(path, dest, name, seed=seed, fresh_slots=fresh_slots,
-                                  script=__file__, validator=legacy_options_match,
+    mesh, reuse = common_fbx_mesh(path, dest, name, fresh_slots=fresh_slots,
+                                  script=__file__, functions=('_source_mesh',), validator=legacy_options_match,
+                                  validation_functions=('legacy_options_match',),
                                   owner_roots=(Path(__file__).resolve().parents[2] / 'world',
                                                Path(__file__).resolve().parents[2] / 'world/regions'))
     reused = mesh is not None
     if mesh is None:
-        existing = EAL.load_asset(dest + '/' + name) if EAL.does_asset_exist(dest + '/' + name) else None
-        legacy = existing is not None and isinstance(existing.get_editor_property('asset_import_data'), unreal.FbxStaticMeshImportData)
-        if not legacy and (existing is not None or Path(path).resolve() != Path(seed).resolve()):
-            seeded = _import_mesh(seed, dest, name)
-            if not isinstance(seeded.get_editor_property('asset_import_data'), unreal.FbxStaticMeshImportData):
-                raise RuntimeError('FBX seed did not establish legacy import data: ' + name)
-        mesh = _import_mesh(path, dest, name, fresh_slots)
+        mesh = _source_mesh(path, dest, name, fresh_slots)
         if reuse is not None:
             reuse.imported(dest + '/' + name)
     imported = time.perf_counter()
@@ -49,6 +44,20 @@ def import_mesh(path, dest, name, *, seed, fresh_slots=False):
     print(f'MESH ROLE TIMING {name}: reused={int(reused)} import={imported-started:.3f}s '
           f'certify_save={certified-imported:.3f}s collect={time.perf_counter()-certified:.3f}s', flush=True)
     return mesh
+
+
+def _source_mesh(path, dest, name, fresh_slots=False):
+    """The raw source pass, separate from receipt bookkeeping and owner finishing."""
+    existing = EAL.load_asset(dest + '/' + name) if EAL.does_asset_exist(dest + '/' + name) else None
+    legacy = existing is not None and isinstance(existing.get_editor_property('asset_import_data'), unreal.FbxStaticMeshImportData)
+    if existing is not None and not legacy:
+        migrated = _import_mesh(path, dest, name, True)
+        if not isinstance(migrated.get_editor_property('asset_import_data'), unreal.FbxStaticMeshImportData):
+            raise RuntimeError('Source pass did not establish legacy import data: ' + name)
+        # Imported source slots replace migration/default palettes before the correctly
+        # scaled pass. No unrelated mesh can contribute geometry or material slots.
+        fresh_slots = True
+    return _import_mesh(path, dest, name, fresh_slots)
 
 
 def legacy_options_match(mesh):

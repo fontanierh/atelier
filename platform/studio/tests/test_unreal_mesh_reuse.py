@@ -641,3 +641,26 @@ def test_all_native_rejections_leave_no_registry_or_disk_scope_for_ordinary_impo
     assert not list(scene.content.glob('Region/*'))
     assert adapter.pending['Mesh']['provenance'] == {'kind': 'current-native-import'}
     assert adapter.counts['reused_candidate'] == 0
+
+
+def test_common_fbx_identity_ignores_unrelated_bootstrap_file(tmp_path, monkeypatch):
+    calls = []
+    adapter = SimpleNamespace(acquire=lambda *a, **kw: calls.append(kw), policy='policy')
+    monkeypatch.setattr(native, 'MeshReuse', lambda *a, **kw: adapter)
+    monkeypatch.setattr(native, 'native_context', lambda _: object())
+    monkeypatch.setattr(native, '_COMMON_FBX', {})
+    for name, value in dict(ATELIER_BUILD_TASK='unreal.region', ATELIER_BUILD_GAME='game',
+                            ATELIER_BUILD_SCRIPT=str(tmp_path/'owner.py'), ATELIER_MESH_REUSE_NONCE='a'*24).items():
+        monkeypatch.setenv(name, value)
+    source = tmp_path/'mesh.fbx'; source.write_bytes(b'actual current mesh')
+    seed = tmp_path/'unrelated.fbx'
+    validator = lambda _: True
+    for data in (None, b'first unrelated export', b'changed timestamp and IDs'):
+        if data is not None: seed.write_bytes(data)
+        native.common_fbx_mesh(source, '/Game/Owned', 'Mesh', fresh_slots=False, functions=('build',), validation_functions=('validate',),
+                               script=tmp_path/'import.py', validator=validator)
+    assert len(calls) == 3 and calls[0] == calls[1] == calls[2]
+    source.write_bytes(b'changed real geometry')
+    native.common_fbx_mesh(source, '/Game/Owned', 'Mesh', fresh_slots=False, functions=('build',), validation_functions=('validate',),
+                           script=tmp_path/'import.py', validator=validator)
+    assert calls[3]['sources'] != calls[2]['sources']
