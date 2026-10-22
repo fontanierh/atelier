@@ -97,6 +97,8 @@ def test_world_selector_includes_native_references_without_reading_their_bytes(t
                      for part in ('geometry', 'materials', 'runtime')})
     expected.update({f'belmonte.native_{part}': 'unreal.belmonte'
                      for part in ('meshes', 'materials', 'tv', 'report')})
+    expected.update({f'skatepark.{part}': 'world.skatepark' for part in ('meshes', 'runtime', 'queries')})
+    expected['skatepark.textures'] = 'world.skatepark_textures'
     assert graph.owners == expected
     assert all(not graph.by_name[owner].cache for product, owner in expected.items()
                if any(isinstance(command, (build.UnrealScript, build.UnrealCompile, build.UnrealPackage))
