@@ -23,7 +23,7 @@ import foliage_roles  # noqa: E402
 import bpy  # noqa: E402
 import numpy as np  # noqa: E402
 
-from brinecove.mesh_export import mesh_object, export, glb_info  # noqa: E402
+from brinecove.mesh_export import mesh_object, export, glb_info, source_roles  # noqa: E402
 from atelier.mesh_partition import face_groups  # noqa: E402
 from terrain_product import load  # noqa: E402
 from brinecove import flora, foliage_library, ground, hero_assets, hero_sources, modules, region as R, rocks  # noqa: E402
@@ -481,7 +481,7 @@ def main(argv=None):
             if slot not in material_entries:
                 material_entries.update(material_report({slot}))
         height = model['bounds_m'][1][2] - model['bounds_m'][0][2]
-        meshes.append({**model, 'path': path.relative_to(OUT).as_posix(), 'foliage_roles': True})
+        meshes.append({**model, 'path': path.relative_to(OUT).as_posix(), 'foliage_roles': source_roles(path)})
         low = proto.startswith('cover_')
         if proto in placements:
             groups.append(group(model['name'], slots, placements[proto], collision=False, shadow=not low,

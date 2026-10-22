@@ -45,10 +45,16 @@ def test_independent_and_mixed_exports_keep_explicit_foliage_roles(tmp_path, mon
         destination.write_bytes(glb_pack({'meshes': [{'primitives': [{'attributes': {'TEXCOORD_5': 0}}]}]}, b''))
     monkeypatch.setattr(mesh_export.model_export, 'export', serialize)
     mesh_export.export(obj, path)
+    assert mesh_export.source_roles(path)
     monkeypatch.setattr(mesh_export.model_export, 'export', lambda *args: path.write_bytes(glb_pack(
         {'meshes': [{'primitives': [{'attributes': {}}]}]}, b'')))
     with pytest.raises(AssertionError, match='Foliage UV5 lost'):
         mesh_export.export(obj, path)
+    assert not mesh_export.source_roles(path)
+    path.write_bytes(glb_pack({'meshes': [{'primitives': [
+        {'attributes': {}}, {'attributes': {'TEXCOORD_5': 0}}]}]}, b''))
+    with pytest.raises(ValueError, match='Incomplete foliage role transport'):
+        mesh_export.source_roles(path)
     models = RECIPE.brinecove_model_steps(tmp_path)
     assert all(RECIPE.WORLD / 'foliage_roles.py' in step.inputs for step in models)
     assert all(RECIPE.REGIONS / 'brinecove/mesh_export.py' in step.inputs for step in models)

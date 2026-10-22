@@ -48,12 +48,12 @@
     "platform/studio/atelier/build_hashes.py": "025cc13adbc3c7568088c08edf65174acfdd11ef9ddb01a3257b6f6bf9d37a38",
     "platform/studio/atelier/engine.py": "5acaba915e0641bb5a1f8498565db94e214d39241a496ad123bb6aa244f73cde",
     "platform/studio/atelier/mesh_geometry.py": "dd06d03e8ec9bd372047ca2b5c70da475cb30863a72ae6f6fe882ce18de3aba0",
-    "platform/studio/atelier/mesh_reuse.py": "f5a5f8eb8eb0a1583624fda9e8466653c424d4a0a55897d52ff317e5f3f23399",
-    "platform/studio/atelier/native_candidates.py": "2d7d77e2fc5ef0d6af075b17d1d19feb817dc7f1da95f9841c09cd46beb17602",
+    "platform/studio/atelier/mesh_reuse.py": "fedd00d9beedf9be42a8fa92b55be9b411bc82e64d6970e8869b543a7901339a",
+    "platform/studio/atelier/native_candidates.py": "4725b2ab07649c5ca3baa05144ee52c26ababb9324e76cba2ca2ece0339e1b8e",
     "platform/studio/atelier/native_protocol.py": "eeb9f18d563cb13059c4c96a834a3490ed83decfc0a195a6d3d38415bb8f7d82",
     "platform/studio/atelier/paths.py": "2176891c3779c90215db409bd4d31e9fca34d45642cdfc38972aa5e688f28924",
     "platform/studio/atelier/source_imports.py": "b0b70fd764f52f5ced29308041edbf3b6176e34f4e391ba6c4af3474972008f6",
-    "platform/studio/atelier/unreal_mesh_reuse.py": "a40864e3d6b0e16d31c6c863b5c2cf59626360c395055945806b0cc3cc157eb4"
+    "platform/studio/atelier/unreal_mesh_reuse.py": "11eaa02d6c8fc2179edb2b2561159956297763168157bee79eed5f9dbcb7e777"
   },
   "policies": [
     [
