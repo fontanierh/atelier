@@ -59,6 +59,7 @@ inline VehicleSpec kart_spec()
     s.drift_assist_min_slip = 0.10471976f;   // 6 degrees
     s.stability_assist = true;
     s.wheel_ground_reference = true;
+    s.kart_alignment_assist = true;
 
     s.brakes.brakes[0] = 60.0f;
     s.brakes.brakes[1] = 45.0f;

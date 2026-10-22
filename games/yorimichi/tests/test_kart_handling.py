@@ -30,6 +30,8 @@ def test_kart_suspension_axle_and_ground_alignment():
     assert 's.transmission.solid_axle[1] = true;' in KART
     assert 's.wheel_ground_reference = true;' in KART
     assert 's.body.collision_bottom_raise = 0.04f;' in KART
+    assert 's.kart_alignment_assist = true;' in KART
+    assert 'if (Spec.kart_alignment_assist)' in DRIVING
     assert 'Car->Chassis.jump_config.alignment.pitch = 1.f;' in DRIVING
     assert 'ground_reference.normal' in WORLD and 'has_ground_reference = true;' in WORLD
     assert 'trans.solid_axle[axle]' in ASSISTS

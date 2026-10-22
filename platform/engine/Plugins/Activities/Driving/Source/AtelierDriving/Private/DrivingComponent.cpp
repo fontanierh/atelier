@@ -674,15 +674,18 @@ bool UDrivingComponent::Summon()
     }
     Car = MakeShared<FDrivingCar>(Spec);
     // The kart is the only host that feeds a wheel-contact plane and uses the airborne alignment assist.
-    Car->Chassis.jump_config.alignment.minimum_ground_up = .55f;
-    Car->Chassis.jump_config.alignment.minimum_body_up = .3f;
-    Car->Chassis.jump_config.alignment.minimum_alignment = .5f;
-    Car->Chassis.jump_config.alignment.minimum_altitude = .02f;
-    Car->Chassis.jump_config.alignment.maximum_altitude = 1.f;
-    Car->Chassis.jump_config.alignment.maximum_speed = 30.f;
-    Car->Chassis.jump_config.alignment.correction_threshold = .1f;
-    Car->Chassis.jump_config.alignment.pitch = 1.f;
-    Car->Chassis.jump_config.alignment.roll = 1.f;
+    if (Spec.kart_alignment_assist)
+    {
+        Car->Chassis.jump_config.alignment.minimum_ground_up = .55f;
+        Car->Chassis.jump_config.alignment.minimum_body_up = .3f;
+        Car->Chassis.jump_config.alignment.minimum_alignment = .5f;
+        Car->Chassis.jump_config.alignment.minimum_altitude = .02f;
+        Car->Chassis.jump_config.alignment.maximum_altitude = 1.f;
+        Car->Chassis.jump_config.alignment.maximum_speed = 30.f;
+        Car->Chassis.jump_config.alignment.correction_threshold = .1f;
+        Car->Chassis.jump_config.alignment.pitch = 1.f;
+        Car->Chassis.jump_config.alignment.roll = 1.f;
+    }
     FindGroundOffset();
     FCarGround Ground{Rider->GetWorld(), Rider, TraceChannel};
     if (!Car->Chassis.place_on_ground(Ground, float(Spot.Y) * .01f, float(Spot.X) * .01f, float(Spot.Z) * .01f + 1.f,

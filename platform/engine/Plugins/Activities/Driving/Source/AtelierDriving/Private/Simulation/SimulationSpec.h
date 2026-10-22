@@ -227,6 +227,8 @@ struct VehicleSpec
     float stability_gain = 1.0f;
     /** Feed the last wheel-contact plane into the jump/alignment assist (off keeps existing cars unchanged). */
     bool wheel_ground_reference = false;
+    /** The host's kart alignment values above are valid; other hosts leave this off. */
+    bool kart_alignment_assist = false;
 };
 
 struct Tunings
