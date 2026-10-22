@@ -531,7 +531,7 @@ bool UYorimichiFoliageResidencyBuilder::SelfTest()
     // slot exercises UV seams independently of material-boundary preservation.
     FMeshDescription Grid;Initialize(Grid,Materials,6);FStaticMeshAttributes GA(Grid);
     auto GP=GA.GetVertexPositions();auto GN=GA.GetVertexInstanceNormals();auto GC=GA.GetVertexInstanceColors();auto GU=GA.GetVertexInstanceUVs();
-    for (int32 Role:{1,2}) for (int32 Y=0;Y<4;++Y) for (int32 X=0;X<4;++X)
+    for (int32 Role:{1,2}) for (int32 Y=0;Y<8;++Y) for (int32 X=0;X<8;++X)
         for (const TArray<FIntPoint>& Points:{TArray<FIntPoint>{{0,0},{1,0},{1,1}},TArray<FIntPoint>{{0,0},{1,1},{0,1}}})
         {
             TArray<FVertexInstanceID> Corners;
@@ -540,14 +540,14 @@ bool UYorimichiFoliageResidencyBuilder::SelfTest()
                 const auto V=Grid.CreateVertex();GP[V]=FVector3f((X+Point.X)*20.f+Role*200.f,(Y+Point.Y)*20.f,0.f);
                 const auto I=Grid.CreateVertexInstance(V);GN[I]=FVector3f(0,0,1);GC[I]=FVector4f(.2f,.4f,.6f,.8f);
                 for (int32 Channel=0;Channel<6;++Channel)
-                    GU.Set(I,Channel,Channel==5?FVector2f(float(Role),73.125f):FVector2f((X+Point.X)*.25f,(Y+Point.Y)*.25f));
+                    GU.Set(I,Channel,Channel==5?FVector2f(float(Role),73.125f):FVector2f((X+Point.X)*.125f,(Y+Point.Y)*.125f));
                 Corners.Add(I);
             }
             Grid.CreateTriangle(FPolygonGroupID(1),Corners);
         }
     TArray<FMeshDescription> ReducedLeaves;FString ReductionVersion;
     bool ReductionProof=LeafLevels(Grid,Materials,ReducedLeaves,ReductionVersion) && ReducedLeaves.Num()==4 &&
-        GeometryHash(Grid)==GeometryHash(ReducedLeaves[0]);
+        GeometryHash(Grid)==GeometryHash(ReducedLeaves[0]) && ReducedLeaves.Last().Triangles().Num()<Grid.Triangles().Num();
     for (const auto& D:ReducedLeaves) for (auto T:D.Triangles().GetElementIDs())
     {
         bool Tagged;FVector2f Role;
