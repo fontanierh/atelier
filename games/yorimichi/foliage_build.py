@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from atelier import build_inputs, unreal_modules
+from atelier.mesh_geometry import SIDECARS
 from atelier.build import Batch, Blender, Product, Step, UnrealScript
 from atelier.build import DeferredInputs
 from atelier.native_protocol import runtime_files as native_runtime_files
@@ -21,8 +22,8 @@ def system_inputs(content):
     fingerprints inside the adapter avoid rebuilding unchanged representations.
     """
     return sorted(p for p in Path(content).rglob('*') if p.is_file()
-                  and p.suffix in ('.uasset', '.uexp', '.ubulk')
-                  and p.relative_to(content).parts[0] not in ('FoliageSystem', 'Data'))
+                  and p.name.endswith(SIDECARS)
+                  and p.relative_to(content).parts[0] not in ('FoliageSystem', 'FoliageResident', 'Data'))
 
 
 def system_packages(content):
@@ -44,23 +45,36 @@ def verify_system(content, report_path):
 
 
 def system_step(ctx, prerequisites):
+    """@cc [owner:fontanierh,label:correctness;performance] foliage-preparation-native-boundary
+    Every current importer MUST complete before observing source package membership.
+    Fingerprints MUST bind the complete actual source packages, consumed source code,
+    configuration and compiled preparation library rather than unrelated gameplay
+    or producer action identities. Ordering-only edges MUST NOT hide a consumed product.
+    Saved outputs MUST still receive current native validation before receiving success.
+    """
     content = GAME/'unreal/Content'
     command = UnrealScript(SCRIPTS/'build_foliage_system.py', 'FOLIAGE SYSTEM COMPLETE',
-                           modules=('YorimichiFoliagePreparation',), null_rhi=True, memory_gib=18,
+                           modules=('YorimichiFoliagePreparation',), null_rhi=True, memory_gib=20,
                            args=('-ForceDPCVars=r.GenerateMeshDistanceFields=0,r.MeshCardRepresentation=0',))
     command.timeout = 7200
     command.progress = 25
     return Step('unreal.foliage_system',
-                [command],
-                inputs=[GAME/'foliage_system.py', WORLD/'foliage_roles.py', SCRIPTS/'build_foliage_system.py', SCRIPTS/'atmosphere.py',
+                [UnrealScript(SCRIPTS/'verify_foliage_transport.py', 'FOLIAGE BINARY TRANSPORT PASS',
+                              modules=('YorimichiFoliagePreparation',), null_rhi=True), command],
+                inputs=[GAME/'foliage_system.py', GAME/'foliage_unit_policy.py', GAME/'foliage_unit_policy_witness.json',
+                        WORLD/'foliage_roles.py', SCRIPTS/'verify_foliage_transport.py', SCRIPTS/'build_foliage_system.py', SCRIPTS/'atmosphere.py',
                         SCRIPTS/'see_through.py', SCRIPTS/'foliage_material.py', SCRIPTS/'foliage_variant_validation.py',
                         GAME.parents[1]/'platform/studio/atelier/mesh_geometry.py', *native_runtime_files(), GAME/'unreal/Config',
                         *(GAME/'unreal/Source/YorimichiFoliagePreparation'/name for name in
-                          ('FoliagePreparation.cpp', 'FoliagePreparation.h', 'MeshGeometrySnapshot.cpp')),
-                        ctx.out/'unreal-modules/YorimichiFoliagePreparation.json'],
+                          ('FoliageSourceWriter.cpp','FoliageSourceWriter.h','FoliageGeometryReader.cpp','FoliageGeometryReader.h')),
+                        *(GAME/'unreal/Source/YorimichiFoliagePreparation'/name for name in
+                          ('FoliagePreparation.cpp','FoliagePreparation.h','MeshGeometrySnapshot.cpp')),
+                        *(ctx.out/'unreal-modules'/(name+'.json') for name in
+                          ('YorimichiFoliagePreparation',))],
                 deferred_inputs=[DeferredInputs('foliage-source-packages', system_inputs, (content,),
-                                                support=(GAME/'foliage_build.py',))],
-                needs=[*prerequisites, *unreal_modules.needs(('YorimichiFoliagePreparation',))],
+                                                support=(GAME/'foliage_build.py', GAME.parents[1]/'platform/studio/atelier/mesh_geometry.py'))],
+                after=list(prerequisites),
+                needs=unreal_modules.needs(('YorimichiFoliagePreparation',)),
                 outputs=[content/'FoliageSystem', content/'Data/foliage_system/registry.json',
                          ctx.out/'foliage_system/report.json', ctx.out/'foliage_system/preparation-counts.json'],
                 verify=lambda:verify_system(content,ctx.out/'foliage_system/report.json'),

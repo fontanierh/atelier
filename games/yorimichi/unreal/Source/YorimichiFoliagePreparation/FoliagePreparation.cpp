@@ -12,6 +12,9 @@
 #include "UObject/Package.h"
 #include "Misc/FileHelper.h"
 #include "Misc/PackageName.h"
+#include "Misc/Paths.h"
+#include "HAL/FileManager.h"
+#include "Policies/CondensedJsonPrintPolicy.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 #include "AssetRegistry/AssetRegistryModule.h"
@@ -273,8 +276,19 @@ bool UYorimichiFoliagePreparation::ExportSource(UStaticMesh* Source, const TArra
         Faces.Add(MakeShared<FJsonValueObject>(Face));
     }
     Root->SetArrayField(TEXT("vertices"),Vertices);Root->SetArrayField(TEXT("faces"),Faces);Root->SetArrayField(TEXT("materials"),Materials);
-    FString Text;
-    return FJsonSerializer::Serialize(Root,TJsonWriterFactory<>::Create(&Text)) && FFileHelper::SaveStringToFile(Text,*Path);
+    // A string writer has a 32-bit byte buffer, so large mixed sources can
+    // exceed its 2 GiB limit even with ample process memory. Stream UTF-8 to a
+    // temporary file and publish only after serialization and close succeed.
+    auto& Files=IFileManager::Get();
+    const FString Temporary=FPaths::CreateTempFilename(*FPaths::GetPath(Path),TEXT("foliage-json-"),TEXT(".tmp"));
+    TUniquePtr<FArchive> File(Files.CreateFileWriter(*Temporary));
+    if (!File) return false;
+    bool Saved=FJsonSerializer::Serialize(Root,TJsonWriterFactory<UTF8CHAR,TCondensedJsonPrintPolicy<UTF8CHAR>>::Create(File.Get()));
+    Saved=File->Close() && Saved && !File->IsError();
+    File.Reset();
+    if (Saved) Saved=Files.Move(*Path,*Temporary,true,false);
+    if (!Saved) Files.Delete(*Temporary,false,false);
+    return Saved;
 }
 
 UStaticMesh* UYorimichiFoliagePreparation::BuildVariant(UStaticMesh* Source, const FString& JsonPath,

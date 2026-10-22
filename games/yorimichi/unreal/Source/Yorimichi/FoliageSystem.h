@@ -1,5 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
+#include "Engine/EngineTypes.h"
 #include "Subsystems/WorldSubsystem.h"
 #include "FoliageSystem.generated.h"
 
@@ -8,6 +9,7 @@ class UHierarchicalInstancedStaticMeshComponent;
 class UStaticMesh;
 class UMaterialInterface;
 class FJsonObject;
+struct FStaticMaterial;
 
 USTRUCT()
 struct FYorimichiFoliageSource
@@ -18,15 +20,20 @@ struct FYorimichiFoliageSource
     UPROPERTY() TObjectPtr<UStaticMeshComponent> Shadow;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> NearVisual;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> Patches;
-    UPROPERTY() TObjectPtr<UStaticMesh> SourceMesh;
+    TWeakObjectPtr<UStaticMesh> SourceMesh;
+    FString SourcePath;
+    ECollisionEnabled::Type Collision=ECollisionEnabled::NoCollision;
+    TArray<FName> MaterialSlots;
+    TArray<TWeakObjectPtr<UMaterialInterface>> MaterialBindings;
+    bool HasRigid=false,CollisionPolicyApplied=false;
     bool Visible = false, Hidden = false, CastShadow = false, DistanceField = false;
     bool ShadowOnly = false, EvaluateWPO = true;
     FString Kind;
     int32 InstanceCount=0;
 };
 
-/** Every region's vegetation, including mixed meshes, shares one representation and settings owner.
- * Original components retain all collision and placements. Optimized children render only.
+/** Every region's vegetation shares one representation and settings owner.
+ * The active mesh set owns collision; inactive legacy assets are paths, never resident meshes.
  */
 UCLASS()
 class YORIMICHI_API UYorimichiFoliageSubsystem : public UTickableWorldSubsystem
@@ -35,6 +42,11 @@ class YORIMICHI_API UYorimichiFoliageSubsystem : public UTickableWorldSubsystem
 public:
     /** All instanced scenery uses this factory so new regional plants cannot escape registration/audit. */
     static UHierarchicalInstancedStaticMeshComponent* NewInstances(UObject* Outer, FName Name = NAME_None);
+    /** Resolve before loading: optimized play never opens the legacy source package. */
+    static UStaticMesh* LoadMesh(UWorld* World,const FString& SourcePath);
+    static FString SourcePath(const UStaticMesh* Mesh);
+    static FString SourceName(const UStaticMesh* Mesh);
+    virtual void Initialize(FSubsystemCollectionBase& Collection) override;
     bool Refresh();
     /** Call after editing an already registered instance layout/material binding, before rendering it again. */
     bool RefreshSource(UStaticMeshComponent* Component);
@@ -43,6 +55,9 @@ public:
     bool SetEnabled(bool Enabled);
     UFUNCTION(BlueprintPure, Category="Foliage")
     bool IsEnabled() const { return bEnabled; }
+    bool IsReloading() const { return RequestedEnabled.IsSet(); }
+    /** Unique loaded mesh objects for managed scenery: legacy and prepared respectively. */
+    FIntPoint LoadedModeCounts() const;
     void SetDistances(bool Performance, float Detail, float SwayMetres, float ShadowMetres);
     const FString& GetError() const { return Error; }
     virtual void Tick(float Dt) override;
@@ -50,9 +65,11 @@ public:
     virtual bool DoesSupportWorldType(EWorldType::Type Type) const override;
     virtual void Deinitialize() override;
 private:
-    struct FAsset { FString Optimized, Shadow, Patch, Kind; int32 Triangles=0,ShadowTriangles=0;
-        TArray<int32> LODTriangles;TArray<TArray<FVector>> Coverage;bool Aggregate=false;FBox Canopy; };
+    struct FAsset { FString Optimized, Shadow, Patch, Rigid, Kind; int32 Triangles=0,ShadowTriangles=0,RigidTriangles=0;
+        TArray<FString> SourceMaterials;TArray<int32> LODTriangles,RigidLODTriangles;TArray<TArray<FVector>> Coverage;
+        bool Aggregate=false,SimpleTrunk=false,Passable=false;FBox Canopy; };
     TMap<FString,FAsset> Assets;
+    TMap<FString,FString> ResidentSources;
     TSet<FString> LeafMaterials;
     TArray<FString> Words;
     struct FClassification
@@ -60,6 +77,7 @@ private:
         TWeakObjectPtr<UStaticMesh> Mesh;
         TArray<TWeakObjectPtr<UMaterialInterface>> Materials;
         TArray<FName> Slots;
+        int32 Triangles=0;
         bool Required=false;
     };
     // Weak keys/values do not keep scenery alive. Reclassify only a new or
@@ -68,15 +86,29 @@ private:
     UPROPERTY() TArray<FYorimichiFoliageSource> Sources;
     FString Error;
     bool bRegistryLoaded=false, bEnabled=true, bPerformance=true, bReportedSetting=false;
+    TOptional<bool> RequestedEnabled;
+    bool bStartupCompleted=false;
+    bool bModeLoadFailed=false;
+    TSet<TWeakObjectPtr<UStaticMesh>> StartupMeasuredMeshes;
+    TSet<TWeakObjectPtr<UStaticMesh>> StartupVertexCopies;
     float Detail=.4f, Sway=60.f, ShadowDistance=80.f, AuditElapsed=0.f;
     bool LoadRegistry();
     bool ReadRegistry(const TSharedPtr<FJsonObject>& Registry);
     friend class FYorimichiFoliageToggleTest;
     friend class FYorimichiFoliageRegistryTest;
     friend class FYorimichiFoliageClassificationTest;
+    friend class FYorimichiFoliageCollisionPolicyTest;
+    friend class FYorimichiFoliageBindingTest;
+    static bool OrdinaryAuthoredProp(const TArray<FStaticMaterial>& Slots,int32 Triangles);
     bool RequiresRegistration(UStaticMeshComponent* Component) const;
     bool CachedRequiresRegistration(UStaticMeshComponent* Component);
     bool Register(UStaticMeshComponent* Component);
+    void DestroyRenderers(FYorimichiFoliageSource& Source);
+    bool ReloadMode(bool Enabled);
+    void ReleaseStartupVertexCopies();
     void Apply(FYorimichiFoliageSource& Source);
-    void Restore(FYorimichiFoliageSource& Source);
+    void ApplyCollision(FYorimichiFoliageSource& Source);
+    static void CaptureBindings(FYorimichiFoliageSource& Source);
+    bool BindingsCurrent(const FYorimichiFoliageSource& Source) const;
+    void Restore(FYorimichiFoliageSource& Source,bool RestoreCollision=true);
 };

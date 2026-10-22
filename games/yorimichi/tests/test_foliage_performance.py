@@ -45,7 +45,7 @@ def test_partial_or_failed_sampler_cannot_look_like_a_complete_pass(metrics):
 
 def test_sampler_rejects_camera_failures_and_records_callback_exceptions(metrics):
     live=SimpleNamespace(L=SimpleNamespace(game_world=lambda:None),behave=lambda *args:None)
-    unreal=SimpleNamespace(SubsystemBlueprintLibrary=SimpleNamespace(get_world_subsystem=lambda *args:object()),
+    unreal=SimpleNamespace(ObjectIterator=lambda cls:[SimpleNamespace(get_outer=lambda:None)],
         YorimichiFoliageSubsystem=object(),Vector=lambda *v:v,
         MegaParkValidation=SimpleNamespace(review_camera=lambda *args:False))
     owner=dict(live=live,unreal=unreal)
@@ -64,7 +64,7 @@ def test_restores_actual_active_preferences_instead_of_default_file(metrics,monk
     default=tmp_path/'Saved/settings.txt';default.parent.mkdir();default.write_text('foliage_optimization=1.0\n')
     custom=tmp_path/'session-preferences.txt';custom.write_text('foliage_optimization=0.0\n')
     state=dict(code='compiled',ready=True,fixed_step=False,fixed_frame_rate=False,enabled=False,
-               film_hud=True,preferences={'foliage_optimization':0.})
+               film_hud=True,preferences={'foliage_optimization':0.},managed_prepared_meshes_resident=0)
     values={'t.MaxFPS':60.};effects=[]
     def set_preference(key,value):
         custom.write_text(f'{key}={value}\n');return True
@@ -135,3 +135,30 @@ def test_scout_camera_output_roundtrips_for_exact_abba_replay(metrics,tmp_path):
     views={'forest':[[10,20,180],[10,20,30],[0,0,0]]}
     path=tmp_path/'slow_views.json';path.write_text(json.dumps(dict(views=views)))
     assert metrics.camera_file(path)==views
+
+
+def test_deferred_switch_waits_for_ready_and_zero_inactive_meshes(metrics,monkeypatch):
+    states=iter([dict(code='compiled',ready=False,reloading=True,enabled=True),
+                 dict(code='compiled',ready=True,reloading=False,enabled=False,managed_prepared_meshes_resident=0)])
+    monkeypatch.setattr(metrics,'read_json',lambda code:next(states))
+    monkeypatch.setattr(metrics.time,'sleep',lambda seconds:None)
+    assert metrics.wait_mode(False,'compiled')['managed_prepared_meshes_resident']==0
+
+
+@pytest.mark.parametrize('state',[
+    dict(code='changed',ready=True,enabled=True,managed_legacy_meshes_resident=0),
+    dict(code='compiled',ready=True,enabled=True,managed_legacy_meshes_resident=1),
+    dict(code='compiled',ready=False,reloading=True,enabled=False)])
+def test_failed_or_stale_reload_cannot_enter_timing(metrics,monkeypatch,state):
+    monkeypatch.setattr(metrics,'read_json',lambda code:state)
+    with pytest.raises(RuntimeError):metrics.wait_mode(True,'compiled',timeout=0.)
+
+
+def test_screenshot_barrier_waits_for_completed_png_footer(metrics,monkeypatch,tmp_path):
+    shot=tmp_path/'view.png';shot.write_bytes(bytes.fromhex('89504e470d0a1a0a'))
+    def finish(seconds):
+        shot.write_bytes(bytes.fromhex('89504e470d0a1a0a0000000049454e44ae426082'))
+    monkeypatch.setattr(metrics.time,'sleep',finish)
+    metrics.wait_png(shot)
+    shot.write_bytes(b'partial')
+    with pytest.raises(RuntimeError,match='screenshot did not finish'):metrics.wait_png(shot,timeout=0.)

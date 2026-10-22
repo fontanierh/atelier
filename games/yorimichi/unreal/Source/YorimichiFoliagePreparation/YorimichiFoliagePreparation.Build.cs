@@ -1,6 +1,6 @@
 using UnrealBuildTool;
 
-// Preparation owns derived foliage geometry; raw import certification cannot depend on it.
+// Saved foliage geometry is prepared independently of gameplay and raw import certification.
 public class YorimichiFoliagePreparation : ModuleRules
 {
     public YorimichiFoliagePreparation(ReadOnlyTargetRules Target) : base(Target)
@@ -9,6 +9,7 @@ public class YorimichiFoliagePreparation : ModuleRules
         PrivateIncludePaths.Add(ModuleDirectory);
         PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine" });
         PrivateDependencyModuleNames.AddRange(new string[] { "UnrealEd", "AssetRegistry", "RenderCore", "RHI",
-            "MeshDescription", "StaticMeshDescription", "ImageCore", "Json" });
+            "MeshDescription", "StaticMeshDescription", "ImageCore", "Json", "Chaos",
+            "MeshReductionInterface", "MeshUtilitiesCommon" });
     }
 }

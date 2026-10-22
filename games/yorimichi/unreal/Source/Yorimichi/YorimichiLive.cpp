@@ -112,7 +112,13 @@ FString UYorimichiLive::FoliageReviewState()
     if (auto* World=ULiveLibrary::GameWorld())
     {
         for (TActorIterator<AJapanWorld> It(World);It;++It) Ready=It->bGameplayReady && It->BootstrapError.IsEmpty();
-        if (const auto* System=World->GetSubsystem<UYorimichiFoliageSubsystem>()) Enabled=System->IsEnabled();
+        if (const auto* System=World->GetSubsystem<UYorimichiFoliageSubsystem>())
+        {
+            Enabled=System->IsEnabled();Ready&=!System->IsReloading();O->SetBoolField(TEXT("reloading"),System->IsReloading());
+            const FIntPoint Counts=System->LoadedModeCounts();
+            O->SetNumberField(TEXT("managed_legacy_meshes_resident"),Counts.X);
+            O->SetNumberField(TEXT("managed_prepared_meshes_resident"),Counts.Y);
+        }
     }
     O->SetBoolField(TEXT("ready"),Ready);O->SetBoolField(TEXT("enabled"),Enabled);
     FString Out;FJsonSerializer::Serialize(O,TJsonWriterFactory<>::Create(&Out));return Out;

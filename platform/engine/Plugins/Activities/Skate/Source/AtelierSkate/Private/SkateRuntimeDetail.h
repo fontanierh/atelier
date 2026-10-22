@@ -184,6 +184,10 @@ namespace SkateRuntimeDetail
      *  data that LOD streaming may release. */
     struct FMeshSurface { TArray<FVector3f> Points, Normals; TArray<uint16> Slots; };
     using FMeshSurfaceRef=TSharedPtr<const FMeshSurface,ESPMode::ThreadSafe>;
+    using FMeshSurfaceCache=TMap<TObjectKey<UStaticMesh>,FMeshSurfaceRef>;
+    FMeshSurfaceCache& MeshSurfaceCache();
+    void PruneMeshSurfaceCache();
+    void ClearMeshSurfaceCache();
 
     /** The surface's name for QA lines (Wood), "none" for None. */
     inline FString SurfaceName(ESkateSurface Surface)
@@ -270,12 +274,12 @@ namespace SkateRuntimeDetail
         return Surface;
     }
 
-    /** The mesh's surface, copied once per mesh and kept (game thread): its collision LOD's render triangles, or in a
-     *  cooked build without CPU copies of them its cooked collision triangles. Null when it has neither. */
+    /** The mesh's surface, copied once while its UObject lives (game thread): its collision LOD's render triangles, or
+     *  its cooked collision triangles. Post-GC drops expired cache ownership; active jobs keep their immutable refs. */
     inline FMeshSurfaceRef MeshSurface(UStaticMesh* Mesh)
     {
         check(IsInGameThread());
-        static TMap<TObjectKey<UStaticMesh>,FMeshSurfaceRef> Cache;
+        FMeshSurfaceCache& Cache=MeshSurfaceCache();
         const TObjectKey<UStaticMesh> Key(Mesh);
         if (const FMeshSurfaceRef* Found=Cache.Find(Key)) return *Found;
         auto Collision=[&]() -> FMeshSurfaceRef
@@ -295,7 +299,8 @@ namespace SkateRuntimeDetail
         const FStaticMeshLODResources& LOD=LODs[FMath::Clamp(Mesh->LODForCollision,0,LODs.Num()-1)];
         const FPositionVertexBuffer& Positions=LOD.VertexBuffers.PositionVertexBuffer;
         const FIndexArrayView Indices=LOD.IndexBuffer.GetArrayView();   // the indices held, not the count it reports
-        if (!Positions.GetVertexData() || Positions.GetNumVertices()==0 || Indices.Num()<3) return Collision();
+        if (!Positions.GetAllowCPUAccess() || !LOD.VertexBuffers.StaticMeshVertexBuffer.GetAllowCPUAccess() ||
+            !Positions.GetVertexData() || Positions.GetNumVertices()==0 || Indices.Num()<3) return Collision();
         auto Surface=MakeShared<FMeshSurface,ESPMode::ThreadSafe>();
         Surface->Points.Reserve(Indices.Num()/3*3); Surface->Normals.Reserve(Indices.Num()/3);
         Surface->Slots.SetNumZeroed(Indices.Num()/3);

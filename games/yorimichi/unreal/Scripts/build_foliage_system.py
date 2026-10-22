@@ -22,6 +22,7 @@ import foliage_system as F
 import see_through
 from foliage_material import supports_lod_blend, enable_bark_lod_blend
 from foliage_variant_validation import matches as variant_matches, settings_reader
+import foliage_unit_policy as unit_policy
 
 OUT = yori.OUT / 'foliage_system'
 E = U.EditorAssetLibrary
@@ -109,6 +110,14 @@ def classify(mesh, registry):
     return list(range(len(mesh.get_editor_property('static_materials')))), 'material'
 
 
+def ordinary_authored_prop(mesh):
+    """Explicit whole-prop tags have a bounded ordinary-prop policy, not foliage conversion."""
+    names = [str(slot.get_editor_property('material_slot_name'))
+             for slot in mesh.get_editor_property('static_materials')]
+    triangles = mesh.get_num_triangles(0)
+    return bool(names) and all(name.startswith(F.roles.AUTHORED_PREFIX) for name in names) and 0 < triangles <= F.roles.AUTHORED_BUDGET
+
+
 def canopy_material(near, patch=False):
     name = 'M_ForestPatch' if patch else 'M_CanopyNear' if near else 'M_CanopyFar'
     path = F.ROOT + '/Materials/' + name
@@ -188,23 +197,17 @@ def bind_variant_materials(mesh, replacements):
         raise ValueError('Foliage variant material bindings did not apply')
 
 
-def write_representations(product, path, needed=('optimized', 'shadow', 'patch')):
+def write_representations(product, path, uv_channels, needed=('optimized','shadow','patch')):
     """@cc [owner:fontanierh,label:correctness;performance] bounded-foliage-serialization
-    Native representation inputs MUST preserve prepared geometry and screens exactly,
-    stream JSON without a whole-document string, and omit unrelated LOD geometry from
-    shadow/patch inputs. They MUST NOT certify a source or publish the runtime registry.
+    Transport MUST preserve every prepared float32 corner, slot and LOD exactly,
+    use mesh_geometry's single shared writer/digest encoder and current native
+    snapshot verification, stream without a whole-document string/DOM, and omit unrelated LOD geometry
+    from shadow/patch inputs. It MUST NOT certify a source or runtime registry.
     """
-    shadow_path = path.with_suffix('.shadow.json')
-    patch_path = path.with_suffix('.patch.json')
-    documents = (('optimized', path, dict(source=product['source'], screens=product['screens'], levels=product['levels'])),
-                 ('shadow', shadow_path, dict(source=product['source'], shadow=product['shadow'])),
-                 ('patch', patch_path, dict(source=product['source'], shadow=product['patch'])))
-    for role, destination, document in documents:
-        if role not in needed:
-            continue
-        with destination.open('w', encoding='utf-8') as handle:
-            json.dump(document, handle, separators=(',', ':'))
-    return shadow_path, patch_path
+    levels = dict(optimized=product['levels'], shadow=[product['shadow']], patch=[product['patch']])
+    paths = {role:path.with_suffix('.'+role+'.mesh') for role in needed}
+    geometry = {role:G.write_geometry(levels[role], uv_channels, destination) for role,destination in paths.items()}
+    return paths, geometry
 
 
 def memory_checkpoint(stage, path):
@@ -244,7 +247,7 @@ def main():
     registry.search_all_assets(synchronous_search=True)
     candidates = sorted(str(asset.package_name) for asset in registry.get_assets_by_path('/Game', recursive=True)
                         if str(asset.asset_class_path.asset_name) == 'StaticMesh'
-                        and not str(asset.package_name).startswith(F.ROOT+'/')
+                        and not str(asset.package_name).startswith((F.ROOT+'/', '/Game/FoliageResident/'))
                         and '/FoliageLODs/' not in str(asset.package_name)
                         and '/lods/' not in str(asset.package_name).lower())
     algorithm = hashlib.sha256()
@@ -253,7 +256,12 @@ def main():
                  yori.GAME/'unreal/Source/YorimichiFoliagePreparation/FoliagePreparation.cpp',
                  yori.GAME/'unreal/Source/YorimichiFoliagePreparation/FoliagePreparation.h',
                  yori.GAME/'unreal/Source/YorimichiFoliagePreparation/MeshGeometrySnapshot.cpp',
+                 yori.GAME/'unreal/Source/YorimichiFoliagePreparation/FoliageSourceWriter.cpp',
+                 yori.GAME/'unreal/Source/YorimichiFoliagePreparation/FoliageSourceWriter.h',
+                 yori.GAME/'unreal/Source/YorimichiFoliagePreparation/FoliageGeometryReader.cpp',
+                 yori.GAME/'unreal/Source/YorimichiFoliagePreparation/FoliageGeometryReader.h',
                  OUT.parent/'unreal-modules/YorimichiFoliagePreparation.json',
+                 Path(unit_policy.__file__), yori.GAME/'foliage_unit_policy_witness.json',
                  Path(G.__file__), Path(__file__).with_name('foliage_variant_validation.py'), *runtime_files()]:
         algorithm.update(file.read_bytes())
     algorithm.update(U.SystemLibrary.get_engine_version().encode())
@@ -261,6 +269,9 @@ def main():
     algorithm.update(json.dumps(dict(platform=sys.platform,architecture=platform.machine(),
                                      python=list(sys.version_info[:3])),sort_keys=True).encode())
     algorithm = algorithm.hexdigest()
+    legacy = unit_policy.legacy_policies(yori.GAME,engine_version=U.SystemLibrary.get_engine_version(),
+        environment=native_environment(native_context(yori.GAME.name)),
+        runtime=dict(platform=sys.platform,architecture=platform.machine(),python=list(sys.version_info[:3])))
     previous_path = OUT/'report.json'
     previous = json.loads(previous_path.read_text()) if previous_path.is_file() else {}
     registry_path=yori.GAME/'unreal/Content/Data/foliage_system/registry.json'
@@ -281,6 +292,11 @@ def main():
             U.YorimichiFoliagePreparation.collect_unused()
             continue
         slots, classification = policy
+        if classification == 'authored' and ordinary_authored_prop(mesh):
+            U.log(f'FOLIAGE SYSTEM ordinary authored prop: {path}')
+            mesh=None
+            U.YorimichiFoliagePreparation.collect_unused()
+            continue
         identity = source_identity(mesh,registry)
         old = cached.get(mesh.get_path_name())
         if old and old.get('identity') == identity and all(
@@ -304,6 +320,10 @@ def main():
         unit_path = OUT/'units'/(key+'.json')
         unit = G.load_unit(unit_path, identity=identity, policy=algorithm, content_root=content,
                            assets=list(destinations.values()))
+        for old_policy in legacy:
+            if unit is not None:break
+            unit = G.load_unit(unit_path, identity=identity, policy=old_policy, content_root=content,
+                               assets=list(destinations.values()))
         if unit:
             row, geometry = unit['metadata'], unit['geometry']
             try:
@@ -321,12 +341,14 @@ def main():
                 row['output_sha256']={role:digest(asset.get_path_name()) for role,asset in loaded.items()}
                 records.append(row);materials.update(row['leaf_materials'])
                 counters['unit_hits']+=1;counters['reused_variants']+=3
+                G.save_unit(unit_path,identity=identity,policy=algorithm,content_root=content,
+                            assets=list(destinations.values()),geometry=geometry,metadata=row)
                 U.log(f'FOLIAGE SYSTEM {n+1}/{len(candidates)} unit readback accepted: {path}')
                 loaded.clear();mesh=None
                 U.YorimichiFoliagePreparation.collect_unused()
                 continue
         U.log(f'FOLIAGE SYSTEM {n+1}/{len(candidates)} exporting: {path}')
-        assert U.YorimichiFoliagePreparation.export_source(mesh, slots, classification, kind, str(source_path)), path
+        assert U.YorimichiFoliageSourceWriter.export_source(mesh, slots, classification, kind, str(source_path)), path
         source = json.loads(source_path.read_text())
         large_source = source_path.stat().st_size >= 32 * 1024 * 1024
         if large_source: memory_checkpoint('source loaded', path)
@@ -335,7 +357,7 @@ def main():
             for level in range(1, len(F.SCREENS)):
                 lod_path = OUT/(key+f'.rigid{level}.json')
                 lod_index = round(level*(mesh.get_num_lods()-1)/(len(F.SCREENS)-1))
-                assert U.YorimichiFoliagePreparation.export_source(mesh, slots, classification, kind, str(lod_path),lod_index), path
+                assert U.YorimichiFoliageSourceWriter.export_source(mesh, slots, classification, kind, str(lod_path),lod_index), path
                 source['rigid_lods'].append(json.loads(lod_path.read_text()))
             if kind == 'tree' and len(source['rigid_lods'][-1]['faces']) <= 256:
                 source['far_proxy'] = source['rigid_lods'][-1]
@@ -348,9 +370,11 @@ def main():
                       patch_triangles=len(product['patch']['faces']))
         leaf_materials = [material['path'] for material in source['materials'] if material['foliage']]
         uv_channels=max(1,source['uv_channels'])
-        geometry=dict(optimized=G.expected_digest(product['levels'],uv_channels),
-                      shadow=G.expected_digest([product['shadow']],uv_channels),
-                      patch=G.expected_digest([product['patch']],uv_channels))
+        absent=[role for role,path in destinations.items() if not E.does_asset_exist(path)]
+        documents,geometry=write_representations(product,product_path,uv_channels,absent)
+        levels=dict(optimized=product['levels'],shadow=[product['shadow']],patch=[product['patch']])
+        for role in destinations:
+            if role not in geometry:geometry[role]=G.expected_digest(levels[role],uv_channels)
         # Old partial products have no unit evidence: reproduce the CURRENT source
         # and preparation, then compare every saved corner before accepting them.
         loaded=saved_variants(mesh,destinations,replacements,(near,far,patch_material),detail,geometry,key)
@@ -359,21 +383,28 @@ def main():
         counters['reused_variants']+=len(loaded)
         counters['built_variants']+=len(missing)
         U.log(f'FOLIAGE SAVED {path}: verified={len(loaded)} rebuild={missing}')
-        shadow_path,patch_path=write_representations(product,product_path,missing)
+        repaired,checks=write_representations(product,product_path,uv_channels,[role for role in missing if role not in documents])
+        assert all(checks[role]==geometry[role] for role in checks),path
+        documents.update(repaired)
+        del levels
         if large_source:memory_checkpoint('representations written',path)
         del source,product
         if large_source:memory_checkpoint('geometry released',path)
         for role in missing:
-            shadow=role!='optimized'
-            document=product_path if role=='optimized' else shadow_path if role=='shadow' else patch_path
+            document=documents[role]
             first,second=(patch_material,patch_material) if role=='patch' else (near,far)
-            result=U.YorimichiFoliagePreparation.build_variant(mesh,str(document),destinations[role],first,second,shadow)
+            screens=F.SCREENS if role=='optimized' else [1.]
+            result=U.YorimichiFoliageGeometryReader.build_variant(mesh,str(document),screens,destinations[role],first,second)
             assert result,destinations[role]
             bind_variant_materials(result,replacements)
             assert E.save_loaded_asset(result),destinations[role]
             expected=counts if role=='optimized' else [detail[role+'_triangles']]
             assert result.get_num_lods()==len(expected),destinations[role]
             assert [result.get_num_triangles(i) for i in range(len(expected))]==expected,(destinations[role],expected)
+            assert variant_matches(result,mesh,replacements,(first,second),expected,screens,geometry[role],
+                OUT/(key+'.'+role+'.built.snapshot'),editor=settings_reader(U),
+                snapshot=U.YorimichiFoliagePreparation.export_geometry_snapshot,digest=G.file_digest,
+                refusal=lambda reason:U.log(f'FOLIAGE BUILT MISS {role} {destinations[role]}: {reason}')),destinations[role]
             loaded[role]=result
         variants={role:asset.get_path_name() for role,asset in loaded.items()}
         assert digest(path)==before,('Foliage owner modified its source',path)

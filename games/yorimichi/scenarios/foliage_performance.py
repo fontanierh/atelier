@@ -115,7 +115,7 @@ def summarize(rows, expected_seconds=None, errors=()):
 SAMPLER = '''
 import time
 world=live.L.game_world()
-system=unreal.SubsystemBlueprintLibrary.get_world_subsystem(world,unreal.YorimichiFoliageSubsystem)
+system=next((s for s in unreal.ObjectIterator(unreal.YorimichiFoliageSubsystem) if s.get_outer()==world),None)
 assert system, 'Foliage subsystem unavailable'
 def vector(point):return unreal.Vector(point[0]*100.,-point[1]*100.,point[2]*100.)
 def aim(eye,target):
@@ -153,12 +153,40 @@ def active_state(code_identity):
     return state
 
 
+def wait_mode(enabled,code_identity,timeout=180.):
+    """Wait for the deferred reload and prove the inactive mesh set was released."""
+    deadline=time.monotonic()+timeout
+    while True:
+        state=read_json('json.loads(live.L.foliage_review_state())')
+        if state['code']!=code_identity:raise RuntimeError('Running native code changed during comparison')
+        if state['ready'] and not state.get('reloading',False) and state['enabled']==enabled:
+            inactive='managed_legacy_meshes_resident' if enabled else 'managed_prepared_meshes_resident'
+            if state[inactive]!=0:raise RuntimeError('Inactive foliage meshes are still resident')
+            return state
+        if time.monotonic()>=deadline:raise RuntimeError('Deferred foliage reload did not reach readiness')
+        time.sleep(.25)
+
+
+def wait_png(path,timeout=10.):
+    """Screenshots finish asynchronously; keep the current mode until PNG closure."""
+    deadline=time.monotonic()+timeout
+    while True:
+        try:
+            with path.open('rb') as handle:
+                signature=handle.read(8);handle.seek(-12,2);footer=handle.read()
+            if signature==bytes.fromhex('89504e470d0a1a0a') and footer==bytes.fromhex('0000000049454e44ae426082'):return
+        except OSError:pass
+        if time.monotonic()>=deadline:raise RuntimeError('Game screenshot did not finish: '+path.name)
+        time.sleep(.05)
+
+
 def restore(state,cvars):
     original=state['preferences']['foliage_optimization']
     qa.py('live.stop("foliage_performance")\n'
           f'try:\n assert live.L.set_preference("foliage_optimization",{original}), "Restoring settings failed"\n'
           'finally:\n for key,value in '+repr(cvars)+'.items():unreal.SystemLibrary.execute_console_command(live.L.game_world(),key+" "+str(value))\n'
           f' unreal.MegaParkValidation.restore_player_camera();live.L.film_hud({state["film_hud"]!r})')
+    wait_mode(bool(original),state['code'])
 
 
 def main():
@@ -179,7 +207,7 @@ def main():
         parser.error('take must be a simple unique name')
     if args.seconds<2 or args.seconds>30 or args.settle<2 or args.settle>30:parser.error('sample/settle must be 2–30 seconds')
     qa.bridge.URL=f'http://127.0.0.1:{args.port}'
-    project=read_json('str(unreal.Paths.project_dir())')
+    project=read_json('str(unreal.Paths.convert_relative_path_to_full(unreal.Paths.project_dir()))')
     if Path(project).resolve()!=(qa.GAME/'unreal').resolve():raise RuntimeError('Live game belongs to another checkout')
     repo=qa.GAME.parents[1]
     if subprocess.check_output(['git','status','--porcelain'],cwd=repo,text=True).strip():
@@ -213,9 +241,9 @@ def main():
             passes=(False,) if args.aerial_scout else (False,True,True,False)
             for index,enabled in enumerate(passes):
                 print(f'{name} pass {index+1}/{len(passes)}: optimization={enabled}; settling {args.settle:g}s then sampling {args.seconds:g}s',flush=True)
-                qa.py(f'assert live.L.set_preference("foliage_optimization",{int(enabled)}), "Settings switch refused"\n'
-                      f'assert live.FOLIAGE_QA["system"].is_enabled()=={enabled}, "Renderer did not switch"\n'
-                      'for key in '+repr(settings)+':unreal.SystemLibrary.execute_console_command(live.L.game_world(),key+" 0")\n'
+                qa.py(f'assert live.L.set_preference("foliage_optimization",{int(enabled)}), "Settings switch refused"')
+                mode_state=wait_mode(enabled,state['code'])
+                qa.py('for key in '+repr(settings)+':unreal.SystemLibrary.execute_console_command(live.L.game_world(),key+" 0")\n'
                       f'live.FOLIAGE_QA["aim"]({eye!r},{target!r})')
                 time.sleep(args.settle)
                 effective_controls=read_json('{key:unreal.SystemLibrary.get_console_variable_float_value(key) for key in '+repr(settings)+'}')
@@ -226,11 +254,12 @@ def main():
                 capture=read_json('(live.stop("foliage_performance"),dict(rows=live.FOLIAGE_QA["rows"],errors=live.FOLIAGE_QA["errors"]))[1]')
                 (out/f'{name}_{index}_samples.json').write_text(json.dumps(capture)+'\n')
                 rows=capture['rows']
-                result=dict(enabled=enabled,effective_controls=effective_controls,samples=rows,
+                result=dict(enabled=enabled,mode_state=mode_state,effective_controls=effective_controls,samples=rows,
                             summary=summarize(rows,args.seconds,capture['errors']))
                 results.append(result)
                 shot=out/f'{name}_{index}_{"on" if enabled else "off"}.png'
                 qa.py(f'live.L.screenshot({str(shot)!r})')
+                wait_png(shot)
                 # Detailed GPU event breakdown stays in the owned game's stdout log.
                 qa.py('unreal.SystemLibrary.execute_console_command(live.L.game_world(),"ProfileGPU")')
                 print(f'{name} pass {index+1}: '+json.dumps(result['summary']),flush=True)

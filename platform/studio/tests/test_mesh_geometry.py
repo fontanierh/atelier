@@ -22,6 +22,53 @@ def test_protocol_matches_independent_little_endian_stream():
     assert M.expected_digest([data], 2) == hashlib.sha256(payload).hexdigest()
 
 
+def test_binary_transport_matches_the_independent_stream_and_digest(tmp_path):
+    data = level()
+    payload = M.MAGIC + struct.pack('<I', 2)
+    for _ in range(2):
+        payload += struct.pack('<III', 2, 1, 2)
+        for vertex in data['vertices']:
+            payload += struct.pack('<14f', *vertex['p'], *vertex['n'], *vertex['c'], *vertex['uvs'][0], *vertex['uvs'][1])
+    path = tmp_path/'nested/source.mesh'
+    assert M.write_geometry([data, data], 2, path) == hashlib.sha256(payload).hexdigest()
+    assert path.read_bytes() == payload
+    assert M.file_digest(path) == M.expected_digest([data, data], 2)
+
+
+def test_transport_is_bounded_and_fallback_uvs_share_the_digest_encoder(tmp_path):
+    data = level()
+    for vertex in data['vertices']: del vertex['uvs']
+    data['faces'] *= 1000
+    assert max(map(len, M._geometry_chunks([data], 8))) <= 16
+    path = tmp_path/'source.mesh'
+    assert M.write_geometry([data], 8, path) == M.expected_digest([data], 8)
+    assert M.file_digest(path) == M.expected_digest([data], 8)
+
+
+@pytest.mark.parametrize('fault', ['nonfinite', 'index', 'slot', 'channels'])
+def test_failed_transport_preserves_previous_output_and_cleans_temporary(tmp_path, fault):
+    data = level(); channels = 2
+    if fault == 'nonfinite': data['vertices'][2]['p'][0] = float('nan')
+    elif fault == 'index': data['faces'][0]['v'][2] = 99
+    elif fault == 'slot': data['faces'][0]['s'] = -1
+    else: channels = 9
+    path = tmp_path/'source.mesh'; path.write_bytes(b'previous complete geometry')
+    with pytest.raises(ValueError): M.write_geometry([data], channels, path)
+    assert path.read_bytes() == b'previous complete geometry'
+    assert list(tmp_path.iterdir()) == [path]
+
+
+@pytest.mark.parametrize('ancestor', [False, True])
+def test_transport_refuses_linked_paths(tmp_path, ancestor):
+    if ancestor:
+        folder = tmp_path/'real'; folder.mkdir()
+        linked = tmp_path/'linked'; linked.symlink_to(folder)
+        path = linked/'source.mesh'
+    else:
+        path = tmp_path/'source.mesh'; path.symlink_to(tmp_path/'absent')
+    with pytest.raises(ValueError, match='Linked'): M.write_geometry([level()], 2, path)
+
+
 @pytest.mark.parametrize('field,index', [('p', 0), ('n', 1), ('c', 2), ('uvs', 0)])
 def test_every_attribute_enters_digest(field, index):
     original = level()

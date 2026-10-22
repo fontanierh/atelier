@@ -1,4 +1,5 @@
 #include "HidamariStable.h"
+#include "FoliageSystem.h"
 #include "AtelierData.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
@@ -80,7 +81,7 @@ bool AHidamariStable::Initialize(const FString& Path)
     Tags.AddUnique(TEXT("hidamari_stable"));
     auto Load = [&](const FString& Name)
     {
-        UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("%s/%s.%s"), *AssetRoot, *Name, *Name));
+        UStaticMesh* Mesh = UYorimichiFoliageSubsystem::LoadMesh(GetWorld(), FString::Printf(TEXT("%s/%s.%s"), *AssetRoot, *Name, *Name));
         if (!Mesh) UE_LOG(LogTemp, Warning, TEXT("Hidamari stable: mesh %s is not imported"), *Name);
         return Mesh;
     };

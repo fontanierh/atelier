@@ -12,7 +12,9 @@ GAME = Path(__file__).resolve().parents[1]
 WORLD = GAME / 'world'
 SCRIPTS = GAME / 'unreal/Scripts'
 PACKAGING = {'data.content', 'data.network', 'unreal.cook', 'unreal.package'}
-ASSEMBLY = PACKAGING | {'unreal.foliage_system'}
+# Preparation waits for importers, then observes actual packages. Source-only
+# perturbations here do not model changed native output bytes (covered separately).
+ASSEMBLY = PACKAGING
 
 
 def test_one_tree_spec_changes_only_its_export_import_and_final_assembly(tmp_path, monkeypatch):
@@ -53,7 +55,9 @@ def test_package_repair_code_invalidates_native_owners_without_reexporting_geome
     changed = changed_by(source, tmp_path, monkeypatch)
     native = {name for name in changed if name.startswith('unreal.foliage.')}
     assert len(native) == 18
-    assert changed == native | ASSEMBLY
+    # Preflight is also a direct support input of the compact native owner.
+    compact = {'unreal.foliage_residency'} if source.name == 'unreal_preflight.py' else set()
+    assert changed == native | ASSEMBLY | compact
 
 
 def test_alpha_texture_is_an_input_only_of_foliage_that_reads_it(tmp_path, monkeypatch):
@@ -90,8 +94,8 @@ def test_world_selector_includes_native_references_without_reading_their_bytes(t
     expected.update({f'terrain.HD_Terrain.{stage}': 'world.hidamari'
                      for stage in ('natural', 'final', 'provenance')})
     expected['gondola.kit']='world.gondola_kit'
-    expected.update({f'brinecove.{part}': 'world.brinecove.meshes'
-                     for part in ('geometry', 'materials', 'runtime', 'map', 'clearance')})
+    expected.update({f'brinecove.{name}': 'world.brinecove.meshes'
+                     for name in ('geometry', 'materials', 'runtime', 'map', 'clearance')})
     assert graph.owners == expected
     assert all(not graph.by_name[owner].cache for product, owner in expected.items()
                if any(isinstance(command, (build.UnrealScript, build.UnrealCompile, build.UnrealPackage))
@@ -159,3 +163,13 @@ def test_role_codec_is_a_real_authoring_input_and_imports_fingerprint_the_stamp_
                  'unreal.swordcamp','unreal.foliage.Tree_Broad_A'):
         assert SCRIPTS/'mesh_import.py' in steps[name].inputs,name
         assert set(recipe.unreal_modules.needs(recipe.IMPORT_CODE))<=set(steps[name].needs),name
+
+
+def test_default_readiness_requires_residency_after_certified_preparation(tmp_path):
+    ctx = SimpleNamespace(game='yorimichi', out=tmp_path, uproject=None)
+    graph = build_products.Graph(build.load_recipe('yorimichi').steps(ctx))
+    compact = graph.by_name['unreal.foliage_residency']
+    assert 'unreal.foliage_system' in compact.after
+    for target in ('data.content', 'data.network', 'unreal.cook'):
+        assert compact.name in {step.name for step in graph.select([target])}
+    assert GAME / 'unreal/Content/FoliageResident' in compact.outputs

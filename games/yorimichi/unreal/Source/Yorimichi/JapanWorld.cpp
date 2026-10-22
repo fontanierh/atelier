@@ -60,10 +60,10 @@ void AJapanWorld::BeginPlay()
     Load();
 }
 
-static UStaticMesh* LoadMesh(const FString& Name)
+static UStaticMesh* LoadMesh(UWorld* World,const FString& Name)
 {
     const FString Path = FString::Printf(TEXT("/Game/Japan/Assets/%s.%s"), *Name, *Name);
-    return LoadObject<UStaticMesh>(nullptr, *Path);
+    return UYorimichiFoliageSubsystem::LoadMesh(World,Path);
 }
 
 void AJapanWorld::Load()
@@ -381,7 +381,7 @@ void AJapanWorld::Load()
         for (const auto& Pair : (*Inst)->Values)
         {
             const FString Key(Pair.Key);
-            UStaticMesh* Mesh = LoadMesh(Key);
+            UStaticMesh* Mesh = LoadMesh(GetWorld(),Key);
             if (!Mesh) { Incomplete.Add(TEXT("mesh ") + Key); UE_LOG(LogTemp, Warning, TEXT("missing mesh asset %s"), *Key); continue; }
             const bool bGrass = Key.StartsWith(TEXT("Grass"));
             const bool bBush = Key.StartsWith(TEXT("Bush"));
@@ -415,6 +415,7 @@ void AJapanWorld::Load()
                 if (Key==TEXT("HD_Harbor") || Key==TEXT("HD_Boat") || Key==TEXT("HD_Sea") || Key==TEXT("HD_Bollard"))
                     H->SetLightingChannels(true, true, false);
                 H->SetCanEverAffectNavigation(false);
+                if (bBackdrop) H->ComponentTags.Add(TEXT("FoliageBackdrop"));
                 const bool bWater=Key==TEXT("HD_Sea") || Key==TEXT("HD_InlandWater") || Key==TEXT("Lake_Water");
                 // The city's overhead wires (HD_Wires, 10 m up) never stop a jump or the camera, and cast no shimmering lines.
                 const bool bWires=Key==TEXT("HD_Wires");
@@ -441,7 +442,7 @@ void AJapanWorld::Load()
                 else if (bBush) H->SetCullDistances(30000, 36000);
                 else if (bLitter) H->SetCullDistances(7000, 9000);
                 if (bTree || bBush) H->SetWorldPositionOffsetDisableDistance(18000);
-                // Walkers meet a tree's leaves; the skateboard meets only its trunk (SkateRuntimeDetail CollectWorld).
+                // Prepared trees use their trunk; the skateboard also selects simple shapes in legacy mode.
                 if (bTree) H->ComponentTags.Add(TEXT("SkateSimpleCollision"));
                 // The tree house: the camera arm keeps above the floor Cairo stands on there, and in hole mode its probe
                 // passes the house (SetSeeThroughProbe). Its door curtains swing up to 60 cm out of their rest pose.
@@ -488,7 +489,7 @@ void AJapanWorld::Load()
             AddGroup(Near, false); AddGroup(Distant, true);
         }
     }
-    if (UStaticMesh* Dome = LoadMesh(TEXT("SkyDome")))
+    if (UStaticMesh* Dome = LoadMesh(GetWorld(),TEXT("SkyDome")))
     {
         SkyDome = NewObject<UStaticMeshComponent>(this, TEXT("SkyDome"));
         SkyDome->SetStaticMesh(Dome); SkyDome->SetupAttachment(RootComponent);
@@ -497,7 +498,7 @@ void AJapanWorld::Load()
         SkyDome->bVisibleInRealTimeSkyCaptures = true;
         SkyDome->RegisterComponent();
     }
-    if (UStaticMesh* SeaMesh = LoadMesh(TEXT("Sea")))
+    if (UStaticMesh* SeaMesh = LoadMesh(GetWorld(),TEXT("Sea")))
     {
         Sea = NewObject<UStaticMeshComponent>(this, TEXT("Sea"));
         Sea->SetStaticMesh(SeaMesh); Sea->SetupAttachment(RootComponent);
@@ -710,7 +711,7 @@ void AJapanWorld::Load()
     const FCollisionQueryParams GroundQuery(SCENE_QUERY_STAT(BackdropGround), true);
     for (auto* Group : BackdropGroups)
     {
-        if (!Group || !Group->GetStaticMesh() || !Group->GetStaticMesh()->GetName().StartsWith(TEXT("Tree"))) continue;
+        if (!Group || !Group->GetStaticMesh() || !UYorimichiFoliageSubsystem::SourceName(Group->GetStaticMesh()).StartsWith(TEXT("Tree"))) continue;
         TArray<int32> Remove;
         for (int32 I = 0; I < Group->GetInstanceCount(); ++I)
         {
@@ -846,7 +847,7 @@ void AJapanWorld::ApplyGroupDiagnostics()
     for (auto* Group : Groups)
     {
         if (!Group || !Group->GetStaticMesh()) continue;
-        const FString Name = Group->GetStaticMesh()->GetName();
+        const FString Name = UYorimichiFoliageSubsystem::SourceName(Group->GetStaticMesh());
         bool Match = false;
         for (const FString& Part : Parts)
             if (!Part.TrimStartAndEnd().IsEmpty() && Name.Contains(Part.TrimStartAndEnd())) Match = true;
@@ -864,7 +865,7 @@ void AJapanWorld::ApplyPerformanceSettings(bool bPerformance, float TreeSwayMetr
         AppliedTreeShadow == TreeShadowMetres)) return;
     for (auto* Group : Groups)
     {
-        const FString Name = Group->GetStaticMesh()->GetName();
+        const FString Name = UYorimichiFoliageSubsystem::SourceName(Group->GetStaticMesh());
         if (Name.StartsWith(TEXT("Grass")))
             Group->SetCullDistances(bPerformance ? 3500 : 6000,bPerformance ? 5000 : 8000);
         // A swaying tree is drawn again into the velocity pass and with its full vertex work into the

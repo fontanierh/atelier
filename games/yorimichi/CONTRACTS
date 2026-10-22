@@ -1,5 +1,5 @@
 @cc [owner:fontanierh,label:architecture;performance] universal-foliage-pipeline
-ALL current and future vegetation (trees, palms, bushes, hedges, flowers, grass,
+Except for the bounded ordinary-prop category specified below, ALL current and future vegetation (trees, palms, bushes, hedges, flowers, grass,
 groundcover and vegetation embedded in mixed meshes), in every region and import
 namespace, MUST pass through foliage_system's build-time classification, bounded
 representation generation and validation, and UYorimichiFoliageSubsystem at runtime.
@@ -21,16 +21,27 @@ Missing, stale or invalid representations MUST fail the normal build and gamepla
 readiness, never silently render an unoptimized fallback. Preparation and all cooked
 dependencies MUST belong to the normal incremental build graph.
 The persistent graphics switch MUST restore the original rendering when disabled;
-both modes MUST remain managed by the same subsystem. Switching MUST preserve authored
-placements, collision, camera visibility behavior and gameplay, without a restart.
-Indivisible textured plant props MAY retain authored surfaces only through the shared,
-explicit authored-prop policy and its hard whole-mesh budget; this MUST NOT become a
-fallback for unclassified sources or the policy for dense vegetation.
+both modes MUST remain managed by the same subsystem. Optimized play MUST load only prepared meshes;
+legacy meshes MUST load only when explicitly selected. Switching MAY reload assets and MUST release the
+inactive mesh set before loading its replacement, preserving placements, camera visibility and gameplay
+without a restart. Prepared trees MUST provide simple trunk collision with passable foliage; mixed
+meshes MUST preserve solid ground/building collision. Bush interaction MUST remain active.
+Certified distant rigid LODs MAY contain zero faces; the runtime reader MUST accept them while
+requiring positive LOD0 exactly matching the carrier and refusing negative or fractional counts.
+Resident canopy meshes MUST retain the complete bounded authored LOD chain (one to eight levels),
+including distant impostors and their native screen thresholds. A rigid tree chain MUST match its
+canopy level count; mixed rigid carriers MAY use one level. Only a source with no lower authored
+LOD MAY use generated leaf reductions. Exact empty distant canopy levels MAY be retained, but
+LOD0 MUST remain positive and every saved/rendered count MUST match the receiving proof.
+Small authored plant props with a complete FoliageAuthored_ slot table and 1–12,288
+LOD0 triangles MUST stay on the ordinary prop path in both graphics modes, preserving
+their existing rendering and collision without replacement meshes. This explicit
+export-certified exception MUST NOT exclude dense vegetation, partial role tables,
+oversized meshes or unclassified sources. Cached verdicts MUST invalidate on triangle-count changes.
 Visual and shadow representations MUST have separate budgets; distant forest patches
 MUST preserve silhouettes and clearings. Changes MUST carry revision-bound ground,
 canopy and aerial captures plus real-time frame/GPU timings before performance or
 visual-equivalence claims. Detached cosmetic particles are not vegetation placements.
-
 @cc [owner:fontanierh,label:architecture;performance] foliage-native-preparation-boundary
 Foliage geometry preparation, palette export and snapshot readback MUST live in the
 YorimichiFoliagePreparation editor module, independently of raw import role certification in

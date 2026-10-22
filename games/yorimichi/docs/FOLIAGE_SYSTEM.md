@@ -1,41 +1,41 @@
 # Shared foliage rendering
 
-Every vegetation source and placement uses the same derivative build owner and runtime subsystem.
-The invariant lives in [the game contracts](../CONTRACTS), and applies to every region, material and future
-vegetation asset, including vegetation inside otherwise rigid meshes.
+Dense vegetation and vegetation embedded in scenery share one classification and runtime owner.
+Small export-certified plant props with a complete `FoliageAuthored_` material table and 1–12,288
+LOD0 triangles stay ordinary props, preserving their existing rendering and collision.
 
-`unreal.foliage_system` follows normal native imports and runtime staging. It discovers vegetation by
-material semantics as well as mesh names, samples the source materials' linear palettes, and creates:
+The normal build has two native preparation steps. `unreal.foliage_system` certifies source roles,
+materials and saved intermediate geometry. `unreal.foliage_residency` publishes the final prepared
+meshes and `Data/foliage_residency/registry.json` consumed by the game. Original packages remain
+read-only. Missing or stale products fail the build or gameplay readiness.
 
-- Close canopy lobes with a shared budget across palette slots and a bounded fringe of original leaves.
-- Thin original surfaces for fronds and standing groundcover, including opaque groundcover embedded in mixed meshes.
-  Already cheap material/spatial groups never gain triangles.
-- Progressively simpler canopy volumes, using the source's authored reduced branches.
-- Existing tiny distant proxies where they are already cheaper than generated volumes.
-- Separate closed shadow proxies and distant forest-patch prototypes.
+Final meshes retain the original leaf texture, opacity, colour, wind and player-interaction material
+wrappers. Sources with authored lower LODs retain their complete chain, including far impostors and
+actual rendered screen thresholds, up to eight levels. Sources with only one LOD use the installed
+native reducer at explicit 50/25/10 percent targets within each material and categorical role island.
+Its minimum island size can prevent tiny sources reaching those percentages. Saved descriptions,
+rendered triangle counts, UV channels, material bindings and settings receive native validation.
 
-Original packages remain read-only. Runtime keeps their components, transforms and collision; generated
-children only render. Mixed architecture keeps its rigid triangles. Detached animated leaf particles
-have an explicit particle role, separate from vegetation placements.
+Rigid scenery appears once, on a separate prepared carrier. Standalone trees retain their authored
+rigid LOD chain and use simple trunk collision; leaves and bushes remain passable. Mixed meshes retain
+rigid-only ground and building collision. Trunk shapes preserve each placement's authored collision
+enablement and channels, including intentionally nonblocking park trees. Bush interaction remains a
+material effect. A separately budgeted shadow mesh replaces leaf-card shadow casting. Opaque canopy
+volumes and coverage patches are not used for the final visible leaf representation.
 
-The graphics menu's **Foliage optimization** switch applies live and persists with other preferences.
-Off restores the original rendering, including the existing city-tree comparison selection; it does not
-opt out of registration or validation. Failed settings saves restore the previous rendering mode.
-The older city-tree detail controls describe the original comparison path while optimization is off.
+The persistent **Foliage optimization** preference is selected before the first scenery mesh load.
+Optimized mode resolves canonical source names to prepared assets without opening the originals.
+Switching off detaches and releases prepared meshes before loading legacy assets; switching on does
+the reverse. A deferred reload waits until callbacks return, preserves placements and visibility, and
+reports readiness only after registration and collision installation complete. Failed preference saves
+restore the previous mode. The existing city-tree preference remains a separate source selection.
 
-Dense forest interiors use 64 m cells and a 200–250 m coverage transition. Cells need at least twelve
-trees. A candidate covers only the central half of the cell's crown bounds, and every tile (at most 2 m)
-of its bounding rectangle must fit entirely inside the projected convex hull of one certified opaque,
-closed generated distant core. Only the exact core vertices may certify this footprint; smooth bounding
-ellipses and arbitrary source/alpha-proxy hulls cannot prove occupied area. Authored far proxies without
-that certificate retain individual optimized LODs. This certifies area coverage, including spaces between
-sample points. Boundary crowns retain their individual LODs; only crowns wholly inside the patch's
-inscribed .92 ellipse may transition to it. Nonuniform component scale also keeps individual LODs, avoiding
-shear loss when converting world-aligned patches to relative transforms. At least eight interior trees and
-a fourfold reduction from their certified final-LOD triangle cost are required. Sparse or uncertain cells retain
-individual optimized trees. Render-only patch transforms derive from the actual placed instances;
-the source placement and all collision bodies stay intact. Shadow proxies use the shared tree-shadow
-distance, including city and regional vegetation.
+Uncooked editor games retain CPU render arrays that cooked games can discard. After GPU upload,
+prepared render-only meshes can release unused CPU vertex copies; collision carriers retain positions
+and indices, and only release shading copies when their CPU consumers permit it. Reloads drain complete
+registration batches rather than accumulating all uploads. Mesh-surface cache entries are pruned after
+garbage collection while immutable in-flight job references remain valid. These mechanisms require
+measured process-footprint and mode-switch evidence; resource-size estimates alone do not prove a gain.
 
 ## Adding vegetation
 
@@ -62,8 +62,8 @@ This adds no rigid stamp or runtime exemption: drawing that named hull directly 
 Small, indivisible planted props (including Belmonte’s nine small flower/herb containers, the potted plants,
 planter boxes and bonsai shelf) explicitly
 declare an authored-surface policy in their source owner. They retain their painted plants and containers
-under a hard 12,288-triangle whole-prop budget, with certified visual/shadow variants and aggregation
-disabled. This is not a missing-classification fallback. Bigger props require normal asset preparation;
+under a hard 12,288-triangle whole-prop budget. A complete authored slot table remains on the ordinary
+prop path in both graphics modes, without generated replacement meshes. This is not a missing-classification fallback. Bigger props require normal asset preparation;
 new dense vegetation must use canopy or thin-surface roles. Their UV5 value is 3 and cooked prefix is
 `FoliageAuthored_`; ordinary roles use 0 for rigid, 1 for solid canopy and 2 for thin surfaces.
 Crater Park’s numbered grass/shrub surfaces declare roles at their DSL exporter; painted moss and snow
@@ -71,6 +71,7 @@ remain rigid. Lake shoreline plants, ornamental pier grass, embedded flower buck
 also carry explicit roles independently of their visible paint.
 Any new adapter belongs in the shared owner, with source-geometry regression coverage.
 
+Scenery loaders use `UYorimichiFoliageSubsystem::LoadMesh` before opening a canonical source asset.
 Instanced scenery components use `UYorimichiFoliageSubsystem::NewInstances`. The subsystem also audits
 static components, refuses unknown vegetation and validates its required representations before game
 readiness. New placement mechanisms must not create an independent vegetation renderer. Opaque grass-painted ground and
@@ -88,7 +89,7 @@ Legacy FBX imports log separate import, role/save and collection timings (`MESH 
 cost of bounded package collection can be measured during normal preparation.
 
 Run the ordinary build. Missing/stale outputs rebuild through their owners; there is no production
-prototype flag or missing-output fallback. `Content/FoliageSystem` and its registry belong to the normal
+prototype flag or missing-output fallback. `Content/FoliageSystem`, `Content/FoliageResident` and their registries belong to the normal
 cook and content-retirement policy. Per-source dependency fingerprints include material/texture bytes;
 changing one palette must not silently reuse another revision's canopy colours.
 
@@ -105,7 +106,7 @@ for close trees, under-canopy views, treehouse decks, city streets, dense forest
 For uncapped Metal timings, use the fullscreen play profile: UE 5.8 forces display synchronization in windowed mode even when `r.VSync=0`. Confirm the effective viewport and pacing before interpreting gains.
 
 Compare on/off in the same settled session at fixed resolution and settings. Check shadow/base/depth pass
-times and p95/p99 frame time, not just triangle counts. Inspect patch transitions and clearings in motion.
+times and p95/p99 frame time, not just triangle counts. Inspect authored LOD transitions and clearings in motion.
 An optimization claim requires those native checks; geometry unit tests alone do not establish it.
 
 Find slow aerial views before selecting comparisons. The scout bins actual tree placements in 128 m cells,
@@ -129,7 +130,7 @@ and GPU captures with the results.
 
 The repeatable real-time comparison driver is `scenarios/foliage_performance.py`. Run it against an
 owned normal game with `--port OWN_PORT --take UNIQUE_NAME` from a clean checkout. It verifies the
-project, compiled code identity, gameplay readiness and effective renderer switch, samples off/on/on/off at fixed camera paths, captures game
+project, compiled code identity, gameplay readiness and effective renderer switch and zero inactive mesh residency after each deferred reload, samples off/on/on/off at fixed camera paths, captures game
 screenshots and requests GPU event breakdowns in the owned stdout log. Frame and GPU means/p95/p99,
 raw samples, settings and source revision go under `build/yorimichi/foliage_performance/`. It refuses
 missing GPU timing (including NullRHI) and either fixed-clock mode, restores the active foliage
@@ -156,5 +157,4 @@ exception or manufactured stamp is involved.
 
 The graph/digest/descriptor tests exercise this boundary with stand-in compiled
 libraries. They do not establish native build compatibility or a production timing
-improvement. Native adoption belongs at a whole-caller boundary after the current
-first-game run, preserving completed products and inspecting the normal build plan.
+improvement. Native validation must use the actual preparation library and current saved products.

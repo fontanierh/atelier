@@ -25,7 +25,7 @@
     },
     {
       "Name": "YorimichiFoliagePreparation",
-      "Type": "UncookedOnly",
+      "Type": "Editor",
       "LoadingPhase": "Default"
     }
   ],
