@@ -4,9 +4,9 @@
 #include "FoliageSourceWriter.generated.h"
 class UStaticMesh;
 
-// Receiver-only editor diagnostic: production preparation lives in its own module.
+// Independent editor-only source transport; current validation belongs to the caller.
 UCLASS()
-class YORIMICHI_API UYorimichiFoliageSourceWriter : public UObject
+class YORIMICHIFOLIAGEPREPARATION_API UYorimichiFoliageSourceWriter : public UObject
 {
     GENERATED_BODY()
 public:

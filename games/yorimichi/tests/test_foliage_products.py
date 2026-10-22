@@ -12,7 +12,9 @@ GAME = Path(__file__).resolve().parents[1]
 WORLD = GAME / 'world'
 SCRIPTS = GAME / 'unreal/Scripts'
 PACKAGING = {'data.content', 'data.network', 'unreal.cook', 'unreal.package'}
-ASSEMBLY = PACKAGING | {'unreal.foliage_system'}
+# Preparation waits for importers, then observes actual packages. Source-only
+# perturbations here do not model changed native output bytes (covered separately).
+ASSEMBLY = PACKAGING
 
 
 def test_one_tree_spec_changes_only_its_export_import_and_final_assembly(tmp_path, monkeypatch):

@@ -18,7 +18,8 @@ SCRIPT = GAME/'unreal/Scripts/build_foliage_system.py'
 
 
 @pytest.mark.parametrize('corrupt_hint', [None, 'geometry', 'metadata'])
-def test_partial_source_resumes_only_after_current_validation(tmp_path, monkeypatch, corrupt_hint):
+@pytest.mark.parametrize('module_change', [None, 'Yorimichi', 'YorimichiImport', 'YorimichiFoliagePreparation'])
+def test_partial_source_resumes_only_after_current_validation(tmp_path, monkeypatch, corrupt_hint, module_change):
     spec = importlib.util.spec_from_file_location('unit_resume_foliage_kernel', GAME/'foliage_system.py')
     kernel = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(kernel)
@@ -30,10 +31,10 @@ def test_partial_source_resumes_only_after_current_validation(tmp_path, monkeypa
     for relative in ('unreal/Source/YorimichiImport/FoliageBuilder.cpp',
                      'unreal/Source/YorimichiImport/FoliageBuilder.h',
                      'unreal/Source/YorimichiImport/MeshGeometrySnapshot.cpp',
-                     'unreal/Source/Yorimichi/Dev/FoliageSourceWriter.cpp',
-                     'unreal/Source/Yorimichi/Dev/FoliageSourceWriter.h',
-                     'unreal/Source/Yorimichi/Dev/FoliageGeometryReader.cpp',
-                     'unreal/Source/Yorimichi/Dev/FoliageGeometryReader.h',
+                     'unreal/Source/YorimichiFoliagePreparation/FoliageSourceWriter.cpp',
+                     'unreal/Source/YorimichiFoliagePreparation/FoliageSourceWriter.h',
+                     'unreal/Source/YorimichiFoliagePreparation/FoliageGeometryReader.cpp',
+                     'unreal/Source/YorimichiFoliagePreparation/FoliageGeometryReader.h',
                      'foliage_unit_policy_witness.json',
                      'unreal/Scripts/foliage_material.py', 'unreal/Scripts/foliage_variant_validation.py'):
         path = game/relative
@@ -43,7 +44,8 @@ def test_partial_source_resumes_only_after_current_validation(tmp_path, monkeypa
     support.write_text('fixture material graph')
     out = tmp_path/'build/foliage_system'
     (out.parent/'unreal-modules').mkdir(parents=True)
-    (out.parent/'unreal-modules/Yorimichi.json').write_text('fixture binary')
+    for module in ('Yorimichi', 'YorimichiImport', 'YorimichiFoliagePreparation'):
+        (out.parent/'unreal-modules'/f'{module}.json').write_text('fixture binary')
     sources = ['/Game/Fixture/Mixed_1', '/Game/Fixture/Mixed_2']
     assets = {}
     outputs = {}
@@ -145,16 +147,19 @@ def test_partial_source_resumes_only_after_current_validation(tmp_path, monkeypa
         hint = json.loads(units[0].read_text())
         del hint[corrupt_hint]['patch']
         units[0].write_text(json.dumps(hint))
+    if module_change:
+        (out.parent/'unreal-modules'/f'{module_change}.json').write_text('changed actual compiled binary')
+    hint_miss = bool(corrupt_hint or module_change in ('YorimichiImport', 'YorimichiFoliagePreparation'))
     failure['enabled'] = False
     namespace['main']()
-    expected = 2 if corrupt_hint else 1
+    expected = 2 if hint_miss else 1
     assert exports.count(sources[0]) == builds.count(assets[sources[0]].get_path_name()) == expected
     assert readbacks.count(sources[0]) == 2
     report = json.loads((out/'report.json').read_text())
     assert report == json.loads((content/'Data/foliage_system/registry.json').read_text())
     counts = json.loads((out/'preparation-counts.json').read_text())
     assert len(report['assets']) == 2 and counts['built_variants'] == 0
-    assert counts['unit_hits'] == (0 if corrupt_hint else 1)
+    assert counts['unit_hits'] == (0 if hint_miss else 1)
 
 
 def test_owner_bootstraps_studio_without_installed_atelier(tmp_path):

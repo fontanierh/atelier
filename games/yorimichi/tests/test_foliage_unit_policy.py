@@ -24,7 +24,7 @@ def pair(tmp_path, monkeypatch):
            'bool UYorimichiFoliageSourceWriter::ExportSource(args)\n{\n#if WITH_EDITOR\n    geometry();\n'
            '    auto& Files=stream();\n}\n')
     files = {'games/yorimichi/unreal/Source/YorimichiImport/FoliageBuilder.cpp':old.encode(),
-             'games/yorimichi/unreal/Source/Yorimichi/Dev/FoliageSourceWriter.cpp':new.encode(),
+             'games/yorimichi/unreal/Source/YorimichiFoliagePreparation/FoliageSourceWriter.cpp':new.encode(),
              'games/fixture/current.py':b'raise AssertionError("historical code must never execute")'}
     for name, raw in files.items():
         path=tmp_path/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(raw)
@@ -77,7 +77,7 @@ def test_absent_or_changed_evidence_is_a_miss(pair,change):
 
 @pytest.mark.parametrize('change',['palette','geometry'])
 def test_changed_semantics_refuse_even_if_source_pins_are_updated(pair,change):
-    name='games/yorimichi/unreal/Source/Yorimichi/Dev/FoliageSourceWriter.cpp'
+    name='games/yorimichi/unreal/Source/YorimichiFoliagePreparation/FoliageSourceWriter.cpp'
     raw=pair.files[name].replace(b'return Number(V)',b'return Number(V+1)') if change=='palette' else pair.files[name].replace(b'geometry();',b'changed_geometry();')
     (pair.root/name).write_bytes(raw)
     pair.witness['current'][name]=hashlib.sha256(raw).hexdigest();pair.pin()
@@ -101,8 +101,9 @@ def test_malformed_context_and_witness_are_misses(pair,change):
     assert pair.run() is None
 
 
-def test_both_ordered_policies_include_exact_retained_module_record(pair):
-    raw=json.dumps(dict(module='Yorimichi',digest='a'*64,files={}),indent=2)+'\n'
+@pytest.mark.parametrize('module', ['Yorimichi', 'YorimichiImport', 'YorimichiFoliagePreparation'])
+def test_both_ordered_policies_include_exact_retained_module_record(pair, module):
+    raw=json.dumps(dict(module=module,digest='a'*64,files={}),indent=2)+'\n'
     pair.witness['policies'].append([*pair.witness['policies'][0],
         dict(module_record=raw,sha256=hashlib.sha256(raw.encode()).hexdigest())])
     pair.pin()
@@ -137,7 +138,7 @@ def test_three_independent_policy_histories_are_retained(pair):
 
 def test_exact_unused_slot_prepass_preserves_previously_emitted_samples(pair):
     old_name='games/yorimichi/unreal/Source/YorimichiImport/FoliageBuilder.cpp'
-    new_name='games/yorimichi/unreal/Source/Yorimichi/Dev/FoliageSourceWriter.cpp'
+    new_name='games/yorimichi/unreal/Source/YorimichiFoliagePreparation/FoliageSourceWriter.cpp'
     old_condition='(LeafSlots.Contains(I) || (Classification!=TEXT("material") && Classification!=TEXT("authored")))'
     new_condition='UsedSlots.Contains(I) && (LeafSlots.Contains(I) || (Classification!=TEXT("material") && Classification!=TEXT("authored")))'
     statement='    if ('+old_condition+' && !MaterialColour(Material,Colour)) return false;\n'
@@ -164,4 +165,11 @@ def test_reviewed_startup_runtime_pair_is_pinned_even_without_geometry_changes(p
     pair.witness['current'][member]=hashlib.sha256(raw).hexdigest();pair.pin()
     assert pair.run()==pair.expected
     target.write_bytes(raw+b'changed runtime behavior')
+    assert pair.run() is None
+
+
+def test_unrelated_retained_module_is_not_preparation_history(pair):
+    raw=json.dumps(dict(module='UnrelatedGameplay',digest='a'*64,files={}))
+    pair.witness['policies'] = [[dict(module_record=raw,sha256=hashlib.sha256(raw.encode()).hexdigest())]]
+    pair.pin()
     assert pair.run() is None

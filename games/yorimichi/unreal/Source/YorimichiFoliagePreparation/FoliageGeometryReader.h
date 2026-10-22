@@ -6,10 +6,10 @@
 class UStaticMesh;
 class UMaterialInterface;
 
-// Receiver-only editor transport diagnostic. Source ownership and current
+// Editor-only binary geometry reader. Source ownership and current
 // geometry/material/settings validation remain with the preparation caller.
 UCLASS()
-class YORIMICHI_API UYorimichiFoliageGeometryReader : public UObject
+class YORIMICHIFOLIAGEPREPARATION_API UYorimichiFoliageGeometryReader : public UObject
 {
     GENERATED_BODY()
 public:

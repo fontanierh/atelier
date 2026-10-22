@@ -243,6 +243,7 @@ def saved_variants(mesh, paths, replacements, canopies, row, geometry, key):
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     U.load_module('YorimichiImport')
+    U.load_module('YorimichiFoliagePreparation')
     registry = U.AssetRegistryHelpers.get_asset_registry()
     registry.search_all_assets(synchronous_search=True)
     candidates = sorted(str(asset.package_name) for asset in registry.get_assets_by_path('/Game', recursive=True)
@@ -256,11 +257,12 @@ def main():
                  yori.GAME/'unreal/Source/YorimichiImport/FoliageBuilder.cpp',
                  yori.GAME/'unreal/Source/YorimichiImport/FoliageBuilder.h',
                  yori.GAME/'unreal/Source/YorimichiImport/MeshGeometrySnapshot.cpp',
-                 yori.GAME/'unreal/Source/Yorimichi/Dev/FoliageSourceWriter.cpp',
-                 yori.GAME/'unreal/Source/Yorimichi/Dev/FoliageSourceWriter.h',
-                 yori.GAME/'unreal/Source/Yorimichi/Dev/FoliageGeometryReader.cpp',
-                 yori.GAME/'unreal/Source/Yorimichi/Dev/FoliageGeometryReader.h',
-                 OUT.parent/'unreal-modules/Yorimichi.json',
+                 yori.GAME/'unreal/Source/YorimichiFoliagePreparation/FoliageSourceWriter.cpp',
+                 yori.GAME/'unreal/Source/YorimichiFoliagePreparation/FoliageSourceWriter.h',
+                 yori.GAME/'unreal/Source/YorimichiFoliagePreparation/FoliageGeometryReader.cpp',
+                 yori.GAME/'unreal/Source/YorimichiFoliagePreparation/FoliageGeometryReader.h',
+                 OUT.parent/'unreal-modules/YorimichiFoliagePreparation.json',
+                 OUT.parent/'unreal-modules/YorimichiImport.json',
                  Path(unit_policy.__file__), yori.GAME/'foliage_unit_policy_witness.json',
                  Path(G.__file__), Path(__file__).with_name('foliage_variant_validation.py'), *runtime_files()]:
         algorithm.update(file.read_bytes())

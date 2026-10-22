@@ -158,7 +158,7 @@ def step(ctx):
     from atelier.build import DeferredInputs, Step, UnrealScript
     scripts = GAME / 'unreal/Scripts'
     script = scripts / 'prepare_foliage_residency.py'
-    command = UnrealScript(script, 'FOLIAGE RESIDENCY COMPLETE', modules=('Yorimichi', 'YorimichiImport'),
+    command = UnrealScript(script, 'FOLIAGE RESIDENCY COMPLETE', modules=('YorimichiFoliagePreparation', 'YorimichiImport'),
                            null_rhi=True, memory_gib=10,
                            args=('-ForceDPCVars=r.GenerateMeshDistanceFields=0,r.MeshCardRepresentation=0',))
     command.timeout = 7200
@@ -167,15 +167,15 @@ def step(ctx):
     return Step('unreal.foliage_residency', [command],
                 inputs=[*build_inputs.local_imports(script, (GAME, GAME / 'world', scripts)),
                         GAME / 'foliage_residency_build.py',
-                        GAME / 'unreal/Source/Yorimichi/Dev/FoliageResidencyBuilder.cpp',
-                        GAME / 'unreal/Source/Yorimichi/Dev/FoliageResidencyBuilder.h',
+                        GAME / 'unreal/Source/YorimichiFoliagePreparation/FoliageResidencyBuilder.cpp',
+                        GAME / 'unreal/Source/YorimichiFoliagePreparation/FoliageResidencyBuilder.h',
                         ctx.out / 'foliage_system/report.json', content / 'FoliageSystem',
                         content / 'Data/foliage_system/registry.json',
                         *(ctx.out / 'foliage' / name / 'manifest.json' for name in species()),
                         GAME.parents[1] / 'platform/studio/atelier/mesh_geometry.py'],
                 deferred_inputs=[DeferredInputs('residency-current-packages', dependency_inputs,
                     (content, ctx.out / 'foliage_system/report.json'), support=(GAME / 'foliage_residency_build.py',))],
-                after=['unreal.foliage_system'], needs=unreal_modules.needs(('Yorimichi', 'YorimichiImport')),
+                after=['unreal.foliage_system'], needs=unreal_modules.needs(('YorimichiFoliagePreparation', 'YorimichiImport')),
                 outputs=[content / 'FoliageResident', content / 'Data/foliage_residency/registry.json',
                          ctx.out / 'foliage_residency/report.json'],
                 verify=lambda: verify(content, ctx.out / 'foliage_residency/report.json'), heavy=True,

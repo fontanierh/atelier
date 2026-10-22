@@ -66,7 +66,8 @@ def _calculate(root, witness, *, engine_version, environment, runtime):
             raw = row['module_record'].encode()
             record = json.loads(raw)
             if (not isinstance(record, dict) or set(record) != {'module', 'digest', 'files'}
-                    or record['module'] != 'Yorimichi' or not isinstance(record['files'], dict)
+                    or record['module'] not in ('Yorimichi', 'YorimichiImport', 'YorimichiFoliagePreparation')
+                    or not isinstance(record['files'], dict)
                     or not isinstance(record['digest'], str) or not re.fullmatch('[0-9a-f]{64}', record['digest'])):
                 raise ValueError('Invalid retained module record')
         else:
@@ -83,7 +84,7 @@ def _calculate(root, witness, *, engine_version, environment, runtime):
 def _transport(root):
     """The copied palette and source geometry body must remain byte-identical."""
     old = _source(_member(root, 'games/yorimichi/unreal/Source/YorimichiImport/FoliageBuilder.cpp')).decode()
-    new = _source(_member(root, 'games/yorimichi/unreal/Source/Yorimichi/Dev/FoliageSourceWriter.cpp')).decode()
+    new = _source(_member(root, 'games/yorimichi/unreal/Source/YorimichiFoliagePreparation/FoliageSourceWriter.cpp')).decode()
     start = 'TSharedPtr<FJsonValue> Number'
     palette = old.split(start, 1)[1].split('bool Read(', 1)[0].strip()
     copied = new.split(start, 1)[1].split('}\n#endif', 1)[0].strip()

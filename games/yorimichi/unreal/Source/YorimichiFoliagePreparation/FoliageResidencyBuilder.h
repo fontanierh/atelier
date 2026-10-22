@@ -15,7 +15,7 @@ class UMaterialInterface;
  * A caller must save and verify every output before publishing its receiving registry.
  */
 UCLASS()
-class YORIMICHI_API UYorimichiFoliageResidencyBuilder : public UObject
+class YORIMICHIFOLIAGEPREPARATION_API UYorimichiFoliageResidencyBuilder : public UObject
 {
     GENERATED_BODY()
 public:

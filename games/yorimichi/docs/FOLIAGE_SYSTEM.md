@@ -135,3 +135,19 @@ raw samples, settings and source revision go under `build/yorimichi/foliage_perf
 missing GPU timing (including NullRHI) and either fixed-clock mode, restores the active foliage
 preference (including launcher-selected settings files), CVars, HUD mode and player camera,
 and never treats fixed-step filming as a real-time performance result. Inspect captures before publishing.
+
+The editor-only `YorimichiFoliagePreparation` module owns source transport, binary
+geometry readback and authored-leaf residency compaction. These commands load that
+module and `YorimichiImport`, whose current classification and geometry snapshot
+helpers they still call. Both actual compiled module records enter preparation
+identity; the unrelated gameplay library does not. Runtime and raw imports do not
+link the preparation module.
+
+Preparation waits for every normal importer before observing the complete source
+package and sidecar membership. It keys those actual bytes and consumed native
+libraries instead of the importers' action identities. A source, material, sidecar,
+configuration or consumed library change still requires current native validation.
+Moving the native classes changes their reflected editor module path and requires
+ordinary compilation, descriptor-isolation checks and receiving validation. Old
+unit policies remain historical proof only: an exact independently reviewed
+source-pair witness must bind moved paths before old hints can be looked up.
