@@ -12,6 +12,7 @@ import tempfile
 
 from . import build_products, paths
 from .native_protocol import entry_path, validate_action as validate, inventory_identity
+from .build_hashes import signature
 from .build_cache import atomic_json, copy_file
 from .checkpoint_store import (CheckpointError, HEX, JOURNAL, Store, canonical, context, identity,
                                members, read_json, relative, roots, safe_destination, tracked_paths)
@@ -166,7 +167,7 @@ def load(store, action_key):
     return validate(read_json(path), store, action_key) if path.exists() else None
 
 
-def snapshot(ctx, step, store, *, save_blobs):
+def snapshot(ctx, step, store, *, save_blobs, observations=None):
     declarations, files = [], {}
     sources = source_scopes(tracked_paths())
     for root in declared(ctx, step):
@@ -175,6 +176,8 @@ def snapshot(ctx, step, store, *, save_blobs):
             raise CheckpointError('Task output scope contains tracked source')
         if root.is_symlink():
             raise CheckpointError('Task cache root must not be linked')
+        if observations is not None:
+            observations[str(root)] = list(signature(root.lstat())) if root.exists() else None
         if not root.exists():
             if root in getattr(step, 'checkpoint_outputs', ()):
                 raise CheckpointError('Required checkpoint output root is missing')
@@ -187,6 +190,8 @@ def snapshot(ctx, step, store, *, save_blobs):
                        and not any(parent.is_symlink() for parent in p.parents if parent != root)]
         for path in leaves:
             info = path.lstat()
+            if observations is not None:
+                observations[str(path)] = list(signature(info))
             if stat.S_ISLNK(info.st_mode):
                 target = path.resolve(strict=True)
                 if getattr(ctx, 'unreal_root', None) and target.is_relative_to(ctx.unreal_root):
@@ -208,7 +213,17 @@ def snapshot(ctx, step, store, *, save_blobs):
                 store.put(path, digest)
             files[label(ctx, path)] = dict(kind='file', size=info.st_size, sha256=digest,
                                            mode=stat.S_IMODE(info.st_mode), mtime_ns=info.st_mtime_ns)
+    if observations is not None:
+        check_observations(observations)
     return declarations, files
+
+
+def check_observations(observations):
+    for name, expected in observations.items():
+        path = Path(name)
+        observed = list(signature(path.lstat())) if path.exists() or path.is_symlink() else None
+        if observed != expected:
+            raise CheckpointError('Published output metadata changed; run the normal incremental build')
 
 
 def equivalent(left, right):
@@ -248,7 +263,8 @@ def publish(ctx, step, fingerprint, stamp, *, store=None, done=None, produced=Fa
         stamp['checkpoint_inventory'] = proof
         value = dict(schema=1, game=ctx.game, key=action_key, task=step.name, fingerprint=fingerprint,
                      roots=declarations, files=files, stamp=stamp)
-        second_roots, second_files = snapshot(ctx, step, store, save_blobs=False)
+        observations = {}
+        second_roots, second_files = snapshot(ctx, step, store, save_blobs=False, observations=observations)
         if (declarations != second_roots or not equivalent(files, second_files)
                 or receiving_fingerprint(step, done) != fingerprint
                 or key(ctx, step, fingerprint) != action_key):
@@ -259,6 +275,7 @@ def publish(ctx, step, fingerprint, stamp, *, store=None, done=None, produced=Fa
             raise CheckpointError('Identical task inputs produced different outputs; cache entry disabled')
         validate(value, store, action_key)
         atomic_json(entry_path(store, action_key), value)
+        ctx.__dict__.setdefault('retention_observations', {})[step.name] = observations
     return action_key
 
 
@@ -448,8 +465,12 @@ def certified(ctx, step, fingerprint, stamp):
         return False
     if declared(ctx, step):
         try:
-            declarations, files = snapshot(ctx, step, Store(ctx.game), save_blobs=False)
-            return stamp.get('checkpoint_inventory') == inventory_identity(declarations, files)
+            observations = {}
+            declarations, files = snapshot(ctx, step, Store(ctx.game), save_blobs=False, observations=observations)
+            good = stamp.get('checkpoint_inventory') == inventory_identity(declarations, files)
+            if good:
+                ctx.__dict__.setdefault('retention_observations', {})[step.name] = observations
+            return good
         except (OSError, ValueError, RuntimeError):
             return False
     return True

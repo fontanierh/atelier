@@ -162,7 +162,7 @@ def prepare(ctx, steps, *, echo=print):
         return store
     expected_context, ownership = context(ctx), {s.name for s in steps}
     for key, saved in store.latest():
-        if saved['context'] == expected_context and set(saved.get('steps', ())) <= ownership:
+        if not saved.get('workspace_only') and saved['context'] == expected_context and set(saved.get('steps', ())) <= ownership:
             echo('Restoring a local build checkpoint; source edits are preserved')
             result = _guard(ctx, 'restore', key)
             _publish_restoration(ctx, steps, store, key, result)
@@ -314,7 +314,8 @@ def retain(source=None, games=(), *, echo=print):
             echo(f'{game}: no existing build stamps; no build or cook requested')
             continue
         echo(f'{game}: retaining existing artifacts locally; no build or cook requested')
-        retained[game] = capture_local(source, game)
+        from .checkpoint_manifest import retain as retain_manifest
+        retained[game] = retain_manifest(source, build_root / game, game)
         echo(f'{game}: local checkpoint {retained[game]}')
     return retained
 

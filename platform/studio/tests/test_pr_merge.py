@@ -173,10 +173,13 @@ def test_retain_auto_selects_only_games_with_existing_stamps(tmp_path, monkeypat
         stamps = tmp_path / 'build' / name / 'stamps'
         stamps.mkdir(parents=True); (stamps / 'completed.json').write_text('{}')
     captured = []
-    def capture(source, game):
+    def capture(source, output, game):
+        assert output == source / 'build' / game
         captured.append((source, game))
         return game + '-checkpoint'
-    monkeypatch.setattr(build_checkpoints, 'capture_local', capture)
+    from atelier import checkpoint_manifest
+    monkeypatch.setattr(checkpoint_manifest, 'retain', capture)
+    monkeypatch.setattr(build_checkpoints, 'capture_local', lambda *a, **kw: pytest.fail('merge retention must never launch capture'))
     messages = []
     assert build_checkpoints.retain(tmp_path, echo=messages.append) == {'built': 'built-checkpoint', 'partial': 'partial-checkpoint'}
     assert captured == [(tmp_path, 'built'), (tmp_path, 'partial')]

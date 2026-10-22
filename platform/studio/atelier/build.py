@@ -730,6 +730,17 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, veri
     ctx = Context(game, **({'cook_mode': cook_mode, 'cook_reason': cook_reason} if cook_mode is not None else {}),
                   **({'recover_cook': recover_cook} if recover_cook is not None else {}),
                   **({'cook_memory_gib': cook_memory_gib} if cook_memory_gib is not None else {}))
+    from .checkpoint_manifest import writer
+    with writer(ctx.out):
+        return _prepared_build(ctx, wanted, force=force, touch=touch, echo=echo, verify=verify,
+                               rebuild_reason=rebuild_reason, rebuild_touched=rebuild_touched,
+                               record_cook_recovery=record_cook_recovery, max_heavy_commands=max_heavy_commands)
+
+
+def _prepared_build(ctx, wanted, *, force, touch, echo, verify, rebuild_reason, rebuild_touched,
+                    record_cook_recovery, max_heavy_commands):
+    from .build_snapshot import require_complete
+    game = ctx.game
     ctx.record_cook_recovery = record_cook_recovery
     ctx.rebuild_touched = rebuild_touched
     from . import build_checkpoints
@@ -773,13 +784,18 @@ def _build(ctx, wanted, *, force, touch, echo, index, steps=None, produced=None,
     from .build_cook import validate_force
     validate_force(ctx, force)
     checkpoint = {}
+    completed = False
     try:
         code = _execute_build(ctx, wanted, force=force, touch=touch, echo=echo, index=index,
                               steps=steps, produced=produced, checkpoint=checkpoint,
                               max_heavy_commands=max_heavy_commands)
+        completed = True
     finally:
         # Failure and yield paths must also discard earlier certificates with changed reads.
         invalid = _discard_changed_certificates(ctx, checkpoint, index=index)
+        if completed and checkpoint.get('steps') is not None:
+            from .checkpoint_manifest import finish
+            finish(ctx, checkpoint['steps'])
     if invalid:
         echo('FAILED: products changed after their owner completed: ' + ', '.join(invalid))
         return 1
@@ -881,7 +897,7 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
         echo(f'BUILD YIELDED: {heavy_commands} heavy commands completed; next: {step.name}. '
              'Completed results are saved. Recheck Waiting, then resume the same build command.')
         return 75
-    checkpoint.update(plan=plan, done=done)
+    checkpoint.update(plan=plan, done=done, steps=steps)
     tool_cache = {}
     ctx.support_migration_tools = tool_cache
     def verify_spatial(step, expected):
@@ -955,6 +971,9 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             build_products.feed_results(done, previous.get('products', {}))
             if actions is not None and saved_action is None and task_cache.certified(ctx, step, current, previous):
                 task_cache.publish(ctx, step, current, previous, store=actions.store, done=done)
+            if actions is not None:
+                from .checkpoint_manifest import record as retain_record
+                retain_record(ctx, step, previous, store=actions.store)
             echo(f'{print_} up to date')
             continue
         if getattr(ctx, 'recover_cook', None) is not None and not recovering and step.name != 'unreal.package':
@@ -1036,6 +1055,11 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                     saved = read_stamp(ctx.stamps / (completed_step.name + '.json'))
                     retain_candidates(ctx, completed_step, saved,
                                       fresh=lambda item=completed_step: fingerprint(item, done), echo=echo)
+            if actions is not None:
+                from .checkpoint_manifest import record as retain_record
+                for completed_step in plan:
+                    if completed_step.name in completed:
+                        retain_record(ctx, completed_step, read_stamp(ctx.stamps / (completed_step.name + '.json')), store=actions.store)
             completed_batches.update(completed)
             ctx.checkpoint_changed = True
             ran += len(completed)
@@ -1228,6 +1252,9 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
         build_products.feed_results(done, products)
         from .checkpoint_native_capture import publish as retain_candidates
         retain_candidates(ctx, step, record, fresh=lambda: fingerprint(step, done), echo=echo)
+        if actions is not None:
+            from .checkpoint_manifest import record as retain_record
+            retain_record(ctx, step, record, store=actions.store)
         restored += int(from_cache)
         ran += int(not from_cache)
         if produced is not None and not from_cache:

@@ -240,3 +240,20 @@ Configured games use UE dependency-tracked incremental cooking by default. This 
 source-first rollout without native builds/cooks. Python tests cover matching, transfer integrity and lifecycle
 boundaries; no packaged parity or tenfold speedup is claimed. A cooker may legitimately invalidate its prior
 state; the rebuild budget stops an expensive miss instead of silently authorizing it.
+
+## Retention before merge
+
+Normal builds publish artifacts and certificates as steps complete. Workspace-only outputs,
+including original-path compiler state, are updated in the CAS during the build using verified
+file signatures to reuse unchanged blobs. Completed cooks export their Zen snapshot through the
+ordinary guarded worker before publication. The build finalizes its retention manifest before exit.
+`atelier merge PR --source CHECKOUT` and `atelier cache retain` then check metadata/signatures and
+retain that existing manifest; they never re-hash outputs, walk generated trees, export Zen or launch a capture.
+Restoration still verifies the actual CAS bytes and the receiving recipe's inputs.
+
+A producer built by an older controller needs one ordinary incremental build to publish this evidence.
+Missing, changed or incomplete evidence refuses promptly instead of silently starting a costly scan.
+Build and retain exclude each other on the producer; active builds are a prompt refusal, not a queue.
+The current `workspaces/*.json` staging records in the private checkpoint store are CAS reference roots
+and must be included in any coordinated retirement audit. Finished checkpoint manifests preserve their
+references after build completion. Explicit release/backup workspace capture remains a separate operation.
