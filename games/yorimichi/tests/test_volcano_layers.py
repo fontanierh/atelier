@@ -78,7 +78,7 @@ def test_the_world_import_reads_no_volcano_input(tmp_path):
     world, north = steps['unreal.world'], steps['unreal.north']
     assert 'world.hidamari' not in world.needs and 'world.hidamari.city' in world.needs
     assert not {RECIPE.SCRIPTS / 'mountain_material.py', tmp_path / 'hidamari' / 'north_snow.png'} & set(world.inputs)
-    # The world import purges /Game/Japan and makes the textures the volcano's materials use.
+    # The world import makes the textures the volcano's materials use.
     names = list(steps)
     assert 'unreal.world' in north.needs and names.index('unreal.world') < names.index('unreal.north')
     assert north.commands[0].env == (('HIDAMARI_ASSETS', 'HD_North*'),)
@@ -235,10 +235,11 @@ def reruns(edited, changed, out):
 
 # City projections rerun, but unchanged tile inputs stop there. Tree generator code also imports the edited modules.
 CITY = {'world.hidamari', 'world.hidamari.city', 'world.hidamari.north', 'world.zeppelin', 'world.zeppelin.meshes',
-        'world.terrain', 'world.terrain.meshes', 'world.map', 'world.hidamari.tiles', 'world.hidamari.trees',
+        'world.terrain', 'world.terrain.meshes', 'world.map', 'world.hidamari.trees',
         'world.city_trees', 'world.city_trees.meshes', 'world.gondola_ground_inputs', 'world.gondola_ground',
         'world.gondola_site', 'world.gondola_service', 'unreal.gondola', 'data.stage',
-        'world.gondola_structure_inputs'} | LATER
+        'world.gondola_structure_inputs'} | {f'world.hidamari.tiles.{source}'
+                                          for source in ('HD_Terrain', 'HD_Streets', 'HD_Square')} | LATER
 # The regions and early FarHills producer conservatively read mountains.py and
 # hidamari/layout.py; the main layout remains a cutoff step.
 NORTHERN = {'world.layout', 'world.farhills', 'world.belmonte', 'world.belmonte.textures', 'world.belmonte.meshes', 'world.hippodrome', 'world.hippodrome.meshes',

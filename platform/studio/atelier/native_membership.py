@@ -51,6 +51,37 @@ def retire(editor, previous, names, destination, prefix):
     obsolete = previous-current
     if any(not editor.does_asset_exist(package) for package in obsolete):
         raise ValueError('Prior native membership changed before retirement')
+    return _retire(editor, obsolete)
+
+
+def retire_replaced(editor, replacements):
+    """@cc [owner:fontanierh,label:correctness] retire-completely-replaced-native-parents
+    The caller MUST own and explicitly delegate each old generated parent to its
+    complete validated and saved replacement packages. Every replacement MUST exist
+    before any retirement. Self references, cycles, escapes and external references
+    MUST refuse before deletion. Saved originals outside the declared generated
+    ownership MUST NOT enter this map. A failed deletion MUST prevent publication.
+    """
+    pattern = r'/Game/(?:[A-Za-z0-9_]+/)+[A-Za-z0-9_][A-Za-z0-9_-]*'
+    if not isinstance(replacements, dict) or not replacements:
+        raise ValueError('Native replacement requires explicit parent ownership')
+    all_current = set()
+    for parent, children in replacements.items():
+        if (not isinstance(parent, str) or not re.fullmatch(pattern, parent)
+                or not isinstance(children, (list, tuple)) or not children
+                or any(not isinstance(child, str) or not re.fullmatch(pattern, child) for child in children)
+                or len(set(children)) != len(children)):
+            raise ValueError('Invalid native replacement membership')
+        all_current.update(children)
+    if set(replacements) & all_current:
+        raise ValueError('Native replacement contains a current parent or cycle')
+    if any(not editor.does_asset_exist(child) for child in all_current):
+        raise ValueError('Current native replacements are incomplete')
+    obsolete = {parent for parent in replacements if editor.does_asset_exist(parent)}
+    return _retire(editor, obsolete)
+
+
+def _retire(editor, obsolete):
     # References between retiring packages are allowed: each is removed through
     # the editor API. A live current/foreign package must keep its dependencies.
     for package in sorted(obsolete):

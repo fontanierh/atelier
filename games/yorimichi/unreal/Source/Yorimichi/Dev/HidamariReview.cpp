@@ -41,7 +41,7 @@ bool ValidateHidamari(UWorld* World,AActor* Player,const FString& Directory)
     // hidden inside a stale collider. Probe their actual pawn support separately.
     int32 KitPads=0,KitGroundChecks=0,KitSweeps=0,KitEntranceGroundChecks=0,KitEntranceSweeps=0;
     double MaxKitError=0.;int32 KitCornerChecks=0,PropPads=0;
-    UStaticMeshComponent* Terrain=nullptr;
+    TArray<UStaticMeshComponent*> Terrain;
     UStaticMeshComponent* Park=nullptr;int32 ShoreFootingChecks=0;
     for(TActorIterator<AJapanWorld> It(World);It;++It)
     {
@@ -49,7 +49,7 @@ bool ValidateHidamari(UWorld* World,AActor* Player,const FString& Directory)
         for(auto* Component:Components)
             if(Component->GetStaticMesh())
             {
-                if(Component->GetStaticMesh()->GetName()==TEXT("HD_Terrain")) Terrain=Component;
+                if(Component->ComponentHasTag(TEXT("CitySurface:HD_Terrain"))) Terrain.Add(Component);
                 if(Component->GetStaticMesh()->GetName()==TEXT("HD_Park")) Park=Component;
             }
     }
@@ -58,9 +58,17 @@ bool ValidateHidamari(UWorld* World,AActor* Player,const FString& Directory)
         FHitResult Hit;++KitGroundChecks;
         if(bEntrance) ++KitEntranceGroundChecks;
         FCollisionQueryParams TerrainParams=Params;TerrainParams.bTraceComplex=true;
-        bool Ground=bTerrainOnly
-            ? (Terrain && Terrain->LineTraceComponent(Hit,Q+FVector(0,0,120),Q-FVector(0,0,150),TerrainParams))
-            : World->LineTraceSingleByChannel(Hit,Q+FVector(0,0,120),Q-FVector(0,0,150),ECC_Pawn,Params);
+        bool Ground=false;
+        if(bTerrainOnly)
+        {
+            for(auto* Surface:Terrain)
+            {
+                FHitResult Candidate;
+                if(Surface->LineTraceComponent(Candidate,Q+FVector(0,0,120),Q-FVector(0,0,150),TerrainParams) &&
+                   (!Ground || Candidate.Distance<Hit.Distance)) {Hit=Candidate;Ground=true;}
+            }
+        }
+        else Ground=World->LineTraceSingleByChannel(Hit,Q+FVector(0,0,120),Q-FVector(0,0,150),ECC_Pawn,Params);
         // A declared shore footing replaces excavated terrain under one
         // pavilion corner. Trace its actual park mesh; roofs, props and water
         // cannot satisfy this fallback, and the same 8 cm height limit applies.
