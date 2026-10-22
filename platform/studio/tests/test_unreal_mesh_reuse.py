@@ -868,3 +868,20 @@ def test_owner_membership_transition_requires_original_complete_local_receipt(sc
     assert second.counts['reused_local'] == second.counts['reused_candidate'] == 0
     if history == 'donor':
         assert not second.compatible and not scene.scans
+
+
+def test_source_discovery_runtime_changes_leave_raw_and_receipt_owner_policy_unchanged(scene, monkeypatch):
+    from atelier import native_protocol, build_cache
+    assert Path(mesh_reuse.__file__).resolve() in native_protocol.runtime_files()
+    assert 'mesh_reuse.py' not in build_cache.TOOL_SUPPORT
+    make = validation_scene(scene, monkeypatch)
+    owner = paths.REPO/'owner.py'
+    runtime = paths.REPO/'history_runtime.py'
+    owner.write_text('import history_runtime\ndef finish(mesh): return mesh\n')
+    runtime.write_text('LOOKUP = 1\n')
+    monkeypatch.setattr(native,'runtime_files',lambda:(runtime,))
+    first = make(owner_script=owner,owner_roots=(paths.REPO,))
+    runtime.write_text('LOOKUP = 2\n')
+    current = make(owner_script=owner,owner_roots=(paths.REPO,))
+    assert 'history_runtime.py' not in first.owner_sources
+    assert current.policy == first.policy and current.receipts.header == first.receipts.header
