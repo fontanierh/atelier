@@ -25,6 +25,17 @@ helper['import_mesh'].__globals__['PLACEHOLDER'] = OUT / 'board/SM_SkateWheel.fb
 E = unreal.EditorAssetLibrary
 AT = unreal.AssetToolsHelpers.get_asset_tools()
 MEL = unreal.MaterialEditingLibrary
+def disable_import_popups():
+    """@cc [owner:fontanierh,label:correctness] unattended-pier-import-keeps-diagnostics
+    Unattended FBX import MUST retain warning/error logs without opening a Slate popup.
+    Disabling the popup MUST NOT bypass geometry, material, save or collision validation.
+    """
+    unreal.load_module('MessageLog')
+    unreal.SystemLibrary.execute_console_command(None, 'MessageLog.DisablePopup 1')
+    assert unreal.SystemLibrary.get_console_variable_bool_value('MessageLog.DisablePopup'), 'FBX popup suppression unavailable'
+
+
+disable_import_popups()
 unreal.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX 0')
 
 
