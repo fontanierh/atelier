@@ -33,6 +33,14 @@ def test_only_the_three_delegated_parent_packages_are_excluded():
     assert P.excluded_packages({P.CATALOG:old[P.CATALOG]}, {P.CATALOG:current[P.CATALOG]})
 
 
+def test_importer_and_world_handoff_preserves_the_shared_generator_catalogue():
+    old, current = sources()
+    # The unused purge catalogue is shared by forest and foliage source generators.
+    # Parent delegation belongs to native importer dispatch and explicit retirement.
+    current[P.CATALOG] = old[P.CATALOG]
+    assert P.excluded_packages(old, current) == tuple('/Game/Japan/Assets/'+name for name in P.PARENTS)
+
+
 @pytest.mark.parametrize('change', ['geometry','selection','extra_skip','wrong_target','wrong_position',
                                   'foreign_member','missing_member','syntax','unchanged','reversed'])
 def test_any_other_owner_or_membership_change_refuses(change):

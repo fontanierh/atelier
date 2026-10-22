@@ -20,7 +20,8 @@ bool JapanCityPieces::Read(const TSharedPtr<FJsonObject>& Manifest,TMap<FString,
     TSet<FString> Names;
     for (const auto& Pair:(*Sources)->Values)
     {
-        if (!IsParent(Pair.Key) || !Pair.Value || Pair.Value->Type!=EJson::Object) return false;
+        const FString ParentName(Pair.Key);
+        if (!IsParent(ParentName) || !Pair.Value || Pair.Value->Type!=EJson::Object) return false;
         const auto Source=Pair.Value->AsObject();
         double Expected=0.,ExpectedHulls=0.;
         const TArray<TSharedPtr<FJsonValue>>* Tiles=nullptr;
@@ -29,10 +30,10 @@ bool JapanCityPieces::Read(const TSharedPtr<FJsonObject>& Manifest,TMap<FString,
             !Source->TryGetNumberField(TEXT("source_collision_hulls"),ExpectedHulls) || !FMath::IsFinite(ExpectedHulls) || ExpectedHulls<0. || ExpectedHulls>MAX_int32 ||
             FMath::FloorToDouble(ExpectedHulls)!=ExpectedHulls ||
             !Source->TryGetArrayField(TEXT("tiles"),Tiles) || Tiles->IsEmpty()) return false;
-        const FRegexPattern Pattern(TEXT("^")+Pair.Key+
+        const FRegexPattern Pattern(TEXT("^")+ParentName+
             TEXT("_cell_(?:0|-?[1-9][0-9]*)_(?:0|-?[1-9][0-9]*)(?:_Piece[0-3]{1,16})?$"));
         double Total=0.,Hulls=0.;int32 HullOwners=0;
-        auto& Paths=Pending.Add(Pair.Key);
+        auto& Paths=Pending.Add(ParentName);
         for (const auto& Value:*Tiles)
         {
             if (!Value || Value->Type!=EJson::Object) return false;
