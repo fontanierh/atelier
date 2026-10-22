@@ -93,3 +93,11 @@ metadata and exact deletion inventory outside the collected store, recompute ret
 exclusion, and refuse changed identities or new references before deleting only authorized obsolete data.
 Metadata/blob/workspace removal and observed free-space gain MUST be reported separately: APFS clones
 can retain underlying blocks after one pathname is removed. Logical sizes MUST NOT imply physical reclaim.
+
+@cc [owner:fontanierh,label:correctness;performance] owned-material-mesh-imports
+A static mesh importer that binds a complete authored material table MUST use the shared
+geometry-only Interchange path: no generated placeholder materials/textures and no temporary
+mesh rename. Source slot names/order and actual geometry options MUST remain significant.
+Current native source, role, material, collision and LOD validation MUST still precede reuse
+finalization. Failure to import the exact requested object or retire obsolete owned scratch
+packages MUST fail the owner, never publish a successful import report.
