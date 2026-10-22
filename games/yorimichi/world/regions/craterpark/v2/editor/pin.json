@@ -1,6 +1,6 @@
 {
   "schema": "craterpark-editor-pin/1",
-  "pieces_sha256": "43f59da43c9d87ec6f3ac855e0737ad26caba074bc452bbb4efbff949c8a6dbb",
+  "pieces_sha256": "31523455a6a14d60b8cacee7d04e338f935b38afe37144d1cb9b3747d0ae989a",
   "source": "Crater Park owner editor, pieces.js; re-pinned by tools/ship_craterpark_editor.py",
   "schema_version": "craterpark-editor/1"
 }

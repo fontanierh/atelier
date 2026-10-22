@@ -735,7 +735,8 @@
        83
       ],
       "h": 4.9,
-      "R": 4.55
+      "R": 4.55,
+      "end_blend_m": 1.6
      },
      {
       "a": [
@@ -747,7 +748,22 @@
        -82.3
       ],
       "h": 4.9,
-      "R": 4.55
+      "R": 4.55,
+      "end_blend_m": 1.6
+     },
+     {
+      "a": [
+       0,
+       -20
+      ],
+      "b": [
+       0,
+       20
+      ],
+      "h": 4.9,
+      "R": 4.55,
+      "boost": 1,
+      "end_blend_m": 1.6
      }
     ],
     "boost": 1
@@ -4030,7 +4046,9 @@
    "name": "Mega air landing",
    "line": "L2",
    "attach": null,
-   "next": [],
+   "next": [
+    "p312"
+   ],
    "heading": -3.0000000000005684,
    "slope": 0,
    "x": 1086.0628460195544,
@@ -4058,6 +4076,39 @@
     },
     "deck": 1.5,
     "dig": true
+   }
+  },
+  {
+   "id": "p312",
+   "type": "kicker",
+   "name": "into the orange last section",
+   "line": "L2",
+   "attach": "p311",
+   "next": [
+    "p56"
+   ],
+   "x": 1240.02,
+   "y": -46.89,
+   "z": 899.16,
+   "heading": -3,
+   "slope": 0,
+   "params": {
+    "kick_R": 40,
+    "lip_deg": 35,
+    "lip_len": 2,
+    "run_in": 0,
+    "width": 26,
+    "wl": {
+     "h": 1.5,
+     "R": 4
+    },
+    "wr": {
+     "h": 1.5,
+     "R": 4
+    },
+    "deck": 1.5,
+    "lift": 0,
+    "dig": false
    }
   }
  ],

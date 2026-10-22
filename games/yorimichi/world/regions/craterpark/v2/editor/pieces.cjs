@@ -795,19 +795,28 @@
   }
   /* a spine in a pool bowl: { a: [u, v], b: [u, v], h, R } (local, like the outline): two transitions back to back along a-b,
      with a flat 0.6 m coping top and rounded ends (an end that stands free in the bowl rides like a hip) */
-  function spineMesh(M, b, sp, fAt, rideC, topC) {
+  function spineMesh(M, b, sp, fAt, rideC, topC, wallR, wallH) {
     if (!Array.isArray(sp.a) || !Array.isArray(sp.b)) return;
     const h = b.pose.h * D2R, ch = Math.cos(h), sh = Math.sin(h), W = (u, v) => [b.pose.x + u * ch - v * sh, b.pose.z + u * sh + v * ch];
     const A = W(...sp.a), B = W(...sp.b), H = Math.max(0.5, num(sp.h, 6)), R = Math.max(0.5, num(sp.R, 6)), c = 0.3;
     const hd = Math.atan2(B[1] - A[1], B[0] - A[0]), N = 14, tmax = H >= R ? Math.PI / 2 : Math.acos(1 - H / R), c0 = R - R * Math.sin(tmax);
+    // A spine that ends at the bowl wall runs into it: extend that cap the blend length
+    // past its b end, so its free vertical face is buried in the wall instead of
+    // standing a metre short of it. The cap top is held at the wall coping height.
+    const blend = Math.max(0, num(sp.end_blend_m, 1.6)), far = Math.hypot(B[0] - b.pose.x, B[1] - b.pose.z);
+    const into = !!(wallR && wallH && blend && far > wallR - 10);
+    const ax = Math.cos(hd), az = Math.sin(hd);
+    const Bc = into ? [B[0] + ax * blend, B[1] + az * blend] : B;
     const dirs = [];        // around the capsule: the B end (-90°..90° off the axis), then the A end (90°..270°)
-    for (let j = 0; j <= N; j++) dirs.push([B, hd - Math.PI / 2 + Math.PI * j / N]);
-    for (let j = 0; j <= N; j++) dirs.push([A, hd + Math.PI / 2 + Math.PI * j / N]);
+    for (let j = 0; j <= N; j++) dirs.push([Bc, hd - Math.PI / 2 + Math.PI * j / N, into]);
+    for (let j = 0; j <= N; j++) dirs.push([A, hd + Math.PI / 2 + Math.PI * j / N, false]);
     const NA = 10, rings = [[c, H, 0, 1, topC]];        // [offset from the axis, height above the floor, nOut, nUp, colour]
     if (H > R) rings.push([c, H, 1, 0, rideC], [c, R, 1, 0, rideC]); else rings.push([c + c0, H, Math.sin(tmax), Math.cos(tmax), rideC]);
     for (let k = 1; k <= NA; k++) { const t = tmax * (1 - k / NA); rings.push([c + R - R * Math.sin(t), R - R * Math.cos(t), Math.sin(t), Math.cos(t), rideC]); }
-    const row = ([off, y, no, nu, col]) => dirs.map(([P0, a]) => { const x = P0[0] + Math.cos(a) * off, z = P0[1] + Math.sin(a) * off;
-      M.pos.push(x, fAt(x, z) + y, z); M.nor.push(Math.cos(a) * no, nu, Math.sin(a) * no); M.col.push(...col); return M.pos.length / 3 - 1; });
+    rings[rings.length - 1][1] -= 0.003;                  // bury the foot: its rim on the floor made a T-junction
+    const row = ([off, y, no, nu, col]) => dirs.map(([P0, a, wallEnd]) => { const x = P0[0] + Math.cos(a) * off, z = P0[1] + Math.sin(a) * off;
+      const yy = wallEnd ? Math.min(y, wallH - 0.02) : y;
+      M.pos.push(x, fAt(x, z) + yy, z); M.nor.push(Math.cos(a) * no, nu, Math.sin(a) * no); M.col.push(...col); return M.pos.length / 3 - 1; });
     const top = row(rings[0]), n = dirs.length;
     for (const t of triangulate(dirs.map(([P0, a]) => [P0[0] + Math.cos(a) * c, P0[1] + Math.sin(a) * c]))) M.idx.push(top[t[0]], top[t[2]], top[t[1]]);
     let prev = row(rings[1]);
@@ -818,6 +827,7 @@
   function bowlMesh(p, b, M, deckC, opts) {
     const poly = bowlOutlineWorld(p, b);
     if (poly.length < 3) return M;
+    const rout = Math.max(...poly.map(q => Math.hypot(q[0] - b.pose.x, q[1] - b.pose.z)));
     const n = poly.length, y0 = b.pose.y, mouthEdges = b.info.mouthEdges || [], ME = new Set(mouthEdges);
     const dirs = offsetDirs(poly, mouthEdges);
     // per-vertex wall: a flow bowl blends from the runway's walls in the necks to the bowl wall around the round part
@@ -864,11 +874,11 @@
       const h = b.pose.h * D2R, ch = Math.cos(h), sh = Math.sin(h);
       const fAt = (x, z) => { const dx = x - b.pose.x, dz = z - b.pose.z; return y0 - dep(dx * ch + dz * sh, -dx * sh + dz * ch); };
       heightFloor(M, floor.map((q, i) => [q[0], q[1], y0 - (wall[i].dep || 0)]), fAt, rideC);
-      for (const sp of getp(p, 'spines') || []) spineMesh(M, b, sp, fAt, rideC, deckC);
+      for (const sp of getp(p, 'spines') || []) spineMesh(M, b, sp, fAt, rideC, deckC, rout, H);
     } else {
       const ids = floor.map(q => { M.pos.push(q[0], y0, q[1]); M.nor.push(0, 1, 0); M.col.push(...rideC); return M.pos.length / 3 - 1; });
       for (const t of triangulate(floor)) M.idx.push(ids[t[0]], ids[t[2]], ids[t[1]]);   // triangulate() is CCW in (x, z) for either outline direction: this faces up
-      if (!b.info.through) for (const sp of getp(p, 'spines') || []) spineMesh(M, b, sp, () => y0, rideC, deckC);
+      if (!b.info.through) for (const sp of getp(p, 'spines') || []) spineMesh(M, b, sp, () => y0, rideC, deckC, rout, H);
     }
     // outer skirt: a flow bowl has the runways' 0.8 m underside (flush with them); an in-ground bowl goes below the cut ground (floor − 3 m)
     const thin = !!b.info.through;
