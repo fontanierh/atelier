@@ -22,7 +22,7 @@
     "games/yorimichi/unreal/Source/Yorimichi/Dev/FoliageSourceWriter.cpp": "f7b5c26347b947806fd470ac2e47fe1dff8edf2d2ad842ef15d2452cf7f19f86",
     "games/yorimichi/unreal/Source/Yorimichi/Dev/FoliageSourceWriter.h": "4cc6586a01573a4c99d3b124dda689c4b2a2258a06884bb20d1c532694f8197c",
     "games/yorimichi/unreal/Source/Yorimichi/FerryService.cpp": "f799ad8667ccb913a35265e1a473f6016d934d863a69d96026ef315e1a9459ec",
-    "games/yorimichi/unreal/Source/Yorimichi/FoliageSystem.cpp": "5b3442e917172d27aea5ce696248efe9bdf1d4d900de6fe0c3a0b2c4e963069b",
+    "games/yorimichi/unreal/Source/Yorimichi/FoliageSystem.cpp": "e9e12ef7b3334cdf121206f2137c270bf0b79e9040033f1d9c52221b72102707",
     "games/yorimichi/unreal/Source/Yorimichi/FoliageSystem.h": "275b59c9011a91ed3bdc6ee6814e7c7afd426d10debe51567825743c7eb037b4",
     "games/yorimichi/unreal/Source/Yorimichi/GondolaService.cpp": "46e86bb34de6a67060313099a1e28ed18e5ff9e68fa8272d281d3cb0e167ea7a",
     "games/yorimichi/unreal/Source/Yorimichi/HidamariStable.cpp": "3083091601846abdd8a75035f80fade8f561ae2e1954651c65c20049f4075b27",
@@ -120,14 +120,14 @@
         "sha256": "16ba3c53fb27cd5da20e69d302d4cb1c350e5a894be9cd33404457161a2b75a7"
       },
       {
-        "blob": "1d3fcba084b3bad53f7a1b0c9169fbd8bd96a96e",
+        "blob": "7b461ea5895b6f64fd7f0c242859251d7772e6a2",
         "path": "games/yorimichi/foliage_unit_policy.py",
-        "sha256": "bcfeb096eb4544b41563b062d1c8fba881883b8bbc9a035c5dffa165806926c2"
+        "sha256": "82e961acaf185a2599efca6ef112f6fea74ed16202221865a22df40b16173a71"
       },
       {
-        "blob": "f62c03867e8878cb58fa1f2d16823ebff9a677d8",
+        "blob": "ea104057d32f346ed5b82a16a7fd6d9787f1e899",
         "path": "games/yorimichi/foliage_unit_policy_witness.json",
-        "sha256": "27af48c914ab0788eb24c85640e2576e1d2e6ecd0418db79f2c4820822032e3e"
+        "sha256": "e710a8c3af2d774b0a931ae27bfdc88a86aa79cb49dc6141188c10a78b33bd56"
       },
       {
         "blob": "5e700ab2aaabe6e510fd2834473e17f2b480ec14",
