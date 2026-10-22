@@ -135,7 +135,7 @@ def test_real_importer_retires_only_after_complete_current_native_validation(tmp
     namespace = dict(yori=NS(GAME=tmp_path / 'game'), ROOT=tmp_path, unreal=unreal, os=os, json=json,
                      hashlib=hashlib, import_mesh=imported, owned_tiles=P.owned_tiles, obsolete_assets=P.obsolete_assets,
                      production_groups=P.production_groups, native_bounds=P.native_bounds,
-                     material_paths=P.material_paths, protected_files=lambda root: {},
+                     piece_material_paths=P.piece_material_paths, protected_files=lambda root: {},
                      collision_matches=lambda *args: True,
                      native_membership=native_membership)
     exec(compile(ast.Module(body=[main], type_ignores=[]), str(script), 'exec'), namespace)
@@ -167,7 +167,8 @@ def production_manifest():
     for source in P.SOURCES:
         sources[source] = dict(source_triangles=2, source_collision_hulls=1,
             source_collision_vertices=[[[0.,0.,0.],[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]]],
-            source_material_slots=['HDS_road','HDS_stone'], source_bounds=dict(min=[0,0,0],max=[1,1,1]),
+            source_material_slots=['HarborWood'] if source == 'HD_Harbor' else ['HDS_road','HDS_stone'],
+            source_bounds=dict(min=[0,0,0],max=[1,1,1]),
             tiles=[dict(name=source+'_cell_0_0',triangles=1,collision_hulls=1,min=[0,0,0],max=[1,1,1]),
                    dict(name=source+'_cell_0_1',triangles=1,collision_hulls=0,min=[0,0,0],max=[1,1,1])])
     return dict(version=2,complete=True,tag='v1_128m',cell_metres=128,triangle_limit=32768,sources=sources)
@@ -180,6 +181,12 @@ def test_complete_piece_union_replaces_all_parents_without_parent_paths():
     assert all(p['asset'].startswith(ROOT+'/') for pieces in groups.values() for p in pieces)
     assert P.material_paths(['HDS_road','HDS_stone']) == {
         'HDS_road':'/Game/Japan/Materials/MI_Road', 'HDS_stone':'/Game/Japan/Hidamari/Materials/MI_HD_stone'}
+    assert P.piece_material_paths('HD_Harbor', ['HarborWood']) == {'HarborWood':'/Game/Japan/Materials/M_Harbor'}
+
+
+@pytest.mark.parametrize('slots', [[], ['One', 'Two'], [''], [None]])
+def test_harbor_material_cannot_be_widened_by_manifest(slots):
+    with pytest.raises(ValueError): P.piece_material_paths('HD_Harbor', slots)
 
 
 @pytest.mark.parametrize('bad', ['missing','sum','budget','duplicate','hull','hull_vertices','slots','bounds'])
@@ -267,12 +274,12 @@ def test_assembly_never_publishes_without_every_current_fbx(tmp_path):
     assert not (tmp_path/'manifest.json').exists() and old.read_bytes()==b'old'
 
 
-@pytest.mark.parametrize('source', ['HD_CivicGardens', 'HD_Park'])
+@pytest.mark.parametrize('source', ['HD_CivicGardens', 'HD_Park', 'HD_Harbor'])
 def test_added_family_is_mandatory_and_its_parent_sidecars_must_retire(tmp_path, source):
     manifest = production_manifest()
     assert source in P.production_groups(manifest)
     del manifest['sources'][source]
-    with pytest.raises(ValueError, match='all five'):
+    with pytest.raises(ValueError, match='all six'):
         P.production_groups(manifest)
     root = tmp_path/'Japan/Assets'
     root.mkdir(parents=True)

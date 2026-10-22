@@ -38,11 +38,13 @@ def verify_lods(target,screen_sizes,meshes,impostor=None,bark='Bark',interface=N
     return {'vertices':[meshes.get_number_verts(target,i) for i in range(count)],
             'screen_sizes':actual,'materials_by_lod':palettes,'all_slots_blend':True}
 
-def apply_lods(target, data, output, meshes, *, seed, folder, interface=None):
+def apply_lods(target, data, output, meshes, *, seed, folder, interface=None, reuse_validator=None):
     """@cc [owner:fontanierh,label:performance] preserve-unchanged-lod-source-packages
     Current material bindings MUST still be applied and validated. An unchanged binding
     MUST NOT dirty its source LOD package, and clean source packages MUST NOT be forced
     through a save. Target LOD assembly and its current validation MUST still run.
+    A task-supplied reuse predicate MUST accompany every source import so the base
+    and LODs share one receipt policy and pending evidence packet.
     """
     editor = U.EditorAssetLibrary
     name = target.get_name()
@@ -51,7 +53,8 @@ def apply_lods(target, data, output, meshes, *, seed, folder, interface=None):
     original_size = sum((getattr(bounds.max, a) - getattr(bounds.min, a)) ** 2 for a in ('x', 'y', 'z')) ** .5
     for level in range(1, len(data['screen_sizes'])):
         lod_name = f'{name}_LOD{level}'
-        source = import_mesh(output / (lod_name + '.fbx'), folder, lod_name, seed=seed, fresh_slots=True)
+        source = import_mesh(output / (lod_name + '.fbx'), folder, lod_name, seed=seed, fresh_slots=True,
+                             reuse_validator=reuse_validator)
         bounds = source.get_bounding_box()
         size = sum((getattr(bounds.max, a) - getattr(bounds.min, a)) ** 2 for a in ('x', 'y', 'z')) ** .5
         assert original_size > 0 and .8 <= size / original_size <= 1.15, (lod_name, 'LOD bounds differ', size, original_size)

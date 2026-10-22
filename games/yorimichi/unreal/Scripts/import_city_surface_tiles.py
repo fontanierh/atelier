@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from import_village import import_mesh
 from atelier import native_membership
 from city_tile_products import (obsolete_assets, owned_tiles, production_groups, native_bounds,
-                                material_paths, collision_matches, protected_files)
+                                piece_material_paths, collision_matches, protected_files)
 
 
 def main():
@@ -42,7 +42,7 @@ def main():
         # Material assets have their own world owner. Opening a whole render
         # parent just to discover these bindings defeats bounded preparation.
         slots = {slot: unreal.EditorAssetLibrary.load_asset(path)
-                 for slot, path in material_paths(source['source_material_slots']).items()}
+                 for slot, path in piece_material_paths(name, source['source_material_slots']).items()}
         assert slots and all(slots.values()), (name, 'production materials')
         material = next(iter(slots.values()))
         imported = []

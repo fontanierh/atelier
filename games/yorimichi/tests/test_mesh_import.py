@@ -516,3 +516,85 @@ def test_actual_nanite_drift_cannot_hide_behind_correct_stored_import_options(im
     with pytest.raises(RuntimeError, match='declared options'):
         p.module.import_mesh(p.source, '/Game/Owned', 'Mesh')
     assert events == ['imported']
+
+
+@pytest.mark.parametrize('hit', [False, True])
+def test_owner_reset_runs_only_between_admission_miss_and_raw_import(importer, monkeypatch, hit):
+    p = importer
+    mesh = p.module.import_mesh(p.source, '/Game/Owned', 'Mesh')
+    events = []
+    reuse = SimpleNamespace(imported=lambda name: events.append('imported'),
+                            defer_validated=lambda name: events.append('pending'))
+    def admit(*args, **kwargs):
+        events.append('admit')
+        return (mesh if hit else None), reuse
+    monkeypatch.setattr(p.module, 'common_fbx_mesh', admit)
+    original = p.module._source_mesh
+    def raw(*args):
+        events.append('raw')
+        return original(*args)
+    monkeypatch.setattr(p.module, '_source_mesh', raw)
+    result = p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', before_import=lambda: events.append('reset'))
+    assert result is mesh
+    assert events == (['admit', 'pending'] if hit else ['admit', 'reset', 'raw', 'imported', 'pending'])
+
+
+def test_failed_owner_preparation_never_imports_or_defers_a_receipt(importer, monkeypatch):
+    p = importer
+    events = []
+    reuse = SimpleNamespace(imported=events.append, defer_validated=events.append)
+    monkeypatch.setattr(p.module, 'common_fbx_mesh', lambda *a, **k: (None, reuse))
+    def refuse():
+        raise RuntimeError('Owner preparation refused')
+    with pytest.raises(RuntimeError, match='Owner preparation refused'):
+        p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', before_import=refuse)
+    assert p.calls == [] and events == []
+
+
+@pytest.mark.parametrize('accepts', [False, True])
+def test_owner_requirement_participates_in_current_native_admission(importer, monkeypatch, accepts):
+    p = importer
+    mesh = p.module.import_mesh(p.source, '/Game/Owned', 'Mesh')
+    p.calls.clear()
+    reads = []
+    def requirement(value):
+        assert value is mesh
+        reads.append('current-owner-check')
+        return accepts
+    def admit(*args, **kwargs):
+        assert kwargs['validation_functions'] == ('legacy_options_match', '_reuse_matches')
+        return (mesh if kwargs['validator'](mesh) else None), None
+    monkeypatch.setattr(p.module, 'common_fbx_mesh', admit)
+    p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', reuse_validator=requirement)
+    assert reads == ['current-owner-check']
+    assert bool(p.calls) is not accepts
+
+
+def test_base_and_lod_share_the_real_common_pending_receipt_packet(importer, monkeypatch, tmp_path):
+    from atelier import mesh_reuse, native_candidates, unreal_mesh_reuse as native
+    p = importer
+    p.source.write_bytes(b'base source')
+    lod = tmp_path/'Mesh_LOD1.fbx'
+    lod.write_bytes(b'LOD source')
+    ctx = SimpleNamespace(out=tmp_path, uproject=tmp_path/'unreal/Game.uproject', game='fixture')
+    current = {'engine': 'fixture'}
+    monkeypatch.setattr(native, 'native_context', lambda _: ctx)
+    monkeypatch.setattr(native, 'context', lambda _: current)
+    monkeypatch.setattr(native_candidates, 'load_all', lambda *args: [])
+    monkeypatch.setattr(native, '_COMMON_FBX', {})
+    monkeypatch.setattr(native, 'imported_source_matches', lambda *args: True)
+    p.unreal.load_asset = p.assets.get
+    p.unreal.EditorLoadingAndSavingUtils = SimpleNamespace(get_dirty_content_packages=lambda: [])
+    owner = Path(__file__).parents[1]/'unreal/Scripts/import_foliage.py'
+    task = 'unreal.foliage.Fixture'
+    nonce = 'a'*24
+    for key,value in dict(ATELIER_BUILD_TASK=task, ATELIER_BUILD_GAME='fixture',
+                          ATELIER_BUILD_SCRIPT=str(owner.resolve()), ATELIER_MESH_REUSE_NONCE=nonce).items():
+        monkeypatch.setenv(key,value)
+    predicate = lambda mesh: True
+    p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', reuse_validator=predicate)
+    p.module.import_mesh(lod, '/Game/Owned', 'Mesh_LOD1', reuse_validator=predicate)
+    packet = json.loads(mesh_reuse.pending_path(ctx,task,nonce).read_text())
+    assert len(native._COMMON_FBX) == 1
+    assert set(packet['entries']) == {'/Game/Owned/Mesh','/Game/Owned/Mesh_LOD1'}
+    assert packet['counts']['imported'] == 2
