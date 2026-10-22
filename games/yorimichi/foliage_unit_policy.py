@@ -6,7 +6,7 @@ import re
 import subprocess
 
 
-WITNESS_SHA256 = '7961fb2a001bcf2d24e317f7824019822c42686af4600c0432f1d02ca1d78c5f'
+WITNESS_SHA256 = '5df5da7b5a5f2e281be04d77085708dea747c2888977107eecf15325ddead904'
 MAX_SOURCE = 8 * 1024 * 1024
 USED_SLOT_PREPASS = '    // Imported meshes can retain unused seed-material slots. They still belong\n    // in the slot table, but no exported corner samples their palette.\n    TSet<int32> UsedSlots;\n    for (const FTriangleID Triangle : Description.Triangles().GetElementIDs())\n    {\n        const FName Name=SlotNames[Description.GetTrianglePolygonGroup(Triangle)];\n        int32 Used=Source->GetMaterialIndex(Name);\n        if (Used==INDEX_NONE)\n            for (int32 I=0;I<Source->GetStaticMaterials().Num();++I)\n                if (Source->GetStaticMaterials()[I].ImportedMaterialSlotName==Name) { Used=I;break; }\n        if (!Source->GetStaticMaterials().IsValidIndex(Used)) return false;\n        UsedSlots.Add(Used);\n    }\n'
 
