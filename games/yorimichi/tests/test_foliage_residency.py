@@ -18,6 +18,28 @@ def test_authored_trunk_uses_exact_unreal_endpoints_and_radius():
     assert R.trunk_bounds(None) == []
 
 
+def test_authored_leaf_publication_preserves_other_owners_and_disables_opaque_patch():
+    old = dict(source_triangles=100, rigid_triangles=30, aggregate=True, coverage=[['opaque']], rigid='unchanged')
+    result = dict(leaf_reducer='actual installed reducer', source_leaf_triangles=70, triangles=[70, 35, 18, 7])
+    row = R.authored_leaf_row(old, result)
+    assert row['rigid'] == 'unchanged' and row['aggregate'] is False and row['coverage'] == []
+    assert old['aggregate'] is True and old['coverage'] == [['opaque']]
+
+
+@pytest.mark.parametrize('damage', ['missing-reducer', 'wrong-source', 'bool-count', 'empty-level', 'increasing', 'missing-level'])
+def test_invalid_authored_leaf_lod_provenance_refuses(damage):
+    old = dict(source_triangles=100, rigid_triangles=30)
+    result = dict(leaf_reducer='actual installed reducer', source_leaf_triangles=70, triangles=[70, 35, 18, 7])
+    if damage == 'missing-reducer': result.pop('leaf_reducer')
+    elif damage == 'wrong-source': result['source_leaf_triangles'] = 71
+    elif damage == 'bool-count': result['source_leaf_triangles'] = True
+    elif damage == 'empty-level': result['triangles'][-1] = 0
+    elif damage == 'increasing': result['triangles'] = [70, 30, 40, 7]
+    else: result['triangles'].pop()
+    with pytest.raises(ValueError):
+        R.authored_leaf_row(old, result)
+
+
 @pytest.mark.parametrize('values', [[], [1] * 6, [0, 0, 0, 0, 0, 0, 1],
     [True, 0, 0, 0, 0, 0, 1], [1, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, float('inf'), 1]])
 def test_invalid_authored_collision_refuses(values):
@@ -212,18 +234,20 @@ def test_owner_skips_old_authored_rows_before_classifier_or_derived_loads(tmp_pa
         assert mesh is not authored
         classified.append(mesh); return [], 'roles'
     result = dict(rigid='', rigid_triangles=0, rigid_lod_triangles=[], optimized=R.ROOT+'/Bush_Canopy',
-                  shadow=R.ROOT+'/Bush_Shadow', triangles=[100]*4, shadow_triangles=100)
+                  shadow=R.ROOT+'/Bush_Shadow', triangles=[100]*4, shadow_triangles=100,
+                  leaf_reducer='native test reducer', source_leaf_triangles=100)
     def compact(*args):
         compacted.append(args); return json.dumps(result)
     values = {}
     env = dict(OUT=out/'foliage_residency', CONTENT=content, json=json,
-        yori=SimpleNamespace(OUT=out), interaction_material=lambda: object(),
+        yori=SimpleNamespace(OUT=out), interaction_material=lambda: pytest.fail('Opaque volume material must remain unused'),
         E=SimpleNamespace(load_asset=load, save_loaded_asset=lambda mesh, dirty: saved.append(mesh) or True),
         G=SimpleNamespace(package_inventory=lambda *a: {'proof':'p'}),
         F=SimpleNamespace(package_inventory=lambda *a: {'proof':'p'}, asset_id=lambda p: p.split('/')[-1], vegetation=lambda n: True,
             roles=SimpleNamespace(plant_words=lambda n: {'bush'}, semantic_tokens=lambda n: {'bush'})),
         R=SimpleNamespace(ROOT=R.ROOT, excluded_authored=R.excluded_authored, TREE_WORDS=R.TREE_WORDS,
-            passable_plant=R.passable_plant, species=lambda: [], source_lods=R.source_lods, assets=R.assets, inventory=lambda *a: {'proof':'p'}),
+            passable_plant=R.passable_plant, species=lambda: [], source_lods=R.source_lods, assets=R.assets,
+            authored_leaf_row=R.authored_leaf_row, inventory=lambda *a: {'proof':'p'}),
         owner=SimpleNamespace(digest=lambda p: 'd', source_identity=lambda *a: 'i', classify=classify),
         U=SimpleNamespace(AssetRegistryHelpers=SimpleNamespace(get_asset_registry=lambda: object()), log=lambda text: None,
             YorimichiFoliageBuilder=SimpleNamespace(collect_unused=lambda: None),
@@ -233,4 +257,5 @@ def test_owner_skips_old_authored_rows_before_classifier_or_derived_loads(tmp_pa
     env['main']()
     final = values[str(out/'foliage_residency/report.json')]
     assert [row['source'] for row in final['assets']] == [normal['source']]
+    assert final['assets'][0]['aggregate'] is False and final['assets'][0]['coverage'] == []
     assert len(classified) == len(compacted) == 1 and saved

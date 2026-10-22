@@ -8,6 +8,27 @@ from atelier import mesh_geometry
 
 GAME = Path(__file__).resolve().parent
 ROOT = '/Game/FoliageResident'
+
+
+def authored_leaf_row(old, result):
+    """@cc [owner:fontanierh,label:correctness] authored-leaf-lod-publication
+    A newly native-validated leaf row MUST bind a nonempty reducer identity and exact original
+    leaf LOD0 count. Four nonempty nonincreasing canopy levels MUST be present. Opaque coverage
+    patches MUST remain disabled and MUST NOT be loaded or rendered as a replacement for leaves.
+    These schema/count checks MUST NOT replace current native source/corner/material/reduction proof.
+    """
+    row = dict(old, **result)
+    levels = row.get('triangles')
+    expected = old['source_triangles'] - old['rigid_triangles']
+    if (not isinstance(result.get('leaf_reducer'), str) or not result['leaf_reducer'].strip()
+            or type(result.get('source_leaf_triangles')) is not int or result['source_leaf_triangles'] != expected
+            or not isinstance(levels, list) or len(levels) != 4
+            or any(type(n) is not int or n < 1 for n in levels)
+            or levels[0] != expected or any(a < b for a, b in zip(levels, levels[1:]))):
+        raise ValueError('Invalid authored leaf LOD provenance/counts')
+    row['aggregate'] = False
+    row['coverage'] = []
+    return row
 TREE_WORDS = frozenset({'tree', 'palm', 'pine', 'maple', 'ginkgo'})
 
 
