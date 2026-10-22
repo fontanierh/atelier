@@ -96,31 +96,31 @@ def material_paths(slots):
     return result
 
 
-def collision_matches(mesh, row, tile):
+def collision_matches(mesh, row, tile, *, read_vertices=None):
     """Read actual imported UCX vertices, including each native shape transform.
 
     FBX metre/axis conversion may round coordinates to float32; the comparison
     permits two float32 ulps, with a 0.001 cm floor. No hull/vertex may disappear.
     """
-    body = mesh.get_editor_property('body_setup')
-    if body is None:
+    # FKConvexElem.Transform is protected in reflected Python. Native code uses
+    # its public getter and rejects nonconvex/nonfinite shapes before readback.
+    if read_vertices is None:
+        import unreal
+        read_vertices = unreal.CitySurfaceValidation.collision_vertices
+    try:
+        hulls = json.loads(read_vertices(mesh))
+    except (ValueError, TypeError):
         return False
-    aggregate = body.get_editor_property('agg_geom')
-    # This producer exports UCX convex hulls only. Other shape families cannot
-    # silently enter the receiving collision proof.
-    if any(aggregate.get_editor_property(name) for name in
-           ('sphere_elems', 'box_elems', 'sphyl_elems', 'tapered_capsule_elems',
-            'level_set_elems', 'skinned_level_set_elems', 'ml_level_set_elems', 'skinned_triangle_mesh_elems')):
+    if (not isinstance(hulls, list)
+            or any(not isinstance(hull, list) or len(hull)<4
+                   or any(not isinstance(point, list) or len(point)!=3
+                          or any(type(v) not in (float, int) or not math.isfinite(v) for v in point)
+                          for point in hull) for hull in hulls)):
         return False
-    hulls = aggregate.get_editor_property('convex_elems')
     expected = row['source_collision_vertices'] if tile['collision_hulls'] else []
     if len(hulls) != len(expected):
         return False
-    actual = []
-    for hull in hulls:
-        transform = hull.get_editor_property('transform')
-        points = [transform.transform_location(vertex) for vertex in hull.get_editor_property('vertex_data')]
-        actual.append(sorted([[float(v.x), float(v.y), float(v.z)] for v in points]))
+    actual = [sorted(hull) for hull in hulls]
     # Import may reorder hulls and vertices. Convex geometry is identified by
     # its complete vertex set, rather than just its count or bounding box.
     remaining = list(actual)

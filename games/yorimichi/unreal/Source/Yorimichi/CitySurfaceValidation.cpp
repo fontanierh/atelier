@@ -3,7 +3,37 @@
 #include "PhysicsEngine/BodySetup.h"
 #if WITH_EDITOR
 #include "Chaos/TriangleMeshImplicitObject.h"
+#include "Serialization/JsonSerializer.h"
+#include "Serialization/JsonWriter.h"
 #endif
+
+FString UCitySurfaceValidation::CollisionVertices(UStaticMesh* Mesh)
+{
+#if WITH_EDITOR
+    const auto* Body=Mesh?Mesh->GetBodySetup():nullptr;
+    if (!Body || Body->AggGeom.GetElementCount()!=Body->AggGeom.ConvexElems.Num()) return {};
+    TArray<TSharedPtr<FJsonValue>> Hulls;
+    for (const auto& Hull:Body->AggGeom.ConvexElems)
+    {
+        const auto Transform=Hull.GetTransform();
+        if (!Transform.IsValid() || Hull.VertexData.Num()<4) return {};
+        TArray<TSharedPtr<FJsonValue>> Points;
+        for (const auto& Vertex:Hull.VertexData)
+        {
+            const auto Point=Transform.TransformPosition(Vertex);
+            if (Point.ContainsNaN()) return {};
+            TArray<TSharedPtr<FJsonValue>> Coordinates;
+            for (int32 Axis=0;Axis<3;++Axis) Coordinates.Add(MakeShared<FJsonValueNumber>(Point[Axis]));
+            Points.Add(MakeShared<FJsonValueArray>(Coordinates));
+        }
+        Hulls.Add(MakeShared<FJsonValueArray>(Points));
+    }
+    FString Result;
+    return FJsonSerializer::Serialize(Hulls,TJsonWriterFactory<>::Create(&Result))?Result:FString();
+#else
+    return {};
+#endif
+}
 
 bool UCitySurfaceValidation::ValidateCollision(UStaticMesh* Mesh,int32 ExpectedTriangles,bool HasAuthoredHulls)
 {

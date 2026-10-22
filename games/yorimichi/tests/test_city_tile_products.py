@@ -223,18 +223,22 @@ def test_source_assembly_reuses_completed_siblings_and_refuses_partial_publicati
 
 def test_actual_collision_hulls_require_complete_transformed_vertex_identity():
     points = [[0.,0.,0.],[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]]
-    values = {'convex_elems':[NS(get_editor_property=lambda key:
-        NS(transform_location=lambda point: point) if key=='transform' else
-        [NS(x=x,y=y,z=z) for x,y,z in reversed(points)])]}
-    body = NS(get_editor_property=lambda key:NS(get_editor_property=lambda key:values.get(key,[])))
-    mesh = NS(get_editor_property=lambda key:body)
+    hulls = [list(reversed(points))]
+    mesh = object()
+    read = lambda _: json.dumps(hulls)
     row = {'source_collision_vertices':[[list(point) for point in points]]}
-    assert P.collision_matches(mesh,row,{'collision_hulls':1})
+    assert P.collision_matches(mesh,row,{'collision_hulls':1},read_vertices=read)
     row['source_collision_vertices'][0][1][0] += .02
-    assert not P.collision_matches(mesh,row,{'collision_hulls':1})
-    values['convex_elems'] = []
-    assert not P.collision_matches(mesh,row,{'collision_hulls':1})
-    assert P.collision_matches(mesh,row,{'collision_hulls':0})
+    assert not P.collision_matches(mesh,row,{'collision_hulls':1},read_vertices=read)
+    hulls.clear()
+    assert not P.collision_matches(mesh,row,{'collision_hulls':1},read_vertices=read)
+    assert P.collision_matches(mesh,row,{'collision_hulls':0},read_vertices=read)
+
+
+@pytest.mark.parametrize('invalid', ['', '{}', '[[]]', '[[[0,0,0],[1,0,0],[0,1,0],[0,0,NaN]]]'])
+def test_unsupported_native_collision_readback_refuses(invalid):
+    assert not P.collision_matches(object(),{'source_collision_vertices':[]},
+                                   {'collision_hulls':0},read_vertices=lambda _:invalid)
 
 
 def test_parent_absence_is_a_receiving_postcondition_including_orphan_sidecars(tmp_path):

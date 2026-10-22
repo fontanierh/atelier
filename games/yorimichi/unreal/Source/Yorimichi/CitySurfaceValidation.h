@@ -12,4 +12,8 @@ class YORIMICHI_API UCitySurfaceValidation : public UBlueprintFunctionLibrary
 public:
     UFUNCTION(BlueprintCallable, Category="City surfaces")
     static bool ValidateCollision(UStaticMesh* Mesh, int32 ExpectedTriangles, bool HasAuthoredHulls);
+
+    /** Complete transformed convex vertices; empty text refuses unsupported shapes/data. */
+    UFUNCTION(BlueprintCallable, Category="City surfaces")
+    static FString CollisionVertices(UStaticMesh* Mesh);
 };
