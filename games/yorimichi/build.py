@@ -20,23 +20,14 @@ from pathlib import Path
 _JSON_CACHE = getattr(sys, '_atelier_json_cache', None)
 if _JSON_CACHE is None:
     _JSON_CACHE = sys._atelier_json_cache = {}
-_MODULE_CACHE = getattr(sys, '_atelier_module_cache', None)
-if _MODULE_CACHE is None:
-    _MODULE_CACHE = sys._atelier_module_cache = {}
 
 
 def _load_helper_module(name, path):
     path = Path(path)
-    st = path.stat()
-    key = (name, path, st.st_mtime_ns, st.st_size)
-    try:
-        return _MODULE_CACHE[key]
-    except KeyError:
-        spec = importlib.util.spec_from_file_location(name, path)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        _MODULE_CACHE[key] = module
-        return module
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def _read_json(path):

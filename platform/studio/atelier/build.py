@@ -293,9 +293,7 @@ def load_recipe(game):
     original_steps = module.steps
     def steps(ctx):
         from .build_cook import apply
-        from .source_imports import scan_scope
-        with scan_scope():
-            return apply(ctx, original_steps(ctx))
+        return apply(ctx, original_steps(ctx))
     module.steps = steps
     return module
 

@@ -6,7 +6,7 @@ import tempfile
 from pathlib import Path
 from types import SimpleNamespace
 
-from atelier import build, build_audit, build_cache, build_deferred, build_inputs, build_products, source_imports
+from atelier import build, build_audit, build_cache, build_deferred, build_inputs, build_products
 
 MEGA = Path(__file__).resolve().parents[1] / 'world' / 'regions' / 'mega'
 _BASELINE_CACHE = {}
@@ -118,14 +118,13 @@ def _build_state(out_dir):
     build_cache.tool_context = lambda *a, **k: {'fixture': 'unchanged tools'}
     build_audit.tool_context = lambda *a, **k: {'fixture': 'unchanged tools'}
     try:
-        with source_imports.scan_scope():
-            before = {}
-            for step in steps:
-                before[step.name] = build.fingerprint(
-                    step, before, observation=observations[step.name], _tool_identity='fixture'
-                )
-                for product in step.products:
-                    before['product:' + product.name] = build_products.identity((product.name, before[step.name]))
+        before = {}
+        for step in steps:
+            before[step.name] = build.fingerprint(
+                step, before, observation=observations[step.name], _tool_identity='fixture'
+            )
+            for product in step.products:
+                before['product:' + product.name] = build_products.identity((product.name, before[step.name]))
     finally:
         build._hash_path = orig_hp
         build_inputs.inventory = orig_inv
@@ -175,29 +174,26 @@ def changed_by(edited, tmp_path, monkeypatch, *, stable_products=()):
     monkeypatch.setattr(build_audit, 'tool_context', lambda *a, **k: {'fixture': 'unchanged tools'})
 
     after = {}
-    with source_imports.scan_scope():
-        for step in steps:
-            inputs_changed = any(p == target_str or target_str.startswith(f'{p}/') for p in step_inputs[step.name])
-            needs_changed = any(after[n] != before[n] for n in step.needs if n in after and n in before)
-            reads_changed = any(
-                after['product:' + r] != before['product:' + r]
-                for r in step.reads if ('product:' + r) in after and ('product:' + r) in before
+    for step in steps:
+        inputs_changed = any(p == target_str or target_str.startswith(f'{p}/') for p in step_inputs[step.name])
+        needs_changed = any(after[n] != before[n] for n in step.needs if n in after and n in before)
+        reads_changed = any(
+            after['product:' + r] != before['product:' + r]
+            for r in step.reads if ('product:' + r) in after and ('product:' + r) in before
+        )
+        if inputs_changed or needs_changed or reads_changed:
+            after[step.name] = build.fingerprint(
+                step, after, observation=observations[step.name], _tool_identity='fixture'
             )
-            if inputs_changed or needs_changed or reads_changed:
-                # If stable_products is non-empty and any read is in stable_products, ensure before['product:'+r]
-                # matches what before used when computing before[step.name] (both use (product.name, before[owner])).
-                after[step.name] = build.fingerprint(
-                    step, after, observation=observations[step.name], _tool_identity='fixture'
-                )
+        else:
+            after[step.name] = before[step.name]
+        for product in step.products:
+            if product.name in stable_set:
+                after['product:' + product.name] = before['product:' + product.name]
+            elif after[step.name] == before[step.name]:
+                after['product:' + product.name] = before['product:' + product.name]
             else:
-                after[step.name] = before[step.name]
-            for product in step.products:
-                if product.name in stable_set:
-                    after['product:' + product.name] = before['product:' + product.name]
-                elif after[step.name] == before[step.name]:
-                    after['product:' + product.name] = before['product:' + product.name]
-                else:
-                    after['product:' + product.name] = build_products.identity((product.name, after[step.name]))
+                after['product:' + product.name] = build_products.identity((product.name, after[step.name]))
     return {name for name in before if not name.startswith('product:') and before[name] != after[name]}
 
 
