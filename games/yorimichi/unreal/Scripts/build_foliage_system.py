@@ -397,12 +397,15 @@ def main():
             result=U.YorimichiFoliageGeometryReader.build_variant(mesh,str(document),screens,destinations[role],first,second)
             assert result,destinations[role]
             bind_variant_materials(result,replacements)
-            assert E.save_loaded_asset(result),destinations[role]
             expected=counts if role=='optimized' else [detail[role+'_triangles']]
             assert result.get_num_lods()==len(expected),destinations[role]
             assert [result.get_num_triangles(i) for i in range(len(expected))]==expected,(destinations[role],expected)
+            editor=settings_reader(U)
+            # Synchronize compiled render thresholds after rebuilding an existing target.
+            assert editor and editor.set_lod_screen_sizes(result,screens),destinations[role]
+            assert E.save_loaded_asset(result),destinations[role]
             assert variant_matches(result,mesh,replacements,(first,second),expected,screens,geometry[role],
-                OUT/(key+'.'+role+'.built.snapshot'),editor=settings_reader(U),
+                OUT/(key+'.'+role+'.built.snapshot'),editor=editor,
                 snapshot=U.YorimichiFoliagePreparation.export_geometry_snapshot,digest=G.file_digest,
                 refusal=lambda reason:U.log(f'FOLIAGE BUILT MISS {role} {destinations[role]}: {reason}')),destinations[role]
             loaded[role]=result
