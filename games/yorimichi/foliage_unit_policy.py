@@ -6,7 +6,7 @@ import re
 import subprocess
 
 
-WITNESS_SHA256 = 'bd9477d2f6c8b7fa2583321ade6c3a6eb6190c2da26c19d69b88a1816e974a6d'
+WITNESS_SHA256 = 'd2412fc8ea14b4e61746cf2ed1bf1153d844590c9dec03d0ecc59b57f8dceba5'
 MAX_SOURCE = 8 * 1024 * 1024
 USED_SLOT_PREPASS = '    // Imported meshes can retain unused seed-material slots. They still belong\n    // in the slot table, but no exported corner samples their palette.\n    TSet<int32> UsedSlots;\n    for (const FTriangleID Triangle : Description.Triangles().GetElementIDs())\n    {\n        const FName Name=SlotNames[Description.GetTrianglePolygonGroup(Triangle)];\n        int32 Used=Source->GetMaterialIndex(Name);\n        if (Used==INDEX_NONE)\n            for (int32 I=0;I<Source->GetStaticMaterials().Num();++I)\n                if (Source->GetStaticMaterials()[I].ImportedMaterialSlotName==Name) { Used=I;break; }\n        if (!Source->GetStaticMaterials().IsValidIndex(Used)) return false;\n        UsedSlots.Add(Used);\n    }\n'
 
@@ -109,8 +109,14 @@ def legacy_policies(game_root, *, engine_version, environment, runtime):
     remain intact; geometry generation, snapshots and current source/settings/material
     admission MUST stay unchanged.
     Selected-mode loading and deferred unload/reload MAY change runtime residency only.
+    Reviewed carrier shading-copy release MUST retain collision positions/indices and
+    refuse unsafe CPU consumers. Post-GC surface-cache pruning MAY drop only cache
+    ownership; immutable job references MUST remain valid. Runtime binding checks and
+    authored trunk enablement/passable-plant policy MUST NOT change saved geometry.
     The new separately owned compaction step MAY create distinct packages; it MUST NOT
-    change the old preparation geometry or admit them as old source inputs. Excluding
+    change the old preparation geometry or admit them as old source inputs. Authored
+    leaf LODs and native reduction MUST run that new owner's current geometry/material
+    proof; historical unit hints MUST NOT certify its new output. Excluding
     that derivative root from discovery MUST preserve the old source roster, except
     complete FoliageAuthored_ props with 1–12,288 LOD0 triangles now explicitly remain
     ordinary props. Dropped prop hints MUST remain unused; remaining mesh generation
