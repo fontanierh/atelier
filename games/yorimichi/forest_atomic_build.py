@@ -15,6 +15,29 @@ def load(label,path):
     return value
 
 
+def native_products(ctx):
+    """Complete fixed package inventory, including every source LOD and its material."""
+    params=load('forest_native_product_parameters',WORLD/'forest_parameters.py')
+    names=[params.load(path)[0] for path in sorted(PARAMETERS.glob('*.json'))]
+    if len(names)!=8 or len(set(names))!=8:
+        raise ValueError('Forest requires all eight native species')
+    content=GAME/'unreal/Content'
+    packages=[content/'Japan/Textures/T_ForestNormalDefault.uasset',
+              content/'Japan/Materials/M_ForestImpostor.uasset']
+    for leaf in ('LeafOlive','LeafOak','LeafCypress','LeafStonePine'):
+        packages.extend((content/f'Japan/Textures/T_{leaf}.uasset',content/f'Japan/Materials/MI_{leaf}.uasset'))
+    for name in names:
+        packages.extend((content/f'Japan/Assets/{name}.uasset',
+                         content/f'Japan/Materials/MI_{name}_Impostor.uasset',
+                         content/f'Japan/FoliageLODs/MI_{name}_Crown.uasset'))
+        packages.extend(content/f'Japan/Textures/T_{name}_{kind}.uasset' for kind in ('colour','normal'))
+        packages.extend(content/f'Japan/FoliageLODs/{name}_LOD{i}.uasset' for i in range(1,5))
+    sidecars=('.uexp','.ubulk','.uptnl','.m.ubulk','.upayload')
+    return [Product('forest.native_assets',tuple(packages),
+                optional_paths=tuple(path.with_suffix(suffix) for path in packages for suffix in sidecars)),
+            Product('forest.native_reports',(ctx.out/'forest/import-report.json',ctx.out/'forest/native/import.json'))]
+
+
 def steps(ctx):
     graph=load('forest_atomic_graph',GAME/'region_exports.py')
     params=load('forest_atomic_parameters',WORLD/'forest_parameters.py')

@@ -2,6 +2,7 @@
 #include "CitySurfacePieces.h"
 #include "IslandPieces.h"
 #include "SouthwestPieces.h"
+#include "LakePieces.h"
 #include "TreehousePieces.h"
 #include "JapanGameplayCollision.h"
 #include "AtelierData.h"
@@ -393,6 +394,12 @@ void AJapanWorld::Load()
     const bool SouthwestReady=JapanSouthwestPieces::Read(
         AtelierReadJson(AtelierDataPath(TEXT("southwest/runtime.json"))),SouthwestPieces,&SouthwestLogicalBounds);
     if(!SouthwestReady)Incomplete.Add(TEXT("complete Southwest pieces"));
+    TMap<FString,TArray<FString>> LakePieces;
+    TMap<FString,FBox> LakeLogicalBounds;
+    TSet<FString> LoadedLakePieces,PlacedLakeParents;
+    const bool LakeReady=JapanLakePieces::Read(
+        AtelierReadJson(AtelierDataPath(TEXT("forest_lake/manifest.json"))),LakePieces,&LakeLogicalBounds);
+    if(!LakeReady)Incomplete.Add(TEXT("complete lake pieces"));
     TArray<FString> DressingPieces;
     TSet<FString> LoadedDressingPieces;
     const bool DressingReady=JapanTreehousePieces::Read(
@@ -424,6 +431,16 @@ void AJapanWorld::Load()
                 if(!Paths){Incomplete.Add(TEXT("Southwest pieces ")+Key);continue;}
                 MeshPaths=*Paths;
             }
+            else if(JapanLakePieces::IsParent(Key))
+            {
+                if(!Pair.Value || Pair.Value->Type!=EJson::Array)
+                {Incomplete.Add(TEXT("lake placements ")+Key);continue;}
+                if(Pair.Value->AsArray().IsEmpty())continue;
+                PlacedLakeParents.Add(Key);
+                const auto* Paths=LakePieces.Find(Key);
+                if(!Paths){Incomplete.Add(TEXT("lake pieces ")+Key);continue;}
+                MeshPaths=*Paths;
+            }
             else if (Key==TEXT("TH_Dressing"))
             {
                 if (!DressingReady) continue;
@@ -438,6 +455,7 @@ void AJapanWorld::Load()
                 if (!Mesh) { Incomplete.Add(TEXT("mesh ") + Key); UE_LOG(LogTemp, Warning, TEXT("missing mesh asset %s"), *Key); continue; }
                 if (JapanCityPieces::IsParent(Key)) LoadedCityPieces.Add(MeshPath);
                 if(JapanSouthwestPieces::IsParent(Key))LoadedSouthwestPieces.Add(MeshPath);
+                if(JapanLakePieces::IsParent(Key))LoadedLakePieces.Add(MeshPath);
                 if (Key==TEXT("TH_Dressing")) LoadedDressingPieces.Add(MeshPath);
                 const bool bGrass = Key.StartsWith(TEXT("Grass"));
                 const bool bBush = Key.StartsWith(TEXT("Bush"));
@@ -474,6 +492,7 @@ void AJapanWorld::Load()
                     }
                     if (Key==TEXT("TH_Dressing")) H->ComponentTags.Add(TEXT("TreehouseDressing"));
                     if(JapanSouthwestPieces::IsParent(Key))H->ComponentTags.Add(FName(*(TEXT("SouthwestSurface:")+Key)));
+                    if(JapanLakePieces::IsParent(Key))H->ComponentTags.Add(FName(*(TEXT("LakeSurface:")+Key)));
                     H->SetMobility(EComponentMobility::Static);
                     if (Key==TEXT("HD_Harbor") || Key==TEXT("HD_Boat") || Key==TEXT("HD_Sea") || Key==TEXT("HD_Bollard"))
                         H->SetLightingChannels(true, true, false);
@@ -504,6 +523,11 @@ void AJapanWorld::Load()
                     {
                         if(!JapanSeeThrough::SetLogicalBounds(H,*LogicalBounds))
                         {Incomplete.Add(TEXT("Southwest logical fade bounds ")+Key);return;}
+                    }
+                    if(const FBox* LogicalBounds=LakeLogicalBounds.Find(Key))
+                    {
+                        if(!JapanSeeThrough::SetLogicalBounds(H,*LogicalBounds))
+                        {Incomplete.Add(TEXT("lake logical fade bounds ")+Key);return;}
                     }
                     if (Key == TEXT("TH_Frame") || Key == TEXT("TH_Dressing"))
                         UE_LOG(LogTemp, Display, TEXT("SEE-THROUGH %s: %s (%d uv channels)"), *Key,
@@ -586,6 +610,13 @@ void AJapanWorld::Load()
         for(const FString& Parent:PlacedSouthwestParents)
             if(const auto* Paths=SouthwestPieces.Find(Parent))Expected+=Paths->Num();
         if(LoadedSouthwestPieces.Num()!=Expected)Incomplete.Add(TEXT("loaded Southwest pieces"));
+    }
+    if(LakeReady)
+    {
+        int32 Expected=0;
+        for(const FString& Parent:PlacedLakeParents)
+            if(const auto* Paths=LakePieces.Find(Parent))Expected+=Paths->Num();
+        if(LoadedLakePieces.Num()!=Expected)Incomplete.Add(TEXT("loaded lake pieces"));
     }
     if (UStaticMesh* Dome = LoadMesh(TEXT("SkyDome")))
     {

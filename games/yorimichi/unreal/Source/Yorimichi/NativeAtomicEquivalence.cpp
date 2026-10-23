@@ -235,8 +235,8 @@ FString UNativeAtomicEquivalence::ComponentPolicy(UStaticMeshComponent* Componen
     const FBox MeshBounds=Component->GetStaticMesh()->GetBoundingBox();if(!MeshBounds.IsValid)return {};
     Result->SetArrayField(TEXT("mesh_bounds"),{Vector({MeshBounds.Min.X,MeshBounds.Min.Y,MeshBounds.Min.Z},Valid),Vector({MeshBounds.Max.X,MeshBounds.Max.Y,MeshBounds.Max.Z},Valid)});
     Result->SetNumberField(TEXT("wpo_disable_distance"),Component->GetWorldPositionOffsetDisableDistance());
-    Result->SetArrayField(TEXT("lighting_channels"),{MakeShared<FJsonValueBoolean>(Component->LightingChannels.bChannel0),
-        MakeShared<FJsonValueBoolean>(Component->LightingChannels.bChannel1),MakeShared<FJsonValueBoolean>(Component->LightingChannels.bChannel2)});
+    Result->SetArrayField(TEXT("lighting_channels"),{MakeShared<FJsonValueBoolean>(bool(Component->LightingChannels.bChannel0)),
+        MakeShared<FJsonValueBoolean>(bool(Component->LightingChannels.bChannel1)),MakeShared<FJsonValueBoolean>(bool(Component->LightingChannels.bChannel2))});
     FValues PrimitiveData;for(float Value:Component->GetCustomPrimitiveData().Data)PrimitiveData.Add(MakeShared<FJsonValueNumber>(Value));
     Result->SetArrayField(TEXT("primitive_data"),PrimitiveData);FValues Tags;
     for(const auto& Tag:Component->ComponentTags)Tags.Add(MakeShared<FJsonValueString>(Tag.ToString()));Result->SetArrayField(TEXT("tags"),Tags);

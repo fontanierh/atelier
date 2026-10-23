@@ -5,11 +5,12 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image
+from atelier.paths import build_dir
 
 GAME = Path(__file__).resolve().parents[1]
 ROOT = GAME.parents[1]
 SOURCE = GAME / 'assets/environment/textures'
-OUT = ROOT / 'build/yorimichi/forest/textures'
+OUT = build_dir('yorimichi') / 'forest/textures'
 NAMES = {'olive': 'LeafOlive', 'oak': 'LeafOak', 'cypress': 'LeafCypress', 'pine': 'LeafStonePine'}
 GAIN = {'olive': 1.35, 'oak': (1.32, 1.58, 1.21), 'cypress': 1.2, 'pine': 1.12}
 

@@ -24,7 +24,8 @@ bool JapanSouthwestPieces::Read(const TSharedPtr<FJsonObject>& Manifest,TMap<FSt
     TMap<FString,TArray<FString>> Pending;TMap<FString,FBox> Bounds;TSet<FString> Seen;
     for(const auto& Pair:(*Sources)->Values)
     {
-        if(!IsParent(Pair.Key) || !Pair.Value || Pair.Value->Type!=EJson::Object)return false;
+        const FString Parent(Pair.Key);
+        if(!IsParent(Parent) || !Pair.Value || Pair.Value->Type!=EJson::Object)return false;
         const auto Source=Pair.Value->AsObject();double Expected=0.;
         const TArray<TSharedPtr<FJsonValue>> *Pieces=nullptr,*Box=nullptr;
         if(!Source->TryGetNumberField(TEXT("source_triangles"),Expected) || !FMath::IsFinite(Expected) ||
@@ -43,8 +44,8 @@ bool JapanSouthwestPieces::Read(const TSharedPtr<FJsonObject>& Manifest,TMap<FSt
         }
         const FBox NativeBounds(FVector(A.X,-B.Y,A.Z),FVector(B.X,-A.Y,B.Z));
         if(!NativeBounds.IsValid || NativeBounds.Min.ContainsNaN() || NativeBounds.Max.ContainsNaN())return false;
-        Bounds.Add(Pair.Key,NativeBounds);double Total=0.;auto& Paths=Pending.Add(Pair.Key);
-        const FRegexPattern Pattern(TEXT("^")+Pair.Key+
+        Bounds.Add(Parent,NativeBounds);double Total=0.;auto& Paths=Pending.Add(Parent);
+        const FRegexPattern Pattern(TEXT("^")+Parent+
             TEXT("_cell_(?:0|-?[1-9][0-9]*)_(?:0|-?[1-9][0-9]*)(?:_Piece[0-3]{1,16})?$"));
         for(const auto& Value:*Pieces)
         {
@@ -54,7 +55,7 @@ bool JapanSouthwestPieces::Read(const TSharedPtr<FJsonObject>& Manifest,TMap<FSt
                 !Piece->TryGetNumberField(TEXT("triangles"),Count) || !FMath::IsFinite(Count) ||
                 Count<1. || Count>Limit || FMath::FloorToDouble(Count)!=Count)return false;
             FRegexMatcher Matcher(Pattern,Name);
-            if(Name!=Pair.Key && (!Matcher.FindNext() || Matcher.GetMatchBeginning()!=0 || Matcher.GetMatchEnding()!=Name.Len()))return false;
+            if(Name!=Parent && (!Matcher.FindNext() || Matcher.GetMatchBeginning()!=0 || Matcher.GetMatchEnding()!=Name.Len()))return false;
             Seen.Add(Name.ToLower());Total+=Count;
             Paths.Add(FString::Printf(TEXT("/Game/Japan/Southwest/Pieces/%s.%s"),*Name,*Name));
         }

@@ -15,7 +15,7 @@ import lake_native
 def main():
     root=yori.OUT/'forest_lake';E=unreal.EditorAssetLibrary
     real_directory(root/'assets')
-    value=json.loads((root/'manifest.json').read_text())
+    value=lake_native.read(root)
     if value.get('schema')!=2 or value.get('complete') is not True or set(value['parents'])!=set(lake_native.OWNERS):
         raise ValueError('Lake requires complete current logical membership')
     names=[name for parent in lake_native.OWNERS for name in value['parents'][parent]]

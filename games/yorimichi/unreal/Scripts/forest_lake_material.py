@@ -81,4 +81,6 @@ return lerp(.18,.36,saturate(fetch*.5+chop*.6));
     for prop,value in [(unreal.MaterialProperty.MP_SPECULAR,.55),(unreal.MaterialProperty.MP_METALLIC,.08)]:
         node=M.create_material_expression(material,unreal.MaterialExpressionConstant,200,400);node.set_editor_property('r',value);M.connect_material_property(node,'',prop)
     material.set_editor_property('used_with_instanced_static_meshes',True)
-    M.recompile_material(material);E.save_loaded_asset(material);return material
+    M.recompile_material(material)
+    if not E.save_loaded_asset(material):raise RuntimeError('Could not save current lake water material')
+    return material
