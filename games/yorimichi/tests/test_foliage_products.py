@@ -14,14 +14,24 @@ SCRIPTS = GAME / 'unreal/Scripts'
 PACKAGING = {'data.content', 'data.network', 'unreal.cook', 'unreal.package'}
 
 
+def kind_tasks(kind):
+    recipe = build.load_recipe('yorimichi')
+    return {step.name for step in recipe.foliage_build.world_steps(SimpleNamespace(out=Path('unused')))
+            if step.name == 'world.foliage.' + kind or step.name == 'world.foliage.definitions.' + kind
+            or any(step.name == prefix + key for prefix in ('world.foliage.source.', 'world.foliage.export.')
+                   for key in [kind, kind+'_Seed', *(kind+'_LOD'+str(i) for i in range(1, 6))])}
+
+
 def test_one_tree_spec_changes_only_its_export_import_and_final_assembly(tmp_path, monkeypatch):
-    assert changed_by(GAME / 'assets/foliage/Tree_Broad_A.json', tmp_path, monkeypatch) == {
-        'world.foliage.Tree_Broad_A', 'unreal.foliage.Tree_Broad_A', *PACKAGING}
+    changed = changed_by(GAME / 'assets/foliage/Tree_Broad_A.json', tmp_path, monkeypatch)
+    assert changed == kind_tasks('Tree_Broad_A') | {'unreal.foliage.Tree_Broad_A', *PACKAGING}
 
 
 def test_foliage_lod_policy_does_not_reimport_world_regions_or_sounds(tmp_path, monkeypatch):
     changed = changed_by(WORLD / 'build_foliage_lods.py', tmp_path, monkeypatch)
-    assert len([name for name in changed if name.startswith('world.foliage.')]) == 18
+    assert len([name for name in changed if name.startswith('world.foliage.source.')]) == 102
+    assert len([name for name in changed if name.startswith('world.foliage.export.')]) == 102
+    assert len([name for name in changed if name.startswith('world.foliage.')]) == 222
     assert len([name for name in changed if name.startswith('unreal.foliage.')]) == 18
     assert changed - PACKAGING == {name for name in changed if '.foliage.' in name}
 
@@ -37,7 +47,7 @@ def test_identical_shared_material_products_leave_world_and_foliage_current(tmp_
 def test_identical_geometry_cuts_off_a_native_import_after_an_export_source_edit(tmp_path, monkeypatch):
     changed = changed_by(GAME / 'assets/foliage/Tree_Broad_A.json', tmp_path, monkeypatch,
                          stable_products={'foliage.Tree_Broad_A.source'})
-    assert changed == {'world.foliage.Tree_Broad_A'}
+    assert changed == kind_tasks('Tree_Broad_A')
 
 
 def test_props_generator_is_not_a_foliage_input(tmp_path, monkeypatch):
@@ -60,8 +70,8 @@ def test_alpha_texture_is_an_input_only_of_foliage_that_reads_it(tmp_path, monke
     texture.parent.mkdir()
     texture.write_bytes(b'fixture for existence, never decoded')
     changed = changed_by(texture, tmp_path, monkeypatch, stable_products={'materials.foliage_interface'})
-    assert {name for name in changed if '.foliage.' in name} == {
-        'world.foliage.Tree_Ginkgo', 'unreal.foliage.Tree_Ginkgo'}
+    assert {name for name in changed if '.foliage.' in name} == (
+        kind_tasks('Tree_Ginkgo') - {'world.foliage.definitions.Tree_Ginkgo'} | {'unreal.foliage.Tree_Ginkgo'})
     assert 'unreal.materials' in changed
 
 
@@ -84,13 +94,14 @@ def test_world_selector_includes_native_references_without_reading_their_bytes(t
     # Keep this selector test exact for its material/foliage/texture interface.
     # Independent atomic region catalogues validate their own products separately.
     actual = {name: owner for name, owner in graph.owners.items()
-              if name.startswith(('materials.', 'foliage.', 'texture.'))}
+              if name in expected or name.startswith(('materials.', 'texture.')) or
+              name.startswith('foliage.') and name.rsplit('.', 1)[-1] in ('source', 'native')}
     assert actual == expected
     assert all(not graph.by_name[owner].cache for owner in graph.owners.values()
                if any(isinstance(command, (build.UnrealScript, build.UnrealCompile, build.UnrealPackage))
                       for command in graph.by_name[owner].commands))
     adapter = build.paths.STUDIO / 'atelier/blender/fbx.py'
-    assert all(adapter in step.inputs for step in graph.by_name.values() if step.name.startswith('world.foliage.'))
+    assert all(adapter in step.inputs for step in graph.by_name.values() if step.name.startswith('world.foliage.export.'))
 
 
 @pytest.mark.parametrize('same_bytes', [False, True])
