@@ -342,8 +342,11 @@ def test_non_factory_blender_is_keyed_on_everything_its_startup_reads(fixture, t
     ctx, steps = fixture.checkout('producer')
     step = steps[0]
     step.commands = [build.Blender(step.inputs[0], factory_startup=False)]
+    from atelier import engine
     app = tmp_path / 'Blender.app/Contents'; (app / 'MacOS').mkdir(parents=True); (app / 'Resources/5.2').mkdir(parents=True)
+    (app / 'MacOS/Blender').write_bytes(b'executable')
     ctx.blender = str(app / 'MacOS/Blender')
+    monkeypatch.setattr(engine, 'blender', lambda: ctx.blender)  # The bundle identity, without an installed app.
     home = tmp_path / 'home'; monkeypatch.setattr(Path, 'home', lambda: home)
     profile = home / 'Library/Application Support/Blender/5.2'
     (profile / 'extensions/.cache').mkdir(parents=True); (profile / 'extensions/.cache/compat.dat').write_text('derived')

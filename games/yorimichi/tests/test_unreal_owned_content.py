@@ -2,7 +2,9 @@
 from atelier import build, checkpoint_actions, paths
 
 
-def test_owned_content_imports_declare_disjoint_complete_outputs():
+def test_owned_content_imports_declare_disjoint_complete_outputs(monkeypatch):
+    # The installed engine and toolchain identity, without an installed engine.
+    monkeypatch.setattr(checkpoint_actions, 'context', lambda _: dict(system='Darwin', machine='arm64', engine='installed'))
     ctx = build.Context('yorimichi')
     steps = build.load_recipe('yorimichi').steps(ctx)
     recipe = build.load_recipe('yorimichi')
