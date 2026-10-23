@@ -1,11 +1,7 @@
-"""Terrain + road + wires (one FBX) and the sea plane from build/yorimichi/world.json + heightmap.npy
-
-    blender -b --python games/yorimichi/world/build_terrain.py
--> build/yorimichi/terrain.fbx (objects Terrain, Road, Wires: material slots Ground, Road, Metal), build/yorimichi/assets/Sea.fbx
-"""
+"""Independent original island constructors; no mesh export occurs in this module."""
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parent)); import yori  # noqa: E402,F401
-import sys, os, json, math
-import bpy, bmesh
+import os, math
+import bpy
 import numpy as np
 import shorelines
 import coastal_surface
@@ -13,6 +9,7 @@ from mathutils import Vector
 
 OUT = str(yori.OUT)
 TEX = str(yori.TEXTURES)
+LOAD_TEXTURES = False
 
 
 def backdrop_owned(x, y, *, city):
@@ -41,7 +38,7 @@ def ocean_mesh(*, city):
 def mat(name, color=(0.5, 0.5, 0.5), texture=None):
     m = bpy.data.materials.new(name); m.use_nodes = True
     b = m.node_tree.nodes["Principled BSDF"]; b.inputs["Base Color"].default_value = (*color, 1); b.inputs["Roughness"].default_value = 1.0
-    if texture:
+    if texture and LOAD_TEXTURES:
         t = m.node_tree.nodes.new("ShaderNodeTexImage"); t.image = bpy.data.images.load(os.path.join(TEX, texture)); m.node_tree.links.new(t.outputs["Color"], b.inputs["Base Color"])
     return m
 
@@ -97,12 +94,10 @@ def rock_surface(ob):
     print('coastal rock surface: %d faces, existing geometry/normals retained'%selected.sum(),flush=True)
 
 
-def main():
-    bpy.ops.wm.read_factory_settings(use_empty=True)
-    W = json.load(open(os.path.join(OUT, "world.json"))); H = np.load(os.path.join(OUT, "heightmap.npy"))
+
+def terrain(W=None, H=None, final=None, *, city=True):
     n = W["n"]; size = W["size"]; step = size / (n - 1)
-    ground = mat("Ground", (0.4, 0.5, 0.22), "T_ground.jpg"); road_m = mat("Road", (0.36, 0.36, 0.37), "T_road.jpg")
-    metal = mat("Metal", (0.12, 0.12, 0.13)); water = mat("Water", (0.3, 0.44, 0.58), "T_water.jpg")
+    ground = mat("Ground", (0.4, 0.5, 0.22), "T_ground.jpg")
     # terrain grid
     verts = [(-size / 2 + i * step, -size / 2 + j * step, float(H[j, i])) for j in range(n) for i in range(n)]
     faces = []
@@ -115,6 +110,11 @@ def main():
     for face in terrain.data.polygons:
         if float(shorelines.weight(face.center.x,face.center.y)) > 0.:
             face.material_index=1
+    return terrain
+
+
+def road(W=None, H=None, final=None, *, city=True):
+    road_m = mat("Road", (0.36, 0.36, 0.37), "T_road.jpg")
     # road strip
     R = np.array(W["road"]); w = W["road_width"] / 2
     T = np.gradient(R[:, :2], axis=0); T /= np.linalg.norm(T, axis=1)[:, None]; Nn = np.stack([-T[:, 1], T[:, 0]], 1)
@@ -130,6 +130,11 @@ def main():
         for li in p.loop_indices:
             vi = road.data.loops[li].vertex_index; i, s = vi // 2, vi % 2
             uv[li].uv = (s, i / 8.0)
+    return road
+
+
+def lane(W=None, H=None, final=None, *, city=True):
+    n = W["n"]; size = W["size"]; step = size / (n - 1)
     # south-west detour: the shore lane as a sunken sand strip and the cove's sand pad (material slot Sand -> MI_Sand)
     SW = W.get("southwest"); lane = sand = None
     if SW:
@@ -152,6 +157,10 @@ def main():
         # Sand now belongs to the ground's Coast section. The former raised
         # sand disc left a second surface only 5 cm above the beach.
         print("southwest lane %d verts; beach painted on ground" % len(lv),flush=True)
+    return lane
+
+
+def guardrail(W=None, H=None, final=None, *, city=True):
     # guardrail: one continuous W-beam strip along the downhill edge (runs from world.json), posts every 2 m
     paint = mat("Paint", (0.86, 0.86, 0.84))
     gv, gf = [], []
@@ -175,6 +184,11 @@ def main():
             for k in range(len(prof) - 1):
                 gf.append((a + k, a + k + 1, b + k + 1, b + k)); gf.append((b + k, b + k + 1, a + k + 1, a + k))
     rail = obj("Guardrail", gv, gf, paint, smooth=True) if gv else None
+    return rail
+
+
+def wires(W=None, H=None, final=None, *, city=True):
+    metal = mat("Metal", (0.12, 0.12, 0.13))
     # wires: catenaries between consecutive poles, 5 per span
     wv, wf = [], []
     A = W["anchors"]
@@ -192,38 +206,22 @@ def main():
                         a, b = ring_prev + q, ring_prev + (q + 1) % 4; wf.append((a, b, base + (q + 1) % 4, base + q))
                 ring_prev = base
     wires = obj("Wires", wv, wf, metal, smooth=True)
+    return wires
+
+
+def farhills(W=None, H=None, final=None, *, city=True):
     # A rolling forest-floor backdrop under the detailed distant canopy.
     far = mat("FarForest", (.055, .11, .035))
     # Include the exact fine-terrain boundaries, then omit their interiors.
     # Shaping both buried and visible ground onto one coast would recreate the
     # original coplanar flicker under the new beaches.
-    from farhills_surface import export_mesh
-    city=os.path.exists(os.path.join(OUT,"hidamari","city.json"))
-    final=export_mesh(n,_Path(OUT)/'terrain/FarHills',city=city)
     hills = obj("FarHills", final.vertices.tolist(), final.polygons(), far, uvs=lambda co: (co.x / 180.0, co.y / 180.0))
     coastal_colours(hills)
     rock_surface(hills)
-    # export terrain fbx
-    bpy.ops.object.select_all(action="DESELECT")
-    for o in [terrain, road, wires, hills] + ([rail] if rail else []) + ([lane] if lane else []): o.select_set(True)
-    bpy.context.view_layer.objects.active = terrain
-    path = os.path.join(OUT, "terrain.fbx")
-    from atelier.blender.fbx import export_fbx as export_scene_fbx
-    export_scene_fbx(filepath=path, use_selection=True, apply_unit_scale=True, apply_scale_options="FBX_SCALE_ALL", axis_forward="-Y", axis_up="Z",
-                             object_types={"MESH"}, mesh_smooth_type="FACE", bake_anim=False, path_mode="COPY", embed_textures=False)
-    print("terrain:", len(terrain.data.polygons), "faces, road", len(road.data.polygons), "wires", len(wires.data.polygons), "->", path)
-    # sea plane (separate asset, no collision)
-    # The sea reaches past the sky dome (a 20 km sphere, JapanWorld.cpp): every view ray that goes below the horizon meets
-    # water, never the dome's lower half. At 3.4 km it stopped short, and a band of the dome's below-horizon colour showed
-    # between the sea's far edge and the horizon.
-    sea_vertices,sea_faces=ocean_mesh(city=city)
-    sea = obj("Sea", sea_vertices, sea_faces, water, uvs=lambda co: (co.x / 24.0, co.y / 24.0), smooth=False)
-    bpy.ops.object.select_all(action="DESELECT"); sea.select_set(True); bpy.context.view_layer.objects.active = sea
-    os.makedirs(os.path.join(OUT, "assets"), exist_ok=True)
-    from atelier.blender.fbx import export_fbx as export_scene_fbx
-    export_scene_fbx(filepath=os.path.join(OUT, "assets", "Sea.fbx"), use_selection=True, apply_unit_scale=True, apply_scale_options="FBX_SCALE_ALL", axis_forward="-Y", axis_up="Z",
-                             object_types={"MESH"}, mesh_smooth_type="FACE", bake_anim=False, path_mode="COPY", embed_textures=False)
-    print("sea exported")
+    return hills
 
 
-main()
+def sea(W=None, H=None, final=None, *, city=True):
+    water = mat("Water", (0.3, 0.44, 0.58), "T_water.jpg")
+    vertices, faces = ocean_mesh(city=city)
+    return obj("Sea", vertices, faces, water, uvs=lambda co: (co.x / 24., co.y / 24.), smooth=False)
