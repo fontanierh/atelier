@@ -36,11 +36,12 @@ def native_product(name, content, packages, *, extra=()):
 
 
 def world_steps(ctx):
-    from atelier.build import Call
-    from atelier import export_tasks, export_assembly
+    from atelier.build import Python
+    from atelier import export_tasks
     import sys
     sys.path.insert(0,str(GAME))
     import foliage_source_products as products
+    product_code=build_inputs.local_imports(Path(products.__file__))
     source=WORLD/'foliage_selected_source.py';exporter=WORLD/'export_foliage_piece.py'
     source_code=build_inputs.local_imports(source,(WORLD,WORLD/'regions'))
     steps=[]
@@ -49,11 +50,10 @@ def world_steps(ctx):
         rows,policy=products.definition_rows(name,spec,material_specs.MATERIALS)
         definitions=ctx.out/'foliage-definitions'/name;data=ctx.out/'foliage-source'/name
         textures=sorted({ctx.out/'textures'/value['texture'] for value in rows[name]['materials'].values() if value.get('texture')})
-        def project(ctx,log,name=name,spec_path=spec_path,definitions=definitions):
-            products.project(name,spec_path,material_specs.MATERIALS,definitions)
-            log.write('Projected independent foliage LOD definitions\n')
-        steps.append(Step('world.foliage.definitions.'+name,[Call('project foliage definitions',project)],
-            inputs=[Path(__file__),Path(products.__file__),WORLD/'material_specs.py',spec_path],cache=True,
+        steps.append(Step('world.foliage.definitions.'+name,
+            [Python(Path(products.__file__),('project','--kind',name,'--spec',str(spec_path),
+                '--materials',str(WORLD/'material_specs.py'),'--output',str(definitions)))],
+            inputs=[Path(__file__),*product_code,WORLD/'material_specs.py',spec_path],cache=True,
             products=[*(Product('foliage.definition.'+key,(definitions/(key+'.json'),)) for key in rows),
                       Product('foliage.policy.'+name,(definitions/'policy.json',))]))
         for key,row in rows.items():
@@ -79,11 +79,9 @@ def world_steps(ctx):
                 about='one seeded authored foliage source; explicit pre-export bounds/crown dependencies'))
             steps += export_tasks.steps(ctx,prefix='world.foliage.export',assets=[export_tasks.Asset(key,data/(key+'.npz'))],
                 script=exporter,inputs=[data/(key+'.materials.json'),*textures],reads=['foliage.payload.'+key],after=['world.textures'])
-        def assemble(ctx,log,name=name,definitions=definitions):
-            products.assemble(ctx.out,name,json.loads((definitions/'policy.json').read_text()))
-            log.write('Complete foliage kind assembled from independent files only\n')
-        steps.append(Step('world.foliage.'+name,[Call('assemble complete foliage kind',assemble)],
-            inputs=[Path(products.__file__),*export_assembly.runtime_inputs()],
+        steps.append(Step('world.foliage.'+name,
+            [Python(Path(products.__file__),('assemble','--kind',name,'--policy',str(definitions/'policy.json'),'--output',str(ctx.out)))],
+            inputs=product_code,
             reads=['foliage.policy.'+name,'foliage.base.'+name,*('foliage.report.'+key for key in rows),
                    *('world.foliage.export.'+key for key in rows)],
             products=[Product('foliage.'+name+'.source',(ctx.out/'foliage'/name,))],cache=True,

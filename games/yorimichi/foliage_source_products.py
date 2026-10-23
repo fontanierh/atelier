@@ -101,3 +101,23 @@ def assemble(out,kind,policy):
     atomic_json(folder/'manifest.json',result)
     for key in old-current:(folder/key).unlink(missing_ok=True)
     return result
+
+
+def main():
+    import argparse
+    import runpy
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('mode',choices=('project','assemble'))
+    parser.add_argument('--kind',required=True)
+    parser.add_argument('--output',type=Path,required=True)
+    parser.add_argument('--spec',type=Path)
+    parser.add_argument('--materials',type=Path)
+    parser.add_argument('--policy',type=Path)
+    args=parser.parse_args()
+    if args.mode=='project':
+        project(args.kind,args.spec,runpy.run_path(str(args.materials))['MATERIALS'],args.output)
+    else:assemble(args.output,args.kind,json.loads(args.policy.read_text()))
+    print('FOLIAGE '+args.mode.upper()+' COMPLETE '+args.kind,flush=True)
+
+
+if __name__=='__main__':main()

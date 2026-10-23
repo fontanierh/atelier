@@ -8,7 +8,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from atelier import build, build_deferred, build_products, export_manifest
+from atelier import build, build_cache, build_deferred, build_inputs, build_products, export_manifest
 from atelier.atomic_files import atomic_json
 
 GAME = Path(__file__).resolve().parents[1]
@@ -43,6 +43,9 @@ def test_full_recipe_declares_every_selected_source_and_preserves_native_api(tmp
     graph = build_products.Graph(recipe.steps(SimpleNamespace(game='yorimichi', out=tmp_path, uproject=None)))
     for step in graph.by_name.values():
         build_deferred.validate(step)
+        if step.name.startswith('world.foliage.'):
+            build_cache.roots(SimpleNamespace(out=tmp_path),step)
+            build_inputs.validate_imports(step,build.required_inputs(step))
     sources = [s for n, s in graph.by_name.items() if n.startswith('world.foliage.source.')]
     exporters = [s for n, s in graph.by_name.items() if n.startswith('world.foliage.export.')]
     assert len(sources) == len(exporters) == 102  # 84 authored LODs, plus all 18 Seed FBXs.
