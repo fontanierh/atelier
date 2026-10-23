@@ -1169,10 +1169,14 @@ class Crater(Station):
 STATIONS = {'valley': Valley, 'rim': Rim, 'crater': Crater}
 
 
-def build(key, p, d, cab, ctx):
+def build(key, p, d, cab, ctx, *, prepared=None):
     """Build, audit, check and export one station. ctx carries build.py's helpers (shared audit and export)."""
     import json
-    st = STATIONS[key](key, p, d); meshes = st.make(); name = f'Station{st.NAME}'
+    if prepared is None:
+        st = STATIONS[key](key, p, d); meshes = st.make()
+    else:
+        st, meshes = prepared
+    name = f'Station{st.NAME}'
     rows, cop = ctx['audit'](meshes)
     seats = solid.seats(list(meshes.values()), st.seats)
     movers = ctx['movers'](cab); static = list(meshes.values())

@@ -111,9 +111,12 @@ def failures_of(rows, cop, seats, extra=()):
 
 
 # ------------------------------------------------------------------ pieces
-def build_cabin(p, d):
-    mats = fresh_scene(); c = Cabin(p, d)
-    meshes, door_info = c.build()
+def build_cabin(p, d, *, prepared=None, export=True):
+    mats = fresh_scene()
+    if prepared is None:
+        c = Cabin(p, d); meshes, door_info = c.build()
+    else:
+        c, meshes, door_info = prepared
     rows, cop = audit_meshes(meshes)
     seats = solid.seats(list(meshes.values()), c.seats)
     proxies = c.proxies()
@@ -122,7 +125,7 @@ def build_cabin(p, d):
     grip_clear = checks.grip_clearances(GRIP, p['rope_radius'])
     if not grip_clear['ok']:
         extra.append(f'grip wheel or pivot within {grip_clear["required_m"]} m of the rope axis: {grip_clear}')
-    hulls = export_piece('Cabin', meshes, mats, proxies)
+    hulls = export_piece('Cabin', meshes, mats, proxies) if export else len(proxies)
     G = d['grip_to_floor']; W = p['cabin_width']
     # Jaw groove on the rope on a level rope, a 40 % grade and a sagging span (rope.py frames, as in the stations).
     span = R.sagging_span(40.0, 4.0, p['rope_radius'])
@@ -251,10 +254,14 @@ def rope_check(cab, path, poses):
             'excluded': 'grip parts tagged jaw and clamp (where the jaws close on the rope)', 'ok': checks.clearance_ok(d, path.r)}
 
 
-def build_towers(p, d, cab):
+def build_towers(p, d, cab, *, prepared=None, export=True):
     mats = fresh_scene(); out = {}; bad = []; movers = cabin_movers(cab)
     for H in p['tower_heights']:
-        t = Tower(p, H); m = t.build(); meshes = {m.name: m}
+        if prepared is None:
+            t = Tower(p, H); m = t.build()
+        else:
+            t, m = prepared[H]
+        meshes = {m.name: m}
         rows, cop = audit_meshes(meshes)
         seats = solid.seats([m], t.seats)
         # The cabin passing over the tower on either rope, door side outward, along the whole sheave train.
@@ -293,10 +300,12 @@ def build_towers(p, d, cab):
         extra += [f'{m.name}: {b}' for b in checks.budget_failures('tower', tris)]
         proxies = t.proxies()
         extra += [f'{m.name}: {b}' for b in checks.proxy_failures(proxies)]
-        obj, _ = solid.to_object(m, mats); solid.export_fbx([obj], ASSETS / f'{m.name}.fbx')
-        hulls = solid.export_collision(proxies, ASSETS / f'{m.name}_Collision.fbx', f'{m.name}_Collision')
-        if H != p['review_tower_height']:          # towers.blend keeps the review height only
-            bpy.data.objects.remove(obj)
+        hulls = len(proxies)
+        if export:
+            obj, _ = solid.to_object(m, mats); solid.export_fbx([obj], ASSETS / f'{m.name}.fbx')
+            hulls = solid.export_collision(proxies, ASSETS / f'{m.name}_Collision.fbx', f'{m.name}_Collision')
+            if H != p['review_tower_height']:
+                bpy.data.objects.remove(obj)
         out[m.name] = {'mesh': rows[m.name], 'triangles': tris, 'bounds': bounds(meshes), **t.attachment(),
                        'collision': {'file': f'assets/{m.name}_Collision.fbx', 'convex_hulls': hulls},
                        'cabin_pass': {'positions': len(places), 'contacts': hits, 'body_within_0.3m': env_hits,
@@ -304,7 +313,7 @@ def build_towers(p, d, cab):
                        'coplanar_overlaps': cop, 'seating': {'checked': len(seats), 'failures': [s for s in seats if s['status'] != 'ok']}}
         bad += failures_of(rows, cop, seats, extra)
         log(f'  {m.name}: {tris} triangles, {rows[m.name]}, pass contacts {len(hits)}, envelope {len(env_hits)}')
-    bpy.ops.wm.save_as_mainfile(filepath=str(OUT / 'towers.blend'))
+    if export: bpy.ops.wm.save_as_mainfile(filepath=str(OUT / 'towers.blend'))
     return out, bad
 
 

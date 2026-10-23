@@ -8,7 +8,7 @@ import json
 import os
 
 BUILD_SOURCES = ('build.py', 'cabin.py', 'checks.py', 'params.py', 'rope.py',
-                 'solid.py', 'stations.py', 'textures.py', 'tower.py', 'walk.py')
+                 'solid.py', 'stations.py', 'textures.py', 'tower.py', 'walk.py', 'commands.py')
 
 DEFAULTS = {
     # Ropeway
