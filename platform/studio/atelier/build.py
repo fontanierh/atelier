@@ -1576,7 +1576,13 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             saved_seconds += record.get('checkpoint_build_seconds') or 0.
         if produced is not None and not from_cache:
             produced.append((step.name, record))
-        echo(f'{print_} {"restored" if from_cache else "done"} in {seconds:.1f} s{slot_summary(slots)}')
+        if from_cache:
+            source = {'checkpoint': 'checkpoint action ' + action_hit['key'][:12] if action_hit else 'checkpoint action',
+                      'local': 'local artifact cache', 'compatible-local': 'compatible local artifact cache',
+                      'https': 'remote artifact cache'}.get(restore_source, restore_source or 'cache')
+            echo(f'{print_} restored in {seconds:.1f} s from {source}{slot_summary(slots)}')
+        else:
+            echo(f'{print_} done in {seconds:.1f} s{slot_summary(slots)}')
     covered = getattr(ctx, 'rebuild_covered', [])
     if covered:
         echo(f'rebuild reason covered {len(covered)} tasks: ' + ', '.join(covered))

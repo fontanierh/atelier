@@ -52,7 +52,7 @@ def test_build_restores_missing_and_modified_outputs_as_independent_copies(proje
     (p.ctx.out / 'mesh/vertices').write_text('corruption')
     assert p.run() == 0 and p.calls == []
     assert build_products.records(p.step) == expected
-    assert any('restored in' in message for message in p.messages)
+    assert any('restored in' in message and message.endswith('from local artifact cache') for message in p.messages)
     assert not (p.ctx.stamps / 'mesh.restore.json').exists()
 
 
