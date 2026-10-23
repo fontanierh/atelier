@@ -4,11 +4,17 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 
 from atelier import engine
 from atelier.export_manifest import real_directory
 from atelier.atomic_files import atomic_json
 from atelier.harness.safety import guarded
+
+GAME = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(GAME / 'world'))
+import yori  # noqa: E402,F401
+from hidamari_stable.query_inputs import generated  # noqa: E402
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--output', type=Path, required=True)
@@ -20,7 +26,7 @@ donor = real_directory(args.donor.absolute())
 checkout = Path(__file__).resolve().parents[4]
 def bindings():
     entries = {}
-    for name in ('world.json', 'heightmap.npy', 'farhills.npy'):
+    for name in generated():
         path = donor / name
         if path.is_symlink() or not path.is_file(): raise ValueError('Missing original Stable donor data')
         info = path.stat()

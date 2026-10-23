@@ -24,8 +24,9 @@ from atelier.atomic_files import atomic_json  # noqa: E402
 from atelier.build_inputs import local_imports  # noqa: E402
 from atelier.build_cache import copy_file  # noqa: E402
 from atelier.export_manifest import real_directory, sha  # noqa: E402
-from island_atomic_equivalence import baseline_packets, captured, signature  # noqa: E402
+from source_packets import baseline_packets, captured, signature  # noqa: E402
 from village import mesh as kernel  # noqa: E402
+from hidamari_stable import query_inputs  # noqa: E402
 
 STAGE = ['preflight']
 PARTS = ('barn', 'gate', 'yard', 'paddock')
@@ -42,18 +43,18 @@ def main():
     original = fixture.read_text(); source = GAME / 'world/regions/hidamari_stable/build.py'
     assert sha(fixture) == sha(source), 'Original Stable constructor source changed before census'
     paths = set(local_imports(source, (GAME / 'world', GAME / 'world/regions')))
-    paths.update((Path(__file__), fixture, Path(__file__).with_name('island_atomic_equivalence.py')))
+    paths.update((Path(__file__), fixture, Path(__file__).with_name('source_packets.py'), Path(query_inputs.__file__)))
     paths.add(GAME / 'world/regions/hidamari/fonts/NotoSansJP.ttf')
     paths.add(GAME / 'assets/vehicles/belmonte-train/line.json')
     donor = real_directory(args.donor)
-    inputs = [donor / name for name in ('world.json', 'heightmap.npy', 'farhills.npy')]
-    for path in inputs:
+    inputs = {name: donor / name for name in query_inputs.generated()}
+    for path in inputs.values():
         real_directory(path.parent)
         if path.is_symlink() or not path.is_file(): raise ValueError('Missing original Stable query input')
-    paths.update(inputs)
+    paths.update(inputs.values()); paths.update(query_inputs.committed())
     before = {str(path): sha(path) for path in sorted(paths)}
-    for path in inputs:
-        target = output / 'data' / path.name; target.parent.mkdir(parents=True, exist_ok=True)
+    for name, path in inputs.items():
+        target = output / 'data' / name; target.parent.mkdir(parents=True, exist_ok=True)
         copy_file(path, target)
         assert sha(target) == before[str(path)]
     yori.OUT = output / 'data'
