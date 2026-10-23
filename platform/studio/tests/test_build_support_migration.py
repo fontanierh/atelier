@@ -1,5 +1,6 @@
 """Support relocation cannot force exports or conceal actual source/tool changes."""
 from dataclasses import replace
+from pathlib import Path
 import json
 
 import pytest
@@ -10,6 +11,12 @@ from test_checkpoints import fixture
 
 @pytest.fixture
 def previous(fixture, monkeypatch):
+    # Exercise a synthetic reviewed pair in this unit fixture. Production keeps
+    # its exact pinned pair and refuses later support changes, including the
+    # runtime-copy extraction; tests must not widen that historical allowance.
+    support = Path(migration.__file__).parent
+    monkeypatch.setattr(migration, 'CURRENT', {name: build_products.file_digest(support / name)
+        for name in (*migration.CURRENT, 'file_copy.py')})
     ctx, steps = fixture.checkout('support-producer')
     steps[0] = replace(steps[0], cache=True)
     fixture.produce(ctx, steps)
@@ -37,7 +44,7 @@ def test_unchanged_complete_products_preserve_dependency_result(previous):
     assert step.outputs[0].read_bytes() == before
 
 
-@pytest.mark.parametrize('change', ['source', 'output', 'command', 'tool', 'future-support', 'missing-output', 'missing-products'])
+@pytest.mark.parametrize('change', ['source', 'output', 'command', 'tool', 'future-support', 'copy-support', 'missing-output', 'missing-products'])
 def test_source_tool_or_output_changes_do_not_migrate(previous, monkeypatch, change):
     ctx, step, old = previous
     if change == 'source': step.inputs[0].write_text('changed_geometry')
@@ -46,6 +53,7 @@ def test_source_tool_or_output_changes_do_not_migrate(previous, monkeypatch, cha
     elif change == 'command': step.commands[0].args = ('changed setting',)
     elif change == 'tool': old['input_state']['tools'] = 'e' * 64
     elif change == 'future-support': monkeypatch.setitem(migration.CURRENT, 'source_imports.py', 'e' * 64)
+    elif change == 'copy-support': monkeypatch.setitem(migration.CURRENT, 'file_copy.py', 'e' * 64)
     else: old.pop('products')
     current, state = build.fingerprint_state(step, {})
     assert migration.migrate(ctx, step, current, state, old, {}, echo=lambda _: None) is old
