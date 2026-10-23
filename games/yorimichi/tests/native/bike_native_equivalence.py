@@ -87,7 +87,9 @@ def component(mesh,group=None):
     else:
         value=actor.get_component_by_class(unreal.StaticMeshComponent);assert value
         value.set_mobility(unreal.ComponentMobility.MOVABLE);assert value.set_static_mesh(mesh)
-    value.set_generate_overlap_events(False);value.set_collision_enabled(unreal.CollisionEnabled.QUERY_ONLY)
+    value.set_editor_property('generate_overlap_events',False)
+    assert not value.get_editor_property('generate_overlap_events')
+    value.set_collision_enabled(unreal.CollisionEnabled.QUERY_ONLY)
     return value
 
 
