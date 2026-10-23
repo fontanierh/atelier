@@ -5,6 +5,74 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "Dom/JsonObject.h"
+#if WITH_EDITOR
+#include "StaticMeshResources.h"
+#include "Serialization/JsonSerializer.h"
+#include "Serialization/JsonWriter.h"
+#endif
+
+FString UHidamariStableMeshComponent::MeasureLogicalBounds(const TArray<UStaticMesh*>& Lod0Parts,
+    const TArray<UStaticMesh*>& Lod1Parts, const TArray<UStaticMesh*>& Lod2Parts)
+{
+#if WITH_EDITOR
+    FBoxSphereBounds::Builder Bounds;
+    TSet<const UStaticMesh*> Seen;
+    for (const TArray<UStaticMesh*>* Parts : {&Lod0Parts, &Lod1Parts, &Lod2Parts})
+    {
+        if (Parts->Num() != 4) return {};
+        FBox3f Box(ForceInit);
+        for (const UStaticMesh* Mesh : *Parts)
+        {
+            if (!Mesh || Seen.Contains(Mesh) || !Mesh->GetRenderData()
+                || Mesh->GetRenderData()->LODResources.IsEmpty()) return {};
+            Seen.Add(Mesh);
+            const auto& Buffer = Mesh->GetRenderData()->LODResources[0].VertexBuffers.PositionVertexBuffer;
+            if (!Buffer.GetVertexData() || Buffer.GetNumVertices() == 0) return {};
+            for (uint32 Index = 0; Index < Buffer.GetNumVertices(); ++Index)
+            {
+                const FVector3f Position = Buffer.VertexPosition(Index);
+                if (Position.ContainsNaN()) return {};
+                Box += Position;
+            }
+        }
+        // Exact installed MeshBuilder::ComputeBoundsFromVertexList arithmetic.
+        const FVector3f Center = Box.GetCenter();
+        float RadiusSquared = 0.f;
+        for (const UStaticMesh* Mesh : *Parts)
+        {
+            const auto& Buffer = Mesh->GetRenderData()->LODResources[0].VertexBuffers.PositionVertexBuffer;
+            for (uint32 Index = 0; Index < Buffer.GetNumVertices(); ++Index)
+                RadiusSquared = FMath::Max(RadiusSquared, (Buffer.VertexPosition(Index) - Center).SizeSquared());
+        }
+        Bounds += FBoxSphereBounds(FVector(Center), FVector(Box.GetExtent()), FMath::Sqrt(RadiusSquared));
+    }
+    const FBoxSphereBounds Result = Bounds;
+    if (Result.ContainsNaN() || Result.SphereRadius <= 0.) return {};
+    auto Vector = [](const FVector& Value)
+    {
+        TArray<TSharedPtr<FJsonValue>> Values;
+        Values.Add(MakeShared<FJsonValueNumber>(Value.X)); Values.Add(MakeShared<FJsonValueNumber>(Value.Y));
+        Values.Add(MakeShared<FJsonValueNumber>(Value.Z)); return Values;
+    };
+    const auto Object = MakeShared<FJsonObject>();
+    Object->SetArrayField(TEXT("origin"), Vector(Result.Origin));
+    Object->SetArrayField(TEXT("extent"), Vector(Result.BoxExtent));
+    Object->SetNumberField(TEXT("sphere_radius"), Result.SphereRadius);
+    FString Json;
+    return FJsonSerializer::Serialize(Object, TJsonWriterFactory<>::Create(&Json)) ? Json : FString();
+#else
+    return {};
+#endif
+}
+
+FBoxSphereBounds UHidamariStableMeshComponent::CalcBounds(const FTransform& LocalToWorld) const
+{
+    if (!bHasLogicalBounds) return Super::CalcBounds(LocalToWorld);
+    FBoxSphereBounds Result = LogicalBounds.TransformBy(LocalToWorld);
+    Result.BoxExtent *= BoundsScale;
+    Result.SphereRadius *= BoundsScale;
+    return Result;
+}
 
 static FVector StableVector(const TArray<TSharedPtr<FJsonValue>>& A)
 {
@@ -75,6 +143,9 @@ bool AHidamariStable::Initialize(const FString& Path)
     if (!Data) { UE_LOG(LogTemp, Warning, TEXT("Hidamari stable: cannot read %s"), *Path); return false; }
     FString AssetRoot(TEXT("/Game/HidamariStable"));
     Data->TryGetStringField(TEXT("asset_root"), AssetRoot);
+    bool bAtomic = false;
+    if (!Data->TryGetBoolField(TEXT("atomic"), bAtomic) || !bAtomic
+        || AssetRoot != TEXT("/Game/HidamariStable/Atomic")) return false;
     Origin = StableField(StableObj(Data, TEXT("site")), TEXT("origin"));
     SetActorLocation(World(FVector::ZeroVector));
     Tags.AddUnique(TEXT("hidamari_stable"));
@@ -84,9 +155,47 @@ bool AHidamariStable::Initialize(const FString& Path)
         if (!Mesh) UE_LOG(LogTemp, Warning, TEXT("Hidamari stable: mesh %s is not imported"), *Name);
         return Mesh;
     };
-    auto Place = [&](UStaticMesh* Mesh, const FString& Name, const FVector& Local, float Yaw, bool bBlocks)
+    TOptional<FBoxSphereBounds> LogicalBounds;
+    const auto Logical = StableObj(Data, TEXT("logical_stable_bounds_cm"));
+    if (Data->HasField(TEXT("atomic")))
     {
-        auto* Component = NewObject<UStaticMeshComponent>(this, *Name);
+        if (!Logical) return false;
+        for (const TCHAR* Key : {TEXT("origin"), TEXT("extent")})
+        {
+            const auto& Coordinates = StableArr(Logical, Key);
+            if (Coordinates.Num() != 3) return false;
+            for (const auto& Coordinate : Coordinates)
+                if (!Coordinate || Coordinate->Type != EJson::Number || !FMath::IsFinite(Coordinate->AsNumber())) return false;
+        }
+        const FVector Center = StableField(Logical, TEXT("origin")), Extent = StableField(Logical, TEXT("extent"));
+        double Radius = 0.;
+        if (!Logical->TryGetNumberField(TEXT("sphere_radius"), Radius) || !FMath::IsFinite(Radius) || Radius <= 0.
+            || Center.ContainsNaN() || Extent.ContainsNaN() || Extent.GetMin() <= 0.
+            || Radius < Extent.GetMax() || Radius > Extent.Size()) return false;
+        LogicalBounds = FBoxSphereBounds(Center, Extent, Radius);
+        static const TSet<FString> Expected = {TEXT("SM_HS_Barn"), TEXT("SM_HS_Gate"), TEXT("SM_HS_Yard"),
+            TEXT("SM_HS_Paddock"), TEXT("SM_HS_Ground"), TEXT("SM_HS_Road"), TEXT("SM_HS_RoadSign"),
+            TEXT("SM_HS_StallDoor"), TEXT("SM_HS_RoomDoor")};
+        TSet<FString> Found;
+        for (const auto& Value : StableArr(Data, TEXT("meshes")))
+        {
+            const auto M = Value ? Value->AsObject() : nullptr;
+            FString Name;
+            if (!M || !M->TryGetStringField(TEXT("name"), Name) || !Expected.Contains(Name) || Found.Contains(Name)
+                || !Load(Name)) return false;
+            Found.Add(Name);
+        }
+        if (Found.Num() != Expected.Num()) return false;
+    }
+    auto Place = [&](UStaticMesh* Mesh, const FString& Name, const FVector& Local, float Yaw, bool bBlocks, bool bLogical = false)
+    {
+        UStaticMeshComponent* Component;
+        if (bLogical && LogicalBounds.IsSet())
+        {
+            auto* Part = NewObject<UHidamariStableMeshComponent>(this, *Name);
+            Part->LogicalBounds = LogicalBounds.GetValue(); Part->bHasLogicalBounds = true; Component = Part;
+        }
+        else Component = NewObject<UStaticMeshComponent>(this, *Name);
         Component->SetMobility(EComponentMobility::Static);
         Component->SetStaticMesh(Mesh); Component->SetupAttachment(RootComponent);
         Component->SetWorldLocationAndRotation(World(Local), FRotator(0, -Yaw, 0));
@@ -107,7 +216,9 @@ bool AHidamariStable::Initialize(const FString& Path)
         if (UStaticMesh* Mesh = Load(Name))
         {
             bool bBlocks = true; M->TryGetBoolField(TEXT("blocks"), bBlocks);
-            Place(Mesh, Name, StableField(M, TEXT("at")), float(M->GetNumberField(TEXT("yaw"))), bBlocks); ++Placed;
+            const bool bLogical = Name == TEXT("SM_HS_Barn") || Name == TEXT("SM_HS_Gate")
+                || Name == TEXT("SM_HS_Yard") || Name == TEXT("SM_HS_Paddock");
+            Place(Mesh, Name, StableField(M, TEXT("at")), float(M->GetNumberField(TEXT("yaw"))), bBlocks, bLogical); ++Placed;
         }
     }
     // stalls: name plates and horse spots, then every door leaf (stall doors keep a pointer for SetDoorOpen)
