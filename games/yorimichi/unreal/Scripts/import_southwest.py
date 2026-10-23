@@ -1,5 +1,9 @@
 """Import the south-west detour props (village kit, coconut stand, temple, island) into /Game/Japan/Assets with the
-village material, and re-import the revised terrain. Level lighting, characters and preferences are untouched."""
+village material. Level lighting, characters and preferences are untouched.
+
+The terrain, the sea plane and their materials (M_Village, MI_Sand, MI_Coast, M_ForestGround, M_Sea) belong to
+unreal.world, which calls sand_material and sea_plane below; this import only reads M_Village, so each package
+has one owner."""
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / 'world')); import yori  # noqa: E402  (build/yorimichi = yori.OUT)
 import json,sys
 from pathlib import Path
@@ -67,28 +71,9 @@ def sea_material():
     # forward shaded: the sun's specular on the wave normals gives the glints
     m.set_editor_property('translucency_lighting_mode',U.TranslucencyLightingMode.TLM_SURFACE_PER_PIXEL_LIGHTING)
     MEL.recompile_material(m);EAL.save_loaded_asset(m);return m
-def main():
+def sea_plane():
+    """The sea plane (re-exported by build_terrain) with the real water material instead of the painted tile."""
     unreal.SystemLibrary.execute_console_command(None,'Interchange.FeatureFlags.Import.FBX 0')
-    manifest=json.loads((OUT/'manifest.json').read_text());mat=V.material();report={}
-    for fbx in sorted((OUT/'fbx').glob('*.fbx')):
-        name=fbx.stem;mesh=V.import_mesh(fbx,'/Game/Japan/Assets',name)
-        mesh.set_material(0,mat)
-        body=mesh.get_editor_property('body_setup')
-        if body:body.set_editor_property('collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
-        EAL.save_loaded_asset(mesh);report[name]=mesh.get_path_name();unreal.log('SOUTHWEST imported '+name)
-    # terrain: same path as the world setup
-    terrain=V.import_mesh(ROOT/'terrain.fbx','/Game/Japan','Terrain')
-    sand_material()
-    from forest_ground import coast_instance
-    coast_instance()
-    for i,slot in enumerate(terrain.static_materials):
-        key=str(slot.get_editor_property('imported_material_slot_name')).split('.')[0]
-        m=EAL.load_asset('/Game/Japan/Materials/MI_'+key);assert m,'Missing terrain material '+key
-        terrain.set_material(i,m)
-    body=terrain.get_editor_property('body_setup')
-    if body:body.set_editor_property('collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
-    EAL.save_loaded_asset(terrain)
-    # the sea plane (re-exported by build_terrain): a real water material instead of the painted tile
     sea=V.import_mesh(ROOT/'assets/Sea.fbx','/Game/Japan/Assets','Sea')
     if sea.get_bounding_box().max.x<100000:
         # The world setup imports the sea through Interchange, and the first FBX reimport over that import data skips
@@ -97,5 +82,16 @@ def main():
     assert sea.get_bounding_box().max.x>100000,'Sea imported at the wrong scale'
     sea.set_material(0,sea_material())
     EAL.save_loaded_asset(sea)
+    return sea
+def main():
+    unreal.SystemLibrary.execute_console_command(None,'Interchange.FeatureFlags.Import.FBX 0')
+    mat=EAL.load_asset('/Game/Japan/Materials/M_Village');assert mat,'Build unreal.world before the south-west props'
+    report={}
+    for fbx in sorted((OUT/'fbx').glob('*.fbx')):
+        name=fbx.stem;mesh=V.import_mesh(fbx,'/Game/Japan/Assets',name)
+        mesh.set_material(0,mat)
+        body=mesh.get_editor_property('body_setup')
+        if body:body.set_editor_property('collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
+        EAL.save_loaded_asset(mesh);report[name]=mesh.get_path_name();unreal.log('SOUTHWEST imported '+name)
     (OUT/'import-report.json').write_text(json.dumps(report,indent=2));unreal.log('SOUTHWEST IMPORT COMPLETE %d meshes'%len(report))
 if __name__=='__main__':main()

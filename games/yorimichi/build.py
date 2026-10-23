@@ -1605,12 +1605,12 @@ def unreal_steps(ctx):
                      *[SCRIPTS / n for n in ('import_hidamari.py', 'mountain_material.py', 'import_village.py', 'atmosphere.py', 'ground_grain.py', 'sea_look.py')]],
              needs=['unreal.world', 'world.hidamari.north', 'world.craterpark_restyle'], heavy=True,
              about='/Game/Japan: the volcano (HD_North*), M_NorthMountains and its rock, snow and crater floor textures'),
-        # The regions below layer onto the world (the south-west import replaces the terrain's and the sea's materials),
-        # so they rerun when it is reimported.
+        # The regions below place their own meshes with the world's materials, so they rerun when it is reimported.
+        # The terrain, the sea and their materials are unreal.world's alone.
         Step('unreal.southwest', [UnrealScript(SCRIPTS / 'import_southwest.py', 'SOUTHWEST IMPORT COMPLETE')],
              inputs=[SCRIPTS / 'import_southwest.py', SCRIPTS / 'sea_look.py', SCRIPTS / 'forest_ground.py',
-                     SCRIPTS / 'ground_grain.py', SCRIPTS / 'material_assets.py'], needs=['unreal.world', 'world.southwest', 'world.terrain.meshes'], heavy=True,
-             about='south-west props, the terrain and the sea'),
+                     SCRIPTS / 'ground_grain.py', SCRIPTS / 'material_assets.py'], needs=['unreal.world', 'world.southwest'], heavy=True,
+             about='south-west props'),
         Step('unreal.mega', [UnrealScript(SCRIPTS / 'import_mega.py', 'MEGA IMPORT COMPLETE')],
              inputs=[SCRIPTS / 'import_mega.py'], needs=['unreal.world', 'world.mega'], heavy=True, about='the mini-mega ramp'),
         Step('unreal.swordcamp', [UnrealScript(SCRIPTS / 'import_swordcamp.py', 'SWORDCAMP IMPORT COMPLETE', null_rhi=True)],
