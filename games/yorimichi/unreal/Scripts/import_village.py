@@ -1,9 +1,10 @@
-"""Targeted village + terrain import; preserves level lighting and both characters."""
+"""Complete independent Village owner; island map and terrain have their own owner."""
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / 'world')); import yori  # noqa: E402  (build/yorimichi = yori.OUT)
 import hashlib,json
 from pathlib import Path
 import unreal
 _sys.path.insert(0, str(_Path(__file__).resolve().parent))
+_sys.path.insert(0, str(yori.GAME))
 import atmosphere  # noqa: E402
 
 ROOT = yori.OUT
@@ -55,7 +56,7 @@ def material():
     link(time,'',wind,'T');link(pos,'',wind,'P');link(vc,'A',wind,'W')
     MEL.connect_material_property(wind,'',unreal.MaterialProperty.MP_WORLD_POSITION_OFFSET)
     m.set_editor_property('used_with_instanced_static_meshes',True)
-    MEL.recompile_material(m);EAL.save_loaded_asset(m)
+    MEL.recompile_material(m);assert EAL.save_loaded_asset(m), 'Village material save failed'
     return m
 
 
@@ -80,13 +81,12 @@ def resident_material():
     for prop,value in [(unreal.MaterialProperty.MP_ROUGHNESS,1.),(unreal.MaterialProperty.MP_SPECULAR,0.)]:
         n=MEL.create_material_expression(m,unreal.MaterialExpressionConstant,0,350);n.set_editor_property('r',value);MEL.connect_material_property(n,'',prop)
     m.set_editor_property('used_with_skeletal_mesh',True);m.set_editor_property('two_sided',True)
-    MEL.recompile_material(m);EAL.save_loaded_asset(m)
+    MEL.recompile_material(m);assert EAL.save_loaded_asset(m), 'Village resident material save failed'
+    return m
 
 
-# The legacy FBX factory opens the Message Log whenever a new mesh has a build warning (nearly zero tangents, for
-# instance), which crashes an editor running as a commandlet. An existing asset takes the reimport path instead, which
-# only opens it on errors. So a mesh that does not exist yet is first created from a small placeholder that builds
-# cleanly, then imported for real as a reimport (the factory points the asset at the new file first).
+# Compatibility only: mesh_import accepts the old seed keyword without reading it.
+# Migration and final source passes always use the requested actual FBX bytes.
 PLACEHOLDER=yori.OUT/'village'/'assets'/'Village_Sign.fbx'   # small, and builds without warnings
 
 
@@ -96,41 +96,32 @@ def import_mesh(path, dest, name, fresh_slots=False):
     return import_fbx(path, dest, name, seed=PLACEHOLDER, fresh_slots=fresh_slots)
 
 
-def main(terrain=True,assets=None):
-    unreal.SystemLibrary.execute_console_command(None,'Interchange.FeatureFlags.Import.FBX 0')
-    identity=json.loads((OUT/'build-identity.json').read_text())
-    def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
-    for source,digest in identity['sources'].items():assert sha(yori.REGIONS/source)==digest,'Rebuild changed village source: '+source
-    assert sha(ROOT/'world.json')==identity['world_sha256'],'Rebuild village for current layout'
-    assert sha(ROOT/'heightmap.npy')==identity['heightmap_sha256'],'Rebuild village for current terrain'
-    for filename,digest in identity['exports'].items():assert sha(OUT/'assets'/filename)==digest,'Incomplete village export: '+filename
-    manifest=json.loads((OUT/'manifest.json').read_text())
-    mat=material()
+def main(terrain=False, assets=None):
+    """Own the complete current Village; island terrain belongs to unreal.island.
+
+    The historical terrain keyword remains accepted without recreating a combined
+    parent. A partial diagnostic must call the bounded receiver explicitly and
+    cannot certify or retire the full production owner.
+    """
+    if type(terrain) is not bool or assets is not None:
+        raise ValueError('Village owner requires its complete explicit current roster')
+    from village_atomic_products import read
+    from import_village_atomic import receive, retire
+    # Refuse incomplete source/placement membership before changing any native asset.
+    groups = read(ROOT)
+    runtime = json.loads((OUT / 'pieces.json').read_text())
+    if (runtime.get('schema') != 1 or runtime.get('complete') is not True
+            or set(runtime.get('parents', {})) != set(groups)):
+        raise ValueError('Incomplete Village runtime placement inventory')
+    members = {parent: group['assets'] for parent, group in runtime['parents'].items()}
+    expected = {parent: ['/Game/Experiments/VillageAtomic/v1_atomic/' + row['name']
+                         for row in group['pieces']] for parent, group in groups.items()}
+    if members != expected:
+        raise ValueError('Village source/runtime membership differs')
+    material()
     resident_material()
-    report=json.loads((OUT/'import-report.json').read_text()) if assets and (OUT/'import-report.json').exists() else {}
-    for name,entry in manifest.items():
-        if assets and name not in assets:continue
-        mesh=import_mesh(OUT/'assets'/f'{name}.fbx','/Game/Japan/Assets',name)
-        assert len(mesh.static_materials)==1,(name,'must have one draw material')
-        mesh.set_material(0,mat)
-        body=mesh.get_editor_property('body_setup');assert body
-        body.set_editor_property('collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE if name=='Village_Ground' else unreal.CollisionTraceFlag.CTF_USE_SIMPLE_AND_COMPLEX)
-        convex=len(body.get_editor_property("agg_geom").get_editor_property("convex_elems"))
-        assert convex>=entry['collision_boxes'],(name,convex,entry['collision_boxes'])
-        box=mesh.get_bounding_box()
-        assert abs(box.max.z-entry['max'][2]*100)<.2,(name,'metres-to-centimetres conversion',box.max.z)
-        EAL.save_loaded_asset(mesh)
-        report[name]={'collision_hulls':convex,'materials':len(mesh.static_materials),'imported':True,'bounds_min':[mesh.get_bounding_box().min.x,mesh.get_bounding_box().min.y,mesh.get_bounding_box().min.z],'bounds_max':[mesh.get_bounding_box().max.x,mesh.get_bounding_box().max.y,mesh.get_bounding_box().max.z]}
-    if terrain:
-        mesh=import_mesh(ROOT/'terrain.fbx','/Game/Japan','Terrain')
-        for i,slot in enumerate(mesh.static_materials):
-            key=str(slot.get_editor_property('imported_material_slot_name')).split('.')[0]
-            mat=EAL.load_asset('/Game/Japan/Materials/MI_'+key)
-            assert mat,'Missing terrain material '+key
-            mesh.set_material(i,mat)
-        mesh.get_editor_property('body_setup').set_editor_property('collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
-        EAL.save_loaded_asset(mesh)
-    (OUT/'import-report.json').write_text(json.dumps(report,indent=2)+'\n')
+    received = receive(ROOT)
+    retire(received, runtime_members=members)
     unreal.log('VILLAGE IMPORT COMPLETE')
 
 if __name__=='__main__':main()
