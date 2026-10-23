@@ -50,12 +50,13 @@ fn declaration_roundtrips_toml_and_json() {
 fn result_roundtrip_keeps_input_key_and_output_content_distinct() {
     let unit = declaration().units.remove(0);
     let record = ResultRecord {
-        schema_version: SCHEMA_VERSION,
+        schema_version: RESULT_SCHEMA_VERSION,
         unit: unit.id.clone(),
         key: "input-key".into(),
         ingredients: IdentityIngredients {
             cache_version: "1".into(),
             op: unit.op,
+            script: unit.script,
             code: BTreeMap::new(),
             worker_version: "1".into(),
             worker_digest: "worker-code".into(),
@@ -64,6 +65,7 @@ fn result_roundtrip_keeps_input_key_and_output_content_distinct() {
             params: unit.params,
             content: BTreeMap::new(),
             references: BTreeMap::new(),
+            staged_inputs: BTreeMap::new(),
             logical_outputs: unit.outputs.clone(),
         },
         outputs: vec![StoredItem {
@@ -72,6 +74,7 @@ fn result_roundtrip_keeps_input_key_and_output_content_distinct() {
                 path: "triangle.glb".into(),
                 digest: "output-bytes".into(),
                 size: 12,
+                mode: 0o644,
             }],
             external_locator: None,
         }],
@@ -84,6 +87,8 @@ fn result_roundtrip_keeps_input_key_and_output_content_distinct() {
         },
     };
     let encoded = serde_json::to_value(&record).unwrap();
+    assert_eq!(encoded["schema_version"], RESULT_SCHEMA_VERSION);
+    assert_eq!(encoded["outputs"][0]["files"][0]["mode"], 0o644);
     assert!(encoded["ingredients"].get("provenance").is_none());
     assert_eq!(encoded["key"], "input-key");
     assert_eq!(encoded["outputs"][0]["files"][0]["digest"], "output-bytes");

@@ -1,7 +1,7 @@
 # Build v2 interfaces (A0)
 
 This unused Rust library is the shared interface for the build-v2 tracks. Production v1 is unchanged.
-Schema version **1** and protocol version **1** are the initial wire contract; incompatible changes
+Declaration schema **1**, result schema **2** and protocol version **1** are the wire contracts; incompatible changes
 require a version bump and coordination with consumers. The lockfile pins this crate's dependencies,
 not game cache identities.
 
@@ -134,3 +134,67 @@ counted as passes. Linux tests prove explicit unsupported behavior; mandatory ma
 APFS cloning, independent edits, read-only snapshots, no-replace races and owned cleanup. Both jobs
 keep compile time separate from the ten-second T0 run. Local native repetition is reserved for a
 specific CI coverage gap or diagnosis, through the ordinary admitted compile workflow.
+
+## Unit keys and source hash hints (A3)
+
+`keys::prepare` consumes an A2-validated declaration, the same frozen source snapshot, explicit
+worker/validator code identities, current produced-item manifests and a complete staged-slot map.
+It returns an immutable `PreparedUnit`: the SHA-256 key, typed ingredients, input staging payloads
+and a `JobRequest` template. The library remains unused by production builds.
+
+Keys use a domain/version-tagged canonical JSON encoding: recursively sorted object keys, sorted
+code/output memberships and exact primitive/array data. Ingredients include cache/op versions,
+selected entry script plus declared project-code hashes, worker/validator versions and code hashes,
+semantic parameters, logical output identities, content identities, references and staged paths.
+Installed Python/libraries/lockfiles, Blender/add-ons, Unreal and compiler/SDK versions are not
+implicitly discovered or hashed. Platform invalidation requires explicit op/cache version changes.
+Project-owned settings/code remain declared inputs. Provenance and stat hints are outside identity.
+
+A content dependency consumes the exact saved file manifest: relative member names, byte SHA-256,
+size and normalized semantic mode. It never consumes the producer's input key, source closure or
+capture provenance. Missing required members fail. External/Zen items need their future typed adapter;
+this API refuses to invent their content identity. References bind only logical path/class; their
+staged descriptor contains exactly those fields, never referenced asset bytes.
+
+Raw files stage exact bytes. JSON selectors stage canonical bytes of the selected value with its
+actual shape, without source locator or selector text. Optional absence is an explicit absent identity,
+not an empty file, JSON null or missing node. Missing selector nodes still fail validation. A source
+locator/selector rename that preserves this staged view leaves the key unchanged.
+
+**Worker-visible staging contract:** every declared slot has one explicit safe relative path. Raw,
+selected and reference-descriptor inputs use that file name (including extension); multi-file items
+use a directory root with their exact recorded member names. Equal/casefold/normalization/ancestor
+collisions fail. This full map enters result ingredients and keys, and `request()` emits precisely its
+`StagedInput` names/paths/identities. Source/code data files stage read-only with canonical mode 0444;
+item members preserve their semantic executable distinction (read-only 0444/0555 while staged).
+
+C1 must implement this boundary: it may not inject original source locators, selector text or producer
+history through Run fields, parameters, logical input objects, environment or helper APIs. Parameters
+are the declared semantic parameters, not an implicit metadata channel. The op sees only the hashed
+staged view. Job ID, job directory and unit scheduling label remain controller/logging metadata and
+must not influence semantic output. The pending `c1.staged-view-semantic-independence` scenario requires
+actual worker output equality under different control metadata and source locators; logs may differ.
+A3 tests establish encoding and Run mapping only, not that future workers already enforce isolation.
+
+**Result schema 2:** `IdentityIngredients.script` identifies the selected entrypoint even when the code
+closure is unchanged; `staged_inputs` records the visible slot map; `StoredFile.mode` is 0644 or 0755.
+B1 blob hashes remain byte-only and stored blobs immutable. B2 must normalize captured source mode
+(any execute bit becomes 0755, otherwise 0644), retain it in result records and compare it for conflicts;
+B3 must restore semantic modes before publishing checkout installs. C1/B2/B3 and package tests must
+prove those mode rules. General ACL/xattr handling is outside this format. Old result records lack
+these required fields; B2 must reject unsupported result versions rather than infer missing metadata.
+Declaration schema and worker framing protocol remain version 1.
+
+`SourceHashCache` hashes each frozen whole-file or selected-view version once. Its advisory version
+hint includes device, inode, size, nanosecond mtime and ctime; selector hints also identify the selected
+view and its explicit encoding version. A changed view codec must bump that version before reusing hints.
+Hint metadata never affects the semantic hash. A changed ctime defeats an unchanged-size/mtime
+hint. Missing hints hash bytes; missing/corrupt checksummed hint records become empty caches. The
+snapshot provider must bind stat tokens to those same frozen bytes. The checksum detects damaged
+hint records; it is not a hostile-input trust boundary. Live source snapshotting, input rechecks,
+mid-build rekeying, actual scheduling cutoff and clean-build oracle integration remain later work.
+
+`tests/keys.rs` covers the identity boundaries, selected-data cutoff, reference independence, semantic
+modes, staged paths, dispatch metadata, manual invalidation, source-version reuse and damaged hints.
+The broad engine scenarios in the registry remain pending until the engine/reference model exists;
+these pure tests do not claim A4/A6/A9 end-to-end execution behavior.

@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 pub const SCHEMA_VERSION: u32 = 1;
+/// Results v2 bind entrypoint/staged input paths and normalized semantic file modes.
+pub const RESULT_SCHEMA_VERSION: u32 = 2;
 pub type Params = BTreeMap<String, serde_json::Value>;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -144,6 +146,7 @@ pub struct ResultRecord {
 pub struct IdentityIngredients {
     pub cache_version: String,
     pub op: Op,
+    pub script: String,
     pub code: BTreeMap<String, String>,
     pub worker_version: String,
     pub worker_digest: String,
@@ -152,6 +155,7 @@ pub struct IdentityIngredients {
     pub params: Params,
     pub content: BTreeMap<String, ContentIdentity>,
     pub references: BTreeMap<String, ReferenceIdentity>,
+    pub staged_inputs: BTreeMap<String, String>,
     pub logical_outputs: Vec<Item>,
 }
 
@@ -177,6 +181,8 @@ pub struct StoredFile {
     pub path: String,
     pub digest: String,
     pub size: u64,
+    /// Semantic result mode: 0644 data or 0755 executable, separate from blob bytes.
+    pub mode: u32,
 }
 
 /// Human evidence only; MUST NOT be included in key computation.
