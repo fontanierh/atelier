@@ -47,7 +47,7 @@ def main(argv=None):
     triangles=sum(len(face)-2 for face in mesh.faces)
     if not 0<triangles<=TRIANGLE_LIMIT:raise ValueError('Vehicle part requires explicit bounded native child support')
     vertices=mesh.verts if family=='bike' else mesh.vertices
-    positions=np.asarray(vertices)
+    positions=np.asarray(vertices,dtype=float)
     report=dict(triangles=triangles,vertices=len(vertices),materials=1,collision_boxes=len(mesh.colliders) if family!='bike' else 0,
         min=positions.min(0).round(4).tolist(),max=positions.max(0).round(4).tolist())
     if family=='kart':
