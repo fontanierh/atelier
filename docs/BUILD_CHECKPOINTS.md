@@ -84,7 +84,7 @@ controller and immutable files in the machine cache. It never writes producer `.
 products or Zen data. Only generated/Content members and historical evidence enter a candidate-only
 catalogue; this is not a complete workspace seed or a new task certificate. Normal importer discovery
 finds it automatically. Preserve the producer until the key is reported. This diagnostic capture is
-not required for ordinary merge/release retention. With the producer owner’s permission,
+not required for ordinary release retention. With the producer owner’s permission,
 `atelier cache recover-history GAME --source CHECKOUT --checkpoint KEY --before-ns N --task TASK`
 can recover explicitly selected small original stamp records. Both timestamps must precede the
 known pre-capture boundary, the checkout must match the captured producer, and each read must
@@ -146,35 +146,18 @@ Reasons are recorded locally. They do not weaken admission, guards, worker caps 
 certify checkpoint builds. `--force` additionally requires one exact task and forces only that task, preserving
 current prerequisites. Never clear caches, delete stamps or force a whole dependency closure to fix a miss.
 
-## Merges retain work locally
+## Merges
 
-After CI and independent review pass, finish the producer's whole caller and native children, then merge:
+Merge PRs with `gh pr merge --squash --match-head-commit <tested head>`; builds publish their results to the local store as they run.
 
-```sh
-uv run atelier merge PR
-```
-
-The command saves all games with existing build stamps in the shared local checkpoint store **before**
-calling GitHub. Use `--source CHECKOUT` if another checkout produced the artifacts. It does not move, clean or
-update that source checkout. Partial builds can be retained; missing or stale tasks are not certified.
-Checkouts without build stamps are explicitly skipped, without starting a build or cook. Retention failure
-stops the merge. The command checks exact-head Python CI and refuses a PR that changes during retention;
-agents still obtain independent review before invoking it.
-
-Local retention needs no private repository or upload. Native copies use the normal guard, and an existing
-Zen cook uses UE snapshot export rather than copying its live database. No compilation, import or cook is
-requested. Current task results and compatible workspace state become available to normal builds on latest
-main through their input/tool identities; squash/merge commit hashes do not affect lookup. Keep the producer
-intact until the saved checkpoint keys are reported, and include those keys in the merge handoff.
-
-To retain a completed producer separately, including after an earlier merge:
+To retain an existing producer's artifacts explicitly, for example one built by an older controller:
 
 ```sh
 uv run atelier cache retain GAME --source CHECKOUT
 ```
 
-With no game arguments it retains every game with build stamps. Never run another build solely to fill a
-merge cache, manufacture success stamps, or copy artifacts manually into another checkout.
+With no game arguments it retains every game with build stamps. Never run another build solely to fill the
+cache, manufacture success stamps, or copy artifacts manually into another checkout.
 
 ## Releases retain work remotely
 
@@ -241,14 +224,14 @@ source-first rollout without native builds/cooks. Python tests cover matching, t
 boundaries; no packaged parity or tenfold speedup is claimed. A cooker may legitimately invalidate its prior
 state; the rebuild budget stops an expensive miss instead of silently authorizing it.
 
-## Retention before merge
+## Retention evidence
 
 Normal builds publish artifacts and certificates as steps complete. Workspace-only outputs,
 including original-path compiler state, are updated in the CAS during the build using verified
 file signatures to reuse unchanged blobs. Completed cooks export their Zen snapshot through the
 ordinary guarded worker before publication. The build finalizes its retention manifest before exit.
-`atelier merge PR --source CHECKOUT` and `atelier cache retain` then check metadata/signatures and
-retain that existing manifest; they never re-hash outputs, walk generated trees, export Zen or launch a capture.
+`atelier cache retain` then checks metadata/signatures and retains that existing manifest; it never
+re-hashes outputs, walks generated trees, exports Zen or launches a capture.
 Restoration still verifies the actual CAS bytes and the receiving recipe's inputs.
 
 A producer built by an older controller needs one ordinary incremental build to publish this evidence.

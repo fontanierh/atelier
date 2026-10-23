@@ -434,7 +434,7 @@ def capture_local(source, game, *, read_only=False, deadline_seconds=900):
 
 
 def retain(source=None, games=(), *, echo=print):
-    """Save completed work before a merge, including partial builds; never start work to fill gaps."""
+    """Save completed work locally, including partial builds; never start work to fill gaps."""
     import re
     source = Path(source or paths.REPO).resolve()
     if (not (source / 'games').is_dir() or not (source / '.git').exists()
