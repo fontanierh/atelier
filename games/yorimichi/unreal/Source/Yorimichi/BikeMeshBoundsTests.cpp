@@ -19,7 +19,7 @@ bool FBikeAtomicBoundsTest::RunTest(const FString&)
     {
         // Exact names participate in production membership. A private transient outer
         // makes them unique without changing that original finite roster.
-        UObject* Outer=NewObject<UObject>();
+        UObject* Outer=NewObject<UBikeSteeringBoundsData>();
         Owners.Emplace(NewObject<UStaticMesh>(Outer,UBikeMeshComponent::SteeringNames()[Index]));
         UStaticMesh* Mesh=Owners.Last().Get();auto Data=MakeUnique<FStaticMeshRenderData>();
         auto* Lod=new FStaticMeshLODResources();Data->LODResources.Add(Lod);
