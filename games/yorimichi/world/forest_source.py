@@ -102,7 +102,7 @@ def trunk(obj):
     hull.scale = (radius * 2, radius * 2, (b - a).length + .2)
     hull.rotation_euler = (b - a).to_track_quat('Z','Y').to_euler()
     bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
-    value = dict(vertices=[list(v.co) for v in hull.data.vertices],
-                 faces=[list(f.vertices) for f in hull.data.polygons], matrix=[list(row) for row in hull.matrix_world])
+    from region_mesh_parts import capture_collision
+    value = capture_collision(hull)
     bpy.data.objects.remove(hull, do_unlink=True)
     return [value]
