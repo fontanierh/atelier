@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from atelier import build
+from atelier import build, paths
 
 GAME = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('region_atomic_graph', GAME / 'region_exports.py')
@@ -43,6 +43,17 @@ def test_cold_recipe_contains_required_planners_not_successful_empty_region(tmp_
     assert not (tmp_path / 'atomic_regions').exists()
 
 
+def platform_controller(path, checkout):
+    return path.name == 'build.py' and path.is_relative_to(checkout / 'platform/studio/atelier')
+
+
+@pytest.mark.parametrize('checkout_name', ['atelier', 'atomic-worktree'])
+def test_controller_scope_does_not_confuse_checkout_name_with_platform_namespace(tmp_path, checkout_name):
+    checkout = tmp_path / checkout_name
+    assert platform_controller(checkout / 'platform/studio/atelier/build.py', checkout)
+    assert not platform_controller(checkout / 'games/yorimichi/world/regions/hidamari_stable/build.py', checkout)
+
+
 def test_material_capture_and_export_code_are_in_actual_consumers_input_closure(tmp_path):
     from atelier import mesh_materials
     helper=Path(mesh_materials.__file__)
@@ -52,7 +63,7 @@ def test_material_capture_and_export_code_are_in_actual_consumers_input_closure(
     planner=next(step for step in steps if step.name=='world.fixture.geometry.One')
     exporter=next(step for step in steps if step.name=='world.fixture.export.One')
     assert helper in planner.inputs and helper in exporter.inputs
-    assert not any(path.name=='build.py' and 'atelier' in path.parts for path in planner.inputs)
+    assert not any(platform_controller(path, paths.REPO) for path in planner.inputs)
 
 
 def test_completed_plan_discovers_per_piece_payloads_without_sibling_inputs(tmp_path):
