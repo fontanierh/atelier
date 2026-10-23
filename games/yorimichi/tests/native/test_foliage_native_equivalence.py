@@ -320,6 +320,10 @@ def producer_collection(tmp_path):
         observation=dict(schema=1,cleanup_and_capacity_close=True,root=[guard['owner'],guard['owner_started']])
         guards.append(dict(step=step,receipt=put(folder/'memory-health-tree.json',guard),
             observation=put(folder/'successful-tree-observation.json',observation),stdout=put(folder/'stdout.log',{'actual':'completed'})))
+        completion=('FOLIAGE SELECTED SOURCE COMPLETE '+key+' 12')if kind=='source'else('ATOMIC FOLIAGE EXPORT COMPLETE '+key)
+        stdout=folder/'stdout.log'
+        stdout.write_text('ATELIER ACTION START '+step+'\n'+completion+'\nATELIER BATCH COMPLETE '+batch+'\n')
+        guards[-1]['stdout']['sha256']=proof.sha(stdout)
     steps.extend(dict(name=f'world.other_{k}',batch=None,fingerprint='b'*64)for k in range(59))
     steps.append(dict(name='world.foliage_lods',batch=None,fingerprint='c'*64))
     head='d'*40
@@ -387,3 +391,31 @@ def test_existing_singular_producer_mode_and_mode_exclusivity(tmp_path):
     with pytest.raises(ValueError,match='Select producer'):producer_evidence(args,'unused',lambda path:Path(path))
     args.producer_handoff=None;args.producer_guard=None
     with pytest.raises(ValueError,match='Select producer'):producer_evidence(args,'unused',lambda path:Path(path))
+
+
+@pytest.mark.parametrize('kind', ['source', 'export'])
+@pytest.mark.parametrize('fault', ['wrong_action', 'wrong_key', 'wrong_batch', 'missing_action',
+    'missing_completion', 'missing_batch', 'reordered', 'duplicate_action', 'duplicate_completion', 'duplicate_batch', 'other_mode'])
+def test_hash_valid_unrelated_or_incomplete_producer_stdout_refuses_before_staging(tmp_path, kind, fault):
+    from prepare_foliage_native_equivalence import producer_evidence,producer_guard_membership
+    args,head,keys,snapshot,commands,handoff,seal=producer_collection(tmp_path)
+    row=next(row for row in snapshot['guards']if row['step'].startswith('world.foliage.'+kind+'.'))
+    path=Path(row['stdout']['path']);lines=path.read_text().splitlines()
+    if fault=='wrong_action':lines[0]='ATELIER ACTION START world.foliage.'+kind+'.Foreign'
+    elif fault=='wrong_key':lines[1]=lines[1].replace('Owner_0','Foreign')
+    elif fault=='wrong_batch':lines[2]='ATELIER BATCH COMPLETE '+'f'*32
+    elif fault=='missing_action':lines.pop(0)
+    elif fault=='missing_completion':lines.pop(1)
+    elif fault=='missing_batch':lines.pop(2)
+    elif fault=='reordered':lines[0],lines[1]=lines[1],lines[0]
+    elif fault.startswith('duplicate_'):lines.append(lines[{'duplicate_action':0,'duplicate_completion':1,'duplicate_batch':2}[fault]])
+    else:lines[1]=('ATOMIC FOLIAGE EXPORT COMPLETE Owner_0'if kind=='source'else'FOLIAGE SELECTED SOURCE COMPLETE Owner_0 12')
+    path.write_text('\n'.join(lines)+'\n')
+    row['stdout']['sha256']=proof.sha(path)
+    seal()  # All hashes are valid: the defect is action/batch identity, not corruption.
+    def bind(path,digest=None):
+        path=Path(path).absolute();proof.check_input(path,proof.sha(path)if digest is None else digest);return path
+    observed=producer_evidence(args,head,bind)
+    with pytest.raises(ValueError,match='stdout.*membership'):
+        producer_guard_membership(observed,keys,args.producer,bind)
+    assert not (tmp_path/'fixture-output').exists()

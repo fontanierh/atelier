@@ -126,7 +126,9 @@ def producer_guard_membership(snapshot,keys,producer,bind):
     A sealed producer collection MUST cover both source and export for every one
     of the102 exact comparison keys. Each unique recorded guard MUST retain its
     bound receipt, successful observation and stdout, positive empty cleanup and
-    matching batch/step membership. Missing, extra or pending proof MUST refuse
+    matching ordered action-start, selected-source/export completion and batch-completion
+    stdout markers. Hash binding alone MUST NOT prove batch/step membership.
+    Missing, extra or pending proof MUST refuse
     before any fixture output is written; collection proof is not native reuse.
     """
     if snapshot is None:return
@@ -149,7 +151,16 @@ def producer_guard_membership(snapshot,keys,producer,bind):
             record=row[kind];path=Path(record['path']).absolute()
             require(path==folder/name and str(path) not in paths,'Aliased/foreign producer guard artifact')
             paths.add(str(path));path=bind(path,record['sha256'])
-            if kind!='stdout':payload[kind]=json.loads(path.read_bytes())
+            payload[kind]=path.read_text()if kind=='stdout'else json.loads(path.read_bytes())
+        step=row['step'];kind,key=step.removeprefix('world.foliage.').split('.',1)
+        prefixes=('ATELIER ACTION START ','FOLIAGE SELECTED SOURCE COMPLETE ',
+                  'ATOMIC FOLIAGE EXPORT COMPLETE ','ATELIER BATCH COMPLETE ')
+        markers=[line for line in payload['stdout'].splitlines()if line.startswith(prefixes)]
+        completion=('FOLIAGE SELECTED SOURCE COMPLETE '+key)if kind=='source'else('ATOMIC FOLIAGE EXPORT COMPLETE '+key)
+        require(len(markers)==3 and markers[0]=='ATELIER ACTION START '+step
+            and markers[2]=='ATELIER BATCH COMPLETE '+batch
+            and (re.fullmatch(re.escape(completion)+r' [1-9][0-9]*',markers[1])if kind=='source'else markers[1]==completion),
+            'Producer stdout action/batch membership differs')
         receipt,observation=payload['receipt'],payload['observation'];producer_empty(receipt)
         require(observation.get('schema')==1 and observation.get('cleanup_and_capacity_close') is True
             and observation.get('root')==[receipt['owner'],receipt['owner_started']],
