@@ -1909,3 +1909,102 @@ fn a_damaged_journal_surfaces_and_is_not_unlinked() {
     );
     assert!(journal.exists(), "the damaged journal stays for retention");
 }
+
+#[test]
+fn an_unknown_marker_survives_the_journal_that_created_it() {
+    use std::io::Write;
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let mut stored = begin(&store, RootKind::Main, "stored", 1);
+    stored.use_result("unit.a", &key(1)).unwrap();
+    stored.commit(None).unwrap();
+    assert_eq!(usage_of(&store).results[&key(1)].as_str(), "1970-01-02");
+    let mut dated = begin(&store, RootKind::Main, "dated", 1);
+    dated.use_result("unit.a", &key(1)).unwrap();
+    let dated_journal = only_session(&workspace.store(), "yorimichi");
+    let legacy = begin(&store, RootKind::Main, "legacy", 1);
+    let legacy_journal = session_files(&workspace.store(), "yorimichi")
+        .into_iter()
+        .find(|path| path != &dated_journal)
+        .unwrap();
+    let mut file = fs::OpenOptions::new()
+        .append(true)
+        .open(&legacy_journal)
+        .unwrap();
+    writeln!(file, "{{\"unit\":\"unit.a\",\"key\":\"{}\"}}", key(1)).unwrap();
+    drop(file);
+
+    // Releasing the legacy journal folds the unknown floor and removes the journal. The older
+    // dated journal is still open, and it must not make the key look known again.
+    legacy.abandon().unwrap();
+    let view = usage_of(&store);
+    assert!(
+        !view.results.contains_key(&key(1)),
+        "an older dated journal must not resurrect a removed unknown observation"
+    );
+    assert!(
+        view.unknown.contains_key(&key(1)),
+        "the unknown floor is persisted"
+    );
+
+    dated.commit(None).unwrap();
+    assert!(
+        !usage_of(&store).results.contains_key(&key(1)),
+        "and it survives the commit of the older dated journal too"
+    );
+}
+
+#[test]
+fn a_fold_refuses_to_run_while_any_journal_is_damaged() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let torn = begin(&store, RootKind::Main, "torn", 1);
+    let torn_journal = only_session(&workspace.store(), "yorimichi");
+    let mut text = fs::read_to_string(&torn_journal).unwrap();
+    text.push_str("{\"unit\":\"unit.x\",\"key\":\"");
+    fs::write(&torn_journal, text).unwrap();
+
+    let mut healthy = begin(&store, RootKind::Main, "healthy", 1);
+    healthy.use_result("unit.a", &key(1)).unwrap();
+    let healthy_journal = session_files(&workspace.store(), "yorimichi")
+        .into_iter()
+        .find(|path| path != &torn_journal)
+        .unwrap();
+
+    let error = healthy.commit(None).unwrap_err();
+    assert!(
+        matches!(error, RootError::Damaged(_)),
+        "a fold must refuse while any journal is damaged: {error}"
+    );
+    assert!(
+        healthy_journal.exists(),
+        "a refused fold must not unlink the healthy journal"
+    );
+    drop(torn);
+}
+
+#[test]
+fn the_all_project_reader_aggregates_each_project_damage() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let alpha = workspace.open_at("alpha", &clock);
+    let beta = workspace.open_at("beta", &clock);
+    fs::write(
+        workspace.project_dir("beta").join("stray.txt"),
+        b"unexpected",
+    )
+    .unwrap();
+
+    let guard = alpha.leases().lock().unwrap();
+    let all = alpha.all_project_retention_locked(&guard).unwrap();
+    assert!(
+        !all.projects["beta"].damaged.is_empty(),
+        "beta reports its own damage"
+    );
+    assert!(
+        !all.damaged.is_empty(),
+        "and the aggregate must not drop it"
+    );
+}

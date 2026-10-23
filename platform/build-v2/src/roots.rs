@@ -412,6 +412,10 @@ struct UsageRecord {
     version: u32,
     #[serde(default)]
     results: BTreeMap<String, UseBucket>,
+    /// Keys with an unknown-age observation, floored at the day it was seen. Removing that
+    /// journal must not let an older dated entry make the key look known again.
+    #[serde(default)]
+    unknown: BTreeMap<String, UseBucket>,
     #[serde(default)]
     observed: BTreeMap<String, UseBucket>,
 }
@@ -421,6 +425,8 @@ struct UsageRecord {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct UsageView {
     pub results: BTreeMap<String, UseBucket>,
+    /// Keys whose newest observation has an unknown time, floored at the day it was recorded.
+    pub unknown: BTreeMap<String, UseBucket>,
     pub observed: BTreeMap<String, UseBucket>,
     pub damaged: Vec<String>,
 }
@@ -469,6 +475,11 @@ fn read_usage(root: &Path) -> Result<Option<UsageRecord>, RootError> {
     for key in usage.results.keys() {
         if !valid_key(key) {
             return Err(damaged("usage record has an invalid result key"));
+        }
+    }
+    for key in usage.unknown.keys() {
+        if !valid_key(key) {
+            return Err(damaged("usage record has an invalid unknown-age key"));
         }
     }
     for digest in usage.observed.keys() {
@@ -1112,13 +1123,18 @@ impl RootStore {
     /// session release, snapshot, drop root) and MUST be coalesced to one write, keeping the newest
     /// bucket per result so a clock rollback never ages a result. A result with no bucket, a legacy
     /// entry without the field, an unreadable journal or a damaged record has **unknown** age and
-    /// MUST be retained; `UsageView.damaged` and `AllProjectsRetention.damaged` are part of the
+    /// MUST be retained. An unknown observation is persisted as a floor, so removing the journal
+    /// that recorded it never lets an older dated entry make the key look known again; only a
+    /// dated use whose round-up day is strictly greater than the floor clears it. The fold MUST
+    /// fail closed while any scanned journal is damaged, so no caller unlinks after a partial fold.
+    /// `UsageView.damaged` and `AllProjectsRetention.damaged` are part of the
     /// answer, and a caller MUST refuse destructive work while either is non-empty rather than
     /// treat a partial view as complete. First-observed digests are write-once and set only by an
     /// explicit call, never from payload metadata. Forgetting is persisted before any unlink, so a
     /// crash leaves unknown age, which retains. `usage_locked`, `open_existing`, `open_existing_with_clock`
     /// and `all_project_retention_locked` MUST NOT create, fold or rewrite anything. See
-    /// tests/roots.rs `a_use_bucket_rounds_the_utc_day_up`, `usage_keeps_the_newest_bucket_on_rollback`,
+    /// tests/roots.rs `a_use_bucket_rounds_the_utc_day_up`,
+    /// `an_unknown_marker_survives_the_journal_that_created_it`, `usage_keeps_the_newest_bucket_on_rollback`,
     /// `a_legacy_journal_entry_has_unknown_age`, `usage_is_folded_once_per_commit_not_per_append`,
     /// `the_usage_readers_and_open_existing_write_nothing`, `usage_damage_is_visible_to_the_caller`,
     /// `observe_objects_is_write_once`, `forgetting_usage_is_persisted_before_any_unlink`,
@@ -1130,6 +1146,7 @@ impl RootStore {
         match read_usage(&self.root) {
             Ok(Some(usage)) => {
                 view.results = usage.results;
+                view.unknown = usage.unknown;
                 view.observed = usage.observed;
             }
             Ok(None) => {}
@@ -1141,7 +1158,16 @@ impl RootStore {
         }
         let scan = self.journal_buckets();
         view.damaged.extend(scan.damaged);
+        let today = UseBucket::ceil_day(self.clock.now())?;
         for (key, bucket) in scan.buckets {
+            if let Some(floor) = view.unknown.get(&key) {
+                if bucket <= *floor {
+                    // An older dated entry cannot make a key with an unknown observation known.
+                    view.results.remove(&key);
+                    continue;
+                }
+                view.unknown.remove(&key);
+            }
             let newer = view
                 .results
                 .get(&key)
@@ -1150,9 +1176,12 @@ impl RootStore {
                 view.results.insert(key, bucket);
             }
         }
-        // An entry that used a key at an unknown time invalidates any stored bucket: the stored
-        // day can no longer be trusted as the newest, and unknown age retains.
+        // An entry that used a key at an unknown time invalidates any stored bucket and leaves a
+        // floor, so dropping that journal later cannot resurrect an older dated bucket.
         for key in scan.unknowns {
+            view.unknown
+                .entry(key.clone())
+                .or_insert_with(|| today.clone());
             view.results.remove(&key);
         }
         Ok(view)
@@ -1200,6 +1229,7 @@ impl RootStore {
         let mut changed = false;
         for key in results {
             changed |= usage.results.remove(key).is_some();
+            changed |= usage.unknown.remove(key).is_some();
         }
         for digest in objects {
             changed |= usage.observed.remove(digest.as_hex()).is_some();
@@ -1214,6 +1244,7 @@ impl RootStore {
         Ok(read_usage(&self.root)?.unwrap_or(UsageRecord {
             version: USAGE_VERSION,
             results: BTreeMap::new(),
+            unknown: BTreeMap::new(),
             observed: BTreeMap::new(),
         }))
     }
@@ -1221,12 +1252,29 @@ impl RootStore {
     /// Folds every open journal into `usage.json` in one write, and only when a bucket grew.
     fn fold_usage_locked(&self) -> Result<(), RootError> {
         let scan = self.journal_buckets();
+        if !scan.damaged.is_empty() {
+            // Fail closed: a caller about to unlink its journal must never do so after a fold
+            // that skipped damaged evidence.
+            return Err(damaged(format!(
+                "usage fold refused while a journal is damaged: {}",
+                scan.damaged.join(", ")
+            )));
+        }
         if scan.buckets.is_empty() && scan.unknowns.is_empty() {
             return Ok(());
         }
         let mut usage = self.usage_record()?;
+        let today = UseBucket::ceil_day(self.clock.now())?;
         let mut changed = false;
         for (key, bucket) in scan.buckets {
+            if let Some(floor) = usage.unknown.get(&key) {
+                if bucket <= *floor {
+                    // A stale dated journal must not clear an unknown-age floor.
+                    continue;
+                }
+                usage.unknown.remove(&key);
+                changed = true;
+            }
             let newer = usage
                 .results
                 .get(&key)
@@ -1237,6 +1285,16 @@ impl RootStore {
             }
         }
         for key in scan.unknowns {
+            let floor = usage
+                .unknown
+                .get(&key)
+                .filter(|floor| **floor >= today)
+                .cloned()
+                .unwrap_or_else(|| today.clone());
+            if usage.unknown.get(&key) != Some(&floor) {
+                usage.unknown.insert(key.clone(), floor);
+                changed = true;
+            }
             changed |= usage.results.remove(&key).is_some();
         }
         // Journals in scan.damaged are deliberately left in place: retention reports each one as
@@ -1765,6 +1823,7 @@ impl RootStore {
             }
             match retention_of_project(&entry.path()) {
                 Ok(view) => {
+                    all.damaged.extend(view.damaged.clone());
                     all.projects.insert(name, view);
                 }
                 Err(error) => all
