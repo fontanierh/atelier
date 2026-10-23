@@ -116,8 +116,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { group: studio, label: studio 1/2, shard: 0, shards: 2, workers: auto }
-          - { group: studio, label: studio 2/2, shard: 1, shards: 2, workers: auto }
+          # Studio keeps one job: the harness tests may not run in two workers on one machine, so
+          # its serial lane is already the longest and splitting the rest only adds a checkout.
+          - { group: studio, label: studio, shard: 0, shards: 1, workers: auto }
           - { group: games, label: games 1/2, shard: 0, shards: 2, workers: auto }
           - { group: games, label: games 2/2, shard: 1, shards: 2, workers: auto }
     steps:
