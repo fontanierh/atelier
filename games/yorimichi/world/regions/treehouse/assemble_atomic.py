@@ -7,27 +7,13 @@ sys.path[:0]=[str(Path(__file__).resolve().parents[3]),str(Path(__file__).resolv
 import yori  # noqa: E402,F401
 from atelier import export_assembly,mesh_ir  # noqa: E402
 from atelier.atomic_files import atomic_json  # noqa: E402
-from atelier.file_copy import copy_file  # noqa: E402
+from atelier.export_assembly import copy_verified  # noqa: E402
 from atelier.export_manifest import real_directory,sha,validate as validate_export  # noqa: E402
 from atelier.model_files import regular_files,retain_files  # noqa: E402
 from region_mesh_parts import validate  # noqa: E402
 
 PARENTS=('TH_Structure','TH_Frame','TH_Trunks','TH_Dressing')
 
-
-def copy_verified(source,destination):
-    real_directory(destination.parent,create=True)
-    if destination.is_symlink() or (destination.exists() and not destination.is_file()):
-        raise ValueError('Foreign/link Treehouse assembly destination')
-    digest=sha(source)
-    if destination.is_file() and sha(destination)==digest:return
-    staging=destination.with_name(destination.name+'.atomic-copy')
-    if staging.exists() or staging.is_symlink():raise ValueError('Unowned Treehouse copy staging')
-    try:
-        copy_file(source,staging)
-        if sha(source)!=digest or sha(staging)!=digest:raise ValueError('Treehouse source changed during assembly')
-        staging.replace(destination)
-    finally:staging.unlink(missing_ok=True)
 
 
 def surfaces(out):

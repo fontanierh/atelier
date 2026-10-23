@@ -1,0 +1,14 @@
+{
+  "crown": null,
+  "lod": 0,
+  "name": "HD_P_postbox",
+  "parent": "HD_P_postbox",
+  "schema": 1,
+  "settings": null,
+  "size": 1.45,
+  "slug": "postbox",
+  "solid": true,
+  "target": 0.06,
+  "turn": 0.0,
+  "upright": false
+}

@@ -1,0 +1,14 @@
+{
+  "crown": null,
+  "lod": 0,
+  "name": "HD_P_lantern_sign",
+  "parent": "HD_P_lantern_sign",
+  "schema": 1,
+  "settings": null,
+  "size": 1.8,
+  "slug": "lantern_sign",
+  "solid": true,
+  "target": 0.09,
+  "turn": 0.0,
+  "upright": false
+}

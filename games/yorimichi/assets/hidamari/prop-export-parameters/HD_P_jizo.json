@@ -1,0 +1,14 @@
+{
+  "crown": null,
+  "lod": 0,
+  "name": "HD_P_jizo",
+  "parent": "HD_P_jizo",
+  "schema": 1,
+  "settings": null,
+  "size": 0.8,
+  "slug": "jizo",
+  "solid": true,
+  "target": 0.08,
+  "turn": -90,
+  "upright": false
+}

@@ -1,16 +1,19 @@
 //! Exact-owned-set checkout installs. Store/root/worker lifecycle policy remains separate.
 //! Pre-install interruptions quarantine the pre-owned scope; later unknown mutations fail closed.
 //! The library remains unused pending final validation and separately reviewed caller integration.
-use crate::checkout_locks::{BuildGuard, CheckoutLocks, INSTALL_METADATA, LockError};
+use crate::checkout_locks::{
+    BuildGuard, CheckoutLocks, ContentReadGuard, INSTALL_METADATA, LockError,
+};
 use crate::graph::BuildGraph;
 pub use crate::install_fs::FileObservation;
 use crate::install_fs::{CreatedDirectory, RootFs};
-use crate::keys::{PreparedUnit, canonical_bytes};
+use crate::keys::{InputPayload, PreparedInput, PreparedUnit, canonical_bytes};
 use crate::leases::ProcessIdentity;
 use crate::paths::{Claims, claim, conflict, folded, logical_path, relative_path};
 use crate::results::{ResultEnvelope, ResultError, ResultStore, WriteTransaction};
-use crate::schema::{ContentSource, Destination, Input, Item, Provenance, StoredFile};
+use crate::schema::{ContentSource, Destination, Input, Item, Provenance, StoredFile, StoredItem};
 use crate::source_hashes::sha256;
+use crate::staging::{ObjectSource, SourceError, SourceErrorKind};
 use crate::store::{ObjectDigest, ObjectStore, StoreError};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
@@ -34,6 +37,7 @@ pub enum InstallError {
     RecoveryRequired(String),
     Lock(LockError),
     Cache(ResultError),
+    LocalCompletion(ResultError),
     Store(StoreError),
     Io(io::Error),
 }
@@ -45,6 +49,7 @@ impl fmt::Display for InstallError {
                 write!(formatter, "install recovery required: {reason}")
             }
             Self::Lock(error) => error.fmt(formatter),
+            Self::LocalCompletion(error) => write!(formatter, "local completion: {error}"),
             Self::Cache(error) => error.fmt(formatter),
             Self::Store(error) => error.fmt(formatter),
             Self::Io(error) => error.fmt(formatter),
@@ -295,6 +300,195 @@ pub enum CurrentStatus {
     NotMaterialized,
 }
 
+/// Sealed identity observation only: no retained checkout guard, FD or byte-availability claim.
+/// Source staging must separately reacquire and revalidate CurrentSources.
+pub struct CurrentIdentities {
+    key: String,
+    items: Vec<StoredItem>,
+}
+impl CurrentIdentities {
+    pub fn key(&self) -> &str {
+        &self.key
+    }
+    pub fn items(&self) -> &[StoredItem] {
+        &self.items
+    }
+}
+
+/// Sealed checkout-byte availability. Custody ends after staging independent job clones.
+/// Public CurrentStatus receipt vectors cannot construct this capability.
+pub struct CurrentSources<'build> {
+    _build: &'build BuildGuard,
+    _read: ContentReadGuard,
+    receipts: Vec<ItemReceipt>,
+    files: BTreeMap<ObjectDigest, CurrentFile>,
+}
+struct CurrentFile {
+    file: fs::File,
+    observation: FileObservation,
+}
+impl CurrentSources<'_> {
+    pub fn receipts(&self) -> &[ItemReceipt] {
+        &self.receipts
+    }
+    pub fn contains(&self, digest: &ObjectDigest) -> bool {
+        self.files.contains_key(digest)
+    }
+    /// Bind exact consumer-visible item metadata before allowing any clone.
+    pub fn objects_for<'a>(
+        &'a self,
+        inputs: &[&PreparedInput],
+    ) -> Result<CurrentObjects<'a, '_>, InstallError> {
+        let mut allowed = BTreeSet::new();
+        for input in inputs {
+            let InputPayload::Item {
+                logical_path,
+                class,
+                files,
+            } = &input.payload
+            else {
+                return Err(invalid("current source requires a typed item input"));
+            };
+            let receipt = self
+                .receipts
+                .iter()
+                .find(|receipt| receipt.logical_path == *logical_path && receipt.class == *class)
+                .ok_or_else(|| invalid("current input item differs from certified receipt"))?;
+            if files
+                .iter()
+                .map(|file| &file.path)
+                .collect::<BTreeSet<_>>()
+                .len()
+                != files.len()
+                || receipt.files.len() != files.len()
+                || files.iter().any(|file| {
+                    !receipt.files.iter().any(|saved| {
+                        saved.output_path == file.path
+                            && saved.digest == file.digest
+                            && saved.size == file.size
+                            && saved.mode == file.mode
+                    })
+                })
+            {
+                return Err(invalid(
+                    "current input content/mode differs from certified receipt",
+                ));
+            }
+            for file in files {
+                allowed.insert(ObjectDigest::from_hex(&file.digest)?);
+            }
+        }
+        Ok(CurrentObjects {
+            sources: self,
+            allowed,
+        })
+    }
+    /// Every descriptor is checked again by the staging adapter before and after cloning.
+    pub(crate) fn file(&self, digest: &ObjectDigest) -> Result<&fs::File, InstallError> {
+        let current = self
+            .files
+            .get(digest)
+            .ok_or_else(|| invalid("uncertified current digest"))?;
+        let metadata = current.file.metadata()?;
+        if !metadata.is_file() || FileObservation::from_metadata(&metadata) != current.observation {
+            return Err(invalid("current source changed under read custody"));
+        }
+        Ok(&current.file)
+    }
+}
+
+/// Borrowed only across C1b stage; it cannot outlive checkout read custody.
+pub struct CurrentObjects<'sources, 'build> {
+    sources: &'sources CurrentSources<'build>,
+    allowed: BTreeSet<ObjectDigest>,
+}
+impl ObjectSource for CurrentObjects<'_, '_> {
+    fn clone_object(&self, digest: &ObjectDigest, destination: &Path) -> Result<(), SourceError> {
+        let error = |kind, message: String| SourceError {
+            kind,
+            digest: digest.clone(),
+            message,
+        };
+        if !self.allowed.contains(digest) {
+            return Err(error(
+                SourceErrorKind::Unavailable,
+                "uncertified current digest".into(),
+            ));
+        }
+        let source = self
+            .sources
+            .file(digest)
+            .map_err(|e| error(SourceErrorKind::Changed, e.to_string()))?;
+        clone_current_fd(source, destination).map_err(|e| {
+            error(
+                if e.kind() == io::ErrorKind::Unsupported
+                    || matches!(e.raw_os_error(), Some(libc::ENOTSUP) | Some(libc::EXDEV))
+                {
+                    SourceErrorKind::CloneUnsupported
+                } else {
+                    SourceErrorKind::Io
+                },
+                e.to_string(),
+            )
+        })?;
+        if let Err(failure) = self.sources.file(digest) {
+            // Only our successful clone owns this leaf; never remove a pre-existing destination.
+            let _ = fs::remove_file(destination);
+            return Err(error(SourceErrorKind::Changed, failure.to_string()));
+        }
+        Ok(())
+    }
+}
+
+fn clone_current_fd(source: &fs::File, destination: &Path) -> io::Result<()> {
+    #[cfg(target_os = "macos")]
+    {
+        use std::os::fd::AsRawFd;
+        use std::os::unix::ffi::OsStrExt;
+        use std::os::unix::fs::OpenOptionsExt;
+        unsafe extern "C" {
+            fn fclonefileat(
+                source: libc::c_int,
+                directory: libc::c_int,
+                name: *const libc::c_char,
+                flags: u32,
+            ) -> libc::c_int;
+        }
+        let parent = destination.parent().ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "clone destination has no parent",
+            )
+        })?;
+        let name = destination.file_name().ok_or_else(|| {
+            io::Error::new(io::ErrorKind::InvalidInput, "clone destination has no name")
+        })?;
+        let name = std::ffi::CString::new(name.as_bytes()).map_err(|_| {
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "clone destination contains NUL",
+            )
+        })?;
+        let directory = fs::OpenOptions::new()
+            .read(true)
+            .custom_flags(libc::O_DIRECTORY | libc::O_NOFOLLOW | libc::O_CLOEXEC)
+            .open(parent)?;
+        if unsafe { fclonefileat(source.as_raw_fd(), directory.as_raw_fd(), name.as_ptr(), 0) } != 0
+        {
+            return Err(io::Error::last_os_error());
+        }
+        Ok(())
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = (source, destination);
+        Err(io::Error::new(
+            io::ErrorKind::Unsupported,
+            "current sources require APFS clone support",
+        ))
+    }
+}
+
 /// Receipt/status access does not open or create the cache, including on cold start.
 #[derive(Clone)]
 pub struct ReceiptReader {
@@ -324,16 +518,24 @@ struct DesiredFile {
     stored: StoredFile,
 }
 
-/// Only prepare_restore constructs this pinned plan. Retrying Busy keeps the plan.
+/// Only validated cached/local preparation constructs this pinned plan. Retrying Busy keeps it.
 pub struct RestorePlan {
-    installer: CheckoutInstaller,
-    transaction: Option<WriteTransaction>,
+    installer: ReceiptReader,
+    completion: Option<PlanCompletion>,
     result: ResultEnvelope,
     view: OwnershipSnapshot,
     removals: Vec<RemovalIntent>,
     desired: BTreeMap<String, DesiredFile>,
     items: BTreeMap<OwnerId, Item>,
     retention: QuarantineRetention,
+}
+
+enum PlanCompletion {
+    Cache {
+        transaction: WriteTransaction,
+        objects: ObjectStore,
+    },
+    Local(crate::completion::FrozenCompletion),
 }
 
 /// A miss retains the original write transaction for dispatch; no second begin/lease.
@@ -361,11 +563,7 @@ impl CheckoutInstaller {
                 .reserved
                 .insert(folded(relative), (relative.into(), "object store".into()));
         }
-        for folder in ["receipts", "transactions", "quarantine"] {
-            reader
-                .fs
-                .mkdirs(&format!("{INSTALL_METADATA}/{folder}"), 0o700)?;
-        }
+        reader.ensure_install_layout()?;
         Ok(Self {
             reader,
             objects,
@@ -394,6 +592,13 @@ impl ReceiptReader {
             policy,
             reserved,
         })
+    }
+    fn ensure_install_layout(&self) -> Result<(), InstallError> {
+        for folder in ["receipts", "transactions", "quarantine"] {
+            self.fs
+                .mkdirs(&format!("{INSTALL_METADATA}/{folder}"), 0o700)?;
+        }
+        Ok(())
     }
     pub fn locks(&self) -> &CheckoutLocks {
         &self.locks
@@ -577,6 +782,269 @@ impl ReceiptReader {
         unit: &PreparedUnit,
     ) -> Result<CurrentStatus, InstallError> {
         self.guard(guard)?;
+        let _reader = self.locks.try_read_content()?;
+        self.current_locked(unit)
+    }
+
+    /// @cc [owner:fontanierh,label:correctness;safety] current-identity-observation-releases-custody
+    /// Identity observation MUST reuse complete Current validation and retain no guard or FD.
+    /// Returning metadata MUST NOT certify future byte availability; staging separately reacquires
+    /// and revalidates CurrentSources. See current_sources_pin_without_cache_and_clone_only_certified_unchanged_items.
+    pub fn current_identities(
+        &self,
+        guard: &BuildGuard,
+        unit: &PreparedUnit,
+    ) -> Result<Option<CurrentIdentities>, InstallError> {
+        self.guard(guard)?;
+        let _read = self.locks.try_read_content()?;
+        let CurrentStatus::Current(receipts) = self.current_locked(unit)? else {
+            return Ok(None);
+        };
+        let mut items = vec![];
+        for item in unit
+            .ingredients()
+            .logical_outputs
+            .iter()
+            .filter(|item| item.destination == Destination::Checkout)
+        {
+            let owner = OwnerId::new(self.policy.project.clone(), &item.logical_path)?;
+            let receipt = receipts
+                .iter()
+                .find(|receipt| receipt.owner == owner)
+                .ok_or_else(|| invalid("missing certified current item"))?;
+            items.push(StoredItem {
+                item: item.clone(),
+                files: receipt
+                    .files
+                    .iter()
+                    .map(|file| StoredFile {
+                        path: file.output_path.clone(),
+                        digest: file.digest.clone(),
+                        size: file.size,
+                        mode: file.mode,
+                    })
+                    .collect(),
+                external_locator: None,
+            });
+        }
+        Ok(Some(CurrentIdentities {
+            key: unit.key().into(),
+            items,
+        }))
+    }
+
+    fn plan_owned(
+        &self,
+        result: &ResultEnvelope,
+        view: &OwnershipSnapshot,
+    ) -> Result<(BTreeMap<String, DesiredFile>, BTreeMap<OwnerId, Item>), InstallError> {
+        let mut desired = BTreeMap::new();
+        let mut items = BTreeMap::new();
+        for stored in &result.result.outputs {
+            if stored.item.destination != Destination::Checkout {
+                continue;
+            }
+            let owner = OwnerId::new(self.policy.project.clone(), &stored.item.logical_path)?;
+            let definition = view.owners.get(&owner).ok_or_else(|| {
+                invalid("result logical owner is absent from current declaration")
+            })?;
+            if definition.class != stored.item.class {
+                return Err(invalid("result class differs from declared owner"));
+            }
+            let declared_files: BTreeMap<_, _> = stored
+                .item
+                .files
+                .iter()
+                .map(|file| {
+                    Ok((
+                        file.path.clone(),
+                        (
+                            file.install_path
+                                .clone()
+                                .ok_or_else(|| invalid("missing output mapping"))?,
+                            file.required,
+                        ),
+                    ))
+                })
+                .collect::<Result<_, InstallError>>()?;
+            if declared_files != definition.files {
+                return Err(invalid(
+                    "result complete mapping differs from current declaration",
+                ));
+            }
+            for file in &stored.files {
+                let declared = stored
+                    .item
+                    .files
+                    .iter()
+                    .find(|expected| expected.path == file.path)
+                    .ok_or_else(|| invalid("unknown saved output"))?;
+                let path = declared
+                    .install_path
+                    .clone()
+                    .ok_or_else(|| invalid("missing output install mapping"))?;
+                if definition.files.get(&file.path) != Some(&(path.clone(), declared.required)) {
+                    return Err(invalid("result mapping differs from current declaration"));
+                }
+                self.output_path(&path)?;
+                if conflict(&view.sources, &path).is_some() {
+                    return Err(invalid(
+                        "install would overwrite a declared source/code path",
+                    ));
+                }
+                if desired
+                    .insert(
+                        folded(&path),
+                        DesiredFile {
+                            owner: owner.clone(),
+                            output_path: file.path.clone(),
+                            install_path: path,
+                            stored: file.clone(),
+                        },
+                    )
+                    .is_some()
+                {
+                    return Err(invalid("duplicate desired output"));
+                }
+            }
+            items.insert(owner, stored.item.clone());
+        }
+        Ok((desired, items))
+    }
+
+    /// Prepare a validated local result without opening a cache. No available-cache token is minted.
+    pub fn prepare_local(
+        &self,
+        guard: &BuildGuard,
+        completion: crate::completion::FrozenCompletion,
+        view: &OwnershipSnapshot,
+        removals: Vec<RemovalIntent>,
+    ) -> Result<RestorePlan, InstallError> {
+        self.guard(guard)?;
+        if !view.projects.contains(&self.policy.project) {
+            return Err(invalid("missing complete project ownership view"));
+        }
+        self.preflight_removals(guard, view, &removals)?;
+        if completion.refused {
+            return Err(invalid(
+                "local completion refused semantic publication conflict",
+            ));
+        }
+        let result = completion.result().clone();
+        let (desired, items) = self.plan_owned(&result, view)?;
+        // A saved same-key receipt is evidence of previously produced content, even when edited.
+        let _read = self.locks.try_read_content()?;
+        let index = self.index()?;
+        self.check_local_history(&result, &index)?;
+        let retention = QuarantineRetention {
+            owner: completion.lease().owner.clone(),
+            workers: completion.lease().workers.clone(),
+            result_key: result.result.key.clone(),
+            object_digests: result.files().map(|file| file.digest.clone()).collect(),
+            upstream_result_keys: result.upstream_result_keys.clone(),
+        };
+        Ok(RestorePlan {
+            installer: self.clone(),
+            completion: Some(PlanCompletion::Local(completion)),
+            result,
+            view: view.clone(),
+            removals,
+            desired,
+            items,
+            retention,
+        })
+    }
+
+    fn check_local_history(
+        &self,
+        result: &ResultEnvelope,
+        index: &ReceiptIndex,
+    ) -> Result<(), InstallError> {
+        for stored in &result.result.outputs {
+            if stored.item.destination != Destination::Checkout {
+                continue;
+            }
+            let owner = OwnerId::new(self.policy.project.clone(), &stored.item.logical_path)?;
+            if let Some((_, receipt)) = self.consistent_receipt(&index, &owner)? {
+                let mut saved: Vec<_> = receipt
+                    .files
+                    .iter()
+                    .map(|file| StoredFile {
+                        path: file.output_path.clone(),
+                        digest: file.digest.clone(),
+                        size: file.size,
+                        mode: file.mode,
+                    })
+                    .collect();
+                let mut produced = stored.files.clone();
+                saved.sort_by(|a, b| a.path.cmp(&b.path));
+                produced.sort_by(|a, b| a.path.cmp(&b.path));
+                if receipt.result_key == result.result.key
+                    && (saved != produced || receipt.class != stored.item.class)
+                {
+                    return Err(InstallError::LocalCompletion(ResultError::Nondeterminism(
+                        result.result.key.clone(),
+                    )));
+                }
+            }
+        }
+        Ok(())
+    }
+
+    pub fn begin_completion(
+        &self,
+        guard: &BuildGuard,
+        unit: &PreparedUnit,
+        identity: LeaseIdentity,
+    ) -> Result<crate::completion::CompletionWork, InstallError> {
+        self.guard(guard)?;
+        let path = format!("{INSTALL_METADATA}/completions");
+        self.fs.mkdirs(&path, 0o700)?;
+        crate::completion::CompletionWork::begin(&self.fs.absolute(&path), unit, identity)
+            .map_err(InstallError::LocalCompletion)
+    }
+
+    /// @cc [owner:fontanierh,label:correctness;safety] sealed-current-source-custody
+    /// Current sources MUST use the shared complete receipt/stat validator under read custody,
+    /// then pin anchored no-follow regular descriptors matching exact receipt observations.
+    /// Issuance MUST NOT open the cache, hash payloads or treat public receipt data as authority.
+    /// The read guard and build borrow MUST outlive staging; independent clones need no checkout lock.
+    pub fn pin_current_sources<'build>(
+        &self,
+        guard: &'build BuildGuard,
+        unit: &PreparedUnit,
+    ) -> Result<Option<CurrentSources<'build>>, InstallError> {
+        self.guard(guard)?;
+        let read = self.locks.try_read_content()?;
+        let CurrentStatus::Current(receipts) = self.current_locked(unit)? else {
+            return Ok(None);
+        };
+        let mut files = BTreeMap::new();
+        for receipt in &receipts {
+            for expected in &receipt.files {
+                let file = self.fs.file(&expected.install_path)?;
+                let observation = FileObservation::from_metadata(&file.metadata()?);
+                if observation != expected.observation
+                    || observation.size != expected.size
+                    || observation.mode != expected.mode
+                {
+                    return Err(invalid("current source changed before pinning"));
+                }
+                let digest = ObjectDigest::from_hex(&expected.digest)?;
+                files
+                    .entry(digest)
+                    .or_insert(CurrentFile { file, observation });
+            }
+        }
+        Ok(Some(CurrentSources {
+            _build: guard,
+            _read: read,
+            receipts,
+            files,
+        }))
+    }
+
+    fn current_locked(&self, unit: &PreparedUnit) -> Result<CurrentStatus, InstallError> {
         let items: Vec<_> = unit
             .ingredients()
             .logical_outputs
@@ -586,7 +1054,6 @@ impl ReceiptReader {
         if items.is_empty() {
             return Ok(CurrentStatus::NotMaterialized);
         }
-        let _reader = self.locks.try_read_content()?;
         let index = self.index()?;
         let mut receipts = vec![];
         for item in items {
@@ -678,80 +1145,13 @@ impl CheckoutInstaller {
         retention
             .upstream_result_keys
             .extend(result.upstream_result_keys.iter().cloned());
-        let mut desired = BTreeMap::new();
-        let mut items = BTreeMap::new();
-        for stored in &result.result.outputs {
-            if stored.item.destination != Destination::Checkout {
-                continue;
-            }
-            let owner = OwnerId::new(self.policy.project.clone(), &stored.item.logical_path)?;
-            let definition = view.owners.get(&owner).ok_or_else(|| {
-                invalid("result logical owner is absent from current declaration")
-            })?;
-            if definition.class != stored.item.class {
-                return Err(invalid("result class differs from declared owner"));
-            }
-            let declared_files: BTreeMap<_, _> = stored
-                .item
-                .files
-                .iter()
-                .map(|file| {
-                    Ok((
-                        file.path.clone(),
-                        (
-                            file.install_path
-                                .clone()
-                                .ok_or_else(|| invalid("missing output mapping"))?,
-                            file.required,
-                        ),
-                    ))
-                })
-                .collect::<Result<_, InstallError>>()?;
-            if declared_files != definition.files {
-                return Err(invalid(
-                    "result complete mapping differs from current declaration",
-                ));
-            }
-            for file in &stored.files {
-                let declared = stored
-                    .item
-                    .files
-                    .iter()
-                    .find(|expected| expected.path == file.path)
-                    .ok_or_else(|| invalid("unknown saved output"))?;
-                let path = declared
-                    .install_path
-                    .clone()
-                    .ok_or_else(|| invalid("missing output install mapping"))?;
-                if definition.files.get(&file.path) != Some(&(path.clone(), declared.required)) {
-                    return Err(invalid("result mapping differs from current declaration"));
-                }
-                self.output_path(&path)?;
-                if conflict(&view.sources, &path).is_some() {
-                    return Err(invalid(
-                        "install would overwrite a declared source/code path",
-                    ));
-                }
-                if desired
-                    .insert(
-                        folded(&path),
-                        DesiredFile {
-                            owner: owner.clone(),
-                            output_path: file.path.clone(),
-                            install_path: path,
-                            stored: file.clone(),
-                        },
-                    )
-                    .is_some()
-                {
-                    return Err(invalid("duplicate desired output"));
-                }
-            }
-            items.insert(owner, stored.item.clone());
-        }
+        let (desired, items) = self.plan_owned(&result, view)?;
         Ok(RestoreLookup::Hit(RestorePlan {
-            installer: self.clone(),
-            transaction: Some(transaction),
+            installer: self.reader.clone(),
+            completion: Some(PlanCompletion::Cache {
+                transaction,
+                objects: self.objects.clone(),
+            }),
             result,
             view: view.clone(),
             removals,
@@ -790,6 +1190,11 @@ pub enum InstallOutcome {
     Installed,
     /// Checkout receipts are committed. B2 keeps its lease when rooting fails.
     InstalledWithRootPending(String),
+    /// Receipt/index publication succeeded from validated local snapshots; CAS availability is unclaimed.
+    /// Local evidence and its owner lease remain; retention failure never invalidates installed bytes.
+    InstalledLocally {
+        retention_error: Option<String>,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -851,7 +1256,7 @@ struct JournalRecord {
     journal: InstallJournal,
 }
 
-impl CheckoutInstaller {
+impl ReceiptReader {
     fn reserve_scope(
         &self,
         mut next: impl FnMut() -> u64,
@@ -1312,11 +1717,16 @@ impl RestorePlan {
         mut self,
         root: impl FnOnce(&ResultEnvelope) -> Result<(), String>,
     ) -> Result<ResultEnvelope, InstallError> {
-        self.transaction
+        match self
+            .completion
             .take()
             .ok_or_else(|| invalid("restore plan already consumed"))?
-            .retain_hit(root)
-            .map_err(InstallError::Cache)
+        {
+            PlanCompletion::Cache { transaction, .. } => {
+                transaction.retain_hit(root).map_err(InstallError::Cache)
+            }
+            PlanCompletion::Local(_) => Err(invalid("local result is not a cached hit")),
+        }
     }
 
     pub fn commit(
@@ -1328,8 +1738,8 @@ impl RestorePlan {
     }
 
     /// @cc [owner:fontanierh,label:correctness;safety] checkout-install-transaction
-    /// Install MUST pin cache objects, acquire build/exclusive content custody and durably journal
-    /// exact old/new leaf ownership before staging or mutation. It MUST clone named CAS objects,
+    /// Install MUST retain certified source custody, acquire build/exclusive content custody and durably journal
+    /// exact old/new leaf ownership before staging or mutation. It MUST clone named CAS objects or sealed local snapshots,
     /// apply recorded normalized modes and publish complete per-project receipts before cleanup.
     /// Existing foreign files, other projects and declared code/sources MUST never be overwritten.
     /// Faults preserve recovery evidence and cache leases; successful later rooting releases claims.
@@ -1342,7 +1752,7 @@ impl RestorePlan {
     ) -> Result<InstallOutcome, InstallError> {
         let installer = &self.installer;
         installer.guard(guard)?;
-        if self.transaction.is_none() {
+        if self.completion.is_none() {
             return Err(invalid("restore plan already consumed"));
         }
         let _writer = guard.try_write_content()?;
@@ -1352,17 +1762,27 @@ impl RestorePlan {
         if self.items.is_empty() && self.removals.is_empty() {
             return Ok(self.finish_root(root));
         }
+        installer.ensure_install_layout()?;
         let before = installer.index()?;
+        if matches!(self.completion.as_ref(), Some(PlanCompletion::Local(_))) {
+            installer.check_local_history(&self.result, &before)?;
+        }
         let (mut journal, affected) = self.plan_journal(before)?;
         installer.save_journal(&journal)?;
         event(InstallEvent::JournalCreated)?;
         for i in 0..journal.entries.len() {
             let entry = &mut journal.entries[i];
             if let Some(stored) = &entry.new {
-                installer.objects.clone_to(
-                    &ObjectDigest::from_hex(&stored.digest)?,
-                    installer.fs.absolute(&entry.stage),
-                )?;
+                let digest = ObjectDigest::from_hex(&stored.digest)?;
+                let destination = installer.fs.absolute(&entry.stage);
+                match self.completion.as_ref().unwrap() {
+                    PlanCompletion::Cache { objects, .. } => {
+                        objects.clone_to(&digest, &destination)?
+                    }
+                    PlanCompletion::Local(completion) => {
+                        completion.clone_to(&digest, &destination)?
+                    }
+                }
                 event(InstallEvent::CloneCreated(i))?;
                 let file = installer.fs.file(&entry.stage)?;
                 file.set_permissions(fs::Permissions::from_mode(stored.mode))?;
@@ -1423,9 +1843,30 @@ impl RestorePlan {
         &mut self,
         root: impl FnOnce(&ResultEnvelope) -> Result<(), String>,
     ) -> InstallOutcome {
-        match self.transaction.take().unwrap().retain_hit(root) {
-            Ok(_) => InstallOutcome::Installed,
-            Err(error) => InstallOutcome::InstalledWithRootPending(error.to_string()),
+        match self.completion.take().unwrap() {
+            PlanCompletion::Cache { transaction, .. } => match transaction.retain_hit(root) {
+                Ok(_) => InstallOutcome::Installed,
+                Err(error) => InstallOutcome::InstalledWithRootPending(error.to_string()),
+            },
+            PlanCompletion::Local(mut completion) => {
+                let mut lease = completion.work.lease.clone();
+                lease.rooted = true;
+                lease.result_keys.clear();
+                lease.object_digests.clear();
+                let failure = completion
+                    .work
+                    .leases
+                    .lock()
+                    .and_then(|guard| guard.save(&lease))
+                    .err()
+                    .map(|e| e.to_string());
+                if failure.is_none() {
+                    completion.work.lease = lease;
+                }
+                InstallOutcome::InstalledLocally {
+                    retention_error: failure,
+                }
+            }
         }
     }
 

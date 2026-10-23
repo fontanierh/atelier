@@ -1,5 +1,6 @@
 //! Immutable content objects only. B2 owns leases, result records and transactions.
 //! Store roots are trusted caller-owned directories; sources and object names are checked.
+use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::fmt;
 use std::fs::{self, File};
@@ -79,22 +80,296 @@ pub struct ObjectStore {
     root: PathBuf,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+struct SnapshotObservation {
+    size: u64,
+    readonly: bool,
+    #[cfg(unix)]
+    device: u64,
+    #[cfg(unix)]
+    inode: u64,
+    #[cfg(unix)]
+    mode: u32,
+    #[cfg(unix)]
+    modified: (i64, i64),
+    #[cfg(unix)]
+    changed: (i64, i64),
+}
+impl SnapshotObservation {
+    fn same_inode(&self, other: &Self) -> bool {
+        #[cfg(unix)]
+        {
+            self.device == other.device && self.inode == other.inode
+        }
+        #[cfg(not(unix))]
+        {
+            self == other
+        }
+    }
+    fn new(metadata: &fs::Metadata) -> Self {
+        #[cfg(unix)]
+        use std::os::unix::fs::MetadataExt;
+        Self {
+            size: metadata.len(),
+            readonly: metadata.permissions().readonly(),
+            #[cfg(unix)]
+            device: metadata.dev(),
+            #[cfg(unix)]
+            inode: metadata.ino(),
+            #[cfg(unix)]
+            mode: metadata.mode(),
+            #[cfg(unix)]
+            modified: (metadata.mtime(), metadata.mtime_nsec()),
+            #[cfg(unix)]
+            changed: (metadata.ctime(), metadata.ctime_nsec()),
+        }
+    }
+}
+
+fn open_snapshot(path: &Path) -> io::Result<File> {
+    let mut options = fs::OpenOptions::new();
+    options.read(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC | libc::O_NONBLOCK);
+    }
+    let file = options.open(path)?;
+    let metadata = file.metadata()?;
+    if !metadata.is_file() || !metadata.permissions().readonly() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "snapshot is not readonly regular data",
+        ));
+    }
+    Ok(file)
+}
+
+pub(crate) fn clone_pinned_fd(source: &File, destination: &Path) -> io::Result<()> {
+    #[cfg(target_os = "macos")]
+    {
+        use std::os::fd::AsRawFd;
+        use std::os::unix::ffi::OsStrExt;
+        use std::os::unix::fs::OpenOptionsExt;
+        unsafe extern "C" {
+            fn fclonefileat(
+                source: libc::c_int,
+                directory: libc::c_int,
+                name: *const libc::c_char,
+                flags: u32,
+            ) -> libc::c_int;
+        }
+        let parent = destination.parent().ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "clone destination has no parent",
+            )
+        })?;
+        let name = destination.file_name().ok_or_else(|| {
+            io::Error::new(io::ErrorKind::InvalidInput, "clone destination has no name")
+        })?;
+        let name = std::ffi::CString::new(name.as_bytes()).map_err(|_| {
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "clone destination contains NUL",
+            )
+        })?;
+        let directory = fs::OpenOptions::new()
+            .read(true)
+            .custom_flags(libc::O_DIRECTORY | libc::O_NOFOLLOW | libc::O_CLOEXEC)
+            .open(parent)?;
+        if unsafe { fclonefileat(source.as_raw_fd(), directory.as_raw_fd(), name.as_ptr(), 0) } != 0
+        {
+            return Err(io::Error::last_os_error());
+        }
+        Ok(())
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = (source, destination);
+        Err(io::Error::new(
+            io::ErrorKind::Unsupported,
+            "APFS fd cloning unsupported",
+        ))
+    }
+}
+
 /// Unforgeable, single-use frozen snapshot. Dropping it removes only its own staging file.
 /// Neither the staged path nor a constructor is public; it cannot certify a caller's digest claim.
 #[derive(Debug)]
 pub struct PreparedObject {
-    root: PathBuf,
+    root: Option<PathBuf>,
+    retain: bool,
     staging: PathBuf,
     staging_dir: PathBuf,
     digest: ObjectDigest,
     size: u64,
     source_mode: u32,
+    observation: Option<SnapshotObservation>,
 }
 impl PreparedObject {
-    /// Validator view of the frozen bytes already hashed by preparation.
-    /// The opaque reader cannot change permissions or recover the private staging path.
-    pub fn reader(&self) -> Result<impl Read + Seek, StoreError> {
-        Ok(File::open(&self.staging)?)
+    // Private local scopes retain evidence on failure/drop; B2's temporary tokens clean their own leaf.
+    pub(crate) fn freeze_local(source: &Path, scope: &Path) -> Result<Self, StoreError> {
+        let prepared = Self::freeze_in(source, scope, None, true)?;
+        File::open(&prepared.staging_dir)?.sync_all()?;
+        File::open(scope)?.sync_all()?;
+        Ok(prepared)
+    }
+    fn reserve(scope: &Path, root: Option<PathBuf>, retain: bool) -> Result<Self, StoreError> {
+        // Reserve a private directory first, so even a partially failed clone has
+        // unambiguous cleanup ownership. Stale or foreign names are never removed.
+        let staging_dir = loop {
+            let serial = NEXT_STAGE.fetch_add(1, Ordering::Relaxed);
+            let path = scope.join(format!("{}-{serial}", std::process::id()));
+            match fs::create_dir(&path) {
+                Ok(()) => break path,
+                Err(error) if error.kind() == io::ErrorKind::AlreadyExists => continue,
+                Err(error) => return Err(error.into()),
+            }
+        };
+        let prepared = PreparedObject {
+            root,
+            retain,
+            staging: staging_dir.join("payload"),
+            staging_dir,
+            digest: ObjectDigest("0".repeat(64)),
+            size: 0,
+            source_mode: 0,
+            observation: None,
+        };
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            fs::set_permissions(&prepared.staging_dir, fs::Permissions::from_mode(0o700))?;
+        }
+        Ok(prepared)
+    }
+    fn freeze_in(
+        source: &Path,
+        scope: &Path,
+        root: Option<PathBuf>,
+        retain: bool,
+    ) -> Result<Self, StoreError> {
+        if !fs::symlink_metadata(scope)?.is_dir() {
+            return Err(StoreError::InvalidFile("staging scope is not a directory"));
+        }
+        let metadata = fs::symlink_metadata(source)?;
+        if !metadata.is_file() {
+            return Err(StoreError::InvalidFile("source is not a regular file"));
+        }
+        let mut prepared = Self::reserve(scope, root, retain)?;
+        native::clone_file(source, &prepared.staging).map_err(StoreError::Clone)?;
+        let cloned = fs::symlink_metadata(&prepared.staging)?;
+        if !cloned.is_file() {
+            return Err(StoreError::InvalidFile(
+                "cloned source is not a regular file",
+            ));
+        }
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            prepared.source_mode = cloned.permissions().mode() & 0o777;
+            fs::set_permissions(&prepared.staging, fs::Permissions::from_mode(0o444))?;
+        }
+        #[cfg(not(unix))]
+        {
+            let mut permissions = fs::metadata(&prepared.staging)?.permissions();
+            permissions.set_readonly(true);
+            fs::set_permissions(&prepared.staging, permissions)?;
+        }
+        let mut file = open_snapshot(&prepared.staging)?;
+        let before_hash = SnapshotObservation::new(&file.metadata()?);
+        let mut hasher = Sha256::new();
+        let mut buffer = [0; 64 * 1024];
+        loop {
+            let count = file.read(&mut buffer)?;
+            if count == 0 {
+                break;
+            }
+            hasher.update(&buffer[..count]);
+            prepared.size += count as u64;
+        }
+        prepared.digest = ObjectDigest(format!("{:x}", hasher.finalize()));
+        file.sync_all()?;
+        let after_hash = SnapshotObservation::new(&file.metadata()?);
+        if after_hash != before_hash || prepared.size != before_hash.size {
+            return Err(StoreError::InvalidFile("snapshot changed while hashing"));
+        }
+        prepared.observation = Some(after_hash);
+        prepared.check_frozen()?;
+        Ok(prepared)
+    }
+
+    pub(crate) fn local_path(&self, scope: &Path) -> Result<&Path, StoreError> {
+        self.staging
+            .strip_prefix(scope)
+            .map_err(|_| StoreError::WrongStore)
+    }
+    pub(crate) fn check_frozen(&self) -> Result<(), StoreError> {
+        let expected = self
+            .observation
+            .as_ref()
+            .ok_or(StoreError::InvalidFile("snapshot is not certified"))?;
+        if SnapshotObservation::new(&immutable(&self.staging)?) != *expected {
+            return Err(StoreError::InvalidFile(
+                "frozen snapshot identity or observations changed",
+            ));
+        }
+        Ok(())
+    }
+    fn open_certified(&self) -> Result<File, StoreError> {
+        self.check_frozen()?;
+        let file = open_snapshot(&self.staging)?;
+        if SnapshotObservation::new(&file.metadata()?) != *self.observation.as_ref().unwrap() {
+            return Err(StoreError::InvalidFile("opened snapshot identity changed"));
+        }
+        self.check_frozen()?;
+        Ok(file)
+    }
+    pub(crate) fn clone_to(&self, destination: &Path) -> Result<(), StoreError> {
+        self.clone_checked(destination, || {})
+    }
+    fn clone_checked(
+        &self,
+        destination: &Path,
+        after_clone: impl FnOnce(),
+    ) -> Result<(), StoreError> {
+        let source = self.open_certified()?;
+        clone_pinned_fd(&source, destination).map_err(StoreError::Clone)?;
+        // The successful no-replace clone owns this leaf; a failed clone never owns an existing one.
+        let cloned = fs::symlink_metadata(destination)?;
+        let observed = SnapshotObservation::new(&cloned);
+        after_clone();
+        let checked = self.check_frozen().and_then(|_| {
+            if SnapshotObservation::new(&source.metadata()?) != *self.observation.as_ref().unwrap()
+            {
+                return Err(StoreError::InvalidFile(
+                    "pinned source changed during clone",
+                ));
+            }
+            if !cloned.is_file()
+                || cloned.len() != self.size
+                || !cloned.permissions().readonly()
+                || SnapshotObservation::new(&immutable(destination)?) != observed
+            {
+                return Err(StoreError::InvalidFile("frozen clone changed"));
+            }
+            Ok(())
+        });
+        if checked.is_err()
+            && fs::symlink_metadata(destination)
+                .is_ok_and(|metadata| SnapshotObservation::new(&metadata).same_inode(&observed))
+        {
+            let _ = fs::remove_file(destination);
+        }
+        checked
+    }
+    pub(crate) fn observation_json(&self) -> serde_json::Value {
+        serde_json::to_value(&self.observation).expect("snapshot observation serializes")
+    }
+    /// Independent cursor over the exact certified inode; no worker-output path is reopened.
+    pub fn reader(&self) -> Result<impl Read + Seek + '_, StoreError> {
+        self.open_certified()
     }
     pub fn digest(&self) -> &ObjectDigest {
         &self.digest
@@ -108,7 +383,15 @@ impl PreparedObject {
 }
 impl Drop for PreparedObject {
     fn drop(&mut self) {
-        let _ = fs::remove_file(&self.staging);
+        if self.retain {
+            return;
+        }
+        if self.observation.as_ref().is_none_or(|expected| {
+            fs::symlink_metadata(&self.staging)
+                .is_ok_and(|metadata| SnapshotObservation::new(&metadata).same_inode(expected))
+        }) {
+            let _ = fs::remove_file(&self.staging);
+        }
         let _ = fs::remove_dir(&self.staging_dir);
     }
 }
@@ -223,6 +506,11 @@ impl ObjectStore {
         source: &Path,
         scope: &Path,
     ) -> Result<PreparedObject, StoreError> {
+        self.check_scope(scope)?;
+        PreparedObject::freeze_in(source, scope, Some(self.root.clone()), false)
+    }
+
+    fn check_scope(&self, scope: &Path) -> Result<(), StoreError> {
         if scope != self.root.join("staging")
             && scope.parent() != Some(self.root.join("staging").as_path())
         {
@@ -231,67 +519,26 @@ impl ObjectStore {
         if !fs::symlink_metadata(scope)?.is_dir() {
             return Err(StoreError::InvalidFile("staging scope is not a directory"));
         }
-        let metadata = fs::symlink_metadata(source)?;
-        if !metadata.is_file() {
-            return Err(StoreError::InvalidFile("source is not a regular file"));
-        }
-        // Reserve a private directory first, so even a partially failed clone has
-        // unambiguous cleanup ownership. Stale or foreign names are never removed.
-        let staging_dir = loop {
-            let serial = NEXT_STAGE.fetch_add(1, Ordering::Relaxed);
-            let path = scope.join(format!("{}-{serial}", std::process::id()));
-            match fs::create_dir(&path) {
-                Ok(()) => break path,
-                Err(error) if error.kind() == io::ErrorKind::AlreadyExists => continue,
-                Err(error) => return Err(error.into()),
-            }
-        };
-        let mut prepared = PreparedObject {
-            root: self.root.clone(),
-            staging: staging_dir.join("payload"),
-            staging_dir,
-            digest: ObjectDigest("0".repeat(64)),
-            size: 0,
-            source_mode: 0,
-        };
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            fs::set_permissions(&prepared.staging_dir, fs::Permissions::from_mode(0o700))?;
-        }
-        native::clone_file(source, &prepared.staging).map_err(StoreError::Clone)?;
-        let cloned = fs::symlink_metadata(&prepared.staging)?;
-        if !cloned.is_file() {
-            return Err(StoreError::InvalidFile(
-                "cloned source is not a regular file",
-            ));
-        }
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            prepared.source_mode = cloned.permissions().mode() & 0o777;
-            fs::set_permissions(&prepared.staging, fs::Permissions::from_mode(0o444))?;
-        }
-        #[cfg(not(unix))]
-        {
-            let mut permissions = fs::metadata(&prepared.staging)?.permissions();
-            permissions.set_readonly(true);
-            fs::set_permissions(&prepared.staging, permissions)?;
-        }
-        let mut file = File::open(&prepared.staging)?;
-        let mut hasher = Sha256::new();
-        let mut buffer = [0; 64 * 1024];
-        loop {
-            let count = file.read(&mut buffer)?;
-            if count == 0 {
-                break;
-            }
-            hasher.update(&buffer[..count]);
-            prepared.size += count as u64;
-        }
-        prepared.digest = ObjectDigest(format!("{:x}", hasher.finalize()));
+        Ok(())
+    }
+
+    /// Clone an existing private frozen proof into this store's already-leased scope.
+    /// No live source reread and no second payload hash is permitted.
+    pub(crate) fn adopt_in(
+        &self,
+        frozen: &PreparedObject,
+        scope: &Path,
+    ) -> Result<PreparedObject, StoreError> {
+        self.check_scope(scope)?;
+        let mut object = PreparedObject::reserve(scope, Some(self.root.clone()), false)?;
+        frozen.clone_to(&object.staging)?;
+        object.digest = frozen.digest.clone();
+        object.size = frozen.size;
+        object.source_mode = frozen.source_mode;
+        let file = open_snapshot(&object.staging)?;
         file.sync_all()?;
-        Ok(prepared)
+        object.observation = Some(SnapshotObservation::new(&file.metadata()?));
+        Ok(object)
     }
 
     /// @cc [owner:fontanierh,label:correctness] first-object-wins
@@ -299,9 +546,10 @@ impl ObjectStore {
     /// replacing any existing entry. Existing entries MUST be regular and read-only. Neither
     /// publication nor a clone hit may rehash previously verified bytes or scan output folders.
     pub fn publish(&self, prepared: PreparedObject) -> Result<PublishedObject, StoreError> {
-        if prepared.root != self.root {
+        if prepared.root.as_ref() != Some(&self.root) {
             return Err(StoreError::WrongStore);
         }
+        prepared.check_frozen()?;
         let destination = self.object_path(&prepared.digest);
         let outcome = match native::publish_exclusive(&prepared.staging, &destination) {
             Ok(()) => {
@@ -391,7 +639,86 @@ mod native {
 #[cfg(all(test, target_os = "macos"))]
 mod tests {
     use super::*;
+    use std::io::SeekFrom;
     use std::os::unix::fs::{PermissionsExt, symlink};
+
+    #[test]
+    fn retained_snapshot_replacement_and_clone_substitution_refuse_without_rehash() {
+        let serial = NEXT_STAGE.fetch_add(1, Ordering::Relaxed);
+        let root = std::env::temp_dir().join(format!(
+            "atelier-v2-frozen-cert-{}-{serial}",
+            std::process::id()
+        ));
+        fs::create_dir(&root).unwrap();
+        struct Workspace(std::path::PathBuf);
+        impl Drop for Workspace {
+            fn drop(&mut self) {
+                fs::remove_dir_all(&self.0).unwrap();
+            }
+        }
+        let _workspace = Workspace(root.clone());
+        let source = root.join("source");
+        fs::write(&source, b"original").unwrap();
+        let replace = |path: &Path| {
+            let replacement = root.join(format!(
+                "replacement-{}",
+                NEXT_STAGE.fetch_add(1, Ordering::Relaxed)
+            ));
+            fs::write(&replacement, b"FOREIGN!").unwrap();
+            fs::set_permissions(&replacement, fs::Permissions::from_mode(0o444)).unwrap();
+            fs::rename(replacement, path).unwrap();
+        };
+        let snapshot = PreparedObject::freeze_local(&source, &root).unwrap();
+        let mut first = snapshot.reader().unwrap();
+        let mut second = snapshot.reader().unwrap();
+        let mut two = [0; 2];
+        let mut three = [0; 3];
+        first.read_exact(&mut two).unwrap();
+        second.read_exact(&mut three).unwrap();
+        assert_eq!(&two, b"or");
+        assert_eq!(&three, b"ori");
+        first.seek(SeekFrom::Start(0)).unwrap();
+        first.read_exact(&mut three).unwrap();
+        assert_eq!(&three, b"ori");
+        replace(&snapshot.staging);
+        assert!(snapshot.reader().is_err());
+        assert!(snapshot.check_frozen().is_err());
+        assert!(snapshot.clone_to(&root.join("not-created")).is_err());
+        assert!(!root.join("not-created").exists());
+        let store = ObjectStore::open(root.join("cache")).unwrap();
+        assert!(
+            store
+                .adopt_in(&snapshot, &store.root.join("staging"))
+                .is_err()
+        );
+        assert!(
+            fs::read_dir(store.root.join("objects/sha256"))
+                .unwrap()
+                .next()
+                .is_none()
+        );
+        let fresh = PreparedObject::freeze_local(&source, &root).unwrap();
+        let existing = root.join("existing");
+        fs::write(&existing, b"FOREIGN!").unwrap();
+        assert!(fresh.clone_to(&existing).is_err());
+        assert_eq!(fs::read(&existing).unwrap(), b"FOREIGN!");
+        let failed = root.join("failed-clone");
+        assert!(
+            fresh
+                .clone_checked(&failed, || replace(&fresh.staging))
+                .is_err()
+        );
+        assert!(!failed.exists());
+        assert_eq!(fs::read(&fresh.staging).unwrap(), b"FOREIGN!");
+        let third = PreparedObject::freeze_local(&source, &root).unwrap();
+        let substituted = root.join("substituted");
+        assert!(
+            third
+                .clone_checked(&substituted, || replace(&substituted))
+                .is_err()
+        );
+        assert_eq!(fs::read(&substituted).unwrap(), b"FOREIGN!");
+    }
 
     #[test]
     fn clone_source_substitution_is_refused_and_owned_destination_removed() {

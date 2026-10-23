@@ -67,7 +67,8 @@ def test_only_the_crater_floor_plants_them():
         if 'Tree_Caldera' in text or re.search(r'craterpark\.v2 import .*\btrees\b|from \. import .*\btrees\b', text):
             users.add(path.relative_to(GAME / 'world').as_posix())
     assert users == {'regions/craterpark/v2/trees.py', 'regions/craterpark/v2/editor_floor.py',
-                     'regions/hidamari/props.py'}, users
+                     'regions/hidamari/props.py', 'regions/hidamari/prop_parameters.py',
+                     'regions/hidamari/prop_roster.py'}, users
 
 
 def test_planted_only_inside_the_crater():

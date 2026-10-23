@@ -47,6 +47,22 @@ def regular_files(root):
     return found
 
 
+def flat_files(root):
+    """@cc [owner:fontanierh,label:correctness] complete-flat-generated-membership
+    Flat generated membership MUST inspect every entry type and refuse links,
+    special files and directories, including empty directories with expected
+    filenames. Ancestor links MUST refuse; membership checks MUST NOT mutate files.
+    """
+    from .export_manifest import real_directory
+    root=real_directory(root)
+    if not stat.S_ISDIR(root.lstat().st_mode):
+        raise ValueError('Generated flat root must be a regular directory')
+    entries=list(root.iterdir())
+    if any(not stat.S_ISREG(path.lstat().st_mode) for path in entries):
+        raise ValueError('Generated flat owners require only regular files')
+    return {path.name for path in entries}
+
+
 def retain_files(root, expected):
     """@cc [owner:fontanierh,label:correctness] retire-superseded-generated-members
     Only a producer with exclusive write ownership MAY retire files in its generated root.

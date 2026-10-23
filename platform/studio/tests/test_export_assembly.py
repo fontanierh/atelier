@@ -100,3 +100,9 @@ def test_previous_inventory_does_not_adopt_foreign_files(tmp_path):
     with pytest.raises(ValueError): assembly.assemble([one], target)
     assert (target / 'foreign.fbx').read_bytes() == b'foreign'
     assert (target / 'One.fbx').exists()
+
+
+def test_runtime_input_closure_names_the_executed_copy_helper():
+    from atelier import export_assembly
+    names = {path.name for path in export_assembly.runtime_inputs()}
+    assert 'file_copy.py' in names and 'build_cache.py' not in names

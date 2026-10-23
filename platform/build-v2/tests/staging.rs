@@ -100,14 +100,33 @@ impl MemoryObjects {
     }
 }
 impl ObjectSource for MemoryObjects {
-    fn clone_object(&self, digest: &ObjectDigest, destination: &Path) -> Result<(), String> {
-        let bytes = self
-            .0
-            .get(digest.as_hex())
-            .ok_or("object is not in the store")?;
-        fs::write(destination, bytes).map_err(|error| error.to_string())?;
-        fs::set_permissions(destination, fs::Permissions::from_mode(0o444))
-            .map_err(|error| error.to_string())
+    fn clone_object(&self, digest: &ObjectDigest, destination: &Path) -> Result<(), SourceError> {
+        let refuse = |kind, message: String| SourceError {
+            kind,
+            digest: digest.clone(),
+            message,
+        };
+        let bytes = self.0.get(digest.as_hex()).ok_or_else(|| {
+            refuse(
+                SourceErrorKind::Unavailable,
+                "object is not in the store".into(),
+            )
+        })?;
+        fs::write(destination, bytes)
+            .and_then(|()| fs::set_permissions(destination, fs::Permissions::from_mode(0o444)))
+            .map_err(|error| refuse(SourceErrorKind::Io, error.to_string()))
+    }
+}
+
+/// A source whose certified bytes changed after certification: it refuses every object.
+struct ChangedObjects;
+impl ObjectSource for ChangedObjects {
+    fn clone_object(&self, digest: &ObjectDigest, _: &Path) -> Result<(), SourceError> {
+        Err(SourceError {
+            kind: SourceErrorKind::Changed,
+            digest: digest.clone(),
+            message: "the certified source file was replaced".into(),
+        })
     }
 }
 
@@ -378,6 +397,8 @@ fn staging_refuses_code_changed_after_keying_and_leaves_no_folder() {
         "job-1",
     )
     .unwrap_err();
+    assert!(matches!(error, StageError::Staging(_)), "{error:?}");
+    let error = String::from(error);
     assert!(error.contains("changed after keying"), "{error}");
     assert!(!space.path("job").exists());
     fixture
@@ -397,6 +418,97 @@ fn staging_refuses_code_changed_after_keying_and_leaves_no_folder() {
 }
 
 #[test]
+fn object_source_refusals_reach_the_controller_typed_and_leave_no_folder() {
+    let space = Workspace::new();
+    let fixture = Fixture::new("assets");
+    let prepared = fixture.prepared();
+    let mesh_digest = sha256(b"mesh bytes");
+    for (source, kind) in [
+        (
+            &MemoryObjects::default() as &dyn ObjectSource,
+            SourceErrorKind::Unavailable,
+        ),
+        (
+            &ChangedObjects as &dyn ObjectSource,
+            SourceErrorKind::Changed,
+        ),
+    ] {
+        let error = stage(
+            &prepared,
+            &fixture.snapshot,
+            source,
+            &space.path("job"),
+            "job-1",
+        )
+        .unwrap_err();
+        let StageError::Source(refusal) = &error else {
+            panic!("expected a typed source refusal, got {error:?}")
+        };
+        assert_eq!(refusal.kind, kind);
+        // Staging asks for a recorded member's digest; which one comes first is staging's order.
+        let recorded = [mesh_digest.clone(), sha256(b"#!/bin/sh\n")];
+        assert!(
+            recorded.contains(&refusal.digest.as_hex().to_string()),
+            "{refusal:?}"
+        );
+        let text = String::from(error.clone());
+        assert_eq!(text, error.to_string());
+        assert!(
+            text.starts_with(&format!("cannot clone object {}: ", refusal.digest)),
+            "{text}"
+        );
+        assert!(!space.path("job").exists());
+    }
+}
+
+#[test]
+fn pinned_objects_report_a_missing_object_as_io_with_the_same_text() {
+    use atelier_build_v2::leases::ProcessIdentity;
+    use atelier_build_v2::results::ResultStore;
+    use atelier_build_v2::store::ObjectStore;
+    let space = Workspace::new();
+    let fixture = Fixture::new("assets");
+    let prepared = fixture.prepared();
+    let objects = ObjectStore::open(space.path("store")).unwrap();
+    let identity = ProcessIdentity {
+        pid: std::process::id(),
+        boot: "boot".into(),
+        started: "start".into(),
+    };
+    let provenance = Provenance {
+        checkout: "test".into(),
+        branch: "test".into(),
+        commit: "test".into(),
+        dirty: false,
+        built_at: "now".into(),
+    };
+    let results = ResultStore::open(space.path("store")).unwrap();
+    let pin = results
+        .begin(
+            &prepared,
+            provenance,
+            identity,
+            vec![],
+            BTreeSet::from([sha256(b"producer")]),
+        )
+        .unwrap();
+    let digest = ObjectDigest::from_hex(&sha256(b"never stored")).unwrap();
+    let error = PinnedObjects::new(&objects, &pin)
+        .clone_object(&digest, &space.path("clone.bin"))
+        .unwrap_err();
+    assert_eq!(error.kind, SourceErrorKind::Io);
+    assert_eq!(error.digest, digest);
+    // The text is the one staging reported before the typed error existed.
+    assert!(
+        error
+            .to_string()
+            .starts_with(&format!("cannot clone object {digest}: ")),
+        "{error}"
+    );
+    assert!(!space.path("clone.bin").exists());
+}
+
+#[test]
 fn staging_refuses_incomplete_items_reused_folders_and_relative_roots() {
     let space = Workspace::new();
     let fixture = Fixture::new("assets");
@@ -408,7 +520,8 @@ fn staging_refuses_incomplete_items_reused_folders_and_relative_roots() {
         &space.path("job"),
         "job-1",
     )
-    .unwrap_err();
+    .unwrap_err()
+    .to_string();
     assert!(error.contains("not in the store"), "{error}");
     assert!(!space.path("job").exists());
     let mut short = MemoryObjects::default();
@@ -422,7 +535,8 @@ fn staging_refuses_incomplete_items_reused_folders_and_relative_roots() {
         &space.path("job"),
         "job-1",
     )
-    .unwrap_err();
+    .unwrap_err()
+    .to_string();
     assert!(error.contains("recorded 10-byte file"), "{error}");
     fs::create_dir(space.path("used")).unwrap();
     fs::write(space.path("used/stale"), b"stale").unwrap();

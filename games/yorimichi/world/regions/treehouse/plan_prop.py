@@ -30,8 +30,11 @@ def main(argv=None):
     if root.exists() and regular_files(root)-{name+'.png','record.json'}:raise ValueError('Foreign selected prop data')
     captured={}
     def publish(obj,hulls):
+        import bpy
+        from atelier.blender.fbx import world_color
         collisions=[capture_collision(hull) for hull in hulls]
-        result=plan(obj,args.output,collisions=collisions,partition='whole', options=OPTIONS)
+        result=plan(obj,args.output,collisions=collisions,partition='whole',
+            options=dict(OPTIONS,scene_world_color=world_color(bpy.context.scene)))
         if len(result['pieces'])!=1 or result['pieces'][0]['name']!=name:
             raise ValueError('Prop requires coordinated instancing membership when oversized')
         captured.update(hulls=collisions)

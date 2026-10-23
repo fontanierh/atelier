@@ -58,8 +58,8 @@ def capture(mesh):
     return result
 
 
-def subset(source, members):
-    """Keep complete faces in source order and map every corner channel through the same loop IDs."""
+def subset(source, members, *, preserve_unused=False):
+    """Keep complete faces/corners; a whole source can retain its unreferenced vertex records too."""
     members = tuple(members)
     if (not members or members != tuple(sorted(set(members)))
             or any(type(i) is not int or not 0 <= i < len(source['counts']) for i in members)):
@@ -69,7 +69,13 @@ def subset(source, members):
     if np.any(counts[selected] < 3):
         raise ValueError('Static mesh piece contains a degenerate face')
     loops = np.concatenate([np.arange(starts[i], starts[i] + counts[i]) for i in selected])
-    used, remapped = np.unique(source['vertex_indices'][loops], return_inverse=True)
+    if type(preserve_unused) is not bool:raise ValueError('Invalid whole vertex preservation policy')
+    if preserve_unused:
+        if members!=tuple(range(len(counts))):raise ValueError('Unused vertices require complete whole-face ownership')
+        used=np.arange(len(source['positions']),dtype=np.int32)
+        remapped=source['vertex_indices'][loops]
+    else:
+        used, remapped = np.unique(source['vertex_indices'][loops], return_inverse=True)
     lengths = counts[selected]
     return dict(positions=source['positions'][used], normals=source['normals'][loops],
                 faces=[a.tolist() for a in np.split(remapped, np.cumsum(lengths)[:-1])],

@@ -1,0 +1,14 @@
+{
+  "crown": null,
+  "lod": 0,
+  "name": "HD_P_fire_buckets",
+  "parent": "HD_P_fire_buckets",
+  "schema": 1,
+  "settings": null,
+  "size": 1.1,
+  "slug": "fire_buckets",
+  "solid": true,
+  "target": 0.09,
+  "turn": -90,
+  "upright": false
+}

@@ -1,0 +1,46 @@
+{
+  "crown": 4.3,
+  "lod": 1,
+  "name": "Tree_Caldera_BlackPine_A_LOD1",
+  "parent": "Tree_Caldera_BlackPine_A",
+  "schema": 1,
+  "settings": {
+    "BASE": [
+      0.1,
+      0.1
+    ],
+    "FLOAT": 0.15,
+    "LODS": [
+      [
+        1.0,
+        1.0,
+        null
+      ],
+      [
+        0.3,
+        0.25,
+        "weld"
+      ],
+      [
+        0.1,
+        0.1,
+        "shell"
+      ],
+      [
+        0.03,
+        0.04,
+        "shell"
+      ]
+    ],
+    "SHELL": [
+      0.02,
+      0.02
+    ]
+  },
+  "size": 8.0,
+  "slug": "black_pine_a",
+  "solid": false,
+  "target": 0.055,
+  "turn": 0.0,
+  "upright": true
+}

@@ -549,3 +549,88 @@ fn concurrent_publication_and_gc_observer_share_claim_mutex_without_gap() {
     assert_eq!(removed, 0);
     assert_eq!(begin(&store, &unit).lookup().unwrap().unwrap(), second);
 }
+
+#[test]
+fn recorded_identity_checks_complete_metadata_without_opening_payloads() {
+    let workspace = Workspace::new();
+    let store = workspace.store();
+    let unit = prepared("unit");
+    let mut record = ResultEnvelope {
+        version: ENVELOPE_VERSION,
+        result: ResultRecord {
+            schema_version: RESULT_SCHEMA_VERSION,
+            unit: "diagnostic-only".into(),
+            key: unit.key().into(),
+            ingredients: unit.ingredients().clone(),
+            outputs: vec![StoredItem {
+                item: unit.ingredients().logical_outputs[0].clone(),
+                files: vec![StoredFile {
+                    path: "result.bin".into(),
+                    digest: "a".repeat(64),
+                    size: 17,
+                    mode: 0o755,
+                }],
+                external_locator: None,
+            }],
+            output_groups: vec![],
+            provenance: provenance("fixture"),
+        },
+        upstream_result_keys: BTreeSet::new(),
+    };
+    let path = workspace
+        .path("store/results")
+        .join(format!("{}.json", unit.key()));
+    let save = |record: &ResultEnvelope| {
+        fs::write(&path, serde_json::to_vec(record).unwrap()).unwrap();
+        let mut permissions = fs::metadata(&path).unwrap().permissions();
+        permissions.set_readonly(true);
+        fs::set_permissions(&path, permissions).unwrap();
+    };
+    save(&record);
+    // Poison the entire object namespace: even a path existence probe would fail.
+    fs::remove_dir(workspace.path("store/objects/sha256")).unwrap();
+    fs::write(workspace.path("store/objects/sha256"), b"unavailable").unwrap();
+    let mut transaction = begin(&store, &unit);
+    let identity = transaction.lookup_recorded().unwrap().unwrap();
+    assert_eq!(identity.result(), &record);
+    assert!(identity.groups().is_empty());
+    assert!(transaction.lease().result_keys.contains(unit.key()));
+    assert!(transaction.lease().object_digests.is_empty());
+    assert!(transaction.lookup().is_err());
+    fs::remove_file(&path).unwrap();
+    record.result.outputs[0].files[0].mode = 0o777;
+    save(&record);
+    assert!(matches!(
+        transaction.lookup_recorded(),
+        Err(ResultError::Invalid(_))
+    ));
+    fs::remove_file(&path).unwrap();
+    record.result.outputs[0].files.clear();
+    save(&record);
+    assert!(matches!(
+        transaction.lookup_recorded(),
+        Err(ResultError::Invalid(_))
+    ));
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn published_record_identity_survives_eviction_without_becoming_available() {
+    let workspace = Workspace::new();
+    let store = workspace.store();
+    let unit = prepared("unit");
+    let result = begin(&store, &unit)
+        .stage(sources(&workspace, b"actual frozen output"), |_| Ok(()))
+        .unwrap()
+        .publish(|_| Ok(()))
+        .unwrap();
+    let digest = &result.result.outputs[0].files[0].digest;
+    fs::remove_file(workspace.path("store/objects/sha256").join(digest)).unwrap();
+    let mut transaction = begin(&store, &unit);
+    assert_eq!(
+        transaction.lookup_recorded().unwrap().unwrap().result(),
+        &result
+    );
+    assert!(transaction.lookup_groups().is_err());
+    assert!(transaction.lease().object_digests.is_empty());
+}

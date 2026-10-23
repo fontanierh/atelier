@@ -539,6 +539,46 @@ later B7/A5/A9 integration. Store, lease, clone or root failures after local out
 valid work as `CompletedNotCached`, whereas invalid producer outputs, validator rejections and
 same-key nondeterminism fail the unit.
 
+## B7 local completion and availability capabilities
+
+`WriteTransaction::lookup_recorded` returns sealed `RecordedIdentities`: exact prepared key,
+ingredients and complete fixed/group metadata, under the existing result-key lease and GC mutex.
+It never probes payload objects. Its selected group projections preserve encoding/role metadata;
+they cannot become available `ValidatedGroup` tokens. `lookup_groups` retains its existing complete
+object checks and pins. A valid recorded identity can therefore resolve a consumer key before an
+unneeded missing producer blob forces work. Normal producer-under-consumer retention prevents the
+common eviction case; missing/corrupt entries still return typed absence/failure. An adapter that
+cannot validate identity without missing payload bytes must refuse rather than invent authority.
+
+`ReceiptReader::pin_current_sources` reuses the cache-free complete receipt/stat validator, holds
+shared read custody and pins no-follow regular file descriptors. `objects_for` binds the consumer's
+exact item content/modes before its `ObjectSource` provider can clone. The provider uses APFS fd
+clones and pre/post observations, with typed `Unavailable`, `Changed`, `CloneUnsupported` or `Io`
+errors; it never copies, hashes, reopens source paths or chmods. C1b applies keyed read-only modes.
+Drop custody immediately after `stage`: job clones are independent, so worker execution does not
+block checkout installs. A5's public Current receipt vectors are diagnostic, not this capability.
+Checkout receipts cannot certify missing store-only outputs or group manifests. No automatic partial
+backfill is provided; complete result publication requires all fixed/group/auxiliary snapshots.
+
+`ReceiptReader::begin_completion` creates an existing-format local owner/worker lease under reserved
+install metadata before job/snapshot writes. Its job directory is suitable for C1b staging; register
+new workers before allowing writes. `CompletionWork::freeze` takes the complete authoritative actual
+output list and shares B2's fixed/group validation core. Validators read the same private snapshots
+that B1 hashes once. A read-only complete envelope plus named snapshot locations is durably recorded.
+`FrozenCompletion::publish_with` consumes the original A5/A9 miss write transaction, held through
+staging/run, and adopts independent verified clones without rehashing. The `publish(store, root)`
+convenience creates a late transaction only when none existed because the cache was unavailable. Local evidence survives every attempt; semantic conflicts latch a hard refusal.
+
+`ReceiptReader::prepare_local` accepts only that sealed completion, never opens CAS and uses the same
+RestorePlan journals, ownership checks, modes, atomic receipt/index publication and recovery as cached
+restoration. Same-key prior receipts are checked for nondeterminism before preparation and again
+under commit custody. A successful local commit returns `InstalledLocally`, separately reporting
+local retention failure, and does not call the cached-result root callback. Its exact receipt/index
+is the durable checkout authority; it is Current without asserting cache availability. Local artifacts
+and owner evidence remain retained, including after quarantine recovery. They are not immortal shared
+CAS pins and introduce no cleanup CLI/service. Production scheduling and the guard/cleanup liveness
+adapter remain separately reviewed integrations.
+
 ## Unit demand (A5)
 
 The unused `demand` module separates checkout satisfaction from stored availability.
@@ -567,6 +607,19 @@ does not materialize prerequisites. This does not prove cold key resolution, dyn
 planner scheduling, worker staging or A9's end-to-end dispatch/output cutoff; those
 integration obligations remain separate. The complete ownership view and exact
 retirement authority still come from B3/D4 callers, never path-prefix inference.
+
+`FrozenCompletion::available_groups` restores available local group tokens only after checking every
+named member against its fully validated private frozen snapshots, including normalized modes.
+`objects_for` binds complete selected consumer item views and returns borrowed `FrozenObjects` for
+clone-only C1b staging. These are local byte capabilities, not CAS hits; missing/corrupt named local
+snapshots refuse rather than becoming available from recorded metadata alone. The producer can stay
+completed while a downstream miss uses preserved store-only/group bytes without rerunning it.
+
+`ReceiptReader::current_identities` issues a sealed metadata observation using the shared Current
+validator under temporary read custody. It retains no guard or FD, so identity-only hits cannot block
+later installs. Stage-time CurrentSources reacquires and revalidates exact selected content/modes.
+FrozenObjects selection checks only selected bytes from sealed recorded views: loss of an unrelated
+sibling refuses a full available group token but does not prevent staging a surviving selected member.
 
 ## Static scheduling core (A9a)
 
@@ -608,3 +661,22 @@ retirement and native materialization proof remain separate acceptance work. The
 executor owns admission, sessions, retry, deadlines and cleanup. This slice resolves
 identity closure before target lookup; it does not claim target-first cold discovery
 or activate production v1.
+
+## Plain-Python data op (D1)
+
+`py_data::PyDataSpec` converts unit-family input slot, output class and parameter schemas into a
+validated `validate::OpDefinition` for `op = "py_data"` (version 1). Because `py_data` is a generic
+host-data op, every content input slot, reference slot and parameter name must be declared explicitly;
+allowed output classes are restricted to data classes (`data`, `json_data`, `route_data` and
+`runtime_data`), rejecting mesh and material classes. `py_data_validator_identity` and
+`py_data_worker_identity` bind `PY_DATA_VALIDATOR_VERSION = "atelier-py-data-validator-1"` and the
+real `python_worker.py`/`python_job.py`/helper closure into A3 unit keys.
+
+`py_data::validate_py_data_unit_outputs` validates already frozen `results::StagedSource` snapshots
+(or pre-staged output files via `validate_py_data_outputs`) against the unit's `PreparedUnit`
+contract before B2 publication. It checks validator identity, enforces required vs optional output
+completeness and unexpected-file rejection, verifies that reported file digests and sizes match the
+frozen bytes, and dispatches payload format validation strictly on the declared `OutputClass`
+(`JsonData` semantic UTF-8 JSON object/array with finite numbers and no duplicate keys,
+`RouteData` finite waypoints and monotone distances, `RuntimeData` `ATD1\x01` binary tables,
+and non-empty `Data`).

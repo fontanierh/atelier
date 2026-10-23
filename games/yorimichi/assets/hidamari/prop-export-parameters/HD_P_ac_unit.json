@@ -1,0 +1,14 @@
+{
+  "crown": null,
+  "lod": 0,
+  "name": "HD_P_ac_unit",
+  "parent": "HD_P_ac_unit",
+  "schema": 1,
+  "settings": null,
+  "size": 0.85,
+  "slug": "ac_unit",
+  "solid": true,
+  "target": 0.15,
+  "turn": -90,
+  "upright": false
+}

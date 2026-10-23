@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 import shutil
+import sys
+from unittest import mock
 
 import pytest
 from atelier.atomic_files import atomic_json
@@ -117,7 +119,12 @@ def test_one_house_height_edit_changes_its_geometry_and_exact_collision_data_onl
 def test_final_harbor_queries_keep_original_probe_storage_and_loader_precision(tmp_path):
     import numpy as np
     source = load('terminal_query_precision_test', 'world/regions/ferry/terminal_sources.py')
-    fs = source.load('terminal_original_loader_test', source.KIT / 'site.py')
+    # The real loader supplies both Blender stubs only when bpy is absent. Keep
+    # another test's partial bpy/ferry module setup outside this loader's scope.
+    with mock.patch.dict(sys.modules):
+        for name in ('bpy', 'mathutils', 'ferry_build'):
+            sys.modules.pop(name, None)
+        fs = source.load('terminal_original_loader_test', source.KIT / 'site.py')
     original = np.asarray([[[0, 0, 1], [1, 0, 1], [0, 1, 1]], [[2, 2, 3], [3, 2, 3], [2, 3, 3]]], dtype=np.float32)
     np.savez(tmp_path / 'world_hidamari.npz', ground=np.empty((0, 3, 3), dtype=np.float32), solid=original,
         solid_label=np.asarray([0, 1], dtype=np.int16), meta=json.dumps(dict(labels=['HD_Harbor', 'Other'], bounds=[0, 0, 4, 4])))

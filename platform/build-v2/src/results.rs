@@ -1,6 +1,7 @@
 //! Per-unit immutable result publication. B3 installs and B4 root policy are separate.
 use crate::groups::{
-    OutputGroupContract, PlanRoster, ValidatedGroup, restore_recorded, validate_frozen,
+    OutputGroupContract, PlanRoster, RecordedGroupIdentity, StoredOutputGroup, ValidatedGroup,
+    recorded_identity, restore_recorded, validate_frozen,
 };
 use crate::keys::{PreparedUnit, canonical_bytes, normalized_mode};
 use crate::leases::{LeaseRecord, LeaseStore, ProcessIdentity, directory, sync_dir};
@@ -18,7 +19,7 @@ use std::path::{Path, PathBuf};
 
 pub const ENVELOPE_VERSION: u32 = 1;
 pub type OutputSources = BTreeMap<(String, String), PathBuf>;
-type GroupSources = BTreeMap<(String, String), PathBuf>;
+pub(crate) type GroupSources = BTreeMap<(String, String), PathBuf>;
 pub type GroupHit = (ResultEnvelope, BTreeMap<String, ValidatedGroup>);
 #[derive(Clone, Debug)]
 pub struct ActualOutput {
@@ -48,6 +49,21 @@ impl ResultEnvelope {
                     .iter()
                     .flat_map(|group| &group.files),
             )
+    }
+}
+
+/// Complete exact-key record identities, not a StoredHit or byte/staging capability.
+#[derive(Debug)]
+pub struct RecordedIdentities {
+    envelope: ResultEnvelope,
+    groups: BTreeMap<String, RecordedGroupIdentity>,
+}
+impl RecordedIdentities {
+    pub fn result(&self) -> &ResultEnvelope {
+        &self.envelope
+    }
+    pub fn groups(&self) -> &BTreeMap<String, RecordedGroupIdentity> {
+        &self.groups
     }
 }
 
@@ -189,7 +205,11 @@ impl ResultStore {
         Ok(self.read_validated(unit)?.map(|(envelope, _)| envelope))
     }
 
-    fn read_validated(&self, unit: &PreparedUnit) -> Result<Option<GroupHit>, ResultError> {
+    // Caller holds the same result/GC mutex and a durable result-key claim.
+    fn read_metadata(
+        &self,
+        unit: &PreparedUnit,
+    ) -> Result<Option<RecordedIdentities>, ResultError> {
         let path = self.record_path(unit.key());
         match fs::symlink_metadata(&path) {
             Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(None),
@@ -200,7 +220,7 @@ impl ResultStore {
             _ => {}
         }
         let envelope: ResultEnvelope =
-            serde_json::from_slice(&fs::read(path)?).map_err(|error| invalid(error.to_string()))?;
+            serde_json::from_slice(&fs::read(path)?).map_err(|e| invalid(e.to_string()))?;
         if envelope.version != ENVELOPE_VERSION
             || envelope.result.schema_version != RESULT_SCHEMA_VERSION
             || envelope.result.key != unit.key()
@@ -218,6 +238,30 @@ impl ResultStore {
             .iter()
             .zip(&envelope.result.output_groups)
         {
+            groups.insert(
+                contract.id.clone(),
+                recorded_identity(contract, stored).map_err(invalid)?,
+            );
+        }
+        check_manifest(unit, &envelope.result.outputs)?;
+        for key in &envelope.upstream_result_keys {
+            digest(key)?;
+        }
+        Ok(Some(RecordedIdentities { envelope, groups }))
+    }
+
+    fn read_validated(&self, unit: &PreparedUnit) -> Result<Option<GroupHit>, ResultError> {
+        let Some(recorded) = self.read_metadata(unit)? else {
+            return Ok(None);
+        };
+        let envelope = recorded.envelope;
+        let mut groups = BTreeMap::new();
+        for (contract, stored) in unit
+            .ingredients()
+            .output_groups
+            .iter()
+            .zip(&envelope.result.output_groups)
+        {
             let token = restore_recorded(contract, stored, |file| {
                 let digest = ObjectDigest::from_hex(&file.digest).map_err(|e| e.to_string())?;
                 self.objects
@@ -227,11 +271,6 @@ impl ResultStore {
             .map_err(invalid)?;
             groups.insert(contract.id.clone(), token);
         }
-
-        check_manifest(unit, &envelope.result.outputs)?;
-        for key in &envelope.upstream_result_keys {
-            digest(key)?;
-        }
         for file in envelope.result.outputs.iter().flat_map(|item| &item.files) {
             self.objects
                 .check_recorded(&ObjectDigest::from_hex(&file.digest)?, file.size)?;
@@ -240,7 +279,7 @@ impl ResultStore {
     }
 }
 
-fn partition_outputs(
+pub(crate) fn partition_outputs(
     unit: &PreparedUnit,
     actual: Vec<ActualOutput>,
 ) -> Result<(OutputSources, GroupSources), ResultError> {
@@ -318,6 +357,115 @@ fn check_manifest(unit: &PreparedUnit, outputs: &[StoredItem]) -> Result<(), Res
     Ok(())
 }
 
+pub(crate) type FrozenParts = (Vec<StoredItem>, Vec<StoredOutputGroup>, Vec<PreparedObject>);
+
+// Both local completion and cache staging use exactly the same full membership/format checks.
+pub(crate) fn freeze_partitioned(
+    unit: &PreparedUnit,
+    mut sources: OutputSources,
+    mut group_sources: GroupSources,
+    validator: impl FnOnce(&[FrozenOutput<'_>]) -> Result<(), String>,
+    mut group_validator: impl FnMut(
+        &OutputGroupContract,
+        &PlanRoster,
+        &BTreeMap<String, &PreparedObject>,
+    ) -> Result<(), String>,
+    mut freeze: impl FnMut(&Path) -> Result<PreparedObject, ResultError>,
+) -> Result<FrozenParts, ResultError> {
+    let mut outputs = vec![];
+    let mut objects = vec![];
+    let mut labels = vec![];
+    for item in &unit.ingredients().logical_outputs {
+        if item.destination == Destination::External {
+            return Err(invalid("external result needs its adapter"));
+        }
+        let mut files = vec![];
+        for file in &item.files {
+            let key = (item.id.clone(), file.path.clone());
+            let Some(source) = sources.remove(&key) else {
+                if file.required {
+                    return Err(invalid(format!("missing output {}", file.path)));
+                }
+                continue;
+            };
+            let object = freeze(&source)?;
+            files.push(StoredFile {
+                path: file.path.clone(),
+                digest: object.digest().to_string(),
+                size: object.size(),
+                mode: normalized_mode(object.source_mode()),
+            });
+            labels.push((item, file.path.as_str()));
+            objects.push(object);
+        }
+        outputs.push(StoredItem {
+            item: item.clone(),
+            files,
+            external_locator: None,
+        });
+    }
+    if !sources.is_empty() {
+        return Err(invalid("undeclared output sources"));
+    }
+    let frozen: Vec<_> = labels
+        .iter()
+        .zip(&objects)
+        .map(|((item, path), object)| FrozenOutput { item, path, object })
+        .collect();
+    validator(&frozen).map_err(ResultError::Validation)?;
+    drop(frozen);
+    drop(labels);
+    let mut output_groups = Vec::new();
+    for contract in &unit.ingredients().output_groups {
+        let names: Vec<_> = group_sources
+            .keys()
+            .filter(|(group, _)| group == &contract.id)
+            .cloned()
+            .collect();
+        if names.len() as u64
+            > contract
+                .max_pieces
+                .checked_add(1)
+                .ok_or_else(|| invalid("group member count overflow"))?
+        {
+            return Err(invalid("group member count budget exceeded"));
+        }
+        let mut declared_bytes = 0u64;
+        for key in &names {
+            let size = fs::symlink_metadata(&group_sources[key])?.len();
+            if size > contract.max_member_bytes {
+                return Err(invalid("group member byte budget exceeded"));
+            }
+            declared_bytes = declared_bytes
+                .checked_add(size)
+                .ok_or_else(|| invalid("group byte count overflow"))?;
+        }
+        if declared_bytes > contract.max_total_bytes {
+            return Err(invalid("group byte budget exceeded"));
+        }
+        let mut indices = BTreeMap::new();
+        for (group, path) in names {
+            let source = group_sources.remove(&(group, path.clone())).unwrap();
+            let object = freeze(&source)?;
+            indices.insert(path, objects.len());
+            objects.push(object);
+        }
+        let members: BTreeMap<_, _> = indices
+            .iter()
+            .map(|(path, index)| (path.clone(), &objects[*index]))
+            .collect();
+        let token = validate_frozen(contract, &members, |roster, objects| {
+            group_validator(contract, roster, objects)
+        })
+        .map_err(ResultError::Validation)?;
+        output_groups.push(token.stored().clone());
+    }
+    if !group_sources.is_empty() {
+        return Err(invalid("unknown output group sources"));
+    }
+    Ok((outputs, output_groups, objects))
+}
+
 impl WriteTransaction {
     pub fn lease(&self) -> &LeaseRecord {
         &self.lease
@@ -343,6 +491,17 @@ impl WriteTransaction {
     /// Complete with retain_hit(); dropping this handle conservatively retains claims.
     pub fn lookup(&mut self) -> Result<Option<ResultEnvelope>, ResultError> {
         Ok(self.lookup_groups()?.map(|(envelope, _)| envelope))
+    }
+
+    /// @cc [owner:fontanierh,label:correctness] recorded-identities-before-availability
+    /// An exact-key metadata lookup MUST reuse complete record/ingredient/manifest checks and
+    /// hold the existing result-key claim under the shared GC mutex. It MUST NOT open/check
+    /// payload objects, mint StoredHit/available groups, substitute producer keys for content,
+    /// or bypass adapter metadata validation. Strict lookup_groups remains unchanged.
+    /// See tests/results.rs; A9 still chooses when real bytes must be materialized.
+    pub fn lookup_recorded(&mut self) -> Result<Option<RecordedIdentities>, ResultError> {
+        let _guard = self.store.leases.lock()?;
+        self.store.read_metadata(&self.unit)
     }
 
     /// Private tokens escape only after all named blobs are checked and durably pinned
@@ -395,112 +554,28 @@ impl WriteTransaction {
 
     fn stage_partitioned(
         self,
-        mut sources: OutputSources,
-        mut group_sources: GroupSources,
+        sources: OutputSources,
+        group_sources: GroupSources,
         validator: impl FnOnce(&[FrozenOutput<'_>]) -> Result<(), String>,
-        mut group_validator: impl FnMut(
+        group_validator: impl FnMut(
             &OutputGroupContract,
             &PlanRoster,
             &BTreeMap<String, &PreparedObject>,
         ) -> Result<(), String>,
     ) -> Result<StagedResult, ResultError> {
-        let mut outputs = vec![];
-        let mut objects = vec![];
-        let mut labels = vec![];
-        for item in &self.unit.ingredients().logical_outputs {
-            if item.destination == Destination::External {
-                return Err(invalid("external result needs its adapter"));
-            }
-            let mut files = vec![];
-            for file in &item.files {
-                let key = (item.id.clone(), file.path.clone());
-                let Some(source) = sources.remove(&key) else {
-                    if file.required {
-                        return Err(invalid(format!("missing output {}", file.path)));
-                    }
-                    continue;
-                };
-                let object = self.store.objects.prepare_in(
-                    &source,
-                    &self.store.objects.root().join(&self.lease.staging),
-                )?;
-                files.push(StoredFile {
-                    path: file.path.clone(),
-                    digest: object.digest().to_string(),
-                    size: object.size(),
-                    mode: normalized_mode(object.source_mode()),
-                });
-                labels.push((item, file.path.as_str()));
-                objects.push(object);
-            }
-            outputs.push(StoredItem {
-                item: item.clone(),
-                files,
-                external_locator: None,
-            });
-        }
-        if !sources.is_empty() {
-            return Err(invalid("undeclared output sources"));
-        }
-        let frozen: Vec<_> = labels
-            .iter()
-            .zip(&objects)
-            .map(|((item, path), object)| FrozenOutput { item, path, object })
-            .collect();
-        validator(&frozen).map_err(ResultError::Validation)?;
-        drop(frozen);
-        drop(labels);
-        let mut output_groups = Vec::new();
-        for contract in &self.unit.ingredients().output_groups {
-            let names: Vec<_> = group_sources
-                .keys()
-                .filter(|(group, _)| group == &contract.id)
-                .cloned()
-                .collect();
-            if names.len() as u64
-                > contract
-                    .max_pieces
-                    .checked_add(1)
-                    .ok_or_else(|| invalid("group member count overflow"))?
-            {
-                return Err(invalid("group member count budget exceeded"));
-            }
-            let mut declared_bytes = 0u64;
-            for key in &names {
-                let size = fs::symlink_metadata(&group_sources[key])?.len();
-                if size > contract.max_member_bytes {
-                    return Err(invalid("group member byte budget exceeded"));
-                }
-                declared_bytes = declared_bytes
-                    .checked_add(size)
-                    .ok_or_else(|| invalid("group byte count overflow"))?;
-            }
-            if declared_bytes > contract.max_total_bytes {
-                return Err(invalid("group byte budget exceeded"));
-            }
-            let mut indices = BTreeMap::new();
-            for (group, path) in names {
-                let source = group_sources.remove(&(group, path.clone())).unwrap();
-                let object = self.store.objects.prepare_in(
-                    &source,
-                    &self.store.objects.root().join(&self.lease.staging),
-                )?;
-                indices.insert(path, objects.len());
-                objects.push(object);
-            }
-            let members: BTreeMap<_, _> = indices
-                .iter()
-                .map(|(path, index)| (path.clone(), &objects[*index]))
-                .collect();
-            let token = validate_frozen(contract, &members, |roster, objects| {
-                group_validator(contract, roster, objects)
-            })
-            .map_err(ResultError::Validation)?;
-            output_groups.push(token.stored().clone());
-        }
-        if !group_sources.is_empty() {
-            return Err(invalid("unknown output group sources"));
-        }
+        let (outputs, output_groups, objects) = freeze_partitioned(
+            &self.unit,
+            sources,
+            group_sources,
+            validator,
+            group_validator,
+            |source| {
+                self.store
+                    .objects
+                    .prepare_in(source, &self.store.objects.root().join(&self.lease.staging))
+                    .map_err(ResultError::Store)
+            },
+        )?;
         let envelope = ResultEnvelope {
             version: ENVELOPE_VERSION,
             result: ResultRecord {
@@ -515,6 +590,62 @@ impl WriteTransaction {
             upstream_result_keys: self.upstream.clone(),
         };
         check_manifest(&self.unit, &envelope.result.outputs)?;
+        Ok(StagedResult {
+            transaction: self,
+            envelope,
+            objects,
+        })
+    }
+
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    pub(crate) fn stage_completion(
+        self,
+        completion: &crate::completion::FrozenCompletion,
+    ) -> Result<StagedResult, ResultError> {
+        let envelope = completion.result();
+        if envelope.result.key != self.unit.key()
+            || &envelope.result.ingredients != self.unit.ingredients()
+        {
+            return Err(ResultError::Validation(
+                "original cache ticket differs from sealed completion key/ingredients".into(),
+            ));
+        }
+        let certified = completion
+            .certified_objects()
+            .map_err(ResultError::Validation)?;
+        // Detect known nondeterminism from complete recorded metadata even when winner blobs vanished.
+        let winner = {
+            let _guard = self.store.leases.lock()?;
+            self.store.read_metadata(&self.unit)?
+        };
+        if let Some(winner) = winner {
+            if winner.envelope.result.outputs != envelope.result.outputs
+                || winner.envelope.result.output_groups != envelope.result.output_groups
+            {
+                return Err(ResultError::Nondeterminism(self.unit.key().into()));
+            }
+        }
+        let mut objects = vec![];
+        for object in certified {
+            match self
+                .store
+                .objects
+                .adopt_in(object, &self.store.objects.root().join(&self.lease.staging))
+            {
+                Ok(adopted) => objects.push(adopted),
+                Err(error) => {
+                    object.check_frozen().map_err(|source| {
+                        ResultError::Validation(format!(
+                            "local snapshot lost certification: {source}"
+                        ))
+                    })?;
+                    return Err(ResultError::Store(error));
+                }
+            }
+        }
+        let mut envelope = envelope.clone();
+        // Retention is nonsemantic; preserve the original miss ticket's already-protected lineage.
+        envelope.upstream_result_keys = self.upstream.clone();
         Ok(StagedResult {
             transaction: self,
             envelope,

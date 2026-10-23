@@ -78,6 +78,8 @@ def plan(obj, root, *, collisions=(), options=None, cell_metres=CELL_METRES, fac
     unchanged logical geometry remains independently cacheable. Unused parent material slots
     MUST stay outside a leaf payload; face material names/order MUST survive local remapping.
     The complete original table remains in logical metadata. No mesh export occurs here.
+    A declared whole source MUST also preserve its ordered unused vertices and POINT
+    attributes rather than silently compacting its original serialized vertex table.
     """
     if obj.type != 'MESH' or obj.modifiers or getattr(obj.data, 'shape_keys', None) is not None:
         raise ValueError('Logical planning requires a completed static mesh without modifiers or shape keys')
@@ -127,7 +129,7 @@ def plan(obj, root, *, collisions=(), options=None, cell_metres=CELL_METRES, fac
     owned = np.zeros(len(faces), dtype=np.int32)
     rows = []
     for key, members in groups:
-        piece = subset(source, members)
+        piece = subset(source, members,preserve_unused=partition=='whole')
         np.add.at(owned, list(members), 1)
         piece, slots, material_indices = compact_materials(piece, [m.name for m in source['slots']])
         payload = mesh_ir.encode(piece, key=key, slots=slots,

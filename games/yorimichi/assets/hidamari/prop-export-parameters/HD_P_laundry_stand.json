@@ -1,0 +1,14 @@
+{
+  "crown": null,
+  "lod": 0,
+  "name": "HD_P_laundry_stand",
+  "parent": "HD_P_laundry_stand",
+  "schema": 1,
+  "settings": null,
+  "size": 2.4,
+  "slug": "laundry_stand",
+  "solid": false,
+  "target": 0.12,
+  "turn": -90,
+  "upright": false
+}

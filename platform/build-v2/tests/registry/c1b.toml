@@ -28,3 +28,11 @@ platforms = ["darwin"]
 [[scenarios]]
 id = "c1b.unsandboxed-loop-refused-by-production-handshake"
 tests = ["atelier-build-v2::staging/an_unsandboxed_loop_never_passes_a_production_keyed_handshake"]
+
+[[scenarios]]
+id = "c1b.staging.typed_object_source_refusals"
+tests = ["atelier-build-v2::staging/object_source_refusals_reach_the_controller_typed_and_leave_no_folder"]
+
+[[scenarios]]
+id = "c1b.staging.pinned_objects_missing_object_is_io"
+tests = ["atelier-build-v2::staging/pinned_objects_report_a_missing_object_as_io_with_the_same_text"]

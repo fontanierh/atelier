@@ -65,6 +65,8 @@ def fit(slug, glb, key, size, turn, target, solid, out, upright=False, *, publis
         render(slug, obj, img, v, out)
     else:
         new.use_nodes = True  # Same final material state as the original diagnostic renderer.
+        # FBX material AmbientColor reads this scene input even with AmbientFactor=0.
+        bpy.context.scene.world=bpy.context.scene.world or bpy.data.worlds.new('W')
     objs = [obj]
     if solid:
         lo, hi = v.min(0), v.max(0); c = (lo+hi)/2; s = (hi-lo)*[.86, .86, 1.]

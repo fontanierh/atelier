@@ -2,7 +2,8 @@
 
 Start this monitor before launching any heavy children, then wait for its `running` receipt.
 It adds the physical footprint of the pinned owner and its owned descendants, retaining
-ownership when an intermediate exits. Shared engine services and their children are excluded.
+ownership when an intermediate exits. Shared engine services and their children are excluded,
+except exact invocation-owned private roots registered through a pre-exec gate.
 Individual game guards and the outer render lock remain required.
 """
 import argparse
@@ -33,13 +34,22 @@ class OwnedTree:
         self.depth = {self.root: 0}
         self.shared = set()
         self.reporters = reporters
+        from .owned_service import Registrations
+        self.services = Registrations(api, self.root)
+
+    def register_service(self, key):
+        self.discover()
+        self.services.register(key, self.excluded())
+
+    def shared_service(self, key):
+        return self.api.name(key[0]) in SHARED and not self.services.includes(key)
 
     def same(self, key):
         return self.api.started(key[0]) == key[1]
 
     def excluded(self):
         for key in self.parents:
-            if self.same(key) and self.api.name(key[0]) in SHARED:
+            if self.same(key) and self.shared_service(key):
                 self.shared.add(key)
         result = set(self.shared)
         for key in self.parents:
@@ -61,7 +71,7 @@ class OwnedTree:
             if parent in seen:
                 continue
             seen.add(parent)
-            if self.api.name(parent[0]) in SHARED:
+            if self.shared_service(parent):
                 self.shared.add(parent)
                 continue
             for child in self.api.owned_children(*parent):
@@ -75,6 +85,9 @@ class OwnedTree:
 
     def sample(self):
         self.discover()
+        from .owned_service import unsupported
+        if unsupported(self.shared, self.parents, self.services):
+            raise RuntimeError('unsupported unregistered shared service below private service')
         excluded = self.excluded()
         samples = []
         for key in self.parents:
@@ -285,10 +298,11 @@ def keep_custody(tree, report, value, custody, code):
 
 
 def run_child(pid, started, report, duration=None, limit_gib=10., controller=None, launch_nonce=None,
-              custody=()):
+              custody=(), service_control=None):
     """@cc [owner:fontanierh,label:safety] owned-child-aggregate-limit
     Every sampled owned process MUST contribute to the simultaneous footprint limit except shared
-    engine services and their descendants. Failure or launcher exit MUST stop the retained pinned
+    engine services and their descendants, except explicitly gated invocation-owned service roots.
+    Failure or launcher exit MUST stop the retained pinned
     tree, and successful terminal receipts MUST require observed tree exit. Cleanup that cannot
     complete within its bound MUST fail; PID reuse MUST NOT transfer ownership. A bound controller
     disappearing MUST stop the owned tree and publish controller_exited with post-drain cleanup,
@@ -320,7 +334,24 @@ def run_child(pid, started, report, duration=None, limit_gib=10., controller=Non
             adopted.bind_root(pid, started)
         if not tree.same(tree.root):
             raise RuntimeError('The launcher is no longer the pinned owner')
+        service_invocation, registrations = None, set()
+        if service_control is not None:
+            from .owned_service import receive, token
+            setup = receive(service_control)
+            if set(setup) != {'invocation', 'owner'} or setup['owner'] != [pid, started]:
+                raise RuntimeError('private service monitor invocation mismatch')
+            service_invocation = token(setup['invocation'])
         while True:
+            registration = None
+            if service_control is not None:
+                from .owned_service import pending, receive, identity, validate_request, MAX_SERVICES
+                if pending(service_control):
+                    registration = receive(service_control)
+                    key = validate_request(registration, service_invocation)
+                    if registration['token'] in registrations or len(registrations) >= MAX_SERVICES:
+                        raise RuntimeError('duplicate or excessive private service registration')
+                    registrations.add(registration['token'])
+                    tree.register_service(key)
             samples = tree.sample()
             total = sum(p['footprint_bytes'] for p in samples)
             peak = max(peak, total)
@@ -340,6 +371,8 @@ def run_child(pid, started, report, duration=None, limit_gib=10., controller=Non
                          elapsed_seconds=elapsed,
                          footprint_bytes=total, peak_bytes=peak, limit_bytes=limit,
                          state=state, processes=samples)
+            if service_control is not None:
+                value['owned_services'] = tree.services.evidence()
             if controller is not None:
                 value['controller'] = list(controller)
             if state != 'running':
@@ -364,15 +397,50 @@ def run_child(pid, started, report, duration=None, limit_gib=10., controller=Non
                 value['observed_monotonic'] = time.monotonic()
                 value['time'] = time.time()
             write_report(report, value)
+            if registration is not None:
+                from .owned_service import send
+                key = identity(registration['identity'])
+                if state != 'running' or not any((p['pid'], p['started']) == key for p in samples):
+                    raise RuntimeError('registered private service lost its live aggregate sample')
+                tree.services.validate(key)
+                send(service_control, dict(**registration, ready=True))
             if state != 'running':
                 code = 0 if state == 'child_exited' else 1
                 return keep_custody(tree, report, value, custody, code) if custody else code
             time.sleep(.25)
     except BaseException as error:
+        lost_controller = False
+        if service_control is not None and controller is not None:
+            try:
+                lost_controller = not controller_live(controller)
+            except (OSError, RuntimeError):
+                pass
         if not custody:
-            drain_owned(tree)
+            cleaned = drain_owned(tree)
+            if service_control is not None:
+                # Control/registration errors must leave failure evidence rather
+                # than a stale running receipt. Never infer an empty tree after
+                # failed observation or erase an unsupported helper identity.
+                from .owned_service import unsupported
+                failed = dict(owner=pid, owner_started=started,
+                              state='controller_exited' if lost_controller else 'private_service_error',
+                              error_type=type(error).__name__, cleanup_complete=False,
+                              owned_services=tree.services.evidence(),
+                              unsupported_services=[list(key) for key in unsupported(
+                                  tree.shared, tree.parents, tree.services)],
+                              time=time.time(), observed_monotonic=time.monotonic(),
+                              footprint_bytes=0, peak_bytes=peak, limit_bytes=limit, processes=[])
+                def record_failure():
+                    remaining = tree.sample()
+                    failed.update(processes=remaining,
+                                  footprint_bytes=sum(p['footprint_bytes'] for p in remaining),
+                                  cleanup_complete=cleaned and not remaining)
+                _quietly(record_failure)
+                _quietly(lambda: write_report(report, failed))
             raise
-        failed = dict(state='cleanup_incomplete', termination_reason='monitor_error', cleanup_complete=False)
+        failed = dict(state='cleanup_incomplete',
+                      termination_reason='controller_exited' if lost_controller else 'monitor_error',
+                      cleanup_complete=False)
 
         def describe():
             failed.update(owner=pid, owner_started=started, time=time.time(), observed_monotonic=time.monotonic(),
@@ -380,6 +448,11 @@ def run_child(pid, started, report, duration=None, limit_gib=10., controller=Non
                           limit_bytes=limit, error=_text(error), processes=[])
             if controller is not None:
                 failed['controller'] = list(controller)
+            if service_control is not None:
+                from .owned_service import unsupported
+                failed['owned_services'] = tree.services.evidence()
+                failed['unsupported_services'] = [list(key) for key in unsupported(
+                    tree.shared, tree.parents, tree.services)]
         _quietly(describe)
         return keep_custody(tree, report, failed, custody, 1)
 
@@ -463,6 +536,7 @@ def main():
     parser.add_argument('--limit-gib', type=float, default=10.)
     parser.add_argument('--custody-fd', type=int, action='append', default=[],
                         help='checkout-lock descriptor this child monitor holds until verified cleanup')
+    parser.add_argument('--service-control-fd', type=int, help=argparse.SUPPRESS)
     args = parser.parse_args()
     custody = ()
     if args.custody_fd:
@@ -487,9 +561,19 @@ def main():
     if args.child:
         if args.stop_file is not None:
             parser.error('--child does not use --stop-file')
+        service_control = None
+        if args.service_control_fd is not None:
+            import socket
+            if args.service_control_fd < 3:
+                parser.error('private service control requires a separate inherited socket')
+            service_control = socket.socket(fileno=args.service_control_fd)
+            service_control.settimeout(.25)
+            os.set_inheritable(args.service_control_fd, False)
         return run_child(args.pid, args.expected_start, args.report, args.duration, args.limit_gib,
                          None if args.controller_pid is None else (args.controller_pid, args.controller_start), nonce,
-                         custody=custody)
+                         custody=custody, service_control=service_control)
+    if args.service_control_fd is not None:
+        parser.error('private services require the normal child aggregate lifecycle')
     if args.stop_file is None or args.duration is None or args.limit_gib != 10.:
         parser.error('compound guards require --stop-file and --duration, with the fixed 10 GiB ceiling')
     # There is deliberately no CLI switch to raise this compound job's 10 GiB ceiling.

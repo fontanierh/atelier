@@ -1,0 +1,76 @@
+{
+  "schema": 1,
+  "kind": "scoped-mesh-equivalence-evidence",
+  "baseline": "90d7a918f922d2e79910d8b79289443b53168f5b",
+  "validated_source": "e44c8571aa83946a2f3b51d817cb85d7f4f7f2cc",
+  "source": {
+    "exports": 48,
+    "triangles": 414325,
+    "maximum_export_triangles": 12890,
+    "authored_hulls": 27,
+    "exact": [
+      "all positions including unused vertices",
+      "POINT attributes",
+      "ordered corners and normals",
+      "all UV/color channels and materials",
+      "transforms and hulls",
+      "fitted reports and texture pixels",
+      "complete meaningful FBX fields"
+    ],
+    "normalization": [
+      "volatile header/UID provenance",
+      "Geometry datablock labels bound uniquely to the exact unchanged Model"
+    ]
+  },
+  "native": {
+    "physical_meshes_per_side": 48,
+    "render_lod_pages_per_side": 60,
+    "main_conifer_chains_per_side": 4,
+    "authored_lods_per_chain": 4,
+    "standalone_conifer_lod_sources_per_side": 12,
+    "exact": [
+      "saved/reloaded MeshDescription",
+      "GPU/render LOD attributes",
+      "cooked collision and hulls",
+      "materials and settings",
+      "actual whole component boxes and spheres including single-LOD units"
+    ],
+    "whole_exit": 0,
+    "elapsed_seconds": 351.1232063330244,
+    "peak_bytes": 3140859392,
+    "cleanup_complete": true,
+    "processes_empty": true,
+    "unresolved_reporters": 0,
+    "fixture_packages_removed": 169,
+    "fixture_directory_absent": true,
+    "engine_build_id": "55116800",
+    "yorimichi_module_sha256": "3c24e03ffb8dc348bf33bc9068741970036c34572f6a8766964a66c7f3d380de"
+  },
+  "one_edit": {
+    "parameter": "HD_P_postbox size",
+    "before": 1.45,
+    "after": 1.46,
+    "constructors_run": 1,
+    "exports_run": 1,
+    "siblings_with_identical_payloads_primary_bytes_and_primary_mtimes": 47,
+    "restored_original_all48_payload_and_primary_hashes": true,
+    "restore_blender_actions": 0,
+    "source_restore_seconds": 0.9,
+    "export_restore_seconds": 0.3,
+    "timing_scope": "Per-action restore timings; whole-command planning/metadata overhead is not included"
+  },
+  "evidence_sha256": {
+    "normal_product_vector": "807bc5e0d92f7a0c374c34561da5604ac01018bf51b1ac3247444459d6d681d5",
+    "native_host_result": "3ebe408ae23512eb6ca70344f51cf67bd0e29eb80b67bfaf70a2f0d3e389af10",
+    "native_raw_records": "e82be9307f391c644d587e8616b633fdd348a8317d16d8dcb7a4e289b677d5f2",
+    "native_spec": "c312bbe819d285ff1bb83bd6b6f861455cce3a23437a9b4fb9529c8ea2e051b5",
+    "strict_whole_bounds_result": "6672b1f6b5d8c3c9c4ecfdfb4f33d640b6a6213d97d6f1907b32ecde63de48a9"
+  },
+  "not_certified": [
+    "production placement and gameplay",
+    "whole-world or packaged cook",
+    "normal native-owner reuse counts",
+    "other regions"
+  ],
+  "authority": "This evidence summary is not an artifact cache admission token and cannot replace current validation."
+}

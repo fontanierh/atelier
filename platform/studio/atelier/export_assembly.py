@@ -13,7 +13,7 @@ from .model_files import regular_files, retain_files
 def runtime_inputs():
     """Only executed file assembly/clone helpers, excluding unused build-controller imports."""
     return [Path(__file__), *(Path(__file__).with_name(name) for name in
-            ('atomic_files.py', 'build_cache.py', 'export_manifest.py', 'model_files.py'))]
+            ('atomic_files.py', 'file_copy.py', 'export_manifest.py', 'model_files.py'))]
 
 
 @dataclass(frozen=True)
@@ -51,6 +51,22 @@ def destination_members(destination, current):
             raise ValueError('Invalid previous assembly inventory') from error
     if actual - owned - {'manifest.json'}:
         raise ValueError('Foreign atomic assembly members')
+
+
+def copy_verified(source,destination):
+    """Copy a preflighted assembly member atomically while preserving unchanged bytes and mtimes."""
+    real_directory(destination.parent,create=True)
+    if destination.is_symlink() or (destination.exists() and not destination.is_file()):
+        raise ValueError('Foreign/link generated assembly destination')
+    digest=sha(source)
+    if destination.is_file() and sha(destination)==digest:return
+    staging=destination.with_name(destination.name+'.atomic-copy')
+    if staging.exists() or staging.is_symlink():raise ValueError('Unowned generated copy staging')
+    try:
+        copy_file(source,staging)
+        if sha(source)!=digest or sha(staging)!=digest:raise ValueError('Generated source changed during assembly')
+        staging.replace(destination)
+    finally:staging.unlink(missing_ok=True)
 
 
 def assemble(items, destination):

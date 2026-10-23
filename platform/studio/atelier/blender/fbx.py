@@ -125,14 +125,40 @@ def validate_atomic_selection(*, triangle_limit=32768):
     return primary
 
 
-def export_atomic_fbx(*, triangle_limit=32768, **options):
+def world_color(scene):
+    """Capture the exact source ambient input consumed by the FBX material serializer."""
+    if scene.world is None:return None
+    return validate_world_color(list(scene.world.color))
+
+
+def validate_world_color(value):
+    import math
+    if (type(value) is not list or len(value)!=3
+            or any(type(v) not in (int,float) or not math.isfinite(v) or not 0<=v<=1 for v in value)):
+        raise ValueError('Invalid explicit FBX source world colour')
+    return value
+
+
+def export_atomic_fbx(*, triangle_limit=32768, scene_world_color=None, **options):
     """@cc [owner:fontanierh,label:correctness;performance] bounded-single-mesh-export
     An atomic world export MUST select exactly one render mesh, at most 32768 triangles,
     plus only its explicitly numbered authored UCX objects. It MUST NOT export the scene,
     join unrelated logical meshes, silently omit modifiers or bypass the shared deterministic
     exporter. Reject invalid selection or budgets before writing any FBX bytes.
+    An explicitly captured source world colour MUST reproduce the FBX material ambient
+    input within this export only; undeclared scene state MUST remain unchanged.
     """
     if options.get('use_selection') is not True or options.get('object_types') != {'MESH'}:
         raise ValueError('Atomic FBX must explicitly export selected mesh objects only')
     validate_atomic_selection(triangle_limit=triangle_limit)
-    return export_fbx(**options)
+    if scene_world_color is None:return export_fbx(**options)
+    validate_world_color(scene_world_color)
+    import bpy
+    scene=bpy.context.scene;previous=scene.world
+    world=bpy.data.worlds.new('_AtomicExportWorld')
+    try:
+        world.color=scene_world_color;scene.world=world
+        return export_fbx(**options)
+    finally:
+        scene.world=previous
+        bpy.data.worlds.remove(world)

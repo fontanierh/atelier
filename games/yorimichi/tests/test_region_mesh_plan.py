@@ -6,6 +6,38 @@ from types import SimpleNamespace
 import pytest
 
 
+def test_whole_source_retains_unused_vertices_and_point_attributes_without_reindexing(tmp_path,monkeypatch):
+    import numpy as np
+    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1]/'world'))
+    from mesh_pieces import subset
+    positions=np.array([[0,0,0],[1,0,0],[0,1,0],[.2,.3,.4],[.4,.3,.2]],dtype=np.float32)
+    colors=np.arange(20,dtype=np.float32).reshape(5,4)/20
+    source=dict(positions=positions,starts=np.array([0]),counts=np.array([3]),
+        vertex_indices=np.array([2,0,1]),normals=np.tile([0,0,1],(3,1)),materials=np.array([0]),
+        smooth=np.array([False]),slots=('Material',),uvs=[('UVMap',np.zeros((3,2)))],
+        colours=[('Color','POINT','FLOAT_COLOR',colors)])
+    whole=subset(source,[0],preserve_unused=True)
+    assert np.array_equal(whole['positions'],positions) and whole['faces']==[[2,0,1]]
+    assert np.array_equal(whole['colours'][0][3],colors)
+    compact=subset(source,[0]);assert len(compact['positions'])==3
+    assert np.array_equal(compact['positions'][compact['faces'][0]],whole['positions'][whole['faces'][0]])
+    source.update(starts=np.array([0,3]),counts=np.array([3,3]),vertex_indices=np.array([2,0,1,1,0,2]),
+        normals=np.tile([0,0,1],(6,1)),materials=np.array([0,0]),smooth=np.array([False,False]),
+        uvs=[('UVMap',np.zeros((6,2)))])
+    with pytest.raises(ValueError,match='whole-face'):subset(source,[0],preserve_unused=True)
+    # Exercise the actual whole planner and its serialized payload, not just the copier.
+    import region_mesh_parts as planner
+    from atelier import mesh_ir
+    source['slots']=(SimpleNamespace(name='Material'),)
+    monkeypatch.setattr(planner,'capture',lambda data:source)
+    obj=SimpleNamespace(name='Whole',type='MESH',modifiers=[],data=SimpleNamespace(shape_keys=None),matrix_world=np.eye(4))
+    root=tmp_path.resolve()/'whole';planner.plan(obj,root,partition='whole')
+    _,saved=mesh_ir.decode((root/'Whole.npz').read_bytes())
+    assert np.array_equal(saved['positions'],positions)
+    assert np.array_equal(saved['colours'][0][3],colors)
+    assert saved['faces']==[[2,0,1],[1,0,2]]
+
+
 @pytest.mark.parametrize('kind,modifiers,shape_keys', [
     ('CURVE', [], None), ('MESH', ['ARRAY'], None), ('MESH', [], object())])
 def test_unfinished_geometry_is_refused_before_creating_output(tmp_path, monkeypatch, kind, modifiers, shape_keys):

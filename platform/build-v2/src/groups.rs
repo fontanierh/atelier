@@ -94,34 +94,82 @@ impl ValidatedGroup {
         &self.stored
     }
     pub fn project(&self, piece: &str) -> Result<StoredItem, String> {
-        let projection = self
-            .stored
+        project_member(&self.contract, &self.stored, piece)
+    }
+}
+
+/// Identity evidence from a trusted immutable record, explicitly NOT blob availability.
+/// Only B2's exact-key metadata reader constructs it; it cannot become ValidatedGroup.
+#[derive(Debug)]
+pub struct RecordedGroupIdentity {
+    contract: OutputGroupContract,
+    stored: StoredOutputGroup,
+}
+impl RecordedGroupIdentity {
+    pub fn contract(&self) -> &OutputGroupContract {
+        &self.contract
+    }
+    pub fn pieces(&self) -> impl Iterator<Item = &str> {
+        self.stored.projections.keys().map(String::as_str)
+    }
+    pub fn projection(&self, piece: &str) -> Result<&MemberProjection, String> {
+        self.stored
             .projections
             .get(piece)
-            .ok_or("unknown projected piece")?;
-        let file = self
-            .stored
-            .files
-            .iter()
-            .find(|file| file.path == projection.payload)
-            .ok_or("projected member is absent")?
-            .clone();
-        Ok(StoredItem {
-            item: Item {
-                id: piece.into(),
-                logical_path: format!("{}/{piece}", self.contract.logical_namespace),
-                class: self.contract.class.clone(),
-                destination: Destination::Store,
-                files: vec![OutputFile {
-                    path: file.path.clone(),
-                    install_path: None,
-                    required: true,
-                }],
-            },
-            files: vec![file],
-            external_locator: None,
-        })
+            .ok_or_else(|| "unknown projected piece".into())
     }
+    /// Selected content view only: no planner input key, roster digest or sibling bytes.
+    pub fn project(&self, piece: &str) -> Result<StoredItem, String> {
+        project_member(&self.contract, &self.stored, piece)
+    }
+}
+
+fn project_member(
+    contract: &OutputGroupContract,
+    stored: &StoredOutputGroup,
+    piece: &str,
+) -> Result<StoredItem, String> {
+    let projection = stored
+        .projections
+        .get(piece)
+        .ok_or("unknown projected piece")?;
+    let file = stored
+        .files
+        .iter()
+        .find(|file| file.path == projection.payload)
+        .ok_or("projected member is absent")?
+        .clone();
+    Ok(StoredItem {
+        item: Item {
+            id: piece.into(),
+            logical_path: format!("{}/{piece}", contract.logical_namespace),
+            class: contract.class.clone(),
+            destination: Destination::Store,
+            files: vec![OutputFile {
+                path: file.path.clone(),
+                install_path: None,
+                required: true,
+            }],
+        },
+        files: vec![file],
+        external_locator: None,
+    })
+}
+
+/// @cc [owner:fontanierh,label:correctness] recorded-group-is-not-available
+/// B2 may issue identity evidence only after matching the exact prepared record/contract and
+/// complete saved projection metadata. This MUST NOT certify payload availability, recreate
+/// source validation from an opaque plan, or expose/convert to the available ValidatedGroup.
+/// Source adapters requiring missing payloads MUST fail rather than guess. See metadata_only_group_preserves_projection_without_certifying_availability.
+pub(crate) fn recorded_identity(
+    contract: &OutputGroupContract,
+    stored: &StoredOutputGroup,
+) -> Result<RecordedGroupIdentity, String> {
+    check_recorded(contract, stored)?;
+    Ok(RecordedGroupIdentity {
+        contract: contract.clone(),
+        stored: stored.clone(),
+    })
 }
 
 pub(crate) fn name(value: &str) -> Result<(), String> {
@@ -542,6 +590,22 @@ mod tests {
         changed.projections.get_mut("Sibling").unwrap().payload = "missing.npz".into();
         assert!(restore_recorded(&contract, &changed, |_| Ok(())).is_err());
     }
+    #[test]
+    fn metadata_only_group_preserves_projection_without_certifying_availability() {
+        let (contract, mut stored) = fixture();
+        let identity = recorded_identity(&contract, &stored).unwrap();
+        assert_eq!(identity.pieces().collect::<Vec<_>>(), ["Village_Edges"]);
+        assert_eq!(
+            identity.projection("Village_Edges").unwrap(),
+            &stored.projections["Village_Edges"]
+        );
+        assert_eq!(identity.project("Village_Edges").unwrap().files.len(), 1);
+        assert!(identity.project("unknown").is_err());
+        assert!(restore_recorded(&contract, &stored, |_| Err("absent".into())).is_err());
+        stored.projections.get_mut("Village_Edges").unwrap().payload = "missing.npz".into();
+        assert!(recorded_identity(&contract, &stored).is_err());
+    }
+
     fn key_fixture(
         contract: &OutputGroupContract,
     ) -> (
@@ -1030,6 +1094,186 @@ mod tests {
                 .next()
                 .is_none()
         );
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn sealed_local_group_stages_selected_bytes_without_cas_and_refuses_missing_frozen_members() {
+        for equal_bytes in [false, true] {
+            use crate::completion::CompletionWork;
+            use crate::install::LeaseIdentity;
+            use crate::leases::ProcessIdentity;
+            use crate::results::ActualOutput;
+            use crate::schema::Provenance;
+            use std::{fs, io::Read};
+            let (contract, _) = fixture();
+            let (declaration, registry, snapshot) = key_fixture(&contract);
+            let planner = prepared(
+                &declaration,
+                &registry,
+                &snapshot,
+                &BTreeMap::new(),
+                "planner",
+            )
+            .unwrap();
+            let workspace = Workspace::new();
+            let work = CompletionWork::begin(
+                &workspace.0,
+                &planner,
+                LeaseIdentity {
+                    provenance: Provenance {
+                        checkout: "fixture".into(),
+                        branch: "main".into(),
+                        commit: "source".into(),
+                        dirty: false,
+                        built_at: "fixture".into(),
+                    },
+                    owner: ProcessIdentity {
+                        pid: std::process::id(),
+                        boot: "fixture".into(),
+                        started: "fixture".into(),
+                    },
+                    workers: vec![],
+                    upstream_result_keys: Default::default(),
+                },
+            )
+            .unwrap();
+            let scope = workspace.0.join(&work.lease().staging);
+            let payload = b"sealed selected group bytes";
+            let sibling_bytes: &[u8] = if equal_bytes {
+                payload
+            } else {
+                b"unneeded sibling payload"
+            };
+            let plan = serde_json::json!({"schema":1,"parent":"Village_Edges","complete":true,"triangle_limit":32768,"source_triangles":6,"source_collision_hulls":0,"pieces":[{"name":"Village_Edges","payload":"Village_Edges.npz","sha256":sha256(payload),"triangles":3,"collision_hulls":0},{"name":"Sibling","payload":"Sibling.npz","sha256":sha256(sibling_bytes),"triangles":3,"collision_hulls":0}]});
+            let source = workspace.0.join("source.npz");
+            fs::write(&source, payload).unwrap();
+            let sibling = workspace.0.join("sibling.npz");
+            fs::write(&sibling, sibling_bytes).unwrap();
+            let manifest = workspace.0.join("plan.json");
+            fs::write(&manifest, serde_json::to_vec(&plan).unwrap()).unwrap();
+            let mut completion = work
+                .freeze(
+                    vec![
+                        ActualOutput {
+                            path: "geometry/plan.json".into(),
+                            source: manifest,
+                        },
+                        ActualOutput {
+                            path: "geometry/Village_Edges.npz".into(),
+                            source: source.clone(),
+                        },
+                        ActualOutput {
+                            path: "geometry/Sibling.npz".into(),
+                            source: sibling,
+                        },
+                    ],
+                    |fixed| {
+                        assert!(fixed.is_empty());
+                        Ok(())
+                    },
+                    |_, _, objects| {
+                        let mut bytes = vec![];
+                        objects["Village_Edges.npz"]
+                            .reader()
+                            .unwrap()
+                            .read_to_end(&mut bytes)
+                            .unwrap();
+                        assert_eq!(bytes, payload);
+                        Ok(())
+                    },
+                )
+                .unwrap();
+            fs::write(&source, b"changed live output").unwrap();
+            let groups = completion.available_groups().unwrap();
+            assert_eq!(
+                groups["geometry"].stored().projections["Village_Edges"].encoding,
+                PlanEncoding::MeshIr
+            );
+            let produced = groups
+                .into_iter()
+                .map(|(id, token)| (("planner".into(), id), token))
+                .collect();
+            let child = prepared(
+                &declaration,
+                &registry,
+                &snapshot,
+                &produced,
+                "export.Village_Edges",
+            )
+            .unwrap();
+            let objects = completion.objects_for(&[&child.inputs()[0]]).unwrap();
+            let staged = crate::staging::stage(
+                &child,
+                &snapshot,
+                &objects,
+                &workspace.0.join("child-job"),
+                "child",
+            )
+            .unwrap();
+            assert_eq!(
+                fs::read(staged.job_dir().join("inputs/payload/Village_Edges.npz")).unwrap(),
+                payload
+            );
+            assert!(!workspace.0.join("objects").exists());
+            assert!(!workspace.0.join("results").exists());
+            let evidence: Value =
+                serde_json::from_slice(&fs::read(scope.join("completion.json")).unwrap()).unwrap();
+            let sibling_named = evidence["objects"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|object| object["digest"] == sha256(sibling_bytes))
+                .unwrap()["path"]
+                .as_str()
+                .unwrap();
+            fs::remove_file(scope.join(sibling_named)).unwrap();
+            assert_eq!(completion.available_groups().is_ok(), equal_bytes);
+            let selected_only = completion.objects_for(&[&child.inputs()[0]]).unwrap();
+            let after_loss = crate::staging::stage(
+                &child,
+                &snapshot,
+                &selected_only,
+                &workspace.0.join("after-sibling-loss"),
+                "selected",
+            )
+            .unwrap();
+            assert_eq!(
+                fs::read(
+                    after_loss
+                        .job_dir()
+                        .join("inputs/payload/Village_Edges.npz")
+                )
+                .unwrap(),
+                payload
+            );
+            crate::staging::remove_job(after_loss.job_dir()).unwrap();
+            drop(selected_only);
+            drop(objects);
+            if equal_bytes {
+                let store = crate::results::ResultStore::open(workspace.0.join("cache")).unwrap();
+                assert!(completion.publish(&store, |_| Ok(())).is_ok());
+            }
+            let named = evidence["objects"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|object| {
+                    object["digest"] == sha256(payload)
+                        && scope.join(object["path"].as_str().unwrap()).is_file()
+                })
+                .unwrap()["path"]
+                .as_str()
+                .unwrap();
+            fs::remove_file(scope.join(named)).unwrap();
+            assert!(completion.available_groups().is_err());
+            assert!(completion.objects_for(&[&child.inputs()[0]]).is_err());
+            assert_eq!(
+                fs::read(staged.job_dir().join("inputs/payload/Village_Edges.npz")).unwrap(),
+                payload
+            );
+            crate::staging::remove_job(staged.job_dir()).unwrap();
+        }
     }
 
     #[cfg(target_os = "macos")]
