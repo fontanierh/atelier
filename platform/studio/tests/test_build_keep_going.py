@@ -146,3 +146,20 @@ def test_a_current_certificate_without_its_stamp_file_is_written_back(project, m
     assert p.run() == 0
     assert 'independent' not in p.ran
     assert json.loads(stamp.read_text()) == saved
+
+
+def test_a_cache_retention_refusal_never_fails_the_build(project, monkeypatch):
+    """Retention is cache bookkeeping: a refused record is reported, and the build still succeeds."""
+    from atelier import checkpoint_manifest
+    from atelier.native_protocol import CheckpointError
+    p = project
+    p.ctx.checkpoint_settings = {}
+
+    def refuse(ctx, step, stamp, store=None):
+        raise CheckpointError('Completed task artifact binding differs')
+
+    monkeypatch.setattr(checkpoint_manifest, 'record', refuse)
+    monkeypatch.setattr(build, '_retain', build._retain)
+    messages = []
+    build._retain(p.ctx, build.Step('x', []), {}, None, messages.append)
+    assert messages == ['x: cache retention skipped (Completed task artifact binding differs)']

@@ -586,6 +586,16 @@ def fingerprint(step, done, *, index=None, tool_cache=None, observation=None, _i
                              observation=observation, _input_bytes=_input_bytes, _tool_identity=_tool_identity)[0]
 
 
+
+def _retain(ctx, step, stamp, store, echo):
+    """Retention is cache bookkeeping: a refusal is reported and never fails the build."""
+    from .checkpoint_manifest import record
+    from .native_protocol import CheckpointError
+    try:
+        record(ctx, step, stamp, store=store)
+    except (CheckpointError, OSError, ValueError) as error:
+        echo(f'{step.name}: cache retention skipped ({error})')
+
 def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, observation=None, _input_bytes=None, _tool_identity=None):
     """@cc [owner:fontanierh,label:correctness;performance] legacy-fingerprint-memo
     A legacy byte-stream fingerprint MAY be reused from the build's hash index only under a key
@@ -1304,8 +1314,7 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                     stamp.write_text(json.dumps(previous) + '\n')  # The contest cleared: now published.
                     echo(f'{print_} published its kept result: the shared-path contest cleared')
             if actions is not None:
-                from .checkpoint_manifest import record as retain_record
-                retain_record(ctx, step, previous, store=actions.store)
+                _retain(ctx, step, previous, actions.store, echo)
             echo(f'{print_} up to date')
             return None
         if getattr(ctx, 'recover_cook', None) is not None and not recovering and step.name != 'unreal.package':
@@ -1397,10 +1406,9 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                     retain_candidates(ctx, completed_step, saved,
                                       fresh=lambda item=completed_step: fingerprint(item, done), echo=echo)
             if actions is not None:
-                from .checkpoint_manifest import record as retain_record
                 for completed_step in plan:
                     if completed_step.name in completed:
-                        retain_record(ctx, completed_step, read_stamp(ctx.stamps / (completed_step.name + '.json')), store=actions.store)
+                        _retain(ctx, completed_step, read_stamp(ctx.stamps / (completed_step.name + '.json')), actions.store, echo)
             completed_batches.update(completed)
             ctx.checkpoint_changed = True
             ran += len(completed)
@@ -1639,8 +1647,7 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
         from .checkpoint_native_capture import publish as retain_candidates
         retain_candidates(ctx, step, record, fresh=lambda: fingerprint(step, done), echo=echo)
         if actions is not None:
-            from .checkpoint_manifest import record as retain_record
-            retain_record(ctx, step, record, store=actions.store)
+            _retain(ctx, step, record, actions.store, echo)
         restored += int(from_cache)
         ran += int(not from_cache)
         if not from_cache:
