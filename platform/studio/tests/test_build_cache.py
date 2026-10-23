@@ -52,7 +52,7 @@ def test_build_restores_missing_and_modified_outputs_as_independent_copies(proje
     (p.ctx.out / 'mesh/vertices').write_text('corruption')
     assert p.run() == 0 and p.calls == []
     assert build_products.records(p.step) == expected
-    assert any('restored in' in message for message in p.messages)
+    assert any('restored in' in message and message.endswith('from local artifact cache') for message in p.messages)
     assert not (p.ctx.stamps / 'mesh.restore.json').exists()
 
 
@@ -252,3 +252,16 @@ def test_restore_refuses_linked_destinations_and_native_outputs(project):
 def test_manifest_paths_cannot_escape_declared_roots(member):
     with pytest.raises(ValueError):
         list(build_cache.members({'schema': 1, 'files': {member: {'kind': 'directory'}}}, 1))
+
+
+def test_stamp_written_before_newer_fields_stays_current(project):
+    """A stamp-format upgrade never rebuilds a current step; only publication waits for a fresh stamp."""
+    p = project
+    assert p.run() == 0 and p.calls == ['mesh']
+    stamp_path = p.ctx.stamps / 'mesh.json'
+    legacy = {k: v for k, v in json.loads(stamp_path.read_text()).items()
+              if k in {'fingerprint', 'input_state', 'products', 'seconds', 'time', 'commands'}}
+    stamp_path.write_text(json.dumps(legacy) + '\n')
+    p.calls.clear()
+    assert build_plan.inspect(p.ctx, [p.step])['steps'][0]['status'] == 'current'
+    assert p.run() == 0 and p.calls == []

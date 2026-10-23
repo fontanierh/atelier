@@ -59,8 +59,29 @@ def snapshot(fixture):
     return ctx, steps, key
 
 
+def adopt_all(ctx, steps):
+    """The build loop's adoption of staged certificates, in order; returns the adopted tasks."""
+    from atelier.build_hashes import HashIndex
+    done, adopted = {}, set()
+    build_checkpoints.incremental_environment(ctx)
+    with HashIndex(ctx.out / cp.RESTORED_HASHES) as index:
+        for step in build.order(steps, [s.name for s in steps]):
+            if not all(need in done for need in step.needs):
+                continue
+            current = build.fingerprint(step, done, index=index)
+            staged = build_checkpoints.adopt_staged(ctx, step, current, index.digest)
+            if staged is None:
+                continue
+            atomic_json(ctx.stamps / (step.name + '.json'), staged[1])
+            done[step.name] = build.result(step, current, staged[1])
+            build.build_products.feed_results(done, staged[1].get('products', {}))
+            adopted.add(step.name)
+    return adopted
+
+
 def publish_receiver(ctx, steps, store, key, stamps):
     build_checkpoints._publish_restoration(ctx, steps, store, key, dict(key=key, stamps=stamps))
+    return adopt_all(ctx, steps)
 
 
 def test_fresh_dirty_checkout_reuses_unaffected_tasks_without_head_equality(fixture):
@@ -68,11 +89,11 @@ def test_fresh_dirty_checkout_reuses_unaffected_tasks_without_head_equality(fixt
     ctx, steps = fixture.checkout('receiver', changed=True)
     before = (paths.REPO / 'combat.txt').read_bytes()
     stamps = cp.restore(ctx, steps, fixture.store, key, echo=lambda _: None)
-    assert set(stamps) == {'tree', 'house'}
+    assert set(stamps) == {'tree', 'combat', 'house'}  # Staged; the build decides per task.
     assert not list(ctx.stamps.glob('*.json'))  # The worker cannot publish before guard close.
     with pytest.raises(SystemExit, match='checkpoint restoration is incomplete'):
         build_snapshot.require_complete(ctx.out, game='fixture')
-    publish_receiver(ctx, steps, fixture.store, key, stamps)
+    assert publish_receiver(ctx, steps, fixture.store, key, stamps) == {'tree', 'house'}
     assert {p.stem for p in ctx.stamps.glob('*.json')} == {'tree', 'house'}
     assert (paths.REPO / 'combat.txt').read_bytes() == before
     assert steps[1].outputs[0].read_bytes() == b'combat'  # Seed only; no current certificate.
@@ -91,8 +112,7 @@ def test_old_workspace_preserves_import_history_for_content_boundary_migration(f
     digest = build.Step('combat.import', [build.Call('digest', lambda *_: None)], needs=['combat'],
                         outputs=[digest_output], cutoff=True)
     stamps = cp.restore(ctx, [*steps, digest], fixture.store, key, echo=lambda _: None)
-    assert 'tree' not in stamps
-    publish_receiver(ctx, [*steps, digest], fixture.store, key, stamps)
+    assert 'tree' not in publish_receiver(ctx, [*steps, digest], fixture.store, key, stamps)
     # The cheap new cutoff runs first; the old importer metadata is absent from current stamps.
     digest_output.parent.mkdir(parents=True); digest_output.write_bytes(b'normalized combat')
     done = {'combat': stamps['combat']['fingerprint'], 'combat.import': 'outputs:normalized-combat'}
@@ -133,7 +153,7 @@ def test_changed_producer_never_certifies_dependent_but_preserves_independent_ta
     current[1].needs = ['tree']
     (paths.REPO / 'tree.txt').write_text('different tree')
     stamps = cp.restore(receiver, current, fixture.store, key)
-    assert set(stamps) == {'house'}
+    assert publish_receiver(receiver, current, fixture.store, key, stamps) == {'house'}
 
 
 def test_checkpoint_never_overwrites_existing_generated_work(fixture):
@@ -177,14 +197,13 @@ def test_interruption_resumes_same_checkpoint_and_retains_launch_barrier(fixture
     assert set(stamps) == {'tree', 'combat', 'house'}
 
 
-def test_receiver_changes_after_worker_refuse_publication(fixture):
+def test_receiver_changes_after_worker_are_never_adopted(fixture):
     _, _, key = snapshot(fixture)
     ctx, steps = fixture.checkout('receiver')
     stamps = cp.restore(ctx, steps, fixture.store, key)
     (paths.REPO / 'tree.txt').write_text('steering edit')
-    with pytest.raises(cp.CheckpointError, match='receiver changed'):
-        publish_receiver(ctx, steps, fixture.store, key, stamps)
-    assert (ctx.out / cp.JOURNAL).exists() and not list(ctx.stamps.glob('*.json'))
+    assert publish_receiver(ctx, steps, fixture.store, key, stamps) == {'combat', 'house'}
+    assert not (ctx.out / cp.JOURNAL).exists() and not (ctx.stamps / 'tree.json').exists()
 
 
 def test_local_outputs_are_independent_of_cache(fixture):
@@ -264,6 +283,41 @@ def test_large_or_unknown_cold_jobs_require_a_recorded_reason(tmp_path):
     ctx.rebuild_reason = 'first build after engine upgrade'
     build_checkpoints.protect(ctx, step, estimate=120)
     assert json.loads((tmp_path / 'rebuild-decisions.jsonl').read_text())['reason'] == ctx.rebuild_reason
+
+
+def test_rebuild_reason_covers_only_the_tasks_it_names_or_that_were_cold(tmp_path):
+    ctx = SimpleNamespace(checkpoint_settings=dict(rebuild_budget_seconds=60), logs=tmp_path, uproject=None,
+                          rebuild_reasons={'native.terrain': 'terrain recipe rewrite'}, rebuild_reason='new region',
+                          cold_at_launch={'native.region'})
+    def native(name):
+        return build.Step(name, [build.UnrealScript(Path('import.py'), 'done')], heavy=True,
+                          checkpoint_outputs=(tmp_path / name,))
+    messages = []
+    build_checkpoints.protect(ctx, native('native.terrain'), estimate=900, echo=messages.append)
+    build_checkpoints.protect(ctx, native('native.region'), echo=messages.append)
+    # An already-built task invalidated by the same run still stops at the budget.
+    with pytest.raises(cp.CheckpointError, match='--rebuild-reason native.world='):
+        build_checkpoints.protect(ctx, native('native.world'), estimate=900, echo=messages.append)
+    assert messages == ['native.terrain: rebuild reason applied (named): terrain recipe rewrite',
+                        'native.region: rebuild reason applied (requested or cold at launch): new region']
+    decisions = [json.loads(line) for line in (tmp_path / 'rebuild-decisions.jsonl').read_text().splitlines()]
+    assert [(d['step'], d['scope']) for d in decisions] == [('native.terrain', 'named'), ('native.region', 'requested or cold at launch')]
+    # The bare reason follows the cascade from a covered rerun, never an unrelated invalidation.
+    ctx.rebuild_upstream = {'native.belmonte': {'native.region'}, 'native.world': {'native.ferry'}}
+    build_checkpoints.note_rerun(ctx, native('native.region'))
+    build_checkpoints.note_rerun(ctx, native('native.ferry'))  # Not covered: it extends nothing.
+    build_checkpoints.protect(ctx, native('native.belmonte'), estimate=900, echo=messages.append)
+    assert messages[-1] == 'native.belmonte: rebuild reason applied (downstream of native.region): new region'
+    with pytest.raises(cp.CheckpointError, match='stopped before a costly rebuild'):
+        build_checkpoints.protect(ctx, native('native.world'), estimate=900, echo=messages.append)
+    assert ctx.rebuild_covered == ['native.terrain', 'native.region', 'native.belmonte']
+
+
+def test_rebuild_reasons_parse_scoped_and_one_bare_value():
+    assert build_checkpoints.reasons(['a.b=why', 'plain reason', 'c=x=y']) == ({'a.b': 'why', 'c': 'x=y'}, 'plain reason')
+    assert build_checkpoints.reasons('legacy single value') == ({}, 'legacy single value')
+    with pytest.raises(cp.CheckpointError, match='at most one bare'):
+        build_checkpoints.reasons(['one', 'two'])
 
 
 def test_guard_failure_cannot_publish_receipt_or_certificates(fixture, monkeypatch):

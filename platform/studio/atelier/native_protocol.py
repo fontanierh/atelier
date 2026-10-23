@@ -8,7 +8,7 @@ import unicodedata
 from types import SimpleNamespace
 
 from . import engine, paths
-from .build_hashes import digest_file
+from .file_identity import digest_file
 from .atomic_files import atomic_json
 
 SCHEMA = 1
@@ -217,7 +217,7 @@ class ReadStore:
         return value
 
 
-RUNTIME_FILES = ('__init__.py', 'atomic_files.py', 'build_hashes.py', 'engine.py', 'mesh_reuse.py',
+RUNTIME_FILES = ('__init__.py', 'atomic_files.py', 'engine.py', 'file_identity.py', 'mesh_reuse.py',
                  'native_candidates.py', 'native_protocol.py', 'paths.py',
                  'source_imports.py', 'unreal_mesh_reuse.py')
 

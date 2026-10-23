@@ -469,9 +469,10 @@ def main(game, package, *, tag, verification, title=None, notes_file=None, sourc
          workers=WORKERS, prerelease=False):
     """@cc [owner:fontanierh,label:correctness] public-release-before-private-upload
     A verified public release MUST publish and report its link before private uploads are scheduled.
-    Private backup failure MUST NOT fail or roll back public success. Existing producer work MUST
-    be retained locally or explicitly reported as needing preservation; detached upload workers
-    MUST use immutable retained bytes without holding or revisiting the producer checkout.
+    Private upload MUST be opt-in with ATELIER_REMOTE_CHECKPOINTS=1 and MUST NOT fail or roll back
+    public success. Existing producer work MUST be retained locally or explicitly reported as needing
+    preservation; detached upload workers MUST use immutable retained bytes without holding or
+    revisiting the producer checkout.
     """
     stop = threading.Event()
     try:
@@ -503,11 +504,13 @@ def main(game, package, *, tag, verification, title=None, notes_file=None, sourc
             revalidate()
             from . import build_checkpoints
             backup = None
-            try:
-                backup = build_checkpoints.prepare_publication(source, game, tag, revision,
-                    revalidate=revalidate, public_repository=repo)
-            except (RuntimeError, OSError, ValueError, KeyError, TypeError, PublishError):
-                say('Private backup preparation is pending; preserve producer artifacts and rerun this command after repair.')
+            opt_in = os.environ.get(build_checkpoints.REMOTE_LOOKUP) == '1'
+            if opt_in:
+                try:
+                    backup = build_checkpoints.prepare_publication(source, game, tag, revision,
+                        revalidate=revalidate, public_repository=repo)
+                except (RuntimeError, OSError, ValueError, KeyError, TypeError, PublishError):
+                    say('Private backup preparation is pending; preserve producer artifacts and rerun this command after repair.')
             result = publish_assets(GitHub(repo, stop), stage,
                 dict(tag_name=tag, target_commitish=revision, name=title, body=notes, prerelease=prerelease),
                 workers=workers, revalidate=revalidate)
@@ -515,6 +518,8 @@ def main(game, package, *, tag, verification, title=None, notes_file=None, sourc
             if backup is not None:
                 from .checkpoint_backup import start
                 start(backup, echo=say)
+            elif not opt_in:
+                say('Private checkpoint backup is off; set ATELIER_REMOTE_CHECKPOINTS=1 to enable it.')
             return 0
     except KeyboardInterrupt:
         stop.set()

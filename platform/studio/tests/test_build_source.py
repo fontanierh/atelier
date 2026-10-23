@@ -42,10 +42,18 @@ def test_budget_cook_and_progress_edits_do_not_invalidate_source_actions(action,
     assert key(action.step) == key(action.step, orchestration)
 
 
-@pytest.mark.parametrize('support', ['build_source.py', 'build_inputs.py', 'build_products.py', 'build_cache.py',
-                                    'build_hashes.py', 'paths.py', 'build_deferred.py', 'process.py', 'exec_gate.py'])
-def test_executed_adapter_and_complete_identity_support_remain_inputs(action, support):
+@pytest.mark.parametrize('support', ['build_source.py', 'atomic_files.py', 'paths.py', 'process.py', 'exec_gate.py'])
+def test_executed_adapter_remains_an_input(action, support):
     assert key(action.step) != key(action.step, support)
+
+
+@pytest.mark.parametrize('controller', ['build_inputs.py', 'build_products.py', 'build_cache.py', 'build_hashes.py',
+                                       'build_deferred.py', 'source_imports.py', 'build_checkpoints.py',
+                                       'checkpoint_store.py', 'checkpoint_actions.py', 'checkpoint_manifest.py',
+                                       'store_reuse.py', 'store_retention.py', 'output_inventory.py'])
+def test_identity_and_controller_edits_keep_source_actions_current(action, controller):
+    """Code that computes identities or schedules work never shapes a source action's outputs."""
+    assert key(action.step) == key(action.step, controller)
 
 
 def test_only_blender_ignores_the_parent_lock(action):

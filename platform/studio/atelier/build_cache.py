@@ -21,8 +21,14 @@ from . import build_products, paths
 from .atomic_files import atomic_json
 
 SCHEMA = 1
-TOOL_SUPPORT = ('build_source.py', 'build_inputs.py', 'build_products.py', 'build_cache.py',
-                'build_hashes.py', 'source_imports.py', 'atomic_files.py', 'paths.py', 'build_deferred.py', 'safety/process.py', 'safety/exec_gate.py')
+# Code that runs inside every source step's process. Identity machinery (input inventories, hash
+# hints, import scanning, deferred observation, tool contexts) never shapes outputs; it is
+# versioned by IDENTITY_SCHEMA instead, so editing it does not rebuild every source product.
+# A script that imports any atelier module still covers it through its own import closure.
+TOOL_SUPPORT = ('build_source.py', 'atomic_files.py', 'paths.py', 'safety/process.py', 'safety/exec_gate.py')
+IDENTITY_SCHEMA = 1  # Bump when a change to identity machinery must re-key existing products.
+IDENTITY_SUPPORT = ('build_inputs.py', 'build_products.py', 'build_cache.py', 'build_hashes.py',
+                    'source_imports.py', 'build_deferred.py')  # Pinned for trusted publication only.
 DIGEST = re.compile(r'[0-9a-f]{64}')
 NATIVE_SUFFIXES = {'.uasset', '.umap', '.uexp', '.ubulk', '.dylib', '.dll', '.so'}
 
@@ -92,8 +98,10 @@ def roots(ctx, step):
 
 def tool_context(step, hasher, *, cache=None):
     """@cc [owner:fontanierh,label:correctness] source-tool-execution-closure
-    Source keys MUST cover the executed source adapter and identity support, not unrelated
-    orchestration. Python MUST include the managed lock and installed packages. Blender-only
+    Source keys MUST cover the executed source adapter, not unrelated orchestration or identity
+    machinery; a change to identity machinery that alters key meaning MUST bump IDENTITY_SCHEMA.
+    Atelier modules a script imports stay covered by its own import closure. Python MUST include
+    the managed lock and installed packages. Blender-only
     actions MAY omit that parent environment only while fingerprinting the complete bundled
     runtime. Audit/bootstrap code MUST remain covered by the action's required inputs.
 
@@ -105,8 +113,8 @@ def tool_context(step, hasher, *, cache=None):
     kinds = {type(c) for c in step.commands}
     if kinds - {build.Python, build.Blender}:
         raise ValueError('Only Python/Blender source products have a portable tool context')
-    context = {'schema': SCHEMA, 'system': platform.system(), 'machine': platform.machine(),
-               'support': {name: hasher(path) for name, path in tool_support().items()}}
+    context = {'schema': SCHEMA, 'identity_schema': IDENTITY_SCHEMA, 'system': platform.system(),
+               'machine': platform.machine(), 'support': {name: hasher(path) for name, path in tool_support().items()}}
     cache = {} if cache is None else cache
     if build.Python in kinds:
         context['lock'] = hasher(paths.REPO / 'uv.lock')

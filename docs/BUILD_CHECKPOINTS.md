@@ -142,6 +142,10 @@ Fix cache access or the invalid input declaration first. An unavoidable rebuild 
 ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi TASK --rebuild-reason "specific reason"
 ```
 
+A bare reason covers only the tasks named on the command line and those with no result at launch. Any other
+task the budget stops needs its own reason, `--rebuild-reason STEP="why"`, repeatable; the stop prints that form.
+Each use is logged with its task and scope.
+
 Reasons are recorded locally. They do not weaken admission, guards, worker caps or deadlines. `--touch` cannot
 certify checkpoint builds. `--force` additionally requires one exact task and forces only that task, preserving
 current prerequisites. Never clear caches, delete stamps or force a whole dependency closure to fix a miss.

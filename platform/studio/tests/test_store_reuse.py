@@ -1,4 +1,5 @@
 """Shared local store reuse: checkouts share only immutable store entries, by exact fingerprint."""
+import json
 import os
 from pathlib import Path
 import time
@@ -132,3 +133,39 @@ def test_retention_evicts_least_recently_used_unpinned_entries(fixture, monkeypa
     assert [p.stem for p in (fixture.store.directory / 'actions').glob('*.json')] == [keys['house']]
     assert actions.load(fixture.store, keys['house']) is not None
     assert store_retention.collect(fixture.store, budget=10**12, echo=lambda _: None)['removed_entries'] == 0
+
+
+def test_retention_dry_run_changes_nothing_and_keeps_workspace_staging_blobs(fixture, monkeypatch):
+    donor, steps = fixture.checkout('donor')
+    fixture.produce(donor, steps)
+    keys = publish_all(donor, steps, fixture.store)
+    old = time.time() - 7200
+    for path in [*(fixture.store.directory / 'actions').glob('*.json'), *fixture.store.blobs.iterdir()]:
+        os.utime(path, (old, old))
+    before = sorted(p.name for p in fixture.store.directory.rglob('*') if p.is_file())
+    plan = store_retention.collect(fixture.store, budget=1, dry_run=True, echo=lambda _: None)
+    assert plan['dry_run'] and plan['removed_entries'] == 3 and len(plan['entries']) == 3
+    assert sorted(p.name for p in fixture.store.directory.rglob('*') if p.is_file()) == before
+    # A build's workspace staging pointer is a CAS root: its blobs survive eviction of entries.
+    house = actions.load(fixture.store, keys['house'])
+    pointer = fixture.store.directory / 'workspaces/producer.json'
+    pointer.parent.mkdir(parents=True, exist_ok=True)
+    pointer.write_text(json.dumps(dict(key='0' * 64, workspace=dict(files=house['files']))))
+    result = store_retention.collect(fixture.store, budget=1, echo=lambda _: None)
+    assert result['removed_entries'] == 3
+    for entry in house['files'].values():
+        if entry['kind'] == 'file':
+            assert fixture.store.blob(entry['sha256']).is_file()
+
+
+def test_budget_is_the_smaller_of_cap_and_free_disk_share(fixture, monkeypatch):
+    import shutil
+    from collections import namedtuple
+    usage = namedtuple('usage', 'total used free')
+    monkeypatch.setattr(shutil, 'disk_usage', lambda _: usage(0, 0, 100 * 2**30))
+    assert store_retention.budget_bytes(fixture.store, total=20 * 2**30) == 60 * 2**30  # Half of 100 + 20 GiB.
+    settings = fixture.store.directory.parent.parent / 'settings.json'
+    settings.parent.mkdir(parents=True, exist_ok=True)
+    settings.write_text(json.dumps(dict(local_budget_gib=30, local_keep_manifests=2)))
+    assert store_retention.budget_bytes(fixture.store, total=20 * 2**30) == 30 * 2**30
+    assert store_retention.settings(fixture.store)['keep'] == 2

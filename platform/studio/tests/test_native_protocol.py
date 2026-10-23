@@ -12,7 +12,7 @@ def test_declared_native_protocol_is_complete_and_excludes_controller():
     actual = source_imports.local_imports(Path(native_protocol.__file__).with_name('unreal_mesh_reuse.py'))
     assert set(actual) == set(native_protocol.runtime_files())
     assert all(file.parent == Path(native_protocol.__file__).parent for file in actual)
-    forbidden = {'build.py', 'build_cache.py', 'checkpoint_store.py', 'checkpoint_actions.py',
+    forbidden = {'build.py', 'build_cache.py', 'build_hashes.py', 'checkpoint_store.py', 'checkpoint_actions.py',
                  'release.py', 'playtest.py', 'artifact_pool.py'}
     assert not forbidden.intersection(file.name for file in actual)
     # Also exercise import execution with only the standard interpreter available.

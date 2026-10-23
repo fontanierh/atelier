@@ -8,8 +8,18 @@ from . import build_cache, build_products
 from .atomic_files import atomic_json
 
 PREVIOUS = {'build_cache.py': 'a4145b3ea37d55919740f024c6be71ded4955260d67311a3e8fbfc45d60c1f2d', 'build_inputs.py': '1372231a341b450130c5e1e11c715e27c05cf62b0e9e9aea858ab9b02bc9fa9e'}
-CURRENT = {'build_cache.py': '011cd67374ebe329460f8aa3222d9db265541bfb9d4ced9f01f541fe728cb06e', 'build_inputs.py': '7f140159d1a4ce9a51eddd5625439c9ff350db3b19beec0d3dc28382ccdf72d4', 'atomic_files.py': '39163e0c3284ecd931b4f182cfded79cd275046de71003d17cdd6134f5533e9c', 'source_imports.py': 'b0b70fd764f52f5ced29308041edbf3b6176e34f4e391ba6c4af3474972008f6'}
+CURRENT = {'build_cache.py': '4515c14043535aa1ad895ceccac4e2d2e677af4bd4bb68f6b3b252441835e5b3', 'build_inputs.py': '7f140159d1a4ce9a51eddd5625439c9ff350db3b19beec0d3dc28382ccdf72d4', 'atomic_files.py': '39163e0c3284ecd931b4f182cfded79cd275046de71003d17cdd6134f5533e9c', 'source_imports.py': '3e0e40ff742ee08354e2276ca385b99d1085e033153fc6416d057ed00e245eee'}
 ADDED = {'atomic_files.py', 'source_imports.py'}
+# The source tool support before the extraction; the current context no longer hashes identity code.
+LEGACY_SUPPORT = ('build_source.py', 'build_inputs.py', 'build_products.py', 'build_cache.py', 'build_hashes.py',
+                  'paths.py', 'build_deferred.py', 'safety/process.py', 'safety/exec_gate.py')
+
+
+def legacy_support():
+    from atelier.harness.safety import process
+    safety, studio = Path(process.__file__).parent, Path(__file__).parent
+    return {name: build_products.file_digest(safety / name.removeprefix('safety/') if name.startswith('safety/')
+                                             else studio / name) for name in LEGACY_SUPPORT}
 
 
 def previous_context(ctx, step, current_identity):
@@ -24,9 +34,9 @@ def previous_context(ctx, step, current_identity):
         value = tool_context(step, build_products.file_digest, cache=ctx.__dict__.setdefault('support_migration_tools', {}))
         if build_products.identity(value) != current_identity or not isinstance(value.get('support'), dict):
             return None
-        support = {k: v for k, v in value['support'].items() if k not in ADDED}
-        support.update(PREVIOUS)
-        cache[current_identity] = {**value, 'support': support}
+        support = {**legacy_support(), **PREVIOUS}
+        legacy = {k: v for k, v in value.items() if k != 'identity_schema'}
+        cache[current_identity] = {**legacy, 'support': support}
     return cache[current_identity]
 
 
