@@ -25,6 +25,7 @@ from atelier.build_inputs import local_imports  # noqa: E402
 from atelier.export_manifest import real_directory, sha  # noqa: E402
 from fbx_face_digests import read as exported  # noqa: E402
 from mesh_pieces import capture  # noqa: E402
+from mesh_pieces import subset  # noqa: E402
 from plan_terrain import construct, OPTIONS, plan_selected, CELL_METRES  # noqa: E402
 from terrain_product import load  # noqa: E402
 from terrain_sources import ASSETS, project  # noqa: E402
@@ -47,6 +48,33 @@ def signature(data):
                  uvs=[(name, arr(values)) for name, values in data['uvs']],
                  colours=[(name, domain, kind, arr(values)) for name, domain, kind, values in data['colours']])
     return value
+
+
+def baseline_packets(data, directory, key, matrix):
+    """Persist EVERY immutable-original polygon in contiguous bounded source packets.
+
+    Baseline membership does not use the new spatial partitioner. The independent
+    cross-region harness reconstructs its complete corner Counter itself.
+    """
+    directory.mkdir(parents=True)
+    groups = []; members = []; triangles = 0
+    for face, count in enumerate(data['counts']):
+        size = int(count) - 2
+        if size > 32768: raise ValueError('Unbounded original source polygon')
+        if members and triangles + size > 32768:
+            groups.append(members); members = []; triangles = 0
+        members.append(face); triangles += size
+    if members: groups.append(members)
+    rows = []
+    for index, members in enumerate(groups):
+        name = key + '_Source' + str(index).zfill(4)
+        path = directory / (name + '.npz')
+        piece = subset(data, members)
+        mesh_ir.write(path, mesh_ir.encode(piece, key=name, slots=data['slots'], matrix=matrix,
+                                           options=OPTIONS))
+        rows.append(dict(path=path.name, sha256=sha(path), triangles=piece['triangles']))
+    assert sum(row['triangles'] for row in rows) == int(sum(data['counts'] - 2))
+    return rows
 
 
 def verify_piece(reference, row, piece):
@@ -95,6 +123,7 @@ def main():
     code = set(local_imports(GAME / 'world/plan_terrain.py', (GAME / 'world', GAME / 'world/regions')))
     code.update((Path(__file__), GAME / 'tests/native/fbx_face_digests.py',
                  GAME / 'tests/native/fbx_corners.py', Path(mesh_ir.__file__),
+                 GAME / 'world/export_region_piece.py', GAME / 'assets/vehicles/belmonte-train/line.json',
                  GAME / 'tests/fixtures/island-terrain-predecessor-283329c07.txt'))
     source_hashes = {str(path): sha(path) for path in sorted(code)}
     for name in paths:
@@ -121,11 +150,13 @@ def main():
     STAGE[0] = 'immutable original complete island construction'
     exec(compile(tree, str(fixture), 'exec'), scope)
     scope['main']()
-    references, controls = {}, {}
+    references, controls, frames, baseline = {}, {}, {}, {}
     for key in args.assets:
         STAGE[0] = 'original capture and FBX ' + key
         obj = bpy.data.objects[key]
         references[key] = captured(obj)
+        frames[key] = [list(row) for row in obj.matrix_world]
+        baseline[key] = baseline_packets(references[key], root / 'baseline' / key, key, frames[key])
         bpy.ops.object.select_all(action='DESELECT'); obj.select_set(True)
         bpy.context.view_layer.objects.active = obj
         path = root / (key + '-whole-control.fbx')
@@ -141,6 +172,7 @@ def main():
         obj = construct(key, source[key], heightmap=heightmap if key in ('Terrain', 'Lane') else None,
                         final=final if key == 'FarHills' else None)
         actual = captured(obj)
+        assert [list(row) for row in obj.matrix_world] == frames[key], (key, 'authored frame changed')
         assert signature(actual) == signature(references[key]), (key, 'ordered source channels differ')
         del actual
         value = plan_selected(obj, root / 'plans' / key)
@@ -157,11 +189,16 @@ def main():
             print(f'ISLAND ATOMIC {key} {index}/{len(value["pieces"])}', flush=True)
         assert observed == controls[key], (key, 'serialized complete corner/material/UV/color/frame union changed')
         results[key] = dict(triangles=value['source_triangles'], polygons=value['source_polygons'],
-                            pieces=len(value['pieces']), max_triangles=max(r['triangles'] for r in value['pieces']))
+                            pieces=len(value['pieces']), max_triangles=max(r['triangles'] for r in value['pieces']),
+                            baseline_packets=baseline[key], actual_packets=[dict(path=row['payload'], sha256=row['sha256'])
+                                for row in value['pieces']])
         del references[key], controls[key], observed
         gc.collect()
     assert identities() == before, 'Donor source identity changed during canary'
     assert {str(path): sha(path) for path in sorted(code)} == source_hashes, 'Canary source changed during execution'
+    atomic_json(root / 'baseline-census.json', dict(complete=set(args.assets) == set(ASSETS),
+        groups={'island': ['world.terrain']}, owners={'world.terrain': dict(models=args.assets,
+            captures={key: dict(source_triangles=row['triangles'], exported=True) for key, row in results.items()})}))
     atomic_json(root / 'result.json', dict(complete=True, predecessor_sha256=sha(fixture), inputs=before,
         source_hashes=source_hashes, cells={key: CELL_METRES.get(key, 128.) for key in args.assets},
         assets=results, exact_source_channels=True, exact_piece_channel_union=True,
