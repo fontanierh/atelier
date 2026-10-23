@@ -63,3 +63,41 @@ engine/reference model is implemented; A1 does not claim the full TESTING scenar
 The registry checker is a read-only Python tool. Its focused tests run in ordinary Python CI:
 `uv run pytest platform/studio/tests/test_build_v2_registry.py -q`. A local nextest compile/run must
 still use the standalone admitted compile workflow; the CI profile is not a memory/admission guard.
+
+## Declaration validation (A2)
+
+`validate::load` parses TOML and checks it against caller-supplied `OpRegistry`, `SourceSnapshot` and
+allowed checkout install roots. `validate::validate` checks an already parsed declaration. The registry
+names supported op/version pairs, their named input roles/requiredness, optional-file/selector policy,
+accepted input-item classes and output classes. Missing definitions and unknown input names fail.
+
+The snapshot is an immutable map of exact project-relative file names to frozen bytes or an explicit
+non-regular/unreadable state. Absence is a missing entry; it is permitted only for an explicitly optional
+file accepted by the op. Missing JSON selector nodes always fail when the file exists, including when
+that file is optional. Successful validation returns dependency order and resolved whole/absent/selected
+file observations. It does not hash inputs, discover imports, walk the live checkout, stage files, launch
+workers or decide cache hits. The snapshot provider must include the real ignored/untracked inputs and
+establish physical path provenance; later A3/C1/A6 bind bytes, enforce loaded code and check mid-build edits.
+
+Paths must be relative, with no empty/dot/traversal components, backslashes, drive colons, controls or
+trailing dot/space aliases. Logical output/reference paths start with `/`. Source Unicode names retain
+exact spelling. Owned-path collision comparison uses canonical Unicode decomposition and full non-Turkic
+case folding, then decomposition again; it rejects equal and ancestor/descendant ownership, including
+optional sidecars. This is a conservative portable collision policy, not an emulator of every APFS
+Unicode revision. Representative ASCII case and composed/decomposed aliases and ancestor conflicts were
+also checked with exclusive file creation on the local case-insensitive filesystem. Full physical-path
+and native receiving acceptance remains a pre-cutover responsibility; validation alone makes no claim
+about symlink aliases outside the supplied snapshot or every filesystem's Unicode rules.
+
+Job-output names are scoped to one unit's scratch output; checkout install ownership is global across
+the declaration and must stay under the caller's allowed roots. Raw/store paths may therefore match a
+finish unit's logical asset identity without sharing mutable outputs. Checkout logical owners are
+unique. Neither code nor declared file inputs may overlap checkout installs. A unit's entry script must
+be listed in its explicit code closure, but the validator does not pretend that this proves all dynamic
+imports are declared. Content and linked-reference producers must exist; linked references must agree
+on logical path/class and carry a proof-test name. Producer scheduling cycles fail.
+
+Focused cases in `tests/validation.rs` cover absence, selectors, missing or non-regular inputs, op rules,
+producer identity, cycles, invalid paths, Unicode collisions, disjoint output ownership and install roots.
+The library remains unused by production v1. Its tests run in hosted Rust CI; local compilation still
+requires ordinary standalone compile admission.
