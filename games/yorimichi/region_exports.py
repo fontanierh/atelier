@@ -110,7 +110,7 @@ def steps(ctx, *, region, assets, after=(), inputs=()):
     destination = ctx.out / 'atomic_regions' / region
     def assemble(ctx, log):
         expected = []
-        parents = {}
+        parents, ownership = {}, {}
         for parent, root, _, _ in logical:
             rows = inventory(root, parent)
             if not rows: raise ValueError('Missing logical geometry plan: ' + parent)
@@ -118,13 +118,19 @@ def steps(ctx, *, region, assets, after=(), inputs=()):
             parents[parent] = [key for key, _ in rows]
         if expected != [key for _, key in children]:
             raise ValueError('Region export roster changed without completed recipe expansion')
+        for parent, root, _, _ in logical:
+            plan = json.loads((root / 'plan.json').read_text())
+            ownership[parent] = {key: plan[key] for key in (
+                'source_triangles', 'source_polygons', 'source_collision_hulls', 'slots', 'matrix')}
+            ownership[parent]['pieces'] = [{key: row[key] for key in (
+                'name', 'triangles', 'polygons', 'collision_hulls', 'min', 'max')} for row in plan['pieces']]
         exports = [export_assembly.Item(key, step.products[0].paths[0]) for step, key in children]
         value = export_assembly.assemble(exports, destination / 'assets')
-        atomic_json(destination / 'logical-pieces.json', dict(schema=1, parents=parents,
+        atomic_json(destination / 'logical-pieces.json', dict(schema=1, parents=parents, ownership=ownership,
                     exports=[row['asset'] for row in value['exports']]))
         log.write(f'Assembled {len(exports)} independently cached {region} exports\n')
     result.append(Step(f'world.{region}.assembled', [Call('assemble ' + region, assemble)],
-        inputs=[Path(__file__), *export_assembly.runtime_inputs()], needs=[barrier], reads=products,
+        inputs=[Path(__file__), *export_assembly.runtime_inputs()], needs=[barrier], reads=[*products, *(row[3] for row in logical)],
         products=[Product(region + '.atomic', (destination,))],
         about='complete validated independent export inventory for ' + region))
     return result
