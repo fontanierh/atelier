@@ -22,4 +22,5 @@ if code: raise SystemExit(code)
 assert 'ATOMIC MESH EXPORT CANARY COMPLETE' in (output / 'guard/stdout.log').read_text()
 result = json.loads((output / 'products/result.json').read_text())
 assert result['complete'] and result['exact_corner_conservation'] and result['oversized_refused']
+assert result['exported_fbx_corners_equal'] and result['colour_layers'] == 4
 print('GUARDED ATOMIC MESH CANARY PASS', flush=True)

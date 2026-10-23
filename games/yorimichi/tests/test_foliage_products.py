@@ -117,6 +117,17 @@ def test_world_selector_includes_native_references_without_reading_their_bytes(t
     expected.update({'swordcamp.geometry_inventory': 'world.swordcamp.geometry',
                      'swordcamp.atomic': 'world.swordcamp.assembled',
                      'swordcamp.meshes': 'world.swordcamp', 'swordcamp.atlas': 'world.swordcamp_atlas'})
+    expected.update({f'mega.geometry.{name}': f'world.mega.geometry.{name}'
+                     for name in ('Mega_Ramp', 'Mega_Trim', 'Mega_Trail')})
+    expected.update({'mega.trail_data': 'world.mega.trail_data',
+                     'mega.geometry_inventory': 'world.mega.geometry',
+                     'mega.atomic': 'world.mega.assembled', 'mega.meshes': 'world.mega',
+                     'mega.native': 'unreal.mega', 'houses.native': 'unreal.houses'})
+    house_models = ('House_A', 'House_B', 'House_C', *(f'HouseLot_{i}' for i in range(1, 6)))
+    expected.update({f'houses.geometry.{name}': f'world.houses.geometry.{name}' for name in house_models})
+    expected.update({f'houses.data.HouseLot_{i}': f'world.houses.data.HouseLot_{i}' for i in range(1, 6)})
+    expected.update({'houses.geometry_inventory': 'world.houses.geometry',
+                     'houses.atomic': 'world.houses.assembled', 'houses.meshes': 'world.houses'})
     assert graph.owners == expected
     assert all(not graph.by_name[owner].cache for product, owner in expected.items()
                if any(isinstance(command, (build.UnrealScript, build.UnrealCompile, build.UnrealPackage))

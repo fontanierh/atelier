@@ -12,10 +12,12 @@ ROOT = Path(__file__).resolve().parents[4]
 sys.path.insert(0, str(ROOT / 'games/yorimichi/world'))
 import yori  # noqa: E402,F401
 from atelier import export_assembly, export_tasks, mesh_ir
-from atelier.blender.fbx import export_atomic_fbx
+from atelier.blender.fbx import export_atomic_fbx, export_fbx
 from mesh_pieces import capture, subset
 from region_mesh_parts import plan
 import export_region_piece
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'native'))
+from fbx_corners import read as exported_corners
 
 
 def corners(piece):
@@ -66,6 +68,10 @@ def main():
         attribute = data.color_attributes.new(name=domain, type='FLOAT_COLOR', domain=domain)
         colours = np.tile(np.array([.125, .25, .5, 1.], np.float32), (len(attribute.data), 1))
         attribute.data.foreach_set('color', colours.ravel())
+    for domain in ('POINT', 'CORNER'):
+        attribute = data.color_attributes.new(name='BYTE_' + domain, type='BYTE_COLOR', domain=domain)
+        colours = np.tile(np.array([.125, .25, .5, 1.], np.float32), (len(attribute.data), 1))
+        attribute.data.foreach_set('color', colours.ravel())
     data.uv_layers.active_index = 4
     data.uv_layers[5].active_render = True
     data.color_attributes.active_color_index = 1
@@ -83,6 +89,12 @@ def main():
         assert not (root / 'oversized.fbx').exists()
     else:
         raise AssertionError('Oversized native selection was accepted')
+    # An explicit diagnostic whole control exercises the original exporter. It
+    # never enters production membership or the atomic task admission path.
+    control = root / 'whole-control.fbx'
+    export_fbx(filepath=str(control), use_selection=True, object_types={'MESH'}, bake_anim=False)
+    expected_exported = exported_corners(control)
+    observed_exported = dict(render=Counter(), collision=Counter())
     inventory = plan(obj, root / 'plan')
     assert len(inventory['pieces']) > 1
     observed = Counter()
@@ -97,11 +109,15 @@ def main():
         print('ATOMIC CANARY EXPORT ' + row['name'], flush=True)
         export_region_piece.main(['--input', str(payload), '--output', str(output)])
         before = (output / (row['name'] + '.fbx')).read_bytes()
+        emitted = exported_corners(output / (row['name'] + '.fbx'))
+        for kind in observed_exported:
+            observed_exported[kind].update(emitted[kind])
         export_region_piece.main(['--input', str(payload), '--output', str(output)])
         assert (output / (row['name'] + '.fbx')).read_bytes() == before
         assert export_tasks.validate(output, key=row['name'])['triangles'] == row['triangles']
         items.append(export_assembly.Item(row['name'], output))
     assert observed == expected, 'Planned pieces changed face/corner/material/UV/color multiplicity'
+    assert observed_exported == expected_exported, 'Serialized FBX changed complete exported polygon corners'
     # GLB uses the same bounded input, with all six UV channels and both colors
     # requested explicitly. Inspect the actual serialized primitive attributes.
     import struct
@@ -118,7 +134,7 @@ def main():
     for primitive in primitives:
         attributes = primitive['attributes']
         assert all('TEXCOORD_' + str(i) in attributes for i in range(6)), attributes
-        assert sum(key.startswith('COLOR_') for key in attributes) >= 2, attributes
+        assert sum(key.startswith('COLOR_') for key in attributes) >= 4, attributes
     export_region_piece.main(['--input', str(payload), '--output', str(glb_root), '--format', '.glb'])
     assert (glb_root / (row['name'] + '.glb')).read_bytes() == blob
 
@@ -126,6 +142,7 @@ def main():
     assert len(assembled['exports']) == len(inventory['pieces'])
     (root / 'result.json').write_text(json.dumps(dict(complete=True, source_triangles=count,
         pieces=len(items), uv_channels=6, exact_corner_conservation=True,
+        exported_fbx_corners_equal=True, colour_layers=4,
         repeated_exports_byte_identical=True, oversized_refused=True)))
     print('ATOMIC MESH EXPORT CANARY COMPLETE', flush=True)
 
