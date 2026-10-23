@@ -1311,6 +1311,7 @@ def world_steps(ctx):
                      REGIONS / 'hidamari' / 'build.py', REGIONS / 'hidamari_stable' / 'layout.py', WORLD / 'build_terrain.py', WORLD / 'farhills_surface.py', WORLD / 'farhills_grid.py', WORLD / 'terrain_product.py',
                      *CRATERPARK, REGIONS / 'southwest', REGIONS / 'mega' / 'ramp.py', REGIONS / 'megapark' / 'placement.py', REGIONS / 'megapark' / 'gate.py',
                      *[REGIONS / 'belmonte' / (name + '.py') for name in ('plan', 'planting', 'source', 'layout', 'terrain', 'query_arrays')],
+                     REGIONS / 'brinecove/ground_sampling.py', REGIONS / 'brinecove/boundary.py',
                      *local_imports(REGIONS / 'brinecove/plan.py'),
                      *belmonte_train_corridor(out),
                      ASSETS / 'belmonte' / 'source.json',
