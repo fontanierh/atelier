@@ -841,7 +841,7 @@ def brinecove_model_steps(out):
                  inputs=[*code, definition],
                  products=[Product('brinecove.model.' + definition.stem,
                                    (out / 'models/brinecove/plants' / definition.stem,))],
-                 toolchain=True, batch=Batch('Brinecove plant models'), heavy=True,
+                 toolchain=True, cache=True, batch=Batch('Brinecove plant models'), heavy=True,
                  about='independent Brinecove plant model ' + definition.stem)
             for definition in definitions]
 
@@ -876,15 +876,8 @@ def brinecove_steps(out):
     region = REGIONS / 'brinecove'
     library = out / 'digests' / 'brinecove-source-library.json'
     return [
-        Step('world.brinecove', [Blender(region / 'build.py', ('--source-library', str(library),
-                                    '--foliage-library', str(out / 'models/brinecove/plants')), threads=3)],
-             inputs=[*build_inputs.local_imports(region / 'build.py', (WORLD, REGIONS)),
-                     region / 'foliage_catalog.json', ASSETS / 'brinecove', library],
-             needs=['world.brinecove.sources'],
-             reads=['terrain.FarHills.final', *('brinecove.model.' + path.stem
-                     for path in brinecove_library.definitions())], heavy=True,
-             outputs=[out / 'brinecove' / 'runtime.json', out / 'brinecove' / 'build-report.json'],
-             about='Brinecove: pirate port ground joined to the far hills, town, waterfall, ships and flora'),
+        _load_helper_module('yorimichi_brinecove_assembly', GAME / 'brinecove_atomic_build.py').assembly_step(
+            out, plant_products=['brinecove.model.' + path.stem for path in brinecove_library.definitions()]),
         Step('world.brinecove.meshes',
              [Python(GAME / 'region_products.py', (out / 'brinecove', out / 'products/brinecove',
                                                    '--ground-prefix', 'SM_BC_Ground_', '--plant-prefix', 'SM_BC_Plant_',

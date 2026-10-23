@@ -150,6 +150,7 @@ def test_export_declares_the_selected_source_library_its_hero_check_reads():
     from atelier import build
     from brinecove import hero_sources
     recipe = build.load_recipe('yorimichi')
+    from types import SimpleNamespace
     out = Path('/tmp/out')
     selection = recipe.brinecove_source_step(out)
     export = next(s for s in recipe.brinecove_steps(out) if s.name == 'world.brinecove')
@@ -157,11 +158,15 @@ def test_export_declares_the_selected_source_library_its_hero_check_reads():
     assert selection.cutoff and not selection.heavy
     assert hero_sources.LIBRARY in selection.inputs
     assert selection.outputs == [library]
-    assert selection.name in export.needs
-    assert library in export.inputs and hero_sources.LIBRARY not in export.inputs
-    assert export.commands[0].args == ('--source-library', str(library),
-                                       '--foliage-library', str(out / 'models/brinecove/plants'))
-    assert recipe.ASSETS / 'brinecove' in export.inputs  # GLB and provenance bytes still invalidate the export
+    independent = recipe._load_helper_module('coastal_selected_sources', recipe.GAME / 'brinecove_atomic_build.py')
+    data = next(s for s in independent.steps(SimpleNamespace(out=out)) if s.name == 'world.brinecove.placements')
+    assert selection.name in data.needs
+    assert library in data.inputs and hero_sources.LIBRARY not in data.inputs
+    assert '--source-library' in data.commands[0].args and str(library) in data.commands[0].args
+    assert 'brinecove.placements' in export.reads
+    # Source-library changes invalidate the validating data step and cheap composition,
+    # while each hero geometry key reads only its own committed GLB/provenance.
+    assert recipe.ASSETS / 'brinecove/models/galleon-hull.glb' in data.inputs
 
 
 def test_atlas_ground_refuses_tiles_that_differ_from_the_export_report(tmp_path):

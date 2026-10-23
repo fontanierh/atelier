@@ -14,6 +14,7 @@ COMPONENTS = (
     ('Market', 'market'), ('TownUpper', 'upper_town'), ('Landmarks', 'landmarks'),
     ('Ships', 'ships'), ('Props', 'props'), ('Understory', 'vegetation'),
 )
+HEROES = ('pirate-queen-statue', 'galleon-hull', 'harbor-capstan')
 
 
 def load(label, path):
@@ -58,5 +59,41 @@ def steps(ctx):
     assets.append(graph.LogicalAsset('SM_BC_Ground', ground_script, args=tuple(arguments),
         reads=('brinecove.rim_data', *paving_products), suffix='.glb',
         products=(Product('terrain.Brinecove.final', (ground_query,)),)))
+    for slug in HEROES:
+        name = 'SM_BC_Hero_' + ''.join(part.title() for part in slug.split('-'))
+        materials = ctx.out / 'brinecove-data/heroes' / slug
+        assets.append(graph.LogicalAsset(name, REGION / 'plan_hero.py',
+            args=('--slug', slug, '--metadata-output', str(materials)), suffix='.glb',
+            inputs=tuple(GAME / 'assets/brinecove/models' / (slug + suffix)
+                         for suffix in ('.glb', '.provenance.json')),
+            products=(Product('brinecove.hero_materials.' + slug, (materials,)),)))
     result.extend(graph.steps(ctx, region='brinecove', assets=assets))
+    placement_script = REGION / 'placement_data.py'
+    placements = ctx.out / 'brinecove-data/placements.json'
+    library = ctx.out / 'digests/brinecove-source-library.json'
+    model_inputs = [path for path in (GAME / 'assets/brinecove/models').iterdir()
+                    if path.suffix == '.glb' or path.name.endswith('.provenance.json')]
+    result.append(Step('world.brinecove.placements', [Python(placement_script, (
+        '--rim', str(rim), '--source-library', str(library), '--output', str(placements)))],
+        inputs=[*local_imports(placement_script, (WORLD, REGIONS)), library, *model_inputs],
+        needs=['world.brinecove.sources'], reads=['brinecove.rim_data'],
+        products=[Product('brinecove.placements', (placements,))], cache=True,
+        about='coastal instance transforms, independent of model geometry/export identities'))
     return result
+
+
+def assembly_step(out, *, plant_products):
+    script = REGION / 'assemble.py'
+    parents = ['SM_BC_' + key for key, _ in COMPONENTS] + ['SM_BC_Ground']
+    parents.extend('SM_BC_Hero_' + ''.join(part.title() for part in slug.split('-')) for slug in HEROES)
+    arguments = ['--out', str(out)]
+    for key in parents: arguments.extend(('--parent', key))
+    for slug in HEROES: arguments.extend(('--hero', slug))
+    return Step('world.brinecove', [Python(script, tuple(arguments))],
+        inputs=[*local_imports(script, (WORLD, REGIONS)), GAME / 'assets/brinecove/textures',
+                REGION / 'foliage_catalog.json', REGION / 'foliage_models'],
+        reads=['brinecove.atomic', 'brinecove.placements',
+               *('brinecove.hero_materials.' + slug for slug in HEROES), *plant_products],
+        products=[Product('brinecove.library', (out / 'brinecove/glb', out / 'brinecove/textures',
+            out / 'brinecove/runtime.json', out / 'brinecove/build-report.json'))], cache=True,
+        about='compose separate bounded coastal meshes and instances without geometry joins')
