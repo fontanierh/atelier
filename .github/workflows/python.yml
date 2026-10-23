@@ -17,7 +17,11 @@ concurrency:
 jobs:
   tests:
     name: Python / ${{ matrix.group }}
-    runs-on: macos-latest
+    # The guard, render-slot and launch-policy suites exercise taskpolicy, libproc and the
+    # macOS process table, so that group stays on macOS. The board and games groups only
+    # mock those interfaces; keeping them on Linux drains far faster than the congested
+    # macOS arm64 pool and halves the runners each PR needs.
+    runs-on: ${{ matrix.group == 'studio' && 'macos-latest' || 'ubuntu-latest' }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
