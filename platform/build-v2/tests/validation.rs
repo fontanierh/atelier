@@ -14,6 +14,7 @@ fn fixture() -> (Declaration, OpRegistry, SourceSnapshot, Vec<String>) {
                         required: false,
                         allow_absent_file: true,
                         allow_selector: true,
+                        require_whole_reason: false,
                         item_classes: BTreeSet::from(["StaticMeshSource".into()]),
                     },
                 ),
@@ -24,6 +25,7 @@ fn fixture() -> (Declaration, OpRegistry, SourceSnapshot, Vec<String>) {
                         required: false,
                         allow_absent_file: false,
                         allow_selector: false,
+                        require_whole_reason: false,
                         item_classes: BTreeSet::from(["Material".into()]),
                     },
                 ),
@@ -416,7 +418,7 @@ fn content_and_scheduling_cycles_fail() {
             unit: "sample.geometry".into(),
             item: "triangle".into(),
         },
-        whole: None,
+        whole: Some("entire selected source item".into()),
         conditional: None,
     };
     rejected(
@@ -603,4 +605,126 @@ fn loader_combines_strict_toml_shape_and_semantic_validation() {
             .to_string()
             .contains("invalid TOML")
     );
+}
+
+#[test]
+fn bounded_items_need_no_whole_note_but_broad_slots_require_one() {
+    let (mut declaration, mut registry, snapshot, roots) = fixture();
+    // A non-root selector narrows even a generally broad slot.
+    registry
+        .values_mut()
+        .next()
+        .unwrap()
+        .inputs
+        .get_mut("shape")
+        .unwrap()
+        .require_whole_reason = true;
+    assert!(validate(&declaration, &registry, &snapshot, &roots).is_ok());
+    registry
+        .values_mut()
+        .next()
+        .unwrap()
+        .inputs
+        .get_mut("shape")
+        .unwrap()
+        .require_whole_reason = false;
+    declaration.units[0].inputs[0] = Input::Content {
+        name: "shape".into(),
+        source: ContentSource::Item {
+            unit: "sample.material".into(),
+            item: "plain".into(),
+        },
+        whole: None,
+        conditional: None,
+    };
+    let rule = registry
+        .values_mut()
+        .next()
+        .unwrap()
+        .inputs
+        .get_mut("shape")
+        .unwrap();
+    rule.item_classes.insert("Material".into());
+    assert!(validate(&declaration, &registry, &snapshot, &roots).is_ok());
+    registry
+        .values_mut()
+        .next()
+        .unwrap()
+        .inputs
+        .get_mut("shape")
+        .unwrap()
+        .require_whole_reason = true;
+    rejected(
+        &declaration,
+        &registry,
+        &snapshot,
+        &roots,
+        "broad op input requires a whole reason",
+    );
+    let Input::Content { whole, .. } = &mut declaration.units[0].inputs[0] else {
+        panic!()
+    };
+    *whole = Some("consumes the complete chosen material set".into());
+    assert!(validate(&declaration, &registry, &snapshot, &roots).is_ok());
+}
+
+#[test]
+fn ancestor_conflicts_survive_lexically_adjacent_sibling_claims() {
+    let (mut declaration, registry, snapshot, roots) = fixture();
+    let mut adjacent = declaration.units[1].clone();
+    adjacent.id = "sample.adjacent".into();
+    adjacent.outputs[0].logical_path = "/Game/Materials/Adjacent".into();
+    adjacent.outputs[0].files[0].install_path = Some("Content/Asset-".into());
+    let mut descendant = adjacent.clone();
+    descendant.id = "sample.child".into();
+    descendant.outputs[0].logical_path = "/Game/Materials/Descendant".into();
+    descendant.outputs[0].files[0].install_path = Some("Content/Asset/child".into());
+    declaration.units[1].outputs[0].files[0].install_path = Some("Content/Asset".into());
+    declaration.units.extend([adjacent, descendant]);
+    rejected(
+        &declaration,
+        &registry,
+        &snapshot,
+        &roots,
+        "overlapping output owners",
+    );
+}
+
+#[test]
+fn output_sets_and_entry_code_must_be_declared_completely() {
+    let (declaration, registry, snapshot, roots) = fixture();
+    let mut changed = declaration.clone();
+    changed.units[0].code.remove(0);
+    rejected(
+        &changed,
+        &registry,
+        &snapshot,
+        &roots,
+        "entry script absent",
+    );
+    changed = declaration.clone();
+    changed.units[0].outputs.clear();
+    rejected(
+        &changed,
+        &registry,
+        &snapshot,
+        &roots,
+        "unit has no outputs",
+    );
+    changed = declaration.clone();
+    changed.units[0].outputs[0].files[0].required = false;
+    rejected(
+        &changed,
+        &registry,
+        &snapshot,
+        &roots,
+        "no required file output",
+    );
+    changed = declaration.clone();
+    changed.units[0].outputs[0].files.push(OutputFile {
+        path: "triangle.uexp".into(),
+        required: false,
+        install_path: None,
+    });
+    assert!(validate(&changed, &registry, &snapshot, &roots).is_ok());
 }

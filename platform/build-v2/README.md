@@ -69,7 +69,8 @@ still use the standalone admitted compile workflow; the CI profile is not a memo
 `validate::load` parses TOML and checks it against caller-supplied `OpRegistry`, `SourceSnapshot` and
 allowed checkout install roots. `validate::validate` checks an already parsed declaration. The registry
 names supported op/version pairs, their named input roles/requiredness, optional-file/selector policy,
-accepted input-item classes and output classes. Missing definitions and unknown input names fail.
+accepted input-item classes, output classes and named parameter types/requiredness. Missing definitions,
+unknown names and invalid top-level parameter types fail; nested domain constraints belong to each op.
 
 The snapshot is an immutable map of exact project-relative file names to frozen bytes or an explicit
 non-regular/unreadable state. Absence is a missing entry; it is permitted only for an explicitly optional
@@ -95,7 +96,10 @@ finish unit's logical asset identity without sharing mutable outputs. Checkout l
 unique. Neither code nor declared file inputs may overlap checkout installs. A unit's entry script must
 be listed in its explicit code closure, but the validator does not pretend that this proves all dynamic
 imports are declared. Content and linked-reference producers must exist; linked references must agree
-on logical path/class and carry a proof-test name. Producer scheduling cycles fail.
+on logical path/class and carry a proof-test name. Broad/aggregate op slots marked
+`require_whole_reason` require a nonempty rationale; already bounded payloads, FBX or narrow query
+results need no boilerplate note. The op definition and recipe review establish that classification.
+Producer scheduling cycles fail.
 
 Focused cases in `tests/validation.rs` cover absence, selectors, missing or non-regular inputs, op rules,
 producer identity, cycles, invalid paths, Unicode collisions, disjoint output ownership and install roots.

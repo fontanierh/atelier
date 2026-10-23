@@ -18,6 +18,8 @@ pub struct InputRule {
     pub required: bool,
     pub allow_absent_file: bool,
     pub allow_selector: bool,
+    /// Broad/aggregate slots require a whole-input rationale. Bounded items do not.
+    pub require_whole_reason: bool,
     /// Accepted classes for producer items and logical references.
     pub item_classes: BTreeSet<String>,
 }
@@ -444,6 +446,12 @@ pub fn validate(
                 } => {
                     note(whole, "whole-input reason")?;
                     note(conditional, "input conditional note")?;
+                    let narrowed = matches!(source, ContentSource::File { selector: Some(pointer), .. } if !pointer.is_empty());
+                    if rule.require_whole_reason && !narrowed && whole.is_none() {
+                        return Err(fail(format!(
+                            "broad op input requires a whole reason: {name}"
+                        )));
+                    }
                     match source {
                         ContentSource::File {
                             path,
