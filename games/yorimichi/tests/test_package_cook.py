@@ -9,8 +9,9 @@ import pytest
 from atelier import build
 from test_package import archive_tool
 
-pytestmark = pytest.mark.skipif(sys.platform != 'darwin',
-                                reason='macOS packaging: ditto and a .command launcher')
+pytestmark = [pytest.mark.macos_only,
+              pytest.mark.skipif(sys.platform != 'darwin',
+                                 reason='macOS packaging: ditto and a .command launcher')]
 
 
 def cooked_app(tmp_path):

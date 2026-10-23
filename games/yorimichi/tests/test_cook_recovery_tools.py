@@ -2,6 +2,7 @@
 import importlib.util
 import io
 import os
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -9,6 +10,11 @@ import pytest
 
 from atelier import build_cook_recovery as recovery, paths
 
+# Xcode and the Metal SDK selectors only exist there, so this file runs in the macOS CI group and
+# skips anywhere else.
+pytestmark = [pytest.mark.macos_only,
+              pytest.mark.skipif(sys.platform != 'darwin',
+                                 reason='cook recovery pins the default Xcode and Metal SDK selections')]
 
 def cook_tool():
     source = Path(__file__).parents[1] / 'tools/package_cook.py'

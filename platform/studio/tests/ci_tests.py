@@ -21,11 +21,17 @@ def serial_file(path):
     return path in SERIAL_FILES or path.startswith(SERIAL_PREFIXES)
 
 
-def group_for(nodeid):
+def group_for(nodeid, markers=()):
     """@cc [owner:fontanierh,label:correctness] complete-ci-partition
     Every collected node MUST belong to exactly one CI group. Tests outside the two explicit
     groups MUST stay in the studio group, so new test locations cannot silently lose coverage.
+
+    The board group is the only one on a macOS runner, so a test that only works there (macOS
+    packaging, Xcode tool selection, a digest pinned to macOS rounding) is marked macos_only and
+    runs in it. Left in a Linux group it would skip and never execute anywhere.
     """
+    if 'macos_only' in markers:
+        return 'board'
     path = PurePosixPath(nodeid.split('::', 1)[0])
     if path.parts[0] == 'games':
         return 'games'
@@ -44,7 +50,8 @@ class CollectionGroup:
     def pytest_collection_modifyitems(self, config, items):
         selected, deselected = [], []
         for item in items:
-            (selected if group_for(item.nodeid) == self.group else deselected).append(item)
+            markers = {marker.name for marker in item.iter_markers()}
+            (selected if group_for(item.nodeid, markers) == self.group else deselected).append(item)
         if self.report:
             self.report.parent.mkdir(parents=True, exist_ok=True)
             self.report.write_text(json.dumps({

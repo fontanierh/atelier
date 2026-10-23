@@ -8,7 +8,7 @@ import xml.etree.ElementTree as ET
 
 import pytest
 
-from ci_tests import GROUPS, CollectionGroup
+from ci_tests import GROUPS, CollectionGroup, group_for
 
 RUNNER = Path(__file__).with_name('ci_tests.py')
 
@@ -86,8 +86,12 @@ def test_multi_worker_shards_preserve_collection_and_merge_junit(tmp_path):
 
 
 class _Item:
-    def __init__(self, nodeid):
+    def __init__(self, nodeid, markers=()):
         self.nodeid = nodeid
+        self._markers = markers
+
+    def iter_markers(self):
+        return [SimpleNamespace(name=name) for name in self._markers]
 
 
 class _Config:
@@ -118,3 +122,35 @@ def test_machine_wide_render_tests_stay_on_one_worker_and_cover_every_node_once(
     assert set(flat) == expected
     assert all(node.startswith('platform/harness/') is False for shard in shards[1:] for node in shard)
     assert any(node.startswith('platform/harness/') for node in shards[0])
+
+
+def test_macos_only_tests_run_in_the_macos_job():
+    """A skip in a Linux group would leave these unexercised, so they belong to the only job on a
+    macOS runner. The marker alone decides it: a path would name a game from platform code."""
+    for nodeid in ('games/x/tests/test_packaging.py::test_app',
+                   'games/x/tests/test_layers.py::TestLayers::test_digest',
+                   'platform/studio/tests/test_portable.py::test_example'):
+        assert group_for(nodeid, {'macos_only'}) == 'board'
+    assert group_for('games/x/tests/test_other.py::test_example', {'slow'}) == 'games'
+    assert group_for('platform/studio/tests/test_other.py::test_example') == 'studio'
+
+
+def test_a_macos_only_test_runs_on_exactly_one_group(tmp_path):
+    """Routing by marker must not lose or duplicate a node in the partition."""
+    (tmp_path / 'pytest.ini').write_text('[pytest]\nmarkers =\n    macos_only: needs macOS\n'
+                                        'testpaths = games\n')
+    portable = tmp_path / 'games/x/tests/test_portable.py'
+    portable.parent.mkdir(parents=True)
+    portable.write_text('def test_linux() -> None:\n    pass\n')
+    mac = tmp_path / 'games/x/tests/test_mac.py'
+    mac.write_text('import pytest\n\npytestmark = pytest.mark.macos_only\n\n'
+                   'def test_mac() -> None:\n    pass\n')
+    selected = {}
+    for group in ('board', 'games'):
+        result, report = run_group(tmp_path, group)
+        assert result.returncode == 0, result.stdout + result.stderr
+        selected[group] = report['selected']
+        assert set(report['collected']) == {'games/x/tests/test_mac.py::test_mac',
+                                            'games/x/tests/test_portable.py::test_linux'}
+    assert selected['board'] == ['games/x/tests/test_mac.py::test_mac']
+    assert selected['games'] == ['games/x/tests/test_portable.py::test_linux']
