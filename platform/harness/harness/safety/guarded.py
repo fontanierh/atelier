@@ -28,7 +28,7 @@ It samples the simultaneous physical footprint of the wrapper and its owned desc
 excluding shared services, under the same ceiling and admission. `memory-health-tree.json` is this aggregate
 receipt, separate from per-process reports. Lost telemetry or a missing successful terminal receipt fails the run.
 """
-import argparse, hashlib, json, os, shutil, signal, subprocess, sys, time, uuid
+import argparse, hashlib, json, math, os, shutil, signal, subprocess, sys, time, uuid
 from contextlib import ExitStack
 from pathlib import Path
 
@@ -247,20 +247,26 @@ def completion_watches(tree):
 def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gib=10., small_gib=None, kind='job',
         on_slot=None, watch=(), progress=0., track_tree=False, fitting_gib=None, pass_fds=(), aggregate_tree=False,
         on_poll=None, admission=None, performance=False, invocation_id=None, worker_binding=None,
-        completion_path=None, compile_memory_gib=None, script_memory_gib=None, launch_context=None):
+        completion_path=None, compile_memory_gib=None, script_memory_gib=None, launch_context=None,
+        queue_seconds=None):
     """@cc [owner:fontanierh,label:correctness] diagnostic-execution-timings
     Timing diagnostics MUST NOT certify outputs or guess command execution duration. Publication
     MUST require clearing the prior report; failure to clear MUST suppress publication without
     changing the guarded result. Reports MUST carry their invocation identity.
 
     Automatic full-capacity pressure no-GO responses MAY return to the same queue only after
-    positive owned cleanup and uncharged close, under the original 1800-second queue deadline.
+    positive owned cleanup and uncharged close, under the original queue deadline when one was opted into.
+    A queued job otherwise waits until admitted (queue_seconds, or ATELIER_CAPACITY_QUEUE_SECONDS, opts in).
     Selection-loss retries remain separately bounded; generic admission errors MUST NOT retry.
     Run one guarded child. The optional invocation_id is a UUID hex string. Admission time ends at GO acknowledgement
     (or spawn for an ungated child). Child lifetime includes gated startup. Execution duration
     stays unknown without an independently pinned gate-consumption event.
     """
     entered = time.monotonic()
+    if queue_seconds is None and os.environ.get('ATELIER_CAPACITY_QUEUE_SECONDS'):
+        queue_seconds = float(os.environ['ATELIER_CAPACITY_QUEUE_SECONDS'])
+    if queue_seconds is not None and not (math.isfinite(queue_seconds) and queue_seconds > 0):
+        raise ValueError('queue_seconds must be a positive number of seconds')
     identifier = uuid.uuid4().hex if invocation_id is None else invocation_id
     if type(identifier) is not str or uuid.UUID(identifier).hex != identifier:
         raise ValueError('invocation_id must be a UUID hex string')
@@ -305,7 +311,7 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
                                 on_slot, watch, progress, track_tree, fitting_gib, pass_fds, aggregate_tree,
                                 on_poll, admission, performance, worker_binding=worker_binding, _timings=events,
                                 _launch_nonce=launch_nonce,
-                                _requeue=previous, _queue_deadline=entered + 1800.,
+                                _requeue=previous, _queue_deadline=None if queue_seconds is None else entered + queue_seconds,
                                 **({'compile_memory_gib': compile_memory_gib} if compile_memory_gib is not None else {}),
                                 **({'script_memory_gib': script_memory_gib} if script_memory_gib is not None else {}),
                                 **({'_completion': completion} if completion is not None else {}))
@@ -547,11 +553,11 @@ def _run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_g
             # moves successful-spawn cleanup before monitor detachment; this fallback is a no-op.
             stack.callback(close_capacity)
             from atelier.harness.capacity_client import wait_for_offer
-            remaining = 1800. if _queue_deadline is None else _queue_deadline - time.monotonic()
-            if remaining <= 0:
+            remaining = None if _queue_deadline is None else _queue_deadline - time.monotonic()
+            if remaining is not None and remaining <= 0:
                 from atelier.harness.capacity_client import CapacityError
                 raise CapacityError('Capacity admission deadline reached; no resources held')
-            wait_for_offer(admission, seconds=min(1800., remaining))
+            wait_for_offer(admission, seconds=remaining)  # Until admitted unless a deadline was opted into.
         slot = None
         if lock:
             def taken(name, why):
@@ -761,13 +767,15 @@ def main(argv=None):
                         help='reserved background Blender fitting slot only (at most 3 GiB, 4 GiB limit)')
     parser.add_argument('--kind', choices=KINDS, default='job', help='recorded in the lock file; games and compiles '
                         'always use the big slot, and a compile waits for a small job to finish')
+    parser.add_argument('--queue-wait', type=float, default=None, metavar='SECONDS',
+                        help='give up after waiting this long for capacity (default: wait until admitted)')
     parser.add_argument('command', nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)
     command = args.command[1:] if args.command and args.command[0] == '--' else args.command
     if not command:
         raise SystemExit('nothing to run')
     return run(command, args.report, args.timeout, args.purpose, lock=not args.no_lock, small_gib=args.small,
-               kind=args.kind, fitting_gib=args.fitting)
+               kind=args.kind, fitting_gib=args.fitting, queue_seconds=args.queue_wait)
 
 
 if __name__ == '__main__':
