@@ -1,6 +1,7 @@
 """Construct only one logical Hidamari asset and publish bounded mesh inputs, not FBX."""
 import argparse
 import json
+import importlib
 from pathlib import Path
 import sys
 
@@ -14,21 +15,28 @@ from atelier.export_manifest import name, real_directory  # noqa: E402
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--asset', required=True)
-    parser.add_argument('--city', type=Path, required=True)
+    parser.add_argument('--city', type=Path)
+    parser.add_argument('--context', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args(argv if argv is not None else sys.argv[sys.argv.index('--') + 1:])
     name(args.asset)
-    real_directory(args.output, create=True)
+    real_directory(args.output)
+    from hidamari import source_context
+    context = source_context.read(args.context, args.asset)
     import bpy
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    from hidamari import build, surfaces
+    from hidamari import surfaces
+    from village import mesh as kernel
     from region_mesh_parts import plan
     surfaces._materials.clear()
-    city = json.loads(args.city.read_text())
-    builders = build.asset_builders(city)
-    if args.asset not in builders:
-        raise ValueError('Unknown logical Hidamari asset: ' + args.asset)
-    source = builders[args.asset]()
+    if args.city is not None:
+        real_directory(args.city.parent)
+        if args.city.is_symlink() or not args.city.is_file():
+            raise ValueError('City constructor requires its explicit layout projection')
+    city = json.loads(args.city.read_text()) if args.city is not None else {}
+    constructor = importlib.import_module('hidamari.logical.' + args.asset).construct
+    source_context.apply(context, kernel)
+    source = constructor(city)
     if source.name != args.asset:
         raise ValueError('Logical builder returned another asset')
     if surfaces.textured(source.name):

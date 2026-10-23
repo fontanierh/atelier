@@ -1,0 +1,524 @@
+{
+  "assets": {
+    "Bush_HD_Amber": {
+      "palette_sha256": "b5dfc53121d0c1a31b9957f1c0816779871c95d011f1c63db79850e976ac8251",
+      "parameters_sha256": "3ca0bd441b0ea1606ac5181361b56b83e4dfcf693f422c5ec71c840e2357c928",
+      "reference_attribute_sha256": "c93e2952920fc83031fbbdd540c49f67840e7b300bb0452211a2507722581812",
+      "triangles": 3646
+    },
+    "Bush_HD_Autumn": {
+      "palette_sha256": "b5dfc53121d0c1a31b9957f1c0816779871c95d011f1c63db79850e976ac8251",
+      "parameters_sha256": "99ee9080b1ecad9f3dec9ec180cae6e22e526289672eb44e7d6d68f599a3057f",
+      "reference_attribute_sha256": "8eeac2de939b4fec2bd57c6c9c469ee98c2cb408ce755b792324d30e7aa8062d",
+      "triangles": 3310
+    },
+    "Bush_HD_Azalea": {
+      "palette_sha256": "b5dfc53121d0c1a31b9957f1c0816779871c95d011f1c63db79850e976ac8251",
+      "parameters_sha256": "7ad5ebf466df7a45f57451b55ba86e936449631103500a621b73cacacb13bde8",
+      "reference_attribute_sha256": "a5739d6aec66d1ec9687cfebf4472bef446f790a2e957162e0ff57bab8ea34c8",
+      "triangles": 3982
+    },
+    "Bush_HD_Ball": {
+      "palette_sha256": "b5dfc53121d0c1a31b9957f1c0816779871c95d011f1c63db79850e976ac8251",
+      "parameters_sha256": "6730cfc73131cb0af762f49cd0262364088c9b97b0cde7bde4e5c2939d39525b",
+      "reference_attribute_sha256": "b0d315ed6c430f3495075257b66601d69aab4ee900374a97cfb3b2b86a0ec5a9",
+      "triangles": 2574
+    },
+    "Bush_HD_Hedge": {
+      "palette_sha256": "b5dfc53121d0c1a31b9957f1c0816779871c95d011f1c63db79850e976ac8251",
+      "parameters_sha256": "298a9717a4ecf9c49103e736a7840c068748a9538aa45a810ac541955d8aa6a2",
+      "reference_attribute_sha256": "04d2d635ea7d3d15cb269c66eef9b59e3e648466f88488caf77760955f6fd5cd",
+      "triangles": 4062
+    },
+    "Bush_HD_Mound": {
+      "palette_sha256": "b5dfc53121d0c1a31b9957f1c0816779871c95d011f1c63db79850e976ac8251",
+      "parameters_sha256": "3ea6762d58e97403d5dac8fd43e93ca9fea66d5e19298f6c07645d806e53918b",
+      "reference_attribute_sha256": "fae8d9c770b53ee3ae4c077ec53dcf650eb4b21c6adf14c456f7a61649bedb64",
+      "triangles": 4966
+    },
+    "Bush_HD_Niwaki": {
+      "palette_sha256": "b5dfc53121d0c1a31b9957f1c0816779871c95d011f1c63db79850e976ac8251",
+      "parameters_sha256": "30dce5488e6a89d424e29921024a76259ac51911e3877b1b2dee7de449e1a3ec",
+      "reference_attribute_sha256": "e248283dc46cbe56dbdf74830a7c30aeb774413ebcb895f5bda5b8487e6f12a1",
+      "triangles": 7266
+    },
+    "HD_Arcade": {
+      "palette_sha256": "fc38b105be7716ed665813567b5b91c5914680a82c89c0fa1dc739a4f3c34558",
+      "parameters_sha256": "8f5f2705511d755ace585f96b039d8cd1fc0d690099e77cab0b69c2f35a1e068",
+      "reference_attribute_sha256": "ab05d2f0b7480b3c7928f70efe756f411c71613a69f9d2d4edf0e48291439a41",
+      "triangles": 14026
+    },
+    "HD_ArcadeFloor": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "33590834f11c2c009bb64e00cecf245f99ed7287a0fe21285d2f8b97ae9f5f86",
+      "reference_attribute_sha256": "ba86266195bfc60dc30da50e160195d4ebd2b42bb36cdaafc6ce3eac2767beb9",
+      "triangles": 23888
+    },
+    "HD_ArcadeGate": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "1bed7f5edf6d649c8bf26d73d81be3767b4aad38aa65b48180fd00955a76fbeb",
+      "reference_attribute_sha256": "274a7fdb74bb16030f11087ae980c9196b6d4bd52d828fdf98ada8583a26fb96",
+      "triangles": 3256
+    },
+    "HD_ArcadeLanterns": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "3b739746b624e6daeeb2473b5dea14d57ecf87fcc38ba29051732074a86801ee",
+      "reference_attribute_sha256": "7ccc9470ccab380b3c358ed611f16ca16c54251de6ea4cdd00e6536c96ec806b",
+      "triangles": 23786
+    },
+    "HD_ArcadeRoof": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "8762894a8bf936be0c1a67417f1bb19d8a2f309d67bf0699d76a0b23db209f2f",
+      "reference_attribute_sha256": "3360f8732a2e29825f0b4df36090c1646c271d53236d3817dcb786801d45f3c0",
+      "triangles": 672
+    },
+    "HD_ArcadeShop_00": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "3e7ac559aa290dbd2cfd1fb8c720f2260bba9ddd9ad331b263bd65d855c2ae0f",
+      "reference_attribute_sha256": "937a5a4145f5adf53f4118b248bb2f8380be1205e74a8b7d22467226b9a9e3c6",
+      "triangles": 23956
+    },
+    "HD_ArcadeShop_01": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "a84eccfe47003e131eab8e50fa7065762fdd06352b10f5f33697cfd8085e3ab1",
+      "reference_attribute_sha256": "7272e1d84043ce00d443e5bb2a99f65d9a94129671ab39acc2bf1e2d838bc6ef",
+      "triangles": 13996
+    },
+    "HD_ArcadeShop_02": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "b13591e289e1902930f41fa4797f923375193759d806cef65a7a8bac5060b60a",
+      "reference_attribute_sha256": "17b3e6aabe28380be8d5e4144f03b250f5b16cef966a8b7c113e4c8308ca9794",
+      "triangles": 7944
+    },
+    "HD_ArcadeShop_03": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "4c20e343892c2bd8ed6f0e11b5c822d0edc1cd507d35b0fe74846db87e362b6d",
+      "reference_attribute_sha256": "8a15cda62b0256b0fecb8b8161d18ebe31e8576512188b6a8a07efcaf9281259",
+      "triangles": 12440
+    },
+    "HD_ArcadeShop_04": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "6d82993b0699f48fe8dff455f5d0c915b5774f561ce284900d5959a20e8d63fb",
+      "reference_attribute_sha256": "bb613020ebfe91019cd0e3913ef6ff0b58e5152f1d8b7f30d330b37bdb62f777",
+      "triangles": 7162
+    },
+    "HD_ArcadeShop_05": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "6118a741da0bb628d3541b9c119007feab999c63e8e2609d88bb030fd5970a45",
+      "reference_attribute_sha256": "354d583ef7684d3994670886cdcbdd2a0b79d78961bded843f4fe522889200e8",
+      "triangles": 12888
+    },
+    "HD_ArcadeTree": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "b4dcabce96a127244bee689a0e6a69526dd89ddc67abc7ab12cd144080c65640",
+      "reference_attribute_sha256": "916ad5b240e80ee0c991640e137a2a9780e041e51efc0db671cbcf95a7ae7248",
+      "triangles": 89532
+    },
+    "HD_Arrival": {
+      "palette_sha256": "b108e8648df09c63975e08014a80e96d0c2fac31b63482f2f928f4291eaa2616",
+      "parameters_sha256": "b1ad1ea7b11b9765e21ee5ac2f167d08eed37c9bd7122c1aa6222c7e714f54cd",
+      "reference_attribute_sha256": "2e709056398eb95fe523a2fc3e5c313764fea8133cf2dd51110bbe0bacef4a67",
+      "triangles": 97922
+    },
+    "HD_Bamboo": {
+      "palette_sha256": "d4a94972333d139c2a389eafd38409bddc79576f9f7cb89021430e3baab93537",
+      "parameters_sha256": "7e1962dfd197648ca2634f1821f9b289491e404f1a2da935af1b55a2a721ce92",
+      "reference_attribute_sha256": "cafd40bd7e92f7cbf0330c374e372c0498823a65b9a577b6d458a99aeb8f246f",
+      "triangles": 1284
+    },
+    "HD_Bench": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "8e84cb90ce338195c1f0266bc6594e1d249422ee4aa2a0f212055ace947b1026",
+      "reference_attribute_sha256": "e3596dcb7388ca61cfeadf20533ba9d67917d50a43fad889294dcbe1d882a5ce",
+      "triangles": 48
+    },
+    "HD_Boat": {
+      "palette_sha256": "fc38b105be7716ed665813567b5b91c5914680a82c89c0fa1dc739a4f3c34558",
+      "parameters_sha256": "4b02a1707a78bf6c35c1aab27a9625acdd7266fbd40a0290ca21a97c14dcbbff",
+      "reference_attribute_sha256": "4fe0a4d56dd485522dd880756293dfefecfcd8870b63cfcf49e5c97eb109cd67",
+      "triangles": 13108
+    },
+    "HD_Bollard": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "d15bec87c63875653b1eea6342552fa6b493f6a31b68e76f42a7c5e90560934e",
+      "reference_attribute_sha256": "7b39b5f15e096a17e61687dbc7e35d8ff3a48ad17c62f05fca2686a6891bac94",
+      "triangles": 48
+    },
+    "HD_CivicGardens": {
+      "palette_sha256": "fc38b105be7716ed665813567b5b91c5914680a82c89c0fa1dc739a4f3c34558",
+      "parameters_sha256": "174b7c5f2c0fa2c2b39899bf91f951d346ff2278c925ea19205c59ec135047b9",
+      "reference_attribute_sha256": "62b192abf021d5f96eed5e84fff999f11e1865c5b8e7bcdd011c0ff7145db99a",
+      "triangles": 217670
+    },
+    "HD_ClockHall": {
+      "palette_sha256": "d7f15e5365a8805bebbca10ee2c9d68378d4b80cecdf8d9e183c7e34af195b4b",
+      "parameters_sha256": "0fa1167eb47bb3d00c5a1e1667347251003ad4780ebd86923e5c77f03d146feb",
+      "reference_attribute_sha256": "ef6c6581e638bef95e986d082d02e4964d7da511200895c9e63a69bbb1d2f51e",
+      "triangles": 41986
+    },
+    "HD_Crate": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "2b40b7c929cbacfb0cffafab9100a0288026202bb79e0971ad0d9de11b4560af",
+      "reference_attribute_sha256": "d8052967a1c13c1817e293eac73c8e78dbd61333903d7913e037f88cc03d52af",
+      "triangles": 72
+    },
+    "HD_Graves": {
+      "palette_sha256": "d4a94972333d139c2a389eafd38409bddc79576f9f7cb89021430e3baab93537",
+      "parameters_sha256": "da69dc492355e2353d75fbf53a71ee3e1914f820e66695616c9da7ecca6b0adb",
+      "reference_attribute_sha256": "6bbad8e89a5b75ee5d7fc60a284f1993a4456828b39c254a2fc33ea4e078d685",
+      "triangles": 3672
+    },
+    "HD_Harbor": {
+      "palette_sha256": "fe6ecbb530d4fb35a1baef12e62a1a23d21a8088ce7e45495b8d48beb2b190dc",
+      "parameters_sha256": "43d6ee95d1ef18f6167bf605f8d321921e3507a82770403392a8344f2de5b226",
+      "reference_attribute_sha256": "5e000e2ce489b71014ed6228544898055096b8c462dcae297b9577e5d13cde2e",
+      "triangles": 190920
+    },
+    "HD_House_00": {
+      "palette_sha256": "de72eb912e7fca7152fdbe081d48996966c107870ed420e1d409379c7671d579",
+      "parameters_sha256": "425fc17f928d0434b817c291eb7fe802951966ff49cf0eeb41fe01a73e332c57",
+      "reference_attribute_sha256": "a41bc39193c07813d5989a9983fb73564f57003fe52f2e660b8d07d2ab62aaee",
+      "triangles": 14835
+    },
+    "HD_House_01": {
+      "palette_sha256": "2aca3fbbfb2445a6ab0878cf520faec91b9568f08de90ac6310ce7a4277a2d6b",
+      "parameters_sha256": "09992e8db250aea4f312d50cad8eea87668ea24083f4ee1884c847cded1d1721",
+      "reference_attribute_sha256": "c60ba40a5d235071021e12db7ba71e3cb8f9ca195680697c7aa149c075f45d8f",
+      "triangles": 15379
+    },
+    "HD_House_02": {
+      "palette_sha256": "2aca3fbbfb2445a6ab0878cf520faec91b9568f08de90ac6310ce7a4277a2d6b",
+      "parameters_sha256": "61e3d754af616be2d174ec7e335620d393ec0f7b8424da8993c52cfebc418ec0",
+      "reference_attribute_sha256": "21df0335aa8629e50c30b559b3b1e090d84b6a945da6bff653f1f409d45348f8",
+      "triangles": 12793
+    },
+    "HD_House_03": {
+      "palette_sha256": "2aca3fbbfb2445a6ab0878cf520faec91b9568f08de90ac6310ce7a4277a2d6b",
+      "parameters_sha256": "54906b04d925291d229aef059ed83b6e401ed73ebbfbee38774043105c45dfac",
+      "reference_attribute_sha256": "db78e09c1b1f42ab054f748a35a5967c51f255a4de7e8aae9b26286198c31a26",
+      "triangles": 14459
+    },
+    "HD_InlandWater": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "8f3825bfa7ebd107bdba41cf23133b7fc9b20b542311ffad3dc2d16600bf1801",
+      "reference_attribute_sha256": "0ce005440b0d03d20823c51bbca1517f110f51bbd32287700f4d6101da1f9682",
+      "triangles": 298
+    },
+    "HD_Lamp": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "63e7e3d77031c6d62126ea1557cddd908cc0079634b92b5b7de12ed445a8e581",
+      "reference_attribute_sha256": "fde812518dcb6a19791c60b7901f08349921359941909a8f5737ac4763d84e8d",
+      "triangles": 264
+    },
+    "HD_LaneEdges": {
+      "palette_sha256": "ba9ae5b4c45a7281d36c604c903b600f7180909f53fa199992a70620279203b1",
+      "parameters_sha256": "10eef74a0652e34c3cefc044934b3cbb158c59add42804687f50454b052ba12f",
+      "reference_attribute_sha256": "f4544c030da129b89bea60e9cc3f6d769012f0bb8810d37b68003c7ea53c4954",
+      "triangles": 29300
+    },
+    "HD_Lighthouse": {
+      "palette_sha256": "fc38b105be7716ed665813567b5b91c5914680a82c89c0fa1dc739a4f3c34558",
+      "parameters_sha256": "661c3579a9dd2346d938ec28dbf29f785f3cae0c7563ec2ab86949f1b63680bd",
+      "reference_attribute_sha256": "a831a9c01d7734d761e6a9fb00414ab1c7dde85bdd725d0b41a9d9d475450105",
+      "triangles": 180
+    },
+    "HD_Market": {
+      "palette_sha256": "fc38b105be7716ed665813567b5b91c5914680a82c89c0fa1dc739a4f3c34558",
+      "parameters_sha256": "a88d3e1cd4173cf7afb4bc5b08485bf3957cdc9067ca848196c83b54760b3ee8",
+      "reference_attribute_sha256": "b80a33994fa4617f5a046ff1fd2fe2b8862dcc5b4f85467fee6893390f8c4164",
+      "triangles": 3894
+    },
+    "HD_NorthApproach": {
+      "palette_sha256": "2aca3fbbfb2445a6ab0878cf520faec91b9568f08de90ac6310ce7a4277a2d6b",
+      "parameters_sha256": "bccc6c640240b5b6fd7ee75388e35de8e699d1259e62f7d65bc7f3b48bdecea5",
+      "reference_attribute_sha256": "3f1a5073f2c6b25db7ca37b2b91697019d043955d66411533ddb49f44237da29",
+      "triangles": 26800
+    },
+    "HD_NorthGate": {
+      "palette_sha256": "2aca3fbbfb2445a6ab0878cf520faec91b9568f08de90ac6310ce7a4277a2d6b",
+      "parameters_sha256": "cfaa9398d0f6091c69e7a16559d21014739fc663d93ebfadc0eaba70aeb724c9",
+      "reference_attribute_sha256": "9f8212a194775443d2a212086479e64515c18a85335d6bf9597d243d2a0cde89",
+      "triangles": 64000
+    },
+    "HD_NorthMountains": {
+      "palette_sha256": "2aca3fbbfb2445a6ab0878cf520faec91b9568f08de90ac6310ce7a4277a2d6b",
+      "parameters_sha256": "65ef22c5f5ef38dde2aa375272179ea489f232d3835ee202d62c7497fdef8562",
+      "reference_attribute_sha256": "44a9c413cd1960876aea2691be96c5b6de36a315c082b08d9dabe536d6a55984",
+      "triangles": 889146
+    },
+    "HD_NorthParkTrail": {
+      "palette_sha256": "2aca3fbbfb2445a6ab0878cf520faec91b9568f08de90ac6310ce7a4277a2d6b",
+      "parameters_sha256": "573f0618ddd64d2d1336a85ad0031a3f6e1af29cda2e7dd9ed2d93dcb9338959",
+      "reference_attribute_sha256": "c52cb8873002f924a3111600aa0c50ce8687453edc545869cfe01f0c92337909",
+      "triangles": 3810
+    },
+    "HD_NorthRockA": {
+      "palette_sha256": "2aca3fbbfb2445a6ab0878cf520faec91b9568f08de90ac6310ce7a4277a2d6b",
+      "parameters_sha256": "161092cb0d9bbe1eedc172a8db02e8ca1db80c4e3b150ad6cd147012f1586232",
+      "reference_attribute_sha256": "c7a79f4cae6f1f88c48bc30d0ac4c94d41a31eb54ac5a3241fb3939dd15c05f6",
+      "triangles": 49
+    },
+    "HD_NorthRockB": {
+      "palette_sha256": "2aca3fbbfb2445a6ab0878cf520faec91b9568f08de90ac6310ce7a4277a2d6b",
+      "parameters_sha256": "8fb7fe4ac3ffb0e3b7adfbf75f0751947f932d2478ac7fb620bd7f5c0f3d624a",
+      "reference_attribute_sha256": "229fc8e7ac4aa3c625a4fc1794b180fb160313ba63ada54821bb294f4c3ab7e6",
+      "triangles": 49
+    },
+    "HD_NorthRockC": {
+      "palette_sha256": "2aca3fbbfb2445a6ab0878cf520faec91b9568f08de90ac6310ce7a4277a2d6b",
+      "parameters_sha256": "756ada1d73a63cd600414da452dcd2426c35ed0bbc5e039f690ff2058ec36a34",
+      "reference_attribute_sha256": "d1fbba8e7596232c162412dc41f6dafaf7877af4856f30c722c5cfbf194f5558",
+      "triangles": 49
+    },
+    "HD_NorthTrail": {
+      "palette_sha256": "2aca3fbbfb2445a6ab0878cf520faec91b9568f08de90ac6310ce7a4277a2d6b",
+      "parameters_sha256": "4e84fdc610edfe694b933be89f07f7d05d3003ba0c297ea13339557f04f17754",
+      "reference_attribute_sha256": "f6ae4d6461e697fbf41def3ad9a12b33a75031e9372bb84407f50aad4b65f2f5",
+      "triangles": 1230
+    },
+    "HD_Pagoda": {
+      "palette_sha256": "b5dfc53121d0c1a31b9957f1c0816779871c95d011f1c63db79850e976ac8251",
+      "parameters_sha256": "1b94456a9dbafc4fe68e9af3abfc2e5b9da5bcb9899b96f039ce467609ba4022",
+      "reference_attribute_sha256": "b6ca16b8a069ff1da8fc89ff861a467038c6952ed66cae955f77c7b37bb38900",
+      "triangles": 1842
+    },
+    "HD_Park": {
+      "palette_sha256": "fe6ecbb530d4fb35a1baef12e62a1a23d21a8088ce7e45495b8d48beb2b190dc",
+      "parameters_sha256": "54b1b4c94dcc0eb7392057042a1b9321064323a0016206f3999e0119264d7633",
+      "reference_attribute_sha256": "275876f9ee7de608920a0e66b594c1554cd3e16a9816e9b5ec7271c37f58b77a",
+      "triangles": 138745
+    },
+    "HD_ParkGrounds": {
+      "palette_sha256": "4b9f0e3d51109301c9e59ce6c5ec4d7c351095f23047e4cbd4b4ce6bb522e668",
+      "parameters_sha256": "47998e3fde897f1d017d4885117ad7695d7b6a1d2827894d3f8150b9740e7be4",
+      "reference_attribute_sha256": "10fb1733f42269eb9e99552f3c7a2b18fe03eac633a8b39865a5ecdbe2b8c735",
+      "triangles": 3276
+    },
+    "HD_Pavilion": {
+      "palette_sha256": "fc38b105be7716ed665813567b5b91c5914680a82c89c0fa1dc739a4f3c34558",
+      "parameters_sha256": "d26ccf0741b5352cf337ec04724d8cef9bb7bb41c352f6014d156e395b5f41a6",
+      "reference_attribute_sha256": "d92e6b09e41b6610c12f7aa0a911382e563d15b5e322080fc0e2bc4e17e6c3d4",
+      "triangles": 390
+    },
+    "HD_Planter": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "a90b717fbb96eaec2caa4679696dd4f52a7b8f8e714673443902b3692e1b03c2",
+      "reference_attribute_sha256": "efca7824587fdf3e42d9090a69904fec68caaea3f44716491f8b23dd745ad165",
+      "triangles": 552
+    },
+    "HD_Playground": {
+      "palette_sha256": "fc38b105be7716ed665813567b5b91c5914680a82c89c0fa1dc739a4f3c34558",
+      "parameters_sha256": "fa0b76f3f0c37f62ac3409df5f3c2e2d46d39190df4ba12727f7fd10e0ee3181",
+      "reference_attribute_sha256": "fd499376128101c03a9aa51b6ec346e9f5d7c964895855045ca7c508df837ba1",
+      "triangles": 132
+    },
+    "HD_PlazaFloor": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "d823c8d05c1934a095098aff9a450c9295af24af26fd4cfcfb98c9bf7ebe21fc",
+      "reference_attribute_sha256": "7245d4aed5f90d78a740c9f4a1d327b1f5bcfec5e38986b393802583ec0deae1",
+      "triangles": 39816
+    },
+    "HD_PlazaFountain": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "a69bb5629110b5813553149847a0f5e481217744b0edfe8e00e6e8ba2ebf7ed2",
+      "reference_attribute_sha256": "459d1b78e70fe45f1c1df7aab850452e6e1ad767e282bd80b80b76a695b32e80",
+      "triangles": 4350
+    },
+    "HD_PlazaShopApproaches": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "f8a5bbf00a600a814c99ac0b78773d22e2bd16acc9afc00830a1f1af742451ca",
+      "reference_attribute_sha256": "66d9a4a44c87ca01c5daa471a83f39b43eed39d0c56a749638b9be8402bd4c9a",
+      "triangles": 15644
+    },
+    "HD_PlazaShopSides": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "50ad28e7f00e7667e158d6a8735ad3362c7b3b0a4e7125bca321fb2fc9c4c2c9",
+      "reference_attribute_sha256": "6ada3e7c16f614b9578970a2c24b07d516f561bb1d7270319465bd22c8bb4e05",
+      "triangles": 4802
+    },
+    "HD_PlazaShopSidesCorner": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "5d48047f17360b3433a8e6268cfd713580f4bf06ef5094006cf1ee933cc9ac59",
+      "reference_attribute_sha256": "a417a4c9c3f53a3723c90ecf7c951b86b2a572927f868950208af6d911d83c18",
+      "triangles": 4802
+    },
+    "HD_PlazaTreeGold": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "01fd870a05a377cf8fae471faf44806a8c35c8fd18f1176e37e8e6390ceab610",
+      "reference_attribute_sha256": "08fe8199c3a3fbe9eee4245077c33ce49aa5a5f59d7307bdc21209c5e428ef5f",
+      "triangles": 56964
+    },
+    "HD_PlazaTreeOrange": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "f670828882860c7862b218b8b53368b05ddcc85aadcda5bfb5799fd1bd7cded2",
+      "reference_attribute_sha256": "1c329e69b583f128ce17cfc5581e4d855a8690f22e0e7f34fdf7c7929eebc613",
+      "triangles": 56964
+    },
+    "HD_PlazaWater": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "0dbc12b8f40e37f9582824d55ff906106ea550e90f1245d47e3b9e3e7f71cbd3",
+      "reference_attribute_sha256": "979eca637becaf1e30844540c190ce3806b66449919010423f8c9e4b299710c8",
+      "triangles": 2428
+    },
+    "HD_Precinct": {
+      "palette_sha256": "d4a94972333d139c2a389eafd38409bddc79576f9f7cb89021430e3baab93537",
+      "parameters_sha256": "8e76b7c6d23407ce90570512247fc0bf3d68bb9f8febfea92a25c690a4336fd7",
+      "reference_attribute_sha256": "3fdb55aa1ee8cbb2aee3791a98cdccff7e815e54d8f86910d16a5eef02809bbf",
+      "triangles": 1482
+    },
+    "HD_Sea": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "56a34ad4737c5b85dded955bd0d47664a53bb8b1a04391d05d79956e56e39836",
+      "reference_attribute_sha256": "3b68258ed79c0253917daa6ec4477ddaaf1488369645d1781497a942c3ffc4c8",
+      "triangles": 2
+    },
+    "HD_Shop_00": {
+      "palette_sha256": "2d14b5979dcf1c3958e87c018404cf277314baa16bbc01f586664066ca9ddef6",
+      "parameters_sha256": "181770853acb3b125743339e8c06fec5e43c9ff77a3fb88e05751016419fcbb5",
+      "reference_attribute_sha256": "f013e946fa80022afdb086aed640039539b47d33303492c2bb4123bc7231a7ce",
+      "triangles": 43969
+    },
+    "HD_Shop_01": {
+      "palette_sha256": "d2a45293e661f12217c2e1727fa4d6d8a7e20d049900e53f134dda25b02b8fb8",
+      "parameters_sha256": "b9417ea9a4f6322914b347a964385626d22797351dce4cd15da00e8be3094dc5",
+      "reference_attribute_sha256": "a632f648c8fc113333df6957a56e6c5bfe2d67f35df6dfd70c125d3db717785d",
+      "triangles": 44968
+    },
+    "HD_Shop_02": {
+      "palette_sha256": "763e23b9a3a77577222f2c30a3967153aaef81b1eb77e9980cd0452c4cf6a187",
+      "parameters_sha256": "d66e130dd01e0dcffbee7f85194807316fcd00bb59247de3f569b0497dfe63db",
+      "reference_attribute_sha256": "513d167c0fc4173315d46ad7781d6639db6cee5c1de438ae9c5bfa102c03368f",
+      "triangles": 35624
+    },
+    "HD_Shop_03": {
+      "palette_sha256": "bf6eb8934b37af1e4f7db71ece6235afd1839eaf977e23227a3643f032dca9a4",
+      "parameters_sha256": "05d1db1525c11e11ff45156b94d4a2ada93d37928353d21b0d8ee74c7118e20f",
+      "reference_attribute_sha256": "a51c2466210478015e4d24203c9866478488212487dd71b2282bf41e16e9b5cc",
+      "triangles": 20279
+    },
+    "HD_Shop_04": {
+      "palette_sha256": "c7e8f29be928ac45fa4284a75f6d6f65f26591d572f6b08e683e6924103f94a4",
+      "parameters_sha256": "e28800b9cf4eaace93b3120cf02f252c3da4654eb4ef0502c63c1fd0bad74bac",
+      "reference_attribute_sha256": "66cb23dfee44883430c48f61dc87818be5f43cfa31f264c224edeab82297e603",
+      "triangles": 37606
+    },
+    "HD_Shop_05": {
+      "palette_sha256": "d2735d787b326e6d2ae81f76ab752405261e67660264ab84d65977a6033061b1",
+      "parameters_sha256": "d686c1576c62d5ea678a40bb8d20bf6dff25a6793386c54b6044bb767cfbcbc4",
+      "reference_attribute_sha256": "79f96ccf73f5966201610a5b3b762c092b9e20dada11b015a9efea5df269aaf1",
+      "triangles": 30300
+    },
+    "HD_Shop_06": {
+      "palette_sha256": "5bca39ac294cf61d783dd25aa227b93e2b942be861db1054018d3b477f4a50c9",
+      "parameters_sha256": "cfb68568265001dd6e207662eba59e3f41e2d3b89d9b5637ecca77750e187b9b",
+      "reference_attribute_sha256": "62ad641883e7491ff9f098552de47ffb929c28ec6c33e9fb31498ba1a5a4054d",
+      "triangles": 44924
+    },
+    "HD_Shop_07": {
+      "palette_sha256": "b74de7bc3c0cac05033a3dbdd02284279d0e36a127fa0867eefb1b8f0f2d3486",
+      "parameters_sha256": "e0962658a64f00167254307c6a06e2be8681ec0ca737a4b89123b5b0c6e969cf",
+      "reference_attribute_sha256": "1be35ccf671603669bbe4e5b845f2c75175ca4c4baaa3fac3d97d09dbdaa6f3d",
+      "triangles": 26500
+    },
+    "HD_Shop_08": {
+      "palette_sha256": "082296daa1c09142e41713734286382e4873dac95751bff0a1c5a0d9db020827",
+      "parameters_sha256": "328c94ef389cd74eab3ac164ee07c3dc603053ed710da800de982c517793d9b4",
+      "reference_attribute_sha256": "0914cce99ef59dfd1ced73a70d2d89d58dc801c08643f7b6e92d1b143c1409d8",
+      "triangles": 43969
+    },
+    "HD_Shop_09": {
+      "palette_sha256": "466c5b58d33138bbf1cec9640dab620a610f24dd431b732b9061c98e1424637c",
+      "parameters_sha256": "cad0cf6011936f996ed7b8ac30d928ba92db1c5c51ed9a21c580ec312392d1ac",
+      "reference_attribute_sha256": "dc641cfe3e021ebc841ab44aec3574efe978c5dc73b89de9fba2024bfff28730",
+      "triangles": 43406
+    },
+    "HD_Shop_10": {
+      "palette_sha256": "5307d0009a7fa433c542f0406858536ad49df4008c89f34bfd66880bfd16b728",
+      "parameters_sha256": "b3013ce4ed9ca05b8bdd598e8b40eb985384bf12b14565e5d33f5e40ce1bf36a",
+      "reference_attribute_sha256": "127f6afe3dcd8a5f00260325c5bcf85feb35e624f21909d6c591b4974f9ae145",
+      "triangles": 35244
+    },
+    "HD_Shop_11": {
+      "palette_sha256": "5307d0009a7fa433c542f0406858536ad49df4008c89f34bfd66880bfd16b728",
+      "parameters_sha256": "dc54631ee17c93cbec230159943b3f171f35619cab051a04397e1b6011a27f6f",
+      "reference_attribute_sha256": "cd31e587eae70363a72e7c0afb1609627f7bc62e71541a42fdab6f2b965714dc",
+      "triangles": 25789
+    },
+    "HD_Shop_12": {
+      "palette_sha256": "28b32cf674206b0abd6a65c25a61a689d4ab7845aac4f30550991153a80dcbd5",
+      "parameters_sha256": "01b31eea0b0cabb9088ee8c213deea5d10053adeff3d1ad454e16dc977adb5b8",
+      "reference_attribute_sha256": "627e836e1834041027d926d33439232cf10fc009298ea6a2ade28c2c590319bf",
+      "triangles": 49136
+    },
+    "HD_Shop_13": {
+      "palette_sha256": "a2c685ed0b81829697b4467a80f5eed945a4a2cb035c702c2a4b3cf8ae807fad",
+      "parameters_sha256": "5e921f0f8d429e0e440453672f8dc7c4c2553d45a4dee9fc3b83229c3876d1f5",
+      "reference_attribute_sha256": "769125e9cd862b7f3ea09fe16fb2f4cb24e386e12aaf7a7f43305fe2194f86dd",
+      "triangles": 31436
+    },
+    "HD_Shop_14": {
+      "palette_sha256": "741902193f4a1fcbb23213abda03759bc8fabec6201da0cad9e1b0a9161b029c",
+      "parameters_sha256": "58ea08b25c4146c19267fa2e8a53e2779a3ca1eddf904938cca6d66567513946",
+      "reference_attribute_sha256": "76afa6fd573d060f83a7952a582ba5a2c9c34d03f9e26a6b3ca995544bff9ee5",
+      "triangles": 35204
+    },
+    "HD_Shop_15": {
+      "palette_sha256": "e640006d27789c64cd53543e54e2e6766ad08c44246fb6da706ee0873302986f",
+      "parameters_sha256": "3791bfa39e5bba74e8a8fe34d9b088ad0425c1734e7c103152f8d9c249448e91",
+      "reference_attribute_sha256": "9bc46412c5f0e36ec1da3ad8752ae85134e25f2b1233560de488597a2d42c06c",
+      "triangles": 30508
+    },
+    "HD_Shrine": {
+      "palette_sha256": "c3cf23c220ba5ec4edea1dc425f46196b2d2b88b8cbaee76ccc19008e2c7af51",
+      "parameters_sha256": "18ac4dc7bafb090405443d60ffa972b1faf84e7b6cc003a66d293a0e92b454d1",
+      "reference_attribute_sha256": "edf57653c603700cecc523358566ee96198347acb73f250559deba7a597afa9d",
+      "triangles": 27668
+    },
+    "HD_Square": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "1da0b49e815c5994d563c8713f1f5ab15e315e702e419ec76f741d83e2006d47",
+      "reference_attribute_sha256": "e68521d669f5a6a4ace2aca2160667a2125cda86fdad1c86924cc06fc0d375eb",
+      "triangles": 281823
+    },
+    "HD_Station": {
+      "palette_sha256": "d7f15e5365a8805bebbca10ee2c9d68378d4b80cecdf8d9e183c7e34af195b4b",
+      "parameters_sha256": "0fddeb3a4898b459d6723544e08d31ca89dc2848d055fe63937fad156b602f27",
+      "reference_attribute_sha256": "6ff845168d60138102816dce8082c05a1ecb2e2a348f8b05e3413e8213b4741f",
+      "triangles": 41218
+    },
+    "HD_StationYard": {
+      "palette_sha256": "d4a94972333d139c2a389eafd38409bddc79576f9f7cb89021430e3baab93537",
+      "parameters_sha256": "fbe06a75757b2d0300e613fd6aaa3051ad4ff918589869f7974f6c28af4ec59b",
+      "reference_attribute_sha256": "fbf0841d75bf227c7bf75a873e1280c6216cad365cc5bae7063af7f5cafc02dc",
+      "triangles": 936
+    },
+    "HD_Streets": {
+      "palette_sha256": "96246a8b54df319d93442e8dca59cc97daebebf701d1728160dcde4ca6f052cb",
+      "parameters_sha256": "fae021a958b6240eaf9bf2e6368e3cfebab47b6b596bee693d9c466c7f593629",
+      "reference_attribute_sha256": "3b7109ef305e69bf67c92871fa74fa14f8168565a7db26c3f3f1a0ef12cd977e",
+      "triangles": 614462
+    },
+    "HD_Temple": {
+      "palette_sha256": "c3cf23c220ba5ec4edea1dc425f46196b2d2b88b8cbaee76ccc19008e2c7af51",
+      "parameters_sha256": "e1a124c9a08ffcd1776952d36cbc14063581b23b0460c565fcaff00f09cd6c69",
+      "reference_attribute_sha256": "d69dfe90f2749fe12eec19541b8eab68ba08a6700fa591da85cfdc990065b428",
+      "triangles": 55356
+    },
+    "HD_Terrain": {
+      "palette_sha256": "fc38b105be7716ed665813567b5b91c5914680a82c89c0fa1dc739a4f3c34558",
+      "parameters_sha256": "c0722165b2d4e750b8cd2d3dadb92ac64fbb9f51d4d8daa2c3b6c7888b6dca1e",
+      "reference_attribute_sha256": "1667044b9a1d18dbdb7428004d8ad1ce287826a75a6f18e4c1e9aa4135cf6694",
+      "triangles": 1099072
+    },
+    "HD_Wires": {
+      "palette_sha256": "0496ba96093ddcf40d31c0396de8c185787db27b307d899561e9bf0c2e18c5c8",
+      "parameters_sha256": "b5135d0b6f89c1343d878255e94d0391921e4d0c3c846163046177ce95877ea3",
+      "reference_attribute_sha256": "b482cb717d000244e76ef87792cfd03945386244ab61d94cc661efd66c66b5b6",
+      "triangles": 40704
+    }
+  },
+  "reference_head": "b636f73d5f90b4934c6805c1feab3d870b454342",
+  "reference_result_sha256": "45b8b03d795269900eb693bc61af3a2c19c7b8453be93fefa5080a2853e54bd8",
+  "reference_scope": "original ordered city constructors; complete ordered source attributes",
+  "schema": 1
+}

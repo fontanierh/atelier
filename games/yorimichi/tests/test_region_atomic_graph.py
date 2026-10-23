@@ -88,3 +88,13 @@ def test_cold_recipe_does_not_follow_a_link_or_certify_its_missing_plan(tmp_path
     root = write_plan(target, 'One', [('One', 12)])
     with pytest.raises(ValueError, match='real directories'):
         graph.inventory(alias / root.relative_to(target), 'One')
+
+
+def test_logical_constructor_owns_its_complete_auxiliary_terrain_products(tmp_path):
+    product = build.Product('fixture.terrain.final', (tmp_path / 'terrain/One/final.npz',))
+    asset = graph.LogicalAsset('One', GAME / 'world/regions/hidamari/plan_asset.py',
+                              args=('--asset', 'One'), products=(product,))
+    steps = graph.steps(SimpleNamespace(out=tmp_path), region='fixture', assets=[asset])
+    assert steps[0].products[1] == product
+    assert steps[0].products[0].name == 'fixture.geometry.One'
+    build.check_modules(steps)
