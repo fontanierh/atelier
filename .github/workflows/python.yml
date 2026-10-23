@@ -17,10 +17,7 @@ concurrency:
 jobs:
   tests:
     name: Python / ${{ matrix.group }}
-    # Only the guard group samples the macOS process table (libproc, taskpolicy). The other
-    # two groups mock those interfaces, so they run on the much faster, uncontended Linux
-    # pool; that also cuts macOS demand per PR from three long jobs to one.
-    runs-on: ${{ matrix.group == 'studio' && 'macos-latest' || 'ubuntu-latest' }}
+    runs-on: macos-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false

@@ -10,6 +10,8 @@ import ctypes
 from atelier.harness.safety.memory_guard import LIB, usage
 
 PROC_PPID_ONLY = 6
+LIB.proc_listpids.argtypes = [ctypes.c_uint32, ctypes.c_uint32, ctypes.c_void_p, ctypes.c_int]
+LIB.proc_name.argtypes = [ctypes.c_int, ctypes.c_void_p, ctypes.c_uint32]
 
 
 def started(pid):

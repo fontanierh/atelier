@@ -6,7 +6,6 @@ While an owned Unreal runs it also records the game's descendants, pinned to the
 `<report>.helpers.json`, so the SDK helpers it leaves behind can be reaped once it exits (`guard.reap_helpers`).
 """
 import argparse,ctypes,json,os,signal,time
-import sys
 from pathlib import Path
 
 class Usage(ctypes.Structure):
@@ -15,30 +14,13 @@ class Usage(ctypes.Structure):
         'started','exited','child_user','child_system','child_idle','child_interrupt','child_pageins',
         'child_elapsed','read_bytes','written_bytes')]
 
+LIB=ctypes.CDLL('/usr/lib/libproc.dylib',use_errno=True)
+LIB.proc_pid_rusage.argtypes=[ctypes.c_int,ctypes.c_int,ctypes.c_void_p]
+LIB.proc_pid_rusage.restype=ctypes.c_int
 
 PROC_PPID_ONLY=6
-
-
-class _Libproc:
-    """libproc, bound on first use. Importing the guard stack must stay portable: only sampling needs macOS."""
-    def __init__(self):
-        self._handle = None
-    def _load(self):
-        if self._handle is None:
-            if sys.platform != 'darwin':
-                raise OSError('process sampling requires macOS libproc')
-            lib = ctypes.CDLL('/usr/lib/libproc.dylib', use_errno=True)
-            lib.proc_pid_rusage.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_void_p]
-            lib.proc_pid_rusage.restype = ctypes.c_int
-            lib.proc_listpids.argtypes = [ctypes.c_uint32, ctypes.c_uint32, ctypes.c_void_p, ctypes.c_int]
-            lib.proc_name.argtypes = [ctypes.c_int, ctypes.c_void_p, ctypes.c_uint32]
-            self._handle = lib
-        return self._handle
-    def __getattr__(self, name):
-        return getattr(self._load(), name)
-
-
-LIB = _Libproc()
+LIB.proc_listpids.argtypes=[ctypes.c_uint32,ctypes.c_uint32,ctypes.c_void_p,ctypes.c_int]
+LIB.proc_name.argtypes=[ctypes.c_int,ctypes.c_void_p,ctypes.c_uint32]
 
 def children(pid):
     """The live children of pid; one born during the call is caught on the next tick."""
