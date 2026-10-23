@@ -48,7 +48,7 @@ def encode(piece, *, key, slots, matrix, options, collisions=()):
     return result
 
 
-def decode(payload):
+def decode(payload,*,_collision_payload=False):
     """@cc [owner:fontanierh,label:correctness] complete-atomic-mesh-input
     Static mesh payloads MUST be bounded, pickle-free and complete. Preserve ordered faces,
     winding, float32 corner normals, all UV/colour values and types, complete material slots,
@@ -59,7 +59,8 @@ def decode(payload):
         raise ValueError('Atomic mesh input exceeds its size bound')
     try:
         with zipfile.ZipFile(io.BytesIO(payload)) as container:
-            if sum(info.file_size for info in container.infolist()) > MAX_BYTES:
+            expanded=sum(info.file_size for info in container.infolist())
+            if expanded > MAX_BYTES:
                 raise ValueError('Expanded atomic mesh input exceeds its size bound')
         with np.load(io.BytesIO(payload), allow_pickle=False) as saved:
             if len(saved.files) != len(set(saved.files)):
@@ -82,8 +83,10 @@ def decode(payload):
             or type(meta['options']) is not dict or type(meta['collisions']) is not list):
         raise ValueError('Invalid atomic mesh materials, transform or settings')
     for collision in meta['collisions']:
-        if type(collision) is not dict or set(collision) != {'vertices', 'faces', 'matrix'}:
+        from . import mesh_collision
+        if type(collision) is not dict or set(collision) not in (mesh_collision.CORE,mesh_collision.RICH,mesh_collision.TRANSFORMED):
             raise ValueError('Invalid atomic collision fields')
+        if _collision_payload:raise ValueError('Nested collision payloads are forbidden')
         vertices = np.asarray(collision['vertices'])
         transform = np.asarray(collision['matrix'])
         faces_ = collision['faces']
@@ -96,6 +99,10 @@ def decode(payload):
                        or any(type(i) is not int or not 0 <= i < len(vertices) for i in face)
                        for face in faces_)):
             raise ValueError('Invalid atomic collision geometry')
+        if 'corner_payload' in collision:
+            packet,size=mesh_collision.unpack(collision);expanded+=size
+            if expanded>MAX_BYTES:raise ValueError('Complete collision channels exceed the mesh input bound')
+            mesh_collision.decode(collision,packet=packet)
     for field, (kind, width) in FIELDS.items():
         value = arrays.get(field)
         required = np.dtype('<f4' if kind == 'f' else '<i4' if kind == 'i' else '?')

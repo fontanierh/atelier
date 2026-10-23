@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import yori  # noqa: E402,F401
 
-from atelier import export_manifest as export_tasks, mesh_ir  # noqa: E402
+from atelier import export_manifest as export_tasks, mesh_ir,mesh_collision  # noqa: E402
 from atelier.blender.fbx import export_atomic_fbx  # noqa: E402
 from atelier.model_files import regular_files  # noqa: E402
 from mesh_pieces import create_mesh  # noqa: E402
@@ -33,7 +33,7 @@ def main(argv=None):
     import bpy
     from mathutils import Matrix
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    piece['slots'] = [bpy.data.materials.new(label) for label in piece['slots']]
+    piece['slots'] = [bpy.data.materials.get(label) or bpy.data.materials.new(label) for label in piece['slots']]
     mesh = create_mesh(key, piece)
     obj = bpy.data.objects.new(key, mesh)
     bpy.context.collection.objects.link(obj)
@@ -41,11 +41,25 @@ def main(argv=None):
     selected = [obj]
     for index, collision in enumerate(meta['collisions']):
         label = f'UCX_{key}_{index:02d}'
-        data = bpy.data.meshes.new(label)
-        data.from_pydata(collision['vertices'], [], collision['faces']); data.update()
+        if 'corner_payload' in collision:
+            source=mesh_collision.decode(collision)
+            source['slots']=[bpy.data.materials.get(slot) or bpy.data.materials.new(slot) for slot in source['slots']]
+            data=create_mesh(label,source)
+        else:
+            data = bpy.data.meshes.new(label)
+            data.from_pydata(collision['vertices'], [], collision['faces']); data.update()
         hull = bpy.data.objects.new(label, data)
         bpy.context.collection.objects.link(hull)
-        hull.matrix_world = Matrix(collision['matrix'])
+        if 'transform' in collision:
+            pose=collision['transform']
+            hull.rotation_mode=pose['rotation_mode'];hull.location=pose['location'];hull.scale=pose['scale']
+            field=('rotation_quaternion' if pose['rotation_mode']=='QUATERNION' else
+                   'rotation_axis_angle' if pose['rotation_mode']=='AXIS_ANGLE' else 'rotation_euler')
+            setattr(hull,field,pose[field]);bpy.context.view_layer.update()
+            import numpy as np
+            if np.asarray(hull.matrix_world,dtype='<f4').tobytes()!=np.asarray(collision['matrix'],dtype='<f4').tobytes():
+                raise ValueError('Original collision transform components no longer reproduce their exact frame')
+        else:hull.matrix_world = Matrix(collision['matrix'])
         selected.append(hull)
     bpy.ops.object.select_all(action='DESELECT')
     for item in selected:

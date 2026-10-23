@@ -10,12 +10,28 @@ import numpy as np
 
 from atelier.export_manifest import TRIANGLE_LIMIT, name, real_directory, sha
 from atelier.mesh_cells import cell_face_groups
-from atelier import mesh_ir
+from atelier import mesh_ir,mesh_collision
 from atelier.model_files import member
 import region_plan_files
 from mesh_pieces import capture, subset
 
 CELL_METRES = 128.
+
+
+def capture_collision(hull):
+    """Capture an already-finished original hull, including its actual corner channels."""
+    if (hull.parent is not None or hull.constraints or hull.modifiers or hull.animation_data is not None
+            or tuple(hull.delta_location)!=(0.,0.,0.) or tuple(hull.delta_scale)!=(1.,1.,1.)
+            or tuple(hull.delta_rotation_euler)!=(0.,0.,0.) or tuple(hull.delta_rotation_quaternion)!=(1.,0.,0.,0.)):
+        raise ValueError('Collision capture requires a complete static unparented transform')
+    source=capture(hull.data)
+    piece={key:source[key] for key in ('positions','normals','materials','smooth','uvs','colours','selection')}
+    piece['faces']=[list(face.vertices) for face in hull.data.polygons]
+    return mesh_collision.encode(piece,slots=[material.name for material in source['slots']],
+        matrix=[list(row) for row in hull.matrix_world],transform=dict(
+            location=list(hull.location),scale=list(hull.scale),rotation_mode=hull.rotation_mode,
+            rotation_euler=list(hull.rotation_euler),rotation_quaternion=list(hull.rotation_quaternion),
+            rotation_axis_angle=list(hull.rotation_axis_angle)))
 
 
 def capture_colliders(boxes):
@@ -27,10 +43,11 @@ def capture_colliders(boxes):
         hull = bpy.context.object
         hull.scale = size
         bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-        collisions.append(dict(vertices=[list(v.co) for v in hull.data.vertices],
-                               faces=[list(f.vertices) for f in hull.data.polygons],
-                               matrix=[list(row) for row in hull.matrix_world]))
-        bpy.data.objects.remove(hull, do_unlink=True)
+        data=hull.data
+        try:collisions.append(capture_collision(hull))
+        finally:
+            bpy.data.objects.remove(hull, do_unlink=True)
+            if data.users==0:bpy.data.meshes.remove(data)
     return collisions
 
 
