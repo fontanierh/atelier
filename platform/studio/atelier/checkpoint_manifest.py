@@ -263,6 +263,9 @@ def retain(source, out, game):
     Merge retention MUST read only build-published metadata under stopped-producer exclusion.
     Current fixed controller declarations MAY be read solely to refuse overlapping legacy
     certificates; they MUST NOT recertify outputs or create a replacement certificate.
+    Embedded action roots/members MUST also refuse overlap, even when a future owned file
+    is absent from the old workspace inventory. See
+    test_retention_refuses_embedded_ancestor_action_even_without_owned_file_in_inventory.
     It MUST NOT hash/copy generated files, re-certify task outputs, walk the workspace, export
     Zen, or launch a capture worker. Missing/stale evidence MUST refuse promptly and direct the
     caller to the normal incremental build, never silently perform a full capture or forge proof.
@@ -300,7 +303,12 @@ def retain(source, out, game):
                 member_claims.refuse_overlap([Path('/') / member for member, entry in manifest['files'].items()
                                              if entry['kind'] != 'directory'
                                              or member_claims.excludes(Path('/') / member)])
-            except ValueError as error:
+                from .checkpoint_actions import validate as validate_action
+                for action_key, action in manifest.get('actions', {}).items():
+                    validate_action(action, store, action_key)
+                    member_claims.refuse_overlap([Path('/') / root['path'] for root in action['roots']]
+                                                 + [Path('/') / member for member in action['files']])
+            except (ValueError, KeyError, TypeError) as error:
                 raise CheckpointError('Retained legacy manifest overlaps controller ownership or unknown roots') from error
             if set(claims.units) & (set(manifest['stamps']) | set(manifest.get('incremental_stamps', {}))):
                 raise CheckpointError('Controller targets cannot retain legacy certificates')

@@ -95,6 +95,40 @@ def test_retention_refuses_old_controlled_file_from_metadata_without_rehash(fixt
         checkpoint_manifest.retain(paths.REPO, ctx.out, ctx.game)
 
 
+def test_retention_refuses_embedded_ancestor_action_even_without_owned_file_in_inventory(fixture, monkeypatch):
+    from atelier import paths
+    from atelier.build_v2 import controller_claims
+    ctx, steps = published(fixture, monkeypatch)
+    # Original tree action owns its complete directory. The new controller path was
+    # not present when that action published, so workspace file-only checks miss it.
+    controlled = steps[0].outputs[0].parent / 'future-controller.json'
+    assert not controlled.exists()
+    ready = cp.read_json(checkpoint_manifest.folder(ctx.out) / 'ready.json')
+    manifest = fixture.store.load(ready['key'])
+    assert actions.label(ctx, controlled) not in manifest['files']
+    assert any(root['path'] == actions.label(ctx, controlled.parent)
+               for action in manifest['actions'].values() for root in action['roots'])
+    claims = ControllerClaims((_claim(controlled),))
+    monkeypatch.setattr(controller_claims, 'for_source', lambda *args: claims)
+    monkeypatch.setattr(actions, 'snapshot', lambda *args, **kwargs: pytest.fail('retention recertified outputs'))
+    monkeypatch.setattr(cp, 'members', lambda *args: pytest.fail('retention walked outputs'))
+    with pytest.raises(cp.CheckpointError, match='controller ownership'):
+        checkpoint_manifest.retain(paths.REPO, ctx.out, ctx.game)
+    assert not controlled.exists()
+    assert cp.read_json(checkpoint_manifest.folder(ctx.out) / 'ready.json') == ready
+
+
+def test_retention_keeps_complete_disjoint_actions_when_controller_file_is_elsewhere(fixture, monkeypatch):
+    from atelier import paths
+    from atelier.build_v2 import controller_claims
+    ctx, _ = published(fixture, monkeypatch)
+    ready = cp.read_json(checkpoint_manifest.folder(ctx.out) / 'ready.json')
+    claims = ControllerClaims((_claim(ctx.out / 'controller/course.json'),))
+    monkeypatch.setattr(controller_claims, 'for_source', lambda *args: claims)
+    assert checkpoint_manifest.retain(paths.REPO, ctx.out, ctx.game) == ready['key']
+    assert len(fixture.store.load(ready['key'])['actions']) == 3
+
+
 def test_capture_drops_whole_old_overlapping_action_but_keeps_disjoint_results(fixture):
     ctx, steps, old_key = saved(fixture)
     controlled = steps[0].outputs[0]
