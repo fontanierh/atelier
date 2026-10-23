@@ -26,6 +26,7 @@ def main(argv=None):
     from mesh_pieces import create_mesh
     from region_plan_files import files
     from hidamari.ferry_cut import cut_object
+    from hidamari.cut_ingress import prepare
     import bpy
     from mathutils import Matrix
     output, raw = real_directory(args.output), real_directory(args.source)
@@ -52,6 +53,7 @@ def main(argv=None):
     obj = bpy.data.objects.new('HD_Harbor', create_mesh('HD_Harbor', source))
     bpy.context.collection.objects.link(obj)
     obj.matrix_world = Matrix(source['matrix'])
+    prepare(obj)
     result = cut_object(obj, cuts)
     if result['failures'] or not all(row['cap_normals_pass'] for row in result['cuts']):
         raise ValueError('Final Harbor source cut failed: ' + json.dumps(result))

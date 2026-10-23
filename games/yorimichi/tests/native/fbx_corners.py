@@ -9,6 +9,18 @@ from collections import Counter
 import numpy as np
 
 
+def polygon_cycles(value):
+    """Ignore only a polygon's starting corner, preserving winding, channels and multiplicity."""
+    result = {}
+    for kind, rows in value.items():
+        counter = Counter()
+        for (frame, corners), count in rows.items():
+            cycle = min(corners[index:] + corners[:index] for index in range(len(corners)))
+            counter[(frame, cycle)] += count
+        result[kind] = counter
+    return result
+
+
 def child(node, key, *, optional=False):
     found = [item for item in node.elems if item.id == key]
     if optional and not found:

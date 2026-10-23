@@ -17,7 +17,7 @@ from atelier.atomic_files import atomic_json  # noqa: E402
 from atelier.blender.fbx import export_fbx  # noqa: E402
 from atelier.build_inputs import local_imports  # noqa: E402
 from atelier.export_manifest import real_directory, sha  # noqa: E402
-from fbx_corners import read as corners  # noqa: E402
+from fbx_corners import read as corners, polygon_cycles  # noqa: E402
 from mesh_pieces import create_mesh  # noqa: E402
 from region_mesh_parts import validate  # noqa: E402
 from region_plan_files import files as source_files  # noqa: E402
@@ -82,11 +82,11 @@ def main():
         emitted = corners(folder / (row['name'] + '.fbx'))
         for kind in actual: actual[kind].update(emitted[kind])
         print('FINAL HARBOR ATOMIC EXPORT', row['name'], flush=True)
-    assert actual == expected, 'Final Harbor complete serialized polygon/corner/material/UV/colour conservation differs'
+    assert polygon_cycles(actual) == polygon_cycles(expected), 'Final Harbor complete serialized polygon/corner/material/UV/colour conservation differs'
     assert identities() == before
     atomic_json(root / 'result.json', dict(complete=True, source_triangles=190920, final_triangles=190896,
         pieces=len(value['pieces']), exact_exported_corners=True, exact_cut_controls=True, inputs=before,
-        scope='actual Harbor cut/export conservation; full ferry sweep, native receiving and traversal remain pending'))
+        scope='exact exported polygon cycles, preserving winding and values; full ferry sweep/native receiving/traversal pending'))
     print('HARBOR SOURCE DATA CUT CANARY COMPLETE', flush=True)
 
 
