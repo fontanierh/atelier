@@ -1877,6 +1877,8 @@ impl RootStore {
 
     pub fn trim_releases(&self) -> Result<Vec<u64>, RootError> {
         let _guard = self.leases.lock()?;
+        // Trimming unlinks a release record, so it needs the same damage refusal as a commit.
+        self.fold_usage_locked()?;
         self.trim_releases_locked()
     }
 

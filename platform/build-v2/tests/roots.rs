@@ -2094,3 +2094,40 @@ fn a_commit_refuses_before_replacing_or_trimming_while_usage_is_damaged() {
         "a refused commit must not trim the oldest release"
     );
 }
+
+#[test]
+fn a_manual_release_trim_refuses_while_usage_is_damaged() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    for sequence in 1..=3 {
+        let kind = RootKind::Release {
+            sequence,
+            label: format!("r{sequence}"),
+        };
+        let mut release = begin(&store, kind, "release", 1);
+        release.use_result("unit.a", &key(1)).unwrap();
+        release.commit(None).unwrap();
+    }
+    let _torn = begin(&store, RootKind::Main, "torn", 1);
+    let journal = only_session(&workspace.store(), "yorimichi");
+    let mut text = fs::read_to_string(&journal).unwrap();
+    text.push_str("{\"unit\":\"unit.x\",\"key\":\"");
+    fs::write(&journal, text).unwrap();
+
+    let error = store.trim_releases().unwrap_err();
+    assert!(
+        matches!(error, RootError::Damaged(_)),
+        "a manual trim must refuse while the store is damaged: {error}"
+    );
+    for sequence in 1..=3 {
+        let kind = RootKind::Release {
+            sequence,
+            label: format!("r{sequence}"),
+        };
+        assert!(
+            store.root(&kind).unwrap().is_some(),
+            "a refused trim must delete nothing"
+        );
+    }
+}
