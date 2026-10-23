@@ -935,7 +935,7 @@ def slot_summary(slots):
 
 def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, verify=False, cook_mode=None, cook_reason=None,
           max_heavy_commands=None, recover_cook=None, record_cook_recovery=False, rebuild_touched=False, cook_memory_gib=None,
-          rebuild_reason=None):
+          rebuild_reason=None, fail_fast=False):
     """@cc [owner:fontanierh,label:correctness] rebuild-touched-certificates
     An explicit touched-only rebuild MUST replace only explicitly named touched certificates through normal
     execution or verified product restoration, without changing action keys or skipping guards.
@@ -966,6 +966,7 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, veri
     ctx = Context(game, **({'cook_mode': cook_mode, 'cook_reason': cook_reason} if cook_mode is not None else {}),
                   **({'recover_cook': recover_cook} if recover_cook is not None else {}),
                   **({'cook_memory_gib': cook_memory_gib} if cook_memory_gib is not None else {}))
+    ctx.fail_fast = fail_fast  # Default: finish and publish every step a failure does not block.
     # TERM/HUP unwind the build, so running children are stopped and completed results stay published.
     from atelier.harness.safety.cancellation import termination_cleanup
     with termination_cleanup():
@@ -1090,6 +1091,8 @@ def _build(ctx, wanted, *, force, touch, echo, index, steps=None, produced=None,
     finally:
         # Failure and yield paths must also discard earlier certificates with changed reads.
         invalid = _discard_changed_certificates(ctx, checkpoint, index=index)
+        # Cancellation never starts workspace finalization; each finished step was already
+        # published (action entry and retention record) when it completed.
         if completed and checkpoint.get('steps') is not None:
             from .checkpoint_manifest import finish
             finish(ctx, checkpoint['steps'])
@@ -1101,6 +1104,16 @@ def _build(ctx, wanted, *, force, touch, echo, index, steps=None, produced=None,
         echo('FAILED: products changed after their owner completed: ' + ', '.join(invalid))
         return 1
     return code
+
+
+def _upstream(steps, plan):
+    """Steps whose failure blocks each planned step: needs, ordering edges, read/referenced producers."""
+    try:
+        owners = build_products.Graph(steps).owners
+    except (ValueError, KeyError):
+        owners = {}
+    return {s.name: {*s.needs, *s.after, *(owners[n] for n in (*s.reads, *s.references) if n in owners)}
+            for s in plan}
 
 
 def _discard_changed_certificates(ctx, checkpoint, *, index):
@@ -1212,9 +1225,9 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
     # The graph includes every prerequisite. Unrelated stamps cannot affect this selected build.
     started = time.monotonic()
     completed_batches = set()
-    for position, step in enumerate(plan):
-        if step.name in completed_batches:
-            continue
+    def attempt(position, step):
+        """Run, restore or confirm one planned step; a non-None value is its exit code."""
+        nonlocal ran, restored, saved_seconds, heavy_commands
         print_ = f'{step.name:34s}'
         stamp = ctx.stamps / f'{step.name}.json'
         journal = ctx.stamps / f'{step.name}.restore.json'
@@ -1305,21 +1318,21 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                 from .checkpoint_manifest import record as retain_record
                 retain_record(ctx, step, previous, store=actions.store)
             echo(f'{print_} up to date')
-            continue
+            return None
         if getattr(ctx, 'recover_cook', None) is not None and not recovering and step.name != 'unreal.package':
             echo(f'{print_} FAILED: recovery requires every prerequisite already current and complete')
             return 1
         if touch:   # the outputs are known to be current (a refactor of the recipe): record them without running
             if not outputs_ok:
                 echo(f'{print_} not touched: outputs missing')
-                continue
+                return None
             touched = {'fingerprint': current, 'seconds': previous.get('seconds'), 'time': time.time(), 'touched': True}
             if step.cutoff:
                 touched['result'] = outputs_digest(step)
             stamp.write_text(json.dumps(touched) + '\n')
             done[step.name] = result(step, current, touched)
             echo(f'{print_} touched')
-            continue
+            return None
         local_portable = step.cache and build_cache.Store().action(current).exists()
         from .build_support_migration import cached_key as previous_cache_key
         compatible_portable = (previous_cache_key(ctx, step, current, input_state, done)
@@ -1407,8 +1420,10 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                     from .build_checkpoints import note_rerun
                     note_rerun(ctx, completed_step)
             if code:
+                # The member that was running failed; unstarted members stay independent work.
+                batch_failed[:] = [s.name for s, _, _ in batch if s.name not in completed][:1]
                 return code
-            continue
+            return None
         pool_key = None
         if step.pool_roots:
             from . import artifact_pool
@@ -1619,12 +1634,65 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             echo(f'{print_} restored in {seconds:.1f} s from {source}{slot_summary(slots)}')
         else:
             echo(f'{print_} done in {seconds:.1f} s{slot_summary(slots)}')
-    covered = getattr(ctx, 'rebuild_covered', [])
-    if covered:
-        echo(f'rebuild reason covered {len(covered)} tasks: ' + ', '.join(covered))
-    echo(f'{len(plan)} steps, {ran} ran, {restored} restored, {len(plan) - ran - restored} up to date, '
-         f'~{saved_seconds:.0f} s of building saved by reuse, {time.monotonic() - started:.0f} s')
-    return 0
+
+    failed, blocked, attempted, batch_failed = [], {}, set(), []
+
+    def summary(interrupted=None):
+        covered = getattr(ctx, 'rebuild_covered', [])
+        if covered:
+            echo(f'rebuild reason covered {len(covered)} tasks: ' + ', '.join(covered))
+        if failed:
+            echo('FAILED steps: ' + ', '.join(failed))
+        if blocked:
+            echo('BLOCKED by a failed step: ' + ', '.join(f'{name} (needs {", ".join(by)})'
+                                                       for name, by in blocked.items()))
+        settled = attempted - ({interrupted} if interrupted else set())
+        not_reached = len([s for s in plan if s.name not in settled and s.name not in completed_batches])
+        current = len(plan) - ran - restored - len(failed) - len(blocked) - not_reached
+        extra = ''.join(f', {count} {label}' for count, label in ((len(failed), 'failed'), (len(blocked), 'blocked'),
+                                                                   (not_reached, 'not reached')) if count)
+        echo(f'{len(plan)} steps, {ran} ran, {restored} restored, {current} up to date{extra}, '
+             f'~{saved_seconds:.0f} s of building saved by reuse, {time.monotonic() - started:.0f} s')
+
+    stopped = set()  # Failed or blocked: their dependents cannot run in this build.
+    upstream = _upstream(steps, plan)
+    running = None
+    try:
+        for position, step in enumerate(plan):
+            if step.name in completed_batches or step.name in stopped:
+                continue
+            by = sorted(upstream.get(step.name, set()) & stopped)
+            if by:
+                blocked[step.name] = by
+                stopped.add(step.name)
+                attempted.add(step.name)
+                echo(f'{step.name:34s} BLOCKED: needs failed {", ".join(by)}')
+                continue
+            running = step.name
+            attempted.add(step.name)
+            batch_failed.clear()
+            code = attempt(position, step)
+            running = None
+            if code is None:
+                continue
+            if code == 1 and not getattr(ctx, 'fail_fast', False):
+                names = batch_failed or [step.name]
+                failed.extend(n for n in names if n not in failed)
+                stopped.update(names)
+                attempted.update(names)
+                continue
+            if code == 1:
+                failed.extend(n for n in (batch_failed or [step.name]) if n not in failed)
+            else:  # A yield or guard stop leaves this step unstarted.
+                attempted.discard(step.name)
+            summary()
+            return code
+    except BaseException:
+        echo(f'BUILD INTERRUPTED{" during " + running if running else ""}; completed steps stay published')
+        summary(interrupted=running)
+        raise
+    summary()
+    return 1 if failed else 0
 
 
 def list_steps(game, echo=print):

@@ -189,13 +189,17 @@ def test_interrupted_fourth_action_preserves_first_three_and_resume_runs_only_re
     script = p.steps[3].commands[0].script
     good = script.read_text()
     script.write_text('import os\nos._exit(7)\n')
+    launches = len(p.launches)
     assert p.run() == 1
     before = {path.name: path.read_bytes() for path in p.ctx.stamps.glob('action*.json')}
-    assert set(before) == {'action1.json', 'action2.json', 'action3.json'}
-    assert not (p.ctx.out / '5.txt').exists() and not (p.ctx.out / '6.txt').exists()
+    # Keep-going: the independent actions after the failed one still finish in a new batch.
+    assert set(before) == {'action1.json', 'action2.json', 'action3.json', 'action5.json', 'action6.json'}
+    assert not (p.ctx.out / '4.txt').exists() and (p.ctx.out / '6.txt').read_text() == 'made'
+    assert 'FAILED steps: action4' in p.messages
     script.write_text(good)
+    launches = len(p.launches)
     assert p.run() == 0
-    assert len(p.launches) == 2
+    assert len(p.launches) == launches + 1  # Only the failed action reruns.
     assert all((p.ctx.stamps / name).read_bytes() == value for name, value in before.items())
     assert (p.ctx.out / '6.txt').read_text() == 'made'
 
@@ -234,8 +238,9 @@ def test_boundaries_use_memory_growth_and_wall_time_without_lifting_the_guard(pr
     assert p.run() == 75
     assert (p.ctx.stamps / 'action1.json').exists()
     assert not (p.ctx.out / '2.txt').exists()
-    assert p.messages[-1] == ('BATCH YIELDED: 1 of 6 actions done; recheck Waiting, '
+    assert p.messages[-2] == ('BATCH YIELDED: 1 of 6 actions done; recheck Waiting, '
                               'then resume with atelier build standin')
+    assert p.messages[-1].startswith('6 steps, 1 ran, 0 restored, 0 up to date, 5 not reached, ')
     decisions = build_plan.inspect(p.ctx, p.steps)['steps']
     assert [d['status'] for d in decisions] == ['current', *(['run'] * 5)]
 
