@@ -8,10 +8,14 @@ def execute(ctx, wanted, *, steps, force, touch, echo, index, max_heavy_commands
     product, cache and checkpoint validation MUST finish before expansion. Reloaded exports
     MUST go through the ordinary build graph and current-input validation; previously completed
     work MUST retain its stamps and products. Heavy-command budgets MUST span all passes.
+    Newly discovered tasks without a stamp MUST inherit only this invocation's original
+    cold-task/rebuild-reason policy. Existing stamped tasks MUST NOT become cold merely
+    because discovery exposed them. Ordinary restoration MUST still precede protection.
     Missing plans MUST never become a successful empty final assembly.
     """
     from . import build
     seen = set()
+    known = {step.name for step in steps or ()}
     ctx.expansion_heavy_commands = 0
     ctx.expansion_completed = {}
     try:
@@ -27,6 +31,18 @@ def execute(ctx, wanted, *, steps, force, touch, echo, index, max_heavy_commands
             echo('Discovering independently cached exports after ' + token[0])
             steps = build.load_recipe(ctx.game).steps(ctx)
             build.check_modules(steps)
+            if hasattr(ctx, 'cold_at_launch'):
+                ctx.cold_at_launch.update(step.name for step in steps if step.name not in known
+                                         and not (ctx.stamps / (step.name + '.json')).exists())
+                # Keep the same read/need propagation as launch classification, using
+                # the expanded graph. Ordering-only edges never confer a reason.
+                from .build_products import Graph
+                try:
+                    graph = Graph(steps)
+                    ctx.rebuild_upstream = {s.name: {*s.needs, *(graph.owners[n] for n in s.reads)} for s in graph.steps}
+                except (ValueError, KeyError):
+                    ctx.rebuild_upstream = {s.name: set(s.needs) for s in steps}
+            known.update(step.name for step in steps)
     finally:
         for field in ('expansion_completed', 'expansion_heavy_commands', 'recipe_expansion'):
             ctx.__dict__.pop(field, None)
