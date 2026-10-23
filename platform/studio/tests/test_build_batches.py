@@ -87,20 +87,12 @@ def test_one_warm_process_keeps_individual_results_and_skips_current_actions(pro
         assert ((p.ctx.stamps / (step.name + '.json')).read_bytes() == before[step.name]) == (step.name != 'action3')
 
 
-def test_batch_prepares_candidates_before_launch_and_binds_each_leaf_owner(project, monkeypatch):
-    from atelier import checkpoint_candidates
+def test_batch_binds_each_leaf_owner(project, monkeypatch):
     p = project
     p.steps[:] = p.steps[:2]
-    prepared = []
-    monkeypatch.setattr(checkpoint_candidates, 'prepare', lambda ctx, step, **kw: prepared.append(step.name))
     for step in p.steps:
         step.commands[0].script.write_text("from pathlib import Path\nimport os, sys\n"
                                          "Path(sys.argv[-1]).write_text(os.environ['ATELIER_BUILD_TASK'] + ':' + os.environ['ATELIER_BUILD_GAME'])\n")
-    launch = build.run_command
-    def checked_launch(*args, **kwargs):
-        assert prepared == ['action1', 'action2']
-        return launch(*args, **kwargs)
-    monkeypatch.setattr(build, 'run_command', checked_launch)
     assert p.run() == 0
     assert (p.ctx.out / '1.txt').read_text() == 'action1:standin'
     assert (p.ctx.out / '2.txt').read_text() == 'action2:standin'

@@ -266,7 +266,7 @@ def capture_local(source, game, *, read_only=False, deadline_seconds=900):
         raise CheckpointError('Local checkpoint capture failed; preserve producer outputs and retry')
     key = read_json(folder / 'result.json')['key']
     store = Store(game)
-    from .checkpoint_candidates import original
+    from .native_candidates import original
     saved = original(store, key) if read_only else store.load(key)
     if source_revision is not None:
         if clean_revision() != source_revision:

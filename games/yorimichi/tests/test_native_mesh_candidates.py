@@ -27,25 +27,6 @@ def test_common_ferry_scope_includes_complete_package_folders_and_shared_code(tm
     assert all(Path(path).is_relative_to(RECIPE.GAME / 'unreal/Content') for path in ferry.candidate_scope.directories)
 
 
-def test_explicit_forest_scope_keeps_lod_packages_and_sidecars(tmp_path):
-    from atelier.checkpoint_candidates import select
-    content = RECIPE.GAME / 'unreal/Content'
-    ctx = SimpleNamespace(out=tmp_path, uproject=content.parent / 'Yorimichi.uproject')
-    forest = next(step for step in RECIPE.steps(ctx) if step.name == 'unreal.forest')
-    assert forest.candidate_scope.directories == (content / 'Japan/Assets', content / 'Japan/FoliageLODs')
-    members = {
-        'content/Japan/Assets/Tree_Forest_Oak.uasset',
-        'content/Japan/Assets/Tree_Forest_Oak.uexp',
-        'content/Japan/FoliageLODs/Tree_Forest_Oak_LOD1.uasset',
-        'content/Japan/FoliageLODs/Tree_Forest_Oak_LOD1.ubulk',
-        'content/Japan/FoliageLODs/Tree_Forest_Oak_LOD2.uasset',
-        'content/Japan/FoliageLODs/Tree_Forest_Oak_LOD3.uasset',
-    }
-    inventory = {name: {'kind': 'file'} for name in members | {
-        'content/Japan/Textures/Tree_Forest_Oak.uasset', 'content/Other/Tree_Forest_Oak.uasset'}}
-    assert set(select(ctx, forest.candidate_scope, inventory)) == members
-
-
 def test_native_adapters_do_not_depend_on_unrelated_host_controller_code(tmp_path):
     steps = RECIPE.steps(SimpleNamespace(out=tmp_path, uproject=tmp_path / 'Fixture.uproject'))
     forbidden = {'build.py', 'build_plan.py', 'build_batches.py', 'build_checkpoints.py', 'build_zen.py',

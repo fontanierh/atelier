@@ -13,7 +13,7 @@ from test_checkpoints import fixture
 def test_read_only_capture_uses_original_fingerprints_and_current_capture_code(tmp_path, monkeypatch, deadline):
     import hashlib
     import subprocess
-    from atelier import build, checkpoint_candidates
+    from atelier import build, native_candidates
     from atelier.harness.safety import guarded
     source = tmp_path / 'producer'; package = source / 'platform/studio/atelier'
     package.mkdir(parents=True)
@@ -61,7 +61,7 @@ class Context:
         return 0
     monkeypatch.setattr(guarded, 'run', guard)
     key = build_checkpoints.capture_local(source, 'fixture', read_only=True, deadline_seconds=deadline)
-    saved = checkpoint_candidates.original(checkpoint_candidates.Store('fixture'), key)
+    saved = native_candidates.original(native_candidates.Store('fixture'), key)
     assert saved['candidate_only'] and saved['stamps'] == {}
     assert saved['incremental_stamps']['mesh']['fingerprint'] == 'a' * 64
     assert len(saved['source_revision']) == 40

@@ -8,7 +8,7 @@ from .build_cache import atomic_json
 
 def main(argv=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument('operation', choices=['capture', 'restore-action', 'stage-candidates', 'export-zen'])
+    parser.add_argument('operation', choices=['capture', 'restore-action', 'export-zen'])
     parser.add_argument('game')
     parser.add_argument('report', type=Path)
     parser.add_argument('--key')
@@ -41,9 +41,6 @@ def main(argv=None):
         from . import checkpoint_zen
         checkpoint_zen.export(ctx)
         atomic_json(result, dict(exported=True))
-    elif args.operation == 'stage-candidates':
-        from .checkpoint_candidates import stage_worker
-        atomic_json(result, stage_worker(ctx, args.key))
     elif args.operation == 'capture':
         from .build_snapshot import require_complete
         require_complete(ctx.out, game=args.game)

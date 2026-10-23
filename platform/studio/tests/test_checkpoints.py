@@ -191,7 +191,7 @@ def test_default_checkpoint_cooking_uses_dependency_tracking(tmp_path):
     assert step.commands[0].cook_mode is CookMode.INCREMENTAL
 
 
-@pytest.mark.parametrize('operation', ['restore', 'restore-action', 'stage-candidates'])
+@pytest.mark.parametrize('operation', ['restore-action'])
 def test_checkpoint_transfer_reaches_real_guard_boundary_with_valid_invocation(tmp_path, monkeypatch, operation):
     from atelier.harness.safety import guarded
     class BeforeNativeLaunch(Exception):

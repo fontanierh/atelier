@@ -1355,8 +1355,6 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             try:
                 for item in batch:
                     candidate = item.step if hasattr(item, 'step') else item[0]
-                    from .checkpoint_candidates import prepare as prepare_candidates
-                    prepare_candidates(ctx, candidate, fingerprint=fingerprint(candidate, done, index=index, tool_cache=tool_cache), echo=echo)
                     protect(ctx, candidate, estimate=estimate(read_stamp(ctx.stamps / (candidate.name + '.json'))), echo=echo)
             except RuntimeError as error:
                 echo(str(error))
@@ -1387,12 +1385,6 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                         except (OSError, ValueError, RuntimeError):
                             path.unlink(missing_ok=True)
                             raise
-            from .checkpoint_native_capture import publish as retain_candidates
-            for completed_step in plan:
-                if completed_step.name in completed:
-                    saved = read_stamp(ctx.stamps / (completed_step.name + '.json'))
-                    retain_candidates(ctx, completed_step, saved,
-                                      fresh=lambda item=completed_step: fingerprint(item, done), echo=echo)
             if actions is not None:
                 from .checkpoint_manifest import record as retain_record
                 for completed_step in plan:
@@ -1461,9 +1453,6 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
         from_cache = products is not None
         if not from_cache and step.heavy and any(not isinstance(c, Call) for c in step.commands) and budget_spent():
             return yield_build(step)
-        if not from_cache:
-            from .checkpoint_candidates import prepare as prepare_candidates
-            prepare_candidates(ctx, step, fingerprint=current, echo=echo)
         if not from_cache and not recovering:
             from .build_checkpoints import protect, estimate
             try:
@@ -1626,8 +1615,6 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                 echo(f'{print_} cache publication skipped ({error})')
         done[step.name] = result(step, current, record)
         build_products.feed_results(done, products)
-        from .checkpoint_native_capture import publish as retain_candidates
-        retain_candidates(ctx, step, record, fresh=lambda: fingerprint(step, done), echo=echo)
         if actions is not None:
             from .checkpoint_manifest import record as retain_record
             retain_record(ctx, step, record, store=actions.store)
