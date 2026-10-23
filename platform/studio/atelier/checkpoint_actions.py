@@ -249,7 +249,12 @@ def publish(ctx, step, fingerprint, stamp, *, store=None, done=None, produced=Fa
     from .build import fingerprint as receiving_fingerprint
     if done is None:
         raise CheckpointError('Task publication requires its verified dependency results')
-    if receiving_fingerprint(step, done) != fingerprint:
+    # Installed tools are fixed for this build invocation. Keep the same complete
+    # resource memo used for planning; do not rediscover/hash the Blender app twice
+    # per small completed action. Source inputs still receive fresh byte checks,
+    # and tool_context retains its executable-change cache invalidation.
+    tools = getattr(ctx, 'build_tool_cache', None)
+    if receiving_fingerprint(step, done, tool_cache=tools) != fingerprint:
         raise CheckpointError('Task inputs changed before publication')
     if step.products and build_products.records(step) != stamp.get('products'):
         raise CheckpointError('Task products changed before publication')
@@ -270,7 +275,7 @@ def publish(ctx, step, fingerprint, stamp, *, store=None, done=None, produced=Fa
         observations = {}
         second_roots, second_files = snapshot(ctx, step, store, save_blobs=False, observations=observations)
         if (declarations != second_roots or not equivalent(files, second_files)
-                or receiving_fingerprint(step, done) != fingerprint
+                or receiving_fingerprint(step, done, tool_cache=tools) != fingerprint
                 or key(ctx, step, fingerprint) != action_key):
             raise CheckpointError('Task inputs or outputs changed during publication')
         previous = load(store, action_key)
