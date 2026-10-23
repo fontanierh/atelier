@@ -1020,6 +1020,11 @@ def _build(ctx, wanted, *, force, touch, echo, index, steps=None, produced=None,
     from .build_cook import validate_force
     validate_force(ctx, force)
     ctx.build_hash_index = index  # Publication reuses the digests this build already computed.
+    def output_tracker(steps):
+        from .checkpoint_actions import verifiable
+        from .output_inventory import Tracker
+        return Tracker(ctx, [s for s in steps if s.outputs and not verifiable(ctx, s)])
+    ctx.output_tracker = output_tracker
     checkpoint = {}
     completed = False
     try:
@@ -1190,7 +1195,9 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             from .checkpoint_store import hashing
             with hashing(ctx, index.digest):  # Hydrated clones were recorded in this index.
                 adoptable = (staged is not None and outputs_present(step) and task_cache.compile_present(ctx, step)
-                             and task_cache.certified(ctx, step, current, staged[1]))
+                             and (task_cache.certified(ctx, step, current, staged[1])
+                                  or (task_cache.inventory_verified(ctx, step, staged[1])
+                                      and task_cache.local_incremental(ctx, step, current, staged[1]))))
             if adoptable:
                 adopted, previous = 'checkpoint ' + str(staged[0])[:12], staged[1]
             elif (step.heavy or step.products) and task_cache.key(ctx, step, current) is not None and \
@@ -1214,6 +1221,12 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                 outputs_ok = outputs_ok and task_cache.valid_outputs(ctx, step, saved_action)
         if step.products:
             outputs_ok = outputs_ok and build_products.valid_records(step, previous.get('products', {}), hasher=index.digest)
+        if outputs_ok and previous.get('output_inventory') and previous.get('fingerprint') == current:
+            from .output_inventory import stale
+            drift = stale(ctx, step, previous)
+            if drift:
+                outputs_ok = False
+                echo(f'{print_} outputs changed since its stamp ({drift[0]}' + (f' and {len(drift) - 1} more' if len(drift) > 1 else '') + '); rebuilding')
         try:
             verify_spatial(step, current)
         except (OSError, ValueError, SyntaxError) as error:
@@ -1300,8 +1313,17 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                 echo(str(error))
                 return 1
             heavy_commands += 1
+            batch_tracker = ctx.output_tracker([s for s, _, _ in batch])
             completed, code = build_batches.run(ctx, batch, done, index=index, tool_cache=tool_cache,
                                                 echo=echo, products=declared_products, wanted=wanted)
+            finished = [(s, read_stamp(ctx.stamps / (s.name + '.json')).get('time', 0))
+                        for s, _, _ in batch if s.name in completed and s.name in batch_tracker.scopes]
+            if finished:
+                from .build_cache import atomic_json
+                for name, inventory in batch_tracker.batch(finished, index.digest).items():
+                    saved = read_stamp(ctx.stamps / (name + '.json'))
+                    if saved:
+                        atomic_json(ctx.stamps / (name + '.json'), dict(saved, output_inventory=inventory))
             if actions is not None:
                 for completed_step in plan:
                     if completed_step.name in completed:
@@ -1394,6 +1416,9 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             except RuntimeError as error:
                 echo(str(error))
                 return 1
+        tracker = ctx.output_tracker([step]) if not from_cache else None  # Credits this step with its writes.
+        if tracker is not None and step.name not in tracker.scopes:
+            tracker = None
         with open(log_path, 'w') as log:
             try:
                 stamp.unlink(missing_ok=True)
@@ -1464,6 +1489,8 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                   'input_state': input_state, 'commands': command_times}
         if audit_receipt and not from_cache:
             record['audit_receipt'] = audit_receipt
+        if tracker is not None:
+            record['output_inventory'] = tracker.inventory(step, index.digest)
         if step.products or 'product_roots' in previous:
             from . import build_changes
             record['products'] = products

@@ -504,9 +504,11 @@ def install(store, value):
 def verifiable(ctx, step):
     """@cc [owner:fontanierh,label:correctness] unverified-steps-never-publish
     A step whose stamp cannot be checked against complete output records (ambient Blender, or
-    only representative outputs) MUST NOT publish its owned files or its stamp to a checkpoint
-    manifest. Restoration and hydration MUST NOT adopt such a stamp or its owned files from the
-    store, including from manifests published before this rule; the receiver rebuilds them.
+    only representative outputs without a matching written-output inventory) MUST NOT publish
+    its owned files or its stamp to a checkpoint manifest. Restoration and hydration MUST NOT
+    adopt such a stamp or its owned files from the store, including from manifests published
+    before this rule; the receiver rebuilds them. An inventoried stamp MAY be adopted only when
+    every listed file was published with the recorded size, mtime and digest.
     """
     from .build import Blender, Call
     if any(isinstance(c, Blender) and not c.factory_startup for c in step.commands):
@@ -516,12 +518,48 @@ def verifiable(ctx, step):
     return all(isinstance(c, Call) for c in step.commands) and not step.outputs
 
 
-def ownership(ctx, steps):
+def ambient(step):
+    from .build import Blender
+    return any(isinstance(c, Blender) and not c.factory_startup for c in step.commands)
+
+
+def inventory_verified(ctx, step, stamp):
+    """A representative-output stamp whose complete written inventory still matches on disk."""
+    from .output_inventory import changed
+    inventory = stamp.get('output_inventory')
+    return bool(inventory) and not ambient(step) and not changed(ctx, inventory)
+
+
+def inventory_published(step, stamp, files):
+    """A saved representative-output stamp whose every inventoried file was published intact."""
+    inventory = stamp.get('output_inventory')
+    if not inventory or ambient(step):
+        return False
+    for name, (size, mtime_ns, digest) in inventory.items():
+        entry = files.get(name)
+        if not entry or entry.get('kind') != 'file' or (entry['size'], entry['sha256'], entry['mtime_ns']) != (size, digest, mtime_ns):
+            return False
+    return True
+
+
+def trusted(ctx, steps, manifest):
+    """Saved stamps a receiver may consider, and the inventories that make them verified."""
+    by_name = {s.name: s for s in steps}
+    saved = {**manifest['stamps'], **manifest.get('incremental_stamps', {})}
+    inventories = {n: v['output_inventory'] for n, v in saved.items()
+                   if n in by_name and not verifiable(ctx, by_name[n]) and inventory_published(by_name[n], v, manifest['files'])}
+    names = {n for n in saved if n in by_name and (verifiable(ctx, by_name[n]) or n in inventories)}
+    return names, inventories
+
+
+def ownership(ctx, steps, inventories=None):
     """Member-name prefix of each step-owned output path -> whether its owner is verifiable.
 
     A representative output only samples what its step writes, so an unverifiable step also
     claims that output's directory. Explicit outputs and declared roots override such claims.
+    A step verified by its written inventory claims exactly the files it lists.
     """
+    inventories = inventories or {}
     owners, weak = {}, {}
     # Deepest root first, as label() chooses; plain string prefixes keep this cheap per build.
     bases = sorted(((str(root), name) for name, (root, _) in roots(ctx).items()), key=lambda b: -len(b[0]))
@@ -534,7 +572,9 @@ def ownership(ctx, steps):
                 return name + '/' + text[len(base) + 1:]
         return None
     for step in steps:
-        good = verifiable(ctx, step)
+        good = verifiable(ctx, step) or step.name in inventories
+        for name in inventories.get(step.name, ()):
+            owners[name] = owners.get(name, True)
         for path in dict.fromkeys([*map(Path, getattr(step, 'outputs', ())), *declared(ctx, step)]):
             name = member(path)
             if name is None:

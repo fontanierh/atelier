@@ -446,3 +446,33 @@ def test_contaminated_manifest_never_restores_an_unverified_step(fixture):
     staged = warm.out / build_checkpoints.STAGED / 'world.json'
     atomic_json(staged, dict(source=contaminated, stamp=stamp))
     assert build_checkpoints.staged_certificate(warm, steps_here[-1], stamp['fingerprint']) is None
+
+
+def test_inventoried_representative_step_restores_in_a_cold_checkout(fixture):
+    from atelier.output_inventory import Tracker
+    ctx, steps = fixture.checkout('producer')
+    fixture.produce(ctx, steps)
+    world = representative(ctx)
+    tracker = Tracker(ctx, [world])
+    (ctx.out / 'world/glb').mkdir(parents=True)
+    (ctx.out / 'world/build-report.json').write_text('report')
+    (ctx.out / 'world/glb/harbor.glb').write_bytes(b'mesh the report describes')
+    inventory = tracker.inventory(world, lambda p: hashlib.sha256(p.read_bytes()).hexdigest())
+    assert set(inventory) == {'generated/world/build-report.json', 'generated/world/glb/harbor.glb'}
+    stamp = dict(fingerprint=build.fingerprint(world, {}), seconds=300., time=1., output_inventory=inventory)
+    atomic_json(ctx.stamps / 'world.json', stamp)
+    ctx.checkpoint_incremental_compatible = True
+    key = cp.capture(ctx, [*steps, world], fixture.store, echo=lambda _: None)
+    saved = fixture.store.load(key)
+    assert saved['incremental_stamps']['world']['output_inventory'] == inventory
+    receiver, received = fixture.checkout('cold')
+    stamps = cp.restore(receiver, [*received, representative(receiver)], fixture.store, key, echo=lambda _: None)
+    assert 'world' in stamps
+    assert (receiver.out / 'world/glb/harbor.glb').read_bytes() == b'mesh the report describes'
+    # A published file that differs from the inventory never lets the stamp through.
+    tampered = deepcopy(saved)
+    tampered['files']['generated/world/glb/harbor.glb']['sha256'] = saved['files']['generated/tree/asset.bin']['sha256']
+    tampered['files']['generated/world/glb/harbor.glb']['size'] = saved['files']['generated/tree/asset.bin']['size']
+    other, current = fixture.checkout('cold-two')
+    stamps = cp.restore(other, [*current, representative(other)], fixture.store, fixture.store.save(tampered), echo=lambda _: None)
+    assert 'world' not in stamps and not (other.out / 'world').exists()

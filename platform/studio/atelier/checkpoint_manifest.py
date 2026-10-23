@@ -51,6 +51,8 @@ def _workspace(ctx, store):
             raise CheckpointError('Published workspace identity differs')
     old_files, old_checks = previous.get('files', {}), previous.get('local_observations', {})
     old_blobs = previous.get('blob_observations', {})
+    index = getattr(ctx, 'build_hash_index', None)
+    hashed = index.digest if index is not None else digest_file  # Reuse digests the build computed.
     source_files = tracked_paths()
     files, checks, blobs = {}, {}, {}
     copied, reused, spoken = 0, 0, time.monotonic()
@@ -87,7 +89,7 @@ def _workspace(ctx, store):
                 else:
                     entry = dict(mode=stat.S_IMODE(info.st_mode), mtime_ns=info.st_mtime_ns)
                     if stat.S_ISREG(info.st_mode):
-                        digest = digest_file(path)
+                        digest = hashed(path)
                         store.put(path, digest)
                         copied += 1
                         entry.update(kind='file', size=info.st_size, sha256=digest)
@@ -180,7 +182,7 @@ def finish(ctx, steps):
         return
     from . import checkpoint_actions as actions
     store = Store(ctx.game)
-    records, entries, observations, incremental = {}, {}, {}, {}
+    records, entries, observations, incremental, inventories = {}, {}, {}, {}, {}
     tool = context(ctx)
     with store.locked():
         workspace = _workspace(ctx, store)
@@ -206,7 +208,11 @@ def finish(ctx, steps):
                     raise CheckpointError('Published task artifact certificate is missing')
                 entries[key] = value
             from .build import Call
-            if not actions.verifiable(ctx, step):
+            if actions.verifiable(ctx, step):
+                pass
+            elif actions.inventory_verified(ctx, step, stamp):
+                inventories[step.name] = stamp['output_inventory']
+            else:
                 continue  # Its stamp and owned files stay local; a receiver rebuilds them.
             if key is None and not (all(isinstance(c, Call) for c in step.commands) and not step.outputs):
                 incremental[step.name] = stamp
@@ -220,7 +226,7 @@ def finish(ctx, steps):
         if not records and not incremental:
             (folder(ctx.out) / 'ready.json').unlink(missing_ok=True)
             return
-        files = actions.publishable(workspace['files'], actions.ownership(ctx, steps))
+        files = actions.publishable(workspace['files'], actions.ownership(ctx, steps, inventories))
         digests = {e['sha256'] for e in files.values() if e['kind'] == 'file'}
         manifest = dict(workspace, workspace_only=False, stamps=records, incremental_stamps=incremental,
                         steps=sorted({*records, *incremental}), actions=entries, files=files,

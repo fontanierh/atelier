@@ -303,10 +303,12 @@ def capture(ctx, steps, store, *, echo=print, allow_seed=False, candidate_only=F
         current_proof = {s.name: before[s.name] for s in steps if not candidate_only and s.name in before
                          and checkpoint_actions.certified(ctx, s, before[s.name]['fingerprint'], before[s.name])}
         # A candidate-only catalogue is never a workspace donor; native validation decides its use.
-        unverified = set() if candidate_only else {s.name for s in steps if not checkpoint_actions.verifiable(ctx, s)}
+        inventories = {s.name: before[s.name]['output_inventory'] for s in steps if s.name in before
+                       and not checkpoint_actions.verifiable(ctx, s) and checkpoint_actions.inventory_verified(ctx, s, before[s.name])}
+        unverified = set() if candidate_only else {s.name for s in steps if not checkpoint_actions.verifiable(ctx, s) and s.name not in inventories}
         incremental = {name: value for name, value in before.items() if name not in current_proof and name not in unverified}
         if not candidate_only:
-            files = checkpoint_actions.publishable(files, checkpoint_actions.ownership(ctx, steps))
+            files = checkpoint_actions.publishable(files, checkpoint_actions.ownership(ctx, steps, inventories))
         manifest = dict(schema=SCHEMA, game=ctx.game, context=context(ctx),
                         checkout=identity(str(paths.REPO.resolve())), files=files, stamps=current_proof, incremental_stamps=incremental,
                         historical_stamps={name: stamp for name, stamp in history.items() if name not in before},
@@ -446,10 +448,10 @@ def restore(ctx, steps, store, key, *, echo=print):
     if manifest['context'] != context(ctx):
         raise CheckpointError('Checkpoint engine/platform identity differs')
     allowed = roots(ctx)
-    from .checkpoint_actions import ownership, unverified_member, verifiable
-    trusted = {s.name for s in steps if verifiable(ctx, s)}
-    saved_stamps = {n: v for n, v in {**manifest['stamps'], **manifest.get('incremental_stamps', {})}.items() if n in trusted}
-    owners = ownership(ctx, steps)
+    from .checkpoint_actions import ownership, trusted, unverified_member
+    names, inventories = trusted(ctx, steps, manifest)
+    saved_stamps = {n: v for n, v in {**manifest['stamps'], **manifest.get('incremental_stamps', {})}.items() if n in names}
+    owners = ownership(ctx, steps, inventories)
     if not set(manifest.get('steps', ())) <= {s.name for s in steps}:
         raise CheckpointError('Checkpoint task ownership changed; a new baseline is required')
     journal = ctx.out / JOURNAL

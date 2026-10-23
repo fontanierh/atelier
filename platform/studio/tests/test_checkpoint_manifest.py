@@ -132,7 +132,7 @@ def test_noop_build_publication_reuses_existing_cas_hashes(fixture, monkeypatch)
     manifests.retain(paths.REPO, ctx.out, ctx.game)
 
 
-def test_real_legacy_build_never_publishes_its_unverified_stamp_or_files(tmp_path, monkeypatch):
+def test_representative_step_publishes_its_written_inventory_and_reruns_when_it_drifts(tmp_path, monkeypatch):
     from types import SimpleNamespace
     from atelier import build_cache
     repo = tmp_path.resolve(); (repo / 'uv.lock').write_text('lock')
@@ -156,14 +156,29 @@ def test_real_legacy_build_never_publishes_its_unverified_stamp_or_files(tmp_pat
         (out / 'asset/sidecar').write_bytes(b'also required')
     monkeypatch.setattr(build, 'run_command', run)
     assert build.build('fixture') == 0
+    # The run credits the step with every file it wrote, not just its representative output.
+    stamp = json.loads((out / 'stamps/legacy.json').read_bytes())
+    assert set(stamp['output_inventory']) == {'generated/asset/sentinel', 'generated/asset/sidecar'}
     monkeypatch.setattr(manifests, 'digest_file', lambda *a: pytest.fail('retain hashes no payload'))
-    # A representative-output step has no verifiable records: nothing of it is published.
-    with pytest.raises(cp.CheckpointError, match='No build-published retention manifest'):
-        manifests.retain(repo, out, 'fixture')
-    for path in cp.Store('fixture').manifests.glob('*.json'):
-        manifest = json.loads(path.read_bytes())
-        assert 'legacy' not in {**manifest['stamps'], **manifest.get('incremental_stamps', {})}
-        assert not {'generated/asset/sentinel', 'generated/asset/sidecar'} & set(manifest['files'])
+    key = manifests.retain(repo, out, 'fixture')
+    manifest = cp.Store('fixture').load(key)
+    assert set(manifest['incremental_stamps']) == {'legacy'}
+    assert {'generated/asset/sentinel', 'generated/asset/sidecar'} <= set(manifest['files'])
+    # A written file that no longer matches its stamp makes the step stale.
+    (out / 'asset/sidecar').write_bytes(b'replaced by another producer')
+    runs = []
+    monkeypatch.setattr(build, 'run_command', lambda *a, **kw: runs.append(1) or run())
+    messages = []
+    assert build.build('fixture', echo=messages.append) == 0
+    assert runs and any('outputs changed since its stamp (generated/asset/sidecar)' in m for m in messages)
+    # A stamp without an inventory (written before this rule) never publishes.
+    stamp = json.loads((out / 'stamps/legacy.json').read_bytes())
+    stamp.pop('output_inventory')
+    (out / 'stamps/legacy.json').write_text(json.dumps(stamp))
+    task = manifests.folder(out) / 'tasks/legacy.json'
+    task.write_text(json.dumps(dict(json.loads(task.read_bytes()), stamp=stamp)))
+    manifests.finish(ctx, [step])
+    assert not (manifests.folder(out) / 'ready.json').exists()
 
 
 def test_build_workspace_staging_does_not_accumulate_full_checkpoint_versions(fixture, monkeypatch):
