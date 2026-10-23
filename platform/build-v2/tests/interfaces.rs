@@ -178,7 +178,7 @@ fn optional_inputs_sidecars_and_install_mapping_are_representable() {
         serde_json::from_value::<ContentSource>(serde_json::to_value(&source).unwrap()).unwrap(),
         source
     );
-    let absent = serde_json::to_value(ContentIdentity::Absent).unwrap();
+    let absent = serde_json::to_value(ContentIdentity::Absent {}).unwrap();
     let empty = serde_json::to_value(ContentIdentity::Digest {
         digest: "empty-file-hash".into(),
     })
@@ -198,5 +198,13 @@ fn optional_inputs_sidecars_and_install_mapping_are_representable() {
     assert_eq!(
         example.units[1].outputs[0].files[0].install_path.as_deref(),
         Some("Content/Data/plain.json")
+    );
+}
+
+#[test]
+fn absent_identity_refuses_unknown_fields() {
+    assert!(
+        serde_json::from_str::<ContentIdentity>(r#"{"state":"absent","digest":"unexpected"}"#)
+            .is_err()
     );
 }

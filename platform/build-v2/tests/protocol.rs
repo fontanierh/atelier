@@ -13,7 +13,7 @@ fn consecutive_frames_roundtrip_and_clean_eof() {
         Request::Cancel {
             job_id: "job-1".into(),
         },
-        Request::Shutdown,
+        Request::Shutdown {},
     ];
     let mut bytes = vec![];
     for request in &requests {
@@ -51,7 +51,7 @@ fn responses_and_failure_classes_roundtrip() {
                 message: "undeclared read".into(),
             },
         },
-        Response::Stopped,
+        Response::Stopped {},
     ];
     for response in responses {
         let mut bytes = vec![];
@@ -141,7 +141,7 @@ fn fragmented_reads_and_interrupts_are_supported() {
     };
     assert_eq!(
         read_frame::<_, Request>(&mut reader).unwrap(),
-        Some(Request::Shutdown)
+        Some(Request::Shutdown {})
     );
     assert!(read_frame::<_, Request>(&mut reader).unwrap().is_none());
 }
@@ -156,4 +156,15 @@ fn oversized_writer_does_not_emit_partial_frame() {
         io::ErrorKind::InvalidData
     );
     assert!(bytes.is_empty());
+}
+
+#[test]
+fn stopped_response_refuses_unknown_fields() {
+    let frame = raw_frame(br#"{"version":1,"message":{"type":"stopped","typo":1}}"#);
+    assert_eq!(
+        read_frame::<_, Response>(&mut Cursor::new(frame))
+            .unwrap_err()
+            .kind(),
+        io::ErrorKind::InvalidData
+    );
 }

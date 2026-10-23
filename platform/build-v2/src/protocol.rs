@@ -18,7 +18,7 @@ struct Envelope<T> {
 pub enum Request {
     Run { job: JobRequest },
     Cancel { job_id: String },
-    Shutdown,
+    Shutdown {},
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -38,7 +38,7 @@ pub enum Response {
         job_id: String,
         failure: WorkerFailure,
     },
-    Stopped,
+    Stopped {},
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

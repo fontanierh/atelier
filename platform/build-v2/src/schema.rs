@@ -113,7 +113,7 @@ pub struct OutputFile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "state", rename_all = "snake_case", deny_unknown_fields)]
 pub enum ContentIdentity {
-    Absent,
+    Absent {},
     Digest { digest: String },
 }
 
