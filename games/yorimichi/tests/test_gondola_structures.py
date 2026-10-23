@@ -109,9 +109,8 @@ def test_instance_rotation_scale_translation_and_region_origin():
     assert np.allclose(low,[6,6,10]) and np.allclose(high,[12,8,22])
 
 
-def test_source_projection_applies_real_transform_and_collision_selection(tmp_path,monkeypatch):
+def test_source_projection_applies_real_transform_and_collision_selection(tmp_path):
     from gondola import source_inputs
-    monkeypatch.setattr(source_inputs,'country_groups',lambda *_:([],{}))
     source_plan(tmp_path,[(1000,4500,0),(1001,4500,0),(1000,4501,1)],[(400,4500,0),(401,4500,0),(400,4501,1)])
     scene=dict(meshes=[dict(name='SM_BM_Wall',source_asset='Wall')],placements=[dict(asset='Wall',materials=[0],transform=
         dict(translation_cm=[0.,0.,0.],scale=[1.,1.,1.],rotation_xyzw=[0.,0.,0.,1.]))])
@@ -320,11 +319,10 @@ def test_structure_bounds_are_cached_by_file_identity(tmp_path, monkeypatch):
     assert len(calls) == 2
 
 
-def test_preexport_child_selection_keeps_old_distant_owner_and_omits_far_render_only_child(tmp_path,monkeypatch):
+def test_preexport_child_selection_keeps_old_distant_owner_and_omits_far_render_only_child(tmp_path):
     import hashlib
     from encoded_region_plan import publish
     from gondola import source_inputs
-    monkeypatch.setattr(source_inputs,'country_groups',lambda *_:([],{}))
     parent='SM_BM_Wall'
     author=tmp_path/'authors'
     collision=author/(parent+'_Collision.glb')
@@ -347,27 +345,3 @@ def test_preexport_child_selection_keeps_old_distant_owner_and_omits_far_render_
     assert [row['asset'].rsplit('/',1)[-1].split('.')[0] for row in value['groups']]==[parent+'_Piece00',parent+'_Piece01']
     assert [row['collision'] for row in value['groups']]==[True,False]
     assert len({path for row in value['groups'] for path in row['geometry'].values()})==3
-
-
-def test_original_country_extra_keeps_only_intersecting_children_with_identity_instances(tmp_path):
-    import hashlib
-    from encoded_region_plan import publish
-    from gondola import source_inputs
-    parent='SM_BM_NorthCountry';parts=[]
-    for index,x in enumerate((400.,1200.)):
-        key=parent+f'_Piece{index}';path=tmp_path/'authors'/(key+'.glb')
-        write_triangle(path,[(x,4500,0),(x+1,4500,0),(x,4501,1)])
-        data=path.read_bytes();entry=dict(name=key,path='glb/'+key+'.glb',
-            sha256=hashlib.sha256(data).hexdigest(),triangles=1,bounds_m=list(structures.mesh_bounds(path)))
-        parts.append(dict(name=key,data=data,metadata=dict(entry=entry,slots=[0],collision=True)))
-    publish(tmp_path/'planned_exports/belmonte_north'/parent,parent=parent,parts=parts)
-    groups,packets=source_inputs.country_groups(tmp_path,[0,0,0])
-    assert len(groups)==len(packets)==1
-    row=groups[0]
-    assert row['asset'].endswith(parent+'_Piece0.'+parent+'_Piece0')
-    assert row['geometry']['visual']==row['geometry']['collision']
-    assert row['transforms']==[dict(translation_cm=[0.,0.,0.],rotation_xyzw=[0.,0.,0.,1.],scale=[1.,1.,1.])]
-    folder=tmp_path/'gondola/world';folder.mkdir(parents=True)
-    (folder/'structures-sources.json').write_text(json.dumps(dict(schema=1,owner='GondolaStructureSources',
-        bounds_m=list(structures.BOUNDS),origin_cm=[0,0,0],groups=groups,sources=packets)))
-    assert structures.selected(tmp_path)['groups']==groups

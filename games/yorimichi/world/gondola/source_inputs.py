@@ -135,39 +135,11 @@ def structure_projection(build,*,scene=None,models=None,origin=None,materials=No
                 transforms.append(transform)
         if transforms:groups.append(dict(asset=group['asset'],geometry=geometry,transforms=transforms,
                                          plant=False,collision=group['collision'],parent_collision=parent_collision))
-    country,country_packets=country_groups(build,origin)
-    groups.extend(country)
     groups.sort(key=lambda row:json.dumps({key:row[key] for key in ('asset','geometry','transforms')},sort_keys=True))
     selected={path for row in groups for path in row['geometry'].values()}
     identities={relative:digest for relative,digest in packets.values()}
-    identities.update(country_packets)
     return dict(schema=1,owner='GondolaStructureSources',bounds_m=list(BOUNDS),origin_cm=origin,groups=groups,
                 sources={path:identities[path] for path in sorted(selected)})
-
-
-def country_groups(build,origin):
-    """Original generated extra: identity instances, selected per actual child box."""
-    from gondola.structures import BOUNDS,affine,mesh_bounds_data,placed_bounds
-    from encoded_region_plan import validate
-    parent='SM_BM_NorthCountry';root=Path(build)/'planned_exports/belmonte_north'/parent
-    plan=validate(root)
-    if plan['parent']!=parent:raise ValueError('Foreign generated country source owner')
-    transform=dict(translation_cm=[0.,0.,0.],rotation_xyzw=[0.,0.,0.,1.],scale=[1.,1.,1.])
-    matrix,offset=affine(transform,origin);groups=[];packets={}
-    for row in plan['pieces']:
-        key=row['name'];path=root/row['payload'];identity,data=encoded_glb.read(path,key=key)
-        metadata=identity['metadata'];entry=metadata['entry']
-        if (identity['role']!='render' or metadata.get('collision') is not True or entry.get('collision')
-                or entry['name']!=key or entry['path']!='glb/'+key+'.glb'
-                or entry['sha256']!=identity['sha256'] or entry['triangles']!=identity['triangles']
-                or entry['bounds_m']!=identity['bounds']):raise ValueError('Foreign generated country child metadata')
-        low,high=placed_bounds(mesh_bounds_data(data),matrix,offset)
-        if high[0]<BOUNDS[0] or low[0]>BOUNDS[2] or high[1]<BOUNDS[1] or low[1]>BOUNDS[3]:continue
-        relative=path.relative_to(build).as_posix();packets[relative]=sha(path)
-        groups.append(dict(asset=f'/Game/Belmonte/Meshes/{key}.{key}',
-            geometry=dict(visual=relative,collision=relative),transforms=[transform],
-            plant=False,collision=True,parent_collision=True))
-    return groups,packets
 
 
 def structure_paths(build):
@@ -175,10 +147,8 @@ def structure_paths(build):
     # census declares every member inspected for bounds selection before exports.
     scene=scene_inputs.read(Path(build)/'belmonte-scene-data/runtime.json',view='runtime')
     paths=[]
-    owners=[('belmonte_models',key) for key in structure_keys(scene=scene)]
-    owners.append(('belmonte_north','SM_BM_NorthCountry'))
-    for namespace,key in owners:
-        root=real_directory(Path(build)/'planned_exports'/namespace/key)
+    for key in structure_keys(scene=scene):
+        root=real_directory(Path(build)/'planned_exports/belmonte_models'/key)
         plan=root/'plan.json'
         if plan.is_symlink() or not plan.is_file():raise ValueError('Missing complete source model plan')
         value=json.loads(plan.read_text())

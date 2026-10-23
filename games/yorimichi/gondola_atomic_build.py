@@ -198,7 +198,7 @@ def query_steps(ctx):
     selected = source.ground_projection(ctx.out)
     result = []
     for kind in ('ground','structures'):
-        reads = (['belmonte.scene.runtime','belmonte.prepared_materials','belmonte_north.geometry.SM_BM_NorthCountry',
+        reads = (['belmonte.scene.runtime','belmonte.prepared_materials',
                   *('belmonte_models.geometry.'+key for key in source.structure_keys())]
                  if kind == 'structures' else [])
         deferred = ([DeferredInputs('gondola-selected-structure-sources',source.structure_paths,(ctx.out,),support=(script,))]
