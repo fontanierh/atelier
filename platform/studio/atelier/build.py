@@ -531,11 +531,18 @@ class RecordingDigest:
         self.local.update(data)
 
 
-def _hash_path(digest, path, skip=True):
-    """Hash a file, or a folder's files; `skip` leaves out what never changes a step's source (SKIP_PARTS)."""
+def _hash_path(digest, path, skip=True, shadow=False):
+    """Hash a file, or a folder's files; `skip` leaves out what never changes a step's source (SKIP_PARTS).
+
+    With shadow, each file contributes its stat identity instead of its bytes (a memo key only).
+    """
     path = Path(path)
     if path.is_file():
         digest.update(str(path.name).encode())
+        if shadow:
+            info = path.stat()
+            digest.update(f'{info.st_size}:{info.st_mtime_ns}:{info.st_ctime_ns}:{info.st_ino}:{info.st_mode}\0'.encode())
+            return
         with open(path, 'rb') as handle:
             for chunk in iter(lambda: handle.read(1 << 20), b''):
                 digest.update(chunk)
@@ -545,7 +552,7 @@ def _hash_path(digest, path, skip=True):
             if child.is_file() and not (skip and (SKIP_PARTS & set(child.parts) or child.suffix in SKIP_SUFFIXES)):
                 # rglob preserves this lexical prefix; avoid searching all parent paths per file.
                 digest.update(str(Path(*child.parts[depth:])).encode())
-                _hash_path(digest, child, skip)
+                _hash_path(digest, child, skip, shadow)
     else:
         digest.update(b'missing:' + str(path).encode())
 
@@ -584,6 +591,34 @@ def fingerprint(step, done, *, index=None, tool_cache=None, observation=None, _i
 
 
 def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, observation=None, _input_bytes=None, _tool_identity=None):
+    """@cc [owner:fontanierh,label:correctness;performance] legacy-fingerprint-memo
+    A legacy byte-stream fingerprint MAY be reused from the build's hash index only under a key
+    that covers everything the fingerprint covers, with each input file's bytes replaced by its
+    identity, size, mode and nanosecond modification/change times. Verification mode, replaced
+    input bytes and named (Merkle) fingerprints MUST compute directly. The value MUST be exactly
+    what the direct computation returned.
+    """
+    named = bool(step.products or step.reads or step.references)
+    if index is None or named or _input_bytes or getattr(index, 'verify', False):
+        return _fingerprint_state(step, done, capture=capture, index=index, tool_cache=tool_cache,
+                                  observation=observation, _input_bytes=_input_bytes, _tool_identity=_tool_identity)
+    from .build_deferred import observe, validate
+    validate(step)
+    observation = observation if observation is not None else observe(step)
+    shadow, _ = _fingerprint_state(step, done, capture=False, index=index, tool_cache=tool_cache,
+                                   observation=observation, _tool_identity=_tool_identity, shadow=True)
+    key = ('legacy-fingerprint-v1:' + ('state:' if capture else 'key:') + shadow)
+    hit = index.remembered(key)
+    if isinstance(hit, list) and len(hit) == 2:
+        return hit[0], hit[1]
+    value = _fingerprint_state(step, done, capture=capture, index=index, tool_cache=tool_cache,
+                               observation=observation, _tool_identity=_tool_identity)
+    index.remember(key, [value[0], value[1]])
+    return value
+
+
+def _fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, observation=None, _input_bytes=None,
+                       _tool_identity=None, shadow=False):
     """Hash once, optionally retaining per-input identities for build explanations.
 
     _input_bytes and _tool_identity only reproduce historical evidence in bounded migration. Ordinary
@@ -640,14 +675,14 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, 
             if replacement is not None:
                 recording.update(Path(item).name.encode()); recording.update(replacement)
             else:
-                _hash_path(recording, item)
+                _hash_path(recording, item, shadow=shadow)
             label = str(item).replace(build_root_str, '<build>').replace(repo_str, '<repo>')
             state['inputs'][label] = recording.local.hexdigest()
         else:
             if replacement is not None:
                 digest.update(Path(item).name.encode()); digest.update(replacement)
             else:
-                _hash_path(digest, item)
+                _hash_path(digest, item, shadow=shadow)
     if step.optional_inputs:
         state['optional_inputs'] = {}
         for item in step.optional_inputs:
@@ -950,20 +985,40 @@ def _prepared_build(ctx, wanted, *, force, touch, echo, verify, rebuild_reason, 
     ctx.record_cook_recovery = record_cook_recovery
     ctx.rebuild_touched = rebuild_touched
     from . import build_checkpoints
-    ctx.rebuild_reason = build_checkpoints.reason(rebuild_reason)
+    try:
+        ctx.rebuild_reasons, ctx.rebuild_reason = build_checkpoints.reasons(rebuild_reason)
+    except build_checkpoints.CheckpointError as error:
+        raise SystemExit(str(error)) from error
     ctx.checkpoint_settings = build_checkpoints.configured(ctx)
     checkpoint_steps = None
     if ctx.checkpoint_settings is not None:
         if touch:
             raise SystemExit('--touch cannot certify checkpoint builds. Use the normal build command.')
-        if force and not ctx.rebuild_reason:
+        if force and not (ctx.rebuild_reason or ctx.rebuild_reasons):
             raise SystemExit('--force requires --rebuild-reason for checkpoint builds; normal builds restore matching results.')
         checkpoint_steps = load_recipe(game).steps(ctx)
         check_source_launch(checkpoint_steps)
+        unknown = sorted(set(ctx.rebuild_reasons) - {s.name for s in checkpoint_steps})
+        if unknown:
+            raise SystemExit(f'--rebuild-reason names unknown tasks: {", ".join(unknown)}')
+        # A bare reason covers the tasks named on the command line and those with no result at
+        # launch; any other task the budget stops needs its own STEP=REASON.
+        ctx.cold_at_launch = {s.name for s in checkpoint_steps if not (ctx.stamps / (s.name + '.json')).exists()} | set(wanted)
+        try:  # Read and need edges carry invalidation; planning reports an invalid graph itself.
+            graph = build_products.Graph(checkpoint_steps)
+            ctx.rebuild_upstream = {s.name: {*s.needs, *(graph.owners[n] for n in s.reads)} for s in graph.steps}
+        except (ValueError, KeyError):
+            ctx.rebuild_upstream = {s.name: set(s.needs) for s in checkpoint_steps}
+        ctx.rebuild_reran, ctx.rebuild_covered = set(), []
         if force and (len(wanted) != 1 or wanted[0] not in {s.name for s in checkpoint_steps}):
             raise SystemExit('--force requires one exact task and --rebuild-reason; broad forced rebuilds are retired.')
         ctx.checkpoint_force_task = wanted[0] if force else None
-        if getattr(ctx, 'cook_mode', CookMode.DEFAULT) is CookMode.FULL and not ctx.rebuild_reason:
+        if force:  # The one forced task is named on the command line, so any given reason covers it.
+            forced_reason = ctx.rebuild_reasons.get(wanted[0]) or ctx.rebuild_reason
+            if not forced_reason:
+                raise SystemExit(f'--force needs a rebuild reason for {wanted[0]}')
+            ctx.rebuild_reasons[wanted[0]] = forced_reason
+        if getattr(ctx, 'cook_mode', CookMode.DEFAULT) is CookMode.FULL and not (ctx.rebuild_reason or ctx.rebuild_reasons):
             raise SystemExit('A diagnostic full cook requires --rebuild-reason; normal builds cook incrementally.')
     # Pure refusal checks precede metadata creation. Unconfigured games keep their
     # existing lifecycle and never acquire a checkpoint-only output lock.
@@ -1196,15 +1251,9 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
         adopted = None
         if actions is not None and not force and previous.get('fingerprint') != current:
             # A hydrated checkpoint certificate counts only for the build's own fingerprint.
-            from .build_checkpoints import staged_certificate
-            staged = staged_certificate(ctx, step, current)
-            from .checkpoint_store import hashing
-            with hashing(ctx, index.digest):  # Hydrated clones were recorded in this index.
-                adoptable = (staged is not None and outputs_present(step) and task_cache.compile_present(ctx, step)
-                             and (task_cache.certified(ctx, step, current, staged[1])
-                                  or (task_cache.inventory_verified(ctx, step, staged[1])
-                                      and task_cache.local_incremental(ctx, step, current, staged[1]))))
-            if adoptable:
+            from .build_checkpoints import adopt_staged
+            staged = adopt_staged(ctx, step, current, index.digest)
+            if staged is not None:
                 adopted, previous = 'checkpoint ' + str(staged[0])[:12], staged[1]
             elif (step.heavy or step.products) and task_cache.key(ctx, step, current) is not None and \
                     task_cache.load(actions.store, task_cache.key(ctx, step, current)) is None:
@@ -1375,6 +1424,10 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             completed_batches.update(completed)
             ctx.checkpoint_changed = True
             ran += len(completed)
+            for completed_step in plan:
+                if completed_step.name in completed:
+                    from .build_checkpoints import note_rerun
+                    note_rerun(ctx, completed_step)
             if code:
                 return code
             for completed_step in plan:
@@ -1588,15 +1641,27 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             retain_record(ctx, step, record, store=actions.store)
         restored += int(from_cache)
         ran += int(not from_cache)
+        if not from_cache:
+            from .build_checkpoints import note_rerun
+            note_rerun(ctx, step)
         if from_cache:
             saved_seconds += record.get('checkpoint_build_seconds') or 0.
         if produced is not None and not from_cache:
             produced.append((step.name, record))
-        echo(f'{print_} {"restored" if from_cache else "done"} in {seconds:.1f} s{slot_summary(slots)}')
+        if from_cache:
+            source = {'checkpoint': 'checkpoint action ' + action_hit['key'][:12] if action_hit else 'checkpoint action',
+                      'local': 'local artifact cache', 'compatible-local': 'compatible local artifact cache',
+                      'https': 'remote artifact cache'}.get(restore_source, restore_source or 'cache')
+            echo(f'{print_} restored in {seconds:.1f} s from {source}{slot_summary(slots)}')
+        else:
+            echo(f'{print_} done in {seconds:.1f} s{slot_summary(slots)}')
         if step.replan:
             ctx.recipe_expansion = (step.name, current)
             ctx.expansion_heavy_commands = getattr(ctx, 'expansion_heavy_commands', 0) + heavy_commands
             return 76
+    covered = getattr(ctx, 'rebuild_covered', [])
+    if covered:
+        echo(f'rebuild reason covered {len(covered)} tasks: ' + ', '.join(covered))
     echo(f'{len(plan)} steps, {ran} ran, {restored} restored, {len(plan) - ran - restored} up to date, '
          f'~{saved_seconds:.0f} s of building saved by reuse, {time.monotonic() - started:.0f} s')
     return 0

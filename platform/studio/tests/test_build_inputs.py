@@ -1,4 +1,5 @@
 """Cache keys must cover helpers, without depending on Python's own bytecode writes."""
+import os
 import subprocess
 import sys
 
@@ -15,7 +16,8 @@ def test_importing_a_declared_source_directory_does_not_invalidate_itself(tmp_pa
     step = build.Step('source', [build.Python(script)], inputs=[source],
                       products=[build.Product('result', (tmp_path / 'out',))])
     before = build.fingerprint(step, {})
-    subprocess.run([sys.executable, str(script)], check=True, capture_output=True)
+    env = {k: v for k, v in os.environ.items() if k != 'PYTHONDONTWRITEBYTECODE'}
+    subprocess.run([sys.executable, str(script)], check=True, capture_output=True, env=env)
     assert list(source.rglob('*.pyc'))
     assert build.fingerprint(step, {}) == before
     (source / 'notes.md').write_text('documentation')

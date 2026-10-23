@@ -437,8 +437,8 @@ def _select(ctx, store, manifest, allowed, keep):
 def restore(ctx, steps, store, key, *, echo=print):
     """@cc [owner:fontanierh,label:correctness] checkpoint-restoration-certificates
     Restoration MUST preserve source files, use independent verified copies and stay within
-    locally allowed generated roots. Only certificates matching the receiving recipe's actual
-    inputs MAY survive. A durable launch barrier MUST precede mutation and survive any failure.
+    locally allowed generated roots. Saved certificates are only staged; the build MUST adopt
+    one only when the receiving recipe's own fingerprint matches and its outputs certify. A durable launch barrier MUST precede mutation and survive any failure.
     Existing generated work MUST NOT be overwritten. Compiler intermediates MUST NOT relocate.
     Copies MUST be clones/copies of digest-named blobs verified when stored; restoration MAY prove
     them by blob size and copied size/mode/mtime instead of rereading bytes.
@@ -474,30 +474,18 @@ def restore(ctx, steps, store, key, *, echo=print):
                 raise CheckpointError('Checkpoint link target is unavailable')
     ctx.stamps.mkdir(parents=True, exist_ok=True)
     atomic_json(journal, resume)
-    for name in saved_stamps:
-        (ctx.stamps / (name + '.json')).unlink(missing_ok=True)
     files = _place(store, selected, echo)
     with HashIndex(ctx.out / RESTORED_HASHES) as hashes:
         for destination, entry in files:
             hashes.record(destination, entry['sha256'])
     # Imported source paths remain provenance. Runtime packages retain their logical /Game paths.
     # The installed engine discovers its registry normally; producer registry caches are not copied.
-    for name, stamp in saved_stamps.items():
-        atomic_json(ctx.stamps / (name + '.json'), stamp)
-    from .build_checkpoints import incremental_environment
-    incremental_environment(ctx)
-    current = certificates(ctx, steps, include_incremental=True, hashes=ctx.out / RESTORED_HASHES)
-    for name in saved_stamps:
-        path = ctx.stamps / (name + '.json')
-        if name not in current:
-            path.unlink(missing_ok=True)
+    # No certificate pass here: the caller stages the saved stamps and the build adopts each one
+    # only when its own fingerprint matches and its restored outputs certify, as for hydration.
     from .build_checkpoints import estimate
-    atomic_json(ctx.out / '.state/checkpoint.json', dict(key=key, restored=sorted(current),
+    atomic_json(ctx.out / '.state/checkpoint.json', dict(key=key, restored=sorted(saved_stamps),
                 estimates={name: estimate(stamp) for name, stamp in saved_stamps.items()}))
-    # Publication of current certificates happens only after the outer guard closes in the caller.
-    for name in current:
-        (ctx.stamps / (name + '.json')).unlink(missing_ok=True)
-    return current
+    return saved_stamps
 
 
 HYDRATION_REQUEST = '.state/hydration-request.json'

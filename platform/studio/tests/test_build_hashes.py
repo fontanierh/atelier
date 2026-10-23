@@ -62,3 +62,25 @@ def test_change_during_hashing_is_rejected(tmp_path, monkeypatch):
     monkeypatch.setattr(build_hashes, 'digest_file', mutate)
     with HashIndex() as index, pytest.raises(ValueError, match='changed while hashing'):
         index.digest(source)
+
+
+def test_legacy_fingerprint_memo_matches_direct_and_never_survives_an_edit(tmp_path, monkeypatch):
+    import os
+    from atelier import build
+    from atelier.build_hashes import HashIndex
+    source = tmp_path / 'script.py'; source.write_text('print(1)\n')
+    data = tmp_path / 'data'; data.mkdir(); (data / 'a.bin').write_bytes(b'abcd')
+    step = build.Step('legacy', [build.Python(source)], inputs=[source, data], outputs=[tmp_path / 'out'])
+    direct = build.fingerprint_state(step, {})
+    with HashIndex(tmp_path / 'index.sqlite3') as index:
+        assert build.fingerprint_state(step, {}, index=index) == direct
+    with HashIndex(tmp_path / 'index.sqlite3', read_only=True) as index:
+        monkeypatch.setattr(build, 'open', lambda *a, **kw: pytest.fail('memo hit read input bytes'), raising=False)
+        assert build.fingerprint_state(step, {}, index=index) == direct
+        monkeypatch.undo()
+    info = (data / 'a.bin').stat()
+    (data / 'a.bin').write_bytes(b'wxyz')  # Same size; restore the old mtime as an editor might.
+    os.utime(data / 'a.bin', ns=(info.st_atime_ns, info.st_mtime_ns))
+    with HashIndex(tmp_path / 'index.sqlite3') as index:
+        changed = build.fingerprint_state(step, {}, index=index)
+    assert changed == build.fingerprint_state(step, {}) and changed[0] != direct[0]

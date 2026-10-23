@@ -3,22 +3,13 @@
 The database is disposable: a miss, schema change or unreadable index means hashing the file.
 Trust boundaries (publication, restoration and explicit verification) bypass the index.
 """
-import hashlib
 from pathlib import Path
+import json
 import sqlite3
 import stat
 
 
-def signature(info):
-    return (info.st_dev, info.st_ino, info.st_mode, info.st_size, info.st_mtime_ns, info.st_ctime_ns)
-
-
-def digest_file(path):
-    digest = hashlib.sha256()
-    with Path(path).open('rb') as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b''):
-            digest.update(block)
-    return digest.hexdigest()
+from .file_identity import digest_file, signature  # noqa: F401  (re-exported for controller callers)
 
 
 class HashIndex:
@@ -31,6 +22,7 @@ class HashIndex:
     def __init__(self, path=None, *, read_only=False, verify=False):
         self.connection = None
         self.memory = {}
+        self.memos = {}
         self.resolved = {}  # Path spelling -> resolved key; realpath dominated warm planning.
         self.read_only = read_only
         self.verify = verify
@@ -47,6 +39,7 @@ class HashIndex:
                 self.connection = sqlite3.connect(path, timeout=.1)
                 self.connection.execute('CREATE TABLE IF NOT EXISTS hashes_v1 '
                                         '(path TEXT PRIMARY KEY, signature TEXT NOT NULL, digest TEXT NOT NULL)')
+                self.connection.execute('CREATE TABLE IF NOT EXISTS memos_v1 (key TEXT PRIMARY KEY, value TEXT NOT NULL)')
         except (OSError, sqlite3.Error):
             self.close()
 
@@ -60,6 +53,28 @@ class HashIndex:
             finally:
                 self.connection.close()
                 self.connection = None
+
+    def remembered(self, key):
+        """A value stored by remember(key, ...), or None. Keys must name every input they depend on."""
+        if key in self.memos:
+            return self.memos[key]
+        if self.connection is None:
+            return None
+        try:
+            row = self.connection.execute('SELECT value FROM memos_v1 WHERE key = ?', (key,)).fetchone()
+        except sqlite3.Error:
+            return None
+        value = json.loads(row[0]) if row else None
+        self.memos[key] = value
+        return value
+
+    def remember(self, key, value):
+        self.memos[key] = value
+        if self.connection is not None and not self.read_only:
+            try:
+                self.connection.execute('INSERT OR REPLACE INTO memos_v1 VALUES (?, ?)', (key, json.dumps(value)))
+            except sqlite3.Error:
+                pass
 
     def __enter__(self):
         return self

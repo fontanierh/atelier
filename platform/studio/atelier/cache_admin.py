@@ -181,6 +181,10 @@ def configure(sub):
     restore.add_argument('game')
     for name in ('snapshot-pin', 'snapshot-unpin', 'snapshot-remove'):
         commands.add_parser(name).add_argument('key')
+    local_gc = commands.add_parser('checkpoint-gc', help='apply the local checkpoint store budget now (LRU; pins and recent kept)')
+    local_gc.add_argument('game')
+    local_gc.add_argument('--max-gib', type=float, help='budget for this run (default: machine-local settings)')
+    local_gc.add_argument('--dry-run', action='store_true', help='report what would be removed; change nothing')
     gc = commands.add_parser('gc')
     gc.add_argument('--max-gib', type=float, default=10, help='unique retained blob bytes (default: 10 GiB)')
     gc.add_argument('--max-age-days', type=float, default=30, help='keep unpinned hits/publications this recent')
@@ -248,6 +252,12 @@ def main(args):
             if not isinstance(members, list) or not all(isinstance(m, str) for m in members):
                 raise ValueError('Candidate members must be a JSON array of member names')
             print(json.dumps({'manifest': str(checkpoint_candidates.stage(ctx, args.checkpoint, args.task, members))}))
+        return 0
+    if args.action == 'checkpoint-gc':
+        from .checkpoint_store import Store as CheckpointStore
+        from .store_retention import collect
+        budget = int(args.max_gib * 2**30) if args.max_gib is not None else None
+        print(json.dumps(collect(CheckpointStore(args.game), budget=budget, dry_run=args.dry_run, echo=lambda m: print(m, file=sys.stderr)), indent=2))
         return 0
     if args.action == 'retain':
         from .build_checkpoints import retain

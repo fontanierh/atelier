@@ -326,7 +326,8 @@ contract review reads them on every PR. Playtests keep finding the same defects,
   until checkpoint verification and receiving restore are accepted. Keep referenced remote releases/packs.
 - Merge PRs with `gh pr merge --squash --match-head-commit <tested head>`; builds publish their results to the local store as they run.
 - Unknown or expensive native misses stop before admission. Inspect `--plan --explain`, fix cache access or
-  declarations, and use a specific `--rebuild-reason` only for unavoidable work. `--touch` is refused. `--force`
+  declarations, and use a specific `--rebuild-reason` only for unavoidable work: `STEP=REASON` (repeatable) for a
+  task the stop names; a bare reason covers only the requested tasks and those with no result at launch. `--touch` is refused. `--force`
   requires one exact task plus a reason, and must preserve current prerequisites. Never clear caches or stamps.
 - New reusable tasks must declare complete disjoint products/output roots and complete inputs. Representative
   legacy outputs cannot become a cache entry by inference; migrate ownership before claiming individual reuse.

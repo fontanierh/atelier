@@ -1,7 +1,7 @@
 """Read-only candidate admission inside native imports; no controller or guard dependencies."""
 import re
 import stat
-from .build_hashes import digest_file, signature
+from .file_identity import digest_file, signature
 from .native_protocol import (CheckpointError, HEX, ReadStore as Store, context, identity, read_json,
                               relative, safe_destination, validate)
 

@@ -73,6 +73,51 @@ def reason(value):
     return value
 
 
+def reasons(values):
+    """--rebuild-reason values: STEP=REASON scopes one task; one bare REASON covers launch-cold tasks."""
+    import re
+    if values is None or isinstance(values, str):
+        values = [] if values is None else [values]
+    scoped, bare = {}, None
+    for value in values:
+        match = re.fullmatch(r'([A-Za-z0-9_][A-Za-z0-9_.:-]*)=(.+)', value or '')
+        if match:
+            scoped[match[1]] = reason(match[2])
+        elif bare is not None:
+            raise CheckpointError('Give at most one bare --rebuild-reason; scope the others as STEP=REASON')
+        else:
+            bare = reason(value)
+    return scoped, bare
+
+
+def reason_for(ctx, step):
+    """The rebuild reason that covers this task, and why it applies, or (None, None).
+
+    A bare reason covers the requested tasks, tasks with no result at launch, and every task
+    whose read or need prerequisite was covered and actually reran in this build.
+    """
+    scoped = getattr(ctx, 'rebuild_reasons', {}).get(step.name)
+    if scoped:
+        return scoped, 'named'
+    bare = getattr(ctx, 'rebuild_reason', None)
+    cold = getattr(ctx, 'cold_at_launch', None)
+    if bare and (cold is None or step.name in cold):
+        return bare, 'requested or cold at launch'
+    reran = getattr(ctx, 'rebuild_reran', set())
+    if bare and reran:
+        upstream = getattr(ctx, 'rebuild_upstream', {}).get(step.name, set(step.needs))
+        cause = next((name for name in sorted(upstream) if name in reran), None)
+        if cause is not None:
+            return bare, f'downstream of {cause}'
+    return None, None
+
+
+def note_rerun(ctx, step):
+    """A covered task that actually reran extends a bare reason to its dependents."""
+    if reason_for(ctx, step)[0]:
+        ctx.__dict__.setdefault('rebuild_reran', set()).add(step.name)
+
+
 def _guard(ctx, operation, key=None):
     """@cc [owner:fontanierh,label:safety] checkpoint-transfer-invocation
     Native-file copies MUST enter the normal owned-child admission/guard lifecycle with
@@ -94,9 +139,11 @@ def _guard(ctx, operation, key=None):
 
 def _publish_restoration(ctx, steps, store, key, record):
     """@cc [owner:fontanierh,label:correctness] post-guard-checkpoint-publication
-    Receiving certificates MUST publish only after successful guarded child exit, cleanup and
-    admission close. The original journal/key, fresh input identities and restored output
-    metadata (size, mode, mtime; bytes for post-import outputs) MUST still agree. Failure MUST retain the launch barrier and MUST NOT retain certificates.
+    Receiving certificates MUST be staged only after successful guarded child exit, cleanup and
+    admission close. The original journal/key and restored output metadata (size, mode, mtime;
+    bytes for post-import outputs) MUST still agree. Staged certificates count only when the
+    build's own fingerprint matches and the outputs certify, task by task, as for hydration.
+    Failure MUST retain the launch barrier and MUST NOT retain staged certificates.
     """
     journal = ctx.out / JOURNAL
     expected = dict(schema=1, key=key, game=ctx.game)
@@ -107,13 +154,10 @@ def _publish_restoration(ctx, steps, store, key, record):
     known = {**saved['stamps'], **saved.get('incremental_stamps', {})}
     if not isinstance(candidates, dict) or any(known.get(n) != s for n, s in candidates.items()):
         raise CheckpointError('Checkpoint restore completion contains foreign certificates')
+    staged = ctx.out / STAGED
     try:
-        for name, stamp in candidates.items():
-            atomic_json(ctx.stamps / (name + '.json'), stamp)
         incremental_environment(ctx)
         from .checkpoint_store import RESTORED_HASHES, unchanged
-        if certificates(ctx, steps, include_incremental=True, hashes=ctx.out / RESTORED_HASHES) != candidates:
-            raise CheckpointError('Checkpoint receiver changed before certificate publication')
         # Revalidate all copied bytes at the publication boundary, not just named products.
         from .checkpoint_store import roots, safe_destination
         same_path = saved['checkout'] == identity(str(paths.REPO.resolve()))
@@ -147,10 +191,13 @@ def _publish_restoration(ctx, steps, store, key, record):
             if entry['kind'] == 'directory' and (path.is_symlink() or not path.is_dir()):
                 raise CheckpointError('Checkpoint directory changed before certificate publication')
         hashes.close()
+        for name, stamp in candidates.items():
+            if not (ctx.stamps / (name + '.json')).exists():
+                atomic_json(staged / (name + '.json'), dict(source=key, stamp=stamp))
         journal.unlink()
     except BaseException:
         for name in candidates:
-            (ctx.stamps / (name + '.json')).unlink(missing_ok=True)
+            (staged / (name + '.json')).unlink(missing_ok=True)
         raise
 
 
@@ -188,8 +235,11 @@ def prepare(ctx, steps, *, echo=print):
     for key, saved in store.latest():
         if not saved.get('workspace_only') and saved['context'] == expected_context and set(saved.get('steps', ())) <= ownership:
             echo('Restoring a local build checkpoint; source edits are preserved')
+            started = time.monotonic()
             result = _guard(ctx, 'restore', key)
             _publish_restoration(ctx, steps, store, key, result)
+            echo(f'checkpoint restore: {len(result.get("stamps", {}))} certificates staged for fingerprint checks, '
+                 f'{time.monotonic() - started:.1f} s')
             return store
     from .checkpoint_github import Remote
     if not settings.get('repository'):
@@ -341,11 +391,37 @@ def staged_certificate(ctx, step, fingerprint):
     return (value.get('source'), stamp) if stamp.get('fingerprint') == fingerprint and not stamp.get('touched') else None
 
 
+def adopt_staged(ctx, step, fingerprint, digest):
+    """A staged certificate the build may adopt for this task now, as (source, stamp), or None.
+
+    Its fingerprint must equal the build's own, and the restored outputs must certify: the
+    action inventory, or a compatible incremental stamp of a verifiable or inventoried task.
+    """
+    staged = staged_certificate(ctx, step, fingerprint)
+    if staged is None:
+        return None
+    from .build import outputs_present
+    from .checkpoint_actions import certified, compile_present, inventory_verified, local_incremental, verifiable
+    from .checkpoint_store import hashing
+    stamp = staged[1]
+    with hashing(ctx, digest):  # Restored clones were recorded in this index.
+        good = (outputs_present(step) and compile_present(ctx, step)
+                and (certified(ctx, step, fingerprint, stamp)
+                     or ((verifiable(ctx, step) or inventory_verified(ctx, step, stamp))
+                         and local_incremental(ctx, step, fingerprint, stamp)))
+                and (not step.products or build_products.valid_records(step, stamp.get('products', {}), hasher=digest)))
+    return staged if good else None
+
+
 def protect(ctx, step, *, estimate=None, echo=print):
     """@cc [owner:fontanierh,label:performance] no-silent-cold-rebuild
     A configured build MUST attempt normal cache restoration before spending native work.
     An unknown cold native job or native work exceeding the retained rebuild budget MUST stop
-    before command preparation/admission unless this invocation records an explicit rebuild reason.
+    before command preparation/admission unless this invocation records an explicit rebuild reason
+    covering that task: one naming it (STEP=REASON), or a bare reason only for tasks named on the
+    command line, tasks with no result when the build launched, and tasks downstream (read or
+    need edges) of a covered task that actually reran. A task whose own inputs changed otherwise
+    MUST still stop. Each use MUST be logged with its task and scope.
     Cache hits/current steps MUST NOT spend the rebuild budget. No override may weaken guards.
     """
     settings = getattr(ctx, 'checkpoint_settings', None)
@@ -354,7 +430,7 @@ def protect(ctx, step, *, estimate=None, echo=print):
     from .build import Call
     if not any(not isinstance(c, Call) for c in step.commands):
         return
-    recorded_reason = getattr(ctx, 'rebuild_reason', None)
+    recorded_reason, scope = reason_for(ctx, step)
     if estimate is None:
         retained = ctx.out / '.state/checkpoint.json' if hasattr(ctx, 'out') else None
         if retained is not None and retained.is_file():
@@ -368,13 +444,15 @@ def protect(ctx, step, *, estimate=None, echo=print):
         duration = 'unknown cold cost' if unknown_cold else f'{spent + estimated:.0f}s retained rebuild estimate'
         raise CheckpointError(f'{step.name}: stopped before a costly rebuild ({duration}). '
                               'Run the same build with --plan --explain to inspect invalidation. '
-                              'Repair checkpoint access, or rerun with --rebuild-reason "why this rebuild is necessary". '
+                              f'Repair checkpoint access, or rerun with --rebuild-reason {step.name}="why this rebuild is necessary". '
                               'No native work was launched for this task.')
     ctx.checkpoint_rebuild_seconds = spent + estimated
-    if recorded_reason:
+    if recorded_reason and (unknown_cold or exceeds):
+        echo(f'{step.name}: rebuild reason applied ({scope}): {recorded_reason}')
+        ctx.__dict__.setdefault('rebuild_covered', []).append(step.name)
         ctx.logs.mkdir(parents=True, exist_ok=True)
         with (ctx.logs / 'rebuild-decisions.jsonl').open('a') as handle:
-            handle.write(json.dumps(dict(step=step.name, reason=recorded_reason, time=time.time(),
+            handle.write(json.dumps(dict(step=step.name, reason=recorded_reason, scope=scope, time=time.time(),
                                          estimated_seconds=known)) + '\n')
 
 
