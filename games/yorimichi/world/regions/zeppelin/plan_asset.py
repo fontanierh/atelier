@@ -1,41 +1,46 @@
-"""Construct one airborne Zeppelin asset from its own declared source closure."""
+"""Plan one selected complete Zeppelin mesh; never export a sibling."""
+import sys
+from pathlib import Path
+sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
 import argparse
 import importlib
-from pathlib import Path
-import sys
+import bpy
+from region_mesh_parts import plan,capture_colliders
+from zeppelin.random_context import restore
+from zeppelin.query_data import Queries
+from zeppelin import primitives
+from village import mesh as v
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-import yori  # noqa: E402,F401
-from atelier.export_manifest import name, real_directory  # noqa: E402
 
-def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--asset', required=True)
-    parser.add_argument('--builder', required=True)
-    parser.add_argument('--output', type=Path, required=True)
-    args = parser.parse_args(argv if argv is not None else sys.argv[sys.argv.index('--') + 1:])
-    name(args.asset); name(args.builder)
-    real_directory(args.output)
-    import bpy
-    from zeppelin import primitives
-    from village import mesh as village_mesh
-    from region_mesh_parts import plan, capture_colliders
+def main(kind=None,key=None):
+    parser=argparse.ArgumentParser();parser.add_argument('--output',required=True);parser.add_argument('--query');parser.add_argument('--asset');parser.add_argument('--builder')
+    args=parser.parse_args(sys.argv[sys.argv.index("--")+1:] if "--" in sys.argv else None)
+    kind=kind or args.builder;key=key or args.asset
+    allowed=dict(ship="ZP_Airship",motors="ZP_Motors",propeller="ZP_Propeller",gate="ZP_Gate",gangway="ZP_Gangway",trail="ZP_Trail")
+    if kind=="station_data":
+        if key not in ("ZP_Woodland","ZP_City","ZP_MegaPark","ZP_Belmonte"):raise ValueError("Unknown Zeppelin station")
+    elif allowed.get(kind)!=key:raise ValueError("Explicit Zeppelin selection required")
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    # The airborne assets precede stations in the original authoring order; only
-    # ship consumes randomness. Explicitly reset both streams in a warm process.
-    primitives.R.seed(980)
-    village_mesh.R.seed(76)
-    builder = args.builder
-    source = getattr(importlib.import_module('zeppelin.parts.' + builder), builder)()
-    if source.name != args.asset:
-        raise ValueError('Zeppelin constructor returned a different logical asset')
-    material = bpy.data.materials.new('ZeppelinPalette')
-    obj = source.object(material)
-    plan(obj, args.output, collisions=capture_colliders(source.colliders), options=dict(
-        apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL', axis_forward='-Y', axis_up='Z',
-        mesh_smooth_type='FACE', use_custom_props=False))
-    print('LOGICAL ZEPPELIN GEOMETRY COMPLETE ' + args.asset, flush=True)
+    restore(key,primitives.R,v.R)
+    print('Construct selected Zeppelin source '+key,flush=True)
+    module=importlib.import_module('zeppelin.parts.'+kind)
+    if kind=='station_data':
+        from zeppelin.layout import MESHES
+        queries=Queries(args.query)
+        mesh=module.station(MESHES.index(key),queries=queries)
+        if key=='ZP_City':
+            assert min(p[1] for p in mesh.vertices)>queries.value['rail_clearance_min_y'],'Air-station geometry enters the railway clearance'
+    elif kind=='trail':mesh=module.construct(Queries(args.query))
+    else:mesh=getattr(module,kind)()
+    if mesh.name!=key:raise ValueError('Selected Zeppelin constructor returned foreign owner')
+    mat=bpy.data.materials.new('ZeppelinPalette');mat.use_nodes=True
+    vc=mat.node_tree.nodes.new('ShaderNodeVertexColor');vc.layer_name='Color'
+    mat.node_tree.links.new(vc.outputs['Color'],mat.node_tree.nodes['Principled BSDF'].inputs['Base Color'])
+    print('Capture complete Zeppelin geometry '+key,flush=True)
+    obj=mesh.object(mat)
+    plan(obj,args.output,collisions=capture_colliders(mesh.colliders),options=dict(
+        apply_unit_scale=True,apply_scale_options='FBX_SCALE_ALL',axis_forward='-Y',axis_up='Z',
+        mesh_smooth_type='FACE',bake_anim=False,use_custom_props=False))
+    print('LOGICAL ZEPPELIN GEOMETRY COMPLETE '+key,flush=True)
 
-
-if __name__ == '__main__':
-    main()
+if __name__=="__main__":main()

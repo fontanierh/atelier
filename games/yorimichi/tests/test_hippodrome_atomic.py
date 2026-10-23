@@ -14,10 +14,12 @@ sys.path.insert(0,str(GAME));sys.path.insert(0,str(GAME/'world'))
 import yori
 BASELINE='283329c07ea04bee34587022a3d43827468c66d7'
 SOURCE='games/yorimichi/world/regions/hippodrome/build.py'
+SOURCE_SHA='50204ef72c0b0667db9e2194fdf72bbe72d2d3336947e0b6cb05a46604499419'
 
 
 def original():
     payload=subprocess.check_output(['git','show',BASELINE+':'+SOURCE],cwd=GAME)
+    assert hashlib.sha256(payload).hexdigest()==SOURCE_SHA
     value=types.ModuleType('immutable_original_hippodrome');value.__file__=str(GAME/'world/regions/hippodrome/build.py')
     exec(compile(payload,str(value.__file__),'exec'),value.__dict__)
     return value,hashlib.sha256(payload).hexdigest()

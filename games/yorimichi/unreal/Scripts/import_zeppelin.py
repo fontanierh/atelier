@@ -3,8 +3,11 @@ import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_
 import json,runpy,os
 from pathlib import Path
 import unreal
+from atelier.unreal_mesh_reuse import AssetGroup,set_if_changed
+from atelier.native_protocol import native_context
+from atelier import native_membership
 HERE=Path(__file__).resolve().parent;ROOT=yori.OUT
-helper=runpy.run_path(str(HERE/'import_village.py'));E=unreal.EditorAssetLibrary
+_sys.path.insert(0,str(HERE));E=unreal.EditorAssetLibrary
 unreal.SystemLibrary.execute_console_command(None,'Interchange.FeatureFlags.Import.FBX 0')
 mat=E.load_asset('/Game/Japan/Materials/M_Village');assert mat
 def fabric_material():
@@ -25,14 +28,46 @@ def fabric_material():
     for source,name in [(color,'C'),(normal,'N'),(sun,'D'),(depth,'Z')]:M.connect_material_expressions(source,'',shade,name)
     M.connect_material_property(shade,'',unreal.MaterialProperty.MP_EMISSIVE_COLOR);M.recompile_material(m);E.save_loaded_asset(m)
     return m
-fabric=fabric_material()
+fabric_group=AssetGroup(native_context(yori.GAME.name),'unreal.zeppelin',__file__,('fabric_material',),parameters={})
+if not fabric_group.matches(['/Game/Japan/Materials/M_ZeppelinFabric']):
+ fabric_material();fabric_group.validated(['/Game/Japan/Materials/M_ZeppelinFabric'])
+fabric=E.load_asset('/Game/Japan/Materials/M_ZeppelinFabric');assert fabric
 manifest=json.loads((ROOT/'zeppelin/manifest.json').read_text());report={}
-for name in manifest:
- mesh=helper['import_mesh'](ROOT/'zeppelin/assets'/f'{name}.fbx','/Game/Japan/Assets',name);mesh.set_material(0,mat)
- if name=='ZP_Airship':
-  assert len(mesh.static_materials)==2
-  for i,slot in enumerate(mesh.static_materials):mesh.set_material(i,fabric if 'ZeppelinFabric' in str(slot.get_editor_property('imported_material_slot_name')) else mat)
- mesh.get_editor_property('body_setup').set_editor_property('collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
- E.save_loaded_asset(mesh);report[name]=True
-# Current island/city ground belongs to their independent normal native owners.
+logical=json.loads((ROOT/'zeppelin/logical-pieces.json').read_text())
+parents={child:parent for parent,children in logical['parents'].items() for child in children}
+if set(parents)!=set(manifest):raise ValueError('Incomplete Zeppelin native membership')
+previous=native_membership.inventory(E,'/Game/Japan/Assets','ZP_')
+
+
+def current(mesh,expected,parent):
+ if not mesh or mesh.get_num_triangles(0)!=expected['triangles']:return False
+ slots=list(mesh.get_editor_property('static_materials'))
+ if len(slots)!=expected['materials']:return False
+ for index,slot in enumerate(slots):
+  want=fabric if parent=='ZP_Airship' and 'ZeppelinFabric' in str(slot.get_editor_property('imported_material_slot_name')) else mat
+  if mesh.get_material(index)!=want:return False
+ body=mesh.get_editor_property('body_setup')
+ if not body or body.get_editor_property('collision_trace_flag')!=unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE:return False
+ box=mesh.get_bounding_box();lo,hi=expected['min'],expected['max']
+ actual=[box.min.x,box.min.y,box.min.z,box.max.x,box.max.y,box.max.z]
+ wanted=[lo[0]*100,-hi[1]*100,lo[2]*100,hi[0]*100,-lo[1]*100,hi[2]*100]
+ return max(abs(a-b) for a,b in zip(actual,wanted))<1.
+
+
+from mesh_import import import_mesh
+for name,expected in manifest.items():
+ parent=parents[name];path=ROOT/'zeppelin/assets'/f'{name}.fbx'
+ from atelier.mesh_reuse import digest
+ if digest(path)!=expected['sha256']:raise ValueError('Changed Zeppelin export: '+name)
+ mesh=import_mesh(path,'/Game/Japan/Assets',name,reuse_validator=lambda mesh:current(mesh,expected,parent))
+ slots=list(mesh.get_editor_property('static_materials'))
+ assert len(slots)==expected['materials'],name
+ for i,slot in enumerate(slots):
+  want=fabric if parent=='ZP_Airship' and 'ZeppelinFabric' in str(slot.get_editor_property('imported_material_slot_name')) else mat
+  if mesh.get_material(i)!=want:mesh.set_material(i,want)
+ set_if_changed(mesh.get_editor_property('body_setup'),'collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
+ assert E.save_loaded_asset(mesh,only_if_is_dirty=True),name
+ assert current(mesh,expected,parent),name
+ report[name]=True
+native_membership.retire(E,previous,list(manifest),'/Game/Japan/Assets','ZP_')
 (ROOT/'zeppelin/import-report.json').write_text(json.dumps(report,indent=2)+'\n');unreal.log('ZEPPELIN IMPORT COMPLETE')
