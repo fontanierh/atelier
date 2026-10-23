@@ -37,6 +37,7 @@ class Observer:
         self.import_roots.update(p.parent for p, directory in self.inputs if not directory)
         self.seen = set()
         self.failed = False
+        self.first_refusal = None
         self.sealed = False
         self.local = threading.local()
         self.lock = threading.RLock()
@@ -62,6 +63,8 @@ class Observer:
         with self.lock:
             if reason:
                 self.failed = True
+                if self.first_refusal is None:
+                    self.first_refusal = f'{operation} {label or ""}: {reason}'.strip()
             if item not in self.seen:
                 if len(self.seen) >= 20000:
                     self.failed = True
@@ -309,7 +312,9 @@ def execute(spec, *, blender=False, before=None, after=None):
         observer.send('complete', success=succeeded and not observer.failed)
         observer.sealed = True
     if observer.failed:
-        raise SystemExit('Input audit failed; see the action audit report')
+        # Name the refusal here too: this line is what the step log shows, and a hook error raised
+        # while reporting another one can stay swallowed by CPython.
+        raise SystemExit('Input audit failed: ' + (observer.first_refusal or 'no complete report'))
 
 
 if __name__ == '__main__':

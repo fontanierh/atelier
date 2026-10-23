@@ -9,6 +9,10 @@ from atelier.harness.safety.launch_ownership import ENVIRONMENT_KEY, LINEAGE_KEY
 from atelier.harness.safety.mac_crash_reporters import Reporters, arguments_and_marker, reporter_for_native
 from atelier.harness.safety.tree_guard import OwnedTree
 
+# CrashReporter adoption reads a macOS kernel facility (libproc and the reporter's own argv);
+# the guard has nothing to reconcile elsewhere, so the whole module runs in the macOS job.
+pytestmark = pytest.mark.macos_only
+
 NONCE = 'a' * 64
 NATIVE = '/fixture/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor'
 REPORTER = '/fixture/Engine/Binaries/Mac/CrashReportClientEditor.app/Contents/MacOS/CrashReportClientEditor'
@@ -495,3 +499,4 @@ def test_kernel_roster_is_scoped_to_launch_user_not_inaccessible_system_daemons(
     api.lib = SimpleNamespace(proc_listpids=list_pids)
     assert api.pids() == (os.getpid(),)
     assert calls == [(4, os.geteuid()), (4, os.geteuid())]
+

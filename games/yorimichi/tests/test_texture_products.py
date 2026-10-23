@@ -91,7 +91,11 @@ def actual_build(tmp_path, monkeypatch):
         state.log = []
         return build.build('yorimichi', echo=state.log.append, **kwargs)
     state.run = execute
-    state.why = lambda: '\n'.join(state.log)
+    def why():
+        logs = ''.join(f'\n--- {path.name} ---\n{path.read_text()[-4000:]}'
+                       for path in sorted(state.ctx.logs.glob('*.log')))
+        return '\n'.join(state.log) + logs
+    state.why = why
     return state
 
 
