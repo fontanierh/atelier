@@ -1,0 +1,15 @@
+@cc [owner:fontanierh,label:architecture] build-v2-opt-in
+The crate MUST remain independent of production v1 until a separately validated caller cutover.
+A0 schemas MUST NOT decide cache hits, launch native tools or publish results.
+
+@cc [owner:fontanierh,label:correctness] build-v2-identity-boundary
+Identity ingredients MUST distinguish producing input keys from each output's content digest.
+Provenance MUST remain outside identity ingredients. Installed Python, dependencies, lockfiles,
+Blender/add-ons, Unreal and compiler/SDK versions MUST NOT automatically become key ingredients;
+platform invalidation uses explicit cache/op versions. See tests/interfaces.rs.
+
+@cc [owner:fontanierh,label:correctness] build-v2-wire-boundary
+Worker messages MUST use a separate pipe with a versioned, bounded JSON frame. Unknown message
+shapes, unsupported protocol versions and truncated frames MUST fail; only EOF between frames
+may be a clean close. Bulk asset bytes MUST travel in staged files, not wire messages.
+See tests/protocol.rs.

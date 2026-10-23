@@ -1,0 +1,33 @@
+name: Build v2
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  interfaces:
+    name: Rust / interfaces
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: platform/build-v2
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Check formatting
+        run: cargo fmt --check
+      - name: Compile interfaces and fixtures
+        run: cargo test --locked --no-run -j 3
+      - name: Test interfaces and fixtures
+        run: cargo test --locked -j 3
