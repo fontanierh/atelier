@@ -7,6 +7,7 @@ import argparse
 import ast
 import hashlib
 import json
+import random
 from pathlib import Path
 import sys
 import threading
@@ -40,6 +41,7 @@ def main():
     assert sha(fixture) == sha(source), 'Original Stable constructor source changed before census'
     paths = set(local_imports(source, (GAME / 'world', GAME / 'world/regions')))
     paths.update((Path(__file__), fixture, Path(__file__).with_name('island_atomic_equivalence.py')))
+    paths.add(GAME / 'world/regions/hidamari/fonts/NotoSansJP.ttf')
     before = {str(path): sha(path) for path in sorted(paths)}
     yori.OUT = output / 'data'
     tree = ast.parse(original)
@@ -53,6 +55,7 @@ def main():
     sys.modules[scope.__name__] = scope
     exec(compile(tree, str(fixture), 'exec'), scope.__dict__)
     if scope.L.is_enabled(): raise ValueError('Diagnostic must retain the committed disabled source policy')
+    assert kernel.R.getstate() == random.Random(76).getstate(), 'Original Stable must retain its untouched fresh RNG'
     contexts, ranges, references = {}, {}, {}
     for part in PARTS:
         original_part = getattr(scope, part)
