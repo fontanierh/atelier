@@ -199,9 +199,23 @@ FString UNativeAtomicEquivalence::Snapshot(UStaticMesh* Mesh,const FString& Logi
 FString UNativeAtomicEquivalence::Probe(UStaticMeshComponent* Component,FVector Start,FVector End,FQuat Rotation,float Radius,float HalfHeight,bool TraceComplex)
 {
     using namespace NativeAtomicEvidence;
-    if(!Component || !Component->GetStaticMesh() || !Component->IsRegistered() || Start.ContainsNaN() || End.ContainsNaN() ||
-        Start.Equals(End) || !Rotation.IsNormalized() || !FMath::IsFinite(Radius) || !FMath::IsFinite(HalfHeight) ||
-        Radius<0 || (Radius>0 && HalfHeight<Radius))return {};
+    auto Refuse=[&](const TCHAR* Reason)
+    {
+        auto Result=MakeShared<FJsonObject>();Result->SetStringField(TEXT("refusal"),Reason);
+        Result->SetBoolField(TEXT("registered"),Component && Component->IsRegistered());
+        Result->SetBoolField(TEXT("has_mesh"),Component && Component->GetStaticMesh());
+        Result->SetBoolField(TEXT("has_world"),Component && Component->GetWorld());
+        if(Component)Result->SetStringField(TEXT("component"),Component->GetPathName());
+        if(FMath::IsFinite(Rotation.SizeSquared()))Result->SetNumberField(TEXT("rotation_norm_squared"),Rotation.SizeSquared());
+        return Text(Result,true);
+    };
+    if(!Component)return Refuse(TEXT("missing_component"));
+    if(!Component->GetStaticMesh())return Refuse(TEXT("missing_mesh"));
+    if(!Component->IsRegistered())return Refuse(TEXT("unregistered_component"));
+    if(Start.ContainsNaN() || End.ContainsNaN() || Start.Equals(End))return Refuse(TEXT("invalid_segment"));
+    if(!Rotation.IsNormalized())return Refuse(TEXT("invalid_rotation"));
+    if(!FMath::IsFinite(Radius) || !FMath::IsFinite(HalfHeight) || Radius<0 || (Radius>0 && HalfHeight<Radius))
+        return Refuse(TEXT("invalid_query_shape"));
     FHitResult Hit;bool Blocked=false;
     if(Radius>0)Blocked=Component->SweepComponent(Hit,Start,End,Rotation,FCollisionShape::MakeCapsule(Radius,HalfHeight),TraceComplex);
     else{FCollisionQueryParams Params(SCENE_QUERY_STAT(AtomicOwnedMeshProbe),TraceComplex);Blocked=Component->LineTraceComponent(Hit,Start,End,Params);}
@@ -210,7 +224,8 @@ FString UNativeAtomicEquivalence::Probe(UStaticMeshComponent* Component,FVector 
     Result->SetBoolField(TEXT("selected_component"),!Blocked || Hit.GetComponent()==Component);
     if(Blocked)
     {
-        if(!Hit.bBlockingHit || Hit.GetComponent()!=Component)return {};
+        if(!Hit.bBlockingHit)return Refuse(TEXT("nonblocking_hit_returned"));
+        if(Hit.GetComponent()!=Component)return Refuse(TEXT("unexpected_hit_component"));
         Result->SetArrayField(TEXT("position"),Vector({Hit.ImpactPoint.X,Hit.ImpactPoint.Y,Hit.ImpactPoint.Z},Valid)->AsArray());
         Result->SetArrayField(TEXT("normal"),Vector({Hit.ImpactNormal.X,Hit.ImpactNormal.Y,Hit.ImpactNormal.Z},Valid)->AsArray());
         Result->SetNumberField(TEXT("distance"),Hit.Distance);

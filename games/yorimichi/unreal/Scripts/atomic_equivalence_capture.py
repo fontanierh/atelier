@@ -28,7 +28,9 @@ def artifact(path):
 
 def _value(text):
     if not isinstance(text,str) or not text:raise ValueError('Native readback refused missing/unsupported data')
-    return json.loads(text,parse_constant=lambda _: (_ for _ in ()).throw(ValueError('Nonfinite native evidence')))
+    value=json.loads(text,parse_constant=lambda _: (_ for _ in ()).throw(ValueError('Nonfinite native evidence')))
+    if isinstance(value,dict) and 'refusal' in value:raise ValueError('Native readback refused: '+str(value))
+    return value
 
 
 def _bounds_policy(row):

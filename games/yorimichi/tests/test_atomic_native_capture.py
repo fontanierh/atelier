@@ -112,6 +112,14 @@ def test_emitter_pages_every_lod_from_actual_api_without_fabricating_generated_s
     assert len(result['raw_pages'])==4 and all(Path(r['path']).is_file() for r in result['saved_packages'])
 
 
+def test_native_probe_refusal_cannot_be_recorded_as_a_negative_hit(tmp_path,monkeypatch):
+    monkeypatch.setattr(API,'probe',lambda *a:json.dumps(dict(refusal='unregistered_component',registered=False)))
+    component=Component(Mesh('/Game/Before/Whole.Whole',POINTS))
+    with pytest.raises(ValueError,match='unregistered_component'):
+        collect(tmp_path,'capture',[component])
+    assert not (tmp_path/'capture/probes.json').exists()
+
+
 def test_signed_cell_assets_and_every_supported_present_sidecar_are_observed(tmp_path):
     name='FarHills_cell_-1_2_Piece03';mesh=Mesh('/Game/After/'+name+'.'+name,POINTS)
     component=Component(mesh);module=unreal(tmp_path);save_fake_mesh(module,mesh)
