@@ -43,6 +43,18 @@ def test_cold_recipe_contains_required_planners_not_successful_empty_region(tmp_
     assert not (tmp_path / 'atomic_regions').exists()
 
 
+def test_material_capture_and_export_code_are_in_actual_consumers_input_closure(tmp_path):
+    from atelier import mesh_materials
+    helper=Path(mesh_materials.__file__)
+    script=GAME/'world/regions/hidamari_stable/plan_asset.py'
+    write_plan(tmp_path,'One',[('One',12)])
+    steps=graph.steps(SimpleNamespace(out=tmp_path),region='fixture',assets=[graph.LogicalAsset('One',script,suffix='.glb')])
+    planner=next(step for step in steps if step.name=='world.fixture.geometry.One')
+    exporter=next(step for step in steps if step.name=='world.fixture.export.One')
+    assert helper in planner.inputs and helper in exporter.inputs
+    assert not any(path.name=='build.py' and 'atelier' in path.parts for path in planner.inputs)
+
+
 def test_completed_plan_discovers_per_piece_payloads_without_sibling_inputs(tmp_path):
     write_plan(tmp_path, 'One', [('One_cell_0_0', 12), ('One_cell_1_0', 24)])
     write_plan(tmp_path, 'Two', [('Two', 6)])

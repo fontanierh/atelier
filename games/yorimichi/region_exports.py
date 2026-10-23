@@ -8,7 +8,7 @@ from atelier.atomic_files import atomic_json
 from atelier.build_inputs import local_imports
 from atelier.build_batch_source import support as batch_support
 from atelier.build import Batch, Blender, Call, Product, Python, Step
-from atelier import export_assembly, export_tasks
+from atelier import export_assembly, export_tasks, paths
 from atelier.model_files import member
 
 GAME = Path(__file__).resolve().parent
@@ -97,7 +97,7 @@ def steps(ctx, *, region, assets, after=(), inputs=()):
         command=(Python(asset.script,arguments) if encoded else Blender(asset.script,arguments,
                     threads=3,factory_startup=True,env=(('PYTHONHASHSEED','0'),)))
         planners.append(Step(task, [command],
-            inputs=[*local_imports(asset.script, (WORLD, WORLD / 'regions')), *(batch_support().values() if not encoded else ()), *asset.inputs], needs=list(asset.needs), reads=list(asset.reads),
+            inputs=[*local_imports(asset.script, (WORLD, WORLD / 'regions', paths.STUDIO)), *(batch_support().values() if not encoded else ()), *asset.inputs], needs=list(asset.needs), reads=list(asset.reads),
             after=list(after), products=[Product(product, (root,)), *asset.products], cache=True, toolchain=not encoded,
             heavy=True, batch=None if encoded else Batch(region + ' logical geometry'), verify=complete,
             about='construct only logical mesh ' + asset.key))
