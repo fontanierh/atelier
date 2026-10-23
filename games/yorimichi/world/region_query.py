@@ -25,6 +25,28 @@ def capture(obj, *, role='render'):
                 triangles=triangles.reshape(-1, 3), matrix=np.asarray(obj.matrix_world, dtype='<f8'))
 
 
+def capture_group(objects, *, owner):
+    """Compose only query arrays from completed pieces sharing their authored frame.
+
+    This does not join Blender geometry or create a mesh export. The rendered
+    objects and their independent export identities remain separate.
+    """
+    objects = tuple(objects)
+    if not objects or len({id(obj) for obj in objects}) != len(objects):
+        raise ValueError('Query group requires complete unique source pieces')
+    positions, indices, offset, frame = [], [], 0, None
+    for obj in objects:
+        surface = capture(obj)
+        if frame is not None and not np.array_equal(surface['matrix'], frame):
+            raise ValueError('Query group pieces must share their explicit authored frame')
+        frame = surface['matrix']
+        positions.append(surface['positions'])
+        indices.append(surface['triangles'].astype('<i8') + offset)
+        offset += len(surface['positions'])
+    return dict(name=name(owner), role='render', matrix=frame,
+                positions=np.concatenate(positions), triangles=np.concatenate(indices))
+
+
 def capture_colliders(owner, collisions):
     """Use the same authored whole hulls, each once, with Blender tessellation."""
     import bpy
@@ -70,6 +92,13 @@ def decode(payload, *, owner, stage):
     manifest or source revision enters unchanged geometry bytes. Malformed, linked,
     oversized or incomplete data MUST refuse rather than fall back to mesh exports.
     """
+    try:
+        return _decode(payload, owner=owner, stage=stage)
+    except (zipfile.BadZipFile, OSError, EOFError, KeyError, TypeError) as error:
+        raise ValueError('Malformed query geometry container') from error
+
+
+def _decode(payload, *, owner, stage):
     name(owner)
     if stage not in ('raw', 'final') or not isinstance(payload, bytes) or len(payload) > MAX_BYTES:
         raise ValueError('Invalid query product stage or size')

@@ -22,6 +22,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--slug', required=True)
     parser.add_argument('--metadata-output', required=True, type=Path)
+    parser.add_argument('--query-output', type=Path)
     parser.add_argument('--output', required=True, type=Path)
     args = parser.parse_args(argv if argv is not None else sys.argv[sys.argv.index('--') + 1:])
     name = key(args.slug)
@@ -75,6 +76,9 @@ def main(argv=None):
     for filename, image in images.items():
         image.file_format = 'PNG'; image.save(filepath=str(root / filename))
     plan(obj, args.output, options=dict(export_apply=True, export_image_format='NONE'))
+    if args.query_output is not None:
+        import region_query
+        region_query.save(args.query_output, [region_query.capture(obj)], owner=name, stage='final')
     if sha(source) != digest: raise ValueError('Committed hero changed while planning')
     atomic_json(root / 'materials.json', dict(schema=1, complete=True, slug=args.slug,
         source_sha256=digest, materials=entries, files={filename: sha(root / filename) for filename in images}))

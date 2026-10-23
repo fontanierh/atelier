@@ -36,6 +36,7 @@ def main(argv=None):
     parser.add_argument('--context', required=True, type=Path)
     parser.add_argument('--rim', required=True, type=Path)
     parser.add_argument('--paving-output', required=True, type=Path)
+    parser.add_argument('--query-output', type=Path)
     parser.add_argument('--output', required=True, type=Path)
     args = parser.parse_args(argv if argv is not None else sys.argv[sys.argv.index('--') + 1:])
     name(args.asset); name(args.builder)
@@ -66,7 +67,7 @@ def main(argv=None):
     thread = threading.Thread(target=heartbeat, daemon=True); thread.start()
     try:
         builder = constructor(Builder('rocks'), hills=False) if args.asset == 'Rocks' else constructor()
-        value, counts, _ = finish_parts(builder, args.asset, rim, args.output)
+        value, counts, _ = finish_parts(builder, args.asset, rim, args.output, query_output=args.query_output)
         # Geometry changes that leave these rectangles unchanged stop before ground.
         atomic_json(args.paving_output, dict(schema=1, owner=args.asset, rectangles=geometry_policy.FLAT_PAVING))
     finally:

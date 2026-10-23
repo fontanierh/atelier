@@ -22,6 +22,7 @@ def main(argv=None):
     parser.add_argument('--rim', required=True, type=Path)
     parser.add_argument('--paving', action='append', required=True, type=Path)
     parser.add_argument('--query-output', required=True, type=Path)
+    parser.add_argument('--surface-output', required=True, type=Path)
     parser.add_argument('--output', required=True, type=Path)
     args = parser.parse_args(argv if argv is not None else sys.argv[sys.argv.index('--') + 1:])
     from brinecove.paving_data import read_all
@@ -37,8 +38,7 @@ def main(argv=None):
     from brinecove import geometry_finish as finish, ground
     from brinecove.piece_inputs import finish_parts
     from terrain_product import Mesh, save
-    from atelier import mesh_ir
-    from mesh_pieces import create_mesh
+    import region_query
     import numpy as np
     done = threading.Event(); started = time.monotonic()
     def heartbeat():
@@ -49,28 +49,15 @@ def main(argv=None):
         source, seam = ground.build(rim, world)
         if source.normals is None:
             source.normals = finish.collar_normals(source, rim, finish.smooth_normals(source))
-        value, counts, _ = finish_parts(source, 'Ground', rim, args.output, paving=paving, seam=seam)
+        value, counts, _ = finish_parts(source, 'Ground', rim, args.output, paving=paving, seam=seam,
+                                       query_output=args.surface_output)
         # The final query surface comes from the actual post-paving finished pieces,
         # without reading back GLBs or substituting analytic/natural terrain.
-        vertices, faces = [], []
-        for row in value['pieces']:
-            identity, part = mesh_ir.decode((args.output / row['payload']).read_bytes())
-            if identity['asset'] != row['name'] or not np.array_equal(identity['matrix'], np.eye(4)):
-                raise ValueError('Final coast query requires the exact local finished mesh frame')
-            # Use Blender's actual exported triangulation, rather than inventing a
-            # first-corner fan across nonplanar ground quads. This remains geometry
-            # data: no sibling GLB is read or exported to construct the query.
-            part['slots'] = [bpy.data.materials.get(label) or bpy.data.materials.new(label)
-                             for label in part['slots']]
-            mesh = create_mesh('CoastalQueryTriangles', part)
-            try:
-                mesh.calc_loop_triangles()
-                offset = len(vertices)
-                vertices.extend([list(vertex.co) for vertex in mesh.vertices])
-                faces.extend([[offset + int(i) for i in triangle.vertices] for triangle in mesh.loop_triangles])
-            finally: bpy.data.meshes.remove(mesh)
+        surface, = region_query.load(args.surface_output, owner='SM_BC_Ground', stage='final')
+        if not np.array_equal(surface['matrix'], np.eye(4)):
+            raise ValueError('Final coast query requires the exact local finished mesh frame')
         from brinecove import region
-        query = Mesh.from_polygons(np.asarray(vertices) + np.asarray(region.ORIGIN), faces)
+        query = Mesh.from_polygons(surface['positions'].astype('<f8') + np.asarray(region.ORIGIN), surface['triangles'])
         save(args.query_output, query, owner='Brinecove', stage='final', city=True)
     finally:
         done.set(); thread.join(timeout=1)

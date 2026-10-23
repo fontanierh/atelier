@@ -16,6 +16,10 @@ def test_coastal_component_planners_are_separate_and_ground_requires_complete_pa
     check_modules(steps)
     planners = {s.name.rsplit('.', 1)[-1]: s for s in steps if '.geometry.' in s.name}
     assert len(planners) == 13
+    for key, step in planners.items():
+        query = tmp_path.resolve() / 'brinecove/query-data' / (key + '.npz')
+        assert next(p for p in step.products if p.name == 'brinecove.query.' + key).paths == (query,)
+        assert '--query-output' in step.commands[0].args or '--surface-output' in step.commands[0].args
     for key, function in recipe.COMPONENTS:
         step = planners['SM_BC_' + key]
         assert step.cache and step.commands[0].factory_startup and step.commands[0].threads == 3

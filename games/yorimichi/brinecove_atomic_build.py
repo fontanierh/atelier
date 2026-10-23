@@ -45,28 +45,31 @@ def steps(ctx):
                 'pirate-queen-statue.glb', 'galleon-figurehead.glb', 'ships-wheel.glb',
                 'galleon-hull.glb', 'galleon-hull.provenance.json'))
         paving = ctx.out / 'brinecove-data/paving' / (key + '.json')
+        query = ctx.out / 'brinecove/query-data' / ('SM_BC_' + key + '.npz')
         product = 'brinecove.paving.' + key
         paving_files.append(paving); paving_products.append(product)
         assets.append(graph.LogicalAsset('SM_BC_' + key, script,
             args=('--asset', key, '--builder', function, '--context', str(parameters),
-                  '--rim', str(rim), '--paving-output', str(paving)),
+                  '--rim', str(rim), '--paving-output', str(paving), '--query-output', str(query)),
             inputs=tuple(sorted(code)), reads=('brinecove.rim_data',), suffix='.glb',
-            products=(Product(product, (paving,)),)))
+            products=(Product('brinecove.query.SM_BC_' + key, (query,)), Product(product, (paving,)))))
     ground_script = REGION / 'plan_ground.py'
     ground_query = ctx.out / 'terrain/Brinecove/final.npz'
-    arguments = ['--rim', str(rim), '--query-output', str(ground_query)]
+    surface = ctx.out / 'brinecove/query-data/SM_BC_Ground.npz'
+    arguments = ['--rim', str(rim), '--query-output', str(ground_query), '--surface-output', str(surface)]
     for path in paving_files: arguments.extend(('--paving', str(path)))
     assets.append(graph.LogicalAsset('SM_BC_Ground', ground_script, args=tuple(arguments),
         reads=('brinecove.rim_data', *paving_products), suffix='.glb',
-        products=(Product('terrain.Brinecove.final', (ground_query,)),)))
+        products=(Product('brinecove.query.SM_BC_Ground', (surface,)), Product('terrain.Brinecove.final', (ground_query,)))))
     for slug in HEROES:
         name = 'SM_BC_Hero_' + ''.join(part.title() for part in slug.split('-'))
         materials = ctx.out / 'brinecove-data/heroes' / slug
+        query = ctx.out / 'brinecove/query-data' / (name + '.npz')
         assets.append(graph.LogicalAsset(name, REGION / 'plan_hero.py',
-            args=('--slug', slug, '--metadata-output', str(materials)), suffix='.glb',
+            args=('--slug', slug, '--metadata-output', str(materials), '--query-output', str(query)), suffix='.glb',
             inputs=tuple(GAME / 'assets/brinecove/models' / (slug + suffix)
                          for suffix in ('.glb', '.provenance.json')),
-            products=(Product('brinecove.hero_materials.' + slug, (materials,)),)))
+            products=(Product('brinecove.query.' + name, (query,)), Product('brinecove.hero_materials.' + slug, (materials,)))))
     result.extend(graph.steps(ctx, region='brinecove', assets=assets))
     placement_script = REGION / 'placement_data.py'
     placements = ctx.out / 'brinecove-data/placements.json'
@@ -79,6 +82,18 @@ def steps(ctx):
         needs=['world.brinecove.sources'], reads=['brinecove.rim_data'],
         products=[Product('brinecove.placements', (placements,))], cache=True,
         about='coastal instance transforms, independent of model geometry/export identities'))
+    query_script = REGION / 'query_data.py'
+    parents = ['SM_BC_' + key for key, _ in COMPONENTS] + ['SM_BC_Ground']
+    parents.extend('SM_BC_Hero_' + ''.join(part.title() for part in slug.split('-')) for slug in HEROES)
+    query_output = ctx.out / 'brinecove-data/query-data.json'
+    arguments = ['--out', str(ctx.out), '--output', str(query_output)]
+    for key in parents: arguments.extend(('--parent', key))
+    for slug in HEROES: arguments.extend(('--hero', slug))
+    result.append(Step('world.brinecove.query_data', [Python(query_script, tuple(arguments))],
+        inputs=local_imports(query_script, (WORLD, REGIONS)),
+        reads=['brinecove.placements', *('brinecove.query.' + key for key in parents)],
+        products=[Product('brinecove.query_data', (query_output,))], cache=True,
+        about='complete logical query surfaces and transforms without exported models'))
     return result
 
 
