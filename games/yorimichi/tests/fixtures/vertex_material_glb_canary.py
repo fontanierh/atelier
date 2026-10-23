@@ -63,10 +63,10 @@ def main():
     control = output / 'original.glb'; old['export_glb'](control, [obj])
     specs = mesh_materials.capture_slots(obj)
     assert specs[1] is None
-    value = plan(obj, output / 'plan', options=dict(export_apply=True), material_specs=specs)
+    value = plan(obj, output / 'plan', partition='whole', options=dict(export_apply=True), material_specs=specs)
     payload = output / 'plan' / value['pieces'][0]['payload']; original_payload = payload.read_bytes()
     unused.use_nodes = True; unused.node_tree.nodes.new('ShaderNodeValue')
-    plan(obj, output / 'plan', options=dict(export_apply=True), material_specs=mesh_materials.capture_slots(obj))
+    plan(obj, output / 'plan', partition='whole', options=dict(export_apply=True), material_specs=mesh_materials.capture_slots(obj))
     assert payload.read_bytes() == original_payload, 'Unused material graph changed the consumed leaf'
     metadata, _ = mesh_ir.decode(original_payload)
     assert metadata['schema'] == 3 and metadata['slots'] == ['M_HS_Stable'] and metadata['material_specs'] == [specs[0]]

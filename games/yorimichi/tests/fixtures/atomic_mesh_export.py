@@ -95,7 +95,7 @@ def main():
     export_fbx(filepath=str(control), use_selection=True, object_types={'MESH'}, bake_anim=False)
     expected_exported = exported_corners(control)
     observed_exported = dict(render=Counter(), collision=Counter())
-    inventory = plan(obj, root / 'plan')
+    inventory = plan(obj, root / 'plan', partition='spatial')
     assert len(inventory['pieces']) > 1
     observed = Counter()
     items = []

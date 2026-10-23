@@ -105,7 +105,7 @@ def main():
         original_triangles = region_query.triangles([region_query.capture(obj)])
         assert (region_query.triangles(region_query.load(query,owner=asset,stage='final')) == original_triangles).all()
         plan_root = root/'plans'/asset
-        value = plan(obj,plan_root,collisions=(),options=dict(apply_unit_scale=True,apply_scale_options='FBX_SCALE_ALL',
+        value = plan(obj,plan_root,partition='spatial' if asset == 'SW_Island' else 'whole',collisions=(),options=dict(apply_unit_scale=True,apply_scale_options='FBX_SCALE_ALL',
             axis_forward='-Y',axis_up='Z',mesh_smooth_type='FACE',colors_type='SRGB'))
         observed = Counter(); emitted = dict(render=Counter(),collision=Counter())
         for row in value['pieces']:

@@ -111,7 +111,7 @@ def main(argv=None):
             obj = bpy.data.objects.get(key)
             hulls = context.collision_objects(key, anchor, context.BROW_COL) if key.endswith('_Brow') else []
             destination = args.output.with_suffix('') / 'plans' / key
-            mesh_plan(obj, destination, collisions=[capture_collision(hull) for hull in hulls], options=dict(
+            mesh_plan(obj, destination, partition='whole', collisions=[capture_collision(hull) for hull in hulls], options=dict(
                 apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL', axis_forward='-Y',
                 axis_up='Z', mesh_smooth_type='EDGE', use_custom_props=False))
             planner.main(['--asset', key, '--source', str(packet_root / (key + '.json')),
