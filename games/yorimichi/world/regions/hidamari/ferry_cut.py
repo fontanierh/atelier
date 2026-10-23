@@ -203,18 +203,18 @@ def triangles(obj):
     return v[t]
 
 
-def main():
+def cut_object(obj, cuts):
+    """@cc [owner:fontanierh,label:correctness] shared-harbor-cut-before-export
+    Apply and audit the same production rail opening on explicit source geometry
+    without a mesh import/export. Preserve mandatory positive pre-cut hits, empty
+    post-cut masks, outward caps, unchanged outside geometry and closed cut edges.
+    The legacy control and final-piece planner MUST share this operation; failure
+    MUST prevent production final-plan publication.
+    """
     fixtures = audit_split_rail()
-    site = json.loads(SITE.read_text())
-    cuts = site['hidamari']['berth']['world_cuts']
     S = load_site()
-    bpy.ops.wm.read_factory_settings(use_empty=True)
-    bpy.ops.import_scene.fbx(filepath=str(SOURCE))
-    objs = [o for o in bpy.data.objects if o.type == 'MESH']
-    if len(objs) != 1:
-        raise SystemExit(f'{SOURCE.name}: expected one mesh object, got {len(objs)}')
-    obj = objs[0]
     bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.select_all(action='DESELECT'); obj.select_set(True)
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
     before = triangles(obj)
     bm = bmesh.new(); bm.from_mesh(obj.data)
@@ -247,6 +247,22 @@ def main():
     bm.free()
     if boundary:
         failures.append(f'{boundary} open edges where the rail was cut')
+    return dict(cuts=done, triangles={'before': len(before), 'after': len(after)},
+                untouched_outside_cuts=bool(same), failures=failures, fixtures=fixtures,
+                open_cut_edges=boundary)
+
+
+def main():
+    site = json.loads(SITE.read_text())
+    cuts = site['hidamari']['berth']['world_cuts']
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    bpy.ops.import_scene.fbx(filepath=str(SOURCE))
+    objs = [o for o in bpy.data.objects if o.type == 'MESH']
+    if len(objs) != 1:
+        raise SystemExit(f'{SOURCE.name}: expected one mesh object, got {len(objs)}')
+    obj = objs[0]
+    result = cut_object(obj, cuts)
+    failures = result['failures']
     TARGET.parent.mkdir(parents=True, exist_ok=True)
     bpy.ops.object.select_all(action='DESELECT'); obj.select_set(True)
     obj.name = 'HD_Harbor'
@@ -254,16 +270,14 @@ def main():
     export_scene_fbx(filepath=str(TARGET), use_selection=True, apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL',
                              axis_forward='-Y', axis_up='Z', object_types={'MESH'}, mesh_smooth_type='FACE', bake_anim=False,
                              use_custom_props=False)
-    report = {'source': str(SOURCE.relative_to(yori.OUT)), 'site': str(SITE.relative_to(yori.OUT)), 'cuts': done,
-              'triangles': {'before': len(before), 'after': len(after)}, 'untouched_outside_cuts': bool(same),
-              'failures': failures, 'fixtures': fixtures, 'open_cut_edges': boundary,
+    report = {**result, 'source': str(SOURCE.relative_to(yori.OUT)), 'site': str(SITE.relative_to(yori.OUT)),
               'inputs': {str(p.relative_to(yori.REPO)) if p.is_relative_to(yori.REPO) else p.name:
                          hashlib.sha256(p.read_bytes()).hexdigest() for p in (Path(__file__), SOURCE, SITE)},
               'output_sha256': hashlib.sha256(TARGET.read_bytes()).hexdigest()}
     (TARGET.parent / 'cut.json').write_text(json.dumps(report, indent=1) + '\n')
     for f in failures:
         print('FAIL', f)
-    print('HIDAMARI FERRY CUT', 'FAIL' if failures else 'PASS', json.dumps(done))
+    print('HIDAMARI FERRY CUT', 'FAIL' if failures else 'PASS', json.dumps(result['cuts']))
     if failures:
         raise SystemExit(1)
 

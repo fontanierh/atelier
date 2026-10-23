@@ -19,12 +19,15 @@ def main(argv=None):
     parser.add_argument('--context', type=Path, required=True)
     parser.add_argument('--query-output', type=Path)
     parser.add_argument('--source-output', type=Path)
+    parser.add_argument('--source-only', action='store_true')
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args(argv if argv is not None else sys.argv[sys.argv.index('--') + 1:])
     name(args.asset)
     real_directory(args.output)
-    if args.source_output is not None and args.asset != 'HD_Harbor':
+    if (args.source_output is not None or args.source_only) and args.asset != 'HD_Harbor':
         raise ValueError('Only the Harbor cut consumes a pre-export city source')
+    if args.source_only and args.source_output is not None:
+        raise ValueError('Source-only output already owns the complete raw source')
     from hidamari import source_context
     context = source_context.read(args.context, args.asset)
     import bpy
@@ -62,12 +65,15 @@ def main(argv=None):
         region_query.save(args.query_output, [region_query.capture(obj),
             *region_query.capture_colliders(args.asset, collisions)], owner=args.asset,
             stage='raw' if args.asset == 'HD_Harbor' else 'final')
-    if args.source_output is not None:
+    if args.source_output is not None or args.source_only:
         from mesh_pieces import capture
         import source_geometry
-        source_geometry.write(args.source_output, capture(obj.data), owner=args.asset,
+        source_geometry.write(args.output if args.source_only else args.source_output, capture(obj.data), owner=args.asset,
             slots=[material.name for material in obj.data.materials],
             matrix=[list(row) for row in obj.matrix_world], collisions=collisions)
+    if args.source_only:
+        print('RAW CITY SOURCE COMPLETE ' + args.asset, flush=True)
+        return
     plan(obj, args.output, collisions=collisions, options=dict(
         apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL', axis_forward='-Y', axis_up='Z',
         mesh_smooth_type='FACE', use_custom_props=False))
