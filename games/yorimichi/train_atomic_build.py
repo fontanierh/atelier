@@ -112,6 +112,7 @@ def track_steps(ctx, *, source_inputs=(), bank_inputs=()):
     result.append(Step('world.belmonte_track', [Call('assemble railway files', assemble)],
         inputs=[Path(__file__), GAME / 'train_track_atomic_products.py', TRAIN / 'track.py',
                 *export_assembly.runtime_inputs()],
-        reads=['belmonte_track.atomic', 'belmonte_track.source_inventory', *source_products],
+        reads=['belmonte_track.atomic', 'belmonte_track.source_inventory', *source_products,
+               *('belmonte_track.geometry.' + asset.key for asset in assets)],
         products=[product], about='file-only railway assembly and original signed triangle/disk budget gates'))
     return result

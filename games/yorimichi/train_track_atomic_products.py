@@ -1,4 +1,5 @@
 """File-only railway assembly, retaining authored LOD and logical source ownership."""
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -13,7 +14,9 @@ GAME = Path(__file__).resolve().parent
 def assemble(out):
     """@cc [owner:fontanierh,label:correctness;performance] railway-complete-file-only-assembly
     Assembly MUST validate every current source/LOD and bounded export before copying
-    files. It MUST preserve every logical authored LOD, original material order, source
+    files. Every plan MUST bind the current consumed source digest and each export MUST
+    bind that plan's geometry and material digests, even when triangle counts match.
+    It MUST preserve every logical authored LOD, original material order, source
     frame, budget and placement record. It MUST NOT construct, join, render or export
     geometry, read rendered siblings as query data, or retire native parent packages.
     """
@@ -32,7 +35,19 @@ def assemble(out):
         levels = []; slots = []; counts = []
         for k in range(doc['meshes'][parent]['levels']):
             key = f'{parent}_LOD{k}'
-            source = json.loads((sources / (key + '.json')).read_text())
+            source_path = sources / (key + '.json')
+            plan_path = out / 'planned_exports/belmonte_track' / key / 'plan.json'
+            for path in (source_path, plan_path):
+                export_manifest.real_directory(path.parent)
+                if path.is_symlink() or not path.is_file(): raise ValueError('Invalid railway source/plan file')
+            source_bytes = source_path.read_bytes()
+            source = json.loads(source_bytes)
+            plan = json.loads(plan_path.read_text())
+            if (plan.get('source_sha256') != hashlib.sha256(source_bytes).hexdigest()
+                    or plan.get('parent') != key or plan.get('complete') is not True
+                    or [row['name'] for row in plan['pieces']] != parents[key]):
+                raise ValueError('Railway plan differs from current source')
+            planned = {row['name']: row for row in plan['pieces']}
             if source['asset'] != key or ownership[key]['source_triangles'] != source['triangles']:
                 raise ValueError('Changed railway source after planning')
             counts.append(source['triangles']); slots.extend(source['materials'])
@@ -41,6 +56,10 @@ def assemble(out):
                 row = exports[piece]
                 actual = export_manifest.validate(out / f'exports/world.belmonte_track.export/{piece}', key=piece)
                 if actual != row: raise ValueError('Railway export differs from complete assembly admission')
+                piece_plan = planned[piece]
+                if (row['metadata'].get('geometry_sha256') != piece_plan['sha256']
+                        or row['metadata'].get('material_sha256') != piece_plan['material_sha256']):
+                    raise ValueError('Railway export differs from current source plan')
                 if row['triangles'] <= 0 or row['triangles'] > export_manifest.TRIANGLE_LIMIT: raise ValueError('Unbounded railway export')
                 items.append(export_assembly.Item(piece, out / f'exports/world.belmonte_track.export/{piece}'))
                 rows.append(dict(name=piece, file='meshes/' + row['primary'], triangles=row['triangles']))

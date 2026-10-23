@@ -1,4 +1,5 @@
 """Selected railway constructors retain source geometry and publish no sibling data."""
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -99,10 +100,15 @@ def assembly_fixture(tmp_path):
     key = 'SM_TK_Sleeper_LOD0'
     atomic_json(root / 'source-data/inventory.json', dict(schema=1, mesh_order=['SM_TK_Sleeper'],
         meshes=dict(SM_TK_Sleeper=dict(levels=1))))
-    atomic_json(root / 'source-data' / (key + '.json'), dict(asset=key, triangles=10, materials=['MI_B_wood']))
+    source_path = root / 'source-data' / (key + '.json')
+    atomic_json(source_path, S.packet('SM_TK_Sleeper', 0, T.sleeper_mesh()))
     folder = tmp_path / 'exports/world.belmonte_track.export' / key; folder.mkdir(parents=True)
     (folder / (key + '.glb')).write_bytes(b'geometry fixture')
-    receipt = publish_receipt(folder, key=key, primary=key + '.glb', triangles=10, bounds=[[0, 0, 0], [1, 1, 1]])
+    receipt = publish_receipt(folder, key=key, primary=key + '.glb', triangles=10, bounds=[[0, 0, 0], [1, 1, 1]],
+        metadata=dict(geometry_sha256='a' * 64, material_sha256='b' * 64))
+    atomic_json(tmp_path / 'planned_exports/belmonte_track' / key / 'plan.json',
+        dict(parent=key, complete=True, source_sha256=hashlib.sha256(source_path.read_bytes()).hexdigest(),
+             pieces=[dict(name=key, sha256='a' * 64, material_sha256='b' * 64)]))
     atomic_json(tmp_path / 'atomic_regions/belmonte_track/assets/manifest.json', dict(exports=[receipt]))
     atomic_json(tmp_path / 'atomic_regions/belmonte_track/logical-pieces.json', dict(parents={key: [key]},
         ownership={key: dict(source_triangles=10)}))
@@ -192,6 +198,7 @@ def test_fixed_constructor_normal_inputs_exclude_route_and_whole_inventory(tmp_p
     source = steps['world.belmonte_track.source.SM_TK_Sleeper_LOD0']
     assert route not in source.inputs and roster not in source.inputs
     assert source.reads == ['belmonte_track.request.SM_TK_Sleeper_LOD0']
+    assert 'belmonte_track.geometry.SM_TK_Sleeper_LOD0' in steps['world.belmonte_track'].reads
     request = steps['world.belmonte_track.request.SM_TK_Sleeper_LOD0']
     assert request.cache and request.products[0].paths[0].name == 'SM_TK_Sleeper_LOD0.json'
 
@@ -260,3 +267,58 @@ def test_station_selected_inputs_exclude_route_and_discovery_sources(tmp_path):
                   if step.name == 'world.belmonte_track.source.SM_ST_Sheds_LOD0')
     assert not {'track.py', 'station.py', 'station_site.py', 'route.py', 'earthworks.py',
                 'track_build.py', 'track_sources.py'}.intersection(path.name for path in source.inputs)
+
+
+@pytest.mark.parametrize('field', ['vertices', 'uv', 'palette'])
+def test_same_count_track_source_cannot_admit_previous_plan_or_export(tmp_path, monkeypatch, field):
+    module, _ = assembly_fixture(tmp_path)
+    module.assemble(tmp_path)
+    root = tmp_path / 'belmonte-track/atomic'
+    before = {p.relative_to(root): (p.read_bytes(), p.stat().st_mtime_ns) for p in root.rglob('*') if p.is_file()}
+    source = tmp_path / 'belmonte-track/source-data/SM_TK_Sleeper_LOD0.json'
+    data = json.loads(source.read_text())
+    if field == 'vertices': data['vertices'][0][0] += 0.125
+    elif field == 'uv':
+        original = data['to_object']
+        data['to_object'] = original.replace('data.extend((v[a], v[b]))', 'data.extend((v[a] * 0.5, v[b]))')
+        assert data['to_object'] != original
+    else: data['palette']['MI_B_wood'][0] = 0.25
+    source.write_text(json.dumps(data))
+    monkeypatch.setattr(module.export_assembly, 'assemble', lambda *a: pytest.fail('publication before source admission'))
+    with pytest.raises(ValueError, match='plan differs from current source'): module.assemble(tmp_path)
+    assert {p.relative_to(root): (p.read_bytes(), p.stat().st_mtime_ns) for p in root.rglob('*') if p.is_file()} == before
+    plan = tmp_path / 'planned_exports/belmonte_track/SM_TK_Sleeper_LOD0/plan.json'
+    data = json.loads(plan.read_text()); data['source_sha256'] = hashlib.sha256(source.read_bytes()).hexdigest()
+    # A genuine new planner changes the consumed geometry or material packet.
+    data['pieces'][0]['material_sha256' if field == 'palette' else 'sha256'] = 'c' * 64
+    plan.write_text(json.dumps(data))
+    with pytest.raises(ValueError, match='export differs from current source plan'): module.assemble(tmp_path)
+    assert {p.relative_to(root): (p.read_bytes(), p.stat().st_mtime_ns) for p in root.rglob('*') if p.is_file()} == before
+
+
+def test_selected_track_planner_records_actual_source_and_palette_digests(tmp_path, monkeypatch):
+    import ast
+    from atelier.atomic_files import atomic_json
+    from atelier.export_manifest import real_directory, sha
+    from atelier.model_files import regular_files, retain_files
+    import argparse
+    source = tmp_path / 'source.json'; output = tmp_path / 'planned'; materials = tmp_path / 'materials'
+    key = 'SM_TK_Test_LOD0'
+    value = dict(schema=1, asset=key, triangles=1, palette=dict(MI_B_wood=[1, 0, 0]),
+                 material_factory='factory', export_glb='export')
+    atomic_json(source, value)
+    def plan(obj, root, **kwargs):
+        real_directory(root, create=True)
+        return dict(parent=key, complete=True, source_triangles=1,
+                    pieces=[dict(name=key, slots=['MI_B_wood'], sha256='a' * 64)])
+    tree = ast.parse((GAME / 'world/train/plan_track.py').read_text())
+    function = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'main')
+    namespace = dict(argparse=argparse, Path=Path, json=json, hashlib=hashlib, __doc__='fixture',
+        real_directory=real_directory, sha=sha, atomic_json=atomic_json, regular_files=regular_files,
+        retain_files=retain_files, construct=lambda v: v, plan=plan,
+        bpy=SimpleNamespace(ops=SimpleNamespace(wm=SimpleNamespace(read_factory_settings=lambda **k: None))))
+    exec(compile(ast.Module(body=[function], type_ignores=[]), '<actual-track-planner-main>', 'exec'), namespace)
+    namespace['main'](['--source', str(source), '--asset', key, '--output', str(output), '--materials', str(materials)])
+    result = json.loads((output / 'plan.json').read_text())
+    assert result['source_sha256'] == sha(source)
+    assert result['pieces'][0]['material_sha256'] == sha(materials / (key + '.json'))

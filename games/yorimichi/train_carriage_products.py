@@ -1,4 +1,5 @@
 """Current complete carriage source validation and file-only train library assembly."""
+import hashlib
 import json
 from pathlib import Path
 import sys
@@ -14,6 +15,7 @@ from atelier.model_files import member, regular_files, retain_files
 GAME = Path(__file__).resolve().parent
 sys.path.insert(0, str(GAME / 'world'))
 from train.carriage_source import read  # noqa: E402
+from train.carriage_mesh import glb  # noqa: E402
 from train import budgets as B, textures as T  # noqa: E402
 
 COACHES = ('locomotive', 'tender', 'baggage-van', 'restaurant', 'first-class', 'second-class', 'brake-van')
@@ -135,7 +137,9 @@ def assemble(out):
     Validate all seven source owners, every independent current primary and all prior
     owned destinations before writes. Preserve source bytes, authored LOD membership,
     material/texture bindings, doors/pivots/collision/seating/boarding/sockets and current
-    runtime filenames. Assembly MUST never construct, export or join geometry; obsolete
+    runtime filenames. Each primary MUST match the exact current packet GLB encoding,
+    including same-count attribute/material changes. Assembly MUST never construct, export
+    or join geometry; obsolete
     authoring members may retire only after every current member is copied and checked.
     """
     out = Path(out); root = real_directory(out / 'belmonte-train')
@@ -148,7 +152,10 @@ def assemble(out):
         for row in inventory['pieces']:
             key = row['name']; product = out / 'exports/world.belmonte_train.export' / key
             receipt = validate(product, key=key)
-            if receipt['triangles'] != row['triangles']: raise ValueError('Carriage export/source triangle count differs')
+            packet, binary = read(folder / 'packets' / row['source'], key=key)
+            expected = hashlib.sha256(glb(packet['document'], binary)).hexdigest()
+            if receipt['triangles'] != row['triangles'] or receipt['sha256'] != expected:
+                raise ValueError('Carriage export differs from current source packet')
             items.append(export_assembly.Item(key, product)); exports[key] = receipt
         for relative, identity in value['files'].items():
             if relative.startswith('textures/'):

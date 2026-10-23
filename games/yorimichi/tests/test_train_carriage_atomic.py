@@ -373,3 +373,50 @@ def test_all_seven_assembly_refuses_foreign_members_before_any_copy(tmp_path, mo
     monkeypatch.setattr(products, 'copy', lambda *args: pytest.fail('assembly wrote before complete preflight'))
     with pytest.raises(ValueError, match='Foreign'): products.assemble(tmp_path)
     assert foreign.read_text() == 'foreign'
+
+
+@pytest.mark.parametrize('field', ['position', 'uv', 'material'])
+def test_same_count_current_carriage_packet_refuses_old_export_before_publication(tmp_path, monkeypatch, field):
+    import hashlib
+    products = full_source_fixture(tmp_path, monkeypatch)
+    products.assemble(tmp_path)
+    root = tmp_path / 'belmonte-train'
+    before = {p.relative_to(root): (p.read_bytes(), p.stat().st_mtime_ns) for p in root.rglob('*') if p.is_file()}
+    folder = tmp_path / 'belmonte-train-sources/locomotive'
+    inventory_path = folder / 'packets/inventory.json'
+    inventory = json.loads(inventory_path.read_text()); row = inventory['pieces'][0]
+    packet_path = folder / 'packets' / row['source']
+    packet, binary = S.read(packet_path, key=row['name']); doc = packet['document']
+    if field == 'position':
+        binary = struct.pack('<f', 0.5) + binary[4:]
+    elif field == 'uv':
+        offset = len(binary) + (-len(binary) % 4); binary += b'\0' * (-len(binary) % 4)
+        doc['bufferViews'].append(dict(buffer=0, byteOffset=offset, byteLength=24))
+        doc['accessors'].append(dict(bufferView=len(doc['bufferViews']) - 1, componentType=5126, count=3, type='VEC2'))
+        doc['meshes'][0]['primitives'][0]['attributes']['TEXCOORD_0'] = len(doc['accessors']) - 1
+        binary += struct.pack('<6f', .25, 0, 1, 0, 0, 1); doc['buffers'][0]['byteLength'] = len(binary)
+    else:
+        doc['materials'][0]['pbrMetallicRoughness']['metallicFactor'] = 0.5
+    packet_path.write_bytes(S.encode(row['name'], doc, binary))
+    assert S.read(packet_path)[0]['triangles'] == row['triangles']
+    row['sha256'] = hashlib.sha256(packet_path.read_bytes()).hexdigest()
+    inventory_path.write_text(json.dumps(inventory))
+    source_path = folder / 'source.json'; source = json.loads(source_path.read_text())
+    for path in (packet_path, inventory_path):
+        source['files'][path.relative_to(folder).as_posix()] = dict(bytes=path.stat().st_size, sha256=products.sha(path))
+    source_path.write_text(json.dumps(source))
+    # The complete new source is internally valid; only its old export is stale.
+    products.source(folder, 'locomotive')
+    monkeypatch.setattr(products.export_assembly, 'assemble', lambda *a: pytest.fail('published before source binding'))
+    monkeypatch.setattr(products, 'copy', lambda *a: pytest.fail('copied before source binding'))
+    with pytest.raises(ValueError, match='export differs from current source packet'): products.assemble(tmp_path)
+    assert {p.relative_to(root): (p.read_bytes(), p.stat().st_mtime_ns) for p in root.rglob('*') if p.is_file()} == before
+
+
+def test_carriage_assembly_declares_actual_packet_encoder_closure(tmp_path):
+    from types import SimpleNamespace
+    recipe = load('carriage_assembly_encoder_recipe', GAME / 'train_carriage_build.py')
+    step = next(s for s in recipe.steps(SimpleNamespace(out=tmp_path)) if s.name == 'world.belmonte_train')
+    assert GAME / 'world/train/carriage_mesh.py' in step.inputs
+    assert GAME / 'world/train/carriage_source.py' in step.inputs
+    assert any(path.name == 'gltf_partition.py' for path in step.inputs)
