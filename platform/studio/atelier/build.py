@@ -1391,8 +1391,10 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                             path.unlink(missing_ok=True)
                             raise
             from .checkpoint_native_capture import publish as retain_candidates
+            from .raw_mesh_cache import publish as cache_raw_meshes
             for completed_step in plan:
                 if completed_step.name in completed:
+                    cache_raw_meshes(ctx, completed_step.name, echo=echo)
                     saved = read_stamp(ctx.stamps / (completed_step.name + '.json'))
                     retain_candidates(ctx, completed_step, saved,
                                       fresh=lambda item=completed_step: fingerprint(item, done), echo=echo)
@@ -1637,6 +1639,8 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
         done[step.name] = result(step, current, record)
         build_products.feed_results(done, products)
         from .checkpoint_native_capture import publish as retain_candidates
+        from .raw_mesh_cache import publish as cache_raw_meshes
+        cache_raw_meshes(ctx, step.name, echo=echo)
         retain_candidates(ctx, step, record, fresh=lambda: fingerprint(step, done), echo=echo)
         if actions is not None:
             from .checkpoint_manifest import record as retain_record

@@ -1,7 +1,7 @@
 """Legacy FBX mesh import using the actual source for migration and fresh material slots."""
 from pathlib import Path
 import unreal
-from atelier.unreal_mesh_reuse import common_fbx_mesh
+from atelier.unreal_mesh_reuse import RawMeshes, common_fbx_mesh, imported_source_matches
 
 EAL = unreal.EditorAssetLibrary
 AT = unreal.AssetToolsHelpers.get_asset_tools()
@@ -29,17 +29,56 @@ def import_mesh(path, dest, name, *, seed=None, fresh_slots=False, before_import
                                   validation_functions=validation_functions, owner_transition=excluded_packages,
                                   owner_roots=(Path(__file__).resolve().parents[2] / 'world',
                                                Path(__file__).resolve().parents[2] / 'world/regions'))
+    package = dest + '/' + name
+    raw = raw_items() if mesh is None and reuse is not None and before_import is None else None
+    key = raw.key(package, [Path(path)], RAW_SETTINGS) if raw is not None else None
+    if mesh is None and raw is not None and raw.install(package, key):
+        # A cached fresh import of exactly this source, importer, project and engine; finishing follows.
+        mesh = EAL.load_asset(package)
+        if mesh and legacy_options_match(mesh) and imported_source_matches(mesh, Path(path)):
+            raw.admitted(package)
+            reuse.reused_raw(package, key)
+        else:
+            mesh = None
+            if not raw.reject(package):
+                raise RuntimeError('A rejected cached raw mesh could not be released: ' + name)
     if mesh is None:
+        fresh = raw is not None and raw.clear(package)
         if before_import is not None:
             before_import()
-        mesh = _source_mesh(path, dest, name, fresh_slots)
+        try:
+            mesh = _import_mesh(path, dest, name, True) if fresh else _source_mesh(path, dest, name, fresh_slots)
+        except Exception:
+            if fresh:
+                raw.restore_aside(package)
+            raise
         if reuse is not None:
-            reuse.imported(dest + '/' + name)
+            reuse.imported(package)
+        if fresh and legacy_options_match(mesh):
+            raw.capture(package, key)
     if not legacy_options_match(mesh):
         raise RuntimeError('FBX import did not preserve declared options: ' + name)
     if reuse is not None:
         reuse.defer_validated(dest + '/' + name)
     return mesh
+
+
+# Steps whose FBX meshes are cached as raw items: a fresh import of each source, before finishing.
+RAW_ITEM_TASKS = frozenset({'unreal.world'})
+RAW_SETTINGS = dict(format='fbx-static-mesh', fresh=True)
+_RAW = {}
+
+
+def raw_items():
+    """The raw mesh cache of the running owning task, or None when the task does not use it."""
+    import os
+    from atelier.native_protocol import native_context
+    task, game = os.environ.get('ATELIER_BUILD_TASK'), os.environ.get('ATELIER_BUILD_GAME')
+    if task not in RAW_ITEM_TASKS or not game:
+        return None
+    if task not in _RAW:
+        _RAW[task] = RawMeshes(native_context(game), task, __file__, ('_import_mesh', 'legacy_options_match'))
+    return _RAW[task]
 
 
 def _source_mesh(path, dest, name, fresh_slots=False):

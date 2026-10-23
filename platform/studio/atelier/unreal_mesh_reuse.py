@@ -14,7 +14,8 @@ import stat
 import tempfile
 
 from . import mesh_reuse, paths
-from .native_protocol import context, read_json, safe_destination, native_context, atomic_json, runtime_files
+from .native_protocol import (context, read_json, safe_destination, native_context, atomic_json, runtime_files,
+                              ReadStore)
 
 
 def observed_environment(ctx, current):
@@ -612,6 +613,11 @@ class MeshReuse:
         """Queue after current native checks; the successful host publishes receipts."""
         self.defer_validated(name)
 
+    def reused_raw(self, name, key):
+        """A cached raw item replaced this mesh's import; its current finishing and checks still run."""
+        self.counts['reused_raw'] = self.counts.get('reused_raw', 0) + 1
+        self.pending[name]['provenance'] = dict(kind='raw-item', key=key)
+
     def imported(self, name=None):
         self.counts['imported'] += 1
         if name is not None:
@@ -732,3 +738,176 @@ def common_fbx_mesh(source, destination, name, *, fresh_slots, script, validator
     mesh = reuse.acquire(package, package, geometry=inputs, donor_geometry=inputs,
                          sources=[(package, Path(source), mesh_reuse.digest(source))], validator=validator)
     return mesh, reuse
+
+
+RAW_SCHEMA = 1
+
+
+def project_identity(ctx):
+    """Everything in the receiving project that can change a fresh import: descriptor, configuration
+    and the compiled project modules the editor loads. Engine and toolchain come from context()."""
+    project = ctx.uproject.parent
+    files = [ctx.uproject, *sorted((project / 'Config').glob('*.ini'))]
+    modules = project / 'Binaries/Mac/UnrealEditor.modules'
+    if modules.is_file():
+        files.append(modules)
+        listed = json.loads(modules.read_text()).get('Modules', {})
+        files += sorted(project / 'Binaries/Mac' / name for name in listed.values())
+    from .file_identity import digest_file
+    return mesh_reuse.identity({path.relative_to(project).as_posix(): digest_file(path) for path in files if path.is_file()})
+
+
+class RawMeshes:
+    """@cc [owner:fontanierh,label:correctness] raw-mesh-items
+    A raw mesh item is the saved package of a FRESH source import (no prior package at that path),
+    captured after the importer's own option check and BEFORE any owner finishing. Its key MUST be
+    the logical package path, every source byte, the declared import settings, the importer
+    function closure, the receiving project identity and the engine context, and nothing from the
+    owning step's orchestration, finishing or map code. A hit installs the recorded bytes as APFS
+    clones into an unloaded package, setting any unproved previous files aside; finishing then runs
+    from current code and data. Loaded or dirty packages are never replaced. Only a successful
+    owning task publishes captured items, through the ordinary host after native success.
+    """
+    def __init__(self, ctx, task, importer, functions):
+        self.ctx, self.task = ctx, task
+        self.content = ctx.uproject.parent / 'Content'
+        self.importer = mesh_reuse.native_policy(Path(importer).read_text(), functions, importer)
+        self.base = dict(schema=RAW_SCHEMA, engine=context(ctx), project=project_identity(ctx), importer=self.importer)
+        self.store = ReadStore(ctx.game)
+        self.nonce = os.environ.get('ATELIER_MESH_REUSE_NONCE')
+        self.counts = dict(raw_installed=0, raw_captured=0, raw_unavailable=0)
+        self.aside = {}
+        self.installed_keys = {}
+
+    def key(self, package, sources, settings):
+        return mesh_reuse.identity(dict(self.base, package=package, settings=settings,
+                                        sources=[mesh_reuse.digest(source) for source in sources]))
+
+    def entry(self, key):
+        path = self.store.directory / 'raw-meshes' / key[:2] / (key + '.json')
+        try:
+            value = read_json(path)
+        except (OSError, ValueError):
+            return None
+        if not isinstance(value, dict) or value.get('schema') != RAW_SCHEMA or value.get('key') != key:
+            return None
+        return value
+
+    def loaded(self, package):
+        import unreal
+        return (unreal.find_object(None, package) is not None
+                or unreal.find_object(None, package + '.' + package.rsplit('/', 1)[1]) is not None)
+
+    def _existing(self, package):
+        result = []
+        for member in mesh_reuse.package_members(package):
+            path = safe_destination(self.content, member.removeprefix('content/'))
+            if os.path.lexists(path):
+                if path.is_symlink() or not path.is_file():
+                    raise ValueError('Linked or irregular package member')
+                result.append(path)
+        return result
+
+    def clear(self, package):
+        """Make the package path fresh: set an unloaded, clean package's files aside. False if impossible."""
+        import unreal
+        try:
+            if self.loaded(package) or not packages_clean([package]):
+                return False
+            existing = self._existing(package)
+        except (ValueError, OSError):
+            return False
+        if existing:
+            self.aside[package] = set_aside(self.ctx, self.content, existing)
+            unreal.AssetRegistryHelpers.get_asset_registry().scan_modified_asset_files([str(p) for p in existing])
+        return True
+
+    def restore_aside(self, package):
+        if package in self.aside:
+            put_back(self.content, self.aside.pop(package))
+
+    def discard_aside(self, package):
+        if package in self.aside:
+            shutil.rmtree(self.aside.pop(package)[0], ignore_errors=True)
+
+    def install(self, package, key):
+        """Clone a cached raw item into a fresh package path. True when installed and registered."""
+        import unreal
+        value = self.entry(key)
+        if value is None or value.get('package') != package:
+            return False
+        files = value.get('files')
+        if not isinstance(files, dict) or mesh_reuse.package_members(package)[0] not in files:
+            self.counts['raw_unavailable'] += 1
+            return False
+        if not self.clear(package):
+            self.counts['raw_unavailable'] += 1
+            return False
+        installed = []
+        try:
+            for member, entry in sorted(files.items()):
+                if member not in mesh_reuse.package_members(package):
+                    raise ValueError('Raw item member outside its package')
+                blob = self.store.blobs / entry['sha256']
+                destination = safe_destination(self.content, member.removeprefix('content/'))
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                clone_file(blob, destination)
+                installed.append(destination)
+                os.chmod(destination, entry['mode'])
+                if destination.stat().st_size != entry['size']:
+                    raise ValueError('Raw item blob size differs')
+            unreal.AssetRegistryHelpers.get_asset_registry().scan_files_synchronous(
+                [str(path) for path in installed if path.suffix == '.uasset'], True)
+        except (OSError, ValueError, KeyError, TypeError):
+            for path in installed:
+                path.unlink(missing_ok=True)
+            self.restore_aside(package)
+            self.counts['raw_unavailable'] += 1
+            return False
+        self.installed_keys[package] = key
+        return True
+
+    def reject(self, package):
+        """An installed item failed current checks: unload it, remove it, put the previous files back.
+        Returns False when the editor cannot release it; the caller must then stop, never overwrite."""
+        import unreal
+        try:
+            objects = [value for value in (unreal.find_object(None, package),) if value is not None]
+            if objects:
+                unreal.EditorLoadingAndSavingUtils.unload_packages(objects)
+            if self.loaded(package):
+                return False
+            removed = self._existing(package)
+            for path in removed:
+                path.unlink()
+            unreal.AssetRegistryHelpers.get_asset_registry().scan_modified_asset_files([str(path) for path in removed])
+        except (OSError, ValueError, TypeError, AttributeError, RuntimeError):
+            return False
+        self.restore_aside(package)
+        return True
+
+    def admitted(self, package):
+        self.discard_aside(package)
+        self.counts['raw_installed'] += 1
+
+    def capture(self, package, key):
+        """After a fresh import passed the importer's check: clone its saved files for publication."""
+        if not self.nonce:
+            return
+        folder = safe_destination(self.ctx.out, '.state/raw-mesh-pending/' + self.task + '/' + self.nonce)
+        manifest = folder / 'manifest.json'
+        value = read_json(manifest) if manifest.exists() else dict(schema=RAW_SCHEMA, task=self.task, items={})
+        files = {}
+        for path in self._existing(package):
+            member = 'content/' + path.relative_to(self.content).as_posix()
+            target = folder / 'files' / key / member
+            target.parent.mkdir(parents=True, exist_ok=True)
+            clone_file(path, target)
+            files[member] = dict(sha256=mesh_reuse.digest(target), size=target.stat().st_size,
+                                 mode=stat.S_IMODE(path.stat().st_mode))
+        if mesh_reuse.package_members(package)[0] not in files:
+            raise ValueError('Fresh raw import saved no package: ' + package)
+        value['items'][key] = dict(package=package, files=files)
+        atomic_json(manifest, value)
+        self.discard_aside(package)
+        self.counts['raw_captured'] += 1

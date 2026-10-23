@@ -401,6 +401,17 @@ def finalize_pending(ctx, task, nonce):
         evidence = _finalize_pending(ctx, owner, nonce)
         if evidence is not None:
             ctx.__dict__.setdefault('native_candidate_observations', {}).setdefault(task, []).append(evidence)
+    pending_path(ctx, task, nonce)  # shared task/nonce validation
+    captures = safe_destination(ctx.out, '.state/raw-mesh-pending/' + task)
+    if captures.is_dir():
+        import shutil
+        current = captures / nonce
+        if current.is_dir():  # Raw items of this successful invocation become publishable.
+            ready = safe_destination(ctx.out, '.state/raw-mesh-ready/' + task + '/' + nonce)
+            ready.parent.mkdir(parents=True, exist_ok=True)
+            os.replace(current, ready)
+        for stale in captures.iterdir():  # Captures of failed invocations are never published.
+            shutil.rmtree(stale, ignore_errors=True)
 
 
 def _finalize_pending(ctx, task, nonce):
