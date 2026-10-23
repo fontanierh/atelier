@@ -297,6 +297,7 @@ def compare(records, runtime):
     """@cc [owner:fontanierh,label:correctness] actual-track-fixture-coverage
     Every production137 mesh and362 authored LOD MUST have complete original/current
     saved source/GPU/cooked/hull/settings/material and exact physical bounds proof.
+    Every authored LOD MUST have available, nonempty saved source on both sides.
     The editor-only marker MUST NOT be inserted into runtime to inflate coverage.
     Actual fixture query outcomes MUST compare exactly; unavailable or refused
     observations MUST fail. Fixture evidence MUST NOT certify production placement,
@@ -312,6 +313,10 @@ def compare(records, runtime):
         require(whole_bounds(old) == whole_bounds(new), name + ' exact whole bounds differ')
         a, b = native_raw_set(old, name), native_raw_set(new, name)
         require(set(a['render_lods']) == set(b['render_lods']) == set(range(levels)), name + ' authored LOD census differs')
+        for observed in (a, b):
+            require(set(observed['source_lods']) == set(observed['source_presence']) == set(range(levels))
+                    and all(observed['source_presence'][level] == {True} and observed['source_lods'][level]
+                            for level in range(levels)), name + ' missing authored saved source LOD coverage')
         for field in FIELDS:
             require(a[field] == b[field], name + ' native ' + field + ' differs')
         require(a['probes'] == b['probes'], name + ' exact selected-component queries differ')

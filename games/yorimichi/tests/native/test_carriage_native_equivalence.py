@@ -1,5 +1,6 @@
 """Source-only finite-boundary regressions; none certify a real Unreal result."""
 import ast
+import json
 from pathlib import Path
 import subprocess
 import sys
@@ -254,3 +255,34 @@ def test_mic_other_guids_nested_fields_and_material_state_remain_strict(tmp_path
     assert proof.material_text(a,cls)!=proof.material_text(b,cls)
     # Other reflected classes receive no generated-ID policy at all.
     assert proof.material_text(a,'/Script/Engine.Material')!=proof.material_text(same,'/Script/Engine.Material')
+
+
+@pytest.mark.parametrize('sides', [('original','current'), ('original',), ('current',)])
+@pytest.mark.parametrize('fault', ['missing_lod', 'unavailable', 'empty_source', 'mixed_availability'])
+def test_matching_missing_authored_carriage_source_lod_never_passes(tmp_path, monkeypatch, sides, fault):
+    # Isolate the authored-LOD predicate; the real roster/raw parser have their own tests.
+    import copy
+    name='SM_SavedSource';material='/Game/Fixture/Texture'
+    pixels=tmp_path/'pixels';pixels.write_bytes(b'exact opaque artifact bytes')
+    page=tmp_path/'page.json';page.write_text(json.dumps(dict(slots=[dict(material=material+'.Texture')])))
+    row=dict(policy_scope='fixture',raw_pages=[dict(path=str(page),sha256=proof.sha(page))],
+             **{field:[] for field in proof.FIELDS})
+    row.update(render_lods={level:['render corner'] for level in range(3)},
+               source_lods={level:['saved source corner'] for level in range(3)},
+               source_presence={level:{True} for level in range(3)})
+    records={phase:{name:copy.deepcopy(row)}for phase in ('original','current')}
+    materials={phase:{material:dict(class_path='/Script/Engine.Texture2D',
+                    pixels=dict(path=str(pixels),sha256=proof.sha(pixels)))}for phase in records}
+    poses={phase:{}for phase in records}
+    monkeypatch.setattr(proof,'inventory',lambda vehicles:{name:3})
+    monkeypatch.setattr(proof,'whole_bounds',lambda record:'equal bound')
+    monkeypatch.setattr(proof,'native_raw_set',lambda record,logical:record)
+    assert proof.compare(records,[],materials,poses)['fixture_geometry_complete']
+    for side in sides:
+        changed=records[side][name]
+        if fault=='missing_lod': changed['source_lods'].pop(1);changed['source_presence'].pop(1)
+        elif fault=='unavailable': changed['source_presence'][1]={False};changed['source_lods'].pop(1)
+        elif fault=='empty_source': changed['source_lods'][1]=[]
+        else: changed['source_presence'][1]={True,False}
+    with pytest.raises(ValueError,match='authored saved source LOD coverage'):
+        proof.compare(records,[],materials,poses)

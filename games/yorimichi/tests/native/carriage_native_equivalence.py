@@ -242,7 +242,8 @@ def compare(records, vehicles, materials, poses):
     """@cc [owner:fontanierh,label:correctness] actual-carriage-fixture-only
     All67 final meshes/81 LODs MUST compare exact saved source/GPU/cooked/hull,
     material/texture/settings/bounds and real selected queries after both whole0/
-    empty guards. Missing observations MUST refuse; no texture tolerance applies.
+    empty guards. Every authored LOD MUST have available, nonempty saved source
+    on both sides. Missing observations MUST refuse; no texture tolerance applies.
     This finite slice MUST NOT certify main/preflight/furniture/route/runtime or
     native task reuse. Each side MUST retain its independently bound source vector.
     """
@@ -268,6 +269,10 @@ def compare(records, vehicles, materials, poses):
                     'Missing actual material graph for a consumed native slot')
         x, y = native_raw_set(a, name), native_raw_set(b, name)
         require(set(x['render_lods']) == set(y['render_lods']) == set(range(count)), 'Incomplete81 LOD pages')
+        for observed in (x, y):
+            require(set(observed['source_lods']) == set(observed['source_presence']) == set(range(count))
+                    and all(observed['source_presence'][level] == {True} and observed['source_lods'][level]
+                            for level in range(count)), name + ' missing authored saved source LOD coverage')
         for field in FIELDS: require(x[field] == y[field], name + ' native ' + field + ' differs')
         if name.startswith('SM_BT_'):
             require(sum(x['hulls'].values()) == boxes[name], 'Actual authored fixed-box multiplicity differs')

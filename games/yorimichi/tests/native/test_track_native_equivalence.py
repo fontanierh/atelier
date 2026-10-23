@@ -285,9 +285,8 @@ def test_actual_material_inputs_refuse_without_creating_any_output(tmp_path, bad
     assert {p.name for p in tmp_path.iterdir()} == {'textures'}
 
 
-@pytest.mark.parametrize('field', ['source_lods', 'render_lods', 'cooked', 'hulls', 'policy', 'settings', 'source_presence', 'sphere', 'probe'])
-def test_paired_census_never_weakens_saved_geometry_or_bounds(tmp_path, monkeypatch, field):
-    value = runtime(); records = dict(original={}, current={})
+def paired_track_source_fixture(tmp_path, value):
+    records = dict(original={}, current={})
     for name, levels in proof.runtime_inventory(value).items():
         mesh = '/Game/Fixture/' + name + '.' + name
         policy = tmp_path / (name + '.json')
@@ -298,8 +297,15 @@ def test_paired_census_never_weakens_saved_geometry_or_bounds(tmp_path, monkeypa
         row = dict(meshes=[mesh], component_policies=[dict(path=str(policy), sha256=proof.sha(policy))], policy_scope='fixture',
             **{k: [] for k in proof.FIELDS})
         row.update(render_lods={k: ['actual'] for k in range(levels)}, source_lods={k: ['saved'] for k in range(levels)},
+            source_presence={k: {True} for k in range(levels)},
             probes=dict(logical=name, controls=[dict(kind=k, hit=None if k.endswith('_negative') else {'blocking': True}) for k in kinds]))
         records['original'][name] = row; records['current'][name] = copy.deepcopy(row)
+    return records
+
+
+@pytest.mark.parametrize('field', ['source_lods', 'render_lods', 'cooked', 'hulls', 'policy', 'settings', 'source_presence', 'sphere', 'probe'])
+def test_paired_census_never_weakens_saved_geometry_or_bounds(tmp_path, monkeypatch, field):
+    value = runtime(); records = paired_track_source_fixture(tmp_path, value)
     monkeypatch.setattr(proof, 'native_raw_set', lambda record, name: record)
     accepted = proof.compare(records, value)
     assert accepted['native_geometry_complete'] and accepted['meshes'] == 137 and accepted['authored_lods'] == 362
@@ -311,6 +317,7 @@ def test_paired_census_never_weakens_saved_geometry_or_bounds(tmp_path, monkeypa
         row['component_policies'] = [dict(path=str(policy), sha256=proof.sha(policy))]
     elif field == 'probe': row['probes']['controls'].pop()
     elif field in ('source_lods', 'render_lods'): row[field][0].append('changed actual corner')
+    elif field == 'source_presence': row[field][0] = {False}
     else: row[field].append('changed actual evidence')
     with pytest.raises(ValueError): proof.compare(records, value)
 
@@ -424,3 +431,19 @@ def test_existing_unrealscript_passes_private_flags_as_exact_native_arguments(tm
     argv = command._argv(ctx, Path('/fixture/Project.uproject'), command.script)
     assert argv[-len(launch['args']):] == launch['args']
     assert '-NullRHI' in argv and '-AllowStdOutLogVerbosity' in argv
+
+
+@pytest.mark.parametrize('sides', [('original','current'), ('original',), ('current',)])
+@pytest.mark.parametrize('fault', ['missing_lod', 'unavailable', 'empty_source', 'mixed_availability'])
+def test_matching_missing_authored_track_source_lod_never_passes(tmp_path, monkeypatch, sides, fault):
+    value=runtime();records=paired_track_source_fixture(tmp_path,value)
+    monkeypatch.setattr(proof,'native_raw_set',lambda record,name:record)
+    assert proof.compare(records,value)['native_geometry_complete']
+    name=next(iter(value['meshes']))
+    for side in sides:
+        row=records[side][name]
+        if fault=='missing_lod': row['source_lods'].pop(1);row['source_presence'].pop(1)
+        elif fault=='unavailable': row['source_presence'][1]={False};row['source_lods'].pop(1)
+        elif fault=='empty_source': row['source_lods'][1]=[]
+        else: row['source_presence'][1]={True,False}
+    with pytest.raises(ValueError,match='authored saved source LOD coverage'): proof.compare(records,value)
