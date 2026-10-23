@@ -459,3 +459,17 @@ def test_action_restore_is_in_process_and_takes_milliseconds(fixture, monkeypatc
     # The regression this guards against took seconds to minutes per hit (a guarded child and
     # broker admission); shared CI runners vary by tens of milliseconds, so the bound is 1 s.
     assert elapsed < 1.0, f'{elapsed:.3f} s for one 201-file action restore'
+
+
+def test_source_scope_inventory_remains_exact_without_rebuilding_shared_ancestor_chains(monkeypatch):
+    sources = {Path('/repo/game/source/deep') / ('file' + str(i) + '.py') for i in range(200)}
+    sources.update((Path('/other/file.py'), Path('/repo/game/source/deep/../literal.py')))
+    expected = {ancestor for path in sources for ancestor in (path, *path.parents)}
+    original = Path.parent.fget
+    calls = []
+    def parent(path):
+        calls.append(path)
+        return original(path)
+    monkeypatch.setattr(Path, 'parent', property(parent))
+    assert actions.source_scopes(iter(sources)) == expected
+    assert len(calls) == len(expected)
