@@ -112,17 +112,25 @@ def test_malformed_procfs_values_fail_instead_of_reporting_absence(procfs):
 def test_a_child_spawned_by_a_worker_thread_is_discovered():
     """The kernel records a child under the thread that created it, so a parent's own task entry
     is not enough; the live tree must still contain a worker thread's child."""
-    spawned = []
-    worker = threading.Thread(target=lambda: spawned.append(
-        subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)'])))
+    spawned, holding = [], threading.Event()
+    def spawn():
+        spawned.append(subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)']))
+        holding.wait(30)  # Stay alive: a thread that exits reparents its child to the leader.
+    worker = threading.Thread(target=spawn)
     worker.start()
-    worker.join()
     try:
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline and not spawned:
+            time.sleep(0.02)
+        assert spawned, 'the worker thread did not start its child'
         deadline = time.monotonic() + 5
         while time.monotonic() < deadline and spawned[0].pid not in guard.children(os.getpid()):
             time.sleep(0.02)
         assert spawned[0].pid in guard.children(os.getpid())
     finally:
-        spawned[0].kill()
-        spawned[0].wait()
+        holding.set()
+        worker.join(timeout=5)
+        if spawned:
+            spawned[0].kill()
+            spawned[0].wait()
 
