@@ -37,7 +37,16 @@ def restore_checkpoint(ctx, step, fingerprint, index, *, echo=print):
     from .checkpoint_actions import certified, compile_present, declared, label
     from .build import outputs_present
     from .build_cache import atomic_json
+    from .checkpoint_store import hashing
+    misses_path = ctx.out / '.state/reuse-misses.json'
+    try:
+        misses = set(read_json(misses_path).get('misses', [])) if misses_path.is_file() else set()
+    except (OSError, ValueError, CheckpointError):
+        misses = set()
     for key in index.checkpoints(ctx).get((step.name, fingerprint), []):
+        token = key + ' ' + step.name + ' ' + fingerprint
+        if token in misses:
+            continue  # This exact entry already failed to certify here; never retry it blindly.
         try:
             started = time.monotonic()
             prefixes = [label(ctx, Path(p)) for p in declared(ctx, step)]
@@ -47,13 +56,18 @@ def restore_checkpoint(ctx, step, fingerprint, index, *, echo=print):
             _guard(ctx, 'clone-step', step.name)
             saved = index.store.load(key)
             stamp = {**saved['stamps'], **saved.get('incremental_stamps', {})}.get(step.name)
-            if (stamp and stamp.get('fingerprint') == fingerprint and outputs_present(step)
-                    and compile_present(ctx, step) and certified(ctx, step, fingerprint, stamp)):
+            build_index = getattr(ctx, 'build_hash_index', None)
+            with hashing(ctx, build_index.digest if build_index is not None else None):
+                good = (stamp and stamp.get('fingerprint') == fingerprint and outputs_present(step)
+                        and compile_present(ctx, step) and certified(ctx, step, fingerprint, stamp))
+            if good:
                 from .store_retention import touch
                 touch(index.store, key)
                 echo(f'{step.name}: restored from checkpoint {key[:12]} ({time.monotonic() - started:.1f} s)')
                 return key, stamp
             echo(f'{step.name}: checkpoint {key[:12]} outputs did not certify; building normally')
+            misses.add(token)
+            atomic_json(misses_path, dict(misses=sorted(misses)))
         except (OSError, ValueError, KeyError, TypeError, CheckpointError) as error:
             echo(f'{step.name}: checkpoint {key[:12]} reuse skipped ({error})')
     return None
@@ -114,6 +128,12 @@ def checkpoint_clone(ctx, request):
             os.chmod(path, entry['mode'])
             os.utime(path, ns=(entry['mtime_ns'], entry['mtime_ns']))
         swap(destination, staged)
+        from .build_hashes import HashIndex
+        from .checkpoint_store import RESTORED_HASHES
+        with HashIndex(ctx.out / RESTORED_HASHES) as hashes:  # Clones keep the recorded metadata.
+            for member, entry in members.items():
+                if entry['kind'] == 'file':
+                    hashes.record(destination if member == prefix else destination / member[len(prefix) + 1:], entry['sha256'])
     return len(request['outputs'])
 
 

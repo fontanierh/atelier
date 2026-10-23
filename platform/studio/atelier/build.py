@@ -985,8 +985,11 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             # A hydrated checkpoint certificate counts only for the build's own fingerprint.
             from .build_checkpoints import staged_certificate
             staged = staged_certificate(ctx, step, current)
-            if (staged is not None and outputs_present(step) and task_cache.compile_present(ctx, step)
-                    and task_cache.certified(ctx, step, current, staged[1])):
+            from .checkpoint_store import hashing
+            with hashing(ctx, index.digest):  # Hydrated clones were recorded in this index.
+                adoptable = (staged is not None and outputs_present(step) and task_cache.compile_present(ctx, step)
+                             and task_cache.certified(ctx, step, current, staged[1]))
+            if adoptable:
                 adopted, previous = 'checkpoint ' + str(staged[0])[:12], staged[1]
             elif (step.heavy or step.products) and task_cache.key(ctx, step, current) is not None and \
                     task_cache.load(actions.store, task_cache.key(ctx, step, current)) is None:
