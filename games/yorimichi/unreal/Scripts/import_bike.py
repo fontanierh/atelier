@@ -20,7 +20,7 @@ def receive(out=None):
     cooked geometry. Render and cooked counts MUST equal the saved MeshDescription after
     the actual engine duplicate-point build rule, within the raw export triangle budget.
     ALL eleven current pieces MUST validate and dirty-only save before
-    old steering retirement. Persist exact actual render union bounds/true sphere on all
+    old steering retirement. Persist exact original saved-source union bounds/true sphere on all
     four steering assets as complete cooked user data; no source sphere approximation.
     """
     root=Path(out) if out is not None else yori.OUT;manifest=read(root);library=unreal.EditorAssetLibrary

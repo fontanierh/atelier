@@ -90,8 +90,10 @@ validation and reference preflight; preserve unknown files and packages by refus
 
 Migrate every actual authored LOD, its screen sizes, source binding and runtime forced-LOD rules.
 Coordinated pieces must retain the original logical box and true sphere where tighter per-piece
-bounds would change culling or LOD selection. Measure final native vertex buffers with the proper
-per-LOD union operation; an AABB-diagonal sphere or arbitrary bounds extension is not equivalent.
+bounds would change culling or LOD selection. Match the original native bounds calculation: imported assets can retain double-precision
+MeshDescription bounds rather than float32 render-buffer bounds. Preserve its exact box and
+true vertex sphere across the complete logical union; an AABB-diagonal sphere or arbitrary
+bounds extension is not equivalent.
 Preserve native/runtime membership, material bindings, collision flags, shadow and cull settings,
 instance grouping, transforms and placement. Include all receiver helpers and module requirements
 in the normal import graph. Native success alone does not establish cooked or runtime parity.

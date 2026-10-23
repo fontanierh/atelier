@@ -4,6 +4,8 @@
 #include "Misc/AutomationTest.h"
 #include "Engine/StaticMesh.h"
 #include "StaticMeshResources.h"
+#include "MeshDescription.h"
+#include "StaticMeshAttributes.h"
 #include "UObject/StrongObjectPtr.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBikeAtomicBoundsTest,"Yorimichi.Bike.AtomicLogicalBounds",
@@ -22,11 +24,20 @@ bool FBikeAtomicBoundsTest::RunTest(const FString&)
         UStaticMesh* Mesh=Owners.Last().Get();auto Data=MakeUnique<FStaticMeshRenderData>();
         auto* Lod=new FStaticMeshLODResources();Data->LODResources.Add(Lod);
         Lod->VertexBuffers.PositionVertexBuffer.Init(Positions[Index],true);Mesh->SetRenderData(MoveTemp(Data));Parts.Add(Mesh);
+        Mesh->AddSourceModel();FMeshDescription Description;FStaticMeshAttributes Attributes(Description);Attributes.Register();
+        TArray<FVertexInstanceID> Corners;
+        for (int32 Corner=0;Corner<3;++Corner)
+        {
+            const FVertexID Vertex=Description.CreateVertex();Attributes.GetVertexPositions()[Vertex]=Positions[Index][0];
+            Corners.Add(Description.CreateVertexInstance(Vertex));
+        }
+        Description.CreateTriangle(Description.CreatePolygonGroup(),Corners);
+        Mesh->CreateMeshDescription(0,MoveTemp(Description));
     }
     FBoxSphereBounds Bound(ForceInit);
-    TestTrue(TEXT("Complete actual position buffers observed"),AtomicMeshBounds::MeasureLod0PartsBounds(Parts,Bound));
-    TestEqual(TEXT("Exact float32 center"),Bound.Origin,FVector(2.,1.,0.));
-    TestEqual(TEXT("Exact float32 extent"),Bound.BoxExtent,FVector(2.,1.,0.));
+    TestTrue(TEXT("Complete actual source descriptions observed"),AtomicMeshBounds::MeasureLod0PartsBounds(Parts,Bound));
+    TestEqual(TEXT("Exact imported center"),Bound.Origin,FVector(2.,1.,0.));
+    TestEqual(TEXT("Exact imported extent"),Bound.BoxExtent,FVector(2.,1.,0.));
     TestEqual(TEXT("True vertex sphere differs from diagonal sqrt5"),Bound.SphereRadius,2.);
     TestTrue(TEXT("Complete named group persists"),UBikeMeshComponent::PrepareSteeringBounds(Parts));
     FBoxSphereBounds Saved(ForceInit);
@@ -49,6 +60,26 @@ bool FBikeAtomicBoundsTest::RunTest(const FString&)
     TestEqual(TEXT("CalcBounds keeps true sphere"),Component->CalcBounds(FTransform::Identity).SphereRadius,2.);
     Component->BoundsScale=2.f;
     TestEqual(TEXT("Original BoundsScale applies to sphere"),Component->CalcBounds(FTransform::Identity).SphereRadius,4.);
+    // The imported asset caches FMeshDescription::GetBounds in double precision;
+    // float32 render bounds differ even for the same non-binary vertex positions.
+    FMeshDescription Whole;FStaticMeshAttributes WholeAttributes(Whole);WholeAttributes.Register();
+    for (int32 Index=0;Index<Parts.Num();++Index)
+    {
+        FMeshDescription* Description=Parts[Index]->GetMeshDescription(0);
+        auto SourcePositions=FStaticMeshAttributes(*Description).GetVertexPositions();TArray<FVertexInstanceID> Corners;
+        for (const FVertexID Vertex:Description->Vertices().GetElementIDs())
+        {
+            SourcePositions[Vertex]+=FVector3f(.1f*Index,.2f*Index,.3f*Index);
+            const FVertexID Joined=Whole.CreateVertex();WholeAttributes.GetVertexPositions()[Joined]=SourcePositions[Vertex];
+            Corners.Add(Whole.CreateVertexInstance(Joined));
+        }
+        Whole.CreateTriangle(Whole.CreatePolygonGroup(),Corners);
+    }
+    TestTrue(TEXT("Fractional imported union observed"),AtomicMeshBounds::MeasureLod0PartsBounds(Parts,Bound));
+    const FBoxSphereBounds Expected=Whole.GetBounds();
+    TestEqual(TEXT("Original engine description center"),Bound.Origin,Expected.Origin);
+    TestEqual(TEXT("Original engine description extent"),Bound.BoxExtent,Expected.BoxExtent);
+    TestEqual(TEXT("Original engine description true sphere"),Bound.SphereRadius,Expected.SphereRadius);
     return true;
 }
 #endif

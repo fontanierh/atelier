@@ -153,6 +153,7 @@ def posed_bounds(original,current,tilt):
         for part in [original,*current]:
             part.set_world_transform(pose,False,False)
             values.append(read_json(unreal.NativeAtomicEquivalence.component_policy(part)))
+        atomic_json(ROOT/'posed-bounds-observations.json',dict(prior=result,input=[pitch,yaw,roll,x,y,z],values=values))
         assert all(row['component_bounds']==values[0]['component_bounds'] for row in values[1:]),'Actual posed box/true sphere differs'
         result.append(dict(input=dict(pitch=pitch,yaw=yaw,roll=roll,location=[x,y,z]),baseline=values[0],actual=values[1:]))
     for part in [original,*current]:part.set_world_transform(unreal.Transform(),False,False)
@@ -242,9 +243,10 @@ def main():
             part.set_collision_enabled(unreal.CollisionEnabled.NO_COLLISION)
         for name in names:
             q=next(row['input'] for row in controls if row['id']==name+'.ray_positive')
+            capsule_q=next(row['input'] for row in controls if row['id']==name+'.capsule_positive')
             for part in (original_components[logical],current_components[name]):
                 policy=read_json(unreal.NativeAtomicEquivalence.component_policy(part))
-                rays=[query(part,q,capsule) for capsule in (False,True)]
+                rays=[query(part,q),query(part,capsule_q,True)]
                 assert all(row['blocking'] is False for row in rays),'Original NoCollision runtime scope blocked'
                 runtime.append(dict(physical=name,policy=policy,queries=rays))
     # A real saved foreign pointer must block retirement before any old deletion.

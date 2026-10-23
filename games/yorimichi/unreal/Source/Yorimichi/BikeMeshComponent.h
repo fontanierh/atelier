@@ -35,7 +35,7 @@ public:
         const TArray<UStaticMesh*>& Parts);
     bool HasLogicalBoundsOverride() const { return bHasLogicalBounds; }
     const FBoxSphereBounds& GetLogicalBoundsOverride() const { return LogicalBounds; }
-    /** Editor-only exact render observation/persistence, without changing build settings. */
+    /** Editor-only exact imported source bounds observation/persistence, without changing build settings. */
     UFUNCTION(BlueprintCallable, Category="Yorimichi|Import")
     static bool PrepareSteeringBounds(const TArray<UStaticMesh*>& Parts);
     UFUNCTION(BlueprintCallable, Category="Yorimichi|Import")
