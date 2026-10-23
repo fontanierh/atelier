@@ -1,12 +1,26 @@
 //! Normal-caller request preparation. This composes existing declaration/source/worker
 //! mechanisms; cache lookup, scheduling and publication stay in their existing owners.
+use crate::explain::{BuildSummary, Recorder};
+use crate::failure_policy::Limits;
 use crate::graph::{BuildGraph, Target};
+use crate::guard_adapter::WorkerLauncher;
+use crate::install::{
+    CheckoutInstaller, InstallError, InstallPolicy, OwnershipSnapshot, ProjectNamespace,
+    ReceiptReader,
+};
+use crate::leases::ProcessIdentity;
 use crate::py_data::{ContentSlotSpec, PyDataClass, PyDataSpec, py_data_validator_identity};
+use crate::python_backend::{CacheAccess, PythonBackend, PythonIo};
+use crate::python_executor::{PythonExecution, PythonExecutor};
 use crate::python_sources::{CapturedSources, capture_sources};
 use crate::python_worker::{PYTHON_WORKER_FILES, PythonWorkerBundle};
-use crate::scheduler::{Demand, FinalDemands, Runtime};
-use crate::schema::{ContentSource, Declaration, Input};
+use crate::results::ResultStore;
+use crate::roots::{BuildSession, RootKind, RootStore};
+use crate::scheduler::{self, Control, Demand, FinalDemands, Runtime, State};
+use crate::schema::{ContentSource, Declaration, Input, Provenance};
+use crate::source_hashes::SourceHashCache;
 use serde::{Deserialize, Serialize};
+use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 
@@ -45,6 +59,8 @@ impl ControllerRequest {
         if bytes.len() > MAX_CONTROL_BYTES {
             return Err("controller request exceeds its size bound".into());
         }
+        crate::py_data::validate_py_data_payload("JsonData", "request.json", bytes)
+            .map_err(|_| "invalid controller request JSON".to_string())?;
         let request: Self = serde_json::from_slice(bytes)
             .map_err(|_| "invalid controller request shape".to_string())?;
         request.check()?;
@@ -55,6 +71,7 @@ impl ControllerRequest {
         if self.version != CONTROL_VERSION || !self.checkout.is_absolute() {
             return Err("unsupported controller version or checkout locator".into());
         }
+        ProjectNamespace::new(&self.project).map_err(|error| error.to_string())?;
         if self.project.is_empty()
             || self.targets.is_empty()
             || self.targets.len() > 256
@@ -205,4 +222,253 @@ impl PreparedController {
 pub fn source_identity() -> Option<&'static str> {
     option_env!("ATELIER_CONTROLLER_SOURCE_SHA256")
         .filter(|value| crate::source_hashes::valid_digest(value))
+}
+
+/// Execution/control context only; installed interpreter facts never enter A3 ingredients.
+pub struct ExecutionContext {
+    pub cache_root: PathBuf,
+    pub interpreter: PathBuf,
+    /// Actual controller identity supplied by the normal caller's authoritative OS probe.
+    pub owner: ProcessIdentity,
+    pub provenance: Provenance,
+    pub worktree_id: String,
+    pub memory_gib: u32,
+    pub limits: Limits,
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Finalization {
+    NotOpened,
+    Complete,
+    Incomplete,
+}
+
+#[derive(Clone, Debug, Default, Serialize)]
+pub struct IoObservation {
+    pub cache_opens: usize,
+    pub cache_lookups: usize,
+    pub staged_jobs: usize,
+    pub input_clones: usize,
+    /// Observed guard ChildStarted attempts, not successful Runs or a complete count on uncertainty.
+    pub observed_worker_attempts: usize,
+    pub worker_attempts_by_unit: BTreeMap<String, usize>,
+    pub worker_files_written: usize,
+    pub publications: usize,
+    pub installs: usize,
+    pub receipt_writes: usize,
+}
+impl From<PythonIo> for IoObservation {
+    fn from(io: PythonIo) -> Self {
+        Self {
+            cache_opens: io.cache_opens,
+            cache_lookups: io.cache_lookups,
+            staged_jobs: io.staged_jobs,
+            input_clones: io.input_clones,
+            observed_worker_attempts: io.launches,
+            worker_attempts_by_unit: io.launches_by_unit,
+            worker_files_written: io.worker_files_written,
+            publications: io.publications,
+            installs: io.installs,
+            receipt_writes: io.receipt_writes,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct ExecutionObservation {
+    pub version: u32,
+    pub summary: Option<BuildSummary>,
+    pub io: IoObservation,
+    pub final_requirements_satisfied: bool,
+    pub cancellation_requested: bool,
+    pub scheduler_error: bool,
+    pub source_finalization: Finalization,
+    pub root_finalization: Finalization,
+}
+
+impl ExecutionObservation {
+    fn cancelled_before_work() -> Self {
+        Self {
+            version: CONTROL_VERSION,
+            summary: None,
+            io: IoObservation::default(),
+            final_requirements_satisfied: false,
+            cancellation_requested: true,
+            scheduler_error: false,
+            source_finalization: Finalization::NotOpened,
+            root_finalization: Finalization::NotOpened,
+        }
+    }
+}
+
+/// @cc [owner:fontanierh,label:correctness] normal-controller-existing-engine
+/// Execution MUST compose the existing A9 scheduler, PythonBackend/production executor,
+/// B3 checkout locks, A7 observer and lazy B4 session. Current MUST NOT open the cache.
+/// Root callbacks MUST bind current scheduling labels; source origins MUST finish before
+/// partial-session commit(None). Scheduler fulfillment, cancellation and external finalization
+/// MUST remain separate observations. No fixture constructor, second scheduler, key encoder,
+/// fallback executor or pruning roster is permitted. See controller_cancelled_before_run_keeps_state_absent;
+/// real normal first/warm/edit and cancellation proof remain I1-min/C5c pending.
+pub fn execute<L: WorkerLauncher + Send>(
+    request: &ControllerRequest,
+    context: ExecutionContext,
+    launcher: L,
+    control: &dyn Control,
+) -> Result<ExecutionObservation, String> {
+    request.check()?;
+    if context.owner.pid != std::process::id()
+        || context.owner.started.is_empty()
+        || context.owner.boot.is_empty()
+        || !context.cache_root.is_absolute()
+        || !context.interpreter.is_absolute()
+        || !crate::source_hashes::valid_digest(&context.worktree_id)
+        || context.memory_gib == 0
+        || context.limits.job.is_zero()
+        || context.limits.cleanup.is_zero()
+        || !context.limits.overall.is_some_and(|overall| {
+            context
+                .limits
+                .job
+                .checked_add(context.limits.cleanup)
+                .is_some_and(|minimum| overall >= minimum)
+        })
+    {
+        return Err("invalid normal controller execution context".into());
+    }
+    if control.cancelled() {
+        return Ok(ExecutionObservation::cancelled_before_work());
+    }
+    let PreparedController {
+        graph,
+        sources,
+        worker,
+        runtimes,
+        targets,
+        demands,
+    } = prepare(request)?;
+    if control.cancelled() {
+        return Ok(ExecutionObservation::cancelled_before_work());
+    }
+    let policy = InstallPolicy {
+        project: ProjectNamespace::new(&request.project).map_err(|error| error.to_string())?,
+        allowed_install_roots: request.allowed_install_roots.clone(),
+    };
+    let reader = ReceiptReader::open(&request.checkout, policy.clone())
+        .map_err(|error| error.to_string())?;
+    let guard = reader
+        .locks()
+        .try_build_exclusive()
+        .map_err(|error| error.to_string())?;
+    let ownership = OwnershipSnapshot::from_projects([(policy.project.clone(), &graph)])
+        .map_err(|error| error.to_string())?;
+    reader
+        .recover(&guard, &ownership)
+        .map_err(|error| error.to_string())?;
+    let schedule = scheduler::Request::select(
+        &graph,
+        &targets,
+        &sources.snapshot,
+        &sources.versions,
+        &runtimes,
+        &demands,
+    )?;
+    let roots: RefCell<Option<BuildSession>> = RefCell::new(None);
+    let mut backend = PythonBackend::new(
+        &graph,
+        schedule.selected(),
+        &sources.snapshot,
+        &reader,
+        &guard,
+        &ownership,
+        context.owner.clone(),
+        context.provenance.clone(),
+        || {
+            let results = ResultStore::open(&context.cache_root).map_err(InstallError::Cache)?;
+            let checkout =
+                CheckoutInstaller::open(&request.checkout, &context.cache_root, policy.clone())?;
+            Ok(CacheAccess { results, checkout })
+        },
+        |unit, envelope| {
+            let mut session = roots.borrow_mut();
+            if session.is_none() {
+                let store = RootStore::open(&context.cache_root, &request.project)
+                    .map_err(|error| error.to_string())?;
+                *session = Some(
+                    store
+                        .begin_session(
+                            RootKind::Worktree {
+                                id: context.worktree_id.clone(),
+                            },
+                            context.provenance.clone(),
+                            context.owner.clone(),
+                        )
+                        .map_err(|error| error.to_string())?,
+                );
+            }
+            session
+                .as_mut()
+                .ok_or("retention session unavailable")?
+                .use_result(unit, &envelope.result.key)
+                .map_err(|error| error.to_string())
+        },
+    );
+    let mut executor = PythonExecutor::new(
+        launcher,
+        PythonExecution {
+            interpreter: context.interpreter.clone(),
+            bundle: worker,
+            profile: "normal-python-data".into(),
+            memory_gib: context.memory_gib,
+            limits: context.limits,
+        },
+    );
+    let recorder = Recorder::default();
+    let report = scheduler::run(
+        schedule,
+        &mut recorder.backend(&mut backend),
+        &mut recorder.executor(&mut executor),
+        control,
+        &mut SourceHashCache::default(),
+    );
+    let before_finish = backend.io();
+    let (io, source_finalization) = match backend.finish() {
+        Ok(io) => (io, Finalization::Complete),
+        Err(_) => (before_finish, Finalization::Incomplete),
+    };
+    let root_finalization = match roots.into_inner() {
+        None => Finalization::NotOpened,
+        Some(session) => match session.commit(None) {
+            Ok(_) => Finalization::Complete,
+            Err(_) => Finalization::Incomplete,
+        },
+    };
+    let (summary, final_requirements_satisfied, scheduler_error) = match report {
+        Ok(report) => {
+            let fulfilled = report.fatal.is_none()
+                && report.unsatisfied.is_empty()
+                && report.states.values().all(|state| {
+                    matches!(
+                        state,
+                        State::Identity | State::Current | State::Hit | State::Executed(_)
+                    )
+                });
+            (
+                Some(recorder.summarize(&report, &BTreeMap::new(), Some(&io.launches_by_unit))?),
+                fulfilled,
+                false,
+            )
+        }
+        Err(_) => (None, false, true),
+    };
+    Ok(ExecutionObservation {
+        version: CONTROL_VERSION,
+        summary,
+        io: io.into(),
+        final_requirements_satisfied,
+        cancellation_requested: control.cancelled(),
+        scheduler_error,
+        source_finalization,
+        root_finalization,
+    })
 }

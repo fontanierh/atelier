@@ -17,6 +17,7 @@ def test_staging_copies_required_sources_and_preserves_unrelated_data(tmp_path, 
     monkeypatch.setattr(data, 'REGIONS', tmp_path / 'regions')
     monkeypatch.setattr(data, 'ASSETS', tmp_path / 'assets')
     monkeypatch.setattr(data, 'RACING_COURSES', tmp_path / 'courses.json')
+    data.RACING_COURSES.write_bytes(course_bytes)
     scene = data.ASSETS / 'belmonte/source.json'
     scene.parent.mkdir(parents=True)
     scene.write_bytes(scene_bytes)
@@ -38,6 +39,10 @@ def test_staging_copies_required_sources_and_preserves_unrelated_data(tmp_path, 
     retained = destination / 'SkateRide/clips.json'
     retained.parent.mkdir(parents=True)
     retained.write_bytes(b'keep source data')
+    controller_owned = destination / data.RACING_RUNTIME
+    controller_owned.parent.mkdir(parents=True)
+    controller_owned.write_bytes(b'keep controller-owned bytes')
+    previous_course_stamp = controller_owned.stat().st_mtime_ns
 
     log = io.StringIO()
     recipe.stage_data(ctx, log)
@@ -47,6 +52,8 @@ def test_staging_copies_required_sources_and_preserves_unrelated_data(tmp_path, 
         assert target.read_bytes() == content
         assert target.stat().st_mtime_ns == 2_000_000_000
     assert retained.read_bytes() == b'keep source data'
+    assert controller_owned.read_bytes() == b'keep controller-owned bytes'
+    assert controller_owned.stat().st_mtime_ns == previous_course_stamp
     assert log.getvalue().splitlines() == [f'staged {rel}' for rel in data.staged(ctx.out)]
 
 

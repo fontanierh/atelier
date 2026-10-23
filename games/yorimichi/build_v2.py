@@ -62,3 +62,11 @@ def declaration():
 def staged_inputs():
     """Worker-visible paths are explicit and bind through existing A3 ingredients."""
     return {slot: staged for slot, (_, staged) in COURSE_INPUTS.items()}
+
+
+def targets():
+    from atelier.build_v2.controller_recipe import ControllerTarget
+    return {COURSE_TARGET: ControllerTarget(
+        unit=COURSE_TARGET, project='yorimichi', declaration=declaration(),
+        staged_inputs={COURSE_TARGET: staged_inputs()}, content_slots={slot: True for slot in COURSE_INPUTS},
+        allowed_install_roots=('games/yorimichi/unreal/Content/Data',))}

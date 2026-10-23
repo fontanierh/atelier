@@ -4,6 +4,13 @@ import json
 from . import build as engine, build_products
 
 
+def controller_decision(step):
+    return {'step': step.name, 'status': 'unknown',
+            'reasons': ['readonly controller/cache observation unavailable; no helper bootstrap performed'],
+            'previous_seconds': None, 'heavy': False, 'products': [], 'needs': [],
+            'after': list(step.after), 'reads': [], 'references': []}
+
+
 def read_stamp(path):
     try:
         value = json.loads(path.read_text())
@@ -61,6 +68,13 @@ def _inspect(ctx, steps, wanted, *, force, index):
     from .build_cook import validate_selection
     validate_selection(ctx, selected)
     for step in selected:
+        if step.controller is not None:
+            decisions.append(controller_decision(step))
+            # Order evidence only; validate_markers refuses v1 content needs until
+            # an explicit output-content bridge exists. This is never an input key.
+            done[step.name] = 'controller-order-not-observed'
+            uncertain_steps.add(step.name)
+            continue
         stamp = read_stamp(ctx.stamps / f'{step.name}.json')
         reasons = []
         try:
@@ -119,6 +133,19 @@ def _inspect(ctx, steps, wanted, *, force, index):
 def show(game, wanted=(), *, force=False, explain=False, as_json=False, echo=print, verify=False, cook_mode=None, cook_reason=None,
          rebuild_touched=False, cook_memory_gib=None):
     engine.cook_memory_limit(cook_memory_gib, wanted)
+    from .build_v2.controller_entry import exact_selection
+    controller = exact_selection(game, wanted)
+    if controller is not None:
+        if force or verify or rebuild_touched or cook_mode is not None or cook_reason is not None:
+            raise ValueError('controller plan does not support legacy force/verify/cook flags')
+        decision = controller_decision(controller)
+        if as_json:
+            echo(json.dumps({'schema': 1, 'game': game, 'steps': [decision]}, indent=2))
+        else:
+            echo(f"{controller.name:34s} unknown")
+            if explain:
+                echo('  ' + decision['reasons'][0])
+        return 0
     ctx = engine.Context(game, create=False, **({'cook_mode': cook_mode, 'cook_reason': cook_reason} if cook_mode is not None else {}),
                          **({'cook_memory_gib': cook_memory_gib} if cook_memory_gib is not None else {}))
     ctx.rebuild_touched = rebuild_touched

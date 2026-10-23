@@ -1,14 +1,15 @@
 {
   "version": 1,
   "files": [
-    "platform/build-v2/Cargo.toml",
-    "platform/build-v2/Cargo.lock",
     "platform/build-v2/.cargo/config.toml",
+    "platform/build-v2/Cargo.lock",
+    "platform/build-v2/Cargo.toml",
     "platform/build-v2/src/bin/atelier-build-v2.rs",
     "platform/build-v2/src/checkout_locks.rs",
     "platform/build-v2/src/cleanup.rs",
     "platform/build-v2/src/completion.rs",
     "platform/build-v2/src/controller.rs",
+    "platform/build-v2/src/controller_transport.rs",
     "platform/build-v2/src/demand.rs",
     "platform/build-v2/src/explain.rs",
     "platform/build-v2/src/failure_policy.rs",

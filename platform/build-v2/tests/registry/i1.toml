@@ -15,6 +15,21 @@ id = "i1.normal-course-first-warm-edit"
 task = "I1-min: real normal course target; requires C5c/Q3 and installer/reader ownership gates"
 
 [[scenarios]]
+id = "i1.controller-early-cancellation"
+tier = "t0"
+tests = ["atelier-build-v2::controller/controller_cancelled_before_run_keeps_state_absent"]
+
+[[scenarios]]
+id = "i1.controller-owned-fds"
+tier = "t0"
+tests = ["atelier-build-v2/controller_transport::tests::handoff_rejects_wrong_access_public_alias_and_occupied_report"]
+
+[[scenarios]]
+id = "i1.controller-startup-liveness"
+tier = "t0"
+tests = ["atelier-build-v2/controller_transport::tests::startup_release_and_parent_eof_are_observed_before_dispatch"]
+
+[[scenarios]]
 id = "i1.controller-selected-source-scope"
 tier = "t0"
 tests = ["atelier-build-v2::controller/selected_source_capture_excludes_unrelated_units_without_weakening_global_structure"]

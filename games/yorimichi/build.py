@@ -235,6 +235,10 @@ staged = runtime_data.staged
 staged_source = runtime_data.staged_source
 stage_data = runtime_data.stage_data
 
+_v2_spec = importlib.util.spec_from_file_location('yorimichi_controller_recipe', GAME / 'build_v2.py')
+controller_recipe = importlib.util.module_from_spec(_v2_spec)
+_v2_spec.loader.exec_module(controller_recipe)
+
 
 @dataclass
 class PackageArchive(Python):
@@ -1803,7 +1807,10 @@ def unreal_steps(ctx):
 def staging_steps(ctx):
     """Runtime data copied into Content/Data after its producers complete."""
     out = ctx.out
+    course = controller_recipe.targets()[controller_recipe.COURSE_TARGET]
     return [
+        Step(course.unit, [], controller=course, outputs=list(course.outputs(paths.REPO)),
+             about='validated exact racing course bytes through the normal build-v2 controller'),
         Step('data.stage', [Call('stage_data', stage_data)],
              inputs=[GAME / 'runtime_data.py', REGIONS / 'skatepark' / 'park.json', ASSETS / 'ui/fonts/atlas-serif.ttf',
                      runtime_data.RACING_COURSES, runtime_data.RACING_VALIDATOR, ASSETS / 'belmonte/source.json',
@@ -1814,6 +1821,7 @@ def staging_steps(ctx):
                     *[f'characters.{key(c)}_{kind}' for c in definition.movers() for kind, wanted in
                       (('bike', c.playable), ('grips', (GRIPS / c.id).is_dir())) if wanted]],
              reads=['brinecove.runtime', 'belmonte.runtime', 'skatepark.runtime','terrain.island.runtime','southwest.meshes','lake.library','village.runtime','village.meshes'],
+             after=[course.unit],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / rel for rel in staged(out)], about='runtime files into unreal/Content/Data'),
         racing_assets_step(out),
     ]

@@ -12,7 +12,9 @@ import os
 from pathlib import Path, PurePosixPath
 import stat
 import subprocess
+import signal
 import tempfile
+import time
 import uuid
 
 MAX_CONTROL_BYTES = 2 * 1024 * 1024
@@ -64,22 +66,26 @@ def _read_at(root, name, bound, *, owned=False):
             child = os.open(part, flags, dir_fd=descriptor)
             os.close(descriptor)
             descriptor = child
-        before = os.fstat(descriptor)
-        if not stat.S_ISREG(before.st_mode) or not 0 <= before.st_size <= bound:
-            raise ValueError('controller file is not regular or exceeds its size bound')
-        if owned and (before.st_uid != os.getuid() or before.st_mode & 0o077):
-            raise ValueError('controller control file must be private and owned')
-        chunks, size = [], 0
-        while chunk := os.read(descriptor, min(1024**2, bound + 1 - size)):
-            chunks.append(chunk)
-            size += len(chunk)
-            if size > bound:
-                raise ValueError('controller file grew beyond its size bound')
-        if _stamp(before) != _stamp(os.fstat(descriptor)) or size != before.st_size:
-            raise ValueError('controller file changed during capture')
-        return b''.join(chunks)
+        return _read_descriptor(descriptor, bound, owned=owned)
     finally:
         os.close(descriptor)
+
+
+def _read_descriptor(descriptor, bound, *, owned=False):
+    before = os.fstat(descriptor)
+    if not stat.S_ISREG(before.st_mode) or not 0 <= before.st_size <= bound:
+        raise ValueError('controller file is not regular or exceeds its size bound')
+    if owned and (before.st_uid != os.getuid() or before.st_mode & 0o077 or before.st_nlink != 1):
+        raise ValueError('controller control file must be private, unique and owned')
+    chunks, size = [], 0
+    while chunk := os.read(descriptor, min(1024**2, bound + 1 - size)):
+        chunks.append(chunk)
+        size += len(chunk)
+        if size > bound:
+            raise ValueError('controller file grew beyond its size bound')
+    if _stamp(before) != _stamp(os.fstat(descriptor)) or size != before.st_size:
+        raise ValueError('controller file changed during capture')
+    return b''.join(chunks)
 
 
 def _json(raw):
@@ -328,3 +334,211 @@ def ensure_controller(checkout, state, *, echo=print):
         return ControllerExecutable(final / 'atelier-build-v2', captured.digest, binary_digest)
     finally:
         os.close(lock)
+
+
+def _probe_child(process):
+    from atelier.harness.capacity_protocol import boot_id, process_start
+    if process.poll() is not None:
+        raise RuntimeError('controller exited before startup identity observation')
+    started = process_start(process.pid)
+    boot = boot_id()
+    if process.poll() is not None or process_start(process.pid) != started:
+        raise RuntimeError('controller changed during startup identity observation')
+    return {'pid': process.pid, 'boot': boot, 'started': str(started)}
+
+
+def _validated_report(raw, source, nonce):
+    report = _json(raw)
+    if (not isinstance(report, dict) or set(report) != {'version', 'nonce', 'controller_source', 'observation'}
+            or type(report['version']) is not int or report['version'] != 1
+            or report['nonce'] != nonce or report['controller_source'] != source):
+        raise ValueError('controller report identity mismatch')
+    observation = report['observation']
+    fields = {'version', 'summary', 'io', 'final_requirements_satisfied', 'cancellation_requested',
+              'scheduler_error', 'source_finalization', 'root_finalization'}
+    if (not isinstance(observation, dict) or set(observation) != fields
+            or type(observation['version']) is not int or observation['version'] != 1):
+        raise ValueError('invalid controller observation')
+    for flag in ('final_requirements_satisfied', 'cancellation_requested', 'scheduler_error'):
+        if type(observation[flag]) is not bool:
+            raise ValueError('invalid controller observation flag')
+    if any(observation[key] not in ('not_opened', 'complete', 'incomplete')
+           for key in ('source_finalization', 'root_finalization')):
+        raise ValueError('invalid controller finalization observation')
+    io = observation['io']
+    counts = {'cache_opens', 'cache_lookups', 'staged_jobs', 'input_clones', 'observed_worker_attempts',
+              'worker_files_written', 'publications', 'installs', 'receipt_writes'}
+    if (not isinstance(io, dict) or set(io) != counts | {'worker_attempts_by_unit'}
+            or any(type(io[key]) is not int or io[key] < 0 for key in counts)
+            or not isinstance(io['worker_attempts_by_unit'], dict)
+            or any(type(value) is not int or value < 0 for value in io['worker_attempts_by_unit'].values())):
+        raise ValueError('invalid controller I/O observations')
+    summary = observation['summary']
+    if summary is not None and (not isinstance(summary, dict)
+                               or set(summary) != {'units', 'counts', 'executor_fatal', 'effects_complete'}
+                               or type(summary['executor_fatal']) is not bool
+                               or type(summary['effects_complete']) is not bool
+                               or not isinstance(summary['units'], list) or not isinstance(summary['counts'], dict)):
+        raise ValueError('invalid controller scheduler summary')
+    if observation['final_requirements_satisfied'] and (
+            summary is None or summary['executor_fatal'] or observation['scheduler_error']):
+        raise ValueError('controller report contradicts target fulfillment')
+    return report
+
+
+def invoke_controller(checkout, executable, marker, runs, execution, *, echo=print):
+    """@cc [owner:fontanierh,label:safety] owned-controller-startup-cancellation
+    Invocation MUST execute the verified immutable helper snapshot, pause it until
+    the parent probes that exact live PID/start/boot and fsyncs its private bounded
+    request/paired spawn receipt, then release only the owned startup pipe. Only the
+    parent MUST own that pipe's write end; EOF and TERM MUST request ordinary C5c
+    cancellation, never bypass cleanup or fabricate a successful/zero-I/O report.
+    Source/provider/identity mismatch MUST fail before Run. Missing/partial reports
+    MUST stay incomplete. Portable handshake negatives run on hosted Linux; actual
+    worker cancellation/cleanup remains C5c/Q3 and normal I1-min proof pending.
+    """
+    if capture_controller(checkout).digest != executable.source:
+        raise ValueError('controller source changed before invocation')
+    execution = dict(execution)
+    allowed = {'cache_root', 'interpreter', 'provenance', 'worktree_id', 'memory_gib',
+               'job_seconds', 'cleanup_seconds', 'overall_seconds'}
+    if set(execution) != allowed:
+        raise ValueError('invalid controller execution options')
+    for key in ('memory_gib', 'job_seconds', 'cleanup_seconds', 'overall_seconds'):
+        if type(execution[key]) is not int or not 0 < execution[key] < 2**32:
+            raise ValueError('invalid controller execution bound')
+    if execution['overall_seconds'] < execution['job_seconds'] + execution['cleanup_seconds']:
+        raise ValueError('controller overall bound does not cover job and cleanup')
+    for key in ('cache_root', 'interpreter'):
+        if not isinstance(execution[key], str) or not Path(execution[key]).is_absolute():
+            raise ValueError('controller execution locator must be absolute')
+    request = marker.request(checkout)
+    directory = _private_root(Path(runs) / uuid.uuid4().hex)
+    nonce = directory.name
+    root = _open_root(directory, private=True)
+    descriptors = set()
+    process = None
+    cancelled = False
+    sent = False
+    released = False
+    previous = {}
+
+    def opened(name, flags):
+        fd = os.open(name, flags | os.O_NOFOLLOW | os.O_NONBLOCK, 0o600, dir_fd=root)
+        descriptors.add(fd)
+        return fd
+
+    def close(fd):
+        if fd in descriptors:
+            os.close(fd)
+            descriptors.remove(fd)
+
+    def stop(number, frame):
+        nonlocal cancelled
+        cancelled = True  # Normal control flow sends TERM and awaits the helper.
+
+    def wait():
+        nonlocal cancelled, sent
+        began, heartbeat = time.monotonic(), time.monotonic()
+        while process.poll() is None:
+            if time.monotonic() - began > execution['overall_seconds'] + 30:
+                cancelled = True
+            if cancelled and not sent:
+                try:
+                    process.send_signal(signal.SIGTERM)
+                except ProcessLookupError:
+                    pass
+                sent = True
+            try:
+                process.wait(timeout=.25)
+            except subprocess.TimeoutExpired:
+                pass
+            if time.monotonic() - heartbeat >= 30:
+                echo('Waiting for build controller cleanup' if cancelled else 'Waiting for build controller; no new progress observation')
+                heartbeat = time.monotonic()
+        return process.returncode
+
+    try:
+        request_write = opened('request.json', os.O_WRONLY | os.O_CREAT | os.O_EXCL)
+        request_read = opened('request.json', os.O_RDONLY)
+        report_write = opened('report.json', os.O_WRONLY | os.O_CREAT | os.O_EXCL)
+        expected_report = os.fstat(report_write)
+        live_read, live_write = os.pipe()
+        descriptors.update((live_read, live_write))
+        for fd in descriptors:
+            os.set_inheritable(fd, False)
+        for number in (signal.SIGTERM, signal.SIGHUP, signal.SIGINT):
+            previous[number] = signal.signal(number, stop)
+        with verified_controller(executable) as binary:
+            image = binary.stat(follow_symlinks=False)
+            log = opened('controller.log', os.O_WRONLY | os.O_CREAT | os.O_EXCL)
+            process = subprocess.Popen(
+                [str(binary), '--request-fd', str(request_read), '--report-fd', str(report_write),
+                 '--liveness-fd', str(live_read)], cwd=checkout, stdin=subprocess.DEVNULL,
+                stdout=log, stderr=subprocess.STDOUT, close_fds=True,
+                pass_fds=(request_read, report_write, live_read))
+            for fd in (request_read, report_write, live_read, log):
+                close(fd)
+            try:
+                owner = _probe_child(process)
+                if (set(owner) != {'pid', 'boot', 'started'} or type(owner['pid']) is not int
+                        or owner['pid'] != process.pid or not isinstance(owner['started'], str)
+                        or not owner['started'].isascii() or not owner['started'].isdecimal()
+                        or int(owner['started']) <= 0 or str(uuid.UUID(owner['boot'])) != owner['boot']):
+                    raise ValueError('invalid controller startup identity provider')
+                if _stamp(binary.stat(follow_symlinks=False)) != _stamp(image):
+                    raise ValueError('private helper image changed during spawn')
+                invocation = {'version': 1, 'nonce': nonce, 'controller_source': executable.source,
+                              'request': request, 'execution': {**execution, 'owner': owner}}
+                raw = json.dumps(invocation, allow_nan=False, separators=(',', ':')).encode()
+                if len(raw) > MAX_CONTROL_BYTES:
+                    raise ValueError('controller invocation exceeds its size bound')
+                with os.fdopen(request_write, 'wb', closefd=False) as stream:
+                    stream.write(raw)
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                close(request_write)
+                write_control(directory, 'spawn.json', {
+                    'version': 1, 'nonce': nonce, 'controller_source': executable.source,
+                    'binary_sha256': executable.binary, 'image_device': image.st_dev,
+                    'image_inode': image.st_ino, 'image_size': image.st_size,
+                    'child': owner, 'request_sha256': hashlib.sha256(raw).hexdigest()})
+                if _probe_child(process) != owner or capture_controller(checkout).digest != executable.source:
+                    raise ValueError('controller startup identity/source changed')
+                if not cancelled:
+                    if os.write(live_write, b'G') != 1:
+                        raise RuntimeError('controller startup release was not delivered')
+                    released = True
+                else:
+                    close(live_write)
+                code = wait()
+            except BaseException:
+                cancelled = True
+                close(live_write)
+                code = wait()
+                write_control(directory, 'client.json', {
+                    'version': 1, 'state': 'incomplete', 'cancelled': True,
+                    'gate_released': released, 'pid': process.pid, 'returncode': code})
+                raise
+        report = None
+        try:
+            fd = opened('report.json', os.O_RDONLY)
+            actual = os.fstat(fd)
+            if (actual.st_dev, actual.st_ino) != (expected_report.st_dev, expected_report.st_ino):
+                raise ValueError('controller report identity changed')
+            report = _validated_report(_read_descriptor(fd, MAX_CONTROL_BYTES, owned=True), executable.source, nonce)
+        except (OSError, ValueError):
+            pass  # Retain incomplete bytes and the paired spawn receipt; no guessed counters.
+        result = {'state': 'observed' if report is not None and code == 0 else 'incomplete',
+                  'cancelled': cancelled, 'returncode': code, 'report': report}
+        write_control(directory, 'client.json', {
+            'version': 1, 'state': result['state'], 'cancelled': cancelled,
+            'gate_released': released, 'returncode': code,
+            'verified_report': report is not None})
+        return result
+    finally:
+        for number, handler in previous.items():
+            signal.signal(number, handler)
+        for fd in list(descriptors):
+            close(fd)
+        os.close(root)

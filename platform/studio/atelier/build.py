@@ -475,6 +475,16 @@ def check_modules(steps):
     check_source_launch(steps)
     from .mesh_export_contract import check_steps
     check_steps(steps, Blender)
+    _check_module_declarations(steps)
+
+
+def check_declarations(steps):
+    """Global metadata preflight without inspecting unrelated actions' source closures."""
+    check_source_launch(steps)
+    _check_module_declarations(steps)
+
+
+def _check_module_declarations(steps):
     for step in steps:
         for command in step.commands:
             if isinstance(command, UnrealScript):
@@ -996,6 +1006,17 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, veri
     if max_heavy_commands is not None and (type(max_heavy_commands) is not int or max_heavy_commands < 1):
         raise ValueError('max_heavy_commands must be a positive integer')
     from .build_snapshot import require_complete
+    from .build_v2.controller_entry import exact_selection, execute as execute_controller
+    controller = exact_selection(game, wanted)
+    if controller is not None:
+        if (force or touch or verify or cook_mode is not None or cook_reason is not None or cook_memory_gib is not None
+                or recover_cook is not None or record_cook_recovery or rebuild_touched or rebuild_reason is not None
+                or max_heavy_commands is not None):
+            raise ValueError('controller target does not support legacy force/touch/verify/cook/recovery flags')
+        if dry:
+            echo(f'{controller.name:34s} unknown (readonly controller/cache observation unavailable; no bootstrap performed)')
+            return 0
+        return execute_controller(controller, echo=echo)
     if dry:
         require_complete(paths.build_root() / game, game=game)
         from .build_plan import show
@@ -1035,6 +1056,8 @@ def _prepared_build(ctx, wanted, *, force, touch, echo, verify, rebuild_reason, 
             raise SystemExit('--force requires --rebuild-reason for checkpoint builds; normal builds restore matching results.')
         checkpoint_steps = load_recipe(game).steps(ctx)
         check_source_launch(checkpoint_steps)
+        if any(step.controller is not None for step in build_products.Graph(checkpoint_steps).select(wanted)):
+            raise ValueError('mixed v1/controller checkpoint and reader custody is not yet accepted; no checkpoint restoration started')
         unknown = sorted(set(ctx.rebuild_reasons) - {s.name for s in checkpoint_steps})
         if unknown:
             raise SystemExit(f'--rebuild-reason names unknown tasks: {", ".join(unknown)}')
@@ -1207,6 +1230,8 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
     rebuild_names = touched_targets(ctx, steps, wanted)
     check_modules(steps)
     plan = order(steps, list(wanted))
+    if any(step.controller is not None for step in plan):
+        raise ValueError('mixed v1/controller execution custody is not yet accepted; no v1 task dispatch started')
     from .build_cook import validate_selection
     validate_selection(ctx, plan, touch=touch)
     declared_products = {p.name: p for s in steps for p in s.products}

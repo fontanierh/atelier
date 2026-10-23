@@ -183,7 +183,14 @@ def test_staging_tracks_all_course_inputs(tmp_path):
     from atelier import gltf
     assert courses.SOURCE_READER in step.inputs
     assert Path(gltf.__file__) in step.inputs
-    assert recipe.GAME / 'unreal/Content/Data/racing/belmonte_courses.json' in step.outputs
+    target = recipe.GAME / 'unreal/Content/Data/racing/belmonte_courses.json'
+    assert target not in step.outputs
+    leaf = next(s for s in recipe.steps(ctx) if s.name == 'data.stage.racing_courses')
+    assert leaf.controller is not None
+    assert leaf.outputs == [target]
+    assert leaf.name in step.after
+    assert leaf.name not in step.needs  # Ordering is not an invented output-content bridge.
+    assert 'racing/belmonte_courses.json' not in runtime.staged(tmp_path)
 
 
 def test_off_venue_course_fails_before_staging_writes(tmp_path, monkeypatch):

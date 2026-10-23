@@ -1,8 +1,16 @@
-use atelier_build_v2::controller::{ControllerRequest, prepare};
+use atelier_build_v2::controller::{
+    ControllerRequest, ExecutionContext, Finalization, execute, prepare,
+};
+use atelier_build_v2::failure_policy::Limits;
+use atelier_build_v2::guard_adapter::GuardedLauncher;
+use atelier_build_v2::leases::ProcessIdentity;
+use atelier_build_v2::scheduler::Control;
+use atelier_build_v2::schema::Provenance;
 use serde_json::{Value, json};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::Duration;
 
 static NEXT: AtomicU64 = AtomicU64::new(0);
 struct Space(PathBuf);
@@ -79,6 +87,13 @@ fn strict_request_refuses_unknown_fields_and_unsupported_ops() {
         assert!(parse(&value).is_err(), "accepted {mutation}");
     }
     let mut raw = serde_json::to_vec(&base).unwrap();
+    let duplicate = String::from_utf8(raw.clone())
+        .unwrap()
+        .replace("\"raw\":true", "\"raw\":true,\"raw\":false");
+    assert!(
+        ControllerRequest::parse(duplicate.as_bytes()).is_err(),
+        "duplicate nested control field accepted"
+    );
     raw.resize(2 * 1024 * 1024 + 1, b' ');
     assert!(ControllerRequest::parse(&raw).is_err());
 }
@@ -169,4 +184,59 @@ fn selected_source_capture_excludes_unrelated_units_without_weakening_global_str
         prepare(&parse(&value).unwrap()).is_err(),
         "unselected ownership collision was ignored"
     );
+}
+
+#[test]
+fn controller_cancelled_before_run_keeps_state_absent() {
+    struct Cancelled;
+    impl Control for Cancelled {
+        fn cancelled(&self) -> bool {
+            true
+        }
+    }
+    let space = Space::new();
+    let parsed = parse(&request(&space.0)).unwrap();
+    let result = execute(
+        &parsed,
+        ExecutionContext {
+            cache_root: space.0.join("cache"),
+            interpreter: PathBuf::from("/fixture/not-executed-python"),
+            // No lease is opened or identity authority claimed in this early-cancellation case.
+            owner: ProcessIdentity {
+                pid: std::process::id(),
+                boot: "fixture".into(),
+                started: "fixture".into(),
+            },
+            provenance: Provenance {
+                checkout: "fixture".into(),
+                branch: "fixture".into(),
+                commit: "fixture".into(),
+                dirty: false,
+                built_at: "fixture".into(),
+            },
+            worktree_id: "a".repeat(64),
+            memory_gib: 1,
+            limits: Limits {
+                job: Duration::from_secs(5),
+                cleanup: Duration::from_secs(2),
+                overall: Some(Duration::from_secs(10)),
+            },
+        },
+        GuardedLauncher { bridge: vec![] },
+        &Cancelled,
+    )
+    .unwrap();
+    assert!(result.cancellation_requested);
+    assert!(!result.final_requirements_satisfied);
+    assert!(!result.scheduler_error);
+    assert!(result.summary.is_none());
+    assert_eq!(result.io.observed_worker_attempts, 0);
+    assert_eq!(result.io.cache_opens, 0);
+    assert_eq!(result.io.receipt_writes, 0);
+    assert!(matches!(
+        result.source_finalization,
+        Finalization::NotOpened
+    ));
+    assert!(matches!(result.root_finalization, Finalization::NotOpened));
+    assert_eq!(fs::read_dir(&space.0).unwrap().count(), 0);
 }

@@ -7,6 +7,7 @@ pub mod cleanup;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod completion;
 pub mod controller;
+pub mod controller_transport;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod demand;
 pub mod explain;

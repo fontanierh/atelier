@@ -65,8 +65,11 @@ def validate_markers(steps, checkout):
     steps = tuple(steps)
     if not any(getattr(step, 'controller', None) is not None for step in steps):
         return
+    controller_names = {step.name for step in steps if getattr(step, 'controller', None) is not None}
     claims = []
     for step in steps:
+        if set(step.needs) & controller_names:
+            raise ValueError('v1 content needs cannot use controller input keys; an explicit content bridge is required')
         marker = getattr(step, 'controller', None)
         if marker is not None:
             if not isinstance(marker, ControllerTarget) or marker.unit != step.name:
