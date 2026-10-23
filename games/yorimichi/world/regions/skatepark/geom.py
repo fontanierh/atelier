@@ -362,6 +362,8 @@ def to_object(m, material, colors=None):
 
 
 def export_fbx(obj, path):
+    if sum(len(face.vertices)-2 for face in obj.data.polygons)>32768:
+        raise ValueError('Large skate exports require the independent atomic recipe')
     import bpy
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True); bpy.context.view_layer.objects.active = obj

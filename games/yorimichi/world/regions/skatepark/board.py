@@ -10,7 +10,10 @@ side (+Y in Unreal) is -Y here. Three meshes, each with its own origin:
 """
 import math
 import numpy as np
-from geom import MeshData
+try:
+    from .geom import MeshData
+except ImportError:
+    from geom import MeshData
 
 LENGTH, WIDTH = 0.80, 0.205
 KICK_START, KICK_RISE, KICK_ANGLE = 0.27, 0.045, 22.0

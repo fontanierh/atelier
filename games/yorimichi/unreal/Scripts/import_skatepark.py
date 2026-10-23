@@ -10,7 +10,6 @@ build/yorimichi/skatepark/import-report.json.
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / 'world')); import yori  # noqa: E402  (build/yorimichi = yori.OUT)
 import hashlib
 import json
-import runpy
 from pathlib import Path
 import unreal
 from atelier import mesh_geometry, native_membership
@@ -19,9 +18,8 @@ from skatepark import pieces
 HERE = Path(__file__).resolve().parent
 JAPAN = yori.OUT
 OUT = JAPAN / 'skatepark'
-helper = runpy.run_path(str(HERE / 'import_village.py'))     # import_mesh only; its main() does not run
-# Targeted park imports have their own small, clean seed; they do not require village build intermediates.
-helper['import_mesh'].__globals__['PLACEHOLDER'] = OUT / 'board/SM_SkateWheel.fbx'
+_sys.path.insert(0,str(HERE))
+from mesh_import import import_mesh  # noqa: E402
 E = unreal.EditorAssetLibrary
 AT = unreal.AssetToolsHelpers.get_asset_tools()
 MEL = unreal.MaterialEditingLibrary
@@ -80,6 +78,38 @@ def check_axes(name, mesh, expect):
 
 report = {'park': {}, 'board': {}}
 owned_textures = set()
+unreal.load_module('StaticMeshEditor')
+mesh_editor=unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
+assert mesh_editor is not None
+BLOCKS={row['name']:row['blocks'] for row in park['meshes']}
+BLOCKS.update({name:False for name in ('SM_SkateDeck','SM_SkateTruck','SM_SkateWheel')})
+
+
+def current_geometry(mesh):
+    name=mesh.get_name()
+    flag=(unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE if BLOCKS.get(name)
+          else unreal.CollisionTraceFlag.CTF_USE_SIMPLE_AS_COMPLEX)
+    return (name in BLOCKS and mesh.get_num_lods()==1 and mesh.get_num_triangles(0)==build['meshes'][name]['triangles']
+        and mesh_editor.get_num_uv_channels(mesh,0)==1
+        and mesh_editor.get_simple_collision_count(mesh)==mesh_editor.get_convex_collision_count(mesh)==0
+        and mesh.get_editor_property('lod_for_collision')==0 and mesh.get_editor_property('complex_collision_mesh') is None
+        and mesh.get_editor_property('body_setup').get_editor_property('collision_trace_flag')==flag
+        and (name not in {row['name'] for row in park['meshes']} or mesh.get_editor_property('allow_cpu_access') is True))
+
+
+def prepare_source(destination,name):
+    if E.does_asset_exist(destination+'/'+name):
+        mesh=E.load_asset(destination+'/'+name)
+        if mesh.get_num_lods()!=1:mesh.set_num_source_models(1)
+        if mesh_editor.get_simple_collision_count(mesh) or mesh_editor.get_convex_collision_count(mesh):
+            assert mesh_editor.remove_collisions(mesh),(name,'source-only stale collision reset')
+        assert mesh_editor.get_simple_collision_count(mesh)==mesh_editor.get_convex_collision_count(mesh)==0,name
+
+
+def receive(path,destination,name,fresh_slots=False):
+    return import_mesh(path,destination,name,fresh_slots=fresh_slots,
+        before_import=lambda:prepare_source(destination,name),reuse_validator=current_geometry)
+
 
 
 def texture(file, name, role):
@@ -149,7 +179,7 @@ for entry in park['meshes']:
     name = entry['name']
     # The common helper seeds/reset slots only on an actual native import miss. Clearing slots
     # here would destroy the current package before its geometry-reuse validator can read it.
-    mesh = helper['import_mesh'](OUT / 'assets' / f'{name}.fbx', '/Game/SkatePark', name, fresh_slots=True)
+    mesh = receive(OUT / 'assets' / f'{name}.fbx', '/Game/SkatePark', name, fresh_slots=True)
     slots = list(mesh.get_editor_property('static_materials')); found = set()
     for slot in slots:
         key = str(slot.get_editor_property('imported_material_slot_name'))
@@ -178,16 +208,20 @@ for entry in park['meshes']:
     assert mesh.get_editor_property('complex_collision_mesh') is None
     assert mesh.get_editor_property('lod_for_collision') == 0
     assert body.get_editor_property('collision_trace_flag') == flag
+    assert current_geometry(mesh),(name,'complete current native skate geometry')
+    if entry['blocks']:
+        assert unreal.CitySurfaceValidation.validate_collision(mesh,build['meshes'][name]['triangles'],False),(name,'actual current cooked riding surface')
     lo, hi = check_axes(name, mesh, build['meshes'][name])
     report['park'][name] = {'asset': entry['asset'], 'blocks': entry['blocks'], 'collision': str(flag), 'bounds_min_cm': lo, 'bounds_max_cm': hi,
                           'materials': sorted(found)}
 
 for name in ('SM_SkateDeck', 'SM_SkateTruck', 'SM_SkateWheel'):
-    mesh = helper['import_mesh'](OUT / 'board' / f'{name}.fbx', '/Game/SkatePark/Board', name)
+    mesh = receive(OUT / 'board' / f'{name}.fbx', '/Game/SkatePark/Board', name)
     assert len(mesh.static_materials) == 1, (name, 'expected one material slot')
     mesh.set_material(0, material)
     body = mesh.get_editor_property('body_setup')
     if body: body.set_editor_property('collision_trace_flag', unreal.CollisionTraceFlag.CTF_USE_SIMPLE_AS_COMPLEX)
+    assert current_geometry(mesh),(name,'current native board geometry')
     assert E.save_loaded_asset(mesh), (name, 'board save failed')
     lo, hi = check_axes(name, mesh, build['meshes'][name])
     report['board'][name] = {'asset': '/Game/SkatePark/Board/' + name, 'bounds_min_cm': lo, 'bounds_max_cm': hi}
@@ -212,6 +246,12 @@ report['assets'] = assets
 report['files'] = mesh_geometry.package_inventory(content, assets)
 report['retired'] = native_membership.retire(E, previous, [row['name'] for row in park['meshes']],
                                             '/Game/SkatePark', 'SM_')
+for package in report['retired']:
+    path=content/package.removeprefix('/Game/')
+    assert not any(path.with_suffix(suffix).exists() or path.with_suffix(suffix).is_symlink()
+                   for suffix in mesh_geometry.SIDECARS),('Retired pier bytes remain',package)
+assert {path for path in native_membership.inventory(E,'/Game/SkatePark','SM_')
+        if pieces.owned_name(path.rsplit('/',1)[-1])}=={row['asset'] for row in park['meshes']},'Current native pier membership differs'
 assert mesh_geometry.package_inventory(content, assets) == report['files'], 'Pier packages changed during retirement'
 (OUT / 'import-report.json').write_text(json.dumps(report, indent=2) + '\n')
 unreal.log('SKATEPARK IMPORT COMPLETE')

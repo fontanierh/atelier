@@ -1,17 +1,16 @@
 """Skate pier, its path and the trick skateboard (docs/SKATE.md).
 
-blender -b --threads 6 --python-exit-code 1 --python games/yorimichi/world/regions/skatepark/build.py [-- --review [--only shot,shot]]
+blender -b --threads 3 --python-exit-code 1 --python games/yorimichi/world/regions/skatepark/build.py [-- --review [--only shot,shot]]
 
-Writes build/yorimichi/skatepark/{assets,board}/*.fbx, SkatePark.blend, build-report.json and runtime-park.json;
-checks the committed gameplay contract games/yorimichi/world/regions/skatepark/park.json. --review renders the review
+The normal atomic recipe writes independent assets/board FBXs, complete metadata and riding queries.
+This direct entrypoint writes only the whole-object diagnostic SkatePark.blend and checks the committed gameplay
+contract games/yorimichi/world/regions/skatepark/park.json. --review renders the review
 images into build/yorimichi/skatepark/review/ (EEVEE); --only names the shots to render (review.py).
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2])); import yori  # noqa: E402,F401
-import hashlib
 import json
 import math
 import sys
-import time
 from pathlib import Path
 
 import bpy
@@ -19,11 +18,14 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE)); sys.path.insert(0, str(HERE.parent))
-import layout as L
-import geom
-import board
-import features
-import pieces
+try:
+    from . import layout as L, geom, board, features, pieces
+except ImportError:
+    import layout as L
+    import geom
+    import board
+    import features
+    import pieces
 
 OUT = yori.OUT / 'skatepark'
 PARK_MESHES = [('SM_SkatePier', True, 'concrete deck, edge beam, perimeter railing (blocks, not grindable), lamp posts'),
@@ -360,105 +362,27 @@ def park_json(pl, rails):
 
 # ----------------------------------------------------------------------------- main
 def main():
-    t0 = time.time()
-    review = '--review' in sys.argv
+    """Whole-object authoring/review diagnostic only; normal exports use the atomic recipe."""
     pieces.preflight_tree(OUT)
-    OUT.mkdir(parents=True, exist_ok=True); (OUT / 'assets').mkdir(exist_ok=True); (OUT / 'board').mkdir(exist_ok=True)
-    pieces.preflight_root(OUT / 'assets')
+    OUT.mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    mat = material()
-    surfaces = surface_materials()
-    world, h = L.load_world()
-    report = {}
-
-    # board
-    deck, truck, wheel = board.deck(), board.truck(), board.wheel()
-    report['board'] = check_board(deck, truck, wheel)
-    objs = {}
-    for m in (deck, truck, wheel):
-        objs[m.name] = geom.to_object(m, mat)
-        geom.export_fbx(objs[m.name], OUT / 'board' / f'{m.name}.fbx')
-    print('BOARD', report['board']['assembled'], flush=True)
-
-    # park
-    pl = L.path_layout(world, h)
-    feats = features.park_features()
-    pier = features.pier()
-    piles = features.pilings(h)
-    path, ss, rows = features.path(pl, h)
-    paint = features.decals()
-    furniture,planting = features.gardens()
-    report['furniture_clearance']=check_furniture_clearance(furniture,feats)
-    park_meshes=(pier,feats,piles,path,furniture,planting,paint)
-    t1 = time.time()
+    mat, surfaces = material(), surface_materials()
+    world, h = L.load_world(); pl = L.path_layout(world, h)
+    objs = {mesh.name: geom.to_object(mesh, mat) for mesh in (board.deck(), board.truck(), board.wheel())}
+    pier, feats = features.pier(), features.park_features()
+    path, _, _ = features.path(pl, h)
+    furniture, planting = features.gardens()
+    meshes = (pier, feats, features.pilings(h), path, furniture, planting, features.decals())
     ao = geom.bake_ao([pier, feats], [pier, feats], skip_tags=('rail', 'railing', 'pole', 'lamp', 'coping'))
-    report['ao_seconds'] = round(time.time() - t1, 1)
-    report['ao'] = {k: {'mean': round(float(np.mean([c for f in v for c in f])), 3), 'max': round(float(np.max([c for f in v for c in f])), 3),
-                        'corners_over_0.3': int(sum(c > 0.3 for f in v for c in f))} for k, v in ao.items()}
-    park = {}
-    for m in park_meshes:
-        cols = geom.shade(m, ao.get(m.name))
-        park[m.name] = geom.to_object(m, surfaces, cols)
-        geom.export_fbx(park[m.name], OUT / 'assets' / f'{m.name}.fbx')
-    report['meshes'] = {m.name: {'triangles': m.triangles, 'vertices': len(m.verts), 'min': list(np.round(bounds(m)[0], 3)), 'max': list(np.round(bounds(m)[1], 3))}
-                        for m in (*park_meshes, deck, truck, wheel)}
-    report['material_slots'] = {name: [slot.name for slot in obj.data.materials] for name, obj in park.items()}
-
-    # contract + checks
-    rails = L.rails()
-    report['rails'] = check_rails(rails, [feats])
-    report['bar_clearance'] = check_bar_clearance(rails, [pier,feats])
-    # Same triangulated riding geometry for repeatable simulation trajectory/pumping checks.
-    triangles=[]
-    for m in (pier,feats):
-        for f in m.faces:
-            for i in range(1,len(f)-1):
-                triangles.append([[m.verts[k][1],m.verts[k][2],m.verts[k][0]] for k in (f[0],f[i],f[i+1])])
-    (OUT / 'collision.json').write_text(json.dumps(dict(triangles=triangles,rails=[[[p[1],p[2],p[0]] for p in r['points']] for r in rails],spawn=[-28,0,-23],heading=0),separators=(',',':')))
-    report['profiles'] = check_profiles()
-    report['path'] = check_path(pl, rows, h)
-    report['path']['house_roof_clearance_m'], report['path']['house_lot_clearance_m'] = house_clearance(pl, world)
-    assert report['path']['house_lot_clearance_m'] > 0, 'the skate path crosses a house lot'
-    report['joins'] = check_joins(pier, feats, path)
-    report['fbx_roundtrip'] = fbx_roundtrip([(m, OUT / 'assets' / f'{m.name}.fbx') for m in park_meshes] +
-                                            [(m, OUT / 'board' / f'{m.name}.fbx') for m in (deck, truck, wheel)])
-    data = park_json(pl, rails)
-    pieces.validate_logical_contract(HERE / 'park.json', data)
-    report['park_json'] = {'origin': data['origin'], 'rails': len(rails), 'rail_points': sum(len(r['points']) for r in rails),
-                           'meshes': [m['name'] for m in data['meshes']], 'spawns': data['spawns'], 'bytes': (HERE / 'park.json').stat().st_size}
-    # Whole-source queries/rail checks above stay logical. Only the generated native roster expands.
-    emitted, membership = [], {}
-    for name, _, _ in PARK_MESHES:
-        children = pieces.export_mesh(park[name], OUT / 'assets', geom.export_fbx)
-        emitted.extend(children)
-        membership[name] = [row['name'] for row in children]
-        for row in children:
-            report['meshes'][row['name']] = {key: row[key] for key in ('triangles', 'vertices', 'min', 'max')}
-            report['material_slots'][row['name']] = row['material_slots']
-    runtime = pieces.runtime_park(data, membership)
-    (OUT / 'runtime-park.json').write_text(json.dumps(runtime, indent=1) + '\n')
-    report['pieces'] = {'triangle_limit': pieces.TRIANGLE_LIMIT, 'cell_metres': pieces.CELL_METRES,
-                        'members': membership, 'exports': emitted,
-                        'retired_exports': pieces.retire_exports(OUT / 'assets', emitted)}
-
-    # scene for review: board assembled beside the park origin
-    for name in ('SM_SkateTruck', 'SM_SkateWheel'):
-        objs[name].hide_render = True
-    bpy.ops.wm.save_as_mainfile(filepath=str(OUT / 'SkatePark.blend'))
-    def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
-    report['identity'] = {'sources': {str(p.relative_to(L.JAPAN)): sha(p) for p in sorted(HERE.glob('*.py'))},
-                          'world_sha256': sha(yori.OUT / 'world.json'), 'heightmap_sha256': sha(yori.OUT / 'heightmap.npy'),
-                          'exports': {str(p.relative_to(OUT)): sha(p) for p in sorted(list((OUT / 'assets').glob('*.fbx')) + list((OUT / 'board').glob('*.fbx')))},
-                          'park_json_sha256': sha(HERE / 'park.json'),
-                          'runtime_park_sha256': sha(OUT / 'runtime-park.json')}
-    report['seconds'] = round(time.time() - t0, 1)
-    (OUT / 'build-report.json').write_text(json.dumps(report, indent=1, default=float) + '\n')
-    print('SKATEPARK BUILD COMPLETE', json.dumps({'triangles': {k: v['triangles'] for k, v in report['meshes'].items()},
-                                                 'rails_worst_mm': report['rails']['worst_mm'], 'path': report['path']}, default=float), flush=True)
-    if review:
-        import review as rv
+    park = {mesh.name: geom.to_object(mesh, surfaces, geom.shade(mesh, ao.get(mesh.name))) for mesh in meshes}
+    data = park_json(pl, L.rails()); pieces.validate_logical_contract(HERE/'park.json', data)
+    for name in ('SM_SkateTruck', 'SM_SkateWheel'): objs[name].hide_render = True
+    bpy.ops.wm.save_as_mainfile(filepath=str(OUT/'SkatePark.blend'))
+    print('SKATEPARK DIAGNOSTIC BLEND COMPLETE; no rendered mesh exports', flush=True)
+    if '--review' in sys.argv:
+        from skatepark import review as rv
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        rv.render_all(OUT / 'review', park, objs, data, world, h, pl, only)
+        rv.render_all(OUT/'review', park, objs, data, world, h, pl, only)
 
 
 if __name__ == '__main__':

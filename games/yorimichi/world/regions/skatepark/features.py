@@ -5,9 +5,13 @@ shared-vertex patch, ramps start exactly on floor grid lines and the floor has h
 solid features (no coplanar overlap, no lips)."""
 import math
 import numpy as np
-import layout as L
-import modules as MOD
-from geom import MeshData, PAL
+try:
+    from . import layout as L, modules as MOD
+    from .geom import MeshData, PAL
+except ImportError:
+    import layout as L
+    import modules as MOD
+    from geom import MeshData, PAL
 
 XS, YS = L.grid_lines()
 
@@ -314,52 +318,57 @@ def park_features():
     return m
 
 
-def gardens():
+def gardens(selected=None):
     """A planted waterfront promenade outside the approaches and landings."""
-    m = MeshData('SM_SkateParkFurniture'); plants = MeshData('SM_SkateParkPlanting')
+    if selected not in (None,'SM_SkateParkFurniture','SM_SkateParkPlanting'):raise ValueError('Unknown selected garden owner')
+    m = MeshData('SM_SkateParkFurniture') if selected!='SM_SkateParkPlanting' else None
+    plants = MeshData('SM_SkateParkPlanting') if selected!='SM_SkateParkFurniture' else None
     rng = np.random.default_rng(184)
     gardens = [(-72, 62, 10), (-49, 62, 8), (-25, 62, 8), (30, 62, 8), (62, 62, 12),
                (-68, -62, 12), (-43, -62, 8), (2, -62, 10), (40, -62, 12),
                (79, -17, 6), (79, 5, 6), (-80, -38, 6)]
     for cx, cy, span in gardens:
-        ring = []
-        for end, angle in [(span / 2 - 1, -90), (-span / 2 + 1, 90)]:
-            for k in range(25):
-                t = math.radians(angle + k * 180 / 24)
-                ring.append((cx + end + math.cos(t), cy + math.sin(t)))
-        outer = [(x, y, .52) for x, y in ring]
-        inner = [(cx + (x - cx) * .88, cy + (y - cy) * .72, .52) for x, y in ring]
-        for k, p in enumerate(outer):
-            j = (k + 1) % len(outer); q = outer[j]
-            m.poly([p, q, inner[j], inner[k]], 'concrete_light', want=(0, 0, 1))
-            m.poly([(p[0], p[1], 0), (q[0], q[1], 0), q, p], 'concrete_dark', want=(p[0]-cx, p[1]-cy, 0))
-        m.fan_polygon([(x, y, .48) for x, y, z in inner], (cx, cy, .48), 'soil', 'soil', (0, 0, 1))
-        # Slatted seats face the skating, with planting behind the seat.
-        seat_y = cy - 1.45 if cy > 0 else cy + 1.45
-        for j in range(5):
-            m.box((cx-span/2+1.5, seat_y-.45+j*.18, .43), (cx+span/2-1.5, seat_y-.30+j*.18, .51), 'timber', 'wood')
-        for x in (cx-span/2+2, cx+span/2-2):
-            m.box((x-.08, seat_y-.42, 0), (x+.08, seat_y+.42, .43), 'steel', 'steel')
-        for _ in range(90):
-            xx = cx + rng.uniform(-span/2+.9, span/2-.9); yy = cy + rng.uniform(-.55, .55)
-            hh = rng.uniform(.3, 1.15); t = rng.uniform(0, math.tau)
-            for off in (0, math.pi/2):
-                ux, uy = math.cos(t+off), math.sin(t+off)
-                plants.poly([(xx-uy*.045, yy+ux*.045, .48), (xx+uy*.045, yy-ux*.045, .48),
-                             (xx+math.cos(t)*.2, yy+math.sin(t)*.2, .48+hh)],
-                            'grass_light' if hh > .8 else 'grass', 'leaves')
-                plants.faces.append(plants.faces[-1][::-1]); plants.colors.append(plants.colors[-1])
-                plants.smooth.append(False); plants.tags.append('leaves')
-    # Cedar pavilion sits on the southern waterfront, clear of the sunset line.
-    for x in (20., 28., 36.):
-        for y in (-64., -58.): m.box((x-.14, y-.14, 0), (x+.14, y+.14, 3.6), 'timber', 'wood')
-    for y in (-64., -58.): m.box((19.5, y-.14, 3.45), (36.5, y+.14, 3.75), 'timber', 'wood')
-    for x in np.arange(19.5, 36.6, .38):
-        m.box((x-.08, -64.4, 3.75), (x+.08, -57.6, 3.88), 'timber', 'wood')
-    # A large original wave print gives the north street its identity.
-    m.box((35., 64., 0), (44.4, 64.3, 6.55), 'concrete_dark')
-    m.poly([(35.2, 63.99, .22), (44.2, 63.99, .22), (44.2, 63.99, 6.22), (35.2, 63.99, 6.22)],
-           'concrete_light', 'mural', want=(0, -1, 0))
+        if m is not None:
+            ring = []
+            for end, angle in [(span / 2 - 1, -90), (-span / 2 + 1, 90)]:
+                for k in range(25):
+                    t = math.radians(angle + k * 180 / 24)
+                    ring.append((cx + end + math.cos(t), cy + math.sin(t)))
+            outer = [(x, y, .52) for x, y in ring]
+            inner = [(cx + (x - cx) * .88, cy + (y - cy) * .72, .52) for x, y in ring]
+            for k, p in enumerate(outer):
+                j = (k + 1) % len(outer); q = outer[j]
+                m.poly([p, q, inner[j], inner[k]], 'concrete_light', want=(0, 0, 1))
+                m.poly([(p[0], p[1], 0), (q[0], q[1], 0), q, p], 'concrete_dark', want=(p[0]-cx, p[1]-cy, 0))
+            m.fan_polygon([(x, y, .48) for x, y, z in inner], (cx, cy, .48), 'soil', 'soil', (0, 0, 1))
+            # Slatted seats face the skating, with planting behind the seat.
+            seat_y = cy - 1.45 if cy > 0 else cy + 1.45
+            for j in range(5):
+                m.box((cx-span/2+1.5, seat_y-.45+j*.18, .43), (cx+span/2-1.5, seat_y-.30+j*.18, .51), 'timber', 'wood')
+            for x in (cx-span/2+2, cx+span/2-2):
+                m.box((x-.08, seat_y-.42, 0), (x+.08, seat_y+.42, .43), 'steel', 'steel')
+        if plants is not None:
+            for _ in range(90):
+                xx = cx + rng.uniform(-span/2+.9, span/2-.9); yy = cy + rng.uniform(-.55, .55)
+                hh = rng.uniform(.3, 1.15); t = rng.uniform(0, math.tau)
+                for off in (0, math.pi/2):
+                    ux, uy = math.cos(t+off), math.sin(t+off)
+                    plants.poly([(xx-uy*.045, yy+ux*.045, .48), (xx+uy*.045, yy-ux*.045, .48),
+                                 (xx+math.cos(t)*.2, yy+math.sin(t)*.2, .48+hh)],
+                                'grass_light' if hh > .8 else 'grass', 'leaves')
+                    plants.faces.append(plants.faces[-1][::-1]); plants.colors.append(plants.colors[-1])
+                    plants.smooth.append(False); plants.tags.append('leaves')
+    if m is not None:
+        # Cedar pavilion sits on the southern waterfront, clear of the sunset line.
+        for x in (20., 28., 36.):
+            for y in (-64., -58.): m.box((x-.14, y-.14, 0), (x+.14, y+.14, 3.6), 'timber', 'wood')
+        for y in (-64., -58.): m.box((19.5, y-.14, 3.45), (36.5, y+.14, 3.75), 'timber', 'wood')
+        for x in np.arange(19.5, 36.6, .38):
+            m.box((x-.08, -64.4, 3.75), (x+.08, -57.6, 3.88), 'timber', 'wood')
+        # A large original wave print gives the north street its identity.
+        m.box((35., 64., 0), (44.4, 64.3, 6.55), 'concrete_dark')
+        m.poly([(35.2, 63.99, .22), (44.2, 63.99, .22), (44.2, 63.99, 6.22), (35.2, 63.99, 6.22)],
+               'concrete_light', 'mural', want=(0, -1, 0))
     return m, plants
 
 def decals():
@@ -442,10 +451,11 @@ def lamp(m, x, y):
     m.lathe((x, y, 4.72), [(0, 0.0), (0, 0.26), (0.18, 0.05), (0.18, 0.0)], 'lamp_cap', 'pole', sides=4)
 
 
-def pilings(h_world):
+def pilings(h_world, *, sample_fn=None):
     import sys
     sys.path.insert(0, str(L.JAPAN))
     from village.layout import sample
+    sample_fn = sample if sample_fn is None else sample_fn
     m = MeshData('SM_SkatePierPilings')
     ox, oy, oz = L.ORIGIN
     xs = np.linspace(-L.HALF_X+4, L.HALF_X-4, 19); ys = np.linspace(-L.HALF_Y+4, L.HALF_Y-4, 15)
@@ -453,7 +463,7 @@ def pilings(h_world):
     for y in ys:
         m.box((-L.HALF_X + .3, y - .3, cap_bot), (L.HALF_X - .3, y + .3, cap_top), 'underside', 'pile', bottom=True)
         for x in xs:
-            bed = float(sample(h_world, ox + x, oy + y)) - oz
+            bed = float(sample_fn(h_world, ox + x, oy + y)) - oz
             prof = [(bed - 0.6 - cap_bot, 0.30), (cap_top - 0.02 - cap_bot, 0.30), (cap_top - 0.02 - cap_bot, 0.0)]
             base = len(m.faces)
             m.lathe((x, y, cap_bot), [(bed - 0.6 - cap_bot, 0.0)] + prof, 'pile', 'pile', sides=10)
@@ -483,12 +493,13 @@ def path_railing(m, run, height=1.1, every=2.0):
     m.tube([run[i] + (0, 0, height * .5) for i in keep], 0.02, 'railing', 'railing', sides=6)
 
 
-def path(pl, h_world):
+def path(pl, h_world, *, surface_fn=None):
     """Path in park-local metres: level cross-sections, dark joints every 3 m, edge bands and a
     skirt down past the ground on both sides so it never floats or sinks out of sight."""
     import sys
     sys.path.insert(0, str(L.JAPAN))
     from village.layout import upper_surface
+    surface_fn = upper_surface if surface_fn is None else surface_fn
     m = MeshData('SM_SkatePath')
     ox, oy, oz = L.ORIGIN
     Pw, s, n, z = pl['P'], pl['s'], pl['n'], pl['z']
@@ -522,9 +533,9 @@ def path(pl, h_world):
         top = [rows[k][j] for k in range(len(ss))]
         bot = []
         for (x, y, zz) in top:
-            g = float(upper_surface(h_world, x + ox, y + oy)) - oz
+            g = float(surface_fn(h_world, x + ox, y + oy)) - oz
             # the terrain may be a little lower between samples: reach well past it
-            lowest = min(g, *(float(upper_surface(h_world, x + ox + dx, y + oy + dy)) - oz for dx, dy in ((.7, 0), (-.7, 0), (0, .7), (0, -.7))))
+            lowest = min(g, *(float(surface_fn(h_world, x + ox + dx, y + oy + dy)) - oz for dx, dy in ((.7, 0), (-.7, 0), (0, .7), (0, -.7))))
             bot.append((x, y, min(zz - 0.25, lowest - 0.45)))
         ids_t = [m.vert(p) for p in top]; ids_b = [m.vert(p) for p in bot]
         for k in range(len(ss) - 1):
@@ -533,7 +544,7 @@ def path(pl, h_world):
             c_top = PAL['skirt']; c_bot = tuple(c * 0.55 for c in PAL['skirt'])
             m.face([ids_b[k], ids_b[k + 1], ids_t[k + 1], ids_t[k]], [c_bot, c_bot, c_top, c_top], 'skirt', False, want=want)
         # guard railing wherever this side stands more than 1.2 m above the ground
-        high = np.array([t[2] - g for t, g in zip(top, [float(upper_surface(h_world, x + ox, y + oy)) - oz for x, y, _ in top])]) > 1.2
+        high = np.array([t[2] - g for t, g in zip(top, [float(surface_fn(h_world, x + ox, y + oy)) - oz for x, y, _ in top])]) > 1.2
         k = 0
         while k < len(ss):
             if not high[k]: k += 1; continue
@@ -548,8 +559,8 @@ def path(pl, h_world):
     # start cap (under the road edge) and end cap (inside the pier edge beam)
     for k, sgn in ((0, -1), (len(ss) - 1, 1)):
         a = rows[k][0]; b = rows[k][-1]
-        ga = min(a[2] - 0.6, float(upper_surface(h_world, a[0] + ox, a[1] + oy)) - oz - 0.45)
-        gb = min(b[2] - 0.6, float(upper_surface(h_world, b[0] + ox, b[1] + oy)) - oz - 0.45)
+        ga = min(a[2] - 0.6, float(surface_fn(h_world, a[0] + ox, a[1] + oy)) - oz - 0.45)
+        gb = min(b[2] - 0.6, float(surface_fn(h_world, b[0] + ox, b[1] + oy)) - oz - 0.45)
         t = (Px[k] - Px[k - sgn] if k else Px[1] - Px[0], Py[k] - Py[k - sgn] if k else Py[1] - Py[0])
         m.poly([a, b, (b[0], b[1], gb), (a[0], a[1], ga)], 'skirt', 'skirt', want=(t[0] * sgn, t[1] * sgn, 0))
     return m, ss, rows
