@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import shutil
 import stat
+from types import SimpleNamespace
 import tempfile
 
 from . import build_products, paths
@@ -256,42 +257,53 @@ def publish(ctx, step, fingerprint, stamp, *, store=None, done=None, produced=Fa
     from .build import fingerprint as receiving_fingerprint
     if done is None:
         raise CheckpointError('Task publication requires its verified dependency results')
-    # Installed tools are fixed for this build invocation. Keep the same complete
-    # resource memo used for planning; do not rediscover/hash the Blender app twice
-    # per small completed action. Source inputs still receive fresh byte checks,
-    # and tool_context retains its executable-change cache invalidation.
+    # Installed tools are fixed for this build invocation. Keep the same complete resource memo
+    # used for planning; tool executables are hashed once per stat signature (tool_digest).
+    # Source inputs still get fresh byte checks through the build's index in verify mode.
     tools = getattr(ctx, 'build_tool_cache', None)
-    if receiving_fingerprint(step, done, tool_cache=tools) != fingerprint:
+    index = getattr(ctx, 'build_hash_index', None)
+    fresh = None if index is None else SimpleNamespace(digest=lambda path: index.digest(path, verify=True), verify=True)
+
+    def inputs_unchanged():
+        return receiving_fingerprint(step, done, index=fresh, tool_cache=tools) == fingerprint
+
+    if not inputs_unchanged():
         raise CheckpointError('Task inputs changed before publication')
     if step.products and build_products.records(step) != stamp.get('products'):
         raise CheckpointError('Task products changed before publication')
     if not compile_present(ctx, step):
         raise CheckpointError('Compiled target is missing required module binaries or its registry')
     from .checkpoint_store import hashing
-    index = getattr(ctx, 'build_hash_index', None)
     digest = index.proving_digest if index is not None else None
-    with store.locked(), hashing(ctx, digest):
+    # Every walk, hash and copy happens before store.lock; the lock only guards the entry write
+    # against concurrent retention, so other builds never wait on this action's hashing.
+    with hashing(ctx, digest):
         declarations, files = snapshot(ctx, step, store, save_blobs=True)
         proof = inventory_identity(declarations, files)
         if not produced and (stamp.get('checkpoint_key') != action_key or stamp.get('checkpoint_inventory') != proof):
             raise CheckpointError('Existing output bytes lack compatible producer tool/inventory proof')
-        stamp['checkpoint_key'] = action_key
-        stamp['checkpoint_inventory'] = proof
-        value = dict(schema=1, game=ctx.game, key=action_key, task=step.name, fingerprint=fingerprint,
-                     roots=declarations, files=files, stamp=stamp)
         observations = {}
         second_roots, second_files = snapshot(ctx, step, store, save_blobs=False, observations=observations)
-        if (declarations != second_roots or not equivalent(files, second_files)
-                or receiving_fingerprint(step, done, tool_cache=tools) != fingerprint
-                or key(ctx, step, fingerprint) != action_key):
-            raise CheckpointError('Task inputs or outputs changed during publication')
+    if (declarations != second_roots or not equivalent(files, second_files)
+            or not inputs_unchanged() or key(ctx, step, fingerprint) != action_key):
+        raise CheckpointError('Task inputs or outputs changed during publication')
+    stamp['checkpoint_key'] = action_key
+    stamp['checkpoint_inventory'] = proof
+    value = dict(schema=1, game=ctx.game, key=action_key, task=step.name, fingerprint=fingerprint,
+                 roots=declarations, files=files, stamp=stamp)
+    validate(value, store, action_key)
+    with store.locked():
+        # Retention may have run since the blobs were stored: metadata checks only, no hashing.
+        if any(entry['kind'] == 'file' and not (store.blob(entry['sha256']).is_file()
+                                                and store.blob(entry['sha256']).stat().st_size == entry['size'])
+               for entry in files.values()):
+            raise CheckpointError('Task output blobs were collected during publication')
         previous = load(store, action_key)
         if previous and (previous['roots'] != declarations or not equivalent(previous['files'], files)):
             atomic_json(entry_path(store, action_key).with_suffix('.conflict'), {'key': action_key})
             raise CheckpointError('Identical task inputs produced different outputs; cache entry disabled')
-        validate(value, store, action_key)
         atomic_json(entry_path(store, action_key), value)
-        ctx.__dict__.setdefault('retention_observations', {})[step.name] = observations
+    ctx.__dict__.setdefault('retention_observations', {})[step.name] = observations
     return action_key
 
 

@@ -50,7 +50,7 @@ def main(argv=None):
     parser.add_argument('--rim', required=True, type=Path)
     parser.add_argument('--source-library', required=True, type=Path)
     parser.add_argument('--output', required=True, type=Path)
-    args = parser.parse_args(argv if argv is not None else sys.argv[sys.argv.index('--') + 1:])
+    args = parser.parse_args(argv)
     real_directory(args.output.parent)
     if args.output.is_symlink(): raise ValueError('Linked coastal placement output')
     done = threading.Event(); started = time.monotonic()

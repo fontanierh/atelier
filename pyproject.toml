@@ -39,3 +39,6 @@ dev-dependencies = ["pytest>=8"]
 [tool.pytest.ini_options]
 testpaths = ["platform/studio/tests", "platform/harness/tests", "games"]
 python_files = ["test_*.py"]
+markers = [
+  "macos_only: needs a macOS runner; the CI board group is the one that runs there",
+]

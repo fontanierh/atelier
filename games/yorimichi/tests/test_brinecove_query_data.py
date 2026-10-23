@@ -77,3 +77,12 @@ def test_existing_nonplant_prototype_groups_keep_all_query_transforms(tmp_path, 
     row = value['models'][-1]
     assert row['owner']==owner and row['prototype']==prototype and row['transforms']==[hero,hero]
     assert row['path']=='brinecove/query-data/plants/broad_0.npz'
+
+
+def test_placement_data_uses_the_python_entrypoint_without_blender_separator():
+    import subprocess
+    import sys
+    script = Path(__file__).resolve().parents[1] / 'world/regions/brinecove/placement_data.py'
+    result = subprocess.run([sys.executable, str(script), '--help'], capture_output=True, text=True, timeout=10)
+    assert result.returncode == 0, result.stderr
+    assert '--source-library' in result.stdout and '--rim' in result.stdout

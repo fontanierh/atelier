@@ -5,10 +5,17 @@ import plistlib
 
 import pytest
 import os
+import sys
 import subprocess
 from types import SimpleNamespace
 
 from atelier import build
+
+# The artifact is a macOS .app assembled with ditto and launched by a .command script, so it runs
+# in the macOS CI group and skips anywhere else.
+pytestmark = [pytest.mark.macos_only,
+              pytest.mark.skipif(sys.platform != 'darwin',
+                                 reason='macOS packaging: ditto and a .command launcher')]
 
 
 def archive_tool():

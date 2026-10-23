@@ -8,7 +8,7 @@ from . import build_cache, build_products
 from .atomic_files import atomic_json
 
 PREVIOUS = {'build_cache.py': 'a4145b3ea37d55919740f024c6be71ded4955260d67311a3e8fbfc45d60c1f2d', 'build_inputs.py': '1372231a341b450130c5e1e11c715e27c05cf62b0e9e9aea858ab9b02bc9fa9e'}
-CURRENT = {'build_cache.py': '4515c14043535aa1ad895ceccac4e2d2e677af4bd4bb68f6b3b252441835e5b3', 'build_inputs.py': '7f140159d1a4ce9a51eddd5625439c9ff350db3b19beec0d3dc28382ccdf72d4', 'atomic_files.py': '39163e0c3284ecd931b4f182cfded79cd275046de71003d17cdd6134f5533e9c', 'source_imports.py': '3e0e40ff742ee08354e2276ca385b99d1085e033153fc6416d057ed00e245eee'}
+CURRENT = {'build_cache.py': '7e334c7950210726e4aad11e9d4c8a1dab678d2003ee4d2b7a28aa74be39cce9', 'build_inputs.py': '7f140159d1a4ce9a51eddd5625439c9ff350db3b19beec0d3dc28382ccdf72d4', 'atomic_files.py': '39163e0c3284ecd931b4f182cfded79cd275046de71003d17cdd6134f5533e9c', 'source_imports.py': '3e0e40ff742ee08354e2276ca385b99d1085e033153fc6416d057ed00e245eee'}
 ADDED = {'atomic_files.py', 'source_imports.py'}
 # The source tool support before the extraction; the current context no longer hashes identity code.
 LEGACY_SUPPORT = ('build_source.py', 'build_inputs.py', 'build_products.py', 'build_cache.py', 'build_hashes.py',

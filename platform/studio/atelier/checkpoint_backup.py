@@ -108,7 +108,7 @@ def snapshot_runtime(directory):
     """Freeze the standard-library upload runtime so checkout changes cannot break a detached worker."""
     modules = ('__init__', 'checkpoint_backup', 'checkpoint_github', 'checkpoint_store', 'checkpoint_actions',
                'checkpoint_packs', 'checkpoint_archive', 'checkpoint_coordination', 'checkpoint_pins', 'checkpoint_gc', 'native_protocol', 'atomic_files', 'build_cache',
-               'build_products', 'build_hashes',
+               'build_products', 'build_hashes', 'file_identity',
                'engine', 'paths', 'release', 'release_claim', 'playtest', 'manifest')
     source = Path(__file__).parent
     data = io.BytesIO()

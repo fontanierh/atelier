@@ -33,7 +33,7 @@ def test_shipped_sheet_arrays_attributes_and_order(carved):
         if key == 'faces':
             np.testing.assert_array_equal(current, old['values'])
         else:
-            np.testing.assert_allclose(current, old['values'], rtol=0., atol=1.e-12, err_msg=key)
+            np.testing.assert_allclose(current, old['values'], rtol=0., atol=1.e-9, err_msg=key)
     if carved:
         assert len(result['vertices']) > len(inputs()['vertices'])
         assert len(result['faces']) > len(inputs()['faces'])

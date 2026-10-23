@@ -205,12 +205,13 @@ def jaw_contact(cab, path, poses, seated=True):
             'tolerance_m': checks.CONTACT_TOL, 'per_part': parts, 'failures': bad, 'ok': not bad}
 
 
-def static_rope_check(meshes, path, contact_tags, contact_name, label):
+def static_rope_check(meshes, path, contact_tags, contact_name, label, expected=None):
     """The rope against a static piece (tower or station), whole path: each part tagged contact_tags (each sheave, the
     bullwheel groove) is the rope's intentional contact, gated on its own and signed; every other part (the piece's
     own rope mesh aside) must stay rope radius + checks.ROPE_CLEARANCE from the rope axis."""
     I = Matrix.Identity(4); pose = [(label, I, path.length / 2)]; reach = path.length / 2 + 0.05
-    parts, bad = part_contacts(meshes, path, pose, contact_tags, {t: checks.EXPECTED_PARTS[t] for t in contact_tags}, reach=None)
+    expected = checks.EXPECTED_PARTS if expected is None else expected
+    parts, bad = part_contacts(meshes, path, pose, contact_tags, {t: expected[t] for t in contact_tags}, reach=None)
     k, _ = solid.rope_clearance(meshes, path, pose, exclude_tags=tuple(contact_tags) + ('rope',), reach=reach)
     need = checks.required_clearance(path.r); dk = k['distance_m']
     dc = min((q['min_signed_m'] for q in parts), default=None)

@@ -96,6 +96,25 @@ def roots(ctx, step):
     return result
 
 
+_TOOL_DIGESTS = {}
+
+
+def tool_digest(path, hasher):
+    """An installed tool executable's digest, memoized for this process by its exact stat signature.
+
+    Interpreters and app binaries are not game source: any replacement changes the signature
+    (identity, size, mode, nanosecond mtime/ctime) and is hashed afresh. --verify still rereads.
+    """
+    from .file_identity import signature
+    if getattr(getattr(hasher, '__self__', None), 'verify', False):
+        return hasher(path)
+    path = Path(path)
+    key = (str(path), signature(path.stat()))
+    if key not in _TOOL_DIGESTS:
+        _TOOL_DIGESTS[key] = hasher(path)
+    return _TOOL_DIGESTS[key]
+
+
 def tool_context(step, hasher, *, cache=None):
     """@cc [owner:fontanierh,label:correctness] source-tool-execution-closure
     Source keys MUST cover the executed source adapter, not unrelated orchestration or identity
@@ -121,7 +140,7 @@ def tool_context(step, hasher, *, cache=None):
         if os.environ.get('ATELIER_PYTHON') or os.environ.get('PYTHONPATH') or os.environ.get('PYTHONHOME'):
             raise ValueError('Portable Python actions require the managed interpreter without path overrides')
         binary = Path(sys.executable).resolve()
-        key = ('python', binary, hasher(binary), context['lock'])
+        key = ('python', binary, tool_digest(binary, hasher), context['lock'])
         if key not in cache:
             cache[key] = {'version': sys.version, 'binary': key[2],
                           'packages': sorted((d.metadata['Name'], d.version)
@@ -135,12 +154,12 @@ def tool_context(step, hasher, *, cache=None):
         bundle = binary.parent.parent
         if binary.parent.name != 'MacOS' or bundle.name != 'Contents':
             raise ValueError('Portable Blender caching currently requires the complete macOS app bundle')
-        key = ('blender', binary, hasher(binary), bundle.stat().st_mtime_ns)
+        key = ('blender', binary, tool_digest(binary, hasher), bundle.stat().st_mtime_ns)
         if key not in cache:
             files = sorted(p for p in bundle.rglob('*') if p.is_file() and '__pycache__' not in p.parts)
             # rglob supplies lexical descendants of this root; no resolution is needed for their keys.
             depth = len(bundle.parts)
-            cache[key] = {'/'.join(p.parts[depth:]): hasher(p) for p in files}
+            cache[key] = {'/'.join(p.parts[depth:]): tool_digest(p, hasher) for p in files}
         context['blender'] = cache[key]
     return context
 

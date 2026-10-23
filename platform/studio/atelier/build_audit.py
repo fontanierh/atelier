@@ -259,7 +259,12 @@ def prepared(ctx, step, products, *, receipt=None):
             reader.close()
             atomic_json(report_path, report)
         if not report['passed']:
-            raise RuntimeError(f'{step.name}: input audit incomplete or failed; see {report_path}')
+            # Name what was refused: the report is outside the log a failing action shows, and
+            # "see the report" alone sends every reader to the artifacts.
+            detail = '; '.join(f"{v['operation']} {v.get('path') or ''}: {v['violation']}".strip()
+                               for v in report['violations'][:3])
+            raise RuntimeError(f'{step.name}: input audit incomplete or failed; see {report_path}'
+                               f" ({detail or report['error'] or 'no complete report'})")
         if receipt is not None:
             from .build_products import identity
             receipt.update(schema=1, execution='audited-native-python-v1' if native else 'audited-python-v1', run_id=nonce,

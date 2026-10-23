@@ -58,8 +58,10 @@ def test_complete_resource_keys_and_hasher_order_match_legacy(app, tmp_path, lin
     assert build_products.identity(actual) == build_products.identity(expected)
     files = [path for path in sorted(bundle.rglob('*'))
              if path.is_file() and '__pycache__' not in path.parts]
-    # The executable is checked once to identify the invocation cache, then again as a resource.
-    assert [path for path in seen if path.is_relative_to(bundle)] == [bundle / 'MacOS/Blender', *files]
+    # The executable is hashed once per stat signature: it identifies the invocation cache, and its
+    # resource entry reuses that digest.
+    assert [path for path in seen if path.is_relative_to(bundle)] == [bundle / 'MacOS/Blender',
+                                                                       *(p for p in files if p != bundle / 'MacOS/Blender')]
     assert 'Resources/one/shared.py' in actual and 'Resources/two/shared.py' in actual
     assert not any('__pycache__' in name for name in actual)
 

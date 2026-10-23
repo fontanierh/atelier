@@ -37,9 +37,17 @@ class Observer:
         self.import_roots.update(p.parent for p, directory in self.inputs if not directory)
         self.seen = set()
         self.failed = False
+        self.first_refusal = None
         self.sealed = False
         self.local = threading.local()
         self.lock = threading.RLock()
+
+    # Kernel device nodes are not recipe inputs. CPython reads entropy to name a temporary file
+    # and libraries seed themselves from it; macOS reaches the same entropy through getentropy
+    # without opening a file, so only Linux reports it here. Discarding an action's output is the
+    # one write outside its products that no recipe can depend on.
+    READABLE_DEVICES = frozenset({'/dev/urandom', '/dev/random'})
+    WRITABLE_DEVICES = frozenset({'/dev/null'})
 
     def send(self, kind, **values):
         line = json.dumps({'kind': kind, 'nonce': self.spec['nonce'], **values}) + '\n'
@@ -62,6 +70,8 @@ class Observer:
         with self.lock:
             if reason:
                 self.failed = True
+                if self.first_refusal is None:
+                    self.first_refusal = f'{operation} {label or ""}: {reason}'.strip()
             if item not in self.seen:
                 if len(self.seen) >= 20000:
                     self.failed = True
@@ -97,6 +107,8 @@ class Observer:
 
     def read(self, path, *, directory=False, metadata=False):
         operation = 'metadata' if metadata else 'list' if directory else 'read'
+        if str(path) in self.READABLE_DEVICES:
+            return self.record(operation, path)
         if self.covered(path, directory=directory):
             return self.record(operation, path)
         if self.owns(path):
@@ -106,7 +118,8 @@ class Observer:
         self.record(operation, path, 'not a declared input/read product or a newly written output')
 
     def write(self, path, *, mkdir=False):
-        allowed = self.owns(path) or mkdir and any(path in p.parents for p in self.outputs)
+        allowed = (self.owns(path) or str(path) in self.WRITABLE_DEVICES
+                   or mkdir and any(path in p.parents for p in self.outputs))
         self.record('mkdir' if mkdir else 'write', path,
                     None if allowed else 'outside owned products and private scratch')
 
@@ -309,7 +322,9 @@ def execute(spec, *, blender=False, before=None, after=None):
         observer.send('complete', success=succeeded and not observer.failed)
         observer.sealed = True
     if observer.failed:
-        raise SystemExit('Input audit failed; see the action audit report')
+        # Name the refusal here too: this line is what the step log shows, and a hook error raised
+        # while reporting another one can stay swallowed by CPython.
+        raise SystemExit('Input audit failed: ' + (observer.first_refusal or 'no complete report'))
 
 
 if __name__ == '__main__':

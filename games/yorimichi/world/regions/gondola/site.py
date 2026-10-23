@@ -882,7 +882,9 @@ def tower_path_audit(tower,mesh,row,profile,cab,p,d):
         places=[(label,placement) for label,placement,_ in frames]
         hits=solid.clearance([mesh],K.cabin_movers(cab),places)
         envelope=solid.clearance([mesh],[K.envelope(p,d,checks.TOWER_BODY_MARGIN)],places)
-        rope=K.static_rope_check([mesh],path,('sheave',),'fitted sheave grooves',row['id'])
+        fitted_sheaves=len(tower.sheaves_x.get(side,()))
+        rope=K.static_rope_check([mesh],path,('sheave',),'fitted sheave grooves',row['id'],
+                                 expected={'sheave':fitted_sheaves})
         if hits or envelope or any(not rope[key]['ok'] for key in ('intentional','clearance')):
             raise ValueError(f'{row["id"]}: actual tower/cabin/rope contact failed: {hits}, {envelope}, {rope}')
         results.append({'side':side,'poses':len(frames),'contacts':hits,'body_envelope':envelope,'rope':rope})

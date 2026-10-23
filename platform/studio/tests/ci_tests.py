@@ -11,6 +11,10 @@ import pytest
 
 GROUPS = ('board', 'studio', 'games')
 
+# A spawned worker inherits its parent's environment. This marks one, so a child process can
+# never spawn another generation even if its slice arguments were ever passed without --workers.
+WORKER_DEPTH = 'ATELIER_CI_WORKER_DEPTH'
+
 # Tests that observe or create machine-wide render processes stay on one worker: a process
 # named Blender or UnrealEditor created by one worker is visible to another worker's scan.
 SERIAL_PREFIXES = ('platform/harness/tests/',)
@@ -21,11 +25,17 @@ def serial_file(path):
     return path in SERIAL_FILES or path.startswith(SERIAL_PREFIXES)
 
 
-def group_for(nodeid):
+def group_for(nodeid, markers=()):
     """@cc [owner:fontanierh,label:correctness] complete-ci-partition
     Every collected node MUST belong to exactly one CI group. Tests outside the two explicit
     groups MUST stay in the studio group, so new test locations cannot silently lose coverage.
+
+    The board group is the only one on a macOS runner, so a test that only works there (macOS
+    packaging, Xcode tool selection, a digest pinned to macOS rounding) is marked macos_only and
+    runs in it. Left in a Linux group it would skip and never execute anywhere.
     """
+    if 'macos_only' in markers:
+        return 'board'
     path = PurePosixPath(nodeid.split('::', 1)[0])
     if path.parts[0] == 'games':
         return 'games'
@@ -44,7 +54,8 @@ class CollectionGroup:
     def pytest_collection_modifyitems(self, config, items):
         selected, deselected = [], []
         for item in items:
-            (selected if group_for(item.nodeid) == self.group else deselected).append(item)
+            markers = {marker.name for marker in item.iter_markers()}
+            (selected if group_for(item.nodeid, markers) == self.group else deselected).append(item)
         if self.report:
             self.report.parent.mkdir(parents=True, exist_ok=True)
             self.report.write_text(json.dumps({
@@ -127,6 +138,16 @@ def _resolve_workers(spec):
     return max(1, int(spec))
 
 
+def shard_argv(index, count):
+    """A spawned worker takes one slice and never spawns again: it already is a slice.
+
+    The slice arguments are not enough on their own. A child inherits ATELIER_CI_WORKERS from its
+    parent's environment, so leaving --workers unset there lets every generation multiply the
+    partition it just received and fork without bound.
+    """
+    return ['--worker-index', str(index), '--worker-count', str(count), '--workers', '1']
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('group', choices=GROUPS)
@@ -136,13 +157,19 @@ def main():
     parser.add_argument('--worker-count', type=int, default=1)
     args, pytest_args = parser.parse_known_args()
     workers = _resolve_workers(args.workers)
-    if workers > 1 and args.worker_count == 1:
+    if os.environ.get(WORKER_DEPTH):
+        workers = 1  # This process is already one slice of a larger partition.
+    if workers > 1:
+        # A matrix job may itself be one shard of the group. Each local worker then takes one
+        # slice of the combined partition, so every node still runs exactly once across jobs:
+        # the greedy assignment only depends on the group's own file set, which all jobs share.
+        combined = workers * args.worker_count
         junit_path, base_pytest_args = _extract_junitxml(pytest_args)
         procs = []
         worker_xmls = []
         for idx in range(workers):
             cmd = [sys.executable, str(Path(__file__).resolve()), args.group,
-                   '--worker-index', str(idx), '--worker-count', str(workers)]
+                   *shard_argv(args.worker_index * workers + idx, combined)]
             if idx == 0 and args.collection_report:
                 cmd.extend(['--collection-report', str(args.collection_report)])
             worker_args = list(base_pytest_args)
@@ -150,7 +177,7 @@ def main():
                 w_xml = junit_path.with_name(f'{junit_path.stem}.worker-{idx}{junit_path.suffix}')
                 worker_xmls.append(w_xml)
                 worker_args.append(f'--junitxml={w_xml}')
-            procs.append(subprocess.Popen(cmd + worker_args))
+            procs.append(subprocess.Popen(cmd + worker_args, env={**os.environ, WORKER_DEPTH: '1'}))
         codes = [p.wait() for p in procs]
         if junit_path is not None:
             _merge_junitxml(junit_path, worker_xmls)
