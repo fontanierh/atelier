@@ -322,6 +322,7 @@ def test_incomparable_completed_indexes_keep_certified_union_after_retry_expiry(
     remote.publish(store, first, 'A', revision='c' * 40)
     assert len(remote.candidates()) == 1
     receiver = cp.Store('fixture', tmp_path / 'receiver')
+    monkeypatch.setenv('ATELIER_REMOTE_CHECKPOINTS', '1')
     cache = actions.Actions(SimpleNamespace(game='fixture'), dict(repository='owner/artifacts'))
     cache.store, cache.remote = receiver, remote
     for name, action_key, body in [('A', 'a' * 64, b'actionA'), ('B', 'b' * 64, b'actionB')]:

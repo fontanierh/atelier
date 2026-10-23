@@ -291,18 +291,21 @@ def valid_outputs(ctx, step, value):
         return False
 
 
-def restore_worker(ctx, step, store, action_key, *, labels=None):
-    """Owned output replacement; called under the ordinary aggregate checkpoint guard.
+def restore_worker(ctx, step, store, action_key, *, labels=None, hashes=None):
+    """Owned output replacement: clones of verified blobs, in the build process or a worker.
 
     With labels (the parent's declared output labels) no recipe is needed; the parent still
     verifies the complete restored inventory against the recipe after the guard closes.
+    With hashes (the build's open hash index) restored digests are recorded there directly.
     """
     value = load(store, action_key)
     if value is None or entry_path(store, action_key).with_suffix('.conflict').exists():
         raise CheckpointError('Task cache entry is missing or disabled')
     task = step.name if step is not None else value['task']
     expected = [label(ctx, p) for p in declared(ctx, step)] if step is not None else list(labels)
-    sources = source_scopes(tracked_paths())
+    if 'tracked_source_scopes' not in ctx.__dict__:  # Tracked files do not change within a build.
+        ctx.tracked_source_scopes = source_scopes(tracked_paths())
+    sources = ctx.tracked_source_scopes
     if any(destination(ctx, name) in sources for name in expected):
         raise CheckpointError('Task restoration cannot replace tracked source')
     if [r['path'] for r in value['roots']] != expected:
@@ -355,13 +358,14 @@ def restore_worker(ctx, step, store, action_key, *, labels=None):
             os.chmod(destination(ctx, name), entry['mode'])
     from .checkpoint_store import RESTORED_HASHES, unchanged
     from .build_hashes import HashIndex
-    with HashIndex(ctx.out / RESTORED_HASHES) as hashes:
+    from contextlib import nullcontext
+    with (nullcontext(hashes) if hashes is not None else HashIndex(ctx.out / RESTORED_HASHES)) as index:
         for name, entry in value['files'].items():
             if entry['kind'] == 'file':
                 target = destination(ctx, name)
                 if not unchanged(target, entry):
                     raise CheckpointError('Restored task output differs; launch barrier retained')
-                hashes.record(target, entry['sha256'])
+                index.record(target, entry['sha256'])
     if step is not None and not restored_outputs(ctx, step, value):
         raise CheckpointError('Restored task output inventory differs; launch barrier retained')
     return value
@@ -404,7 +408,8 @@ class Actions:
         value = load(self.store, action_key)
         if value is not None:
             return value
-        if local_only or not self.settings.get('repository'):
+        from .build_checkpoints import remote_repository
+        if local_only or remote_repository(self.settings) is None:
             return None
         from .checkpoint_github import Remote
         if self.remote is None:
@@ -437,17 +442,24 @@ class Actions:
         self.misses.add(action_key)
         return None
 
-    def restore(self, step, fingerprint, value, done):
-        from .build_checkpoints import _guard
-        from .build import fingerprint as fresh_fingerprint
-        if fresh_fingerprint(step, done) != fingerprint:
+    def restore(self, step, fingerprint, value, done, *, index=None, tool_cache=None):
+        """@cc [owner:fontanierh,label:safety;performance] in-process-action-restore
+        A per-task action restore MUST only clone digest-named blobs verified when stored into
+        that task's declared roots, under its durable launch barrier, inside the build process
+        that already holds the build lock; it MUST NOT spawn a child or wait for admission.
+        Inputs MUST be rechecked before and after, with the build's hash index, and the complete
+        restored inventory MUST match before the barrier is cleared. Whole-workspace restores,
+        hydration and other transfers keep the guarded worker lifecycle.
+        """
+        from .build import fingerprint as fresh
+        def current():
+            return fresh(step, done, index=index, tool_cache=tool_cache) if index is not None else fresh(step, done)
+        if current() != fingerprint:
             raise CheckpointError('Inputs changed before task cache restoration')
-        request = self.ctx.out / '.state/action-requests' / (value['key'] + '.json')
-        atomic_json(request, dict(task=step.name, labels=[label(self.ctx, p) for p in declared(self.ctx, step)]))
-        result = _guard(self.ctx, 'restore-action', value['key'])
-        if result.get('key') != value['key'] or not restored_outputs(self.ctx, step, value):
+        restored = restore_worker(self.ctx, step, self.store, value['key'], hashes=index)
+        if restored.get('key') != value['key']:
             raise CheckpointError('Task restoration completion differs; launch barrier retained')
-        if fresh_fingerprint(step, done) != fingerprint:
+        if current() != fingerprint:
             raise CheckpointError('Inputs changed during task restoration; launch barrier retained')
         journal = self.ctx.out / JOURNAL
         expected = dict(schema=1, game=self.ctx.game, key=value['key'], task=step.name, operation='action')
@@ -487,6 +499,107 @@ def install(store, value):
             atomic_json(path.with_suffix('.conflict'), dict(key=action_key))
             raise CheckpointError('Remote and local task results conflict; key disabled')
         atomic_json(path, value)
+
+
+def verifiable(ctx, step):
+    """@cc [owner:fontanierh,label:correctness] unverified-steps-never-publish
+    A step whose stamp cannot be checked against complete output records (ambient Blender, or
+    only representative outputs without a matching written-output inventory) MUST NOT publish
+    its owned files or its stamp to a checkpoint manifest. Restoration and hydration MUST NOT
+    adopt such a stamp or its owned files from the store, including from manifests published
+    before this rule; the receiver rebuilds them. An inventoried stamp MAY be adopted only when
+    every listed file was published with the recorded size, mtime and digest.
+    """
+    from .build import Blender, Call
+    if any(isinstance(c, Blender) and not c.factory_startup for c in step.commands):
+        return False
+    if declared(ctx, step):
+        return True
+    return all(isinstance(c, Call) for c in step.commands) and not step.outputs
+
+
+def ambient(step):
+    from .build import Blender
+    return any(isinstance(c, Blender) and not c.factory_startup for c in step.commands)
+
+
+def inventory_verified(ctx, step, stamp):
+    """A representative-output stamp whose complete written inventory still matches on disk."""
+    from .output_inventory import changed
+    inventory = stamp.get('output_inventory')
+    return bool(inventory) and not ambient(step) and not changed(ctx, inventory)
+
+
+def inventory_published(step, stamp, files):
+    """A saved representative-output stamp whose every inventoried file was published intact."""
+    inventory = stamp.get('output_inventory')
+    if not inventory or ambient(step):
+        return False
+    for name, (size, mtime_ns, digest) in inventory.items():
+        entry = files.get(name)
+        if not entry or entry.get('kind') != 'file' or (entry['size'], entry['sha256'], entry['mtime_ns']) != (size, digest, mtime_ns):
+            return False
+    return True
+
+
+def trusted(ctx, steps, manifest):
+    """Saved stamps a receiver may consider, and the inventories that make them verified."""
+    by_name = {s.name: s for s in steps}
+    saved = {**manifest['stamps'], **manifest.get('incremental_stamps', {})}
+    inventories = {n: v['output_inventory'] for n, v in saved.items()
+                   if n in by_name and not verifiable(ctx, by_name[n]) and inventory_published(by_name[n], v, manifest['files'])}
+    names = {n for n in saved if n in by_name and (verifiable(ctx, by_name[n]) or n in inventories)}
+    return names, inventories
+
+
+def ownership(ctx, steps, inventories=None):
+    """Member-name prefix of each step-owned output path -> whether its owner is verifiable.
+
+    A representative output only samples what its step writes, so an unverifiable step also
+    claims that output's directory. Explicit outputs and declared roots override such claims.
+    A step verified by its written inventory claims exactly the files it lists.
+    """
+    inventories = inventories or {}
+    owners, weak = {}, {}
+    # Deepest root first, as label() chooses; plain string prefixes keep this cheap per build.
+    bases = sorted(((str(root), name) for name, (root, _) in roots(ctx).items()), key=lambda b: -len(b[0]))
+    def member(path):
+        text = str(Path(path).absolute())
+        for base, name in bases:
+            if text == base:
+                return name
+            if text.startswith(base + '/'):
+                return name + '/' + text[len(base) + 1:]
+        return None
+    for step in steps:
+        good = verifiable(ctx, step) or step.name in inventories
+        for name in inventories.get(step.name, ()):
+            owners[name] = owners.get(name, True)
+        for path in dict.fromkeys([*map(Path, getattr(step, 'outputs', ())), *declared(ctx, step)]):
+            name = member(path)
+            if name is None:
+                continue
+            owners[name] = owners.get(name, True) and good
+            if not good and name.count('/') >= 2:  # Never a whole root.
+                weak[name.rpartition('/')[0]] = False
+    return {**weak, **owners}
+
+
+def unverified_member(member, owners):
+    """True when the deepest step-owned prefix of a member belongs to an unverifiable step."""
+    name = member
+    while name:
+        if name in owners:
+            return not owners[name]
+        name = name.rpartition('/')[0]
+    return False
+
+
+def publishable(files, owners):
+    """Manifest members minus unverified-owned files and links into them."""
+    kept = {m: e for m, e in files.items() if not unverified_member(m, owners)}
+    return {m: e for m, e in kept.items()
+            if not (e.get('kind') == 'link' and e['target'].startswith('member:') and unverified_member(e['target'][7:], owners))}
 
 
 def certificate_key(ctx, step, fingerprint):

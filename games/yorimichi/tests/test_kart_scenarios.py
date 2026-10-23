@@ -61,7 +61,8 @@ def test_failed_scenario_still_releases_throttle():
 
 
 def test_every_kart_scenario_cleans_up_on_both_paths():
-    for name in ('kart_equipment.py', 'kart_uneven.py', 'kart_fit.py', 'kart_film.py'):
+    for name in ('kart_equipment.py', 'kart_uneven.py', 'kart_fit.py', 'kart_film.py',
+                 'kart_flip.py', 'kart_spawn.py'):
         source = (SCENARIOS / name).read_text()
         assert source.count('CLEAN.cleanup') >= 2, name
 

@@ -40,6 +40,7 @@ METAL, THUMP, DRUM, STICK = ('smartsound_sword_hit_metal_02.wav', 'gamemaster_bo
                              'baxter_hit_big_drum_03.wav', 'audioville_stick_hit_13_wild.wav')
 CUES = {
     # ferry
+    'ferry_engine_idle': dict(loop=True, variants=1, sonniss=()),
     'ferry_engine': dict(loop=True, variants=1, sonniss=()),
     'ferry_thruster': dict(loop=True, variants=1, sonniss=()),
     'ferry_wash': dict(loop=True, variants=1, sonniss=()),
@@ -127,7 +128,7 @@ def strokes(seconds, fire, knock, seed, decay=.4, accents=(1., .86, .95, .8, .92
         body = np.sin(2 * np.pi * knock * r.uniform(.97, 1.03) * t) * np.exp(-t / tau)
         puff = noise(m, lambda f: band(f, 60, 1400), int(r.integers(1 << 30))) * np.exp(-t / (.7 * tau))
         return body + .6 * puff
-    return train(seconds, fire, stroke, seed, .02, accents)
+    return train(seconds, fire, stroke, seed, .003, accents)
 
 
 def clatter_env(seconds, fire, seed, sharp=.12):
@@ -152,29 +153,56 @@ def echo(x, delays):
     return out
 
 
+def balance_seam_window(x, w=2400):
+    """Equalise the first and last 50 ms RMS levels with a C-infinity odd periodic bump so the seam has zero step."""
+    x = np.asarray(x, np.float64) - np.mean(x)
+    n = len(x)
+    signed = ((np.arange(n) + n // 2) % n) - n // 2
+    span = 2 * w
+    mask = np.abs(signed) < span
+    u = signed[mask] / span
+    bump = np.zeros(n)
+    bump[mask] = np.sin(np.pi * u) * 0.5 * (1.0 + np.cos(np.pi * u))
+    lo, hi = -0.5, 0.5
+    for _ in range(30):
+        mid = 0.5 * (lo + hi)
+        y = x * (1.0 + mid * bump)
+        if np.mean(y[:w] ** 2) < np.mean(y[-w:] ** 2):
+            lo = mid
+        else:
+            hi = mid
+    y = x * (1.0 + 0.5 * (lo + hi) * bump)
+    return y - np.mean(y)
+
+
 def horn(blasts, f0s, seed):
-    """A ship's whistle: a chord of rich reed tones, each blast starting a little flat and rising to pitch as the steam
-    builds, with a breathy edge, sounding for each (start, length) in `blasts`, then echoing back off the water."""
+    """Dual-chime marine air-tyfon: brass reed chord with horn-flare saturation, compressed-air valve chuff and harbour
+    slap-back echo."""
     r = np.random.default_rng(seed)
     total = max(s + d for s, d in blasts) + .6
     n = n_of(total); t = np.arange(n) / SR
-    gate, since = np.zeros(n), np.full(n, 10.)
+    gate, since, chuff_env = np.zeros(n), np.full(n, 10.), np.zeros(n)
     for s, d in blasts:
         a, b = n_of(s), n_of(s + d)
         seg = np.arange(b - a) / SR
-        gate[a:b] = np.maximum(gate[a:b], (1 - np.exp(-seg / .07)) * np.clip((d - seg) / .35, 0, 1) ** 1.5)
+        gate[a:b] = np.maximum(gate[a:b], (1 - np.exp(-seg / .045)) * np.clip((d - seg) / .32, 0, 1) ** 1.4)
         since[a:b] = seg
-    sag = 1 - .03 * np.exp(-since / .09)
+        chuff_env[a:b] = np.maximum(chuff_env[a:b], np.exp(-seg / .028) * (1 - np.exp(-seg / .004)))
+    sag = 1 - .028 * np.exp(-since / .075)
     x = np.zeros(n)
     for f0, g in f0s:
-        freq = f0 * sag * (1 + .0025 * np.sin(2 * np.pi * 4.7 * t + r.uniform(0, 6.3)))
+        freq = f0 * sag * (1 + .0022 * np.sin(2 * np.pi * 5.1 * t + r.uniform(0, 6.3)))
         ph = 2 * np.pi * np.cumsum(freq) / SR
-        for k in range(1, int(5000 / f0)):
+        for k in range(1, int(5200 / f0)):
             fk = k * f0
-            x += g * np.sin(k * ph) / k ** 1.1 * (1 + 1.6 * np.exp(-.5 * ((fk - 480) / 160) ** 2) + .8 * np.exp(-.5 * ((fk - 1150) / 320) ** 2))
-    breath = noise(n, lambda f: band(f, 500, 3500), int(r.integers(1 << 30)))
-    x = (x + .05 * np.max(np.abs(x)) * breath) * gate
-    return echo(x, [(.42, .22), (.95, .09)])
+            formant = 1 + 1.8 * np.exp(-.5 * ((fk - 420) / 150) ** 2) + 1.1 * np.exp(-.5 * ((fk - 980) / 260) ** 2)
+            x += g * np.sin(k * ph) / k ** 1.05 * formant
+    x = np.tanh(1.65 * x / max(np.max(np.abs(x)), 1e-9))
+    breath = noise(n, lambda f: band(f, 450, 3600), int(r.integers(1 << 30)))
+    chuff = noise(n, lambda f: band(f, 180, 2800), int(r.integers(1 << 30))) * chuff_env
+    x = (x + .06 * breath) * gate + .22 * chuff
+    out = echo(x, [(.42, .24), (.98, .12), (1.80, .06)])
+    return out - np.mean(out)
 
 
 def ship_bell(f0, strikes, seed):
@@ -202,13 +230,21 @@ def at(x, seconds):
 def loops():
     """Every loop, each periodic over its own length."""
     out = {}
-    # ferry_engine: the old-school ferry's slow six-cylinder diesel at cruise (30 strokes a second at pitch 1; the game
-    # drops it to about .62 at idle): a deep thrum, the exhaust's puffs, a valve tick and the hull's rumble (3 s)
-    thrum = filtered(strokes(3., 30, 62, 11), 25, 900)
-    valves = shaped_noise(3., lambda f: band(f, 1400, 5500), 12) * clatter_env(3., 30, 13)
-    rumble = shaped_noise(3., lambda f: band(f, 18, 140, 1.5), 14) * periodic_mod(3., .3, 1.5, .2, 15)
-    whine = .05 * tone(3., 418) + .03 * tone(3., 836, 1.)
-    out['ferry_engine'] = (thrum + .05 * valves + .5 * rumble + whine) * periodic_mod(3., .5, 2, .08, 16)
+    # ferry_engine_idle: slow 6-cylinder marine diesel chug at idle (20 Hz firing cadence with uneven cylinder
+    # accents, 40/60 Hz hull resonance and wet exhaust water-lock burble, 3 s, 50 ms periodic harmonic lock)
+    thrum_idle = filtered(strokes(3., 20, 60, 17, .48, (1., .92, .96, .9, .94, .92)), 24, 750)
+    valves_idle = shaped_noise(3., lambda f: band(f, 1200, 4800), 19) * clatter_env(3., 20, 20, .14)
+    burble_idle = shaped_noise(3., lambda f: band(f, 45, 320, 1.4), 24) * (.65 + .35 * blades(3., 20, 1.8))
+    hull_idle = .55 * tone(3., 40) + .35 * tone(3., 60, .4) + .18 * tone(3., 80, 1.1)
+    out['ferry_engine_idle'] = thrum_idle + .06 * valves_idle + .55 * burble_idle + hull_idle
+    # ferry_engine: loaded turbo-diesel cruise throb (20/40 Hz firing harmonics, deep hull rumble, 420/840 Hz turbo
+    # whistle and 4-blade propeller cavitation, 3 s)
+    thrum = filtered(strokes(3., 20, 80, 11, .52) + .7 * strokes(3., 40, 120, 12, .45), 28, 1100)
+    valves = shaped_noise(3., lambda f: band(f, 1400, 5500), 13) * clatter_env(3., 20, 14)
+    cavitation = shaped_noise(3., lambda f: band(f, 90, 2200, 1.3), 15) * (.6 + .4 * blades(3., 20, 2.))
+    rumble = shaped_noise(3., lambda f: band(f, 20, 150, 1.5), 16)
+    whine = .65 * tone(3., 40) + .6 * tone(3., 80, .1) + .08 * tone(3., 420) + .04 * tone(3., 840, .8)
+    out['ferry_engine'] = thrum + .05 * valves + .55 * cavitation + .45 * rumble + whine
     # ferry_thruster: the bow tunnel thruster crabbing the ship onto its berth: the electric motor's whine, four blades
     # churning water in the tunnel and a cavitation fizz (2 s)
     motor = tone(2., 300) + .45 * tone(2., 600, .7) + .2 * tone(2., 903, 2.)
@@ -217,10 +253,11 @@ def loops():
     out['ferry_thruster'] = .12 * motor + churn + .12 * fizz
     # ferry_wash: water parting at the bow and running down the hull, the wake churning astern; the game raises it
     # with the ship's speed (4 s)
-    hull = shaped_noise(4., lambda f: band(f, 90, 3500, 1.2) * (1 / np.maximum(f, 90) ** .35), 31) * periodic_mod(4., .25, 1.2, .45, 32)
-    spray = shaped_noise(4., lambda f: band(f, 1800, 9000), 33) * periodic_mod(4., 1.5, 7, .9, 34)
-    slosh = shaped_noise(4., lambda f: band(f, 35, 220), 35) * periodic_mod(4., .2, .8, .6, 36)
-    out['ferry_wash'] = hull + .3 * spray + .6 * slosh
+    bow_surge = shaped_noise(4., lambda f: band(f, 80, 600, 1.3), 31) * periodic_mod(4., .25, 1., .35, 32)
+    hull = shaped_noise(4., lambda f: band(f, 90, 3200, 1.2) * (1 / np.maximum(f, 90) ** .35), 33)
+    spray = shaped_noise(4., lambda f: band(f, 1200, 6000), 34) * periodic_mod(4., .5, 2.5, .35, 35)
+    slosh = shaped_noise(4., lambda f: band(f, 35, 220), 36) * periodic_mod(4., .25, .8, .35, 37)
+    out['ferry_wash'] = .75 * bow_surge + hull + .35 * spray + .55 * slosh
     # ferry_moorings: at berth: water lapping between hull and quay, slaps under the pier, the mooring lines creaking
     # on their bollards and the rubber fenders groaning as the ship works (6 s)
     lap = shaped_noise(6., lambda f: band(f, 150, 1400) * (1 + peak(f, 420, 150, .6)), 41) * periodic_mod(6., .3, 1.1, .9, 42)
@@ -259,7 +296,7 @@ def loops():
     wires = shaped_noise(4., lambda f: peak(f, 880, 25) + .6 * peak(f, 1320, 30), 83) * periodic_mod(4., .3, 1., .9, 84)
     frame = scattered(4., .6, lambda r: creak(r.uniform(.3, .5), r.uniform(190, 260), r.uniform(140, 180), r.uniform(18, 30), int(r.integers(1 << 30))), 85)
     out['zeppelin_envelope'] = gust + .05 * wires + .45 * frame
-    return {cue: x - np.mean(x) for cue, x in out.items()}
+    return {cue: balance_seam_window(x) for cue, x in out.items()}
 
 
 # --------------------------------------------------------------------------------------------- one-shots
@@ -272,8 +309,8 @@ def one_shots(sonniss):
     drum = filtered(transient(master(DRUM), 1.2), 25, 260)
     stick = transient(master(STICK), .3)
     out = {cue: [] for cue, spec in CUES.items() if not spec['loop']}
-    out['ferry_horn_depart'].append(horn([(0, 3.4)], [(98, 1.), (147, .55)], 101))         # one prolonged blast
-    out['ferry_horn_arrive'].append(horn([(0, 1.), (1.45, 2.2)], [(98, 1.), (147, .55)], 102))  # a short and a long
+    out['ferry_horn_depart'].append(horn([(0, 3.4)], [(73.4, 1.), (92.5, .78), (110., .62)], 101))         # one prolonged blast
+    out['ferry_horn_arrive'].append(horn([(0, 1.), (1.45, 2.2)], [(73.4, 1.), (92.5, .78), (110., .62)], 102))  # a short and a long
     # chime: the cabin's soft two-tone 'ding-dong' (E5, C5), struck bars with their fourth and tenth partials
     bar = lambda f, decay, beat: fade_tail(ring([f, f * 4, f * 10], 2.4, [decay, .25, .06], [1., .18, .05], beat=beat) * env(n_of(2.4), .004, 1e9), .5)
     out['gondola_chime'].append(mix((bar(659.3, .9, 1.1), 1.), (at(bar(523.3, 1., .9), .48), .9)))
@@ -337,21 +374,51 @@ def one_shots(sonniss):
 # Peak (linear) each cue is written at: the transport bank sits inside the bike's and the skateboard's level range
 # (games/yorimichi/tests/test_transport_audio.py checks it); the game balances them further with its own gains.
 PEAKS = {
-    'ferry_engine': .5, 'ferry_thruster': .45, 'ferry_wash': .45, 'ferry_moorings': .45,
+    'ferry_engine_idle': .5, 'ferry_engine': .5, 'ferry_thruster': .45, 'ferry_wash': .45, 'ferry_moorings': .45,
     'gondola_station': .45, 'gondola_cabin': .4, 'zeppelin_engine_idle': .5, 'zeppelin_engine': .5, 'zeppelin_envelope': .4,
-    'ferry_horn_depart': .38, 'ferry_horn_arrive': .38, 'ferry_brow_open': .8, 'ferry_brow_close': .7, 'ferry_fender': .75,
+    'ferry_horn_depart': .72, 'ferry_horn_arrive': .72, 'ferry_brow_open': .8, 'ferry_brow_close': .7, 'ferry_fender': .75,
     'gondola_sheave': .6, 'gondola_grip_attach': .7, 'gondola_grip_release': .6, 'gondola_door_open': .45,
     'gondola_door_close': .6, 'gondola_chime': .45, 'zeppelin_gate_open': .55, 'zeppelin_gate_close': .65,
     'zeppelin_moor': .72, 'zeppelin_bell': .6,
 }
 
 
+def demo_mix():
+    """20 s ferry audio showcase: idle -> depart horn -> equal-power spool into cruise + wash -> arrive horn -> idle."""
+    lps = {k: finish(k, v) for k, v in loops().items() if k in ('ferry_engine_idle', 'ferry_engine', 'ferry_wash')}
+    shots = one_shots(None)
+    h_dep = finish('ferry_horn_depart', shots['ferry_horn_depart'][0])
+    h_arr = finish('ferry_horn_arrive', shots['ferry_horn_arrive'][0])
+    n = n_of(20.)
+    t = np.arange(n) / SR
+    # Spool profile: 0 on [0, 3.5], smooth rise 3.5..6.5, 1.0 on [6.5, 13.0], smooth fall 13.0..16.0, 0 on [16.0, 20.0]
+    up = np.clip((t - 3.5) / 3.0, 0., 1.)
+    dn = np.clip((t - 13.0) / 3.0, 0., 1.)
+    spool = (3 * up ** 2 - 2 * up ** 3) - (3 * dn ** 2 - 2 * dn ** 3)
+    idle_rep = np.tile(lps['ferry_engine_idle'], int(np.ceil(n / len(lps['ferry_engine_idle']))))[:n]
+    cruise_rep = np.tile(lps['ferry_engine'], int(np.ceil(n / len(lps['ferry_engine']))))[:n]
+    wash_rep = np.tile(lps['ferry_wash'], int(np.ceil(n / len(lps['ferry_wash']))))[:n]
+    out = (0.65 * np.cos(spool * np.pi / 2) * idle_rep +
+           0.85 * np.sin(spool * np.pi / 2) * cruise_rep +
+           0.75 * (spool ** 1.2) * wash_rep)
+    s_dep = n_of(1.5)
+    out[s_dep:s_dep + len(h_dep)] += 0.85 * h_dep[:n - s_dep]
+    s_arr = n_of(11.5)
+    out[s_arr:s_arr + len(h_arr)] += 0.85 * h_arr[:n - s_arr]
+    out = out - np.mean(out)
+    out[:480] *= np.linspace(0., 1., 480)
+    out[-960:] *= np.linspace(1., 0., 960)
+    out = out - np.mean(out)
+    return out / max(np.max(np.abs(out)), 1e-9) * 0.78
+
+
 def finish(cue, x):
     """Normalise to the cue's peak. One-shots get a 2 ms fade-in and a 20 ms fade-out; loops are left whole, since
     any fade would put a dip at the seam."""
-    x = np.asarray(x, np.float64)
+    x = np.asarray(x, np.float64) - np.mean(x)
     if not CUES[cue]['loop']:
         x = fade_tail(x); x[:96] *= np.linspace(0, 1, 96)
+        x = x - np.mean(x); x[:96] *= np.linspace(0, 1, 96); x[-96:] *= np.linspace(1, 0, 96)
     return x / max(np.max(np.abs(x)), 1e-9) * PEAKS[cue]
 
 

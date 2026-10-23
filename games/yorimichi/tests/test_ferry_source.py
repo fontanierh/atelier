@@ -95,3 +95,19 @@ else:
 assert not {'numpy','bpy','mathutils'}.intersection(sys.modules)
 """
     subprocess.run([sys.executable,'-S','-c',code,str(world),str(tmp_path)],check=True)
+
+
+def test_harbor_water_and_ferry_wake_keep_surf_and_fade_below_100_cm_s():
+    root = Path(__file__).resolve().parents[1]
+    harbor_mat = (root / 'unreal/Scripts/harbor_material.py').read_text()
+    import_ferry = (root / 'unreal/Scripts/import_ferry.py').read_text()
+    ferry_cpp = (root / 'unreal/Source/Yorimichi/FerryService.cpp').read_text()
+    # Harbor water retains waterline surf and foam inside the harbor (E -> 1).
+    assert 'harbor_foam' in harbor_mat and 'max(surf,fleck)' in harbor_mat
+    assert 'return lerp(C,inner,E);' in harbor_mat
+    # Single mesh FY_Wake and single material M_FerryWake, no Niagara, fading to zero below ~100 cm/s.
+    assert '/Game/Ferry/Materials/M_FerryWake' in import_ferry
+    assert '/Game/Ferry/Ship/FY_Wake' in import_ferry
+    assert 'smoothstep(95.0, 240.0, S)' in import_ferry
+    assert 'FMath::SmoothStep(100.f, 260.f, SpeedCmPerS)' in ferry_cpp
+    assert 'Niagara' not in import_ferry and 'Niagara' not in ferry_cpp

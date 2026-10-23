@@ -91,50 +91,50 @@ h1 { font-family: var(--display); font-weight: 400; font-size: 2rem; line-height
 </style>
 
 <div id="app">
-  <aside id="panel" aria-label="Commandes de la rame">
+  <aside id="panel" aria-label="Train controls">
     <header>
-      <h1>Train de Belmonte</h1>
-      <p class="sub">Assemblage de la rame, attelée tampon contre tampon. Les voitures en pointillé restent à construire.</p>
+      <h1>Belmonte train</h1>
+      <p class="sub">Train consist, coupled buffer to buffer. Dashed coaches are still to be built.</p>
     </header>
     <section>
-      <p class="label">Rame · <span id="len"></span></p>
-      <svg id="strip" class="strip" role="list" aria-label="Ordre des véhicules"></svg>
+      <p class="label">Consist · <span id="len"></span></p>
+      <svg id="strip" class="strip" role="list" aria-label="Vehicle order"></svg>
     </section>
     <section>
       <ul id="list" class="list"></ul>
     </section>
     <section>
-      <p class="label">Affichage</p>
+      <p class="label">Display</p>
       <div class="toggles">
-        <label><input type="checkbox" id="t-roof"> Toits retirés</label>
-        <label><input type="checkbox" id="t-doors"> Portes ouvertes</label>
-        <label><input type="checkbox" id="t-res" checked> Réservations</label>
-        <label><input type="checkbox" id="t-planned" checked> À construire</label>
+        <label><input type="checkbox" id="t-roof"> Roofs removed</label>
+        <label><input type="checkbox" id="t-doors"> Doors open</label>
+        <label><input type="checkbox" id="t-res" checked> Reservations</label>
+        <label><input type="checkbox" id="t-planned" checked> Planned</label>
       </div>
     </section>
     <section>
       <p class="label">Mode</p>
       <div class="modes">
-        <button id="m-orbit" aria-pressed="true">Vue libre</button>
-        <button id="m-adult" aria-pressed="false">À pied · adulte</button>
-        <button id="m-cairo" aria-pressed="false">À pied · Cairo</button>
+        <button id="m-orbit" aria-pressed="true">Free view</button>
+        <button id="m-adult" aria-pressed="false">On foot · adult</button>
+        <button id="m-cairo" aria-pressed="false">On foot · Cairo</button>
       </div>
     </section>
     <section>
-      <p class="label">Mobilier</p>
+      <p class="label">Furniture</p>
       <div class="stats">
-        <div class="stat"><b id="s-fit">0</b><span>modèles ajustés</span></div>
-        <div class="stat"><b id="s-res">0</b><span>emplacements réservés</span></div>
-        <div class="stat"><b id="s-seat">0</b><span>places assises</span></div>
+        <div class="stat"><b id="s-fit">0</b><span>fitted models</span></div>
+        <div class="stat"><b id="s-res">0</b><span>reserved spots</span></div>
+        <div class="stat"><b id="s-seat">0</b><span>seats</span></div>
       </div>
     </section>
-    <p class="note">Repère : x le long du train (tête vers +x), z depuis le rail, mètres. Les mêmes <code>consist.json</code> et GLB servent à l'import Unreal.</p>
+    <p class="note">Axes: x along the train (front toward +x), z up from the rail, metres. The same <code>consist.json</code> and GLBs feed the Unreal import.</p>
   </aside>
   <main id="stage">
-    <div id="loading">Chargement…</div>
-    <div id="hud">Glisser pour tourner · molette pour zoomer · cliquer un véhicule dans la liste pour s'y rendre, puis « À pied » pour y entrer</div>
+    <div id="loading">Loading…</div>
+    <div id="hud">Drag to orbit · wheel to zoom · click a vehicle in the list to go there, then On foot to enter</div>
     <div id="cross" hidden></div>
-    <div id="pad" hidden><button id="p-f" aria-label="Avancer">▲</button><button id="p-b" aria-label="Reculer">▼</button></div>
+    <div id="pad" hidden><button id="p-f" aria-label="Forward">▲</button><button id="p-b" aria-label="Back">▼</button></div>
   </main>
 </div>
 
@@ -198,7 +198,7 @@ const obstacles = [];   // world-space circles-vs-boxes for walking: [x0, x1, y0
 let loading = 0, fitted = 0, reservedCount = 0, seats = 0;
 const resMat = new THREE.MeshStandardMaterial({ color: 0xd9822b, transparent: true, opacity: .45, roughness: .8, depthWrite: false });
 const plannedMat = new THREE.MeshStandardMaterial({ color: 0x8b93a6, transparent: true, opacity: .22, roughness: .9, depthWrite: false });
-function setLoading(d) { loading += d; $('loading').textContent = loading ? `Chargement… ${loading}` : ''; }
+function setLoading(d) { loading += d; $('loading').textContent = loading ? `Loading… ${loading}` : ''; }
 
 function footprint(p) {
   const d = consist.furniture[p.asset].dimensions_m;
@@ -296,7 +296,7 @@ function updateStats() {
 updateStats();
 
 // --- panel: strip, list, toggles ----------------------------------------------------------------------
-$('len').textContent = `${consist.length_m.toFixed(0)} m, ${consist.vehicles.length} véhicules`;
+$('len').textContent = `${consist.length_m.toFixed(0)} m, ${consist.vehicles.length} vehicles`;
 const strip = $('strip');
 const W = 300, H = 46, scale = W / consist.length_m;
 strip.setAttribute('viewBox', `0 0 ${W} ${H}`);
@@ -320,8 +320,8 @@ const list = $('list');
 for (const v of consist.vehicles) {
   const li = document.createElement('li');
   const built = v.status === 'built';
-  li.innerHTML = `<button><span class="name">${v.title}<span class="pill ${built ? 'built' : 'planned'}">${built ? 'construite' : 'à construire'}</span></span>
-    <span class="meta">${v.length.toFixed(0)} m${built ? ` · ${v.seats.length} pl.` : ''}</span></button>`;
+  li.innerHTML = `<button><span class="name">${v.title}<span class="pill ${built ? 'built' : 'planned'}">${built ? 'built' : 'planned'}</span></span>
+    <span class="meta">${v.length.toFixed(0)} m${built ? ` · ${v.seats.length} seats` : ''}</span></button>`;
   li.querySelector('button').addEventListener('click', () => focusVehicle(v));
   list.appendChild(li);
 }
@@ -403,10 +403,10 @@ function setMode(m) {
       : built.reduce((best, q) => (Math.abs(q.x - controls.target.x) < Math.abs(best.x - controls.target.x) ? q : best), built[0]);
     const here = built.find((q) => { const lx = walker.x - q.x; return lx >= q.walk[0] && lx <= q.walk[1]; });
     if (here !== target || !inside(walker.x, walker.y, walker.r) || hits(walker.x, walker.y, walker.r)) spawn(target);
-    $('hud').textContent = touch ? 'Glisser pour regarder · ▲ ▼ pour avancer' : 'Cliquer pour regarder à la souris · ZQSD / WASD ou flèches · Maj pour courir · Échap pour libérer';
+    $('hud').textContent = touch ? 'Drag to look · ▲ ▼ to move' : 'Click to look with the mouse · WASD or arrows · Shift to run · Esc to release';
   } else {
     if (document.pointerLockElement) document.exitPointerLock();
-    $('hud').textContent = 'Glisser pour tourner · molette pour zoomer · cliquer un véhicule dans la liste pour s\'y rendre, puis « À pied » pour y entrer';
+    $('hud').textContent = 'Drag to orbit · wheel to zoom · click a vehicle in the list to go there, then On foot to enter';
   }
 }
 $('m-orbit').addEventListener('click', () => setMode('orbit'));

@@ -20,11 +20,11 @@ def publish_all(ctx, steps, store):
 
 
 def recipe_free_guard(monkeypatch, store):
-    def guard(ctx, operation, key):
-        assert operation == 'restore-action'
-        request = cp.read_json(ctx.out / '.state/action-requests' / (key + '.json'))
-        actions.restore_worker(ctx, None, store, key, labels=request['labels'])
-        return dict(key=key)
+    """Per-task action restores run in the build process; other transfers keep the guard."""
+    real = build_checkpoints._guard
+    def guard(ctx, operation, key=None):
+        assert operation != 'restore-action', 'action restores never spawn a guarded child'
+        return real(ctx, operation, key)
     monkeypatch.setattr(build_checkpoints, '_guard', guard)
 
 

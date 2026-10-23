@@ -46,6 +46,11 @@ FQuat ToUE(const Quat& Q)
     return FQuat(Q.z, Q.x, Q.y, Q.w);
 }
 
+Quat ToSim(const FQuat& Q)
+{
+    return Quat{float(Q.Y), float(Q.Z), float(Q.X), float(Q.W)};
+}
+
 /** The simulation's only world interface: a ray per wheel, plus the body rays the step makes for the chassis. */
 struct FCarGround final : Ground
 {
@@ -533,6 +538,11 @@ bool UDrivingComponent::Toggle()
 {
     if (bEquipped)
     {
+        if (bAutoRight && IsInverted())
+        {
+            StartRighting(true);
+            return true;
+        }
         if (GetSpeed() > 60.f)
         {
             Hint = TEXT("Stop first");
@@ -620,7 +630,10 @@ bool UDrivingComponent::Summon()
     const FVector Right = Basis.GetUnitAxis(EAxis::Y);
     const FVector Forward = Basis.GetUnitAxis(EAxis::X);
     const FVector Base = Rider->GetActorLocation();
-    const FVector Candidates[] = {Base + Right * 190.f, Base - Right * 190.f, Base - Forward * 460.f};
+    TArray<FVector> Candidates;
+    for (const FVector& Direction : {Forward, Right, -Right, -Forward})
+        for (const float Distance : {200.f, 350.f, 500.f})
+            Candidates.Add(Base + Direction * Distance);
     FVector Spot = FVector::ZeroVector;
     bool bFound = false;
     for (const FVector& Candidate : Candidates)
@@ -660,6 +673,19 @@ bool UDrivingComponent::Summon()
                                     (Spec.tires.section_width[I] * .001f) * 100.f;
     }
     Car = MakeShared<FDrivingCar>(Spec);
+    // The kart is the only host that feeds a wheel-contact plane and uses the airborne alignment assist.
+    if (Spec.kart_alignment_assist)
+    {
+        Car->Chassis.jump_config.alignment.minimum_ground_up = .55f;
+        Car->Chassis.jump_config.alignment.minimum_body_up = .3f;
+        Car->Chassis.jump_config.alignment.minimum_alignment = .5f;
+        Car->Chassis.jump_config.alignment.minimum_altitude = .02f;
+        Car->Chassis.jump_config.alignment.maximum_altitude = 1.f;
+        Car->Chassis.jump_config.alignment.maximum_speed = 30.f;
+        Car->Chassis.jump_config.alignment.correction_threshold = .1f;
+        Car->Chassis.jump_config.alignment.pitch = 1.f;
+        Car->Chassis.jump_config.alignment.roll = 1.f;
+    }
     FindGroundOffset();
     FCarGround Ground{Rider->GetWorld(), Rider, TraceChannel};
     if (!Car->Chassis.place_on_ground(Ground, float(Spot.Y) * .01f, float(Spot.X) * .01f, float(Spot.Z) * .01f + 1.f,
@@ -717,6 +743,9 @@ bool UDrivingComponent::Summon()
 
     bEquipped = true;
     bHasGround = false;
+    bRighting = false;
+    InvertedTime = 0.f;
+    RightingTime = 0.f;
     LastGround = Spot;
     MoveInput = FVector2D::ZeroVector;
     bHandbrake = false;
@@ -784,6 +813,9 @@ void UDrivingComponent::FinishDrive()
     StopAudio();
     Car.Reset();
     bEquipped = false;
+    bRighting = false;
+    InvertedTime = 0.f;
+    RightingTime = 0.f;
     Hint = TEXT("Parked");
 }
 
@@ -811,6 +843,58 @@ void UDrivingComponent::Recover()
     // No verified floor plus standing room: keep the capsule centre and let the game's fall/respawn handle it.
     FinishDrive();
     Hint = TEXT("Recovered without ground");
+}
+
+bool UDrivingComponent::IsInverted() const
+{
+    if (!Car)
+    {
+        return false;
+    }
+    return FVector::DotProduct(ToUE(Car->Chassis.orientation()).GetUpVector(), FVector::UpVector) < .3f;
+}
+
+bool UDrivingComponent::ForceInvertedForQA()
+{
+    if (!Car || !bEquipped)
+    {
+        return false;
+    }
+    const FQuat Flipped = ToUE(Car->Chassis.orientation()) * FQuat(FVector::ForwardVector, PI);
+    Car->Chassis.body.orientation = ToSim(Flipped);
+    Car->Chassis.body.position += VEC3_Y * .3f;
+    Car->Chassis.body.linear_velocity = VEC3_ZERO;
+    Car->Chassis.body.angular_velocity = VEC3_ZERO;
+    InvertedTime = 0.f;
+    bRighting = false;
+    return true;
+}
+
+void UDrivingComponent::StartRighting(bool bImmediate)
+{
+    if (!Car)
+    {
+        return;
+    }
+    RightFrom = ToUE(Car->Chassis.position());
+    RightFromQ = ToUE(Car->Chassis.orientation());
+    const FVector Ground = bHasGround ? LastGround : RightFrom - FVector(0, 0, GroundOffset);
+    const float Yaw = RightFromQ.Rotator().Yaw;
+    RightToQ = FRotator(0.f, Yaw, 0.f).Quaternion();
+    RightTo = FVector(RightFrom.X, RightFrom.Y, Ground.Z + GroundOffset);
+    Car->Chassis.body.linear_velocity = VEC3_ZERO;
+    Car->Chassis.body.angular_velocity = VEC3_ZERO;
+    InvertedTime = 0.f;
+    if (bImmediate)
+    {
+        Car->Chassis.place(ToSim(RightTo), ToSim(RightToQ));
+        bRighting = false;
+        UpdatePose(0.f);
+        Hint = TEXT("Recovered");
+        return;
+    }
+    RightingTime = 0.f;
+    bRighting = true;
 }
 
 void UDrivingComponent::UpdatePose(float DeltaSeconds)
@@ -893,6 +977,43 @@ void UDrivingComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAct
     if (!bEquipped || !Car || !Rider || !Rider->GetWorld())
     {
         return;
+    }
+    if (bRighting)
+    {
+        RightingTime += FMath::Min(DeltaTime, .1f);
+        const float T = FMath::Clamp(RightingTime / .5f, 0.f, 1.f);
+        const float Smooth = T * T * (3.f - 2.f * T);
+        FVector Position = FMath::Lerp(RightFrom, RightTo, Smooth);
+        Position.Z += 50.f * FMath::Sin(PI * T);
+        const FQuat Rotation = FQuat::Slerp(RightFromQ, RightToQ, Smooth);
+        Car->Chassis.body.position = ToSim(Position);
+        Car->Chassis.body.orientation = ToSim(Rotation);
+        Car->Chassis.body.linear_velocity = VEC3_ZERO;
+        Car->Chassis.body.angular_velocity = VEC3_ZERO;
+        UpdatePose(0.f);
+        if (T >= 1.f)
+        {
+            Car->Chassis.place(ToSim(RightTo), ToSim(RightToQ));
+            bRighting = false;
+            Hint = TEXT("Recovered");
+        }
+        return;
+    }
+    if (bAutoRight)
+    {
+        if (IsInverted() && GetSpeed() < 200.f)
+        {
+            InvertedTime += DeltaTime;
+        }
+        else
+        {
+            InvertedTime = 0.f;
+        }
+        if (InvertedTime >= 1.f)
+        {
+            StartRighting();
+            return;
+        }
     }
     InputState Input;
     Input.steer = MoveInput.X;

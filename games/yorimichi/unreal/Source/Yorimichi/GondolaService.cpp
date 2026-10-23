@@ -142,6 +142,23 @@ UStaticMeshComponent* AGondolaService::MeshPart(const FString& Name,const FStrin
     C->PrimaryComponentTick.bCanEverTick=false;Components.Add(C);if(Movable)C->RegisterComponent();return C;
 }
 
+void AGondolaService::BuildCabinSeats(const FVector& CabinSize,float CabinFloorZ,TArray<FSeat>& OutSeats)
+{
+    // Derived directly from assets/vehicles/gondola/cabin.py bench constants:
+    // Wall thickness T = 7.5 cm, bench depth SEAT_D = 40.0 cm, bench height SEAT_H = 46.0 cm.
+    // Door is on +Y_ue (-y in Blender); back bench is on -Y_ue facing +Y_ue (Yaw 90),
+    // west bench on -X_ue facing +X_ue (Yaw 0), east bench on +X_ue facing -X_ue (Yaw 180).
+    const float WallT=7.5f,BenchD=40.f,BenchH=46.f;
+    const float Xi=CabinSize.X*0.5f-WallT;
+    const float Yi=CabinSize.Y*0.5f-WallT;
+    const float SeatZ=CabinFloorZ+BenchH;
+    OutSeats.Reset();
+    OutSeats.Add({TEXT("back_left"),FVector(-28.f,-(Yi-0.5f*BenchD),SeatZ),90.f});
+    OutSeats.Add({TEXT("back_right"),FVector(28.f,-(Yi-0.5f*BenchD),SeatZ),90.f});
+    OutSeats.Add({TEXT("west"),FVector(-(Xi-0.5f*BenchD),0.f,SeatZ),0.f});
+    OutSeats.Add({TEXT("east"),FVector(Xi-0.5f*BenchD,0.f,SeatZ),180.f});
+}
+
 bool AGondolaService::Initialize(const FString& Path)
 {
     if(bReady)return true;if(bFailed)return false;bFailed=true;
@@ -167,6 +184,7 @@ bool AGondolaService::Initialize(const FString& Path)
     FloorZ=Data->GetNumberField(TEXT("floor_z_cm"));DoorCentre=Vector(Data->GetArrayField(TEXT("door_centre_cm")));
     DoorWidth=Data->GetNumberField(TEXT("door_width_cm"));DoorHeight=Data->GetNumberField(TEXT("door_height_cm"));
     const auto& Dimensions=Data->GetArrayField(TEXT("size_cm"));Size=FVector(Dimensions[0]->AsNumber(),Dimensions[1]->AsNumber(),0);
+    BuildCabinSeats(Size,FloorZ,Seats);
     for(int32 L=0;L<Lines.Num();++L)
     {
         const auto Row=Root->GetArrayField(TEXT("lines"))[L]->AsObject();
@@ -195,6 +213,7 @@ bool AGondolaService::Initialize(const FString& Path)
             C.DoorBlock->SetCollisionObjectType(ECC_Vehicle);C.DoorBlock->SetCollisionResponseToAllChannels(ECR_Block);C.DoorBlock->SetNetAddressable();
             Components.Add(C.DoorBlock);C.DoorBlock->RegisterComponent();
             C.Audio=NewObject<UGondolaAudioComponent>(this,*(Prefix+TEXT("Audio")));C.Audio->SetupAttachment(C.Body);Components.Add(C.Audio);C.Audio->RegisterComponent();
+            C.SeatTaken.Init(0,Seats.Num());
         }
     }
     bReady=true;bFailed=false;Place(ServiceTime(),true);if(HasAuthority())Publish();return true;
@@ -243,13 +262,164 @@ void AGondolaService::Place(double Time,bool First)
     }
 }
 
-void AGondolaService::UpdateRiders()
+AGondolaService::FRiderSeat& AGondolaService::SeatFor(AWandererCharacter* Character)
+{
+    for(FRiderSeat& S:SeatsByRider)if(S.Character.Get()==Character)return S;
+    FRiderSeat& S=SeatsByRider.AddDefaulted_GetRef();S.Character=Character;return S;
+}
+const AGondolaService::FRiderSeat* AGondolaService::FindSeat(const AWandererCharacter* Character)const
+{
+    for(const FRiderSeat& S:SeatsByRider)if(S.Character.Get()==Character)return &S;
+    return nullptr;
+}
+int32 AGondolaService::NearestFreeSeat(int32 CabinIndex,const FVector& WorldFeet)const
+{
+    if(!Cabins.IsValidIndex(CabinIndex))return INDEX_NONE;
+    const FCabin& Cabin=Cabins[CabinIndex];
+    const FTransform& T=Cabin.Body->GetComponentTransform();
+    int32 Best=INDEX_NONE;double BestDist=DBL_MAX;
+    for(int32 I=0;I<Seats.Num();++I)
+    {
+        if(Cabin.SeatTaken.IsValidIndex(I)&&Cabin.SeatTaken[I])continue;
+        const double D=FVector::Dist2D(T.TransformPosition(Seats[I].Location),WorldFeet);
+        if(D<BestDist){BestDist=D;Best=I;}
+    }
+    return Best;
+}
+void AGondolaService::SitDown(FTransportRider& R,FRiderSeat& S,int32 CabinIndex,int32 SeatIndex)
+{
+    AWandererCharacter* C=R.Character.Get();
+    if(!C||!Cabins.IsValidIndex(CabinIndex)||!Seats.IsValidIndex(SeatIndex))return;
+    if(S.Seat!=INDEX_NONE&&Cabins.IsValidIndex(S.Cabin)&&Cabins[S.Cabin].SeatTaken.IsValidIndex(S.Seat))
+        Cabins[S.Cabin].SeatTaken[S.Seat]=0;
+    FCabin& Cabin=Cabins[CabinIndex];
+    if(Cabin.SeatTaken.IsValidIndex(SeatIndex))Cabin.SeatTaken[SeatIndex]=1;
+    R.Vehicle=CabinIndex;
+    FTransportRiders::SetAboard(R,true,false,ETransportVehicle::Gondola);
+    S.Cabin=CabinIndex;S.Seat=SeatIndex;S.Seated=0.f;S.bSailed=false;S.bManualStand=false;
+    C->bTrainDriving=true;C->bGondolaSeated=true;
+    auto* M=C->GetCharacterMovement();
+    C->MoveIntent=FVector2D::ZeroVector;C->bJog=C->bWalk=C->bSprintHeld=false;
+    M->StopMovementImmediately();M->ClearAccumulatedForces();M->SetMovementMode(MOVE_None);
+    C->SetActorEnableCollision(false);
+    const FTransform& T=Cabin.Body->GetComponentTransform();
+    const FSeat& Seat=Seats[SeatIndex];
+    const float Half=C->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+    const float SeatYaw=float(T.Rotator().Yaw)+Seat.Yaw;
+    C->SetActorLocationAndRotation(T.TransformPosition(Seat.Location)+FVector(0.f,0.f,Half-12.f),
+        FRotator(0.f,SeatYaw,0.f),false,nullptr,ETeleportType::TeleportPhysics);
+    S.SeatedAt=C->GetActorLocation();
+    if(C->IsLocallyControlled()&&C->Controller)
+        C->Controller->SetControlRotation(FRotator(0.f,SeatYaw,0.f));
+    C->SetAction(TEXT("SitDown"),false,.12f,true);
+    UE_LOG(LogTemp,Display,TEXT("GONDOLA RIDER %s sat cabin=%d seat=%s"),*C->GetName(),CabinIndex,*Seat.Id);
+}
+void AGondolaService::StandUp(FTransportRider& R,FRiderSeat& S)
+{
+    AWandererCharacter* C=R.Character.Get();
+    if(!C||S.Seat==INDEX_NONE)return;
+    const int32 CabinIndex=S.Cabin;
+    const int32 SeatIndex=S.Seat;
+    if(Cabins.IsValidIndex(CabinIndex)&&Cabins[CabinIndex].SeatTaken.IsValidIndex(SeatIndex))
+        Cabins[CabinIndex].SeatTaken[SeatIndex]=0;
+    S.Seat=INDEX_NONE;S.Seated=0.f;S.bSailed=false;
+    C->bGondolaSeated=false;C->bTrainDriving=false;
+    if(Cabins.IsValidIndex(CabinIndex))
+    {
+        const FCabin& Cabin=Cabins[CabinIndex];
+        const FTransform& T=Cabin.Body->GetComponentTransform();
+        const float Half=C->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+        const FVector StandLocal(0.f,0.f,FloorZ+Half+2.f);
+        const float DoorYaw=float(T.Rotator().Yaw)+90.f;
+        C->SetActorLocationAndRotation(T.TransformPosition(StandLocal),FRotator(0.f,DoorYaw,0.f),false,nullptr,ETeleportType::TeleportPhysics);
+        C->SetActorEnableCollision(true);
+        auto* M=C->GetCharacterMovement();
+        M->SetMovementMode(MOVE_Walking);M->bForceNextFloorCheck=true;
+        C->SetBase(Cabin.Body);
+    }
+    else
+    {
+        C->SetActorEnableCollision(true);
+        C->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+    }
+    C->SetAction(NAME_None,false,.2f);
+    UE_LOG(LogTemp,Display,TEXT("GONDOLA RIDER %s stood cabin=%d seat=%s"),*C->GetName(),CabinIndex,
+        Seats.IsValidIndex(SeatIndex)?*Seats[SeatIndex].Id:TEXT("-"));
+}
+bool AGondolaService::SitPlayer(AWandererCharacter* Character,int32 PreferredSeat)
+{
+    if(!Character)return false;
+    auto& R=FTransportRiders::Find(Riders,Character);
+    auto& S=SeatFor(Character);
+    if(!R.bAboard||!Cabins.IsValidIndex(R.Vehicle))return false;
+    const FVector Feet=Character->GetActorLocation()-FVector(0,0,Character->GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+    const int32 SeatIndex=Seats.IsValidIndex(PreferredSeat)?PreferredSeat:NearestFreeSeat(R.Vehicle,Feet);
+    if(SeatIndex==INDEX_NONE)return false;
+    SitDown(R,S,R.Vehicle,SeatIndex);
+    if(HasAuthority())Publish();
+    return true;
+}
+bool AGondolaService::StandPlayer(AWandererCharacter* Character)
+{
+    if(!Character)return false;
+    auto& R=FTransportRiders::Find(Riders,Character);
+    auto& S=SeatFor(Character);
+    if(S.Seat==INDEX_NONE)return false;
+    S.bManualStand=true;
+    StandUp(R,S);
+    if(HasAuthority())Publish();
+    return true;
+}
+bool AGondolaService::TryInteract(AWandererCharacter* Character)
+{
+    auto* Service=Find(Character);
+    if(!Service||!Character)return false;
+    const FRiderSeat* S=Service->FindSeat(Character);
+    if(S&&S->Seat!=INDEX_NONE)return Service->StandPlayer(Character);
+    return Service->SitPlayer(Character);
+}
+void AGondolaService::UpdateRiders(float Dt)
 {
     bool Changed=Riders.RemoveAll([](const FTransportRider& R){return !R.Character.IsValid();})>0;
+    SeatsByRider.RemoveAll([](const FRiderSeat& S){return !S.Character.IsValid();});
     for(TActorIterator<AWandererCharacter> It(GetWorld());It;++It)
     {
         auto* C=*It;if(C->IsNpc())continue;
         auto& R=FTransportRiders::Find(Riders,C);FTransportRiders::OrderTick(*this,R);
+        auto& S=SeatFor(C);
+        if(S.Seat!=INDEX_NONE&&Cabins.IsValidIndex(S.Cabin)&&Seats.IsValidIndex(S.Seat))
+        {
+            const FCabin& Cabin=Cabins[S.Cabin];
+            if(S.Seated>0.f&&(C->IsLocallyControlled()||HasAuthority())&&FVector::Dist(C->GetActorLocation(),S.SeatedAt)>300.)
+            {
+                StandUp(R,S);
+                FTransportRiders::SetAboard(R,false,false,ETransportVehicle::Gondola);
+                R.Vehicle=INDEX_NONE;Changed=true;continue;
+            }
+            S.bSailed|=Cabin.Pose.Speed>0.5;
+            if((S.bSailed&&Cabin.Pose.Stop!=INDEX_NONE&&Cabin.Pose.Door>0.85f)||
+               (!C->MoveIntent.IsNearlyZero()&&Cabin.Pose.Stop!=INDEX_NONE&&Cabin.Pose.Door>0.5f&&S.Seated>0.5f))
+            {
+                S.bManualStand=true;
+                StandUp(R,S);Changed=true;
+            }
+            else
+            {
+                const FSeat& Seat=Seats[S.Seat];
+                const FTransform& T=Cabin.Body->GetComponentTransform();
+                const float Half=C->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+                const double Turn=FRotator::NormalizeAxis(T.Rotator().Yaw-Cabin.Previous.Rotator().Yaw);
+                C->SetActorLocationAndRotation(T.TransformPosition(Seat.Location)+FVector(0.f,0.f,Half-12.f),
+                    FRotator(0.f,float(T.Rotator().Yaw)+Seat.Yaw,0.f),false,nullptr,ETeleportType::TeleportPhysics);
+                S.SeatedAt=C->GetActorLocation();
+                C->GetCharacterMovement()->Velocity=FVector::ZeroVector;
+                if(C->IsLocallyControlled()&&C->Controller&&!FMath::IsNearlyZero(Turn))
+                    C->Controller->SetControlRotation(C->Controller->GetControlRotation()+FRotator(0.,Turn,0.));
+                S.Seated+=Dt;
+                if(S.Seated>1.1f)C->SetAction(TEXT("SitIdle"),true,.2f);
+                continue;
+            }
+        }
         if(!C->IsPlayerControlled()||!(C->IsLocallyControlled()||C->HasAuthority()))continue;
         int32 Vehicle=INDEX_NONE;
         const FVector Feet=C->GetActorLocation()-FVector(0,0,C->GetCapsuleComponent()->GetScaledCapsuleHalfHeight()-3.);
@@ -267,6 +437,20 @@ void AGondolaService::UpdateRiders()
         if(Vehicle!=INDEX_NONE)FTransportRiders::Carry(R,*this,Cabins[Vehicle].Body,Cabins[Vehicle].Previous,true);
         Changed|=R.bAboard!=(Vehicle!=INDEX_NONE)||(R.bAboard&&R.Vehicle!=Vehicle);
         R.Vehicle=Vehicle;FTransportRiders::SetAboard(R,Vehicle!=INDEX_NONE,false,ETransportVehicle::Gondola);
+        if(Vehicle==INDEX_NONE)S.bManualStand=false;
+        else if(S.Seat==INDEX_NONE&&!S.bManualStand)
+        {
+            const FCabin& Cabin=Cabins[Vehicle];
+            const FVector Local=Cabin.Body->GetComponentTransform().InverseTransformPosition(Feet);
+            const bool bInsideCore=FMath::Abs(Local.X)<=55.f&&Local.Y<=35.f;
+            const bool bStoppedWalking=C->MoveIntent.IsNearlyZero()&&C->GetVelocity().Size2D()<15.f;
+            const bool bDeparting=Cabin.Pose.Stop==INDEX_NONE||Cabin.Pose.Door<0.95f;
+            if((bInsideCore&&bStoppedWalking)||bDeparting)
+            {
+                const int32 SeatIndex=NearestFreeSeat(Vehicle,Feet);
+                if(SeatIndex!=INDEX_NONE){SitDown(R,S,Vehicle,SeatIndex);Changed=true;}
+            }
+        }
     }
     if(Changed&&HasAuthority())Publish();
 }
@@ -279,7 +463,10 @@ void AGondolaService::Publish()
     NetworkState.Passengers.Reset();
     for(const auto& R:Riders)
         if(auto* C=R.Character.Get();C&&R.bAboard&&Cabins.IsValidIndex(R.Vehicle))
-        {auto& P=NetworkState.Passengers.AddDefaulted_GetRef();P.Rider=C;P.Cabin=R.Vehicle;}
+        {
+            auto& P=NetworkState.Passengers.AddDefaulted_GetRef();P.Rider=C;P.Cabin=R.Vehicle;
+            if(const FRiderSeat* S=FindSeat(C))P.Seat=int16(S->Seat);
+        }
     ForceNetUpdate();
 }
 void AGondolaService::ApplyRemote()
@@ -287,6 +474,14 @@ void AGondolaService::ApplyRemote()
     if(!NetworkState.Serial||!bReady)return;
     TArray<FTransportMembership> Members;for(const auto& P:NetworkState.Passengers)Members.Add({P.Rider.Get(),P.Cabin});
     FTransportRiders::ApplyRemote(*this,Riders,Members,Cabins.Num(),ETransportVehicle::Gondola);
+    for(const auto& P:NetworkState.Passengers)
+        if(AWandererCharacter* C=P.Rider.Get())
+        {
+            auto& R=FTransportRiders::Find(Riders,C);
+            auto& S=SeatFor(C);
+            if(P.Seat!=INDEX_NONE&&S.Seat!=P.Seat)SitDown(R,S,P.Cabin,P.Seat);
+            else if(P.Seat==INDEX_NONE&&S.Seat!=INDEX_NONE)StandUp(R,S);
+        }
 }
 void AGondolaService::OnRep_NetworkState()
 {
@@ -304,11 +499,15 @@ void AGondolaService::Tick(float Dt)
         if(Scale!=NetworkState.Scale||(Scale!=1.f&&PublishElapsed>=.2)){Publish();PublishElapsed=0.;}
     }
     else ApplyRemote();
-    Place(ServiceTime());UpdateRiders();
+    Place(ServiceTime());UpdateRiders(Dt);
 }
 void AGondolaService::EndPlay(const EEndPlayReason::Type Reason)
 {
-    for(auto& R:Riders)FTransportRiders::SetAboard(R,false,false,ETransportVehicle::Gondola);
+    for(auto& R:Riders)
+    {
+        if(AWandererCharacter* C=R.Character.Get())if(FRiderSeat* S= const_cast<FRiderSeat*>(FindSeat(C)))if(S->Seat!=INDEX_NONE)StandUp(R,*S);
+        FTransportRiders::SetAboard(R,false,false,ETransportVehicle::Gondola);
+    }
     Super::EndPlay(Reason);
 }
 
@@ -345,6 +544,25 @@ FString AGondolaService::StateJson()const
     for(const auto& R:Riders)if(R.Character.IsValid()&&R.bAboard)
     {
         auto Row=MakeShared<FJsonObject>();Row->SetStringField(TEXT("name"),R.Character->GetName());Row->SetNumberField(TEXT("cabin"),R.Vehicle);
+        const FRiderSeat* S=FindSeat(R.Character.Get());
+        const int32 SeatIdx=S?S->Seat:INDEX_NONE;
+        Row->SetBoolField(TEXT("seated"),SeatIdx!=INDEX_NONE);
+        Row->SetNumberField(TEXT("seat"),SeatIdx);
+        Row->SetStringField(TEXT("seat_id"),Seats.IsValidIndex(SeatIdx)?Seats[SeatIdx].Id:TEXT(""));
+        Row->SetBoolField(TEXT("first_person"),R.Character->IsTrainFirstPerson());
+        Row->SetBoolField(TEXT("head_hidden"),R.Character->HidesTrainBody());
+        Row->SetNumberField(TEXT("camera_blend"),R.Character->GetTrainViewBlend());
+        if(Cabins.IsValidIndex(R.Vehicle))
+        {
+            const FVector Local=Cabins[R.Vehicle].Body->GetComponentTransform().InverseTransformPosition(R.Character->GetActorLocation());
+            const float Radius=SeatIdx!=INDEX_NONE?18.f:22.f;
+            const float Xi=Size.X*0.5f-7.5f,Yi=Size.Y*0.5f-7.5f;
+            const float ClearX=Xi-FMath::Abs(float(Local.X))-Radius;
+            const float ClearY=Yi-FMath::Abs(float(Local.Y))-Radius;
+            const float ClearZ=(FloorZ+212.f)-(float(Local.Z)+55.f);
+            Row->SetNumberField(TEXT("wall_clearance_cm"),FMath::Min3(ClearX,ClearY,ClearZ));
+            Row->SetBoolField(TEXT("no_clip"),FMath::Min3(ClearX,ClearY,ClearZ)>0.f);
+        }
         const auto* Base=R.Character->GetMovementBase();
         Row->SetStringField(TEXT("movement_base"),Base?Base->GetName():TEXT(""));
         Row->SetBoolField(TEXT("base_is_cabin"),Cabins.IsValidIndex(R.Vehicle)&&Base==Cabins[R.Vehicle].Body);
@@ -363,6 +581,11 @@ FVector AGondolaService::Point(const FString& What)const
         const auto* S=Stations.FindByPredicate([&](const FStation& R){return R.Id==Parts[1];});if(!S)return FVector::ZeroVector;
         int32 I=FCString::Atoi(*Parts[2]);if(I<0)I+=S->Walk.Num();return S->Walk.IsValidIndex(I)?S->Walk[I]:FVector::ZeroVector;
     }
+    if(Parts.Num()==3&&Parts[0]==TEXT("seat"))
+    {
+        const int32 C=FCString::Atoi(*Parts[1]),I=FCString::Atoi(*Parts[2]);
+        return Cabins.IsValidIndex(C)&&Seats.IsValidIndex(I)?Cabins[C].Body->GetComponentTransform().TransformPosition(Seats[I].Location):FVector::ZeroVector;
+    }
     if(Parts.Num()==2&&Parts[0]==TEXT("cabin"))
     {const int32 I=FCString::Atoi(*Parts[1]);return Cabins.IsValidIndex(I)?Cabins[I].Body->GetComponentTransform().TransformPosition(FVector(0,0,FloorZ)):FVector::ZeroVector;}
     return FVector::ZeroVector;
@@ -370,3 +593,5 @@ FVector AGondolaService::Point(const FString& What)const
 FString UGondolaLive::GondolaState(){auto* S=AGondolaService::Find(ULiveLibrary::GameWorld());return S?S->StateJson():TEXT("{}");}
 bool UGondolaLive::GondolaGo(const FString& Station){auto* S=AGondolaService::Find(ULiveLibrary::GameWorld());return S&&S->GoTo(Station);}
 FVector UGondolaLive::GondolaPoint(const FString& What){auto* S=AGondolaService::Find(ULiveLibrary::GameWorld());return S?S->Point(What):FVector::ZeroVector;}
+bool UGondolaLive::GondolaSit(int32 SeatIndex){auto* W=ULiveLibrary::GameWorld();auto* S=AGondolaService::Find(W);auto* PC=W?W->GetFirstPlayerController():nullptr;return S&&PC&&S->SitPlayer(Cast<AWandererCharacter>(PC->GetPawn()),SeatIndex);}
+bool UGondolaLive::GondolaStand(){auto* W=ULiveLibrary::GameWorld();auto* S=AGondolaService::Find(W);auto* PC=W?W->GetFirstPlayerController():nullptr;return S&&PC&&S->StandPlayer(Cast<AWandererCharacter>(PC->GetPawn()));}

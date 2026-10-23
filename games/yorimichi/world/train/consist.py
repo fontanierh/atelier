@@ -28,11 +28,11 @@ VIEWER = Path(__file__).with_name('viewer.html')
 VEHICLES = [
     dict(id='locomotive', title='Locomotive 4-6-2', length=L.LOCO_LENGTH, status='built', concept='locomotive/locomotive-tender--locomotive-profile.png'),
     dict(id='tender', title='Tender', length=L.TENDER_LENGTH, status='built', concept='locomotive/locomotive-tender--tender-profile-v2.png'),
-    dict(id='baggage-van', title='Fourgon à bagages', length=L.LENGTH_OVER_BUFFERS, status='built'),
-    dict(id='restaurant', title='Voiture restaurant', length=L.LENGTH_OVER_BUFFERS, status='built'),
-    dict(id='first-class', title='Première classe', length=L.LENGTH_OVER_BUFFERS, status='built'),
-    dict(id='second-class', title='Deuxième classe et cantine', length=L.LENGTH_OVER_BUFFERS, status='built'),
-    dict(id='brake-van', title='Fourgon-frein de queue', length=L.BRAKE_LENGTH, status='built'),
+    dict(id='baggage-van', title='Baggage van', length=L.LENGTH_OVER_BUFFERS, status='built'),
+    dict(id='restaurant', title='Dining car', length=L.LENGTH_OVER_BUFFERS, status='built'),
+    dict(id='first-class', title='First class', length=L.LENGTH_OVER_BUFFERS, status='built'),
+    dict(id='second-class', title='Second class and canteen', length=L.LENGTH_OVER_BUFFERS, status='built'),
+    dict(id='brake-van', title='Rear brake van', length=L.BRAKE_LENGTH, status='built'),
 ]
 
 

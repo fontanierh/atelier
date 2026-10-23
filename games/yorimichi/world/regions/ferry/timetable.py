@@ -16,9 +16,12 @@ import math
 
 SPEED = {
     'sea': 15.0,          # m/s cruising (about 29 knots): the sea crossing takes about four minutes
-    'harbour': 6.0,       # m/s on the harbours' ahead legs
+    'harbour': 2.0,       # m/s inside a harbour (turns and approach/departure legs)
+    'astern': 1.2,        # m/s on curved astern backing legs (<= 1.5 m/s rule)
     'accel': 0.25,        # m/s^2 gathering way and stopping
     'lateral': 0.65,      # m/s^2 on an arc: the speed limit there is sqrt(lateral * radius)
+    'max_yaw': 3.0,       # deg/s maximum yaw rate anywhere
+    'max_crab': 0.28,     # m/s maximum lateral (crab) drift speed along any move
     'crab': 0.9, 'crab_accel': 0.15,     # thrusters, sideways onto and off the berth
     'glide': 1.5, 'glide_accel': 0.15,   # engines and thrusters, heading held
     'pivot': 4.5, 'pivot_accel': 0.9,    # deg/s and deg/s^2, turning on the spot
@@ -27,6 +30,7 @@ DWELL = 120.0             # seconds standing at each berth, brow down for most o
 BROW = {'settle': 4.0,    # after the ship comes alongside, before the brow starts down
         'travel': 8.0,    # seconds to lower or raise it
         'before': 22.0}   # it starts up this long before the ship moves off
+GEAR_STOP = 2.0           # seconds at a full stop (zero speed, zero yaw) between astern and ahead
 DT = 0.5                  # seconds between samples
 STEP = 0.25               # metres (or degrees) of the speed profile's grid
 PHASES = ('berthed', 'departing', 'cruise', 'approach')
@@ -40,6 +44,10 @@ def _profile(length, caps, accel):
     starts = [c[0] for c in caps]
     cap = [caps[max(0, bisect.bisect_right(starts, x) - 1)][1] for x in s]
     v = list(cap)
+    for i in range(n):
+        seg_cap = caps[max(0, bisect.bisect_right(starts, 0.5 * (s[i] + s[i + 1])) - 1)][1]
+        v[i] = min(v[i], seg_cap)
+        v[i + 1] = min(v[i + 1], seg_cap)
     v[0] = v[-1] = 0.0
     ds = length / n
     for i in range(1, n + 1):
@@ -59,17 +67,43 @@ class Leg:
         self.move, self.kind, self.phase, self.berth = move, move[0], phase, berth
         self.x, self.y, self.h = pose
         k = self.kind
-        self.length = (abs(move[1]) if k in ('ahead', 'crab', 'berth', 'pivot') else
-                       abs(move[1] * math.radians(move[2])) if k == 'arc' else math.hypot(move[1], move[2]) if k == 'move' else 0.0)
+        if k in ('ahead', 'crab', 'berth'):
+            if k in ('crab', 'berth') and len(move) == 2:
+                self.ds, self.dl = 0.0, float(move[1])
+                self.length = abs(self.dl)
+                self.s_dir = 0
+            else:
+                self.ds = float(move[1])
+                self.dl = float(move[2]) if len(move) > 2 else 0.0
+                self.length = abs(self.ds)
+                self.s_dir = 1 if self.ds >= 0 else -1
+        elif k == 'arc':
+            self.ds = float(move[1]) * abs(math.radians(move[2]))
+            self.dl = float(move[3]) if len(move) > 3 else 0.0
+            self.length = abs(self.ds)
+            self.s_dir = 1 if move[1] >= 0 else -1
+        elif k == 'pivot':
+            self.ds, self.dl, self.length, self.s_dir = 0.0, 0.0, abs(move[1]), 0
+        elif k == 'move':
+            self.ds, self.dl, self.length, self.s_dir = 0.0, 0.0, math.hypot(move[1], move[2]), 0
+        else:
+            self.ds = self.dl = self.length = 0.0
+            self.s_dir = 0
         self.end = self.at(self.length)[:3]
 
     def at(self, a):
         """(x, y, heading deg, unit velocity x, y per unit `along`, heading rate deg per unit `along`)."""
         x, y, h, m, k = self.x, self.y, math.radians(self.h), self.move, self.kind
         if k in ('ahead', 'crab', 'berth'):
-            sgn = 1.0 if m[1] >= 0 else -1.0
-            ux, uy = (math.cos(h), math.sin(h)) if k == 'ahead' else (-math.sin(h), math.cos(h))
-            return x + ux * sgn * a, y + uy * sgn * a, self.h, ux * sgn, uy * sgn, 0.0
+            if self.s_dir == 0:
+                sgn = 1.0 if self.dl >= 0 else -1.0
+                ux, uy = -math.sin(h), math.cos(h)
+                return x + ux * sgn * a, y + uy * sgn * a, self.h, ux * sgn, uy * sgn, 0.0
+            sgn = float(self.s_dir)
+            dr = self.dl / max(self.length, 1e-9)
+            ch, sh = math.cos(h), math.sin(h)
+            ux, uy = sgn * ch - dr * sh, sgn * sh + dr * ch
+            return x + ux * a, y + uy * a, self.h, ux, uy, 0.0
         if k == 'move':
             L = max(self.length, 1e-9)
             return x + m[1] * a / L, y + m[2] * a / L, self.h, m[1] / L, m[2] / L, 0.0
@@ -77,11 +111,18 @@ class Leg:
             sgn = 1.0 if m[1] >= 0 else -1.0
             return x, y, self.h + sgn * a, 0.0, 0.0, sgn
         if k == 'arc':
-            R, sgn = m[1], (1.0 if m[2] > 0 else -1.0)
-            cx, cy = x - sgn * R * math.sin(h), y + sgn * R * math.cos(h)
-            hk = h + sgn * a / R
-            return (cx + sgn * R * math.sin(hk), cy - sgn * R * math.cos(hk), math.degrees(hk), math.cos(hk), math.sin(hk),
-                    sgn * math.degrees(1.0 / R))
+            R, deg = float(m[1]), float(m[2])
+            sgn_v = 1.0 if R >= 0 else -1.0
+            L = max(self.length, 1e-9)
+            curv = math.radians(deg) / L
+            dr = self.dl / L
+            hk = h + curv * a
+            ic = (math.sin(hk) - math.sin(h)) / curv
+            is_ = (math.cos(h) - math.cos(hk)) / curv
+            ux = sgn_v * math.cos(hk) - dr * math.sin(hk)
+            uy = sgn_v * math.sin(hk) + dr * math.cos(hk)
+            return (x + sgn_v * ic - dr * is_, y + sgn_v * is_ + dr * ic, math.degrees(hk), ux, uy,
+                    math.degrees(curv))
         raise ValueError(k)
 
     def cap(self, sea):
@@ -89,13 +130,17 @@ class Leg:
         k = self.kind
         if k == 'pivot':
             return SPEED['pivot'], SPEED['pivot_accel']
-        if k in ('crab', 'berth'):
+        if k in ('crab', 'berth') and self.s_dir == 0:
             return SPEED['crab'], SPEED['crab_accel']
         if k == 'move':
             return SPEED['glide'], SPEED['glide_accel']
-        limit = SPEED['sea'] if sea else SPEED['harbour']
+        limit = SPEED['sea'] if sea else (SPEED['astern'] if self.s_dir < 0 else SPEED['harbour'])
+        if abs(self.dl) > 1e-9:
+            dr = abs(self.dl) / max(self.length, 1e-9)
+            limit = min(limit, SPEED['max_crab'] / dr)
         if k == 'arc':
-            limit = min(limit, math.sqrt(SPEED['lateral'] * abs(self.move[1])))
+            R = abs(self.move[1])
+            limit = min(limit, math.sqrt(SPEED['lateral'] * R), math.radians(SPEED['max_yaw']) * R)
         return limit, SPEED['accel']
 
 
@@ -136,12 +181,15 @@ class Motion:
         limit = leg.cap(leg.phase == 'cruise')[0]
         if leg.kind == 'pivot':
             throttle, thruster = (0.35 if v > 1e-3 else 0.0), min(1.0, v / SPEED['pivot'])
-        elif leg.kind in ('crab', 'berth'):
+        elif leg.kind in ('crab', 'berth') and leg.s_dir == 0:
             throttle, thruster = (0.2 if v > 1e-3 else 0.0), min(1.0, v / SPEED['crab'])
         elif leg.kind == 'move':
             throttle, thruster = (0.35 if v > 1e-3 else 0.0), min(1.0, 0.6 * v / SPEED['glide'])
         else:
+            v_lat = abs(leg.dl) / max(leg.length, 1e-9) * v
             throttle, thruster = (max(0.35, v / SPEED['sea']) if v > 1e-3 else 0.0), 0.0
+            if v_lat > 1e-3:
+                thruster = min(1.0, v_lat / SPEED['max_crab'])
         return {'x': x, 'y': y, 'h': h, 'vx': ux * v, 'vy': uy * v, 'w': w * v, 'speed': v if leg.kind != 'pivot' else 0.0,
                 'throttle': throttle, 'thruster': thruster, 'phase': leg.phase, 'berth': None, 'limit': limit, 'kind': leg.kind}
 
@@ -169,6 +217,21 @@ class Dwell:
         return [(0.0, 'berthed')]
 
 
+class Pause:
+    """Brief full stop in gear neutral between an astern run and an ahead run (zero speed, zero yaw rate)."""
+
+    def __init__(self, pose, seconds, phase):
+        self.pose, self.duration, self.phase = pose, seconds, phase
+
+    def state(self, t):
+        x, y, h = self.pose
+        return {'x': x, 'y': y, 'h': h, 'vx': 0.0, 'vy': 0.0, 'w': 0.0, 'speed': 0.0, 'throttle': 0.0, 'thruster': 0.0,
+                'phase': self.phase, 'berth': None, 'limit': 0.0, 'kind': 'stop'}
+
+    def phase_starts(self):
+        return [(0.0, self.phase)]
+
+
 def voyage(start, moves):
     """Legs of a voyage: [(phase, moves)] sailed in turn from pose start. Returns (motions, end pose)."""
     legs, pose = [], start
@@ -180,11 +243,17 @@ def voyage(start, moves):
             pose = leg.end
     motions, run = [], []
     for leg in legs:
-        if leg.kind in ('ahead', 'arc'):
+        if leg.s_dir != 0 and (not run or run[-1].s_dir == leg.s_dir):
             run.append(leg); continue
         if run:
+            prev_dir = run[-1].s_dir
             motions.append(Motion(run)); run = []
-        motions.append(Motion([leg]))
+            if leg.s_dir != 0 and leg.s_dir != prev_dir:
+                motions.append(Pause((leg.x, leg.y, leg.h), GEAR_STOP, leg.phase))
+        if leg.s_dir != 0:
+            run.append(leg)
+        else:
+            motions.append(Motion([leg]))
     if run:
         motions.append(Motion(run))
     return motions, pose

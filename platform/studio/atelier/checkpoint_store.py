@@ -302,7 +302,13 @@ def capture(ctx, steps, store, *, echo=print, allow_seed=False, candidate_only=F
             raise CheckpointError('Build changed during checkpoint capture; nothing published')
         current_proof = {s.name: before[s.name] for s in steps if not candidate_only and s.name in before
                          and checkpoint_actions.certified(ctx, s, before[s.name]['fingerprint'], before[s.name])}
-        incremental = {name: value for name, value in before.items() if name not in current_proof}
+        # A candidate-only catalogue is never a workspace donor; native validation decides its use.
+        inventories = {s.name: before[s.name]['output_inventory'] for s in steps if s.name in before
+                       and not checkpoint_actions.verifiable(ctx, s) and checkpoint_actions.inventory_verified(ctx, s, before[s.name])}
+        unverified = set() if candidate_only else {s.name for s in steps if not checkpoint_actions.verifiable(ctx, s) and s.name not in inventories}
+        incremental = {name: value for name, value in before.items() if name not in current_proof and name not in unverified}
+        if not candidate_only:
+            files = checkpoint_actions.publishable(files, checkpoint_actions.ownership(ctx, steps, inventories))
         manifest = dict(schema=SCHEMA, game=ctx.game, context=context(ctx),
                         checkout=identity(str(paths.REPO.resolve())), files=files, stamps=current_proof, incremental_stamps=incremental,
                         historical_stamps={name: stamp for name, stamp in history.items() if name not in before},
@@ -442,7 +448,10 @@ def restore(ctx, steps, store, key, *, echo=print):
     if manifest['context'] != context(ctx):
         raise CheckpointError('Checkpoint engine/platform identity differs')
     allowed = roots(ctx)
-    saved_stamps = {**manifest['stamps'], **manifest.get('incremental_stamps', {})}
+    from .checkpoint_actions import ownership, trusted, unverified_member
+    names, inventories = trusted(ctx, steps, manifest)
+    saved_stamps = {n: v for n, v in {**manifest['stamps'], **manifest.get('incremental_stamps', {})}.items() if n in names}
+    owners = ownership(ctx, steps, inventories)
     if not set(manifest.get('steps', ())) <= {s.name for s in steps}:
         raise CheckpointError('Checkpoint task ownership changed; a new baseline is required')
     journal = ctx.out / JOURNAL
@@ -453,7 +462,10 @@ def restore(ctx, steps, store, key, *, echo=print):
     require_complete(ctx.out, game=ctx.game, checkpoint_resume=resume if existing else None)
     if existing is None and not cold(ctx):
         raise CheckpointError('Checkpoint restoration preserves existing generated work; receiver is not empty')
-    selected = _select(ctx, store, manifest, allowed, lambda *_: True)
+    # Files owned by unverifiable receiving steps are never adopted, even from older manifests.
+    selected = _select(ctx, store, manifest, allowed, lambda member, *_: not unverified_member(member, owners))
+    selected = {m: (d, e) for m, (d, e) in selected.items()
+                if not (e['kind'] == 'link' and e['target'].startswith('member:') and unverified_member(e['target'][7:], owners))}
     # Verify link targets before changing anything; never create a link into a skipped root.
     for destination, entry in selected.values():
         if entry['kind'] == 'link' and entry['target'].startswith('member:'):
@@ -515,8 +527,10 @@ def hydrate_files(ctx, store, key, *, echo=print):
     allowed = roots(ctx)
     units = [u for u in resume['units'] if u.partition('/')[0] in allowed and u.partition('/')[0] not in ('zen', 'cooked')]
     outputs = set(read_json(ctx.out / HYDRATION_REQUEST).get('outputs', ())) if (ctx.out / HYDRATION_REQUEST).is_file() else set()
+    owners = read_json(ctx.out / HYDRATION_REQUEST).get('owners', {}) if (ctx.out / HYDRATION_REQUEST).is_file() else {}
+    from .checkpoint_actions import unverified_member
     def keep(member, label, name):
-        return (any(member.startswith(u) for u in units)
+        return (any(member.startswith(u) for u in units) and not unverified_member(member, owners)
                 and (label != 'generated' or declared_member(name, outputs)))
     candidates = _select(ctx, store, manifest, allowed, keep)
     # Only absent destinations, under real local directories, are filled.

@@ -16,6 +16,7 @@
 #include "SwordTrainer.h"
 #include "LiveLibrary.h"
 #include "BelmonteTrainService.h"
+#include "CraterParkTower.h"
 #include "RacingService.h"
 #include "YorimichiLive.h"
 #include "EngineUtils.h"
@@ -234,12 +235,23 @@ void AJapanHUD::DrawHUD()
     {
         const FString TrainHint=ABelmonteTrainService::Hint(Pawn);
         if(!TrainHint.IsEmpty())Controls=TrainHint.Replace(TEXT("Use"),bController?TEXT("D-pad Down"):TEXT("E"));
+        const FString HoistHint=CraterParkTower::Hint(Pawn);
+        if(!HoistHint.IsEmpty())
+        {
+            const FString Prompt=FString::Printf(TEXT("%s   %s"),bController?TEXT("D-pad Down"):TEXT("E"),*HoistHint);
+            Controls=Prompt;
+            const float Scale=Canvas->SizeY/1080.f;
+            float W=0.f,H=0.f;Canvas->StrLen(Font,Prompt,W,H);const float S=1.3f*FMath::Max(Scale,.75f);
+            const float X=Canvas->SizeX*.5f-W*S*.5f,Y=Canvas->SizeY*.7f;
+            DrawRect(FLinearColor(0,0,0,.45f),X-14,Y-8,W*S+28,H*S+16);
+            DrawText(Prompt,FLinearColor(1.f,.9f,.74f),X,Y,Font,S);
+        }
     }
     const USkateComponent* Ride=Pawn->GetSkate();
     const bool bRide=Ride && Ride->IsRiding();
     if (Pawn->IsTrainPassenger())
     {
-        const TCHAR* View=Pawn->IsTrainFirstPerson()?TEXT("vue à la troisième personne"):TEXT("vue à la première personne");
+        const TCHAR* View=Pawn->IsTrainFirstPerson()?TEXT("third-person view"):TEXT("first-person view");
         Secondary += bController ? FString::Printf(TEXT("   %s %s"),Pad.LeftBumper,View) : FString::Printf(TEXT("   P %s"),View);
     }
     if (!Pawn->IsOnTrain() && !bRide && !bSailboat && !Pawn->IsZeppelinPassenger() && Ride && Ride->IsAvailable())
@@ -280,7 +292,7 @@ void AJapanHUD::DrawHUD()
     else if (const UDrivingComponent* Car = Pawn->GetCar(); Car && Car->IsEquipped())
     {
         Controls = bController
-            ? FString::Printf(TEXT("%s throttle   %s brake   Left stick steer   %s handbrake   Hold %s step out (stopped)      %s   %.0f km/h"),Pad.Attack,Pad.Parry,Pad.Roll,Pad.LeftBumper,*Car->GetStatus(),Car->GetSpeedKph())
+            ? FString::Printf(TEXT("%s throttle   %s brake   Left stick steer   %s handbrake   Tap %s step out (stopped)      %s   %.0f km/h"),Pad.Attack,Pad.Parry,Pad.Roll,Pad.LeftBumper,*Car->GetStatus(),Car->GetSpeedKph())
             : FString::Printf(TEXT("W throttle   S brake   A / D steer   Space handbrake   L step out (stopped)      %s   %.0f km/h"),*Car->GetStatus(),Car->GetSpeedKph());
         Secondary = bController ? FString::Printf(TEXT("Right stick look   %s map (hold: places)   %s settings"),Pad.Map,Pad.Menu)
             : TEXT("Mouse look   M map & travel   Esc settings");
@@ -291,7 +303,12 @@ void AJapanHUD::DrawHUD()
         if (Bike && Bike->IsAvailable())
             Secondary += bController ? FString::Printf(TEXT("   Hold %s bike"),Pad.Skate) : TEXT("   V bike");
         if (const UDrivingComponent* ParkedCar = Pawn->GetCar(); ParkedCar && !ParkedCar->IsEquipped())
-            Secondary += bController ? FString::Printf(TEXT("   Hold %s kart"),Pad.LeftBumper) : TEXT("   L kart");
+        {
+            Secondary += bController ? FString::Printf(TEXT("   Tap %s kart"),Pad.LeftBumper) : TEXT("   L kart");
+            const FString CarHint = ParkedCar->GetStatus();
+            if (!CarHint.IsEmpty() && CarHint != TEXT("Parked") && CarHint != TEXT("Driving"))
+                Secondary += FString::Printf(TEXT("   %s"), *CarHint);
+        }
         // Only to a character with horse clips; a shared game offers it while its host allows vehicles
         // (AWandererCharacter::RequestNetworkHorse).
         const AJapanGameState* Rules = GetWorld()->GetGameState<AJapanGameState>();

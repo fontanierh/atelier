@@ -262,6 +262,7 @@ private:
     friend class UWandererSwordComponent;
     friend class AZeppelinService;
     friend class ABelmonteTrainService;
+    friend class AGondolaService;
     friend struct FTransportRiders;
     friend class UAdventureMoveSet;
     friend class UJapanCharacterMovement;
@@ -341,11 +342,13 @@ public:
     class AZeppelinService* GetZeppelin() const;
     bool IsZeppelinPassenger() const;
     /** Inside a no-sprint volume (aboard the Belmonte train): sprint is unavailable. */
-    bool bNoSprint = false, bTrainAboard = false, bTrainDriving = false;
+    bool bNoSprint = false, bTrainAboard = false, bTrainDriving = false, bGondolaSeated = false;
     ETransportVehicle AboardVehicle = ETransportVehicle::None;
     bool IsTrainPassenger() const;
+    bool IsGondolaSeated() const { return bTrainAboard && AboardVehicle == ETransportVehicle::Gondola && bGondolaSeated; }
     bool IsTrainFirstPerson() const { return TrainView.IsFirstPerson(); }
     bool HidesTrainBody() const { return !bFixedView && !bCinematic && TrainView.HidesBody(); }
+    float GetTrainViewBlend() const { return TrainView.GetBlend(); }
     /** Standing, seated or stepping through a train door. */
     bool IsOnTrain() const { return bTrainAboard || bTrainDriving; }
     /** Refuse deploying a vehicle on the train through the same local/owner message. Stowing bypasses this gate. */

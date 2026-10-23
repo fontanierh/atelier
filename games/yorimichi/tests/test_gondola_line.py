@@ -9,20 +9,68 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'world'))
-from gondola.line import centre_profile, closed_circuit, simplify, span_height, station_frame
+from gondola.line import centre_profile, closed_circuit, simplify, span_height, station_frame, tower_saddles
 
 
-def test_shoulders_meet_the_level_sheave_trains_with_continuous_tangents():
+def test_span_is_one_parabola_with_the_authored_sag():
     length,za,zb=100.,0.,70.
-    epsilon=1e-5
     z=lambda x: float(span_height(x,length,za,zb))
     assert z(0)==za and z(length)==zb
-    assert abs((z(epsilon)-z(0))/epsilon)<1e-5
-    assert abs((z(length)-z(length-epsilon))/epsilon)<1e-5
-    for x in (40.,60.):
-        assert abs((z(x)-z(x-epsilon))/epsilon-(z(x+epsilon)-z(x))/epsilon)<1e-5
+    assert z(length/2)==pytest.approx((za+zb)/2-.035*length)
+    slopes=[(z((k+1)*length/20)-z(k*length/20))/(length/20) for k in range(20)]
+    assert all(b>a for a,b in zip(slopes,slopes[1:]))          # no mid-air inflection
+    second=[z((k+1)*length/20)-2*z(k*length/20)+z((k-1)*length/20) for k in range(1,20)]
+    assert all(v>0 for v in second)                             # concave up everywhere
+
+
+def test_tower_saddle_meets_both_spans_with_continuous_tangents():
     p=centre_profile([(0,0,False),(100,30,True),(200,60,False)])
-    assert np.all(p[(p[:,0]>=98.4)&(p[:,0]<=101.6),1]==30)
+    x=p[:,0]
+    assert np.all(np.diff(x)>1e-9)
+    eps=1e-4
+    z=lambda q: float(np.interp(q,x,p[:,1]))
+    for q in (98.4,101.6):
+        left=(z(q)-z(q-eps))/eps; right=(z(q+eps)-z(q))/eps
+        assert left==pytest.approx(right,abs=5e-3)               # tangent at both contact points
+    assert z(101.6)>z(98.4)                                      # the train climbs with the line
+    slopes=[(z(98.4+k*.4+eps)-z(98.4+k*.4-eps))/(2*eps) for k in range(9)]
+    assert max(slopes)-min(slopes)>1e-3                          # a saddle, not a level shelf
+
+
+def test_station_mouth_curve_is_short_and_tangent_to_the_span():
+    p=centre_profile([(0,13.77,False),(200,73.77,False)],station_curve=7.)
+    x,z=p[:,0],p[:,1]
+    assert x[-1]==pytest.approx(200)
+    assert z[0]==pytest.approx(13.77)
+    eps=1e-4
+    zq=lambda q: float(np.interp(q,x,z))
+    assert (zq(eps)-zq(0))/eps==pytest.approx(0,abs=1e-2)
+    assert x[x<=7.01].max()==pytest.approx(7,abs=.1)
+    L=200.;m=(73.77-13.77)/L
+    for q in (20.,50.,100.):
+        assert zq(q)==pytest.approx(13.77+m*q-4*.035*L*(q/L)*(1-q/L),abs=1e-3)
+
+
+def test_final_station_curve_can_use_twenty_metres_without_exceeding_the_span_slope():
+    supports=[(0,500.,False),(460,611.,True),(615.5,707.4,False)]
+    p=centre_profile(supports,end_station_curve=20.)
+    x,z=p[:,0],p[:,1]
+    zq=lambda q: float(np.interp(q,x,z))
+    assert z[-1]==pytest.approx(707.4)
+    assert zq(615.5-20.)==pytest.approx(float(span_height(615.5-460.-20.,155.5,611.,707.4)),abs=.2)
+    end_slope=math.atan((707.4-611.)/(615.5-460.)+4*.035)
+    peak=max(math.atan((zq(q+1e-3)-zq(q-1e-3))/2e-3) for q in np.linspace(595.5,615.5,401))
+    assert peak<=end_slope+math.radians(1)
+
+
+def test_high_deflection_tower_saddle_keeps_a_twelve_metre_bend():
+    gentle=tower_saddles([(0,0,False),(100,20,True),(200,54,False)])[1]
+    assert gentle['half']==pytest.approx(1.6)                   # <= 10 deg keeps the 3.2 m train
+    steep=tower_saddles([(0,0,False),(100,40,True),(200,60,False)])[1]
+    assert steep['half']>1.6
+    flat=min(abs(steep['m_in']),abs(steep['m_out']))
+    radius=(1+flat*flat)**1.5*2*steep['half']/abs(steep['m_out']-steep['m_in'])
+    assert radius>=12.                                          # tightest curvature at the flatter end
 
 
 @pytest.mark.parametrize('supports', [[(0,0,0),(0,1,1)],[(1,0,0),(0,0,0)],[(0,0,0),(1,float('nan'),0)]])

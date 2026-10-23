@@ -22,7 +22,7 @@ REGIONS = (
          polygon=[[-850., 430.], [3300., 430.], [3300., 1600.], [100., 1600.], [100., 1800.], [-850., 1800.]], color='#98a06c'),
     dict(key='volcanic_highlands', name='Volcanic Highlands', bounds=[-1000., 850., 3200., 3650.],
          polygon=[[100., 1600.], [3300., 1600.], [3300., 3600.], [-850., 3600.], [-850., 1800.], [100., 1800.]], color='#9baab2'),
-    dict(key='haras_valley', name='Haras Valley', bounds=[-950., 3600., 2500., 5900.],
+    dict(key='haras_valley', name='Stud Valley', bounds=[-950., 3600., 2500., 5900.],
          polygon=[[-950., 3600.], [3300., 3600.], [3300., 7100.], [-950., 7100.]], color='#83a080'),
     # The western reach west of Momiji Coast (world/regions/brinecove/region.py), stepping round the foothills' corner.
     dict(key='brinecove', name='Brinecove Reach', bounds=[-2880., -1080., -360., 600.], label=[-1600., -1000.],

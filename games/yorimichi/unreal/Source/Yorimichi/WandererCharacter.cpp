@@ -1,5 +1,6 @@
 #include "WandererCharacter.h"
 #include "BelmonteTrainService.h"
+#include "GondolaService.h"
 #include "CraterParkTower.h"
 #include "AtelierExit.h"
 #include "JapanCombatResolver.h"
@@ -424,6 +425,7 @@ void AWandererCharacter::ConfigureCar()
     }
     else UE_LOG(LogTemp, Error, TEXT("Kart cockpit data missing: build the kart and stage runtime data"));
     Car->RequireAuthoredGrips(true);
+    Car->SetAutoRight(true);
     ReadKartGrip(this, Car);
 }
 
@@ -573,10 +575,10 @@ void AWandererCharacter::BuildInput()
         FEnhancedActionKeyMapping& Hold = Mapping->MapKey(Axis(TEXT("HorsePad"),EInputActionValueType::Boolean),EKeys::Gamepad_RightShoulder);
         auto* HoldTrigger = NewObject<UInputTriggerHold>(Mapping); HoldTrigger->HoldTimeThreshold = .4f; HoldTrigger->bIsOneShot = true; Hold.Triggers.Add(HoldTrigger);
     }
-    // The kart: a 0.4 s hold of the left bumper, free on foot (it is the train view and flight speed only aboard those).
+    // The kart: a tap (0.15 s) of the left bumper, free on foot (it is the train view and flight speed only aboard those).
     {
         FEnhancedActionKeyMapping& Hold = Mapping->MapKey(Axis(TEXT("CarPad"),EInputActionValueType::Boolean),EKeys::Gamepad_LeftShoulder);
-        auto* HoldTrigger = NewObject<UInputTriggerHold>(Mapping); HoldTrigger->HoldTimeThreshold = .4f; HoldTrigger->bIsOneShot = true; Hold.Triggers.Add(HoldTrigger);
+        auto* HoldTrigger = NewObject<UInputTriggerHold>(Mapping); HoldTrigger->HoldTimeThreshold = .15f; HoldTrigger->bIsOneShot = true; Hold.Triggers.Add(HoldTrigger);
     }
     Key(Axis(TEXT("HorseRandomPad"),EInputActionValueType::Boolean),EKeys::Gamepad_FaceButton_Left);
     Key(Axis(TEXT("HorseBreedPad"),EInputActionValueType::Boolean),EKeys::Gamepad_DPad_Up);
@@ -899,8 +901,8 @@ bool AWandererCharacter::CanCarrySkateBoard() const
 bool AWandererCharacter::RefuseVehicleOnTrain()
 {
     if (!IsOnTrain()) return false;
-    const TCHAR* Message = bTrainAboard && AboardVehicle == ETransportVehicle::Gondola ? TEXT("Pas à bord de la télécabine") :
-        bTrainAboard && AboardVehicle == ETransportVehicle::Ferry ? TEXT("Pas à bord du ferry") : TEXT("Pas à bord du train");
+    const TCHAR* Message = bTrainAboard && AboardVehicle == ETransportVehicle::Gondola ? TEXT("Not aboard the gondola") :
+        bTrainAboard && AboardVehicle == ETransportVehicle::Ferry ? TEXT("Not aboard the ferry") : TEXT("Not aboard the train");
     if (IsLocallyControlled()) ULiveLibrary::Say(Message, 2.f);
     else if (HasAuthority()) ClientActivityRejected(Message);
     return true;
@@ -1158,8 +1160,10 @@ void AWandererCharacter::Interact(const FInputActionValue&) {
   return;
  }
  if(bReady&&!bMenuOpen&&IsLocallyControlled()&&!SkateRide->IsRiding()&&!OnVehicle()&&!IsZeppelinPassenger()&&ABelmonteTrainService::TryInteract(this))return;
+ if(bReady&&!bMenuOpen&&IsLocallyControlled()&&!SkateRide->IsRiding()&&!OnVehicle()&&!IsZeppelinPassenger()&&AGondolaService::TryInteract(this))return;
  // In the saddle nothing is used (online the host refuses boarding off foot, ServerZeppelinInput).
  if(SkateRide->IsRiding()||Horse->IsEquipped()||!bReady||bMenuOpen)return;
+ if(!OnVehicle()&&!IsZeppelinPassenger()&&CraterParkTower::TryInteract(this))return;
  auto* Ship=GetZeppelin();
  const bool bZeppelinReach=Ship&&(Ship->IsPassenger(this)||Ship->CanReach(this));
  const ASwordTrainer* Trainer=ASwordTrainer::Find(this);
@@ -1894,7 +1898,9 @@ void AWandererCharacter::CalcCamera(float DeltaTime, FMinimalViewInfo& OutResult
         if (bFixedView || bCinematic) TrainView = FTrainPassengerView();
         else
         {
-            TrainView.Update(IsTrainPassenger(), PC->bPreferTrainFirstPerson, DeltaTime);
+            const bool bGondolaFP = IsGondolaSeated();
+            const bool bSlowBlend = bGondolaFP || AboardVehicle == ETransportVehicle::Gondola;
+            TrainView.Update(IsTrainPassenger() || bGondolaFP, bGondolaFP ? true : PC->bPreferTrainFirstPerson, DeltaTime, bSlowBlend ? 2.5f : 4.f);
             TrainView.Apply(*this, DeltaTime, OutResult);
         }
     }

@@ -11,3 +11,9 @@ owned map path, including when that map already exists. It MUST NOT delete the
 receiving asset namespace or ignore blank-world/save failure. Successful completion
 MUST require the actual populated world's save result; engine save is not an atomic
 preservation guarantee for a previous map on failure.
+
+@cc [owner:fontanierh,label:correctness] english-user-facing-text
+The game is in English. Every user-facing string in Python, C++, runtime data and UI
+(including station and terminal names, signs, timetables, arrival boards, broadcasts,
+map zones, hints and HUD prompts) MUST be natural English and MUST NOT contain French
+words or French labels. Proper-noun world toponyms that are not French words MAY remain.

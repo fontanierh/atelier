@@ -3,10 +3,10 @@
     uv run atelier play yorimichi --profile play          # in one terminal (or any profile with the live bridge)
     uv run python games/yorimichi/tools/review_belmonte_train_ride.py [--out DIR] [--scale 10]
 
-1. travel to the Gare de Belmonte as a train starts its dwell; 2. wait for the dwell; 3. Monter at a door (it opens, the
+1. travel to Belmonte Station as a train starts its dwell; 2. wait for the dwell; 3. Board at a door (it opens, the
 steps, it closes); 4. into the saloon; 5. stand still through the departure (drift against the coach), walk the saloon
 at speed, sit; 6. ride (at --scale times the timetable) past the loop, stand a while in the spiral, sit again; 7. arrive
-at Hidamari; 8. stand and Descendre onto the platform.
+at Hidamari; 8. stand and Step off onto the platform.
 """
 import argparse
 import json
@@ -134,10 +134,10 @@ def main(argv=None):
     r = Review(args.out)
     py(HELPERS)
     console('train.TimeScale 1')
-    # 1. Teleport (the map's "Gare de Belmonte" does the same).
+    # 1. Teleport (the map's "Belmonte Station" does the same).
     console('train.Go belmonte')
     time.sleep(3)
-    s = r.log('1 teleported to the Gare de Belmonte', 'teleport')
+    s = r.log('1 teleported to Belmonte Station', 'teleport')
     # 2. Wait for the dwell.
     s = r.wait(lambda s: any(t['station'] and t['s'] > 7000 for t in s['trains']), 60)
     train = next(i for i, t in enumerate(s['trains']) if t['station'] and t['s'] > 7000)
@@ -159,7 +159,7 @@ def main(argv=None):
     def ride_door(up):
         py("live.press('interact')")
         time.sleep(.6)
-        r.log(f'{"Monter" if up else "Descendre"}: on the steps', 'steps-up' if up else 'steps-down')
+        r.log(f'{"Board" if up else "Step off"}: on the steps', 'steps-up' if up else 'steps-down')
         return r.wait(lambda s: not s['boarding'], 15, .2)
 
     # 3. Monter: from the platform at the door, the door opens, he walks up the steps, it closes behind him.
@@ -167,10 +167,10 @@ def main(argv=None):
     py(f'train_face({vehicle(f"board:{args.door}:-1")!r})')
     time.sleep(.3)
     s = r.log('3 at the door on the platform', 'door')
-    assert 'monter' in s['prompt'], s['prompt']
+    assert 'board' in s['prompt'], s['prompt']
     s = ride_door(True)
     s = r.log('4 aboard (door closed behind)', 'aboard')
-    assert s['aboard'], 'not aboard after Monter'
+    assert s['aboard'], 'not aboard after boarding'
     # 4. Through the bulkhead door into the saloon, then stand still in the aisle for the departure.
     r.walk(vehicle(f'door:{args.inner}:1'), 35)
     py(f'train_face({vehicle(f"door:{args.inner}:0")!r})')
@@ -228,7 +228,7 @@ def main(argv=None):
     py(f'train_face({vehicle(f"board:{args.door}:0")!r})')
     time.sleep(.3)
     s = r.log('8a inside at the door at Hidamari', 'door-hidamari')
-    assert 'descendre' in s['prompt'], s['prompt']
+    assert 'step off' in s['prompt'], s['prompt']
     s = ride_door(False)
     py(f'train_face({vehicle("centre")!r})')
     time.sleep(.5)

@@ -17,8 +17,8 @@ inline VehicleSpec kart_spec()
     s.chassis.front_axle = 0.75f;
     s.chassis.front_weight_bias = 42.0f;
     s.chassis.roll_center = 3.0f;
-    // Ride quality over broken ground, measured by tests/.../kart_ride_test.cpp: 9.1 cm of travel on soft springs
-    // with light damping keeps all four tyres down over ripples and facets without wallowing in a turn.
+    // Ride quality over broken ground: 4.5 in of travel on soft springs with light damping keeps all four tyres
+    // down over ripples and facets without wallowing in a turn.
     s.chassis.spring_stiffness[0] = 90.0f;
     s.chassis.spring_stiffness[1] = 105.0f;
     s.chassis.spring_progression[0] = 0.5f;
@@ -29,8 +29,8 @@ inline VehicleSpec kart_spec()
     s.chassis.shock_ext_stiffness[1] = 19.0f;
     s.chassis.swaybar_stiffness[0] = 80.0f;
     s.chassis.swaybar_stiffness[1] = 60.0f;
-    s.chassis.travel[0] = 3.6f;
-    s.chassis.travel[1] = 3.6f;
+    s.chassis.travel[0] = 4.5f;
+    s.chassis.travel[1] = 4.5f;
     s.chassis.ride_height[0] = 2.8f;
     s.chassis.ride_height[1] = 2.8f;
 
@@ -41,11 +41,25 @@ inline VehicleSpec kart_spec()
     s.tires.aspect_ratio[0] = 60.0f;
     s.tires.aspect_ratio[1] = 60.0f;
     s.tires.static_grip[0] = 1.3f;
-    s.tires.static_grip[1] = 1.3f;
+    s.tires.static_grip[1] = 1.35f;
     s.tires.dynamic_grip[0] = 1.1f;
-    s.tires.dynamic_grip[1] = 1.1f;
-    s.tires.steering = 0.6f;   // about 17 degrees at full lock: a kart turns quickly without spinning on every input
+    s.tires.dynamic_grip[1] = 1.15f;
+    s.tires.steering = 0.6f;   // fallback for the shared tables; the lock curve below is used instead
+    s.tires.has_lock_curve = true;
+    s.tires.lock_angle_low = 27.0f;    // tight at walking pace
+    s.tires.lock_angle_high = 12.0f;   // calmer at the 24.6 m/s top speed
+    s.tires.lock_speed_low = 3.0f;
+    s.tires.lock_speed_high = 24.6f;
+    s.tires.lock_ramp_time = 0.15f;
+    s.tires.lock_center_rate = 1.5f;
     s.tires.yaw_control = {1.0f, 0.9f, 0.7f};
+    s.body.collision_bottom_raise = 0.04f;
+    s.drift_requires_request = true;
+    s.drift_assist_min_speed = 3.0f;
+    s.drift_assist_min_slip = 0.10471976f;   // 6 degrees
+    s.stability_assist = true;
+    s.wheel_ground_reference = true;
+    s.kart_alignment_assist = true;
 
     s.brakes.brakes[0] = 60.0f;
     s.brakes.brakes[1] = 45.0f;
@@ -66,6 +80,7 @@ inline VehicleSpec kart_spec()
     s.transmission.gear_efficiency.assign(3, 0.95f);
     s.transmission.final_gear = 1.0f;
     s.transmission.differential[1] = 0.0f;
+    s.transmission.solid_axle[1] = true;
     s.transmission.clutch_slip = 0.4f;
     s.transmission.shift_speed = 0.1f;
 

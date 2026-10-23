@@ -15,6 +15,12 @@ BRINECOVE_CRAB = 40.0                 # west of the berth, a 180-degree pivot cl
 
 def layout(world, geometry):
     px, pw = BRINECOVE_PIER
+    tris = world['solid']
+    if len(tris):
+        lo, hi = tris.min(1), tris.max(1)
+        relocated_boat = (hi[:, 0] >= -255.0) & (lo[:, 0] <= -245.0) & (hi[:, 1] >= -46.0) & (lo[:, 1] <= -34.0)
+        world['solid'] = tris[~relocated_boat]
+        world['solid_label'] = world['solid_label'][~relocated_boat]
     face_x = px - pw / 2 - 0.5            # fender piles on the pier's west face
     cx = face_x - geometry.FENDER - geometry.ship.BEAM
     berth = (cx, BRINECOVE_BERTH_Y, 90.0)  # bow north; starboard (east) side to the pier
@@ -22,7 +28,7 @@ def layout(world, geometry):
     landing = [(face_x, gy - 3.6), (face_x + 3.4, gy - 3.6), (face_x + 3.4, gy + 3.6), (face_x, gy + 3.6)]
     # The berth is the pier's west face along the hull: fender piles, pier deck edge and its piles.
     half = (geometry.ship.STEM - geometry.ship.STERN) / 2 + 4.0
-    zone = [(face_x - 0.05, BRINECOVE_BERTH_Y - half), (px + pw / 2, BRINECOVE_BERTH_Y - half),
+    zone = [(face_x - 0.05, BRINECOVE_BERTH_Y - half - 20.0), (px + pw / 2, BRINECOVE_BERTH_Y - half - 20.0),
             (px + pw / 2, BRINECOVE_BERTH_Y + half), (face_x - 0.05, BRINECOVE_BERTH_Y + half)]
     deck = geometry.levels(world, geometry.rect_points(face_x + 0.6, gy - 12.0, face_x + 12.5, gy + 18.0), 5.6)
     walk = {'world_cuts': [], 'pier_deck_z': round(float(np.nanmedian(deck)), 3), 'pier_deck_range': [round(float(np.nanmin(deck)), 3), round(float(np.nanmax(deck)), 3)]}
@@ -31,14 +37,23 @@ def layout(world, geometry):
 
 def moves(berth):
     bx, by, _ = berth
-    # Arrival: up the channel west of the west pier, bow north, between the two moored rowboats: east of the one at
-    # (-270, -145), then a glide west to pass west of the one at (-250, -40), then crab east onto the fenders.
+    # Arrival: straight north up the channel 4 m west of the berth line, then a 16 m aligned berthing leg easing
+    # starboard onto the fenders as the ship decelerates to rest.
     arrival_start = (bx - BRINECOVE_LANE, -250.0, 90.0)
-    arrival = [('ahead', BRINECOVE_JOG_Y + 250.0), ('move', BRINECOVE_LANE - BRINECOVE_STANDOFF, 0.0),
-               ('ahead', by - BRINECOVE_JOG_Y), ('berth', -BRINECOVE_STANDOFF)]
-    # Departure: crab off to port (west) into the open basin until a pivot clears the pier, turn on the spot to south,
-    # then ahead out of the bay.
-    departure = [('berth', BRINECOVE_STANDOFF), ('crab', BRINECOVE_CRAB - BRINECOVE_STANDOFF), ('pivot', 180.0), ('ahead', 260.0)]
+    arrival = [('ahead', (by - 16.0) - (-250.0)), ('berth', 16.0, -BRINECOVE_LANE)]
+    # Departure: ease astern 16 m off the pier while drifting 4 m to port, curve astern past the pier tip into the
+    # west basin (total astern < 116 m <= 120 m) to a full stop, then swing ahead on an 80 m radius port arc to south.
+    l1 = 1800.0 * math.radians(2.0)
+    l2 = 80.0 * math.radians(27.0)
+    departure = [
+        ('berth', -16.0, BRINECOVE_LANE),
+        ('arc', -1800.0, -2.0, round(l1 * 0.20, 4)),
+        ('arc', -80.0, 27.0, round(l2 * 0.20, 4)),
+        ('ahead', -2.5, 0.5),
+        ('ahead', 2.5),
+        ('arc', 80.0, 155.0),
+        ('ahead', 110.305024),
+    ]
     return (arrival_start, arrival), (berth, departure)
 
 def assemble(kit):

@@ -51,12 +51,7 @@ uv run pytest path/to/test_file.py -q     # focused local tests; full suite runs
   Agents may resolve false positives without owner approval. Contract CI is advisory and must not become a
   required merge gate. Every contract owner is `fontanierh`; [the guide](docs/CODE_CONTRACTS.md) covers setup.
   Native validation still uses the machine guards.
-  Then merge it yourself with `uv run atelier merge PR` from the completed producer checkout, or pass
-  `--source CHECKOUT` when merging from another controller. This saves existing build artifacts in the local
-  checkpoint store before merging; do not use raw `gh pr merge` to skip retention. Finish the producer's whole
-  caller and native children first. Never build/cook just to populate the cache for a merge. A code/docs-only
-  checkout without build stamps is skipped explicitly. If retention fails, preserve the producer and fix/retry
-  it before merging. Include the retained checkpoint keys or the explicit no-artifacts result in the handoff.
+  Merge PRs with `gh pr merge --squash --match-head-commit <tested head>`; builds publish their results to the local store as they run.
   A refactor must not change behaviour, and a fresh clone must still install and pass.
 - Run focused local Python tests for the changed behavior. Do not repeatedly run the full suite locally or
   duplicate a successful CI run: hosted CI runs the complete suite on every PR head. After focused tests pass,
@@ -329,12 +324,7 @@ contract review reads them on every PR. Playtests keep finding the same defects,
   only in machine-local configuration, never tracked source. Release publication retains an existing verified
   build before publishing the playtest; it does not request another cook. Preserve producers and all caches
   until checkpoint verification and receiving restore are accepted. Keep referenced remote releases/packs.
-- Merge completed work through `atelier merge PR`, which automatically retains every game with existing build
-  stamps locally before merging. Partial builds are useful too: current verified tasks remain reusable, and
-  compatible remaining workspace state stays an incremental seed. Keys use actual inputs/tools across commits;
-  never rewrite stamps to the merge SHA. `atelier cache retain [GAME ...] [--source CHECKOUT]` can retain a
-  completed producer separately or recover artifacts after an earlier merge. Keep producer outputs until the
-  command reports saved keys. Retention does not upload private releases, compile, import or cook the game.
+- Merge PRs with `gh pr merge --squash --match-head-commit <tested head>`; builds publish their results to the local store as they run.
 - Unknown or expensive native misses stop before admission. Inspect `--plan --explain`, fix cache access or
   declarations, and use a specific `--rebuild-reason` only for unavoidable work. `--touch` is refused. `--force`
   requires one exact task plus a reason, and must preserve current prerequisites. Never clear caches or stamps.

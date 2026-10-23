@@ -389,7 +389,7 @@ def harbor():
             if t > 0.5:
                 b.ring((px + off - 1.2, py - 1.0, 5.32), 0.55, 0.07, 'rope', sides=10)
     # Small boats give the open water scale and life.
-    for x, y, yaw in ((-250, -40, 22), (-150, -90, -14), (-30, -150, 8), (100, -70, 35),
+    for x, y, yaw in ((-225, -40, -22), (-150, -90, -14), (-30, -150, 8), (100, -70, 35),
                       (180, -160, -8), (300, -60, 18), (-380, -40, -22), (420, -120, 12)):
         if L.is_water(x, y):
             rowboat(b, x, y, 0.0, yaw, 1.0)

@@ -1,4 +1,4 @@
 id = "transport"
 needs = ["combat"]                    # made from four combat masters plus synthesis
-build = "make.py"                     # -> build/yorimichi/audio/transport (9 loops, 15 cues, 45 files)
+build = "make.py"                     # -> build/yorimichi/audio/transport (10 loops, 15 cues, 46 files)
 licence = "Sonniss GDC bundles and own synthesis: may ship inside the game; no AI use"

@@ -116,14 +116,30 @@ return lerp(%s,water*lerp(.90,1.10,tide),E)*(1-H);
         prop(custom(f'return lerp({S.num(S.SPECULAR)},.5,E)*(1-H);',[('E',edge,''),('H',haze,'')],FLOAT1),unreal.MaterialProperty.MP_SPECULAR)
         prop(node(unreal.MaterialExpressionConstant,r=0.0),unreal.MaterialProperty.MP_METALLIC)
         # Identical depth, surf and shallows on the shared open-water boundary;
-        # inward the harbor's calm lit surface takes over.
+        # inward the harbor's calm lit surface keeps the waterline surf, hull/pile foam and shallow tint.
         behind=node(unreal.MaterialExpressionSubtract)
         link(node(unreal.MaterialExpressionSceneDepth),'',behind,'A')
         link(depth,'',behind,'B')
-        look=custom(S.LOOK,[('W',sea,''),('V',node(unreal.MaterialExpressionCameraVectorWS),''),('D',depth,''),
+        cam=node(unreal.MaterialExpressionCameraVectorWS)
+        look=custom(S.LOOK,[('W',sea,''),('V',cam,''),('D',depth,''),
                             ('L',behind,''),('P',pos,''),('T',time,'')])
-        prop(custom('return lerp(C,%s*H,E);' % S.f3(S.FAR_COLOUR),[('C',look,''),('E',edge,''),('H',haze,'')]),
-             unreal.MaterialProperty.MP_EMISSIVE_COLOR)
+        emissive=custom('''
+float2 p=P.xy*.01;
+float l=max(0,L)*.01*max(V.z,.03);
+float fp=max(abs(ddx(l)),abs(ddy(l)));
+float w=%(surf_m)s+min(1.5*fp,%(surf_aa_max_m)s);
+float wob=.5+.25*sin(p.x*.83+p.y*.37+T*.6)+.25*sin(p.y*1.13-p.x*.51-T*.45);
+float s_edge=saturate(1-l/(w*(.55+.9*wob)));
+float surf=s_edge*s_edge*(3-2*s_edge)*(.7+.3*sin(T*1.2+l/w*4))*(1-smoothstep(%(far0)s,%(far1)s,D*.01));
+float fleck=smoothstep(.58,.84,W.z)*%(fleck)s*.5;
+float3 harbor_foam=lerp(%(shallow)s*(1-saturate(l/%(shallow_m)s))*.25,%(foam)s,saturate(max(surf,fleck)));
+float3 inner=lerp(harbor_foam,%(far)s,H);
+return lerp(C,inner,E);
+''' % dict(surf_m=S.num(S.SURF_M),surf_aa_max_m=S.num(S.SURF_AA_MAX_M),far0=S.num(S.SURF_FAR[0]),
+           far1=S.num(S.SURF_FAR[1]),fleck=S.num(S.FLECK),shallow=S.f3(S.SHALLOW),
+           shallow_m=S.num(S.SHALLOW_M),foam=S.f3(S.FOAM),far=S.f3(S.FAR_COLOUR)),
+        [('C',look,''),('E',edge,''),('H',haze,''),('W',sea,''),('V',cam,''),('D',depth,''),('L',behind,''),('P',pos,''),('T',time,'')])
+        prop(emissive,unreal.MaterialProperty.MP_EMISSIVE_COLOR)
     else:
         paving=node(unreal.MaterialExpressionTextureObject,texture=texture('paving'))
         timber=node(unreal.MaterialExpressionTextureObject,texture=texture('timber'))

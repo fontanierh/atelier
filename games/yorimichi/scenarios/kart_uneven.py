@@ -29,7 +29,8 @@ RUN = 6.0   # seconds of throttle from the standing start
 NUMBER = re.compile(r'(y|vy|pitch|roll)=(-?[0-9.]+)')
 
 st = {'t': 0.0, 'phase': 0, 'accels': [], 'speeds': [], 'lost': 0, 'samples': 0,
-      'prev_vy': None, 'shot': 0, 'errors': []}
+      'prev_vy': None, 'shot': 0, 'errors': [], 'steer_on': False, 'steer_done': False,
+      'steer_t0': 0.0, 'steer_yaw': 0.0, 'steer_last_yaw': 0.0, 'yaw_rates': []}
 
 
 def ride():
@@ -40,6 +41,11 @@ def ride():
     return values, contact
 
 
+def yaw_of(state):
+    match = re.search(r'yaw=(-?[0-9.]+)', state)
+    return float(match.group(1)) if match else 0.0
+
+
 def finish():
     CLEAN.cleanup(live, unreal.MegaParkValidation.restore_player_camera)
     accels = st['accels']
@@ -48,9 +54,28 @@ def finish():
     rms = (sum(a * a for a in accels) / len(accels)) ** .5 if accels else 0.0
     peak = max((abs(a) for a in accels), default=0.0)
     mean_speed = sum(st['speeds']) / len(st['speeds']) if st['speeds'] else 0.0
+    final_speed = st['speeds'][-1] if st['speeds'] else 0.0
+    lost = 100.0 * st['lost'] / max(1, st['samples'])
+    steer_rms = ((sum(r * r for r in st['yaw_rates']) / len(st['yaw_rates'])) ** .5
+                 if st['yaw_rates'] else 0.0)
+    if accels and rms >= 4.5:
+        st['errors'].append('vertical rms %.2f >= 4.5' % rms)
+    if peak >= 12.0:
+        st['errors'].append('vertical peak %.2f >= 12' % peak)
+    if lost >= 5.0:
+        st['errors'].append('contact lost %.1f%% >= 5%%' % lost)
+    if mean_speed < 15.0:
+        st['errors'].append('mean speed %.1f kph < 15' % mean_speed)
+    if final_speed < 10.0:
+        st['errors'].append('final speed %.1f kph < 10 (stall)' % final_speed)
+    if not st['yaw_rates']:
+        st['errors'].append('no steering response samples')
+    elif steer_rms < 15.0 or steer_rms > 300.0:
+        st['errors'].append('steering response rms %.1f deg/s outside 15..300' % steer_rms)
     report = {'rms_accel': round(rms, 3), 'peak_accel': round(peak, 3),
-              'contact_lost_percent': round(100.0 * st['lost'] / max(1, st['samples']), 2),
-              'mean_speed_kph': round(mean_speed, 1), 'samples': len(accels),
+              'contact_lost_percent': round(lost, 2), 'mean_speed_kph': round(mean_speed, 1),
+              'final_speed_kph': round(final_speed, 1), 'steer_rms_deg_s': round(steer_rms, 1),
+              'samples': len(accels),
               'errors': st['errors']}
     report['ok'] = not st['errors']
     report['status'] = 'passed' if not st['errors'] else 'failed'
@@ -85,6 +110,20 @@ def run(dt):
             state = L.car_state()
             speed = float(re.search(r'kph=([0-9.]+)', state).group(1))
             st['speeds'].append(speed)
+            if speed > 4.0 and t > 4.0 and not st['steer_on']:
+                st['steer_on'] = True
+                st['steer_t0'] = t
+                st['steer_yaw'] = yaw_of(state)
+                st['steer_last_yaw'] = st['steer_yaw']
+                L.input_key('D', 'press', 1.0)
+            if st['steer_on'] and not st['steer_done']:
+                yaw = yaw_of(state)
+                delta = ((yaw - st['steer_last_yaw'] + 180.0) % 360.0) - 180.0
+                st['steer_last_yaw'] = yaw
+                st['yaw_rates'].append(abs(delta) / max(dt, 1e-4))
+                if t - st['steer_t0'] >= .35:
+                    L.input_key('D', 'release', 0.0)
+                    st['steer_done'] = True
             vy = values.get('vy', 0.0)
             if st['prev_vy'] is not None and speed > 4.0:
                 st['accels'].append((vy - st['prev_vy']) / max(dt, 1e-4))

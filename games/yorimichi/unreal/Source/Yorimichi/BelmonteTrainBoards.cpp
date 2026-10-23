@@ -64,10 +64,10 @@ TArray<FBelmonteTrainArrival> FBelmonteTrainLine::NextArrivals(const TArray<FBel
 FString FBelmonteTrainLine::Countdown(const FBelmonteTrainArrival& Arrival, double Scale)
 {
     if (Arrival.Train == INDEX_NONE) return TEXT("-");
-    if (Arrival.bAtPlatform) return TEXT("à quai");
+    if (Arrival.bAtPlatform) return TEXT("at platform");
     const double Real = Arrival.In / FMath::Max(Scale, 1e-3);
-    if (Real < 60.) return TEXT("arrive");
-    return FString::Printf(TEXT("dans %d min"), FMath::FloorToInt(Real / 60.));
+    if (Real < 60.) return TEXT("arriving");
+    return FString::Printf(TEXT("in %d min"), FMath::FloorToInt(Real / 60.));
 }
 
 // ------------------------------------------------------------------------------------------------------------ Boards
@@ -128,11 +128,23 @@ void ABelmonteTrainService::BuildBoards(const TSharedPtr<FJsonObject>& Root)
         const TSharedPtr<FJsonObject> S = (*Rows)[Index] ? (*Rows)[Index]->AsObject() : nullptr;
         const TArray<TSharedPtr<FJsonValue>>* BoardRows = nullptr;
         if (!S || !S->TryGetArrayField(TEXT("boards"), BoardRows)) continue;
-        // Trains arrive here from the other terminus ("Gare de Belmonte" -> "BELMONTE").
+        // Trains arrive here from the other terminus ("Belmonte Station" -> "BELMONTE").
+        // Older generated data may still carry the former "Gare de" prefix.
         FString From;
         for (const FStation& Other : Stations)
-            if (&Other != &Stations[Index]) From = Other.Name.Replace(TEXT("Gare de "), TEXT("")).ToUpper();
-        const FString Header = From.IsEmpty() ? FString(TEXT("ARRIVÉES")) : TEXT("ARRIVÉES DE ") + From;
+            if (&Other != &Stations[Index])
+            {
+                FString Name = Other.Name.TrimStartAndEnd();
+                if (Name.EndsWith(TEXT("Station")))
+                    Name.LeftChopInline(7);
+                else
+                {
+                    int32 Space = INDEX_NONE;
+                    if (Name.FindLastChar(TEXT(' '), Space)) Name = Name.RightChop(Space + 1);
+                }
+                From = Name.ToUpper();
+            }
+        const FString Header = From.IsEmpty() ? FString(TEXT("ARRIVALS")) : TEXT("ARRIVALS FROM ") + From;
         for (const auto& Value : *BoardRows)
         {
             const TSharedPtr<FJsonObject> B = Value ? Value->AsObject() : nullptr;
@@ -193,8 +205,8 @@ void ABelmonteTrainService::BuildBoards(const TSharedPtr<FJsonObject>& Root)
                     return T;
                 };
                 Text(TEXT("_Header"), Header, 0., .30 * H, .72 * Row, EHTA_Center, HeaderColour);
-                Text(TEXT("_Label1"), TEXT("Prochain train"), W / 2 - Margin, .02 * H, Row, EHTA_Left, LabelColour);
-                Text(TEXT("_Label2"), TEXT("Train suivant"), W / 2 - Margin, -.26 * H, Row, EHTA_Left, LabelColour);
+                Text(TEXT("_Label1"), TEXT("Next train"), W / 2 - Margin, .02 * H, Row, EHTA_Left, LabelColour);
+                Text(TEXT("_Label2"), TEXT("Following train"), W / 2 - Margin, -.26 * H, Row, EHTA_Left, LabelColour);
                 Board.Next.Add(Text(TEXT("_Next"), TEXT(""), -(W / 2 - Margin), .02 * H, Row, EHTA_Right, ValueColour));
                 Board.After.Add(Text(TEXT("_After"), TEXT(""), -(W / 2 - Margin), -.26 * H, Row, EHTA_Right, ValueColour));
             }

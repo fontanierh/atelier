@@ -428,10 +428,11 @@ def closed(m):
     for part in m.parts:
         start, end = part[:2]
         vol = 0.0
+        o = Vector(V[m.faces[start][0]]) if start < end else Vector((0, 0, 0))
         for f in m.faces[start:end]:
-            a = Vector(V[f[0]])
+            a = Vector(V[f[0]]) - o
             for i in range(1, len(f) - 1):
-                vol += a.dot(Vector(V[f[i]]).cross(Vector(V[f[i + 1]]))) / 6
+                vol += a.dot((Vector(V[f[i]]) - o).cross(Vector(V[f[i + 1]]) - o)) / 6
         if vol < 0:
             flipped += 1
             for i in range(start, end):
@@ -489,22 +490,25 @@ def coplanar_overlaps(meshes, d_tol=0.0015, min_area=2e-4, limit=60):
     """Same-facing coplanar faces of different parts that overlap: they z-fight. Returns (count, samples), one sample
     per pair of kit source lines."""
     tris = _triangles(meshes); buckets = {}
+    o = Vector(tris[0][0][0]) if tris else Vector((0, 0, 0))
     for idx, ((a, b, c), key) in enumerate(tris):
-        A, B, C = Vector(a), Vector(b), Vector(c); n = (B - A).cross(C - A)
+        A, B, C = Vector(a) - o, Vector(b) - o, Vector(c) - o; n = (B - A).cross(C - A)
         if n.length < 1e-10:
             continue
         n.normalize(); d = n.dot(A)
         k = (round(n.x * 300), round(n.y * 300), round(n.z * 300), math.floor(d / d_tol))
-        buckets.setdefault(k, []).append((idx, n, d))
+        buckets.setdefault(k, []).append((idx, A, n))
     count = 0; samples = []; seen = set()
     for k, items in buckets.items():
-        pool = items + buckets.get((k[0], k[1], k[2], k[3] + 1), [])
+        pool = (items + buckets.get((k[0], k[1], k[2], k[3] + 1), []) +
+                buckets.get((k[0], k[1], k[2], k[3] + 2), []))
         if len(pool) < 2:
             continue
-        for ii, (i, n, d) in enumerate(items):
-            for (j, n2, d2) in pool[ii + 1:]:
+        for ii, (i, A, n) in enumerate(items):
+            for (j, A2, n2) in pool[ii + 1:]:
                 ki, kj = tris[i][1], tris[j][1]
-                if ki == kj or abs(d - d2) > d_tol or n.dot(n2) < 0.9995:
+                if (ki == kj or n.dot(n2) < 0.9995 or
+                        abs(n.dot(A2 - A)) > d_tol or abs(n2.dot(A - A2)) > d_tol):
                     continue
                 U = n.orthogonal().normalized(); W = n.cross(U)
                 P = [(Vector(v).dot(U), Vector(v).dot(W)) for v in tris[i][0]]

@@ -90,8 +90,8 @@ struct YORIMICHI_API FBelmonteTrainLine
     /** The next Count arrivals at a terminus with these stops at a service time: trains standing there first, then the
      *  trains to come, cycle after cycle. */
     static TArray<FBelmonteTrainArrival> NextArrivals(const TArray<FBelmonteTrainStop>& Stops, double Cycle, double Time, int32 Count);
-    /** A board's countdown in real minutes: "à quai" while the train stands there, "arrive" under a minute, otherwise
-     *  "dans N min" (whole minutes left). Scale is the service clock's speed (service seconds per real second). */
+    /** A board's countdown in real minutes: "at platform" while the train stands there, "arriving" under a minute,
+     *  otherwise "in N min" (whole minutes left). Scale is the service clock's speed (service seconds per real second). */
     static FString Countdown(const FBelmonteTrainArrival& Arrival, double Scale);
 };
 

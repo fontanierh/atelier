@@ -44,7 +44,7 @@ bool FTrainVehicleAdmissionTest::RunTest(const FString&)
     if (!TestNotNull(TEXT("Owner board transport"), Stream)) return false;
     Stream->Rider = Rider; // Deferred fixture: exercise the real RPC without running art-dependent BeginPlay.
     FJapanBoardState Board;
-    const TCHAR* Refusal = TEXT("Pas à bord du train");
+    const TCHAR* Refusal = TEXT("Not aboard the train");
     auto CheckRefused = [&](const TCHAR* Action, TFunction<void()> Request)
     {
         Session->SetSessionStatus(TEXT("sentinel"));

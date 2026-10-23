@@ -46,12 +46,23 @@ def layout(world, geometry):
 
 def moves(berth):
     bx, by, _ = berth
-    px, py = HIDAMARI_PIVOT
-    # Arrival: in through the harbour mouth heading north, stop in deep water, pivot to port onto west, glide
-    # north-west to the stand-off line, then crab onto the fenders. Departure is the same in reverse.
-    arrive = (px, -290.0, 90.0)
-    arrival = [('ahead', py + 290.0), ('pivot', 90.0), ('move', bx - px, HIDAMARI_STANDOFF - py), ('berth', -(by - HIDAMARI_STANDOFF))]
-    departure = [('berth', by - HIDAMARI_STANDOFF), ('move', px - bx, py - HIDAMARI_STANDOFF), ('pivot', 90.0), ('ahead', py + 290.0)]
+    # Arrival: enter the east harbour channel heading north, turn 90 deg to port on an 80 m radius arc to line up
+    # west, then sail a 15 m aligned berthing leg easing starboard onto the jetty fenders.
+    arrive = (bx + 95.0, -290.0, 90.0)
+    arrival = [('ahead', (by - 86.0) - (-290.0)), ('arc', 80.0, 90.0), ('berth', 15.0, -6.0)]
+    # Departure: ease astern off the jetty over 15 m while drifting 5 m to port, curve astern into the deep basin
+    # (total astern < 105 m <= 120 m) to a full stop, then swing ahead on an 80 m radius port turn out the mouth.
+    l1 = 80.0 * math.radians(35.0)
+    l2 = 80.0 * math.radians(25.0)
+    departure = [
+        ('berth', -15.0, 5.0),
+        ('arc', -80.0, -35.0, round(l1 * 0.20, 4)),
+        ('arc', -80.0, 25.0, round(l2 * 0.20, 4)),
+        ('ahead', -2.5, 0.5),
+        ('ahead', 2.5),
+        ('arc', 80.0, 100.0),
+        ('ahead', 26.868538),
+    ]
     return (arrive, arrival), (berth, departure)
 
 def assemble(kit):

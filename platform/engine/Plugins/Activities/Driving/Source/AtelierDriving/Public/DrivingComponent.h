@@ -58,6 +58,11 @@ public:
     /** Summon and mount, or (stopped) step off and park. False with the reason in GetStatus(). */
     bool Toggle();
     void StowImmediately();
+    /** Kart-only: right an inverted, slow car after one second, and let the step-out button right it at once. */
+    void SetAutoRight(bool On) { bAutoRight = On; }
+    bool IsInverted() const;
+    /** Test hook for the native flip scenario; it only changes this equipped car's rigid body. */
+    bool ForceInvertedForQA();
 
     bool IsEquipped() const { return bEquipped; }
     bool IsDriving() const { return bEquipped; }
@@ -136,6 +141,7 @@ private:
     void FinishDrive();
     bool StandingRoom(const FVector& Ground) const;
     void Recover();
+    void StartRighting(bool bImmediate = false);
     void UpdatePose(float DeltaSeconds);
     void LoadSounds();
     bool PlayCue(FName Cue, float Volume, float Pitch);
@@ -178,6 +184,14 @@ private:
     bool bHandbrake = false;
     bool bEquipped = false;
     bool bHasGround = false;
+    bool bAutoRight = false;
+    bool bRighting = false;
+    float InvertedTime = 0.f;
+    float RightingTime = 0.f;
+    FVector RightFrom = FVector::ZeroVector;
+    FVector RightTo = FVector::ZeroVector;
+    FQuat RightFromQ = FQuat::Identity;
+    FQuat RightToQ = FQuat::Identity;
     bool bSavedUseControllerYaw = false;
     FString AudioRoot = TEXT("/Game/Audio/Driving");
     UPROPERTY() TObjectPtr<USoundAttenuation> Attenuation;

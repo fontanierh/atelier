@@ -258,6 +258,7 @@ def test_old_task_result_is_found_after_twenty_newer_releases(fixture, tmp_path,
     for number in range(21):
         remote.publish(store, key, 'new-' + str(number), revision='d' * 40)
     receiving = cp.Store('fixture', tmp_path / 'receiver')
+    monkeypatch.setenv('ATELIER_REMOTE_CHECKPOINTS', '1')
     cache = actions.Actions(SimpleNamespace(game='fixture'), dict(repository='owner/artifacts'))
     cache.store, cache.remote = receiving, remote
     monkeypatch.setattr(actions, 'key', lambda *a: action_key)

@@ -8,7 +8,7 @@
 namespace BelmonteTrainRules
 {
 /** The HUD line when a vehicle is refused on the train. */
-inline const TCHAR* Refusal() { return TEXT("Pas à bord du train"); }
+inline const TCHAR* Refusal() { return TEXT("Not aboard the train"); }
 
 /** Taking out the skateboard, the bike, the horse or the sailboat: never aboard, seated or while stepping through a
  *  door (bTrainAction). Putting one away is always allowed. */

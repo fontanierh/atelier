@@ -85,7 +85,7 @@ bool FBelmonteTrainRulesTest::RunTest(const FString&)
     TestFalse(TEXT("Aboard, no vehicle"), MayTakeOutVehicle(true, false));
     TestFalse(TEXT("Seated or on the steps, no vehicle"), MayTakeOutVehicle(false, true));
     TestFalse(TEXT("Seated aboard, no vehicle"), MayTakeOutVehicle(true, true));
-    TestTrue(TEXT("The refusal reads in French"), FString(Refusal()) == TEXT("Pas à bord du train"));
+    TestTrue(TEXT("The refusal reads in English"), FString(Refusal()) == TEXT("Not aboard the train"));
     // Riding inside a running coach without the boarding walk: put back outside; passengers and door steps stay.
     TestTrue(TEXT("Riding inside without boarding is ejected"), MustEject(true, false, false, false, true, true));
     TestFalse(TEXT("A boarded passenger stays"), MustEject(true, true, false, false, true, true));
@@ -346,23 +346,23 @@ bool FBelmonteTrainBoardsTest::RunTest(const FString&)
     TestTrue(TEXT("At 0 m at 100 s: B in 90 s, A in 290 s"), Next(Near, 100.)[0].Train == 1 && FMath::IsNearlyEqual(Next(Near, 100.)[1].In, 290.));
     TestEqual(TEXT("No stops, no arrivals"), FBelmonteTrainLine::NextArrivals({}, Line.Cycle, 0., 2).Num(), 0);
 
-    // Real minutes: whole minutes left, "arrive" under one, "à quai" when standing; the dev clock speed divides.
+    // Real minutes: whole minutes left, "arriving" under one, "at platform" when standing; the dev clock speed divides.
     auto In = [](double Seconds) { FBelmonteTrainArrival R; R.Train = 0; R.In = Seconds; return R; };
     FBelmonteTrainArrival Standing; Standing.Train = 0; Standing.bAtPlatform = true;
-    TestEqual(TEXT("Standing"), FBelmonteTrainLine::Countdown(Standing, 1.), FString(TEXT("à quai")));
-    TestEqual(TEXT("Under a minute"), FBelmonteTrainLine::Countdown(In(59.), 1.), FString(TEXT("arrive")));
-    TestEqual(TEXT("One minute"), FBelmonteTrainLine::Countdown(In(60.), 1.), FString(TEXT("dans 1 min")));
-    TestEqual(TEXT("Five minutes and a bit"), FBelmonteTrainLine::Countdown(In(5 * 60. + 59.), 1.), FString(TEXT("dans 5 min")));
-    TestEqual(TEXT("Clock ten times faster: 600 service s are one real minute"), FBelmonteTrainLine::Countdown(In(600.), 10.), FString(TEXT("dans 1 min")));
-    TestEqual(TEXT("... and 590 are under it"), FBelmonteTrainLine::Countdown(In(590.), 10.), FString(TEXT("arrive")));
-    TestEqual(TEXT("Clock at half speed: 90 service s are three real minutes"), FBelmonteTrainLine::Countdown(In(90.), .5), FString(TEXT("dans 3 min")));
+    TestEqual(TEXT("Standing"), FBelmonteTrainLine::Countdown(Standing, 1.), FString(TEXT("at platform")));
+    TestEqual(TEXT("Under a minute"), FBelmonteTrainLine::Countdown(In(59.), 1.), FString(TEXT("arriving")));
+    TestEqual(TEXT("One minute"), FBelmonteTrainLine::Countdown(In(60.), 1.), FString(TEXT("in 1 min")));
+    TestEqual(TEXT("Five minutes and a bit"), FBelmonteTrainLine::Countdown(In(5 * 60. + 59.), 1.), FString(TEXT("in 5 min")));
+    TestEqual(TEXT("Clock ten times faster: 600 service s are one real minute"), FBelmonteTrainLine::Countdown(In(600.), 10.), FString(TEXT("in 1 min")));
+    TestEqual(TEXT("... and 590 are under it"), FBelmonteTrainLine::Countdown(In(590.), 10.), FString(TEXT("arriving")));
+    TestEqual(TEXT("Clock at half speed: 90 service s are three real minutes"), FBelmonteTrainLine::Countdown(In(90.), .5), FString(TEXT("in 3 min")));
     TestEqual(TEXT("No train"), FBelmonteTrainLine::Countdown(FBelmonteTrainArrival(), 1.), FString(TEXT("-")));
 
     // The countdown at a board follows the service clock: a minute of service time later (scale 1) it reads a minute less.
-    TestEqual(TEXT("Board at 100 s"), FBelmonteTrainLine::Countdown(Next(Far, 100.)[0], 1.), FString(TEXT("dans 1 min")));
-    TestEqual(TEXT("Board at 140 s"), FBelmonteTrainLine::Countdown(Next(Far, 140.)[0], 1.), FString(TEXT("arrive")));
-    TestEqual(TEXT("Board at 200 s"), FBelmonteTrainLine::Countdown(Next(Far, 200.)[0], 1.), FString(TEXT("à quai")));
-    TestEqual(TEXT("Board at 200 s, the train after"), FBelmonteTrainLine::Countdown(Next(Far, 200.)[1], 1.), FString(TEXT("dans 3 min")));
+    TestEqual(TEXT("Board at 100 s"), FBelmonteTrainLine::Countdown(Next(Far, 100.)[0], 1.), FString(TEXT("in 1 min")));
+    TestEqual(TEXT("Board at 140 s"), FBelmonteTrainLine::Countdown(Next(Far, 140.)[0], 1.), FString(TEXT("arriving")));
+    TestEqual(TEXT("Board at 200 s"), FBelmonteTrainLine::Countdown(Next(Far, 200.)[0], 1.), FString(TEXT("at platform")));
+    TestEqual(TEXT("Board at 200 s, the train after"), FBelmonteTrainLine::Countdown(Next(Far, 200.)[1], 1.), FString(TEXT("in 3 min")));
     return true;
 }
 #endif

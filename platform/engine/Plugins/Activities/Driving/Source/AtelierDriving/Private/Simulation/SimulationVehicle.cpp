@@ -295,6 +295,13 @@ void Vehicle::update_steering(float dt, float forward_speed)
     input.forward_speed = forward_speed;
     input.tire_steering = spec.tires.steering;
     input.tuning = tunings.steering;
+    input.has_lock_curve = spec.tires.has_lock_curve;
+    input.lock_angle_low = spec.tires.lock_angle_low;
+    input.lock_angle_high = spec.tires.lock_angle_high;
+    input.lock_speed_low = spec.tires.lock_speed_low;
+    input.lock_speed_high = spec.tires.lock_speed_high;
+    input.lock_ramp_time = spec.tires.lock_ramp_time;
+    input.lock_center_rate = spec.tires.lock_center_rate;
     input.device = config.steering_device;
     input.rear_slip_deg[0] = tires[2].slip_angle * 360.0f;
     input.rear_slip_deg[1] = tires[3].slip_angle * 360.0f;
@@ -378,6 +385,10 @@ void Vehicle::run_powertrain(float dt, float speed)
 
 bool Vehicle::is_drifting() const
 {
+    if (spec.drift_requires_request && controls_.handbrake <= 0.5f)
+    {
+        return false;
+    }
     for (int i = 2; i < 4; ++i)
     {
         if (loaded_[i] && std::fabs(tires[i].slip_angle) > DRIFT_SLIP)

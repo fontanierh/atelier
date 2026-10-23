@@ -28,13 +28,14 @@ def test_task_reuses_in_warm_changed_checkout_without_overwriting_other_work(fix
     fingerprint = build.fingerprint(steps[0], {})
     hit = cache.get(steps[0], fingerprint)
     assert hit['key'] == key
-    def guarded(ctx, operation, key):
-        assert operation == 'restore-action'
-        actions.restore_worker(ctx, steps[0], fixture.store, key)
-        assert (ctx.out / cp.JOURNAL).exists()
+    monkeypatch.setattr(build_checkpoints, '_guard', lambda *a: pytest.fail('action restore spawned a child'))
+    worker = actions.restore_worker
+    def barrier(ctx, step, store, key, **kwargs):
+        value = worker(ctx, step, store, key, **kwargs)
+        assert (ctx.out / cp.JOURNAL).exists()  # The launch barrier stands until verification.
         assert not (ctx.stamps / 'tree.json').exists()
-        return dict(key=key)
-    monkeypatch.setattr(build_checkpoints, '_guard', guarded)
+        return value
+    monkeypatch.setattr(actions, 'restore_worker', barrier)
     cache.restore(steps[0], fingerprint, hit, {})
     assert steps[0].outputs[0].read_bytes() == b'tree'
     assert own.read_bytes() == b'new combat'
@@ -287,3 +288,87 @@ def test_fresh_unsupported_execution_is_current_after_observed_environment_chang
     stamp = dict(fingerprint='a' * 64, checkpoint_key=None,
                  checkpoint_incremental_context=ctx.checkpoint_observed_context)
     assert actions.local_incremental(ctx, steps[0], 'a' * 64, stamp)
+
+
+def offline(monkeypatch):
+    """Any subprocess or socket use during lookup fails the test."""
+    import socket, subprocess
+    from atelier import checkpoint_github
+    def refuse(*_, **__):
+        pytest.fail('ordinary checkpoint lookup made a subprocess or network call')
+    for name in ('run', 'Popen', 'check_output', 'check_call', 'call'):
+        monkeypatch.setattr(subprocess, name, refuse)
+    monkeypatch.setattr(socket, 'create_connection', refuse)
+    monkeypatch.setattr(socket.socket, 'connect', refuse)
+    monkeypatch.setattr(checkpoint_github, 'Remote', refuse)
+
+
+def test_ordinary_miss_makes_no_subprocess_or_network_call(fixture, monkeypatch):
+    monkeypatch.delenv(build_checkpoints.REMOTE_LOOKUP, raising=False)
+    ctx, steps = fixture.checkout('receiver')
+    cache = actions.Actions(ctx, dict(repository='owner/private'))
+    cache.store = fixture.store
+    offline(monkeypatch)
+    assert cache.get(steps[0], build.fingerprint(steps[0], {})) is None
+    assert cache.remote is None
+
+
+def test_cold_prepare_without_local_checkpoint_stays_offline(fixture, monkeypatch):
+    monkeypatch.delenv(build_checkpoints.REMOTE_LOOKUP, raising=False)
+    ctx, steps = fixture.checkout('receiver')
+    monkeypatch.setattr(build_checkpoints, 'Store', lambda game: fixture.store)
+    monkeypatch.setattr(build_checkpoints, 'configured', lambda ctx: dict(repository='owner/private'))
+    monkeypatch.setattr(build_checkpoints, 'cold', lambda ctx: True)
+    messages = []
+    offline(monkeypatch)
+    build_checkpoints.prepare(ctx, steps, echo=messages.append)
+    assert any('remote checkpoint lookup is off' in m for m in messages)
+
+
+def test_remote_action_lookup_runs_only_when_opted_in(fixture, monkeypatch):
+    from contextlib import contextmanager
+    from atelier import checkpoint_github
+    ctx, steps = fixture.checkout('receiver')
+    opened = []
+    class Remote:
+        def __init__(self, repository, game, echo=None): opened.append(repository)
+        @contextmanager
+        def transaction(self): yield
+        def candidates(self): return []
+    monkeypatch.setattr(checkpoint_github, 'Remote', Remote)
+    monkeypatch.setenv(build_checkpoints.REMOTE_LOOKUP, '1')
+    cache = actions.Actions(ctx, dict(repository='owner/private'))
+    cache.store = fixture.store
+    assert cache.get(steps[0], build.fingerprint(steps[0], {})) is None
+    assert opened == ['owner/private']
+
+
+def test_action_restore_is_in_process_and_takes_milliseconds(fixture, monkeypatch):
+    import time
+    from atelier.build_hashes import HashIndex
+    ctx, steps = fixture.checkout('producer')
+    fixture.produce(ctx, steps)
+    for i in range(200):  # A foliage-sized action: many outputs under one declared root.
+        (ctx.out / 'tree' / f'lod{i}.bin').write_bytes(b'lod %d' % i)
+    step = steps[0]
+    stamp = cp.read_json(ctx.stamps / 'tree.json')
+    stamp['products'] = build.build_products.records(step)
+    stamp['checkpoint_inventory'] = actions.inventory_identity(*actions.snapshot(ctx, step, fixture.store, save_blobs=False))
+    actions.publish(ctx, step, stamp['fingerprint'], stamp, store=fixture.store, done={}, produced=True)
+    receiver, received = fixture.checkout('receiver')
+    monkeypatch.setattr(build_checkpoints, '_guard', lambda *a: pytest.fail('action restore spawned a child'))
+    cache = actions.Actions(receiver, {})
+    cache.store = fixture.store
+    with HashIndex(receiver.out / '.state/file-hashes.sqlite3') as index:
+        tools = {}
+        current = build.fingerprint(received[0], {}, index=index, tool_cache=tools)
+        hit = cache.get(received[0], current)
+        started = time.perf_counter()
+        cache.restore(received[0], current, hit, {}, index=index, tool_cache=tools)
+        elapsed = time.perf_counter() - started
+        # Restored digests are already in the build's index: product records read no bytes.
+        monkeypatch.setattr(build.build_products, 'file_digest', lambda *a: pytest.fail('restored output was reread'))
+        assert build.build_products.records(received[0], hasher=index.digest)
+    assert len(list((receiver.out / 'tree').glob('lod*.bin'))) == 200
+    print(f'201-file action restore in process: {elapsed * 1000:.0f} ms')
+    assert elapsed < 0.2, f'{elapsed:.3f} s for one 201-file action restore'

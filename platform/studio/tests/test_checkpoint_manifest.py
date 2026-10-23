@@ -1,4 +1,5 @@
 """Build-time CAS publication and metadata-only merge retention with real small artifacts."""
+import json
 from pathlib import Path
 
 import pytest
@@ -131,7 +132,7 @@ def test_noop_build_publication_reuses_existing_cas_hashes(fixture, monkeypatch)
     manifests.retain(paths.REPO, ctx.out, ctx.game)
 
 
-def test_real_legacy_build_publishes_all_workspace_files_then_retains_without_capture(tmp_path, monkeypatch):
+def test_representative_step_publishes_its_written_inventory_and_reruns_when_it_drifts(tmp_path, monkeypatch):
     from types import SimpleNamespace
     from atelier import build_cache
     repo = tmp_path.resolve(); (repo / 'uv.lock').write_text('lock')
@@ -155,14 +156,29 @@ def test_real_legacy_build_publishes_all_workspace_files_then_retains_without_ca
         (out / 'asset/sidecar').write_bytes(b'also required')
     monkeypatch.setattr(build, 'run_command', run)
     assert build.build('fixture') == 0
+    # The run credits the step with every file it wrote, not just its representative output.
+    stamp = json.loads((out / 'stamps/legacy.json').read_bytes())
+    assert set(stamp['output_inventory']) == {'generated/asset/sentinel', 'generated/asset/sidecar'}
     monkeypatch.setattr(manifests, 'digest_file', lambda *a: pytest.fail('retain hashes no payload'))
     key = manifests.retain(repo, out, 'fixture')
     manifest = cp.Store('fixture').load(key)
     assert set(manifest['incremental_stamps']) == {'legacy'}
-    assert manifest['stamps'] == {}
-    assert 'generated/asset/sentinel' in manifest['files']
-    assert 'generated/asset/sidecar' in manifest['files']
-    assert manifest['actions'] == {}  # No invented complete portable action scope.
+    assert {'generated/asset/sentinel', 'generated/asset/sidecar'} <= set(manifest['files'])
+    # A written file that no longer matches its stamp makes the step stale.
+    (out / 'asset/sidecar').write_bytes(b'replaced by another producer')
+    runs = []
+    monkeypatch.setattr(build, 'run_command', lambda *a, **kw: runs.append(1) or run())
+    messages = []
+    assert build.build('fixture', echo=messages.append) == 0
+    assert runs and any('outputs changed since its stamp (generated/asset/sidecar)' in m for m in messages)
+    # A stamp without an inventory (written before this rule) never publishes.
+    stamp = json.loads((out / 'stamps/legacy.json').read_bytes())
+    stamp.pop('output_inventory')
+    (out / 'stamps/legacy.json').write_text(json.dumps(stamp))
+    task = manifests.folder(out) / 'tasks/legacy.json'
+    task.write_text(json.dumps(dict(json.loads(task.read_bytes()), stamp=stamp)))
+    manifests.finish(ctx, [step])
+    assert not (manifests.folder(out) / 'ready.json').exists()
 
 
 def test_build_workspace_staging_does_not_accumulate_full_checkpoint_versions(fixture, monkeypatch):
@@ -197,7 +213,8 @@ def test_three_hundred_step_build_retains_without_payload_work(tmp_path, monkeyp
             primary.parent.mkdir(parents=True, exist_ok=True)
             primary.write_bytes(b'artifact')
             primary.with_suffix('.sidecar').write_bytes(b'complete workspace companion')
-        steps.append(build.Step(f'asset{i}', [build.Call(f'emit{i}', emit)], inputs=[source], outputs=[primary]))
+        steps.append(build.Step(f'asset{i}', [build.Call(f'emit{i}', emit)], inputs=[source], outputs=[primary],
+                                products=[build.Product(f'asset{i}', (primary, primary.with_suffix('.sidecar')))]))
     monkeypatch.setattr(build, 'Context', lambda *a, **kw: ctx)
     monkeypatch.setattr(build, 'load_recipe', lambda _: SimpleNamespace(steps=lambda ctx: steps))
     monkeypatch.setattr(build_checkpoints, 'configured', lambda ctx: {})
@@ -212,7 +229,7 @@ def test_three_hundred_step_build_retains_without_payload_work(tmp_path, monkeyp
     key = manifests.retain(repo, out, 'fixture')
     elapsed = time.perf_counter() - started
     value = cp.Store('fixture').load(key)
-    assert len(value['incremental_stamps']) == 300
+    assert len(value['stamps']) == 300
     assert len([v for v in value['files'].values() if v['kind'] == 'file']) == 600
     print(f'300-step/600-file actual build: retain={elapsed:.4f}s; zero payload hashing/copying')
 

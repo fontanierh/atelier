@@ -33,6 +33,8 @@ struct RigidBodySpec
     Vec3 drag_angular = VEC3_ZERO;
     float sleep_velocity = 0.1f;
     Vec3 collision_box_pad = VEC3_ZERO;
+    /** Raise the bottom collision corners off terrain facets (metres, 0 keeps every existing car unchanged). */
+    float collision_bottom_raise = 0.0f;
     float ground_friction[2] = {0.8f, 0.6f};
     Vec3 ground_elasticity = Vec3::splat(0.2f);
     Vec3 ground_moment_scale = VEC3_ONE;
@@ -96,6 +98,14 @@ struct TireSpec
     float static_grip[2] = {1.0f, 1.0f};
     float dynamic_grip[2] = {1.0f, 1.0f};
     float steering = 1.0f;
+    /** Optional absolute lock curve. Disabled by default; cars keep the shared steering tables. */
+    bool has_lock_curve = false;
+    float lock_angle_low = 0.0f;      // degrees at or below lock_speed_low
+    float lock_angle_high = 0.0f;     // degrees at or above lock_speed_high
+    float lock_speed_low = 0.0f;      // m/s
+    float lock_speed_high = 0.0f;     // m/s
+    float lock_ramp_time = 0.0f;      // seconds from centre to full lock
+    float lock_center_rate = 1.5f;    // centring is this much faster than turning in
     std::vector<float> yaw_control;
     float yaw_speed = 1.0f;
 
@@ -134,6 +144,8 @@ struct TransmissionSpec
     float final_gear = 0.0f;
     float torque_split = 0.0f;
     float differential[3] = {0.0f, 0.0f, 0.0f};
+    /** A locked axle gives all of its torque to the grounded wheel(s); false keeps the open differential. */
+    bool solid_axle[2] = {false, false};
     float torque_converter = 0.0f;
     float clutch_slip = 0.0f;
     float shift_speed = 0.0f;
@@ -207,6 +219,16 @@ struct VehicleSpec
     InductionSpec induction;
     NosSpec nos;
     AeroSpec aero;
+    /** True only for the kart: the drift state waits for the handbrake, and a low-speed stabilizer runs. */
+    bool drift_requires_request = false;
+    float drift_assist_min_speed = 13.4112f;   // 30 mph
+    float drift_assist_min_slip = 0.2094395f;  // 12 degrees
+    bool stability_assist = false;
+    float stability_gain = 1.0f;
+    /** Feed the last wheel-contact plane into the jump/alignment assist (off keeps existing cars unchanged). */
+    bool wheel_ground_reference = false;
+    /** The host's kart alignment values above are valid; other hosts leave this off. */
+    bool kart_alignment_assist = false;
 };
 
 struct Tunings

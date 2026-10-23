@@ -431,7 +431,7 @@ bool FRacingTvPlacementTest::RunTest(const FString&)
     const FTransform Mount = RacingTv::SpotTransform(Spot, Origin);
     TestTrue(TEXT("Facing west"), Mount.GetRotation().GetForwardVector().Equals(FVector(-1., 0., 0.), 1e-4));
     TestTrue(TEXT("The picture's centre"), RacingTv::ScreenCentre(Spot, Origin).Equals(Origin + FVector(-2600. - RacingTv::PictureFront * Spot.Scale, -190., 248.), .01));
-    TestTrue(TEXT("1.3 to 1.5 times Haras Valley's screen"), Spot.Scale >= 1.3f && Spot.Scale <= 1.5f);
+    TestTrue(TEXT("1.3 to 1.5 times Stud Valley's screen"), Spot.Scale >= 1.3f && Spot.Scale <= 1.5f);
     TestTrue(TEXT("2.3 m over the floor"), FMath::IsNearlyEqual(Spot.Pivot.Z - Spot.Watch.Z, 230., .01));
     for (const RacingTv::FSpot& S : Authored)
     {

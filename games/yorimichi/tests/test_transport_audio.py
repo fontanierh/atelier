@@ -100,6 +100,42 @@ def test_loops_are_seamless(built):
         assert np.array_equal(x, again[cue]), cue
 
 
+def test_ferry_loops_and_demo_mix_match_seam_phase_level_and_duration(built):
+    out, _ = built
+    w50 = make.n_of(0.05)  # 50 ms = 2400 samples at 48 kHz
+    expected_durations = {
+        'ferry_engine_idle': 3.0,
+        'ferry_engine': 3.0,
+        'ferry_wash': 4.0,
+    }
+    for cue, dur_s in expected_durations.items():
+        x = samples(out / cue / f'{cue}_01.wav')
+        assert len(x) == make.n_of(dur_s), cue
+        assert abs(float(np.mean(x))) < 1e-4, cue
+        lv = make.levels(x)
+        assert lv['peak_dbfs'] <= -1.0, (cue, lv)
+        head, tail = x[:w50], x[-w50:]
+        rms_head = 20 * np.log10(np.sqrt(np.mean(head ** 2)) + 1e-12)
+        rms_tail = 20 * np.log10(np.sqrt(np.mean(tail ** 2)) + 1e-12)
+        assert abs(rms_head - rms_tail) < 0.25, (cue, rms_head, rms_tail)
+        if cue in ('ferry_engine_idle', 'ferry_engine'):
+            # Dominant 20/40/60/80 Hz engine harmonics complete integer cycles in 50 ms, so phase matches across head/tail.
+            spec_h = np.fft.rfft(head)
+            spec_t = np.fft.rfft(tail)
+            dom = int(np.argmax(np.abs(spec_h[1:]))) + 1
+            phase_diff = abs((np.angle(spec_h[dom]) - np.angle(spec_t[dom]) + np.pi) % (2 * np.pi) - np.pi)
+            assert phase_diff < 0.35, (cue, dom, phase_diff)
+    for horn_cue in ('ferry_horn_depart', 'ferry_horn_arrive'):
+        hx = samples(out / horn_cue / f'{horn_cue}_01.wav')
+        assert len(hx) / make.SR >= 5.5
+        assert abs(float(np.mean(hx))) < 1e-4
+        assert make.levels(hx)['peak_dbfs'] <= -1.0
+    demo = make.demo_mix()
+    assert len(demo) == make.n_of(20.0)
+    assert abs(float(np.mean(demo))) < 1e-4
+    assert make.levels(demo)['peak_dbfs'] <= -1.0
+
+
 def test_levels_sit_inside_the_existing_banks(built):
     out, manifest = built
     for cue, files in manifest['cues'].items():
