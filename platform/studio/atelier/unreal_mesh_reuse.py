@@ -131,6 +131,59 @@ def retire_candidate_attempt(content, packages, selected, loaded):
         return False
 
 
+def clone_file(source, destination):
+    """An APFS clone (copy-on-write, no bytes copied) when available, else a byte copy; True if cloned."""
+    import sys
+    if sys.platform == 'darwin':
+        import ctypes
+        clone = ctypes.CDLL('/usr/lib/libSystem.B.dylib', use_errno=True).clonefile
+        clone.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int]
+        if clone(os.fsencode(source), os.fsencode(destination), 0) == 0:
+            return True
+    shutil.copyfile(source, destination)
+    return False
+
+
+def set_aside(ctx, content, existing):
+    """@cc [owner:fontanierh,label:safety] replace-unproved-package-transactionally
+    An unproved existing package MAY be replaced by a complete compatible cached item only when
+    none of its group is loaded. Its files MUST be renamed aside, outside Content, before any
+    candidate byte is installed, and MUST be put back unchanged when no candidate is admitted.
+    Only an admitted candidate MAY discard them. A dirty or loaded package is never replaced.
+    """
+    folder = Path(tempfile.mkdtemp(prefix='mesh-replace-', dir=_state(ctx)))
+    moved = []
+    try:
+        for path in existing:
+            relative = path.relative_to(content).as_posix()
+            target = folder / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            os.replace(path, target)
+            moved.append((target, path))
+    except OSError:
+        put_back(content, (folder, moved))
+        raise
+    return folder, moved
+
+
+def _state(ctx):
+    state = safe_destination(ctx.out, '.state')
+    state.mkdir(parents=True, exist_ok=True)
+    return state
+
+
+def put_back(content, aside):
+    """Return set-aside files to their exact paths and let the registry see them again."""
+    import unreal
+    folder, moved = aside
+    for target, path in moved:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        os.replace(target, path)
+    shutil.rmtree(folder, ignore_errors=True)
+    registry = unreal.AssetRegistryHelpers.get_asset_registry()
+    registry.scan_files_synchronous([str(path) for _, path in moved if path.suffix == '.uasset'], True)
+
+
 def historical_validator_functions(source, task, functions):
     """Recover one literal declaration from the original recorded importer, never guess names."""
     tree = ast.parse(source)
@@ -430,15 +483,17 @@ class MeshReuse:
                           'local_package_history_mismatch' if self.local_compatible else
                           'no_compatible_package_history')
                 return self.miss(reason)
-            if any(unreal.EditorAssetLibrary.does_asset_exist(target)
-                   or unreal.find_object(None, target) is not None
+            if any(unreal.find_object(None, target) is not None
                    or unreal.find_object(None, target + '.' + target.rsplit('/', 1)[1]) is not None
                    for target in packages):
-                # A candidate never replaces an unproved existing receiving scope.
-                return self.miss('unproved_existing_package')
-            if any(os.path.lexists(safe_destination(self.content, member.removeprefix('content/')))
-                   for target in packages for member in mesh_reuse.package_members(target)):
+                # A loaded asset is never swapped underneath the editor.
+                return self.miss('unproved_loaded_package')
+            existing = [path for target in packages for member in mesh_reuse.package_members(target)
+                        for path in [safe_destination(self.content, member.removeprefix('content/'))]
+                        if os.path.lexists(path)]
+            if any(path.is_symlink() or not path.is_file() for path in existing):
                 return self.miss('unproved_disk_sidecar')
+            aside = None
             bundle, selected = None, []
             geometry_matches, member_failed = False, False
             native_failure = None
@@ -478,15 +533,21 @@ class MeshReuse:
                     try:
                         for index, (source, destination, expected) in enumerate(trial):
                             temporary_file = Path(temporary) / str(index)
-                            shutil.copyfile(source, temporary_file)
+                            # member_path verified these staged bytes just now; an APFS clone shares
+                            # them copy-on-write, so only a byte copy needs its digest checked again.
+                            cloned = clone_file(source, temporary_file)
                             os.chmod(temporary_file, expected['mode'])
                             if (temporary_file.stat().st_size != expected['size']
-                                    or mesh_reuse.digest(temporary_file) != expected['sha256']):
+                                    or not cloned and mesh_reuse.digest(temporary_file) != expected['sha256']):
                                 raise ValueError('Candidate copy changed')
                             prepared.append((temporary_file, destination))
                     except (OSError, ValueError):
                         member_failed = True
                         continue
+                    if existing and aside is None:
+                        # An unproved package is not a current result. Move its files aside (a rename) so
+                        # a failed candidate can put them back unchanged for the ordinary import.
+                        aside = set_aside(self.ctx, self.content, existing)
                     for temporary_file, destination in prepared:
                         destination.parent.mkdir(parents=True, exist_ok=True)
                         os.replace(temporary_file, destination)
@@ -516,8 +577,13 @@ class MeshReuse:
                 bundle = candidate
                 break
             if bundle is None:
+                if aside is not None:
+                    put_back(self.content, aside)
                 return self.miss(native_failure or ('candidate_member_missing' if member_failed else
                                  'candidate_package_missing' if geometry_matches else 'candidate_geometry_mismatch'))
+            if aside is not None:
+                shutil.rmtree(aside[0], ignore_errors=True)
+                self.counts['replaced_unproved'] = self.counts.get('replaced_unproved', 0) + 1
             copied = True
             self.pending[name]['provenance'] = dict(kind='compatibility-only',
                 checkpoint=bundle['checkpoint'], donor_task=bundle['donor_task'],

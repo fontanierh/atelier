@@ -206,16 +206,16 @@ def test_late_copy_corruption_tries_next_donor_before_any_package_install(scene,
     primary['checkpoint'] = '1' * 64
     monkeypatch.setattr(checkpoint_candidates, 'load_all', lambda *_: [primary, scene.bundle])
     adapter = scene.adapter()
-    copy = native.shutil.copyfile
+    copy = native.clone_file
     calls = []
     def corrupted_once(source, target):
         calls.append(source)
-        if len(calls) == 1:
+        if len(calls) == 1:  # A byte-copy fallback whose bytes changed underway.
             assert not list(scene.content.glob('Region/*'))
             Path(target).write_bytes(b'changed during copy')
-        else:
-            return copy(source, target)
-    monkeypatch.setattr(native.shutil, 'copyfile', corrupted_once)
+            return False
+        return copy(source, target)
+    monkeypatch.setattr(native, 'clone_file', corrupted_once)
     assert acquire(scene, adapter)
     assert adapter.pending['Mesh']['provenance']['checkpoint'] == scene.bundle['checkpoint']
     assert (scene.content / 'Region/Mesh.uasset').read_bytes() == scene.staged['content/Region/Mesh.uasset'].read_bytes()
@@ -286,13 +286,46 @@ def test_receiving_observation_refuses_later_engine_sdk_change(tmp_path):
     assert not native.observed_environment(ctx, {'engine': 'same', 'sdk': 'changed'})
 
 
-@pytest.mark.parametrize('suffix', ['.uasset', '.ubulk', '.upayload'])
-def test_registry_invisible_disk_members_refuse_copy(scene, suffix):
-    target = scene.content / ('Region/Mesh' + suffix)
-    target.parent.mkdir(parents=True); target.write_bytes(b'unproved existing output')
+def test_candidate_members_install_as_clones_without_rehashing(scene, monkeypatch):
+    digests = []
+    real = mesh_reuse.digest
+    monkeypatch.setattr(mesh_reuse, 'digest', lambda path, *a: digests.append(Path(path)) or real(path, *a))
     adapter = scene.adapter()
-    assert acquire(scene, adapter) is None
-    assert target.read_bytes() == b'unproved existing output'
+    assert acquire(scene, adapter)
+    assert not [path for path in digests if '.mesh-import-' in str(path)]  # No second hash of installed clones.
+
+
+@pytest.mark.parametrize('suffix', ['.uasset', '.ubulk', '.upayload'])
+def test_unproved_existing_package_is_replaced_by_an_admitted_cached_item(scene, suffix):
+    stale = scene.content / ('Region/Mesh' + suffix)
+    stale.parent.mkdir(parents=True); stale.write_bytes(b'unproved existing output')
+    adapter = scene.adapter()
+    assert acquire(scene, adapter)
+    assert adapter.counts['reused_candidate'] == 1 and adapter.counts['replaced_unproved'] == 1
+    installed = {path.name: path.read_bytes() for path in scene.content.glob('Region/*')}
+    assert installed == {Path(m).name: ('candidate:' + m).encode() for m in scene.bundle['files']}
+    assert not list((scene.ctx.out / '.state').glob('mesh-replace-*'))  # Nothing left aside.
+
+
+@pytest.mark.parametrize('suffix', ['.uasset', '.ubulk', '.upayload'])
+def test_unproved_existing_package_is_put_back_unchanged_when_no_cached_item_is_admitted(scene, suffix):
+    stale = scene.content / ('Region/Mesh' + suffix)
+    stale.parent.mkdir(parents=True); stale.write_bytes(b'unproved existing output')
+    adapter = scene.adapter()
+    assert acquire(scene, adapter, validator=lambda _: False) is None
+    assert {path.name: path.read_bytes() for path in scene.content.glob('Region/*')} == {
+        stale.name: b'unproved existing output'}
+    assert adapter.miss_reasons == {'current_validator_rejected': 1}
+    assert not list((scene.ctx.out / '.state').glob('mesh-replace-*'))
+    assert any(str(stale) in names for names in scene.scans) or suffix != '.uasset'
+
+
+def test_linked_existing_member_is_never_replaced(scene, tmp_path):
+    outside = tmp_path / 'outside'; outside.write_bytes(b'foreign')
+    link = scene.content / 'Region/Mesh.uasset'; link.parent.mkdir(parents=True); link.symlink_to(outside)
+    adapter = scene.adapter()
+    assert acquire(scene, adapter) is None and adapter.miss_reasons == {'unproved_disk_sidecar': 1}
+    assert link.is_symlink() and outside.read_bytes() == b'foreign'
 
 
 def test_matching_property_does_not_dirty_asset():
