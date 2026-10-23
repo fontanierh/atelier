@@ -7576,6 +7576,10 @@
     "vehicles/kart/reference.png": {
       "bytes": 1698713,
       "sha256": "3cb59ad1ed7dfb83b86d44d1ef95f8c912d3b8c77d04d1c6edcd7b5c2666c61e"
+    },
+    "props/skydome/mesh.source.npz": {
+      "bytes": 35518,
+      "sha256": "59994b166caf603ace942ff7b8444c5bebe4a6a74f0e5939707551ac382dde73"
     }
   }
 }
