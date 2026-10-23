@@ -1,6 +1,7 @@
 #include "BikeMeshComponent.h"
 #include "AtomicMeshBounds.h"
 #include "Engine/StaticMesh.h"
+#include "GameFramework/Actor.h"
 #include "PhysicsEngine/BodySetup.h"
 #if WITH_EDITOR
 #include "Chaos/TriangleMeshImplicitObject.h"
@@ -93,6 +94,35 @@ FString UBikeMeshComponent::SteeringBounds(const TArray<UStaticMesh*>& Parts)
     Object->SetNumberField(TEXT("sphere_radius"), Bound.SphereRadius);
     FString Json;
     return FJsonSerializer::Serialize(Object, TJsonWriterFactory<>::Create(&Json)) ? Json : FString();
+}
+
+
+bool UBikeMeshComponent::UseSavedSteeringBounds(const TArray<UStaticMesh*>& Parts)
+{
+    bHasLogicalBounds = false; LogicalBounds = FBoxSphereBounds(ForceInit); UpdateBounds();
+    FBoxSphereBounds Bounds(ForceInit);
+    if (!Parts.Contains(GetStaticMesh()) || !ReadGroupBounds(Parts, Bounds)) return false;
+    SetLogicalBounds(Bounds);
+    return true;
+}
+
+UBikeMeshComponent* UBikeMeshComponent::CreateEvidenceComponent(AActor* Owner, UStaticMesh* Mesh,
+    const TArray<UStaticMesh*>& Parts)
+{
+#if WITH_EDITOR
+    FBoxSphereBounds Bounds(ForceInit);
+    if (!Owner || !Owner->GetWorld() || !Mesh || !Parts.Contains(Mesh) || !ReadGroupBounds(Parts, Bounds)) return nullptr;
+    auto* Component = NewObject<UBikeMeshComponent>(Owner);
+    if (Owner->GetRootComponent()) Component->SetupAttachment(Owner->GetRootComponent());
+    else Owner->SetRootComponent(Component);
+    Component->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    Component->SetGenerateOverlapEvents(false); Component->SetCanEverAffectNavigation(false);
+    Component->SetStaticMesh(Mesh); Component->SetLogicalBounds(Bounds);
+    Component->RegisterComponent();
+    return Component;
+#else
+    return nullptr;
+#endif
 }
 
 void UBikeMeshComponent::SetLogicalBounds(const FBoxSphereBounds& Bounds)

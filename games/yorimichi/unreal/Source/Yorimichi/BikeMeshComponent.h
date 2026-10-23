@@ -25,6 +25,14 @@ public:
     static const TArray<FName>& SteeringNames();
     static bool ReadGroupBounds(const TArray<UStaticMesh*>& Parts, FBoxSphereBounds& OutBounds);
     void SetLogicalBounds(const FBoxSphereBounds& Bounds);
+    /** Configure only from the complete saved group containing this component mesh. */
+    UFUNCTION(BlueprintCallable, Category="Yorimichi|Import")
+    bool UseSavedSteeringBounds(const TArray<UStaticMesh*>& Parts);
+    /** Explicit evidence fixture only: native supported component creation/registration.
+     * Production BikeComponent creates its own complete steering joint and children. */
+    UFUNCTION(BlueprintCallable, Category="Yorimichi|Import")
+    static UBikeMeshComponent* CreateEvidenceComponent(AActor* Owner, UStaticMesh* Mesh,
+        const TArray<UStaticMesh*>& Parts);
     bool HasLogicalBoundsOverride() const { return bHasLogicalBounds; }
     const FBoxSphereBounds& GetLogicalBoundsOverride() const { return LogicalBounds; }
     /** Editor-only exact render observation/persistence, without changing build settings. */

@@ -38,7 +38,13 @@ bool FBikeAtomicBoundsTest::RunTest(const FString&)
     auto Missing=Parts;Missing.Pop();
     TestFalse(TEXT("Missing member cannot use stored records"),UBikeMeshComponent::ReadGroupBounds(Missing,Saved));
     TStrongObjectPtr<UBikeMeshComponent> Component(NewObject<UBikeMeshComponent>());
-    Component->SetLogicalBounds(Bound);Component->BoundsScale=1.f;
+    TestFalse(TEXT("Missing component mesh cannot borrow group bounds"),Component->UseSavedSteeringBounds(Parts));
+    Component->SetStaticMesh(Parts[0]);
+    TestTrue(TEXT("Actual member uses complete saved group"),Component->UseSavedSteeringBounds(Parts));
+    TestFalse(TEXT("Incomplete group refuses even with stored metadata"),Component->UseSavedSteeringBounds(Missing));
+    TestFalse(TEXT("Refusal does not retain stale override"),Component->HasLogicalBoundsOverride());
+    TestTrue(TEXT("Complete group configures again"),Component->UseSavedSteeringBounds(Parts));
+    Component->BoundsScale=1.f;
     TestTrue(TEXT("Typed actual logical override exposed"),Component->HasLogicalBoundsOverride());
     TestEqual(TEXT("CalcBounds keeps true sphere"),Component->CalcBounds(FTransform::Identity).SphereRadius,2.);
     Component->BoundsScale=2.f;
