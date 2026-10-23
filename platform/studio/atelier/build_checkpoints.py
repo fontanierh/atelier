@@ -15,7 +15,8 @@ import uuid
 
 from . import build_products, manifest, paths
 from .build_cache import atomic_json
-from .checkpoint_store import CheckpointError, JOURNAL, Store, certificates, cold, context, identity, read_json
+from .checkpoint_store import (CheckpointError, JOURNAL, Store, certificates, cold, context, hydration_member, identity,
+                               read_json)
 from .release import PublishError
 
 
@@ -269,6 +270,38 @@ def prepare(ctx, steps, *, echo=print):
 STAGED = '.state/hydration-stamps'
 
 
+def hydratable(ctx, steps, names, inventories):
+    """@cc [owner:fontanierh,label:correctness] hydration-fills-only-non-current-owners
+    Hydration MAY fill a manifest member only when a receiving step without a local stamp owns
+    it: inside that verifiable step's declared roots, or listed in its published output inventory.
+    A member any locally stamped step claims (its declared roots, or its local or saved inventory)
+    MUST stay as that step left it: a file its current result omits is never restored. A member
+    without such an owner MUST NOT be restored. Returns (owned, current) member-label scopes.
+    """
+    from .checkpoint_actions import declared, label, verifiable
+    present = {p.stem for p in ctx.stamps.glob('*.json')} if ctx.stamps.is_dir() else set()
+    owned, current = set(), set()
+    for step in steps:
+        scope = set()
+        try:
+            scope.update(label(ctx, root) for root in declared(ctx, step))
+        except CheckpointError:
+            pass
+        if step.name in present:
+            scope.update(inventories.get(step.name, ()))
+            try:
+                scope.update(read_json(ctx.stamps / (step.name + '.json')).get('output_inventory') or ())
+            except (OSError, ValueError, CheckpointError):
+                pass
+            current |= scope
+        elif step.name in names:
+            if step.name in inventories:
+                owned.update(inventories[step.name])
+            elif verifiable(ctx, step):
+                owned |= scope
+    return owned, current
+
+
 def hydration_plan(ctx, steps, store):
     """The largest compatible local checkpoint, compared file by file with this workspace.
 
@@ -295,12 +328,14 @@ def hydration_plan(ctx, steps, store):
     files = saved['files']
     trusted, inventories = trusted_stamps(ctx, steps, saved)
     owners = owned_outputs(ctx, steps, inventories)
+    owned, current = hydratable(ctx, steps, trusted, inventories)
     missing, labels = 0, set()
     bases = {label: str(root) + '/' for label, (root, _) in allowed.items()}
     for member in files:
         label, _, name = member.partition('/')
         if (not usable(summary, label) or label == 'generated' and not declared_member(name, outputs)
-                or unverified_member(member, owners)):
+                or unverified_member(member, owners) or not hydration_member(member, owned)
+                or hydration_member(member, current)):
             continue
         labels.add(label + '/')
         if not os.path.lexists(bases[label] + name):
@@ -317,7 +352,7 @@ def hydration_plan(ctx, steps, store):
     if not (missing or lacking) or futile:
         return None, len(summaries), len(candidates)
     return (dict(key=key, units=sorted(labels), missing=missing, stamps=lacking, outputs=sorted(outputs), token=token,
-                 owners=owners),
+                 owners=owners, owned=sorted(owned), current=sorted(current)),
             len(summaries), len(candidates))
 
 
@@ -331,9 +366,11 @@ def hydrate(ctx, steps, store, *, echo=print, resume=None):
     started = time.monotonic()
     if resume is not None:
         from .checkpoint_actions import ownership, trusted
-        _, inventories = trusted(ctx, steps, json.loads((store.manifests / (resume['key'] + '.json')).read_bytes()))
+        names, inventories = trusted(ctx, steps, json.loads((store.manifests / (resume['key'] + '.json')).read_bytes()))
+        owned, current = hydratable(ctx, steps, names, inventories)
         plan = dict(key=resume['key'], units=resume['units'], missing=None, stamps=resume.get('stamps', []),
-                    outputs=sorted(declared(ctx, steps)), token=None, owners=ownership(ctx, steps, inventories))
+                    outputs=sorted(declared(ctx, steps)), token=None, owners=ownership(ctx, steps, inventories),
+                    owned=sorted(owned), current=sorted(current))
         echo(f'Resuming checkpoint hydration from {plan["key"][:12]}')
     else:
         plan, total, scanned = hydration_plan(ctx, steps, store)
@@ -346,7 +383,8 @@ def hydrate(ctx, steps, store, *, echo=print, resume=None):
     journal = ctx.out / JOURNAL
     try:
         atomic_json(ctx.out / HYDRATION_REQUEST, dict(key=plan['key'], units=plan['units'], stamps=plan['stamps'],
-                                                      outputs=plan['outputs'], owners=plan['owners']))
+                                                      outputs=plan['outputs'], owners=plan['owners'],
+                                                      owned=plan['owned'], current=plan['current']))
         result = _guard(ctx, 'hydrate', plan['key'])
         pending = read_json(journal)
         if result.get('key') != plan['key'] or pending.get('key') != plan['key'] or 'units' not in pending:

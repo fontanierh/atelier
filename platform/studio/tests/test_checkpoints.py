@@ -3,6 +3,7 @@ from copy import deepcopy
 import hashlib
 import json
 import os
+import shutil
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -531,3 +532,64 @@ def test_inventoried_representative_step_restores_in_a_cold_checkout(fixture):
     other, current = fixture.checkout('cold-two')
     stamps = cp.restore(other, [*current, representative(other)], fixture.store, fixture.store.save(tampered), echo=lambda _: None)
     assert 'world' not in stamps and not (other.out / 'world').exists()
+
+
+def inventoried(ctx, files):
+    """A representative-output step (like unreal.treehouse) whose stamp lists every file it wrote."""
+    step = representative(ctx)
+    (ctx.out / 'world').mkdir(parents=True, exist_ok=True)
+    inventory = {}
+    for name in ('build-report.json', *files):
+        path = ctx.out / 'world' / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(name.encode())
+        info = path.stat()
+        inventory['generated/world/' + name] = [info.st_size, info.st_mtime_ns, hashlib.sha256(name.encode()).hexdigest()]
+    stamp = dict(fingerprint=build.fingerprint(step, {}), seconds=30., time=1., output_inventory=inventory)
+    atomic_json(ctx.stamps / 'world.json', stamp)
+    return step
+
+
+def test_hydration_never_restores_files_a_current_step_removed(fixture, monkeypatch):
+    # An older checkpoint still holds files the current steps deliberately removed (r13: TH_Dressing).
+    donor, steps = fixture.checkout('donor')
+    fixture.produce(donor, steps)
+    tree = steps[0]
+    (donor.out / 'tree/retired.bin').write_bytes(b'retired by the current tree step')
+    stamp = json.loads((donor.stamps / 'tree.json').read_text())
+    declarations, files = checkpoint_actions.snapshot(donor, tree, fixture.store, save_blobs=False)
+    stamp['checkpoint_inventory'] = checkpoint_actions.inventory_identity(declarations, files)
+    atomic_json(donor.stamps / 'tree.json', stamp)
+    world = inventoried(donor, ['glb/harbor.glb', 'glb/dressing.glb'])
+    saved = deepcopy(fixture.store.load(cp.capture(donor, steps, fixture.store, echo=lambda _: None)))
+    stamp = json.loads((donor.stamps / 'world.json').read_text())
+    for name, (size, mtime_ns, digest) in stamp['output_inventory'].items():
+        fixture.store.put(donor.out / name.partition('/')[2], digest)
+        saved['files'][name] = dict(kind='file', size=size, sha256=digest, mode=0o644, mtime_ns=mtime_ns)
+    saved['incremental_stamps']['world'] = stamp
+    saved['steps'] = sorted({*saved['steps'], 'world'})
+    key = fixture.store.save(saved)
+    assert 'generated/tree/retired.bin' in saved['files'] and 'generated/world/glb/dressing.glb' in saved['files']
+    # The receiver's steps are current and no longer write those files.
+    ctx, current = fixture.checkout('receiver')
+    fixture.produce(ctx, current)
+    world_here = inventoried(ctx, ['glb/harbor.glb'])
+    receiving = [*current, world_here]
+    hydrate_in_process(monkeypatch, fixture)
+    plan, _, _ = build_checkpoints.hydration_plan(ctx, receiving, fixture.store)
+    assert plan is None or plan['missing'] == 0
+    build_checkpoints.hydrate(ctx, receiving, fixture.store, echo=lambda _: None)
+    # Even a request scoped by an older planner fills nothing a current step owns.
+    atomic_json(ctx.out / cp.HYDRATION_REQUEST, dict(key=key, units=['generated/'], stamps=[], outputs=[]))
+    assert cp.hydrate_files(ctx, fixture.store, key, echo=lambda _: None) == 0
+    (ctx.out / cp.JOURNAL).unlink(missing_ok=True)
+    assert not (ctx.out / 'tree/retired.bin').exists()
+    assert not (ctx.out / 'world/glb/dressing.glb').exists()
+    # A step that is not current here still receives its files.
+    shutil.rmtree(ctx.out / 'house')
+    (ctx.stamps / 'house.json').unlink()
+    plan, _, _ = build_checkpoints.hydration_plan(ctx, receiving, fixture.store)
+    assert plan['missing'] == 1 and plan['stamps'] == ['house']
+    build_checkpoints.hydrate(ctx, receiving, fixture.store, echo=lambda _: None)
+    assert (ctx.out / 'house/asset.bin').read_bytes() == b'house'
+    assert not (ctx.out / 'tree/retired.bin').exists() and not (ctx.out / 'world/glb/dressing.glb').exists()
