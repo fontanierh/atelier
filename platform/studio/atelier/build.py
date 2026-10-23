@@ -527,11 +527,18 @@ class RecordingDigest:
         self.local.update(data)
 
 
-def _hash_path(digest, path, skip=True):
-    """Hash a file, or a folder's files; `skip` leaves out what never changes a step's source (SKIP_PARTS)."""
+def _hash_path(digest, path, skip=True, shadow=False):
+    """Hash a file, or a folder's files; `skip` leaves out what never changes a step's source (SKIP_PARTS).
+
+    With shadow, each file contributes its stat identity instead of its bytes (a memo key only).
+    """
     path = Path(path)
     if path.is_file():
         digest.update(str(path.name).encode())
+        if shadow:
+            info = path.stat()
+            digest.update(f'{info.st_size}:{info.st_mtime_ns}:{info.st_ctime_ns}:{info.st_ino}:{info.st_mode}\0'.encode())
+            return
         with open(path, 'rb') as handle:
             for chunk in iter(lambda: handle.read(1 << 20), b''):
                 digest.update(chunk)
@@ -541,7 +548,7 @@ def _hash_path(digest, path, skip=True):
             if child.is_file() and not (skip and (SKIP_PARTS & set(child.parts) or child.suffix in SKIP_SUFFIXES)):
                 # rglob preserves this lexical prefix; avoid searching all parent paths per file.
                 digest.update(str(Path(*child.parts[depth:])).encode())
-                _hash_path(digest, child, skip)
+                _hash_path(digest, child, skip, shadow)
     else:
         digest.update(b'missing:' + str(path).encode())
 
@@ -580,6 +587,34 @@ def fingerprint(step, done, *, index=None, tool_cache=None, observation=None, _i
 
 
 def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, observation=None, _input_bytes=None, _tool_identity=None):
+    """@cc [owner:fontanierh,label:correctness;performance] legacy-fingerprint-memo
+    A legacy byte-stream fingerprint MAY be reused from the build's hash index only under a key
+    that covers everything the fingerprint covers, with each input file's bytes replaced by its
+    identity, size, mode and nanosecond modification/change times. Verification mode, replaced
+    input bytes and named (Merkle) fingerprints MUST compute directly. The value MUST be exactly
+    what the direct computation returned.
+    """
+    named = bool(step.products or step.reads or step.references)
+    if index is None or named or _input_bytes or getattr(index, 'verify', False):
+        return _fingerprint_state(step, done, capture=capture, index=index, tool_cache=tool_cache,
+                                  observation=observation, _input_bytes=_input_bytes, _tool_identity=_tool_identity)
+    from .build_deferred import observe, validate
+    validate(step)
+    observation = observation if observation is not None else observe(step)
+    shadow, _ = _fingerprint_state(step, done, capture=False, index=index, tool_cache=tool_cache,
+                                   observation=observation, _tool_identity=_tool_identity, shadow=True)
+    key = ('legacy-fingerprint-v1:' + ('state:' if capture else 'key:') + shadow)
+    hit = index.remembered(key)
+    if isinstance(hit, list) and len(hit) == 2:
+        return hit[0], hit[1]
+    value = _fingerprint_state(step, done, capture=capture, index=index, tool_cache=tool_cache,
+                               observation=observation, _tool_identity=_tool_identity)
+    index.remember(key, [value[0], value[1]])
+    return value
+
+
+def _fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, observation=None, _input_bytes=None,
+                       _tool_identity=None, shadow=False):
     """Hash once, optionally retaining per-input identities for build explanations.
 
     _input_bytes and _tool_identity only reproduce historical evidence in bounded migration. Ordinary
@@ -636,14 +671,14 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, 
             if replacement is not None:
                 recording.update(Path(item).name.encode()); recording.update(replacement)
             else:
-                _hash_path(recording, item)
+                _hash_path(recording, item, shadow=shadow)
             label = str(item).replace(build_root_str, '<build>').replace(repo_str, '<repo>')
             state['inputs'][label] = recording.local.hexdigest()
         else:
             if replacement is not None:
                 digest.update(Path(item).name.encode()); digest.update(replacement)
             else:
-                _hash_path(digest, item)
+                _hash_path(digest, item, shadow=shadow)
     if step.optional_inputs:
         state['optional_inputs'] = {}
         for item in step.optional_inputs:

@@ -283,3 +283,18 @@ def test_explicit_stair_cap_owns_join_contact_but_never_hides_a_rail():
         walking_headroom(query,contact)
         query=StructureClearance({'visual':cap+[0,0,.3],'collision':cap},[-20,-20,20,20])
         with pytest.raises(ValueError,match='headroom'):walking_headroom(query,contact)
+
+
+def test_structure_bounds_are_cached_by_file_identity(tmp_path, monkeypatch):
+    import os
+    calls = []
+    (tmp_path/'.state').mkdir()
+    glb = tmp_path/'piece.glb'; glb.write_bytes(b'first')
+    monkeypatch.setattr(structures, 'mesh_bounds', lambda path: calls.append(path) or ([0., 0., 0.], [1., 1., 1.]))
+    monkeypatch.setattr(structures, '_bounds_memo', {})
+    assert structures.cached_bounds(tmp_path, 'piece.glb') == ([0., 0., 0.], [1., 1., 1.])
+    monkeypatch.setattr(structures, '_bounds_memo', {})  # A new process reads the persisted cache.
+    assert structures.cached_bounds(tmp_path, 'piece.glb') == ([0., 0., 0.], [1., 1., 1.]) and len(calls) == 1
+    glb.write_bytes(b'other bytes')
+    structures.cached_bounds(tmp_path, 'piece.glb')
+    assert len(calls) == 2

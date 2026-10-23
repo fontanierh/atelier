@@ -7,6 +7,7 @@ import hashlib
 import itertools
 import json
 import math
+import os
 from pathlib import Path
 import re
 import struct
@@ -78,6 +79,45 @@ def mesh_bounds(path):
     return low,high
 
 
+BOUNDS_CACHE = '.state/gondola-mesh-bounds.json'
+BOUNDS_SCHEMA = 1  # Bump when mesh_bounds or the FRAME mapping changes.
+_bounds_memo = {}
+
+
+def cached_bounds(build, relative):
+    """mesh_bounds, remembered per file identity (size, mtime, inode) across runs.
+
+    Planning decodes every structure GLB to choose the deferred inputs; an unchanged file keeps
+    its observed bounds. The selected files are still hashed in full as the step's inputs.
+    """
+    build = Path(build)
+    path = build/relative
+    info = path.stat()
+    identity = [info.st_size, info.st_mtime_ns, info.st_ino]
+    store = _bounds_memo.get(str(build))
+    if store is None:
+        try:
+            saved = json.loads((build/BOUNDS_CACHE).read_text())
+            store = saved['entries'] if saved.get('schema') == BOUNDS_SCHEMA else {}
+        except (OSError, ValueError, KeyError, TypeError):
+            store = {}
+        _bounds_memo[str(build)] = store
+    hit = store.get(relative)
+    if hit and hit[0] == identity:
+        return hit[1], hit[2]
+    low, high = mesh_bounds(path)
+    store[relative] = [identity, low, high]
+    target = build/BOUNDS_CACHE
+    if target.parent.is_dir():  # Never create output folders; a missing cache only costs time.
+        try:
+            temporary = target.with_name(target.name + '.%d.tmp' % os.getpid())
+            temporary.write_text(json.dumps({'schema': BOUNDS_SCHEMA, 'entries': store}, sort_keys=True))
+            temporary.replace(target)
+        except OSError:
+            pass
+    return low, high
+
+
 def placed_bounds(bounds, matrix, offset):
     points = [[sum(matrix[i][j]*p[j] for j in range(3))+offset[i] for i in range(3)]
               for p in itertools.product(*zip(*bounds))]
@@ -121,7 +161,7 @@ def selected(build):
                                      if entry.get('collision') else geometry['visual'])
         for relative in set(geometry.values()):
             if relative not in bounds_cache:
-                bounds_cache[relative] = mesh_bounds(build/relative)
+                bounds_cache[relative] = cached_bounds(build, relative)
         transforms = []
         if not group['transforms']:
             raise ValueError('Empty Belmonte structure instance roster')
