@@ -1,24 +1,11 @@
-"""Hidamari stable (陽だまり厩舎), Blender, headless: `atelier build yorimichi world.hidamari_stable`.
+"""Original Stable geometry constructors used by selected atomic source tasks.
 
-Builds Henry's racing stable from layout.py with Hidamari's building kit (village.build.Mesh, one vertex-colour
-material, kawara tile roofs): a long timber barn (umaya) with a central aisle, ten stalls, a tack room and the
-jockeys' office; the roofed entrance gate with the name plate, the sand yard (trough, hitching rail, stone lanterns),
-the fenced paddock, the yard's ground overlays and the earth road from the end of Hidamari's street. The pad itself
-and its slopes are Hidamari's own terrain (layout.grade).
-
-Outputs in build/yorimichi/hidamari-stable/:
-- hidamari-stable.blend: every LOD in its own collection, collision boxes and anchors as empties.
-- glb/SM_HS_Stable_LOD0/1/2.glb: the stable, one material (M_HS_Stable, vertex colours); glb/SM_HS_StallDoor_LOD0/1/2
-  and SM_HS_RoomDoor_LOD0/1/2: the sliding door leaves (origin at the closed leaf's bottom centre, placed by the
-  placements); glb/SM_HS_Ground.glb (the yard and paddock overlays) and SM_HS_Road.glb (the road), both walkable and
-  in Hidamari's surfaces (HDS_<slug> slots); SM_HS_RoadSign.glb (the lanterns and sign where the road leaves the street);
-  glb/SM_HS_Stable_Collision.glb: the UCX_ boxes.
-- placements.json: the site, every mesh with its placement, the stalls (door pivots, name plates, horse spots), the
-  rooms, the sign and notice board anchors, NPC spots, the road and the island clearance polygons.
-- manifest.json: triangle counts per LOD, budgets, checksums and checks.
-
-All meshes are in the stable's frame (layout.py): metres, origin on the pad's top at SITE, Blender's standard glTF
-export (Y-up).
+The normal graph declares canonical query/state data, then 24 independently cached
+bounded GLBs: Barn, BarnRoof, Gate, Yard and Paddock at three LODs; two three-LOD
+door leaves; Ground, Road and RoadSign. File-only assembly publishes complete
+membership and unchanged placements. No monolithic export entry remains.
+The committed Stable enable switch stays false; source/native diagnostics use
+explicit isolated fixtures and do not enable the world.
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2])); import yori  # noqa: E402,F401
 import hashlib
