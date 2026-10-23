@@ -1,10 +1,11 @@
-"""The game target's receipt: its products and runtime dependencies, and their paths after a restore.
+"""The game target's receipt: its products and runtime dependencies, and a checkout-independent form.
 
 UBT writes $(ProjectDir) and $(EngineDir) variables for the products but absolute paths for the
-repository's own plugin descriptors. A result restored from another worktree keeps those donor paths,
-so a restore fixes exactly those references; the building checkout's own receipt is never rewritten.
+repository's own plugin descriptors. Those are rewritten to $(ProjectDir) right after the build, so a
+stored result is byte-identical in every checkout and a restore needs no rewriting of its own.
 """
 import json
+import os
 from pathlib import Path
 
 
@@ -24,6 +25,8 @@ def verify(ctx, log):
     if not path.is_file():
         raise RuntimeError('the game target did not write ' + path.name)
     data = json.loads(path.read_text())
+    if portable(ctx, data):          # UBT writes the repository's own plugin descriptors absolutely
+        path.write_text(json.dumps(data) + '\n')
     products = data.get('BuildProducts') or []
     dependencies = data.get('RuntimeDependencies') or []
     missing = [item['Path'] for item in products if not expand(ctx, item['Path']).exists()]
@@ -34,31 +37,30 @@ def verify(ctx, log):
     log.write(f'game binary receipt: {len(products)} products, {len(dependencies)} runtime dependencies present\n')
 
 
-def relocate(ctx, log):
-    """A restored receipt still names the donor checkout's plugin descriptors; point them at this one.
+def portable(ctx, data):
+    """Rewrite absolute paths inside this repository as $(ProjectDir) so the bytes do not depend on the checkout.
 
-    The products already use $(ProjectDir)/$(EngineDir), so only absolute repository paths move.
+    Without this a restored result differs from its stored entry and the store refuses it. Products already use the
+    variable; the repository plugin descriptors in RuntimeDependencies do not.
     """
     from atelier import paths
-    path = receipt(ctx)
-    if not path.is_file():
-        raise RuntimeError('the restored game binary has no .target receipt')
-    data = json.loads(path.read_text())
-    dependencies = data.get('RuntimeDependencies') or []
-    moved = 0
-    for item in dependencies:
+    project = Path(ctx.uproject).resolve().parent
+    changed = False
+    for item in data.get('RuntimeDependencies') or []:
         text = item.get('Path', '') if isinstance(item, dict) else item
-        if not text.startswith('/') or Path(text).is_relative_to(paths.REPO):
+        if not text.startswith('/'):
             continue
-        wanted = next(((paths.REPO / marker.split('/')[1] / text.split(marker, 1)[1]).as_posix()
-                       for marker in ('/platform/', '/games/') if marker in text), text)
-        if wanted == text:
+        target = Path(text)
+        if not target.is_relative_to(paths.REPO):
             continue
-        moved += 1
+        wanted = '$(ProjectDir)/' + os.path.relpath(target, project).replace(os.sep, '/')
         if isinstance(item, dict):
             item['Path'] = wanted
-    if moved:
-        data['RuntimeDependencies'] = dependencies
-        path.write_text(json.dumps(data) + '\n')
-    log.write(f'game binary relocated {moved} repository references\n')
+        changed = True
+    return changed
+
+
+def relocate(ctx, log):
+    """A restored receipt must carry no checkout-specific path; check it in this checkout and log where it points."""
     verify(ctx, log)
+    log.write('game binary receipt relocated to this checkout\n')
