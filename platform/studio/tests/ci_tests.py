@@ -11,6 +11,10 @@ import pytest
 
 GROUPS = ('board', 'studio', 'games')
 
+# A spawned worker inherits its parent's environment. This marks one, so a child process can
+# never spawn another generation even if its slice arguments were ever passed without --workers.
+WORKER_DEPTH = 'ATELIER_CI_WORKER_DEPTH'
+
 # Tests that observe or create machine-wide render processes stay on one worker: a process
 # named Blender or UnrealEditor created by one worker is visible to another worker's scan.
 SERIAL_PREFIXES = ('platform/harness/tests/',)
@@ -134,6 +138,16 @@ def _resolve_workers(spec):
     return max(1, int(spec))
 
 
+def shard_argv(index, count):
+    """A spawned worker takes one slice and never spawns again: it already is a slice.
+
+    The slice arguments are not enough on their own. A child inherits ATELIER_CI_WORKERS from its
+    parent's environment, so leaving --workers unset there lets every generation multiply the
+    partition it just received and fork without bound.
+    """
+    return ['--worker-index', str(index), '--worker-count', str(count), '--workers', '1']
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('group', choices=GROUPS)
@@ -143,13 +157,19 @@ def main():
     parser.add_argument('--worker-count', type=int, default=1)
     args, pytest_args = parser.parse_known_args()
     workers = _resolve_workers(args.workers)
-    if workers > 1 and args.worker_count == 1:
+    if os.environ.get(WORKER_DEPTH):
+        workers = 1  # This process is already one slice of a larger partition.
+    if workers > 1:
+        # A matrix job may itself be one shard of the group. Each local worker then takes one
+        # slice of the combined partition, so every node still runs exactly once across jobs:
+        # the greedy assignment only depends on the group's own file set, which all jobs share.
+        combined = workers * args.worker_count
         junit_path, base_pytest_args = _extract_junitxml(pytest_args)
         procs = []
         worker_xmls = []
         for idx in range(workers):
             cmd = [sys.executable, str(Path(__file__).resolve()), args.group,
-                   '--worker-index', str(idx), '--worker-count', str(workers)]
+                   *shard_argv(args.worker_index * workers + idx, combined)]
             if idx == 0 and args.collection_report:
                 cmd.extend(['--collection-report', str(args.collection_report)])
             worker_args = list(base_pytest_args)
@@ -157,7 +177,7 @@ def main():
                 w_xml = junit_path.with_name(f'{junit_path.stem}.worker-{idx}{junit_path.suffix}')
                 worker_xmls.append(w_xml)
                 worker_args.append(f'--junitxml={w_xml}')
-            procs.append(subprocess.Popen(cmd + worker_args))
+            procs.append(subprocess.Popen(cmd + worker_args, env={**os.environ, WORKER_DEPTH: '1'}))
         codes = [p.wait() for p in procs]
         if junit_path is not None:
             _merge_junitxml(junit_path, worker_xmls)

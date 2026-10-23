@@ -154,3 +154,29 @@ def test_a_macos_only_test_runs_on_exactly_one_group(tmp_path):
                                             'games/x/tests/test_portable.py::test_linux'}
     assert selected['board'] == ['games/x/tests/test_mac.py::test_mac']
     assert selected['games'] == ['games/x/tests/test_portable.py::test_linux']
+
+def test_two_sharded_jobs_of_two_workers_cover_every_node_once():
+    """A matrix job is one shard of the group; its workers take slices of the combined partition.
+    The union of both jobs must still be every node, each once, with serial files on job 0."""
+    nodeids = ([f'platform/harness/tests/test_capacity_{i}.py::test_{i}' for i in range(4)]
+               + [f'platform/studio/tests/test_plain_{i}.py::test_{i}' for i in range(7)]
+               + [f'games/x/tests/test_game_{i}.py::test_{i}' for i in range(5)])
+    slices = [_shard('studio', index, 4, nodeids) for index in range(4)]
+    jobs = [slices[0] + slices[1], slices[2] + slices[3]]
+    flat = [node for job in jobs for node in job]
+    assert sorted(flat) == sorted(set(flat)), 'a node ran in more than one slice'
+    expected = {n for n in nodeids if not n.startswith('games/')}
+    assert set(flat) == expected
+    assert any(node.startswith('platform/harness/') for node in jobs[0])
+    assert not any(node.startswith('platform/harness/') for node in jobs[1])
+
+
+
+def test_a_spawned_worker_cannot_spawn_again():
+    """A child inherits ATELIER_CI_WORKERS, so its own --workers must be pinned to one or every
+    generation multiplies the partition it was given."""
+    from ci_tests import shard_argv
+    argv = shard_argv(3, 8)
+    assert argv == ['--worker-index', '3', '--worker-count', '8', '--workers', '1']
+    assert '--workers' in argv and argv[argv.index('--workers') + 1] == '1'
+
