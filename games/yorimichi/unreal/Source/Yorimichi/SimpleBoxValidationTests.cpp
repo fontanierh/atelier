@@ -6,7 +6,7 @@
 #include "Misc/AutomationTest.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FCurrentSimpleBoxValidation,"Yorimichi.AtomicMeshes.SimpleBoxValidation",
-    EAutomationTestFlags::EditorContext|EAutomationTestFlags::EngineFilter)
+    EAutomationTestFlags_ApplicationContextMask|EAutomationTestFlags::EngineFilter)
 bool FCurrentSimpleBoxValidation::RunTest(const FString&)
 {
     auto* Mesh=NewObject<UStaticMesh>();

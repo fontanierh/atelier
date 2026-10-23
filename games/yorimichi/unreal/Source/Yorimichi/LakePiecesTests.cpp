@@ -4,7 +4,7 @@
 #include "Dom/JsonValue.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLakeMembershipTest,"Yorimichi.LakePieces.CompleteMembership",
-    EAutomationTestFlags::EditorContext|EAutomationTestFlags::EngineFilter)
+    EAutomationTestFlags_ApplicationContextMask|EAutomationTestFlags::EngineFilter)
 bool FLakeMembershipTest::RunTest(const FString&)
 {
     auto Manifest=MakeShared<FJsonObject>();auto Parents=MakeShared<FJsonObject>();auto Assets=MakeShared<FJsonObject>();
