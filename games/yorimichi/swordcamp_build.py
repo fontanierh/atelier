@@ -6,7 +6,7 @@ from pathlib import Path
 from atelier.atomic_files import atomic_json
 from atelier.build import Call, Product, Step
 from atelier.build_inputs import local_imports
-from atelier.export_assembly import Item, assemble
+from atelier.export_assembly import Item, assemble, runtime_inputs
 
 GAME = Path(__file__).resolve().parent
 REGION = GAME / 'world/regions/swordcamp'
@@ -50,7 +50,7 @@ def steps(ctx):
         atomic_json(root / 'manifest.json', manifest)
         log.write(f'SwordCamp: {len(manifest)} complete independent exports\n')
     result.append(Step('world.swordcamp', [Call('publish swordcamp', finish)],
-        inputs=local_imports(Path(__file__)), reads=['swordcamp.atomic'], needs=['world.swordcamp_atlas'],
+        inputs=[Path(__file__), REGION / 'catalogue.py', *runtime_inputs()], reads=['swordcamp.atomic'],
         products=[Product('swordcamp.meshes', (root / 'fbx', root / 'manifest.json'))],
         about='assemble the complete independently cached equipment library'))
     return result

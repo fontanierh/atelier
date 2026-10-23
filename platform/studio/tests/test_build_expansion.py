@@ -53,7 +53,7 @@ def project(tmp_path, monkeypatch):
         return result
     for name in ('One', 'Two'): (repo / (name + '.txt')).write_text(name)
     monkeypatch.setattr(build, 'load_recipe', lambda _: SimpleNamespace(steps=recipe))
-    return SimpleNamespace(repo=repo, out=out, spec=spec, trace=trace)
+    return SimpleNamespace(repo=repo, out=out, spec=spec, trace=trace, ctx=ctx)
 
 
 def test_cold_build_discovers_real_children_before_assembly(project):
@@ -86,6 +86,14 @@ def test_replanned_roster_keeps_unchanged_atomic_products_current(project):
 def test_forced_planner_is_not_forced_again_on_its_internal_expansion_pass(project):
     assert build.build('fixture', force=True) == 0
     assert project.trace == ['plan', 'One', 'Two', 'assemble']
+
+
+def test_force_suppression_is_scoped_to_one_expansion_invocation(project):
+    for _ in range(2):
+        assert build.build('fixture', force=True) == 0
+        assert not hasattr(project.ctx, 'expansion_completed')
+        assert not hasattr(project.ctx, 'expansion_heavy_commands')
+    assert project.trace == ['plan', 'One', 'Two', 'assemble'] * 2
 
 
 def test_heavy_budget_spans_planner_expansion(project, monkeypatch):

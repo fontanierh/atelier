@@ -1357,7 +1357,8 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             for completed_step in plan:
                 if completed_step.name in completed:
                     saved = read_stamp(ctx.stamps / (completed_step.name + '.json'))
-                    ctx.__dict__.setdefault('expansion_completed', {})[completed_step.name] = saved['fingerprint']
+                    if hasattr(ctx, 'expansion_completed'):
+                        ctx.expansion_completed[completed_step.name] = saved['fingerprint']
             planners = [s for s in plan if s.name in completed and s.replan]
             if planners:
                 planner = planners[-1]
@@ -1542,7 +1543,8 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
         temporary.write_text(json.dumps(record) + '\n')
         temporary.replace(stamp)
         ctx.checkpoint_changed = True
-        ctx.__dict__.setdefault('expansion_completed', {})[step.name] = current
+        if hasattr(ctx, 'expansion_completed'):
+            ctx.expansion_completed[step.name] = current
         journal.unlink(missing_ok=True)
         if store is not None and not from_cache:
             try:

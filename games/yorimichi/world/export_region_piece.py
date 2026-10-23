@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import yori  # noqa: E402,F401
 
-from atelier import export_tasks, mesh_ir  # noqa: E402
+from atelier import export_manifest as export_tasks, mesh_ir  # noqa: E402
 from atelier.blender.fbx import export_atomic_fbx  # noqa: E402
 from atelier.model_files import regular_files  # noqa: E402
 from mesh_pieces import create_mesh  # noqa: E402

@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import yori  # noqa: E402,F401
 
-from atelier.export_tasks import name, real_directory  # noqa: E402
+from atelier.export_manifest import name, real_directory  # noqa: E402
 
 
 def main(argv=None):

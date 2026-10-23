@@ -1,6 +1,7 @@
 """Normal cached logical geometry, atomic exports and complete regional assembly."""
 from dataclasses import dataclass
 import json
+import os
 from pathlib import Path
 
 from atelier.atomic_files import atomic_json
@@ -28,11 +29,13 @@ class LogicalAsset:
 
 def inventory(root, parent):
     """Read task identities only; the owning ordinary task verifies all geometry payloads."""
-    root = export_tasks.real_directory(root)
+    root = Path(root)
     path = root / 'plan.json'
-    if not path.exists():
-        if path.is_symlink(): raise ValueError('Linked logical plan')
+    # Discovery describes cold tasks without creating or admitting their outputs.
+    # Existing plans still require strict lexical-root validation before any read.
+    if not os.path.lexists(path):
         return ()
+    root = export_tasks.real_directory(root)
     if path.is_symlink() or not path.is_file(): raise ValueError('Invalid logical plan')
     value = json.loads(path.read_text())
     if (value.get('schema') != 1 or value.get('parent') != parent or value.get('complete') is not True
@@ -101,7 +104,7 @@ def steps(ctx, *, region, assets, after=(), inputs=()):
         atomic_json(discovery, dict(schema=1, parents=rows))
         log.write(f'Discovered {sum(map(len, rows.values()))} atomic {region} mesh exports\n')
     result = [*planners, Step(barrier, [Call('discover ' + region, discover)],
-              inputs=local_imports(Path(__file__)), reads=[row[3] for row in logical],
+              inputs=[Path(__file__), *export_assembly.runtime_inputs()], reads=[row[3] for row in logical],
               products=[Product(region + '.geometry_inventory', (discovery,))], replan=True,
               about='discover all completed logical mesh plans before any export'), *exports]
     destination = ctx.out / 'atomic_regions' / region
@@ -121,7 +124,7 @@ def steps(ctx, *, region, assets, after=(), inputs=()):
                     exports=[row['asset'] for row in value['exports']]))
         log.write(f'Assembled {len(exports)} independently cached {region} exports\n')
     result.append(Step(f'world.{region}.assembled', [Call('assemble ' + region, assemble)],
-        inputs=local_imports(Path(__file__)), needs=[barrier], reads=products,
+        inputs=[Path(__file__), *export_assembly.runtime_inputs()], needs=[barrier], reads=products,
         products=[Product(region + '.atomic', (destination,))],
         about='complete validated independent export inventory for ' + region))
     return result

@@ -76,3 +76,15 @@ def test_changed_inventory_never_silently_assembles_the_old_roster(tmp_path):
     with pytest.raises(ValueError, match='roster changed'):
         steps[-1].commands[0].fn(ctx, None)
     assert not (tmp_path / 'atomic_regions').exists()
+
+
+def test_cold_recipe_does_not_follow_a_link_or_certify_its_missing_plan(tmp_path):
+    target = tmp_path / 'real'; target.mkdir()
+    alias = tmp_path / 'alias'; alias.symlink_to(target, target_is_directory=True)
+    ctx = SimpleNamespace(out=alias)
+    steps = graph.steps(ctx, region='fixture', assets=[logical()])
+    assert not steps[0].verify()
+    assert list(target.iterdir()) == []
+    root = write_plan(target, 'One', [('One', 12)])
+    with pytest.raises(ValueError, match='real directories'):
+        graph.inventory(alias / root.relative_to(target), 'One')

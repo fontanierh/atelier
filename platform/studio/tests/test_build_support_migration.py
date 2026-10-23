@@ -79,6 +79,8 @@ def test_composed_host_migration_refuses_changed_reserved_environment(previous, 
         step.commands[0].env = (('ATELIER_BUILD_GAME', 'other-owner'),)
     raw = b'# prior host fixture\n'
     monkeypatch.setattr(host, 'previous_host', lambda _: raw)
+    # Select the synthetic current/predecessor pair only in this unit fixture.
+    monkeypatch.setattr(host, 'RECEIPT_HOST_SHA256', build_products.file_digest(Path(host.__file__).with_name('build_batches.py')))
     current, state = build.fingerprint_state(step, {})
     old_context = migration.previous_context(ctx, step, state['tools'])
     old_tools = build_products.identity(old_context)

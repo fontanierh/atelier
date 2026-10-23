@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from atelier import build, build_batch_migration as migration, checkpoint_actions as actions, checkpoint_store as cp
+from atelier import build, build_products, build_batch_migration as migration, checkpoint_actions as actions, checkpoint_store as cp
 from test_checkpoints import fixture
 
 
@@ -13,6 +13,10 @@ def previous(fixture, monkeypatch):
     step = steps[0]
     step.batch = build.Batch('trees')
     fixture.produce(ctx, steps)
+    # A synthetic eligible host pair tests the migration mechanism. Production
+    # retains its immutable guard and refuses this new batching implementation.
+    monkeypatch.setattr(migration, 'RECEIPT_HOST_SHA256',
+                        build_products.file_digest(Path(build.__file__).with_name('build_batches.py')))
     raw = b'# synthetic immutable predecessor host\n'
     monkeypatch.setattr(migration, 'previous_host', lambda _: raw)
     host = Path(build.__file__).with_name('build_batches.py')

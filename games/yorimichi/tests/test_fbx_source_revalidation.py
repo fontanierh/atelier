@@ -44,7 +44,21 @@ def geometry_ast(text, resource_path_only=False):
 
 
 def test_source_only_export_migration_and_negative_geometry_controls():
-    assert sha((ROOT / 'platform/studio/atelier/blender/fbx.py').read_bytes()) == PROOF['exporter_sha256']
+    extension = json.loads((GAME / 'assets/atomic-export-revalidation.json').read_text())
+    exporter = (ROOT / 'platform/studio/atelier/blender/fbx.py').read_bytes()
+    assert sha((GAME / 'assets/fbx-boundary-revalidation.json').read_bytes()) == extension['predecessor_witness_sha256']
+    assert sha(exporter) == extension['exporter_current_sha256']
+    boundary = extension['exporter_previous_bytes']
+    assert sha(exporter[:boundary]) == PROOF['exporter_sha256'] == extension['exporter_previous_sha256']
+    added = ast.parse(exporter[boundary:]).body
+    assert [node.name for node in added] == extension['added_functions']
+    for node in added:
+        assert isinstance(node, ast.FunctionDef) and not node.decorator_list and node.returns is None
+        for arg in (*node.args.posonlyargs, *node.args.args, *node.args.kwonlyargs,
+                    *([node.args.kwarg] if node.args.kwarg else [])):
+            assert arg.annotation is None
+        for default in (*node.args.defaults, *node.args.kw_defaults):
+            if default is not None: ast.literal_eval(default)  # No added import-time execution.
     for rel, row in PROOF['files'].items():
         text = (ROOT / rel).read_text()
         assert sha(text.encode()) == row['current_sha256']

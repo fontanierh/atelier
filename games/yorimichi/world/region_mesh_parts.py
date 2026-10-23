@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 
 from atelier.atomic_files import atomic_json
-from atelier.export_tasks import TRIANGLE_LIMIT, name, real_directory, sha
+from atelier.export_manifest import TRIANGLE_LIMIT, name, real_directory, sha
 from atelier.mesh_cells import cell_face_groups
 from atelier import mesh_ir
 from atelier.model_files import member, regular_files, retain_files
@@ -42,6 +42,8 @@ def plan(obj, root, *, collisions=(), options=None, cell_metres=CELL_METRES):
     Per-piece payloads MUST exclude unrelated piece identities and whole-parent receipts so
     unchanged logical geometry remains independently cacheable. No mesh export occurs here.
     """
+    if obj.type != 'MESH' or obj.modifiers or getattr(obj.data, 'shape_keys', None) is not None:
+        raise ValueError('Logical planning requires a completed static mesh without modifiers or shape keys')
     parent = name(obj.name)
     root = real_directory(root, create=True)
     if root.exists():

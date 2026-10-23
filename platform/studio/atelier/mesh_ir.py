@@ -12,7 +12,7 @@ import zipfile
 
 import numpy as np
 
-from .export_tasks import TRIANGLE_LIMIT, name, real_directory
+from .export_manifest import TRIANGLE_LIMIT, name, real_directory
 
 FIELDS = {'positions': ('f', 3), 'normals': ('f', 3), 'counts': ('i', None),
           'indices': ('i', None), 'materials': ('i', None), 'smooth': ('b', None)}

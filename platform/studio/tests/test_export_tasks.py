@@ -52,6 +52,7 @@ def test_recipe_has_separate_complete_owners_and_explicit_cached_launch(tmp_path
     assert steps[0].products[0].paths != steps[1].products[0].paths
     assert Path('Two.npz') not in steps[0].inputs
     assert Path('One.npz') not in steps[1].inputs
+    assert Path(tasks.__file__) not in steps[0].inputs
     assert all(s.cache and s.commands[0].factory_startup and s.commands[0].threads == 3 for s in steps)
 
 

@@ -14,15 +14,19 @@ def execute(ctx, wanted, *, steps, force, touch, echo, index, max_heavy_commands
     seen = set()
     ctx.expansion_heavy_commands = 0
     ctx.expansion_completed = {}
-    while True:
-        code = build._build(ctx, wanted, force=force, touch=touch, echo=echo, index=index,
-                            steps=steps, max_heavy_commands=max_heavy_commands)
-        if code != REPLAN:
-            return code
-        token = getattr(ctx, 'recipe_expansion', None)
-        if token is None or token in seen:
-            raise ValueError('Planner expansion repeated without a new completed result')
-        seen.add(token)
-        echo('Discovering independently cached exports after ' + token[0])
-        steps = build.load_recipe(ctx.game).steps(ctx)
-        build.check_modules(steps)
+    try:
+        while True:
+            code = build._build(ctx, wanted, force=force, touch=touch, echo=echo, index=index,
+                                steps=steps, max_heavy_commands=max_heavy_commands)
+            if code != REPLAN:
+                return code
+            token = getattr(ctx, 'recipe_expansion', None)
+            if token is None or token in seen:
+                raise ValueError('Planner expansion repeated without a new completed result')
+            seen.add(token)
+            echo('Discovering independently cached exports after ' + token[0])
+            steps = build.load_recipe(ctx.game).steps(ctx)
+            build.check_modules(steps)
+    finally:
+        for field in ('expansion_completed', 'expansion_heavy_commands', 'recipe_expansion'):
+            ctx.__dict__.pop(field, None)

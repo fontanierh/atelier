@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "scope": "Append-only atomic FBX entry points. The complete previously attested legacy exporter remains byte-identical; added undecorated function definitions perform no import-time work. This is source equivalence for the legacy entry point, not output/native acceptance for new atomic exports.",
+  "predecessor_witness_sha256": "ab9f06a5f251f345e9f9e9c5dacefa175d3e084477f43ce36b9d7ccd98a4c23f",
+  "exporter_previous_bytes": 4828,
+  "exporter_previous_sha256": "57ddda2bc2b852d2c5a1f92f1c3101397c33ea4060ce5893da1222ecc93896b1",
+  "exporter_current_sha256": "73821d60b6152d0ab4b031427c526b361c25f748685c8d53a85fcfd21f75821d",
+  "added_functions": [
+    "validate_atomic_selection",
+    "export_atomic_fbx"
+  ]
+}
