@@ -76,8 +76,16 @@ def test_the_step_declares_the_receipt_products(recipe):
         assert any(path == base or base in path.parents for base in bases), path
 
 
-def test_the_cook_restores_the_binary_and_does_not_build(recipe):
+def test_the_cook_restores_the_binary_and_does_not_build(recipe, monkeypatch, tmp_path):
     ctx, steps = recipe
+    # CI has no engine: this step reads the installed engine's version for dependency-tracked cooking, so the
+    # test supplies a 5.8 engine of its own rather than weakening the argv contract.
+    engine = tmp_path / 'UE'
+    (engine / 'Engine/Build').mkdir(parents=True)
+    (engine / 'Engine/Build/Build.version').write_text(json.dumps({'MajorVersion': 5, 'MinorVersion': 8}))
+    monkeypatch.setattr(ctx, 'unreal_root', engine)
+    monkeypatch.setattr(checkpoint_actions, 'context',
+                        lambda _: dict(system='Darwin', machine='arm64', engine='installed'))
     cook = steps['unreal.cook']
     assert 'unreal.game_binary' in cook.needs
     package = [c for c in cook.commands if isinstance(c, UnrealPackage)]
