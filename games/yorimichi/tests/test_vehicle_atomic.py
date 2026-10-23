@@ -125,3 +125,17 @@ def test_bike_receiver_requires_complete_hashed_atomic_roster_before_native_work
     (assets/'BK_Steer_Core.fbx').write_bytes(b'BK_Steer_Core')
     manifest['steering_parts'].pop();(root/'bike/manifest.json').write_text(json.dumps(manifest))
     with pytest.raises(ValueError,match='membership'):products.read(root)
+
+
+def test_native_bike_namespace_changes_only_exact_immutable_package_literals():
+    import ast
+    helper=load('bike_native_fixture_source',GAME/'tests/native/bike_native_source.py')
+    text=(GAME/'tests/fixtures/bike-native-importer-283329c07.txt').read_text()
+    tree=helper.namespace_tree(text,'/Game/AtelierValidation/BikeAtomicNativeCanary/Original',('/Game/Japan/Assets',))
+    assert not any(isinstance(node,ast.Constant) and node.value=='/Game/Japan/Assets' for node in ast.walk(tree))
+    assert "allow_cpu_access" in ast.unparse(tree) and 'save_loaded_asset' in ast.unparse(tree)
+    # Extra/removed occurrences refuse rather than silently broadening native scope.
+    with pytest.raises(ValueError,match='occurrence'):
+        helper.namespace_tree(text+"\nx='/Game/Japan/Assets'\n",'/Game/AtelierValidation/BikeAtomicNativeCanary/Original',('/Game/Japan/Assets',))
+    with pytest.raises(ValueError,match='occurrence'):
+        helper.namespace_tree(text.replace('/Game/Japan/Assets','/Game/Other'),'/Game/AtelierValidation/BikeAtomicNativeCanary/Original',('/Game/Japan/Assets',))
