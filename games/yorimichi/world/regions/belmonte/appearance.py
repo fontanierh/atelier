@@ -25,7 +25,7 @@ def forest_weight(x, y):
     return t*t*(3.-2.*t)
 
 
-def paint_join_data(data, owner, mesh):
+def paint_join_data(data, owner, mesh, *, palette=None):
     """@cc [owner:fontanierh,label:correctness] country-earthworks-colour-frame
     Railway colour blending MUST compare carved and natural heights in the same
     world frame. Unchanged ground MUST retain its forest or shoreline palette.
@@ -34,7 +34,8 @@ def paint_join_data(data, owner, mesh):
     # The inner rim keeps the four-layer palette at the actual terrain triangles.
     x = np.clip(points[:, 0], L.BOUNDS[0], L.BOUNDS[2]) - L.ORIGIN[0]
     y = np.clip(points[:, 1], L.BOUNDS[1], L.BOUNDS[3]) - L.ORIGIN[1]
-    colours = source.terrain_colours().colour(x, y)
+    palette=source.terrain_colours() if palette is None else palette
+    colours = palette.colour(x, y)
     assert np.isfinite(colours).all(), 'Missing valley colour at the terrain join'
     weight = forest_weight(points[:, 0], points[:, 1])
     # All exterior edges share the forest-floor palette. The mountain material

@@ -68,7 +68,12 @@ def native_colours(path):
 
 def triangles(path, palettes=None):
     """The acquisition bakes object transforms; glTF nodes are identity."""
-    doc, binary = glb_parts(path.read_bytes())
+    return triangles_data(path.read_bytes(),palettes,label=path)
+
+
+def triangles_data(data,palettes=None,*,label='encoded terrain source'):
+    """Read complete query triangles directly from source data, before render exports."""
+    doc, binary = glb_parts(data)
 
     def read(index):
         accessor = doc['accessors'][index]
@@ -81,7 +86,7 @@ def triangles(path, palettes=None):
 
     result, colours = [], []
     for node in doc['nodes']:
-        assert not any(key in node for key in ('matrix', 'translation', 'rotation', 'scale')), (path, node)
+        assert not any(key in node for key in ('matrix', 'translation', 'rotation', 'scale')), (label, node)
         if 'mesh' not in node:
             continue
         for primitive in doc['meshes'][node['mesh']]['primitives']:
@@ -90,7 +95,7 @@ def triangles(path, palettes=None):
             faces = read(primitive['indices']).reshape(-1, 3)
             result.append(vertices[faces])
             if palettes is not None:
-                assert doc.get('extras', {}).get('atelier_vertex_colours') == 'native-byte-rgb-linear-alpha', path
+                assert doc.get('extras', {}).get('atelier_vertex_colours') == 'native-byte-rgb-linear-alpha', label
                 index = primitive['attributes']['COLOR_0']
                 weights = read(index).astype(float)
                 component = doc['accessors'][index]['componentType']

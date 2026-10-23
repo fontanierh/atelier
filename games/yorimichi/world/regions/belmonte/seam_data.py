@@ -17,7 +17,7 @@ def capture(meshes,origin,lines):
     """Project the exact existing stitch sequence into per-owner boundary data."""
     from train import earthworks
     working={name(owner):deepcopy(mesh) for owner,mesh in meshes.items()}
-    result={owner:dict(schema=1,owner=owner,origin=list(origin),seams=[]) for owner in working}
+    result={owner:dict(schema=1,owner=owner,origin=[float(v) for v in origin],seams=[]) for owner in working}
     for axis,value in lines:
         snapshots={}
         for owner,mesh in working.items():

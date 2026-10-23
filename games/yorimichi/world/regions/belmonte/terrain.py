@@ -74,10 +74,11 @@ def old_backdrop(grid, x, y):
     return result
 
 
-def collar():
+def collar(surface=None):
     """Four stitched strips: every imported rim vertex and outer grid knot retained."""
     mesh = Mesh()
-    points = source.terrain(natural=True).faces.reshape(-1, 3) + L.ORIGIN
+    surface=source.terrain(natural=True) if surface is None else surface
+    points = surface.faces.reshape(-1, 3) + L.ORIGIN
     xs, ys, _ = country_grid()
     inner, outer = L.BOUNDS, OUTER
     # Orient each strip counter-clockwise round the hole; its outward rows then
@@ -96,7 +97,7 @@ def collar():
                                    (knots - olo) / (ohi - olo), np.linspace(0., 1., int(abs(hi - lo) / 10.) + 2)], 0., 1.))
         ix, iy = (lo + u * (hi - lo), np.full_like(u, edge)) if along == 0 else (np.full_like(u, edge), lo + u * (hi - lo))
         ox, oy = (olo + u * (ohi - olo), np.full_like(u, rim)) if along == 0 else (np.full_like(u, rim), olo + u * (ohi - olo))
-        iz = source.terrain(natural=True).height(ix - L.ORIGIN[0], iy - L.ORIGIN[1]) + L.ORIGIN[2]
+        iz = surface.height(ix - L.ORIGIN[0], iy - L.ORIGIN[1]) + L.ORIGIN[2]
         oz = H.north_height(ox, oy, carved=False) if across == 1 and edge == inner[1] else country_profile_height(ox, oy)
         assert np.isfinite(iz).all() and np.isfinite(oz).all(), 'Open Belmonte collar edge'
         previous = None
