@@ -29,6 +29,7 @@ def roots(ctx):
     if getattr(ctx, 'uproject', None):
         project = ctx.uproject.parent
         result.update(content=(project / 'Content', False), binaries=(project / 'Binaries', False),
+                      samples=(project / 'Samples', False),
                       intermediate=(project / 'Intermediate', True), cooked=(project / 'Saved/Cooked', False),
                       zen=(ctx.out / '.state/checkpoint-zen', False))
         for base in (paths.ENGINE_PLUGINS, project / 'Plugins'):

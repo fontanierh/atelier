@@ -326,6 +326,23 @@ class UnrealCompile:
 
 
 @dataclass
+class UnrealGame:
+    """Build one game target and its Mac app bundle, without cooking.
+
+    The cook passes -skipbuild, so this is the only place the game binary is built. `products` names the extra files
+    the target writes beside the executable and the bundle (the engine's redistributed dylibs); the step publishes and
+    restores them together with the executable, the bundle and the .target receipt.
+    """
+    target: str
+    config: str = 'Development'
+    products: tuple = ()
+
+    def argv(self, ctx):
+        return [str(ctx.unreal_root / 'Engine/Build/BatchFiles/Mac/Build.sh'), self.target, 'Mac', self.config,
+                f'-project={ctx.uproject}', '-WaitMutex']
+
+
+@dataclass
 class UnrealPackage:
     """Build, cook, stage, package and archive the game with UAT BuildCookRun. The editor must already be compiled.
     Everything under Content is cooked, because the game loads many assets by path at run time. On a Mac, -package
@@ -341,6 +358,7 @@ class UnrealPackage:
     watch: tuple = ('UnrealEditor-Cmd', 'UnrealEditor', 'ShaderCompileWorker', 'dotnet')
     progress: float = 25.               # quiet UAT phases still print at least every 30 s
     cook_mode: CookMode = CookMode.DEFAULT
+    skip_build: bool = False            # the game binary is its own cached step; BuildCookRun must not rebuild it
 
     def __post_init__(self):
         self.cook_mode = CookMode(self.cook_mode)
@@ -351,7 +369,8 @@ class UnrealPackage:
         lifecycle implementation MUST enter the action inputs without invalidating unrelated commands.
         Nondefault cook mode MUST enter command identity on every recipe and receipt reload.
         """
-        shown = [f for f in fields(self) if f.name != 'cook_mode' or self.cook_mode != CookMode.DEFAULT]
+        shown = [f for f in fields(self) if (f.name != 'cook_mode' or self.cook_mode != CookMode.DEFAULT)
+                 and (f.name != 'skip_build' or self.skip_build)]
         return f'UnrealPackage({", ".join(f"{f.name}={getattr(self, f.name)!r}" for f in shown)})'
 
     def runs(self):
@@ -367,7 +386,8 @@ class UnrealPackage:
         folder = None if os.environ.get('UE_HEADLESS_USER_DIR') else headless_user_dir(ctx.unreal_root)
         prefix = ['/usr/bin/env', f'UE_HEADLESS_USER_DIR={folder}'] if folder else []
         return prefix + [str(ctx.unreal_root / 'Engine/Build/BatchFiles/RunUAT.sh'), 'BuildCookRun', f'-project={ctx.uproject}',
-                f'-target={self.target}', '-platform=Mac', f'-clientconfig={self.config}', '-build',
+                f'-target={self.target}', '-platform=Mac', f'-clientconfig={self.config}',
+                '-skipbuild' if self.skip_build else '-build',
                 f'-ubtargs=-MaxParallelActions={self.workers}', '-cook', '-cookall', '-stage', '-pak', '-package', '-archive',
                 f'-archivedirectory={self.archive}', '-nocompileeditor', '-noP4', '-unattended', '-utf8output', *extra]
 

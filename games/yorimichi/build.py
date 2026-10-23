@@ -76,7 +76,7 @@ def _mentions_import_village(path):
     st = Path(path).stat()
     return _file_mentions_village(Path(path), st.st_mtime_ns, st.st_size)
 
-from atelier.build import Product, Step, DeferredInputs, Python, Blender, UnrealScript, UnrealCompile, UnrealPackage, Call, Batch
+from atelier.build import Product, Step, DeferredInputs, Python, Blender, UnrealScript, UnrealCompile, UnrealGame, UnrealPackage, Call, Batch
 from atelier.checkpoint_candidates import CandidateScope
 from atelier import build_inputs, paths, unreal_modules
 
@@ -532,6 +532,14 @@ _racing_assets_spec.loader.exec_module(racing_assets)
 _cook_spec = importlib.util.spec_from_file_location('yorimichi_package_cook', TOOLS / 'package_cook.py')
 package_cook = importlib.util.module_from_spec(_cook_spec)
 _cook_spec.loader.exec_module(package_cook)
+_binary_spec = importlib.util.spec_from_file_location('yorimichi_game_binary', TOOLS / 'game_binary.py')
+game_binary = importlib.util.module_from_spec(_binary_spec)
+_binary_spec.loader.exec_module(game_binary)
+
+# The game target's BuildProducts beyond the executable, the app bundle and the receipt (engine dylibs, sample files).
+GAME_BINARY_PRODUCTS = ('Binaries/Mac/libtbb.12.17.dylib', 'Binaries/Mac/libtbb.12.dylib', 'Binaries/Mac/libtbb.dylib',
+                        'Binaries/Mac/libtbbmalloc.2.17.dylib', 'Binaries/Mac/libtbbmalloc.2.dylib', 'Binaries/Mac/libtbbmalloc.dylib',
+                        'Samples/PixelStreaming2/WebServers/get_ps_servers.bat', 'Samples/PixelStreaming2/WebServers/get_ps_servers.sh')
 
 
 def engine_version(ctx):
@@ -553,7 +561,8 @@ def cook_step(ctx, steps):
     out = ctx.out
     engine_inputs = engine_version(ctx)
     return Step('unreal.cook',
-                [Call('prepare_cook', package_cook.prepare), UnrealPackage('Yorimichi', out / 'package' / 'archive'),
+                [Call('prepare_cook', package_cook.prepare),
+                 UnrealPackage('Yorimichi', out / 'package' / 'archive', skip_build=True),
                  Call('certify_cook', package_cook.finish)],
                 inputs=[ctx.uproject, TOOLS / 'package_cook.py', *engine_inputs],
                 deferred_inputs=[native_source_inputs()],
@@ -1579,6 +1588,15 @@ def unreal_steps(ctx):
              deferred_inputs=[native_source_inputs()],
              needs=['skate.runtime'], heavy=True,
              about='the Yorimichi C++ modules (editor target)'),
+        # The game binary is its own unit: the cook runs with -skipbuild and restores this result instead of
+        # rebuilding the C++ in every checkout. Keyed like the editor compile: the complete native source
+        # membership, the project descriptor, the installed engine build and the toolchain context.
+        Step('unreal.game_binary',
+             [UnrealGame('Yorimichi', products=GAME_BINARY_PRODUCTS), Call('verify game binary', game_binary.verify)],
+             inputs=[ctx.uproject, *engine_version(ctx), TOOLS / 'game_binary.py'],
+             deferred_inputs=[native_source_inputs()],
+             checkpoint_restore=game_binary.relocate, heavy=True,
+             about='the Yorimichi game binary, app bundle and redistributed files; the cook does not build'),
         *unreal_modules.steps(ctx, IMPORT_CODE + SAVED_TYPES + CONTACT_TYPES + ('Yorimichi',)),
         *foliage_build.unreal_steps(ctx, IMPORT_CODE, engine_version(ctx)),
         Step('unreal.world', [UnrealScript(SCRIPTS / 'setup_project.py', 'level saved', memory_gib=14)],
