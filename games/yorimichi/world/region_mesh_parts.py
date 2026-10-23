@@ -8,11 +8,11 @@ from pathlib import Path
 
 import numpy as np
 
-from atelier.atomic_files import atomic_json
 from atelier.export_manifest import TRIANGLE_LIMIT, name, real_directory, sha
 from atelier.mesh_cells import cell_face_groups
 from atelier import mesh_ir
-from atelier.model_files import member, regular_files, retain_files
+from atelier.model_files import member
+import region_plan_files
 from mesh_pieces import capture, subset
 
 CELL_METRES = 128.
@@ -47,9 +47,7 @@ def plan(obj, root, *, collisions=(), options=None, cell_metres=CELL_METRES):
     if obj.type != 'MESH' or obj.modifiers or getattr(obj.data, 'shape_keys', None) is not None:
         raise ValueError('Logical planning requires a completed static mesh without modifiers or shape keys')
     parent = name(obj.name)
-    root = real_directory(root, create=True)
-    if root.exists():
-        regular_files(root)
+    root = real_directory(root)
     source = capture(obj.data)
     matrix = np.asarray(obj.matrix_world, dtype=np.float64)
     world = source['positions'] @ matrix[:3, :3].T + matrix[:3, 3]
@@ -61,6 +59,9 @@ def plan(obj, root, *, collisions=(), options=None, cell_metres=CELL_METRES):
         groups = [(None, None, '', tuple(range(len(faces))))]
     else:
         groups = cell_face_groups(world, faces, cell_metres, triangle_limit=TRIANGLE_LIMIT)
+    keys = [parent if x is None else f'{parent}_cell_{x}_{y}' + ('_Piece' + suffix if suffix else '')
+            for x, y, suffix, _ in groups]
+    region_plan_files.begin(root, parent, [key + '.npz' for key in keys])
     owned = np.zeros(len(faces), dtype=np.int32)
     rows = []
     for x, y, suffix, members in groups:
@@ -84,16 +85,19 @@ def plan(obj, root, *, collisions=(), options=None, cell_metres=CELL_METRES):
                  slots=[m.name for m in source['slots']], matrix=matrix.tolist(), pieces=rows)
     # Validate the complete current set before retiring any superseded inputs.
     validate(root, value)
-    expected = [r['payload'] for r in rows] + ['plan.json']
-    atomic_json(root / 'plan.json', value)
-    retain_files(root, expected)
+    region_plan_files.finish(root, value)
     return value
 
 
 def validate(root, value=None):
     """Validate a complete planner inventory before discovering any executable child tasks."""
     root = real_directory(root)
-    value = json.loads((root / 'plan.json').read_text()) if value is None else value
+    published = value is None
+    if published:
+        actual = region_plan_files.files(root)
+        value = json.loads((root / 'plan.json').read_text())
+        if actual != {'plan.json', *(row['payload'] for row in value['pieces'])}:
+            raise ValueError('Incomplete or foreign logical plan membership')
     if (value.get('schema') != 1 or value.get('complete') is not True
             or value.get('triangle_limit') != TRIANGLE_LIMIT or not value.get('pieces')):
         raise ValueError('Missing or incomplete logical export plan')
