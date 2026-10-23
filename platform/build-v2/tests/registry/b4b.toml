@@ -116,3 +116,8 @@ tier = "t0"
 id = "b4b.roots.a_manual_release_trim_refuses_while_usage_is_damaged"
 tests = ["atelier-build-v2::roots/a_manual_release_trim_refuses_while_usage_is_damaged"]
 tier = "t0"
+
+[[scenarios]]
+id = "b4b.roots.a_snapshot_refuses_before_trimming_while_usage_is_damaged"
+tests = ["atelier-build-v2::roots/a_snapshot_refuses_before_trimming_while_usage_is_damaged"]
+tier = "t0"

@@ -1654,6 +1654,8 @@ impl RootStore {
         }
         let guard = self.leases.lock()?;
         self.sweep_tmp_locked(&guard)?;
+        // Fold before the frozen write or the release trim: a damage refusal must cost nothing.
+        self.fold_usage_locked()?;
         let source_record = self
             .root_locked(&guard, source)?
             .ok_or_else(|| invalid("source root is missing"))?;
@@ -1680,7 +1682,6 @@ impl RootStore {
         if matches!(&target, RootKind::Release { .. }) {
             self.trim_releases_locked()?;
         }
-        self.fold_usage_locked()?;
         Ok(record)
     }
 

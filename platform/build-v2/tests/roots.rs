@@ -2131,3 +2131,51 @@ fn a_manual_release_trim_refuses_while_usage_is_damaged() {
         );
     }
 }
+
+#[test]
+fn a_snapshot_refuses_before_trimming_while_usage_is_damaged() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let mut main = begin(&store, RootKind::Main, "main", 1);
+    main.use_result("unit.a", &key(1)).unwrap();
+    main.commit(None).unwrap();
+    for sequence in 1..=3 {
+        let kind = RootKind::Release {
+            sequence,
+            label: format!("r{sequence}"),
+        };
+        let mut release = begin(&store, kind, "release", 1);
+        release.use_result("unit.a", &key(1)).unwrap();
+        release.commit(None).unwrap();
+    }
+    let _torn = begin(&store, RootKind::Main, "torn", 1);
+    let journal = only_session(&workspace.store(), "yorimichi");
+    let mut text = fs::read_to_string(&journal).unwrap();
+    text.push_str("{\"unit\":\"unit.x\",\"key\":\"");
+    fs::write(&journal, text).unwrap();
+
+    let target = RootKind::Release {
+        sequence: 4,
+        label: "r4".into(),
+    };
+    let error = store
+        .snapshot(&RootKind::Main, target.clone(), provenance("snap"))
+        .unwrap_err();
+    assert!(
+        matches!(error, RootError::Damaged(_)),
+        "a snapshot must refuse while the store is damaged: {error}"
+    );
+    assert!(
+        store.root(&target).unwrap().is_none(),
+        "a refused snapshot writes nothing"
+    );
+    let oldest = RootKind::Release {
+        sequence: 1,
+        label: "r1".into(),
+    };
+    assert!(
+        store.root(&oldest).unwrap().is_some(),
+        "a refused snapshot trims nothing"
+    );
+}
