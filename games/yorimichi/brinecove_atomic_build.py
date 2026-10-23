@@ -84,12 +84,16 @@ def steps(ctx):
     parents = ['SM_BC_' + key for key, _ in COMPONENTS] + ['SM_BC_Ground']
     parents.extend('SM_BC_Hero_' + ''.join(part.title() for part in slug.split('-')) for slug in HEROES)
     query_output = ctx.out / 'brinecove-data/query-data.json'
+    names = load('coastal_query_plant_names', REGION / 'foliage_names.py')
+    plants = [path.stem for path in names.definitions()]
     arguments = ['--out', str(ctx.out), '--output', str(query_output)]
     for key in parents: arguments.extend(('--parent', key))
     for slug in HEROES: arguments.extend(('--hero', slug))
+    for prototype in plants: arguments.extend(('--plant', prototype))
     result.append(Step('world.brinecove.query_data', [Python(query_script, tuple(arguments))],
         inputs=local_imports(query_script, (WORLD, REGIONS)),
-        reads=['brinecove.placements', *('brinecove.query.' + key for key in parents)],
+        reads=['brinecove.placements', *('brinecove.query.' + key for key in parents),
+               *('brinecove.query.plant.' + prototype for prototype in plants)],
         products=[Product('brinecove.query_data', (query_output,))], cache=True,
         about='complete logical query surfaces and transforms without exported models'))
     return result

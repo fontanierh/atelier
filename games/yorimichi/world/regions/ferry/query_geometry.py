@@ -9,6 +9,7 @@ from atelier.export_manifest import real_directory, sha
 import region_query
 from hidamari.logical_catalogue import ASSETS as CITY
 from brinecove.logical_catalogue import PARENTS as COAST
+from brinecove.foliage_names import definitions, name as plant_name
 
 
 def regular(build, relative, sources):
@@ -20,9 +21,9 @@ def regular(build, relative, sources):
     return path
 
 
-def surface(build, owner, sources, *, city=False):
+def surface(build, owner, sources, *, city=False, relative=None):
     raw = city and owner == 'HD_Harbor'
-    relative = ('hidamari' if city else 'brinecove') + '/query-data/' + owner + ('.raw.npz' if raw else '.npz')
+    relative = relative or ('hidamari' if city else 'brinecove') + '/query-data/' + owner + ('.raw.npz' if raw else '.npz')
     path = regular(build, relative, sources)
     result = region_query.load(path, owner=owner, stage='raw' if raw else 'final')
     if sha(path) != sources[relative]:
@@ -70,31 +71,41 @@ def hidamari(build, bounds, *, clip, placement, z_band, water_z):
 
 def brinecove(build, bounds, *, clip, placement, z_band):
     """@cc [owner:fontanierh,label:correctness;performance] ferry-coastal-query-before-exports
-    Require the complete logical coastal query roster and exact per-source hashes.
+    Require the complete logical coastal and prototype query roster and exact per-source hashes.
     Use its original transforms and origin, never a rendered child or exported GLB.
-    Keep ground, hero obstacles and procedural solids in their original roles.
+    Keep ground, hero obstacles, procedural solids and all originally non-plant
+    prototype instances in their original roles. The existing runtime marks these
+    foliage groups plant=False, so vegetation MUST NOT silently disappear here.
     Missing, extra, duplicate or stale geometry MUST refuse rather than disappear.
     """
     sources, names, ground, solid = {}, [], [], []
     path = regular(build, 'brinecove-data/query-data.json', sources)
     data = json.loads(path.read_text())
+    selected = definitions()
+    prototypes = {plant_name(path.stem):path.stem for path in selected}
+    owners = {*COAST,*prototypes}
+    if len(prototypes)!=len(selected) or len({key.casefold() for key in owners})!=len(COAST)+len(selected):
+        raise ValueError('Aliased coastal ferry query owner')
     if (set(data) != {'schema', 'stage', 'origin_cm', 'models'}
-            or data.get('schema') != 1 or data.get('stage') != 'final' or not isinstance(data.get('models'), list)
-            or len(data['models']) != len(COAST) or {row['owner'] for row in data['models']} != set(COAST)):
+            or data.get('schema') != 2 or data.get('stage') != 'final' or not isinstance(data.get('models'), list)
+            or len(data['models']) != len(owners) or {row['owner'] for row in data['models']} != owners):
         raise ValueError('Incomplete coastal ferry query ownership')
     origin = np.asarray(data['origin_cm'])
     if origin.shape != (3,) or origin.dtype.kind not in 'fi' or not np.isfinite(origin).all():
         raise ValueError('Invalid coastal ferry query origin')
     for row in data['models']:
         owner = row['owner']
-        expected = 'brinecove/query-data/' + owner + '.npz'
-        if (set(row) != {'owner', 'path', 'sha256', 'transforms'}
-                or row['path'] != expected or not isinstance(row['transforms'], list) or not row['transforms']):
+        prototype = prototypes.get(owner)
+        expected = 'brinecove/query-data/' + ('plants/'+prototype if prototype else owner) + '.npz'
+        if (set(row) != {'owner', 'prototype', 'path', 'sha256', 'transforms'}
+                or row['prototype'] != prototype or row['path'] != expected
+                or not isinstance(row['transforms'], list) or (not row['transforms'] and prototype is None)):
             raise ValueError('Invalid coastal ferry source or placements')
-        geometry = surface(build, owner, sources)
+        geometry = surface(build, owner, sources, relative=expected)
         if sources[expected] != row['sha256']:
             raise ValueError('Coastal ferry query differs from its current source data')
-        for transform in row['transforms']:
+        transforms = row['transforms']
+        for transform in transforms:
             sizes = {'translation_cm': 3, 'rotation_xyzw': 4, 'scale': 3}
             if (not isinstance(transform, dict) or set(transform) != set(sizes)
                     or any(not isinstance(transform[key], list) or len(transform[key]) != size
@@ -103,6 +114,15 @@ def brinecove(build, bounds, *, clip, placement, z_band):
                     or any(value == 0 for value in transform['scale'])
                     or abs(sum(value*value for value in transform['rotation_xyzw'])-1) > 1e-3):
                 raise ValueError('Invalid coastal ferry instance frame')
+        if not transforms: continue
+        positions = np.concatenate([item['positions'] @ item['matrix'][:3,:3].T + item['matrix'][:3,3] for item in geometry])
+        lower,upper = positions.min(0),positions.max(0)
+        radius = math.hypot(upper[0]-lower[0],upper[1]-lower[1])/2 * max(max(abs(value) for value in item['scale']) for item in transforms)
+        centre = (lower+upper)/2
+        x0,y0,x1,y1 = bounds
+        transforms = [item for item in transforms if x0-radius <= centre[0]+item['translation_cm'][0]/100 <= x1+radius
+                      and y0-radius <= centre[1]-item['translation_cm'][1]/100 <= y1+radius]
+        for transform in transforms:
             triangles = region_query.triangles(geometry, placement=placement(transform))
             if owner == 'SM_BC_Ground': ground.append(clip(triangles, bounds))
             else:

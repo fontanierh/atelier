@@ -35,11 +35,16 @@ def test_complete_query_rows_preserve_logical_placement_without_export_or_librar
     assert value['models'][0]['transforms'] == [dict(translation_cm=[0., 0., 0.], rotation_xyzw=[0., 0., 0., 1.], scale=[1., 1., 1.])]
     assert value['models'][1]['transforms'] == [hero]
     assert value['stage'] == 'final'
-    # Unconsumed planting/metadata edits do not spread into berth/crossing queries.
+    # Quay metadata is not read by these geometry queries.
     path = root / 'brinecove-data/placements.json'
-    data = json.loads(path.read_text()); data['plants'] = {'new_land_plant': []}; data['quay_z'] = 99
+    data = json.loads(path.read_text()); data['quay_z'] = 99
     path.write_text(json.dumps(data))
     assert query_data.snapshot(root, parents=parents, heroes=['harbor-capstan']) == value
+    # Existing runtime prototype groups are plant=False, so unknown planting
+    # ownership must refuse rather than silently omit actual query obstacles.
+    data['plants'] = {'new_land_plant': []}; path.write_text(json.dumps(data))
+    with pytest.raises(ValueError, match='plant placements'):
+        query_data.snapshot(root, parents=parents, heroes=['harbor-capstan'])
 
 
 @pytest.mark.parametrize('kind', ['missing-query', 'changed-query', 'missing-hero', 'invalid-transform', 'aliased-owner'])
@@ -53,3 +58,22 @@ def test_queries_refuse_incomplete_or_invalid_current_sources(tmp_path, query_da
     path.write_text(json.dumps(data))
     with pytest.raises((ValueError, OSError)):
         query_data.snapshot(root, parents=parents, heroes=['harbor-capstan'])
+
+
+def test_existing_nonplant_prototype_groups_keep_all_query_transforms(tmp_path, query_data):
+    import region_query
+    from brinecove.foliage_names import name
+    from brinecove.runtime_data import group
+    parents,path,data,hero = inputs(tmp_path)
+    prototype = 'broad_0'; owner = name(prototype)
+    assert group(owner,['leaf_gold'],[hero],collision=False,shadow=True,cull_cm=60000)['plant'] is False
+    data['plants'][prototype] = [hero]; data['scrub'][prototype] = [hero]
+    path.write_text(json.dumps(data))
+    surface = dict(name=owner,role='render',positions=np.asarray([[0,0,0],[1,0,0],[0,1,0]],dtype='<f4'),
+                   triangles=np.asarray([[0,1,2]],dtype='<i4'),matrix=np.eye(4))
+    region_query.save(tmp_path/'brinecove/query-data/plants/broad_0.npz',[surface],owner=owner,stage='final')
+    value = query_data.snapshot(tmp_path,parents=parents,heroes=['harbor-capstan'],plants=[prototype])
+    assert value['schema']==2 and len(value['models'])==3
+    row = value['models'][-1]
+    assert row['owner']==owner and row['prototype']==prototype and row['transforms']==[hero,hero]
+    assert row['path']=='brinecove/query-data/plants/broad_0.npz'

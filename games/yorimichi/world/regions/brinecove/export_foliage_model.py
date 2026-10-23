@@ -6,7 +6,7 @@ from pathlib import Path
 import sys
 
 _source = Path(__file__).resolve()
-for _path in (_source.parents[5] / 'platform/studio', _source.parents[1]):
+for _path in (_source.parents[5] / 'platform/studio', _source.parents[1], _source.parents[2]):
     sys.path.insert(0, str(_path))
 from brinecove import foliage_models, foliage_names  # noqa: E402
 from atelier.model_export import mesh_object, glb_info  # noqa: E402
@@ -15,7 +15,7 @@ from atelier.export_manifest import real_directory, TRIANGLE_LIMIT  # noqa: E402
 from atelier.model_files import regular_files  # noqa: E402
 
 
-def main(definition, destination):
+def main(definition, destination, query_output=None):
     import bpy
     definition, destination = Path(definition), Path(destination)
     real_directory(definition.parent); destination = real_directory(destination)
@@ -23,6 +23,13 @@ def main(definition, destination):
     if destination.exists() and (regular_files(destination) - {'model.glb', 'model.json'}
                                  or any(p.is_dir() for p in destination.iterdir())):
         raise ValueError('Foreign independent plant product')
+    if query_output is not None:
+        query_output = Path(query_output)
+        real_directory(query_output.parent)
+        if (query_output.absolute() == definition.absolute()
+                or query_output.absolute().is_relative_to(destination.absolute()) or query_output.is_symlink()
+                or (query_output.exists() and not query_output.is_file())):
+            raise ValueError('Plant query data requires an independent regular destination')
     builder = foliage_models.build(json.loads(definition.read_text()))
     builder.name = foliage_names.name(definition.stem)
     bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -32,6 +39,9 @@ def main(definition, destination):
         material.use_nodes = True
         materials[slot] = material
     obj = mesh_object(builder, materials)
+    if query_output is not None:
+        import region_query
+        region_query.save(query_output,[region_query.capture(obj)],owner=builder.name,stage='final')
     destination.mkdir(parents=True, exist_ok=True)
     path = destination / 'model.glb'
     bpy.ops.object.select_all(action='DESELECT')

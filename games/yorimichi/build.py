@@ -832,16 +832,19 @@ def brinecove_model_steps(out):
     from atelier.build_batch_source import support
     region = REGIONS / 'brinecove'
     script = region / 'export_foliage_model.py'
-    code = build_inputs.local_imports(script, (REGIONS,))
+    code = build_inputs.local_imports(script, (WORLD, REGIONS))
     definitions = brinecove_library.definitions()
     if not definitions:
         raise ValueError('Brinecove requires its committed plant model definitions')
     return [Step('world.brinecove.model.' + definition.stem,
-                 [Blender(script, (str(definition), str(out / 'models/brinecove/plants' / definition.stem)),
+                 [Blender(script, (str(definition), str(out / 'models/brinecove/plants' / definition.stem),
+                                   str(out / 'brinecove/query-data/plants' / (definition.stem+'.npz'))),
                           threads=3, factory_startup=True, env=(('PYTHONHASHSEED', '0'),))],
                  inputs=[*code, *support().values(), definition],
                  products=[Product('brinecove.model.' + definition.stem,
-                                   (out / 'models/brinecove/plants' / definition.stem,))],
+                                   (out / 'models/brinecove/plants' / definition.stem,)),
+                           Product('brinecove.query.plant.'+definition.stem,
+                                   (out / 'brinecove/query-data/plants' / (definition.stem+'.npz'),))],
                  toolchain=True, cache=True, batch=Batch('Brinecove plant models'), heavy=True,
                  about='independent Brinecove plant model ' + definition.stem)
             for definition in definitions]

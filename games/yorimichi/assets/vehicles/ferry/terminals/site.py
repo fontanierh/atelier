@@ -488,10 +488,12 @@ def load_world(name, out=OUT):
 
 def code_inputs():
     from atelier.build_inputs import local_imports
+    from brinecove.foliage_names import definitions
     world = REPO / 'games/yorimichi/world'
     return tuple(sorted({HERE / 'site.py', HERE / 'world_probe.py', HERE.parent / 'build.py',
         Path(HD.__file__), Path(BC.__file__), world / 'solid_mesh.py', world / 'regions/ferry/route.py',
         REPO / 'games/yorimichi/unreal/Source/Yorimichi/CitySurfaceParents.h',
+        world / 'regions/brinecove/foliage_catalog.json', *definitions(),
         *local_imports(HERE / 'world_probe.py', (world, world / 'regions'))}))
 
 
