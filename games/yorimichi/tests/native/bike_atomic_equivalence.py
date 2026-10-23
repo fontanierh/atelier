@@ -41,7 +41,8 @@ def main():
         source_union.setdefault(parent,Counter()).update(face_counter(meta,piece))
         output=current/'exports/world.vehicle_bike.export'/key
         export_region_piece.main(['--input',str(payload),'--output',str(output)])
-        fbx_union.setdefault(parent,Counter()).update(fbx_counter(output/(key+'.fbx')))
+        encoded,count=fbx_counter(output/(key+'.fbx'));assert count==piece['triangles'] and not encoded['collision']
+        fbx_union.setdefault(parent,Counter()).update(encoded['render'])
         records[key]=dict(triangles=piece['triangles'],parent=parent)
         if parent!='BK_Steer':assert json.loads(report.read_text())==old['assets'][parent]['report'],key+' original report'
         print('BIKE ATOMIC EXPORTED '+key+' '+str(piece['triangles']),flush=True)
@@ -50,7 +51,7 @@ def main():
         for row in value['packets']:
             meta,piece=mesh_ir.decode((baseline/'baseline'/parent/row['path']).read_bytes());expected.update(face_counter(meta,piece))
         assert source_union[parent]==expected,parent+' strict complete original source corners'
-        assert fbx_union[parent]==fbx_counter(baseline/'data/bike/assets'/(parent+'.fbx')),parent+' strict complete serialized FBX'
+        assert fbx_union[parent]==fbx_counter(baseline/'data/bike/assets'/(parent+'.fbx'))[0]['render'],parent+' strict complete serialized FBX'
         print('BIKE ORIGINAL SOURCE/FBX UNION '+parent+' PASS',flush=True)
     plan_bike_layout.main(['--source',spec['layout_source'],'--output',str(current/'bike-layout.json')])
     module_spec=importlib.util.spec_from_file_location('actual_bike_recipe',GAME/'vehicle_atomic_build.py')
