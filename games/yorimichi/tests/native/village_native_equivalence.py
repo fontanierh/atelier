@@ -132,7 +132,7 @@ def main():
     if os.path.lexists(output):raise ValueError('Fresh native output required')
     for rows in (spec['source_files'],spec['frozen_files']):unchanged(rows)
     # Resolve the installed Python surface before creating any fixture package.
-    block_response=unreal.CollisionResponse.BLOCK
+    block_response=unreal.CollisionResponseType.ECR_BLOCK
     for api in (unreal.NativeAtomicEquivalence.snapshot,unreal.NativeAtomicEquivalence.probe,
                 unreal.NativeAtomicEquivalence.component_policy,unreal.EditorAssetLibrary.delete_loaded_assets):
         if not callable(api):raise ValueError('Required native fixture API is unavailable')
