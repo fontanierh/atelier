@@ -13,6 +13,8 @@ from atelier.export_manifest import real_directory  # noqa: E402
 FAMILIES={
     'sailboat':dict(material='SailboatPalette',builders={
         'SB_Hull':'hull','SB_Sail':'sail','SB_Boom':'boom','SB_Rudder':'rudder','SB_Wake':'wake'}),
+    'kei':dict(material='KeiPalette',builders={
+        'SM_Kei_Pickup':'pickup','SM_Kei_Wagon':'wagon','SM_Kei_Retro':'retro','SM_Kei_Microvan':'microvan'}),
 }
 SOURCE=yori.ASSETS/'vehicles'
 

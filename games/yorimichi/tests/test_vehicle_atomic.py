@@ -49,3 +49,15 @@ def test_selected_part_cannot_invoke_a_sibling_constructor():
     sources=load('vehicle_sibling_refusal',GAME/'world/vehicle_sources.py')
     text=(GAME/'assets/vehicles/sailboat/build.py').read_text().replace("m=v.Mesh('SB_Boom')","m=hull()")
     with pytest.raises(ValueError,match='sibling'):sources.projection(text,'sailboat')
+
+
+def test_kei_pickup_crate_edit_does_not_change_other_selected_variants(tmp_path):
+    sources=load('kei_source_projection',GAME/'world/vehicle_sources.py')
+    text=(GAME/'assets/vehicles/kei/build.py').read_text()
+    original=sources.projection(text,'kei');edited=sources.projection(text.replace('(.56, .46, .36)','(.58, .46, .36)'),'kei')
+    assert {key for key in original if original[key]!=edited[key]}=={'SM_Kei_Pickup'}
+    assert len(original)==4
+    recipe=load('kei_atomic_recipe_test',GAME/'vehicle_atomic_build.py')
+    plans=[step for step in recipe.steps(SimpleNamespace(out=tmp_path.resolve()),'kei')
+           if step.name.startswith('world.vehicle_kei.geometry.')]
+    assert len(plans)==4 and all(step.cache and step.commands[0].factory_startup for step in plans)
