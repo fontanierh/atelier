@@ -19,6 +19,7 @@ if json.loads(CUT.read_text())['failures']:
 import unreal  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from mesh_import import import_mesh  # noqa: E402
+import ferry_native  # noqa: E402
 
 E = unreal.EditorAssetLibrary
 M = unreal.MaterialEditingLibrary
@@ -173,29 +174,40 @@ for folder, dest, entries, palette in (
          {name: mesh for terminal in terminals['terminals'].values() for name, mesh in terminal['meshes'].items()},
          terminals['materials'])):
     mats = materials(parent, palette)
+    if folder == ROOT:
+        ship_state = ferry_native.configure(ROOT, ship)
     names = list(entries)
     names += ['FY_Collision'] if folder == ROOT else ['FT_HD_Collision', 'FT_BC_Collision']
     for name in names:
-        path = folder / 'assets' / f'{name}.fbx'
-        mesh = import_mesh(path, dest, name, seed=ROOT / 'assets/FY_ImportSeed.fbx', fresh_slots=True)
+        path = folder / ('atomic-assets' if folder == ROOT else 'assets') / f'{name}.fbx'
+        options = (dict(before_import=lambda name=name: ferry_native.prepare_source(name),
+                        reuse_validator=lambda mesh, name=name: ferry_native.reusable(mesh, name, ship_state, mats))
+                   if folder == ROOT else {})
+        mesh = import_mesh(path, dest, name, fresh_slots=True, **options)
         for index, slot in enumerate(mesh.static_materials):
             key = str(slot.get_editor_property('imported_material_slot_name')).split('.')[0]
             if key in mats:
-                mesh.set_material(index, mats[key])
+                if mesh.get_material(index) != mats[key]:
+                    mesh.set_material(index, mats[key])
             elif not name.endswith('_Collision'):
                 raise ValueError(f'{name}: undeclared material {key}')
         body = mesh.get_editor_property('body_setup')
         collision = name.endswith(('_Collision', '_Brow'))
         if collision:
-            body.set_editor_property('collision_trace_flag', unreal.CollisionTraceFlag.CTF_USE_SIMPLE_AS_COMPLEX)
+            if body.get_editor_property('collision_trace_flag') != unreal.CollisionTraceFlag.CTF_USE_SIMPLE_AS_COMPLEX:
+                body.set_editor_property('collision_trace_flag', unreal.CollisionTraceFlag.CTF_USE_SIMPLE_AS_COMPLEX)
             count = EDITOR.get_convex_collision_count(mesh)
             if count <= 0:
                 raise ValueError(f'{name}: missing authored convex collision')
         else:
             count = 0
-        E.save_loaded_asset(mesh)
+        if folder == ROOT and not ferry_native.reusable(mesh, name, ship_state, mats):
+            raise ValueError('Current ferry native source/material/hull validation failed: ' + name)
+        if not E.save_loaded_asset(mesh, True):
+            raise ValueError('Current ferry native save failed: ' + name)
         report[name] = {'triangles': mesh.get_num_triangles(0), 'convex_hulls': count}
         unreal.log(f'FERRY IMPORT {name}: {report[name]}')
 
+retired = ferry_native.retire(ship_state)
 (ROOT / 'import-report.json').write_text(json.dumps(report, indent=2) + '\n')
 unreal.log('FERRY IMPORT COMPLETE')
