@@ -273,9 +273,9 @@ def test_compatible_workspace_keeps_pre_key_stamps_without_action_certificates(f
     assert set(value['incremental_stamps']) == {'tree', 'combat', 'house'}
     receiver, current = fixture.checkout('receiver', changed=True)
     restored = cp.restore(receiver, current, fixture.store, key)
-    build_checkpoints._publish_restoration(receiver, current, fixture.store, key, dict(key=key, stamps=restored))
-    assert set(restored) == {'tree', 'house'}
-    assert all('checkpoint_key' not in record for record in restored.values())
+    from test_checkpoints import publish_receiver
+    assert publish_receiver(receiver, current, fixture.store, key, restored) == {'tree', 'house'}
+    assert all('checkpoint_key' not in cp.read_json(p) for p in receiver.stamps.glob('*.json'))
 
 
 def test_fresh_unsupported_execution_is_current_after_observed_environment_change(fixture, monkeypatch):

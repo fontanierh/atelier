@@ -1210,15 +1210,9 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
         adopted = None
         if actions is not None and not force and previous.get('fingerprint') != current:
             # A hydrated checkpoint certificate counts only for the build's own fingerprint.
-            from .build_checkpoints import staged_certificate
-            staged = staged_certificate(ctx, step, current)
-            from .checkpoint_store import hashing
-            with hashing(ctx, index.digest):  # Hydrated clones were recorded in this index.
-                adoptable = (staged is not None and outputs_present(step) and task_cache.compile_present(ctx, step)
-                             and (task_cache.certified(ctx, step, current, staged[1])
-                                  or (task_cache.inventory_verified(ctx, step, staged[1])
-                                      and task_cache.local_incremental(ctx, step, current, staged[1]))))
-            if adoptable:
+            from .build_checkpoints import adopt_staged
+            staged = adopt_staged(ctx, step, current, index.digest)
+            if staged is not None:
                 adopted, previous = 'checkpoint ' + str(staged[0])[:12], staged[1]
             elif (step.heavy or step.products) and task_cache.key(ctx, step, current) is not None and \
                     task_cache.load(actions.store, task_cache.key(ctx, step, current)) is None:

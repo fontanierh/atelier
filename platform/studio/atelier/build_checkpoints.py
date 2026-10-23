@@ -139,9 +139,11 @@ def _guard(ctx, operation, key=None):
 
 def _publish_restoration(ctx, steps, store, key, record):
     """@cc [owner:fontanierh,label:correctness] post-guard-checkpoint-publication
-    Receiving certificates MUST publish only after successful guarded child exit, cleanup and
-    admission close. The original journal/key, fresh input identities and restored output
-    metadata (size, mode, mtime; bytes for post-import outputs) MUST still agree. Failure MUST retain the launch barrier and MUST NOT retain certificates.
+    Receiving certificates MUST be staged only after successful guarded child exit, cleanup and
+    admission close. The original journal/key and restored output metadata (size, mode, mtime;
+    bytes for post-import outputs) MUST still agree. Staged certificates count only when the
+    build's own fingerprint matches and the outputs certify, task by task, as for hydration.
+    Failure MUST retain the launch barrier and MUST NOT retain staged certificates.
     """
     journal = ctx.out / JOURNAL
     expected = dict(schema=1, key=key, game=ctx.game)
@@ -152,13 +154,10 @@ def _publish_restoration(ctx, steps, store, key, record):
     known = {**saved['stamps'], **saved.get('incremental_stamps', {})}
     if not isinstance(candidates, dict) or any(known.get(n) != s for n, s in candidates.items()):
         raise CheckpointError('Checkpoint restore completion contains foreign certificates')
+    staged = ctx.out / STAGED
     try:
-        for name, stamp in candidates.items():
-            atomic_json(ctx.stamps / (name + '.json'), stamp)
         incremental_environment(ctx)
         from .checkpoint_store import RESTORED_HASHES, unchanged
-        if certificates(ctx, steps, include_incremental=True, hashes=ctx.out / RESTORED_HASHES) != candidates:
-            raise CheckpointError('Checkpoint receiver changed before certificate publication')
         # Revalidate all copied bytes at the publication boundary, not just named products.
         from .checkpoint_store import roots, safe_destination
         same_path = saved['checkout'] == identity(str(paths.REPO.resolve()))
@@ -192,10 +191,13 @@ def _publish_restoration(ctx, steps, store, key, record):
             if entry['kind'] == 'directory' and (path.is_symlink() or not path.is_dir()):
                 raise CheckpointError('Checkpoint directory changed before certificate publication')
         hashes.close()
+        for name, stamp in candidates.items():
+            if not (ctx.stamps / (name + '.json')).exists():
+                atomic_json(staged / (name + '.json'), dict(source=key, stamp=stamp))
         journal.unlink()
     except BaseException:
         for name in candidates:
-            (ctx.stamps / (name + '.json')).unlink(missing_ok=True)
+            (staged / (name + '.json')).unlink(missing_ok=True)
         raise
 
 
@@ -233,8 +235,11 @@ def prepare(ctx, steps, *, echo=print):
     for key, saved in store.latest():
         if not saved.get('workspace_only') and saved['context'] == expected_context and set(saved.get('steps', ())) <= ownership:
             echo('Restoring a local build checkpoint; source edits are preserved')
+            started = time.monotonic()
             result = _guard(ctx, 'restore', key)
             _publish_restoration(ctx, steps, store, key, result)
+            echo(f'checkpoint restore: {len(result.get("stamps", {}))} certificates staged for fingerprint checks, '
+                 f'{time.monotonic() - started:.1f} s')
             return store
     from .checkpoint_github import Remote
     if not settings.get('repository'):
@@ -384,6 +389,28 @@ def staged_certificate(ctx, step, fingerprint):
     if not verifiable(ctx, step) and (ambient(step) or not stamp.get('output_inventory')):
         return None
     return (value.get('source'), stamp) if stamp.get('fingerprint') == fingerprint and not stamp.get('touched') else None
+
+
+def adopt_staged(ctx, step, fingerprint, digest):
+    """A staged certificate the build may adopt for this task now, as (source, stamp), or None.
+
+    Its fingerprint must equal the build's own, and the restored outputs must certify: the
+    action inventory, or a compatible incremental stamp of a verifiable or inventoried task.
+    """
+    staged = staged_certificate(ctx, step, fingerprint)
+    if staged is None:
+        return None
+    from .build import outputs_present
+    from .checkpoint_actions import certified, compile_present, inventory_verified, local_incremental, verifiable
+    from .checkpoint_store import hashing
+    stamp = staged[1]
+    with hashing(ctx, digest):  # Restored clones were recorded in this index.
+        good = (outputs_present(step) and compile_present(ctx, step)
+                and (certified(ctx, step, fingerprint, stamp)
+                     or ((verifiable(ctx, step) or inventory_verified(ctx, step, stamp))
+                         and local_incremental(ctx, step, fingerprint, stamp)))
+                and (not step.products or build_products.valid_records(step, stamp.get('products', {}), hasher=digest)))
+    return staged if good else None
 
 
 def protect(ctx, step, *, estimate=None, echo=print):

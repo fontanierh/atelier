@@ -59,8 +59,29 @@ def snapshot(fixture):
     return ctx, steps, key
 
 
+def adopt_all(ctx, steps):
+    """The build loop's adoption of staged certificates, in order; returns the adopted tasks."""
+    from atelier.build_hashes import HashIndex
+    done, adopted = {}, set()
+    build_checkpoints.incremental_environment(ctx)
+    with HashIndex(ctx.out / cp.RESTORED_HASHES) as index:
+        for step in build.order(steps, [s.name for s in steps]):
+            if not all(need in done for need in step.needs):
+                continue
+            current = build.fingerprint(step, done, index=index)
+            staged = build_checkpoints.adopt_staged(ctx, step, current, index.digest)
+            if staged is None:
+                continue
+            atomic_json(ctx.stamps / (step.name + '.json'), staged[1])
+            done[step.name] = build.result(step, current, staged[1])
+            build.build_products.feed_results(done, staged[1].get('products', {}))
+            adopted.add(step.name)
+    return adopted
+
+
 def publish_receiver(ctx, steps, store, key, stamps):
     build_checkpoints._publish_restoration(ctx, steps, store, key, dict(key=key, stamps=stamps))
+    return adopt_all(ctx, steps)
 
 
 def test_fresh_dirty_checkout_reuses_unaffected_tasks_without_head_equality(fixture):
@@ -68,11 +89,11 @@ def test_fresh_dirty_checkout_reuses_unaffected_tasks_without_head_equality(fixt
     ctx, steps = fixture.checkout('receiver', changed=True)
     before = (paths.REPO / 'combat.txt').read_bytes()
     stamps = cp.restore(ctx, steps, fixture.store, key, echo=lambda _: None)
-    assert set(stamps) == {'tree', 'house'}
+    assert set(stamps) == {'tree', 'combat', 'house'}  # Staged; the build decides per task.
     assert not list(ctx.stamps.glob('*.json'))  # The worker cannot publish before guard close.
     with pytest.raises(SystemExit, match='checkpoint restoration is incomplete'):
         build_snapshot.require_complete(ctx.out, game='fixture')
-    publish_receiver(ctx, steps, fixture.store, key, stamps)
+    assert publish_receiver(ctx, steps, fixture.store, key, stamps) == {'tree', 'house'}
     assert {p.stem for p in ctx.stamps.glob('*.json')} == {'tree', 'house'}
     assert (paths.REPO / 'combat.txt').read_bytes() == before
     assert steps[1].outputs[0].read_bytes() == b'combat'  # Seed only; no current certificate.
@@ -91,8 +112,7 @@ def test_old_workspace_preserves_import_history_for_content_boundary_migration(f
     digest = build.Step('combat.import', [build.Call('digest', lambda *_: None)], needs=['combat'],
                         outputs=[digest_output], cutoff=True)
     stamps = cp.restore(ctx, [*steps, digest], fixture.store, key, echo=lambda _: None)
-    assert 'tree' not in stamps
-    publish_receiver(ctx, [*steps, digest], fixture.store, key, stamps)
+    assert 'tree' not in publish_receiver(ctx, [*steps, digest], fixture.store, key, stamps)
     # The cheap new cutoff runs first; the old importer metadata is absent from current stamps.
     digest_output.parent.mkdir(parents=True); digest_output.write_bytes(b'normalized combat')
     done = {'combat': stamps['combat']['fingerprint'], 'combat.import': 'outputs:normalized-combat'}
@@ -133,7 +153,7 @@ def test_changed_producer_never_certifies_dependent_but_preserves_independent_ta
     current[1].needs = ['tree']
     (paths.REPO / 'tree.txt').write_text('different tree')
     stamps = cp.restore(receiver, current, fixture.store, key)
-    assert set(stamps) == {'house'}
+    assert publish_receiver(receiver, current, fixture.store, key, stamps) == {'house'}
 
 
 def test_checkpoint_never_overwrites_existing_generated_work(fixture):
@@ -177,14 +197,13 @@ def test_interruption_resumes_same_checkpoint_and_retains_launch_barrier(fixture
     assert set(stamps) == {'tree', 'combat', 'house'}
 
 
-def test_receiver_changes_after_worker_refuse_publication(fixture):
+def test_receiver_changes_after_worker_are_never_adopted(fixture):
     _, _, key = snapshot(fixture)
     ctx, steps = fixture.checkout('receiver')
     stamps = cp.restore(ctx, steps, fixture.store, key)
     (paths.REPO / 'tree.txt').write_text('steering edit')
-    with pytest.raises(cp.CheckpointError, match='receiver changed'):
-        publish_receiver(ctx, steps, fixture.store, key, stamps)
-    assert (ctx.out / cp.JOURNAL).exists() and not list(ctx.stamps.glob('*.json'))
+    assert publish_receiver(ctx, steps, fixture.store, key, stamps) == {'combat', 'house'}
+    assert not (ctx.out / cp.JOURNAL).exists() and not (ctx.stamps / 'tree.json').exists()
 
 
 def test_local_outputs_are_independent_of_cache(fixture):

@@ -123,7 +123,8 @@ def test_local_capture_uses_guard_and_publishes_to_normal_restore_store(fixture,
         key = build_checkpoints.capture_local(source, 'fixture')
         receiver, current = fixture.checkout('latest-main', changed=True)
         stamps = cp.restore(receiver, current, fixture.store, key, echo=lambda _: None)
-        assert set(stamps) == {'tree', 'house'}
+        from test_checkpoints import publish_receiver
+        assert publish_receiver(receiver, current, fixture.store, key, stamps) == {'tree', 'house'}
     assert before == steps[0].outputs[0].read_bytes()
 
 
