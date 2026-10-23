@@ -713,6 +713,9 @@ def material():
 
 
 def export(m, mat):
+    """Diagnostic single-primary export; normal builds use independent atomic tasks."""
+    if sum(len(face)-2 for face in m.faces)>32768:
+        raise ValueError('Large Bike exports require independent semantic children')
     ob = m.object(mat)
     bpy.ops.object.select_all(action='DESELECT'); ob.select_set(True); bpy.context.view_layer.objects.active = ob
     path = OUT / 'assets' / f'{m.name}.fbx'
@@ -754,7 +757,8 @@ def assemble(objects, info):
     piv = info['pivots']
     for name, ob in objects.items():
         if name != 'BK_Pedal': ob.matrix_world = Matrix.Translation(piv.get(name, (0, 0, 0)))
-    objects['BK_Steer'].matrix_world = Matrix.Translation(HEAD_BOTTOM) @ frame_along(AXIS).to_4x4()
+    for name in info['steering_parts']:
+        objects[name].matrix_world = Matrix.Translation(HEAD_BOTTOM) @ frame_along(AXIS).to_4x4()
     right = objects['BK_Pedal']; left = right.copy(); left.data = right.data; left.name = 'BK_Pedal.L'
     bpy.context.scene.collection.objects.link(left)
     a = math.radians(-44)
@@ -764,16 +768,8 @@ def assemble(objects, info):
 
 
 def main():
-    (OUT / 'assets').mkdir(parents=True, exist_ok=True)
-    bpy.ops.wm.read_factory_settings(use_empty=True)
-    mat = material(); manifest = {'parts': {}}; objects = {}
-    for m in parts():
-        objects[m.name], manifest['parts'][m.name] = export(m, mat)
-    manifest.update(layout())
-    assemble(objects, manifest)
-    bpy.ops.wm.save_as_mainfile(filepath=str(OUT / 'Bike.blend'))
-    (OUT / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
-    print('BIKE BUILD COMPLETE', sum(p['triangles'] for p in manifest['parts'].values()), 'triangles', flush=True)
+    """The normal build owns independent source plans, exports and the review scene."""
+    raise RuntimeError('Use the normal world.bike atomic source/export/scene steps')
 
 
 if __name__ == '__main__':

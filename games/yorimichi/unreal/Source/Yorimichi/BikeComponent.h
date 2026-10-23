@@ -4,7 +4,7 @@
 #include "JapanBikeState.h"
 #include "JapanSkateClock.h"
 #include "BikeComponent.generated.h"
-class AWandererCharacter; class UStaticMeshComponent; class USceneComponent; class UAnimSequence; class UAudioComponent; class USoundWave; class USoundAttenuation; class UPhysicsAsset;
+class UBikeMeshComponent; class AWandererCharacter; class UStaticMeshComponent; class USceneComponent; class UAnimSequence; class UAudioComponent; class USoundWave; class USoundAttenuation; class UPhysicsAsset;
 
 /** Cairo's teal mamachari (assets/vehicles/bike, docs/BIKE.md). Summoned beside him, mounted, ridden with walking
  *  physics (floors, slopes and walls stay the movement component's), parked on its stand or crashed. Every rider move
@@ -88,7 +88,8 @@ private:
  UPROPERTY() TObjectPtr<AWandererCharacter> Rider;
  UPROPERTY() TObjectPtr<USceneComponent> BikeRoot;
  UPROPERTY() TObjectPtr<UStaticMeshComponent> Frame;
- UPROPERTY() TObjectPtr<UStaticMeshComponent> Steer;
+ UPROPERTY() TObjectPtr<USceneComponent> Steer;
+ UPROPERTY() TArray<TObjectPtr<UBikeMeshComponent>> SteeringParts;
  UPROPERTY() TObjectPtr<UStaticMeshComponent> WheelFront;
  UPROPERTY() TObjectPtr<UStaticMeshComponent> WheelRear;
  mutable TArray<FVector> WheelSupport[2];

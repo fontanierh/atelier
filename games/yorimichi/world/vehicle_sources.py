@@ -102,14 +102,13 @@ def projection(text,family,*,layout=None):
 
 def publish(family,output,*,layout_output=None):
     layout=cockpit_layout() if family=='kart' else None
-    if family=='kart' and layout_output is None:raise ValueError('Kart requires its independently owned full cockpit product')
+    if family in ('kart','bike') and layout_output is None:raise ValueError('Vehicle requires its independently owned construction/layout product')
     values=projection((SOURCE/family/'build.py').read_text(),family,layout=layout)
     output=real_directory(output,create=True);expected={key+'.json' for key in values}
     if any(path.is_symlink() or not path.is_file() or path.name not in expected for path in output.iterdir()):
         raise ValueError('Foreign vehicle source-data member')
     for key,value in values.items():atomic_json(output/(key+'.json'),value)
     if family=='bike':
-        if layout_output is None:raise ValueError('Bike requires its separate layout source product')
         atomic_json(layout_output,dict(schema=1,program=bike_programs((SOURCE/family/'build.py').read_text())['__layout__']))
     if family=='kart':atomic_json(layout_output,layout)
 

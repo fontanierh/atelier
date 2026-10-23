@@ -399,7 +399,7 @@ def pose_bike(parts, base, c):
     about = lambda at, R: Matrix.Translation(at) @ R @ Matrix.Translation(-at)
     for name, ob in parts.items():
         M = base[name]
-        if name in ('BK_Steer', 'BK_WheelFront'): M = S @ M
+        if name in (*MANIFEST['steering_parts'], 'BK_WheelFront'): M = S @ M
         elif name == 'BK_Kickstand': M = about(STAND, Matrix.Rotation(STOWED * c['stand'], 4, 'Y')) @ M
         elif name == 'BK_Crank': M = about(BB, Matrix.Rotation(-math.radians(c['crank'] - REST_CRANK), 4, 'Y')) @ M
         elif name.startswith('BK_Pedal'):
