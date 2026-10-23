@@ -1,6 +1,7 @@
 """Public exact original SkyDome authority, avoiding allocator-dependent BMesh normals."""
 import ast
 import hashlib
+import inspect
 import json
 from pathlib import Path
 
@@ -40,7 +41,10 @@ def reference(function):
     No sibling construction, normal recomputation/rounding or private geometry fallback is allowed.
     """
     provenance,_,_=read()
-    if provenance['constructor']['ast_sha256']!=sha(ast.dump(function,include_attributes=False).encode()):
+    # Python 3.13 omits empty AST fields by default; the original 3.12 authority
+    # includes them. Bind the same complete AST on the host and Blender runtimes.
+    options={'show_empty':True} if 'show_empty' in inspect.signature(ast.dump).parameters else {}
+    if provenance['constructor']['ast_sha256']!=sha(ast.dump(function,include_attributes=False,**options).encode()):
         raise ValueError('SkyDome constructor changed; capture and prove a new public source authority')
     return dict(path='props/skydome/mesh.source.npz',sha256=provenance['packet']['sha256'],
                 provenance_sha256=sha(PROVENANCE.read_bytes()))

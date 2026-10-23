@@ -58,6 +58,18 @@ def test_changed_sphere_constructor_cannot_silently_keep_an_old_packet():
         SOURCES.project(OLD.read_text().replace('u_segments=48','u_segments=49'))
 
 
+def test_skydome_constructor_authority_includes_empty_ast_fields_on_new_python(monkeypatch):
+    import skydome_source
+    original_dump=ast.dump
+    def newer_dump(node,*,include_attributes=False,show_empty=False):
+        assert show_empty, 'Python 3.13 default drops fields from the recorded complete AST'
+        return original_dump(node,include_attributes=include_attributes)
+    function=next(node for node in ast.parse(OLD.read_text()).body if isinstance(node,ast.FunctionDef) and node.name=='sky_dome')
+    expected=skydome_source.reference(function)
+    monkeypatch.setattr(ast,'dump',newer_dump)
+    assert skydome_source.reference(function)==expected
+
+
 def test_selected_birds_preserve_original_primitive_events_and_build_no_siblings():
     built=[]
     class Mesh:
