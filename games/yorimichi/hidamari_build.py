@@ -51,3 +51,48 @@ def layout_steps(ctx, *, terrain_inputs=(), terrain_needs=()):
             reads=['hidamari.city_data'], products=[Product('hidamari.data.' + key, (path,))],
             cache=True, about='only the city fields consumed by ' + key))
     return result
+
+
+def mesh_steps(ctx, *, terrain_inputs=(), terrain_needs=()):
+    """Build all logical city sources separately, then discover one export per bounded piece.
+
+    Native consumer migration selects this graph when the complete current roster is
+    assembled; construction never imports the former whole-city builder.
+    """
+    graph = load('hidamari_atomic_mesh_graph', GAME / 'region_exports.py')
+    catalogue = load('hidamari_logical_catalogue', REGION / 'logical_catalogue.py')
+    context = load('hidamari_source_context_inputs', REGION / 'source_context.py')
+    parameters = GAME / 'assets/hidamari/export-parameters'
+    assets = []
+    for key in catalogue.ASSETS:
+        constructor = REGION / 'logical' / (key + '.py')
+        code = set(local_imports(constructor, (WORLD, REGIONS)))
+        code.update((REGION / 'logical/__init__.py', REGION / 'logical_catalogue.py'))
+        source_parameters = parameters / (key + '.json')
+        code.update(context.inputs(source_parameters, key))
+        arguments = ['--asset', key, '--context', str(source_parameters)]
+        reads, needs, products = [], [], []
+        if REGION / 'layout.py' in code:
+            # These constructors sample real final terrain; independent local models do not.
+            code.update(terrain_inputs)
+            code.update((ctx.out / 'world.json', ctx.out / 'heightmap.npy', ctx.out / 'farhills.npy',
+                         ctx.out / 'megapark/trail.json', ctx.out / 'treehouse/trees/trees.json',
+                         REGION / 'location.json', GAME / 'assets/megapark/map.json',
+                         GAME / 'assets/megapark/geometry', GAME / 'assets/megapark/collision'))
+            needs.extend(('world.layout', 'world.treehouse_trees', *terrain_needs))
+            if REGION / 'forest_backdrop.py' in code:
+                reads.append('terrain.FarHills.final')
+        if any(path in code for path in (REGION / 'lettering_mesh.py', REGION / 'kit/_lettering.py')):
+            code.add(REGION / 'fonts/NotoSansJP.ttf')
+        if key in DATA_ASSETS:
+            projection = ctx.out / 'hidamari/constructor-data' / (key + '.json')
+            arguments.extend(('--city', str(projection)))
+            reads.append('hidamari.data.' + key)
+        if key in ('HD_Terrain', 'HD_NorthMountains'):
+            for stage in ('natural', 'final', 'provenance'):
+                relative = 'manifest.json' if stage == 'provenance' else stage + '.npz'
+                products.append(Product('terrain.' + key + '.' + stage,
+                                        (ctx.out / 'terrain' / key / relative,)))
+        assets.append(graph.LogicalAsset(key, REGION / 'plan_asset.py', args=tuple(arguments),
+                      inputs=tuple(sorted(code)), needs=tuple(needs), reads=tuple(reads), products=tuple(products)))
+    return graph.steps(ctx, region='hidamari', assets=assets)
