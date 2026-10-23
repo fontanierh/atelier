@@ -81,17 +81,6 @@ jobs:
           cargo clean --release --locked --package atelier-board-server
           cargo build --release --locked
           cargo test --release --locked --bin atelier-board-server
-      - name: Save Rust dependencies from main
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.rust-cache.outputs.cache-hit != 'true'
-        continue-on-error: true
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0, Node 24
-        with:
-          path: |
-            build/board-server
-            ~/.cargo/registry/index
-            ~/.cargo/registry/cache
-            ~/.cargo/registry/src
-          key: ${{ steps.rust.outputs.prefix }}-${{ hashFiles('platform/harness/web/server/src/**') }}
       # One worker: these tests start machine-wide board servers, so a serial roster keeps them
       # isolated from each other on this runner.
       - name: Run tests
@@ -105,6 +94,17 @@ jobs:
           name: python-board
           path: build/ci/
           retention-days: 7
+      - name: Save Rust dependencies from main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.rust-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0, Node 24
+        with:
+          path: |
+            build/board-server
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/registry/src
+          key: ${{ steps.rust.outputs.prefix }}-${{ hashFiles('platform/harness/web/server/src/**') }}
 
   tests:
     name: Python / ${{ matrix.label }}
