@@ -291,18 +291,21 @@ def valid_outputs(ctx, step, value):
         return False
 
 
-def restore_worker(ctx, step, store, action_key, *, labels=None):
-    """Owned output replacement; called under the ordinary aggregate checkpoint guard.
+def restore_worker(ctx, step, store, action_key, *, labels=None, hashes=None):
+    """Owned output replacement: clones of verified blobs, in the build process or a worker.
 
     With labels (the parent's declared output labels) no recipe is needed; the parent still
     verifies the complete restored inventory against the recipe after the guard closes.
+    With hashes (the build's open hash index) restored digests are recorded there directly.
     """
     value = load(store, action_key)
     if value is None or entry_path(store, action_key).with_suffix('.conflict').exists():
         raise CheckpointError('Task cache entry is missing or disabled')
     task = step.name if step is not None else value['task']
     expected = [label(ctx, p) for p in declared(ctx, step)] if step is not None else list(labels)
-    sources = source_scopes(tracked_paths())
+    if 'tracked_source_scopes' not in ctx.__dict__:  # Tracked files do not change within a build.
+        ctx.tracked_source_scopes = source_scopes(tracked_paths())
+    sources = ctx.tracked_source_scopes
     if any(destination(ctx, name) in sources for name in expected):
         raise CheckpointError('Task restoration cannot replace tracked source')
     if [r['path'] for r in value['roots']] != expected:
@@ -355,13 +358,14 @@ def restore_worker(ctx, step, store, action_key, *, labels=None):
             os.chmod(destination(ctx, name), entry['mode'])
     from .checkpoint_store import RESTORED_HASHES, unchanged
     from .build_hashes import HashIndex
-    with HashIndex(ctx.out / RESTORED_HASHES) as hashes:
+    from contextlib import nullcontext
+    with (nullcontext(hashes) if hashes is not None else HashIndex(ctx.out / RESTORED_HASHES)) as index:
         for name, entry in value['files'].items():
             if entry['kind'] == 'file':
                 target = destination(ctx, name)
                 if not unchanged(target, entry):
                     raise CheckpointError('Restored task output differs; launch barrier retained')
-                hashes.record(target, entry['sha256'])
+                index.record(target, entry['sha256'])
     if step is not None and not restored_outputs(ctx, step, value):
         raise CheckpointError('Restored task output inventory differs; launch barrier retained')
     return value
@@ -438,17 +442,24 @@ class Actions:
         self.misses.add(action_key)
         return None
 
-    def restore(self, step, fingerprint, value, done):
-        from .build_checkpoints import _guard
-        from .build import fingerprint as fresh_fingerprint
-        if fresh_fingerprint(step, done) != fingerprint:
+    def restore(self, step, fingerprint, value, done, *, index=None, tool_cache=None):
+        """@cc [owner:fontanierh,label:safety;performance] in-process-action-restore
+        A per-task action restore MUST only clone digest-named blobs verified when stored into
+        that task's declared roots, under its durable launch barrier, inside the build process
+        that already holds the build lock; it MUST NOT spawn a child or wait for admission.
+        Inputs MUST be rechecked before and after, with the build's hash index, and the complete
+        restored inventory MUST match before the barrier is cleared. Whole-workspace restores,
+        hydration and other transfers keep the guarded worker lifecycle.
+        """
+        from .build import fingerprint as fresh
+        def current():
+            return fresh(step, done, index=index, tool_cache=tool_cache) if index is not None else fresh(step, done)
+        if current() != fingerprint:
             raise CheckpointError('Inputs changed before task cache restoration')
-        request = self.ctx.out / '.state/action-requests' / (value['key'] + '.json')
-        atomic_json(request, dict(task=step.name, labels=[label(self.ctx, p) for p in declared(self.ctx, step)]))
-        result = _guard(self.ctx, 'restore-action', value['key'])
-        if result.get('key') != value['key'] or not restored_outputs(self.ctx, step, value):
+        restored = restore_worker(self.ctx, step, self.store, value['key'], hashes=index)
+        if restored.get('key') != value['key']:
             raise CheckpointError('Task restoration completion differs; launch barrier retained')
-        if fresh_fingerprint(step, done) != fingerprint:
+        if current() != fingerprint:
             raise CheckpointError('Inputs changed during task restoration; launch barrier retained')
         journal = self.ctx.out / JOURNAL
         expected = dict(schema=1, game=self.ctx.game, key=value['key'], task=step.name, operation='action')

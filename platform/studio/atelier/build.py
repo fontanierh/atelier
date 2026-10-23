@@ -1351,7 +1351,7 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             echo(f'{print_} FAILED: {error}')
             return 1
         if action_hit is not None:
-            actions.restore(step, current, action_hit, done)
+            actions.restore(step, current, action_hit, done, index=index, tool_cache=tool_cache)
             products = build_products.records(step, hasher=index.digest)
             restore_source = "checkpoint"
         if products is None and store is not None and not force_step:
@@ -1378,7 +1378,7 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
         if products is None and actions is not None and local_portable and not force_step:
             action_hit = actions.get(step, current)
             if action_hit is not None:
-                actions.restore(step, current, action_hit, done)
+                actions.restore(step, current, action_hit, done, index=index, tool_cache=tool_cache)
                 products = build_products.records(step, hasher=index.digest)
                 restore_source = 'checkpoint'
         from_cache = products is not None
