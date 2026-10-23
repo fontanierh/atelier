@@ -1112,6 +1112,7 @@ def world_steps(ctx):
         *belmonte_steps(out)[:3],
         brinecove_source_step(out),
         *brinecove_model_steps(out),
+        *_load_helper_module('yorimichi_brinecove_atomic', GAME / 'brinecove_atomic_build.py').steps(ctx),
         *brinecove_steps(out)[:2],
         # Zeppelin samples layout products and shared terrain code, not Hidamari's exported city/assets.
         # Keep the old build order; track tree metadata read by the imported treehouse layout directly.
