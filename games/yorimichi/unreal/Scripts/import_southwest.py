@@ -98,8 +98,8 @@ def main():
         if mesh.get_material(0) != mat: mesh.set_material(0, mat)
         if mesh.get_num_lods() > 1: mesh.set_num_source_models(1)
         settings = editor.get_lod_build_settings(mesh, 0)
-        if not settings.get_editor_property('use_full_precision_u_vs'):
-            settings.set_editor_property('use_full_precision_u_vs', True)
+        if settings.get_editor_property('use_full_precision_u_vs'):
+            settings.set_editor_property('use_full_precision_u_vs', False)
             editor.set_lod_build_settings(mesh, 0, settings)
         body = mesh.get_editor_property('body_setup')
         assert body is not None, (name, 'missing complex collision body')
@@ -109,7 +109,7 @@ def main():
         assert mesh.get_num_triangles(0) == row['triangles'], (name, 'render triangle count')
         assert mesh.get_num_lods() == 1, (name, 'unexpected LODs')
         assert editor.get_num_uv_channels(mesh, 0) == 1, (name, 'UV channel count')
-        assert editor.get_lod_build_settings(mesh, 0).get_editor_property('use_full_precision_u_vs'), name
+        assert not editor.get_lod_build_settings(mesh, 0).get_editor_property('use_full_precision_u_vs'), name
         assert mesh.get_material(0) == mat, (name, 'current material')
         assert unreal.CitySurfaceValidation.validate_collision(mesh, row['triangles'], False), (name, 'current own cooked LOD0')
         box = mesh.get_bounding_box(); lower, upper = receipt['bounds']

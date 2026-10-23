@@ -13,9 +13,11 @@ def functions():
     return ast.Module(body=[node for node in tree.body if isinstance(node, ast.FunctionDef)], type_ignores=[])
 
 
-def fixture(*, hit, hulls=0, cooked=True, save=True):
+def fixture(*, hit, hulls=0, cooked=True, save=True, precision=False):
     state = dict(removes=0, imports=0, saves=0, hulls=hulls, callback_hulls=None)
-    settings = SimpleNamespace(get_editor_property=lambda key: True)
+    precision_state = {'value': precision}
+    settings = SimpleNamespace(get_editor_property=lambda key: precision_state['value'],
+        set_editor_property=lambda key, value: precision_state.update(value=value))
     body = SimpleNamespace(get_editor_property=lambda key: 'complex')
     materials = {key: SimpleNamespace(get_path_name=lambda key=key: '/Game/Material/' + key)
                  for key in ('Ground', 'Coast')}
@@ -29,7 +31,7 @@ def fixture(*, hit, hulls=0, cooked=True, save=True):
     def remove(mesh): state['removes'] += 1; state['hulls'] = 0; return True
     editor = SimpleNamespace(get_simple_collision_count=lambda mesh: 0,
         get_convex_collision_count=lambda mesh: state['hulls'], remove_collisions=remove,
-        get_lod_build_settings=lambda mesh, lod: settings, get_num_uv_channels=lambda mesh, lod: 1)
+        get_lod_build_settings=lambda mesh, lod: settings, set_lod_build_settings=lambda *a: None, get_num_uv_channels=lambda mesh, lod: 1)
     def save_mesh(mesh, dirty_only):
         assert dirty_only is True; state['saves'] += 1; return save
     library = SimpleNamespace(list_assets=lambda *a, **kw: [], load_asset=lambda key: materials[key] if key in materials else mesh,
@@ -54,6 +56,7 @@ def fixture(*, hit, hulls=0, cooked=True, save=True):
     exec(compile(functions(), '<actual-island-receiver>', 'exec'), scope)
     scope['owned_packages'] = lambda paths: set(paths)
     scope['import_mesh'] = import_mesh
+    scope['precision_state'] = precision_state
     return scope, state
 
 
@@ -103,3 +106,9 @@ def test_map_and_runtime_migration_precede_one_complete_retirement_preflight(tmp
                      '/Game/Japan/Assets/Sea': ['/Game/Current/Sea'],
                      '/Game/Island/Terrain_cell_9_9': ['/Game/Current/Terrain', '/Game/Current/Sea']}]
     assert not (tmp_path / 'terrain/island-import-report.json').exists()
+
+
+def test_warm_hit_restores_original_legacy_half_precision_uv_policy():
+    scope, state = fixture(hit=True, precision=True)
+    scope['receive'](Path('output'))
+    assert scope['precision_state']['value'] is False

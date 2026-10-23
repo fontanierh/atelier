@@ -53,14 +53,15 @@ def main():
                 raise ValueError('Lake current bounds changed: '+name)
         mesh.set_material(0,water if row['parent']=='Lake_Water' else material)
         settings=editor.get_lod_build_settings(mesh,0)
-        if not settings.get_editor_property('use_full_precision_u_vs'):
-            settings.set_editor_property('use_full_precision_u_vs',True);editor.set_lod_build_settings(mesh,0,settings)
+        if settings.get_editor_property('use_full_precision_u_vs'):
+            settings.set_editor_property('use_full_precision_u_vs',False);editor.set_lod_build_settings(mesh,0,settings)
+        assert not editor.get_lod_build_settings(mesh,0).get_editor_property('use_full_precision_u_vs')
         body=mesh.get_editor_property('body_setup');assert body
         body.set_editor_property('collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
         assert unreal.CitySurfaceValidation.validate_collision(mesh,row['triangles'],False),(name,'current cooked LOD0 query')
         assert E.save_loaded_asset(mesh),(name,'save failed')
         report[name]=dict(parent=row['parent'],triangles=mesh.get_num_triangles(0),materials=1,
-                          uv_channels=editor.get_num_uv_channels(mesh,0),full_precision=True)
+                          uv_channels=editor.get_num_uv_channels(mesh,0),full_precision=False)
     retired=lake_native.retire(E,previous,names,yori.GAME/'unreal/Content')
     (root/'import-report.json').write_text(json.dumps(dict(meshes=report,retired=retired),indent=2)+'\n')
     unreal.log('LAKE IMPORT COMPLETE')

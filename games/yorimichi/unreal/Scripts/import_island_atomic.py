@@ -44,7 +44,7 @@ def receive(out=None):
     primary independently on untouched saved packages. A real raw-import miss MAY clear
     only that child's stale hulls before import; current zero-hull finishing MUST also run
     on reuse hits. Bind every original named material and require current render counts,
-    bounds, full-precision UV settings/channel count, LOD0 cooked complex surface and zero simple
+    bounds, original legacy half-precision UV settings/channel count, LOD0 cooked complex surface and zero simple
     hulls before saving. Never load, join or retire the old combined Terrain here.
     Sea's runtime components MUST remain nonblocking and shadow-free.
     """
@@ -78,8 +78,8 @@ def receive(out=None):
                 if mesh.get_material(slot) != materials[key]: mesh.set_material(slot, materials[key])
             assert set(row['used_slots']) <= set(actual_slots), (row['name'], 'missing consumed material binding')
             settings = editor.get_lod_build_settings(mesh, 0)
-            if not settings.get_editor_property('use_full_precision_u_vs'):
-                settings.set_editor_property('use_full_precision_u_vs', True)
+            if settings.get_editor_property('use_full_precision_u_vs'):
+                settings.set_editor_property('use_full_precision_u_vs', False)
                 editor.set_lod_build_settings(mesh, 0, settings)
             body = mesh.get_editor_property('body_setup')
             assert body is not None
@@ -91,7 +91,7 @@ def receive(out=None):
             for axis, low, high in zip(('x', 'y', 'z'), lower, upper):
                 assert abs(getattr(bounds.min, axis)-low) < .2 and abs(getattr(bounds.max, axis)-high) < .2, (row['name'], axis, 'bounds')
             assert editor.get_num_uv_channels(mesh, 0) == len(row['uv_channels']) == 1, (row['name'], 'UV channels')
-            assert editor.get_lod_build_settings(mesh, 0).get_editor_property('use_full_precision_u_vs')
+            assert not editor.get_lod_build_settings(mesh, 0).get_editor_property('use_full_precision_u_vs')
             assert unreal.CitySurfaceValidation.validate_collision(mesh, row['triangles'], False), (row['name'], 'current cooked LOD0 surface')
             assert library.save_loaded_asset(mesh, True), (row['name'], 'native save failed')
             current.append(dict(name=row['name'], asset=row['asset'], triangles=row['triangles'],

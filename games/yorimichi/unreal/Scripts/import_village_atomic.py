@@ -36,7 +36,7 @@ def receive(out=None):
     """@cc [owner:fontanierh,label:correctness;performance] receive-current-independent-village
     Admit untouched saved child packages independently. Only a real raw-import miss MAY
     reset previous hulls before authored UCX import. Every hit/miss MUST receive current
-    original material, exact full hull geometry, parent collision policy, full-precision UV,
+    original material, exact full hull geometry, parent collision policy, original half-precision UV,
     render count/bounds/LOD0 cook validation and a checked dirty-only save. Render-only leaves
     of simple-collision parents MUST NOT acquire complex-as-simple blocking behavior.
     No old parent may be loaded as a fallback or retired before the full current set succeeds.
@@ -75,13 +75,13 @@ def receive(out=None):
             if row['collision_hulls'] == 0: clear_shapes(mesh, editor)
             assert collision_matches(mesh, group, row), (key, 'complete authored hull geometry')
             settings = editor.get_lod_build_settings(mesh, 0)
-            if not settings.get_editor_property('use_full_precision_u_vs'):
-                settings.set_editor_property('use_full_precision_u_vs', True); editor.set_lod_build_settings(mesh, 0, settings)
+            if settings.get_editor_property('use_full_precision_u_vs'):
+                settings.set_editor_property('use_full_precision_u_vs', False); editor.set_lod_build_settings(mesh, 0, settings)
             low, high = native_bounds(row); bounds = mesh.get_bounding_box()
             for axis, a, b in zip(('x', 'y', 'z'), low, high):
                 assert abs(getattr(bounds.min, axis)-a) < .2 and abs(getattr(bounds.max, axis)-b) < .2, (key, axis, 'bounds')
             assert editor.get_num_uv_channels(mesh, 0) == len(row['uv_channels']) == 1, (key, 'UV count')
-            assert editor.get_lod_build_settings(mesh, 0).get_editor_property('use_full_precision_u_vs')
+            assert not editor.get_lod_build_settings(mesh, 0).get_editor_property('use_full_precision_u_vs')
             # This validator's bool selects the expected SimpleAndComplex trace policy;
             # actual hull presence/vertices are independently required above, even at zero.
             assert unreal.CitySurfaceValidation.validate_collision(mesh, row['triangles'], source_simple_policy), (key, 'current cooked surface')

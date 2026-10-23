@@ -9,10 +9,12 @@ GAME = Path(__file__).resolve().parents[1]
 SCRIPT = GAME / 'unreal/Scripts/import_village_atomic.py'
 
 
-def native(*, hit=True, hulls=0, expected=0, ground=False, save=True):
+def native(*, hit=True, hulls=0, expected=0, ground=False, save=True, precision=False):
     state = dict(hulls=hulls, resets=0, raw=0, saves=0, trace='simple', cooked_policy=None)
     material = object()
-    settings = SimpleNamespace(get_editor_property=lambda name: True)
+    precision_state = {'value': precision}
+    settings = SimpleNamespace(get_editor_property=lambda key: precision_state['value'],
+        set_editor_property=lambda key, value: precision_state.update(value=value))
     def set_body(key, value): state['trace'] = value
     body = SimpleNamespace(get_editor_property=lambda name: state['trace'], set_editor_property=set_body)
     slot = SimpleNamespace(get_editor_property=lambda name: 'VillagePalette')
@@ -23,7 +25,7 @@ def native(*, hit=True, hulls=0, expected=0, ground=False, save=True):
         get_bounding_box=lambda: SimpleNamespace(min=SimpleNamespace(x=0., y=0., z=0.), max=SimpleNamespace(x=1., y=1., z=1.)))
     def remove(mesh): state['resets'] += 1; state['hulls'] = 0; return True
     editor = SimpleNamespace(get_simple_collision_count=lambda mesh: 0, get_convex_collision_count=lambda mesh: state['hulls'],
-        remove_collisions=remove, get_lod_build_settings=lambda *a: settings, get_num_uv_channels=lambda *a: 1)
+        remove_collisions=remove, get_lod_build_settings=lambda *a: settings, set_lod_build_settings=lambda *a: None, get_num_uv_channels=lambda *a: 1)
     def save_mesh(mesh, dirty): assert dirty; state['saves'] += 1; return save
     library = SimpleNamespace(list_assets=lambda *a, **kw: [], load_asset=lambda path: material if path == 'material' else mesh,
         does_asset_exist=lambda path: True, save_loaded_asset=save_mesh)
@@ -45,6 +47,7 @@ def native(*, hit=True, hulls=0, expected=0, ground=False, save=True):
     tree = ast.parse(SCRIPT.read_text())
     exec(compile(ast.Module(body=[n for n in tree.body if isinstance(n, ast.FunctionDef)], type_ignores=[]), str(SCRIPT), 'exec'), scope)
     scope['inventory'] = lambda paths: set(paths)
+    scope['precision_state'] = precision_state
     return scope, state
 
 
@@ -89,3 +92,9 @@ def test_village_owner_never_recreates_combined_island_terrain():
     main = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'main')
     assert 'terrain.fbx' not in ast.unparse(main) and '/Game/Japan/Terrain' not in ast.unparse(main)
     assert 'receive(ROOT)' in ast.unparse(main) and 'retire(received, runtime_members=members)' in ast.unparse(main)
+
+
+def test_warm_hit_restores_original_legacy_half_precision_uv_policy():
+    scope, state = native(hit=True, precision=True)
+    scope['receive'](Path('output'))
+    assert scope['precision_state']['value'] is False

@@ -76,10 +76,10 @@ def validate_current(trees):
             if base.get_num_triangles(level)!=count or meshes.get_num_uv_channels(base,level)!=1:
                 raise ValueError('Forest assembled level geometry differs: '+name)
             settings=meshes.get_lod_build_settings(base,level)
-            if not settings.get_editor_property('use_full_precision_u_vs'):
-                settings.set_editor_property('use_full_precision_u_vs',True)
+            if settings.get_editor_property('use_full_precision_u_vs'):
+                settings.set_editor_property('use_full_precision_u_vs',False)
                 meshes.set_lod_build_settings(base,level,settings)
-            if not meshes.get_lod_build_settings(base,level).get_editor_property('use_full_precision_u_vs'):
+            if meshes.get_lod_build_settings(base,level).get_editor_property('use_full_precision_u_vs'):
                 raise ValueError('Forest UV precision did not persist: '+name)
             if level:
                 source=E.load_asset(LODS+'/'+name+f'_LOD{level}')
