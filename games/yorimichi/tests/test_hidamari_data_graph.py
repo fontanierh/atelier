@@ -39,3 +39,30 @@ def test_normal_city_producer_requires_the_new_data_owner(tmp_path):
     assert steps['world.hidamari.layout_data'].products[0].name == 'hidamari.city_data'
     for asset in ('HD_CivicGardens', 'HD_Streets', 'HD_PlazaShopApproaches', 'HD_Wires', 'HD_LaneEdges'):
         assert steps['world.hidamari.data.' + asset].reads == ['hidamari.city_data']
+
+
+def test_complete_city_mesh_graph_has_separate_constructor_parameters_and_no_sibling_sources(tmp_path):
+    spec = importlib.util.spec_from_file_location('hidamari_mesh_graph', GAME / 'hidamari_build.py')
+    recipe = importlib.util.module_from_spec(spec); spec.loader.exec_module(recipe)
+    out = tmp_path.resolve()
+    steps = recipe.mesh_steps(SimpleNamespace(out=out))
+    planners = {s.name.rsplit('.', 1)[-1]: s for s in steps if '.geometry.' in s.name}
+    assert len(planners) == 86
+    assert all(s.cache and s.commands[0].factory_startup and s.commands[0].threads == 3 for s in planners.values())
+    for key in ('HD_Shop_00', 'HD_Shop_01', 'HD_Boat'):
+        step = planners[key]
+        assert not step.needs and not step.reads
+        assert REGION / 'logical' / (key + '.py') in step.inputs
+        assert REGION / 'build.py' not in step.inputs
+        assert REGION / 'layout.py' not in step.inputs
+        assert out / 'heightmap.npy' not in step.inputs
+        assert GAME / 'assets/hidamari/export-parameters' / (key + '.json') in step.inputs
+        for sibling in set(planners) - {key}:
+            assert REGION / 'logical' / (sibling + '.py') not in step.inputs
+            assert GAME / 'assets/hidamari/export-parameters' / (sibling + '.json') not in step.inputs
+    for key in recipe.DATA_ASSETS:
+        assert 'hidamari.data.' + key in planners[key].reads
+    for key in ('HD_Terrain', 'HD_NorthMountains'):
+        assert {p.name for p in planners[key].products} == {'hidamari.geometry.' + key,
+            *('terrain.' + key + '.' + stage for stage in ('natural', 'final', 'provenance'))}
+    check_modules(steps)

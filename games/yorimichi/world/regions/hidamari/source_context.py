@@ -4,7 +4,6 @@ import math
 from pathlib import Path
 
 from atelier.export_manifest import name, real_directory
-from random_stream import positioned
 
 
 def header(path, asset):
@@ -55,6 +54,7 @@ def apply(value, kernel):
     the result. Do not run another constructor or read its export to recover context.
     Palette entries MUST retain tuple semantics used by current surface classification.
     """
+    from random_stream import positioned
     kernel.PALETTE.clear()
     kernel.PALETTE.update({key: tuple(rgb) for key, rgb in value['palette'].items()})
     kernel.R.setstate(positioned(value['seed'], value['prefix_words']).getstate())
