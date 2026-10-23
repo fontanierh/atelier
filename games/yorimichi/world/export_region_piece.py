@@ -78,7 +78,7 @@ def main(argv=None):
             export_atomic_fbx(**options)
         else:
             from atelier.blender.gltf import export_atomic_glb
-            export_atomic_glb(primary, options=meta['options'])
+            export_atomic_glb(primary, options=meta['options'], finite_materials=meta['schema'] == 3)
         if args.input.read_bytes() != original:
             raise ValueError('Planned input changed during atomic export')
         primary.replace(root / primary.name)
