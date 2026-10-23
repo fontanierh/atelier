@@ -55,6 +55,7 @@ def test_catalogue_binds_complete_membership_and_preserves_authored_order(tmp_pa
 
 def test_real_model_declarations_have_independent_inputs_and_complete_owners(tmp_path):
     steps = RECIPE.brinecove_model_steps(tmp_path)
+    build.check_modules(steps)
     assert len(steps) == 36
     build_products.Graph(steps)
     for step in steps:
