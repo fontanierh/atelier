@@ -98,7 +98,19 @@ def test_normal_graph_has_independent_selected_sources_and_preexport_queries(tmp
     build.check_modules(steps)
     final = graph.assembly_step(SimpleNamespace(out=tmp_path))
     assert final.name == 'world.southwest' and final.reads == ['southwest.atomic']
-    assert final.cache and isinstance(final.commands[0],build.Call)
+    assert not final.cache and isinstance(final.commands[0],build.Call)
+
+
+def test_complete_recipe_cached_declarations_pass_the_actual_portable_validator(tmp_path):
+    from types import SimpleNamespace
+    from atelier import build, build_cache
+    ctx = SimpleNamespace(game='yorimichi', out=tmp_path.resolve(), uproject=None)
+    steps = build.load_recipe('yorimichi').steps(ctx)
+    build.check_modules(steps)
+    cached = [step for step in steps if step.cache]
+    assert cached
+    for step in cached:
+        assert build_cache.roots(ctx, step), step.name
 
 
 def test_file_only_assembly_binds_every_current_primary_hash_and_roster(tmp_path):

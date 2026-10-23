@@ -53,4 +53,4 @@ def assembly_step(ctx):
     return Step('world.southwest', [Call('assemble Southwest logical runtime membership', assemble)],
         inputs=[*local_imports(GAME / 'southwest_atomic_products.py', (GAME, WORLD))],
         reads=['southwest.atomic'], products=[Product('southwest.meshes', (ctx.out / 'southwest/runtime.json',))],
-        cache=True, about='file-only complete Southwest membership; preserves independent native children')
+        about='file-only complete Southwest membership; preserves independent native children')
