@@ -1,7 +1,7 @@
 """Read-only build decisions. A producer's future output is unknown until it runs."""
 import json
 
-from . import build as engine, build_products
+from . import build as engine, build_products, paths
 
 
 def controller_decision(step):
@@ -136,6 +136,8 @@ def show(game, wanted=(), *, force=False, explain=False, as_json=False, echo=pri
     from .build_v2.controller_entry import exact_selection
     controller = exact_selection(game, wanted)
     if controller is not None:
+        from .build_snapshot import require_complete
+        require_complete(paths.build_root() / game, game=game)
         if force or verify or rebuild_touched or cook_mode is not None or cook_reason is not None:
             raise ValueError('controller plan does not support legacy force/verify/cook flags')
         decision = controller_decision(controller)

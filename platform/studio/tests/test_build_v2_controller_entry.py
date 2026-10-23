@@ -71,6 +71,8 @@ def test_normal_exact_target_bypasses_legacy_context_stamps_and_fallback(tmp_pat
     assert calls == [owned.unit]
     with pytest.raises(ValueError, match='legacy force'):
         build.build('fixture', [owned.unit], touch=True, echo=lambda _: None)
+    with pytest.raises(ValueError, match='legacy force'):
+        build.build('fixture', [owned.unit], fail_fast=True, echo=lambda _: None)
     assert calls == [owned.unit]
     assert not list(tmp_path.iterdir())
 
@@ -89,6 +91,49 @@ def test_readonly_exact_controller_plan_never_bootstraps_or_opens_context(tmp_pa
     assert 'unknown' in output[0]
     assert 'no helper bootstrap' in output[1]
     assert not list(tmp_path.iterdir())
+
+
+def test_controller_list_is_explicit_without_runtime_context_or_bootstrap(tmp_path, monkeypatch):
+    owned = marker()
+    step = build.Step(owned.unit, [], outputs=list(owned.outputs(tmp_path)), controller=owned)
+    monkeypatch.setattr(paths, 'REPO', tmp_path)
+    monkeypatch.setattr(entry, 'discover', lambda game: {owned.unit: owned})
+    monkeypatch.setattr(entry, 'declaration_context', lambda game: SimpleNamespace(game=game))
+    monkeypatch.setattr(build, 'load_recipe', lambda game: SimpleNamespace(steps=lambda ctx: [step]))
+    def forbidden(*args, **kwargs):
+        raise AssertionError('controller list created runtime/bootstrap state')
+    monkeypatch.setattr(build, 'Context', forbidden)
+    monkeypatch.setattr(entry, 'ensure_controller', forbidden)
+    monkeypatch.setattr(entry, 'invoke_controller', forbidden)
+    output = []
+    build.list_steps('fixture', echo=output.append)
+    assert 'controller; reuse unknown; no bootstrap' in output[0]
+    assert not list(tmp_path.iterdir())
+
+
+@pytest.mark.parametrize('journal', ['.checkpoint-in-progress.json', '.reuse-in-progress.json',
+                                     '.package-install-in-progress.json', '.portable-snapshot-in-progress.json'])
+def test_controller_exact_build_and_plan_preserve_default_snapshot_barriers(tmp_path, monkeypatch, journal):
+    owned = marker()
+    step = build.Step(owned.unit, [], outputs=list(owned.outputs(tmp_path)), controller=owned)
+    monkeypatch.setattr(paths, 'REPO', tmp_path)
+    monkeypatch.setattr(paths, 'build_root', lambda: tmp_path / 'override')
+    monkeypatch.setattr(entry, 'exact_selection', lambda *args: step)
+    default = tmp_path / 'build/fixture'
+    default.mkdir(parents=True)
+    barrier = default / journal
+    barrier.write_text('{}')
+    def forbidden(*args, **kwargs):
+        raise AssertionError('partial legacy snapshot reached runtime/bootstrap')
+    monkeypatch.setattr(build, 'Context', forbidden)
+    monkeypatch.setattr(entry, 'execute', forbidden)
+    for invoke in [lambda: build.build('fixture', [owned.unit]),
+                   lambda: build_plan.show('fixture', [owned.unit])]:
+        with pytest.raises(SystemExit, match='incomplete|interrupted'):
+            invoke()
+    assert barrier.read_text() == '{}'
+    assert not (tmp_path / 'override').exists()
+    assert not (tmp_path / 'Game').exists()
 
 
 def test_mixed_checkpoint_custody_refuses_before_old_workspace_restore(tmp_path, monkeypatch):

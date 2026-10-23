@@ -1011,8 +1011,9 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, veri
     if controller is not None:
         if (force or touch or verify or cook_mode is not None or cook_reason is not None or cook_memory_gib is not None
                 or recover_cook is not None or record_cook_recovery or rebuild_touched or rebuild_reason is not None
-                or max_heavy_commands is not None):
+                or max_heavy_commands is not None or fail_fast):
             raise ValueError('controller target does not support legacy force/touch/verify/cook/recovery flags')
+        require_complete(paths.build_root() / game, game=game)
         if dry:
             echo(f'{controller.name:34s} unknown (readonly controller/cache observation unavailable; no bootstrap performed)')
             return 0
@@ -1817,11 +1818,23 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
 
 
 def list_steps(game, echo=print):
-    ctx = Context(game, create=False)
-    for s in load_recipe(game).steps(ctx):
+    """@cc [owner:fontanierh,label:correctness] readonly-controller-step-list
+    Controller-aware listing MUST use source-only declarations, validate global metadata
+    and explicitly report controller ownership with reuse unknown. It MUST NOT construct
+    a runtime Context, bootstrap a helper or create build/cache state. See
+    test_controller_list_is_explicit_without_runtime_context_or_bootstrap.
+    """
+    from .build_v2.controller_entry import discover, declaration_context
+    if discover(game):
+        steps = load_recipe(game).steps(declaration_context(game))
+        check_declarations(steps)
+    else:
+        steps = load_recipe(game).steps(Context(game, create=False))
+    for s in steps:
         needs = f'  (needs {", ".join(s.needs)})' if s.needs else ''
         needs += f'  (after {", ".join(s.after)})' if s.after else ''
         needs += f'  (products {", ".join(p.name for p in s.products)})' if s.products else ''
         needs += f'  (reads {", ".join(s.reads)})' if s.reads else ''
         needs += f'  (references {", ".join(s.references)})' if s.references else ''
-        echo(f'{s.name:34s} {s.about}{needs}')
+        marker = ' [controller; reuse unknown; no bootstrap]' if s.controller is not None else ''
+        echo(f'{s.name:34s} {s.about}{marker}{needs}')
