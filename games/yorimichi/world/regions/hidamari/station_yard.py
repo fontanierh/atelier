@@ -6,20 +6,13 @@ static railcar, narrow-gauge track and blocking engine shed are gone. HD_Station
 bicycle shelter and kiosk; the east lane ends on each side of the railway. Two shop lots flank the station square.
 """
 
-STATION = (1185., 290.)
+from hidamari.station_yard_placement import (
+    BED, KIOSK, LANE_BREAK, PAD, RAIL, SHELTER, SHOPS, STATION, X0, X1, Y0, Y1, floor_z, place,
+)
+
 TRACK_Y = 301.8                   # 1.85 m from the existing platform edge at y=299.95
 SERVICE_CENTRE = (1208., TRACK_Y)
-X0, X1 = 1128., 1300.            # the buffer clears the west lane; the east lane stops at the station yard
-Y0, Y1 = 295.8, 306.
-RAIL = -.67                       # rail top below the station floor (platform top +.25, 92 cm above the rail)
-BED = RAIL-.72                    # the cutting floor
-SHOPS = [('HD_Shop_05', 1143., 249.), ('HD_Shop_11', 1219.5, 249.)]   # north side of the y=230 street, facing it
-SHELTER = (1146.2, 1150.0, 265.4, 276.2)   # x0, x1, y0, y1: over the bicycles at x 1148
-KIOSK = (1221., 288.)             # faces west, towards the station's east end
-LANE_BREAK = (1240., 280., 322.)  # the east lane ends on each side of the extended platform and track cutting
 # The pad's front is its north side (yaw 180): the review's approach probe lands on the cutting's foot there.
-PAD = dict(asset='HD_StationYard', x=(X0+X1)/2, y=(Y0+Y1)/2, yaw=180, half_width=(X1-X0)/2, front=-(Y1-Y0)/2,
-           back=(Y1-Y0)/2, fade_x=4., fade_y=4., group='public')
 PALETTE = {'sy_floor_gravel': (.24, .22, .19), 'sy_buffer_concrete': (.32, .31, .29),
            'sy_shadow': (.012, .010, .009), 'sy_lamp_glow': (1., .75, .4),
            'sy_shelter_steel': (.20, .24, .22), 'sy_shelter_roof_tin': (.32, .36, .34),
@@ -32,28 +25,6 @@ PALETTE = {'sy_floor_gravel': (.24, .22, .19), 'sy_buffer_concrete': (.32, .31, 
 def palette():
     from village import mesh as v
     v.PALETTE.update(PALETTE)
-
-
-def floor_z():
-    from hidamari import layout
-    return float(layout.street_height(STATION[0], STATION[1]-11.5))   # HD_Station's pad (layout.terrain_pads)
-
-
-def place(put, inst, height, buildings):
-    """@cc [owner:fontanierh,label:correctness] hidamari-operating-terminus
-    Hidamari's town platform MUST serve the Belmonte trains. No decorative railcar, shed end wall or duplicate
-    track may occupy the service's clearance. The platform surface MUST meet the station floor plus 0.25 m.
-    """
-    z = floor_z()
-    inst.pop('HD_Railcar', None)
-    buildings.append({'asset': 'HD_StationYard', 'position': [PAD['x'], PAD['y'], z+BED], 'yaw': 180,
-                      'width': X1-X0, 'depth': Y1-Y0, 'terrain_pad': True})
-    boxes = [(X0-2, X1+1, 294., Y1+4), (SHELTER[0]-.5, SHELTER[1]+.5, SHELTER[2]-.5, SHELTER[3]+.5),
-             (KIOSK[0]-2.2, KIOSK[0]+2.2, KIOSK[1]-2.6, KIOSK[1]+2.6)]
-    boxes += [(x-13.5, x+13.5, y-11.6, y+11.6) for _, x, y in SHOPS]
-    for name, items in inst.items():
-        if name.startswith('HD_Shop_') or not items: continue
-        inst[name] = [p for p in items if not any(a < p[0] < b and c < p[1] < d for a, b, c, d in boxes)]
 
 
 def _shelter(m, height):

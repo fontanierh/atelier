@@ -8,7 +8,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'world'))
 import yori  # noqa: E402,F401
-from hidamari import arrival  # noqa: E402
+from hidamari import arrival, arrival_placement  # noqa: E402
 
 N, SIZE = 301, 600.
 END = (294.51, 59.69, .05*294.51 + .25)   # the island road, its strip a little above the terrain
@@ -50,7 +50,8 @@ def island(monkeypatch):
     axis = np.linspace(-SIZE/2, SIZE/2, N); x, y = np.meshgrid(axis, axis)
     H = .05*x + .1*((np.arange(N)[:, None]+np.arange(N)[None, :]) % 2)*(np.arange(N)[None, :] < N-1)
     road = [[250., 60., .05*250 + .25], list(END)]
-    monkeypatch.setattr(arrival, '_world', lambda: {'road': road, 'n': N, 'size': SIZE})
+    for owner in (arrival, arrival_placement):
+        monkeypatch.setattr(owner, '_world', lambda: {'road': road, 'n': N, 'size': SIZE})
     monkeypatch.setattr(arrival, '_island', lambda: (H, N, SIZE))
     xs = tuple(np.arange(300., 420.1, 4.)); ys = tuple(np.arange(0., 240.1, 4.))
     monkeypatch.setattr(arrival, '_hidamari_axes', lambda: (xs, ys))

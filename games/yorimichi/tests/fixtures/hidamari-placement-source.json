@@ -1,0 +1,66 @@
+{
+  "reference_head": "b636f73d5f90b4934c6805c1feab3d870b454342",
+  "schema": 1,
+  "sources": {
+    "arrival": {
+      "declarations": {
+        "AREA": "3ab2f3e748ea5ded6512ff724e9ad385b9a87091a6c943bcbbbc9da45c55c6a1",
+        "BUS_STOP": "a039e3cc9431afba0aeb80191962d677aee24c5a6a35e2bb6bba73b2d4a6e7c0",
+        "ROAD_CLEAR": "33fa48ae5923402f2daf5080a6fff9e0e2f84cbfd070fef476201ee19c4ed641",
+        "SHRINE": "e5575478af35b4d175de77119e4cda1d1e4005eb90f72ef721486b3c9feeb768",
+        "STEP_MAX": "b7acc66379122c3e02d775d88fcfcf90ec07ce7dad1c6ccc43414127ef94471a",
+        "_fits": "ff30eb512a42a99d99c46c8910e9dce9969335a9ecb9bc0fba72b2ec8427d78e",
+        "_road": "ca920761eec60c3bba43f27265f5960b52a56350f2c9cbec8dcffcd62e1e094b",
+        "_world": "728648079eb1d4b5547ec91ce72b0a22595a3ee2d693a25947f672fa9da099ff",
+        "cells": "2c75d0d4e9dbc20deed0441fc5cc1ec74286ab58ec444be2bbaf798099c8b531",
+        "place": "9f1c374e2063156831d932c2b6880a6903d2da86fb2806d2357297ddbc1f4721",
+        "road_distance": "120fec015b06aaa96907785be4aa348597873f95f3836011dcc9758911788d29"
+      },
+      "original_sha256": "1dec51ce1fe195604000c8f3d4623c8d5b52971b2a1d80dc8186ae4f59040c6c"
+    },
+    "park_grounds": {
+      "declarations": {
+        "BEDS": "1eeb976eedf4d6e74d6dbcdf918a6f713b9d063d9ee70379fd9198e16300c0c7",
+        "LAMPS": "78e13383923b9f263078739ba144ee8899d73a3a0964b7f8327304c814b1057d",
+        "PATHS": "0e7404de6917726def26b8a23a50c39f2f8d4f81b7908de90e5458a36d00cfa1",
+        "SAND": "dd5c60e7ad7d6ae8c6c8587a1a9db56853b513e6d86d97a84b5a3f9a88994844",
+        "WIDTH": "4b2b698f4a4bddf0fc511c3b477e42dae56a84d3dcee0f56674e00baaa693800",
+        "_near_path": "c9655ea4f34e937b31c04d3fc660c876bf2b8fcd4b6402140ad4eb285833584a",
+        "place": "33f3672fe9bb7926c4b2817a3227e5491cd8dca5252343979eff5196b4adc295"
+      },
+      "original_sha256": "9f6c02caa0a5dbd48c9f84818acfb8fc85a8e1545c13fd4dffe4bd2fb35ba049"
+    },
+    "station_yard": {
+      "declarations": {
+        "BED": "d693dada977e0e6cba14908e9da3f0292a7f6ab65fc600a5ef66121a2b86605b",
+        "KIOSK": "170ab6056e50aaf4203b0b767e960d519e1153ca5602bedb9210e8ff03725998",
+        "LANE_BREAK": "d9327ffd5c0b60815650013f3bb687dc5570aa754694268a0f332eaf3036e1e6",
+        "PAD": "c1c82f2a0d29f03ec40a068a5cc0ac2eb7b779dcb8387daa078bb277bfd63247",
+        "RAIL": "b8d99ba558e0482f95a4bb1c809df7d835399e3d78d9881846495f720e15f1cc",
+        "SHELTER": "ca704c5a82fc62199ff3312bf8e0c687b700f56408e6b5beb2d59921ae35fd7c",
+        "SHOPS": "d3bdab4336d617a549b370ec2866c7c46f32bdbc50d141c4172678f4211928d4",
+        "STATION": "5a4cbeb0aca6990b77c04d7b13e8eda8e4c993a98c10b8a9e8d78af4f16dd865",
+        "X0": "bc77a687e453c49249ea363a596e300e1a7902609a2dac5f3c39aa14d5f565ca",
+        "X1": "bc77a687e453c49249ea363a596e300e1a7902609a2dac5f3c39aa14d5f565ca",
+        "Y0": "1891df3fa6404936ec86716efe3f060788564fa9bc11d3e90d95c1434ff3e866",
+        "Y1": "1891df3fa6404936ec86716efe3f060788564fa9bc11d3e90d95c1434ff3e866",
+        "floor_z": "37f49f19a305136974ac20cc11a0daf8d2be4d5e7f7576ba50a7bcb9665482bf",
+        "place": "6976e4786fe0cebc23477e45f27ca9965a2b43ee241a9c781da9a261e982296c"
+      },
+      "original_sha256": "1d6596f49a47387bffadc74cd44f05e84b625c9e8a84e5636001696e0c0a07b1"
+    },
+    "temple_precinct": {
+      "declarations": {
+        "APPROACHES": "1307e2781902cebdb1427a6097cc9f248a563dfcb0fad93327760fb8deee41d4",
+        "BAMBOO": "34d5d2b00bf8b84dbb9933a46082e6895c8b80f88db3b7f74458710a0f884832",
+        "GRAVES": "7ba988605843a3f52fecb8517d24c73154cb85dc11d55493977131f42292a94a",
+        "MAPLES": "a2b9054f5b6a64d8f08bc532f0d5a3a3bbea985738509f032502768631e46361",
+        "PADS": "53c288069c0a2016a51f5c14f1fdd008b56445b7991896a6ed639e579118d8db",
+        "PAGODA": "1ef4b7535435c8f4f0e43982dcdc418efbc49bc0792f30c00e25003b6f30570c",
+        "WALL_Y": "213e488df975d5d3e42dd5d3affd9d4287aeea32ac61d56b5e445b5f0f827a89",
+        "place": "b9b3aab774d3d586f84c98c68df454f6b1dc3d57ce5b20171a4d39cde6964464"
+      },
+      "original_sha256": "bad824d3b97fadd0573bee6fa6ce1f4bac060d6e6394cde6b235f9d02e6891c4"
+    }
+  }
+}
