@@ -3,6 +3,7 @@ import copy
 import json
 from pathlib import Path
 import sys
+import subprocess
 from types import SimpleNamespace
 
 import pytest
@@ -162,3 +163,42 @@ def test_refusals_never_publish_final_receipt(tmp_path, monkeypatch, fault):
         finalizer.finalize(root, root / 'finalized-refusal')
     assert not (root / 'finalized-refusal/finalized-host-result.json').exists()
     assert (root / 'host-result.json').read_bytes() == before
+
+
+def test_receiver_build_stays_bound_when_original_source_prepends_its_studio(tmp_path):
+    source, receiver = tmp_path / 'source', tmp_path / 'receiver'
+    for root in (source, receiver):
+        package = root / 'platform/studio/atelier'; package.mkdir(parents=True)
+        (package / '__init__.py').write_text('')
+        (package / 'build.py').write_text(
+            "from pathlib import Path\nclass Context:\n"
+            "    def __init__(self, name):\n"
+            "        self.game_dir = Path(__file__).resolve().parents[3] / 'games' / name\n")
+    native = source / 'games/yorimichi/tests/native'; native.mkdir(parents=True)
+    tools = source / 'games/yorimichi/tools'; tools.mkdir(parents=True)
+    world = source / 'games/yorimichi/world'; world.mkdir(parents=True)
+    (world / 'yori.py').write_text(
+        "import sys\nfrom pathlib import Path\n"
+        "sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'platform/studio'))\n")
+    modules = [native / 'foliage_native_equivalence.py', tools / 'atomic_equivalence.py',
+               native / 'track_native_equivalence.py', tools / 'network_review_common.py']
+    for module in modules:
+        module.write_text('import yori\n')
+    spec = dict(inputs={str(p): finalizer.digest(p.read_bytes()) for p in modules})
+    spec_file = tmp_path / 'spec.json'; spec_file.write_text(json.dumps(spec))
+    program = r'''
+import importlib.util, json, pathlib, sys
+receiver, source, tool, spec_file = map(pathlib.Path, sys.argv[1:])
+sys.path.insert(0, str(receiver / 'platform/studio'))
+loading = importlib.util.spec_from_file_location('finalizer', tool)
+finalizer = importlib.util.module_from_spec(loading); loading.loader.exec_module(finalizer)
+api = finalizer.original_api(source, json.loads(spec_file.read_text()))
+assert sys.path[0] == str(source / 'platform/studio')
+assert pathlib.Path(api['foliage_native_equivalence'].__file__).is_relative_to(source)
+assert pathlib.Path(finalizer.build.__file__).is_relative_to(receiver)
+assert finalizer.build.Context('yorimichi').game_dir == receiver / 'games/yorimichi'
+'''
+    result = subprocess.run([sys.executable, '-I', '-S', '-c', program, str(receiver), str(source),
+                             str(Path(finalizer.__file__).absolute()), str(spec_file)],
+                            capture_output=True, text=True, timeout=10)
+    assert result.returncode == 0, result.stdout + result.stderr

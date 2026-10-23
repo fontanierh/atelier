@@ -15,6 +15,10 @@ import stat
 import subprocess
 import sys
 
+# Bind the receiver-installed package before source yori prepends its own studio.
+# This is the original native runner import order; Context must remain receiving.
+from atelier import build
+
 MAX_LOG_BYTES = 8 * 1024 * 1024
 
 
@@ -174,7 +178,6 @@ def finalize(workspace, output):
             require(clean_head(Path(spec[key])) == spec[key + '_head'], 'Original executable source head changed')
     api = original_api(source, specs['original']); proof = api['foliage_native_equivalence']
     generic = api['atomic_equivalence']; track = api['track_native_equivalence']
-    from atelier import build
     require(Path.cwd().resolve() == receiver.resolve(), 'Run in the stopped receiving checkout')
     ctx = build.Context('yorimichi')
     require(ctx.game_dir == receiver / 'games/yorimichi', 'Wrong receiving project')
