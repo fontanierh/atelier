@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "model": "boat",
+  "asset": "SW_Boat",
+  "contexts": {
+    "stand": {
+      "seed": 11,
+      "prefix_words": 1246
+    },
+    "fishing": {
+      "seed": 23,
+      "prefix_words": 1312
+    },
+    "temple": {
+      "seed": 41,
+      "prefix_words": 0
+    },
+    "village": {
+      "seed": 76,
+      "prefix_words": 0
+    }
+  }
+}

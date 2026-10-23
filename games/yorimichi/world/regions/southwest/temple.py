@@ -7,7 +7,7 @@ import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_
 import math, random, sys
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from mesh import Mesh, PALETTE
+from southwest.mesh import Mesh, PALETTE
 R=random.Random(41)
 def cv(key,amount=.05):
     f=R.uniform(1-amount,1+amount);return tuple(min(1,c*f) for c in PALETTE[key])
@@ -15,7 +15,7 @@ def lerp(a,b,t):return a+(b-a)*t
 
 def site_ground(x,y):
     """Temple is placed 180 degrees around the authored island summit."""
-    import island
+    from southwest import island
     z=float(island.height(-x,island.SUMMIT[1]-y))-island.SUMMIT_Z
     if abs(x)<=6.5 and -4.5<=y<=6.5:z=max(z,.48)
     if abs(x)<=4.5 and -3<=y<=5:z=max(z,1.0)
@@ -254,7 +254,7 @@ def grass_patch(m,x,y,z,r,seed=0):
 
 def stair(m,y0,z0,steps,rise,run,width,cheek=True):
     """descending stair toward -Y from (y0,z0); returns (y,z) at the bottom"""
-    import island
+    from southwest import island
     for i in range(steps):
         y=y0-(i+.5)*run; top=z0-i*rise
         ground=min(float(island.height(-x,island.SUMMIT[1]-yy))-island.SUMMIT_Z

@@ -1,0 +1,26 @@
+@cc [owner:fontanierh,label:correctness;performance] southwest-independent-geometry-and-runtime
+Southwest source and receiving ownership MUST satisfy the following boundaries.
+
+The production roster MUST preserve all sixteen original logical placement keys,
+including Tree_PineLean_A and Tree_PineLean_B. Each model MUST construct only its own
+completed source with an explicitly recorded original random stream position.
+Do not execute siblings or read sibling exports to recover random state.
+Production geometry MUST use factory-startup source planners and one independently
+cached export per bounded primary (at most 32768 triangles). File assembly MUST
+require the complete current roster and MUST NOT export or join geometry.
+Every original polygon and ordered corner MUST retain its one owner, winding,
+normal, all UV/color values and names, material identity and authored pivot/frame.
+Spatial pieces MUST remain separate native assets and retain their parent's
+placement, shadow/culling/fade policy and complete logical local bounds.
+Southwest's original FBX emitted only render geometry, with complex-as-simple native
+queries. Mesh.colliders contains authoring diagnostics, NOT exported UCX; do not turn
+those boxes into new blocking hulls. Each child MUST validate its own current cooked
+LOD0 surface, no simple/convex leftovers and no external collision proxy.
+Query products MUST capture final actual render tessellation before any exports.
+Ferry and other query consumers MUST read that explicit complete source surface
+instead of a whole render export or a partial child subset.
+Validate and physically save every current native child before one combined
+retirement preflight for obsolete pieces and the exact sixteen former parents.
+Foreign references MUST refuse the entire retirement before any deletion. Require
+physical parent/sidecar absence before task success; missing membership MUST fail
+without loading any old parent as a fallback.

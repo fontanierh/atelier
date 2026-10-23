@@ -4,7 +4,7 @@ yellow-green coconuts, a string of coconuts on the post, a chalkboard easel, a s
 leaning nobori beside it and two grey boulders. Front (the counter) faces -Y; place it so -Y faces the lane.
 Footprint about 3.6 m (x) by 4.2 m (y) including the banner and boulders; the hut itself is 2.6 x 1.8 m."""
 import math, random
-from mesh import Mesh
+from southwest.mesh import Mesh
 R=random.Random(11)
 
 # warmer, darker wood than the shared palette (linear values; the game's exposure lifts mid tones)

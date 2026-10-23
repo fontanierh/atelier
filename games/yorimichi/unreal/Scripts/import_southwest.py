@@ -6,6 +6,7 @@ from pathlib import Path
 import unreal
 ROOT = yori.OUT;OUT=ROOT/'southwest'
 sys.path.insert(0,str(Path(__file__).resolve().parent))
+sys.path.insert(0,str(yori.GAME))
 import import_village as V
 import sea_look
 EAL=unreal.EditorAssetLibrary
@@ -69,13 +70,57 @@ def sea_material():
     MEL.recompile_material(m);EAL.save_loaded_asset(m);return m
 def main():
     unreal.SystemLibrary.execute_console_command(None,'Interchange.FeatureFlags.Import.FBX 0')
-    manifest=json.loads((OUT/'manifest.json').read_text());mat=V.material();report={}
-    for fbx in sorted((OUT/'fbx').glob('*.fbx')):
-        name=fbx.stem;mesh=V.import_mesh(fbx,'/Game/Japan/Assets',name)
-        mesh.set_material(0,mat)
-        body=mesh.get_editor_property('body_setup')
-        if body:body.set_editor_property('collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
-        EAL.save_loaded_asset(mesh);report[name]=mesh.get_path_name();unreal.log('SOUTHWEST imported '+name)
+    from southwest_atomic_products import exports, native_inventory, native_files, DESTINATION, PARENTS
+    from atelier import native_membership, native_packages
+    from import_city_surface_tiles import prepare_collision_import, finish_empty_collision
+    runtime, current = exports(ROOT)
+    content = yori.GAME / 'unreal/Content'
+    native_files(content)
+    for parent in PARENTS:
+        primary = content / 'Japan/Assets' / (parent + '.uasset')
+        assert not any(p.is_symlink() for p in (primary, *primary.parents)), ('linked old Southwest parent', parent)
+    previous = native_inventory(EAL)
+    mat = V.material(); assert mat is not None, 'Southwest village material missing'
+    unreal.SystemLibrary.execute_console_command(None, 'Editor.AsyncStaticMeshCompilation 0')
+    unreal.load_module('StaticMeshEditor')
+    editor = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
+    assert editor is not None
+    content = yori.GAME / 'unreal/Content'
+    report = {parent: [] for parent in PARENTS}
+    for index, (parent, row, receipt, path) in enumerate(current, 1):
+        name = row['name']
+        from mesh_import import import_mesh
+        mesh = import_mesh(path, DESTINATION, name, fresh_slots=True,
+            before_import=lambda: prepare_collision_import(DESTINATION, name, editor))
+        assert len(mesh.static_materials) == 1, (name, 'Southwest source material count')
+        assert str(mesh.static_materials[0].get_editor_property('imported_material_slot_name')) == 'Southwest_Palette', name
+        if mesh.get_material(0) != mat: mesh.set_material(0, mat)
+        if mesh.get_num_lods() > 1: mesh.set_num_source_models(1)
+        settings = editor.get_lod_build_settings(mesh, 0)
+        if not settings.get_editor_property('use_full_precision_u_vs'):
+            settings.set_editor_property('use_full_precision_u_vs', True)
+            editor.set_lod_build_settings(mesh, 0, settings)
+        body = mesh.get_editor_property('body_setup')
+        assert body is not None, (name, 'missing complex collision body')
+        if body.get_editor_property('collision_trace_flag') != unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE:
+            body.set_editor_property('collision_trace_flag', unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
+        finish_empty_collision(mesh, row, editor)
+        assert mesh.get_num_triangles(0) == row['triangles'], (name, 'render triangle count')
+        assert mesh.get_num_lods() == 1, (name, 'unexpected LODs')
+        assert editor.get_num_uv_channels(mesh, 0) == 1, (name, 'UV channel count')
+        assert editor.get_lod_build_settings(mesh, 0).get_editor_property('use_full_precision_u_vs'), name
+        assert mesh.get_material(0) == mat, (name, 'current material')
+        assert unreal.CitySurfaceValidation.validate_collision(mesh, row['triangles'], False), (name, 'current own cooked LOD0')
+        box = mesh.get_bounding_box(); lower, upper = receipt['bounds']
+        expected = ([lower[0]*100, -upper[1]*100, lower[2]*100],
+                    [upper[0]*100, -lower[1]*100, upper[2]*100])
+        for coordinates, actual in zip(expected, (box.min, box.max)):
+            assert all(abs(getattr(actual, axis)-value) < .2 for axis, value in zip(('x','y','z'),coordinates)), (name, 'bounds')
+        native_packages.save(mesh, EAL, content)
+        report[parent].append(dict(name=name, triangles=row['triangles'], asset=mesh.get_path_name()))
+        mesh = body = None
+        if index % 16 == 0: unreal.SystemLibrary.collect_garbage()
+        unreal.log('SOUTHWEST current ' + name + ' ' + str(index) + '/' + str(len(current)))
     # terrain: same path as the world setup
     terrain=V.import_mesh(ROOT/'terrain.fbx','/Game/Japan','Terrain')
     sand_material()
@@ -97,5 +142,24 @@ def main():
     assert sea.get_bounding_box().max.x>100000,'Sea imported at the wrong scale'
     sea.set_material(0,sea_material())
     EAL.save_loaded_asset(sea)
-    (OUT/'import-report.json').write_text(json.dumps(report,indent=2));unreal.log('SOUTHWEST IMPORT COMPLETE %d meshes'%len(report))
+    # One complete reference preflight covers old pieces AND every original parent.
+    # Every current child has been validated and physically saved before retirement.
+    current_packages = [r['asset'].split('.')[0] for rows in report.values() for r in rows]
+    replacements = {'/Game/Japan/Assets/' + parent: [r['asset'].split('.')[0] for r in report[parent]] for parent in PARENTS}
+    replacements.update({package: current_packages for package in previous - set(current_packages)})
+    # Pin every obsolete primary/ancestor as real filesystem ownership before any deletion.
+    for package in replacements:
+        primary = content / (package[len('/Game/'):] + '.uasset')
+        assert not any(p.is_symlink() for p in (primary, *primary.parents)), ('linked obsolete Southwest package', package)
+    retired = native_membership.retire_replaced(EAL, replacements)
+    for package in replacements:
+        primary = content / (package[len('/Game/'):] + '.uasset')
+        assert not any(primary.with_suffix(suffix).exists() or primary.with_suffix(suffix).is_symlink()
+                       for suffix in ('.uasset', '.uexp', '.ubulk', '.uptnl')), ('Southwest physical retirement failed', package)
+    assert native_inventory(EAL) == set(current_packages), 'Southwest current native roster differs'
+    files = native_files(content)
+    assert {p.stem for p in files if p.suffix == '.uasset'} == {r['name'] for _,r,_,_ in current}
+    assert set(report) == set(runtime['parents'])
+    (OUT/'import-report.json').write_text(json.dumps(dict(parents=report, retired=retired), indent=2) + '\n')
+    unreal.log('SOUTHWEST IMPORT COMPLETE %d meshes' % len(current_packages))
 if __name__=='__main__':main()

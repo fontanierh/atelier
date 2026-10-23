@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "model": "pine_lean_b",
+  "asset": "Tree_PineLean_B",
+  "contexts": {
+    "stand": {
+      "seed": 11,
+      "prefix_words": 1246
+    },
+    "fishing": {
+      "seed": 23,
+      "prefix_words": 1817
+    },
+    "temple": {
+      "seed": 41,
+      "prefix_words": 786
+    },
+    "village": {
+      "seed": 76,
+      "prefix_words": 0
+    }
+  }
+}

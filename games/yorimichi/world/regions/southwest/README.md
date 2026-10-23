@@ -14,9 +14,12 @@ uv run atelier build yorimichi world.southwest unreal.southwest data.stage
   grades the village terrace and the shore lane, places the houses and props, and places the island
   (`ISLAND`: origin (-150, -530), yaw 15 degrees) with its trees, boulders, torii and temple. The island sits 50 m
   farther offshore after Sunset Pier's enlargement, leaving about 65 m of water at its nearest headland.
-- `world.southwest` ([`build.py`](build.py), Blender) builds the props (`stand.py`, `fishing.py`, `temple.py`, on the
-  village kit and the shared helpers in `mesh.py`), the island mesh, its boulders and the leaning pines.
-- `unreal.southwest` (`unreal/Scripts/import_southwest.py`) imports them and builds the sea plane's `M_Sea`.
+- `world.southwest.geometry.<logical>` constructs only the selected completed model with its recorded original random context. It publishes final query data and bounded mesh payloads before exports.
+- `world.southwest.export.<piece>` owns exactly one independently cached FBX (at most 32,768 triangles). `world.southwest` assembles complete file membership without exporting or joining geometry.
+- [`build.py`](build.py) remains an explicit authoring/review tool; its former monolithic `--export` path refuses. Production uses the normal graph above.
+- `unreal.southwest` (`unreal/Scripts/import_southwest.py`) imports separate child assets, validates their current materials, UVs, bounds and own cooked complex collision, then retires obsolete children and all original parent packages in one reference preflight. Logical instance keys, original local frame, visibility/fade bounds and tree policy remain unchanged. It also retains terrain/sea material finishing.
+- `southwest/query/<logical>.npz` contains the final actual triangulated source used by ferry sweeps, independent of export files. The analytical island height/scatter functions still serve map/layout authorship.
+- The guarded `tests/native/southwest_atomic_canary.py` compares all sixteen current constructors against the immutable original production order, including ordered polygon corners, normals, all UV/color fields, materials, transforms, diagnostic boxes and serialized FBX corner multiplicity. This source proof is separate from native receiving/full-world acceptance.
 - The sailboat is its own asset: `world.sailboat` and `unreal.world` build and import it, and
   `uv run atelier qa yorimichi sailboat SESSION` checks it.
 

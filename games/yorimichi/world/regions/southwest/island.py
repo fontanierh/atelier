@@ -215,7 +215,7 @@ def face_colour(cx,cy,cz,slope,nz):
     return np.clip(c,0,1)
 
 def build():
-    from mesh import Mesh
+    from southwest.mesh import Mesh
     X,Y,Z=grid();m=Mesh('SW_Island');ny,nx=Z.shape
     tris=[]
     for j in range(ny-1):
@@ -239,7 +239,7 @@ def build():
 
 # ---- boulders: faceted rocks for the waterline ring, the lower slope and the peak (scaled 5-15 m by the layout)
 def _boulder(name,seed,rx,ry,rz,rings=4,segs=7,jitter=.22,flat_top=.75):
-    from mesh import Mesh
+    from southwest.mesh import Mesh
     rng=np.random.default_rng(seed);m=Mesh(name)
     def pt(i,k):
         th=math.pi*(i/rings);ph=2*math.pi*(k%segs)/segs+(.5*(i%2))*2*math.pi/segs
@@ -265,7 +265,7 @@ BOULDERS={'boulder_a':boulder_a,'boulder_b':boulder_b,'boulder_c':boulder_c}
 def _pine_lean(name,seed,height,lean):
     """A trunk in five beams that leans out along +x by `lean` metres and turns up at the top, with flat layered
     needle pads on short branches (the clipped-cloud look of a coastal kuromatsu). The layout yaws +x to the sea."""
-    from mesh import Mesh
+    from southwest.mesh import Mesh
     rng=np.random.default_rng(seed);m=Mesh(name)
     pts=[(0.0,0.0,-.6)]
     for k in range(1,6):

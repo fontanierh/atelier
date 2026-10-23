@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "model": "stand",
+  "asset": "SW_CoconutStand",
+  "contexts": {
+    "stand": {
+      "seed": 11,
+      "prefix_words": 0
+    },
+    "fishing": {
+      "seed": 23,
+      "prefix_words": 0
+    },
+    "temple": {
+      "seed": 41,
+      "prefix_words": 0
+    },
+    "village": {
+      "seed": 76,
+      "prefix_words": 0
+    }
+  }
+}

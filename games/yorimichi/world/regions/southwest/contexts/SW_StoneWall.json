@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "model": "stone_wall",
+  "asset": "SW_StoneWall",
+  "contexts": {
+    "stand": {
+      "seed": 11,
+      "prefix_words": 1246
+    },
+    "fishing": {
+      "seed": 23,
+      "prefix_words": 1464
+    },
+    "temple": {
+      "seed": 41,
+      "prefix_words": 786
+    },
+    "village": {
+      "seed": 76,
+      "prefix_words": 0
+    }
+  }
+}

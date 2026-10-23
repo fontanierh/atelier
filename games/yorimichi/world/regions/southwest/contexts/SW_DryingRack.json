@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "model": "drying_rack",
+  "asset": "SW_DryingRack",
+  "contexts": {
+    "stand": {
+      "seed": 11,
+      "prefix_words": 1246
+    },
+    "fishing": {
+      "seed": 23,
+      "prefix_words": 1384
+    },
+    "temple": {
+      "seed": 41,
+      "prefix_words": 0
+    },
+    "village": {
+      "seed": 76,
+      "prefix_words": 0
+    }
+  }
+}
