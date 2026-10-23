@@ -103,7 +103,7 @@ def _build_state(out_dir):
         req = build.required_inputs(step, observation=obs)
         step_inputs[step.name] = tuple(str(p) for p in (*req, *step.optional_inputs))
 
-    def unedited_hash(digest, path):
+    def unedited_hash(digest, path, *args, **kwargs):  # skip/shadow: names stand in for bytes either way
         digest.update(str(path).encode())
 
     def unedited_inventory(path, **kwargs):
@@ -158,7 +158,7 @@ def changed_by(edited, tmp_path, monkeypatch, *, stable_products=()):
 
     target_str = str(target)
 
-    def stand_in(digest, path):
+    def stand_in(digest, path, *args, **kwargs):
         s = str(path)
         inside = s == target_str or target_str.startswith(f'{s}/')
         digest.update(s.encode() + (b'edited' if inside else b''))

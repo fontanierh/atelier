@@ -20,7 +20,7 @@ def test_sound_key_uses_its_saved_type_and_audio_instead_of_the_world(tmp_path, 
     assert 'unreal.module.YorimichiAssets' in sound.needs
     assert len(sound.commands) == 6
     assert all(command.modules == ('YorimichiAssets',) for command in sound.commands)
-    monkeypatch.setattr(build, '_hash_path', lambda digest, path: digest.update(str(path).encode()))
+    monkeypatch.setattr(build, '_hash_path', lambda digest, path, *args, **kwargs: digest.update(str(path).encode()))
     monkeypatch.setattr(build_cache, 'tool_context', lambda *a, **k: {'tools': 'unchanged'})
     before = {name: 'same' for name in graph.by_name}
     before.update({'product:' + name: 'same audio bytes' for name in sound.reads})

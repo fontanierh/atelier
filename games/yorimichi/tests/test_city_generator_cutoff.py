@@ -118,16 +118,34 @@ def test_unused_manifest_fields_do_not_regenerate_city_outputs(city_build):
     assert p.run(edited=True) == 0 and p.generated == []
 
 
+def without_producer_inventory(p):
+    """A producer stamp with no written-output inventory cannot repair; the consumers must refuse."""
+    stamp = p.out / 'stamps/world.hidamari.json'
+    stamp.write_text(json.dumps({k: v for k, v in json.loads(stamp.read_text()).items() if k != 'output_inventory'}))
+
+
 def test_generated_mesh_mutation_without_source_edit_is_not_a_hit(city_build):
     p = city_build
+    without_producer_inventory(p)
     (p.folder/'assets'/f'{RECIPE.city_inputs.TILES[0]}.fbx').write_bytes(b'outside mutation')
     assert p.run() == 0 and p.generated == ['tiles']
 
 
 def test_missing_mesh_never_keeps_a_successful_generator_hit(city_build):
     p = city_build
+    without_producer_inventory(p)
     (p.folder/'assets'/f'{RECIPE.city_inputs.TREES[0]}.fbx').unlink()
     assert p.run() != 0 and p.generated == []
+
+
+@pytest.mark.parametrize('damage', ['mutate', 'delete'])
+def test_inventoried_producer_rebuilds_damaged_meshes_and_consumers_cut_off(city_build, damage):
+    p = city_build
+    mesh = p.folder/'assets'/f'{RECIPE.city_inputs.TILES[0]}.fbx'
+    original, runs = mesh.read_bytes(), len(p.exported)
+    mesh.write_bytes(b'outside mutation') if damage == 'mutate' else mesh.unlink()
+    assert p.run() == 0 and len(p.exported) == runs + 1 and p.generated == []
+    assert mesh.read_bytes() == original
 
 
 def test_generator_source_change_still_runs_both_consumers(city_build):
