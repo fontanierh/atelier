@@ -14,7 +14,7 @@ def receipt(ctx):
 
 def expand(ctx, text):
     project = Path(ctx.uproject).resolve().parent
-    engine = Path(ctx.unreal_root).resolve()
+    engine = (Path(ctx.unreal_root) / 'Engine').resolve()  # $(EngineDir) is the engine folder, not its root
     return Path(text.replace('$(ProjectDir)', project.as_posix()).replace('$(EngineDir)', engine.as_posix()))
 
 
