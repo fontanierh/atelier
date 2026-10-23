@@ -6,18 +6,16 @@ Missing/incompatible checkpoints never silently authorize an expensive cold rebu
 """
 import json
 import os
+import shutil
 from pathlib import Path
 import stat
 import sys
-import tempfile
 import time
 import uuid
 
-from . import build_products, manifest, paths
+from . import manifest, paths
 from .build_cache import atomic_json
-from .checkpoint_store import (CheckpointError, JOURNAL, Store, certificates, cold, context, hydration_member, identity,
-                               read_json)
-from .release import PublishError
+from .checkpoint_store import CheckpointError, JOURNAL, Store, certificates, context, identity, read_json
 
 
 def configured(ctx):
@@ -138,71 +136,13 @@ def _guard(ctx, operation, key=None):
     return read_json(folder / 'result.json')
 
 
-def _publish_restoration(ctx, steps, store, key, record):
-    """@cc [owner:fontanierh,label:correctness] post-guard-checkpoint-publication
-    Receiving certificates MUST be staged only after successful guarded child exit, cleanup and
-    admission close. The original journal/key and restored output metadata (size, mode, mtime;
-    bytes for post-import outputs) MUST still agree. Staged certificates count only when the
-    build's own fingerprint matches and the outputs certify, task by task, as for hydration.
-    Failure MUST retain the launch barrier and MUST NOT retain staged certificates.
-    """
-    journal = ctx.out / JOURNAL
-    expected = dict(schema=1, key=key, game=ctx.game)
-    if read_json(journal) != expected or record.get('key') != key:
-        raise CheckpointError('Checkpoint restore completion does not match its journal')
-    saved = store.load(key)
-    candidates = record.get('stamps')
-    known = {**saved['stamps'], **saved.get('incremental_stamps', {})}
-    if not isinstance(candidates, dict) or any(known.get(n) != s for n, s in candidates.items()):
-        raise CheckpointError('Checkpoint restore completion contains foreign certificates')
-    staged = ctx.out / STAGED
-    try:
-        incremental_environment(ctx)
-        from .checkpoint_store import RESTORED_HASHES, unchanged
-        # Revalidate all copied bytes at the publication boundary, not just named products.
-        from .checkpoint_store import roots, safe_destination
-        same_path = saved['checkout'] == identity(str(paths.REPO.resolve()))
-        allowed = roots(ctx)
-        post_import = record.get('post_import', {})
-        from .build_hashes import HashIndex
-        hashes = HashIndex(ctx.out / RESTORED_HASHES)
-        if set(post_import) - {'cooked/Mac/ue.projectstore'}:
-            raise CheckpointError('Unexpected mutable Zen checkpoint output')
-        for member, entry in saved['files'].items():
-            label, _, name = member.partition('/')
-            root, bound = allowed[label]
-            if bound and not same_path:
-                continue
-            path = safe_destination(root, name)
-            expected_digest = post_import.get(member, entry.get('sha256'))
-            if entry['kind'] == 'file' and (path.is_symlink() or not path.is_file()
-                    or path.stat().st_mode & 0o777 != entry['mode']
-                    or (member in post_import and build_products.file_digest(path) != expected_digest)
-                    or (member not in post_import and not unchanged(path, entry)
-                        and hashes.digest(path) != entry['sha256'])):
-                raise CheckpointError('Checkpoint output changed before certificate publication')
-            if entry['kind'] == 'link':
-                if entry['target'].startswith('member:'):
-                    target_label, _, target_name = entry['target'][7:].partition('/')
-                    target = safe_destination(allowed[target_label][0], target_name)
-                else:
-                    target = ctx.unreal_root / entry['target'][7:]
-                if not path.is_symlink() or os.readlink(path) != os.path.relpath(target, path.parent):
-                    raise CheckpointError('Checkpoint link changed before certificate publication')
-            if entry['kind'] == 'directory' and (path.is_symlink() or not path.is_dir()):
-                raise CheckpointError('Checkpoint directory changed before certificate publication')
-        hashes.close()
-        for name, stamp in candidates.items():
-            if not (ctx.stamps / (name + '.json')).exists():
-                atomic_json(staged / (name + '.json'), dict(source=key, stamp=stamp))
-        journal.unlink()
-    except BaseException:
-        for name in candidates:
-            (staged / (name + '.json')).unlink(missing_ok=True)
-        raise
-
-
 def prepare(ctx, steps, *, echo=print):
+    """@cc [owner:fontanierh,label:correctness] per-step-reuse-only
+    A step's result MUST come back only from its own action entry, saved under its exact input
+    key, or by running it. Whole-checkpoint restores, hydration and certificate adoption are
+    retired: an interrupted one left by an older controller is dropped, with every certificate
+    it may have mixed, so each step proves its own result again.
+    """
     settings = configured(ctx)
     if settings is None:
         return None
@@ -222,234 +162,14 @@ def prepare(ctx, steps, *, echo=print):
                 raise CheckpointError('Interrupted task restoration did not complete')
             journal.unlink()
             return store
-        if 'units' in pending:
-            hydrate(ctx, steps, store, echo=echo, resume=pending)
-            return store
-        key = pending['key']
-        result = _guard(ctx, 'restore', key)
-        _publish_restoration(ctx, steps, store, key, result)
-        return store
-    if not cold(ctx):
-        hydrate(ctx, steps, store, echo=echo)
-        return store
-    expected_context, ownership = context(ctx), {s.name for s in steps}
-    for key, saved in store.latest():
-        if not saved.get('workspace_only') and saved['context'] == expected_context and set(saved.get('steps', ())) <= ownership:
-            echo('Restoring a local build checkpoint; source edits are preserved')
-            started = time.monotonic()
-            result = _guard(ctx, 'restore', key)
-            _publish_restoration(ctx, steps, store, key, result)
-            echo(f'checkpoint restore: {len(result.get("stamps", {}))} certificates staged for fingerprint checks, '
-                 f'{time.monotonic() - started:.1f} s')
-            return store
-    from .checkpoint_github import Remote
-    if not settings.get('repository'):
-        echo('No remote checkpoint configured. Use `atelier cache configure --repository OWNER/REPOSITORY`.')
-        return store
-    if remote_repository(settings) is None:
-        echo(f'No compatible local checkpoint; remote checkpoint lookup is off ({REMOTE_LOOKUP}=1 enables it).')
-        return store
-    remote = Remote(settings['repository'], ctx.game, echo=echo)
-    try:
-        with remote.transaction(), tempfile.TemporaryDirectory(dir=store.directory) as temporary:
-            for item in remote.candidates():
-                data = remote.descriptor(item, Path(temporary))
-                saved = data['checkpoint']
-                if saved['context'] != expected_context or not set(saved.get('steps', ())) <= ownership:
-                    continue
-                echo('Downloading the latest compatible playtest build checkpoint')
-                key = remote.fetch(item, data, store)
-                result = _guard(ctx, 'restore', key)
-                _publish_restoration(ctx, steps, store, key, result)
-                return store
-    except (OSError, ValueError, KeyError, TypeError, PublishError) as error:
-        echo(f'Checkpoint unavailable: {error}. Cold rebuilds still require an explicit reason.')
-    return store
-
-
-STAGED = '.state/hydration-stamps'
-
-
-def hydratable(ctx, steps, names, inventories):
-    """@cc [owner:fontanierh,label:correctness] hydration-fills-only-non-current-owners
-    Hydration MAY fill a manifest member only when a receiving step without a local stamp owns
-    it: inside that verifiable step's declared roots, or listed in its published output inventory.
-    A member any locally stamped step claims (its declared roots, or its local or saved inventory)
-    MUST stay as that step left it: a file its current result omits is never restored. A member
-    without such an owner MUST NOT be restored. Returns (owned, current) member-label scopes.
-    """
-    from .checkpoint_actions import declared, label, verifiable
-    present = {p.stem for p in ctx.stamps.glob('*.json')} if ctx.stamps.is_dir() else set()
-    owned, current = set(), set()
-    for step in steps:
-        scope = set()
-        try:
-            scope.update(label(ctx, root) for root in declared(ctx, step))
-        except CheckpointError:
-            pass
-        if step.name in present:
-            scope.update(inventories.get(step.name, ()))
-            try:
-                scope.update(read_json(ctx.stamps / (step.name + '.json')).get('output_inventory') or ())
-            except (OSError, ValueError, CheckpointError):
-                pass
-            current |= scope
-        elif step.name in names:
-            if step.name in inventories:
-                owned.update(inventories[step.name])
-            elif verifiable(ctx, step):
-                owned |= scope
-    return owned, current
-
-
-def hydration_plan(ctx, steps, store):
-    """The largest compatible local checkpoint, compared file by file with this workspace.
-
-    Only cached summaries and one manifest are read; existence is checked, nothing is hashed.
-    Certificates are only staged: the build adopts one when its own fingerprint matches.
-    """
-    from .checkpoint_store import declared, declared_member, roots
-    from .checkpoint_actions import ownership as owned_outputs, trusted as trusted_stamps, unverified_member
-    allowed = roots(ctx)
-    outputs = declared(ctx, steps)
-    expected, ownership = identity(context(ctx)), {s.name for s in steps}
-    here = identity(str(paths.REPO.resolve()))
-    summaries = store.summaries()
-    usable = lambda summary, label: (label in allowed and label not in ('zen', 'cooked')
-                                     and not (allowed[label][1] and summary['checkout'] != here))
-    candidates = [(sum(c for u, c in summary['units'].items() if u.count('/') == 1 and usable(summary, u[:-1])), -age, key, summary)
-                  for age, (key, summary) in enumerate(summaries)
-                  if not summary['workspace_only'] and summary['context'] == expected
-                  and set(summary['steps']) <= ownership and {u.partition('/')[0] for u in summary['units']} <= set(allowed)]
-    if not candidates:
-        return None, len(summaries), 0
-    _, _, key, summary = max(candidates)
-    saved = json.loads((store.manifests / (key + '.json')).read_bytes())
-    files = saved['files']
-    trusted, inventories = trusted_stamps(ctx, steps, saved)
-    owners = owned_outputs(ctx, steps, inventories)
-    owned, current = hydratable(ctx, steps, trusted, inventories)
-    missing, labels = 0, set()
-    bases = {label: str(root) + '/' for label, (root, _) in allowed.items()}
-    for member in files:
-        label, _, name = member.partition('/')
-        if (not usable(summary, label) or label == 'generated' and not declared_member(name, outputs)
-                or unverified_member(member, owners) or not hydration_member(member, owned)
-                or hydration_member(member, current)):
-            continue
-        labels.add(label + '/')
-        if not os.path.lexists(bases[label] + name):
-            missing += 1
-    present = {p.stem for p in ctx.stamps.glob('*.json')} if ctx.stamps.is_dir() else set()
-    staged = {p.stem for p in (ctx.out / STAGED).glob('*.json')}
-    lacking = sorted(n for n in summary['stamps'] if n in trusted and n not in present and n not in staged)
-    token = identity([key, missing, lacking])
-    checks = ctx.out / '.state/hydration-futile.json'
-    try:
-        futile = read_json(checks).get('token') == token if checks.is_file() else False
-    except (OSError, ValueError, CheckpointError):
-        futile = False
-    if not (missing or lacking) or futile:
-        return None, len(summaries), len(candidates)
-    return (dict(key=key, units=sorted(labels), missing=missing, stamps=lacking, outputs=sorted(outputs), token=token,
-                 owners=owners, owned=sorted(owned), current=sorted(current)),
-            len(summaries), len(candidates))
-
-
-def hydrate(ctx, steps, store, *, echo=print, resume=None):
-    """Clone generated files this workspace lacks and stage the checkpoint's certificates.
-
-    A hydration never fails the build: on any refusal its journal is cleared, since it only
-    ever added missing generated files and published no certificate.
-    """
-    from .checkpoint_store import HYDRATION_REQUEST, declared
-    started = time.monotonic()
-    if resume is not None:
-        from .checkpoint_actions import ownership, trusted
-        names, inventories = trusted(ctx, steps, json.loads((store.manifests / (resume['key'] + '.json')).read_bytes()))
-        owned, current = hydratable(ctx, steps, names, inventories)
-        plan = dict(key=resume['key'], units=resume['units'], missing=None, stamps=resume.get('stamps', []),
-                    outputs=sorted(declared(ctx, steps)), token=None, owners=ownership(ctx, steps, inventories),
-                    owned=sorted(owned), current=sorted(current))
-        echo(f'Resuming checkpoint hydration from {plan["key"][:12]}')
-    else:
-        plan, total, scanned = hydration_plan(ctx, steps, store)
-        echo(f'checkpoint reuse scan: {total} checkpoints, {scanned} candidates, {time.monotonic() - started:.1f} s')
-        if plan is None:
-            return None
-        echo(f'Hydrating from local checkpoint {plan["key"][:12]}: {plan["missing"]} missing files, '
-             f'{len(plan["stamps"])} certificates staged for fingerprint checks; existing files are kept')
-    started = time.monotonic()
-    journal = ctx.out / JOURNAL
-    try:
-        atomic_json(ctx.out / HYDRATION_REQUEST, dict(key=plan['key'], units=plan['units'], stamps=plan['stamps'],
-                                                      outputs=plan['outputs'], owners=plan['owners'],
-                                                      owned=plan['owned'], current=plan['current']))
-        result = _guard(ctx, 'hydrate', plan['key'])
-        pending = read_json(journal)
-        if result.get('key') != plan['key'] or pending.get('key') != plan['key'] or 'units' not in pending:
-            raise CheckpointError('Checkpoint hydration completion does not match its journal')
-        saved = json.loads((store.manifests / (plan['key'] + '.json')).read_bytes())
-        from .checkpoint_actions import trusted
-        names, _ = trusted(ctx, steps, saved)
-        known = {n: v for n, v in {**saved['stamps'], **saved.get('incremental_stamps', {})}.items() if n in names}
-        staged = ctx.out / STAGED
-        for name in pending.get('stamps', []):
-            if name in known and not (ctx.stamps / (name + '.json')).exists():
-                atomic_json(staged / (name + '.json'), dict(source=plan['key'], stamp=known[name]))
+        if 'units' not in pending:
+            # A whole-workspace copy may have mixed files under existing certificates.
+            for stamp in ctx.stamps.glob('*.json') if ctx.stamps.is_dir() else ():
+                stamp.unlink()
+        shutil.rmtree(ctx.out / '.state/hydration-stamps', ignore_errors=True)
         journal.unlink()
-    except (OSError, ValueError, KeyError, TypeError, CheckpointError) as error:
-        echo(f'checkpoint hydration skipped: {error}')
-        if journal.is_file() and 'units' in read_json(journal):
-            journal.unlink()
-        return None
-    placed = result.get('placed', 0)
-    from .store_retention import touch
-    touch(store, plan['key'])
-    echo(f'checkpoint restore: {placed} files hydrated, {len(plan["stamps"])} certificates staged, '
-         f'{time.monotonic() - started:.1f} s')
-    if plan['token'] and not placed:
-        atomic_json(ctx.out / '.state/hydration-futile.json', dict(token=plan['token']))
-    return plan
-
-
-def staged_certificate(ctx, step, fingerprint):
-    """A hydrated checkpoint certificate whose fingerprint equals the build's own; else None."""
-    path = ctx.out / STAGED / (step.name + '.json')
-    try:
-        value = read_json(path) if path.is_file() else None
-    except (OSError, ValueError, CheckpointError):
-        return None
-    if not isinstance(value, dict) or not isinstance(value.get('stamp'), dict):
-        return None
-    stamp = value['stamp']
-    from .checkpoint_actions import ambient, verifiable
-    if not verifiable(ctx, step) and (ambient(step) or not stamp.get('output_inventory')):
-        return None
-    return (value.get('source'), stamp) if stamp.get('fingerprint') == fingerprint and not stamp.get('touched') else None
-
-
-def adopt_staged(ctx, step, fingerprint, digest):
-    """A staged certificate the build may adopt for this task now, as (source, stamp), or None.
-
-    Its fingerprint must equal the build's own, and the restored outputs must certify: the
-    action inventory, or a compatible incremental stamp of a verifiable or inventoried task.
-    """
-    staged = staged_certificate(ctx, step, fingerprint)
-    if staged is None:
-        return None
-    from .build import outputs_present
-    from .checkpoint_actions import certified, compile_present, inventory_verified, local_incremental, verifiable
-    from .checkpoint_store import hashing
-    stamp = staged[1]
-    with hashing(ctx, digest):  # Restored clones were recorded in this index.
-        good = (outputs_present(step) and compile_present(ctx, step)
-                and (certified(ctx, step, fingerprint, stamp)
-                     or ((verifiable(ctx, step) or inventory_verified(ctx, step, stamp))
-                         and local_incremental(ctx, step, fingerprint, stamp)))
-                and (not step.products or build_products.valid_records(step, stamp.get('products', {}), hasher=digest)))
-    return staged if good else None
-
+        echo('Dropped an interrupted whole-checkpoint restore; every step restores from its own result or runs')
+    return store
 
 def protect(ctx, step, *, estimate=None, echo=print):
     """@cc [owner:fontanierh,label:performance] no-silent-cold-rebuild

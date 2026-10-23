@@ -1257,22 +1257,6 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             from .build_batch_migration import migrate as migrate_batch
             previous = migrate_batch(ctx, step, current, input_state, previous, done, echo=echo)
         ctx.__dict__.setdefault('native_previous_stamps', {})[step.name] = previous
-        adopted = None
-        if actions is not None and not force and previous.get('fingerprint') != current:
-            # A hydrated checkpoint certificate counts only for the build's own fingerprint.
-            from .build_checkpoints import adopt_staged
-            staged = adopt_staged(ctx, step, current, index.digest)
-            if staged is not None:
-                adopted, previous = 'checkpoint ' + str(staged[0])[:12], staged[1]
-            elif (step.heavy or step.products) and task_cache.key(ctx, step, current) is not None and \
-                    task_cache.load(actions.store, task_cache.key(ctx, step, current)) is None:
-                # Without a saved action, any retained store checkpoint certifying this fingerprint serves.
-                from . import store_reuse
-                if not hasattr(ctx, 'store_catalogue'):
-                    ctx.store_catalogue = store_reuse.Catalogue(ctx.game)
-                reused = store_reuse.restore_checkpoint(ctx, step, current, ctx.store_catalogue, echo=echo)
-                if reused is not None:
-                    adopted, previous = 'checkpoint ' + reused[0][:12], reused[1]
         outputs_ok = outputs_present(step) and task_cache.compile_present(ctx, step)
         saved_action = None
         from .checkpoint_store import hashing
@@ -1308,13 +1292,7 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             return 1
         rebuilding_touched = step.name in rebuild_names and previous.get('touched')
         if not recovering and not force_step and not rebuilding_touched and previous.get('fingerprint') == current and outputs_ok:
-            if adopted is not None:
-                stamp.write_text(json.dumps(previous) + '\n')
-                from .build_checkpoints import estimate
-                restored += 1
-                saved_seconds += estimate(previous) or 0.
-                echo(f'{print_} certificate adopted from {adopted}')
-            elif read_stamp(stamp) != previous:
+            if read_stamp(stamp) != previous:
                 # A migrated certificate is current only once it is on disk: consumers such as
                 # the cook read every prerequisite's stamp file directly.
                 stamp.write_text(json.dumps(previous) + '\n')

@@ -521,8 +521,8 @@ class Actions:
         that task's declared roots, under its durable launch barrier, inside the build process
         that already holds the build lock; it MUST NOT spawn a child or wait for admission.
         Inputs MUST be rechecked before and after, with the build's hash index, and the complete
-        restored inventory MUST match before the barrier is cleared. Whole-workspace restores,
-        hydration and other transfers keep the guarded worker lifecycle.
+        restored inventory MUST match before the barrier is cleared. Other transfers keep the
+        guarded worker lifecycle.
         """
         from .build import fingerprint as fresh
         def current():
@@ -578,10 +578,10 @@ def verifiable(ctx, step):
     """@cc [owner:fontanierh,label:correctness] unverified-steps-never-publish
     A step whose stamp cannot be checked against complete output records (ambient Blender, or
     only representative outputs without a matching written-output inventory) MUST NOT publish
-    its owned files or its stamp to a checkpoint manifest. Restoration and hydration MUST NOT
-    adopt such a stamp or its owned files from the store, including from manifests published
-    before this rule; the receiver rebuilds them. An inventoried stamp MAY be adopted only when
-    every listed file was published with the recorded size, mtime and digest.
+    its owned files or its stamp to a checkpoint manifest. A receiver MUST NOT adopt such a stamp
+    or its owned files from the store, including from manifests published before this rule; it
+    rebuilds them. An inventoried stamp MAY be adopted only when every listed file was published
+    with the recorded size, mtime and digest.
     """
     from .build import Blender, Call
     if any(isinstance(c, Blender) and not c.factory_startup for c in step.commands):
@@ -601,28 +601,6 @@ def inventory_verified(ctx, step, stamp):
     from .output_inventory import changed
     inventory = stamp.get('output_inventory')
     return bool(inventory) and not ambient(step) and not changed(ctx, inventory)
-
-
-def inventory_published(step, stamp, files):
-    """A saved representative-output stamp whose every inventoried file was published intact."""
-    inventory = stamp.get('output_inventory')
-    if not inventory or ambient(step):
-        return False
-    for name, (size, mtime_ns, digest) in inventory.items():
-        entry = files.get(name)
-        if not entry or entry.get('kind') != 'file' or (entry['size'], entry['sha256'], entry['mtime_ns']) != (size, digest, mtime_ns):
-            return False
-    return True
-
-
-def trusted(ctx, steps, manifest):
-    """Saved stamps a receiver may consider, and the inventories that make them verified."""
-    by_name = {s.name: s for s in steps}
-    saved = {**manifest['stamps'], **manifest.get('incremental_stamps', {})}
-    inventories = {n: v['output_inventory'] for n, v in saved.items()
-                   if n in by_name and not verifiable(ctx, by_name[n]) and inventory_published(by_name[n], v, manifest['files'])}
-    names = {n for n in saved if n in by_name and (verifiable(ctx, by_name[n]) or n in inventories)}
-    return names, inventories
 
 
 def ownership(ctx, steps, inventories=None):
