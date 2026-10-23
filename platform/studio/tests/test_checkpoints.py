@@ -399,3 +399,50 @@ def test_hydration_never_touches_outputs_of_current_local_stamps(fixture, monkey
     build_checkpoints.hydrate(ctx, steps, fixture.store, echo=lambda _: None)
     assert {s.name: s.outputs[0].stat().st_ino for s in steps} == before
     assert set(cp.certificates(ctx, steps)) == {'tree', 'combat', 'house'}
+
+
+def representative(ctx):
+    """A step known only by a sample output, like a non-factory Blender world export."""
+    source = paths.REPO / 'world.txt'
+    source.write_text('world')
+    report = ctx.out / 'world/build-report.json'
+    return build.Step('world', [build.Python(source, (report,))], inputs=[source], outputs=[report])
+
+
+def test_contaminated_manifest_never_restores_an_unverified_step(fixture):
+    ctx, steps = fixture.checkout('producer')
+    fixture.produce(ctx, steps)
+    world = representative(ctx)
+    (ctx.out / 'world/glb').mkdir(parents=True)
+    (ctx.out / 'world/build-report.json').write_text('report for an older mesh')
+    (ctx.out / 'world/glb/harbor.glb').write_bytes(b'mesh the report does not describe')
+    stamp = dict(fingerprint=build.fingerprint(world, {}), seconds=300., time=1.)
+    atomic_json(ctx.stamps / 'world.json', stamp)
+    key = cp.capture(ctx, [*steps, world], fixture.store, echo=lambda _: None)
+    clean = fixture.store.load(key)
+    assert 'world' not in {**clean['stamps'], **clean['incremental_stamps']}
+    assert not [m for m in clean['files'] if m.startswith('generated/world')]
+    # A manifest published before this rule (op597's d9fea0c4) carries the stamp and files.
+    legacy = deepcopy(clean)
+    for path in (ctx.out / 'world/build-report.json', ctx.out / 'world/glb/harbor.glb'):
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        fixture.store.put(path, digest)
+        info = path.stat()
+        legacy['files']['generated/' + path.relative_to(ctx.out).as_posix()] = dict(
+            kind='file', size=info.st_size, sha256=digest, mode=0o644, mtime_ns=info.st_mtime_ns)
+    legacy['incremental_stamps']['world'] = stamp
+    legacy['steps'] = sorted({*legacy['steps'], 'world'})
+    contaminated = fixture.store.save(legacy)
+    receiver, received = fixture.checkout('cold')
+    stamps = cp.restore(receiver, [*received, representative(receiver)], fixture.store, contaminated, echo=lambda _: None)
+    assert set(stamps) == {'tree', 'combat', 'house'}
+    assert not (receiver.out / 'world').exists()
+    # Hydration of a warm workspace neither stages that stamp nor adds its files.
+    warm, current = fixture.checkout('warm')
+    fixture.produce(warm, current)
+    steps_here = [*current, representative(warm)]
+    plan, _, _ = build_checkpoints.hydration_plan(warm, steps_here, fixture.store)
+    assert plan is None or ('world' not in plan['stamps'] and plan['missing'] == 0)
+    staged = warm.out / build_checkpoints.STAGED / 'world.json'
+    atomic_json(staged, dict(source=contaminated, stamp=stamp))
+    assert build_checkpoints.staged_certificate(warm, steps_here[-1], stamp['fingerprint']) is None

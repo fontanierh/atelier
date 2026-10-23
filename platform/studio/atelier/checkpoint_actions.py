@@ -501,6 +501,67 @@ def install(store, value):
         atomic_json(path, value)
 
 
+def verifiable(ctx, step):
+    """@cc [owner:fontanierh,label:correctness] unverified-steps-never-publish
+    A step whose stamp cannot be checked against complete output records (ambient Blender, or
+    only representative outputs) MUST NOT publish its owned files or its stamp to a checkpoint
+    manifest. Restoration and hydration MUST NOT adopt such a stamp or its owned files from the
+    store, including from manifests published before this rule; the receiver rebuilds them.
+    """
+    from .build import Blender, Call
+    if any(isinstance(c, Blender) and not c.factory_startup for c in step.commands):
+        return False
+    if declared(ctx, step):
+        return True
+    return all(isinstance(c, Call) for c in step.commands) and not step.outputs
+
+
+def ownership(ctx, steps):
+    """Member-name prefix of each step-owned output path -> whether its owner is verifiable.
+
+    A representative output only samples what its step writes, so an unverifiable step also
+    claims that output's directory. Explicit outputs and declared roots override such claims.
+    """
+    owners, weak = {}, {}
+    # Deepest root first, as label() chooses; plain string prefixes keep this cheap per build.
+    bases = sorted(((str(root), name) for name, (root, _) in roots(ctx).items()), key=lambda b: -len(b[0]))
+    def member(path):
+        text = str(Path(path).absolute())
+        for base, name in bases:
+            if text == base:
+                return name
+            if text.startswith(base + '/'):
+                return name + '/' + text[len(base) + 1:]
+        return None
+    for step in steps:
+        good = verifiable(ctx, step)
+        for path in dict.fromkeys([*map(Path, getattr(step, 'outputs', ())), *declared(ctx, step)]):
+            name = member(path)
+            if name is None:
+                continue
+            owners[name] = owners.get(name, True) and good
+            if not good and name.count('/') >= 2:  # Never a whole root.
+                weak[name.rpartition('/')[0]] = False
+    return {**weak, **owners}
+
+
+def unverified_member(member, owners):
+    """True when the deepest step-owned prefix of a member belongs to an unverifiable step."""
+    name = member
+    while name:
+        if name in owners:
+            return not owners[name]
+        name = name.rpartition('/')[0]
+    return False
+
+
+def publishable(files, owners):
+    """Manifest members minus unverified-owned files and links into them."""
+    kept = {m: e for m, e in files.items() if not unverified_member(m, owners)}
+    return {m: e for m, e in kept.items()
+            if not (e.get('kind') == 'link' and e['target'].startswith('member:') and unverified_member(e['target'][7:], owners))}
+
+
 def certificate_key(ctx, step, fingerprint):
     from .build import Call
     if not declared(ctx, step) and all(isinstance(c, Call) for c in step.commands):

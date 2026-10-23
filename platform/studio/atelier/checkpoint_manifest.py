@@ -206,6 +206,8 @@ def finish(ctx, steps):
                     raise CheckpointError('Published task artifact certificate is missing')
                 entries[key] = value
             from .build import Call
+            if not actions.verifiable(ctx, step):
+                continue  # Its stamp and owned files stay local; a receiver rebuilds them.
             if key is None and not (all(isinstance(c, Call) for c in step.commands) and not step.outputs):
                 incremental[step.name] = stamp
             else:
@@ -218,8 +220,11 @@ def finish(ctx, steps):
         if not records and not incremental:
             (folder(ctx.out) / 'ready.json').unlink(missing_ok=True)
             return
+        files = actions.publishable(workspace['files'], actions.ownership(ctx, steps))
+        digests = {e['sha256'] for e in files.values() if e['kind'] == 'file'}
         manifest = dict(workspace, workspace_only=False, stamps=records, incremental_stamps=incremental,
-                        steps=sorted({*records, *incremental}), actions=entries)
+                        steps=sorted({*records, *incremental}), actions=entries, files=files,
+                        blob_observations={d: v for d, v in workspace['blob_observations'].items() if d in digests})
         key = store.save(manifest)
         atomic_json(folder(ctx.out) / 'ready.json', dict(schema=1, game=ctx.game,
                     checkout=manifest['checkout'], key=key,
