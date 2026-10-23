@@ -51,12 +51,14 @@ def probe(component,query):
     value=unreal.NativeAtomicEquivalence.probe(component,unreal.Vector(*query['start']),unreal.Vector(*query['end']),
         unreal.Quat(*query.get('orientation',[0.,0.,0.,1.])),query.get('radius_cm',0.),query.get('half_height_cm',0.),query['trace_complex'])
     if not value:raise ValueError('Actual selected-component native probe unavailable')
-    return json.loads(value)
+    result=json.loads(value)
+    if 'refusal' in result:raise ValueError('Actual selected-component native probe refused: '+str(result))
+    return result
 
 
 def query(point,normal,*,capsule=False):
     result=dict(start=[p+50*n for p,n in zip(point,normal)],end=[p-50*n for p,n in zip(point,normal)],
-        channel='selected_component',trace_complex=True)
+        channel='Pawn',trace_complex=True)
     if capsule:result.update(radius_cm=.1,half_height_cm=.2,orientation=[0.,0.,0.,1.])
     return result
 
