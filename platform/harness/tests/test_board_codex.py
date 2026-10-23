@@ -12,9 +12,11 @@ from atelier.harness import board_codex
 
 
 class Fake:
-    def __init__(self, replies):
+    def __init__(self, replies, reopened=(), deadline=None):
         self.replies = iter(replies)
         self.calls = []
+        self.reopened = list(reopened)
+        self.deadline = time.monotonic() + 30 if deadline is None else deadline
 
     def call(self, method, params):
         self.calls.append((method, params))
@@ -23,9 +25,21 @@ class Fake:
             raise reply
         return reply
 
+    def reopen(self, budget=None):
+        if not self.reopened:
+            raise board_codex.TransportError('no fake connection')
+        return self.reopened.pop(0)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        pass
+
 
 ACTIVE = {'thread': {'status': {'type': 'active'}}}
 IDLE = {'thread': {'status': {'type': 'idle'}}}
+NOT_LOADED = {'thread': {'status': {'type': 'notLoaded'}}}
 TURN = {'data': [{'id': 'turn-1', 'status': 'inProgress'}]}
 
 
@@ -61,8 +75,40 @@ def test_idle_becoming_busy_race_steers_new_turn():
     assert board_codex.notify(fake, 'existing', 'handoff') == 'steered'
 
 
+def test_not_loaded_thread_resumes_polls_and_delivers_on_fresh_connections(monkeypatch):
+    monkeypatch.setattr(board_codex, 'WAKE_POLL_SECONDS', 0.)
+    delivery = Fake([IDLE, {}])
+    probe = Fake([IDLE])
+    first_probe = Fake([NOT_LOADED])
+    resume = Fake([{}])
+    initial = Fake([NOT_LOADED], reopened=[resume, first_probe, probe, delivery])
+    assert board_codex.notify(initial, 'existing', 'handoff') == 'woke_idle'
+    assert resume.calls == [('thread/resume', {'threadId': 'existing'})]
+    assert [method for method, _ in delivery.calls] == ['thread/read', 'turn/start']
+    assert all('thread/resume' not in method for method, _ in delivery.calls)
+
+
+def test_not_loaded_resume_connection_drop_still_delivers(monkeypatch):
+    monkeypatch.setattr(board_codex, 'WAKE_POLL_SECONDS', 0.)
+    delivery = Fake([IDLE, {}])
+    probe = Fake([IDLE])
+    resume = Fake([board_codex.TransportError('dropped after load')])
+    initial = Fake([NOT_LOADED], reopened=[resume, probe, delivery])
+    assert board_codex.notify(initial, 'existing', 'handoff') == 'woke_idle'
+
+
+def test_not_loaded_thread_that_stays_unloaded_is_failure_not_queue():
+    delivery = Fake([NOT_LOADED])
+    resume = Fake([{}])
+    initial = Fake([NOT_LOADED], reopened=[resume, delivery],
+                   deadline=time.monotonic() + .5)
+    with pytest.raises(board_codex.TransportError, match='retained'):
+        board_codex.notify(initial, 'existing', 'handoff')
+    assert all('queue' not in method for method, _ in initial.calls + delivery.calls)
+
+
 def test_unavailable_or_racing_session_is_failure_not_queue_success():
-    fake = Fake([{'thread': {'status': {'type': 'notLoaded'}}}])
+    fake = Fake([{'thread': {'status': {'type': 'error'}}}])
     with pytest.raises(board_codex.TransportError):
         board_codex.notify(fake, 'existing', 'handoff')
     fake = Fake([ACTIVE, {'data': []}, ACTIVE, {'data': []}])

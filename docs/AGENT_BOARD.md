@@ -30,9 +30,11 @@ uv run atelier board status
 ```
 
 `notify-codex` sends `turn/steer` to a busy session with the required current turn ID. It wakes an idle,
-loaded session with `turn/start` in that same thread. It never creates another agent, resumes a stored
-transcript, cancels a turn, or changes model/permission settings. A turn ending during delivery gets one
-fresh status check before retry. Unavailable sessions and failed deliveries retain the mailbox cursor.
+loaded session with `turn/start` in that same thread. A `notLoaded` thread is resumed in its owning daemon
+(`thread/resume`), polled until it is idle or active, then delivered on a fresh connection. It never creates
+another agent or a separate writer, cancels a turn, or changes model/permission settings. A turn ending during
+delivery gets one fresh status check before retry. Unavailable sessions and failed deliveries retain the
+mailbox cursor.
 Use a full path to `atelier` in the notify argv when it isn't on the subscriber's `PATH`, and use the
 installed daemon-compatible Codex executable (`notify-codex --codex PATH`) when multiple CLI versions exist.
 Each Codex home (`CODEX_HOME`) runs its own app-server daemon, and a thread belongs to exactly one of them.
