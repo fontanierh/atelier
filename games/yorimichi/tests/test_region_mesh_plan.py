@@ -91,3 +91,41 @@ def test_recorded_face_membership_cannot_duplicate_or_drop_a_base_polygon(tmp_pa
     assert planner.validate(root, value) == value
     value['pieces'][1]['source_faces'] = [0]
     with pytest.raises(ValueError, match='exactly once'): planner.validate(root, value)
+
+
+def test_unused_material_edit_preserves_actual_leaf_payloads_and_face_bindings(tmp_path, monkeypatch):
+    import numpy as np
+    from atelier import mesh_ir
+    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1] / 'world'))
+    planner = importlib.import_module('region_mesh_parts')
+    source = dict(positions=np.array([[0,0,0],[1,0,0],[0,1,0],[10,0,0],[11,0,0],[10,1,0]],dtype=np.float32),
+        starts=np.array([0,3]), counts=np.array([3,3]), vertex_indices=np.arange(6),
+        normals=np.array([[0,0,1]]*6,dtype=np.float32),materials=np.array([1,2]),smooth=np.array([False,True]),
+        uvs=[('UVMap',np.zeros((6,2),dtype=np.float32))],colours=[],
+        slots=[SimpleNamespace(name=name) for name in ('Unused','Bark','Leaf')])
+    monkeypatch.setattr(planner,'capture',lambda mesh:source)
+    obj=SimpleNamespace(name='Whole',type='MESH',modifiers=[],data=SimpleNamespace(shape_keys=None),matrix_world=np.eye(4))
+    groups=[('Whole_cell_0_0',[0]),('Whole_cell_1_0',[1])]
+    folder=tmp_path/'plan'
+    original=planner.plan(obj,folder,face_groups=groups)
+    payloads={row['payload']:(folder/row['payload']).read_bytes() for row in original['pieces']}
+    source['slots'][0].name='ChangedUnused'
+    current=planner.plan(obj,folder,face_groups=groups)
+    assert current['slots']==['ChangedUnused','Bark','Leaf']
+    assert {row['payload']:(folder/row['payload']).read_bytes() for row in current['pieces']}==payloads
+    for row, expected in zip(current['pieces'],('Bark','Leaf')):
+        meta,piece=mesh_ir.decode((folder/row['payload']).read_bytes())
+        assert meta['slots']==[expected] and piece['materials'].tolist()==[0]
+    # A real material change affects precisely the leaf whose faces consume it.
+    source['slots'][1].name='ChangedBark'
+    changed=planner.plan(obj,folder,face_groups=groups)
+    assert (folder/changed['pieces'][0]['payload']).read_bytes()!=payloads[changed['pieces'][0]['payload']]
+    assert (folder/changed['pieces'][1]['payload']).read_bytes()==payloads[changed['pieces'][1]['payload']]
+
+
+def test_compacted_piece_cannot_remap_to_a_different_parent_material(tmp_path, monkeypatch):
+    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1] / 'world'))
+    planner=importlib.import_module('region_mesh_parts');root=tmp_path/'plan';value=planned_pair(root)
+    value['slots'].append('Foreign')
+    value['pieces'][0].update(slots=['Material'],source_material_indices=[1])
+    with pytest.raises(ValueError,match='material ownership'):planner.validate(root,value)

@@ -18,6 +18,16 @@ from mesh_pieces import capture, subset
 CELL_METRES = 128.
 
 
+def compact_materials(piece, slots):
+    """Keep face material identity while excluding unused parent slots from leaf bytes."""
+    used = sorted({int(index) for index in piece['materials']})
+    if not used or used[0] < 0 or used[-1] >= len(slots):
+        raise ValueError('Piece material index escaped the original table')
+    remap = {old: new for new, old in enumerate(used)}
+    result = dict(piece, materials=np.asarray([remap[int(index)] for index in piece['materials']], dtype=np.int32))
+    return result, [slots[index] for index in used], used
+
+
 def capture_collision(hull):
     """Capture an already-finished original hull, including its actual corner channels."""
     if (hull.parent is not None or hull.constraints or hull.modifiers or hull.animation_data is not None
@@ -59,7 +69,9 @@ def plan(obj, root, *, collisions=(), options=None, cell_metres=CELL_METRES, fac
     policy independently of each child's owned hull count, so render-only children cannot
     introduce additional simple blocking surfaces when the parent used authored UCX.
     Per-piece payloads MUST exclude unrelated piece identities and whole-parent receipts so
-    unchanged logical geometry remains independently cacheable. No mesh export occurs here.
+    unchanged logical geometry remains independently cacheable. Unused parent material slots
+    MUST stay outside a leaf payload; face material names/order MUST survive local remapping.
+    The complete original table remains in logical metadata. No mesh export occurs here.
     """
     if obj.type != 'MESH' or obj.modifiers or getattr(obj.data, 'shape_keys', None) is not None:
         raise ValueError('Logical planning requires a completed static mesh without modifiers or shape keys')
@@ -87,7 +99,8 @@ def plan(obj, root, *, collisions=(), options=None, cell_metres=CELL_METRES, fac
     for key, members in groups:
         piece = subset(source, members)
         np.add.at(owned, list(members), 1)
-        payload = mesh_ir.encode(piece, key=key, slots=[m.name for m in source['slots']],
+        piece, slots, material_indices = compact_materials(piece, [m.name for m in source['slots']])
+        payload = mesh_ir.encode(piece, key=key, slots=slots,
                                  matrix=matrix.tolist(), options=options or {},
                                  collisions=collisions if not rows else ())
         relative = key + '.npz'
@@ -95,7 +108,7 @@ def plan(obj, root, *, collisions=(), options=None, cell_metres=CELL_METRES, fac
         used = world[piece['used']]
         rows.append(dict(name=key, payload=relative, sha256=sha(root / relative),
                          triangles=piece['triangles'], polygons=len(members),
-                         source_faces=list(members),
+                         source_faces=list(members), slots=slots, source_material_indices=material_indices,
                          min=used.min(0).tolist(), max=used.max(0).tolist(),
                          collision_hulls=len(collisions) if not rows else 0))
     if not np.all(owned == 1) or sum(r['triangles'] for r in rows) != triangles:
@@ -162,9 +175,16 @@ def validate(root, value=None):
         if path.is_symlink() or not path.is_file() or sha(path) != row['sha256']:
             raise ValueError('Planned geometry input is missing or changed')
         meta, piece = mesh_ir.decode(path.read_bytes())
+        slots = row.get('slots', value['slots'])
+        if not mesh_set and 'slots' in row:
+            indices = row.get('source_material_indices')
+            if (not isinstance(indices, list) or not indices or any(type(i) is not int or not 0 <= i < len(value['slots']) for i in indices)
+                    or indices != sorted(set(indices)) or slots != [value['slots'][i] for i in indices]
+                    or set(piece['materials']) != set(range(len(slots)))):
+                raise ValueError('Piece material ownership differs from its original face table')
         if (meta['asset'] != key or piece['triangles'] != row['triangles']
                 or row.get('polygons') != len(piece['faces'])
-                or meta['slots'] != (row.get('slots') if mesh_set else value['slots']) or meta['matrix'] != value['matrix']
+                or meta['slots'] != (row.get('slots') if mesh_set else slots) or meta['matrix'] != value['matrix']
                 or len(meta['collisions']) != (hulls if index == 0 else 0)
                 or row.get('collision_hulls') != len(meta['collisions'])):
             raise ValueError('Planned geometry identity or logical ownership differs')

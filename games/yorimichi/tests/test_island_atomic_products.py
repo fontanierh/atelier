@@ -28,7 +28,7 @@ def fixture(out):
         receipts.append(dict(schema=1, asset=key, primary=path.name, sha256=sha(path), triangles=1,
             bounds=[tile['min'], tile['max']], metadata=dict(slots=slots, collision_hulls=0, polygons=1,
                                                           uv_channels=['UVMap'], geometry_sha256='a'*64)))
-        sources[key] = dict(used_slots=slots, geometry_sha256='a'*64)
+        sources[key] = dict(used_slots=slots, export_slots=slots, geometry_sha256='a'*64)
     logical = dict(schema=1, parents=parents, ownership=owners, exports=roster)
     manifest = dict(schema=1, complete=True, exports=receipts)
     terrain = out / 'terrain'; terrain.mkdir()
