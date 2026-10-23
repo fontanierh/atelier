@@ -127,10 +127,19 @@ def controls_for(key,before,after):
     else:raise AssertionError(('No actual positive selected-component ray/capsule control',key))
     controls=[]
     for capsule,kind in ((False,'ray_positive'),(True,'capsule_positive')):
-        controls.append(dict(id=key+'.'+kind,kind=kind,input=q,target=after.get_path_name()))
+        parameters=dict(q)
+        if capsule:parameters['orientation']=[0.,0.,0.,1.]
+        else:
+            parameters.pop('radius_cm');parameters.pop('half_height_cm')
+        controls.append(dict(id=key+'.'+kind,kind=kind,input=parameters,target=after.get_path_name()))
     far=dict(start=[1000000,1000000,1000010],end=[1000000,1000000,999990],trace_complex=True,
         channel='Pawn',radius_cm=.001,half_height_cm=.002)
-    for kind in ('ray_negative','capsule_negative'):controls.append(dict(id=key+'.'+kind,kind=kind,input=far,target=after.get_path_name()))
+    for kind in ('ray_negative','capsule_negative'):
+        parameters=dict(far)
+        if 'capsule' in kind:parameters['orientation']=[0.,0.,0.,1.]
+        else:
+            parameters.pop('radius_cm');parameters.pop('half_height_cm')
+        controls.append(dict(id=key+'.'+kind,kind=kind,input=parameters,target=after.get_path_name()))
     return controls
 
 

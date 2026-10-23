@@ -139,3 +139,19 @@ def test_native_bike_namespace_changes_only_exact_immutable_package_literals():
         helper.namespace_tree(text+"\nx='/Game/Japan/Assets'\n",'/Game/AtelierValidation/BikeAtomicNativeCanary/Original',('/Game/Japan/Assets',))
     with pytest.raises(ValueError,match='occurrence'):
         helper.namespace_tree(text.replace('/Game/Japan/Assets','/Game/Other'),'/Game/AtelierValidation/BikeAtomicNativeCanary/Original',('/Game/Japan/Assets',))
+
+
+def test_bike_native_controls_follow_actual_strict_query_protocol():
+    import ast
+    file=GAME/'tests/native/bike_native_equivalence.py'
+    tree=ast.parse(file.read_text())
+    function=next(node for node in tree.body if isinstance(node,ast.FunctionDef) and node.name=='controls_for')
+    part=SimpleNamespace(get_path_name=lambda:'selected',get_editor_property=lambda _:object())
+    scope=dict(anchors=lambda _:[(1.,[0.,0.,0.],[0.,0.,1.])],query=lambda *args:dict(blocking=True))
+    exec(compile(ast.Module(body=[function],type_ignores=[]),str(file),'exec'),scope)
+    controls=scope['controls_for']('BK_Frame',part,part)
+    for row in controls:
+        expected={'start','end','channel','trace_complex'}
+        if 'capsule' in row['kind']:expected|={'radius_cm','half_height_cm','orientation'}
+        assert set(row['input'])==expected
+        assert row['input']['channel']=='Pawn'

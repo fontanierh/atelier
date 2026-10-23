@@ -158,7 +158,7 @@ def run(args):
         for field in ('source_lods','render_lods','cooked','hulls','settings','source_presence'):
             assert before[field]==after[field],(logical,'Saved native geometry/policy union differs',field)
         comparisons[logical]=dict(source=True,render=True,cooked=True,hulls=True,settings=True,
-            probes=harness.probes(before['probes'],after['probes'],logical,after['meshes'],after['seams']))
+            probes=harness.compare_probes(before['probes'],after['probes'],logical,set(after['meshes']),set(before['meshes']),after['seams']))
     atomic_json(root/'host-result.json',dict(whole_exit=0,guard_empty=True,fixture_absent=True,comparisons=comparisons,
         source_head=spec['source_head'],receiving_head=spec['receiving_head'],native=native,
         complete=False,missing=['actual production Bike owner/clip/network invocation','normal task reuse counts'],
