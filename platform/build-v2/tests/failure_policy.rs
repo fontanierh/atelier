@@ -331,6 +331,26 @@ fn matrix() -> Vec<Row> {
             (30, CleanupFinished, failed(Stop::Crash, 1, Finished)),
         ],
     ));
+    // A non-crash failure fact during crash cleanup withdraws the retry like cancellation.
+    for (event, label) in [
+        (Observed(ProtocolViolation), "protocol violation"),
+        (Observed(DependencyViolation), "dependency violation"),
+        (Observed(GuardStopped), "guard stop"),
+        (WorkerFailed(FailureKind::Job), "worker job failure claim"),
+        (WorkerFailed(FailureKind::Crash), "worker crash claim"),
+    ] {
+        rows.push(row(
+            &format!("{label} during crash cleanup withdraws the retry"),
+            None,
+            vec![
+                (0, Admitted, launch(1)),
+                (10, Observed(UnexpectedExit), cleanup(Stop::Crash)),
+                (20, event, Decision::Wait),
+                (30, CleanupFinished, failed(Stop::Crash, 1, Finished)),
+                (40, Tick, Decision::Wait),
+            ],
+        ));
+    }
     rows.push(row(
         "cancel while awaiting a new admission",
         None,
@@ -412,7 +432,7 @@ fn matrix() -> Vec<Row> {
 #[test]
 fn decision_matrix_retries_only_one_confirmed_crash_within_deadlines() {
     let rows = matrix();
-    assert!(rows.len() >= 30);
+    assert!(rows.len() >= 37);
     for row in &rows {
         run(row);
     }

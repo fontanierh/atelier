@@ -211,7 +211,8 @@ controller-observed unexpected exit on the first attempt is retry-eligible; the 
 confirmed cleanup and then asks for a fresh admission (`RequestAdmission`), launching only after
 `Admitted`. A worker's own `failed` claim, including `crash`, is never crash evidence. Job, dependency
 and protocol errors, cancellation, job-limit and overall-deadline timeouts, guard stops and cleanup
-timeouts do not retry. The job limit starts at each admission; the optional overall deadline runs from
+timeouts do not retry; such a fact or a cancellation during crash cleanup withdraws the pending
+retry. The job limit starts at each admission; the optional overall deadline runs from
 submission over queue, execution, cleanup and retries. `BeginCleanup` is a request limited to the
 owned process and unpublished scratch, and an `Unconfirmed` cleanup outcome means the process may
 still be alive. Real owned-process cleanup (C5b) and capacity/guard integration (C7) remain pending.

@@ -278,7 +278,8 @@ impl JobPolicy {
     /// Only a controller-observed unexpected exit on the first attempt MAY become retry-eligible.
     /// A retry MUST NOT launch until cleanup is confirmed within its limits and the overall
     /// deadline, and a new admission is then granted. Worker-claimed kinds, job, dependency and
-    /// protocol errors, cancellation, timeouts, guard stops and cleanup timeouts MUST NOT retry.
+    /// protocol errors, cancellation, timeouts, guard stops and cleanup timeouts MUST NOT retry;
+    /// such a fact or cancellation arriving during crash cleanup MUST withdraw the pending retry.
     /// See tests/failure_policy.rs.
     pub fn decide(&mut self, now: MonoTime, event: Event) -> Result<Decision, PolicyError> {
         if now < self.last {
@@ -394,8 +395,15 @@ impl JobPolicy {
                         *attempt,
                         CleanupState::Unconfirmed(Expiry::CleanupLimit),
                     )),
-                    // Cancellation withdraws a pending retry; the stop reason stays as observed.
-                    Event::CancelRequested => Ok((
+                    // Cancellation or any non-crash failure fact withdraws a pending retry;
+                    // the stop reason stays as first observed.
+                    Event::CancelRequested
+                    | Event::WorkerFailed(_)
+                    | Event::Observed(
+                        Observation::GuardStopped
+                        | Observation::ProtocolViolation
+                        | Observation::DependencyViolation,
+                    ) => Ok((
                         Phase::CleaningUp {
                             attempt: *attempt,
                             stop: stop.clone(),
@@ -404,7 +412,7 @@ impl JobPolicy {
                         },
                         Decision::Wait,
                     )),
-                    // Late completions, claims and exits while stopping are not new evidence.
+                    // Ticks, late completions and repeated exits while stopping change nothing.
                     _ => keep(),
                 }
             }
