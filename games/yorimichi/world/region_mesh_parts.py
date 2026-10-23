@@ -106,10 +106,16 @@ def validate(root, value=None):
     polygons = value.get('source_polygons')
     if type(hulls) is not int or hulls < 0 or type(polygons) is not int or polygons <= 0:
         raise ValueError('Missing logical parent collision or polygon ownership')
+    mesh_set = value.get('kind') == 'mesh_set'
+    if value.get('kind') not in (None, 'mesh_set') or (mesh_set and hulls != 0):
+        raise ValueError('Unsupported logical geometry ownership kind')
     seen, total, total_polygons = set(), 0, 0
+    all_slots = set()
     for index, row in enumerate(value['pieces']):
         key = name(row['name'])
-        if key.casefold() in seen or member(row['payload']) != key + '.npz':
+        if (key.casefold() in seen or member(row['payload']) != key + '.npz'
+                or type(row['triangles']) is not int or not 0 < row['triangles'] <= TRIANGLE_LIMIT
+                or (mesh_set and not (key == value['parent'] or key.startswith(value['parent'] + '_')))):
             raise ValueError('Duplicate or noncanonical planned export')
         seen.add(key.casefold())
         path = root / row['payload']
@@ -118,7 +124,7 @@ def validate(root, value=None):
         meta, piece = mesh_ir.decode(path.read_bytes())
         if (meta['asset'] != key or piece['triangles'] != row['triangles']
                 or row.get('polygons') != len(piece['faces'])
-                or meta['slots'] != value['slots'] or meta['matrix'] != value['matrix']
+                or meta['slots'] != (row.get('slots') if mesh_set else value['slots']) or meta['matrix'] != value['matrix']
                 or len(meta['collisions']) != (hulls if index == 0 else 0)
                 or row.get('collision_hulls') != len(meta['collisions'])):
             raise ValueError('Planned geometry identity or logical ownership differs')
@@ -127,8 +133,15 @@ def validate(root, value=None):
         if (not np.array_equal(world.min(0), row.get('min'))
                 or not np.array_equal(world.max(0), row.get('max'))):
             raise ValueError('Planned geometry bounds differ from the current payload')
+        all_slots.update(meta['slots'])
         total += piece['triangles']
         total_polygons += len(piece['faces'])
+    if mesh_set and (not isinstance(value.get('metadata'), dict)
+                     or set(value['metadata']) != {r['name'] for r in value['pieces']}
+                     or any(not isinstance(v, dict) for v in value['metadata'].values())):
+        raise ValueError('Finished mesh-set semantic inventory is incomplete')
+    if mesh_set and sorted(all_slots) != value['slots']:
+        raise ValueError('Finished mesh-set material inventory is incomplete')
     if total != value['source_triangles'] or total_polygons != polygons:
         raise ValueError('Planned geometry triangle conservation failed')
     return value

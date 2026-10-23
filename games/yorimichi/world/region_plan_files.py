@@ -28,7 +28,7 @@ def payloads(parent, values):
     for value in values:
         if (not isinstance(value, str) or not value.endswith('.npz')
                 or value != name(Path(value).stem) + '.npz'
-                or not (value == parent + '.npz' or value.startswith(parent + '_cell_'))):
+                or not (value == parent + '.npz' or value.startswith(parent + '_'))):
             raise ValueError('Foreign logical payload ownership')
         if value.casefold() in {v.casefold() for v in result}:
             raise ValueError('Duplicate logical payload ownership')

@@ -14,35 +14,8 @@ from brinecove.procedural.cell_material import cell_material
 from brinecove.procedural.ground_face import ground_face
 from brinecove import region as R
 from brinecove.geom import Builder
-
-STEP = 4.0
-
-
-def jag_point(p):
-    """Break the sampled heightfield on steep faces: cliffs read as rock, not as a smooth sampled surface. Part of
-    the landform the atlas signs (world/map/atlas.py), so it lives with the ground rather than the town kit."""
-    px, py, pz = p
-    amp = min(2.2, max(0.0, L.slope(px, py) - 0.42) * 2.4)
-    if amp <= 0.0:
-        return p
-    wave = (math.sin(px * 0.11 + py * 0.07) * math.cos(py * 0.13 - px * 0.05)
-            + 0.45 * math.sin(px * 0.27 + py * 0.19 + 1.3))
-    return (px + math.cos(py * 0.17) * amp * 0.38,
-            py + math.sin(px * 0.19) * amp * 0.38,
-            pz + wave * amp)
-
-
-def weld(vertices, triangles, decimals=4):
-    """One vertex per position. The FarHills final product keeps each tile's corners separate, so its hole rim
-    would list coincident points and the zipper below would emit zero-length triangles."""
-    vertices, triangles = np.asarray(vertices), np.asarray(triangles)
-    _, first, inverse = np.unique(vertices.round(decimals), axis=0, return_index=True, return_inverse=True)
-    return vertices[first], inverse.reshape(-1)[triangles]
-
-
-def _axis(lo, hi, step):
-    n = max(2, math.ceil((hi - lo) / step))
-    return [lo + (hi - lo) * k / n for k in range(n + 1)]
+from brinecove.boundary import weld
+from brinecove.ground_sampling import STEP, _axis, jag_point
 
 
 def _loop(points_by_side):
