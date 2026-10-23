@@ -19,7 +19,7 @@ FString UHidamariStableMeshComponent::MeasureLogicalBounds(const TArray<UStaticM
     TSet<const UStaticMesh*> Seen;
     for (const TArray<UStaticMesh*>* Parts : {&Lod0Parts, &Lod1Parts, &Lod2Parts})
     {
-        if (Parts->Num() != 4) return {};
+        if (Parts->Num() != 5) return {};
         FBox3f Box(ForceInit);
         for (const UStaticMesh* Mesh : *Parts)
         {
@@ -173,7 +173,7 @@ bool AHidamariStable::Initialize(const FString& Path)
             || Center.ContainsNaN() || Extent.ContainsNaN() || Extent.GetMin() <= 0.
             || Radius < Extent.GetMax() || Radius > Extent.Size()) return false;
         LogicalBounds = FBoxSphereBounds(Center, Extent, Radius);
-        static const TSet<FString> Expected = {TEXT("SM_HS_Barn"), TEXT("SM_HS_Gate"), TEXT("SM_HS_Yard"),
+        static const TSet<FString> Expected = {TEXT("SM_HS_Barn"), TEXT("SM_HS_BarnRoof"), TEXT("SM_HS_Gate"), TEXT("SM_HS_Yard"),
             TEXT("SM_HS_Paddock"), TEXT("SM_HS_Ground"), TEXT("SM_HS_Road"), TEXT("SM_HS_RoadSign"),
             TEXT("SM_HS_StallDoor"), TEXT("SM_HS_RoomDoor")};
         TSet<FString> Found;
@@ -216,7 +216,7 @@ bool AHidamariStable::Initialize(const FString& Path)
         if (UStaticMesh* Mesh = Load(Name))
         {
             bool bBlocks = true; M->TryGetBoolField(TEXT("blocks"), bBlocks);
-            const bool bLogical = Name == TEXT("SM_HS_Barn") || Name == TEXT("SM_HS_Gate")
+            const bool bLogical = Name == TEXT("SM_HS_Barn") || Name == TEXT("SM_HS_BarnRoof") || Name == TEXT("SM_HS_Gate")
                 || Name == TEXT("SM_HS_Yard") || Name == TEXT("SM_HS_Paddock");
             Place(Mesh, Name, StableField(M, TEXT("at")), float(M->GetNumberField(TEXT("yaw"))), bBlocks, bLogical); ++Placed;
         }
