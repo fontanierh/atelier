@@ -41,16 +41,16 @@ namespace NativeAtomicEvidence
     }
 }
 
-FString UNativeAtomicEquivalence::Snapshot(UStaticMesh* Mesh,const FString& Logical,int32 FirstTriangle,int32 MaximumTriangles)
+FString UNativeAtomicEquivalence::Snapshot(UStaticMesh* Mesh,const FString& Logical,int32 FirstTriangle,int32 MaximumTriangles,int32 LODIndex)
 {
 #if WITH_EDITOR
     using namespace NativeAtomicEvidence;
-    if(!Mesh || Logical.IsEmpty() || FirstTriangle<0 || MaximumTriangles<1 || MaximumTriangles>32768)return {};
-    const auto* Description=Mesh->GetMeshDescription(0);const auto* Render=Mesh->GetRenderData();
+    if(!Mesh || Logical.IsEmpty() || LODIndex<0 || FirstTriangle<0 || MaximumTriangles<1 || MaximumTriangles>32768)return {};
+    const auto* Description=LODIndex<Mesh->GetNumSourceModels()?Mesh->GetMeshDescription(LODIndex):nullptr;const auto* Render=Mesh->GetRenderData();
     const auto* Body=Mesh->GetBodySetup();
-    if(!Description || !Render || Render->LODResources.IsEmpty() || !Body || Body->BuildScale3D!=FVector::OneVector ||
+    if(!Render || !Render->LODResources.IsValidIndex(LODIndex) || !Body || Body->BuildScale3D!=FVector::OneVector ||
         !Body->bCreatedPhysicsMeshes || Body->bFailedToCreatePhysicsMeshes)return {};
-    const auto& LOD=Render->LODResources[0];const auto Indices=LOD.IndexBuffer.GetArrayView();
+    const auto& LOD=Render->LODResources[LODIndex];const auto Indices=LOD.IndexBuffer.GetArrayView();
     const auto& Positions=LOD.VertexBuffers.PositionVertexBuffer;const auto& Vertices=LOD.VertexBuffers.StaticMeshVertexBuffer;
     const auto& Colors=LOD.VertexBuffers.ColorVertexBuffer;
     if(!Positions.GetNumVertices() || !Positions.GetVertexData() || !Vertices.GetTangentData() ||
@@ -58,18 +58,15 @@ FString UNativeAtomicEquivalence::Snapshot(UStaticMesh* Mesh,const FString& Logi
         Vertices.GetNumVertices()!=Positions.GetNumVertices() ||
         (Colors.GetNumVertices() && (Colors.GetNumVertices()!=Positions.GetNumVertices() || !Colors.GetVertexData())) ||
         Indices.Num()!=int32(LOD.GetNumTriangles()*3) || Indices.Num()==0)return {};
-    const int32 SourceCount=Description->Triangles().Num(),RenderCount=LOD.GetNumTriangles();
-    int32 CookedCount=0;for(const auto& Geometry:Body->TriMeshGeometries)
+    const int32 SourceCount=Description?Description->Triangles().Num():0,RenderCount=LOD.GetNumTriangles();
+    int32 CookedCount=0;if(LODIndex==0)for(const auto& Geometry:Body->TriMeshGeometries)
     { if(!Geometry)return {};CookedCount+=Geometry->Elements().GetNumTriangles(); }
     if(FirstTriangle>=FMath::Max3(SourceCount,RenderCount,CookedCount))return {};
-    FStaticMeshConstAttributes Attributes(*Description);const auto SourcePositions=Attributes.GetVertexPositions();
-    const auto Normals=Attributes.GetVertexInstanceNormals();const auto Tangents=Attributes.GetVertexInstanceTangents();
-    const auto Signs=Attributes.GetVertexInstanceBinormalSigns();const auto UVs=Attributes.GetVertexInstanceUVs();
-    const auto SourceColors=Attributes.GetVertexInstanceColors();const auto Hardness=Attributes.GetEdgeHardnesses();
-    const auto GroupSlots=Attributes.GetPolygonGroupMaterialSlotNames();bool Valid=true;
+    bool Valid=true;
     auto Root=MakeShared<FJsonObject>();Root->SetNumberField(TEXT("schema"),1);Root->SetStringField(TEXT("logical"),Logical);
     Root->SetStringField(TEXT("asset"),Mesh->GetPathName());Root->SetNumberField(TEXT("first"),FirstTriangle);
-    Root->SetNumberField(TEXT("maximum"),MaximumTriangles);Root->SetNumberField(TEXT("source_count"),SourceCount);
+    Root->SetNumberField(TEXT("maximum"),MaximumTriangles);Root->SetNumberField(TEXT("lod"),LODIndex);
+    Root->SetBoolField(TEXT("source_available"),Description!=nullptr);Root->SetNumberField(TEXT("source_count"),SourceCount);
     Root->SetNumberField(TEXT("render_count"),RenderCount);Root->SetNumberField(TEXT("cooked_count"),CookedCount);
     const FBox Bounds=Mesh->GetBoundingBox();if(!Bounds.IsValid)return {};
     Root->SetArrayField(TEXT("bounds"),{Vector({Bounds.Min.X,Bounds.Min.Y,Bounds.Min.Z},Valid),Vector({Bounds.Max.X,Bounds.Max.Y,Bounds.Max.Z},Valid)});
@@ -91,6 +88,13 @@ FString UNativeAtomicEquivalence::Snapshot(UStaticMesh* Mesh,const FString& Logi
     Settings->SetBoolField(TEXT("high_precision_tangents"),Vertices.GetUseHighPrecisionTangentBasis());
     Settings->SetBoolField(TEXT("never_cooked"),Body->bNeverNeedsCookedCollisionData);
     Root->SetObjectField(TEXT("settings"),Settings);
+    if(Description)
+    {
+    FStaticMeshConstAttributes Attributes(*Description);const auto SourcePositions=Attributes.GetVertexPositions();
+    const auto Normals=Attributes.GetVertexInstanceNormals();const auto Tangents=Attributes.GetVertexInstanceTangents();
+    const auto Signs=Attributes.GetVertexInstanceBinormalSigns();const auto UVs=Attributes.GetVertexInstanceUVs();
+    const auto SourceColors=Attributes.GetVertexInstanceColors();const auto Hardness=Attributes.GetEdgeHardnesses();
+    const auto GroupSlots=Attributes.GetPolygonGroupMaterialSlotNames();
     auto Source=MakeShared<FJsonObject>();Source->SetStringField(TEXT("kind"),TEXT("mesh_description"));
     Source->SetNumberField(TEXT("uv_count"),UVs.GetNumChannels());Source->SetStringField(TEXT("color_encoding"),TEXT("linear_float32"));
     FValues SourceRows;int32 Ordinal=0;
@@ -117,6 +121,8 @@ FString UNativeAtomicEquivalence::Snapshot(UStaticMesh* Mesh,const FString& Logi
         Row->SetArrayField(TEXT("corners"),Corners);Row->SetArrayField(TEXT("hard_edges"),Edges);SourceRows.Add(MakeShared<FJsonValueObject>(Row));
     }
     Source->SetArrayField(TEXT("triangles"),SourceRows);Root->SetObjectField(TEXT("source"),Source);
+    }
+    else Root->SetField(TEXT("source"),MakeShared<FJsonValueNull>());
     auto GPU=MakeShared<FJsonObject>();GPU->SetStringField(TEXT("kind"),TEXT("render_buffers"));
     GPU->SetNumberField(TEXT("uv_count"),Vertices.GetNumTexCoords());
     GPU->SetStringField(TEXT("color_encoding"),Colors.GetNumVertices()?TEXT("srgb_uint8"):TEXT("absent"));FValues RenderRows;
@@ -146,7 +152,7 @@ FString UNativeAtomicEquivalence::Snapshot(UStaticMesh* Mesh,const FString& Logi
     }
     GPU->SetArrayField(TEXT("triangles"),RenderRows);Root->SetObjectField(TEXT("render"),GPU);
     FValues CookedRows;int32 CookedOffset=0;
-    for(const auto& Geometry:Body->TriMeshGeometries)
+    if(LODIndex==0)for(const auto& Geometry:Body->TriMeshGeometries)
     {
         const int32 Count=Geometry->Elements().GetNumTriangles();
         for(int32 Triangle=FMath::Max(0,FirstTriangle-CookedOffset);Triangle<FMath::Min(Count,FirstTriangle+MaximumTriangles-CookedOffset);++Triangle)
@@ -160,7 +166,7 @@ FString UNativeAtomicEquivalence::Snapshot(UStaticMesh* Mesh,const FString& Logi
     Root->SetArrayField(TEXT("cooked"),CookedRows);FValues Hulls;
     const auto& Agg=Body->AggGeom;
     if(Agg.GetElementCount()!=Agg.ConvexElems.Num()+Agg.BoxElems.Num()+Agg.SphereElems.Num()+Agg.SphylElems.Num())return {};
-    if(FirstTriangle==0)
+    if(FirstTriangle==0 && LODIndex==0)
     {
         for(const auto& Hull:Agg.ConvexElems)
         {
@@ -183,7 +189,7 @@ FString UNativeAtomicEquivalence::Snapshot(UStaticMesh* Mesh,const FString& Logi
         for(const auto& Hull:Agg.SphylElems)
         { auto Data=MakeShared<FJsonObject>();Data->SetNumberField(TEXT("radius"),Hull.Radius);Data->SetNumberField(TEXT("length"),Hull.Length);Primitive(TEXT("capsule"),Hull.GetTransform(),Data); }
     }
-    Root->SetArrayField(TEXT("hulls"),Hulls);Root->SetBoolField(TEXT("hulls_complete"),FirstTriangle==0);
+    Root->SetArrayField(TEXT("hulls"),Hulls);Root->SetBoolField(TEXT("hulls_complete"),FirstTriangle==0 && LODIndex==0);
     return Text(Root,Valid);
 #else
     return {};
@@ -223,6 +229,11 @@ FString UNativeAtomicEquivalence::ComponentPolicy(UStaticMeshComponent* Componen
     Result->SetArrayField(TEXT("responses"),Responses);Result->SetBoolField(TEXT("cast_shadow"),Component->CastShadow);
     Result->SetNumberField(TEXT("min_draw_distance"),Component->MinDrawDistance);Result->SetNumberField(TEXT("max_draw_distance"),Component->LDMaxDrawDistance);
     Result->SetBoolField(TEXT("visible"),Component->IsVisible());Result->SetNumberField(TEXT("materials"),Component->GetNumMaterials());
+    FValues MaterialBindings;for(int32 Index=0;Index<Component->GetNumMaterials();++Index)
+    { const auto* Material=Component->GetMaterial(Index);if(!Material)return {};MaterialBindings.Add(MakeShared<FJsonValueString>(Material->GetPathName())); }
+    Result->SetArrayField(TEXT("material_bindings"),MaterialBindings);
+    const FBox MeshBounds=Component->GetStaticMesh()->GetBoundingBox();if(!MeshBounds.IsValid)return {};
+    Result->SetArrayField(TEXT("mesh_bounds"),{Vector({MeshBounds.Min.X,MeshBounds.Min.Y,MeshBounds.Min.Z},Valid),Vector({MeshBounds.Max.X,MeshBounds.Max.Y,MeshBounds.Max.Z},Valid)});
     Result->SetNumberField(TEXT("wpo_disable_distance"),Component->GetWorldPositionOffsetDisableDistance());
     Result->SetArrayField(TEXT("lighting_channels"),{MakeShared<FJsonValueBoolean>(Component->LightingChannels.bChannel0),
         MakeShared<FJsonValueBoolean>(Component->LightingChannels.bChannel1),MakeShared<FJsonValueBoolean>(Component->LightingChannels.bChannel2)});

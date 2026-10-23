@@ -13,7 +13,7 @@ class YORIMICHI_API UNativeAtomicEquivalence : public UBlueprintFunctionLibrary
 public:
     /** Empty text refuses unsupported, missing, nonfinite or unavailable CPU/cooked data. */
     UFUNCTION(BlueprintCallable, Category="Atomic mesh evidence")
-    static FString Snapshot(UStaticMesh* Mesh,const FString& Logical,int32 FirstTriangle=0,int32 MaximumTriangles=16384);
+    static FString Snapshot(UStaticMesh* Mesh,const FString& Logical,int32 FirstTriangle=0,int32 MaximumTriangles=16384,int32 LODIndex=0);
 
     /** Query only this component. Radius zero means ray; positive radius means capsule. */
     UFUNCTION(BlueprintCallable, Category="Atomic mesh evidence")
