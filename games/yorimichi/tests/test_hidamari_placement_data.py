@@ -60,3 +60,21 @@ def test_constructor_city_projection_stops_unread_city_and_sibling_fields(monkey
     assert project(city, 'HD_Streets') == value
     city['roads'][0][0][2] = 1
     assert project(city, 'HD_Streets') != value
+
+
+def test_shop_approach_projection_supplies_real_hero_approach_consumer(monkeypatch):
+    monkeypatch.syspath_prepend(str(GAME / 'world'))
+    monkeypatch.syspath_prepend(str(REGIONS))
+    import yori  # noqa: F401
+    from hidamari.city_data import project, read
+    from hidamari.hero_approaches import approach_specs
+    pads = [dict(asset=asset, x=x, y=260, z=30, yaw=0)
+            for asset, x in (('HD_Station', 700), ('HD_Shrine', 800))]
+    city = dict(buildings=[], terrain_pads=pads, unrelated=['first'])
+    value = deepcopy(project(city, 'HD_PlazaShopApproaches'))
+    assert approach_specs(read(value, 'HD_PlazaShopApproaches')) == approach_specs(city)
+    assert {row['asset'] for row in approach_specs(value['city'])} == {'HD_Station', 'HD_Shrine'}
+    city['unrelated'] = ['second']
+    assert project(city, 'HD_PlazaShopApproaches') == value
+    city['terrain_pads'][0]['x'] += 1
+    assert project(city, 'HD_PlazaShopApproaches') != value
