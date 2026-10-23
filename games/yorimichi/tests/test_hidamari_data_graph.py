@@ -68,8 +68,18 @@ def test_complete_city_mesh_graph_has_separate_constructor_parameters_and_no_sib
         assert next(p for p in step.products if p.name == 'hidamari.query.' + key).paths == (query,)
         assert '--query-output' in step.commands[0].args
     harbor = planners['HD_Harbor']
-    assert next(p for p in harbor.products if p.name == 'hidamari.source.HD_Harbor').paths == (
+    raw = next(step for step in steps if step.name == 'world.hidamari.source.HD_Harbor')
+    assert next(p for p in raw.products if p.name == 'hidamari.source.HD_Harbor').paths == (
         out / 'hidamari/source-data/HD_Harbor',)
+    assert raw.commands[0].script == REGION / 'plan_asset.py'
+    assert '--source-only' in raw.commands[0].args
+    assert harbor.commands[0].script == REGION / 'plan_harbor.py'
+    assert harbor.needs == ['world.hidamari.harbor_cut_data']
+    assert harbor.reads == ['hidamari.source.HD_Harbor']
+    cut_data = next(step for step in steps if step.name == 'world.hidamari.harbor_cut_data')
+    assert cut_data.needs == ['world.ferry_site'] and cut_data.cutoff and not cut_data.cache
+    assert cut_data.deferred_inputs[0].name == 'ferry-cut-proof'
+    assert cut_data.outputs[0] in harbor.inputs
     assert all('--source-output' not in step.commands[0].args for key, step in planners.items() if key != 'HD_Harbor')
     for key in ('HD_Terrain', 'HD_NorthMountains'):
         assert {p.name for p in planners[key].products} == {'hidamari.geometry.' + key,

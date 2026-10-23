@@ -2,7 +2,8 @@
 import importlib.util
 from pathlib import Path
 
-from atelier.build import Blender, Product, Python, Step
+from atelier.build import Batch, Blender, Call, DeferredInputs, Product, Python, Step
+from atelier.build_batch_source import support as batch_support
 from atelier.build_inputs import local_imports
 
 GAME = Path(__file__).resolve().parent
@@ -63,7 +64,7 @@ def mesh_steps(ctx, *, terrain_inputs=(), terrain_needs=()):
     catalogue = load('hidamari_logical_catalogue', REGION / 'logical_catalogue.py')
     context = load('hidamari_source_context_inputs', REGION / 'source_context.py')
     parameters = GAME / 'assets/hidamari/export-parameters'
-    assets = []
+    assets, prerequisites = [], []
     for key in catalogue.ASSETS:
         constructor = REGION / 'logical' / (key + '.py')
         code = set(local_imports(constructor, (WORLD, REGIONS)))
@@ -75,10 +76,6 @@ def mesh_steps(ctx, *, terrain_inputs=(), terrain_needs=()):
         query = ctx.out / 'hidamari/query-data' / (key + '.npz')
         arguments.extend(('--query-output', str(query)))
         products.append(Product('hidamari.query.' + key, (query,)))
-        if key == 'HD_Harbor':
-            raw = ctx.out / 'hidamari/source-data' / key
-            arguments.extend(('--source-output', str(raw)))
-            products.append(Product('hidamari.source.' + key, (raw,)))
         if REGION / 'layout.py' in code:
             # These constructors sample real final terrain; independent local models do not.
             code.update(terrain_inputs)
@@ -100,6 +97,35 @@ def mesh_steps(ctx, *, terrain_inputs=(), terrain_needs=()):
                 relative = 'manifest.json' if stage == 'provenance' else stage + '.npz'
                 products.append(Product('terrain.' + key + '.' + stage,
                                         (ctx.out / 'terrain' / key / relative,)))
-        assets.append(graph.LogicalAsset(key, REGION / 'plan_asset.py', args=tuple(arguments),
-                      inputs=tuple(sorted(code)), needs=tuple(needs), reads=tuple(reads), products=tuple(products)))
-    return graph.steps(ctx, region='hidamari', assets=assets)
+        if key == 'HD_Harbor':
+            raw = ctx.out / 'hidamari/source-data' / key
+            raw_query = ctx.out / 'hidamari/query-data' / (key + '.raw.npz')
+            script = REGION / 'plan_asset.py'
+            prerequisites.append(Step('world.hidamari.source.' + key,
+                [Blender(script, ('--asset', key, '--context', str(source_parameters), '--source-only',
+                    '--output', str(raw), '--query-output', str(raw_query)), threads=3,
+                    factory_startup=True, env=(('PYTHONHASHSEED', '0'),))],
+                inputs=[*local_imports(script, (WORLD, REGIONS)), *batch_support().values(), *sorted(code)],
+                needs=needs, reads=reads,
+                products=[Product('hidamari.source.' + key, (raw,)), Product('hidamari.query.' + key + '.raw', (raw_query,))],
+                cache=True, toolchain=True, heavy=True, batch=Batch('hidamari logical geometry'),
+                about='raw Harbor source/query data before ferry access cuts; no mesh export'))
+            proof_helper = REGIONS / 'ferry/site_inputs.py'
+            proof = load('hidamari_ferry_proof_membership', proof_helper)
+            cut = ctx.out / 'hidamari/final-source-data/harbor-cut.json'
+            cut_data = ctx.out / 'hidamari/final-source-data/harbor-cut-data.json'
+            prerequisites.append(Step('world.hidamari.harbor_cut_data',
+                [Call('verified Harbor cut parameters', lambda ctx, log, proof=proof, cut_data=cut_data:
+                      proof.record(ctx.out, GAME.parents[1], cut_data, log))],
+                inputs=[proof_helper], needs=['world.ferry_site'], outputs=[cut_data], cutoff=True,
+                deferred_inputs=[DeferredInputs('ferry-cut-proof', proof.paths, (ctx.out, GAME.parents[1]),
+                                                support=(proof_helper,))],
+                about='verify complete ferry sweep proof before projecting unchanged cut parameters'))
+            assets.append(graph.LogicalAsset(key, REGION / 'plan_harbor.py', args=(
+                '--source', str(raw), '--cut-data', str(cut_data), '--query-output', str(query), '--proof-output', str(cut)),
+                inputs=(cut_data,), needs=('world.hidamari.harbor_cut_data',), reads=('hidamari.source.' + key,),
+                products=(Product('hidamari.query.' + key, (query,)), Product('hidamari.harbor_cut', (cut,)))))
+        else:
+            assets.append(graph.LogicalAsset(key, REGION / 'plan_asset.py', args=tuple(arguments),
+                          inputs=tuple(sorted(code)), needs=tuple(needs), reads=tuple(reads), products=tuple(products)))
+    return [*prerequisites, *graph.steps(ctx, region='hidamari', assets=assets)]
