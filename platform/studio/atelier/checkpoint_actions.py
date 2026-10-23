@@ -208,7 +208,7 @@ def snapshot(ctx, step, store, *, save_blobs, observations=None):
                 continue
             if not stat.S_ISREG(info.st_mode):
                 raise CheckpointError('Special task cache output')
-            digest = build_products.file_digest(path)
+            digest = (getattr(ctx, 'checkpoint_hasher', None) or build_products.file_digest)(path)
             if save_blobs:
                 store.put(path, digest)
             files[label(ctx, path)] = dict(kind='file', size=info.st_size, sha256=digest,

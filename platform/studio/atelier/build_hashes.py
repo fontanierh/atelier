@@ -66,6 +66,17 @@ class HashIndex:
     def __exit__(self, *exception):
         self.close()
 
+    def record(self, path, digest):
+        """Seed a digest proven elsewhere, e.g. a clone of a content-addressed checkpoint blob."""
+        path = Path(path)
+        key, stamp = str(path.resolve()), repr(signature(path.stat()))
+        self.memory[key] = (stamp, digest)
+        if self.connection is not None and not self.read_only:
+            try:
+                self.connection.execute('INSERT OR REPLACE INTO hashes_v1 VALUES (?, ?, ?)', (key, stamp, digest))
+            except sqlite3.Error:
+                self.close()
+
     def digest(self, path, *, verify=False):
         path = Path(path)
         before = path.stat()

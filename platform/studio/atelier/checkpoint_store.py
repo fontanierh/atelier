@@ -121,16 +121,8 @@ class Store:
             cached = index / path.name
             try:
                 summary = read_json(cached) if cached.is_file() else None
-                if not isinstance(summary, dict) or summary.get('schema') != 1:
-                    saved = self.load(path.stem)
-                    counts = {}
-                    for member in saved['files']:
-                        label = member.partition('/')[0]
-                        counts[label] = counts.get(label, 0) + 1
-                    stamps = {**saved['stamps'], **saved.get('incremental_stamps', {})}
-                    summary = dict(schema=1, context=identity(saved['context']), checkout=saved['checkout'],
-                                   steps=sorted(saved.get('steps', ())), workspace_only=bool(saved.get('workspace_only')),
-                                   roots=counts, stamps={n: s.get('fingerprint') for n, s in stamps.items()})
+                if not isinstance(summary, dict) or summary.get('schema') != 2:
+                    summary = summarize(self.load(path.stem))
                     index.mkdir(parents=True, exist_ok=True)
                     atomic_json(cached, summary)
             except (OSError, ValueError, KeyError, TypeError, CheckpointError):
@@ -138,13 +130,44 @@ class Store:
             result.append((path.stem, summary))
         return result
 
+SMALL_UNIT = 256
 
-def certificates(ctx, steps, *, include_incremental=False):
+
+def unit_name(member):
+    """Hydration unit of a member: its root, or one task's native import receipts."""
+    parts = member.split('/', 3)
+    if parts[0] == 'generated' and len(parts) > 3 and parts[1] == 'native-imports':
+        return 'generated/native-imports/' + parts[2] + '/'
+    return parts[0] + '/'
+
+
+def summarize(saved):
+    units, listings = {}, {}
+    for member, entry in saved['files'].items():
+        label = member.partition('/')[0] + '/'
+        units[label] = units.get(label, 0) + 1
+        unit = unit_name(member)
+        if unit != label:
+            units[unit] = units.get(unit, 0) + 1
+    for member, entry in saved['files'].items():
+        unit = member.partition('/')[0] + '/'
+        if units[unit] <= SMALL_UNIT:
+            listings.setdefault(unit, {})[member[len(unit):]] = [entry['kind'], entry.get('size'), entry.get('mode'), entry.get('mtime_ns')]
+    stamps = {**saved['stamps'], **saved.get('incremental_stamps', {})}
+    return dict(schema=2, context=identity(saved['context']), checkout=saved['checkout'],
+                steps=sorted(saved.get('steps', ())), workspace_only=bool(saved.get('workspace_only')),
+                units=units, listings=listings, stamps={n: s.get('fingerprint') for n, s in stamps.items()})
+
+
+RESTORED_HASHES = '.state/file-hashes.sqlite3'  # The build's own hash index.
+
+
+def certificates(ctx, steps, *, include_incremental=False, hashes=None):
     from .build import fingerprint, order, outputs_present, result
     from .build_plan import read_stamp
     from .checkpoint_actions import compile_present, certified, local_incremental
     done, records = {}, {}
-    with HashIndex() as index:
+    with HashIndex(hashes) as index, hashing(ctx, index.digest):
         for step in order(steps, [s.name for s in steps]):
             stamp = read_stamp(ctx.stamps / (step.name + '.json'))
             try:
@@ -161,6 +184,26 @@ def certificates(ctx, steps, *, include_incremental=False):
                 build_products.feed_results(done, products)
     return records
 
+
+
+@contextmanager
+def hashing(ctx, digest):
+    previous = getattr(ctx, 'checkpoint_hasher', None)
+    ctx.checkpoint_hasher = digest
+    try:
+        yield
+    finally:
+        ctx.checkpoint_hasher = previous
+
+
+def unchanged(path, entry):
+    """Metadata proof for a clone this restoration made from a verified content-addressed blob."""
+    try:
+        info = path.lstat()
+    except OSError:
+        return False
+    return (stat.S_ISREG(info.st_mode) and info.st_size == entry['size']
+            and stat.S_IMODE(info.st_mode) == entry['mode'] and info.st_mtime_ns == entry['mtime_ns'])
 
 
 def historical_candidates(ctx, steps):
@@ -281,14 +324,17 @@ def unit_of(member, selected):
     return next((u for u in selected if member.startswith(u)), None)
 
 
-def restore(ctx, steps, store, key, *, echo=print, hydrate=None):
+def restore(ctx, steps, store, key, *, echo=print, hydrate=None, replace=()):
     """@cc [owner:fontanierh,label:correctness] checkpoint-restoration-certificates
     Restoration MUST preserve source files, use independent verified copies and stay within
     locally allowed generated roots. Only certificates matching the receiving recipe's actual
     inputs MAY survive. A durable launch barrier MUST precede mutation and survive any failure.
     Existing generated work MUST NOT be overwritten. Compiler intermediates MUST NOT relocate.
     Partial hydration MAY fill only selected units whose existing members are identical to the
-    checkpoint's, and MAY add only certificates the receiver lacks.
+    checkpoint's, and MAY add only certificates the receiver lacks. It MAY replace a unit only
+    when no current local certificate owns outputs in it.
+    Copies MUST be clones/copies of digest-named blobs verified when stored; restoration MAY prove
+    them by blob size and copied size/mode/mtime instead of rereading bytes.
     """
     from .build_snapshot import require_complete
     manifest = store.load(key)
@@ -301,7 +347,7 @@ def restore(ctx, steps, store, key, *, echo=print, hydrate=None):
     journal = ctx.out / JOURNAL
     existing = read_json(journal) if journal.exists() else None
     if existing is not None and hydrate is None and 'units' in existing:
-        hydrate = existing['units']
+        hydrate, replace = existing['units'], existing.get('replace', [])
     resume = dict(schema=SCHEMA, key=key, game=ctx.game)
     if hydrate is not None:
         if (not isinstance(hydrate, list) or not hydrate
@@ -314,7 +360,9 @@ def restore(ctx, steps, store, key, *, echo=print, hydrate=None):
         if not set(lacking) <= set(saved_stamps):
             raise CheckpointError('Checkpoint hydration journal names foreign certificates')
         saved_stamps = {n: saved_stamps[n] for n in lacking}
-        resume.update(units=sorted(hydrate), stamps=lacking)
+        if not set(replace) <= set(hydrate) or any(u.count('/') != 1 for u in replace):
+            raise CheckpointError('Invalid checkpoint replacement units')
+        resume.update(units=sorted(hydrate), stamps=lacking, **({'replace': sorted(replace)} if replace else {}))
     if existing is not None and existing != resume:
         raise CheckpointError('A different checkpoint restoration is incomplete')
     require_complete(ctx.out, game=ctx.game, checkpoint_resume=resume if existing else None)
@@ -335,8 +383,8 @@ def restore(ctx, steps, store, key, *, echo=print, hydrate=None):
             raise CheckpointError('Checkpoint cannot replace tracked source')
         if entry['kind'] == 'file':
             blob = store.blob(entry['sha256'])
-            if (blob.is_symlink() or blob.stat().st_size != entry['size']
-                    or build_products.file_digest(blob) != entry['sha256']):
+            # Blobs are named by digest and verified when written; restore checks identity, not bytes.
+            if not blob.is_file() or blob.is_symlink() or blob.stat().st_size != entry['size']:
                 raise CheckpointError('Checkpoint blob is missing or corrupt')
         selected[member] = (destination, entry)
     # Verify link targets before changing anything; never create a link into a skipped root.
@@ -345,9 +393,18 @@ def restore(ctx, steps, store, key, *, echo=print, hydrate=None):
             if (entry['target'][7:] not in selected
                     and not any(m.startswith(entry['target'][7:] + '/') for m in selected)):
                 raise CheckpointError('Checkpoint link target is unavailable')
+    verified = set()
     if hydrate is not None and existing is None:
         # Existing members of a hydration unit must already be the checkpoint's own bytes.
+        if replace:
+            owned = certificates(ctx, steps, include_incremental=True, hashes=ctx.out / RESTORED_HASHES)
+            bases = [allowed[u.partition('/')[0]][0] for u in replace]
+            for step in steps:
+                if step.name in owned and any(Path(o).is_relative_to(b) for o in step.outputs for b in bases):
+                    raise CheckpointError('Checkpoint hydration keeps current local ' + step.name + ' outputs')
         for unit in hydrate:
+            if unit in replace:
+                continue
             label, _, prefix = unit.partition('/')
             root = allowed[label][0]
             for path in members(root / prefix if prefix else root):
@@ -356,32 +413,55 @@ def restore(ctx, steps, store, key, *, echo=print, hydrate=None):
                 if (path in source_paths or member not in selected or entry['kind'] != 'file' or path.is_symlink()
                         or path.stat().st_size != entry['size'] or build_products.file_digest(path) != entry['sha256']):
                     raise CheckpointError('Checkpoint hydration preserves differing local work in ' + unit)
+                verified.add(path)
     ctx.stamps.mkdir(parents=True, exist_ok=True)
     atomic_json(journal, resume)
     for name in saved_stamps:
         (ctx.stamps / (name + '.json')).unlink(missing_ok=True)
-    spoken = time.monotonic()
-    for count, (destination, entry) in enumerate(selected.values(), 1):
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        if entry['kind'] == 'file':
-            if destination.exists() or destination.is_symlink():
-                if (destination.is_symlink() or not destination.is_file()
-                        or build_products.file_digest(destination) != entry['sha256']):
+    for unit in replace:
+        # Stale restored files only; the receiver's own current outputs were refused above.
+        label = unit.partition('/')[0]
+        root = allowed[label][0]
+        for path in list(members(root)):
+            member = label + '/' + path.relative_to(root).as_posix()
+            if (member not in selected or path.is_symlink() or selected[member][1]['kind'] != 'file'
+                    or not unchanged(path, selected[member][1])):
+                path.unlink()
+    def place(item):
+        destination, entry = item
+        if destination.exists() or destination.is_symlink():
+            if destination.is_symlink() or not destination.is_file():
+                raise CheckpointError('Receiver output changed during checkpoint restoration; preserving it')
+            if destination not in verified and not unchanged(destination, entry):
+                if build_products.file_digest(destination) != entry['sha256']:
                     raise CheckpointError('Receiver output changed during checkpoint restoration; preserving it')
-            else:
-                with tempfile.TemporaryDirectory(prefix='.checkpoint-', dir=destination.parent) as temporary:
-                    staged = Path(temporary) / 'file'
-                    copy_file(store.blob(entry['sha256']), staged)
-                    if build_products.file_digest(staged) != entry['sha256']:
-                        raise CheckpointError('Staged checkpoint bytes differ')
-                    os.chmod(staged, entry['mode'])
-                    os.utime(staged, ns=(entry['mtime_ns'], entry['mtime_ns']))
-                    staged.replace(destination)
-        elif entry['kind'] == 'directory':
+                verified.add(destination)
+            return
+        staged = destination.parent / ('.checkpoint-' + os.urandom(8).hex())
+        try:
+            copy_file(store.blob(entry['sha256']), staged)
+            os.chmod(staged, entry['mode'])
+            os.utime(staged, ns=(entry['mtime_ns'], entry['mtime_ns']))
+            staged.replace(destination)
+        finally:
+            staged.unlink(missing_ok=True)
+    started = spoken = time.monotonic()
+    files = [item for item in selected.values() if item[1]['kind'] == 'file']
+    for parent in sorted({d.parent for d, _ in selected.values()}):
+        parent.mkdir(parents=True, exist_ok=True)
+    # APFS clones are metadata operations; a few threads hide per-file syscall latency.
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(8) as pool:
+        for count, _ in enumerate(pool.map(place, files), 1):
+            if time.monotonic() - spoken >= 25:
+                echo(f'checkpoint restore: {count}/{len(files)} files cloned')
+                spoken = time.monotonic()
+    for destination, entry in selected.values():
+        if entry['kind'] == 'directory':
             if destination.is_symlink() or destination.exists() and not destination.is_dir():
                 raise CheckpointError('Receiver directory destination is occupied')
             destination.mkdir(exist_ok=True)
-        else:
+        elif entry['kind'] == 'link':
             if entry['target'].startswith('member:'):
                 label, _, name = entry['target'][7:].partition('/')
                 target = safe_destination(allowed[label][0], name)
@@ -395,19 +475,20 @@ def restore(ctx, steps, store, key, *, echo=print, hydrate=None):
                 raise CheckpointError('Receiver link destination is occupied')
             else:
                 destination.symlink_to(link)
-        if time.monotonic() - spoken >= 25:
-            echo(f'checkpoint restore: {count}/{len(selected)} files copied')
-            spoken = time.monotonic()
-    for destination, entry in selected.values():
-        if entry['kind'] == 'file' and build_products.file_digest(destination) != entry['sha256']:
-            raise CheckpointError('Restored checkpoint bytes differ; launch barrier retained')
+    echo(f'checkpoint restore: {len(files)} files cloned in {time.monotonic() - started:.1f} s')
+    with HashIndex(ctx.out / RESTORED_HASHES) as hashes:
+        for destination, entry in selected.values():
+            if entry['kind'] == 'file':
+                if not unchanged(destination, entry) and destination not in verified:
+                    raise CheckpointError('Restored checkpoint bytes differ; launch barrier retained')
+                hashes.record(destination, entry['sha256'])
     # Imported source paths remain provenance. Runtime packages retain their logical /Game paths.
     # The installed engine discovers its registry normally; producer registry caches are not copied.
     for name, stamp in saved_stamps.items():
         atomic_json(ctx.stamps / (name + '.json'), stamp)
     from .build_checkpoints import incremental_environment
     incremental_environment(ctx)
-    current = certificates(ctx, steps, include_incremental=True)
+    current = certificates(ctx, steps, include_incremental=True, hashes=ctx.out / RESTORED_HASHES)
     for name in saved_stamps:
         path = ctx.stamps / (name + '.json')
         if name not in current:
