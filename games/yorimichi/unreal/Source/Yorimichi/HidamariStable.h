@@ -1,9 +1,30 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Components/StaticMeshComponent.h"
 #include "HidamariStable.generated.h"
 
-class UStaticMeshComponent;
+class UStaticMesh;
+
+/** Separate geometry with the predecessor's complete logical bounds, including its true sphere.
+ * Mesh bounds extensions recompute an AABB-diagonal sphere and therefore cannot preserve
+ * the original Stable's screen-size LOD transitions. */
+UCLASS()
+class YORIMICHI_API UHidamariStableMeshComponent : public UStaticMeshComponent
+{
+    GENERATED_BODY()
+public:
+    FBoxSphereBounds LogicalBounds = FBoxSphereBounds(ForceInit);
+    bool bHasLogicalBounds = false;
+    bool HasLogicalBoundsOverride() const { return bHasLogicalBounds; }
+    const FBoxSphereBounds& GetLogicalBoundsOverride() const { return LogicalBounds; }
+    /** Original MeshBuilder bound of all separate source positions per LOD, then its LOD union.
+     * No geometry is joined and no CPU-access/build setting is changed. Empty means unavailable proof. */
+    UFUNCTION(BlueprintCallable, Category="Yorimichi|Import")
+    static FString MeasureLogicalBounds(const TArray<UStaticMesh*>& Lod0Parts,
+        const TArray<UStaticMesh*>& Lod1Parts, const TArray<UStaticMesh*>& Lod2Parts);
+    virtual FBoxSphereBounds CalcBounds(const FTransform& LocalToWorld) const override;
+};
 
 /** One stall of the stable (world/regions/hidamari_stable/layout.py), in Unreal cm and degrees. */
 struct FHidamariStall
