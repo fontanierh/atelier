@@ -3,23 +3,13 @@
 The database is disposable: a miss, schema change or unreadable index means hashing the file.
 Trust boundaries (publication, restoration and explicit verification) bypass the index.
 """
-import hashlib
 from pathlib import Path
 import json
 import sqlite3
 import stat
 
 
-def signature(info):
-    return (info.st_dev, info.st_ino, info.st_mode, info.st_size, info.st_mtime_ns, info.st_ctime_ns)
-
-
-def digest_file(path):
-    digest = hashlib.sha256()
-    with Path(path).open('rb') as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b''):
-            digest.update(block)
-    return digest.hexdigest()
+from .file_identity import digest_file, signature  # noqa: F401  (re-exported for controller callers)
 
 
 class HashIndex:

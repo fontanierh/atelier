@@ -32,3 +32,26 @@ def test_controller_edits_leave_sampled_game_steps_current():
         assert [name for name in CONTROLLER if key(step, name) != current] == [], step.name
         # The executed adapter still re-keys the step, so the check above is not vacuous.
         assert key(step, 'build_source.py') != current, step.name
+
+
+def test_planning_only_hash_index_edits_leave_native_imports_current():
+    """The Unreal adapter executes file_identity, not the planner's hash index."""
+    from atelier import build_hashes, file_identity, native_protocol
+    ctx = build.Context('yorimichi')
+    steps = build.load_recipe('yorimichi').steps(ctx)
+    runtime = {path.resolve() for path in native_protocol.runtime_files()}
+    native = [s for s in steps if s.name.startswith('unreal.')
+              and runtime <= {Path(item).resolve() for item in s.inputs}]
+    assert len(native) >= 30
+    planner, primitives = Path(build_hashes.__file__), Path(file_identity.__file__)
+    assert planner.resolve() not in runtime and primitives.resolve() in runtime
+    upstream = collections.defaultdict(lambda: 'upstream result')
+
+    def key(step, edited=None):
+        replaced = {edited: edited.read_bytes() + b'\n# edited\n'} if edited else None
+        return build.fingerprint(step, upstream, _input_bytes=replaced)
+
+    for step in native[:3]:
+        current = key(step)
+        assert key(step, planner) == current, step.name
+        assert key(step, primitives) != current, step.name

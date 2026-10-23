@@ -32,7 +32,7 @@ REF = re.compile(r'refs/heads/[A-Za-z0-9][A-Za-z0-9_./-]{0,200}\Z')
 # Pin the executed adapter and identity support, plus the publisher's host build/certification
 # engine. The latter two are trust checks, not inputs to the source action's execution key.
 TOOL_SUPPORT = (Path(build_cache.__file__).with_name('build.py'), *build_cache.tool_support().values(),
-                *(Path(build_cache.__file__).with_name(name) for name in build_cache.IDENTITY_SUPPORT))
+                *(Path(build_cache.__file__).with_name(name) for name in (*build_cache.IDENTITY_SUPPORT, 'file_identity.py')))
 
 
 class PublisherError(ValueError):

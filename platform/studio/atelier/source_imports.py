@@ -3,7 +3,7 @@ import ast
 from functools import lru_cache
 from pathlib import Path
 from . import paths
-from .build_hashes import signature
+from .file_identity import signature
 
 @lru_cache(maxsize=2048)
 def import_names(source, change_token):
