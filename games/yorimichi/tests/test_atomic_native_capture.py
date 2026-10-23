@@ -57,7 +57,9 @@ class API:
         return json.dumps(dict(component=component.get_path_name(),mesh=component.mesh.path,matrix=IDENTITY,instances=[],
             collision_enabled=1,object_channel=0,responses=[2]*32,cast_shadow=True,min_draw_distance=0,max_draw_distance=0,
             visible=True,materials=1,material_bindings=['/Game/M.M'],mesh_bounds=[[0,0,0],[1,1,0]],wpo_disable_distance=0,
-            lighting_channels=[True,False,False],primitive_data=[],tags=[]))
+            lighting_channels=[True,False,False],primitive_data=[],tags=[],
+            component_bounds=dict(origin=[.5,.5,0.],extent=[.5,.5,0.],sphere_radius=.7071),bounds_scale=1.,lod_coordinated=component.mesh.lods>1,
+            **(dict(logical_bounds=dict(origin=[.5,.5,0.],extent=[.5,.5,0.],sphere_radius=.7071)) if component.mesh.lods>1 else {})))
     @staticmethod
     def probe(component,start,end,rotation,radius,halfheight,complex):
         blocked=start[0]<2
@@ -175,7 +177,7 @@ def test_emitter_refuses_claimed_world_channel_filtering(tmp_path):
         capture.capture([component],'Logical',tmp_path/'capture',controls=[query],api=API,unreal_module=module)
 
 
-@pytest.mark.parametrize('change',['tangent','binormal','uv','color','missing_lod','dropped_page','cook','saved_bytes'])
+@pytest.mark.parametrize('change',['tangent','binormal','uv','color','missing_lod','dropped_page','cook','saved_bytes','screen_threshold','precision'])
 def test_native_value_or_coverage_changes_refuse_or_differ(tmp_path,change):
     mesh=Mesh('/Game/Before/Whole.Whole',POINTS,lods=2);result=collect(tmp_path,'readback',[Component(mesh)])
     old=eq.native_raw_set(result,'Logical');changed=copy.deepcopy(result)
@@ -189,11 +191,55 @@ def test_native_value_or_coverage_changes_refuse_or_differ(tmp_path,change):
         elif change=='binormal':corner['normal'][3]=-1.
         elif change=='uv':corner['uvs'][0][0]=.01
         elif change=='color':corner['color'][0]+=1
+        elif change=='screen_threshold':value['settings']['lod_screen_sizes'][1]=.499
+        elif change=='precision':value['settings']['full_precision_uvs']=False
         else:value['cooked'][0][0][2]=.1
         Path(row['path']).write_text(json.dumps(value));row['sha256']=__import__('hashlib').sha256(Path(row['path']).read_bytes()).hexdigest()
-    if change in ('missing_lod','dropped_page','saved_bytes'):
+    if change in ('missing_lod','dropped_page','saved_bytes','screen_threshold','precision'):
         with pytest.raises(eq.EvidenceError):eq.native_raw_set(changed,'Logical')
     else:
         new=eq.native_raw_set(changed,'Logical')
         field='cooked' if change=='cook' else 'render_lods'
         assert old[field]!=new[field]
+
+
+@pytest.mark.parametrize('change',['sphere','extent','scale','missing','coordination','threshold','physical_sphere'])
+def test_observed_logical_bounds_sphere_and_lod_policy_are_strict(tmp_path,change):
+    component=Component(Mesh('/Game/Before/Whole.Whole',POINTS,lods=2))
+    result=collect(tmp_path,'bounds',[component])
+    row=eq.json_artifact(result['component_policies'][0])
+    row.update(lod_coordinated=True,logical_bounds=copy.deepcopy(row['component_bounds']))
+    info={component.mesh.path:dict(slots=[dict(name='Painted')],lods=component.mesh.lods)}
+    old=eq._native_policy([row],info,'Logical','production')
+    changed=copy.deepcopy(row)
+    if change=='sphere':changed['logical_bounds']['sphere_radius']+=.01;changed['component_bounds']=copy.deepcopy(changed['logical_bounds'])
+    elif change=='extent':changed['logical_bounds']['extent'][0]+=.01;changed['component_bounds']=copy.deepcopy(changed['logical_bounds'])
+    elif change=='scale':changed['bounds_scale']=1.1
+    elif change=='missing':changed.pop('logical_bounds')
+    elif change=='coordination':changed['lod_coordinated']=False
+    elif change=='physical_sphere':changed['component_bounds']['sphere_radius']+=.01
+    else:changed['instance_lod_scale']=.5
+    if change in ('missing','coordination','physical_sphere'):
+        with pytest.raises(eq.EvidenceError):eq._native_policy([changed],info,'Logical','production')
+        with pytest.raises(ValueError):capture._bounds_policy(changed)
+    else:assert eq._native_policy([changed],info,'Logical','production')!=old
+
+
+def test_ordinary_spatial_piece_bounds_recorded_without_false_parent_bound_requirement(tmp_path):
+    component=Component(Mesh('/Game/Before/Whole.Whole',POINTS))
+    result=collect(tmp_path,'bounds',[component]);row=eq.json_artifact(result['component_policies'][0])
+    info={component.mesh.path:dict(slots=[dict(name='Painted')],lods=component.mesh.lods)}
+    old=eq._native_policy([row],info,'Logical','production')
+    changed=copy.deepcopy(row);changed['component_bounds']=dict(origin=[1,2,3],extent=[.1,.2,.3],sphere_radius=.4)
+    assert eq._native_policy([changed],info,'Logical','production')==old
+    assert row['component_bounds']!=changed['component_bounds']
+
+
+@pytest.mark.parametrize('field',['component_bounds','bounds_scale','lod_coordinated'])
+def test_native_capture_refuses_unobserved_bound_fields(tmp_path,monkeypatch,field):
+    original=API.component_policy
+    def missing(component):
+        value=json.loads(original(component));value.pop(field);return json.dumps(value)
+    monkeypatch.setattr(API,'component_policy',missing)
+    with pytest.raises(ValueError,match='bounds/sphere'):
+        collect(tmp_path,'bounds',[Component(Mesh('/Game/Before/Whole.Whole',POINTS))])

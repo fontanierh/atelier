@@ -8,6 +8,7 @@ The host tools/atomic_equivalence.py independently validates every raw page and 
 """
 import hashlib
 import json
+import math
 from pathlib import Path
 import re
 import sys
@@ -28,6 +29,20 @@ def artifact(path):
 def _value(text):
     if not isinstance(text,str) or not text:raise ValueError('Native readback refused missing/unsupported data')
     return json.loads(text,parse_constant=lambda _: (_ for _ in ()).throw(ValueError('Nonfinite native evidence')))
+
+
+def _bounds_policy(row):
+    def valid(value):
+        return (isinstance(value,dict) and set(value)=={'origin','extent','sphere_radius'}
+            and all(isinstance(value.get(k),list) and len(value[k])==3
+                and all(type(v) in (int,float) and math.isfinite(v) for v in value[k]) for k in ('origin','extent'))
+            and all(v>=0 for v in value['extent']) and type(value.get('sphere_radius')) in (int,float)
+            and math.isfinite(value['sphere_radius']) and value['sphere_radius']>=0)
+    if (not valid(row.get('component_bounds')) or type(row.get('bounds_scale')) not in (int,float)
+            or not math.isfinite(row['bounds_scale']) or row['bounds_scale']<=0 or type(row.get('lod_coordinated')) is not bool
+            or (row['lod_coordinated'] and (not valid(row.get('logical_bounds')) or row['logical_bounds']!=row['component_bounds']))
+            or (not row['lod_coordinated'] and row.get('logical_bounds') is not None)):
+        raise ValueError('Missing actual component bounds/sphere or logical LOD policy')
 
 
 def valid_mesh_path(path):
@@ -82,6 +97,8 @@ def capture(components,logical,output,*,controls,seams=(),policy_scope='fixture'
             if sidecar.exists() or sidecar.is_symlink():saved_files.append(artifact(sidecar))
         by_mesh[mesh_path]=mesh
         row=_value(api.component_policy(component))
+        _bounds_policy(row)
+        if row['lod_coordinated']!=(mesh.get_num_lods()>1):raise ValueError('Observed LOD policy contradicts actual render LOD census')
         if row.get('component')!=component.get_path_name() or row.get('mesh')!=mesh_path:
             raise ValueError('Component policy identity changed')
         owner=component.get_owner()

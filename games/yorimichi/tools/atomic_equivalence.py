@@ -1,6 +1,8 @@
 """Independent, fail-closed export/native equivalence across the original production census.
 
-Run this parser in a normal guarded Blender process when the spec contains FBX files.
+Run aggregate verification on the host. For FBX, use atomic_equivalence_host.py
+prepare/finalize around atomic_equivalence_parser.py in normally guarded Blender.
+Never run the aggregate verifier's Git authority checks inside a native child.
 The harness never launches a producer, imports geometry into an assembly, or changes outputs.
 Adapters execute the IMMUTABLE original constructors separately, retain their complete export
 census and canonical source packets, and retain actual current serialized exports/native data.
@@ -111,6 +113,8 @@ def json_artifact(row):
 
 
 def source_binding(row,repo=REPO):
+    require(not any(name in sys.modules for name in ('bpy','unreal')),
+        'Git source authority is host-only; use atomic_equivalence_host prepare/finalize')
     require(isinstance(row,dict) and set(row)=={'revision','path','sha256'}
         and isinstance(row['revision'],str) and REVISION.fullmatch(row['revision'])
         and isinstance(row['sha256'],str) and HEX.fullmatch(row['sha256'])
@@ -408,13 +412,18 @@ def glb_counter(data):
     return result,triangles
 
 
-def serialized_set(rows):
+def serialized_set(rows, observations=None):
     require(isinstance(rows,list) and rows,'Missing actual serialized mesh exports')
     result=dict(render=Counter(),collision=Counter(),triangles=0);seen=set()
     for row in rows:
         artifact(row);path=Path(row['path'])
         require(path not in seen,'Duplicate serialized mesh file');seen.add(path)
-        if path.suffix.lower()=='.fbx':values,count=fbx_counter(path)
+        if path.suffix.lower()=='.fbx':
+            if observations is None:values,count=fbx_counter(path)
+            else:
+                key=(str(path),row['sha256'])
+                require(key in observations,'Missing independently parsed frozen FBX observation')
+                values,count=observations[key]
         elif path.suffix.lower()=='.glb':values,count=glb_counter(artifact(row))
         else:raise EvidenceError('Serialized format adapter is missing: '+path.suffix)
         artifact(row)  # Refuse an input replacement during parse.
@@ -602,6 +611,26 @@ def _native_corner_counter(data,slots,lod):
     return result,edges
 
 
+def component_bounds(row):
+    """Validate observed sphere separately from the box; never approximate it."""
+    def bounds(value):
+        require(isinstance(value,dict) and set(value)=={'origin','extent','sphere_radius'}
+            and all(isinstance(value.get(k),list) and len(value[k])==3
+                and all(type(v) in (int,float) and math.isfinite(v) for v in value[k]) for k in ('origin','extent'))
+            and all(v>=0 for v in value['extent']) and type(value.get('sphere_radius')) in (int,float)
+            and math.isfinite(value['sphere_radius']) and value['sphere_radius']>=0,'Missing actual component/logical bounds')
+        return value
+    physical=bounds(row.get('component_bounds'))
+    require(type(row.get('bounds_scale')) in (int,float) and math.isfinite(row['bounds_scale'])
+        and row['bounds_scale']>0 and type(row.get('lod_coordinated')) is bool,'Missing observed bounds/LOD policy')
+    logical=row.get('logical_bounds')
+    if row['lod_coordinated']:
+        bounds(logical)
+        require(canonical(physical)==canonical(logical),'Logical LOD bounds do not match actual observed component bounds')
+    else:require(logical is None,'Logical bounds without actual coordinated LOD override')
+    return physical,logical
+
+
 def _native_policy(rows,info,logical,scope):
     require(rows,'Actual native component policy is missing')
     groups={mesh:Counter() for mesh in info};materials={};placements={};culls={};shadows={};fades={};collisions={}
@@ -611,6 +640,8 @@ def _native_policy(rows,info,logical,scope):
             and isinstance(row.get('primitive_data'),list) and isinstance(row.get('responses'),list)
             and isinstance(row.get('material_bindings'),list) and len(row['material_bindings'])==len(info[row['mesh']]['slots'])
             and type(row.get('cast_shadow')) is bool and type(row.get('visible')) is bool,'Incomplete observed native component policy')
+        physical,logical_bound=component_bounds(row)
+        require(row['lod_coordinated']==(info[row['mesh']]['lods']>1),'Observed component LOD coordination contradicts actual render LOD census')
         if scope=='production':require(isinstance(row.get('owner_class'),str) and row['owner_class'].startswith('/Script/Yorimichi.'),
             'Fixture actors cannot certify production runtime policy')
         instances=row['instances'] if row['instances'] else [row['matrix']]
@@ -626,7 +657,11 @@ def _native_policy(rows,info,logical,scope):
         for key in ('instance_min_draw','instance_start_cull','instance_end_cull','instance_lod_scale'):
             if key in row:cull[key]=row[key]
         collision={key:row[key] for key in ('collision_enabled','object_channel','responses')}
-        state=dict(cull=cull,shadow=row['cast_shadow'],fade=fade,collision=collision,visible=row['visible'],lighting=row['lighting_channels'])
+        # Ordinary spatial pieces legitimately have tighter physical bounds. Their
+        # raw observations remain in component_policies. Coordinated families MUST
+        # instead preserve the complete original logical sphere/box/LOD policy.
+        bounds_policy=dict(bounds_scale=row['bounds_scale'],lod_coordinated=row['lod_coordinated'],logical_bounds=logical_bound)
+        state=dict(cull=cull,shadow=row['cast_shadow'],fade=fade,collision=collision,visible=row['visible'],lighting=row['lighting_channels'],bounds=bounds_policy)
         signature=hashlib.sha256(canonical(state)).hexdigest()
         group=canonical(dict(state=state,instances=instances))
         groups[row['mesh']][group]+=1
@@ -666,7 +701,7 @@ def native_raw_set(value,logical):
         count=initial['settings']['lods']
         require(type(count) is int and count>0 and set(lods)==set(range(count)),'Native LOD census is incomplete')
         require(initial.get('hulls_complete') is True,'Complete actual native hull readback is missing')
-        hulls.update(native_hulls(initial['hulls']));info[mesh]=dict(slots=initial['slots'])
+        hulls.update(native_hulls(initial['hulls']));info[mesh]=dict(slots=initial['slots'],lods=count)
         for lod,pages in sorted(lods.items()):
             pages.sort(key=lambda p:p['first']);base=pages[0]
             require(type(base.get('source_available')) is bool and (lod!=0 or base['source_available']),
@@ -733,13 +768,13 @@ def compare_native(value,logical):
         simple_hulls=sum(after['hulls'].values()),lods=sorted(after['render_lods']))
 
 
-def compare_asset(value,logical,*,native=True,serialized=True):
+def compare_asset(value,logical,*,native=True,serialized=True,observations=None):
     before=geometry_set(value['baseline'],bounded=False);after=geometry_set(value['actual'],bounded=True)
     require(before==after,'Source geometry/corners/channels/frame/whole-hull conservation differs: '+logical)
     require(policy(value['baseline_policy'],logical)==policy(value['actual_policy'],logical),
         'Logical placement/cull/shadow/fade/material/collision policy differs: '+logical)
     if serialized:
-        original_exports=serialized_set(value['baseline_exports']);current_exports=serialized_set(value['actual_exports'])
+        original_exports=serialized_set(value['baseline_exports'],observations);current_exports=serialized_set(value['actual_exports'],observations)
         require(original_exports==current_exports,
             'Actual serialized corner/material/frame/collision conservation differs: '+logical)
         require(original_exports['triangles']==before['triangles'],
@@ -776,7 +811,7 @@ def validate_scope(value,repo=REPO,required_groups=MINIMUM_GROUPS):
     return census
 
 
-def verify(spec,*,repo=REPO,native=True,serialized=True,required_groups=MINIMUM_GROUPS):
+def verify(spec,*,repo=REPO,native=True,serialized=True,required_groups=MINIMUM_GROUPS,observations=None):
     """@cc [owner:fontanierh,label:correctness] all-region-independent-equivalence-evidence
     Immutable original producer bytes and their complete captured original inventory MUST
     define expected coverage; new split manifests MUST NOT define their own expected roster.
@@ -795,7 +830,7 @@ def verify(spec,*,repo=REPO,native=True,serialized=True,required_groups=MINIMUM_
         census=validate_scope(spec['scope'],repo,required_groups)
         require(set(spec['regions'])==set(census['owners']),'Aggregate omits or invents original producer owners')
     except failures as error:
-        return dict(schema=1,complete=False,exporter_complete=False,native_complete=False,regions={},
+        return dict(schema=1,complete=False,source_complete=False,exporter_complete=False,native_complete=False,regions={},
             errors=[str(error)],exporter_errors=[str(error)],native_errors=[])
     for owner,expected in census['owners'].items():
         item=spec['regions'][owner];observed={};results[owner]=observed
@@ -816,7 +851,7 @@ def verify(spec,*,repo=REPO,native=True,serialized=True,required_groups=MINIMUM_
             exporter_errors.append(owner+': '+str(error));continue
         for logical in expected['models']:
             try:
-                observed[logical]=compare_asset(item['assets'][logical],logical,native=False,serialized=serialized)
+                observed[logical]=compare_asset(item['assets'][logical],logical,native=False,serialized=serialized,observations=observations)
                 require(observed[logical]['triangles']==expected['captures'][logical]['source_triangles'],
                     'Original census triangle count differs: '+logical)
             except failures as error:
@@ -830,9 +865,9 @@ def verify(spec,*,repo=REPO,native=True,serialized=True,required_groups=MINIMUM_
                     observed[logical]['native_error']=str(error);native_errors.append(owner+'/'+logical+': '+str(error))
     exporter=not exporter_errors and serialized
     native_complete=exporter and not native_errors and native
-    return dict(schema=1,complete=native_complete,exporter_complete=exporter,native_complete=native_complete,
+    return dict(schema=1,complete=native_complete,source_complete=not exporter_errors,exporter_complete=exporter,native_complete=native_complete,
         regions=results,errors=[*exporter_errors,*native_errors],exporter_errors=exporter_errors,native_errors=native_errors,
-        scope_groups=sorted(census['groups']),mode='full' if native else 'exporter_only',
+        scope_groups=sorted(census['groups']),mode='full' if native else 'exporter_only' if serialized else 'source_only',
         precision='float32 source channels; exact parsed numeric serialized/native values')
 
 
