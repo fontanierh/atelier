@@ -81,7 +81,12 @@ def _build_state(out_dir):
     ctx = SimpleNamespace(game='yorimichi', out=out_dir, logs=out_dir / 'logs',
                           stamps=out_dir / 'stamps', uproject=None)
     recipe = build.load_recipe('yorimichi').steps(ctx)
-    steps = build.order(recipe, [step.name for step in recipe])
+    ordered = build.order(recipe, [step.name for step in recipe])
+    controller_names = {step.name for step in ordered if step.controller is not None}
+    # This fixture exercises v1 byte-stream fingerprints, not A3 or the Rust backend.
+    # Never mint placeholder keys for migrated controllers or hide a content bridge.
+    assert not any(controller_names & set(step.needs) for step in ordered if step.controller is None)
+    steps = [step for step in ordered if step.controller is None]
     observations = {}
     step_inputs = {}
     provider_cache = {}
@@ -134,7 +139,8 @@ def _build_state(out_dir):
 
 
 def changed_by(edited, tmp_path, monkeypatch, *, stable_products=()):
-    """Steps whose fingerprint changes when edited changes. Inputs hash by name, and an input that is or contains
+    """Legacy v1 steps whose fingerprint changes; migrated controller identities are tested through A3 separately.
+    Inputs hash by name, and an input that is or contains
     edited hashes differently afterwards, so the test reads the recipe's dependencies and needs no built files."""
     tmp_path = Path(tmp_path)
     edited = Path(edited)
