@@ -21,7 +21,7 @@ from atelier.export_manifest import real_directory, sha  # noqa: E402
 from mesh_pieces import capture  # noqa: E402
 
 INPUTS = ('world.json', 'heightmap.npy', 'farhills.npy', 'megapark/trail.json',
-          'craterpark/v2/geometry.npz')
+          'craterpark/v2/geometry.npz', 'terrain/FarHills/final.npz')
 SELECTED = {
     'HD_Temple': ('temple_mesh', 'temple'), 'HD_Pavilion': ('pavilion_mesh', 'pavilion'),
     'HD_Playground': ('playground_mesh', 'playground'), 'HD_Boat': ('boat_mesh', 'boat'),
