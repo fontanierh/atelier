@@ -329,3 +329,95 @@ def test_host_cleanup_refuses_every_changed_member_before_any_unlink(tmp_path, b
     else: (root / 'Foreign.uasset').write_bytes(b'foreign')
     with pytest.raises(ValueError): strict_cleanup(dict(content=str(content), package=package), record)
     assert first.read_bytes() == b'first actual fixture package'
+
+
+def private_fixture(tmp_path):
+    root = tmp_path / 'proof'; engine = tmp_path / 'installed'
+    (root / 'original/user').mkdir(parents=True); (root / 'current/user').mkdir(parents=True)
+    (root / 'private-ddc').mkdir()
+    pak = engine / 'Engine/DerivedDataCache/Compressed.ddp'; pak.parent.mkdir(parents=True); pak.write_bytes(b'installed')
+    launch = proof.private_launch(root, 'original', engine)
+    spec = dict(phase='original', output=str(root / 'original'), launch=launch)
+    log = '\n'.join([
+        "LogDerivedDataCache: Verbose: Parsing cache graph '" + launch['args'][3][5:] + "'...",
+        'LogDerivedDataCache: Display: ../../../Engine/DerivedDataCache/Compressed.ddp: Opened pak cache for reading. (42 MiB)',
+        'LogDerivedDataCache: V2Local: Using data cache path ' + launch['ddc_dir'] + ': Writable',
+    ])
+    return spec, log
+
+
+def test_private_envelope_exact_args_distinct_userdirs_shared_persistent_ddc(tmp_path):
+    spec, log = private_fixture(tmp_path); launch = proof.check_private_launch(spec)
+    current = proof.private_launch(tmp_path / 'proof', 'current', tmp_path / 'installed')
+    assert launch['ddc_dir'] == current['ddc_dir'] and launch['user_dir'] != current['user_dir']
+    assert launch['args'] == ['-UserDir=' + launch['user_dir'], '-nowrite', '-NoZenAutoLaunch',
+        '-DDC=(InstalledEnginePak,V2Local=(Type=FileSystem,Path=' + launch['ddc_dir'] + '))',
+        '-DDC-NoDefaultGraph', '-LogCmds=LogDerivedDataCache Verbose']
+    result = proof.startup_ddc(launch, log)
+    assert result['filesystems'] == [['V2Local', launch['ddc_dir'], 'Writable']]
+    assert result['read_only_paks'] == [launch['engine_pak']] and result['cache_is_evidence'] is False
+    (Path(launch['ddc_dir']) / 'untrusted-cached-bytes').write_bytes(b'not proof')
+    assert proof.check_private_launch(spec) == launch  # Cache bytes are never compared or trusted.
+
+
+@pytest.mark.parametrize('fault', ['missing_graph', 'other_graph', 'shared_path', 'readonly', 'missing_pak',
+    'foreign_pak', 'write_pak', 'fallback', 'redirect', 'zen', 'extra_store'])
+def test_private_startup_refuses_missing_foreign_fallback_and_unavailable_graph(tmp_path, fault):
+    spec, text = private_fixture(tmp_path); launch = spec['launch']
+    if fault == 'missing_graph': text = '\n'.join(text.splitlines()[1:])
+    elif fault == 'other_graph': text += "\nLogDerivedDataCache: Verbose: Parsing cache graph 'Installed'..."
+    elif fault == 'shared_path': text = text.replace(launch['ddc_dir'], '/shared/ddc')
+    elif fault == 'readonly': text = text.replace(': Writable', ': ReadOnly')
+    elif fault == 'missing_pak': text = '\n'.join(row for row in text.splitlines() if 'Opened pak' not in row)
+    elif fault == 'foreign_pak': text = text.replace('../../../Engine/DerivedDataCache/Compressed.ddp', '/foreign/pak.ddp')
+    elif fault == 'write_pak': text = text.replace('for reading.', 'for writing.')
+    elif fault == 'fallback': text += '\nLogDerivedDataCache: Warning: Failed to create graph; Attempting default graph'
+    elif fault == 'redirect': text += '\nLogDerivedDataCache: V2Local: Successfully redirected to Shared'
+    elif fault == 'zen': text += '\nLogDerivedDataCache: ZenLocal: Using ZenServer HTTP service'
+    else: text += '\nLogDerivedDataCache: Shared: Using data cache path /shared: Writable'
+    with pytest.raises(ValueError): proof.startup_ddc(launch, text)
+
+
+@pytest.mark.parametrize('fault', ['args', 'path', 'symlink', 'file', 'punctuation'])
+def test_private_envelope_refuses_changed_or_linked_paths_before_native(tmp_path, fault):
+    spec, _ = private_fixture(tmp_path); launch = spec['launch']
+    if fault == 'args': launch['args'].remove('-DDC-NoDefaultGraph')
+    elif fault == 'path': launch['ddc_dir'] = str(tmp_path / 'foreign')
+    elif fault == 'punctuation':
+        with pytest.raises(ValueError): proof.private_launch(tmp_path / 'bad,graph', 'original', tmp_path / 'installed')
+        return
+    else:
+        path = Path(launch['ddc_dir']); path.rmdir()
+        if fault == 'symlink': path.symlink_to(tmp_path / 'installed', target_is_directory=True)
+        else: path.write_text('not a directory')
+    with pytest.raises(ValueError): proof.check_private_launch(spec)
+
+
+def test_actual_private_startup_checks_command_userdir_engine_and_log_before_assets(tmp_path):
+    import shlex
+    spec, log = private_fixture(tmp_path); launch = spec['launch']
+    path = Path(launch['startup_log']); path.parent.mkdir(); path.write_text(log)
+    U = SimpleNamespace(SystemLibrary=SimpleNamespace(get_command_line=lambda: ' '.join(map(shlex.quote, launch['args']))),
+        Paths=SimpleNamespace(project_user_dir=lambda: launch['user_dir'], engine_dir=lambda: launch['engine_dir'],
+            convert_relative_path_to_full=str))
+    assert proof.receiving_startup(spec, U)['launch'] == launch
+    U.Paths.project_user_dir = lambda: str(tmp_path)
+    with pytest.raises(ValueError): proof.receiving_startup(spec, U)
+    U.Paths.project_user_dir = lambda: launch['user_dir']
+    U.SystemLibrary.get_command_line = lambda: ' '.join(map(shlex.quote, launch['args'] + ['-DDC=Shared']))
+    with pytest.raises(ValueError): proof.receiving_startup(spec, U)
+    run = next(node for node in ast.parse(Path(proof.__file__).read_text()).body
+               if isinstance(node, ast.FunctionDef) and node.name == 'run_native')
+    calls = [node.func.id for node in ast.walk(run) if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)]
+    assert calls.index('receiving_startup') < calls.index('actor_scope')
+
+
+def test_existing_unrealscript_passes_private_flags_as_exact_native_arguments(tmp_path):
+    from atelier import build
+    spec, _ = private_fixture(tmp_path); launch = spec['launch']
+    ctx = SimpleNamespace(unreal_cmd=Path('/engine/UnrealEditor-Cmd'))
+    command = build.UnrealScript(HERE / 'track_native_equivalence.py', 'not launched', null_rhi=True,
+        args=('-nosound', '-noshaderworker', *launch['args']))
+    argv = command._argv(ctx, Path('/fixture/Project.uproject'), command.script)
+    assert argv[-len(launch['args']):] == launch['args']
+    assert '-NullRHI' in argv and '-AllowStdOutLogVerbosity' in argv

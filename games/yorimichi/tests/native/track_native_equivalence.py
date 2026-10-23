@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import shlex
 import stat
 import sys
 import types
@@ -46,6 +47,84 @@ def check_input(path, digest):
             'Linked, special or oversized source input')
     identity = lambda value: (value.st_dev, value.st_ino, value.st_mode, value.st_size, value.st_mtime_ns, value.st_ctime_ns)
     require(sha(path) == digest and identity(path.lstat()) == identity(before), 'Source input bytes/identity changed')
+
+
+
+def private_launch(workspace, phase, engine_root):
+    """@cc [owner:fontanierh,label:safety] private-track-cache-envelope
+    Receiving MUST use owned unlinked UserDir/DDC paths, no config writes or Zen
+    auto-launch, and no default cache fallback. DDC bytes MUST NOT certify outputs.
+    """
+    root = real_directory(Path(workspace).absolute()); engine = real_directory(Path(engine_root).absolute())
+    require(phase in ('original', 'current'), 'Unknown private Track phase')
+    user = real_directory(root / phase / 'user'); ddc = real_directory(root / 'private-ddc')
+    for path in (user, ddc):
+        forbidden = ('\\', '"', "'", '(', ')', ',', '=')
+        require(not any(c.isspace() or c in forbidden for c in str(path)), 'Unsafe native private path argument')
+    graph = '(InstalledEnginePak,V2Local=(Type=FileSystem,Path=' + str(ddc) + '))'
+    args = ['-UserDir=' + str(user), '-nowrite', '-NoZenAutoLaunch', '-DDC=' + graph,
+            '-DDC-NoDefaultGraph', '-LogCmds=LogDerivedDataCache Verbose']
+    return dict(user_dir=str(user), ddc_dir=str(ddc), engine_dir=str(engine / 'Engine'),
+        engine_pak=str(engine / 'Engine/DerivedDataCache/Compressed.ddp'),
+        startup_log=str(root / phase / 'guard/stdout.log'), args=args, cache_is_evidence=False)
+
+
+def check_private_launch(spec):
+    launch = spec.get('launch'); require(isinstance(launch, dict), 'Missing private launch envelope')
+    output = Path(spec['output']); require(output.name == spec['phase'], 'Wrong private phase output')
+    expected = private_launch(output.parent, spec['phase'], Path(launch['engine_dir']).parent)
+    require(launch == expected, 'Changed private launch paths/arguments')
+    for key in ('user_dir', 'ddc_dir'):
+        path = real_directory(launch[key]); require(path.is_dir(), 'Missing real private launch directory')
+    pak = Path(launch['engine_pak']); real_directory(pak.parent)
+    require(not pak.is_symlink() and pak.is_file(), 'Missing regular installed engine pak')
+    return launch
+
+
+def startup_ddc(launch, text):
+    """Validate actual startup graph/store log messages, not a native graph introspection API."""
+    rows = [line.split('LogDerivedDataCache:', 1)[1].strip() for line in text.splitlines()
+            if 'LogDerivedDataCache:' in line]
+    rows = [re.sub(r'^(Verbose|VeryVerbose|Display|Warning|Error|Fatal):\s*', '', row) for row in rows]
+    require(rows, 'Missing actual DDC startup evidence')
+    require(not any(re.search(r'failed|unable|redirect|fallback|\bzen|\bcloud|\bhttp|\bs3\b', row, re.I)
+                    for row in rows), 'DDC fallback/remote/Zen/failure startup evidence')
+    graphs = [match.group(1) for row in rows if (match := re.fullmatch(r"Parsing cache graph '(.*)'\.\.\.", row))]
+    require(graphs == [launch['args'][3].removeprefix('-DDC=')], 'Unexpected/missing actual startup cache graph')
+    stores = []
+    for row in rows:
+        if 'Using data cache path ' in row:
+            match = re.fullmatch(r'([^:]+): Using data cache path (.*): (Writable|ReadOnly|DeleteOnly)', row)
+            require(match is not None, 'Unknown filesystem cache startup record')
+            stores.append((match[1], str(Path(match[2])), match[3]))
+    require(stores == [('V2Local', launch['ddc_dir'], 'Writable')], 'Non-private or unavailable DDC store')
+    paks = []
+    for row in rows:
+        if 'Opened pak cache for ' in row:
+            match = re.fullmatch(r'(.*): Opened pak cache for reading\. \(\d+ MiB\)', row)
+            require(match is not None, 'Writable/unknown pak cache startup record')
+            path = Path(match[1])
+            if not path.is_absolute(): path = Path(launch['engine_dir']) / 'Binaries/Mac' / path
+            paks.append(str(path.resolve()))
+    require(paks == [launch['engine_pak']], 'Unexpected/missing installed read-only cache pak')
+    return dict(graph=graphs[0], filesystems=[list(row) for row in stores], read_only_paks=paks,
+        evidence='actual startup log messages; no native graph introspection', cache_is_evidence=False)
+
+
+def receiving_startup(spec, U):
+    launch = check_private_launch(spec)
+    args = shlex.split(U.SystemLibrary.get_command_line())
+    prefixes = ('-userdir=', '-nowrite', '-nozenautolaunch', '-ddc=', '-ddc-nodefaultgraph', '-logcmds=')
+    actual = [value for value in args if value.lower().startswith(prefixes)]
+    require(actual == launch['args'], 'Actual receiving command line changed private envelope')
+    full = lambda value: Path(U.Paths.convert_relative_path_to_full(value)).resolve()
+    require(full(U.Paths.project_user_dir()) == Path(launch['user_dir'])
+            and full(U.Paths.engine_dir()) == Path(launch['engine_dir']), 'Actual native UserDir/engine mismatch')
+    path = Path(launch['startup_log']); real_directory(path.parent)
+    require(not path.is_symlink() and path.is_file() and path.stat().st_size <= MAX_ARTIFACT_BYTES,
+            'Missing/linked/oversized startup log')
+    payload = path.read_bytes(); result = startup_ddc(launch, payload.decode(errors='replace'))
+    return dict(**result, startup_prefix_sha256=hashlib.sha256(payload).hexdigest(), launch=launch)
 
 
 def bound_inputs(spec):
@@ -340,6 +419,8 @@ def run_native(spec_path, spec_sha):
     import unreal as U
     payload = artifact(dict(path=str(Path(spec_path).absolute()), sha256=spec_sha))
     spec = json.loads(payload); bound_inputs(spec)
+    startup = receiving_startup(spec, U)
+    atomic_json(Path(spec['output']) / 'startup-ddc.json', startup)
     package = spec['package']; output = real_directory(spec['output']); content = Path(spec['content'])
     require(re.fullmatch(r'/Game/AtelierValidation/Track_[0-9a-f]{12}', package), 'Invalid fixture namespace')
     require(Path(U.Paths.project_content_dir()).resolve() == content.resolve(), 'Wrong receiving Content root')

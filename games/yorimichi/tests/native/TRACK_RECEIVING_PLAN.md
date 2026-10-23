@@ -73,6 +73,24 @@ checks all 137 primary assets, saves/reloads them, and captures every authored s
 MeshDescription/render LOD, GPU basis/color/UV/material, cooked surface and hull,
 settings/screens, actual physical box/sphere and fixture component policy.
 
+Each phase uses its own real unlinked `UserDir` under the proof workspace and the
+same persistent private proof DDC. The frozen spec and whole result bind the exact
+existing `UnrealScript.args`: `-UserDir`, `-nowrite`, `-NoZenAutoLaunch`, the C3
+inline installed-read-only-pak/private-filesystem graph, `-DDC-NoDefaultGraph` and
+verbose DDC logging. No global environment, service or config setting changes.
+Installed `ConfigCacheIni.cpp` applies `-nowrite` to config persistence; normal
+editor package saves use the separate `SavePackages` path and remain required.
+
+Before any fixture asset mutation, the receiving script checks actual command-line,
+project user and engine paths and the actual startup log: exactly the requested graph,
+the private writable filesystem and installed read-only pak. Missing or extra graph/store,
+redirect, fallback, Zen/remote or cache-failure evidence refuses. The host rechecks the
+complete log after whole exit. This is startup-log evidence, not C3's native effective-
+graph introspection; the existing compiled module exposes no such API. The no-default-
+graph flag also prevents installed default-graph fallback during startup. DDC is only
+acceleration: neither cache contents nor cache hits certify geometry or success, and
+this functional comparison is not a throughput benchmark.
+
 The original phase archives every saved package and raw page before supported editor
 deletion. Require whole exit0, the exact completion marker, an empty child/reporter
 guard and unchanged input/source/module identities. Only then may the host preflight

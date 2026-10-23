@@ -19,6 +19,7 @@ GAME = Path(__file__).resolve().parents[2]
 REPO = GAME.parents[1]
 sys.path[:0] = [str(GAME / 'world'), str(GAME / 'tools'), str(Path(__file__).parent)]
 import yori  # noqa: E402,F401
+from atelier import engine  # noqa: E402
 from atelier.atomic_files import atomic_json  # noqa: E402
 from atelier.build_inputs import local_imports  # noqa: E402
 from atelier.export_manifest import real_directory  # noqa: E402
@@ -137,7 +138,11 @@ def prepare(args):
     package = '/Game/AtelierValidation/Track_' + uuid.uuid4().hex[:12]
     proof.owner_tree(importer, package + '/Prerequisites/Materials')
     # The complete input validation above precedes all file staging.
+    engine_root = engine.unreal_root()
+    bind(engine_root / 'Engine/Config/BaseEngine.ini')
+    launches = {phase: proof.private_launch(root, phase, engine_root) for phase in ('original', 'current')}
     root.mkdir(parents=True)
+    (root / 'private-ddc').mkdir()
     for phase in ('original', 'current'):
         directory = root / 'frozen' / phase
         document = json.loads(json.dumps(runtime))
@@ -152,8 +157,10 @@ def prepare(args):
         path = directory / 'runtime/track.json'; atomic_json(path, document); bind(path)
     for phase in ('original', 'current'):
         output = root / phase; output.mkdir()
+        (output / 'user').mkdir()
+        launch = launches[phase]
         spec = dict(schema=1, phase=phase, source=str(REPO), source_head=source_head, receiving=str(args.receiving),
-            receiving_head=receiver_head, package=package, output=str(output),
+            receiving_head=receiver_head, package=package, output=str(output), launch=launch,
             content=str(args.receiving / 'games/yorimichi/unreal/Content'), importer=str(importer),
             material_owner=str(material_owner), material_report=str(material_report), material_data=str(material_data),
             original_track=str(root / 'frozen/original'), current_track=str(root / 'frozen/current'),
