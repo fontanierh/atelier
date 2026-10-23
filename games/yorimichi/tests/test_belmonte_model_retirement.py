@@ -1,4 +1,4 @@
-"""Real ordinary producer removal/rename, with expensive terrain generation stubbed."""
+"""Legacy file adapter retirement compatibility; current assembly has its own tests."""
 import ast
 from dataclasses import replace
 import hashlib
@@ -18,7 +18,7 @@ from test_region_products import products, RECIPE
 
 
 @pytest.mark.parametrize('change', ['remove', 'rename', 'remove_hull'])
-def test_normal_belmonte_producer_retires_superseded_glbs_without_touching_sources(tmp_path, monkeypatch, change):
+def test_legacy_belmonte_adapter_retires_superseded_glbs_without_touching_sources(tmp_path, monkeypatch, change):
     out, library = tmp_path / 'out', tmp_path / 'sources'
     library.mkdir()
     settings = tmp_path / 'selection.json'
@@ -70,7 +70,7 @@ def test_normal_belmonte_producer_retires_superseded_glbs_without_touching_sourc
         source_records=model_files.source_records, retain_files=model_files.retain_files, model_pieces=pieces, ground_pieces=ground, Path=Path)
     exec(compile(ast.Module(body=[main], type_ignores=[]), str(script), 'exec'), scope)
     producer = replace(RECIPE.belmonte_steps(out)[0], commands=[build.Call('real producer', lambda ctx, log: scope['main']())],
-                       inputs=[settings, library, script], needs=[], heavy=False)
+                       inputs=[settings, library, script], needs=[], reads=[], cache=False, heavy=False)
     projection = RECIPE.belmonte_steps(out)[1]
     selector = replace(RECIPE.region_texture_step(out, 'belmonte'), needs=[producer.name])
     projection = replace(projection, needs=[producer.name, selector.name], commands=[build.Call('real projection',

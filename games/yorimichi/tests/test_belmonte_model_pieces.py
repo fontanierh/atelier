@@ -59,10 +59,15 @@ def test_small_models_keep_exact_bytes_names_and_policy(tmp_path):
 
 def test_actual_recipe_binds_all_partition_support(tmp_path):
     ctx = SimpleNamespace(game='yorimichi', out=tmp_path, uproject=None)
-    owner = next(step for step in build.load_recipe('yorimichi').steps(ctx) if step.name == 'world.belmonte')
-    assert REGION / 'model_pieces.py' in owner.inputs
-    assert all(build.paths.STUDIO / 'atelier' / name in owner.inputs
-               for name in ('gltf_partition.py', 'mesh_partition.py', 'gltf.py'))
+    steps=build.load_recipe('yorimichi').steps(ctx)
+    owners=[step for step in steps if step.name.startswith('world.belmonte_models.geometry.')]
+    assert len(owners)==232
+    for owner in owners:
+        assert REGION / 'model_pieces.py' in owner.inputs
+        assert all(build.paths.STUDIO / 'atelier' / name in owner.inputs
+                   for name in ('gltf_partition.py', 'mesh_partition.py', 'gltf.py'))
+    assembly=next(step for step in steps if step.name=='world.belmonte')
+    assert REGION/'model_pieces.py' not in assembly.inputs
 
 
 def test_bad_triangle_declaration_refuses_before_writing_pieces(tmp_path):

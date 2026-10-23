@@ -934,18 +934,7 @@ def belmonte_steps(out):
     """
     region = REGIONS / 'belmonte'
     return [
-        Step('world.belmonte', [Python(region / 'build.py')],
-             inputs=[*(p for p in region.iterdir() if p.name not in ('gondola.py', '__pycache__')),
-                     *(paths.STUDIO / 'atelier' / name for name in ('model_files.py', 'gltf.py', 'gltf_partition.py', 'mesh_partition.py')),
-                     WORLD / 'surface_textures.py', ASSETS / 'belmonte', ASSETS / 'environment/textures/tuscan-ground.jpg',
-                     ASSETS / 'environment/textures/tuscan-ground.provenance.json', REGIONS / 'megapark/forest.py', REGIONS / 'hippodrome' / 'build.py',
-                     REGIONS / 'forest/ecotone.py', REGIONS / 'forest/specs.py',
-                     REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari_stable' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK, YORI, *NORTH_LAYOUT, *belmonte_train_corridor(out)],
-             needs=['world.layout', 'world.treehouse_trees'], heavy=True,
-             outputs=[out / 'belmonte' / 'runtime.json', out / 'belmonte' / 'build-report.json',
-                      out / 'belmonte' / 'natural' / 'SM_BM_NorthApron.glb', out / 'belmonte' / 'natural' / 'SM_BM_NorthCountry.glb',
-                      out / 'belmonte/ground/membership.json'],
-             about='Belmonte environment: committed models, northern terrain join and island flora'),
+        _load_helper_module('yorimichi_belmonte_scene', GAME / 'belmonte_scene_build.py').assembly_step(out),
         Step('world.belmonte.meshes',
              [Python(GAME / 'region_products.py', (str(out / 'belmonte'), str(out / 'products/belmonte'),
                                                    '--mesh-library', '--texture-inventory', str(out / 'digests/belmonte-textures.json')))],
@@ -1092,6 +1081,11 @@ def world_steps(ctx):
         *_load_helper_module('yorimichi_hidamari_atomic', GAME / 'hidamari_build.py').metadata_steps(
             ctx, terrain_inputs=[*CRATERPARK, *craterpark_v4.input_paths(), *belmonte_train_corridor(out)],
             terrain_needs=crater_geometry),
+        *_load_helper_module('yorimichi_belmonte_models', GAME / 'belmonte_atomic_build.py').model_steps(ctx),
+        *_load_helper_module('yorimichi_belmonte_models', GAME / 'belmonte_atomic_build.py').ground_steps(ctx),
+        *_load_helper_module('yorimichi_belmonte_north', GAME / 'belmonte_north_build.py').query_steps(ctx),
+        *_load_helper_module('yorimichi_belmonte_north', GAME / 'belmonte_north_build.py').steps(ctx),
+        *_load_helper_module('yorimichi_belmonte_scene', GAME / 'belmonte_scene_build.py').steps(ctx),
         *belmonte_steps(out)[:3],
         brinecove_source_step(out),
         *brinecove_model_steps(out),
