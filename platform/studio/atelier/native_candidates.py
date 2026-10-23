@@ -33,10 +33,12 @@ def inventory(ctx, key, task):
     task_name(task)
     saved = original(Store(ctx.game), key)
     stamp = {**saved['stamps'], **saved.get('incremental_stamps', {}), **saved.get('historical_stamps', {})}.get(task)
+    # Revision is provenance only: geometry is proved by the receiver's import validation, so
+    # dirty or unrevisioned producers donate on input identity alone.
     revision = saved.get('source_revision', '')
     if (saved['context'] != context(ctx) or not stamp or stamp.get('touched')
-            or not re.fullmatch(r'[0-9a-f]{40}', revision)):
-        raise CheckpointError('Candidate needs compatible engine/platform, clean source revision and historical task proof')
+            or not isinstance(revision, str) or revision and not re.fullmatch(r'[0-9a-f]{40}', revision)):
+        raise CheckpointError('Candidate needs compatible engine/platform and historical task proof')
     return dict(schema=1, checkpoint=key, donor_task=task, donor_fingerprint=stamp['fingerprint'],
                 source_revision=revision, donor_stamp=stamp, context=saved['context'], provenance='compatibility-only', files=saved['files'])
 
@@ -84,7 +86,7 @@ def completion(ctx, value, directory, *, verify_files=True, verified=None):
     if (not isinstance(value, dict) or value.get('schema') not in (1, 2) or value.get('provenance') != 'compatibility-only'
             or value.get('context') != context(ctx) or not HEX.fullmatch(value.get('checkpoint', ''))
             or not HEX.fullmatch(value.get('donor_fingerprint', ''))
-            or not re.fullmatch(r'[0-9a-f]{40}', value.get('source_revision', ''))
+            or not re.fullmatch(r'([0-9a-f]{40})?', value.get('source_revision', ''))
             or not isinstance(value.get('files'), dict) or not value['files']):
         raise CheckpointError('Invalid or incompatible candidate completion')
     task_name(value['donor_task'])

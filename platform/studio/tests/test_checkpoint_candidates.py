@@ -112,7 +112,9 @@ def test_many_original_proofs_share_one_guard_copy_and_fresh_hash_per_unique_obj
         value['files'] = {'generated/tree/asset.bin': saved['files']['generated/tree/asset.bin']}
         value['stamps']['tree']['fingerprint'] = str(i) * 64
         keys.append(fixture.store.save(value))
-    fixture.store.manifests.joinpath(key + '.json').unlink()
+    for path in fixture.store.manifests.glob('*.json'):  # Revisionless captures donate too.
+        if path.stem not in keys:
+            path.unlink()
     ctx, steps = fixture.checkout('receiver')
     step = replace(steps[0], candidate_scope=candidates.CandidateScope(directories=(ctx.out / 'tree',)))
     copied, guards = [], []
@@ -189,12 +191,19 @@ def test_stale_engine_pointer_is_a_miss(fixture, donor, monkeypatch):
     assert candidates.load(ctx, 'tree') is None
 
 
-@pytest.mark.parametrize('bad', ['missing-source', 'missing-task', 'linked-member'])
+def test_dirty_producer_without_revision_still_donates(fixture, donor):
+    key, value = donor
+    value.pop('source_revision')
+    key = fixture.store.save(value)
+    ctx, _ = fixture.checkout('receiver')
+    candidates.stage(ctx, key, 'tree', ['generated/tree/asset.bin'])
+    assert candidates.load(ctx, 'tree')['source_revision'] == ''
+
+
+@pytest.mark.parametrize('bad', ['missing-task', 'linked-member'])
 def test_missing_historical_proof_or_unsupported_member_cannot_stage(fixture, donor, bad):
     key, value = donor
-    if bad == 'missing-source':
-        value.pop('source_revision')
-    elif bad == 'missing-task':
+    if bad == 'missing-task':
         value['stamps'].pop('tree')
     else:
         value['files']['generated/tree/link'] = dict(kind='link', target='member:generated/tree/asset.bin', mode=0o777, mtime_ns=1)
@@ -286,7 +295,8 @@ def test_corrupted_completion_cannot_invent_source_revision(fixture, donor):
 @pytest.mark.parametrize('failure', ['incompatible', 'descriptor', 'download'])
 def test_remote_discovery_skips_unusable_newer_checkpoint(fixture, donor, monkeypatch, failure):
     key, saved = donor
-    incompatible = dict(saved, source_revision='' if failure == 'incompatible' else 'b' * 40)
+    incompatible = (dict(saved, context=dict(saved['context'], system='Other')) if failure == 'incompatible'
+                    else dict(saved, source_revision='b' * 40))
     bad_key = cp.identity(incompatible)
     ctx, steps = fixture.checkout('receiver')
     step = replace(steps[0], candidate_scope=candidates.CandidateScope(files=(steps[0].outputs[0],)))

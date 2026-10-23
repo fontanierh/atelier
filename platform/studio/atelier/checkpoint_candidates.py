@@ -295,7 +295,7 @@ def prepare(ctx, step, *, fingerprint=None, echo=print):
                 spoken = time.monotonic()
             hint = hints[cache_key]
             if (hint['context'] != current_context or donor_task not in hint['stamps']
-                    or not re.fullmatch('[0-9a-f]{40}', hint['revision']) or not set(required) <= hint['files'].keys()):
+                    or not re.fullmatch('([0-9a-f]{40})?', hint['revision']) or not set(required) <= hint['files'].keys()):
                 continue
             selected = set(required) | {name for name in hint['files'] if any(name.startswith(prefix) for prefix in prefixes)}
             if selected:

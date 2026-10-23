@@ -208,9 +208,10 @@ def snapshot(ctx, step, store, *, save_blobs, observations=None):
                 continue
             if not stat.S_ISREG(info.st_mode):
                 raise CheckpointError('Special task cache output')
-            digest = (getattr(ctx, 'checkpoint_hasher', None) or build_products.file_digest)(path)
+            hasher = getattr(ctx, 'checkpoint_hasher', None)
+            digest = (hasher or build_products.file_digest)(path)
             if save_blobs:
-                store.put(path, digest)
+                store.put(path, digest, **({'proved': signature(info)} if getattr(hasher, 'proves', False) else {}))
             files[label(ctx, path)] = dict(kind='file', size=info.st_size, sha256=digest,
                                            mode=stat.S_IMODE(info.st_mode), mtime_ns=info.st_mtime_ns)
     if observations is not None:
@@ -254,7 +255,10 @@ def publish(ctx, step, fingerprint, stamp, *, store=None, done=None, produced=Fa
         raise CheckpointError('Task products changed before publication')
     if not compile_present(ctx, step):
         raise CheckpointError('Compiled target is missing required module binaries or its registry')
-    with store.locked():
+    from .checkpoint_store import hashing
+    index = getattr(ctx, 'build_hash_index', None)
+    digest = index.proving_digest if index is not None else None
+    with store.locked(), hashing(ctx, digest):
         declarations, files = snapshot(ctx, step, store, save_blobs=True)
         proof = inventory_identity(declarations, files)
         if not produced and (stamp.get('checkpoint_key') != action_key or stamp.get('checkpoint_inventory') != proof):
@@ -287,19 +291,24 @@ def valid_outputs(ctx, step, value):
         return False
 
 
-def restore_worker(ctx, step, store, action_key):
-    """Owned output replacement; called under the ordinary aggregate checkpoint guard."""
+def restore_worker(ctx, step, store, action_key, *, labels=None):
+    """Owned output replacement; called under the ordinary aggregate checkpoint guard.
+
+    With labels (the parent's declared output labels) no recipe is needed; the parent still
+    verifies the complete restored inventory against the recipe after the guard closes.
+    """
     value = load(store, action_key)
     if value is None or entry_path(store, action_key).with_suffix('.conflict').exists():
         raise CheckpointError('Task cache entry is missing or disabled')
+    task = step.name if step is not None else value['task']
+    expected = [label(ctx, p) for p in declared(ctx, step)] if step is not None else list(labels)
     sources = source_scopes(tracked_paths())
-    if any(root in sources for root in declared(ctx, step)):
+    if any(destination(ctx, name) in sources for name in expected):
         raise CheckpointError('Task restoration cannot replace tracked source')
-    expected = [label(ctx, p) for p in declared(ctx, step)]
     if [r['path'] for r in value['roots']] != expected:
         raise CheckpointError('Task output declarations changed')
     journal = ctx.out / JOURNAL
-    receipt = dict(schema=1, game=ctx.game, key=action_key, task=step.name, operation='action')
+    receipt = dict(schema=1, game=ctx.game, key=action_key, task=task, operation='action')
     from .build_snapshot import require_complete
     require_complete(ctx.out, game=ctx.game, checkpoint_resume=receipt)
     if journal.exists() and read_json(journal) != receipt:
@@ -309,10 +318,12 @@ def restore_worker(ctx, step, store, action_key):
         if entry['kind'] != 'file':
             continue
         blob = store.blob(entry['sha256'])
-        if blob.is_symlink() or blob.stat().st_size != entry['size'] or build_products.file_digest(blob) != entry['sha256']:
-            raise CheckpointError('Task cache blob is missing or corrupt')
+        # Blobs are verified when stored; a wrong identity disables the entry, never the build.
+        if not blob.is_file() or blob.is_symlink() or blob.stat().st_size != entry['size']:
+            atomic_json(entry_path(store, action_key).with_suffix('.conflict'), {'key': action_key, 'reason': 'blob'})
+            raise CheckpointError('Task cache blob is missing or corrupt; entry disabled')
     ctx.stamps.mkdir(parents=True, exist_ok=True)
-    (ctx.stamps / (step.name + '.json')).unlink(missing_ok=True)
+    (ctx.stamps / (task + '.json')).unlink(missing_ok=True)
     atomic_json(journal, receipt)
     # Whole declared roots are replaced, including deletion of retired members. Other roots
     # and all tracked source stay outside the transaction's authority.
@@ -342,9 +353,37 @@ def restore_worker(ctx, step, store, action_key):
     for name, entry in reversed(list(value['files'].items())):
         if entry['kind'] == 'directory':
             os.chmod(destination(ctx, name), entry['mode'])
-    if not valid_outputs(ctx, step, value):
+    from .checkpoint_store import RESTORED_HASHES, unchanged
+    from .build_hashes import HashIndex
+    with HashIndex(ctx.out / RESTORED_HASHES) as hashes:
+        for name, entry in value['files'].items():
+            if entry['kind'] == 'file':
+                target = destination(ctx, name)
+                if not unchanged(target, entry):
+                    raise CheckpointError('Restored task output differs; launch barrier retained')
+                hashes.record(target, entry['sha256'])
+    if step is not None and not restored_outputs(ctx, step, value):
         raise CheckpointError('Restored task output inventory differs; launch barrier retained')
     return value
+
+
+def metadata_hasher(ctx, files):
+    """Digest of a just-restored clone proved by its recorded size, mode and mtime; else read."""
+    from .checkpoint_store import unchanged
+    known = {str(destination(ctx, n)): e for n, e in files.items() if e['kind'] == 'file'}
+    def digest(path):
+        entry = known.get(str(path))
+        if entry is not None and unchanged(Path(path), entry):
+            return entry['sha256']
+        return build_products.file_digest(path)
+    return digest
+
+
+def restored_outputs(ctx, step, value):
+    """valid_outputs for a fresh restoration: complete inventory, metadata proof for clones."""
+    from .checkpoint_store import hashing
+    with hashing(ctx, metadata_hasher(ctx, value['files'])):
+        return valid_outputs(ctx, step, value)
 
 
 class Actions:
@@ -404,9 +443,9 @@ class Actions:
         if fresh_fingerprint(step, done) != fingerprint:
             raise CheckpointError('Inputs changed before task cache restoration')
         request = self.ctx.out / '.state/action-requests' / (value['key'] + '.json')
-        atomic_json(request, dict(task=step.name))
+        atomic_json(request, dict(task=step.name, labels=[label(self.ctx, p) for p in declared(self.ctx, step)]))
         result = _guard(self.ctx, 'restore-action', value['key'])
-        if result.get('key') != value['key'] or not valid_outputs(self.ctx, step, value):
+        if result.get('key') != value['key'] or not restored_outputs(self.ctx, step, value):
             raise CheckpointError('Task restoration completion differs; launch barrier retained')
         if fresh_fingerprint(step, done) != fingerprint:
             raise CheckpointError('Inputs changed during task restoration; launch barrier retained')

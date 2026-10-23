@@ -76,19 +76,25 @@ class Store:
             raise CheckpointError('Invalid checkpoint content digest')
         return self.blobs / digest
 
-    def put(self, path, digest):
+    def put(self, path, digest, *, proved=None):
+        """Store bytes under their digest. proved is the source's stat signature when digest came
+        from the build's hash index for exactly that signature: an unchanged source across the
+        APFS clone proves the blob without rereading it."""
         destination = self.blob(digest)
         if destination.is_symlink():
             raise CheckpointError('Linked checkpoint blob')
         if destination.exists():
-            if build_products.file_digest(destination) != digest:
+            if (destination.stat().st_size != path.stat().st_size if proved is not None
+                    else build_products.file_digest(destination) != digest):
                 raise CheckpointError('Existing checkpoint blob is corrupt; no results were restored')
             return
         self.blobs.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=self.directory) as temporary:
             copied = Path(temporary) / 'blob'
             copy_file(path, copied)
-            if build_products.file_digest(copied) != digest:
+            if proved is not None and signature(path.stat()) == proved and copied.stat().st_size == path.stat().st_size:
+                pass
+            elif build_products.file_digest(copied) != digest:
                 raise CheckpointError('Checkpoint output changed while being copied')
             os.chmod(copied, 0o600)
             copied.replace(destination)

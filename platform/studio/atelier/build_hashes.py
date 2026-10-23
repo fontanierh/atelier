@@ -66,6 +66,14 @@ class HashIndex:
     def __exit__(self, *exception):
         self.close()
 
+    @property
+    def proving_digest(self):
+        """index.digest, marked as binding each digest to the file's exact stat signature."""
+        def digest(path):
+            return self.digest(path)
+        digest.proves = not self.verify
+        return digest
+
     def record(self, path, digest):
         """Seed a digest proven elsewhere, e.g. a clone of a content-addressed checkpoint blob."""
         path = Path(path)

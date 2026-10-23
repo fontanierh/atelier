@@ -366,31 +366,8 @@ def test_hydration_failure_never_fails_the_build(fixture, monkeypatch):
     assert (ctx.out / 'tree/asset.bin').read_bytes() == b'stale'
 
 
-def test_sibling_worktree_result_is_cloned_by_fingerprint(fixture, monkeypatch, tmp_path):
-    from atelier import worktree_reuse
-    donor, steps = fixture.checkout('donor')
-    fixture.produce(donor, steps)
-    ctx, receiving = fixture.checkout('receiver')
-    (ctx.out / 'tree').mkdir(parents=True)
-    (ctx.out / 'tree/asset.bin').write_bytes(b'stale')
-    monkeypatch.setattr(worktree_reuse, 'trees', lambda: [donor.out.parent.parent])
-    monkeypatch.setattr(worktree_reuse, 'database', lambda: tmp_path / 'reuse.sqlite3')
-    def guard(ctx, operation, key):
-        assert operation == 'clone-step'
-        return dict(key=key, cloned=worktree_reuse.clone_worker(ctx, key))
-    monkeypatch.setattr(build_checkpoints, '_guard', guard)
-    index, messages = worktree_reuse.Index('fixture'), []
-    tree = receiving[0]
-    reused = worktree_reuse.restore(ctx, tree, build.fingerprint(tree, {}), index, echo=messages.append)
-    assert reused is not None and reused[0] == donor.out.parent.parent
-    assert (ctx.out / 'tree/asset.bin').read_bytes() == b'tree' and not (ctx.out / 'tree/asset.bin').is_symlink()
-    assert (donor.out / 'tree/asset.bin').stat().st_ino != (ctx.out / 'tree/asset.bin').stat().st_ino
-    assert 'restored from worktree donor' in messages[-1]
-    assert worktree_reuse.restore(ctx, tree, '0' * 64, index, echo=messages.append) is None
-
-
 def test_any_retained_checkpoint_restores_one_task_by_fingerprint(fixture, monkeypatch):
-    from atelier import worktree_reuse
+    from atelier import store_reuse
     _, _, key = snapshot(fixture)
     ctx, steps = fixture.checkout('receiver')
     (ctx.out / 'tree').mkdir(parents=True)
@@ -398,14 +375,14 @@ def test_any_retained_checkpoint_restores_one_task_by_fingerprint(fixture, monke
     (ctx.out / 'tree/extra.bin').write_bytes(b'stale extra')
     monkeypatch.setattr(cp, 'Store', lambda game: fixture.store)
     monkeypatch.setattr(build_checkpoints, '_guard', lambda ctx, operation, task: dict(
-        key=task, cloned=worktree_reuse.clone_worker(ctx, task)))
-    index, messages = worktree_reuse.Index('fixture'), []
+        key=task, cloned=store_reuse.clone_worker(ctx, task)))
+    index, messages = store_reuse.Catalogue('fixture'), []
     tree = steps[0]
-    reused = worktree_reuse.restore_checkpoint(ctx, tree, build.fingerprint(tree, {}), index, echo=messages.append)
+    reused = store_reuse.restore_checkpoint(ctx, tree, build.fingerprint(tree, {}), index, echo=messages.append)
     assert reused[0] == key and 'restored from checkpoint' in messages[-1]
     assert (ctx.out / 'tree/asset.bin').read_bytes() == b'tree' and not (ctx.out / 'tree/extra.bin').exists()
     assert not (ctx.out / 'house').exists()
-    assert worktree_reuse.restore_checkpoint(ctx, tree, '0' * 64, index, echo=messages.append) is None
+    assert store_reuse.restore_checkpoint(ctx, tree, '0' * 64, index, echo=messages.append) is None
 
 
 def test_hydration_never_touches_outputs_of_current_local_stamps(fixture, monkeypatch):

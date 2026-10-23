@@ -204,7 +204,7 @@ def test_bad_phase_output_does_not_certify_or_fail_an_action_by_itself(action):
 def test_unreal_command_echoes_parse_after_normal_success_checks(tmp_path, monkeypatch):
     begin, end = interval().splitlines(keepends=True)
     stdout = 'SUCCESS\n' + begin + 'LogPython: ' + begin + end + 'LogPython: ' + end
-    monkeypatch.setattr(build.subprocess, 'run', lambda *args, **kwargs: SimpleNamespace(returncode=0, stdout=stdout))
+    monkeypatch.setattr(build, 'run_light', lambda *args, **kwargs: (0, stdout))
     ctx = SimpleNamespace(game='fixture', out=tmp_path / 'build', env=lambda _: {})
     command = UnrealScript(tmp_path / 'import.py', 'SUCCESS')
     receipt = build.run_argv(ctx, Step('import', [command]), command, ['fake-command'], (), io.StringIO(), None, None)
