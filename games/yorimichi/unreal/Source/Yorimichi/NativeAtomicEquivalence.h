@@ -15,7 +15,8 @@ public:
     UFUNCTION(BlueprintCallable, Category="Atomic mesh evidence")
     static FString Snapshot(UStaticMesh* Mesh,const FString& Logical,int32 FirstTriangle=0,int32 MaximumTriangles=16384,int32 LODIndex=0);
 
-    /** Query only this component. Radius zero means ray; positive radius means capsule.
+    /** Query blocking on the actual Pawn channel, excluding all other components.
+     * Radius zero means ray; positive radius means capsule.
      * A refusal object reports unavailable evidence and must never be treated as a miss. */
     UFUNCTION(BlueprintCallable, Category="Atomic mesh evidence")
     static FString Probe(UStaticMeshComponent* Component,FVector Start,FVector End,FQuat Rotation,

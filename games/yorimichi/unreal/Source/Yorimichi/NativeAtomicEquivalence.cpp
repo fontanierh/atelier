@@ -6,6 +6,8 @@
 #include "CollisionQueryParams.h"
 #include "CollisionShape.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/World.h"
+#include "EngineUtils.h"
 #include "PhysicsEngine/BodySetup.h"
 #include "StaticMeshResources.h"
 #include "Dom/JsonObject.h"
@@ -216,9 +218,19 @@ FString UNativeAtomicEquivalence::Probe(UStaticMeshComponent* Component,FVector 
     if(!Rotation.IsNormalized())return Refuse(TEXT("invalid_rotation"));
     if(!FMath::IsFinite(Radius) || !FMath::IsFinite(HalfHeight) || Radius<0 || (Radius>0 && HalfHeight<Radius))
         return Refuse(TEXT("invalid_query_shape"));
+    UWorld* World=Component->GetWorld();if(!World)return Refuse(TEXT("missing_world"));
+    // Component-only Chaos queries deliberately use BuildOverlapAll and cannot
+    // establish blocking. Query the real Pawn channel, excluding every other
+    // component without changing any collision responses or fixture geometry.
+    FCollisionQueryParams Params(SCENE_QUERY_STAT(AtomicOwnedMeshProbe),TraceComplex);
+    for(TActorIterator<AActor> It(World);It;++It)
+    {
+        TInlineComponentArray<UPrimitiveComponent*> Others;It->GetComponents(Others);
+        for(UPrimitiveComponent* Other:Others)if(Other!=Component)Params.AddIgnoredComponent(Other);
+    }
     FHitResult Hit;bool Blocked=false;
-    if(Radius>0)Blocked=Component->SweepComponent(Hit,Start,End,Rotation,FCollisionShape::MakeCapsule(Radius,HalfHeight),TraceComplex);
-    else{FCollisionQueryParams Params(SCENE_QUERY_STAT(AtomicOwnedMeshProbe),TraceComplex);Blocked=Component->LineTraceComponent(Hit,Start,End,Params);}
+    if(Radius>0)Blocked=World->SweepSingleByChannel(Hit,Start,End,Rotation,ECC_Pawn,FCollisionShape::MakeCapsule(Radius,HalfHeight),Params);
+    else Blocked=World->LineTraceSingleByChannel(Hit,Start,End,ECC_Pawn,Params);
     bool Valid=true;auto Result=MakeShared<FJsonObject>();Result->SetBoolField(TEXT("blocking"),Blocked && Hit.bBlockingHit);
     Result->SetStringField(TEXT("component"),Component->GetPathName());Result->SetStringField(TEXT("mesh"),Component->GetStaticMesh()->GetPathName());
     Result->SetBoolField(TEXT("selected_component"),!Blocked || Hit.GetComponent()==Component);
@@ -240,7 +252,7 @@ FString UNativeAtomicEquivalence::ComponentPolicy(UStaticMeshComponent* Componen
     Result->SetStringField(TEXT("mesh"),Component->GetStaticMesh()->GetPathName());Result->SetField(TEXT("matrix"),Transform(Component->GetComponentTransform(),Valid));
     Result->SetNumberField(TEXT("collision_enabled"),int32(Component->GetCollisionEnabled()));
     Result->SetNumberField(TEXT("object_channel"),int32(Component->GetCollisionObjectType()));
-    FValues Responses;for(int32 I=0;I<ECC_MAX;++I)Responses.Add(MakeShared<FJsonValueNumber>(int32(Component->GetCollisionResponseToChannel(ECollisionChannel(I)))));
+    FValues Responses;for(int32 I=0;I<ECC_OverlapAll_Deprecated;++I)Responses.Add(MakeShared<FJsonValueNumber>(int32(Component->GetCollisionResponseToChannel(ECollisionChannel(I)))));
     Result->SetArrayField(TEXT("responses"),Responses);Result->SetBoolField(TEXT("cast_shadow"),Component->CastShadow);
     Result->SetNumberField(TEXT("min_draw_distance"),Component->MinDrawDistance);Result->SetNumberField(TEXT("max_draw_distance"),Component->LDMaxDrawDistance);
     Result->SetBoolField(TEXT("visible"),Component->IsVisible());Result->SetNumberField(TEXT("materials"),Component->GetNumMaterials());
