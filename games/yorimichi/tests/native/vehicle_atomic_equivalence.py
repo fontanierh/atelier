@@ -87,8 +87,8 @@ def main():
     old_manifest=json.loads((original_root/family/'manifest.json').read_text())
     assert json.loads((current/family/'manifest.json').read_text())==old_manifest,'Normal file-only assembly changed original manifest'
     files={key:sha(current/family/'assets'/(key+'.fbx')) for key in records}
-    selected=next(key for key in records if key.endswith('Boom'))
-    edited=json.loads(Path(spec['sources'][selected]).read_text());edited['program']=edited['program'].replace('-2.22','-2.24')
+    selected,before,after=spec['edit']
+    edited=json.loads(Path(spec['sources'][selected]).read_text());edited['program']=edited['program'].replace(before,after)
     assert edited!=json.loads(Path(spec['sources'][selected]).read_text())
     source=root/'one-edit/source.json';atomic_json(source,edited)
     plan_vehicle_part.main(['--source',str(source),'--output',str(root/'one-edit/plan'),'--report',str(root/'one-edit/report.json')])

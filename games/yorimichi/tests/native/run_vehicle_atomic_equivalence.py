@@ -18,7 +18,7 @@ BASELINE='283329c07ea04bee34587022a3d43827468c66d7'
 
 
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--family',choices=('sailboat',),required=True);parser.add_argument('--output',type=Path,required=True)
+    parser=argparse.ArgumentParser();parser.add_argument('--family',choices=('sailboat','kei'),required=True);parser.add_argument('--output',type=Path,required=True)
     args=parser.parse_args();root=real_directory(args.output.absolute())
     if os.path.lexists(root):raise ValueError('Fresh vehicle proof root required')
     def git(*args):return subprocess.check_output(['git',*args],cwd=REPO)
@@ -48,7 +48,9 @@ def main():
             result[str(path)]=hashlib.sha256(path.read_bytes()).hexdigest()
         return result
     before=identities();spec=root/'spec.json'
-    atomic_json(spec,dict(family=args.family,output=str(root/'products'),original=str(original),kernel=str(kernel),
+    edit={'sailboat':('SB_Boom','-2.22','-2.24'),
+          'kei':('SM_Kei_Pickup','(0.56, 0.46, 0.36)','(0.58, 0.46, 0.36)')}[args.family]
+    atomic_json(spec,dict(family=args.family,output=str(root/'products'),original=str(original),kernel=str(kernel),edit=edit,
         hull_observer=str(observer),sources={key:str(sources/(key+'.json')) for key in source_module.FAMILIES[args.family]['builders']},inputs=before))
     ctx=build.Context('yorimichi');command=build.Blender(fixture,('--spec',str(spec),'--sha256',hashlib.sha256(spec.read_bytes()).hexdigest()),threads=3,factory_startup=True)
     code=guarded.run(command.argv(ctx),root/'guard',timeout=180,kind='job',purpose=args.family+' complete original independent source and FBX equivalence',env=ctx.env(),progress=15.,track_tree=True)
