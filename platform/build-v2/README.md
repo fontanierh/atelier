@@ -45,3 +45,21 @@ Local compile/tests must use the standalone compile admission described in
 [BUILD_CAPACITY](../../docs/BUILD_CAPACITY.md#standalone-native-tool-builds), with three workers.
 Run from this crate directory so `.cargo/config.toml` places generated files in `build/build-v2/`:
 `cargo test --locked`. Compilation time and test execution time are reported separately.
+
+## T0 CI (A1)
+
+Every PR runs the `Rust / T0` hosted job. It compiles the current crate with three workers, then runs
+pinned cargo-nextest 0.9.149 with profile `ci`: a ten-second global test timeout, no retries and no
+ignored tests. Compile time is reported in its own step. The job retains collection JSON and JUnit
+execution/timing artifacts; neither a cached binary nor an empty test run can provide success.
+
+`tests/registry.toml` maps each active scenario to nextest IDs (`binary-id/test-name`). The hook
+checks that collection and execution cover exactly those tests once, with no ignored, filtered,
+skipped, failing or unmapped tests. Add an active row with each new T0 scenario; use the named
+scenario IDs in future engine tests. Future required scenarios remain explicit `pending` rows with
+their implementation tasks. A pending row is a gap, not a pass. A8/H5 will activate those rows as the
+engine/reference model is implemented; A1 does not claim the full TESTING scenario suite exists.
+
+The registry checker is a read-only Python tool. Its focused tests run in ordinary Python CI:
+`uv run pytest platform/studio/tests/test_build_v2_registry.py -q`. A local nextest compile/run must
+still use the standalone admitted compile workflow; the CI profile is not a memory/admission guard.

@@ -13,3 +13,9 @@ Worker messages MUST use a separate pipe with a versioned, bounded JSON frame. U
 shapes, unsupported protocol versions and truncated frames MUST fail; only EOF between frames
 may be a clean close. Bulk asset bytes MUST travel in staged files, not wire messages.
 See tests/protocol.rs.
+
+@cc [owner:fontanierh,label:correctness] build-v2-t0-registry
+CI MUST compile the current crate successfully before running its T0 tests. Active registry
+scenarios MUST be backed by complete, unskipped execution evidence within ten seconds, excluding
+compilation. Pending future scenarios MUST be reported separately and MUST NOT count as coverage.
+See tools/check_registry.py and platform/studio/tests/test_build_v2_registry.py.

@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   interfaces:
-    name: Rust / interfaces
+    name: Rust / T0
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
@@ -25,9 +25,28 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
+      - name: Install pinned nextest binary
+        uses: taiki-e/install-action@a4d3f3f761dcd95cce1b72cb61cb6d1963438177 # v2
+        with:
+          tool: cargo-nextest@0.9.149
       - name: Check formatting
         run: cargo fmt --check
       - name: Compile interfaces and fixtures
         run: cargo test --locked --no-run -j 3
-      - name: Test interfaces and fixtures
-        run: cargo test --locked -j 3
+      - name: Collect T0 and check active registry
+        run: |
+          cargo nextest list --locked --profile ci --message-format json > ../../build/build-v2/test-list.json
+          python3 tools/check_registry.py --registry tests/registry.toml --listing ../../build/build-v2/test-list.json
+      - name: Run T0 within ten seconds after compilation
+        run: cargo nextest run --locked --profile ci --no-tests=fail
+      - name: Verify complete execution and timing
+        run: python3 tools/check_registry.py --registry tests/registry.toml --listing ../../build/build-v2/test-list.json --junit ../../build/build-v2/nextest/ci/junit.xml
+      - name: Keep T0 collection and result evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2, Node 24
+        with:
+          name: build-v2-t0
+          path: |
+            build/build-v2/test-list.json
+            build/build-v2/nextest/ci/junit.xml
+          retention-days: 7
