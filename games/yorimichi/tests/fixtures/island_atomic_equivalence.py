@@ -50,7 +50,7 @@ def signature(data):
     return value
 
 
-def baseline_packets(data, directory, key, matrix):
+def baseline_packets(data, directory, key, matrix, *, options=None, collisions=()):
     """Persist EVERY immutable-original polygon in contiguous bounded source packets.
 
     Baseline membership does not use the new spatial partitioner. The independent
@@ -71,7 +71,8 @@ def baseline_packets(data, directory, key, matrix):
         path = directory / (name + '.npz')
         piece = subset(data, members)
         mesh_ir.write(path, mesh_ir.encode(piece, key=name, slots=data['slots'], matrix=matrix,
-                                           options=OPTIONS))
+                                           options=OPTIONS if options is None else options,
+                                           collisions=collisions if index == 0 else ()))
         rows.append(dict(path=path.name, sha256=sha(path), triangles=piece['triangles']))
     assert sum(row['triangles'] for row in rows) == int(sum(data['counts'] - 2))
     return rows
