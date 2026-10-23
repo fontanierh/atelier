@@ -66,6 +66,7 @@ fn result_roundtrip_keeps_input_key_and_output_content_distinct() {
             content: BTreeMap::new(),
             references: BTreeMap::new(),
             staged_inputs: BTreeMap::new(),
+            input_kinds: BTreeMap::new(),
             logical_outputs: unit.outputs.clone(),
         },
         outputs: vec![StoredItem {

@@ -1,12 +1,11 @@
 //! Pure unit identity and explicit worker-input staging plans. No scheduling/store I/O.
+use crate::paths::{Claims, claim, relative_path};
 use crate::protocol::{JobRequest, StagedInput};
 use crate::schema::*;
 use crate::source_hashes::{FileVersion, SourceHashCache, sha256, valid_digest};
 use crate::validate::{FileSelection, SnapshotEntry, SourceSnapshot, ValidatedDeclaration};
 use serde::Serialize;
 use std::collections::{BTreeMap, BTreeSet};
-use unicode_casefold::UnicodeCaseFold;
-use unicode_normalization::UnicodeNormalization;
 
 pub const KEY_ENCODING_VERSION: u32 = 1;
 pub const CANONICAL_JSON_VERSION: u32 = 1;
@@ -107,32 +106,16 @@ fn normalized_item(item: &Item) -> Item {
     item
 }
 
-fn safe_staged_paths(paths: &BTreeMap<String, String>) -> Result<(), String> {
-    let mut folded_paths = BTreeSet::new();
-    for path in paths.values() {
-        if path.is_empty()
-            || path
-                .chars()
-                .any(|character| character.is_control() || character == '\\' || character == ':')
-            || path.split('/').any(|part| {
-                part.is_empty() || part == "." || part == ".." || part.ends_with(['.', ' '])
-            })
-        {
-            return Err(format!("invalid staged input path: {path:?}"));
-        }
-        let folded: String = path.nfd().case_fold().nfd().collect();
-        if folded_paths.contains(&folded)
-            || folded
-                .match_indices('/')
-                .any(|(index, _)| folded_paths.contains(&folded[..index]))
-            || folded_paths
-                .range((folded.clone() + "/")..)
-                .next()
-                .is_some_and(|next: &String| next.starts_with(&(folded.clone() + "/")))
-        {
-            return Err("overlapping staged input slots".into());
-        }
-        folded_paths.insert(folded);
+fn safe_staged_paths(paths: &BTreeMap<String, String>, code: &[String]) -> Result<(), String> {
+    let mut claims = Claims::new();
+    claim(&mut claims, "output", "writable output root")?;
+    for path in code.iter().collect::<BTreeSet<_>>() {
+        relative_path(path, false)?;
+        claim(&mut claims, path, "project code")?;
+    }
+    for (slot, path) in paths {
+        relative_path(path, true)?;
+        claim(&mut claims, path, &format!("staged input {slot}"))?;
     }
     Ok(())
 }
@@ -203,7 +186,8 @@ struct ContentItem<'a> {
 
 /// @cc [owner:fontanierh,label:correctness] key-exact-visible-ingredients
 /// Unit keys MUST bind explicit versions, declared code/params/logical outputs,
-/// exact content views and worker-visible staged paths. Producer input keys and
+/// exact content views, file/item shapes and disjoint worker-visible staging paths.
+/// Producer input keys and
 /// provenance MUST NOT substitute for output content. Reference bytes and ambient
 /// platform versions MUST NOT enter keys. See tests/keys.rs; worker isolation and
 /// output-cutoff execution proof remain C1/A4/A6/A9 responsibilities.
@@ -240,7 +224,7 @@ pub fn prepare(
     if names != context.staged_inputs.keys().cloned().collect() {
         return Err("staged input map must cover exactly the declared slots".into());
     }
-    safe_staged_paths(context.staged_inputs)?;
+    safe_staged_paths(context.staged_inputs, &unit.code)?;
     let mut code = BTreeMap::new();
     for path in &unit.code {
         let bytes =
@@ -390,6 +374,18 @@ pub fn prepare(
         content,
         references,
         staged_inputs: context.staged_inputs.clone(),
+        input_kinds: inputs
+            .iter()
+            .map(|input| {
+                (
+                    input.wire.name.clone(),
+                    match &input.payload {
+                        InputPayload::Item { .. } => InputKind::Item,
+                        InputPayload::Absent | InputPayload::Bytes(_) => InputKind::File,
+                    },
+                )
+            })
+            .collect(),
         logical_outputs: outputs.clone(),
     };
     #[derive(Serialize)]

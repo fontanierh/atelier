@@ -323,3 +323,11 @@ tests = ["atelier-build-v2::keys/optional_result_membership_changes_content_with
 [[scenarios]]
 id = "a3.keys.selected_view_memo_binds_its_encoding_version"
 tests = ["atelier-build-v2::keys/selected_view_memo_binds_its_encoding_version"]
+
+[[scenarios]]
+id = "a3.keys.staged_namespace_separates_code_inputs_and_writable_outputs"
+tests = ["atelier-build-v2::keys/staged_namespace_separates_code_inputs_and_writable_outputs"]
+
+[[scenarios]]
+id = "a3.keys.equal_content_digests_do_not_alias_file_and_item_shapes"
+tests = ["atelier-build-v2::keys/equal_content_digests_do_not_alias_file_and_item_shapes"]

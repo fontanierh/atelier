@@ -2,8 +2,9 @@
 //! Deserialization checks wire shape; semantic declaration validation belongs to A2.
 pub mod fixture;
 pub mod keys;
+mod paths;
 pub mod protocol;
 pub mod schema;
-pub mod store;
 pub mod source_hashes;
+pub mod store;
 pub mod validate;

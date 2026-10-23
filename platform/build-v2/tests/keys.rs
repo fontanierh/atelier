@@ -65,7 +65,7 @@ impl Fixture {
                 ]),
             },
         )]);
-        let snapshot = BTreeMap::from([
+        let snapshot: SourceSnapshot = BTreeMap::from([
             (
                 "ops/geometry.py".into(),
                 SnapshotEntry::File(b"geometry".to_vec()),
@@ -634,4 +634,79 @@ fn selected_view_memo_binds_its_encoding_version() {
         .unwrap();
     assert_ne!(first, changed);
     assert_eq!(cache.stats.versions_hashed, 2);
+}
+
+#[test]
+fn staged_namespace_separates_code_inputs_and_writable_outputs() {
+    for path in [
+        "ops/geometry.py",
+        "OPS/Geometry.PY",
+        "ops",
+        "ops/common.py/child",
+        "output",
+        "OUTPUT/triangle.glb",
+    ] {
+        let mut fixture = Fixture::new();
+        fixture.staged.insert("shape".into(), path.into());
+        assert!(
+            fixture.prepared(&mut SourceHashCache::default()).is_err(),
+            "{path}"
+        );
+    }
+    let mut fixture = Fixture::new();
+    fixture.declaration.units[0].code.push("ops/Café.py".into());
+    fixture
+        .snapshot
+        .insert("ops/Café.py".into(), SnapshotEntry::File(b"code".to_vec()));
+    fixture
+        .staged
+        .insert("shape".into(), "OPS/Cafe\u{301}.py".into());
+    assert!(fixture.prepared(&mut SourceHashCache::default()).is_err());
+    let mut fixture = Fixture::new();
+    fixture.declaration.units[0]
+        .code
+        .push("OUTPUT/utility.py".into());
+    fixture.snapshot.insert(
+        "OUTPUT/utility.py".into(),
+        SnapshotEntry::File(b"code".to_vec()),
+    );
+    assert!(fixture.prepared(&mut SourceHashCache::default()).is_err());
+}
+
+#[test]
+fn equal_content_digests_do_not_alias_file_and_item_shapes() {
+    let mut fixture = Fixture::new();
+    fixture.content_item();
+    let before = fixture.prepared(&mut SourceHashCache::default()).unwrap();
+    let stored = fixture.produced.values().next().unwrap();
+    let bytes = canonical_bytes(&serde_json::json!({
+        "domain": "atelier-item-content", "version": 1,
+        "logical_path": stored.item.logical_path, "class": stored.item.class,
+        "files": stored.files,
+    }))
+    .unwrap();
+    let expected = ContentIdentity::Digest {
+        digest: sha256(&bytes),
+    };
+    assert_eq!(before.ingredients().content["shape"], expected);
+    fixture.declaration.units[0].inputs[0] = Input::Content {
+        name: "shape".into(),
+        source: ContentSource::File {
+            path: "data/shape.json".into(),
+            selector: None,
+            optional: false,
+        },
+        whole: None,
+        conditional: None,
+    };
+    fixture.change("data/shape.json", &bytes);
+    let after = fixture.prepared(&mut SourceHashCache::default()).unwrap();
+    assert_eq!(after.ingredients().content["shape"], expected);
+    assert_eq!(
+        before.ingredients().staged_inputs,
+        after.ingredients().staged_inputs
+    );
+    assert_eq!(before.ingredients().input_kinds["shape"], InputKind::Item);
+    assert_eq!(after.ingredients().input_kinds["shape"], InputKind::File);
+    assert_ne!(before.key(), after.key());
 }

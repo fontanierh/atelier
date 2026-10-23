@@ -156,7 +156,16 @@ pub struct IdentityIngredients {
     pub content: BTreeMap<String, ContentIdentity>,
     pub references: BTreeMap<String, ReferenceIdentity>,
     pub staged_inputs: BTreeMap<String, String>,
+    pub input_kinds: BTreeMap<String, InputKind>,
     pub logical_outputs: Vec<Item>,
+}
+
+/// Filesystem shape observed at a staged slot, separate from its content digest.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum InputKind {
+    File,
+    Item,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

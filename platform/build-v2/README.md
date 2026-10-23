@@ -164,7 +164,10 @@ locator/selector rename that preserves this staged view leaves the key unchanged
 **Worker-visible staging contract:** every declared slot has one explicit safe relative path. Raw,
 selected and reference-descriptor inputs use that file name (including extension); multi-file items
 use a directory root with their exact recorded member names. Equal/casefold/normalization/ancestor
-collisions fail. This full map enters result ingredients and keys, and `request()` emits precisely its
+collisions fail across staged slots, project code and the reserved writable `output/` tree.
+Code retains its declared relative paths; neither code nor inputs may occupy `output/`. The same
+conservative normalized path policy is shared with A2. This full map enters result ingredients and
+keys, and `request()` emits precisely its
 `StagedInput` names/paths/identities. Source/code data files stage read-only with canonical mode 0444;
 item members preserve their semantic executable distinction (read-only 0444/0555 while staged).
 
@@ -177,7 +180,8 @@ actual worker output equality under different control metadata and source locato
 A3 tests establish encoding and Run mapping only, not that future workers already enforce isolation.
 
 **Result schema 2:** `IdentityIngredients.script` identifies the selected entrypoint even when the code
-closure is unchanged; `staged_inputs` records the visible slot map; `StoredFile.mode` is 0644 or 0755.
+closure is unchanged; `staged_inputs` records the visible slot map and `input_kinds` binds each slot
+as a file or item directory, even if content digests coincide. `StoredFile.mode` is 0644 or 0755.
 B1 blob hashes remain byte-only and stored blobs immutable. B2 must normalize captured source mode
 (any execute bit becomes 0755, otherwise 0644), retain it in result records and compare it for conflicts;
 B3 must restore semantic modes before publishing checkout installs. C1/B2/B3 and package tests must
