@@ -151,3 +151,35 @@ def test_actual_surface_assembly_publishes_complete_named_five_uv_membership(tmp
     before={path:path.stat().st_mtime_ns for path in (out/'treehouse/assets').rglob('*.fbx')}
     assembly.surfaces(out)
     assert {path:path.stat().st_mtime_ns for path in before}==before
+
+
+def test_host_authority_refuses_native_pass_when_whole_guard_close_is_incomplete(tmp_path,monkeypatch):
+    authority=module('treehouse_host_authority',GAME/'tests/native/prepare_treehouse_proof.py')
+    monkeypatch.setattr(authority,'revision',lambda root:'a'*40)
+    monkeypatch.setattr(authority.subprocess,'check_output',lambda *a,**kw:'')
+    path=tmp_path/'input';path.write_bytes(b'bound source')
+    manifest=tmp_path/'attestation.json'
+    value=dict(schema=1,repo=str(authority.REPO),source_head='a'*40,donor=str(tmp_path),donor_head='a'*40,
+        current_source=authority.snapshot([path]),donor_inputs={},archive_files={})
+    manifest.write_text(json.dumps(value))
+    result=tmp_path/'result.json';result.write_text(json.dumps(dict(complete=True,source_head='a'*40,
+        host_attestation_sha256=authority.sha(manifest))))
+    guard=tmp_path/'guard';guard.mkdir()
+    (guard/'memory-health-tree.json').write_text(json.dumps(dict(state='child_exited',cleanup_complete=True,
+        processes=[],late_reporters=dict(unresolved=[]))))
+    (guard/'execution-timings.json').write_text(json.dumps(dict(execution_seconds=None)))
+    with pytest.raises(ValueError,match='Whole native/guard'):authority.verify(manifest,result,guard,0)
+    assert not (tmp_path/'postcheck.json').exists()
+    (guard/'execution-timings.json').write_text(json.dumps(dict(execution_seconds=1.)))
+    with pytest.raises(ValueError,match='Whole native/guard'):authority.verify(manifest,result,guard,1)
+    authority.verify(manifest,result,guard,0)
+    assert json.loads((tmp_path/'postcheck.json').read_text())['complete'] is True
+    path.write_bytes(b'changed source')
+    with pytest.raises(ValueError,match='bytes/stat'):authority.verify(manifest)
+
+
+def test_guarded_treehouse_proof_uses_frozen_files_without_git_subprocesses():
+    source=(GAME/'tests/native/treehouse_atomic_equivalence.py').read_text()
+    tree=ast.parse(source)
+    assert not any(isinstance(node,ast.Name) and node.id in ('subprocess','revision') for node in ast.walk(tree))
+    assert '--attestation-sha256' in source and 'host_attestation_sha256' in source
