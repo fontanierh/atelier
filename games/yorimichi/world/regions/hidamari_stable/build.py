@@ -137,6 +137,11 @@ def tree(m, x, y, kind, scale, lod):
 
 # ------------------------------------------------------------------ the barn
 def barn(m, lod):
+    barn_shell(m, lod)
+    roof(m, lod)
+
+
+def barn_shell(m, lod):
     cx, cy = L.BARN_CENTRE
     X0, X1, Y0, Y1 = L.BARN_X0, L.BARN_X1, L.BARN_Y0, L.BARN_Y1
     F, E, W = L.FLOOR_Z, L.EAVE_Z, L.WALL
@@ -207,7 +212,6 @@ def barn(m, lod):
             for y in (Y0 - .3, Y1 + .3):
                 kawara.downpipe(m, (x, y, E - .6), (x + (.2 if x < cx else -.2), y + (.2 if y < cy else -.2)))
     interior(m, lod)
-    roof(m, lod)
 
 
 def window(m, axis, x, y_face, side, w, z0, z1, lod):
@@ -880,16 +884,14 @@ def tris(m):
 
 
 def export_glb(path, objs):
+    """Bounded compatibility entry; production uses one planned source per task."""
+    from atelier.blender.gltf import export_atomic_glb
     bpy.ops.object.select_all(action='DESELECT')
-    for o in objs:
-        o.hide_set(False); o.select_set(True)
+    for obj in objs:
+        obj.hide_set(False); obj.select_set(True)
+    if not objs: raise ValueError('Stable export requires its bounded primary')
     bpy.context.view_layer.objects.active = objs[0]
-    kw = dict(filepath=str(path), export_format='GLB', use_selection=True, export_yup=True, export_apply=True,
-              export_extras=True, export_materials='EXPORT', export_cameras=False, export_lights=False, export_animations=False)
-    try:
-        bpy.ops.export_scene.gltf(**kw, export_vertex_color='ACTIVE')
-    except TypeError:
-        bpy.ops.export_scene.gltf(**kw)
+    export_atomic_glb(path, options=dict(export_apply=True), finite_materials=True)
     bpy.ops.object.select_all(action='DESELECT')
 
 
@@ -927,94 +929,7 @@ def anchors(coll, data):
 
 
 def main():
-    if not L.is_enabled():
-        raise SystemExit('HIDAMARI STABLE is disabled (ENABLED = False in hidamari_stable/layout.py): enable it and rebuild world.layout first')
-    palette()
-    for o in list(bpy.data.objects):
-        bpy.data.objects.remove(o, do_unlink=True)
-    OUT.mkdir(parents=True, exist_ok=True); GLB.mkdir(parents=True, exist_ok=True)
-    pad_z = L.PAD_Z
-    platform_z = HL.platform_height(H.north_height)
-    print(f'HIDAMARI STABLE: pad {pad_z} m at {L.SITE}, hippodrome platform {platform_z} m', flush=True)
-    mat = material()
-    scene = bpy.context.scene
-    meshes, counts, files = {}, {}, {}
-
-    hide = []
-
-    def collection(name, hidden=False):
-        c = bpy.data.collections.new(name); scene.collection.children.link(c)
-        if hidden:
-            hide.append(c)
-        return c
-
-    for lod in (0, 1, 2):
-        coll = collection(f'LOD{lod}', hidden=lod > 0)
-        m = v.Mesh(f'SM_HS_Stable_LOD{lod}')
-        barn(m, lod); gate(m, lod); yard(m, lod); paddock(m, lod)
-        counts[m.name] = tris(m)
-        obj = make(m, mat, coll)
-        doors = []
-        for name, build_door in (('StallDoor', stall_door), ('RoomDoor', room_door)):
-            d = build_door(lod)
-            counts[d.name] = tris(d)
-            dobj = make(d, mat, coll)
-            doors.append(dobj)
-            meshes[d.name] = dobj
-        meshes[m.name] = obj
-        print(f'HIDAMARI STABLE LOD{lod}: {counts[m.name]} triangles', flush=True)
-    coll = collection('Ground')
-    g = ground(pad_z); counts[g.name] = tris(g); meshes[g.name] = city_object(g, coll)
-    r, road_z = road(pad_z); counts[r.name] = tris(r); meshes[r.name] = city_object(r, coll)
-    rs = road_sign(pad_z); counts[rs.name] = tris(rs); meshes[rs.name] = make(rs, mat, coll)
-    ccoll = collection('Collision', hidden=True)
-    ucx = collision(ccoll)
-
-    # door instances in the LOD collections, so the .blend and the renders show them closed in place
-    data = placements(pad_z, platform_z, road_z)
-    for lod in (0, 1, 2):
-        coll = bpy.data.collections[f'LOD{lod}']
-        for inst in data['doors']:
-            src = meshes[f'SM_HS_{inst["mesh"]}_LOD{lod}']
-            o = bpy.data.objects.new(f'{inst["id"]}_LOD{lod}', src.data); coll.objects.link(o)
-            o.location = inst['pivot']; o.rotation_euler = (0, 0, math.radians(inst['yaw']))
-            o['instance'] = True
-    acoll = collection('Anchors', hidden=True)
-    anchors(acoll, data)
-
-    for name, obj in meshes.items():
-        path_ = GLB / f'{name}.glb'
-        export_glb(path_, [obj]); files[name] = path_
-    path_ = GLB / 'SM_HS_Stable_Collision.glb'
-    export_glb(path_, ucx); files['SM_HS_Stable_Collision'] = path_
-    (OUT / 'placements.json').write_text(json.dumps(data, indent=1, ensure_ascii=False), encoding='utf-8')
-    for c in hide:
-        c.hide_render = True; c.hide_viewport = True
-    bpy.ops.wm.save_as_mainfile(filepath=str(OUT / 'hidamari-stable.blend'))
-
-    budgets = L.BUDGETS
-    checks = []
-    for lod in (0, 1, 2):
-        n = counts[f'SM_HS_Stable_LOD{lod}']
-        if n > budgets[f'LOD{lod}']:
-            checks.append(f'SM_HS_Stable_LOD{lod}: {n} triangles over {budgets[f"LOD{lod}"]}')
-    if counts['SM_HS_Stable_LOD1'] >= counts['SM_HS_Stable_LOD0'] or counts['SM_HS_Stable_LOD2'] >= counts['SM_HS_Stable_LOD1']:
-        checks.append('LODs do not decrease')
-    if counts['SM_HS_StallDoor_LOD0'] > budgets['door_LOD0']:
-        checks.append('stall door over budget')
-    if len(data['collision']) > budgets['collision_boxes']:
-        checks.append('too many collision boxes')
-    manifest = dict(
-        step='world.hidamari_stable', name=L.NAME,
-        units='metres in the .blend and placements; GLBs are standard glTF (Y-up) exported by Blender',
-        site=data['site'], budgets=budgets, triangles=counts, collision_boxes=len(data['collision']),
-        files={k: dict(path=str(f.relative_to(OUT)), sha256=sha(f), bytes=f.stat().st_size) for k, f in files.items()},
-        checks=checks)
-    (OUT / 'manifest.json').write_text(json.dumps(manifest, indent=1, ensure_ascii=False), encoding='utf-8')
-    print('HIDAMARI STABLE triangles:', json.dumps(counts), flush=True)
-    if checks:
-        raise SystemExit('HIDAMARI STABLE checks failed: ' + '; '.join(checks))
-    print('HIDAMARI STABLE COMPLETE', flush=True)
+    raise ValueError('Use the declared independent Stable source/query/export/assembly tasks; monolithic generation is retired')
 
 
 def placements(pad_z, platform_z, road_z):
