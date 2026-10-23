@@ -352,7 +352,7 @@ def test_private_envelope_exact_args_distinct_userdirs_shared_persistent_ddc(tmp
     assert launch['ddc_dir'] == current['ddc_dir'] and launch['user_dir'] != current['user_dir']
     assert launch['args'] == ['-UserDir=' + launch['user_dir'], '-nowrite', '-NoZenAutoLaunch',
         '-DDC=(InstalledEnginePak,V2Local=(Type=FileSystem,Path=' + launch['ddc_dir'] + '))',
-        '-DDC-NoDefaultGraph', '-LogCmds=LogDerivedDataCache Verbose']
+        '-DDC-NoDefaultGraph', '-LogCmds=LogDerivedDataCache Verbose', '-abslog=' + launch['startup_log']]
     result = proof.startup_ddc(launch, log)
     assert result['filesystems'] == [['V2Local', launch['ddc_dir'], 'Writable']]
     assert result['read_only_paks'] == [launch['engine_pak']] and result['cache_is_evidence'] is False
@@ -396,11 +396,14 @@ def test_private_envelope_refuses_changed_or_linked_paths_before_native(tmp_path
 def test_actual_private_startup_checks_command_userdir_engine_and_log_before_assets(tmp_path):
     import shlex
     spec, log = private_fixture(tmp_path); launch = spec['launch']
-    path = Path(launch['startup_log']); path.parent.mkdir(); path.write_text(log)
-    U = SimpleNamespace(SystemLibrary=SimpleNamespace(get_command_line=lambda: ' '.join(map(shlex.quote, launch['args']))),
+    path = Path(launch['startup_log']); path.parent.mkdir(exist_ok=True); path.write_text(log)
+    flushed=[]
+    U = SimpleNamespace(SystemLibrary=SimpleNamespace(get_command_line=lambda: ' '.join(map(shlex.quote, launch['args'])),
+        execute_console_command=lambda world,command:flushed.append((world,command))),
         Paths=SimpleNamespace(project_user_dir=lambda: launch['user_dir'], engine_dir=lambda: launch['engine_dir'],
             convert_relative_path_to_full=str))
     assert proof.receiving_startup(spec, U)['launch'] == launch
+    assert flushed==[(None,'FLUSHLOG')]
     U.Paths.project_user_dir = lambda: str(tmp_path)
     with pytest.raises(ValueError): proof.receiving_startup(spec, U)
     U.Paths.project_user_dir = lambda: launch['user_dir']

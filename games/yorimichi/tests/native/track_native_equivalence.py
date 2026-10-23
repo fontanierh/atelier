@@ -62,11 +62,12 @@ def private_launch(workspace, phase, engine_root):
         forbidden = ('\\', '"', "'", '(', ')', ',', '=')
         require(not any(c.isspace() or c in forbidden for c in str(path)), 'Unsafe native private path argument')
     graph = '(InstalledEnginePak,V2Local=(Type=FileSystem,Path=' + str(ddc) + '))'
+    startup = root / phase / 'engine.log'
     args = ['-UserDir=' + str(user), '-nowrite', '-NoZenAutoLaunch', '-DDC=' + graph,
-            '-DDC-NoDefaultGraph', '-LogCmds=LogDerivedDataCache Verbose']
+            '-DDC-NoDefaultGraph', '-LogCmds=LogDerivedDataCache Verbose', '-abslog=' + str(startup)]
     return dict(user_dir=str(user), ddc_dir=str(ddc), engine_dir=str(engine / 'Engine'),
         engine_pak=str(engine / 'Engine/DerivedDataCache/Compressed.ddp'),
-        startup_log=str(root / phase / 'guard/stdout.log'), args=args, cache_is_evidence=False)
+        startup_log=str(startup), args=args, cache_is_evidence=False)
 
 
 def check_private_launch(spec):
@@ -114,12 +115,15 @@ def startup_ddc(launch, text):
 def receiving_startup(spec, U):
     launch = check_private_launch(spec)
     args = shlex.split(U.SystemLibrary.get_command_line())
-    prefixes = ('-userdir=', '-nowrite', '-nozenautolaunch', '-ddc=', '-ddc-nodefaultgraph', '-logcmds=')
+    prefixes = ('-userdir=', '-nowrite', '-nozenautolaunch', '-ddc=', '-ddc-nodefaultgraph', '-logcmds=', '-abslog=')
     actual = [value for value in args if value.lower().startswith(prefixes)]
     require(actual == launch['args'], 'Actual receiving command line changed private envelope')
     full = lambda value: Path(U.Paths.convert_relative_path_to_full(value)).resolve()
     require(full(U.Paths.project_user_dir()) == Path(launch['user_dir'])
             and full(U.Paths.engine_dir()) == Path(launch['engine_dir']), 'Actual native UserDir/engine mismatch')
+    # Stdout omits verbose structured records; the bound full engine log contains
+    # the actual graph. Flush through the installed engine before reading it.
+    U.SystemLibrary.execute_console_command(None, 'FLUSHLOG')
     path = Path(launch['startup_log']); real_directory(path.parent)
     require(not path.is_symlink() and path.is_file() and path.stat().st_size <= MAX_ARTIFACT_BYTES,
             'Missing/linked/oversized startup log')

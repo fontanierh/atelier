@@ -72,6 +72,7 @@ def run(workspace, phase):
     require(head(receiver) == spec['receiving_head'] and head(source) == spec['source_head'], 'Track source changed')
     bound_inputs(spec)
     launch = check_private_launch(spec)
+    require(not os.path.lexists(launch['startup_log']), 'Fresh bound Track engine log required')
     guard = output / 'guard'
     require(not os.path.lexists(guard) and not os.path.lexists(output / 'whole-result.json'), 'Fresh Track phase guard required')
     fixture = Path(spec['content']) / spec['package'].removeprefix('/Game/')
@@ -109,7 +110,8 @@ def run(workspace, phase):
     require(current_native_build(ctx) == native and head(receiver) == spec['receiving_head']
             and head(source) == spec['source_head'], 'Actual native/source identity changed')
     bound_inputs(spec); require(artifact(spec_binding) == payload, 'Track phase spec changed')
-    observed_ddc = startup_ddc(launch, (guard / 'stdout.log').read_text())
+    engine_log = binding(launch['startup_log'])
+    observed_ddc = startup_ddc(launch, artifact(engine_log).decode(errors='replace'))
     native_startup = json.loads((output / 'startup-ddc.json').read_bytes())
     require(native_startup['launch'] == launch and all(native_startup[key] == value for key, value in observed_ddc.items()),
             'Startup/native private DDC evidence differs')
@@ -118,7 +120,8 @@ def run(workspace, phase):
     strict_cleanup(spec, json.loads((output / 'cleanup.json').read_bytes()))
     result = dict(schema=1, complete=False, native_complete=False, whole_exit=0, guard_empty=True,
         fixture_absent=True, phase=phase, spec_sha256=spec_binding['sha256'], native=native, guard=evidence,
-        source_head=spec['source_head'], receiving_head=spec['receiving_head'], launch=launch, startup_ddc=observed_ddc)
+        source_head=spec['source_head'], receiving_head=spec['receiving_head'], launch=launch, startup_ddc=observed_ddc,
+        engine_log=engine_log)
     atomic_json(output / 'host-result.json', result)
     if phase == 'current':
         original = json.loads((root / 'original/native.json').read_bytes())

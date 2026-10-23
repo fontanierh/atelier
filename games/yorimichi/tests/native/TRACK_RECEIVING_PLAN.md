@@ -144,3 +144,10 @@ Before a launch, source review and focused pure fault-injection checks remain
 necessary for this new draft. The parent alone owns the stopped receiver boundary,
 launch and admission decision. No source preparation, child marker or plan is
 acceptance evidence.
+
+Startup graph evidence comes from a fresh, explicitly bound `-abslog` engine
+logfile. The installed stdout device omits verbose structured graph records even
+when the category is enabled. The fixture flushes the engine log before its
+pre-asset startup check; the host binds and rechecks the complete file after whole
+cleanup. Missing or foreign graph/store records still refuse. The failed stdout
+diagnostic is retained separately and certifies no fixture assets.
