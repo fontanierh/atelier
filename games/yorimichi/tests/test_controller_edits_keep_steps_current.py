@@ -4,14 +4,25 @@ import functools
 from pathlib import Path
 from types import SimpleNamespace
 
-from atelier import build, build_products
+from atelier import build, build_products, engine
 
 PACKAGE = Path(build.__file__).parent
 CONTROLLER = ('build.py', 'build_hashes.py', 'build_cache.py', 'build_inputs.py', 'build_products.py',
               'build_checkpoints.py', 'checkpoint_store.py', 'store_reuse.py', 'output_inventory.py')
 
 
-def test_controller_edits_leave_sampled_game_steps_current():
+def fake_blender(tmp_path, monkeypatch):
+    """A tiny app bundle, so the test needs no installed Blender (CI has none)."""
+    binary = tmp_path / 'Blender.app/Contents/MacOS/Blender'
+    binary.parent.mkdir(parents=True)
+    binary.write_text('fake blender')
+    (binary.parent.parent / 'Resources').mkdir()
+    (binary.parent.parent / 'Resources/runtime.py').write_text('bundled runtime')
+    monkeypatch.setattr(engine, 'blender', lambda: str(binary))
+
+
+def test_controller_edits_leave_sampled_game_steps_current(tmp_path, monkeypatch):
+    fake_blender(tmp_path, monkeypatch)
     ctx = build.Context('yorimichi')
     steps = build.load_recipe('yorimichi').steps(ctx)
     tooled = [s for s in steps if s.toolchain and not s.cache][:3]
@@ -34,8 +45,9 @@ def test_controller_edits_leave_sampled_game_steps_current():
         assert key(step, 'build_source.py') != current, step.name
 
 
-def test_planning_only_hash_index_edits_leave_native_imports_current():
+def test_planning_only_hash_index_edits_leave_native_imports_current(tmp_path, monkeypatch):
     """The Unreal adapter executes file_identity, not the planner's hash index."""
+    fake_blender(tmp_path, monkeypatch)
     from atelier import build_hashes, file_identity, native_protocol
     ctx = build.Context('yorimichi')
     steps = build.load_recipe('yorimichi').steps(ctx)

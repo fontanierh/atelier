@@ -1,12 +1,17 @@
 """A failed assembly cannot consume a certified cook or replace an existing download."""
 import io
 import json
+import sys
 from types import SimpleNamespace
 
 import pytest
 
 from atelier import build
 from test_package import archive_tool
+
+pytestmark = [pytest.mark.macos_only,
+              pytest.mark.skipif(sys.platform != 'darwin',
+                                 reason='macOS packaging: ditto and a .command launcher')]
 
 
 def cooked_app(tmp_path):

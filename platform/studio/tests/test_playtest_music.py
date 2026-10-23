@@ -10,6 +10,9 @@ import pytest
 
 from atelier import playtest
 
+# atelier playtest installs macOS release builds and clones the music with cp -cR on APFS.
+pytestmark = [pytest.mark.macos_only]
+
 SPEC = {'fetch': 'fetch.py', 'cache': 'music', 'into': 'Library/Application Support/Game/Music', 'arg': '-music='}
 
 

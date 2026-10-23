@@ -15,14 +15,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  tests:
-    name: Python / ${{ matrix.group }}
-    runs-on: macos-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        group: [board, studio, games]
+  quality:
+    name: Python / lint and wheel
+    # Lint and the wheel smoke test are portable, so they no longer wait for a macOS runner.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -33,25 +30,38 @@ jobs:
           version: '0.10.0'
           python-version: '3.12'
           enable-cache: false
-      # Framework launchers re-exec Python under another name; the process-identity fixtures need
-      # the portable interpreter itself to retain their deliberately chosen executable names.
       - run: uv sync --frozen --managed-python
-      - if: matrix.group == 'board'
-        run: uv run atelier lint
+      - run: uv run atelier lint
       - name: Verify the distributable package
-        if: matrix.group == 'board'
         run: |
           uv build --wheel --out-dir build/ci/wheels
           uv run python platform/harness/tests/wheel_smoke.py build/ci/wheels/*.whl
+
+  board:
+    name: Python / board
+    # The board group starts the real board server, so this job builds the macOS-only Rust crate
+    # (libproc, statfs, darwin priorities) and then runs its tests on the same runner. Every other
+    # group runs on Linux.
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
+        with:
+          version: '0.10.0'
+          python-version: '3.12'
+          enable-cache: false
+      - run: uv sync --frozen --managed-python
       - name: Identify Rust cache
-        if: matrix.group == 'board'
         id: rust
         shell: bash
         run: |
           toolchain=$( { rustc --version --verbose; clang --version; printf '%s\n' "$ImageOS" "$ImageVersion"; } | shasum -a 256 | cut -d ' ' -f 1)
           echo "prefix=board-v1-${RUNNER_OS}-${RUNNER_ARCH}-${toolchain}-${{ hashFiles('platform/harness/web/server/Cargo.lock', 'platform/harness/web/server/Cargo.toml', 'platform/harness/web/server/.cargo/config.toml') }}" >> "$GITHUB_OUTPUT"
       - name: Restore Rust dependencies
-        if: matrix.group == 'board'
         id: rust-cache
         continue-on-error: true
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0, Node 24
@@ -66,20 +76,26 @@ jobs:
       # Production can serve the last working binary after a failed build. CI must never do that:
       # remove this crate's artifacts and require a successful compile, keeping dependency artifacts.
       - name: Build the current board server
-        if: matrix.group == 'board'
         working-directory: platform/harness/web/server
         run: |
           cargo clean --release --locked --package atelier-board-server
           cargo build --release --locked
           cargo test --release --locked --bin atelier-board-server
-      # Each runner collects the whole suite, then selects one disjoint group. Fake renderer
-      # processes and board servers stay isolated, and new test locations fall into studio.
+      # One worker: these tests start machine-wide board servers, so a serial roster keeps them
+      # isolated from each other on this runner.
       - name: Run tests
         env:
-          ATELIER_CI_WORKERS: ${{ matrix.group == 'board' && '1' || 'auto' }}
-        run: uv run python platform/studio/tests/ci_tests.py ${{ matrix.group }} --collection-report build/ci/collection.json -q --durations=20 --junitxml=build/ci/results.xml
+          ATELIER_CI_WORKERS: 1
+        run: uv run python platform/studio/tests/ci_tests.py board --collection-report build/ci/collection.json -q --durations=20 --junitxml=build/ci/results.xml
+      - name: Keep test results and collection
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2, Node 24
+        with:
+          name: python-board
+          path: build/ci/
+          retention-days: 7
       - name: Save Rust dependencies from main
-        if: matrix.group == 'board' && github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.rust-cache.outputs.cache-hit != 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.rust-cache.outputs.cache-hit != 'true'
         continue-on-error: true
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0, Node 24
         with:
@@ -89,21 +105,59 @@ jobs:
             ~/.cargo/registry/cache
             ~/.cargo/registry/src
           key: ${{ steps.rust.outputs.prefix }}-${{ hashFiles('platform/harness/web/server/src/**') }}
+
+  tests:
+    name: Python / ${{ matrix.label }}
+    # Each shard is an independent job, so each group uses twice the cores, and every shard still
+    # takes a disjoint slice of the same partition.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Studio keeps one job: the harness tests may not run in two workers on one machine, so
+          # its serial lane is already the longest and splitting the rest only adds a checkout.
+          - { group: studio, label: studio, shard: 0, shards: 1, workers: auto }
+          - { group: games, label: games 1/2, shard: 0, shards: 2, workers: auto }
+          - { group: games, label: games 2/2, shard: 1, shards: 2, workers: auto }
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
+        with:
+          version: '0.10.0'
+          python-version: '3.12'
+          enable-cache: false
+      # Framework launchers re-exec Python under another name; the process-identity fixtures need
+      # the portable interpreter itself to retain their deliberately chosen executable names.
+      - run: uv sync --frozen --managed-python
+      # Each runner collects the whole suite, then selects one disjoint slice. Fake renderer
+      # processes and board servers stay isolated, and new test locations fall into studio.
+      - name: Run tests
+        env:
+          ATELIER_CI_WORKERS: ${{ matrix.workers }}
+        run: uv run python platform/studio/tests/ci_tests.py ${{ matrix.group }} --worker-count ${{ matrix.shards }} --worker-index ${{ matrix.shard }} --collection-report build/ci/collection.json -q --durations=20 --junitxml=build/ci/results.xml
       - name: Keep test results and collection
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2, Node 24
         with:
-          name: python-${{ matrix.group }}
+          name: python-${{ matrix.group }}-${{ matrix.shard }}
           path: build/ci/
           retention-days: 7
 
   gate:
     name: Studio Python / macOS
-    needs: tests
+    needs: [quality, board, tests]
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Require every group to pass
+      - name: Require every job to pass
         env:
-          RESULT: ${{ needs.tests.result }}
-        run: test "$RESULT" = success
+          QUALITY: ${{ needs.quality.result }}
+          BOARD: ${{ needs.board.result }}
+          TESTS: ${{ needs.tests.result }}
+        run: test "$QUALITY" = success && test "$BOARD" = success && test "$TESTS" = success
+

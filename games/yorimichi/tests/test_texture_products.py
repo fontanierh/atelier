@@ -88,14 +88,20 @@ def actual_build(tmp_path, monkeypatch):
     monkeypatch.setattr(build, 'run_command', observed)
     def execute(**kwargs):
         monkeypatch.setenv('ATELIER_BUILD_ROOT', str(state.ctx.out.parent))
-        return build.build('yorimichi', echo=lambda _: None, **kwargs)
+        state.log = []
+        return build.build('yorimichi', echo=state.log.append, **kwargs)
     state.run = execute
+    def why():
+        logs = ''.join(f'\n--- {path.name} ---\n{path.read_text()[-4000:]}'
+                       for path in sorted(state.ctx.logs.glob('*.log')))
+        return '\n'.join(state.log) + logs
+    state.why = why
     return state
 
 
 def test_actual_audited_textures_restore_in_a_different_directory_without_execution(actual_build, tmp_path, monkeypatch):
     p = actual_build
-    assert p.run() == 0
+    assert p.run() == 0, p.why()
     assert set(p.calls) == {'world.textures.white', 'world.textures.concrete'}
     expected = {product.paths[0].name: product.paths[0].read_bytes()
                 for step in p.steps(p.ctx) for product in step.products}
@@ -103,11 +109,11 @@ def test_actual_audited_textures_restore_in_a_different_directory_without_execut
         stamp = json.loads((p.ctx.stamps / f'{step.name}.json').read_text())
         assert stamp['audit_receipt']['execution'] == 'audited-python-v1'
     p.calls.clear()
-    assert p.run() == 0 and p.calls == []  # Warm stamps.
+    assert p.run() == 0 and p.calls == [], p.why()  # Warm stamps.
     original = p.ctx.out
     p.ctx = context(tmp_path / 'receiver')
     monkeypatch.setattr(build, 'run_command', lambda *args, **kwargs: pytest.fail('cache restoration executed a command'))
-    assert p.run() == 0
+    assert p.run() == 0, p.why()
     assert {path.name: path.read_bytes() for path in (p.ctx.out / 'textures').iterdir()} == expected
     for step in p.steps(p.ctx):
         stamp = json.loads((p.ctx.stamps / f'{step.name}.json').read_text())
@@ -126,13 +132,13 @@ def test_one_spec_edit_rebuilds_one_texture_and_its_real_consumers(actual_build,
                 build.Step('consume.concrete', [build.Call('concrete', lambda ctx, log: p.consumers.append('concrete'))], reads=['texture.concrete']),
                 build.Step('consume.legacy', [build.Call('legacy', lambda ctx, log: p.consumers.append('legacy'))], needs=['world.textures'])]
     monkeypatch.setattr(build, 'load_recipe', lambda game: SimpleNamespace(steps=steps))
-    assert p.run() == 0
+    assert p.run() == 0, p.why()
     concrete = (p.ctx.out / 'textures/T_concrete.jpg').read_bytes()
     p.calls.clear(); p.consumers.clear()
     value = json.loads(p.spec.read_text())
     value['options']['colour'] = [250, 251, 252]
     p.spec.write_text(json.dumps(value))
-    assert p.run() == 0
+    assert p.run() == 0, p.why()
     assert set(p.calls) == {'world.textures.white', 'consume.white', 'consume.legacy'}
     assert set(p.consumers) == {'white', 'legacy'}
     assert (p.ctx.out / 'textures/T_concrete.jpg').read_bytes() == concrete

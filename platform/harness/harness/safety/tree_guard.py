@@ -10,9 +10,18 @@ import json
 import os
 from pathlib import Path
 import signal
+import sys
 import time
 
 SHARED = frozenset({'zenserver', 'UnrealTraceServer'})
+
+
+def adopt_reporters(launch_nonce):
+    """macOS CrashReporter reconciliation; other kernels have no reporters to adopt."""
+    if launch_nonce is None or sys.platform != 'darwin':
+        return None
+    from .mac_crash_reporters import Reporters
+    return Reporters(launch_nonce)
 
 
 class OwnedTree:
@@ -154,15 +163,14 @@ def run_child(pid, started, report, duration=None, limit_gib=10., controller=Non
     never successful completion. Independent guards MUST outlive the controller process group.
     """
     from atelier.harness.safety import process_tree
-    from .mac_crash_reporters import Reporters
-    reporters = Reporters(launch_nonce) if launch_nonce is not None else None
-    tree = OwnedTree(process_tree, pid, started, reporters)
+    adopted = adopt_reporters(launch_nonce)
+    tree = OwnedTree(process_tree, pid, started, adopted)
     report = Path(report)
     began, peak = time.monotonic(), 0
     limit = int(limit_gib * 1024**3)
     try:
-        if reporters is not None:
-            reporters.bind_root(pid, started)
+        if adopted is not None:
+            adopted.bind_root(pid, started)
         if not tree.same(tree.root):
             raise RuntimeError('The launcher is no longer the pinned owner')
         while True:
@@ -197,9 +205,9 @@ def run_child(pid, started, report, duration=None, limit_gib=10., controller=Non
                     # Keep the established offending sample for failure diagnostics.
                     value.update(cleanup_processes=remaining, cleanup_footprint_bytes=remaining_total)
                 value['cleanup_complete'] = value['cleanup_complete'] and not remaining
-                if reporters is not None:
-                    value['cleanup_complete'] = value['cleanup_complete'] and reporters.empty()
-                    value['late_reporters'] = reporters.evidence()
+                if adopted is not None:
+                    value['cleanup_complete'] = value['cleanup_complete'] and adopted.empty()
+                    value['late_reporters'] = adopted.evidence()
                 value['peak_bytes'] = max(value['peak_bytes'], remaining_total)
                 if not value['cleanup_complete']:
                     value['termination_reason'], value['state'] = state, 'cleanup_incomplete'
@@ -217,16 +225,15 @@ def run_child(pid, started, report, duration=None, limit_gib=10., controller=Non
 
 def run(pid, started, report, duration, stop_file, limit_gib=10., launch_nonce=None):
     from atelier.harness.safety import process_tree
-    from .mac_crash_reporters import Reporters
-    reporters = Reporters(launch_nonce) if launch_nonce is not None else None
-    tree = OwnedTree(process_tree, pid, started, reporters)
+    adopted = adopt_reporters(launch_nonce)
+    tree = OwnedTree(process_tree, pid, started, adopted)
     report = Path(report)
     report.parent.mkdir(parents=True, exist_ok=True)
     began, peak = time.monotonic(), 0
     limit = int(limit_gib * 1024**3)
     try:
-        if reporters is not None:
-            reporters.bind_root(pid, started)
+        if adopted is not None:
+            adopted.bind_root(pid, started)
         if not tree.same(tree.root):
             raise RuntimeError('The compound job is no longer the pinned owner')
         while True:
@@ -244,19 +251,19 @@ def run(pid, started, report, duration, stop_file, limit_gib=10., launch_nonce=N
             elif Path(stop_file).exists():
                 # The harness asks to stop only after all owned games and helpers have
                 # exited. Keep protecting the job if a game tree remains alive.
-                if reporters is not None:
-                    reporters.reconcile(tree)
+                if adopted is not None:
+                    adopted.reconcile(tree)
                     samples = tree.sample()
                     total = sum(p['footprint_bytes'] for p in samples)
                     peak = max(peak, total)
                 state = 'complete' if all(p['pid'] in {pid, os.getpid()} for p in samples) else 'children_remain'
-                if reporters is not None and not reporters.empty():
+                if adopted is not None and not adopted.empty():
                     state = 'cleanup_incomplete'
             value = dict(owner=pid, owner_started=started, time=time.time(), elapsed_seconds=elapsed,
                          footprint_bytes=total, peak_bytes=peak, limit_bytes=limit,
                          state=state, processes=samples)
-            if reporters is not None:
-                value['late_reporters'] = reporters.evidence()
+            if adopted is not None:
+                value['late_reporters'] = adopted.evidence()
             if state == 'complete':
                 write_report(report, value)
                 return 0
@@ -266,9 +273,9 @@ def run(pid, started, report, duration, stop_file, limit_gib=10., launch_nonce=N
                 value.update(cleanup_processes=remaining,
                              cleanup_footprint_bytes=sum(row['footprint_bytes'] for row in remaining))
                 value['cleanup_complete'] = value['cleanup_complete'] and not remaining
-                if reporters is not None:
-                    value['cleanup_complete'] = value['cleanup_complete'] and reporters.empty()
-                    value['late_reporters'] = reporters.evidence()
+                if adopted is not None:
+                    value['cleanup_complete'] = value['cleanup_complete'] and adopted.empty()
+                    value['late_reporters'] = adopted.evidence()
                 if not value['cleanup_complete']:
                     value.update(state='cleanup_incomplete', termination_reason=state)
                 write_report(report, value)

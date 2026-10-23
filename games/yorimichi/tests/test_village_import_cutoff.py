@@ -180,10 +180,25 @@ def test_missing_input_cannot_reuse_a_successful_cutoff(village_build, missing):
                                     'village/build-identity.json', 'village/manifest.json'])
 def test_corrupt_input_fails_before_any_fbx_normalization(village_build, monkeypatch, corrupt):
     p = village_build
+    # A producer with a written-output inventory repairs its own files (below); without one, the
+    # import's receipt validation is the only guard and must refuse.
+    stamp = p.out / 'stamps/world.layout.json'
+    stamp.write_text(json.dumps({k: v for k, v in json.loads(stamp.read_text()).items() if k != 'output_inventory'}))
     (p.out / corrupt).write_bytes(b'corrupt')
     monkeypatch.setattr(DIGEST, 'fbx', lambda data: pytest.fail('Raw receipts must be validated before FBX normalization'))
     assert p.run() == 1 and p.imported == []
     assert not DIGEST.village_present(p.out, p.regions)
+
+
+@pytest.mark.parametrize('corrupt', ['world.json', 'heightmap.npy'])
+def test_corrupted_layout_output_is_rebuilt_by_its_producer_and_cut_off(village_build, monkeypatch, corrupt):
+    p = village_build
+    original = (p.out / corrupt).read_bytes()
+    (p.out / corrupt).write_bytes(b'corrupt')
+    monkeypatch.setattr(DIGEST, 'fbx', lambda data: pytest.fail('Repaired identical bytes must not renormalize FBX'))
+    assert p.run() == 0 and p.imported == []
+    assert (p.out / corrupt).read_bytes() == original
+    assert any('outputs changed since its stamp' in m for m in p.messages)
 
 
 def test_stale_source_receipt_fails_before_normalization(village_build, monkeypatch):

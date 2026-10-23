@@ -38,6 +38,7 @@ class Tower:
             raise ValueError('Placed tower requires complete footing coverage/relief')
         self.pedestal_bases = {}
         self.anchor_bounds = {}
+        self.sheaves_x = {}
         self.p = p; self.H = float(height); self.g = p['gauge']; self.rr = p['rope_radius']
         self.z_cap = self.H - 0.89
         self.seats = []
@@ -188,22 +189,29 @@ class Tower:
     # ---------------------------------------------------------------- head
     def head(self, m):
         H, g, zc = self.H, self.g, self.z_cap
-        ya = g / 2 - 0.12                      # crossarm ends stay inside the hanger's path
+        # The cabin body (0.30 m envelope) sweeps across the head; on a graded
+        # saddle its level roof rises past the crossarm and guide posts. Every
+        # part that would pass under the body stays at least 1.5 m inboard of
+        # the rope line; only the carrier and sheaves remain beside the rope,
+        # and the carrier is reached by a bracket arm at its own height.
+        envelope_y = self.p['cabin_width'] / 2 + TOWER_BODY_MARGIN
+        envelope_x = self.p['cabin_length'] / 2 + TOWER_BODY_MARGIN
+        clear_y = envelope_y + 0.15
+        ya = g / 2 - clear_y
         with m.tagged('crossarm'):
             for s in (-1, 1):
                 m.box((s * 0.32, 0, zc + 0.17), (0.24, 2 * ya, 0.34), TIMBER)
                 for sy in (-1, 1):
                     for dx in (-0.08, 0.08):
                         self.seat('crossarm on cap girt', s * 0.32 + dx, sy * self.hy(zc - GIRT_H / 2), zc, on=('girt',))
-        # Keep the whole brace inboard of the passing cabin's clearance envelope.
-        # The top joint and its plate share this attachment; taller towers must not widen it.
-        knee_y = min(1.9, g / 2 - self.p['cabin_width'] / 2 - TOWER_BODY_MARGIN - 0.05)
+        # Knees and their plates stay wholly inboard of the passing body.
+        knee_y = min(1.9, g / 2 - clear_y - 0.05)
         z1 = self.levels[1]
         for sx in (-1, 1):
             for sy in (-1, 1):
                 a = Vector((sx * 0.32, sy * knee_y, zc - 0.02)); b = Vector((sx * 0.32, sy * (self.hy(z1) + GIRT_D / 2 + 0.02), z1))
                 m.beam(a, b, 0.06, 0.14, IRON, up=(1, 0, 0))
-                m.box((sx * 0.32, sy * knee_y, zc - 0.015), (0.3, 0.32, 0.03), IRON)
+                m.box((sx * 0.32, sy * knee_y, zc - 0.015), (0.3, 0.2, 0.03), IRON)
         def saddle_z(x):
             if not self.saddle:
                 return H
@@ -220,40 +228,57 @@ class Tower:
             k = (self.saddle['m_out'] - self.saddle['m_in']) / (2 * h)
             return mid + 2 * k * x
 
+        def rope_z(x):
+            """The rope height beside the train, continuing the end slope."""
+            if not self.saddle:
+                return H
+            half = self.saddle.get('half', 1.6)
+            if x > half:
+                return saddle_z(half) + saddle_slope(half) * (x - half)
+            if x < -half:
+                return saddle_z(-half) + saddle_slope(-half) * (x + half)
+            return saddle_z(x)
+
+        roof_drop = self.p['hanger_length'] + 0.02
+
+        def sheaf_clear(x):
+            """True when the whole wheel stays above the cabin's body envelope
+            at every cabin position whose envelope reaches it."""
+            rf = SHEAVE_R + 0.6 * self.rr
+            low = saddle_z(x) - (self.rr + SHEAVE_R) - rf
+            top = max(rope_z(x + envelope_x * (2 * k / 8 - 1)) for k in range(9))
+            return low >= top - roof_drop
+
         for s in (-1, 1):
-            yc = s * (g / 2 - 0.11)
+            yc = s * (g / 2 - 0.30)           # carrier: 10 cm out of the grip's sweep
+            ypost = s * (g / 2 - clear_y)     # guide posts outside the body
             train_half = self.saddle.get('half', 1.6) if self.saddle else 1.6
             sheaves = list(SHEAVE_X)
-            extra = 1.35 + 0.75
+            extra = 2.1
             while extra <= train_half - 0.25 + 1e-9:
                 sheaves += [-extra, extra]
-                extra += 0.75
-            sheaves = sorted(sheaves)
-            # Timber carrier along the rope, following the saddle and resting
-            # on both crossarm beams, with steel end straps.
+                extra += 1.5
+            # A sheave whose flange would pass inside the passing body on the
+            # next rise is left off; the carrier still supports the rope there.
+            sheaves = [x for x in sorted(sheaves) if sheaf_clear(x)]
+            self.sheaves_x[s] = sheaves
+            # Timber carrier along the rope, following the saddle and hung
+            # from the two bracket arms, with steel end straps.
             def carrier_z(x):
-                return max(saddle_z(x) - (self.rr + SHEAVE_R), H - 0.375)
+                # 8 cm below the sheaf centres: the carrier stays under the
+                # grip's lowest sweep on the fitted saddles.
+                return max(saddle_z(x) - (self.rr + SHEAVE_R + 0.08), H - 0.375)
             with m.tagged('carrier'):
-                # 1.2 m chords hold the beam clear of the rope on the tightest
-                # saddle; one piece per sheaf would be several times the cost.
-                segments = max(1, math.ceil(2 * train_half / 1.2))
+                # One loft replaces the chords: interior rings have no caps,
+                # so neighbouring pieces cannot z-fight at a knot.
+                segments = max(1, math.ceil(2 * train_half / 1.45))
                 knots = [-train_half + 2 * train_half * k / segments for k in range(segments + 1)]
-                for a, b in zip(knots, knots[1:]):
-                    m.beam((a, yc, carrier_z(a)), (b, yc, carrier_z(b)), 0.1, 0.35, TIMBER, up=(0, 0, 1))
+                rings = [[(x, yc - 0.05, carrier_z(x) - 0.175), (x, yc + 0.05, carrier_z(x) - 0.175),
+                          (x, yc + 0.05, carrier_z(x) + 0.175), (x, yc - 0.05, carrier_z(x) + 0.175)]
+                         for x in knots]
+                m.loft(rings, TIMBER)
             for x in (-train_half, train_half):
                 m.box((x, yc - s * 0.055, carrier_z(x)), (0.16, 0.012, 0.37), IRON)
-            if train_half > 1.6:
-                # A long train needs its own beam and posts; they stay above
-                # the passing cabin roof (z_cap is below the hanger line).
-                with m.tagged('carrier'):
-                    m.beam((-train_half, yc, self.z_cap + 0.05), (train_half, yc, self.z_cap + 0.05),
-                           0.12, 0.15, TIMBER, up=(0, 0, 1))
-                for x in knots:
-                    if abs(x) > 1.6 + 1e-9:
-                        m.box((x, yc, (self.z_cap + 0.05 + carrier_z(x) - 0.175) / 2),
-                              (0.12, 0.12, carrier_z(x) - 0.175 - self.z_cap - 0.05), TIMBER)
-            for x in (-0.32, 0.32):
-                self.seat('sheave carrier', x, yc, H - 0.55, on=('crossarm',))
             # Sheaves under the rope: each centre offset along the local rope
             # normal, so the groove stays concentric with a tilted rope.
             for x in sheaves:
@@ -265,16 +290,34 @@ class Tower:
                 rr = self.rr; hw = rr + 0.035; rf = SHEAVE_R + 0.6 * rr; rg = rr + 0.002
                 groove = [(f * rr, SHEAVE_R + rr - math.sqrt(rg * rg - (f * rr) ** 2)) for f in (-0.9, -0.45, 0.0, 0.45, 0.9)]
                 prof = [(-hw, rf)] + groove + [(hw, rf)]
-                with m.tagged('sheave'):            # the rope's intentional contact (rope clearance report)
-                    # Nine sides with a vertex at the top keep the exact seat.
-                    m.lathe(tuple(c + Vector((0, -hw, 0))), [(a + hw, r) for a, r in prof], STEEL,
+                # The wheel's plane follows the rope's tangent, so its groove
+                # stays concentric with the tilted rope at every station.
+                tangent = (math.cos(theta), 0, math.sin(theta))
+                normal = (-math.sin(theta), 0, math.cos(theta))
+                with m.tagged('sheave'), m.frame(c, tangent, (0, 1, 0), normal):
+                    # Nine sides with a vertex on the normal keep the exact seat.
+                    m.lathe((0, 0, 0), [(a, r) for a, r in prof], STEEL,
                             n=9, axis=(0, 1, 0), phase=math.pi / 2)
-            # Head posts above the crossarm, inside the rope line, tied by a head beam along the line.
+                # Axle bracket: out of the wheel's inner face at its centre
+                # height, then up beside the rope into the carrier. The elbow
+                # stays low; only the vertical leg nears the grip, and that
+                # leg is 15 cm outboard of the grip's swept width.
+                m.box((c.x, s * (g / 2 - 0.185), c.z), (0.14, 0.25, 0.12), IRON)
+                lo, hi = sorted((c.z, carrier_z(c.x) - 0.155))
+                if hi - lo > 1e-6:
+                    m.box((c.x + 0.01, yc, (lo + hi) / 2), (0.10, 0.08, hi - lo), IRON)
+            # Head bracket: a post outside the cabin body and an arm at the
+            # carrier's own height reach in to support it.
             for x in (-0.32, 0.32):
-                m.box((x, s * (g / 2 - 0.5), H - 0.55 + 0.425), (0.22, 0.22, 0.85), TIMBER)
-                self.seat('head post', x, s * (g / 2 - 0.5), H - 0.55, on=('crossarm',))
-                m.box((x, s * (g / 2 - 0.5), H + 0.315), (0.26, 0.26, 0.03), IRON)
-            m.box((0, s * (g / 2 - 0.5), H + 0.16), (1.1, 0.18, 0.2), TIMBER)
+                arm_z = carrier_z(x)
+                m.box((x, s * (g / 2 - (0.30 + clear_y) / 2), arm_z), (0.24, clear_y - 0.30, 0.10), TIMBER)
+                lo, hi = sorted((zc + 0.34, arm_z + 0.07))
+                if hi - lo > 0.02:
+                    m.box((x, ypost, (lo + hi) / 2), (0.14, 0.14, hi - lo), TIMBER)
+                self.seat('head post', x, ypost, zc + 0.34, on=('crossarm',))
+            # A light head tie between the posts keeps the frame reading as one head.
+            m.beam((-0.55, ypost, carrier_z(-0.32) + 0.08), (0.55, ypost, carrier_z(0.32) + 0.08),
+                   0.11, 0.11, TIMBER)
 
     def ladder(self, m):
         """Steel ladder up the -x face (outside the bracing) through a hatch in a railed timber landing that rests
@@ -330,16 +373,17 @@ class Tower:
                 bottom,top = self.anchor_bounds.get((sx,sy),(-.9,.55))
                 P.append(proxy_box('guy anchor', ax, ay, 0.9, 0.9, bottom, top))
         g = self.g
-        P.append(proxy_box('crossarm', 0, 0, 0.9, g - 0.24, self.z_cap, self.z_cap + 0.34))
+        clear_y = self.p['cabin_width'] / 2 + TOWER_BODY_MARGIN + 0.15
+        P.append(proxy_box('crossarm', 0, 0, 0.9, 2 * (g / 2 - clear_y), self.z_cap, self.z_cap + 0.34))
         for s in (-1, 1):
-            P.append(proxy_box('sheave train', 0, s * g / 2 - s * 0.05, 3.5, 0.22, self.H - 0.55, self.H - self.rr))
-            P.append(proxy_box('head posts', 0, s * (g / 2 - 0.5), 1.1, 0.26, self.H - 0.55, self.H + 0.33))
+            P.append(proxy_box('sheave train', 0, s * (g / 2 - 0.30), 3.5, 0.22, self.H - 0.55, self.H - self.rr))
+            P.append(proxy_box('head posts', 0, s * (g / 2 - clear_y), 1.1, 0.26, self.z_cap + 0.34, self.H + 0.35))
         return P
 
     def attachment(self):
         g = self.g
         return {'height': self.H, 'rope_saddles': [{'side': s, 'centre': [0.0, s * g / 2, self.H],
-                                                    'sheaves_x': list(SHEAVE_X), 'sheave_groove_radius': SHEAVE_R,
+                                                    'sheaves_x': list(self.sheaves_x.get(s, SHEAVE_X)), 'sheave_groove_radius': SHEAVE_R,
                                                     'sheave_centre_z': round(self.H - self.rr - SHEAVE_R, 4)} for s in (-1, 1)],
                 'crossarm_z': [round(self.z_cap, 3), round(self.z_cap + 0.34, 3)], 'cap_z': round(self.z_cap, 3),
                 'base_half_widths': [round(self.hx(LEG_FOOT) + LEG / 2, 3), round(self.hy(LEG_FOOT) + LEG / 2, 3)],

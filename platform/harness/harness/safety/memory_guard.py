@@ -6,6 +6,7 @@ While an owned Unreal runs it also records the game's descendants, pinned to the
 `<report>.helpers.json`, so the SDK helpers it leaves behind can be reaped once it exits (`guard.reap_helpers`).
 """
 import argparse,ctypes,json,os,signal,time
+import errno,sys
 from pathlib import Path
 
 class Usage(ctypes.Structure):
@@ -14,16 +15,105 @@ class Usage(ctypes.Structure):
         'started','exited','child_user','child_system','child_idle','child_interrupt','child_pageins',
         'child_elapsed','read_bytes','written_bytes')]
 
-LIB=ctypes.CDLL('/usr/lib/libproc.dylib',use_errno=True)
-LIB.proc_pid_rusage.argtypes=[ctypes.c_int,ctypes.c_int,ctypes.c_void_p]
-LIB.proc_pid_rusage.restype=ctypes.c_int
-
 PROC_PPID_ONLY=6
-LIB.proc_listpids.argtypes=[ctypes.c_uint32,ctypes.c_uint32,ctypes.c_void_p,ctypes.c_int]
-LIB.proc_name.argtypes=[ctypes.c_int,ctypes.c_void_p,ctypes.c_uint32]
+DARWIN=sys.platform=='darwin'
+PROCFS=Path('/proc')
+
+
+class _Libproc:
+    """libproc, bound on first use so importing the guard stack stays portable."""
+    def __init__(self):
+        self._handle=None
+    def _load(self):
+        if self._handle is None:
+            lib=ctypes.CDLL('/usr/lib/libproc.dylib',use_errno=True)
+            lib.proc_pid_rusage.argtypes=[ctypes.c_int,ctypes.c_int,ctypes.c_void_p]
+            lib.proc_pid_rusage.restype=ctypes.c_int
+            lib.proc_listpids.argtypes=[ctypes.c_uint32,ctypes.c_uint32,ctypes.c_void_p,ctypes.c_int]
+            lib.proc_name.argtypes=[ctypes.c_int,ctypes.c_void_p,ctypes.c_uint32]
+            self._handle=lib
+        return self._handle
+    def __getattr__(self,name):
+        return getattr(self._load(),name)
+
+
+LIB=_Libproc()
+
+
+class ProcfsUsage:
+    """The same fields as Usage, sampled from Linux /proc.
+
+    Linux has no equivalent of macOS's compressed and GPU footprint, so `footprint` is the
+    resident set and the limits mean resident memory there."""
+    __slots__=('user','system','idle_wakeups','interrupt_wakeups','pageins','wired','resident','footprint',
+               'started','exited','child_user','child_system','child_idle','child_interrupt','child_pageins',
+               'child_elapsed','read_bytes','written_bytes')
+
+
+def _procfs_usage(pid):
+    def gone():return ProcessLookupError(errno.ESRCH,'Cannot sample process',pid)
+    def broken(entry):return RuntimeError(f'Cannot read {entry} for process {pid}')
+    def read(entry,text=False):
+        # Only a missing entry proves the process left. A refused or failed read, or a short or
+        # non-numeric value, is telemetry loss and must never certify an empty tree.
+        path=PROCFS/str(pid)/entry
+        try:return path.read_text() if text else path.read_bytes()
+        except FileNotFoundError:raise gone() from None
+    raw=read('stat')
+    end=raw.rfind(b')')
+    fields=raw[end+2:].split() if end>=0 else []
+    if len(fields)<20:raise broken('stat')
+    if fields[0] in (b'Z',b'X',b'x'):raise gone()          # reaped or not, it no longer owns memory
+    try:
+        user,system,started=int(fields[11]),int(fields[12]),int(fields[19])
+        resident=int(read('statm',True).split()[1])*os.sysconf('SC_PAGE_SIZE')
+    except (IndexError,ValueError):raise broken('stat or statm') from None
+    wired=0
+    # Locked memory and byte counters are optional accounting: a kernel may refuse them (for
+    # example /proc/<pid>/io needs ptrace access) without the process having gone anywhere.
+    # A missing entry is still absence, and a malformed required value was rejected above.
+    try:status=read('status',True)
+    except ProcessLookupError:raise
+    except OSError:status=''
+    for line in status.splitlines():
+        if line.startswith('VmLck:'):
+            try:wired=int(line.split()[1])*1024
+            except (IndexError,ValueError):raise broken('status') from None
+            break
+    read_bytes=written_bytes=0
+    try:counters=read('io',True)
+    except ProcessLookupError:raise
+    except OSError:counters=''
+    for line in counters.splitlines():
+        key,_,value=line.partition(':')
+        try:
+            if key=='read_bytes':read_bytes=int(value)
+            elif key=='write_bytes':written_bytes=int(value)
+        except ValueError:raise broken('io') from None
+    value=ProcfsUsage()
+    value.user,value.system=user,system
+    value.started,value.exited=started,0
+    value.resident=value.footprint=resident
+    value.wired,value.pageins=wired,0
+    value.read_bytes,value.written_bytes=read_bytes,written_bytes
+    value.idle_wakeups=value.interrupt_wakeups=0
+    value.child_user=value.child_system=value.child_idle=0
+    value.child_interrupt=value.child_pageins=value.child_elapsed=0
+    return value
 
 def children(pid):
     """The live children of pid; one born during the call is caught on the next tick."""
+    if not DARWIN:
+        # A task lists only the children it created itself, so a child spawned from a worker
+        # thread appears under that thread alone. Every task is read and unioned, or the guard
+        # would miss such a process entirely and could certify an empty tree while it lives.
+        try:tasks=[entry for entry in (PROCFS/str(pid)/'task').iterdir() if entry.name.isdigit()]
+        except FileNotFoundError:raise ProcessLookupError(errno.ESRCH,'Cannot sample process',pid)
+        found=set()
+        for task in tasks:
+            try:found.update(int(value) for value in (task/'children').read_text().split())
+            except FileNotFoundError:continue  # That thread exited; its children were reparented.
+        return sorted(found)
     size=ctypes.sizeof(ctypes.c_int);count=LIB.proc_listpids(PROC_PPID_ONLY,pid,None,0)
     if count<=0:return []
     buf=(ctypes.c_int*(count//size+64))();count=LIB.proc_listpids(PROC_PPID_ONLY,pid,buf,ctypes.sizeof(buf))
@@ -31,6 +121,9 @@ def children(pid):
 
 def name(pid):
     """The executable's name ('UnrealEditor', 'dotnet'), or '' once it is gone."""
+    if not DARWIN:
+        try:return (PROCFS/str(pid)/'comm').read_text().strip()
+        except FileNotFoundError:return ''
     buf=ctypes.create_string_buffer(256)
     return buf.value.decode(errors='replace') if LIB.proc_name(pid,buf,256)>0 else ''
 
@@ -45,8 +138,11 @@ def owned_children(parent,parent_start):
     and a child has the same start on both sides of a second listing, so a reused pid (the parent's or a child's)
     never brings in another process's children."""
     if _started(parent)!=parent_start:return []
-    first=children(parent);starts={c:_started(c) for c in first}
-    again=set(children(parent))
+    try:first=children(parent)
+    except ProcessLookupError:return []          # The parent left between the identity checks.
+    starts={c:_started(c) for c in first}
+    try:again=set(children(parent))
+    except ProcessLookupError:return []
     if _started(parent)!=parent_start:return []
     return [(c,s) for c,s in starts.items() if s is not None and c in again and _started(c)==s]
 
@@ -68,6 +164,7 @@ def record_helpers(pid,started,path,seen):
             helpers=list(seen.values())),indent=2)+'\n');temp.replace(path)
 
 def usage(pid):
+    if not DARWIN:return _procfs_usage(pid)
     value=Usage()
     if LIB.proc_pid_rusage(pid,2,ctypes.byref(value)):
         raise ProcessLookupError(ctypes.get_errno(), 'Cannot sample process',pid)
