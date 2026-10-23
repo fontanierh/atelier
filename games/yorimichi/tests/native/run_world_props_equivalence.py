@@ -59,10 +59,16 @@ def main():
                  GAME/'tests/fixtures/world-props-predecessor-283329c07.txt',GAME/'tests/native/fbx_corners.py'))
     from atelier import mesh_ir,mesh_collision
     code.update((Path(mesh_ir.__file__),Path(mesh_collision.__file__)))
-    input_files=[*code,*donor_paths,*archive.iterdir(),*sources.iterdir(),*textures.iterdir()]
+    sky=GAME/'assets/props/skydome'
+    sky_files={key:sky/name for key,name in dict(packet='mesh.source.npz',provenance='provenance.json',fbx='source.fbx').items()}
+    provenance=json.loads(sky_files['provenance'].read_text())
+    if sha(sky_files['fbx'])!=provenance['original_export']['sha256']:
+        raise ValueError('Original SkyDome FBX control differs from its public provenance')
+    input_files=[*code,*donor_paths,*archive.iterdir(),*sources.iterdir(),*textures.iterdir(),*sky_files.values()]
     before=identities(input_files)
     spec=root/'spec.json';atomic_json(spec,dict(output=str(root/'products'),original=str(archive/'build_assets.py'),
-        textures=str(textures),sources={key:str(sources/(key+'.json')) for key in module.BUILDERS},inputs=before))
+        textures=str(textures),sources={key:str(sources/(key+'.json')) for key in module.BUILDERS},inputs=before,
+        skydome_authority={key:str(path) for key,path in sky_files.items()}))
     ctx=build.Context('yorimichi')
     command=build.Blender(fixture,('--spec',str(spec),'--sha256',sha(spec)),threads=3,factory_startup=True)
     print('World prop proof: frozen source and16 texture copies; submitting bounded original/selected comparison',flush=True)

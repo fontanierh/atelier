@@ -18,12 +18,22 @@ def main(argv=None):
     real_directory(args.source.parent)
     if args.source.is_symlink() or not args.source.is_file():raise ValueError('World prop source must be regular')
     value=json.loads(args.source.read_text())
-    if set(value)!={'schema','asset','builder','args','program','materials'} or value['schema']!=1:
+    fields={'schema','asset','builder','args','program','materials'}
+    if set(value)!=(fields|({'canonical_source'} if value.get('asset')=='SkyDome' else set())) or value['schema']!=1:
         raise ValueError('Incomplete selected prop source')
     bpy.ops.wm.read_factory_settings(use_empty=True);asset_mesh.MATS.clear()
     for key,spec in value['materials'].items():asset_mesh.mat(key,**spec)
-    scope={};exec(compile(value['program'],str(args.source),'exec'),scope)
-    obj=scope[value['builder']](value['asset'],*value['args'])
+    if value['asset']=='SkyDome':
+        import ast
+        from skydome_source import construct,reference
+        functions=[node for node in ast.parse(value['program']).body if isinstance(node,ast.FunctionDef)]
+        if (value['builder']!='sky_dome' or value['args'] or len(functions)!=1
+                or functions[0].name!='sky_dome' or reference(functions[0])!=value['canonical_source']):
+            raise ValueError('SkyDome selected constructor differs from its public source authority')
+        obj=construct(value['canonical_source'],asset_mesh.MATS)
+    else:
+        scope={};exec(compile(value['program'],str(args.source),'exec'),scope)
+        obj=scope[value['builder']](value['asset'],*value['args'])
     if obj.name!=value['asset']:raise ValueError('Prop constructor returned a different logical owner')
     triangles=sum(len(face.vertices)-2 for face in obj.data.polygons)
     if not 0<triangles<=TRIANGLE_LIMIT:

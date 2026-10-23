@@ -56,6 +56,9 @@ def project(text):
         program='import math, random\nimport bpy, bmesh\nfrom mathutils import Vector\nfrom asset_mesh import Mesh, MATS\n'+ast.unparse(function)+'\n'
         values[name]=dict(schema=1,asset=name,builder=builder,args=args,program=program,
                           materials={key:MATERIALS[key] for key in keys})
+        if name=='SkyDome':
+            from skydome_source import reference
+            values[name]['canonical_source']=reference(function)
     return values
 
 

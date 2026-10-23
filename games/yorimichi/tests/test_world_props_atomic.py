@@ -35,6 +35,29 @@ def test_unrelated_constructor_and_palette_edits_leave_other_packets_unchanged(m
     assert {key for key in original if original[key]!=edited[key]}=={'Rock_A','Rock_B','Rock_C'}
 
 
+def test_skydome_public_original_packet_is_exact_complete_and_explicitly_consumed(tmp_path):
+    from atelier import mesh_ir
+    root=GAME/'assets/props/skydome';provenance=json.loads((root/'provenance.json').read_text())
+    raw=(root/'mesh.source.npz').read_bytes();meta,piece=mesh_ir.decode(raw)
+    assert hashlib.sha256(raw).hexdigest()==provenance['packet']['sha256']=='59994b166caf603ace942ff7b8444c5bebe4a6a74f0e5939707551ac382dde73'
+    assert hashlib.sha256((root/'source.fbx').read_bytes()).hexdigest()==provenance['original_export']['sha256']
+    assert piece['triangles']==2208 and len(piece['faces'])==1152 and meta['slots']==['Sky']
+    values=SOURCES.project(OLD.read_text())
+    assert [key for key,row in values.items() if 'canonical_source' in row]==['SkyDome']
+    recipe=load('world_prop_canonical_recipe',GAME/'props_atomic_build.py')
+    steps=recipe.steps(SimpleNamespace(out=tmp_path.resolve()))
+    for step in steps:
+        if step.name.startswith('world.props.geometry.'):
+            if step.name.endswith('.SkyDome'):
+                assert root/'mesh.source.npz' in step.inputs and root/'provenance.json' in step.inputs
+            else:assert root/'mesh.source.npz' not in step.inputs and root/'provenance.json' not in step.inputs
+
+
+def test_changed_sphere_constructor_cannot_silently_keep_an_old_packet():
+    with pytest.raises(ValueError,match='constructor changed'):
+        SOURCES.project(OLD.read_text().replace('u_segments=48','u_segments=49'))
+
+
 def test_selected_birds_preserve_original_primitive_events_and_build_no_siblings():
     built=[]
     class Mesh:

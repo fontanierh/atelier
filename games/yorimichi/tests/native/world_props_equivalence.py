@@ -55,14 +55,31 @@ def main():
     finally:sys.argv=saved
     objects={obj.name:obj for obj in bpy.context.scene.objects if obj.type=='MESH'}
     assert set(objects)==set(BUILDERS),'Executed original export census differs'
-    original={}
+    original={};authority_observations={}
     for name,obj in objects.items():
         source=capture(obj.data);piece=subset(source,tuple(range(len(source['counts']))))
         payload=mesh_ir.encode(piece,key=name,slots=[slot.name for slot in source['slots']],
             matrix=[list(row) for row in obj.matrix_world],options={})
         meta,decoded=mesh_ir.decode(payload)
         packet=root/'baseline'/(name+'.npz');mesh_ir.write(packet,payload)
-        original[name]=dict(source=face_counter(meta,decoded),fbx=fbx_counter(yori.OUT/'assets'/(name+'.fbx')),
+        original_fbx=yori.OUT/'assets'/(name+'.fbx')
+        if name=='SkyDome':
+            # The original BMesh sphere itself varies by allocator/fan order.
+            # Compare to its public exact original source/FBX capture, never round
+            # or recompute either expected or current normals to obtain equality.
+            authority=spec['skydome_authority'];provenance=json.loads(Path(authority['provenance']).read_text())
+            frozen=Path(authority['packet']).read_bytes()
+            assert hashlib.sha256(frozen).hexdigest()==provenance['packet']['sha256']
+            original_fbx=Path(authority['fbx'])
+            assert sha(original_fbx)==provenance['original_export']['sha256']
+            frozen_meta,frozen_piece=mesh_ir.decode(frozen)
+            assert frozen_piece['triangles']==decoded['triangles']
+            authority_observations[name]=dict(fresh_original_source_equal=face_counter(meta,decoded)==face_counter(frozen_meta,frozen_piece),
+                source_authority_sha256=hashlib.sha256(frozen).hexdigest(),original_fbx_sha256=sha(original_fbx),
+                rationale=provenance['rationale'])
+            mesh_ir.write(root/'observed-original/SkyDome.npz',payload)
+            mesh_ir.write(packet,frozen);meta,decoded=frozen_meta,frozen_piece
+        original[name]=dict(source=face_counter(meta,decoded),fbx=fbx_counter(original_fbx),
                             triangles=decoded['triangles'])
     records={};export_files={}
     for index,name in enumerate(BUILDERS,1):
@@ -89,6 +106,7 @@ def main():
     assert identity(export_files.values())==before,'One edit touched unrelated canonical exports'
     assert identity(spec['inputs'])==spec['inputs'],'Frozen source/donor inputs changed'
     atomic_json(root/'result.json',dict(complete=True,assets=records,original_export_census=list(BUILDERS),
+        canonical_original_observations=authority_observations,
         one_piece_edit=True,unchanged_canonical_exports=len(before),inputs=spec['inputs'],
         scope='source attributes and serialized FBX ordered corner/material-name equality; no Unreal/cook/runtime acceptance'))
     print('WORLD PROPS ORIGINAL EQUIVALENCE COMPLETE',flush=True)

@@ -19,14 +19,17 @@ def steps(ctx):
     sources=load('world_selected_prop_sources',WORLD/'prop_sources.py')
     graph=load('world_prop_export_graph',GAME/'region_exports.py')
     source=ctx.out/'prop-source-data'
+    canonical=GAME/'assets/props/skydome'
     result=[Step('world.props.sources',[Python(WORLD/'prop_sources.py',('--output',str(source)))],
-        inputs=[*local_imports(WORLD/'prop_sources.py',(WORLD,)),WORLD/'build_assets.py'],
+        inputs=[*local_imports(WORLD/'prop_sources.py',(WORLD,)),WORLD/'build_assets.py',
+                canonical/'mesh.source.npz',canonical/'provenance.json'],
         products=[Product('props.source.'+key,(source/(key+'.json'),)) for key in sources.BUILDERS],cache=True)]
     assets=[]
     for key,value in sources.project(sources.SOURCE.read_text()).items():
         textures=[ctx.out/'textures'/spec['texture'] for spec in value['materials'].values() if spec.get('texture')]
         assets.append(graph.LogicalAsset(key,WORLD/'plan_world_prop.py',args=('--source',str(source/(key+'.json'))),
-            reads=('props.source.'+key,),inputs=tuple(textures),needs=('world.textures',) if textures else ()))
+            reads=('props.source.'+key,),inputs=tuple(textures)+((canonical/'mesh.source.npz',canonical/'provenance.json') if key=='SkyDome' else ()),
+            needs=('world.textures',) if textures else ()))
     result.extend(graph.steps(ctx,region='props',assets=assets))
     def assemble(ctx,log):
         root=ctx.out/'atomic_regions/props'
