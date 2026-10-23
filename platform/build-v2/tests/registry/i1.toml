@@ -1,0 +1,20 @@
+schema_version = 1
+
+[[scenarios]]
+id = "i1.controller-strict-request"
+tier = "t0"
+tests = ["atelier-build-v2::controller/strict_request_refuses_unknown_fields_and_unsupported_ops"]
+
+[[scenarios]]
+id = "i1.controller-readonly-preparation"
+tier = "t0"
+tests = ["atelier-build-v2::controller/prepare_plan_has_no_state_writes_and_uses_existing_worker_identity"]
+
+[[pending]]
+id = "i1.normal-course-first-warm-edit"
+task = "I1-min: real normal course target; requires C5c/Q3 and installer/reader ownership gates"
+
+[[scenarios]]
+id = "i1.controller-selected-source-scope"
+tier = "t0"
+tests = ["atelier-build-v2::controller/selected_source_capture_excludes_unrelated_units_without_weakening_global_structure"]

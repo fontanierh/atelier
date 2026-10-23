@@ -1,5 +1,6 @@
 """Committed racecourses must match both their schema and the actual venue surface."""
 import io
+import importlib.util
 import hashlib
 import json
 from pathlib import Path
@@ -15,6 +16,84 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'world'))
 import yori  # noqa: E402,F401
 from racing import courses  # noqa: E402
 from belmonte import source, planting  # noqa: E402
+
+
+def course_leaf():
+    path = courses.DATA.parent / 'stage_courses.py'
+    spec = importlib.util.spec_from_file_location('stage_courses', path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_course_leaf_preserves_original_bytes(tmp_path):
+    leaf = course_leaf()
+    original = courses.DATA.read_bytes()
+    # Valid noncanonical whitespace must survive just as it does under original copy2.
+    raw = b' \r\n' + original.replace(b'\n', b'\r\n') + b'\t\r\n'
+    course = tmp_path / 'input.json'
+    course.write_bytes(raw)
+    output = tmp_path / 'output' / 'belmonte_courses.json'
+
+    def destination(name):
+        assert name == 'belmonte_courses.json'
+        output.parent.mkdir()
+        return output
+
+    leaf.run(SimpleNamespace(input=lambda slot: {'courses': course, 'venue': courses.SCENE,
+                                                'surface': courses.surface_inputs()[0]}[slot],
+                             output=destination))
+    assert output.read_bytes() == raw
+    assert courses.load_bytes(raw) == courses.load()
+
+
+@pytest.mark.parametrize('bad', [b'{}', b'{broken json', b'[]',
+                                b'\xef\xbb\xbf{}', '{}'.encode('utf-16')])
+def test_invalid_course_leaf_never_requests_output(tmp_path, bad):
+    leaf = course_leaf()
+    course = tmp_path / 'input.json'
+    course.write_bytes(bad)
+    requested = []
+
+    def forbidden_output(name):
+        requested.append(name)
+        raise AssertionError('invalid preflight reached output staging')
+
+    with pytest.raises(ValueError):
+        leaf.run(SimpleNamespace(input=lambda slot: {'courses': course, 'venue': courses.SCENE,
+                                                    'surface': courses.surface_inputs()[0]}[slot],
+                                 output=forbidden_output))
+    assert requested == []
+    assert sorted(p.name for p in tmp_path.iterdir()) == ['input.json']
+
+
+def test_course_declaration_is_pure_complete_and_independent(monkeypatch):
+    recipe_path = courses.DATA.parents[2] / 'build_v2.py'
+    spec = importlib.util.spec_from_file_location('yorimichi_build_v2', recipe_path)
+    recipe = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(recipe)
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError('declaration discovery touched filesystem state')
+
+    with monkeypatch.context() as patch:
+        patch.setattr(Path, 'read_bytes', forbidden)
+        patch.setattr(Path, 'read_text', forbidden)
+        patch.setattr(Path, 'mkdir', forbidden)
+        first = recipe.declaration()
+        second = recipe.declaration()
+    unit = first['units'][0]
+    assert unit['id'] == 'data.stage.racing_courses'
+    assert unit['params'] == {}
+    assert {i['source']['path'] for i in unit['inputs']} == {
+        str(p.relative_to(courses.GAME.parents[1])) for p in [courses.DATA, courses.SCENE, *courses.surface_inputs()]}
+    assert set(unit['code']) == set(recipe.COURSE_CODE)
+    assert unit['outputs'][0]['files'] == [{
+        'path': 'belmonte_courses.json',
+        'install_path': 'games/yorimichi/unreal/Content/Data/racing/belmonte_courses.json'}]
+    unit['code'].clear()
+    assert second['units'][0]['code']
+    assert recipe.staged_inputs()['surface'] == 'inputs/venue/meshes/SM_BM_BHip_Course.glb'
 
 
 def test_committed_lap_lengths_and_finish():

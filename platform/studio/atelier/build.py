@@ -29,6 +29,7 @@ from .build_products import Product
 from .build_deferred import DeferredInputs
 from .build_spatial import BBoxQuery
 from .build_cook import CookMode
+from .build_v2.controller_recipe import ControllerTarget, validate_markers
 from .play_limits import GAME_GIB, GAME_MAX_GIB
 from atelier.harness.safety import guarded
 from atelier.harness.safety.render_lock import GiB, slot_count
@@ -439,6 +440,7 @@ class Step:
     checkpoint_outputs: tuple = field(default=(), repr=False)  # complete additional output roots, never representative samples
     candidate_scope: object = field(default=None, repr=False, compare=False)  # generic compatibility candidates; native validation still required
     replan: bool = field(default=False, kw_only=True)  # reload recipe after a completed source planner
+    controller: ControllerTarget | None = field(default=None, kw_only=True)  # explicit Rust-owned execution, never a v1 stamp
 
 
 def outputs_present(step):
@@ -457,6 +459,8 @@ def check_source_launch(steps):
     tool-context inventory. This declaration check MUST NOT add fingerprint
     fields or change command representations.
     """
+    steps = tuple(steps)
+    validate_markers(steps, paths.REPO)
     for step in steps:
         if type(getattr(step, 'replan', False)) is not bool or (getattr(step, 'replan', False) and (not step.products or not step.commands
                 or any(not isinstance(c, (Call, Python, Blender)) for c in step.commands))):
@@ -628,6 +632,8 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, 
     input bytes and named (Merkle) fingerprints MUST compute directly. The value MUST be exactly
     what the direct computation returned.
     """
+    if step.controller is not None:
+        raise ValueError(f'{step.name}: controller-owned step cannot use v1 fingerprint or stamp dispatch')
     named = bool(step.products or step.reads or step.references)
     if index is None or named or _input_bytes or getattr(index, 'verify', False):
         return _fingerprint_state(step, done, capture=capture, index=index, tool_cache=tool_cache,
