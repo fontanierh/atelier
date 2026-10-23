@@ -26,3 +26,24 @@ def test_complete_village_owner_is_on_actual_world_and_staging_paths(tmp_path):
     assert owner.candidate_scope.directories == products['village.native_meshes'].paths
     assert all(getattr(command, 'script', None) != GAME/'world/regions/village/build.py'
                for step in selected for command in step.commands)
+
+
+def test_selected_regions_query_before_exports_and_publish_native_products(tmp_path):
+    ctx = SimpleNamespace(game='yorimichi', out=tmp_path.resolve(), logs=tmp_path/'logs',
+                          stamps=tmp_path/'stamps', uproject=None)
+    steps = build.load_recipe('yorimichi').steps(ctx)
+    by_name = {step.name: step for step in steps}
+    build.order(steps, ['world.hippodrome', 'world.zeppelin', 'world.skatepark', 'unreal.hippodrome'])
+    assert len([s for s in steps if s.name.startswith('world.hippodrome.geometry.')]) == 10
+    assert len([s for s in steps if s.name.startswith('world.zeppelin.geometry.')]) == 10
+    assert len([s for s in steps if s.name.startswith('world.skatepark.geometry.')]) == 7
+    assert len([s for s in steps if s.name.startswith('world.skatepark_board.geometry.')]) == 3
+    for name in ('world.hippodrome.queries', 'world.zeppelin.query.ZP_MegaPark'):
+        query = by_name[name]
+        assert 'world.layout' in query.needs
+        assert {ctx.out/'heightmap.npy',ctx.out/'farhills.npy',ctx.out/'megapark/trail.json'} <= set(query.inputs)
+        assert not any('export.' in product for product in query.reads)
+    assert by_name['unreal.hippodrome'].reads == ['hippodrome.region']
+    native = by_name['unreal.hippodrome'].products[0]
+    assert ctx.out/'hippodrome/import-report.json' in native.paths
+    assert ctx.out/'hippodrome/region/import-report.json' not in native.paths

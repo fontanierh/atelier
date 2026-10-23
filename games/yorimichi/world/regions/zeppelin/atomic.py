@@ -1,6 +1,11 @@
 """Independent Zeppelin constructors, bounded exports and file-only compatibility assembly."""
 import json
 from pathlib import Path
+import sys
+
+GAME=Path(__file__).resolve().parents[3]
+sys.path.insert(0,str(GAME));sys.path.insert(0,str(GAME/"world"))
+import yori  # noqa: E402,F401
 from atelier.atomic_files import atomic_json
 from atelier.build import Step,Product,Python,Call
 from atelier.build_inputs import local_imports

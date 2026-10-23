@@ -201,5 +201,5 @@ native_membership.retire(E,previous_meshes,[entry['name'] for entry in data['mes
 reuse.finish()
 DATA.mkdir(parents=True, exist_ok=True)
 shutil.copy2(OUT / 'hippodrome.json', DATA / 'hippodrome.json')
-(OUT / 'import-report.json').write_text(json.dumps(result, indent=1) + '\n')
+(OUT.parent / 'import-report.json').write_text(json.dumps(result, indent=1) + '\n')
 unreal.log(f'HIPPODROME IMPORT COMPLETE: {len(result)} meshes')

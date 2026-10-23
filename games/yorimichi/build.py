@@ -751,18 +751,18 @@ def adventure_steps(out):
     ]
 
 
-def hippodrome_steps(out):
+def hippodrome_steps(ctx):
     """The Hidamari Hippodrome (docs/HIPPODROME.md): the racecourse north of the city, built without Blender."""
+    out=ctx.out
     region = REGIONS / 'hippodrome'
     return [
-        Step('world.hippodrome', [Python(region / 'build.py')],
-             inputs=[region, ASSETS / 'hippodrome' / 'props', REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari_stable' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK, REGIONS / 'forest/ecotone.py', REGIONS / 'forest/specs.py',
-                     *NORTH_LAYOUT],
-             needs=['world.layout', 'world.treehouse_trees.data'], outputs=[out / 'hippodrome' / 'region' / 'hippodrome.json'],
-             about='hippodrome course meshes (platform, skirt, track, rails, lane), its Tripo structures and venue data'),
+        *_load_helper_module('yorimichi_hippodrome_atomic',region/'atomic.py').steps(
+            ctx,query_inputs=northern_query_inputs(out),query_needs=['world.layout','world.treehouse_trees.data']),
         digest_step(out, 'world.hippodrome', 'meshes', 'what unreal.hippodrome reads of the course', out / 'hippodrome', ['region']),
         Step('unreal.hippodrome', [UnrealScript(SCRIPTS / 'import_hippodrome.py', 'HIPPODROME IMPORT COMPLETE', null_rhi=True)],
-             inputs=[SCRIPTS / 'import_hippodrome.py'], needs=['world.hippodrome.meshes', 'unreal.world'], heavy=True,
+             inputs=[SCRIPTS / 'import_hippodrome.py'], needs=['unreal.world'], reads=['hippodrome.region'], heavy=True,
+             products=[Product('hippodrome.native',(GAME/'unreal/Content/Hippodrome',out/'hippodrome/import-report.json'))],
+             candidate_scope=CandidateScope(directories=(GAME/'unreal/Content/Hippodrome',)),
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'hippodrome' / 'hippodrome.json'],
              about='/Game/Hippodrome: the course meshes with collision, and the data AHippodrome places them from'),
         *hidamari_stable_steps(out),
@@ -811,6 +811,17 @@ def belmonte_train_corridor(out):
     unconditional inputs of the terrain and planting steps."""
     return [WORLD / 'train' / 'corridor.py', WORLD / 'train' / 'earthworks.py', WORLD / 'train' / 'station_site.py',
             ASSETS / 'vehicles' / 'belmonte-train' / 'line.json']
+
+
+def northern_query_inputs(out):
+    """Complete read closure of the original final terrain query, before mesh exports."""
+    return [out/'world.json',out/'heightmap.npy',out/'farhills.npy',out/'megapark/trail.json',
+            *([out/'craterpark/v2/geometry.npz'] if craterpark_v4.selected() else []),
+            *CRATERPARK,*craterpark_v4.input_paths(),*belmonte_train_corridor(out),
+            ASSETS/'belmonte/source.json',
+            *(ASSETS/'belmonte'/entry['path'] for entry in _read_json(ASSETS/'belmonte/source.json')['meshes']
+              if entry['name'].startswith('SM_BM_BT_Terrain_')),
+            ASSETS/'megapark/map.json',ASSETS/'megapark/geometry',ASSETS/'megapark/collision']
 
 
 def brinecove_source_step(out):
@@ -1084,20 +1095,8 @@ def world_steps(ctx):
         *brinecove_model_steps(out),
         *_load_helper_module('yorimichi_brinecove_atomic', GAME / 'brinecove_atomic_build.py').steps(ctx),
         *brinecove_steps(out)[:2],
-        # Zeppelin samples layout products and shared terrain code, not Hidamari's exported city/assets.
-        # Keep the old build order; track tree metadata read by the imported treehouse layout directly.
-        Step('world.zeppelin', [Blender(REGIONS / 'zeppelin' / 'build.py', threads=2)],
-             # The Hidamari path follows HD_Terrain as built (layout height, railway earthworks, apron pad).
-            inputs=[REGIONS / 'zeppelin', REGIONS / 'village' / 'mesh.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK,
-                     REGIONS / 'hidamari' / 'layout.py', *belmonte_train_corridor(out),
-                     REGIONS / 'belmonte' / 'layout.py', REGIONS / 'belmonte' / 'source.py', REGIONS / 'belmonte' / 'terrain.py',
-                     ASSETS / 'belmonte' / 'source.json',
-                     *(ASSETS / 'belmonte' / entry['path'] for entry in _read_json(ASSETS / 'belmonte/source.json')['meshes']
-                       if entry['name'].startswith('SM_BM_BT_Terrain_')),
-                     REGIONS / 'megapark' / 'gate.py', ASSETS / 'megapark' / 'map.json',
-                     ASSETS / 'megapark' / 'geometry', ASSETS / 'megapark' / 'collision'],
-             needs=['world.layout', 'world.treehouse_trees.data'], after=['world.hidamari'],
-             outputs=[out / 'zeppelin' / 'manifest.json'], about='airship and its four stations', heavy=True),
+        *_load_helper_module('yorimichi_zeppelin_atomic',REGIONS/'zeppelin/atomic.py').steps(
+            ctx,query_inputs=northern_query_inputs(out),query_needs=['world.layout','world.treehouse_trees.data']),
         digest_step(out, 'world.zeppelin', 'meshes', 'the zeppelin meshes unreal.world reads', out / 'zeppelin', ['manifest.json', 'assets']),
         Step('world.hidamari_textures', [Python(TOOLS / 'hidamari_textures.py', ('finish',))],
              inputs=[TOOLS / 'hidamari_textures.py', TOOLS / 'treehouse_textures.py', ASSETS / 'hidamari' / 'textures'],
@@ -1155,16 +1154,7 @@ def world_steps(ctx):
                      ASSETS / 'skatepark' / 'textures', ASSETS / 'megapark' / 'restyle' / 'stone_cut.jpg'],
              products=[Product('skatepark.textures', (out / 'skatepark/textures',))], cache=True,
              about='Sunburst pier material maps (offline; no paid calls)'),
-        Step('world.skatepark', [Blender(REGIONS / 'skatepark' / 'build.py', threads=3)],
-             inputs=[*sorted((REGIONS / 'skatepark').glob('*.py')), REGIONS / 'skatepark/park.json', ASSETS / 'skatepark' / 'modules.json',
-                     ASSETS / 'skatepark' / 'modules', WORLD / 'mesh_pieces.py',
-                     paths.STUDIO / 'atelier/mesh_cells.py', paths.STUDIO / 'atelier/mesh_partition.py', *VILLAGE_LAYOUT],
-             needs=['world.layout'], reads=['skatepark.textures'],
-             products=[Product('skatepark.meshes', (out / 'skatepark/assets', out / 'skatepark/board',
-                                                  out / 'skatepark/build-report.json')),
-                       Product('skatepark.runtime', (out / 'skatepark/runtime-park.json',)),
-                       Product('skatepark.queries', (out / 'skatepark/collision.json',))],
-             heavy=True, about='bounded skate pier meshes, complete logical riding queries and board'),
+        *_load_helper_module('yorimichi_skate_atomic',GAME/'skatepark_atomic_build.py').steps(ctx),
         Step('world.sailboat', [Blender(ASSETS / 'vehicles' / 'sailboat' / 'build.py', threads=4)],
              inputs=[ASSETS / 'vehicles' / 'sailboat', REGIONS / 'village' / 'build.py'],
              outputs=[out / 'sailboat' / 'manifest.json'], about='the dinghy', heavy=True),
@@ -1964,7 +1954,7 @@ def steps(ctx):
     result = (world_steps(ctx) + character_steps(ctx) + sound_effect_steps(ctx)
               + [step for step in ferry if not step.name.startswith('unreal.')]
               + [step for step in gondola if not step.name.startswith('unreal.')]
-              + unreal_steps(ctx) + staging_steps(ctx) + adventure_steps(ctx.out) + hippodrome_steps(ctx.out) + belmonte_steps(ctx.out)[3:]
+              + unreal_steps(ctx) + staging_steps(ctx) + adventure_steps(ctx.out) + hippodrome_steps(ctx) + belmonte_steps(ctx.out)[3:]
               + brinecove_steps(ctx.out)[2:] + [step for step in ferry if step.name.startswith('unreal.')]
               + [step for step in gondola if step.name.startswith('unreal.')])
     result += fit_steps(ctx.out, result)
