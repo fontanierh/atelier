@@ -126,7 +126,7 @@ def replacements(data, ground=None):
 
 def woodland(surface, limit=17000):
     """Detailed leaf trees in clustered woodland on the connecting collar."""
-    from . import terrain
+    from . import terrain_bounds as terrain
     rng = np.random.default_rng(941)
     x, y = np.meshgrid(np.arange(terrain.OUTER[0] + 8., terrain.OUTER[2], 6.),
                        np.arange(terrain.OUTER[1] + 8., terrain.OUTER[3], 6.))

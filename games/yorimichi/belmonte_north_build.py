@@ -101,7 +101,10 @@ def steps(ctx):
                 products=[Product('belmonte.north.natural.'+owner,(target,)),Product('belmonte.natural_surface.'+owner,(query,))]
             else:
                 args.extend(('--palette',str(ctx.out/'belmonte-query-data/BelmonteValleyColours-natural.npz')))
-                reads.append('belmonte.valley_colours');products=[Product('belmonte.final_surface.'+owner,(target,))]
+                query=ctx.out/'belmonte-query-data'/(owner+'-final.npz')
+                args.extend(('--surface-query',str(query)))
+                reads.append('belmonte.valley_colours');products=[Product('belmonte.final_surface.'+owner,(target,)),
+                    Product('belmonte.query.'+owner,(query,))]
             result.append(Step('world.belmonte.north.'+stage+'.'+owner,[Python(pipeline,tuple(args))],
                 inputs=[*code(pipeline),line],reads=reads,products=products,cache=True,heavy=True,
                 about='independent '+stage+' source '+owner))

@@ -56,10 +56,12 @@ def boundary(args):
 
 def one(args):
     if args.owner not in OWNERS or len(args.input)!=1:raise ValueError('Terrain stage requires one explicit owner')
-    for path in (args.output,*([args.query] if args.query is not None else [])):
+    for path in (args.output,*([args.query] if args.query is not None else []),
+                 *([args.surface_query] if args.surface_query is not None else [])):
         real_directory(path.parent)
         if path.is_symlink() or path.exists() and not path.is_file():raise ValueError('Terrain stage outputs must be regular')
     owner=args.owner;mesh=mesh_data.read(args.input[0],owner=owner)
+    if args.surface_query is not None and args.mode!='final':raise ValueError('Final query arrays require the final terrain stage')
     if args.mode in ('natural','final'):
         if args.seam is None:raise ValueError('Terrain finishing requires its consumed seam projection')
         mesh=seam_data.apply(mesh,seam_data.read(args.seam,owner=owner),owner=owner)
@@ -85,6 +87,8 @@ def one(args):
     entry=dict(name=owner,path='glb/'+owner+'.glb',sha256=hashlib.sha256(data).hexdigest(),
                triangles=info['triangles'],bounds_m=[info['min'],info['max']],slots=['Ground'])
     surface_data.write(args.query if args.mode=='natural' else args.output,entry,data,stage=args.mode)
+    if args.mode=='final' and args.surface_query is not None:
+        query_arrays.write(args.surface_query,source.Surface(source.triangles_data(data)).faces,owner=owner,stage='final')
     print('BELMONTE TERRAIN SOURCE COMPLETE',args.mode,owner,entry['triangles'],flush=True)
 
 
@@ -94,6 +98,7 @@ def main(argv=None):
     parser.add_argument('--owner',choices=OWNERS)
     parser.add_argument('--input',type=Path,action='append',required=True)
     parser.add_argument('--seam',type=Path);parser.add_argument('--palette',type=Path);parser.add_argument('--query',type=Path)
+    parser.add_argument('--surface-query',type=Path)
     parser.add_argument('--output',type=Path,required=True)
     args=parser.parse_args(argv)
     if args.mode=='boundary':boundary(args)

@@ -9,7 +9,7 @@ import yori  # noqa: E402,F401
 import numpy as np  # noqa: E402
 from atelier.atomic_files import atomic_json  # noqa: E402
 from atelier.export_manifest import real_directory  # noqa: E402
-from belmonte import source  # noqa: E402
+from belmonte.terrain_palette import TERRAIN_LAYERS  # noqa: E402
 from belmonte.model_sources import entry  # noqa: E402
 from belmonte.ground_pieces import placements  # noqa: E402
 
@@ -27,7 +27,7 @@ def project(value):
             material=value['materials'][key];vectors=material['vectors']
             tint=np.asarray(vectors.get('Tint',[1.,1.,1.])[:3])*vectors.get('StableColor',[1.,1.,1.])[:3]
             if tint.shape!=(3,) or not np.isfinite(tint).all():raise ValueError('Invalid effective terrain tint')
-            palettes.append([list(map(list,source.TERRAIN_LAYERS.values())),
+            palettes.append([list(map(list,TERRAIN_LAYERS.values())),
                              (tint*material['scalars'].get('Brightness',1.)).tolist()])
         result.append(dict(name=current['name'],path=current['path'],sha256=current['sha256'],palettes=palettes))
     if len(result)!=56:raise ValueError('Incomplete terrain palette source roster')

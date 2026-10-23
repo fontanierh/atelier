@@ -5,11 +5,11 @@ from functools import lru_cache
 import numpy as np
 from belmonte import layout as L, source
 from belmonte.ground_names import VALLEY_CARVED_TILES
+from belmonte.terrain_bounds import OUTER
 from hidamari import layout as H
 from hippodrome.build import Mesh
 import shorelines
 
-OUTER = (L.BOUNDS[0] - L.APRON, L.SOUTH_JOIN, L.BOUNDS[2] + L.APRON, L.BOUNDS[3] + L.APRON)
 # The country runs out to sea NORTH_SHIFT metres further north than it first did, keeping its distance from the valley.
 SEA = 6500. + L.NORTH_SHIFT
 COUNTRY = (-3200., L.SOUTH_JOIN, 3200., SEA)
