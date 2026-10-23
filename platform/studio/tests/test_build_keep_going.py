@@ -122,3 +122,27 @@ def test_checkpoint_builds_publish_finished_steps_whatever_stops_them(tmp_path, 
     from atelier.checkpoint_manifest import folder
     assert (folder(ctx.out) / 'tasks/mesh.json').is_file()  # Retention record for the finished step.
     assert messages[-1].startswith('2 steps, 1 ran, 0 restored, 0 up to date, ')
+
+
+def test_a_current_certificate_without_its_stamp_file_is_written_back(project, monkeypatch):
+    """A migrated or otherwise recovered current certificate must land on disk: the cook reads stamp files."""
+    from atelier import build_plan
+    p = project
+    assert p.run() == 0
+    stamp = p.ctx.stamps / 'independent.json'
+    saved = json.loads(stamp.read_text())
+    stamp.unlink()
+    real = build_plan.read_stamp
+    served = []
+
+    def recovered(path):
+        if path == stamp and not served:  # The certificate arrives from elsewhere, as a migration would supply it.
+            served.append(path)
+            return dict(saved)
+        return real(path)
+
+    monkeypatch.setattr(build_plan, 'read_stamp', recovered)
+    p.ran.clear(); p.messages.clear()
+    assert p.run() == 0
+    assert 'independent' not in p.ran
+    assert json.loads(stamp.read_text()) == saved
