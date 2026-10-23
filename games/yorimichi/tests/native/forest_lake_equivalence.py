@@ -88,6 +88,7 @@ def main(argv=None):
     parser.add_argument('--donor',type=Path,required=True)
     parser.add_argument('--donor-head',required=True)
     parser.add_argument('--baseline',default='283329c07')
+    parser.add_argument('--forest-textures',type=Path,required=True)
     parser.add_argument('--output',type=Path,required=True)
     args=parser.parse_args(argv if argv is not None else sys.argv[sys.argv.index('--')+1:])
     repo=GAME.parents[1]
@@ -102,7 +103,13 @@ def main(argv=None):
     donor=args.donor/'build/yorimichi'
     files=[donor/'heightmap.npy',donor/'world.json']
     files.extend(donor/'textures'/value['texture'] for value in MATERIALS.values() if 'texture' in value)
-    files.extend(donor/'forest/textures'/('T_'+args_[-1]+'.png') for args_ in TUSCAN.values())
+    files.append(donor/'forest/textures/textures.json')
+    atlas_report=json.loads(files[-1].read_text())
+    atlases=[args.forest_textures/('T_'+args_[-1]+'.png') for args_ in TUSCAN.values()]
+    atlas_before=snapshot(atlases+[args.forest_textures/'proof.json'])
+    for path in atlases:
+        if sha(path)!=atlas_report[path.stem.removeprefix('T_')]['sha256']:
+            raise ValueError('Private canonical atlas differs from retained donor report')
     before=snapshot(files)
     current_scripts=[GAME/'world/plan_forest_tree.py',GAME/'world/bake_forest_tree.py',
         GAME/'world/assemble_forest.py',GAME/'world/regions/forest_lake/plan_asset.py',
@@ -111,11 +118,14 @@ def main(argv=None):
     closure=set(current_scripts)
     for script in current_scripts:closure.update(local_imports(script,(GAME/'world',GAME/'world/regions')))
     closure.update((GAME/'assets/forest/export-parameters').glob('*.json'))
+    closure.add(GAME/'tools/forest_textures.py')
+    closure.update(GAME/'assets/environment/textures'/('leaf-'+name+suffix)
+        for name in ('olive','oak','cypress','pine') for suffix in ('.jpg','.provenance.json'))
     source_before=snapshot(list(closure))
     args.output.mkdir()
     baselines=args.output/'baselines';baselines.mkdir()
     immutable={}
-    legacy=('world/build_forest.py','world/asset_mesh.py','world/forest_trees.py','world/forest_impostors.py',
+    legacy=('tools/forest_textures.py','world/build_forest.py','world/asset_mesh.py','world/forest_trees.py','world/forest_impostors.py',
         'world/far_crown.py','world/material_specs.py','world/regions/forest/specs.py',
         'world/regions/forest_lake/build.py','world/regions/forest_lake/details.py',
         'world/regions/forest_lake/layout.py','world/regions/village/mesh.py','world/regions/village/layout.py')
@@ -134,6 +144,9 @@ def main(argv=None):
             destination=root/path.relative_to(donor);destination.parent.mkdir(parents=True,exist_ok=True)
             copy_file(path,destination)
             if sha(path)!=sha(destination):raise ValueError('Diagnostic source copy differs')
+    for root in (old,new):
+        folder=root/'forest/textures';folder.mkdir(parents=True,exist_ok=True)
+        for path in atlases:copy_file(path,folder/path.name)
     import asset_mesh as A
     original_mesh=A.Mesh
     yori.OUT=old;yori.TEXTURES=old/'textures';A.TEX=str(yori.TEXTURES)
@@ -200,10 +213,12 @@ def main(argv=None):
         results[name]=compare(old/'forest_lake/assets'/(name+'.fbx'),children)
         print('LAKE FULL CONSERVATION',name,flush=True)
     assemble_graph(GAME/'lake_atomic_build.py','lake',new);assemble.main(['--out',str(new)])
+    if snapshot(atlases+[args.forest_textures/'proof.json'])!=atlas_before:
+        raise ValueError('Canonical private atlas inputs changed during diagnostic')
     if snapshot(files)!=before or revision(args.donor)!=args.donor_head:raise ValueError('Donor changed during diagnostic')
     if snapshot(list(closure))!=source_before or revision(repo)!=source_head:raise ValueError('Current source changed during diagnostic')
     value=dict(schema=1,complete=True,source_head=source_head,baseline_revision=args.baseline,
-        baseline_files=immutable,donor_head=args.donor_head,donor_inputs=before,current_source=source_before,
+        baseline_files=immutable,donor_head=args.donor_head,donor_inputs=before,canonical_atlases=atlas_before,current_source=source_before,
         exports=results,images=image_results,forest_metadata_equal=True,
         scope='exported corner/channel/frame/hull and impostor/query metadata conservation; native receiving separate')
     atomic_json(args.output/'result.json',value)
