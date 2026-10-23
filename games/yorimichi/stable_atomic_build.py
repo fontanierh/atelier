@@ -29,7 +29,7 @@ def steps(ctx):
         '--query-output', str(query), '--data-root', str(ctx.out)))],
         inputs=[*local_imports(REGION / 'atomic_sources.py', (WORLD, REGIONS)),
                 GAME / 'assets/hidamari-stable/construction-contexts.json', *(ctx.out / name for name in query_names)],
-        needs=['world.layout', 'world.treehouse_trees', 'world.craterpark_geometry'], cache=True,
+        needs=['world.layout', 'world.treehouse_trees.data', 'world.craterpark_geometry'], cache=True,
         products=[*[Product('stable.source.' + key, (source / (key + '.json'),)) for key in catalogue.SOURCES],
                   Product('stable.query.sources', (query,))],
         about='selected original Stable random contexts; committed disabled policy refuses normal generation')

@@ -765,38 +765,35 @@ def hippodrome_steps(ctx):
              candidate_scope=CandidateScope(directories=(GAME/'unreal/Content/Hippodrome',)),
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'hippodrome' / 'hippodrome.json'],
              about='/Game/Hippodrome: the course meshes with collision, and the data AHippodrome places them from'),
-        *hidamari_stable_steps(out),
+        *hidamari_stable_steps(ctx),
     ]
 
 
-def hidamari_stable_steps(out):
-    """Henry's racing stable east of the hippodrome (world/regions/hidamari_stable/README.md): the Blender model, its
-    control renders and the Unreal import. All three steps are explicit, so plain builds skip them."""
+def hidamari_stable_steps(ctx):
+    """Explicit disabled Stable: independent semantic/LOD exports and complete native ownership."""
+    out = ctx.out
     region = REGIONS / 'hidamari_stable'
     root = out / 'hidamari-stable'
-    kit = [REGIONS / 'village' / 'mesh.py', REGIONS / 'village' / 'layout.py', REGIONS / 'hidamari' / 'arcade.py',
-           REGIONS / 'hidamari' / 'kit' / 'kawara.py', REGIONS / 'hidamari' / 'kit' / '_lettering.py',
-           REGIONS / 'hidamari' / 'fonts' / 'NotoSansJP.ttf']
+    catalogue = _load_helper_module('stable_central_catalogue', region / 'catalogue.py')
     return [
-        Step('world.hidamari_stable', [Blender(region / 'build.py', threads=3)],
-             inputs=[region / 'build.py', region / 'layout.py', *kit, REGIONS / 'hippodrome' / 'layout.py',
-                     REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK,
-                     REGIONS / 'forest/ecotone.py', REGIONS / 'forest/specs.py', *NORTH_LAYOUT, YORI],
-             needs=['world.layout', 'world.treehouse_trees.data'], heavy=True, explicit=True,
-             outputs=[root / 'hidamari-stable.blend', root / 'placements.json', root / 'manifest.json',
-                      *(root / 'glb' / f'SM_HS_{m}_LOD{k}.glb' for m in ('Stable', 'StallDoor', 'RoomDoor') for k in (0, 1, 2)),
-                      *(root / 'glb' / f'SM_HS_{m}.glb' for m in ('Ground', 'Road', 'RoadSign')), root / 'glb' / 'SM_HS_Stable_Collision.glb'],
-             about='Hidamari stable: barn (10 stalls, tack room, office), gate, yard, paddock; LOD0-2, collision, placements'),
-        Step('world.hidamari_stable_review', [Blender(region / 'render.py', threads=3)],
-             inputs=[region / 'render.py', region / 'layout.py', REGIONS / 'hippodrome' / 'layout.py'],
-             needs=['world.hidamari_stable', 'world.hippodrome'], heavy=True, explicit=True,
+        *_load_helper_module('stable_central_atomic', GAME / 'stable_atomic_build.py').steps(ctx),
+        Step('world.hidamari_stable_review', [Blender(region / 'render.py', threads=3, factory_startup=True)],
+             inputs=[*local_imports(region / 'render.py', (WORLD, REGIONS, paths.STUDIO)), *northern_query_inputs(out)],
+             needs=['world.hippodrome', 'world.layout', 'world.treehouse_trees.data', 'world.craterpark_geometry'],
+             reads=['stable.runtime', *('hidamari_stable.geometry.' + key for key in catalogue.SOURCES)],
+             heavy=True, explicit=True,
              outputs=[root / 'review' / f'{v}.png' for v in ('road', 'gate', 'front', 'three_quarter', 'aerial', 'aisle', 'plan', 'lod1', 'lod2')],
-             about='Hidamari stable control renders: road from the street, front, three-quarter, aerial, interior aisle'),
-        Step('unreal.hidamari_stable', [UnrealScript(SCRIPTS / 'import_hidamari_stable.py', 'HIDAMARI STABLE IMPORT COMPLETE', null_rhi=True)],
-             inputs=[SCRIPTS / 'import_hidamari_stable.py'], needs=['world.hidamari_stable', 'unreal.world'],
+             about='explicit control renders from complete atomic source packets, without a combined export'),
+        Step('unreal.hidamari_stable', [UnrealScript(SCRIPTS / 'import_hidamari_stable.py', 'HIDAMARI STABLE IMPORT COMPLETE', null_rhi=True, modules=IMPORT_CODE)],
+             inputs=[*local_imports(SCRIPTS / 'import_hidamari_stable.py', (SCRIPTS, WORLD, REGIONS)),
+                     GAME / 'stable_atomic_products.py'],
+             needs=['unreal.world', *unreal_modules.needs(IMPORT_CODE)],
+             reads=['stable.meshes', 'stable.runtime', 'hidamari_stable.atomic'],
              after=['unreal.compile'], heavy=True, explicit=True,
-             outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'hidamari_stable' / 'stable.json', root / 'import-report.json'],
-             about='/Game/HidamariStable: the stable (3 LODs, box collision), door leaves, pad, road and sign, AHidamariStable data'),
+             products=[Product('stable.native', (GAME / 'unreal/Content/HidamariStable',
+                 GAME / 'unreal/Content/Data/hidamari_stable/stable.json', root / 'import-report.json'))],
+             candidate_scope=CandidateScope(directories=(GAME / 'unreal/Content/HidamariStable',)),
+             about='complete separate Stable assets, coordinated LODs, original boxes and combined old-parent retirement'),
     ]
 
 
@@ -1808,13 +1805,7 @@ def gondola_steps(ctx):
     kit = ASSETS / 'vehicles/gondola'
     parameters = _load_helper_module('gondola_parameters', kit / 'params.py')
     folder = ctx.out / 'gondola'
-    files = [folder / name for name in parameters.product_files()]
-    result = [Step('world.gondola_kit', [Blender(kit / 'build.py', threads=3, factory_startup=True,
-                    env=(('GONDOLA_PIECES', 'cabin,towers,valley,rim,crater'),
-                         ('GONDOLA_PARAMS', ''), ('GONDOLA_SOFT_FAIL', '')))],
-                 inputs=sorted(set(local_imports(kit / 'build.py') + [kit / name for name in parameters.BUILD_SOURCES] + [WORLD/'walk_raster.py'])),
-                 products=[Product('gondola.kit', tuple(files))], heavy=True, cache=True,
-                 about='ropeway cabin, all tower heights and stations: closure, contact, level-floor and walk gates')]
+    result = _load_helper_module('gondola_central_atomic', GAME / 'gondola_atomic_build.py').kit_steps(ctx)
 
     query = WORLD / 'gondola/inputs.py'
     queries = _load_helper_module('gondola_world_inputs', query)

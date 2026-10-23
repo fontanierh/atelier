@@ -1,10 +1,10 @@
 """Production preparation keeps diagnostic overrides out of shipped kit data."""
 from types import SimpleNamespace
 from pathlib import Path
+import ast
 
 from atelier import build
 from atelier.build_inputs import validate_imports
-from atelier.build_source import environment
 
 
 def test_normal_kit_preparation_cannot_inherit_partial_or_soft_failure_modes(monkeypatch, tmp_path):
@@ -12,15 +12,24 @@ def test_normal_kit_preparation_cannot_inherit_partial_or_soft_failure_modes(mon
     monkeypatch.setenv('GONDOLA_SOFT_FAIL','1')
     monkeypatch.setenv('GONDOLA_PARAMS','diagnostic-parameters.json')
     recipe = build.load_recipe('yorimichi')
-    step = next(s for s in recipe.gondola_steps(SimpleNamespace(out=tmp_path)) if s.name=='world.gondola_kit')
-    command, = step.commands
-    env = environment(command.env)
-    assert set(env['GONDOLA_PIECES'].split(',')) == {'cabin','towers','valley','rim','crater'}
-    assert not env['GONDOLA_SOFT_FAIL'] and not env['GONDOLA_PARAMS']
-    assert step.heavy and command.threads == 3 and command.factory_startup
-    products = {p.name:p for p in step.products}
-    assert 'gondola.kit' in products and step.cache
-    validate_imports(step, step.inputs)
+    rows = {s.name:s for s in recipe.gondola_steps(SimpleNamespace(out=tmp_path))}
+    sources, audit, assembled = (rows['world.gondola_kit.sources'],
+        rows['world.gondola_kit.audit'], rows['world.gondola_kit'])
+    for step in (sources, audit):
+        command, = step.commands
+        assert step.cache and step.heavy and command.threads == 3 and command.factory_startup
+        validate_imports(step, step.inputs)
+    assert isinstance(assembled.commands[0],build.Call)
+    assert 'gondola.kit' in {p.name for p in assembled.products}
+    assert len([p for p in sources.products if p.name!='gondola_kit.source.audit']) == 33
+    # Source construction selects committed canonical defaults, independently of
+    # diagnostic P.load/environment and with a complete fixed roster.
+    source = ast.parse(sources.commands[0].script.read_text())
+    project = next(node for node in source.body if isinstance(node,ast.FunctionDef) and node.name=='project')
+    assert any(isinstance(node,ast.Assign) and ast.unparse(node)=='p = dict(P.DEFAULTS)' for node in project.body)
+    assert not any(isinstance(node,ast.Call) and ast.unparse(node.func) in ('P.load','os.getenv') for node in ast.walk(project))
+    assert 'gondola_kit.audit' in assembled.reads
+    assert len(audit.reads) == 23 and all(key.startswith('gondola_kit.query.') for key in audit.reads)
 
 
 def test_ground_query_is_narrow_and_keeps_region_layout_edits_out_of_exporters(tmp_path):
@@ -66,8 +75,10 @@ def test_runtime_import_and_staging_are_normal_closed_dependencies(tmp_path):
 
 def test_missing_native_mesh_material_texture_or_receipt_invalidates_import(tmp_path,monkeypatch):
     recipe=build.load_recipe('yorimichi')
-    monkeypatch.setattr(recipe,'GAME',tmp_path/'source-game')
     step=next(row for row in recipe.gondola_steps(SimpleNamespace(out=tmp_path/'build')) if row.name=='unreal.gondola')
+    # Isolate only the native destination, leaving real recipe helper/code loading intact.
+    step.outputs=[tmp_path/'source-game'/path.relative_to(recipe.GAME) if path.is_relative_to(recipe.GAME) else path
+                  for path in step.outputs]
     assert step.outputs and not build.outputs_present(step)
     for path in step.outputs:
         path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(b'asset')
@@ -97,7 +108,7 @@ def test_shared_walking_core_is_a_narrow_declared_production_input(tmp_path):
     recipe=build.load_recipe('yorimichi')
     rows={s.name:s for s in recipe.steps(SimpleNamespace(out=tmp_path,uproject=None))}
     core=recipe.WORLD/'walk_raster.py'
-    for name in ('world.gondola_kit','world.gondola_site','world.gondola_service','unreal.gondola',
+    for name in ('world.gondola_kit.audit','world.gondola_site','world.gondola_service','unreal.gondola',
                  'world.ferry_ship','world.ferry_service','unreal.ferry'):
         assert core in rows[name].inputs,name
     assert core not in rows['world.ferry_probes'].inputs

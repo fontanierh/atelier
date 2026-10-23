@@ -208,8 +208,34 @@ def show_lod(lod):
         c.hide_render = k != lod; c.hide_viewport = k != lod
 
 
+def atomic_scene():
+    """Create diagnostic objects from complete immutable packets; never join or export them."""
+    from atelier import mesh_ir
+    from atelier.mesh_materials import restore
+    from mathutils import Matrix
+    from mesh_pieces import create_mesh
+    from region_mesh_parts import validate
+    from hidamari_stable.catalogue import SOURCES, selected
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    collections = {}
+    for level in (0, 1, 2):
+        collection = bpy.data.collections.new('LOD' + str(level))
+        bpy.context.scene.collection.children.link(collection); collections[level] = collection
+    for key in SOURCES:
+        root = yori.OUT / 'planned_exports/hidamari_stable' / key
+        plan = validate(root)
+        for row in plan['pieces']:
+            meta, piece = mesh_ir.decode((root / row['payload']).read_bytes())
+            if 'material_specs' not in meta: raise ValueError('Missing exact Stable source material graphs')
+            piece['slots'] = [restore(label, spec) for label, spec in zip(meta['slots'], meta['material_specs'])]
+            obj = bpy.data.objects.new(row['name'], create_mesh(row['name'], piece))
+            level = selected(key)[1]
+            (collections[level] if level is not None else bpy.context.scene.collection).objects.link(obj)
+            obj.matrix_world = Matrix(meta['matrix'])
+
+
 def main():
-    bpy.ops.wm.open_mainfile(filepath=str(OUT / 'hidamari-stable.blend'))
+    atomic_scene()
     REVIEW.mkdir(parents=True, exist_ok=True)
     scene = bpy.context.scene
     data = json.loads((OUT / 'placements.json').read_text())

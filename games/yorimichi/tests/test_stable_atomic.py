@@ -148,3 +148,27 @@ def test_atomic_assembly_preserves_original_whole_logical_budgets():
     groups['SM_HS_Barn']['levels'][0]['triangles'] = 1000
     groups['SM_HS_StallDoor']['levels'][0]['triangles'] = 601
     with pytest.raises(ValueError, match='budget'): module.validate_budgets(groups)
+
+
+def test_actual_recipe_uses_atomic_stable_and_complete_native_owner(tmp_path):
+    from atelier import build
+    recipe = build.load_recipe('yorimichi')
+    ctx = SimpleNamespace(out=tmp_path.resolve(),game='yorimichi',uproject=None)
+    steps = {step.name:step for step in recipe.steps(ctx)}
+    stable = {name:step for name,step in steps.items() if 'hidamari_stable' in name}
+    assert len([key for key in stable if key.startswith('world.hidamari_stable.geometry.')]) == 24
+    assert all(step.explicit for step in stable.values())
+    assert all(command.script != GAME/'world/regions/hidamari_stable/build.py'
+        for step in stable.values() for command in step.commands if isinstance(command,build.Blender))
+    assembled = stable['world.hidamari_stable']
+    assert isinstance(assembled.commands[0],build.Call)
+    receiver = stable['unreal.hidamari_stable']
+    assert set(receiver.reads)=={'stable.meshes','stable.runtime','hidamari_stable.atomic'}
+    assert GAME/'unreal/Content/HidamariStable' in receiver.products[0].paths
+    required = build.order(list(steps.values()),['unreal.hidamari_stable'])
+    names = {step.name for step in required}
+    assert 'world.hidamari_stable.sources' in names
+    assert 'world.treehouse_trees.data' in names
+    review = stable['world.hidamari_stable_review']
+    assert len([key for key in review.reads if key.startswith('hidamari_stable.geometry.')])==24
+    assert not any(path.suffix=='.blend' for path in review.inputs)
