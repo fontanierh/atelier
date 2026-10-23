@@ -11,10 +11,11 @@ import xml.etree.ElementTree as ET
 
 def check_registry(registry: dict, listing: dict, junit: ET.Element | None = None) -> dict:
     """@cc [owner:fontanierh,label:correctness] active-scenario-evidence
-    Active scenarios MUST name collected, unignored and unfiltered tests. Every collected test
-    MUST have an active scenario. Execution evidence MUST include each test exactly once with
-    no failures, skips or errors, and finite nonnegative suite time at most ten seconds.
-    Pending scenarios MUST remain explicitly pending and MUST NOT count as passed coverage.
+    Active scenarios applicable to the recorded host platform MUST name collected, unignored
+    and unfiltered tests. Every collected test MUST have an applicable active scenario. Execution
+    evidence MUST include each applicable test exactly once with no failures, skips or errors,
+    and finite nonnegative suite time at most ten seconds. Other-platform exclusions and pending
+    scenarios MUST be reported separately and MUST NOT count as passed coverage.
     """
     if registry.get('schema_version') != 1:
         raise ValueError('unsupported registry version')

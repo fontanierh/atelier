@@ -15,9 +15,10 @@ may be a clean close. Bulk asset bytes MUST travel in staged files, not wire mes
 See tests/protocol.rs.
 
 @cc [owner:fontanierh,label:correctness] build-v2-t0-registry
-CI MUST compile the current crate successfully before running its T0 tests. Active registry
-scenarios MUST be backed by complete, unskipped execution evidence within ten seconds, excluding
-compilation. Pending future scenarios MUST be reported separately and MUST NOT count as coverage.
+CI MUST compile the current crate successfully before running its T0 tests. Its matrix MUST cover
+all declared supported host platforms. Every active scenario MUST have complete, unskipped execution
+evidence on each applicable platform within ten seconds, excluding compilation. Other-platform
+exclusions and pending future scenarios MUST be reported separately and MUST NOT count as coverage.
 See tools/check_registry.py and platform/studio/tests/test_build_v2_registry.py.
 
 @cc [owner:fontanierh,label:correctness] build-v2-object-digest-format
