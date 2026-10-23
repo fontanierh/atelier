@@ -31,10 +31,12 @@ def revision(root):return subprocess.check_output(['git','rev-parse','HEAD'],cwd
 
 def verify(manifest,native_result=None,guard=None,whole_exit=None):
     value=json.loads(manifest.read_text())
-    if value.get('schema')!=1 or value.get('repo')!=str(REPO):raise ValueError('Foreign proof attestation')
-    if revision(REPO)!=value['source_head'] or revision(Path(value['donor']))!=value['donor_head']:
+    if value.get('schema')!=1 or not isinstance(value.get('repo'),str):raise ValueError('Foreign proof attestation')
+    subject=real_directory(Path(value['repo']))
+    if not subject.is_absolute():raise ValueError('Proof subject must be canonical and absolute')
+    if revision(subject)!=value['source_head'] or revision(Path(value['donor']))!=value['donor_head']:
         raise ValueError('Proof source/donor Git head changed')
-    if subprocess.check_output(['git','status','--porcelain'],cwd=REPO,text=True).strip():raise ValueError('Proof source is dirty')
+    if subprocess.check_output(['git','status','--porcelain'],cwd=subject,text=True).strip():raise ValueError('Proof source is dirty')
     for field in ('current_source','donor_inputs','archive_files'):
         if snapshot([Path(path) for path in value[field]])!=value[field]:raise ValueError('Proof source bytes/stat identities changed')
     if native_result is not None:
@@ -44,7 +46,7 @@ def verify(manifest,native_result=None,guard=None,whole_exit=None):
                 or result.get('host_attestation_sha256')!=sha(manifest) or terminal.get('state')!='child_exited'
                 or terminal.get('cleanup_complete') is not True or terminal.get('processes')!=[]
                 or terminal.get('late_reporters',{}).get('unresolved')!=[]
-                or type(timing.get('execution_seconds')) not in (int,float)):
+                or type(timing.get('child_lifetime_seconds')) not in (int,float)):
             raise ValueError('Whole native/guard result or final authority is incomplete')
         atomic_json(manifest.parent/'postcheck.json',dict(schema=1,complete=True,whole_exit=0,
             source_head=value['source_head'],attestation_sha256=sha(manifest),native_result_sha256=sha(native_result)))

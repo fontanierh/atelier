@@ -167,10 +167,10 @@ def test_host_authority_refuses_native_pass_when_whole_guard_close_is_incomplete
     guard=tmp_path/'guard';guard.mkdir()
     (guard/'memory-health-tree.json').write_text(json.dumps(dict(state='child_exited',cleanup_complete=True,
         processes=[],late_reporters=dict(unresolved=[]))))
-    (guard/'execution-timings.json').write_text(json.dumps(dict(execution_seconds=None)))
+    (guard/'execution-timings.json').write_text(json.dumps(dict(child_lifetime_seconds=None)))
     with pytest.raises(ValueError,match='Whole native/guard'):authority.verify(manifest,result,guard,0)
     assert not (tmp_path/'postcheck.json').exists()
-    (guard/'execution-timings.json').write_text(json.dumps(dict(execution_seconds=1.)))
+    (guard/'execution-timings.json').write_text(json.dumps(dict(child_lifetime_seconds=1.)))
     with pytest.raises(ValueError,match='Whole native/guard'):authority.verify(manifest,result,guard,1)
     authority.verify(manifest,result,guard,0)
     assert json.loads((tmp_path/'postcheck.json').read_text())['complete'] is True
