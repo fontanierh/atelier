@@ -8,7 +8,10 @@ import math
 import numpy as np
 
 from brinecove import layout as L
-from brinecove import modules
+from brinecove import rocks
+from brinecove.geom import _surface_scale as surface_scale
+from brinecove.procedural.cell_material import cell_material
+from brinecove.procedural.ground_face import ground_face
 from brinecove import region as R
 from brinecove.geom import Builder
 
@@ -86,7 +89,7 @@ def material_face(b, tri, material=None):
     if material is None:
         zavg = sum(p[2] for p in tri) / 3
         material = 'seabed' if zavg < -0.5 else 'sand' if zavg < 2.0 else 'jungle_dark'
-    k = 1.0 / max(0.05, modules.surface_scale(material))
+    k = 1.0 / max(0.05, surface_scale(material))
     # Keep every triangle facing up: the loops run counter-clockwise, the outer one outside the inner.
     (ax, ay, _), (bx, by, _), (cx, cy, _) = tri
     if (bx - ax) * (cy - ay) - (by - ay) * (cx - ax) < 0:
@@ -119,12 +122,12 @@ def build(rim, rim_world):
             inside = R.collar_weight(gx, gy) <= 0.0
             sl = L.slope(gx, gy) if inside else grid_slope
             if inside:
-                mat = modules.cell_material(a, bb, c, d, gx, gy, sl, i, j)
+                mat = cell_material(a, bb, c, d, gx, gy, sl, i, j)
             else:
                 zavg = (a[2] + bb[2] + c[2] + d[2]) / 4
                 mat = ('seabed' if zavg < -0.5 else 'sand' if zavg < 2.0 and sl < 0.45 else
-                       modules.rocks.terrain_material(gx, gy, zavg, sl, i, j))
-            modules.ground_face(b, a, bb, c, d, mat, gx, gy, sl)
+                       rocks.terrain_material(gx, gy, zavg, sl, i, j))
+            ground_face(b, a, bb, c, d, mat, gx, gy, sl)
     # The ring one step in from the edge, and FarHills' own hole vertices on the edge.
     inner = _loop({
         'south': ([pts[i][1] for i in range(1, nx)], 0, xs[1], xs[nx - 1], True, 0.0),
