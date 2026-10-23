@@ -22,15 +22,25 @@ def steps(ctx,family):
     roster=sources.FAMILIES[family]['builders'];region='vehicle_'+family
     data=ctx.out/'vehicle-source-data'/family;reports=ctx.out/'vehicle-part-reports'/family
     primitive=tuple(local_imports(WORLD/'regions/village/mesh.py',(WORLD,)))
-    result=[Step('world.'+family+'.sources',[Python(WORLD/'vehicle_sources.py',('--family',family,'--output',str(data)))],
-        inputs=[*local_imports(WORLD/'vehicle_sources.py',(WORLD,)),GAME/'assets/vehicles'/family/'build.py'],
-        products=[Product(region+'.source.'+key,(data/(key+'.json'),)) for key in roster],cache=True)]
+    kart=family=='kart';cockpit=ctx.out/'kart/cockpit.json'
+    result=[Step('world.'+family+'.sources',[Python(WORLD/'vehicle_sources.py',('--family',family,'--output',str(data),
+        *(('--layout-output',str(cockpit)) if kart else ())))],
+        inputs=[*local_imports(WORLD/'vehicle_sources.py',(WORLD,)),GAME/'assets/vehicles'/family/'build.py',
+                *((GAME/'assets/vehicles/kart/cockpit.py',GAME/'assets/vehicles/kart/cockpit.json') if kart else ())],
+        products=[*[Product(region+'.source.'+key,(data/(key+'.json'),)) for key in roster],
+                  *([Product(region+'.cockpit',(cockpit,))] if kart else [])],cache=True)]
     assets=[graph.LogicalAsset(key,WORLD/'plan_vehicle_part.py',
         args=('--source',str(data/(key+'.json')),'--report',str(reports/(key+'.json'))),
         reads=(region+'.source.'+key,),inputs=primitive,
         products=(Product(region+'.report.'+key,(reports/(key+'.json'),)),)) for key in roster]
     result.extend(graph.steps(ctx,region=region,assets=assets))
     def assemble(ctx,log):
+        """@cc [owner:fontanierh,label:correctness;performance] complete-independent-vehicle-assembly
+        Assembly MUST gather the complete independently exported rigid roster without
+        joining geometry or re-exporting parts. Exact original report/layout/pivot fields
+        MUST remain available to native and runtime consumers. Kart MUST retain its
+        original total budget of 6000 triangles; native reports MUST stay outside source products.
+        """
         region_root=ctx.out/'atomic_regions'/region
         logical=json.loads((region_root/'logical-pieces.json').read_text())
         if set(logical['parents'])!=set(roster) or any(values!=[key] for key,values in logical['parents'].items()):
@@ -44,10 +54,13 @@ def steps(ctx,family):
             if row['triangles']!=report['triangles'] or row['metadata']['collision_hulls']!=report['collision_boxes']:
                 raise ValueError('Vehicle construction report differs from exported ownership')
             records[key]=report
+        if kart:
+            if sum(row['triangles'] for row in records.values())>6000:raise ValueError('Original kart triangle budget exceeded')
+            records['layout']=json.loads(cockpit.read_text())
         atomic_json(ctx.out/family/'manifest.json',records)
         log.write(f'{family}: complete independent parts assembled without joining geometry\n')
     result.append(Step('world.'+family,[Call('assemble independent '+family+' parts',assemble)],
         inputs=[Path(__file__),*export_assembly.runtime_inputs()],
-        reads=[region+'.atomic',*(region+'.report.'+key for key in roster)],
+        reads=[region+'.atomic',*(region+'.report.'+key for key in roster),*([region+'.cockpit'] if kart else [])],
         products=[Product(region+'.library',(ctx.out/family/'assets',ctx.out/family/'manifest.json'))]))
     return result
