@@ -293,7 +293,7 @@ def native_raw_set(record, logical):
     return read(record, logical)
 
 
-def compare(records, runtime):
+def compare(records, runtime, *, progress=None):
     """@cc [owner:fontanierh,label:correctness] actual-track-fixture-coverage
     Every production137 mesh and362 authored LOD MUST have complete original/current
     saved source/GPU/cooked/hull/settings/material and exact physical bounds proof.
@@ -324,6 +324,7 @@ def compare(records, runtime):
                 name + ' query positive/negative control failed')
         result[name] = dict(native_geometry_complete=True, whole_bounds_exact=True, lods=levels,
                             query_controls=len(controls))
+        if progress is not None: progress(name)
     return dict(schema=1, native_geometry_complete=True, meshes=NATIVE_COUNT, authored_lods=NATIVE_LODS,
                 complete=False, native_complete=False, production_runtime_complete=False, assets=result,
                 scope='Paired unchanged importer/isolated actual materials and saved native fixtures; no production actor/task/game/cook claim')
@@ -516,11 +517,12 @@ def run_native(spec_path, spec_sha):
                 release_actor(actor, actor_editor, U.StaticMeshComponent, actors)
                 component = actor = mesh = None
                 print('TRACK ACTUAL SAVED NATIVE ' + phase + ' ' + str(index + 1) + '/137 ' + name, flush=True)
+            owner_track = owner.TRACK
             owner = None; U.SystemLibrary.collect_garbage()
             packages = assets(E, package + '/Library')
-            require(packages == {path for path in paths.values()} | {package + '/Library/Materials/M_TK_Glow'} |
-                    {package + '/Library/Materials/' + name for name in imported['materials'] if name.startswith('MI_TK_')},
-                    'Foreign or leftover imported Track assets')
+            from track_material_roster import library_membership, source_tables
+            owned,_ = library_membership(runtime, imported, package + '/Library', source_tables(runtime, owner_track))
+            require(packages == owned, 'Foreign or leftover imported Track assets')
             allowed.update(packages); allowed.update(common_assets)
             bound_inputs(spec)
             atomic_json(output / 'native.json', records)
