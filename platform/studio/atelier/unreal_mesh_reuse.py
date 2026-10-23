@@ -8,7 +8,6 @@ import ast
 from functools import lru_cache
 import json
 import os
-import re
 from pathlib import Path
 import shutil
 import stat
@@ -588,14 +587,9 @@ class AssetGroup:
     Skipping a material/texture builder MUST require a receipt for its current
     parameters, all source/support bytes, engine context and complete saved packages.
     Historical candidates MUST NOT bootstrap this receipt. A new receipt MUST follow
-    successful native loads and saves of every owned asset in the group. Selected
-    record names MAY coexist only under the same task, source policy and engine
-    context; selecting a record MUST NOT weaken parameter or complete package proof.
+    successful native loads and saves of every owned asset in the group.
     """
-    def __init__(self, ctx, task, script, functions, *, parameters, sources=(), support=(), record_name='assets'):
-        if not isinstance(record_name, str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,159}', record_name):
-            raise ValueError('Invalid selected native asset-group record name')
-        self.record_name = record_name
+    def __init__(self, ctx, task, script, functions, *, parameters, sources=(), support=()):
         self.enabled = True
         try:
             code = mesh_reuse.native_policy(Path(script).read_text(), functions, script)
@@ -611,7 +605,7 @@ class AssetGroup:
         self.sources = [Path(script), *map(Path, sources), *map(Path, support)]
 
     def matches(self, packages):
-        return self.enabled and packages_clean(packages) and self.book.matches(self.record_name, self.key, packages)
+        return self.enabled and packages_clean(packages) and self.book.matches('assets', self.key, packages)
 
     def validated(self, packages):
         import unreal
@@ -626,7 +620,7 @@ class AssetGroup:
                     dict(member=mesh_reuse.source_member(self.ctx, file), sha256=mesh_reuse.digest(file))
                     for file in self.sources])
             mesh_reuse.queue_pending(self.ctx, self.task, nonce, self.book.header['policy'],
-                                    self.book.header['context'], self.record_name, record, {'rebuilt': 1})
+                                    self.book.header['context'], 'assets', record, {'rebuilt': 1})
 
 
 def set_if_changed(asset, name, value):
