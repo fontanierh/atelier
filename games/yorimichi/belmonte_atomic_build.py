@@ -48,3 +48,29 @@ def model_steps(ctx):
             args=('--asset',key,'--definition',str(folder/(key+'.json')),'--library',str(LIBRARY)),
             inputs=tuple(inputs),reads=('belmonte.model_definition.'+key,),suffix='.glb',encoding='encoded_glb'))
     return [projection,*graph.steps(ctx,region='belmonte_models',assets=assets)]
+
+
+def ground_steps(ctx):
+    """Final source data is authoritative; render planners consume only their own surface."""
+    spec=importlib.util.spec_from_file_location('belmonte_independent_ground_graph',GAME/'region_exports.py')
+    graph=importlib.util.module_from_spec(spec);spec.loader.exec_module(graph)
+    spec=importlib.util.spec_from_file_location('belmonte_carved_ground_names',REGION/'ground_names.py')
+    names=importlib.util.module_from_spec(spec);spec.loader.exec_module(names)
+    selected=definitions(ctx);sources=[];assets=[]
+    for key,value in selected.items():
+        if not key.startswith('SM_BM_BT_Terrain_'):continue
+        entry=value['source'];carved=key in names.VALLEY_CARVED_TILES
+        script=REGION/('carve_ground.py' if carved else 'source_ground.py')
+        surface=ctx.out/'belmonte-source-data'/(key+'.surface')
+        inputs=[*local_imports(script,(WORLD,WORLD/'regions')),LIBRARY/entry['path']]
+        if carved:inputs.append(GAME/'assets/vehicles/belmonte-train/line.json')
+        product='belmonte.final_surface.'+key
+        sources.append(Step('world.belmonte.final_source.'+key,[Python(script,(
+            '--asset',key,'--definition',str(ctx.out/'belmonte-model-definitions'/(key+'.json')),
+            '--library',str(LIBRARY),'--output',str(surface)))],
+            inputs=inputs,reads=['belmonte.model_definition.'+key],
+            products=[Product(product,(surface,))],heavy=True,cache=True,
+            about='construct only the selected final query surface before render export'))
+        assets.append(graph.LogicalAsset(key,REGION/'plan_ground.py',
+            args=('--asset',key,'--surface',str(surface)),reads=(product,),suffix='.glb',encoding='encoded_glb'))
+    return [*sources,*graph.steps(ctx,region='belmonte_ground',assets=assets)]

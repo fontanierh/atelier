@@ -4,6 +4,7 @@ from functools import lru_cache
 
 import numpy as np
 from belmonte import layout as L, source
+from belmonte.ground_names import VALLEY_CARVED_TILES
 from hidamari import layout as H
 from hippodrome.build import Mesh
 import shorelines
@@ -133,8 +134,6 @@ def country():
 
 # --- Belmonte valley railway & station tile carving (generated into build/yorimichi/belmonte/glb/) -------------------
 
-VALLEY_CARVED_TILES = frozenset({'SM_BM_BT_Terrain_4_3', 'SM_BM_BT_Terrain_5_2',
-                                 'SM_BM_BT_Terrain_5_3', 'SM_BM_BT_Terrain_6_2'})
 VALLEY_SUBDIV = 3           # 3x3 barycentric split (~1.5 m edges) on non-planar carved triangles
 WALL_FINE = .85             # metres along the overbridge walls and deck ends
 FORECOURT_FINE = .75        # metres along the station forecourt edges
@@ -174,7 +173,7 @@ def _encode_colour(colour):
     return np.column_stack([rgb, 65535 - rgb.sum(1)]).astype('<u2')
 
 
-def _write_glb(path, doc, position, normal, uv, colour, faces):
+def encoded_tile(doc, position, normal, uv, colour, faces):
     blobs, views, accessors = [], [], []
 
     def add(array, component, kind, target, normalized=False, bounds=False):
@@ -201,7 +200,11 @@ def _write_glb(path, doc, position, normal, uv, colour, faces):
     doc['bufferViews'], doc['accessors'] = views, accessors
     binary = b''.join(blobs)
     doc['buffers'] = [dict(byteLength=len(binary))]
-    path.write_bytes(source.glb_pack(doc, binary))
+    return source.glb_pack(doc, binary)
+
+
+def _write_glb(path, doc, position, normal, uv, colour, faces):
+    path.write_bytes(encoded_tile(doc,position,normal,uv,colour,faces))
 
 
 def _repaint(colour, x, y, z, z0, ln):
@@ -474,3 +477,11 @@ def write_carved_valley_tile(source_path, dest_path):
     verts = local_pos.astype(float) @ source.FRAME.T
     lo, hi = verts.min(0), verts.max(0)
     return int(len(faces)), [[float(c) for c in lo], [float(c) for c in hi]], report
+
+
+def carved_valley_data(source_path):
+    """The same final terrain bytes and bounds, before any render mesh export."""
+    doc,local_pos,local_norm,uv,colour,faces,report=carve_valley_tile(source_path)
+    data=encoded_tile(doc,local_pos,local_norm,uv,colour,faces)
+    verts=local_pos.astype(float)@source.FRAME.T
+    return data,int(len(faces)),[verts.min(0).tolist(),verts.max(0).tolist()],report

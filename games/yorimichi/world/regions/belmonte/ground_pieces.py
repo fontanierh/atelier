@@ -40,19 +40,16 @@ def placements(data):
             raise ValueError('Final query ground requires exactly one identity placement: '+entry['name'])
 
 
-def prepare(entry, path, folder, *, triangle_limit=LIMIT):
+def planned(entry, raw, *, triangle_limit=LIMIT):
     """@cc [owner:fontanierh,label:correctness] bounded-native-final-ground
     Final ground MUST retain a canonical whole query surface before native subdivision.
     Every native piece MUST preserve the exact encoded triangles/corner attributes and
     fit the declared budget. Queries MUST use the whole final surface, never natural or
     a stale parent mesh. Origin, material slots and identity placements remain unchanged.
     """
-    path, folder = Path(path), Path(folder)
     name = entry['name']
     if not is_ground(name) or not re.fullmatch(r'SM_BM_[A-Za-z0-9_]+', name) or entry.get('collision'):
         raise ValueError('Unsupported final ground owner')
-    _plain(path); _plain(folder)
-    raw = path.read_bytes()
     if hashlib.sha256(raw).hexdigest() != entry['sha256']:
         raise ValueError('Final ground bytes differ from the producer record')
     low, high = entry['bounds_m']
@@ -65,23 +62,32 @@ def prepare(entry, path, folder, *, triangle_limit=LIMIT):
     slots = [int(material['name'].split('_')[1]) for material in doc['materials']]
     surface = {key: entry[key] for key in ('name', 'sha256', 'bounds_m', 'triangles')}
     surface['path'] = 'ground/glb/'+name+'.glb'
-    query = folder / surface['path']
-    destinations = [path.with_name(name+('_Piece'+part['suffix'] if part['suffix'] else '')+'.glb')
-                    for part in parts]
-    for destination in [query, *destinations]: _plain(destination)
-    query.parent.mkdir(parents=True, exist_ok=True)
-    query.write_bytes(raw)
     if len(parts) == 1 and not parts[0]['suffix']:
-        return surface, [(entry, slots, True)]
+        return surface, [(entry, slots, True, raw)]
     result = []
-    for destination, part in zip(destinations, parts):
-        destination.write_bytes(part['data'])
-        current = dict(entry, name=destination.stem, path='glb/'+destination.name,
+    for part in parts:
+        key=name+('_Piece'+part['suffix'] if part['suffix'] else '')
+        current = dict(entry, name=key, path='glb/'+key+'.glb',
                        sha256=hashlib.sha256(part['data']).hexdigest(), triangles=part['triangles'],
                        bounds_m=[list(row) for row in part['bounds']], parent_bounds_m=entry['bounds_m'],
                        parent_material_slots=slots)
-        result.append((current, [slots[i] for i in part['materials']], True))
+        result.append((current, [slots[i] for i in part['materials']], True, part['data']))
     return surface, result
+
+
+def prepare(entry, path, folder, *, triangle_limit=LIMIT):
+    """Compatibility adapter for canonical whole queries and independent native pieces."""
+    path,folder=Path(path),Path(folder)
+    _plain(path);_plain(folder)
+    raw=path.read_bytes()
+    surface,rows=planned(entry,raw,triangle_limit=triangle_limit)
+    query=folder/surface['path']
+    destinations=[path.with_name(row['name']+'.glb') for row,_,_,_ in rows]
+    for destination in [query,*destinations]:_plain(destination)
+    query.parent.mkdir(parents=True,exist_ok=True);query.write_bytes(raw)
+    for destination,(_,_,_,data) in zip(destinations,rows):
+        if destination!=path:destination.write_bytes(data)
+    return surface,[(row,slots,collides) for row,slots,collides,_ in rows]
 
 
 def publish(folder, surfaces, origin_cm):
