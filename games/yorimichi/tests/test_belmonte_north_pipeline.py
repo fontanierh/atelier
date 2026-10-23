@@ -81,6 +81,31 @@ def test_natural_stage_checks_both_destinations_before_writing_owned_mesh(tmp_pa
     assert not output.exists() and outside.read_bytes()==b'keep'
 
 
+def test_carve_persisted_mesh_matches_original_mutable_mesh_with_active_line(tmp_path,modules,monkeypatch):
+    from types import SimpleNamespace
+    from test_belmonte_earthworks import made_up_line
+    from hidamari import mountains
+    pipeline,earthworks=modules
+    monkeypatch.setattr(earthworks,'line',made_up_line)
+    monkeypatch.setattr(pipeline.L,'ORIGIN',(0.,0.,0.))
+    monkeypatch.setattr(pipeline.L,'BOUNDS',(-1000.,-1000.,1000.,1000.))
+    monkeypatch.setattr(mountains,'BOUNDS',(10000.,10000.,11000.,11000.))
+    mesh=SimpleNamespace(p=[(40.,-10.,120.),(60.,-10.,120.),(60.,10.,120.),(40.,10.,120.)],
+        n=[(0.,0.,1.)]*4,t=[(0.,0.),(1.,0.),(1.,1.),(0.,1.)],i=[0,1,2,0,2,3])
+    original=deepcopy(mesh);owner=pipeline.OWNERS[0]
+    source=tmp_path/'natural'/(owner+'.npz');target=tmp_path/'carve'/(owner+'.npz')
+    pipeline.mesh_data.write(source,mesh,owner=owner)
+    earthworks.quads(original,pipeline.L.ORIGIN,2.5,
+        hidden=lambda x,y:(x>mountains.BOUNDS[0])&(x<mountains.BOUNDS[2])&(y>mountains.BOUNDS[1])&(y<pipeline.L.SOUTH_JOIN),
+        weight=lambda x,y:earthworks.seam_weight(x,y,pipeline.L.BOUNDS))
+    assert len(original.i)>len(mesh.i)
+    pipeline.main(['--mode','carve','--owner',owner,'--input',str(source),'--output',str(target)])
+    actual=pipeline.mesh_data.arrays(pipeline.mesh_data.read(target,owner=owner))
+    expected=pipeline.mesh_data.arrays(original)
+    assert actual.keys()==expected.keys()
+    for key in expected:assert actual[key].tobytes()==expected[key].tobytes()
+
+
 @pytest.mark.parametrize('apron',[False,True])
 def test_raw_constructor_invokes_only_selected_factory_with_explicit_context(tmp_path,modules,monkeypatch,apron):
     pipeline,_=modules

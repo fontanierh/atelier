@@ -69,6 +69,9 @@ def one(args):
         if args.seam or args.palette or args.query:raise ValueError('Carving may not consume a rendered or sibling mesh')
         from hidamari import mountains
         from train import earthworks
+        # The persisted arrays are lossless, but the original mutable Mesh API
+        # uses list truthiness before refining the triangle index buffer.
+        mesh.i=mesh.i.tolist()
         earthworks.quads(mesh,L.ORIGIN,2.5 if owner==OWNERS[0] else 4.,
             hidden=lambda x,y:(x>mountains.BOUNDS[0])&(x<mountains.BOUNDS[2])&(y>mountains.BOUNDS[1])&(y<L.SOUTH_JOIN),
             weight=lambda x,y:earthworks.seam_weight(x,y,L.BOUNDS))
