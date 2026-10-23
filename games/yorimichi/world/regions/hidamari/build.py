@@ -486,7 +486,7 @@ def asset_builders(city):
 
 def main():
     OUT.mkdir(parents=True,exist_ok=True);(OUT/'assets').mkdir(exist_ok=True)
-    city=generate();text=json.dumps(city,indent=2)+'\n'
+    city=json.loads((OUT/'layout-data.json').read_text());text=json.dumps(city,indent=2)+'\n'
     # Atomic, unchanged-content-preserving write: single-asset rebuilds run alongside live captures.
     if not (OUT/'city.json').exists() or (OUT/'city.json').read_text()!=text:
         tmp=OUT/'city.json.tmp';tmp.write_text(text);tmp.replace(OUT/'city.json')
