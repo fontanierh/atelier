@@ -2042,6 +2042,9 @@ impl BuildSession {
             provenance: self.provenance.clone(),
         };
         validate_record(&record, &self.store.project).map_err(damaged)?;
+        // Fold before any destructive step: replacing a root or trimming a release must never
+        // happen when the fold would refuse the batch as damaged.
+        self.store.fold_usage_locked()?;
         let existing = self.store.root_locked(&guard, &self.kind)?;
         let frozen = matches!(&self.kind, RootKind::Release { .. } | RootKind::Pin { .. });
         if frozen {
@@ -2071,7 +2074,6 @@ impl BuildSession {
         if matches!(&self.kind, RootKind::Release { .. }) {
             self.store.trim_releases_locked()?;
         }
-        self.store.fold_usage_locked()?;
         fs::remove_file(&self.journal)?;
         sync_dir(self.journal.parent().expect("journal has a parent"))?;
         observe(CommitStep::SessionRemoved)?;

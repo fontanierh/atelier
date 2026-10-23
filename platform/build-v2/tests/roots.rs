@@ -2034,3 +2034,63 @@ fn dropping_a_root_refuses_before_unlinking_while_usage_is_damaged() {
     );
     drop(torn);
 }
+
+#[test]
+fn a_commit_refuses_before_replacing_or_trimming_while_usage_is_damaged() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let worktree = RootKind::Worktree { id: "w1".into() };
+    let mut seed = begin(&store, worktree.clone(), "seed", 1);
+    seed.use_result("unit.a", &key(1)).unwrap();
+    seed.commit(None).unwrap();
+    for sequence in 1..=3 {
+        let kind = RootKind::Release {
+            sequence,
+            label: format!("r{sequence}"),
+        };
+        let mut release = begin(&store, kind, "release", 1);
+        release.use_result("unit.a", &key(1)).unwrap();
+        release.commit(None).unwrap();
+    }
+
+    let _torn = begin(&store, RootKind::Main, "torn", 1);
+    let journal = only_session(&workspace.store(), "yorimichi");
+    let mut text = fs::read_to_string(&journal).unwrap();
+    text.push_str("{\"unit\":\"unit.x\",\"key\":\"");
+    fs::write(&journal, text).unwrap();
+
+    let mut replace = begin(&store, worktree.clone(), "replace", 1);
+    replace.use_result("unit.a", &key(2)).unwrap();
+    let error = replace.commit(None).unwrap_err();
+    assert!(
+        matches!(error, RootError::Damaged(_)),
+        "the fold must refuse the commit: {error}"
+    );
+    let current = store.root(&worktree).unwrap().unwrap();
+    assert_eq!(
+        current.entries["unit.a"].key,
+        key(1),
+        "a refused commit must not replace the existing root"
+    );
+
+    let fourth = RootKind::Release {
+        sequence: 4,
+        label: "r4".into(),
+    };
+    let mut next = begin(&store, fourth.clone(), "fourth", 1);
+    next.use_result("unit.a", &key(1)).unwrap();
+    assert!(next.commit(None).is_err());
+    assert!(
+        store.root(&fourth).unwrap().is_none(),
+        "a refused commit must not write a partial release"
+    );
+    let oldest = RootKind::Release {
+        sequence: 1,
+        label: "r1".into(),
+    };
+    assert!(
+        store.root(&oldest).unwrap().is_some(),
+        "a refused commit must not trim the oldest release"
+    );
+}
