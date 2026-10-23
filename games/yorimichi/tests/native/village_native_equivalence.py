@@ -27,6 +27,13 @@ from village.catalogue import ASSETS  # noqa: E402
 def sha(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def content_root(raw):
+    # UE can return a path relative to its engine working directory, containing '..'.
+    # Reject links before canonicalizing; compare the actual private directory identity.
+    path=Path(raw).absolute();real_directory(path)
+    return path.resolve()
+
+
 def unchanged(rows):
     for raw,row in rows.items():
         path=Path(raw);real_directory(path.parent)
@@ -119,7 +126,7 @@ def main():
     if sha(spec_file)!=os.environ['ATELIER_VILLAGE_NATIVE_SPEC_SHA256']:raise ValueError('Unbound native spec')
     spec=json.loads(spec_file.read_text())
     if spec.get('schema')!=1 or spec.get('region')!='village-native':raise ValueError('Foreign native spec')
-    content=Path(unreal.Paths.project_content_dir()).absolute()
+    content=content_root(unreal.Paths.project_content_dir())
     if content!=Path(spec['content']):raise ValueError('Native project is not the explicit private receiving Content')
     real_directory(content);out=Path(spec['out']);output=Path(spec['output']);real_directory(output.parent)
     if os.path.lexists(output):raise ValueError('Fresh native output required')

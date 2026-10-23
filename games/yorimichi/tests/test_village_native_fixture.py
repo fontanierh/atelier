@@ -35,6 +35,18 @@ def test_host_input_binding_refuses_links_and_detects_byte_or_stat_changes(tmp_p
     with pytest.raises(ValueError,match='linked'):host.identities([alias])
 
 
+def test_unreal_relative_content_directory_is_canonicalized_after_link_refusal(tmp_path):
+    source=ast.parse((GAME/'tests/native/village_native_equivalence.py').read_text())
+    function=next(node for node in source.body if isinstance(node,ast.FunctionDef) and node.name=='content_root')
+    from atelier.export_manifest import real_directory
+    scope=dict(Path=Path,real_directory=real_directory)
+    exec(compile(ast.Module(body=[function],type_ignores=[]),'native-content-identity','exec'),scope)
+    root=tmp_path.resolve();(root/'engine').mkdir();(root/'Content').mkdir()
+    assert scope['content_root'](root/'engine/../Content')==root/'Content'
+    (root/'linked').symlink_to(root/'Content',target_is_directory=True)
+    with pytest.raises(ValueError,match='real directories'):scope['content_root'](root/'linked')
+
+
 def test_probe_geometry_preserves_actual_shared_edge_neighbors_and_independent_faces(tmp_path):
     out=tmp_path.resolve();folder=out/'planned_exports/village/Whole';folder.mkdir(parents=True)
     for key,positions in [('One',[[0,0,0],[1,0,0],[0,1,0]]),('Two',[[1,0,0],[1,1,0],[0,1,0]])]:

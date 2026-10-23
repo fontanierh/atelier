@@ -77,7 +77,7 @@ def capture(components,logical,output,*,controls,seams=(),policy_scope='fixture'
     root=real_directory(Path(output).absolute())
     if root.exists() or root.is_symlink():raise ValueError('Native capture requires a fresh exclusive output')
     before=[artifact(path) for path in inputs]
-    content=real_directory(Path(unreal_module.Paths.project_content_dir()).absolute())
+    content=real_directory(Path(unreal_module.Paths.project_content_dir()).absolute()).resolve()
     editor=unreal_module.get_editor_subsystem(unreal_module.StaticMeshEditorSubsystem)
     if editor is None:raise ValueError('Actual stored LOD settings are unavailable')
     saved_files=[]
