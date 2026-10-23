@@ -13,8 +13,6 @@ import subprocess
 import sys
 import uuid
 
-import numpy as np
-
 GAME = Path(__file__).resolve().parents[2]
 REPO = GAME.parents[1]
 sys.path[:0] = [str(GAME / 'world'), str(GAME / 'tools'), str(Path(__file__).parent)]
@@ -34,32 +32,19 @@ def head(root):
     return subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root).decode().strip()
 
 
-def controls(name, runtime, source):
-    """One source-derived interior segment and one safely external segment, no outcome fitting."""
-    level = max(proof.collision_lods(runtime)[name], 0)
-    value = json.loads((source / f'{name}_LOD{level}.json').read_bytes())
-    require(value['asset'] == f'{name}_LOD{level}', 'Wrong Track source control geometry')
-    vertices = np.asarray(value['vertices'], dtype=float) * [100., -100., 100.]
-    require(vertices.ndim == 2 and vertices.shape[1] == 3 and np.isfinite(vertices).all(), 'Missing control source positions')
-    best = None
-    for face in value['faces']:
-        for index in range(1, len(face) - 1):
-            triangle = vertices[[face[0], face[index], face[index + 1]]]
-            normal = np.cross(triangle[1] - triangle[0], triangle[2] - triangle[0])
-            area = float(np.linalg.norm(normal))
-            if area > 0 and (best is None or area > best[0]): best = (area, triangle.mean(0), normal / area)
-    require(best is not None, 'No actual source triangle for Track controls')
-    _, center, normal = best
-    positive = dict(start=(center + normal * 200.).tolist(), end=(center - normal * 200.).tolist(),
-                    channel='Pawn', trace_complex=True)
-    far = vertices.max(0) + 10000.
-    negative = dict(start=far.tolist(), end=(far + [0, 0, 100.]).tolist(), channel='Pawn', trace_complex=True)
-    rows = []
-    blocking = proof.collision_lods(runtime)[name] >= 0
-    for kind, query in ([('positive', positive)] if blocking else []) + [('negative', negative if blocking else positive)]:
-        rows.append(dict(id=name + '.ray.' + kind, kind='ray_' + kind, input=query))
-        rows.append(dict(id=name + '.capsule.' + kind, kind='capsule_' + kind,
-                         input=dict(query, radius_cm=.1, half_height_cm=.1, orientation=[0., 0., 0., 1.])))
+def controls(name, runtime, source, *, witnesses=None):
+    """Use actual serialized collision-LOD tessellation, never a concave polygon fan."""
+    from track_query_surface import controls as make,triangles
+    asset=name+'_LOD'+str(max(proof.collision_lods(runtime)[name],0))
+    require(Path(source).name==asset+'.glb','Selected Track control source path differs')
+    rows,witness=make(name,triangles(Path(source).read_bytes(),asset=asset))
+    if witnesses is not None:
+        witnesses[name]=dict(source=str(source),sha256=proof.sha(source),triangle=witness,
+            frame='baked export_yup glTF (x,y,z) -> native FVector3f cm (100x,100z,100y)')
+    if proof.collision_lods(runtime)[name]<0:
+        # NoCollision negatives must cross real geometry, not hide outside it.
+        rows=[dict(row,id=row['id'].replace('.positive','.negative'),kind=row['kind'].replace('_positive','_negative'))
+              for row in rows if row['kind'].endswith('positive')]
     return rows
 
 
@@ -133,7 +118,11 @@ def prepare(args):
                  Path(proof.__file__), GAME / 'tools/atomic_equivalence.py',
                  GAME / 'tools/atomic_equivalence_io.py'):
         bind(path)
-    control_rows = {name: controls(name, runtime, source / 'selected') for name in inventory}
+    surface = Path(__file__).with_name('track_query_surface.py')
+    for path in local_imports(surface, (surface.parent, GAME / 'tools', REPO / 'platform/studio')):
+        bind(path)
+    control_witnesses = {}
+    control_rows = {name: controls(name, runtime, by_asset[f'{name}_LOD{max(proof.collision_lods(runtime)[name],0)}']['original']['path'],witnesses=control_witnesses) for name in inventory}
     proof.validate_controls(control_rows, runtime)
     package = '/Game/AtelierValidation/Track_' + uuid.uuid4().hex[:12]
     proof.owner_tree(importer, package + '/Prerequisites/Materials')
@@ -164,7 +153,7 @@ def prepare(args):
             content=str(args.receiving / 'games/yorimichi/unreal/Content'), importer=str(importer),
             material_owner=str(material_owner), material_report=str(material_report), material_data=str(material_data),
             original_track=str(root / 'frozen/original'), current_track=str(root / 'frozen/current'),
-            controls=control_rows, inputs=inputs,
+            controls=control_rows, control_witnesses=control_witnesses, inputs=inputs,
             coverage=dict(source_logical=138, source_lods=363, native_logical=137, native_lods=362,
                 editor_only=['SM_TK_Marker'], production_runtime=False, normal_task_reuse=False))
         atomic_json(output / 'spec.json', spec)
