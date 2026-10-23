@@ -1,0 +1,189 @@
+{
+  "schema": 1,
+  "kind": "selected-export-followup-evidence",
+  "complete": false,
+  "foliage": {
+    "source_head": "c50af3e679e050a61a9059a3363d2f91b31bcc4a",
+    "source_exports": 102,
+    "authored_lod_exports": 84,
+    "seed_exports": 18,
+    "logical_owners": 18,
+    "maximum_export_triangles": 4484,
+    "literal_source_and_fbx_exact": 102,
+    "legacy_manifest_values_exact": 18,
+    "authored_source_hulls": 10,
+    "ordinary_repeat": {
+      "current_tasks": 264,
+      "executed_tasks": 0,
+      "restored_tasks": 0
+    },
+    "independent_receiver": {
+      "restored_tasks": 39,
+      "executed_tasks": 0,
+      "provider": "checkpoint actions"
+    },
+    "one_lod_edit": {
+      "source_and_export_fingerprints_changed": 2,
+      "unchanged_sibling_fingerprints": 202,
+      "unchanged_published_files": 564
+    },
+    "native_geometry_proof": {
+      "status": "scoped paired PASS",
+      "source_head": "b59638ab175e14df1288f2cb7b6f41b6c2a90a08",
+      "receiving_head": "e1a700a24b95f83254379eb2d30a4f7551b76f05",
+      "mesh_packages_per_side": 84,
+      "native_lod_pages_per_side": 150,
+      "whole_exit_codes": [
+        0,
+        0
+      ],
+      "guards_empty": true,
+      "fixture_absent": true,
+      "immutable_stdout_finalization": true,
+      "original_receipts_preserved": true,
+      "production_runtime_complete": false,
+      "normal_native_reuse": false,
+      "distance_fields_and_mesh_cards": "disabled in this fixture; runtime behavior not certified"
+    },
+    "producer_guard_marker_revalidation": {
+      "source_and_export_guards": 204,
+      "source_keys": 102,
+      "metadata_and_log_bindings_unchanged": 628,
+      "ordered_action_completion_batch_markers": true,
+      "producer_or_native_rerun": false,
+      "collection_proof_is_native_reuse": false
+    }
+  },
+  "track": {
+    "source_head": "f37d202d475fa509fcf5195d7e486391288f1c25",
+    "logical_source_owners": 138,
+    "source_lod_exports": 363,
+    "native_runtime_roster": {
+      "meshes": 137,
+      "lod_pages": 362,
+      "excluded_editor_marker": "SM_TK_Marker"
+    },
+    "maximum_export_triangles": 31272,
+    "source_and_actual_glb_exact": true,
+    "native_geometry_proof": {
+      "status": "retained original observations with conditional source/input identity carry; separate seven-owner query supplement PASS",
+      "original_whole_exit": 255,
+      "observed_meshes": 137,
+      "observed_source_and_gpu_lod_pages": 362,
+      "old_invalid_positive_controls": 14,
+      "old_fully_covered_query_owners": 130,
+      "old_successful_query_rows": 526,
+      "query_supplement": {
+        "owners": 7,
+        "actual_ray_capsule_outcomes": 28,
+        "whole_exit": 0,
+        "imports": 0,
+        "saves": 0,
+        "package_deletions": 0,
+        "guard_empty": true
+      },
+      "four_additional_materials": [
+        "MI_ST_Clock",
+        "MI_ST_Coach",
+        "MI_ST_Glass",
+        "MI_ST_Green"
+      ],
+      "independent_current_paired_execution": false,
+      "current_main_compiled": false,
+      "normal_native_reuse": false,
+      "cleanup_pending": true,
+      "old_failures_preserved": true
+    }
+  },
+  "carriages": {
+    "source_head": "d6e272a4d3b542cd354b74c5cdf441496ca003ac",
+    "logical_owners": 7,
+    "source_glb_exports": 81,
+    "maximum_export_triangles": 30590,
+    "shared_genuine_atlas_source_and_glb_exact": 81,
+    "ordinary_repeat": {
+      "current_tasks": 178,
+      "executed_tasks": 0,
+      "restored_tasks": 0
+    },
+    "one_edit": {
+      "query": "Restaurant crest position",
+      "executed_tasks": 15,
+      "unchanged_other_source_owners": 6,
+      "unchanged_moving_door_products": true
+    },
+    "restore_after_source_restoration": {
+      "restored_tasks": 15,
+      "executed_tasks": 0,
+      "restored_files_exact": 996
+    },
+    "normal_vs_conditional_source_oracle": {
+      "byte_exact_glbs": 79,
+      "atlas_only_differences": 2,
+      "changed_rgb_pixels": 6,
+      "maximum_component_delta": 1,
+      "tolerance_waiver": false,
+      "independent_atlas_render_repeatability": "not established; original renderer also exhibits the difference"
+    },
+    "native_geometry_proof": {
+      "status": "scoped paired retained-capture PASS",
+      "meshes_per_side": 67,
+      "authored_lod_pages_per_side": 81,
+      "whole_exit_codes": [
+        0,
+        0
+      ],
+      "guards_empty": true,
+      "fixture_absent": true,
+      "fixed_boxes": 383,
+      "switchable_collision_meshes": 55,
+      "moving_doors": 60,
+      "generated_guid_exclusion": "Only class/depth-specific generated MIC ParameterStateId/LightingGuid and Texture2D LightingGuid; all other fields and all texture pixels remain exact",
+      "static_lighting_and_texture_streaming_runtime_certified": false,
+      "production_runtime_complete": false,
+      "normal_native_reuse": false,
+      "original_comparison_failure_preserved": true
+    }
+  },
+  "evidence_sha256": {
+    "foliage_source_handoff": "917cf87a930090ab3002c603e402613729605262dc457d8fcb49d262ca1e6096",
+    "foliage_ordinary_handoff": "96e4353ae48d41bc86fee4c4efc22a3e3ed526a052f0a8320863e126eaa0c993",
+    "foliage_finalized_native_receipt": "68ac061a2a00095bc8d0c2ef2620c970556888165e40d10493dcf3b4629d48b6",
+    "track_source_result": "6aa9a25a5df98f3d9a08f581c02787591ccfee7b4425a9a965c936401f6ec736",
+    "carriage_source_result": "0755caa92a957519c6ed5916b739fca8d7048377778102155aa77f8f4e42c3c7",
+    "carriage_normal_cache_handoff": "157e3eb4dcb1b57d1c709ff7562425e25caa7c9bf85ec18309bed1cf1fb95e8e",
+    "track_final_metadata_packet": "0b634b9facd9cb5c4b0e4f4a1fe71456c9fd7797a853710ab279a9c771db800f",
+    "track_data_observation": "4efc048a47b53b865b2d4f2ed8446ce33ee280889a8840ae700badf601a9b2d3",
+    "track_provider_checked_host": "92538e60a5aa763b4abff83ca3a178a63a65ca3d1386e1fb3b48125264c14036",
+    "track_seven_query_host": "b818fb4b5a7869c3c7b74ca430a7fac19738f8cc4e1003261c3eb4e73a395ced",
+    "carriage_paired_revalidation": "d22e649d225f8602fd0e6a71ec301c1085d3644626238b2d141438157afaaf6c",
+    "authored_source_lod_metadata_observation": "14116775efbbb4682452996adfed81fe5f33210e84b4d1085e5784600735955a",
+    "authored_source_lod_predicate_replay": "44b90188b7352499a415a9ce16eb2b4e52256aa62bbccbf60c2b40b487ea0026",
+    "foliage_producer_guard_marker_revalidation": "ca5114ae31c79f04b218d730f1c9a9c95b719c4795460b9111e12f9931ae93b6"
+  },
+  "not_certified": [
+    "Independent current paired Track native equivalence; original whole remains failed",
+    "normal native-owner mesh reuse",
+    "full furniture LOD bake and service/route closure",
+    "production placement, gameplay and runtime behavior",
+    "whole-world or packaged cook",
+    "uncensused families"
+  ],
+  "excluded_by_owner": [
+    "skeletal character and horse splitting",
+    "additional small-asset splitting"
+  ],
+  "authority": "Informational evidence index only; never a cache admission token or replacement for current validation.",
+  "source_lod_predicate_replay": {
+    "kind": "metadata-derived exact-condition replay only",
+    "track_original_owners": 137,
+    "track_original_lods": 362,
+    "carriage_owners_per_side": 67,
+    "carriage_lods_per_side": 81,
+    "owner_side_projections": 271,
+    "known_page_suffix_bytes_read": 34496,
+    "raw_geometry_or_archive_hash_replay": false,
+    "native_execution": false,
+    "track_current_pair_fabricated": false
+  }
+}

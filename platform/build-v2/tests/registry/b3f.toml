@@ -1,0 +1,7 @@
+schema_version = 1
+
+[[scenarios]]
+id = "b3f.installs.busy_before_install_start_is_distinct_from_a_journaled_failure_and_recovery"
+tier = "t0"
+tests = ["atelier-build-v2::installs/busy_before_install_start_is_distinct_from_a_journaled_failure_and_recovery"]
+platforms = ["linux", "darwin"]

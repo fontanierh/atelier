@@ -25,8 +25,11 @@ def test_controller_edits_leave_sampled_game_steps_current(tmp_path, monkeypatch
     fake_blender(tmp_path, monkeypatch)
     ctx = build.Context('yorimichi')
     steps = build.load_recipe('yorimichi').steps(ctx)
-    tooled = [s for s in steps if s.toolchain and not s.cache][:3]
-    cached = [s for s in steps if s.cache][:3]
+    # Bounded Blender constructors are now cached too. Sample real toolchain
+    # actions and distinct portable Python actions without requiring retired
+    # uncached whole-region callbacks.
+    tooled = [s for s in steps if s.toolchain][:3]
+    cached = [s for s in steps if s.cache and not s.toolchain][:3]
     sample = tooled + cached
     assert len(sample) == 6
     digest = functools.lru_cache(maxsize=None)(lambda path: build_products.file_digest(path))

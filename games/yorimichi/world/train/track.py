@@ -614,9 +614,10 @@ def _xyz(p):
     return [round(float(c), 3) for c in p]
 
 
-def layout(line=None):
+def layout(line=None, *, make=None):
     """Every mesh (name -> list of LOD meshes) and track.json's content."""
     line = line or Line()
+    make = make or (lambda builder, *args: builder(*args))
     meshes, placed = {}, {}
     tunnel_list = tunnels(line)
 
@@ -630,11 +631,11 @@ def layout(line=None):
     for i, a, b in chunks(line):
         origin = line.frame(a)[0]
         name = f'SM_TK_Chunk_{i:02d}'
-        meshes[name] = [chunk_mesh(line, a, b, lod, origin) for lod in range(3)]
+        meshes[name] = [make(chunk_mesh, line, a, b, lod, origin) for lod in range(3)]
         chunk_rows.append(dict(name=name, start=round(a, 2), end=round(b, 2), origin=_xyz(origin), layer=in_tunnel(a, b),
                                collision='LOD2'))
     loop_origin = line.frame(line.loop[0])[0]
-    meshes['SM_TK_Loop'] = [loop_mesh(line, lod, loop_origin) for lod in range(3)]
+    meshes['SM_TK_Loop'] = [make(loop_mesh, line, lod, loop_origin) for lod in range(3)]
     chunk_rows.append(dict(name='SM_TK_Loop', start=line.loop[0], end=line.loop[1], origin=_xyz(loop_origin), layer=None,
                            collision=None))
 
@@ -647,7 +648,7 @@ def layout(line=None):
         for k, (p, q) in enumerate(zip(edges[:-1], edges[1:])):
             origin = line.frame(p)[0]
             mesh_name = f'SM_TK_Tunnel_{name}_{k:02d}'
-            meshes[mesh_name] = [lining_mesh(line, p, q, lod, origin) for lod in range(2)]
+            meshes[mesh_name] = [make(lining_mesh, line, p, q, lod, origin) for lod in range(2)]
             pieces.append(dict(name=mesh_name, start=round(float(p), 2), end=round(float(q), 2), origin=_xyz(origin),
                                collision='LOD1', volume=tunnel_volume(line, p, q)))
         lamps[name], lights[name] = tunnel_lamps(line, a, b)
@@ -664,7 +665,7 @@ def layout(line=None):
                               yaw=round(math.degrees(line.heading(s)), 3)))
         tunnel_rows.append(dict(name=name, start=a, end=b, lining=pieces, portals=ends, load_boxes=boxes,
                                 chunks=[c['name'] for c in chunk_rows if c['layer'] == name]))
-    meshes['SM_TK_Portal'] = [portal_mesh(lod) for lod in range(2)]
+    meshes['SM_TK_Portal'] = [make(portal_mesh, lod) for lod in range(2)]
     placed['SM_TK_Portal'] = portals
     bank_rows = []
     for a0, b0 in bank_ranges(line):
@@ -672,10 +673,10 @@ def layout(line=None):
         for a, b in zip(edges[:-1], edges[1:]):
             origin = line.frame(a)[0]
             name = f'SM_TK_Bank_{len(bank_rows):02d}'
-            meshes[name] = [bank_mesh(line, a, b, lod, origin) for lod in range(2)]
+            meshes[name] = [make(bank_mesh, line, a, b, lod, origin) for lod in range(2)]
             bank_rows.append(dict(name=name, start=round(float(a), 2), end=round(float(b), 2), origin=_xyz(origin),
                                   collision='LOD1'))
-    meshes['SM_TK_TunnelLamp'] = [lamp_mesh()]
+    meshes['SM_TK_TunnelLamp'] = [make(lamp_mesh)]
     placed['SM_TK_TunnelLamp'] = lamps
 
     viaduct_rows = []
@@ -689,21 +690,21 @@ def layout(line=None):
             part = piers[start:end + 1]
             origin = line.frame(part[0])[0]
             name = f'SM_TK_Viaduct_{v}{len(pieces)}'
-            meshes[name] = [viaduct_mesh(line, part, lod, origin) for lod in range(3)]
+            meshes[name] = [make(viaduct_mesh, line, part, lod, origin) for lod in range(3)]
             pieces.append(dict(name=name, start=round(float(part[0]), 2), end=round(float(part[-1]), 2),
                                origin=_xyz(origin), collision='LOD2'))
             start = end
         viaduct_rows.append(dict(start=float(piers[0]), end=float(piers[-1]), piers=[round(float(s), 2) for s in piers],
                                  pieces=pieces))
 
-    meshes['SM_TK_Sleeper'] = [sleeper_mesh()]
+    meshes['SM_TK_Sleeper'] = [make(sleeper_mesh)]
     placed['SM_TK_Sleeper'] = sleepers(line)
-    meshes['SM_TK_BufferStop'] = [buffer_stop_mesh()]
+    meshes['SM_TK_BufferStop'] = [make(buffer_stop_mesh)]
     placed['SM_TK_BufferStop'] = [
         [*_xyz(line.frame(BUFFER_OFFSET)[0]), round(math.degrees(line.heading(BUFFER_OFFSET)), 3), 1.],
         [*_xyz(line.frame(line.length - BUFFER_OFFSET)[0]),
          round(math.degrees(line.heading(line.length - BUFFER_OFFSET)) + 180., 3), 1.]]
-    meshes['SM_TK_StopBoard'] = [stop_board_mesh()]
+    meshes['SM_TK_StopBoard'] = [make(stop_board_mesh)]
     boards = []
     for s, facing in ((STOP_OFFSET, 0.), (line.length - STOP_OFFSET, 180.)):
         side = 1. if facing == 0. else -1.            # on the driver's side, right of the arriving train
@@ -711,14 +712,14 @@ def layout(line=None):
         boards.append([*_xyz((p[0], p[1], p[2] + TUNNEL_BASE)),
                        round(math.degrees(line.heading(s)) + facing, 3), 1.])
     placed['SM_TK_StopBoard'] = boards
-    meshes['SM_TK_Turnout'] = [turnout_mesh()]
+    meshes['SM_TK_Turnout'] = [make(turnout_mesh)]
     turnouts = []
     for s, toward in ((line.loop[0], 0.), (line.loop[1], 180.)):
         p = line.frame(s)[0]
         mirror = line.loop_side if toward == 0. else -line.loop_side    # the loop is to the left of the diverging direction
         turnouts.append([*_xyz(p), round(math.degrees(line.heading(s)) + toward, 3), round(mirror, 1)])
     placed['SM_TK_Turnout'] = turnouts
-    meshes['SM_TK_Marker'] = [marker_mesh()]
+    meshes['SM_TK_Marker'] = [make(marker_mesh)]
     placed['SM_TK_Marker'] = markers(line)
 
     doc = dict(
@@ -746,9 +747,9 @@ def layout(line=None):
                       note='Belmonte has its station (station.py, station below); Hidamari\'s yard is its own region\'s'),
         materials=list(MATERIALS))
     from train import overbridge        # the road over the final cutting, on a line ending at the station's site
-    bridge_meshes, doc['overbridge'] = overbridge.layout(line)
+    bridge_meshes, doc['overbridge'] = overbridge.layout(line, make=make)
     from train import station           # the Belmonte terminus's buildings, on a line ending at the station's site
-    station_meshes, doc['station'] = station.layout(line)
+    station_meshes, doc['station'] = station.layout(line, make=make)
     meshes.update(station_meshes)
     meshes.update(bridge_meshes)
     return meshes, doc

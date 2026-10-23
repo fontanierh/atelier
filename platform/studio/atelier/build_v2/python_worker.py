@@ -72,6 +72,16 @@ def interpreter_roots():
     return sorted({os.path.realpath(root) for root in roots} | roots)
 
 
+def site_libraries():
+    """This interpreter's installed-library folders (its venv's, when it runs in one), in order.
+
+    Both scheme folders are always passed, never filtered here: the child refuses, as a `dependency`
+    failure naming the folder, any one that is missing, not a folder or outside the platform roots.
+    """
+    paths = sysconfig.get_paths()
+    return list(dict.fromkeys(paths[name] for name in ('purelib', 'platlib')))
+
+
 def _quote(path):
     return '"' + path.replace('\\', '\\\\').replace('"', '\\"') + '"'
 
@@ -135,6 +145,13 @@ class Platform:
     def import_roots(self):
         return interpreter_roots()
 
+    def site_libraries(self):
+        """The installed-library folders a job imports from: this loop's own purelib and platlib.
+
+        The child runs with -P -s -S, so it never derives them itself and never runs a .pth file.
+        """
+        return site_libraries()
+
     def extra_rules(self):
         """Further sandbox allowances this platform needs, each a reviewed profile rule; none here."""
         return []
@@ -186,7 +203,8 @@ def job_config(job, job_dir, result_fd, platform=None):
         raise JobRefused('protocol', 'the entry script is outside the declared code')
     return {'script': job['script'], 'code': job['code'], 'inputs': inputs,
             'outputs': [_job_relative(item['path'], 'output') for item in job['outputs']],
-            'params': job['params'], 'platform_roots': platform.import_roots(), 'read_subpaths': platform.reads()[0],
+            'params': job['params'], 'platform_roots': platform.import_roots(),
+            'site_libraries': platform.site_libraries(), 'read_subpaths': platform.reads()[0],
             'read_literals': platform.reads()[1], 'result_fd': result_fd}
 
 

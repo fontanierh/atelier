@@ -79,6 +79,13 @@ only after named object checks and durable pins under the GC mutex, without plan
 tree walks or rehashing. See tests/results.rs and
 groups::tests::leased_group_publication_restores_tokens_and_compares_whole_manifest.
 
+@cc [owner:fontanierh,label:correctness] lock-busy-is-transient-under-concurrent-spawn
+An ambient CLOEXEC fork copy of a checkout lock descriptor keeps that lock held until the child
+execs, so a just-released lock can report Busy. Busy alone MUST NOT be treated as proof that another
+owner holds the checkout. A caller that retries MUST bound its own retry and deadline; the library
+does not impose one. Explicit custody lasts until its last handle closes, independently of any fork
+copy. See tests/checkout_locks_spawn.rs::lock_busy_is_transient_during_spawn.
+
 @cc [owner:fontanierh,label:correctness;safety] build-v2-checkout-install
 Checkout installs MUST hold build and exclusive content custody, retain certified source custody
 (named cache-object pins for cached restores or durable sealed snapshots for local completions),
@@ -117,7 +124,12 @@ and install::tests::scope_allocator_preserves_occupied_transaction_and_quarantin
 @cc [owner:fontanierh,label:correctness] build-v2-python-job-isolation
 Each Python job MUST run in its own child of the job loop, in its staged folder, with the declared
 environment only, loading only installed platform modules and the unit's declared code; the checkout
-MUST NOT be on its import path. On macOS the child MUST run under a deny-default sandbox that lets
+MUST NOT be on its import path. The child keeps `-P -s -S` and runs no `.pth` file: installed
+libraries come only from the loop's own purelib and platlib folders, passed in the child's private
+configuration and appended after the standard library, and the child MUST fail the job as
+`dependency` before running it when any such folder is missing, relative, not a folder, or resolves
+(symbolic links included) outside the approved platform roots. Installed libraries stay platform
+context and never enter a key. On macOS the child MUST run under a deny-default sandbox that lets
 it execute only the interpreter, and any undeclared read, Python-level existence check (of a present
 or missing path), listing, network use or process start MUST fail the job as `dependency` rather
 than return a value; writes outside `output/` MUST fail. The production loop entry MUST have no
@@ -144,8 +156,8 @@ accidental undeclared dependencies, not an adversarial Python jail, and these ch
 all nondeterminism or absence probes. This scope MUST NOT excuse an ordinary API bug in a supported
 check. Unit code MUST NOT derive outputs from real clocks, file timestamps or native entropy;
 clean-room and determinism fixtures remain required. See
-platform/studio/tests/test_build_v2_python_worker.py, test_build_v2_python_sandbox.py and
-tests/staging.rs.
+platform/studio/tests/test_build_v2_python_worker.py, test_build_v2_python_sandbox.py,
+test_build_v2_python_job_libraries.py and tests/staging.rs.
 
 Private transaction directories MUST actually be empty before cleanup clears the journal;
 unknown private leaves MUST preserve the active barrier and evidence. Only checkout output-parent
@@ -382,3 +394,15 @@ isolation contract apply, including native probes of missing paths. See
 platform/studio/tests/test_build_v2_blender_worker.py and tests/blender_jobs.rs, including
 job_loop_commands_refuse_a_non_utf8_script_path_instead_of_replacing_it and
 a_loop_command_converts_to_the_guarded_launcher_command_field_for_field.
+
+@cc [owner:fontanierh,label:correctness] build-v2-blender-op-boundary
+The unused D2 route MUST retain existing MeshIR schema-2 semantics and complete explicit geometry,
+material/channel/transform/collision ownership. A selected piece key MUST bind only its selected
+payload view, per-piece parameters and actual code/reference inputs, never a planner key, whole
+roster or siblings. Producer in-job semantic checks MUST finish before Completed; consumer MUST
+fully decode selected bytes and check its emitted artifact before receipt completion. B2 MUST
+independently validate its exact certified frozen inventory, schema/roles/bounds and hash bindings,
+without claiming another semantic geometry decode or reading live producer files. Unsupported
+formats, roles, incomplete/aliased/linked outputs and ownership-widening settings MUST refuse.
+See tests/blender_ops.rs and platform/studio/tests/test_build_v2_blender_ops.py. Native geometry
+fidelity/determinism, dynamic dispatch and production activation remain separate pending acceptance.

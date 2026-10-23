@@ -234,6 +234,31 @@ def _monitor_identity():
     return [os.getpid(), process_tree.started(os.getpid())]
 
 
+def _identity(value):
+    """A usable [pid, start] pair: two positive ints, never bools; otherwise None."""
+    if (isinstance(value, list) and len(value) == 2
+            and all(type(part) is int and part > 0 for part in value)):
+        return list(value)
+    return None
+
+
+def pin_monitor():
+    """@cc [owner:fontanierh,label:safety] tree-monitor-custody-identity
+    A custody monitor MUST pin its own positive integer [pid, start] once, before its first
+    readiness receipt, and MUST publish exactly that identity as top-level `monitor` in every
+    receipt it writes (running, terminal, stop, exception fallback and the late-custody
+    continuation), with `custody.monitor` agreeing wherever present. If it cannot pin a usable
+    identity it MUST write no readiness receipt and keep the fail-closed custody hold. Monitors
+    without custody MUST NOT publish the field. See tests/test_tree_guard_custody.py.
+
+    Returns this custodian's own identity, to pin once before its first readiness receipt.
+    """
+    monitor = _identity(_monitor_identity())
+    if monitor is None or monitor[0] != os.getpid():
+        raise RuntimeError('cannot pin the custody monitor identity')
+    return monitor
+
+
 def _observation(remaining, quiet, drained):
     """What a refresh must publish promptly when it changes; footprints alone do not count."""
     pins = _quietly(lambda: sorted((p['pid'], p['started']) for p in remaining), None)
@@ -254,7 +279,9 @@ def keep_custody(tree, report, value, custody, code):
         _close_custody(custody)
         return code
     first, longest = CUSTODY_PAUSE_SECONDS
-    monitor = _quietly(_monitor_identity) or [os.getpid(), None]
+    # The identity pinned before readiness, so custody.monitor always agrees with it.
+    monitor = (_quietly(lambda: _identity(value.get('monitor')))
+               or _quietly(_monitor_identity) or [os.getpid(), None])
     reason = _text(_quietly(lambda: value.get('termination_reason') or value.get('state'), 'unknown'))
     record = dict(held=True, reason='owned cleanup unverified after ' + reason, lock_files=files,
                   monitor=monitor, since=time.time(), last_observation=None, last_error=None, remaining=None,
@@ -322,6 +349,7 @@ def run_child(pid, started, report, duration=None, limit_gib=10., controller=Non
     began, peak = time.monotonic(), 0
     limit = int(limit_gib * 1024**3)
     terminated = []
+    monitor = None
     if custody:
         # Installed before the first readiness receipt: TERM/HUP drain the owned tree and never
         # end a custodian. Default monitors keep their ordinary signal behaviour.
@@ -334,6 +362,8 @@ def run_child(pid, started, report, duration=None, limit_gib=10., controller=Non
             adopted.bind_root(pid, started)
         if not tree.same(tree.root):
             raise RuntimeError('The launcher is no longer the pinned owner')
+        if custody:
+            monitor = pin_monitor()  # before any readiness receipt; a failure is never ready
         service_invocation, registrations = None, set()
         if service_control is not None:
             from .owned_service import receive, token
@@ -371,6 +401,8 @@ def run_child(pid, started, report, duration=None, limit_gib=10., controller=Non
                          elapsed_seconds=elapsed,
                          footprint_bytes=total, peak_bytes=peak, limit_bytes=limit,
                          state=state, processes=samples)
+            if monitor is not None:
+                value['monitor'] = list(monitor)
             if service_control is not None:
                 value['owned_services'] = tree.services.evidence()
             if controller is not None:
@@ -441,6 +473,8 @@ def run_child(pid, started, report, duration=None, limit_gib=10., controller=Non
         failed = dict(state='cleanup_incomplete',
                       termination_reason='controller_exited' if lost_controller else 'monitor_error',
                       cleanup_complete=False)
+        if monitor is not None:
+            failed['monitor'] = list(monitor)  # the pinned identity, on the fallback receipt too
 
         def describe():
             failed.update(owner=pid, owner_started=started, time=time.time(), observed_monotonic=time.monotonic(),

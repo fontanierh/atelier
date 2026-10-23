@@ -1,41 +1,43 @@
 """Control renders of the Belmonte station (Blender, headless, Eevee): `atelier build yorimichi world.belmonte_station_review`.
 
-Builds the station's LOD0 meshes (station.py) with the last 320 m of track and the road's overbridge, and
+Reads the assembled separate station LOD0 GLBs with the last 320 m of track and the road's overbridge, and
 renders the views Paul's elevations show (assets/belmonte/concepts/station/): front, back, both sides and the roof,
 orthographic on a white background, then a three-quarter view, a platform and the stair hall. Output:
 build/yorimichi/belmonte-track/review/station-*.png.
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[1])); import yori  # noqa: E402,F401
-import math
+import argparse
+from pathlib import Path
+import sys
 
 import bpy
 import numpy as np
-from mathutils import Vector
 
-from train import station as ST
 from train import station_site as S
 from train import track as T
-from train import track_build as B
 from train import track_render as TR
+from train.track_review_source import Library, instances
 
 REVIEW = T.OUT / 'review'
 
 
-def main():
-    B.clear()
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--source', type=Path, default=T.OUT / 'atomic/track.json')
+    args = parser.parse_args(argv if argv is not None else sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else [])
+    bpy.ops.wm.read_factory_settings(use_empty=True)
     REVIEW.mkdir(parents=True, exist_ok=True)
     line = T.Line()
-    meshes, doc = T.layout(line)
-    mats = B.materials()
+    library = Library(args.source); doc = library.doc
     st = doc['station']
     for row in [*st['pieces'], *([doc['overbridge']] if doc.get('overbridge') else [])]:
-        o = B.to_object(row['name'], meshes[row['name']][0], mats)
-        o.location = row['origin']
+        library.place(row['name'], [[*row['origin'], 0., 1.]])
     for chunk in doc['chunks']:
         if chunk['end'] > line.length - 320.:
-            B.to_object(chunk['name'], meshes[chunk['name']][0], mats).location = chunk['origin']
-    stop = [r for r in doc['instances']['SM_TK_BufferStop'] if np.hypot(r[0] - st['frame']['origin'][0], r[1] - st['frame']['origin'][1]) < 20]
-    B.to_object('buffer', TR.merged(meshes['SM_TK_BufferStop'][0], stop), mats)
+            library.place(chunk['name'], [[*chunk['origin'], 0., 1.]])
+    stop = [row for row in instances(doc, 'SM_TK_BufferStop')
+            if np.hypot(row[0] - st['frame']['origin'][0], row[1] - st['frame']['origin'][1]) < 20]
+    library.place('SM_TK_BufferStop', stop)
     scene, cam = TR.scene_setup()
     scene.render.resolution_x, scene.render.resolution_y = 1800, 1000
     origin = np.array(st['frame']['origin'], float)

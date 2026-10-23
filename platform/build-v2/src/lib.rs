@@ -2,6 +2,7 @@
 //! Deserialization checks wire shape; semantic declaration validation belongs to A2.
 #[cfg(all(test, target_os = "macos"))]
 extern crate self as atelier_build_v2;
+pub mod blender_ops;
 pub mod checkout_locks;
 pub mod cleanup;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -36,6 +37,7 @@ pub mod results;
 pub mod roots;
 pub mod scheduler;
 pub mod schema;
+pub mod session_lifecycle;
 pub mod source_hashes;
 pub mod staging;
 pub mod store;

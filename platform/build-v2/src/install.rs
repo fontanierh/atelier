@@ -1799,6 +1799,11 @@ impl RestorePlan {
     /// apply recorded normalized modes and publish complete per-project receipts before cleanup.
     /// Existing foreign files, other projects and declared code/sources MUST never be overwritten.
     /// Faults preserve recovery evidence and cache leases; successful later rooting releases claims.
+    /// Busy before journal creation is a precondition refusal, not a journaled transaction failure:
+    /// healthy shared readers remain allowed. An injected pre-index failure after JournalCreated
+    /// MUST preserve the reader barrier until recovery. Fault tests MUST establish the exact cut was reached, not
+    /// merely accept any error. See busy_before_install_start_is_distinct_from_a_journaled_failure_and_recovery
+    /// and interrupted_local_install_retains_completion_and_uses_existing_quarantine_recovery.
     /// No fallback copy, payload rehash, tree walk or inferred prefix ownership is permitted.
     pub fn commit_with(
         &mut self,

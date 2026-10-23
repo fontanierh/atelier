@@ -10,6 +10,7 @@ from atelier import build, build_audit, build_cache, build_deferred, build_input
 
 MEGA = Path(__file__).resolve().parents[1] / 'world' / 'regions' / 'mega'
 _BASELINE_CACHE = {}
+_SOURCE_INVENTORY = build_inputs.inventory
 _BELMONTE_RUNTIME_JSON = None
 _BELMONTE_GROUND_JSON = None
 _BELMONTE_REPORT_JSON = '{"meshes": [], "materials": {}}'
@@ -66,6 +67,14 @@ def _has_custom_files(tmp_path):
     return False
 
 
+def _fixture_inventory(path, digest, *, complete=False):
+    # Optional-file validation checks the real finite inventory schema. Keep its
+    # file/type membership while substituting only this dependency test's hash.
+    if complete:
+        return _SOURCE_INVENTORY(path,hasher=lambda _:digest,complete=True)
+    return {'source':digest}
+
+
 def _env_signature():
     return (
         os.environ.get('ATELIER_CRATERPARK_EDITOR_PARK', ''),
@@ -114,7 +123,7 @@ def _build_state(out_dir):
     def unedited_inventory(path, **kwargs):
         d = hashlib.sha256()
         d.update(str(path).encode())
-        return {'source': d.hexdigest()}
+        return _fixture_inventory(path,d.hexdigest(),complete=kwargs.get('complete',False))
 
     orig_hp, orig_inv = build._hash_path, build_inputs.inventory
     orig_tc, orig_atc = build_cache.tool_context, build_audit.tool_context
@@ -172,7 +181,7 @@ def changed_by(edited, tmp_path, monkeypatch, *, stable_products=()):
     def inventory(path, **kwargs):
         digest = hashlib.sha256()
         stand_in(digest, path)
-        return {'source': digest.hexdigest()}
+        return _fixture_inventory(path,digest.hexdigest(),complete=kwargs.get('complete',False))
 
     monkeypatch.setattr(build, '_hash_path', stand_in)
     monkeypatch.setattr(build_inputs, 'inventory', inventory)

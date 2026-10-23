@@ -95,6 +95,7 @@ def test_default_monitor_behaviour_is_unchanged(tmp_path, monkeypatch):
     assert tree_guard.run_child(1, 10, path) == 1
     value = json.loads(path.read_text())
     assert value['state'] == 'cleanup_incomplete' and 'custody' not in value
+    assert 'monitor' not in value, 'monitors without custody publish no identity'
     assert signal.getsignal(signal.SIGTERM) is before
 
 
@@ -163,6 +164,96 @@ def test_monitor_error_holds_custody_instead_of_unwinding(tmp_path, monkeypatch)
     assert tree_guard.run_child(1, 10, path, custody=custody_of(duplicate)) == 1
     value = json.loads(path.read_text())
     assert value['termination_reason'] == 'monitor_error' and value['late_cleanup_complete'] is True
+    assert not refused(lock_path)
+
+
+def recorded_writes(monkeypatch):
+    writes = []
+    original_write = tree_guard.write_report
+
+    def record(path, value):
+        writes.append(json.loads(json.dumps(value)))
+        original_write(path, value)
+    monkeypatch.setattr(tree_guard, 'write_report', record)
+    return writes
+
+
+def identities(monkeypatch, *values):
+    """The monitor's own identity as process_tree reports it, call by call (the last repeats)."""
+    calls = []
+
+    def identity():
+        calls.append(1)
+        return list(values[min(len(calls), len(values)) - 1])
+    monkeypatch.setattr(tree_guard, '_monitor_identity', identity)
+    return calls
+
+
+def test_a_custody_monitor_pins_its_identity_once_and_publishes_it_on_every_receipt(tmp_path, monkeypatch):
+    lock_path = tmp_path / 'checkout.lock'
+    original, duplicate = lock(lock_path)
+    os.close(original)
+    root = dict(pid=1, started=10, footprint_bytes=1)
+    # Running twice, then the root exits with cleanup unverified: the continuation holds custody
+    # and releases it late. A later lookup of the identity would differ; it is never used.
+    samples = iter([[root], [root], [], [], [], []])
+    monkeypatch.setattr(tree_guard, 'OwnedTree', lambda *args: fake_tree(lambda: next(samples)))
+    monkeypatch.setattr(tree_guard, 'drain_owned', scripted(iter([False, False, True])))
+    monkeypatch.setattr(tree_guard.time, 'sleep', lambda seconds: None)
+    monkeypatch.setattr(tree_guard, '_custody_pause', lambda seconds: None)
+    calls = identities(monkeypatch, [os.getpid(), 4242], [os.getpid(), 5353])
+    writes = recorded_writes(monkeypatch)
+    assert tree_guard.run_child(1, 10, tmp_path / 'tree.json', custody=custody_of(duplicate)) == 1
+    assert len(calls) == 1, 'pinned once'
+    assert [w['state'] for w in writes[:2]] == ['running', 'running']
+    assert writes[0]['monitor'] == [os.getpid(), 4242], 'in the first readiness receipt'
+    assert all(w['monitor'] == [os.getpid(), 4242] for w in writes), 'identical on every receipt'
+    custody = [w['custody'] for w in writes if 'custody' in w]
+    assert any(c['held'] for c in custody) and custody[-1]['released'] == 'late_cleanup_complete'
+    assert all(c['monitor'] == [os.getpid(), 4242] for c in custody if 'monitor' in c)
+    assert writes[-1]['late_cleanup_complete'] is True
+    assert not refused(lock_path)
+
+
+def test_the_exception_fallback_keeps_the_pinned_identity(tmp_path, monkeypatch):
+    lock_path = tmp_path / 'checkout.lock'
+    original, duplicate = lock(lock_path)
+    os.close(original)
+    monkeypatch.setattr(tree_guard, 'OwnedTree',
+                        lambda *args: fake_tree(scripted(iter([KeyError('broken sample'), [], []]))))
+    monkeypatch.setattr(tree_guard, 'drain_owned', scripted(iter([False, True])))
+    monkeypatch.setattr(tree_guard, '_custody_pause', lambda seconds: None)
+    identities(monkeypatch, [os.getpid(), 4242], [os.getpid(), 5353])
+    writes = recorded_writes(monkeypatch)
+    assert tree_guard.run_child(1, 10, tmp_path / 'tree.json', custody=custody_of(duplicate)) == 1
+    assert writes and all(w['termination_reason'] == 'monitor_error' for w in writes)
+    assert all(w['monitor'] == [os.getpid(), 4242] == w['custody']['monitor'] for w in writes)
+    assert not refused(lock_path)
+
+
+@pytest.mark.parametrize('identity', [[None, None], [0, 4242], [True, 4242], [1, 4242], [-1, 4242]])
+def test_an_unpinnable_monitor_is_never_ready_and_keeps_custody(tmp_path, monkeypatch, identity):
+    lock_path = tmp_path / 'checkout.lock'
+    original, duplicate = lock(lock_path)
+    os.close(original)
+    if identity[0] is None:
+        identity = [os.getpid(), None]
+    elif identity[0] == 1:
+        identity = [os.getpid(), True]
+    elif identity[0] == -1:
+        identity = [os.getpid() + 1, 4242]  # not this process
+    identities(monkeypatch, identity)
+    root = dict(pid=1, started=10, footprint_bytes=1)
+    monkeypatch.setattr(tree_guard, 'OwnedTree', lambda *args: fake_tree(scripted(iter([[root], [], []]))))
+    monkeypatch.setattr(tree_guard, 'drain_owned', scripted(iter([False, True])))
+    pauses = []
+    monkeypatch.setattr(tree_guard, '_custody_pause', holding_pause(lock_path, pauses))
+    writes = recorded_writes(monkeypatch)
+    assert tree_guard.run_child(1, 10, tmp_path / 'tree.json', custody=custody_of(duplicate)) == 1
+    assert pauses, 'custody was held until cleanup was verified'
+    assert not any(w['state'] == 'running' for w in writes), 'no readiness receipt'
+    assert not any('monitor' in w for w in writes), 'no usable identity is published'
+    assert writes[-1]['termination_reason'] == 'monitor_error'
     assert not refused(lock_path)
 
 
@@ -433,6 +524,9 @@ def test_real_monitor_keeps_exclusion_after_the_launcher_closes_until_the_reader
     report = tmp_path / 'tree.json'
     with guard.attach_tree(reader.pid, report, None, custody_fds=[duplicate]) as monitor:
         monitor.ready()
+        from atelier.harness.safety import process_tree
+        pinned = [monitor.process.pid, process_tree.started(monitor.process.pid)]
+        assert json.loads(report.read_text())['monitor'] == pinned, 'the real monitor, from its first receipt'
         os.close(original)
         os.close(duplicate)  # the launcher holds nothing now; the reader is still alive
         assert refused(lock_path)
@@ -442,6 +536,7 @@ def test_real_monitor_keeps_exclusion_after_the_launcher_closes_until_the_reader
     value = json.loads(report.read_text())
     assert value['state'] == 'child_exited' and value['cleanup_complete'] is True
     assert value['custody']['released'] == 'cleanup_complete'
+    assert value['monitor'] == pinned
 
 
 CONTROLLER = r'''

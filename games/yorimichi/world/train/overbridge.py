@@ -165,13 +165,14 @@ def overbridge(line, lod):
     return m, p, s
 
 
-def layout(line):
+def layout(line, *, make=None):
     """({'SM_ST_Overbridge': [LODs]}, its piece for track.json) on a line ending at the station's site, else
     ({}, None)."""
+    make = make or (lambda builder, *args: builder(*args))
     end, before = line.frame(line.length)[0], line.frame(line.length - 10.)[0]
     if S.for_line([before[:2], end[:2]], [before[2], end[2]]) is None:
         return {}, None
-    lods, at, chainage = zip(*[overbridge(line, k) for k in range(3)])
+    lods, at, chainage = zip(*[make(overbridge, line, k) for k in range(3)])
     piece = dict(name='SM_ST_Overbridge', origin=[round(float(c), 3) for c in at[0]], collision='LOD2',
                  chainage=round(float(chainage[0]), 2))
     return {'SM_ST_Overbridge': list(lods)}, piece

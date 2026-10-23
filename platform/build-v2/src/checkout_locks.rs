@@ -221,6 +221,18 @@ mod tests {
     use std::os::fd::AsRawFd;
     use std::sync::atomic::{AtomicU64, Ordering};
     static NEXT: AtomicU64 = AtomicU64::new(0);
+    /// A child spawn briefly duplicates every open descriptor, including a lock one just
+    /// released, until exec closes it. Spawning tests hold the write side; tests that assert
+    /// an immediate re-acquire hold the read side and can still run in parallel with each other.
+    static SPAWN_GATE: std::sync::RwLock<()> = std::sync::RwLock::new(());
+    fn spawn_gate_read() -> std::sync::RwLockReadGuard<'static, ()> {
+        SPAWN_GATE.read().unwrap_or_else(|error| error.into_inner())
+    }
+    fn spawn_gate_write() -> std::sync::RwLockWriteGuard<'static, ()> {
+        SPAWN_GATE
+            .write()
+            .unwrap_or_else(|error| error.into_inner())
+    }
     struct OwnedChild(std::process::Child);
     impl Drop for OwnedChild {
         fn drop(&mut self) {
@@ -251,6 +263,7 @@ mod tests {
 
     #[test]
     fn checkout_build_and_content_locks_have_independent_lifetimes() {
+        let _gate = spawn_gate_read();
         let workspace = Workspace::new();
         let first = workspace.locks();
         let second = workspace.locks();
@@ -271,6 +284,7 @@ mod tests {
     }
     #[test]
     fn explicit_custody_duplicate_keeps_same_description_and_cloexec() {
+        let _gate = spawn_gate_read();
         let workspace = Workspace::new();
         let locks = workspace.locks();
         let build = locks.try_build_exclusive().unwrap();
@@ -292,6 +306,7 @@ mod tests {
     }
     #[test]
     fn any_journal_entry_blocks_readers_without_touching_lock_inodes() {
+        let _gate = spawn_gate_read();
         let workspace = Workspace::new();
         let locks = workspace.locks();
         let journal = locks.metadata.join("journal.json");
@@ -312,6 +327,7 @@ mod tests {
     }
     #[test]
     fn real_process_shared_reader_excludes_checkout_writer() {
+        let _gate = spawn_gate_write();
         use std::io::{BufRead, BufReader, Write};
         use std::process::{Command, Stdio};
         let workspace = Workspace::new();

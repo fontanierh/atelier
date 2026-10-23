@@ -19,6 +19,7 @@ from train import render as R
 OUT = yori.OUT / 'belmonte-train'
 FURN = OUT / 'furniture'
 FRAMES = OUT / 'review-perf' / 'frames'
+SCENES = None
 
 
 def load(path, prefix):
@@ -88,7 +89,7 @@ def furnish(coach, which):
 
 def coach_frames(coach, views):
     for which in ('before', 'lod0'):
-        bpy.ops.wm.open_mainfile(filepath=str(OUT / coach / f'{coach}.blend'))
+        bpy.ops.wm.open_mainfile(filepath=str(SCENES / coach / f'{coach}.blend'))
         scene = bpy.context.scene
         coll = R.setup(scene)
         c = next(v for v in L.vehicles() if v.name == coach)
@@ -102,14 +103,22 @@ def coach_frames(coach, views):
             R.shoot(scene, cam, res, FRAMES / f'{coach}-{name}-{which}.png', ('_Reservations', '_Collision', '_LOD2'))
 
 
-def main():
-    args = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
+def main(argv=None):
+    import argparse
+    global SCENES
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--scenes', type=_Path, required=True, help='isolated legacy authoring scenes')
+    parser.add_argument('assets', nargs='*')
+    args = parser.parse_args(argv)
+    SCENES = args.scenes.resolve()
+    if SCENES == OUT.resolve():
+        raise ValueError('Furniture diagnostics require isolated authoring scenes')
     FRAMES.mkdir(parents=True, exist_ok=True)
-    assets = [a for a in (args or B.FURNITURE) if a in B.FURNITURE and (FURN / 'lod' / f'{a}_LOD0.glb').exists()]
+    assets = [a for a in (args.assets or B.FURNITURE) if a in B.FURNITURE and (FURN / 'lod' / f'{a}_LOD0.glb').exists()]
     for k, a in enumerate(assets):
         print(f'REVIEW [{k + 1}/{len(assets)}] {a}', flush=True)
         asset_frames(a)
-    if not args:
+    if not args.assets:
         eye = L.FLOOR_Z + 1.55
         coach_frames('second-class', [('saloon', (9.0, 0, eye), (-7.0, 0, eye - .3), 17),
                                       ('benches-close', (4.2, -.35, eye - .1), (1.6, -.9, L.FLOOR_Z + .5), 24),
@@ -120,4 +129,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else [])

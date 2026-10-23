@@ -193,10 +193,11 @@ def _plan(registry: dict, listing: dict) -> dict:
             'native_rows': [row for row in selected if row['tier'] in NATIVE_TIERS]}
 
 
-def _executed(junit: ET.Element, other_tier) -> tuple[list[str], list[str]]:
-    """Split one tier's JUnit into passed tests and documented other-tier filter skips."""
+def _executed(junit: ET.Element, other_tier, native) -> tuple[list[str], list[str], list[str]]:
+    """Split one tier's JUnit into passes and documented other-tier and native filter skips."""
     executed = []
-    excluded = []
+    excluded_other = []
+    excluded_native = []
     for suite in junit.findall('testsuite'):
         for case in suite.findall('testcase'):
             identity = f"{case.attrib['classname']}/{case.attrib['name']}"
@@ -207,14 +208,20 @@ def _executed(junit: ET.Element, other_tier) -> tuple[list[str], list[str]]:
             if skip is None:
                 executed.append(identity)
                 continue
-            if identity not in other_tier:
-                raise ValueError(f'skipped test is not another host tier: {identity}')
             if skip.attrib.get('message') != FILTER_SKIP_MESSAGE:
                 raise ValueError(f'skipped test without the filter message: {identity}')
-            excluded.append(identity)
-    if len(excluded) != len(set(excluded)):
+            if identity in other_tier:
+                excluded_other.append(identity)
+            elif identity in native:
+                excluded_native.append(identity)
+            else:
+                raise ValueError(
+                    f'skipped test is neither another host tier nor a declared native tier: {identity}')
+    if len(excluded_other) != len(set(excluded_other)):
         raise ValueError('an excluded test was reported more than once')
-    return executed, excluded
+    if len(excluded_native) != len(set(excluded_native)):
+        raise ValueError('an excluded native test was reported more than once')
+    return executed, excluded_other, excluded_native
 
 
 def check_registry(registry: dict, listing: dict, *,
@@ -227,8 +234,9 @@ def check_registry(registry: dict, listing: dict, *,
     explicit exclusions that never count as passed coverage. A tier's own listing MUST match that
     tier's tests exactly. Execution evidence MUST include every host CI test exactly once, with no
     failures, errors, duplicate runs or skips other than nextest's documented filter exclusion of
-    tests mapped to another host tier, and finite nonnegative suite time within each tier's
-    budget: ten seconds for t0 and thirty for t1a. An excluded test MUST NOT count as a pass.
+    tests mapped to another host tier or declared native (t1b, t2), and finite nonnegative suite
+    time within each tier's budget: ten seconds for t0 and thirty for t1a. An excluded test MUST
+    NOT count as a pass.
     """
     plan = _plan(registry, listing)
     expected = plan['expected']
@@ -271,7 +279,8 @@ def check_registry(registry: dict, listing: dict, *,
     executed_all: list[str] = []
     all_ci = set().union(*expected.values())
     for tier, junit in results.items():
-        executed, excluded = _executed(junit, all_ci - expected[tier])
+        executed, excluded_other, excluded_native = _executed(
+            junit, all_ci - expected[tier], set(plan['native']))
         if len(executed) != len(set(executed)):
             raise ValueError(f'{tier} executed a test more than once')
         if set(executed) != expected[tier]:
@@ -282,7 +291,8 @@ def check_registry(registry: dict, listing: dict, *,
         if not math.isfinite(elapsed) or elapsed < 0 or elapsed > TIER_BUDGETS[tier]:
             raise ValueError(f'{tier} exceeded its time budget or has invalid timing: {elapsed}')
         summary['tiers'][tier]['test_seconds'] = elapsed
-        summary['tiers'][tier]['excluded_other_tier'] = len(excluded)
+        summary['tiers'][tier]['excluded_other_tier'] = len(excluded_other)
+        summary['tiers'][tier]['excluded_native'] = len(excluded_native)
         executed_all.extend(executed)
     if results:
         if set(results) != set(TIER_BUDGETS):

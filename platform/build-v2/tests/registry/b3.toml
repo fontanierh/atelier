@@ -25,6 +25,12 @@ platforms = ["darwin", "linux"]
 tier = "t0"
 
 [[scenarios]]
+id = "b3.locks.lock_busy_is_transient_during_spawn"
+tests = ["atelier-build-v2::checkout_locks_spawn/lock_busy_is_transient_during_spawn"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
 id = "b3.installs.receipt_owner_namespace_is_explicit_and_independent_of_selected_roots"
 tests = ["atelier-build-v2::installs/receipt_owner_namespace_is_explicit_and_independent_of_selected_roots"]
 platforms = ["darwin", "linux"]

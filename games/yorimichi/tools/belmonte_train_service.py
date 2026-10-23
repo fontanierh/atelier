@@ -438,9 +438,14 @@ def furniture_entry(asset, spec, record):
 
 # ---------------------------------------------------------------- the vehicles' meshes
 
-def split_meshes(root, train, folder):
+def split_meshes(root, train, folder, *, source_library=None):
     """Each vehicle's LOD0 and LOD1 without its door leaves (they move), and each leaf from LOD0 as its own GLB, in
-    vehicle coordinates; LOD2 keeps its doors shut. Without the GLBs (tests), the levels name the Train Builder's files."""
+    vehicle coordinates; LOD2 keeps its doors shut. The normal recipe supplies source_library for strict file-only
+    assembly. The direct combined-file path remains for explicit original controls and legacy fixtures."""
+    if source_library is not None:
+        from train.service_meshes import copy_to_service
+        copy_to_service(root, train, folder, source_library)
+        return
     for v in train['vehicles']:
         name = v['name']
         source = [root / v['id'] / f'{name}_LOD{i}.glb' for i in range(3)]
@@ -595,7 +600,7 @@ def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def build(root=TRAIN, glb=None):
+def build(root=TRAIN, glb=None, *, source_library=None):
     route_path = root / 'route' / 'route.json'
     consist_path = root / 'assembly' / 'consist.json'
     route = json.loads(route_path.read_text())
@@ -621,7 +626,7 @@ def build(root=TRAIN, glb=None):
         'furniture': furniture,
         'service': service(route),
     }
-    split_meshes(root, train, glb or root / 'service' / 'glb')
+    split_meshes(root, train, glb or root / 'service' / 'glb', source_library=source_library)
     data['stations'] = stations(route, train, data['service']['terminals'])
     data['service']['crossings'] = [
         dict(c, in_loop=bool(data['line']['loop']['points']) and data['line']['loop']['start'] <= c['s'] <= data['line']['loop']['end'])
@@ -633,8 +638,9 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--root', type=Path, default=TRAIN, help='the Train Builder output folder')
     parser.add_argument('--output', type=Path, default=OUTPUT)
+    parser.add_argument('--source-library', type=Path, help='required complete bounded source library in the normal recipe')
     args = parser.parse_args(argv)
-    data = build(args.root, args.output.parent / 'glb')
+    data = build(args.root, args.output.parent / 'glb', source_library=args.source_library)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(data, separators=(',', ':')) + '\n')
     s = data['service']

@@ -1,36 +1,23 @@
 """Control renders of the Belmonte railway track (Blender, headless, Eevee): `atelier build yorimichi world.belmonte_track_review`.
 
-Builds the track from track.py's layout (LOD0, the instances merged into single meshes) and renders the viaduct,
+Reads the assembled separate track LOD0 GLBs and linked instances, and renders the viaduct,
 a portal of the spiral tunnel, the passing loop from above, a turnout, the Belmonte buffer stop and a plan of the
 whole line, on a white background without terrain. Output: build/yorimichi/belmonte-track/review/.
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[1])); import yori  # noqa: E402,F401
+import argparse
 import math
+from pathlib import Path
+import sys
 
 import bpy
 import numpy as np
 from mathutils import Vector
 
 from train import track as T
-from train import track_build as B
+from train.track_review_source import Library, origins, instances
 
 REVIEW = T.OUT / 'review'
-
-
-def merged(mesh, rows, scale_axis=1):
-    """One mesh holding `mesh` at every [x, y, z, yaw degrees, scale] row (scale along local `scale_axis`)."""
-    out = T.Mesh()
-    v = np.asarray(mesh.verts)
-    for x, y, z, yaw, scale in rows:
-        local = v.copy()
-        local[:, scale_axis] *= scale
-        c, s = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
-        world = np.c_[x + c * local[:, 0] - s * local[:, 1], y + s * local[:, 0] + c * local[:, 1], z + local[:, 2]]
-        base = len(out.verts)
-        out.verts.extend(map(tuple, world))
-        out.faces.extend(tuple(base + i for i in f) for f in mesh.faces)
-        out.mats.extend(mesh.mats)
-    return out
 
 
 def scene_setup():
@@ -69,26 +56,21 @@ def shoot(scene, cam, name, eye, target, lens=35., ortho=None):
     bpy.ops.render.render(write_still=True)
 
 
-def main():
-    B.clear()
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--source', type=Path, default=T.OUT / 'atomic/track.json')
+    args = parser.parse_args(argv if argv is not None else sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else [])
+    bpy.ops.wm.read_factory_settings(use_empty=True)
     REVIEW.mkdir(parents=True, exist_ok=True)
     line = T.Line()
-    meshes, doc = T.layout(line)
-    mats = B.materials()
-    for name, lods in meshes.items():
-        if name in doc['instances']:
-            continue
-        row = next((r for group in (doc['chunks'], *[t['lining'] for t in doc['tunnels']],
-                                    *[v['pieces'] for v in doc['viaducts']]) for r in group if r['name'] == name), None)
-        o = B.to_object(name, lods[0], mats)
-        if row:
-            o.location = row['origin']
-    for name, rows in doc['instances'].items():
-        if name in doc['editor_only']:
-            continue
-        rows = [r for group in rows.values() for r in group] if isinstance(rows, dict) else rows
-        mesh = merged(meshes[name][0], rows)
-        B.to_object(name + '_all', mesh, mats)
+    library = Library(args.source); doc = library.doc
+    placed = origins(doc)
+    for parent in doc['meshes']:
+        if parent in doc['instances']:
+            if parent not in doc['editor_only']: library.place(parent, instances(doc, parent))
+        else:
+            if parent not in placed: raise ValueError('Missing published railway placement: ' + parent)
+            library.place(parent, [[*placed[parent], 0., 1.]])
     scene, cam = scene_setup()
 
     def at(s, u=0., v=0.):

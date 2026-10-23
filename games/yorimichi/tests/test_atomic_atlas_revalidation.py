@@ -18,7 +18,7 @@ ATLAS = GAME / 'world/map/atlas'
 def test_live_atlas_carry_has_exact_current_source_and_immutable_predecessor():
     witness = json.loads((ATLAS / carry.WITNESS).read_text())
     assert carry.prove() == witness['source_proof']
-    assert len(witness['source_proof']['comparisons']) == 12
+    assert len(witness['source_proof']['comparisons']) == 13
     previous = witness['records']['coasts/source.json']['previous_tables']['geography']
     originals = json.loads(carry.FIXTURE.read_text())['files']
     for rel, digest in previous.items():
@@ -83,3 +83,59 @@ def test_map_reads_complete_final_query_arrays_in_the_original_frame(tmp_path, m
     assert namespace['Surface'](faces).height(xs, ys).tobytes() == Surface(actual).height(xs, ys).tobytes()
     with pytest.raises(ValueError):
         read(path, owner='SM_BM_NorthApron', stage='natural')
+
+
+@pytest.mark.parametrize('fault',['stage','owners','sampler','cache','reader'])
+def test_natural_reader_carry_is_finite_and_refuses_semantic_or_signature_edits(tmp_path,fault):
+    witness=json.loads((ATLAS/carry.WITNESS).read_text())
+    for source in [*witness['source_proof']['bound_sources'],'tests/fixtures/atlas-atomic-predecessor.json']:
+        path=tmp_path/source;path.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(GAME/source,path)
+    path=tmp_path/'world/train/route.py';text=path.read_text()
+    if fault=='stage':text=text.replace("stage='natural'","stage='final'")
+    if fault=='owners':text=text.replace("owners = ('SM_BM_NorthCountry', 'SM_BM_NorthApron')","owners = ('SM_BM_NorthApron', 'SM_BM_NorthCountry')")
+    if fault=='sampler':text=text.replace('z = np.array(CITY.north_height(x, y, carved=False), float)','z = np.array(CITY.north_height(x, y, carved=False), float) + .001')
+    if fault=='cache':text=text.replace("'SM_BM_NorthApron.surface'","'SM_BM_NorthApron-final.surface'")
+    path.write_text(text)
+    if fault=='reader':
+        reader=tmp_path/'world/regions/belmonte/surface_data.py';reader.write_text(reader.read_text()+'\n# unproved reader change\n')
+    with pytest.raises(ValueError,match='differ'):carry.prove(tmp_path)
+
+
+def test_natural_route_reader_preserves_every_corner_and_sample_from_immutable_predecessor(tmp_path,monkeypatch):
+    import hashlib
+    from functools import lru_cache
+    from types import SimpleNamespace
+    from atelier.gltf import glb_parts,glb_pack
+    from test_belmonte_ground_pieces import model
+    monkeypatch.syspath_prepend(str(GAME/'world'));monkeypatch.syspath_prepend(str(GAME/'world/regions'))
+    from belmonte import source,surface_data
+    fixture=json.loads(carry.FIXTURE.read_text());originals=fixture['files']
+    old_source=carry.declarations(originals['games/yorimichi/world/regions/belmonte/source.py']['source'])
+    namespace=dict(np=np,glb_parts=glb_parts)
+    exec(compile(ast.Module(body=[old_source[name] for name in ('FRAME','triangles','Surface')],type_ignores=[]),'immutable-natural-sampler','exec'),namespace)
+    doc,binary=glb_parts(model());binary=bytearray(binary)
+    np.frombuffer(binary,dtype='<f4',count=36).reshape(-1,3)[:,1]=np.linspace(198.125,214.875,12,dtype='<f4')
+    data=glb_pack(doc,bytes(binary))
+    for owner in ('SM_BM_NorthCountry','SM_BM_NorthApron'):
+        path=tmp_path/'belmonte/natural'/f'{owner}.glb';path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
+        entry=dict(name=owner,sha256=hashlib.sha256(data).hexdigest(),triangles=4)
+        surface_data.write(tmp_path/'belmonte-natural-source-data'/f'{owner}.surface',entry,data,stage='natural')
+    marker=object();monkeypatch.setattr(source,'terrain',lambda *,natural:marker if natural is True else None)
+    def reader(text):
+        node=carry.declarations(text)['_belmonte_surfaces'];env=dict(lru_cache=lru_cache,yori=SimpleNamespace(OUT=tmp_path))
+        exec(compile(ast.Module(body=[node],type_ignores=[]),'route-reader-only','exec'),env);return env['_belmonte_surfaces']
+    before=reader(originals['games/yorimichi/world/train/route.py']['source'])
+    after=reader((GAME/'world/train/route.py').read_text())
+    with monkeypatch.context() as old:
+        old.setattr(source,'triangles',namespace['triangles']);old.setattr(source,'Surface',namespace['Surface'])
+        old_terrain,old_surfaces=before()
+    new_terrain,new_surfaces=after();assert old_terrain is new_terrain is marker
+    for old,new in zip(old_surfaces,new_surfaces):
+        assert old.faces.tobytes()==new.faces.tobytes()
+        points=old.faces.mean(axis=1)
+        assert old.height(points[:,0],points[:,1]).tobytes()==new.height(points[:,0],points[:,1]).tobytes()
+    # A final-stage packet cannot be substituted even while legacy natural GLBs exist.
+    owner='SM_BM_NorthCountry';entry=dict(name=owner,sha256=hashlib.sha256(data).hexdigest(),triangles=4)
+    surface_data.write(tmp_path/'belmonte-natural-source-data'/f'{owner}.surface',entry,data,stage='final')
+    after.cache_clear()
+    with pytest.raises(ValueError):after()

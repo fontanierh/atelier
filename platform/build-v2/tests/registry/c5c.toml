@@ -1,0 +1,296 @@
+schema_version = 1
+
+[[scenarios]]
+id = "c5c.session.units_run_in_order_one_session_at_a_time"
+tests = ["atelier-build-v2::session_lifecycle/units_run_in_order_one_session_at_a_time"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.a_crash_retry_joins_a_later_session_only_after_confirmed_cleanup"
+tests = ["atelier-build-v2::session_lifecycle/a_crash_retry_joins_a_later_session_only_after_confirmed_cleanup"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.a_held_session_starts_no_further_session"
+tests = ["atelier-build-v2::session_lifecycle/a_held_session_starts_no_further_session"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.cancelling_one_waiting_unit_keeps_the_session_for_the_others"
+tests = ["atelier-build-v2::session_lifecycle/cancelling_one_waiting_unit_keeps_the_session_for_the_others"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.units_that_expire_while_waiting_withdraw_the_request_within_their_deadline"
+tests = ["atelier-build-v2::session_lifecycle/units_that_expire_while_waiting_withdraw_the_request_within_their_deadline"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.a_unit_after_close_or_twice_is_refused"
+tests = ["atelier-build-v2::session_lifecycle/a_unit_after_close_or_twice_is_refused"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.session_commands_never_delete_or_republish"
+tests = ["atelier-build-v2::session_lifecycle/session_commands_never_delete_or_republish"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.run_session_hands_each_settled_unit_off_without_waiting_for_its_receiver"
+tests = ["atelier-build-v2::guard_adapter/run_session_hands_each_settled_unit_off_without_waiting_for_its_receiver"]
+tier = "t1a"
+
+[[scenarios]]
+id = "c5c.session.a_cancel_sent_before_run_job_cancels_the_queued_job"
+tests = ["atelier-build-v2::guard_adapter/a_cancel_sent_before_run_job_cancels_the_queued_job"]
+tier = "t1a"
+
+[[scenarios]]
+id = "c5c.session.a_later_units_job_limit_counts_from_its_own_assignment"
+tests = ["atelier-build-v2::session_lifecycle/a_later_units_job_limit_counts_from_its_own_assignment"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.a_later_units_capacity_wait_stays_outside_its_job_limit"
+tests = ["atelier-build-v2::session_lifecycle/a_later_units_capacity_wait_stays_outside_its_job_limit"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.a_later_units_failed_registration_stops_its_run"
+tests = ["atelier-build-v2::session_lifecycle/a_later_units_failed_registration_stops_its_run"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.hello_before_registration_waits_for_the_registration"
+tests = ["atelier-build-v2::session_lifecycle/hello_before_registration_waits_for_the_registration"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.foreign_identities_and_pipe_loss_are_never_crash_evidence_for_a_unit"
+tests = ["atelier-build-v2::session_lifecycle/foreign_identities_and_pipe_loss_are_never_crash_evidence_for_a_unit"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.a_session_ended_before_admission_requeues_the_units_its_queue_limit_did_not_cover"
+tests = ["atelier-build-v2::session_lifecycle/a_session_ended_before_admission_requeues_the_units_its_queue_limit_did_not_cover"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.an_expired_units_deadline_never_bounds_a_later_settlement"
+tests = ["atelier-build-v2::session_lifecycle/an_expired_units_deadline_never_bounds_a_later_settlement"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.a_late_confirmed_receipt_never_reopens_a_held_lifecycle_or_changes_a_published_record"
+tests = ["atelier-build-v2::session_lifecycle/a_late_confirmed_receipt_never_reopens_a_held_lifecycle_or_changes_a_published_record"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.a_unit_already_past_its_deadline_is_never_requeued"
+tests = ["atelier-build-v2::session_lifecycle/a_unit_already_past_its_deadline_is_never_requeued"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.a_reused_session_runs_the_next_unit_only_after_quiescence_evidence"
+tests = ["atelier-build-v2::session_lifecycle/a_reused_session_runs_the_next_unit_only_after_quiescence_evidence"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.without_quiescence_evidence_the_session_stops_and_the_receipt_settles_the_unit"
+tests = ["atelier-build-v2::session_lifecycle/without_quiescence_evidence_the_session_stops_and_the_receipt_settles_the_unit"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.cancelling_a_running_unit_cancels_only_its_job_when_others_wait"
+tests = ["atelier-build-v2::session_lifecycle/cancelling_a_running_unit_cancels_only_its_job_when_others_wait"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.every_session_serves_one_unit_without_quiescence_evidence"
+tests = ["atelier-build-v2::session_lifecycle/every_session_serves_one_unit_without_quiescence_evidence"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.an_open_idle_session_waits_for_more_units_then_shuts_down"
+tests = ["atelier-build-v2::session_lifecycle/an_open_idle_session_waits_for_more_units_then_shuts_down"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.a_later_unit_that_does_not_fit_the_sessions_lifetime_gets_a_fresh_session"
+tests = ["atelier-build-v2::session_lifecycle/a_later_unit_that_does_not_fit_the_sessions_lifetime_gets_a_fresh_session"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.run_session_refuses_a_unit_with_another_key_or_a_used_job_id"
+tests = ["atelier-build-v2::guard_adapter/run_session_refuses_a_unit_with_another_key_or_a_used_job_id"]
+tier = "t1a"
+
+[[scenarios]]
+id = "c5c.session.run_session_refuses_custody_that_is_not_its_keys_custody_set"
+tests = ["atelier-build-v2::guard_adapter/run_session_refuses_custody_that_is_not_its_keys_custody_set"]
+tier = "t1a"
+
+[[scenarios]]
+id = "c5c.session.a_cancel_the_worker_cannot_read_stops_the_session_and_the_receipt_settles_the_unit"
+tests = ["atelier-build-v2::session_lifecycle/a_cancel_the_worker_cannot_read_stops_the_session_and_the_receipt_settles_the_unit"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.a_worker_that_exits_after_completed_ends_its_session_without_crash_evidence"
+tests = ["atelier-build-v2::session_lifecycle/a_worker_that_exits_after_completed_ends_its_session_without_crash_evidence"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.the_lifetime_fit_counts_the_job_the_quiescence_bound_and_the_session_cleanup"
+tests = ["atelier-build-v2::session_lifecycle/the_lifetime_fit_counts_the_job_the_quiescence_bound_and_the_session_cleanup"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.a_unit_a_session_could_never_serve_is_refused_at_submission"
+tests = ["atelier-build-v2::session_lifecycle/a_unit_a_session_could_never_serve_is_refused_at_submission"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.run_session_refuses_custody_not_held_in_its_declared_scope"
+tests = ["atelier-build-v2::guard_adapter/run_session_refuses_custody_not_held_in_its_declared_scope"]
+tier = "t1a"
+
+[[scenarios]]
+id = "c5c.session.quiescence_refuses_every_sample_that_is_not_fresh_exact_evidence"
+tests = ["atelier-build-v2::guard_adapter/quiescence_refuses_every_sample_that_is_not_fresh_exact_evidence"]
+tier = "t1a"
+
+[[scenarios]]
+id = "c5c.session.tree_sample_events_decode_strictly"
+tests = ["atelier-build-v2::guard_adapter/tree_sample_events_decode_strictly"]
+tier = "t1a"
+
+[[scenarios]]
+id = "c5c.session.a_resident_session_reuses_its_worker_only_on_fresh_exact_samples"
+tests = ["atelier-build-v2::guard_adapter/a_resident_session_reuses_its_worker_only_on_fresh_exact_samples"]
+tier = "t1a"
+
+[[scenarios]]
+id = "c5c.session.a_failed_preparation_ends_the_unit_without_a_run"
+tests = ["atelier-build-v2::session_lifecycle/a_failed_preparation_ends_the_unit_without_a_run"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.a_crash_in_a_reused_session_retries_in_a_later_session_and_requeues_the_rest"
+tests = ["atelier-build-v2::session_lifecycle/a_crash_in_a_reused_session_retries_in_a_later_session_and_requeues_the_rest"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.a_crash_retry_runs_a_freshly_prepared_request_in_a_later_session"
+tests = ["atelier-build-v2::guard_adapter/a_crash_retry_runs_a_freshly_prepared_request_in_a_later_session"]
+tier = "t1a"
+
+[[scenarios]]
+id = "c5c.session.a_failed_preparation_ends_the_unit_without_a_run_and_is_never_retried"
+tests = ["atelier-build-v2::guard_adapter/a_failed_preparation_ends_the_unit_without_a_run_and_is_never_retried"]
+tier = "t1a"
+
+[[scenarios]]
+id = "c5c.session.a_stop_delivered_right_after_the_worker_starts_is_always_reported"
+tests = ["atelier-build-v2::guard_adapter/a_stop_delivered_right_after_the_worker_starts_is_always_reported"]
+tier = "t1a"
+
+[[scenarios]]
+id = "c5c.session.a_reply_read_after_the_exit_report_still_completes_the_unit"
+tests = ["atelier-build-v2::guard_adapter/a_reply_read_after_the_exit_report_still_completes_the_unit"]
+tier = "t1a"
+
+[[scenarios]]
+id = "c5c.session.an_exit_report_without_the_stream_end_applies_after_the_drain_limit"
+tests = ["atelier-build-v2::guard_adapter/an_exit_report_without_the_stream_end_applies_after_the_drain_limit"]
+tier = "t1a"
+
+[[scenarios]]
+id = "c5c.session.a_resident_session_refuses_a_key_without_the_no_fork_sandbox"
+tests = ["atelier-build-v2::guard_adapter/a_resident_session_refuses_a_key_without_the_no_fork_sandbox"]
+tier = "t1a"
+
+[[scenarios]]
+id = "c5c.session.a_custodian_session_runs_only_after_its_monitor_is_registered"
+tests = ["atelier-build-v2::session_lifecycle/a_custodian_session_runs_only_after_its_monitor_is_registered"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.a_missing_changed_or_unregistered_monitor_never_runs_the_unit"
+tests = ["atelier-build-v2::session_lifecycle/a_missing_changed_or_unregistered_monitor_never_runs_the_unit"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.the_custody_monitor_is_durably_registered_before_the_first_run"
+tests = ["atelier-build-v2::guard_adapter/the_custody_monitor_is_durably_registered_before_the_first_run"]
+tier = "t1a"
+
+[[scenarios]]
+id = "c5c.session.a_missing_changed_or_unregistered_monitor_prevents_the_run"
+tests = ["atelier-build-v2::guard_adapter/a_missing_changed_or_unregistered_monitor_prevents_the_run"]
+tier = "t1a"
+
+[[scenarios]]
+id = "c5c.session.cleanup_is_confirmed_only_by_this_invocations_durable_record"
+tests = ["atelier-build-v2::guard_adapter/cleanup_is_confirmed_only_by_this_invocations_durable_record"]
+tier = "t1a"
+
+[[scenarios]]
+id = "c5c.session.a_controller_lost_after_registering_the_monitor_never_runs_and_leaves_its_correlation"
+tests = ["atelier-build-v2::guard_adapter/a_controller_lost_after_registering_the_monitor_never_runs_and_leaves_its_correlation"]
+tier = "t1a"
+
+[[scenarios]]
+id = "c5c.session.a_resident_session_without_custody_is_refused"
+tests = ["atelier-build-v2::guard_adapter/a_resident_session_without_custody_is_refused"]
+tier = "t1a"
+
+[[scenarios]]
+id = "c5c.session.evidence_past_its_bound_before_any_tick_never_settles_the_unit_or_reuses_the_worker"
+tests = ["atelier-build-v2::session_lifecycle/evidence_past_its_bound_before_any_tick_never_settles_the_unit_or_reuses_the_worker"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.a_reusable_units_quiescence_wait_never_outlasts_its_overall_deadline"
+tests = ["atelier-build-v2::session_lifecycle/a_reusable_units_quiescence_wait_never_outlasts_its_overall_deadline"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.a_stop_after_an_invalid_frame_never_signals_an_owner_whose_exit_waits_for_replay"
+tests = ["atelier-build-v2/worker_lifecycle::tests::a_stop_after_an_invalid_frame_never_signals_an_owner_whose_exit_waits_for_replay"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.no_run_path_runs_a_unit_at_or_past_its_overall_deadline"
+tests = ["atelier-build-v2::session_lifecycle/no_run_path_runs_a_unit_at_or_past_its_overall_deadline"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.a_refreshed_quiet_window_never_outlasts_the_units_cleanup_limit"
+tests = ["atelier-build-v2::session_lifecycle/a_refreshed_quiet_window_never_outlasts_the_units_cleanup_limit"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.a_broken_or_lost_protocol_poisons_the_session_in_every_phase"
+tests = ["atelier-build-v2::session_lifecycle/a_broken_or_lost_protocol_poisons_the_session_in_every_phase"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.a_fault_while_a_unit_awaits_evidence_still_bounds_the_settlement"
+tests = ["atelier-build-v2::session_lifecycle/a_fault_while_a_unit_awaits_evidence_still_bounds_the_settlement"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.a_protocol_fault_on_an_idle_session_stops_it_with_a_bounded_settlement"
+tests = ["atelier-build-v2::session_lifecycle/a_protocol_fault_on_an_idle_session_stops_it_with_a_bounded_settlement"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.a_receipt_at_or_past_its_limit_before_any_tick_leaves_the_cleanup_unknown"
+tests = ["atelier-build-v2::session_lifecycle/a_receipt_at_or_past_its_limit_before_any_tick_leaves_the_cleanup_unknown"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.session.a_receipt_past_its_units_overall_deadline_in_any_phase_releases_nothing"
+tests = ["atelier-build-v2::session_lifecycle/a_receipt_past_its_units_overall_deadline_in_any_phase_releases_nothing"]
+tier = "t0"

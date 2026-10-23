@@ -96,7 +96,7 @@
       "world/regions/belmonte/terrain.py": "efe5a61fee8198f0b400547692db20adbbf4f304446eae53fb4a790c87f19e4b",
       "world/regions/belmonte/plan.py": "b2b10ac599577713c36ca27b28343ec2cff244b0272640da45e4bc671821612c",
       "world/regions/southwest/island.py": "33a35bc01cf22f5552268717716d01e5eaf64d73c15f75abf6af1603d7bf90c1",
-      "world/train/route.py": "217efe967d76250d4c2fe3eefc5452f44806a00727d18ab4c87cf81515e15a71",
+      "world/train/route.py": "21bbfbcd590d69e39097130ce355af903dd39a139b86e7d5ece730cf20a6766b",
       "world/train/corridor.py": "af3891bbe90caf06cc94ca2dee42d4714b654dd974a79190880714326a04be88",
       "world/train/earthworks.py": "3d7af5b066a10f90203d15573bcba928a8ab26c333d089214049c7470c20f18c",
       "world/train/station_site.py": "bc31b47aa379c19bc272db23b7cd1c4a06bc316a278764e7c25893f533c8323e",
@@ -115,6 +115,7 @@
       "world/regions/hidamari/temple_precinct_placement.py": "5a64a7703ffebeed56f8923f146bfe75d332b4e1116ca06353c7ff379e50a169",
       "world/regions/belmonte/query_arrays.py": "2bf353fee3471499ee742a561d55b44e046aa8132f79551bd20d1520b06c8223",
       "world/regions/belmonte/query_surface.py": "01212f534acb9b5c8ee0a5e475c8d209d163b91e33696f1c145811398a159c9e",
+      "world/regions/belmonte/surface_data.py": "965e24468cebbb691ae1c3fc0b44e3f2483a8be58fad0d9c781d8fbf6ee381de",
       "world/regions/belmonte/source.py": "323dbc1637d8ff8cb80097c60342f9efb38d54dc972b0922553d059e0289a47d",
       "world/map/build_map.py": "0c67e31a39beb6e36116da6e20591047f1335dc26406efdf9810d7f73db5c8eb",
       "world/regions/belmonte/ground_names.py": "ef71d416c8b71015fe38848101893d9d9bcc4f7bae1459e1df9b604770cf125c",
@@ -137,6 +138,6 @@
   },
   "atomic_export_revalidation": {
     "witness": "coasts/atomic-export-equivalence.json",
-    "sha256": "ed0c9bf2a433d86dfe6aaf64bae7acf43dd9c9b3b45d569ba31d84bdcfe0eb9c"
+    "sha256": "83451abf3b80a3120a1a2acc663ec57e3e653a7e311b2c2b7ec9993ff5951303"
   }
 }

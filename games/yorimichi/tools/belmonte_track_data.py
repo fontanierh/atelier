@@ -120,8 +120,9 @@ def build(track):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--track', type=Path, default=TRACK)
+    parser.add_argument('--source', type=Path, help='explicit completed track source/assembly document')
     args = parser.parse_args(argv)
-    data = build(json.loads((args.track / 'track.json').read_text()))
+    data = build(json.loads((args.source or args.track / 'track.json').read_text()))
     missing = [lod for m in data['meshes'].values() for lod in m['lods'] if not (args.track / lod).exists()]
     if missing:
         sys.exit(f'missing track meshes: {missing[:5]}')

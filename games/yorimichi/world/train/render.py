@@ -3,7 +3,7 @@
 For each coach: exterior profile and three-quarter views showing the empty interior through the glazing, the
 interior views of the references (restaurant towards the bar and back; a first-class cabin towards its window and
 towards the corridor), the roof-off top view and the same top view with the furniture reservations. White
-backgrounds and even light, as technical references. Output: build/yorimichi/belmonte-train/review/.
+backgrounds and even light, as technical references. Output: build/yorimichi/belmonte-train-authoring/review/.
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[1])); import yori  # noqa: E402,F401
 import math
@@ -172,7 +172,16 @@ def consist():
     shoot(scene, cam, res, REVIEW / 'consist-through-gangway.png', hide)
 
 
-def main():
+def main(argv=None):
+    import argparse
+    global OUT, REVIEW
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--source', type=_Path, required=True, help='isolated legacy authoring scenes')
+    args = parser.parse_args(argv)
+    OUT = args.source.resolve()
+    if OUT == (yori.OUT / 'belmonte-train').resolve():
+        raise ValueError('Coach diagnostics require isolated authoring scenes')
+    REVIEW = OUT / 'review'
     REVIEW.mkdir(parents=True, exist_ok=True)
     for c in L.coaches():
         coach_views(c)
@@ -181,4 +190,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(_sys.argv[_sys.argv.index('--') + 1:] if '--' in _sys.argv else [])

@@ -1,0 +1,31 @@
+schema_version = 1
+
+[[scenarios]]
+id = "d2.blender_ops.selected_payload_keys_cut_off_planner_and_sibling_changes_without_group_authority_forgery"
+tests = ["atelier-build-v2::blender_ops/selected_payload_keys_cut_off_planner_and_sibling_changes_without_group_authority_forgery"]
+tier = "t0"
+
+[[scenarios]]
+id = "d2.blender_ops.planner_contract_reserves_worker_visible_root_parent_and_bounds"
+tests = ["atelier-build-v2::blender_ops/planner_contract_reserves_worker_visible_root_parent_and_bounds"]
+tier = "t0"
+
+[[scenarios]]
+id = "d2.blender_ops.piece_contract_refuses_broad_extra_inputs_wrong_roles_formats_and_incomplete_auxiliary_sets"
+tests = ["atelier-build-v2::blender_ops/piece_contract_refuses_broad_extra_inputs_wrong_roles_formats_and_incomplete_auxiliary_sets"]
+tier = "t0"
+
+[[scenarios]]
+id = "d2.blender_ops.frozen_metadata_conserves_faces_material_mapping_collision_owner_and_finite_bounds"
+tests = ["atelier-build-v2::blender_ops/frozen_metadata_conserves_faces_material_mapping_collision_owner_and_finite_bounds"]
+tier = "t0"
+
+[[scenarios]]
+id = "d2.blender_ops.validator_identity_binds_frozen_decoder_bytes_and_versions_but_not_installed_platform"
+tests = ["atelier-build-v2::blender_ops/validator_identity_binds_frozen_decoder_bytes_and_versions_but_not_installed_platform"]
+tier = "t0"
+
+[[scenarios]]
+id = "d2.blender_ops.receipt_binding_uses_selected_output_content_digest_and_complete_fixed_ownership"
+tests = ["atelier-build-v2::blender_ops/receipt_binding_uses_selected_output_content_digest_and_complete_fixed_ownership"]
+tier = "t0"

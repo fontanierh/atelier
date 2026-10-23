@@ -40,7 +40,6 @@ import json
 import os
 from pathlib import Path
 import sys
-import sysconfig
 import threading
 import traceback
 from types import MappingProxyType
@@ -393,19 +392,38 @@ def _ancestors(path):
         path = parent
 
 
+def site_libraries(config, platform_roots):
+    """The loop's declared installed-library folders, each a real folder inside an approved platform root.
+
+    Nothing else is derived here: under -S the child's own sysconfig no longer names the loop's venv.
+    """
+    folders = config.get('site_libraries')
+    if not isinstance(folders, list) or not all(isinstance(folder, str) for folder in folders):
+        raise UndeclaredModuleError('the job configuration names no installed-library folders')
+    for folder in folders:
+        real = os.path.realpath(folder)
+        if not os.path.isabs(folder) or not os.path.isdir(real):
+            raise UndeclaredModuleError(f'installed-library folder {folder!r} is not an existing absolute folder')
+        if not any(_inside(real, root) for root in platform_roots):
+            raise UndeclaredModuleError(f'installed-library folder {folder!r} is outside the platform roots')
+    return list(dict.fromkeys(folders))
+
+
 def main(config, report):
     job_dir = os.path.realpath(os.getcwd())
     platform_roots = [os.path.realpath(root) for root in config['platform_roots']]
     declared = set(config['code'])
     entry_dir = os.path.join(job_dir, os.path.dirname(config['script']))
     # The child starts with -P -s -S, so no .pth file runs and no editable install can put the checkout on
-    # the path. The installed library directories are added explicitly; the entry script's directory
-    # is the only project import root.
-    libraries = [sysconfig.get_paths()[name] for name in ('purelib', 'platlib')]
-    sys.path[:] = [entry_dir] + [
-        entry for entry in dict.fromkeys(sys.path + libraries)
-        if entry and any(_inside(os.path.realpath(entry), root) for root in platform_roots)
-    ]
+    # the path. The loop's installed-library folders are appended after the standard library, exactly
+    # as declared, so they never shadow it; the entry script's directory is the only project import root.
+    try:
+        libraries = site_libraries(config, platform_roots)
+    except UndeclaredModuleError as error:
+        return report({'status': 'failed', 'kind': 'dependency', 'message': f'{type(error).__name__}: {error}'})
+    standard = [entry for entry in dict.fromkeys(sys.path)
+                if entry and any(_inside(os.path.realpath(entry), root) for root in platform_roots)]
+    sys.path[:] = [entry_dir] + standard + [folder for folder in libraries if folder not in standard]
     os.environ.pop('__CF_USER_TEXT_ENCODING', None)  # injected by macOS at exec; not declared
     finder = DeclaredCodeFinder(job_dir, declared, platform_roots)
     sys.meta_path.insert(0, finder)

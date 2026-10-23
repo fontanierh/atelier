@@ -2036,7 +2036,21 @@ def loco_lod2(c, coll, parent):
 B = L.Body()      # the body of the vehicle being built (build() sets it)
 
 
-def build(coach, images):
+def runtime_placements(coach, mesh_name):
+    placements = L.as_dict(coach)
+    placements['doors_runtime'] = DOOR_RECORDS
+    placements['doors'] = door_interactions(coach, mesh_name)
+    placements['door_rules'] = DOOR_RULES
+    placements['interior_volumes'] = L.interior_volumes(coach)
+    placements['exterior_volumes'] = L.exterior_volumes(coach)
+    placements['boarding'] = CO.boarding(coach)
+    placements['envelope'] = L.envelope()
+    placements['coupling'] = L.coupling(B)
+    placements['collision_boxes'] = [dict(name=name, part=n, group=g, box=[round(v, 4) for v in b]) for name, n, g, b in CO.named_boxes(coach, mesh_name)]
+    return placements
+
+
+def build(coach, images, *, source_sink=None):
     global B
     B = coach.body
     bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -2120,22 +2134,24 @@ def build(coach, images):
     lod_sets = {k: [o for o in every if k in list(o.get('lods', []))] for k in (0, 1, 2)}
     lod_sets[0] = [o for o in lod_sets[0] if o.name != lod2.name]
     lod_sets[1] = [o for o in lod_sets[1] if o.name != lod2.name]
+    if source_sink is not None:
+        info = dict(title=coach.title, mesh=mesh_name,
+            triangles={f'LOD{k}': tris(lod_sets[k]) for k in (0, 1, 2)},
+            objects={f'LOD{k}': sum(1 for o in lod_sets[k] if o.type == 'MESH') for k in (0, 1, 2)},
+            materials=sorted({s.material.name for o in lod_sets[0] if o.type == 'MESH' for s in o.material_slots if s.material}),
+            collision_boxes=len(ucx), placements=len(coach.placements), seats=len(coach.seats), mounts=len(coach.mounts),
+            reservations=len(coach.reservations), doors=len(DOOR_RECORDS), mesh_checks=mesh_checks(lod_sets[0]),
+            layout_checks=L.check(coach))
+        if info['layout_checks']: raise ValueError('Selected carriage layout checks failed: ' + repr(info['layout_checks']))
+        return source_sink(coach, mesh=mesh_name, lod_sets=lod_sets,
+                           placements=runtime_placements(coach, mesh_name), info=info)
     files = {}
     for k in (0, 1, 2):
         p = out / f'{mesh_name}_LOD{k}.glb'; export_glb(p, lod_sets[k]); files[p.name] = p
     p = out / f'{mesh_name}_Collision.glb'; export_glb(p, [col_root] + ucx); files[p.name] = p
     blockout = [res_root] + [o for o in every if o.parent == res_root]
     p = out / f'{coach.name}-blockout.glb'; export_glb(p, blockout); files[p.name] = p
-    placements = L.as_dict(coach)
-    placements['doors_runtime'] = DOOR_RECORDS
-    placements['doors'] = door_interactions(coach, mesh_name)
-    placements['door_rules'] = DOOR_RULES
-    placements['interior_volumes'] = L.interior_volumes(coach)
-    placements['exterior_volumes'] = L.exterior_volumes(coach)
-    placements['boarding'] = CO.boarding(coach)
-    placements['envelope'] = L.envelope()
-    placements['coupling'] = L.coupling(B)
-    placements['collision_boxes'] = [dict(name=name, part=n, group=g, box=[round(v, 4) for v in b]) for name, n, g, b in CO.named_boxes(coach, mesh_name)]
+    placements = runtime_placements(coach, mesh_name)
     p = out / f'{coach.name}-placements.json'; p.write_text(json.dumps(placements, indent=1)); files[p.name] = p
     for o in cols['Reservations'].objects:
         o.hide_render = False

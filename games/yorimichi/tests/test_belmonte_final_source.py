@@ -6,6 +6,7 @@ import importlib
 import importlib.util
 import json
 from pathlib import Path
+import struct
 from types import SimpleNamespace
 
 import numpy as np
@@ -108,6 +109,41 @@ def test_plain_ground_constructor_refuses_each_authored_carved_tile_before_any_o
         with pytest.raises(ValueError,match='carved terrain'):
             source.main(['--asset',key,'--definition',str(definition),'--library',str(LIBRARY),'--output',str(output)])
         assert not output.exists()
+
+
+@pytest.mark.parametrize('count',[1,32769])
+def test_carved_source_bounds_match_encoded_surface_before_unsplit_assembly(tmp_path,modules,monkeypatch,count):
+    surfaces,_,planner,definitions=modules
+    carver=importlib.import_module('belmonte.carve_ground')
+    entry=next(row for row in json.loads((LIBRARY/'source.json').read_text())['meshes']
+               if row['name']=='SM_BM_BT_Terrain_4_3')
+    points=np.asarray([[255.5000000000001,4.2,-3.079999999999984],
+                       [256.5000000000001,4.2,-3.079999999999984],
+                       [255.5000000000001,5.2,-2.]],dtype=float)
+    # Actual glTF Y-up bytes, decoded by the same strict ordinary mesh reader.
+    raw=b''.join(struct.pack('<3f',x,z,-y) for x,y,z in points)+struct.pack('<3H',0,1,2)*count
+    doc=dict(asset={'version':'2.0'},buffers=[dict(byteLength=len(raw))],
+             bufferViews=[dict(buffer=0,byteOffset=0,byteLength=36),dict(buffer=0,byteOffset=36,byteLength=6*count)],
+             accessors=[dict(bufferView=0,componentType=5126,type='VEC3',count=3),
+                        dict(bufferView=1,componentType=5123,type='SCALAR',count=3*count)],
+             materials=[dict(name='BM_000_Ground')],nodes=[dict(mesh=0)],scenes=[dict(nodes=[0])],scene=0,
+             meshes=[dict(primitives=[dict(attributes=dict(POSITION=0),indices=1,material=0)])])
+    data=glb_pack(doc,raw);intermediate=[points.min(0).tolist(),points.max(0).tolist()]
+    monkeypatch.setattr(carver.terrain,'carved_valley_data',lambda _: (data,count,intermediate,{}))
+    definition=tmp_path/'selected.json';definition.write_text(json.dumps(definitions.project(dict(meshes=[entry]))[entry['name']]))
+    path=tmp_path/(entry['name']+'.surface')
+    carver.main(['--asset',entry['name'],'--definition',str(definition),'--library',str(LIBRARY),'--output',str(path)])
+    saved,actual=surfaces.read(path,owner=entry['name'])
+    expected=[points.astype(np.float32).min(0).astype(float).tolist(),points.astype(np.float32).max(0).astype(float).tolist()]
+    assert expected!=intermediate and saved['bounds_m']==expected and actual==data
+    assert saved['sha256']==hashlib.sha256(data).hexdigest() and saved['triangles']==count
+    if count>32768:
+        return  # Whole query data is allowed; no oversized native primary is emitted.
+    plan=planner.main(['--asset',entry['name'],'--surface',str(path),'--output',str(tmp_path/'plan')])
+    assert len(plan['pieces'])==1 and plan['pieces'][0]['name']==entry['name']
+    row=plan['pieces'][0];receipt=encoded_glb.export(tmp_path/'plan'/row['payload'],tmp_path/'exports'/row['name'])
+    assert row['bounds']==receipt['bounds']==receipt['metadata']['entry']['bounds_m']==expected
+    assert (tmp_path/'exports'/row['name']/receipt['primary']).read_bytes()==data
 
 
 def test_ground_graph_selects_final_carving_and_has_no_export_or_assembly_input(tmp_path,modules):

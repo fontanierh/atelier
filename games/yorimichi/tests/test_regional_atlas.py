@@ -24,7 +24,8 @@ def test_extracted_terrain_sources_are_signed_and_declared_inputs(tmp_path, monk
     from atelier import build
     sources = {'world/build_terrain.py', 'world/farhills_surface.py', 'world/farhills_grid.py', 'world/terrain_product.py',
                'world/north_mountain_surface.py', 'world/city_terrain_surface.py', 'world/regions/hidamari/build.py',
-               'world/regions/hidamari/natural_terrain.py', 'world/regions/craterpark/v2/v4_config.py'}
+               'world/regions/hidamari/natural_terrain.py', 'world/regions/craterpark/v2/v4_config.py',
+               'world/regions/belmonte/surface_data.py'}
     assert sources <= set(atlas.GEOGRAPHY_SOURCES)
     recipe = build.load_recipe('yorimichi')
     step = next(s for s in recipe.steps(SimpleNamespace(game='yorimichi', out=tmp_path, uproject=None))

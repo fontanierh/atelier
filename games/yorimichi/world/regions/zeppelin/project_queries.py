@@ -66,5 +66,5 @@ def project(asset,destination):
     atomic_json(destination,value)
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser();parser.add_argument('--asset',required=True);parser.add_argument('--output',required=True)
+    parser=argparse.ArgumentParser();parser.add_argument('--asset',required=True);parser.add_argument('--output',type=Path,required=True)
     args=parser.parse_args();project(args.asset,args.output)

@@ -77,7 +77,68 @@ pub enum CleanupReceipt {
     Unconfirmed { reason: String },
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+/// One running tree receipt of the pinned worker, as the bridge relays it: the receipt's time
+/// (seconds since the epoch) and its owned processes as `(pid, started)`, shared services
+/// excluded. Evidence only once [`quiescence`] accepts it.
+#[derive(Clone, Debug, PartialEq)]
+pub struct TreeSample {
+    pub time: f64,
+    pub processes: Vec<(u32, String)>,
+}
+
+/// Why a tree sample is not quiescence evidence.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SampleRefusal {
+    /// Not a finite time.
+    Malformed,
+    /// Taken before the unit's terminal reply was received.
+    Stale,
+    /// Later than the controller's clock allows.
+    Future,
+    /// The pinned worker is not the only process.
+    Unclassified,
+    /// The only process is not the pinned worker.
+    WrongIdentity,
+    /// No process at all: the worker is gone, so this is no evidence for a live session.
+    Empty,
+}
+
+/// How far a sample may claim to be ahead of the controller's clock, as in the bridge.
+pub const SAMPLE_CLOCK_SKEW_SECONDS: f64 = 2.0;
+
+/// @cc [owner:fontanierh,label:safety] quiescence-sample-evidence
+/// A tree sample MUST count as quiescence evidence only when its time is finite, strictly after
+/// the unit's terminal reply was received (`after`, the controller's clock), no later than the
+/// controller's clock plus the skew, and its process list is exactly the session's pinned worker
+/// (pid and start time). An absent, stale, future, malformed, empty sample, one with any other
+/// process or one naming another identity MUST be refused, never repaired. The ordering assumes
+/// the monitor's and the controller's wall clocks agree within `SAMPLE_CLOCK_SKEW_SECONDS` and
+/// are not adjusted between the terminal reply and the sample; it is not causal ordering. See
+/// tests/guard_adapter.rs (`quiescence_refuses_every_sample_that_is_not_fresh_exact_evidence`).
+pub fn quiescence(
+    sample: &TreeSample,
+    pinned: &ProcessIdentity,
+    after: f64,
+    now: f64,
+) -> Result<(), SampleRefusal> {
+    if !sample.time.is_finite() || !after.is_finite() || !now.is_finite() {
+        return Err(SampleRefusal::Malformed);
+    }
+    if sample.time <= after {
+        return Err(SampleRefusal::Stale);
+    }
+    if sample.time > now + SAMPLE_CLOCK_SKEW_SECONDS {
+        return Err(SampleRefusal::Future);
+    }
+    match sample.processes.as_slice() {
+        [] => Err(SampleRefusal::Empty),
+        [(pid, started)] if *pid == pinned.pid && *started == pinned.started => Ok(()),
+        [_] => Err(SampleRefusal::WrongIdentity),
+        _ => Err(SampleRefusal::Unclassified),
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum LaunchEvent {
     Queued,
     /// The broker's offer was accepted (`on_slot`); the job limit starts here.
@@ -96,11 +157,19 @@ pub enum LaunchEvent {
         cleanup: CleanupReceipt,
         receipts: PathBuf,
     },
+    /// A running tree receipt of the pinned worker; never cleanup or crash evidence by itself.
+    TreeSample(TreeSample),
+    /// With checkout custody: the guard's custody monitor's own pinned identity, with the guard
+    /// invocation whose cleanup receipt it belongs to. Published once, after `ChildStarted`.
+    Monitor {
+        monitor: ProcessIdentity,
+        invocation: String,
+    },
     /// The admission owner broke its event contract. Never cleanup or crash evidence.
     Fault(String),
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct AttemptEvent {
     pub attempt: u32,
     pub event: LaunchEvent,
@@ -154,6 +223,19 @@ pub enum BridgeEvent {
         returncode: Option<i32>,
         stopped_by: Option<StoppedBy>,
     },
+    TreeSample {
+        time: f64,
+        processes: Vec<(u32, String)>,
+    },
+    Monitor {
+        pid: u32,
+        started: String,
+        boot: String,
+        invocation: String,
+    },
+    Fault {
+        reason: String,
+    },
     Finished {
         cleanup: String,
         reason: Option<String>,
@@ -194,6 +276,31 @@ pub fn decode_event(line: &str, receipts: &std::path::Path) -> LaunchEvent {
             },
             stopped_by,
         }),
+        BridgeEvent::TreeSample { time, processes } => {
+            Ok(LaunchEvent::TreeSample(TreeSample { time, processes }))
+        }
+        BridgeEvent::Monitor {
+            pid,
+            started,
+            boot,
+            invocation,
+        } => {
+            let invocation_ok = invocation.len() == 32
+                && invocation
+                    .bytes()
+                    .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b));
+            identity(pid, started, boot).and_then(|monitor| {
+                if invocation_ok {
+                    Ok(LaunchEvent::Monitor {
+                        monitor,
+                        invocation,
+                    })
+                } else {
+                    Err("a monitor identity without its guard invocation".into())
+                }
+            })
+        }
+        BridgeEvent::Fault { reason } => Err(format!("the bridge reported a fault: {reason}")),
         BridgeEvent::Finished { cleanup, reason } => match cleanup.as_str() {
             "confirmed" => Ok(LaunchEvent::Finished {
                 cleanup: CleanupReceipt::Confirmed,

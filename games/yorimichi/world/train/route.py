@@ -390,11 +390,11 @@ def _belmonte_surfaces():
     from belmonte import source
     # The natural ground: belmonte/build.py writes the apron and country before the railway's earthworks carve the
     # built meshes; the committed valley tiles in assets/belmonte/meshes/ remain natural.
-    paths = [yori.OUT / f'belmonte/natural/{name}.glb' for name in ('SM_BM_NorthCountry', 'SM_BM_NorthApron')]
-    for p in paths:
-        if not p.is_file():
-            raise FileNotFoundError(f'missing Belmonte natural ground {p}; run world.belmonte first')
-    north = [source.Surface(source.triangles(p)) for p in paths]
+    from belmonte.surface_data import read
+    owners = ('SM_BM_NorthCountry', 'SM_BM_NorthApron')
+    packets = [read(yori.OUT / 'belmonte-natural-source-data' / (owner + '.surface'),
+                    owner=owner, stage='natural')[1] for owner in owners]
+    north = [source.Surface(source.triangles_data(data)) for data in packets]
     return source.terrain(natural=True), north
 
 
@@ -490,10 +490,8 @@ class Raster:
             yori.OUT / 'world.json',
             yori.OUT / 'heightmap.npy',
             yori.OUT / 'farhills.npy',
-            yori.OUT / 'belmonte' / 'natural' / 'SM_BM_NorthApron.glb',
-            yori.OUT / 'belmonte' / 'natural' / 'SM_BM_NorthCountry.glb',
-            yori.OUT / 'belmonte' / 'glb' / 'SM_BM_NorthApron.glb',
-            yori.OUT / 'belmonte' / 'glb' / 'SM_BM_NorthCountry.glb',
+            yori.OUT / 'belmonte-natural-source-data' / 'SM_BM_NorthApron.surface',
+            yori.OUT / 'belmonte-natural-source-data' / 'SM_BM_NorthCountry.surface',
         ]
         for p in files:
             h.update(str(p.name).encode() + (p.read_bytes() if p.is_file() else b'missing'))

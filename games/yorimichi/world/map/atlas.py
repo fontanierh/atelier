@@ -50,6 +50,7 @@ GEOGRAPHY_SOURCES = (
     'world/regions/hidamari/arrival_placement.py', 'world/regions/hidamari/park_grounds_placement.py',
     'world/regions/hidamari/station_yard_placement.py', 'world/regions/hidamari/temple_precinct_placement.py',
     'world/regions/belmonte/query_arrays.py', 'world/regions/belmonte/query_surface.py',
+    'world/regions/belmonte/surface_data.py',
     'world/regions/belmonte/source.py', 'world/map/build_map.py',
     'world/regions/belmonte/ground_names.py', 'world/regions/belmonte/terrain_bounds.py',
     'world/regions/brinecove/ground_sampling.py', 'world/regions/brinecove/boundary.py',

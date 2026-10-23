@@ -12,16 +12,20 @@ import sys
 
 import pytest
 
-from atelier.build_v2.guarded_worker import classify, cleanup
+from atelier.build_v2.guarded_worker import classify, cleanup, monitor_identity, tree_sample
 
 ROOT = Path(__file__).resolve().parents[3]
 WORKER = ROOT / 'platform/build-v2/tests/fixtures/disposable_worker.py'
 darwin = pytest.mark.skipif(sys.platform != 'darwin', reason='process identities use macOS libproc')
 
+MONITOR = [999991, 4242]  # the fake guard's custody monitor identity (see FAKE_GUARD)
+
 FAKE_GUARD = r'''
 import json, os, signal, subprocess, sys, time
 from pathlib import Path
 from atelier.harness.capacity_protocol import process_start
+
+MONITOR = [999991, 4242]  # stands in for the custody monitor's own pinned identity
 
 def run(command, folder, timeout=0., purpose=None, env=None, limit_gib=10., kind='job', on_slot=None,
         on_poll=None, pass_fds=(), queue_seconds=None, custody_fds=(), invocation_id=None):
@@ -51,6 +55,32 @@ def run(command, folder, timeout=0., purpose=None, env=None, limit_gib=10., kind
     if scenario == 'unconfirmed':
         tree.update(state='cleanup_incomplete', termination_reason='child_exited', cleanup_complete=False)
     try:
+        if files:
+            # A custody monitor's readiness receipt names its controller (this bridge) and itself.
+            running = dict(owner=child.pid, owner_started=start, state='running', time=time.time(),
+                           controller=[os.getpid(), process_start(os.getpid())], monitor=list(MONITOR),
+                           processes=[dict(pid=child.pid, started=start, name='python', depth=0, footprint_bytes=1)])
+            if scenario == 'monitor_foreign':
+                running['controller'] = [1, 1]
+            (folder / 'memory-health-tree.json').write_text(json.dumps(running))
+            on_poll(child.pid)
+            if scenario in ('monitor_changed', 'monitor_missing'):
+                running['time'] = time.time() + .001
+                if scenario == 'monitor_changed':
+                    running['monitor'] = [MONITOR[0], MONITOR[1] + 1]
+                else:
+                    del running['monitor']
+                (folder / 'memory-health-tree.json').write_text(json.dumps(running))
+                on_poll(child.pid)
+            tree['monitor'] = list(MONITOR)
+        if scenario == 'sampling':
+            running = dict(owner=child.pid, owner_started=start, state='running', time=time.time(),
+                           processes=[dict(pid=child.pid, started=start, name='python', depth=0, footprint_bytes=1)])
+            (folder / 'memory-health-tree.json').write_text(json.dumps(running))
+            on_poll(child.pid)
+            on_poll(child.pid)  # the same receipt again: no second sample
+            running.update(time=time.time() + .001, processes=running['processes'] + [dict(pid=1, started=7)])
+            (folder / 'memory-health-tree.json').write_text(json.dumps(running))
         on_poll(child.pid)
         if scenario == 'memory':
             child.kill()
@@ -76,6 +106,7 @@ def run(command, folder, timeout=0., purpose=None, env=None, limit_gib=10., kind
 
 class Bridge:
     def __init__(self, tmp_path, scenario, custody=()):
+        self.skip_samples = bool(custody)  # a custody readiness receipt is also a sample
         (tmp_path / 'fakeguard.py').write_text(FAKE_GUARD)
         self.report = tmp_path / 'attempt-1'
         self.report.mkdir()
@@ -104,9 +135,12 @@ class Bridge:
         self.events = os.fdopen(events_r, 'r')
 
     def next(self):
-        line = self.events.readline()
-        assert line, 'the bridge closed its events before finishing'
-        return json.loads(line)
+        while True:
+            line = self.events.readline()
+            assert line, 'the bridge closed its events before finishing'
+            event = json.loads(line)
+            if not (self.skip_samples and event['event'] == 'tree_sample'):
+                return event
 
     def hello_then_close(self):
         import importlib.util
@@ -134,12 +168,20 @@ def test_normal_attempt_reports_pinned_identity_and_confirmed_cleanup(tmp_path):
     assert bridge.next() == {'event': 'admitted'}
     started = bridge.next()
     assert started['event'] == 'child_started' and started['pid'] > 0 and started['started'] and started['boot']
+    monitor = bridge.next()
+    assert monitor == dict(event='monitor', pid=MONITOR[0], started=str(MONITOR[1]), boot=started['boot'],
+                           invocation=monitor['invocation']), 'the custody monitor, once, with its correlation'
+    assert len(monitor['invocation']) == 32
     bridge.hello_then_close()
     exited = bridge.next()
     assert exited == dict(event='child_exited', pid=started['pid'], started=started['started'], boot=started['boot'],
                           returncode=0, stopped_by=None)
     assert bridge.next() == dict(event='finished', cleanup='confirmed', reason=None)
     assert bridge.finish() == 0
+    record = json.loads((bridge.report / 'cleanup.json').read_text())
+    assert record == dict(schema=1, invocation=monitor['invocation'], boot=started['boot'],
+                          child=[started['pid'], int(started['started'])], monitor=MONITOR, confirmed=True,
+                          reason=None)
     call = json.loads((bridge.report / 'fake-call.json').read_text())
     info = os.fstat(lock)
     assert call['kind'] == 'job' and call['limit_gib'] == 1 and len(call['pass_fds']) == 2
@@ -221,13 +263,15 @@ CUSTODY = dict(held=False, released='cleanup_complete', lock_files=[[1, 12], [1,
     receipts(time=201.),  # within the clock skew
     receipts(**STOPPED),
     {**receipts(**STOPPED), 'error': SystemExit('child exceeded 30 s')},
-    {**receipts(custody=CUSTODY), 'custody': FILES},
+    {**receipts(custody=CUSTODY, monitor=[9, 90]), 'custody': FILES},
+    {**receipts(custody=CUSTODY, monitor=[9, 90]), 'custody': FILES, 'monitor': [9, 90]},
     dict(error=SystemExit(143), child=None, process=None, tree=None, admitted=False, since=50., now=200.,
          invocation=INVOCATION, timings=None, custody=None),
     # The real guard publishes its diagnostic timings even for a run cancelled in the queue.
     dict(error=SystemExit(143), child=None, process=None, tree=None, admitted=False, since=50., now=200.,
          invocation=INVOCATION, timings=dict(schema=1, invocation_id=INVOCATION), custody=None),
-], ids=['exited', 'skew', 'stopped', 'deadline', 'custody', 'queued-cancel', 'queued-cancel-timings'])
+], ids=['exited', 'skew', 'stopped', 'deadline', 'custody', 'custody-monitor', 'queued-cancel',
+        'queued-cancel-timings'])
 def test_cleanup_confirms_only_consistent_affirmative_evidence(evidence):
     assert judge(**evidence) == (True, None)
 
@@ -285,6 +329,12 @@ def mutate(path, value, **tree):
     mutate('custody', FILES, custody=dict(held=False, released='cleanup_complete')),
     mutate('custody', FILES, custody='released'),
     receipts(custody=CUSTODY),
+    receipts(monitor=[9, 90]),  # a monitor identity for a run without custody
+    mutate('custody', FILES, custody=CUSTODY),  # custody without a monitor identity
+    mutate('custody', FILES, custody=CUSTODY, monitor=[9, 0]),
+    mutate('custody', FILES, custody=CUSTODY, monitor=[True, 90]),
+    {**receipts(custody=CUSTODY, monitor=[9, 90]), 'custody': FILES, 'monitor': [9, 91]},  # another monitor
+    {**receipts(custody=CUSTODY, monitor=[9, 90]), 'custody': FILES, 'monitor': [9, 90], 'monitor_fault': True},
 ])
 def test_cleanup_rejects_malformed_contradictory_stale_or_missing_evidence(evidence):
     confirmed, reason = judge(**evidence)
@@ -305,3 +355,138 @@ def test_no_child_is_confirmed_only_for_an_unwind_before_admission_without_recei
                     invocation=INVOCATION, timings=None, custody=None)
     evidence.update(change)
     assert judge(**evidence)[0] is False
+
+
+@darwin
+def test_running_tree_receipts_become_samples_of_the_pinned_child_once_each(tmp_path):
+    bridge = Bridge(tmp_path, 'sampling')
+    assert bridge.next() == {'event': 'queued'}
+    assert bridge.next() == {'event': 'admitted'}
+    started = bridge.next()
+    assert started['event'] == 'child_started'
+    first = bridge.next()
+    assert first['event'] == 'tree_sample' and set(first) == {'event', 'time', 'processes'}
+    assert first['processes'] == [[started['pid'], started['started']]]
+    second = bridge.next()
+    assert second['event'] == 'tree_sample' and second['time'] > first['time']
+    assert second['processes'] == [[started['pid'], started['started']], [1, '7']], 'reported, not judged'
+    bridge.hello_then_close()
+    assert bridge.next()['event'] == 'child_exited'
+    assert bridge.next()['event'] == 'finished'
+    bridge.finish()
+
+
+SINCE, NOW, CHILD = 1000., 2000., (42, 77)
+
+
+def running(**change):
+    value = dict(owner=42, owner_started=77, state='running', time=1500.,
+                 processes=[dict(pid=42, started=77, name='python', depth=0, footprint_bytes=1)])
+    value.update(change)
+    return value
+
+
+def test_a_fresh_running_receipt_of_the_pinned_child_is_a_sample():
+    assert tree_sample(running(), CHILD, SINCE, NOW, None) == dict(time=1500., processes=[[42, '77']])
+    two = running(processes=running()['processes'] + [dict(pid=9, started=3)])
+    assert tree_sample(two, CHILD, SINCE, NOW, 1400.)['processes'] == [[42, '77'], [9, '3']]
+
+
+@pytest.mark.parametrize('tree, last', [
+    (None, None),  # absent
+    ('not a receipt', None),  # malformed
+    (running(time=999.), None),  # stale: before this invocation
+    (running(time=NOW + 60), None),  # from the future
+    (running(time=float('nan')), None),  # malformed time
+    (running(time=True), None),  # malformed time
+    (running(), 1500.),  # not newer than the last sample
+    (running(owner=43), None),  # another identity
+    (running(owner_started=78), None),  # a reused pid
+    (running(owner_started='77'), None),  # malformed identity
+    (running(state='child_exited'), None),  # not a running sample
+    (running(processes='42'), None),  # malformed list
+    (running(processes=[dict(pid=42)]), None),  # a process without its start time
+    (running(processes=[dict(pid='42', started=77)]), None),  # malformed pid
+])
+def test_absent_stale_future_malformed_or_foreign_receipts_are_never_samples(tree, last):
+    assert tree_sample(tree, CHILD, SINCE, NOW, last) is None
+    assert tree_sample(running(), None, SINCE, NOW, None) is None, 'no pinned child yet'
+
+
+@darwin
+@pytest.mark.parametrize('scenario', ['monitor_changed', 'monitor_missing'])
+def test_a_published_monitor_that_changes_or_goes_missing_is_a_fault_and_never_confirmed(tmp_path, scenario):
+    import fcntl
+    lock = os.open(tmp_path / 'checkout.lock', os.O_RDWR | os.O_CREAT, 0o600)
+    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    custody = fcntl.fcntl(lock, fcntl.F_DUPFD_CLOEXEC, 3)
+    bridge = Bridge(tmp_path, scenario, custody=[custody])
+    os.close(custody)
+    assert [bridge.next()['event'] for _ in range(4)] == ['queued', 'admitted', 'child_started', 'monitor']
+    assert bridge.next() == dict(event='fault', reason='the published custody monitor identity changed or went missing')
+    bridge.hello_then_close()
+    assert bridge.next()['event'] == 'child_exited'
+    finished = bridge.next()
+    assert finished['event'] == 'finished' and finished['cleanup'] == 'unconfirmed' and 'monitor' in finished['reason']
+    bridge.finish()
+    record = json.loads((bridge.report / 'cleanup.json').read_text())
+    assert record['confirmed'] is False and record['monitor'] == MONITOR
+    os.close(lock)
+
+
+@darwin
+def test_a_receipt_from_another_controller_never_publishes_a_monitor(tmp_path):
+    import fcntl
+    lock = os.open(tmp_path / 'checkout.lock', os.O_RDWR | os.O_CREAT, 0o600)
+    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    custody = fcntl.fcntl(lock, fcntl.F_DUPFD_CLOEXEC, 3)
+    bridge = Bridge(tmp_path, 'monitor_foreign', custody=[custody])
+    os.close(custody)
+    assert [bridge.next()['event'] for _ in range(3)] == ['queued', 'admitted', 'child_started']
+    bridge.hello_then_close()
+    assert bridge.next()['event'] == 'child_exited', 'no monitor event'
+    assert bridge.next()['event'] == 'finished'
+    bridge.finish()
+    assert json.loads((bridge.report / 'cleanup.json').read_text())['monitor'] is None
+    os.close(lock)
+
+
+def test_runs_without_custody_publish_no_monitor_and_write_no_cleanup_record(tmp_path):
+    if sys.platform != 'darwin':
+        pytest.skip('process identities use macOS libproc')
+    bridge = Bridge(tmp_path, 'normal')
+    events = [bridge.next()['event'] for _ in range(3)]
+    bridge.hello_then_close()
+    events += [bridge.next()['event'], bridge.next()['event']]
+    bridge.finish()
+    assert events == ['queued', 'admitted', 'child_started', 'child_exited', 'finished']
+    assert not (bridge.report / 'cleanup.json').exists()
+
+
+CONTROLLER = (5, 50)
+
+
+def readiness(**change):
+    value = dict(running(), controller=list(CONTROLLER), monitor=[9, 90])
+    value.update(change)
+    return value
+
+
+def test_a_fresh_readiness_receipt_of_the_pinned_child_and_this_bridge_names_the_monitor():
+    assert monitor_identity(readiness(), CHILD, CONTROLLER, SINCE, NOW) == [9, 90]
+
+
+@pytest.mark.parametrize('tree', [
+    None, 'not a receipt',
+    readiness(state='child_exited'),  # not a readiness receipt
+    readiness(time=999.), readiness(time=NOW + 60), readiness(time=float('nan')),  # not fresh
+    readiness(owner=43), readiness(owner_started=78),  # another child
+    readiness(controller=[5, 51]), readiness(controller=None),  # another controller
+    readiness(monitor=None), readiness(monitor=[9]), readiness(monitor=[9, 0]), readiness(monitor=[0, 90]),
+    readiness(monitor=[True, 90]), readiness(monitor=[9, '90']), readiness(monitor=(9, 90)),
+    readiness(monitor=[42, 90]),  # the child itself
+    readiness(monitor=[5, 90]),  # the controller itself
+])
+def test_no_usable_monitor_identity_is_ever_inferred(tree):
+    assert monitor_identity(tree, CHILD, CONTROLLER, SINCE, NOW) is None
+    assert monitor_identity(readiness(), None, CONTROLLER, SINCE, NOW) is None, 'no pinned child yet'

@@ -685,19 +685,20 @@ def forecourt(site, lod):
     return m
 
 
-def layout(line):
+def layout(line, *, make=None):
     """(meshes {name: [LODs]}, the station's record for track.json) at the end of a line ending at the station's site,
     else ({}, None). The road's overbridge is overbridge.py's."""
+    make = make or (lambda builder, *args: builder(*args))
     end, before = line.frame(line.length)[0], line.frame(line.length - 10.)[0]
     site = S.for_line([before[:2], end[:2]], [before[2], end[2]])
     if site is None:
         return {}, None
     origin = (*site.origin, site.rail)
     meshes = {
-        'SM_ST_Headhouse': [to_world(headhouse(k), site) for k in range(3)],
-        'SM_ST_Sheds': [to_world(sheds(k), site) for k in range(3)],
-        'SM_ST_Coaches': [to_world(coaches(k), site) for k in range(3)],
-        'SM_ST_Forecourt': [to_world(forecourt(site, k), site) for k in range(3)],
+        'SM_ST_Headhouse': [make(to_world, make(headhouse, k), site) for k in range(3)],
+        'SM_ST_Sheds': [make(to_world, make(sheds, k), site) for k in range(3)],
+        'SM_ST_Coaches': [make(to_world, make(coaches, k), site) for k in range(3)],
+        'SM_ST_Forecourt': [make(to_world, make(forecourt, site, k), site) for k in range(3)],
     }
     rows = [dict(name=name, origin=[round(float(c), 3) for c in origin], collision=f'LOD{len(meshes[name]) - 1}')
             for name in meshes]

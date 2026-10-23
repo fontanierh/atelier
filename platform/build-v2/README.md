@@ -327,7 +327,10 @@ that child and answers `cancelled`. The child runs `python -P -s -S -B` with the
 `PYTHONHASHSEED=0` and two Python I/O settings. The entry script defines `run(context)`; the
 `JobContext` (documented in `python_job.py`) exposes slot paths (`None` when absent), read-only params,
 declared outputs and the seed, never the job ID, folder or any locator. Only platform modules and the
-unit's declared code load, and the checkout is never on `sys.path`. Wall-clock reads (including
+unit's declared code load, and the checkout is never on `sys.path`. Under `-S` the child cannot find
+the loop's virtual environment itself, so the loop passes its own purelib and platlib folders in the
+child's configuration; the child appends exactly those, after the standard library, and refuses the
+job when one is missing or resolves outside the platform roots. No `.pth` file runs. Wall-clock reads (including
 `clock_gettime` of realtime clocks) return a fixed instant, `random` is seeded with the declared
 `seed` (default 0) even when reseeded without an argument, and OS entropy, `uuid1/4` and `secrets`
 raise; this makes ordinary scripts reproducible, not the OS deterministic. Elapsed-time clocks, file
@@ -988,3 +991,5 @@ The engine-wide writes the T2 probes measured are named proof gaps in `build-v2-
 - Zen files and its status utility;
 - crash reports;
 - the shared filesystem DDC, which a session refused for its graph may already have written at startup.
+
+D2 unused Blender op definitions and in-job bodies support the initial schema-2 MeshIR → FBX route. See [Blender op contracts](../../docs/build-v2/BLENDER_OPS.md) for ownership, frozen validation and pending native acceptance.

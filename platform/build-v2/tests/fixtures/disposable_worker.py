@@ -6,7 +6,8 @@ lives until this worker's pipe to it closes, so a guard sees a two-process tree.
 `started`: normal (completed), fail (failed/job), crash (exit 3), crash_once (exit 3 unless the
 CRASH_MARKER file exists, which it creates), hang (wait until stopped or the pipe closes),
 deaf (sends hello, then never reads again until stopped).
-WORKER_FD_REPORT, when set, names a JSON file recording the descriptors this process holds.
+WORKER_FD_REPORT, when set, names a JSON file recording the descriptors this process holds;
+JOB_LOG, when set, names a file that gets one JSON line {job_id, job_dir} for every run received.
 Only the standard library and the Python protocol module, loaded by path, are used.
 """
 import importlib.util
@@ -85,6 +86,9 @@ def main(argv):
             continue
         job = request['job']
         send({'type': 'started', 'job_id': job['job_id']})
+        if os.environ.get('JOB_LOG'):
+            with open(os.environ['JOB_LOG'], 'a') as log:
+                log.write(json.dumps({'job_id': job['job_id'], 'job_dir': job['job_dir']}) + '\n')
         marker = os.environ.get('CRASH_MARKER')
         if scenario == 'crash' or (scenario == 'crash_once' and marker and not Path(marker).exists()):
             if marker:
