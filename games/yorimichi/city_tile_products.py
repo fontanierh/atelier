@@ -107,6 +107,31 @@ def piece_material_paths(source, slots):
     return material_paths(slots)
 
 
+def _bijection(left, right, equivalent):
+    """Match complete unordered multisets, including ambiguous nearby values."""
+    if len(left) != len(right): return False
+    edges = [[j for j, candidate in enumerate(right) if equivalent(value, candidate)] for value in left]
+    owners = {}
+    for first in range(len(left)):
+        pending = [first]; previous = {}; visited = set(); found = None
+        for current in pending:
+            for target in edges[current]:
+                if target in visited: continue
+                visited.add(target); previous[target] = current
+                if target not in owners:
+                    found = target; break
+                pending.append(owners[target])
+            if found is not None: break
+        if found is None: return False
+        # Reverse the augmenting path without recursion or dropping multiplicity.
+        while found is not None:
+            current = previous[found]
+            former = next((target for target, owner in owners.items() if owner == current), None)
+            owners[found] = current
+            found = former
+    return True
+
+
 def collision_matches(mesh, row, tile, *, read_vertices=None):
     """Read actual imported UCX vertices, including each native shape transform.
 
@@ -131,19 +156,14 @@ def collision_matches(mesh, row, tile, *, read_vertices=None):
     expected = row['source_collision_vertices'] if tile['collision_hulls'] else []
     if len(hulls) != len(expected):
         return False
-    actual = [sorted(hull) for hull in hulls]
     # Import may reorder hulls and vertices. Convex geometry is identified by
     # its complete vertex set, rather than just its count or bounding box.
-    remaining = list(actual)
-    for points in expected:
-        match = next((i for i, candidate in enumerate(remaining)
-                      if len(points) == len(candidate) and all(
-                          abs(a-b) <= max(.001, 2.**(math.frexp(max(abs(a), abs(b)))[1]-23))
-                          for left, right in zip(sorted(points), candidate) for a, b in zip(left, right))), None)
-        if match is None:
-            return False
-        remaining.pop(match)
-    return not remaining
+    # Lexicographic sorting is invalid under the existing rounding allowance:
+    # nearly equal X values may swap two vertices whose Y/Z differ greatly.
+    def point_matches(left, right):
+        return all(abs(a-b) <= max(.001, 2.**(math.frexp(max(abs(a), abs(b)))[1]-23))
+                   for a, b in zip(left, right))
+    return _bijection(expected, hulls, lambda left, right: _bijection(left, right, point_matches))
 
 
 def protected_files(root):

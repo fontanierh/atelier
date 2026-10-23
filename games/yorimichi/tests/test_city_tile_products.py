@@ -256,6 +256,29 @@ def test_actual_collision_hulls_require_complete_transformed_vertex_identity():
     assert P.collision_matches(mesh,row,{'collision_hulls':0},read_vertices=read)
 
 
+def test_collision_rounding_can_reverse_sort_order_without_changing_vertex_matching():
+    # Observed original AND split Village CottageA native hull, after FBX axis conversion.
+    expected = [[-325.,250.,-50.],[-325.,250.,325.],[-325.,-250.,-50.],[-325.,-250.,325.],
+                [325.,250.,-50.],[325.,250.,325.],[325.,-250.,-50.],[325.,-250.,325.]]
+    actual = [[-325.0000305175781,249.9999542236328,-50.],[-325.0000305175781,249.9999542236328,325.],
+              [-324.9999694824219,-250.0000457763672,-50.],[-324.9999694824219,-250.0000457763672,325.],
+              [324.9999694824219,250.0000457763672,-50.],[324.9999694824219,250.0000457763672,325.],
+              [325.0000305175781,-249.9999542236328,-50.],[325.0000305175781,-249.9999542236328,325.]]
+    row = dict(source_collision_vertices=[expected])
+    assert P.collision_matches(None,row,dict(collision_hulls=1),read_vertices=lambda _:json.dumps([actual]))
+    actual[-1] = actual[-2]  # A duplicate cannot hide the missing corner.
+    assert not P.collision_matches(None,row,dict(collision_hulls=1),read_vertices=lambda _:json.dumps([actual]))
+
+
+def test_collision_nearby_vertices_require_a_complete_bijection_not_a_greedy_pair():
+    expected = [[0.,0.,0.],[.0015,0.,0.],[0.,1.,0.],[0.,0.,1.]]
+    actual = [[.00075,0.,0.],[-.00075,0.,0.],[0.,1.,0.],[0.,0.,1.]]
+    row = dict(source_collision_vertices=[expected])
+    assert P.collision_matches(None,row,dict(collision_hulls=1),read_vertices=lambda _:json.dumps([actual]))
+    actual[0][0] = .003  # The tolerance is unchanged.
+    assert not P.collision_matches(None,row,dict(collision_hulls=1),read_vertices=lambda _:json.dumps([actual]))
+
+
 @pytest.mark.parametrize('invalid', ['', '{}', '[[]]', '[[[0,0,0],[1,0,0],[0,1,0],[0,0,NaN]]]'])
 def test_unsupported_native_collision_readback_refuses(invalid):
     assert not P.collision_matches(object(),{'source_collision_vertices':[]},
