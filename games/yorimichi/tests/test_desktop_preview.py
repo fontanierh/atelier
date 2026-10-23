@@ -20,19 +20,20 @@ def desktop(monkeypatch, tmp_path):
     return module
 
 
-def manifest(desktop, count=83):
+def manifest(desktop, count=183):
+    from regions.hidamari.logical_catalogue import ASSETS
     path = desktop.PROJECT / 'Content' / 'Data' / 'city_surface_tiles' / 'v1_128m' / 'manifest.json'
     path.parent.mkdir(parents=True, exist_ok=True)
     sources = {name: {'tiles': [{'name': name + str(i)} for i in range(n)]}
-               for name, n in zip(('HD_Terrain', 'HD_Streets', 'HD_Square'), (count - 2, 1, 1))}
-    path.write_text(json.dumps({'complete': True, 'tag': 'v1_128m', 'sources': sources}))
+               for name, n in zip(ASSETS,(count-len(ASSETS)+1,*([1]*(len(ASSETS)-1))))}
+    path.write_text(json.dumps({'version':3,'complete': True, 'tag': 'v1_128m', 'sources': sources}))
     return path
 
 
-def ready_log(lumen=False, trees=True, tiles=83, forced=2, groups=3):
+def ready_log(lumen=False, trees=True, tiles=183, forced=2, groups=3):
     return (f'DESKTOP PREVIEW viewport=2228x1440 fullscreen=1 window_aspect=1.547\n'
             f'r.ForwardShading = "{int(not lumen)}"\n'
-            f'CITY PIECES production parents=3 pieces={tiles} hidden_parents=0\n'
+            f'CITY PIECES production parents=86 pieces={tiles} hidden_parents=0\n'
             f'CITY TREE LODS tag=v4 enabled={int(trees)} forced={forced} groups={groups} instances=900 distance_scale=1.50\n'
             'FORWARD FILL nominal_lux=3.000 lights=1\n')
 
@@ -101,9 +102,9 @@ def test_readiness_matches_current_manifest_and_rejects_partial_import(desktop):
     manifest(desktop)
     assert desktop.parse_ready(ready_log())['height'] == 1440
     assert desktop.parse_ready(ready_log(lumen=True, trees=False), True, tree_optimization=False)
-    with pytest.raises(ValueError, match='pieces=83'):
+    with pytest.raises(ValueError, match='pieces=183'):
         desktop.parse_ready(ready_log(tiles=85))
-    with pytest.raises(ValueError, match='pieces=83'):
+    with pytest.raises(ValueError, match='pieces=183'):
         desktop.parse_ready(ready_log(tiles=830))
     with pytest.raises(ValueError, match='CITY TREE LODS'):
         desktop.parse_ready(ready_log().replace('CITY TREE LODS', 'missing trees'))

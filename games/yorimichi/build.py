@@ -1086,26 +1086,12 @@ def world_steps(ctx):
         *_load_helper_module('yorimichi_hidamari_atomic', GAME / 'hidamari_build.py').layout_steps(
             ctx, terrain_inputs=[*CRATERPARK, *craterpark_v4.input_paths(), *belmonte_train_corridor(out)],
             terrain_needs=crater_geometry),
-        Step('world.hidamari', [Blender(REGIONS / 'hidamari' / 'build.py')],
-             inputs=[*(p for p in (REGIONS / 'hidamari').iterdir() if p.name not in ('ferry_terminal.py', 'ferry_cut.py', 'ferry_source.py', 'gondola.py', '__pycache__')), *CRATERPARK, REGIONS / 'village' / 'mesh.py', REGIONS / 'zeppelin' / 'layout.py',
-                     REGIONS / 'megapark' / 'placement.py', REGIONS / 'megapark' / 'forest.py', REGIONS / 'megapark' / 'trail.py',
-                     REGIONS / 'megapark' / 'gate.py', REGIONS / 'forest/ecotone.py', REGIONS / 'forest/specs.py', ASSETS / 'hidamari' / 'props',
-                     *TREEHOUSE_LAYOUT, *VILLAGE_LAYOUT, WORLD / 'farhills_grid.py', WORLD / 'north_mountain_surface.py',
-                     WORLD / 'terrain_product.py', WORLD / 'city_terrain_surface.py', *belmonte_train_corridor(out)],
-             needs=['world.layout', 'world.treehouse_trees', *crater_geometry],
-             reads=['terrain.FarHills.final', 'hidamari.city_data'],
-             outputs=[out / 'hidamari' / 'city.json', out / 'hidamari' / 'manifest.json',
-                                             out / 'hidamari' / 'north_snow.png', out / 'hidamari' / 'north_snow.json',
-                                             out / 'hidamari' / 'north_crater.png', out / 'hidamari' / 'north_crater.json'],
-             products=[Product('terrain.HD_NorthMountains.natural', (out / 'terrain/HD_NorthMountains/natural.npz',)),
-                       Product('terrain.HD_NorthMountains.final', (out / 'terrain/HD_NorthMountains/final.npz',)),
-                       Product('terrain.HD_NorthMountains.provenance', (out / 'terrain/HD_NorthMountains/manifest.json',)),
-                       Product('terrain.HD_Terrain.natural', (out / 'terrain/HD_Terrain/natural.npz',)),
-                       Product('terrain.HD_Terrain.final', (out / 'terrain/HD_Terrain/final.npz',)),
-                       Product('terrain.HD_Terrain.provenance', (out / 'terrain/HD_Terrain/manifest.json',))],
-             about='the city: layout (city.json), building kit, harbor, plaza, arcade, mountains', heavy=True),
-        digest_step(out, 'world.hidamari', 'city', 'the Hidamari meshes unreal.world reads (all but the volcano)', north=False),
-        digest_step(out, 'world.hidamari', 'north', "the volcano's meshes unreal.north reads (HD_North*)", north=True),
+        *_load_helper_module('yorimichi_hidamari_atomic', GAME / 'hidamari_build.py').mesh_steps(
+            ctx, terrain_inputs=[*CRATERPARK, *craterpark_v4.input_paths(), *belmonte_train_corridor(out)],
+            terrain_needs=crater_geometry),
+        *_load_helper_module('yorimichi_hidamari_atomic', GAME / 'hidamari_build.py').metadata_steps(
+            ctx, terrain_inputs=[*CRATERPARK, *craterpark_v4.input_paths(), *belmonte_train_corridor(out)],
+            terrain_needs=crater_geometry),
         *belmonte_steps(out)[:3],
         brinecove_source_step(out),
         *brinecove_model_steps(out),
@@ -1374,13 +1360,10 @@ def world_steps(ctx):
                                                                      'northern_foothills', 'volcanic_highlands', 'haras_valley',
                                                                      'brinecove'))],
              heavy=True, about='map zones and label-free regional atlas'),
-        *city_tile_steps(out),
-        digest_step(out, 'world.city_tiles', 'meshes', 'the city tiles unreal.desktop reads', out / 'city_surface_tiles', ['v1_128m']),
-        city_input_step(out, 'trees'),
-        Step('world.city_trees', [Blender(WORLD / 'city_tree_lods.py', ('--tag', 'v4'), threads=3)],
-             inputs=[WORLD / 'city_tree_lods.py', REGIONS / 'hidamari' / 'arcade.py', REGIONS / 'hidamari' / 'plaza.py'],
-             needs=['world.hidamari.trees'], outputs=[out / 'city_tree_lods' / 'v4' / 'manifest.json'], about='desktop profile: city tree LODs', heavy=True),
-        digest_step(out, 'world.city_trees', 'meshes', 'the city tree LODs unreal.desktop reads', out / 'city_tree_lods', ['v4']),
+        *_load_helper_module('yorimichi_hidamari_atomic', GAME / 'hidamari_build.py').assembly_steps(ctx),
+        digest_step(out, 'world.city_tiles', 'meshes', 'the independent city pieces unreal.desktop reads', out / 'city_surface_tiles', ['v1_128m']),
+        *_load_helper_module('yorimichi_city_tree_atomic', GAME / 'hidamari_tree_build.py').steps(ctx),
+        digest_step(out, 'world.city_trees', 'meshes', 'the independent tree LODs Unreal reads', out / 'city_tree_lods', ['v4']),
     ]
 
 
@@ -1554,6 +1537,7 @@ def unreal_steps(ctx):
         Step('unreal.world', [UnrealScript(SCRIPTS / 'setup_project.py', 'level saved', memory_gib=14)],
              # The city's arcade and harbor materials read the region's committed paintings.
              inputs=[WORLD / 'asset_catalog.py', WORLD / 'coast_water.py', REGIONS / 'hidamari' / 'textures',
+                     REGIONS/'hidamari/logical_catalogue.py', GAME/'unreal/Source/Yorimichi/CitySurfaceParents.h',
                      REGIONS / 'hidamari/ferry_source.py',
                      ASSETS / 'environment/textures/volcanic-rock.jpg', SCRIPTS / 'coast_rock_look.py',
                      *[SCRIPTS / n for n in ('setup_project.py', 'material_assets.py', 'mesh_import.py',
@@ -1569,7 +1553,7 @@ def unreal_steps(ctx):
         # The volcano: its meshes, M_NorthMountains with the rock and snow mask textures, M_NorthGate. The world import
         # purges /Game/Japan and makes the textures and MPC these materials use, so this reruns after it.
         Step('unreal.north', [UnrealScript(SCRIPTS / 'import_hidamari.py', 'HIDAMARI IMPORT COMPLETE', env=(('HIDAMARI_ASSETS', 'HD_North*'),))],
-             inputs=[WORLD / 'coast_water.py', SCRIPTS / 'forest_ground.py', ASSETS / 'environment/textures/volcanic-rock.jpg', out / 'hidamari' / 'north_snow.png', out / 'hidamari' / 'north_snow.json',
+             inputs=[WORLD / 'coast_water.py',REGIONS/'hidamari/logical_catalogue.py', GAME/'unreal/Source/Yorimichi/CitySurfaceParents.h', SCRIPTS / 'forest_ground.py', ASSETS / 'environment/textures/volcanic-rock.jpg', out / 'hidamari' / 'north_snow.png', out / 'hidamari' / 'north_snow.json',
                      out / 'hidamari' / 'north_crater.png', out / 'hidamari' / 'north_crater.json',
                      out / 'craterpark' / 'textures' / 'crater_floor.png', TOOLS / 'craterpark_textures.py',
                      *[SCRIPTS / n for n in ('import_hidamari.py', 'mountain_material.py', 'import_village.py', 'atmosphere.py', 'ground_grain.py', 'sea_look.py')]],
@@ -1732,34 +1716,25 @@ def unreal_steps(ctx):
              needs=['unreal.world', *[f'unreal.{key(c)}' for c in definition.movers() if 'see_through' in c.toml]], heavy=True,
              about='camera see-through on playable character materials'),
         # Runtime metadata is a separate overlay: changing it must not clear/reimport /Game/Japan.
-        Step('unreal.city_tree_cpu_access', [UnrealScript(SCRIPTS / 'city_tree_cpu_access.py', 'CITY TREE CPU ACCESS COMPLETE')],
-             inputs=[SCRIPTS / 'city_tree_cpu_access.py'], needs=['unreal.world'], heavy=True,
-             outputs=[out / 'city_tree_lods' / 'production-cpu-access.json'],
-             verify=lambda: city_tree_cpu_access_present(ctx),
-             about='retain cooked CPU buffers for the three production trees used by runtime LOD validation'),
-        Step('unreal.city_tree_lods', [
-                UnrealScript(SCRIPTS / 'import_city_tree_lods.py', 'CITY TREE LODS IMPORT COMPLETE',
-                             env=(('CITY_TREE_LODS_TAG', 'v4'),))],
-             inputs=[SCRIPTS / 'import_city_tree_lods.py', SCRIPTS / 'experiment_mesh_import.py'],
-             needs=['unreal.city_tree_cpu_access', 'world.city_trees.meshes'], heavy=True,
-             products=[Product('city.native_tree_lods', (GAME / 'unreal/Content/Experiments/CityTrees/v4',)),
-                       Product('city.native_tree_report', (out / 'city_tree_lods/v4/import-report.json',))],
-             candidate_scope=CandidateScope(directories=(GAME / 'unreal/Content/Experiments/CityTrees/v4',)),
-             about='independent existing city tree LOD owner'),
-        Step('unreal.desktop', [
-                UnrealScript(SCRIPTS / 'import_city_surface_tiles.py', 'CITY SURFACE TILE IMPORT COMPLETE', memory_gib=14,
-                             env=(('CITY_SURFACE_TILES_TAG', 'v1_128m'),), modules=IMPORT_CODE+('Yorimichi',))],
-             inputs=[SCRIPTS / 'import_city_surface_tiles.py', GAME / 'city_tile_products.py',
-                     paths.STUDIO / 'atelier/conventions.py'],
-             needs=['unreal.world', 'world.city_tiles.meshes', *unreal_modules.needs(IMPORT_CODE+('Yorimichi',))],
-             # Preserve the old targeted desktop entrypoint, without deriving
-             # piece identity from unrelated tree LOD bytes.
-             after=['unreal.city_tree_lods'], heavy=True,
-             verify=lambda: city_products.parents_retired(GAME / 'unreal/Content'),
-             products=[Product('city.native_pieces', (GAME / 'unreal/Content/Experiments/CitySurfaces/v1_128m',)),
-                       Product('city.native_piece_report', (out / 'city_surface_tiles/v1_128m/import-report.json',))],
-             candidate_scope=CandidateScope(directories=(GAME / 'unreal/Content/Experiments/CitySurfaces/v1_128m',)),
-             about='production city pieces with complete collision; superseded parents retired'),
+        Step('unreal.desktop', [UnrealScript(SCRIPTS/'import_city_atomic.py', 'CITY SURFACE TILE IMPORT COMPLETE',
+                    memory_gib=14,modules=IMPORT_CODE+('Yorimichi',))],
+             inputs=[*build_inputs.local_imports(SCRIPTS/'import_city_atomic.py',(SCRIPTS,GAME,WORLD,REGIONS)),
+                     GAME/'unreal/Source/Yorimichi/CitySurfaceParents.h'],
+             needs=['unreal.world','unreal.north','world.city_tiles.meshes',*unreal_modules.needs(IMPORT_CODE+('Yorimichi',))],
+             heavy=True,
+             verify=lambda: _load_helper_module('complete_atomic_city_products',GAME/'city_atomic_products.py').parents_retired(GAME/'unreal/Content'),
+             products=[Product('city.native_pieces',(GAME/'unreal/Content/Experiments/CitySurfaces/v1_128m',)),
+                       Product('city.native_piece_report',(out/'city_surface_tiles/v1_128m/import-report.json',))],
+             candidate_scope=CandidateScope(directories=(GAME/'unreal/Content/Experiments/CitySurfaces/v1_128m',)),
+             about='receive every independent bounded city piece; retire complete original parent roster'),
+        Step('unreal.city_tree_lods',[UnrealScript(SCRIPTS/'import_city_tree_atomic.py','CITY ATOMIC TREE LODS IMPORT COMPLETE')],
+             inputs=[*build_inputs.local_imports(SCRIPTS/'import_city_tree_atomic.py',(SCRIPTS,GAME,WORLD,REGIONS)),
+                     GAME/'unreal/Source/Yorimichi/CitySurfaceParents.h'],
+             needs=['unreal.desktop','world.city_trees.meshes'],heavy=True,
+             products=[Product('city.native_tree_lods',(GAME/'unreal/Content/Experiments/CityTrees/v4',)),
+                       Product('city.native_tree_report',(out/'city_tree_lods/v4/import-report.json',))],
+             candidate_scope=CandidateScope(directories=(GAME/'unreal/Content/Experiments/CityTrees/v4',)),
+             about='attach bounded per-piece authored tree outline LODs; never recreate monolithic parents'),
         # The Ride skating clips: the simulation rig and every simulation clip as Unreal assets (/Game/SkateRide), the manifest
         # the Ride runtime reads, and the measurement of the compressed poses against the simulation data. Both scripts
         # run in batches that resume where a failed run stopped (unreal/Scripts/skate_ride/README.md).
@@ -1915,7 +1890,12 @@ def ferry_steps(ctx):
     shared = [WORLD / 'solid_mesh.py', YORI]
     harbor_source = REGIONS / 'hidamari/ferry_source.py'
     layouts = [REGIONS / name / 'ferry_terminal.py' for name in ('hidamari', 'brinecove')]
-    site_code = [terminal / 'site.py', terminal / 'world_probe.py', kit / 'build.py', region / 'route.py', *layouts, *shared]
+    city_roster = _load_helper_module('ferry_city_query_roster',REGIONS/'hidamari/logical_catalogue.py')
+    prototype_names = _load_helper_module('ferry_coastal_query_roster',REGIONS/'brinecove/foliage_names.py')
+    site_code = sorted({terminal/'site.py', terminal/'world_probe.py',kit/'build.py',region/'route.py',*layouts,*shared,
+        *build_inputs.local_imports(terminal/'world_probe.py',(WORLD,REGIONS)),city_roster.ROSTER,
+        REGIONS/'brinecove/foliage_catalog.json',*prototype_names.definitions()})
+    service_code = build_inputs.local_imports(region/'service.py',(WORLD,REGIONS))
     ship_names = ['FY_' + name for name in ('Hull', 'Superstructure', 'Funnel', 'Lifeboats', 'Rails', 'Masts', 'Fittings', 'BoardingGate', 'Collision')]
     terminal_names = ['FT_HD_' + name for name in ('Jetty', 'Stage', 'Brow', 'WaitingHouse', 'Timetable', 'Collision')]
     terminal_names += ['FT_BC_' + name for name in ('Landing', 'Brow', 'Pavilion', 'TicketHut', 'Fenders', 'Props', 'Collision')]
@@ -1928,8 +1908,9 @@ def ferry_steps(ctx):
              about='approved passenger ferry: closed meshes, seated fittings, collision and deck walk audits'),
         Step('world.ferry_probes', [Blender(terminal / 'world_probe.py', (str(out),), threads=3)],
              inputs=site_code,
-             needs=['world.hidamari.city', 'world.terrain.meshes', 'world.southwest', 'world.layout'],
-             reads=['brinecove.clearance'],
+             needs=['world.southwest','world.layout'],
+             reads=['hidamari.city_data','terrain.FarHills.final','brinecove.query_data',
+                    *('hidamari.query.'+key+('.raw' if key=='HD_Harbor' else '') for key in city_roster.ASSETS)],
              outputs=[out / 'ferry/terminals' / f'world_{name}.npz' for name in ('hidamari', 'brinecove', 'crossing')],
              heavy=True, about='final exported harbour and open-water geometry for the ferry sweeps'),
         Step('world.ferry_site', [Python(terminal / 'site.py')], inputs=site_code,
@@ -1941,19 +1922,21 @@ def ferry_steps(ctx):
              outputs=[out / 'ferry/terminals/manifest.json', out / 'ferry/terminals/walk.json',
                       *(out / 'ferry/terminals/assets' / f'{name}.fbx' for name in terminal_names)],
              heavy=True, about='region-owned ferry terminals: grounded, carried, walkable, with moving brow collision'),
-        Step('world.hidamari_ferry_cut', [Blender(REGIONS / 'hidamari/ferry_cut.py', threads=3)],
-             inputs=[REGIONS / 'hidamari/ferry_cut.py', *site_code],
-             needs=['world.ferry_site'],
-             outputs=[out / 'hidamari/ferry/HD_Harbor.fbx', out / 'hidamari/ferry/cut.json'],
-             heavy=True, about='Hidamari opens its quay rail and posts at the audited jetty root'),
+        Step('world.hidamari_ferry_cut',[Call('verify final Harbor source cut',lambda ctx,log:
+            export_digest.record(out/'digests/world.hidamari_ferry_cut.json',
+                _load_helper_module('current_atomic_harbor_proof',harbor_source).validated_atomic_harbor(out,paths.REPO),log))],
+             inputs=[harbor_source,region/'site_inputs.py',WORLD/'region_plan_files.py',*site_code],
+             reads=['hidamari.harbor_cut','hidamari.query.HD_Harbor','hidamari.source.HD_Harbor','hidamari.geometry.HD_Harbor'],
+             needs=['world.ferry_site'],outputs=[out/'digests/world.hidamari_ferry_cut.json'],cutoff=True,
+             about='validate the final source-data opening; no whole Harbor re-export'),
         Step('world.ferry_service', [Python(region / 'service.py')],
-             inputs=[region / 'service.py', region / 'timetable.py', harbor_source, terminal / 'walkcheck.py', kit / 'walk.py', WORLD/'walk_raster.py', *site_code],
+             inputs=[*service_code, terminal / 'walkcheck.py', kit / 'walk.py', WORLD/'walk_raster.py', *site_code],
              needs=['world.ferry_terminals', 'world.hidamari_ferry_cut'],
              outputs=[out / 'ferry/service/service.json'],
              about='one passenger ferry, a shared-clock two-way timetable, audited boarding walks and sounds'),
         Step('unreal.ferry', [UnrealScript(SCRIPTS / 'import_ferry.py', 'FERRY IMPORT COMPLETE', null_rhi=True)],
              inputs=[SCRIPTS / 'import_ferry.py', SCRIPTS / 'mesh_import.py',
-                     region / 'service.py', region / 'timetable.py', harbor_source, terminal / 'walkcheck.py', kit / 'walk.py', WORLD/'walk_raster.py', *site_code],
+                     *service_code, terminal / 'walkcheck.py', kit / 'walk.py', WORLD/'walk_raster.py', *site_code],
              needs=['world.ferry_service', 'unreal.world'], after=['unreal.compile'],
              outputs=[out / 'ferry/import-report.json',
                       *(GAME / 'unreal/Content/Ferry/Ship' / f'{name}.uasset' for name in ship_names),

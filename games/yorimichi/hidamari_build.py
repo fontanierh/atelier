@@ -129,3 +129,46 @@ def mesh_steps(ctx, *, terrain_inputs=(), terrain_needs=()):
             assets.append(graph.LogicalAsset(key, REGION / 'plan_asset.py', args=tuple(arguments),
                           inputs=tuple(sorted(code)), needs=tuple(needs), reads=tuple(reads), products=tuple(products)))
     return [*prerequisites, *graph.steps(ctx, region='hidamari', assets=assets)]
+
+
+def metadata_steps(ctx, *, terrain_inputs=(), terrain_needs=()):
+    """Independent masks and file-only logical placement/material metadata."""
+    masks = REGION/'north_masks.py'
+    metadata = GAME/'hidamari_metadata.py'
+    helper = load('city_logical_metadata',metadata)
+    catalogue = load('city_logical_metadata_roster',REGION/'logical_catalogue.py')
+    outputs = [ctx.out/'hidamari'/('north_'+key+suffix) for key in ('snow','crater') for suffix in ('.png','.json')]
+    result = [Step('world.hidamari.north_masks',[Blender(masks,threads=3,factory_startup=True,
+                    env=(('PYTHONHASHSEED','0'),))],
+        inputs=[*local_imports(masks,(WORLD,REGIONS)),*terrain_inputs,
+                ctx.out/'world.json',ctx.out/'heightmap.npy',ctx.out/'farhills.npy',
+                ctx.out/'megapark/trail.json',ctx.out/'treehouse/trees/trees.json',REGION/'location.json'],
+        needs=['world.layout','world.treehouse_trees',*terrain_needs],
+        products=[Product('hidamari.north_masks',tuple(outputs))],cache=True,toolchain=True,heavy=True,
+        about='north snow/crater mask data; no mesh generation or export'),
+        Step('world.hidamari',[Python(metadata,('--out',str(ctx.out)))],
+        inputs=[*local_imports(metadata,(GAME,WORLD,REGIONS)),catalogue.ROSTER],
+        reads=['hidamari.city_data',*('hidamari.geometry.'+key for key in catalogue.ASSETS)],
+        products=[Product('hidamari.logical_metadata',(ctx.out/'hidamari/city.json',ctx.out/'hidamari/manifest.json'))],
+        cache=True,about='logical city placement and materials; geometry stays independently owned')]
+    for north,key in ((False,'city'),(True,'north')):
+        destination = ctx.out/'digests'/('world.hidamari.'+key+'.json')
+        def record(ctx,log,north=north,destination=destination):
+            digest = load('city_material_metadata_digest',GAME/'export_digest.py')
+            digest.record(destination,helper.material_inputs(ctx.out,north),log)
+        result.append(Step('world.hidamari.'+key,[Call('city material/placement prerequisites',record)],
+            inputs=[metadata,GAME/'export_digest.py',REGION/'logical_catalogue.py',catalogue.ROSTER],
+            reads=['hidamari.logical_metadata','hidamari.north_masks'],outputs=[destination],cutoff=True,
+            about='city material preparation only; excludes every mesh/export identity'))
+    return result
+
+
+def assembly_steps(ctx):
+    script = GAME/'city_atomic_products.py'
+    catalogue = load('complete_atomic_city_roster',REGION/'logical_catalogue.py')
+    return [Step('world.city_tiles',[Python(script,('--out',str(ctx.out)))],
+        inputs=[*local_imports(script,(GAME,WORLD,REGIONS)),catalogue.ROSTER],
+        reads=['hidamari.atomic',*('hidamari.geometry.'+key for key in catalogue.ASSETS)],
+        products=[Product('city.atomic_manifest',(ctx.out/'city_surface_tiles/v1_128m/manifest.json',)),
+                  Product('city.atomic_sources',tuple(ctx.out/'city_surface_tiles/v1_128m'/key for key in catalogue.ASSETS))],
+        cache=True,about='file-only gathering of all independently exported bounded city pieces')]

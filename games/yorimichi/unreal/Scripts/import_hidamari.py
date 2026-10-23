@@ -19,10 +19,8 @@ only={a for a in asked if not a.endswith('*')}|{n for n in manifest for a in ask
 assert only or not asked,('no Hidamari assets match',sorted(asked))
 north=globals().get('NORTH',True)
 # Hidamari owns the final harbour package. Every world reimport uses the same audited rail opening.
-harbor_source=None
-if 'HD_Harbor' in manifest and (not only or 'HD_Harbor' in only):
-    from regions.hidamari.ferry_source import validated_harbor
-    harbor_source=validated_harbor(yori.OUT,yori.REPO)
+from regions.hidamari.logical_catalogue import ASSETS as ATOMIC_CITY_PARENTS
+assert set(manifest)==set(ATOMIC_CITY_PARENTS),'Incomplete logical city material metadata'
 mat=unreal.EditorAssetLibrary.load_asset('/Game/Japan/Materials/M_Village') or material()
 arcade_mat=arcade_material() if not only or any(n.startswith(('HD_Arcade','HD_Plaza','HD_Shop_')) or n in ['HD_ClockHall','HD_Square','HD_Station','HD_Shrine','HD_Park','HD_Streets','HD_CivicGardens'] for n in only) else None
 paving_mat=arcade_material(paving=True) if not only or only & {'HD_ArcadeFloor','HD_PlazaFloor'} else None
@@ -119,9 +117,9 @@ for name,entry in manifest.items():
     if (only and name not in only) or (not north and name.startswith('HD_North')):continue
     # Bounded city pieces own these complete surfaces, including collision.
     # Their importer retires old parents only after all pieces have validated.
-    if name in ('HD_Terrain', 'HD_Streets', 'HD_Square', 'HD_CivicGardens', 'HD_Park', 'HD_Harbor'):
+    if name in ATOMIC_CITY_PARENTS:
         continue
-    source=harbor_source if name=='HD_Harbor' else OUT/'assets'/f'{name}.fbx'
+    source=OUT/'assets'/f'{name}.fbx'
     mesh=import_mesh(source,'/Game/Japan/Assets',name,fresh_slots='slots' in entry)
     if name=='HD_NorthGate': selected=gate_mat
     elif name.startswith('HD_NorthRock'): selected=rock_mat

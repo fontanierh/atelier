@@ -2,6 +2,9 @@
 import json
 from pathlib import Path
 import tempfile
+import sys
+
+sys.path.insert(0,str(Path(__file__).resolve().parent/'world'))
 
 from atelier.atomic_files import atomic_json
 from atelier.build_cache import copy_file
@@ -54,6 +57,12 @@ def owned_tiles(asset_paths, destination):
 
 def obsolete_assets(previous, current, destination):
     return legacy.obsolete_assets(previous, current, destination, parents=SOURCES, whole_small=True)
+
+
+def parents_retired(content):
+    root = Path(content)/'Japan/Assets'
+    if any(path.is_symlink() for path in (root.absolute(),*root.absolute().parents)): return False
+    return all(not path.exists() and not path.is_symlink() for key in SOURCES for path in root.glob(key+'.*'))
 
 
 def source_record(root, receipts):
@@ -185,3 +194,10 @@ def assemble(out, log=print):
         (destination / name).unlink(missing_ok=True)
     log('CITY ATOMIC PIECES assembled ' + str(len(members)))
     return current
+
+
+if __name__=='__main__':
+    import argparse
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--out',type=Path,required=True)
+    assemble(parser.parse_args().out)

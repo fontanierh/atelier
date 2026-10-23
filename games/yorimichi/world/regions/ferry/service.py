@@ -35,7 +35,8 @@ SHIP_ROOT = '/Game/Ferry/Ship'
 TERMINAL_ROOT = '/Game/Ferry/Terminals'
 SHIP_WALK = yori.ASSETS / 'vehicles/ferry/walk.py'
 SHARED_WALK = yori.WORLD / 'walk_raster.py'
-CODE = (HERE / 'service.py', HERE / 'timetable.py', HERE.parent / 'hidamari/ferry_source.py', SHIP_WALK, SHARED_WALK)
+CODE = (HERE/'service.py',HERE/'timetable.py',HERE.parent/'hidamari/ferry_source.py',
+        HERE/'site_inputs.py',yori.WORLD/'region_plan_files.py',SHIP_WALK,SHARED_WALK)
 
 
 def ue(x, y, z=0.0):
@@ -227,8 +228,8 @@ def preflight(root=FERRY):
     terminals = json.loads((root / 'terminals/manifest.json').read_text())
     walks = json.loads((root / 'terminals/walk.json').read_text())
     ferry = json.loads((root / 'manifest.json').read_text())
-    from regions.hidamari.ferry_source import validated_harbor
-    validated_harbor(yori.OUT, REPO)
+    from regions.hidamari.ferry_source import validated_atomic_harbor
+    validated_atomic_harbor(yori.OUT, REPO)
     crossings = site.get('crossings') or {}
     if set(crossings) != {'eastbound', 'westbound'} or not all(c.get('pass') for c in crossings.values()):
         raise ValueError('a swept ferry sea crossing is missing or failed')
@@ -247,12 +248,13 @@ def preflight(root=FERRY):
 
 
 def source_records(root=FERRY):
+    from regions.hidamari.ferry_source import validated_atomic_harbor
+    harbor = validated_atomic_harbor(yori.OUT, REPO)
     return {'code': {str(p.relative_to(REPO)): sha(p) for p in CODE},
-            'products': {str(p.relative_to(yori.OUT)): sha(p) for p in
+            'products': harbor | {str(p.relative_to(yori.OUT)): sha(p) for p in
                          (root / 'terminals/site.json', root / 'terminals/manifest.json',
                           root / 'terminals/walk.json', root / 'manifest.json',
-                          root / 'review/walk_report.json',
-                          yori.OUT / 'hidamari/ferry/cut.json', yori.OUT / 'hidamari/ferry/HD_Harbor.fbx')}}
+                          root / 'review/walk_report.json')}}
 
 
 def validate_service(data, root=FERRY):

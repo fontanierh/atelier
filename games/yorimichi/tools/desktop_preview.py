@@ -159,10 +159,12 @@ def packaged_launcher(startup_seconds=20):
 
 
 def tile_counts(path):
+    from regions.hidamari.logical_catalogue import ASSETS
     try:
         manifest = json.loads(path.read_text())
         sources = manifest['sources']
-        if manifest.get('complete') is not True or manifest['tag'] != TILE_TAG or set(sources) != {'HD_Terrain', 'HD_Streets', 'HD_Square'}:
+        if (manifest.get('version')!=3 or manifest.get('complete') is not True
+                or manifest['tag'] != TILE_TAG or set(sources) != set(ASSETS)):
             raise ValueError('manifest identity or completion')
         names = [tile['name'] for source in sources.values() for tile in source['tiles']]
         if not all(source['tiles'] for source in sources.values()) or not all(isinstance(name, str) and name for name in names) or len(names) != len(set(names)):
