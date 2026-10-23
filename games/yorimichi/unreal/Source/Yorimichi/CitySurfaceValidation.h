@@ -16,4 +16,8 @@ public:
     /** Complete transformed convex vertices; empty text refuses unsupported shapes/data. */
     UFUNCTION(BlueprintCallable, Category="City surfaces")
     static FString CollisionVertices(UStaticMesh* Mesh);
+
+    /** Current SimpleAsComplex box-only body, including explicitly nonblocking zero-box parts. */
+    UFUNCTION(BlueprintCallable, Category="City surfaces")
+    static bool ValidateSimpleBoxes(UStaticMesh* Mesh,int32 ExpectedBoxes);
 };

@@ -35,7 +35,7 @@ ASSET_ROOTS = frozenset({
 DATA_ROOTS = frozenset({
     'Network', 'SkateRide', 'adventure', 'belmonte', 'bike', 'city_surface_tiles', 'craterpark', 'heightmap.bin',
     'hidamari', 'hippodrome', 'horses', 'kart', 'map', 'megapark', 'skatepark', 'treehouse', 'world.json',
-    'gondola', 'ferry', 'belmonte_track', 'belmonte_train', 'brinecove', 'hidamari_stable', 'racing','terrain','southwest','forest_lake',
+    'gondola', 'ferry', 'belmonte_track', 'belmonte_train', 'brinecove', 'hidamari_stable', 'racing','terrain','southwest','forest_lake','village',
 } | {c.id for c in MOVERS})
 # Each mover's runtime data: its move record, its readiness record, bike report if playable, and its posed grips if
 # committed; and the runtime data of the imports that write their own (unreal.hippodrome, unreal.horses).

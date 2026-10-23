@@ -55,3 +55,21 @@ bool UCitySurfaceValidation::ValidateCollision(UStaticMesh* Mesh,int32 ExpectedT
     return false;
 #endif
 }
+
+bool UCitySurfaceValidation::ValidateSimpleBoxes(UStaticMesh* Mesh,int32 ExpectedBoxes)
+{
+#if WITH_EDITOR
+    if(!Mesh || ExpectedBoxes<0 || Mesh->LODForCollision!=0 || Mesh->ComplexCollisionMesh)return false;
+    const auto* Body=Mesh->GetBodySetup();
+    if(!Body || Body->CollisionTraceFlag!=CTF_UseSimpleAsComplex || Body->BuildScale3D!=FVector::OneVector ||
+       Body->bNeverNeedsCookedCollisionData || !Body->bCreatedPhysicsMeshes || Body->bFailedToCreatePhysicsMeshes ||
+       Body->AggGeom.BoxElems.Num()!=ExpectedBoxes || Body->AggGeom.GetElementCount()!=ExpectedBoxes ||
+       !Body->TriMeshGeometries.IsEmpty())return false;
+    for(const auto& Box:Body->AggGeom.BoxElems)
+        if(Box.Center.ContainsNaN() || Box.Rotation.ContainsNaN() || !FMath::IsFinite(Box.X) ||
+           !FMath::IsFinite(Box.Y) || !FMath::IsFinite(Box.Z) || Box.X<=0.f || Box.Y<=0.f || Box.Z<=0.f)return false;
+    return true;
+#else
+    return false;
+#endif
+}

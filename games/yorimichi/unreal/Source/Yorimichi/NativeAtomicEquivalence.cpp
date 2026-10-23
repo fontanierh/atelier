@@ -234,6 +234,15 @@ FString UNativeAtomicEquivalence::ComponentPolicy(UStaticMeshComponent* Componen
     Result->SetArrayField(TEXT("material_bindings"),MaterialBindings);
     const FBox MeshBounds=Component->GetStaticMesh()->GetBoundingBox();if(!MeshBounds.IsValid)return {};
     Result->SetArrayField(TEXT("mesh_bounds"),{Vector({MeshBounds.Min.X,MeshBounds.Min.Y,MeshBounds.Min.Z},Valid),Vector({MeshBounds.Max.X,MeshBounds.Max.Y,MeshBounds.Max.Z},Valid)});
+    const auto Bounds=Component->Bounds;auto ObservedBounds=MakeShared<FJsonObject>();
+    if(!FMath::IsFinite(Bounds.SphereRadius) || Bounds.SphereRadius<0. || !FMath::IsFinite(Component->BoundsScale))return {};
+    ObservedBounds->SetField(TEXT("origin"),Vector({Bounds.Origin.X,Bounds.Origin.Y,Bounds.Origin.Z},Valid));
+    ObservedBounds->SetField(TEXT("extent"),Vector({Bounds.BoxExtent.X,Bounds.BoxExtent.Y,Bounds.BoxExtent.Z},Valid));
+    ObservedBounds->SetNumberField(TEXT("sphere_radius"),Bounds.SphereRadius);
+    Result->SetObjectField(TEXT("component_bounds"),ObservedBounds);Result->SetNumberField(TEXT("bounds_scale"),Component->BoundsScale);
+    const bool Coordinated=Component->GetStaticMesh()->GetNumLODs()>1;
+    Result->SetBoolField(TEXT("lod_coordinated"),Coordinated);
+    if(Coordinated)Result->SetObjectField(TEXT("logical_bounds"),ObservedBounds);
     Result->SetNumberField(TEXT("wpo_disable_distance"),Component->GetWorldPositionOffsetDisableDistance());
     Result->SetArrayField(TEXT("lighting_channels"),{MakeShared<FJsonValueBoolean>(bool(Component->LightingChannels.bChannel0)),
         MakeShared<FJsonValueBoolean>(bool(Component->LightingChannels.bChannel1)),MakeShared<FJsonValueBoolean>(bool(Component->LightingChannels.bChannel2))});

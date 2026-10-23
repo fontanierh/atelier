@@ -1118,9 +1118,7 @@ def world_steps(ctx):
         *_load_helper_module('yorimichi_treehouse_atomic',GAME/'treehouse_atomic_build.py').prop_steps(ctx),
         *_load_helper_module('yorimichi_treehouse_atomic',GAME/'treehouse_atomic_build.py').surface_steps(ctx),
         *_load_helper_module('yorimichi_island_atomic', GAME/'terrain_atomic_build.py').steps(ctx),
-        Step('world.village', [Blender(REGIONS / 'village' / 'build.py')], inputs=[REGIONS / 'village', YORI], needs=['world.layout'],
-             outputs=[out / 'village' / 'manifest.json'], about='Momiji Hamlet', heavy=True),
-        village_import_step(out),
+        *_load_helper_module('yorimichi_village_atomic',GAME/'village_atomic_build.py').steps(ctx),
         *_load_helper_module('yorimichi_houses_atomic', GAME / 'houses_build.py').steps(ctx),
         *_load_helper_module('yorimichi_southwest_atomic', GAME/'southwest_atomic_build.py').steps(ctx),
         _load_helper_module('yorimichi_southwest_atomic', GAME/'southwest_atomic_build.py').assembly_step(ctx),
@@ -1517,6 +1515,19 @@ def unreal_steps(ctx):
                         for suffix in ('.uexp','.ubulk','.uptnl','.m.ubulk','.upayload'))),
                 Product('island.native_report',(out/'terrain/island-import-report.json',))],
              heavy=True, about='receive separate island meshes, save Slice and retire old parents as one complete owner'),
+        Step('unreal.village',[UnrealScript(SCRIPTS/'import_village.py','VILLAGE IMPORT COMPLETE',modules=IMPORT_CODE)],
+             inputs=[*build_inputs.local_imports(SCRIPTS/'import_village.py',(SCRIPTS,WORLD,REGIONS)),
+                     GAME/'village_atomic_products.py'],
+             after=['unreal.compile','unreal.materials'],needs=[*unreal_modules.needs(IMPORT_CODE)],
+             reads=['village.atomic','village.meshes','village.runtime','materials.shared'],
+             products=[Product('village.native_meshes',(GAME/'unreal/Content/Experiments/VillageAtomic/v1_atomic',)),
+                       Product('village.native_materials',tuple(GAME/'unreal/Content/Japan/Materials'/(name+'.uasset')
+                           for name in ('M_Village','M_VillageResident')),optional_paths=tuple(
+                           GAME/'unreal/Content/Japan/Materials'/(name+suffix) for name in ('M_Village','M_VillageResident')
+                           for suffix in ('.uexp','.ubulk','.uptnl','.m.ubulk','.upayload'))),
+                       Product('village.native_report',(out/'village/import-report.json',))],
+             candidate_scope=CandidateScope(directories=(GAME/'unreal/Content/Experiments/VillageAtomic/v1_atomic',)),
+             heavy=True,about='receive complete independent Village pieces/materials before world consumers; combined old-parent retirement'),
         Step('unreal.world', [UnrealScript(SCRIPTS / 'setup_project.py', 'WORLD ASSETS IMPORT COMPLETE', memory_gib=14)],
              # The city's arcade and harbor materials read the region's committed paintings.
              inputs=[WORLD / 'asset_catalog.py', WORLD / 'coast_water.py', REGIONS / 'hidamari' / 'textures',
@@ -1528,10 +1539,10 @@ def unreal_steps(ctx):
                                           'import_hidamari.py', 'import_southwest.py', 'arcade_material.py', 'plaza_material.py',
                                           'harbor_material.py', 'sea_look.py', 'import_sailboat.py', 'sailboat_material.py',
                                           'import_zeppelin.py', 'forest_ground.py', 'ground_grain.py', 'atmosphere.py', 'city_material.py', 'mesh_materials.py')]],
-             after=['unreal.compile', 'unreal.materials'],
-             references=['materials.shared', *['foliage.' + name + '.native' for name in foliage_build.catalog.FOLIAGE]],
+             after=['unreal.compile', 'unreal.materials','unreal.village'],
+             references=['materials.shared','village.native_materials', *['foliage.' + name + '.native' for name in foliage_build.catalog.FOLIAGE]],
              needs=['unreal.island','world.hidamari_ferry_cut', 'world.textures', 'world.layout', 'world.props', 'world.hidamari.city', 'world.hidamari_textures', 'world.hidamari_props.import',
-                    'world.zeppelin.meshes', 'world.terrain.meshes', 'world.village.import', 'world.sailboat', 'characters.wanderer'],
+                    'world.zeppelin.meshes', 'world.terrain.meshes', 'world.sailboat', 'characters.wanderer'],
              heavy=True, about='legacy world assets; island owns the map, materials and foliage remain independent'),
         # The volcano: its meshes, M_NorthMountains with the rock and snow mask textures, M_NorthGate. The world import
         # purges /Game/Japan and makes the textures and MPC these materials use, so this reruns after it.
@@ -1780,7 +1791,7 @@ def staging_steps(ctx):
              needs=['world.ferry_service', 'world.gondola_service', 'world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark', 'world.craterpark', 'world.crater_cloud', 'world.bike',
                     *[f'characters.{key(c)}_{kind}' for c in definition.movers() for kind, wanted in
                       (('bike', c.playable), ('grips', (GRIPS / c.id).is_dir())) if wanted]],
-             reads=['brinecove.runtime', 'belmonte.runtime', 'skatepark.runtime','terrain.island.runtime','southwest.meshes','lake.library'],
+             reads=['brinecove.runtime', 'belmonte.runtime', 'skatepark.runtime','terrain.island.runtime','southwest.meshes','lake.library','village.runtime','village.meshes'],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / rel for rel in staged(out)], about='runtime files into unreal/Content/Data'),
         racing_assets_step(out),
     ]

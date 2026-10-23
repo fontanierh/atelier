@@ -11,6 +11,7 @@ from atelier.model_files import regular_files
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent / 'world'))
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'world/regions'))
 from village.catalogue import ASSETS  # noqa: E402
 from city_tile_products import native_bounds, collision_matches  # noqa: E402,F401
 

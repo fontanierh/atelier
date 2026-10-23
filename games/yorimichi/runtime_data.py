@@ -24,7 +24,7 @@ STAGED = ('world.json', 'heightmap.bin', 'hidamari/city.json', 'skatepark/park.j
           'map/map.png', 'map/map.jpg', 'map/atlas-serif.ttf',
           *(f'map/atlas/{key}.png' for key in ('world', 'momiji_coast', 'momiji_woods', 'hidamari', 'temple_island',
                                              'northern_foothills', 'volcanic_highlands', 'haras_valley', 'brinecove')),
-          'city_surface_tiles/v1_128m/manifest.json','terrain/island.json','southwest/runtime.json','forest_lake/manifest.json',
+          'city_surface_tiles/v1_128m/manifest.json','terrain/island.json','southwest/runtime.json','forest_lake/manifest.json','village/atomic-manifest.json','village/pieces.json',
           'treehouse/runtime.json', 'treehouse/pieces.json', 'treehouse/surfaces.json', 'megapark/park.json', 'craterpark/park.json', 'craterpark/cloud.json', 'bike/manifest.json', 'kart/cockpit.json',  # kart import owns this staged output (see staged()).
           'belmonte/runtime.json',
           'brinecove/runtime.json', 'gondola/runtime.json', 'ferry/service/service.json', 'racing/belmonte_courses.json',

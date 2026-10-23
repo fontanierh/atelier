@@ -3,6 +3,7 @@
 #include "IslandPieces.h"
 #include "SouthwestPieces.h"
 #include "LakePieces.h"
+#include "VillagePieces.h"
 #include "TreehousePieces.h"
 #include "TreehouseSurfacePieces.h"
 #include "JapanGameplayCollision.h"
@@ -401,6 +402,12 @@ void AJapanWorld::Load()
     const bool LakeReady=JapanLakePieces::Read(
         AtelierReadJson(AtelierDataPath(TEXT("forest_lake/manifest.json"))),LakePieces,&LakeLogicalBounds);
     if(!LakeReady)Incomplete.Add(TEXT("complete lake pieces"));
+    TMap<FString,TArray<FString>> VillagePieces;
+    TMap<FString,FBox> VillageLogicalBounds;
+    TSet<FString> LoadedVillagePieces,PlacedVillageParents;
+    const bool VillageReady=JapanVillagePieces::Read(
+        AtelierReadJson(AtelierDataPath(TEXT("village/atomic-manifest.json"))),VillagePieces,&VillageLogicalBounds);
+    if(!VillageReady)Incomplete.Add(TEXT("complete Village pieces"));
     TArray<FString> DressingPieces;
     TSet<FString> LoadedDressingPieces;
     const bool DressingReady=JapanTreehousePieces::Read(
@@ -439,6 +446,16 @@ void AJapanWorld::Load()
                 if(!Paths){Incomplete.Add(TEXT("Southwest pieces ")+Key);continue;}
                 MeshPaths=*Paths;
             }
+            else if(JapanVillagePieces::IsParent(Key))
+            {
+                if(!Pair.Value || Pair.Value->Type!=EJson::Array)
+                {Incomplete.Add(TEXT("Village placements ")+Key);continue;}
+                if(Pair.Value->AsArray().IsEmpty())continue;
+                PlacedVillageParents.Add(Key);
+                const auto* Paths=VillagePieces.Find(Key);
+                if(!Paths){Incomplete.Add(TEXT("Village pieces ")+Key);continue;}
+                MeshPaths=*Paths;
+            }
             else if(JapanLakePieces::IsParent(Key))
             {
                 if(!Pair.Value || Pair.Value->Type!=EJson::Array)
@@ -470,6 +487,7 @@ void AJapanWorld::Load()
                 if (JapanCityPieces::IsParent(Key)) LoadedCityPieces.Add(MeshPath);
                 if(JapanSouthwestPieces::IsParent(Key))LoadedSouthwestPieces.Add(MeshPath);
                 if(JapanLakePieces::IsParent(Key))LoadedLakePieces.Add(MeshPath);
+                if(JapanVillagePieces::IsParent(Key))LoadedVillagePieces.Add(MeshPath);
                 if (Key==TEXT("TH_Dressing")) LoadedDressingPieces.Add(MeshPath);
                 if(Key==TEXT("TH_Structure"))LoadedStructurePieces.Add(MeshPath);
                 const bool bGrass = Key.StartsWith(TEXT("Grass"));
@@ -509,6 +527,7 @@ void AJapanWorld::Load()
                     if(Key==TEXT("TH_Structure"))H->ComponentTags.Add(TEXT("TreehouseStructure"));
                     if(JapanSouthwestPieces::IsParent(Key))H->ComponentTags.Add(FName(*(TEXT("SouthwestSurface:")+Key)));
                     if(JapanLakePieces::IsParent(Key))H->ComponentTags.Add(FName(*(TEXT("LakeSurface:")+Key)));
+                    if(JapanVillagePieces::IsParent(Key))H->ComponentTags.Add(FName(*(TEXT("VillageSurface:")+Key)));
                     H->SetMobility(EComponentMobility::Static);
                     if (Key==TEXT("HD_Harbor") || Key==TEXT("HD_Boat") || Key==TEXT("HD_Sea") || Key==TEXT("HD_Bollard"))
                         H->SetLightingChannels(true, true, false);
@@ -635,6 +654,13 @@ void AJapanWorld::Load()
         for(const FString& Parent:PlacedLakeParents)
             if(const auto* Paths=LakePieces.Find(Parent))Expected+=Paths->Num();
         if(LoadedLakePieces.Num()!=Expected)Incomplete.Add(TEXT("loaded lake pieces"));
+    }
+    if(VillageReady)
+    {
+        int32 Expected=0;
+        for(const FString& Parent:PlacedVillageParents)
+            if(const auto* Paths=VillagePieces.Find(Parent))Expected+=Paths->Num();
+        if(LoadedVillagePieces.Num()!=Expected)Incomplete.Add(TEXT("loaded Village pieces"));
     }
     if (UStaticMesh* Dome = LoadMesh(TEXT("SkyDome")))
     {

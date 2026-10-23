@@ -215,8 +215,8 @@ def main():
     import runpy
     runpy.run_path(os.path.join(os.path.dirname(__file__), "import_wanderer.py"), run_name="__main__")
     if W.get("village"):
-        import import_village
-        import_village.main(terrain=False)
+        for name in ('M_Village','M_VillageResident'):
+            assert EAL.load_asset('/Game/Japan/Materials/'+name), ('Independent Village material is missing',name)
     if os.path.exists(os.path.join(OUT,"hidamari","manifest.json")):
         # The volcano (HD_North*) is unreal.north's: a snow or rock change reimports only it.
         runpy.run_path(os.path.join(os.path.dirname(__file__),"import_hidamari.py"),init_globals={"NORTH":False},run_name="__main__")
