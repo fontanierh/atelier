@@ -6,8 +6,8 @@ between their origins is the sum of their half-lengths over buffers. Vehicles no
 with their target length so the train's order and total length are already right.
 
 `assembly()` writes build/yorimichi/belmonte-train/assembly/: consist.json (engine-agnostic: vehicles, offsets,
-placements, doors, seats, collision boxes, fitted furniture) and copies of the GLBs it names, next to the viewer
-page (viewer.html) that the Claude artifact publishes. Unreal reads the same consist.json and GLBs later.
+placements, doors, seats, collision boxes, fitted furniture) and copies of the GLBs it names. Unreal reads the same
+consist.json and GLBs later.
 """
 import json
 import shutil
@@ -22,7 +22,6 @@ from train import layout as L  # noqa: E402
 
 OUT = yori.OUT / 'belmonte-train'
 ASSEMBLY = OUT / 'assembly'
-VIEWER = Path(__file__).with_name('viewer.html')
 
 # front to back; length over buffers in metres
 VEHICLES = [
@@ -36,27 +35,9 @@ VEHICLES = [
 ]
 
 
-def web_copy(glb, out_dir):
-    """Copy a GLB next to the viewer, plus a glTF-JSON twin with its buffer embedded as base64 (`<name>.gltf.json`):
-    artifacts serve .json but not .glb, and three.js reads both."""
-    import base64
-    import struct
-    data = glb.read_bytes()
+def copy_glb(glb, out_dir):
+    """Copy a GLB next to consist.json."""
     shutil.copy2(glb, out_dir / glb.name)
-    length = struct.unpack_from('<I', data, 8)[0]
-    pos, doc, binary = 12, None, b''
-    while pos < length:
-        size, kind = struct.unpack_from('<II', data, pos)
-        chunk = data[pos + 8:pos + 8 + size]
-        if kind == 0x4E4F534A:
-            doc = json.loads(chunk)
-        elif kind == 0x004E4942:
-            binary = chunk
-        pos += 8 + size
-    doc['buffers'][0]['uri'] = 'data:application/octet-stream;base64,' + base64.b64encode(binary).decode()
-    name = glb.stem + '.gltf.json'
-    (out_dir / name).write_text(json.dumps(doc, separators=(',', ':')))
-    return name
 
 
 BUILDERS = {'locomotive': L.locomotive, 'tender': L.tender, 'baggage-van': L.baggage_van, 'restaurant': L.restaurant, 'first-class': L.first_class, 'second-class': L.second_class, 'brake-van': L.brake_van}
@@ -74,7 +55,7 @@ def offsets():
 def assembly():
     """@cc [owner:fontanierh,label:correctness] production-furniture-assembly
     Assembly MUST validate the complete furniture bake before writing outputs, select baked LOD0
-    for viewer geometry and record the summary checksum consumed by service generation.
+    for assembly geometry and record the summary checksum consumed by service generation.
     """
     baked = BM.read(OUT / 'furniture')
     ASSEMBLY.mkdir(parents=True, exist_ok=True)
@@ -89,7 +70,7 @@ def assembly():
                      fit=json.loads(fitted.read_text())['fitted_m'])
         lod0 = OUT / 'furniture' / 'lod' / record['levels'][0]['glb']
         entry['glb'] = lod0.name
-        entry['web'] = web_copy(lod0, ASSEMBLY)
+        copy_glb(lod0, ASSEMBLY)
         entry['lods'] = [dict(r, glb=f'lod/{r["glb"]}') for r in record['levels']]
         entry['cull_screen_size'] = record['cull_screen_size']
         furniture[a['id']] = entry
@@ -99,7 +80,7 @@ def assembly():
         if v['status'] == 'built':
             title = ''.join(p.title() for p in v['id'].split('-'))
             glb = OUT / v['id'] / f'SM_BT_{title}_LOD0.glb'
-            rec['web'] = web_copy(glb, ASSEMBLY)
+            copy_glb(glb, ASSEMBLY)
             p = json.loads((OUT / v['id'] / f'{v["id"]}-placements.json').read_text())
             door_rules = p['door_rules']
             body = BUILDERS[v['id']]().body
@@ -124,7 +105,7 @@ def assembly():
         notes=dict(
             collision="per vehicle, 'collision_boxes' is the full simple collision (name, part, group, box): build game "
                       "collision from it (or from the _Collision.glb). 'collision' is only the fixed boxes' extents, the "
-                      "viewer's obstacles; it has no switchable door or gangway-lock boxes",
+                      "simple obstacle boxes; it has no switchable door or gangway-lock boxes",
             door_interactions="one per door: Interact opens it alone, under door_rules",
             interior_volumes="tags ['interior', 'no_sprint', 'no_climb']: inside any of them a player walks (no sprint) "
                              "and cannot climb",
@@ -136,7 +117,6 @@ def assembly():
         length_m=sum(v['length'] for v in VEHICLES),
     )
     (ASSEMBLY / 'consist.json').write_text(json.dumps(doc, indent=1))
-    shutil.copy2(VIEWER, ASSEMBLY / 'index.html')
     print(f'BELMONTE TRAIN ASSEMBLY: {len(vehicles)} vehicles, {doc["length_m"]:.1f} m', flush=True)
 
 

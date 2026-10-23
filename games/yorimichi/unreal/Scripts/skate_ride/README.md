@@ -8,7 +8,7 @@ Ride runtime reads the manifest.
 
 ```sh
 uv run atelier build yorimichi unreal.skate_clips      # import (4 editor runs) and verify (2 editor runs)
-uv run atelier build yorimichi skate.ride_stills       # stills of four clips from the verified poses
+uv run atelier qa yorimichi skate_ride_stills           # stills of four clips from the verified poses
 SKATE_RIDE_LIMIT=20 uv run atelier build yorimichi unreal.skate_clips   # a quick subset (manifest says partial)
 ```
 
@@ -18,7 +18,7 @@ SKATE_RIDE_LIMIT=20 uv run atelier build yorimichi unreal.skate_clips   # a quic
 | `rider_mesh.py` | A box body and board skinned to the simulation rig in RIG_TPOSE, written as a GLB. |
 | `import_clips.py` | Editor script: the rider, the compression settings, the mirror table, one sequence per clip and the manifest. Batched by `SKATE_RIDE_BATCH=i/n`; resumable. |
 | `verify_clips.py` | Editor script: samples every clip's compressed data at every frame and compares every bone with the simulation pose. Batched by `SKATE_RIDE_VERIFY_BATCH=i/n`. |
-| `render_stills.py` | Draws the rider in the verified poses with the simulation joints on top. |
+| `../../../scenarios/skate_ride_stills.py` | QA: draws the rider in the verified poses with the simulation joints on top. |
 
 ## Assets
 

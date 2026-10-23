@@ -34,7 +34,7 @@ Missing, corrupt or invalid sources fail the build. There is no placeholder fall
 `world.belmonte_train_furniture_lods` is a required incremental Cycles bake. It produces budgeted meshes,
 embedded textures and `furniture/lod/summary.json` without modifying fitted source reports. Assembly and service
 require a complete, source-matched bake; missing, corrupt or over-budget outputs fail instead of falling back to
-full fitted meshes. The assembly viewer uses baked LOD0 too. Unchanged inputs reuse the verified bake.
+full fitted meshes. The assembly uses baked LOD0 too. Unchanged inputs reuse the verified bake.
 
 `world.belmonte_train_furniture_review` produces optional comparison renders; it does not control whether
 production furniture is optimized.

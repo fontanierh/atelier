@@ -451,22 +451,22 @@ def belmonte_train_route_present(out):
 
 
 def belmonte_train_assembly_present(out):
-    """consist.json, index.html and every vehicle and furniture GLB/gltf.json copy in assembly/."""
+    """consist.json and every vehicle and furniture GLB copy in assembly/."""
     root = out / 'belmonte-train' / 'assembly'
     try:
         doc = json.loads((root / 'consist.json').read_text())
         vehicles = doc['vehicles']
         furniture = doc['furniture']
         baked = train_bake.read(root.parent / 'furniture')
-        return (bool(vehicles) and (root / 'index.html').is_file()
+        return (bool(vehicles)
                 and doc['furniture_bake_sha256'] == train_bake.sha(root.parent / 'furniture' / 'lod' / 'summary.json')
                 and set(furniture) == set(TRAIN_FURNITURE)
-                and all((root / v['glb']).is_file() and (root / v['web']).is_file()
+                and all((root / v['glb']).is_file()
                         for v in vehicles if v.get('status') == 'built')
                 and all(f['glb'] == baked[aid]['levels'][0]['glb']
                         and train_bake.sha(root / f['glb']) == baked[aid]['levels'][0]['sha256']
                         and f['lods'] == [dict(r, glb='lod/' + r['glb']) for r in baked[aid]['levels']]
-                        and (root / f['web']).is_file()
+                        and (root / f['glb']).is_file()
                         for aid, f in furniture.items()))
     except (OSError, ValueError, KeyError, TypeError):
         return False
@@ -1300,14 +1300,14 @@ def world_steps(ctx):
              verify=lambda: belmonte_train_furniture_lods_present(out),
              about='Belmonte train furniture: LOD0/LOD1 decimated from the fitted Tripo meshes, maps baked (Cycles)'),
         Step('world.belmonte_train_assembly', [Python(WORLD / 'train' / 'consist.py')],
-             inputs=[WORLD / 'train' / 'consist.py', WORLD / 'train' / 'layout.py', WORLD / 'train' / 'viewer.html',
+             inputs=[WORLD / 'train' / 'consist.py', WORLD / 'train' / 'layout.py',
                      WORLD / 'train' / 'bake_manifest.py', WORLD / 'train' / 'budgets.py',
                      ASSETS / 'vehicles' / 'belmonte-train' / 'planning', out / 'belmonte-train' / 'furniture',
                      *(out / 'belmonte-train' / v for v in TRAIN_VEHICLES)],
              needs=['world.belmonte_train', 'world.belmonte_train_furniture_lods'],
-             outputs=[out / 'belmonte-train' / 'assembly' / 'consist.json', out / 'belmonte-train' / 'assembly' / 'index.html'],
+             outputs=[out / 'belmonte-train' / 'assembly' / 'consist.json'],
              verify=lambda: belmonte_train_assembly_present(out),
-             about='Belmonte train assembly: consist.json, GLBs and the viewer page'),
+             about='Belmonte train assembly: consist.json and GLBs'),
         Step('world.belmonte_train_review', [Blender(WORLD / 'train' / 'render.py', threads=3)],
              inputs=[WORLD / 'train' / 'render.py', WORLD / 'train' / 'layout.py',
                      ASSETS / 'vehicles' / 'belmonte-train' / 'planning',
@@ -1803,9 +1803,6 @@ def unreal_steps(ctx):
                       GAME / 'unreal/Content/SkateMotion/MotionData.uasset', out / 'skate-data/verify.json'],
              verify=lambda: skate_data_present(out),
              about='typed simulation runtime and motion records; exact serialized reload and offline gameplay replays'),
-        Step('skate.ride_stills', [Python(SKATE_RIDE / 'render_stills.py')],
-             inputs=[SKATE_RIDE / n for n in ('render_stills.py', 'simulation.py', 'rider_mesh.py')], needs=['unreal.skate_clips'],
-             outputs=[out / 'skate-ride' / 'clip-stills' / 'index.json'], about='stills of a few Ride clips sampled in Unreal'),
     ]
 
 
