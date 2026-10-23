@@ -22,9 +22,13 @@ guard-binding = {receipt: artifact, stdout: artifact, marker: nonempty-string,
                  whole_result: artifact}; whole_result JSON must contain exit_code=0.
 geometry-set = {packets: [mesh_ir/encoded_glb/static-GLB artifact], query_stage: 'final'}.
 Encoded GLB preserves every encoded attribute/type; unsupported transforms/skins refuse.
-Native sets contain geometry-set render, cooked triangles artifact (JSON list of three
-positions per triangle), hulls artifact (JSON list of typed complete primitive/convex
-readbacks), policy artifact, probes artifact, meshes: complete child-name list, and packet_owners: native mesh names parallel to render packets.
+Native sets use format='unreal_atomic_native_v2' and contain logical, raw_pages,
+component_policies, probes, meshes, policy_scope, inputs and saved_packages. The actual
+Scripts/atomic_equivalence_capture.py emitter reads each saved source/render LOD, GPU
+tangent/binormal basis and cooked triangles through NativeAtomicEquivalence. All file
+members except meshes/scope/logical/format are artifact lists, except probes (one artifact).
+Fixture policy proves receiving geometry only; production-created components are required
+for complete runtime policy. Older MeshIR-only native sets refuse full acceptance.
 Policy is explicit JSON {logical, placements, cull, shadow, fade, collision, materials}.
 Probes JSON {logical, controls:[{id,kind,input,target,hit}], seams:[{a,b,controls:[ids]}]}.
 Each positive probe's hit is {logical,blocking,position,normal,distance}; miss is null.
@@ -172,8 +176,8 @@ def hull_counter(hulls):
     require(isinstance(hulls,list), 'Missing complete hull inventory')
     result=Counter()
     for hull in hulls:
-        core={'vertices','faces','matrix'};rich=core|{'material_slots','corner_payload'}
-        require(isinstance(hull,dict) and set(hull) in (core,rich), 'Incomplete authored hull readback')
+        core={'vertices','faces','matrix'};rich=core|{'material_slots','corner_payload'};transformed=rich|{'transform'}
+        require(isinstance(hull,dict) and set(hull) in (core,rich,transformed), 'Incomplete authored hull readback')
         vertices=np.asarray(hull['vertices'],dtype='<f8');matrix=np.asarray(hull['matrix'],dtype='<f8')
         faces=hull['faces']
         require(vertices.ndim==2 and vertices.shape[1]==3 and len(vertices)>=4 and np.isfinite(vertices).all()
@@ -190,13 +194,21 @@ def hull_counter(hulls):
             rows[_digest(cycle)]+=1
         geometry_digest=_digest([_f64(matrix),*sorted(_f64(vertex) for vertex in vertices),
             *(_digest([key,str(count).encode()]) for key,count in sorted(rows.items()))])
-        if set(hull)==rich:
+        if set(hull) in (rich,transformed):
+            if 'transform' in hull:
+                pose=hull['transform'];fields={'location':3,'scale':3,'rotation_euler':3,'rotation_quaternion':4,'rotation_axis_angle':4}
+                require(isinstance(pose,dict) and set(pose)==set(fields)|{'rotation_mode'}
+                    and pose['rotation_mode'] in ('XYZ','XZY','YXZ','YZX','ZXY','ZYX','QUATERNION','AXIS_ANGLE')
+                    and all(isinstance(pose[key],list) and len(pose[key])==width
+                        and all(type(v) in (int,float) and math.isfinite(v) for v in pose[key]) for key,width in fields.items())
+                    and all(v!=0 for v in pose['scale']),'Invalid original authored hull TRS components')
+                require(_f32(pose['location'])==_f32(matrix[:3,3]),'Authored hull TRS location and original matrix disagree')
             require(isinstance(hull['material_slots'],list) and all(isinstance(v,str) and v for v in hull['material_slots'])
                 and isinstance(hull['corner_payload'],str),'Malformed complete authored hull channels')
             try:payload=base64.b64decode(hull['corner_payload'],validate=True)
             except ValueError as error:raise EvidenceError('Malformed authored hull corner payload') from error
             meta,piece=mesh_ir.decode(payload)
-            require(meta['asset']=='Collision' and not meta['collisions']
+            require(meta['asset']=='Collision' and not meta['options'] and not meta['collisions']
                 and meta['matrix']==hull['matrix'] and piece['faces']==faces
                 and np.array_equal(piece['positions'],np.asarray(vertices,dtype='<f4')),
                 'Authored hull core and complete corner payload disagree')
@@ -428,9 +440,16 @@ def native_hulls(value):
     result=Counter()
     for row in value:
         require(isinstance(row,dict) and row.get('kind') in ('convex','box','sphere','capsule')
-            and set(row)=={'kind','geometry'},'Unknown/incomplete native collision primitive')
+            and set(row) in ({'kind','geometry'},{'kind','geometry','authored_vertices'})
+            and ('authored_vertices' not in row or row['kind']=='convex'),'Unknown/incomplete native collision primitive')
         if row['kind']=='convex':
-            count=hull_counter([row['geometry']]);result.update((_digest([b'convex',key]) for key in count.elements()))
+            count=hull_counter([row['geometry']])
+            authored=[]
+            if 'authored_vertices' in row:
+                points=np.asarray(row['authored_vertices'],dtype='<f8')
+                require(points.ndim==2 and points.shape[1]==3 and len(points)>=4 and np.isfinite(points).all(),'Missing complete authored native convex vertices')
+                authored=sorted(_f64(point) for point in points)
+            result.update((_digest([b'convex',key,*authored]) for key in count.elements()))
         else:
             expected={'matrix','size'} if row['kind']=='box' else {'matrix','radius'} if row['kind']=='sphere' else {'matrix','radius','length'}
             require(isinstance(row['geometry'],dict) and set(row['geometry'])==expected,'Incomplete simple primitive geometry')
@@ -544,13 +563,157 @@ def seam_adjacency(geometry,owners):
     return pairs
 
 
+
+def _native_corner_counter(data,slots,lod):
+    require(isinstance(data,dict) and set(data)=={'kind','uv_count','color_encoding','triangles'}
+        and data['kind'] in ('mesh_description','render_buffers') and type(data['uv_count']) is int
+        and 0<=data['uv_count']<=32 and isinstance(data['triangles'],list),'Missing complete native corner channels')
+    gpu=data['kind']=='render_buffers';encoding=data['color_encoding']
+    require(encoding in (('srgb_uint8','absent') if gpu else ('linear_float32',)),'Unknown native color storage')
+    header=canonical(dict(kind=data['kind'],uv_count=data['uv_count'],color_encoding=encoding,lod=lod,space='asset_local_cm'))
+    result=Counter();edges=[]
+    for triangle in data['triangles']:
+        require(isinstance(triangle,dict) and set(triangle)=={'material','corners','hard_edges'}
+            and type(triangle['material']) is int and 0<=triangle['material']<len(slots)
+            and isinstance(triangle['corners'],list) and len(triangle['corners'])==3,'Malformed actual native triangle')
+        hard=triangle['hard_edges']
+        require(hard is None if gpu else isinstance(hard,list) and len(hard)==3 and all(type(v) is bool for v in hard),
+            'Missing actual saved edge hardness/readback representation')
+        corners=[];positions=[]
+        for index,corner in enumerate(triangle['corners']):
+            require(isinstance(corner,dict) and set(corner)=={'position','normal','tangent','color','uvs'}
+                and all(isinstance(corner[key],list) and len(corner[key])==width for key,width in
+                    (('position',3),('normal',4 if gpu else 3),('tangent',4)))
+                and isinstance(corner['uvs'],list) and len(corner['uvs'])==data['uv_count']
+                and all(isinstance(v,list) and len(v)==2 for v in corner['uvs']) and finite(corner),
+                'Missing actual native position/normal/tangent/binormal/UV values')
+            if encoding=='absent':require(corner['color'] is None,'Absent GPU color buffer was fabricated')
+            else:require(isinstance(corner['color'],list) and len(corner['color'])==4,'Missing actual native color values')
+            if encoding=='srgb_uint8':require(all(type(v) in (int,float) and int(v)==v and 0<=v<=255 for v in corner['color']),
+                'Malformed actual packed native color')
+            parts=[_f32(corner[key]) for key in ('position','normal','tangent')]
+            parts.extend(_f32(uv) for uv in corner['uvs'])
+            parts.append(b'absent' if corner['color'] is None else _f32(corner['color']))
+            if hard is not None:parts.append(canonical(hard[index]))
+            corners.append(_digest(parts));positions.append(_f32(corner['position']))
+        cycle=min(tuple(corners[i:]+corners[:i]) for i in range(3))
+        result[_digest([header,canonical(slots[triangle['material']]),*cycle])]+=1
+        edges.extend(tuple(sorted((positions[i],positions[(i+1)%3]))) for i in range(3) if positions[i]!=positions[(i+1)%3])
+    return result,edges
+
+
+def _native_policy(rows,info,logical,scope):
+    require(rows,'Actual native component policy is missing')
+    groups={mesh:Counter() for mesh in info};materials={};placements={};culls={};shadows={};fades={};collisions={}
+    for row in rows:
+        require(isinstance(row,dict) and row.get('mesh') in info and row.get('policy_scope')==scope
+            and isinstance(row.get('instances'),list) and isinstance(row.get('matrix'),list)
+            and isinstance(row.get('primitive_data'),list) and isinstance(row.get('responses'),list)
+            and isinstance(row.get('material_bindings'),list) and len(row['material_bindings'])==len(info[row['mesh']]['slots'])
+            and type(row.get('cast_shadow')) is bool and type(row.get('visible')) is bool,'Incomplete observed native component policy')
+        if scope=='production':require(isinstance(row.get('owner_class'),str) and row['owner_class'].startswith('/Script/Yorimichi.'),
+            'Fixture actors cannot certify production runtime policy')
+        instances=row['instances'] if row['instances'] else [row['matrix']]
+        require(all(isinstance(matrix,list) and np.asarray(matrix).shape==(4,4) for matrix in instances),'Missing actual native instance transforms')
+        mode=row['primitive_data'][0] if row['primitive_data'] else 0.
+        fade=dict(mode=mode)
+        if mode==1:  # SeeThrough.cpp FadeInstances consumes logical bounds; other modes consume their vertex/lens data.
+            if len(row['primitive_data'])>=8 and row['primitive_data'][7]==1:
+                fade['center']=row['primitive_data'][1:4];fade['extent']=row['primitive_data'][4:7]
+            else:
+                box=row['mesh_bounds'];fade['center']=[(a+b)/2 for a,b in zip(*box)];fade['extent']=[(b-a)/2 for a,b in zip(*box)]
+        cull={key:row[key] for key in ('min_draw_distance','max_draw_distance','wpo_disable_distance')}
+        for key in ('instance_min_draw','instance_start_cull','instance_end_cull','instance_lod_scale'):
+            if key in row:cull[key]=row[key]
+        collision={key:row[key] for key in ('collision_enabled','object_channel','responses')}
+        state=dict(cull=cull,shadow=row['cast_shadow'],fade=fade,collision=collision,visible=row['visible'],lighting=row['lighting_channels'])
+        signature=hashlib.sha256(canonical(state)).hexdigest()
+        group=canonical(dict(state=state,instances=instances))
+        groups[row['mesh']][group]+=1
+        placements[signature]=instances;culls[signature]=cull;shadows[signature]=dict(cast=row['cast_shadow'],visible=row['visible'],lighting=row['lighting_channels'])
+        fades[signature]=fade;collisions[signature]=collision
+        for slot,path in zip(info[row['mesh']]['slots'],row['material_bindings']):
+            require(isinstance(path,str) and path,'Actual component material binding is missing')
+            previous=materials.setdefault(slot['name'],path)
+            require(previous==path,'Ambiguous per-instance/child material overrides require a complete face-placement adapter')
+    require(all(groups.values()),'Some native meshes have no actual component policy')
+    first=next(iter(groups.values()))
+    require(all(group==first for group in groups.values()),'Split pieces changed logical instance/cull/shadow/fade/collision groups')
+    return dict(logical=logical,placements=[dict(group=key,instances=placements[key]) for key in sorted(placements)],
+        cull=culls,shadow=shadows,fade=fades,collision=collisions,materials=[list(v) for v in sorted(materials.items())])
+
+
+def native_raw_set(value,logical):
+    require(isinstance(value,dict) and set(value)=={'format','logical','raw_pages','component_policies','probes','meshes','policy_scope','inputs','saved_packages'}
+        and value['format']=='unreal_atomic_native_v2' and value['logical']==logical
+        and isinstance(value['meshes'],list) and value['meshes'] and len(set(value['meshes']))==len(value['meshes'])
+        and value['policy_scope'] in ('fixture','production') and isinstance(value['raw_pages'],list) and value['raw_pages'],
+        'Missing executable native capture descriptor')
+    for row in [*value['inputs'],*value['saved_packages']]:artifact(row)
+    grouped={mesh:{} for mesh in value['meshes']};seen=set()
+    for binding in value['raw_pages']:
+        page=json_artifact(binding)
+        require(isinstance(page,dict) and page.get('schema')==1 and page.get('logical')==logical and page.get('asset') in grouped
+            and type(page.get('lod')) is int and page['lod']>=0 and type(page.get('first')) is int and page['first']>=0,
+            'Foreign or malformed actual native geometry page')
+        identity=(page['asset'],page['lod'],page['first']);require(identity not in seen,'Duplicate native geometry page');seen.add(identity)
+        grouped[page['asset']].setdefault(page['lod'],[]).append(page)
+    source_lods={};render_lods={};cooked=Counter();hulls=Counter();edge_owners={};seams=set();settings=set();info={};source_presence={}
+    for mesh,lods in grouped.items():
+        require(0 in lods,'Missing native LOD0 snapshot')
+        initial=sorted(lods[0],key=lambda p:p['first'])[0]
+        require(initial['first']==0 and isinstance(initial.get('settings'),dict),'Missing native initial page/settings')
+        count=initial['settings']['lods']
+        require(type(count) is int and count>0 and set(lods)==set(range(count)),'Native LOD census is incomplete')
+        require(initial.get('hulls_complete') is True,'Complete actual native hull readback is missing')
+        hulls.update(native_hulls(initial['hulls']));info[mesh]=dict(slots=initial['slots'])
+        for lod,pages in sorted(lods.items()):
+            pages.sort(key=lambda p:p['first']);base=pages[0]
+            require(type(base.get('source_available')) is bool and (lod!=0 or base['source_available']),
+                'Saved native LOD0 MeshDescription is unavailable')
+            counts=[base[key] for key in ('source_count','render_count','cooked_count')]
+            require(all(type(v) is int and v>=0 for v in counts) and counts[1]>0 and (lod==0 or counts[2]==0),
+                'Missing actual native geometry counts')
+            require(bool(counts[0])==base['source_available'],'Saved source availability/count contradicts readback')
+            maximum=base['maximum'];require(type(maximum) is int and 0<maximum<=32768,'Invalid native page budget')
+            require([p['first'] for p in pages]==list(range(0,max(counts),maximum)),'Native pages do not cover all actual triangles')
+            slots=base['slots'];require(isinstance(slots,list) and slots and all(set(v)=={'name','material'} for v in slots),'Missing actual native material bindings')
+            require(base['settings'].get('nanite_enabled') is False and isinstance(base['settings'].get('lod_screen_sizes'),list)
+                and len(base['settings']['lod_screen_sizes'])==count,'Actual native renderer/LOD settings absent')
+            normalized=dict(base['settings']);normalized['complex_proxy']=bool(normalized['complex_proxy'])
+            settings.add(canonical(dict(lod=lod,settings=normalized)));source_presence.setdefault(lod,set()).add(base['source_available'])
+            for page in pages:
+                require(all(page[key]==base[key] for key in ('source_count','render_count','cooked_count','source_available','maximum','slots','settings','bounds')),
+                    'Actual native geometry changed during capture')
+                for field,index in (('source',0),('render',1),('cooked',2)):
+                    observed=page[field];rows=observed['triangles'] if isinstance(observed,dict) else observed
+                    expected=max(0,min(maximum,counts[index]-page['first']))
+                    if field=='source' and observed is None and expected==0:continue
+                    require(isinstance(rows,list) and len(rows)==expected,'Missing native page triangle/channel coverage')
+                    if field=='cooked':
+                        if rows:cooked.update(triangles_counter(rows))
+                        continue
+                    faces,edges=_native_corner_counter(observed,slots,lod)
+                    (source_lods if field=='source' else render_lods).setdefault(lod,Counter()).update(faces)
+                    if field=='source' and lod==0:
+                        for edge in edges:
+                            owners=edge_owners.setdefault(edge,set());seams.update(tuple(sorted((mesh,other))) for other in owners if other!=mesh);owners.add(mesh)
+                if page['first'] or lod:require(page['hulls']==[] and page['hulls_complete'] is False,'Native hulls duplicated on later pages/LODs')
+    policies=[json_artifact(row) for row in value['component_policies']]
+    normalized_policy=_native_policy(policies,info,logical,value['policy_scope'])
+    return dict(source_lods=source_lods,render_lods=render_lods,cooked=cooked,hulls=hulls,policy=canonical(normalized_policy),
+        probes=json_artifact(value['probes']),meshes=value['meshes'],seams=seams,settings=settings,
+        source_presence=source_presence,basis_complete=True,runtime_complete=value['policy_scope']=='production')
+
+
 def native_set(value,logical):
+    if isinstance(value,dict) and value.get('format')=='unreal_atomic_native_v2':return native_raw_set(value,logical)
     require(isinstance(value,dict) and set(value)=={'render','cooked','hulls','policy','probes','meshes','packet_owners'}
         and isinstance(value['meshes'],list) and value['meshes'] and all(isinstance(v,str) and v for v in value['meshes'])
         and len(set(value['meshes']))==len(value['meshes']),'Missing complete native receiving snapshots')
     require(isinstance(value['packet_owners'],list) and set(value['packet_owners'])==set(value['meshes'])
         and len(value['packet_owners'])==len(value['render']['packets']),'Native snapshots omit or invent a native mesh')
-    return dict(seams=seam_adjacency(value['render'],value['packet_owners']),render=geometry_set(value['render'],bounded=False),cooked=triangles_counter(json_artifact(value['cooked'])),
+    return dict(basis_complete=False,runtime_complete=False,seams=seam_adjacency(value['render'],value['packet_owners']),render=geometry_set(value['render'],bounded=False),cooked=triangles_counter(json_artifact(value['cooked'])),
         hulls=native_hulls(json_artifact(value['hulls'])),policy=policy(value['policy'],logical),
         probes=json_artifact(value['probes']),meshes=value['meshes'])
 
@@ -559,11 +722,15 @@ def compare_native(value,logical):
     require(isinstance(value,dict) and set(value)=={'baseline','actual','baseline_guard','actual_guard'},'Native acceptance coverage absent')
     guard_binding(value['baseline_guard']);guard_binding(value['actual_guard'])
     before=native_set(value['baseline'],logical);after=native_set(value['actual'],logical)
-    for field in ('render','cooked','hulls','policy'):
+    require(before['basis_complete'] and after['basis_complete'],
+        'Actual GPU tangent/binormal basis and every LOD readback are mandatory; legacy/count-only evidence is insufficient')
+    for field in ('source_lods','render_lods','cooked','hulls','policy','settings','source_presence'):
         require(before[field]==after[field],'Native '+field+' differs: '+logical)
     probes=compare_probes(before['probes'],after['probes'],logical,set(after['meshes']),set(before['meshes']),after['seams'])
-    return dict(complete=True,cooked_triangles=sum(after['cooked'].values()),controls=probes,
-        meshes=len(after['meshes']),simple_hulls=sum(after['hulls'].values()))
+    runtime=before['runtime_complete'] and after['runtime_complete']
+    return dict(complete=runtime,geometry_complete=True,runtime_policy_complete=runtime,
+        cooked_triangles=sum(after['cooked'].values()),controls=probes,meshes=len(after['meshes']),
+        simple_hulls=sum(after['hulls'].values()),lods=sorted(after['render_lods']))
 
 
 def compare_asset(value,logical,*,native=True,serialized=True):
@@ -580,7 +747,7 @@ def compare_asset(value,logical,*,native=True,serialized=True):
     result=dict(exporter_complete=serialized,source_complete=True,triangles=after['triangles'],polygons=after['polygons'],
         native_complete=False)
     if native:
-        result['native']=compare_native(value.get('native'),logical);result['native_complete']=True
+        result['native']=compare_native(value.get('native'),logical);result['native_complete']=result['native']['complete']
     return result
 
 
@@ -657,7 +824,8 @@ def verify(spec,*,repo=REPO,native=True,serialized=True,required_groups=MINIMUM_
             if native:
                 try:
                     observed[logical]['native']=compare_native(item['assets'][logical].get('native'),logical)
-                    observed[logical]['native_complete']=True
+                    observed[logical]['native_complete']=observed[logical]['native']['complete']
+                    require(observed[logical]['native_complete'],'Production runtime policy remains missing; fixture geometry proof is separate')
                 except failures as error:
                     observed[logical]['native_error']=str(error);native_errors.append(owner+'/'+logical+': '+str(error))
     exporter=not exporter_errors and serialized

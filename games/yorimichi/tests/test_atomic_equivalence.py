@@ -284,12 +284,12 @@ def test_full_native_snapshot_has_complete_saved_meshes_cook_hulls_policy_and_se
         probes=write_json(tmp_path,'before-probes.json',before),meshes=['Original'],packet_owners=['Original'])
     current=dict(render=actual,cooked=cooked,hulls=hulls,policy=policy,
         probes=write_json(tmp_path,'after-probes.json',after),meshes=['A','B'],packet_owners=['A','B'])
-    result=eq.compare_native(dict(baseline=original,actual=current,baseline_guard=guard,actual_guard=guard),'Logical')
-    assert result==dict(complete=True,cooked_triangles=2,controls=8,meshes=2,simple_hulls=0)
+    with pytest.raises(eq.EvidenceError,match='tangent/binormal'):
+        eq.compare_native(dict(baseline=original,actual=current,baseline_guard=guard,actual_guard=guard),'Logical')
     changed=copy.deepcopy(current);changed['packet_owners']=['A','A']
     with pytest.raises(eq.EvidenceError,match='omit'):eq.native_set(changed,'Logical')
     changed=copy.deepcopy(current);changed['probes']=write_json(tmp_path,'missing-seam.json',dict(after,seams=[]))
-    with pytest.raises(eq.EvidenceError,match='seam census'):
+    with pytest.raises(eq.EvidenceError,match='tangent/binormal|seam census'):
         eq.compare_native(dict(baseline=original,actual=changed,baseline_guard=guard,actual_guard=guard),'Logical')
 
 
