@@ -49,3 +49,16 @@ def test_selected_part_cannot_invoke_a_sibling_constructor():
     sources=load('vehicle_sibling_refusal',GAME/'world/vehicle_sources.py')
     text=(GAME/'assets/vehicles/sailboat/build.py').read_text().replace("m=v.Mesh('SB_Boom')","m=hull()")
     with pytest.raises(ValueError,match='sibling'):sources.projection(text,'sailboat')
+
+
+def test_actual_sailboat_build_orders_each_selected_source_before_native_import(tmp_path):
+    from atelier import build
+    recipe=build.load_recipe('yorimichi')
+    ctx=SimpleNamespace(out=tmp_path.resolve(),game='yorimichi',uproject=None)
+    steps=recipe.steps(ctx);by_name={step.name:step for step in steps}
+    assert len([name for name in by_name if name.startswith('world.vehicle_sailboat.geometry.')])==5
+    assert isinstance(by_name['world.sailboat'].commands[0],build.Call)
+    assert all(command.script!=GAME/'assets/vehicles/sailboat/build.py'
+        for step in steps for command in step.commands if isinstance(command,build.Blender))
+    required={step.name for step in build.order(steps,['unreal.world'])}
+    assert {'world.sailboat.sources','world.sailboat'}<=required
