@@ -130,159 +130,62 @@ def test_failed_source_migration_cannot_continue_to_final_pass(importer, monkeyp
 
 
 @pytest.mark.parametrize('initial', ['new', 'interchange', 'legacy'])
-@pytest.mark.parametrize('entrypoint', ['region', 'world'])
-def test_hidamari_terrain_reimport_replaces_seed_slots_and_keeps_terrain_materials(importer, monkeypatch, tmp_path, initial, entrypoint):
-    """Run the real region owner, village adapter, FBX migration and material assignment."""
+def test_hidamari_material_owner_preserves_independent_city_and_island_packages(importer, monkeypatch, tmp_path, initial):
+    """The real legacy dispatch supplies materials but never recreates delegated geometry."""
     p = importer
     scripts = Path(__file__).resolve().parents[1] / 'unreal/Scripts'
-    terrain_package = '/Game/Japan/Terrain'
-    names = ('Ground', 'Road', 'Sand', 'Coast', 'CoastRock')
-    materials = {name: object() for name in names}
-
-    class Slot:
-        def __init__(self, name, material=None):
-            self.values = dict(material_slot_name=name, imported_material_slot_name=name, material_interface=material)
-        def get_editor_property(self, name):
-            return self.values[name]
-        def set_editor_property(self, name, value):
-            self.values[name] = value
-        def copy(self):
-            return Slot(self.values['material_slot_name'], self.values['material_interface'])
-
-    p.source_slots.update({'Village_Sign.fbx': [Slot('VillagePalette')],
-                          'terrain.fbx': [Slot(name) for name in names]})
+    game = scripts.parents[1]
+    package = '/Game/Japan/Terrain'
     previous = None
     if initial != 'new':
-        previous = p.assets[terrain_package] = Mesh(ImportData() if initial == 'legacy' else object())
-        previous.static_materials = [Slot('VillagePalette')] if initial == 'legacy' else [Slot(name) for name in names]
+        previous = p.assets[package] = Mesh(ImportData() if initial == 'legacy' else object())
     unrelated = p.assets['/Game/Other/Mesh'] = Mesh(object())
-    p.assets.update({'/Game/Japan/Materials/MI_' + name: material for name, material in materials.items()
-                     if name != 'CoastRock'})
     p.assets['/Game/Japan/Materials/M_Village'] = object()
-    saved, logs, sand_calls, coast_calls, rock_calls, events, sea_calls = [], [], [], [], [], [], []
-    collision = {}
-    def coast_rock_instance():
-        events.append('create-rock')
-        rock_calls.append('rock')
-        p.assets['/Game/Japan/Materials/MI_CoastRock'] = materials['CoastRock']
-        return materials['CoastRock']
-    original_load = p.unreal.EditorAssetLibrary.load_asset
-    def load(path):
-        if path == '/Game/Japan/Materials/MI_CoastRock':
-            events.append('lookup-rock')
-            assert rock_calls, 'Rock material must exist before its slot is bound'
-        return original_load(path)
-    p.unreal.EditorAssetLibrary.load_asset = load
-    original_execute = p.unreal.AssetToolsHelpers.get_asset_tools().import_asset_tasks
-    def execute(tasks):
-        if any(Path(task.filename).name == 'terrain.fbx' for task in tasks):
-            events.append('import-terrain')
-            assert p.assets.get('/Game/Japan/Materials/MI_CoastRock') is materials['CoastRock']
-        original_execute(tasks)
-        p.assets[terrain_package].values['body_setup'] = SimpleNamespace(set_editor_property=collision.__setitem__)
-    p.module.AT.import_asset_tasks = execute
-    p.unreal.AssetToolsHelpers.get_asset_tools = lambda: SimpleNamespace(import_asset_tasks=execute)
-    p.unreal.EditorAssetLibrary.save_loaded_asset = saved.append
-    p.unreal.MaterialEditingLibrary = SimpleNamespace()
-    p.unreal.SystemLibrary = SimpleNamespace(execute_console_command=lambda *args: None)
-    p.unreal.CollisionTraceFlag = SimpleNamespace(CTF_USE_COMPLEX_AS_SIMPLE='complex')
-    p.unreal.log = logs.append
     monkeypatch.setattr(sys, 'path', list(sys.path))
     monkeypatch.delenv('HIDAMARI_ASSETS', raising=False)
+    p.unreal.SystemLibrary = SimpleNamespace(execute_console_command=lambda *args: None)
+    p.unreal.MaterialEditingLibrary = SimpleNamespace()
+    logs = []; p.unreal.log = logs.append
     for name, module in {
-        'yori': SimpleNamespace(OUT=tmp_path), 'atmosphere': SimpleNamespace(), 'mesh_import': p.module,
+        'yori': SimpleNamespace(OUT=tmp_path, GAME=game), 'atmosphere': SimpleNamespace(), 'mesh_import': p.module,
         'harbor_material': SimpleNamespace(material=lambda **kwargs: object()),
         'arcade_material': SimpleNamespace(material=lambda **kwargs: object()),
         'plaza_material': SimpleNamespace(water_material=lambda *args: object(), paving_material=lambda: object()),
         'city_material': SimpleNamespace(),
-        'import_southwest': SimpleNamespace(sand_material=lambda: sand_calls.append('sand'),
-                                            sea_plane=lambda: sea_calls.append('sea')),
-        'forest_ground': SimpleNamespace(coast_instance=lambda *args: coast_calls.append('coast'),
-                                        coast_rock_instance=coast_rock_instance),
     }.items():
         monkeypatch.setitem(sys.modules, name, module)
-    for name in ('import_village', 'mesh_materials'):
-        spec = importlib.util.spec_from_file_location(name, scripts / (name + '.py'))
-        module = importlib.util.module_from_spec(spec)
-        monkeypatch.setitem(sys.modules, name, module)
-        spec.loader.exec_module(module)
-    (tmp_path / 'hidamari').mkdir()
-    (tmp_path / 'hidamari/manifest.json').write_text('{}')
-    run_city = lambda: runpy.run_path(str(scripts / 'import_hidamari.py'), init_globals={'NORTH': False})
-    built = []
-    if entrypoint == 'world':
-        # Execute the production orchestration, real city importer, village adapter and
-        # FBX migration together. Unrelated character/level work is outside this fixture.
-        import glob
-        import os
-        (tmp_path / 'world.json').write_text('{}')
-        script = scripts / 'setup_project.py'
-        tree = ast.parse(script.read_text())
-        body = [n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'main']
-        forest = SimpleNamespace(get_editor_property=lambda name: object())
-        generic = []
-        owner = dict(__file__=str(script), OUT=str(tmp_path), os=os, glob=glob,
-                     EAL=p.unreal.EditorAssetLibrary, unreal=p.unreal, FOLIAGE=set(),
-                     purge=lambda: pytest.fail("Upfront purge would destroy reusable packages"), material_bindings=lambda: {},
-                     instance=lambda *args: forest, forest_ground_material=lambda: object(),
-                     import_fbx=lambda *args: generic.append(args), assign=lambda *args: None,
-                     build_level=lambda mesh, *args: built.append(mesh))
-        exec(compile(ast.Module(body=body, type_ignores=[]), str(script), 'exec'), owner)
-        real_run_path = runpy.run_path
-        def nested(path, **kwargs):
-            if Path(path).name == 'import_wanderer.py':
-                return {}
-            if Path(path).name == 'import_southwest.py' and kwargs.get('init_globals', {}).get('SEA_ONLY'):
-                sea_calls.append('sea')
-                return {}
-            return real_run_path(path, **kwargs)
-        monkeypatch.setattr(runpy, 'run_path', nested)
-        run_city = owner['main']
+    monkeypatch.delitem(sys.modules, 'import_village', raising=False)
+    spec = importlib.util.spec_from_file_location('city_logical_fixture',game/'world/regions/hidamari/logical_catalogue.py')
+    catalogue = importlib.util.module_from_spec(spec); spec.loader.exec_module(catalogue)
+    folder = tmp_path/'hidamari'; folder.mkdir()
+    manifest = folder/'manifest.json'
+    manifest.write_text(json.dumps(dict.fromkeys(catalogue.ASSETS, {})))
     for _ in range(2):
-        events.clear()
-        run_city()
-        mesh = p.assets[terrain_package]
-        assert mesh.centimetres == 1200
-        assert isinstance(mesh.values['asset_import_data'], ImportData)
-        assert [slot.values['imported_material_slot_name'] for slot in mesh.static_materials] == list(names)
-        assert [slot.values['material_interface'] for slot in mesh.static_materials] == list(materials.values())
-        assert events.index('create-rock') < events.index('import-terrain') < events.index('lookup-rock')
-        assert events.count('create-rock') == 1 and events.count('lookup-rock') == 1
-        assert mesh.static_materials[-1].values['material_interface'] is materials['CoastRock']
-        assert saved[-1] is mesh
-    if previous is not None:
-        assert mesh is previous
-    assert [name for name, _, _ in p.calls] == ['terrain.fbx'] * (3 if initial == 'interchange' else 2)
-    assert collision == {'collision_trace_flag': 'complex'}
-    assert p.assets['/Game/Other/Mesh'] is unrelated and unrelated.centimetres is None
-    assert json.loads((tmp_path / 'hidamari/import-report.json').read_text()) == {}
-    assert sand_calls == ['sand', 'sand']
-    assert rock_calls == ['rock', 'rock']
-    assert coast_calls == ['coast'] * (4 if entrypoint == 'world' else 2)
+        runpy.run_path(str(scripts/'import_hidamari.py'), init_globals={'NORTH':False})
+        assert p.assets.get(package) is previous
+        assert p.assets['/Game/Other/Mesh'] is unrelated
+        assert p.calls == []
     assert logs == ['HIDAMARI IMPORT COMPLETE'] * 2
-    if entrypoint == 'world':
-        assert built == [mesh, mesh]  # the level receives the final imported package
-        assert generic == []  # no earlier full terrain import, including the first build
-        assert coast_calls == ['coast'] * 4  # setup material plus final city binding per run
-    assert sea_calls == (['sea', 'sea'] if entrypoint == 'world' else [])  # the sea plane is the world's
+    # Incomplete logical material membership must fail before any raw source pass.
+    manifest.write_text('{}')
+    with pytest.raises(AssertionError, match='Incomplete logical city material metadata'):
+        runpy.run_path(str(scripts/'import_hidamari.py'), init_globals={'NORTH':False})
+    assert p.calls == []
 
 
 @pytest.mark.parametrize('initial', ['new', 'stale-slots', 'stale-lods'])
 @pytest.mark.parametrize('save_succeeds', [True, False])
-def test_treehouse_trees_seed_from_existing_fbx_before_reimport(importer, monkeypatch, tmp_path, initial, save_succeeds):
-    """Run the real tree owner and FBX adapter, including missing-source reimport failure."""
+def test_treehouse_trees_receive_their_own_source_and_current_collision(importer, monkeypatch, tmp_path, initial, save_succeeds):
+    """Run current tree receiving and FBX admission without an unrelated source seed."""
     p = importer
     scripts = Path(__file__).resolve().parents[1] / 'unreal/Scripts'
     package = '/Game/Japan/Assets/Tree_Treehouse'
     source = tmp_path / 'treehouse/trees'
     source.mkdir(parents=True)
     (source / 'trees.json').write_text(json.dumps({
-        'Tree_Treehouse': dict(slot='LeafAmber', leaf='LeafAmber', crown_hi=12.0),
+        'Tree_Treehouse': dict(slot='LeafAmber', leaf='LeafAmber', crown_hi=12.0, triangles=42),
     }))
     (source / 'Tree_Treehouse.fbx').touch()
-    seed = tmp_path / 'village/assets/Village_Sign.fbx'
-    seed.parent.mkdir(parents=True)
-    seed.touch()
 
     class Slot:
         def __init__(self, name, material=None):
@@ -295,14 +198,15 @@ def test_treehouse_trees_seed_from_existing_fbx_before_reimport(importer, monkey
             return Slot(self.values['imported_material_slot_name'], self.values['material_interface'])
 
     monkeypatch.setattr(Mesh, 'get_num_lods', lambda self: getattr(self, 'lods', 1), raising=False)
+    monkeypatch.setattr(Mesh, 'get_num_triangles', lambda self, lod: 42, raising=False)
+    monkeypatch.setattr(Mesh, 'get_name', lambda self: 'Tree_Treehouse', raising=False)
     monkeypatch.setattr(Mesh, 'set_num_source_models', lambda self, count: setattr(self, 'lods', count), raising=False)
     monkeypatch.setattr(Mesh, 'get_bounding_box', lambda self: SimpleNamespace(max=SimpleNamespace(z=self.centimetres)), raising=False)
     if initial != 'new':
         stale = p.assets[package] = Mesh(ImportData())
         stale.static_materials = [Slot('Bark'), Slot('OldLeaf' if initial == 'stale-slots' else 'LeafAmber')]
         stale.lods = 2 if initial == 'stale-lods' else 1
-    p.source_slots.update({'Village_Sign.fbx': [Slot('VillagePalette')],
-                          'Tree_Treehouse.fbx': [Slot('Bark'), Slot('LeafAmber')]})
+    p.source_slots.update({'Tree_Treehouse.fbx': [Slot('Bark'), Slot('LeafAmber')]})
     materials = {name: object() for name in ('Bark', 'LeafAmber')}
     for name in ('M_Foliage', 'MI_LeafCrimson', 'MI_LeafAmber', 'MI_Bark'):
         p.assets['/Game/Japan/Materials/' + name] = materials.get(name.removeprefix('MI_'), object())
@@ -341,6 +245,9 @@ def test_treehouse_trees_seed_from_existing_fbx_before_reimport(importer, monkey
     p.unreal.Vector4 = lambda *args: args
     p.unreal.TextureMipGenSettings = SimpleNamespace(TMGS_SIMPLE_AVERAGE='average')
     p.unreal.CollisionTraceFlag = SimpleNamespace(CTF_USE_SIMPLE_AS_COMPLEX='none')
+    p.unreal.StaticMeshEditorSubsystem = object
+    p.unreal.get_editor_subsystem = lambda cls: SimpleNamespace(get_simple_collision_count=lambda mesh: 0, get_convex_collision_count=lambda mesh: 0)
+    p.unreal.CitySurfaceValidation = SimpleNamespace(collision_vertices=lambda mesh: '[]')
     monkeypatch.setattr(sys, 'path', list(sys.path))
     for name, module in {'yori': SimpleNamespace(OUT=tmp_path), 'atmosphere': SimpleNamespace(),
                          'see_through': SimpleNamespace(), 'mesh_import': p.module}.items():
@@ -348,6 +255,7 @@ def test_treehouse_trees_seed_from_existing_fbx_before_reimport(importer, monkey
     # This commandlet runs main() unconditionally; load its real definitions without
     # importing unrelated room meshes and material graphs.
     script = scripts / 'import_treehouse.py'
+    monkeypatch.delitem(sys.modules, 'treehouse_atomic_native', raising=False)
     tree = ast.parse(script.read_text(), filename=str(script))
     assert isinstance(tree.body[-1], ast.Expr) and isinstance(tree.body[-1].value, ast.Call)
     assert tree.body[-1].value.func.id == 'main'
@@ -359,6 +267,7 @@ def test_treehouse_trees_seed_from_existing_fbx_before_reimport(importer, monkey
             owner['trees']({})
         assert saved and not p.calls  # A failed prerequisite save must stop before the mesh import.
         return
+    monkeypatch.setattr(owner['atomic_native'], 'HULLS', {'Tree_Treehouse': []})
     report = {}
     for _ in range(2):
         owner['trees'](report)
@@ -367,8 +276,8 @@ def test_treehouse_trees_seed_from_existing_fbx_before_reimport(importer, monkey
         assert [slot.values['imported_material_slot_name'] for slot in mesh.static_materials] == ['Bark', 'LeafAmber']
         assert [slot.values['material_interface'] for slot in mesh.static_materials] == list(materials.values())
         assert saved[-1] is mesh
-    assert [name for name, _, _ in p.calls] == ['Village_Sign.fbx', 'Tree_Treehouse.fbx', 'Tree_Treehouse.fbx']
-    assert deleted == ([] if initial == 'new' else [package])
+    assert [name for name, _, _ in p.calls] == ['Tree_Treehouse.fbx', 'Tree_Treehouse.fbx']
+    assert deleted == []  # The current receiver preserves package identity and refreshes its own source.
     assert collision == {'collision_trace_flag': 'none'}
     assert report == {'trees': ['Tree_Treehouse', 'Tree_Treehouse']}
 
@@ -393,45 +302,27 @@ def test_see_through_commandlet_resolves_sibling_without_scripts_on_path(monkeyp
     assert Path(sys.modules['definition'].__file__) == pipeline / 'definition.py'
 
 
-def test_world_without_city_retains_terrain_import_binding_and_collision(tmp_path, monkeypatch):
+def test_world_asset_owner_requires_island_materials_without_reimporting_terrain(tmp_path, monkeypatch):
     import os
-    scripts = Path(__file__).resolve().parents[1] / 'unreal/Scripts'
-    script = scripts / 'setup_project.py'
-    tree = ast.parse(script.read_text())
-    body = [n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'main']
-    (tmp_path / 'world.json').write_text('{}')
-    collision, calls = {}, []
-    mesh = SimpleNamespace(get_editor_property=lambda name: SimpleNamespace(set_editor_property=collision.__setitem__))
-    forest = SimpleNamespace(get_editor_property=lambda name: object())
-    unreal = SimpleNamespace(CollisionTraceFlag=SimpleNamespace(CTF_USE_COMPLEX_AS_SIMPLE='complex'))
-    library = SimpleNamespace(load_asset=lambda path: mesh if path == '/Game/Japan/Terrain' else None,
-                              save_loaded_asset=lambda asset: calls.append(('save', asset)))
+    script = Path(__file__).resolve().parents[1]/'unreal/Scripts/setup_project.py'
+    body = [n for n in ast.parse(script.read_text()).body if isinstance(n,ast.FunctionDef) and n.name=='main']
+    (tmp_path/'world.json').write_text('{}')
+    calls = []; materials = {'/Game/Japan/Materials/MI_'+name:object() for name in ('FarForest','Coast')}
     monkeypatch.delenv('JAPAN_ONLY', raising=False)
-    rock = object()
-    def coast_rock_instance():
-        calls.append(('rock', rock))
-        return rock
-    monkeypatch.setitem(sys.modules, 'forest_ground', SimpleNamespace(coast_instance=lambda *args: object(),
-                                                                   coast_rock_instance=coast_rock_instance))
-    def run_path(path, **kwargs):
-        if Path(path).name == 'import_southwest.py' and kwargs.get('init_globals', {}).get('SEA_ONLY'):
-            calls.append(('sea',))
-        return {}
-    monkeypatch.setattr(runpy, 'run_path', run_path)
-    owner = dict(__file__=str(script), OUT=str(tmp_path), os=os,
-                 glob=SimpleNamespace(glob=lambda pattern: []), EAL=library, unreal=unreal, FOLIAGE=set(),
-                 purge=lambda: pytest.fail("Upfront purge would destroy reusable packages"), material_bindings=lambda: {}, instance=lambda *args: forest,
-                 forest_ground_material=lambda: object(),
-                 import_fbx=lambda *args: calls.append(('import', *args)),
-                 assign=lambda *args: calls.append(('bind', *args)),
-                 build_level=lambda terrain, *args: calls.append(('level', terrain)))
-    exec(compile(ast.Module(body=body, type_ignores=[]), str(script), 'exec'), owner)
-    owner['main']()
-    assert [c[0] for c in calls] == ['rock', 'import', 'bind', 'save', 'sea', 'level']
-    assert calls[1][1:] == (str(tmp_path / 'terrain.fbx'), '/Game/Japan', 'Terrain')
-    assert calls[2][1] == '/Game/Japan/Terrain' and calls[2][2]['CoastRock'] is rock
-    assert calls[-1][1] is mesh and calls[-3][1] is mesh  # level and terrain save; the sea plane between
-    assert collision == {'collision_trace_flag': 'complex'}
+    monkeypatch.setitem(sys.modules,'world_props',SimpleNamespace(read=lambda out:{}))
+    monkeypatch.setattr(runpy,'run_path',lambda path,**kwargs:calls.append(Path(path).name))
+    owner=dict(__file__=str(script),OUT=str(tmp_path),Path=Path,os=os,
+        EAL=SimpleNamespace(load_asset=materials.get),unreal=SimpleNamespace(),
+        material_bindings=lambda:{},LOG=calls.append,
+        purge=lambda:pytest.fail('Never purge receiving evidence'),
+        import_fbx=lambda *args:pytest.fail('Island geometry must not be imported here'),
+        build_level=lambda *args:pytest.fail('Island map must not be recreated here'))
+    exec(compile(ast.Module(body=body,type_ignores=[]),str(script),'exec'),owner)
+    for _ in range(2):owner['main']()
+    assert calls == ['import_wanderer.py','WORLD ASSETS IMPORT COMPLETE']*2
+    materials.pop('/Game/Japan/Materials/MI_Coast')
+    with pytest.raises(RuntimeError,match='Build unreal.island.*Coast'):owner['main']()
+    assert len(calls)==4
 
 
 def test_verified_default_reuse_skips_geometry_and_defers_receipt(importer, monkeypatch):

@@ -13,6 +13,7 @@ from test_mega_ramp_layers import changed_by
 RECIPE = build.load_recipe('yorimichi')
 DIGEST = RECIPE.export_digest
 LATER = {'data.content', 'data.network', 'unreal.cook', 'unreal.package'}
+NATIVE_NORTH = {'unreal.north', 'unreal.desktop', 'unreal.city_tree_lods'}
 
 
 def records(items, at):
@@ -48,7 +49,7 @@ def test_an_fbx_digest_ignores_the_export_time_and_ids_but_not_the_mesh():
 def test_snow_and_mountain_material_reimport_only_the_volcano(tmp_path, monkeypatch):
     for edited in (tmp_path / 'hidamari' / 'north_snow.png', tmp_path / 'hidamari' / 'north_snow.json',
                    RECIPE.SCRIPTS / 'mountain_material.py'):
-        assert changed_by(edited, tmp_path, monkeypatch) == {'unreal.north'} | LATER, edited
+        assert changed_by(edited, tmp_path, monkeypatch) == NATIVE_NORTH | LATER, edited
 
 
 def test_shared_rock_texture_reimports_both_owners_without_regenerating_geometry(tmp_path, monkeypatch):
@@ -64,12 +65,16 @@ def test_the_crater_floor_reimports_only_the_volcano(tmp_path, monkeypatch):
     """The crater floor's mask and painting (mountain_material.py) reimport the volcano and nothing else."""
     for edited in (tmp_path / 'hidamari' / 'north_crater.png', tmp_path / 'hidamari' / 'north_crater.json',
                    tmp_path / 'craterpark' / 'textures' / 'crater_floor.png'):
-        assert changed_by(edited, tmp_path, monkeypatch) == {'unreal.north'} | LATER, edited
+        assert changed_by(edited, tmp_path, monkeypatch) == NATIVE_NORTH | LATER, edited
     ctx = SimpleNamespace(game='yorimichi', out=tmp_path, uproject=tmp_path / 'Yorimichi.uproject')
     steps = {s.name: s for s in RECIPE.steps(ctx)}
     assert 'world.craterpark_restyle' in steps['unreal.north'].needs
+    masks = steps['world.hidamari.north_masks']
+    assert {product.name for product in masks.products} == {'hidamari.north_masks'}
     assert {tmp_path / 'hidamari' / 'north_crater.png', tmp_path / 'hidamari' / 'north_crater.json'} <= set(
-        steps['world.hidamari'].outputs)
+        masks.products[0].paths)
+    order = [step.name for step in build.order(list(steps.values()), ['unreal.north'])]
+    assert order.index('world.hidamari.north_masks') < order.index('unreal.north')
 
 
 def test_the_world_import_reads_no_volcano_input(tmp_path):
@@ -218,62 +223,42 @@ def test_missing_hidamari_prop_export_fails_even_after_successful_cutoff(props_b
     assert any('FAILED' in message for message in messages)
 
 
-def reruns(edited, changed, out):
-    """Steps that rerun when `edited` changes: an input is or holds it, or a need reran; a cutoff need only when its
-    outputs changed (`changed`: the cutoff steps whose files differ). World exports are taken to write the same files
-    except where `changed` says otherwise."""
-    ctx = SimpleNamespace(game='yorimichi', out=out, uproject=out / 'Yorimichi.uproject')
-    steps = build.order(RECIPE.steps(ctx), ['unreal.package'])
-    cutoff = {s.name for s in steps if s.cutoff}
-    ran = set()
-    for step in steps:
-        inside = any(str(edited) == str(i) or str(edited).startswith(f'{i}/') for i in step.inputs)
-        if inside or any(n in ran and (n not in cutoff or n in changed) for n in step.needs):
-            ran.add(step.name)
-    return ran
+def test_mountain_geometry_and_material_cutoffs_feed_the_current_atomic_receiver(tmp_path):
+    """Follow actual named products; the old needs-only simulator missed atomic owners."""
+    from atelier import build_products
+    ctx = SimpleNamespace(game='yorimichi', out=tmp_path, uproject=tmp_path/'Yorimichi.uproject')
+    graph = build_products.Graph(RECIPE.steps(ctx))
+    owner = graph.by_name['world.hidamari.geometry.HD_NorthMountains']
+    assert RECIPE.REGIONS/'hidamari/mountains.py' in owner.inputs
+    assert graph.owners['terrain.HD_NorthMountains.final'] == owner.name
+    assert graph.by_name['world.hidamari.north'].cutoff
+    native = graph.by_name['unreal.north']
+    assert 'world.hidamari.north' in native.needs
+    assert 'unreal.north' in graph.by_name['unreal.desktop'].needs
+    assert 'unreal.desktop' in graph.by_name['unreal.city_tree_lods'].needs
+    # Layout and painting changes may refresh the material owner; receiving current
+    # atomic pieces must follow it rather than preserve stale material bindings.
+    selected = {step.name for step in graph.select(['unreal.desktop'])}
+    assert {owner.name, 'world.hidamari.north', 'unreal.north'} <= selected
 
 
-# City projections rerun, but unchanged tile inputs stop there. Tree generator code also imports the edited modules.
-CITY = {'world.hidamari', 'world.hidamari.city', 'world.hidamari.north', 'world.zeppelin', 'world.zeppelin.meshes',
-        'world.terrain', 'world.terrain.meshes', 'world.map', 'world.hidamari.trees',
-        'world.city_trees', 'world.city_trees.meshes', 'world.gondola_ground_inputs', 'world.gondola_ground',
-        'world.gondola_site', 'world.gondola_service', 'unreal.gondola', 'data.stage',
-        'world.gondola_structure_inputs'} | {f'world.hidamari.tiles.{source}'
-                                          for source in ('HD_Terrain', 'HD_Streets', 'HD_Square', 'HD_CivicGardens', 'HD_Park')} | LATER
-# The regions and early FarHills producer conservatively read mountains.py and
-# hidamari/layout.py; the main layout and final Belmonte ground remain cutoff steps.
-NORTHERN = {'world.layout', 'world.farhills', 'world.belmonte', 'world.belmonte.ground', 'world.belmonte.textures', 'world.belmonte.meshes', 'world.hippodrome', 'world.hippodrome.meshes',
-            'world.belmonte_train_route', 'world.belmonte_track', 'world.belmonte_track_data', 'world.belmonte_track.meshes'}
-
-
-def test_volcano_snow_or_colours_reimport_only_the_volcano(tmp_path):
-    ran = reruns(RECIPE.REGIONS / 'hidamari' / 'mountains.py', {'world.hidamari.north'}, tmp_path)
-    assert ran == CITY | NORTHERN | {'unreal.north'}
-
-
-def test_caldera_dressing_reimports_nothing(tmp_path):
-    ran = reruns(RECIPE.REGIONS / 'hidamari' / 'layout.py', set(), tmp_path)
-    assert ran == CITY | NORTHERN
-    # Unless the volcano's meshes change with it.
-    assert reruns(RECIPE.REGIONS / 'hidamari' / 'layout.py', {'world.hidamari.north'}, tmp_path) == CITY | NORTHERN | {'unreal.north'}
-
-
-def test_layout_dependents_list_the_layout_sources_they_import(tmp_path):
-    """world.layout is a cutoff step: a dependent no longer sees its sources through its fingerprint."""
-    ctx = SimpleNamespace(game='yorimichi', out=tmp_path, uproject=tmp_path / 'Yorimichi.uproject')
-    steps = {s.name: s for s in RECIPE.steps(ctx)}
+def test_layout_reads_belong_to_source_projections_not_file_only_assemblies(tmp_path):
+    ctx = SimpleNamespace(game='yorimichi', out=tmp_path, uproject=tmp_path/'Yorimichi.uproject')
+    steps = {s.name:s for s in RECIPE.steps(ctx)}
     assert steps['world.layout'].cutoff
     covers = lambda step, files: all(any(f == i or i in f.parents for i in step.inputs) for f in files)
-    for name in ('world.village', 'world.houses.geometry.House_A', 'world.southwest', 'world.mega.trail_data', 'world.lake', 'world.skatepark',
-                 'world.treehouse', 'world.hidamari', 'world.belmonte', 'world.hippodrome'):
-        assert covers(steps[name], RECIPE.VILLAGE_LAYOUT), name
-    # The completed assembly reads declared products; the terrain sampler owns
-    # its actual layout code, without feeding world inputs into the local ramp.
+    for name in ('world.village.sources','world.lake.query_data','world.treehouse.source_data','world.hidamari.layout_data'):
+        assert covers(steps[name],RECIPE.VILLAGE_LAYOUT),name
+        assert 'world.layout' in steps[name].needs,name
+    for name in ('world.village','world.southwest','world.lake','world.treehouse'):
+        assert RECIPE.REGIONS/'village/layout.py' not in steps[name].inputs,name
+        assert steps[name].reads,name
+    treehouse = steps['world.treehouse.source_data']
+    assert covers(treehouse,RECIPE.TREEHOUSE_LAYOUT)
+    assert 'treehouse.canopy_dimensions' in treehouse.reads
     assert 'mega.atomic' in steps['world.mega'].reads
     assert not steps['world.mega.geometry.Mega_Ramp'].reads
     assert not steps['world.mega.geometry.Mega_Trim'].reads
-    for name in ('world.treehouse', 'world.hidamari', 'world.belmonte', 'world.hippodrome'):   # import treehouse/layout.py
-        assert covers(steps[name], RECIPE.TREEHOUSE_LAYOUT) and 'world.treehouse_trees' in steps[name].needs, name
 
 
 def test_layout_dependents_hash_every_module_their_scripts_import(tmp_path):

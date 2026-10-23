@@ -7,27 +7,30 @@ from atelier import build
 from test_mega_ramp_layers import changed_by
 
 
-def test_cpu_metadata_edit_reruns_only_the_tree_overlay_lods_and_package(tmp_path, monkeypatch):
+def test_retired_cpu_overlay_does_not_invalidate_atomic_tree_owners(tmp_path, monkeypatch):
     recipe = build.load_recipe('yorimichi')
     # Exercise the real graph with source/product/tool stand-ins, without installed native tools.
     changed = changed_by(recipe.SCRIPTS / 'city_tree_cpu_access.py', tmp_path, monkeypatch)
-    # Changed imported bytes must also refresh the multiplayer compatibility manifest.
-    assert changed == {
-        'unreal.city_tree_cpu_access', 'unreal.city_tree_lods', 'data.content', 'data.network', 'unreal.cook', 'unreal.package'}
+    # CPU support is now received on the current atomic pieces, never on retired parents.
+    assert changed == set()
 
     # A real world importer change still invalidates the world and overlays.
     world_changed = changed_by(recipe.SCRIPTS / 'import_hidamari.py', tmp_path, monkeypatch)
-    assert {'unreal.world', 'unreal.city_tree_cpu_access', 'unreal.city_tree_lods', 'unreal.desktop', 'unreal.bike', 'unreal.package'} <= world_changed
+    assert {'unreal.world', 'unreal.city_tree_lods', 'unreal.desktop', 'unreal.bike', 'unreal.package'} <= world_changed
+    assert 'unreal.city_tree_cpu_access' not in world_changed
 
 
-def test_cpu_overlay_is_ordered_before_variants_and_records_a_required_output(tmp_path):
+def test_atomic_base_receiving_is_ordered_before_tree_variants(tmp_path):
     recipe = build.load_recipe('yorimichi')
     ctx = SimpleNamespace(game='yorimichi', out=tmp_path, uproject=tmp_path / 'Yorimichi.uproject')
-    steps = build.order(recipe.steps(ctx), ['unreal.desktop'])
+    steps = build.order(recipe.steps(ctx), ['unreal.city_tree_lods'])
     names = [s.name for s in steps]
-    assert names.index('unreal.world') < names.index('unreal.city_tree_cpu_access') < names.index('unreal.desktop')
-    overlay = next(s for s in steps if s.name == 'unreal.city_tree_cpu_access')
-    assert overlay.heavy and overlay.outputs == [tmp_path / 'city_tree_lods' / 'production-cpu-access.json']
+    assert names.index('unreal.world') < names.index('unreal.desktop') < names.index('unreal.city_tree_lods')
+    assert 'unreal.city_tree_cpu_access' not in names
+    variants = next(s for s in steps if s.name == 'unreal.city_tree_lods')
+    assert variants.heavy
+    assert {p.name for p in variants.products} == {'city.native_tree_lods', 'city.native_tree_report'}
+    assert variants.commands[0].script.name == 'import_city_tree_atomic.py'
 
 
 def test_overwritten_tree_invalidates_the_overlay_even_with_unchanged_world_inputs(tmp_path):
