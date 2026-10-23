@@ -102,6 +102,27 @@ def reap(child, grace=10.):
         _reap_helpers(child.pid)
 
 
+def process_guard_receipt(pid, started, report, limit_bytes):
+    """@cc [owner:fontanierh,label:safety] process-guard-live-receipt
+    True MUST require a readable bounded object with the exact child PID/start, ceiling and running
+    state, and a finite timestamp no more than five seconds old and not in the future. Monitor
+    liveness alone MUST NOT substitute for this evidence at startup or ongoing private-service checks.
+    """
+    try:
+        with Path(report).open('rb') as handle:
+            raw = handle.read(1024 * 1024 + 1)
+        value = json.loads(raw) if len(raw) <= 1024 * 1024 else None
+    except (OSError, ValueError):
+        return False
+    if not isinstance(value, dict):
+        return False
+    observed = value.get('time')
+    fresh = (type(observed) in (int, float) and math.isfinite(observed)
+             and 0 <= time.time() - observed <= 5.)
+    return (fresh and value.get('pid') == pid and value.get('process_start') == started
+            and value.get('limit_bytes') == limit_bytes and value.get('state') == 'running')
+
+
 def wait_ready(monitor, pid, started, report, limit_bytes, timeout=5.):
     """Require a fresh process-guard sample before releasing a capacity-gated child.
 
@@ -112,19 +133,8 @@ def wait_ready(monitor, pid, started, report, limit_bytes, timeout=5.):
     while time.monotonic() < deadline:
         if monitor is None or monitor.poll() is not None:
             raise RuntimeError('process memory guard exited before becoming ready')
-        try:
-            with Path(report).open('rb') as handle:
-                raw = handle.read(1024 * 1024 + 1)
-            value = json.loads(raw) if len(raw) <= 1024 * 1024 else None
-        except (OSError, ValueError):
-            value = None
-        if isinstance(value, dict):
-            observed = value.get('time')
-            fresh = (type(observed) in (int, float) and math.isfinite(observed)
-                     and 0 <= time.time() - observed <= 5.)
-            if (fresh and value.get('pid') == pid and value.get('process_start') == started
-                    and value.get('limit_bytes') == limit_bytes and value.get('state') == 'running'):
-                return
+        if process_guard_receipt(pid, started, report, limit_bytes):
+            return
         time.sleep(.01)
     raise RuntimeError('process memory guard did not become ready')
 

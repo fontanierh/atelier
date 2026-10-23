@@ -136,7 +136,7 @@ def test_go_only_after_both_trackers_and_actual_child_guard_ready(tmp_path, monk
     events = []
     key = (2, 200)
     monitor = SimpleNamespace(poll=lambda: None)
-    tree = SimpleNamespace(folder=tmp_path, root=(1, 100), guarded={},
+    tree = SimpleNamespace(folder=tmp_path, root=(1, 100), guarded={}, service_reports={},
                            register_service=lambda k: events.append(('launcher', k)),
                            check=lambda: events.append(('check', key)), same=lambda k: True,
                            services=SimpleNamespace(validate=lambda k: events.append(('pre_go', k))))
@@ -431,3 +431,47 @@ def test_two_received_gate_descriptors_are_both_closed_on_refusal(monkeypatch):
 def test_spawn_options_cannot_replace_or_leak_gate(option):
     with pytest.raises(TypeError):
         owned_service.spawn(['unused'], **{option: None})
+
+
+@pytest.mark.parametrize('case', ['missing','malformed','stale','future','nan','pid','start','limit','state'])
+def test_alive_private_monitor_needs_ongoing_fresh_bound_telemetry(tmp_path, monkeypatch, case):
+    import json
+    import time
+    api = tables()
+    monkeypatch.setattr(guarded, 'process_tree', api)
+    with ExitStack() as stack:
+        tree = guarded.Descendants(1,100,tmp_path,(),None,10.,stack)
+        tree.register_service((2,200))
+        path = tmp_path/'private.json'
+        tree.service_reports[(2,200)] = path
+        tree.guarded[(2,200)] = ('owned-service', SimpleNamespace(poll=lambda: None))
+        value = dict(pid=2,process_start=200,time=time.time(),limit_bytes=10*1024**3,state='running')
+        path.write_text(json.dumps(value))
+        tree.check()
+        changes={'stale':dict(time=time.time()-6), 'future':dict(time=time.time()+60),
+                 'nan':dict(time=float('nan')), 'pid':dict(pid=999),'start':dict(process_start=999),
+                 'limit':dict(limit_bytes=1), 'state':dict(state='memory_limit')}
+        if case=='missing': path.unlink()
+        elif case=='malformed': path.write_text('{')
+        else:
+            value.update(changes[case]);path.write_text(json.dumps(value))
+        with pytest.raises(RuntimeError, match='lost its live receipt'):
+            tree.check()
+
+
+def test_live_but_stale_private_guard_fails_and_drains_after_go(tmp_path, admissions, monkeypatch):
+    import json
+    import sys
+    marker=tmp_path/'service.json'
+    service=('import os,json,time;from atelier.harness.safety.process_tree import started;'
+             f'open({str(marker)!r},"w").write(json.dumps([os.getpid(),started(os.getpid())]));time.sleep(30)')
+    driver=('import sys,time;from atelier.harness.safety.owned_service import spawn;'
+            f'child=spawn([sys.executable,"-c",{service!r}]);child.wait()')
+    original=guard.process_guard_receipt
+    def stale(pid, started, report, limit):
+        if marker.exists() and 'owned-service' in str(report): return False
+        return original(pid,started,report,limit)
+    monkeypatch.setattr(guard,'process_guard_receipt',stale)
+    with pytest.raises(RuntimeError, match='lost its live receipt'):
+        guarded.run([sys.executable,'-c',driver],tmp_path/'guard',timeout=10.,owned_services=True)
+    assert_gone(*json.loads(marker.read_text()))

@@ -196,6 +196,7 @@ class Controller:
             if monitor is None:
                 raise RuntimeError('private service has no actual-child guard')
             tree.guarded[key] = ('owned-service', monitor)
+            tree.service_reports[key] = report
             wait_ready(monitor, key[0], key[1], report, int(limit_gib * 1024**3))
             aggregate.register_service(key, request['token'])
             tree.check()

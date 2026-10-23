@@ -52,6 +52,7 @@ class Descendants:
         self.root, self.folder, self.watch, self.duration, self.limit_gib, self.stack = (
             (root, root_start), folder, set(watch), duration, limit_gib, stack)
         self.depth, self.parent, self.guarded, self.shared = {}, {}, {}, set()
+        self.service_reports = {}
         from .owned_service import Registrations
         self.services = Registrations(process_tree, self.root)
 
@@ -115,6 +116,11 @@ class Descendants:
         for key, (label, monitor) in self.guarded.items():
             if monitor.poll() is not None and self.same(key):
                 raise SystemExit(f'memory guard for {label} {key[0]} exited before it')
+            if key in self.service_reports and self.same(key):
+                from .guard import process_guard_receipt
+                if not process_guard_receipt(key[0], key[1], self.service_reports[key],
+                                             int(self.limit_gib * 1024**3)):
+                    raise RuntimeError('private service memory guard lost its live receipt')
 
     def shared_now(self, check_coverage=False):
         """Recorded processes at or under a shared service, judged on current names: a recorded `sh` may have exec'd

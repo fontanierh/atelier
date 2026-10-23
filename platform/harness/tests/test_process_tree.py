@@ -61,13 +61,14 @@ def tracker(monkeypatch, tmp_path, attached):
 
 def test_a_child_first_seen_as_sh_is_guarded_once_it_execs_the_cook(monkeypatch, tmp_path):
     # PID 77, start 300: the same identity is recorded as `sh`, then execs UnrealEditor-Cmd (review #1506).
-    names = {77: Then(['sh', 'sh', 'UnrealEditor-Cmd'])}   # read once while walking, once when guarding
+    names = {77: 'sh'}  # A process-table transition, independent of how often names are sampled.
     world(monkeypatch, starts={10: 100, 77: 300}, kids={10: [77]}, names=names)
     attached = []
     stack, tree = tracker(monkeypatch, tmp_path, attached)
     with stack:
         tree.poll()
         assert attached == []
+        names[77] = 'UnrealEditor-Cmd'
         tree.poll()
         assert [(pid, start) for pid, start, _ in attached] == [(77, 300)], 'expected start comes from validated discovery'
         tree.poll()
