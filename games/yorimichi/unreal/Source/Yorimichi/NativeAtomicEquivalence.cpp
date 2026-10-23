@@ -232,6 +232,7 @@ FString UNativeAtomicEquivalence::Probe(UStaticMeshComponent* Component,FVector 
     if(Radius>0)Blocked=World->SweepSingleByChannel(Hit,Start,End,Rotation,ECC_Pawn,FCollisionShape::MakeCapsule(Radius,HalfHeight),Params);
     else Blocked=World->LineTraceSingleByChannel(Hit,Start,End,ECC_Pawn,Params);
     bool Valid=true;auto Result=MakeShared<FJsonObject>();Result->SetBoolField(TEXT("blocking"),Blocked && Hit.bBlockingHit);
+    Result->SetStringField(TEXT("query_channel"),TEXT("Pawn"));
     Result->SetStringField(TEXT("component"),Component->GetPathName());Result->SetStringField(TEXT("mesh"),Component->GetStaticMesh()->GetPathName());
     Result->SetBoolField(TEXT("selected_component"),!Blocked || Hit.GetComponent()==Component);
     if(Blocked)

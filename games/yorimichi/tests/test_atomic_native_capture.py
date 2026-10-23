@@ -63,7 +63,7 @@ class API:
     @staticmethod
     def probe(component,start,end,rotation,radius,halfheight,complex):
         blocked=start[0]<2
-        result=dict(component=component.get_path_name(),mesh=component.mesh.path,selected_component=True,blocking=blocked)
+        result=dict(component=component.get_path_name(),mesh=component.mesh.path,selected_component=True,blocking=blocked,query_channel='Pawn')
         if blocked:result.update(position=[start[0],start[1],0],normal=[0,0,1],distance=1.)
         return json.dumps(result)
 
@@ -82,7 +82,7 @@ def save_fake_mesh(module,mesh):
 
 
 def control(kind,target,id=None,x=.25):
-    query=dict(start=[x,.25,1.],end=[x,.25,-1.],channel='selected_component',trace_complex=True)
+    query=dict(start=[x,.25,1.],end=[x,.25,-1.],channel='Pawn',trace_complex=True)
     if 'capsule' in kind:query.update(radius_cm=.1,half_height_cm=.2,orientation=[0,0,0,1])
     return dict(id=id or kind,kind=kind,input=query,target=target.get_path_name())
 

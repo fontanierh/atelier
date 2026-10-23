@@ -152,13 +152,14 @@ def capture(components,logical,output,*,controls,seams=(),policy_scope='fixture'
         if (not isinstance(control,dict) or set(control)!={'id','kind','input','target'} or control['id'] in seen
                 or control['target'] not in by_component):raise ValueError('Invalid selected-component native control')
         seen.add(control['id']);component=by_component[control['target']];query=control['input']
-        if query.get('channel')!='selected_component':
-            raise ValueError('Native direct-component probes require channel=selected_component; world channel filtering is not observed')
+        if query.get('channel')!='Pawn':
+            raise ValueError('Native selected_component probes require the actual Pawn channel')
         capsule='capsule' in control['kind'];radius=query.get('radius_cm',0.) if capsule else 0.
         half_height=query.get('half_height_cm',0.) if capsule else 0.
         rotation=query.get('orientation',[0.,0.,0.,1.])
         observed=_value(api.probe(component,unreal_module.Vector(*query['start']),unreal_module.Vector(*query['end']),
             unreal_module.Quat(*rotation),radius,half_height,query['trace_complex']))
+        if observed.get('query_channel')!='Pawn':raise ValueError('Native selected_component query channel is not observed')
         mesh_path=component.get_editor_property('static_mesh').get_path_name()
         if (observed.get('component')!=component.get_path_name() or observed.get('mesh')!=mesh_path
                 or observed.get('selected_component') is not True):raise ValueError('Native query escaped selected component')
