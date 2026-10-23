@@ -2,8 +2,8 @@
 village material. Level lighting, characters and preferences are untouched.
 
 The terrain, the sea plane and their materials (M_Village, MI_Sand, MI_Coast, M_ForestGround, M_Sea) belong to
-unreal.world, which calls sand_material and sea_plane below; this import only reads M_Village, so each package
-has one owner."""
+unreal.world: its city pass calls sand_material (through import_hidamari) and sea_plane below. This import only
+reads M_Village, so each package has one owner."""
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / 'world')); import yori  # noqa: E402  (build/yorimichi = yori.OUT)
 import json,sys
 from pathlib import Path

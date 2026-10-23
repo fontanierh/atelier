@@ -192,7 +192,7 @@ if not only or os.environ.get('HIDAMARI_TERRAIN')=='1':
     # (VillagePalette) would otherwise stay; the terrain's slots are its own (Ground, Road, Sand, ...).
     mesh=import_mesh(ROOT/'terrain.fbx','/Game/Japan','Terrain',fresh_slots=True)
     from import_southwest import sand_material
-    sand_material()   # the beach slot; the south-west import (later in a fresh build) owns it
+    sand_material()   # the beach slot; this city pass writes MI_Sand for unreal.world
     coast_instance()
     materials=[]
     for slot in mesh.static_materials:
