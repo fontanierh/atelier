@@ -1299,7 +1299,10 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             done[step.name] = result(step, current, previous)
             build_products.feed_results(done, previous.get('products', {}))
             if actions is not None and saved_action is None and task_cache.certified(ctx, step, current, previous):
-                task_cache.publish(ctx, step, current, previous, store=actions.store, done=done)
+                retrying = bool(previous.get('checkpoint_retry'))
+                if task_cache.publish(ctx, step, current, previous, store=actions.store, done=done) and retrying:
+                    stamp.write_text(json.dumps(previous) + '\n')  # The contest cleared: now published.
+                    echo(f'{print_} published its kept result: the shared-path contest cleared')
             if actions is not None:
                 from .checkpoint_manifest import record as retain_record
                 retain_record(ctx, step, previous, store=actions.store)
@@ -1575,12 +1578,19 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             record['restored_from'] = compatible_portable
         if content_before is not None:
             from . import package_ownership
-            names, reasons = package_ownership.written(ctx, step, content_before, log_path, record.get('output_inventory'))
+            names, reasons, gone = package_ownership.written(ctx, step, content_before, log_path,
+                                                             record.get('output_inventory'))
             package_ownership.seed(ctx, steps, actions.store)
-            reasons = package_ownership.decide(ctx, steps, step, record.get('checkpoint_key'), names, reasons, actions.store)
+            reasons, retry = package_ownership.decide(ctx, steps, step, task_cache.key(ctx, step, current), names,
+                                                      reasons, actions.store, gone)
             record['checkpoint_packages'] = names
             if reasons:
                 record['checkpoint_local'] = reasons[:20]
+                if retry:  # Only a contest blocks it: keep the run's inventory to publish once it clears.
+                    from .native_protocol import inventory_identity
+                    record['checkpoint_retry'] = True
+                    record['checkpoint_local_inventory'] = inventory_identity(*task_cache.snapshot(
+                        ctx, step, actions.store, save_blobs=False, scope=task_cache.package_scope(ctx, names)))
                 echo(f'{print_} kept local, not published: {reasons[0]}'
                      + (f' and {len(reasons) - 1} more' if len(reasons) > 1 else ''))
         elif from_cache and action_hit is not None and task_cache.packaged(ctx, step):

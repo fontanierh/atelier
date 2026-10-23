@@ -32,10 +32,13 @@ module/plugin binaries. Producer tool keys and complete inventory identities are
 invalidate a previous stamp. Existing bytes cannot be adopted under a newly selected toolchain. Conflicting bytes for one input
 key disable that entry rather than choosing one result silently.
 
-Tasks with complete output declarations have individually reusable entries. Tasks with representative outputs
-continue only through their own local incremental state; it is not promoted into a produced task/tool certificate. Normal output/input checks still apply.
-This includes existing non-factory Blender steps, whose ambient startup does not support portable action proof.
-Add complete declarations and an explicit factory tool environment when migrating those tasks to individual reuse.
+Tasks with complete output declarations have individually reusable entries. A task without declared
+outputs owns exactly the files its run wrote under the generated root and the project Content
+(`package_ownership.py`), and publishes them as its entry. A non-factory Blender task's tool key
+also covers everything its startup can read beyond the keyed app bundle: the bytes of the version's
+user resource tree (preferences, startup file, add-ons, startup scripts, app templates, extensions;
+Blender's derived extension cache excepted) and the `BLENDER_USER_*` and `BLENDER_SYSTEM_*`
+variables with the trees they name. Its fingerprint is unchanged, so dependents are not re-keyed.
 
 For existing native state, compiled engine BuildId and SDK must be compatible. The receiving observed environment
 is recorded locally; a later tool change invalidates compatibility-only stamps. Unknown or expensive misses still

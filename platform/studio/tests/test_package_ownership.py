@@ -1,6 +1,7 @@
 """Unreal imports sharing a Content folder own exactly the files they wrote; no Unreal launches."""
 import json
 import os
+from pathlib import Path
 import shutil
 import time
 from types import SimpleNamespace
@@ -46,15 +47,25 @@ def shared(tmp_path, monkeypatch):
     monkeypatch.setattr(build_cache, 'tool_context', lambda *a, **kw: dict(tool='fixed'))
     launches = []
 
-    def run(ctx, step, command, log, *args, **kw):  # Stands in for the Unreal editor.
+    def run(ctx, step, command, log, *args, **kw):  # Stands in for the Unreal editor, Python and calls.
         launches.append(step.name)
         for relative in saves[step.name]:
+            if callable(relative):  # Any other effect, such as removing a replaced file.
+                relative()
+                continue
+            if isinstance(relative, Path):  # A generated file a script writes.
+                relative.parent.mkdir(parents=True, exist_ok=True)
+                relative.write_bytes(b'generated ' + relative.name.encode())
+                continue
             (content / relative).parent.mkdir(parents=True, exist_ok=True)
             (content / relative).write_bytes(b'package ' + relative.encode())
             log.write(save_line(content, relative))
     monkeypatch.setattr(build, 'run_command', run)
     messages = []
-    return SimpleNamespace(ctx=ctx, content=content, launches=launches, saves=saves, messages=messages,
+    def add(step, writes):
+        steps.append(step)
+        saves[step.name] = list(writes)
+    return SimpleNamespace(ctx=ctx, content=content, launches=launches, saves=saves, messages=messages, add=add,
                            stamp=lambda name: json.loads((ctx.stamps / (name + '.json')).read_text()),
                            run=lambda **kw: build.build('fixture', echo=messages.append, **kw))
 
@@ -137,3 +148,89 @@ def test_a_file_written_in_an_earlier_run_but_not_now_keeps_the_run_local(shared
     (paths.REPO / 'unreal.kei.py').write_text('# import unreal.kei, revised')  # New inputs, new key.
     assert p.run() == 0 and p.launches == ['unreal.kei', 'unreal.lake', 'unreal.kei']
     assert p.stamp('unreal.kei')['checkpoint_local'] == ['content/Japan/Materials/MI_Kei.uasset present but not rewritten']
+
+
+def test_a_script_without_declared_outputs_owns_its_generated_files(shared):
+    p = shared
+    layout = paths.REPO / 'layout.py'; layout.write_text('# layout')
+    files = [p.ctx.out / 'layout/world.json', p.ctx.out / 'layout/roads/streets.json']
+    p.add(build.Step('world.layout', [build.Python(layout, ())], inputs=[layout]), files)
+    assert p.run() == 0
+    stamp = p.stamp('world.layout')
+    assert stamp['checkpoint_packages'] == ['generated/layout/roads/streets.json', 'generated/layout/world.json']
+    assert 'checkpoint_local' not in stamp
+    shutil.rmtree(p.ctx.out / 'layout')
+    assert p.run() == 0 and p.launches.count('world.layout') == 1  # Restored from its own entry.
+    assert all(f.read_bytes() == b'generated ' + f.name.encode() for f in files)
+
+
+@pytest.mark.parametrize('commands', [[build.Call('textures', lambda ctx, log: None)], []], ids=['call', 'group'])
+def test_a_step_that_writes_nothing_publishes_an_empty_result(shared, commands):
+    p = shared
+    p.add(build.Step('world.textures', commands), [])
+    assert p.run() == 0
+    stamp = p.stamp('world.textures')
+    assert stamp['checkpoint_packages'] == [] and 'checkpoint_local' not in stamp
+    entry = json.loads(actions.entry_path(cp.Store('fixture'), stamp['checkpoint_key']).read_text())
+    assert entry['roots'] == [] and entry['files'] == {}
+    for stamp_file in p.ctx.stamps.glob('*.json'):  # A fresh checkout: nothing local.
+        stamp_file.unlink()
+    p.messages.clear()
+    assert p.run() == 0 and p.launches.count('world.textures') == len(commands)  # Not run again.
+    assert any(m.startswith('world.textures') and 'restored in' in m for m in p.messages)
+
+
+def test_a_moved_package_clears_the_old_claim_and_the_kept_result_publishes(shared):
+    p = shared
+    # kei once wrote the sea too; lake is its single owner now (as slice C made world the owner).
+    p.saves['unreal.lake'].append('Japan/Assets/Sea.uasset')
+    p.saves['unreal.kei'].append('Japan/Assets/Sea.uasset')
+    assert p.run() == 0
+    lake = p.stamp('unreal.lake')
+    assert lake['checkpoint_local'][0].startswith('content/Japan/Assets/Sea.uasset also written by unreal.kei')
+    assert lake['checkpoint_retry']
+    p.saves['unreal.kei'].remove('Japan/Assets/Sea.uasset')
+    (paths.REPO / 'unreal.kei.py').write_text('# import unreal.kei, reads the sea')  # Its recipe changed.
+    p.messages.clear()
+    assert p.run() == 0
+    assert p.launches == ['unreal.kei', 'unreal.lake', 'unreal.kei']  # lake did not rerun.
+    assert 'checkpoint_local' not in p.stamp('unreal.kei')  # Its latest run no longer claims the sea.
+    assert package_ownership.report(cp.Store('fixture'))['contested'] == {}
+    lake = p.stamp('unreal.lake')
+    assert 'checkpoint_local' not in lake and actions.entry_path(cp.Store('fixture'), lake['checkpoint_key']).is_file()
+    assert any(m.startswith('unreal.lake') and 'published its kept result' in m for m in p.messages)
+    for name in [*LAKE, 'Japan/Assets/Sea.uasset']:  # And it now restores like any other result.
+        (p.content / name).unlink()
+    assert p.run() == 0 and p.launches.count('unreal.lake') == 1
+    assert (p.content / 'Japan/Assets/Sea.uasset').read_bytes() == b'package Japan/Assets/Sea.uasset'
+
+
+def test_a_step_replacing_its_own_release_file_publishes_and_restores_exactly(shared):
+    p = shared
+    script = paths.REPO / 'package.py'; script.write_text('# package r1')
+    package = p.ctx.out / 'package'
+    def release(n):
+        return [lambda: [old.unlink() for old in package.glob('Release-*.zip')],
+                package / f'Release-{n}.zip', package / 'Download/Game.app/Contents/Info.plist', package / 'SHA256SUMS']
+    p.add(build.Step('unreal.package', [build.Python(script, ())], inputs=[script]), release('r1'))
+    assert p.run() == 0 and 'checkpoint_local' not in p.stamp('unreal.package')
+    p.saves['unreal.package'] = release('r2')
+    script.write_text('# package r2')  # A new revision: the old zip is deleted, as package_archive does.
+    assert p.run() == 0
+    stamp = p.stamp('unreal.package')
+    assert 'checkpoint_local' not in stamp and not (package / 'Release-r1.zip').exists()
+    assert stamp['checkpoint_packages'] == ['generated/package/Download/Game.app/Contents/Info.plist',
+                                            'generated/package/Release-r2.zip', 'generated/package/SHA256SUMS']
+    shutil.rmtree(package)
+    assert p.run() == 0 and p.launches.count('unreal.package') == 2  # Restored, exact bytes.
+    assert (package / 'Release-r2.zip').read_bytes() == b'generated Release-r2.zip'
+    assert sorted(f.name for f in package.rglob('*') if f.is_file()) == ['Info.plist', 'Release-r2.zip', 'SHA256SUMS']
+
+
+def test_deleting_another_steps_file_keeps_the_run_local(shared):
+    p = shared
+    script = paths.REPO / 'clean.py'; script.write_text('# clean')
+    p.add(build.Step('world.clean', [build.Python(script, ())], inputs=[script], needs=['unreal.kei']),
+          [lambda: (shared.content / KEI[0]).unlink(), p.ctx.out / 'clean.json'])
+    assert p.run() == 0
+    assert p.stamp('world.clean')['checkpoint_local'][0] == 'deleted content/' + KEI[0]

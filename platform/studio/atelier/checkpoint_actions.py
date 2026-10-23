@@ -37,10 +37,13 @@ def declared(ctx, step):
 
 
 def packaged(ctx, step):
-    """An Unreal import without declared outputs owns exactly the files it wrote (package_ownership)."""
-    from .build import UnrealScript
-    return (getattr(ctx, 'uproject', None) is not None and not getattr(step, 'batch', None)
-            and bool(step.commands) and all(isinstance(c, UnrealScript) for c in step.commands)
+    """A step without declared outputs owns exactly the files its run wrote (package_ownership).
+
+    Compiles and cooks keep their declared outputs. Ambient Blender is keyed on its user profile.
+    """
+    from .build import UnrealCompile, UnrealPackage
+    return (not getattr(step, 'batch', None)
+            and not any(isinstance(c, (UnrealCompile, UnrealPackage)) for c in step.commands)
             and not declared(ctx, step))
 
 
@@ -161,12 +164,42 @@ def destination(ctx, name):
     return safe_destination(root, tail) if tail else safe_destination(root.parent, root.name)
 
 
+def blender_user_identity(ctx):
+    """@cc [owner:fontanierh,label:correctness] ambient-blender-startup-identity
+    A non-factory Blender startup reads user preferences, startup files, add-ons, startup
+    scripts, app templates and extensions from its version's user resource tree, or from trees
+    named by BLENDER_USER_* and BLENDER_SYSTEM_* variables. Their complete bytes and those
+    variables MUST be part of an ambient step's tool key; Blender's own extension cache is
+    derived and excluded. The binary and bundled resources are already in the tool key.
+    """
+    cached = ctx.__dict__.get('_blender_user_identity')
+    if cached is not None:
+        return cached
+    blender = Path(getattr(ctx, 'blender', '') or '')
+    resources = blender.parent.parent / 'Resources' if blender.parent.name == 'MacOS' else blender.parent
+    versions = sorted(p.name for p in resources.glob('[0-9]*.[0-9]*') if p.is_dir()) if resources.is_dir() else []
+    variables = {name: value for name, value in sorted(os.environ.items())
+                 if name.startswith(('BLENDER_USER_', 'BLENDER_SYSTEM_'))}
+    trees = [Path(value) for value in variables.values() if Path(value).is_dir()]
+    default = Path.home() / 'Library/Application Support/Blender'
+    trees += [default / version for version in versions]
+    files = {}
+    for tree in trees:
+        if not tree.is_dir():
+            continue
+        for path in sorted(tree.rglob('*')):
+            relative = path.relative_to(tree)
+            if relative.parts[:2] == ('extensions', '.cache') or not path.is_file():
+                continue
+            files[str(tree) + '/' + relative.as_posix()] = build_products.file_digest(path)
+    home = str(Path.home())
+    cached = ctx.__dict__['_blender_user_identity'] = identity(dict(
+        versions=versions, variables={k: v.replace(home, '~') for k, v in variables.items()},
+        files={k.replace(home, '~'): v for k, v in files.items()}))
+    return cached
+
+
 def key(ctx, step, fingerprint, *, require_outputs=True):
-    from .build import Blender
-    # Ambient Blender startup is not portable producer proof. Existing local incremental
-    # state can continue, but these commands do not publish transferable action entries.
-    if any(isinstance(c, Blender) and not c.factory_startup for c in step.commands):
-        return None
     outputs = declared(ctx, step)
     # A package-owned result keeps the certificate key (no declared roots); its files are the entry's roots.
     if not outputs and require_outputs and not packaged(ctx, step):
@@ -177,12 +210,15 @@ def key(ctx, step, fingerprint, *, require_outputs=True):
     from .build import Python, Blender, UnrealScript, UnrealCompile, UnrealPackage
     if not any(isinstance(c, (UnrealScript, UnrealCompile, UnrealPackage)) for c in step.commands):
         tool = {name: value for name, value in tool.items() if name in ('system', 'machine')}
+    if ambient(step):
+        tool['blender_user'] = blender_user_identity(ctx)  # Everything its startup can read beyond the bundle.
     if any(isinstance(c, (Python, Blender)) for c in step.commands):
         from .build_cache import tool_context
         from .build_hashes import HashIndex
         with HashIndex(paths.cache_dir('checkpoints') / 'tool-hashes.sqlite3') as index:
             from dataclasses import fields, replace
-            commands = [base(**{f.name: getattr(c, f.name) for f in fields(base)})
+            # The bundle identity is the same for either startup; the user profile is keyed above.
+            commands = [base(**{f.name: (True if f.name == 'factory_startup' else getattr(c, f.name)) for f in fields(base)})
                         for c in step.commands for base in (Python, Blender) if isinstance(c, base)]
             source_step = replace(step, commands=commands)
             tool['source_tools'] = tool_context(source_step, index.digest, cache=ctx.__dict__.setdefault('checkpoint_source_tool_cache', {}))
@@ -277,14 +313,18 @@ def publish(ctx, step, fingerprint, stamp, *, store=None, done=None, produced=Fa
     if action_key is None or stamp.get('touched'):
         return None
     scope = None
+    expected_inventory = stamp.get('checkpoint_inventory')
     if packaged(ctx, step):
         names = stamp.get('checkpoint_packages')
-        if not names or stamp.get('checkpoint_local'):
+        if names is None or (stamp.get('checkpoint_local') and not stamp.get('checkpoint_retry')):
             return None  # Never observed as complete and uncontested: the result stays local.
         from .package_ownership import blocked
         if blocked(ctx, getattr(ctx, 'checkpoint_plan', ()), step, names, store):
             return None
         scope = package_scope(ctx, names)
+        if stamp.get('checkpoint_local'):
+            # Kept local only for a contest that has since cleared: publish the run's unchanged bytes.
+            expected_inventory, produced = stamp.get('checkpoint_local_inventory'), False
     from .build import fingerprint as receiving_fingerprint
     if done is None:
         raise CheckpointError('Task publication requires its verified dependency results')
@@ -311,7 +351,7 @@ def publish(ctx, step, fingerprint, stamp, *, store=None, done=None, produced=Fa
     with hashing(ctx, digest):
         declarations, files = snapshot(ctx, step, store, save_blobs=True, scope=scope)
         proof = inventory_identity(declarations, files)
-        if not produced and (stamp.get('checkpoint_key') != action_key or stamp.get('checkpoint_inventory') != proof):
+        if not produced and (stamp.get('checkpoint_key') != action_key or expected_inventory != proof):
             raise CheckpointError('Existing output bytes lack compatible producer tool/inventory proof')
         observations = {}
         second_roots, second_files = snapshot(ctx, step, store, save_blobs=False, observations=observations, scope=scope)
@@ -320,6 +360,8 @@ def publish(ctx, step, fingerprint, stamp, *, store=None, done=None, produced=Fa
         raise CheckpointError('Task inputs or outputs changed during publication')
     stamp['checkpoint_key'] = action_key
     stamp['checkpoint_inventory'] = proof
+    for name in ('checkpoint_local', 'checkpoint_retry', 'checkpoint_local_inventory'):
+        stamp.pop(name, None)
     value = dict(schema=1, game=ctx.game, key=action_key, task=step.name, fingerprint=fingerprint,
                  roots=declarations, files=files, stamp=stamp)
     validate(value, store, action_key)
@@ -360,8 +402,8 @@ def restore_worker(ctx, step, store, action_key, *, labels=None, hashes=None):
     task = step.name if step is not None else value['task']
     if step is not None and packaged(ctx, step):
         # Package-owned: exactly the recorded files, each replaced alone; folders are shared.
-        expected = list(value['stamp'].get('checkpoint_packages') or ())
-        if not expected or any(r.get('kind') != 'file' for r in value['roots']):
+        expected = value['stamp'].get('checkpoint_packages')
+        if not isinstance(expected, list) or any(r.get('kind') != 'file' for r in value['roots']):
             raise CheckpointError('Package-owned task result must list only its files')
     else:
         expected = [label(ctx, p) for p in declared(ctx, step)] if step is not None else list(labels)

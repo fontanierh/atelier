@@ -1,13 +1,16 @@
-"""File-level ownership of Unreal imports that write into shared Content folders.
+"""File-level ownership of steps that declare no output folder (Unreal imports, scripts, calls).
 
-An Unreal import that declares no output folder owns exactly the files it wrote in that run:
-the packages Unreal saved, every other Content file it created or changed, its explicit outputs
-and the files written beside them. That result publishes as an ordinary action entry whose
-roots are those files, so restoring it writes only them.
+Such a step owns exactly the files it wrote in that run: every file it created or changed under
+the generated root and the project Content (a metadata diff), the packages Unreal saved, and its
+explicit outputs and the files written beside them. That result publishes as an ordinary action
+entry whose roots are those files, so restoring it writes only them; a run that wrote nothing
+publishes an empty result.
 
 Ownership claims are kept beside the action entries, shared by every checkout using the store.
-A path two steps ever wrote stays unpublished for both. A step whose written set differs for an
-identical input/tool key is non-deterministic and stays local. A run is complete only when no
+A step claims the files its latest run wrote, so a recipe that moves a package to one owner
+clears the old claim when the old writer runs again. A path two steps claim stays unpublished
+for both; a result kept local only for that reason publishes once the contest clears. A step
+whose written set differs for an identical input/tool key is non-deterministic and stays local. A run is complete only when no
 unclaimed file sits beside its packages and none of its earlier files was left in place: an
 import that skips an unchanged package must never publish a partial result.
 """
@@ -26,30 +29,51 @@ def content(ctx):
 
 
 def observe(ctx):
-    """Content files -> (size, mtime_ns), by metadata only (about 40 ms for 11k files)."""
-    from .output_inventory import observe as walk
-    return walk([content(ctx)])
+    """Owned-root files -> (size, mtime_ns), by metadata only (about 0.2 s for 40k files).
+
+    The generated root skips controller state, logs and stamps, as checkpoint capture does.
+    """
+    from .native_protocol import excluded
+    seen = {}
+    tops = [Path(ctx.out)] + ([content(ctx)] if getattr(ctx, 'uproject', None) else [])
+    for top in tops:
+        for base, directories, leaves in os.walk(top, followlinks=False):
+            relative = Path(base).relative_to(top)
+            directories[:] = [d for d in directories if not excluded(relative / d)]
+            for name in leaves:
+                if excluded(relative / name):
+                    continue
+                path = os.path.join(base, name)
+                info = os.lstat(path)
+                if stat.S_ISREG(info.st_mode):
+                    seen[path] = (info.st_size, info.st_mtime_ns)
+    return seen
 
 
 def written(ctx, step, before, log_path, inventory):
-    """(labels this run owns, reasons it cannot publish), after the step ran."""
+    """(labels this run owns, reasons it cannot publish, labels it deleted), after the step ran."""
+    from .build import UnrealScript
     from .checkpoint_actions import label
     from .unreal_saves import foreign, saved
-    root = content(ctx)
     after = observe(ctx)
     reasons = []
     owned = {path for path, sig in after.items() if before.get(path) != sig}
-    gone = sorted(path for path in before if path not in after)
-    if gone:
-        reasons.append('deleted ' + os.path.relpath(gone[0], root))
-    for name in saved(log_path, root):
-        if (root / name).is_file():
-            owned.add(str(root / name))
-        else:
-            reasons.append('saved package is missing after the run: ' + name)
-    outside = foreign(log_path, root)
-    if outside:
-        reasons.append('saved outside the project Content: ' + outside[0].rpartition('/')[2])
+    gone = []
+    for path in sorted(path for path in before if path not in after):
+        try:
+            gone.append(label(ctx, Path(path)))
+        except CheckpointError:
+            reasons.append('deleted ' + Path(path).name)
+    if getattr(ctx, 'uproject', None) and any(isinstance(c, UnrealScript) for c in step.commands):
+        root = content(ctx)
+        for name in saved(log_path, root):
+            if (root / name).is_file():
+                owned.add(str(root / name))
+            else:
+                reasons.append('saved package is missing after the run: ' + name)
+        outside = foreign(log_path, root)
+        if outside:
+            reasons.append('saved outside the project Content: ' + outside[0].rpartition('/')[2])
     for output in map(Path, step.outputs):
         if output.is_file():
             owned.add(str(output.absolute()))
@@ -61,19 +85,26 @@ def written(ctx, step, before, log_path, inventory):
             labels.add(label(ctx, Path(path)))
         except CheckpointError:
             reasons.append('wrote outside generated directories: ' + Path(path).name)
-    return sorted(labels), reasons
+    return sorted(labels), reasons, gone
 
 
 def load(store):
+    """{steps: step -> member labels its latest run wrote, claims: label -> steps, runs, nondeterministic}."""
     path = store.directory / CLAIMS
     try:
         value = read_json(path) if path.is_file() else {}
     except (OSError, ValueError, CheckpointError):
         value = {}
-    if value.get('schema') != 1:
+    if value.get('schema') != 2:
         value = {}
-    return dict(schema=1, claims=value.get('claims', {}), runs=value.get('runs', {}),
-                nondeterministic=value.get('nondeterministic', {}))
+    value = dict(schema=2, steps=value.get('steps', {}), runs=value.get('runs', {}),
+                 nondeterministic=value.get('nondeterministic', {}))
+    claims = {}
+    for owner, names in value['steps'].items():
+        for name in names:
+            claims.setdefault(name, []).append(owner)
+    value['claims'] = {name: sorted(owners) for name, owners in claims.items()}
+    return value
 
 
 def recipe_claims(ctx, steps):
@@ -113,9 +144,8 @@ def seed(ctx, steps, store):
             if names:
                 found[step.name] = ['content/' + name for name in names]
     if found:
-        update(store, lambda value: [value['claims'].setdefault(name, []).append(owner)
-                                     for owner, names in found.items() for name in names
-                                     if owner not in value['claims'].get(name, [])])
+        # Only steps with no recorded run: a recorded latest run is authoritative for its step.
+        update(store, lambda value: [value['steps'].setdefault(owner, names) for owner, names in found.items()])
 
 
 def update(store, change):
@@ -123,10 +153,8 @@ def update(store, change):
     with store.locked():
         value = load(store)
         change(value)
-        for owners in value['claims'].values():
-            owners.sort()
-        atomic_json(store.directory / CLAIMS, value)
-    return value
+        atomic_json(store.directory / CLAIMS, {k: v for k, v in value.items() if k != 'claims'})
+    return load(store)
 
 
 def others(ctx, steps, step, name, value):
@@ -153,7 +181,7 @@ def leftovers(ctx, steps, step, labels, value):
     from .checkpoint_actions import destination
     owned = set(labels)
     result = []
-    folders = {name.rpartition('/')[0] for name in owned if name.startswith('content/')}
+    folders = {name.rpartition('/')[0] for name in owned if '/' in name}
     for folder in sorted(folders):
         directory = destination(ctx, folder)
         try:
@@ -166,21 +194,24 @@ def leftovers(ctx, steps, step, labels, value):
                 continue
             if not others(ctx, steps, step, name, value):
                 result.append(name)
-    for name, owners in value['claims'].items():
-        if step.name in owners and name not in owned and name not in result and destination(ctx, name).is_file():
+    for name in value['steps'].get(step.name, ()):
+        # A file another step now writes moved to that owner; it is not this run's leftover.
+        if (name not in owned and name not in result and destination(ctx, name).is_file()
+                and not others(ctx, steps, step, name, value)):
             result.append(name)
     return result
 
 
-def decide(ctx, steps, step, certificate, labels, reasons, store):
-    """Record this run's claims; return the reasons it stays local (empty: it may publish)."""
+def decide(ctx, steps, step, certificate, labels, reasons, store, gone=()):
+    """Record this run's claims; return (reasons it stays local, whether only a contest blocks it).
+
+    Deleting a file its own latest run wrote is a step replacing its output (a renamed release
+    zip); deleting any other file cannot be represented by a result that only writes files.
+    """
     signature = identity(sorted(labels))
     reasons = list(reasons)
     def change(value):
-        for name in labels:
-            owners = value['claims'].setdefault(name, [])
-            if step.name not in owners:
-                owners.append(step.name)
+        value['steps'][step.name] = sorted(labels)
         if certificate is None:
             return
         runs = value['runs'].setdefault(step.name, {})
@@ -191,12 +222,18 @@ def decide(ctx, steps, step, certificate, labels, reasons, store):
         for old in list(runs)[:-RUNS_KEPT]:
             runs.pop(old)
     before = load(store)
-    reasons += [f'{name} also written by {", ".join(owners)}' for name, owners in contested(ctx, steps, step, labels, before).items()]
+    own = set(before['steps'].get(step.name, ()))
+    foreign = [name for name in gone if name not in own or others(ctx, steps, step, name, before)]
+    if foreign:
+        reasons.insert(0, 'deleted ' + foreign[0])
     reasons += [f'{name} present but not rewritten' for name in leftovers(ctx, steps, step, labels, before)]
     value = update(store, change)
     if step.name in value['nondeterministic']:
         reasons.insert(0, 'written set changed for identical inputs (non-deterministic)')
-    return reasons
+    retry = not reasons
+    contests = contested(ctx, steps, step, labels, value)
+    reasons += [f'{name} also written by {", ".join(owners)}' for name, owners in contests.items()]
+    return reasons, retry and bool(contests)
 
 
 def blocked(ctx, steps, step, labels, store):

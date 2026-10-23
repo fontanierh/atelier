@@ -338,11 +338,29 @@ def test_observed_environment_keeps_pre_key_warm_state_without_adopting_it(fixtu
     assert not actions.local_incremental(ctx, steps[0], stamp['fingerprint'], stamp)
 
 
-def test_non_factory_blender_does_not_claim_a_portable_action_key(fixture):
+def test_non_factory_blender_is_keyed_on_everything_its_startup_reads(fixture, tmp_path, monkeypatch):
     ctx, steps = fixture.checkout('producer')
     step = steps[0]
     step.commands = [build.Blender(step.inputs[0], factory_startup=False)]
-    assert actions.key(ctx, step, build.fingerprint(step, {})) is None
+    app = tmp_path / 'Blender.app/Contents'; (app / 'MacOS').mkdir(parents=True); (app / 'Resources/5.2').mkdir(parents=True)
+    ctx.blender = str(app / 'MacOS/Blender')
+    home = tmp_path / 'home'; monkeypatch.setattr(Path, 'home', lambda: home)
+    profile = home / 'Library/Application Support/Blender/5.2'
+    (profile / 'extensions/.cache').mkdir(parents=True); (profile / 'extensions/.cache/compat.dat').write_text('derived')
+    def key():
+        ctx.__dict__.pop('_blender_user_identity', None)
+        return actions.key(ctx, step, build.fingerprint(step, {}))
+    empty = key()
+    assert empty is not None
+    (profile / 'extensions/.cache/compat.dat').write_text('derived again')
+    assert key() == empty  # Blender's own cache is not an input.
+    (profile / 'config').mkdir(); (profile / 'config/userpref.blend').write_bytes(b'prefs')
+    with_prefs = key()
+    assert with_prefs != empty
+    (profile / 'scripts/startup').mkdir(parents=True); (profile / 'scripts/startup/hook.py').write_text('x = 1')
+    assert key() not in (empty, with_prefs)
+    monkeypatch.setenv('BLENDER_USER_SCRIPTS', str(tmp_path / 'scripts'))
+    assert key() not in (empty, with_prefs)
 
 
 def test_fresh_unsupported_execution_is_current_after_observed_environment_change(fixture, monkeypatch):

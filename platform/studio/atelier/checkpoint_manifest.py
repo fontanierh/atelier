@@ -166,7 +166,7 @@ def record(ctx, step, stamp, *, store=None):
         if value is not None:
             if value['task'] != step.name or value['fingerprint'] != stamp['fingerprint'] or value['stamp'].get('checkpoint_inventory') != stamp.get('checkpoint_inventory'):
                 raise CheckpointError('Completed task artifact binding differs')
-            if not observations:
+            if not observations and value['files']:
                 raise CheckpointError('Completed task lacks verified file metadata')
             actions.check_observations(observations)
             ctx.__dict__.setdefault('retention_artifacts', {})[step.name] = dict(files=value['files'], observations=observations)
