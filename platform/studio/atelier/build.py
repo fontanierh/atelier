@@ -418,6 +418,7 @@ class Step:
     checkpoint_restore: object = field(default=None, repr=False)  # optional non-destructive recertification callback
     checkpoint_outputs: tuple = field(default=(), repr=False)  # complete additional output roots, never representative samples
     candidate_scope: object = field(default=None, repr=False, compare=False)  # generic compatibility candidates; native validation still required
+    replan: bool = field(default=False, kw_only=True)  # reload recipe after a completed source planner
 
 
 def outputs_present(step):
@@ -437,6 +438,9 @@ def check_source_launch(steps):
     fields or change command representations.
     """
     for step in steps:
+        if type(getattr(step, 'replan', False)) is not bool or (getattr(step, 'replan', False) and (not step.products or not step.commands
+                or any(not isinstance(c, (Call, Python, Blender)) for c in step.commands))):
+            raise ValueError(f'{step.name}: recipe planners require complete source products')
         for command in step.commands:
             if step.cache and isinstance(command, Blender) and not command.factory_startup:
                 raise ValueError(f'{step.name}: cached Blender commands require factory_startup=True')
@@ -973,9 +977,10 @@ def _prepared_build(ctx, wanted, *, force, touch, echo, verify, rebuild_reason, 
             except (OSError, ValueError, RuntimeError) as error:
                 raise SystemExit(str(error)) from None
         from .build_hashes import HashIndex
+        from .build_expansion import execute
         with HashIndex(ctx.out / '.state' / 'file-hashes.sqlite3', verify=verify) as index:
-            return _build(ctx, wanted, force=force, touch=touch, echo=echo, index=index,
-                          steps=checkpoint_steps, max_heavy_commands=max_heavy_commands)
+            return execute(ctx, wanted, force=force, touch=touch, echo=echo, index=index,
+                           steps=checkpoint_steps, max_heavy_commands=max_heavy_commands)
 
 
 def run_light(argv, env, extra):
@@ -1030,10 +1035,10 @@ def _build(ctx, wanted, *, force, touch, echo, index, steps=None, produced=None,
     finally:
         # Failure and yield paths must also discard earlier certificates with changed reads.
         invalid = _discard_changed_certificates(ctx, checkpoint, index=index)
-        if completed and checkpoint.get('steps') is not None:
+        if completed and code != 76 and checkpoint.get('steps') is not None:
             from .checkpoint_manifest import finish
             finish(ctx, checkpoint['steps'])
-    if completed and getattr(ctx, 'checkpoint_settings', None) is not None:
+    if completed and code != 76 and getattr(ctx, 'checkpoint_settings', None) is not None:
         from . import store_retention
         from .checkpoint_store import Store
         store_retention.maybe_collect(Store(ctx.game), echo=echo)
@@ -1132,7 +1137,7 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
     done, ran, restored, saved_seconds = {}, 0, 0, 0.
     heavy_commands = 0
     def budget_spent():
-        return max_heavy_commands is not None and heavy_commands >= max_heavy_commands
+        return max_heavy_commands is not None and heavy_commands + getattr(ctx, 'expansion_heavy_commands', 0) >= max_heavy_commands
 
     def yield_build(step):
         echo(f'BUILD YIELDED: {heavy_commands} heavy commands completed; next: {step.name}. '
@@ -1221,7 +1226,7 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             echo(f'{print_} FAILED: {error}')
             return 1
         from .build_cook import forced
-        force_step = forced(ctx, step, force)
+        force_step = forced(ctx, step, force) and getattr(ctx, 'expansion_completed', {}).get(step.name) != current
         recovering = getattr(ctx, 'recover_cook', None) is not None and step.name == 'unreal.cook'
         if (recovering or (step.name == 'unreal.cook' and getattr(ctx, 'record_cook_recovery', False))) and step.cook_recovery is None:
             echo(f'{print_} FAILED: this recipe does not support cook recovery')
@@ -1271,11 +1276,18 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
         except (OSError, ValueError, SyntaxError) as error:
             echo(f'{print_} FAILED: {error}')
             return 1
-        if batch and actions is not None and not force_step:
+        if batch and not force_step:
             from .build_support_migration import migrate as migrate_support
             from .build_batch_migration import migrate as migrate_batch
             # Saved or equivalently preserved results never enter a native batch.
             for offset, (candidate, candidate_key, candidate_state) in enumerate(batch):
+                if candidate.cache and build_cache.Store().action(candidate_key).is_file():
+                    # Presence is only a reason to defer to ordinary verified restore,
+                    # never cache authority or permission to skip its checks.
+                    batch = batch[:offset]
+                    break
+                if actions is None:
+                    continue
                 prior = read_stamp(ctx.stamps / (candidate.name + '.json'))
                 prior = migrate_support(ctx, candidate, candidate_key, candidate_state, prior, done, echo=echo)
                 prior = migrate_batch(ctx, candidate, candidate_key, candidate_state, prior, done, echo=echo)
@@ -1316,6 +1328,16 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                         except (OSError, ValueError, RuntimeError):
                             path.unlink(missing_ok=True)
                             raise
+            if code in (0, 75):
+                # The guarded process has closed positively. Failed/uncertain sessions
+                # do not publish portable source-cache authority.
+                for completed_step in plan:
+                    if completed_step.name in completed and completed_step.cache:
+                        saved = read_stamp(ctx.stamps / (completed_step.name + '.json'))
+                        try:
+                            build_cache.Store().publish(ctx, completed_step, saved['fingerprint'], saved['products'])
+                        except (OSError, ValueError, KeyError, TypeError) as error:
+                            echo(f'{completed_step.name}: cache publication skipped ({error})')
             from .checkpoint_native_capture import publish as retain_candidates
             for completed_step in plan:
                 if completed_step.name in completed:
@@ -1332,6 +1354,17 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             ran += len(completed)
             if code:
                 return code
+            for completed_step in plan:
+                if completed_step.name in completed:
+                    saved = read_stamp(ctx.stamps / (completed_step.name + '.json'))
+                    ctx.__dict__.setdefault('expansion_completed', {})[completed_step.name] = saved['fingerprint']
+            planners = [s for s in plan if s.name in completed and s.replan]
+            if planners:
+                planner = planners[-1]
+                saved = read_stamp(ctx.stamps / (planner.name + '.json'))
+                ctx.recipe_expansion = (planner.name, saved['fingerprint'])
+                ctx.expansion_heavy_commands = getattr(ctx, 'expansion_heavy_commands', 0) + heavy_commands
+                return 76
             continue
         pool_key = None
         if step.pool_roots:
@@ -1509,6 +1542,7 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
         temporary.write_text(json.dumps(record) + '\n')
         temporary.replace(stamp)
         ctx.checkpoint_changed = True
+        ctx.__dict__.setdefault('expansion_completed', {})[step.name] = current
         journal.unlink(missing_ok=True)
         if store is not None and not from_cache:
             try:
@@ -1529,6 +1563,10 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
         if produced is not None and not from_cache:
             produced.append((step.name, record))
         echo(f'{print_} {"restored" if from_cache else "done"} in {seconds:.1f} s{slot_summary(slots)}')
+        if step.replan:
+            ctx.recipe_expansion = (step.name, current)
+            ctx.expansion_heavy_commands = getattr(ctx, 'expansion_heavy_commands', 0) + heavy_commands
+            return 76
     echo(f'{len(plan)} steps, {ran} ran, {restored} restored, {len(plan) - ran - restored} up to date, '
          f'~{saved_seconds:.0f} s of building saved by reuse, {time.monotonic() - started:.0f} s')
     return 0

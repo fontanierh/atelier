@@ -1,7 +1,7 @@
 """A compact fish market between the existing piers, based on the approved concept."""
 import math
 import random
-from village import build as v
+from village import mesh as v
 from hidamari import harbor
 
 from hidamari.public_spaces import HARBOR_STALLS

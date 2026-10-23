@@ -101,3 +101,38 @@ def export_fbx(**options):
     if result != {'FINISHED'}:
         raise RuntimeError('FBX export did not finish')
     return result
+
+
+def validate_atomic_selection(*, triangle_limit=32768):
+    """Validate finalized single-mesh geometry before either production mesh exporter."""
+    import bpy
+    if type(triangle_limit) is not int or not 1 <= triangle_limit <= 32768:
+        raise ValueError('Invalid atomic mesh triangle budget')
+    selected = list(bpy.context.selected_objects)
+    render = [o for o in selected if o.type == 'MESH' and not o.name.startswith('UCX_')]
+    if len(render) != 1 or any(o.type != 'MESH' for o in selected):
+        raise ValueError('Atomic FBX requires exactly one primary render mesh')
+    primary = render[0]
+    if getattr(primary, 'modifiers', ()):
+        raise ValueError('Atomic mesh geometry must be finalized before export')
+    primary.data.calc_loop_triangles()
+    if not 0 < len(primary.data.loop_triangles) <= triangle_limit:
+        raise ValueError('Atomic FBX render mesh exceeds its triangle budget')
+    hulls = [o for o in selected if o is not primary]
+    expected = {f'UCX_{primary.name}_{index:02d}' for index in range(len(hulls))}
+    if {o.name for o in hulls} != expected or any(getattr(o, 'modifiers', ()) for o in hulls):
+        raise ValueError('Atomic FBX contains unrelated collision or unfinished geometry')
+    return primary
+
+
+def export_atomic_fbx(*, triangle_limit=32768, **options):
+    """@cc [owner:fontanierh,label:correctness;performance] bounded-single-mesh-export
+    An atomic world export MUST select exactly one render mesh, at most 32768 triangles,
+    plus only its explicitly numbered authored UCX objects. It MUST NOT export the scene,
+    join unrelated logical meshes, silently omit modifiers or bypass the shared deterministic
+    exporter. Reject invalid selection or budgets before writing any FBX bytes.
+    """
+    if options.get('use_selection') is not True or options.get('object_types') != {'MESH'}:
+        raise ValueError('Atomic FBX must explicitly export selected mesh objects only')
+    validate_atomic_selection(triangle_limit=triangle_limit)
+    return export_fbx(**options)

@@ -1,6 +1,6 @@
 """Half-timbered two-storey bookshop (本と文具) / wagashi shop (和菓子): glowing vitrine under a timber colonnade, slate-blue gable roof with exposed purlins."""
 import math,random
-from village import build as v
+from village import mesh as v
 from hidamari import arcade
 
 ASSETS={'HD_Shop_06':0,'HD_Shop_14':1}

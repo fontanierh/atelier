@@ -1,7 +1,7 @@
 """Human-scale street details matching the reference, with a clear carriageway."""
 import math
 import random
-from village import build as v
+from village import mesh as v
 from hidamari import layout, living_plaza, arcade
 from hidamari.kit import station
 

@@ -229,7 +229,7 @@ def approach_height(x, y):
 
 def approach_mesh():
     """HD_NorthApproach: the approach's ground under its forest, with skirts down the far hills' sides."""
-    from village.build import Mesh
+    from village.mesh import Mesh
     from hidamari import mountains
     xs, ys, z = approach_grid()
     X, Y = np.meshgrid(xs, ys)
@@ -291,7 +291,7 @@ def ground(x, y, north_height):
 
 def trail_mesh(north_height):
     """HD_NorthParkTrail: the path, packed earth between soft edges of leaf litter, just over the ground."""
-    from village.build import Mesh
+    from village.mesh import Mesh
     p = bed()
     t = np.gradient(p[:, :2], axis=0)
     t /= np.linalg.norm(t, axis=1)[:, None]

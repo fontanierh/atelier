@@ -2,7 +2,7 @@
 import math
 import random
 from functools import partial
-from village import build as v
+from village import mesh as v
 from hidamari import living_plaza, pond_garden
 from hidamari.kit import station
 surface_patch=partial(living_plaza.patch,cell=.25)

@@ -12,7 +12,7 @@ block wall; 1 a hedge (its garden tree is a foliage instance, house_gardens.py);
 a board fence; 3 ribbed metal upstairs, a balcony of washing and a block wall with openings.
 """
 import math, random
-from village import build as v
+from village import mesh as v
 from hidamari.kit import apartment, kawara
 
 ASSETS = {'HD_House_00': 0, 'HD_House_01': 1, 'HD_House_02': 2, 'HD_House_03': 3}

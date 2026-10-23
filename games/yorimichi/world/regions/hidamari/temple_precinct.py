@@ -29,7 +29,7 @@ PALETTE = {'tp_flag_stone': (.25, .235, .205), 'tp_wall_stone': (.23, .22, .19),
 
 
 def palette():
-    from village import build as v
+    from village import mesh as v
     v.PALETTE.update(PALETTE)
 
 
@@ -124,7 +124,7 @@ def _wall(m, x0, x1, y, za, zb, r):
 
 def pagoda():
     """A three-storey pagoda, 6 m square at the base, about 21 m to the tip of the spire."""
-    from village import build as v
+    from village import mesh as v
     palette()
     m = v.Mesh('HD_Pagoda')
     m.box((0, 0, -.1), (7.4, 7.4, .9), 'tp_wall_stone'); m.box((0, 0, .45), (8.2, 8.2, .2), 'tp_flag_stone')
@@ -184,7 +184,7 @@ def _pyramid(m, w, z, rise):
 
 def bamboo():
     """A clump of a dozen canes, 7-11 m, leaning a little outwards, with leaf sprays in their upper third."""
-    from village import build as v
+    from village import mesh as v
     palette()
     m = v.Mesh('HD_Bamboo'); r = random.Random(41)
     for k in range(12):
@@ -207,7 +207,7 @@ def bamboo():
 
 def graves():
     """A small temple graveyard on its terrace: rows of family stones on stepped bases, a few stupa boards, a path."""
-    from village import build as v
+    from village import mesh as v
     palette()
     m = v.Mesh('HD_Graves'); r = random.Random(23)
     w, d = GRAVES[2], GRAVES[3]

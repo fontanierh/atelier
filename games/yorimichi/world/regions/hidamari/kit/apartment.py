@@ -1,6 +1,6 @@
 """Three-storey timber apato over a bike shop (variant 0) or a barber (variant 1): shared balconies, side stair, blue tiled gable."""
 import math,random
-from village import build as v
+from village import mesh as v
 from hidamari import arcade
 from hidamari.kit._lettering import raised_text
 

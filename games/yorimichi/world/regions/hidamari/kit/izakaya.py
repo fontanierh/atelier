@@ -1,7 +1,7 @@
 """Two adjoining eateries on one lot: a tall ramen shop (red tin front, ラーメン) and a lower yakitori izakaya (honey timber, 焼鳥, orange lantern row); variant 1 is a soba shop + oden bar."""
 import math,random
 from mathutils import Vector
-from village import build as v
+from village import mesh as v
 from hidamari import arcade
 from hidamari.kit._lettering import raised_text
 ASSETS={'HD_Shop_02':0,'HD_Shop_10':1}

@@ -15,7 +15,7 @@ from contextlib import contextmanager
 import bpy
 import numpy as np
 from mathutils import Vector
-from village.build import Mesh, PALETTE
+from village.mesh import Mesh, PALETTE
 
 # metres per texture tile (treehouse_textures.py SURFACES); pictures are 1
 TILE = dict(wood_plank=1.2, wood_timber=1.2, wood_pale=1.2, bark=1.6, shingle=1.6, moss=1.0, stone=1.2, plaster=1.5,

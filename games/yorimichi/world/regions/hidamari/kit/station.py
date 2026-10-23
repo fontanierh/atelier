@@ -1,7 +1,7 @@
 """Hidamari railway terminus: clock-tower pavilion, arched wings, columned porch, platform canopy (ref_1)."""
 import math,random
 import numpy as np
-from village import build as v
+from village import mesh as v
 from hidamari import arcade
 from hidamari.kit._lettering import raised_text
 ASSETS={'HD_Station':0}

@@ -1,7 +1,7 @@
 """Neighbourhood Inari shrine hall: raised floor on vermilion posts, broad low stepped-row bark hip roof with chigi, wide gabled porch canopy with a gold frieze, curly-maned komainu, lantern, basin pavilion, banners."""
 import math,random
 import numpy as np
-from village import build as v
+from village import mesh as v
 from hidamari import arcade
 from hidamari.kit._lettering import raised_text
 

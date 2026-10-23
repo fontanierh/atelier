@@ -33,6 +33,12 @@ def validate(step):
     if (not step.heavy or not step.products or step.cutoff or step.pool_roots or len(step.commands) != 1
             or type(step.commands[0]) not in (build.Blender, build.UnrealScript)):
         raise ValueError(f'{step.name}: batching requires one guarded Blender/editor command and named products')
+    if step.cache:
+        from .build_batch_source import support
+        declared = [Path(p).resolve() for p in step.inputs]
+        for path in support().values():
+            if not any(path.resolve() == p or p.is_dir() and path.resolve().is_relative_to(p) for p in declared):
+                raise ValueError(f'{step.name}: cached batch runtime must be a declared input')
     if set(step.batch.runtime_env) & {'PYTHONHASHSEED', 'PYTHONPATH', 'PYTHONHOME', 'PATH',
                                       'ATELIER_BATCH', 'ATELIER_SCRIPT', 'ATELIER_LEFT_OUT'}:
         raise ValueError('A batch may not vary process-start environment settings between scripts')
@@ -44,7 +50,7 @@ def compatible(first, other):
     An omitted override MUST start a separate process so it cannot inherit a predecessor's value.
     Explicit runtime values may differ; each action's command records them in its own key.
     """
-    if (first.audit or other.audit or other.batch != first.batch or other.cache
+    if (first.audit or other.audit or other.batch != first.batch or other.cache != first.cache
             or type(other.commands[0]) is not type(first.commands[0])):
         return False
     a, b = first.commands[0], other.commands[0]
@@ -65,7 +71,7 @@ def compatible(first, other):
 def select(ctx, plan, start, done, *, force, index, tool_cache):
     """Consecutive ready actions only; a future reader never runs before its producer commits."""
     first = plan[start]
-    if first.batch is None or first.cache or first.audit:
+    if first.batch is None or first.audit:
         return []
     candidates = []
     for step in plan[start:]:
@@ -133,12 +139,10 @@ class Session:
             command = step.commands[0]
             from .checkpoint_candidates import save_prior
             prior = save_prior(self.ctx, step.name, self.mesh_nonces[step.name], self.previous[step.name])
-            actions.append({'name': step.name, 'script': str(command.script), 'args': list(getattr(command, 'args', ()))
-                            if isinstance(command, build.Blender) else [],
-                            'env': {k: v for k, v in command.env if k != 'ATELIER_BUILD_PRIOR_STAMP'} | {'ATELIER_BUILD_TASK': step.name, 'ATELIER_BUILD_GAME': self.ctx.game,
-                                                       'ATELIER_BUILD_SCRIPT': str(command.script),
-                                                       'ATELIER_MESH_REUSE_NONCE': self.mesh_nonces[step.name]}
-                                   | ({'ATELIER_BUILD_PRIOR_STAMP': str(prior)} if prior is not None else {})})
+            from .build_batch_source import action
+            actions.append(action(command, name=step.name, game=self.ctx.game,
+                                  nonce=self.mesh_nonces[step.name], prior=prior,
+                                  blender=isinstance(command, build.Blender)))
             # An action about to run cannot keep a successful stamp from an older invocation.
             (self.ctx.stamps / (step.name + '.json')).unlink(missing_ok=True)
         atomic_json(self.folder / 'plan.json', {'nonce': self.nonce, 'actions': actions,

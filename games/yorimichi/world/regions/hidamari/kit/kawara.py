@@ -7,7 +7,7 @@ and carry a copper half-round gutter. Every function works in the caller's frame
 S(u, t) -> (x, y, z), u across the slope in metres and t from the eave (0) to the top (1).
 """
 import math
-from village import build as v
+from village import mesh as v
 
 PITCH = .3                     # roll spacing across the slope
 ROLL = .068                    # roll radius

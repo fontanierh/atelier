@@ -13,7 +13,7 @@ import math
 
 import bpy
 from mathutils import Vector
-from village import build as v
+from village import mesh as v
 
 OUT = yori.OUT / 'kei'; v.OUT = OUT
 LENGTH, WIDTH = 3.39, 1.47          # the kei class's outer limits

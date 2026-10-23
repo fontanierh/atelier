@@ -22,7 +22,7 @@ from pathlib import Path
 import bpy
 import numpy as np
 from mathutils import Vector
-from village.build import Mesh as KitMesh, PALETTE as KIT
+from village.mesh import Mesh as KitMesh, PALETTE as KIT
 from houses.layout import HOUSES, HALF_W, BACK, to_world, front_y
 
 HERE = Path(__file__).resolve().parent

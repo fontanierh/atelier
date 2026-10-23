@@ -1,6 +1,6 @@
 """Showa-era corner cafe block: chamfered corner entrance, arched shopfront under a striped awning, copper-green hip roof."""
 import math,random
-from village import build as v
+from village import mesh as v
 from hidamari import arcade
 
 ASSETS={'HD_Shop_04':0,'HD_Shop_12':1}

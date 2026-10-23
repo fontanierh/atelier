@@ -34,7 +34,7 @@ PALETTE = {'ar_paddy_earth': (.22, .15, .065), 'ar_stubble_row': (.40, .29, .10)
 
 
 def palette():
-    from village import build as v
+    from village import mesh as v
     v.PALETTE.update(PALETTE)
 
 
@@ -353,7 +353,7 @@ def _ribbon(m, height):
         faces = len(m.faces); m.poly(points, 'ar_verge_lawn')
         if len(m.faces) > faces and hasattr(m, 'colors'):
             from hidamari import layout
-            from village import build as v
+            from village import mesh as v
             k = len(m.faces[-1]); hd = v.PALETTE['hd_grass']
             for i, (x, _, _) in enumerate(m.vertices[-k:]):
                 w = float(layout.island_fade(x)); m.colors[len(m.colors)-k+i] = (*(a*(1-w)+b*w for a, b in zip(layout.ISLAND_LAWN, hd)), 0)

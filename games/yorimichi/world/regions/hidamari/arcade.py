@@ -2,7 +2,7 @@
 import math
 import random
 from mathutils import Matrix
-from village import build as v
+from village import mesh as v
 
 
 def palette():

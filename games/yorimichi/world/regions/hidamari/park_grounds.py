@@ -29,7 +29,7 @@ PALETTE = {'pk_path_gravel': (.33, .30, .25), 'pk_path_edge_stone': (.27, .26, .
 
 
 def palette():
-    from village import build as v
+    from village import mesh as v
     v.PALETTE.update(PALETTE)
 
 

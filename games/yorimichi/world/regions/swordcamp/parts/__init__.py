@@ -1,0 +1,1 @@
+"""Independent logical SwordCamp constructors."""

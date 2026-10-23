@@ -39,3 +39,31 @@ queries, rails, placement transforms, collision flags and source face ownership 
 Every native blocking child MUST use its own current LOD0 collision, without a stale whole-parent override.
 The native owner MUST validate every current child and all package sidecars before retiring old members.
 Source checks do not replace guarded native collision, seam, traversal and packaged-root acceptance.
+
+@cc [owner:fontanierh,label:correctness;performance] independently-cached-atomic-world-exports
+Region geometry MUST be generated and exported as explicit small logical products. Each final
+mesh export task MUST own exactly one primary FBX or GLB with at most 32768 triangles, its complete
+metadata and declared source/data/tool inputs. Unrelated logical assets MUST NOT share an export
+cache key or a region-wide generation callback. One local logical asset edit MUST leave unrelated
+geometry/export tasks current when their actual consumed inputs are unchanged. Whole-region source
+fingerprints and order-only edges MUST NOT hide or manufacture consumed-data dependencies.
+
+@cc [owner:fontanierh,label:correctness] assemble-small-world-products
+Region assembly MUST combine the exact independently owned export inventory, placements and material
+bindings without joining the bounded products back into an oversized mesh. Missing, stale, duplicate,
+foreign or incomplete products MUST fail before publishing the region manifest. Renames and removals
+MUST retire only that owner's superseded generated files after a complete preflight. Every original
+face/corner, normal, UV channel/value, colour, material binding, transform and collision contract MUST
+be preserved across the logical split; a spatial child MUST NOT reinterpret logical placement keys.
+Pieces MUST remain independently imported native mesh assets. A required performance merge,
+packed representation or HLOD MUST be an explicit downstream native product after individual
+receiving, with its own consumed-piece identities; it MUST NOT force unchanged source pieces
+through a whole-parent export or raw reimport.
+
+@cc [owner:fontanierh,label:correctness;performance] mesh-export-dependency-direction
+A mesh export MUST consume its own geometry definition, parameters and shared construction primitives.
+Exports SHOULD remain independent of sibling mesh exports. Required terrain, boundary, placement and
+query prerequisites MUST be explicit validated data products rather than incidental reads of another
+exported FBX/GLB whenever the geometry data can be published directly. Assembly consumes the cached
+mesh products and performs their logical composition, placement and connections. A shared assembly
+manifest MUST NOT become an input to otherwise independent mesh exports.

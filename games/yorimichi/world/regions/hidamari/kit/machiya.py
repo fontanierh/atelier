@@ -1,6 +1,6 @@
 """Kyoto machiya pair: a tea shop and a kimono tailor under one deep dark-tiled gable roof."""
 import math,random
-from village import build as v
+from village import mesh as v
 from hidamari import arcade
 ASSETS={'HD_Shop_00':0,'HD_Shop_08':1}
 

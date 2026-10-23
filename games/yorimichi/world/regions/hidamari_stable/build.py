@@ -29,7 +29,7 @@ import random
 import bpy
 import numpy as np
 
-from village import build as v
+from village import mesh as v
 from hidamari import surfaces
 from hidamari import arcade
 from hidamari import layout as H

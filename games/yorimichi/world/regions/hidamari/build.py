@@ -7,7 +7,7 @@ import shorelines
 from mathutils import Matrix
 ROOT=yori.REGIONS
 from hidamari.layout import OUT,height,street_height,terrain_axes,pond,canal,generate,ROAD_X,ROAD_Y
-from village import build as v
+from village import mesh as v
 from hidamari import harbor as harbor_kit
 from hidamari import arcade as arcade_kit
 from hidamari import plaza as plaza_kit
@@ -419,15 +419,8 @@ def gate_rock(name):
     for points,colour in gate.rock(seed,size):m.poly(points,colour)
     return m
 
-def main():
-    OUT.mkdir(parents=True,exist_ok=True);(OUT/'assets').mkdir(exist_ok=True)
-    city=generate();text=json.dumps(city,indent=2)+'\n'
-    # Atomic, unchanged-content-preserving write: single-asset rebuilds run alongside live captures.
-    if not (OUT/'city.json').exists() or (OUT/'city.json').read_text()!=text:
-        tmp=OUT/'city.json.tmp';tmp.write_text(text);tmp.replace(OUT/'city.json')
-    bpy.ops.wm.read_factory_settings(use_empty=True)
-    mat=bpy.data.materials.new('HidamariPalette');mat.use_nodes=True
-    vc=mat.node_tree.nodes.new('ShaderNodeVertexColor');vc.layer_name='Color';mat.node_tree.links.new(vc.outputs['Color'],mat.node_tree.nodes['Principled BSDF'].inputs['Base Color'])
+def asset_builders(city):
+    """Logical geometry constructors; registering a sibling never constructs its mesh."""
     from city_terrain_surface import generate as city_ground
     builders={f'HD_Shop_{i:02d}':(lambda i=i:shop(i)) for i in range(16)}
     builders.update({
@@ -488,6 +481,19 @@ def main():
     from megapark import trail as park_trail
     builders['HD_NorthApproach']=park_trail.approach_mesh
     builders['HD_NorthParkTrail']=lambda:park_trail.trail_mesh(north_height)
+    return builders
+
+
+def main():
+    OUT.mkdir(parents=True,exist_ok=True);(OUT/'assets').mkdir(exist_ok=True)
+    city=generate();text=json.dumps(city,indent=2)+'\n'
+    # Atomic, unchanged-content-preserving write: single-asset rebuilds run alongside live captures.
+    if not (OUT/'city.json').exists() or (OUT/'city.json').read_text()!=text:
+        tmp=OUT/'city.json.tmp';tmp.write_text(text);tmp.replace(OUT/'city.json')
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    mat=bpy.data.materials.new('HidamariPalette');mat.use_nodes=True
+    vc=mat.node_tree.nodes.new('ShaderNodeVertexColor');vc.layer_name='Color';mat.node_tree.links.new(vc.outputs['Color'],mat.node_tree.nodes['Principled BSDF'].inputs['Base Color'])
+    builders=asset_builders(city)
     only=set(filter(None,os.environ.get('HIDAMARI_ASSETS','').split(',')))
     if only-set(builders):raise ValueError('Unknown city assets: '+str(only-set(builders)))
     manifest=json.loads((OUT/'manifest.json').read_text()) if only and (OUT/'manifest.json').exists() else {}

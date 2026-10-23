@@ -172,7 +172,8 @@ def test_recipe_keeps_generator_code_and_existing_unreal_cutoffs(tmp_path):
         assert steps['world.city_'+part+'.meshes'].needs == ['world.city_'+part]
     assert RECIPE.REGIONS/'hidamari/arcade.py' in consumer.inputs
     assert RECIPE.REGIONS/'hidamari/plaza.py' in consumer.inputs
-    assert RECIPE.REGIONS/'village/build.py' in consumer.inputs
+    assert RECIPE.REGIONS/'village/mesh.py' in consumer.inputs
+    assert RECIPE.REGIONS/'village/build.py' not in consumer.inputs
 
 
 def test_source_specific_cutoffs_rebuild_only_the_changed_city_parent(tmp_path, monkeypatch):

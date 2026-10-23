@@ -4,8 +4,8 @@ import sys,json,math,random
 from pathlib import Path
 import bpy,numpy as np
 ROOT=yori.REGIONS
-import village.build as lib
-from village.build import Mesh,roof,window,door,pot,lantern
+import village.mesh as lib
+from village.mesh import Mesh,roof,window,door,pot,lantern
 from village.layout import upper_surface
 from forest_lake.layout import CENTER,RADII,WATER,CABIN,radius
 OUT=yori.OUT/'forest_lake';random.seed(719)

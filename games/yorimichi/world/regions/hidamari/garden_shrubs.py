@@ -5,7 +5,7 @@ fade, their cull distance). Shapes are superellipsoids: exponent 2 a clipped bal
 """
 import math, random
 from mathutils import Matrix, Vector
-from village import build as v
+from village import mesh as v
 
 GREEN = [(.045, .085, .018), (.06, .11, .022), (.075, .13, .03), (.10, .16, .04), (.035, .07, .016)]
 AZALEA = [(.32, .045, .02), (.42, .08, .02), (.24, .035, .018), (.06, .10, .02)]       # satsuki in autumn colour

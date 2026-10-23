@@ -6,7 +6,7 @@ A roofed bay is offset from the through lane; all supports extend below water.
 import math
 import random
 import numpy as np
-from village import build as v
+from village import mesh as v
 
 
 def level(x):

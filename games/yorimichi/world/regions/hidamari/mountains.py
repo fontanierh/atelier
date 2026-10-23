@@ -484,7 +484,7 @@ def _apron_part(ax,ay,base_sampler):
 
 
 def trail_mesh(surface):
-    from village.build import Mesh
+    from village.mesh import Mesh
     m=Mesh('HD_NorthTrail')
     for a,b in zip(TRAIL,TRAIL[1:]):
         dx,dy=b[0]-a[0],b[1]-a[1];length=math.hypot(dx,dy)

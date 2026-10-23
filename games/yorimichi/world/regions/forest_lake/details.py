@@ -1,7 +1,7 @@
 """Small-scale joinery and shoreline landmarks from the Sunburst reference."""
 import math,random
 import numpy as np
-from village.build import window,pot
+from village.mesh import window,pot
 WOOD=(.17,.073,.024);DARK=(.065,.029,.012);EDGE=(.23,.12,.045)
 
 def lean_roof(m,x,y,w,d,z,rise):

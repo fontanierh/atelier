@@ -16,7 +16,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 from hidamari import arcade, plaza
-from village import build as village
+from village import mesh as village
 
 BUILDERS = {'HD_ArcadeTree': arcade.tree, 'HD_PlazaTreeGold': plaza.tree,
             'HD_PlazaTreeOrange': lambda: plaza.tree(orange=True)}

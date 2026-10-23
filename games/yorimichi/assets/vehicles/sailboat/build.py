@@ -4,7 +4,7 @@ import sys,math,json
 from pathlib import Path
 import bpy
 ROOT=yori.REGIONS
-from village import build as v
+from village import mesh as v
 OUT=yori.OUT/'sailboat';v.OUT=OUT
 WOOD=(.20,.085,.026);TRIM=(.29,.15,.06);DARK=(.055,.03,.016);TEAL=(.045,.10,.12);CREAM=(.62,.57,.45);GOLD=(.65,.36,.06);METAL=(.20,.22,.21)
 

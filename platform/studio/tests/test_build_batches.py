@@ -375,3 +375,60 @@ def test_queue_wait_does_not_consume_the_batch_budget_but_running_time_still_doe
     if expire_after_first:
         assert any('wall-time budget' in message for message in p.messages)
         assert not (p.ctx.out / '3.txt').exists()
+
+
+@pytest.fixture
+def portable(project, tmp_path, monkeypatch):
+    from atelier import build_cache, paths
+    p = project
+    monkeypatch.setattr(paths, 'REPO', tmp_path)
+    monkeypatch.setenv('ATELIER_CACHE', str(tmp_path / 'source-cache'))
+    monkeypatch.setattr(build_cache, 'tool_context', lambda *a, **kw: {'portable-test-runtime': 1})
+    for step in p.steps:
+        step.cache = True
+        step.commands[0].factory_startup = True
+        from atelier.build_batch_source import support
+        step.inputs = [step.commands[0].script, *support().values()]
+    return p
+
+
+def test_portable_source_batch_keeps_individual_verified_cache_results(portable):
+    from atelier import build_cache
+    p = portable
+    assert p.run() == 0
+    assert len(p.launches) == 1
+    records = [build_plan.read_stamp(p.ctx.stamps / (s.name + '.json')) for s in p.steps]
+    store = build_cache.Store()
+    assert all(store.action(record['fingerprint']).is_file() for record in records)
+    for step in p.steps:
+        step.products[0].paths[0].unlink()
+    # A possible cache hit leaves the warm worker and goes through ordinary
+    # staged verification; no source invocation is repeated for missing copies.
+    assert p.run() == 0
+    assert len(p.launches) == 1
+    assert all(step.products[0].paths[0].read_text() == 'made' for step in p.steps)
+
+
+def test_portable_batch_stops_before_a_cached_sibling(portable):
+    from atelier import build_cache
+    p = portable
+    assert p.run() == 0
+    store = build_cache.Store()
+    records = [build_plan.read_stamp(p.ctx.stamps / (s.name + '.json')) for s in p.steps]
+    for index, step in enumerate(p.steps):
+        (p.ctx.stamps / (step.name + '.json')).unlink()
+        step.products[0].paths[0].unlink()
+        if index < 2:
+            store.action(records[index]['fingerprint']).unlink()
+    assert p.run() == 0
+    assert len(p.launches) == 2  # only the first two misses share the second worker
+    assert any('4 restored' in message for message in p.messages)
+
+
+def test_failed_source_batch_does_not_publish_portable_authority(portable):
+    from atelier import build_cache
+    p = portable
+    p.steps[3].commands[0].script.write_text("raise RuntimeError('fixture failure')\n")
+    assert p.run() == 1
+    actions = build_cache.Store().root / 'actions'
+    assert not list(actions.glob('*.json'))

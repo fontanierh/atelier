@@ -6,7 +6,7 @@ Alpha tags select local surface treatments in M_Harbor: 0 paint, .25 cedar,
 import math
 import random
 from mathutils import Vector, Matrix
-from village import build as v
+from village import mesh as v
 
 COLORS = {
     'h_white': (.55,.53,.43), 'h_blue': (.010,.10,.22),

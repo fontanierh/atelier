@@ -12,13 +12,23 @@ def values(collection, property_name, width, dtype=np.float32):
     return data.reshape(-1, width) if width > 1 else data
 
 
+def channel_selection(mesh):
+    """Active/render roles are part of UV/color semantics, in addition to their values."""
+    def selected(group, index):
+        return group[index].name if 0 <= index < len(group) else None
+    return dict(uv_active=mesh.uv_layers.active.name if mesh.uv_layers.active else None,
+                uv_render=next((layer.name for layer in mesh.uv_layers if layer.active_render), None),
+                colour_active=selected(mesh.color_attributes, mesh.color_attributes.active_color_index),
+                colour_render=selected(mesh.color_attributes, mesh.color_attributes.render_color_index))
+
+
 def capture(mesh):
     """@cc [owner:fontanierh,label:correctness] complete-static-mesh-corner-capture
     Partitioning MUST capture whole-source corner normals, all UV/colour layers, face materials and
-    smoothing before making children. Unsupported exported attributes or colour domains and nonfinite
+    smoothing and active/render channel selection before making children. Unsupported exported attributes or colour domains and nonfinite
     values MUST refuse. A child MUST retain the source's complete ordered material table.
     """
-    result = dict(positions=values(mesh.vertices, 'co', 3),
+    result = dict(selection=channel_selection(mesh), positions=values(mesh.vertices, 'co', 3),
                   starts=values(mesh.polygons, 'loop_start', 1, np.int32),
                   counts=values(mesh.polygons, 'loop_total', 1, np.int32),
                   vertex_indices=values(mesh.loops, 'vertex_index', 1, np.int32),
@@ -67,7 +77,8 @@ def subset(source, members):
                 uvs=[(name, uv[loops]) for name, uv in source['uvs']],
                 colours=[(name, domain, kind, colour[used if domain == 'POINT' else loops])
                          for name, domain, kind, colour in source['colours']],
-                used=used, loops=loops, triangles=int(sum(lengths - 2)))
+                used=used, loops=loops, triangles=int(sum(lengths - 2)),
+                **({'selection': dict(source['selection'])} if 'selection' in source else {}))
 
 
 def create_mesh(name, piece):
@@ -93,6 +104,19 @@ def create_mesh(name, piece):
         data.uv_layers.new(name=name).data.foreach_set('uv', uv.ravel())
     for name, domain, kind, colour in piece['colours']:
         data.color_attributes.new(name=name, type=kind, domain=domain).data.foreach_set('color', colour.ravel())
+    if 'selection' in piece:
+        selection = piece['selection']
+        uv_names = [layer.name for layer in data.uv_layers]
+        colour_names = [layer.name for layer in data.color_attributes]
+        if uv_names:
+            data.uv_layers.active_index = uv_names.index(selection['uv_active']) if selection['uv_active'] is not None else -1
+            if selection['uv_render'] is not None:
+                data.uv_layers[selection['uv_render']].active_render = True
+        if colour_names:
+            data.color_attributes.active_color_index = colour_names.index(selection['colour_active']) if selection['colour_active'] is not None else -1
+            data.color_attributes.render_color_index = colour_names.index(selection['colour_render']) if selection['colour_render'] is not None else -1
+        if channel_selection(data) != selection:
+            raise ValueError('Static mesh active/render UV or colour selection differs')
     if (not np.array_equal(values(data.vertices, 'co', 3), piece['positions'])
             or values(data.corner_normals, 'vector', 3).tobytes() != piece['normals'].tobytes()
             or not np.array_equal(values(data.polygons, 'material_index', 1, np.int32), piece['materials'])

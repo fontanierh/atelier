@@ -30,7 +30,7 @@ PALETTE = {'sy_floor_gravel': (.24, .22, .19), 'sy_buffer_concrete': (.32, .31, 
 
 
 def palette():
-    from village import build as v
+    from village import mesh as v
     v.PALETTE.update(PALETTE)
 
 

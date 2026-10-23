@@ -13,7 +13,7 @@ index to its corners' UVs), so the arrival road runs on from the island road in 
 import math, re
 from functools import lru_cache
 import bpy
-from village import build as v
+from village import mesh as v
 
 RULES = [
     ('earth', r'^coast_sand$'),
@@ -105,26 +105,36 @@ def material(slug):
     return _materials[slug]
 
 
-def export(m):
-    """village.build.export with one material slot per surface; the manifest entry lists the slots."""
+def mesh_object(m, make=None):
+    """Construct the same textured source object without performing an export."""
     per_face = slugs(m); used = sorted(set(per_face)); index = {s: i for i, s in enumerate(used)}
-    make = m.object
+    ob = (make or m.object)(material(used[0]))
+    data = ob.data
+    uv = data.uv_layers['UVMap'].data
+    for face, corners in getattr(m, 'uvs', {}).items():
+        for loop, value in zip(data.polygons[face].loop_indices, corners):
+            uv[loop].uv = value
+    for slug in used[1:]:
+        data.materials.append(material(slug))
+    data.polygons.foreach_set('material_index', [index[slug] for slug in per_face])
+    counts = {slug: 0 for slug in used}
+    for slug in per_face:
+        counts[slug] += 1
+    return ob, counts
 
+
+def export(m):
+    """Compatibility export through the same geometry-only constructor."""
+    make = m.object
+    counts = {}
     def textured(_material):
-        ob = make(material(used[0]))
-        data = ob.data
-        uv = data.uv_layers['UVMap'].data
-        for f, corners in getattr(m, 'uvs', {}).items():
-            for li, c in zip(data.polygons[f].loop_indices, corners): uv[li].uv = c
-        for s in used[1:]: data.materials.append(material(s))
-        data.polygons.foreach_set('material_index', [index[s] for s in per_face])
+        ob, slots = mesh_object(m, make)
+        counts.update(slots)
         return ob
     m.object = textured
     try:
-        ob, info = v.export(m, material(used[0]))
+        ob, info = v.export(m, material(sorted(set(slugs(m)))[0]))
     finally:
         del m.object
-    counts = {s: 0 for s in used}
-    for s in per_face: counts[s] += 1
-    info.update(materials=len(used), slots={s: counts[s] for s in used})
+    info.update(materials=len(counts), slots=counts)
     return ob, info

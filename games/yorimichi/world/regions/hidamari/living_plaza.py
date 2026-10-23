@@ -2,7 +2,7 @@
 import math
 import random
 import numpy as np
-from village import build as v
+from village import mesh as v
 from hidamari import plaza, arcade
 from hidamari.public_spaces import PLAZA_GARDENS, PLAZA_STALLS, PLAZA_CAFE
 

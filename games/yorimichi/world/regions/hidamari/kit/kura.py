@@ -1,7 +1,7 @@
 """White plaster kura storehouse with a namako base and a timber shop annex: pottery gallery (0) or sake shop (1)."""
 import math,random
 from mathutils import Matrix,Vector
-from village import build as v
+from village import mesh as v
 from hidamari import arcade
 
 ASSETS={'HD_Shop_09':0,'HD_Shop_01':1}

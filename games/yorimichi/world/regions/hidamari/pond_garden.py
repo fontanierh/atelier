@@ -5,7 +5,7 @@ All stone planting is below the inner bank; the island avoids recovery probes.
 """
 import math
 import random
-from village import build as v
+from village import mesh as v
 from hidamari import plaza, living_plaza
 
 

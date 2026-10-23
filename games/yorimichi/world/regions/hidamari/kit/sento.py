@@ -1,7 +1,7 @@
 """Neighbourhood sento: two-tier dark tiled hip roof with tile courses and rafter tails, projecting karahafu porch with a ゆ noren, brick chimney, glazed coin-laundry annex."""
 import math,random
 from mathutils import Vector
-from village import build as v
+from village import mesh as v
 from hidamari import arcade
 
 ASSETS={'HD_Shop_13':0,'HD_Shop_05':1}
