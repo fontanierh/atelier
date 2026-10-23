@@ -7,6 +7,8 @@ import json
 import os
 from pathlib import Path
 import sys
+import threading
+import time
 
 import bpy
 import numpy as np
@@ -19,6 +21,8 @@ from atelier.build_cache import copy_file  # noqa: E402
 from atelier.build_inputs import local_imports  # noqa: E402
 from atelier.export_manifest import real_directory, sha  # noqa: E402
 from mesh_pieces import capture  # noqa: E402
+
+PHASE = dict(stage='input preflight', completed=0, total=86)
 
 INPUTS = ('world.json', 'heightmap.npy', 'farhills.npy', 'megapark/trail.json',
           'craterpark/v2/geometry.npz', 'terrain/FarHills/final.npz')
@@ -78,6 +82,7 @@ def main():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     from hidamari import build, surfaces
     from village import mesh as kernel
+    PHASE['stage'] = 'original city layout'
     city = build.generate()
     builders = build.asset_builders(city)
     from hidamari.logical_catalogue import ASSETS
@@ -93,16 +98,19 @@ def main():
     for key, constructor in builders.items():
         palette, random_state = dict(kernel.PALETTE), kernel.R.getstate()
         contexts[key] = dict(seed=76, prefix_draws=draws[0], palette=palette)
+        PHASE['stage'] = 'original geometry ' + key
         source = constructor()
         assert source.name == key
         after_palette, after_state, after_draws = dict(kernel.PALETTE), kernel.R.getstate(), draws[0]
         if key in selected_builders:
+            PHASE['stage'] = 'original corner capture ' + key
             reference = signature(source, surfaces)
             del source
             module, function = selected_builders[key]
             selected = getattr(importlib.import_module('hidamari.' + module), function)
             kernel.PALETTE.clear(); kernel.PALETTE.update(palette)
             kernel.R.setstate(random_state)
+            PHASE['stage'] = 'selected geometry/corner comparison ' + key
             actual = selected(city)
             observed = signature(actual, surfaces)
             assert observed == reference, (key, 'selected ordered geometry/corners/channels/collision changed')
@@ -113,6 +121,7 @@ def main():
         else:
             del source
         gc.collect()
+        PHASE['completed'] = len(contexts)
         atomic_json(root / 'progress.json', dict(completed=len(contexts), total=len(builders), asset=key))
         print(f'CITY CONTEXT {len(contexts)}/{len(builders)} {key}; checked {len(results)} selected constructors', flush=True)
     assert set(results) == set(selected_builders)
@@ -125,4 +134,15 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    done = threading.Event()
+    started = time.monotonic()
+    def heartbeat():
+        while not done.wait(25):
+            print(f'City context heartbeat {time.monotonic()-started:.0f}s: {PHASE}; no additional completed stage', flush=True)
+    thread = threading.Thread(target=heartbeat, daemon=True)
+    thread.start()
+    try:
+        main()
+    finally:
+        done.set()
+        thread.join(timeout=1)

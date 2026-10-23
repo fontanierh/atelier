@@ -66,7 +66,7 @@ def import_model(slug):
 
 
 def add_hero_assets(collection):
-    from brinecove.modules import HULL
+    from brinecove.procedural.hero_presence import HULL
     placed = []
     for slug, spots in placements(HULL).items():
         model = _import(slug)
