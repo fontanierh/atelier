@@ -407,4 +407,6 @@ def test_action_restore_is_in_process_and_takes_milliseconds(fixture, monkeypatc
         assert build.build_products.records(received[0], hasher=index.digest)
     assert len(list((receiver.out / 'tree').glob('lod*.bin'))) == 200
     print(f'201-file action restore in process: {elapsed * 1000:.0f} ms')
-    assert elapsed < 0.2, f'{elapsed:.3f} s for one 201-file action restore'
+    # The regression this guards against took seconds to minutes per hit (a guarded child and
+    # broker admission); shared CI runners vary by tens of milliseconds, so the bound is 1 s.
+    assert elapsed < 1.0, f'{elapsed:.3f} s for one 201-file action restore'

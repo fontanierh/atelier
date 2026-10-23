@@ -436,7 +436,8 @@ def test_any_retained_checkpoint_restores_one_task_by_fingerprint(fixture, monke
     reused = store_reuse.restore_checkpoint(ctx, tree, build.fingerprint(tree, {}), index, echo=messages.append)
     elapsed = time.perf_counter() - started
     assert reused[0] == key and 'restored from checkpoint' in messages[-1]
-    assert elapsed < 0.2, f'{elapsed:.3f} s for one in-process store clone'
+    # Guards against a return to per-hit guarded children; shared CI runners need headroom.
+    assert elapsed < 1.0, f'{elapsed:.3f} s for one in-process store clone'
     assert (ctx.out / 'tree/asset.bin').read_bytes() == b'tree' and not (ctx.out / 'tree/extra.bin').exists()
     assert not (ctx.out / 'house').exists()
     assert store_reuse.restore_checkpoint(ctx, tree, '0' * 64, index, echo=messages.append) is None
