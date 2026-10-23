@@ -17,7 +17,10 @@ concurrency:
 jobs:
   tests:
     name: Python / ${{ matrix.group }}
-    runs-on: macos-latest
+    # The board group builds a macOS-only Rust server (libproc, statfs, darwin priorities).
+    # The other two groups sample processes through /proc and mock the darwin packaging
+    # paths, so they use the far faster, uncontended Linux pool.
+    runs-on: ${{ matrix.group == 'board' && 'macos-latest' || 'ubuntu-latest' }}
     timeout-minutes: 30
     strategy:
       fail-fast: false

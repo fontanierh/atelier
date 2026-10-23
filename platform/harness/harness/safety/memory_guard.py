@@ -6,6 +6,7 @@ While an owned Unreal runs it also records the game's descendants, pinned to the
 `<report>.helpers.json`, so the SDK helpers it leaves behind can be reaped once it exits (`guard.reap_helpers`).
 """
 import argparse,ctypes,json,os,signal,time
+import errno,sys
 from pathlib import Path
 
 class Usage(ctypes.Structure):
@@ -14,16 +15,79 @@ class Usage(ctypes.Structure):
         'started','exited','child_user','child_system','child_idle','child_interrupt','child_pageins',
         'child_elapsed','read_bytes','written_bytes')]
 
-LIB=ctypes.CDLL('/usr/lib/libproc.dylib',use_errno=True)
-LIB.proc_pid_rusage.argtypes=[ctypes.c_int,ctypes.c_int,ctypes.c_void_p]
-LIB.proc_pid_rusage.restype=ctypes.c_int
-
 PROC_PPID_ONLY=6
-LIB.proc_listpids.argtypes=[ctypes.c_uint32,ctypes.c_uint32,ctypes.c_void_p,ctypes.c_int]
-LIB.proc_name.argtypes=[ctypes.c_int,ctypes.c_void_p,ctypes.c_uint32]
+DARWIN=sys.platform=='darwin'
+PROCFS=Path('/proc')
+
+
+class _Libproc:
+    """libproc, bound on first use so importing the guard stack stays portable."""
+    def __init__(self):
+        self._handle=None
+    def _load(self):
+        if self._handle is None:
+            lib=ctypes.CDLL('/usr/lib/libproc.dylib',use_errno=True)
+            lib.proc_pid_rusage.argtypes=[ctypes.c_int,ctypes.c_int,ctypes.c_void_p]
+            lib.proc_pid_rusage.restype=ctypes.c_int
+            lib.proc_listpids.argtypes=[ctypes.c_uint32,ctypes.c_uint32,ctypes.c_void_p,ctypes.c_int]
+            lib.proc_name.argtypes=[ctypes.c_int,ctypes.c_void_p,ctypes.c_uint32]
+            self._handle=lib
+        return self._handle
+    def __getattr__(self,name):
+        return getattr(self._load(),name)
+
+
+LIB=_Libproc()
+
+
+class ProcfsUsage:
+    """The same fields as Usage, sampled from Linux /proc.
+
+    Linux has no equivalent of macOS's compressed and GPU footprint, so `footprint` is the
+    resident set and the limits mean resident memory there."""
+    __slots__=('user','system','idle_wakeups','interrupt_wakeups','pageins','wired','resident','footprint',
+               'started','exited','child_user','child_system','child_idle','child_interrupt','child_pageins',
+               'child_elapsed','read_bytes','written_bytes')
+
+
+def _procfs_usage(pid):
+    def gone():return ProcessLookupError(errno.ESRCH,'Cannot sample process',pid)
+    try:raw=(PROCFS/str(pid)/'stat').read_bytes()
+    except OSError:raise gone()
+    end=raw.rfind(b')')
+    fields=raw[end+2:].split() if end>=0 else []
+    if len(fields)<20:raise gone()
+    if fields[0] in (b'Z',b'X',b'x'):raise gone()          # reaped or not, it no longer owns memory
+    try:resident=int((PROCFS/str(pid)/'statm').read_text().split()[1])*os.sysconf('SC_PAGE_SIZE')
+    except (OSError,ValueError,IndexError):raise gone()
+    wired=0
+    try:
+        for line in (PROCFS/str(pid)/'status').read_text().splitlines():
+            if line.startswith('VmLck:'):wired=int(line.split()[1])*1024;break
+    except (OSError,ValueError,IndexError):pass
+    read_bytes=written_bytes=0
+    try:
+        for line in (PROCFS/str(pid)/'io').read_text().splitlines():
+            key,_,value=line.partition(':')
+            if key=='read_bytes':read_bytes=int(value)
+            elif key=='write_bytes':written_bytes=int(value)
+    except (OSError,ValueError):pass
+    value=ProcfsUsage()
+    value.user,value.system=int(fields[11]),int(fields[12])
+    value.started,value.exited=int(fields[19]),0
+    value.resident=value.footprint=resident
+    value.wired,value.pageins=wired,0
+    value.read_bytes,value.written_bytes=read_bytes,written_bytes
+    value.idle_wakeups=value.interrupt_wakeups=0
+    value.child_user=value.child_system=value.child_idle=0
+    value.child_interrupt=value.child_pageins=value.child_elapsed=0
+    return value
 
 def children(pid):
     """The live children of pid; one born during the call is caught on the next tick."""
+    if not DARWIN:
+        try:return [int(p) for p in (PROCFS/str(pid)/'task'/str(pid)/'children').read_text().split()]
+        except (OSError,ValueError):return []
     size=ctypes.sizeof(ctypes.c_int);count=LIB.proc_listpids(PROC_PPID_ONLY,pid,None,0)
     if count<=0:return []
     buf=(ctypes.c_int*(count//size+64))();count=LIB.proc_listpids(PROC_PPID_ONLY,pid,buf,ctypes.sizeof(buf))
@@ -31,6 +95,9 @@ def children(pid):
 
 def name(pid):
     """The executable's name ('UnrealEditor', 'dotnet'), or '' once it is gone."""
+    if not DARWIN:
+        try:return (PROCFS/str(pid)/'comm').read_text().strip()
+        except OSError:return ''
     buf=ctypes.create_string_buffer(256)
     return buf.value.decode(errors='replace') if LIB.proc_name(pid,buf,256)>0 else ''
 
@@ -68,6 +135,7 @@ def record_helpers(pid,started,path,seen):
             helpers=list(seen.values())),indent=2)+'\n');temp.replace(path)
 
 def usage(pid):
+    if not DARWIN:return _procfs_usage(pid)
     value=Usage()
     if LIB.proc_pid_rusage(pid,2,ctypes.byref(value)):
         raise ProcessLookupError(ctypes.get_errno(), 'Cannot sample process',pid)

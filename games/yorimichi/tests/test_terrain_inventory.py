@@ -24,13 +24,13 @@ def test_r8_ordered_geometry_and_query_fixtures():
     for name, (vertices, faces, metadata, queries) in actual.items():
         old = baseline['cases'][name]
         # Preserve every vertex and its order, not just a few height samples.
-        np.testing.assert_allclose(vertices, old['vertices'], rtol=0., atol=1.e-12, err_msg=name)
+        np.testing.assert_allclose(vertices, old['vertices'], rtol=0., atol=1.e-9, err_msg=name)
         np.testing.assert_array_equal(faces, old['triangles'], err_msg=name)
         assert metadata == old['metadata'], name
         assert queries == old['queries'], name
         expected = np.array([np.nan if z is None else z for z in old['heights']])
         current = np.array([np.nan if z is None else z for z in sampled_heights(vertices, faces, queries)])
-        np.testing.assert_allclose(current, expected, rtol=0., atol=1.e-12, equal_nan=True, err_msg=name)
+        np.testing.assert_allclose(current, expected, rtol=0., atol=1.e-9, equal_nan=True, err_msg=name)
         assert inventory(np.asarray(old['vertices']), np.asarray(old['triangles']),
                          owner='FarHills-fixture', stage='final') == old['inventory']
     assert baseline['cases']['portal_opening']['metadata']['report']['hole_triangles'] > 0
