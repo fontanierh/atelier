@@ -15,6 +15,16 @@ PARK=('SM_SkatePier','SM_SkatePierPilings','SM_SkateParkFeatures','SM_SkatePath'
 AO=('SM_SkatePier','SM_SkateParkFeatures')
 
 
+def imported_triangle_count(piece):
+    """Blender validates duplicate polygons on import; exports retain both windings.
+
+    Count only the importer's exact shared-index face equivalence, without welding
+    distinct vertices or changing the complete authored/exported polygon inventory.
+    """
+    faces={tuple(sorted(face)) for face in piece['faces']}
+    return sum(len(face)-2 for face in faces)
+
+
 def preflight(root,expected):
     root=real_directory(root)
     if root.exists() and regular_files(root)-set(expected):raise ValueError('Foreign canonical skate source data')

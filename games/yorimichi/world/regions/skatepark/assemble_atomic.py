@@ -57,6 +57,8 @@ def main(argv=None):
                 raise ValueError('Missing/stale actual per-piece skate FBX roundtrip')
             if receipt['metadata'].get('geometry_sha256')!=row['sha256']:raise ValueError('Atomic skate payload changed after export')
             meta,piece=mesh_ir.decode((plan_root/row['payload']).read_bytes())
+            if proof.get('imported_triangles')!=source.imported_triangle_count(piece):
+                raise ValueError('Skate actual imported polygon census differs from exact source validation')
             material_slots=[slot for i,slot in enumerate(meta['slots']) if i in set(piece['materials'])]
             item=dict(name=key,parent=name,triangles=row['triangles'],vertices=len(piece['positions']),
                 min=row['min'],max=row['max'],material_slots=material_slots,source_material_slots=meta['slots'],sha256=receipt['sha256'])

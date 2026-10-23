@@ -6,6 +6,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
 import yori  # noqa: E402,F401
 import bpy  # noqa: E402
 import numpy as np  # noqa: E402
+from skatepark.atomic_source import imported_triangle_count  # noqa: E402
 from atelier import mesh_ir,export_manifest  # noqa: E402
 from atelier.atomic_files import atomic_json  # noqa: E402
 
@@ -27,14 +28,14 @@ def main(argv=None):
     world=np.asarray([obj.matrix_world@vertex.co for vertex in mesh.vertices])
     matrix=np.asarray(meta['matrix']);original=piece['positions']@matrix[:3,:3].T+matrix[:3,3]
     error=float(max(np.abs(world.min(0)-original.min(0)).max(),np.abs(world.max(0)-original.max(0)).max()))
-    if error>=.001 or len(mesh.loop_triangles)!=piece['triangles']:
+    if error>=.001 or len(mesh.loop_triangles)!=imported_triangle_count(piece):
         raise ValueError('Actual skate FBX roundtrip changed bounds or triangle count')
     if [layer.name for layer in mesh.uv_layers]!=[label for label,_ in piece['uvs']]:raise ValueError('Skate FBX roundtrip lost original UV channels')
     if len(mesh.color_attributes)!=len(piece['colours']):raise ValueError('Skate FBX roundtrip lost colour channels')
     used={meta['slots'][int(i)] for i in piece['materials']};actual={slot.name for slot in mesh.materials}
     if not used<=actual<=set(meta['slots']):raise ValueError('Skate FBX roundtrip changed source material membership')
     atomic_json(args.output,dict(schema=1,name=name,complete=True,fbx_sha256=receipt['sha256'],
-        input_sha256=export_manifest.sha(args.input),triangles=piece['triangles'],bounds_error_mm=error*1000))
+        input_sha256=export_manifest.sha(args.input),triangles=piece['triangles'],imported_triangles=len(mesh.loop_triangles),bounds_error_mm=error*1000))
     print('SKATE ATOMIC FBX ROUNDTRIP COMPLETE',name,error*1000,flush=True)
 
 

@@ -131,7 +131,7 @@ def test_actual_skate_assembly_requires_all_roundtrips_before_retiring_owned_fil
         atomic_json(data/'records'/(name+'.json'),dict(name=name,triangles=1,vertices=3,min=[0,0,0],max=[1,1,0],pieces=[name],material_slots=['Palette']))
         export=out/('exports/world.'+region+'.export')/name;export.mkdir(parents=True);(export/(name+'.fbx')).write_bytes(b'opaque verified primary')
         receipt=export_manifest.publish_receipt(export,key=name,primary=name+'.fbx',triangles=1,bounds=[[0,0,0],[1,1,0]],metadata=dict(geometry_sha256=digest))
-        atomic_json(data/'roundtrip'/(name+'.json'),dict(schema=1,name=name,complete=True,fbx_sha256=receipt['sha256'],input_sha256=digest,triangles=1,bounds_error_mm=0.))
+        atomic_json(data/'roundtrip'/(name+'.json'),dict(schema=1,name=name,complete=True,fbx_sha256=receipt['sha256'],input_sha256=digest,triangles=1,imported_triangles=1,bounds_error_mm=0.))
     logical=json.loads((GAME/'world/regions/skatepark/park.json').read_text())
     atomic_json(data/'queries/logical.json',logical);atomic_json(data/'queries/report.json',{})
     atomic_json(data/'ao/report.json',{});(data/'queries/collision.json').write_bytes(b'exact original physics bytes')
@@ -147,3 +147,12 @@ def test_actual_skate_assembly_requires_all_roundtrips_before_retiring_owned_fil
     before={p:p.stat().st_mtime_ns for part in ('assets','board') for p in (out/'skatepark'/part).glob('*.fbx')}
     assemble_atomic.main(['--out',str(out)])
     assert {p:p.stat().st_mtime_ns for p in before}==before
+
+
+def test_roundtrip_counts_exact_shared_index_opposite_faces_without_changing_export_geometry():
+    faces=[[0,1,2],[2,1,0],[3,4,5],[6,7,8,9]]
+    piece=dict(faces=faces,triangles=5)
+    assert source.imported_triangle_count(piece)==4
+    assert piece['faces']==faces and piece['triangles']==5
+    # Coordinate-coincident but independently indexed faces remain independent.
+    assert source.imported_triangle_count(dict(faces=[[0,1,2],[3,4,5]]))==2
