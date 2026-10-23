@@ -19,6 +19,32 @@ DESTINATION = '/Game/Experiments/VillageAtomic/v1_atomic'
 MATERIAL = '/Game/Japan/Materials/M_Village'
 
 
+def ground_native_count(metadata, piece):
+    """Project only unambiguous ground FBX degenerate removal, preserving exported faces.
+
+    Installed FbxStaticMeshImport.cpp tests the squared float32 cross product
+    against SMALL_NUMBER (1e-8). Native/source counts remain separate: no face
+    is removed from the source payload or serialized FBX. Only already triangular
+    source polygons qualify; n-gons retain their full n-2 expected count. Borderline
+    triangular cases require a stronger proof and refuse.
+    """
+    import numpy as np
+    matrix = np.asarray(metadata['matrix'])
+    points = piece['positions'] @ matrix[:3, :3].T + matrix[:3, 3]
+    points = np.asarray([to_unreal(point) for point in points], dtype=np.float32)
+    removed = []
+    for index, face in enumerate(piece['faces']):
+        if len(face) != 3: continue
+        a, b, c = points[list(face)]
+        normal = np.cross(b-c, a-c)
+        squared = float(np.dot(normal, normal))
+        if squared <= 2.5e-9:
+            removed.append(index)
+        elif squared <= 4e-8:
+            raise ValueError('Borderline Village legacy FBX degeneracy')
+    return dict(native_triangles=piece['triangles']-len(removed), native_removed_polygons=removed)
+
+
 def owned(key, parent):
     return key == parent or re.fullmatch(re.escape(parent) + r'_cell_-?\d+_-?\d+(?:_Piece[0-3]{1,16})?', key) is not None
 
@@ -60,6 +86,9 @@ def assemble(out):
             hulls.append([[float(value) for value in to_unreal(point)] for point in vertices])
         pieces = []
         for row in plan['pieces']:
+            metadata, source_piece = mesh_ir.decode((plan_root / row['payload']).read_bytes())
+            native_projection = (ground_native_count(metadata, source_piece) if parent == 'Village_Ground'
+                                 else dict(native_triangles=row['triangles'], native_removed_polygons=[]))
             receipt = receipts.get(row['name'], {})
             if (receipt.get('primary') != row['name'] + '.fbx' or receipt.get('triangles') != row['triangles']
                     or receipt.get('bounds') != [row['min'], row['max']]
@@ -70,6 +99,7 @@ def assemble(out):
             pieces.append({key: row[key] for key in ('name', 'triangles', 'min', 'max', 'collision_hulls')}
                           | dict(sha256=receipt['sha256'], geometry_sha256=row['sha256'],
                                  uv_channels=receipt['metadata']['uv_channels']))
+            pieces[-1].update(native_projection)
             primary = root / 'assets' / receipt['primary']
             if primary.is_symlink() or not primary.is_file() or sha(primary) != receipt['sha256']:
                 raise ValueError('Village assembled primary bytes changed')
@@ -118,9 +148,15 @@ def read(out):
         triangles = hulls = 0
         for index, row in enumerate(group['pieces']):
             key = name(row['name'])
+            removed = row.get('native_removed_polygons')
+            polygons = receipts.get(key, {}).get('metadata', {}).get('polygons')
             if (not owned(key, parent) or key.casefold() in seen or type(row.get('triangles')) is not int
                     or not 0 < row['triangles'] <= TRIANGLE_LIMIT
                     or row.get('collision_hulls') != (group['source_collision_hulls'] if index == 0 else 0)
+                    or type(row.get('native_triangles')) is not int or not 0 < row['native_triangles'] <= row['triangles']
+                    or type(polygons) is not int or not 0 < polygons <= row['triangles']
+                    or not isinstance(removed, list) or any(type(i) is not int or not 0 <= i < polygons for i in removed)
+                    or len(removed) != row['triangles'] - row['native_triangles'] or len(set(removed)) != len(removed)
                     or row.get('uv_channels') != ['UVMap']):
                 raise ValueError('Unbounded, foreign or duplicate Village piece')
             seen.add(key.casefold()); expected.add(key + '.fbx')

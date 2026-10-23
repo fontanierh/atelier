@@ -9,7 +9,8 @@ GAME = Path(__file__).resolve().parents[1]
 SCRIPT = GAME / 'unreal/Scripts/import_village_atomic.py'
 
 
-def native(*, hit=True, hulls=0, expected=0, ground=False, save=True, precision=False):
+def native(*, hit=True, hulls=0, expected=0, ground=False, save=True, precision=False,
+           source_triangles=12, native_triangles=12, actual_triangles=12):
     state = dict(hulls=hulls, resets=0, raw=0, saves=0, trace='simple', cooked_policy=None)
     material = object()
     precision_state = {'value': precision}
@@ -19,7 +20,7 @@ def native(*, hit=True, hulls=0, expected=0, ground=False, save=True, precision=
     body = SimpleNamespace(get_editor_property=lambda name: state['trace'], set_editor_property=set_body)
     slot = SimpleNamespace(get_editor_property=lambda name: 'VillagePalette')
     key = 'Village_Ground' if ground else 'Village_Planting'
-    mesh = SimpleNamespace(get_path_name=lambda: '/Game/Atomic/' + key, get_num_triangles=lambda lod: 12,
+    mesh = SimpleNamespace(get_path_name=lambda: '/Game/Atomic/' + key, get_num_triangles=lambda lod: actual_triangles,
         get_num_lods=lambda: 1, static_materials=[slot], get_material=lambda i: material,
         get_editor_property=lambda prop: body,
         get_bounding_box=lambda: SimpleNamespace(min=SimpleNamespace(x=0., y=0., z=0.), max=SimpleNamespace(x=1., y=1., z=1.)))
@@ -35,8 +36,9 @@ def native(*, hit=True, hulls=0, expected=0, ground=False, save=True, precision=
         CollisionTraceFlag=SimpleNamespace(CTF_USE_SIMPLE_AND_COMPLEX='simple', CTF_USE_COMPLEX_AS_SIMPLE='complex'),
         CitySurfaceValidation=SimpleNamespace(validate_collision=cooked), log=lambda *a: None,
         SystemLibrary=SimpleNamespace(execute_console_command=lambda *a: None, collect_garbage=lambda: None))
-    row = dict(name=key, triangles=12, collision_hulls=expected, uv_channels=['UVMap'])
-    groups = {key: dict(collision='complex_as_simple' if ground else 'simple_and_complex', source_triangles=12, pieces=[row])}
+    row = dict(name=key, triangles=source_triangles, native_triangles=native_triangles,
+               native_removed_polygons=list(range(source_triangles-native_triangles)), collision_hulls=expected, uv_channels=['UVMap'])
+    groups = {key: dict(collision='complex_as_simple' if ground else 'simple_and_complex', source_triangles=source_triangles, pieces=[row])}
     def import_mesh(*a, **kw):
         if not hit or not kw['reuse_validator'](mesh):
             kw['before_import'](); state['raw'] += 1; state['hulls'] = expected
@@ -61,6 +63,16 @@ def test_ground_hit_keeps_complex_surface_and_does_not_reimport():
     scope, state = native(ground=True)
     scope['receive'](Path('output'))
     assert state['trace'] == 'complex' and state['cooked_policy'] is False and not state['raw']
+
+
+def test_ground_requires_exact_projected_native_count_and_complete_export_count():
+    scope, state = native(ground=True,source_triangles=13)
+    result = scope['receive'](Path('output'))
+    row, = result['groups']['Village_Ground']
+    assert row['triangles']==12 and row['source_triangles']==13
+    assert state['saves']==1
+    scope, _ = native(ground=True,source_triangles=13,actual_triangles=11)
+    with pytest.raises(AssertionError,match='render geometry'): scope['receive'](Path('output'))
 
 
 def test_stale_saved_hulls_force_actual_miss_reset_before_import():

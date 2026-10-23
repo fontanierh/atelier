@@ -65,7 +65,7 @@ def receive(out=None):
                 fresh_slots=True, before_import=before_import,
                 reuse_validator=lambda mesh: collision_matches(mesh, group, row))
             assert mesh.get_path_name().split('.')[0] == DESTINATION + '/' + key
-            assert mesh.get_num_triangles(0) == row['triangles'] and mesh.get_num_lods() == 1, (key, 'render geometry')
+            assert mesh.get_num_triangles(0) == row['native_triangles'] and mesh.get_num_lods() == 1, (key, 'render geometry')
             assert len(mesh.static_materials) == 1, (key, 'original draw material')
             assert str(mesh.static_materials[0].get_editor_property('imported_material_slot_name')) == 'VillagePalette'
             if mesh.get_material(0) != material: mesh.set_material(0, material)
@@ -84,13 +84,13 @@ def receive(out=None):
             assert not editor.get_lod_build_settings(mesh, 0).get_editor_property('use_full_precision_u_vs')
             # This validator's bool selects the expected SimpleAndComplex trace policy;
             # actual hull presence/vertices are independently required above, even at zero.
-            assert unreal.CitySurfaceValidation.validate_collision(mesh, row['triangles'], source_simple_policy), (key, 'current cooked surface')
+            assert unreal.CitySurfaceValidation.validate_collision(mesh, row['native_triangles'], source_simple_policy), (key, 'current cooked surface')
             assert library.save_loaded_asset(mesh, True), (key, 'native save failed')
-            current.append(dict(name=key, asset=DESTINATION + '/' + key, triangles=row['triangles']))
+            current.append(dict(name=key, asset=DESTINATION + '/' + key, triangles=row['native_triangles'], source_triangles=row['triangles']))
             mesh = body = None
             if index % 16 == 0: unreal.SystemLibrary.collect_garbage()
             unreal.log(f'VILLAGE RECEIVE {parent} {index}/{len(group["pieces"])}')
-        assert sum(row['triangles'] for row in current) == group['source_triangles']
+        assert sum(row['source_triangles'] for row in current) == group['source_triangles']
         report[parent] = current
     return dict(out=root, previous=previous, groups=report)
 
