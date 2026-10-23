@@ -27,3 +27,19 @@ def test_unrepresented_export_settings_refuse_before_importing_blender(monkeypat
     monkeypatch.delitem(sys.modules, 'bpy', raising=False)
     with pytest.raises(ValueError):
         gltf.export_atomic_glb('output.glb', options=options)
+
+
+def test_finite_image_free_graph_uses_original_shader_traversal(monkeypatch):
+    from atelier import mesh_materials
+    material = SimpleNamespace(type='MESH'); calls = []; checked = []
+    monkeypatch.setattr(gltf, 'validate_atomic_selection', lambda **_: None)
+    monkeypatch.setattr(mesh_materials, 'capture_slots', lambda obj: checked.append(obj))
+    monkeypatch.setitem(sys.modules, 'bpy', SimpleNamespace(context=SimpleNamespace(selected_objects=[material]),
+        ops=SimpleNamespace(export_scene=SimpleNamespace(gltf=lambda **kw: calls.append(kw) or {'FINISHED'}))))
+    gltf.export_atomic_glb('output.glb', options={'export_apply': True}, finite_materials=True)
+    assert checked == [material] and calls[0]['export_image_format'] == 'AUTO'
+    def unsupported(_): raise ValueError('image or unsupported graph')
+    monkeypatch.setattr(mesh_materials, 'capture_slots', unsupported)
+    with pytest.raises(ValueError, match='unsupported graph'):
+        gltf.export_atomic_glb('output.glb', finite_materials=True)
+    assert len(calls) == 1

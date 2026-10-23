@@ -93,7 +93,7 @@ def decode(payload,*,_collision_payload=False):
                 or set(meta['options']) - {'export_apply', 'export_image_format'} or _collision_payload):
             raise ValueError('Invalid explicit GLB material table')
         if (type(meta['options'].get('export_apply', False)) is not bool
-                or meta['options'].get('export_image_format', 'NONE') != 'NONE'):
+                or meta['options'].get('export_image_format', 'AUTO') != 'AUTO'):
             raise ValueError('Unsupported explicit GLB material export policy')
         for spec in specs: mesh_materials.validate(spec)
     for collision in meta['collisions']:
