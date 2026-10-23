@@ -1,5 +1,50 @@
 schema_version = 1
 
+[[scenarios]]
+tier = "t0"
+id = "b5.policy.retained_consumers_keep_transitive_producers_and_shared_auxiliary_objects"
+tests = ["atelier-build-v2::cleanup/retained_consumers_keep_transitive_producers_and_shared_auxiliary_objects"]
+
+[[scenarios]]
+tier = "t0"
+id = "b5.policy.oldest_eligible_result_never_precedes_its_still_kept_consumer"
+tests = ["atelier-build-v2::cleanup/oldest_eligible_result_never_precedes_its_still_kept_consumer"]
+
+[[scenarios]]
+tier = "t0"
+id = "b5.policy.recent_unknown_and_future_observations_never_expire_early"
+tests = ["atelier-build-v2::cleanup/recent_unknown_and_future_observations_never_expire_early"]
+
+[[scenarios]]
+tier = "t0"
+id = "b5.policy.lease_facts_are_protection_not_liveness_or_cleanup_decisions"
+tests = ["atelier-build-v2::cleanup/lease_facts_are_protection_not_liveness_or_cleanup_decisions"]
+
+[[scenarios]]
+tier = "t0"
+id = "b5.policy.every_record_reference_is_validated_before_any_proposal"
+tests = ["atelier-build-v2::cleanup/every_record_reference_is_validated_before_any_proposal"]
+
+[[scenarios]]
+tier = "t0"
+id = "b5.policy.cyclic_lineage_and_missing_payloads_are_honest_non_deletion_cases"
+tests = ["atelier-build-v2::cleanup/cyclic_lineage_and_missing_payloads_are_honest_non_deletion_cases"]
+
+[[scenarios]]
+tier = "t0"
+id = "b5.policy.logical_dedup_budget_and_orphan_grace_do_not_claim_physical_reclaim"
+tests = ["atelier-build-v2::cleanup/logical_dedup_budget_and_orphan_grace_do_not_claim_physical_reclaim"]
+
+[[scenarios]]
+tier = "t0"
+id = "b5.policy.malformed_duplicate_overflow_and_expired_catalogs_refuse"
+tests = ["atelier-build-v2::cleanup/malformed_duplicate_overflow_and_expired_catalogs_refuse"]
+
+[[scenarios]]
+tier = "t0"
+id = "b5.policy.deadline_covers_validation_and_planning_without_returning_partial_authority"
+tests = ["atelier-build-v2/cleanup::tests::deadline_covers_validation_and_planning_without_returning_partial_authority"]
+
 [[pending]]
 id = "t0.restore-gc-race"
 task = "B5"

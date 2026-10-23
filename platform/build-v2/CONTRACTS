@@ -181,3 +181,12 @@ Committed local plans MUST retain their private completion proof for store-only 
 See recorded_retention_roots_metadata_without_payload_claims_and_rejects_cross_store,
 selected_recorded_sources_require_durable_claims_and_preserve_clone_independence in tests/results.rs,
 and retained_restore_sources_survive_settlement_until_explicit_release in tests/installs.rs.
+
+@cc [owner:fontanierh,label:correctness] build-v2-pure-cleanup-policy
+Cleanup fact planning MUST validate all supplied producer/object references before proposing any
+removal, protect roots/retained lease sets/recent/unknown observations and producer closure, and
+never propose a producer while a remaining consumer references it. Unknown lease lineage and cyclic
+closure MUST retain. One absolute deadline covers validation/planning without reset and returns no
+plan on expiry. Plans MUST remain diagnostic, with no deletion authority, process-liveness decision,
+filesystem access, physical-space claim or new cache identity. See tests/cleanup.rs and
+cleanup::tests::deadline_covers_validation_and_planning_without_returning_partial_authority.

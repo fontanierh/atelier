@@ -1,6 +1,7 @@
 //! Opt-in build-v2 interfaces. No production v1 callers use this crate.
 //! Deserialization checks wire shape; semantic declaration validation belongs to A2.
 pub mod checkout_locks;
+pub mod cleanup;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod completion;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
