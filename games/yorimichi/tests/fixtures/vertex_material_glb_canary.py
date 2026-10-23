@@ -40,7 +40,7 @@ def main():
     exec(compile(tree, str(fixture), 'exec'), old)
     # Only the independently maintained pure numeric GLB parser is executed here.
     # Git authority is checked by the outer host, never inside a guarded child.
-    functions = {'canonical', 'require', '_digest', 'glb_counter'}
+    functions = {'canonical', 'finite', 'require', '_digest', 'glb_counter'}
     parsed = ast.parse(args.counter.read_text())
     parsed.body = [node for node in parsed.body if (isinstance(node, ast.FunctionDef) and node.name in functions)
                    or (isinstance(node, ast.ClassDef) and node.name == 'EvidenceError')]
