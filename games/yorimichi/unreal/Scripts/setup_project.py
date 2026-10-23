@@ -8,6 +8,7 @@
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / 'world')); import yori  # noqa: E402  (build/yorimichi = yori.OUT)
 import os, glob, sys, unreal
+from pathlib import Path
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -199,10 +200,8 @@ def main():
         MI[name] = EAL.load_asset('/Game/Japan/Materials/MI_' + name)
         if MI[name] is None:
             raise RuntimeError('Build unreal.island before importing world assets: ' + name)
-    for path in sorted(glob.glob(os.path.join(OUT, "assets", "*.fbx"))):
-        name = os.path.splitext(os.path.basename(path))[0]
-        if name in FOLIAGE or name == 'Sea':
-            continue  # stale pre-split exports may still exist; their independent owner imports them
+    from world_props import read as read_props
+    for name,path in read_props(Path(OUT)).items():
         import_fbx(path, "/Game/Japan/Assets", name)
         assign(f"/Game/Japan/Assets/{name}", MI)
     # props need collision too (trees, poles, rails): complex-as-simple is fine for a demo; the houses have their own import

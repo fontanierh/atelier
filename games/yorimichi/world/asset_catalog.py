@@ -7,6 +7,9 @@ from pathlib import Path
 
 SPEC_ROOT = Path(__file__).resolve().parents[1] / 'assets/foliage'
 
+WORLD_PROPS = ('Leaf','Litter','Rock_A','Rock_B','Rock_C','Pole','Pole_Lamp','Guardrail','Lantern','Torii',
+               'SkyDome','BirdBody','BirdWingL','BirdWingR')
+
 FOLIAGE = (
     'Tree_Broad_A',
     'Tree_Broad_B',
