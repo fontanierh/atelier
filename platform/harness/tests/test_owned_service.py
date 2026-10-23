@@ -140,7 +140,7 @@ def test_go_only_after_both_trackers_and_actual_child_guard_ready(tmp_path, monk
                            register_service=lambda k: events.append(('launcher', k)),
                            check=lambda: events.append(('check', key)), same=lambda k: True,
                            services=SimpleNamespace(validate=lambda k: events.append(('pre_go', k))))
-    def register(k, token):
+    def register(k, token, **kwargs):
         events.append(('aggregate', k))
         if failure == 'monitor':
             raise RuntimeError('lost aggregate registration')
@@ -261,7 +261,7 @@ def test_python_gate_never_execs_after_controller_dies_between_bindings(tmp_path
     import sys
     marker = tmp_path / 'executed'
     captured = []
-    def fail_between_bindings(self, key, token):
+    def fail_between_bindings(self, key, token, **kwargs):
         captured.append(key)
         raise RuntimeError('controller failed after launcher binding before aggregate ack')
     monkeypatch.setattr(guard.TreeMonitor, 'register_service', fail_between_bindings)
@@ -301,7 +301,7 @@ def admitted(purpose,**options):
     options['on_slot']('big','')
     yield
 guarded.render_lock=admitted
-def die(self,key,token):
+def die(self,key,token,**kwargs):
     Path({str(identities)!r}).write_text(json.dumps(dict(root=[self.pid,self.started],service=list(key),monitor=[self.process.pid,process_tree.started(self.process.pid)])))
     os._exit(23)
 guard.TreeMonitor.register_service=die
@@ -455,7 +455,7 @@ def test_alive_private_monitor_needs_ongoing_fresh_bound_telemetry(tmp_path, mon
         elif case=='malformed': path.write_text('{')
         else:
             value.update(changes[case]);path.write_text(json.dumps(value))
-        with pytest.raises(RuntimeError, match='lost its live receipt'):
+        with pytest.raises(RuntimeError, match='lost its live receipt|stopped its child'):
             tree.check()
 
 
@@ -475,3 +475,205 @@ def test_live_but_stale_private_guard_fails_and_drains_after_go(tmp_path, admiss
     with pytest.raises(RuntimeError, match='lost its live receipt'):
         guarded.run([sys.executable,'-c',driver],tmp_path/'guard',timeout=10.,owned_services=True)
     assert_gone(*json.loads(marker.read_text()))
+
+
+@pytest.mark.parametrize('phase', ['header','body'])
+def test_slow_progress_cannot_renew_complete_frame_deadline(phase):
+    import threading
+    import time
+    left,right=owned_service.channel()
+    right.settimeout(.04)
+    raw=b'{"body":"'+b'a'*60+b'"}'
+    wire=len(raw).to_bytes(4,'big')+raw
+    def dribble():
+        try:
+            if phase=='body': left.sendall(wire[:4]);data=wire[4:]
+            else: data=wire
+            for byte in data:
+                left.sendall(bytes([byte]));time.sleep(.015)
+        except OSError: pass
+    thread=threading.Thread(target=dribble,daemon=True)
+    thread.start();began=time.monotonic()
+    try:
+        with pytest.raises(TimeoutError): owned_service.receive(right)
+        assert time.monotonic()-began < .5
+        assert right.gettimeout()==.04
+    finally:
+        left.close();right.close();thread.join(timeout=.3)
+
+
+@pytest.mark.parametrize('phase',['gate_ready','release','aggregate_ack','pre_go'])
+def test_one_registration_deadline_covers_all_phases_without_go(tmp_path,monkeypatch,phase):
+    import time
+    controller=owned_service.Controller();gate,peer=owned_service.channel()
+    request=dict(identity=[2,200],token='a'*32,invocation=controller.invocation)
+    tree=SimpleNamespace(folder=tmp_path,root=(1,100),guarded={},service_reports={},
+                         register_service=lambda key:None,check=lambda:None,
+                         services=SimpleNamespace(validate=lambda key:None))
+    monitor=SimpleNamespace(poll=lambda:None)
+    @contextmanager
+    def attach(*args,**kwargs): yield monitor
+    def ready(*args,**kwargs):
+        time.sleep(.03)  # Earlier phases consume the same overall budget.
+    def register(key,token,*,deadline):
+        if phase=='aggregate_ack':
+            while True:
+                time.sleep(.005);owned_service.remaining(deadline)
+    def pre_go(key):
+        if phase=='pre_go': time.sleep(.08)
+    tree.services.validate=pre_go
+    monkeypatch.setattr(guard,'attach',attach)
+    monkeypatch.setattr(guard,'wait_ready',ready)
+    monkeypatch.setattr(owned_service,'REGISTRATION_TIMEOUT',.07)
+    owned_service.send(controller.driver,request,gate.fileno())
+    if phase!='gate_ready':
+        owned_service.send(peer,dict(gated=request['identity'],token=request['token']))
+    if phase!='release': owned_service.send(controller.driver,dict(**request,released=True))
+    began=time.monotonic()
+    try:
+        with ExitStack() as stack:
+            with pytest.raises(TimeoutError):
+                controller.poll(tree,SimpleNamespace(register_service=register),stack,30.,10.)
+        assert time.monotonic()-began < 1.  # Allow timer coalescing; timeout and no-GO remain mandatory.
+        gate.close()  # The helper's failure path also releases its retained endpoint.
+        with pytest.raises(owned_service.ChannelClosed): owned_service.receive(peer)
+    finally:
+        gate.close();peer.close();controller.close()
+
+
+def test_rights_on_later_body_fragment_are_not_silently_ignored():
+    import array
+    left,right=owned_service.channel();gate,peer=owned_service.channel()
+    try:
+        left.sendall(b'\0\0\0\2')
+        left.sendmsg([b'{}'],[(socket.SOL_SOCKET,socket.SCM_RIGHTS,array.array('i',[gate.fileno()]))])
+        with pytest.raises(RuntimeError,match='message/descriptor'):
+            owned_service.receive(right)
+    finally:
+        left.close();right.close();gate.close();peer.close()
+
+
+def test_expired_aggregate_ack_budget_never_execs_and_retains_cleanup(tmp_path,admissions,monkeypatch):
+    import json
+    import sys
+    import time
+    marker=tmp_path/'executed';captured=[]
+    original=guard.TreeMonitor.register_service
+    def late(self,key,token,*,deadline):
+        captured.append(key)
+        time.sleep(max(0.,deadline-time.monotonic())+.01)
+        return original(self,key,token,deadline=deadline)
+    monkeypatch.setattr(guard.TreeMonitor,'register_service',late)
+    monkeypatch.setattr(owned_service,'REGISTRATION_TIMEOUT',.5)
+    service='open('+repr(str(marker))+',"w").write("ran")'
+    driver=('import sys;from atelier.harness.safety.owned_service import spawn;'
+            f'spawn([sys.executable,"-c",{service!r}])')
+    with pytest.raises(TimeoutError):
+        guarded.run([sys.executable,'-c',driver],tmp_path/'guard',timeout=10.,owned_services=True)
+    assert len(captured)==1 and not marker.exists()
+    assert_gone(*captured[0])
+    receipt=json.loads((tmp_path/'guard/memory-health-tree.json').read_text())
+    assert receipt['cleanup_complete'] is True and receipt['processes']==[]
+
+
+def test_received_rights_are_cloexec_before_waiting_for_remaining_body():
+    import array
+    gate,peer=owned_service.channel();fd=os.dup(gate.fileno());os.set_inheritable(fd,True)
+    class Fragments:
+        timeout=.25
+        def gettimeout(self): return self.timeout
+        def settimeout(self,value): self.timeout=value
+        def recvmsg(self,count,*args):
+            if count==4:
+                return b'\0\0\0\2',[(socket.SOL_SOCKET,socket.SCM_RIGHTS,array.array('i',[fd]).tobytes())],0,None
+            assert not os.get_inheritable(fd)
+            return b'{}',[],0,None
+    try:
+        value,received=owned_service.receive(Fragments(),descriptor=True)
+        assert value=={} and received==fd and not os.get_inheritable(fd)
+    finally:
+        os.close(fd);gate.close();peer.close()
+
+
+def test_truncated_ancillary_frame_closes_every_received_right():
+    import array
+    gate,peer=owned_service.channel();fd=os.dup(gate.fileno())
+    class Truncated:
+        timeout=.25
+        def gettimeout(self): return self.timeout
+        def settimeout(self,value): self.timeout=value
+        def recvmsg(self,*args):
+            return b'\0\0\0\2',[(socket.SOL_SOCKET,socket.SCM_RIGHTS,array.array('i',[fd]).tobytes())],socket.MSG_CTRUNC,None
+    try:
+        with pytest.raises(RuntimeError,match='truncated private service message'):
+            owned_service.receive(Truncated(),descriptor=True)
+        with pytest.raises(OSError): os.fstat(fd)
+    finally:
+        gate.close();peer.close()
+
+
+@pytest.mark.parametrize('state',['memory_limit','test_duration'])
+def test_gone_private_child_cannot_erase_guard_stop_before_completion(tmp_path,monkeypatch,state):
+    import json
+    import time
+    api=tables();monkeypatch.setattr(guarded,'process_tree',api)
+    with ExitStack() as stack:
+        tree=guarded.Descendants(1,100,tmp_path,(),None,10.,stack)
+        tree.register_service((2,200))
+        path=tmp_path/'service.json'
+        tree.service_reports[(2,200)]=path
+        tree.guarded[(2,200)]=('owned-service',SimpleNamespace(poll=lambda:0,wait=lambda **kw:0))
+        path.write_text(json.dumps(dict(pid=2,process_start=200,time=time.time(),limit_bytes=10*1024**3,state=state)))
+        del api.rows[2]
+        with pytest.raises(RuntimeError,match='stopped its child'): tree.check()
+        with pytest.raises(RuntimeError,match='stopped its child'): tree.finish_services()
+
+
+def test_ignored_real_private_duration_kill_cannot_publish_clean_completion(tmp_path,admissions,monkeypatch):
+    import json
+    import sys
+    original=guard.attach
+    @contextmanager
+    def short_private(pid,report,**options):
+        if 'owned-service' in str(report): options['duration']=1.1
+        with original(pid,report,**options) as monitor: yield monitor
+    monkeypatch.setattr(guard,'attach',short_private)
+    marker=tmp_path/'executed'
+    service=f'open({str(marker)!r},"w").write("ran");import time;time.sleep(30)'
+    driver=('import sys;from atelier.harness.safety.owned_service import spawn;'
+            f'child=spawn([sys.executable,"-c",{service!r}]);'
+            'child.wait();raise SystemExit(0)')
+    published=[]
+    def callback(pid):
+        if guarded.process_tree.started(pid) is None:
+            published.append(pid)
+    folder=tmp_path/'guard'
+    with pytest.raises((RuntimeError,SystemExit)):
+        guarded.run([sys.executable,'-c',driver],folder,timeout=10.,owned_services=True,
+                    on_poll=callback)
+    records=[json.loads(path.read_text()) for path in folder.glob('memory-health-owned-service-*.json')]
+    assert marker.exists() and len(records)==1 and records[0]['state']=='test_duration'
+    assert published==[]
+    assert_gone(records[0]['pid'],records[0]['process_start'])
+
+
+@pytest.mark.parametrize('case',['missing','identity','failed_monitor','unfinished_monitor','historical_clean'])
+def test_private_final_settlement_requires_identity_and_natural_monitor_exit(tmp_path,monkeypatch,case):
+    import json
+    import subprocess
+    import time
+    api=tables();monkeypatch.setattr(guarded,'process_tree',api)
+    with ExitStack() as stack:
+        tree=guarded.Descendants(1,100,tmp_path,(),None,10.,stack)
+        tree.register_service((2,200));del api.rows[2]
+        path=tmp_path/'service.json';tree.service_reports[(2,200)]=path
+        def wait(**kwargs):
+            if case=='unfinished_monitor': raise subprocess.TimeoutExpired('private-monitor',kwargs['timeout'])
+            return 1 if case=='failed_monitor' else 0
+        tree.guarded[(2,200)]=('owned-service',SimpleNamespace(poll=lambda:0,wait=wait))
+        value=dict(pid=999 if case=='identity' else 2,process_start=200,time=time.time()-3600,
+                   limit_bytes=10*1024**3,state='running')
+        if case!='missing': path.write_text(json.dumps(value))
+        if case=='historical_clean': tree.finish_services()
+        else:
+            with pytest.raises(RuntimeError): tree.finish_services()

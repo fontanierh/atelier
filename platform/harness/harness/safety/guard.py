@@ -102,19 +102,25 @@ def reap(child, grace=10.):
         _reap_helpers(child.pid)
 
 
+def process_guard_record(report):
+    """Read bounded guard evidence; malformed/missing receipts never certify a private service."""
+    try:
+        with Path(report).open('rb') as handle:
+            raw = handle.read(1024 * 1024 + 1)
+        value = json.loads(raw) if len(raw) <= 1024 * 1024 else None
+    except (OSError, ValueError):
+        return None
+    return value if isinstance(value, dict) else None
+
+
 def process_guard_receipt(pid, started, report, limit_bytes):
     """@cc [owner:fontanierh,label:safety] process-guard-live-receipt
     True MUST require a readable bounded object with the exact child PID/start, ceiling and running
     state, and a finite timestamp no more than five seconds old and not in the future. Monitor
     liveness alone MUST NOT substitute for this evidence at startup or ongoing private-service checks.
     """
-    try:
-        with Path(report).open('rb') as handle:
-            raw = handle.read(1024 * 1024 + 1)
-        value = json.loads(raw) if len(raw) <= 1024 * 1024 else None
-    except (OSError, ValueError):
-        return False
-    if not isinstance(value, dict):
+    value = process_guard_record(report)
+    if value is None:
         return False
     observed = value.get('time')
     fresh = (type(observed) in (int, float) and math.isfinite(observed)
@@ -177,14 +183,14 @@ class TreeMonitor:
         self.service_control = service_control
         self.service_invocation = service_invocation
 
-    def register_service(self, key, token):
+    def register_service(self, key, token, *, deadline):
         from .owned_service import send, receive
         self.check()
         if self.service_control is None:
             raise RuntimeError('private service registration is disabled')
         request = dict(identity=list(key), token=token, invocation=self.service_invocation)
-        send(self.service_control, request)
-        if receive(self.service_control) != dict(**request, ready=True):
+        send(self.service_control, request, deadline=deadline)
+        if receive(self.service_control, deadline=deadline) != dict(**request, ready=True):
             raise RuntimeError('aggregate did not acknowledge private service identity')
         self.check()
         record = json.loads(self.report.read_text())

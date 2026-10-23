@@ -116,11 +116,36 @@ class Descendants:
         for key, (label, monitor) in self.guarded.items():
             if monitor.poll() is not None and self.same(key):
                 raise SystemExit(f'memory guard for {label} {key[0]} exited before it')
-            if key in self.service_reports and self.same(key):
-                from .guard import process_guard_receipt
-                if not process_guard_receipt(key[0], key[1], self.service_reports[key],
-                                             int(self.limit_gib * 1024**3)):
+            if key in self.service_reports:
+                from .guard import process_guard_record, process_guard_receipt
+                record = process_guard_record(self.service_reports[key])
+                if (not record or (record.get('pid'), record.get('process_start')) != key
+                        or record.get('limit_bytes') != int(self.limit_gib * 1024**3)):
+                    raise RuntimeError('private service memory guard lost its live receipt or terminal identity')
+                if record.get('state') != 'running':
+                    raise RuntimeError('private service memory guard stopped its child: ' + str(record.get('state')))
+                if monitor.poll() not in (None, 0):
+                    raise RuntimeError('private service memory guard failed')
+                if self.same(key) and not process_guard_receipt(
+                        key[0], key[1], self.service_reports[key], int(self.limit_gib * 1024**3)):
                     raise RuntimeError('private service memory guard lost its live receipt')
+
+    def finish_services(self, timeout=3.):
+        """@cc [owner:fontanierh,label:safety] private-service-terminal-stop-evidence
+        Before success or a final callback, every private actual-child monitor MUST settle naturally
+        and its identity-bound receipt MUST be checked, even after the child disappeared. Memory or
+        duration stops, missing/changed evidence and monitor failure MUST NOT become clean completion.
+        """
+        deadline = time.monotonic() + timeout
+        for key in self.service_reports:
+            monitor = self.guarded[key][1]
+            try:
+                status = monitor.wait(timeout=max(0., deadline - time.monotonic()))
+            except subprocess.TimeoutExpired:
+                raise RuntimeError('private service memory guard did not settle naturally') from None
+            if status != 0:
+                raise RuntimeError('private service memory guard failed before completion')
+        self.check()
 
     def shared_now(self, check_coverage=False):
         """Recorded processes at or under a shared service, judged on current names: a recorded `sh` may have exec'd
@@ -784,6 +809,8 @@ def _run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_g
             if status != 0:
                 raise RuntimeError('process memory guard failed after capacity completion')
         check_root_guard(child, monitor, folder/'memory-health.json', final=True)
+        if service_controller is not None:
+            tree.finish_services()
         if capacity_finishing:
             response = admission.check(descendants=retained())
             if response.get('terminal') is not True or response.get('admission') is not False:
