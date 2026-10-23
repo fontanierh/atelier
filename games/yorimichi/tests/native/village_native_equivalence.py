@@ -112,6 +112,9 @@ def main():
     remain unchanged. Foreign references MUST refuse the combined plan before any deletion.
     Fixture components MUST NOT claim production runtime policy or ordinary cache reuse.
     """
+    inherited=('ATELIER_BUILD_TASK','ATELIER_BUILD_GAME','ATELIER_BUILD_SCRIPT','ATELIER_MESH_REUSE_NONCE')
+    if any(os.environ.get(name) for name in inherited):
+        raise ValueError('Standalone native fixture must not inherit a build/reuse invocation')
     spec_file=Path(os.environ['ATELIER_VILLAGE_NATIVE_SPEC'])
     if sha(spec_file)!=os.environ['ATELIER_VILLAGE_NATIVE_SPEC_SHA256']:raise ValueError('Unbound native spec')
     spec=json.loads(spec_file.read_text())

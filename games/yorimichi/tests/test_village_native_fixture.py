@@ -55,6 +55,7 @@ def test_native_fixture_has_no_subprocess_or_git_authority_and_calls_real_owner(
     assert 'owner.receive(out)' in source and 'owner.retire(received,runtime_members=members)' in source
     assert 'capture.capture(' in source and "policy_scope='fixture'" in source
     assert 'retained-original' in source and 'physical_retirement=retired' in source
+    assert 'Standalone native fixture must not inherit a build/reuse invocation' in source
 
 
 def test_positive_probe_selection_handles_reflected_winding_without_changing_collision_policy():
