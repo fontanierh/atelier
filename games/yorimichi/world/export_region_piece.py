@@ -1,5 +1,6 @@
 """Export exactly one complete, bounded planned mesh in an ordinary cached Blender task."""
 import argparse
+import hashlib
 from pathlib import Path
 import sys
 import tempfile
@@ -67,7 +68,8 @@ def main(argv=None):
     export_tasks.publish_receipt(root, key=key, primary=key + args.format,
                                 triangles=piece['triangles'],
                                 bounds=[positions.min(0).tolist(), positions.max(0).tolist()],
-                                metadata=dict(slots=meta['slots'], polygons=len(piece['faces']), collision_hulls=len(meta['collisions']),
+                                metadata=dict(geometry_sha256=hashlib.sha256(original).hexdigest(),
+                                              slots=meta['slots'], polygons=len(piece['faces']), collision_hulls=len(meta['collisions']),
                                               uv_channels=[n for n, _ in piece['uvs']]))
     print('ATOMIC REGION EXPORT COMPLETE ' + key, flush=True)
 
