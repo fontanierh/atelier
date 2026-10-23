@@ -16,6 +16,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'world'))
 import yori  # noqa: E402,F401
 from atelier.atomic_files import atomic_json  # noqa: E402
 from atelier.export_manifest import real_directory  # noqa: E402
+from atelier.mesh_geometry import SIDECARS  # noqa: E402
 
 
 def artifact(path):
@@ -27,6 +28,17 @@ def artifact(path):
 def _value(text):
     if not isinstance(text,str) or not text:raise ValueError('Native readback refused missing/unsupported data')
     return json.loads(text,parse_constant=lambda _: (_ for _ in ()).throw(ValueError('Nonfinite native evidence')))
+
+
+def valid_mesh_path(path):
+    match=re.fullmatch(r'/Game/(?:[A-Za-z0-9_]+/)*(?P<name>[A-Za-z][A-Za-z0-9_-]*)\.(?P=name)',path)
+    if not match:return False
+    name=match.group('name')
+    if '_cell_' in name:
+        prefix,cell=name.split('_cell_',1)
+        return bool(re.fullmatch(r'[A-Za-z][A-Za-z0-9_]*',prefix) and re.fullmatch(
+            r'(?:0|-?[1-9][0-9]*)_(?:0|-?[1-9][0-9]*)(?:_Piece[0-3]{1,16})?',cell))
+    return bool(re.fullmatch(r'[A-Za-z][A-Za-z0-9_]*',name))
 
 
 def capture(components,logical,output,*,controls,seams=(),policy_scope='fixture',inputs=(),page_size=16384,api=None,unreal_module=None):
@@ -59,12 +71,13 @@ def capture(components,logical,output,*,controls,seams=(),policy_scope='fixture'
         mesh=component.get_editor_property('static_mesh')
         if mesh is None:raise ValueError('Selected native component has no mesh')
         mesh_path=mesh.get_path_name()
-        if not re.fullmatch(r'/Game/(?:[A-Za-z0-9_]+/)*[A-Za-z0-9_]+\.[A-Za-z0-9_]+',mesh_path):
+        if not valid_mesh_path(mesh_path):
             raise ValueError('Native capture only accepts exact saved project mesh paths')
         package=mesh_path.split('.')[0]
         primary=content/(package[len('/Game/'):]+'.uasset')
         saved_files.append(artifact(primary))
-        for suffix in ('.uexp','.ubulk','.uptnl'):
+        for suffix in SIDECARS:
+            if suffix=='.uasset':continue
             sidecar=primary.with_suffix(suffix)
             if sidecar.exists() or sidecar.is_symlink():saved_files.append(artifact(sidecar))
         by_mesh[mesh_path]=mesh

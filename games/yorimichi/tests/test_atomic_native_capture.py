@@ -110,6 +110,28 @@ def test_emitter_pages_every_lod_from_actual_api_without_fabricating_generated_s
     assert len(result['raw_pages'])==4 and all(Path(r['path']).is_file() for r in result['saved_packages'])
 
 
+def test_signed_cell_assets_and_every_supported_present_sidecar_are_observed(tmp_path):
+    name='FarHills_cell_-1_2_Piece03';mesh=Mesh('/Game/After/'+name+'.'+name,POINTS)
+    component=Component(mesh);module=unreal(tmp_path);save_fake_mesh(module,mesh)
+    primary=Path(module.Paths.project_content_dir())/('After/'+name+'.uasset')
+    for suffix in ('.m.ubulk','.upayload'):primary.with_suffix(suffix).write_bytes(suffix.encode())
+    controls=[control(kind,component,x=99 if kind.endswith('_negative') else .25) for kind in
+        ('ray_positive','ray_negative','capsule_positive','capsule_negative')]
+    result=capture.capture([component],'Logical',tmp_path/'capture',controls=controls,
+        api=API,unreal_module=module)
+    assert {Path(row['path']).name for row in result['saved_packages']}=={
+        name+'.uasset',name+'.m.ubulk',name+'.upayload'}
+    assert eq.native_raw_set(result,'Logical')['basis_complete']
+
+
+@pytest.mark.parametrize('path',['/Game/After/Foo.Bar','/Game/After/Foo-Bar.Foo-Bar',
+    '/Game/After/FarHills_cell_-01_2.FarHills_cell_-01_2','/Game/After/FarHills_cell_01_2.FarHills_cell_01_2'])
+def test_noncanonical_native_package_aliases_refuse(tmp_path,path):
+    component=Component(Mesh(path,POINTS))
+    with pytest.raises(ValueError,match='exact saved project mesh paths'):
+        collect(tmp_path,'capture',[component])
+
+
 def test_original_whole_and_current_children_have_equal_actual_gpu_cook_policy_and_owned_probes(tmp_path):
     original=Component(Mesh('/Game/Before/Whole.Whole',POINTS),'Original')
     parts=[Component(Mesh('/Game/After/A.A',[POINTS[0]]),'A'),Component(Mesh('/Game/After/B.B',[POINTS[1]]),'B')]
