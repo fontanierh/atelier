@@ -56,7 +56,8 @@ def main(argv=None):
             groups = [(f'TH_Dressing_cell_{x}_{y}' + ('_Piece'+suffix if suffix else ''), [int(i) for i in members])
                 for x,y,suffix,members in cell_face_groups(original['positions'],faces,64.,triangle_limit=32768)]
         value = plan(obj, root/mesh.name, collisions=capture_colliders(mesh.colliders),
-                     options=OPTIONS, face_groups=groups)
+                     options=OPTIONS, face_groups=groups,
+                     partition=None if groups is not None else ('spatial' if mesh.name == 'TH_Structure' else 'whole'))
         info = dict(triangles=value['source_triangles'], vertices=len(mesh.vertices), slots=sorted(set(mesh.kinds)),
                     collision_boxes=len(mesh.colliders), min=[round(float(v),3) for v in value['pieces'][0]['min']],
                     max=[round(float(v),3) for v in value['pieces'][0]['max']],

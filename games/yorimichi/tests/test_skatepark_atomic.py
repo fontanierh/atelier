@@ -127,6 +127,7 @@ def test_actual_skate_assembly_requires_all_roundtrips_before_retiring_owned_fil
         digest=export_manifest.sha(folder/(name+'.npz'))
         row=dict(name=name,payload=name+'.npz',sha256=digest,triangles=1,polygons=1,collision_hulls=0,min=[0,0,0],max=[1,1,0],source_faces=[0])
         atomic_json(folder/'plan.json',dict(schema=1,parent=name,complete=True,triangle_limit=32768,source_triangles=1,
+            partition='explicit',collision_owner=None,
             source_polygons=1,source_collision_hulls=0,slots=['Palette'],matrix=matrix,pieces=[row]))
         atomic_json(data/'records'/(name+'.json'),dict(name=name,triangles=1,vertices=3,min=[0,0,0],max=[1,1,0],pieces=[name],material_slots=['Palette']))
         export=out/('exports/world.'+region+'.export')/name;export.mkdir(parents=True);(export/(name+'.fbx')).write_bytes(b'opaque verified primary')

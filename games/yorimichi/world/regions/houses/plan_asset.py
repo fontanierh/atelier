@@ -53,7 +53,7 @@ def main(argv=None):
         raise ValueError('House constructor returned a different logical asset')
     materials = [bpy.data.materials.new(label) for label in ('Village', 'Ground')]
     obj = source.object(materials, kernel.house_shade if args.mode == 'model' else None)
-    plan(obj, args.output, collisions=capture_colliders(source.colliders), options=dict(
+    plan(obj, args.output, collisions=capture_colliders(source.colliders), partition='whole', options=dict(
         apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL', axis_forward='-Y', axis_up='Z',
         mesh_smooth_type='FACE', use_custom_props=False))
     print('LOGICAL HOUSE GEOMETRY COMPLETE ' + args.asset, flush=True)

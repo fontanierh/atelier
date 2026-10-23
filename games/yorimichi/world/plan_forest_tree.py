@@ -43,7 +43,7 @@ def main(argv=None):
         else:
             obj, record['crown'] = source.crown(name, parameters, frame)
     collisions = source.trunk(obj) if args.level == 0 else []
-    value = plan(obj, args.output, collisions=collisions, options=OPTIONS)
+    value = plan(obj, args.output, collisions=collisions, partition='whole', options=OPTIONS)
     if args.level == 0:
         record['trunk_hulls'] = collisions
     if len(value['pieces']) != 1 or value['pieces'][0]['name'] != obj.name:

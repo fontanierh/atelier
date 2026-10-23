@@ -4,6 +4,7 @@ No FBX/GLB is written here. Normal recipe discovery creates one export task for
 one payload; unchanged payload bytes remain current after another part changes.
 """
 import json
+import re
 from pathlib import Path
 
 import numpy as np
@@ -61,11 +62,16 @@ def capture_colliders(boxes):
     return collisions
 
 
-def plan(obj, root, *, collisions=(), options=None, cell_metres=CELL_METRES, face_groups=None, material_specs=None):
+def plan(obj, root, *, collisions=(), options=None, cell_metres=CELL_METRES, face_groups=None, material_specs=None,
+         partition=None, collision_owner=None):
     """@cc [owner:fontanierh,label:correctness;performance] planned-independent-mesh-pieces
     Capture complete original corner channels before partitioning. Every source face MUST have
     exactly one piece owner and every piece MUST fit the atomic export budget. Whole authored
-    UCX MUST belong to exactly one piece. The assembly MUST retain the parent's collision
+    UCX MUST belong to exactly one explicitly authored piece. Whole units MUST
+    remain whole and refuse oversize geometry; declared spatial owners MUST stay
+    spatial even below the total budget. Spatial UCX owners MUST declare an existing
+    member key; missing owners MUST refuse rather than transfer hulls or invent geometry.
+    The assembly MUST retain the parent's collision
     policy independently of each child's owned hull count, so render-only children cannot
     introduce additional simple blocking surfaces when the parent used authored UCX.
     Per-piece payloads MUST exclude unrelated piece identities and whole-parent receipts so
@@ -75,6 +81,15 @@ def plan(obj, root, *, collisions=(), options=None, cell_metres=CELL_METRES, fac
     """
     if obj.type != 'MESH' or obj.modifiers or getattr(obj.data, 'shape_keys', None) is not None:
         raise ValueError('Logical planning requires a completed static mesh without modifiers or shape keys')
+    if face_groups is None:
+        if partition not in ('whole', 'spatial'):
+            raise ValueError('Declare whole or spatial logical authoring policy')
+    elif partition not in (None, 'explicit'):
+        raise ValueError('Explicit face groups cannot use an automatic partition policy')
+    else:
+        partition = 'explicit'
+    if collision_owner is not None: name(collision_owner)
+    collisions = tuple(collisions)
     parent = name(obj.name)
     root = real_directory(root)
     source = capture(obj.data)
@@ -86,15 +101,28 @@ def plan(obj, root, *, collisions=(), options=None, cell_metres=CELL_METRES, fac
     triangles = int(sum(source['counts'] - 2))
     if not faces or not source['slots'] or any(slot is None for slot in source['slots']):
         raise ValueError('Logical mesh requires geometry and a complete material table')
-    if face_groups is None:
-        spatial = ([(None, None, '', tuple(range(len(faces))))] if triangles <= TRIANGLE_LIMIT else
-                   cell_face_groups(world, faces, cell_metres, triangle_limit=TRIANGLE_LIMIT))
-        groups = [(parent if x is None else f'{parent}_cell_{x}_{y}' + ('_Piece' + suffix if suffix else ''), members)
+    if partition == 'whole':
+        groups = [(parent, tuple(range(len(faces))))]
+    elif partition == 'spatial':
+        spatial = cell_face_groups(world, faces, cell_metres, triangle_limit=TRIANGLE_LIMIT)
+        groups = [(f'{parent}_cell_{x}_{y}' + ('_Piece' + suffix if suffix else ''), members)
                   for x, y, suffix, members in spatial]
     else:
         groups = [(key, tuple(members)) for key, members in face_groups]
-    keys = [name(key) for key, _ in groups]
     validate_face_groups(groups, source['counts'])
+    if collisions:
+        if collision_owner is None:
+            if len(groups) != 1 or partition == 'spatial':
+                raise ValueError('Spatial or multi-piece UCX requires an explicit collision-owner key')
+            collision_owner = groups[0][0]
+        if collision_owner not in {key for key, _ in groups}:
+            raise ValueError('Declared collision-owner render member is absent')
+        # Existing readers put the complete authored UCX owner first. This order is
+        # determined by the declaration, never by sorted/new cell membership.
+        groups.sort(key=lambda row: row[0] != collision_owner)
+    else:
+        collision_owner = None
+    keys = [name(key) for key, _ in groups]
     region_plan_files.begin(root, parent, [key + '.npz' for key in keys])
     owned = np.zeros(len(faces), dtype=np.int32)
     rows = []
@@ -105,7 +133,7 @@ def plan(obj, root, *, collisions=(), options=None, cell_metres=CELL_METRES, fac
         payload = mesh_ir.encode(piece, key=key, slots=slots,
                                  matrix=matrix.tolist(), options=options or {},
                                  material_specs=None if material_specs is None else [material_specs[i] for i in material_indices],
-                                 collisions=collisions if not rows else ())
+                                 collisions=collisions if key == collision_owner else ())
         relative = key + '.npz'
         mesh_ir.write(root / relative, payload)
         used = world[piece['used']]
@@ -113,10 +141,11 @@ def plan(obj, root, *, collisions=(), options=None, cell_metres=CELL_METRES, fac
                          triangles=piece['triangles'], polygons=len(members),
                          source_faces=list(members), slots=slots, source_material_indices=material_indices,
                          min=used.min(0).tolist(), max=used.max(0).tolist(),
-                         collision_hulls=len(collisions) if not rows else 0))
+                         collision_hulls=len(collisions) if key == collision_owner else 0))
     if not np.all(owned == 1) or sum(r['triangles'] for r in rows) != triangles:
         raise ValueError('Logical geometry is not completely and exclusively partitioned')
     value = dict(schema=1, parent=parent, complete=True, triangle_limit=TRIANGLE_LIMIT,
+                 partition=partition, collision_owner=collision_owner,
                  source_triangles=triangles, source_polygons=len(faces), source_collision_hulls=len(collisions),
                  slots=[m.name for m in source['slots']], matrix=matrix.tolist(), pieces=rows)
     # Validate the complete current set before retiring any superseded inputs.
@@ -165,6 +194,18 @@ def validate(root, value=None):
     mesh_set = value.get('kind') == 'mesh_set'
     if value.get('kind') not in (None, 'mesh_set') or (mesh_set and hulls != 0):
         raise ValueError('Unsupported logical geometry ownership kind')
+    if not mesh_set:
+        partition = value.get('partition')
+        collision_owner = value.get('collision_owner')
+        if (partition not in ('whole', 'spatial', 'explicit') or 'collision_owner' not in value
+                or (hulls > 0 and (not isinstance(collision_owner, str) or value['pieces'][0]['name'] != collision_owner))
+                or (hulls == 0 and collision_owner is not None)):
+            raise ValueError('Missing or inconsistent authored partition/collision ownership')
+        if partition == 'whole' and [row['name'] for row in value['pieces']] != [value['parent']]:
+            raise ValueError('Whole logical owner cannot silently partition')
+        if partition == 'spatial' and any(not re.fullmatch(re.escape(value['parent']) +
+                r'_cell_(?:0|-?[1-9][0-9]*)_(?:0|-?[1-9][0-9]*)(?:_Piece[0-3]{1,16})?', row['name']) for row in value['pieces']):
+            raise ValueError('Spatial logical owner cannot collapse to a whole parent')
     seen, total, total_polygons = set(), 0, 0
     all_slots = set()
     for index, row in enumerate(value['pieces']):
@@ -188,7 +229,7 @@ def validate(root, value=None):
         if (meta['asset'] != key or piece['triangles'] != row['triangles']
                 or row.get('polygons') != len(piece['faces'])
                 or meta['slots'] != (row.get('slots') if mesh_set else slots) or meta['matrix'] != value['matrix']
-                or len(meta['collisions']) != (hulls if index == 0 else 0)
+                or len(meta['collisions']) != (hulls if (mesh_set and index == 0) or (not mesh_set and key == collision_owner) else 0)
                 or row.get('collision_hulls') != len(meta['collisions'])):
             raise ValueError('Planned geometry identity or logical ownership differs')
         matrix = np.asarray(meta['matrix'])

@@ -21,7 +21,7 @@ def capture(obj, entry, root, metadata, *, colours=False, materials=None):
     options = dict(OPTIONS, use_tspace=bool(obj.data.uv_layers))
     if colours:
         options['colors_type'] = 'SRGB'
-    value = plan(obj, root, options=options)
+    value = plan(obj, root, partition='whole', options=options)
     atomic_json(metadata, dict(schema=1, entry=entry, materials=materials or {}))
     return value
 

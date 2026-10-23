@@ -33,6 +33,7 @@ def prepared(out, key):
     row = dict(name=key, payload=path.name, sha256=sha(path), triangles=1, polygons=1,
                min=[0,0,0], max=[1,1,0], collision_hulls=1)
     value = dict(schema=1, parent=key, complete=True, triangle_limit=32768, source_triangles=1,
+                 partition='explicit', collision_owner=key,
                  source_polygons=1, source_collision_hulls=1, slots=['Palette'], matrix=matrix.tolist(), pieces=[row])
     (root / 'plan.json').write_text(json.dumps(value))
     export = out / 'individual' / key; export.mkdir(parents=True)

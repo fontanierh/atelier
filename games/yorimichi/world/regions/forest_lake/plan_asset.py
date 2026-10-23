@@ -60,7 +60,7 @@ def main(argv=None):
             raise ValueError('Foreign selected lake query data')
         replay(mesh,source['events'])
     obj=mesh.object(material)
-    value=plan(obj,args.output,collisions=capture_colliders(mesh.colliders),options=OPTIONS)
+    value=plan(obj,args.output,collisions=capture_colliders(mesh.colliders),partition='whole', options=OPTIONS)
     atomic_json(args.record,dict(name=args.asset,triangles=value['source_triangles'],
         collision_boxes=len(mesh.colliders),pieces=[row['name'] for row in value['pieces']]))
     print('LAKE LOGICAL COMPLETE',args.asset,value['source_triangles'],len(value['pieces']),flush=True)

@@ -136,6 +136,7 @@ def test_actual_surface_assembly_publishes_complete_named_five_uv_membership(tmp
         row=dict(name=name,payload=name+'.npz',sha256=hashlib.sha256(payload).hexdigest(),triangles=1,polygons=1,
                  min=[0,0,0],max=[1,1,0],collision_hulls=0,source_faces=[0])
         atomic_json(folder/'plan.json',dict(schema=1,parent=parent,complete=True,triangle_limit=32768,source_triangles=1,
+            partition='explicit',collision_owner=None,
             source_polygons=1,source_collision_hulls=0,slots=['TH_wood'],matrix=matrix,pieces=[row]))
         export=out/'exports/world.treehouse_surfaces.export'/name;export.mkdir(parents=True)
         (export/(name+'.fbx')).write_bytes(b'one verified opaque primary')

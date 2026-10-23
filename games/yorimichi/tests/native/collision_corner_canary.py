@@ -56,7 +56,7 @@ def main():
         assert not piece['colours'] and not piece['smooth'].any()
     options=dict(apply_unit_scale=True,apply_scale_options='FBX_SCALE_ALL',axis_forward='-Y',axis_up='Z',
                  mesh_smooth_type='FACE',use_custom_props=False)
-    result=plan(obj,root/'planned',collisions=collisions,options=options)
+    result=plan(obj,root/'planned',partition='whole',collisions=collisions,options=options)
     actual=dict(render=Counter(),collision=Counter())
     for row in result['pieces']:
         packet=root/'planned'/row['payload'];meta,_=mesh_ir.decode(packet.read_bytes())

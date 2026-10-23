@@ -12,6 +12,56 @@ import yori  # noqa: E402,F401
 from atelier.export_manifest import name, real_directory  # noqa: E402
 
 
+# Authored source policy: these executed large logical owners keep their existing
+# spatial membership even if later edits reduce the total below the atomic cap.
+SPATIAL_OWNERS = ('HD_ArcadeTree',
+ 'HD_Arrival',
+ 'HD_CivicGardens',
+ 'HD_ClockHall',
+ 'HD_Harbor',
+ 'HD_NorthGate',
+ 'HD_NorthMountains',
+ 'HD_Park',
+ 'HD_PlazaFloor',
+ 'HD_PlazaTreeGold',
+ 'HD_PlazaTreeOrange',
+ 'HD_Shop_00',
+ 'HD_Shop_01',
+ 'HD_Shop_02',
+ 'HD_Shop_04',
+ 'HD_Shop_06',
+ 'HD_Shop_08',
+ 'HD_Shop_09',
+ 'HD_Shop_10',
+ 'HD_Shop_12',
+ 'HD_Shop_14',
+ 'HD_Square',
+ 'HD_Station',
+ 'HD_Streets',
+ 'HD_Temple',
+ 'HD_Terrain',
+ 'HD_Wires')
+# Complete authored UCX remains on these exact retained render members. A missing
+# member refuses before output mutation; new earlier cells never steal ownership.
+COLLISION_OWNERS = {'HD_ArcadeTree': 'HD_ArcadeTree_cell_-1_-1',
+ 'HD_Arrival': 'HD_Arrival_cell_2_0_Piece0',
+ 'HD_ClockHall': 'HD_ClockHall_cell_-1_-1',
+ 'HD_PlazaTreeGold': 'HD_PlazaTreeGold_cell_-1_-1',
+ 'HD_PlazaTreeOrange': 'HD_PlazaTreeOrange_cell_-1_-1',
+ 'HD_Shop_00': 'HD_Shop_00_cell_-1_-1',
+ 'HD_Shop_01': 'HD_Shop_01_cell_-1_-1',
+ 'HD_Shop_02': 'HD_Shop_02_cell_-1_-1',
+ 'HD_Shop_04': 'HD_Shop_04_cell_-1_-1',
+ 'HD_Shop_06': 'HD_Shop_06_cell_-1_-1',
+ 'HD_Shop_08': 'HD_Shop_08_cell_-1_-1',
+ 'HD_Shop_09': 'HD_Shop_09_cell_-1_-1',
+ 'HD_Shop_10': 'HD_Shop_10_cell_-1_-1',
+ 'HD_Shop_12': 'HD_Shop_12_cell_-1_-1',
+ 'HD_Shop_14': 'HD_Shop_14_cell_-1_-1',
+ 'HD_Square': 'HD_Square_cell_5_0',
+ 'HD_Station': 'HD_Station_cell_-1_-1',
+ 'HD_Temple': 'HD_Temple_cell_-1_-1'}
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--asset', required=True)
@@ -74,7 +124,8 @@ def main(argv=None):
     if args.source_only:
         print('RAW CITY SOURCE COMPLETE ' + args.asset, flush=True)
         return
-    plan(obj, args.output, collisions=collisions, options=dict(
+    plan(obj, args.output, partition='spatial' if args.asset in SPATIAL_OWNERS else 'whole',
+         collision_owner=COLLISION_OWNERS.get(args.asset), collisions=collisions, options=dict(
         apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL', axis_forward='-Y', axis_up='Z',
         mesh_smooth_type='FACE', use_custom_props=False))
     print('LOGICAL CITY GEOMETRY COMPLETE ' + args.asset, flush=True)

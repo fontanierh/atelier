@@ -31,7 +31,7 @@ def main(argv=None):
     captured={}
     def publish(obj,hulls):
         collisions=[capture_collision(hull) for hull in hulls]
-        result=plan(obj,args.output,collisions=collisions,options=OPTIONS)
+        result=plan(obj,args.output,collisions=collisions,partition='whole', options=OPTIONS)
         if len(result['pieces'])!=1 or result['pieces'][0]['name']!=name:
             raise ValueError('Prop requires coordinated instancing membership when oversized')
         captured.update(hulls=collisions)

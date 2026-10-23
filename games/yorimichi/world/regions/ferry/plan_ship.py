@@ -58,7 +58,7 @@ def main(argv=None):
     selected = source(args.source, args.asset)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     obj, query = construct(args.asset, selected)
-    value = plan(obj, args.output, options=OPTIONS)
+    value = plan(obj, args.output, partition='whole', options=OPTIONS)
     query['triangles'] = value['source_triangles']
     query['min'] = [round(min(v[i] for v in query['vertices']), 3) for i in range(3)]
     query['max'] = [round(max(v[i] for v in query['vertices']), 3) for i in range(3)]

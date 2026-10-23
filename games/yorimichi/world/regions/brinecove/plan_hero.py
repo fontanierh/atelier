@@ -75,7 +75,7 @@ def main(argv=None):
     root.mkdir(parents=True, exist_ok=True)
     for filename, image in images.items():
         image.file_format = 'PNG'; image.save(filepath=str(root / filename))
-    plan(obj, args.output, options=dict(export_apply=True, export_image_format='NONE'))
+    plan(obj, args.output, partition='spatial' if obj.name in ('SM_BC_Hero_GalleonHull', 'SM_BC_Hero_PirateQueenStatue') else 'whole', options=dict(export_apply=True, export_image_format='NONE'))
     if args.query_output is not None:
         import region_query
         region_query.save(args.query_output, [region_query.capture(obj)], owner=name, stage='final')

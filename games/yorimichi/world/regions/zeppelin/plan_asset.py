@@ -38,7 +38,7 @@ def main(kind=None,key=None):
     mat.node_tree.links.new(vc.outputs['Color'],mat.node_tree.nodes['Principled BSDF'].inputs['Base Color'])
     print('Capture complete Zeppelin geometry '+key,flush=True)
     obj=mesh.object(mat)
-    plan(obj,args.output,collisions=capture_colliders(mesh.colliders),options=dict(
+    plan(obj,args.output,collisions=capture_colliders(mesh.colliders),partition='whole', options=dict(
         apply_unit_scale=True,apply_scale_options='FBX_SCALE_ALL',axis_forward='-Y',axis_up='Z',
         mesh_smooth_type='FACE',bake_anim=False,use_custom_props=False))
     print('LOGICAL ZEPPELIN GEOMETRY COMPLETE '+key,flush=True)

@@ -43,7 +43,7 @@ def main(argv=None):
     obj, slots = context.F.to_object(mesh, materials)
     hulls = context.collision_objects(args.asset, anchor, context.BROW_COL) if args.asset.endswith('_Brow') else []
     collisions = [capture_collision(hull) for hull in hulls]
-    value = plan(obj, args.output, options=OPTIONS, collisions=collisions)
+    value = plan(obj, args.output, partition='whole', options=OPTIONS, collisions=collisions)
     atomic_json(args.queries, dict(schema=1, asset=args.asset, owner=source['owner'], raw=raw,
         metadata=metadata, fixed_hulls=context.COL, moving_hulls=context.BROW_COL,
         report=report, triangles=value['source_triangles'], materials=slots, anchor=anchor, authored_hulls=collisions))
