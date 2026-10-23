@@ -45,6 +45,14 @@ GEOGRAPHY_SOURCES = (
     'assets/belmonte/source.json', 'assets/vehicles/belmonte-train/line.json',
     'world/regions/brinecove/region.py', 'world/regions/brinecove/layout.py', 'world/regions/brinecove/ground.py',
     'world/regions/brinecove/plan.py',
+    # The split moves consumed source expressions into these narrow modules.
+    # They remain signed inputs; a later helper edit must invalidate the art.
+    'world/regions/hidamari/arrival_placement.py', 'world/regions/hidamari/park_grounds_placement.py',
+    'world/regions/hidamari/station_yard_placement.py', 'world/regions/hidamari/temple_precinct_placement.py',
+    'world/regions/belmonte/query_arrays.py', 'world/regions/belmonte/query_surface.py',
+    'world/regions/belmonte/source.py', 'world/map/build_map.py',
+    'world/regions/belmonte/ground_names.py', 'world/regions/belmonte/terrain_bounds.py',
+    'world/regions/brinecove/ground_sampling.py', 'world/regions/brinecove/boundary.py',
 )
 STABLE_NAMES = (
     ('home_stables', 'Home Stables'), ('alder_stables', 'Alder Stables'),

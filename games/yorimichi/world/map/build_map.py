@@ -102,7 +102,8 @@ if BELMONTE:
     north_extension = np.zeros(GX.shape, bool)
     for name in ('SM_BM_NorthCountry', 'SM_BM_NorthApron'):
         progress(f'projecting terrain surface {name}')
-        mesh = BM_SOURCE.Surface(BM_SOURCE.triangles(yori.OUT / f'belmonte/ground/glb/{name}.glb'))
+        from belmonte.query_arrays import read as final_query
+        mesh = BM_SOURCE.Surface(final_query(yori.OUT / 'belmonte-query-data' / f'{name}-final.npz', owner=name, stage='final')['faces'])
         height = mesh.height(GX - BM.ORIGIN[0], GY - BM.ORIGIN[1]) + BM.ORIGIN[2]
         # The country mesh starts at y=3200, below SOUTH_JOIN. Its lower band
         # lies under the northern terrain where they overlap; preserve the
