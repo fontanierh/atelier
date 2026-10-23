@@ -79,3 +79,20 @@ def test_missing_vertices_and_unknown_attribute_modes_refuse():
     reader.child(uv, b'MappingInformationType').props[0] = b'Unrecognized'
     with pytest.raises(ValueError, match='mapping'):
         reader.decode(root)
+
+
+def test_polygon_cycle_comparison_preserves_winding_all_channels_and_duplicates():
+    from collections import Counter
+    root, _ = fixture()
+    original = reader.decode(root)
+    frame, corners = next(iter(original['render']))
+    repeated = dict(render=Counter({(frame, corners): 3}), collision=Counter())
+    rotated = dict(render=Counter({(frame, corners[1:] + corners[:1]): 3}), collision=Counter())
+    assert reader.polygon_cycles(repeated) == reader.polygon_cycles(rotated)
+    reversed_ = dict(render=Counter({(frame, tuple(reversed(corners))): 3}), collision=Counter())
+    assert reader.polygon_cycles(repeated) != reader.polygon_cycles(reversed_)
+    rotated['render'][(frame, corners[1:] + corners[:1])] = 2
+    assert reader.polygon_cycles(repeated) != reader.polygon_cycles(rotated)
+    changed = (corners[0][0], corners[0][1], (*corners[0][2], (b'LayerElementUV', 1, 'Extra', (0., 0.))))
+    different = dict(render=Counter({(frame, (changed, *corners[1:])): 3}), collision=Counter())
+    assert reader.polygon_cycles(repeated) != reader.polygon_cycles(different)
