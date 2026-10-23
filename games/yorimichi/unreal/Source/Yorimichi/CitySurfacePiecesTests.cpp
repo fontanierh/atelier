@@ -11,14 +11,18 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FCitySurfaceMembershipTest,"Yorimichi.CityPiece
     EAutomationTestFlags_ApplicationContextMask|EAutomationTestFlags::EngineFilter)
 bool FCitySurfaceMembershipTest::RunTest(const FString&)
 {
-    auto Root=MakeShared<FJsonObject>();Root->SetNumberField(TEXT("version"),2);
+    auto Root=MakeShared<FJsonObject>();Root->SetNumberField(TEXT("version"),3);
     Root->SetBoolField(TEXT("complete"),true);Root->SetStringField(TEXT("tag"),TEXT("v1_128m"));
     Root->SetNumberField(TEXT("triangle_limit"),32768);
     auto Sources=MakeShared<FJsonObject>();Root->SetObjectField(TEXT("sources"),Sources);
-    for(const TCHAR* Name:{TEXT("HD_Terrain"),TEXT("HD_Streets"),TEXT("HD_Square"),TEXT("HD_CivicGardens"),TEXT("HD_Park"),TEXT("HD_Harbor")})
+    for(const FString& Name:JapanCityPieces::Parents())
     {
         auto Source=MakeShared<FJsonObject>();Sources->SetObjectField(Name,Source);
         Source->SetNumberField(TEXT("source_triangles"),2);Source->SetNumberField(TEXT("source_collision_hulls"),1);
+        auto Bounds=MakeShared<FJsonObject>();
+        Bounds->SetArrayField(TEXT("min"),{MakeShared<FJsonValueNumber>(-2.),MakeShared<FJsonValueNumber>(-4.),MakeShared<FJsonValueNumber>(0.)});
+        Bounds->SetArrayField(TEXT("max"),{MakeShared<FJsonValueNumber>(3.),MakeShared<FJsonValueNumber>(5.),MakeShared<FJsonValueNumber>(10.)});
+        Source->SetObjectField(TEXT("source_bounds"),Bounds);
         TArray<TSharedPtr<FJsonValue>> Tiles;
         for(int32 I=0;I<2;++I)
         {
@@ -30,12 +34,16 @@ bool FCitySurfaceMembershipTest::RunTest(const FString&)
         Source->SetArrayField(TEXT("tiles"),Tiles);
     }
     TMap<FString,TArray<FString>> Paths;
-    TestTrue(TEXT("Complete bounded union loads signed cells"),JapanCityPieces::Read(Root,Paths));
-    TestEqual(TEXT("All logical placements retained"),Paths.Num(),6);
+    TMap<FString,FBox> Bounds;
+    TestTrue(TEXT("Complete bounded union loads signed cells"),JapanCityPieces::Read(Root,Paths,&Bounds));
+    TestEqual(TEXT("All logical placements retained"),Paths.Num(),JapanCityPieces::Parents().Num());
+    TestEqual(TEXT("Shared city roster contains all current sources"),JapanCityPieces::Parents().Num(),86);
+    TestEqual(TEXT("Logical parent bounds use native handedness"),Bounds.FindChecked(TEXT("HD_Square")).Min,FVector(-200.,-500.,0.));
     const auto Streets=Sources->GetObjectField(TEXT("HD_Streets"));
     Streets->SetNumberField(TEXT("source_triangles"),3);
-    TestFalse(TEXT("Missing face refuses whole membership"),JapanCityPieces::Read(Root,Paths));
+    TestFalse(TEXT("Missing face refuses whole membership"),JapanCityPieces::Read(Root,Paths,&Bounds));
     TestTrue(TEXT("Failed membership leaves no partial paths"),Paths.IsEmpty());
+    TestTrue(TEXT("Failed membership leaves no partial logical bounds"),Bounds.IsEmpty());
     Streets->SetNumberField(TEXT("source_triangles"),2);
     Streets->GetArrayField(TEXT("tiles"))[1]->AsObject()->SetNumberField(TEXT("collision_hulls"),1);
     TestFalse(TEXT("Duplicated whole collision refuses"),JapanCityPieces::Read(Root,Paths));
@@ -49,10 +57,22 @@ bool FCitySurfaceMembershipTest::RunTest(const FString&)
     Sources->RemoveField(TEXT("HD_Harbor"));
     TestFalse(TEXT("Missing final-cut Harbor refuses readiness"),JapanCityPieces::Read(Root,Paths));
     Sources->SetObjectField(TEXT("HD_Harbor"),Harbor);
-    Sources->SetObjectField(TEXT("HD_PlazaFloor"),Park);
-    TestFalse(TEXT("Unowned plaza cannot enter this family handoff"),JapanCityPieces::Read(Root,Paths));
-    Sources->RemoveField(TEXT("HD_PlazaFloor"));
-    TestTrue(TEXT("Restored exact six families load"),JapanCityPieces::Read(Root,Paths));
+    Sources->SetObjectField(TEXT("HD_Foreign"),Park);
+    TestFalse(TEXT("Unowned source cannot enter the city handoff"),JapanCityPieces::Read(Root,Paths));
+    Sources->RemoveField(TEXT("HD_Foreign"));
+    TestTrue(TEXT("Restored complete city inventory loads"),JapanCityPieces::Read(Root,Paths));
+    const auto Clock=Sources->GetObjectField(TEXT("HD_ClockHall"));
+    const auto ClockTiles=Clock->GetArrayField(TEXT("tiles"));
+    auto Small=MakeShared<FJsonObject>();Small->SetStringField(TEXT("name"),TEXT("HD_ClockHall"));
+    Small->SetNumberField(TEXT("triangles"),2);Small->SetNumberField(TEXT("collision_hulls"),1);
+    Clock->SetArrayField(TEXT("tiles"),{MakeShared<FJsonValueObject>(Small)});
+    TestTrue(TEXT("A bounded small source retains its stable logical name"),JapanCityPieces::Read(Root,Paths));
+    TestEqual(TEXT("Small source has exactly one native asset"),Paths.FindChecked(TEXT("HD_ClockHall")).Num(),1);
+    Clock->SetNumberField(TEXT("source_triangles"),32769);Small->SetNumberField(TEXT("triangles"),32769);
+    TestFalse(TEXT("Whole-name shortcut cannot admit an oversized source"),JapanCityPieces::Read(Root,Paths));
+    Clock->SetNumberField(TEXT("source_triangles"),2);Clock->SetArrayField(TEXT("tiles"),ClockTiles);
+    Clock->GetObjectField(TEXT("source_bounds"))->SetArrayField(TEXT("min"),{MakeShared<FJsonValueNumber>(4.),MakeShared<FJsonValueNumber>(-4.),MakeShared<FJsonValueNumber>(0.)});
+    TestFalse(TEXT("Reversed logical bounds refuse readiness"),JapanCityPieces::Read(Root,Paths));
     return true;
 }
 

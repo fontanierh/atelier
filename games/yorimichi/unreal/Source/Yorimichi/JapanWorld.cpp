@@ -380,9 +380,10 @@ void AJapanWorld::Load()
     ABelmonteRegion::Clear(Root, AtelierDataPath(TEXT("gondola/runtime.json")));
     const TSharedPtr<FJsonObject>* Inst = nullptr;
     TMap<FString,TArray<FString>> CityPieces;
+    TMap<FString,FBox> CityLogicalBounds;
     TSet<FString> LoadedCityPieces;
     const bool PiecesReady=JapanCityPieces::Read(
-        AtelierReadJson(AtelierDataPath(TEXT("city_surface_tiles/v1_128m/manifest.json"))),CityPieces);
+        AtelierReadJson(AtelierDataPath(TEXT("city_surface_tiles/v1_128m/manifest.json"))),CityPieces,&CityLogicalBounds);
     if (!PiecesReady) Incomplete.Add(TEXT("complete production city pieces"));
     TArray<FString> DressingPieces;
     TSet<FString> LoadedDressingPieces;
@@ -462,6 +463,14 @@ void AJapanWorld::Load()
                     {
                         H->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
                         H->SetCustomPrimitiveDataFloat(0, float(Fade));
+                    }
+                    if(const FBox* LogicalBounds=CityLogicalBounds.Find(Key))
+                    {
+                        if(!JapanSeeThrough::SetLogicalBounds(H,*LogicalBounds))
+                        {
+                            Incomplete.Add(TEXT("city logical fade bounds ")+Key);
+                            return;
+                        }
                     }
                     if (Key == TEXT("TH_Frame") || Key == TEXT("TH_Dressing"))
                         UE_LOG(LogTemp, Display, TEXT("SEE-THROUGH %s: %s (%d uv channels)"), *Key,

@@ -67,15 +67,27 @@ def test_other_tag_cannot_be_deletion_destination():
 
 
 @pytest.mark.parametrize('failure', [None, 'triangles', 'save', 'bounds', 'empty', 'subset', 'collision'])
-def test_real_importer_retires_only_after_complete_current_native_validation(tmp_path, monkeypatch, failure):
-    script = Path(__file__).parents[1] / 'unreal/Scripts/import_city_surface_tiles.py'
+@pytest.mark.parametrize('atomic', [False, True])
+def test_real_importer_retires_only_after_complete_current_native_validation(tmp_path, monkeypatch, failure, atomic):
+    owner = P
+    if atomic:
+        import importlib
+        game = Path(__file__).parents[1]
+        monkeypatch.syspath_prepend(str(game))
+        monkeypatch.syspath_prepend(str(game / 'world'))
+        owner = importlib.import_module('city_atomic_products')
+    script = Path(__file__).parents[1] / ('unreal/Scripts/import_city_atomic.py' if atomic else 'unreal/Scripts/import_city_surface_tiles.py')
     functions = [node for node in ast.parse(script.read_text()).body if isinstance(node, ast.FunctionDef)
                  and node.name in ('main', 'prepare_collision_import', 'finish_empty_collision')]
+    if atomic:
+        shared = script.with_name('import_city_surface_tiles.py')
+        functions.extend(node for node in ast.parse(shared.read_text()).body if isinstance(node, ast.FunctionDef)
+                         and node.name in ('prepare_collision_import', 'finish_empty_collision'))
     folder = tmp_path / 'city_surface_tiles/v1_128m'
     folder.mkdir(parents=True)
     old = 'HD_Streets_cell_4_1'
     sources = {}
-    for source in P.SOURCES:
+    for source in owner.SOURCES:
         tiles = []
         names = [old+'_Piece0', old+'_Piece1'] if source == 'HD_Streets' else [source+'_cell_0_0']
         for name in names:
@@ -83,16 +95,16 @@ def test_real_importer_retires_only_after_complete_current_native_validation(tmp
             (folder / source).mkdir(exist_ok=True)
             (folder / source / (name+'.fbx')).write_bytes(payload)
             tiles.append(dict(name=name, triangles=1 if source=='HD_Streets' else 2,
-                              collision_hulls=0, sha256=hashlib.sha256(payload).hexdigest(), min=[1.,2.,3.], max=[2.,4.,5.]))
+                              collision_hulls=0, uv_channels=['UVMap'], sha256=hashlib.sha256(payload).hexdigest(), min=[1.,2.,3.], max=[2.,4.,5.]))
         sources[source] = dict(source_triangles=2, tiles=tiles, source_collision_hulls=0,
                                source_collision_vertices=[], source_material_slots=['HDS_paving'],
                                source_bounds=dict(min=[1.,2.,3.], max=[2.,4.,5.]))
     if failure == 'empty': sources = {}
     if failure == 'subset': sources = {'HD_Streets': sources['HD_Streets']}
-    (folder/'manifest.json').write_text(json.dumps(dict(version=2, triangle_limit=32768, complete=True, tag='v1_128m', sources=sources)))
+    (folder/'manifest.json').write_text(json.dumps(dict(version=3 if atomic else 2, triangle_limit=32768, complete=True, tag='v1_128m', sources=sources)))
     monkeypatch.setenv('CITY_SURFACE_TILES_TAG', 'v1_128m')
     events = []
-    packages = {'/Game/Japan/Assets/'+name for name in P.SOURCES} | {ROOT+'/'+old}
+    packages = {'/Game/Japan/Assets/'+name for name in owner.SOURCES} | {ROOT+'/'+old}
     material = NS(get_path_name=lambda: '/Game/Japan/Materials/Paving.Paving')
     slot = NS(get_editor_property=lambda key: material if key == 'material_interface' else 'HDS_paving')
     bounds = NS(min=NS(x=100.,y=-400.,z=300.), max=NS(x=200.,y=-200.,z=500.))
@@ -130,15 +142,15 @@ def test_real_importer_retires_only_after_complete_current_native_validation(tmp
     settings = NS(get_editor_property=lambda key: True)
     unreal = NS(CitySurfaceValidation=NS(validate_collision=lambda *args: failure!='collision'), load_module=lambda name: None, StaticMeshEditorSubsystem=object,
                 get_editor_subsystem=lambda cls: NS(get_lod_build_settings=lambda mesh,lod: settings,
-                    get_simple_collision_count=lambda mesh:0, get_convex_collision_count=lambda mesh:0),
+                    get_num_uv_channels=lambda mesh,lod:1, get_simple_collision_count=lambda mesh:0, get_convex_collision_count=lambda mesh:0),
                 CollisionTraceFlag=NS(CTF_USE_COMPLEX_AS_SIMPLE='complex'),
                 EditorAssetLibrary=editor, SystemLibrary=NS(execute_console_command=lambda *args: None, collect_garbage=lambda: None),
                 log=lambda message: events.append(message))
     namespace = dict(yori=NS(GAME=tmp_path / 'game'), ROOT=tmp_path, unreal=unreal, os=os, json=json,
-                     hashlib=hashlib, import_mesh=imported, owned_tiles=P.owned_tiles, obsolete_assets=P.obsolete_assets,
-                     production_groups=P.production_groups, native_bounds=P.native_bounds,
-                     piece_material_paths=P.piece_material_paths, protected_files=lambda root: {},
-                     collision_matches=lambda *args: True,
+                     hashlib=hashlib, import_mesh=imported, owned_tiles=owner.owned_tiles, obsolete_assets=owner.obsolete_assets,
+                     production_groups=owner.production_groups, native_bounds=P.native_bounds,
+                     piece_material_paths=owner.piece_material_paths, protected_files=lambda root: {},
+                     collision_matches=lambda *args: True, distance_lods=lambda *args: events.append('distance LODs'),
                      native_membership=native_membership)
     exec(compile(ast.Module(body=functions, type_ignores=[]), str(script), 'exec'), namespace)
     if failure:
@@ -149,7 +161,7 @@ def test_real_importer_retires_only_after_complete_current_native_validation(tmp
     else:
         namespace['main']()
         assert {event for event in events if event.startswith('delete ')} == {
-            'delete '+ROOT+'/'+old, *('delete /Game/Japan/Assets/'+name for name in P.SOURCES)}
+            'delete '+ROOT+'/'+old, *('delete /Game/Japan/Assets/'+name for name in owner.SOURCES)}
         assert events.index('delete ' + ROOT+'/'+old) > events.index('import ' + old + '_Piece1')
         assert (folder / 'import-report.json').is_file()
 

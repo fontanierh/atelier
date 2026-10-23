@@ -43,7 +43,9 @@ void USailboatComponent::QueryParams(FCollisionQueryParams& P) const
  if(!Landscape)return;
  P.AddIgnoredComponent(Landscape->Sea);
  for(auto* G:Landscape->Groups)if(G&&G->GetStaticMesh())
- {const FString N=G->GetStaticMesh()->GetName();if(N==TEXT("Sea")||N==TEXT("HD_Sea")||N==TEXT("HD_InlandWater")||N==TEXT("HD_PlazaWater"))P.AddIgnoredComponent(G);}
+ {const FString N=G->GetStaticMesh()->GetName();if(N==TEXT("Sea")||N==TEXT("HD_Sea")||N==TEXT("HD_InlandWater")||N==TEXT("HD_PlazaWater")||
+   G->ComponentHasTag(TEXT("CitySurface:HD_Sea"))||G->ComponentHasTag(TEXT("CitySurface:HD_InlandWater"))||
+   G->ComponentHasTag(TEXT("CitySurface:HD_PlazaWater")))P.AddIgnoredComponent(G);}
 }
 bool USailboatComponent::GroundAt(FVector P,FHitResult& Hit) const
 {

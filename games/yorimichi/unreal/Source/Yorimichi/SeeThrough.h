@@ -6,6 +6,7 @@
 class AJapanWorld;
 class UMaterialParameterCollection;
 class UStaticMesh;
+class UPrimitiveComponent;
 
 /** Camera see-through (docs/CAMERA.md). The switches are japan.SeeThrough, japan.SeeThroughHole and
  *  japan.SeeThroughRadius. */
@@ -32,6 +33,9 @@ namespace JapanSeeThrough
     constexpr int32 FadeNearOnly = 3;
     /** The fade mode of the world.json group Key drawn with Mesh. */
     YORIMICHI_API int32 FadeMode(const FString& Key, const UStaticMesh* Mesh);
+    /** Preserve a partitioned logical instance's original local bounds for whole-instance fading.
+     * Custom primitive floats 1..6 store centre/extent; 7 enables them. Float 0 remains FadeMode. */
+    YORIMICHI_API bool SetLogicalBounds(UPrimitiveComponent* Component,const FBox& Bounds);
 }
 
 /** Feeds /Game/SeeThrough/MPC_SeeThrough every frame from the player's pawn:

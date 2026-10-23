@@ -9,6 +9,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/PrimitiveComponent.h"
 #include "Materials/MaterialInterface.h"
 #include "Materials/MaterialParameterCollection.h"
 #include "Materials/MaterialParameterCollectionInstance.h"
@@ -48,6 +49,19 @@ namespace JapanSeeThrough
         // Everything else stops the camera: the terrain (with the road's guardrail), houses, rocks, and the tree house's
         // floors, walls, roofs and trunks.
         return FadeSolid;
+    }
+
+    bool SetLogicalBounds(UPrimitiveComponent* Component,const FBox& Bounds)
+    {
+        if(!Component || !Bounds.IsValid || Bounds.Min.ContainsNaN() || Bounds.Max.ContainsNaN() ||
+            Bounds.Min.X>Bounds.Max.X || Bounds.Min.Y>Bounds.Max.Y || Bounds.Min.Z>Bounds.Max.Z)return false;
+        const FVector Centre=Bounds.GetCenter(),Extent=Bounds.GetExtent();
+        const float Values[]={float(Centre.X),float(Centre.Y),float(Centre.Z),float(Extent.X),float(Extent.Y),float(Extent.Z)};
+        for(float Value:Values)if(!FMath::IsFinite(Value))return false;
+        Component->SetCustomPrimitiveDataFloat(7,0.f);
+        for(int32 Index=0;Index<6;++Index)Component->SetCustomPrimitiveDataFloat(Index+1,Values[Index]);
+        Component->SetCustomPrimitiveDataFloat(7,1.f);
+        return true;
     }
 }
 

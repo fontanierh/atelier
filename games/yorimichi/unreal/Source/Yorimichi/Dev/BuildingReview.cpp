@@ -60,7 +60,8 @@ static int32 RunBuildingProbes(UWorld* World,AActor* Pawn,const TSharedPtr<FJson
   for(auto* C:Components)if(C->GetStaticMesh())
   {
    const FString N=C->GetStaticMesh()->GetName();
-   if(N==TEXT("Terrain")||C->ComponentHasTag(TEXT("CitySurface:HD_Terrain"))||N==TEXT("SW_Island")||N==TEXT("HD_NorthMountains"))Terrain.Add(C);
+   if(N==TEXT("Terrain")||C->ComponentHasTag(TEXT("CitySurface:HD_Terrain"))||N==TEXT("SW_Island")||N==TEXT("HD_NorthMountains")||
+      C->ComponentHasTag(TEXT("CitySurface:HD_NorthMountains")))Terrain.Add(C);
   }
  }
  FCollisionQueryParams Q(SCENE_QUERY_STAT(BuildingSemanticProbe),true,Pawn);
@@ -92,7 +93,11 @@ static int32 RunBuildingProbes(UWorld* World,AActor* Pawn,const TSharedPtr<FJson
    FString ActualAsset,ExpectedAsset;(*Input)->TryGetStringField(TEXT("expected_mesh_asset"),ExpectedAsset);
    if(Blocked)
    {
-    if(const auto* M=Cast<UStaticMeshComponent>(DoorHit.GetComponent());M&&M->GetStaticMesh())ActualAsset=M->GetStaticMesh()->GetName();
+    if(const auto* M=Cast<UStaticMeshComponent>(DoorHit.GetComponent());M&&M->GetStaticMesh())
+    {
+     ActualAsset=M->GetStaticMesh()->GetName();
+     if(!ExpectedAsset.IsEmpty()&&M->ComponentHasTag(FName(TEXT("CitySurface:")+ExpectedAsset)))ActualAsset=ExpectedAsset;
+    }
     Row->SetStringField(TEXT("mesh_asset"),ActualAsset);Row->SetNumberField(TEXT("instance_index"),DoorHit.Item);Row->SetNumberField(TEXT("door_centre_error_cm"),FVector::Dist(DoorHit.ImpactPoint,Point));
    }
    const bool Passed=Blocked&&FVector::Dist(DoorHit.ImpactPoint,Point)<=20&&(ExpectedAsset.IsEmpty()||ExpectedAsset==ActualAsset);

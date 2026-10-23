@@ -86,6 +86,9 @@ DITHER = ('float2 px = Parameters.SvPosition.xy + float(View.StateFrameIndexMod8
 # O instance origin, P vertex (rest), U1..U4 the bake.
 INSTANCE = (' float3 bc = GetPrimitiveData(Parameters).InstanceLocalBoundsCenter;'
             ' float3 be = GetPrimitiveData(Parameters).InstanceLocalBoundsExtent;'
+            ' float4 logical = GetPrimitiveData(Parameters).CustomPrimitiveData[1];'
+            ' if (logical.w > 0.5) {'
+            ' bc = GetPrimitiveData(Parameters).CustomPrimitiveData[0].yzw; be = logical.xyz; }'
             ' float3 c = O + TransformLocalVectorToWorld(Parameters, bc);'
             ' float3 e = abs(TransformLocalVectorToWorld(Parameters, float3(be.x, 0.0, 0.0)))'
             ' + abs(TransformLocalVectorToWorld(Parameters, float3(0.0, be.y, 0.0)))'

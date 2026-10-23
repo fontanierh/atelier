@@ -1,89 +1,32 @@
-"""Complete ordered logical city inventory; entries never import sibling constructors."""
-ASSETS = (
-    'HD_Shop_00',
-    'HD_Shop_01',
-    'HD_Shop_02',
-    'HD_Shop_03',
-    'HD_Shop_04',
-    'HD_Shop_05',
-    'HD_Shop_06',
-    'HD_Shop_07',
-    'HD_Shop_08',
-    'HD_Shop_09',
-    'HD_Shop_10',
-    'HD_Shop_11',
-    'HD_Shop_12',
-    'HD_Shop_13',
-    'HD_Shop_14',
-    'HD_Shop_15',
-    'HD_ClockHall',
-    'HD_Station',
-    'HD_Temple',
-    'HD_Shrine',
-    'HD_Arcade',
-    'HD_Playground',
-    'HD_Pavilion',
-    'HD_Market',
-    'HD_Boat',
-    'HD_Lighthouse',
-    'HD_Terrain',
-    'HD_CivicGardens',
-    'HD_Streets',
-    'HD_Harbor',
-    'HD_Park',
-    'HD_Square',
-    'HD_InlandWater',
-    'HD_ArcadeShop_00',
-    'HD_ArcadeShop_01',
-    'HD_ArcadeShop_02',
-    'HD_ArcadeShop_03',
-    'HD_ArcadeShop_04',
-    'HD_ArcadeShop_05',
-    'HD_ArcadeGate',
-    'HD_ArcadeRoof',
-    'HD_ArcadeLanterns',
-    'HD_ArcadeFloor',
-    'HD_ArcadeTree',
-    'HD_PlazaShopSides',
-    'HD_PlazaShopSidesCorner',
-    'HD_PlazaShopApproaches',
-    'HD_PlazaFloor',
-    'HD_PlazaFountain',
-    'HD_PlazaWater',
-    'HD_PlazaTreeGold',
-    'HD_PlazaTreeOrange',
-    'HD_Bench',
-    'HD_Planter',
-    'HD_Lamp',
-    'HD_Bollard',
-    'HD_Crate',
-    'HD_Sea',
-    'HD_Wires',
-    'HD_LaneEdges',
-    'Bush_HD_Ball',
-    'Bush_HD_Mound',
-    'Bush_HD_Azalea',
-    'Bush_HD_Amber',
-    'Bush_HD_Hedge',
-    'Bush_HD_Autumn',
-    'Bush_HD_Niwaki',
-    'HD_Pagoda',
-    'HD_Bamboo',
-    'HD_Graves',
-    'HD_Precinct',
-    'HD_StationYard',
-    'HD_ParkGrounds',
-    'HD_Arrival',
-    'HD_House_00',
-    'HD_House_01',
-    'HD_House_02',
-    'HD_House_03',
-    'HD_NorthMountains',
-    'HD_NorthGate',
-    'HD_NorthRockA',
-    'HD_NorthRockB',
-    'HD_NorthRockC',
-    'HD_NorthTrail',
-    'HD_NorthApproach',
-    'HD_NorthParkTrail',
-)
+"""Shared city ownership data; individual constructors do not consume this roster."""
+from pathlib import Path
+import re
+
+ROSTER = Path(__file__).resolve().parents[3] / 'unreal/Source/Yorimichi/CitySurfaceParents.h'
+PREFIX = ('// Shared logical city ownership, read by the recipe and runtime.\n'
+          '#pragma once\n#define YORIMICHI_CITY_PARENTS(ITEM) ' + '\\' + '\n')
+
+
+def read(path=ROSTER):
+    """@cc [owner:fontanierh,label:correctness] shared-logical-city-roster
+    Build admission and native runtime MUST use the same explicit ordered parent
+    inventory. Adding a parent MUST NOT add this roster to existing constructors'
+    inputs: each selected constructor still reads only its own code/data. Reject
+    unsafe, duplicate or case-fold aliased parent names before graph construction.
+    """
+    text = Path(path).read_text()
+    if not text.startswith(PREFIX) or not text.endswith('\n'):
+        raise ValueError('Invalid shared city ownership header')
+    rows = text[len(PREFIX):].splitlines()
+    result = []
+    for index, row in enumerate(rows):
+        match = re.fullmatch(r'    ITEM\("([A-Za-z][A-Za-z0-9_]*)"\)' + (r' \\' if index+1<len(rows) else ''), row)
+        if match is None:
+            raise ValueError('Invalid shared city parent entry')
+        result.append(match[1])
+    if not result or len({key.casefold() for key in result}) != len(result):
+        raise ValueError('Shared city ownership must be complete and unique')
+    return tuple(result)
+
+
+ASSETS = read()
