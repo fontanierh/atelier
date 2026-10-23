@@ -77,6 +77,14 @@ The second phase must not run over failed, unresolved or partially cleaned state
 No UE-side manual file deletion is permitted. A failed run remains preserved for
 explicit recovery; this draft has no automatic retry path.
 
+The native receiving body has a bounded failure `finally` for only its recorded
+fixture actors. Both success and failure paths detach every owned mesh component,
+read `static_mesh` back as null and require actor destruction. Capture/save/query
+errors remain the original exception; cleanup errors are separately printed and
+recorded with the partial namespace. Failure cleanup never deletes packages or
+publishes the receiving marker. Normal package retirement remains behind complete
+successful capture and ownership/reference preflight.
+
 The initial budget proposal is the normal 10GiB full reservation, three supported
 shader/compiler workers and a 900-second work deadline per phase, with separately
 bounded queue time and progress. These are ceilings, not timing/peak claims. Parent

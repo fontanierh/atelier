@@ -79,6 +79,90 @@ def test_deletion_observer_records_real_packages_without_replacing_api_results()
     assert len(calls) == 1
 
 
+def actor_fixture(*, stuck=False, destroy=True):
+    state = dict(mesh=object(), detach_calls=0, destroy_calls=0)
+    def detach(value):
+        assert value is None
+        state['detach_calls'] += 1
+        if not stuck: state['mesh'] = None
+        return True
+    component = SimpleNamespace(set_static_mesh=detach, get_editor_property=lambda name: state['mesh'])
+    actor = SimpleNamespace(get_components_by_class=lambda cls: [component])
+    def remove(value):
+        assert value is actor
+        state['destroy_calls'] += 1
+        return destroy
+    return actor, SimpleNamespace(destroy_actor=remove), state
+
+
+def test_capture_failure_detaches_only_recorded_actors_and_preserves_original(tmp_path):
+    actor, editor, state = actor_fixture(); recorded = [actor]
+    foreign, _, foreign_state = actor_fixture()
+    failure = RuntimeError('actual capture failed')
+    with pytest.raises(RuntimeError) as caught:
+        with proof.actor_scope(recorded, editor, object, tmp_path, lambda: {'packages': ['saved partial']}):
+            raise failure
+    assert caught.value is failure and recorded == []
+    assert state['mesh'] is None and state['destroy_calls'] == state['detach_calls'] == 1
+    assert foreign_state['detach_calls'] == foreign_state['destroy_calls'] == 0
+    report = json.loads((tmp_path / 'failed-fixture-state.json').read_text())
+    assert report['original_error']['message'] == 'actual capture failed'
+    assert report['cleanup_failures'] == [] and report['remaining_own_actors'] == 0
+    assert report['actor_cleanup_only'] and report['partial_namespace']['packages'] == ['saved partial']
+
+
+@pytest.mark.parametrize('bad', ['null_readback', 'destruction'])
+def test_cleanup_failure_is_reported_without_hiding_capture_failure(tmp_path, capsys, bad):
+    actor, editor, state = actor_fixture(stuck=bad == 'null_readback', destroy=bad != 'destruction')
+    recorded = [actor]; failure = LookupError('native query failure')
+    with pytest.raises(LookupError) as caught:
+        with proof.actor_scope(recorded, editor, object, tmp_path, lambda: {'packages': ['partial remains']}):
+            raise failure
+    assert caught.value is failure and recorded == [actor]
+    assert 'TRACK OWN ACTOR CLEANUP FAILED' in capsys.readouterr().out
+    assert any('TRACK OWN ACTOR CLEANUP FAILED' in note for note in failure.__notes__)
+    report = json.loads((tmp_path / 'failed-fixture-state.json').read_text())
+    assert report['original_error']['type'] == 'LookupError' and len(report['cleanup_failures']) == 1
+    assert report['remaining_own_actors'] == 1 and report['packages_left_for_explicit_recovery']
+    assert state['destroy_calls'] == (0 if bad == 'null_readback' else 1)
+
+
+def test_cleanup_failure_without_primary_is_a_failure_not_success(tmp_path):
+    actor, editor, _ = actor_fixture(destroy=False)
+    with pytest.raises(RuntimeError, match='OWN ACTOR CLEANUP FAILED'):
+        with proof.actor_scope([actor], editor, object, tmp_path, lambda: {}):
+            pass
+    report = json.loads((tmp_path / 'failed-fixture-state.json').read_text())
+    assert report['original_error'] is None and report['cleanup_failures']
+
+
+def test_failure_state_write_error_never_replaces_original_capture_failure(tmp_path, monkeypatch):
+    actor, editor, _ = actor_fixture(); failure = RuntimeError('original capture failure')
+    def refuse(*args): raise OSError('fixture reporting refused')
+    monkeypatch.setattr(proof, 'atomic_json', refuse)
+    with pytest.raises(RuntimeError) as caught:
+        with proof.actor_scope([actor], editor, object, tmp_path, lambda: {}):
+            raise failure
+    assert caught.value is failure
+    assert any('failure-state reporting: OSError' in note for note in failure.__notes__)
+
+
+def test_successful_per_actor_cleanup_requires_reflected_null_readback():
+    actor, editor, state = actor_fixture(); recorded = [actor]
+    proof.release_actor(actor, editor, object, recorded)
+    assert recorded == [] and state['mesh'] is None and state['destroy_calls'] == 1
+
+
+def test_actual_native_capture_and_retirement_stay_inside_failure_cleanup_boundary():
+    source = Path(proof.__file__).read_text(); tree = ast.parse(source)
+    function = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'run_native')
+    scopes = [n for n in ast.walk(function) if isinstance(n, ast.With)
+              and any(ast.unparse(item.context_expr).startswith('actor_scope(') for item in n.items)]
+    assert len(scopes) == 1
+    calls = [ast.unparse(n.func) for n in ast.walk(scopes[0]) if isinstance(n, ast.Call)]
+    assert 'capture.capture' in calls and 'release_actor' in calls and 'retire_owned' in calls
+
+
 @pytest.mark.parametrize('bad', ['missing', 'bytes', 'size', 'link', 'directory', 'ground'])
 def test_actual_material_inputs_refuse_without_creating_any_output(tmp_path, bad):
     textures = tmp_path / 'textures'; textures.mkdir(); path = textures / 'Ground.png'; path.write_bytes(b'actual donor bytes')

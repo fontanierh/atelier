@@ -7,6 +7,7 @@ actor/runtime claim is made.
 """
 import argparse
 import ast
+from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -267,6 +268,65 @@ class ObserveDeletion:
         return self.editor.delete_directory(path)
 
 
+def release_actor(actor, actor_editor, mesh_class, actors):
+    """Release one recorded fixture actor only after reflected null readback."""
+    require(actor in actors, 'Cannot clean an unrecorded fixture actor')
+    for component in actor.get_components_by_class(mesh_class):
+        require(component.set_static_mesh(None), 'Track component detach failed')
+        require(component.get_editor_property('static_mesh') is None, 'Track component still holds its mesh')
+    require(actor_editor.destroy_actor(actor), 'Track fixture actor destroy failed')
+    actors.remove(actor)
+
+
+@contextmanager
+def actor_scope(actors, actor_editor, mesh_class, output, partial_state):
+    """@cc [owner:fontanierh,label:safety;correctness] own-track-actors-on-failure
+    Every exit MUST attempt bounded cleanup of only recorded fixture actors, verify
+    reflected mesh detachment and require actor destruction. Cleanup failures MUST
+    remain visible without replacing the original capture/save/query exception.
+    Failure cleanup MUST NOT delete packages; retain the partial namespace for
+    explicit recovery and never publish a successful receiving marker.
+    """
+    primary = None
+    try:
+        yield
+    except BaseException as error:
+        primary = error
+        raise
+    finally:
+        failures = []
+        for actor in tuple(actors):
+            try:
+                release_actor(actor, actor_editor, mesh_class, actors)
+            except BaseException as error:
+                failures.append(type(error).__name__ + ': ' + str(error))
+        if primary is not None or failures:
+            row = dict(original_error=None if primary is None else dict(type=type(primary).__name__, message=str(primary)),
+                       cleanup_failures=failures, remaining_own_actors=len(actors), actor_cleanup_only=True,
+                       packages_left_for_explicit_recovery=True)
+            try:
+                row['partial_namespace'] = partial_state()
+            except BaseException as error:
+                row['partial_namespace_error'] = type(error).__name__ + ': ' + str(error)
+            try:
+                atomic_json(Path(output) / 'failed-fixture-state.json', row)
+            except BaseException as error:
+                failures.append('failure-state reporting: ' + type(error).__name__ + ': ' + str(error))
+            if failures:
+                message = 'TRACK OWN ACTOR CLEANUP FAILED: ' + '; '.join(failures)
+                if primary is not None:
+                    primary.add_note(message)
+                try:
+                    print(message, flush=True)
+                except BaseException as error:
+                    if primary is not None:
+                        primary.add_note('Cleanup stdout reporting failed: ' + type(error).__name__)
+                    else:
+                        raise RuntimeError(message) from error
+                if primary is None:
+                    raise RuntimeError(message)
+
+
 def run_native(spec_path, spec_sha):
     """Receiving only; the enclosing supported guarded caller remains the authority."""
     import unreal as U
@@ -302,78 +362,80 @@ def run_native(spec_path, spec_sha):
     require(U.SystemLibrary.get_console_variable_int_value('MessageLog.DisablePopup') == 1,
             'Import modal notification suppression unavailable')
     actors = []
-    material = definitions(spec['material_owner'], 'actual_track_fixture_materials')
-    material.ROOT = package + '/Prerequisites'; material.OUT = Path(spec['material_data'])
-    material.surfaces(report, material.parent(), material.textures(report))
-    common_assets = assets(E, package + '/Prerequisites')
-    require(common_assets == {package + '/Prerequisites/Materials/' + name for name in
-            ['M_Belmonte', 'M_BelmonteJoin', *material_names]} |
-            {package + '/Prerequisites/Textures/' + Path(name).stem for name in texture_names},
-            'Incomplete or foreign actual material prerequisites')
     actor_editor = U.get_editor_subsystem(U.EditorActorSubsystem)
-    records = {}
-    allowed = set()
-    for phase in (phase,):
-        runtime = json.loads((Path(spec[phase + '_track']) / 'runtime/track.json').read_bytes())
-        expected = runtime_inventory(runtime)
-        owner = types.ModuleType('actual_track_' + phase); owner.__file__ = spec['importer']
-        exec(compile(owner_tree(spec['importer'], package + '/Prerequisites/Materials'), spec['importer'], 'exec'), owner.__dict__)
-        owner.ROOT = package + '/Library'; owner.TRACK = Path(spec[phase + '_track'])
-        owner.RUNTIME = owner.TRACK / 'runtime/track.json'; owner.DATA = output / 'runtime-copy' / phase
-        owner.BELMONTE_REPORT = Path(spec['material_report'])
-        require(not assets(E, owner.ROOT), 'Previous Track phase remains live')
-        owner.E = ObserveDeletion(E, owner.ROOT, allowed)
-        owner.main()  # Exact production import/LOD assembly/material/collision/save body.
-        imported = json.loads((owner.TRACK / 'runtime/import-report.json').read_text())
-        require(set(imported['meshes']) == set(expected) and all(row['collision_lod'] == collision_lods(runtime)[name]
-                for name, row in imported['meshes'].items()), 'Actual importer omitted or changed a collision selector')
-        paths = {name: owner.ROOT + '/' + name for name in expected}
-        loaded = [E.load_asset(path) for path in paths.values()]
-        require(all(loaded), 'Missing saved Track mesh')
-        for mesh in loaded:
-            require(E.save_loaded_asset(mesh, only_if_is_dirty=True), 'Track save failed')
-        packages = [mesh.get_outermost() for mesh in loaded]
-        loaded.clear(); mesh = None
-        changed, error = U.EditorLoadingAndSavingUtils.reload_packages(packages, U.ReloadPackagesInteractionMode.ASSUME_POSITIVE)
-        require(changed and not str(error), 'Track saved package reload failed')
-        packages.clear(); U.SystemLibrary.collect_garbage()
-        records[phase] = {}
-        for index, name in enumerate(sorted(expected)):
-            mesh = E.load_asset(paths[name]); require(mesh is not None and mesh.get_num_lods() == expected[name], 'Wrong actual Track LOD count')
-            actor = actor_editor.spawn_actor_from_class(U.StaticMeshActor, U.Vector(0, 0, 0)); require(actor is not None, 'No Track fixture actor')
-            actors.append(actor); component = actor.get_component_by_class(U.StaticMeshComponent)
-            component.set_mobility(U.ComponentMobility.MOVABLE); require(component.set_static_mesh(mesh), 'Track mesh assignment failed')
-            # Fixture components are deliberately not claimed as ABelmonteTrack.
-            component.set_collision_profile_name('BlockAll')
-            component.set_collision_enabled(U.CollisionEnabled.QUERY_AND_PHYSICS if imported['meshes'][name]['collision_lod'] >= 0 else U.CollisionEnabled.NO_COLLISION)
-            controls = spec['controls'][name]
-            controls = [dict(row, target=component.get_path_name()) for row in controls]
-            descriptor = capture.capture([component], name, output / 'captures' / phase / name,
-                                         controls=controls, inputs=[spec_path], policy_scope='fixture')
-            archived = []
-            for row in descriptor['saved_packages']:
-                source = Path(row['path']); target = output / 'saved-packages' / phase / (hashlib.sha256(str(source).encode()).hexdigest() + source.suffix)
-                target.parent.mkdir(parents=True, exist_ok=True); shutil.copyfile(source, target)
-                require(sha(source) == sha(target) == row['sha256'], 'Saved Track copy differs')
-                archived.append(dict(path=str(target), sha256=row['sha256']))
-            descriptor['saved_packages'] = archived; records[phase][name] = descriptor
-            require(component.set_static_mesh(None), 'Track component detach failed')
-            require(actor_editor.destroy_actor(actor), 'Track fixture actor destroy failed'); actors.remove(actor)
-            component = actor = mesh = None
-            print('TRACK ACTUAL SAVED NATIVE ' + phase + ' ' + str(index + 1) + '/137 ' + name, flush=True)
-        owner = None; U.SystemLibrary.collect_garbage()
-        packages = assets(E, package + '/Library')
-        require(packages == {path for path in paths.values()} | {package + '/Library/Materials/M_TK_Glow'} |
-                {package + '/Library/Materials/' + name for name in imported['materials'] if name.startswith('MI_TK_')},
-                'Foreign or leftover imported Track assets')
-        allowed.update(packages); allowed.update(common_assets)
-        bound_inputs(spec)
-        atomic_json(output / 'native.json', records)
-    retire_owned(U, packages | common_assets, allowed)
-    require(not assets(E, package), 'Track fixture registry not empty')
-    remaining = fixture_files(folder, allowed, package)
-    atomic_json(output / 'cleanup.json', dict(root=str(folder), remaining=remaining, allowed_packages=sorted(allowed)))
-    bound_inputs(spec); require(sha(spec_path) == spec_sha, 'Track spec changed')
+    require(actor_editor is not None, 'Track actor subsystem unavailable')
+    partial_state = lambda: dict(package=package, folder=str(folder), observed_packages=sorted(assets(E, package)))
+    with actor_scope(actors, actor_editor, U.StaticMeshComponent, output, partial_state):
+        material = definitions(spec['material_owner'], 'actual_track_fixture_materials')
+        material.ROOT = package + '/Prerequisites'; material.OUT = Path(spec['material_data'])
+        material.surfaces(report, material.parent(), material.textures(report))
+        common_assets = assets(E, package + '/Prerequisites')
+        require(common_assets == {package + '/Prerequisites/Materials/' + name for name in
+                ['M_Belmonte', 'M_BelmonteJoin', *material_names]} |
+                {package + '/Prerequisites/Textures/' + Path(name).stem for name in texture_names},
+                'Incomplete or foreign actual material prerequisites')
+        records = {}
+        allowed = set()
+        for phase in (phase,):
+            runtime = json.loads((Path(spec[phase + '_track']) / 'runtime/track.json').read_bytes())
+            expected = runtime_inventory(runtime)
+            owner = types.ModuleType('actual_track_' + phase); owner.__file__ = spec['importer']
+            exec(compile(owner_tree(spec['importer'], package + '/Prerequisites/Materials'), spec['importer'], 'exec'), owner.__dict__)
+            owner.ROOT = package + '/Library'; owner.TRACK = Path(spec[phase + '_track'])
+            owner.RUNTIME = owner.TRACK / 'runtime/track.json'; owner.DATA = output / 'runtime-copy' / phase
+            owner.BELMONTE_REPORT = Path(spec['material_report'])
+            require(not assets(E, owner.ROOT), 'Previous Track phase remains live')
+            owner.E = ObserveDeletion(E, owner.ROOT, allowed)
+            owner.main()  # Exact production import/LOD assembly/material/collision/save body.
+            imported = json.loads((owner.TRACK / 'runtime/import-report.json').read_text())
+            require(set(imported['meshes']) == set(expected) and all(row['collision_lod'] == collision_lods(runtime)[name]
+                    for name, row in imported['meshes'].items()), 'Actual importer omitted or changed a collision selector')
+            paths = {name: owner.ROOT + '/' + name for name in expected}
+            loaded = [E.load_asset(path) for path in paths.values()]
+            require(all(loaded), 'Missing saved Track mesh')
+            for mesh in loaded:
+                require(E.save_loaded_asset(mesh, only_if_is_dirty=True), 'Track save failed')
+            packages = [mesh.get_outermost() for mesh in loaded]
+            loaded.clear(); mesh = None
+            changed, error = U.EditorLoadingAndSavingUtils.reload_packages(packages, U.ReloadPackagesInteractionMode.ASSUME_POSITIVE)
+            require(changed and not str(error), 'Track saved package reload failed')
+            packages.clear(); U.SystemLibrary.collect_garbage()
+            records[phase] = {}
+            for index, name in enumerate(sorted(expected)):
+                mesh = E.load_asset(paths[name]); require(mesh is not None and mesh.get_num_lods() == expected[name], 'Wrong actual Track LOD count')
+                actor = actor_editor.spawn_actor_from_class(U.StaticMeshActor, U.Vector(0, 0, 0)); require(actor is not None, 'No Track fixture actor')
+                actors.append(actor); component = actor.get_component_by_class(U.StaticMeshComponent)
+                component.set_mobility(U.ComponentMobility.MOVABLE); require(component.set_static_mesh(mesh), 'Track mesh assignment failed')
+                # Fixture components are deliberately not claimed as ABelmonteTrack.
+                component.set_collision_profile_name('BlockAll')
+                component.set_collision_enabled(U.CollisionEnabled.QUERY_AND_PHYSICS if imported['meshes'][name]['collision_lod'] >= 0 else U.CollisionEnabled.NO_COLLISION)
+                controls = spec['controls'][name]
+                controls = [dict(row, target=component.get_path_name()) for row in controls]
+                descriptor = capture.capture([component], name, output / 'captures' / phase / name,
+                                             controls=controls, inputs=[spec_path], policy_scope='fixture')
+                archived = []
+                for row in descriptor['saved_packages']:
+                    source = Path(row['path']); target = output / 'saved-packages' / phase / (hashlib.sha256(str(source).encode()).hexdigest() + source.suffix)
+                    target.parent.mkdir(parents=True, exist_ok=True); shutil.copyfile(source, target)
+                    require(sha(source) == sha(target) == row['sha256'], 'Saved Track copy differs')
+                    archived.append(dict(path=str(target), sha256=row['sha256']))
+                descriptor['saved_packages'] = archived; records[phase][name] = descriptor
+                release_actor(actor, actor_editor, U.StaticMeshComponent, actors)
+                component = actor = mesh = None
+                print('TRACK ACTUAL SAVED NATIVE ' + phase + ' ' + str(index + 1) + '/137 ' + name, flush=True)
+            owner = None; U.SystemLibrary.collect_garbage()
+            packages = assets(E, package + '/Library')
+            require(packages == {path for path in paths.values()} | {package + '/Library/Materials/M_TK_Glow'} |
+                    {package + '/Library/Materials/' + name for name in imported['materials'] if name.startswith('MI_TK_')},
+                    'Foreign or leftover imported Track assets')
+            allowed.update(packages); allowed.update(common_assets)
+            bound_inputs(spec)
+            atomic_json(output / 'native.json', records)
+        retire_owned(U, packages | common_assets, allowed)
+        require(not assets(E, package), 'Track fixture registry not empty')
+        remaining = fixture_files(folder, allowed, package)
+        atomic_json(output / 'cleanup.json', dict(root=str(folder), remaining=remaining, allowed_packages=sorted(allowed)))
+        bound_inputs(spec); require(sha(spec_path) == spec_sha, 'Track spec changed')
     print('TRACK ACTUAL ORIGINAL/CURRENT137/362 NATIVE FIXTURE COMPLETE ' + phase + ' ' + spec_sha, flush=True)
 
 
