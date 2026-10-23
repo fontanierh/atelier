@@ -61,3 +61,22 @@ def test_kei_pickup_crate_edit_does_not_change_other_selected_variants(tmp_path)
     plans=[step for step in recipe.steps(SimpleNamespace(out=tmp_path.resolve()),'kei')
            if step.name.startswith('world.vehicle_kei.geometry.')]
     assert len(plans)==4 and all(step.cache and step.commands[0].factory_startup for step in plans)
+
+
+def test_kart_geometry_reads_only_selected_cockpit_fields_and_keeps_full_layout_separate(tmp_path):
+    sources=load('kart_source_projection',GAME/'world/vehicle_sources.py')
+    text=(GAME/'assets/vehicles/kart/build.py').read_text();layout=sources.cockpit_layout()
+    original=sources.projection(text,'kart',layout=layout)
+    changed=dict(layout,wheel_width=layout['wheel_width']+.01)
+    edited=sources.projection(text,'kart',layout=changed)
+    assert {key for key in original if original[key]!=edited[key]}=={'SM_Kart_Wheel'}
+    assert original['SM_Kart_Seat']['data']=={'layout':{}}
+    assert set(original['SM_Kart_Body']['data']['layout'])=={'body_half_extents','wheel_radius'}
+    for row in original.values():assert 'def winding_selftest' in row['program'] and 'def geometry_hash' in row['program']
+    output=tmp_path/'sources';cockpit=tmp_path/'kart/cockpit.json'
+    sources.publish('kart',output.resolve(),layout_output=cockpit.resolve())
+    assert json.loads(cockpit.read_text())==layout
+    recipe=load('kart_atomic_recipe_test',GAME/'vehicle_atomic_build.py')
+    steps=recipe.steps(SimpleNamespace(out=tmp_path.resolve()),'kart')
+    assert steps[0].products[-1].name=='vehicle_kart.cockpit'
+    assert 'vehicle_kart.cockpit' in steps[-1].reads

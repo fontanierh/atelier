@@ -81,6 +81,7 @@ def main():
     module_spec=importlib.util.spec_from_file_location('actual_vehicle_recipe',GAME/'vehicle_atomic_build.py')
     recipe=importlib.util.module_from_spec(module_spec);module_spec.loader.exec_module(recipe)
     context=SimpleNamespace(out=current)
+    if spec['layout']:atomic_json(current/family/'cockpit.json',json.loads(Path(spec['layout']).read_text()))
     for step in recipe.steps(context,family):
         for command in step.commands:
             if hasattr(command,'fn'):command.fn(context,io.StringIO())
