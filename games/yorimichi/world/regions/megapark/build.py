@@ -14,8 +14,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import yori
 from megapark import cars, placement, plants, sign
 
-import bpy
-import bmesh
 import hashlib
 import json
 import struct
@@ -56,7 +54,8 @@ def native_to_blender(values):
     return result
 
 
-def export_mesh(name, vertices, faces, materials, face_materials, channels=None, normals=None):
+def mesh_object(name, vertices, faces, materials, face_materials, channels=None, normals=None):
+    import bpy
     bpy.ops.object.select_all(action='SELECT')
     bpy.ops.object.delete(use_global=False)
     # A local origin makes each source chunk straightforward to select/move.
@@ -84,19 +83,25 @@ def export_mesh(name, vertices, faces, materials, face_materials, channels=None,
     bpy.context.collection.objects.link(obj)
     bpy.context.view_layer.objects.active = obj
     obj.select_set(True)
+    lo, hi = vertices.min(axis=0), vertices.max(axis=0)
+    result = {'name': name, 'fbx': f'fbx/{name}.fbx', 'sha256': None,
+        'native_origin': origin.tolist(), 'bounds': {'minimum': lo.tolist(), 'maximum': hi.tolist()},
+        'vertices': len(vertices), 'triangles': len(faces), 'materials': materials}
+    return obj, result
+
+
+def export_mesh(name, vertices, faces, materials, face_materials, channels=None, normals=None):
+    import bpy
+    obj, result = mesh_object(name, vertices, faces, materials, face_materials, channels, normals)
     path = OUT / 'fbx' / f'{name}.fbx'
     from atelier.blender.fbx import export_fbx as export_scene_fbx
     export_scene_fbx(filepath=str(path), use_selection=True, object_types={'MESH'},
         apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL', global_scale=1.,
         axis_forward='-Z', axis_up='Y', use_mesh_modifiers=False, mesh_smooth_type='FACE',
         use_tspace=bool(channels), bake_anim=False, add_leaf_bones=False, path_mode='STRIP')
-    lo, hi = vertices.min(axis=0), vertices.max(axis=0)
-    result = {'name': name, 'fbx': f'fbx/{name}.fbx', 'sha256': sha(path),
-        'native_origin': origin.tolist(), 'bounds': {'minimum': lo.tolist(), 'maximum': hi.tolist()},
-        'vertices': len(vertices), 'triangles': len(faces), 'materials': materials}
-    bpy.data.meshes.remove(data, do_unlink=True)
+    result['sha256'] = sha(path)
+    bpy.data.meshes.remove(obj.data, do_unlink=True)
     return result
-
 
 def channels(arrays, i, v, f):
     """(normals, uvs, lightmap uvs, decal uvs) of source part i with vertices v and faces f."""
@@ -111,7 +116,7 @@ def channels(arrays, i, v, f):
     return n, uv, np.abs(arrays.get(f'lightmap_uvs_{i}', uv)), arrays.get(f'decal_uvs_{i}', uv)
 
 
-def export_seam(source, report):
+def export_seam(source, report, entry_mesh=export_mesh, selection=None):
     """The seam (placement.SEAM, docs/MEGAPARK.md "Seam"): its parts and the skirt under their open edges as one
     render mesh, its collision triangles and the skirt as one collision mesh. Only the island places them."""
     models = {m['asset_id']: m for m in source['models']}
@@ -178,17 +183,19 @@ def export_seam(source, report):
             la, lb = np.mean(lit[a], 0), np.mean(lit[b], 0)
             lightmaps.append(np.stack([la, lb, lb, la]).astype(lightmap.dtype))
             offset += 4
-    render = export_mesh('SM_MP_Seam', np.concatenate(vertices), np.concatenate(faces), slots, material_indices,
+    render = entry_mesh('SM_MP_Seam', np.concatenate(vertices), np.concatenate(faces), slots, material_indices,
         {'UVMap': np.concatenate(uvs), 'RetailLightmap': np.concatenate(lightmaps), 'RetailDecal': np.concatenate(decals)},
         np.concatenate(normals))
     render['seam_parts'] = {asset: list(parts) for asset, parts in placement.SEAM.items()}
     render['skirt_edges'] = len(placement.seam_skirt())
+    if selection == 'render':
+        return [render]
     section = next(c for c in source['collision'] if c['id'] == placement.SEAM_SECTION)
     with np.load(SOURCE / section['npz'], allow_pickle=False) as arrays:
         triangles = arrays['triangles']
     kept = np.concatenate([triangles[placement.seam_mask()], placement.skirt_triangles().astype(triangles.dtype)])
     vertices = kept.reshape(-1, 3)
-    collision = export_mesh('UC_MP_Seam', vertices, np.arange(len(vertices), dtype='u4').reshape(-1, 3), ['M_Collision'],
+    collision = entry_mesh('UC_MP_Seam', vertices, np.arange(len(vertices), dtype='u4').reshape(-1, 3), ['M_Collision'],
         np.zeros(len(kept), dtype='i4'))
     collision['source_id'] = section['id']; collision['seam_triangles'] = int(placement.seam_mask().sum())
     collision['one_sided'] = bool(section['mesh_flags'] & 0x10)
@@ -198,6 +205,8 @@ def export_seam(source, report):
 def letters():
     """寄り道 where SHARKS stood (sign.py): native vertices (float32, one per face corner so the concrete keeps crisp
     edges), triangles, normals and UVs."""
+    import bpy
+    import bmesh
     curve = bpy.data.curves.new('letters', 'FONT')
     curve.body = sign.TEXT
     curve.font = bpy.data.fonts.load(str(OUT / sign.BLACK), check_existing=True)
@@ -319,21 +328,100 @@ def write_island(report):
     spawn = report['spawn']
     island = {'source_sha256': report['source_sha256'], 'location_cm': t['location_cm'], 'yaw_deg': t['yaw_deg'],
         'placement': placement.summary(),
-        'render': [{'name': e['name'], 'origin_cm': ue(e['native_origin'])} for e in report['render'] if e['name'] in render],
-        'collision': [{'name': e['name'], 'origin_cm': ue(e['native_origin'])} for e in report['collision'] if e['name'] in collision],
+        'render': [{'name': e['name'], 'origin_cm': ue(e['native_origin'])} for e in report['render'] if e.get('logical_parent', e['name']) in render],
+        'collision': [{'name': e['name'], 'origin_cm': ue(e['native_origin'])} for e in report['collision'] if e.get('logical_parent', e['name']) in collision],
         'rails': [{'id': r['id'] + suffix, 'closed': r['closed'] and not suffix, 'points_cm': [ue(p) for p in points]}
                   for r in report['rails'] for suffix, points in island_runs(r['points'])],
         'spawn': {'location_cm': placement.to_unreal(spawn['position']).tolist(), 'yaw_deg': spawn['heading_degrees'] + t['yaw_deg']},
         'trees': {name: [ue(p[:3]) + p[3:] for p in items] for name, items in plants.trees().items()},
         'props': cars.props()}
-    assert len(island['render']) + len(render & set(report['foliage_only'])) == len(render)
-    assert len(island['collision']) == len(collision)
+    assert {e.get('logical_parent', e['name']) for e in report['render']} & render == render - set(report['foliage_only'])
+    assert {e.get('logical_parent', e['name']) for e in report['collision']} & collision == collision
     for e in report['seam']:
         island['collision' if e['name'].startswith('UC_') else 'render'].append({'name': e['name'], 'origin_cm': ue(e['native_origin'])})
     (OUT / 'park.json').write_text(json.dumps(island) + '\n')
 
 
+def model_geometry(source, model, new_letters, report, entry_mesh=export_mesh):
+    """Construct exactly one source model, with the original restyle and corner channels."""
+    assert sha(SOURCE/model['npz']) == model['sha256'], model['npz']
+    vertices, faces, normals, uvs, lightmaps, decals, material_indices, slots = [], [], [], [], [], [], [], []
+    offset = 0; degenerates = 0; foliage = 0; car = 0
+    with np.load(SOURCE / model['npz'], allow_pickle=False) as arrays:
+        for part in model['meshes']:
+            i = part['index']; v = arrays[f'vertices_{i}']; f = arrays[f'faces_{i}']
+            if plants.is_foliage(part):
+                # The desert plants give way to island trees, planted by the park actor (write_island).
+                foliage += len(f)
+                continue
+            if cars.is_car(model, part):
+                # The traffic cars give way to the kei cars, parked by the park actor (write_island).
+                car += len(f)
+                continue
+            if sign.is_letters(model, part):
+                v, f, n, uv = new_letters
+                key = material_key(letters_material(part))
+                if key not in slots:
+                    slots.append(key)
+                report['materials'].setdefault(key, letters_material(part))
+                vertices.append(v); faces.append(f+offset); material_indices.extend([slots.index(key)]*len(f))
+                normals.append(n); uvs.append(uv); lightmaps.append(np.zeros_like(uv)); decals.append(uv)
+                offset += len(v)
+                continue
+            t = v[f].astype('f8')
+            valid = np.linalg.norm(np.cross(t[:,1]-t[:,0], t[:,2]-t[:,0]), axis=1) > 1e-12
+            degenerates += int((~valid).sum()); f = f[valid]
+            if not len(v) or not len(f):
+                continue
+            key = material_key(part)
+            if key not in slots:
+                slots.append(key)
+            report['materials'].setdefault(key, part)
+            vertices.append(v); faces.append(f+offset); material_indices.extend([slots.index(key)]*len(f))
+            n, uv, lightmap, decal = channels(arrays, i, v, f)
+            normals.append(n); uvs.append(uv); lightmaps.append(lightmap); decals.append(decal)
+            offset += len(v)
+    if not vertices:
+        if foliage:
+            report['foliage_only'].append('SM_MP_'+model['asset_id'][2:])
+        return None
+    entry = entry_mesh('SM_MP_'+model['asset_id'][2:], np.concatenate(vertices), np.concatenate(faces), slots,
+        material_indices, {'UVMap': np.concatenate(uvs), 'RetailLightmap': np.concatenate(lightmaps), 'RetailDecal': np.concatenate(decals)}, np.concatenate(normals))
+    entry['source_asset_id'] = model['asset_id']
+    entry['degenerate_faces_removed'] = degenerates
+    entry['foliage_faces_removed'] = foliage
+    if car:
+        entry['car_faces_removed'] = car
+    return entry
+
+
+def collision_geometry(mesh, new_letters, entry_mesh=export_mesh):
+    """Construct one authoritative riding collision section with the original source order."""
+    assert sha(SOURCE/mesh['npz']) == mesh['sha256'], mesh['npz']
+    with np.load(SOURCE / mesh['npz'], allow_pickle=False) as arrays:
+        triangles = arrays['triangles']
+        cross = np.cross(triangles[:,1]-triangles[:,0], triangles[:,2]-triangles[:,0])
+        valid = np.linalg.norm(cross, axis=1) > 1e-12
+        # Only geometrically degenerate faces cannot be represented in Chaos.
+        # Opposite-wound contacts and feature boundaries remain untouched.
+        kept = triangles[valid]
+        if mesh['id'] == sign.SECTION:
+            # SHARKS gives way to 寄り道, solid like the letters it replaces (sign.py).
+            kept = np.concatenate([kept[~sign.letters_mask(kept)], new_letters[0][new_letters[1]].astype(kept.dtype)])
+        car = cars.collision_mask(kept) if mesh['id'] == cars.SECTION else np.zeros(len(kept), bool)
+        kept = kept[~car]     # the kei cars bring their own collision
+        vertices = kept.reshape(-1,3)
+        faces = np.arange(len(vertices), dtype='u4').reshape(-1,3)
+        entry = entry_mesh('UC_MP_'+mesh['id'], vertices, faces, ['M_Collision'], np.zeros(len(faces), dtype='i4'))
+        entry['source_id'] = mesh['id']; entry['degenerate_faces_removed'] = int((~valid).sum())
+        if car.any():
+            entry['car_faces_removed'] = int(car.sum())
+        entry['one_sided'] = bool(mesh['mesh_flags'] & 0x10)
+        return entry
+
+
 def main():
+    import bpy
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / 'fbx').mkdir(exist_ok=True)
     write_fallbacks()
@@ -345,78 +433,12 @@ def main():
     new_letters = letters()
     np.savez(OUT / 'letters.npz', triangles=new_letters[0][new_letters[1]])
     for model in source['models']:
-        assert sha(SOURCE/model['npz']) == model['sha256'], model['npz']
-        vertices, faces, normals, uvs, lightmaps, decals, material_indices, slots = [], [], [], [], [], [], [], []
-        offset = 0; degenerates = 0; foliage = 0; car = 0
-        with np.load(SOURCE / model['npz'], allow_pickle=False) as arrays:
-            for part in model['meshes']:
-                i = part['index']; v = arrays[f'vertices_{i}']; f = arrays[f'faces_{i}']
-                if plants.is_foliage(part):
-                    # The desert plants give way to island trees, planted by the park actor (write_island).
-                    foliage += len(f)
-                    continue
-                if cars.is_car(model, part):
-                    # The traffic cars give way to the kei cars, parked by the park actor (write_island).
-                    car += len(f)
-                    continue
-                if sign.is_letters(model, part):
-                    v, f, n, uv = new_letters
-                    key = material_key(letters_material(part))
-                    if key not in slots:
-                        slots.append(key)
-                    report['materials'].setdefault(key, letters_material(part))
-                    vertices.append(v); faces.append(f+offset); material_indices.extend([slots.index(key)]*len(f))
-                    normals.append(n); uvs.append(uv); lightmaps.append(np.zeros_like(uv)); decals.append(uv)
-                    offset += len(v)
-                    continue
-                t = v[f].astype('f8')
-                valid = np.linalg.norm(np.cross(t[:,1]-t[:,0], t[:,2]-t[:,0]), axis=1) > 1e-12
-                degenerates += int((~valid).sum()); f = f[valid]
-                if not len(v) or not len(f):
-                    continue
-                key = material_key(part)
-                if key not in slots:
-                    slots.append(key)
-                report['materials'].setdefault(key, part)
-                vertices.append(v); faces.append(f+offset); material_indices.extend([slots.index(key)]*len(f))
-                n, uv, lightmap, decal = channels(arrays, i, v, f)
-                normals.append(n); uvs.append(uv); lightmaps.append(lightmap); decals.append(decal)
-                offset += len(v)
-        if not vertices:
-            if foliage:
-                report['foliage_only'].append('SM_MP_'+model['asset_id'][2:])
-            continue
-        entry = export_mesh('SM_MP_'+model['asset_id'][2:], np.concatenate(vertices), np.concatenate(faces), slots,
-            material_indices, {'UVMap': np.concatenate(uvs), 'RetailLightmap': np.concatenate(lightmaps), 'RetailDecal': np.concatenate(decals)}, np.concatenate(normals))
-        entry['source_asset_id'] = model['asset_id']
-        entry['degenerate_faces_removed'] = degenerates
-        entry['foliage_faces_removed'] = foliage
-        if car:
-            entry['car_faces_removed'] = car
-        report['render'].append(entry)
-        print('Exported', entry['name'], flush=True)
+        entry = model_geometry(source, model, new_letters, report)
+        if entry is not None:
+            report['render'].append(entry)
+            print('Exported', entry['name'], flush=True)
     for mesh in source['collision']:
-        assert sha(SOURCE/mesh['npz']) == mesh['sha256'], mesh['npz']
-        with np.load(SOURCE / mesh['npz'], allow_pickle=False) as arrays:
-            triangles = arrays['triangles']
-            cross = np.cross(triangles[:,1]-triangles[:,0], triangles[:,2]-triangles[:,0])
-            valid = np.linalg.norm(cross, axis=1) > 1e-12
-            # Only geometrically degenerate faces cannot be represented in Chaos.
-            # Opposite-wound contacts and feature boundaries remain untouched.
-            kept = triangles[valid]
-            if mesh['id'] == sign.SECTION:
-                # SHARKS gives way to 寄り道, solid like the letters it replaces (sign.py).
-                kept = np.concatenate([kept[~sign.letters_mask(kept)], new_letters[0][new_letters[1]].astype(kept.dtype)])
-            car = cars.collision_mask(kept) if mesh['id'] == cars.SECTION else np.zeros(len(kept), bool)
-            kept = kept[~car]     # the kei cars bring their own collision
-            vertices = kept.reshape(-1,3)
-            faces = np.arange(len(vertices), dtype='u4').reshape(-1,3)
-            entry = export_mesh('UC_MP_'+mesh['id'], vertices, faces, ['M_Collision'], np.zeros(len(faces), dtype='i4'))
-            entry['source_id'] = mesh['id']; entry['degenerate_faces_removed'] = int((~valid).sum())
-            if car.any():
-                entry['car_faces_removed'] = int(car.sum())
-            entry['one_sided'] = bool(mesh['mesh_flags'] & 0x10)
-            report['collision'].append(entry)
+        report['collision'].append(collision_geometry(mesh, new_letters))
     report['seam'] = export_seam(source, report)
     report['rails'] = [sample_rail(rail) for rail in source['rails']]
     # Seed the existing FBX factory's safe reimport route with a clean triangle.

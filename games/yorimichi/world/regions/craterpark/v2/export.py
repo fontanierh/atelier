@@ -67,7 +67,7 @@ def line_npz(mesh, line, path):
     return path
 
 
-def export_mesh(out, name, vertices, faces, materials, face_materials, uvs=None, normals=None, ao=None):
+def mesh_object(out, name, vertices, faces, materials, face_materials, uvs=None, normals=None, ao=None):
     """An FBX about a local origin on a 32 m grid, native units, Y up (craterpark/build.py export_mesh), with the
     analytic per-vertex `normals` as custom split normals. Returns its build.json entry (r4's common keys)."""
     import bpy
@@ -101,6 +101,17 @@ def export_mesh(out, name, vertices, faces, materials, face_materials, uvs=None,
     bpy.context.collection.objects.link(obj)
     bpy.context.view_layer.objects.active = obj
     obj.select_set(True)
+    used = vertices[np.unique(faces)]
+    lo, hi = used.min(axis=0), used.max(axis=0)
+    result = {'name': name, 'fbx': f'fbx/{name}.fbx', 'sha256': None, 'native_origin': origin.tolist(),
+              'bounds': {'minimum': lo.tolist(), 'maximum': hi.tolist()}, 'vertices': len(vertices),
+              'triangles': len(faces), 'materials': list(materials)}
+    return obj, result
+
+
+def export_mesh(out, name, vertices, faces, materials, face_materials, uvs=None, normals=None, ao=None):
+    import bpy
+    obj, result = mesh_object(out, name, vertices, faces, materials, face_materials, uvs, normals, ao)
     path = Path(out) / 'fbx' / f'{name}.fbx'
     from atelier.blender.fbx import export_fbx as export_scene_fbx
     export_scene_fbx(filepath=str(path), use_selection=True, object_types={'MESH'},
@@ -108,14 +119,9 @@ def export_mesh(out, name, vertices, faces, materials, face_materials, uvs=None,
                              axis_forward='-Z', axis_up='Y', use_mesh_modifiers=False, mesh_smooth_type='FACE',
                              use_tspace=uvs is not None, bake_anim=False, add_leaf_bones=False, path_mode='STRIP',
                              colors_type='SRGB')
-    used = vertices[np.unique(faces)]
-    lo, hi = used.min(axis=0), used.max(axis=0)
-    result = {'name': name, 'fbx': f'fbx/{name}.fbx', 'sha256': sha(path), 'native_origin': origin.tolist(),
-              'bounds': {'minimum': lo.tolist(), 'maximum': hi.tolist()}, 'vertices': len(vertices),
-              'triangles': len(faces), 'materials': list(materials)}
-    bpy.data.meshes.remove(data, do_unlink=True)
+    result['sha256'] = sha(path)
+    bpy.data.meshes.remove(obj.data, do_unlink=True)
     return result
-
 
 ZONE_PAD = 200.     # cm round each capped launch ramp
 
@@ -166,11 +172,8 @@ def boost_boxes(zones, placement):
     return boxes
 
 
-def write(out, source, geometry, placement, entry_mesh=export_mesh):
-    """Every FBX, build.json and park.json under `out` from the arrays in `geometry` (generate.bundle's npz)."""
-    out = Path(out); (out / 'fbx').mkdir(parents=True, exist_ok=True)
-    # mesh files this build does not make are removed, so no stale r4 FBX lies next to the new ones
-    index = json.loads(str(geometry['index']))
+def validate_geometry(index):
+    """Keep the existing structural/support admission before every atomic projection."""
     provenance = None
     if v4_config.selected():
         provenance = v4_config.provenance()
@@ -190,29 +193,12 @@ def write(out, source, geometry, placement, entry_mesh=export_mesh):
             raise ValueError('v4 geometry has no checked tower starts')
     elif index.get('v4'):
         raise ValueError('v4 geometry requires its explicit design selection; rebuild old geometry')
-    build = {'scene_sha256': sha(source / 'scene.json'), 'render': [], 'collision': []}
-    if provenance:
-        build['v4'] = provenance
-    for i, spec in enumerate(index['render']):
-        mesh = dsl.Mesh.from_arrays(geometry, f'r{i}_')
-        materials = [dsl.MATERIALS[int(m)] for m in np.unique(mesh.material)]
-        local = np.searchsorted(np.unique(mesh.material), mesh.material)
-        entry = entry_mesh(out, spec['name'], mesh.V, mesh.F, materials, local, mesh.UV, mesh.N, mesh.AO)
-        entry.update(source_id=spec['name'][6:], role=spec['role'], skipped=0, covered=0,
-                     occlusion_mean=round(float(mesh.AO.mean()), 4) if len(mesh.AO) else 1.)
-        build['render'].append({k: entry[k] for k in RENDER_KEYS})
-    for i, spec in enumerate(index['collision']):
-        t = np.asarray(geometry[f'c{i}'], 'f8')
-        vertices, faces = t.reshape(-1, 3), np.arange(len(t) * 3).reshape(-1, 3)
-        entry = entry_mesh(out, spec['name'], vertices, faces, ['M_Collision'], np.zeros(len(faces), 'i4'))
-        entry.update(source_triangles=len(t), role=spec['role'], one_sided=False)
-        build['collision'].append({k: entry[k] for k in COLLISION_KEYS})
-    entry_mesh(out, 'SM_CP_ImportSeed', np.asarray([[0, 0, 0], [1, 0, 0], [0, 0, 1]], 'f8'), np.asarray([[0, 2, 1]]),
-               ['M_Collision'], [0], np.asarray([[0, 0], [1, 0], [0, 1]], 'f8'))
-    keep = {e['name'] for e in build['render'] + build['collision']} | {'SM_CP_ImportSeed'}
-    for stale in (out / 'fbx').glob('*.fbx'):
-        if stale.stem not in keep:
-            stale.unlink()
+    return provenance
+
+
+def write_metadata(out, source, geometry, placement, build, index, provenance):
+    """Write placements/course/query metadata only; never construct or join render geometry."""
+    out = Path(out)
     t = placement.unreal_transform()
     ground = None if provenance else json.loads((source / 'drop-in.json').read_text())['groundPosition']
     rails = []
@@ -263,6 +249,38 @@ def write(out, source, geometry, placement, entry_mesh=export_mesh):
         temporary.write_text(json.dumps(data, indent=1 if name == 'build.json' else None) + '\n')
         temporary.replace(out / name)
     return build, park
+
+
+def write(out, source, geometry, placement, entry_mesh=export_mesh):
+    """Every FBX, build.json and park.json under `out` from the arrays in `geometry` (generate.bundle's npz)."""
+    out = Path(out); (out / 'fbx').mkdir(parents=True, exist_ok=True)
+    # mesh files this build does not make are removed, so no stale r4 FBX lies next to the new ones
+    index = json.loads(str(geometry['index']))
+    provenance = validate_geometry(index)
+    build = {'scene_sha256': sha(source / 'scene.json'), 'render': [], 'collision': []}
+    if provenance:
+        build['v4'] = provenance
+    for i, spec in enumerate(index['render']):
+        mesh = dsl.Mesh.from_arrays(geometry, f'r{i}_')
+        materials = [dsl.MATERIALS[int(m)] for m in np.unique(mesh.material)]
+        local = np.searchsorted(np.unique(mesh.material), mesh.material)
+        entry = entry_mesh(out, spec['name'], mesh.V, mesh.F, materials, local, mesh.UV, mesh.N, mesh.AO)
+        entry.update(source_id=spec['name'][6:], role=spec['role'], skipped=0, covered=0,
+                     occlusion_mean=round(float(mesh.AO.mean()), 4) if len(mesh.AO) else 1.)
+        build['render'].append({k: entry[k] for k in RENDER_KEYS})
+    for i, spec in enumerate(index['collision']):
+        t = np.asarray(geometry[f'c{i}'], 'f8')
+        vertices, faces = t.reshape(-1, 3), np.arange(len(t) * 3).reshape(-1, 3)
+        entry = entry_mesh(out, spec['name'], vertices, faces, ['M_Collision'], np.zeros(len(faces), 'i4'))
+        entry.update(source_triangles=len(t), role=spec['role'], one_sided=False)
+        build['collision'].append({k: entry[k] for k in COLLISION_KEYS})
+    entry_mesh(out, 'SM_CP_ImportSeed', np.asarray([[0, 0, 0], [1, 0, 0], [0, 0, 1]], 'f8'), np.asarray([[0, 2, 1]]),
+               ['M_Collision'], [0], np.asarray([[0, 0], [1, 0], [0, 1]], 'f8'))
+    keep = {e['name'] for e in build['render'] + build['collision']} | {'SM_CP_ImportSeed'}
+    for stale in (out / 'fbx').glob('*.fbx'):
+        if stale.stem not in keep:
+            stale.unlink()
+    return write_metadata(out, source, geometry, placement, build, index, provenance)
 
 
 def main():

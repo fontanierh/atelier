@@ -10,6 +10,9 @@ import yori
 import hashlib
 import json
 import unreal
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import park_atomic_native
+from atelier.unreal_mesh_reuse import common_fbx_mesh
 
 OUT = yori.OUT / 'megapark'
 SOURCE = yori.ASSETS / 'megapark'
@@ -217,12 +220,58 @@ def materials(report):
     return result
 
 
+def _park_options_match(mesh):
+    """Read-only admission; current materials/physics/bounds are still finished below."""
+    data = mesh.get_editor_property('asset_import_data')
+    if not isinstance(data, unreal.FbxStaticMeshImportData):
+        return False
+    options = dict(combine_meshes=True, generate_lightmap_u_vs=False, auto_generate_collision=False,
+        convert_scene=True, convert_scene_unit=True, import_uniform_scale=1., build_nanite=False,
+        remove_degenerates=False, normal_import_method=unreal.FBXNormalImportMethod.FBXNIM_IMPORT_NORMALS)
+    if mesh.get_name().startswith('SM_CP_'):
+        options['vertex_color_import_option'] = unreal.VertexColorImportOption.REPLACE
+    actual_nanite = unreal.AssetRegistryHelpers.create_asset_data(mesh).get_tag_value('NaniteEnabled')
+    return actual_nanite == 'False' and all(data.get_editor_property(k) == v for k, v in options.items())
+
+
+def _finish_mesh(mesh):
+    mesh.set_editor_property('allow_cpu_access', True)
+    # Keep authored UVs at float precision; half UVs noticeably distort long ramps.
+    editor = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
+    settings = editor.get_lod_build_settings(mesh, 0)
+    settings.set_editor_property('use_full_precision_u_vs', True)
+    settings.set_editor_property('remove_degenerates', False)
+    settings.set_editor_property('distance_field_resolution_scale', 0.)
+    editor.set_lod_build_settings(mesh, 0, settings)
+    return mesh
+
+
 def import_mesh(path, name, dest=None, seed=None, vertex_colors=False):
+    """Admit unchanged source bytes before any raw import/package mutation."""
+    dest = dest or ROOT + '/Meshes'
+    mesh, reuse = common_fbx_mesh(path, dest, name, fresh_slots=True, script=__file__,
+        functions=('_source_mesh',), validator=_park_options_match,
+        validation_functions=('_park_options_match',),
+        owner_roots=(Path(__file__).resolve().parents[2] / 'world',
+                     Path(__file__).resolve().parents[2] / 'world/regions'))
+    if mesh is None:
+        mesh = _source_mesh(path, name, dest, seed, vertex_colors)
+        if reuse is not None:
+            reuse.imported(dest + '/' + name)
+    if not _park_options_match(mesh):
+        raise ValueError('Park FBX options differ from current source policy: ' + name)
+    _finish_mesh(mesh)
+    if reuse is not None:
+        reuse.defer_validated(dest + '/' + name)
+    return mesh
+
+
+def _source_mesh(path, name, dest=None, seed=None, vertex_colors=False):
     """Faithful FBX import; another park may supply its own destination and seed."""
     dest = dest or ROOT+'/Meshes'; seed = seed or OUT/'fbx'/(SEED+'.fbx')
     asset = dest+'/'+name
     if not E.does_asset_exist(asset) and path.resolve() != seed.resolve():
-        import_mesh(seed, name, dest, seed, vertex_colors)
+        _source_mesh(seed, name, dest, seed, vertex_colors)
     task = unreal.AssetImportTask()
     task.filename = str(path); task.destination_path = dest; task.destination_name = name
     task.automated = True; task.replace_existing = True; task.replace_existing_settings = True; task.save = True
@@ -251,16 +300,7 @@ def import_mesh(path, name, dest=None, seed=None, vertex_colors=False):
                 if k != 'build_nanite': prior.set_editor_property(k, v)
     task.options = ui; AT.import_asset_tasks([task])
     mesh = E.load_asset(asset); assert mesh and task.imported_object_paths, name
-    mesh.set_editor_property('allow_cpu_access', True)
-    # Keep authored UVs at float precision; half UVs noticeably distort long ramps.
-    editor = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
-    settings = editor.get_lod_build_settings(mesh, 0)
-    settings.set_editor_property('use_full_precision_u_vs', True)
-    settings.set_editor_property('remove_degenerates', False)
-    settings.set_editor_property('distance_field_resolution_scale', 0.)
-    editor.set_lod_build_settings(mesh, 0, settings)
     return mesh
-
 
 def mesh_actor(entry, collision, mis, actors, editor, results, place=True):
     """Import one mesh, check it, and (when place) stand it in the standalone level."""
@@ -280,7 +320,7 @@ def mesh_actor(entry, collision, mis, actors, editor, results, place=True):
             slot.set_editor_property('material_interface', mis[key]); found.add(key)
         assert found == set(entry['materials']), (entry['name'], found, entry['materials'])
         mesh.set_editor_property('static_materials', slots)
-    E.save_loaded_asset(mesh)
+    assert E.save_loaded_asset(mesh), ('Could not save current park mesh', entry['name'])
     audit = OUT/'imported-geometry'; audit.mkdir(exist_ok=True)
     assert unreal.MeshImportAudit.dump_mesh_triangles(mesh, ue(entry['native_origin']), str(audit/(entry['name']+'.bin')))
     actual = mesh.get_bounding_box()
@@ -311,6 +351,7 @@ def main():
     unreal.load_module('StaticMeshEditor')
     editor = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
     actors = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
+    previous = park_atomic_native.inventory(E, ROOT, 'MP')
     E.make_directory(ROOT+'/Maps')
     world = unreal.EditorLoadingAndSavingUtils.new_blank_map(False)
     assert world, 'Could not create park level'
@@ -352,8 +393,9 @@ def main():
                      override_motion_blur_amount=True, motion_blur_amount=0.).items(): settings.set_editor_property(k, v)
     volume.set_editor_property('settings', settings)
     assert unreal.EditorLoadingAndSavingUtils.save_map(world, LEVEL), 'Failed to save native map'
-    E.save_directory(ROOT, only_if_is_dirty=True, recursive=True)
-    result = {'level': LEVEL, 'source_sha256': report['source_sha256'], 'meshes': results,
+    assert E.save_directory(ROOT, only_if_is_dirty=True, recursive=True), 'Park save failed'
+    retired = park_atomic_native.retire(E, previous, report, ROOT, 'MP', yori.GAME / 'unreal/Content')
+    result = {'retired': retired, 'level': LEVEL, 'source_sha256': report['source_sha256'], 'meshes': results,
               'textures': len(report['textures']), 'materials': len(mis), 'rails': len(rails),
               'render_triangles': sum(e['triangles'] for e in results if not e['collision']),
               'collision_triangles': sum(e['triangles'] for e in results if e['collision'])}

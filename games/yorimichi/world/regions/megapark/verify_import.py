@@ -20,7 +20,7 @@ OUT = yori.OUT/'megapark'
 TOLERANCE = .0005  # original metres; 0.05 cm in Unreal
 
 
-def expected_triangles(entry, source):
+def whole_expected_triangles(entry, source):
     if entry['name'] == 'SM_MP_Seam':
         # The seam's parts without their zero-area faces, and the skirt under their open edges (build.py export_seam).
         return np.concatenate([v[f] for _, _, v, f in placement.seam_parts()] + [placement.skirt_triangles()])
@@ -52,6 +52,17 @@ def expected_triangles(entry, source):
         triangles = np.concatenate([triangles[~sign.letters_mask(triangles)], letters().astype(triangles.dtype)])
     if model['id'] == cars.SECTION:
         triangles = triangles[~cars.collision_mask(triangles)]
+    return triangles
+
+
+def expected_triangles(entry, source):
+    parent = entry.get('logical_parent', entry['name'])
+    triangles = whole_expected_triangles(dict(entry, name=parent), source)
+    if 'source_faces' in entry:
+        members = np.asarray(entry['source_faces'])
+        assert members.ndim == 1 and members.dtype.kind in 'iu'
+        assert len(members) == len(np.unique(members)) and (members >= 0).all() and (members < len(triangles)).all()
+        return triangles[members]
     return triangles
 
 

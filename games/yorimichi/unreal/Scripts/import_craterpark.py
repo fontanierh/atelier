@@ -11,6 +11,7 @@ import yori
 import json
 import unreal
 import import_megapark as megapark
+import park_atomic_native
 
 OUT = yori.OUT / 'craterpark'
 SOURCE = yori.ASSETS / 'craterpark'
@@ -158,25 +159,6 @@ def materials():
     return result
 
 
-def delete_stale(report):
-    """Delete the SM_CP_* / UC_CP_* meshes under ROOT/Meshes that this build.json no longer names (the seed stays):
-    /Game/CraterPark is always cooked (DefaultGame.ini DirectoriesToAlwaysCook), so a dead mesh would ship."""
-    wanted = {e['name'] for e in report['render'] + report['collision']} | {'SM_CP_ImportSeed'}
-    deleted = []
-    for path in E.list_assets(ROOT + '/Meshes', recursive=False, include_folder=False):
-        name = str(path).rsplit('/', 1)[-1].split('.')[0]
-        if name.startswith(('SM_CP_', 'UC_CP_')) and name not in wanted:
-            assert E.delete_asset(str(path).split('.')[0]), f'Could not delete the stale mesh {path}'
-            deleted.append(name)
-    # the import's geometry audit (imported-geometry/<name>.bin) would otherwise keep r4's dead meshes in analyses
-    audit = OUT / 'imported-geometry'
-    for stale in (audit.glob('*.bin') if audit.exists() else ()):
-        if stale.stem not in wanted:
-            stale.unlink(); deleted.append(stale.name)
-    print('CRATERPARK stale meshes deleted:', len(deleted), flush=True)
-    return deleted
-
-
 def main():
     report = json.loads((OUT / 'build.json').read_text())
     assert megapark.sha(SOURCE / 'scene.json') == report['scene_sha256'], 'Rebuild Crater Park first (world.craterpark)'
@@ -190,7 +172,7 @@ def main():
     megapark.import_mesh = lambda path, name, dest=None, seed=None, vertex_colors=False: plain(
         path, name, dest, seed, vertex_colors or name.startswith('SM_CP_'))
     E.make_directory(ROOT + '/Meshes')
-    deleted = delete_stale(report)
+    previous = park_atomic_native.inventory(E, ROOT, 'CP')
     mis = materials(); results = []
     # The riding collision is placed in a throwaway level, so the editor cooks it here into the shared cache instead of
     # the game cooking about 600k triangles as the island loads (over the memory guard).
@@ -202,8 +184,10 @@ def main():
         if not collision:
             # Only the riding collision is read on the CPU (the skating snapshot); the drawn meshes keep no CPU copy.
             mesh = E.load_asset(ROOT + '/Meshes/' + entry['name'])
-            mesh.set_editor_property('allow_cpu_access', False); E.save_loaded_asset(mesh)
-    E.save_directory(ROOT, only_if_is_dirty=True, recursive=True)
+            mesh.set_editor_property('allow_cpu_access', False)
+            assert E.save_loaded_asset(mesh), ('Crater render save failed', entry['name'])
+    assert E.save_directory(ROOT, only_if_is_dirty=True, recursive=True), 'Crater park save failed'
+    deleted = park_atomic_native.retire(E, previous, report, ROOT, 'CP', yori.GAME / 'unreal/Content')
     result = {'root': ROOT, 'source_sha256': report['scene_sha256'], 'meshes': results, 'materials': len(mis),
               'deleted_stale': deleted,
               'render_triangles': sum(e['triangles'] for e in results if not e['collision']),
