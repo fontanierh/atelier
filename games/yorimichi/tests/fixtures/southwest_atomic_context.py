@@ -22,6 +22,7 @@ from mesh_pieces import capture, subset  # noqa: E402
 from random_stream import Counted  # noqa: E402
 from region_mesh_parts import plan  # noqa: E402
 import export_region_piece  # noqa: E402
+import source_geometry  # noqa: E402
 
 
 MODELS = 'stand,fisher_house_a,fisher_house_b,boat_shed,stairs,dock,boat,drying_rack,temple,island,boulder_a,boulder_b,boulder_c,stone_wall,pine_lean_a,pine_lean_b'.split(',')
@@ -49,7 +50,7 @@ def main():
         *sorted((GAME/'world/regions/southwest').glob('*.py')),
         *sorted((GAME/'world/regions/southwest/contexts').glob('*.json')), Path(__file__),
         GAME/'world/mesh_pieces.py',GAME/'world/region_mesh_parts.py',GAME/'world/export_region_piece.py',
-        GAME/'world/region_query.py',GAME/'tests/native/fbx_corners.py']
+        GAME/'world/region_query.py',GAME/'world/source_geometry.py',GAME/'tests/native/fbx_corners.py']
     def hashes():
         result = {}
         for path in source_files:
@@ -75,6 +76,8 @@ def main():
     for model in MODELS:
         context = {key:counter.context(seeds[key]) for key,counter in counts.items()}
         source = original['MODELS'][model](); obj, reference = captured(source,material)
+        source_geometry.write(root/'original-source'/source.name,capture(obj.data),owner=source.name,
+            slots=[slot.name for slot in obj.data.materials],matrix=[list(row) for row in obj.matrix_world],collisions=())
         contexts[source.name] = dict(schema=1,model=model,asset=source.name,contexts=context)
         bpy.ops.object.select_all(action='DESELECT'); obj.select_set(True);bpy.context.view_layer.objects.active=obj
         control = root/'controls'/(source.name+'.fbx');control.parent.mkdir(exist_ok=True)

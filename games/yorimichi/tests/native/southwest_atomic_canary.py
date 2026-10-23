@@ -41,4 +41,5 @@ receipt = json.loads((root/'guard/memory-health-tree.json').read_text())
 assert result['complete'] and len(result['assets']) == 16 and result['actual_fbx_corner_conservation']
 assert receipt['state'] == 'child_exited' and receipt['cleanup_complete'] and not receipt['processes']
 assert not receipt.get('late_reporters',{}).get('unresolved',[])
+(root/'whole-result.json').write_text(json.dumps(dict(exit_code=0,complete=True))+'\n')
 print('GUARDED SIXTEEN-OWNER SOUTHWEST SOURCE CONSERVATION PASS',flush=True)
