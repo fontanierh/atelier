@@ -37,13 +37,14 @@ def native_product(name, content, packages, *, extra=()):
 
 def world_steps(ctx):
     from atelier.build import Python
+    from atelier.build_batch_source import support as batch_support
     from atelier import export_tasks
     import sys
     sys.path.insert(0,str(GAME))
     import foliage_source_products as products
     product_code=build_inputs.local_imports(Path(products.__file__))
     source=WORLD/'foliage_selected_source.py';exporter=WORLD/'export_foliage_piece.py'
-    source_code=build_inputs.local_imports(source,(WORLD,WORLD/'regions'))
+    source_code=[*build_inputs.local_imports(source,(WORLD,WORLD/'regions')),*batch_support().values()]
     steps=[]
     for name in catalog.FOLIAGE:
         spec_path=catalog.SPEC_ROOT/(name+'.json');st=spec_path.stat();spec=_read_spec(spec_path,st.st_mtime_ns,st.st_size)
