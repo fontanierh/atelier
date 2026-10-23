@@ -1,6 +1,7 @@
 """Compose independently exported coastal meshes, materials and instance data without joining geometry."""
 import argparse
 import json
+import re
 from pathlib import Path
 import sys
 
@@ -24,6 +25,25 @@ def texture_names(materials):
         if value['texture']: result.add(value['texture'])
         for field in ('layers', 'normals'):
             result.update(v for v in value.get(field, {}).values() if v)
+    return result
+
+
+def previous_textures(previous, root, current):
+    """Retire declared ancillary source files only with exact prior byte proof."""
+    root = real_directory(root)
+    result = texture_names(previous['materials'])
+    auxiliary = previous.get('auxiliary_textures', {})
+    if not isinstance(auxiliary, dict): raise ValueError('Invalid prior coastal auxiliary inventory')
+    for filename, digest in auxiliary.items():
+        if (member(filename) != Path(filename).name or not re.fullmatch(r'T_BC_[a-z][a-z0-9_]*\.(?:jpg|png)', filename)
+                or not isinstance(digest, str)
+                or not re.fullmatch('[0-9a-f]{64}', digest)):
+            raise ValueError('Invalid prior coastal auxiliary texture')
+        path = root / filename
+        if filename not in current and (path.exists() or path.is_symlink()):
+            if path.is_symlink() or not path.is_file() or sha(path) != digest:
+                raise ValueError('Retiring coastal auxiliary texture differs from prior ownership')
+        result.add(filename)
     return result
 
 
@@ -81,11 +101,17 @@ def assemble(out, *, expected_parents, heroes):
                 triangles=triangles, bounds_m=bounds, slots=slots, collision=policy['collision']))
             groups.append(group(child, slots, transforms, **{k: policy[k] for k in ('collision', 'shadow', 'cull_cm')}))
     materials, textures = material_report(used - {slot for slot in used if slot.startswith('hero_')})
+    # The established factory also emits source rock images before selecting
+    # layered terrain shading. Keep their exact declared ownership separate
+    # from textures actually bound by a material; never accept arbitrary extras.
+    auxiliary_textures = set(textures) - texture_names(materials)
     for slug in heroes:
         folder = out / 'brinecove-data/heroes' / slug
         metadata = read(folder / 'materials.json')
         if metadata.get('complete') is not True or metadata.get('slug') != slug:
             raise ValueError('Missing coastal hero material data')
+        if set(metadata['files']) != texture_names(metadata['materials']):
+            raise ValueError('Coastal hero texture ownership differs from its material bindings')
         materials.update(metadata['materials'])
         for filename, digest in metadata['files'].items():
             if member(filename) != Path(filename).name: raise ValueError('Nonflat coastal hero texture')
@@ -106,6 +132,7 @@ def assemble(out, *, expected_parents, heroes):
         sources[filename] = source
         models.append({**model, 'path': 'glb/' + filename})
         extra, selected = material_report(set(model['slots']) - materials.keys())
+        auxiliary_textures.update(set(selected) - texture_names(extra))
         materials.update(extra); textures.update(selected)
         low = proto.startswith('cover_'); height = model['bounds_m'][1][2] - model['bounds_m'][0][2]
         if proto in data['plants']:
@@ -113,7 +140,7 @@ def assemble(out, *, expected_parents, heroes):
                 cull_cm=5000 if low else 24000 if height < 4 else 60000))
         if proto in data['scrub']:
             groups.append(group(model['name'], model['slots'], data['scrub'][proto], collision=False, shadow=False, cull_cm=9000))
-    if used - materials.keys() or texture_names(materials) != set(textures):
+    if used - materials.keys() or (texture_names(materials) | auxiliary_textures) != set(textures):
         raise ValueError('Incomplete coastal material/texture bindings')
     real_directory(destination)
     previous = dict(meshes=[], materials={})
@@ -126,7 +153,8 @@ def assemble(out, *, expected_parents, heroes):
         if value != 'glb/' + model['name'] + '.glb': raise ValueError('Foreign previous coastal model ownership')
         prior_models.add(Path(value).name)
     model_root = files.preflight(destination / 'glb', sources, prior_models)
-    texture_root = files.preflight(destination / 'textures', textures, texture_names(previous['materials']))
+    texture_root = files.preflight(destination / 'textures', textures,
+                                   previous_textures(previous, destination / 'textures', textures))
     model_hashes = {name: sha(path) for name, path in sources.items()}
     if any(model_hashes[Path(model['path']).name] != model['sha256'] for model in models):
         raise ValueError('Coastal model differs before staging')
@@ -138,6 +166,7 @@ def assemble(out, *, expected_parents, heroes):
     diagnostics = {parent.removeprefix('SM_BC_'): value['diagnostics']
         for parent, value in library['ownership'].items() if value.get('kind') == 'mesh_set'}
     report = dict(meshes=models, materials=materials, seam=diagnostics['Ground']['seam'],
+        auxiliary_textures={name: texture_hashes[name] for name in sorted(auxiliary_textures)},
         **{field + '_faces': {parent: value[field] for parent, value in diagnostics.items()}
            for field in ('outside', 'drowned', 'degenerate')},
         triangles=sum(m['triangles'] for m in models), instances=sum(len(g['transforms']) for g in groups))
