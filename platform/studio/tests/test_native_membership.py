@@ -151,3 +151,23 @@ def test_replacement_paths_allow_actual_negative_city_cells():
     e, paths, deleted = editor([OLD, current])
     assert M.retire_replaced(e, {OLD: [current]}) == [OLD]
     assert paths == {current}
+
+
+@pytest.mark.parametrize('name',['SM_Region_Shore_cell_-1_2','SM_Region_Shore_cell_1_-2_Piece03',
+    'SM_Region_Shore_cell_-1_-2_Piece0012'])
+def test_generated_signed_cells_share_inventory_and_retirement_ownership(name):
+    current=ROOT+'/'+name
+    e,paths,deleted=editor([OLD,current])
+    previous=M.inventory(e,ROOT,PREFIX)
+    assert previous=={OLD,current}
+    assert M.retire(e,previous,[name],ROOT,PREFIX)==[OLD]
+    assert paths=={current} and deleted==[OLD]
+
+
+@pytest.mark.parametrize('name',['SM_Region_Foreign-name','SM_Region_Shore_cell_-01_2',
+    'SM_Region_Shore_cell_-0_2','SM_Region_Shore_cell_-1_2_Piece4','SM_Region_Shore_cell_-1_2_Extra',
+    'SM_Region_Shore_cell_-1_2/Wrong','SM_Region_Shore_cell_-1_2.Other','Foreign_cell_-1_2'])
+def test_signed_cell_support_never_authorizes_other_names_or_paths(name):
+    e,paths,deleted=editor([OLD,CURRENT])
+    with pytest.raises(ValueError):M.retire(e,{OLD},[name],ROOT,PREFIX)
+    assert not deleted and paths=={OLD,CURRENT}

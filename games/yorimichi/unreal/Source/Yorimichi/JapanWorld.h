@@ -79,7 +79,7 @@ public:
      *  culled per instance at the menu's tree shadow distance from the camera. */
     UPROPERTY() TArray<UHierarchicalInstancedStaticMeshComponent*> ShadowTwins;
     UPROPERTY() UStaticMeshComponent* SkyDome = nullptr;
-    UPROPERTY() UStaticMeshComponent* Sea = nullptr;
+    UPROPERTY() TArray<UStaticMeshComponent*> SeaPieces;
     UPROPERTY() class UMaterialParameterCollection* WindMPC = nullptr;
 
     // wind (Unreal frame, cm/s): a steady direction with slow gusts

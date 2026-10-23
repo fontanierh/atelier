@@ -16,13 +16,17 @@ class Node:
     def get_editor_property(self, key):
         return self.values.get(key, 0)
 
+    def set_static_mesh(self, mesh):
+        self.values['static_mesh']=mesh
+        return True
+
     def __getattr__(self, key):
         if key.startswith('set_'):
             return lambda *args: None
         return self.values.setdefault(key, Node())
 
 
-def builder(*, blank_fails=False, save_fails=False):
+def builder(*, blank_fails=False, save_fails=False, mesh_fails=False):
     source = Path(__file__).parents[1]/'unreal/Scripts/setup_project.py'
     function = next(n for n in ast.parse(source.read_text()).body if isinstance(n, ast.FunctionDef) and n.name == 'build_level')
     state = SimpleNamespace(world=None, maps={'/Game/Japan/Maps/Slice': 'prior saved map'}, saves=[], logs=[])
@@ -34,6 +38,9 @@ def builder(*, blank_fails=False, save_fails=False):
         return state.world
     def spawn(*args):
         actor = Node()
+        actor.kind=args[0]
+        if mesh_fails:
+            actor.static_mesh_component.set_static_mesh=lambda mesh: False
         state.world.actors.append(actor)
         return actor
     def save(world, path):
@@ -50,12 +57,16 @@ def builder(*, blank_fails=False, save_fails=False):
         ComponentMobility=enum, AutoExposureMethod=enum, DynamicGlobalIlluminationMethod=enum,
         StaticMeshActor=object(), DirectionalLight=object(), SkyLight=object(), ExponentialHeightFog=object(),
         PostProcessVolume=object(), PlayerStart=object())
+    unreal.Name=str
     for name in ('Vector','Vector4','Rotator','LinearColor','ExponentialHeightFogData','WeightedBlendables','WeightedBlendable'):
         setattr(unreal,name,lambda *a,**kw: (a,kw))
     scope = dict(unreal=unreal, opt=lambda obj,key,value: obj.set_editor_property(key,value),
                  soft_colour_grade=lambda settings: None, LOG=state.logs.append)
     exec(compile(ast.Module(body=[function],type_ignores=[]),str(source),'exec'),scope)
-    state.run = lambda: scope['build_level'](object(), {'player_start':[0,0,0,0]}, {'_painterly':object()})
+    state.meshes={'Terrain':[('Terrain_cell_0_0',object()),('Terrain_cell_0_1',object())],
+                  'Road':[('Road',object())],'Sea':[('Sea',object())]}
+    state.run = lambda: scope['build_level'](state.meshes, {'player_start':[0,0,0,0]}, {'_painterly':object()})
+    state.terrain_class=unreal.StaticMeshActor
     return state
 
 
@@ -63,10 +74,16 @@ def test_repeat_map_build_populates_a_new_world_and_replaces_only_its_saved_map(
     state = builder()
     state.run()
     first = state.maps['/Game/Japan/Maps/Slice']
-    assert len(first.actors) == 6
+    assert len(first.actors) == 8
+    terrain=[actor for actor in first.actors if actor.kind is state.terrain_class]
+    assert len(terrain)==3
+    assert [actor.static_mesh_component.values['static_mesh'] for actor in terrain]==[
+        *[mesh for _,mesh in state.meshes['Terrain']],state.meshes['Road'][0][1]]
+    assert [actor.static_mesh_component.values['component_tags'] for actor in terrain]==[
+        ['IslandSurface:Terrain'],['IslandSurface:Terrain'],['IslandSurface:Road']]
     state.run()
     second = state.maps['/Game/Japan/Maps/Slice']
-    assert second is not first and len(second.actors) == 6
+    assert second is not first and len(second.actors) == 8
     assert len(state.maps) == 1 and len(state.saves) == 2
     assert len(state.logs) == 4
 
@@ -83,3 +100,10 @@ def test_failed_map_save_does_not_report_completion():
     with pytest.raises(RuntimeError,match='Failed to save'):
         state.run()
     assert not any(line.startswith('level saved:') for line in state.logs)
+
+
+def test_child_mesh_assignment_failure_preserves_previous_saved_map():
+    state=builder(mesh_fails=True)
+    with pytest.raises(RuntimeError,match='assign island child'):
+        state.run()
+    assert state.saves==[] and state.maps['/Game/Japan/Maps/Slice']=='prior saved map'

@@ -60,7 +60,9 @@ static int32 RunBuildingProbes(UWorld* World,AActor* Pawn,const TSharedPtr<FJson
   for(auto* C:Components)if(C->GetStaticMesh())
   {
    const FString N=C->GetStaticMesh()->GetName();
-   if(N==TEXT("Terrain")||C->ComponentHasTag(TEXT("CitySurface:HD_Terrain"))||N==TEXT("SW_Island")||N==TEXT("HD_NorthMountains")||
+   if(N==TEXT("Terrain")||C->ComponentHasTag(TEXT("CitySurface:HD_Terrain"))||
+      C->ComponentHasTag(TEXT("IslandSurface:Terrain"))||C->ComponentHasTag(TEXT("IslandSurface:FarHills"))||
+      C->ComponentHasTag(TEXT("SouthwestSurface:SW_Island"))||N==TEXT("SW_Island")||N==TEXT("HD_NorthMountains")||
       C->ComponentHasTag(TEXT("CitySurface:HD_NorthMountains")))Terrain.Add(C);
   }
  }

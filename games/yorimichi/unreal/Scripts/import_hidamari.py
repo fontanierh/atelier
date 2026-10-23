@@ -21,7 +21,8 @@ north=globals().get('NORTH',True)
 # Hidamari owns the final harbour package. Every world reimport uses the same audited rail opening.
 from regions.hidamari.logical_catalogue import ASSETS as ATOMIC_CITY_PARENTS
 assert set(manifest)==set(ATOMIC_CITY_PARENTS),'Incomplete logical city material metadata'
-mat=unreal.EditorAssetLibrary.load_asset('/Game/Japan/Materials/M_Village') or material()
+mat=unreal.EditorAssetLibrary.load_asset('/Game/Japan/Materials/M_Village')
+assert mat,'Build the Village material owner before Hidamari receiving'
 arcade_mat=arcade_material() if not only or any(n.startswith(('HD_Arcade','HD_Plaza','HD_Shop_')) or n in ['HD_ClockHall','HD_Square','HD_Station','HD_Shrine','HD_Park','HD_Streets','HD_CivicGardens'] for n in only) else None
 paving_mat=arcade_material(paving=True) if not only or only & {'HD_ArcadeFloor','HD_PlazaFloor'} else None
 plaza_paving=paving_material() if not only or 'HD_PlazaFloor' in only else None
@@ -183,23 +184,6 @@ if (OUT/'props'/'props.json').exists() and (not only or any(n.startswith('HD_P_'
         unreal.EditorAssetLibrary.save_loaded_asset(mesh)
         report[key]={'imported':True,'triangles':props[key]['triangles'],'material':mi.get_path_name()}
         if lods:report[key]['lods']=lods
-if not only or os.environ.get('HIDAMARI_TERRAIN')=='1':
-    from forest_ground import coast_instance,coast_rock_instance
-    coast_rock_instance()
-    # Fresh slots: setup_project's Interchange import is migrated through the village seed, whose one slot
-    # (VillagePalette) would otherwise stay; the terrain's slots are its own (Ground, Road, Sand, ...).
-    mesh=import_mesh(ROOT/'terrain.fbx','/Game/Japan','Terrain',fresh_slots=True)
-    from import_southwest import sand_material
-    sand_material()   # the beach slot; the south-west import (later in a fresh build) owns it
-    coast_instance()
-    materials=[]
-    for slot in mesh.static_materials:
-        key=str(slot.get_editor_property('imported_material_slot_name')).split('.')[0]
-        mat=unreal.EditorAssetLibrary.load_asset('/Game/Japan/Materials/MI_'+key)
-        assert mat,key
-        materials.append(mat)
-    assign_materials(mesh,materials)
-    mesh.get_editor_property('body_setup').set_editor_property('collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
-    unreal.EditorAssetLibrary.save_loaded_asset(mesh)
+# unreal.island owns terrain/sea receiving and the replacement Slice map.
 (OUT/'import-report.json').write_text(json.dumps(report,indent=2)+'\n')
 unreal.log('HIDAMARI IMPORT COMPLETE')

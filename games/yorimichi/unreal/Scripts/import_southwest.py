@@ -80,7 +80,8 @@ def main():
         primary = content / 'Japan/Assets' / (parent + '.uasset')
         assert not any(p.is_symlink() for p in (primary, *primary.parents)), ('linked old Southwest parent', parent)
     previous = native_inventory(EAL)
-    mat = V.material(); assert mat is not None, 'Southwest village material missing'
+    mat = EAL.load_asset('/Game/Japan/Materials/M_Village')
+    assert mat is not None, 'Build the Village material owner before Southwest receiving'
     unreal.SystemLibrary.execute_console_command(None, 'Editor.AsyncStaticMeshCompilation 0')
     unreal.load_module('StaticMeshEditor')
     editor = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
@@ -121,27 +122,7 @@ def main():
         mesh = body = None
         if index % 16 == 0: unreal.SystemLibrary.collect_garbage()
         unreal.log('SOUTHWEST current ' + name + ' ' + str(index) + '/' + str(len(current)))
-    # terrain: same path as the world setup
-    terrain=V.import_mesh(ROOT/'terrain.fbx','/Game/Japan','Terrain')
-    sand_material()
-    from forest_ground import coast_instance
-    coast_instance()
-    for i,slot in enumerate(terrain.static_materials):
-        key=str(slot.get_editor_property('imported_material_slot_name')).split('.')[0]
-        m=EAL.load_asset('/Game/Japan/Materials/MI_'+key);assert m,'Missing terrain material '+key
-        terrain.set_material(i,m)
-    body=terrain.get_editor_property('body_setup')
-    if body:body.set_editor_property('collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
-    EAL.save_loaded_asset(terrain)
-    # the sea plane (re-exported by build_terrain): a real water material instead of the painted tile
-    sea=V.import_mesh(ROOT/'assets/Sea.fbx','/Game/Japan/Assets','Sea')
-    if sea.get_bounding_box().max.x<100000:
-        # The world setup imports the sea through Interchange, and the first FBX reimport over that import data skips
-        # the unit conversion (a sea 100 times too small); the second finds FBX data to update and imports in metres.
-        sea=V.import_mesh(ROOT/'assets/Sea.fbx','/Game/Japan/Assets','Sea')
-    assert sea.get_bounding_box().max.x>100000,'Sea imported at the wrong scale'
-    sea.set_material(0,sea_material())
-    EAL.save_loaded_asset(sea)
+    # unreal.island exclusively owns the separate terrain/sea assets and final shaders.
     # One complete reference preflight covers old pieces AND every original parent.
     # Every current child has been validated and physically saved before retirement.
     current_packages = [r['asset'].split('.')[0] for rows in report.values() for r in rows]

@@ -30,6 +30,8 @@ def map_history(scene, monkeypatch, request):
         scan.setattr(paths, 'REPO', REPO)
         originals = source_imports.local_imports(REPO/OWNER, (GAME/'world', GAME/'world/regions'))
     files = set(originals) | {REPO/RAW, REPO/SUPPORT}
+    files.update(source_imports.local_imports(GAME/'unreal/Scripts/forest_ground.py',
+        (GAME/'unreal/Scripts',GAME/'world',GAME/'world/regions')))
     texts = {str(p.relative_to(REPO)):p.read_text() for p in files if p.is_relative_to(REPO)}
     filename = 'world_map_local_startup_policy.json' if request.param == 'local' else 'world_map_startup_policy.json'
     history = json.loads((GAME/'tests/fixtures'/filename).read_text())
@@ -76,7 +78,10 @@ def map_history(scene, monkeypatch, request):
     first.imported('Mesh')  # fixture packages stand in for the successful original import
     first.validated('Mesh')
     mesh_reuse.finalize_pending(scene.ctx, 'unreal.world', 'e'*24)
-    (repo/OWNER).write_text((REPO/OWNER).read_text())
+    final=json.loads((GAME/'tests/fixtures/atomic-predecessor-native-policies.json').read_text())
+    assert final['source_revision'][OWNER].startswith('283329c07')
+    assert hashlib.sha256(final['sources'][OWNER].encode()).hexdigest()==final['source_sha256'][OWNER]
+    (repo/OWNER).write_text(final['sources'][OWNER])
     (repo/SUPPORT).write_text((REPO/SUPPORT).read_text())
     return scene, make, first, repo
 
@@ -95,6 +100,15 @@ def test_original_world_header_revalidates_unchanged_mesh_across_map_startup(map
     current.validated('Mesh')
     mesh_reuse.finalize_pending(scene.ctx, 'unreal.world', 'e'*24)
     assert json.loads(current.receipts.path.read_text())['policy'] == current.receipts.header['policy']
+
+
+def test_atomic_island_owner_move_requires_current_receiving_instead_of_an_old_world_exemption(map_history):
+    scene,make,first,repo=map_history
+    (repo/OWNER).write_text((REPO/OWNER).read_text())
+    current=make()
+    assert not current.previous_owner_transition
+    assert _fixtures.acquire(scene,current,validator=lambda mesh:True) is None
+    assert current.counts['reused_local']==current.counts['reused_candidate']==0
 
 
 @pytest.mark.parametrize('bad', ['no_receipt', 'source', 'source_bytes', 'sidecar', 'validator', 'finishing', 'closure', 'new_mesh'])

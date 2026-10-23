@@ -199,21 +199,19 @@ def crossing(build):
     solid += [t + origin for t in bs]; names += bn; sources.update(bp)
     path = build / 'world.json'; sources[str(path.relative_to(build))] = sha(path)
     world = json.loads(path.read_text())
+    from region_query import load as query_load, triangles as query_triangles
     for name, rows in sorted(world['instances'].items()):
         if not name.startswith('SW_'):
             continue
-        path = build / 'southwest/fbx' / f'{name}.fbx'
-        if not path.is_file():
-            raise FileNotFoundError(path)
+        path = build / 'southwest/query' / f'{name}.npz'
+        surfaces = query_load(path, owner=name, stage='final')
         sources[str(path.relative_to(build))] = sha(path)
-        objs = import_file(path)
         for x, y, z, yaw, scale in rows:
             matrix = Matrix.Translation((x, y, z)) @ Matrix.Rotation(math.radians(yaw), 4, 'Z') @ Matrix.Scale(scale, 4)
-            tris = triangles(objs, matrix)
+            tris = query_triangles(surfaces, placement=np.asarray(matrix), roles=('render',))
             solid.append(clip(tris, BOUNDS, Z_BAND)); names.append(name)
             if name == 'SW_Island':
                 ground.append(clip(tris, BOUNDS))
-        clear_scene()
         print(f'crossing placed {name}: {len(rows)} instances', flush=True)
     return np.concatenate(ground), solid, names, sources, {'frame': 'world metres'}
 

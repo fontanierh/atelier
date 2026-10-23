@@ -1,5 +1,6 @@
 """Owner equivalence must prove only the reviewed source-membership handoff."""
 import ast
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -10,6 +11,15 @@ spec = importlib.util.spec_from_file_location('city_parent_transition',
     Path(__file__).parents[1]/'unreal/Scripts/city_parent_transition.py')
 P = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(P)
+
+
+def historical_current(member):
+    fixture=json.loads((Path(__file__).parent/'fixtures/atomic-predecessor-native-policies.json').read_text())
+    expected='283329c07' if member==P.SETUP else 'a66794fa20c57f3b0fa30883596625ab9c5b1966'
+    assert fixture['source_revision'][member].startswith(expected)
+    value=fixture['sources'][member]
+    assert hashlib.sha256(value.encode()).hexdigest()==fixture['source_sha256'][member]
+    return value
 
 
 def sources():
@@ -72,7 +82,7 @@ def test_removed_upfront_purge_never_hides_other_world_changes(change):
 
 
 def product_sources():
-    current = (Path(__file__).parents[1]/'city_tile_products.py').read_text()
+    current = historical_current(P.PRODUCTS)
     history = json.loads((Path(__file__).parent/'fixtures/city_five_family_policy.json').read_text())
     previous = history['sources'][P.PRODUCTS]
     assert previous != current
@@ -124,6 +134,9 @@ def test_exact_harbor_binding_and_ownership_doc_transition(member):
         previous_call = "piece_material_paths(source['source_material_slots'])"
         assert current.count(previous_call) == 1
         current = current.replace(previous_call, "piece_material_paths(name, source['source_material_slots'])")
+    else:
+        assert P.excluded_packages(old,{member:current}) is None
+        current=historical_current(member)
     assert P.excluded_packages(old, {member: current})
     assert P.excluded_packages({member: current}, old) is None
     if member == P.PIECE_IMPORTER:
@@ -160,7 +173,7 @@ def map_sources(local=False):
     name = 'world_map_local_startup_policy.json' if local else 'world_map_startup_policy.json'
     fixture = json.loads((Path(__file__).parent/'fixtures'/name).read_text())
     assert hashlib.sha256(fixture['sources'][P.SETUP].encode()).hexdigest() == fixture['source_sha256'][P.SETUP]
-    current = (Path(__file__).parents[1]/'unreal/Scripts/setup_project.py').read_text()
+    current = historical_current(P.SETUP)
     return {P.SETUP:fixture['sources'][P.SETUP]}, {P.SETUP:current}
 
 
@@ -169,6 +182,14 @@ def test_exact_map_startup_transition_preserves_the_complete_remaining_world_own
     old,current = map_sources(local)
     assert P.excluded_packages(old,current)
     assert P.excluded_packages(current,old) is None
+
+
+@pytest.mark.parametrize('member',[P.SETUP,P.PRODUCTS,P.FERRY_SOURCE])
+def test_atomic_source_and_map_ownership_changes_are_not_historical_policy_exemptions(member):
+    previous=historical_current(member)
+    current=(Path(__file__).parents[3]/member).read_text()
+    assert previous!=current
+    assert P.excluded_packages({member:previous},{member:current}) is None
 
 
 @pytest.mark.parametrize('change', ['map','partition','blank_failure','actor','material','save','save_failure',

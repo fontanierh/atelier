@@ -9,10 +9,7 @@ from sailboat_material import material
 ROOT=yori.OUT;OUT=ROOT/'sailboat'
 unreal.SystemLibrary.execute_console_command(None,'Interchange.FeatureFlags.Import.FBX 0')
 mat=unreal.EditorAssetLibrary.load_asset('/Game/Japan/Materials/M_Village');assert mat
-from import_southwest import sea_material
-water=sea_material()
-sea=unreal.EditorAssetLibrary.load_asset('/Game/Japan/Assets/Sea')
-if sea:sea.set_material(0,water);unreal.EditorAssetLibrary.save_loaded_asset(sea)
+# The island owner binds M_Sea to every separate sea piece before this task.
 cloth=material();foam=material(wake=True)
 report={}
 for name,entry in json.loads((OUT/'manifest.json').read_text()).items():

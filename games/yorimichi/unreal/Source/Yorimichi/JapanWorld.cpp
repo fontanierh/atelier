@@ -1,5 +1,7 @@
 #include "JapanWorld.h"
 #include "CitySurfacePieces.h"
+#include "IslandPieces.h"
+#include "SouthwestPieces.h"
 #include "TreehousePieces.h"
 #include "JapanGameplayCollision.h"
 #include "AtelierData.h"
@@ -385,6 +387,12 @@ void AJapanWorld::Load()
     const bool PiecesReady=JapanCityPieces::Read(
         AtelierReadJson(AtelierDataPath(TEXT("city_surface_tiles/v1_128m/manifest.json"))),CityPieces,&CityLogicalBounds);
     if (!PiecesReady) Incomplete.Add(TEXT("complete production city pieces"));
+    TMap<FString,TArray<FString>> SouthwestPieces;
+    TMap<FString,FBox> SouthwestLogicalBounds;
+    TSet<FString> LoadedSouthwestPieces,PlacedSouthwestParents;
+    const bool SouthwestReady=JapanSouthwestPieces::Read(
+        AtelierReadJson(AtelierDataPath(TEXT("southwest/runtime.json"))),SouthwestPieces,&SouthwestLogicalBounds);
+    if(!SouthwestReady)Incomplete.Add(TEXT("complete Southwest pieces"));
     TArray<FString> DressingPieces;
     TSet<FString> LoadedDressingPieces;
     const bool DressingReady=JapanTreehousePieces::Read(
@@ -406,6 +414,16 @@ void AJapanWorld::Load()
                 if (!Paths) { Incomplete.Add(TEXT("city pieces ")+Key);continue; }
                 MeshPaths=*Paths;
             }
+            else if(JapanSouthwestPieces::IsParent(Key))
+            {
+                if(!Pair.Value || Pair.Value->Type!=EJson::Array)
+                { Incomplete.Add(TEXT("Southwest placements ")+Key);continue; }
+                if(Pair.Value->AsArray().IsEmpty())continue;
+                PlacedSouthwestParents.Add(Key);
+                const auto* Paths=SouthwestPieces.Find(Key);
+                if(!Paths){Incomplete.Add(TEXT("Southwest pieces ")+Key);continue;}
+                MeshPaths=*Paths;
+            }
             else if (Key==TEXT("TH_Dressing"))
             {
                 if (!DressingReady) continue;
@@ -419,6 +437,7 @@ void AJapanWorld::Load()
                 UStaticMesh* Mesh = LoadMesh(MeshPath);
                 if (!Mesh) { Incomplete.Add(TEXT("mesh ") + Key); UE_LOG(LogTemp, Warning, TEXT("missing mesh asset %s"), *Key); continue; }
                 if (JapanCityPieces::IsParent(Key)) LoadedCityPieces.Add(MeshPath);
+                if(JapanSouthwestPieces::IsParent(Key))LoadedSouthwestPieces.Add(MeshPath);
                 if (Key==TEXT("TH_Dressing")) LoadedDressingPieces.Add(MeshPath);
                 const bool bGrass = Key.StartsWith(TEXT("Grass"));
                 const bool bBush = Key.StartsWith(TEXT("Bush"));
@@ -454,6 +473,7 @@ void AJapanWorld::Load()
                         H->ComponentTags.Add(FName(*(TEXT("CityPiece:")+Mesh->GetName())));
                     }
                     if (Key==TEXT("TH_Dressing")) H->ComponentTags.Add(TEXT("TreehouseDressing"));
+                    if(JapanSouthwestPieces::IsParent(Key))H->ComponentTags.Add(FName(*(TEXT("SouthwestSurface:")+Key)));
                     H->SetMobility(EComponentMobility::Static);
                     if (Key==TEXT("HD_Harbor") || Key==TEXT("HD_Boat") || Key==TEXT("HD_Sea") || Key==TEXT("HD_Bollard"))
                         H->SetLightingChannels(true, true, false);
@@ -479,6 +499,11 @@ void AJapanWorld::Load()
                             Incomplete.Add(TEXT("city logical fade bounds ")+Key);
                             return;
                         }
+                    }
+                    if(const FBox* LogicalBounds=SouthwestLogicalBounds.Find(Key))
+                    {
+                        if(!JapanSeeThrough::SetLogicalBounds(H,*LogicalBounds))
+                        {Incomplete.Add(TEXT("Southwest logical fade bounds ")+Key);return;}
                     }
                     if (Key == TEXT("TH_Frame") || Key == TEXT("TH_Dressing"))
                         UE_LOG(LogTemp, Display, TEXT("SEE-THROUGH %s: %s (%d uv channels)"), *Key,
@@ -555,6 +580,13 @@ void AJapanWorld::Load()
     }
     if (DressingReady && LoadedDressingPieces.Num()!=DressingPieces.Num())
         Incomplete.Add(TEXT("loaded treehouse dressing pieces"));
+    if(SouthwestReady)
+    {
+        int32 Expected=0;
+        for(const FString& Parent:PlacedSouthwestParents)
+            if(const auto* Paths=SouthwestPieces.Find(Parent))Expected+=Paths->Num();
+        if(LoadedSouthwestPieces.Num()!=Expected)Incomplete.Add(TEXT("loaded Southwest pieces"));
+    }
     if (UStaticMesh* Dome = LoadMesh(TEXT("SkyDome")))
     {
         SkyDome = NewObject<UStaticMeshComponent>(this, TEXT("SkyDome"));
@@ -564,14 +596,21 @@ void AJapanWorld::Load()
         SkyDome->bVisibleInRealTimeSkyCaptures = true;
         SkyDome->RegisterComponent();
     }
-    if (UStaticMesh* SeaMesh = LoadMesh(TEXT("Sea")))
+    TMap<FString,TArray<FString>> IslandPieces;
+    if(!JapanIslandPieces::Read(AtelierReadJson(AtelierDataPath(TEXT("terrain/island.json"))),IslandPieces))
+        Incomplete.Add(TEXT("complete island pieces"));
+    else for(const FString& Path:IslandPieces.FindChecked(TEXT("Sea")))
     {
-        Sea = NewObject<UStaticMeshComponent>(this, TEXT("Sea"));
+        UStaticMesh* SeaMesh=LoadMesh(Path);
+        if(!SeaMesh){Incomplete.Add(TEXT("island Sea piece ")+Path);continue;}
+        UStaticMeshComponent* Sea = NewObject<UStaticMeshComponent>(this);
         Sea->SetStaticMesh(SeaMesh); Sea->SetupAttachment(RootComponent);
         // Only the boat supports a rider at sea level. Walking off shore uses safe recovery.
         Sea->SetCastShadow(false);Sea->SetCollisionEnabled(ECollisionEnabled::NoCollision);
         Sea->SetGenerateOverlapEvents(false);
+        Sea->ComponentTags.Add(TEXT("IslandSurface:Sea"));
         Sea->RegisterComponent();
+        SeaPieces.Add(Sea);
     }
     bLoaded = true;
     // The tree house (world/regions/treehouse): warm lantern and room lights, [x, y, z, lumens, radius m, shadows],

@@ -3,8 +3,8 @@
     "$UE/Engine/Binaries/Mac/UnrealEditor-Cmd" "$PROJ/Yorimichi.uproject" -run=pythonscript -script="$PROJ/Scripts/setup_project.py" -unattended -nop4 -nosplash
 
 - replaces legacy /Game/Japan assets, preserving independent material and foliage owners
-- imports props, terrain, sea and the traveler, and binds the shared materials by stable path
-- builds the level /Game/Japan/Maps/Slice: terrain, sun, sky light, fog, post-process, player start
+- imports legacy props and the traveler, and binds shared materials by stable path
+- exposes the original Slice lighting/map builder to the separate island native owner
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / 'world')); import yori  # noqa: E402  (build/yorimichi = yori.OUT)
 import os, glob, sys, unreal
@@ -13,7 +13,6 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from asset_catalog import FOLIAGE, independently_owned, material_bindings
 from material_assets import opt, instance
-from forest_ground import material as forest_ground_material
 ROOT = str(yori.OUT)
 OUT = ROOT; TEX = os.path.join(ROOT, "textures")
 REPORT = None
@@ -117,8 +116,18 @@ def build_level(terrain_mesh, W, MI):
     if world is None:
         raise RuntimeError("Failed to create the replacement Slice world")
     if True:
-        t = eas.spawn_actor_from_class(unreal.StaticMeshActor, unreal.Vector(0, 0, 0))
-        t.set_actor_label("Terrain"); t.static_mesh_component.set_static_mesh(terrain_mesh); t.set_mobility(unreal.ComponentMobility.STATIC)
+        for parent, pieces in terrain_mesh.items():
+            if parent == 'Sea':
+                continue  # JapanWorld owns the nonblocking, shadow-free sea components.
+            for name, mesh in pieces:
+                t = eas.spawn_actor_from_class(unreal.StaticMeshActor, unreal.Vector(0, 0, 0))
+                if t is None:
+                    raise RuntimeError('Failed to place island child ' + name)
+                t.set_actor_label('Island:' + parent + ':' + name)
+                if not t.static_mesh_component.set_static_mesh(mesh):
+                    raise RuntimeError('Failed to assign island child ' + name)
+                t.static_mesh_component.set_editor_property('component_tags', [unreal.Name('IslandSurface:' + parent)])
+                t.set_mobility(unreal.ComponentMobility.STATIC)
         sun = eas.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 3000))
         # unreal.Rotator(roll, pitch, yaw): the sun sits 48 deg up and shines toward yaw -30 (east-north-east), so it stands in
         # the west-south-west, over the sea and behind the traveler: the road is lit along its length, tree shadows fall
@@ -171,9 +180,10 @@ def build_level(terrain_mesh, W, MI):
 
 def main():
     """@cc [owner:fontanierh,label:correctness] world-terrain-single-source-pass
-    With a city manifest, the city importer MUST perform the sole final-source Terrain import,
-    including its fresh slots, unit conversion, material bindings, complex collision and save.
-    The level MUST reference that final mesh; without a city, the legacy setup path MUST remain.
+    The independent island owner MUST have received all bounded terrain/sea
+    children and saved Slice before this asset-only owner runs. This task MUST
+    NOT recreate a combined terrain parent, reimport island geometry or save
+    another version of that owner's map.
     """
     if os.environ.get('JAPAN_ONLY'):
         raise RuntimeError('JAPAN_ONLY is retired; select unreal.materials or unreal.foliage.<asset>')
@@ -185,12 +195,13 @@ def main():
     MI = {name: EAL.load_asset(path) for name, path in material_bindings().items()}
     if not all(MI.values()):
         raise RuntimeError('Build unreal.materials before importing the world')
-    MI['FarForest'] = instance('MI_FarForest', forest_ground_material())
-    from forest_ground import coast_instance
-    MI['Coast'] = coast_instance(MI['FarForest'].get_editor_property('parent'))
+    for name in ('FarForest', 'Coast'):
+        MI[name] = EAL.load_asset('/Game/Japan/Materials/MI_' + name)
+        if MI[name] is None:
+            raise RuntimeError('Build unreal.island before importing world assets: ' + name)
     for path in sorted(glob.glob(os.path.join(OUT, "assets", "*.fbx"))):
         name = os.path.splitext(os.path.basename(path))[0]
-        if name in FOLIAGE:
+        if name in FOLIAGE or name == 'Sea':
             continue  # stale pre-split exports may still exist; their independent owner imports them
         import_fbx(path, "/Game/Japan/Assets", name)
         assign(f"/Game/Japan/Assets/{name}", MI)
@@ -209,27 +220,11 @@ def main():
     if os.path.exists(os.path.join(OUT,"hidamari","manifest.json")):
         # The volcano (HD_North*) is unreal.north's: a snow or rock change reimports only it.
         runpy.run_path(os.path.join(os.path.dirname(__file__),"import_hidamari.py"),init_globals={"NORTH":False},run_name="__main__")
-        # The city owner already imports this exact terrain.fbx, refreshes its material slots,
-        # binds all terrain materials and saves complex collision. An earlier setup import
-        # only built a second copy before that final pass; no preceding owner consumes Terrain.
-        terrain = EAL.load_asset("/Game/Japan/Terrain")
-        if terrain is None:
-            raise RuntimeError("City import did not produce /Game/Japan/Terrain")
-    else:
-        from forest_ground import coast_rock_instance
-        MI['CoastRock'] = coast_rock_instance()
-        import_fbx(os.path.join(OUT, "terrain.fbx"), "/Game/Japan", "Terrain")
-        assign("/Game/Japan/Terrain", MI)
-        terrain = EAL.load_asset("/Game/Japan/Terrain")
-        if terrain:
-            bs = terrain.get_editor_property("body_setup")
-            if bs: bs.set_editor_property("collision_trace_flag", unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
-            EAL.save_loaded_asset(terrain)
     if os.path.exists(os.path.join(OUT,"sailboat","manifest.json")):
         runpy.run_path(os.path.join(os.path.dirname(__file__),"import_sailboat.py"),run_name="__main__")
     if W.get("zeppelin"):
         runpy.run_path(os.path.join(os.path.dirname(__file__),"import_zeppelin.py"),init_globals={"ASSETS_ONLY":True},run_name="__main__")
-    build_level(terrain, W, MI)
+    LOG('WORLD ASSETS IMPORT COMPLETE')
 
 
 if __name__ == "__main__":

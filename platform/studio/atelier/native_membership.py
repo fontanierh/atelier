@@ -3,9 +3,14 @@ import re
 
 
 def package_path(destination, prefix, name):
+    # The bounded exporter uses signed spatial cell coordinates. '-' is legal
+    # in installed Unreal object/package names, but admit it only in that exact
+    # generated suffix; folder, prefix and foreign-name rules remain unchanged.
+    coordinate=r'(?:0|-?[1-9][0-9]*)'
+    generated=r'[A-Za-z0-9_]+(?:_cell_'+coordinate+'_'+coordinate+r'(?:_Piece[0-3]{1,16})?)?'
     if (not isinstance(destination, str) or not re.fullmatch(r'/Game/[A-Za-z0-9_]+(?:/[A-Za-z0-9_]+)*', destination)
             or not isinstance(prefix, str) or not re.fullmatch(r'[A-Za-z][A-Za-z0-9_]*_', prefix)
-            or not isinstance(name, str) or not re.fullmatch(re.escape(prefix)+r'[A-Za-z0-9_]+', name)):
+            or not isinstance(name, str) or not re.fullmatch(re.escape(prefix)+generated, name)):
         raise ValueError('Invalid generated native package ownership')
     return destination+'/'+name
 

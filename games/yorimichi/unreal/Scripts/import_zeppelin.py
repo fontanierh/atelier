@@ -34,11 +34,5 @@ for name in manifest:
   for i,slot in enumerate(mesh.static_materials):mesh.set_material(i,fabric if 'ZeppelinFabric' in str(slot.get_editor_property('imported_material_slot_name')) else mat)
  mesh.get_editor_property('body_setup').set_editor_property('collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
  E.save_loaded_asset(mesh);report[name]=True
-if not (globals().get('ASSETS_ONLY') or os.environ.get('ZEPPELIN_ASSETS_ONLY')):
- mesh=helper['import_mesh'](ROOT/'hidamari/assets/HD_Terrain.fbx','/Game/Japan/Assets','HD_Terrain');mesh.set_material(0,mat)
- mesh.get_editor_property('body_setup').set_editor_property('collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE);E.save_loaded_asset(mesh)
- mesh=helper['import_mesh'](ROOT/'terrain.fbx','/Game/Japan','Terrain')
- for i,slot in enumerate(mesh.static_materials):
-  key=str(slot.get_editor_property('imported_material_slot_name')).split('.')[0];material=E.load_asset('/Game/Japan/Materials/MI_'+key);assert material,key;mesh.set_material(i,material)
- mesh.get_editor_property('body_setup').set_editor_property('collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE);E.save_loaded_asset(mesh)
+# Current island/city ground belongs to their independent normal native owners.
 (ROOT/'zeppelin/import-report.json').write_text(json.dumps(report,indent=2)+'\n');unreal.log('ZEPPELIN IMPORT COMPLETE')
