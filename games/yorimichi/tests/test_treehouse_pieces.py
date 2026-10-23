@@ -83,6 +83,18 @@ def sources(out):
     for filename, value in (('textures/textures.json', {'wood':{}, 'bark':{}}),
                             ('props/props.json', dict.fromkeys(P.PROPS, {})), ('trees/trees.json', dict.fromkeys(P.TREES, {}))):
         (root / filename).write_text(json.dumps(value))
+    parents={'TH_Dressing':[row['name'] for row in data['pieces']]};assets={}
+    for row in data['pieces']:
+        assets[row['name']]=dict(row,parent='TH_Dressing',collision_hulls=0,slots=data['slots'],
+            uv_channels=list(P.UVS),fbx='assets/dressing/'+row['name']+'.fbx')
+    for parent,folder in (('TH_Structure','structure'),('TH_Frame','frame'),('TH_Trunks','trunks')):
+        name=parent+'_cell_0_0' if parent=='TH_Structure' else parent
+        parents[parent]=[name]
+        path=root/'assets'/folder/(name+'.fbx');path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(b'fbx')
+        assets[name]=dict(name=name,parent=parent,collision_hulls=0,slots=['TH_wood'],used_slots=['TH_wood'],triangles=1,
+            min=[0,0,0],max=[1,1,1],sha256=hashlib.sha256(b'fbx').hexdigest(),fbx=str(path.relative_to(root)),
+            uv_channels=list(P.UVS) if parent=='TH_Frame' else ['UVMap'])
+    (root/'surfaces.json').write_text(json.dumps(dict(schema=1,complete=True,parents=parents,assets=assets)))
     return data
 
 
@@ -109,7 +121,10 @@ def receiving(out, content):
         path = content / (package.removeprefix('/Game/') + '.uasset')
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(package.encode())
-    report = dict(assets=assets, dressing=[P.DESTINATION+'/'+row['name'] for row in data['pieces']],
+    from treehouse_surfaces import rows
+    report = dict(surfaces=[row['package'] for row in rows(out)],
+                  surfaces_sha256=hashlib.sha256((out/'treehouse/surfaces.json').read_bytes()).hexdigest(),
+                  assets=assets, dressing=[P.DESTINATION+'/'+row['name'] for row in data['pieces']],
                   pieces_sha256=hashlib.sha256((out/'treehouse/pieces.json').read_bytes()).hexdigest(),
                   files=P.package_inventory(content, assets))
     (out/'treehouse/import-report.json').write_text(json.dumps(report))
@@ -196,7 +211,7 @@ def test_importer_bootstraps_scripts_from_unrelated_working_directory(tmp_path, 
     unreal = ModuleType('unreal')
     unreal.__getattr__ = lambda name: Stub()
     monkeypatch.setitem(sys.modules, 'unreal', unreal)
-    for name in ('import_treehouse_pieces','import_village','mesh_import','see_through','atmosphere'):
+    for name in ('treehouse_atomic_native','mesh_import','forest_native','see_through','atmosphere'):
         monkeypatch.delitem(sys.modules, name, raising=False)
     monkeypatch.setattr(sys, 'path', [p for p in sys.path if p != str(GAME/'unreal/Scripts')])
     monkeypatch.chdir(tmp_path)
@@ -205,4 +220,4 @@ def test_importer_bootstraps_scripts_from_unrelated_working_directory(tmp_path, 
     tree.body.pop()  # Test the actual entrypoint bootstrap without starting its native work.
     scope = {'__file__':str(script),'__name__':'treehouse_bootstrap_test'}
     exec(compile(tree,str(script),'exec'),scope)
-    assert Path(sys.modules['import_treehouse_pieces'].__file__).parent == script.parent
+    assert Path(sys.modules['treehouse_atomic_native'].__file__).parent == script.parent

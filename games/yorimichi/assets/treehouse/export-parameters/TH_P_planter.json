@@ -1,0 +1,9 @@
+{
+  "name": "TH_P_planter",
+  "schema": 1,
+  "size": 0.7,
+  "slug": "planter",
+  "solid": true,
+  "target": 0.065,
+  "turn": 0.0
+}

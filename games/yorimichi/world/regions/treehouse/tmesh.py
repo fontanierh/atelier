@@ -169,6 +169,8 @@ class TMesh(Mesh):
 
 def export(m, materials, out, *, split_dressing=False):
     """Like village.build.export, with one material slot per texture slug."""
+    if not split_dressing and sum(len(face)-2 for face in m.faces)>32768:
+        raise ValueError('Large Treehouse exports require the independent atomic recipe')
     obj = m.object(materials); objs = [obj]
     if split_dressing:
         assert m.name == 'TH_Dressing' and not m.colliders

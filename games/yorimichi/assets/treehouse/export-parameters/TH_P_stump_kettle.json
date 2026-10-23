@@ -1,0 +1,9 @@
+{
+  "name": "TH_P_stump_kettle",
+  "schema": 1,
+  "size": 0.55,
+  "slug": "stump_kettle",
+  "solid": true,
+  "target": 0.05,
+  "turn": 0.0
+}

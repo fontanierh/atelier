@@ -29,7 +29,7 @@ import numpy as np
 from mathutils import Vector
 from village.layout import sample
 from treehouse import layout as L
-from treehouse.tmesh import Pieces, TMesh, export, material_factory
+from treehouse.tmesh import Pieces, TMesh, material_factory
 
 OUT = yori.OUT/'treehouse'
 R = random.Random(1729)
@@ -2317,10 +2317,13 @@ def moss_on_trunk(d, x, y, r, g, top):
             d.poly(pts, vary(MOSS, .15)); d.poly(pts[::-1], vary(MOSS, .15))
 
 
-def main():
-    global H
+def construct():
+    """Finish canonical geometry and shared fade axes before any rendered export."""
+    global H, R
+    from treehouse import tmesh
+    R = random.Random(1729); tmesh.RJ = random.Random(4242)
+    PLACED.clear(); LIGHTS.clear(); ROOMS.clear(); WINDOWS.clear()
     H = np.load(yori.OUT/'heightmap.npy')
-    (OUT/'assets').mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     mats = material_factory()
     pl = L.plan(H); P = pl['places']
@@ -2377,15 +2380,18 @@ def main():
     slide(m, fr, d, pl)
     lookout(m, fr, d, pl)
     entry_way(m, fr, d, pl)
-    panes(d); report = {'windows': len(WINDOWS)}
-    for mesh in (m, fr, trunks, d):
-        _, report[mesh.name] = export(mesh, mats, OUT/'assets', split_dressing=mesh is d)
-    report['props'] = {k: len(v) for k, v in PLACED.items()}
-    runtime = dict(instances=PLACED, lights=LIGHTS, rooms=ROOMS, room_grade=ROOM_GRADE)
-    (OUT/'runtime.json').write_text(json.dumps(runtime)+'\n'); report['lights'] = len(LIGHTS); report['rooms'] = len(ROOMS)
+    panes(d)
+    runtime = dict(instances=dict(PLACED), lights=LIGHTS[:], rooms=ROOMS[:], room_grade=ROOM_GRADE)
+    return (m, fr, trunks, d), mats, runtime, len(WINDOWS)
+
+
+def main():
+    """Explicit whole-object authoring diagnostic; production uses the atomic recipe."""
+    meshes, materials, _, _ = construct()
+    OUT.mkdir(parents=True, exist_ok=True)
+    for mesh in meshes: mesh.object(materials)
     bpy.ops.wm.save_as_mainfile(filepath=str(OUT/'Treehouse.blend'))
-    (OUT/'manifest.json').write_text(json.dumps(report, indent=2)+'\n')
-    print('TREEHOUSE BUILD COMPLETE', json.dumps({k: v.get('triangles', v) if isinstance(v, dict) and 'triangles' in v else v for k, v in report.items()}), flush=True)
+    print('TREEHOUSE DIAGNOSTIC BLEND COMPLETE; no rendered mesh exports', flush=True)
 
 
 if __name__ == '__main__':

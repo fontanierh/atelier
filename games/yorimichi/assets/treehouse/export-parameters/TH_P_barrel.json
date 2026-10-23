@@ -1,0 +1,9 @@
+{
+  "name": "TH_P_barrel",
+  "schema": 1,
+  "size": 0.8,
+  "slug": "barrel",
+  "solid": true,
+  "target": 0.05,
+  "turn": 0.0
+}

@@ -101,7 +101,7 @@ KEYS = ['TH_Structure', 'TH_Frame', 'TH_Trunks', 'TH_Dressing']
 # The tall canopy trees (treehouse/trees.py) hold red and gold crowns at deck height round every place, as in the
 # paintings: each is scaled so its crown top stands `above` metres over the nearest deck (more further out), so
 # the houses stand just over a carpet of crowns seen from above and the crowns frame the walks at railing height.
-TREES = yori.OUT/'treehouse'/'trees'/'trees.json'
+TREES = yori.OUT/'treehouse-data'/'canopy'/'trees.json'
 CANOPY = dict(reach=26., share=.85, gap=4.2, headroom=2.5, above=(-1.0, 3.5), scale=(.72, 1.5),
               replace=('Tree_Maple_A', 'Tree_Maple_B', 'Tree_Ginkgo', 'Tree_Broad_A'),
               mix=(('Tree_Canopy_Maple', .28), ('Tree_Canopy_Crimson', .27), ('Tree_Canopy_Amber', .2), ('Tree_Canopy_Ginkgo', .25)))

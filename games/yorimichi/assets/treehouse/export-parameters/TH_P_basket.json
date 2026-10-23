@@ -1,0 +1,9 @@
+{
+  "name": "TH_P_basket",
+  "schema": 1,
+  "size": 0.85,
+  "slug": "basket",
+  "solid": false,
+  "target": 0.08,
+  "turn": 0.0
+}

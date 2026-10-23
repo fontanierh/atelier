@@ -23,8 +23,7 @@ from pathlib import Path
 import unreal
 HERE = Path(__file__).resolve().parent
 _sys.path.insert(0, str(HERE))
-from import_treehouse_pieces import import_dressing  # noqa: E402
-import import_village  # noqa: E402
+import treehouse_atomic_native as atomic_native  # noqa: E402
 _sys.path.insert(0, str(HERE)); import see_through  # noqa: E402
 E = unreal.EditorAssetLibrary; MEL = unreal.MaterialEditingLibrary; AT = unreal.AssetToolsHelpers.get_asset_tools()
 unreal.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX 0')
@@ -32,14 +31,8 @@ OUT = yori.OUT/'treehouse'; TEX = '/Game/Japan/Treehouse/Textures'; MAT = '/Game
 GLOW = {'paper': 3., 'glass': .3, 'noren_cream': .05}   # paper is only lanterns now
 
 
-# The legacy FBX factory opens the Message Log when a NEW mesh has a build warning, which crashes a commandlet; an
-# existing asset takes the reimport path. So a new mesh is first created from a small placeholder that builds cleanly.
-PLACEHOLDER = yori.OUT/'village'/'assets'/'Village_Sign.fbx'
-
-
 def import_mesh(path, dest, name):
-    if not E.does_asset_exist(f'{dest}/{name}'): import_village.import_mesh(PLACEHOLDER, dest, name)
-    return import_village.import_mesh(path, dest, name)
+    return atomic_native.receive(path,dest,name)
 
 
 def texture(path, name):
@@ -206,22 +199,11 @@ def trees(report):
         MEL.set_material_instance_parent(mi, foliage); MEL.set_material_instance_texture_parameter_value(mi, 'Tex', t)
         MEL.update_material_instance(mi); assert E.save_loaded_asset(mi)
     for name, d in info.items():
-        # Seed a new tree with the owned placeholder, then reimport its own geometry and slots. Borrowing
-        # Tree_Maple_A here made treehouse packages secretly depend on the island foliage's bytes.
         path = f'/Game/Japan/Assets/{name}'; want = sorted(['Bark', d['slot']])
         slots = lambda m: sorted(str(s.get_editor_property('imported_material_slot_name')) for s in m.get_editor_property('static_materials'))
-        top = lambda m: m.get_bounding_box().max.z / 100          # metres; the tree's crown top from trees.json
-        if E.does_asset_exist(path) and (slots(E.load_asset(path)) != want or E.load_asset(path).get_num_lods() != 1): E.delete_asset(path)
-        if not E.does_asset_exist(path):
-            # Seed a new tree from an owned FBX on disk (as the other trees above do), never the engine cube: its import
-            # data names a source file that does not exist here, so the reimport asks for a file dialog and the commandlet
-            # crashes (SIGSEGV in FDesktopPlatformMac::FileDialogShared).
-            import_village.import_mesh(PLACEHOLDER, '/Game/Japan/Assets', name)
-        mesh = import_village.import_mesh(src/f'{name}.fbx', '/Game/Japan/Assets', name, fresh_slots=True)
-        if abs(top(mesh)-d['crown_hi']) > .5:
-            # A seed without FBX import data can skip the first unit
-            # conversion (a tree 100 times too small); the second one finds FBX data to update and imports in metres.
-            mesh = import_village.import_mesh(src/f'{name}.fbx', '/Game/Japan/Assets', name, fresh_slots=True)
+        top = lambda m: m.get_bounding_box().max.z / 100
+        mesh = import_mesh(src/f'{name}.fbx', '/Game/Japan/Assets', name)
+        assert mesh.get_num_triangles(0)==d['triangles'],(name,'current canopy triangles')
         assert abs(top(mesh)-d['crown_hi']) < .5 and mesh.get_num_lods() == 1, (name, top(mesh), mesh.get_num_lods())
         assert slots(mesh) == want, (name, slots(mesh))
         for i, s in enumerate(mesh.get_editor_property('static_materials')):
@@ -259,7 +241,9 @@ def uv_channels(mesh):
     return mesh_editor().get_num_uv_channels(mesh, 0)
 
 
-def main():
+def _main():
+    unreal.load_module('StaticMeshEditor')
+    atomic_native.configure(OUT)
     report = {'textures': 0, 'meshes': {}, 'props': {}}
     if (OUT/'trees/trees.json').exists(): trees(report)
     info = json.loads((OUT/'textures/textures.json').read_text()); tex = {}
@@ -273,39 +257,35 @@ def main():
         trunk = instance('MI_TH_trunk', par, tex['bark'], info['bark']['gain'])
         MEL.set_material_instance_scalar_parameter_value(trunk, 'RoomCut', 0.)
         MEL.update_material_instance(trunk); assert E.save_loaded_asset(trunk)
-    manifest = json.loads((OUT/'manifest.json').read_text())
-    for name, solid in (('TH_Structure', True), ('TH_Trunks', True), ('TH_Frame', True)):
-        if name not in manifest: continue      # TH_Frame: only once the build splits the thin pieces out
-        # A reimport keeps the old material slot list, so faces of a new material land in a stale slot:
-        # start the asset afresh whenever the build's slots changed.
-        path = f'/Game/Japan/Assets/{name}'
-        if E.does_asset_exist(path):
-            old = sorted(str(s.get_editor_property('material_slot_name')).removeprefix('TH_')
-                         for s in E.load_asset(path).get_editor_property('static_materials'))
-            if old != sorted(manifest[name]['slots']):
-                E.delete_asset(path); report.setdefault('fresh', []).append(name)
-        mesh = import_mesh(OUT/'assets'/f'{name}.fbx', '/Game/Japan/Assets', name)
-        used = assign(mesh, {**mis, 'bark': trunk} if name == 'TH_Trunks' and trunk else mis, report)
-        flag = unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE if solid else unreal.CollisionTraceFlag.CTF_USE_SIMPLE_AS_COMPLEX
-        mesh.get_editor_property('body_setup').set_editor_property('collision_trace_flag', flag)
-        channels = uv_channels(mesh)
-        if name in PIECES and channels >= 5: full_precision_uvs(mesh)
-        assert E.save_loaded_asset(mesh)
-        report['meshes'][name] = {'slots': used, 'collision': 'complex' if solid else 'none', 'uv_channels': channels}
     props = OUT/'props/props.json'
     if props.exists():
         for key, d in json.loads(props.read_text()).items():
             t = texture(OUT/'props'/f'{key}.png', f'T_{key}')
             mi = instance(f'MI_{key}', par, t, d['gain'], d.get('glow', 0.))
             mesh = import_mesh(OUT/'props'/f'{key}.fbx', '/Game/Japan/Assets', key)
-            for i in range(len(mesh.get_editor_property('static_materials'))): mesh.set_material(i, mi)
+            assert mesh.get_num_lods()==1 and mesh.get_num_triangles(0)==d['triangles'],(key,'current prop triangles')
+            for i in range(len(mesh.get_editor_property('static_materials'))):
+                if mesh.get_material(i)!=mi:mesh.set_material(i, mi)
+                assert mesh.get_material(i)==mi,key
             flag = unreal.CollisionTraceFlag.CTF_USE_SIMPLE_AS_COMPLEX
             mesh.get_editor_property('body_setup').set_editor_property('collision_trace_flag', flag)
             assert E.save_loaded_asset(mesh)
             report['props'][key] = {'gain': d['gain'], 'boxes': d.get('boxes', 0)}
-    import_dressing(OUT, mis, report)
+    atomic_native.import_surfaces(OUT,mis,trunk,report)
     (OUT/'import-report.json').write_text(json.dumps(report, indent=2)+'\n')
     unreal.log('TREEHOUSE IMPORT COMPLETE')
+
+
+def main():
+    unreal.load_module('MessageLog')
+    key='MessageLog.DisablePopup';system=unreal.SystemLibrary
+    prior=system.get_console_variable_bool_value(key)
+    system.execute_console_command(None,key+' 1')
+    assert system.get_console_variable_bool_value(key) is True,'MessageLog popup control unavailable'
+    try:_main()
+    finally:
+        system.execute_console_command(None,key+(' 1' if prior else ' 0'))
+        assert system.get_console_variable_bool_value(key)==prior,'MessageLog popup control restore failed'
 
 
 main()

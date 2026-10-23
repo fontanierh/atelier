@@ -1,0 +1,9 @@
+{
+  "name": "TH_P_log_table",
+  "schema": 1,
+  "size": 1.35,
+  "slug": "log_table",
+  "solid": true,
+  "target": 0.055,
+  "turn": 0.0
+}

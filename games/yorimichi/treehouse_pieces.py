@@ -101,11 +101,12 @@ def expected_assets(out):
     trees = json.loads((root / 'trees/trees.json').read_text())
     if set(props) != set(PROPS) or set(trees) != set(TREES):
         raise ValueError('Incomplete current treehouse prop/tree ownership')
-    names = ('TH_Structure', 'TH_Trunks', 'TH_Frame', *props, *trees)
+    names = (*props, *trees)
     if any(not isinstance(name, str) or not re.fullmatch('[A-Za-z0-9_]+', name) for name in (*names, *textures)):
         raise ValueError('Invalid treehouse native ownership roster')
     result = {'/Game/Japan/Assets/' + name for name in names}
-    result.update(DESTINATION + '/' + row['name'] for row in rows)
+    from treehouse_surfaces import rows as surface_rows
+    result.update(row['package'] for row in surface_rows(out))
     result.update('/Game/Japan/Treehouse/Textures/T_TH_' + slug for slug in textures)
     result.update('/Game/Japan/Treehouse/Textures/T_' + key for key in props)
     result.update('/Game/Japan/Treehouse/Materials/MI_TH_' + slug for slug in textures)
@@ -122,7 +123,7 @@ def expected_assets(out):
 def native_outputs(content):
     """Complete fixed native ownership is knowable before a cold producer runs."""
     content = Path(content)
-    packages = ['Japan/Assets/' + name for name in ('TH_Structure', 'TH_Trunks', 'TH_Frame', *PROPS, *TREES)]
+    packages = ['Japan/Assets/' + name for name in ('TH_Trunks', 'TH_Frame', *PROPS, *TREES)]
     for colour in ('crimson', 'amber'):
         packages += ['Japan/Textures/T_leaf_' + colour, 'Japan/Materials/MI_Leaf' + colour.title()]
     primaries = tuple(content / (package + '.uasset') for package in packages)
@@ -138,7 +139,9 @@ def present(out, content):
         report = json.loads((root / 'import-report.json').read_text())
         expected = [DESTINATION + '/' + row['name'] for row in rows]
         assets = report['assets']
-        if (report['pieces_sha256'] != hashlib.sha256((root / 'pieces.json').read_bytes()).hexdigest()
+        from treehouse_surfaces import retired_parents_absent, rows as surface_rows
+        if (report.get('surfaces') != [row['package'] for row in surface_rows(out)] or not retired_parents_absent(content) or report.get('surfaces_sha256') != hashlib.sha256((root/'surfaces.json').read_bytes()).hexdigest()
+                or report['pieces_sha256'] != hashlib.sha256((root / 'pieces.json').read_bytes()).hexdigest()
                 or report['dressing'] != expected or assets != expected_assets(out) or not parent_absent(content)):
             return False
         return report['files'] == package_inventory(content, assets)
