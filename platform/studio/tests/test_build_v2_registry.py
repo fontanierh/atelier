@@ -16,7 +16,7 @@ check_registry = _module.check_registry
 def evidence():
     registry = {'schema_version': 1, 'scenarios': [{'id': 'one', 'tests': ['fixture/test']}],
                 'pending': [{'id': 'future', 'task': 'A8'}]}
-    listing = {'test-count': 1, 'rust-suites': {'fixture': {'status': 'listed', 'testcases': {
+    listing = {'rust-build-meta': {'platforms': {'host': {'platform': {'triple': 'x86_64-unknown-linux-gnu'}}}}, 'test-count': 1, 'rust-suites': {'fixture': {'status': 'listed', 'testcases': {
         'test': {'ignored': False, 'filter-match': {'status': 'matches'}},
     }}}}
     junit = ET.fromstring('<testsuites time="0.1"><testsuite name="fixture">'
@@ -26,7 +26,8 @@ def evidence():
 
 def test_active_coverage_and_pending_are_reported_separately():
     registry, listing, junit = evidence()
-    assert check_registry(registry, listing) == {'active_scenarios': 1, 'tests': 1, 'pending_scenarios': 1}
+    assert check_registry(registry, listing) == {'active_scenarios': 1, 'tests': 1, 'pending_scenarios': 1,
+                                                'platform': 'linux', 'platform_excluded_scenarios': 0}
     assert check_registry(registry, listing, junit)['test_seconds'] == 0.1
 
 
@@ -67,3 +68,32 @@ def test_registry_refuses_incomplete_or_slow_execution(mutation):
         junit.set('time', {'slow': '10.01', 'nan': 'NaN', 'negative': '-1'}[mutation])
     with pytest.raises(ValueError):
         check_registry(registry, listing, junit)
+
+
+def test_platform_exclusions_are_explicit_and_not_passed_coverage():
+    registry, listing, _ = evidence()
+    registry['scenarios'].append({'id': 'mac-only', 'tests': ['fixture/apfs'], 'platforms': ['darwin']})
+    summary = check_registry(registry, listing)
+    assert summary['active_scenarios'] == 1
+    assert summary['platform_excluded_scenarios'] == 1
+    listing['rust-build-meta']['platforms']['host']['platform']['triple'] = 'aarch64-apple-darwin'
+    with pytest.raises(ValueError, match='registry mismatch'):
+        check_registry(registry, listing)
+    listing['rust-suites']['fixture']['testcases']['apfs'] = {'ignored': False, 'filter-match': {'status': 'matches'}}
+    listing['test-count'] = 2
+    assert check_registry(registry, listing)['active_scenarios'] == 2
+
+
+@pytest.mark.parametrize('platforms', [[], ['windows'], 'darwin'])
+def test_invalid_platform_labels_fail_instead_of_silently_excluding(platforms):
+    registry, listing, _ = evidence()
+    registry['scenarios'][0]['platforms'] = platforms
+    with pytest.raises(ValueError, match='platform labels'):
+        check_registry(registry, listing)
+
+
+def test_unknown_recorded_host_fails():
+    registry, listing, _ = evidence()
+    listing['rust-build-meta']['platforms']['host']['platform']['triple'] = 'x86_64-pc-windows-msvc'
+    with pytest.raises(ValueError, match='unsupported recorded host'):
+        check_registry(registry, listing)

@@ -27,7 +27,18 @@ def check_registry(registry: dict, listing: dict, junit: ET.Element | None = Non
         raise ValueError('pending scenario must name its implementation task')
     if not active or any(not row.get('tests') for row in active):
         raise ValueError('active scenario must name tests')
-    registered = {test for row in active for test in row['tests']}
+    supported = {'linux', 'darwin'}
+    triple = listing['rust-build-meta']['platforms']['host']['platform']['triple']
+    platform = 'darwin' if triple.endswith('-apple-darwin') else 'linux' if '-linux-' in triple else None
+    if platform is None:
+        raise ValueError(f'unsupported recorded host platform: {triple}')
+    for row in active:
+        platforms = row.get('platforms', sorted(supported))
+        if not isinstance(platforms, list) or not platforms or any(item not in supported for item in platforms):
+            raise ValueError(f'invalid scenario platform labels: {row["id"]}')
+    selected = [row for row in active if platform in row.get('platforms', supported)]
+    excluded = len(active) - len(selected)
+    registered = {test for row in selected for test in row['tests']}
     collected = set()
     for binary, suite in listing['rust-suites'].items():
         if suite['status'] != 'listed':
@@ -42,7 +53,8 @@ def check_registry(registry: dict, listing: dict, junit: ET.Element | None = Non
     if registered != collected:
         raise ValueError(f'registry mismatch: missing tests={sorted(registered-collected)}, '
                          f'unmapped tests={sorted(collected-registered)}')
-    summary = {'active_scenarios': len(active), 'tests': len(collected), 'pending_scenarios': len(pending)}
+    summary = {'active_scenarios': len(selected), 'tests': len(collected), 'pending_scenarios': len(pending),
+               'platform': platform, 'platform_excluded_scenarios': excluded}
     if junit is not None:
         executed = []
         for suite in junit.findall('testsuite'):

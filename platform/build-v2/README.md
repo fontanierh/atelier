@@ -105,3 +105,32 @@ Focused cases in `tests/validation.rs` cover absence, selectors, missing or non-
 producer identity, cycles, invalid paths, Unicode collisions, disjoint output ownership and install roots.
 The library remains unused by production v1. Its tests run in hosted Rust CI; local compilation still
 requires ordinary standalone compile admission.
+
+## Immutable objects (B1)
+
+`store::ObjectStore::open(root)` uses an explicit trusted store root. Object format **1** stores
+payloads at `objects/sha256/<64 lowercase hex characters>`. It has no default machine path and no
+production callers. Changing algorithm or encoding requires a new format/namespace.
+
+`prepare(source)` clones a regular source into a newly reserved private staging directory, freezes
+the snapshot read-only, hashes its exact bytes once and returns a private `PreparedObject` token.
+`publish(token)` accepts only a token from the same store and publishes with macOS `RENAME_EXCL`.
+The first entry wins; an existing regular read-only entry is kept, with a cheap size check. Existing
+object contents are trusted on ordinary hits; B7 owns explicit corruption verification and recovery.
+A dropped/failed token cleans only its own staging payload and empty private directory. Source files
+remain unchanged. This is not a result transaction: B2 must lease before calling prepare and retain
+that lease through its publication/record lifecycle. No cleanup, root or result-record engine exists here.
+
+`clone_to(digest, destination)` uses APFS `clonefile`, never rehashes or scans, refuses an existing
+destination and never copies bytes as a fallback. Unsupported platforms/filesystems and other clone
+errors are explicit failures. The cloned payload is read-only; B2/B3 must retain/install source modes
+from the publication receipt (including executable permissions) as result metadata. B1 stores bytes,
+not checkout install policy or file-mode identity.
+
+The Rust job now runs on Linux and macOS. Registry `platforms` may contain only `linux`/`darwin`;
+selection uses the host triple recorded in nextest's listing, so downloaded evidence is interpreted
+independently of the reviewer's machine. Excluded-platform scenarios are reported separately, never
+counted as passes. Linux tests prove explicit unsupported behavior; mandatory macOS tests prove real
+APFS cloning, independent edits, read-only snapshots, no-replace races and owned cleanup. Both jobs
+keep compile time separate from the ten-second T0 run. Local native repetition is reserved for a
+specific CI coverage gap or diagnosis, through the ordinary admitted compile workflow.

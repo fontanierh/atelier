@@ -19,3 +19,15 @@ CI MUST compile the current crate successfully before running its T0 tests. Acti
 scenarios MUST be backed by complete, unskipped execution evidence within ten seconds, excluding
 compilation. Pending future scenarios MUST be reported separately and MUST NOT count as coverage.
 See tools/check_registry.py and platform/studio/tests/test_build_v2_registry.py.
+
+@cc [owner:fontanierh,label:correctness] build-v2-object-digest-format
+Object format version 1 MUST name payload bytes with exactly 64 lowercase SHA-256 hex characters
+under objects/sha256. A change to algorithm or encoding MUST use a new object format/namespace.
+Filesystem permissions MUST remain result metadata rather than payload identity.
+
+@cc [owner:fontanierh,label:correctness] build-v2-object-publication
+The object store MUST freeze and verify an independent clone before atomic no-replace publication.
+Caller-provided unchecked digests MUST NOT certify bytes. Hits MUST clone without rehashing or
+scanning output folders; clone failures MUST be explicit and MUST NOT fall back to byte copies.
+Existing entries and unrelated checkout/staging files MUST never be overwritten or removed.
+See tests/objects.rs; macOS APFS tests are required acceptance evidence.
