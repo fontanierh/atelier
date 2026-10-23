@@ -129,3 +129,37 @@ def test_compacted_piece_cannot_remap_to_a_different_parent_material(tmp_path, m
     value['slots'].append('Foreign')
     value['pieces'][0].update(slots=['Material'],source_material_indices=[1])
     with pytest.raises(ValueError,match='material ownership'):planner.validate(root,value)
+
+
+def test_material_graph_edits_change_only_the_leaf_that_uses_the_slot(tmp_path, monkeypatch):
+    import numpy as np
+    from atelier import mesh_ir
+    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1] / 'world'))
+    planner = importlib.import_module('region_mesh_parts')
+    def spec(roughness):
+        return dict(kind='vertex_color_principled_v1', attribute='Color', roughness=float(np.float32(roughness)),
+            metallic=0.0, base_color_default=[float(np.float32(.8))]*3+[1.0],
+            viewport_color=[float(np.float32(.8))]*3+[1.0], viewport_roughness=0.5,
+            viewport_metallic=0.0, viewport_specular=0.5, backface_culling=False, default_profile_sha256='a'*64)
+    source = dict(positions=np.array([[0,0,0],[1,0,0],[0,1,0],[10,0,0],[11,0,0],[10,1,0]],dtype=np.float32),
+        starts=np.array([0,3]), counts=np.array([3,3]), vertex_indices=np.arange(6),
+        normals=np.array([[0,0,1]]*6,dtype=np.float32),materials=np.array([1,2]),smooth=np.array([False,True]),
+        uvs=[('UVMap',np.zeros((6,2),dtype=np.float32))],
+        colours=[('Color','POINT','FLOAT_COLOR',np.ones((6,4),dtype=np.float32))],
+        slots=[SimpleNamespace(name=name) for name in ('Unused','Bark','Leaf')])
+    monkeypatch.setattr(planner, 'capture', lambda mesh: source)
+    obj = SimpleNamespace(name='Whole',type='MESH',modifiers=[],data=SimpleNamespace(shape_keys=None),matrix_world=np.eye(4))
+    folder = tmp_path / 'plan'; groups = [('Whole_cell_0_0',[0]),('Whole_cell_1_0',[1])]
+    values = [spec(.5),spec(.85),spec(.5)]
+    original = planner.plan(obj, folder, face_groups=groups, options={'export_apply':True}, material_specs=values)
+    before = [(folder / row['payload']).read_bytes() for row in original['pieces']]
+    values[0] = spec(.25)
+    planner.plan(obj, folder, face_groups=groups, options={'export_apply':True}, material_specs=values)
+    assert [(folder / row['payload']).read_bytes() for row in original['pieces']] == before
+    values[1] = spec(.25)
+    planner.plan(obj, folder, face_groups=groups, options={'export_apply':True}, material_specs=values)
+    assert (folder / original['pieces'][0]['payload']).read_bytes() != before[0]
+    assert (folder / original['pieces'][1]['payload']).read_bytes() == before[1]
+    for row, expected in zip(original['pieces'], values[1:]):
+        metadata, _ = mesh_ir.decode((folder / row['payload']).read_bytes())
+        assert metadata['material_specs'] == [expected]

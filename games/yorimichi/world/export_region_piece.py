@@ -26,6 +26,7 @@ def main(argv=None):
         raise ValueError('Atomic exporter requires a regular planned input')
     original = args.input.read_bytes()
     meta, piece = mesh_ir.decode(original)
+    if meta['schema'] == 3 and args.format != '.glb': raise ValueError('Explicit source material graphs require the declared GLB route')
     key = meta['asset']
     root = export_tasks.real_directory(args.output, create=True)
     if regular_files(root) - {key + args.format, 'export.json'}:
@@ -33,7 +34,11 @@ def main(argv=None):
     import bpy
     from mathutils import Matrix
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    piece['slots'] = [bpy.data.materials.get(label) or bpy.data.materials.new(label) for label in piece['slots']]
+    if 'material_specs' in meta:
+        from atelier.mesh_materials import restore
+        piece['slots'] = [restore(label, spec) for label, spec in zip(piece['slots'], meta['material_specs'])]
+    else:
+        piece['slots'] = [bpy.data.materials.get(label) or bpy.data.materials.new(label) for label in piece['slots']]
     mesh = create_mesh(key, piece)
     obj = bpy.data.objects.new(key, mesh)
     bpy.context.collection.objects.link(obj)

@@ -61,7 +61,7 @@ def capture_colliders(boxes):
     return collisions
 
 
-def plan(obj, root, *, collisions=(), options=None, cell_metres=CELL_METRES, face_groups=None):
+def plan(obj, root, *, collisions=(), options=None, cell_metres=CELL_METRES, face_groups=None, material_specs=None):
     """@cc [owner:fontanierh,label:correctness;performance] planned-independent-mesh-pieces
     Capture complete original corner channels before partitioning. Every source face MUST have
     exactly one piece owner and every piece MUST fit the atomic export budget. Whole authored
@@ -78,6 +78,8 @@ def plan(obj, root, *, collisions=(), options=None, cell_metres=CELL_METRES, fac
     parent = name(obj.name)
     root = real_directory(root)
     source = capture(obj.data)
+    if material_specs is not None and (type(material_specs) is not list or len(material_specs) != len(source['slots'])):
+        raise ValueError('Explicit material descriptors differ from the original slot table')
     matrix = np.asarray(obj.matrix_world, dtype=np.float64)
     world = source['positions'] @ matrix[:3, :3].T + matrix[:3, 3]
     faces = [source['vertex_indices'][s:s + n].tolist() for s, n in zip(source['starts'], source['counts'])]
@@ -102,6 +104,7 @@ def plan(obj, root, *, collisions=(), options=None, cell_metres=CELL_METRES, fac
         piece, slots, material_indices = compact_materials(piece, [m.name for m in source['slots']])
         payload = mesh_ir.encode(piece, key=key, slots=slots,
                                  matrix=matrix.tolist(), options=options or {},
+                                 material_specs=None if material_specs is None else [material_specs[i] for i in material_indices],
                                  collisions=collisions if not rows else ())
         relative = key + '.npz'
         mesh_ir.write(root / relative, payload)
