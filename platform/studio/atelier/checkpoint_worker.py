@@ -8,7 +8,7 @@ from .build_cache import atomic_json
 
 def main(argv=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument('operation', choices=['capture', 'restore', 'restore-action', 'stage-candidates', 'export-zen', 'hydrate'])
+    parser.add_argument('operation', choices=['capture', 'restore', 'restore-action', 'stage-candidates', 'export-zen', 'hydrate', 'clone-step'])
     parser.add_argument('game')
     parser.add_argument('report', type=Path)
     parser.add_argument('--key')
@@ -31,7 +31,7 @@ def main(argv=None):
             mode = previous['requested']
     ctx = build.Context(args.game, cook_mode=mode, create=not args.read_only)
     # Hydration is scoped by the parent's request; it needs no recipe.
-    steps = build.load_recipe(args.game).steps(ctx) if args.operation != 'hydrate' else None
+    steps = build.load_recipe(args.game).steps(ctx) if args.operation not in ('hydrate', 'clone-step') else None
     store = checkpoint_store.Store(args.game)
     args.report.mkdir(parents=True, exist_ok=True)
     result = args.report / 'result.json'
@@ -63,6 +63,9 @@ def main(argv=None):
         step = next(s for s in steps if s.name == request['task'])
         restore_worker(ctx, step, store, args.key)
         atomic_json(result, dict(key=args.key))
+    elif args.operation == 'clone-step':
+        from .worktree_reuse import clone_worker
+        atomic_json(result, dict(key=args.key, cloned=clone_worker(ctx, args.key)))
     elif args.operation == 'hydrate':
         placed = checkpoint_store.hydrate_files(ctx, store, args.key, echo=lambda m: print(m, flush=True))
         atomic_json(result, dict(key=args.key, placed=placed))

@@ -951,7 +951,20 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             staged = staged_certificate(ctx, step, current)
             if (staged is not None and outputs_present(step) and task_cache.compile_present(ctx, step)
                     and task_cache.certified(ctx, step, current, staged[1])):
-                adopted, previous = staged
+                adopted, previous = 'checkpoint ' + str(staged[0])[:12], staged[1]
+            elif step.heavy or step.products:
+                from . import worktree_reuse
+                if not hasattr(ctx, 'worktree_index'):
+                    ctx.worktree_index = worktree_reuse.Index(ctx.game)
+                reused = worktree_reuse.restore(ctx, step, current, ctx.worktree_index, echo=echo)
+                if reused is not None:
+                    adopted, previous = 'worktree ' + reused[0].name, reused[1]
+                elif actions is not None and task_cache.key(ctx, step, current) is not None and \
+                        task_cache.load(actions.store, task_cache.key(ctx, step, current)) is None:
+                    # Without a saved action, any retained checkpoint certifying this fingerprint serves.
+                    reused = worktree_reuse.restore_checkpoint(ctx, step, current, ctx.worktree_index, echo=echo)
+                    if reused is not None:
+                        adopted, previous = 'checkpoint ' + reused[0][:12], reused[1]
         outputs_ok = outputs_present(step) and task_cache.compile_present(ctx, step)
         if actions is not None:
             outputs_ok = outputs_ok and (task_cache.certified(ctx, step, current, previous)
@@ -980,7 +993,7 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
         if not recovering and not force_step and not rebuilding_touched and previous.get('fingerprint') == current and outputs_ok:
             if adopted is not None:
                 stamp.write_text(json.dumps(previous) + '\n')
-                echo(f'{print_} certificate adopted from checkpoint {adopted[:12]}')
+                echo(f'{print_} certificate adopted from {adopted}')
             done[step.name] = result(step, current, previous)
             build_products.feed_results(done, previous.get('products', {}))
             if actions is not None and saved_action is None and task_cache.certified(ctx, step, current, previous):
