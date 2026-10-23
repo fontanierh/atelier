@@ -63,7 +63,16 @@ def test_complete_city_mesh_graph_has_separate_constructor_parameters_and_no_sib
             assert GAME / 'assets/hidamari/export-parameters' / (sibling + '.json') not in step.inputs
     for key in recipe.DATA_ASSETS:
         assert 'hidamari.data.' + key in planners[key].reads
+    for key, step in planners.items():
+        query = out / 'hidamari/query-data' / (key + '.npz')
+        assert next(p for p in step.products if p.name == 'hidamari.query.' + key).paths == (query,)
+        assert '--query-output' in step.commands[0].args
+    harbor = planners['HD_Harbor']
+    assert next(p for p in harbor.products if p.name == 'hidamari.source.HD_Harbor').paths == (
+        out / 'hidamari/source-data/HD_Harbor',)
+    assert all('--source-output' not in step.commands[0].args for key, step in planners.items() if key != 'HD_Harbor')
     for key in ('HD_Terrain', 'HD_NorthMountains'):
         assert {p.name for p in planners[key].products} == {'hidamari.geometry.' + key,
+            'hidamari.query.' + key,
             *('terrain.' + key + '.' + stage for stage in ('natural', 'final', 'provenance'))}
     check_modules(steps)

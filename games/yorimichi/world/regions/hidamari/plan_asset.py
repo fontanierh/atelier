@@ -17,10 +17,14 @@ def main(argv=None):
     parser.add_argument('--asset', required=True)
     parser.add_argument('--city', type=Path)
     parser.add_argument('--context', type=Path, required=True)
+    parser.add_argument('--query-output', type=Path)
+    parser.add_argument('--source-output', type=Path)
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args(argv if argv is not None else sys.argv[sys.argv.index('--') + 1:])
     name(args.asset)
     real_directory(args.output)
+    if args.source_output is not None and args.asset != 'HD_Harbor':
+        raise ValueError('Only the Harbor cut consumes a pre-export city source')
     from hidamari import source_context
     context = source_context.read(args.context, args.asset)
     import bpy
@@ -53,6 +57,17 @@ def main(argv=None):
         obj = source.object(material)
     from region_mesh_parts import capture_colliders
     collisions = capture_colliders(source.colliders)
+    if args.query_output is not None:
+        import region_query
+        region_query.save(args.query_output, [region_query.capture(obj),
+            *region_query.capture_colliders(args.asset, collisions)], owner=args.asset,
+            stage='raw' if args.asset == 'HD_Harbor' else 'final')
+    if args.source_output is not None:
+        from mesh_pieces import capture
+        import source_geometry
+        source_geometry.write(args.source_output, capture(obj.data), owner=args.asset,
+            slots=[material.name for material in obj.data.materials],
+            matrix=[list(row) for row in obj.matrix_world], collisions=collisions)
     plan(obj, args.output, collisions=collisions, options=dict(
         apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL', axis_forward='-Y', axis_up='Z',
         mesh_smooth_type='FACE', use_custom_props=False))

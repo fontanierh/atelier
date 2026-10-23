@@ -72,6 +72,13 @@ def mesh_steps(ctx, *, terrain_inputs=(), terrain_needs=()):
         code.update(context.inputs(source_parameters, key))
         arguments = ['--asset', key, '--context', str(source_parameters)]
         reads, needs, products = [], [], []
+        query = ctx.out / 'hidamari/query-data' / (key + '.npz')
+        arguments.extend(('--query-output', str(query)))
+        products.append(Product('hidamari.query.' + key, (query,)))
+        if key == 'HD_Harbor':
+            raw = ctx.out / 'hidamari/source-data' / key
+            arguments.extend(('--source-output', str(raw)))
+            products.append(Product('hidamari.source.' + key, (raw,)))
         if REGION / 'layout.py' in code:
             # These constructors sample real final terrain; independent local models do not.
             code.update(terrain_inputs)
