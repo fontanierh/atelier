@@ -12,3 +12,12 @@ Native Unreal packages MUST NOT opt into a portable cache until their relocation
 @cc [owner:fontanierh,label:safety] advisory-capacity
 The capacity planner MUST NOT write scheduler state, grant leases, take locks, launch workloads or
 change the live safety system. A queued phase MUST hold no resources or named locks.
+
+@cc [owner:fontanierh,label:safety] gated-private-service-ownership
+Shared Zen/Trace services and their descendants MUST remain excluded from accounting and signals
+unless a fresh direct child of the exact guarded compound driver was explicitly spawned behind an
+invocation-private exec gate. Its exact PID/start identity MUST be bound to both launcher tracking
+and the independent aggregate monitor, with live aggregate and actual-child guard readiness, before
+GO. Default behavior MUST have no exceptions. Arbitrary PID adoption, post-exec registration,
+PID-reuse inheritance and public mutable allowlists MUST NOT grant ownership. Lost registration,
+acknowledgment or guard telemetry MUST fail closed and retain ordinary pinned cleanup/admission.

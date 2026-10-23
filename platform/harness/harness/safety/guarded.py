@@ -20,8 +20,9 @@ A launcher whose heavy work runs in descendants (UAT's BuildCookRun starts the c
 compilers) passes `watch`: every descendant is recorded by pid and start time as it appears, and those whose executable
 name is in `watch` get their own memory guard (`memory-health-<name>-<pid>.json`) under the same ceiling and the same
 outer slot turn. When the run ends, for any reason, recorded descendants still running as the same processes are stopped,
-deepest first, before the child itself. Shared engine services a cook starts (Zen, Unreal Trace Server) and anything
-under them are never signalled, nor is anything outside the recorded tree. `progress` prints a line that often while the child is quiet.
+deepest first, before the child itself. Shared engine services and their children are excluded, except exact owned
+private roots registered before exec through the explicit owned_services protocol. Nothing outside the recorded
+tree is signalled. `progress` prints a line that often while the child is quiet.
 
 Compile-kind launchers additionally wait behind a private exec gate until a sibling aggregate guard is ready.
 It samples the simultaneous physical footprint of the wrapper and its owned descendants every quarter second,
@@ -51,6 +52,15 @@ class Descendants:
         self.root, self.folder, self.watch, self.duration, self.limit_gib, self.stack = (
             (root, root_start), folder, set(watch), duration, limit_gib, stack)
         self.depth, self.parent, self.guarded, self.shared = {}, {}, {}, set()
+        from .owned_service import Registrations
+        self.services = Registrations(process_tree, self.root)
+
+    def register_service(self, key):
+        self.poll(attach_guards=False)
+        self.services.register(key, self.shared_now())
+
+    def shared_service(self, key):
+        return process_tree.name(key[0]) in SHARED_SERVICES and not self.services.includes(key)
 
     def same(self, key):
         return process_tree.started(key[0]) == key[1]
@@ -58,29 +68,34 @@ class Descendants:
     def poll(self, attach_guards=True):
         # Walk from the root and from every recorded process still alive: an intermediate that lost the root's
         # ancestry (its parent exited) can still start the cook.
+        excluded = self.shared_now()
         queue = [(*self.root, 0)] + [(*key, depth) for key, depth in self.depth.items()
-                                     if key not in self.shared and self.same(key)]
+                                     if key not in excluded and self.same(key)]
         seen = set()
         while queue:
             parent, parent_start, depth = queue.pop()
             if (parent, parent_start) in seen:
                 continue
             seen.add((parent, parent_start))
+            if self.shared_service((parent, parent_start)):
+                self.shared.add((parent, parent_start))
+                continue
             for child, child_start in process_tree.owned_children(parent, parent_start):
                 key = (child, child_start)
                 self.depth.setdefault(key, depth+1)
                 self.parent.setdefault(key, (parent, parent_start))
-                if process_tree.name(child) in SHARED_SERVICES:
+                if self.shared_service(key):
                     self.shared.add(key)
                 if key not in self.shared:
                     queue.append((child, child_start, depth+1))
+        excluded = self.shared_now(check_coverage=True)
         if not attach_guards:
             return
         for key in self.depth:
-            if key in self.guarded or key in self.shared or not self.same(key):
+            if key in self.guarded or key in excluded or not self.same(key):
                 continue
             label = process_tree.name(key[0])
-            if label in SHARED_SERVICES:   # a child that exec'd a shared service after it was recorded
+            if self.shared_service(key):   # a child that exec'd a shared service after it was recorded
                 self.shared.add(key)
                 continue
             if label not in self.watch:
@@ -101,12 +116,16 @@ class Descendants:
             if monitor.poll() is not None and self.same(key):
                 raise SystemExit(f'memory guard for {label} {key[0]} exited before it')
 
-    def shared_now(self):
+    def shared_now(self, check_coverage=False):
         """Recorded processes at or under a shared service, judged on current names: a recorded `sh` may have exec'd
         zenserver since the last poll, and everything under it is then the service's too."""
         for key in self.depth:
-            if key not in self.shared and self.same(key) and process_tree.name(key[0]) in SHARED_SERVICES:
+            if key not in self.shared and self.same(key) and self.shared_service(key):
                 self.shared.add(key)
+        if check_coverage:
+            from .owned_service import unsupported
+            if unsupported(self.shared, self.parent, self.services):
+                raise RuntimeError('unsupported unregistered shared service below private service')
 
         def under(key):
             seen = set()
@@ -142,7 +161,7 @@ class Descendants:
     def signal(self, key, number):
         """Signal one recorded process only if its pinned identity still holds at this instant and it has not become a
         shared service."""
-        if self.same(key) and process_tree.name(key[0]) not in SHARED_SERVICES:
+        if self.same(key) and key not in self.shared_now() and not self.shared_service(key) and self.same(key):
             try:
                 os.kill(key[0], number)
             except ProcessLookupError:
@@ -248,7 +267,7 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
         on_slot=None, watch=(), progress=0., track_tree=False, fitting_gib=None, pass_fds=(), aggregate_tree=False,
         on_poll=None, admission=None, performance=False, invocation_id=None, worker_binding=None,
         completion_path=None, compile_memory_gib=None, script_memory_gib=None, launch_context=None,
-        queue_seconds=None, custody_fds=()):
+        queue_seconds=None, custody_fds=(), owned_services=False):
     """@cc [owner:fontanierh,label:correctness] diagnostic-execution-timings
     Timing diagnostics MUST NOT certify outputs or guess command execution duration. Publication
     MUST require clearing the prior report; failure to clear MUST suppress publication without
@@ -263,6 +282,12 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
     stays unknown without an independently pinned gate-consumption event.
     """
     entered = time.monotonic()
+    if type(owned_services) is not bool:
+        raise ValueError('owned_services must be an explicit bool')
+    if owned_services and not lock:
+        raise ValueError('private services require ordinary guarded admission')
+    if owned_services and (worker_binding is not None or completion_path is not None):
+        raise ValueError('private services do not yet support worker binding or compile completion publication')
     if queue_seconds is None and os.environ.get('ATELIER_CAPACITY_QUEUE_SECONDS'):
         queue_seconds = float(os.environ['ATELIER_CAPACITY_QUEUE_SECONDS'])
     if queue_seconds is not None and not (math.isfinite(queue_seconds) and queue_seconds > 0):
@@ -311,6 +336,7 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
                                 on_slot, watch, progress, track_tree, fitting_gib, pass_fds, aggregate_tree,
                                 on_poll, admission, performance, worker_binding=worker_binding, _timings=events,
                                 _launch_nonce=launch_nonce, custody_fds=custody_fds, _invocation=identifier,
+                                **({'owned_services': True} if owned_services else {}),
                                 _requeue=previous, _queue_deadline=None if queue_seconds is None else entered + queue_seconds,
                                 **({'compile_memory_gib': compile_memory_gib} if compile_memory_gib is not None else {}),
                                 **({'script_memory_gib': script_memory_gib} if script_memory_gib is not None else {}),
@@ -391,7 +417,7 @@ def _run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_g
         on_slot=None, watch=(), progress=0., track_tree=False, fitting_gib=None, pass_fds=(), aggregate_tree=False,
         on_poll=None, admission=None, performance=False, *, worker_binding=None, _timings, _completion=None,
         _requeue=None, _queue_deadline=None, compile_memory_gib=None, script_memory_gib=None, _launch_nonce=None,
-        custody_fds=(), _invocation=None):
+        custody_fds=(), _invocation=None, owned_services=False):
     """@cc [owner:fontanierh,label:safety] compile-tree-monitor-lifecycle
     Aggregate mode MUST release the command only after a matching monitor readiness receipt, and MUST
     require a successful matching terminal receipt proving observed tree exit before returning success.
@@ -489,7 +515,9 @@ def _run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_g
     if admission is not None and getattr(admission, 'mode', None) in ('capacity', 'sealed-maintenance'):
         from atelier.harness.capacity_runtime import validate_session_profile
         validate_session_profile(admission, kind=kind, command=command, limit_gib=limit_gib)
-    aggregate_tree = aggregate_tree or kind == 'compile' or admission is not None
+    aggregate_tree = aggregate_tree or kind == 'compile' or admission is not None or owned_services
+    if owned_services and not lock:
+        raise ValueError('private services require ordinary guarded admission')
     if custody_fds and not aggregate_tree:
         raise ValueError('checkout custody requires the aggregate tree monitor')
     if fitting_gib is not None:
@@ -596,6 +624,15 @@ def _run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_g
         if admission is not None:
             stack.callback(close_capacity)
         descriptors = tuple(pass_fds)
+        service_controller = None
+        if owned_services:
+            from .owned_service import Controller, ENV_FD, ENV_TOKEN
+            service_controller = Controller()
+            stack.callback(service_controller.close)
+            env = dict(os.environ if env is None else env)
+            env[ENV_FD] = str(service_controller.driver.fileno())
+            env[ENV_TOKEN] = service_controller.invocation
+            descriptors += (service_controller.driver.fileno(),)
         gate = None
         try:
             from atelier.harness.safety import tree_observation
@@ -623,6 +660,8 @@ def _run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_g
         stack.callback(observed_exit)
         if aggregate_tree:
             gate_read.close()
+        if service_controller is not None:
+            service_controller.driver.close()
         fitting_ready_by = time.monotonic()+FITTING_STARTUP_SECONDS
         fitting_started = False
         stack.callback(reap, child, grace=0. if aggregate_tree else 10.)
@@ -645,6 +684,7 @@ def _run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_g
             aggregate = monitors.enter_context(attach_tree(child.pid, folder/'memory-health-tree.json',
                                                            duration=horizon, limit_gib=limit_gib,
                                                            expected_start=root_start,
+                                                           **({'owned_services': True} if owned_services else {}),
                                                            **({'launch_nonce': _launch_nonce} if _launch_nonce is not None else {}),
                                                            **({'custody_fds': custody_fds, 'invocation': _invocation}
                                                               if custody_fds else {})))
@@ -722,6 +762,8 @@ def _run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_g
                     break
             if on_poll is not None and child.poll() is None:
                 on_poll(child.pid)
+            if service_controller is not None and child.poll() is None:
+                service_controller.poll(tree, aggregate, monitors, horizon, limit_gib)
             try:
                 child.wait(timeout=.01 if fitting_gib is not None and not fitting_started else 1)
             except subprocess.TimeoutExpired:
@@ -783,13 +825,16 @@ def main(argv=None):
                         'always use the big slot, and a compile waits for a small job to finish')
     parser.add_argument('--queue-wait', type=float, default=None, metavar='SECONDS',
                         help='give up after waiting this long for capacity (default: wait until admitted)')
+    parser.add_argument('--owned-services', action='store_true',
+                        help='enable gated invocation-owned private service children in a compound driver')
     parser.add_argument('command', nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)
     command = args.command[1:] if args.command and args.command[0] == '--' else args.command
     if not command:
         raise SystemExit('nothing to run')
     return run(command, args.report, args.timeout, args.purpose, lock=not args.no_lock, small_gib=args.small,
-               kind=args.kind, fitting_gib=args.fitting, queue_seconds=args.queue_wait)
+               kind=args.kind, fitting_gib=args.fitting, queue_seconds=args.queue_wait,
+               owned_services=args.owned_services)
 
 
 if __name__ == '__main__':

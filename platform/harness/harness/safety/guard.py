@@ -162,8 +162,24 @@ def attach(pid, report, duration, limit_gib=10., expected_start=None):
 
 class TreeMonitor:
     """A sibling aggregate monitor whose receipts belong to this exact launcher."""
-    def __init__(self, process, pid, started, report):
+    def __init__(self, process, pid, started, report, service_control=None, service_invocation=None):
         self.process, self.pid, self.started, self.report = process, pid, started, Path(report)
+        self.service_control = service_control
+        self.service_invocation = service_invocation
+
+    def register_service(self, key, token):
+        from .owned_service import send, receive
+        self.check()
+        if self.service_control is None:
+            raise RuntimeError('private service registration is disabled')
+        request = dict(identity=list(key), token=token, invocation=self.service_invocation)
+        send(self.service_control, request)
+        if receive(self.service_control) != dict(**request, ready=True):
+            raise RuntimeError('aggregate did not acknowledge private service identity')
+        self.check()
+        record = json.loads(self.report.read_text())
+        if list(key) not in record.get('owned_services', []):
+            raise RuntimeError('aggregate receipt lacks private service registration')
 
     def receipt(self, state):
         try:
@@ -210,7 +226,7 @@ class TreeMonitor:
 
 @contextmanager
 def attach_tree(pid, report, duration, limit_gib=10., expected_start=None, launch_nonce=None, custody_fds=(),
-                invocation=None):
+                invocation=None, owned_services=False):
     """@cc [owner:fontanierh,label:safety] tree-monitor-custody-detach
     Checkout custody descriptors MUST be validated before the monitor starts and MUST reach only
     the monitor, as its own inherited duplicates; the caller keeps and closes its descriptors.
@@ -238,39 +254,64 @@ def attach_tree(pid, report, duration, limit_gib=10., expected_start=None, launc
     for fd, _ in custody:
         command += ['--custody-fd', str(fd)]
     kept = tuple(fd for fd, _ in custody)
-    if launch_nonce is None:
-        process = subprocess.Popen(command, start_new_session=True, **({'pass_fds': kept} if kept else {}))
+    service_control = service_peer = None
+    if owned_services:
+        from .owned_service import channel
+        import uuid
+        service_control, service_peer = channel()
+        service_invocation = uuid.uuid4().hex
+        command += ['--service-control-fd', str(service_peer.fileno())]
+        kept += (service_peer.fileno(),)
     else:
-        from .launch_ownership import private_pipe
-        with private_pipe(launch_nonce) as descriptor:
-            process = subprocess.Popen([*command, '--launch-context-fd', str(descriptor)],
-                                       start_new_session=True, pass_fds=(*kept, descriptor))
-    monitor = TreeMonitor(process, pid, started, report)
+        service_invocation = None
     try:
+        if launch_nonce is None:
+            process = subprocess.Popen(command, start_new_session=True, **({'pass_fds': kept} if kept else {}))
+        else:
+            from .launch_ownership import private_pipe
+            with private_pipe(launch_nonce) as descriptor:
+                process = subprocess.Popen([*command, '--launch-context-fd', str(descriptor)],
+                                           start_new_session=True, pass_fds=(*kept, descriptor))
+    except BaseException:
+        if service_control is not None:
+            service_control.close()
+        raise
+    finally:
+        if service_peer is not None:
+            service_peer.close()
+    monitor = TreeMonitor(process, pid, started, report, service_control, service_invocation)
+    try:
+        if service_control is not None:
+            from .owned_service import send
+            send(service_control, dict(invocation=service_invocation, owner=[pid, started]))
         yield monitor
     finally:
-        if custody:
-            # A custodian may hold checkout exclusion while cleanup is uncertain. Never end it.
-            try:
-                process.wait(timeout=3)
-            except subprocess.TimeoutExpired:
-                try:
-                    monitor_start = process_tree.started(process.pid)
-                except Exception:
-                    monitor_start = None
-                print(f'custody monitor retained: pid {process.pid} start {monitor_start} '
-                      f'invocation {invocation} report {report} '
-                      f'lock files {[list(identity) for _, identity in custody]}', flush=True)
-        else:
-            if process.poll() is None:
-                # The launcher has already been reaped by the caller. Let the monitor observe and
-                # drain its retained tree before detaching; its child-mode cleanup has a 2 s bound.
+        try:
+            if custody:
+                # A custodian may hold checkout exclusion while cleanup is uncertain. Never end it.
                 try:
                     process.wait(timeout=3)
                 except subprocess.TimeoutExpired:
-                    process.terminate()
-            try:
-                process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                process.wait(timeout=5)
+                    try:
+                        monitor_start = process_tree.started(process.pid)
+                    except Exception:
+                        monitor_start = None
+                    print(f'custody monitor retained: pid {process.pid} start {monitor_start} '
+                          f'invocation {invocation} report {report} '
+                          f'lock files {[list(identity) for _, identity in custody]}', flush=True)
+            else:
+                if process.poll() is None:
+                    # The launcher has already been reaped by the caller. Let the monitor observe and
+                    # drain its retained tree before detaching; its child-mode cleanup has a 2 s bound.
+                    try:
+                        process.wait(timeout=3)
+                    except subprocess.TimeoutExpired:
+                        process.terminate()
+                try:
+                    process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait(timeout=5)
+        finally:
+            if service_control is not None:
+                service_control.close()

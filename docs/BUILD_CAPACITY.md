@@ -189,3 +189,26 @@ fingerprint. Failed output checks do not publish a successful action stamp. Cach
 are unchanged. The existing fingerprint retains its existing tool/input scope: this diagnostic does not
 prove complete transitive tool or environment calibration, nor does one observation establish a smaller
 safe envelope. No admission, profile, ceiling, worker count or sizing formula consumes this new history.
+
+### Owned private services in a compound job
+
+A diagnostic that owns a private service may explicitly enable `owned_services=True` on
+`atelier.harness.safety.guarded.run`, or use `--owned-services` on the guarded CLI. This keeps one
+ordinary admission, aggregate ceiling and deadline for the driver, service and native clients.
+Inside that exact driver, use `atelier.harness.safety.owned_service.spawn(argv, ...)`; do not start
+and then register a service PID. The helper holds a direct child behind a private exec gate until
+both the launcher and independent aggregate tracker bind its PID/start identity and its actual-child
+memory guard is ready. Failure or timeout refuses exec and fails the job.
+
+The default shared Zen/Trace exclusions remain in force. The opt-in covers only a fresh gated
+child and its owned ordinary descendants; it cannot adopt an existing process, transfer across PID
+reuse, authorize shared-service settings/GC, or permit a detached service. The diagnostic must verify
+its own private endpoint/data/config isolation, stop the foreground service before successful driver
+exit, and preserve launch/cleanup evidence. An unregistered shared-named descendant below a private service fails as unsupported; it is never
+silently dropped from a claimed full-coverage proof or signalled as an owned service. This API currently supports service
+spawns directly from the guarded driver, not from nested workers.
+
+The first API accepts argv, kind, cwd and stdout/stderr only. Environment overrides, shell, detach,
+pre-exec hooks and caller-selected descriptor inheritance are unsupported. Its Python exec gate uses
+isolated startup; service capability/token fields are removed before the private service executes.
+Worker-binding and compile-completion publication are not supported with this opt-in.
