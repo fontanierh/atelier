@@ -1260,10 +1260,12 @@ impl RootStore {
                 scan.damaged.join(", ")
             )));
         }
+        // Validate the persisted record before any early return: a damaged usage.json must refuse
+        // every destructive caller even when no journal currently has anything to fold.
+        let mut usage = self.usage_record()?;
         if scan.buckets.is_empty() && scan.unknowns.is_empty() {
             return Ok(());
         }
-        let mut usage = self.usage_record()?;
         let today = UseBucket::ceil_day(self.clock.now())?;
         let mut changed = false;
         for (key, bucket) in scan.buckets {

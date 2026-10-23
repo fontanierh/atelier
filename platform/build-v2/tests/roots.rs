@@ -2179,3 +2179,24 @@ fn a_snapshot_refuses_before_trimming_while_usage_is_damaged() {
         "a refused snapshot trims nothing"
     );
 }
+
+#[test]
+fn a_damaged_usage_record_refuses_a_root_drop() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let mut session = begin(&store, RootKind::Main, "first", 1);
+    session.use_result("unit.a", &key(1)).unwrap();
+    session.commit(None).unwrap();
+    fs::write(usage_file(&workspace), b"{not json").unwrap();
+
+    let error = store.drop_root(&RootKind::Main).unwrap_err();
+    assert!(
+        matches!(error, RootError::Damaged(_)),
+        "a damaged usage record must refuse the drop: {error}"
+    );
+    assert!(
+        store.root(&RootKind::Main).unwrap().is_some(),
+        "the root stays when usage cannot be trusted"
+    );
+}
