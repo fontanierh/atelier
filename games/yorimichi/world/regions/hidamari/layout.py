@@ -3,7 +3,9 @@ import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_
 import json, math, random
 from functools import lru_cache
 from pathlib import Path
-from hidamari import arrival as arrival_road, house_gardens, mountains, park_grounds, station_yard, temple_precinct
+from hidamari import (arrival_placement as arrival_road, house_gardens, mountains,
+                      park_grounds_placement as park_grounds, station_yard_placement as station_yard,
+                      temple_precinct_placement as temple_precinct)
 from megapark import trail as park_trail
 from forest.specs import MODEL_BY_KIND
 

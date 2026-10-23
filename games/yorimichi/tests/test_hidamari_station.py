@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'world'))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 import yori  # noqa: E402,F401
 import belmonte_train_service as service  # noqa: E402
-from hidamari import layout, station_yard as yard  # noqa: E402
+from hidamari import layout, station_yard as yard, station_yard_placement as placement  # noqa: E402
 from train import route  # noqa: E402
 
 
@@ -18,8 +18,8 @@ def test_no_decorative_train_or_scatter_in_the_platform_and_approach():
     instances = {'HD_Railcar': [[1185., 301.8, 0.]],
                  'HD_P_Bin': [[1250., 301.8, 0.], [1221., 280., 0.]],
                  'Tree_Maple_A': [[1280., 302., 0.], [1100., 270., 0.]]}
-    with patch.object(yard, 'floor_z', return_value=31.64):
-        yard.place(lambda *a: None, instances, lambda x, y: 0., [])
+    with patch.object(placement, 'floor_z', return_value=31.64):
+        placement.place(lambda *a: None, instances, lambda x, y: 0., [])
     assert 'HD_Railcar' not in instances
     assert instances['HD_P_Bin'] == [[1221., 280., 0.]]
     assert instances['Tree_Maple_A'] == [[1100., 270., 0.]]

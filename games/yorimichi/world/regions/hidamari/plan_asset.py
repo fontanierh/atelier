@@ -33,7 +33,11 @@ def main(argv=None):
         real_directory(args.city.parent)
         if args.city.is_symlink() or not args.city.is_file():
             raise ValueError('City constructor requires its explicit layout projection')
-    city = json.loads(args.city.read_text()) if args.city is not None else {}
+    if args.city is not None:
+        from hidamari.city_data import read as read_city
+        city = read_city(json.loads(args.city.read_text()), args.asset)
+    else:
+        city = {}
     constructor = importlib.import_module('hidamari.logical.' + args.asset).construct
     source_context.apply(context, kernel)
     source = constructor(city)
