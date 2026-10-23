@@ -133,7 +133,10 @@ def prepare(spec_path,output,*,current_source=None):
     rows={key:binding(path)for key,path in dict(spec=spec_path,whole=folder/'whole-result.json',
         failure=folder/'failed-fixture-state.json',guard=folder/'guard/memory-health-tree.json',
         current_runtime=Path(spec['current_track'])/'runtime/track.json',
-        stdout=folder/'guard/stdout.log',runtime=runtime_path,report=runtime_path.with_name('import-report.json')).items()}
+        runtime=runtime_path,report=runtime_path.with_name('import-report.json')).items()}
+    from track_guard_stdout import snapshot
+    rows['stdout'],stdout_source=snapshot(rows['guard'],rows['whole'],folder/'guard/stdout.log',
+        output.with_suffix('.native-stdout.snapshot.log'),expected_exit=255)
     values={key:read(row)for key,row in rows.items()if key!='stdout'}
     expected=failed_authority(spec,values['whole'],values['failure'],values['guard'],artifact(rows['stdout']).decode(),values['runtime'])
     state=host_state(spec,current_source);require(state['native']==values['whole']['native'],'Current native inventory differs from failed observation')
@@ -142,10 +145,10 @@ def prepare(spec_path,output,*,current_source=None):
     from atelier.source_imports import local_imports
     support={path for entry in (Path(__file__),Path(proof.__file__))
              for path in local_imports(entry,(GAME,GAME.parents[1]/'platform/studio'))}
-    support.update((Path(__file__),HERE/'track_material_roster.py'))
+    support.update((Path(__file__),HERE/'track_material_roster.py',HERE/'track_observation_data.py',HERE/'track_query_surface.py'))
     validation_inputs={str(path.absolute()):proof.sha(path)for path in support}
     atomic_json(output,dict(validation_inputs=validation_inputs,schema=1,kind='track07-observation-plan',old_spec_sha256=OLD_SPEC,
-        metadata=rows,descriptors=descriptors,host_before=state,
+        metadata=rows,descriptors=descriptors,host_before=state,stdout_source_observation=stdout_source,
         failed_old_whole=255,observation_validation_only=True,cleanup_pending=True))
     print('TRACK07 OBSERVATION PLAN PREPARED; NO NATIVE/DATA VALIDATION',flush=True)
 
@@ -216,9 +219,11 @@ def validate(plan_path,plan_sha,output,*,check_current_packages=False):
     for name,refs in references.items():
         source_users={row['mesh']for row in witnesses[name]['sources']}
         require(any(ref['mesh']in source_users for ref in refs),'Native material lacks the exact source/runtime witness')
-    # This is an internal DATA consistency check against itself, never a second native invocation.
-    proof.compare(dict(original=records,current=records),runtime,
-        progress=lambda name:print('TRACK07 RAW DATA SELF-CONSISTENCY '+name,flush=True))
+    # Validate every raw observation independently; preserve exact known query noncoverage.
+    # The strict paired comparator remains unchanged and still rejects these records.
+    from track_observation_data import validate as validate_data
+    diagnostic=validate_data(records,runtime,spec['controls'],
+        progress=lambda name:print('TRACK07 STRICT RAW OBSERVATION DATA '+name,flush=True))
     proof.bound_inputs(spec)
     if current_source is not None:
         require(current_owner_bindings(spec,current_source['root'])==current_source['files'],'Carried source bytes changed during verification')
@@ -228,7 +233,7 @@ def validate(plan_path,plan_sha,output,*,check_current_packages=False):
     result=dict(schema=1,kind='track07-observation-data',plan=plan_row,failed_old_whole=255,
         observation_validation_only=True,cleanup_pending=True,complete=False,native_complete=False,
         source_input_identity_carry=current_source is not None,independent_paired_native_execution=False,
-        current_compiled_main_claim=False,current_source=current_source,input_identity_vectors=vectors,
+        current_compiled_main_claim=False,current_source=current_source,input_identity_vectors=vectors,diagnostic=diagnostic,
         original_current_equivalence=False,normal_task_reuse=False,records=records,station_material_witnesses=witnesses,
         actual_slot_references=references,owned_packages=sorted(owned|common),saved_archives=archive_rows,current_package_bytes_checked=check_current_packages,
         source_head=OLD_HEAD,native=whole['native'],logical_meshes=137,authored_lods=362,
@@ -246,8 +251,10 @@ def finalize(plan_path,plan_sha,data_path,guard_path,whole_path,output,*,current
     require(data['plan']==plan_row and data['failed_old_whole']==255 and data['observation_validation_only'] is True
         and data['cleanup_pending'] is True and data['complete'] is False and data['native_complete'] is False,
         'Data report tried to promote failed observations')
-    evidence=dict(receipt=binding(Path(guard_path)/'memory-health-tree.json'),stdout=binding(Path(guard_path)/'stdout.log'),
-        whole_result=binding(whole_path),marker='TRACK07 OBSERVATION DATA VALIDATION COMPLETE '+plan_sha+' '+data_row['sha256'])
+    from track_guard_stdout import snapshot
+    receipt=binding(Path(guard_path)/'memory-health-tree.json');whole_row=binding(whole_path)
+    stdout,stdout_source=snapshot(receipt,whole_row,Path(guard_path)/'stdout.log',Path(output).with_suffix('.data-stdout.snapshot.log'),expected_exit=0)
+    evidence=dict(receipt=receipt,stdout=stdout,whole_result=whole_row,marker='TRACK07 OBSERVATION DATA VALIDATION COMPLETE '+plan_sha+' '+data_row['sha256'])
     guard_binding(evidence)  # ONLY the new data-verifier caller, never the old255 caller.
     prepared_current=plan['host_before'].get('current_source')
     require(data['source_input_identity_carry'] is (prepared_current is not None),'Unwitnessed source input carry')
@@ -258,7 +265,7 @@ def finalize(plan_path,plan_sha,data_path,guard_path,whole_path,output,*,current
     require(after==plan['host_before'],'Host source/native identities changed across data verification')
     for path,digest in plan['validation_inputs'].items():proof.check_input(path,digest)
     for row in plan['metadata'].values():artifact(row)
-    atomic_json(output,dict(schema=1,kind='track07-observation-host-final',data=data_row,new_data_guard=evidence,
+    atomic_json(output,dict(schema=1,kind='track07-observation-host-final',data=data_row,new_data_guard=evidence,stdout_source_observation=stdout_source,
         failed_old_whole=255,observation_validation_only=True,cleanup_pending=True,complete=False,native_complete=False,
         source_input_identity_carry=data['source_input_identity_carry'],independent_paired_native_execution=False,
         current_compiled_main_claim=False,current_source=prepared_current,

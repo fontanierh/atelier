@@ -27,8 +27,11 @@ The parent owns execution and admission. Three separate commands exist:
    through the parent's ordinary guarded Python admission/deadline/queue. It
    spawns no subprocess or tool probe. It verifies the frozen inputs, exact
    whole255/empty/actor-cleanup/137 markers, deterministic saved archive bytes,
-   actual material slots and every raw record through the unchanged complete
-   comparator against itself **as data only**. It prints per-logical progress.
+   actual material slots and every raw record through the strict saved-source/GPU/
+   cooked/bounds/LOD/schema DATA validator. It enumerates exactly fourteen failed
+   legacy positive rows on seven owners, with130 query-complete owners. The strict
+   paired comparator remains unchanged and still rejects those outcomes. It prints
+   per-logical progress.
    `--check-current-packages` additionally compares retained archive identities
    against the current receiving files, only in this admitted verifier.
 3. `finalize --plan NEW_PLAN --plan-sha256 SHA --data NEW_DATA_REPORT --guard NEW_GUARD
@@ -64,3 +67,58 @@ old observed native environment. It is **not** a second native execution:
 `current_compiled_main_claim`, `native_complete` and `normal_task_reuse` stay false.
 Old whole255 and cleanup pending remain explicit. Fresh production runtime
 acceptance remains a separate BV1 obligation.
+
+
+## New diagnostic plan and optional seven-owner native supplement
+
+Never reuse the prior failed DATA plan/report or alter its exit1. Prepare a fresh
+plan with these helper bytes, then run its data child through the parent's existing
+ordinary guarded Python caller. Git/SDK probes remain HOST-only before/after.
+Both old native255 and prior DATA1 stay failed. New diagnostic DATA success means
+all137 saved-source/GPU/cooked/bounds/LOD/schema records passed while exactly14
+legacy positives remain unsupported; it is not query-allPASS or equivalence.
+
+All new evidence binds read-only independent stdout snapshots after exact owned
+whole/empty checks. Source inode/mode/length and the copied prefix hash are checked
+across two reads. Later shared TraceServer appends cannot invalidate the frozen
+copy; replacement/truncation/prefix mutation refuses. No shared-service wait or
+signal is performed. The original stdout/whole/spec/captures remain unchanged.
+
+The following are **future parent commands, not executions performed by this patch**.
+`TOOLS` is this clean committed checkout's `games/yorimichi/tests/native` directory.
+Use fresh private paths for every `NEW_*` value. Run host preparation/finalization
+outside the admitted data child:
+
+```sh
+uv run python "$TOOLS/recover_track_native_observations.py" prepare --spec "$OLD_SPEC" --current-source "$CURRENT_SOURCE" --output "$NEW_PLAN"
+# Submit this exact child argv to the existing ordinary guarded Python caller:
+# python "$TOOLS/recover_track_native_observations.py" validate --plan "$NEW_PLAN" --plan-sha256 "$PLAN_SHA" --output "$NEW_DATA" --check-current-packages
+uv run python "$TOOLS/recover_track_native_observations.py" finalize --plan "$NEW_PLAN" --plan-sha256 "$PLAN_SHA" --data "$NEW_DATA" --guard "$NEW_DATA_GUARD" --whole "$NEW_DATA_WHOLE" --current-source "$CURRENT_SOURCE" --output "$NEW_HOST"
+```
+
+Only after that narrowed report is host-finalized and BV1/admission permits it,
+prepare the seven-owner supplement. From the unchanged receiving checkout's own
+installed `uv` environment, which must bind `atelier.build` before original source
+`yori` can prepend another checkout's package directory:
+
+```sh
+uv run python "$TOOLS/run_track_query_supplement.py" prepare --observation-host "$NEW_HOST" --workspace "$NEW_QUERY_ROOT"
+ATELIER_AGENT="$OWNER" nice -n 10 uv run python "$TOOLS/run_track_query_supplement.py" run --workspace "$NEW_QUERY_ROOT"
+```
+
+The latter runner already owns the ordinary guard:10GiB,300-second work deadline,
+1200-second queue deadline. Do not add an outer native guard. Preparation requires
+exact source/cooked surface witnesses from actual collisionLOD2 GLB triangle
+indices, f32 native import-frame positions and retained cooked triangles, plus
+original archives/current package SHA and original compiled environment identity.
+It refuses absent or approximate witnesses. Its UE child loads only the seven
+existing packages and performs28 real selected-component ray/capsule positive/
+external-negative queries. It never imports, saves, snapshots geometry, repairs,
+or deletes packages. Component policy must equal the old observation apart from
+its transient component name; actor detachment/destruction is strict on all exits.
+Current package/code/input SHA and source/native inventory are checked before/after.
+
+A successful new query supplement is reported separately from source-input carry,
+with28 actual queries and0 imports/saves/package deletions. Old failures and all
+fourteen old rows stay unchanged. Cleanup remains pending; full/native/paired-
+execution/current-main-compilation/task-reuse/production-runtime claims stay false.
