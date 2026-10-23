@@ -3723,7 +3723,7 @@
     {
       "game": "yorimichi",
       "recipe": "world.belmonte_train_plan",
-      "task": "E16 (scope extension proposed)",
+      "task": "E16.1",
       "status": "move to QA",
       "kind": "qa",
       "reason": "Explicit diagnostic output; no ordinary default-build execution. Preserve separate QA command.",
@@ -3815,7 +3815,7 @@
     {
       "game": "yorimichi",
       "recipe": "world.belmonte_train_review",
-      "task": "E16 (scope extension proposed)",
+      "task": "E16.1",
       "status": "move to QA",
       "kind": "qa",
       "reason": "Explicit diagnostic output; no ordinary default-build execution. Preserve separate QA command.",
@@ -3884,7 +3884,7 @@
     {
       "game": "yorimichi",
       "recipe": "world.belmonte_track_review",
-      "task": "E16 (scope extension proposed)",
+      "task": "E16.1",
       "status": "move to QA",
       "kind": "qa",
       "reason": "Explicit diagnostic output; no ordinary default-build execution. Preserve separate QA command.",
@@ -3906,7 +3906,7 @@
     {
       "game": "yorimichi",
       "recipe": "world.belmonte_station_review",
-      "task": "E16 (scope extension proposed)",
+      "task": "E16.1",
       "status": "move to QA",
       "kind": "qa",
       "reason": "Explicit diagnostic output; no ordinary default-build execution. Preserve separate QA command.",
@@ -3928,7 +3928,7 @@
     {
       "game": "yorimichi",
       "recipe": "world.belmonte_train_furniture_review",
-      "task": "E16 (scope extension proposed)",
+      "task": "E16.1",
       "status": "move to QA",
       "kind": "qa",
       "reason": "Explicit diagnostic output; no ordinary default-build execution. Preserve separate QA command.",
@@ -8629,7 +8629,7 @@
     {
       "game": "yorimichi",
       "recipe": "world.hidamari_stable_review",
-      "task": "E16 (scope extension proposed)",
+      "task": "E16.1",
       "status": "move to QA",
       "kind": "qa",
       "reason": "Explicit diagnostic output; no ordinary default-build execution. Preserve separate QA command.",

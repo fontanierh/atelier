@@ -116,7 +116,7 @@ body/outfit file does not create an extra production variant. Clip membership re
 ## Diagnostics still reachable from v1
 
 E16's merged #615 removed `skate.ride_stills` and the train viewer. It did not remove the following declarations.
-All six are explicit; plain builds skip them. Inventory proposes a follow-up E16 scope extension, without changing
+All six are explicit; plain builds skip them. The delivery-plan owner accepted E16.1 for these remaining targets, without changing
 any rendering behavior here. Production furniture LOD baking remains E11.1.
 
 | Explicit diagnostic target | Output | Normal production consumers of this target |
@@ -191,15 +191,15 @@ basis, cooked triangles/typed hulls, component policy and both-neighbour ray/cap
 cannot pass the aggregate. No row in this document claims G1–G5, cook parity, fresh-checkout native restore or complete
 all-family acceptance.
 
-## Follow-up corrections and contract planning
+## Plan corrections and contract planning
 
-Proposed narrow delivery-plan corrections, for its document owner to apply:
+The delivery-plan owner accepted these narrow corrections during the inventory handoff:
 
-1. Keep E16's #615 completion scoped to the two removed previews; add E16.1 for the six explicit diagnostic
-   targets above and route mixed production/diagnostic separation. This does not reopen the completed PR.
-2. E13.14 source adaptation needs D1, D5/D6 for native materials, not an obligatory D2/D4a mesh path. Keep the
+1. E16's #615 completion stays scoped to the two removed previews; E16.1 covers the six explicit diagnostic
+   targets above and separation of the mixed production/diagnostic route output. This does not reopen the completed PR.
+2. E13.14 source adaptation now names D1, D5/D6 for native materials, not an obligatory D2/D4a mesh path. Keep the
    family acceptance, runtime cloud data and material proof; do not invent static geometry work.
-3. E13.11 and E13.12 are **split needed** at this baseline: five sailboat constructors, four kei models,
+3. The inventory classifies E13.11 and E13.12 as **split needed** at this baseline: five sailboat constructors, four kei models,
    four kart parts, eight bike parts plus assembly/layout. Source splitting remains coordinated with Editor Cost.
 4. E0a's 301 sample must remain historical; this snapshot has 313 + 11, with future dynamic plan rows added
    at handoff/cutover. I11 closure checks mappings and branches, not a fixed row count.
@@ -352,15 +352,15 @@ The exact declaration snapshot, including required and optional Product roots an
 | yorimichi / `world.kei` | E13.12 | split needed | source |
 | yorimichi / `world.kart` | E13.12 | split needed | source |
 | yorimichi / `world.belmonte_train` | E11.1 | split needed | source |
-| yorimichi / `world.belmonte_train_plan` | E16 (scope extension proposed) | move to QA | qa |
+| yorimichi / `world.belmonte_train_plan` | E16.1 | move to QA | qa |
 | yorimichi / `world.belmonte_train_furniture_lods` | E11.1 | split needed | source |
 | yorimichi / `world.belmonte_train_assembly` | E11.1 | split needed | source |
-| yorimichi / `world.belmonte_train_review` | E16 (scope extension proposed) | move to QA | qa |
+| yorimichi / `world.belmonte_train_review` | E16.1 | move to QA | qa |
 | yorimichi / `world.belmonte_train_route` | E11.1 | adapter only | data |
 | yorimichi / `world.belmonte_track` | E11.1 | split needed | source |
-| yorimichi / `world.belmonte_track_review` | E16 (scope extension proposed) | move to QA | qa |
-| yorimichi / `world.belmonte_station_review` | E16 (scope extension proposed) | move to QA | qa |
-| yorimichi / `world.belmonte_train_furniture_review` | E16 (scope extension proposed) | move to QA | qa |
+| yorimichi / `world.belmonte_track_review` | E16.1 | move to QA | qa |
+| yorimichi / `world.belmonte_station_review` | E16.1 | move to QA | qa |
+| yorimichi / `world.belmonte_train_furniture_review` | E16.1 | move to QA | qa |
 | yorimichi / `world.belmonte_train_service` | E11.1 | adapter only | data |
 | yorimichi / `world.belmonte_track_data` | E11.1 | adapter only | data |
 | yorimichi / `world.belmonte_track.meshes` | E11.1 | adapter only | digest |
@@ -516,7 +516,7 @@ The exact declaration snapshot, including required and optional Product roots an
 | yorimichi / `world.hippodrome.meshes` | E13.4 | adapter only | digest |
 | yorimichi / `unreal.hippodrome` | E13.4 | split needed | native |
 | yorimichi / `world.hidamari_stable` | E13.1 | split needed | source |
-| yorimichi / `world.hidamari_stable_review` | E16 (scope extension proposed) | move to QA | qa |
+| yorimichi / `world.hidamari_stable_review` | E16.1 | move to QA | qa |
 | yorimichi / `unreal.hidamari_stable` | E13.1 | split needed | native |
 | yorimichi / `unreal.belmonte` | E11 | split needed | native |
 | yorimichi / `unreal.belmonte_train` | E11.1 | split needed | native |
