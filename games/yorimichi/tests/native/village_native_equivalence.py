@@ -63,6 +63,18 @@ def query(point,normal,*,capsule=False):
     return result
 
 
+def frontmost(component,hits):
+    """Select controls by current geometry visibility, never by matching the baseline result."""
+    positive=[(part,row) for part,row in hits if row.get('blocking') is True]
+    if not positive:return False
+    distance=min(row['distance'] for _,row in positive)
+    nearest=[(part,row) for part,row in positive if row['distance']==distance]
+    # Coincident surfaces with different contact normals are ambiguous controls.
+    # They cannot establish ownership of one requested seam neighbor.
+    results={json.dumps({key:row[key] for key in ('position','normal','distance')},sort_keys=True) for _,row in nearest}
+    return len(results)==1 and any(part==component for part,_ in nearest)
+
+
 def controls_for(logical,original,pieces,geometry):
     before=[];after=[];seams=[]
     def pair(key,kind,component,candidates):
@@ -72,7 +84,9 @@ def controls_for(logical,original,pieces,geometry):
             # Probe both exact directions without changing collision/two-sided policy.
             for direction in (1.,-1.):
                 value=query(candidate['point'],[direction*v for v in candidate['normal']],capsule='capsule' in kind)
-                if probe(component,value).get('blocking') is True and probe(original,value).get('blocking') is True:
+                if frontmost(component,[(part,probe(part,value)) for part in pieces.values()]):
+                    if probe(original,value).get('blocking') is not True:
+                        raise ValueError('Original whole misses an unoccluded current positive control: '+key)
                     found=value;break
             if found is not None:break
         if found is None:raise ValueError('No actual positive original/current selected-component control: '+key)

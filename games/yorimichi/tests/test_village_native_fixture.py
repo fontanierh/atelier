@@ -27,6 +27,23 @@ def test_original_finishing_is_the_complete_exact_original_ast_loop():
     assert 'terrain.fbx' not in text
 
 
+def test_positive_control_ownership_excludes_nearer_siblings_without_matching_baseline():
+    import json
+    source=ast.parse((GAME/'tests/native/village_native_equivalence.py').read_text())
+    function=next(node for node in source.body if isinstance(node,ast.FunctionDef) and node.name=='frontmost')
+    scope=dict(json=json)
+    exec(compile(ast.Module(body=[function],type_ignores=[]),'current-control-ownership','exec'),scope)
+    frontmost=scope['frontmost']
+    def hit(distance,normal=(0.,0.,1.)):
+        return dict(blocking=True,distance=distance,position=[0.,0.,distance],normal=list(normal))
+    # The baseline whole would hit the earlier sibling at36, not the requested
+    # seam piece at48. This query cannot establish that neighbor's equivalence.
+    assert not frontmost('selected',[('selected',hit(48.)),('sibling',hit(36.))])
+    assert frontmost('selected',[('selected',hit(10.)),('sibling',hit(36.))])
+    assert not frontmost('selected',[('selected',hit(10.)),('sibling',hit(10.,(1.,0.,0.)))])
+    assert not frontmost('selected',[('selected',dict(blocking=False))])
+
+
 def test_host_input_binding_refuses_links_and_detects_byte_or_stat_changes(tmp_path):
     root=tmp_path.resolve();file=root/'source';file.write_bytes(b'first')
     bound=host.identities([file]);assert bound==host.identities([file])
@@ -92,13 +109,14 @@ def test_fixture_component_uses_explicit_local_collision_policy():
 def test_positive_probe_selection_handles_reflected_winding_without_changing_collision_policy():
     from types import SimpleNamespace
     file=GAME/'tests/native/village_native_equivalence.py';tree=ast.parse(file.read_text())
-    nodes=[node for node in tree.body if isinstance(node,ast.FunctionDef) and node.name in ('query','controls_for')]
+    nodes=[node for node in tree.body if isinstance(node,ast.FunctionDef) and node.name in ('query','frontmost','controls_for')]
     def part(path):return SimpleNamespace(get_path_name=lambda:path)
     original=part('original');child=part('current')
     def observed(component,query):
         if query['start'][0]>1000:return dict(blocking=False)
-        return dict(blocking=query['start'][2]>query['end'][2])
-    scope=dict(probe=observed)
+        return dict(blocking=query['start'][2]>query['end'][2],distance=50.,position=[0.,0.,0.],normal=[0.,0.,1.])
+    import json
+    scope=dict(probe=observed,json=json)
     exec(compile(ast.Module(body=nodes,type_ignores=[]),str(file),'exec'),scope)
     geometry=dict(pieces={'Piece':[dict(point=[0.,0.,0.],normal=[0.,0.,-1.])]},seams=[],negative=[10000.,10000.,10000.])
     before,after,seams=scope['controls_for']('Whole',original,{'Piece':child},geometry)
