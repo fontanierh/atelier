@@ -10,7 +10,6 @@ import unreal
 from atelier import native_membership
 from atelier.atomic_files import atomic_json
 from atelier.export_manifest import real_directory
-from atelier.interchange_mesh import import_static_mesh
 from atelier.native_protocol import native_context
 from atelier.unreal_mesh_reuse import MeshReuse
 from hidamari_stable.catalogue import PARENTS, PARTS, LOD_PARENTS
@@ -28,17 +27,63 @@ def cm_bounds(bounds):
 
 
 def raw_import(source, folder, key):
-    return import_static_mesh(source, folder, key)
+    # Preserve both explicit no-collision flags from the immutable Stable pipeline.
+    # Direct final naming avoids temporary materials and old rename redirectors.
+    generic = unreal.InterchangeGenericAssetsPipeline()
+    generic.set_editor_property('asset_name', key)
+    material = generic.get_editor_property('material_pipeline')
+    material.set_editor_property('import_materials', False)
+    material.get_editor_property('texture_pipeline').set_editor_property('import_textures', False)
+    mesh = generic.get_editor_property('mesh_pipeline')
+    for name, value in dict(import_static_meshes=True, import_skeletal_meshes=False,
+        combine_static_meshes_behavior=unreal.InterchangeCombineStaticMeshesBehavior.ALL,
+        build_nanite=False, collision=False, import_collision_according_to_mesh_name=False).items():
+        mesh.set_editor_property(name, value)
+    generic.get_editor_property('animation_pipeline').set_editor_property('import_animations', False)
+    stack = unreal.InterchangePipelineStackOverride(); stack.add_pipeline(generic)
+    stack.add_pipeline(unreal.InterchangeGLTFPipeline())
+    task = unreal.AssetImportTask()
+    for name, value in dict(filename=str(source), destination_path=folder, destination_name=key,
+            options=stack, automated=True, replace_existing=True, save=True).items(): task.set_editor_property(name, value)
+    unreal.AssetToolsHelpers.get_asset_tools().import_asset_tasks([task])
+    target = folder + '/' + key
+    assert list(map(str, task.imported_object_paths)) == [target + '.' + key], 'Unexpected Stable raw import products'
+    result = unreal.EditorAssetLibrary.load_asset(target)
+    assert isinstance(result, unreal.StaticMesh), 'Stable raw import did not produce its exact saved mesh'
+    return result
+
+
+def collision_options_match(mesh):
+    data = mesh.get_editor_property('asset_import_data')
+    pipelines = list(data.get_pipelines())
+    settings = pipelines[0].get_editor_property('mesh_pipeline')
+    return (settings.get_editor_property('collision') is False
+            and settings.get_editor_property('import_collision_according_to_mesh_name') is False)
+
+
+def lod_bounds_match(mesh, bounds, level=0):
+    observed = unreal.HidamariStableMeshComponent.measure_lod_bounds(mesh, level)
+    if not observed: return False
+    value = json.loads(observed)
+    low, high = cm_bounds(bounds)
+    return (set(value) == {'min', 'max'} and len(value['min']) == len(value['max']) == 3
+            and all(abs(a-b) < .2 for actual, expected in ((value['min'], low), (value['max'], high))
+                    for a, b in zip(actual, expected)))
 
 
 def validate_raw(mesh, source, row, out):
-    """Saved byte/source/options proof plus exact raw geometry before current finishing."""
-    return (glb_mesh_validation.validate_mesh(mesh, source, dict(triangles=row['triangles'], bounds_m=row['bounds']),
-                len(row['slots']), out=out, tolerance_cm=.2)
-            and mesh.get_num_triangles(0) == row['triangles']
-            and mesh.get_num_lods() in ((1, 3) if row['name'].endswith('_LOD0') else (1,))
-            and [str(slot.get_editor_property('imported_material_slot_name')).split('.')[0]
-                 for slot in mesh.get_editor_property('static_materials')] == row['slots'])
+    """Saved byte/options proof plus actual LOD0, independent of assembled LOD union."""
+    try:
+        return (bool(mesh) and glb_mesh_validation.source_matches(mesh, source, out)
+                and glb_mesh_validation.options_match(mesh) and collision_options_match(mesh)
+                and mesh.get_num_triangles(0) == row['triangles']
+                and mesh.get_num_lods() in ((1, 3) if row['name'].endswith('_LOD0') else (1,))
+                and len(mesh.get_editor_property('static_materials')) == len(row['slots'])
+                and [str(slot.get_editor_property('imported_material_slot_name')).split('.')[0]
+                     for slot in mesh.get_editor_property('static_materials')] == row['slots']
+                and lod_bounds_match(mesh, row['bounds']))
+    except Exception:
+        return False
 
 
 def donor_row(report, key):
@@ -99,9 +144,8 @@ def finish(mesh, group, editor):
         assert editor.get_num_uv_channels(mesh, level) == len(row['uv_channels']) == 1
         if group['uv_precision'] == 'full':
             assert editor.get_lod_build_settings(mesh, level).get_editor_property('use_full_precision_u_vs')
-    bounds = mesh.get_bounding_box(); low, high = cm_bounds(group['levels'][0]['bounds'])
-    for axis, a, b in zip(('x', 'y', 'z'), low, high):
-        assert abs(getattr(bounds.min, axis)-a) < .2 and abs(getattr(bounds.max, axis)-b) < .2
+    for level, row in enumerate(group['levels']):
+        assert lod_bounds_match(mesh, row['bounds'], level), (row['name'], 'actual selected render LOD bounds')
     if simple:
         assert unreal.CitySurfaceValidation.validate_simple_boxes(mesh, len(group['boxes']))
     else:
