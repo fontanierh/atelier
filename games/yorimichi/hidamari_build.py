@@ -67,7 +67,7 @@ def mesh_steps(ctx, *, terrain_inputs=(), terrain_needs=()):
     for key in catalogue.ASSETS:
         constructor = REGION / 'logical' / (key + '.py')
         code = set(local_imports(constructor, (WORLD, REGIONS)))
-        code.update((REGION / 'logical/__init__.py', REGION / 'logical_catalogue.py'))
+        code.add(REGION / 'logical/__init__.py')
         source_parameters = parameters / (key + '.json')
         code.update(context.inputs(source_parameters, key))
         arguments = ['--asset', key, '--context', str(source_parameters)]

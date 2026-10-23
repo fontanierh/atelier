@@ -48,6 +48,7 @@ def test_complete_city_mesh_graph_has_separate_constructor_parameters_and_no_sib
     steps = recipe.mesh_steps(SimpleNamespace(out=out))
     planners = {s.name.rsplit('.', 1)[-1]: s for s in steps if '.geometry.' in s.name}
     assert len(planners) == 86
+    assert all(REGION / 'logical_catalogue.py' not in step.inputs for step in planners.values())
     assert all(s.cache and s.commands[0].factory_startup and s.commands[0].threads == 3 for s in planners.values())
     for key in ('HD_Shop_00', 'HD_Shop_01', 'HD_Boat'):
         step = planners[key]
