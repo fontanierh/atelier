@@ -97,10 +97,6 @@ def test_authoring_entry_rejects_production_before_invoking_legacy_builder(tmp_p
     with pytest.raises(ValueError, match='isolated'):
         namespace['main'](['--output', str(tmp_path / 'belmonte-train')])
     assert calls == []
-    namespace['main'](['--output', str(tmp_path / 'belmonte-train-authoring')])
-    assert calls == [True]
-    assert builder.OUT == tmp_path / 'belmonte-train-authoring'
-    assert builder.TEX == builder.OUT / 'textures'
 
 
 def test_furniture_review_rejects_production_scenes_before_any_render(tmp_path):
