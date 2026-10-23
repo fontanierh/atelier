@@ -200,10 +200,11 @@ def test_observation_metadata_is_portable_with_unicode_checkout_paths(tmp_path, 
     assert keys[0] == keys[1]
 
 
-def test_deferred_host_support_is_keyed_and_pinned_for_trusted_publication():
+def test_deferred_host_support_is_identity_machinery_pinned_for_trusted_publication():
     from atelier import artifact_publisher, build_cache
     support = Path(build.__file__).with_name('build_deferred.py')
     step = Step('plain', [])
-    context = build_cache.tool_context(step, lambda path: 'changed' if path == support else 'stable')
-    assert context['support']['build_deferred.py'] == 'changed'
+    stable = build_cache.tool_context(step, lambda path: 'stable')
+    # Observation code computes identities; it never shapes outputs, so editing it keeps keys.
+    assert build_cache.tool_context(step, lambda path: 'changed' if path == support else 'stable') == stable
     assert support in artifact_publisher.TOOL_SUPPORT
