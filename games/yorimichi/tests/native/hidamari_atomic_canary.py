@@ -27,7 +27,7 @@ if code:
 assert 'HIDAMARI ATOMIC CONTEXT COMPLETE' in (root / 'guard/stdout.log').read_text()
 result = json.loads((root / 'products/result.json').read_text())
 guard = json.loads((root / 'guard/memory-health-tree.json').read_text())
-assert result['complete'] and result['ordered_attribute_hash_equality'] and len(result['selected']) == 10
+assert result['complete'] and result['ordered_attribute_hash_equality'] and len(result['selected']) == result['logical_assets'] == 86
 assert guard['state'] == 'child_exited' and guard['cleanup_complete'] and not guard['processes']
 assert not guard.get('late_reporters', {}).get('unresolved', [])
 print('GUARDED CITY SOURCE CONTEXT PASS', flush=True)
