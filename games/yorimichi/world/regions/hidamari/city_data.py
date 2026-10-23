@@ -12,7 +12,7 @@ from atelier.export_manifest import real_directory  # noqa: E402
 FIELDS = {
     'HD_CivicGardens': ('roads',),
     'HD_Streets': ('roads', 'road_widths'),
-    'HD_PlazaShopApproaches': ('buildings',),
+    'HD_PlazaShopApproaches': ('buildings', 'terrain_pads'),
     'HD_Wires': ('poles',),
     'HD_LaneEdges': ('buildings',),
 }
