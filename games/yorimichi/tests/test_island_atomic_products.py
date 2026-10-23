@@ -31,7 +31,8 @@ def fixture(out):
         sources[key] = dict(used_slots=slots, geometry_sha256='a'*64)
     logical = dict(schema=1, parents=parents, ownership=owners, exports=roster)
     manifest = dict(schema=1, complete=True, exports=receipts)
-    (folder / 'receiving.json').write_text(json.dumps(dict(schema=1, complete=True, pieces=sources)))
+    terrain = out / 'terrain'; terrain.mkdir()
+    (terrain / 'island-receiving.json').write_text(json.dumps(dict(schema=1, complete=True, pieces=sources)))
     def write():
         (folder / 'logical-pieces.json').write_text(json.dumps(logical))
         (assets / 'manifest.json').write_text(json.dumps(manifest))
@@ -45,6 +46,8 @@ def test_complete_roster_keeps_native_pieces_separate_and_ocean_nonblocking(tmp_
     assert set(groups) == products.REQUIRED
     assert all(group['collision'] and group['cast_shadow'] for parent, group in groups.items() if parent != 'Sea')
     assert not groups['Sea']['collision'] and not groups['Sea']['cast_shadow']
+    assert products.material_paths('Sea', ['Water']) == {'Water': '/Game/Japan/Materials/M_Sea'}
+    assert products.material_paths('Road', ['Road']) == {'Road': '/Game/Japan/Materials/MI_Road'}
     assert all(row['asset'].startswith(products.DESTINATION + '/')
                for group in groups.values() for row in group['pieces'])
     assert products.native_bounds(dict(min=[-1., -2., -3.], max=[4., 5., 6.])) == ([-100., -500., -300.], [400., 200., 600.])

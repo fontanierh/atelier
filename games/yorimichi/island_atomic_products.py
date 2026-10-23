@@ -24,6 +24,10 @@ def material_paths(parent, slots):
         raise ValueError('Missing original island material slots')
     if parent == 'FarHills' and slots[0] != 'FarForest':
         raise ValueError('Missing original FarHills ground material')
+    # The final sea owner historically replaces the initial Water placeholder
+    # with the translucent wave shader; retain its slot name and final binding.
+    if parent == 'Sea':
+        return {'Water': '/Game/Japan/Materials/M_Sea'}
     return {slot: '/Game/Japan/Materials/MI_' + slot for slot in slots}
 
 
@@ -83,11 +87,12 @@ def read(out):
     sources = json.loads(source_path.read_text())
     folder = real_directory(out / 'atomic_regions/island')
     assets = real_directory(folder / 'assets')
-    for path in (folder / 'logical-pieces.json', assets / 'manifest.json', folder / 'receiving.json'):
+    terrain = real_directory(out / 'terrain')
+    for path in (folder / 'logical-pieces.json', assets / 'manifest.json', terrain / 'island-receiving.json'):
         if path.is_symlink() or not path.is_file(): raise ValueError('Missing island assembled inventory')
     logical = json.loads((folder / 'logical-pieces.json').read_text())
     manifest = json.loads((assets / 'manifest.json').read_text())
-    receiving = json.loads((folder / 'receiving.json').read_text())
+    receiving = json.loads((terrain / 'island-receiving.json').read_text())
     parents, owners = logical.get('parents'), logical.get('ownership')
     if (logical.get('schema') != 1 or not isinstance(parents, dict) or not REQUIRED <= set(parents)
             or set(parents) - set(PARENTS) or not isinstance(owners, dict) or set(owners) != set(parents)

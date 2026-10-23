@@ -102,4 +102,4 @@ def test_map_and_runtime_migration_precede_one_complete_retirement_preflight(tmp
     assert plans == [{'/Game/Japan/Terrain': ['/Game/Current/Terrain'],
                      '/Game/Japan/Assets/Sea': ['/Game/Current/Sea'],
                      '/Game/Island/Terrain_cell_9_9': ['/Game/Current/Terrain', '/Game/Current/Sea']}]
-    assert not (tmp_path / 'atomic_regions/island/import-report.json').exists()
+    assert not (tmp_path / 'terrain/island-import-report.json').exists()
