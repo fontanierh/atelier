@@ -133,3 +133,18 @@ def test_native_base_admission_uses_lod0_when_an_assembled_lower_lod_extends_out
     assert namespace['validate_raw'](Mesh(), 'source.glb', row, 'out') and selected_lods == [0]
     assert not namespace['lod_bounds_match'](Mesh(), row['bounds'], 1)
     assert selected_lods == [0, 1]
+
+
+def test_atomic_assembly_preserves_original_whole_logical_budgets():
+    spec = importlib.util.spec_from_file_location('stable_budget_test', GAME / 'stable_atomic_products.py')
+    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    from hidamari_stable.catalogue import PARTS
+    groups = {'SM_HS_'+part: dict(levels=[dict(triangles=1000),dict(triangles=100),dict(triangles=10)], boxes=[])
+              for part in PARTS}
+    groups['SM_HS_StallDoor'] = dict(levels=[dict(triangles=216)])
+    module.validate_budgets(groups)
+    groups['SM_HS_Barn']['levels'][0]['triangles'] = 60000
+    with pytest.raises(ValueError, match='budget'): module.validate_budgets(groups)
+    groups['SM_HS_Barn']['levels'][0]['triangles'] = 1000
+    groups['SM_HS_StallDoor']['levels'][0]['triangles'] = 601
+    with pytest.raises(ValueError, match='budget'): module.validate_budgets(groups)

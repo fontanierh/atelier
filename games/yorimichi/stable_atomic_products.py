@@ -14,6 +14,16 @@ from hidamari_stable.catalogue import SOURCES, PARENTS, PARTS, LOD_PARENTS, sele
 DESTINATION = '/Game/HidamariStable/Atomic'
 
 
+def validate_budgets(parents):
+    from hidamari_stable import layout as L
+    counts = [sum(parents['SM_HS_'+part]['levels'][lod]['triangles'] for part in PARTS) for lod in range(3)]
+    if (any(count > L.BUDGETS['LOD'+str(lod)] for lod, count in enumerate(counts))
+            or not counts[0] > counts[1] > counts[2]
+            or parents['SM_HS_StallDoor']['levels'][0]['triangles'] > L.BUDGETS['door_LOD0']
+            or len(parents['SM_HS_Barn']['boxes']) > L.BUDGETS['collision_boxes']):
+        raise ValueError('Original Stable logical LOD/door/collision budget failed')
+
+
 def assemble(out):
     """@cc [owner:fontanierh,label:correctness;performance] complete-stable-atomic-assembly
     Semantic parts MUST retain their coordinated original three LODs, exact material
@@ -77,6 +87,7 @@ def assemble(out):
             bounds=full_bounds if semantic else files[0]['bounds'],
             uv_precision='full' if parent in ('SM_HS_Ground', 'SM_HS_Road') else 'original_interchange_default',
             lod_screen_sizes=list(L.LOD_SCREEN_SIZES) if len(files) == 3 else [])
+    validate_budgets(parents)
     meshes = []
     for entry in original['meshes']:
         if entry['name'] == 'SM_HS_Stable':
@@ -140,4 +151,5 @@ def read(out):
             if path.is_symlink() or not path.is_file() or sha(path) != row['sha256']:
                 raise ValueError('Stable source primary bytes differ')
     if regular_files(assets) != expected: raise ValueError('Foreign or incomplete Stable primary membership')
+    validate_budgets(value['parents'])
     return value['parents']

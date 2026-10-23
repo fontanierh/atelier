@@ -6,17 +6,17 @@ style: charred cedar boards under cream plaster, dark timber frames, blue-grey k
 stone tōrō. A dirt road carries on from the end of the city's street at x = 920 and climbs to its roofed gate.
 
 ```sh
-uv run atelier build yorimichi world.hidamari_stable world.hidamari_stable_review   # Blender model, control renders
-uv run atelier build yorimichi unreal.compile unreal.hidamari_stable                # /Game/HidamariStable
+uv run atelier build yorimichi world.hidamari_stable                              # independent source/export assembly
+uv run atelier build yorimichi unreal.compile unreal.hidamari_stable                # /Game/HidamariStable/Atomic
 uv run atelier live py "live.stable('aisle')"                                       # in game: arrival, aisle, yard, paddock
 uv run pytest games/yorimichi/tests/test_hidamari_stable_layout.py -q
 ```
 
-All three steps are explicit, so only a build that names them runs them. The pad and its slopes are not a mesh: they are
+The Stable remains disabled by the committed paired Python/C++ switch. Its source/query/export and native steps are explicit; a normal disabled build refuses before generating artifacts. Enabling it requires the complete saved-native equivalence checks. The pad and its slopes are not a mesh: they are
 Hidamari's own terrain. `hidamari/layout.py height()` passes its ground through `grade()` here, so `HD_Terrain`, the
 heightmap, the scatter and the foliage all see the graded ground and keep Hidamari's grass and material. Every step that
 reads `hidamari/layout.py` therefore also lists this `layout.py` as an input. `world.hidamari_stable` needs
-`world.layout`; the review also needs `world.hippodrome` for the course in the background of the views.
+`world.layout`, Treehouse dimensions and the selected Crater geometry for the complete canonical height-query closure. The old review script consumes a historical diagnostic blend; it is not a production export or an acceptance fallback.
 
 `unreal.hidamari_stable` (`unreal/Scripts/import_hidamari_stable.py`) imports the stable with its three LODs and the
 placements' axis-aligned boxes as simple collision (the roof as steps), the door leaves, the walkable pad and road, and the
@@ -58,20 +58,27 @@ the importer has to remove the island's trees and grass inside them, as the hipp
   陽だまり厩舎 (2.6 × 0.72 m) hangs on its west face.
 - **Paddock**: 36 × 32 m south of the barn, post-and-rail fence 1.35 m, with a 3.6 m gate in its north side.
 
-## Outputs (`build/yorimichi/hidamari-stable/`)
+## Atomic outputs
 
-| File | Holds |
+| Path under `build/yorimichi/` | Holds |
 | --- | --- |
-| `hidamari-stable.blend` | LOD0/1/2, Ground, Collision and Anchors collections (doors placed in their stalls) |
-| `glb/SM_HS_Stable_LOD0/1/2.glb` | The barn, gate, yard and paddock: one material `M_HS_Stable` (vertex colours, like Hidamari's `M_Arcade`) |
-| `glb/SM_HS_StallDoor_LOD0/1/2.glb`, `glb/SM_HS_RoomDoor_LOD0/1/2.glb` | The sliding leaves, origin at the closed leaf's bottom centre |
-| `glb/SM_HS_Ground.glb` | The pad's overlays (yard, paddock, paths, garden) in Hidamari's earth and gravel surfaces, metre UVs, walkable (complex collision) |
-| `glb/SM_HS_Road.glb` | The road on the graded ground, in Hidamari's lane earth (`MI_HD_earth`), metre UVs, walkable |
-| `glb/SM_HS_RoadSign.glb` | The lanterns and the sign where the road leaves the street |
-| `glb/SM_HS_Stable_Collision.glb` | `UCX_SM_HS_Stable_NN` boxes: walls broken at every doorway, stall fronts, partitions, rooms, roof slabs, yard, gate and paddock |
-| `placements.json` | The site and every mesh's placement, stalls (door pivot, slide axis and travel, plate centre/normal/size, horse spot), rooms, doors, sign and notice-board anchors, NPC, horse and arrival spots, the road, the clearance polygons |
-| `manifest.json` | Triangles per mesh and LOD, budgets, checksums, checks |
-| `review/*.png` | Control renders: road (from the street), front, gate, three-quarter, aerial with the streets, interior aisle, plan, LOD1 and LOD2 |
+| `stable-source-data/<source>.json` | One observed original random state for each independent semantic/LOD constructor |
+| `stable-query-data/` | Complete canonical height-query inputs, separate from rendered exports |
+| `stable-sampled-queries/` | Exact requested Road/RoadSign height samples and original placement site data |
+| `planned_exports/hidamari_stable/<source>/` | One bounded primary's complete positions, ordered corners, normals, UVs, colours, material graph and frame |
+| `atomic_regions/hidamari_stable/assets/*.glb` | 24 independently cached single-primary GLBs; assembly copies files and never joins geometry |
+| `hidamari-stable/atomic-manifest.json` | Complete ten-parent native membership, coordinated LOD chains, material/collision policy and original logical budgets |
+| `hidamari-stable/placements.json` | Original site, pivots, travel, stalls, rooms, anchors, canonical road and clearance data, with five separate Stable semantics |
+
+Barn, BarnRoof, Gate, Yard and Paddock each retain three LODs. StallDoor and RoomDoor
+retain their original three LODs; Ground, Road and RoadSign remain singles. Native
+assets stay separate under `/Game/HidamariStable/Atomic`. A separate logical bounds
+override preserves the original whole Stable's coordinated LOD box and true sphere;
+source AABB approximations are not accepted as native equivalence. The original
+whole AABB collision table is owned once by Barn; the other four semantic components
+retain zero shapes. Door collision must match the original saved/reloaded
+three-LOD control; source bounds alone do not prove that policy. Ground, Road and
+RoadSign remain complex-as-simple.
 
 All meshes and placements are in the stable's frame: Blender metres, origin on the pad's top at `SITE`, glTF exported
 Y-up by Blender. Island = `SITE` + p; Unreal = (100 x, −100 y, 100 z).
