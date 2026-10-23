@@ -13,19 +13,18 @@ import re
 import struct
 
 from atelier.gltf import glb_parts
-from atelier.export_manifest import real_directory
 
 # Includes both L2 station loops, complete station/access footprints and the
 # intervening corridor. Queries outside this footprint must refuse.
 BOUNDS = (340., 2700., 560., 4680.)
 REPO = Path(__file__).resolve().parents[4]
 CODE = ('games/yorimichi/world/gondola/structures.py',
-        'games/yorimichi/world/gondola/structure_probe.py','games/yorimichi/world/gondola/source_inputs.py',
-        'games/yorimichi/world/regions/belmonte/source.py','games/yorimichi/world/regions/belmonte/runtime_groups.py',
-        'games/yorimichi/world/gondola/__init__.py','platform/studio/atelier/gltf.py',
-        'platform/studio/atelier/encoded_glb.py','platform/studio/atelier/gltf_partition.py','platform/studio/atelier/mesh_partition.py',
-        'platform/studio/atelier/__init__.py','platform/studio/atelier/paths.py',
-        'platform/studio/atelier/export_manifest.py','platform/studio/atelier/model_files.py','platform/studio/atelier/atomic_files.py')
+        'games/yorimichi/world/gondola/structure_probe.py',
+        'games/yorimichi/world/regions/belmonte/source.py',
+        'games/yorimichi/unreal/Scripts/import_belmonte.py',
+        'games/yorimichi/world/gondola/__init__.py',
+        'platform/studio/atelier/gltf.py','platform/studio/atelier/__init__.py',
+        'platform/studio/atelier/paths.py')
 
 
 def affine(transform, origin):
@@ -50,11 +49,7 @@ def affine(transform, origin):
 
 def mesh_bounds(path):
     """Read actual POSITION bytes, including collision hulls with no bounds metadata."""
-    return mesh_bounds_data(path.read_bytes())
-
-
-def mesh_bounds_data(data):
-    doc,binary = glb_parts(data)
+    doc,binary = glb_parts(path.read_bytes())
     low,high = [math.inf]*3, [-math.inf]*3
     count = 0
     for node in doc['nodes']:
@@ -132,64 +127,67 @@ def placed_bounds(bounds, matrix, offset):
 
 def selected(build):
     """@cc [owner:fontanierh,label:correctness] complete-structure-piece-geometry
-    Query membership MUST preserve the original per-child bounds selection, order
-    and whole-hull ownership using committed source packets before render exports.
-    Every selected visual and collision face MUST occur once per selected instance.
-    Explicit plant/collision booleans, paths and transforms MUST refuse inconsistent
-    ownership; selecting a child MUST NOT broaden its query to sibling geometry.
+    Every rendered child of a collidable logical structure MUST remain in visual clearance
+    geometry even when a different child owns its whole authored collision hull. Collision
+    geometry MUST enter only through actual collision-enabled components; it MUST NOT be
+    duplicated once per visual child. Legacy groups without parent metadata keep their
+    existing collision ownership. Inconsistent or nonboolean ownership MUST refuse.
     """
-    path=Path(build)/'gondola/world/structures-sources.json'
-    real_directory(path.parent)
-    if path.is_symlink() or not path.is_file():raise ValueError('Missing pre-export structure source projection')
-    value=json.loads(path.read_text())
-    if (set(value)!={'schema','owner','bounds_m','origin_cm','groups','sources'} or value['schema']!=1
-            or value['owner']!='GondolaStructureSources' or value['bounds_m']!=list(BOUNDS)
-            or not isinstance(value['groups'],list)):
-        raise ValueError('Incomplete pre-export structure source selection')
-    origin=value['origin_cm']
-    if (not isinstance(origin,list) or len(origin)!=3 or
-            any(type(v) not in (int,float) or not math.isfinite(v) for v in origin)):
-        raise ValueError('Invalid source structure origin')
-    for row in value['groups']:
-        if (set(row)!={'asset','geometry','transforms','plant','collision','parent_collision'}
-                or row['plant'] is not False or type(row['collision']) is not bool or row['parent_collision'] is not True
-                or not isinstance(row['transforms'],list) or not row['transforms']
-                or set(row['geometry'])!=({'visual','collision'} if row['collision'] else {'visual'})):
-            raise ValueError('Incomplete logical source parent collision ownership')
-        key=row['asset'].rsplit('/',1)[-1].split('.')[0]
-        if not re.fullmatch(r'SM_BM_[A-Za-z0-9_]+',key):raise ValueError('Foreign source structure owner')
-        parents=set()
-        for role,relative in row['geometry'].items():
-            parts=Path(relative).parts
-            if (len(parts)!=4 or parts[:2]!=('planned_exports','belmonte_models') or
-                    not re.fullmatch(r'SM_BM_[A-Za-z0-9_]+',parts[2]) or
-                    parts[3]!=(key+'.mesh') and not (role=='collision' and parts[3]==parts[2]+'_Collision.mesh') or
-                    not (key==parts[2] or key.startswith(parts[2]+'_'))):
-                raise ValueError('Foreign pre-export source structure path')
-            parents.add(parts[2])
-        if len(parents)!=1:raise ValueError('Mismatched logical whole collision owner')
-        for transform in row['transforms']:affine(transform,origin)
-    expected={name for row in value['groups'] for name in row['geometry'].values()}
-    if (not isinstance(value['sources'],dict) or set(value['sources'])!=expected or
-            any(not isinstance(digest,str) or not re.fullmatch('[0-9a-f]{64}',digest) for digest in value['sources'].values())):
-        raise ValueError('Incomplete committed structure source identities')
-    return dict(bounds_m=value['bounds_m'],origin_cm=origin,groups=value['groups'],sources=value['sources'])
+    build = Path(build)
+    runtime = json.loads((build/'belmonte/runtime.json').read_text())
+    report = json.loads((build/'belmonte/build-report.json').read_text())
+    entries = {row['name']:row for row in report['meshes']}
+    bounds_cache = {}
+    groups = []
+    for group in runtime['groups']:
+        if type(group.get('plant')) is not bool or type(group.get('collision')) is not bool:
+            raise ValueError('Belmonte structure roster lacks explicit collision/plant ownership')
+        parent_collision = group.get('parent_collision', group['collision'])
+        if type(parent_collision) is not bool or (group['collision'] and not parent_collision):
+            raise ValueError('Belmonte structure parent collision ownership is inconsistent')
+        # Vegetation has its own declared runtime clearing contract. Terrain
+        # remains in the separately owned ground products.
+        if group['plant'] or not parent_collision:
+            continue
+        name = group['asset'].rsplit('/',1)[-1].split('.')[0]
+        if name.startswith('SM_BM_BT_Terrain_') or re.fullmatch(r'SM_BM_NorthApron(?:_Piece[0-3]+)?', name):
+            continue
+        if name not in entries:
+            raise ValueError('Missing final Belmonte structure metadata: '+name)
+        entry = entries[name]
+        geometry = {'visual':'belmonte/glb/'+Path(entry['path']).name}
+        if group['collision']:
+            geometry['collision'] = ('belmonte/glb/'+Path(entry['collision']['path']).name
+                                     if entry.get('collision') else geometry['visual'])
+        for relative in set(geometry.values()):
+            if relative not in bounds_cache:
+                bounds_cache[relative] = cached_bounds(build, relative)
+        transforms = []
+        if not group['transforms']:
+            raise ValueError('Empty Belmonte structure instance roster')
+        for transform in group['transforms']:
+            matrix,offset = affine(transform,runtime['origin_cm'])
+            boxes = [placed_bounds(bounds_cache[path],matrix,offset) for path in set(geometry.values())]
+            if any(hi[0] >= BOUNDS[0] and lo[0] <= BOUNDS[2] and
+                   hi[1] >= BOUNDS[1] and lo[1] <= BOUNDS[3] for lo,hi in boxes):
+                transforms.append(transform)
+        if transforms:
+            groups.append({'asset':group['asset'],'geometry':geometry,'transforms':transforms})
+    groups.sort(key=lambda row:json.dumps(row,sort_keys=True))
+    return {'bounds_m':list(BOUNDS),'origin_cm':runtime['origin_cm'],'groups':groups}
 
 
 def paths(build):
-    return [Path(build)/'gondola/world/structures-sources.json',
-            *(Path(build)/name for name in sorted({name for group in selected(build)['groups'] for name in group['geometry'].values()}))]
+    return [Path(build)/name for name in sorted({name for group in selected(build)['groups']
+                                               for name in group['geometry'].values()})]
 
 
 def inputs(build):
-    roster=selected(build)
-    files=sorted({name for group in roster['groups'] for name in group['geometry'].values()})
-    for name in files:
-        path=Path(build)/name;real_directory(path.parent)
-        if path.is_symlink() or not path.is_file():raise ValueError('Committed structure query source must be regular')
-        if hashlib.sha256(path.read_bytes()).hexdigest()!=roster['sources'][name]:raise ValueError('Committed structure source differs from its definition')
-    return dict(selection=roster,code={name:hashlib.sha256((REPO/name).read_bytes()).hexdigest() for name in CODE},
-                files={name:hashlib.sha256((Path(build)/name).read_bytes()).hexdigest() for name in files})
+    roster = selected(build)
+    files = sorted({name for group in roster['groups'] for name in group['geometry'].values()})
+    return {'selection':roster,
+            'code':{name:hashlib.sha256((REPO/name).read_bytes()).hexdigest() for name in CODE},
+            'files':{name:hashlib.sha256((Path(build)/name).read_bytes()).hexdigest() for name in files}}
 
 
 def validate(build):

@@ -13,14 +13,10 @@ _spec=importlib.util.spec_from_file_location('gondola_canonical_parameters',KIT/
 PARAMETERS=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(PARAMETERS)
 SITE_CODE=tuple(GAME/name for name in (
     'world/regions/gondola/site.py','world/regions/gondola/layout.py',
-    'world/regions/gondola/site_sources.py','world/regions/gondola/plan_site.py',
-    'world/regions/gondola/audit_site.py','gondola_site_products.py',
     'world/regions/hidamari/gondola.py','world/regions/belmonte/gondola.py',
     'world/walk_raster.py','world/gondola/line.py','world/gondola/support.py','world/gondola/products.py',
-    'world/gondola/source_inputs.py','world/regions/belmonte/runtime_groups.py',
     'world/gondola/terrain.py','world/gondola/clearance.py','world/gondola/structures.py','world/gondola/validation.py',
-    'unreal/Scripts/mesh_import.py','unreal/Scripts/import_gondola.py','unreal/Scripts/gondola_native.py',
-    'unreal/Source/Yorimichi/GondolaService.h','unreal/Source/Yorimichi/GondolaService.cpp',
+    'unreal/Scripts/mesh_import.py','unreal/Scripts/import_gondola.py',
     'world/terrain_product.py','world/terrain_query.py','world/regions/belmonte/layout.py',
     'world/gondola/interactions.py','world/regions/zeppelin/layout.py','world/regions/village/layout.py',
     'world/regions/zeppelin/build.py','unreal/Source/Yorimichi/ZeppelinService.cpp',
@@ -274,34 +270,6 @@ def validate_site(build):
         jump=station['jump']
         if jump.get('pass') is not True or jump['poses']<=0 or (jump['minimum_m'] is not None and (not math.isfinite(jump['minimum_m']) or jump['minimum_m']<15.)):
             raise ValueError('Gondola station-loop jump proof is missing or failed')
-    if data.get('atomic') is True:
-        from atelier.export_manifest import real_directory
-        expected={f'gondola/world/query-data/{key}.json' for key in layout.mesh_names()}
-        expected.update(f'gondola/query-data/{key}.json' for key in PARAMETERS.asset_names() if not key.endswith('_Collision'))
-        expected.add('gondola/world/source-data/fit.json')
-        if set(data.get('query_inputs',{}))!=expected:
-            raise ValueError('Incomplete fitted Gondola pre-export audit bindings')
-        for name,digest in data['query_inputs'].items():
-            path=build/name;real_directory(path.parent)
-            if path.is_symlink() or not path.is_file() or sha(path)!=digest:
-                raise ValueError('Fitted Gondola pre-export audit input changed: '+name)
-        logical=data.get('logical_pieces',{})
-        if set(logical.get('parents',{}))!=set(layout.mesh_names()):
-            raise ValueError('Incomplete fitted Gondola logical export closure')
-        all_pieces=[piece['name'].casefold() for row in data['exports'] for piece in row.get('pieces',[])]
-        if len(all_pieces)!=len(set(all_pieces)):
-            raise ValueError('Duplicate fitted Gondola child ownership')
-        for row in data['exports']:
-            if (logical['parents'][row['name']]!=[piece['name'] for piece in row.get('pieces',[])] or
-                    logical['ownership'][row['name']]['source_triangles']!=row['triangles']):
-                raise ValueError('Fitted Gondola logical source membership changed')
-        if set(data.get('rope_groups',{}))!={line['id'] for line in data['lines']}:
-            raise ValueError('Incomplete fitted Gondola logical rope families')
-        for line in data['lines']:
-            groups=[logical['parents'][f'GD_{line["id"]}_Rope_LOD{lod}'] for lod in range(3)]
-            if (not groups[0] or len(groups[0])>8 or data['rope_groups'][line['id']]!=groups[0] or
-                    any(group!=[key.replace('_LOD0',f'_LOD{lod}') for key in groups[0]] for lod,group in enumerate(groups))):
-                raise ValueError('Gondola rope LODs do not retain coordinated complete child families')
     for row in data['exports']:
         if row['name'].startswith(('GD_belmonte_','GD_northwest_','GD_L2_')) and '_Rope_LOD' not in row['name']:
             validate_structure_proof(row.get('world_structure') or {},static=True)
@@ -316,18 +284,7 @@ def validate_site(build):
                     any(seat['status']!='ok' for seat in row['seating']) or carried['failures']!=[] or
                     carried['uncarried_groups']!=0 or carried['uncarried_islands']!=0 or carried['groups']<=0):
                 raise ValueError('Gondola fitted support/access proof is missing or failed')
-        if data.get('atomic') is True:
-            pieces=row.get('pieces',[])
-            if (not pieces or sum(piece['triangles'] for piece in pieces)!=row['triangles']
-                    or any(type(piece.get('triangles')) is not int or not 0<piece['triangles']<=32768 for piece in pieces)
-                    or len({piece['name'].casefold() for piece in pieces})!=len(pieces)):
-                raise ValueError('Incomplete bounded fitted Gondola mesh membership')
-            for piece in pieces:
-                from atelier.export_manifest import name
-                key=name(piece['name'])
-                if sha(folder/'atomic-assets'/f'{key}.fbx')!=piece['sha256']:
-                    raise ValueError('Gondola fitted atomic piece changed: '+key)
-        elif sha(folder/'assets'/f"{row['name']}.fbx")!=row['sha256']:
+        if sha(folder/'assets'/f"{row['name']}.fbx")!=row['sha256']:
             raise ValueError('Gondola fitted mesh changed: '+row['name'])
     # Revalidate extraction identities too: a receipt bound only to old world
     # bytes cannot authorize an old interpretation of unchanged exports.

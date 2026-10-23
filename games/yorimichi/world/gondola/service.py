@@ -35,7 +35,6 @@ def records(build):
 
 
 def build_data(site,build):
-    if site.get('atomic') is not True:raise ValueError('Gondola runtime requires complete bounded site membership')
     p=PARAMETERS.DEFAULTS;d=PARAMETERS.derived(p)
     kit=json.loads((build/'gondola/manifest.json').read_text())
     cabin=kit['pieces']['cabin']
@@ -46,9 +45,8 @@ def build_data(site,build):
         for name in names:
             static.append({'name':key+'_'+name,'mesh':asset(name),'collision':name.endswith('_Collision'),**placement})
         for part in ('foundation','access_mesh'):
-            for piece in row[part]['pieces']:
-                name=piece['name']
-                static.append({'name':name,'mesh':asset(name,True),'collision':True,**placement})
+            name=row[part]['name']
+            static.append({'name':name,'mesh':asset(name,True),'collision':True,**placement})
         angle=math.radians(row['heading']);along=[math.cos(angle),math.sin(angle)];lateral=[-along[1],along[0]]
         origin=row['origin'];z=row['platform_z'];rope_z=z+d['rope_height_above_platform']
         walk=row['access']['route']
@@ -70,9 +68,8 @@ def build_data(site,build):
             location=tower['origin'];angle=math.radians(tower['heading']);lateral=[-math.sin(angle),math.cos(angle)]
             tracks={str(side):[location[0]+side*p['gauge']/2*lateral[0],location[1]+side*p['gauge']/2*lateral[1],location[2]+tower['height']] for side in (-1,1)}
             towers.append({'tracks':tracks})
-            for piece in tower['mesh']['pieces']:
-                static.append({'name':piece['name'],'mesh':asset(piece['name'],True),
-                               'location_cm':ue(location),'yaw':-tower['heading'],'collision':True})
+            static.append({'name':tower['mesh']['name'],'mesh':asset(tower['mesh']['name'],True),
+                           'location_cm':ue(location),'yaw':-tower['heading'],'collision':True})
         table=clock.prepare(line['circuit'],[by_name[key] for key in line['stations']],towers)
         # The geometry remains exact; only world coordinate units change here.
         count=4 if line['id']=='L3' else 12
@@ -80,7 +77,7 @@ def build_data(site,build):
         table['points']=[ue(q) for q in table['points']]
         lines.append({'id':line['id'],'stations':line['stations'],'clock':table,
                       'cabins':count,'spacing':separation,
-                      'ropes':[asset(name,True) for name in site['rope_groups'][line['id']]],
+                      'rope':asset(line['rope_meshes'][0]['name'],True),
                       'rope_lod_minimum_m':[row['minimum_view_distance_m'] for row in line['rope_meshes']]})
     clear=[]
     for line in site['lines']:

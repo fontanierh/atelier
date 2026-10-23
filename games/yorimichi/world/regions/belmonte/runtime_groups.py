@@ -2,12 +2,6 @@
 import numpy as np
 
 
-def logical_collision(name):
-    """Original static parent collision policy, shared by runtime and source queries."""
-    if not isinstance(name,str) or not name:raise ValueError('Invalid Belmonte logical parent name')
-    return not any(word in name for word in ('Water','Foam'))
-
-
 def groups(data,materials,by_asset,meshes,extra):
     grouped = {}
     for placement in data['placements']:
@@ -23,7 +17,7 @@ def groups(data,materials,by_asset,meshes,extra):
             grouped.setdefault(key, []).append(placement['transform'])
     groups = []
     for (name, bindings, collides, _parent_bindings), transforms in grouped.items():
-        water = not logical_collision(name)
+        water = any(word in name for word in ('Water', 'Foam'))
         entry = next(entry for entry in meshes if entry['name'] == name)
         policy_bounds = entry.get('parent_bounds_m', entry['bounds_m'])
         span = max(np.subtract(policy_bounds[1], policy_bounds[0]))
