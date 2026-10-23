@@ -14,6 +14,7 @@ use crate::source_hashes::sha256;
 use crate::store::{ObjectDigest, ObjectStore};
 use crate::validate::{SnapshotEntry, SourceSnapshot};
 use std::collections::{BTreeMap, BTreeSet};
+use std::fmt;
 use std::fs::{self, OpenOptions};
 use std::io::{self, Write};
 use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
@@ -22,7 +23,77 @@ use std::path::{Component, Path, PathBuf};
 /// Where staging gets stored object bytes. Implementations clone, never copy.
 pub trait ObjectSource {
     /// Create `destination` (which must not exist) as a read-only clone of the object `digest`.
-    fn clone_object(&self, digest: &ObjectDigest, destination: &Path) -> Result<(), String>;
+    fn clone_object(&self, digest: &ObjectDigest, destination: &Path) -> Result<(), SourceError>;
+}
+
+/// Why an [`ObjectSource`] could not provide one object. The controller classifies staging
+/// failures by this kind; nothing travels in a side channel.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SourceErrorKind {
+    /// The source does not hold this digest, or cannot reach it now.
+    Unavailable,
+    /// The source's bytes for this digest changed or were replaced after they were certified.
+    Changed,
+    /// The destination cannot be a clone of the source; there is no copy fallback.
+    CloneUnsupported,
+    /// Any other I/O failure while cloning.
+    Io,
+}
+
+/// One object an [`ObjectSource`] could not clone, with the digest staging asked for.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SourceError {
+    pub kind: SourceErrorKind,
+    pub digest: ObjectDigest,
+    pub message: String,
+}
+
+impl fmt::Display for SourceError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            formatter,
+            "cannot clone object {}: {}",
+            self.digest, self.message
+        )
+    }
+}
+
+impl std::error::Error for SourceError {}
+
+/// Why [`stage`] failed: an object source's typed refusal, or any other staging error.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum StageError {
+    Source(SourceError),
+    Staging(String),
+}
+
+impl fmt::Display for StageError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Source(error) => error.fmt(formatter),
+            Self::Staging(message) => formatter.write_str(message),
+        }
+    }
+}
+
+impl std::error::Error for StageError {}
+
+impl From<String> for StageError {
+    fn from(message: String) -> Self {
+        Self::Staging(message)
+    }
+}
+
+impl From<&str> for StageError {
+    fn from(message: &str) -> Self {
+        Self::Staging(message.into())
+    }
+}
+
+impl From<StageError> for String {
+    fn from(error: StageError) -> Self {
+        error.to_string()
+    }
 }
 
 /// Store objects read while a live B2 write transaction pins them. The transaction's lease claims
@@ -40,10 +111,14 @@ impl<'a> PinnedObjects<'a> {
 }
 
 impl ObjectSource for PinnedObjects<'_> {
-    fn clone_object(&self, digest: &ObjectDigest, destination: &Path) -> Result<(), String> {
+    fn clone_object(&self, digest: &ObjectDigest, destination: &Path) -> Result<(), SourceError> {
         self.objects
             .clone_to(digest, destination)
-            .map_err(|error| format!("cannot clone object {digest}: {error}"))
+            .map_err(|error| SourceError {
+                kind: SourceErrorKind::Io,
+                digest: digest.clone(),
+                message: error.to_string(),
+            })
     }
 }
 
@@ -130,28 +205,31 @@ fn stage_item(
     directory: &Path,
     files: &[StoredFile],
     objects: &dyn ObjectSource,
-) -> Result<(), String> {
+) -> Result<(), StageError> {
     let mut seen = BTreeSet::new();
     for file in files {
         if !seen.insert(file.path.as_str()) {
-            return Err(format!("duplicate item member {}", file.path));
+            return Err(format!("duplicate item member {}", file.path).into());
         }
         let mode = match file.mode {
             0o644 => 0o444,
             0o755 => 0o555,
-            other => return Err(format!("item member {} has mode {other:o}", file.path)),
+            other => return Err(format!("item member {} has mode {other:o}", file.path).into()),
         };
         let destination = inside(directory, &file.path)?;
         parents(root, &destination)?;
         let digest = ObjectDigest::from_hex(&file.digest).map_err(|error| error.to_string())?;
-        objects.clone_object(&digest, &destination)?;
+        objects
+            .clone_object(&digest, &destination)
+            .map_err(StageError::Source)?;
         let metadata =
             fs::symlink_metadata(&destination).map_err(|error| io_error(&destination, error))?;
         if !metadata.is_file() || metadata.len() != file.size {
             return Err(format!(
                 "item member {} is not the recorded {}-byte file",
                 file.path, file.size
-            ));
+            )
+            .into());
         }
         set_mode(&destination, mode)?;
     }
@@ -188,15 +266,28 @@ fn staged_directories(root: &Path) -> Result<Vec<PathBuf>, String> {
 /// are files and `Item` inputs directories of exactly their recorded members, cloned (never copied)
 /// from pinned store objects with their recorded size and executable bit; absent optional inputs
 /// create nothing. Every staged file and directory except `output/` MUST be read-only. Unsafe
-/// paths, links, shape mismatches and incomplete items MUST fail the staging. The request MUST carry
-/// no install path, locator or source path. See tests/staging.rs.
+/// paths, links, shape mismatches and incomplete items MUST fail the staging. An object source's
+/// refusal MUST reach the caller as `StageError::Source` with its typed kind and the digest asked
+/// for, never flattened or retried by copying; every other failure is `StageError::Staging`. The
+/// request MUST carry no install path, locator or source path. See tests/staging.rs.
 pub fn stage(
     prepared: &PreparedUnit,
     frozen_code: &SourceSnapshot,
     objects: &dyn ObjectSource,
     job_dir: &Path,
     job_id: &str,
-) -> Result<StagedJob, String> {
+) -> Result<StagedJob, StageError> {
+    let job_dir = fresh_job_dir(job_dir)?;
+    let staged = stage_into(prepared, frozen_code, objects, &job_dir, job_id);
+    if staged.is_err() {
+        // Only this call's own fresh folder is removed; nothing else is touched.
+        let _ = remove_job(&job_dir);
+    }
+    staged
+}
+
+/// Create the job folder, which must not exist, under the real path of its existing parent.
+fn fresh_job_dir(job_dir: &Path) -> Result<PathBuf, String> {
     if !job_dir.is_absolute() {
         return Err("the job folder must be an absolute path".into());
     }
@@ -206,12 +297,7 @@ pub fn stage(
         .map_err(|error| io_error(parent, error))?;
     let job_dir = parent.join(job_dir.file_name().ok_or("the job folder has no name")?);
     fs::create_dir(&job_dir).map_err(|error| io_error(&job_dir, error))?;
-    let staged = stage_into(prepared, frozen_code, objects, &job_dir, job_id);
-    if staged.is_err() {
-        // Only this call's own fresh folder is removed; nothing else is touched.
-        let _ = remove_job(&job_dir);
-    }
-    staged
+    Ok(job_dir)
 }
 
 fn stage_into(
@@ -220,14 +306,14 @@ fn stage_into(
     objects: &dyn ObjectSource,
     job_dir: &Path,
     job_id: &str,
-) -> Result<StagedJob, String> {
+) -> Result<StagedJob, StageError> {
     let ingredients = prepared.ingredients();
     for (path, digest) in &ingredients.code {
         let Some(SnapshotEntry::File(bytes)) = frozen_code.get(path) else {
-            return Err(format!("declared code {path} is not a frozen regular file"));
+            return Err(format!("declared code {path} is not a frozen regular file").into());
         };
         if &sha256(bytes) != digest {
-            return Err(format!("declared code {path} changed after keying"));
+            return Err(format!("declared code {path} changed after keying").into());
         }
         let destination = inside(job_dir, path)?;
         parents(job_dir, &destination)?;
@@ -249,9 +335,7 @@ fn stage_into(
                 stage_item(job_dir, &destination, files, objects)?;
             }
             _ => {
-                return Err(format!(
-                    "input {name} payload does not match its keyed shape"
-                ));
+                return Err(format!("input {name} payload does not match its keyed shape").into());
             }
         }
     }
