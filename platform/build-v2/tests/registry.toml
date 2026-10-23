@@ -247,3 +247,8 @@ tests = ["atelier-build-v2::objects/apfs::existing_entries_and_clone_destination
 id = "b1.apfs-owned-staging-cleanup"
 platforms = ["darwin"]
 tests = ["atelier-build-v2::objects/apfs::discarded_and_wrong_store_tokens_clean_only_owned_staging_files"]
+
+[[scenarios]]
+id = "b1.apfs-source-substitution-refused"
+platforms = ["darwin"]
+tests = ["atelier-build-v2/store::tests::clone_source_substitution_is_refused_and_owned_destination_removed"]

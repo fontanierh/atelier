@@ -152,6 +152,23 @@ fn immutable(path: &Path) -> Result<fs::Metadata, StoreError> {
     Ok(metadata)
 }
 
+// The clone operation is a private seam for deterministic source-substitution tests.
+fn clone_checked(
+    source: &Path,
+    destination: &Path,
+    clone: impl FnOnce(&Path, &Path) -> io::Result<()>,
+) -> Result<(), StoreError> {
+    immutable(source)?;
+    clone(source, destination).map_err(StoreError::Clone)?;
+    // A successful clone created this destination. NOFOLLOW can clone a substituted
+    // symlink itself; permission changes can likewise arrive with a substituted file.
+    if let Err(error) = immutable(destination) {
+        fs::remove_file(destination)?;
+        return Err(error);
+    }
+    Ok(())
+}
+
 impl ObjectStore {
     pub fn open(root: impl AsRef<Path>) -> Result<Self, StoreError> {
         fs::create_dir_all(root.as_ref())?;
@@ -288,14 +305,15 @@ impl ObjectStore {
         destination: impl AsRef<Path>,
     ) -> Result<(), StoreError> {
         let source = self.object_path(digest);
-        immutable(&source)?;
-        native::clone_file(&source, destination.as_ref()).map_err(StoreError::Clone)
+        clone_checked(&source, destination.as_ref(), native::clone_file)
     }
 }
 
 #[cfg(target_os = "macos")]
 mod native {
     use std::{ffi::CString, io, os::unix::ffi::OsStrExt, path::Path};
+    // Darwin SDK sys/clonefile.h. libc exposes clonefile but omits this flag.
+    const CLONE_NOFOLLOW: libc::c_uint = 0x0001;
     fn path(path: &Path) -> io::Result<CString> {
         CString::new(path.as_os_str().as_bytes())
             .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "path contains NUL"))
@@ -305,7 +323,7 @@ mod native {
         let destination = path(destination)?;
         // CLONE_NOFOLLOW prevents a source race from following a replacement symlink.
         let result =
-            unsafe { libc::clonefile(source.as_ptr(), destination.as_ptr(), libc::CLONE_NOFOLLOW) };
+            unsafe { libc::clonefile(source.as_ptr(), destination.as_ptr(), CLONE_NOFOLLOW) };
         if result == 0 {
             Ok(())
         } else {
@@ -338,5 +356,43 @@ mod native {
             io::ErrorKind::Unsupported,
             "exclusive APFS publication requires macOS",
         ))
+    }
+}
+
+#[cfg(all(test, target_os = "macos"))]
+mod tests {
+    use super::*;
+    use std::os::unix::fs::{PermissionsExt, symlink};
+
+    #[test]
+    fn clone_source_substitution_is_refused_and_owned_destination_removed() {
+        let serial = NEXT_STAGE.fetch_add(1, Ordering::Relaxed);
+        let root = std::env::temp_dir().join(format!(
+            "atelier-v2-clone-race-{}-{serial}",
+            std::process::id()
+        ));
+        fs::create_dir(&root).unwrap();
+        let source = root.join("source");
+        let target = root.join("target");
+        let destination = root.join("destination");
+        fs::write(&target, b"unrelated target").unwrap();
+        for use_symlink in [true, false] {
+            fs::write(&source, b"stored payload").unwrap();
+            fs::set_permissions(&source, fs::Permissions::from_mode(0o444)).unwrap();
+            let result = clone_checked(&source, &destination, |source, destination| {
+                fs::remove_file(source)?;
+                if use_symlink {
+                    symlink(&target, source)?;
+                } else {
+                    fs::write(source, b"writable replacement")?;
+                }
+                native::clone_file(source, destination)
+            });
+            assert!(matches!(result, Err(StoreError::InvalidFile(_))));
+            assert!(fs::symlink_metadata(&destination).is_err());
+            assert_eq!(fs::read(&target).unwrap(), b"unrelated target");
+            fs::remove_file(&source).unwrap();
+        }
+        fs::remove_dir_all(root).unwrap();
     }
 }
