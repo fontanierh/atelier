@@ -1440,6 +1440,13 @@ fn digest(fill: &str) -> ObjectDigest {
 fn a_use_bucket_rounds_the_utc_day_up() {
     let midnight = UseBucket::ceil_day(std::time::UNIX_EPOCH).unwrap();
     assert_eq!(midnight.as_str(), "1970-01-01");
+    let one_millisecond =
+        UseBucket::ceil_day(std::time::UNIX_EPOCH + std::time::Duration::from_millis(1)).unwrap();
+    assert_eq!(
+        one_millisecond.as_str(),
+        "1970-01-02",
+        "sub-second precision must round up, not truncate"
+    );
     let one_second =
         UseBucket::ceil_day(std::time::UNIX_EPOCH + std::time::Duration::from_secs(1)).unwrap();
     assert_eq!(one_second.as_str(), "1970-01-02");
@@ -1447,6 +1454,13 @@ fn a_use_bucket_rounds_the_utc_day_up() {
         UseBucket::ceil_day(std::time::UNIX_EPOCH + std::time::Duration::from_secs(86_400))
             .unwrap();
     assert_eq!(next_midnight.as_str(), "1970-01-02");
+    let next_midnight_plus_one = UseBucket::ceil_day(
+        std::time::UNIX_EPOCH
+            + std::time::Duration::from_secs(86_400)
+            + std::time::Duration::from_nanos(1),
+    )
+    .unwrap();
+    assert_eq!(next_midnight_plus_one.as_str(), "1970-01-03");
     assert!(UseBucket::parse("2024-02-29").is_ok());
     assert!(UseBucket::parse("2026-02-29").is_err());
     assert!(UseBucket::parse("2026-13-01").is_err());
@@ -1791,6 +1805,7 @@ fn two_open_sessions_on_one_target_keep_the_other_journal() {
 
 #[test]
 fn open_existing_creates_nothing() {
+    use std::os::unix::fs::MetadataExt;
     let workspace = Workspace::new();
     fs::create_dir_all(workspace.store()).unwrap();
     let error = RootStore::open_existing(workspace.store(), "yorimichi").unwrap_err();
@@ -1800,8 +1815,97 @@ fn open_existing_creates_nothing() {
     );
     assert!(!workspace.store().join("roots").exists());
     assert!(!workspace.store().join("meta").exists());
+    assert!(
+        !workspace.store().join("leases").exists(),
+        "a refusal must not create the lease directory"
+    );
+    assert!(
+        !workspace.store().join("staging").exists(),
+        "a refusal must not create the staging directory"
+    );
+    assert!(
+        !workspace.store().join("metadata.lock").exists(),
+        "a refusal must not create the metadata mutex"
+    );
 
     let clock = TestClock::at(0);
     let _store = workspace.open_at("yorimichi", &clock);
+    let lock = workspace.store().join("metadata.lock");
+    let before = fs::metadata(&lock).unwrap();
+    let (inode, mtime) = (before.ino(), before.modified().unwrap());
     RootStore::open_existing(workspace.store(), "yorimichi").unwrap();
+    let after = fs::metadata(&lock).unwrap();
+    assert_eq!(
+        after.ino(),
+        inode,
+        "the read path must not replace the mutex"
+    );
+    assert_eq!(
+        after.modified().unwrap(),
+        mtime,
+        "the read path must not rewrite the mutex"
+    );
+}
+
+#[test]
+fn an_unknown_age_entry_invalidates_a_stored_bucket() {
+    use std::io::Write;
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let mut session = begin(&store, RootKind::Main, "first", 1);
+    session.use_result("unit.a", &key(1)).unwrap();
+    session.commit(None).unwrap();
+    assert_eq!(usage_of(&store).results[&key(1)].as_str(), "1970-01-02");
+
+    let legacy = begin(&store, RootKind::Main, "legacy", 1);
+    let journal = only_session(&workspace.store(), "yorimichi");
+    let mut file = fs::OpenOptions::new().append(true).open(&journal).unwrap();
+    writeln!(file, "{{\"unit\":\"unit.a\",\"key\":\"{}\"}}", key(1)).unwrap();
+    drop(file);
+    assert!(
+        !usage_of(&store).results.contains_key(&key(1)),
+        "an unknown use invalidates the stored day"
+    );
+
+    legacy.abandon().unwrap();
+    assert!(
+        !usage_of(&store).results.contains_key(&key(1)),
+        "the invalidation is durable after abandon"
+    );
+}
+
+#[test]
+fn a_missing_session_directory_is_reported_by_usage() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    fs::remove_dir_all(workspace.project_dir("yorimichi").join("session")).unwrap();
+    let view = usage_of(&store);
+    assert!(
+        !view.damaged.is_empty(),
+        "a vanished session directory must not read as clean"
+    );
+}
+
+#[test]
+fn a_damaged_journal_surfaces_and_is_not_unlinked() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let session = begin(&store, RootKind::Main, "torn", 1);
+    let journal = only_session(&workspace.store(), "yorimichi");
+    let mut text = fs::read_to_string(&journal).unwrap();
+    text.push_str("{\"unit\":\"unit.a\",\"key\":\"");
+    fs::write(&journal, text).unwrap();
+
+    assert!(
+        !usage_of(&store).damaged.is_empty(),
+        "a torn journal is damage, not silence"
+    );
+    assert!(
+        session.abandon().is_err(),
+        "abandon must refuse to erase a damaged journal"
+    );
+    assert!(journal.exists(), "the damaged journal stays for retention");
 }
