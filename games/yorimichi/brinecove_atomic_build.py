@@ -9,18 +9,16 @@ GAME = Path(__file__).resolve().parent
 WORLD = GAME / 'world'
 REGIONS = WORLD / 'regions'
 REGION = REGIONS / 'brinecove'
-COMPONENTS = (
-    ('Rocks', 'terrain_dressing'), ('Harbor', 'harbor'), ('TownLower', 'lower_town'),
-    ('Market', 'market'), ('TownUpper', 'upper_town'), ('Landmarks', 'landmarks'),
-    ('Ships', 'ships'), ('Props', 'props'), ('Understory', 'vegetation'),
-)
-HEROES = ('pirate-queen-statue', 'galleon-hull', 'harbor-capstan')
 
 
 def load(label, path):
     spec = importlib.util.spec_from_file_location(label, path)
     module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
     return module
+
+
+_catalogue = load('brinecove_logical_catalogue', REGION / 'logical_catalogue.py')
+COMPONENTS, HEROES = _catalogue.COMPONENTS, _catalogue.HEROES
 
 
 def steps(ctx):

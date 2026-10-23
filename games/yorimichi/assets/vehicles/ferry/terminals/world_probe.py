@@ -86,7 +86,7 @@ def clip(tris, bounds, band=None):
     return tris[keep].astype(np.float32)
 
 
-def hidamari(build, bounds=None):
+def legacy_hidamari(build, bounds=None):
     bounds = S.BOUNDS['hidamari'] if bounds is None else bounds; sources = {}; names = []; skipped = []
     clear_scene()
     path = build / 'hidamari/assets/HD_Terrain.fbx'; sources[str(path.relative_to(build))] = sha(path)
@@ -136,7 +136,7 @@ def label(name):
     return '_'.join(parts)
 
 
-def brinecove(build, bounds=None):
+def legacy_brinecove(build, bounds=None):
     bounds = S.BOUNDS['brinecove'] if bounds is None else bounds; sources = {}; names = []; ground = []; solid = []
     runtime = build / 'products/brinecove/clearance.json'; sources[str(runtime.relative_to(build))] = sha(runtime)
     data = json.loads(runtime.read_text())
@@ -166,13 +166,31 @@ def brinecove(build, bounds=None):
             {'frame': 'brinecove-local metres', 'origin_cm': data['origin_cm']})
 
 
+
+def city_placement(row):
+    x, y, z, yaw, scale = row
+    return Matrix.Translation((x, y, z)) @ Matrix.Rotation(math.radians(yaw), 4, 'Z') @ Matrix.Scale(scale, 4)
+
+
+def hidamari(build, bounds=None):
+    from regions.ferry import query_geometry
+    return query_geometry.hidamari(build, S.BOUNDS['hidamari'] if bounds is None else bounds,
+        clip=clip, placement=city_placement, z_band=Z_BAND, water_z=WATER_Z)
+
+
+def brinecove(build, bounds=None):
+    from regions.ferry import query_geometry
+    return query_geometry.brinecove(build, S.BOUNDS['brinecove'] if bounds is None else bounds,
+        clip=clip, placement=unreal_to_blender, z_band=Z_BAND)
+
+
 def crossing(build):
     """Export every final surface/solid along the sea corridor in the same placement frames as the game."""
     sys.path.insert(0, str(S.REPO / 'games/yorimichi/world'))
     from regions.ferry.route import BOUNDS
     ground, solid, names, sources, _ = hidamari(build, BOUNDS)
     ground = [ground]
-    runtime = json.loads((build / 'products/brinecove/clearance.json').read_text())
+    runtime = json.loads((build / 'brinecove-data/query-data.json').read_text())
     ox, oy, oz = runtime['origin_cm']
     origin = np.array((ox / 100, -oy / 100, oz / 100))
     x0, y0, x1, y1 = BOUNDS
@@ -202,6 +220,8 @@ def crossing(build):
 
 def main():
     build = Path(sys.argv[sys.argv.index('--') + 1]).resolve()
+    sys.path.insert(0, str(S.REPO / 'games/yorimichi/world'))
+    sys.path.insert(0, str(S.REPO / 'games/yorimichi/world/regions'))
     bpy.ops.wm.read_factory_settings(use_empty=True)
     OUT.mkdir(parents=True, exist_ok=True)
     for name, fn in (('hidamari', hidamari), ('brinecove', brinecove), ('crossing', crossing)):

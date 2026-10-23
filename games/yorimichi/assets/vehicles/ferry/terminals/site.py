@@ -487,8 +487,12 @@ def load_world(name, out=OUT):
 
 
 def code_inputs():
-    return (HERE / 'site.py', HERE / 'world_probe.py', HERE.parent / 'build.py', Path(HD.__file__), Path(BC.__file__),
-            REPO / 'games/yorimichi/world/solid_mesh.py', REPO / 'games/yorimichi/world/regions/ferry/route.py')
+    from atelier.build_inputs import local_imports
+    world = REPO / 'games/yorimichi/world'
+    return tuple(sorted({HERE / 'site.py', HERE / 'world_probe.py', HERE.parent / 'build.py',
+        Path(HD.__file__), Path(BC.__file__), world / 'solid_mesh.py', world / 'regions/ferry/route.py',
+        REPO / 'games/yorimichi/unreal/Source/Yorimichi/CitySurfaceParents.h',
+        *local_imports(HERE / 'world_probe.py', (world, world / 'regions'))}))
 
 
 def inputs(worlds):
