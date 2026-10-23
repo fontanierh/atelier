@@ -63,7 +63,8 @@ def retire(received,*,runtime_members):
     library=unreal.EditorAssetLibrary
     if set(received['parts'])!=set(PARTS):raise ValueError('Incomplete current Bike receiving set')
     retired=native_membership.retire_replaced(library,{DESTINATION+'/BK_Steer':[DESTINATION+'/'+key for key in STEERING]})
-    folder=yori.GAME/'unreal/Content/Japan/Assets';real_directory(folder)
+    content=Path(unreal.Paths.convert_relative_path_to_full(unreal.Paths.project_content_dir()))
+    folder=content/DESTINATION.removeprefix('/Game/');real_directory(folder)
     assert not list(folder.glob('BK_Steer.*')),'Old Bike steering parent remains physically saved'
     (received['out']/'bike/import-report.json').write_text(json.dumps(dict(complete=True,parts=received['parts'],steering_bounds=received['steering'],retired=retired),indent=2)+'\n')
     return retired
