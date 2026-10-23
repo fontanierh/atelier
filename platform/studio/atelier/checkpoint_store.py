@@ -491,6 +491,16 @@ def restore(ctx, steps, store, key, *, echo=print):
 HYDRATION_REQUEST = '.state/hydration-request.json'
 
 
+def hydration_member(member, scopes):
+    """True when member or one of its parent labels is in scopes."""
+    name = member
+    while name:
+        if name in scopes:
+            return True
+        name = name.rpartition('/')[0]
+    return False
+
+
 def hydrate_files(ctx, store, key, *, echo=print):
     """@cc [owner:fontanierh,label:correctness] checkpoint-file-hydration
     Hydration of a non-cold receiver MAY only add generated files that are missing locally,
@@ -515,11 +525,15 @@ def hydrate_files(ctx, store, key, *, echo=print):
     allowed = roots(ctx)
     units = [u for u in resume['units'] if u.partition('/')[0] in allowed and u.partition('/')[0] not in ('zen', 'cooked')]
     outputs = set(read_json(ctx.out / HYDRATION_REQUEST).get('outputs', ())) if (ctx.out / HYDRATION_REQUEST).is_file() else set()
-    owners = read_json(ctx.out / HYDRATION_REQUEST).get('owners', {}) if (ctx.out / HYDRATION_REQUEST).is_file() else {}
+    planned = read_json(ctx.out / HYDRATION_REQUEST) if (ctx.out / HYDRATION_REQUEST).is_file() else {}
+    owners = planned.get('owners', {})
+    # Only members a non-current receiving step owns; a request without that scope fills nothing.
+    owned, current = set(planned.get('owned', ())), set(planned.get('current', ()))
     from .checkpoint_actions import unverified_member
     def keep(member, label, name):
         return (any(member.startswith(u) for u in units) and not unverified_member(member, owners)
-                and (label != 'generated' or declared_member(name, outputs)))
+                and (label != 'generated' or declared_member(name, outputs))
+                and hydration_member(member, owned) and not hydration_member(member, current))
     candidates = _select(ctx, store, manifest, allowed, keep)
     # Only absent destinations, under real local directories, are filled.
     parents, blocked = set(), set()

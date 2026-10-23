@@ -81,7 +81,8 @@ def test_interrupted_hydration_resumes(fixture, monkeypatch):
     (ctx.out / 'tree').mkdir(parents=True)
     (ctx.out / 'tree/asset.bin').write_bytes(b'stale')
     plan, _, _ = build_checkpoints.hydration_plan(ctx, steps, fixture.store)
-    atomic_json(ctx.out / cp.HYDRATION_REQUEST, dict(key=key, units=plan['units'], stamps=plan['stamps'], outputs=plan['outputs']))
+    atomic_json(ctx.out / cp.HYDRATION_REQUEST, dict(key=key, units=plan['units'], stamps=plan['stamps'], outputs=plan['outputs'],
+                                                  owned=plan['owned'], current=plan['current']))
     original, copies = cp.copy_file, []
     def interrupted(source, destination):
         copies.append(source)
