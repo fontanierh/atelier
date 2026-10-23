@@ -101,10 +101,19 @@ def main():
         for obj in loaded.objects:
             assert obj and obj.type=='MESH'
             bpy.context.collection.objects.link(obj);members.append(obj.name)
-            data=capture(obj.data);piece=subset(data,tuple(range(len(data['counts']))))
-            payload=mesh_ir.encode(piece,key=obj.name.replace('.','_'),slots=[slot.name for slot in data['slots']],
-                matrix=[list(row) for row in obj.matrix_world],options={},collisions=[])
-            meta,piece=mesh_ir.decode(payload);total.update(face_counter(meta,piece))
+            data=capture(obj.data);groups=[];selected=[];triangles=0
+            # Observation of the original whole uses contiguous source-face chunks,
+            # never the production semantic partitioner or a raised codec budget.
+            for index,count in enumerate(data['counts']):
+                if selected and triangles+int(count)-2>32768:
+                    groups.append(selected);selected=[];triangles=0
+                selected.append(index);triangles+=int(count)-2
+            if selected:groups.append(selected)
+            for index,faces in enumerate(groups):
+                piece=subset(data,tuple(faces))
+                payload=mesh_ir.encode(piece,key=obj.name.replace('.','_')+str(index),slots=[slot.name for slot in data['slots']],
+                    matrix=[list(row) for row in obj.matrix_world],options={},collisions=[])
+                meta,piece=mesh_ir.decode(payload);total.update(face_counter(meta,piece))
         return total,members
     posed_original,original_members=assembled(baseline/'data/bike/Bike.blend')
     posed_actual,actual_members=assembled(current/'bike/Bike.blend')
