@@ -18,7 +18,7 @@ def plan(key, output, construct):
         bounds += [max(bounds[i]+128,math.ceil(hi[i]/128)*128) for i in (0,1)]
         parts=[dict(name=key+'_Piece'+row['suffix'],data=row['data'],metadata=dict(
                    info,triangles=row['triangles'],min=list(row['bounds'][0]),max=list(row['bounds'][1]),
-                   parent=key,parent_bounds=[lo,hi])) for row in split(data,bounds)]
+                   parent=key),assembly_metadata=dict(parent_bounds=[lo,hi])) for row in split(data,bounds)]
     return publish(output,parent=key,parts=parts)
 
 

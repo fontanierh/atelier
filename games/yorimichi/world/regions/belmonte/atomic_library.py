@@ -6,6 +6,7 @@ import re
 from atelier import encoded_glb
 from atelier.export_manifest import name,real_directory,sha
 from atelier.model_files import regular_files
+from belmonte.atomic_metadata import entry as runtime_entry
 
 
 def read(root,*,expected,original):
@@ -58,7 +59,7 @@ def read(root,*,expected,original):
                 if key!=parent+'_Collision' or metadata.get('parent')!=parent:
                     raise ValueError('Foreign whole collision owner')
                 continue
-            entry=metadata['entry']
+            entry=runtime_entry(piece,metadata)
             if (entry['name']!=key or entry['path']!='glb/'+path.name or entry['sha256']!=digest
                     or entry['triangles']!=row['triangles'] or entry['bounds_m']!=row['bounds']
                     or type(metadata['collision']) is not bool):raise ValueError('Foreign rendered source metadata')

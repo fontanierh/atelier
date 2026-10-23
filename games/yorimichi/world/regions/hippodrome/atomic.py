@@ -57,6 +57,12 @@ def assemble(out):
     for entry in data['meshes']:
         for name in membership['parents'][entry['name']]:
             row=receipts[name];info=dict(row['metadata'])
+            pieces=membership['ownership'][entry['name']]['pieces']
+            owned=next(piece for piece in pieces if piece['name']==name)
+            assembly=owned.get('assembly_metadata',{})
+            if not isinstance(assembly,dict) or set(assembly)-{'parent_bounds'} or set(assembly)&set(info):
+                raise ValueError('Foreign or ambiguous venue runtime metadata')
+            info.update(assembly)
             for key in ('role','slots','geometry_sha256'):info.pop(key,None)
             info['sha256']=row['sha256'];report[name]=info
             meshes.append(dict(entry,name=name,logical_parent=entry['name']))

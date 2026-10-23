@@ -59,6 +59,29 @@ def test_complete_plan_and_renamed_piece_retire_only_recorded_owned_data(tmp_pat
     assert {p.name for p in root.iterdir()}=={'plan.json','Logical_First.mesh','Logical_Renamed.mesh'}
 
 
+def test_parent_runtime_bounds_and_material_groups_do_not_invalidate_leaf_packets(tmp_path,plan,monkeypatch):
+    monkeypatch.syspath_prepend(str(GAME/'world/regions'))
+    from belmonte.atomic_metadata import metadata,entry
+    parent=dict(parent_bounds_m=[[0.,0.,0.],[20.,10.,5.]],parent_material_slots=[0,1])
+    def selected():
+        return [dict(name=key,data=model(),**metadata(dict(name=key,bounds_m=[[0.,0.,-.5],[7.5,0.,0.]],**parent),[0],True))
+                for key in ('Logical_First','Logical_Second')]
+    root=tmp_path/'plan';first=plan.publish(root,parent='Logical',parts=selected())
+    before={p.name:(p.read_bytes(),p.stat().st_mtime_ns) for p in root.glob('*.mesh')}
+    parent.update(parent_bounds_m=[[-10.,0.,0.],[20.,10.,5.]],parent_material_slots=[0,1,2])
+    current=plan.publish(root,parent='Logical',parts=selected())
+    assert first!=current
+    assert before=={p.name:(p.read_bytes(),p.stat().st_mtime_ns) for p in root.glob('*.mesh')}
+    for row in current['pieces']:
+        packet,_=encoded_glb.read(root/row['payload'])
+        assert 'parent_bounds_m' not in packet['metadata']['entry']
+        assert 'parent_material_slots' not in packet['metadata']['entry']
+        assert entry(row,packet['metadata'])==dict(packet['metadata']['entry'],**parent)
+    exported=tmp_path/'export';encoded_glb.export(root/'Logical_First.mesh',exported)
+    primary=(exported/'Logical_First.glb').read_bytes()
+    assert primary==model()
+
+
 @pytest.mark.parametrize('fault',['foreign','link','duplicate','escape','corrupt'])
 def test_invalid_source_refuses_without_overwriting_owned_or_foreign_members(tmp_path,plan,fault):
     root=tmp_path/'source';plan.publish(root,parent='Logical',parts=parts())

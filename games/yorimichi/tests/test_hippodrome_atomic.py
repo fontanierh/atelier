@@ -90,10 +90,11 @@ def test_complete_file_assembly_and_actual_serialized_corner_conservation(tmp_pa
     monkeypatch.setattr(old.H,'north_height',lambda x,y:np.asarray(x)*.001+np.asarray(y)*.003+35.)
     old.OUT=tmp_path/'original';old.main()
     out=tmp_path/'actual';out.mkdir();project(out/'hippodrome_queries.json');load(out/'hippodrome_queries.json')
-    items=[];parents={}
+    items=[];parents={};ownership={}
     for asset in assets():
         module=importlib.import_module('hippodrome.'+asset.script.stem)
         root=out/'plans'/asset.key;value=plan(asset.key,root,module.construct);parents[asset.key]=[]
+        ownership[asset.key]=value
         actual_counter=None
         for row in value['pieces']:
             key=row['name'];destination=out/'exports'/key
@@ -107,7 +108,7 @@ def test_complete_file_assembly_and_actual_serialized_corner_conservation(tmp_pa
         baseline=glb_counter((old.OUT/'glb'/(asset.key+'.glb')).read_bytes())
         assert actual_counter==baseline
     region=out/'atomic_regions'/'hippodrome';region.mkdir(parents=True)
-    export_assembly.assemble(items,region/'assets');atomic_json(region/'logical-pieces.json',dict(parents=parents))
+    export_assembly.assemble(items,region/'assets');atomic_json(region/'logical-pieces.json',dict(parents=parents,ownership=ownership))
     assemble(out)
     before=json.loads((old.OUT/'hippodrome.json').read_text());after=json.loads((out/'hippodrome/region/hippodrome.json').read_text())
     for row in after['meshes']:row.pop('logical_parent')

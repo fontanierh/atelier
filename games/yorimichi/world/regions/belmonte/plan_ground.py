@@ -7,6 +7,7 @@ sys.path[:0]=[str(Path(__file__).resolve().parents[2]),str(Path(__file__).resolv
 import yori  # noqa: E402,F401
 from belmonte.surface_data import read  # noqa: E402
 from belmonte.ground_pieces import planned  # noqa: E402
+from belmonte.atomic_metadata import metadata  # noqa: E402
 from encoded_region_plan import publish  # noqa: E402
 
 
@@ -19,7 +20,7 @@ def main(argv=None):
     entry,data=read(args.surface,owner=args.asset)
     _,rows=planned(entry,data)
     result=publish(args.output,parent=args.asset,parts=[
-        dict(name=row['name'],data=payload,metadata=dict(entry=row,slots=slots,collision=collides))
+        dict(name=row['name'],data=payload,**metadata(row,slots,collides))
         for row,slots,collides,payload in rows])
     print('BELMONTE GROUND DATA COMPLETE',args.asset,len(rows),entry['triangles'],flush=True)
     return result

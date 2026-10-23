@@ -9,6 +9,7 @@ import yori  # noqa: E402,F401
 from atelier.export_manifest import real_directory  # noqa: E402
 from belmonte.model_sources import read  # noqa: E402
 from belmonte.model_pieces import planned  # noqa: E402
+from belmonte.atomic_metadata import metadata  # noqa: E402
 from encoded_region_plan import publish  # noqa: E402
 
 
@@ -35,7 +36,7 @@ def main(argv=None):
     data=regular(library,value['path'],value['sha256'])
     value=dict(value,path='glb/'+value['name']+'.glb')
     rows=planned(value,data)
-    parts=[dict(name=row['name'],data=payload,metadata=dict(entry=row,slots=slots,collision=collides))
+    parts=[dict(name=row['name'],data=payload,**metadata(row,slots,collides))
            for row,slots,collides,payload in rows]
     if 'collision' in value:
         hull=value['collision'];payload=regular(library,hull['path'],hull['sha256'])

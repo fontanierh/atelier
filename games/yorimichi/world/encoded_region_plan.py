@@ -14,6 +14,8 @@ def publish(root,*,parent,parts):
     independent exports. Preserve each encoded primitive exactly; no sibling export
     is an input. Validate every current packet and the entire old exclusive tree
     before writing, and retire only that source's previously recorded members.
+    Whole-parent runtime metadata MUST remain in the complete plan's assembly
+    metadata, outside each consumed leaf packet and exporter identity.
     """
     root=real_directory(root);parent=name(parent)
     prepared=[];seen=set()
@@ -25,6 +27,10 @@ def publish(root,*,parent,parts):
         identity,_=encoded_glb.decode(packet,key=key)
         row=dict(name=key,payload=key+'.mesh',sha256=hashlib.sha256(packet).hexdigest(),
                  triangles=identity['triangles'],role=identity['role'],bounds=identity['bounds'])
+        assembly=part.get('assembly_metadata',{})
+        if not isinstance(assembly,dict):raise ValueError('Assembly metadata must be explicit JSON fields')
+        json.dumps(assembly,allow_nan=False)
+        if assembly:row['assembly_metadata']=assembly
         prepared.append((row,packet))
     if not prepared or not any(row['role']=='render' for row,_ in prepared):
         raise ValueError('Encoded source requires its complete rendered membership')
@@ -55,6 +61,9 @@ def validate(root):
     names=set();totals=dict(render=0,collision=0)
     for row in value['pieces']:
         key=name(row['name'])
+        assembly=row.get('assembly_metadata',{})
+        if not isinstance(assembly,dict):raise ValueError('Invalid encoded assembly metadata')
+        json.dumps(assembly,allow_nan=False)
         if key.casefold() in names or row['payload']!=key+'.mesh':raise ValueError('Aliased encoded source member')
         names.add(key.casefold())
         path=root/row['payload']
