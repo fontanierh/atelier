@@ -116,3 +116,38 @@ def test_combined_treehouse_foreign_reference_refuses_before_any_delete_then_rep
     assert owned==set(current) and S.retired_parents_absent(content)
     assert scope['retire'](editor,set(current),current,rows,content)==[]
     assert len(deleted)==2
+
+
+def test_actual_surface_assembly_publishes_complete_named_five_uv_membership(tmp_path):
+    import numpy as np
+    from atelier import mesh_ir,export_manifest
+    from atelier.atomic_files import atomic_json
+    assembly=module('actual_treehouse_file_assembly',GAME/'world/regions/treehouse/assemble_atomic.py')
+    out=tmp_path.resolve();positions=np.asarray([[0,0,0],[1,0,0],[0,1,0]],dtype=np.float32)
+    matrix=np.eye(4).tolist()
+    for parent in S.PARENTS:
+        name=parent if parent in ('TH_Frame','TH_Trunks') else parent+'_cell_0_0'
+        labels=['UVMap','Piece1','Piece2','Piece3','Piece4'] if parent in ('TH_Frame','TH_Dressing') else ['UVMap']
+        piece=dict(positions=positions,normals=np.tile([0,0,1],(3,1)),faces=[[0,1,2]],materials=[0],smooth=[False],
+            uvs=[(label,np.zeros((3,2))) for label in labels],colours=[])
+        folder=out/'planned_exports/treehouse_surfaces'/parent;folder.mkdir(parents=True)
+        payload=mesh_ir.encode(piece,key=name,slots=['TH_wood'],matrix=matrix,options={})
+        mesh_ir.write(folder/(name+'.npz'),payload)
+        row=dict(name=name,payload=name+'.npz',sha256=hashlib.sha256(payload).hexdigest(),triangles=1,polygons=1,
+                 min=[0,0,0],max=[1,1,0],collision_hulls=0,source_faces=[0])
+        atomic_json(folder/'plan.json',dict(schema=1,parent=parent,complete=True,triangle_limit=32768,source_triangles=1,
+            source_polygons=1,source_collision_hulls=0,slots=['TH_wood'],matrix=matrix,pieces=[row]))
+        export=out/'exports/world.treehouse_surfaces.export'/name;export.mkdir(parents=True)
+        (export/(name+'.fbx')).write_bytes(b'one verified opaque primary')
+        export_manifest.publish_receipt(export,key=name,primary=name+'.fbx',triangles=1,bounds=[[0,0,0],[1,1,0]],
+            metadata=dict(geometry_sha256=row['sha256'],slots=['TH_wood'],polygons=1,collision_hulls=0,uv_channels=labels))
+    metadata=out/'treehouse-data/surfaces';metadata.mkdir(parents=True)
+    for name in ('runtime.json','manifest.json'):atomic_json(metadata/name,dict(source='canonical'))
+    old=out/'treehouse/assets/TH_Structure.fbx';old.parent.mkdir(parents=True);old.write_bytes(b'old whole')
+    assembly.surfaces(out)
+    rows=S.rows(out)
+    assert len(rows)==4 and all(row['name'] for row in rows) and not old.exists()
+    assert json.loads((out/'treehouse/pieces.json').read_text())['pieces'][0]['name']=='TH_Dressing_cell_0_0'
+    before={path:path.stat().st_mtime_ns for path in (out/'treehouse/assets').rglob('*.fbx')}
+    assembly.surfaces(out)
+    assert {path:path.stat().st_mtime_ns for path in before}==before

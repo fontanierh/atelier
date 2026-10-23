@@ -67,7 +67,7 @@ def surfaces(out):
         for row in value['pieces']:
             key=row['name'];meta,piece=mesh_ir.decode((out/'planned_exports/treehouse_surfaces'/parent/row['payload']).read_bytes())
             used=sorted({meta['slots'][int(i)] for i in piece['materials']})
-            entries[key]=dict(parent=parent,triangles=row['triangles'],collision_hulls=row['collision_hulls'],
+            entries[key]=dict(name=key,parent=parent,triangles=row['triangles'],collision_hulls=row['collision_hulls'],
                 min=row['min'],max=row['max'],used_slots=used,slots=value['slots'],
                 sha256=digests[key],fbx='assets/'+subdir+'/'+key+'.fbx',
                 uv_channels=[label for label,_ in piece['uvs']])
