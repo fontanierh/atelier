@@ -151,3 +151,9 @@ when the category is enabled. The fixture flushes the engine log before its
 pre-asset startup check; the host binds and rechecks the complete file after whole
 cleanup. Missing or foreign graph/store records still refuse. The failed stdout
 diagnostic is retained separately and certifies no fixture assets.
+
+Each complete 137-mesh/362-LOD phase has a 40-minute work deadline and a separate
+20-minute queue deadline under the same full 10 GiB guard. The original 15-minute
+work estimate was insufficient: the unchanged production importer synchronously
+rebuilds distance fields while assigning material slots. This budget correction
+does not change the importer, engine settings, geometry or acceptance gates.

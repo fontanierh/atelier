@@ -98,11 +98,12 @@ def run(workspace, phase):
         require([value for value in argv if value in launch['args']] == launch['args'], 'Prepared private args changed')
         env = dict(ctx.env(), **dict(overrides), ATELIER_TRACK_NATIVE_SPEC=str(spec_path),
                    ATELIER_TRACK_NATIVE_SHA256=spec_binding['sha256'])
-        code = guarded.run(argv, guard, timeout=900, queue_seconds=1200, limit_gib=10,
+        code = guarded.run(argv, guard, timeout=2400, queue_seconds=1200, limit_gib=10,
             kind='job', purpose='Track137 whole meshes/all362 authored LOD actual receiving ' + phase,
             env=env, progress=15., track_tree=True)
     atomic_json(output / 'whole-result.json', dict(exit_code=code, native=native, phase=phase,
-        source_head=spec['source_head'], receiving_head=spec['receiving_head'], spec_sha256=spec_binding['sha256'], launch=launch, argv=argv))
+        source_head=spec['source_head'], receiving_head=spec['receiving_head'], spec_sha256=spec_binding['sha256'],
+        work_seconds=2400, queue_seconds=1200, launch=launch, argv=argv))
     if code: raise SystemExit(code)
     evidence = dict(receipt=binding(guard / 'memory-health-tree.json'), stdout=binding(guard / 'stdout.log'),
                     marker=marker, whole_result=binding(output / 'whole-result.json'))
