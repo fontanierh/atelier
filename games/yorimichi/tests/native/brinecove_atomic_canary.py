@@ -28,7 +28,7 @@ assert 'BRINECOVE ATOMIC CONTEXT COMPLETE' in (root / 'guard/stdout.log').read_t
 result = json.loads((root / 'products/result.json').read_text())
 guard = json.loads((root / 'guard/memory-health-tree.json').read_text())
 assert result['complete'] and result['exact_builder_fields'] and len(result['assets']) == 9
-assert result['complete_paving_data_equal']
+assert result['complete_paving_data_equal'] and result['exact_rim_projection']
 assert guard['state'] == 'child_exited' and guard['cleanup_complete'] and not guard['processes']
 assert not guard.get('late_reporters', {}).get('unresolved', [])
 print('GUARDED COASTAL SOURCE CONTEXT PASS', flush=True)

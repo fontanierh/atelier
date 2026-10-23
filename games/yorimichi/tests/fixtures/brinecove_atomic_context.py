@@ -63,7 +63,12 @@ def main():
     from brinecove.geom import Builder
     from brinecove.procedural import geometry_policy, random_state
     PHASE['stage'] = 'final collar query data'
-    rim, _ = build.rim()
+    rim, world = build.rim()
+    from brinecove import rim_data
+    projection = rim_data.project(target)
+    projected, projected_world = rim_data.read(json.loads(json.dumps(projection)))
+    assert projected.sides == rim.sides and projected_world == world, 'Final rim data projection changed'
+    atomic_json(root / 'rim.json', projection)
     settle = build.settle(rim)
     def final_ground(x, y):
         actual = settle(x, y)[1]
@@ -102,7 +107,7 @@ def main():
     PHASE['stage'] = 'complete'
     atomic_json(root / 'contexts.json', contexts)
     atomic_json(root / 'result.json', dict(complete=True, assets=results, contexts=contexts,
-        exact_builder_fields=True, complete_paving_data_equal=True, sources=before,
+        exact_builder_fields=True, complete_paving_data_equal=True, exact_rim_projection=True, sources=before,
         scope='procedural constructor and paving data only; no mesh export or native receiving acceptance'))
     print('BRINECOVE ATOMIC CONTEXT COMPLETE', flush=True)
 
