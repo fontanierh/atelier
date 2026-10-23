@@ -82,12 +82,16 @@ needed values. A `whole` note is for the case where the unit really consumes all
 
 ## Stable IDs
 
-Unit `id`, item `id`, `logical_path` and `class` are identity. Choose names from what the thing is, not
-from its position, index or list order. Adding a piece must not rename the others, or every downstream
-key changes for no new content.
+Choose stable unit and item IDs so graph links and ownership stay clear. Logical output paths/classes and
+declared item identities enter the key. A unit's scheduling label alone must not invalidate identical
+work.
 
-Renaming an id creates a new unit. A plan that drops a piece removes that piece's old outputs; it does
-not imply anything about its neighbours.
+Choose names from what the thing is, not from its position, index or list order. Adding a piece must not
+rename the others, or identical work gets new identities.
+
+Changing package paths, classes or declared item identities changes the work; renaming a unit's
+scheduling label alone does not. A plan that drops a piece removes that piece's old outputs; it does not
+imply anything about its neighbours.
 
 ## Keep raw, finish and placement separate
 
@@ -115,11 +119,12 @@ or `external`, for example Zen-owned cooked data whose adapter defines the locat
 job output folder. A checkout item needs an `install_path` under the allowed checkout roots. `required`
 defaults to true; set it false only for a genuine optional sidecar, and keep at least one required file.
 
-Each checkout path has exactly one owner, and each job-output path is claimed once across the
-declaration. The declaration is refused for overlapping paths, an owner claiming both an ancestor and a
-descendant, case or Unicode aliases, and outputs that overlap declared code or source inputs. Store
-outputs may share a logical path with a finish output because they never share mutable files. List every
-file and sidecar: a missing, altered or unexpected file fails acceptance.
+Each checkout path has exactly one final owner across the declaration. Within each unit's job, each
+output path is claimed once; different isolated jobs may use the same relative filename. Checkout owners
+are refused for overlapping paths, an owner claiming both an ancestor and a descendant, case or Unicode
+aliases. Declared code and source inputs may not overlap any checkout install path. Store outputs may
+share a logical path with a finish output because they never share mutable files. List every file and
+sidecar: a missing, altered or unexpected file fails acceptance.
 
 ## Staged paths
 
@@ -131,7 +136,7 @@ identity. Moving a source file without changing its staged layout and bytes ther
 unit; changing the staged layout does.
 
 Staged input paths must not alias a code or script path or the writable `output/` tree, including
-ancestor, case and Unicode aliases. A3/C1b staging validation enforces this.
+ancestor, case and Unicode aliases. Key construction and staging must enforce this.
 
 Worker enforcement of this contract is still pending. Do not rely on it yet as proof that a declaration
 is keyed correctly.
