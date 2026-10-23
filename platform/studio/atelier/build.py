@@ -730,11 +730,9 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, veri
     ctx = Context(game, **({'cook_mode': cook_mode, 'cook_reason': cook_reason} if cook_mode is not None else {}),
                   **({'recover_cook': recover_cook} if recover_cook is not None else {}),
                   **({'cook_memory_gib': cook_memory_gib} if cook_memory_gib is not None else {}))
-    from .checkpoint_manifest import writer
-    with writer(ctx.out):
-        return _prepared_build(ctx, wanted, force=force, touch=touch, echo=echo, verify=verify,
-                               rebuild_reason=rebuild_reason, rebuild_touched=rebuild_touched,
-                               record_cook_recovery=record_cook_recovery, max_heavy_commands=max_heavy_commands)
+    return _prepared_build(ctx, wanted, force=force, touch=touch, echo=echo, verify=verify,
+                           rebuild_reason=rebuild_reason, rebuild_touched=rebuild_touched,
+                           record_cook_recovery=record_cook_recovery, max_heavy_commands=max_heavy_commands)
 
 
 def _prepared_build(ctx, wanted, *, force, touch, echo, verify, rebuild_reason, rebuild_touched,
@@ -759,16 +757,21 @@ def _prepared_build(ctx, wanted, *, force, touch, echo, verify, rebuild_reason, 
         ctx.checkpoint_force_task = wanted[0] if force else None
         if getattr(ctx, 'cook_mode', CookMode.DEFAULT) is CookMode.FULL and not ctx.rebuild_reason:
             raise SystemExit('A diagnostic full cook requires --rebuild-reason; normal builds cook incrementally.')
-        try:
-            build_checkpoints.prepare(ctx, checkpoint_steps, echo=echo)
-        except (OSError, ValueError, RuntimeError) as error:
-            raise SystemExit(str(error)) from None
+    # Pure refusal checks precede metadata creation. Unconfigured games keep their
+    # existing lifecycle and never acquire a checkpoint-only output lock.
     require_complete(paths.build_root() / game, game=game)
-    from .build_hashes import HashIndex
-    with HashIndex(ctx.out / '.state' / 'file-hashes.sqlite3', verify=verify) as index:
-        code = _build(ctx, wanted, force=force, touch=touch, echo=echo, index=index,
-                      steps=checkpoint_steps, max_heavy_commands=max_heavy_commands)
-    return code
+    from contextlib import nullcontext
+    from .checkpoint_manifest import writer
+    with writer(ctx.out) if ctx.checkpoint_settings is not None else nullcontext():
+        if checkpoint_steps is not None:
+            try:
+                build_checkpoints.prepare(ctx, checkpoint_steps, echo=echo)
+            except (OSError, ValueError, RuntimeError) as error:
+                raise SystemExit(str(error)) from None
+        from .build_hashes import HashIndex
+        with HashIndex(ctx.out / '.state' / 'file-hashes.sqlite3', verify=verify) as index:
+            return _build(ctx, wanted, force=force, touch=touch, echo=echo, index=index,
+                          steps=checkpoint_steps, max_heavy_commands=max_heavy_commands)
 
 
 def touched_targets(ctx, steps, wanted):

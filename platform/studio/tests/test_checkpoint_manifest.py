@@ -265,3 +265,18 @@ def test_obsolete_recipe_stamps_are_observed_without_forging_certificates(fixtur
     value = fixture.store.load(manifests.retain(paths.REPO, ctx.out, ctx.game))
     assert 'obsolete' not in value['stamps']
     assert 'obsolete' not in value.get('incremental_stamps', {})
+
+
+def test_unconfigured_build_does_not_acquire_checkpoint_metadata_lock(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    repo = tmp_path.resolve(); (repo / 'uv.lock').write_text('lock')
+    monkeypatch.setattr(paths, 'REPO', repo)
+    monkeypatch.setattr(paths, 'build_root', lambda: repo / 'build')
+    ctx = SimpleNamespace(game='fixture', out=repo / 'build/fixture',
+                          cook_mode=build.CookMode.DEFAULT)
+    monkeypatch.setattr(build, 'Context', lambda *a, **kw: ctx)
+    monkeypatch.setattr(build_checkpoints, 'configured', lambda ctx: None)
+    monkeypatch.setattr(build, '_build', lambda *a, **kw: 0)
+    monkeypatch.setattr(manifests, 'writer', lambda *a: pytest.fail('unconfigured build acquired checkpoint writer'))
+    assert build.build('fixture') == 0
+    assert not (ctx.out / '.state/retention').exists()
