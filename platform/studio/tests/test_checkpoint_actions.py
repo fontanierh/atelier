@@ -287,3 +287,56 @@ def test_fresh_unsupported_execution_is_current_after_observed_environment_chang
     stamp = dict(fingerprint='a' * 64, checkpoint_key=None,
                  checkpoint_incremental_context=ctx.checkpoint_observed_context)
     assert actions.local_incremental(ctx, steps[0], 'a' * 64, stamp)
+
+
+def offline(monkeypatch):
+    """Any subprocess or socket use during lookup fails the test."""
+    import socket, subprocess
+    from atelier import checkpoint_github
+    def refuse(*_, **__):
+        pytest.fail('ordinary checkpoint lookup made a subprocess or network call')
+    for name in ('run', 'Popen', 'check_output', 'check_call', 'call'):
+        monkeypatch.setattr(subprocess, name, refuse)
+    monkeypatch.setattr(socket, 'create_connection', refuse)
+    monkeypatch.setattr(socket.socket, 'connect', refuse)
+    monkeypatch.setattr(checkpoint_github, 'Remote', refuse)
+
+
+def test_ordinary_miss_makes_no_subprocess_or_network_call(fixture, monkeypatch):
+    monkeypatch.delenv(build_checkpoints.REMOTE_LOOKUP, raising=False)
+    ctx, steps = fixture.checkout('receiver')
+    cache = actions.Actions(ctx, dict(repository='owner/private'))
+    cache.store = fixture.store
+    offline(monkeypatch)
+    assert cache.get(steps[0], build.fingerprint(steps[0], {})) is None
+    assert cache.remote is None
+
+
+def test_cold_prepare_without_local_checkpoint_stays_offline(fixture, monkeypatch):
+    monkeypatch.delenv(build_checkpoints.REMOTE_LOOKUP, raising=False)
+    ctx, steps = fixture.checkout('receiver')
+    monkeypatch.setattr(build_checkpoints, 'Store', lambda game: fixture.store)
+    monkeypatch.setattr(build_checkpoints, 'configured', lambda ctx: dict(repository='owner/private'))
+    monkeypatch.setattr(build_checkpoints, 'cold', lambda ctx: True)
+    messages = []
+    offline(monkeypatch)
+    build_checkpoints.prepare(ctx, steps, echo=messages.append)
+    assert any('remote checkpoint lookup is off' in m for m in messages)
+
+
+def test_remote_action_lookup_runs_only_when_opted_in(fixture, monkeypatch):
+    from contextlib import contextmanager
+    from atelier import checkpoint_github
+    ctx, steps = fixture.checkout('receiver')
+    opened = []
+    class Remote:
+        def __init__(self, repository, game, echo=None): opened.append(repository)
+        @contextmanager
+        def transaction(self): yield
+        def candidates(self): return []
+    monkeypatch.setattr(checkpoint_github, 'Remote', Remote)
+    monkeypatch.setenv(build_checkpoints.REMOTE_LOOKUP, '1')
+    cache = actions.Actions(ctx, dict(repository='owner/private'))
+    cache.store = fixture.store
+    assert cache.get(steps[0], build.fingerprint(steps[0], {})) is None
+    assert opened == ['owner/private']

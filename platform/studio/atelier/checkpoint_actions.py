@@ -404,7 +404,8 @@ class Actions:
         value = load(self.store, action_key)
         if value is not None:
             return value
-        if local_only or not self.settings.get('repository'):
+        from .build_checkpoints import remote_repository
+        if local_only or remote_repository(self.settings) is None:
             return None
         from .checkpoint_github import Remote
         if self.remote is None:

@@ -39,6 +39,20 @@ def configured(ctx):
     return {**value, 'repository': repository}
 
 
+REMOTE_LOOKUP = 'ATELIER_REMOTE_CHECKPOINTS'
+
+
+def remote_repository(settings):
+    """@cc [owner:fontanierh,label:performance] remote-checkpoint-lookup-opt-in
+    Ordinary builds MUST make no network or subprocess call to the private checkpoint repository
+    while looking up or restoring results; build reuse reads the local store only. The remote
+    fallback MUST run only when ATELIER_REMOTE_CHECKPOINTS=1 is set explicitly for that process.
+    """
+    if not settings or not settings.get('repository') or os.environ.get(REMOTE_LOOKUP) != '1':
+        return None
+    return settings['repository']
+
+
 def configure_repository(repository):
     """@cc [owner:fontanierh,label:security] private-cache-local-configuration
     The private cache repository identity MUST be stored only in machine-local configuration,
@@ -180,6 +194,9 @@ def prepare(ctx, steps, *, echo=print):
     from .checkpoint_github import Remote
     if not settings.get('repository'):
         echo('No remote checkpoint configured. Use `atelier cache configure --repository OWNER/REPOSITORY`.')
+        return store
+    if remote_repository(settings) is None:
+        echo(f'No compatible local checkpoint; remote checkpoint lookup is off ({REMOTE_LOOKUP}=1 enables it).')
         return store
     remote = Remote(settings['repository'], ctx.game, echo=echo)
     try:

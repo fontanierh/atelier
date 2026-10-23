@@ -319,9 +319,9 @@ def prepare(ctx, step, *, fingerprint=None, echo=print):
             echo(step.name + ': candidate composition miss (' + str(error) + ')')
             selected_donors.clear()
             signatures.clear()
-    from .build_checkpoints import configured
+    from .build_checkpoints import configured, remote_repository
     settings = configured(ctx)
-    if settings and settings.get('repository'):
+    if remote_repository(settings) is not None:
         from .checkpoint_github import Remote
         remote = Remote(settings['repository'], ctx.game, echo=echo)
         try:

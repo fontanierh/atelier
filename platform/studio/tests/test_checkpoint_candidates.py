@@ -156,6 +156,7 @@ def test_remote_discovery_keeps_both_independent_partial_histories(fixture, dono
     step = replace(steps[0], candidate_scope=candidates.CandidateScope(directories=(ctx.out / 'tree',)))
     monkeypatch.setattr(candidates, 'local_keys', lambda _: [])
     monkeypatch.setattr(build_checkpoints, 'configured', lambda _: dict(repository='owner/private'))
+    monkeypatch.setenv(build_checkpoints.REMOTE_LOOKUP, '1')
     fetched = []
     class Remote:
         def __init__(self, *a, **kw): self.owned = False
@@ -302,6 +303,7 @@ def test_remote_discovery_skips_unusable_newer_checkpoint(fixture, donor, monkey
     step = replace(steps[0], candidate_scope=candidates.CandidateScope(files=(steps[0].outputs[0],)))
     monkeypatch.setattr(candidates, 'local_keys', lambda _: [])
     monkeypatch.setattr(build_checkpoints, 'configured', lambda ctx: dict(repository='owner/private'))
+    monkeypatch.setenv(build_checkpoints.REMOTE_LOOKUP, '1')
     from atelier import checkpoint_github
     fetched, instances = [], []
     class Remote:
