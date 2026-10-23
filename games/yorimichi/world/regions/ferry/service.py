@@ -121,6 +121,17 @@ def line(cycle):
             'samples': samples}
 
 
+def model_order(data):
+    """Preserve original constructor/component ordering through sorted JSON dictionaries."""
+    meshes = data['meshes']
+    if ('logical_meshes' in data or any('logical_parent' in row for row in meshes.values())) and 'mesh_order' not in data:
+        raise ValueError('Atomic ferry mesh order is missing')
+    order = data.get('mesh_order', list(meshes))
+    if not isinstance(order, list) or len(order) != len(meshes) or len(set(order)) != len(order) or set(order) != set(meshes):
+        raise ValueError('Ferry mesh order is incomplete or foreign')
+    return order
+
+
 def ship_data(ferry):
     x0, y0, _ = ferry['dimensions']['min']; x1, y1, _ = ferry['dimensions']['max']
     gates = []
@@ -133,7 +144,7 @@ def ship_data(ferry):
     lo, hi = ue(x0, y1, DECK_Z[0]), ue(x1, y0, DECK_Z[1])
     return {'body': asset(SHIP_ROOT, 'FY_Collision'),
             'gate_mesh': asset(SHIP_ROOT, 'FY_BoardingGate'),
-            'parts': [{'name': n.removeprefix('FY_'), 'mesh': asset(SHIP_ROOT, n), 'cull_cm': 15000 if n == 'FY_Masts' else 0} for n in ferry['meshes'] if n != 'FY_BoardingGate'],
+            'parts': [{'name': n.removeprefix('FY_'), 'mesh': asset(SHIP_ROOT, n), 'cull_cm': 15000 if n == 'FY_Masts' else 0} for n in model_order(ferry) if n != 'FY_BoardingGate'],
             'deck_box_cm': [*lo, *hi], 'gates': gates}
 
 
@@ -146,7 +157,7 @@ def terminal_data(name, i, terminals, walks, origin):
     return {'key': name, 'name': name.title(), 'berth': i, 'side': 'starboard',
             'anchor_cm': ue(*world(tuple(t['anchor']), origin)),
             'parts': [{'name': n.removeprefix(prefix + '_'), 'mesh': asset(TERMINAL_ROOT, n)}
-                      for n in t['meshes'] if n != f'{prefix}_Brow'],
+                      for n in model_order(t) if n != f'{prefix}_Brow'],
             'collision': asset(TERMINAL_ROOT, f'{prefix}_Collision'),
             'brow': {'mesh': asset(TERMINAL_ROOT, f'{prefix}_Brow'), 'hinge_cm': ue(*world(tuple(brow['from']), origin)),
                      'to_cm': ue(*world(tuple(brow['to']), origin)), 'raised_deg': BROW_RAISED},

@@ -45,7 +45,7 @@ def material_parent():
         node.set_editor_property('parameter_name', key)
         M.connect_material_property(node, '', prop)
     M.recompile_material(mat)
-    E.save_loaded_asset(mat)
+    if not E.save_loaded_asset(mat, True): raise ValueError('Current ferry parent material save failed')
     return mat
 
 
@@ -122,7 +122,7 @@ return saturate((0.75 * v_arm + 0.65 * collar + 0.85 * prop_wash) * turb) * edge
     op = custom_node(op_code, [('UV', uv), ('T', time), ('S', speed), ('F', fade), ('D', depth_gap)], unreal.CustomMaterialOutputType.CMOT_FLOAT1, 180)
     M.connect_material_property(op, '', unreal.MaterialProperty.MP_OPACITY)
     M.recompile_material(mat)
-    E.save_loaded_asset(mat)
+    if not E.save_loaded_asset(mat, True): raise ValueError('Current ferry wake material save failed')
     return mat
 
 
@@ -132,12 +132,14 @@ def wake_mesh(mat):
     mesh = E.load_asset(dest) if E.does_asset_exist(dest) else E.duplicate_asset('/Engine/BasicShapes/Plane', dest)
     if mesh is None:
         raise RuntimeError('Failed to create /Game/Ferry/Ship/FY_Wake from /Engine/BasicShapes/Plane')
-    mesh.set_material(0, mat)
+    if mesh.get_material(0) != mat: mesh.set_material(0, mat)
     body = mesh.get_editor_property('body_setup')
     if body:
-        body.set_editor_property('collision_trace_flag', unreal.CollisionTraceFlag.CTF_USE_DEFAULT)
-    EDITOR.remove_collisions(mesh)
-    E.save_loaded_asset(mesh)
+        if body.get_editor_property('collision_trace_flag') != unreal.CollisionTraceFlag.CTF_USE_DEFAULT:
+            body.set_editor_property('collision_trace_flag', unreal.CollisionTraceFlag.CTF_USE_DEFAULT)
+    if EDITOR.get_simple_collision_count(mesh) or EDITOR.get_convex_collision_count(mesh):
+        if not EDITOR.remove_collisions(mesh): raise ValueError('Current ferry wake collision reset failed')
+    if not E.save_loaded_asset(mesh, True): raise ValueError('Current ferry wake mesh save failed')
     return mesh
 
 
@@ -155,14 +157,16 @@ def materials(parent, entries):
         M.set_material_instance_scalar_parameter_value(mat, 'Roughness', roughness)
         M.set_material_instance_scalar_parameter_value(mat, 'Metallic', metallic)
         M.update_material_instance(mat)
-        E.save_loaded_asset(mat)
+        if not E.save_loaded_asset(mat, True): raise ValueError('Current ferry material instance save failed: ' + name)
         result[name] = mat
     return result
 
 
-parent = material_parent()
 ship = json.loads((ROOT / 'manifest.json').read_text())
 terminals = json.loads((ROOT / 'terminals/manifest.json').read_text())
+ship_state = ferry_native.configure(ROOT, ship)
+terminal_state = ferry_native.configure_terminals(ROOT / 'terminals', terminals)
+parent = material_parent()
 report = {}
 wake_mat = wake_material()
 wake = wake_mesh(wake_mat)
@@ -174,15 +178,13 @@ for folder, dest, entries, palette in (
          {name: mesh for terminal in terminals['terminals'].values() for name, mesh in terminal['meshes'].items()},
          terminals['materials'])):
     mats = materials(parent, palette)
-    if folder == ROOT:
-        ship_state = ferry_native.configure(ROOT, ship)
+    state = ship_state if folder == ROOT else terminal_state
     names = list(entries)
     names += ['FY_Collision'] if folder == ROOT else ['FT_HD_Collision', 'FT_BC_Collision']
     for name in names:
-        path = folder / ('atomic-assets' if folder == ROOT else 'assets') / f'{name}.fbx'
-        options = (dict(before_import=lambda name=name: ferry_native.prepare_source(name),
-                        reuse_validator=lambda mesh, name=name: ferry_native.reusable(mesh, name, ship_state, mats))
-                   if folder == ROOT else {})
+        path = folder / 'atomic-assets' / f'{name}.fbx'
+        options = dict(before_import=lambda name=name, dest=dest: ferry_native.prepare_source(name, dest),
+                       reuse_validator=lambda mesh, name=name, state=state, mats=mats: ferry_native.reusable(mesh, name, state, mats))
         mesh = import_mesh(path, dest, name, fresh_slots=True, **options)
         for index, slot in enumerate(mesh.static_materials):
             key = str(slot.get_editor_property('imported_material_slot_name')).split('.')[0]
@@ -201,13 +203,13 @@ for folder, dest, entries, palette in (
                 raise ValueError(f'{name}: missing authored convex collision')
         else:
             count = 0
-        if folder == ROOT and not ferry_native.reusable(mesh, name, ship_state, mats):
+        if not ferry_native.reusable(mesh, name, state, mats):
             raise ValueError('Current ferry native source/material/hull validation failed: ' + name)
         if not E.save_loaded_asset(mesh, True):
             raise ValueError('Current ferry native save failed: ' + name)
         report[name] = {'triangles': mesh.get_num_triangles(0), 'convex_hulls': count}
         unreal.log(f'FERRY IMPORT {name}: {report[name]}')
 
-retired = ferry_native.retire(ship_state)
+retired = ferry_native.retire_all((ship_state, terminal_state))
 (ROOT / 'import-report.json').write_text(json.dumps(report, indent=2) + '\n')
 unreal.log('FERRY IMPORT COMPLETE')

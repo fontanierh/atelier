@@ -65,14 +65,37 @@ def moves(berth):
     ]
     return (arrive, arrival), (berth, departure)
 
-def assemble(kit):
+CONSTRUCTORS = {'FT_HD_Jetty': 'make_jetty', 'FT_HD_Stage': 'make_stage', 'FT_HD_Brow': 'make_brow', 'FT_HD_WaitingHouse': 'make_waiting_house', 'FT_HD_Timetable': 'make_timetable_mesh'}
+MESH_ORDER = tuple(CONSTRUCTORS)
+CONSTRUCTION_FIELDS = {'FT_HD_Jetty': ['QF', 'deck_t', 'face', 'gx', 'quay', 'x0', 'x1'], 'FT_HD_Stage': ['foot_y', 'gal0', 'gal1', 'gx', 'land_y0', 'land_y1', 'posts', 'quay', 'sx0', 'sx1', 'ze'], 'FT_HD_Brow': ['face', 'gx', 'gy'], 'FT_HD_WaitingHouse': ['dx', 'gd', 'hb', 'hx0', 'hx1', 'hy0', 'hy1', 'hz', 'top', 'wh'], 'FT_HD_Timetable': ['tx', 'ty', 'tz'], 'collision': ['QF', 'deck_t', 'face', 'foot_y', 'gal0', 'gal1', 'hb', 'hx0', 'hx1', 'hy0', 'hy1', 'hz', 'posts', 'quay', 'sx0', 'sx1', 'wh', 'x0', 'x1', 'ze'], 'walk': ['QF', 'dx', 'face', 'foot_y', 'gal0', 'gal1', 'gx', 'gy', 'hy0', 'hz', 'land_y0', 'land_y1', 'quay', 'tx', 'ty', 'tz']}
+
+
+def construction_plan(kit):
+    """Shared exact scalar/layout data; this function never constructs geometry."""
     b = kit.SITE['hidamari']['berth']; gx, gy, _ = b['gate']; face = b['face']; quay = b['quay_top_z']
-    QF = -127.7                       # quay coping outer face
-    world = kit.FS.load_world('hidamari')  # the exported quay, for feet and bases set on it
-    meshes = {k: kit.F.Mesh(k) for k in ('FT_HD_Jetty', 'FT_HD_Stage', 'FT_HD_Brow', 'FT_HD_WaitingHouse', 'FT_HD_Timetable')}
-    J, S, B, W, T = meshes.values()
-    deck_t = 0.3
-    x0, x1 = gx - 8.0, gx + 8.0
+    QF = -127.7
+    deck_t = 0.3; x0, x1 = gx - 8.0, gx + 8.0
+    gal0, gal1 = face, face + 3.0; sx0, sx1 = gx - 5.5, gx + 5.5
+    foot_y = gal1 + kit.stair_run([10, 9]); ze = kit.SILL + 2.6
+    posts = [(x, y) for x in (sx0 + 0.2, gx - 1.45, gx + 1.45, sx1 - 0.2) for y in (gal0 + 0.2, gal1 - 0.1)]
+    posts += [(x, foot_y - 0.2) for x in (sx0 + 0.2, sx1 - 0.2)]
+    land_y0 = gal1 + 8 * kit.TREAD; land_y1 = land_y0 + 1.2
+    hx0, hx1, hy0, hy1 = gx - 21.0, gx - 9.0, -122.0, -114.5
+    hz = b['promenade_z']; hb = b['promenade_range'][0] - 0.15; wh = 2.9
+    gd = b['door_ground_z']; dx = hx0 + 1.7; top = hz + 0.18
+    tx, ty, tz = b['timetable']
+    return {'QF': QF, 'b': b, 'deck_t': deck_t, 'dx': dx, 'face': face, 'foot_y': foot_y, 'gal0': gal0, 'gal1': gal1, 'gd': gd, 'gx': gx, 'gy': gy, 'hb': hb, 'hx0': hx0, 'hx1': hx1, 'hy0': hy0, 'hy1': hy1, 'hz': hz, 'land_y0': land_y0, 'land_y1': land_y1, 'posts': posts, 'quay': quay, 'sx0': sx0, 'sx1': sx1, 'top': top, 'tx': tx, 'ty': ty, 'tz': tz, 'wh': wh, 'x0': x0, 'x1': x1, 'ze': ze}
+
+
+def make_jetty(kit, data):
+    QF = data['QF']
+    deck_t = data['deck_t']
+    face = data['face']
+    gx = data['gx']
+    quay = data['quay']
+    x0 = data['x0']
+    x1 = data['x1']
+    J = kit.F.Mesh('FT_HD_Jetty')
     # Jetty: plank deck flush with the coping, on timber piles, with a dark fascia, black fender piles on its face and
     # railings along its open sides.
     J.prism(kit.F.rect(x0, face, x1, QF), quay - deck_t, quay, kit.TIMBER_DARK, top=kit.PLANK)
@@ -92,16 +115,26 @@ def assemble(kit):
     kit.rail_line(J, [(x0 + 0.15, QF - 0.3), (x0 + 0.15, face + 0.12), (x1 - 0.15, face + 0.12), (x1 - 0.15, QF - 0.3)], quay)
     for xx in (x0 + 0.7, x1 - 0.7):
         kit.bollard(J, xx, face + 0.7, quay)
+    return J, {}
+
+
+def make_stage(kit, data):
+    foot_y = data['foot_y']
+    gal0 = data['gal0']
+    gal1 = data['gal1']
+    gx = data['gx']
+    land_y0 = data['land_y0']
+    land_y1 = data['land_y1']
+    posts = data['posts']
+    quay = data['quay']
+    sx0 = data['sx0']
+    sx1 = data['sx1']
+    ze = data['ze']
+    S = kit.F.Mesh('FT_HD_Stage')
     # Boarding stage: a timber stage on tall posts tied with nuki beams (a little Kiyomizu), its gallery flush with the
     # ship's sill; the stair climbs from the jetty straight to the gate on its axis; a kawara roof covers both.
-    gal0, gal1 = face, face + 3.0
-    sx0, sx1 = gx - 5.5, gx + 5.5
-    foot_y = gal1 + kit.stair_run([10, 9])
     st = kit.solid_stair(S, (gx, foot_y), (0, -1), 2.2, quay, [10, 9], (kit.SILL - quay) / 19, landing=1.2)
     S.prism(kit.F.rect(sx0, gal0, sx1, gal1), kit.SILL - 0.3, kit.SILL, kit.TIMBER_DARK, top=kit.PLANK)
-    ze = kit.SILL + 2.6                            # tie beams clear the gallery by 2.25 m
-    posts = [(x, y) for x in (sx0 + 0.2, gx - 1.45, gx + 1.45, sx1 - 0.2) for y in (gal0 + 0.2, gal1 - 0.1)]
-    posts += [(x, foot_y - 0.2) for x in (sx0 + 0.2, sx1 - 0.2)]
     for x, y in posts:
         kit.post(S, x, y, quay, ze, s=0.3)
     for y in (gal0 + 0.2, gal1 - 0.1):          # nuki ties through the posts, clear of the stair head
@@ -113,7 +146,6 @@ def assemble(kit):
         S.beam((x, gal0, quay + 2.45), (x, foot_y - 0.2, quay + 2.45), 0.14, 0.25, kit.TIMBER)   # end trusses' tie beams
     for x in (gx - 1.45, gx + 1.45):             # stair landing posts
         kit.post(S, x, gal1 + 9 * kit.TREAD + 0.6, quay, quay + (kit.SILL - quay) * 10 / 19 - 0.05, s=0.22)
-    land_y0 = gal1 + 8 * kit.TREAD; land_y1 = land_y0 + 1.2
     # Gallery and stair railings, open at the brow and the stair head.
     kit.rail_line(S, [(gx - 1.2, gal1 - 0.05), (sx0 + 0.1, gal1 - 0.05), (sx0 + 0.1, gal0 + 0.1), (gx - kit.BROW_W / 2 - 0.1, gal0 + 0.1)], kit.SILL)
     kit.rail_line(S, [(gx + kit.BROW_W / 2 + 0.1, gal0 + 0.1), (sx1 - 0.1, gal0 + 0.1), (sx1 - 0.1, gal1 - 0.05), (gx + 1.2, gal1 - 0.05)], kit.SILL)
@@ -136,15 +168,35 @@ def assemble(kit):
         S.beam((x, gal1 - 0.3, ze - 0.245), (x, gal1 - 0.3, ze - 0.2), 0.03, 0.03, kit.IRON)
         # An iron arm from the middle truss's tie beam carries the hanger.
         S.beam((gx, gal1 - 0.3, ze - 0.2), (x + math.copysign(0.02, x - gx), gal1 - 0.3, ze - 0.2), 0.04, 0.04, kit.IRON)
+    return S, {'stair': st}
+
+
+def make_brow(kit, data):
+    face = data['face']
+    gx = data['gx']
+    gy = data['gy']
+    B = kit.F.Mesh('FT_HD_Brow')
     # Brow: hinged on the gallery's south edge, over the fender gap to the hull, its lip on the ship's landing plate.
     br = kit.brow(B, (gx, face), (gx, gy), (0.0, -1.0), kit.SILL)
+    return B, {'brow': br}
+
+
+def make_waiting_house(kit, data):
+    dx = data['dx']
+    gd = data['gd']
+    hb = data['hb']
+    hx0 = data['hx0']
+    hx1 = data['hx1']
+    hy0 = data['hy0']
+    hy1 = data['hy1']
+    hz = data['hz']
+    top = data['top']
+    wh = data['wh']
+    W = kit.F.Mesh('FT_HD_WaitingHouse')
+    world = kit.FS.load_world('hidamari')
     # Waiting house on the promenade west of the jetty root: white plaster between dark timber, sliding windows,
     # a door to the jetty side, a bench and lamp in front, kawara roof.
-    hx0, hx1, hy0, hy1 = gx - 21.0, gx - 9.0, -122.0, -114.5
-    hz = b['promenade_z']                      # the highest exported promenade under the plinth (site.py)
-    hb = b['promenade_range'][0] - 0.15        # the plinth reaches below the lowest ground under it
     W.prism(kit.F.rect(hx0 - 0.3, hy0 - 0.3, hx1 + 0.3, hy1 + 0.3), hb, hz + 0.18, kit.STONE)
-    wh = 2.9
     kit.wall(W, (hx0, hy0), (hx1, hy0), hz + 0.18, wh, 0.18, kit.PLASTER, [(1.2, 2.2, 0.0, 2.15, 'open door'), (3.0, 6.0, 0.85, 2.2), (7.0, 10.6, 0.85, 2.2)], end_post=False)
     kit.wall(W, (hx1, hy0), (hx1, hy1), hz + 0.18, wh, 0.18, kit.PLASTER, [(1.4, 6.1, 0.85, 2.2)], end_post=False)
     kit.wall(W, (hx1, hy1), (hx0, hy1), hz + 0.18, wh, 0.18, kit.PLASTER, [(1.0, 4.0, 0.85, 2.2), (8.0, 11.0, 0.85, 2.2)], end_post=False)
@@ -156,7 +208,6 @@ def assemble(kit):
     kit.lantern(W, hx0 + 2.5, hy0 - 0.18, hz + 2.3, h=0.36)
     # The door steps down from the plinth (hz + 0.18) to the quay at the door (site.py door_ground_z): equal risers
     # no taller than DOOR_RISER, 0.35 m treads, 1.2 m wide.
-    gd = b['door_ground_z']; dx = hx0 + 1.7; top = hz + 0.18
     n = max(1, math.ceil((top - gd) / kit.DOOR_RISER - 1e-9)); r = (top - gd) / n
     for k in range(1, n):
         y1, y0 = hy0 - 0.3 - (k - 1) * 0.35, hy0 - 0.3 - k * 0.35
@@ -168,10 +219,41 @@ def assemble(kit):
             W.lathe((xx, hy0 - 0.8, pz), [(0, 0.22), (0.45, 0.3), (0.5, 0.0)], kit.TERRACOTTA, n=10)
             W.lathe((xx, hy0 - 0.8, pz + 0.45), [(0, 0.3), (0.3, 0.36), (0.6, 0.0)], kit.MOSS, n=10)
             base.append((xx, hy0 - 0.8, pz))
+    return W, {}
+
+
+def make_timetable_mesh(kit, data):
+    tx = data['tx']
+    ty = data['ty']
+    tz = data['tz']
+    T = kit.F.Mesh('FT_HD_Timetable')
     # Timetable board on the promenade at the jetty root, facing the city.
-    tx, ty, tz = b['timetable']
     kit.timetable(T, tx, ty, tz - 0.02, 0.0)
     kit.col_box(tx - 1.6, ty - 0.3, tx + 1.6, ty + 0.3, tz, tz + 3.2)
+    return T, {}
+
+
+def fixed_collision(kit, data):
+    QF = data['QF']
+    deck_t = data['deck_t']
+    face = data['face']
+    foot_y = data['foot_y']
+    gal0 = data['gal0']
+    gal1 = data['gal1']
+    hb = data['hb']
+    hx0 = data['hx0']
+    hx1 = data['hx1']
+    hy0 = data['hy0']
+    hy1 = data['hy1']
+    hz = data['hz']
+    posts = data['posts']
+    quay = data['quay']
+    sx0 = data['sx0']
+    sx1 = data['sx1']
+    wh = data['wh']
+    x0 = data['x0']
+    x1 = data['x1']
+    ze = data['ze']
     # Collision for the decks, posts, benches and the waiting house (rails, stairs and brow add their own).
     kit.col_box(x0, QF, x1, face, quay - deck_t, quay)
     kit.col_box(sx0, gal0, sx1, gal1, kit.SILL - 0.3, kit.SILL)
@@ -187,6 +269,25 @@ def assemble(kit):
             kit.col_seg((a_[0] + t_[0] * u_, a_[1] + t_[1] * u_), (a_[0] + t_[0] * c0, a_[1] + t_[1] * c0), 0.2, hz + 0.18, hz + 0.18 + wh)
             u_ = c1
     kit.col_box(hx0 + 0.2, hy0 - 0.19, hx0 + 1.2, hy0 - 0.13, hz + 0.18, hz + 0.18 + 2.15)   # the open door leaf
+
+
+def walk_plan(kit, data, st, br):
+    QF = data['QF']
+    dx = data['dx']
+    face = data['face']
+    foot_y = data['foot_y']
+    gal0 = data['gal0']
+    gal1 = data['gal1']
+    gx = data['gx']
+    gy = data['gy']
+    hy0 = data['hy0']
+    hz = data['hz']
+    land_y0 = data['land_y0']
+    land_y1 = data['land_y1']
+    quay = data['quay']
+    tx = data['tx']
+    ty = data['ty']
+    tz = data['tz']
     # From the waiting house out of its door, along the quay clear of the benches, then onto the jetty axis. The jetty
     # root is beside the canal's west wall (x 840, railing posts every 2 m north of y -122), so the walk does not
     # start on that line.
@@ -198,4 +299,16 @@ def assemble(kit):
             'gate': [gx, gy, kit.SILL], 'stair': {k: v for k, v in st.items() if k != 'treads'}, 'brow': br,
             'anchor': [gx, face, 0.0], 'frame': 'world'}
     walk['board'] = {'position': [tx, ty - .095, tz + 2.3], 'yaw': 0., 'text_size_m': .14}
-    return meshes, walk
+    return walk
+
+
+def assemble(kit):
+    """Diagnostic whole terminal; production selects the explicit constructors above."""
+    data = construction_plan(kit)
+    meshes, metadata = {}, {}
+    for key, function in CONSTRUCTORS.items():
+        mesh, row = globals()[function](kit, data)
+        meshes[key] = mesh; metadata.update(row)
+    fixed_collision(kit, data)
+    walk = walk_plan(kit, data, metadata['stair'], metadata['brow'])
+    return {key: meshes[key] for key in MESH_ORDER}, walk

@@ -15,6 +15,29 @@ sys.path.insert(0, str(WORLD))
 from regions.ferry import route, service, timetable as TT  # noqa: E402
 
 
+def test_atomic_ship_preserves_original_runtime_component_order_through_sorted_json():
+    order = ['FY_Hull', 'FY_Superstructure', 'FY_Funnel', 'FY_Lifeboats', 'FY_Rails', 'FY_Masts', 'FY_Fittings', 'FY_BoardingGate']
+    original = dict(dimensions=dict(min=[-40., -6., -2.6], max=[40., 6., 25.]), boarding_openings=[],
+                    meshes={key: {} for key in order})
+    atomic = dict(original, meshes={key: dict(logical_parent=key) for key in sorted(order)}, mesh_order=order,
+                  logical_meshes=original['meshes'])
+    assert service.ship_data(original) == service.ship_data(atomic)
+    del atomic['mesh_order']
+    with pytest.raises(ValueError, match='order'): service.ship_data(atomic)
+
+
+def test_atomic_terminal_preserves_original_runtime_component_order():
+    order = ['FT_BC_Landing', 'FT_BC_Brow', 'FT_BC_Pavilion', 'FT_BC_TicketHut', 'FT_BC_Fenders', 'FT_BC_Props']
+    original = dict(meshes={key: {} for key in order}, anchor=[-244.5, 25., 0.],
+        brow=dict(**{'from': [-244.5, 25., 6.9], 'to': [-245.1, 25., 6.9]}),
+        board=dict(position=[-230., 40., 7.], yaw=180., text_size_m=.09))
+    atomic = dict(original, meshes={key: dict(logical_parent=key) for key in sorted(order)}, mesh_order=order)
+    walks = dict(brinecove=dict(route=[[-235., 45., 5.2], [-235., 40., 5.2]]))
+    expected = service.terminal_data('brinecove', 1, dict(terminals=dict(brinecove=original)), walks, (0., 0.))
+    actual = service.terminal_data('brinecove', 1, dict(terminals=dict(brinecove=atomic)), walks, (0., 0.))
+    assert actual == expected
+
+
 def closed_cycle():
     outbound, end = TT.voyage((0., 0., 0.), [('departing', [('ahead', 50.)]),
                                            ('cruise', [('ahead', 200.)]), ('approach', [('ahead', 50.)])])
@@ -199,7 +222,7 @@ def test_hidamari_landing_waypoints_match_the_two_flight_stair(quay):
     # Execute the production route declaration without Blender mesh generation.
     source = WORLD / 'regions/hidamari/ferry_terminal.py'
     tree = ast.parse(source.read_text())
-    assemble = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'assemble')
+    assemble = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'walk_plan')
     declaration = next(n for n in assemble.body if isinstance(n, ast.Assign)
                        and any(isinstance(t, ast.Name) and t.id == 'walk' for t in n.targets))
     scope = dict(dx=820.5, hy0=-122., hz=2.867, gx=839.8, QF=-127.7, quay=quay,

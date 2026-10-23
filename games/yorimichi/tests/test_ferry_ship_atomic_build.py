@@ -72,6 +72,7 @@ def test_assembly_copies_complete_physical_roster_and_keeps_logical_identity(tmp
     assert 'FY_Hull' not in value['meshes']
     assert value['meshes']['FY_Hull_PieceA']['logical_parent'] == 'FY_Hull'
     assert value['logical_meshes']['FY_Hull']['triangles'] == 24
+    assert value['mesh_order'] == ['FY_Hull_PieceA', 'FY_Hull_PieceB', *list(module.sources.BUILDERS)[1:]]
     assert value['collision']['convex_hulls'] == 3
     files = tmp_path / 'ferry/atomic-assets'
     assert not (files / 'FY_Hull.fbx').exists()

@@ -53,7 +53,7 @@ def assemble(out):
     materials = palette['materials']
     manifest = dict(sources={str(path.relative_to(GAME.parents[1])): export_manifest.sha(path)
                              for path in (KIT / 'build.py', WORLD / 'solid_mesh.py')},
-        materials=materials, meshes=physical, logical_meshes=audit['meshes'],
+        materials=materials, meshes=physical, mesh_order=list(physical), logical_meshes=audit['meshes'],
         units='metres, +X bow, z up, waterline z=0',
         **{field: audit[field] for field in ('dimensions', 'boarding_openings', 'decks', 'stair', 'deck_audit')},
         triangles=sum(row['triangles'] for row in physical.values()),

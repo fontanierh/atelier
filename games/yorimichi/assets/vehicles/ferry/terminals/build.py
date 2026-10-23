@@ -35,11 +35,20 @@ FS = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(FS)
 _spec = importlib.util.spec_from_file_location('ferry_walkcheck', HERE / 'walkcheck.py')
 WC = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(WC)
 OUT = F.OUT / 'terminals'
-SITE = json.loads((OUT / 'site.json').read_text())
-if FS.stale_inputs(SITE) or not SITE.get('pass'):
-    raise SystemExit(f'site.json is stale or failed ({FS.stale_inputs(SITE) or "sweep FAIL"}): rerun world_probe.py and site.py')
-SILL = SITE['ship']['sill_z']
-GATE_W = SITE['ship']['gate_width']
+SITE = None
+SILL = None
+GATE_W = None
+
+
+def configure_site():
+    """Validate the complete authoritative site before any production geometry mutation."""
+    global SITE, SILL, GATE_W
+    site = json.loads((OUT / 'site.json').read_text())
+    stale = FS.stale_inputs(site)
+    if stale or not site.get('pass'):
+        raise ValueError(f'site.json is stale or failed ({stale or "sweep FAIL"}): rerun world_probe.py and site.py')
+    SITE, SILL, GATE_W = site, site['ship']['sill_z'], site['ship']['gate_width']
+    return site
 DOOR_RISER = 0.2                           # waiting-house door steps: riser limit (under walkcheck.STEP_MAX)
 BROW_W = 1.9            # brow width: clear of the ship's brass gate posts (inner faces 1.04 m off the gate centre)
 LIP = 0.55              # the brow's steel lip runs this far inboard of the hull side, onto the landing plate
@@ -665,6 +674,7 @@ def code_sources():
 
 
 def main():
+    configure_site()
     (OUT / 'assets').mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     mats = F.make_materials()
