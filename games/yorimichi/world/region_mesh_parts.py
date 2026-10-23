@@ -38,7 +38,9 @@ def plan(obj, root, *, collisions=(), options=None, cell_metres=CELL_METRES):
     """@cc [owner:fontanierh,label:correctness;performance] planned-independent-mesh-pieces
     Capture complete original corner channels before partitioning. Every source face MUST have
     exactly one piece owner and every piece MUST fit the atomic export budget. Whole authored
-    UCX MUST belong to exactly one piece; other pieces retain their own complex surface.
+    UCX MUST belong to exactly one piece. The assembly MUST retain the parent's collision
+    policy independently of each child's owned hull count, so render-only children cannot
+    introduce additional simple blocking surfaces when the parent used authored UCX.
     Per-piece payloads MUST exclude unrelated piece identities and whole-parent receipts so
     unchanged logical geometry remains independently cacheable. No mesh export occurs here.
     """
@@ -78,7 +80,7 @@ def plan(obj, root, *, collisions=(), options=None, cell_metres=CELL_METRES):
     if not np.all(owned == 1) or sum(r['triangles'] for r in rows) != triangles:
         raise ValueError('Logical geometry is not completely and exclusively partitioned')
     value = dict(schema=1, parent=parent, complete=True, triangle_limit=TRIANGLE_LIMIT,
-                 source_triangles=triangles, source_polygons=len(faces),
+                 source_triangles=triangles, source_polygons=len(faces), source_collision_hulls=len(collisions),
                  slots=[m.name for m in source['slots']], matrix=matrix.tolist(), pieces=rows)
     # Validate the complete current set before retiring any superseded inputs.
     validate(root, value)
@@ -96,8 +98,12 @@ def validate(root, value=None):
             or value.get('triangle_limit') != TRIANGLE_LIMIT or not value.get('pieces')):
         raise ValueError('Missing or incomplete logical export plan')
     name(value['parent'])
-    seen, total = set(), 0
-    for row in value['pieces']:
+    hulls = value.get('source_collision_hulls')
+    polygons = value.get('source_polygons')
+    if type(hulls) is not int or hulls < 0 or type(polygons) is not int or polygons <= 0:
+        raise ValueError('Missing logical parent collision or polygon ownership')
+    seen, total, total_polygons = set(), 0, 0
+    for index, row in enumerate(value['pieces']):
         key = name(row['name'])
         if key.casefold() in seen or member(row['payload']) != key + '.npz':
             raise ValueError('Duplicate or noncanonical planned export')
@@ -106,10 +112,20 @@ def validate(root, value=None):
         if path.is_symlink() or not path.is_file() or sha(path) != row['sha256']:
             raise ValueError('Planned geometry input is missing or changed')
         meta, piece = mesh_ir.decode(path.read_bytes())
-        if meta['asset'] != key or piece['triangles'] != row['triangles']:
-            raise ValueError('Planned geometry identity differs')
+        if (meta['asset'] != key or piece['triangles'] != row['triangles']
+                or row.get('polygons') != len(piece['faces'])
+                or meta['slots'] != value['slots'] or meta['matrix'] != value['matrix']
+                or len(meta['collisions']) != (hulls if index == 0 else 0)
+                or row.get('collision_hulls') != len(meta['collisions'])):
+            raise ValueError('Planned geometry identity or logical ownership differs')
+        matrix = np.asarray(meta['matrix'])
+        world = piece['positions'] @ matrix[:3, :3].T + matrix[:3, 3]
+        if (not np.array_equal(world.min(0), row.get('min'))
+                or not np.array_equal(world.max(0), row.get('max'))):
+            raise ValueError('Planned geometry bounds differ from the current payload')
         total += piece['triangles']
-    if total != value['source_triangles']:
+        total_polygons += len(piece['faces'])
+    if total != value['source_triangles'] or total_polygons != polygons:
         raise ValueError('Planned geometry triangle conservation failed')
     return value
 

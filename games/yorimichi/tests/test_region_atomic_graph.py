@@ -56,7 +56,7 @@ def test_completed_plan_discovers_per_piece_payloads_without_sibling_inputs(tmp_
         assert len(payloads) == 1 and payloads[0].stem == step.name.split('.')[-1]
         assert not step.needs and not step.reads
         assert step.after == ['world.fixture.geometry']
-    assert steps[-1].reads == [s.products[0].name for s in exports]
+    assert steps[-1].reads == [*[s.products[0].name for s in exports], 'fixture.geometry.One', 'fixture.geometry.Two']
     build.check_modules(steps)
 
 
