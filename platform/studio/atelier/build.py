@@ -965,6 +965,12 @@ def _prepared_build(ctx, wanted, *, force, touch, echo, verify, rebuild_reason, 
         # A bare reason covers the tasks named on the command line and those with no result at
         # launch; any other task the budget stops needs its own STEP=REASON.
         ctx.cold_at_launch = {s.name for s in checkpoint_steps if not (ctx.stamps / (s.name + '.json')).exists()} | set(wanted)
+        try:  # Read and need edges carry invalidation; planning reports an invalid graph itself.
+            graph = build_products.Graph(checkpoint_steps)
+            ctx.rebuild_upstream = {s.name: {*s.needs, *(graph.owners[n] for n in s.reads)} for s in graph.steps}
+        except (ValueError, KeyError):
+            ctx.rebuild_upstream = {s.name: set(s.needs) for s in checkpoint_steps}
+        ctx.rebuild_reran, ctx.rebuild_covered = set(), []
         if force and (len(wanted) != 1 or wanted[0] not in {s.name for s in checkpoint_steps}):
             raise SystemExit('--force requires one exact task and --rebuild-reason; broad forced rebuilds are retired.')
         ctx.checkpoint_force_task = wanted[0] if force else None
@@ -1366,6 +1372,10 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             completed_batches.update(completed)
             ctx.checkpoint_changed = True
             ran += len(completed)
+            for completed_step in plan:
+                if completed_step.name in completed:
+                    from .build_checkpoints import note_rerun
+                    note_rerun(ctx, completed_step)
             if code:
                 return code
             continue
@@ -1565,11 +1575,17 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             retain_record(ctx, step, record, store=actions.store)
         restored += int(from_cache)
         ran += int(not from_cache)
+        if not from_cache:
+            from .build_checkpoints import note_rerun
+            note_rerun(ctx, step)
         if from_cache:
             saved_seconds += record.get('checkpoint_build_seconds') or 0.
         if produced is not None and not from_cache:
             produced.append((step.name, record))
         echo(f'{print_} {"restored" if from_cache else "done"} in {seconds:.1f} s{slot_summary(slots)}')
+    covered = getattr(ctx, 'rebuild_covered', [])
+    if covered:
+        echo(f'rebuild reason covered {len(covered)} tasks: ' + ', '.join(covered))
     echo(f'{len(plan)} steps, {ran} ran, {restored} restored, {len(plan) - ran - restored} up to date, '
          f'~{saved_seconds:.0f} s of building saved by reuse, {time.monotonic() - started:.0f} s')
     return 0

@@ -283,6 +283,15 @@ def test_rebuild_reason_covers_only_the_tasks_it_names_or_that_were_cold(tmp_pat
                         'native.region: rebuild reason applied (requested or cold at launch): new region']
     decisions = [json.loads(line) for line in (tmp_path / 'rebuild-decisions.jsonl').read_text().splitlines()]
     assert [(d['step'], d['scope']) for d in decisions] == [('native.terrain', 'named'), ('native.region', 'requested or cold at launch')]
+    # The bare reason follows the cascade from a covered rerun, never an unrelated invalidation.
+    ctx.rebuild_upstream = {'native.belmonte': {'native.region'}, 'native.world': {'native.ferry'}}
+    build_checkpoints.note_rerun(ctx, native('native.region'))
+    build_checkpoints.note_rerun(ctx, native('native.ferry'))  # Not covered: it extends nothing.
+    build_checkpoints.protect(ctx, native('native.belmonte'), estimate=900, echo=messages.append)
+    assert messages[-1] == 'native.belmonte: rebuild reason applied (downstream of native.region): new region'
+    with pytest.raises(cp.CheckpointError, match='stopped before a costly rebuild'):
+        build_checkpoints.protect(ctx, native('native.world'), estimate=900, echo=messages.append)
+    assert ctx.rebuild_covered == ['native.terrain', 'native.region', 'native.belmonte']
 
 
 def test_rebuild_reasons_parse_scoped_and_one_bare_value():

@@ -91,7 +91,11 @@ def reasons(values):
 
 
 def reason_for(ctx, step):
-    """The rebuild reason that covers this task, and why it applies, or (None, None)."""
+    """The rebuild reason that covers this task, and why it applies, or (None, None).
+
+    A bare reason covers the requested tasks, tasks with no result at launch, and every task
+    whose read or need prerequisite was covered and actually reran in this build.
+    """
     scoped = getattr(ctx, 'rebuild_reasons', {}).get(step.name)
     if scoped:
         return scoped, 'named'
@@ -99,7 +103,19 @@ def reason_for(ctx, step):
     cold = getattr(ctx, 'cold_at_launch', None)
     if bare and (cold is None or step.name in cold):
         return bare, 'requested or cold at launch'
+    reran = getattr(ctx, 'rebuild_reran', set())
+    if bare and reran:
+        upstream = getattr(ctx, 'rebuild_upstream', {}).get(step.name, set(step.needs))
+        cause = next((name for name in sorted(upstream) if name in reran), None)
+        if cause is not None:
+            return bare, f'downstream of {cause}'
     return None, None
+
+
+def note_rerun(ctx, step):
+    """A covered task that actually reran extends a bare reason to its dependents."""
+    if reason_for(ctx, step)[0]:
+        ctx.__dict__.setdefault('rebuild_reran', set()).add(step.name)
 
 
 def _guard(ctx, operation, key=None):
@@ -376,8 +392,9 @@ def protect(ctx, step, *, estimate=None, echo=print):
     An unknown cold native job or native work exceeding the retained rebuild budget MUST stop
     before command preparation/admission unless this invocation records an explicit rebuild reason
     covering that task: one naming it (STEP=REASON), or a bare reason only for tasks named on the
-    command line or with no result when the build launched. Each use MUST be logged with its
-    task and scope.
+    command line, tasks with no result when the build launched, and tasks downstream (read or
+    need edges) of a covered task that actually reran. A task whose own inputs changed otherwise
+    MUST still stop. Each use MUST be logged with its task and scope.
     Cache hits/current steps MUST NOT spend the rebuild budget. No override may weaken guards.
     """
     settings = getattr(ctx, 'checkpoint_settings', None)
@@ -405,6 +422,7 @@ def protect(ctx, step, *, estimate=None, echo=print):
     ctx.checkpoint_rebuild_seconds = spent + estimated
     if recorded_reason and (unknown_cold or exceeds):
         echo(f'{step.name}: rebuild reason applied ({scope}): {recorded_reason}')
+        ctx.__dict__.setdefault('rebuild_covered', []).append(step.name)
         ctx.logs.mkdir(parents=True, exist_ok=True)
         with (ctx.logs / 'rebuild-decisions.jsonl').open('a') as handle:
             handle.write(json.dumps(dict(step=step.name, reason=recorded_reason, scope=scope, time=time.time(),
