@@ -47,3 +47,17 @@ def test_selected_regions_query_before_exports_and_publish_native_products(tmp_p
     native = by_name['unreal.hippodrome'].products[0]
     assert ctx.out/'hippodrome/import-report.json' in native.paths
     assert ctx.out/'hippodrome/region/import-report.json' not in native.paths
+
+
+def test_ferry_ship_is_eight_independent_owners_before_file_assembly(tmp_path):
+    ctx = SimpleNamespace(game='yorimichi', out=tmp_path.resolve(), logs=tmp_path/'logs',
+                          stamps=tmp_path/'stamps', uproject=None)
+    steps = build.load_recipe('yorimichi').steps(ctx)
+    by_name = {step.name:step for step in steps}
+    build.order(steps,['unreal.ferry'])
+    planners=[step for step in steps if step.name.startswith('world.ferry_ship.geometry.')]
+    assert len(planners)==8 and all(step.cache for step in planners)
+    assert set(by_name['unreal.ferry'].reads)=={'ferry.ship','ferry_ship.collision_data'}
+    assert by_name['unreal.ferry'].products[0].paths == (GAME/'unreal/Content/Ferry',ctx.out/'ferry/import-report.json')
+    assert not any(getattr(command,'script',None)==GAME/'assets/vehicles/ferry/build.py'
+                   for step in steps for command in step.commands)

@@ -1900,12 +1900,7 @@ def ferry_steps(ctx):
     terminal_names = ['FT_HD_' + name for name in ('Jetty', 'Stage', 'Brow', 'WaitingHouse', 'Timetable', 'Collision')]
     terminal_names += ['FT_BC_' + name for name in ('Landing', 'Brow', 'Pavilion', 'TicketHut', 'Fenders', 'Props', 'Collision')]
     return [
-        Step('world.ferry_ship', [Blender(kit / 'build.py', threads=3), Python(kit / 'walk.py')],
-             inputs=[kit / 'build.py', kit / 'walk.py', WORLD/'walk_raster.py', *shared],
-             outputs=[out / 'ferry/manifest.json', out / 'ferry/deck_layout.json', out / 'ferry/review/walk_report.json',
-                      out / 'ferry/assets/FY_ImportSeed.fbx',
-                      *(out / 'ferry/assets' / f'{name}.fbx' for name in ship_names)], heavy=True,
-             about='approved passenger ferry: closed meshes, seated fittings, collision and deck walk audits'),
+        *_load_helper_module('yorimichi_ferry_ship_atomic',GAME/'ferry_ship_atomic_build.py').steps(ctx),
         Step('world.ferry_probes', [Blender(terminal / 'world_probe.py', (str(out),), threads=3)],
              inputs=site_code,
              needs=['world.layout'],
@@ -1940,6 +1935,9 @@ def ferry_steps(ctx):
              inputs=[SCRIPTS / 'import_ferry.py', SCRIPTS / 'mesh_import.py',
                      *service_code, terminal / 'walkcheck.py', kit / 'walk.py', WORLD/'walk_raster.py', *site_code],
              needs=['world.ferry_service', 'unreal.world'], after=['unreal.compile'],
+             reads=['ferry.ship','ferry_ship.collision_data'],
+             products=[Product('ferry.native',(GAME/'unreal/Content/Ferry',out/'ferry/import-report.json'))],
+             candidate_scope=CandidateScope(directories=(GAME/'unreal/Content/Ferry',)),
              outputs=[out / 'ferry/import-report.json',
                       *(GAME / 'unreal/Content/Ferry/Ship' / f'{name}.uasset' for name in ship_names),
                       *(GAME / 'unreal/Content/Ferry/Terminals' / f'{name}.uasset' for name in terminal_names)],
