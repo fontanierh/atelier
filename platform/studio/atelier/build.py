@@ -1297,6 +1297,10 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                 restored += 1
                 saved_seconds += estimate(previous) or 0.
                 echo(f'{print_} certificate adopted from {adopted}')
+            elif read_stamp(stamp) != previous:
+                # A migrated certificate is current only once it is on disk: consumers such as
+                # the cook read every prerequisite's stamp file directly.
+                stamp.write_text(json.dumps(previous) + '\n')
             done[step.name] = result(step, current, previous)
             build_products.feed_results(done, previous.get('products', {}))
             if actions is not None and saved_action is None and task_cache.certified(ctx, step, current, previous):
