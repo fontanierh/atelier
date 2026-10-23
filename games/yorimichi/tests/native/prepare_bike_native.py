@@ -157,11 +157,23 @@ def run(args):
         before=harness.native_raw_set(record['baseline'],logical);after=harness.native_raw_set(record['actual'],logical)
         for field in ('source_lods','render_lods','cooked','hulls','settings','source_presence'):
             assert before[field]==after[field],(logical,'Saved native geometry/policy union differs',field)
-        comparisons[logical]=dict(source=True,render=True,cooked=True,hulls=True,settings=True,
-            probes=harness.compare_probes(before['probes'],after['probes'],logical,set(after['meshes']),set(before['meshes']),after['seams']))
+        if logical=='BK_Steer':
+            # The original runtime disables collision for the whole Bike. Its whole
+            # steering mesh does not provide matching query-enabled component hits;
+            # preserve that limitation instead of calling isolated-piece parity PASS.
+            controls=after['probes']['controls']
+            for mesh in after['meshes']:
+                selected=[row for row in controls if row['target']==mesh]
+                assert {row['kind'] for row in selected}=={'ray_positive','capsule_positive','ray_negative','capsule_negative'}
+                for row in selected:
+                    assert (row['hit'] is not None)==row['kind'].endswith('_positive')
+            probes=dict(current_piece_positive_controls=True,synthetic_original_whole_parity=False)
+        else:
+            probes=harness.compare_probes(before['probes'],after['probes'],logical,set(after['meshes']),set(before['meshes']),after['seams'])
+        comparisons[logical]=dict(source=True,render=True,cooked=True,hulls=True,settings=True,probes=probes)
     atomic_json(root/'host-result.json',dict(whole_exit=0,guard_empty=True,fixture_absent=True,comparisons=comparisons,
         source_head=spec['source_head'],receiving_head=spec['receiving_head'],native=native,
-        complete=False,missing=['actual production Bike owner/clip/network invocation','normal task reuse counts'],
+        complete=False,missing=['actual production Bike owner/clip/network invocation','normal task reuse counts','synthetic query-enabled original whole steering versus isolated-piece parity'],
         scope='strict saved/reloaded actual native geometry plus explicit fixture query/NoCollision/posed-bounds and retirement proof'))
     print('BIKE NATIVE SAVED GEOMETRY/QUERY FIXTURE PASS; PRODUCTION RUNTIME/REUSE REMAIN SEPARATE',flush=True)
 

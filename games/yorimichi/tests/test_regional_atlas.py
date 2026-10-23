@@ -30,6 +30,12 @@ def test_extracted_terrain_sources_are_signed_and_declared_inputs(tmp_path, monk
     step = next(s for s in recipe.steps(SimpleNamespace(game='yorimichi', out=tmp_path, uproject=None))
                 if s.name == 'world.map')
     assert {GAME / rel for rel in sources} <= set(step.inputs)
+    # The attestation hashes every listed file, including relocated helpers and
+    # the renderer itself; unchanged upstream products cannot hide those reads.
+    assert all(any(path == declared or declared.is_dir() and declared in path.parents
+                   for declared in step.inputs)
+               for path in (GAME / rel for rel in atlas.GEOGRAPHY_SOURCES))
+    assert {'belmonte.query.SM_BM_NorthCountry', 'belmonte.query.SM_BM_NorthApron'} <= set(step.reads)
     monkeypatch.setattr(atlas, 'GAME', tmp_path)
     for rel in atlas.GEOGRAPHY_SOURCES:
         path = tmp_path / rel

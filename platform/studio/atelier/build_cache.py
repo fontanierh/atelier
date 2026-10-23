@@ -3,10 +3,8 @@
 Only generated files under the game's build folder are eligible. Unreal packages, binaries and
 mutable engine state require a different relocation protocol and cannot enter this store.
 """
-import ctypes
 from contextlib import contextmanager
 import fcntl
-from functools import cache
 import importlib.metadata
 import json
 import os
@@ -19,6 +17,7 @@ import tempfile
 
 from . import build_products, paths
 from .atomic_files import atomic_json
+from .file_copy import clone_function as clone_function, copy_file as copy_file
 
 SCHEMA = 1
 # Code that runs inside every source step's process. Identity machinery (input inventories, hash
@@ -40,25 +39,6 @@ def tool_support():
     studio = Path(__file__).parent
     return {name: safety / name.removeprefix('safety/') if name.startswith('safety/') else studio / name
             for name in TOOL_SUPPORT}
-
-
-@cache
-def clone_function():
-    clone = ctypes.CDLL('/usr/lib/libSystem.B.dylib', use_errno=True).clonefile
-    clone.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int]
-    clone.restype = ctypes.c_int
-    return clone
-
-
-def copy_file(source, destination):
-    """An APFS clone when available, otherwise a byte copy. Never a mutable hard/symbolic link."""
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    if sys.platform == 'darwin':
-        if clone_function()(os.fsencode(source), os.fsencode(destination), 0) == 0:
-            destination.chmod(0o644)
-            return
-    shutil.copyfile(source, destination)
-    destination.chmod(0o644)
 
 
 def roots(ctx, step):

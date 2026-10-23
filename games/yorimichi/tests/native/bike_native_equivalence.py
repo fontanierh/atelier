@@ -119,14 +119,21 @@ def query(value,query,capsule=False):
     return result
 
 
-def controls_for(key,before,after):
+def controls_for(key,before,after,*,require_before=True):
+    selected=None
     for area,point,normal in anchors(after.get_editor_property('static_mesh')):
-        # Tiny bidirectional local controls avoid unrelated surfaces in the old whole.
-        q=dict(start=[point[i]+normal[i]*.05 for i in range(3)],end=[point[i]-normal[i]*.05 for i in range(3)],
-            trace_complex=True,channel='Pawn',radius_cm=.001,half_height_cm=.002)
-        observed=[query(component,q,capsule) for component in (before,after) for capsule in (False,True)]
-        if all(row['blocking'] for row in observed):break
-    else:raise AssertionError(('No actual positive selected-component ray/capsule control',key))
+        for reach in (.05,1.):
+            for direction in (1.,-1.):
+                q=dict(start=[point[i]+normal[i]*reach*direction for i in range(3)],
+                    end=[point[i]-normal[i]*reach*direction for i in range(3)],
+                    trace_complex=True,channel='Pawn',radius_cm=.001,half_height_cm=.002)
+                targets=(before,after) if require_before else (after,)
+                observed=[query(component,q,capsule) for component in targets for capsule in (False,True)]
+                if all(row['blocking'] for row in observed):selected=q;break
+            if selected is not None:break
+        if selected is not None:break
+    if selected is None:raise AssertionError(('No actual positive selected-component ray/capsule control',key))
+    q=selected
     controls=[]
     for capsule,kind in ((False,'ray_positive'),(True,'capsule_positive')):
         parameters=dict(q)
@@ -228,7 +235,7 @@ def main():
     native={};runtime=[]
     for logical in old_manifest['parts']:
         names=STEERING if logical=='BK_Steer' else (logical,)
-        controls=[row for name in names for row in controls_for(name,original_components[logical],current_components[name])]
+        controls=[row for name in names for row in controls_for(name,original_components[logical],current_components[name],require_before=logical!='BK_Steer')]
         old_controls=[dict(row,target=original_components[logical].get_path_name()) for row in controls]
         before=emitter.capture([original_components[logical]],logical,ROOT/'captures/baseline'/logical,
             controls=old_controls,policy_scope='fixture',inputs=[SPEC])
@@ -247,6 +254,7 @@ def main():
             for part in (original_components[logical],current_components[name]):
                 policy=read_json(unreal.NativeAtomicEquivalence.component_policy(part))
                 rays=[query(part,q),query(part,capsule_q,True)]
+                assert policy['collision_enabled']==0,'Actual runtime NoCollision policy differs'
                 assert all(row['blocking'] is False for row in rays),'Original NoCollision runtime scope blocked'
                 runtime.append(dict(physical=name,policy=policy,queries=rays))
     # A real saved foreign pointer must block retirement before any old deletion.
@@ -267,6 +275,8 @@ def main():
     assert not list((FOLDER/'Current').glob('BK_Steer.*'))
     result=dict(schema=1,source_spec=sha(SPEC),original_policy=observed_original,current_policy=observed_current,
         native=native,posed_bounds=poses,runtime_no_collision=runtime,retirement_refusal=True,retired=retired,
+        synthetic_steering_query_parity=False,
+        query_scope='Steering current-piece positive controls and original/current NoCollision negatives; artificial query-enabled whole-versus-isolated-piece parity is not established.',
         coverage='Actual immutable raw importer/current receiver; saved reload; fixture geometry and NoCollision policy scopes. Production Bike owner/clip/network invocation and normal task reuse remain separate.')
     atomic_json(ROOT/'result.json',result);pinned()
     # Release only fixture actors/components and packages; no foreign process or shared cache mutation.
