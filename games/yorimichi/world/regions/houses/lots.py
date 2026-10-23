@@ -148,5 +148,3 @@ def lot_mesh(lot, ground):
         bottom = min(low(x + s * .5, y0 + .5), -.12) - .3
         m.poly([(x, y0, bottom), (x, y0 + KERB, bottom), (x, y0 + KERB, tops.get(x, .3)), (x, y0, tops.get(x, .3))], 'stone', out=(s, 0, 0))
     return m
-
-

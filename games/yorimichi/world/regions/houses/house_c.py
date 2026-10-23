@@ -74,5 +74,3 @@ def house_c(m):
     step_stone(m, door, -4.0, .12, 1.4, .6)
     step_stone(m, door, -4.75, .06, 1.0, .5)
     pots(m, door - 1.5, -4.0)
-
-

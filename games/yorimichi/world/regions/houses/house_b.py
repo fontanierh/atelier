@@ -73,5 +73,3 @@ def house_b(m):
             y = -1.75 + k * .47 + row * .235; z = .18 + row * .31
             m.log((lx0 + .1, y, z), (lx0 + 1.75 + R.uniform(-.08, .08), y, z), .16, variant('log', .15), variant('log_end', .1))
     m.collider(((lx0 + lx1) / 2, 0, 1.0), (lx1 - lx0, 4.8, 2.0))
-
-

@@ -228,4 +228,3 @@ def _band(pts, z0, z1):
                 s = (level - a[2]) / (b[2] - a[2]); out.append(tuple(a[i] + (b[i] - a[i]) * s for i in range(3)))
         return out
     return clip(clip(list(pts), z0, True), z1, False)
-

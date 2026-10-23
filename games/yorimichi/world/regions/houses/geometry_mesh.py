@@ -98,5 +98,3 @@ class Mesh(KitMesh):
 def house_shade(z):
     """Ground-contact darkening on the houses."""
     return .72 + .28 * smooth((z + .1) / 1.4)
-
-
