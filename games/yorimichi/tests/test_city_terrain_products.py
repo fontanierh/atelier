@@ -99,9 +99,9 @@ def test_normal_recipe_owns_all_city_ground_products(tmp_path):
     from atelier import build, build_products
     recipe = build.load_recipe('yorimichi')
     graph = build_products.Graph(recipe.steps(SimpleNamespace(game='yorimichi', out=tmp_path, uproject=None)))
-    step = graph.by_name['world.hidamari']
+    step = graph.by_name['world.hidamari.geometry.HD_Terrain']
     for stage in ('natural', 'final', 'provenance'):
-        assert graph.owners['terrain.HD_Terrain.'+stage] == 'world.hidamari'
+        assert graph.owners['terrain.HD_Terrain.'+stage] == step.name
     assert GAME/'world/city_terrain_surface.py' in step.inputs
     assert GAME/'world/terrain_product.py' in step.inputs
-    assert step.heavy and not step.cache
+    assert step.heavy and step.cache
