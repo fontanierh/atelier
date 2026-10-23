@@ -12,7 +12,6 @@ from test_volcano_layers import RECIPE
 
 def test_hidamari_export_implementation_does_not_regenerate_zeppelin(tmp_path, monkeypatch):
     changed = changed_by(RECIPE.REGIONS / 'hidamari' / 'build.py', tmp_path, monkeypatch)
-    assert 'world.hidamari' in changed
     assert 'world.zeppelin' not in changed
 
 
@@ -30,24 +29,20 @@ def test_consumed_code_and_data_still_regenerate_zeppelin(tmp_path, monkeypatch,
 
 def test_targeted_zeppelin_keeps_selection_order_and_complete_source_closure(tmp_path):
     steps = RECIPE.steps(SimpleNamespace(game='yorimichi', out=tmp_path, uproject=None))
-    selected = build.order(list(reversed(steps)), ['world.zeppelin'])
+    from atelier.build_products import Graph
+    selected = Graph(steps).select(['world.zeppelin'])
     names = [step.name for step in selected]
-    assert names.index('world.hidamari') < names.index('world.zeppelin')
+    assert 'world.hidamari' not in names
+    queries = [name for name in names if name.startswith('world.zeppelin.query.')]
+    assert len(queries) == 5
+    assert all(names.index(name) < names.index('world.zeppelin') for name in queries)
+    for name in queries:
+        query = next(step for step in selected if step.name == name)
+        assert set(RECIPE.local_imports(query.commands[0].script)) <= set(query.inputs)
     zeppelin = next(step for step in selected if step.name == 'world.zeppelin')
-    assert {'world.layout', 'world.treehouse_trees'} <= set(zeppelin.needs)
-    assert 'world.hidamari' not in zeppelin.needs and 'world.hidamari' in zeppelin.after
-    script = RECIPE.REGIONS / 'zeppelin' / 'build.py'
-    assert set(RECIPE.local_imports(script)) <= set(zeppelin.inputs)
-    assert RECIPE.ASSETS / 'belmonte' / 'source.json' in zeppelin.inputs
-    belmonte_meshes = json.loads((RECIPE.ASSETS / 'belmonte' / 'source.json').read_text())['meshes']
-    for entry in belmonte_meshes:
-        if entry['name'].startswith('SM_BM_BT_Terrain_'):
-            assert RECIPE.ASSETS / 'belmonte' / entry['path'] in zeppelin.inputs
-    assert {RECIPE.ASSETS / 'megapark' / name for name in ('map.json','geometry','collision')} <= set(zeppelin.inputs)
-    catalog = json.loads((RECIPE.ASSETS / 'megapark' / 'map.json').read_text())
-    for item in catalog['models'] + catalog['collision']:
-        path = RECIPE.ASSETS / 'megapark' / item['npz']
-        assert any(path == root or root in path.parents for root in zeppelin.inputs), path
+    assert 'zeppelin.atomic' in zeppelin.reads
+    assert not zeppelin.needs
+    assert all(step.cache for step in selected if '.export.' in step.name)
 
 
 @pytest.mark.parametrize('legacy', [False, True], ids=['independent-exports', 'old-city-export-edge'])
@@ -76,7 +71,8 @@ def test_builder_rechecks_actual_dependencies_after_layout_cutoff(tmp_path, monk
         airship.write_text(world.read_text()+trees.read_text())
 
     zeppelin = replace(production, commands=[build.Call('export airship', export_airship)],
-                       inputs=[], outputs=[airship], heavy=False)
+                       inputs=[], outputs=[airship], heavy=False, reads=[], products=[],
+                       needs=['world.layout','world.treehouse_trees'], after=['world.hidamari'])
     if legacy:
         zeppelin = replace(zeppelin, needs=['world.layout','world.hidamari'], after=[])
     steps = [

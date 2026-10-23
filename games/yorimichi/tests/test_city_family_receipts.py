@@ -99,34 +99,22 @@ def family_history(scene, monkeypatch, request, city_owner):
     return scene, make, first, repo, actual_owner, task
 
 
-def test_recorded_family_header_reuses_only_unchanged_owner_finishing(family_history):
+def test_recorded_family_header_refuses_changed_finishing_then_reuses_current_save(family_history):
     scene, make, first, repo, actual_owner, task = family_history
     saved = first.receipts.path.read_bytes()
     current = make()
-    if actual_owner == OWNER:
-        # Collision refresh is a real desktop finishing change beyond the
-        # membership/material-only proof. Do not widen historical admission.
-        assert not current.previous_owner_transition and not current.local_compatible
-        assert _fixtures.acquire(scene, current, validator=lambda mesh: True) is None
-        assert current.receipts.path.read_bytes() == saved
-        current.imported('Mesh')
-        current.validated('Mesh')
-        mesh_reuse.finalize_pending(scene.ctx, task, 'e'*24)
-        refreshed = make()
-        assert _fixtures.acquire(scene, refreshed, validator=lambda mesh: True)
-        assert refreshed.counts == dict(reused_local=1,reused_candidate=0,imported=0)
-        assert json.loads(refreshed.receipts.path.read_text())['policy'] == refreshed.receipts.header['policy']
-        return
-    assert current.previous_owner_transition and current.local_compatible
-    assert first.receipts.header['policy'] in current.previous_receipt_policies
-    assert current.receipts.header['policy'] != first.receipts.header['policy']
-    checks = []
-    assert _fixtures.acquire(scene, current, validator=lambda mesh: checks.append(mesh) or True)
-    assert len(checks) == 1 and current.counts == dict(reused_local=1,reused_candidate=0,imported=0)
-    assert current.receipts.path.read_bytes() == saved  # publication remains deferred
+    # Current desktop collision finishing and north ownership changed beyond
+    # the historical membership/material-only policy. Require a fresh receipt.
+    assert not current.previous_owner_transition and not current.local_compatible
+    assert _fixtures.acquire(scene, current, validator=lambda mesh: True) is None
+    assert current.receipts.path.read_bytes() == saved
+    current.imported('Mesh')
     current.validated('Mesh')
     mesh_reuse.finalize_pending(scene.ctx, task, 'e'*24)
-    assert json.loads(current.receipts.path.read_text())['policy'] == current.receipts.header['policy']
+    refreshed = make()
+    assert _fixtures.acquire(scene, refreshed, validator=lambda mesh: True)
+    assert refreshed.counts == dict(reused_local=1,reused_candidate=0,imported=0)
+    assert json.loads(refreshed.receipts.path.read_text())['policy'] == refreshed.receipts.header['policy']
 
 
 @pytest.mark.parametrize('bad', ['no_receipt', 'source', 'source_bytes', 'sidecar', 'validator', 'finishing', 'closure', 'new_piece'])

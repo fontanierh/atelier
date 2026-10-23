@@ -80,5 +80,5 @@ def test_the_volcano_and_island_consumers_follow_the_editor_ground_grid(tmp_path
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     steps = {step.name: step for step in module.world_steps(SimpleNamespace(out=tmp_path))}
-    for name in ('world.hidamari', 'world.layout', 'world.map'):
+    for name in ('world.hidamari.geometry.HD_NorthMountains', 'world.layout', 'world.map'):
         assert 'world.craterpark_geometry' in steps[name].needs, name

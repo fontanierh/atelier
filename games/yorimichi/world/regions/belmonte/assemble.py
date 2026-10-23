@@ -8,7 +8,7 @@ import tempfile
 sys.path[:0]=[str(Path(__file__).resolve().parents[2]),str(Path(__file__).resolve().parents[1])]
 import yori  # noqa: E402,F401
 from atelier.atomic_files import atomic_json  # noqa: E402
-from atelier.build_cache import copy_file  # noqa: E402
+from atelier.file_copy import copy_file  # noqa: E402
 from atelier.export_manifest import real_directory,sha  # noqa: E402
 from atelier.model_files import member,regular_files,source_records  # noqa: E402
 from belmonte import atomic_library,ground_pieces,query_arrays,runtime_groups,runtime_layout,surface_data  # noqa: E402

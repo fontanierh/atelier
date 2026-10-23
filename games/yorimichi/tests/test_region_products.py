@@ -153,7 +153,8 @@ def test_recipe_consumers_follow_named_brinecove_inputs(tmp_path):
     assert 'brinecove.map' in by_name['world.map'].reads
     assert 'brinecove.runtime' in by_name['data.stage'].reads
     assert 'world.brinecove.meshes' not in by_name['world.ferry_probes'].needs
-    assert 'brinecove.clearance' in by_name['world.ferry_probes'].reads
+    assert 'brinecove.query_data' in by_name['world.ferry_probes'].reads
+    assert 'brinecove.clearance' not in by_name['world.ferry_probes'].reads
 
 
 def test_real_projection_runs_with_complete_audited_inputs(tmp_path, monkeypatch):
@@ -206,7 +207,7 @@ def test_actual_runtime_staging_copies_the_published_runtime_view(tmp_path,monke
     assert (destination/'brinecove/runtime.json').read_bytes()==published
 
 
-def test_actual_clearance_consumer_reads_projection_without_raw_runtime_or_materials(tmp_path):
+def test_legacy_clearance_control_reads_projection_without_raw_runtime_or_materials(tmp_path):
     import ast,math
     import numpy as np
     out=tmp_path/'out';export(out/'brinecove',{})
@@ -214,14 +215,14 @@ def test_actual_clearance_consumer_reads_projection_without_raw_runtime_or_mater
     (out/'brinecove/runtime.json').write_text('raw runtime must not be read')
     (out/'brinecove/build-report.json').write_text('raw material report must not be read')
     file=GAME/'assets/vehicles/ferry/terminals/world_probe.py'
-    function=next(node for node in ast.parse(file.read_text()).body if isinstance(node,ast.FunctionDef) and node.name=='brinecove')
+    function=next(node for node in ast.parse(file.read_text()).body if isinstance(node,ast.FunctionDef) and node.name=='legacy_brinecove')
     opened=[]
     scope=dict(json=json,math=math,np=np,S=SimpleNamespace(BOUNDS={'brinecove':[-5,-5,5,5]}),Z_BAND=(-1,1),
         sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest(),
         import_file=lambda p:opened.append(p) or [],unreal_to_blender=lambda t:t,
         triangles=lambda *a:np.zeros((1,3,3)),clip=lambda tris,*a:tris,clear_scene=lambda:None,label=lambda n:n)
     exec(compile(ast.Module(body=[function],type_ignores=[]),str(file),'exec'),scope)
-    ground,solid,names,sources,frame=scope['brinecove'](out)
+    ground,solid,names,sources,frame=scope['legacy_brinecove'](out)
     assert {path.stem for path in opened}=={'SM_BC_Ground_0_0','SM_BC_Pier'}
     assert len(ground)==1 and len(solid)==1 and names==['SM_BC_Pier']
     assert 'products/brinecove/clearance.json' in sources

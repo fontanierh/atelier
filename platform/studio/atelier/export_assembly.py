@@ -5,7 +5,7 @@ from pathlib import Path
 import tempfile
 
 from .atomic_files import atomic_json
-from .build_cache import copy_file
+from .file_copy import copy_file
 from .export_manifest import name, real_directory, sha, validate
 from .model_files import regular_files, retain_files
 

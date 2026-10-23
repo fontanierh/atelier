@@ -108,10 +108,13 @@ def test_recipe_selection_declares_data_and_geometry_dependencies(selection, tmp
     layout = by_name['world.craterpark_layout']
     assert layout.cutoff and layout.needs == ['world.craterpark_geometry']
     assert selection in layout.inputs
-    for name in ('world.layout', 'world.hidamari', 'world.map'):
+    for name in ('world.layout', 'world.hidamari.layout_data', 'world.map'):
         assert 'world.craterpark_layout' in by_name[name].needs
-        assert 'world.craterpark_geometry' not in by_name[name].needs
-        assert selection not in by_name[name].inputs
+        if name == 'world.hidamari.layout_data':
+            assert selection in by_name[name].inputs  # selected source queries consume the design directly
+        else:
+            assert 'world.craterpark_geometry' not in by_name[name].needs
+            assert selection not in by_name[name].inputs
     monkeypatch.delenv(v4_config.SWITCH)
     legacy = module.craterpark_v2_steps(tmp_path)[0]
     assert legacy.commands[0].script.name == 'generate.py'

@@ -168,30 +168,22 @@ def test_missing_selected_receipt_cannot_hide_behind_a_cutoff(city_build, missin
 def test_recipe_keeps_generator_code_and_existing_unreal_cutoffs(tmp_path):
     ctx = SimpleNamespace(out=tmp_path, uproject=None)
     steps = {s.name: s for s in RECIPE.steps(ctx)}
-    consumer = steps['world.city_trees']
-    cutoff = steps['world.hidamari.trees']
-    assert cutoff.cutoff and not cutoff.heavy and cutoff.needs == ['world.hidamari']
-    assert cutoff.name in consumer.needs and 'world.hidamari' not in consumer.needs
-    assert consumer.commands[0].script in consumer.inputs
+    # Normal production now builds selected source geometry directly, then
+    # exports each bounded child. Legacy rendered-parent cutoffs are diagnostic.
     for name in RECIPE.city_inputs.TILES:
-        cutoff = steps['world.hidamari.tiles.'+name]
-        piece = steps['world.city_tiles.'+name]
-        assert cutoff.cutoff and cutoff.needs == ['world.hidamari']
-        assert piece.needs == [cutoff.name]
-        assert piece.cache and piece.products[0].name == 'city.tiles.'+name
-        assert piece.commands[0].factory_startup is True
-        assert piece.commands[0].script in piece.inputs
-        closure = set(build_inputs.local_imports(piece.commands[0].script, (RECIPE.WORLD, RECIPE.REGIONS)))
-        assert closure <= set(piece.inputs)
-    assert steps['world.city_tiles'].reads == ['city.tiles.'+name for name in RECIPE.city_products.SOURCES]
+        owner = steps['world.hidamari.geometry.' + name]
+        assert owner.cache and owner.products
+        assert owner.commands[0].factory_startup
+        assert owner.commands[0].script in owner.inputs
+        closure = set(build_inputs.local_imports(owner.commands[0].script, (RECIPE.WORLD, RECIPE.REGIONS)))
+        assert closure <= set(owner.inputs)
+        assert 'world.hidamari' not in owner.needs
+    assert 'hidamari.atomic' in steps['world.city_tiles'].reads
     desktop = steps['unreal.desktop']
+    assert desktop.commands[0].script.name == 'import_city_atomic.py'
     assert set(RECIPE.unreal_modules.needs(RECIPE.IMPORT_CODE+('Yorimichi',))) <= set(desktop.needs)
-    for part in ('tiles', 'trees'):
-        assert steps['world.city_'+part+'.meshes'].needs == ['world.city_'+part]
-    assert RECIPE.REGIONS/'hidamari/arcade.py' in consumer.inputs
-    assert RECIPE.REGIONS/'hidamari/plaza.py' in consumer.inputs
-    assert RECIPE.REGIONS/'village/mesh.py' in consumer.inputs
-    assert RECIPE.REGIONS/'village/build.py' not in consumer.inputs
+    assert 'world.city_tiles.meshes' in desktop.needs
+    assert desktop.products[0].name == 'city.native_pieces'
 
 
 def test_source_specific_cutoffs_rebuild_only_the_changed_city_parent(tmp_path, monkeypatch):
@@ -236,17 +228,12 @@ def test_new_large_hds_families_share_existing_independent_source_owners(tmp_pat
     assert RECIPE.city_inputs.TILES == names
     assert RECIPE.city_products.SOURCES == (*names, 'HD_Harbor')
     for source in names:
-        step = steps['world.city_tiles.'+source]
-        assert step.commands[0].args[-1] == source
-        assert step.needs == ['world.hidamari.tiles.'+source]
-    harbor = steps['world.hidamari.tiles.HD_Harbor']
-    assert harbor.cutoff and harbor.needs == ['world.hidamari_ferry_cut']
-    piece = steps['world.city_tiles.HD_Harbor']
-    assert piece.needs == [harbor.name]
-    assert piece.commands[0].factory_startup is True
-    assert piece.commands[0].args == ('--tag', 'v1_128m', '--sources', 'HD_Harbor',
-        '--source-path', 'hidamari/ferry/HD_Harbor.fbx',
-        '--metadata-path', 'digests/world.hidamari.tiles.HD_Harbor.json')
+        step = steps['world.hidamari.geometry.' + source]
+        assert step.products[0].name == 'hidamari.geometry.' + source
+        assert step.cache and step.products
+    harbor = steps['world.hidamari.source.HD_Harbor']
+    assert harbor.cache
+    assert 'hidamari.geometry.HD_Harbor' in steps['world.city_tiles'].reads
 
 
 @pytest.mark.parametrize('selection', [[], ['../HD_Park'], ['HD_Ｐark'],

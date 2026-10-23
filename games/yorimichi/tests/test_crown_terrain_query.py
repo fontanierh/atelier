@@ -48,6 +48,6 @@ def test_city_producer_reads_final_product_before_grounding_crowns(tmp_path):
     from atelier import build,build_products
     recipe=build.load_recipe('yorimichi')
     graph=build_products.Graph(recipe.steps(SimpleNamespace(game='yorimichi',out=tmp_path,uproject=None)))
-    assert graph.by_name['world.hidamari'].reads==['terrain.FarHills.final']
+    assert 'terrain.FarHills.final' in graph.by_name['world.hidamari.layout_data'].reads
     names=[s.name for s in graph.select(['world.hidamari'])]
     assert names.index('world.layout') < names.index('world.farhills') < names.index('world.hidamari')

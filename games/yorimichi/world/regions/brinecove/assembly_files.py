@@ -1,7 +1,7 @@
 """Flat coastal staging ownership: validate all destinations before changing any bytes."""
 from pathlib import Path
 
-from atelier.build_cache import copy_file
+from atelier.file_copy import copy_file
 from atelier.export_manifest import real_directory, sha
 from atelier.model_files import member, regular_files
 

@@ -12,11 +12,12 @@ def test_missing_backdrop_grid_invalidates_a_matching_layout_stamp(tmp_path, mon
     layout = next(s for s in build.load_recipe('yorimichi').steps(ctx) if s.name == 'world.layout')
     backdrop = tmp_path/'farhills.npy'
     assert backdrop in layout.outputs
-    trees = build.Step('world.treehouse_trees', [])
+    trees = build.Step('world.treehouse_trees.data', [])
+    layout = replace(layout, needs=[trees.name], reads=[])
     trees_fingerprint = build.fingerprint(trees, {})
     current = build.fingerprint(layout, {trees.name: trees_fingerprint})
     ctx.stamps.mkdir()
-    (ctx.stamps/'world.treehouse_trees.json').write_text(json.dumps({'fingerprint': trees_fingerprint}))
+    (ctx.stamps/(trees.name+'.json')).write_text(json.dumps({'fingerprint': trees_fingerprint}))
     (ctx.stamps/'world.layout.json').write_text(json.dumps({'fingerprint': current}))
     for output in layout.outputs:
         output.parent.mkdir(parents=True, exist_ok=True)
@@ -55,7 +56,7 @@ def test_city_piece_import_reserves_its_measured_memory_envelope(tmp_path):
     desktop = next(s for s in build.load_recipe('yorimichi').steps(ctx) if s.name == 'unreal.desktop')
     command, = desktop.commands
     assert isinstance(command, build.UnrealScript)
-    assert command.script.name == 'import_city_surface_tiles.py'
+    assert command.script.name == 'import_city_atomic.py'
     assert command.memory_gib == command.memory_limit() == 14
     assert desktop.heavy and desktop.batch is None
 

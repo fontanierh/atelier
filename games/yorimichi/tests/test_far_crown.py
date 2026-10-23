@@ -148,8 +148,11 @@ def test_forest_rebuilds_when_the_crown_helper_changes(tmp_path):
     from types import SimpleNamespace
     from atelier import build
     steps = build.load_recipe('yorimichi').steps(SimpleNamespace(game='yorimichi', out=tmp_path, uproject=None))
-    forest = next(step for step in steps if step.name == 'world.forest')
-    assert Path(__file__).resolve().parents[1] / 'world/far_crown.py' in [Path(p).resolve() for p in forest.inputs]
+    helper = Path(__file__).resolve().parents[1] / 'world/far_crown.py'
+    owners = [step for step in steps if step.name.startswith('world.forest.geometry.')]
+    assert owners and all(helper in step.inputs for step in owners)
+    assembly = next(step for step in steps if step.name == 'world.forest')
+    assert 'forest.atomic' in assembly.reads
 
 
 class SlotMesh:

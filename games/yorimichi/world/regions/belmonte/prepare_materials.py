@@ -11,7 +11,7 @@ import yori  # noqa: E402,F401
 from atelier.atomic_files import atomic_json  # noqa: E402
 from atelier.export_manifest import real_directory,sha  # noqa: E402
 from atelier.model_files import regular_files  # noqa: E402
-from atelier.build_cache import copy_file  # noqa: E402
+from atelier.file_copy import copy_file  # noqa: E402
 from belmonte.scene_inputs import read  # noqa: E402
 from belmonte.material_preparation import finish  # noqa: E402
 

@@ -140,10 +140,10 @@ def test_normal_city_recipe_owns_all_mountain_products(tmp_path):
     from atelier import build, build_products
     recipe = build.load_recipe('yorimichi')
     graph = build_products.Graph(recipe.steps(SimpleNamespace(game='yorimichi', out=tmp_path, uproject=None)))
-    step = graph.by_name['world.hidamari']
+    step = graph.by_name['world.hidamari.geometry.HD_NorthMountains']
     for stage in ('natural', 'final', 'provenance'):
         name = 'terrain.HD_NorthMountains.'+stage
-        assert graph.owners[name] == 'world.hidamari'
-    assert step.heavy and not step.cache
+        assert graph.owners[name] == step.name
+    assert step.heavy and step.cache
     assert GAME/'world/north_mountain_surface.py' in step.inputs
     assert GAME/'world/terrain_product.py' in step.inputs

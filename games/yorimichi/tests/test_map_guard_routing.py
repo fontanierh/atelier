@@ -7,7 +7,7 @@ import pytest
 from atelier import build, build_source
 
 
-@pytest.mark.parametrize('step_name,script', [('world.map', 'map/build_map.py'), ('world.belmonte', 'regions/belmonte/build.py')])
+@pytest.mark.parametrize('step_name,script', [('world.map', 'map/build_map.py'), ('world.belmonte.north.natural.SM_BM_NorthApron', 'regions/belmonte/north_pipeline.py')])
 @pytest.mark.parametrize('exit_code', [0, 9], ids=['success', 'guard-stop'])
 def test_map_and_country_generation_use_guarded_admission(tmp_path, monkeypatch, exit_code, step_name, script):
     ctx = SimpleNamespace(game='yorimichi', out=tmp_path/'out', logs=tmp_path/'logs', uproject=None)

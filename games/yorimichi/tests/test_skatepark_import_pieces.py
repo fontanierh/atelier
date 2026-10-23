@@ -68,9 +68,9 @@ def finishing(damage=None):
         return [0, 0, 0], [100, 100, 100]
 
     namespace = dict(park={'meshes': [dict(name=name, asset='/Game/SkatePark/' + name, blocks=True) for name in names]},
-                     helper={'import_mesh': load}, OUT=Path('/unused-build-root'), surfaces={'Pier_concrete': surface},
+                     receive=load, current_geometry=lambda mesh: mesh.get_num_triangles(0)==2, OUT=Path('/unused-build-root'), surfaces={'Pier_concrete': surface},
                      E=SimpleNamespace(save_loaded_asset=save), pieces=SimpleNamespace(TRIANGLE_LIMIT=32768),
-                     unreal=SimpleNamespace(CollisionTraceFlag=SimpleNamespace(CTF_USE_COMPLEX_AS_SIMPLE='complex',
+                     unreal=SimpleNamespace(CitySurfaceValidation=SimpleNamespace(validate_collision=lambda *args: damage != 'cooked-collision'), CollisionTraceFlag=SimpleNamespace(CTF_USE_COMPLEX_AS_SIMPLE='complex',
                                                                               CTF_USE_SIMPLE_AS_COMPLEX='simple')),
                      build={'material_slots': {name: ['Pier_concrete'] for name in names},
                             'meshes': {name: {'triangles': 2} for name in names}},
@@ -98,7 +98,7 @@ def test_current_piece_collision_is_its_own_lod_zero_and_cooked_cpu_access_is_re
     assert mesh.get_editor_property('body_setup').get_editor_property('collision_trace_flag') == 'complex'
 
 
-@pytest.mark.parametrize('damage', ['triangles', 'materials', 'save', 'bounds'])
+@pytest.mark.parametrize('damage', ['triangles', 'materials', 'save', 'bounds', 'cooked-collision'])
 def test_native_piece_refusal_stops_before_the_next_import_or_a_complete_report(damage):
     code, namespace, _, imports, _, _, report = finishing(damage)
     with pytest.raises(AssertionError):

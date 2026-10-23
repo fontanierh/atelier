@@ -5,7 +5,6 @@ import hashlib
 import math
 from pathlib import Path
 import random
-import subprocess
 import sys
 from types import SimpleNamespace
 
@@ -38,7 +37,7 @@ class Mesh:
 
 
 def source(path):
-    payload=subprocess.check_output(['git','show',BASELINE+':games/yorimichi/world/regions/'+path],cwd=GAME)
+    payload=(GAME/'tests/fixtures/immutable-283329c07'/(path.replace('/','-')+'.txt')).read_bytes()
     assert hashlib.sha256(payload).hexdigest()==SOURCE_SHA[path]
     return payload
 
