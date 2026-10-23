@@ -165,8 +165,9 @@ def craterpark_v2_steps(out):
              inputs=[v2, *common, *volcano, *craterpark_v4.input_paths()],
              outputs=[geometry / 'geometry.npz', geometry / 'geometry-report.json'],
              about='Crater Park v2: layout -> conforming surfaces, solids, rails, render tiles and collision (numpy)',
-             heavy=True),
-        Step('world.craterpark', [Blender(v2 / 'export.py', threads=2)], inputs=[v2, *common, *craterpark_v4.input_paths()],
+             cutoff=True, heavy=True),
+        Step('world.craterpark', [Blender(v2 / 'export.py', threads=2)],
+             inputs=[*(f for f in local_imports(v2 / 'export.py') if f.is_relative_to(WORLD)), *common, *craterpark_v4.input_paths()],
              needs=['world.craterpark_geometry'],
              outputs=[out / 'craterpark' / 'build.json', out / 'craterpark' / 'park.json', out / 'craterpark' / 'fbx' / 'SM_CP_ImportSeed.fbx'],
              about='Crater Park v2 export: FBX, build.json and park.json in the r4 contract', heavy=True),
@@ -185,7 +186,7 @@ VILLAGE_LAYOUT = (REGIONS / 'village' / 'layout.py', YORI)
 # What importing treehouse/layout.py reads (its sizes come from world.treehouse_trees' trees.json, which steps that
 # import it also need), and the layout modules hidamari/layout.py brings in.
 TREEHOUSE_LAYOUT = (TREEHOUSE / 'layout.py', TREEHOUSE / 'screen.py', REGIONS / 'zeppelin' / 'layout.py', REGIONS / 'megapark' / 'placement.py')
-NORTH_LAYOUT = (REGIONS / 'hidamari' / 'forest_backdrop.py', REGIONS / 'megapark' / 'forest.py', REGIONS / 'megapark' / 'gate.py',
+NORTH_LAYOUT = (REGIONS / 'hidamari' / 'forest_backdrop.py', REGIONS / 'megapark' / 'gate.py',
                 REGIONS / 'megapark' / 'trail.py', *TREEHOUSE_LAYOUT, *VILLAGE_LAYOUT)
 SOUTHWEST_MODELS = ('stand,fisher_house_a,fisher_house_b,boat_shed,stairs,dock,boat,drying_rack,temple,island,'
                     'boulder_a,boulder_b,boulder_c,stone_wall,pine_lean_a,pine_lean_b')
@@ -200,10 +201,33 @@ _horse_data = importlib.util.spec_from_file_location('horse_data', SCRIPTS / 'ho
 horse_data = importlib.util.module_from_spec(_horse_data)
 _horse_data.loader.exec_module(horse_data)
 
+MEGAPARK_FOREST = (REGIONS / 'megapark' / 'forest.py').resolve()
+MEGAPARK_PLANTS = (REGIONS / 'megapark' / 'plants.py').resolve()
+FOREST_IMPORTERS = {
+    (WORLD / 'gen_world.py').resolve(),
+    (REGIONS / 'hidamari' / 'build.py').resolve(),
+    (REGIONS / 'hidamari' / 'layout.py').resolve(),
+    (REGIONS / 'hidamari' / 'mountains.py').resolve(),
+    (REGIONS / 'megapark' / 'trail.py').resolve(),
+    MEGAPARK_FOREST,
+}
+PLANTS_IMPORTERS = {
+    (REGIONS / 'megapark' / 'build.py').resolve(),
+    (REGIONS / 'hidamari' / 'build.py').resolve(),
+    (REGIONS / 'megapark' / 'gate.py').resolve(),
+    (REGIONS / 'megapark' / 'verify_import.py').resolve(),
+    MEGAPARK_PLANTS,
+}
 
-def local_imports(script, roots=(WORLD, REGIONS)):
+
+def local_imports(script, roots=(WORLD, REGIONS), scanner=None):
     """Hash the static local import closure; the platform memoizes parsing between steps."""
-    return build_inputs.local_imports(script, roots)
+    entry = Path(script).resolve()
+    files = (scanner.local_imports(script, roots) if scanner is not None
+             else build_inputs.local_imports(script, roots))
+    drop = ((set() if entry in FOREST_IMPORTERS else {MEGAPARK_FOREST})
+            | (set() if entry in PLANTS_IMPORTERS else {MEGAPARK_PLANTS}))
+    return [f for f in files if f.resolve() not in drop] if drop else files
 
 
 # Keep the recipe's helpers available while the staging implementation has its own narrow input.
@@ -941,7 +965,7 @@ def belmonte_steps(out):
              inputs=[*(p for p in region.iterdir() if p.name not in ('gondola.py', '__pycache__')),
                      *(paths.STUDIO / 'atelier' / name for name in ('model_files.py', 'gltf.py', 'gltf_partition.py', 'mesh_partition.py')),
                      WORLD / 'surface_textures.py', ASSETS / 'belmonte', ASSETS / 'environment/textures/tuscan-ground.jpg',
-                     ASSETS / 'environment/textures/tuscan-ground.provenance.json', REGIONS / 'megapark/forest.py', REGIONS / 'hippodrome' / 'build.py',
+                     ASSETS / 'environment/textures/tuscan-ground.provenance.json', REGIONS / 'hippodrome' / 'build.py',
                      REGIONS / 'forest/ecotone.py', REGIONS / 'forest/specs.py',
                      REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari_stable' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK, YORI, *NORTH_LAYOUT, *belmonte_train_corridor(out)],
              needs=['world.layout', 'world.treehouse_trees'], heavy=True,
@@ -1079,8 +1103,7 @@ def world_steps(ctx):
                      *(ASSETS / 'belmonte' / entry['path'] for entry in _read_json(ASSETS / 'belmonte/source.json')['meshes']
                        if entry['name'].startswith('SM_BM_BT_Terrain_')),
                      REGIONS / 'megapark' / 'placement.py', REGIONS / 'megapark' / 'trail.py', REGIONS / 'megapark' / 'gate.py',
-                     out / 'world.json', out / 'heightmap.npy', out / 'farhills.npy', out / 'megapark' / 'trail.json',
-                     *([out / 'craterpark/v2/geometry.npz'] if craterpark_v4.selected() else [])],
+                     out / 'world.json', out / 'heightmap.npy', out / 'farhills.npy', out / 'megapark' / 'trail.json'],
              needs=['world.layout', *crater_geometry],
              products=[Product('terrain.FarHills.natural', (out / 'terrain/FarHills/natural.npz',)),
                        Product('terrain.FarHills.final', (out / 'terrain/FarHills/final.npz',)),
@@ -1794,7 +1817,7 @@ def staging_steps(ctx):
              inputs=[GAME / 'runtime_data.py', REGIONS / 'skatepark' / 'park.json', ASSETS / 'ui/fonts/atlas-serif.ttf',
                      runtime_data.RACING_COURSES, runtime_data.RACING_VALIDATOR, ASSETS / 'belmonte/source.json',
                      *runtime_data.courses.surface_inputs(),
-                     *build_inputs.local_imports(runtime_data.courses.SOURCE_READER),
+                     *local_imports(runtime_data.courses.SOURCE_READER),
                      *(CHARS / 'portraits' / f'{c.id}.png' for c in definition.movers() if c.playable)],
              needs=['world.ferry_service', 'world.gondola_service', 'world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark', 'world.craterpark', 'world.crater_cloud', 'world.bike',
                     *[f'characters.{key(c)}_{kind}' for c in definition.movers() for kind, wanted in
@@ -1983,7 +2006,7 @@ def steps(ctx):
                     step.inputs += [path for path in (fbx_helper.parent / '__init__.py', fbx_helper)
                                     if path not in step.inputs]
             if isinstance(command, (Python, Blender)) and WORLD in Path(command.script).parents:
-                step.inputs += [f for f in scanner.local_imports(command.script, (WORLD, REGIONS)) if f not in step.inputs]
+                step.inputs += [f for f in local_imports(command.script, (WORLD, REGIONS), scanner) if f not in step.inputs]
         # Native geometry reuse hashes its complete native-only source closure.
         for command in step.commands:
             if not isinstance(command, UnrealScript):

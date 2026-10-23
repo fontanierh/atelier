@@ -139,3 +139,72 @@ def test_explicit_snapshot_is_verified_without_global_library_fallback(tmp_path,
     missing.write_text('{"files": {}}')
     with pytest.raises(ValueError, match='lists no models'):
         hero_sources.verify(missing)
+
+
+def test_output_identical_craterpark_source_edit_keeps_downstream_fingerprints_and_geometry_change_invalidates_them(tmp_path, monkeypatch):
+    monkeypatch.setenv('ATELIER_CRATERPARK_EDITOR_PARK', str(RECIPE.craterpark_v4.SHIPPED))
+    ctx = SimpleNamespace(game='yorimichi', out=tmp_path, uproject=tmp_path / 'Yorimichi.uproject')
+    steps = {s.name: s for s in RECIPE.steps(ctx)}
+    geometry = steps['world.craterpark_geometry']
+    assert geometry.cutoff
+    dependents = ('world.hidamari', 'world.layout', 'world.farhills', 'world.map',
+                  'world.craterpark_layout', 'world.craterpark', 'world.gondola_site')
+    for name in dependents:
+        assert 'world.craterpark_geometry' in steps[name].needs, name
+
+    for output in geometry.outputs:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_bytes(b'geometry-v1')
+    source = (RECIPE.REGIONS / 'craterpark/v2/solids.py').resolve()
+    edited_bytes = {source: source.read_bytes() + b'\n# output-identical refactor\n'}
+
+    geom_before = build.fingerprint(geometry, {})
+    geom_after = build.fingerprint(geometry, {}, _input_bytes=edited_bytes)
+    assert geom_before != geom_after
+
+    digest_v1 = build.outputs_digest(geometry)
+    done_before = {
+        'world.craterpark_geometry': build.result(geometry, geom_before, {'fingerprint': geom_before, 'result': digest_v1}),
+        'world.craterpark_layout': 'layout-v1',
+        'world.layout': 'world-layout-v1',
+        'world.treehouse_trees': 'trees-v1',
+        'world.hidamari': 'hidamari-v1',
+        'world.skatepark': 'skatepark-v1',
+        'world.zeppelin': 'zeppelin-v1',
+        'world.belmonte': 'belmonte-v1',
+        'world.gondola_kit': 'gondola-kit-v1',
+        'world.gondola_ground': 'gondola-ground-v1',
+        'world.gondola_structures': 'gondola-structures-v1',
+        'product:terrain.FarHills.final': 'farhills-final-v1',
+        'product:brinecove.map': 'brinecove-map-v1',
+        'product:belmonte.ground': 'belmonte-ground-v1',
+    }
+    done_after_identical = {
+        **done_before,
+        'world.craterpark_geometry': build.result(geometry, geom_after, {'fingerprint': geom_after, 'result': digest_v1}),
+    }
+    for name in dependents:
+        step = steps[name]
+        assert (build.fingerprint(step, done_before, _tool_identity='fixture')
+                == build.fingerprint(step, done_after_identical, _input_bytes=edited_bytes, _tool_identity='fixture')), name
+
+    geometry.outputs[0].write_bytes(b'geometry-v2-changed')
+    digest_v2 = build.outputs_digest(geometry)
+    assert digest_v2 != digest_v1
+    done_after_changed = {
+        **done_before,
+        'world.craterpark_geometry': build.result(geometry, geom_after, {'fingerprint': geom_after, 'result': digest_v2}),
+    }
+    for name in dependents:
+        step = steps[name]
+        assert (build.fingerprint(step, done_before, _tool_identity='fixture')
+                != build.fingerprint(step, done_after_changed, _input_bytes=edited_bytes, _tool_identity='fixture')), name
+
+
+def test_megapark_forest_and_plants_inputs_are_narrowed_to_actual_importers(tmp_path):
+    ctx = SimpleNamespace(game='yorimichi', out=tmp_path, uproject=tmp_path / 'Yorimichi.uproject')
+    steps = RECIPE.steps(ctx)
+    forest = RECIPE.REGIONS / 'megapark' / 'forest.py'
+    plants = RECIPE.REGIONS / 'megapark' / 'plants.py'
+    assert {s.name for s in steps if forest in s.inputs} == {'world.layout', 'world.hidamari'}
+    assert {s.name for s in steps if plants in s.inputs} == {'world.megapark', 'world.hidamari'}
