@@ -1,5 +1,9 @@
 nextest-version = "0.9.149"
 
+# nextest reports do not follow Cargo target-dir automatically.
+[store]
+dir = "../../build/build-v2/nextest"
+
 [profile.ci]
 global-timeout = "10s"
 test-threads = 3
