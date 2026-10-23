@@ -125,7 +125,10 @@ def steps(ctx, *, region, assets, after=(), inputs=()):
             ownership[parent] = {key: plan[key] for key in (
                 'source_triangles', 'source_polygons', 'source_collision_hulls', 'slots', 'matrix')}
             ownership[parent]['pieces'] = [{key: row[key] for key in (
-                'name', 'triangles', 'polygons', 'collision_hulls', 'min', 'max')} for row in plan['pieces']]
+                'name', 'triangles', 'polygons', 'collision_hulls', 'min', 'max')} |
+                ({'slots': row['slots']} if plan.get('kind') == 'mesh_set' else {}) for row in plan['pieces']]
+            if plan.get('kind') == 'mesh_set':
+                ownership[parent].update(kind='mesh_set', metadata=plan['metadata'], diagnostics=plan['diagnostics'])
         exports = [export_assembly.Item(key, step.products[0].paths[0]) for step, key in children]
         value = export_assembly.assemble(exports, destination / 'assets')
         atomic_json(destination / 'logical-pieces.json', dict(schema=1, parents=parents, ownership=ownership,

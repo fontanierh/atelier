@@ -1,5 +1,6 @@
 """Assemble validated independent export files; never construct or join geometry."""
 from dataclasses import dataclass
+import json
 from pathlib import Path
 import tempfile
 
@@ -21,6 +22,37 @@ class Item:
     root: Path
 
 
+def destination_members(destination, current):
+    """Retire only names owned by the prior complete flat assembly inventory."""
+    if not destination.exists():
+        return
+    actual = regular_files(destination)
+    if any(path.is_dir() for path in destination.iterdir()):
+        raise ValueError('Atomic assembly destination must be flat')
+    owned = set(current)
+    previous = destination / 'manifest.json'
+    if previous.exists():
+        try:
+            manifest = json.loads(previous.read_text())
+            if (not isinstance(manifest, dict) or manifest.get('schema') != 1
+                    or manifest.get('complete') is not True
+                    or not isinstance(manifest.get('exports'), list) or not manifest['exports']):
+                raise ValueError('Invalid previous assembly inventory')
+            names = set()
+            for row in manifest['exports']:
+                asset = name(row['asset'])
+                primary = row['primary']
+                if (asset.casefold() in names or not isinstance(primary, str)
+                        or primary not in (asset + '.fbx', asset + '.glb')):
+                    raise ValueError('Invalid previous assembly member')
+                names.add(asset.casefold())
+                owned.add(primary)
+        except (KeyError, TypeError, ValueError) as error:
+            raise ValueError('Invalid previous assembly inventory') from error
+    if actual - owned - {'manifest.json'}:
+        raise ValueError('Foreign atomic assembly members')
+
+
 def assemble(items, destination):
     """@cc [owner:fontanierh,label:correctness;performance] assembled-atomic-export-inventory
     Validate ALL independently owned products and the exclusive destination tree before writes.
@@ -34,8 +66,7 @@ def assemble(items, destination):
         raise ValueError('Assembly requires a nonempty unique logical export inventory')
     rows = [(item, validate(item.root, key=item.key)) for item in items]
     destination = real_directory(destination)
-    if destination.exists():
-        regular_files(destination)
+    destination_members(destination, {receipt['primary'] for _, receipt in rows})
     # No destination write precedes the complete source and destination preflight.
     destination.mkdir(parents=True, exist_ok=True)
     manifest = dict(schema=1, complete=True, exports=[])

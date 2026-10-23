@@ -21,7 +21,7 @@ def mesh_height(x, y):
     """The highest the built ground mesh can stand at (x, y): ground.py samples the layout on a 4 m grid and jitters
     steep corners by up to 0.84 m sideways and 2.2 m up, so across the fall's narrow notch its triangles bridge in
     front of the analytic cliff and cut the curtain off on a diagonal. Every triangle lies under its cell's corners."""
-    from brinecove import ground as G
+    from brinecove import ground_sampling as G
     import brinecove.region as R
     ox0, oy0, ox1, oy1 = R.OUTER
     if 'axes' not in _CORNERS:

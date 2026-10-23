@@ -63,3 +63,40 @@ def test_case_aliases_refuse_before_destination_exists(tmp_path):
     target = tmp_path / 'assembled'
     with pytest.raises(ValueError): assembly.assemble([one, assembly.Item('ONE', Path('unused'))], target)
     assert not target.exists()
+
+
+@pytest.mark.parametrize('kind', ['file', 'directory'])
+def test_foreign_destination_member_refuses_before_copy_or_retirement(tmp_path, kind):
+    one = item(tmp_path, 'One')
+    target = tmp_path / 'assembled'
+    target.mkdir()
+    foreign = target / 'foreign'
+    if kind == 'file': foreign.write_bytes(b'not owned')
+    else: foreign.mkdir()
+    with pytest.raises(ValueError): assembly.assemble([one], target)
+    assert foreign.exists()
+    assert not (target / 'One.fbx').exists()
+    assert not (target / 'manifest.json').exists()
+
+
+@pytest.mark.parametrize('rows', [[], [{'asset': 'Old', 'primary': '../foreign.fbx'}],
+    [{'asset': 'Old', 'primary': 'Old.fbx'}, {'asset': 'OLD', 'primary': 'OLD.fbx'}], [None]])
+def test_invalid_previous_inventory_refuses_before_first_write(tmp_path, rows):
+    one = item(tmp_path, 'One')
+    target = tmp_path / 'assembled'; target.mkdir()
+    manifest = target / 'manifest.json'
+    manifest.write_text(json.dumps(dict(schema=1, complete=True, exports=rows)))
+    before = manifest.read_bytes()
+    with pytest.raises(ValueError): assembly.assemble([one], target)
+    assert manifest.read_bytes() == before
+    assert not (target / 'One.fbx').exists()
+
+
+def test_previous_inventory_does_not_adopt_foreign_files(tmp_path):
+    one = item(tmp_path, 'One')
+    target = tmp_path / 'assembled'
+    assembly.assemble([one], target)
+    (target / 'foreign.fbx').write_bytes(b'foreign')
+    with pytest.raises(ValueError): assembly.assemble([one], target)
+    assert (target / 'foreign.fbx').read_bytes() == b'foreign'
+    assert (target / 'One.fbx').exists()

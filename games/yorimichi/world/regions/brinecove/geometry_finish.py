@@ -2,8 +2,7 @@
 import math
 import numpy as np
 from atelier.mesh_partition import face_groups
-from terrain_product import load
-from brinecove import ground, rocks
+from brinecove import rocks
 from brinecove import layout as L
 from brinecove import region as R
 from brinecove.geom import Builder, distinct_corners
@@ -13,22 +12,6 @@ MIXED_TRIANGLE_LIMIT = 32768
 SOFT = ('leaf_', 'palm_', 'waterfall', 'mist', 'spray', 'foam', 'water', 'vine', 'flower', 'grass', 'fern', 'cover_')
 SEA_LEVEL = ('water', 'foam', 'spray', 'mist', 'waterfall', 'seabed')
 GROUND_REMAP = {'sand': 'terrain', 'jungle_dark': 'terrain'}
-
-
-def rim(path):
-    """FarHills' hole boundary from its final product (world.farhills)."""
-    mesh = load(path, owner='FarHills', stage='final', city=True)
-    vertices, triangles = np.asarray(mesh.vertices), np.asarray(mesh.triangles())
-    vertices, triangles = ground.weld(vertices, triangles)
-    x0, y0, x1, y1 = R.OUTER_WORLD
-    near = ((np.abs(vertices[:, 0] - x0) < .05) | (np.abs(vertices[:, 0] - x1) < .05)
-            | (np.abs(vertices[:, 1] - y0) < .05) | (np.abs(vertices[:, 1] - y1) < .05))
-    near &= (vertices[:, 0] > x0 - .05) & (vertices[:, 0] < x1 + .05) & (vertices[:, 1] > y0 - .05) & (vertices[:, 1] < y1 + .05)
-    keep = near[triangles].sum(1) >= 2
-    used = np.unique(triangles[keep])
-    remap = {int(v): i for i, v in enumerate(used)}
-    local = [[remap[int(v)] for v in t] for t in triangles[keep]]
-    return R.rim_from_mesh(vertices[used].tolist(), local)
 
 
 def settle(rim):

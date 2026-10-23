@@ -51,7 +51,7 @@ def test_ground_remapping_cannot_silently_skip_its_paving_dependency(finish):
 
 def test_final_rim_projection_stops_unread_interior_changes_but_keeps_boundary_changes(finish, tmp_path):
     import json
-    from brinecove import rim_data
+    from brinecove import boundary, rim_data
     from terrain_product import Mesh, save
     x0, y0, x1, y1 = finish.R.OUTER_WORLD
     points = [[x0, y0, 2], [x1, y0, 2], [x1, y1, 2], [x0, y1, 2],
@@ -62,7 +62,7 @@ def test_final_rim_projection_stops_unread_interior_changes_but_keeps_boundary_c
         save(path, Mesh.from_polygons(points, faces), owner='FarHills', stage='final', city=True)
         value = rim_data.project(path)
         current, world = rim_data.read(json.loads(json.dumps(value)))
-        expected, expected_world = finish.rim(path)
+        expected, expected_world = boundary.rim(path)
         assert current.sides == expected.sides and world == expected_world
         return value
     first = publish()
