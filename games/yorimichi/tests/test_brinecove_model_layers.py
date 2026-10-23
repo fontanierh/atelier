@@ -24,6 +24,8 @@ def encoded(builder):
     return json.dumps(builder.__dict__, sort_keys=True, separators=(',', ':')).encode()
 
 
+@pytest.mark.skipif(sys.platform != 'darwin',
+                    reason='the authored prototype digest is pinned to macOS libm rounding')
 def test_every_original_prototype_keeps_vertices_faces_uvs_normals_and_materials(library):
     from brinecove import flora
     baseline = json.loads((Path(__file__).parent / 'fixtures/brinecove-prototype-geometry.json').read_text())
