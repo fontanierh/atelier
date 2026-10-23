@@ -26,7 +26,8 @@ def main(argv=None):
     parser.add_argument('--recolour',type=Path)
     parser.add_argument('--record',action='append',type=Path)
     parser.add_argument('--output',type=Path)
-    args=parser.parse_args(argv if argv is not None else sys.argv[sys.argv.index('--')+1:])
+    args=parser.parse_args(argv if argv is not None else
+        sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else sys.argv[1:])
     if args.recolour:
         root=real_directory(args.recolour)
         if root.exists() and regular_files(root)-{'T_leaf_crimson.png','T_leaf_amber.png'}:
