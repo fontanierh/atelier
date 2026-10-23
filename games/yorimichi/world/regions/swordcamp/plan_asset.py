@@ -33,7 +33,7 @@ def main(argv=None):
     material = bpy.data.materials.new('M_SwordCamp')
     obj = source.to_blender(material)
     hulls = capture_colliders([(centre, size, (0., 0., 0.)) for centre, size in source.colliders])
-    plan(obj, args.output, collisions=hulls, options=dict(
+    plan(obj, args.output, collisions=hulls, partition='whole', options=dict(
         apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL', axis_forward='-Y', axis_up='Z',
         mesh_smooth_type='FACE', use_custom_props=False, path_mode='STRIP'))
     print('LOGICAL SWORDCAMP GEOMETRY COMPLETE ' + args.asset, flush=True)

@@ -36,7 +36,7 @@ def main(argv=None):
     m = construct(args.asset, source, heights)
     material = bpy.data.materials.new('VillagePalette')
     obj = m.object(material)
-    value = plan(obj, args.output, collisions=capture_colliders(m.colliders), options=OPTIONS)
+    value = plan(obj, args.output, partition='spatial' if args.asset == 'Village_Planting' else 'whole', collisions=capture_colliders(m.colliders), options=OPTIONS)
     print('VILLAGE LOGICAL PLAN COMPLETE ' + args.asset + ' ' + str(len(value['pieces'])), flush=True)
 
 

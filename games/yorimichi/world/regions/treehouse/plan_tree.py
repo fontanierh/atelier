@@ -26,7 +26,7 @@ def main(argv=None):
     bpy.ops.wm.read_factory_settings(use_empty=True);A.MATS.clear();A.LEAF_CROPS.clear()
     A.materials(['Bark','LeafMaple'])
     obj,info=canopy_tree(name,*value['args'])
-    result=plan(obj,args.output,options=OPTIONS)
+    result=plan(obj,args.output,partition='whole', options=OPTIONS)
     if len(result['pieces'])!=1 or result['pieces'][0]['name']!=name:
         raise ValueError('Canopy requires a coordinated HISM membership change when oversized')
     atomic_json(args.record,dict(name=name,dimensions=info))

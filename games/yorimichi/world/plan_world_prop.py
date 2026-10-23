@@ -38,7 +38,7 @@ def main(argv=None):
     triangles=sum(len(face.vertices)-2 for face in obj.data.polygons)
     if not 0<triangles<=TRIANGLE_LIMIT:
         raise ValueError('A growing rigid prop needs explicit native child/pivot support before export')
-    plan(obj,args.output,options=dict(apply_unit_scale=True,apply_scale_options='FBX_SCALE_ALL',axis_forward='-Y',axis_up='Z',
+    plan(obj,args.output,partition='whole', options=dict(apply_unit_scale=True,apply_scale_options='FBX_SCALE_ALL',axis_forward='-Y',axis_up='Z',
         object_types=['MESH'],mesh_smooth_type='FACE',bake_anim=False,path_mode='STRIP',embed_textures=False,
         use_tspace=False,colors_type='SRGB'))
     print('WORLD PROP GEOMETRY COMPLETE '+obj.name,flush=True)

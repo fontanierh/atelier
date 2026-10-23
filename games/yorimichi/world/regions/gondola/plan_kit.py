@@ -52,7 +52,7 @@ def main(argv=None):
     selected = source(args.source, args.asset)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     obj, query = construct(selected)
-    value = plan(obj, args.output, options=OPTIONS)
+    value = plan(obj, args.output, partition='whole', options=OPTIONS)
     query['triangles'] = value['source_triangles']
     atomic_json(args.queries, query)
     print('GONDOLA LOGICAL PLAN COMPLETE', args.asset, len(value['pieces']), flush=True)

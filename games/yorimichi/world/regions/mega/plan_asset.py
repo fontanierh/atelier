@@ -39,7 +39,7 @@ def main(argv=None):
                       if mesh.name == args.asset)
     material = bpy.data.materials.new('MegaPalette')
     obj = source.object(material)
-    plan(obj, args.output, collisions=capture_colliders(source.colliders), options=dict(
+    plan(obj, args.output, collisions=capture_colliders(source.colliders), partition='whole', options=dict(
         apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL', axis_forward='-Y', axis_up='Z',
         mesh_smooth_type='FACE', use_custom_props=False))
     print('LOGICAL MEGA GEOMETRY COMPLETE ' + args.asset, flush=True)

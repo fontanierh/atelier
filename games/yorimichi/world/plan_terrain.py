@@ -22,7 +22,7 @@ def plan_selected(obj, output):
     from region_mesh_parts import plan
     if obj.name not in ASSETS:
         raise ValueError('Unowned island logical constructor')
-    return plan(obj, output, options=OPTIONS, cell_metres=CELL_METRES.get(obj.name, 128.))
+    return plan(obj, output, partition='spatial' if obj.name in ('Terrain', 'FarHills') else 'whole', options=OPTIONS, cell_metres=CELL_METRES.get(obj.name, 128.))
 
 
 def construct(key, source, *, heightmap=None, final=None):

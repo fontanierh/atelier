@@ -58,7 +58,7 @@ def main(argv=None):
     if result['failures'] or not all(row['cap_normals_pass'] for row in result['cuts']):
         raise ValueError('Final Harbor source cut failed: ' + json.dumps(result))
     region_query.save(args.query_output, [region_query.capture(obj)], owner='HD_Harbor', stage='final')
-    value = plan(obj, args.output, options=dict(apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL',
+    value = plan(obj, args.output, partition='spatial', options=dict(apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL',
         axis_forward='-Y', axis_up='Z', mesh_smooth_type='FACE', use_custom_props=False))
     if value['source_triangles'] != result['triangles']['after']:
         raise ValueError('Final Harbor plan differs from the audited cut')

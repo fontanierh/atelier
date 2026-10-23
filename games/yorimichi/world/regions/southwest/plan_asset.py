@@ -28,7 +28,7 @@ def main(argv=None):
     # Old Southwest FBX exported only this render object. Its diagnostic boxes
     # never participated in native collision; preserve actual complex queries.
     region_query.save(args.query_output, [region_query.capture(obj)], owner=source.name, stage='final')
-    value = plan(obj, args.output, collisions=(), options=dict(
+    value = plan(obj, args.output, partition='spatial' if obj.name == 'SW_Island' else 'whole', collisions=(), options=dict(
         apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL', axis_forward='-Y', axis_up='Z',
         mesh_smooth_type='FACE', colors_type='SRGB'))
     print('SOUTHWEST LOGICAL GEOMETRY COMPLETE', source.name, value['source_triangles'], len(value['pieces']), flush=True)

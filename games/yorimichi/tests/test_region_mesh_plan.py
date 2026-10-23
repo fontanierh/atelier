@@ -39,6 +39,7 @@ def planned_pair(root):
         rows.append(dict(name=key, payload=path.name, sha256=sha(path), triangles=1, polygons=1,
                          min=[11, 0, 0], max=[12, 1, 0], collision_hulls=1 if index == 0 else 0))
     value = dict(schema=1, parent='Whole', complete=True, triangle_limit=32768,
+                 partition='explicit', collision_owner='One',
                  source_triangles=2, source_polygons=2, source_collision_hulls=1,
                  slots=['Material'], matrix=matrix.tolist(), pieces=rows)
     (root / 'plan.json').write_text(json.dumps(value))
@@ -163,3 +164,127 @@ def test_material_graph_edits_change_only_the_leaf_that_uses_the_slot(tmp_path, 
     for row, expected in zip(original['pieces'], values[1:]):
         metadata, _ = mesh_ir.decode((folder / row['payload']).read_bytes())
         assert metadata['material_specs'] == [expected]
+
+
+def cell_source(monkeypatch, cells):
+    import numpy as np
+    import importlib
+    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1]/'world'))
+    planner=importlib.import_module('region_mesh_parts')
+    positions=[];materials=[];smooth=[]
+    for cell,count in cells:
+        positions.extend([[128.*cell+1.,1.,0.],[128.*cell+2.,1.,0.],[128.*cell+1.,2.,0.]]*count)
+        materials.extend([cell%2]*count);smooth.extend([bool(cell%2)]*count)
+    count=len(materials)
+    source=dict(positions=np.asarray(positions,dtype=np.float32),starts=np.arange(count)*3,
+        counts=np.full(count,3),vertex_indices=np.arange(count*3),normals=np.tile([0.,0.,1.],(count*3,1)).astype('f4'),
+        materials=np.asarray(materials),smooth=np.asarray(smooth),
+        uvs=[('UVMap',np.tile([[0.,0.],[1.,0.],[0.,1.]],(count,1)).astype('f4'))],
+        colours=[('Color','POINT','FLOAT_COLOR',np.tile([.2,.4,.6,1.],(count*3,1)).astype('f4'))],
+        slots=[SimpleNamespace(name='Even'),SimpleNamespace(name='Odd')])
+    monkeypatch.setattr(planner,'capture',lambda _:source)
+    obj=SimpleNamespace(name='Whole',type='MESH',modifiers=[],data=SimpleNamespace(shape_keys=None),matrix_world=np.eye(4))
+    return planner,obj,source
+
+
+def payloads(root):return {p.name:p.read_bytes() for p in root.iterdir() if p.suffix=='.npz'}
+
+
+def authored_hull():
+    import numpy as np
+    return dict(vertices=[[0,0,0],[1,0,0],[0,1,0],[0,0,1]],
+        faces=[[0,2,1],[0,1,3],[1,2,3],[2,0,3]],matrix=np.eye(4).tolist())
+
+
+def test_spatial_owner_never_collapses_when_total_crosses_whole_budget(tmp_path,monkeypatch):
+    planner,obj,_=cell_source(monkeypatch,[(0,31000),(2,2000)])
+    root=tmp_path/'retained';before=planner.plan(obj,root,partition='spatial');first=payloads(root)
+    assert before['source_triangles']==33000
+    planner,obj,_=cell_source(monkeypatch,[(0,30000),(2,2000)])
+    after=planner.plan(obj,root,partition='spatial')
+    assert after['source_triangles']==32000 and after['partition']=='spatial'
+    assert {row['name'] for row in after['pieces']}=={'Whole_cell_0_0','Whole_cell_2_0'}
+    assert payloads(root)['Whole_cell_2_0.npz']==first['Whole_cell_2_0.npz']
+    fresh=tmp_path/'fresh';planner.plan(obj,fresh,partition='spatial')
+    assert payloads(root)==payloads(fresh)  # No previous-plan/history input decides identity.
+
+
+def test_explicit_whole_refuses_large_geometry_before_output_and_missing_policy_refuses(tmp_path,monkeypatch):
+    planner,obj,_=cell_source(monkeypatch,[(0,32769)])
+    with pytest.raises(ValueError,match='bounded source face group'):planner.plan(obj,tmp_path/'large',partition='whole')
+    assert not (tmp_path/'large').exists()
+    with pytest.raises(ValueError,match='Declare whole or spatial'):planner.plan(obj,tmp_path/'implicit')
+    assert not (tmp_path/'implicit').exists()
+    planner,obj,_=cell_source(monkeypatch,[(2,1)])
+    result=planner.plan(obj,tmp_path/'small',partition='whole')
+    assert [row['name'] for row in result['pieces']]==['Whole']
+
+
+@pytest.mark.parametrize('cells', [[(2,1),(3,1),(-2,1)],[(-2,1),(2,1),(3,1)]])
+def test_earlier_cell_append_or_prepend_cannot_take_fixed_ucx_owner(tmp_path,monkeypatch,cells):
+    from atelier import mesh_ir
+    planner,obj,_=cell_source(monkeypatch,[(2,1),(3,1)])
+    root=tmp_path/'plan';kwargs=dict(partition='spatial',collisions=[authored_hull()],collision_owner='Whole_cell_2_0')
+    planner.plan(obj,root,**kwargs);before=payloads(root)
+    planner,obj,_=cell_source(monkeypatch,cells);current=planner.plan(obj,root,**kwargs)
+    assert current['collision_owner']=='Whole_cell_2_0' and current['pieces'][0]['name']=='Whole_cell_2_0'
+    assert {key:payloads(root)[key] for key in before}==before
+    hulls={row['name']:len(mesh_ir.decode((root/row['payload']).read_bytes())[0]['collisions']) for row in current['pieces']}
+    assert hulls=={'Whole_cell_2_0':1,'Whole_cell_-2_0':0,'Whole_cell_3_0':0}
+    fresh=tmp_path/'fresh';planner.plan(obj,fresh,**kwargs);assert payloads(fresh)==payloads(root)
+
+
+def test_missing_declared_ucx_owner_refuses_before_changing_previous_outputs(tmp_path,monkeypatch):
+    planner,obj,_=cell_source(monkeypatch,[(2,1),(3,1)])
+    root=tmp_path/'plan';kwargs=dict(partition='spatial',collisions=[authored_hull()],collision_owner='Whole_cell_2_0')
+    planner.plan(obj,root,**kwargs);before={p.name:p.read_bytes() for p in root.iterdir()}
+    planner,obj,_=cell_source(monkeypatch,[(-2,1),(3,1)])
+    with pytest.raises(ValueError,match='render member is absent'):planner.plan(obj,root,**kwargs)
+    assert {p.name:p.read_bytes() for p in root.iterdir()}==before
+    with pytest.raises(ValueError,match='explicit collision-owner'):planner.plan(obj,tmp_path/'missing',partition='spatial',collisions=[authored_hull()])
+    assert not (tmp_path/'missing').exists()
+
+
+def test_authored_policy_and_owner_metadata_cannot_lie_about_actual_payloads(tmp_path,monkeypatch):
+    planner,obj,_=cell_source(monkeypatch,[(2,1),(3,1)])
+    root=tmp_path/'plan';value=planner.plan(obj,root,partition='spatial',collisions=[authored_hull()],collision_owner='Whole_cell_2_0')
+    for field,replacement in [('partition','whole'),('collision_owner','Whole_cell_3_0')]:
+        changed=dict(value,**{field:replacement})
+        with pytest.raises(ValueError):planner.validate(root,changed)
+    missing=dict(value);missing.pop('partition')
+    with pytest.raises(ValueError):planner.validate(root,missing)
+
+
+def test_declared_spatial_union_conserves_exact_all_corner_fields_and_whole_hull(tmp_path,monkeypatch):
+    from collections import Counter
+    from atelier import mesh_ir
+    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1]/'tools'))
+    from atomic_equivalence import face_counter,hull_counter
+    planner,obj,source=cell_source(monkeypatch,[(2,2),(3,2)])
+    source['normals'][0]=[.25,.5,.75]
+    source['uvs'][0][1][0]=[.125,.875]
+    source['colours'][0][3][0]=[.1,.2,.3,.4]
+    original=planner.subset(source,tuple(range(len(source['counts']))))
+    meta,original=mesh_ir.decode(mesh_ir.encode(original,key='Original',slots=[s.name for s in source['slots']],
+        matrix=obj.matrix_world.tolist(),options={},collisions=[authored_hull()]))
+    expected=face_counter(meta,original);expected_hulls=hull_counter(meta['collisions'])
+    root=tmp_path/'plan';value=planner.plan(obj,root,partition='spatial',collisions=[authored_hull()],collision_owner='Whole_cell_2_0')
+    actual=Counter();hulls=Counter()
+    for row in value['pieces']:
+        meta,piece=mesh_ir.decode((root/row['payload']).read_bytes())
+        actual.update(face_counter(meta,piece));hulls.update(hull_counter(meta['collisions']))
+    assert actual==expected and hulls==expected_hulls
+
+
+def test_local_corner_edit_carries_current_data_without_changing_sibling_bytes(tmp_path,monkeypatch):
+    import numpy as np
+    from atelier import mesh_ir
+    planner,obj,source=cell_source(monkeypatch,[(2,1),(3,1)])
+    root=tmp_path/'plan';before=planner.plan(obj,root,partition='spatial');old=payloads(root)
+    source['uvs'][0][1][0]=[.25,.75]  # Counts, bounds and spatial membership stay unchanged.
+    after=planner.plan(obj,root,partition='spatial');new=payloads(root)
+    assert new['Whole_cell_2_0.npz']!=old['Whole_cell_2_0.npz']
+    assert new['Whole_cell_3_0.npz']==old['Whole_cell_3_0.npz']
+    assert [(r['name'],r['triangles'],r['min'],r['max']) for r in before['pieces']]==[(r['name'],r['triangles'],r['min'],r['max']) for r in after['pieces']]
+    _,piece=mesh_ir.decode(new['Whole_cell_2_0.npz'])
+    assert np.array_equal(piece['uvs'][0][1][0],np.asarray([.25,.75],dtype='f4'))
