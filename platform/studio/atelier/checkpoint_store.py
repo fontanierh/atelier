@@ -113,6 +113,31 @@ class Store:
         candidates = sorted(self.manifests.glob('*.json'), key=lambda p: p.stat().st_mtime_ns, reverse=True)
         return [(p.stem, self.load(p.stem)) for p in candidates]
 
+    def summaries(self):
+        """Newest first; a small cached summary per immutable manifest, so scans avoid large JSON."""
+        index = self.directory / 'index'
+        result = []
+        for path in sorted(self.manifests.glob('*.json'), key=lambda p: p.stat().st_mtime_ns, reverse=True):
+            cached = index / path.name
+            try:
+                summary = read_json(cached) if cached.is_file() else None
+                if not isinstance(summary, dict) or summary.get('schema') != 1:
+                    saved = self.load(path.stem)
+                    counts = {}
+                    for member in saved['files']:
+                        label = member.partition('/')[0]
+                        counts[label] = counts.get(label, 0) + 1
+                    stamps = {**saved['stamps'], **saved.get('incremental_stamps', {})}
+                    summary = dict(schema=1, context=identity(saved['context']), checkout=saved['checkout'],
+                                   steps=sorted(saved.get('steps', ())), workspace_only=bool(saved.get('workspace_only')),
+                                   roots=counts, stamps={n: s.get('fingerprint') for n, s in stamps.items()})
+                    index.mkdir(parents=True, exist_ok=True)
+                    atomic_json(cached, summary)
+            except (OSError, ValueError, KeyError, TypeError, CheckpointError):
+                continue
+            result.append((path.stem, summary))
+        return result
+
 
 def certificates(ctx, steps, *, include_incremental=False):
     from .build import fingerprint, order, outputs_present, result
@@ -252,12 +277,18 @@ def cold(ctx):
     return True
 
 
-def restore(ctx, steps, store, key, *, echo=print):
+def unit_of(member, selected):
+    return next((u for u in selected if member.startswith(u)), None)
+
+
+def restore(ctx, steps, store, key, *, echo=print, hydrate=None):
     """@cc [owner:fontanierh,label:correctness] checkpoint-restoration-certificates
     Restoration MUST preserve source files, use independent verified copies and stay within
     locally allowed generated roots. Only certificates matching the receiving recipe's actual
     inputs MAY survive. A durable launch barrier MUST precede mutation and survive any failure.
     Existing generated work MUST NOT be overwritten. Compiler intermediates MUST NOT relocate.
+    Partial hydration MAY fill only selected units whose existing members are identical to the
+    checkpoint's, and MAY add only certificates the receiver lacks.
     """
     from .build_snapshot import require_complete
     manifest = store.load(key)
@@ -268,12 +299,26 @@ def restore(ctx, steps, store, key, *, echo=print):
     if not set(manifest.get('steps', ())) <= {s.name for s in steps}:
         raise CheckpointError('Checkpoint task ownership changed; a new baseline is required')
     journal = ctx.out / JOURNAL
-    resume = dict(schema=SCHEMA, key=key, game=ctx.game)
     existing = read_json(journal) if journal.exists() else None
+    if existing is not None and hydrate is None and 'units' in existing:
+        hydrate = existing['units']
+    resume = dict(schema=SCHEMA, key=key, game=ctx.game)
+    if hydrate is not None:
+        if (not isinstance(hydrate, list) or not hydrate
+                or any(not isinstance(u, str) or not u.endswith('/') or u.partition('/')[0] not in allowed
+                       or u.partition('/')[0] in ('zen', 'cooked') for u in hydrate)):
+            raise CheckpointError('Invalid checkpoint hydration units')
+        lacking = sorted(n for n in saved_stamps if not (ctx.stamps / (n + '.json')).exists())
+        if existing is not None:
+            lacking = existing.get('stamps', [])
+        if not set(lacking) <= set(saved_stamps):
+            raise CheckpointError('Checkpoint hydration journal names foreign certificates')
+        saved_stamps = {n: saved_stamps[n] for n in lacking}
+        resume.update(units=sorted(hydrate), stamps=lacking)
     if existing is not None and existing != resume:
         raise CheckpointError('A different checkpoint restoration is incomplete')
     require_complete(ctx.out, game=ctx.game, checkpoint_resume=resume if existing else None)
-    if existing is None and not cold(ctx):
+    if existing is None and hydrate is None and not cold(ctx):
         raise CheckpointError('Checkpoint restoration preserves existing generated work; receiver is not empty')
     selected = {}
     source_paths = tracked_paths()
@@ -283,7 +328,7 @@ def restore(ctx, steps, store, key, *, echo=print):
         if label not in allowed:
             raise CheckpointError('Checkpoint root is not owned by this project')
         root, path_bound = allowed[label]
-        if path_bound and not same_path:
+        if path_bound and not same_path or hydrate is not None and unit_of(member, hydrate) is None:
             continue
         destination = safe_destination(root, name)
         if destination in source_paths:
@@ -300,6 +345,17 @@ def restore(ctx, steps, store, key, *, echo=print):
             if (entry['target'][7:] not in selected
                     and not any(m.startswith(entry['target'][7:] + '/') for m in selected)):
                 raise CheckpointError('Checkpoint link target is unavailable')
+    if hydrate is not None and existing is None:
+        # Existing members of a hydration unit must already be the checkpoint's own bytes.
+        for unit in hydrate:
+            label, _, prefix = unit.partition('/')
+            root = allowed[label][0]
+            for path in members(root / prefix if prefix else root):
+                member = label + '/' + path.relative_to(root).as_posix()
+                entry = manifest['files'].get(member)
+                if (path in source_paths or member not in selected or entry['kind'] != 'file' or path.is_symlink()
+                        or path.stat().st_size != entry['size'] or build_products.file_digest(path) != entry['sha256']):
+                    raise CheckpointError('Checkpoint hydration preserves differing local work in ' + unit)
     ctx.stamps.mkdir(parents=True, exist_ok=True)
     atomic_json(journal, resume)
     for name in saved_stamps:
@@ -356,9 +412,14 @@ def restore(ctx, steps, store, key, *, echo=print):
         path = ctx.stamps / (name + '.json')
         if name not in current:
             path.unlink(missing_ok=True)
+    if hydrate is not None:
+        current = {name: stamp for name, stamp in current.items() if name in saved_stamps}
     from .build_checkpoints import estimate
-    atomic_json(ctx.out / '.state/checkpoint.json', dict(key=key, restored=sorted(current),
-                estimates={name: estimate(stamp) for name, stamp in saved_stamps.items()}))
+    state = ctx.out / '.state/checkpoint.json'
+    estimates = {name: estimate(stamp) for name, stamp in saved_stamps.items()}
+    if hydrate is not None and state.is_file():
+        estimates = {**estimates, **read_json(state).get('estimates', {})}
+    atomic_json(state, dict(key=key, restored=sorted(current), estimates=estimates))
     # Publication of current certificates happens only after the outer guard closes in the caller.
     for name in current:
         (ctx.stamps / (name + '.json')).unlink(missing_ok=True)

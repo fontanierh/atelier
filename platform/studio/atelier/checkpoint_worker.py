@@ -14,6 +14,7 @@ def main(argv=None):
     parser.add_argument('--key')
     parser.add_argument('--source', type=Path)
     parser.add_argument('--release', action='store_true')
+    parser.add_argument('--unit', action='append', help='partial hydration member prefix')
     parser.add_argument('--read-only', action='store_true', help='candidate catalogue only; no producer metadata or Zen writes')
     args = parser.parse_args(argv)
     if args.source:
@@ -65,9 +66,10 @@ def main(argv=None):
     else:
         if not args.key:
             parser.error('restoration requires --key')
-        stamps = checkpoint_store.restore(ctx, steps, store, args.key)
+        stamps = checkpoint_store.restore(ctx, steps, store, args.key, hydrate=args.unit)
         from . import checkpoint_zen
-        post_import = checkpoint_zen.import_(ctx)
+        journal = checkpoint_store.read_json(ctx.out / checkpoint_store.JOURNAL)
+        post_import = {} if 'units' in journal else checkpoint_zen.import_(ctx)
         atomic_json(result, dict(key=args.key, stamps=stamps, post_import=post_import))
     return 0
 

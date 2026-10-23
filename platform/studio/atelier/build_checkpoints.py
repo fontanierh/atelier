@@ -7,6 +7,7 @@ Missing/incompatible checkpoints never silently authorize an expensive cold rebu
 import json
 import os
 from pathlib import Path
+import stat
 import sys
 import tempfile
 import time
@@ -58,7 +59,7 @@ def reason(value):
     return value
 
 
-def _guard(ctx, operation, key=None):
+def _guard(ctx, operation, key=None, units=()):
     """@cc [owner:fontanierh,label:safety] checkpoint-transfer-invocation
     Native-file copies MUST enter the normal owned-child admission/guard lifecycle with
     its required canonical UUID invocation identity. Invalid transfer metadata MUST NOT
@@ -70,6 +71,8 @@ def _guard(ctx, operation, key=None):
     argv = [sys.executable, '-m', 'atelier.checkpoint_worker', operation, ctx.game, str(folder)]
     if key:
         argv += ['--key', key]
+    for unit in units:
+        argv += ['--unit', unit]
     code = guarded.run(argv, folder, aggregate_tree=True, timeout=3600, progress=25,
                        kind='job', purpose='build checkpoint ' + operation, invocation_id=nonce)
     if code:
@@ -85,18 +88,27 @@ def _publish_restoration(ctx, steps, store, key, record):
     """
     journal = ctx.out / JOURNAL
     expected = dict(schema=1, key=key, game=ctx.game)
-    if read_json(journal) != expected or record.get('key') != key:
+    pending = read_json(journal)
+    units = pending.get('units') if isinstance(pending, dict) else None
+    if units is not None:
+        expected.update(units=units, stamps=pending.get('stamps'))
+    if pending != expected or record.get('key') != key:
         raise CheckpointError('Checkpoint restore completion does not match its journal')
     saved = store.load(key)
     candidates = record.get('stamps')
     known = {**saved['stamps'], **saved.get('incremental_stamps', {})}
     if not isinstance(candidates, dict) or any(known.get(n) != s for n, s in candidates.items()):
         raise CheckpointError('Checkpoint restore completion contains foreign certificates')
+    if units is not None and not set(candidates) <= set(expected['stamps']):
+        raise CheckpointError('Checkpoint hydration would replace receiver certificates')
     try:
         for name, stamp in candidates.items():
             atomic_json(ctx.stamps / (name + '.json'), stamp)
         incremental_environment(ctx)
-        if certificates(ctx, steps, include_incremental=True) != candidates:
+        current = certificates(ctx, steps, include_incremental=True)
+        if units is not None:
+            current = {n: s for n, s in current.items() if n in expected['stamps']}
+        if current != candidates:
             raise CheckpointError('Checkpoint receiver changed before certificate publication')
         # Revalidate all copied bytes at the publication boundary, not just named products.
         from .checkpoint_store import roots, safe_destination
@@ -108,7 +120,7 @@ def _publish_restoration(ctx, steps, store, key, record):
         for member, entry in saved['files'].items():
             label, _, name = member.partition('/')
             root, bound = allowed[label]
-            if bound and not same_path:
+            if bound and not same_path or units is not None and not any(member.startswith(u) for u in units):
                 continue
             path = safe_destination(root, name)
             expected_digest = post_import.get(member, entry.get('sha256'))
@@ -159,6 +171,7 @@ def prepare(ctx, steps, *, echo=print):
         _publish_restoration(ctx, steps, store, key, result)
         return store
     if not cold(ctx):
+        hydrate(ctx, steps, store, echo=echo)
         return store
     expected_context, ownership = context(ctx), {s.name for s in steps}
     for key, saved in store.latest():
@@ -187,6 +200,113 @@ def prepare(ctx, steps, *, echo=print):
     except (OSError, ValueError, KeyError, TypeError, PublishError) as error:
         echo(f'Checkpoint unavailable: {error}. Cold rebuilds still require an explicit reason.')
     return store
+
+
+SMALL_ROOT = 256
+
+
+def hydration_plan(ctx, steps, store):
+    """Best compatible local checkpoint for the units this workspace lacks; nothing is read twice.
+
+    Units are whole generated roots and per-task native import receipts. A unit qualifies when it is
+    empty locally, or holds only a few files whose names, kinds and sizes match the checkpoint
+    (restore then verifies their bytes). Large or differing units are reported, never replaced.
+    """
+    from itertools import islice
+    from .checkpoint_store import members, roots
+    allowed = roots(ctx)
+    expected, ownership = identity(context(ctx)), {s.name for s in steps}
+    here = identity(str(paths.REPO.resolve()))
+    present = {p.stem for p in ctx.stamps.glob('*.json')} if ctx.stamps.is_dir() else set()
+    local = {}
+    def found(unit):
+        if unit not in local:
+            label, _, prefix = unit.partition('/')
+            root = allowed[label][0]
+            local[unit] = [(p.relative_to(root).as_posix(), p.lstat())
+                           for p in islice(members(root / prefix if prefix else root), SMALL_ROOT + 1)]
+        return local[unit]
+    scanned, best, blocked = 0, None, []
+    summaries = store.summaries()
+    for age, (key, summary) in enumerate(summaries):
+        if (summary['workspace_only'] or summary['context'] != expected or not set(summary['steps']) <= ownership
+                or not set(summary['roots']) <= set(allowed)):
+            continue
+        scanned += 1
+        counts = summary['roots']
+        candidate = {}
+        for label, count in counts.items():
+            if label in ('zen', 'cooked') or allowed[label][1] and summary['checkout'] != here:
+                continue
+            existing = found(label + '/')
+            if not existing:
+                candidate[label + '/'] = count
+            elif len(existing) <= SMALL_ROOT:
+                candidate[label + '/'] = (count, existing)
+            elif label == 'generated':
+                candidate['generated'] = count  # Large root: per-task receipt units, resolved below.
+            else:
+                blocked.append((key, label, count))
+        stamps = sum(1 for n in summary['stamps'] if n not in present)
+        rough = sum(c if type(c) is int else c[0] - len(c[1]) for u, c in candidate.items() if u != 'generated')
+        if best is None or (rough, stamps) > best[0]:
+            best = ((rough, stamps), age, key, candidate)
+    plan = None
+    if best is not None and (best[0][0] or best[0][1] or 'generated' in best[3]):
+        key, candidate = best[2], best[3]
+        saved = store.load(key)
+        files = saved['files']
+        selected = {}
+        for unit, value in candidate.items():
+            if unit == 'generated':
+                for task in {m.split('/')[2] for m in files if m.startswith('generated/native-imports/')
+                             and m.count('/') > 2}:
+                    prefix = 'generated/native-imports/' + task + '/'
+                    if not found(prefix):
+                        selected[prefix] = sum(1 for m in files if m.startswith(prefix))
+                continue
+            if type(value) is int:
+                selected[unit] = value
+                continue
+            count, existing = value
+            label = unit.partition('/')[0]
+            if all((e := files.get(label + '/' + name)) is not None and e['kind'] == 'file'
+                   and stat.S_ISREG(info.st_mode) and info.st_size == e['size'] for name, info in existing):
+                if count > len(existing):
+                    selected[unit] = count - len(existing)
+            else:
+                blocked.append((key, label, count))
+        lacking = [n for n in {**saved['stamps'], **saved.get('incremental_stamps', {})} if n not in present]
+        if selected:
+            plan = dict(key=key, units=sorted(selected), files=sum(selected.values()), stamps=len(lacking))
+    blocked = [b for b in blocked if plan is None or b[0] != plan['key'] or b[1] + '/' not in plan['units']]
+    return plan, len(summaries), scanned, blocked
+
+
+def hydrate(ctx, steps, store, *, echo=print):
+    """Fill generated units this workspace lacks from the best compatible local checkpoint."""
+    started = time.monotonic()
+    plan, total, scanned, blocked = hydration_plan(ctx, steps, store)
+    echo(f'checkpoint reuse scan: {total} checkpoints, {scanned} candidates, {time.monotonic() - started:.1f} s')
+    if blocked:
+        key, label, count = max(blocked, key=lambda b: b[2])
+        echo(f'checkpoint {key[:12]} holds {count} {label} files, but local {label} differs and is kept; '
+             f'empty it to hydrate from that checkpoint')
+    if plan is None:
+        return None
+    echo(f'Hydrating {plan["files"]} files ({", ".join(u.rstrip("/") for u in plan["units"])}) from local '
+         f'checkpoint {plan["key"][:12]}; existing work is kept')
+    started = time.monotonic()
+    try:
+        result = _guard(ctx, 'restore', plan['key'], plan['units'])
+    except CheckpointError as error:
+        if (ctx.out / JOURNAL).exists():
+            raise
+        echo(f'checkpoint hydration skipped: {error}')
+        return None
+    _publish_restoration(ctx, steps, store, plan['key'], result)
+    echo(f'checkpoint restore: {len(result.get("stamps", {}))} certificates, {time.monotonic() - started:.1f} s')
+    return plan
 
 
 def protect(ctx, step, *, estimate=None, echo=print):

@@ -320,3 +320,33 @@ def test_checkpoint_transfer_reaches_real_guard_boundary_with_valid_invocation(t
     with pytest.raises(BeforeNativeLaunch):
         build_checkpoints._guard(ctx, operation, 'a' * 64)
     assert len(calls) == 1
+
+
+def test_non_cold_receiver_hydrates_matching_unit_and_keeps_its_work(fixture):
+    _, _, key = snapshot(fixture)
+    ctx, steps = fixture.checkout('receiver')
+    (ctx.out / 'tree').mkdir(parents=True)
+    (ctx.out / 'tree/asset.bin').write_bytes(b'tree')
+    plan, total, scanned, blocked = build_checkpoints.hydration_plan(ctx, steps, fixture.store)
+    assert plan['key'] == key and plan['units'] == ['generated/'] and plan['files'] == 2
+    assert (total, scanned, blocked) == (1, 1, [])
+    stamps = cp.restore(ctx, steps, fixture.store, key, hydrate=plan['units'], echo=lambda _: None)
+    assert set(stamps) == {'tree', 'combat', 'house'}
+    publish_receiver(ctx, steps, fixture.store, key, stamps)
+    assert (ctx.out / 'house/asset.bin').read_bytes() == b'house' and not (ctx.out / cp.JOURNAL).exists()
+    assert set(cp.certificates(ctx, steps)) == {'tree', 'combat', 'house'}
+
+
+def test_differing_local_work_is_kept_with_a_notice(fixture):
+    _, _, key = snapshot(fixture)
+    ctx, steps = fixture.checkout('receiver')
+    (ctx.out / 'tree').mkdir(parents=True)
+    (ctx.out / 'tree/asset.bin').write_bytes(b'mine')
+    messages = []
+    assert build_checkpoints.hydrate(ctx, steps, fixture.store, echo=messages.append) is None
+    assert messages[0].startswith('checkpoint reuse scan: 1 checkpoints, 1 candidates')
+    assert key[:12] in messages[1] and 'kept' in messages[1]
+    assert (ctx.out / 'tree/asset.bin').read_bytes() == b'mine' and not (ctx.out / 'house').exists()
+    with pytest.raises(cp.CheckpointError, match='differing local work'):
+        cp.restore(ctx, steps, fixture.store, key, hydrate=['generated/'])
+    assert not (ctx.out / cp.JOURNAL).exists()
