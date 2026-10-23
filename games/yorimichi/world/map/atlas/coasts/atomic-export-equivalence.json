@@ -1,0 +1,871 @@
+{
+  "schema": 1,
+  "kind": "atomic-export-map-source-equivalence",
+  "source_proof": {
+    "schema": 1,
+    "kind": "atomic-export-map-source-equivalence",
+    "predecessor_revision": "3aec3ac7e3f9903e1ae1e3d2004156b6d9459aa5",
+    "predecessor_fixture_sha256": "77ca116543014091b59847969235cbbbfe2869831522cc5771c3008a68ca4d32",
+    "renderer_sha256": "0c67e31a39beb6e36116da6e20591047f1335dc26406efdf9810d7f73db5c8eb",
+    "changed_sources": {
+      "world/build_terrain.py": {
+        "previous_sha256": "c00634b7dadc6ff98fe87ee4759f3a471dbe24cdf4c0c3d935fa835f6f9d6108",
+        "current_sha256": "4c9d91d4eab875de7d34976fca1cca38c7045b01573114f1257fc7431beded9f"
+      },
+      "world/map/build_map.py": {
+        "previous_sha256": "8ae530ea279cb3f3a4578d36acf6bc30f35c75bc58cb6790a2d975fa352d69cf",
+        "current_sha256": "0c67e31a39beb6e36116da6e20591047f1335dc26406efdf9810d7f73db5c8eb"
+      },
+      "world/regions/belmonte/terrain.py": {
+        "previous_sha256": "5ac9877948237befe95bb034786f54f69681aac33d3d28eb16fa51b5715416ee",
+        "current_sha256": "efe5a61fee8198f0b400547692db20adbbf4f304446eae53fb4a790c87f19e4b"
+      },
+      "world/regions/brinecove/ground.py": {
+        "previous_sha256": "d0cb5decc01c21b55c8e658ce1c29aa3f1e8e7c9da3002688cb1b60278d5f062",
+        "current_sha256": "06bb34478aab4b58c5582c7516d7a03029c5a32abbb078485b05e37f0a67035b"
+      },
+      "world/regions/hidamari/arrival.py": {
+        "previous_sha256": "3e70d4aea12da4f0dcb2aa28f027f65154c6d2734d6da277f44c3fc29bf69470",
+        "current_sha256": "4a12d54b6691f8c62f4a41519875cdad5d06a39ed2cad5e283c6d5fcd3bfab12"
+      },
+      "world/regions/hidamari/build.py": {
+        "previous_sha256": "eb57e173bdc65e4c4b9b11dc9481fe71309ab691b00968f322faac09b63830a6",
+        "current_sha256": "e570d190a616fdef6f20b646e22147d3e8854efdf159e74f3d6fa570f4435d20"
+      },
+      "world/regions/hidamari/layout.py": {
+        "previous_sha256": "9c05919534010689ef77cfc0ceb2a9c3af5aca611519a7d463bb513e359dca5f",
+        "current_sha256": "3dfe3ed560dc4ca08e012b9f50738bb36ca59729b55a2411f91d70ece0d8e0de"
+      },
+      "world/regions/hidamari/mountains.py": {
+        "previous_sha256": "df3f445eaf2bfe98909d9fc0ca2859096d1cd089fc16c8d09ed42160896cc155",
+        "current_sha256": "7060bf6ae296bf0a5a1e7dd7e30703591198ad91a833439c0329865546787b76"
+      },
+      "world/regions/hidamari/park_grounds.py": {
+        "previous_sha256": "9c192293801d77671003ca44e79289bc51cb9729f37be1d421de9768e4053c08",
+        "current_sha256": "5aa5dabfb76935e8c5539e28f33d8fc666efacb9f802ceb7190ece5878cb9d4f"
+      },
+      "world/regions/hidamari/station_yard.py": {
+        "previous_sha256": "88ae5f09845069916a4c4121aaad1849afb5bc837e6f55ca8e0e64d47a272d5e",
+        "current_sha256": "153eeac99de80b3fe671ab8e2a4f129da1a9bf6316c8e41204cbd2db3b34080d"
+      },
+      "world/regions/hidamari/temple_precinct.py": {
+        "previous_sha256": "07faa44cd13b7fabc2d833dd18ffaf52bc1fd57f8dd0c6e9d03bb67c6dfb4a4a",
+        "current_sha256": "c814ddfe4661c2476138499c5cc41b26d63f5f171bd7adc76df5791d94ed51ba"
+      },
+      "world/regions/southwest/island.py": {
+        "previous_sha256": "977f38a49fb5eb699f8164544fee1cde5f804372ddaeb03826125242e9c7b96f",
+        "current_sha256": "33a35bc01cf22f5552268717716d01e5eaf64d73c15f75abf6af1603d7bf90c1"
+      },
+      "world/regions/belmonte/source.py": {
+        "previous_sha256": "2f5fa59da16f38feb8678535a2c534f0fb82804dfdf3eed33f757e530c4f0519",
+        "current_sha256": "323dbc1637d8ff8cb80097c60342f9efb38d54dc972b0922553d059e0289a47d"
+      }
+    },
+    "comparisons": [
+      {
+        "source": "world/regions/hidamari/layout.py",
+        "previous_source": "world/regions/hidamari/layout.py",
+        "declarations": [
+          "BACKDROP",
+          "CITY_WEST",
+          "CITY_WEST_STITCH",
+          "H",
+          "HOUSE",
+          "HOUSE_ALLEY",
+          "ISLAND_FADE",
+          "LANE",
+          "ROAD_X",
+          "ROAD_Y",
+          "WIDE",
+          "_base_height",
+          "_city_west_stitch",
+          "_clear_of_hero",
+          "arcade_sites",
+          "backdrop_grid",
+          "backdrop_height",
+          "city_west_edge",
+          "coastal_backdrop_height",
+          "far_height",
+          "height",
+          "house_sites",
+          "island_fade",
+          "north_base_height",
+          "north_height",
+          "north_surface",
+          "road_width",
+          "shop_sites",
+          "street_height",
+          "terrain_axes",
+          "terrain_pads"
+        ],
+        "ast_sha256": "f9f11bcabe3fb6528cdc56fd8a1c46977d2c8b42e25fee1f5b9264926b3254c7"
+      },
+      {
+        "source": "world/regions/hidamari/arrival_placement.py",
+        "previous_source": "world/regions/hidamari/arrival.py",
+        "declarations": [
+          "AREA",
+          "BUS_STOP",
+          "ROAD_CLEAR",
+          "SHRINE",
+          "STEP_MAX",
+          "_fits",
+          "_road",
+          "_world",
+          "cells",
+          "place",
+          "road_distance"
+        ],
+        "ast_sha256": "c3b4567fe4ee6c9f13ef587459db6e50f77b5db74b64953c59971c94231ffc35"
+      },
+      {
+        "source": "world/regions/hidamari/park_grounds_placement.py",
+        "previous_source": "world/regions/hidamari/park_grounds.py",
+        "declarations": [
+          "BEDS",
+          "LAMPS",
+          "PATHS",
+          "SAND",
+          "WIDTH",
+          "_near_path",
+          "place"
+        ],
+        "ast_sha256": "e9c3679eba2dfe6e4f8700a658a03d9338be1ba2c073d94f8eabd15514c0b48f"
+      },
+      {
+        "source": "world/regions/hidamari/station_yard_placement.py",
+        "previous_source": "world/regions/hidamari/station_yard.py",
+        "declarations": [
+          "BED",
+          "KIOSK",
+          "LANE_BREAK",
+          "PAD",
+          "RAIL",
+          "SHELTER",
+          "SHOPS",
+          "STATION",
+          "X0",
+          "X1",
+          "Y0",
+          "Y1",
+          "floor_z",
+          "place"
+        ],
+        "ast_sha256": "9e990210ba64342f45fc5ece5ab525e5c85d999b61b0d996ce3d5893f4489fcb"
+      },
+      {
+        "source": "world/regions/hidamari/temple_precinct_placement.py",
+        "previous_source": "world/regions/hidamari/temple_precinct.py",
+        "declarations": [
+          "APPROACHES",
+          "BAMBOO",
+          "GRAVES",
+          "MAPLES",
+          "PADS",
+          "PAGODA",
+          "WALL_Y",
+          "place"
+        ],
+        "ast_sha256": "35c2690d8f71d440a7dea7ff2bb62c57ffbde23a6ba824f068ceb0c0a53562aa"
+      },
+      {
+        "source": "world/regions/hidamari/mountains.py",
+        "previous_source": "world/regions/hidamari/mountains.py",
+        "declarations": [
+          "BOUNDS",
+          "_cell",
+          "_city_edge_row",
+          "_surface_grid",
+          "height",
+          "raw_height",
+          "surface_grid",
+          "trail_points"
+        ],
+        "ast_sha256": "bb1bb5eb70697fb03b7e06cd8194f6eb638221da74010850ddc567282e5f7d06"
+      },
+      {
+        "source": "world/regions/southwest/island.py",
+        "previous_source": "world/regions/southwest/island.py",
+        "declarations": [
+          "CENTRE",
+          "COVE_BEARING",
+          "COVE_R",
+          "CROWN",
+          "FRONT_DROP",
+          "FRONT_Y",
+          "HEADLANDS",
+          "HILLS",
+          "LANDING",
+          "NOISE_AMP",
+          "OUTCROPS",
+          "PEAK",
+          "SIZE",
+          "STACKS",
+          "SUMMIT",
+          "SUMMIT_R",
+          "SUMMIT_Z",
+          "VALLEY",
+          "WAYPOINTS",
+          "_PATH",
+          "_RAMP",
+          "_base",
+          "_dome",
+          "_hills",
+          "_lobe",
+          "_noise",
+          "_path_arrays",
+          "_ramp",
+          "_smooth",
+          "cliff_height",
+          "coast_radius",
+          "height",
+          "path_points"
+        ],
+        "ast_sha256": "99b30fd17814e7225c2085e4d0026926d5c4f269954d31827dae60f47be1ef38"
+      },
+      {
+        "source": "world/regions/belmonte/terrain.py",
+        "previous_source": "world/regions/belmonte/terrain.py",
+        "declarations": [
+          "ACCESS_FINE",
+          "FORECOURT_FINE",
+          "PATH_STEP",
+          "SALON_PATH",
+          "VALLEY_CARVED_TILES",
+          "VALLEY_SUBDIV",
+          "WALL_FINE",
+          "_bisect_near",
+          "_border_vertices",
+          "_read_glb",
+          "_repaint",
+          "_salon_path",
+          "carve_valley_tile",
+          "valley_tile_triangles"
+        ],
+        "ast_sha256": "9caa6a6546663ca463345340050f25c2bec15253517e5b4438f3f89ad8cc7228"
+      },
+      {
+        "source": "world/regions/belmonte/query_surface.py",
+        "previous_source": "world/regions/belmonte/source.py",
+        "declarations": [
+          "Surface"
+        ],
+        "ast_sha256": "3f68cc85380474fdcd462108f2c5e1cf04453ec27bd0ed2fc227d7c2882545fc"
+      },
+      {
+        "source": "world/regions/belmonte/source.py",
+        "previous_source": "world/regions/belmonte/source.py",
+        "declarations": [
+          "FRAME",
+          "LIBRARY",
+          "MANIFEST",
+          "Surface",
+          "manifest",
+          "terrain",
+          "triangles"
+        ],
+        "ast_sha256": "af9332ca9dbd60df0f8a6b9733759057f8a4556fbcc6435c2971ded3def77ae3"
+      },
+      {
+        "source": "world/regions/brinecove/ground_sampling.py",
+        "previous_source": "world/regions/brinecove/ground.py",
+        "declarations": [
+          "STEP",
+          "_axis",
+          "jag_point"
+        ],
+        "ast_sha256": "21216e2676587e4e12d9362fea664510ad03d40bea4278146acffcb85b2e5841"
+      },
+      {
+        "source": "world/regions/brinecove/boundary.py",
+        "previous_source": "world/regions/brinecove/ground.py",
+        "declarations": [
+          "weld"
+        ],
+        "ast_sha256": "d8bfa04b81a57a6ab9a494602c24872ab653eb00a9055c90d85fe8ab8195cf58"
+      }
+    ],
+    "bound_sources": {
+      "world/build_terrain.py": "4c9d91d4eab875de7d34976fca1cca38c7045b01573114f1257fc7431beded9f",
+      "world/map/build_map.py": "0c67e31a39beb6e36116da6e20591047f1335dc26406efdf9810d7f73db5c8eb",
+      "world/regions/belmonte/ground_names.py": "ef71d416c8b71015fe38848101893d9d9bcc4f7bae1459e1df9b604770cf125c",
+      "world/regions/belmonte/query_arrays.py": "2bf353fee3471499ee742a561d55b44e046aa8132f79551bd20d1520b06c8223",
+      "world/regions/belmonte/query_surface.py": "01212f534acb9b5c8ee0a5e475c8d209d163b91e33696f1c145811398a159c9e",
+      "world/regions/belmonte/source.py": "323dbc1637d8ff8cb80097c60342f9efb38d54dc972b0922553d059e0289a47d",
+      "world/regions/belmonte/terrain.py": "efe5a61fee8198f0b400547692db20adbbf4f304446eae53fb4a790c87f19e4b",
+      "world/regions/belmonte/terrain_bounds.py": "75e66899899936cea96d48669884ada8b8889b2ac20ba4ffb25f64dd8e1696a7",
+      "world/regions/brinecove/boundary.py": "51cc29f795a59bcd72970bdcc1a89b19d5a6b39d6f9af357361a124a582b50ff",
+      "world/regions/brinecove/ground.py": "06bb34478aab4b58c5582c7516d7a03029c5a32abbb078485b05e37f0a67035b",
+      "world/regions/brinecove/ground_sampling.py": "2a1c02beccdd8b1a463f0de1aa8a4d98cd301ed18369962aa309d61d922725e0",
+      "world/regions/hidamari/arrival.py": "4a12d54b6691f8c62f4a41519875cdad5d06a39ed2cad5e283c6d5fcd3bfab12",
+      "world/regions/hidamari/arrival_placement.py": "515374f677e891321e48d0f46187f792872c4a0887eb70676784f6c795d82d03",
+      "world/regions/hidamari/build.py": "e570d190a616fdef6f20b646e22147d3e8854efdf159e74f3d6fa570f4435d20",
+      "world/regions/hidamari/layout.py": "3dfe3ed560dc4ca08e012b9f50738bb36ca59729b55a2411f91d70ece0d8e0de",
+      "world/regions/hidamari/mountains.py": "7060bf6ae296bf0a5a1e7dd7e30703591198ad91a833439c0329865546787b76",
+      "world/regions/hidamari/park_grounds.py": "5aa5dabfb76935e8c5539e28f33d8fc666efacb9f802ceb7190ece5878cb9d4f",
+      "world/regions/hidamari/park_grounds_placement.py": "837bdd9c8bdd640dab7b7af0bbccf29beecf7950aba38232b77a7ccbc694f9b6",
+      "world/regions/hidamari/station_yard.py": "153eeac99de80b3fe671ab8e2a4f129da1a9bf6316c8e41204cbd2db3b34080d",
+      "world/regions/hidamari/station_yard_placement.py": "939f81ed0b590115f4f808d3ac3e3434d009f58ec88e7bb4bc693dbcfaaf9504",
+      "world/regions/hidamari/temple_precinct.py": "c814ddfe4661c2476138499c5cc41b26d63f5f171bd7adc76df5791d94ed51ba",
+      "world/regions/hidamari/temple_precinct_placement.py": "5a64a7703ffebeed56f8923f146bfe75d332b4e1116ca06353c7ff379e50a169",
+      "world/regions/southwest/island.py": "33a35bc01cf22f5552268717716d01e5eaf64d73c15f75abf6af1603d7bf90c1"
+    },
+    "render_only_sources": [
+      "world/build_terrain.py",
+      "world/regions/hidamari/build.py"
+    ],
+    "scope": "Unchanged atlas-consumed height/placement expressions and exact helper relocations; no new terrain/coast/painting acceptance."
+  },
+  "current_geography": {
+    "world/gen_world.py": "9763dfffa7b4c2e9c186d469124289fad26510254a7c16e15d6a1604ed26c4ef",
+    "world/build_terrain.py": "4c9d91d4eab875de7d34976fca1cca38c7045b01573114f1257fc7431beded9f",
+    "world/farhills_surface.py": "4b2e2ab9cb3f8410a6725554de2c40a926da3091f89671af422de0884c69b3dc",
+    "world/farhills_grid.py": "6451e5894c63e3eedcded121cef2f477a9615c36b1dd61715d16938ab53228c4",
+    "world/terrain_product.py": "6d9dc77173d8edb5a5486154e0cc1004d7b649f9ed87b1f7e3aa4c5655ed84bd",
+    "world/north_mountain_surface.py": "380fac8eece8794a9d8737444af73b3e3979227470aba3de49d415df42477816",
+    "world/city_terrain_surface.py": "0da9fe701db9f11a7eefc02f199bd2fe05789d5c936c04f835f195944bae6656",
+    "world/regions/hidamari/build.py": "e570d190a616fdef6f20b646e22147d3e8854efdf159e74f3d6fa570f4435d20",
+    "world/regions/hidamari/layout.py": "3dfe3ed560dc4ca08e012b9f50738bb36ca59729b55a2411f91d70ece0d8e0de",
+    "world/regions/hidamari_stable/layout.py": "d30b9b12b09c2e3cad3ab2d21db8d5ca8e83c7fe6daad0bf309bc50180cea97c",
+    "world/regions/hidamari/mountains.py": "7060bf6ae296bf0a5a1e7dd7e30703591198ad91a833439c0329865546787b76",
+    "world/regions/hidamari/natural_terrain.py": "bca99462123604c90670b2082872f921aed96eb750df1f25ebd03a48d0ce29e0",
+    "world/regions/craterpark/v2/v4_config.py": "ee6e94c6212e02aa2c92bf27a555d73f5be5efa8c84160ef6c37ca617316fdbd",
+    "world/regions/belmonte/layout.py": "2ecad733eda23105dad686e57efe82182a2eca5762a507fe070bfd0807836890",
+    "world/regions/belmonte/terrain.py": "efe5a61fee8198f0b400547692db20adbbf4f304446eae53fb4a790c87f19e4b",
+    "world/regions/belmonte/plan.py": "b2b10ac599577713c36ca27b28343ec2cff244b0272640da45e4bc671821612c",
+    "world/regions/southwest/island.py": "33a35bc01cf22f5552268717716d01e5eaf64d73c15f75abf6af1603d7bf90c1",
+    "world/train/route.py": "217efe967d76250d4c2fe3eefc5452f44806a00727d18ab4c87cf81515e15a71",
+    "world/train/corridor.py": "af3891bbe90caf06cc94ca2dee42d4714b654dd974a79190880714326a04be88",
+    "world/train/earthworks.py": "3d7af5b066a10f90203d15573bcba928a8ab26c333d089214049c7470c20f18c",
+    "world/train/station_site.py": "bc31b47aa379c19bc272db23b7cd1c4a06bc316a278764e7c25893f533c8323e",
+    "world/regions/skatepark/park.json": "a0fe294c872e312cbb07f57895782d914f62a8758cba5d681e4506b32688d637",
+    "world/regions/craterpark/placement.py": "f8ab80eb99b84d3dc9bb8ba6219b30f9fac2b2d20d4c2b199d3a6eb717444d42",
+    "world/regions/megapark/placement.py": "b3cf874a6d444b61e0504374ea691330fb7c9326dbbcbfda64ddd6ebed05fbdf",
+    "assets/belmonte/source.json": "a83ec8c74dd8d031c7d44d722e9358a8240556af649298f37743e5088fcdd1b9",
+    "assets/vehicles/belmonte-train/line.json": "fd64b115e1596efb3102be2129cfbf8c095fd05dd4d6e457e27d03a8bfc2f180",
+    "world/regions/brinecove/region.py": "9e007570e353c305964befbc9db53755c52d95c55069a6253058a39792e67408",
+    "world/regions/brinecove/layout.py": "ffac69eb203391165e2b84c306d4eb0c02865fa3ca83a6181e16b18203dd6655",
+    "world/regions/brinecove/ground.py": "06bb34478aab4b58c5582c7516d7a03029c5a32abbb078485b05e37f0a67035b",
+    "world/regions/brinecove/plan.py": "ee166c5bcd608096f4a00124de2f8b44df750baf323a52164432059aac6e359b",
+    "world/regions/hidamari/arrival_placement.py": "515374f677e891321e48d0f46187f792872c4a0887eb70676784f6c795d82d03",
+    "world/regions/hidamari/park_grounds_placement.py": "837bdd9c8bdd640dab7b7af0bbccf29beecf7950aba38232b77a7ccbc694f9b6",
+    "world/regions/hidamari/station_yard_placement.py": "939f81ed0b590115f4f808d3ac3e3434d009f58ec88e7bb4bc693dbcfaaf9504",
+    "world/regions/hidamari/temple_precinct_placement.py": "5a64a7703ffebeed56f8923f146bfe75d332b4e1116ca06353c7ff379e50a169",
+    "world/regions/belmonte/query_arrays.py": "2bf353fee3471499ee742a561d55b44e046aa8132f79551bd20d1520b06c8223",
+    "world/regions/belmonte/query_surface.py": "01212f534acb9b5c8ee0a5e475c8d209d163b91e33696f1c145811398a159c9e",
+    "world/regions/belmonte/source.py": "323dbc1637d8ff8cb80097c60342f9efb38d54dc972b0922553d059e0289a47d",
+    "world/map/build_map.py": "0c67e31a39beb6e36116da6e20591047f1335dc26406efdf9810d7f73db5c8eb",
+    "world/regions/belmonte/ground_names.py": "ef71d416c8b71015fe38848101893d9d9bcc4f7bae1459e1df9b604770cf125c",
+    "world/regions/belmonte/terrain_bounds.py": "75e66899899936cea96d48669884ada8b8889b2ac20ba4ffb25f64dd8e1696a7",
+    "world/regions/brinecove/ground_sampling.py": "2a1c02beccdd8b1a463f0de1aa8a4d98cd301ed18369962aa309d61d922725e0",
+    "world/regions/brinecove/boundary.py": "51cc29f795a59bcd72970bdcc1a89b19d5a6b39d6f9af357361a124a582b50ff",
+    "world/shorelines.py": "087b0fe32ea76a8082e1aed80581b24261bead89ee2db165a3ee053f5f5d1006"
+  },
+  "query_data_equivalence": {
+    "schema": 1,
+    "old_decoder_sha256": "2f5fa59da16f38feb8678535a2c534f0fb82804dfdf3eed33f757e530c4f0519",
+    "surfaces": {
+      "SM_BM_NorthCountry": {
+        "baseline": {
+          "sha256": "deedc7c5a829fb0f055babda61a3464ecb2e08c1d610be82e712acd401cae41f",
+          "bytes": 130360792
+        },
+        "actual": {
+          "sha256": "110262c366067181987526f74467729786f02f862d09208f2e2a823d54310966",
+          "bytes": 80256598
+        },
+        "shape": [
+          1114667,
+          3,
+          3
+        ],
+        "dtype": "<f8",
+        "ordered_triangle_bytes_sha256": "f78c161e5739614c7aa856bff27240ee15801ff557ab4577b98c04cbb82c3706",
+        "exact": true
+      },
+      "SM_BM_NorthApron": {
+        "baseline": {
+          "sha256": "6a5b050e599b166b335c6ec6639e792abb8311378ccd0435ac84cbc52661d733",
+          "bytes": 16621704
+        },
+        "actual": {
+          "sha256": "40ceb52c49e4549b633fdd9825e31a0fb14f0e2f39c939ad42f29bcf986f125c",
+          "bytes": 11728652
+        },
+        "shape": [
+          162890,
+          3,
+          3
+        ],
+        "dtype": "<f8",
+        "ordered_triangle_bytes_sha256": "6a14b4e55c3869ccb0b834f580ea8683bd5deaf54343c04bfe03fc5ade8141ff",
+        "exact": true
+      }
+    },
+    "archived_producer_source_revision": "1d3ff87b8a6477fd7ca954654b111d9148d13fd0",
+    "archived_preparation_receipt_sha256": "139a9063682f1b0301342f7e0e4296701b33552917b7c756ff9c4fb3a03cf3d3",
+    "current_data_source_revision": "583643963e3f66182a517bd9e93e46877a33dc6b",
+    "decoder_revision": "3aec3ac7e3f9903e1ae1e3d2004156b6d9459aa5",
+    "scope": "Actual archived complete final GLB decoded by immutable original decoder vs complete final query NPZ; ordered float64 triangle bytes, winding and frame exact. No native/render acceptance."
+  },
+  "records": {
+    "coasts/source.json": {
+      "previous_record_sha256": "49c89307a8a87b13c8a8a22da414202faa979917ce9b68d80f4796fabf2f595f",
+      "previous_tables": {
+        "geography": {
+          "world/gen_world.py": "9763dfffa7b4c2e9c186d469124289fad26510254a7c16e15d6a1604ed26c4ef",
+          "world/build_terrain.py": "c00634b7dadc6ff98fe87ee4759f3a471dbe24cdf4c0c3d935fa835f6f9d6108",
+          "world/farhills_surface.py": "4b2e2ab9cb3f8410a6725554de2c40a926da3091f89671af422de0884c69b3dc",
+          "world/farhills_grid.py": "6451e5894c63e3eedcded121cef2f477a9615c36b1dd61715d16938ab53228c4",
+          "world/terrain_product.py": "6d9dc77173d8edb5a5486154e0cc1004d7b649f9ed87b1f7e3aa4c5655ed84bd",
+          "world/north_mountain_surface.py": "380fac8eece8794a9d8737444af73b3e3979227470aba3de49d415df42477816",
+          "world/city_terrain_surface.py": "0da9fe701db9f11a7eefc02f199bd2fe05789d5c936c04f835f195944bae6656",
+          "world/regions/hidamari/build.py": "eb57e173bdc65e4c4b9b11dc9481fe71309ab691b00968f322faac09b63830a6",
+          "world/regions/hidamari/layout.py": "9c05919534010689ef77cfc0ceb2a9c3af5aca611519a7d463bb513e359dca5f",
+          "world/regions/hidamari_stable/layout.py": "d30b9b12b09c2e3cad3ab2d21db8d5ca8e83c7fe6daad0bf309bc50180cea97c",
+          "world/regions/hidamari/mountains.py": "df3f445eaf2bfe98909d9fc0ca2859096d1cd089fc16c8d09ed42160896cc155",
+          "world/regions/hidamari/natural_terrain.py": "bca99462123604c90670b2082872f921aed96eb750df1f25ebd03a48d0ce29e0",
+          "world/regions/craterpark/v2/v4_config.py": "ee6e94c6212e02aa2c92bf27a555d73f5be5efa8c84160ef6c37ca617316fdbd",
+          "world/regions/belmonte/layout.py": "2ecad733eda23105dad686e57efe82182a2eca5762a507fe070bfd0807836890",
+          "world/regions/belmonte/terrain.py": "5ac9877948237befe95bb034786f54f69681aac33d3d28eb16fa51b5715416ee",
+          "world/regions/belmonte/plan.py": "b2b10ac599577713c36ca27b28343ec2cff244b0272640da45e4bc671821612c",
+          "world/regions/southwest/island.py": "977f38a49fb5eb699f8164544fee1cde5f804372ddaeb03826125242e9c7b96f",
+          "world/train/route.py": "217efe967d76250d4c2fe3eefc5452f44806a00727d18ab4c87cf81515e15a71",
+          "world/train/corridor.py": "af3891bbe90caf06cc94ca2dee42d4714b654dd974a79190880714326a04be88",
+          "world/train/earthworks.py": "3d7af5b066a10f90203d15573bcba928a8ab26c333d089214049c7470c20f18c",
+          "world/train/station_site.py": "bc31b47aa379c19bc272db23b7cd1c4a06bc316a278764e7c25893f533c8323e",
+          "world/regions/skatepark/park.json": "a0fe294c872e312cbb07f57895782d914f62a8758cba5d681e4506b32688d637",
+          "world/regions/craterpark/placement.py": "f8ab80eb99b84d3dc9bb8ba6219b30f9fac2b2d20d4c2b199d3a6eb717444d42",
+          "world/regions/megapark/placement.py": "b3cf874a6d444b61e0504374ea691330fb7c9326dbbcbfda64ddd6ebed05fbdf",
+          "assets/belmonte/source.json": "a83ec8c74dd8d031c7d44d722e9358a8240556af649298f37743e5088fcdd1b9",
+          "assets/vehicles/belmonte-train/line.json": "fd64b115e1596efb3102be2129cfbf8c095fd05dd4d6e457e27d03a8bfc2f180",
+          "world/regions/brinecove/region.py": "9e007570e353c305964befbc9db53755c52d95c55069a6253058a39792e67408",
+          "world/regions/brinecove/layout.py": "ffac69eb203391165e2b84c306d4eb0c02865fa3ca83a6181e16b18203dd6655",
+          "world/regions/brinecove/ground.py": "d0cb5decc01c21b55c8e658ce1c29aa3f1e8e7c9da3002688cb1b60278d5f062",
+          "world/regions/brinecove/plan.py": "ee166c5bcd608096f4a00124de2f8b44df750baf323a52164432059aac6e359b",
+          "world/shorelines.py": "087b0fe32ea76a8082e1aed80581b24261bead89ee2db165a3ee053f5f5d1006"
+        }
+      }
+    },
+    "world.json": {
+      "previous_record_sha256": "164a83de07ab4ba995c8bcac0146e451570bd2aab8c3a1b5b3714d1165f5bca4",
+      "previous_tables": {
+        "verified_geography.geography": {
+          "world/gen_world.py": "9763dfffa7b4c2e9c186d469124289fad26510254a7c16e15d6a1604ed26c4ef",
+          "world/build_terrain.py": "c00634b7dadc6ff98fe87ee4759f3a471dbe24cdf4c0c3d935fa835f6f9d6108",
+          "world/farhills_surface.py": "4b2e2ab9cb3f8410a6725554de2c40a926da3091f89671af422de0884c69b3dc",
+          "world/farhills_grid.py": "6451e5894c63e3eedcded121cef2f477a9615c36b1dd61715d16938ab53228c4",
+          "world/terrain_product.py": "6d9dc77173d8edb5a5486154e0cc1004d7b649f9ed87b1f7e3aa4c5655ed84bd",
+          "world/north_mountain_surface.py": "380fac8eece8794a9d8737444af73b3e3979227470aba3de49d415df42477816",
+          "world/city_terrain_surface.py": "0da9fe701db9f11a7eefc02f199bd2fe05789d5c936c04f835f195944bae6656",
+          "world/regions/hidamari/build.py": "eb57e173bdc65e4c4b9b11dc9481fe71309ab691b00968f322faac09b63830a6",
+          "world/regions/hidamari/layout.py": "9c05919534010689ef77cfc0ceb2a9c3af5aca611519a7d463bb513e359dca5f",
+          "world/regions/hidamari_stable/layout.py": "d30b9b12b09c2e3cad3ab2d21db8d5ca8e83c7fe6daad0bf309bc50180cea97c",
+          "world/regions/hidamari/mountains.py": "df3f445eaf2bfe98909d9fc0ca2859096d1cd089fc16c8d09ed42160896cc155",
+          "world/regions/hidamari/natural_terrain.py": "bca99462123604c90670b2082872f921aed96eb750df1f25ebd03a48d0ce29e0",
+          "world/regions/craterpark/v2/v4_config.py": "ee6e94c6212e02aa2c92bf27a555d73f5be5efa8c84160ef6c37ca617316fdbd",
+          "world/regions/belmonte/layout.py": "2ecad733eda23105dad686e57efe82182a2eca5762a507fe070bfd0807836890",
+          "world/regions/belmonte/terrain.py": "5ac9877948237befe95bb034786f54f69681aac33d3d28eb16fa51b5715416ee",
+          "world/regions/belmonte/plan.py": "b2b10ac599577713c36ca27b28343ec2cff244b0272640da45e4bc671821612c",
+          "world/regions/southwest/island.py": "977f38a49fb5eb699f8164544fee1cde5f804372ddaeb03826125242e9c7b96f",
+          "world/train/route.py": "217efe967d76250d4c2fe3eefc5452f44806a00727d18ab4c87cf81515e15a71",
+          "world/train/corridor.py": "af3891bbe90caf06cc94ca2dee42d4714b654dd974a79190880714326a04be88",
+          "world/train/earthworks.py": "3d7af5b066a10f90203d15573bcba928a8ab26c333d089214049c7470c20f18c",
+          "world/train/station_site.py": "bc31b47aa379c19bc272db23b7cd1c4a06bc316a278764e7c25893f533c8323e",
+          "world/regions/skatepark/park.json": "a0fe294c872e312cbb07f57895782d914f62a8758cba5d681e4506b32688d637",
+          "world/regions/craterpark/placement.py": "f8ab80eb99b84d3dc9bb8ba6219b30f9fac2b2d20d4c2b199d3a6eb717444d42",
+          "world/regions/megapark/placement.py": "b3cf874a6d444b61e0504374ea691330fb7c9326dbbcbfda64ddd6ebed05fbdf",
+          "assets/belmonte/source.json": "a83ec8c74dd8d031c7d44d722e9358a8240556af649298f37743e5088fcdd1b9",
+          "assets/vehicles/belmonte-train/line.json": "fd64b115e1596efb3102be2129cfbf8c095fd05dd4d6e457e27d03a8bfc2f180",
+          "world/regions/brinecove/region.py": "9e007570e353c305964befbc9db53755c52d95c55069a6253058a39792e67408",
+          "world/regions/brinecove/layout.py": "ffac69eb203391165e2b84c306d4eb0c02865fa3ca83a6181e16b18203dd6655",
+          "world/regions/brinecove/ground.py": "d0cb5decc01c21b55c8e658ce1c29aa3f1e8e7c9da3002688cb1b60278d5f062",
+          "world/regions/brinecove/plan.py": "ee166c5bcd608096f4a00124de2f8b44df750baf323a52164432059aac6e359b",
+          "world/shorelines.py": "087b0fe32ea76a8082e1aed80581b24261bead89ee2db165a3ee053f5f5d1006"
+        },
+        "geography": {
+          "world/gen_world.py": "9763dfffa7b4c2e9c186d469124289fad26510254a7c16e15d6a1604ed26c4ef",
+          "world/build_terrain.py": "c00634b7dadc6ff98fe87ee4759f3a471dbe24cdf4c0c3d935fa835f6f9d6108",
+          "world/farhills_surface.py": "4b2e2ab9cb3f8410a6725554de2c40a926da3091f89671af422de0884c69b3dc",
+          "world/farhills_grid.py": "6451e5894c63e3eedcded121cef2f477a9615c36b1dd61715d16938ab53228c4",
+          "world/terrain_product.py": "6d9dc77173d8edb5a5486154e0cc1004d7b649f9ed87b1f7e3aa4c5655ed84bd",
+          "world/north_mountain_surface.py": "380fac8eece8794a9d8737444af73b3e3979227470aba3de49d415df42477816",
+          "world/city_terrain_surface.py": "0da9fe701db9f11a7eefc02f199bd2fe05789d5c936c04f835f195944bae6656",
+          "world/regions/hidamari/build.py": "eb57e173bdc65e4c4b9b11dc9481fe71309ab691b00968f322faac09b63830a6",
+          "world/regions/hidamari/layout.py": "9c05919534010689ef77cfc0ceb2a9c3af5aca611519a7d463bb513e359dca5f",
+          "world/regions/hidamari_stable/layout.py": "d30b9b12b09c2e3cad3ab2d21db8d5ca8e83c7fe6daad0bf309bc50180cea97c",
+          "world/regions/hidamari/mountains.py": "df3f445eaf2bfe98909d9fc0ca2859096d1cd089fc16c8d09ed42160896cc155",
+          "world/regions/hidamari/natural_terrain.py": "bca99462123604c90670b2082872f921aed96eb750df1f25ebd03a48d0ce29e0",
+          "world/regions/craterpark/v2/v4_config.py": "ee6e94c6212e02aa2c92bf27a555d73f5be5efa8c84160ef6c37ca617316fdbd",
+          "world/regions/belmonte/layout.py": "2ecad733eda23105dad686e57efe82182a2eca5762a507fe070bfd0807836890",
+          "world/regions/belmonte/terrain.py": "5ac9877948237befe95bb034786f54f69681aac33d3d28eb16fa51b5715416ee",
+          "world/regions/belmonte/plan.py": "b2b10ac599577713c36ca27b28343ec2cff244b0272640da45e4bc671821612c",
+          "world/regions/southwest/island.py": "977f38a49fb5eb699f8164544fee1cde5f804372ddaeb03826125242e9c7b96f",
+          "world/train/route.py": "217efe967d76250d4c2fe3eefc5452f44806a00727d18ab4c87cf81515e15a71",
+          "world/train/corridor.py": "af3891bbe90caf06cc94ca2dee42d4714b654dd974a79190880714326a04be88",
+          "world/train/earthworks.py": "3d7af5b066a10f90203d15573bcba928a8ab26c333d089214049c7470c20f18c",
+          "world/train/station_site.py": "bc31b47aa379c19bc272db23b7cd1c4a06bc316a278764e7c25893f533c8323e",
+          "world/regions/skatepark/park.json": "a0fe294c872e312cbb07f57895782d914f62a8758cba5d681e4506b32688d637",
+          "world/regions/craterpark/placement.py": "f8ab80eb99b84d3dc9bb8ba6219b30f9fac2b2d20d4c2b199d3a6eb717444d42",
+          "world/regions/megapark/placement.py": "b3cf874a6d444b61e0504374ea691330fb7c9326dbbcbfda64ddd6ebed05fbdf",
+          "assets/belmonte/source.json": "a83ec8c74dd8d031c7d44d722e9358a8240556af649298f37743e5088fcdd1b9",
+          "assets/vehicles/belmonte-train/line.json": "fd64b115e1596efb3102be2129cfbf8c095fd05dd4d6e457e27d03a8bfc2f180",
+          "world/regions/brinecove/region.py": "9e007570e353c305964befbc9db53755c52d95c55069a6253058a39792e67408",
+          "world/regions/brinecove/layout.py": "ffac69eb203391165e2b84c306d4eb0c02865fa3ca83a6181e16b18203dd6655",
+          "world/regions/brinecove/ground.py": "d0cb5decc01c21b55c8e658ce1c29aa3f1e8e7c9da3002688cb1b60278d5f062",
+          "world/regions/brinecove/plan.py": "ee166c5bcd608096f4a00124de2f8b44df750baf323a52164432059aac6e359b",
+          "world/shorelines.py": "087b0fe32ea76a8082e1aed80581b24261bead89ee2db165a3ee053f5f5d1006"
+        },
+        "generation_witness.geography": {
+          "world/gen_world.py": "9763dfffa7b4c2e9c186d469124289fad26510254a7c16e15d6a1604ed26c4ef",
+          "world/build_terrain.py": "c00634b7dadc6ff98fe87ee4759f3a471dbe24cdf4c0c3d935fa835f6f9d6108",
+          "world/farhills_surface.py": "4b2e2ab9cb3f8410a6725554de2c40a926da3091f89671af422de0884c69b3dc",
+          "world/farhills_grid.py": "6451e5894c63e3eedcded121cef2f477a9615c36b1dd61715d16938ab53228c4",
+          "world/terrain_product.py": "6d9dc77173d8edb5a5486154e0cc1004d7b649f9ed87b1f7e3aa4c5655ed84bd",
+          "world/north_mountain_surface.py": "380fac8eece8794a9d8737444af73b3e3979227470aba3de49d415df42477816",
+          "world/city_terrain_surface.py": "0da9fe701db9f11a7eefc02f199bd2fe05789d5c936c04f835f195944bae6656",
+          "world/regions/hidamari/build.py": "eb57e173bdc65e4c4b9b11dc9481fe71309ab691b00968f322faac09b63830a6",
+          "world/regions/hidamari/layout.py": "9c05919534010689ef77cfc0ceb2a9c3af5aca611519a7d463bb513e359dca5f",
+          "world/regions/hidamari_stable/layout.py": "d30b9b12b09c2e3cad3ab2d21db8d5ca8e83c7fe6daad0bf309bc50180cea97c",
+          "world/regions/hidamari/mountains.py": "df3f445eaf2bfe98909d9fc0ca2859096d1cd089fc16c8d09ed42160896cc155",
+          "world/regions/hidamari/natural_terrain.py": "bca99462123604c90670b2082872f921aed96eb750df1f25ebd03a48d0ce29e0",
+          "world/regions/craterpark/v2/v4_config.py": "ee6e94c6212e02aa2c92bf27a555d73f5be5efa8c84160ef6c37ca617316fdbd",
+          "world/regions/belmonte/layout.py": "2ecad733eda23105dad686e57efe82182a2eca5762a507fe070bfd0807836890",
+          "world/regions/belmonte/terrain.py": "5ac9877948237befe95bb034786f54f69681aac33d3d28eb16fa51b5715416ee",
+          "world/regions/belmonte/plan.py": "b2b10ac599577713c36ca27b28343ec2cff244b0272640da45e4bc671821612c",
+          "world/regions/southwest/island.py": "977f38a49fb5eb699f8164544fee1cde5f804372ddaeb03826125242e9c7b96f",
+          "world/train/route.py": "217efe967d76250d4c2fe3eefc5452f44806a00727d18ab4c87cf81515e15a71",
+          "world/train/corridor.py": "af3891bbe90caf06cc94ca2dee42d4714b654dd974a79190880714326a04be88",
+          "world/train/earthworks.py": "3d7af5b066a10f90203d15573bcba928a8ab26c333d089214049c7470c20f18c",
+          "world/train/station_site.py": "bc31b47aa379c19bc272db23b7cd1c4a06bc316a278764e7c25893f533c8323e",
+          "world/regions/skatepark/park.json": "a0fe294c872e312cbb07f57895782d914f62a8758cba5d681e4506b32688d637",
+          "world/regions/craterpark/placement.py": "f8ab80eb99b84d3dc9bb8ba6219b30f9fac2b2d20d4c2b199d3a6eb717444d42",
+          "world/regions/megapark/placement.py": "b3cf874a6d444b61e0504374ea691330fb7c9326dbbcbfda64ddd6ebed05fbdf",
+          "assets/belmonte/source.json": "a83ec8c74dd8d031c7d44d722e9358a8240556af649298f37743e5088fcdd1b9",
+          "assets/vehicles/belmonte-train/line.json": "fd64b115e1596efb3102be2129cfbf8c095fd05dd4d6e457e27d03a8bfc2f180",
+          "world/regions/brinecove/region.py": "9e007570e353c305964befbc9db53755c52d95c55069a6253058a39792e67408",
+          "world/regions/brinecove/layout.py": "ffac69eb203391165e2b84c306d4eb0c02865fa3ca83a6181e16b18203dd6655",
+          "world/regions/brinecove/ground.py": "d0cb5decc01c21b55c8e658ce1c29aa3f1e8e7c9da3002688cb1b60278d5f062",
+          "world/regions/brinecove/plan.py": "ee166c5bcd608096f4a00124de2f8b44df750baf323a52164432059aac6e359b",
+          "world/shorelines.py": "087b0fe32ea76a8082e1aed80581b24261bead89ee2db165a3ee053f5f5d1006"
+        }
+      }
+    },
+    "momiji_coast.json": {
+      "previous_record_sha256": "63dbe176e66ee7f859189601575b1710280b3a563289e46b99073126d7c43dc3",
+      "previous_tables": {
+        "verified_geography.geography": {
+          "world/gen_world.py": "9763dfffa7b4c2e9c186d469124289fad26510254a7c16e15d6a1604ed26c4ef",
+          "world/build_terrain.py": "c00634b7dadc6ff98fe87ee4759f3a471dbe24cdf4c0c3d935fa835f6f9d6108",
+          "world/farhills_surface.py": "4b2e2ab9cb3f8410a6725554de2c40a926da3091f89671af422de0884c69b3dc",
+          "world/farhills_grid.py": "6451e5894c63e3eedcded121cef2f477a9615c36b1dd61715d16938ab53228c4",
+          "world/terrain_product.py": "6d9dc77173d8edb5a5486154e0cc1004d7b649f9ed87b1f7e3aa4c5655ed84bd",
+          "world/north_mountain_surface.py": "380fac8eece8794a9d8737444af73b3e3979227470aba3de49d415df42477816",
+          "world/city_terrain_surface.py": "0da9fe701db9f11a7eefc02f199bd2fe05789d5c936c04f835f195944bae6656",
+          "world/regions/hidamari/build.py": "eb57e173bdc65e4c4b9b11dc9481fe71309ab691b00968f322faac09b63830a6",
+          "world/regions/hidamari/layout.py": "9c05919534010689ef77cfc0ceb2a9c3af5aca611519a7d463bb513e359dca5f",
+          "world/regions/hidamari_stable/layout.py": "d30b9b12b09c2e3cad3ab2d21db8d5ca8e83c7fe6daad0bf309bc50180cea97c",
+          "world/regions/hidamari/mountains.py": "df3f445eaf2bfe98909d9fc0ca2859096d1cd089fc16c8d09ed42160896cc155",
+          "world/regions/hidamari/natural_terrain.py": "bca99462123604c90670b2082872f921aed96eb750df1f25ebd03a48d0ce29e0",
+          "world/regions/craterpark/v2/v4_config.py": "ee6e94c6212e02aa2c92bf27a555d73f5be5efa8c84160ef6c37ca617316fdbd",
+          "world/regions/belmonte/layout.py": "2ecad733eda23105dad686e57efe82182a2eca5762a507fe070bfd0807836890",
+          "world/regions/belmonte/terrain.py": "5ac9877948237befe95bb034786f54f69681aac33d3d28eb16fa51b5715416ee",
+          "world/regions/belmonte/plan.py": "b2b10ac599577713c36ca27b28343ec2cff244b0272640da45e4bc671821612c",
+          "world/regions/southwest/island.py": "977f38a49fb5eb699f8164544fee1cde5f804372ddaeb03826125242e9c7b96f",
+          "world/train/route.py": "217efe967d76250d4c2fe3eefc5452f44806a00727d18ab4c87cf81515e15a71",
+          "world/train/corridor.py": "af3891bbe90caf06cc94ca2dee42d4714b654dd974a79190880714326a04be88",
+          "world/train/earthworks.py": "3d7af5b066a10f90203d15573bcba928a8ab26c333d089214049c7470c20f18c",
+          "world/train/station_site.py": "bc31b47aa379c19bc272db23b7cd1c4a06bc316a278764e7c25893f533c8323e",
+          "world/regions/skatepark/park.json": "a0fe294c872e312cbb07f57895782d914f62a8758cba5d681e4506b32688d637",
+          "world/regions/craterpark/placement.py": "f8ab80eb99b84d3dc9bb8ba6219b30f9fac2b2d20d4c2b199d3a6eb717444d42",
+          "world/regions/megapark/placement.py": "b3cf874a6d444b61e0504374ea691330fb7c9326dbbcbfda64ddd6ebed05fbdf",
+          "assets/belmonte/source.json": "a83ec8c74dd8d031c7d44d722e9358a8240556af649298f37743e5088fcdd1b9",
+          "assets/vehicles/belmonte-train/line.json": "fd64b115e1596efb3102be2129cfbf8c095fd05dd4d6e457e27d03a8bfc2f180",
+          "world/regions/brinecove/region.py": "9e007570e353c305964befbc9db53755c52d95c55069a6253058a39792e67408",
+          "world/regions/brinecove/layout.py": "ffac69eb203391165e2b84c306d4eb0c02865fa3ca83a6181e16b18203dd6655",
+          "world/regions/brinecove/ground.py": "d0cb5decc01c21b55c8e658ce1c29aa3f1e8e7c9da3002688cb1b60278d5f062",
+          "world/regions/brinecove/plan.py": "ee166c5bcd608096f4a00124de2f8b44df750baf323a52164432059aac6e359b",
+          "world/shorelines.py": "087b0fe32ea76a8082e1aed80581b24261bead89ee2db165a3ee053f5f5d1006"
+        }
+      }
+    },
+    "momiji_woods.json": {
+      "previous_record_sha256": "ac50874c8f20c8eea4f8953061f040d23470d78d42ff5beed779f5b16c7f14b7",
+      "previous_tables": {
+        "verified_geography.geography": {
+          "world/gen_world.py": "9763dfffa7b4c2e9c186d469124289fad26510254a7c16e15d6a1604ed26c4ef",
+          "world/build_terrain.py": "c00634b7dadc6ff98fe87ee4759f3a471dbe24cdf4c0c3d935fa835f6f9d6108",
+          "world/farhills_surface.py": "4b2e2ab9cb3f8410a6725554de2c40a926da3091f89671af422de0884c69b3dc",
+          "world/farhills_grid.py": "6451e5894c63e3eedcded121cef2f477a9615c36b1dd61715d16938ab53228c4",
+          "world/terrain_product.py": "6d9dc77173d8edb5a5486154e0cc1004d7b649f9ed87b1f7e3aa4c5655ed84bd",
+          "world/north_mountain_surface.py": "380fac8eece8794a9d8737444af73b3e3979227470aba3de49d415df42477816",
+          "world/city_terrain_surface.py": "0da9fe701db9f11a7eefc02f199bd2fe05789d5c936c04f835f195944bae6656",
+          "world/regions/hidamari/build.py": "eb57e173bdc65e4c4b9b11dc9481fe71309ab691b00968f322faac09b63830a6",
+          "world/regions/hidamari/layout.py": "9c05919534010689ef77cfc0ceb2a9c3af5aca611519a7d463bb513e359dca5f",
+          "world/regions/hidamari_stable/layout.py": "d30b9b12b09c2e3cad3ab2d21db8d5ca8e83c7fe6daad0bf309bc50180cea97c",
+          "world/regions/hidamari/mountains.py": "df3f445eaf2bfe98909d9fc0ca2859096d1cd089fc16c8d09ed42160896cc155",
+          "world/regions/hidamari/natural_terrain.py": "bca99462123604c90670b2082872f921aed96eb750df1f25ebd03a48d0ce29e0",
+          "world/regions/craterpark/v2/v4_config.py": "ee6e94c6212e02aa2c92bf27a555d73f5be5efa8c84160ef6c37ca617316fdbd",
+          "world/regions/belmonte/layout.py": "2ecad733eda23105dad686e57efe82182a2eca5762a507fe070bfd0807836890",
+          "world/regions/belmonte/terrain.py": "5ac9877948237befe95bb034786f54f69681aac33d3d28eb16fa51b5715416ee",
+          "world/regions/belmonte/plan.py": "b2b10ac599577713c36ca27b28343ec2cff244b0272640da45e4bc671821612c",
+          "world/regions/southwest/island.py": "977f38a49fb5eb699f8164544fee1cde5f804372ddaeb03826125242e9c7b96f",
+          "world/train/route.py": "217efe967d76250d4c2fe3eefc5452f44806a00727d18ab4c87cf81515e15a71",
+          "world/train/corridor.py": "af3891bbe90caf06cc94ca2dee42d4714b654dd974a79190880714326a04be88",
+          "world/train/earthworks.py": "3d7af5b066a10f90203d15573bcba928a8ab26c333d089214049c7470c20f18c",
+          "world/train/station_site.py": "bc31b47aa379c19bc272db23b7cd1c4a06bc316a278764e7c25893f533c8323e",
+          "world/regions/skatepark/park.json": "a0fe294c872e312cbb07f57895782d914f62a8758cba5d681e4506b32688d637",
+          "world/regions/craterpark/placement.py": "f8ab80eb99b84d3dc9bb8ba6219b30f9fac2b2d20d4c2b199d3a6eb717444d42",
+          "world/regions/megapark/placement.py": "b3cf874a6d444b61e0504374ea691330fb7c9326dbbcbfda64ddd6ebed05fbdf",
+          "assets/belmonte/source.json": "a83ec8c74dd8d031c7d44d722e9358a8240556af649298f37743e5088fcdd1b9",
+          "assets/vehicles/belmonte-train/line.json": "fd64b115e1596efb3102be2129cfbf8c095fd05dd4d6e457e27d03a8bfc2f180",
+          "world/regions/brinecove/region.py": "9e007570e353c305964befbc9db53755c52d95c55069a6253058a39792e67408",
+          "world/regions/brinecove/layout.py": "ffac69eb203391165e2b84c306d4eb0c02865fa3ca83a6181e16b18203dd6655",
+          "world/regions/brinecove/ground.py": "d0cb5decc01c21b55c8e658ce1c29aa3f1e8e7c9da3002688cb1b60278d5f062",
+          "world/regions/brinecove/plan.py": "ee166c5bcd608096f4a00124de2f8b44df750baf323a52164432059aac6e359b",
+          "world/shorelines.py": "087b0fe32ea76a8082e1aed80581b24261bead89ee2db165a3ee053f5f5d1006"
+        }
+      }
+    },
+    "hidamari.json": {
+      "previous_record_sha256": "30f01c145a11751c3836a9db9768e4f95f186205f9d627390d1e91c4adceceed",
+      "previous_tables": {
+        "verified_geography.geography": {
+          "world/gen_world.py": "9763dfffa7b4c2e9c186d469124289fad26510254a7c16e15d6a1604ed26c4ef",
+          "world/build_terrain.py": "c00634b7dadc6ff98fe87ee4759f3a471dbe24cdf4c0c3d935fa835f6f9d6108",
+          "world/farhills_surface.py": "4b2e2ab9cb3f8410a6725554de2c40a926da3091f89671af422de0884c69b3dc",
+          "world/farhills_grid.py": "6451e5894c63e3eedcded121cef2f477a9615c36b1dd61715d16938ab53228c4",
+          "world/terrain_product.py": "6d9dc77173d8edb5a5486154e0cc1004d7b649f9ed87b1f7e3aa4c5655ed84bd",
+          "world/north_mountain_surface.py": "380fac8eece8794a9d8737444af73b3e3979227470aba3de49d415df42477816",
+          "world/city_terrain_surface.py": "0da9fe701db9f11a7eefc02f199bd2fe05789d5c936c04f835f195944bae6656",
+          "world/regions/hidamari/build.py": "eb57e173bdc65e4c4b9b11dc9481fe71309ab691b00968f322faac09b63830a6",
+          "world/regions/hidamari/layout.py": "9c05919534010689ef77cfc0ceb2a9c3af5aca611519a7d463bb513e359dca5f",
+          "world/regions/hidamari_stable/layout.py": "d30b9b12b09c2e3cad3ab2d21db8d5ca8e83c7fe6daad0bf309bc50180cea97c",
+          "world/regions/hidamari/mountains.py": "df3f445eaf2bfe98909d9fc0ca2859096d1cd089fc16c8d09ed42160896cc155",
+          "world/regions/hidamari/natural_terrain.py": "bca99462123604c90670b2082872f921aed96eb750df1f25ebd03a48d0ce29e0",
+          "world/regions/craterpark/v2/v4_config.py": "ee6e94c6212e02aa2c92bf27a555d73f5be5efa8c84160ef6c37ca617316fdbd",
+          "world/regions/belmonte/layout.py": "2ecad733eda23105dad686e57efe82182a2eca5762a507fe070bfd0807836890",
+          "world/regions/belmonte/terrain.py": "5ac9877948237befe95bb034786f54f69681aac33d3d28eb16fa51b5715416ee",
+          "world/regions/belmonte/plan.py": "b2b10ac599577713c36ca27b28343ec2cff244b0272640da45e4bc671821612c",
+          "world/regions/southwest/island.py": "977f38a49fb5eb699f8164544fee1cde5f804372ddaeb03826125242e9c7b96f",
+          "world/train/route.py": "217efe967d76250d4c2fe3eefc5452f44806a00727d18ab4c87cf81515e15a71",
+          "world/train/corridor.py": "af3891bbe90caf06cc94ca2dee42d4714b654dd974a79190880714326a04be88",
+          "world/train/earthworks.py": "3d7af5b066a10f90203d15573bcba928a8ab26c333d089214049c7470c20f18c",
+          "world/train/station_site.py": "bc31b47aa379c19bc272db23b7cd1c4a06bc316a278764e7c25893f533c8323e",
+          "world/regions/skatepark/park.json": "a0fe294c872e312cbb07f57895782d914f62a8758cba5d681e4506b32688d637",
+          "world/regions/craterpark/placement.py": "f8ab80eb99b84d3dc9bb8ba6219b30f9fac2b2d20d4c2b199d3a6eb717444d42",
+          "world/regions/megapark/placement.py": "b3cf874a6d444b61e0504374ea691330fb7c9326dbbcbfda64ddd6ebed05fbdf",
+          "assets/belmonte/source.json": "a83ec8c74dd8d031c7d44d722e9358a8240556af649298f37743e5088fcdd1b9",
+          "assets/vehicles/belmonte-train/line.json": "fd64b115e1596efb3102be2129cfbf8c095fd05dd4d6e457e27d03a8bfc2f180",
+          "world/regions/brinecove/region.py": "9e007570e353c305964befbc9db53755c52d95c55069a6253058a39792e67408",
+          "world/regions/brinecove/layout.py": "ffac69eb203391165e2b84c306d4eb0c02865fa3ca83a6181e16b18203dd6655",
+          "world/regions/brinecove/ground.py": "d0cb5decc01c21b55c8e658ce1c29aa3f1e8e7c9da3002688cb1b60278d5f062",
+          "world/regions/brinecove/plan.py": "ee166c5bcd608096f4a00124de2f8b44df750baf323a52164432059aac6e359b",
+          "world/shorelines.py": "087b0fe32ea76a8082e1aed80581b24261bead89ee2db165a3ee053f5f5d1006"
+        }
+      }
+    },
+    "temple_island.json": {
+      "previous_record_sha256": "059fbc88bc3ec8ab274e2c64c25bb2adfe2c9caeb27d5cb10c82e43685a6b5c4",
+      "previous_tables": {
+        "verified_geography.geography": {
+          "world/gen_world.py": "9763dfffa7b4c2e9c186d469124289fad26510254a7c16e15d6a1604ed26c4ef",
+          "world/build_terrain.py": "c00634b7dadc6ff98fe87ee4759f3a471dbe24cdf4c0c3d935fa835f6f9d6108",
+          "world/farhills_surface.py": "4b2e2ab9cb3f8410a6725554de2c40a926da3091f89671af422de0884c69b3dc",
+          "world/farhills_grid.py": "6451e5894c63e3eedcded121cef2f477a9615c36b1dd61715d16938ab53228c4",
+          "world/terrain_product.py": "6d9dc77173d8edb5a5486154e0cc1004d7b649f9ed87b1f7e3aa4c5655ed84bd",
+          "world/north_mountain_surface.py": "380fac8eece8794a9d8737444af73b3e3979227470aba3de49d415df42477816",
+          "world/city_terrain_surface.py": "0da9fe701db9f11a7eefc02f199bd2fe05789d5c936c04f835f195944bae6656",
+          "world/regions/hidamari/build.py": "eb57e173bdc65e4c4b9b11dc9481fe71309ab691b00968f322faac09b63830a6",
+          "world/regions/hidamari/layout.py": "9c05919534010689ef77cfc0ceb2a9c3af5aca611519a7d463bb513e359dca5f",
+          "world/regions/hidamari_stable/layout.py": "d30b9b12b09c2e3cad3ab2d21db8d5ca8e83c7fe6daad0bf309bc50180cea97c",
+          "world/regions/hidamari/mountains.py": "df3f445eaf2bfe98909d9fc0ca2859096d1cd089fc16c8d09ed42160896cc155",
+          "world/regions/hidamari/natural_terrain.py": "bca99462123604c90670b2082872f921aed96eb750df1f25ebd03a48d0ce29e0",
+          "world/regions/craterpark/v2/v4_config.py": "ee6e94c6212e02aa2c92bf27a555d73f5be5efa8c84160ef6c37ca617316fdbd",
+          "world/regions/belmonte/layout.py": "2ecad733eda23105dad686e57efe82182a2eca5762a507fe070bfd0807836890",
+          "world/regions/belmonte/terrain.py": "5ac9877948237befe95bb034786f54f69681aac33d3d28eb16fa51b5715416ee",
+          "world/regions/belmonte/plan.py": "b2b10ac599577713c36ca27b28343ec2cff244b0272640da45e4bc671821612c",
+          "world/regions/southwest/island.py": "977f38a49fb5eb699f8164544fee1cde5f804372ddaeb03826125242e9c7b96f",
+          "world/train/route.py": "217efe967d76250d4c2fe3eefc5452f44806a00727d18ab4c87cf81515e15a71",
+          "world/train/corridor.py": "af3891bbe90caf06cc94ca2dee42d4714b654dd974a79190880714326a04be88",
+          "world/train/earthworks.py": "3d7af5b066a10f90203d15573bcba928a8ab26c333d089214049c7470c20f18c",
+          "world/train/station_site.py": "bc31b47aa379c19bc272db23b7cd1c4a06bc316a278764e7c25893f533c8323e",
+          "world/regions/skatepark/park.json": "a0fe294c872e312cbb07f57895782d914f62a8758cba5d681e4506b32688d637",
+          "world/regions/craterpark/placement.py": "f8ab80eb99b84d3dc9bb8ba6219b30f9fac2b2d20d4c2b199d3a6eb717444d42",
+          "world/regions/megapark/placement.py": "b3cf874a6d444b61e0504374ea691330fb7c9326dbbcbfda64ddd6ebed05fbdf",
+          "assets/belmonte/source.json": "a83ec8c74dd8d031c7d44d722e9358a8240556af649298f37743e5088fcdd1b9",
+          "assets/vehicles/belmonte-train/line.json": "fd64b115e1596efb3102be2129cfbf8c095fd05dd4d6e457e27d03a8bfc2f180",
+          "world/regions/brinecove/region.py": "9e007570e353c305964befbc9db53755c52d95c55069a6253058a39792e67408",
+          "world/regions/brinecove/layout.py": "ffac69eb203391165e2b84c306d4eb0c02865fa3ca83a6181e16b18203dd6655",
+          "world/regions/brinecove/ground.py": "d0cb5decc01c21b55c8e658ce1c29aa3f1e8e7c9da3002688cb1b60278d5f062",
+          "world/regions/brinecove/plan.py": "ee166c5bcd608096f4a00124de2f8b44df750baf323a52164432059aac6e359b",
+          "world/shorelines.py": "087b0fe32ea76a8082e1aed80581b24261bead89ee2db165a3ee053f5f5d1006"
+        }
+      }
+    },
+    "northern_foothills.json": {
+      "previous_record_sha256": "b574a89522b12037094de11c27e33d0865769d75f9242b3d5f0a53a4c19de057",
+      "previous_tables": {
+        "verified_geography.geography": {
+          "world/gen_world.py": "9763dfffa7b4c2e9c186d469124289fad26510254a7c16e15d6a1604ed26c4ef",
+          "world/build_terrain.py": "c00634b7dadc6ff98fe87ee4759f3a471dbe24cdf4c0c3d935fa835f6f9d6108",
+          "world/farhills_surface.py": "4b2e2ab9cb3f8410a6725554de2c40a926da3091f89671af422de0884c69b3dc",
+          "world/farhills_grid.py": "6451e5894c63e3eedcded121cef2f477a9615c36b1dd61715d16938ab53228c4",
+          "world/terrain_product.py": "6d9dc77173d8edb5a5486154e0cc1004d7b649f9ed87b1f7e3aa4c5655ed84bd",
+          "world/north_mountain_surface.py": "380fac8eece8794a9d8737444af73b3e3979227470aba3de49d415df42477816",
+          "world/city_terrain_surface.py": "0da9fe701db9f11a7eefc02f199bd2fe05789d5c936c04f835f195944bae6656",
+          "world/regions/hidamari/build.py": "eb57e173bdc65e4c4b9b11dc9481fe71309ab691b00968f322faac09b63830a6",
+          "world/regions/hidamari/layout.py": "9c05919534010689ef77cfc0ceb2a9c3af5aca611519a7d463bb513e359dca5f",
+          "world/regions/hidamari_stable/layout.py": "d30b9b12b09c2e3cad3ab2d21db8d5ca8e83c7fe6daad0bf309bc50180cea97c",
+          "world/regions/hidamari/mountains.py": "df3f445eaf2bfe98909d9fc0ca2859096d1cd089fc16c8d09ed42160896cc155",
+          "world/regions/hidamari/natural_terrain.py": "bca99462123604c90670b2082872f921aed96eb750df1f25ebd03a48d0ce29e0",
+          "world/regions/craterpark/v2/v4_config.py": "ee6e94c6212e02aa2c92bf27a555d73f5be5efa8c84160ef6c37ca617316fdbd",
+          "world/regions/belmonte/layout.py": "2ecad733eda23105dad686e57efe82182a2eca5762a507fe070bfd0807836890",
+          "world/regions/belmonte/terrain.py": "5ac9877948237befe95bb034786f54f69681aac33d3d28eb16fa51b5715416ee",
+          "world/regions/belmonte/plan.py": "b2b10ac599577713c36ca27b28343ec2cff244b0272640da45e4bc671821612c",
+          "world/regions/southwest/island.py": "977f38a49fb5eb699f8164544fee1cde5f804372ddaeb03826125242e9c7b96f",
+          "world/train/route.py": "217efe967d76250d4c2fe3eefc5452f44806a00727d18ab4c87cf81515e15a71",
+          "world/train/corridor.py": "af3891bbe90caf06cc94ca2dee42d4714b654dd974a79190880714326a04be88",
+          "world/train/earthworks.py": "3d7af5b066a10f90203d15573bcba928a8ab26c333d089214049c7470c20f18c",
+          "world/train/station_site.py": "bc31b47aa379c19bc272db23b7cd1c4a06bc316a278764e7c25893f533c8323e",
+          "world/regions/skatepark/park.json": "a0fe294c872e312cbb07f57895782d914f62a8758cba5d681e4506b32688d637",
+          "world/regions/craterpark/placement.py": "f8ab80eb99b84d3dc9bb8ba6219b30f9fac2b2d20d4c2b199d3a6eb717444d42",
+          "world/regions/megapark/placement.py": "b3cf874a6d444b61e0504374ea691330fb7c9326dbbcbfda64ddd6ebed05fbdf",
+          "assets/belmonte/source.json": "a83ec8c74dd8d031c7d44d722e9358a8240556af649298f37743e5088fcdd1b9",
+          "assets/vehicles/belmonte-train/line.json": "fd64b115e1596efb3102be2129cfbf8c095fd05dd4d6e457e27d03a8bfc2f180",
+          "world/regions/brinecove/region.py": "9e007570e353c305964befbc9db53755c52d95c55069a6253058a39792e67408",
+          "world/regions/brinecove/layout.py": "ffac69eb203391165e2b84c306d4eb0c02865fa3ca83a6181e16b18203dd6655",
+          "world/regions/brinecove/ground.py": "d0cb5decc01c21b55c8e658ce1c29aa3f1e8e7c9da3002688cb1b60278d5f062",
+          "world/regions/brinecove/plan.py": "ee166c5bcd608096f4a00124de2f8b44df750baf323a52164432059aac6e359b",
+          "world/shorelines.py": "087b0fe32ea76a8082e1aed80581b24261bead89ee2db165a3ee053f5f5d1006"
+        }
+      }
+    },
+    "volcanic_highlands.json": {
+      "previous_record_sha256": "fe0e2a59238c246d1c3f83c05a888bde095418e9501f5353caf8bc120190db83",
+      "previous_tables": {
+        "verified_geography.geography": {
+          "world/gen_world.py": "9763dfffa7b4c2e9c186d469124289fad26510254a7c16e15d6a1604ed26c4ef",
+          "world/build_terrain.py": "c00634b7dadc6ff98fe87ee4759f3a471dbe24cdf4c0c3d935fa835f6f9d6108",
+          "world/farhills_surface.py": "4b2e2ab9cb3f8410a6725554de2c40a926da3091f89671af422de0884c69b3dc",
+          "world/farhills_grid.py": "6451e5894c63e3eedcded121cef2f477a9615c36b1dd61715d16938ab53228c4",
+          "world/terrain_product.py": "6d9dc77173d8edb5a5486154e0cc1004d7b649f9ed87b1f7e3aa4c5655ed84bd",
+          "world/north_mountain_surface.py": "380fac8eece8794a9d8737444af73b3e3979227470aba3de49d415df42477816",
+          "world/city_terrain_surface.py": "0da9fe701db9f11a7eefc02f199bd2fe05789d5c936c04f835f195944bae6656",
+          "world/regions/hidamari/build.py": "eb57e173bdc65e4c4b9b11dc9481fe71309ab691b00968f322faac09b63830a6",
+          "world/regions/hidamari/layout.py": "9c05919534010689ef77cfc0ceb2a9c3af5aca611519a7d463bb513e359dca5f",
+          "world/regions/hidamari_stable/layout.py": "d30b9b12b09c2e3cad3ab2d21db8d5ca8e83c7fe6daad0bf309bc50180cea97c",
+          "world/regions/hidamari/mountains.py": "df3f445eaf2bfe98909d9fc0ca2859096d1cd089fc16c8d09ed42160896cc155",
+          "world/regions/hidamari/natural_terrain.py": "bca99462123604c90670b2082872f921aed96eb750df1f25ebd03a48d0ce29e0",
+          "world/regions/craterpark/v2/v4_config.py": "ee6e94c6212e02aa2c92bf27a555d73f5be5efa8c84160ef6c37ca617316fdbd",
+          "world/regions/belmonte/layout.py": "2ecad733eda23105dad686e57efe82182a2eca5762a507fe070bfd0807836890",
+          "world/regions/belmonte/terrain.py": "5ac9877948237befe95bb034786f54f69681aac33d3d28eb16fa51b5715416ee",
+          "world/regions/belmonte/plan.py": "b2b10ac599577713c36ca27b28343ec2cff244b0272640da45e4bc671821612c",
+          "world/regions/southwest/island.py": "977f38a49fb5eb699f8164544fee1cde5f804372ddaeb03826125242e9c7b96f",
+          "world/train/route.py": "217efe967d76250d4c2fe3eefc5452f44806a00727d18ab4c87cf81515e15a71",
+          "world/train/corridor.py": "af3891bbe90caf06cc94ca2dee42d4714b654dd974a79190880714326a04be88",
+          "world/train/earthworks.py": "3d7af5b066a10f90203d15573bcba928a8ab26c333d089214049c7470c20f18c",
+          "world/train/station_site.py": "bc31b47aa379c19bc272db23b7cd1c4a06bc316a278764e7c25893f533c8323e",
+          "world/regions/skatepark/park.json": "a0fe294c872e312cbb07f57895782d914f62a8758cba5d681e4506b32688d637",
+          "world/regions/craterpark/placement.py": "f8ab80eb99b84d3dc9bb8ba6219b30f9fac2b2d20d4c2b199d3a6eb717444d42",
+          "world/regions/megapark/placement.py": "b3cf874a6d444b61e0504374ea691330fb7c9326dbbcbfda64ddd6ebed05fbdf",
+          "assets/belmonte/source.json": "a83ec8c74dd8d031c7d44d722e9358a8240556af649298f37743e5088fcdd1b9",
+          "assets/vehicles/belmonte-train/line.json": "fd64b115e1596efb3102be2129cfbf8c095fd05dd4d6e457e27d03a8bfc2f180",
+          "world/regions/brinecove/region.py": "9e007570e353c305964befbc9db53755c52d95c55069a6253058a39792e67408",
+          "world/regions/brinecove/layout.py": "ffac69eb203391165e2b84c306d4eb0c02865fa3ca83a6181e16b18203dd6655",
+          "world/regions/brinecove/ground.py": "d0cb5decc01c21b55c8e658ce1c29aa3f1e8e7c9da3002688cb1b60278d5f062",
+          "world/regions/brinecove/plan.py": "ee166c5bcd608096f4a00124de2f8b44df750baf323a52164432059aac6e359b",
+          "world/shorelines.py": "087b0fe32ea76a8082e1aed80581b24261bead89ee2db165a3ee053f5f5d1006"
+        }
+      }
+    },
+    "haras_valley.json": {
+      "previous_record_sha256": "5621519e2084c855f625e613a0f26fc0e6493f8efc5f19f7767aaaccdc6995ae",
+      "previous_tables": {
+        "verified_geography.geography": {
+          "world/gen_world.py": "9763dfffa7b4c2e9c186d469124289fad26510254a7c16e15d6a1604ed26c4ef",
+          "world/build_terrain.py": "c00634b7dadc6ff98fe87ee4759f3a471dbe24cdf4c0c3d935fa835f6f9d6108",
+          "world/farhills_surface.py": "4b2e2ab9cb3f8410a6725554de2c40a926da3091f89671af422de0884c69b3dc",
+          "world/farhills_grid.py": "6451e5894c63e3eedcded121cef2f477a9615c36b1dd61715d16938ab53228c4",
+          "world/terrain_product.py": "6d9dc77173d8edb5a5486154e0cc1004d7b649f9ed87b1f7e3aa4c5655ed84bd",
+          "world/north_mountain_surface.py": "380fac8eece8794a9d8737444af73b3e3979227470aba3de49d415df42477816",
+          "world/city_terrain_surface.py": "0da9fe701db9f11a7eefc02f199bd2fe05789d5c936c04f835f195944bae6656",
+          "world/regions/hidamari/build.py": "eb57e173bdc65e4c4b9b11dc9481fe71309ab691b00968f322faac09b63830a6",
+          "world/regions/hidamari/layout.py": "9c05919534010689ef77cfc0ceb2a9c3af5aca611519a7d463bb513e359dca5f",
+          "world/regions/hidamari_stable/layout.py": "d30b9b12b09c2e3cad3ab2d21db8d5ca8e83c7fe6daad0bf309bc50180cea97c",
+          "world/regions/hidamari/mountains.py": "df3f445eaf2bfe98909d9fc0ca2859096d1cd089fc16c8d09ed42160896cc155",
+          "world/regions/hidamari/natural_terrain.py": "bca99462123604c90670b2082872f921aed96eb750df1f25ebd03a48d0ce29e0",
+          "world/regions/craterpark/v2/v4_config.py": "ee6e94c6212e02aa2c92bf27a555d73f5be5efa8c84160ef6c37ca617316fdbd",
+          "world/regions/belmonte/layout.py": "2ecad733eda23105dad686e57efe82182a2eca5762a507fe070bfd0807836890",
+          "world/regions/belmonte/terrain.py": "5ac9877948237befe95bb034786f54f69681aac33d3d28eb16fa51b5715416ee",
+          "world/regions/belmonte/plan.py": "b2b10ac599577713c36ca27b28343ec2cff244b0272640da45e4bc671821612c",
+          "world/regions/southwest/island.py": "977f38a49fb5eb699f8164544fee1cde5f804372ddaeb03826125242e9c7b96f",
+          "world/train/route.py": "217efe967d76250d4c2fe3eefc5452f44806a00727d18ab4c87cf81515e15a71",
+          "world/train/corridor.py": "af3891bbe90caf06cc94ca2dee42d4714b654dd974a79190880714326a04be88",
+          "world/train/earthworks.py": "3d7af5b066a10f90203d15573bcba928a8ab26c333d089214049c7470c20f18c",
+          "world/train/station_site.py": "bc31b47aa379c19bc272db23b7cd1c4a06bc316a278764e7c25893f533c8323e",
+          "world/regions/skatepark/park.json": "a0fe294c872e312cbb07f57895782d914f62a8758cba5d681e4506b32688d637",
+          "world/regions/craterpark/placement.py": "f8ab80eb99b84d3dc9bb8ba6219b30f9fac2b2d20d4c2b199d3a6eb717444d42",
+          "world/regions/megapark/placement.py": "b3cf874a6d444b61e0504374ea691330fb7c9326dbbcbfda64ddd6ebed05fbdf",
+          "assets/belmonte/source.json": "a83ec8c74dd8d031c7d44d722e9358a8240556af649298f37743e5088fcdd1b9",
+          "assets/vehicles/belmonte-train/line.json": "fd64b115e1596efb3102be2129cfbf8c095fd05dd4d6e457e27d03a8bfc2f180",
+          "world/regions/brinecove/region.py": "9e007570e353c305964befbc9db53755c52d95c55069a6253058a39792e67408",
+          "world/regions/brinecove/layout.py": "ffac69eb203391165e2b84c306d4eb0c02865fa3ca83a6181e16b18203dd6655",
+          "world/regions/brinecove/ground.py": "d0cb5decc01c21b55c8e658ce1c29aa3f1e8e7c9da3002688cb1b60278d5f062",
+          "world/regions/brinecove/plan.py": "ee166c5bcd608096f4a00124de2f8b44df750baf323a52164432059aac6e359b",
+          "world/shorelines.py": "087b0fe32ea76a8082e1aed80581b24261bead89ee2db165a3ee053f5f5d1006"
+        }
+      }
+    },
+    "brinecove.json": {
+      "previous_record_sha256": "39b448cccdd3a6301fa99be8316ad0a5c2146af21727ee71ddd9331d3aadde04",
+      "previous_tables": {
+        "verified_geography.geography": {
+          "world/gen_world.py": "9763dfffa7b4c2e9c186d469124289fad26510254a7c16e15d6a1604ed26c4ef",
+          "world/build_terrain.py": "c00634b7dadc6ff98fe87ee4759f3a471dbe24cdf4c0c3d935fa835f6f9d6108",
+          "world/farhills_surface.py": "4b2e2ab9cb3f8410a6725554de2c40a926da3091f89671af422de0884c69b3dc",
+          "world/farhills_grid.py": "6451e5894c63e3eedcded121cef2f477a9615c36b1dd61715d16938ab53228c4",
+          "world/terrain_product.py": "6d9dc77173d8edb5a5486154e0cc1004d7b649f9ed87b1f7e3aa4c5655ed84bd",
+          "world/north_mountain_surface.py": "380fac8eece8794a9d8737444af73b3e3979227470aba3de49d415df42477816",
+          "world/city_terrain_surface.py": "0da9fe701db9f11a7eefc02f199bd2fe05789d5c936c04f835f195944bae6656",
+          "world/regions/hidamari/build.py": "eb57e173bdc65e4c4b9b11dc9481fe71309ab691b00968f322faac09b63830a6",
+          "world/regions/hidamari/layout.py": "9c05919534010689ef77cfc0ceb2a9c3af5aca611519a7d463bb513e359dca5f",
+          "world/regions/hidamari_stable/layout.py": "d30b9b12b09c2e3cad3ab2d21db8d5ca8e83c7fe6daad0bf309bc50180cea97c",
+          "world/regions/hidamari/mountains.py": "df3f445eaf2bfe98909d9fc0ca2859096d1cd089fc16c8d09ed42160896cc155",
+          "world/regions/hidamari/natural_terrain.py": "bca99462123604c90670b2082872f921aed96eb750df1f25ebd03a48d0ce29e0",
+          "world/regions/craterpark/v2/v4_config.py": "ee6e94c6212e02aa2c92bf27a555d73f5be5efa8c84160ef6c37ca617316fdbd",
+          "world/regions/belmonte/layout.py": "2ecad733eda23105dad686e57efe82182a2eca5762a507fe070bfd0807836890",
+          "world/regions/belmonte/terrain.py": "5ac9877948237befe95bb034786f54f69681aac33d3d28eb16fa51b5715416ee",
+          "world/regions/belmonte/plan.py": "b2b10ac599577713c36ca27b28343ec2cff244b0272640da45e4bc671821612c",
+          "world/regions/southwest/island.py": "977f38a49fb5eb699f8164544fee1cde5f804372ddaeb03826125242e9c7b96f",
+          "world/train/route.py": "217efe967d76250d4c2fe3eefc5452f44806a00727d18ab4c87cf81515e15a71",
+          "world/train/corridor.py": "af3891bbe90caf06cc94ca2dee42d4714b654dd974a79190880714326a04be88",
+          "world/train/earthworks.py": "3d7af5b066a10f90203d15573bcba928a8ab26c333d089214049c7470c20f18c",
+          "world/train/station_site.py": "bc31b47aa379c19bc272db23b7cd1c4a06bc316a278764e7c25893f533c8323e",
+          "world/regions/skatepark/park.json": "a0fe294c872e312cbb07f57895782d914f62a8758cba5d681e4506b32688d637",
+          "world/regions/craterpark/placement.py": "f8ab80eb99b84d3dc9bb8ba6219b30f9fac2b2d20d4c2b199d3a6eb717444d42",
+          "world/regions/megapark/placement.py": "b3cf874a6d444b61e0504374ea691330fb7c9326dbbcbfda64ddd6ebed05fbdf",
+          "assets/belmonte/source.json": "a83ec8c74dd8d031c7d44d722e9358a8240556af649298f37743e5088fcdd1b9",
+          "assets/vehicles/belmonte-train/line.json": "fd64b115e1596efb3102be2129cfbf8c095fd05dd4d6e457e27d03a8bfc2f180",
+          "world/regions/brinecove/region.py": "9e007570e353c305964befbc9db53755c52d95c55069a6253058a39792e67408",
+          "world/regions/brinecove/layout.py": "ffac69eb203391165e2b84c306d4eb0c02865fa3ca83a6181e16b18203dd6655",
+          "world/regions/brinecove/ground.py": "d0cb5decc01c21b55c8e658ce1c29aa3f1e8e7c9da3002688cb1b60278d5f062",
+          "world/regions/brinecove/plan.py": "ee166c5bcd608096f4a00124de2f8b44df750baf323a52164432059aac6e359b",
+          "world/shorelines.py": "087b0fe32ea76a8082e1aed80581b24261bead89ee2db165a3ee053f5f5d1006"
+        }
+      }
+    }
+  },
+  "unchanged_art_sha256": {
+    "world.png": "3ce1de84a3de6f6ffbf4975ef44fa943b7af731dbb2e9ca97cb7995642bb5e67",
+    "volcanic_highlands.png": "1a79458d501f48624f6e16404f7f9766110c9c108589efef9fd0bc59a3c8d096",
+    "brinecove.png": "742470bd5ddb449204807b99e77f03c17b5ca3d21e361d2de13d53c17c84878a",
+    "northern_foothills.png": "9e03e5a3d90ee0835a0f294da8e5db7459cab6a9bad61c269b2cacda44dea3c0",
+    "hidamari.png": "179aa0aa3c949affafbab9f508ddc3f4fe768f71680466d887206f03c3019567",
+    "momiji_woods.png": "ef5e0a5ccdd897fd9e95e8122de945a21f6e47b33f1de68d6158d871b20e117c",
+    "momiji_coast.png": "45d27bb9984ffb43f11e50563575c987e381e41dc252c6caded33f9b1cd0d16d",
+    "temple_island.png": "a017f14014e3266c2fbc9676cf56e57ec79cb9ead11f7b108cb89694432e7d45",
+    "haras_valley.png": "5436f62f64174f230b5cacde4bee02f8b41553ad87494c7c8fb3dfd172b6d439"
+  },
+  "scope": "Finite unchanged map-consumed source expressions, exact placement/helper relocation, unchanged complete final query triangles. No regenerated painting, new coast, traversal or native proof."
+}

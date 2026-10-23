@@ -2,12 +2,26 @@
 import ast
 import hashlib
 import inspect
+import importlib.util
 import json
 from pathlib import Path
 
 GAME = Path(__file__).resolve().parents[1]
 ROOT = GAME.parents[1]
 PROOF = json.loads((GAME / 'assets/fbx-boundary-revalidation.json').read_text())
+
+# This earlier migration remains an immutable historical proof. Atomic logical
+# decomposition deliberately changed its generator bodies; it must not rewrite
+# the old proof to pretend those bodies are still current.
+PREDECESSOR = json.loads((GAME / 'tests/fixtures/atlas-atomic-predecessor.json').read_text())['files']
+carry_spec = importlib.util.spec_from_file_location('atlas_atomic_fbx_history', GAME / 'tools/atlas_atomic_revalidation.py')
+carry = importlib.util.module_from_spec(carry_spec)
+carry_spec.loader.exec_module(carry)
+
+
+def witnessed_source(rel):
+    original = PREDECESSOR.get(rel)
+    return original['source'] if original else (ROOT / rel).read_text()
 
 
 def sha(data):
@@ -60,7 +74,7 @@ def test_source_only_export_migration_and_negative_geometry_controls():
         for default in (*node.args.defaults, *node.args.kw_defaults):
             if default is not None: ast.literal_eval(default)  # No added import-time execution.
     for rel, row in PROOF['files'].items():
-        text = (ROOT / rel).read_text()
+        text = witnessed_source(rel)
         assert sha(text.encode()) == row['current_sha256']
         assert geometry_ast(text, row['resource_path_only']) == row['geometry_ast_sha256']
         assert geometry_ast(text + '\ngeometry_changed = 1\n', row['resource_path_only']) != row['geometry_ast_sha256']
@@ -76,11 +90,11 @@ def test_only_current_source_bindings_changed_in_art_and_grip_records():
         return {k:by_new.get(v, v) for k,v in value.items()}
     for rel, evidence in PROOF['atlas'].items():
         data = (ROOT / rel).read_bytes()
-        record = json.loads(data)
+        record = carry.restore_record(str(Path(rel).relative_to(GAME.relative_to(ROOT) / 'world/map/atlas')), json.loads(data))
         # Later source-only geography rebindings must reconstruct the exact
         # frozen exporter migration record, including every historical field.
         for source, binding in PROOF.get('atlas_source_rebindings', {}).items():
-            assert sha((ROOT / source).read_bytes()) == binding['current_sha256']
+            assert sha(witnessed_source(source).encode()) == binding['current_sha256']
             key = Path(source).relative_to(GAME.relative_to(ROOT)).as_posix()
             tables = [record[name] if name == 'geography' else record[name]['geography']
                       for name in evidence.get('rebound_tables', [])]

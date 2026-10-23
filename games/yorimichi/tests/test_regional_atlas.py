@@ -261,7 +261,10 @@ def test_natural_kernel_revalidation_preserves_art_and_generation_provenance():
             continue
         assert hashlib.sha256((atlas.ASSETS / rel).read_bytes()).hexdigest() == expected
     for key, expected in witness['unchanged_generation_payload_sha256'].items():
-        record = before_recut(json.loads((atlas.ASSETS / f'{key}.json').read_text()))
+        carry_spec = importlib.util.spec_from_file_location('atlas_atomic_carry_history', GAME / 'tools/atlas_atomic_revalidation.py')
+        carry = importlib.util.module_from_spec(carry_spec)
+        carry_spec.loader.exec_module(carry)
+        record = before_recut(carry.restore_record(f'{key}.json', json.loads((atlas.ASSETS / f'{key}.json').read_text())))
         assert record.pop('natural_kernel_revalidation') == pin
         record.pop('verified_geography', None)
         if key == 'world':
