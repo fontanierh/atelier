@@ -11,6 +11,47 @@
 #include "Serialization/JsonWriter.h"
 #endif
 
+#if WITH_EDITOR
+static bool StableReadLodBox(const UStaticMesh* Mesh, int32 LodIndex, FBox3f& Box)
+{
+    if (!Mesh || !Mesh->GetRenderData() || !Mesh->GetRenderData()->LODResources.IsValidIndex(LodIndex)) return false;
+    const auto& Buffer = Mesh->GetRenderData()->LODResources[LodIndex].VertexBuffers.PositionVertexBuffer;
+    if (!Buffer.GetVertexData() || Buffer.GetNumVertices() == 0) return false;
+    Box = FBox3f(ForceInit);
+    for (uint32 Index = 0; Index < Buffer.GetNumVertices(); ++Index)
+    {
+        const FVector3f Position = Buffer.VertexPosition(Index);
+        if (Position.ContainsNaN()) return false;
+        Box += Position;
+    }
+    return Box.IsValid != 0;
+}
+#endif
+
+/** @cc [owner:fontanierh,label:correctness] stable-selected-render-lod-bounds
+ * Warm admission MUST compare the requested actual render LOD's finite position AABB,
+ * not the mesh's union, extension, logical override or a source-derived approximation.
+ * Missing CPU data or invalid LODs MUST refuse. Logical union/sphere remains separate. */
+FString UHidamariStableMeshComponent::MeasureLodBounds(UStaticMesh* Mesh, int32 LodIndex)
+{
+#if WITH_EDITOR
+    FBox3f Box(ForceInit);
+    if (!StableReadLodBox(Mesh, LodIndex, Box)) return {};
+    auto Vector = [](const FVector3f& Value)
+    {
+        return TArray<TSharedPtr<FJsonValue>>{MakeShared<FJsonValueNumber>(Value.X),
+            MakeShared<FJsonValueNumber>(Value.Y), MakeShared<FJsonValueNumber>(Value.Z)};
+    };
+    const auto Object = MakeShared<FJsonObject>();
+    Object->SetArrayField(TEXT("min"), Vector(Box.Min));
+    Object->SetArrayField(TEXT("max"), Vector(Box.Max));
+    FString Json;
+    return FJsonSerializer::Serialize(Object, TJsonWriterFactory<>::Create(&Json)) ? Json : FString();
+#else
+    return {};
+#endif
+}
+
 FString UHidamariStableMeshComponent::MeasureLogicalBounds(const TArray<UStaticMesh*>& Lod0Parts,
     const TArray<UStaticMesh*>& Lod1Parts, const TArray<UStaticMesh*>& Lod2Parts)
 {
@@ -23,17 +64,10 @@ FString UHidamariStableMeshComponent::MeasureLogicalBounds(const TArray<UStaticM
         FBox3f Box(ForceInit);
         for (const UStaticMesh* Mesh : *Parts)
         {
-            if (!Mesh || Seen.Contains(Mesh) || !Mesh->GetRenderData()
-                || Mesh->GetRenderData()->LODResources.IsEmpty()) return {};
+            FBox3f PartBox(ForceInit);
+            if (Seen.Contains(Mesh) || !StableReadLodBox(Mesh, 0, PartBox)) return {};
             Seen.Add(Mesh);
-            const auto& Buffer = Mesh->GetRenderData()->LODResources[0].VertexBuffers.PositionVertexBuffer;
-            if (!Buffer.GetVertexData() || Buffer.GetNumVertices() == 0) return {};
-            for (uint32 Index = 0; Index < Buffer.GetNumVertices(); ++Index)
-            {
-                const FVector3f Position = Buffer.VertexPosition(Index);
-                if (Position.ContainsNaN()) return {};
-                Box += Position;
-            }
+            Box += PartBox;
         }
         // Exact installed MeshBuilder::ComputeBoundsFromVertexList arithmetic.
         const FVector3f Center = Box.GetCenter();

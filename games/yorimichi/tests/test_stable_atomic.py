@@ -108,3 +108,28 @@ def test_stale_selected_query_does_not_silently_survive_constructor_changes():
     recorder([1.], [2.]); recorder([2.], [3.])
     current = Lookup(recorder.value()); current([1.], [2.])
     with pytest.raises(ValueError, match='unused'): current.complete()
+
+
+def test_native_base_admission_uses_lod0_when_an_assembled_lower_lod_extends_outside_it():
+    source = GAME / 'unreal/Scripts/import_stable_atomic.py'
+    tree = ast.parse(source.read_text())
+    tree.body = [node for node in tree.body if isinstance(node, ast.FunctionDef)
+                 and node.name in ('cm_bounds', 'lod_bounds_match', 'validate_raw')]
+    selected_lods = []
+    def observed(mesh, lod):
+        selected_lods.append(lod)
+        return json.dumps({'min': [0, -200, 0], 'max': [100, 0, 300]} if lod == 0 else
+                          {'min': [-1000, -2000, -3000], 'max': [1000, 2000, 3000]})
+    namespace = dict(json=json, collision_options_match=lambda _: True, unreal=SimpleNamespace(HidamariStableMeshComponent=SimpleNamespace(measure_lod_bounds=observed)),
+        glb_mesh_validation=SimpleNamespace(source_matches=lambda *args: True, options_match=lambda *args: True))
+    exec(compile(tree, str(source), 'exec'), namespace)
+    class Mesh:
+        def get_num_triangles(self, _): return 4
+        def get_num_lods(self): return 3
+        def get_editor_property(self, _):
+            return [SimpleNamespace(get_editor_property=lambda _: 'M_HS_Stable')]
+        def get_bounding_box(self): raise AssertionError('Asset union bounds must not replace selected LOD0')
+    row = dict(name='SM_HS_Barn_LOD0', triangles=4, slots=['M_HS_Stable'], bounds=[[0, 0, 0], [1, 2, 3]])
+    assert namespace['validate_raw'](Mesh(), 'source.glb', row, 'out') and selected_lods == [0]
+    assert not namespace['lod_bounds_match'](Mesh(), row['bounds'], 1)
+    assert selected_lods == [0, 1]

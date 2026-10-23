@@ -23,6 +23,10 @@ public:
     UFUNCTION(BlueprintCallable, Category="Yorimichi|Import")
     static FString MeasureLogicalBounds(const TArray<UStaticMesh*>& Lod0Parts,
         const TArray<UStaticMesh*>& Lod1Parts, const TArray<UStaticMesh*>& Lod2Parts);
+    /** Actual selected render LOD AABB, independent of the asset's union/extended bounds.
+     * Empty refuses unavailable CPU data, invalid LODs and nonfinite positions. */
+    UFUNCTION(BlueprintCallable, Category="Yorimichi|Import")
+    static FString MeasureLodBounds(UStaticMesh* Mesh, int32 LodIndex = 0);
     virtual FBoxSphereBounds CalcBounds(const FTransform& LocalToWorld) const override;
 };
 
