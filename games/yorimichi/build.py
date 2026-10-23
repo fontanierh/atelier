@@ -1152,9 +1152,7 @@ def world_steps(ctx):
              about='Sunburst pier material maps (offline; no paid calls)'),
         *_load_helper_module('yorimichi_skate_atomic',GAME/'skatepark_atomic_build.py').steps(ctx),
         *_load_helper_module('sailboat_atomic_recipe', GAME / 'vehicle_atomic_build.py').steps(ctx, 'sailboat'),
-        Step('world.bike', [Blender(ASSETS / 'vehicles' / 'bike' / 'build.py')],
-             inputs=[ASSETS / 'vehicles' / 'bike' / 'build.py', YORI],
-             outputs=[out / 'bike' / 'manifest.json'], about="Cairo's bike: frame, steering, wheels, crank, pedals, kickstand, rack board", heavy=True),
+        *_load_helper_module('bike_atomic_recipe', GAME / 'vehicle_atomic_build.py').steps(ctx, 'bike'),
         # Verifies every library GLB, measures each breed's contacts and samples the reference breed's clips. A cutoff:
         # its dependents (the riders, unreal.horses) list what else they read, so a palette edit reruns only the import.
         Step('world.horses', [Blender(HORSES / 'build.py', threads=3)],
@@ -1610,9 +1608,21 @@ def unreal_steps(ctx):
                         GAME / 'unreal/Content/Data/kart/prepared-models.json',
                         *(GAME / f'unreal/Content/Data/kart/grips/{name}.json' for name in kart_source_identity.playable_ids())],
              about='the go-kart body, wheels and steering wheel (/Game/Japan/Kart)'),
-        Step('unreal.bike', [UnrealScript(SCRIPTS / 'import_bike.py', 'BIKE IMPORT COMPLETE')],
-             inputs=[SCRIPTS / 'import_bike.py', SCRIPTS / 'bike_material.py'], needs=['unreal.world', 'world.bike'], heavy=True,
-             about="Cairo's bike parts and M_Bike (/Game/Japan/Assets)"),
+        Step('unreal.bike', [UnrealScript(SCRIPTS / 'import_bike.py', 'BIKE IMPORT COMPLETE', modules=('Yorimichi', *IMPORT_CODE))],
+             inputs=[*local_imports(SCRIPTS / 'import_bike.py', (SCRIPTS, WORLD, REGIONS)), GAME / 'bike_atomic_products.py'],
+             needs=['unreal.world', *unreal_modules.needs(('Yorimichi', *IMPORT_CODE))], reads=['vehicle_bike.library'], heavy=True,
+             products=[Product('bike.native_meshes', tuple(GAME / 'unreal/Content/Japan/Assets' / (key + '.uasset')
+                           for key in ('BK_Frame','BK_WheelFront','BK_WheelRear','BK_Crank','BK_Pedal','BK_Kickstand','BK_RackBoard',
+                                       'BK_Steer_BasketFoot','BK_Steer_BasketRim','BK_Steer_BasketShell','BK_Steer_Core')),
+                           optional_paths=tuple(GAME / 'unreal/Content/Japan/Assets' / (key + suffix)
+                           for key in ('BK_Frame','BK_WheelFront','BK_WheelRear','BK_Crank','BK_Pedal','BK_Kickstand','BK_RackBoard',
+                                       'BK_Steer_BasketFoot','BK_Steer_BasketRim','BK_Steer_BasketShell','BK_Steer_Core')
+                           for suffix in ('.uexp','.ubulk','.uptnl','.m.ubulk','.upayload'))),
+                       Product('bike.native_material', (GAME / 'unreal/Content/Japan/Materials/M_Bike.uasset',),
+                           optional_paths=tuple(GAME / 'unreal/Content/Japan/Materials' / ('M_Bike' + suffix)
+                           for suffix in ('.uexp','.ubulk','.uptnl','.m.ubulk','.upayload'))),
+                       Product('bike.native_report', (out / 'bike/import-report.json',))],
+             about="Cairo's eleven separate bike meshes and cooked complete steering bounds"),
         Step('unreal.horses', [UnrealScript(SCRIPTS / 'import_horses.py', 'HORSES IMPORT COMPLETE')],
              inputs=horse_import_inputs(), after=['unreal.compile'], needs=['world.horses'],
              outputs=[out / 'horses' / 'unreal_import.json', GAME / 'unreal' / 'Content' / 'Data' / 'horses' / 'roster.json'],
