@@ -86,7 +86,7 @@ def main():
         expected_meta, _ = mesh_ir.decode((old / 'baseline' / key / references[key]['packets'][0]['path']).read_bytes())
         if hulls != expected_meta['collisions']:
             raise ValueError('Complete original Village collision channels/transform changed: ' + key)
-        value = plan(obj, root / 'plans' / key, collisions=hulls, options=OPTIONS)
+        value = plan(obj, root / 'plans' / key, partition='spatial' if key == 'Village_Planting' else 'whole', collisions=hulls, options=OPTIONS)
         original = exported(old / 'data/village/assets' / (key + '.fbx'))
         observed = dict(render=Counter(), collision=Counter())
         for index, row in enumerate(value['pieces'], 1):

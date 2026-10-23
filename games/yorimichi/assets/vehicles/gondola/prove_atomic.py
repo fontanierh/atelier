@@ -94,7 +94,7 @@ def main(argv=None):
         obj, _ = solid.to_object(after,mats)
         logical = args.output / 'plans' / key
         logical.mkdir(parents=True, exist_ok=True)
-        manifest = plan(obj, logical, options=OPTIONS)
+        manifest = plan(obj, logical, partition='whole', options=OPTIONS)
         bpy.data.objects.remove(obj, do_unlink=True)
         full = dict(render=Counter(), collision=Counter()); triangles = 0
         for row in manifest['pieces']:
