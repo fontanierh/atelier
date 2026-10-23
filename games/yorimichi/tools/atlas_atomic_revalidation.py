@@ -172,6 +172,52 @@ def prove(game=GAME):
     ):
         compare(rel, roots, previous='world/regions/brinecove/ground.py')
 
+    # Only this complete, byte-bound natural-reader/cache-signature transition
+    # may change route.py. Every sampler, route constant, arithmetic expression,
+    # frame and operation outside these two exact boundaries remains unchanged.
+    route_rel = 'world/train/route.py'
+    route = current(route_rel)
+    previous_route = old(route_rel)
+    previous_read = """    paths = [yori.OUT / f'belmonte/natural/{name}.glb' for name in ('SM_BM_NorthCountry', 'SM_BM_NorthApron')]
+    for p in paths:
+        if not p.is_file():
+            raise FileNotFoundError(f'missing Belmonte natural ground {p}; run world.belmonte first')
+    north = [source.Surface(source.triangles(p)) for p in paths]"""
+    current_read = """    from belmonte.surface_data import read
+    owners = ('SM_BM_NorthCountry', 'SM_BM_NorthApron')
+    packets = [read(yori.OUT / 'belmonte-natural-source-data' / (owner + '.surface'),
+                    owner=owner, stage='natural')[1] for owner in owners]
+    north = [source.Surface(source.triangles_data(data)) for data in packets]"""
+    previous_cache = """            yori.OUT / 'belmonte' / 'natural' / 'SM_BM_NorthApron.glb',
+            yori.OUT / 'belmonte' / 'natural' / 'SM_BM_NorthCountry.glb',
+            yori.OUT / 'belmonte' / 'glb' / 'SM_BM_NorthApron.glb',
+            yori.OUT / 'belmonte' / 'glb' / 'SM_BM_NorthCountry.glb',"""
+    current_cache = """            yori.OUT / 'belmonte-natural-source-data' / 'SM_BM_NorthApron.surface',
+            yori.OUT / 'belmonte-natural-source-data' / 'SM_BM_NorthCountry.surface',"""
+    for actual, previous in ((current_read, previous_read), (current_cache, previous_cache)):
+        if route.count(actual) != 1:
+            raise ValueError('Atlas natural reader/signature transition differs')
+        route = route.replace(actual, previous)
+    if route != previous_route:
+        raise ValueError('Atlas consumed declarations differ: ' + route_rel)
+    reader = fixture['natural_surface_reader']
+    reader_rel = reader['path'].removeprefix(PREFIX)
+    if (reader['path'] != PREFIX + 'world/regions/belmonte/surface_data.py'
+            or sha(reader['source'].encode()) != reader['sha256']
+            or current(reader_rel) != reader['source']):
+        raise ValueError('Atlas natural source reader differs from immutable binding')
+    bound_sources.update((route_rel, reader_rel))
+    route_ast = closure(declarations(previous_route), declarations(previous_route))
+    comparisons.append(dict(source=route_rel, previous_source=route_rel,
+        declarations=sorted(route_ast), ast_sha256=sha(json.dumps(route_ast, sort_keys=True).encode())))
+    natural_reader = dict(predecessor_revision=fixture['revision'],
+        predecessor_route_sha256=originals[PREFIX + route_rel]['sha256'],
+        current_route_sha256=sha(current(route_rel).encode()),
+        reader_revision=reader['revision'], reader_source_sha256=reader['sha256'],
+        stage='natural', owners=['SM_BM_NorthCountry', 'SM_BM_NorthApron'],
+        boundary='exact encoded GLB bytes; original triangles_data decoder and Surface sampler unchanged',
+        cache_signature='exact natural .surface filenames replace natural and unused final GLB filenames')
+
     changed = {}
     for path, row in originals.items():
         rel = path.removeprefix(PREFIX)
@@ -180,7 +226,7 @@ def prove(game=GAME):
             changed[rel] = dict(previous_sha256=row['sha256'], current_sha256=digest)
     return dict(schema=1, kind='atomic-export-map-source-equivalence',
                 predecessor_revision=fixture['revision'], predecessor_fixture_sha256=sha((game / 'tests/fixtures/atlas-atomic-predecessor.json').read_bytes()),
-                renderer_sha256=sha(current(map_rel).encode()),
+                renderer_sha256=sha(current(map_rel).encode()), natural_reader_equivalence=natural_reader,
                 changed_sources=changed, comparisons=comparisons,
                 bound_sources={rel: sha((game / rel).read_bytes()) for rel in sorted(bound_sources | {'world/regions/belmonte/query_arrays.py', 'world/regions/belmonte/terrain_bounds.py', 'world/regions/belmonte/ground_names.py'})},
                 render_only_sources=['world/build_terrain.py', 'world/regions/hidamari/build.py'],

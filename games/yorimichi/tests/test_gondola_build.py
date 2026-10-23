@@ -2,6 +2,7 @@
 from types import SimpleNamespace
 from pathlib import Path
 import ast
+import json
 
 from atelier import build
 from atelier.build_inputs import validate_imports
@@ -38,7 +39,12 @@ def test_ground_query_is_narrow_and_keeps_region_layout_edits_out_of_exporters(t
     query=rows['world.gondola_ground_inputs']
     assert 'world.gondola_ground' in {s.name for s in build.order(list(rows.values()),['world.gondola_ground'])}
     assert query.cutoff
-    assert set(query.needs)=={'world.hidamari','world.terrain.meshes','world.belmonte.ground'}
+    assert query.needs==['world.gondola_ground_sources']
+    projection=rows['world.gondola_ground_sources']
+    assert not projection.needs
+    assert {'hidamari.query.HD_NorthTrail','terrain.HD_Terrain.final','terrain.HD_NorthMountains.final'} <= set(projection.reads)
+    assert any(key.startswith('belmonte.final_surface.') for key in projection.reads)
+    assert 'gondola.ground_sources' in rows['world.gondola_ground'].reads
     assert rows['world.gondola_ground'].needs==['world.gondola_ground_inputs']
     for name in ('world.hidamari','world.belmonte'):
         assert all(Path(p).name!='gondola.py' for p in rows[name].inputs)
@@ -54,9 +60,23 @@ def test_fitted_world_declares_its_complete_code_and_mesh_closure(tmp_path):
     validate_imports(structures,structures.inputs)
     assert structures.needs==['world.gondola_structure_inputs']
     assert rows['world.gondola_structure_inputs'].cutoff
-    assert set(site.needs)=={'world.gondola_kit','world.gondola_ground','world.gondola_structures','world.craterpark_geometry','world.zeppelin'}
-    assert len(site.outputs)==32
-    assert all(c.threads==3 and c.factory_startup for c in site.commands)
+    audit=rows['world.gondola_site.audit']
+    validate_imports(audit,audit.inputs)
+    assert set(audit.needs)=={'world.gondola_ground','world.gondola_structures','world.craterpark_geometry','world.zeppelin'}
+    assert {'gondola_site.atomic','gondola_site.source.fit','gondola.kit','gondola.ground','gondola.structures'} <= set(audit.reads)
+    assert 'gondola_site.audit' in site.reads
+    assert 'gondola_site.atomic' in site.reads
+    assert isinstance(site.commands[0],build.Call)
+    assert {p.name for p in site.products}=={'gondola.site'}
+    sources=rows['world.gondola_site.sources']
+    assert all(c.threads==3 and c.factory_startup for step in (sources,audit) for c in step.commands)
+    source_keys={p.name.removeprefix('gondola_site.source.') for p in sources.products}-{'fit'}
+    query_keys={key.removeprefix('gondola_site.query.') for key in audit.reads if key.startswith('gondola_site.query.')}
+    assert source_keys==query_keys and source_keys
+    for key in source_keys:
+        owners=[step for step in rows.values() if 'gondola_site.source.'+key in step.reads]
+        assert len(owners)==1 and owners[0].cache
+        assert owners[0].reads==['gondola_site.source.'+key]
 
 
 def test_runtime_import_and_staging_are_normal_closed_dependencies(tmp_path):
@@ -75,7 +95,13 @@ def test_runtime_import_and_staging_are_normal_closed_dependencies(tmp_path):
 
 def test_missing_native_mesh_material_texture_or_receipt_invalidates_import(tmp_path,monkeypatch):
     recipe=build.load_recipe('yorimichi')
+    # Exercise discovered bounded membership, including the runtime omission of far rope LODs.
+    manifest=tmp_path/'build/gondola/world/site.json'
+    manifest.parent.mkdir(parents=True)
+    pieces=['GD_L3_Rope_LOD0_Piece00','GD_L3_Rope_LOD1_Piece00','GD_L3_Rope_LOD2_Piece00']
+    manifest.write_text(json.dumps(dict(atomic=True,exports=[dict(pieces=[dict(name=name) for name in pieces])])))
     step=next(row for row in recipe.gondola_steps(SimpleNamespace(out=tmp_path/'build')) if row.name=='unreal.gondola')
+    assert not any('_Rope_LOD1' in str(path) or '_Rope_LOD2' in str(path) for path in step.outputs)
     # Isolate only the native destination, leaving real recipe helper/code loading intact.
     step.outputs=[tmp_path/'source-game'/path.relative_to(recipe.GAME) if path.is_relative_to(recipe.GAME) else path
                   for path in step.outputs]
@@ -83,7 +109,7 @@ def test_missing_native_mesh_material_texture_or_receipt_invalidates_import(tmp_
     for path in step.outputs:
         path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(b'asset')
     assert build.outputs_present(step)
-    for suffix in ('Kit/GD_Cabin_Collision.uasset','World/GD_L3_Rope_LOD0.uasset',
+    for suffix in ('Kit/GD_Cabin_Collision.uasset','World/GD_L3_Rope_LOD0_Piece00.uasset',
                    'Materials/GD_Timber.uasset','Materials/GD_WindowPane.uasset','Textures/GD_wood_panel_color.uasset','import-report.json'):
         path=next(path for path in step.outputs if str(path).endswith(suffix))
         path.unlink()
@@ -108,8 +134,12 @@ def test_shared_walking_core_is_a_narrow_declared_production_input(tmp_path):
     recipe=build.load_recipe('yorimichi')
     rows={s.name:s for s in recipe.steps(SimpleNamespace(out=tmp_path,uproject=None))}
     core=recipe.WORLD/'walk_raster.py'
-    for name in ('world.gondola_kit.audit','world.gondola_site','world.gondola_service','unreal.gondola',
+    for name in ('world.gondola_kit.audit','world.gondola_site.audit','world.gondola_site','unreal.gondola',
                  'world.ferry_ship','world.ferry_service','unreal.ferry'):
         assert core in rows[name].inputs,name
+    # Service consumes the audited assembled site rather than re-running walking validation.
+    assert rows['world.gondola_service'].needs==['world.gondola_site']
+    assert 'gondola_site.audit' in rows['world.gondola_site'].reads
+    assert core not in rows['world.gondola_service'].inputs
     assert core not in rows['world.ferry_probes'].inputs
     assert core not in rows['world.ferry_site'].inputs

@@ -10,6 +10,7 @@ from atelier import build, build_audit, build_cache, build_deferred, build_input
 
 MEGA = Path(__file__).resolve().parents[1] / 'world' / 'regions' / 'mega'
 _BASELINE_CACHE = {}
+_SOURCE_INVENTORY = build_inputs.inventory
 _BELMONTE_RUNTIME_JSON = None
 _BELMONTE_GROUND_JSON = None
 _BELMONTE_REPORT_JSON = '{"meshes": [], "materials": {}}'
@@ -45,13 +46,29 @@ def _write_belmonte_fixture(out_dir):
     if not ground.is_file():
         ground.parent.mkdir(parents=True, exist_ok=True)
         ground.write_text(ground_json)
+    projection=out_dir/'gondola/world/ground-sources.json'
+    if not projection.is_file():
+        ground_data=json.loads(ground_json)
+        projection.parent.mkdir(parents=True,exist_ok=True)
+        projection.write_text(json.dumps(dict(schema=1,owner='GondolaGroundSources',
+            origin_cm=ground_data['origin_cm'],groups=[dict(name=row['name'],
+                path='belmonte-source-data/'+row['name']+'.surface') for row in ground_data['surfaces']
+                if row['name']!='SM_BM_NorthCountry'])))
+
+    # The synthetic runtime above contains only ground groups, so its matching
+    # pre-export structure projection has an explicitly empty selected roster.
+    structures=out_dir/'gondola/world/structures-sources.json'
+    if not structures.is_file():
+        structures.write_text(json.dumps(dict(schema=1,owner='GondolaStructureSources',
+            bounds_m=[340.,2700.,560.,4680.],origin_cm=json.loads(ground_json)['origin_cm'],
+            groups=[],sources={})))
 
 
 def _has_custom_files(tmp_path):
     if not tmp_path.exists():
         return False
     for child in tmp_path.iterdir():
-        if child.name not in ('belmonte', 'products'):
+        if child.name not in ('belmonte', 'products', 'gondola'):
             return True
     belmonte = tmp_path / 'belmonte'
     if belmonte.is_dir():
@@ -63,7 +80,20 @@ def _has_custom_files(tmp_path):
         for child in products.rglob('*'):
             if child.is_file() and child.relative_to(products) != Path('belmonte/ground.json'):
                 return True
+    gondola=tmp_path/'gondola'
+    if gondola.is_dir():
+        for child in gondola.rglob('*'):
+            if child.is_file() and child.relative_to(gondola) not in (Path('world/ground-sources.json'),Path('world/structures-sources.json')):
+                return True
     return False
+
+
+def _fixture_inventory(path, digest, *, complete=False):
+    # Optional-file validation checks the real finite inventory schema. Keep its
+    # file/type membership while substituting only this dependency test's hash.
+    if complete:
+        return _SOURCE_INVENTORY(path,hasher=lambda _:digest,complete=True)
+    return {'source':digest}
 
 
 def _env_signature():
@@ -109,7 +139,7 @@ def _build_state(out_dir):
     def unedited_inventory(path, **kwargs):
         d = hashlib.sha256()
         d.update(str(path).encode())
-        return {'source': d.hexdigest()}
+        return _fixture_inventory(path,d.hexdigest(),complete=kwargs.get('complete',False))
 
     orig_hp, orig_inv = build._hash_path, build_inputs.inventory
     orig_tc, orig_atc = build_cache.tool_context, build_audit.tool_context
@@ -166,7 +196,7 @@ def changed_by(edited, tmp_path, monkeypatch, *, stable_products=()):
     def inventory(path, **kwargs):
         digest = hashlib.sha256()
         stand_in(digest, path)
-        return {'source': digest.hexdigest()}
+        return _fixture_inventory(path,digest.hexdigest(),complete=kwargs.get('complete',False))
 
     monkeypatch.setattr(build, '_hash_path', stand_in)
     monkeypatch.setattr(build_inputs, 'inventory', inventory)

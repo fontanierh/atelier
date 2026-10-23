@@ -160,7 +160,8 @@ def test_incomplete_or_changed_query_product_refuses(prepared,fault):
 def test_ground_and_native_consumers_use_distinct_real_products():
     ctx=build.Context('yorimichi',create=False);recipe=build.load_recipe('yorimichi')
     steps={step.name:step for step in recipe.steps(ctx)}
-    assert 'world.belmonte.ground' in steps['world.gondola_ground_inputs'].needs
+    assert steps['world.gondola_ground_inputs'].needs==['world.gondola_ground_sources']
+    assert 'world.belmonte.ground' not in steps['world.gondola_ground_inputs'].needs
     assert 'world.belmonte' not in steps['world.gondola_ground_inputs'].needs
     assert 'belmonte.ground' in steps['world.map'].reads
     assert 'belmonte.ground' not in steps['unreal.belmonte'].reads

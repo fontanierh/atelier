@@ -154,7 +154,9 @@ def test_output_identical_craterpark_source_edit_keeps_downstream_fingerprints_a
     geometry = steps['world.craterpark_geometry']
     assert geometry.cutoff
     dependents = ('world.hidamari.layout_data', 'world.layout', 'world.farhills', 'world.map',
-                  'world.craterpark_layout', 'world.craterpark.inputs', 'world.gondola_site')
+                  'world.craterpark_layout', 'world.craterpark.inputs', 'world.gondola_site.audit')
+    assert tmp_path/'craterpark/v2/geometry.npz' in steps['world.gondola_site.audit'].inputs
+    assert 'gondola_site.audit' in steps['world.gondola_site'].reads
     for name in dependents:
         assert 'world.craterpark_geometry' in steps[name].needs, name
 
