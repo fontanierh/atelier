@@ -1620,11 +1620,12 @@ impl RootStore {
         let guard = self.leases.lock()?;
         let record = self.root_locked(&guard, kind)?;
         if record.is_some() {
+            // Fold before unlinking: a damage refusal must never cost the root's retention.
+            self.fold_usage_locked()?;
             let path = self.path(kind)?;
             fs::remove_file(&path)?;
             sync_dir(path.parent().expect("root has a parent"))?;
         }
-        self.fold_usage_locked()?;
         Ok(record)
     }
 

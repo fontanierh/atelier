@@ -2008,3 +2008,29 @@ fn the_all_project_reader_aggregates_each_project_damage() {
         "and the aggregate must not drop it"
     );
 }
+
+#[test]
+fn dropping_a_root_refuses_before_unlinking_while_usage_is_damaged() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let mut session = begin(&store, RootKind::Main, "first", 1);
+    session.use_result("unit.a", &key(1)).unwrap();
+    session.commit(None).unwrap();
+    let torn = begin(&store, RootKind::Main, "torn", 1);
+    let journal = only_session(&workspace.store(), "yorimichi");
+    let mut text = fs::read_to_string(&journal).unwrap();
+    text.push_str("{\"unit\":\"unit.x\",\"key\":\"");
+    fs::write(&journal, text).unwrap();
+
+    let error = store.drop_root(&RootKind::Main).unwrap_err();
+    assert!(
+        matches!(error, RootError::Damaged(_)),
+        "the fold must refuse first: {error}"
+    );
+    assert!(
+        store.root(&RootKind::Main).unwrap().is_some(),
+        "a refused drop must leave the root and its retention intact"
+    );
+    drop(torn);
+}
