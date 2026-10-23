@@ -5,8 +5,8 @@ from pathlib import Path
 
 from atelier.atomic_files import atomic_json
 from atelier.export_assembly import copy_verified
-from atelier.export_manifest import name as asset_name,validate,real_directory
-from atelier.model_files import regular_files
+from atelier.export_manifest import name as asset_name,validate,real_directory,sha
+from atelier.model_files import regular_files,flat_files
 
 
 def definition_rows(kind,spec,materials):
@@ -46,10 +46,13 @@ def project(kind,spec_path,materials,output):
 
 def assemble(out,kind,policy):
     """@cc [owner:fontanierh,label:correctness] complete-file-only-foliage-kind
-    Validate every selected source report and atomic export before changing the kind
-    folder. Copy files only, retaining original names and manifest/API fields. Retire
-    only recorded previous members after complete current publication; unknown files
-    and missing/altered payload/export/query membership MUST refuse.
+    Validate every selected source report, actual regular geometry/material payload
+    bytes and atomic export before changing the kind folder. Reports and receipts
+    MUST NOT substitute for current selected bytes. Unselected old regular source
+    files MAY remain unused; they MUST NOT become current outputs. Copy files only,
+    retaining original names and manifest/API fields. Retire only recorded previous
+    destination members after complete current publication; unknown destination files
+    and missing/altered selected payload/export/query membership MUST refuse.
     """
     out=Path(out);kind=asset_name(kind);folder=real_directory(out/'foliage'/kind);data=real_directory(out/'foliage-source'/kind)
     if policy.get('kind')!=kind or policy.get('schema')!=1:raise ValueError('Foreign foliage policy')
@@ -57,7 +60,9 @@ def assemble(out,kind,policy):
     if (not levels or keys!=levels+[kind+'_Seed'] or levels[0]!=kind or
             levels!=[kind]+[f'{kind}_LOD{i}' for i in range(1,len(levels))] or len(levels)!=len(policy['screen_sizes'])):
         raise ValueError('Incomplete foliage member roster')
-    members=regular_files(data)
+    members=flat_files(data)
+    required={kind+'.base.json',*(key+suffix for key in keys for suffix in ('.report.json','.npz','.materials.json'))}
+    if not required<=members:raise ValueError('Incomplete selected foliage source membership')
     def read(member):
         if member not in members:raise ValueError('Missing selected foliage source report')
         return (data/member).read_bytes()
@@ -71,6 +76,9 @@ def assemble(out,kind,policy):
         if any(row.get(field)!=receipt['metadata'].get(field) or not isinstance(row.get(field),str) or len(row[field])!=64
                for field in ('geometry_sha256','materials_sha256')):
             raise ValueError('Foliage source/export identities differ')
+        if any(sha(data/(key+suffix))!=row[field] for suffix,field in (
+                ('.npz','geometry_sha256'),('.materials.json','materials_sha256'))):
+            raise ValueError('Selected foliage payload differs from source/export identity')
         if key==kind and row.get('base_sha256')!=hashlib.sha256(base_bytes).hexdigest():
             raise ValueError('Foliage base query identity differs')
         receipts[key]=receipt

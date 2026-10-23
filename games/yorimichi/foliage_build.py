@@ -84,6 +84,7 @@ def world_steps(ctx):
             [Python(Path(products.__file__),('assemble','--kind',name,'--policy',str(definitions/'policy.json'),'--output',str(ctx.out)))],
             inputs=product_code,
             reads=['foliage.policy.'+name,'foliage.base.'+name,*('foliage.report.'+key for key in rows),
+                   *('foliage.payload.'+key for key in rows),
                    *('world.foliage.export.'+key for key in rows)],
             products=[Product('foliage.'+name+'.source',(ctx.out/'foliage'/name,))],cache=True,
             about='strict complete file-only foliage assembly with unchanged native API'))

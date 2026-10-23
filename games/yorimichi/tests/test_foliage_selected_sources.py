@@ -64,6 +64,10 @@ def test_full_recipe_declares_every_selected_source_and_preserves_native_api(tmp
                               'foliage.palette.Tree_Broad_A'}
     assembled = graph.by_name['world.foliage.Tree_Broad_A']
     assert assembled.products[0].name == 'foliage.Tree_Broad_A.source'
+    expected = {'foliage.payload.'+step.name.removeprefix('world.foliage.source.')
+                for step in sources if step.name == 'world.foliage.source.Tree_Broad_A'
+                or step.name.startswith('world.foliage.source.Tree_Broad_A_')}
+    assert expected <= set(assembled.reads)
     assert not any(type(command).__name__ == 'Blender' for command in assembled.commands)
     assert set(graph.by_name['unreal.foliage.Tree_Broad_A'].reads) == {
         'foliage.Tree_Broad_A.source', 'materials.foliage_interface'}
@@ -77,7 +81,11 @@ def fixture(out):
     source.mkdir(parents=True)
     base = dict(bounds=[[0, 0, 0], [1, 1, 1]], materials=['Bark'], trunk_collision=[1, 0, 0, 0, 0, 0, 1])
     atomic_json(source/(kind+'.base.json'), base)
+    atomic_json(source/(kind+'.bounds.json'), base['bounds'])
+    atomic_json(source/(kind+'.palette.json'), base['materials'])
     for key, count in zip(keys, [24, 12, 12]):
+        (source/(key+'.npz')).write_bytes(key.encode())
+        (source/(key+'.materials.json')).write_bytes(b'materials')
         metadata = dict(collision_hulls=1 if key != keys[-1] else 0, slots=['Bark'],
                         geometry_sha256=hashlib.sha256(key.encode()).hexdigest(),
                         materials_sha256=hashlib.sha256(b'materials').hexdigest())
@@ -121,3 +129,62 @@ def test_incomplete_or_altered_assembly_refuses_before_publication(tmp_path, cor
         products.assemble(tmp_path,kind,policy)
     assert sentinel.read_bytes()==b'previous complete member'
     assert not (folder/'manifest.json').exists()
+
+
+@pytest.mark.parametrize('key', ['Fixture', 'Fixture_LOD1', 'Fixture_Seed'])
+@pytest.mark.parametrize('suffix', ['.npz', '.materials.json'])
+@pytest.mark.parametrize('fault', ['missing', 'changed'])
+def test_actual_selected_payloads_must_match_before_any_assembly_mutation(tmp_path, monkeypatch, key, suffix, fault):
+    kind, policy, _ = fixture(tmp_path)
+    products.assemble(tmp_path, kind, policy)
+    folder = tmp_path/'foliage'/kind
+    # This genuinely owned previous LOD must not retire on a failed admission.
+    (folder/'Fixture_LOD2.fbx').write_bytes(b'previous owned LOD')
+    previous = json.loads((folder/'manifest.json').read_text())
+    previous.update(triangles=[24, 12, 6], screen_sizes=[1, .1, .01])
+    atomic_json(folder/'manifest.json', previous)
+    before = {p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in folder.iterdir()}
+    payload = tmp_path/'foliage-source'/kind/(key+suffix)
+    if fault == 'missing': payload.unlink()
+    else: payload.write_bytes(b'changed selected bytes, reports and exports still agree')
+    monkeypatch.setattr(products, 'copy_verified', lambda *a: pytest.fail('copied before payload admission'))
+    monkeypatch.setattr(products, 'atomic_json', lambda *a: pytest.fail('published before payload admission'))
+    with pytest.raises((ValueError, FileNotFoundError)):
+        products.assemble(tmp_path, kind, policy)
+    assert {p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in folder.iterdir()} == before
+
+
+@pytest.mark.parametrize('fault', ['linked_payload', 'directory_payload', 'special_payload', 'empty_directory', 'nested_payload'])
+def test_selected_source_member_types_refuse_before_destination_creation(tmp_path, fault):
+    kind, policy, _ = fixture(tmp_path)
+    source = tmp_path/'foliage-source'/kind; payload = source/'Fixture_LOD1.npz'
+    if fault == 'linked_payload':
+        external = tmp_path/'external.npz'; payload.rename(external); payload.symlink_to(external)
+    elif fault == 'directory_payload': payload.unlink(); payload.mkdir()
+    elif fault == 'special_payload':
+        import os
+        payload.unlink(); os.mkfifo(payload)
+    elif fault == 'empty_directory': (source/'foreign').mkdir()
+    else:
+        (source/'nested').mkdir(); payload.rename(source/'nested'/payload.name)
+    with pytest.raises((ValueError, FileNotFoundError)):
+        products.assemble(tmp_path, kind, policy)
+    assert not (tmp_path/'foliage'/kind).exists()
+
+
+def test_policy_shrink_preserves_unused_regular_sources_without_admitting_them(tmp_path):
+    kind, policy, _ = fixture(tmp_path)
+    products.assemble(tmp_path, kind, policy)
+    folder = tmp_path/'foliage'/kind; source = tmp_path/'foliage-source'/kind
+    previous = json.loads((folder/'manifest.json').read_text())
+    previous.update(triangles=[24, 12, 6], screen_sizes=[1, .1, .01])
+    atomic_json(folder/'manifest.json', previous)
+    obsolete = folder/'Fixture_LOD2.fbx'; obsolete.write_bytes(b'previous owned LOD')
+    unused = {source/('Fixture_LOD2'+suffix): b'unused prior source, not admitted or decoded'
+              for suffix in ('.npz', '.materials.json', '.report.json')}
+    for path, data in unused.items(): path.write_bytes(data)
+    result = products.assemble(tmp_path, kind, policy)
+    assert result['triangles'] == [24, 12]
+    assert not obsolete.exists()
+    assert {path.name for path in folder.iterdir()} == {'Fixture.fbx', 'Fixture_LOD1.fbx', 'Fixture_Seed.fbx', 'manifest.json'}
+    assert all(path.read_bytes() == data for path, data in unused.items())
