@@ -167,6 +167,9 @@ shadow and collision policies. Every source face MUST have one rendered piece ow
 every authored whole collision hull MUST have one component owner, while every piece
 retains its exact complex query surface. A hidden monolithic collision parent MUST NOT
 remain loaded. Missing membership MUST fail readiness rather than load a parent.
+The complete prepared roster MUST remain mandatory, while only logical sources
+with actual nonempty placements load native pieces. An unused definition MUST NOT
+be instantiated or counted as a missing runtime placement.
 Canonical terrain-only diagnostic queries MUST inspect the complete tagged terrain
 piece union, preserving their original trace semantics.
 Park shore-footing diagnostics MUST likewise trace the complete tagged park piece
@@ -178,6 +181,15 @@ Whole-instance fading MUST use the original logical parent's local bounds on eve
 child, never each child's smaller bounds. The override MUST preserve fade mode at
 custom primitive float 0 and use the same declared fields in native setup and the
 material shader. Unpartitioned owners MUST retain their existing default bounds.
+
+@cc [owner:fontanierh,label:correctness;performance] bounded-city-tree-lod-ownership
+The three optimized logical city trees MUST retain complete current per-piece base
+and lower-level ownership. LOD0, source materials, instance transforms, authored
+whole collision and logical fade bounds MUST survive toggling optimization.
+Runtime swapping MUST use exact current child identities, never reopen a retired
+whole parent or match an unrelated same-prefix asset. Every lower level MUST retain
+CPU-readback geometry for the existing current LOD0/normal/scale validation, with
+the existing screen sizes and saved user preference semantics.
 
 @cc [owner:fontanierh,label:correctness;performance] bounded-treehouse-dressing
 TH_Dressing MUST load only its complete bounded render piece membership, never

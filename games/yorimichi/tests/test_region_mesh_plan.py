@@ -70,3 +70,24 @@ def test_planned_parent_metadata_cannot_disagree_with_current_child_bytes(tmp_pa
     if mutation == 'frame': value['matrix'][0][3] = 12
     with pytest.raises(ValueError):
         planner.validate(root, value)
+
+
+def test_explicit_lod_groups_conserve_original_polygon_ids_and_budget(monkeypatch):
+    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1] / 'world'))
+    planner = importlib.import_module('region_mesh_parts')
+    planner.validate_face_groups([('Second', [1]), ('First', [0])], [4, 3])
+    for groups, counts in [([('One', [0, 0])], [3, 3]), ([('One', [0])], [3, 3]),
+                           ([('One', [2])], [3, 3]), ([('One', [0])], [32771]),
+                           ([('One', [0]), ('ONE', [1])], [3, 3])]:
+        with pytest.raises(ValueError): planner.validate_face_groups(groups, counts)
+
+
+def test_recorded_face_membership_cannot_duplicate_or_drop_a_base_polygon(tmp_path, monkeypatch):
+    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1] / 'world'))
+    planner = importlib.import_module('region_mesh_parts')
+    root = tmp_path / 'planned'
+    value = planned_pair(root)
+    for index, row in enumerate(value['pieces']): row['source_faces'] = [index]
+    assert planner.validate(root, value) == value
+    value['pieces'][1]['source_faces'] = [0]
+    with pytest.raises(ValueError, match='exactly once'): planner.validate(root, value)

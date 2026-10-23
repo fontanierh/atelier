@@ -150,7 +150,7 @@ def test_real_importer_retires_only_after_complete_current_native_validation(tmp
                      hashlib=hashlib, import_mesh=imported, owned_tiles=owner.owned_tiles, obsolete_assets=owner.obsolete_assets,
                      production_groups=owner.production_groups, native_bounds=P.native_bounds,
                      piece_material_paths=owner.piece_material_paths, protected_files=lambda root: {},
-                     collision_matches=lambda *args: True, distance_lods=lambda *args: events.append('distance LODs'),
+                     collision_matches=lambda *args: True, distance_lods=lambda *args: events.append('distance LODs'), TREES=(),
                      native_membership=native_membership)
     exec(compile(ast.Module(body=functions, type_ignores=[]), str(script), 'exec'), namespace)
     if failure:

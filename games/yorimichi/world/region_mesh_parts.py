@@ -34,7 +34,7 @@ def capture_colliders(boxes):
     return collisions
 
 
-def plan(obj, root, *, collisions=(), options=None, cell_metres=CELL_METRES):
+def plan(obj, root, *, collisions=(), options=None, cell_metres=CELL_METRES, face_groups=None):
     """@cc [owner:fontanierh,label:correctness;performance] planned-independent-mesh-pieces
     Capture complete original corner channels before partitioning. Every source face MUST have
     exactly one piece owner and every piece MUST fit the atomic export budget. Whole authored
@@ -55,17 +55,19 @@ def plan(obj, root, *, collisions=(), options=None, cell_metres=CELL_METRES):
     triangles = int(sum(source['counts'] - 2))
     if not faces or not source['slots'] or any(slot is None for slot in source['slots']):
         raise ValueError('Logical mesh requires geometry and a complete material table')
-    if triangles <= TRIANGLE_LIMIT:
-        groups = [(None, None, '', tuple(range(len(faces))))]
+    if face_groups is None:
+        spatial = ([(None, None, '', tuple(range(len(faces))))] if triangles <= TRIANGLE_LIMIT else
+                   cell_face_groups(world, faces, cell_metres, triangle_limit=TRIANGLE_LIMIT))
+        groups = [(parent if x is None else f'{parent}_cell_{x}_{y}' + ('_Piece' + suffix if suffix else ''), members)
+                  for x, y, suffix, members in spatial]
     else:
-        groups = cell_face_groups(world, faces, cell_metres, triangle_limit=TRIANGLE_LIMIT)
-    keys = [parent if x is None else f'{parent}_cell_{x}_{y}' + ('_Piece' + suffix if suffix else '')
-            for x, y, suffix, _ in groups]
+        groups = [(key, tuple(members)) for key, members in face_groups]
+    keys = [name(key) for key, _ in groups]
+    validate_face_groups(groups, source['counts'])
     region_plan_files.begin(root, parent, [key + '.npz' for key in keys])
     owned = np.zeros(len(faces), dtype=np.int32)
     rows = []
-    for x, y, suffix, members in groups:
-        key = parent if x is None else f'{parent}_cell_{x}_{y}' + ('_Piece' + suffix if suffix else '')
+    for key, members in groups:
         piece = subset(source, members)
         np.add.at(owned, list(members), 1)
         payload = mesh_ir.encode(piece, key=key, slots=[m.name for m in source['slots']],
@@ -76,6 +78,7 @@ def plan(obj, root, *, collisions=(), options=None, cell_metres=CELL_METRES):
         used = world[piece['used']]
         rows.append(dict(name=key, payload=relative, sha256=sha(root / relative),
                          triangles=piece['triangles'], polygons=len(members),
+                         source_faces=list(members),
                          min=used.min(0).tolist(), max=used.max(0).tolist(),
                          collision_hulls=len(collisions) if not rows else 0))
     if not np.all(owned == 1) or sum(r['triangles'] for r in rows) != triangles:
@@ -87,6 +90,26 @@ def plan(obj, root, *, collisions=(), options=None, cell_metres=CELL_METRES):
     validate(root, value)
     region_plan_files.finish(root, value)
     return value
+
+
+def validate_face_groups(groups, counts):
+    """@cc [owner:fontanierh,label:correctness] logical-piece-lod-face-membership
+    Every original polygon MUST have exactly one bounded child owner. Explicit
+    LOD groups MUST retain base polygon membership and names; simplification MUST
+    NOT repartition leaves into different native components. Refuse missing,
+    duplicate, out-of-range or unbounded groups before creating output files.
+    """
+    names, covered = set(), np.zeros(len(counts), dtype=np.int32)
+    for key, members in groups:
+        key = name(key)
+        members = tuple(members)
+        if (key.casefold() in names or not members or any(type(i) is not int or not 0 <= i < len(counts) for i in members)
+                or not 0 < sum(int(counts[i])-2 for i in members) <= TRIANGLE_LIMIT):
+            raise ValueError('Invalid bounded source face group')
+        names.add(key.casefold())
+        np.add.at(covered, list(members), 1)
+    if not len(counts) or not np.all(covered == 1):
+        raise ValueError('Source face groups must cover each polygon exactly once')
 
 
 def validate(root, value=None):
@@ -142,6 +165,12 @@ def validate(root, value=None):
         raise ValueError('Finished mesh-set semantic inventory is incomplete')
     if mesh_set and sorted(all_slots) != value['slots']:
         raise ValueError('Finished mesh-set material inventory is incomplete')
+    if any('source_faces' in row for row in value['pieces']):
+        groups = [(row['name'], row.get('source_faces', ())) for row in value['pieces']]
+        # Polygon counts, not reduced triangle counts, determine conserved membership.
+        validate_face_groups(groups, np.full(polygons, 3, dtype=np.int32))
+        if any(len(row['source_faces']) != row['polygons'] for row in value['pieces']):
+            raise ValueError('Source polygon membership differs from its current piece')
     if total != value['source_triangles'] or total_polygons != polygons:
         raise ValueError('Planned geometry triangle conservation failed')
     return value

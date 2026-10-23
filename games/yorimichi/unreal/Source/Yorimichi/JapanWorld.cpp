@@ -381,7 +381,7 @@ void AJapanWorld::Load()
     const TSharedPtr<FJsonObject>* Inst = nullptr;
     TMap<FString,TArray<FString>> CityPieces;
     TMap<FString,FBox> CityLogicalBounds;
-    TSet<FString> LoadedCityPieces;
+    TSet<FString> LoadedCityPieces,PlacedCityParents;
     const bool PiecesReady=JapanCityPieces::Read(
         AtelierReadJson(AtelierDataPath(TEXT("city_surface_tiles/v1_128m/manifest.json"))),CityPieces,&CityLogicalBounds);
     if (!PiecesReady) Incomplete.Add(TEXT("complete production city pieces"));
@@ -398,6 +398,10 @@ void AJapanWorld::Load()
             TArray<FString> MeshPaths;
             if (JapanCityPieces::IsParent(Key))
             {
+                if (!Pair.Value || Pair.Value->Type!=EJson::Array)
+                { Incomplete.Add(TEXT("city placements ")+Key);continue; }
+                if (Pair.Value->AsArray().IsEmpty()) continue;
+                PlacedCityParents.Add(Key);
                 const auto* Paths=CityPieces.Find(Key);
                 if (!Paths) { Incomplete.Add(TEXT("city pieces ")+Key);continue; }
                 MeshPaths=*Paths;
@@ -444,7 +448,11 @@ void AJapanWorld::Load()
                     if (Xs.IsEmpty()) return;
                     UHierarchicalInstancedStaticMeshComponent* H = NewObject<UHierarchicalInstancedStaticMeshComponent>(this);
                     H->SetStaticMesh(Mesh); H->SetupAttachment(RootComponent);
-                    if (JapanCityPieces::IsParent(Key)) H->ComponentTags.Add(FName(*(TEXT("CitySurface:")+Key)));
+                    if (JapanCityPieces::IsParent(Key))
+                    {
+                        H->ComponentTags.Add(FName(*(TEXT("CitySurface:")+Key)));
+                        H->ComponentTags.Add(FName(*(TEXT("CityPiece:")+Mesh->GetName())));
+                    }
                     if (Key==TEXT("TH_Dressing")) H->ComponentTags.Add(TEXT("TreehouseDressing"));
                     H->SetMobility(EComponentMobility::Static);
                     if (Key==TEXT("HD_Harbor") || Key==TEXT("HD_Boat") || Key==TEXT("HD_Sea") || Key==TEXT("HD_Bollard"))
@@ -534,11 +542,14 @@ void AJapanWorld::Load()
     }
     if (PiecesReady)
     {
-        int32 ExpectedPieces=0;
-        for (const auto& Group:CityPieces) ExpectedPieces+=Group.Value.Num();
+        int32 ExpectedPieces=0,PreparedPieces=0;
+        for (const auto& Group:CityPieces) PreparedPieces+=Group.Value.Num();
+        for (const FString& Parent:PlacedCityParents)
+            if (const auto* Paths=CityPieces.Find(Parent)) ExpectedPieces+=Paths->Num();
         if (LoadedCityPieces.Num()==ExpectedPieces)
         {
-            UE_LOG(LogTemp,Display,TEXT("CITY PIECES production parents=%d pieces=%d hidden_parents=0"),CityPieces.Num(),ExpectedPieces);
+            UE_LOG(LogTemp,Display,TEXT("CITY PIECES production parents=%d pieces=%d hidden_parents=0 placed_parents=%d loaded_pieces=%d"),
+                CityPieces.Num(),PreparedPieces,PlacedCityParents.Num(),ExpectedPieces);
         }
         else Incomplete.Add(TEXT("loaded production city pieces"));
     }

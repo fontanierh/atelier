@@ -3,14 +3,12 @@ import json
 from pathlib import Path
 import tempfile
 
-import numpy as np
-
 from atelier.atomic_files import atomic_json
 from atelier.build_cache import copy_file
 from atelier.conventions import to_unreal
 from atelier.export_manifest import real_directory, sha
 from atelier.model_files import regular_files
-from atelier import export_manifest, mesh_ir
+from atelier import export_manifest
 import city_tile_products as legacy
 from regions.hidamari.logical_catalogue import ASSETS
 
@@ -65,6 +63,8 @@ def source_record(root, receipts):
     Every current export MUST match its own planned geometry digest and bounded
     count; assembly MUST NOT construct, join or re-export mesh geometry.
     """
+    import numpy as np
+    from atelier import mesh_ir
     from region_mesh_parts import validate
     value = validate(root)
     if value['parent'] not in SOURCES or value.get('kind') is not None:

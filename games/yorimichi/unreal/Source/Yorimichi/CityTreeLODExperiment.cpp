@@ -1,4 +1,6 @@
 #include "JapanWorld.h"
+#include "CitySurfacePieces.h"
+#include "AtelierData.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "StaticMeshResources.h"
@@ -23,15 +25,24 @@ static bool ApplyCityTreeLODs(AJapanWorld* Landscape,const FString& Tag,bool Ena
     // A full-detail comparison uses the original single-LOD mesh, avoiding its
     // ambiguous zero/automatic case and preserving the production leaf geometry.
     const bool OptimizedMesh=Enabled && Forced!=1;
-    TMap<FString,UStaticMesh*> Replacements;
-    for (const FString Name:{TEXT("HD_ArcadeTree"),TEXT("HD_PlazaTreeGold"),TEXT("HD_PlazaTreeOrange")})
+    TMap<FString,TArray<FString>> CityPieces;
+    if (!JapanCityPieces::Read(AtelierReadJson(AtelierDataPath(TEXT("city_surface_tiles/v1_128m/manifest.json"))),CityPieces))
+        return false;
+    TMap<FString,UStaticMesh*> Replacements,Originals;
+    for (const FString Parent:{TEXT("HD_ArcadeTree"),TEXT("HD_PlazaTreeGold"),TEXT("HD_PlazaTreeOrange")})
     {
-        const FString Variant=Name+TEXT("_")+Tag;
-        const FString Path=OptimizedMesh?FString::Printf(TEXT("/Game/Experiments/CityTrees/%s/%s.%s"),*Tag,*Variant,*Variant):
-            FString::Printf(TEXT("/Game/Japan/Assets/%s.%s"),*Name,*Name);
-        auto* Mesh=LoadObject<UStaticMesh>(nullptr,*Path);
-        if (!Mesh) { UE_LOG(LogTemp,Error,TEXT("CITY TREE LODS missing %s; keeping current meshes"),*Path); return false; }
-        Replacements.Add(Name,Mesh);
+        const auto* Paths=CityPieces.Find(Parent);
+        if (!Paths || Paths->IsEmpty()) return false;
+        for (const FString& OriginalPath:*Paths)
+        {
+            auto* Original=LoadObject<UStaticMesh>(nullptr,*OriginalPath);
+            if (!Original) return false;
+            const FString Name=Original->GetName(),Variant=Name+TEXT("_")+Tag;
+            const FString Path=OptimizedMesh?FString::Printf(TEXT("/Game/Experiments/CityTrees/%s/%s.%s"),*Tag,*Variant,*Variant):OriginalPath;
+            auto* Mesh=LoadObject<UStaticMesh>(nullptr,*Path);
+            if (!Mesh) { UE_LOG(LogTemp,Error,TEXT("CITY TREE LODS missing %s; keeping current meshes"),*Path); return false; }
+            Originals.Add(Name,Original);Replacements.Add(Name,Mesh);
+        }
     }
 #if WITH_EDITOR
     FAssetCompilingManager::Get().FinishAllCompilation();
@@ -48,7 +59,7 @@ static bool ApplyCityTreeLODs(AJapanWorld* Landscape,const FString& Tag,bool Ena
 #endif
         if (bNanite)
         { UE_LOG(LogTemp,Error,TEXT("CITY TREE LODS require non-Nanite HISM meshes; refusing swap %s"),*Pair.Key); return false; }
-        auto* Original=LoadObject<UStaticMesh>(nullptr,*FString::Printf(TEXT("/Game/Japan/Assets/%s.%s"),*Pair.Key,*Pair.Key));
+        auto* Original=Originals.FindChecked(Pair.Key);
         const auto* Data=Pair.Value->GetRenderData();
         if (!Original || !Data || Data->LODResources.Num()!=3) return false;
         const auto* OriginalData=Original->GetRenderData();
@@ -85,12 +96,12 @@ static bool ApplyCityTreeLODs(AJapanWorld* Landscape,const FString& Tag,bool Ena
                 UE_LOG(LogTemp,Display,TEXT("CITY TREE LOD DATA %s lod=%d triangles=%u screen=%.5f"),
                     *Pair.Value->GetName(),LOD,Data->LODResources[LOD].GetNumTriangles(),Data->ScreenSize[LOD].GetValue());
     int32 Groups=0,Instances=0;
+    TSet<FString> AppliedPieces;
     {
         for (auto* Group:Landscape->Groups)
             if (Group && Group->GetStaticMesh())
                 for (const auto& Pair:Replacements)
-                    if (Group->GetStaticMesh()->GetName()==Pair.Key ||
-                        (Group->GetStaticMesh()->GetPathName().StartsWith(TEXT("/Game/Experiments/CityTrees/")) && Group->GetStaticMesh()->GetName().StartsWith(Pair.Key+TEXT("_"))))
+                    if (Group->ComponentHasTag(FName(*(TEXT("CityPiece:")+Pair.Key))))
                     {
                         if (Group->GetStaticMesh()!=Pair.Value)
                         {
@@ -114,8 +125,11 @@ static bool ApplyCityTreeLODs(AJapanWorld* Landscape,const FString& Tag,bool Ena
                             Group->bOverrideMinLOD=false;Group->MinLOD=0;
                             Group->MarkRenderStateDirty();
                         }
+                        AppliedPieces.Add(Pair.Key);
                         ++Groups;Instances+=Group->GetInstanceCount();break;
                     }
+        if (AppliedPieces.Num()!=Replacements.Num())
+        { UE_LOG(LogTemp,Error,TEXT("CITY TREE LODS incomplete child swap %d/%d"),AppliedPieces.Num(),Replacements.Num());return false; }
         const FName Prepared(TEXT("CityTreeLODPrepared"));
         if (Enabled && !Landscape->Tags.Contains(Prepared))
         {

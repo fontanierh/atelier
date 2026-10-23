@@ -18,6 +18,7 @@ from city_atomic_products import (obsolete_assets, owned_tiles, production_group
 
 from import_city_surface_tiles import prepare_collision_import, finish_empty_collision
 from city_distance_lods import distance_lods
+from hidamari.tree_policy import TREES
 
 def main():
     tag = os.environ['CITY_SURFACE_TILES_TAG']
@@ -76,6 +77,9 @@ def main():
             if body.get_editor_property('collision_trace_flag') != collision:
                 body.set_editor_property('collision_trace_flag', collision)
             finish_empty_collision(mesh, tile, editor)
+            if name in TREES:
+                if mesh.get_num_lods()>1: mesh.set_num_source_models(1)
+                if not mesh.get_editor_property('allow_cpu_access'): mesh.set_editor_property('allow_cpu_access',True)
             assert collision_matches(mesh, source, tile), (tile['name'], 'authored UCX geometry')
             assert unreal.CitySurfaceValidation.validate_collision(mesh, tile['triangles'],
                 bool(source['source_collision_hulls'])), (tile['name'], 'current cooked query surface')
