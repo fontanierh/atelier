@@ -201,3 +201,42 @@ def test_data_verifier_refuses_shadow_helper_outside_declared_closure(missing):
         plan['validation_inputs'].pop(str(Path(sys.modules['atelier.atomic_files'].__file__).absolute()))
         with pytest.raises(ValueError):recovery.validation_environment(plan)
     else:recovery.validation_environment(plan)
+
+
+@pytest.mark.parametrize('fault',[None,'missing_source_helper','shadow_source_helper'])
+def test_real_host_prepare_closes_actual_loaded_helper_origins(tmp_path,monkeypatch,fault):
+    import importlib
+    import importlib.util
+    import recover_track_native_observations as recovery
+    from test_track_observation_recovery import carry_fixture,failed_rows
+    from atelier.atomic_files import atomic_json
+    for module in recovery.VALIDATION_MODULES:importlib.import_module(module)
+    spec,runtime=carry_fixture(tmp_path)
+    folder=tmp_path/'old-original';folder.mkdir()
+    spec.update(phase='original',source_head=recovery.OLD_HEAD,output=str(folder),source=str(tmp_path/'frozen-source'))
+    for phase in ('original','current'):
+        path=Path(spec[phase+'_track'])/'runtime/track.json';atomic_json(path,runtime)
+    atomic_json(Path(spec['original_track'])/'runtime/import-report.json',dict(meshes={},materials={}))
+    spec_path=folder/'spec.json';atomic_json(spec_path,spec)
+    monkeypatch.setattr(recovery,'OLD_SPEC',recovery.proof.sha(spec_path))
+    _,whole,failure,guard=failed_rows();whole.update(spec_sha256=recovery.OLD_SPEC,native=dict(compiled='controlled'))
+    atomic_json(folder/'whole-result.json',whole);atomic_json(folder/'failed-fixture-state.json',failure)
+    atomic_json(folder/'guard/memory-health-tree.json',guard)
+    (folder/'guard/stdout.log').write_text(''.join('TRACK ACTUAL SAVED NATIVE original '+str(i)+'/137 '+name+'\n'
+        for i,name in enumerate(sorted(runtime['meshes']),1)))
+    for name in runtime['meshes']:atomic_json(folder/'captures/original'/name/'native-descriptor.json',dict(logical=name))
+    monkeypatch.setattr(recovery,'host_state',lambda *a,**k:dict(source_head=recovery.OLD_HEAD,native=whole['native']))
+    output=tmp_path/'fresh-plan/plan.json';recovery.prepare(spec_path,output)
+    plan=json.loads(output.read_text())
+    source=recovery.GAME/'tools/atomic_equivalence_io.py'
+    assert str(source)in plan['validation_inputs']
+    assert str(recovery.GAME/'tools/atomic_equivalence.py')in plan['validation_inputs']
+    if fault=='missing_source_helper':plan['validation_inputs'].pop(str(source))
+    elif fault=='shadow_source_helper':
+        shadow=tmp_path/'different-source/atomic_equivalence_io.py';shadow.parent.mkdir();shadow.write_bytes(source.read_bytes())
+        module_spec=importlib.util.spec_from_file_location('atomic_equivalence_io',shadow)
+        module=importlib.util.module_from_spec(module_spec);module_spec.loader.exec_module(module)
+        monkeypatch.setitem(sys.modules,'atomic_equivalence_io',module)
+    if fault is None:recovery.validation_environment(plan)
+    else:
+        with pytest.raises(ValueError):recovery.validation_environment(plan)

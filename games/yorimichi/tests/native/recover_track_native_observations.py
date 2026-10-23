@@ -125,6 +125,21 @@ print(json.dumps(current_native_build(build.Context('yorimichi'))))
         native_probe_helper=binding(receiver/'games/yorimichi/tools/network_review_common.py'))
 
 
+def validation_support():
+    """Resolve the actual native/tools/world/Studio namespaces before freezing code."""
+    from atelier.source_imports import local_imports
+    studio=GAME.parents[1]/'platform/studio'
+    roots=(HERE,GAME/'tools',GAME/'world',studio)
+    entries=(Path(__file__),Path(proof.__file__),HERE/'track_material_roster.py',
+        HERE/'track_observation_data.py',HERE/'track_query_surface.py',HERE/'track_query_scope.py',
+        HERE/'track_guard_stdout.py',GAME/'tools/atomic_equivalence_io.py',GAME/'tools/atomic_equivalence.py',
+        *(studio/'atelier'/name for name in ('atomic_files.py','export_manifest.py','paths.py',
+            'gltf.py','mesh_ir.py','mesh_geometry.py')))
+    support={path for entry in entries for path in local_imports(entry,roots)}
+    support.update(entries)
+    return {str(path.absolute()):proof.sha(path)for path in sorted(support)}
+
+
 def prepare(spec_path,output,*,current_source=None):
     """Freeze metadata/code authority only; do not parse/hash raw native geometry here."""
     output=Path(output).absolute();require(not os.path.lexists(output),'Fresh recovery plan required')
@@ -142,13 +157,7 @@ def prepare(spec_path,output,*,current_source=None):
     state=host_state(spec,current_source);require(state['native']==values['whole']['native'],'Current native inventory differs from failed observation')
     descriptors={name:binding(folder/'captures/original'/name/'native-descriptor.json')for name in expected}
     require({p.name for p in (folder/'captures/original').iterdir()}==set(expected),'Foreign/missing retained capture directory')
-    from atelier.source_imports import local_imports
-    support={path for entry in (Path(__file__),Path(proof.__file__))
-             for path in local_imports(entry,(GAME,GAME.parents[1]/'platform/studio'))}
-    support.update((Path(__file__),HERE/'track_material_roster.py',HERE/'track_observation_data.py',HERE/'track_query_surface.py'))
-    support.update(GAME.parents[1]/'platform/studio/atelier'/name for name in
-        ('atomic_files.py','export_manifest.py','paths.py','gltf.py','mesh_ir.py','mesh_geometry.py'))
-    validation_inputs={str(path.absolute()):proof.sha(path)for path in support}
+    validation_inputs=validation_support()
     atomic_json(output,dict(validation_inputs=validation_inputs,schema=1,kind='track07-observation-plan',old_spec_sha256=OLD_SPEC,
         metadata=rows,descriptors=descriptors,host_before=state,stdout_source_observation=stdout_source,
         failed_old_whole=255,observation_validation_only=True,cleanup_pending=True))
