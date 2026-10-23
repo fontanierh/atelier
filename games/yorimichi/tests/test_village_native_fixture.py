@@ -70,6 +70,25 @@ def test_native_fixture_has_no_subprocess_or_git_authority_and_calls_real_owner(
     assert 'Standalone native fixture must not inherit a build/reuse invocation' in source
 
 
+def test_fixture_component_uses_explicit_local_collision_policy():
+    from types import SimpleNamespace
+    file=GAME/'tests/native/village_native_equivalence.py';tree=ast.parse(file.read_text())
+    main=next(node for node in tree.body if isinstance(node,ast.FunctionDef) and node.name=='main')
+    factory=next(node for node in main.body if isinstance(node,ast.FunctionDef) and node.name=='component')
+    events=[];actors=[];mesh=object();block=object()
+    part=SimpleNamespace(set_static_mesh=lambda value:events.append(('mesh',value)),
+        set_collision_enabled=lambda value:events.append(('enabled',value)),
+        set_collision_response_to_all_channels=lambda value:events.append(('response',value)))
+    actor=SimpleNamespace(static_mesh_component=part)
+    unreal=SimpleNamespace(StaticMeshActor=object(),Vector=lambda *a:a,
+        CollisionEnabled=SimpleNamespace(QUERY_AND_PHYSICS='query_physics'))
+    scope=dict(unreal=unreal,actors=actors,block_response=block,
+        actor_system=SimpleNamespace(spawn_actor_from_class=lambda *a:actor))
+    exec(compile(ast.Module(body=[factory],type_ignores=[]),str(file),'exec'),scope)
+    assert scope['component'](mesh) is part and actors==[actor]
+    assert events==[('mesh',mesh),('enabled','query_physics'),('response',block)]
+
+
 def test_positive_probe_selection_handles_reflected_winding_without_changing_collision_policy():
     from types import SimpleNamespace
     file=GAME/'tests/native/village_native_equivalence.py';tree=ast.parse(file.read_text())

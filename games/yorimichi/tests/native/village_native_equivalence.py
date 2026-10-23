@@ -131,6 +131,11 @@ def main():
     real_directory(content);out=Path(spec['out']);output=Path(spec['output']);real_directory(output.parent)
     if os.path.lexists(output):raise ValueError('Fresh native output required')
     for rows in (spec['source_files'],spec['frozen_files']):unchanged(rows)
+    # Resolve the installed Python surface before creating any fixture package.
+    block_response=unreal.CollisionResponse.BLOCK
+    for api in (unreal.NativeAtomicEquivalence.snapshot,unreal.NativeAtomicEquivalence.probe,
+                unreal.NativeAtomicEquivalence.component_policy,unreal.EditorAssetLibrary.delete_loaded_assets):
+        if not callable(api):raise ValueError('Required native fixture API is unavailable')
     for root in ('Japan/Assets','Japan/Materials','Experiments/VillageAtomic','VillageNativeForeign'):
         if os.path.lexists(content/root):raise ValueError('Private fixture owner root is occupied: '+root)
     yori.OUT=out;yori.GAME=content.parent.parent
@@ -174,7 +179,7 @@ def main():
         actor=actor_system.spawn_actor_from_class(unreal.StaticMeshActor,unreal.Vector(0.,0.,0.))
         assert actor is not None;actors.append(actor);part=actor.static_mesh_component
         part.set_static_mesh(mesh);part.set_collision_enabled(unreal.CollisionEnabled.QUERY_AND_PHYSICS)
-        part.set_collision_response_to_all_channels(unreal.CollisionResponse.ECR_BLOCK)
+        part.set_collision_response_to_all_channels(block_response)
         return part
     output.mkdir();evidence={};geometry=json.loads((out/'native-probe-geometry.json').read_text())
     for parent in ASSETS:
