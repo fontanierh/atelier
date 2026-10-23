@@ -12,6 +12,12 @@ from atelier.export_manifest import real_directory  # noqa: E402
 
 
 def main(argv=None):
+    """@cc [owner:fontanierh,label:correctness] coastal-final-query-triangulation
+    The final query MUST use the actual post-paving, float32 finished ground and
+    Blender's exported triangle diagonals, in the region's world frame exactly once.
+    It MUST NOT read GLB exports, reconstruct analytic terrain, or replace nonplanar
+    quads with a different fan. Every complete paving owner and final rim is required.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--rim', required=True, type=Path)
     parser.add_argument('--paving', action='append', required=True, type=Path)
@@ -32,6 +38,7 @@ def main(argv=None):
     from brinecove.piece_inputs import finish_parts
     from terrain_product import Mesh, save
     from atelier import mesh_ir
+    from mesh_pieces import create_mesh
     import numpy as np
     done = threading.Event(); started = time.monotonic()
     def heartbeat():
@@ -42,7 +49,7 @@ def main(argv=None):
         source, seam = ground.build(rim, world)
         if source.normals is None:
             source.normals = finish.collar_normals(source, rim, finish.smooth_normals(source))
-        value, counts, _ = finish_parts(source, 'Ground', rim, args.output, paving=paving)
+        value, counts, _ = finish_parts(source, 'Ground', rim, args.output, paving=paving, seam=seam)
         # The final query surface comes from the actual post-paving finished pieces,
         # without reading back GLBs or substituting analytic/natural terrain.
         vertices, faces = [], []
@@ -50,10 +57,20 @@ def main(argv=None):
             identity, part = mesh_ir.decode((args.output / row['payload']).read_bytes())
             if identity['asset'] != row['name'] or not np.array_equal(identity['matrix'], np.eye(4)):
                 raise ValueError('Final coast query requires the exact local finished mesh frame')
-            offset = len(vertices)
-            vertices.extend(part['positions'].tolist())
-            faces.extend([[offset + int(i) for i in face] for face in part['faces']])
-        query = Mesh.from_polygons(vertices, faces)
+            # Use Blender's actual exported triangulation, rather than inventing a
+            # first-corner fan across nonplanar ground quads. This remains geometry
+            # data: no sibling GLB is read or exported to construct the query.
+            part['slots'] = [bpy.data.materials.get(label) or bpy.data.materials.new(label)
+                             for label in part['slots']]
+            mesh = create_mesh('CoastalQueryTriangles', part)
+            try:
+                mesh.calc_loop_triangles()
+                offset = len(vertices)
+                vertices.extend([list(vertex.co) for vertex in mesh.vertices])
+                faces.extend([[offset + int(i) for i in triangle.vertices] for triangle in mesh.loop_triangles])
+            finally: bpy.data.meshes.remove(mesh)
+        from brinecove import region
+        query = Mesh.from_polygons(np.asarray(vertices) + np.asarray(region.ORIGIN), faces)
         save(args.query_output, query, owner='Brinecove', stage='final', city=True)
     finally:
         done.set(); thread.join(timeout=1)

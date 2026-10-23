@@ -1,0 +1,22 @@
+{
+  "revision": "099b747ed0d7da290864339fe45e53481c00a85b",
+  "files": {
+    "hero_assets.py": {
+      "sha256": "088666a25f4fcdb699e7d8c1f4a66a47c37ac95be33401ab27b70f9058e07a0c",
+      "definitions": {
+        "_import": "71f877d3766e46711550864c77727738135dd74e671c9b31db93dee98298f774",
+        "placements": "11628f21e20f4c02253e23ac57023fb707078df470647869e1a600ba5d88659d"
+      }
+    },
+    "flora.py": {
+      "sha256": "945c73c0ad0e43ce84140fc3aebaa78c93a3805efa3eb69333b12e09258c310d",
+      "definitions": {
+        "Poisson": "a1538e1b58b1397eb1dc0323de40f475d2f7642b65e748255f431618830a0f55",
+        "_ridge": "69437d51a28ac773e697f24f9c53d47f05c72b10dc8c4798fbde4fc9dd0a3a4a",
+        "scatter": "fe202295812ca9dc8a757297e60b96edfb1a047826c34142f234a38693845760",
+        "groundcover": "6070395ce783fd5161103becbe2f817f73f01f875e25f73e951c179440fd830e",
+        "bloom_spots": "b9f0935240cfa3afa79cf8cde6af0b07e9a0ca40e260510d202e21ca652ddeec"
+      }
+    }
+  }
+}

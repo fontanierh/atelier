@@ -186,20 +186,24 @@ def test_real_model_entrypoint_publishes_a_verifiable_independent_product(tmp_pa
     definition = next(p for p in lib.definitions() if p.stem == 'bloom_0')
     calls, exported = [], []
     monkeypatch.setitem(sys.modules, 'bpy', SimpleNamespace(
-        ops=SimpleNamespace(wm=SimpleNamespace(read_factory_settings=lambda **kw: calls.append(kw))),
+        ops=SimpleNamespace(wm=SimpleNamespace(read_factory_settings=lambda **kw: calls.append(kw)),
+                            object=SimpleNamespace(select_all=lambda **kw: None)),
+        context=SimpleNamespace(view_layer=SimpleNamespace(objects=SimpleNamespace(active=None))),
         data=SimpleNamespace(materials=SimpleNamespace(new=lambda name: SimpleNamespace(use_nodes=False)))))
     def object_from_builder(builder, materials):
         exported.append((builder, materials))
-        return builder
+        return SimpleNamespace(select_set=lambda value: None)
     monkeypatch.setattr(exporter, 'mesh_object', object_from_builder)
-    def glb(mesh, destination):
+    def glb(destination, *, options):
+        assert options == dict(export_apply=True, export_image_format='NONE')
+        mesh = exported[-1][0]
         # Only Blender's serialization is stubbed; execute the production metadata
         # readback and library validation against a real GLB container.
         document = dict(meshes=[{'primitives': [{'indices': 0, 'attributes': {'POSITION': 1}}]}],
             accessors=[{'count': 3}, {'min': [0, 1, 2], 'max': [3, 4, 5]}],
             materials=[{'name': 'BC_' + slot} for slot in sorted(set(mesh.mats))])
         destination.write_bytes(glb_pack(document, b''))
-    monkeypatch.setattr(exporter, 'export', glb)
+    monkeypatch.setattr(exporter, 'export_atomic_glb', glb)
     folder = tmp_path / 'library' / definition.stem
     exporter.main(definition, folder)
     monkeypatch.setattr(lib, 'definitions', lambda: [definition])
