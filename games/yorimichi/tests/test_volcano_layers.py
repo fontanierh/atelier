@@ -264,9 +264,14 @@ def test_layout_dependents_list_the_layout_sources_they_import(tmp_path):
     steps = {s.name: s for s in RECIPE.steps(ctx)}
     assert steps['world.layout'].cutoff
     covers = lambda step, files: all(any(f == i or i in f.parents for i in step.inputs) for f in files)
-    for name in ('world.village', 'world.houses', 'world.southwest', 'world.mega', 'world.lake', 'world.skatepark',
+    for name in ('world.village', 'world.houses', 'world.southwest', 'world.mega.trail_data', 'world.lake', 'world.skatepark',
                  'world.treehouse', 'world.hidamari', 'world.belmonte', 'world.hippodrome'):
         assert covers(steps[name], RECIPE.VILLAGE_LAYOUT), name
+    # The completed assembly reads declared products; the terrain sampler owns
+    # its actual layout code, without feeding world inputs into the local ramp.
+    assert 'mega.atomic' in steps['world.mega'].reads
+    assert not steps['world.mega.geometry.Mega_Ramp'].reads
+    assert not steps['world.mega.geometry.Mega_Trim'].reads
     for name in ('world.treehouse', 'world.hidamari', 'world.belmonte', 'world.hippodrome'):   # import treehouse/layout.py
         assert covers(steps[name], RECIPE.TREEHOUSE_LAYOUT) and 'world.treehouse_trees' in steps[name].needs, name
 
