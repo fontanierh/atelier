@@ -9,7 +9,7 @@
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FAtomicRefusedProbeTest,
     "Yorimichi.AtomicMeshes.RefusedProbeIsUnavailable",
-    EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
 
 bool FAtomicRefusedProbeTest::RunTest(const FString&)
 {
