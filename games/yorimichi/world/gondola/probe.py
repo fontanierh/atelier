@@ -1,4 +1,4 @@
-"""Read final exported North Trail and narrowly selected Belmonte ground.
+"""Read final source-query North Trail and narrowly selected Belmonte ground.
 
 This generates ropeway query products only; it never changes either region.
 """
@@ -8,10 +8,11 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 import hashlib
 import json
 
-import bpy
 import numpy as np
 import yori  # Bootstrap shared studio and region imports inside Blender.
+import region_query
 from gondola.inputs import GROUND_BOUNDS, snapshot
+from gondola.query_frames import imported_identity_triangles
 from regions.belmonte import source
 
 
@@ -24,22 +25,12 @@ def clipped(triangles,bounds):
 
 def main():
     build=yori.OUT; before=snapshot(build)
-    bpy.ops.wm.read_factory_settings(use_empty=True)
-    print('GONDOLA GROUND: final exported North Trail',flush=True)
-    bpy.ops.import_scene.fbx(filepath=str(build/'hidamari/assets/HD_NorthTrail.fbx'))
-    trail=[]
-    for obj in list(bpy.data.objects):
-        if obj.type!='MESH':
-            continue
-        mesh=obj.data;mesh.calc_loop_triangles()
-        matrix=np.asarray(obj.matrix_world,float)
-        vertices=np.asarray([tuple(v.co) for v in mesh.vertices],float).reshape(-1,3)
-        vertices=vertices@matrix[:3,:3].T+matrix[:3,3]
-        indices=np.asarray([tuple(f.vertices) for f in mesh.loop_triangles],int).reshape(-1,3)
-        trail.append(vertices[indices])
-    if not trail or not sum(map(len,trail)):
-        raise ValueError('Exported North Trail does not cover the valley station')
-    surfaces={'trail':np.concatenate(trail)}
+    print('GONDOLA GROUND: final North Trail source query',flush=True)
+    trail=imported_identity_triangles(region_query.load(build/'hidamari/query-data/HD_NorthTrail.npz',
+        owner='HD_NorthTrail',stage='final'))
+    if not len(trail):
+        raise ValueError('Final North Trail does not cover the valley station')
+    surfaces={'trail':trail}
     origin=np.asarray(before['belmonte_ground']['origin_cm'])/np.array([100.,-100.,100.])
     valley=[]
     for group in before['belmonte_ground']['groups']:

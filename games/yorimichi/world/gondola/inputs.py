@@ -15,6 +15,9 @@ REPO = Path(__file__).resolve().parents[4]
 CODE = {name: REPO / name for name in (
     'games/yorimichi/world/gondola/inputs.py',
     'games/yorimichi/world/gondola/probe.py',
+    'games/yorimichi/world/gondola/query_frames.py',
+    'games/yorimichi/world/region_query.py',
+    'games/yorimichi/assets/vehicles/gondola/fbx-query-frame.json',
     'games/yorimichi/world/regions/belmonte/source.py',
     'games/yorimichi/export_digest.py',
     'platform/studio/atelier/gltf.py',
@@ -67,7 +70,7 @@ def selected_ground(build):
 
 def geometry_paths(build, ground):
     return [build/'terrain/HD_Terrain/final.npz',build/'terrain/HD_NorthMountains/final.npz',
-            build/'hidamari/assets/HD_NorthTrail.fbx',
+            build/'hidamari/query-data/HD_NorthTrail.npz',
             *(build/'belmonte'/g['path'] for g in ground['groups'])]
 
 
