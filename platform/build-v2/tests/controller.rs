@@ -62,6 +62,66 @@ fn strict_request_refuses_unknown_fields_and_unsupported_ops() {
     let space = Space::new();
     let base = request(&space.0);
     assert!(parse(&base).is_ok());
+    for (pointer, fields) in [
+        (
+            "",
+            vec![
+                "version",
+                "checkout",
+                "project",
+                "allowed_install_roots",
+                "declaration",
+                "targets",
+                "data_contract",
+                "staged_inputs",
+            ],
+        ),
+        ("/data_contract", vec!["content_slots"]),
+        (
+            "/declaration",
+            vec!["schema_version", "cache_version", "units"],
+        ),
+        (
+            "/declaration/units/0",
+            vec![
+                "id",
+                "op",
+                "script",
+                "code",
+                "inputs",
+                "params",
+                "outputs",
+                "output_groups",
+                "conditional",
+            ],
+        ),
+        ("/declaration/units/0/op", vec!["kind", "version"]),
+        (
+            "/declaration/units/0/inputs/0/source",
+            vec!["kind", "path", "selector", "optional"],
+        ),
+        (
+            "/declaration/units/0/outputs/0",
+            vec!["id", "logical_path", "class", "files", "destination"],
+        ),
+        (
+            "/declaration/units/0/outputs/0/files/0",
+            vec!["path", "install_path", "required"],
+        ),
+    ] {
+        let mut value = base.clone();
+        let target = value.pointer_mut(pointer).unwrap();
+        *target = Value::Array(
+            fields
+                .iter()
+                .map(|field| target.get(*field).cloned().unwrap_or(Value::Null))
+                .collect(),
+        );
+        assert!(
+            parse(&value).unwrap_err().contains("must be a JSON object"),
+            "positional record {pointer}"
+        );
+    }
     for mutation in [
         "unknown",
         "version",

@@ -20,6 +20,7 @@ use crate::scheduler::{self, Control, Demand, FinalDemands, Runtime, State};
 use crate::schema::{ContentSource, Declaration, Input, Provenance};
 use crate::source_hashes::SourceHashCache;
 use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value};
 use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
@@ -50,7 +51,8 @@ pub struct ControllerRequest {
 
 impl ControllerRequest {
     /// @cc [owner:fontanierh,label:correctness] bounded-normal-controller-request
-    /// Requests MUST be bounded, versioned and strict before any state creation. The
+    /// Requests MUST be bounded, versioned, duplicate-free and object-only at every
+    /// typed record position before any state creation; real array fields remain arrays. The
     /// initial caller MUST accept only explicit fixed JsonData/py_data declarations;
     /// unsupported formats/groups MUST refuse, never be silently relabeled. Installed
     /// tool facts MUST NOT be supplied as semantic parameters by this controller.
@@ -61,7 +63,10 @@ impl ControllerRequest {
         }
         crate::py_data::validate_py_data_payload("JsonData", "request.json", bytes)
             .map_err(|_| "invalid controller request JSON".to_string())?;
-        let request: Self = serde_json::from_slice(bytes)
+        let document: Value = serde_json::from_slice(bytes)
+            .map_err(|_| "invalid controller request JSON".to_string())?;
+        object_records(&document)?;
+        let request: Self = serde_json::from_value(document)
             .map_err(|_| "invalid controller request shape".to_string())?;
         request.check()?;
         Ok(request)
@@ -115,6 +120,56 @@ impl ControllerRequest {
         }
         Ok(())
     }
+}
+
+pub(crate) fn object(value: &Value) -> Result<&Map<String, Value>, String> {
+    value
+        .as_object()
+        .ok_or_else(|| "control record must be a JSON object".into())
+}
+
+fn records(value: Option<&Value>) -> Result<Vec<&Value>, String> {
+    let Some(Value::Array(values)) = value else {
+        return Ok(vec![]);
+    };
+    for value in values {
+        object(value)?;
+    }
+    Ok(values.iter().collect())
+}
+
+/// serde's struct decoder also accepts positional arrays. Like protocol v1, control
+/// data requires object-only record positions before typed decoding; real array fields
+/// and arbitrary semantic JSON values are left intact. Wrong/missing field types stay
+/// serde errors. No record values are interpreted as identity ingredients here.
+pub(crate) fn object_records(document: &Value) -> Result<(), String> {
+    let request = object(document)?;
+    if let Some(contract) = request.get("data_contract") {
+        object(contract)?;
+    }
+    if let Some(declaration) = request.get("declaration") {
+        let declaration = object(declaration)?;
+        for unit in records(declaration.get("units"))? {
+            let unit = object(unit)?;
+            if let Some(op) = unit.get("op") {
+                object(op)?;
+            }
+            for input in records(unit.get("inputs"))? {
+                let input = object(input)?;
+                for field in ["source", "producer"] {
+                    if let Some(value) = input.get(field).filter(|value| !value.is_null()) {
+                        object(value)?;
+                    }
+                }
+            }
+            for item in records(unit.get("outputs"))? {
+                let item = object(item)?;
+                records(item.get("files"))?;
+            }
+            records(unit.get("output_groups"))?;
+        }
+    }
+    Ok(())
 }
 
 pub struct PreparedController {

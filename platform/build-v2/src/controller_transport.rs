@@ -52,6 +52,31 @@ pub struct Invocation {
     pub execution: ExecutionSettings,
 }
 
+impl Invocation {
+    fn parse(bytes: &[u8]) -> Result<Self, String> {
+        if bytes.len() > MAX_CONTROL_BYTES {
+            return Err("invocation exceeds bound".into());
+        }
+        crate::py_data::validate_py_data_payload("JsonData", "invocation.json", bytes)
+            .map_err(|_| "invalid invocation JSON")?;
+        let document: serde_json::Value =
+            serde_json::from_slice(bytes).map_err(|_| "invalid invocation JSON")?;
+        let invocation = controller::object(&document)?;
+        if let Some(request) = invocation.get("request") {
+            controller::object_records(request)?;
+        }
+        if let Some(execution) = invocation.get("execution") {
+            let execution = controller::object(execution)?;
+            for field in ["owner", "provenance"] {
+                if let Some(record) = execution.get(field) {
+                    controller::object(record)?;
+                }
+            }
+        }
+        serde_json::from_value(document).map_err(|_| "invalid invocation shape".into())
+    }
+}
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ExecutionSettings {
@@ -228,10 +253,7 @@ impl Handoff {
         if !same(&before, &after) || bytes.len() != before.len() as usize {
             return Err("request changed during handoff".into());
         }
-        crate::py_data::validate_py_data_payload("JsonData", "invocation.json", &bytes)
-            .map_err(|_| "invalid invocation JSON")?;
-        let invocation: Invocation =
-            serde_json::from_slice(&bytes).map_err(|_| "invalid invocation shape")?;
+        let invocation = Invocation::parse(&bytes)?;
         if invocation.version != controller::CONTROL_VERSION
             || invocation.nonce.len() != 32
             || !invocation
@@ -378,6 +400,61 @@ mod tests {
 
     #[test]
     fn handoff_rejects_wrong_access_public_alias_and_occupied_report() {
+        let base = serde_json::json!({
+            "version": 1, "nonce": "a".repeat(32), "controller_source": "b".repeat(64),
+            "request": {"version": 1, "checkout": "/checkout", "project": "fixture",
+                "allowed_install_roots": ["Game"], "targets": ["data.copy"],
+                "declaration": {"schema_version": 2, "cache_version": "v2-1", "units": []},
+                "data_contract": {"content_slots": {}}, "staged_inputs": {}},
+            "execution": {"cache_root": "/cache", "interpreter": "/python",
+                "owner": {"pid": 1, "boot": "boot", "started": "start"},
+                "provenance": {"checkout": "diagnostic", "branch": "branch", "commit": "commit", "dirty": false, "built_at": "time"},
+                "worktree_id": "c".repeat(64), "memory_gib": 2, "job_seconds": 30,
+                "cleanup_seconds": 10, "overall_seconds": 60}
+        });
+        // Shape decoding only; identity/selected declaration admission follows in invocation().
+        assert!(Invocation::parse(&serde_json::to_vec(&base).unwrap()).is_ok());
+        for (pointer, fields) in [
+            (
+                "",
+                vec![
+                    "version",
+                    "nonce",
+                    "controller_source",
+                    "request",
+                    "execution",
+                ],
+            ),
+            (
+                "/execution",
+                vec![
+                    "cache_root",
+                    "interpreter",
+                    "owner",
+                    "provenance",
+                    "worktree_id",
+                    "memory_gib",
+                    "job_seconds",
+                    "cleanup_seconds",
+                    "overall_seconds",
+                ],
+            ),
+            ("/execution/owner", vec!["pid", "boot", "started"]),
+            (
+                "/execution/provenance",
+                vec!["checkout", "branch", "commit", "dirty", "built_at"],
+            ),
+        ] {
+            let mut value = base.clone();
+            let record = value.pointer_mut(pointer).unwrap();
+            *record = serde_json::Value::Array(
+                fields.iter().map(|field| record[*field].clone()).collect(),
+            );
+            assert!(
+                Invocation::parse(&serde_json::to_vec(&value).unwrap()).is_err(),
+                "accepted positional {pointer}"
+            );
+        }
         for fault in ["access", "public", "alias", "occupied"] {
             let space = Space::new();
             let (mut files, _writer) = inherited(&space);
