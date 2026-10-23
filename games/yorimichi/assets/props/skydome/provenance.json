@@ -1,0 +1,36 @@
+{
+  "asset": "SkyDome",
+  "authority": "complete original source packet",
+  "baseline_revision": "283329c07ea04bee34587022a3d43827468c66d7",
+  "capture": {
+    "original_export_phase_complete": true,
+    "source_revision": "0ebc872762a40fd0fc206b9364bcbde6af8577cb",
+    "whole_exit": 1,
+    "whole_failure": "Later selected SkyDome comparison correctly rejected allocator-dependent original BMesh normals; original fourteen exports had completed."
+  },
+  "constructor": {
+    "ast_sha256": "d24ff8488e25e9e273734ac0aea6998ff1a413aa5daa34d88eaedd12163bb401",
+    "file_sha256": "dcdba009bbf0f001b4e309d327b42b74a286751740c895b904b1218eb51b4946",
+    "function": "sky_dome",
+    "path": "games/yorimichi/world/build_assets.py"
+  },
+  "original_export": {
+    "bytes": 57372,
+    "format": "FBX",
+    "path": "source.fbx",
+    "sha256": "e6f0af671c7824510bf8f002fdd032fc2e8711c89ae46812aba8f50c764d9067"
+  },
+  "packet": {
+    "bytes": 35518,
+    "path": "mesh.source.npz",
+    "polygons": 1152,
+    "sha256": "59994b166caf603ace942ff7b8444c5bebe4a6a74f0e5939707551ac382dde73",
+    "triangles": 2208
+  },
+  "primitive_sources": {
+    "asset_mesh.py": "7c6af2c51e01f17220c3cbe3acb25816d5216aaacaafbb108a15f38f4358caa5",
+    "material_specs.py": "9ab9af14980cc22f9618eef86a9cdc130c5f6006e321d468f4ea46c5d1b0dbcf"
+  },
+  "rationale": "The unchanged BMesh UV sphere produces allocator-dependent cyclic face order and float32 smooth normals. Scene updates and FBX export do not resolve it. This exact original packet is the public source authority; unsupported constructor changes require a new explicit source capture and full original export equivalence proof. No normal is rounded or recomputed.",
+  "schema": 1
+}
