@@ -88,3 +88,28 @@ def test_native_preflight_refuses_incomplete_props_before_import(tmp_path,monkey
         assert set(reader.read(tmp_path))==set(reader.WORLD_PROPS)
         return
     with pytest.raises(ValueError):reader.read(tmp_path)
+
+
+def test_actual_proof_host_freezes_complete_inputs_before_native_admission(tmp_path,monkeypatch):
+    host=load('world_prop_proof_host_test',GAME/'tests/native/run_world_props_equivalence.py')
+    root=tmp_path.resolve();donor=root/'donor';textures=donor/'build/yorimichi/textures';textures.mkdir(parents=True)
+    for row in SOURCES.MATERIALS.values():
+        if row.get('texture'):(textures/row['texture']).write_bytes(b'bound-image-input')
+    monkeypatch.setattr(host,'git',lambda *args,**kwargs:'' if args[0]=='status' else 'a'*40)
+    monkeypatch.setattr(host.subprocess,'check_output',lambda argv,**kwargs:(GAME/'world'/argv[-1].rsplit('/',1)[-1]).read_bytes())
+    monkeypatch.setattr(host.build,'Context',lambda *args:SimpleNamespace(env=lambda:{}))
+    monkeypatch.setattr(host.build,'Blender',lambda *args,**kwargs:SimpleNamespace(argv=lambda ctx:['not-launched']))
+    class AdmissionBoundary(Exception):pass
+    observed=[]
+    def boundary(argv,report,**kwargs):
+        spec=json.loads((root/'proof/spec.json').read_text())
+        assert len(spec['sources'])==14 and set(spec['sources'])==set(SOURCES.BUILDERS)
+        assert len(list((root/'proof/textures').iterdir()))==16
+        assert all(Path(path).is_file() and hashlib.sha256(Path(path).read_bytes()).hexdigest()==row['sha256']
+                   for path,row in spec['inputs'].items())
+        observed.append(spec)
+        raise AdmissionBoundary
+    monkeypatch.setattr(host.guarded,'run',boundary)
+    monkeypatch.setattr(__import__('sys'),'argv',['proof-host','--donor',str(donor),'--output',str(root/'proof')])
+    with pytest.raises(AdmissionBoundary):host.main()
+    assert len(observed)==1

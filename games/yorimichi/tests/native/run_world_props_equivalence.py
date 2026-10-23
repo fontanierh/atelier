@@ -59,8 +59,8 @@ def main():
                  GAME/'tests/fixtures/world-props-predecessor-283329c07.txt',GAME/'tests/native/fbx_corners.py'))
     from atelier import mesh_ir,mesh_collision
     code.update((Path(mesh_ir.__file__),Path(mesh_collision.__file__)))
-    paths=[*code,*donor_paths,*archive.iterdir(),*sources.iterdir(),*textures.iterdir()]
-    before=identities(paths)
+    input_files=[*code,*donor_paths,*archive.iterdir(),*sources.iterdir(),*textures.iterdir()]
+    before=identities(input_files)
     spec=root/'spec.json';atomic_json(spec,dict(output=str(root/'products'),original=str(archive/'build_assets.py'),
         textures=str(textures),sources={key:str(sources/(key+'.json')) for key in module.BUILDERS},inputs=before))
     ctx=build.Context('yorimichi')
@@ -74,7 +74,7 @@ def main():
     assert terminal['state']=='child_exited' and terminal['cleanup_complete'] and terminal['processes']==[]
     assert not terminal.get('late_reporters',{}).get('unresolved')
     assert 'WORLD PROPS ORIGINAL EQUIVALENCE COMPLETE' in (root/'guard/stdout.log').read_text()
-    assert identities(paths)==before and git('rev-parse','HEAD')==head and not git('status','--porcelain')
+    assert identities(input_files)==before and git('rev-parse','HEAD')==head and not git('status','--porcelain')
     assert git('rev-parse','HEAD',cwd=donor)==donor_head
     result=json.loads((root/'products/result.json').read_text());assert result['complete'] and len(result['assets'])==14
     atomic_json(root/'host-result.json',dict(complete=True,source_head=head,donor_head=donor_head,
