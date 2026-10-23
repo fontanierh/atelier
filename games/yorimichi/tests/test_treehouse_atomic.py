@@ -183,3 +183,24 @@ def test_guarded_treehouse_proof_uses_frozen_files_without_git_subprocesses():
     tree=ast.parse(source)
     assert not any(isinstance(node,ast.Name) and node.id in ('subprocess','revision') for node in ast.walk(tree))
     assert '--attestation-sha256' in source and 'host_attestation_sha256' in source
+
+
+@pytest.mark.parametrize('parent',S.PARENTS)
+@pytest.mark.parametrize('initial',[False,True])
+def test_native_precision_finishing_preserves_legacy_format_on_warm_hits(parent,initial):
+    source=GAME/'unreal/Scripts/treehouse_atomic_native.py'
+    function=next(node for node in ast.parse(source.read_text()).body if isinstance(node,ast.FunctionDef)
+        and node.name=='finish_uv_precision')
+    scope={};exec(compile(ast.Module(body=[function],type_ignores=[]),str(source),'exec'),scope)
+    state={'value':initial};rebuilds=[]
+    settings=SimpleNamespace(get_editor_property=lambda key:state['value'],
+        set_editor_property=lambda key,value:state.update(value=value))
+    subsystem=SimpleNamespace(get_lod_build_settings=lambda mesh,lod:settings,
+        set_lod_build_settings=lambda mesh,lod,value:rebuilds.append(state['value']))
+    mesh=SimpleNamespace(get_name=lambda:parent)
+    scope['finish_uv_precision'](mesh,subsystem,parent)
+    expected=parent in ('TH_Frame','TH_Dressing')
+    assert state['value']==expected and rebuilds==([] if initial==expected else [expected])
+    before=rebuilds[:]
+    scope['finish_uv_precision'](mesh,subsystem,parent)
+    assert rebuilds==before  # A warm current hit must not rebuild the render data again.

@@ -83,6 +83,16 @@ def retire(editor,previous,current,rows,content):
     return retired
 
 
+def finish_uv_precision(mesh,sub,parent):
+    """Preserve the original explicit five-channel fade precision and legacy single-UV format."""
+    expected=parent in ('TH_Frame','TH_Dressing')
+    settings=sub.get_lod_build_settings(mesh,0)
+    if settings.get_editor_property('use_full_precision_u_vs')!=expected:
+        settings.set_editor_property('use_full_precision_u_vs',expected)
+        sub.set_lod_build_settings(mesh,0,settings)
+    assert sub.get_lod_build_settings(mesh,0).get_editor_property('use_full_precision_u_vs')==expected,mesh.get_name()
+
+
 def import_surfaces(out,materials,trunk_material,report):
     root=Path(out);content=Path(__file__).resolve().parents[1]/'Content'
     editor=unreal.EditorAssetLibrary;sub=unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
@@ -104,10 +114,7 @@ def import_surfaces(out,materials,trunk_material,report):
               else unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
         body=mesh.get_editor_property('body_setup')
         if body.get_editor_property('collision_trace_flag')!=flag:body.set_editor_property('collision_trace_flag',flag)
-        settings=sub.get_lod_build_settings(mesh,0)
-        if not settings.get_editor_property('use_full_precision_u_vs'):
-            settings.set_editor_property('use_full_precision_u_vs',True);sub.set_lod_build_settings(mesh,0,settings)
-        assert sub.get_lod_build_settings(mesh,0).get_editor_property('use_full_precision_u_vs'),name
+        finish_uv_precision(mesh,sub,parent)
         assert reusable(mesh) and body.get_editor_property('collision_trace_flag')==flag,name
         assert mesh.get_editor_property('lod_for_collision')==0 and mesh.get_editor_property('complex_collision_mesh') is None,name
         if parent!='TH_Dressing':assert unreal.CitySurfaceValidation.validate_collision(mesh,row['triangles'],False),(name,'actual cooked collision')
