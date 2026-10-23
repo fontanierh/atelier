@@ -18,12 +18,16 @@ use std::fmt;
 use std::fs::{self, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 pub const ROOT_VERSION: u32 = 1;
 pub const SESSION_VERSION: u32 = 1;
 /// Store-level record of initialized projects, kept beside `roots/`.
 pub const PROJECTS_VERSION: u32 = 1;
+/// Store-level recent-use and first-observed record, kept beside `roots/`.
+pub const USAGE_VERSION: u32 = 1;
 /// DESIGN section 8 keeps the three most recent releases.
 pub const RELEASES_KEPT: usize = 3;
 static NEXT: AtomicU64 = AtomicU64::new(0);
@@ -161,11 +165,22 @@ pub enum CommitStep {
     SessionRemoved,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct RootStore {
     root: PathBuf,
     project: String,
     leases: LeaseStore,
+    clock: Arc<dyn Clock>,
+}
+
+impl fmt::Debug for RootStore {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("RootStore")
+            .field("root", &self.root)
+            .field("project", &self.project)
+            .finish_non_exhaustive()
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -183,6 +198,10 @@ struct SessionHeader {
 struct SessionEntry {
     unit: String,
     key: String,
+    /// The round-up UTC day this key was last used. Absent in older journals, which read as
+    /// unknown age and are retained.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    use_bucket: Option<UseBucket>,
 }
 
 /// One build's durable retention. Dropping it without commit or abandon keeps the journal, and
@@ -254,6 +273,203 @@ fn unix_seconds() -> u64 {
         .duration_since(std::time::UNIX_EPOCH)
         .map(|duration| duration.as_secs())
         .unwrap_or(0)
+}
+
+/// A UTC day on which a result or an object was last observed, rounded **up**. A coarse bucket
+/// that never overstates age is safe for retention; an older bucket would not be.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct UseBucket(String);
+
+impl UseBucket {
+    /// The UTC day of `now`, rounded up: anything after midnight is dated the next day.
+    pub fn ceil_day(now: SystemTime) -> Result<Self, RootError> {
+        let seconds = now
+            .duration_since(UNIX_EPOCH)
+            .map_err(|error| invalid(format!("clock is before the unix epoch: {error}")))?
+            .as_secs();
+        let days = seconds / 86_400;
+        let days = if seconds % 86_400 == 0 {
+            days
+        } else {
+            days + 1
+        };
+        if days > i64::MAX as u64 {
+            return Err(invalid("clock is outside the supported range"));
+        }
+        let (year, month, day) = civil_from_days(days as i64);
+        if !(1..=9999).contains(&year) {
+            return Err(invalid("clock is outside the supported range"));
+        }
+        Ok(Self(format!("{year:04}-{month:02}-{day:02}")))
+    }
+
+    /// Parses a strict `YYYY-MM-DD` real calendar date.
+    pub fn parse(value: &str) -> Result<Self, RootError> {
+        let bytes = value.as_bytes();
+        let digits = |range: std::ops::Range<usize>| {
+            bytes
+                .get(range)
+                .is_some_and(|part| part.iter().all(u8::is_ascii_digit))
+        };
+        if bytes.len() != 10
+            || bytes[4] != b'-'
+            || bytes[7] != b'-'
+            || !digits(0..4)
+            || !digits(5..7)
+            || !digits(8..10)
+        {
+            return Err(invalid("use bucket must be YYYY-MM-DD"));
+        }
+        let year: i64 = value[0..4]
+            .parse()
+            .map_err(|_| invalid("bad use bucket year"))?;
+        let month: u32 = value[5..7]
+            .parse()
+            .map_err(|_| invalid("bad use bucket month"))?;
+        let day: u32 = value[8..10]
+            .parse()
+            .map_err(|_| invalid("bad use bucket day"))?;
+        if !(1..=12).contains(&month)
+            || day < 1
+            || day > days_in_month(year, month)
+            || !(1..=9999).contains(&year)
+        {
+            return Err(invalid("use bucket is not a real calendar date"));
+        }
+        Ok(Self(value.to_string()))
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl fmt::Display for UseBucket {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(formatter)
+    }
+}
+
+impl Serialize for UseBucket {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(&self.0)
+    }
+}
+
+impl<'de> Deserialize<'de> for UseBucket {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let value = String::deserialize(deserializer)?;
+        Self::parse(&value).map_err(serde::de::Error::custom)
+    }
+}
+
+/// The clock a store reads for coarse use buckets. Real UTC in production; fixed or steppable
+/// in tests, so a session that runs past midnight never records an older age.
+pub trait Clock: Send + Sync {
+    fn now(&self) -> SystemTime;
+}
+
+#[derive(Debug, Default)]
+pub struct UtcClock;
+
+impl Clock for UtcClock {
+    fn now(&self) -> SystemTime {
+        SystemTime::now()
+    }
+}
+
+fn days_in_month(year: i64, month: u32) -> u32 {
+    match month {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 if (year % 4 == 0 && year % 100 != 0) || year % 400 == 0 => 29,
+        2 => 28,
+        _ => 0,
+    }
+}
+
+/// Days since 1970-01-01 to a proleptic Gregorian civil date (Howard Hinnant's algorithm).
+fn civil_from_days(days: i64) -> (i64, u32, u32) {
+    let shifted = days + 719_468;
+    let era = if shifted >= 0 {
+        shifted
+    } else {
+        shifted - 146_096
+    } / 146_097;
+    let day_of_era = shifted - era * 146_097;
+    let year_of_era =
+        (day_of_era - day_of_era / 1_460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
+    let year = year_of_era + era * 400;
+    let day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
+    let mp = (5 * day_of_year + 2) / 153;
+    let day = (day_of_year - (153 * mp + 2) / 5 + 1) as u32;
+    let month = if mp < 10 { mp + 3 } else { mp - 9 } as u32;
+    (year + i64::from(month <= 2), month, day)
+}
+
+/// The store-level recent-use record: result key to newest bucket, digest to first-observed day.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct UsageRecord {
+    version: u32,
+    #[serde(default)]
+    results: BTreeMap<String, UseBucket>,
+    #[serde(default)]
+    observed: BTreeMap<String, UseBucket>,
+}
+
+/// Read-only view of recent use. A key absent from `results` has **unknown** age and must be
+/// retained, and a non-empty `damaged` list obliges the caller to refuse destructive work.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct UsageView {
+    pub results: BTreeMap<String, UseBucket>,
+    pub observed: BTreeMap<String, UseBucket>,
+    pub damaged: Vec<String>,
+}
+
+/// Read-only retention across every project in the store, read under the caller's one guard.
+#[derive(Clone, Debug, Default)]
+pub struct AllProjectsRetention {
+    pub projects: BTreeMap<String, RetentionView>,
+    pub damaged: Vec<String>,
+}
+
+fn usage_path(root: &Path) -> PathBuf {
+    root.join("usage.json")
+}
+
+fn valid_digest(value: &str) -> bool {
+    value.len() == 64
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+}
+
+fn read_usage(root: &Path) -> Result<Option<UsageRecord>, RootError> {
+    let bytes = match fs::read(usage_path(root)) {
+        Ok(bytes) => bytes,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(None),
+        Err(error) => return Err(damaged(format!("usage record is unreadable: {error}"))),
+    };
+    let usage: UsageRecord = serde_json::from_slice(&bytes)
+        .map_err(|error| damaged(format!("usage record is unreadable: {error}")))?;
+    if usage.version != USAGE_VERSION {
+        return Err(damaged(format!(
+            "unsupported usage record version {}",
+            usage.version
+        )));
+    }
+    for key in usage.results.keys() {
+        if !valid_key(key) {
+            return Err(damaged("usage record has an invalid result key"));
+        }
+    }
+    for digest in usage.observed.keys() {
+        if !valid_digest(digest) {
+            return Err(damaged("usage record has an invalid object digest"));
+        }
+    }
+    Ok(Some(usage))
 }
 
 fn invalid(message: impl Into<String>) -> RootError {
@@ -442,6 +658,138 @@ fn write_record(
     Ok(())
 }
 
+/// Temp file, fsync, rename, then both directories' fsync: one small record, never in place.
+fn write_atomic_private(directory: &Path, target: &Path, bytes: &[u8]) -> Result<(), RootError> {
+    let serial = NEXT.fetch_add(1, Ordering::Relaxed);
+    let name = target
+        .file_name()
+        .map(|name| name.to_string_lossy().to_string())
+        .unwrap_or_else(|| "record".to_string());
+    let temporary = directory.join(format!(".{name}-{}-{serial}.tmp", std::process::id()));
+    let mut options = OpenOptions::new();
+    options.write(true).create_new(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600);
+    }
+    let mut file = options.open(&temporary)?;
+    file.write_all(bytes)?;
+    file.sync_all()?;
+    drop(file);
+    if let Err(error) = fs::rename(&temporary, target) {
+        let _ = fs::remove_file(&temporary);
+        return Err(error.into());
+    }
+    sync_dir(directory)?;
+    if let Some(parent) = target.parent() {
+        if parent != directory {
+            sync_dir(parent)?;
+        }
+    }
+    Ok(())
+}
+
+/// Every key one project's readable roots and journals name, plus what could not be read.
+fn retention_of_project(base: &Path) -> Result<RetentionView, RootError> {
+    let mut view = RetentionView::default();
+    let project_name = base
+        .file_name()
+        .map(|name| name.to_string_lossy().to_string())
+        .unwrap_or_default();
+    for (folder, extension) in [
+        ("worktree", "json"),
+        ("release", "json"),
+        ("pin", "json"),
+        ("session", "jsonl"),
+    ] {
+        let Ok(entries) = fs::read_dir(base.join(folder)) else {
+            view.damaged.push(base.join(folder).display().to_string());
+            continue;
+        };
+        for entry in entries {
+            let entry = entry?;
+            let path = entry.path();
+            if !entry.file_type()?.is_file()
+                || path.extension().is_none_or(|value| value != extension)
+            {
+                view.damaged.push(path.display().to_string());
+                continue;
+            }
+            if folder == "session" {
+                if retention_of_session(&path, &mut view.keys) {
+                    view.damaged.push(path.display().to_string());
+                }
+                continue;
+            }
+            match fs::read(&path)
+                .map_err(|error| error.to_string())
+                .and_then(|bytes| {
+                    serde_json::from_slice::<RootRecord>(&bytes).map_err(|error| error.to_string())
+                }) {
+                Ok(record) if record.version == ROOT_VERSION && record.project == project_name => {
+                    let mut invalid = false;
+                    for entry in record.entries.values() {
+                        if valid_key(&entry.key) {
+                            view.keys.insert(entry.key.clone());
+                        } else {
+                            invalid = true;
+                        }
+                    }
+                    if invalid {
+                        view.damaged.push(path.display().to_string());
+                    }
+                }
+                _ => view.damaged.push(path.display().to_string()),
+            }
+        }
+    }
+    let main = base.join("main.json");
+    match fs::symlink_metadata(&main) {
+        Ok(_) => match fs::read(&main)
+            .map_err(|error| error.to_string())
+            .and_then(|bytes| {
+                serde_json::from_slice::<RootRecord>(&bytes).map_err(|error| error.to_string())
+            }) {
+            Ok(record) if record.version == ROOT_VERSION && record.project == project_name => {
+                let mut invalid = false;
+                for entry in record.entries.values() {
+                    if valid_key(&entry.key) {
+                        view.keys.insert(entry.key.clone());
+                    } else {
+                        invalid = true;
+                    }
+                }
+                if invalid {
+                    view.damaged.push(main.display().to_string());
+                }
+            }
+            _ => view.damaged.push(main.display().to_string()),
+        },
+        Err(error) if error.kind() == io::ErrorKind::NotFound => {}
+        Err(_) => view.damaged.push(main.display().to_string()),
+    }
+    match fs::read_dir(base) {
+        Ok(entries) => {
+            for entry in entries {
+                let Ok(entry) = entry else {
+                    view.damaged.push(base.display().to_string());
+                    continue;
+                };
+                let name = entry.file_name();
+                let name = name.to_string_lossy();
+                if !["worktree", "release", "pin", "session", "tmp", "main.json"]
+                    .contains(&name.as_ref())
+                {
+                    view.damaged.push(entry.path().display().to_string());
+                }
+            }
+        }
+        Err(_) => view.damaged.push(base.display().to_string()),
+    }
+    Ok(view)
+}
+
 fn parse_journal(
     path: &Path,
     project: &str,
@@ -532,6 +880,41 @@ impl RootStore {
         store_root: impl AsRef<Path>,
         project: impl Into<String>,
     ) -> Result<Self, RootError> {
+        Self::open_with_clock(store_root, project, Arc::new(UtcClock))
+    }
+
+    /// The same contract with an injected clock, for tests and deterministic replay.
+    pub fn open_with_clock(
+        store_root: impl AsRef<Path>,
+        project: impl Into<String>,
+        clock: Arc<dyn Clock>,
+    ) -> Result<Self, RootError> {
+        Self::observe_project(store_root, project, clock, true)
+    }
+
+    /// Opens a project that MUST already be initialized. Never creates a store, registry or
+    /// project directory; a missing one is damage. Read-only apart from the observation itself.
+    pub fn open_existing(
+        store_root: impl AsRef<Path>,
+        project: impl Into<String>,
+    ) -> Result<Self, RootError> {
+        Self::open_existing_with_clock(store_root, project, Arc::new(UtcClock))
+    }
+
+    pub fn open_existing_with_clock(
+        store_root: impl AsRef<Path>,
+        project: impl Into<String>,
+        clock: Arc<dyn Clock>,
+    ) -> Result<Self, RootError> {
+        Self::observe_project(store_root, project, clock, false)
+    }
+
+    fn observe_project(
+        store_root: impl AsRef<Path>,
+        project: impl Into<String>,
+        clock: Arc<dyn Clock>,
+        create: bool,
+    ) -> Result<Self, RootError> {
         let project = project.into();
         if !valid_segment(&project) {
             return Err(invalid("project name must be a safe single path segment"));
@@ -549,6 +932,7 @@ impl RootStore {
             root,
             project,
             leases,
+            clock,
         };
         // Initialization and reopen observation share the metadata mutex with every reader.
         let _guard = store.leases.lock()?;
@@ -603,6 +987,12 @@ impl RootStore {
             }
         } else if roots_present {
             return Err(damaged("roots metadata exists without a projects registry"));
+        }
+        if !create {
+            return Err(damaged(format!(
+                "project {} has no initialized metadata",
+                store.project
+            )));
         }
         // Genuine first use of this project: create its tree, then record it durably.
         if !roots_present {
@@ -661,28 +1051,196 @@ impl RootStore {
             ));
         }
         let bytes = serde_json::to_vec(registry).map_err(|error| invalid(error.to_string()))?;
-        let serial = NEXT.fetch_add(1, Ordering::Relaxed);
-        let temporary = meta.join(format!("projects-{}-{serial}.tmp", std::process::id()));
-        let mut options = OpenOptions::new();
-        options.write(true).create_new(true);
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::OpenOptionsExt;
-            options.mode(0o600);
-        }
-        let mut file = options.open(&temporary)?;
-        file.write_all(&bytes)?;
-        file.sync_all()?;
-        drop(file);
-        if let Err(error) = fs::rename(&temporary, registry_path(&self.root)) {
-            let _ = fs::remove_file(&temporary);
-            return Err(error.into());
-        }
-        sync_dir(&meta)?;
+        write_atomic_private(&meta, &registry_path(&self.root), &bytes)?;
         if created {
             sync_dir(&self.root)?;
         }
         Ok(())
+    }
+
+    fn write_usage(&self, usage: &UsageRecord) -> Result<(), RootError> {
+        let bytes = serde_json::to_vec(usage).map_err(|error| invalid(error.to_string()))?;
+        write_atomic_private(&self.root, &usage_path(&self.root), &bytes)
+    }
+
+    /// @cc [owner:fontanierh,label:correctness] build-v2-root-usage
+    /// Recent use is coarse, advisory and never a cache-identity input. A session entry MAY carry
+    /// a round-up UTC day, written inside the append that already fsyncs; nothing writes per hit.
+    /// Folding to `usage.json` MUST happen only at durable boundaries (commit, abandon, dead
+    /// session release, snapshot, drop root) and MUST be coalesced to one write, keeping the newest
+    /// bucket per result so a clock rollback never ages a result. A result with no bucket, a legacy
+    /// entry without the field, an unreadable journal or a damaged record has **unknown** age and
+    /// MUST be retained; `UsageView.damaged` and `AllProjectsRetention.damaged` are part of the
+    /// answer, and a caller MUST refuse destructive work while either is non-empty rather than
+    /// treat a partial view as complete. First-observed digests are write-once and set only by an
+    /// explicit call, never from payload metadata. Forgetting is persisted before any unlink, so a
+    /// crash leaves unknown age, which retains. `usage_locked`, `open_existing`, `open_existing_with_clock`
+    /// and `all_project_retention_locked` MUST NOT create, fold or rewrite anything. See
+    /// tests/roots.rs `a_use_bucket_rounds_the_utc_day_up`, `usage_keeps_the_newest_bucket_on_rollback`,
+    /// `a_legacy_journal_entry_has_unknown_age`, `usage_is_folded_once_per_commit_not_per_append`,
+    /// `the_usage_readers_and_open_existing_write_nothing`, `usage_damage_is_visible_to_the_caller`,
+    /// `observe_objects_is_write_once`, `forgetting_usage_is_persisted_before_any_unlink`,
+    /// `a_dead_sessions_recent_use_survives_its_release`, `the_all_project_reader_sees_every_project`
+    /// and `the_usage_readers_refuse_a_foreign_guard`.
+    pub fn usage_locked(&self, guard: &MetadataGuard) -> Result<UsageView, RootError> {
+        self.check_guard(guard)?;
+        let mut view = UsageView::default();
+        match read_usage(&self.root) {
+            Ok(Some(usage)) => {
+                view.results = usage.results;
+                view.observed = usage.observed;
+            }
+            Ok(None) => {}
+            Err(error) => {
+                view.damaged
+                    .push(usage_path(&self.root).display().to_string());
+                view.damaged.push(error.to_string());
+            }
+        }
+        let (buckets, damaged) = self.journal_buckets();
+        view.damaged.extend(damaged);
+        for (key, bucket) in buckets {
+            let newer = view
+                .results
+                .get(&key)
+                .is_none_or(|current| *current < bucket);
+            if newer {
+                view.results.insert(key, bucket);
+            }
+        }
+        Ok(view)
+    }
+
+    /// Records the first observation of each object digest. Write-once: an existing entry is
+    /// never refreshed, and this is the only way an orphan gets a grace date.
+    pub fn observe_objects_locked(
+        &self,
+        guard: &MetadataGuard,
+        objects: &BTreeSet<ObjectDigest>,
+    ) -> Result<(), RootError> {
+        self.check_guard(guard)?;
+        if objects.is_empty() {
+            return Ok(());
+        }
+        let mut usage = self.usage_record()?;
+        let bucket = UseBucket::ceil_day(self.clock.now())?;
+        let mut changed = false;
+        for digest in objects {
+            let key = digest.as_hex().to_string();
+            if !usage.observed.contains_key(&key) {
+                usage.observed.insert(key, bucket.clone());
+                changed = true;
+            }
+        }
+        if changed {
+            self.write_usage(&usage)?;
+        }
+        Ok(())
+    }
+
+    /// Forgets result and object age before the caller unlinks them. One coalesced write; a crash
+    /// after this call leaves unknown age, which retains rather than deletes.
+    pub fn forget_usage_locked(
+        &self,
+        guard: &MetadataGuard,
+        results: &BTreeSet<String>,
+        objects: &BTreeSet<ObjectDigest>,
+    ) -> Result<(), RootError> {
+        self.check_guard(guard)?;
+        let Some(mut usage) = read_usage(&self.root)? else {
+            return Ok(());
+        };
+        let mut changed = false;
+        for key in results {
+            changed |= usage.results.remove(key).is_some();
+        }
+        for digest in objects {
+            changed |= usage.observed.remove(digest.as_hex()).is_some();
+        }
+        if changed {
+            self.write_usage(&usage)?;
+        }
+        Ok(())
+    }
+
+    fn usage_record(&self) -> Result<UsageRecord, RootError> {
+        Ok(read_usage(&self.root)?.unwrap_or(UsageRecord {
+            version: USAGE_VERSION,
+            results: BTreeMap::new(),
+            observed: BTreeMap::new(),
+        }))
+    }
+
+    /// Folds every open journal into `usage.json` in one write, and only when a bucket grew.
+    fn fold_usage_locked(&self) -> Result<(), RootError> {
+        let (buckets, _) = self.journal_buckets();
+        if buckets.is_empty() {
+            return Ok(());
+        }
+        let mut usage = self.usage_record()?;
+        let mut changed = false;
+        for (key, bucket) in buckets {
+            let newer = usage
+                .results
+                .get(&key)
+                .is_none_or(|current| *current < bucket);
+            if newer {
+                usage.results.insert(key, bucket);
+                changed = true;
+            }
+        }
+        if changed {
+            self.write_usage(&usage)?;
+        }
+        Ok(())
+    }
+
+    /// Every `(key, bucket)` in any open journal, plus the paths of journals that could not be
+    /// read. Legacy entries without a bucket are unknown age and are not folded.
+    fn journal_buckets(&self) -> (Vec<(String, UseBucket)>, Vec<String>) {
+        let mut buckets = Vec::new();
+        let mut damaged = Vec::new();
+        let roots = self.root.join("roots");
+        let Ok(projects) = fs::read_dir(&roots) else {
+            return (buckets, damaged);
+        };
+        for project in projects.flatten() {
+            if !project
+                .file_type()
+                .map(|kind| kind.is_dir())
+                .unwrap_or(false)
+            {
+                continue;
+            }
+            let Ok(sessions) = fs::read_dir(project.path().join("session")) else {
+                continue;
+            };
+            for session in sessions.flatten() {
+                let path = session.path();
+                if path.extension().is_none_or(|value| value != "jsonl") {
+                    continue;
+                }
+                let Ok(text) = fs::read_to_string(&path) else {
+                    damaged.push(path.display().to_string());
+                    continue;
+                };
+                for line in text.lines().skip(1) {
+                    match serde_json::from_str::<SessionEntry>(line) {
+                        Ok(entry) => {
+                            if let Some(bucket) = entry.use_bucket {
+                                if valid_key(&entry.key) {
+                                    buckets.push((entry.key, bucket));
+                                } else {
+                                    damaged.push(path.display().to_string());
+                                }
+                            }
+                        }
+                        Err(_) => damaged.push(path.display().to_string()),
+                    }
+                }
+            }
+        }
+        (buckets, damaged)
     }
 
     fn path(&self, kind: &RootKind) -> Result<PathBuf, RootError> {
@@ -915,6 +1473,7 @@ impl RootStore {
         };
         let verdict = may_reclaim(&lease, probe, custodians, cleanup);
         if verdict == Reclaim::Reclaimable {
+            self.fold_usage_locked()?;
             fs::remove_file(&path)?;
             sync_dir(path.parent().expect("journal has a parent"))?;
         }
@@ -929,6 +1488,7 @@ impl RootStore {
             fs::remove_file(&path)?;
             sync_dir(path.parent().expect("root has a parent"))?;
         }
+        self.fold_usage_locked()?;
         Ok(record)
     }
 
@@ -983,6 +1543,7 @@ impl RootStore {
         if matches!(&target, RootKind::Release { .. }) {
             self.trim_releases_locked()?;
         }
+        self.fold_usage_locked()?;
         Ok(record)
     }
 
@@ -1009,46 +1570,11 @@ impl RootStore {
         self.check_guard(_guard)?;
         let mut view = RetentionView::default();
         let roots = self.root.join("roots");
-        match fs::symlink_metadata(&roots) {
-            Ok(_) => {}
-            Err(_) => {
-                view.damaged.push(roots.display().to_string());
-                return Ok(view);
-            }
+        if fs::symlink_metadata(&roots).is_err() {
+            view.damaged.push(roots.display().to_string());
+            return Ok(view);
         }
-        let selected = self.project_dir();
-        match fs::symlink_metadata(&selected) {
-            Ok(metadata) if metadata.is_dir() => {}
-            _ => view.damaged.push(selected.display().to_string()),
-        }
-        // A project that was initialized but whose directory is gone hides every key it retained.
-        match read_registry(&self.root) {
-            Ok(Some(registry)) => {
-                for name in registry.projects.keys() {
-                    let path = roots.join(name);
-                    match fs::symlink_metadata(&path) {
-                        Ok(metadata) if metadata.is_dir() => {}
-                        _ => view.damaged.push(path.display().to_string()),
-                    }
-                }
-            }
-            Ok(None) => {
-                let mut any = false;
-                for entry in fs::read_dir(&roots)? {
-                    if entry.is_ok() {
-                        any = true;
-                        break;
-                    }
-                }
-                if any {
-                    view.damaged
-                        .push(registry_path(&self.root).display().to_string());
-                }
-            }
-            Err(_) => view
-                .damaged
-                .push(registry_path(&self.root).display().to_string()),
-        }
+        self.check_projects_present_locked(&roots, &self.project, &mut view.damaged);
         for project in fs::read_dir(&roots)? {
             let project = match project {
                 Ok(project) => project,
@@ -1058,117 +1584,117 @@ impl RootStore {
                     continue;
                 }
             };
-            let directory = match project.file_type() {
-                Ok(file_type) => file_type.is_dir(),
-                Err(_) => {
+            match project.file_type() {
+                Ok(kind) if kind.is_dir() => {}
+                _ => {
                     view.damaged.push(project.path().display().to_string());
                     continue;
                 }
-            };
-            if !directory {
-                view.damaged.push(project.path().display().to_string());
-                continue;
             }
-            let project_name = project.file_name().to_string_lossy().to_string();
-            let base = project.path();
-            for (folder, extension) in [
-                ("worktree", "json"),
-                ("release", "json"),
-                ("pin", "json"),
-                ("session", "jsonl"),
-            ] {
-                let Ok(entries) = fs::read_dir(base.join(folder)) else {
-                    view.damaged.push(base.join(folder).display().to_string());
-                    continue;
-                };
-                for entry in entries {
-                    let entry = entry?;
-                    let path = entry.path();
-                    if !entry.file_type()?.is_file()
-                        || path.extension().is_none_or(|value| value != extension)
-                    {
-                        view.damaged.push(path.display().to_string());
-                        continue;
-                    }
-                    if folder == "session" {
-                        if retention_of_session(&path, &mut view.keys) {
-                            view.damaged.push(path.display().to_string());
-                        }
-                        continue;
-                    }
-                    match fs::read(&path)
-                        .map_err(|error| error.to_string())
-                        .and_then(|bytes| {
-                            serde_json::from_slice::<RootRecord>(&bytes).map_err(|e| e.to_string())
-                        }) {
-                        Ok(record)
-                            if record.version == ROOT_VERSION && record.project == project_name =>
-                        {
-                            let mut invalid = false;
-                            for entry in record.entries.values() {
-                                if valid_key(&entry.key) {
-                                    view.keys.insert(entry.key.clone());
-                                } else {
-                                    invalid = true;
-                                }
-                            }
-                            if invalid {
-                                view.damaged.push(path.display().to_string());
-                            }
-                        }
-                        _ => view.damaged.push(path.display().to_string()),
-                    }
+            match retention_of_project(&project.path()) {
+                Ok(inner) => {
+                    view.keys.extend(inner.keys);
+                    view.damaged.extend(inner.damaged);
                 }
-            }
-            let main = base.join("main.json");
-            match fs::symlink_metadata(&main) {
-                Ok(_) => {
-                    match fs::read(&main)
-                        .map_err(|error| error.to_string())
-                        .and_then(|bytes| {
-                            serde_json::from_slice::<RootRecord>(&bytes).map_err(|e| e.to_string())
-                        }) {
-                        Ok(record)
-                            if record.version == ROOT_VERSION && record.project == project_name =>
-                        {
-                            let mut invalid = false;
-                            for entry in record.entries.values() {
-                                if valid_key(&entry.key) {
-                                    view.keys.insert(entry.key.clone());
-                                } else {
-                                    invalid = true;
-                                }
-                            }
-                            if invalid {
-                                view.damaged.push(main.display().to_string());
-                            }
-                        }
-                        _ => view.damaged.push(main.display().to_string()),
-                    }
-                }
-                Err(error) if error.kind() == io::ErrorKind::NotFound => {}
-                Err(_) => view.damaged.push(main.display().to_string()),
-            }
-            match fs::read_dir(&base) {
-                Ok(entries) => {
-                    for entry in entries {
-                        let Ok(entry) = entry else {
-                            view.damaged.push(base.display().to_string());
-                            continue;
-                        };
-                        let name = entry.file_name();
-                        let name = name.to_string_lossy();
-                        if !["worktree", "release", "pin", "session", "tmp", "main.json"]
-                            .contains(&name.as_ref())
-                        {
-                            view.damaged.push(entry.path().display().to_string());
-                        }
-                    }
-                }
-                Err(_) => view.damaged.push(base.display().to_string()),
+                Err(error) => view
+                    .damaged
+                    .push(format!("{}: {error}", project.path().display())),
             }
         }
         Ok(view)
+    }
+
+    /// Presence checks retention needs for the selected project and every registered one. Reads
+    /// only: nothing is created, and a missing registered project is damage, never an empty view.
+    fn check_projects_present_locked(
+        &self,
+        roots: &Path,
+        selected: &str,
+        damaged: &mut Vec<String>,
+    ) {
+        let selected = roots.join(selected);
+        match fs::symlink_metadata(&selected) {
+            Ok(metadata) if metadata.is_dir() => {}
+            _ => damaged.push(selected.display().to_string()),
+        }
+        match read_registry(&self.root) {
+            Ok(Some(registry)) => {
+                for name in registry.projects.keys() {
+                    let path = roots.join(name);
+                    match fs::symlink_metadata(&path) {
+                        Ok(metadata) if metadata.is_dir() => {}
+                        _ => damaged.push(path.display().to_string()),
+                    }
+                }
+            }
+            Ok(None) => {
+                let any = fs::read_dir(roots)
+                    .map(|mut entries| entries.next().is_some())
+                    .unwrap_or(false);
+                if any {
+                    damaged.push(registry_path(&self.root).display().to_string());
+                }
+            }
+            Err(_) => damaged.push(registry_path(&self.root).display().to_string()),
+        }
+    }
+
+    /// Per-project retention for every project in the store, read under the caller's one guard
+    /// and creating nothing. A non-empty `damaged` list obliges the caller to refuse destructive
+    /// work rather than trust a partial view.
+    pub fn all_project_retention_locked(
+        &self,
+        guard: &MetadataGuard,
+    ) -> Result<AllProjectsRetention, RootError> {
+        self.check_guard(guard)?;
+        let mut all = AllProjectsRetention::default();
+        let roots = self.root.join("roots");
+        if fs::symlink_metadata(&roots).is_err() {
+            all.damaged.push(roots.display().to_string());
+            return Ok(all);
+        }
+        self.check_projects_present_locked(&roots, &self.project, &mut all.damaged);
+        let registered = match read_registry(&self.root) {
+            Ok(Some(registry)) => Some(registry),
+            Ok(None) => None,
+            Err(error) => {
+                all.damaged.push(error.to_string());
+                None
+            }
+        };
+        for entry in fs::read_dir(&roots)? {
+            let entry = match entry {
+                Ok(entry) => entry,
+                Err(error) => {
+                    all.damaged
+                        .push(format!("unreadable project entry: {error}"));
+                    continue;
+                }
+            };
+            match entry.file_type() {
+                Ok(kind) if kind.is_dir() => {}
+                _ => {
+                    all.damaged.push(entry.path().display().to_string());
+                    continue;
+                }
+            }
+            let name = entry.file_name().to_string_lossy().to_string();
+            if let Some(registry) = registered.as_ref() {
+                if !registry.projects.contains_key(&name) {
+                    all.damaged.push(entry.path().display().to_string());
+                    continue;
+                }
+            }
+            match retention_of_project(&entry.path()) {
+                Ok(view) => {
+                    all.projects.insert(name, view);
+                }
+                Err(error) => all
+                    .damaged
+                    .push(format!("{}: {error}", entry.path().display())),
+            }
+        }
+        Ok(all)
     }
 
     fn trim_releases_locked(&self) -> Result<Vec<u64>, RootError> {
@@ -1282,9 +1808,11 @@ impl BuildSession {
     pub fn use_result(&mut self, unit: &str, key: &str) -> Result<(), RootError> {
         checked_entry(unit, key)?;
         let _guard = self.store.leases.lock()?;
+        let bucket = UseBucket::ceil_day(self.store.clock.now())?;
         let line = serde_json::to_vec(&SessionEntry {
             unit: unit.to_string(),
             key: key.to_string(),
+            use_bucket: Some(bucket),
         })
         .map_err(|error| invalid(error.to_string()))?;
         let mut file = OpenOptions::new().append(true).open(&self.journal)?;
@@ -1405,6 +1933,7 @@ impl BuildSession {
         if matches!(&self.kind, RootKind::Release { .. }) {
             self.store.trim_releases_locked()?;
         }
+        self.store.fold_usage_locked()?;
         fs::remove_file(&self.journal)?;
         sync_dir(self.journal.parent().expect("journal has a parent"))?;
         observe(CommitStep::SessionRemoved)?;
@@ -1414,6 +1943,7 @@ impl BuildSession {
     /// Release this session's retention without touching any root. Only this journal is removed.
     pub fn abandon(self) -> Result<(), RootError> {
         let _guard = self.store.leases.lock()?;
+        self.store.fold_usage_locked()?;
         fs::remove_file(&self.journal)?;
         sync_dir(self.journal.parent().expect("journal has a parent"))?;
         Ok(())

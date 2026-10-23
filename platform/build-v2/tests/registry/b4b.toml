@@ -1,0 +1,72 @@
+schema_version = 1
+
+[[scenarios]]
+id = "b4b.roots.a_use_bucket_rounds_the_utc_day_up"
+tests = ["atelier-build-v2::roots/a_use_bucket_rounds_the_utc_day_up"]
+tier = "t0"
+
+[[scenarios]]
+id = "b4b.roots.usage_keeps_the_newest_bucket_on_rollback"
+tests = ["atelier-build-v2::roots/usage_keeps_the_newest_bucket_on_rollback"]
+tier = "t0"
+
+[[scenarios]]
+id = "b4b.roots.a_future_bucket_is_kept"
+tests = ["atelier-build-v2::roots/a_future_bucket_is_kept"]
+tier = "t0"
+
+[[scenarios]]
+id = "b4b.roots.a_legacy_journal_entry_has_unknown_age"
+tests = ["atelier-build-v2::roots/a_legacy_journal_entry_has_unknown_age"]
+tier = "t0"
+
+[[scenarios]]
+id = "b4b.roots.usage_is_folded_once_per_commit_not_per_append"
+tests = ["atelier-build-v2::roots/usage_is_folded_once_per_commit_not_per_append"]
+tier = "t0"
+
+[[scenarios]]
+id = "b4b.roots.the_usage_readers_and_open_existing_write_nothing"
+tests = ["atelier-build-v2::roots/the_usage_readers_and_open_existing_write_nothing"]
+tier = "t0"
+
+[[scenarios]]
+id = "b4b.roots.usage_damage_is_visible_to_the_caller"
+tests = ["atelier-build-v2::roots/usage_damage_is_visible_to_the_caller"]
+tier = "t0"
+
+[[scenarios]]
+id = "b4b.roots.observe_objects_is_write_once"
+tests = ["atelier-build-v2::roots/observe_objects_is_write_once"]
+tier = "t0"
+
+[[scenarios]]
+id = "b4b.roots.forgetting_usage_is_persisted_before_any_unlink"
+tests = ["atelier-build-v2::roots/forgetting_usage_is_persisted_before_any_unlink"]
+tier = "t0"
+
+[[scenarios]]
+id = "b4b.roots.a_dead_sessions_recent_use_survives_its_release"
+tests = ["atelier-build-v2::roots/a_dead_sessions_recent_use_survives_its_release"]
+tier = "t0"
+
+[[scenarios]]
+id = "b4b.roots.the_all_project_reader_sees_every_project"
+tests = ["atelier-build-v2::roots/the_all_project_reader_sees_every_project"]
+tier = "t0"
+
+[[scenarios]]
+id = "b4b.roots.the_usage_readers_refuse_a_foreign_guard"
+tests = ["atelier-build-v2::roots/the_usage_readers_refuse_a_foreign_guard"]
+tier = "t0"
+
+[[scenarios]]
+id = "b4b.roots.two_open_sessions_on_one_target_keep_the_other_journal"
+tests = ["atelier-build-v2::roots/two_open_sessions_on_one_target_keep_the_other_journal"]
+tier = "t0"
+
+[[scenarios]]
+id = "b4b.roots.open_existing_creates_nothing"
+tests = ["atelier-build-v2::roots/open_existing_creates_nothing"]
+tier = "t0"
+
