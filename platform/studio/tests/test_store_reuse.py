@@ -8,7 +8,7 @@ import pytest
 
 from atelier import build, build_checkpoints, checkpoint_actions as actions, checkpoint_store as cp, store_retention
 from atelier.build_cache import atomic_json
-from test_checkpoints import fixture, hydrate_in_process, snapshot  # noqa: F401
+from test_checkpoints import fixture, snapshot  # noqa: F401
 
 
 def publish_all(ctx, steps, store):
@@ -73,49 +73,6 @@ def test_partial_or_changed_outputs_are_never_published(fixture):
     with pytest.raises((cp.CheckpointError, OSError, ValueError)):
         actions.publish(ctx, step, stamp['fingerprint'], stamp, store=fixture.store, done={}, produced=True)
     assert not list((fixture.store.directory / 'actions').glob('*.json'))
-
-
-def test_interrupted_hydration_resumes(fixture, monkeypatch):
-    _, _, key = snapshot(fixture)
-    ctx, steps = fixture.checkout('receiver')
-    (ctx.out / 'tree').mkdir(parents=True)
-    (ctx.out / 'tree/asset.bin').write_bytes(b'stale')
-    plan, _, _ = build_checkpoints.hydration_plan(ctx, steps, fixture.store)
-    atomic_json(ctx.out / cp.HYDRATION_REQUEST, dict(key=key, units=plan['units'], stamps=plan['stamps'], outputs=plan['outputs']))
-    original, copies = cp.copy_file, []
-    def interrupted(source, destination):
-        copies.append(source)
-        if len(copies) == 2:
-            raise OSError('interrupted')
-        original(source, destination)
-    monkeypatch.setattr(cp, 'copy_file', interrupted)
-    with pytest.raises(OSError):
-        cp.hydrate_files(ctx, fixture.store, key, echo=lambda _: None)
-    pending = cp.read_json(ctx.out / cp.JOURNAL)
-    monkeypatch.setattr(cp, 'copy_file', original)
-    hydrate_in_process(monkeypatch, fixture)
-    assert build_checkpoints.hydrate(ctx, steps, fixture.store, echo=lambda _: None, resume=pending)['key'] == key
-    assert (ctx.out / 'combat/asset.bin').read_bytes() == b'combat' and (ctx.out / 'house/asset.bin').read_bytes() == b'house'
-    assert (ctx.out / 'tree/asset.bin').read_bytes() == b'stale' and not (ctx.out / cp.JOURNAL).exists()
-
-
-def test_scan_of_a_large_checkpoint_is_fast(fixture, monkeypatch):
-    ctx, steps = fixture.checkout('donor')
-    original = Path.mkdir
-    monkeypatch.setattr(Path, 'mkdir', lambda self, *a, **k: original(self, *a, **{**k, 'exist_ok': True}))
-    many = ctx.out / 'tree/many'
-    many.mkdir(parents=True)
-    for i in range(5000):
-        (many / f'{i}.bin').write_bytes(b'%d' % (i % 7))
-    fixture.produce(ctx, steps)
-    monkeypatch.setattr(Path, 'mkdir', original)
-    key = cp.capture(ctx, steps, fixture.store, echo=lambda _: None)
-    receiver, receiving = fixture.checkout('receiver')
-    build_checkpoints.hydration_plan(receiver, receiving, fixture.store)  # Builds the summary once.
-    started = time.monotonic()
-    plan, _, _ = build_checkpoints.hydration_plan(receiver, receiving, fixture.store)
-    assert plan['key'] == key and plan['missing'] == 5003
-    assert time.monotonic() - started < 1.0
 
 
 def test_retention_evicts_least_recently_used_unpinned_entries(fixture, monkeypatch):

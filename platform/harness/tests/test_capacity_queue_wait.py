@@ -52,10 +52,45 @@ def test_only_positive_queue_responses_retry(monkeypatch, error):
     assert caught.value is error and calls == [1]
 
 
-@pytest.mark.parametrize('value', [0, -1, 1801, float('inf'), float('nan'), True, '30'])
+@pytest.mark.parametrize('value', [0, -1, float('inf'), float('nan'), True, '30'])
 def test_invalid_wait_bounds_do_not_offer(value):
     with pytest.raises(ValueError, match='queue wait'):
         client.wait_for_offer(SimpleNamespace(offer=lambda: pytest.fail('offered')), seconds=value)
+
+
+def test_queue_wait_without_a_deadline_waits_until_admitted(monkeypatch, capsys):
+    now = clock(monkeypatch)
+    def offer():
+        if now[0] < 3 * 3600:  # Hours behind a cook: never a failure.
+            raise client.CapacityQueued('performance window must drain first')
+        return {'selected': True}
+    assert client.wait_for_offer(SimpleNamespace(offer=offer)) == {'selected': True}
+    out = capsys.readouterr().out
+    assert 'Waiting for capacity: 10775s;' in out and 'deadline' not in out
+
+
+def test_guard_queues_until_admitted_unless_a_deadline_is_opted_into(monkeypatch, tmp_path):
+    seen = []
+    class Admission:
+        mode = 'legacy-bridge'
+        def offer(self):
+            raise client.CapacityQueued('busy')
+        def close(self, **kwargs):
+            pass
+    def wait(admission, *, seconds=None):
+        seen.append(seconds)
+        raise KeyboardInterrupt
+    monkeypatch.setattr(client, 'wait_for_offer', wait)
+    monkeypatch.setattr(guarded, 'spawn', lambda *args, **kwargs: pytest.fail('child started while queued'))
+    monkeypatch.delenv('ATELIER_CAPACITY_QUEUE_SECONDS', raising=False)
+    with pytest.raises(KeyboardInterrupt):
+        guarded.run(['python', '-c', 'pass'], tmp_path/'a', kind='job', admission=Admission())
+    with pytest.raises(KeyboardInterrupt):
+        guarded.run(['python', '-c', 'pass'], tmp_path/'b', kind='job', admission=Admission(), queue_seconds=60)
+    monkeypatch.setenv('ATELIER_CAPACITY_QUEUE_SECONDS', '90')
+    with pytest.raises(KeyboardInterrupt):
+        guarded.run(['python', '-c', 'pass'], tmp_path/'c', kind='job', admission=Admission())
+    assert seen[0] is None and 0 < seen[1] <= 60 and 60 < seen[2] <= 90
 
 
 @pytest.mark.parametrize('selected,state,queued', [(False, 'queued', True), (False, 'offered', False),

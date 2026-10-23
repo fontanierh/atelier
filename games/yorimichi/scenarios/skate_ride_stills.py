@@ -1,5 +1,10 @@
 """Stills of the Ride clips sampled in Unreal: build/yorimichi/skate-ride/clip-stills/<CLIP>.png.
 
+    uv run atelier qa yorimichi skate_ride_stills
+
+Requires a build with `skate.runtime` (the assembled simulation package) and `unreal.skate_clips` (the verified
+still poses). This is QA/review tooling, not part of the build graph.
+
 verify_clips.py writes, for a few clips (an ollie, a kickflip, a push, a 50-50 grind), the component-space pose
 Unreal samples from the compressed asset at every frame. This draws SK_SkateRider's box body and board skinned to
 those poses (six frames per clip, side by side, a three-quarter view framed tight on the rider, the ground at the
@@ -14,9 +19,10 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE))
-sys.path.insert(0, str(HERE.parents[2] / 'world'))
+GAME = Path(__file__).resolve().parents[1]
+SKATE_RIDE = GAME / 'unreal' / 'Scripts' / 'skate_ride'
+sys.path.insert(0, str(SKATE_RIDE))
+sys.path.insert(0, str(GAME / 'world'))
 import simulation as N  # noqa: E402
 import rider_mesh as M  # noqa: E402
 import yori  # noqa: E402
@@ -113,6 +119,11 @@ def draw_panel(image, ox, mesh, triangles, world, joints, ground, label):
 
 def main():
     global LOCALS
+    if not BUNDLE.is_dir():
+        raise SystemExit(f'missing {BUNDLE}; run atelier build yorimichi skate.runtime first')
+    poses = sorted(POSES.glob('*.json'))
+    if not poses:
+        raise SystemExit(f'no still poses in {POSES}; run atelier build yorimichi unreal.skate_clips first')
     rig = N.Bundle(BUNDLE).rig()
     pose = rig.named_pose(0, 'RIG_TPOSE')
     _, globals_, mesh = M.build(rig, pose, N.split_sample)
@@ -122,7 +133,7 @@ def main():
     STILLS.mkdir(parents=True, exist_ok=True)
     bundle = N.Bundle(BUNDLE)
     index = []
-    for path in sorted(POSES.glob('*.json')):
+    for path in poses:
         data = json.loads(path.read_text())
         name, frames = data['clip'], data['frames']
         clip = next(N.load_clip(p.read_bytes()) for p in bundle.clip_paths() if p.stem == name)

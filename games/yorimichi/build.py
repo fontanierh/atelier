@@ -76,7 +76,7 @@ def _mentions_import_village(path):
     st = Path(path).stat()
     return _file_mentions_village(Path(path), st.st_mtime_ns, st.st_size)
 
-from atelier.build import Product, Step, DeferredInputs, Python, Blender, UnrealScript, UnrealCompile, UnrealPackage, Call, Batch
+from atelier.build import Product, Step, DeferredInputs, Python, Blender, UnrealScript, UnrealCompile, UnrealGame, UnrealPackage, Call, Batch
 from atelier.checkpoint_candidates import CandidateScope
 from atelier import build_inputs, paths, unreal_modules
 
@@ -165,7 +165,7 @@ def craterpark_v2_steps(out):
              inputs=[v2, *common, *volcano, *craterpark_v4.input_paths()],
              outputs=[geometry / 'geometry.npz', geometry / 'geometry-report.json'],
              about='Crater Park v2: layout -> conforming surfaces, solids, rails, render tiles and collision (numpy)',
-             heavy=True),
+             cutoff=True, heavy=True),
         *_load_helper_module('yorimichi_craterpark_atomic', GAME/'craterpark_atomic_build.py').steps(SimpleNamespace(out=out)),
         *([Step('world.craterpark_layout', [Python(WORLD / 'craterpark_layout.py')],
                 inputs=[WORLD / 'craterpark_layout.py', *CRATERPARK, *craterpark_v4.input_paths()],
@@ -182,7 +182,7 @@ VILLAGE_LAYOUT = (REGIONS / 'village' / 'layout.py', YORI)
 # What importing treehouse/layout.py reads (its sizes come from world.treehouse_trees' trees.json, which steps that
 # import it also need), and the layout modules hidamari/layout.py brings in.
 TREEHOUSE_LAYOUT = (TREEHOUSE / 'layout.py', TREEHOUSE / 'screen.py', REGIONS / 'zeppelin' / 'layout.py', REGIONS / 'megapark' / 'placement.py')
-NORTH_LAYOUT = (REGIONS / 'hidamari' / 'forest_backdrop.py', REGIONS / 'megapark' / 'forest.py', REGIONS / 'megapark' / 'gate.py',
+NORTH_LAYOUT = (REGIONS / 'hidamari' / 'forest_backdrop.py', REGIONS / 'megapark' / 'gate.py',
                 REGIONS / 'megapark' / 'trail.py', *TREEHOUSE_LAYOUT, *VILLAGE_LAYOUT)
 SOUTHWEST_MODELS = ('stand,fisher_house_a,fisher_house_b,boat_shed,stairs,dock,boat,drying_rack,temple,island,'
                     'boulder_a,boulder_b,boulder_c,stone_wall,pine_lean_a,pine_lean_b')
@@ -197,10 +197,33 @@ _horse_data = importlib.util.spec_from_file_location('horse_data', SCRIPTS / 'ho
 horse_data = importlib.util.module_from_spec(_horse_data)
 _horse_data.loader.exec_module(horse_data)
 
+MEGAPARK_FOREST = (REGIONS / 'megapark' / 'forest.py').resolve()
+MEGAPARK_PLANTS = (REGIONS / 'megapark' / 'plants.py').resolve()
+FOREST_IMPORTERS = {
+    (WORLD / 'gen_world.py').resolve(),
+    (REGIONS / 'hidamari' / 'build.py').resolve(),
+    (REGIONS / 'hidamari' / 'layout.py').resolve(),
+    (REGIONS / 'hidamari' / 'mountains.py').resolve(),
+    (REGIONS / 'megapark' / 'trail.py').resolve(),
+    MEGAPARK_FOREST,
+}
+PLANTS_IMPORTERS = {
+    (REGIONS / 'megapark' / 'build.py').resolve(),
+    (REGIONS / 'hidamari' / 'build.py').resolve(),
+    (REGIONS / 'megapark' / 'gate.py').resolve(),
+    (REGIONS / 'megapark' / 'verify_import.py').resolve(),
+    MEGAPARK_PLANTS,
+}
 
-def local_imports(script, roots=(WORLD, REGIONS)):
+
+def local_imports(script, roots=(WORLD, REGIONS), scanner=None):
     """Hash the static local import closure; the platform memoizes parsing between steps."""
-    return build_inputs.local_imports(script, roots)
+    entry = Path(script).resolve()
+    files = (scanner.local_imports(script, roots) if scanner is not None
+             else build_inputs.local_imports(script, roots))
+    drop = ((set() if entry in FOREST_IMPORTERS else {MEGAPARK_FOREST})
+            | (set() if entry in PLANTS_IMPORTERS else {MEGAPARK_PLANTS}))
+    return [f for f in files if f.resolve() not in drop] if drop else files
 
 
 # Keep the recipe's helpers available while the staging implementation has its own narrow input.
@@ -424,22 +447,22 @@ def belmonte_train_route_present(out):
 
 
 def belmonte_train_assembly_present(out):
-    """consist.json, index.html and every vehicle and furniture GLB/gltf.json copy in assembly/."""
+    """consist.json and every vehicle and furniture GLB copy in assembly/."""
     root = out / 'belmonte-train' / 'assembly'
     try:
         doc = json.loads((root / 'consist.json').read_text())
         vehicles = doc['vehicles']
         furniture = doc['furniture']
         baked = train_bake.read(root.parent / 'furniture')
-        return (bool(vehicles) and (root / 'index.html').is_file()
+        return (bool(vehicles)
                 and doc['furniture_bake_sha256'] == train_bake.sha(root.parent / 'furniture' / 'lod' / 'summary.json')
                 and set(furniture) == set(TRAIN_FURNITURE)
-                and all((root / v['glb']).is_file() and (root / v['web']).is_file()
+                and all((root / v['glb']).is_file()
                         for v in vehicles if v.get('status') == 'built')
                 and all(f['glb'] == baked[aid]['levels'][0]['glb']
                         and train_bake.sha(root / f['glb']) == baked[aid]['levels'][0]['sha256']
                         and f['lods'] == [dict(r, glb='lod/' + r['glb']) for r in baked[aid]['levels']]
-                        and (root / f['web']).is_file()
+                        and (root / f['glb']).is_file()
                         for aid, f in furniture.items()))
     except (OSError, ValueError, KeyError, TypeError):
         return False
@@ -505,6 +528,14 @@ _racing_assets_spec.loader.exec_module(racing_assets)
 _cook_spec = importlib.util.spec_from_file_location('yorimichi_package_cook', TOOLS / 'package_cook.py')
 package_cook = importlib.util.module_from_spec(_cook_spec)
 _cook_spec.loader.exec_module(package_cook)
+_binary_spec = importlib.util.spec_from_file_location('yorimichi_game_binary', TOOLS / 'game_binary.py')
+game_binary = importlib.util.module_from_spec(_binary_spec)
+_binary_spec.loader.exec_module(game_binary)
+
+# The game target's BuildProducts beyond the executable, the app bundle and the receipt (engine dylibs, sample files).
+GAME_BINARY_PRODUCTS = ('Binaries/Mac/libtbb.12.17.dylib', 'Binaries/Mac/libtbb.12.dylib', 'Binaries/Mac/libtbb.dylib',
+                        'Binaries/Mac/libtbbmalloc.2.17.dylib', 'Binaries/Mac/libtbbmalloc.2.dylib', 'Binaries/Mac/libtbbmalloc.dylib',
+                        'Samples/PixelStreaming2/WebServers/get_ps_servers.bat', 'Samples/PixelStreaming2/WebServers/get_ps_servers.sh')
 
 
 def engine_version(ctx):
@@ -526,7 +557,8 @@ def cook_step(ctx, steps):
     out = ctx.out
     engine_inputs = engine_version(ctx)
     return Step('unreal.cook',
-                [Call('prepare_cook', package_cook.prepare), UnrealPackage('Yorimichi', out / 'package' / 'archive'),
+                [Call('prepare_cook', package_cook.prepare),
+                 UnrealPackage('Yorimichi', out / 'package' / 'archive', skip_build=True),
                  Call('certify_cook', package_cook.finish)],
                 inputs=[ctx.uproject, TOOLS / 'package_cook.py', *engine_inputs],
                 deferred_inputs=[native_source_inputs()],
@@ -1051,7 +1083,8 @@ def world_steps(ctx):
              about='terrain heightfield, road, scatter and every region layout -> world.json (dependents see these files)'),
         Step('world.forest_textures', [Python(TOOLS / 'forest_textures.py')],
              # Only the twig atlases it reads: a new rock or ground painting leaves the forest current.
-             inputs=[TOOLS / 'forest_textures.py', *sorted((ASSETS / 'environment/textures').glob('leaf-*'))],
+             inputs=[*build_inputs.local_imports(TOOLS / 'forest_textures.py', (TOOLS, WORLD, REGIONS, paths.STUDIO)),
+                     *sorted((ASSETS / 'environment/textures').glob('leaf-*'))],
              products=[Product('forest.textures',(out/'forest/textures',))],cache=True,
              about='Sunburst Mediterranean twig atlases with coverage masks'),
         *_load_helper_module('yorimichi_forest_atomic',GAME/'forest_atomic_build.py').steps(ctx),
@@ -1065,8 +1098,7 @@ def world_steps(ctx):
                      *(ASSETS / 'belmonte' / entry['path'] for entry in _read_json(ASSETS / 'belmonte/source.json')['meshes']
                        if entry['name'].startswith('SM_BM_BT_Terrain_')),
                      REGIONS / 'megapark' / 'placement.py', REGIONS / 'megapark' / 'trail.py', REGIONS / 'megapark' / 'gate.py',
-                     out / 'world.json', out / 'heightmap.npy', out / 'farhills.npy', out / 'megapark' / 'trail.json',
-                     *([out / 'craterpark/v2/geometry.npz'] if craterpark_v4.selected() else [])],
+                     out / 'world.json', out / 'heightmap.npy', out / 'farhills.npy', out / 'megapark' / 'trail.json'],
              needs=['world.layout', *crater_geometry],
              products=[Product('terrain.FarHills.natural', (out / 'terrain/FarHills/natural.npz',)),
                        Product('terrain.FarHills.final', (out / 'terrain/FarHills/final.npz',)),
@@ -1190,14 +1222,14 @@ def world_steps(ctx):
              verify=lambda: belmonte_train_furniture_lods_present(out),
              about='Belmonte train furniture: LOD0/LOD1 decimated from the fitted Tripo meshes, maps baked (Cycles)'),
         Step('world.belmonte_train_assembly', [Python(WORLD / 'train' / 'consist.py')],
-             inputs=[WORLD / 'train' / 'consist.py', WORLD / 'train' / 'layout.py', WORLD / 'train' / 'viewer.html',
+             inputs=[WORLD / 'train' / 'consist.py', WORLD / 'train' / 'layout.py',
                      WORLD / 'train' / 'bake_manifest.py', WORLD / 'train' / 'budgets.py',
                      ASSETS / 'vehicles' / 'belmonte-train' / 'planning', out / 'belmonte-train' / 'furniture',
                      *(out / 'belmonte-train' / v for v in TRAIN_VEHICLES)],
              needs=['world.belmonte_train', 'world.belmonte_train_furniture_lods'],
-             outputs=[out / 'belmonte-train' / 'assembly' / 'consist.json', out / 'belmonte-train' / 'assembly' / 'index.html'],
+             outputs=[out / 'belmonte-train' / 'assembly' / 'consist.json'],
              verify=lambda: belmonte_train_assembly_present(out),
-             about='Belmonte train assembly: consist.json, GLBs and the viewer page'),
+             about='Belmonte train assembly: consist.json and GLBs'),
         Step('world.belmonte_train_review', [Blender(WORLD / 'train' / 'render.py', threads=3)],
              inputs=[WORLD / 'train' / 'render.py', WORLD / 'train' / 'layout.py',
                      ASSETS / 'vehicles' / 'belmonte-train' / 'planning',
@@ -1469,6 +1501,15 @@ def unreal_steps(ctx):
              deferred_inputs=[native_source_inputs()],
              needs=['skate.runtime'], heavy=True,
              about='the Yorimichi C++ modules (editor target)'),
+        # The game binary is its own unit: the cook runs with -skipbuild and restores this result instead of
+        # rebuilding the C++ in every checkout. Keyed like the editor compile: the complete native source
+        # membership, the project descriptor, the installed engine build and the toolchain context.
+        Step('unreal.game_binary',
+             [UnrealGame('Yorimichi', products=GAME_BINARY_PRODUCTS), Call('verify game binary', game_binary.verify)],
+             inputs=[ctx.uproject, *engine_version(ctx), TOOLS / 'game_binary.py'],
+             deferred_inputs=[native_source_inputs()],
+             checkpoint_restore=game_binary.relocate, heavy=True,
+             about='the Yorimichi game binary, app bundle and redistributed files; the cook does not build'),
         *unreal_modules.steps(ctx, IMPORT_CODE + SAVED_TYPES + CONTACT_TYPES + ('Yorimichi',)),
         *foliage_build.unreal_steps(ctx, IMPORT_CODE, engine_version(ctx)),
         Step('unreal.island', [UnrealScript(SCRIPTS/'import_island_world.py', 'ISLAND ATOMIC IMPORT COMPLETE',
@@ -1528,8 +1569,8 @@ def unreal_steps(ctx):
                      *[SCRIPTS / n for n in ('import_hidamari.py', 'mountain_material.py', 'import_village.py', 'atmosphere.py', 'ground_grain.py', 'sea_look.py')]],
              needs=['unreal.world', 'world.hidamari.north', 'world.craterpark_restyle'], heavy=True,
              about='/Game/Japan: the volcano (HD_North*), M_NorthMountains and its rock, snow and crater floor textures'),
-        # The regions below layer onto the world (the south-west import replaces the terrain's and the sea's materials),
-        # so they rerun when it is reimported.
+        # The regions below place their own meshes with the world's materials, so they rerun when it is reimported.
+        # Island pieces and their shared materials belong to unreal.island.
         Step('unreal.southwest', [UnrealScript(SCRIPTS / 'import_southwest.py', 'SOUTHWEST IMPORT COMPLETE')],
              inputs=[SCRIPTS / 'import_southwest.py', SCRIPTS / 'sea_look.py', SCRIPTS / 'forest_ground.py',
                      SCRIPTS / 'ground_grain.py', SCRIPTS / 'material_assets.py',GAME/'southwest_atomic_products.py'],
@@ -1759,9 +1800,6 @@ def unreal_steps(ctx):
                       GAME / 'unreal/Content/SkateMotion/MotionData.uasset', out / 'skate-data/verify.json'],
              verify=lambda: skate_data_present(out),
              about='typed simulation runtime and motion records; exact serialized reload and offline gameplay replays'),
-        Step('skate.ride_stills', [Python(SKATE_RIDE / 'render_stills.py')],
-             inputs=[SKATE_RIDE / n for n in ('render_stills.py', 'simulation.py', 'rider_mesh.py')], needs=['unreal.skate_clips'],
-             outputs=[out / 'skate-ride' / 'clip-stills' / 'index.json'], about='stills of a few Ride clips sampled in Unreal'),
     ]
 
 
@@ -1773,7 +1811,7 @@ def staging_steps(ctx):
              inputs=[GAME / 'runtime_data.py', REGIONS / 'skatepark' / 'park.json', ASSETS / 'ui/fonts/atlas-serif.ttf',
                      runtime_data.RACING_COURSES, runtime_data.RACING_VALIDATOR, ASSETS / 'belmonte/source.json',
                      *runtime_data.courses.surface_inputs(),
-                     *build_inputs.local_imports(runtime_data.courses.SOURCE_READER),
+                     *local_imports(runtime_data.courses.SOURCE_READER),
                      *(CHARS / 'portraits' / f'{c.id}.png' for c in definition.movers() if c.playable)],
              needs=['world.ferry_service', 'world.gondola_service', 'world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark', 'world.craterpark', 'world.crater_cloud', 'world.bike',
                     *[f'characters.{key(c)}_{kind}' for c in definition.movers() for kind, wanted in
@@ -1961,7 +1999,7 @@ def steps(ctx):
                     step.inputs += [path for path in (fbx_helper.parent / '__init__.py', fbx_helper)
                                     if path not in step.inputs]
             if isinstance(command, (Python, Blender)) and WORLD in Path(command.script).parents:
-                step.inputs += [f for f in scanner.local_imports(command.script, (WORLD, REGIONS)) if f not in step.inputs]
+                step.inputs += [f for f in local_imports(command.script, (WORLD, REGIONS), scanner) if f not in step.inputs]
         if TREEHOUSE/'layout.py' in step.inputs and any(isinstance(command,(Python,Blender)) for command in step.commands):
             if 'treehouse.canopy_dimensions' not in step.reads:step.reads.append('treehouse.canopy_dimensions')
         # Native geometry reuse hashes its complete native-only source closure.
@@ -2031,4 +2069,34 @@ def steps(ctx):
                        needs=[s.name for s in result if s.name.startswith('unreal.') and not s.explicit] + ['data.stage', 'data.content'],
                        outputs=[content / 'Data/Network/session.json'],
                        about='matching multiplayer code, imported assets and staged gameplay data'))
+    declare_owned_content(result)
     return result + [cook_step(ctx, result), package_step(ctx, result)]
+
+
+# Unreal imports whose saved packages (LogSavePackage, across every recorded run) land only in Content folders that
+# no other step writes. Those folders and the step's explicit outputs are its complete outputs, so it publishes and
+# restores like a source action; a run that saves elsewhere stays local (build.py checks each run's log). Imports
+# sharing a folder (Japan/*, a character's root with its adventure import, SkatePark) are left unpublished.
+OWNED_CONTENT = {
+    'unreal.adventure': ('Adventure',), 'unreal.belmonte_track': ('BelmonteTrack',),
+    'unreal.belmonte_train': ('BelmonteTrain',), 'unreal.cairo_adventure': ('CairoAdventure',),
+    'unreal.cairo_bike': ('CairoBike',), 'unreal.cairo_horse': ('CairoHorse',), 'unreal.crater_cloud': ('CraterPark/Cloud',),
+    'unreal.craterpark': ('CraterPark/Materials', 'CraterPark/Meshes'), 'unreal.ferry': ('Ferry',),
+    'unreal.fox_hunter': ('FoxHunter',), 'unreal.fx': ('FX',), 'unreal.gondola': ('Gondola',),
+    'unreal.hippodrome': ('Hippodrome',), 'unreal.horses': ('Horses',), 'unreal.kart': ('Japan/Kart',),
+    'unreal.modori_bike': ('ModoriBike',), 'unreal.modori_horse': ('ModoriHorse',), 'unreal.nox_bike': ('NoxBike',),
+    'unreal.nox_horse': ('NoxHorse',), 'unreal.paul_bike': ('PaulBike',), 'unreal.paul_horse': ('PaulHorse',),
+    'unreal.skate_clips': ('SkateRide',), 'unreal.swordcamp': ('SwordCamp',),
+}
+
+
+def declare_owned_content(steps):
+    content = GAME / 'unreal' / 'Content'
+    for step in steps:
+        folders = OWNED_CONTENT.get(step.name)
+        if not folders or step.products or step.checkpoint_outputs or step.batch:
+            continue
+        owned = tuple(content / folder for folder in folders)
+        step.checkpoint_outputs = owned + tuple(
+            Path(output) for output in step.outputs
+            if not any(Path(output) == root or root in Path(output).parents for root in owned))

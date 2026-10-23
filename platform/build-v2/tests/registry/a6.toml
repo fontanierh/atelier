@@ -1,0 +1,5 @@
+schema_version = 1
+
+[[pending]]
+id = "t0.mid-build-edit"
+task = "A6"

@@ -5,6 +5,10 @@
 Samples the chassis' own vertical motion (car_ride) at the 60 Hz step and writes ride numbers plus stills to
 build/yorimichi/kart_film/kart_uneven.json. Use it before and after a suspension change, from the same revision
 family, so the vertical acceleration and wheel-contact numbers compare like for like.
+
+The steering test runs on the uneven grass at 18 kph, a second after the kart starts rolling, and turns left into
+the open field. A full right steer at the end of the straight (the old run) crossed the waterfront bank at about
+46 kph, which measured the bank descent rather than steering on the uneven patch.
 """
 import json
 import importlib.util
@@ -26,11 +30,13 @@ json.dump({'ok': False, 'status': 'running', 'errors': []}, open(REPORT, 'w'), i
 START = globals().get('KART_UNEVEN_START', unreal.Vector(-23600.0, 16000.0, 0.0))
 YAW = globals().get('KART_UNEVEN_YAW', 0.0)
 RUN = 6.0   # seconds of throttle from the standing start
+STEER_T = 2.4    # seconds: on the uneven grass, after the kart is rolling
+STEER_KPH = 18.0  # the turn belongs at a controlled speed, not at the end of the straight
 NUMBER = re.compile(r'(y|vy|pitch|roll)=(-?[0-9.]+)')
 
 st = {'t': 0.0, 'phase': 0, 'accels': [], 'speeds': [], 'lost': 0, 'samples': 0,
       'prev_vy': None, 'shot': 0, 'errors': [], 'steer_on': False, 'steer_done': False,
-      'steer_t0': 0.0, 'steer_yaw': 0.0, 'steer_last_yaw': 0.0, 'yaw_rates': []}
+      'steer_t0': 0.0, 'steer_yaw': 0.0, 'steer_last_yaw': 0.0, 'steer_speed': 0.0, 'yaw_rates': []}
 
 
 def ride():
@@ -75,7 +81,7 @@ def finish():
     report = {'rms_accel': round(rms, 3), 'peak_accel': round(peak, 3),
               'contact_lost_percent': round(lost, 2), 'mean_speed_kph': round(mean_speed, 1),
               'final_speed_kph': round(final_speed, 1), 'steer_rms_deg_s': round(steer_rms, 1),
-              'samples': len(accels),
+              'speed_at_steer_kph': round(st['steer_speed'], 1), 'samples': len(accels),
               'errors': st['errors']}
     report['ok'] = not st['errors']
     report['status'] = 'passed' if not st['errors'] else 'failed'
@@ -110,19 +116,20 @@ def run(dt):
             state = L.car_state()
             speed = float(re.search(r'kph=([0-9.]+)', state).group(1))
             st['speeds'].append(speed)
-            if speed > 4.0 and t > 4.0 and not st['steer_on']:
+            if speed >= STEER_KPH and t >= STEER_T and not st['steer_on']:
                 st['steer_on'] = True
                 st['steer_t0'] = t
+                st['steer_speed'] = speed
                 st['steer_yaw'] = yaw_of(state)
                 st['steer_last_yaw'] = st['steer_yaw']
-                L.input_key('D', 'press', 1.0)
+                L.input_key('A', 'press', 1.0)
             if st['steer_on'] and not st['steer_done']:
                 yaw = yaw_of(state)
                 delta = ((yaw - st['steer_last_yaw'] + 180.0) % 360.0) - 180.0
                 st['steer_last_yaw'] = yaw
                 st['yaw_rates'].append(abs(delta) / max(dt, 1e-4))
                 if t - st['steer_t0'] >= .35:
-                    L.input_key('D', 'release', 0.0)
+                    L.input_key('A', 'release', 0.0)
                     st['steer_done'] = True
             vy = values.get('vy', 0.0)
             if st['prev_vy'] is not None and speed > 4.0:

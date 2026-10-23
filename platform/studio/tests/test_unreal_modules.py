@@ -140,6 +140,17 @@ class ModuleDigestTests(unittest.TestCase):
         self.loads = {'libUnrealEditor-Tools.dylib': ['libUnrealEditor-Kit.dylib', 'libUnrealEditor-Engine.dylib']}
         links = patch.object(unreal_modules, 'links', lambda library: self.loads.get(Path(library).name, []))
         links.start(); self.addCleanup(links.stop)
+        owners = {'Tools': self.project / 'Source', 'Game': self.project / 'Source', 'Kit': self.project.parent / 'plugins/Kit/Source',
+                  'KitEditor': self.project.parent / 'plugins/Kit/Source', 'Base': self.project.parent / 'plugins/Base/Source',
+                  'Other': self.project.parent / 'plugins/Other/Source'}
+        self.sources = {name: root / name for name, root in owners.items()}
+        for name, folder in self.sources.items():
+            self.write(folder / f'{name}.Build.cs', f'// {name} rules')
+            self.write(folder / 'Private' / f'{name}.cpp', f'// {name} code')
+        self.write(self.project / 'Source' / 'GameEditor.Target.cs', '// editor target rules')
+        self.tools = {'engine': {'Engine/Build/Build.version': 'engine 1'}, 'toolchain': {'sdk': 'sdk 1'}}
+        identity = patch.object(unreal_modules, 'tool_identity', lambda *a: self.tools)
+        identity.start(); self.addCleanup(identity.stop)
 
     def library(self, name):
         return self.binaries / f'libUnrealEditor-{name}.dylib'
@@ -155,24 +166,53 @@ class ModuleDigestTests(unittest.TestCase):
         self.assertEqual(unreal_modules.closure(self.uproject, ['Game']), {'Game'})
 
     def test_code_covers_the_closure_its_descriptors_and_config(self):
-        self.assertEqual(sorted(self.code()), ['<Kit>/Config/DefaultKit.ini', '<config>/Config/DefaultGame.ini', 'Base.uplugin', 'Game.uproject',
-                                               'Kit.uplugin', 'libUnrealEditor-Base.dylib', 'libUnrealEditor-Kit.dylib',
-                                               'libUnrealEditor-KitEditor.dylib', 'libUnrealEditor-Tools.dylib'])
+        modules = [f'<{name}>/{file}' for name in ('Base', 'Kit', 'KitEditor', 'Tools')
+                   for file in (f'Private/{name}.cpp', f'{name}.Build.cs')]
+        self.assertEqual(sorted(self.code()), sorted(['<Kit>/Config/DefaultKit.ini', '<config>/Config/DefaultGame.ini', 'Base.uplugin',
+                                                      'Game.uproject', 'Kit.uplugin', '<targets>/GameEditor.Target.cs', '<tools>',
+                                                      *modules]))
 
-    def test_code_changes_with_what_was_compiled_and_config_only(self):
-        """A rebuilt library counts whatever changed it: sources, generated code, compiler options or build rules."""
+    def test_code_changes_with_compile_inputs_and_config_only(self):
+        """Sources, build and target rules, descriptors and config of the closure count; library bytes do not."""
         before = self.code()
-        self.write(self.library('Game'), 'Game 2')
-        self.write(self.library('Other'), 'Other 2')
+        for name in ('Tools', 'Kit', 'Game', 'Other'):
+            self.write(self.library(name), f'{name} relinked elsewhere')  # Absolute paths make each build differ.
+        self.write(self.sources['Game'] / 'Private/Game.cpp', '// unrelated edit')
+        self.write(self.sources['Other'] / 'Private/Other.cpp', '// unrelated edit')
         self.write(self.project.parent / 'plugins/Other/Config/DefaultOther.ini', 'Size=2\n')
         self.assertEqual(self.code(), before)
-        for path in (self.library('Tools'), self.library('Kit'), self.library('KitEditor'), self.library('Base'),
-                     self.config, self.plugin_config, self.uproject):
+        for path in (self.sources['Tools'] / 'Private/Tools.cpp', self.sources['Kit'] / 'Kit.Build.cs',
+                     self.sources['KitEditor'] / 'Private/KitEditor.cpp', self.sources['Base'] / 'Private/Base.cpp',
+                     self.project / 'Source/GameEditor.Target.cs', self.config, self.plugin_config, self.uproject):
             text = path.read_text()
             self.write(path, text + ' ')
             self.assertNotEqual(self.code(), before, path.name)
             self.write(path, text)
         self.assertEqual(self.code(), before)
+
+    def test_same_sources_in_another_checkout_path_give_the_same_digest(self):
+        import shutil
+        before = self.code()
+        other = Path(self.temp.name) / 'a much longer checkout path' / 'Epic Games'
+        shutil.copytree(self.project.parent, other)
+        for library in (other / 'game/Binaries/Mac').glob('*.dylib'):
+            library.write_text(library.read_text() + ' built at ' + str(other))
+        self.assertEqual(unreal_modules.code(other / 'game/Game.uproject', 'Tools'), before)
+
+    def test_engine_or_toolchain_changes_change_the_digest(self):
+        before = self.code()
+        self.tools = {**self.tools, 'engine': {'Engine/Build/Build.version': 'engine 2'}}
+        self.assertNotEqual(self.code(), before)
+        self.tools = {**self.tools, 'engine': {'Engine/Build/Build.version': 'engine 1'}, 'toolchain': {'sdk': 'sdk 2'}}
+        self.assertNotEqual(self.code(), before)
+
+    def test_a_prebuilt_module_without_sources_keys_on_its_library(self):
+        import shutil
+        shutil.rmtree(self.sources['Base'])
+        before = self.code()
+        self.assertIn('libUnrealEditor-Base.dylib', before)
+        self.write(self.library('Base'), 'Base 2')
+        self.assertNotEqual(self.code(), before)
 
     def test_record_writes_a_stable_digest(self):
         output = Path(self.temp.name) / 'digest.json'
@@ -206,7 +246,7 @@ class ModuleDigestTests(unittest.TestCase):
         self.assertFalse(path.exists())
         with self.assertRaises(RuntimeError), unreal_modules.descriptor(self.uproject, ['Tools']):
             raise RuntimeError('the editor failed')
-        self.assertEqual(sorted(p.name for p in self.project.iterdir()), ['Binaries', 'Config', 'Game.uproject'])
+        self.assertEqual(sorted(p.name for p in self.project.iterdir()), ['Binaries', 'Config', 'Game.uproject', 'Source'])
 
     def test_a_guarded_run_removes_its_descriptor_whatever_the_outcome(self):
         """Success, a failed editor and a refused render slot all end with the project folder as it was."""
@@ -232,7 +272,7 @@ class ModuleDigestTests(unittest.TestCase):
                         builder.run_command(ctx, step, command, io.StringIO())
                 else:
                     builder.run_command(ctx, step, command, io.StringIO())
-            self.assertEqual(sorted(p.name for p in self.project.iterdir()), ['Binaries', 'Config', 'Game.uproject'])
+            self.assertEqual(sorted(p.name for p in self.project.iterdir()), ['Binaries', 'Config', 'Game.uproject', 'Source'])
         self.assertEqual(seen, [True, True, True])
 
 

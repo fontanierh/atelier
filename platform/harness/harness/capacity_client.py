@@ -33,16 +33,17 @@ class CapacityTransportError(CapacityError):
     """A transient transport failure; whether the broker acted is unknown."""
 
 
-def wait_for_offer(admission, *, seconds=1800.):
+def wait_for_offer(admission, *, seconds=None):
     """@cc [owner:fontanierh,label:safety] uncharged-capacity-wait
     Only a positive queued response MAY retry admission, retaining this controller's request and nonce.
     Waiting MUST hold no capacity, launch gate, child or legacy lock. The queue loop MUST NOT catch
     transport, policy, fencing or other failures; session RPC reconciliation is separate and bounded.
-    The wait MUST have a bounded deadline
-    and progress, and cancellation MUST unwind through the guard's normal queued-session close.
+    A queued job MUST stay queued until admitted, printing progress: lack of capacity is never a
+    failure. A deadline applies only when the caller opts into one (seconds), and cancellation MUST
+    unwind through the guard's normal queued-session close.
     """
-    if type(seconds) not in (int, float) or not math.isfinite(seconds) or not 0 < seconds <= 1800:
-        raise ValueError('Capacity queue wait must be positive and at most 1800 seconds')
+    if seconds is not None and (type(seconds) not in (int, float) or not math.isfinite(seconds) or not seconds > 0):
+        raise ValueError('Capacity queue wait must be None (until admitted) or a positive number of seconds')
     started = time.monotonic()
     spoken = None
     while True:
@@ -50,14 +51,15 @@ def wait_for_offer(admission, *, seconds=1800.):
             return admission.offer()
         except CapacityQueued as queued:
             now = time.monotonic()
-            if now - started >= seconds:
+            if seconds is not None and now - started >= seconds:
                 raise CapacityError('Capacity queue wait deadline reached; no resources held. '
                                     'Rerunning the same job retains its ready age.') from None
             if spoken is None or now - spoken >= 25:
-                print(f'Waiting for capacity: {now-started:.0f}/{seconds:.0f}s; '
+                limit = '' if seconds is None else f'/{seconds:.0f}'
+                print(f'Waiting for capacity: {now-started:.0f}{limit}s; '
                       f'broker queue active, no resources or child held; {queued}', flush=True)
                 spoken = now
-            time.sleep(min(1., seconds - (now - started)))
+            time.sleep(1. if seconds is None else min(1., seconds - (now - started)))
 
 
 def _endpoint(path):

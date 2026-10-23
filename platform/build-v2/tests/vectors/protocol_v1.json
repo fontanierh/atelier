@@ -1,0 +1,1360 @@
+{
+ "about": "Protocol v1 frames shared by tests/worker_session.rs and platform/studio/tests/test_build_v2_protocol.py. A vector concatenates its chunks (hex bytes or UTF-8 text). Reading frames of the given kind yields messages in order (opaque_messages more are only checked canonically, being too deep to embed); then the next read is a clean end (error null) or fails with the named error (invalid: Rust InvalidData, truncated: UnexpectedEof). Canonical vectors are also the exact bytes that both encoders write for those messages. reencoded, when present, is the exact text both encoders write for a non-canonical input. Regenerate with generate_protocol_v1.py.",
+ "vectors": [
+  {
+   "name": "empty_stream_is_clean_eof",
+   "kind": "request",
+   "chunks": [],
+   "messages": [],
+   "error": null,
+   "canonical": true
+  },
+  {
+   "name": "shutdown",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "0000002b"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"shutdown\"}}"
+    }
+   ],
+   "messages": [
+    {
+     "type": "shutdown"
+    }
+   ],
+   "error": null,
+   "canonical": true
+  },
+  {
+   "name": "cancel_then_shutdown",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "0000003a"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"cancel\",\"job_id\":\"job-1\"}}"
+    },
+    {
+     "hex": "0000002b"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"shutdown\"}}"
+    }
+   ],
+   "messages": [
+    {
+     "type": "cancel",
+     "job_id": "job-1"
+    },
+    {
+     "type": "shutdown"
+    }
+   ],
+   "error": null,
+   "canonical": true
+  },
+  {
+   "name": "run_with_unicode_escapes_extreme_integers_and_both_identities",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "000002cc"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"run\",\"job\":{\"job_id\":\"job-1\",\"unit\":\"mesh/arch\",\"op\":{\"kind\":\"blender_export\",\"version\":\"1\"},\"job_dir\":\"/jobs/job-1\",\"script\":\"code/export.py\",\"code\":[\"code/export.py\",\"code/lib/shape.py\"],\"inputs\":[{\"name\":\"terrain\",\"path\":\"inputs/terrain/heights.json\",\"identity\":{\"state\":\"digest\",\"digest\":\"sha256:ab\"}},{\"name\":\"overrides\",\"path\":\"inputs/overrides.json\",\"identity\":{\"state\":\"absent\"}}],\"params\":{\"angle\":0.5,\"big\":18446744073709551615,\"flags\":[true,false,null],\"label\":\"café ☕ 𝄞 \\\"q\\\" \\\\ \\n\\t\\u0001\",\"min\":-9223372036854775808,\"nested\":{\"a\":1,\"b\":[]}},\"outputs\":[{\"path\":\"arch.glb\",\"install_path\":\"out/arch.glb\",\"required\":true},{\"path\":\"arch.log.json\",\"required\":false}]}}}"
+    }
+   ],
+   "messages": [
+    {
+     "type": "run",
+     "job": {
+      "job_id": "job-1",
+      "unit": "mesh/arch",
+      "op": {
+       "kind": "blender_export",
+       "version": "1"
+      },
+      "job_dir": "/jobs/job-1",
+      "script": "code/export.py",
+      "code": [
+       "code/export.py",
+       "code/lib/shape.py"
+      ],
+      "inputs": [
+       {
+        "name": "terrain",
+        "path": "inputs/terrain/heights.json",
+        "identity": {
+         "state": "digest",
+         "digest": "sha256:ab"
+        }
+       },
+       {
+        "name": "overrides",
+        "path": "inputs/overrides.json",
+        "identity": {
+         "state": "absent"
+        }
+       }
+      ],
+      "params": {
+       "angle": 0.5,
+       "big": 18446744073709551615,
+       "flags": [
+        true,
+        false,
+        null
+       ],
+       "label": "café ☕ 𝄞 \"q\" \\ \n\t\u0001",
+       "min": -9223372036854775808,
+       "nested": {
+        "a": 1,
+        "b": []
+       }
+      },
+      "outputs": [
+       {
+        "path": "arch.glb",
+        "install_path": "out/arch.glb",
+        "required": true
+       },
+       {
+        "path": "arch.log.json",
+        "required": false
+       }
+      ]
+     }
+    }
+   ],
+   "error": null,
+   "canonical": true
+  },
+  {
+   "name": "run_required_defaults_true_and_null_install_path_is_absent",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "000000e4"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"run\",\"job\":{\"job_id\":\"j\",\"unit\":\"u\",\"op\":{\"kind\":\"k\",\"version\":\"1\"},\"job_dir\":\"/jobs/j\",\"script\":\"s.py\",\"code\":[\"s.py\"],\"inputs\":[],\"params\":{},\"outputs\":[{\"path\":\"o.json\",\"install_path\":null}]}}}"
+    }
+   ],
+   "messages": [
+    {
+     "type": "run",
+     "job": {
+      "job_id": "j",
+      "unit": "u",
+      "op": {
+       "kind": "k",
+       "version": "1"
+      },
+      "job_dir": "/jobs/j",
+      "script": "s.py",
+      "code": [
+       "s.py"
+      ],
+      "inputs": [],
+      "params": {},
+      "outputs": [
+       {
+        "path": "o.json",
+        "required": true
+       }
+      ]
+     }
+    }
+   ],
+   "error": null,
+   "canonical": false
+  },
+  {
+   "name": "fields_in_any_order_with_whitespace",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "00000040"
+    },
+    {
+     "text": " {\"message\" : {\"job_id\":\"job-1\", \"type\":\"cancel\"},\n\"version\":1} "
+    }
+   ],
+   "messages": [
+    {
+     "type": "cancel",
+     "job_id": "job-1"
+    }
+   ],
+   "error": null,
+   "canonical": false
+  },
+  {
+   "name": "floats_use_rust_shortest_text",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "0000017e"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"run\",\"job\":{\"job_id\":\"j\",\"unit\":\"u\",\"op\":{\"kind\":\"k\",\"version\":\"1\"},\"job_dir\":\"/jobs/j\",\"script\":\"s.py\",\"code\":[\"s.py\"],\"inputs\":[],\"params\":{\"f\":[1e-7,0.00001,0.00001234,1e-6,1e+16,1000000000000000.0,1.2345678901234568e+17,1.5e+300,5e-324,1.7976931348623157e+308,0.1,2.5,100.0,123.456,-2.5e-10,-0.0]},\"outputs\":[{\"path\":\"o.json\",\"required\":true}]}}}"
+    }
+   ],
+   "messages": [
+    {
+     "type": "run",
+     "job": {
+      "job_id": "j",
+      "unit": "u",
+      "op": {
+       "kind": "k",
+       "version": "1"
+      },
+      "job_dir": "/jobs/j",
+      "script": "s.py",
+      "code": [
+       "s.py"
+      ],
+      "inputs": [],
+      "params": {
+       "f": [
+        1e-07,
+        1e-05,
+        1.234e-05,
+        1e-06,
+        1e+16,
+        1000000000000000.0,
+        1.2345678901234568e+17,
+        1.5e+300,
+        5e-324,
+        1.7976931348623157e+308,
+        0.1,
+        2.5,
+        100.0,
+        123.456,
+        -2.5e-10,
+        -0.0
+       ]
+      },
+      "outputs": [
+       {
+        "path": "o.json",
+        "required": true
+       }
+      ]
+     }
+    }
+   ],
+   "error": null,
+   "canonical": true
+  },
+  {
+   "name": "negative_zero_integer_token_is_float",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "000000e6"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"run\",\"job\":{\"job_id\":\"j\",\"unit\":\"u\",\"op\":{\"kind\":\"k\",\"version\":\"1\"},\"job_dir\":\"/jobs/j\",\"script\":\"s.py\",\"code\":[\"s.py\"],\"inputs\":[],\"params\":{\"x\":-0},\"outputs\":[{\"path\":\"o.json\",\"required\":true}]}}}"
+    }
+   ],
+   "messages": [
+    {
+     "type": "run",
+     "job": {
+      "job_id": "j",
+      "unit": "u",
+      "op": {
+       "kind": "k",
+       "version": "1"
+      },
+      "job_dir": "/jobs/j",
+      "script": "s.py",
+      "code": [
+       "s.py"
+      ],
+      "inputs": [],
+      "params": {
+       "x": -0.0
+      },
+      "outputs": [
+       {
+        "path": "o.json",
+        "required": true
+       }
+      ]
+     }
+    }
+   ],
+   "error": null,
+   "canonical": false,
+   "reencoded": [
+    {
+     "hex": "000000e8"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"run\",\"job\":{\"job_id\":\"j\",\"unit\":\"u\",\"op\":{\"kind\":\"k\",\"version\":\"1\"},\"job_dir\":\"/jobs/j\",\"script\":\"s.py\",\"code\":[\"s.py\"],\"inputs\":[],\"params\":{\"x\":-0.0},\"outputs\":[{\"path\":\"o.json\",\"required\":true}]}}}"
+    }
+   ]
+  },
+  {
+   "name": "nesting_depth_127_is_accepted",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "000001da"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"run\",\"job\":{\"job_id\":\"j\",\"unit\":\"u\",\"op\":{\"kind\":\"k\",\"version\":\"1\"},\"job_dir\":\"/jobs/j\",\"script\":\"s.py\",\"code\":[\"s.py\"],\"inputs\":[],\"params\":{\"d\":[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]},\"outputs\":[{\"path\":\"o.json\",\"required\":true}]}}}"
+    }
+   ],
+   "messages": [],
+   "error": null,
+   "canonical": true,
+   "opaque_messages": 1
+  },
+  {
+   "name": "unsupported_version",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "0000002b"
+    },
+    {
+     "text": "{\"version\":2,\"message\":{\"type\":\"shutdown\"}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "version_as_string",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "0000002d"
+    },
+    {
+     "text": "{\"version\":\"1\",\"message\":{\"type\":\"shutdown\"}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "version_as_boolean",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "0000002e"
+    },
+    {
+     "text": "{\"version\":true,\"message\":{\"type\":\"shutdown\"}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "version_as_float",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "0000002d"
+    },
+    {
+     "text": "{\"version\":1.0,\"message\":{\"type\":\"shutdown\"}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "missing_version",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "0000001f"
+    },
+    {
+     "text": "{\"message\":{\"type\":\"shutdown\"}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "duplicate_version",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "00000037"
+    },
+    {
+     "text": "{\"version\":1,\"version\":1,\"message\":{\"type\":\"shutdown\"}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "unknown_envelope_field",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "00000034"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"shutdown\"},\"typo\":1}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "unknown_message_field",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "00000034"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"shutdown\",\"typo\":1}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "unknown_type",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "00000028"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"pause\"}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "missing_type",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "0000002a"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"job_id\":\"job-1\"}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "cancel_missing_job_id",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "00000029"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"cancel\"}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "cancel_job_id_not_string",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "00000034"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"cancel\",\"job_id\":7}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "duplicate_job_id",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "00000043"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"cancel\",\"job_id\":\"a\",\"job_id\":\"b\"}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "message_null",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "0000001c"
+    },
+    {
+     "text": "{\"version\":1,\"message\":null}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "message_array",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "0000001a"
+    },
+    {
+     "text": "{\"version\":1,\"message\":[]}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "not_json",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "00000008"
+    },
+    {
+     "text": "not json"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "trailing_garbage",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "0000002c"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"shutdown\"}}x"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "byte_order_mark",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "0000002e"
+    },
+    {
+     "text": "﻿{\"version\":1,\"message\":{\"type\":\"shutdown\"}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "lone_surrogate",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "0000003b"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"cancel\",\"job_id\":\"\\ud800\"}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "job_unknown_field",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "000000eb"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"run\",\"job\":{\"job_id\":\"j\",\"repo\":\"x\",\"unit\":\"u\",\"op\":{\"kind\":\"k\",\"version\":\"1\"},\"job_dir\":\"/jobs/j\",\"script\":\"s.py\",\"code\":[\"s.py\"],\"inputs\":[],\"params\":{},\"outputs\":[{\"path\":\"o.json\",\"required\":true}]}}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "job_missing_params",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "000000d4"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"run\",\"job\":{\"job_id\":\"j\",\"unit\":\"u\",\"op\":{\"kind\":\"k\",\"version\":\"1\"},\"job_dir\":\"/jobs/j\",\"script\":\"s.py\",\"code\":[\"s.py\"],\"inputs\":[],\"outputs\":[{\"path\":\"o.json\",\"required\":true}]}}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "identity_unknown_field",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "00000122"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"run\",\"job\":{\"job_id\":\"j\",\"unit\":\"u\",\"op\":{\"kind\":\"k\",\"version\":\"1\"},\"job_dir\":\"/jobs/j\",\"script\":\"s.py\",\"code\":[\"s.py\"],\"inputs\":[{\"name\":\"a\",\"path\":\"a\",\"identity\":{\"state\":\"absent\",\"digest\":\"x\"}}],\"params\":{},\"outputs\":[{\"path\":\"o.json\",\"required\":true}]}}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "identity_unknown_state",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "00000114"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"run\",\"job\":{\"job_id\":\"j\",\"unit\":\"u\",\"op\":{\"kind\":\"k\",\"version\":\"1\"},\"job_dir\":\"/jobs/j\",\"script\":\"s.py\",\"code\":[\"s.py\"],\"inputs\":[{\"name\":\"a\",\"path\":\"a\",\"identity\":{\"state\":\"stale\"}}],\"params\":{},\"outputs\":[{\"path\":\"o.json\",\"required\":true}]}}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "output_required_as_integer",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "000000dd"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"run\",\"job\":{\"job_id\":\"j\",\"unit\":\"u\",\"op\":{\"kind\":\"k\",\"version\":\"1\"},\"job_dir\":\"/jobs/j\",\"script\":\"s.py\",\"code\":[\"s.py\"],\"inputs\":[],\"params\":{},\"outputs\":[{\"path\":\"o.json\",\"required\":1}]}}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "output_required_null",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "000000e0"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"run\",\"job\":{\"job_id\":\"j\",\"unit\":\"u\",\"op\":{\"kind\":\"k\",\"version\":\"1\"},\"job_dir\":\"/jobs/j\",\"script\":\"s.py\",\"code\":[\"s.py\"],\"inputs\":[],\"params\":{},\"outputs\":[{\"path\":\"o.json\",\"required\":null}]}}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "output_unknown_field",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "000000dd"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"run\",\"job\":{\"job_id\":\"j\",\"unit\":\"u\",\"op\":{\"kind\":\"k\",\"version\":\"1\"},\"job_dir\":\"/jobs/j\",\"script\":\"s.py\",\"code\":[\"s.py\"],\"inputs\":[],\"params\":{},\"outputs\":[{\"path\":\"o.json\",\"source\":\"x\"}]}}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "nan_parameter",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "000000e7"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"run\",\"job\":{\"job_id\":\"j\",\"unit\":\"u\",\"op\":{\"kind\":\"k\",\"version\":\"1\"},\"job_dir\":\"/jobs/j\",\"script\":\"s.py\",\"code\":[\"s.py\"],\"inputs\":[],\"params\":{\"x\":NaN},\"outputs\":[{\"path\":\"o.json\",\"required\":true}]}}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "infinite_parameter",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "000000e9"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"run\",\"job\":{\"job_id\":\"j\",\"unit\":\"u\",\"op\":{\"kind\":\"k\",\"version\":\"1\"},\"job_dir\":\"/jobs/j\",\"script\":\"s.py\",\"code\":[\"s.py\"],\"inputs\":[],\"params\":{\"x\":1e400},\"outputs\":[{\"path\":\"o.json\",\"required\":true}]}}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "nesting_depth_128",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "000001dc"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"run\",\"job\":{\"job_id\":\"j\",\"unit\":\"u\",\"op\":{\"kind\":\"k\",\"version\":\"1\"},\"job_dir\":\"/jobs/j\",\"script\":\"s.py\",\"code\":[\"s.py\"],\"inputs\":[],\"params\":{\"d\":[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]},\"outputs\":[{\"path\":\"o.json\",\"required\":true}]}}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "positional_envelope",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "00000017"
+    },
+    {
+     "text": "[1,{\"type\":\"shutdown\"}]"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "positional_message",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "0000002a"
+    },
+    {
+     "text": "{\"version\":1,\"message\":[\"cancel\",\"job-1\"]}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "positional_job",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "00000074"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"run\",\"job\":[\"j\",\"u\",{\"kind\":\"k\",\"version\":\"1\"},\"/jobs/j\",\"s.py\",[\"s.py\"],[],{},[]]}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "positional_op",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "000000cf"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"run\",\"job\":{\"job_id\":\"j\",\"unit\":\"u\",\"op\":[\"k\",\"1\"],\"job_dir\":\"/jobs/j\",\"script\":\"s.py\",\"code\":[\"s.py\"],\"inputs\":[],\"params\":{},\"outputs\":[{\"path\":\"o.json\",\"required\":true}]}}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "positional_input",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "000000fc"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"run\",\"job\":{\"job_id\":\"j\",\"unit\":\"u\",\"op\":{\"kind\":\"k\",\"version\":\"1\"},\"job_dir\":\"/jobs/j\",\"script\":\"s.py\",\"code\":[\"s.py\"],\"inputs\":[[\"a\",\"a\",{\"state\":\"absent\"}]],\"params\":{},\"outputs\":[{\"path\":\"o.json\",\"required\":true}]}}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "positional_identity",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "0000010d"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"run\",\"job\":{\"job_id\":\"j\",\"unit\":\"u\",\"op\":{\"kind\":\"k\",\"version\":\"1\"},\"job_dir\":\"/jobs/j\",\"script\":\"s.py\",\"code\":[\"s.py\"],\"inputs\":[{\"name\":\"a\",\"path\":\"a\",\"identity\":[\"absent\"]}],\"params\":{},\"outputs\":[{\"path\":\"o.json\",\"required\":true}]}}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "positional_output",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "000000d3"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"run\",\"job\":{\"job_id\":\"j\",\"unit\":\"u\",\"op\":{\"kind\":\"k\",\"version\":\"1\"},\"job_dir\":\"/jobs/j\",\"script\":\"s.py\",\"code\":[\"s.py\"],\"inputs\":[],\"params\":{},\"outputs\":[[\"o.json\",null,true]]}}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "duplicate_param_key",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "000000eb"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"run\",\"job\":{\"job_id\":\"j\",\"unit\":\"u\",\"op\":{\"kind\":\"k\",\"version\":\"1\"},\"job_dir\":\"/jobs/j\",\"script\":\"s.py\",\"code\":[\"s.py\"],\"inputs\":[],\"params\":{\"a\":1,\"a\":2},\"outputs\":[{\"path\":\"o.json\",\"required\":true}]}}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "duplicate_identity_state",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "00000126"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"run\",\"job\":{\"job_id\":\"j\",\"unit\":\"u\",\"op\":{\"kind\":\"k\",\"version\":\"1\"},\"job_dir\":\"/jobs/j\",\"script\":\"s.py\",\"code\":[\"s.py\"],\"inputs\":[{\"name\":\"a\",\"path\":\"a\",\"identity\":{\"state\":\"absent\",\"state\":\"absent\"}}],\"params\":{},\"outputs\":[{\"path\":\"o.json\",\"required\":true}]}}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "positional_failure",
+   "kind": "response",
+   "chunks": [
+    {
+     "hex": "0000004c"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"failed\",\"job_id\":\"j\",\"failure\":[\"job\",\"m\"]}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "positional_completed_outputs",
+   "kind": "response",
+   "chunks": [
+    {
+     "hex": "0000004b"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"completed\",\"job_id\":\"j\",\"outputs\":[[\"a\"]]}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "positional_hello",
+   "kind": "response",
+   "chunks": [
+    {
+     "hex": "00000035"
+    },
+    {
+     "text": "[1,{\"type\":\"hello\",\"worker_version\":\"fake-worker-1\"}]"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "duplicate_started_job_id",
+   "kind": "response",
+   "chunks": [
+    {
+     "hex": "00000048"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"started\",\"job_id\":\"other\",\"job_id\":\"j\"}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "arrays_inside_params_are_data",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "000000fd"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"run\",\"job\":{\"job_id\":\"j\",\"unit\":\"u\",\"op\":{\"kind\":\"k\",\"version\":\"1\"},\"job_dir\":\"/jobs/j\",\"script\":\"s.py\",\"code\":[\"s.py\"],\"inputs\":[],\"params\":{\"m\":[[\"k\",\"1\"],[{\"a\":[]}],[]]},\"outputs\":[{\"path\":\"o.json\",\"required\":true}]}}}"
+    }
+   ],
+   "messages": [
+    {
+     "type": "run",
+     "job": {
+      "job_id": "j",
+      "unit": "u",
+      "op": {
+       "kind": "k",
+       "version": "1"
+      },
+      "job_dir": "/jobs/j",
+      "script": "s.py",
+      "code": [
+       "s.py"
+      ],
+      "inputs": [],
+      "params": {
+       "m": [
+        [
+         "k",
+         "1"
+        ],
+        [
+         {
+          "a": []
+         }
+        ],
+        []
+       ]
+      },
+      "outputs": [
+       {
+        "path": "o.json",
+        "required": true
+       }
+      ]
+     }
+    }
+   ],
+   "error": null,
+   "canonical": true
+  },
+  {
+   "name": "invalid_utf8",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "00000036"
+    },
+    {
+     "hex": "7b2276657273696f6e223a312c226d657373616765223a7b2274797065223a2263616e63656c222c226a6f625f6964223a22ff227d7d"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "zero_length",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "00000000"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "length_one_over_maximum",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "00800001"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "length_u32_max",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "ffffffff"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "truncated_header",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "0000"
+    }
+   ],
+   "messages": [],
+   "error": "truncated",
+   "canonical": false
+  },
+  {
+   "name": "header_without_body",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "0000002b"
+    }
+   ],
+   "messages": [],
+   "error": "truncated",
+   "canonical": false
+  },
+  {
+   "name": "truncated_body",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "0000002b"
+    },
+    {
+     "hex": "7b2276657273696f6e223a312c226d657373616765223a7b2274797065223a2273687574646f776e227d"
+    }
+   ],
+   "messages": [],
+   "error": "truncated",
+   "canonical": false
+  },
+  {
+   "name": "frame_then_partial_header",
+   "kind": "request",
+   "chunks": [
+    {
+     "hex": "0000002b"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"shutdown\"}}"
+    },
+    {
+     "hex": "00"
+    }
+   ],
+   "messages": [
+    {
+     "type": "shutdown"
+    }
+   ],
+   "error": "truncated",
+   "canonical": false
+  },
+  {
+   "name": "every_response_and_failure_kind",
+   "kind": "response",
+   "chunks": [
+    {
+     "hex": "00000045"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"hello\",\"worker_version\":\"fixture-1\"}}"
+    },
+    {
+     "hex": "0000003b"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"started\",\"job_id\":\"job-1\"}}"
+    },
+    {
+     "hex": "00000071"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"completed\",\"job_id\":\"job-1\",\"outputs\":{\"files\":[\"arch.glb\",\"ünï/côde.json\"]}}}"
+    },
+    {
+     "hex": "00000061"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"failed\",\"job_id\":\"job-1\",\"failure\":{\"kind\":\"job\",\"message\":\"m\"}}}"
+    },
+    {
+     "hex": "00000068"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"failed\",\"job_id\":\"job-1\",\"failure\":{\"kind\":\"dependency\",\"message\":\"m\"}}}"
+    },
+    {
+     "hex": "00000066"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"failed\",\"job_id\":\"job-1\",\"failure\":{\"kind\":\"protocol\",\"message\":\"m\"}}}"
+    },
+    {
+     "hex": "00000063"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"failed\",\"job_id\":\"job-1\",\"failure\":{\"kind\":\"crash\",\"message\":\"m\"}}}"
+    },
+    {
+     "hex": "00000067"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"failed\",\"job_id\":\"job-1\",\"failure\":{\"kind\":\"cancelled\",\"message\":\"m\"}}}"
+    },
+    {
+     "hex": "00000065"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"failed\",\"job_id\":\"job-1\",\"failure\":{\"kind\":\"timeout\",\"message\":\"m\"}}}"
+    },
+    {
+     "hex": "00000068"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"failed\",\"job_id\":\"job-1\",\"failure\":{\"kind\":\"guard_stop\",\"message\":\"m\"}}}"
+    },
+    {
+     "hex": "0000002a"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"stopped\"}}"
+    }
+   ],
+   "messages": [
+    {
+     "type": "hello",
+     "worker_version": "fixture-1"
+    },
+    {
+     "type": "started",
+     "job_id": "job-1"
+    },
+    {
+     "type": "completed",
+     "job_id": "job-1",
+     "outputs": {
+      "files": [
+       "arch.glb",
+       "ünï/côde.json"
+      ]
+     }
+    },
+    {
+     "type": "failed",
+     "job_id": "job-1",
+     "failure": {
+      "kind": "job",
+      "message": "m"
+     }
+    },
+    {
+     "type": "failed",
+     "job_id": "job-1",
+     "failure": {
+      "kind": "dependency",
+      "message": "m"
+     }
+    },
+    {
+     "type": "failed",
+     "job_id": "job-1",
+     "failure": {
+      "kind": "protocol",
+      "message": "m"
+     }
+    },
+    {
+     "type": "failed",
+     "job_id": "job-1",
+     "failure": {
+      "kind": "crash",
+      "message": "m"
+     }
+    },
+    {
+     "type": "failed",
+     "job_id": "job-1",
+     "failure": {
+      "kind": "cancelled",
+      "message": "m"
+     }
+    },
+    {
+     "type": "failed",
+     "job_id": "job-1",
+     "failure": {
+      "kind": "timeout",
+      "message": "m"
+     }
+    },
+    {
+     "type": "failed",
+     "job_id": "job-1",
+     "failure": {
+      "kind": "guard_stop",
+      "message": "m"
+     }
+    },
+    {
+     "type": "stopped"
+    }
+   ],
+   "error": null,
+   "canonical": true
+  },
+  {
+   "name": "unknown_failure_kind",
+   "kind": "response",
+   "chunks": [
+    {
+     "hex": "0000005e"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"failed\",\"job_id\":\"j\",\"failure\":{\"kind\":\"oops\",\"message\":\"m\"}}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "stopped_unknown_field",
+   "kind": "response",
+   "chunks": [
+    {
+     "hex": "00000033"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"stopped\",\"typo\":1}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "completed_missing_outputs",
+   "kind": "response",
+   "chunks": [
+    {
+     "hex": "00000039"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"completed\",\"job_id\":\"j\"}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "completed_outputs_unknown_field",
+   "kind": "response",
+   "chunks": [
+    {
+     "hex": "0000005f"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"completed\",\"job_id\":\"j\",\"outputs\":{\"files\":[],\"bytes\":\"AA==\"}}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "hello_null_version",
+   "kind": "response",
+   "chunks": [
+    {
+     "hex": "0000003e"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"hello\",\"worker_version\":null}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  },
+  {
+   "name": "request_is_not_a_response",
+   "kind": "response",
+   "chunks": [
+    {
+     "hex": "0000002b"
+    },
+    {
+     "text": "{\"version\":1,\"message\":{\"type\":\"shutdown\"}}"
+    }
+   ],
+   "messages": [],
+   "error": "invalid",
+   "canonical": false
+  }
+ ]
+}

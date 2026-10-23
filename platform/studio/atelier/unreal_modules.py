@@ -1,13 +1,15 @@
 """Digests of a game's compiled Unreal modules, for steps whose results depend on game code: an import that calls a
 module's functions, or saves its classes in assets.
 
-A module's digest covers what an editor running it loads (closure): its library and every game or plugin library that
+A module's digest covers what an editor running it loads (closure): its module and every game or plugin module that
 brings in (the libraries it links, by their load commands, and the repository plugins those belong to and depend on,
-whole), by content, with the descriptors that decide what loads and the config files of the project and those plugins,
-which set class defaults too. A library holds all the module's compiled code, whatever its sources, generated code or compiler
-options; engine libraries are left out, as the engine is installed at a fixed version. Unreal relinks only the
-libraries whose code changed, so an edit in a module outside the closure leaves the digest unchanged: a game keeps
-what its imports save (data assets, placed actors) in small modules apart from its gameplay.
+whole). Each is keyed by its compile inputs, never by library bytes: the module's source folder (code and Build.cs),
+the project's target rules, the descriptors that decide what loads, the config files of the project and those plugins
+(which set class defaults too), and the installed engine and Xcode toolchain/SDK identity. Library bytes embed the
+checkout's absolute source paths, so the same sources compiled in another worktree would otherwise never match. Each
+library must still exist (validation, not identity); a prebuilt module without sources keys on its library bytes.
+Unreal relinks only the libraries whose code changed, so an edit in a module outside the closure leaves the digest
+unchanged: a game keeps what its imports save (data assets, placed actors) in small modules apart from its gameplay.
 
 `steps()` makes a cutoff step per module: it reruns after every compile, and its dependents rerun only when the digest
 changes. A script that uses game modules lists them in `UnrealScript(modules=...)` and needs their steps. It runs in
@@ -15,6 +17,7 @@ an editor started on `descriptor()`, which loads only their closure and exists o
 unreal_script_guard fails the step if any other game or plugin library is loaded when the script ends.
 """
 import hashlib, json, os, subprocess
+from types import SimpleNamespace
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -46,6 +49,38 @@ def linked(project, module):
 
 def _file_hash(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def sources(uproject):
+    """{module: its source folder}, the folders holding <Module>.Build.cs under the project's and plugins' Source."""
+    project = Path(uproject).parent
+    roots = [project / 'Source', *(path.parent / 'Source' for path, _, _ in plugins(uproject).values())]
+    found = {}
+    for root in roots:
+        for rules in sorted(root.rglob('*.Build.cs')) if root.is_dir() else []:
+            found.setdefault(rules.name[:-len('.Build.cs')], rules.parent)
+    return found
+
+
+def _tree(folder):
+    """{relative path: sha256} of a source folder's files, independent of where the checkout lives."""
+    return {path.relative_to(folder).as_posix(): _file_hash(path) for path in sorted(folder.rglob('*'))
+            if path.is_file() and not any(part.startswith('.') for part in path.relative_to(folder).parts)}
+
+
+_TOOLS = {}
+
+
+def tool_identity(engine_root=None):
+    """The installed engine build and the selected Xcode toolchain/SDK, which decide what a source compiles to."""
+    from . import engine
+    from .native_protocol import context
+    root = Path(engine_root or engine.unreal_root())
+    if root not in _TOOLS:
+        value = context(SimpleNamespace(unreal_root=root))
+        _TOOLS[root] = {'engine': value['engine'], 'toolchain': value['toolchain'],
+                        'system': value['system'], 'machine': value['machine']}
+    return _TOOLS[root]
 
 
 def plugins(uproject):
@@ -83,14 +118,18 @@ def closure(uproject, modules):
     return found
 
 
-def code(uproject, module):
-    """{file: sha256} of the libraries of the module and everything an editor running it loads (closure), and of the
-    descriptors and config files (the project's and its enabled plugins') that decide what loads and the classes'
-    defaults."""
+def code(uproject, module, *, tools=None):
+    """{file: sha256} of the compile inputs of the module and everything an editor running it loads (closure): their
+    sources, the target rules, the descriptors and config files (the project's and its enabled plugins') that decide
+    what loads and the classes' defaults, and the engine/toolchain identity. Every library must have been built."""
     project = Path(uproject).parent
     libraries, binaries = project_modules(project), project / 'Binaries' / PLATFORM
     loaded = closure(uproject, [module])
     files = {f'<config>/{path.relative_to(project).as_posix()}': _file_hash(path) for path in project.glob('Config/**/*.ini')}
+    files.update({f'<targets>/{path.name}': _file_hash(path) for path in sorted((project / 'Source').glob('*.Target.cs'))})
+    tools = tool_identity() if tools is None else tools
+    files['<tools>'] = hashlib.sha256(json.dumps(tools, sort_keys=True).encode()).hexdigest()
+    folders = sources(uproject)
     files[Path(uproject).name] = _file_hash(Path(uproject))
     for path, names, _ in plugins(uproject).values():
         if set(names) & loaded:       # an enabled plugin's config is merged into the project's
@@ -99,9 +138,12 @@ def code(uproject, module):
                           for c in path.parent.glob('Config/**/*.ini')})
     for name in loaded:
         library = binaries / libraries.get(name, '-')
-        if not library.is_file():
+        if not library.is_file() or library.stat().st_size == 0:
             raise SystemExit(f'{name}: the editor target did not build it; compile the editor first')
-        files[library.name] = _file_hash(library)
+        if name in folders:
+            files.update({f'<{name}>/{relative}': digest for relative, digest in _tree(folders[name]).items()})
+        else:  # A prebuilt module without sources: its library is its only identity.
+            files[library.name] = _file_hash(library)
     return dict(sorted(files.items()))
 
 
@@ -133,8 +175,8 @@ def descriptor(uproject, modules):
         path.unlink(missing_ok=True)
 
 
-def record(uproject, module, output):
-    files = code(uproject, module)
+def record(uproject, module, output, *, tools=None):
+    files = code(uproject, module, tools=tools)
     digest = hashlib.sha256(json.dumps(files, sort_keys=True).encode()).hexdigest()
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps({'module': module, 'digest': digest, 'files': files}, indent=1) + '\n')
@@ -149,7 +191,8 @@ def steps(ctx, modules, compile='unreal.compile'):
         output = ctx.out / 'unreal-modules' / f'{module}.json'
 
         def write(ctx, log, module=module, output=output):
-            log.write(f'{module} code digest {record(ctx.uproject, module, output)}\n')
+            tools = tool_identity(getattr(ctx, 'unreal_root', None))
+            log.write(f'{module} code digest {record(ctx.uproject, module, output, tools=tools)}\n')
         made.append(Step(module_step(module), [Call(f'unreal module digest {module}', write)], inputs=[Path(__file__)],
                          needs=[compile], outputs=[output], cutoff=True, about=f'the code digest of the compiled {module} module'))
     return made

@@ -1,0 +1,49 @@
+schema_version = 1
+
+[[scenarios]]
+id = "c1a.worker_session.session_round_trip_handshake_jobs_and_shutdown"
+tests = ["atelier-build-v2::worker_session/session_round_trip_handshake_jobs_and_shutdown"]
+
+[[scenarios]]
+id = "c1a.worker_session.handshake_requires_the_expected_version_first"
+tests = ["atelier-build-v2::worker_session/handshake_requires_the_expected_version_first"]
+
+[[scenarios]]
+id = "c1a.worker_session.wrong_job_ids_and_out_of_order_responses_break_the_session"
+tests = ["atelier-build-v2::worker_session/wrong_job_ids_and_out_of_order_responses_break_the_session"]
+
+[[scenarios]]
+id = "c1a.worker_session.duplicate_terminal_and_messages_after_stop_fail"
+tests = ["atelier-build-v2::worker_session/duplicate_terminal_and_messages_after_stop_fail"]
+
+[[scenarios]]
+id = "c1a.worker_session.cancellation_is_a_request_until_the_worker_confirms_it"
+tests = ["atelier-build-v2::worker_session/cancellation_is_a_request_until_the_worker_confirms_it"]
+
+[[scenarios]]
+id = "c1a.worker_session.one_active_job_and_controller_misuse_leave_the_session_unchanged"
+tests = ["atelier-build-v2::worker_session/one_active_job_and_controller_misuse_leave_the_session_unchanged"]
+
+[[scenarios]]
+id = "c1a.worker_session.channel_turns_framing_faults_into_session_failures"
+tests = ["atelier-build-v2::worker_session/channel_turns_framing_faults_into_session_failures"]
+
+[[scenarios]]
+id = "c1a.worker_session.unframeable_requests_are_not_sent_and_write_failures_break_the_session"
+tests = ["atelier-build-v2::worker_session/unframeable_requests_are_not_sent_and_write_failures_break_the_session"]
+
+[[scenarios]]
+id = "c1a.worker_session.shared_vectors_decode_and_encode_like_python"
+tests = ["atelier-build-v2::worker_session/shared_vectors_decode_and_encode_like_python"]
+
+[[scenarios]]
+id = "c1a.worker_session.python_worker_round_trip_over_dedicated_pipes"
+tests = ["atelier-build-v2::worker_session/python_worker_round_trip_over_dedicated_pipes"]
+
+[[scenarios]]
+id = "c1a.worker_session.python_worker_faults_break_the_session_over_dedicated_pipes"
+tests = ["atelier-build-v2::worker_session/python_worker_faults_break_the_session_over_dedicated_pipes"]
+
+[[scenarios]]
+id = "c1a.worker_session.cancel_before_started_still_requires_started_then_one_terminal"
+tests = ["atelier-build-v2::worker_session/cancel_before_started_still_requires_started_then_one_terminal"]

@@ -10,7 +10,7 @@ frame against the attribute values they encode.
 
 A control proves the compressed path is measured: a copy of one clip under the engine's default bone compression must
 show a non-zero error. The poses of the still clips (import_clips.STILLS) are written in component space to
-build/yorimichi/skate-ride/still-poses/ for render_stills.py.
+build/yorimichi/skate-ride/still-poses/ for the QA script scenarios/skate_ride_stills.py.
 
 Batched like the import (SKATE_RIDE_VERIFY_BATCH=i/n, default 1/1); the run that finds every clip measured writes
 clips-verify.json.

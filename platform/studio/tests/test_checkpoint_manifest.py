@@ -132,7 +132,7 @@ def test_noop_build_publication_reuses_existing_cas_hashes(fixture, monkeypatch)
     manifests.retain(paths.REPO, ctx.out, ctx.game)
 
 
-def test_representative_step_publishes_its_written_inventory_and_reruns_when_it_drifts(tmp_path, monkeypatch):
+def test_representative_step_publishes_its_written_files_and_restores_when_they_drift(tmp_path, monkeypatch):
     from types import SimpleNamespace
     from atelier import build_cache
     repo = tmp_path.resolve(); (repo / 'uv.lock').write_text('lock')
@@ -162,23 +162,17 @@ def test_representative_step_publishes_its_written_inventory_and_reruns_when_it_
     monkeypatch.setattr(manifests, 'digest_file', lambda *a: pytest.fail('retain hashes no payload'))
     key = manifests.retain(repo, out, 'fixture')
     manifest = cp.Store('fixture').load(key)
-    assert set(manifest['incremental_stamps']) == {'legacy'}
+    # It owns the files it wrote, so it publishes an action entry like any other step.
+    assert set(manifest['stamps']) == {'legacy'} and not manifest['incremental_stamps']
     assert {'generated/asset/sentinel', 'generated/asset/sidecar'} <= set(manifest['files'])
-    # A written file that no longer matches its stamp makes the step stale.
+    # A written file that no longer matches its stamp makes the step stale: its own entry puts it back.
     (out / 'asset/sidecar').write_bytes(b'replaced by another producer')
     runs = []
     monkeypatch.setattr(build, 'run_command', lambda *a, **kw: runs.append(1) or run())
     messages = []
     assert build.build('fixture', echo=messages.append) == 0
-    assert runs and any('outputs changed since its stamp (generated/asset/sidecar)' in m for m in messages)
-    # A stamp without an inventory (written before this rule) never publishes.
-    stamp = json.loads((out / 'stamps/legacy.json').read_bytes())
-    stamp.pop('output_inventory')
-    (out / 'stamps/legacy.json').write_text(json.dumps(stamp))
-    task = manifests.folder(out) / 'tasks/legacy.json'
-    task.write_text(json.dumps(dict(json.loads(task.read_bytes()), stamp=stamp)))
-    manifests.finish(ctx, [step])
-    assert not (manifests.folder(out) / 'ready.json').exists()
+    assert not runs and any(m.startswith('legacy') and 'restored in' in m for m in messages)
+    assert (out / 'asset/sidecar').read_bytes() == b'also required'
 
 
 def test_build_workspace_staging_does_not_accumulate_full_checkpoint_versions(fixture, monkeypatch):

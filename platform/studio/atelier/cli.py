@@ -178,6 +178,8 @@ def make_parser():
                         'or a bare REASON for the named tasks and those with no result at launch')
     p.add_argument('--rebuild-touched', action='store_true',
                    help='rebuild selected touched certificates; preserve proven current steps and caches')
+    p.add_argument('--fail-fast', action='store_true',
+                   help='stop at the first failed step instead of finishing every independent step')
     p.add_argument('--max-heavy-commands', type=int, metavar='N',
                    help='run at most N heavy commands, then yield before the next one (exit 75)')
     p.add_argument('--dry-run', '--plan', action='store_true', help='read-only build decisions')
@@ -339,6 +341,8 @@ def main(argv=None):
             bounded['record_cook_recovery'] = True
         if args.rebuild_touched:
             bounded['rebuild_touched'] = True
+        if args.fail_fast:
+            bounded['fail_fast'] = True
         return build(args.game, args.steps, force=args.force, dry=args.dry_run, touch=args.touch, verify=args.verify,
                      **experimental, **bounded, **cook_memory)
     if args.command == 'play':

@@ -58,3 +58,13 @@ def test_city_piece_import_reserves_its_measured_memory_envelope(tmp_path):
     assert command.script.name == 'import_city_surface_tiles.py'
     assert command.memory_gib == command.memory_limit() == 14
     assert desktop.heavy and desktop.batch is None
+
+
+def test_preview_and_viewer_outputs_stay_out_of_the_build_graph(tmp_path):
+    ctx = SimpleNamespace(game='yorimichi', out=tmp_path, uproject=None)
+    steps = {s.name: s for s in build.load_recipe('yorimichi').steps(ctx)}
+    assert 'skate.ride_stills' not in steps
+    assembly = steps['world.belmonte_train_assembly']
+    declared = list(assembly.inputs) + list(assembly.outputs)
+    assert not [p for p in declared if p.name in ('viewer.html', 'index.html')]
+    assert tmp_path / 'belmonte-train' / 'assembly' / 'consist.json' in assembly.outputs

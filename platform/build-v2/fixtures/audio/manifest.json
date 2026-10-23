@@ -1,0 +1,100 @@
+{
+  "description": "Tiny integer-specified audio source fixtures for build v2 (H4b). Source data only, not native import proof.",
+  "format": {
+    "container": "wav",
+    "encoding": "pcm_s16le",
+    "sample_rate_hz": 8000,
+    "channels": 1,
+    "bits_per_sample": 16,
+    "frame_count": 800,
+    "duration_ms": 100
+  },
+  "signal_rule": "Each segment holds frames [start_frame, start_frame + frames). Its values repeat in order from the first frame of the segment. Segments are contiguous and cover every frame.",
+  "base": {
+    "file": "base-mono-pcm16-100ms.wav",
+    "segments": [
+      {
+        "start_frame": 0,
+        "frames": 100,
+        "values": [
+          1000,
+          -1000
+        ]
+      },
+      {
+        "start_frame": 100,
+        "frames": 100,
+        "values": [
+          2000,
+          -2000
+        ]
+      },
+      {
+        "start_frame": 200,
+        "frames": 100,
+        "values": [
+          1234,
+          -4321
+        ]
+      },
+      {
+        "start_frame": 300,
+        "frames": 100,
+        "values": [
+          8000,
+          -8000
+        ]
+      },
+      {
+        "start_frame": 400,
+        "frames": 100,
+        "values": [
+          250,
+          -250
+        ]
+      },
+      {
+        "start_frame": 500,
+        "frames": 100,
+        "values": [
+          16000,
+          -16000
+        ]
+      },
+      {
+        "start_frame": 600,
+        "frames": 100,
+        "values": [
+          3,
+          -3
+        ]
+      },
+      {
+        "start_frame": 700,
+        "frames": 100,
+        "values": [
+          20000,
+          -20000
+        ]
+      }
+    ],
+    "sha256": "a2bd10b0edfdac943122e1daebcbadbce02ad359a5c4d4652ef9cf25bcb27bfc",
+    "byte_size": 1644
+  },
+  "variant": {
+    "file": "variant-mono-pcm16-100ms.wav",
+    "same_as_base": true,
+    "changed_segment": {
+      "start_frame": 400,
+      "frames": 40,
+      "values": [
+        12000,
+        -12000,
+        6000,
+        -6000
+      ]
+    },
+    "sha256": "4ec9a281a549889960c2ad1b38591f89ff7e17cd36cf07740ff4a3a085e0c9eb",
+    "byte_size": 1644
+  }
+}
