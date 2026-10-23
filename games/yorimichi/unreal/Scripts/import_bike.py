@@ -22,6 +22,10 @@ def receive(out=None):
     four steering assets as complete cooked user data; no source sphere approximation.
     """
     root=Path(out) if out is not None else yori.OUT;manifest=read(root);library=unreal.EditorAssetLibrary
+    # Keep import warnings in the log without opening Slate UI in commandlets.
+    unreal.load_module('MessageLog')
+    unreal.SystemLibrary.execute_console_command(None,'MessageLog.DisablePopup 1')
+    assert unreal.SystemLibrary.get_console_variable_bool_value('MessageLog.DisablePopup')
     # The flat shared Assets directory is not exclusive: inventory only this exact family.
     previous=native_membership.inventory(library,DESTINATION,'BK_')
     if previous-{DESTINATION+'/'+key for key in (*PARTS,'BK_Steer')}:raise ValueError('Foreign Bike native member')

@@ -187,7 +187,13 @@ def main():
     start=next(i for i,node in enumerate(tree.body) if isinstance(node,ast.Assign) and any(isinstance(t,ast.Name) and t.id=='OUT' for t in node.targets))
     scope=dict(yori=SimpleNamespace(OUT=Path(S['original_data'])),unreal=unreal,json=json,import_mesh=old_raw._source_mesh,
         material=material_function(S['original_material']))
-    exec(compile(ast.Module(body=tree.body[start:],type_ignores=[]),S['original_receiver'],'exec'),scope)
+    unreal.load_module('MessageLog')
+    unreal.SystemLibrary.execute_console_command(None,'MessageLog.DisablePopup 1')
+    assert unreal.SystemLibrary.get_console_variable_bool_value('MessageLog.DisablePopup')
+    try:exec(compile(ast.Module(body=tree.body[start:],type_ignores=[]),S['original_receiver'],'exec'),scope)
+    finally:
+        unreal.SystemLibrary.execute_console_command(None,'MessageLog.DisablePopup 0')
+        assert not unreal.SystemLibrary.get_console_variable_bool_value('MessageLog.DisablePopup')
     old_manifest=json.loads((Path(S['original_data'])/'bike/manifest.json').read_text())
     original_paths=[PACKAGE+'/Original/Assets/'+name for name in old_manifest['parts']]
     original={name:EAL.load_asset(path) for name,path in zip(old_manifest['parts'],original_paths)}
