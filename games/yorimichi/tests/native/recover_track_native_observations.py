@@ -146,6 +146,8 @@ def prepare(spec_path,output,*,current_source=None):
     support={path for entry in (Path(__file__),Path(proof.__file__))
              for path in local_imports(entry,(GAME,GAME.parents[1]/'platform/studio'))}
     support.update((Path(__file__),HERE/'track_material_roster.py',HERE/'track_observation_data.py',HERE/'track_query_surface.py'))
+    support.update(GAME.parents[1]/'platform/studio/atelier'/name for name in
+        ('atomic_files.py','export_manifest.py','paths.py','gltf.py','mesh_ir.py','mesh_geometry.py'))
     validation_inputs={str(path.absolute()):proof.sha(path)for path in support}
     atomic_json(output,dict(validation_inputs=validation_inputs,schema=1,kind='track07-observation-plan',old_spec_sha256=OLD_SPEC,
         metadata=rows,descriptors=descriptors,host_before=state,stdout_source_observation=stdout_source,
@@ -169,6 +171,20 @@ def rebuild_saved_archives(descriptor,name,spec,*,check_current_packages=False):
     return descriptor,saved
 
 
+VALIDATION_MODULES=('atelier.atomic_files','atelier.export_manifest','atelier.paths','atelier.gltf',
+    'atelier.mesh_ir','atelier.mesh_geometry','atomic_equivalence_io','atomic_equivalence')
+
+
+def validation_environment(plan):
+    """Refuse a shadow installed helper even when a different declared file is intact."""
+    for name in VALIDATION_MODULES:
+        module=sys.modules.get(name)
+        if module is None:continue
+        path=Path(module.__file__).absolute();expected=plan['validation_inputs'].get(str(path))
+        require(expected is not None,'Actual data helper is outside the frozen source closure: '+name)
+        proof.check_input(path,expected)
+
+
 def validate(plan_path,plan_sha,output,*,check_current_packages=False):
     """@cc [owner:fontanierh,label:correctness] failed-track-observation-not-admission
     Failed whole255 observations MUST remain data-only with cleanup pending. Complete
@@ -184,6 +200,7 @@ def validate(plan_path,plan_sha,output,*,check_current_packages=False):
     expected=failed_authority(spec,whole,read(rows['failure']),read(rows['guard']),artifact(rows['stdout']).decode(),runtime)
     require(plan['host_before']['native']==whole['native'] and plan['host_before']['source_head']==OLD_HEAD,'Unbound host/native preparation')
     for path,digest in plan['validation_inputs'].items():proof.check_input(path,digest)
+    validation_environment(plan)
     proof.bound_inputs(spec)
     vectors=input_identity_vectors(spec,runtime,read(rows['current_runtime']))
     current_source=plan['host_before'].get('current_source')
@@ -224,6 +241,7 @@ def validate(plan_path,plan_sha,output,*,check_current_packages=False):
     from track_observation_data import validate as validate_data
     diagnostic=validate_data(records,runtime,spec['controls'],
         progress=lambda name:print('TRACK07 STRICT RAW OBSERVATION DATA '+name,flush=True))
+    validation_environment(plan)
     proof.bound_inputs(spec)
     if current_source is not None:
         require(current_owner_bindings(spec,current_source['root'])==current_source['files'],'Carried source bytes changed during verification')

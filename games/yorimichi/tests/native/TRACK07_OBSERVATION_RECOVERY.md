@@ -122,3 +122,9 @@ A successful new query supplement is reported separately from source-input carry
 with28 actual queries and0 imports/saves/package deletions. Old failures and all
 fourteen old rows stay unchanged. Cleanup remains pending; full/native/paired-
 execution/current-main-compilation/task-reuse/production-runtime claims stay false.
+
+Run the admitted DATA child with this owned tool checkout's synced `.venv/bin/python`,
+matching its declared validation helper paths; it now refuses loaded parser helpers
+from a different installation. Host SDK/module checks still execute separately in
+the receiving environment. The seven-query host runner must instead be launched
+from the receiving checkout's installed `uv` environment as shown above.

@@ -190,3 +190,14 @@ def test_code_closure_uses_actual_receiver_platform_and_rejects_shadow_provider(
     assert all(studio in roots and own_studio not in roots for roots in seen)
     monkeypatch.setattr(host.build,'__file__',str(own_studio/'atelier/build.py'))
     with pytest.raises(ValueError):host.runtime_code_inputs(receiver)
+
+
+@pytest.mark.parametrize('missing',[False,True])
+def test_data_verifier_refuses_shadow_helper_outside_declared_closure(missing):
+    import recover_track_native_observations as recovery
+    plan=dict(validation_inputs={str(Path(sys.modules[name].__file__).absolute()):recovery.proof.sha(sys.modules[name].__file__)
+        for name in recovery.VALIDATION_MODULES if name in sys.modules})
+    if missing:
+        plan['validation_inputs'].pop(str(Path(sys.modules['atelier.atomic_files'].__file__).absolute()))
+        with pytest.raises(ValueError):recovery.validation_environment(plan)
+    else:recovery.validation_environment(plan)
