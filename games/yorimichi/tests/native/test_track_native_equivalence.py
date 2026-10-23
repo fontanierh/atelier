@@ -79,11 +79,12 @@ def test_deletion_observer_records_real_packages_without_replacing_api_results()
     assert len(calls) == 1
 
 
-def actor_fixture(*, stuck=False, destroy=True):
-    state = dict(mesh=object(), detach_calls=0, destroy_calls=0)
+def actor_fixture(*, stuck=False, destroy=True, assigned=True):
+    state = dict(mesh=object() if assigned else None, detach_calls=0, destroy_calls=0)
     def detach(value):
         assert value is None
         state['detach_calls'] += 1
+        if state['mesh'] is None: return False  # UE reports no change for an already-null component.
         if not stuck: state['mesh'] = None
         return True
     component = SimpleNamespace(set_static_mesh=detach, get_editor_property=lambda name: state['mesh'])
@@ -151,6 +152,35 @@ def test_successful_per_actor_cleanup_requires_reflected_null_readback():
     actor, editor, state = actor_fixture(); recorded = [actor]
     proof.release_actor(actor, editor, object, recorded)
     assert recorded == [] and state['mesh'] is None and state['destroy_calls'] == 1
+
+
+def test_failure_before_mesh_assignment_still_destroys_recorded_actor(tmp_path):
+    actor, editor, state = actor_fixture(assigned=False); recorded = [actor]
+    failure = RuntimeError('failed before mesh assignment')
+    with pytest.raises(RuntimeError) as caught:
+        with proof.actor_scope(recorded, editor, object, tmp_path, lambda: {}):
+            raise failure
+    assert caught.value is failure and recorded == []
+    assert state['detach_calls'] == 0 and state['destroy_calls'] == 1 and state['mesh'] is None
+    report = json.loads((tmp_path / 'failed-fixture-state.json').read_text())
+    assert report['cleanup_failures'] == [] and report['remaining_own_actors'] == 0
+
+
+def test_cleanup_retry_after_detach_and_failed_destroy_preserves_original_failure(tmp_path):
+    actor, editor, state = actor_fixture(); recorded = [actor]
+    def remove(value):
+        assert value is actor
+        state['destroy_calls'] += 1
+        return state['destroy_calls'] == 2
+    editor.destroy_actor = remove
+    with pytest.raises(ValueError, match='actor destroy failed') as caught:
+        with proof.actor_scope(recorded, editor, object, tmp_path, lambda: {}):
+            proof.release_actor(actor, editor, object, recorded)
+    assert recorded == [] and state['mesh'] is None
+    assert state['detach_calls'] == 1 and state['destroy_calls'] == 2
+    report = json.loads((tmp_path / 'failed-fixture-state.json').read_text())
+    assert report['original_error']['message'] == str(caught.value)
+    assert report['cleanup_failures'] == [] and report['remaining_own_actors'] == 0
 
 
 def test_actual_native_capture_and_retirement_stay_inside_failure_cleanup_boundary():

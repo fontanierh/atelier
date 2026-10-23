@@ -272,7 +272,8 @@ def release_actor(actor, actor_editor, mesh_class, actors):
     """Release one recorded fixture actor only after reflected null readback."""
     require(actor in actors, 'Cannot clean an unrecorded fixture actor')
     for component in actor.get_components_by_class(mesh_class):
-        require(component.set_static_mesh(None), 'Track component detach failed')
+        if component.get_editor_property('static_mesh') is not None:
+            require(component.set_static_mesh(None), 'Track component detach failed')
         require(component.get_editor_property('static_mesh') is None, 'Track component still holds its mesh')
     require(actor_editor.destroy_actor(actor), 'Track fixture actor destroy failed')
     actors.remove(actor)
