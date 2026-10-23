@@ -19,7 +19,7 @@ FIELDS = {'positions': ('f', 3), 'normals': ('f', 3), 'counts': ('i', None),
 MAX_BYTES = 128 * 1024 * 1024
 
 
-def encode(piece, *, key, slots, matrix, options, collisions=()):
+def encode(piece, *, key, slots, matrix, options, collisions=(), material_specs=None):
     """Create one complete piece payload; parent history and other pieces are not inputs."""
     arrays = dict(positions=np.asarray(piece['positions'], dtype='<f4'),
                   normals=np.asarray(piece['normals'], dtype='<f4'),
@@ -39,6 +39,8 @@ def encode(piece, *, key, slots, matrix, options, collisions=()):
                          colour_render=colour[0][0] if colour else None))
     metadata = dict(schema=2, asset=name(key), slots=slots, matrix=matrix, options=options, selection=selection,
                     uvs=uv, colours=colour, collisions=list(collisions))
+    if material_specs is not None:
+        metadata.update(schema=3, material_specs=material_specs)
     arrays['metadata'] = np.frombuffer(json.dumps(metadata, sort_keys=True, separators=(',', ':'),
                                                 allow_nan=False).encode(), dtype=np.uint8)
     stream = io.BytesIO()
@@ -72,7 +74,9 @@ def decode(payload,*,_collision_payload=False):
     if encoded is None or encoded.dtype != np.uint8 or encoded.ndim != 1:
         raise ValueError('Atomic mesh metadata is missing')
     meta = json.loads(encoded.tobytes())
-    if set(meta) != {'schema', 'asset', 'slots', 'matrix', 'options', 'uvs', 'colours', 'collisions', 'selection'} or meta['schema'] != 2:
+    fields = {'schema', 'asset', 'slots', 'matrix', 'options', 'uvs', 'colours', 'collisions', 'selection'}
+    if (type(meta) is not dict or type(meta.get('schema')) is not int or meta['schema'] not in (2, 3)
+            or set(meta) != fields | ({'material_specs'} if meta['schema'] == 3 else set())):
         raise ValueError('Unsupported atomic mesh metadata')
     name(meta['asset'])
     slots, matrix = meta['slots'], np.asarray(meta['matrix'])
@@ -82,6 +86,16 @@ def decode(payload,*,_collision_payload=False):
             or not np.array_equal(matrix[3], [0, 0, 0, 1]) or np.linalg.det(matrix[:3, :3]) == 0
             or type(meta['options']) is not dict or type(meta['collisions']) is not list):
         raise ValueError('Invalid atomic mesh materials, transform or settings')
+    if meta['schema'] == 3:
+        from . import mesh_materials
+        specs = meta['material_specs']
+        if (type(specs) is not list or len(specs) != len(slots)
+                or set(meta['options']) - {'export_apply', 'export_image_format'} or _collision_payload):
+            raise ValueError('Invalid explicit GLB material table')
+        if (type(meta['options'].get('export_apply', False)) is not bool
+                or meta['options'].get('export_image_format', 'NONE') != 'NONE'):
+            raise ValueError('Unsupported explicit GLB material export policy')
+        for spec in specs: mesh_materials.validate(spec)
     for collision in meta['collisions']:
         from . import mesh_collision
         if type(collision) is not dict or set(collision) not in (mesh_collision.CORE,mesh_collision.RICH,mesh_collision.TRANSFORMED):
@@ -136,6 +150,8 @@ def decode(payload,*,_collision_payload=False):
             raise ValueError('Invalid atomic colour channel')
         expected.add(field); labels.add(label)
     selection = meta['selection']
+    if meta['schema'] == 3 and any(spec['attribute'] not in [row[0] for row in meta['colours']] for spec in meta['material_specs']):
+        raise ValueError('Vertex-colour material references a missing source channel')
     if (type(selection) is not dict or set(selection) != {'uv_active', 'uv_render', 'colour_active', 'colour_render'}
             or any(selection[role] is not None and selection[role] not in [entry[0] for entry in meta['uvs']]
                    for role in ('uv_active', 'uv_render'))
