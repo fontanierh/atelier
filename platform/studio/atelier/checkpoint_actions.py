@@ -41,7 +41,14 @@ def source_scopes(sources):
     Source inventories MUST remain fresh per check; no filesystem/index state MAY be
     cached across publication or restoration checks. Paths MUST NOT be resolved differently.
     """
-    return {parent for source in sources for parent in (source, *source.parents)}
+    result = set()
+    for source in sources:
+        # A previously visited parent already contributed its complete ancestor
+        # chain in this check. Do not rebuild that chain for every sibling file.
+        while source not in result:
+            result.add(source)
+            source = source.parent
+    return result
 
 
 def compile_outputs(ctx, step):

@@ -408,3 +408,17 @@ def test_action_restore_is_in_process_and_takes_milliseconds(fixture, monkeypatc
     assert len(list((receiver.out / 'tree').glob('lod*.bin'))) == 200
     print(f'201-file action restore in process: {elapsed * 1000:.0f} ms')
     assert elapsed < 0.2, f'{elapsed:.3f} s for one 201-file action restore'
+
+
+def test_source_scope_inventory_remains_exact_without_rebuilding_shared_ancestor_chains(monkeypatch):
+    sources = {Path('/repo/game/source/deep') / ('file' + str(i) + '.py') for i in range(200)}
+    sources.update((Path('/other/file.py'), Path('/repo/game/source/deep/../literal.py')))
+    expected = {ancestor for path in sources for ancestor in (path, *path.parents)}
+    original = Path.parent.fget
+    calls = []
+    def parent(path):
+        calls.append(path)
+        return original(path)
+    monkeypatch.setattr(Path, 'parent', property(parent))
+    assert actions.source_scopes(iter(sources)) == expected
+    assert len(calls) == len(expected)
