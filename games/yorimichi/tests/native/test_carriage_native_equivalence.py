@@ -153,7 +153,7 @@ def test_only_proven_mic_change_detection_id_is_normalized(tmp_path):
     assert proof.material_text(a,cls)==proof.material_text(b,cls)
     c=row('c.t3d','2'*32,'   TextureParameterValues(0)=(ParameterValue="/actual/changed")\n')
     assert proof.material_text(a,cls)!=proof.material_text(c,cls)
-    assert proof.material_text(a,'/Script/Engine.Texture2D')!=proof.material_text(b,'/Script/Engine.Texture2D')
+    with pytest.raises(ValueError): proof.material_text(a,'/Script/Engine.Texture2D')
     p=Path(b['path']);p.write_text(p.read_text().replace('ParameterValue=0.25','ParameterValue=0.26'))
     b['sha256']=proof.sha(p)
     assert proof.material_text(a,cls)!=proof.material_text(b,cls)
@@ -166,3 +166,48 @@ def test_incomplete_positive_native_census_refuses():
                    collision=[],switchable=[],doors=[]) for k in proof.COACHES]
     with pytest.raises(ValueError, match='positive census'): proof.inventory(vehicles)
     with pytest.raises(ValueError, match='seven-coach'): proof.inventory(vehicles[:-1])
+
+
+def texture_text_row(tmp_path, name, guid, *, source_id='A'*32, settings='TC_Default', extra=''):
+    path=tmp_path/name
+    path.write_text('Begin Object Class=/Script/Engine.Texture2D Name="actual"\n'
+                    '   Source=(Id='+source_id+',SizeX=1,SizeY=1)\n'
+                    '   CompressionSettings='+settings+'\n'
+                    '   LightingGuid='+guid+'\n'+extra+'End Object\n')
+    return dict(path=str(path),sha256=proof.sha(path))
+
+
+def test_texture_lighting_identity_only_source_and_settings_remain_strict(tmp_path):
+    a=texture_text_row(tmp_path,'a.t3d','1'*32);b=texture_text_row(tmp_path,'b.t3d','2'*32)
+    cls='/Script/Engine.Texture2D'
+    assert proof.material_text(a,cls)==proof.material_text(b,cls)
+    assert proof.material_text(a,'/Script/Engine.Material')!=proof.material_text(b,'/Script/Engine.Material')
+    source=texture_text_row(tmp_path,'source.t3d','2'*32,source_id='B'*32)
+    settings=texture_text_row(tmp_path,'settings.t3d','2'*32,settings='TC_Normalmap')
+    assert proof.material_text(a,cls)!=proof.material_text(source,cls)
+    assert proof.material_text(a,cls)!=proof.material_text(settings,cls)
+    assert Path(a['path']).read_bytes()!=Path(b['path']).read_bytes()  # Raw artifacts remain intact.
+
+
+@pytest.mark.parametrize('case',['nested','duplicate','malformed','missing'])
+def test_texture_identity_wrong_scope_duplicate_malformed_or_missing_refuses(tmp_path, case):
+    row=texture_text_row(tmp_path,'bad.t3d','1'*32)
+    path=Path(row['path']);text=path.read_text()
+    line='   LightingGuid='+'1'*32+'\n'
+    if case=='nested': text=text.replace(line,'   Begin Object Name="nested"\n'+line+'   End Object\n')
+    if case=='duplicate': text=text.replace(line,line+line)
+    if case=='malformed': text=text.replace(line,'   LightingGuid=not-a-guid\n')
+    if case=='missing': text=text.replace(line,'')
+    path.write_text(text);row['sha256']=proof.sha(path)
+    with pytest.raises(ValueError): proof.material_text(row,'/Script/Engine.Texture2D')
+
+
+def test_texture_lighting_normalization_does_not_waive_changed_png(tmp_path, monkeypatch):
+    a=texture_text_row(tmp_path,'a.t3d','1'*32);b=texture_text_row(tmp_path,'b.t3d','2'*32)
+    old=tmp_path/'old.png';new=tmp_path/'new.png';old.write_bytes(b'actual source pixels');new.write_bytes(b'actual source pixelx')
+    def row(text,pixels):
+        return dict(class_path='/Script/Engine.Texture2D',text=text,pixels=dict(path=str(pixels),sha256=proof.sha(pixels)))
+    monkeypatch.setattr(proof,'inventory',lambda vehicles: {})
+    with pytest.raises(ValueError,match='material/texture differs'):
+        proof.compare({'original':{},'current':{}},[],
+            {'original':{'texture':row(a,old)},'current':{'texture':row(b,new)}},{'original':{},'current':{}})

@@ -114,7 +114,11 @@ def prepare(args):
                      'Editor/UnrealEd/Private/Factories/EditorFactories.cpp',
                      'Runtime/Engine/Public/Materials/MaterialInstanceConstant.h',
                      'Runtime/Engine/Private/Materials/MaterialInstanceConstant.cpp',
-                     'Runtime/Core/Private/Misc/Guid.cpp'):
+                     'Runtime/Core/Private/Misc/Guid.cpp',
+                     'Runtime/Engine/Classes/Engine/Texture.h',
+                     'Runtime/Engine/Private/Texture.cpp',
+                     'Runtime/Engine/Classes/Engine/Texture2D.h',
+                     'Runtime/Engine/Private/Texture2D.cpp'):
         bind(engine_root / 'Engine/Source' / relative)
     for path in (engine_root / 'Engine/Plugins/Interchange/Assets/Content/gltf').rglob('*.uasset'):
         bind(path)

@@ -196,27 +196,31 @@ def material_capture(U, editor, packages, output, package):
 
 
 def material_text(binding, class_path):
-    """Normalize only MIC.ParameterStateId, an editor change-detection identity.
+    """Normalize only two class-specific editor/cache identities; retain raw T3D.
 
-    Installed MaterialInstanceConstant.cpp PostEditChangeProperty assigns NewGuid;
-    Guid.cpp exports precisely 32 hex digits. Keep all raw T3D artifacts. No other
-    GUID, source/provenance, parent, parameter, override or texture field is waived.
-    Any additional generated differences remain a strict unsupported boundary.
+    MIC.ParameterStateId is NewGuid change detection. Texture2D inherits Texture's
+    PostEditChangeProperty -> SetLightingGuid -> BuildLightingGuid -> NewGuid;
+    LightingGuid links distributed-lighting/streaming build data, outside this
+    fixture's shader/source-pixel scope. Guid.cpp exports exactly 32 hex digits.
+    Source.Id, compression/settings, all shading fields and every other GUID stay
+    strict. This MUST NOT certify baked lighting or production streaming/runtime.
     """
     payload = artifact(binding)
-    if class_path != '/Script/Engine.MaterialInstanceConstant': return payload
+    field = {'/Script/Engine.MaterialInstanceConstant': 'ParameterStateId',
+             '/Script/Engine.Texture2D': 'LightingGuid'}.get(class_path)
+    if field is None: return payload
     lines = payload.decode('utf-8').splitlines(keepends=True); depth = 0; found = 0
     for index, line in enumerate(lines):
         stripped = line.strip()
         if stripped.startswith('Begin Object'): depth += 1
-        if 'ParameterStateId=' in line:
-            require(depth == 1 and re.fullmatch(r'[ \t]+ParameterStateId=[0-9A-Fa-f]{32}\r?\n?', line),
-                    'Unexpected MIC generated-ID grammar/scope')
-            require(found == 0, 'Duplicate MIC parameter state identity')
-            lines[index] = re.sub(r'(?<=ParameterStateId=)[0-9A-Fa-f]{32}', '0' * 32, line); found += 1
+        if field + '=' in line:
+            require(depth == 1 and re.fullmatch(r'[ \t]+' + field + r'=[0-9A-Fa-f]{32}\r?\n?', line),
+                    'Unexpected class-specific generated-ID grammar/scope')
+            require(found == 0, 'Duplicate class-specific generated identity')
+            lines[index] = re.sub(r'(?<=' + field + r'=)[0-9A-Fa-f]{32}', '0' * 32, line); found += 1
         if stripped == 'End Object': depth -= 1
         require(depth >= 0, 'Malformed actual material object text')
-    require(found == 1 and depth == 0, 'Missing complete MIC object/parameter state identity')
+    require(found == 1 and depth == 0, 'Missing complete object/class-specific generated identity')
     return ''.join(lines).encode('utf-8')
 
 
