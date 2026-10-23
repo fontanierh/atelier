@@ -34,6 +34,7 @@ pub mod results;
 pub mod roots;
 pub mod scheduler;
 pub mod schema;
+pub mod source_fence;
 pub mod source_hashes;
 pub mod staging;
 pub mod store;
