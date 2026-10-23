@@ -42,6 +42,26 @@ def action(tmp_path, monkeypatch):
                            stamp=lambda: json.loads((ctx.stamps / 'generate.json').read_text()))
 
 
+def test_kernel_entropy_and_discard_devices_are_not_recipe_inputs(action):
+    """A temporary-file name and a discarded write reach kernel devices; neither is a file the
+    recipe read. Reading an undeclared regular file is still refused in the same action."""
+    a = action
+    a.code('''import os, tempfile
+with tempfile.NamedTemporaryFile(mode='w', delete=False) as stream:
+    stream.write(source.read_text())
+with open('/dev/null', 'w') as discard:
+    discard.write('ignored')
+os.replace(stream.name, output)
+''')
+    assert a.run() == 0, a.messages
+    report = a.report()
+    assert report['passed'] and report['violations'] == []
+    # macOS reaches entropy through getentropy, so only Linux records the read.
+    for access in report['accesses']:
+        if access['path'] in ('<external>/urandom', '<external>/null'):
+            assert access['violation'] is None
+
+
 def test_declared_reads_atomic_write_noop_and_cache_restore(action):
     a = action
     a.code('''import os, tempfile

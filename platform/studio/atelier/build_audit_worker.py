@@ -42,6 +42,13 @@ class Observer:
         self.local = threading.local()
         self.lock = threading.RLock()
 
+    # Kernel device nodes are not recipe inputs. CPython reads entropy to name a temporary file
+    # and libraries seed themselves from it; macOS reaches the same entropy through getentropy
+    # without opening a file, so only Linux reports it here. Discarding an action's output is the
+    # one write outside its products that no recipe can depend on.
+    READABLE_DEVICES = frozenset({'/dev/urandom', '/dev/random'})
+    WRITABLE_DEVICES = frozenset({'/dev/null'})
+
     def send(self, kind, **values):
         line = json.dumps({'kind': kind, 'nonce': self.spec['nonce'], **values}) + '\n'
         with self.lock:
@@ -100,6 +107,8 @@ class Observer:
 
     def read(self, path, *, directory=False, metadata=False):
         operation = 'metadata' if metadata else 'list' if directory else 'read'
+        if str(path) in self.READABLE_DEVICES:
+            return self.record(operation, path)
         if self.covered(path, directory=directory):
             return self.record(operation, path)
         if self.owns(path):
@@ -109,7 +118,8 @@ class Observer:
         self.record(operation, path, 'not a declared input/read product or a newly written output')
 
     def write(self, path, *, mkdir=False):
-        allowed = self.owns(path) or mkdir and any(path in p.parents for p in self.outputs)
+        allowed = (self.owns(path) or str(path) in self.WRITABLE_DEVICES
+                   or mkdir and any(path in p.parents for p in self.outputs))
         self.record('mkdir' if mkdir else 'write', path,
                     None if allowed else 'outside owned products and private scratch')
 
