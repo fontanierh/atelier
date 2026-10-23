@@ -1,0 +1,6 @@
+@cc [owner:fontanierh,label:correctness;performance] explicit-logical-city-authoring-parameters
+Each current logical asset MUST consume its own declared source parameter file and explicitly selected
+shared palette for its colors and random-stream position. Import order, prior sibling construction and prior
+worker state MUST NOT supply those values. These source assets preserve the initial authored
+appearance; they MUST NOT be treated as successful build stamps, historical validation
+exceptions or authority to skip current export, material, collision and receiving checks.

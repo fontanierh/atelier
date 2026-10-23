@@ -25,6 +25,7 @@ class LogicalAsset:
     reads: tuple = ()
     needs: tuple = ()
     suffix: str = '.fbx'
+    products: tuple = ()
 
 
 def inventory(root, parent):
@@ -58,7 +59,8 @@ def inventory(root, parent):
 def steps(ctx, *, region, assets, after=(), inputs=()):
     """@cc [owner:fontanierh,label:correctness;performance] logical-region-export-graph
     Each logical constructor MUST be a separate normally cached planner with complete consumed
-    code/data/product inputs. Every planned bounded piece MUST then own an independent normal
+    code/data/product inputs. Auxiliary query/terrain outputs written by that constructor
+    MUST be declared under the same normal producer before other tasks consume them. Every planned bounded piece MUST then own an independent normal
     cached exporter, whose geometry input excludes sibling identities. Cold discovery MUST use
     the build controller's successful planner expansion. Assembly MUST require all planners and
     all current export products; it MUST NOT reconstruct missing geometry inline or export it.
@@ -83,7 +85,7 @@ def steps(ctx, *, region, assets, after=(), inputs=()):
         planners.append(Step(task, [Blender(asset.script, (*asset.args, '--output', str(root)),
                     threads=3, factory_startup=True, env=(('PYTHONHASHSEED', '0'),))],
             inputs=[*local_imports(asset.script, (WORLD, WORLD / 'regions')), *batch_support().values(), *asset.inputs], needs=list(asset.needs), reads=list(asset.reads),
-            after=list(after), products=[Product(product, (root,))], cache=True, toolchain=True,
+            after=list(after), products=[Product(product, (root,)), *asset.products], cache=True, toolchain=True,
             heavy=True, batch=Batch(region + ' logical geometry'), verify=complete,
             about='construct only logical mesh ' + asset.key))
         logical.append((asset.key, root, task, product))
