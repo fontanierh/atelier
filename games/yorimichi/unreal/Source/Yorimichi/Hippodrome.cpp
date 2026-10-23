@@ -86,6 +86,7 @@ bool AHippodrome::Initialize(const FString& Path)
     SetActorLocation(Course.World(O.X, O.Y));
     Tags.AddUnique(TEXT("hippodrome"));
     int32 Placed = 0;
+    Course.Grounds = FBox(ForceInit);
     for (const TSharedPtr<FJsonValue>& Entry : Root_->GetArrayField(TEXT("meshes")))
     {
         const TSharedPtr<FJsonObject>& M = Entry->AsObject();
@@ -101,7 +102,10 @@ bool AHippodrome::Initialize(const FString& Path)
         Component->SetCollisionResponseToAllChannels(ECR_Block);
         Component->SetCanEverAffectNavigation(false);
         Component->RegisterComponent(); ++Placed;
-        if (Name == TEXT("SM_HD_Ground")) Course.Grounds = Component->Bounds.GetBox();
+        FString LogicalParent;
+        M->TryGetStringField(TEXT("logical_parent"), LogicalParent);
+        if (Name == TEXT("SM_HD_Ground") || LogicalParent == TEXT("SM_HD_Ground"))
+            Course.Grounds += Component->Bounds.GetBox();
     }
     RootComponent->SetMobility(EComponentMobility::Static);
     bGameplayReady = Placed > 0 && Placed == Root_->GetArrayField(TEXT("meshes")).Num();

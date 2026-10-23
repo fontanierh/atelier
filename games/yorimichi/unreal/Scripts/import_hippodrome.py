@@ -16,6 +16,9 @@ import json
 import runpy
 import shutil
 import unreal
+from atelier.unreal_mesh_reuse import MeshReuse, AssetGroup, set_if_changed
+from atelier.native_protocol import native_context
+from atelier import native_membership
 
 OUT = yori.OUT / 'hippodrome' / 'region'
 ROOT = '/Game/Hippodrome'
@@ -32,7 +35,8 @@ SURFACES = {'HD_Grass': ('T_HD_Grass.png', .95, False), 'HD_Dirt': ('T_HD_Dirt.p
 
 def surface(key, colour, roughness, two_sided):
     name = 'M_' + key; dest = ROOT + '/Materials'
-    m = AT.create_asset(name, dest, unreal.Material, unreal.MaterialFactoryNew())
+    m = E.load_asset(dest + '/' + name) if E.does_asset_exist(dest + '/' + name) else AT.create_asset(name, dest, unreal.Material, unreal.MaterialFactoryNew())
+    MEL.delete_all_material_expressions(m)
     m.set_editor_property('two_sided', two_sided)
     if isinstance(colour, str):
         node = MEL.create_material_expression(m, unreal.MaterialExpressionTextureSample)
@@ -53,7 +57,9 @@ def surface(key, colour, roughness, two_sided):
 
 
 def structure_material():
-    material = AT.create_asset('M_HD_Structure', ROOT + '/Materials', unreal.Material, unreal.MaterialFactoryNew())
+    path = ROOT + '/Materials/M_HD_Structure'
+    material = E.load_asset(path) if E.does_asset_exist(path) else AT.create_asset('M_HD_Structure', ROOT + '/Materials', unreal.Material, unreal.MaterialFactoryNew())
+    MEL.delete_all_material_expressions(material)
     material.set_editor_property('two_sided', True)
     base = MEL.create_material_expression(material, unreal.MaterialExpressionTextureSampleParameter2D)
     base.set_editor_property('parameter_name', 'BaseColorTexture')
@@ -120,38 +126,79 @@ def restyle(instance, master):
 
 report = json.loads((OUT / 'build-report.json').read_text())
 data = json.loads((OUT / 'hippodrome.json').read_text())
-if E.does_directory_exist(ROOT):
-    E.delete_directory(ROOT)
 E.make_directory(ROOT)
-master = structure_material()
-surfaces = {key: surface(key, *spec) for key, spec in SURFACES.items()}
+previous_meshes = native_membership.inventory(E, ROOT, 'SM_HD_')
+material_paths=[ROOT+'/Materials/M_HD_Structure',*[ROOT+'/Materials/M_'+key for key in SURFACES]]
+material_paths += [ROOT+'/Textures/T_Grass',ROOT+'/Textures/T_Dirt']
+materials=AssetGroup(native_context(yori.GAME.name),'unreal.hippodrome',__file__,
+    ('surface','structure_material'),parameters=SURFACES,sources=[OUT/'textures'/file for file in data['textures'].values()])
+if not materials.matches(material_paths):
+    structure_material()
+    for key,spec in SURFACES.items():surface(key,*spec)
+    materials.validated(material_paths)
+master=E.load_asset(ROOT+'/Materials/M_HD_Structure')
+surfaces={key:E.load_asset(ROOT+'/Materials/M_'+key) for key in SURFACES}
+
+
+def validate_reused_mesh(mesh, expected):
+    if not mesh or mesh.get_num_triangles(0)!=expected['triangles']:return False
+    slots=list(mesh.get_editor_property('static_materials'))
+    if len(slots)!=1 or mesh.get_material(0) is None:return False
+    if expected['material'] in surfaces:
+        if mesh.get_material(0)!=surfaces[expected['material']]:return False
+    else:
+        instance=mesh.get_material(0)
+        if not isinstance(instance,unreal.MaterialInstanceConstant):return False
+        if instance.get_editor_property('parent')!=master:return False
+        if not MEL.get_material_instance_texture_parameter_value(instance,'BaseColorTexture'):return False
+    body=mesh.get_editor_property('body_setup')
+    if not body or body.get_editor_property('collision_trace_flag')!=unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE or not body.get_editor_property('double_sided_geometry'):return False
+    box=mesh.get_bounding_box();lo,hi=expected['min'],expected['max']
+    actual=[box.min.x,box.min.y,box.min.z,box.max.x,box.max.y,box.max.z]
+    wanted=[lo[0]*100,-hi[1]*100,lo[2]*100,hi[0]*100,-lo[1]*100,hi[2]*100]
+    return max(abs(a-b) for a,b in zip(actual,wanted))<1.
+
+reuse=MeshReuse(native_context(yori.GAME.name),'unreal.hippodrome',__file__,('import_mesh','pipeline'),
+    report_member='generated/hippodrome/region/build-report.json',validation_functions=('validate_reused_mesh',))
 result = {}
 for entry in data['meshes']:
     name = entry['name']; expected = report['meshes'][name]
     path = OUT / 'glb' / f'{name}.glb'
     assert sha(path) == expected['sha256'], 'stale region build: ' + name
-    mesh, found = import_mesh(path, name)
+    target=ROOT+'/'+name
+    mesh=reuse.acquire(name,target,geometry=expected,sources=[(target,path,expected['sha256'])],
+        donor_geometry=lambda saved: saved.get('meshes',{}).get(name),
+        validator=lambda candidate: validate_reused_mesh(candidate,expected))
+    reused=mesh is not None
+    if mesh is None:
+        if E.does_asset_exist(target):assert E.delete_asset(target),target
+        mesh,found=import_mesh(path,name)
+        reuse.imported(name)
+    else:found=assets_in(f'{ROOT}/Meshes/{name}')
     assert mesh.get_num_triangles(0) == expected['triangles'], (name, mesh.get_num_triangles(0), expected['triangles'])
     slots = list(mesh.get_editor_property('static_materials'))
     assert len(slots) == 1, (name, 'one material slot expected', len(slots))
     if expected['material'] in surfaces:
-        slots[0].set_editor_property('material_interface', surfaces[expected['material']])
+        if mesh.get_material(0)!=surfaces[expected['material']]:mesh.set_material(0,surfaces[expected['material']])
     else:
-        instances = found.get('MaterialInstanceConstant', [])
-        assert len(instances) == 1, (name, instances)
-        slots[0].set_editor_property('material_interface', restyle(E.load_asset(instances[0]), master))
-    mesh.set_editor_property('static_materials', slots)
+        instance=mesh.get_material(0)
+        assert isinstance(instance,unreal.MaterialInstanceConstant),(name,'missing imported painted material')
+        if not reused:restyle(instance,master)
     body = mesh.get_editor_property('body_setup'); assert body, name
-    body.set_editor_property('collision_trace_flag', unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
-    body.set_editor_property('double_sided_geometry', True)
-    E.save_loaded_asset(mesh)
+    set_if_changed(body,'collision_trace_flag', unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
+    set_if_changed(body,'double_sided_geometry', True)
+    assert E.save_loaded_asset(mesh,only_if_is_dirty=True),name
     box = mesh.get_bounding_box()
     lo, hi = [box.min.x, box.min.y, box.min.z], [box.max.x, box.max.y, box.max.z]
     want_lo = [expected['min'][0] * 100, -expected['max'][1] * 100, expected['min'][2] * 100]
     want_hi = [expected['max'][0] * 100, -expected['min'][1] * 100, expected['max'][2] * 100]
     assert max(abs(a - b) for a, b in zip(lo + hi, want_lo + want_hi)) < 1., (name, 'unit/axis conversion', lo, hi, want_lo, want_hi)
+    assert validate_reused_mesh(mesh,expected),name
+    reuse.validated(name)
     result[name] = {'triangles': expected['triangles'], 'bounds_cm': [lo, hi]}
     unreal.log(f'HIPPODROME {name}: {expected["triangles"]} triangles')
+native_membership.retire(E,previous_meshes,[entry['name'] for entry in data['meshes']],ROOT,'SM_HD_')
+reuse.finish()
 DATA.mkdir(parents=True, exist_ok=True)
 shutil.copy2(OUT / 'hippodrome.json', DATA / 'hippodrome.json')
 (OUT / 'import-report.json').write_text(json.dumps(result, indent=1) + '\n')
