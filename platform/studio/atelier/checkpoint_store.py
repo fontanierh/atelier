@@ -320,19 +320,40 @@ def cold(ctx):
     return True
 
 
+def declared(ctx, steps):
+    """Generated paths some receiving step declares; other donor files are never hydrated."""
+    base = str(ctx.out.absolute()) + '/'
+    result = set()
+    for step in steps:
+        result.add('native-imports/' + step.name)  # Mesh reuse receipts, validated by their owner.
+        for path in (*getattr(step, 'outputs', ()), *(q for product in getattr(step, 'products', ()) for q in product.paths)):
+            text = str(Path(path).absolute())
+            if text.startswith(base):
+                result.add(text[len(base):])
+    return result
+
+
+def declared_member(name, outputs):
+    while name:
+        if name in outputs:
+            return True
+        name = name.rpartition('/')[0]
+    return False
+
+
 def unit_of(member, selected):
     return next((u for u in selected if member.startswith(u)), None)
 
 
-def restore(ctx, steps, store, key, *, echo=print, hydrate=None, replace=()):
+def restore(ctx, steps, store, key, *, echo=print, hydrate=None):
     """@cc [owner:fontanierh,label:correctness] checkpoint-restoration-certificates
     Restoration MUST preserve source files, use independent verified copies and stay within
     locally allowed generated roots. Only certificates matching the receiving recipe's actual
     inputs MAY survive. A durable launch barrier MUST precede mutation and survive any failure.
     Existing generated work MUST NOT be overwritten. Compiler intermediates MUST NOT relocate.
-    Partial hydration MAY fill only selected units whose existing members are identical to the
-    checkpoint's, and MAY add only certificates the receiver lacks. It MAY replace a unit only
-    when no current local certificate owns outputs in it.
+    Partial hydration decides per file: matching files are adopted, missing ones cloned, and stale
+    generated files replaced unless a current local certificate owns them. It MAY add only
+    certificates the receiver lacks.
     Copies MUST be clones/copies of digest-named blobs verified when stored; restoration MAY prove
     them by blob size and copied size/mode/mtime instead of rereading bytes.
     """
@@ -347,7 +368,7 @@ def restore(ctx, steps, store, key, *, echo=print, hydrate=None, replace=()):
     journal = ctx.out / JOURNAL
     existing = read_json(journal) if journal.exists() else None
     if existing is not None and hydrate is None and 'units' in existing:
-        hydrate, replace = existing['units'], existing.get('replace', [])
+        hydrate = existing['units']
     resume = dict(schema=SCHEMA, key=key, game=ctx.game)
     if hydrate is not None:
         if (not isinstance(hydrate, list) or not hydrate
@@ -360,9 +381,9 @@ def restore(ctx, steps, store, key, *, echo=print, hydrate=None, replace=()):
         if not set(lacking) <= set(saved_stamps):
             raise CheckpointError('Checkpoint hydration journal names foreign certificates')
         saved_stamps = {n: saved_stamps[n] for n in lacking}
-        if not set(replace) <= set(hydrate) or any(u.count('/') != 1 for u in replace):
-            raise CheckpointError('Invalid checkpoint replacement units')
-        resume.update(units=sorted(hydrate), stamps=lacking, **({'replace': sorted(replace)} if replace else {}))
+        resume.update(units=sorted(hydrate), stamps=lacking)
+        if existing is not None and 'replace' in existing:
+            resume['replace'] = existing['replace']  # Written by an earlier partial format.
     if existing is not None and existing != resume:
         raise CheckpointError('A different checkpoint restoration is incomplete')
     require_complete(ctx.out, game=ctx.game, checkpoint_resume=resume if existing else None)
@@ -370,13 +391,15 @@ def restore(ctx, steps, store, key, *, echo=print, hydrate=None, replace=()):
         raise CheckpointError('Checkpoint restoration preserves existing generated work; receiver is not empty')
     selected = {}
     source_paths = tracked_paths()
+    outputs = declared(ctx, steps) if hydrate is not None else set()
     same_path = manifest['checkout'] == identity(str(paths.REPO.resolve()))
     for member, entry in manifest['files'].items():
         label, _, name = member.partition('/')
         if label not in allowed:
             raise CheckpointError('Checkpoint root is not owned by this project')
         root, path_bound = allowed[label]
-        if path_bound and not same_path or hydrate is not None and unit_of(member, hydrate) is None:
+        if path_bound and not same_path or hydrate is not None and (unit_of(member, hydrate) is None
+                or label == 'generated' and not declared_member(name, outputs)):
             continue
         destination = safe_destination(root, name)
         if destination in source_paths:
@@ -393,43 +416,44 @@ def restore(ctx, steps, store, key, *, echo=print, hydrate=None, replace=()):
             if (entry['target'][7:] not in selected
                     and not any(m.startswith(entry['target'][7:] + '/') for m in selected)):
                 raise CheckpointError('Checkpoint link target is unavailable')
-    verified = set()
-    if hydrate is not None and existing is None:
-        # Existing members of a hydration unit must already be the checkpoint's own bytes.
-        if replace:
+    verified, kept = set(), set()
+    if hydrate is not None:
+        def adopted(destination, entry):
+            if entry['kind'] == 'file':
+                return not destination.is_symlink() and unchanged(destination, entry)
+            if entry['kind'] == 'directory':
+                return destination.is_dir() and not destination.is_symlink()
+            return destination.is_symlink()
+        stale = [m for m, (d, e) in selected.items() if os.path.lexists(d) and not adopted(d, e)]
+        parents = set()
+        for member, (destination, _) in selected.items():
+            root = allowed[member.partition('/')[0]][0]
+            for parent in destination.parents:
+                if parent == root or parent in parents:
+                    break
+                parents.add(parent)
+        blocked = {p for p in parents if p.is_symlink() or p.exists() and not p.is_dir()}
+        kept = {m for m, (d, e) in selected.items()
+                if blocked and any(p in blocked for p in d.parents)
+                or e['kind'] != 'directory' and d.is_dir() and not d.is_symlink()}
+        if set(stale) - kept:
+            # Never replace outputs that a current local certificate owns.
             owned = certificates(ctx, steps, include_incremental=True, hashes=ctx.out / RESTORED_HASHES)
-            bases = [allowed[u.partition('/')[0]][0] for u in replace]
-            for step in steps:
-                if step.name in owned and any(Path(o).is_relative_to(b) for o in step.outputs for b in bases):
-                    raise CheckpointError('Checkpoint hydration keeps current local ' + step.name + ' outputs')
-        for unit in hydrate:
-            if unit in replace:
-                continue
-            label, _, prefix = unit.partition('/')
-            root = allowed[label][0]
-            for path in members(root / prefix if prefix else root):
-                member = label + '/' + path.relative_to(root).as_posix()
-                entry = manifest['files'].get(member)
-                if (path in source_paths or member not in selected or entry['kind'] != 'file' or path.is_symlink()
-                        or path.stat().st_size != entry['size'] or build_products.file_digest(path) != entry['sha256']):
-                    raise CheckpointError('Checkpoint hydration preserves differing local work in ' + unit)
-                verified.add(path)
+            bases = [Path(o) for step in steps if step.name in owned
+                     for o in (*step.outputs, *(q for product in step.products for q in product.paths))]
+            kept |= {m for m in stale if any(selected[m][0] == b or selected[m][0].is_relative_to(b) for b in bases)}
+        for member in kept:
+            del selected[member]
+    ctx.checkpoint_kept = sorted(kept)
     ctx.stamps.mkdir(parents=True, exist_ok=True)
     atomic_json(journal, resume)
     for name in saved_stamps:
         (ctx.stamps / (name + '.json')).unlink(missing_ok=True)
-    for unit in replace:
-        # Stale restored files only; the receiver's own current outputs were refused above.
-        label = unit.partition('/')[0]
-        root = allowed[label][0]
-        for path in list(members(root)):
-            member = label + '/' + path.relative_to(root).as_posix()
-            if (member not in selected or path.is_symlink() or selected[member][1]['kind'] != 'file'
-                    or not unchanged(path, selected[member][1])):
-                path.unlink()
     def place(item):
         destination, entry = item
-        if destination.exists() or destination.is_symlink():
+        if hydrate is not None and os.path.lexists(destination) and not unchanged(destination, entry):
+            pass  # Stale generated file without a current owner: replaced atomically below.
+        elif destination.exists() or destination.is_symlink():
             if destination.is_symlink() or not destination.is_file():
                 raise CheckpointError('Receiver output changed during checkpoint restoration; preserving it')
             if destination not in verified and not unchanged(destination, entry):
@@ -468,9 +492,14 @@ def restore(ctx, steps, store, key, *, echo=print, hydrate=None, replace=()):
             else:
                 target = ctx.unreal_root / entry['target'][7:]
             link = os.path.relpath(target, destination.parent)
+            if destination.is_symlink() and hydrate is not None and os.readlink(destination) != link:
+                destination.unlink()
             if destination.is_symlink():
                 if os.readlink(destination) != link:
                     raise CheckpointError('Receiver link changed during checkpoint restoration')
+            elif destination.exists() and hydrate is not None and destination.is_file():
+                destination.unlink()
+                destination.symlink_to(link)
             elif destination.exists():
                 raise CheckpointError('Receiver link destination is occupied')
             else:

@@ -322,31 +322,35 @@ def test_checkpoint_transfer_reaches_real_guard_boundary_with_valid_invocation(t
     assert len(calls) == 1
 
 
-def test_non_cold_receiver_hydrates_matching_unit_and_keeps_its_work(fixture):
+def test_non_cold_receiver_hydrates_per_file(fixture):
     _, _, key = snapshot(fixture)
     ctx, steps = fixture.checkout('receiver')
     (ctx.out / 'tree').mkdir(parents=True)
-    (ctx.out / 'tree/asset.bin').write_bytes(b'tree')
-    plan, total, scanned, blocked = build_checkpoints.hydration_plan(ctx, steps, fixture.store)
-    assert plan['key'] == key and plan['units'] == ['generated/'] and plan['files'] == 2
-    assert (total, scanned, blocked) == (1, 1, [])
+    (ctx.out / 'tree/asset.bin').write_bytes(b'stale')
+    (ctx.out / 'mine.txt').write_text('keep me')
+    plan, total, scanned = build_checkpoints.hydration_plan(ctx, steps, fixture.store)
+    assert (plan['key'], plan['units'], plan['missing'], plan['stale'], plan['stamps']) == (key, ['generated/'], 2, 1, 3)
     stamps = cp.restore(ctx, steps, fixture.store, key, hydrate=plan['units'], echo=lambda _: None)
     assert set(stamps) == {'tree', 'combat', 'house'}
     publish_receiver(ctx, steps, fixture.store, key, stamps)
-    assert (ctx.out / 'house/asset.bin').read_bytes() == b'house' and not (ctx.out / cp.JOURNAL).exists()
-    assert set(cp.certificates(ctx, steps)) == {'tree', 'combat', 'house'}
+    assert (ctx.out / 'tree/asset.bin').read_bytes() == b'tree' and (ctx.out / 'mine.txt').read_text() == 'keep me'
+    assert set(cp.certificates(ctx, steps)) == {'tree', 'combat', 'house'} and not (ctx.out / cp.JOURNAL).exists()
+    assert build_checkpoints.hydration_plan(ctx, steps, fixture.store)[0] is None
 
 
-def test_differing_local_work_is_kept_with_a_notice(fixture):
+def test_hydration_never_replaces_current_local_outputs(fixture, monkeypatch):
     _, _, key = snapshot(fixture)
     ctx, steps = fixture.checkout('receiver')
-    (ctx.out / 'tree').mkdir(parents=True)
-    (ctx.out / 'tree/asset.bin').write_bytes(b'mine')
+    fixture.produce(ctx, steps)
+    output = steps[1].outputs[0]
+    before = output.stat().st_ino
+    plan, _, _ = build_checkpoints.hydration_plan(ctx, steps, fixture.store)
+    assert plan['stale'] == 3 and plan['missing'] == 0 and plan['stamps'] == 0
+    monkeypatch.setattr(build_checkpoints, '_guard', lambda ctx, op, key, units: dict(
+        key=key, stamps=cp.restore(ctx, steps, fixture.store, key, hydrate=units, echo=lambda _: None),
+        post_import={}, kept=ctx.checkpoint_kept))
     messages = []
-    assert build_checkpoints.hydrate(ctx, steps, fixture.store, echo=messages.append) is None
-    assert messages[0].startswith('checkpoint reuse scan: 1 checkpoints, 1 candidates')
-    assert key[:12] in messages[1] and 'kept' in messages[1]
-    assert (ctx.out / 'tree/asset.bin').read_bytes() == b'mine' and not (ctx.out / 'house').exists()
-    with pytest.raises(cp.CheckpointError, match='differing local work'):
-        cp.restore(ctx, steps, fixture.store, key, hydrate=['generated/'])
-    assert not (ctx.out / cp.JOURNAL).exists()
+    build_checkpoints.hydrate(ctx, steps, fixture.store, echo=messages.append)
+    assert output.stat().st_ino == before and '3 current local files kept' in messages[-1]
+    assert set(cp.certificates(ctx, steps)) == {'tree', 'combat', 'house'}
+    assert build_checkpoints.hydration_plan(ctx, steps, fixture.store)[0] is None

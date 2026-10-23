@@ -59,7 +59,7 @@ def reason(value):
     return value
 
 
-def _guard(ctx, operation, key=None, units=(), replace=()):
+def _guard(ctx, operation, key=None, units=()):
     """@cc [owner:fontanierh,label:safety] checkpoint-transfer-invocation
     Native-file copies MUST enter the normal owned-child admission/guard lifecycle with
     its required canonical UUID invocation identity. Invalid transfer metadata MUST NOT
@@ -73,8 +73,6 @@ def _guard(ctx, operation, key=None, units=(), replace=()):
         argv += ['--key', key]
     for unit in units:
         argv += ['--unit', unit]
-    for unit in replace:
-        argv += ['--replace', unit]
     code = guarded.run(argv, folder, aggregate_tree=True, timeout=3600, progress=25,
                        kind='job', purpose='build checkpoint ' + operation, invocation_id=nonce)
     if code:
@@ -103,6 +101,10 @@ def _publish_restoration(ctx, steps, store, key, record):
         raise CheckpointError('Checkpoint restore completion contains foreign certificates')
     if units is not None and not set(candidates) <= set(expected['stamps']):
         raise CheckpointError('Checkpoint hydration would replace receiver certificates')
+    kept = record.get('kept', [])
+    if not isinstance(kept, list) or not set(kept) <= set(saved['files']):
+        raise CheckpointError('Checkpoint hydration kept unknown outputs')
+    kept = set(kept)
     try:
         for name, stamp in candidates.items():
             atomic_json(ctx.stamps / (name + '.json'), stamp)
@@ -125,7 +127,8 @@ def _publish_restoration(ctx, steps, store, key, record):
         for member, entry in saved['files'].items():
             label, _, name = member.partition('/')
             root, bound = allowed[label]
-            if bound and not same_path or units is not None and not any(member.startswith(u) for u in units):
+            if (bound and not same_path or member in kept
+                    or units is not None and not any(member.startswith(u) for u in units)):
                 continue
             path = safe_destination(root, name)
             expected_digest = post_import.get(member, entry.get('sha256'))
@@ -210,121 +213,81 @@ def prepare(ctx, steps, *, echo=print):
 
 
 def hydration_plan(ctx, steps, store):
-    """Best compatible local checkpoint for the generated units this workspace lacks.
+    """The largest compatible local checkpoint, compared file by file with this workspace.
 
-    Units are whole generated roots and per-task native import receipts. A unit is filled when
-    empty, or when its few files match the checkpoint; a small unit holding exactly another
-    checkpoint's restored files (never rebuilt here) may be replaced. Others are kept and reported.
-    Only cached manifest summaries are read; a large manifest is read once per new local state.
+    Only cached summaries and one manifest are read; files are compared by kind, size, mode and
+    mtime (a clone keeps them), never hashed. An unchanged retry that achieved nothing is skipped.
     """
-    from itertools import islice
-    from .checkpoint_store import SMALL_UNIT, members, roots
+    from .checkpoint_store import declared, declared_member, roots
     allowed = roots(ctx)
+    outputs = declared(ctx, steps)
     expected, ownership = identity(context(ctx)), {s.name for s in steps}
     here = identity(str(paths.REPO.resolve()))
-    present = {p.stem for p in ctx.stamps.glob('*.json')} if ctx.stamps.is_dir() else set()
-    local, loaded = {}, {}
-    checks_path = ctx.out / '.state/hydration-checks.json'
-    try:
-        checks = read_json(checks_path) if checks_path.is_file() else {}
-    except (OSError, ValueError, CheckpointError):
-        checks = {}
-    changed = False
-    def found(unit):
-        if unit not in local:
-            label, _, prefix = unit.partition('/')
-            root = allowed[label][0]
-            local[unit] = [(p.relative_to(root).as_posix(), p.lstat())
-                           for p in islice(members(root / prefix if prefix else root), SMALL_UNIT + 1)]
-        return local[unit]
-    def listing(existing):
-        return {n: ['file' if stat.S_ISREG(i.st_mode) else 'link', i.st_size if stat.S_ISREG(i.st_mode) else None,
-                    stat.S_IMODE(i.st_mode), i.st_mtime_ns] for n, i in existing}
-    def subset(key, summary, unit, existing):
-        nonlocal changed
-        saved = summary['listings'].get(unit)
-        if saved is None:
-            token = ' '.join((key, unit, identity(listing(existing))))
-            if token not in checks:
-                if key not in loaded:
-                    loaded[key] = store.load(key)['files']
-                saved = {m[len(unit):]: [e['kind'], e.get('size')] for m in (unit + n for n, _ in existing)
-                         if (e := loaded[key].get(m)) is not None}
-                checks[token] = all(saved.get(n, [None])[:2] == v[:2] and v[0] == 'file' for n, v in listing(existing).items())
-                changed = True
-            return checks[token]
-        return all(v[0] == 'file' and saved.get(n, [None, None])[:2] == v[:2] for n, v in listing(existing).items())
     summaries = store.summaries()
-    restored = [s['listings'] for _, s in summaries]
-    scanned, best, blocked = 0, None, []
-    for age, (key, summary) in enumerate(summaries):
-        if (summary['workspace_only'] or summary['context'] != expected or not set(summary['steps']) <= ownership
-                or not {u.partition('/')[0] for u in summary['units']} <= set(allowed)):
+    usable = lambda summary, label: (label in allowed and label not in ('zen', 'cooked')
+                                     and not (allowed[label][1] and summary['checkout'] != here))
+    candidates = [(sum(c for u, c in summary['units'].items() if u.count('/') == 1 and usable(summary, u[:-1])), -age, key, summary)
+                  for age, (key, summary) in enumerate(summaries)
+                  if not summary['workspace_only'] and summary['context'] == expected
+                  and set(summary['steps']) <= ownership and {u.partition('/')[0] for u in summary['units']} <= set(allowed)]
+    if not candidates:
+        return None, len(summaries), 0
+    _, _, key, summary = max(candidates)
+    files = json.loads((store.manifests / (key + '.json')).read_bytes())['files']
+    missing = stale = 0
+    labels = set()
+    bases = {label: str(root) + '/' for label, (root, _) in allowed.items()}
+    for member, entry in files.items():
+        label, _, name = member.partition('/')
+        if not usable(summary, label) or label == 'generated' and not declared_member(name, outputs):
             continue
-        scanned += 1
-        fill, replace = {}, {}
-        for unit, count in summary['units'].items():
-            label = unit.partition('/')[0]
-            if label in ('zen', 'cooked') or allowed[label][1] and summary['checkout'] != here:
-                continue
-            existing = found(unit)
-            if unit != label + '/':
-                if not existing and 'generated/' not in fill:
-                    fill[unit] = count
-            elif not existing:
-                fill[unit] = count
-            elif len(existing) > SMALL_UNIT:
-                if label != 'generated':
-                    blocked.append((key, label, count))
-            elif subset(key, summary, unit, existing):
-                if count > len(existing):
-                    fill[unit] = count - len(existing)
-            elif (any(r.get(unit) == listing(existing) for r in restored)
-                    and summary['listings'].get(unit) != listing(existing)):
-                replace[unit] = count
-            else:
-                blocked.append((key, label, count))
-        if 'generated/' in fill:
-            fill = {u: c for u, c in fill.items() if not u.startswith('generated/native-imports/')}
-        score = (sum(fill.values()) + sum(replace.values()), sum(1 for n in summary['stamps'] if n not in present))
-        if (fill or replace) and (best is None or score > best[0]):
-            best = (score, key, fill, replace)
-    if changed:
+        labels.add(label + '/')
         try:
-            atomic_json(checks_path, checks)
-        except OSError:
-            pass
-    plan = None
-    if best is not None:
-        score, key, fill, replace = best
-        plan = dict(key=key, units=sorted([*fill, *replace]), replace=sorted(replace), files=score[0], stamps=score[1])
-    blocked = [b for b in blocked if plan is None or b[0] != plan['key'] or b[1] + '/' not in plan['units']]
-    return plan, len(summaries), scanned, blocked
+            info = os.lstat(bases[label] + name)
+        except FileNotFoundError:
+            missing += 1
+            continue
+        kind = entry['kind']
+        if not (stat.S_ISLNK(info.st_mode) if kind == 'link' else stat.S_ISDIR(info.st_mode) if kind == 'directory'
+                else stat.S_ISREG(info.st_mode) and info.st_size == entry['size']
+                and stat.S_IMODE(info.st_mode) == entry['mode'] and info.st_mtime_ns == entry['mtime_ns']):
+            stale += 1
+    present = {p.stem for p in ctx.stamps.glob('*.json')} if ctx.stamps.is_dir() else set()
+    lacking = sorted(n for n in summary['stamps'] if n not in present)
+    token = identity([key, missing, stale, lacking])
+    checks = ctx.out / '.state/hydration-futile.json'
+    try:
+        futile = read_json(checks).get('token') == token if checks.is_file() else False
+    except (OSError, ValueError, CheckpointError):
+        futile = False
+    if not (missing or stale or lacking) or futile:
+        return None, len(summaries), len(candidates)
+    return (dict(key=key, units=sorted(labels), missing=missing, stale=stale, stamps=len(lacking), token=token),
+            len(summaries), len(candidates))
 
 
 def hydrate(ctx, steps, store, *, echo=print):
-    """Fill generated units this workspace lacks from the best compatible local checkpoint."""
+    """Adopt, clone or replace generated files from the best compatible local checkpoint."""
     started = time.monotonic()
-    plan, total, scanned, blocked = hydration_plan(ctx, steps, store)
+    plan, total, scanned = hydration_plan(ctx, steps, store)
     echo(f'checkpoint reuse scan: {total} checkpoints, {scanned} candidates, {time.monotonic() - started:.1f} s')
-    if blocked:
-        key, label, count = max(blocked, key=lambda b: b[2])
-        echo(f'checkpoint {key[:12]} holds {count} {label} files, but local {label} differs and is kept; '
-             f'empty it to hydrate from that checkpoint')
     if plan is None:
         return None
-    echo(f'Hydrating {plan["files"]} files ({", ".join(u.rstrip("/") for u in plan["units"])}) from local '
-         f'checkpoint {plan["key"][:12]}; existing work is kept')
+    echo(f'Hydrating from local checkpoint {plan["key"][:12]}: {plan["missing"]} missing and {plan["stale"]} stale files, '
+         f'{plan["stamps"]} certificates to check; current local outputs are kept')
     started = time.monotonic()
     try:
-        result = _guard(ctx, 'restore', plan['key'], plan['units'], plan['replace'])
+        result = _guard(ctx, 'restore', plan['key'], plan['units'])
     except CheckpointError as error:
         if (ctx.out / JOURNAL).exists():
             raise
         echo(f'checkpoint hydration skipped: {error}')
         return None
     _publish_restoration(ctx, steps, store, plan['key'], result)
-    echo(f'checkpoint restore: {len(result.get("stamps", {}))} certificates, {time.monotonic() - started:.1f} s')
+    kept, stamps = len(result.get('kept', [])), len(result.get('stamps', {}))
+    echo(f'checkpoint restore: {stamps} certificates, {kept} current local files kept, {time.monotonic() - started:.1f} s')
+    if not plan['missing'] and not stamps:
+        atomic_json(ctx.out / '.state/hydration-futile.json', dict(token=plan['token']))
     return plan
 
 
