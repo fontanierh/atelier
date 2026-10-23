@@ -25,7 +25,7 @@ def forest_weight(x, y):
     return t*t*(3.-2.*t)
 
 
-def paint_join(path, mesh):
+def paint_join_data(data, owner, mesh):
     """@cc [owner:fontanierh,label:correctness] country-earthworks-colour-frame
     Railway colour blending MUST compare carved and natural heights in the same
     world frame. Unchanged ground MUST retain its forest or shoreline palette.
@@ -43,7 +43,7 @@ def paint_join(path, mesh):
     oy = np.clip(points[:, 1], terrain.OUTER[1], terrain.OUTER[3])
     outer = far_palette(ox, oy)
     colours = colours*(1.-weight[:, None]) + outer*weight[:, None]
-    if path.stem == 'SM_BM_NorthCountry':
+    if owner == 'SM_BM_NorthCountry':
         colours = far_palette(points[:,0],points[:,1])
         colours = shorelines.colours(points[:,0],points[:,1],points[:,2],
                                      np.asarray(mesh.n)[:,2],colours)
@@ -51,10 +51,15 @@ def paint_join(path, mesh):
         from train import earthworks
         colours = earthworks.paint(colours, points[:, 0], points[:, 1], points[:, 2], mesh.natural)
     rgba = np.c_[source.srgb(colours), weight].astype('<f4')
-    doc, binary = glb_parts(path.read_bytes())
+    doc, binary = glb_parts(data)
     assert doc['accessors'][doc['meshes'][0]['primitives'][0]['attributes']['POSITION']]['count'] == len(rgba)
     doc['bufferViews'].append({'buffer': 0, 'byteOffset': len(binary), 'byteLength': rgba.nbytes, 'target': 34962})
     doc['accessors'].append({'bufferView': len(doc['bufferViews'])-1, 'componentType': 5126, 'count': len(rgba), 'type': 'VEC4'})
     doc['meshes'][0]['primitives'][0]['attributes']['COLOR_0'] = len(doc['accessors'])-1
     binary += rgba.tobytes(); doc['buffers'][0]['byteLength'] = len(binary)
-    path.write_bytes(glb_pack(doc, binary))
+    return glb_pack(doc, binary)
+
+
+def paint_join(path,mesh):
+    """Compatibility file adapter for the unchanged final colour encoding."""
+    path.write_bytes(paint_join_data(path.read_bytes(),path.stem,mesh))

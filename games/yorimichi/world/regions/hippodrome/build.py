@@ -30,8 +30,8 @@ UV_METRES = 4.          # one texture repeat per 4 m
 
 
 # ------------------------------------------------------------------ glTF
-def write_glb(path, positions, normals, uvs, indices, material):
-    """One static mesh with one material slot; positions and normals in Blender axes (metres)."""
+def encoded_glb(name, positions, normals, uvs, indices, material):
+    """The original exact mesh encoding, as data before any file export."""
     p = np.asarray(positions, np.float32); n = np.asarray(normals, np.float32); t = np.asarray(uvs, np.float32)
     i = np.asarray(indices, np.uint32).reshape(-1)
     gl = lambda v: np.stack([v[:, 0], v[:, 2], -v[:, 1]], 1).astype(np.float32)
@@ -53,24 +53,34 @@ def write_glb(path, positions, normals, uvs, indices, material):
                   'TEXCOORD_0': add(t, 'VEC2', 5126, 34962)}
     index = add(i, 'SCALAR', 5125, 34963)
     gltf = {'asset': {'version': '2.0', 'generator': 'yorimichi hippodrome'}, 'scene': 0,
-            'scenes': [{'nodes': [0]}], 'nodes': [{'name': path.stem, 'mesh': 0}],
-            'meshes': [{'name': path.stem, 'primitives': [{'attributes': attributes, 'indices': index, 'material': 0}]}],
+            'scenes': [{'nodes': [0]}], 'nodes': [{'name': name, 'mesh': 0}],
+            'meshes': [{'name': name, 'primitives': [{'attributes': attributes, 'indices': index, 'material': 0}]}],
             'materials': [{'name': material, 'pbrMetallicRoughness': {'baseColorFactor': [.8, .8, .8, 1.],
                                                                        'metallicFactor': 0., 'roughnessFactor': .9}}],
             'buffers': [{'byteLength': len(chunks)}], 'bufferViews': views, 'accessors': accessors}
-    _save(path, gltf, chunks)
-    return {'triangles': len(i) // 3, 'min': [float(v) for v in np.asarray(positions).min(0)],
+    return _encoded(gltf,chunks), {'triangles': len(i) // 3, 'min': [float(v) for v in np.asarray(positions).min(0)],
             'max': [float(v) for v in np.asarray(positions).max(0)], 'material': material}
 
 
-def _save(path, gltf, binary):
+def write_glb(path, positions, normals, uvs, indices, material):
+    """One static mesh with one material slot; positions and normals in Blender axes (metres)."""
+    data,info=encoded_glb(path.stem,positions,normals,uvs,indices,material)
+    path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
+    return info
+
+
+def _encoded(gltf,binary):
     binary = bytes(binary) + b'\x00' * (-len(binary) % 4)
     gltf['buffers'] = [{'byteLength': len(binary)}]
     text = json.dumps(gltf, separators=(',', ':')).encode()
     text += b' ' * (-len(text) % 4)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(struct.pack('<III', 0x46546C67, 2, 12 + 8 + len(text) + 8 + len(binary)) +
-                     struct.pack('<II', len(text), 0x4E4F534A) + text + struct.pack('<II', len(binary), 0x004E4942) + binary)
+    return (struct.pack('<III', 0x46546C67, 2, 12 + 8 + len(text) + 8 + len(binary)) +
+            struct.pack('<II', len(text), 0x4E4F534A) + text + struct.pack('<II', len(binary), 0x004E4942) + binary)
+
+
+def _save(path,gltf,binary):
+    data=_encoded(gltf,binary)
+    path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
 
 
 def _read(path):
