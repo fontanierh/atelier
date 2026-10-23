@@ -17,7 +17,9 @@ def receive(out=None):
     """@cc [owner:fontanierh,label:correctness;performance] receive-complete-independent-bike
     Admit untouched saved packages independently, preserving original legacy FBX options,
     M_Bike, half-precision UVs, wheel CPU support and default-trace zero-hull current LOD0
-    cooked geometry. ALL eleven current pieces MUST validate and dirty-only save before
+    cooked geometry. Render and cooked counts MUST equal the saved MeshDescription after
+    the actual engine duplicate-point build rule, within the raw export triangle budget.
+    ALL eleven current pieces MUST validate and dirty-only save before
     old steering retirement. Persist exact actual render union bounds/true sphere on all
     four steering assets as complete cooked user data; no source sphere approximation.
     """
@@ -37,13 +39,13 @@ def receive(out=None):
     for name in PARTS:
         entry=manifest['parts'][name];wheel=name in ('BK_WheelFront','BK_WheelRear')
         def valid(mesh,wheel=wheel,entry=entry):
-            return (mesh.get_num_lods()==1 and mesh.get_num_triangles(0)==entry['triangles']
+            return (mesh.get_num_lods()==1
                 and bool(mesh.get_editor_property('allow_cpu_access'))==wheel
                 and not editor.get_lod_build_settings(mesh,0).get_editor_property('use_full_precision_u_vs')
                 and unreal.BikeMeshComponent.validate_part(mesh,entry['triangles']))
         mesh=import_mesh(root/'bike/assets'/(name+'.fbx'),DESTINATION,name,fresh_slots=True,reuse_validator=valid)
         assert mesh.get_path_name().split('.')[0]==DESTINATION+'/'+name
-        assert mesh.get_num_lods()==1 and mesh.get_num_triangles(0)==entry['triangles'],(name,'render geometry')
+        assert mesh.get_num_lods()==1,(name,'original single render LOD')
         assert len(mesh.static_materials)==1 and str(mesh.static_materials[0].get_editor_property('imported_material_slot_name'))=='BikePalette'
         if mesh.get_material(0)!=mat:mesh.set_material(0,mat)
         if wheel and not mesh.get_editor_property('allow_cpu_access'):mesh.set_editor_property('allow_cpu_access',True)
@@ -54,7 +56,7 @@ def receive(out=None):
         bounds=mesh.get_bounding_box();expected_min=(entry['min'][0],-entry['max'][1],entry['min'][2]);expected_max=(entry['max'][0],-entry['min'][1],entry['max'][2])
         for actual,expected in ((bounds.min,expected_min),(bounds.max,expected_max)):
             assert all(abs(getattr(actual,axis)-target*100)<.3 for axis,target in zip(('x','y','z'),expected)),(name,'original axis/scale')
-        meshes[name]=mesh;report[name]=dict(triangles=entry['triangles'],min=[bounds.min.x,bounds.min.y,bounds.min.z],max=[bounds.max.x,bounds.max.y,bounds.max.z])
+        meshes[name]=mesh;report[name]=dict(source_triangles=entry['triangles'],triangles=mesh.get_num_triangles(0),min=[bounds.min.x,bounds.min.y,bounds.min.z],max=[bounds.max.x,bounds.max.y,bounds.max.z])
     steering=[meshes[name] for name in STEERING]
     assert unreal.BikeMeshComponent.prepare_steering_bounds(steering),'Incomplete actual steering bounds'
     logical=json.loads(unreal.BikeMeshComponent.steering_bounds(steering))

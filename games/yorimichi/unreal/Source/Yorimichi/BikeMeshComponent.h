@@ -40,9 +40,9 @@ public:
     static bool PrepareSteeringBounds(const TArray<UStaticMesh*>& Parts);
     UFUNCTION(BlueprintCallable, Category="Yorimichi|Import")
     static FString SteeringBounds(const TArray<UStaticMesh*>& Parts);
-    /** Current original default-trace, zero-hull, LOD0 cooked surface. */
+    /** Exact saved-source/build-policy render and cooked counts within the raw source budget. */
     UFUNCTION(BlueprintCallable, Category="Yorimichi|Import")
-    static bool ValidatePart(UStaticMesh* Mesh, int32 ExpectedTriangles);
+    static bool ValidatePart(UStaticMesh* Mesh, int32 ExpectedSourceTriangles);
     virtual FBoxSphereBounds CalcBounds(const FTransform& LocalToWorld) const override;
 private:
     FBoxSphereBounds LogicalBounds = FBoxSphereBounds(ForceInit);

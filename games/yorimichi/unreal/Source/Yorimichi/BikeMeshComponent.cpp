@@ -5,6 +5,9 @@
 #include "PhysicsEngine/BodySetup.h"
 #if WITH_EDITOR
 #include "Chaos/TriangleMeshImplicitObject.h"
+#include "MeshBuild.h"
+#include "MeshDescription.h"
+#include "StaticMeshAttributes.h"
 #endif
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonSerializer.h"
@@ -139,10 +142,29 @@ FBoxSphereBounds UBikeMeshComponent::CalcBounds(const FTransform& LocalToWorld) 
 }
 
 
-bool UBikeMeshComponent::ValidatePart(UStaticMesh* Mesh, int32 ExpectedTriangles)
+bool UBikeMeshComponent::ValidatePart(UStaticMesh* Mesh, int32 ExpectedSourceTriangles)
 {
 #if WITH_EDITOR
-    if (!Mesh || ExpectedTriangles < 1 || Mesh->LODForCollision != 0 || Mesh->ComplexCollisionMesh) return false;
+    if (!Mesh || ExpectedSourceTriangles < 1 || Mesh->GetNumLODs() != 1
+        || Mesh->LODForCollision != 0 || Mesh->ComplexCollisionMesh) return false;
+    const FMeshDescription* Description = Mesh->GetMeshDescription(0);
+    if (!Description || Description->Triangles().Num() < 1
+        || Description->Triangles().Num() > ExpectedSourceTriangles) return false;
+    // Legacy FBX import and MeshBuilder may remove duplicate-point pole/cap triangles.
+    // Derive the exact render target from saved source geometry and the actual build policy,
+    // using MeshBuilder's predicate rather than treating the export's fan count as rendered.
+    const auto Positions = FStaticMeshConstAttributes(*Description).GetVertexPositions();
+    const bool RemoveDegenerates = Mesh->GetSourceModel(0).BuildSettings.bRemoveDegenerates;
+    int32 ExpectedBuiltTriangles = 0;
+    for (const FTriangleID Triangle : Description->Triangles().GetElementIDs())
+    {
+        const auto Vertices = Description->GetTriangleVertices(Triangle);
+        const FVector3f A = Positions[Vertices[0]], B = Positions[Vertices[1]], C = Positions[Vertices[2]];
+        if (A.ContainsNaN() || B.ContainsNaN() || C.ContainsNaN()) return false;
+        if (!PointsEqual(A, B, RemoveDegenerates) && !PointsEqual(A, C, RemoveDegenerates)
+            && !PointsEqual(B, C, RemoveDegenerates)) ++ExpectedBuiltTriangles;
+    }
+    if (ExpectedBuiltTriangles < 1 || Mesh->GetNumTriangles(0) != ExpectedBuiltTriangles) return false;
     const auto* Body = Mesh->GetBodySetup();
     // The original Bike owner leaves the legacy importer's default trace policy intact.
     if (!Body || Body->CollisionTraceFlag != CTF_UseDefault || Body->BuildScale3D != FVector::OneVector
@@ -154,7 +176,7 @@ bool UBikeMeshComponent::ValidatePart(UStaticMesh* Mesh, int32 ExpectedTriangles
         if (!Geometry) return false;
         Count += Geometry->Elements().GetNumTriangles();
     }
-    return Count == ExpectedTriangles;
+    return Count == ExpectedBuiltTriangles;
 #else
     return false;
 #endif

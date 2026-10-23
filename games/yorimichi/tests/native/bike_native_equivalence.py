@@ -60,7 +60,7 @@ def material_function(path):
 def settings(mesh,editor):
     build=editor.get_lod_build_settings(mesh,0);body=mesh.get_editor_property('body_setup')
     keys=('use_full_precision_u_vs','use_high_precision_tangent_basis','recompute_normals','recompute_tangents',
-          'use_mikk_t_space','use_backwards_compatible_f16_trunc_u_vs')
+          'use_mikk_t_space','use_backwards_compatible_f16_trunc_u_vs','remove_degenerates')
     return dict(build={key:bool(build.get_editor_property(key)) for key in keys},
         trace=str(body.get_editor_property('collision_trace_flag')),uv_channels=editor.get_num_uv_channels(mesh,0),
         allow_cpu_access=bool(mesh.get_editor_property('allow_cpu_access')),lods=mesh.get_num_lods(),
@@ -212,6 +212,10 @@ def main():
     actual=reload_meshes(current_paths)
     observed_current={name:settings(mesh,editor) for name,mesh in actual.items()}
     for name,row in observed_current.items():assert row==observed_original['BK_Steer' if name in STEERING else name],(name,'actual original native policy differs',row)
+    for name,mesh in actual.items():
+        assert unreal.BikeMeshComponent.validate_part(mesh,received['parts'][name]['source_triangles'])
+        assert not unreal.BikeMeshComponent.validate_part(mesh,0),'Empty source budget admitted'
+        assert not unreal.BikeMeshComponent.validate_part(mesh,1),'Truncated source budget admitted'
     original_components={name:component(mesh) for name,mesh in original.items()}
     group=[actual[name] for name in STEERING]
     current_components={name:component(mesh,group if name in STEERING else None) for name,mesh in actual.items()}
