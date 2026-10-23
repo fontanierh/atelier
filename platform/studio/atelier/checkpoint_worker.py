@@ -8,13 +8,12 @@ from .build_cache import atomic_json
 
 def main(argv=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument('operation', choices=['capture', 'restore', 'restore-action', 'stage-candidates', 'export-zen'])
+    parser.add_argument('operation', choices=['capture', 'restore', 'restore-action', 'stage-candidates', 'export-zen', 'hydrate'])
     parser.add_argument('game')
     parser.add_argument('report', type=Path)
     parser.add_argument('--key')
     parser.add_argument('--source', type=Path)
     parser.add_argument('--release', action='store_true')
-    parser.add_argument('--unit', action='append', help='partial hydration member prefix')
     parser.add_argument('--read-only', action='store_true', help='candidate catalogue only; no producer metadata or Zen writes')
     args = parser.parse_args(argv)
     if args.source:
@@ -31,7 +30,8 @@ def main(argv=None):
         if previous.get('requested') in ('modern-incremental', 'modern-full'):
             mode = previous['requested']
     ctx = build.Context(args.game, cook_mode=mode, create=not args.read_only)
-    steps = build.load_recipe(args.game).steps(ctx)
+    # Hydration is scoped by the parent's request; it needs no recipe.
+    steps = build.load_recipe(args.game).steps(ctx) if args.operation != 'hydrate' else None
     store = checkpoint_store.Store(args.game)
     args.report.mkdir(parents=True, exist_ok=True)
     result = args.report / 'result.json'
@@ -63,15 +63,16 @@ def main(argv=None):
         step = next(s for s in steps if s.name == request['task'])
         restore_worker(ctx, step, store, args.key)
         atomic_json(result, dict(key=args.key))
+    elif args.operation == 'hydrate':
+        placed = checkpoint_store.hydrate_files(ctx, store, args.key, echo=lambda m: print(m, flush=True))
+        atomic_json(result, dict(key=args.key, placed=placed))
     else:
         if not args.key:
             parser.error('restoration requires --key')
-        stamps = checkpoint_store.restore(ctx, steps, store, args.key, hydrate=args.unit)
+        stamps = checkpoint_store.restore(ctx, steps, store, args.key)
         from . import checkpoint_zen
-        journal = checkpoint_store.read_json(ctx.out / checkpoint_store.JOURNAL)
-        post_import = {} if 'units' in journal else checkpoint_zen.import_(ctx)
-        atomic_json(result, dict(key=args.key, stamps=stamps, post_import=post_import,
-                                 **({'kept': ctx.checkpoint_kept} if 'units' in journal else {})))
+        post_import = checkpoint_zen.import_(ctx)
+        atomic_json(result, dict(key=args.key, stamps=stamps, post_import=post_import))
     return 0
 
 

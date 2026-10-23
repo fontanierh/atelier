@@ -944,6 +944,14 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             from .build_batch_migration import migrate as migrate_batch
             previous = migrate_batch(ctx, step, current, input_state, previous, done, echo=echo)
         ctx.__dict__.setdefault('native_previous_stamps', {})[step.name] = previous
+        adopted = None
+        if actions is not None and not force and previous.get('fingerprint') != current:
+            # A hydrated checkpoint certificate counts only for the build's own fingerprint.
+            from .build_checkpoints import staged_certificate
+            staged = staged_certificate(ctx, step, current)
+            if (staged is not None and outputs_present(step) and task_cache.compile_present(ctx, step)
+                    and task_cache.certified(ctx, step, current, staged[1])):
+                adopted, previous = staged
         outputs_ok = outputs_present(step) and task_cache.compile_present(ctx, step)
         if actions is not None:
             outputs_ok = outputs_ok and (task_cache.certified(ctx, step, current, previous)
@@ -970,6 +978,9 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             return 1
         rebuilding_touched = step.name in rebuild_names and previous.get('touched')
         if not recovering and not force_step and not rebuilding_touched and previous.get('fingerprint') == current and outputs_ok:
+            if adopted is not None:
+                stamp.write_text(json.dumps(previous) + '\n')
+                echo(f'{print_} certificate adopted from checkpoint {adopted[:12]}')
             done[step.name] = result(step, current, previous)
             build_products.feed_results(done, previous.get('products', {}))
             if actions is not None and saved_action is None and task_cache.certified(ctx, step, current, previous):
