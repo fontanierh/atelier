@@ -3,31 +3,39 @@ schema_version = 1
 [[scenarios]]
 id = "d1.py_data.op_definition_restricts_classes_to_data_and_requires_explicit_slots"
 tests = ["atelier-build-v2::py_data/op_definition_restricts_classes_to_data_and_requires_explicit_slots"]
+tier = "t1a"
 
 [[scenarios]]
 id = "d1.py_data.clean_rebuild_byte_equality_across_workspaces_and_locators"
 tests = ["atelier-build-v2::py_data/clean_rebuild_byte_equality_across_workspaces_and_locators"]
+tier = "t1a"
 
 [[scenarios]]
 id = "d1.py_data.identical_selection_cutoff_and_relevant_edit_isolation"
 tests = ["atelier-build-v2::py_data/identical_selection_cutoff_and_relevant_edit_isolation"]
+tier = "t1a"
 
 [[scenarios]]
 id = "d1.py_data.optional_absent_versus_present_and_reference_only_identity"
 tests = ["atelier-build-v2::py_data/optional_absent_versus_present_and_reference_only_identity"]
+tier = "t1a"
 
 [[scenarios]]
 id = "d1.py_data.executable_and_data_member_modes_roundtrip"
 tests = ["atelier-build-v2::py_data/executable_and_data_member_modes_roundtrip"]
+tier = "t1a"
 
 [[scenarios]]
 id = "d1.py_data.validator_and_staging_refuse_missing_extra_links_and_malformed_domain_data"
 tests = ["atelier-build-v2::py_data/validator_and_staging_refuse_missing_extra_links_and_malformed_domain_data"]
+tier = "t1a"
 
 [[scenarios]]
 id = "d1.py_data.undeclared_reads_and_missing_required_inputs_fail_without_partial_publish"
 tests = ["atelier-build-v2::py_data/undeclared_reads_and_missing_required_inputs_fail_without_partial_publish"]
+tier = "t1a"
 
 [[scenarios]]
 id = "d1.py_data.seed_determinism_and_job_alone_versus_sequential_worker_purity"
 tests = ["atelier-build-v2::py_data/seed_determinism_and_job_alone_versus_sequential_worker_purity"]
+tier = "t1a"

@@ -47,23 +47,35 @@ Local compile/tests must use the standalone compile admission described in
 Run from this crate directory so `.cargo/config.toml` places generated files in `build/build-v2/`:
 `cargo test --locked`. Compilation time and test execution time are reported separately.
 
-## T0 CI (A1)
+## Host CI tiers (A1, H5b)
 
-Every PR runs the `Rust / T0` hosted job. It compiles the current crate with three workers, then runs
-pinned cargo-nextest 0.9.149 with profile `ci`: a ten-second global test timeout, no retries and no
-ignored tests. Compile time is reported in its own step. The job retains collection JSON and JUnit
-execution/timing artifacts; neither a cached binary nor an empty test run can provide success.
+Every PR runs the `Rust / host tiers` hosted job. It compiles the current crate with three workers,
+then runs pinned cargo-nextest 0.9.149 twice, in two required steps of the same job: profile `ci`
+for T0 with a ten-second global test timeout, and profile `t1a` for tests that execute a real
+Python op or job with a thirty-second one. Both keep three test threads, no retries and no ignored
+tests. Compile time is reported in its own step. The job retains the full collection, each tier's
+filtered listing, both JUnit execution/timing artifacts and the derived filter plan; neither a
+cached binary nor an empty test run can provide success.
 
 `tests/registry/<task>.toml` holds one fragment per task, each with `schema_version = 1` and its
 `scenarios` and `pending` rows. The loader discovers the fragments from the explicit directory,
 merges them in filename order and refuses any other directory entry, unknown key, malformed row or
 empty fragment. Active rows map each scenario to nextest IDs (`binary-id/test-name`). The hook
 checks that collection and execution cover exactly those tests once, with no ignored, filtered,
-skipped, failing or unmapped tests. Add an active row to your task's fragment with each new T0
-scenario; use the named scenario IDs in future engine tests. Future required scenarios remain
-explicit `pending` rows in the fragment of the task that will implement them. A pending row is a
-gap, not a pass. A8/H5 will activate those rows as the engine/reference model is implemented; A1 does
-not claim the full TESTING scenario suite exists.
+skipped, failing or unmapped tests.
+
+Each active row declares `tier`: `t0` for wire, schema, key, filesystem and process-mechanism
+decisions, `t1a` for tests that execute a real Python op or job, `t1b` for real Blender and `t2`
+for real Unreal. The checker derives one nextest filter expression per host tier from that field,
+so a test that shares a binary with tests of another tier is selected by its own test ID. `t1b`
+and `t2` never run in either host step; they are reported as explicit native exclusions and never
+count as coverage. A missing or unknown tier fails the check.
+
+Add an active row to your task's fragment with each new T0 scenario; use the named scenario IDs in
+future engine tests. Future required scenarios remain explicit `pending` rows in the fragment of
+the task that will implement them. A pending row is a gap, not a pass. A8/H5 will activate those
+rows as the engine/reference model is implemented; A1 does not claim the full TESTING scenario
+suite exists.
 
 The registry checker is a read-only Python tool. Its focused tests run in ordinary Python CI:
 `uv run pytest platform/studio/tests/test_build_v2_registry.py -q`. A local nextest compile/run must

@@ -3,51 +3,64 @@ schema_version = 1
 [[scenarios]]
 id = "c7.guard.bridge_events_decode_strictly"
 tests = ["atelier-build-v2::guard_adapter/bridge_events_decode_strictly"]
+tier = "t0"
 
 [[scenarios]]
 id = "c7.guard.bridge_alone_receives_its_descriptors_and_the_worker_only_the_protocol_pipe"
 tests = ["atelier-build-v2::guard_adapter/bridge_alone_receives_its_descriptors_and_the_worker_only_the_protocol_pipe"]
+tier = "t0"
 
 [[scenarios]]
 id = "c7.guard.stop_signals_only_the_unreaped_bridge_and_never_a_stale_pid"
 tests = ["atelier-build-v2::guard_adapter/stop_signals_only_the_unreaped_bridge_and_never_a_stale_pid"]
+tier = "t0"
 
 [[scenarios]]
 id = "c7.guard.custody_duplicate_keeps_exclusion_after_the_launcher_drops_its_own_descriptor"
 tests = ["atelier-build-v2::guard_adapter/custody_duplicate_keeps_exclusion_after_the_launcher_drops_its_own_descriptor"]
+tier = "t0"
 
 [[scenarios]]
 id = "c7.guard.controller_loss_stops_the_attempt_through_the_liveness_pipe"
 tests = ["atelier-build-v2::guard_adapter/controller_loss_stops_the_attempt_through_the_liveness_pipe"]
+tier = "t0"
 
 [[scenarios]]
 id = "c7.guard.driver_runs_a_job_over_dedicated_pipes_and_registers_the_worker_first"
 tests = ["atelier-build-v2::guard_adapter/driver_runs_a_job_over_dedicated_pipes_and_registers_the_worker_first"]
+tier = "t0"
 
 [[scenarios]]
 id = "c7.guard.driver_retries_one_crash_with_a_fresh_admission_and_report_folder"
 tests = ["atelier-build-v2::guard_adapter/driver_retries_one_crash_with_a_fresh_admission_and_report_folder"]
+tier = "t0"
 
 [[scenarios]]
 id = "c7.guard.driver_never_retries_guard_stops_cancellation_or_foreign_exits"
 tests = ["atelier-build-v2::guard_adapter/driver_never_retries_guard_stops_cancellation_or_foreign_exits"]
+tier = "t0"
 
 [[scenarios]]
 id = "c7.guard.driver_holds_an_attempt_whose_cleanup_is_unconfirmed"
 tests = ["atelier-build-v2::guard_adapter/driver_holds_an_attempt_whose_cleanup_is_unconfirmed"]
+tier = "t0"
 
 [[scenarios]]
 id = "c7.guard.concurrent_handshakes_stay_within_bound"
 tests = ["atelier-build-v2::guard_adapter/concurrent_handshakes_stay_within_bound"]
+tier = "t0"
 
 [[scenarios]]
 id = "c7.guard.submit_refuses_a_non_utf8_argument_before_starting_any_admission_owner"
 tests = ["atelier-build-v2::guard_adapter/submit_refuses_a_non_utf8_argument_before_starting_any_admission_owner"]
+tier = "t0"
 
 [[scenarios]]
 id = "c7.guard.a_spec_write_failure_after_the_spawn_ends_unconfirmed_and_never_errs"
 tests = ["atelier-build-v2::guard_adapter/a_spec_write_failure_after_the_spawn_ends_unconfirmed_and_never_errs"]
+tier = "t0"
 
 [[scenarios]]
 id = "c7.guard.driver_reports_launch_failure_only_before_a_spawn"
 tests = ["atelier-build-v2::guard_adapter/driver_reports_launch_failure_only_before_a_spawn"]
+tier = "t0"

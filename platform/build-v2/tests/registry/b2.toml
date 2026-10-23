@@ -3,47 +3,57 @@ schema_version = 1
 [[scenarios]]
 id = "b2.results.lease_is_durable_before_staging_and_unknown_liveness_never_expires"
 tests = ["atelier-build-v2::results/lease_is_durable_before_staging_and_unknown_liveness_never_expires"]
+tier = "t0"
 
 [[scenarios]]
 id = "b2.results.unsupported_result_versions_and_undeclared_groups_refuse"
 tests = ["atelier-build-v2::results/unsupported_result_versions_and_undeclared_groups_refuse"]
+tier = "t0"
 
 [[scenarios]]
 id = "b2.leases.dangling_lease_and_staging_names_remain_occupied"
 tests = ["atelier-build-v2/leases::tests::dangling_lease_and_staging_names_remain_occupied"]
+tier = "t0"
 
 [[scenarios]]
 id = "b2.results.metadata_mutex_serializes_independent_handles_and_corrupt_leases_fail_closed"
 tests = ["atelier-build-v2::results/metadata_mutex_serializes_independent_handles_and_corrupt_leases_fail_closed"]
+tier = "t0"
 
 [[scenarios]]
 id = "b2.results.missing_extra_outputs_and_incomplete_process_identity_refuse_before_publish"
 tests = ["atelier-build-v2::results/missing_extra_outputs_and_incomplete_process_identity_refuse_before_publish"]
+tier = "t0"
 
 [[scenarios]]
 id = "b2.results.validator_reads_frozen_hashed_bytes_and_modes_survive_source_changes"
 tests = ["atelier-build-v2::results/validator_reads_frozen_hashed_bytes_and_modes_survive_source_changes"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[scenarios]]
 id = "b2.results.validation_failure_and_unknown_outputs_never_publish_objects_or_records"
 tests = ["atelier-build-v2::results/validation_failure_and_unknown_outputs_never_publish_objects_or_records"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[scenarios]]
 id = "b2.results.faults_at_each_publication_boundary_preserve_claims_and_prior_results"
 tests = ["atelier-build-v2::results/faults_at_each_publication_boundary_preserve_claims_and_prior_results"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[scenarios]]
 id = "b2.results.same_key_writers_deduplicate_and_keep_first_lineage_while_different_output_refuses"
 tests = ["atelier-build-v2::results/same_key_writers_deduplicate_and_keep_first_lineage_while_different_output_refuses"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[scenarios]]
 id = "b2.results.concurrent_publication_and_gc_observer_share_claim_mutex_without_gap"
 tests = ["atelier-build-v2::results/concurrent_publication_and_gc_observer_share_claim_mutex_without_gap"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[pending]]
 id = "t0.competing-producers"

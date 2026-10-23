@@ -7,47 +7,59 @@ task = "C5"
 [[scenarios]]
 id = "c5b.lifecycle.queued_cancel_spawns_no_child_and_holds_no_capacity"
 tests = ["atelier-build-v2::worker_lifecycle/queued_cancel_spawns_no_child_and_holds_no_capacity"]
+tier = "t0"
 
 [[scenarios]]
 id = "c5b.lifecycle.admitted_job_completes_then_shuts_down_and_releases"
 tests = ["atelier-build-v2::worker_lifecycle/admitted_job_completes_then_shuts_down_and_releases"]
+tier = "t0"
 
 [[scenarios]]
 id = "c5b.lifecycle.job_failure_shuts_the_worker_down_and_never_retries"
 tests = ["atelier-build-v2::worker_lifecycle/job_failure_shuts_the_worker_down_and_never_retries"]
+tier = "t0"
 
 [[scenarios]]
 id = "c5b.lifecycle.one_retry_only_after_confirmed_cleanup_and_a_new_admission"
 tests = ["atelier-build-v2::worker_lifecycle/one_retry_only_after_confirmed_cleanup_and_a_new_admission"]
+tier = "t0"
 
 [[scenarios]]
 id = "c5b.lifecycle.retried_attempt_can_complete"
 tests = ["atelier-build-v2::worker_lifecycle/retried_attempt_can_complete"]
+tier = "t0"
 
 [[scenarios]]
 id = "c5b.lifecycle.timeout_guard_stop_and_cancel_never_retry"
 tests = ["atelier-build-v2::worker_lifecycle/timeout_guard_stop_and_cancel_never_retry"]
+tier = "t0"
 
 [[scenarios]]
 id = "c5b.lifecycle.uncertain_cleanup_is_held_and_never_released_or_relaunched"
 tests = ["atelier-build-v2::worker_lifecycle/uncertain_cleanup_is_held_and_never_released_or_relaunched"]
+tier = "t0"
 
 [[scenarios]]
 id = "c5b.lifecycle.foreign_or_stale_identities_are_never_crash_evidence"
 tests = ["atelier-build-v2::worker_lifecycle/foreign_or_stale_identities_are_never_crash_evidence"]
+tier = "t0"
 
 [[scenarios]]
 id = "c5b.lifecycle.queue_wait_does_not_spend_the_job_limit_and_launch_failures_hold_nothing"
 tests = ["atelier-build-v2::worker_lifecycle/queue_wait_does_not_spend_the_job_limit_and_launch_failures_hold_nothing"]
+tier = "t0"
 
 [[scenarios]]
 id = "c5b.lifecycle.completed_work_is_kept_and_later_facts_never_stop_or_retry_it"
 tests = ["atelier-build-v2::worker_lifecycle/completed_work_is_kept_and_later_facts_never_stop_or_retry_it"]
+tier = "t0"
 
 [[scenarios]]
 id = "c5b.lifecycle.settlement_never_outlasts_the_overall_deadline"
 tests = ["atelier-build-v2::worker_lifecycle/settlement_never_outlasts_the_overall_deadline"]
+tier = "t0"
 
 [[scenarios]]
 id = "c5b.lifecycle.a_worker_that_stops_reading_cannot_block_the_overall_deadline"
 tests = ["atelier-build-v2::guard_adapter/a_worker_that_stops_reading_cannot_block_the_overall_deadline"]
+tier = "t0"

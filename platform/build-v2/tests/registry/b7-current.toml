@@ -4,8 +4,10 @@ schema_version = 1
 id = "b7.installs.current_sources_pin_without_cache_and_clone_only_certified_unchanged_items"
 tests = ["atelier-build-v2::installs/current_sources_pin_without_cache_and_clone_only_certified_unchanged_items"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[scenarios]]
 id = "b7.installs.retirement_valid_at_prepare_refuses_new_owner_receipt_before_journal_or_mutation"
 tests = ["atelier-build-v2::installs/retirement_valid_at_prepare_refuses_new_owner_receipt_before_journal_or_mutation"]
 platforms = ["darwin"]
+tier = "t0"

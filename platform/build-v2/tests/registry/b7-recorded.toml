@@ -3,12 +3,15 @@ schema_version = 1
 [[scenarios]]
 id = "b7.results.recorded_identity_checks_complete_metadata_without_opening_payloads"
 tests = ["atelier-build-v2::results/recorded_identity_checks_complete_metadata_without_opening_payloads"]
+tier = "t0"
 
 [[scenarios]]
 id = "b7.results.published_record_identity_survives_eviction_without_becoming_available"
 tests = ["atelier-build-v2::results/published_record_identity_survives_eviction_without_becoming_available"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[scenarios]]
 id = "b7.groups.metadata_only_group_preserves_projection_without_certifying_availability"
 tests = ["atelier-build-v2/groups::tests::metadata_only_group_preserves_projection_without_certifying_availability"]
+tier = "t0"

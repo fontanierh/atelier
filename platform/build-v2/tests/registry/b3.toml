@@ -4,98 +4,118 @@ schema_version = 1
 id = "b3.locks.checkout_build_and_content_locks_have_independent_lifetimes"
 tests = ["atelier-build-v2/checkout_locks::tests::checkout_build_and_content_locks_have_independent_lifetimes"]
 platforms = ["darwin", "linux"]
+tier = "t0"
 
 [[scenarios]]
 id = "b3.locks.explicit_custody_duplicate_keeps_same_description_and_cloexec"
 tests = ["atelier-build-v2/checkout_locks::tests::explicit_custody_duplicate_keeps_same_description_and_cloexec"]
 platforms = ["darwin", "linux"]
+tier = "t0"
 
 [[scenarios]]
 id = "b3.locks.any_journal_entry_blocks_readers_without_touching_lock_inodes"
 tests = ["atelier-build-v2/checkout_locks::tests::any_journal_entry_blocks_readers_without_touching_lock_inodes"]
 platforms = ["darwin", "linux"]
+tier = "t0"
 
 [[scenarios]]
 id = "b3.locks.real_process_shared_reader_excludes_checkout_writer"
 tests = ["atelier-build-v2/checkout_locks::tests::real_process_shared_reader_excludes_checkout_writer"]
 platforms = ["darwin", "linux"]
+tier = "t0"
 
 [[scenarios]]
 id = "b3.installs.receipt_owner_namespace_is_explicit_and_independent_of_selected_roots"
 tests = ["atelier-build-v2::installs/receipt_owner_namespace_is_explicit_and_independent_of_selected_roots"]
 platforms = ["darwin", "linux"]
+tier = "t0"
 
 [[scenarios]]
 id = "b3.installs.install_modes_receipts_and_clone_independence_survive_cache_removal"
 tests = ["atelier-build-v2::installs/install_modes_receipts_and_clone_independence_survive_cache_removal"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[scenarios]]
 id = "b3.installs.two_projects_same_logical_item_never_overwrite_receipts_or_retire_neighbor_sidecars"
 tests = ["atelier-build-v2::installs/two_projects_same_logical_item_never_overwrite_receipts_or_retire_neighbor_sidecars"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[scenarios]]
 id = "b3.installs.every_durable_install_cut_recovers_old_or_committed_named_files"
 tests = ["atelier-build-v2::installs/every_durable_install_cut_recovers_old_or_committed_named_files"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[scenarios]]
 id = "b3.installs.foreign_files_busy_readers_root_failures_and_unknown_recovery_are_explicit"
 tests = ["atelier-build-v2::installs/foreign_files_busy_readers_root_failures_and_unknown_recovery_are_explicit"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[scenarios]]
 id = "b3.installs.whole_item_retirement_requires_exact_current_namespaced_receipt_authority"
 tests = ["atelier-build-v2::installs/whole_item_retirement_requires_exact_current_namespaced_receipt_authority"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[scenarios]]
 id = "b3.installs.malformed_journal_and_linked_metadata_fail_closed_without_cleanup"
 tests = ["atelier-build-v2::installs/malformed_journal_and_linked_metadata_fail_closed_without_cleanup"]
 platforms = ["darwin", "linux"]
+tier = "t0"
 
 [[scenarios]]
 id = "b3.installs.replaced_receipt_inode_is_foreign_before_restore_and_whole_item_retirement"
 tests = ["atelier-build-v2::installs/replaced_receipt_inode_is_foreign_before_restore_and_whole_item_retirement"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[scenarios]]
 id = "b3.installs.dirty_same_inode_edits_are_preserved_during_failed_install_rollback"
 tests = ["atelier-build-v2::installs/dirty_same_inode_edits_are_preserved_during_failed_install_rollback"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[scenarios]]
 id = "b3.installs.preinstall_abort_preserves_unknown_clone_and_resumes_every_durable_cut"
 tests = ["atelier-build-v2::installs/preinstall_abort_preserves_unknown_clone_and_resumes_every_durable_cut"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[scenarios]]
 id = "b3.installs.preinstall_abort_rejects_changed_outputs_trash_and_replaced_directory_identities"
 tests = ["atelier-build-v2::installs/preinstall_abort_rejects_changed_outputs_trash_and_replaced_directory_identities"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[scenarios]]
 id = "b3.installs.metadata_only_cached_use_roots_same_transaction_without_materializing_checkout"
 tests = ["atelier-build-v2::installs/metadata_only_cached_use_roots_same_transaction_without_materializing_checkout"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[scenarios]]
 id = "b3.installs.interrupted_cleanup_resumes_after_each_leaf_directory_and_barrier_removal"
 tests = ["atelier-build-v2::installs/interrupted_cleanup_resumes_after_each_leaf_directory_and_barrier_removal"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[scenarios]]
 id = "b3.installs.extra_owner_index_membership_refuses_current_and_restore_without_mutation"
 tests = ["atelier-build-v2::installs/extra_owner_index_membership_refuses_current_and_restore_without_mutation"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[scenarios]]
 id = "b3.installs.scope_allocator_preserves_occupied_transaction_and_quarantine_names"
 tests = ["atelier-build-v2/install::tests::scope_allocator_preserves_occupied_transaction_and_quarantine_names"]
 platforms = ["darwin", "linux"]
+tier = "t0"
 
 [[scenarios]]
 id = "b3.installs.unknown_private_cleanup_leaves_preserve_journal_and_block_readers"
 tests = ["atelier-build-v2::installs/unknown_private_cleanup_leaves_preserve_journal_and_block_readers"]
 platforms = ["darwin"]
+tier = "t0"

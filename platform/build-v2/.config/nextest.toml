@@ -13,3 +13,13 @@ fail-fast = false
 [profile.ci.junit]
 path = "junit.xml"
 report-skipped = "all"
+
+# T1a runs tests that execute a real Python op or job. It keeps the same isolation as T0 and
+# allows a longer budget; the tier assignment itself lives in tests/registry/*.toml.
+[profile.t1a]
+inherits = "ci"
+global-timeout = "30s"
+
+[profile.t1a.junit]
+path = "junit.xml"
+report-skipped = "all"

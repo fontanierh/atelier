@@ -14,13 +14,13 @@ concurrency:
 
 jobs:
   interfaces:
-    name: Rust / T0 (${{ matrix.os }})
+    name: Rust / host tiers (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 10
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: platform/build-v2
@@ -37,20 +37,31 @@ jobs:
         run: cargo fmt --check
       - name: Compile interfaces and fixtures
         run: cargo test --locked --no-run -j 3
-      - name: Collect T0 and check active registry
+      - name: Collect every test and derive the tier plans
         run: |
           cargo nextest list --locked --profile ci --message-format json > ../../build/build-v2/test-list.json
-          python3 tools/check_registry.py --registry-dir tests/registry --listing ../../build/build-v2/test-list.json
+          python3 tools/check_registry.py --registry-dir tests/registry --listing ../../build/build-v2/test-list.json --plan-dir ../../build/build-v2/tiers
+      - name: Check both tier filters collect only their own tests
+        run: |
+          cargo nextest list --locked --profile ci --filter-expr "$(cat ../../build/build-v2/tiers/t0.filter)" --message-format json > ../../build/build-v2/t0-list.json
+          cargo nextest list --locked --profile t1a --filter-expr "$(cat ../../build/build-v2/tiers/t1a.filter)" --message-format json > ../../build/build-v2/t1a-list.json
+          python3 tools/check_registry.py --registry-dir tests/registry --listing ../../build/build-v2/test-list.json --tier-listing t0=../../build/build-v2/t0-list.json --tier-listing t1a=../../build/build-v2/t1a-list.json
       - name: Run T0 within ten seconds after compilation
-        run: cargo nextest run --locked --profile ci --no-tests=fail
-      - name: Verify complete execution and timing
-        run: python3 tools/check_registry.py --registry-dir tests/registry --listing ../../build/build-v2/test-list.json --junit ../../build/build-v2/nextest/ci/junit.xml
-      - name: Keep T0 collection and result evidence
+        run: cargo nextest run --locked --profile ci --filter-expr "$(cat ../../build/build-v2/tiers/t0.filter)" --no-tests=fail
+      - name: Run T1a within thirty seconds after compilation
+        run: cargo nextest run --locked --profile t1a --filter-expr "$(cat ../../build/build-v2/tiers/t1a.filter)" --no-tests=fail
+      - name: Verify both tier results and the combined roster
+        run: python3 tools/check_registry.py --registry-dir tests/registry --listing ../../build/build-v2/test-list.json --result t0=../../build/build-v2/nextest/ci/junit.xml --result t1a=../../build/build-v2/nextest/t1a/junit.xml
+      - name: Keep collection and result evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2, Node 24
         with:
-          name: build-v2-t0-${{ matrix.os }}
+          name: build-v2-tiers-${{ matrix.os }}
           path: |
             build/build-v2/test-list.json
+            build/build-v2/t0-list.json
+            build/build-v2/t1a-list.json
+            build/build-v2/tiers/
             build/build-v2/nextest/ci/junit.xml
+            build/build-v2/nextest/t1a/junit.xml
           retention-days: 7

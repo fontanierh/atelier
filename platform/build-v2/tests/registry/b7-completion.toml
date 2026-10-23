@@ -4,28 +4,34 @@ schema_version = 1
 id = "b7.installs.local_valid_completion_installs_without_cache_and_preserves_frozen_bytes_after_publish_failure"
 tests = ["atelier-build-v2::installs/local_valid_completion_installs_without_cache_and_preserves_frozen_bytes_after_publish_failure"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[scenarios]]
 id = "b7.installs.frozen_completion_cache_adoption_does_not_rehash_live_output_and_conflicts_block_local_install"
 tests = ["atelier-build-v2::installs/frozen_completion_cache_adoption_does_not_rehash_live_output_and_conflicts_block_local_install"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[scenarios]]
 id = "b7.installs.interrupted_local_install_retains_completion_and_uses_existing_quarantine_recovery"
 tests = ["atelier-build-v2::installs/interrupted_local_install_retains_completion_and_uses_existing_quarantine_recovery"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[scenarios]]
 id = "b7.installs.corrupt_cached_metadata_is_not_cached_and_does_not_invalidate_frozen_local_work"
 tests = ["atelier-build-v2::installs/corrupt_cached_metadata_is_not_cached_and_does_not_invalidate_frozen_local_work"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[scenarios]]
 id = "b7.groups.sealed_local_group_stages_selected_bytes_without_cas_and_refuses_missing_frozen_members"
 tests = ["atelier-build-v2/groups::tests::sealed_local_group_stages_selected_bytes_without_cas_and_refuses_missing_frozen_members"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[scenarios]]
 id = "b7.store.retained_snapshot_replacement_and_clone_substitution_refuse_without_rehash"
 tests = ["atelier-build-v2/store::tests::retained_snapshot_replacement_and_clone_substitution_refuse_without_rehash"]
 platforms = ["darwin"]
+tier = "t0"

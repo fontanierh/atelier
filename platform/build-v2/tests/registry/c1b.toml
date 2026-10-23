@@ -3,36 +3,45 @@ schema_version = 1
 [[scenarios]]
 id = "c1.staged-view-semantic-independence"
 tests = ["atelier-build-v2::staging/python_job_gives_the_same_bytes_under_other_ids_folders_and_source_locations"]
+tier = "t1a"
 
 [[scenarios]]
 id = "c1b.staging.exact_read_only_view"
 tests = ["atelier-build-v2::staging/stages_exact_read_only_view_with_selected_bytes_items_and_no_locators"]
+tier = "t0"
 
 [[scenarios]]
 id = "c1b.staging.code_changed_after_keying"
 tests = ["atelier-build-v2::staging/staging_refuses_code_changed_after_keying_and_leaves_no_folder"]
+tier = "t0"
 
 [[scenarios]]
 id = "c1b.staging.incomplete_items_and_reused_folders"
 tests = ["atelier-build-v2::staging/staging_refuses_incomplete_items_reused_folders_and_relative_roots"]
+tier = "t0"
 
 [[scenarios]]
 id = "c1b.staging.collected_output_membership"
 tests = ["atelier-build-v2::staging/collected_outputs_are_every_actual_file_and_fixed_mapping_refuses_others"]
+tier = "t0"
 
 [[scenarios]]
 id = "c1b.staging.pinned_item_clones"
 tests = ["atelier-build-v2::staging/sandboxed::pinned_item_clones_run_sandboxed_and_stage_into_the_result_store"]
 platforms = ["darwin"]
+tier = "t1a"
 
 [[scenarios]]
 id = "c1b.unsandboxed-loop-refused-by-production-handshake"
 tests = ["atelier-build-v2::staging/an_unsandboxed_loop_never_passes_a_production_keyed_handshake"]
+tier = "t1a"
 
 [[scenarios]]
 id = "c1b.staging.typed_object_source_refusals"
 tests = ["atelier-build-v2::staging/object_source_refusals_reach_the_controller_typed_and_leave_no_folder"]
+tier = "t0"
 
 [[scenarios]]
 id = "c1b.staging.pinned_objects_missing_object_is_io"
 tests = ["atelier-build-v2::staging/pinned_objects_report_a_missing_object_as_io_with_the_same_text"]
+tier = "t0"

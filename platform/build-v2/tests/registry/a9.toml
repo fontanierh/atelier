@@ -7,67 +7,84 @@ task = "A9"
 [[scenarios]]
 id = "a9a.frontier_lookup_precedes_compatible_dispatch_and_hits_launch_nothing"
 tests = ["atelier-build-v2::scheduler/frontier_lookup_precedes_compatible_dispatch_and_hits_launch_nothing"]
+tier = "t0"
 
 [[scenarios]]
 id = "a9a.equal_output_content_cuts_off_changed_producer_input_key"
 tests = ["atelier-build-v2::scheduler/equal_output_content_cuts_off_changed_producer_input_key"]
+tier = "t0"
 
 [[scenarios]]
 id = "a9a.reference_ordering_does_not_hash_producer_payload"
 tests = ["atelier-build-v2::scheduler/reference_ordering_does_not_hash_producer_payload"]
+tier = "t0"
 
 [[scenarios]]
 id = "a9a.independent_failure_retains_publication_and_blocks_only_dependents"
 tests = ["atelier-build-v2::scheduler/independent_failure_retains_publication_and_blocks_only_dependents"]
+tier = "t0"
 
 [[scenarios]]
 id = "a9a.cancellation_preserves_completed_units_and_settles_queued_work"
 tests = ["atelier-build-v2::scheduler/cancellation_preserves_completed_units_and_settles_queued_work"]
+tier = "t0"
 
 [[scenarios]]
 id = "a9a.faulty_backend_key_and_materialization_claims_refuse"
 tests = ["atelier-build-v2::scheduler/faulty_backend_key_and_materialization_claims_refuse"]
+tier = "t0"
 
 [[scenarios]]
 id = "a9a.target_materialization_is_explicit_and_current_does_not_rewrite"
 tests = ["atelier-build-v2::scheduler/target_materialization_is_explicit_and_current_does_not_rewrite"]
+tier = "t0"
 
 [[scenarios]]
 id = "a9a.independent-harness"
 tests = ["atelier-build-v2::scheduler_harness/independent_model_and_clean_oracle_judge_real_static_scheduler"]
+tier = "t0"
 
 [[scenarios]]
 id = "a9a.harness-negative"
 tests = ["atelier-build-v2::scheduler_harness/independent_model_rejects_faulty_scheduler_adapter_overbuild"]
+tier = "t0"
 
 [[scenarios]]
 id = "a9a.compatibility-and-publication-failure"
 tests = ["atelier-build-v2::scheduler/incompatible_profiles_split_batches_and_publication_failure_preserves_sibling"]
+tier = "t0"
 
 [[scenarios]]
 id = "a9a.missing-terminal"
 tests = ["atelier-build-v2::scheduler/missing_executor_terminal_is_failure_and_never_unlocks_dependents"]
+tier = "t0"
 
 [[scenarios]]
 id = "a9a.refresh-between-batches"
 tests = ["atelier-build-v2::scheduler/completed_batch_refreshes_new_ready_hit_before_unrelated_dispatch"]
+tier = "t0"
 
 [[scenarios]]
 id = "a9a.current-is-not-stored"
 tests = ["atelier-build-v2::scheduler/current_checkout_cannot_satisfy_explicit_stored_demand"]
+tier = "t0"
 
 [[scenarios]]
 id = "a9a.mixed-final-and-conditional-source"
 tests = ["atelier-build-v2::scheduler/mixed_checkout_targets_use_identity_for_hits_and_stage_only_actual_consumer_misses"]
+tier = "t0"
 
 [[scenarios]]
 id = "a9a.internal-identity-no-availability"
 tests = ["atelier-build-v2::scheduler/internal_recorded_identity_needs_no_stored_availability_or_stage_on_hit"]
+tier = "t0"
 
 [[scenarios]]
 id = "a9a.dual-final-requirements"
 tests = ["atelier-build-v2::scheduler/dual_explicit_requirements_need_stored_proof_and_checkout_settlement"]
+tier = "t0"
 
 [[scenarios]]
 id = "a9a.not-cached-final-accounting"
 tests = ["atelier-build-v2::scheduler/local_completion_keeps_identity_usable_without_claiming_stored_final_satisfaction"]
+tier = "t0"

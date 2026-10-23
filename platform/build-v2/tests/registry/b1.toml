@@ -4,41 +4,50 @@ schema_version = 1
 [[scenarios]]
 id = "b1.digest-encoding"
 tests = ["atelier-build-v2::objects/digest_encoding_rejects_noncanonical_or_pathlike_names"]
+tier = "t0"
 
 [[scenarios]]
 id = "b1.nonregular-inputs"
 tests = ["atelier-build-v2::objects/nonregular_sources_and_store_directories_are_refused"]
+tier = "t0"
 
 [[scenarios]]
 id = "b1.symlink-refusal"
 tests = ["atelier-build-v2::objects/symlink_sources_and_store_roots_are_refused"]
+tier = "t0"
 
 [[scenarios]]
 id = "b1.unsupported-clone"
 platforms = ["linux"]
 tests = ["atelier-build-v2::objects/unavailable_clone_backend_fails_without_copying"]
+tier = "t0"
 
 [[scenarios]]
 id = "b1.apfs-snapshot-and-independent-clones"
 platforms = ["darwin"]
 tests = ["atelier-build-v2::objects/apfs::snapshot_is_frozen_and_hits_clone_independent_bytes"]
+tier = "t0"
 
 [[scenarios]]
 id = "b1.apfs-no-replace-race"
 platforms = ["darwin"]
 tests = ["atelier-build-v2::objects/apfs::racing_publishers_keep_exactly_one_readonly_winner"]
+tier = "t0"
 
 [[scenarios]]
 id = "b1.apfs-existing-entries-preserved"
 platforms = ["darwin"]
 tests = ["atelier-build-v2::objects/apfs::existing_entries_and_clone_destinations_are_never_overwritten"]
+tier = "t0"
 
 [[scenarios]]
 id = "b1.apfs-owned-staging-cleanup"
 platforms = ["darwin"]
 tests = ["atelier-build-v2::objects/apfs::discarded_and_wrong_store_tokens_clean_only_owned_staging_files"]
+tier = "t0"
 
 [[scenarios]]
 id = "b1.apfs-source-substitution-refused"
 platforms = ["darwin"]
 tests = ["atelier-build-v2/store::tests::clone_source_substitution_is_refused_and_owned_destination_removed"]
+tier = "t0"

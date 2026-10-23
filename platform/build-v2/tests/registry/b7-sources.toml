@@ -3,13 +3,16 @@ schema_version = 1
 [[scenarios]]
 id = "b7.results.recorded_retention_roots_metadata_without_payload_claims_and_rejects_cross_store"
 tests = ["atelier-build-v2::results/recorded_retention_roots_metadata_without_payload_claims_and_rejects_cross_store"]
+tier = "t0"
 
 [[scenarios]]
 id = "b7.results.selected_recorded_sources_require_durable_claims_and_preserve_clone_independence"
 tests = ["atelier-build-v2::results/selected_recorded_sources_require_durable_claims_and_preserve_clone_independence"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[scenarios]]
 id = "b7.installs.retained_restore_sources_survive_settlement_until_explicit_release"
 tests = ["atelier-build-v2::installs/retained_restore_sources_survive_settlement_until_explicit_release"]
 platforms = ["darwin"]
+tier = "t0"

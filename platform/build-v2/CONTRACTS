@@ -18,10 +18,15 @@ tests/vectors/protocol_v1.json checked by tests/worker_session.rs and
 platform/studio/tests/test_build_v2_protocol.py.
 
 @cc [owner:fontanierh,label:correctness] build-v2-t0-registry
-CI MUST compile the current crate successfully before running its T0 tests. Its matrix MUST cover
-all declared supported host platforms. Every active scenario MUST have complete, unskipped execution
-evidence on each applicable platform within ten seconds, excluding compilation. Other-platform
-exclusions and pending future scenarios MUST be reported separately and MUST NOT count as coverage.
+CI MUST compile the current crate successfully before running host tier tests. Its matrix MUST cover
+all declared supported host platforms. Every active scenario MUST declare one tier: t0 and t1a run
+as the two required steps of that job within ten and thirty seconds respectively, excluding
+compilation; t1b (Blender) and t2 (Unreal) are native exclusions and MUST NOT run there. Every
+applicable test MUST be assigned to exactly one host tier and have complete, unskipped execution
+evidence on each applicable platform; the filters derived from that assignment MUST select exactly
+each tier's own tests, including tests that share one binary with another tier. Other-platform
+exclusions, native tiers and pending future scenarios MUST be reported separately and MUST NOT count
+as coverage.
 See tools/check_registry.py and platform/studio/tests/test_build_v2_registry.py.
 
 @cc [owner:fontanierh,label:correctness] build-v2-object-digest-format

@@ -3,79 +3,99 @@ schema_version = 1
 [[scenarios]]
 id = "a2.validation.validates_frozen_inputs_and_dependency_first_order"
 tests = ["atelier-build-v2::validation/validates_frozen_inputs_and_dependency_first_order"]
+tier = "t0"
 
 [[scenarios]]
 id = "a2.validation.optional_absence_empty_file_and_missing_selector_are_distinct"
 tests = ["atelier-build-v2::validation/optional_absence_empty_file_and_missing_selector_are_distinct"]
+tier = "t0"
 
 [[scenarios]]
 id = "a2.validation.selectors_decode_escapes_and_preserve_null"
 tests = ["atelier-build-v2::validation/selectors_decode_escapes_and_preserve_null"]
+tier = "t0"
 
 [[scenarios]]
 id = "a2.validation.missing_sources_and_nonregular_entries_fail_even_when_optional"
 tests = ["atelier-build-v2::validation/missing_sources_and_nonregular_entries_fail_even_when_optional"]
+tier = "t0"
 
 [[scenarios]]
 id = "a2.validation.unknown_versions_ops_and_classes_fail"
 tests = ["atelier-build-v2::validation/unknown_versions_ops_and_classes_fail"]
+tier = "t0"
 
 [[scenarios]]
 id = "a2.validation.duplicate_unit_item_input_and_code_names_fail"
 tests = ["atelier-build-v2::validation/duplicate_unit_item_input_and_code_names_fail"]
+tier = "t0"
 
 [[scenarios]]
 id = "a2.validation.op_rules_require_named_inputs_and_correct_roles"
 tests = ["atelier-build-v2::validation/op_rules_require_named_inputs_and_correct_roles"]
+tier = "t0"
 
 [[scenarios]]
 id = "a2.validation.op_rules_control_optional_files_and_selectors"
 tests = ["atelier-build-v2::validation/op_rules_control_optional_files_and_selectors"]
+tier = "t0"
 
 [[scenarios]]
 id = "a2.validation.missing_producer_items_and_reference_identity_fail"
 tests = ["atelier-build-v2::validation/missing_producer_items_and_reference_identity_fail"]
+tier = "t0"
 
 [[scenarios]]
 id = "a2.validation.content_and_scheduling_cycles_fail"
 tests = ["atelier-build-v2::validation/content_and_scheduling_cycles_fail"]
+tier = "t0"
 
 [[scenarios]]
 id = "a2.validation.invalid_owned_and_source_paths_fail_without_normalizing_them"
 tests = ["atelier-build-v2::validation/invalid_owned_and_source_paths_fail_without_normalizing_them"]
+tier = "t0"
 
 [[scenarios]]
 id = "a2.validation.install_paths_require_allowed_roots_and_cannot_overwrite_sources"
 tests = ["atelier-build-v2::validation/install_paths_require_allowed_roots_and_cannot_overwrite_sources"]
+tier = "t0"
 
 [[scenarios]]
 id = "a2.validation.unicode_case_and_ancestor_output_conflicts_fail"
 tests = ["atelier-build-v2::validation/unicode_case_and_ancestor_output_conflicts_fail"]
+tier = "t0"
 
 [[scenarios]]
 id = "a2.validation.optional_sidecar_and_job_output_overlaps_fail"
 tests = ["atelier-build-v2::validation/optional_sidecar_and_job_output_overlaps_fail"]
+tier = "t0"
 
 [[scenarios]]
 id = "a2.validation.unicode_source_and_distinct_unicode_output_names_remain_usable"
 tests = ["atelier-build-v2::validation/unicode_source_and_distinct_unicode_output_names_remain_usable"]
+tier = "t0"
 
 [[scenarios]]
 id = "a2.validation.op_parameters_reject_typos_wrong_types_and_missing_requirements"
 tests = ["atelier-build-v2::validation/op_parameters_reject_typos_wrong_types_and_missing_requirements"]
+tier = "t0"
 
 [[scenarios]]
 id = "a2.validation.loader_combines_strict_toml_shape_and_semantic_validation"
 tests = ["atelier-build-v2::validation/loader_combines_strict_toml_shape_and_semantic_validation"]
+tier = "t0"
 
 [[scenarios]]
 id = "a2.validation.bounded_items_need_no_whole_note_but_broad_slots_require_one"
 tests = ["atelier-build-v2::validation/bounded_items_need_no_whole_note_but_broad_slots_require_one"]
+tier = "t0"
 
 [[scenarios]]
 id = "a2.validation.ancestor_conflicts_survive_lexically_adjacent_sibling_claims"
 tests = ["atelier-build-v2::validation/ancestor_conflicts_survive_lexically_adjacent_sibling_claims"]
+tier = "t0"
 
 [[scenarios]]
 id = "a2.validation.output_sets_and_entry_code_must_be_declared_completely"
 tests = ["atelier-build-v2::validation/output_sets_and_entry_code_must_be_declared_completely"]
+tier = "t0"

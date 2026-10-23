@@ -3,31 +3,39 @@ schema_version = 1
 [[scenarios]]
 id = "b7a.verify.good_records_and_objects_verify_with_deterministic_counts"
 tests = ["atelier-build-v2::verify/good_records_and_objects_verify_with_deterministic_counts"]
+tier = "t0"
 
 [[scenarios]]
 id = "b7a.verify.normal_hit_does_not_rehash_while_verifier_catches_same_size_mtime_mutation"
 tests = ["atelier-build-v2::verify/normal_hit_does_not_rehash_while_verifier_catches_same_size_mtime_mutation"]
+tier = "t0"
 
 [[scenarios]]
 id = "b7a.verify.isolated_corrupt_truncated_oversized_missing_and_mismatched_objects_report_precisely"
 tests = ["atelier-build-v2::verify/isolated_corrupt_truncated_oversized_missing_and_mismatched_objects_report_precisely"]
+tier = "t0"
 
 [[scenarios]]
 id = "b7a.verify.malformed_unsupported_and_tampered_records_report_precisely"
 tests = ["atelier-build-v2::verify/malformed_unsupported_and_tampered_records_report_precisely"]
+tier = "t0"
 
 [[scenarios]]
 id = "b7a.verify.incomplete_and_invalid_manifests_report_precisely"
 tests = ["atelier-build-v2::verify/incomplete_and_invalid_manifests_report_precisely"]
+tier = "t0"
 
 [[scenarios]]
 id = "b7a.verify.external_zen_references_and_deterministic_sampling_never_report_verified"
 tests = ["atelier-build-v2::verify/external_zen_references_and_deterministic_sampling_never_report_verified"]
+tier = "t0"
 
 [[scenarios]]
 id = "b7a.verify.pin_guard_releases_claims_on_normal_error_and_panic_exits_and_crashed_lease_is_reclaimable"
 tests = ["atelier-build-v2::verify/pin_guard_releases_claims_on_normal_error_and_panic_exits_and_crashed_lease_is_reclaimable"]
+tier = "t0"
 
 [[scenarios]]
 id = "b7a.integrity.cache_failures_preserve_valid_work_while_invalid_or_nondeterministic_outputs_fail"
 tests = ["atelier-build-v2::verify/cache_failures_preserve_valid_work_while_invalid_or_nondeterministic_outputs_fail"]
+tier = "t0"

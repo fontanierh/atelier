@@ -3,17 +3,21 @@ schema_version = 1
 [[scenarios]]
 id = "c2a.python.seed_and_params_change_output"
 tests = ["atelier-build-v2::staging/python_job_output_changes_with_only_seed_or_params"]
+tier = "t1a"
 
 [[scenarios]]
 id = "c2a.python.failures_yield_no_outputs"
 tests = ["atelier-build-v2::staging/python_job_failures_yield_no_outputs_and_undeclared_files_are_reported"]
+tier = "t1a"
 
 [[scenarios]]
 id = "c2a.python.sandboxed_semantic_independence"
 tests = ["atelier-build-v2::staging/sandboxed::sandboxed_python_job_gives_the_same_bytes_under_other_ids_folders_and_source_locations"]
 platforms = ["darwin"]
+tier = "t1a"
 
 [[scenarios]]
 id = "c2a.python.sandbox_refuses_undeclared_access"
 tests = ["atelier-build-v2::staging/sandboxed::sandboxed_python_job_fails_on_undeclared_reads_checks_listings_and_network"]
 platforms = ["darwin"]
+tier = "t1a"

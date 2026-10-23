@@ -4,43 +4,52 @@ schema_version = 1
 id = "t0.noop"
 tests = ["atelier-build-v2::demand/current_noop_never_opens_unavailable_cache_or_rewrites_files_and_receipts"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[scenarios]]
 id = "t0.demand-restore"
 tests = ["atelier-build-v2::demand/final_target_hit_installs_only_target_without_ancestor_materialization"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[scenarios]]
 id = "a5.stored-miss-lease"
 tests = ["atelier-build-v2::demand/stored_miss_returns_original_single_prewrite_lease"]
 platforms = ["darwin", "linux"]
+tier = "t0"
 
 [[scenarios]]
 id = "a5.checkout-miss-lease"
 tests = ["atelier-build-v2::demand/checkout_miss_preserves_original_transaction"]
 platforms = ["darwin", "linux"]
+tier = "t0"
 
 [[scenarios]]
 id = "a5.typed-non-hits"
 tests = ["atelier-build-v2::demand/unavailable_and_damaged_store_are_typed_non_hits"]
 platforms = ["darwin", "linux"]
+tier = "t0"
 
 [[scenarios]]
 id = "a5.recovery-refusal"
 tests = ["atelier-build-v2::demand/pending_recovery_is_hard_error_before_any_cache_access"]
 platforms = ["darwin", "linux"]
+tier = "t0"
 
 [[scenarios]]
 id = "a5.stored-hit-retention"
 tests = ["atelier-build-v2::demand/stored_hit_pins_without_install_and_failed_root_preserves_claims"]
 platforms = ["darwin"]
+tier = "t0"
 
 [[scenarios]]
 id = "a5.retirement-authority-preflight"
 tests = ["atelier-build-v2::demand/malformed_retirement_authority_refuses_before_cache_open_or_miss"]
 platforms = ["darwin", "linux"]
+tier = "t0"
 
 [[scenarios]]
 id = "a5.cache-origin-errors"
 tests = ["atelier-build-v2::demand/only_cache_origin_failures_become_checkout_non_hits"]
 platforms = ["darwin", "linux"]
+tier = "t0"

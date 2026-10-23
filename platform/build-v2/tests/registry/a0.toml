@@ -3,59 +3,74 @@ schema_version = 1
 [[scenarios]]
 id = "a0.interfaces.declaration_roundtrips_toml_and_json"
 tests = ["atelier-build-v2::interfaces/declaration_roundtrips_toml_and_json"]
+tier = "t0"
 
 [[scenarios]]
 id = "a0.interfaces.result_roundtrip_keeps_input_key_and_output_content_distinct"
 tests = ["atelier-build-v2::interfaces/result_roundtrip_keeps_input_key_and_output_content_distinct"]
+tier = "t0"
 
 [[scenarios]]
 id = "a0.interfaces.declaration_rejects_unknown_shape_but_defers_semantics"
 tests = ["atelier-build-v2::interfaces/declaration_rejects_unknown_shape_but_defers_semantics"]
+tier = "t0"
 
 [[scenarios]]
 id = "a0.interfaces.mock_returns_multiple_files_then_scripted_failure_and_refuses_extra_work"
 tests = ["atelier-build-v2::interfaces/mock_returns_multiple_files_then_scripted_failure_and_refuses_extra_work"]
+tier = "t0"
 
 [[scenarios]]
 id = "a0.interfaces.mock_refuses_out_of_order_job"
 tests = ["atelier-build-v2::interfaces/mock_refuses_out_of_order_job"]
+tier = "t0"
 
 [[scenarios]]
 id = "a0.interfaces.run_job_roundtrips_without_asset_payloads"
 tests = ["atelier-build-v2::interfaces/run_job_roundtrips_without_asset_payloads"]
+tier = "t0"
 
 [[scenarios]]
 id = "a0.interfaces.optional_inputs_sidecars_and_install_mapping_are_representable"
 tests = ["atelier-build-v2::interfaces/optional_inputs_sidecars_and_install_mapping_are_representable"]
+tier = "t0"
 
 [[scenarios]]
 id = "a0.interfaces.absent_identity_refuses_unknown_fields"
 tests = ["atelier-build-v2::interfaces/absent_identity_refuses_unknown_fields"]
+tier = "t0"
 
 [[scenarios]]
 id = "a0.protocol.consecutive_frames_roundtrip_and_clean_eof"
 tests = ["atelier-build-v2::protocol/consecutive_frames_roundtrip_and_clean_eof"]
+tier = "t0"
 
 [[scenarios]]
 id = "a0.protocol.responses_and_failure_classes_roundtrip"
 tests = ["atelier-build-v2::protocol/responses_and_failure_classes_roundtrip"]
+tier = "t0"
 
 [[scenarios]]
 id = "a0.protocol.malformed_frames_fail_closed"
 tests = ["atelier-build-v2::protocol/malformed_frames_fail_closed"]
+tier = "t0"
 
 [[scenarios]]
 id = "a0.protocol.every_partial_header_and_body_fails"
 tests = ["atelier-build-v2::protocol/every_partial_header_and_body_fails"]
+tier = "t0"
 
 [[scenarios]]
 id = "a0.protocol.fragmented_reads_and_interrupts_are_supported"
 tests = ["atelier-build-v2::protocol/fragmented_reads_and_interrupts_are_supported"]
+tier = "t0"
 
 [[scenarios]]
 id = "a0.protocol.oversized_writer_does_not_emit_partial_frame"
 tests = ["atelier-build-v2::protocol/oversized_writer_does_not_emit_partial_frame"]
+tier = "t0"
 
 [[scenarios]]
 id = "a0.protocol.stopped_response_refuses_unknown_fields"
 tests = ["atelier-build-v2::protocol/stopped_response_refuses_unknown_fields"]
+tier = "t0"
