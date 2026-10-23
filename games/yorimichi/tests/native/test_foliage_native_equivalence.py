@@ -14,7 +14,7 @@ import pytest
 HERE=Path(__file__).resolve().parent
 sys.path.insert(0,str(HERE))
 import foliage_native_equivalence as proof
-from prepare_foliage_native_equivalence import freeze_textures,source_control
+from prepare_foliage_native_equivalence import freeze_current_fbx,freeze_textures,source_control
 from atelier import mesh_ir
 
 PACKAGE='/Game/AtelierValidation/Foliage_0123456789ab'
@@ -265,3 +265,22 @@ def test_optional_engine_material_companions_are_bound_as_absent_not_ignored(tmp
     spec=dict(schema=1,inputs={str(path):proof.sha(path)},absent_inputs=[str(absent)])
     proof.bound_inputs(spec);absent.write_bytes(b'new data changes actual shader input')
     with pytest.raises(ValueError):proof.bound_inputs(spec)
+
+
+@pytest.mark.parametrize('fault',[None,'changed','missing','linked'])
+def test_current_receiving_binds_completed_producer_fbx_not_control_copy(tmp_path,fault):
+    producer=tmp_path/'producer';owner='Tree_Broad_A';key=owner+'_LOD1'
+    path=producer/'build/yorimichi/foliage'/owner/(key+'.fbx');path.parent.mkdir(parents=True)
+    control=tmp_path/'control.fbx';control.write_bytes(b'validated original FBX bytes')
+    path.write_bytes(control.read_bytes());digest=proof.sha(control)
+    rows={key:dict(actual_fbx=dict(path=str(control),sha256=digest))}
+    if fault=='changed':path.write_bytes(b'different real producer output')
+    elif fault=='missing':path.unlink()
+    elif fault=='linked':path.unlink();path.symlink_to(control)
+    def bind(actual,expected):
+        proof.check_input(actual,expected);return actual
+    if fault is not None:
+        with pytest.raises((ValueError,FileNotFoundError)):freeze_current_fbx(producer,rows,[owner],bind)
+    else:
+        assert freeze_current_fbx(producer,rows,[owner],bind)=={key:path}
+    assert control.read_bytes()==b'validated original FBX bytes'

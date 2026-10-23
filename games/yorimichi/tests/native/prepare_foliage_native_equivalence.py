@@ -72,6 +72,17 @@ def freeze_textures(producer,bind):
     return {name:bind(Path(producer)/'build/yorimichi/textures'/name)for name in names}
 
 
+def freeze_current_fbx(producer,rows,names,bind):
+    """Bind real completed native inputs, never substitute the earlier control outputs."""
+    result={}
+    for key,row in rows.items():
+        owners=[name for name in names if key==name or key.startswith(name+'_')]
+        require(len(owners)==1,'Ambiguous actual foliage source owner')
+        path=Path(producer)/'build/yorimichi/foliage'/owners[0]/(key+'.fbx')
+        result[key]=bind(path,row['actual_fbx']['sha256'])
+    return result
+
+
 def prepare(args):
     for key in ('proof','producer','receiving'):setattr(args,key,real_directory(getattr(args,key).absolute()))
     root=real_directory(args.output.absolute());require(not root.exists(),'Fresh receiving fixture required')
@@ -123,6 +134,7 @@ def prepare(args):
             and row['original_fbx']['sha256']==row['actual_fbx']['sha256']
             and row['original_source']['sha256']==row['actual_source']['sha256'],'Literal original/current source differs')
         for key in('original_fbx','actual_fbx','original_source','actual_source'):bind(row[key]['path'],row[key]['sha256'])
+    actual_fbx=freeze_current_fbx(args.producer,by_key,names,bind)
     texture_paths=freeze_textures(args.producer,bind);textures=tuple(texture_paths)
     scripts=GAME/'unreal/Scripts';roots=(GAME,GAME/'world',GAME/'tools',REPO/'platform/studio')
     for entry in [scripts/'shared_materials.py',scripts/'import_foliage.py',scripts/'atomic_equivalence_capture.py',Path(__file__),
@@ -158,7 +170,8 @@ def prepare(args):
             original_path=manifest_paths[name][int(phase=='current')];shutil.copyfile(original_path,target);bind(target,inputs[str(original_path)])
         for key,row in by_key.items():
             owner=next(name for name in names if key==name or key.startswith(name+'_'))
-            path=Path(row['original_fbx'if phase=='original'else'actual_fbx']['path']);target=folder/'foliage'/owner/(key+'.fbx')
+            path=Path(row['original_fbx']['path'])if phase=='original'else actual_fbx[key]
+            target=folder/'foliage'/owner/(key+'.fbx')
             shutil.copyfile(path,target);bind(target,row['original_fbx']['sha256'])
         output=root/phase;output.mkdir();(output/'user').mkdir()
     for path,digest in inputs.items():check_input(path,digest);require(identity(path)==pins[path],'Source identity changed during staging')
