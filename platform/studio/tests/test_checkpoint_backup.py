@@ -90,6 +90,7 @@ def test_active_worker_does_not_block_public_replay_or_start_duplicate(fixture, 
 def test_public_release_precedes_detached_private_upload_and_private_failure_cannot_fail_it(package, tmp_path, monkeypatch, failure):
     root, proof, _, _ = package
     events = []
+    monkeypatch.setenv('ATELIER_REMOTE_CHECKPOINTS', '1')
     monkeypatch.setattr(release, 'source_identity', lambda *a: (REVISION, 'owner/repo', SPEC))
     monkeypatch.setattr(release.paths, 'build_dir', lambda game: tmp_path / 'controller')
     def prepare(*a, **kw):
@@ -112,6 +113,25 @@ def test_public_release_precedes_detached_private_upload_and_private_failure_can
     assert release.main('game', root, tag=TAG, verification=proof, source=tmp_path) == 0
     assert events == ['retain-local', 'public'] + ([] if failure == 'prepare' else ['detach'])
     assert any('published verified release: public-release' in m for m in messages)
+
+
+def test_publish_skips_private_backup_unless_opted_in(package, tmp_path, monkeypatch):
+    root, proof, _, _ = package
+    events = []
+    monkeypatch.delenv('ATELIER_REMOTE_CHECKPOINTS', raising=False)
+    monkeypatch.setattr(release, 'source_identity', lambda *a: (REVISION, 'owner/repo', SPEC))
+    monkeypatch.setattr(release.paths, 'build_dir', lambda game: tmp_path / 'controller')
+    monkeypatch.setattr(build_checkpoints, 'prepare_publication',
+                        lambda *a, **kw: events.append('retain-local') or Path('immutable-backup-request'))
+    monkeypatch.setattr(backup, 'start', lambda *a, **kw: events.append('detach'))
+    def publish(*a, **kw):
+        events.append('public')
+        return {'html_url': 'public-release'}
+    monkeypatch.setattr(release, 'publish_assets', publish)
+    messages = []; monkeypatch.setattr(release, 'say', messages.append)
+    assert release.main('game', root, tag=TAG, verification=proof, source=tmp_path) == 0
+    assert events == ['public']
+    assert any('backup is off' in m for m in messages)
 
 
 @pytest.mark.parametrize('origin', ['new', 'pending'])
