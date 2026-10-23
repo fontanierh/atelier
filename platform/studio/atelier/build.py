@@ -1200,6 +1200,7 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
         return 75
     checkpoint.update(plan=plan, done=done, steps=steps)
     tool_cache = {}
+    ctx.build_tool_cache = tool_cache
     ctx.support_migration_tools = tool_cache
     def verify_spatial(step, expected):
         if step.queries:

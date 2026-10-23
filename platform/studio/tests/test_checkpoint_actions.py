@@ -44,6 +44,7 @@ def test_task_reuses_in_warm_changed_checkout_without_overwriting_other_work(fix
 
 def test_source_change_during_publication_cannot_save_action(fixture, monkeypatch):
     ctx, steps = fixture.checkout('producer')
+    ctx.build_tool_cache = {}
     fixture.produce(ctx, steps)
     step = steps[0]; stamp = cp.read_json(ctx.stamps / 'tree.json')
     key = actions.key(ctx, step, stamp['fingerprint'])
@@ -55,6 +56,41 @@ def test_source_change_during_publication_cannot_save_action(fixture, monkeypatc
     with pytest.raises(cp.CheckpointError, match='changed during publication'):
         actions.publish(ctx, step, stamp['fingerprint'], stamp, store=fixture.store, done={}, produced=True)
     assert not actions.entry_path(fixture.store, key).exists()
+
+
+def test_publication_reuses_invocation_tool_resources_but_refuses_changed_binary(fixture, tmp_path, monkeypatch):
+    from dataclasses import replace
+    from atelier import build_cache, engine
+    ctx, steps = fixture.checkout('producer')
+    bundle = tmp_path / 'Blender.app/Contents'
+    binary, resource = bundle / 'MacOS/Blender', bundle / 'Resources/exporter.py'
+    binary.parent.mkdir(parents=True); resource.parent.mkdir(parents=True)
+    binary.write_bytes(b'executable one'); resource.write_bytes(b'complete bundled exporter')
+    monkeypatch.setattr(engine, 'blender', lambda: str(binary))
+    step = replace(steps[0], commands=[build.Blender(steps[0].inputs[0], factory_startup=True)], cache=True)
+    fixture.produce(ctx, [step])
+    stamp = cp.read_json(ctx.stamps / 'tree.json')
+    ctx.build_tool_cache = {}
+    assert build.fingerprint(step, {}, tool_cache=ctx.build_tool_cache) == stamp['fingerprint']
+    original = build_cache.tool_context
+    calls, reads = [], []
+    def context(step, hasher, *, cache=None):
+        calls.append(cache)
+        def observed(path):
+            reads.append(path)
+            return hasher(path)
+        return original(step, observed, cache=cache)
+    monkeypatch.setattr(build_cache, 'tool_context', context)
+    assert actions.publish(ctx, step, stamp['fingerprint'], stamp, store=fixture.store, done={}, produced=True)
+    assert sum(value is ctx.build_tool_cache for value in calls) == 2
+    assert len(calls) == 4 and all(value is ctx.build_tool_cache or value is ctx.checkpoint_source_tool_cache
+                                 for value in calls)
+    assert resource not in reads  # No repeated complete app hashing for each publication.
+    assert reads.count(binary) == 4  # Both fingerprint and action-key executable checks stay live.
+    binary.write_bytes(b'changed executable')
+    with pytest.raises(cp.CheckpointError, match='inputs changed before publication'):
+        actions.publish(ctx, step, stamp['fingerprint'], stamp, store=fixture.store, done={}, produced=True)
+    assert resource in reads  # Changed executable invalidates the ordinary tool memo.
 
 
 def test_same_inputs_different_outputs_disable_key(fixture):
