@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import stat
 import sys
 import types
 
@@ -22,7 +23,7 @@ import yori  # noqa: E402,F401
 from atelier.atomic_files import atomic_json  # noqa: E402
 from atelier.export_manifest import real_directory  # noqa: E402
 from atelier.mesh_geometry import SIDECARS  # noqa: E402
-from atomic_equivalence import artifact, canonical, component_bounds, native_raw_set, require  # noqa: E402
+from atomic_equivalence import MAX_ARTIFACT_BYTES, artifact, canonical, component_bounds, native_raw_set, require  # noqa: E402
 
 IMPORTER_SHA = 'b311b7322b0030c1d5f4bd44e03f82f2ed092e8001389a8f6e67370119ebe892'
 SOURCE_COUNT, SOURCE_LODS = 138, 363
@@ -34,11 +35,23 @@ def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def check_input(path, digest):
+    """Declared code may be empty; geometry/spec artifact rules stay unchanged."""
+    path = Path(path)
+    require(path.is_absolute() and isinstance(digest, str) and re.fullmatch('[0-9a-f]{64}', digest),
+            'Invalid exact source input identity')
+    real_directory(path.parent); before = path.lstat()
+    require(stat.S_ISREG(before.st_mode) and before.st_size <= MAX_ARTIFACT_BYTES,
+            'Linked, special or oversized source input')
+    identity = lambda value: (value.st_dev, value.st_ino, value.st_mode, value.st_size, value.st_mtime_ns, value.st_ctime_ns)
+    require(sha(path) == digest and identity(path.lstat()) == identity(before), 'Source input bytes/identity changed')
+
+
 def bound_inputs(spec):
     require(spec.get('schema') == 1 and isinstance(spec.get('inputs'), dict) and spec['inputs'],
             'Missing complete Track input inventory')
     for path, digest in spec['inputs'].items():
-        artifact(dict(path=path, sha256=digest))
+        check_input(path, digest)
 
 
 def assets(editor, root):

@@ -24,6 +24,16 @@ def runtime():
     return result
 
 
+def test_complete_code_inputs_accept_empty_init_without_weakening_artifact_rules(tmp_path):
+    path = tmp_path / '__init__.py'; path.write_bytes(b'')
+    proof.check_input(path, proof.sha(path))
+    with pytest.raises(ValueError): proof.artifact(dict(path=str(path), sha256=proof.sha(path)))
+    digest = proof.sha(path); path.write_bytes(b'changed')
+    with pytest.raises(ValueError): proof.check_input(path, digest)
+    path.unlink(); path.symlink_to(tmp_path / 'missing')
+    with pytest.raises(ValueError): proof.check_input(path, digest)
+
+
 def test_production_census_retains_every_authored_lod_but_never_injects_marker():
     value = runtime(); assert len(proof.runtime_inventory(value)) == 137
     assert sum(proof.runtime_inventory(value).values()) == 362

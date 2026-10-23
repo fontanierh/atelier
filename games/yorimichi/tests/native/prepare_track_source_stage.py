@@ -20,6 +20,7 @@ from atelier.export_manifest import real_directory  # noqa: E402
 from atelier.file_copy import copy_file  # noqa: E402
 from atelier.model_files import regular_files  # noqa: E402
 from atomic_equivalence import artifact, require  # noqa: E402
+from track_native_equivalence import check_input  # noqa: E402
 
 
 def sha(path):
@@ -37,7 +38,7 @@ def run(spec_path, spec_sha):
     payload = artifact(dict(path=str(spec_path.absolute()), sha256=spec_sha)); spec = json.loads(payload)
     def recheck():
         require(artifact(dict(path=str(spec_path.absolute()), sha256=spec_sha)) == payload, 'Source-stage spec changed')
-        for path, digest in spec['inputs'].items(): artifact(dict(path=path, sha256=digest))
+        for path, digest in spec['inputs'].items(): check_input(path, digest)
     recheck()
     donor = Path(spec['proof']); out = real_directory(spec['output'])
     require(not out.exists(), 'Fresh independent Track source-stage output required')

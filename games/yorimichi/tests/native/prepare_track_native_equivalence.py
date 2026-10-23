@@ -22,7 +22,7 @@ import yori  # noqa: E402,F401
 from atelier.atomic_files import atomic_json  # noqa: E402
 from atelier.build_inputs import local_imports  # noqa: E402
 from atelier.export_manifest import real_directory  # noqa: E402
-from atomic_equivalence import artifact, require  # noqa: E402
+from atomic_equivalence import require  # noqa: E402
 import track_native_equivalence as proof  # noqa: E402
 
 SOURCE_HEAD = 'f37d202d475fa509fcf5195d7e486391288f1c25'
@@ -71,7 +71,7 @@ def prepare(args):
     def bind(path, expected=None):
         path = Path(path).absolute()
         digest = proof.sha(path) if expected is None else expected
-        artifact(dict(path=str(path), sha256=digest)); inputs[str(path)] = digest
+        proof.check_input(path, digest); inputs[str(path)] = digest
         return path
     result_path = bind(source / 'result.json'); audit_path = bind(source / 'serialized-byte-audit.json')
     authority = bind(source / 'authority.json')
