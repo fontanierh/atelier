@@ -80,3 +80,28 @@ def test_kart_geometry_reads_only_selected_cockpit_fields_and_keeps_full_layout_
     steps=recipe.steps(SimpleNamespace(out=tmp_path.resolve()),'kart')
     assert steps[0].products[-1].name=='vehicle_kart.cockpit'
     assert 'vehicle_kart.cockpit' in steps[-1].reads
+
+
+def test_bike_semantic_leaf_projections_keep_basket_geometry_independent(tmp_path):
+    sources=load('bike_source_projection',GAME/'world/vehicle_sources.py')
+    text=(GAME/'assets/vehicles/bike/build.py').read_text()
+    original=sources.projection(text,'bike')
+    changed=sources.projection(text.replace('13, 3, 4, 40','14, 3, 4, 40'),'bike')
+    assert {key for key in original if original[key]!=changed[key]}=={'BK_Steer_BasketShell'}
+    changed=sources.projection(text.replace('m.tube(rim + [rim[0]], .0085','m.tube(rim + [rim[0]], .0086'),'bike')
+    assert {key for key in original if original[key]!=changed[key]}=={'BK_Steer_BasketRim'}
+    assert len(original)==11 and 'BK_Steer' not in original
+    for row in original.values():
+        assert 'def parts(' not in row['program'] and 'def steer(' not in row['program'] and 'def basket(' not in row['program']
+    layout=tmp_path/'layout-source.json'
+    sources.publish('bike',(tmp_path/'sources').resolve(),layout_output=layout.resolve())
+    program=json.loads(layout.read_text())['program']
+    assert 'def layout(' in program and 'class Mesh' not in program
+    recipe=load('bike_atomic_recipe',GAME/'vehicle_atomic_build.py')
+    steps=recipe.steps(SimpleNamespace(out=tmp_path.resolve()),'bike')
+    plans=[step for step in steps if step.name.startswith('world.vehicle_bike.geometry.')]
+    assert len(plans)==11 and all(step.cache and step.commands[0].factory_startup for step in plans)
+    data=next(step for step in steps if step.name=='world.bike.layout')
+    assert data.reads==['vehicle_bike.layout_source'] and data.commands[0].threads==3
+    assert 'vehicle_bike.layout' in steps[-1].reads
+    check_modules(steps)

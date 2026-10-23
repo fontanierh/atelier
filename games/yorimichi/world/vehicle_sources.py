@@ -19,6 +19,8 @@ FAMILIES={
     'kart':dict(material='KartPalette',builders={
         'SM_Kart_Body':'kart','SM_Kart_Seat':'seat','SM_Kart_Wheel':'wheel','SM_Kart_SteeringWheel':'steering_wheel'}),
 }
+from bike_sources import BUILDERS as BIKE_BUILDERS, programs as bike_programs  # noqa: E402
+FAMILIES['bike']=dict(material='BikePalette',builders=BIKE_BUILDERS)
 SOURCE=yori.ASSETS/'vehicles'
 
 
@@ -37,6 +39,10 @@ def projection(text,family,*,layout=None):
     Unrelated part/constant edits MUST stop at unchanged selected products before export.
     """
     if family not in FAMILIES:raise ValueError('Unknown independently declared vehicle family')
+    if family=='bike':
+        programs=bike_programs(text)
+        return {key:dict(schema=1,family=family,asset=key,builder=builder,program=programs[key],material='BikePalette')
+                for key,builder in BIKE_BUILDERS.items()}
     if family=='kart':layout=cockpit_layout() if layout is None else layout
     tree=ast.parse(text);nodes={};order=[]
     def bound(target):
@@ -102,6 +108,9 @@ def publish(family,output,*,layout_output=None):
     if any(path.is_symlink() or not path.is_file() or path.name not in expected for path in output.iterdir()):
         raise ValueError('Foreign vehicle source-data member')
     for key,value in values.items():atomic_json(output/(key+'.json'),value)
+    if family=='bike':
+        if layout_output is None:raise ValueError('Bike requires its separate layout source product')
+        atomic_json(layout_output,dict(schema=1,program=bike_programs((SOURCE/family/'build.py').read_text())['__layout__']))
     if family=='kart':atomic_json(layout_output,layout)
 
 
