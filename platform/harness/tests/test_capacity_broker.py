@@ -85,13 +85,23 @@ def test_operation_error_logs_only_safe_phase_metadata(broker, monkeypatch, caps
 
 
 def test_slow_success_logs_elapsed_operation_without_changing_result(broker, monkeypatch, capsys):
+    marker = 'capacity slow operation: '
     original = broker.handle
     def slow(message, principal):
         time.sleep(.26)
         return original(message, principal)
     monkeypatch.setattr(broker, 'handle', slow)
     assert client.status(broker.socket_path)['charged_count'] == 0
-    report = json.loads(capsys.readouterr().err.split('capacity slow operation: ')[1].splitlines()[0])
+    output = ''
+    deadline = time.monotonic() + 2.0
+    while time.monotonic() < deadline:
+        output += capsys.readouterr().err
+        if marker in output and '\n' in output.split(marker, 1)[1]:
+            break
+        time.sleep(0.01)
+    else:
+        pytest.fail(f'timed out waiting for {marker!r} line in broker stderr; got {output!r}')
+    report = json.loads(output.split(marker, 1)[1].splitlines()[0])
     assert report['action'] == 'status' and report['phase'] == 'send'
     assert report['elapsed_seconds'] >= .25 and report['observed_at'] > 0
     assert report['handle_seconds'] >= .25
