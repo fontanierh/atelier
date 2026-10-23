@@ -3,3 +3,33 @@ schema_version = 1
 [[pending]]
 id = "t0.mid-build-edit"
 task = "A6"
+
+[[scenarios]]
+id = "a6.fence.bytes_not_hints"
+tests = ["atelier-build-v2/source_fence::tests::unchanged_bytes_do_not_rekey_even_when_the_version_moved"]
+tier = "t0"
+
+[[scenarios]]
+id = "a6.fence.same_size_rewrite"
+tests = ["atelier-build-v2/source_fence::tests::same_size_rewrite_is_changed_because_bytes_differ"]
+tier = "t0"
+
+[[scenarios]]
+id = "a6.fence.absent_becomes_present"
+tests = ["atelier-build-v2/source_fence::tests::an_absent_name_that_appears_is_changed"]
+tier = "t0"
+
+[[scenarios]]
+id = "a6.fence.every_entry_kind"
+tests = ["atelier-build-v2/source_fence::tests::every_non_file_entry_kind_fences"]
+tier = "t0"
+
+[[scenarios]]
+id = "a6.fence.new_name_in_scope"
+tests = ["atelier-build-v2/source_fence::tests::a_new_name_outside_the_old_scope_is_changed"]
+tier = "t0"
+
+[[scenarios]]
+id = "a6.fence.reprepare_budget"
+tests = ["atelier-build-v2/source_fence::tests::the_reprepare_budget_fails_on_the_fourth_change"]
+tier = "t0"
