@@ -829,6 +829,7 @@ def brinecove_source_step(out):
 
 def brinecove_model_steps(out):
     """One deterministic source product per plant model; no terrain or placement inputs."""
+    from atelier.build_batch_source import support
     region = REGIONS / 'brinecove'
     script = region / 'export_foliage_model.py'
     code = build_inputs.local_imports(script, (REGIONS,))
@@ -838,7 +839,7 @@ def brinecove_model_steps(out):
     return [Step('world.brinecove.model.' + definition.stem,
                  [Blender(script, (str(definition), str(out / 'models/brinecove/plants' / definition.stem)),
                           threads=3, factory_startup=True, env=(('PYTHONHASHSEED', '0'),))],
-                 inputs=[*code, definition],
+                 inputs=[*code, *support().values(), definition],
                  products=[Product('brinecove.model.' + definition.stem,
                                    (out / 'models/brinecove/plants' / definition.stem,))],
                  toolchain=True, cache=True, batch=Batch('Brinecove plant models'), heavy=True,
