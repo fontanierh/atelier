@@ -1,0 +1,168 @@
+"""Source-only finite-boundary regressions; none certify a real Unreal result."""
+import ast
+from pathlib import Path
+import subprocess
+import sys
+import types
+
+import pytest
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+import carriage_native_equivalence as proof  # noqa: E402
+
+GAME = HERE.parents[1]
+IMPORTER = GAME / 'unreal/Scripts/import_belmonte_train.py'
+SERVICE = GAME / 'tools/belmonte_train_service.py'
+
+
+def test_complete_importer_unchanged_except_dispatch_and_loop_wrapper():
+    original = ast.parse(IMPORTER.read_bytes()); tree, loop = proof.owner_tree(IMPORTER)
+    assert ast.dump(tree) == ast.dump(ast.Module(body=original.body[:-1], type_ignores=[]))
+    main = next(n for n in original.body if isinstance(n, ast.FunctionDef) and n.name == 'main')
+    assert any(ast.dump(loop.body[0]) == ast.dump(n) for n in main.body)
+    assert proof.ast_sha(loop.body[0]) == proof.LOOP_SHA
+    assert not any(isinstance(n, ast.Call) and ast.unparse(n.func) in ('BM.preflight_service', 'main') for n in ast.walk(loop))
+
+
+def test_finite_service_projection_uses_actual_conversion_and_door_motion():
+    service = proof.projection_module(SERVICE)
+    p = dict(collision_boxes=[dict(name='fixed', group='fixed', box=[-1, 2, -3, 4, 5, 6]),
+                             dict(name='moving', group='door', part='door', box=[0, 1, -2, -1, 1, 3])],
+             doors=[dict(id='door', kind='staff', box=[0, 1, -2, -1, 1, 3], collision='moving',
+                         leaves=[dict(name='Door_leaf', kind='hinged', pivot=[1, 2, 3], swing_deg=-95)], handles=[])])
+    actual = service.project(p, p, 'SM_BT_Locomotive')
+    assert actual['collision'] == [[-100, -400, 500, 200, 300, 600]]
+    assert actual['switchable'] == [dict(name='moving', group='door', part='door', box=[0, 100, 100, 100, 200, 300])]
+    leaf = actual['doors'][0]['leaves'][0]
+    assert leaf == dict(node='Door_leaf', mesh='/Game/BelmonteTrain/Doors/SM_BTD_Locomotive_leaf.SM_BTD_Locomotive_leaf',
+                        pivot=[100, -200, 300], motion='hinged', yaw=95.)
+    assert 'furniture' not in actual and service.RENDER['screen_sizes'] == [1., .6, .15]
+
+
+@pytest.mark.parametrize('change', ['collision', 'door', 'helper'])
+def test_changed_actual_service_or_importer_refused(tmp_path, change):
+    source = SERVICE.read_text() if change != 'helper' else IMPORTER.read_text()
+    source = source.replace("b.get('group', 'fixed') == 'fixed'", "b.get('group', 'fixed') != 'fixed'", 1) if change == 'collision' else source
+    source = source.replace("yaw=-float(leaf.get('swing_deg', 90))", "yaw=float(leaf.get('swing_deg', 90))", 1) if change == 'door' else source
+    source = source.replace("'build_nanite', False", "'build_nanite', True", 1) if change == 'helper' else source
+    path = tmp_path / 'changed.py'; path.write_text(source)
+    with pytest.raises(ValueError): (proof.owner_tree if change == 'helper' else proof.projection_module)(path)
+
+
+def test_exact_original_loop_forwards_lod_boxes_and_door_material_finishing():
+    # Executes the real loop, with observable native API doubles, not a second importer.
+    _, loop = proof.owner_tree(IMPORTER); calls = []
+    class Material:
+        def get_editor_property(self, key): return {'imported_material_slot_name': 'paint', 'material_interface': 'genuine-parent'}[key]
+        def set_editor_property(self, key, value): calls.append(('material', key, value))
+    class Mesh:
+        def get_editor_property(self, key): return [Material()] if key == 'static_materials' else self
+        def set_editor_property(self, key, value): calls.append(('property', key, value))
+        def get_num_lods(self): return 3
+        def get_num_triangles(self, index): return [10, 8, 2][index]
+        def get_path_name(self): return '/owned/body'
+        def get_bounding_box(self): return types.SimpleNamespace(min=types.SimpleNamespace(x=0,y=0,z=0), max=types.SimpleNamespace(x=1,y=1,z=1))
+    owner = types.ModuleType('actual_loop_test'); owner.__file__ = str(IMPORTER); owner.TRAIN = Path('/fixture')
+    owner.ROOT = '/owned'; owner.with_lods = lambda *args: calls.append(('lods', args[:3])) or Mesh()
+    owner.import_mesh = lambda *args: calls.append(('door', args)) or Mesh(); owner.box = lambda value: value
+    owner.sha = lambda path: 'actual-source-bound-by-host'
+    owner.E = types.SimpleNamespace(save_loaded_asset=lambda *args,**kw: calls.append(('save',)),
+        does_directory_exist=lambda path: True, delete_directory=lambda path: calls.append(('delete',path)))
+    owner.unreal = types.SimpleNamespace(BelmonteTrainImportLibrary=types.SimpleNamespace(set_simple_boxes=lambda mesh,boxes: len(boxes)),
+        CollisionTraceFlag=types.SimpleNamespace(CTF_USE_SIMPLE_AS_COMPLEX=7),log=lambda msg: None,log_warning=lambda msg: pytest.fail(msg))
+    vehicle = dict(id='locomotive', name='SM_BT_Locomotive', levels=['a','b','c'], collision=[[0,0,0,1,1,1]],
+                   switchable=[{}], doors=[dict(leaves=[dict(glb='door.glb',mesh='/Game/BelmonteTrain/Doors/SM_BTD_Locomotive_leaf.asset')])])
+    result = proof.execute_vehicle_loop(owner, loop, [vehicle], [1,.6,.15], {},
+        types.SimpleNamespace(get_lod_screen_sizes=lambda mesh: [1,.6,.15]))
+    assert result['vehicles']['SM_BT_Locomotive']['door_leaves'] == 1
+    assert ('property', 'lod_for_collision', 0) in calls
+    assert ('property', 'collision_trace_flag', 7) in calls
+    assert ('material', 'material_interface', 'genuine-parent') in calls
+    assert ('delete', '/owned/Source/SM_BTD_Locomotive_leaf') in calls
+    assert sum(c[0] == 'save' for c in calls) == 2
+    assert not hasattr(owner, 'mesh') and not hasattr(owner, 'part')
+
+
+def test_source_control_has_real_positive_negative_segments():
+    controls = proof.controls_for_boxes([[1,2,3,4,6,8]])
+    assert {c['kind'] for c in controls} == {'ray_positive','ray_negative','capsule_positive','capsule_negative'}
+    assert all(c['input']['channel'] == 'Pawn' and c['input']['trace_complex'] for c in controls)
+    with pytest.raises(ValueError): proof.controls_for_boxes([[1,2,3,1,6,8]])
+
+
+def test_unreal_import_closure_is_stdlib_only(tmp_path):
+    code = '''
+import importlib.abc, pathlib, sys, types
+native=pathlib.Path(sys.argv[1]); game=native.parents[1]
+sys.path[:0]=[str(native),str(game/'unreal/Scripts')]
+class BlockHost(importlib.abc.MetaPathFinder):
+ def find_spec(self,fullname,path=None,target=None):
+  if fullname=='atomic_equivalence' or fullname.split('.')[0] in ('numpy','mesh_ir') or fullname=='atelier.mesh_ir':
+   raise ModuleNotFoundError(fullname)
+sys.meta_path.insert(0,BlockHost())
+u=types.ModuleType('unreal');u.EditorAssetLibrary=object()
+u.AssetToolsHelpers=types.SimpleNamespace(get_asset_tools=lambda:object())
+u.AssetRegistryHelpers=types.SimpleNamespace(get_asset_registry=lambda:object())
+sys.modules['unreal']=u
+import carriage_native_equivalence as p
+import atomic_equivalence_capture
+path=game/'unreal/Scripts/import_belmonte_train.py'
+tree,loop=p.owner_tree(path);owner=types.ModuleType('unchanged');owner.__file__=str(path)
+exec(compile(tree,str(path),'exec'),owner.__dict__)
+assert callable(owner.with_lods) and callable(owner.main)
+assert p.ast_sha(loop.body[0])==p.LOOP_SHA
+assert callable(p.projection_module(game/'tools/belmonte_train_service.py').project)
+assert 'numpy' not in sys.modules and 'atomic_equivalence' not in sys.modules
+print('STDLIB CARRIAGE SLICE VERIFIED')
+'''
+    result = subprocess.run([sys.executable,'-I','-S','-c',code,str(HERE)], cwd=tmp_path, capture_output=True,text=True,timeout=30)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert 'STDLIB CARRIAGE SLICE VERIFIED' in result.stdout
+
+
+def test_exact_material_texture_comparator_does_not_waive_one_pixel(tmp_path, monkeypatch):
+    a=tmp_path/'a.png';b=tmp_path/'b.png';a.write_bytes(b'actual pixels');b.write_bytes(b'actual pixelx')
+    row=lambda path: dict(class_path='/Script/Engine.Texture2D', pixels=dict(path=str(path),sha256=proof.sha(path)))
+    monkeypatch.setattr(proof,'inventory',lambda vehicles: {})
+    with pytest.raises(ValueError, match='material/texture differs'):
+        proof.compare({'original':{},'current':{}},[],{'original':{'texture':row(a)},'current':{'texture':row(b)}},
+                      {'original':{},'current':{}})
+
+
+def test_cleanup_and_native_capture_are_not_allowed_before_guard_evidence():
+    path=HERE/'run_carriage_native_equivalence.py'; tree=ast.parse(path.read_bytes())
+    run=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='run')
+    calls=[ast.unparse(n.func) for n in ast.walk(run) if isinstance(n,ast.Call)]
+    assert 'guard_binding' in calls and 'strict_cleanup' in calls and 'current_native_build' in calls
+    text=path.read_text();assert text.index('guard_binding(evidence)') < text.index('strict_cleanup(spec,')
+    assert 'track_tree=True' in text and 'carriage_tree' not in text
+
+
+def test_only_proven_mic_change_detection_id_is_normalized(tmp_path):
+    def row(name, guid, suffix=''):
+        p=tmp_path/name
+        p.write_text('Begin Object Class=/Script/Engine.MaterialInstanceConstant Name="actual"\n'
+                     '   ParameterStateId='+guid+'\n'
+                     '   Parent="/InterchangeAssets/gltf/actual"\n'
+                     '   ScalarParameterValues(0)=(ParameterInfo=(Name="Roughness"),ParameterValue=0.25,ExpressionGUID='+('A'*32)+')\n'
+                     '   BasePropertyOverrides=(bOverride_TwoSided=True,TwoSided=True)\n'+suffix+'End Object\n')
+        return dict(path=str(p),sha256=proof.sha(p))
+    a=row('a.t3d','1'*32); b=row('b.t3d','2'*32)
+    cls='/Script/Engine.MaterialInstanceConstant'
+    assert proof.material_text(a,cls)==proof.material_text(b,cls)
+    c=row('c.t3d','2'*32,'   TextureParameterValues(0)=(ParameterValue="/actual/changed")\n')
+    assert proof.material_text(a,cls)!=proof.material_text(c,cls)
+    assert proof.material_text(a,'/Script/Engine.Texture2D')!=proof.material_text(b,'/Script/Engine.Texture2D')
+    p=Path(b['path']);p.write_text(p.read_text().replace('ParameterValue=0.25','ParameterValue=0.26'))
+    b['sha256']=proof.sha(p)
+    assert proof.material_text(a,cls)!=proof.material_text(b,cls)
+    d=row('d.t3d','not-a-guid')
+    with pytest.raises(ValueError): proof.material_text(d,cls)
+
+
+def test_incomplete_positive_native_census_refuses():
+    vehicles=[dict(id=k,name='SM_BT_'+''.join(s.title() for s in k.split('-')),levels=['a','b','c'],
+                   collision=[],switchable=[],doors=[]) for k in proof.COACHES]
+    with pytest.raises(ValueError, match='positive census'): proof.inventory(vehicles)
+    with pytest.raises(ValueError, match='seven-coach'): proof.inventory(vehicles[:-1])
