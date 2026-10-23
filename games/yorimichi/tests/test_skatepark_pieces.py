@@ -172,13 +172,14 @@ def test_normal_recipe_declares_complete_piece_products_native_owner_and_runtime
     assert 'skatepark.meshes' not in steps['data.stage'].reads
     assert 'skatepark.textures' in steps['unreal.skatepark'].reads
     assert recipe.WORLD / 'mesh_pieces.py' in steps['world.skatepark'].inputs
-    # City pieces now use the same exact copier; their cutoffs and unrelated
-    # producers still do not consume it merely because their outputs feed pieces.
+    # City geometry now uses independent constructor/planner owners; assemblies
+    # consume their products instead of reopening rendered parent exports.
     for source in recipe.city_inputs.TILES:
-        assert recipe.WORLD / 'mesh_pieces.py' in steps['world.city_tiles.' + source].inputs
-        assert recipe.WORLD / 'mesh_pieces.py' not in steps['world.hidamari.tiles.' + source].inputs
-    for name in ('world.hidamari', 'world.city_tiles', 'world.city_trees'):
-        assert recipe.WORLD / 'mesh_pieces.py' not in steps[name].inputs
+        owner = steps['world.hidamari.geometry.' + source]
+        assert recipe.WORLD / 'mesh_pieces.py' in owner.inputs
+        assert owner.cache and owner.commands[0].factory_startup
+    assert not any(name.startswith('world.city_tiles.') and name.rsplit('.', 1)[-1] in recipe.city_inputs.TILES
+                   for name in steps)
     assert steps['unreal.skatepark'].commands[0].modules == recipe.IMPORT_CODE
     assert recipe.runtime_data.staged_source(tmp_path, 'skatepark/park.json') == tmp_path / 'skatepark/runtime-park.json'
 

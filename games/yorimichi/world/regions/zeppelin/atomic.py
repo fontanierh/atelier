@@ -52,7 +52,7 @@ def steps(ctx,*,query_inputs=(),query_reads=(),query_needs=(),**kwargs):
         destination=ctx.out/'zeppelin'/'assets'
         export_assembly.destination_members(destination,{row['primary'] for row in receipts.values()})
         destination.mkdir(parents=True,exist_ok=True)
-        from atelier.build_cache import copy_file
+        from atelier.file_copy import copy_file
         from atelier.model_files import retain_files
         for row in receipts.values():
             path=source/row['primary'];target=destination/path.name
@@ -63,7 +63,7 @@ def steps(ctx,*,query_inputs=(),query_reads=(),query_needs=(),**kwargs):
                          materials=len(row['metadata']['slots']),sha256=row['sha256']) for name,row in receipts.items()}
         atomic_json(ctx.out/'zeppelin'/'manifest.json',report)
         atomic_json(ctx.out/'zeppelin'/'logical-pieces.json',membership)
-        from atelier.build_cache import copy_file
+        from atelier.file_copy import copy_file
         copy_file(ctx.out/'zeppelin_rotor_clearance.json',ctx.out/'zeppelin'/'rotor-clearance.json')
         log.write('Complete Zeppelin file-only assembly\n')
     result.append(Step('world.zeppelin',[Call('assemble Zeppelin',assemble)],

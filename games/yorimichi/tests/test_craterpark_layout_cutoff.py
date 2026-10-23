@@ -124,12 +124,14 @@ def test_recipe_routes_placement_consumers_through_validated_cutoff(selected, tm
     cutoff = next(s for s in steps if s.name == 'world.craterpark_layout')
     assert cutoff.cutoff and cutoff.heavy and cutoff.needs == ['world.craterpark_geometry']
     assert v4_config.design_path() in cutoff.inputs
-    for name in ('world.layout', 'world.hidamari', 'world.zeppelin', 'world.terrain',
-                 'world.map', 'world.belmonte', 'world.hippodrome'):
+    for name in ('world.layout', 'world.hidamari.layout_data', 'world.island.geometry.FarHills',
+                 'world.map', 'world.belmonte.north.raw.SM_BM_NorthApron'):
         step = next(s for s in steps if s.name == name)
         assert 'world.craterpark_layout' in step.needs, name
-        assert 'world.craterpark_geometry' not in step.needs, name
-        assert v4_config.design_path() not in step.inputs, name
+        # Direct geometry queries retain their source dependency as well as
+        # the validated placement identity; assemblies only consume Products.
+        if name in ('world.layout', 'world.map'):
+            assert v4_config.design_path() not in step.inputs, name
     geometry = next(s for s in steps if s.name == 'world.craterpark_geometry')
     assert v4_config.design_path() in geometry.inputs
     assert 'world.craterpark_layout' not in geometry.needs

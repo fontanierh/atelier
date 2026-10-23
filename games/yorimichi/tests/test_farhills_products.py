@@ -139,15 +139,16 @@ def test_products_have_one_early_guarded_owner_and_export_reads_final(tmp_path):
     from atelier import build, build_products
     recipe = build.load_recipe('yorimichi')
     graph = build_products.Graph(recipe.steps(SimpleNamespace(game='yorimichi', out=tmp_path, uproject=None)))
-    producer, export = graph.by_name['world.farhills'], graph.by_name['world.terrain']
+    producer, export = graph.by_name['world.farhills'], graph.by_name['world.island.geometry.FarHills']
     assert producer.heavy and producer.commands[0].threads == 3
     assert 'world.layout' in producer.needs and 'world.hidamari' not in producer.needs
     assert not any(path.name == 'city.json' for path in producer.inputs)
     assert {p.name for p in producer.products} == {f'terrain.FarHills.{stage}' for stage in ('natural', 'final', 'provenance')}
     assert all(graph.owners[p.name] == producer.name for p in producer.products)
-    assert export.reads == ['terrain.FarHills.final'] and not export.products
+    assert 'terrain.FarHills.final' in export.reads and export.products
+    assert graph.by_name['world.terrain'].reads == ['island.atomic', 'island.receiving', 'island.source_inventory']
     names = [step.name for step in graph.select(['world.terrain'])]
-    assert names.index('world.farhills') < names.index('world.hidamari') < names.index('world.terrain')
+    assert names.index('world.farhills') < names.index(export.name) < names.index('world.terrain')
     assert recipe.WORLD/'build_terrain.py' not in producer.inputs
     # The city layout's conservative import closure still includes appearance
     # definitions. Narrow those modules separately; never hide reachable reads.

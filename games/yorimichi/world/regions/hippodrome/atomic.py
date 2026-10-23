@@ -40,7 +40,7 @@ def assemble(out):
     receipts={row['asset']:row for row in exports['exports']}
     expected=[name for names in membership['parents'].values() for name in names]
     if set(expected)!=set(receipts) or len(expected)!=len(receipts):raise ValueError('Incomplete venue assembly')
-    from atelier.build_cache import copy_file
+    from atelier.file_copy import copy_file
     destination=out/'hippodrome'/'region';glb=destination/'glb'
     export_assembly.destination_members(glb,{name+'.glb' for name in expected})
     for name in expected:

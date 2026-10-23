@@ -70,7 +70,10 @@ def test_fresh_checkout_selects_park_steps_without_fetch(tmp_path):
     ctx = SimpleNamespace(game='yorimichi', out=tmp_path / 'no-build-output', uproject=None)
     steps = {step.name: step for step in recipe.steps(ctx)}
     assert not ctx.out.exists()
-    assert ASSETS / 'skatepark/modules' in steps['world.skatepark'].inputs
+    module_inputs = {path for step in steps.values() if step.name.startswith('world.skatepark.geometry.') for path in step.inputs}
+    for entry in json.loads((ASSETS / 'skatepark/modules.json').read_text())['parts'].values():
+        assert any((ASSETS / 'skatepark' / entry['file']) == path or path in (ASSETS / 'skatepark' / entry['file']).parents
+                   for path in module_inputs)
     fetch = tomllib.loads((GAME / 'game.toml').read_text())['fetch']['scripts']
     assert fetch and all(script.startswith('assets/audio/') for script in fetch)
 

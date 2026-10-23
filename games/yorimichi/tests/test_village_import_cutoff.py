@@ -56,14 +56,14 @@ def village_build(tmp_path, monkeypatch, recipe_graph):
         (folder / 'build-identity.json').write_text(json.dumps(identity))
 
     world = recipe_graph['unreal.world']
-    assert 'world.village.import' in world.needs and 'world.village' not in world.needs
+    assert 'world.village.import' not in world.needs and 'world.village' not in world.needs
     steps = [build.Step('world.layout', [build.Call('layout', layout)], inputs=[layout_source],
                         outputs=[out / 'world.json', out / 'heightmap.npy'], cutoff=True),
              build.Step('world.village', [build.Call('export', export)], inputs=[recipe_source, *sources.values()],
                         needs=['world.layout']),
              RECIPE.village_import_step(out, regions=regions),
              build.Step('unreal.world', [build.Call('import', lambda ctx, log: imported.append('world'))],
-                        needs=[name for name in world.needs if name in ('world.layout', 'world.village.import')])]
+                        needs=['world.layout', 'world.village.import'])]
     monkeypatch.setattr(build, 'Context', lambda game: ctx)
     monkeypatch.setattr(build, 'load_recipe', lambda game: SimpleNamespace(steps=lambda context: steps))
 
@@ -87,13 +87,13 @@ def recipe_graph(tmp_path_factory):
 
 def test_recipe_changes_only_the_village_import_edge(recipe_graph):
     steps = recipe_graph
-    assert steps['world.village.import'].needs == ['world.village']
+    # Production receiving identities now follow complete independent Products.
+    assert steps['world.village.import'].reads == ['village.atomic', 'village.meshes', 'village.runtime']
     assert steps['world.village.import'].cutoff and not steps['world.village.import'].heavy
-    assert steps['world.village'].needs == ['world.layout']
-    assert steps['unreal.world'].needs == [
-        'world.hidamari_ferry_cut', 'world.textures', 'world.layout', 'world.props', 'world.hidamari.city', 'world.hidamari_textures',
-        'world.hidamari_props.import', 'world.zeppelin.meshes', 'world.terrain.meshes',
-        'world.village.import', 'world.sailboat', 'characters.wanderer']
+    assert {'village.atomic', 'village.meshes', 'village.runtime'} <= set(steps['unreal.village'].reads)
+    assert 'unreal.village' in steps['unreal.world'].after
+    assert 'village.native_materials' in steps['unreal.world'].references
+    assert 'world.village.import' not in steps['unreal.world'].needs
     assert 'unreal.world' in steps['unreal.north'].needs
     assert 'unreal.world' in steps['unreal.southwest'].needs
     assert 'unreal.world' in steps['unreal.see_through'].needs

@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0,str(Path(__file__).resolve().parent/'world'))
 
 from atelier.atomic_files import atomic_json
-from atelier.build_cache import copy_file
+from atelier.file_copy import copy_file
 from atelier.conventions import to_unreal
 from atelier.export_manifest import real_directory, sha
 from atelier.model_files import regular_files

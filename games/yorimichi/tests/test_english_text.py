@@ -157,7 +157,7 @@ def test_belmonte_sign_map_covers_every_source_sign_and_is_english():
     import sys
     sys.path.insert(0, str(GAME / 'world' / 'regions'))
     source = json.loads((GAME / 'assets' / 'belmonte' / 'source.json').read_text())
-    build = (GAME / 'world' / 'regions' / 'belmonte' / 'build.py').read_text()
+    build = (GAME / 'world' / 'regions' / 'belmonte' / 'runtime_layout.py').read_text()
     tree = ast.parse(build)
     mapping = None
     for node in tree.body:

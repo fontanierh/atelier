@@ -57,7 +57,7 @@ def test_ferry_ship_is_eight_independent_owners_before_file_assembly(tmp_path):
     build.order(steps,['unreal.ferry'])
     planners=[step for step in steps if step.name.startswith('world.ferry_ship.geometry.')]
     assert len(planners)==8 and all(step.cache for step in planners)
-    assert set(by_name['unreal.ferry'].reads)=={'ferry.ship','ferry_ship.collision_data'}
+    assert set(by_name['unreal.ferry'].reads)=={'ferry.ship','ferry_ship.collision_data','ferry.terminals','ferry_terminals.walk','ferry_terminals.query_proof','ferry_terminals.audit'}
     assert by_name['unreal.ferry'].products[0].paths == (GAME/'unreal/Content/Ferry',ctx.out/'ferry/import-report.json')
     assert not any(getattr(command,'script',None)==GAME/'assets/vehicles/ferry/build.py'
                    for step in steps for command in step.commands)

@@ -8,7 +8,7 @@ sys.path[:0]=[str(Path(__file__).resolve().parents[2]),str(Path(__file__).resolv
 import yori  # noqa: E402,F401
 from atelier import export_manifest,mesh_ir  # noqa: E402
 from atelier.atomic_files import atomic_json  # noqa: E402
-from atelier.build_cache import copy_file  # noqa: E402
+from atelier.file_copy import copy_file  # noqa: E402
 from atelier.export_manifest import real_directory,sha  # noqa: E402
 from atelier.model_files import regular_files  # noqa: E402
 from region_mesh_parts import validate  # noqa: E402

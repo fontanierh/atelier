@@ -141,9 +141,9 @@ def test_real_recipe_tracks_surface_selection_for_export_and_owned_planting(tmp_
     ctx=SimpleNamespace(game='yorimichi',out=tmp_path,uproject=tmp_path/'Yorimichi.uproject')
     steps={s.name:s for s in recipe.steps(ctx)}
     helper=recipe.WORLD/'coastal_surface.py'
-    for name in ['world.layout','world.terrain','world.hidamari']:
+    for name in ['world.layout','world.farhills','world.hidamari.layout_data']:
         assert helper in steps[name].inputs,name
-    assert recipe.SCRIPTS/'forest_ground.py' in steps['unreal.world'].inputs
-    assert recipe.SCRIPTS/'import_hidamari.py' in steps['unreal.world'].inputs
-    assert recipe.SCRIPTS/'coast_rock_look.py' in steps['unreal.world'].inputs
-    assert recipe.ASSETS/'environment/textures/volcanic-rock.jpg' in steps['unreal.world'].inputs
+    assert recipe.SCRIPTS/'forest_ground.py' in steps['unreal.island'].inputs
+    assert recipe.SCRIPTS/'import_island_world.py' in steps['unreal.island'].inputs
+    assert recipe.SCRIPTS/'coast_rock_look.py' in steps['unreal.island'].inputs
+    assert recipe.ASSETS/'environment/textures/volcanic-rock.jpg' in steps['unreal.island'].inputs
