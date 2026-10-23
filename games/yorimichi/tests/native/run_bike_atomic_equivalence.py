@@ -36,7 +36,9 @@ def main():
     files=set(local_imports(fixture,(GAME/'world',GAME/'tools',paths.STUDIO)))
     files.update(local_imports(GAME/'vehicle_atomic_build.py',(GAME, GAME/'world',paths.STUDIO)))
     files.update(local_imports(GAME/'world/vehicle_sources.py',(GAME/'world',paths.STUDIO)))
-    files.update((Path(__file__),fixture,old_source,baseline/'result.json',baseline/'data/bike/manifest.json',layout_source,GAME/'assets/vehicles/bike/build.py'))
+    files.update((Path(__file__),fixture,old_source,baseline/'result.json',baseline/'data/bike/manifest.json',baseline/'data/bike/Bike.blend',layout_source,GAME/'assets/vehicles/bike/build.py'))
+    files.update((GAME/'bike_atomic_products.py',GAME/'unreal/Scripts/import_bike.py',
+                  GAME/'unreal/Source/Yorimichi/BikeMeshComponent.cpp',GAME/'unreal/Source/Yorimichi/BikeComponent.cpp'))
     sources={path.stem:str(path) for path in (root/'sources').glob('*.json')};files.update(Path(path) for path in sources.values())
     census=json.loads((baseline/'result.json').read_text())
     for key,value in census['assets'].items():

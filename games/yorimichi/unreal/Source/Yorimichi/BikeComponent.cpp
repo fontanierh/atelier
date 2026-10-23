@@ -1,4 +1,5 @@
 #include "BikeComponent.h"
+#include "BikeMeshComponent.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "PhysicsEngine/SkeletalBodySetup.h"
 #include "JapanVehicleTelemetry.h"
@@ -88,6 +89,14 @@ bool UBikeComponent::LoadData()
  if(!FFileHelper::LoadFileToString(Text,*AtelierDataPath(TEXT("bike/manifest.json")))||!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Manifest)||!Manifest)return false;
  // Each playable character has its own clips on its own rig (rider.py --character): Cairo's, or Modori's.
  if(!FFileHelper::LoadFileToString(Text,*AtelierDataPath(RiderRig().ToLower()/TEXT("bike/export.json")))||!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Export)||!Export)return false;
+ const TArray<TSharedPtr<FJsonValue>>* Group=nullptr;
+ if(!Manifest->TryGetArrayField(TEXT("steering_parts"),Group)||Group->Num()!=4)return false;
+ TSet<FName> GroupNames;
+ for(const auto& Value:*Group){const FName Name(*Value->AsString());if(GroupNames.Contains(Name)||!UBikeMeshComponent::SteeringNames().Contains(Name))return false;GroupNames.Add(Name);}
+ const TSharedPtr<FJsonObject>* PartRoster=nullptr;
+ if(!Manifest->TryGetObjectField(TEXT("parts"),PartRoster)||(*PartRoster)->Values.Num()!=11)return false;
+ for(FName Name:UBikeMeshComponent::SteeringNames())if(!(*PartRoster)->HasField(Name.ToString()))return false;
+ for(const TCHAR* Name:{TEXT("BK_Frame"),TEXT("BK_WheelFront"),TEXT("BK_WheelRear"),TEXT("BK_Crank"),TEXT("BK_Pedal"),TEXT("BK_Kickstand"),TEXT("BK_RackBoard")})if(!(*PartRoster)->HasField(Name))return false;
  const TSharedPtr<FJsonObject> Pivots=Manifest->GetObjectField(TEXT("pivots")),Seat=Manifest->GetObjectField(TEXT("rider"));
  HeadPivot=FromBlender(Pivots->GetArrayField(TEXT("BK_Steer")));
  FrontAxle=FromBlender(Pivots->GetArrayField(TEXT("BK_WheelFront")));RearAxle=FromBlender(Pivots->GetArrayField(TEXT("BK_WheelRear")));
@@ -126,6 +135,11 @@ FString UBikeComponent::RiderRig() const
  return Player?CastChecked<AWandererCharacter>(Player->GetDefaultObject())->GetBikeRig():FString();
 }
 
+/** @cc [owner:fontanierh,label:correctness] complete-independent-bike-steering
+ * The four steering leaves MUST share the exact original joint/rest/pivot transform,
+ * complete cooked logical AABB/true sphere and original component policy. Missing
+ * membership or bounds MUST keep the bike unavailable; no whole-parent fallback is
+ * allowed. Rider contacts, wheel support, collision and network pose math stay unchanged. */
 void UBikeComponent::Initialize(AWandererCharacter* C)
 {
  if (Rider) return; // Possession and world readiness may both initialize the same replicated pawn.
@@ -140,7 +154,22 @@ void UBikeComponent::Initialize(AWandererCharacter* C)
   P->SetCanEverAffectNavigation(false);P->SetStaticMesh(LoadObject<UStaticMesh>(nullptr,Asset));P->RegisterComponent();return P;
  };
  Frame=Part(TEXT("BikeFrame"),TEXT("/Game/Japan/Assets/BK_Frame.BK_Frame"));
- Steer=Part(TEXT("BikeSteer"),TEXT("/Game/Japan/Assets/BK_Steer.BK_Steer"));
+ Steer=NewObject<USceneComponent>(C,TEXT("BikeSteer"));Steer->SetupAttachment(BikeRoot);Steer->RegisterComponent();
+ TArray<UStaticMesh*> SteeringMeshes;
+ for(FName Name:UBikeMeshComponent::SteeringNames())
+ {
+  const FString Path=FString::Printf(TEXT("/Game/Japan/Assets/%s.%s"),*Name.ToString(),*Name.ToString());
+  SteeringMeshes.Add(LoadObject<UStaticMesh>(nullptr,*Path));
+ }
+ FBoxSphereBounds SteeringBounds(ForceInit);
+ const bool bSteering=UBikeMeshComponent::ReadGroupBounds(SteeringMeshes,SteeringBounds);
+ if(bSteering)for(int32 Index=0;Index<SteeringMeshes.Num();++Index)
+ {
+  auto* P=NewObject<UBikeMeshComponent>(C,UBikeMeshComponent::SteeringNames()[Index]);
+  P->SetupAttachment(Steer);P->SetCollisionEnabled(ECollisionEnabled::NoCollision);P->SetGenerateOverlapEvents(false);
+  P->SetCanEverAffectNavigation(false);P->SetStaticMesh(SteeringMeshes[Index]);P->SetLogicalBounds(SteeringBounds);
+  P->RegisterComponent();SteeringParts.Add(P);
+ }
  WheelFront=Part(TEXT("BikeWheelFront"),TEXT("/Game/Japan/Assets/BK_WheelFront.BK_WheelFront"));
  WheelRear=Part(TEXT("BikeWheelRear"),TEXT("/Game/Japan/Assets/BK_WheelRear.BK_WheelRear"));
  Crank=Part(TEXT("BikeCrank"),TEXT("/Game/Japan/Assets/BK_Crank.BK_Crank"));
@@ -149,7 +178,7 @@ void UBikeComponent::Initialize(AWandererCharacter* C)
  Kickstand=Part(TEXT("BikeKickstand"),TEXT("/Game/Japan/Assets/BK_Kickstand.BK_Kickstand"));
  RackBoard=Part(TEXT("BikeRackBoard"),TEXT("/Game/Japan/Assets/BK_RackBoard.BK_RackBoard"));
  BikeRoot->SetVisibility(false,true);
- bool bParts=true;for(const UStaticMeshComponent* P:TArray<UStaticMeshComponent*>{Frame,Steer,WheelFront,WheelRear,Crank,PedalL,Kickstand,RackBoard})bParts&=P->GetStaticMesh()!=nullptr;
+ bool bParts=bSteering&&SteeringParts.Num()==4;for(const UStaticMeshComponent* P:TArray<UStaticMeshComponent*>{Frame,WheelFront,WheelRear,Crank,PedalL,Kickstand,RackBoard})bParts&=P->GetStaticMesh()!=nullptr;
  bAssetsReady=bParts&&LoadData();
  if(!bAssetsReady)UE_LOG(LogTemp,Warning,TEXT("BIKE not installed for %s: parts %d, data %s (rig %s)"),*C->GetName(),bParts?1:0,
      *AtelierDataPath(RiderRig().ToLower()/TEXT("bike/export.json")),*RiderRig());
@@ -169,7 +198,9 @@ bool UBikeComponent::MaterialsReady(bool bFinish) const
 {
  bool bReady=true;
 #if WITH_EDITOR
- for(const UStaticMeshComponent* P:TArray<UStaticMeshComponent*>{Frame,Steer,WheelFront,WheelRear,Crank,PedalL,PedalR,Kickstand,RackBoard})
+ TArray<UStaticMeshComponent*> Parts{Frame,WheelFront,WheelRear,Crank,PedalL,PedalR,Kickstand,RackBoard};
+ for(const auto& P:SteeringParts)Parts.Add(P);
+ for(const UStaticMeshComponent* P:Parts)
   for(int32 I=0;P&&I<P->GetNumMaterials();++I)
    if(UMaterialInterface* Material=P->GetMaterial(I))
     if(FMaterialResource* Resource=Material->GetMaterialResource(GMaxRHIShaderPlatform))

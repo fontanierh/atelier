@@ -105,3 +105,23 @@ def test_bike_semantic_leaf_projections_keep_basket_geometry_independent(tmp_pat
     assert data.reads==['vehicle_bike.layout_source'] and data.commands[0].threads==3
     assert 'vehicle_bike.layout' in steps[-1].reads
     check_modules(steps)
+
+
+def test_bike_receiver_requires_complete_hashed_atomic_roster_before_native_work(tmp_path):
+    products=load('bike_current_products',GAME/'bike_atomic_products.py')
+    root=tmp_path.resolve();assets=root/'bike/assets';assets.mkdir(parents=True)
+    parts={key:dict(triangles=12,vertices=8,min=[-1,-2,-3],max=[1,2,3]) for key in products.PARTS}
+    import hashlib
+    exports=[]
+    for key in products.PARTS:
+        payload=key.encode();(assets/(key+'.fbx')).write_bytes(payload)
+        exports.append(dict(asset=key,primary=key+'.fbx',triangles=12,sha256=hashlib.sha256(payload).hexdigest(),
+            metadata=dict(slots=['BikePalette'],collision_hulls=0,uv_channels=['UVMap'])))
+    manifest=dict(parts=parts,steering_parts=list(products.STEERING));(root/'bike/manifest.json').write_text(json.dumps(manifest))
+    (assets/'manifest.json').write_text(json.dumps(dict(complete=True,exports=exports)))
+    assert products.read(root)==manifest
+    (assets/'BK_Steer_Core.fbx').write_bytes(b'changed after publication')
+    with pytest.raises(ValueError,match='bytes changed'):products.read(root)
+    (assets/'BK_Steer_Core.fbx').write_bytes(b'BK_Steer_Core')
+    manifest['steering_parts'].pop();(root/'bike/manifest.json').write_text(json.dumps(manifest))
+    with pytest.raises(ValueError,match='membership'):products.read(root)

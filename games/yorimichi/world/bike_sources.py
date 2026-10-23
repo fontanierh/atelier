@@ -68,7 +68,16 @@ def programs(text):
         synthetic.append(fn)
     for name,asset,half in [('wheel_front','BK_WheelFront',.048),('wheel_rear','BK_WheelRear',.050)]:
         synthetic.append(ast.parse(f'def {name}():\n    return wheel({asset!r}, {half!r})').body[0])
-    statements=tree.body+synthetic;nodes={}
+    statements=[]
+    for node in tree.body+synthetic:
+        # The original finite coordinate/palette tuple constants are pure expressions;
+        # selecting one must not retain its unused neighbour as a cache dependency.
+        if (isinstance(node,ast.Assign) and len(node.targets)==1 and isinstance(node.targets[0],ast.Tuple)
+                and isinstance(node.value,ast.Tuple) and len(node.targets[0].elts)==len(node.value.elts)
+                and all(isinstance(target,ast.Name) for target in node.targets[0].elts)):
+            statements.extend(ast.Assign(targets=[target],value=value) for target,value in zip(node.targets[0].elts,node.value.elts))
+        else:statements.append(node)
+    nodes={}
     for node in statements:
         if isinstance(node,(ast.FunctionDef,ast.ClassDef)):nodes[node.name]=node
         elif isinstance(node,ast.Assign):

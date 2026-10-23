@@ -41,6 +41,13 @@ def steps(ctx,family):
         reads=(region+'.source.'+key,),inputs=primitive,
         products=(Product(region+'.report.'+key,(reports/(key+'.json'),)),)) for key in roster]
     result.extend(graph.steps(ctx,region=region,assets=assets))
+    if bike:
+        result.append(Step('world.bike.scene',[Blender(WORLD/'build_bike_scene.py',
+            ('--plans',str(ctx.out/'planned_exports/vehicle_bike'),'--layout',str(layout),
+             '--output',str(ctx.out/'bike/Bike.blend')),threads=3,factory_startup=True)],
+            inputs=[*local_imports(WORLD/'build_bike_scene.py',(WORLD,)),GAME/'assets/vehicles/bike/build.py'],
+            reads=[region+'.layout',*(region+'.geometry.'+key for key in roster)],
+            products=[Product(region+'.scene',(ctx.out/'bike/Bike.blend',))],cache=True))
     def assemble(ctx,log):
         """@cc [owner:fontanierh,label:correctness;performance] complete-independent-vehicle-assembly
         Assembly MUST gather the complete independently exported rigid roster without
@@ -72,6 +79,6 @@ def steps(ctx,family):
         log.write(f'{family}: complete independent parts assembled without joining geometry\n')
     result.append(Step('world.'+family,[Call('assemble independent '+family+' parts',assemble)],
         inputs=[Path(__file__),*export_assembly.runtime_inputs()],
-        reads=[region+'.atomic',*(region+'.report.'+key for key in roster),*([region+'.cockpit'] if kart else []),*([region+'.layout'] if bike else [])],
+        reads=[region+'.atomic',*(region+'.report.'+key for key in roster),*([region+'.cockpit'] if kart else []),*([region+'.layout',region+'.scene'] if bike else [])],
         products=[Product(region+'.library',(ctx.out/family/'assets',ctx.out/family/'manifest.json'))]))
     return result
