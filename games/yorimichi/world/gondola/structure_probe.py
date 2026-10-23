@@ -7,9 +7,11 @@ import hashlib
 import importlib.util
 import json
 from gondola.structures import inputs, affine
+from gondola import structures
 
 def extract(build):
     import numpy as np
+    from atelier import encoded_glb
     spec=importlib.util.spec_from_file_location('gondola_belmonte_geometry',WORLD/'regions/belmonte/source.py')
     source=importlib.util.module_from_spec(spec);spec.loader.exec_module(source)
     build = Path(build)
@@ -17,7 +19,8 @@ def extract(build):
     surfaces = {'visual':[], 'collision':[]}
     for group in before['selection']['groups']:
         for kind,path in group['geometry'].items():
-            triangles = source.triangles(build/path)
+            _,data=encoded_glb.read(build/path,key=Path(path).stem)
+            triangles = source.triangles_data(data)
             for transform in group['transforms']:
                 matrix,offset = affine(transform,before['selection']['origin_cm'])
                 surfaces[kind].append(triangles@np.asarray(matrix).T+offset)

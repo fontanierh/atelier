@@ -14,6 +14,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parent))
 from mesh_import import import_mesh
 from mesh_materials import assign_materials
 from material_assets import import_texture, node, link, save_material
+import gondola_native
 
 E=unreal.EditorAssetLibrary
 M=unreal.MaterialEditingLibrary
@@ -24,6 +25,7 @@ if EDITOR is None:raise RuntimeError('StaticMeshEditor subsystem is unavailable 
 unreal.SystemLibrary.execute_console_command(None,'Interchange.FeatureFlags.Import.FBX 0')
 manifest=json.loads((ROOT/'manifest.json').read_text())
 site=json.loads((ROOT/'world/site.json').read_text())
+state=gondola_native.configure(site)
 
 
 def material(name,rgb,roughness,metallic,texture):
@@ -61,9 +63,10 @@ def material(name,rgb,roughness,metallic,texture):
 mats={name:material(name,*values,manifest['textured_materials'].get(name)) for name,values in manifest['materials'].items()}
 report={}
 for folder,dest,names in ((ROOT,'/Game/Gondola/Kit',PARAMETERS.asset_names()),
-                          (ROOT/'world','/Game/Gondola/World',[row['name'] for row in site['exports'] if not row['name'].endswith(('_LOD1','_LOD2'))])):
+                          (ROOT/'world','/Game/Gondola/World',state['current'])):
     for name in names:
-        mesh=import_mesh(folder/'assets'/f'{name}.fbx',dest,name,seed=ROOT/'assets/GD_Cabin.fbx',fresh_slots=True)
+        source=folder/('assets' if folder==ROOT else 'atomic-assets')
+        mesh=import_mesh(source/f'{name}.fbx',dest,name,seed=ROOT/'assets/GD_Cabin.fbx',fresh_slots=True)
         mesh.set_editor_property('generate_mesh_distance_field',False)
         collision=name.endswith('_Collision')
         body=mesh.get_editor_property('body_setup')
@@ -78,14 +81,16 @@ for folder,dest,names in ((ROOT,'/Game/Gondola/Kit',PARAMETERS.asset_names()),
             if key not in mats and not collision:raise ValueError(name+': unknown material '+key)
             slots.append(mats.get(key,mats['GD_DarkIron']))
         if slots:assign_materials(mesh,slots)
-        if name.endswith('_Rope_LOD0'):
+        if name in {key for family in site['rope_groups'].values() for key in family}:
             for level in (1,2):
-                path=folder/'assets'/f'{name[:-1]}{level}.fbx'
+                path=source/(name.replace('_LOD0',f'_LOD{level}')+'.fbx')
                 if EDITOR.import_lod(mesh,level,str(path))!=level:raise ValueError(name+': failed rope LOD import')
             if mesh.get_num_lods()!=3:raise ValueError(name+': incomplete rope detail levels')
-        E.save_loaded_asset(mesh)
+        if not E.save_loaded_asset(mesh):raise ValueError('Gondola mesh save failed: '+name)
         report[name]={'triangles':[mesh.get_num_triangles(i) for i in range(mesh.get_num_lods())],
                       'convex_hulls':EDITOR.get_convex_collision_count(mesh)}
         unreal.log('GONDOLA IMPORT '+name+' '+str(report[name]))
+gondola_native.finish_ropes(site,report)
+gondola_native.retire(state)
 (ROOT/'import-report.json').write_text(json.dumps(report,indent=2)+'\n')
 unreal.log('GONDOLA IMPORT COMPLETE')

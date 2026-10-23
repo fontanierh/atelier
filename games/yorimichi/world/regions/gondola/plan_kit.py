@@ -10,10 +10,9 @@ sys.path[:0] = [str(KIT), str(WORLD)]
 import yori  # noqa: E402,F401
 import bpy  # noqa: E402
 from atelier.atomic_files import atomic_json  # noqa: E402
-from atelier.export_manifest import real_directory  # noqa: E402
+from atelier.export_manifest import real_directory, name  # noqa: E402
 from region_mesh_parts import plan  # noqa: E402
 from commands import replay  # noqa: E402
-from regions.gondola.kit_sources import RENDER  # noqa: E402
 import solid  # noqa: E402
 
 OPTIONS = dict(apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL', axis_forward='-Y',
@@ -31,7 +30,7 @@ def source(path, asset):
 
 
 def construct(value):
-    if value['asset'] not in RENDER: raise ValueError('Unknown Gondola selected mesh')
+    if not name(value['asset']).startswith('GD_'): raise ValueError('Unknown Gondola selected mesh')
     mesh = replay(value, solid.Mesh)
     report = solid.closed(mesh)
     if any(report[key] for key in ('open_edges', 'misoriented_edges', 'degenerate_faces')):
@@ -44,7 +43,7 @@ def construct(value):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--asset', choices=RENDER, required=True)
+    parser.add_argument('--asset', required=True)
     parser.add_argument('--source', type=Path, required=True)
     parser.add_argument('--queries', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)

@@ -17,66 +17,87 @@ def write_triangle(path, points):
     path.parent.mkdir(parents=True,exist_ok=True)
     vertices=[(x,z,-y) for x,y,z in points]
     binary=b''.join(struct.pack('<3f',*p) for p in vertices)+struct.pack('<3H',0,1,2)
-    doc={'asset':{'version':'2.0'},'buffers':[{'byteLength':len(binary)}],
+    doc={'asset':{'version':'2.0'},'scene':0,'scenes':[{'nodes':[0]}],'buffers':[{'byteLength':len(binary)}],
          'bufferViews':[{'buffer':0,'byteOffset':0,'byteLength':36},
                         {'buffer':0,'byteOffset':36,'byteLength':6}],
          'accessors':[{'bufferView':0,'componentType':5126,'count':3,'type':'VEC3'},
                       {'bufferView':1,'componentType':5123,'count':3,'type':'SCALAR'}],
          'nodes':[{'mesh':0}], 'meshes':[{'primitives':[{'attributes':{'POSITION':0},'indices':1}]}]}
+    if not path.stem.endswith('_Collision'):
+        doc['materials']=[{'name':'BM_000_Default'}];doc['meshes'][0]['primitives'][0]['material']=0
     path.write_bytes(glb_pack(doc,binary))
 
 
+def seal(folder):
+    import hashlib
+    path=folder/'gondola/world/structures-sources.json'
+    value=json.loads(path.read_text())
+    value['sources']={name:hashlib.sha256((folder/name).read_bytes()).hexdigest()
+                      for group in value['groups'] for name in group['geometry'].values()}
+    path.write_text(json.dumps(value))
+
+
+def source_file(folder,name):
+    return folder/'planned_exports/belmonte_models/SM_BM_Wall'/name.replace('.glb','.mesh')
+
+
+def source_plan(folder,visual_points,collision_points):
+    import hashlib
+    from encoded_region_plan import publish
+    author=folder/'authors';visual=author/'SM_BM_Wall.glb';collision=author/'SM_BM_Wall_Collision.glb'
+    write_triangle(visual,visual_points);write_triangle(collision,collision_points)
+    entry=dict(name='SM_BM_Wall',path='glb/SM_BM_Wall.glb',sha256=hashlib.sha256(visual.read_bytes()).hexdigest(),
+               triangles=1,bounds_m=list(structures.mesh_bounds(visual)),slots=['Default'],source_asset='Wall',
+               collision=dict(path='meshes/SM_BM_Wall_Collision.glb',sha256=hashlib.sha256(collision.read_bytes()).hexdigest()))
+    publish(source_file(folder,'SM_BM_Wall.glb').parent,parent='SM_BM_Wall',parts=[
+        dict(name='SM_BM_Wall',data=visual.read_bytes(),metadata=dict(entry=entry,slots=[0],collision=True)),
+        dict(name='SM_BM_Wall_Collision',data=collision.read_bytes(),role='collision',metadata=dict(parent='SM_BM_Wall'))])
+
+
+
 @pytest.fixture
-def exported(tmp_path):
-    folder=tmp_path/'belmonte';folder.mkdir()
-    row={'asset':'/Game/Belmonte/Meshes/Wall.Wall','plant':False,'collision':True,
+def exported(tmp_path,monkeypatch):
+    monkeypatch.setattr(structures,'REPO',tmp_path)
+    monkeypatch.setattr(structures,'CODE',())
+    row={'asset':'/Game/Belmonte/Meshes/SM_BM_Wall.SM_BM_Wall','plant':False,'collision':True,'parent_collision':True,
+         'geometry':{'visual':'planned_exports/belmonte_models/SM_BM_Wall/SM_BM_Wall.mesh',
+                     'collision':'planned_exports/belmonte_models/SM_BM_Wall/SM_BM_Wall_Collision.mesh'},
          'transforms':[{'translation_cm':[0.,0.,0.],'scale':[1.,1.,1.],'rotation_xyzw':[0.,0.,0.,1.]}]}
-    (folder/'runtime.json').write_text(json.dumps({'origin_cm':[0,0,0],'groups':[row]}))
-    (folder/'build-report.json').write_text(json.dumps({'meshes':[{'name':'Wall','path':'glb/Wall.glb',
-        'collision':{'path':'meshes/Wall_Collision.glb'}}]}))
-    write_triangle(folder/'glb/Wall.glb',[(1000,4500,0),(1001,4500,0),(1000,4501,1)])
-    write_triangle(folder/'glb/Wall_Collision.glb',[(400,4500,0),(401,4500,0),(400,4501,1)])
+    path=tmp_path/'gondola/world/structures-sources.json';path.parent.mkdir(parents=True)
+    path.write_text(json.dumps(dict(schema=1,owner='GondolaStructureSources',bounds_m=list(structures.BOUNDS),
+                                   origin_cm=[0,0,0],groups=[row],sources={})))
+    source_plan(tmp_path,[(1000,4500,0),(1001,4500,0),(1000,4501,1)],[(400,4500,0),(401,4500,0),(400,4501,1)])
+    seal(tmp_path)
     return tmp_path,row
 
 
-def test_separate_collision_source_selects_an_otherwise_distant_visual(exported):
+def test_separate_collision_source_retains_complete_otherwise_distant_visual(exported):
     folder,row=exported
     result=structures.inputs(folder)
     assert len(result['selection']['groups'])==1
-    assert set(result['files'])=={'belmonte/glb/Wall.glb','belmonte/glb/Wall_Collision.glb'}
+    assert set(result['files'])==set(row['geometry'].values())
     old=result['files'].copy()
-    write_triangle(folder/'belmonte/glb/Wall_Collision.glb',[(400,4500,0),(402,4500,0),(400,4501,2)])
+    source_plan(folder,[(1000,4500,0),(1001,4500,0),(1000,4501,1)],[(400,4500,0),(402,4500,0),(400,4501,2)])
+    with pytest.raises(ValueError,match='definition'):structures.inputs(folder)
+    seal(folder)
     assert structures.inputs(folder)['files']!=old
 
 
-def test_render_only_children_remain_in_actual_clearance_extraction_once(exported):
+def test_complete_source_visual_and_authored_collision_enter_once(exported):
     from gondola import structure_probe
-    folder, row = exported
-    row['parent_collision'] = True
-    child = dict(row, asset='/Game/Belmonte/Meshes/Second.Second', collision=False)
-    root = folder/'belmonte'
-    (root/'runtime.json').write_text(json.dumps({'origin_cm':[0,0,0],'groups':[row,child]}))
-    report = json.loads((root/'build-report.json').read_text())
-    report['meshes'].append({'name':'Second','path':'glb/Second.glb'})
-    (root/'build-report.json').write_text(json.dumps(report))
-    write_triangle(root/'glb/Second.glb',[(420,4500,0),(421,4500,0),(420,4501,1)])
-    selection = structures.selected(folder)['groups']
-    assert len(selection) == 2
-    assert sorted(sorted(group['geometry']) for group in selection) == [['collision','visual'],['visual']]
+    folder,row=exported
     structure_probe.extract(folder)
     with np.load(folder/'gondola/world/structures.npz') as arrays:
-        assert len(arrays['visual']) == 2
-        assert len(arrays['collision']) == 1
-        assert set(arrays['visual'][:,0,0]) == {420.,1000.}
+        assert len(arrays['visual'])==len(arrays['collision'])==1
+        assert arrays['visual'][0,0,0]==1000.
+        assert arrays['collision'][0,0,0]==400.
 
 
-@pytest.mark.parametrize('parent', [None, 1, 'yes', False])
-def test_invalid_parent_collision_ownership_refuses(exported, parent):
-    folder, row = exported
-    row['parent_collision'] = parent
-    (folder/'belmonte/runtime.json').write_text(json.dumps({'origin_cm':[0,0,0],'groups':[row]}))
-    with pytest.raises(ValueError, match='parent collision'):
-        structures.selected(folder)
+@pytest.mark.parametrize('parent',[None,1,'yes',False])
+def test_invalid_parent_collision_ownership_refuses(exported,parent):
+    folder,row=exported;row['parent_collision']=parent
+    path=folder/'gondola/world/structures-sources.json';value=json.loads(path.read_text());value['groups']=[row];path.write_text(json.dumps(value))
+    with pytest.raises(ValueError,match='parent collision'):structures.selected(folder)
 
 
 def test_instance_rotation_scale_translation_and_region_origin():
@@ -88,23 +109,22 @@ def test_instance_rotation_scale_translation_and_region_origin():
     assert np.allclose(low,[6,6,10]) and np.allclose(high,[12,8,22])
 
 
-def test_selector_applies_nonidentity_instance_translation(exported):
-    folder,row=exported
-    row['transforms'][0]['translation_cm']=[-60000,0,0]
-    path=folder/'belmonte/runtime.json'
-    path.write_text(json.dumps({'origin_cm':[0,0,0],'groups':[row]}))
-    result=structures.selected(folder)
-    # Visual x1000 becomes400, while the separate hull becomes-200.
-    assert result['groups'][0]['transforms']==row['transforms']
-    row['transforms'][0]['translation_cm']=[600000,0,0]
-    path.write_text(json.dumps({'origin_cm':[0,0,0],'groups':[row]}))
-    assert structures.selected(folder)['groups']==[]
+def test_source_projection_applies_real_transform_and_collision_selection(tmp_path):
+    from gondola import source_inputs
+    source_plan(tmp_path,[(1000,4500,0),(1001,4500,0),(1000,4501,1)],[(400,4500,0),(401,4500,0),(400,4501,1)])
+    scene=dict(meshes=[dict(name='SM_BM_Wall',source_asset='Wall')],placements=[dict(asset='Wall',materials=[0],transform=
+        dict(translation_cm=[0.,0.,0.],scale=[1.,1.,1.],rotation_xyzw=[0.,0.,0.,1.]))])
+    models={'SM_BM_Wall':dict(source=dict(name='SM_BM_Wall',source_asset='Wall',collision={'path':'meshes/SM_BM_Wall_Collision.glb'}))}
+    materials={0:dict(name='MI_Test')}
+    result=source_inputs.structure_projection(tmp_path,scene=scene,models=models,origin=[0,0,0],materials=materials)
+    assert len(result['groups'])==1 and set(result['groups'][0]['geometry'])=={'visual','collision'}
+    scene['placements'][0]['transform']['translation_cm']=[600000,0,0]
+    assert not source_inputs.structure_projection(tmp_path,scene=scene,models=models,origin=[0,0,0],materials=materials)['groups']
 
 
 def test_missing_geometry_and_unsupported_transform_refuse(exported):
-    folder,row=exported
-    (folder/'belmonte/glb/Wall_Collision.glb').unlink()
-    with pytest.raises(FileNotFoundError):structures.inputs(folder)
+    folder,row=exported;source_file(folder,'SM_BM_Wall_Collision.glb').unlink()
+    with pytest.raises(ValueError,match='regular'):structures.inputs(folder)
     with pytest.raises(ValueError,match='transform'):
         structures.affine({'translation_cm':[0,0,0],'scale':[1,0,1],'rotation_xyzw':[0,0,0,1]},[0,0,0])
 
@@ -113,11 +133,9 @@ def test_structure_loader_refuses_changed_extraction_code_without_geometry_chang
     import hashlib
     folder,row=exported
     code=folder/'extractor.py';code.write_text('old extraction')
-    monkeypatch.setattr(structures,'REPO',folder)
     monkeypatch.setattr(structures,'CODE',('extractor.py',))
     before=structures.inputs(folder)
-    product=folder/'gondola/world';product.mkdir(parents=True)
-    output=product/'structures.npz';output.write_bytes(b'unchanged output')
+    product=folder/'gondola/world';output=product/'structures.npz';output.write_bytes(b'unchanged output')
     (product/'structures.json').write_text(json.dumps({'inputs':before,'output_sha256':hashlib.sha256(output.read_bytes()).hexdigest()}))
     assert structures.validate(folder)
     code.write_text('corrected extraction')
@@ -229,15 +247,16 @@ def test_structure_preflight_remains_available_without_geometry_libraries(export
     import subprocess
     folder,_=exported
     world=Path(__file__).resolve().parents[1]/'world'
-    script='''import sys
+    studio=Path(__file__).resolve().parents[3]/'platform/studio'
+    script="""import sys
 sys.path[:0]=sys.argv[1:3]
 from pathlib import Path
-from gondola.structures import inputs
-assert inputs(Path(sys.argv[3]))['selection']['groups']
+from gondola import structures
+structures.REPO=Path(sys.argv[3]);structures.CODE=()
+assert structures.inputs(Path(sys.argv[3]))['selection']['groups']
 assert 'numpy' not in sys.modules and 'bpy' not in sys.modules
-'''
-    result=subprocess.run([sys.executable,'-S','-c',script,str(world),str(structures.REPO/'platform/studio'),str(folder)],
-                          capture_output=True,text=True)
+"""
+    result=subprocess.run([sys.executable,'-S','-c',script,str(world),str(studio),str(folder)],capture_output=True,text=True)
     assert result.returncode==0,result.stderr
 
 
@@ -298,3 +317,31 @@ def test_structure_bounds_are_cached_by_file_identity(tmp_path, monkeypatch):
     glb.write_bytes(b'other bytes')
     structures.cached_bounds(tmp_path, 'piece.glb')
     assert len(calls) == 2
+
+
+def test_preexport_child_selection_keeps_old_distant_owner_and_omits_far_render_only_child(tmp_path):
+    import hashlib
+    from encoded_region_plan import publish
+    from gondola import source_inputs
+    parent='SM_BM_Wall'
+    author=tmp_path/'authors'
+    collision=author/(parent+'_Collision.glb')
+    write_triangle(collision,[(400,4500,0),(401,4500,0),(400,4501,1)])
+    hull=dict(path='meshes/'+collision.name,sha256=hashlib.sha256(collision.read_bytes()).hexdigest())
+    parts=[]
+    for index,x in enumerate((1000.,420.,1200.)):
+        key=parent+f'_Piece{index:02d}';path=author/(key+'.glb')
+        write_triangle(path,[(x,4500,0),(x+1,4500,0),(x,4501,1)])
+        entry=dict(name=key,path='glb/'+key+'.glb',sha256=hashlib.sha256(path.read_bytes()).hexdigest(),triangles=1,
+                   bounds_m=list(structures.mesh_bounds(path)),source_asset='Wall',slots=['Default'])
+        if index==0:entry['collision']=hull
+        parts.append(dict(name=key,data=path.read_bytes(),metadata=dict(entry=entry,slots=[0],collision=index==0)))
+    parts.append(dict(name=parent+'_Collision',data=collision.read_bytes(),role='collision',metadata=dict(parent=parent)))
+    publish(tmp_path/'planned_exports/belmonte_models'/parent,parent=parent,parts=parts)
+    scene=dict(meshes=[dict(name=parent,source_asset='Wall')],placements=[dict(asset='Wall',materials=[0],transform=
+        dict(translation_cm=[0.,0.,0.],scale=[1.,1.,1.],rotation_xyzw=[0.,0.,0.,1.]))])
+    models={parent:dict(source=dict(name=parent,source_asset='Wall',collision=hull))}
+    value=source_inputs.structure_projection(tmp_path,scene=scene,models=models,origin=[0,0,0],materials={0:dict(name='M')})
+    assert [row['asset'].rsplit('/',1)[-1].split('.')[0] for row in value['groups']]==[parent+'_Piece00',parent+'_Piece01']
+    assert [row['collision'] for row in value['groups']]==[True,False]
+    assert len({path for row in value['groups'] for path in row['geometry'].values()})==3

@@ -10,6 +10,10 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
+#if WITH_EDITOR
+#include "StaticMeshResources.h"
+#include "Serialization/JsonWriter.h"
+#endif
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -20,6 +24,96 @@
 #include "Misc/Paths.h"
 #include "Net/UnrealNetwork.h"
 #include "Serialization/JsonSerializer.h"
+
+/** @cc [owner:fontanierh,label:correctness] gondola-native-logical-rope-bounds
+ * Every bounded rope child MUST retain its complete original three-LOD logical
+ * box and true sphere, measured from actual final native PositionVertexBuffers.
+ * No AABB-diagonal sphere, CPU-access setting change or class fallback is allowed.
+ * Missing buffers, mismatched family membership and nonfinite bounds MUST refuse. */
+FString UGondolaRopeMeshComponent::FinishLogicalRope(const FString& Parent, const TArray<UStaticMesh*>& Parts)
+{
+#if WITH_EDITOR
+    if (Parent.IsEmpty() || Parts.IsEmpty() || Parts.Num() > 8) return {};
+    TArray<FString> Family;
+    TSet<UStaticMesh*> Seen;
+    for (UStaticMesh* Mesh : Parts)
+    {
+        if (!Mesh || Seen.Contains(Mesh) || !Mesh->GetRenderData() || Mesh->GetRenderData()->LODResources.Num() != 3) return {};
+        Seen.Add(Mesh); Family.Add(Mesh->GetPathName());
+    }
+    FBoxSphereBounds::Builder Bounds;
+    for (int32 Lod = 0; Lod < 3; ++Lod)
+    {
+        FBox3f Box(ForceInit);
+        for (const UStaticMesh* Mesh : Parts)
+        {
+            const auto& Buffer = Mesh->GetRenderData()->LODResources[Lod].VertexBuffers.PositionVertexBuffer;
+            if (!Buffer.GetVertexData() || Buffer.GetNumVertices() == 0) return {};
+            for (uint32 Index = 0; Index < Buffer.GetNumVertices(); ++Index)
+            {
+                const FVector3f Position = Buffer.VertexPosition(Index);
+                if (Position.ContainsNaN()) return {};
+                Box += Position;
+            }
+        }
+        if (!Box.IsValid) return {};
+        const FVector3f Center = Box.GetCenter();
+        float RadiusSquared = 0.f;
+        for (const UStaticMesh* Mesh : Parts)
+        {
+            const auto& Buffer = Mesh->GetRenderData()->LODResources[Lod].VertexBuffers.PositionVertexBuffer;
+            for (uint32 Index = 0; Index < Buffer.GetNumVertices(); ++Index)
+                RadiusSquared = FMath::Max(RadiusSquared, (Buffer.VertexPosition(Index) - Center).SizeSquared());
+        }
+        Bounds += FBoxSphereBounds(FVector(Center), FVector(Box.GetExtent()), FMath::Sqrt(RadiusSquared));
+    }
+    const FBoxSphereBounds Result = Bounds;
+    if (Result.ContainsNaN() || Result.SphereRadius <= 0.) return {};
+    for (UStaticMesh* Mesh : Parts)
+    {
+        auto* Data = Cast<UGondolaRopeBoundsData>(Mesh->GetAssetUserDataOfClass(UGondolaRopeBoundsData::StaticClass()));
+        const bool Changed = !Data || Data->LogicalParent != Parent || Data->Family != Family ||
+            Data->Origin != Result.Origin || Data->Extent != Result.BoxExtent || Data->Radius != Result.SphereRadius;
+        if (!Data) { Data = NewObject<UGondolaRopeBoundsData>(Mesh); Mesh->AddAssetUserData(Data); }
+        if (Changed)
+        {
+            Data->LogicalParent = Parent; Data->Family = Family; Data->Origin = Result.Origin;
+            Data->Extent = Result.BoxExtent; Data->Radius = Result.SphereRadius; Mesh->MarkPackageDirty();
+        }
+    }
+    auto Vector = [](const FVector& Value)
+    {
+        return TArray<TSharedPtr<FJsonValue>>{MakeShared<FJsonValueNumber>(Value.X),
+            MakeShared<FJsonValueNumber>(Value.Y), MakeShared<FJsonValueNumber>(Value.Z)};
+    };
+    const auto Object = MakeShared<FJsonObject>();
+    Object->SetArrayField(TEXT("origin"), Vector(Result.Origin));
+    Object->SetArrayField(TEXT("extent"), Vector(Result.BoxExtent));
+    Object->SetNumberField(TEXT("sphere_radius"), Result.SphereRadius);
+    FString Json;
+    return FJsonSerializer::Serialize(Object, TJsonWriterFactory<>::Create(&Json)) ? Json : FString();
+#else
+    return {};
+#endif
+}
+
+bool UGondolaRopeMeshComponent::ConfigureLogicalFamily(const FString& Parent, const TArray<FString>& Family)
+{
+    UStaticMesh* Mesh = GetStaticMesh();
+    const auto* Data = Mesh ? Cast<UGondolaRopeBoundsData>(Mesh->GetAssetUserDataOfClass(UGondolaRopeBoundsData::StaticClass())) : nullptr;
+    if (!Data || Data->LogicalParent != Parent || Data->Family != Family || Family.IsEmpty() || Family.Num() > 8 ||
+        !Family.Contains(Mesh->GetPathName()) || Data->Origin.ContainsNaN() || Data->Extent.ContainsNaN() ||
+        Data->Extent.GetMin() < 0. || !FMath::IsFinite(Data->Radius) || Data->Radius <= 0.) return false;
+    LogicalBounds = FBoxSphereBounds(Data->Origin, Data->Extent, Data->Radius);
+    return !LogicalBounds.ContainsNaN();
+}
+
+FBoxSphereBounds UGondolaRopeMeshComponent::CalcBounds(const FTransform& LocalToWorld) const
+{
+    FBoxSphereBounds Result = LogicalBounds.TransformBy(LocalToWorld);
+    Result.BoxExtent *= BoundsScale; Result.SphereRadius *= BoundsScale;
+    return Result;
+}
 
 namespace
 {
@@ -131,10 +225,10 @@ void AGondolaService::BeginPlay()
 void AGondolaService::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps)const
 {Super::GetLifetimeReplicatedProps(OutLifetimeProps);DOREPLIFETIME(AGondolaService,NetworkState);}
 
-UStaticMeshComponent* AGondolaService::MeshPart(const FString& Name,const FString& Path,bool Collision,bool Movable)
+UStaticMeshComponent* AGondolaService::MeshPart(const FString& Name,const FString& Path,bool Collision,bool Movable,bool Rope)
 {
     auto* Mesh=LoadObject<UStaticMesh>(nullptr,*Path);if(!Mesh){UE_LOG(LogTemp,Error,TEXT("GONDOLA missing mesh %s"),*Path);return nullptr;}
-    auto* C=NewObject<UStaticMeshComponent>(this,*Name);C->SetupAttachment(RootComponent);
+    UStaticMeshComponent* C=Rope?NewObject<UGondolaRopeMeshComponent>(this,*Name):NewObject<UStaticMeshComponent>(this,*Name);C->SetupAttachment(RootComponent);
     C->SetMobility(Movable?EComponentMobility::Movable:EComponentMobility::Static);C->SetStaticMesh(Mesh);
     C->SetCollisionEnabled(Collision?ECollisionEnabled::QueryAndPhysics:ECollisionEnabled::NoCollision);
     C->SetCollisionObjectType(Movable?ECC_Vehicle:ECC_WorldStatic);C->SetGenerateOverlapEvents(false);
@@ -188,8 +282,20 @@ bool AGondolaService::Initialize(const FString& Path)
     for(int32 L=0;L<Lines.Num();++L)
     {
         const auto Row=Root->GetArrayField(TEXT("lines"))[L]->AsObject();
-        auto* Rope=MeshPart(TEXT("Rope_")+Lines[L].Id,Row->GetStringField(TEXT("rope")),false,false);if(!Rope||Rope->GetStaticMesh()->GetNumLODs()!=3)return false;
-        Rope->RegisterComponent();Rope->SetForcedLodModel(1);Ropes.Add({Rope,L});
+        TArray<FString> RopeFamily;
+        for (const auto& Value : Row->GetArrayField(TEXT("ropes"))) RopeFamily.Add(Value->AsString());
+        if (RopeFamily.IsEmpty() || RopeFamily.Num() > 8) return false;
+        TSet<FString> RopeSeen;
+        for (int32 Part = 0; Part < RopeFamily.Num(); ++Part)
+        {
+            if (RopeSeen.Contains(RopeFamily[Part])) return false;
+            RopeSeen.Add(RopeFamily[Part]);
+            auto* Base=MeshPart(FString::Printf(TEXT("Rope_%s_%02d"),*Lines[L].Id,Part),RopeFamily[Part],false,false,true);
+            auto* Rope=Cast<UGondolaRopeMeshComponent>(Base);
+            if (!Rope || Rope->GetStaticMesh()->GetNumLODs()!=3 ||
+                !Rope->ConfigureLogicalFamily(TEXT("GD_")+Lines[L].Id+TEXT("_Rope"),RopeFamily)) return false;
+            Rope->RegisterComponent();Rope->SetForcedLodModel(1);Ropes.Add({Rope,L});
+        }
         for(int32 I=0;I<Lines[L].CabinCount;++I)
         {
             FCabin& C=Cabins.AddDefaulted_GetRef();C.Line=L;C.Index=I;
