@@ -15,6 +15,15 @@ def saved(log_path, content):
                    for destination in SAVED.findall(text) if marker in destination.replace('\\', '/')})
 
 
+def foreign(log_path, content):
+    """Saved package files that lie outside the project's Content folder."""
+    content = Path(content)
+    marker = '/' + content.parent.name + '/' + content.name + '/'
+    log_path = Path(log_path)
+    text = log_path.read_text(errors='ignore') if log_path.is_file() else ''
+    return sorted({d.replace('\\', '/') for d in SAVED.findall(text) if marker not in d.replace('\\', '/')})
+
+
 def outside(log_path, content, roots):
     """Saved packages that no declared output root covers."""
     content, roots = Path(content), [Path(root) for root in roots]

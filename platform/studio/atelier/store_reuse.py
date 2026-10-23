@@ -44,6 +44,8 @@ def restore_checkpoint(ctx, step, fingerprint, index, *, echo=print):
     from .build import outputs_present
     from .build_cache import atomic_json
     from .checkpoint_store import hashing
+    if not declared(ctx, step):
+        return None  # Nothing to clone: a package-owned result restores only from its action entry.
     misses_path = ctx.out / '.state/reuse-misses.json'
     try:
         misses = set(read_json(misses_path).get('misses', [])) if misses_path.is_file() else set()

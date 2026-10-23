@@ -36,6 +36,19 @@ def declared(ctx, step):
     return [p for p in result if not any(parent in selected for parent in p.parents)]
 
 
+def packaged(ctx, step):
+    """An Unreal import without declared outputs owns exactly the files it wrote (package_ownership)."""
+    from .build import UnrealScript
+    return (getattr(ctx, 'uproject', None) is not None and not getattr(step, 'batch', None)
+            and bool(step.commands) and all(isinstance(c, UnrealScript) for c in step.commands)
+            and not declared(ctx, step))
+
+
+def package_scope(ctx, names):
+    """Destinations of a package-owned result's member labels."""
+    return [destination(ctx, name) for name in names or ()]
+
+
 def source_scopes(sources):
     """@cc [owner:fontanierh,label:correctness] tracked-source-containment
     Membership MUST be equivalent to a tracked source or any of its lexical parents.
@@ -117,18 +130,31 @@ def compile_present(ctx, step):
         return False
 
 
+def owned_roots(ctx):
+    """roots(ctx), once per build context: discovering plugin roots walks their descriptors (~10 ms)."""
+    key = (str(getattr(ctx, 'uproject', None)), str(ctx.out))
+    cached = ctx.__dict__.get('_checkpoint_roots')
+    if cached is None or cached[0] != key:
+        cached = ctx.__dict__['_checkpoint_roots'] = (key, roots(ctx))
+    return cached[1]
+
+
 def label(ctx, path):
-    choices = [(name, root) for name, (root, _) in roots(ctx).items() if path == root or root in path.parents]
-    if not choices:
+    # Lexical containment by normalized path text, as Path.parents compares; the deepest root wins.
+    text, best = str(Path(path)), None
+    for name, (root, _) in owned_roots(ctx).items():
+        base = str(root)
+        if (text == base or text.startswith(base.rstrip('/') + '/')) and (best is None or len(base) > len(best[1])):
+            best = (name, base)
+    if best is None:
         raise CheckpointError('Task output is outside checkpoint-owned generated directories')
-    name, root = max(choices, key=lambda item: len(item[1].parts))
-    tail = path.relative_to(root).as_posix()
-    return name if tail == '.' else name + '/' + tail
+    name, base = best
+    return name if text == base else name + '/' + text[len(base.rstrip('/')) + 1:]
 
 
 def destination(ctx, name):
     part, _, tail = name.partition('/')
-    allowed = roots(ctx)
+    allowed = owned_roots(ctx)
     if part not in allowed:
         raise CheckpointError('Task output root is not locally owned')
     root = allowed[part][0]
@@ -142,7 +168,8 @@ def key(ctx, step, fingerprint, *, require_outputs=True):
     if any(isinstance(c, Blender) and not c.factory_startup for c in step.commands):
         return None
     outputs = declared(ctx, step)
-    if not outputs and require_outputs:
+    # A package-owned result keeps the certificate key (no declared roots); its files are the entry's roots.
+    if not outputs and require_outputs and not packaged(ctx, step):
         return None
     if not hasattr(ctx, 'checkpoint_tool_context'):
         ctx.checkpoint_tool_context = context(ctx)
@@ -168,10 +195,12 @@ def load(store, action_key):
     return validate(read_json(path), store, action_key) if path.exists() else None
 
 
-def snapshot(ctx, step, store, *, save_blobs, observations=None):
+def snapshot(ctx, step, store, *, save_blobs, observations=None, scope=None):
+    """Declared roots, or for a package-owned result exactly the files in scope."""
     declarations, files = [], {}
     sources = source_scopes(tracked_paths())
-    for root in declared(ctx, step):
+    outputs = declared(ctx, step) if scope is None else list(scope)
+    for root in outputs:
         name = label(ctx, root)
         if root in sources:
             raise CheckpointError('Task output scope contains tracked source')
@@ -197,7 +226,7 @@ def snapshot(ctx, step, store, *, save_blobs, observations=None):
                 target = path.resolve(strict=True)
                 if getattr(ctx, 'unreal_root', None) and target.is_relative_to(ctx.unreal_root):
                     link = 'engine:' + target.relative_to(ctx.unreal_root).as_posix()
-                elif any(target == p or p in target.parents for p in declared(ctx, step)):
+                elif any(target == p or p in target.parents for p in outputs):
                     link = 'member:' + label(ctx, target)
                 else:
                     raise CheckpointError('Task output link escapes its declared artifact and engine')
@@ -247,6 +276,15 @@ def publish(ctx, step, fingerprint, stamp, *, store=None, done=None, produced=Fa
     action_key = key(ctx, step, fingerprint)
     if action_key is None or stamp.get('touched'):
         return None
+    scope = None
+    if packaged(ctx, step):
+        names = stamp.get('checkpoint_packages')
+        if not names or stamp.get('checkpoint_local'):
+            return None  # Never observed as complete and uncontested: the result stays local.
+        from .package_ownership import blocked
+        if blocked(ctx, getattr(ctx, 'checkpoint_plan', ()), step, names, store):
+            return None
+        scope = package_scope(ctx, names)
     from .build import fingerprint as receiving_fingerprint
     if done is None:
         raise CheckpointError('Task publication requires its verified dependency results')
@@ -271,12 +309,12 @@ def publish(ctx, step, fingerprint, stamp, *, store=None, done=None, produced=Fa
     # Every walk, hash and copy happens before store.lock; the lock only guards the entry write
     # against concurrent retention, so other builds never wait on this action's hashing.
     with hashing(ctx, digest):
-        declarations, files = snapshot(ctx, step, store, save_blobs=True)
+        declarations, files = snapshot(ctx, step, store, save_blobs=True, scope=scope)
         proof = inventory_identity(declarations, files)
         if not produced and (stamp.get('checkpoint_key') != action_key or stamp.get('checkpoint_inventory') != proof):
             raise CheckpointError('Existing output bytes lack compatible producer tool/inventory proof')
         observations = {}
-        second_roots, second_files = snapshot(ctx, step, store, save_blobs=False, observations=observations)
+        second_roots, second_files = snapshot(ctx, step, store, save_blobs=False, observations=observations, scope=scope)
     if (declarations != second_roots or not equivalent(files, second_files)
             or not inputs_unchanged() or key(ctx, step, fingerprint) != action_key):
         raise CheckpointError('Task inputs or outputs changed during publication')
@@ -302,7 +340,8 @@ def publish(ctx, step, fingerprint, stamp, *, store=None, done=None, produced=Fa
 
 def valid_outputs(ctx, step, value):
     try:
-        declarations, files = snapshot(ctx, step, Store(ctx.game), save_blobs=False)
+        scope = package_scope(ctx, [r['path'] for r in value['roots']]) if packaged(ctx, step) else None
+        declarations, files = snapshot(ctx, step, Store(ctx.game), save_blobs=False, scope=scope)
         return declarations == value['roots'] and equivalent(files, value['files'])
     except (OSError, ValueError, RuntimeError):
         return False
@@ -319,7 +358,13 @@ def restore_worker(ctx, step, store, action_key, *, labels=None, hashes=None):
     if value is None or entry_path(store, action_key).with_suffix('.conflict').exists():
         raise CheckpointError('Task cache entry is missing or disabled')
     task = step.name if step is not None else value['task']
-    expected = [label(ctx, p) for p in declared(ctx, step)] if step is not None else list(labels)
+    if step is not None and packaged(ctx, step):
+        # Package-owned: exactly the recorded files, each replaced alone; folders are shared.
+        expected = list(value['stamp'].get('checkpoint_packages') or ())
+        if not expected or any(r.get('kind') != 'file' for r in value['roots']):
+            raise CheckpointError('Package-owned task result must list only its files')
+    else:
+        expected = [label(ctx, p) for p in declared(ctx, step)] if step is not None else list(labels)
     if 'tracked_source_scopes' not in ctx.__dict__:  # Tracked files do not change within a build.
         ctx.tracked_source_scopes = source_scopes(tracked_paths())
     sources = ctx.tracked_source_scopes
@@ -424,7 +469,7 @@ class Actions:
             raise CheckpointError('Task cache key is disabled after conflicting outputs')
         value = load(self.store, action_key)
         if value is not None:
-            return value
+            return value if self.usable(step, value) else None
         from .build_checkpoints import remote_repository
         if local_only or remote_repository(self.settings) is None:
             return None
@@ -455,9 +500,20 @@ class Actions:
                                 blobs={digest: locations[digest] for digest in needed})
                 self.remote.fetch(item, transfer, self.store, save=False)
                 install(self.store, value)
-                return value
+                return value if self.usable(step, value) else None
         self.misses.add(action_key)
         return None
+
+    def usable(self, step, value):
+        """A package-owned result is never restored once a path in it is contested."""
+        if not packaged(self.ctx, step):
+            return True
+        from .package_ownership import blocked
+        reasons = blocked(self.ctx, getattr(self.ctx, 'checkpoint_plan', ()), step,
+                          [r['path'] for r in value['roots']], self.store)
+        if reasons:
+            self.echo(f'{step.name}: saved result not restored ({reasons[0]})')
+        return not reasons
 
     def restore(self, step, fingerprint, value, done, *, index=None, tool_cache=None):
         """@cc [owner:fontanierh,label:safety;performance] in-process-action-restore
@@ -634,10 +690,12 @@ def certified(ctx, step, fingerprint, stamp):
         return all(isinstance(c, Call) for c in step.commands)
     if stamp.get('checkpoint_key') != expected:
         return False
-    if declared(ctx, step):
+    owned = packaged(ctx, step) and bool(stamp.get('checkpoint_inventory'))
+    if declared(ctx, step) or owned:
         try:
             observations = {}
-            declarations, files = snapshot(ctx, step, Store(ctx.game), save_blobs=False, observations=observations)
+            scope = package_scope(ctx, stamp.get('checkpoint_packages')) if owned else None
+            declarations, files = snapshot(ctx, step, Store(ctx.game), save_blobs=False, observations=observations, scope=scope)
             good = stamp.get('checkpoint_inventory') == inventory_identity(declarations, files)
             if good:
                 ctx.__dict__.setdefault('retention_observations', {})[step.name] = observations

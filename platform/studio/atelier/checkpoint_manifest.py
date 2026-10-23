@@ -157,9 +157,11 @@ def record(ctx, step, stamp, *, store=None):
             from .build_checkpoints import _guard
             _guard(ctx, 'export-zen')
     with store.locked():
-        value = actions.load(store, key) if key is not None else None
+        # A package-owned result kept local claims no inventory: it binds to no published entry.
+        local = not stamp.get('checkpoint_inventory') and actions.packaged(ctx, step)
+        value = actions.load(store, key) if key is not None and not local else None
         # A stamp that claims a certificate must have it published; a keyless (local-only) stamp is legacy state.
-        if key is not None and actions.key(ctx, step, stamp['fingerprint']) is not None and value is None:
+        if key is not None and not local and actions.key(ctx, step, stamp['fingerprint']) is not None and value is None:
             raise CheckpointError('Completed task lacks its published artifact certificate')
         if value is not None:
             if value['task'] != step.name or value['fingerprint'] != stamp['fingerprint'] or value['stamp'].get('checkpoint_inventory') != stamp.get('checkpoint_inventory'):

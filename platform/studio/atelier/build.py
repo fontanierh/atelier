@@ -1199,6 +1199,7 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
     from . import checkpoint_actions as task_cache
     settings = getattr(ctx, 'checkpoint_settings', None)
     actions = task_cache.Actions(ctx, settings, echo) if settings is not None else None
+    ctx.checkpoint_plan = steps  # Other steps' declared and explicit outputs are package claims.
     if actions is not None:
         from .checkpoint_actions import validate_ownership
         validate_ownership(ctx, steps)
@@ -1273,15 +1274,18 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                 if reused is not None:
                     adopted, previous = 'checkpoint ' + reused[0][:12], reused[1]
         outputs_ok = outputs_present(step) and task_cache.compile_present(ctx, step)
-        if actions is not None:
-            outputs_ok = outputs_ok and (task_cache.certified(ctx, step, current, previous)
-                                         or task_cache.local_incremental(ctx, step, current, previous))
         saved_action = None
-        if actions is not None:
-            identity = task_cache.key(ctx, step, current)
-            saved_action = task_cache.load(actions.store, identity) if identity else None
-            if saved_action is not None:
-                outputs_ok = outputs_ok and task_cache.valid_outputs(ctx, step, saved_action)
+        from .checkpoint_store import hashing
+        # Output digests come from the build's stat-bound index (rehashed under --verify), as in publication.
+        with hashing(ctx, index.proving_digest if actions is not None else None):
+            if actions is not None:
+                outputs_ok = outputs_ok and (task_cache.certified(ctx, step, current, previous)
+                                             or task_cache.local_incremental(ctx, step, current, previous))
+            if actions is not None:
+                identity = task_cache.key(ctx, step, current)
+                saved_action = task_cache.load(actions.store, identity) if identity else None
+                if saved_action is not None:
+                    outputs_ok = outputs_ok and task_cache.valid_outputs(ctx, step, saved_action)
         if step.products:
             outputs_ok = outputs_ok and build_products.valid_records(step, previous.get('products', {}), hasher=index.digest)
         if outputs_ok and previous.get('output_inventory') and previous.get('fingerprint') == current:
@@ -1486,6 +1490,10 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                 echo(str(error))
                 return 1
         tracker = ctx.output_tracker([step]) if not from_cache else None  # Credits this step with its writes.
+        content_before = None
+        if actions is not None and not from_cache and task_cache.packaged(ctx, step):
+            from .package_ownership import observe as observe_content
+            content_before = observe_content(ctx)  # Metadata only: the run owns what it changes.
         if tracker is not None and step.name not in tracker.scopes:
             tracker = None
         with open(log_path, 'w') as log:
@@ -1594,6 +1602,18 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             record['checkpoint_migrated_from'] = compatible_portable
             record['checkpoint_migration_result'] = record.get('result', compatible_portable)
             record['restored_from'] = compatible_portable
+        if content_before is not None:
+            from . import package_ownership
+            names, reasons = package_ownership.written(ctx, step, content_before, log_path, record.get('output_inventory'))
+            package_ownership.seed(ctx, steps, actions.store)
+            reasons = package_ownership.decide(ctx, steps, step, record.get('checkpoint_key'), names, reasons, actions.store)
+            record['checkpoint_packages'] = names
+            if reasons:
+                record['checkpoint_local'] = reasons[:20]
+                echo(f'{print_} kept local, not published: {reasons[0]}'
+                     + (f' and {len(reasons) - 1} more' if len(reasons) > 1 else ''))
+        elif from_cache and action_hit is not None and task_cache.packaged(ctx, step):
+            record['checkpoint_packages'] = action_hit['stamp'].get('checkpoint_packages')
         unowned = []
         if (actions is not None and not from_cache and step.checkpoint_outputs and getattr(ctx, 'uproject', None)
                 and any(isinstance(c, UnrealScript) for c in step.commands)):
