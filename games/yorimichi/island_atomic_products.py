@@ -65,7 +65,7 @@ def source_metadata(out):
         for row in plan['pieces']:
             meta, piece = mesh_ir.decode((root / row['payload']).read_bytes())
             used = {int(index) for index in piece['materials']}
-            records[row['name']] = dict(geometry_sha256=row['sha256'],
+            records[row['name']] = dict(geometry_sha256=row['sha256'], export_slots=meta['slots'],
                 used_slots=[slot for i, slot in enumerate(meta['slots']) if i in used])
     return dict(schema=1, complete=True, pieces=records)
 
@@ -135,12 +135,15 @@ def read(out):
             source = receiving['pieces'][key]
             if (receipt.get('schema') != 1 or receipt.get('primary') != key + '.fbx'
                     or receipt.get('triangles') != triangles or receipt.get('bounds') != bounds
-                    or metadata.get('slots') != slots or metadata.get('collision_hulls') != 0
+                    or metadata.get('slots') != source.get('export_slots') or metadata.get('collision_hulls') != 0
                     or metadata.get('polygons') != piece['polygons'] or metadata.get('uv_channels') != ['UVMap']
                     or metadata.get('geometry_sha256') != source.get('geometry_sha256')
                     or not isinstance(source.get('geometry_sha256'), str)
                     or not re.fullmatch('[0-9a-f]{64}', source['geometry_sha256'])
                     or not isinstance(source.get('used_slots'), list) or not source['used_slots']
+                    or not isinstance(source.get('export_slots'), list) or not source['export_slots']
+                    or source['export_slots'] != [slot for slot in slots if slot in source['export_slots']]
+                    or not set(source['used_slots']) <= set(source['export_slots'])
                     or source['used_slots'] != [slot for slot in slots if slot in source['used_slots']]
                     or sha(assets / receipt['primary']) != receipt.get('sha256')):
                 raise ValueError('Island primary differs from its complete assembled receipt')
