@@ -13,8 +13,22 @@ import numpy as np
 from mathutils import Matrix
 from atelier import mesh_ir,export_manifest
 from atelier.model_files import regular_files
-from mesh_pieces import create_mesh
+from mesh_pieces import create_mesh,values as mesh_values
 import asset_mesh as A
+
+
+def restore_normal_domain(mesh,piece,domain):
+    """@cc [owner:fontanierh,label:correctness] original-foliage-normal-domain
+    Preserve the original POINT/FACE/CORNER normal domain, including FBX normal
+    encoding. Remove redundant restored custom-normal storage ONLY when the original
+    domain was computed POINT/FACE and every recomputed corner float remains bitwise
+    identical to the immutable packet. Changed normals or domains MUST refuse.
+    """
+    if domain not in ('POINT','FACE','CORNER'):raise ValueError('Unknown original foliage normal domain')
+    if domain!='CORNER':
+        mesh.attributes.remove(mesh.attributes['custom_normal']);mesh.update()
+    if mesh.normals_domain!=domain or mesh_values(mesh.corner_normals,'vector',3).tobytes()!=piece['normals'].tobytes():
+        raise ValueError('Original foliage normal domain or exact corner values changed')
 
 
 def main(argv=None):
@@ -44,7 +58,8 @@ def main(argv=None):
     bpy.ops.wm.read_factory_settings(use_empty=True);A.MATS.clear();A.LEAF_CROPS.clear()
     for label in values['material_order']:A.mat(label,**values['materials'][label])
     data['slots']=[A.MATS[label] for label in meta['slots']]
-    mesh=create_mesh(key,data);obj=bpy.data.objects.new(key,mesh);bpy.context.scene.collection.objects.link(obj)
+    mesh=create_mesh(key,data);restore_normal_domain(mesh,data,values['normals_domain'])
+    obj=bpy.data.objects.new(key,mesh);bpy.context.scene.collection.objects.link(obj)
     obj.matrix_world=Matrix(meta['matrix'])
     if values['trunk_collision'] is not None:obj['trunk_collision']=values['trunk_collision']
     with tempfile.TemporaryDirectory(prefix='.export-',dir=root) as staging:

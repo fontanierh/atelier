@@ -88,7 +88,7 @@ def main(argv=None):
             if mode!='crown' or label!=far_crown.slot(kind):raise ValueError('Unprojected foliage material')
             material_rows[label]=dict(color=[1.,1.,1.])
     atomic_json(args.output/(key+'.materials.json'),dict(materials=material_rows,material_order=list(row['material_order'])+[m for m in palette if m not in row['materials']],
-        trunk_collision=list(obj['trunk_collision']) if 'trunk_collision' in obj else None))
+        normals_domain=obj.data.normals_domain,trunk_collision=list(obj['trunk_collision']) if 'trunk_collision' in obj else None))
     report=dict(key=key,triangles=triangles(obj),materials=palette,collision_hulls=len(hulls),
                 geometry_sha256=hashlib.sha256(payload).hexdigest(),
                 materials_sha256=hashlib.sha256((args.output/(key+'.materials.json')).read_bytes()).hexdigest())
