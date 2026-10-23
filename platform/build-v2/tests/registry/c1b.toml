@@ -1,0 +1,5 @@
+schema_version = 1
+
+[[pending]]
+id = "c1.staged-view-semantic-independence"
+task = "C1 / C2a / C6"

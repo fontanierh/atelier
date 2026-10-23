@@ -3,6 +3,7 @@ from copy import deepcopy
 import hashlib
 import json
 import os
+import shutil
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -59,163 +60,6 @@ def snapshot(fixture):
     return ctx, steps, key
 
 
-def adopt_all(ctx, steps):
-    """The build loop's adoption of staged certificates, in order; returns the adopted tasks."""
-    from atelier.build_hashes import HashIndex
-    done, adopted = {}, set()
-    build_checkpoints.incremental_environment(ctx)
-    with HashIndex(ctx.out / cp.RESTORED_HASHES) as index:
-        for step in build.order(steps, [s.name for s in steps]):
-            if not all(need in done for need in step.needs):
-                continue
-            current = build.fingerprint(step, done, index=index)
-            staged = build_checkpoints.adopt_staged(ctx, step, current, index.digest)
-            if staged is None:
-                continue
-            atomic_json(ctx.stamps / (step.name + '.json'), staged[1])
-            done[step.name] = build.result(step, current, staged[1])
-            build.build_products.feed_results(done, staged[1].get('products', {}))
-            adopted.add(step.name)
-    return adopted
-
-
-def publish_receiver(ctx, steps, store, key, stamps):
-    build_checkpoints._publish_restoration(ctx, steps, store, key, dict(key=key, stamps=stamps))
-    return adopt_all(ctx, steps)
-
-
-def test_fresh_dirty_checkout_reuses_unaffected_tasks_without_head_equality(fixture):
-    _, _, key = snapshot(fixture)
-    ctx, steps = fixture.checkout('receiver', changed=True)
-    before = (paths.REPO / 'combat.txt').read_bytes()
-    stamps = cp.restore(ctx, steps, fixture.store, key, echo=lambda _: None)
-    assert set(stamps) == {'tree', 'combat', 'house'}  # Staged; the build decides per task.
-    assert not list(ctx.stamps.glob('*.json'))  # The worker cannot publish before guard close.
-    with pytest.raises(SystemExit, match='checkpoint restoration is incomplete'):
-        build_snapshot.require_complete(ctx.out, game='fixture')
-    assert publish_receiver(ctx, steps, fixture.store, key, stamps) == {'tree', 'house'}
-    assert {p.stem for p in ctx.stamps.glob('*.json')} == {'tree', 'house'}
-    assert (paths.REPO / 'combat.txt').read_bytes() == before
-    assert steps[1].outputs[0].read_bytes() == b'combat'  # Seed only; no current certificate.
-    build_snapshot.require_complete(ctx.out, game='fixture')
-
-
-def test_old_workspace_preserves_import_history_for_content_boundary_migration(fixture, monkeypatch):
-    from dataclasses import replace
-    donor, old_steps = fixture.checkout('old-workspace')
-    old_steps[0] = replace(old_steps[0], needs=['combat'])
-    fixture.produce(donor, [old_steps[1], old_steps[0], old_steps[2]])
-    key = cp.capture(donor, old_steps, fixture.store, echo=lambda _: None)
-    ctx, steps = fixture.checkout('new-recipe')
-    steps[0] = replace(steps[0], needs=['combat.import'], checkpoint_previous_needs=('combat',))
-    digest_output = ctx.out / 'digests/combat.json'
-    digest = build.Step('combat.import', [build.Call('digest', lambda *_: None)], needs=['combat'],
-                        outputs=[digest_output], cutoff=True)
-    stamps = cp.restore(ctx, [*steps, digest], fixture.store, key, echo=lambda _: None)
-    assert 'tree' not in publish_receiver(ctx, [*steps, digest], fixture.store, key, stamps)
-    # The cheap new cutoff runs first; the old importer metadata is absent from current stamps.
-    digest_output.parent.mkdir(parents=True); digest_output.write_bytes(b'normalized combat')
-    done = {'combat': stamps['combat']['fingerprint'], 'combat.import': 'outputs:normalized-combat'}
-    current, state = build.fingerprint_state(steps[0], done)
-    monkeypatch.setattr(checkpoint_actions, 'Store', lambda _: fixture.store)
-    migrated = checkpoint_actions.migrate_boundary(ctx, steps[0], current, state, {}, done)
-    assert migrated['fingerprint'] == current
-    assert migrated['checkpoint_migration_result'] == fixture.store.load(key)['stamps']['tree']['fingerprint']
-    assert steps[0].outputs[0].read_bytes() == b'tree'
-
-
-@pytest.mark.parametrize('change', ['mode', 'link'])
-def test_post_guard_workspace_rejects_changed_mode_or_link(fixture, change):
-    ctx, steps = fixture.checkout('donor')
-    fixture.produce(ctx, steps)
-    link = steps[0].outputs[0].parent / 'asset-link'
-    link.symlink_to('asset.bin')
-    key = cp.capture(ctx, steps, fixture.store, echo=lambda _: None)
-    receiver, receiving = fixture.checkout('receiver')
-    stamps = cp.restore(receiver, receiving, fixture.store, key, echo=lambda _: None)
-    output = receiving[0].outputs[0]
-    if change == 'mode':
-        output.chmod(0o700)
-    else:
-        link = output.parent / 'asset-link'; link.unlink(); link.symlink_to('../combat/asset.bin')
-    with pytest.raises(cp.CheckpointError, match='changed'):
-        publish_receiver(receiver, receiving, fixture.store, key, stamps)
-    assert (receiver.out / cp.JOURNAL).exists()
-    assert not list(receiver.stamps.glob('*.json'))
-
-
-def test_changed_producer_never_certifies_dependent_but_preserves_independent_task(fixture):
-    ctx, steps = fixture.checkout('donor')
-    steps[1].needs = ['tree']
-    fixture.produce(ctx, steps)
-    key = cp.capture(ctx, steps, fixture.store, echo=lambda _: None)
-    receiver, current = fixture.checkout('receiver')
-    current[1].needs = ['tree']
-    (paths.REPO / 'tree.txt').write_text('different tree')
-    stamps = cp.restore(receiver, current, fixture.store, key)
-    assert publish_receiver(receiver, current, fixture.store, key, stamps) == {'house'}
-
-
-def test_checkpoint_never_overwrites_existing_generated_work(fixture):
-    _, _, key = snapshot(fixture)
-    ctx, steps = fixture.checkout('receiver')
-    ctx.out.mkdir(parents=True)
-    owned = ctx.out / 'new-work.txt'
-    owned.write_text('keep me')
-    with pytest.raises(cp.CheckpointError, match='not empty'):
-        cp.restore(ctx, steps, fixture.store, key)
-    assert owned.read_text() == 'keep me' and not (ctx.out / cp.JOURNAL).exists()
-
-
-def test_corrupt_blob_refuses_before_mutation(fixture):
-    _, _, key = snapshot(fixture)
-    saved = fixture.store.load(key)
-    digest = next(iter(saved['files'].values()))['sha256']
-    fixture.store.blob(digest).write_bytes(b'corrupt')
-    ctx, steps = fixture.checkout('receiver')
-    with pytest.raises(cp.CheckpointError, match='corrupt'):
-        cp.restore(ctx, steps, fixture.store, key)
-    assert not ctx.out.exists()
-
-
-def test_interruption_resumes_same_checkpoint_and_retains_launch_barrier(fixture, monkeypatch):
-    _, _, key = snapshot(fixture)
-    ctx, steps = fixture.checkout('receiver')
-    original, copies = cp.copy_file, []
-    def interrupted(source, destination):
-        copies.append(source)
-        if len(copies) == 2:
-            raise OSError('interrupted')
-        original(source, destination)
-    monkeypatch.setattr(cp, 'copy_file', interrupted)
-    with pytest.raises(OSError, match='interrupted'):
-        cp.restore(ctx, steps, fixture.store, key)
-    assert (ctx.out / cp.JOURNAL).exists() and not list(ctx.stamps.glob('*.json'))
-    monkeypatch.setattr(cp, 'copy_file', original)
-    stamps = cp.restore(ctx, steps, fixture.store, key)
-    publish_receiver(ctx, steps, fixture.store, key, stamps)
-    assert set(stamps) == {'tree', 'combat', 'house'}
-
-
-def test_receiver_changes_after_worker_are_never_adopted(fixture):
-    _, _, key = snapshot(fixture)
-    ctx, steps = fixture.checkout('receiver')
-    stamps = cp.restore(ctx, steps, fixture.store, key)
-    (paths.REPO / 'tree.txt').write_text('steering edit')
-    assert publish_receiver(ctx, steps, fixture.store, key, stamps) == {'combat', 'house'}
-    assert not (ctx.out / cp.JOURNAL).exists() and not (ctx.stamps / 'tree.json').exists()
-
-
-def test_local_outputs_are_independent_of_cache(fixture):
-    _, _, key = snapshot(fixture)
-    ctx, steps = fixture.checkout('receiver')
-    stamps = cp.restore(ctx, steps, fixture.store, key)
-    publish_receiver(ctx, steps, fixture.store, key, stamps)
-    for blob in fixture.store.blobs.iterdir():
-        blob.unlink()
-    assert steps[0].outputs[0].read_bytes() == b'tree'
-
-
 @pytest.mark.parametrize('member', ['generated/../source', '/absolute', 'generated/.env',
                                     'generated/part/../../source', 'generated/a\\b'])
 def test_manifest_refuses_unsafe_paths(fixture, member):
@@ -235,17 +79,6 @@ def test_manifest_refuses_case_aliases_and_file_ancestors(fixture):
         value['files'] = dict.fromkeys(names, entry)
         with pytest.raises(cp.CheckpointError):
             cp.validate(value, 'fixture')
-
-
-def test_linked_destination_ancestor_refuses_before_source_mutation(fixture):
-    _, _, key = snapshot(fixture)
-    ctx, steps = fixture.checkout('receiver')
-    source = paths.REPO / 'source'
-    source.mkdir()
-    (paths.REPO / 'build').symlink_to(source, target_is_directory=True)
-    with pytest.raises(cp.CheckpointError, match='linked ancestor'):
-        cp.restore(ctx, steps, fixture.store, key)
-    assert not list(source.iterdir())
 
 
 def test_touched_or_stale_tasks_do_not_become_checkpoint_certificates(fixture):
@@ -376,86 +209,6 @@ def test_checkpoint_transfer_reaches_real_guard_boundary_with_valid_invocation(t
     assert len(calls) == 1
 
 
-def hydrate_in_process(monkeypatch, fixture, failure=None):
-    def guard(ctx, operation, key):
-        assert operation == 'hydrate'
-        placed = cp.hydrate_files(ctx, fixture.store, key, echo=lambda _: None)
-        if failure:
-            raise cp.CheckpointError(failure)
-        return dict(key=key, placed=placed)
-    monkeypatch.setattr(build_checkpoints, '_guard', guard)
-
-
-def test_non_cold_receiver_fills_missing_files_and_stages_certificates(fixture, monkeypatch):
-    _, _, key = snapshot(fixture)
-    ctx, steps = fixture.checkout('receiver')
-    (ctx.out / 'tree').mkdir(parents=True)
-    (ctx.out / 'tree/asset.bin').write_bytes(b'stale')
-    (ctx.out / 'mine.txt').write_text('keep me')
-    plan, total, scanned = build_checkpoints.hydration_plan(ctx, steps, fixture.store)
-    assert (plan['key'], plan['units'], plan['missing'], plan['stamps']) == (key, ['generated/'], 2, ['combat', 'house', 'tree'])
-    hydrate_in_process(monkeypatch, fixture)
-    messages = []
-    assert build_checkpoints.hydrate(ctx, steps, fixture.store, echo=messages.append)['key'] == key
-    assert 'checkpoint restore: 2 files hydrated, 3 certificates staged' in messages[-1]
-    assert (ctx.out / 'tree/asset.bin').read_bytes() == b'stale' and (ctx.out / 'mine.txt').read_text() == 'keep me'
-    assert (ctx.out / 'house/asset.bin').read_bytes() == b'house' and not (ctx.out / cp.JOURNAL).exists()
-    assert not list(ctx.stamps.glob('*.json'))
-    house = steps[2]
-    source, stamp = build_checkpoints.staged_certificate(ctx, house, build.fingerprint(house, {}))
-    assert source == key and checkpoint_actions.certified(ctx, house, stamp['fingerprint'], stamp)
-    assert build_checkpoints.staged_certificate(ctx, house, '0' * 64) is None
-    assert build_checkpoints.hydration_plan(ctx, steps, fixture.store)[0] is None
-
-
-def test_hydration_failure_never_fails_the_build(fixture, monkeypatch):
-    _, _, key = snapshot(fixture)
-    ctx, steps = fixture.checkout('receiver')
-    (ctx.out / 'tree').mkdir(parents=True)
-    (ctx.out / 'tree/asset.bin').write_bytes(b'stale')
-    hydrate_in_process(monkeypatch, fixture, failure='interrupted')
-    messages = []
-    assert build_checkpoints.hydrate(ctx, steps, fixture.store, echo=messages.append) is None
-    assert 'skipped: interrupted' in messages[-1] and not (ctx.out / cp.JOURNAL).exists()
-    assert (ctx.out / 'tree/asset.bin').read_bytes() == b'stale'
-
-
-def test_any_retained_checkpoint_restores_one_task_by_fingerprint(fixture, monkeypatch):
-    from atelier import store_reuse
-    _, _, key = snapshot(fixture)
-    ctx, steps = fixture.checkout('receiver')
-    (ctx.out / 'tree').mkdir(parents=True)
-    (ctx.out / 'tree/asset.bin').write_bytes(b'stale')
-    (ctx.out / 'tree/extra.bin').write_bytes(b'stale extra')
-    monkeypatch.setattr(cp, 'Store', lambda game: fixture.store)
-    monkeypatch.setattr(build_checkpoints, '_guard', lambda *a: pytest.fail('store clone spawned a child'))
-    index, messages = store_reuse.Catalogue('fixture'), []
-    tree = steps[0]
-    import time
-    started = time.perf_counter()
-    reused = store_reuse.restore_checkpoint(ctx, tree, build.fingerprint(tree, {}), index, echo=messages.append)
-    elapsed = time.perf_counter() - started
-    assert reused[0] == key and 'restored from checkpoint' in messages[-1]
-    # Guards against a return to per-hit guarded children; shared CI runners need headroom.
-    assert elapsed < 1.0, f'{elapsed:.3f} s for one in-process store clone'
-    assert (ctx.out / 'tree/asset.bin').read_bytes() == b'tree' and not (ctx.out / 'tree/extra.bin').exists()
-    assert not (ctx.out / 'house').exists()
-    assert store_reuse.restore_checkpoint(ctx, tree, '0' * 64, index, echo=messages.append) is None
-
-
-def test_hydration_never_touches_outputs_of_current_local_stamps(fixture, monkeypatch):
-    _, _, key = snapshot(fixture)
-    ctx, steps = fixture.checkout('receiver')
-    fixture.produce(ctx, steps)
-    for step in steps:  # Same names, different metadata: exactly the build-8 clobbering case.
-        os.utime(step.outputs[0], ns=(1, 1))
-    before = {s.name: s.outputs[0].stat().st_ino for s in steps}
-    hydrate_in_process(monkeypatch, fixture)
-    build_checkpoints.hydrate(ctx, steps, fixture.store, echo=lambda _: None)
-    assert {s.name: s.outputs[0].stat().st_ino for s in steps} == before
-    assert set(cp.certificates(ctx, steps)) == {'tree', 'combat', 'house'}
-
-
 def representative(ctx):
     """A step known only by a sample output, like a non-factory Blender world export."""
     source = paths.REPO / 'world.txt'
@@ -464,70 +217,17 @@ def representative(ctx):
     return build.Step('world', [build.Python(source, (report,))], inputs=[source], outputs=[report])
 
 
-def test_contaminated_manifest_never_restores_an_unverified_step(fixture):
-    ctx, steps = fixture.checkout('producer')
-    fixture.produce(ctx, steps)
-    world = representative(ctx)
-    (ctx.out / 'world/glb').mkdir(parents=True)
-    (ctx.out / 'world/build-report.json').write_text('report for an older mesh')
-    (ctx.out / 'world/glb/harbor.glb').write_bytes(b'mesh the report does not describe')
-    stamp = dict(fingerprint=build.fingerprint(world, {}), seconds=300., time=1.)
-    atomic_json(ctx.stamps / 'world.json', stamp)
-    key = cp.capture(ctx, [*steps, world], fixture.store, echo=lambda _: None)
-    clean = fixture.store.load(key)
-    assert 'world' not in {**clean['stamps'], **clean['incremental_stamps']}
-    assert not [m for m in clean['files'] if m.startswith('generated/world')]
-    # A manifest published before this rule (op597's d9fea0c4) carries the stamp and files.
-    legacy = deepcopy(clean)
-    for path in (ctx.out / 'world/build-report.json', ctx.out / 'world/glb/harbor.glb'):
-        digest = hashlib.sha256(path.read_bytes()).hexdigest()
-        fixture.store.put(path, digest)
+def inventoried(ctx, files):
+    """A representative-output step (like unreal.treehouse) whose stamp lists every file it wrote."""
+    step = representative(ctx)
+    (ctx.out / 'world').mkdir(parents=True, exist_ok=True)
+    inventory = {}
+    for name in ('build-report.json', *files):
+        path = ctx.out / 'world' / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(name.encode())
         info = path.stat()
-        legacy['files']['generated/' + path.relative_to(ctx.out).as_posix()] = dict(
-            kind='file', size=info.st_size, sha256=digest, mode=0o644, mtime_ns=info.st_mtime_ns)
-    legacy['incremental_stamps']['world'] = stamp
-    legacy['steps'] = sorted({*legacy['steps'], 'world'})
-    contaminated = fixture.store.save(legacy)
-    receiver, received = fixture.checkout('cold')
-    stamps = cp.restore(receiver, [*received, representative(receiver)], fixture.store, contaminated, echo=lambda _: None)
-    assert set(stamps) == {'tree', 'combat', 'house'}
-    assert not (receiver.out / 'world').exists()
-    # Hydration of a warm workspace neither stages that stamp nor adds its files.
-    warm, current = fixture.checkout('warm')
-    fixture.produce(warm, current)
-    steps_here = [*current, representative(warm)]
-    plan, _, _ = build_checkpoints.hydration_plan(warm, steps_here, fixture.store)
-    assert plan is None or ('world' not in plan['stamps'] and plan['missing'] == 0)
-    staged = warm.out / build_checkpoints.STAGED / 'world.json'
-    atomic_json(staged, dict(source=contaminated, stamp=stamp))
-    assert build_checkpoints.staged_certificate(warm, steps_here[-1], stamp['fingerprint']) is None
-
-
-def test_inventoried_representative_step_restores_in_a_cold_checkout(fixture):
-    from atelier.output_inventory import Tracker
-    ctx, steps = fixture.checkout('producer')
-    fixture.produce(ctx, steps)
-    world = representative(ctx)
-    tracker = Tracker(ctx, [world])
-    (ctx.out / 'world/glb').mkdir(parents=True)
-    (ctx.out / 'world/build-report.json').write_text('report')
-    (ctx.out / 'world/glb/harbor.glb').write_bytes(b'mesh the report describes')
-    inventory = tracker.inventory(world, lambda p: hashlib.sha256(p.read_bytes()).hexdigest())
-    assert set(inventory) == {'generated/world/build-report.json', 'generated/world/glb/harbor.glb'}
-    stamp = dict(fingerprint=build.fingerprint(world, {}), seconds=300., time=1., output_inventory=inventory)
+        inventory['generated/world/' + name] = [info.st_size, info.st_mtime_ns, hashlib.sha256(name.encode()).hexdigest()]
+    stamp = dict(fingerprint=build.fingerprint(step, {}), seconds=30., time=1., output_inventory=inventory)
     atomic_json(ctx.stamps / 'world.json', stamp)
-    ctx.checkpoint_incremental_compatible = True
-    key = cp.capture(ctx, [*steps, world], fixture.store, echo=lambda _: None)
-    saved = fixture.store.load(key)
-    assert saved['incremental_stamps']['world']['output_inventory'] == inventory
-    receiver, received = fixture.checkout('cold')
-    stamps = cp.restore(receiver, [*received, representative(receiver)], fixture.store, key, echo=lambda _: None)
-    assert 'world' in stamps
-    assert (receiver.out / 'world/glb/harbor.glb').read_bytes() == b'mesh the report describes'
-    # A published file that differs from the inventory never lets the stamp through.
-    tampered = deepcopy(saved)
-    tampered['files']['generated/world/glb/harbor.glb']['sha256'] = saved['files']['generated/tree/asset.bin']['sha256']
-    tampered['files']['generated/world/glb/harbor.glb']['size'] = saved['files']['generated/tree/asset.bin']['size']
-    other, current = fixture.checkout('cold-two')
-    stamps = cp.restore(other, [*current, representative(other)], fixture.store, fixture.store.save(tampered), echo=lambda _: None)
-    assert 'world' not in stamps and not (other.out / 'world').exists()
+    return step

@@ -8,7 +8,7 @@ from atelier import build, build_products, engine
 
 PACKAGE = Path(build.__file__).parent
 CONTROLLER = ('build.py', 'build_hashes.py', 'build_cache.py', 'build_inputs.py', 'build_products.py',
-              'build_checkpoints.py', 'checkpoint_store.py', 'store_reuse.py', 'output_inventory.py')
+              'build_checkpoints.py', 'checkpoint_store.py', 'output_inventory.py')
 
 
 def fake_blender(tmp_path, monkeypatch):

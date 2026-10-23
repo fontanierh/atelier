@@ -159,7 +159,7 @@ def test_hidamari_terrain_reimport_replaces_seed_slots_and_keeps_terrain_materia
     p.assets.update({'/Game/Japan/Materials/MI_' + name: material for name, material in materials.items()
                      if name != 'CoastRock'})
     p.assets['/Game/Japan/Materials/M_Village'] = object()
-    saved, logs, sand_calls, coast_calls, rock_calls, events = [], [], [], [], [], []
+    saved, logs, sand_calls, coast_calls, rock_calls, events, sea_calls = [], [], [], [], [], [], []
     collision = {}
     def coast_rock_instance():
         events.append('create-rock')
@@ -195,7 +195,8 @@ def test_hidamari_terrain_reimport_replaces_seed_slots_and_keeps_terrain_materia
         'arcade_material': SimpleNamespace(material=lambda **kwargs: object()),
         'plaza_material': SimpleNamespace(water_material=lambda *args: object(), paving_material=lambda: object()),
         'city_material': SimpleNamespace(),
-        'import_southwest': SimpleNamespace(sand_material=lambda: sand_calls.append('sand')),
+        'import_southwest': SimpleNamespace(sand_material=lambda: sand_calls.append('sand'),
+                                            sea_plane=lambda: sea_calls.append('sea')),
         'forest_ground': SimpleNamespace(coast_instance=lambda *args: coast_calls.append('coast'),
                                         coast_rock_instance=coast_rock_instance),
     }.items():
@@ -231,6 +232,9 @@ def test_hidamari_terrain_reimport_replaces_seed_slots_and_keeps_terrain_materia
         def nested(path, **kwargs):
             if Path(path).name == 'import_wanderer.py':
                 return {}
+            if Path(path).name == 'import_southwest.py' and kwargs.get('init_globals', {}).get('SEA_ONLY'):
+                sea_calls.append('sea')
+                return {}
             return real_run_path(path, **kwargs)
         monkeypatch.setattr(runpy, 'run_path', nested)
         run_city = owner['main']
@@ -260,6 +264,7 @@ def test_hidamari_terrain_reimport_replaces_seed_slots_and_keeps_terrain_materia
         assert built == [mesh, mesh]  # the level receives the final imported package
         assert generic == []  # no earlier full terrain import, including the first build
         assert coast_calls == ['coast'] * 4  # setup material plus final city binding per run
+    assert sea_calls == (['sea', 'sea'] if entrypoint == 'world' else [])  # the sea plane is the world's
 
 
 @pytest.mark.parametrize('initial', ['new', 'stale-slots', 'stale-lods'])
@@ -408,7 +413,11 @@ def test_world_without_city_retains_terrain_import_binding_and_collision(tmp_pat
         return rock
     monkeypatch.setitem(sys.modules, 'forest_ground', SimpleNamespace(coast_instance=lambda *args: object(),
                                                                    coast_rock_instance=coast_rock_instance))
-    monkeypatch.setattr(runpy, 'run_path', lambda *args, **kwargs: {})
+    def run_path(path, **kwargs):
+        if Path(path).name == 'import_southwest.py' and kwargs.get('init_globals', {}).get('SEA_ONLY'):
+            calls.append(('sea',))
+        return {}
+    monkeypatch.setattr(runpy, 'run_path', run_path)
     owner = dict(__file__=str(script), OUT=str(tmp_path), os=os,
                  glob=SimpleNamespace(glob=lambda pattern: []), EAL=library, unreal=unreal, FOLIAGE=set(),
                  purge=lambda: pytest.fail("Upfront purge would destroy reusable packages"), material_bindings=lambda: {}, instance=lambda *args: forest,
@@ -418,10 +427,10 @@ def test_world_without_city_retains_terrain_import_binding_and_collision(tmp_pat
                  build_level=lambda terrain, *args: calls.append(('level', terrain)))
     exec(compile(ast.Module(body=body, type_ignores=[]), str(script), 'exec'), owner)
     owner['main']()
-    assert [c[0] for c in calls] == ['rock', 'import', 'bind', 'save', 'level']
+    assert [c[0] for c in calls] == ['rock', 'import', 'bind', 'save', 'sea', 'level']
     assert calls[1][1:] == (str(tmp_path / 'terrain.fbx'), '/Game/Japan', 'Terrain')
     assert calls[2][1] == '/Game/Japan/Terrain' and calls[2][2]['CoastRock'] is rock
-    assert calls[-1][1] is mesh and calls[-2][1] is mesh
+    assert calls[-1][1] is mesh and calls[-3][1] is mesh  # level and terrain save; the sea plane between
     assert collision == {'collision_trace_flag': 'complex'}
 
 

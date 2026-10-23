@@ -110,25 +110,3 @@ def export(ctx):
     if not snapshots or any(s.get('type') != 'file' or s.get('targetplatform') != 'Mac' for s in snapshots):
         raise CheckpointError('Zen export did not produce a complete file snapshot')
     atomic_json(receipt, dict(cook_metadata=key))
-
-
-def import_(ctx):
-    descriptor = ctx.out / '.state/checkpoint-zen/descriptor.json'
-    if not descriptor.exists():
-        return {}
-    value = read_json(descriptor)
-    snapshots = value.get('snapshots', [])
-    if not snapshots or len(snapshots) != 1:
-        raise CheckpointError('Zen checkpoint descriptor must contain one Mac snapshot')
-    for snapshot in snapshots:
-        if (snapshot.get('type') != 'file' or snapshot.get('targetplatform') != 'Mac'
-                or snapshot.get('filename') != 'cook'):
-            raise CheckpointError('Unsupported Zen checkpoint snapshot')
-        snapshot['directory'] = str(descriptor.parent)
-    relocated = ctx.logs / 'checkpoint-zen-import.json'
-    atomic_json(relocated, value)
-    run(ctx, 'import', descriptor.parent, relocated)
-    path = ctx.uproject.parent / 'Saved/Cooked/Mac/ue.projectstore'
-    if not path.is_file() or path.is_symlink():
-        raise CheckpointError('Zen import did not produce a receiver project store')
-    return {'cooked/Mac/ue.projectstore': build_products.file_digest(path)}

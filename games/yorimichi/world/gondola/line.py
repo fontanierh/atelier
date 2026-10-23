@@ -26,30 +26,18 @@ def _hermite(t, a, b, da, db):
 
 
 def _station_ramp(t, rise, end_slope, length):
-    """A short vertical curve from flat to the span's own end slope.
+    """A vertical curve from flat to the span's own end slope.
 
-    A one-metre smoothstep at each end carries the slope from 0 to the peak
-    and back to the span tangent. The peak is solved from the required rise.
+    One cubic Hermite uses the whole curve: it holds the station tangent at
+    zero, meets the span tangent at the far end, and spreads the curvature
+    over the full length (about length / abs(end_slope) metres of radius). The
+    old one-metre smoothstep concentrated the bend at the mouth, where the
+    rigid jaw groove could not follow it.
     """
     t=np.asarray(t,float)
-    if abs(rise)<1e-12:
+    if abs(rise)<1e-12 and abs(end_slope)<1e-12:
         return np.zeros_like(t)
-    b=min(1.0,length*.1)
-    peak=(rise-end_slope*b/2)/(length-b)
-    if peak*rise<=0 or rise*end_slope<=0:
-        return _hermite(t,0.,rise,0.,end_slope*length)
-    bt=b/length
-    u=np.clip(t/bt,0,1); left=3*u*u-2*u**3
-    v=np.clip((t-(1-bt))/bt,0,1); right=3*v*v-2*v**3
-    slope=np.where(t<bt,peak*left,np.where(t<1-bt,peak,peak+(end_slope-peak)*right))
-    grid=np.unique(np.r_[0.,t,1.])
-    gu=np.clip(grid/bt,0,1); gv=np.clip((grid-(1-bt))/bt,0,1)
-    gs=np.where(grid<bt,peak*(3*gu*gu-2*gu**3),
-                np.where(grid<1-bt,peak,peak+(end_slope-peak)*(3*gv*gv-2*gv**3)))
-    area=np.r_[0.,np.cumsum(.5*(gs[1:]+gs[:-1])*np.diff(grid))]*length
-    if abs(area[-1])<1e-12:
-        return _hermite(t,0.,rise,0.,end_slope*length)
-    return np.interp(t,grid,area)*rise/area[-1]
+    return _hermite(t,0.,rise,0.,end_slope*length)
 
 
 def _support_contacts(supports, sag, train_half):
@@ -102,7 +90,7 @@ def tower_saddles(supports, *, sag=.035, train_half=1.6):
     return out
 
 
-def centre_profile(supports, *, train_half=1.6, step=.05, sag=.035, station_curve=7.0, end_station_curve=20.0):
+def centre_profile(supports, *, train_half=1.6, step=.05, sag=.035, station_curve=7.0, end_station_curve=35.0):
     """@cc [owner:fontanierh,label:correctness] gondola-shared-rope-path
     The generated rope, grip placements and runtime samples MUST use this one
     support profile, with a tangent-continuous saddle over every tower train

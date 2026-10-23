@@ -1,0 +1,29 @@
+schema_version = 1
+
+[[scenarios]]
+id = "a4a.graph.target_closure_includes_content_and_reference_producers_only"
+tests = ["atelier-build-v2::graph/target_closure_includes_content_and_reference_producers_only"]
+
+[[scenarios]]
+id = "a4a.graph.prefix_targets_respect_namespace_boundaries_and_union_without_duplicates"
+tests = ["atelier-build-v2::graph/prefix_targets_respect_namespace_boundaries_and_union_without_duplicates"]
+
+[[scenarios]]
+id = "a4a.graph.unknown_empty_or_partial_targets_refuse"
+tests = ["atelier-build-v2::graph/unknown_empty_or_partial_targets_refuse"]
+
+[[scenarios]]
+id = "a4a.graph.declaration_and_target_order_do_not_change_selected_graph"
+tests = ["atelier-build-v2::graph/declaration_and_target_order_do_not_change_selected_graph"]
+
+[[scenarios]]
+id = "a4a.graph.external_references_add_no_fabricated_producer_or_content_edge"
+tests = ["atelier-build-v2::graph/external_references_add_no_fabricated_producer_or_content_edge"]
+
+[[scenarios]]
+id = "a4a.graph.unrelated_missing_sources_and_selectors_do_not_gate_selected_closure"
+tests = ["atelier-build-v2::graph/unrelated_missing_sources_and_selectors_do_not_gate_selected_closure"]
+
+[[scenarios]]
+id = "a4a.graph.structural_errors_refuse_globally_before_any_selection"
+tests = ["atelier-build-v2::graph/structural_errors_refuse_globally_before_any_selection"]

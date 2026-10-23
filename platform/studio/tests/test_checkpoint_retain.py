@@ -95,39 +95,6 @@ def test_retain_auto_selects_only_games_with_existing_stamps(tmp_path, monkeypat
     assert not (tmp_path / 'build/no-build').exists()
 
 
-@pytest.mark.parametrize('exit_code', [0, 2])
-def test_local_capture_uses_guard_and_publishes_to_normal_restore_store(fixture, monkeypatch, exit_code):
-    from atelier import checkpoint_store as cp
-    from atelier.build_cache import atomic_json
-    from atelier.harness.safety import guarded
-    ctx, steps = fixture.checkout('producer')
-    source = paths.REPO
-    game = source / 'games/fixture'; game.mkdir(parents=True)
-    (game / 'game.toml').write_text('')
-    fixture.produce(ctx, steps)
-    before = steps[0].outputs[0].read_bytes()
-    monkeypatch.setattr(build_checkpoints, 'Store', lambda _: fixture.store)
-    def guard(argv, folder, **options):
-        assert options['aggregate_tree'] and options['timeout'] == 3600
-        assert 'atelier.checkpoint_worker' in argv[2] and 'capture' in argv
-        if exit_code:
-            return exit_code
-        key = cp.capture(ctx, steps, fixture.store, echo=lambda _: None)
-        atomic_json(folder / 'result.json', dict(key=key))
-        return 0
-    monkeypatch.setattr(guarded, 'run', guard)
-    if exit_code:
-        with pytest.raises(CheckpointError, match='capture failed'):
-            build_checkpoints.capture_local(source, 'fixture')
-    else:
-        key = build_checkpoints.capture_local(source, 'fixture')
-        receiver, current = fixture.checkout('latest-main', changed=True)
-        stamps = cp.restore(receiver, current, fixture.store, key, echo=lambda _: None)
-        from test_checkpoints import publish_receiver
-        assert publish_receiver(receiver, current, fixture.store, key, stamps) == {'tree', 'house'}
-    assert before == steps[0].outputs[0].read_bytes()
-
-
 @pytest.mark.parametrize('deadline', [True, 59, 901, 60.5])
 def test_candidate_deadline_refuses_outside_bounded_handoff(tmp_path, deadline):
     with pytest.raises(CheckpointError, match='deadline'):

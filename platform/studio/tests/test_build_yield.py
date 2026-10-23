@@ -58,6 +58,7 @@ def test_budget_yields_before_preparation_and_preserves_unstarted_outputs(projec
     assert stamp.read_bytes() == before
     assert (p.ctx.out / 'second').read_text() == 'old owned output'
     assert any('BUILD YIELDED' in message and 'second' in message for message in p.messages)
+    assert p.messages[-1].startswith('3 steps, 1 ran, 0 restored, 0 up to date, 2 not reached, ')
 
 
 def test_resume_skips_completed_stamps_and_final_command_succeeds(project):

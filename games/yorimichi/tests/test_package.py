@@ -71,7 +71,10 @@ def test_package_cooks_after_every_import_then_assembles_in_a_separate_turn(tmp_
     argv = uat.argv(ctx)
     assert argv[0].endswith('RunUAT.sh') and argv[1] == 'BuildCookRun'
     # UAT runs UnrealBuildTool itself, past the capped Build.sh wrapper, so the worker cap is passed explicitly.
-    assert '-build' in argv and '-ubtargs=-MaxParallelActions=3' in argv and '-cookall' in argv
+    # The game binary is its own step: UAT must not rebuild it inside the cook.
+    assert '-skipbuild' in argv and '-build' not in argv
+    assert '-ubtargs=-MaxParallelActions=3' in argv and '-cookall' in argv
+    assert 'unreal.game_binary' in cook.needs
     # Without -package the Mac archive copies Binaries/Mac/<game>.app: no paks, no Content/Data.
     assert argv.index('-stage') < argv.index('-package') < argv.index('-archive')
     assert f'-archivedirectory={tmp_path/"package"/"archive"}' in argv and '-nocompileeditor' in argv

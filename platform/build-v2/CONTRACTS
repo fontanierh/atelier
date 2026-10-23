@@ -1,0 +1,65 @@
+@cc [owner:fontanierh,label:architecture] build-v2-opt-in
+The crate MUST remain independent of production v1 until a separately validated caller cutover.
+A0 schemas MUST NOT decide cache hits, launch native tools or publish results.
+
+@cc [owner:fontanierh,label:correctness] build-v2-identity-boundary
+Identity ingredients MUST distinguish producing input keys from each output's content digest.
+Provenance MUST remain outside identity ingredients. Installed Python, dependencies, lockfiles,
+Blender/add-ons, Unreal and compiler/SDK versions MUST NOT automatically become key ingredients;
+platform invalidation uses explicit cache/op versions. See tests/interfaces.rs.
+
+@cc [owner:fontanierh,label:correctness] build-v2-wire-boundary
+Worker messages MUST use a separate pipe with a versioned, bounded JSON frame. Unknown message
+shapes, unsupported protocol versions and truncated frames MUST fail, as MUST duplicate keys and
+positional (array) forms of the envelope, message or any typed record; arrays inside params and
+lists remain data. Only EOF between frames may be a clean close. Bulk asset bytes MUST travel in
+staged files, not wire messages. See tests/protocol.rs and the shared vectors
+tests/vectors/protocol_v1.json checked by tests/worker_session.rs and
+platform/studio/tests/test_build_v2_protocol.py.
+
+@cc [owner:fontanierh,label:correctness] build-v2-t0-registry
+CI MUST compile the current crate successfully before running its T0 tests. Its matrix MUST cover
+all declared supported host platforms. Every active scenario MUST have complete, unskipped execution
+evidence on each applicable platform within ten seconds, excluding compilation. Other-platform
+exclusions and pending future scenarios MUST be reported separately and MUST NOT count as coverage.
+See tools/check_registry.py and platform/studio/tests/test_build_v2_registry.py.
+
+@cc [owner:fontanierh,label:correctness] build-v2-object-digest-format
+Object format version 1 MUST name payload bytes with exactly 64 lowercase SHA-256 hex characters
+under objects/sha256. A change to algorithm or encoding MUST use a new object format/namespace.
+Filesystem permissions MUST remain result metadata rather than payload identity.
+
+@cc [owner:fontanierh,label:correctness] build-v2-object-publication
+The object store MUST freeze and verify an independent clone before atomic no-replace publication.
+Caller-provided unchecked digests MUST NOT certify bytes. Hits MUST clone without rehashing or
+scanning output folders; clone failures MUST be explicit and MUST NOT fall back to byte copies.
+Existing entries and unrelated checkout/staging files MUST never be overwritten or removed.
+See tests/objects.rs; macOS APFS tests are required acceptance evidence.
+
+@cc [owner:fontanierh,label:correctness] build-v2-worker-session-order
+A controller session MUST accept work only after a hello with the expected worker version, MUST
+keep at most one active job, and MUST require `started` then exactly one terminal response with
+the active job ID. Wrong IDs, duplicate or out-of-order responses, malformed frames and early end
+of stream MUST break the session. Sending `cancel` MUST NOT count as cancellation; only a worker's
+`cancelled` failure confirms it. A worker MUST send `started` for every `run` before its single
+terminal response, including a job it rejects at once and a `cancel` that arrives before it started.
+Job requests MUST pass through unchanged. See tests/worker_session.rs.
+
+@cc [owner:fontanierh,label:correctness] build-v2-result-leases
+Result writes MUST have a durable staging lease before payload creation and durable object claims
+under the shared metadata mutex before object publication. The order MUST be objects, immutable
+result record, required durable build-root callback, then per-unit claim release. Failure before
+durable rooting MUST retain claims; no failure may erase earlier results. Live or unknown owners/workers MUST prevent reclamation;
+timestamps alone MUST NOT expire leases. See tests/results.rs; B4/B5 implement root/GC policy later.
+Initial leases MUST retain supplied upstream result keys while the consumer record is incomplete.
+Fresh lease/staging names MUST preserve every occupied entry, including dangling symlinks.
+
+@cc [owner:fontanierh,label:correctness] build-v2-frozen-result-validation
+Output validators MUST read the same frozen snapshots hashed and published by B1. Result winner
+comparison MUST include complete fixed and group manifests/projections and semantic modes, but
+exclude provenance, unit scheduling labels and upstream retention links. Group publication MUST
+require complete actual membership, fixed keyed contracts and sealed frozen-source validation.
+External outputs MUST refuse until their typed adapter exists. Cached group tokens MUST issue
+only after named object checks and durable pins under the GC mutex, without plan reads, output
+tree walks or rehashing. See tests/results.rs and
+groups::tests::leased_group_publication_restores_tokens_and_compares_whole_manifest.

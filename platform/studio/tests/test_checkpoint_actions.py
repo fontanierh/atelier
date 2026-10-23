@@ -7,7 +7,7 @@ import pytest
 
 from atelier import build, build_checkpoints, build_snapshot, checkpoint_actions as actions, checkpoint_store as cp, paths
 from atelier.build_cache import atomic_json
-from test_checkpoints import fixture  # noqa: F401
+from test_checkpoints import fixture, snapshot  # noqa: F401
 
 
 def saved(fixture):
@@ -338,29 +338,32 @@ def test_observed_environment_keeps_pre_key_warm_state_without_adopting_it(fixtu
     assert not actions.local_incremental(ctx, steps[0], stamp['fingerprint'], stamp)
 
 
-def test_non_factory_blender_does_not_claim_a_portable_action_key(fixture):
+def test_non_factory_blender_is_keyed_on_everything_its_startup_reads(fixture, tmp_path, monkeypatch):
     ctx, steps = fixture.checkout('producer')
     step = steps[0]
     step.commands = [build.Blender(step.inputs[0], factory_startup=False)]
-    assert actions.key(ctx, step, build.fingerprint(step, {})) is None
-
-
-def test_compatible_workspace_keeps_pre_key_stamps_without_action_certificates(fixture):
-    ctx, steps = fixture.checkout('producer')
-    fixture.produce(ctx, steps)
-    for path in ctx.stamps.glob('*.json'):
-        value = cp.read_json(path); value.pop('checkpoint_key'); value.pop('checkpoint_inventory')
-        atomic_json(path, value)
-    build_checkpoints.incremental_environment(ctx)
-    key = cp.capture(ctx, steps, fixture.store)
-    value = fixture.store.load(key)
-    assert not value['stamps'] and not value['actions']
-    assert set(value['incremental_stamps']) == {'tree', 'combat', 'house'}
-    receiver, current = fixture.checkout('receiver', changed=True)
-    restored = cp.restore(receiver, current, fixture.store, key)
-    from test_checkpoints import publish_receiver
-    assert publish_receiver(receiver, current, fixture.store, key, restored) == {'tree', 'house'}
-    assert all('checkpoint_key' not in cp.read_json(p) for p in receiver.stamps.glob('*.json'))
+    from atelier import engine
+    app = tmp_path / 'Blender.app/Contents'; (app / 'MacOS').mkdir(parents=True); (app / 'Resources/5.2').mkdir(parents=True)
+    (app / 'MacOS/Blender').write_bytes(b'executable')
+    ctx.blender = str(app / 'MacOS/Blender')
+    monkeypatch.setattr(engine, 'blender', lambda: ctx.blender)  # The bundle identity, without an installed app.
+    home = tmp_path / 'home'; monkeypatch.setattr(Path, 'home', lambda: home)
+    profile = home / 'Library/Application Support/Blender/5.2'
+    (profile / 'extensions/.cache').mkdir(parents=True); (profile / 'extensions/.cache/compat.dat').write_text('derived')
+    def key():
+        ctx.__dict__.pop('_blender_user_identity', None)
+        return actions.key(ctx, step, build.fingerprint(step, {}))
+    empty = key()
+    assert empty is not None
+    (profile / 'extensions/.cache/compat.dat').write_text('derived again')
+    assert key() == empty  # Blender's own cache is not an input.
+    (profile / 'config').mkdir(); (profile / 'config/userpref.blend').write_bytes(b'prefs')
+    with_prefs = key()
+    assert with_prefs != empty
+    (profile / 'scripts/startup').mkdir(parents=True); (profile / 'scripts/startup/hook.py').write_text('x = 1')
+    assert key() not in (empty, with_prefs)
+    monkeypatch.setenv('BLENDER_USER_SCRIPTS', str(tmp_path / 'scripts'))
+    assert key() not in (empty, with_prefs)
 
 
 def test_fresh_unsupported_execution_is_current_after_observed_environment_change(fixture, monkeypatch):
@@ -398,16 +401,31 @@ def test_ordinary_miss_makes_no_subprocess_or_network_call(fixture, monkeypatch)
     assert cache.remote is None
 
 
-def test_cold_prepare_without_local_checkpoint_stays_offline(fixture, monkeypatch):
-    monkeypatch.delenv(build_checkpoints.REMOTE_LOOKUP, raising=False)
+def test_cold_prepare_restores_nothing_and_stays_offline(fixture, monkeypatch):
+    # Reuse is per step only: no whole-checkpoint restore, hydration or remote lookup at start.
+    _, _, key = snapshot(fixture)
     ctx, steps = fixture.checkout('receiver')
     monkeypatch.setattr(build_checkpoints, 'Store', lambda game: fixture.store)
     monkeypatch.setattr(build_checkpoints, 'configured', lambda ctx: dict(repository='owner/private'))
-    monkeypatch.setattr(build_checkpoints, 'cold', lambda ctx: True)
-    messages = []
+    monkeypatch.setattr(build_checkpoints, '_guard', lambda *a, **k: pytest.fail('no checkpoint worker at prepare'))
     offline(monkeypatch)
+    messages = []
+    assert build_checkpoints.prepare(ctx, steps, echo=messages.append) is fixture.store
+    assert messages == [] and not (ctx.out / 'tree').exists()
+
+
+def test_an_interrupted_whole_checkpoint_restore_is_dropped_with_its_certificates(fixture, monkeypatch):
+    ctx, steps = fixture.checkout('receiver')
+    fixture.produce(ctx, steps)
+    atomic_json(ctx.out / cp.JOURNAL, dict(schema=1, key='0' * 64, game='fixture'))
+    (ctx.out / '.state/hydration-stamps').mkdir(parents=True)
+    monkeypatch.setattr(build_checkpoints, 'Store', lambda game: fixture.store)
+    monkeypatch.setattr(build_checkpoints, 'configured', lambda ctx: {})
+    messages = []
     build_checkpoints.prepare(ctx, steps, echo=messages.append)
-    assert any('remote checkpoint lookup is off' in m for m in messages)
+    assert not (ctx.out / cp.JOURNAL).exists() and not list(ctx.stamps.glob('*.json'))
+    assert not (ctx.out / '.state/hydration-stamps').exists()
+    assert 'every step restores from its own result or runs' in messages[-1]
 
 
 def test_remote_action_lookup_runs_only_when_opted_in(fixture, monkeypatch):

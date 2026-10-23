@@ -51,16 +51,40 @@ def test_station_mouth_curve_is_short_and_tangent_to_the_span():
         assert zq(q)==pytest.approx(13.77+m*q-4*.035*L*(q/L)*(1-q/L),abs=1e-3)
 
 
-def test_final_station_curve_can_use_twenty_metres_without_exceeding_the_span_slope():
+def _min_vertical_radius(x,z,lo,hi):
+    """Tightest geometric radius of the rope height over x in [lo, hi]."""
+    pick=(x>=lo)&(x<=hi)
+    xs,zs=x[pick],z[pick]
+    slope=np.diff(zs)/np.diff(xs)
+    curvature=np.abs(np.diff(slope))/np.diff(xs)[1:]/(1+slope[1:]**2)**1.5
+    return 1/curvature.max()
+
+
+def test_final_station_curve_meets_the_span_and_keeps_a_groove_safe_radius():
     supports=[(0,500.,False),(460,611.,True),(615.5,707.4,False)]
-    p=centre_profile(supports,end_station_curve=20.)
+    p=centre_profile(supports,step=.01)
     x,z=p[:,0],p[:,1]
     zq=lambda q: float(np.interp(q,x,z))
     assert z[-1]==pytest.approx(707.4)
-    assert zq(615.5-20.)==pytest.approx(float(span_height(615.5-460.-20.,155.5,611.,707.4)),abs=.2)
-    end_slope=math.atan((707.4-611.)/(615.5-460.)+4*.035)
-    peak=max(math.atan((zq(q+1e-3)-zq(q-1e-3))/2e-3) for q in np.linspace(595.5,615.5,401))
-    assert peak<=end_slope+math.radians(1)
+    L=155.5;w=35.;eps=1e-3
+    assert zq(615.5-w)==pytest.approx(float(span_height(L-w,L,611.,707.4)),abs=.2)
+    span_slope=(float(span_height(L-w+eps,L,611.,707.4))-float(span_height(L-w-eps,L,611.,707.4)))/(2*eps)
+    assert (zq(615.5-w+eps)-zq(615.5-w-eps))/(2*eps)==pytest.approx(span_slope,abs=5e-3)
+    assert (zq(615.5)-zq(615.5-eps))/eps==pytest.approx(0.,abs=1e-2)
+    assert _min_vertical_radius(x,z,615.5-w-.5,615.5)>=10.
+
+
+@pytest.mark.parametrize('supports', [
+    [(0,51.163,False),(35,60.6,True),(425,111.511,True),(970,286.62,True),(1430,611.104,True),(1585.54,707.446,False)],
+    [(0,222.595,False),(70,240.742,True),(615,276.574,True),(1160,281.774,True),(1705,649.758,True),(1807.63,717.414,False)],
+    [(0,655.162,False),(30,660.503,True),(158,715.976,True),(199.37,707.523,False)],
+])
+def test_station_curves_keep_a_groove_safe_radius(supports):
+    """A rigid jaw groove about 0.39 m long stays within 2 mm only near 10 m radius or more."""
+    p=centre_profile(supports,step=.01)
+    x,z=p[:,0],p[:,1]
+    assert _min_vertical_radius(x,z,0.,7.)>=10.
+    assert _min_vertical_radius(x,z,x[-1]-35.,x[-1])>=10.
 
 
 def test_high_deflection_tower_saddle_keeps_a_twelve_metre_bend():

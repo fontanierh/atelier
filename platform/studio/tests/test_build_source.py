@@ -50,7 +50,7 @@ def test_executed_adapter_remains_an_input(action, support):
 @pytest.mark.parametrize('controller', ['build_inputs.py', 'build_products.py', 'build_cache.py', 'build_hashes.py',
                                        'build_deferred.py', 'source_imports.py', 'build_checkpoints.py',
                                        'checkpoint_store.py', 'checkpoint_actions.py', 'checkpoint_manifest.py',
-                                       'store_reuse.py', 'store_retention.py', 'output_inventory.py'])
+                                       'store_retention.py', 'output_inventory.py'])
 def test_identity_and_controller_edits_keep_source_actions_current(action, controller):
     """Code that computes identities or schedules work never shapes a source action's outputs."""
     assert key(action.step) == key(action.step, controller)

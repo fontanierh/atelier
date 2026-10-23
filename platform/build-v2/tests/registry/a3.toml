@@ -1,0 +1,97 @@
+schema_version = 1
+
+[[scenarios]]
+id = "a3.keys.sha256_and_typed_canonical_encoding_are_unambiguous"
+tests = ["atelier-build-v2::keys/sha256_and_typed_canonical_encoding_are_unambiguous"]
+
+[[scenarios]]
+id = "a3.keys.declared_code_settings_and_logical_identity_change_keys"
+tests = ["atelier-build-v2::keys/declared_code_settings_and_logical_identity_change_keys"]
+
+[[scenarios]]
+id = "a3.keys.explicit_op_cache_worker_and_validator_versions_invalidate"
+tests = ["atelier-build-v2::keys/explicit_op_cache_worker_and_validator_versions_invalidate"]
+
+[[scenarios]]
+id = "a3.keys.ambient_platform_and_provenance_are_not_implicit_inputs"
+tests = ["atelier-build-v2::keys/ambient_platform_and_provenance_are_not_implicit_inputs"]
+
+[[scenarios]]
+id = "a3.keys.selector_hashes_only_selected_data_and_preserves_shape"
+tests = ["atelier-build-v2::keys/selector_hashes_only_selected_data_and_preserves_shape"]
+
+[[scenarios]]
+id = "a3.keys.locator_rename_keeps_key_but_visible_staged_path_changes_it"
+tests = ["atelier-build-v2::keys/locator_rename_keeps_key_but_visible_staged_path_changes_it"]
+
+[[scenarios]]
+id = "a3.keys.exact_safe_collision_free_slot_mapping_is_required"
+tests = ["atelier-build-v2::keys/exact_safe_collision_free_slot_mapping_is_required"]
+
+[[scenarios]]
+id = "a3.keys.optional_absence_differs_from_empty_and_selected_null"
+tests = ["atelier-build-v2::keys/optional_absence_differs_from_empty_and_selected_null"]
+
+[[scenarios]]
+id = "a3.keys.reference_bytes_and_producer_input_history_do_not_propagate"
+tests = ["atelier-build-v2::keys/reference_bytes_and_producer_input_history_do_not_propagate"]
+
+[[scenarios]]
+id = "a3.keys.semantic_modes_and_complete_result_membership_are_content"
+tests = ["atelier-build-v2::keys/semantic_modes_and_complete_result_membership_are_content"]
+
+[[scenarios]]
+id = "a3.keys.declaration_order_and_dispatch_metadata_do_not_change_semantic_request"
+tests = ["atelier-build-v2::keys/declaration_order_and_dispatch_metadata_do_not_change_semantic_request"]
+
+[[scenarios]]
+id = "a3.keys.source_version_memo_reuses_hashes_and_same_size_mtime_edit_invalidates"
+tests = ["atelier-build-v2::keys/source_version_memo_reuses_hashes_and_same_size_mtime_edit_invalidates"]
+
+[[scenarios]]
+id = "a3.keys.damaged_or_missing_hash_indexes_fall_back_to_source_bytes"
+tests = ["atelier-build-v2::keys/damaged_or_missing_hash_indexes_fall_back_to_source_bytes"]
+
+[[scenarios]]
+id = "a3.keys.implementation_identity_rejects_unversioned_or_noncanonical_digests"
+tests = ["atelier-build-v2::keys/implementation_identity_rejects_unversioned_or_noncanonical_digests"]
+
+[[scenarios]]
+id = "a3.keys.reference_logical_path_and_class_remain_key_ingredients"
+tests = ["atelier-build-v2::keys/reference_logical_path_and_class_remain_key_ingredients"]
+
+[[scenarios]]
+id = "a3.keys.optional_result_membership_changes_content_without_producer_key_noise"
+tests = ["atelier-build-v2::keys/optional_result_membership_changes_content_without_producer_key_noise"]
+
+[[scenarios]]
+id = "a3.keys.selected_view_memo_binds_its_encoding_version"
+tests = ["atelier-build-v2::keys/selected_view_memo_binds_its_encoding_version"]
+
+[[scenarios]]
+id = "a3.keys.staged_namespace_separates_code_inputs_and_writable_outputs"
+tests = ["atelier-build-v2::keys/staged_namespace_separates_code_inputs_and_writable_outputs"]
+
+[[scenarios]]
+id = "a3.keys.equal_content_digests_do_not_alias_file_and_item_shapes"
+tests = ["atelier-build-v2::keys/equal_content_digests_do_not_alias_file_and_item_shapes"]
+
+[[pending]]
+id = "t0.same-stat-edit"
+task = "A3"
+
+[[pending]]
+id = "t0.dirty-untracked"
+task = "A3"
+
+[[pending]]
+id = "t0.platform-stability"
+task = "A3"
+
+[[pending]]
+id = "t0.project-invalidation"
+task = "A3"
+
+[[pending]]
+id = "t0.explicit-versions"
+task = "A3"

@@ -1,0 +1,25 @@
+schema_version = 1
+cache_version = "v2-1"
+
+[[units]]
+id = "sample.geometry"
+op = { kind = "py_data", version = "1" }
+script = "ops/geometry.py"
+code = ["ops/geometry.py", "ops/common.py"]
+params = { seed = 42, enabled = true, label = "triangle" }
+inputs = [
+  { role = "content", name = "shape", source = { kind = "file", path = "data/shape.json", selector = "/triangle" } },
+  { role = "reference", name = "material", logical_path = "/Game/Materials/Plain", class = "Material", proof = "reference_material_bytes", producer = { unit = "sample.material", item = "plain" } },
+]
+outputs = [
+  { id = "triangle", logical_path = "/Game/Meshes/Triangle", class = "StaticMeshSource", files = [{ path = "triangle.glb" }], destination = "store" },
+]
+
+[[units]]
+id = "sample.material"
+op = { kind = "py_data", version = "1" }
+script = "ops/material.py"
+code = ["ops/material.py"]
+outputs = [
+  { id = "plain", logical_path = "/Game/Materials/Plain", class = "Material", files = [{ path = "plain.json", install_path = "Content/Data/plain.json" }], destination = "checkout" },
+]

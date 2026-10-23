@@ -1,0 +1,91 @@
+schema_version = 1
+
+[[pending]]
+id = "t0.plan-membership"
+task = "A4"
+
+[[scenarios]]
+id = "a4b.groups.retained_plan_maps_exact_flat_membership_without_geometry_reinterpretation"
+tests = ["atelier-build-v2::groups/retained_plan_maps_exact_flat_membership_without_geometry_reinterpretation"]
+
+[[scenarios]]
+id = "a4b.groups.fixed_and_group_roots_have_one_owner_under_shared_path_policy"
+tests = ["atelier-build-v2::groups/fixed_and_group_roots_have_one_owner_under_shared_path_policy"]
+
+[[scenarios]]
+id = "a4b.groups.malformed_foreign_or_incomplete_discovery_refuses"
+tests = ["atelier-build-v2::groups/malformed_foreign_or_incomplete_discovery_refuses"]
+
+[[scenarios]]
+id = "a4b.groups.missing_extra_alias_members_and_invalid_modes_refuse"
+tests = ["atelier-build-v2::groups/missing_extra_alias_members_and_invalid_modes_refuse"]
+
+[[scenarios]]
+id = "a4b.groups.declared_limits_and_payload_encoding_are_enforced"
+tests = ["atelier-build-v2::groups/declared_limits_and_payload_encoding_are_enforced"]
+
+[[scenarios]]
+id = "a4b.groups.group_root_must_match_explicit_keyed_worker_param"
+tests = ["atelier-build-v2::groups/group_root_must_match_explicit_keyed_worker_param"]
+
+[[scenarios]]
+id = "a4b.groups.source_validator_reads_the_same_frozen_objects_and_failure_issues_no_token"
+platforms = ["darwin"]
+tests = ["atelier-build-v2::groups/source_validator_reads_the_same_frozen_objects_and_failure_issues_no_token"]
+
+[[scenarios]]
+id = "a4b.groups.recorded_group_projects_only_selected_member_without_output_reads"
+tests = ["atelier-build-v2/groups::tests::recorded_group_projects_only_selected_member_without_output_reads"]
+
+[[scenarios]]
+id = "a4b.groups.fixed_group_contract_keys_planner_without_runtime_membership"
+tests = ["atelier-build-v2/groups::tests::fixed_group_contract_keys_planner_without_runtime_membership"]
+
+[[scenarios]]
+id = "a4b.groups.member_keys_cut_off_planner_and_sibling_changes_but_bind_selected_view"
+tests = ["atelier-build-v2/groups::tests::member_keys_cut_off_planner_and_sibling_changes_but_bind_selected_view"]
+
+[[scenarios]]
+id = "a4b.paths.path_policy_refuses_mutations_and_normalized_owner_aliases"
+tests = ["atelier-build-v2/paths::tests::path_policy_refuses_mutations_and_normalized_owner_aliases"]
+
+[[scenarios]]
+id = "a4b.groups.complete_output_partition_refuses_unknown_alias_and_ancestor_reports_before_cloning"
+tests = ["atelier-build-v2/groups::tests::complete_output_partition_refuses_unknown_alias_and_ancestor_reports_before_cloning"]
+
+[[scenarios]]
+id = "a4b.groups.leased_group_publication_restores_tokens_and_compares_whole_manifest"
+platforms = ["darwin"]
+tests = ["atelier-build-v2/groups::tests::leased_group_publication_restores_tokens_and_compares_whole_manifest"]
+
+[[scenarios]]
+id = "a4b.groups.encoded_discovery_keeps_roles_and_complete_render_collision_totals"
+tests = ["atelier-build-v2::groups/encoded_discovery_keeps_roles_and_complete_render_collision_totals"]
+
+[[scenarios]]
+id = "a4b.plans.cold_child_selection_requires_planner_then_resolves_or_refuses"
+tests = ["atelier-build-v2/plans::tests::cold_child_selection_requires_planner_then_resolves_or_refuses"]
+
+[[scenarios]]
+id = "a4b.plans.complete_expansion_has_stable_children_and_exact_prior_owner_removal_intents"
+tests = ["atelier-build-v2/plans::tests::complete_expansion_has_stable_children_and_exact_prior_owner_removal_intents"]
+
+[[scenarios]]
+id = "a4b.plans.batch_owner_collisions_and_foreign_or_changed_receipts_refuse"
+tests = ["atelier-build-v2/plans::tests::batch_owner_collisions_and_foreign_or_changed_receipts_refuse"]
+
+[[scenarios]]
+id = "a4b.plans.template_interface_and_staging_alias_mutations_refuse"
+tests = ["atelier-build-v2/plans::tests::template_interface_and_staging_alias_mutations_refuse"]
+
+[[scenarios]]
+id = "a4b.groups.cached_member_keys_bind_equal_byte_payload_type_and_role_without_plan_reads"
+tests = ["atelier-build-v2/groups::tests::cached_member_keys_bind_equal_byte_payload_type_and_role_without_plan_reads"]
+
+[[scenarios]]
+id = "a4b.plans.expanded_child_key_ignores_roster_and_planner_code_but_binds_exporter_code"
+tests = ["atelier-build-v2/plans::tests::expanded_child_key_ignores_roster_and_planner_code_but_binds_exporter_code"]
+
+[[scenarios]]
+id = "a4b.plans.receipt_ownership_survives_exporter_and_planner_version_evolution"
+tests = ["atelier-build-v2/plans::tests::receipt_ownership_survives_exporter_and_planner_version_evolution"]
