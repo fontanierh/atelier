@@ -22,14 +22,7 @@ from mesh_pieces import capture  # noqa: E402
 
 INPUTS = ('world.json', 'heightmap.npy', 'farhills.npy', 'megapark/trail.json',
           'craterpark/v2/geometry.npz', 'terrain/FarHills/final.npz')
-SELECTED = {
-    'HD_Temple': ('temple_mesh', 'temple'), 'HD_Pavilion': ('pavilion_mesh', 'pavilion'),
-    'HD_Playground': ('playground_mesh', 'playground'), 'HD_Boat': ('boat_mesh', 'boat'),
-    'HD_Lighthouse': ('lighthouse_mesh', 'lighthouse'),
-    'HD_Streets': ('streets_mesh', 'streets'), 'HD_Harbor': ('harbor_mesh', 'harbor'),
-    'HD_Square': ('square_mesh', 'square'), 'HD_Park': ('park_mesh', 'park'),
-    'HD_InlandWater': ('water_mesh', 'inland_water'),
-}
+
 
 
 def signature(source, surfaces):
@@ -87,6 +80,9 @@ def main():
     from village import mesh as kernel
     city = build.generate()
     builders = build.asset_builders(city)
+    from hidamari.logical_catalogue import ASSETS
+    assert tuple(builders) == ASSETS, 'Selected city inventory differs from original production order'
+    selected_builders = {key: ('logical.' + key, 'construct') for key in ASSETS}
     contexts, results = {}, {}
     draws = [0]
     next_random = kernel.R.random
@@ -100,14 +96,14 @@ def main():
         source = constructor()
         assert source.name == key
         after_palette, after_state, after_draws = dict(kernel.PALETTE), kernel.R.getstate(), draws[0]
-        if key in SELECTED:
+        if key in selected_builders:
             reference = signature(source, surfaces)
             del source
-            module, function = SELECTED[key]
+            module, function = selected_builders[key]
             selected = getattr(importlib.import_module('hidamari.' + module), function)
             kernel.PALETTE.clear(); kernel.PALETTE.update(palette)
             kernel.R.setstate(random_state)
-            actual = selected(city) if key == 'HD_Streets' else selected()
+            actual = selected(city)
             observed = signature(actual, surfaces)
             assert observed == reference, (key, 'selected ordered geometry/corners/channels/collision changed')
             results[key] = reference
@@ -119,7 +115,7 @@ def main():
         gc.collect()
         atomic_json(root / 'progress.json', dict(completed=len(contexts), total=len(builders), asset=key))
         print(f'CITY CONTEXT {len(contexts)}/{len(builders)} {key}; checked {len(results)} selected constructors', flush=True)
-    assert set(results) == set(SELECTED)
+    assert set(results) == set(selected_builders)
     assert identities() == before, 'City source or donor changed during context validation'
     atomic_json(root / 'contexts.json', contexts)
     atomic_json(root / 'result.json', dict(complete=True, ordered_attribute_hash_equality=True,

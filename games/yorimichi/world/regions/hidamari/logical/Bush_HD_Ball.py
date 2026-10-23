@@ -1,0 +1,6 @@
+"""Construct only Bush_HD_Ball from declared parameters and final data."""
+from hidamari import garden_shrubs
+
+
+def construct(city):
+    return garden_shrubs.shrub('Bush_HD_Ball')

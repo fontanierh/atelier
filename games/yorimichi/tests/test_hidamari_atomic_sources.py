@@ -43,8 +43,10 @@ def test_selected_city_sources_do_not_load_the_whole_or_sibling_builders():
 def test_selected_constructor_global_names_are_explicitly_bound():
     import builtins
     import symtable
-    for name in MODULES:
-        path = REGION / (name + '.py')
+    paths = [REGION / (name + '.py') for name in (*MODULES, 'sea_mesh', 'wire_mesh', 'lane_edge_mesh', 'arcade_mesh')]
+    paths.extend((REGION / 'logical').glob('*.py'))
+    for path in paths:
+        name = path.stem
         table = symtable.symtable(path.read_text(), str(path), 'exec')
         available = set(table.get_identifiers()) | set(dir(builtins))
         pending = list(table.get_children())
@@ -54,3 +56,17 @@ def test_selected_constructor_global_names_are_explicitly_bound():
                 if symbol.is_global() and symbol.is_referenced():
                     assert symbol.get_name() in available, (name, scope.get_name(), symbol.get_name())
             pending.extend(scope.get_children())
+
+
+def test_all_logical_city_entry_points_exclude_sibling_entry_points_and_original_exporter():
+    import runpy
+    names = runpy.run_path(str(REGION / 'logical_catalogue.py'))['ASSETS']
+    assert len(names) == 86 and len(set(names)) == 86
+    for name in names:
+        path = REGION / 'logical' / (name + '.py')
+        sources = set(local_imports(path, (REGIONS, REGIONS.parent)))
+        assert REGION / 'build.py' not in sources
+        assert {p.name for p in sources if p.parent == REGION / 'logical'} == {path.name}
+    lighthouse = set(local_imports(REGION / 'logical/HD_Lighthouse.py', (REGIONS, REGIONS.parent)))
+    assert REGION / 'layout.py' not in lighthouse
+    assert REGION / 'harbor_mesh.py' not in lighthouse
