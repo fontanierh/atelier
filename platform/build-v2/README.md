@@ -573,6 +573,20 @@ The custodian registry and confirmation are traits (`SessionCustodians`,
 journals only; result records, objects and leases are untouched, and no root is removed because a
 checkout directory disappeared.
 
+### Usage (B4b)
+
+Sessions record a coarse last-use day inside the journal entry they already fsync, so a hit costs no
+extra write. `RootStore::usage_locked(guard)` merges those open journals with `<store>/usage.json`
+in memory and returns `UsageView { results, observed, damaged }`. The day is UTC rounded up, the
+newest bucket per result wins so a clock rollback never ages a result, and an entry without a
+bucket, a legacy journal or an unreadable record is unknown age and must be retained.
+`usage_locked`, `open_existing`, `open_existing_with_clock` and
+`all_project_retention_locked` create and rewrite nothing; the all-project reader returns one
+`RetentionView` per project plus its own damaged list. `observe_objects_locked` sets a write-once
+first-observed day and is the only way one is set; `forget_usage_locked` removes result and object
+age and is persisted before the caller unlinks. A non-empty damaged list in either view obliges the
+caller to refuse destructive work rather than read a partial view as complete.
+
 ## Bounded groups and typed child expansion (A4b)
 
 `groups` reads the existing D2 schema1 plan envelope and checks complete flat membership, authored

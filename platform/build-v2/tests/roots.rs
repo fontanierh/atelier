@@ -6,6 +6,7 @@ use atelier_build_v2::schema::{
     Declaration, Destination, Item, Op, OutputFile, Provenance, SCHEMA_VERSION, Unit,
 };
 use atelier_build_v2::source_hashes::SourceHashCache;
+use atelier_build_v2::store::ObjectDigest;
 use atelier_build_v2::validate::{OpDefinition, SnapshotEntry, ValidatedDeclaration, validate};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
@@ -1386,4 +1387,855 @@ fn a_roster_requires_a_complete_validated_declaration() {
         DeclaredRoster::from_validated(&declared, &validated(&["unit.a", "unit.b"])).unwrap();
     assert!(roster.contains("unit.a") && roster.contains("unit.b"));
     assert_eq!(roster.digest().len(), 64);
+}
+
+// ---- B4b: coarse recent use, first-observed grace and the read-only readers ----
+
+#[derive(Debug)]
+struct TestClock(std::sync::Mutex<std::time::SystemTime>);
+
+impl TestClock {
+    fn at(seconds: u64) -> Arc<Self> {
+        Arc::new(Self(std::sync::Mutex::new(
+            std::time::UNIX_EPOCH + std::time::Duration::from_secs(seconds),
+        )))
+    }
+    fn set(&self, seconds: u64) {
+        *self.0.lock().unwrap() = std::time::UNIX_EPOCH + std::time::Duration::from_secs(seconds);
+    }
+}
+
+impl Clock for TestClock {
+    fn now(&self) -> std::time::SystemTime {
+        *self.0.lock().unwrap()
+    }
+}
+
+impl Workspace {
+    fn open_at(&self, project: &str, clock: &Arc<TestClock>) -> RootStore {
+        fs::create_dir_all(self.store()).unwrap();
+        RootStore::open_with_clock(self.store(), project, Arc::clone(clock) as Arc<dyn Clock>)
+            .unwrap()
+    }
+}
+
+fn usage_file(workspace: &Workspace) -> PathBuf {
+    workspace.store().join("usage.json")
+}
+
+fn usage_bytes(workspace: &Workspace) -> Option<Vec<u8>> {
+    fs::read(usage_file(workspace)).ok()
+}
+
+fn usage_of(store: &RootStore) -> UsageView {
+    let guard = store.leases().lock().unwrap();
+    store.usage_locked(&guard).unwrap()
+}
+
+fn digest(fill: &str) -> ObjectDigest {
+    ObjectDigest::from_hex(&fill.repeat(64)).unwrap()
+}
+
+#[test]
+fn a_use_bucket_rounds_the_utc_day_up() {
+    let midnight = UseBucket::ceil_day(std::time::UNIX_EPOCH).unwrap();
+    assert_eq!(midnight.as_str(), "1970-01-01");
+    let one_millisecond =
+        UseBucket::ceil_day(std::time::UNIX_EPOCH + std::time::Duration::from_millis(1)).unwrap();
+    assert_eq!(
+        one_millisecond.as_str(),
+        "1970-01-02",
+        "sub-second precision must round up, not truncate"
+    );
+    let one_second =
+        UseBucket::ceil_day(std::time::UNIX_EPOCH + std::time::Duration::from_secs(1)).unwrap();
+    assert_eq!(one_second.as_str(), "1970-01-02");
+    let next_midnight =
+        UseBucket::ceil_day(std::time::UNIX_EPOCH + std::time::Duration::from_secs(86_400))
+            .unwrap();
+    assert_eq!(next_midnight.as_str(), "1970-01-02");
+    let next_midnight_plus_one = UseBucket::ceil_day(
+        std::time::UNIX_EPOCH
+            + std::time::Duration::from_secs(86_400)
+            + std::time::Duration::from_nanos(1),
+    )
+    .unwrap();
+    assert_eq!(next_midnight_plus_one.as_str(), "1970-01-03");
+    assert!(UseBucket::parse("2024-02-29").is_ok());
+    assert!(UseBucket::parse("2026-02-29").is_err());
+    assert!(UseBucket::parse("2026-13-01").is_err());
+    assert!(UseBucket::parse("26-01-01").is_err());
+}
+
+#[test]
+fn usage_keeps_the_newest_bucket_on_rollback() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let mut session = begin(&store, RootKind::Main, "first", 1);
+    session.use_result("unit.a", &key(1)).unwrap();
+    session.commit(None).unwrap();
+    assert_eq!(
+        usage_of(&store).results[&key(1)].as_str(),
+        "1970-01-02",
+        "the append records the round-up day"
+    );
+
+    clock.set(0);
+    let mut rolled_back = begin(&store, RootKind::Main, "second", 1);
+    rolled_back.use_result("unit.a", &key(1)).unwrap();
+    rolled_back.commit(None).unwrap();
+    assert_eq!(
+        usage_of(&store).results[&key(1)].as_str(),
+        "1970-01-02",
+        "a clock rollback must never age a result"
+    );
+}
+
+#[test]
+fn a_future_bucket_is_kept() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(10 * 86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let mut session = begin(&store, RootKind::Main, "first", 1);
+    session.use_result("unit.a", &key(1)).unwrap();
+    session.commit(None).unwrap();
+    assert_eq!(usage_of(&store).results[&key(1)].as_str(), "1970-01-11");
+
+    clock.set(2 * 86_400);
+    let mut earlier = begin(&store, RootKind::Main, "second", 1);
+    earlier.use_result("unit.a", &key(1)).unwrap();
+    earlier.commit(None).unwrap();
+    assert_eq!(
+        usage_of(&store).results[&key(1)].as_str(),
+        "1970-01-11",
+        "a future bucket is kept, never aged down"
+    );
+}
+
+#[test]
+fn a_legacy_journal_entry_has_unknown_age() {
+    use std::io::Write;
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let mut session = begin(&store, RootKind::Main, "legacy", 1);
+    let journal = only_session(&workspace.store(), "yorimichi");
+    let mut file = fs::OpenOptions::new().append(true).open(&journal).unwrap();
+    writeln!(file, "{{\"unit\":\"unit.legacy\",\"key\":\"{}\"}}", key(9)).unwrap();
+    drop(file);
+    session.use_result("unit.a", &key(1)).unwrap();
+
+    let view = usage_of(&store);
+    assert!(view.damaged.is_empty(), "{:?}", view.damaged);
+    assert!(
+        !view.results.contains_key(&key(9)),
+        "an entry without a bucket is unknown age, not a made-up date"
+    );
+    assert_eq!(view.results[&key(1)].as_str(), "1970-01-02");
+
+    session.commit(None).unwrap();
+    let view = usage_of(&store);
+    assert!(!view.results.contains_key(&key(9)));
+}
+
+#[test]
+fn usage_is_folded_once_per_commit_not_per_append() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let mut session = begin(&store, RootKind::Main, "first", 1);
+    session.use_result("unit.a", &key(1)).unwrap();
+    assert!(
+        usage_bytes(&workspace).is_none(),
+        "an append alone must never write usage"
+    );
+    session.use_result("unit.b", &key(2)).unwrap();
+    assert!(usage_bytes(&workspace).is_none());
+    session.commit(None).unwrap();
+    let first = usage_bytes(&workspace).expect("the commit folds once");
+    let view = usage_of(&store);
+    assert!(view.results.contains_key(&key(1)));
+    assert!(view.results.contains_key(&key(2)));
+
+    let mut again = begin(&store, RootKind::Main, "second", 1);
+    again.use_result("unit.a", &key(1)).unwrap();
+    again.commit(None).unwrap();
+    assert_eq!(
+        usage_bytes(&workspace).unwrap(),
+        first,
+        "a commit that adds no newer bucket writes nothing"
+    );
+}
+
+#[test]
+fn the_usage_readers_and_open_existing_write_nothing() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let mut session = begin(&store, RootKind::Main, "first", 1);
+    session.use_result("unit.a", &key(1)).unwrap();
+    session.commit(None).unwrap();
+    let mut open = begin(&store, RootKind::Main, "second", 1);
+    open.use_result("unit.b", &key(2)).unwrap();
+
+    let journal = only_session(&workspace.store(), "yorimichi");
+    let usage_before = usage_bytes(&workspace).unwrap();
+    let usage_mtime = fs::metadata(usage_file(&workspace))
+        .unwrap()
+        .modified()
+        .unwrap();
+    let journal_bytes = fs::read(&journal).unwrap();
+    let journal_mtime = fs::metadata(&journal).unwrap().modified().unwrap();
+
+    {
+        let guard = store.leases().lock().unwrap();
+        store.usage_locked(&guard).unwrap();
+        store.all_project_retention_locked(&guard).unwrap();
+    }
+    RootStore::open_existing(workspace.store(), "yorimichi").unwrap();
+    RootStore::open_existing_with_clock(
+        workspace.store(),
+        "yorimichi",
+        Arc::clone(&clock) as Arc<dyn Clock>,
+    )
+    .unwrap();
+
+    assert_eq!(usage_bytes(&workspace).unwrap(), usage_before);
+    assert_eq!(
+        fs::metadata(usage_file(&workspace))
+            .unwrap()
+            .modified()
+            .unwrap(),
+        usage_mtime,
+        "the readers must not rewrite usage.json"
+    );
+    assert_eq!(fs::read(&journal).unwrap(), journal_bytes);
+    assert_eq!(
+        fs::metadata(&journal).unwrap().modified().unwrap(),
+        journal_mtime,
+        "the readers must not touch an open journal"
+    );
+}
+
+#[test]
+fn usage_damage_is_visible_to_the_caller() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let mut session = begin(&store, RootKind::Main, "first", 1);
+    session.use_result("unit.a", &key(1)).unwrap();
+    session.commit(None).unwrap();
+    fs::write(usage_file(&workspace), b"{not json").unwrap();
+
+    let view = usage_of(&store);
+    assert!(
+        !view.damaged.is_empty(),
+        "a partial usage view must never look complete"
+    );
+}
+
+#[test]
+fn observe_objects_is_write_once() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let digest = digest("a");
+    let mut objects = BTreeSet::new();
+    objects.insert(digest.clone());
+    {
+        let guard = store.leases().lock().unwrap();
+        store.observe_objects_locked(&guard, &objects).unwrap();
+    }
+    assert_eq!(
+        usage_of(&store).observed[digest.as_hex()].as_str(),
+        "1970-01-02"
+    );
+
+    clock.set(5 * 86_400);
+    {
+        let guard = store.leases().lock().unwrap();
+        store.observe_objects_locked(&guard, &objects).unwrap();
+    }
+    assert_eq!(
+        usage_of(&store).observed[digest.as_hex()].as_str(),
+        "1970-01-02",
+        "first-observed is write-once and never refreshed"
+    );
+}
+
+#[test]
+fn forgetting_usage_is_persisted_before_any_unlink() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let mut session = begin(&store, RootKind::Main, "first", 1);
+    session.use_result("unit.a", &key(1)).unwrap();
+    session.commit(None).unwrap();
+    let digest = digest("b");
+    let mut objects = BTreeSet::new();
+    objects.insert(digest.clone());
+    let mut results = BTreeSet::new();
+    results.insert(key(1));
+    {
+        let guard = store.leases().lock().unwrap();
+        store.observe_objects_locked(&guard, &objects).unwrap();
+        store
+            .forget_usage_locked(&guard, &results, &objects)
+            .unwrap();
+    }
+    let view = usage_of(&store);
+    assert!(
+        !view.results.contains_key(&key(1)),
+        "forgetting is durable before the caller unlinks anything"
+    );
+    assert!(!view.observed.contains_key(digest.as_hex()));
+
+    clock.set(3 * 86_400);
+    {
+        let guard = store.leases().lock().unwrap();
+        store.observe_objects_locked(&guard, &objects).unwrap();
+    }
+    assert_eq!(
+        usage_of(&store).observed[digest.as_hex()].as_str(),
+        "1970-01-04",
+        "a republished digest starts fresh"
+    );
+}
+
+#[test]
+fn a_dead_sessions_recent_use_survives_its_release() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let mut session = begin(&store, RootKind::Main, "dead", 4_242);
+    session.use_result("unit.a", &key(1)).unwrap();
+    let id = session_id(&only_session(&workspace.store(), "yorimichi"));
+
+    let verdict = store
+        .release_dead_session(&id, |_| Liveness::Dead, &no_custodians(), &no_cleanup())
+        .unwrap();
+    assert_eq!(verdict, Reclaim::Reclaimable);
+    assert!(
+        !workspace
+            .project_dir("yorimichi")
+            .join("session")
+            .join(format!("{id}.jsonl"))
+            .exists()
+    );
+    assert_eq!(
+        usage_of(&store).results[&key(1)].as_str(),
+        "1970-01-02",
+        "the released journal's use is folded before it is removed"
+    );
+}
+
+#[test]
+fn the_all_project_reader_sees_every_project() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let alpha = workspace.open_at("alpha", &clock);
+    let beta = workspace.open_at("beta", &clock);
+    let mut session = begin(&alpha, RootKind::Main, "alpha", 1);
+    session.use_result("unit.a", &key(1)).unwrap();
+    session.commit(None).unwrap();
+    let mut session = begin(&beta, RootKind::Main, "beta", 1);
+    session.use_result("unit.beta", &key(2)).unwrap();
+    session.commit(None).unwrap();
+
+    {
+        let guard = alpha.leases().lock().unwrap();
+        let all = alpha.all_project_retention_locked(&guard).unwrap();
+        assert!(all.projects["alpha"].keys.contains(&key(1)));
+        assert!(all.projects["beta"].keys.contains(&key(2)));
+        assert!(all.damaged.is_empty(), "{:?}", all.damaged);
+    }
+
+    fs::remove_dir_all(workspace.project_dir("beta")).unwrap();
+    let guard = alpha.leases().lock().unwrap();
+    let all = alpha.all_project_retention_locked(&guard).unwrap();
+    assert!(
+        !all.damaged.is_empty(),
+        "a missing project must not look like an empty one"
+    );
+}
+
+#[test]
+fn the_usage_readers_refuse_a_foreign_guard() {
+    let workspace = Workspace::new();
+    let other = Workspace::new();
+    let clock = TestClock::at(0);
+    let alpha = workspace.open_at("alpha", &clock);
+    let beta = other.open_at("beta", &clock);
+    let mut objects = BTreeSet::new();
+    objects.insert(digest("c"));
+
+    let guard = alpha.leases().lock().unwrap();
+    assert!(beta.usage_locked(&guard).is_err());
+    assert!(beta.all_project_retention_locked(&guard).is_err());
+    assert!(beta.observe_objects_locked(&guard, &objects).is_err());
+    assert!(
+        beta.forget_usage_locked(&guard, &BTreeSet::new(), &objects)
+            .is_err()
+    );
+}
+
+#[test]
+fn two_open_sessions_on_one_target_keep_the_other_journal() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let mut first = begin(&store, RootKind::Main, "first", 1);
+    first.use_result("unit.a", &key(1)).unwrap();
+    let mut second = begin(&store, RootKind::Main, "second", 1);
+    second.use_result("unit.b", &key(2)).unwrap();
+    first.commit(None).unwrap();
+
+    let journal = only_session(&workspace.store(), "yorimichi");
+    let text = fs::read_to_string(&journal).unwrap();
+    assert!(
+        text.contains(&key(2)),
+        "the other session's journal survives"
+    );
+    assert!(
+        usage_of(&store).results.contains_key(&key(2)),
+        "an open session's use is still visible while it runs"
+    );
+}
+
+#[test]
+fn open_existing_creates_nothing() {
+    use std::os::unix::fs::MetadataExt;
+    let workspace = Workspace::new();
+    fs::create_dir_all(workspace.store()).unwrap();
+    let error = RootStore::open_existing(workspace.store(), "yorimichi").unwrap_err();
+    assert!(
+        matches!(error, RootError::Damaged(_)),
+        "an uninitialized project is damage, not a first use: {error}"
+    );
+    assert!(!workspace.store().join("roots").exists());
+    assert!(!workspace.store().join("meta").exists());
+    assert!(
+        !workspace.store().join("leases").exists(),
+        "a refusal must not create the lease directory"
+    );
+    assert!(
+        !workspace.store().join("staging").exists(),
+        "a refusal must not create the staging directory"
+    );
+    assert!(
+        !workspace.store().join("metadata.lock").exists(),
+        "a refusal must not create the metadata mutex"
+    );
+
+    let clock = TestClock::at(0);
+    let _store = workspace.open_at("yorimichi", &clock);
+    let lock = workspace.store().join("metadata.lock");
+    let before = fs::metadata(&lock).unwrap();
+    let (inode, mtime) = (before.ino(), before.modified().unwrap());
+    RootStore::open_existing(workspace.store(), "yorimichi").unwrap();
+    let after = fs::metadata(&lock).unwrap();
+    assert_eq!(
+        after.ino(),
+        inode,
+        "the read path must not replace the mutex"
+    );
+    assert_eq!(
+        after.modified().unwrap(),
+        mtime,
+        "the read path must not rewrite the mutex"
+    );
+}
+
+#[test]
+fn an_unknown_age_entry_invalidates_a_stored_bucket() {
+    use std::io::Write;
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let mut session = begin(&store, RootKind::Main, "first", 1);
+    session.use_result("unit.a", &key(1)).unwrap();
+    session.commit(None).unwrap();
+    assert_eq!(usage_of(&store).results[&key(1)].as_str(), "1970-01-02");
+
+    let legacy = begin(&store, RootKind::Main, "legacy", 1);
+    let journal = only_session(&workspace.store(), "yorimichi");
+    let mut file = fs::OpenOptions::new().append(true).open(&journal).unwrap();
+    writeln!(file, "{{\"unit\":\"unit.a\",\"key\":\"{}\"}}", key(1)).unwrap();
+    drop(file);
+    assert!(
+        !usage_of(&store).results.contains_key(&key(1)),
+        "an unknown use invalidates the stored day"
+    );
+
+    legacy.abandon().unwrap();
+    assert!(
+        !usage_of(&store).results.contains_key(&key(1)),
+        "the invalidation is durable after abandon"
+    );
+}
+
+#[test]
+fn a_missing_session_directory_is_reported_by_usage() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    fs::remove_dir_all(workspace.project_dir("yorimichi").join("session")).unwrap();
+    let view = usage_of(&store);
+    assert!(
+        !view.damaged.is_empty(),
+        "a vanished session directory must not read as clean"
+    );
+}
+
+#[test]
+fn a_damaged_journal_surfaces_and_is_not_unlinked() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let session = begin(&store, RootKind::Main, "torn", 1);
+    let journal = only_session(&workspace.store(), "yorimichi");
+    let mut text = fs::read_to_string(&journal).unwrap();
+    text.push_str("{\"unit\":\"unit.a\",\"key\":\"");
+    fs::write(&journal, text).unwrap();
+
+    assert!(
+        !usage_of(&store).damaged.is_empty(),
+        "a torn journal is damage, not silence"
+    );
+    assert!(
+        session.abandon().is_err(),
+        "abandon must refuse to erase a damaged journal"
+    );
+    assert!(journal.exists(), "the damaged journal stays for retention");
+}
+
+#[test]
+fn an_unknown_marker_survives_the_journal_that_created_it() {
+    use std::io::Write;
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let mut stored = begin(&store, RootKind::Main, "stored", 1);
+    stored.use_result("unit.a", &key(1)).unwrap();
+    stored.commit(None).unwrap();
+    assert_eq!(usage_of(&store).results[&key(1)].as_str(), "1970-01-02");
+    let mut dated = begin(&store, RootKind::Main, "dated", 1);
+    dated.use_result("unit.a", &key(1)).unwrap();
+    let dated_journal = only_session(&workspace.store(), "yorimichi");
+    let legacy = begin(&store, RootKind::Main, "legacy", 1);
+    let legacy_journal = session_files(&workspace.store(), "yorimichi")
+        .into_iter()
+        .find(|path| path != &dated_journal)
+        .unwrap();
+    let mut file = fs::OpenOptions::new()
+        .append(true)
+        .open(&legacy_journal)
+        .unwrap();
+    writeln!(file, "{{\"unit\":\"unit.a\",\"key\":\"{}\"}}", key(1)).unwrap();
+    drop(file);
+
+    // Releasing the legacy journal folds the unknown floor and removes the journal. The older
+    // dated journal is still open, and it must not make the key look known again.
+    legacy.abandon().unwrap();
+    let view = usage_of(&store);
+    assert!(
+        !view.results.contains_key(&key(1)),
+        "an older dated journal must not resurrect a removed unknown observation"
+    );
+    assert!(
+        view.unknown.contains_key(&key(1)),
+        "the unknown floor is persisted"
+    );
+
+    dated.commit(None).unwrap();
+    assert!(
+        !usage_of(&store).results.contains_key(&key(1)),
+        "and it survives the commit of the older dated journal too"
+    );
+}
+
+#[test]
+fn a_fold_refuses_to_run_while_any_journal_is_damaged() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let torn = begin(&store, RootKind::Main, "torn", 1);
+    let torn_journal = only_session(&workspace.store(), "yorimichi");
+    let mut text = fs::read_to_string(&torn_journal).unwrap();
+    text.push_str("{\"unit\":\"unit.x\",\"key\":\"");
+    fs::write(&torn_journal, text).unwrap();
+
+    let mut healthy = begin(&store, RootKind::Main, "healthy", 1);
+    healthy.use_result("unit.a", &key(1)).unwrap();
+    let healthy_journal = session_files(&workspace.store(), "yorimichi")
+        .into_iter()
+        .find(|path| path != &torn_journal)
+        .unwrap();
+
+    let error = healthy.commit(None).unwrap_err();
+    assert!(
+        matches!(error, RootError::Damaged(_)),
+        "a fold must refuse while any journal is damaged: {error}"
+    );
+    assert!(
+        healthy_journal.exists(),
+        "a refused fold must not unlink the healthy journal"
+    );
+    drop(torn);
+}
+
+#[test]
+fn the_all_project_reader_aggregates_each_project_damage() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let alpha = workspace.open_at("alpha", &clock);
+    let beta = workspace.open_at("beta", &clock);
+    fs::write(
+        workspace.project_dir("beta").join("stray.txt"),
+        b"unexpected",
+    )
+    .unwrap();
+
+    let guard = alpha.leases().lock().unwrap();
+    let all = alpha.all_project_retention_locked(&guard).unwrap();
+    assert!(
+        !all.projects["beta"].damaged.is_empty(),
+        "beta reports its own damage"
+    );
+    assert!(
+        !all.damaged.is_empty(),
+        "and the aggregate must not drop it"
+    );
+}
+
+#[test]
+fn dropping_a_root_refuses_before_unlinking_while_usage_is_damaged() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let mut session = begin(&store, RootKind::Main, "first", 1);
+    session.use_result("unit.a", &key(1)).unwrap();
+    session.commit(None).unwrap();
+    let torn = begin(&store, RootKind::Main, "torn", 1);
+    let journal = only_session(&workspace.store(), "yorimichi");
+    let mut text = fs::read_to_string(&journal).unwrap();
+    text.push_str("{\"unit\":\"unit.x\",\"key\":\"");
+    fs::write(&journal, text).unwrap();
+
+    let error = store.drop_root(&RootKind::Main).unwrap_err();
+    assert!(
+        matches!(error, RootError::Damaged(_)),
+        "the fold must refuse first: {error}"
+    );
+    assert!(
+        store.root(&RootKind::Main).unwrap().is_some(),
+        "a refused drop must leave the root and its retention intact"
+    );
+    drop(torn);
+}
+
+#[test]
+fn a_commit_refuses_before_replacing_or_trimming_while_usage_is_damaged() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let worktree = RootKind::Worktree { id: "w1".into() };
+    let mut seed = begin(&store, worktree.clone(), "seed", 1);
+    seed.use_result("unit.a", &key(1)).unwrap();
+    seed.commit(None).unwrap();
+    for sequence in 1..=3 {
+        let kind = RootKind::Release {
+            sequence,
+            label: format!("r{sequence}"),
+        };
+        let mut release = begin(&store, kind, "release", 1);
+        release.use_result("unit.a", &key(1)).unwrap();
+        release.commit(None).unwrap();
+    }
+
+    let _torn = begin(&store, RootKind::Main, "torn", 1);
+    let journal = only_session(&workspace.store(), "yorimichi");
+    let mut text = fs::read_to_string(&journal).unwrap();
+    text.push_str("{\"unit\":\"unit.x\",\"key\":\"");
+    fs::write(&journal, text).unwrap();
+
+    let mut replace = begin(&store, worktree.clone(), "replace", 1);
+    replace.use_result("unit.a", &key(2)).unwrap();
+    let error = replace.commit(None).unwrap_err();
+    assert!(
+        matches!(error, RootError::Damaged(_)),
+        "the fold must refuse the commit: {error}"
+    );
+    let current = store.root(&worktree).unwrap().unwrap();
+    assert_eq!(
+        current.entries["unit.a"].key,
+        key(1),
+        "a refused commit must not replace the existing root"
+    );
+
+    let fourth = RootKind::Release {
+        sequence: 4,
+        label: "r4".into(),
+    };
+    let mut next = begin(&store, fourth.clone(), "fourth", 1);
+    next.use_result("unit.a", &key(1)).unwrap();
+    assert!(next.commit(None).is_err());
+    assert!(
+        store.root(&fourth).unwrap().is_none(),
+        "a refused commit must not write a partial release"
+    );
+    let oldest = RootKind::Release {
+        sequence: 1,
+        label: "r1".into(),
+    };
+    assert!(
+        store.root(&oldest).unwrap().is_some(),
+        "a refused commit must not trim the oldest release"
+    );
+}
+
+#[test]
+fn a_manual_release_trim_refuses_while_usage_is_damaged() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    for sequence in 1..=3 {
+        let kind = RootKind::Release {
+            sequence,
+            label: format!("r{sequence}"),
+        };
+        let mut release = begin(&store, kind, "release", 1);
+        release.use_result("unit.a", &key(1)).unwrap();
+        release.commit(None).unwrap();
+    }
+    let _torn = begin(&store, RootKind::Main, "torn", 1);
+    let journal = only_session(&workspace.store(), "yorimichi");
+    let mut text = fs::read_to_string(&journal).unwrap();
+    text.push_str("{\"unit\":\"unit.x\",\"key\":\"");
+    fs::write(&journal, text).unwrap();
+
+    let error = store.trim_releases().unwrap_err();
+    assert!(
+        matches!(error, RootError::Damaged(_)),
+        "a manual trim must refuse while the store is damaged: {error}"
+    );
+    for sequence in 1..=3 {
+        let kind = RootKind::Release {
+            sequence,
+            label: format!("r{sequence}"),
+        };
+        assert!(
+            store.root(&kind).unwrap().is_some(),
+            "a refused trim must delete nothing"
+        );
+    }
+}
+
+#[test]
+fn a_snapshot_refuses_before_trimming_while_usage_is_damaged() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let mut main = begin(&store, RootKind::Main, "main", 1);
+    main.use_result("unit.a", &key(1)).unwrap();
+    main.commit(None).unwrap();
+    for sequence in 1..=3 {
+        let kind = RootKind::Release {
+            sequence,
+            label: format!("r{sequence}"),
+        };
+        let mut release = begin(&store, kind, "release", 1);
+        release.use_result("unit.a", &key(1)).unwrap();
+        release.commit(None).unwrap();
+    }
+    let _torn = begin(&store, RootKind::Main, "torn", 1);
+    let journal = only_session(&workspace.store(), "yorimichi");
+    let mut text = fs::read_to_string(&journal).unwrap();
+    text.push_str("{\"unit\":\"unit.x\",\"key\":\"");
+    fs::write(&journal, text).unwrap();
+
+    let target = RootKind::Release {
+        sequence: 4,
+        label: "r4".into(),
+    };
+    let error = store
+        .snapshot(&RootKind::Main, target.clone(), provenance("snap"))
+        .unwrap_err();
+    assert!(
+        matches!(error, RootError::Damaged(_)),
+        "a snapshot must refuse while the store is damaged: {error}"
+    );
+    assert!(
+        store.root(&target).unwrap().is_none(),
+        "a refused snapshot writes nothing"
+    );
+    let oldest = RootKind::Release {
+        sequence: 1,
+        label: "r1".into(),
+    };
+    assert!(
+        store.root(&oldest).unwrap().is_some(),
+        "a refused snapshot trims nothing"
+    );
+}
+
+#[test]
+fn a_damaged_usage_record_refuses_a_root_drop() {
+    let workspace = Workspace::new();
+    let clock = TestClock::at(86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let mut session = begin(&store, RootKind::Main, "first", 1);
+    session.use_result("unit.a", &key(1)).unwrap();
+    session.commit(None).unwrap();
+    fs::write(usage_file(&workspace), b"{not json").unwrap();
+
+    let error = store.drop_root(&RootKind::Main).unwrap_err();
+    assert!(
+        matches!(error, RootError::Damaged(_)),
+        "a damaged usage record must refuse the drop: {error}"
+    );
+    assert!(
+        store.root(&RootKind::Main).unwrap().is_some(),
+        "the root stays when usage cannot be trusted"
+    );
+}
+
+#[test]
+fn a_clock_rollback_cannot_lower_an_unknown_tombstone() {
+    use std::io::Write;
+    let workspace = Workspace::new();
+    let clock = TestClock::at(9 * 86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let mut dated = begin(&store, RootKind::Main, "dated", 1);
+    dated.use_result("unit.a", &key(1)).unwrap();
+    let dated_journal = only_session(&workspace.store(), "yorimichi");
+
+    clock.set(86_400);
+    let legacy = begin(&store, RootKind::Main, "legacy", 1);
+    let legacy_journal = session_files(&workspace.store(), "yorimichi")
+        .into_iter()
+        .find(|path| path != &dated_journal)
+        .unwrap();
+    let mut file = fs::OpenOptions::new()
+        .append(true)
+        .open(&legacy_journal)
+        .unwrap();
+    writeln!(file, "{{\"unit\":\"unit.a\",\"key\":\"{}\"}}", key(1)).unwrap();
+    drop(file);
+    legacy.abandon().unwrap();
+
+    assert_eq!(
+        usage_of(&store).unknown[&key(1)].as_str(),
+        "1970-01-10",
+        "the floor covers the dated observation it invalidated, not just the rolled-back today"
+    );
+    assert!(!usage_of(&store).results.contains_key(&key(1)));
+
+    dated.abandon().unwrap();
+    assert!(
+        !usage_of(&store).results.contains_key(&key(1)),
+        "the pre-existing day-10 bucket must not clear the floor"
+    );
+    assert!(usage_of(&store).unknown.contains_key(&key(1)));
 }
