@@ -2,6 +2,7 @@
 from pathlib import Path
 from atelier import native_membership
 from atelier.export_manifest import real_directory
+from atelier.mesh_geometry import SIDECARS
 
 
 def inventory(editor, root, prefix):
@@ -41,7 +42,7 @@ def retire(editor, previous, report, root, prefix, content):
     for package in retired:
         path = physical(package)
         if any(path.with_suffix(suffix).exists() or path.with_suffix(suffix).is_symlink()
-               for suffix in ('.uasset','.uexp','.ubulk','.uptnl')):
+               for suffix in SIDECARS):
             raise ValueError('Superseded park package remains on disk: ' + package)
     if inventory(editor, root, prefix) != current:
         raise ValueError('Native park membership differs from complete current roster')

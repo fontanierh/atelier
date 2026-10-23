@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "name": "Tree_Tuscan_Oak",
+  "args": [
+    "oak",
+    273,
+    13.0,
+    16.0,
+    "LeafOak"
+  ]
+}

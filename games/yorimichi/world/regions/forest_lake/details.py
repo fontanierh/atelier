@@ -1,7 +1,6 @@
 """Small-scale joinery and shoreline landmarks from the Sunburst reference."""
 import math,random
 import numpy as np
-from village.mesh import window,pot
 WOOD=(.17,.073,.024);DARK=(.065,.029,.012);EDGE=(.23,.12,.045)
 
 def lean_roof(m,x,y,w,d,z,rise):
@@ -19,6 +18,7 @@ def lean_roof(m,x,y,w,d,z,rise):
     m.beam((x-w/2,y,z-.015),(x+w/2,y,z-.015),.11,.16,WOOD)
 
 def cabin(m):
+    from village.mesh import window,pot
     # Staggered stone footing around the cabin and porch, rooted below the soil.
     for row in range(2):
         for side in [-1,1]:
