@@ -151,7 +151,9 @@ jobs:
   gate:
     name: Studio Python / macOS
     needs: [quality, board, tests]
-    if: always()
+    # A newer commit on main cancels this run; a cancelled run is not a failure. Pull requests still
+    # fail on cancellation, so a skipped gate can never stand in for a passing one.
+    if: ${{ !cancelled() || github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     steps:
       - name: Require every job to pass
