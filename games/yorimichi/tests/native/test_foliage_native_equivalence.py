@@ -284,3 +284,88 @@ def test_current_receiving_binds_completed_producer_fbx_not_control_copy(tmp_pat
     else:
         assert freeze_current_fbx(producer,rows,[owner],bind)=={key:path}
     assert control.read_bytes()==b'validated original FBX bytes'
+
+
+def producer_collection(tmp_path):
+    from argparse import Namespace
+    producer=tmp_path/'producer';root=producer/'build/yorimichi/foliage-proof/ordinary';root.mkdir(parents=True)
+    keys={f'Owner_{k}'for k in range(102)};steps=[];guards=[]
+    def put(path,value):
+        path.parent.mkdir(parents=True,exist_ok=True)
+        path.write_text(json.dumps(value));return dict(path=str(path),sha256=proof.sha(path))
+    for index,(key,kind) in enumerate((key,kind)for key in sorted(keys)for kind in('source','export')):
+        step='world.foliage.'+kind+'.'+key;batch=f'{index+1:032x}'
+        folder=producer/'build/yorimichi/logs'/('batch.'+batch+'.guard')
+        steps.append(dict(name=step,batch=batch,fingerprint='a'*64))
+        guard=dict(state='child_exited',cleanup_complete=True,processes=[],footprint_bytes=0,
+            owner=index+1,owner_started=index+1000,late_reporters=dict(unresolved=[],unresolved_pids=[],scan_failed=False))
+        observation=dict(schema=1,cleanup_and_capacity_close=True,root=[guard['owner'],guard['owner_started']])
+        guards.append(dict(step=step,receipt=put(folder/'memory-health-tree.json',guard),
+            observation=put(folder/'successful-tree-observation.json',observation),stdout=put(folder/'stdout.log',{'actual':'completed'})))
+    steps.extend(dict(name=f'world.other_{k}',batch=None,fingerprint='b'*64)for k in range(59))
+    steps.append(dict(name='world.foliage_lods',batch=None,fingerprint='c'*64))
+    head='d'*40
+    snapshot=dict(checkout=str(producer),head=head,target='world.foliage_lods',steps=steps,guards=guards)
+    commands={name:dict(command='actual command '+name,exit_code=0,steps=264 if name!='receiver'else 39)
+        for name in('producer','noop','receiver')}
+    handoff=dict(head=head,source_clean=True,commands=copy.deepcopy(commands),artifacts=[])
+    def seal():
+        handoff['artifacts']=[put(root/'whole-results.json',commands),put(root/'producer-after-noop.json',snapshot)]
+        put(root/'handoff.json',handoff)
+    seal()
+    args=Namespace(producer=producer,producer_handoff=root/'handoff.json',producer_whole=None,producer_guard=None)
+    return args,head,keys,snapshot,commands,handoff,seal
+
+
+@pytest.mark.parametrize('fault',[None,'head','nonzero','commands','missing_guard','wrong_sha','pending','unresolved',
+    'unknown_step','omitted_step','duplicate_step','snapshot_head','target','step_inventory','observation','observation_root','alias_guard'])
+def test_sealed_collection_binds_all204_actual_guard_steps_before_staging(tmp_path,fault):
+    from prepare_foliage_native_equivalence import producer_evidence,producer_guard_membership
+    args,head,keys,snapshot,commands,handoff,seal=producer_collection(tmp_path)
+    if fault=='head':handoff['head']='e'*40
+    elif fault=='nonzero':commands['producer']['exit_code']=1;handoff['commands']=copy.deepcopy(commands)
+    elif fault=='commands':handoff['commands']['producer']['command']='different caller'
+    elif fault=='missing_guard':snapshot['guards'].pop()
+    elif fault=='wrong_sha':snapshot['guards'][0]['receipt']['sha256']='0'*64
+    elif fault in('pending','unresolved','observation','observation_root'):
+        kind='receipt'if fault in('pending','unresolved')else'observation'
+        row=snapshot['guards'][0][kind];path=Path(row['path']);value=json.loads(path.read_bytes())
+        if fault=='pending':value['cleanup_complete']=False
+        elif fault=='unresolved':value['late_reporters']['unresolved_pids']=[123]
+        elif fault=='observation':value['cleanup_and_capacity_close']=False
+        else:value['root']=[999,999]
+        path.write_text(json.dumps(value));row['sha256']=proof.sha(path)
+    elif fault=='unknown_step':snapshot['guards'][0]['step']='world.foliage.source.Foreign'
+    elif fault=='omitted_step':keys.remove(next(iter(keys)))
+    elif fault=='duplicate_step':snapshot['guards'][0]['step']=snapshot['guards'][1]['step']
+    elif fault=='snapshot_head':snapshot['head']='e'*40
+    elif fault=='target':snapshot['target']='world.other'
+    elif fault=='step_inventory':snapshot['steps'][-1]['name']=snapshot['steps'][0]['name']
+    elif fault=='alias_guard':snapshot['guards'][1]['receipt']=snapshot['guards'][0]['receipt']
+    seal();bound={}
+    def bind(path,digest=None):
+        path=Path(path).absolute();digest=proof.sha(path)if digest is None else digest
+        proof.check_input(path,digest);bound[str(path)]=digest;return path
+    def check():
+        observed=producer_evidence(args,head,bind)
+        producer_guard_membership(observed,keys,args.producer,bind)
+    if fault:
+        with pytest.raises((ValueError,FileNotFoundError)):check()
+    else:
+        check()
+        assert len(bound)==3+204*3
+        assert all(str(Path(row['receipt']['path']))in bound for row in snapshot['guards'])
+    assert not (tmp_path/'fixture-output').exists()
+
+
+def test_existing_singular_producer_mode_and_mode_exclusivity(tmp_path):
+    from argparse import Namespace
+    from prepare_foliage_native_equivalence import producer_evidence
+    whole=tmp_path/'whole.json';whole.write_text('{"exit_code":0}')
+    guard=tmp_path/'guard.json';guard.write_text(json.dumps(dict(state='child_exited',cleanup_complete=True,processes=[],footprint_bytes=0)))
+    args=Namespace(producer_whole=whole,producer_guard=guard,producer_handoff=None)
+    assert producer_evidence(args,'unused',lambda path:Path(path)) is None
+    args.producer_handoff=tmp_path/'handoff.json'
+    with pytest.raises(ValueError,match='Select producer'):producer_evidence(args,'unused',lambda path:Path(path))
+    args.producer_handoff=None;args.producer_guard=None
+    with pytest.raises(ValueError,match='Select producer'):producer_evidence(args,'unused',lambda path:Path(path))

@@ -5,6 +5,7 @@ unchanged through complete independent texture/FBX/manifest staging.
 """
 import argparse
 import json
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -22,7 +23,7 @@ from atelier.build_inputs import local_imports  # noqa: E402
 from atelier.export_manifest import real_directory  # noqa: E402
 from atelier.mesh_geometry import SIDECARS  # noqa: E402
 from atomic_equivalence import guard_binding,source_binding  # noqa: E402
-from atomic_equivalence_io import artifact,require  # noqa: E402
+from atomic_equivalence_io import require  # noqa: E402
 import foliage_native_equivalence as proof  # noqa: E402
 from track_native_equivalence import check_input,private_launch,sha  # noqa: E402
 
@@ -83,24 +84,88 @@ def freeze_current_fbx(producer,rows,names,bind):
     return result
 
 
+def producer_empty(guard):
+    late=guard.get('late_reporters',{})
+    require(guard.get('state')=='child_exited' and guard.get('cleanup_complete') is True and guard.get('processes')==[]
+        and guard.get('footprint_bytes')==0 and not late.get('unresolved') and not late.get('unresolved_pids') and not late.get('scan_failed'),
+        'Producer guard is not independently terminal/empty')
+
+
+def producer_evidence(args,producer_head,bind):
+    """Read an actual singular caller or its sealed collection, never invent wrappers."""
+    collection=getattr(args,'producer_handoff',None)
+    require(bool(collection)!=bool(args.producer_whole) and (not collection or args.producer_guard is None)
+        and (not args.producer_whole or args.producer_guard is not None),'Select producer handoff OR whole plus guard')
+    if collection is None:
+        whole=json.loads(bind(args.producer_whole).read_bytes())
+        require(whole.get('exit_code')==0,'Producer whole caller did not succeed')
+        producer_empty(json.loads(bind(args.producer_guard).read_bytes()))
+        return None
+    path=bind(collection);handoff=json.loads(path.read_bytes())
+    require(handoff.get('head')==producer_head and handoff.get('source_clean') is True,'Producer handoff head/clean source differs')
+    declared=handoff['artifacts'];metadata={}
+    for row in declared:
+        item=Path(row['path']).absolute()
+        require(item.parent==path.parent and item.name not in metadata,'Aliased/foreign handoff artifact')
+        metadata[item.name]=bind(item,row['sha256'])
+    require({'whole-results.json','producer-after-noop.json'}<=set(metadata),'Missing producer collection metadata')
+    whole=json.loads(metadata['whole-results.json'].read_bytes())
+    require(set(whole)=={'producer','noop','receiver'} and handoff.get('commands')==whole,'Producer commands differ from bound whole collection')
+    require(whole['producer'].get('exit_code')==0 and whole['producer'].get('steps')==264,'Producer whole caller did not succeed264 steps')
+    snapshot=json.loads(metadata['producer-after-noop.json'].read_bytes())
+    require(snapshot.get('head')==producer_head and snapshot.get('checkout')==str(args.producer)
+        and snapshot.get('target')=='world.foliage_lods','Producer snapshot head/checkout/target differs')
+    steps=snapshot['steps'];names=[row['name']for row in steps]
+    require(len(steps)==264 and len(set(names))==264 and 'world.foliage_lods' in names
+        and all(re.fullmatch('[0-9a-f]{64}',row['fingerprint'])for row in steps),'Incomplete producer step inventory')
+    return snapshot
+
+
+def producer_guard_membership(snapshot,keys,producer,bind):
+    """@cc [owner:fontanierh,label:correctness;safety] foliage-normal-producer-guard-closure
+    A sealed producer collection MUST cover both source and export for every one
+    of the102 exact comparison keys. Each unique recorded guard MUST retain its
+    bound receipt, successful observation and stdout, positive empty cleanup and
+    matching batch/step membership. Missing, extra or pending proof MUST refuse
+    before any fixture output is written; collection proof is not native reuse.
+    """
+    if snapshot is None:return
+    expected={'world.foliage.'+kind+'.'+key for key in keys for kind in('source','export')}
+    require(len(keys)==102 and len(expected)==204,'Incomplete comparison keys for producer guard coverage')
+    steps={row['name']:row for row in snapshot['steps']};guards=snapshot['guards']
+    names=[row['step']for row in guards]
+    require(len(guards)==204 and len(set(names))==204 and set(names)==expected
+        and set(steps)&expected==expected,'Missing/unknown/duplicate producer guard step')
+    require({name for name in steps if name.startswith(('world.foliage.source.','world.foliage.export.'))}==expected,
+        'Producer action inventory differs from comparison keys')
+    paths=set()
+    for row in guards:
+        require(set(row)=={'step','receipt','observation','stdout'},'Invalid producer guard record')
+        batch=steps[row['step']]['batch']
+        require(isinstance(batch,str) and re.fullmatch('[0-9a-f]{32}',batch),'Missing producer batch identity')
+        folder=producer/'build/yorimichi/logs'/('batch.'+batch+'.guard')
+        payload={}
+        for kind,name in(('receipt','memory-health-tree.json'),('observation','successful-tree-observation.json'),('stdout','stdout.log')):
+            record=row[kind];path=Path(record['path']).absolute()
+            require(path==folder/name and str(path) not in paths,'Aliased/foreign producer guard artifact')
+            paths.add(str(path));path=bind(path,record['sha256'])
+            if kind!='stdout':payload[kind]=json.loads(path.read_bytes())
+        receipt,observation=payload['receipt'],payload['observation'];producer_empty(receipt)
+        require(observation.get('schema')==1 and observation.get('cleanup_and_capacity_close') is True
+            and observation.get('root')==[receipt['owner'],receipt['owner_started']],
+            'Producer successful observation differs from actual guard')
+
+
 def prepare(args):
     for key in ('proof','producer','receiving'):setattr(args,key,real_directory(getattr(args,key).absolute()))
     root=real_directory(args.output.absolute());require(not root.exists(),'Fresh receiving fixture required')
     source_head,receiver_head=head(REPO),head(args.receiving)
     producer_head=head(args.producer)
-    # A real completed producer caller/guard is mandatory; no invented stamp/report stands in.
-    whole=json.loads(artifact(dict(path=str(args.producer_whole.absolute()),sha256=sha(args.producer_whole))))
-    require(whole.get('exit_code')==0,'Producer whole caller did not succeed')
-    guard=json.loads(artifact(dict(path=str(args.producer_guard.absolute()),sha256=sha(args.producer_guard))))
-    late=guard.get('late_reporters',{})
-    require(guard.get('state')=='child_exited' and guard.get('cleanup_complete') is True and guard.get('processes')==[]
-        and guard.get('footprint_bytes')==0 and not late.get('unresolved') and not late.get('unresolved_pids') and not late.get('scan_failed'),
-        'Producer guard is not independently terminal/empty')
     inputs={};pins={}
     def bind(path,digest=None):
         path=Path(path).absolute();digest=sha(path)if digest is None else digest
         check_input(path,digest);inputs[str(path)]=digest;pins[str(path)]=identity(path);return path
-    bind(args.producer_whole);bind(args.producer_guard)
+    producer_snapshot=producer_evidence(args,producer_head,bind)
     handoff=json.loads(bind(args.proof/'handoff.json').read_bytes())
     require(handoff['literal_fbx_exact']==102 and handoff['source_packet_exact']==102
         and handoff['legacy_manifest_values_exact']==18,'Missing complete frozen foliage source proof')
@@ -120,6 +185,7 @@ def prepare(args):
     comparison=json.loads(bind(args.proof/'comparison-normal-domain.json').read_bytes())
     rows=comparison['rows'];require(len(rows)==102 and len({row['key']for row in rows})==102,'Missing frozen source rows')
     by_key={row['key']:row for row in rows};manifests={};manifest_paths={}
+    producer_guard_membership(producer_snapshot,set(by_key),args.producer,bind)
     old_data=args.proof/'original-repo/build/yorimichi/foliage';new_data=args.producer/'build/yorimichi/foliage'
     names=proof.owner_names()
     require(len(names)==18,'Wrong actual native owner catalogue')
@@ -195,8 +261,13 @@ def prepare(args):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    for name in('proof','producer','receiving','producer-whole','producer-guard','output'):parser.add_argument('--'+name,type=Path,required=True)
-    prepare(parser.parse_args())
+    for name in('proof','producer','receiving','output'):parser.add_argument('--'+name,type=Path,required=True)
+    mode=parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument('--producer-whole',type=Path);mode.add_argument('--producer-handoff',type=Path)
+    parser.add_argument('--producer-guard',type=Path)
+    args=parser.parse_args()
+    if bool(args.producer_whole)!=bool(args.producer_guard):parser.error('--producer-whole requires --producer-guard; handoff forbids it')
+    prepare(args)
 
 
 if __name__=='__main__':main()
