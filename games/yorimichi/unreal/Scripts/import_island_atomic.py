@@ -131,7 +131,7 @@ def retire_after_map(received, *, runtime_members, saved_map='/Game/Japan/Maps/S
         real_directory(path.parent)
         if any(path.parent.glob(path.name + '.*')):
             raise ValueError('Island superseded package remains physically present: ' + package)
-    folder = real_directory(Path(received['out']) / 'atomic_regions/island')
-    (folder / 'import-report.json').write_text(json.dumps(dict(complete=True, parents=groups, retired=retired), indent=2) + '\n')
+    folder = real_directory(Path(received['out']) / 'terrain')
+    (folder / 'island-import-report.json').write_text(json.dumps(dict(complete=True, parents=groups, retired=retired), indent=2) + '\n')
     unreal.log('ISLAND ATOMIC IMPORT COMPLETE')
     return retired

@@ -82,6 +82,9 @@ def test_cold_and_warm_recipe_has_only_selected_data_edges(tmp_path):
             ['terrain.FarHills.final'] if key == 'FarHills' else [])
         assert not any('terrain.fbx' in str(p) for p in step.inputs)
     check_modules(steps)
+    atomic = next(p for step in steps for p in step.products if p.name == 'island.atomic')
+    receiving = next(p for step in steps for p in step.products if p.name == 'island.receiving')
+    assert not receiving.paths[0].is_relative_to(atomic.paths[0])
 
 
 def test_constructors_are_original_statement_slices_without_inline_exports():

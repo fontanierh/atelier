@@ -74,7 +74,7 @@ def steps(ctx, *, city=True):
             spec = importlib.util.spec_from_file_location('island_receiving_metadata', GAME / 'island_atomic_products.py')
             module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
             value = module.source_metadata(ctx.out)
-            atomic_json(ctx.out / 'atomic_regions/island/receiving.json', value)
+            atomic_json(ctx.out / 'terrain/island-receiving.json', value)
             log.write('Projected exact used slots for every bounded island mesh\n')
         result.append(Step('world.island.receiving', [Call('island native source metadata', receiving)],
             inputs=[Path(__file__), GAME / 'island_atomic_products.py', WORLD / 'region_mesh_parts.py',
@@ -82,7 +82,7 @@ def steps(ctx, *, city=True):
                     *(Path(mesh_ir.__file__).with_name(key) for key in
                       ('export_manifest.py', 'model_files.py', 'atomic_files.py'))],
             reads=['island.atomic', *('island.geometry.' + a.key for a in assets)],
-            products=[Product('island.receiving', (ctx.out / 'atomic_regions/island/receiving.json',))],
+            products=[Product('island.receiving', (ctx.out / 'terrain/island-receiving.json',))],
             about='exact consumed slot metadata for bounded native receiving'))
     def publish(ctx, log):
         spec = importlib.util.spec_from_file_location('island_runtime_metadata', GAME / 'island_atomic_products.py')
