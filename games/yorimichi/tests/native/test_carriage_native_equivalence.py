@@ -139,11 +139,12 @@ def test_cleanup_and_native_capture_are_not_allowed_before_guard_evidence():
     assert 'track_tree=True' in text and 'carriage_tree' not in text
 
 
-def test_only_proven_mic_change_detection_id_is_normalized(tmp_path):
+def test_only_proven_mic_change_detection_and_lighting_ids_are_normalized(tmp_path):
     def row(name, guid, suffix=''):
         p=tmp_path/name
         p.write_text('Begin Object Class=/Script/Engine.MaterialInstanceConstant Name="actual"\n'
                      '   ParameterStateId='+guid+'\n'
+                     '   LightingGuid='+guid+'\n'
                      '   Parent="/InterchangeAssets/gltf/actual"\n'
                      '   ScalarParameterValues(0)=(ParameterInfo=(Name="Roughness"),ParameterValue=0.25,ExpressionGUID='+('A'*32)+')\n'
                      '   BasePropertyOverrides=(bOverride_TwoSided=True,TwoSided=True)\n'+suffix+'End Object\n')
@@ -211,3 +212,45 @@ def test_texture_lighting_normalization_does_not_waive_changed_png(tmp_path, mon
     with pytest.raises(ValueError,match='material/texture differs'):
         proof.compare({'original':{},'current':{}},[],
             {'original':{'texture':row(a,old)},'current':{'texture':row(b,new)}},{'original':{},'current':{}})
+
+
+@pytest.mark.parametrize('field', ['ParameterStateId', 'LightingGuid'])
+@pytest.mark.parametrize('fault', ['nested', 'duplicate', 'missing', 'malformed', 'wrong_class'])
+def test_mic_cache_identity_scope_is_exact(tmp_path, field, fault):
+    cls='/Script/Engine.MaterialInstanceConstant';path=tmp_path/'mic.t3d'
+    text='Begin Object Class='+cls+' Name="actual"\n'
+    text+='   ParameterStateId='+('1'*32)+'\n   LightingGuid='+('2'*32)+'\nEnd Object\n'
+    line='   '+field+'='+('1' if field=='ParameterStateId' else '2')*32+'\n'
+    if fault=='nested': text=text.replace(line,'   Begin Object Name="nested"\n'+line+'   End Object\n')
+    if fault=='duplicate': text=text.replace(line,line+line)
+    if fault=='missing': text=text.replace(line,'')
+    if fault=='malformed': text=text.replace(line,'   '+field+'=not-a-guid\n')
+    if fault=='wrong_class': text=text.replace('Class='+cls,'Class=/Script/Engine.Material')
+    path.write_text(text);row=dict(path=str(path),sha256=proof.sha(path))
+    with pytest.raises(ValueError): proof.material_text(row,cls)
+
+
+@pytest.mark.parametrize('extra', [
+    '   Source=(Id='+'A'*32+')\n',
+    '   ScalarParameterValues(0)=(ParameterValue=0.25,ExpressionGUID='+'B'*32+')\n',
+    '   OtherGuid='+'C'*32+'\n',
+    '   Parent="/actual/first"\n',
+    '   CompressionSettings=TC_Default\n',
+    '   Begin Object Name="nested"\n      OtherGuid='+'D'*32+'\n   End Object\n',
+])
+def test_mic_other_guids_nested_fields_and_material_state_remain_strict(tmp_path, extra):
+    cls='/Script/Engine.MaterialInstanceConstant'
+    def row(name, param, lighting, suffix):
+        path=tmp_path/name
+        path.write_text('Begin Object Class='+cls+' Name="actual"\n   ParameterStateId='+param+'\n'
+                        '   LightingGuid='+lighting+'\n'+suffix+'End Object\n')
+        return dict(path=str(path),sha256=proof.sha(path))
+    a=row('a.t3d','1'*32,'2'*32,extra)
+    same=row('same.t3d','3'*32,'4'*32,extra)
+    assert proof.material_text(a,cls)==proof.material_text(same,cls)
+    changed=extra.replace('A'*32,'E'*32).replace('B'*32,'E'*32).replace('C'*32,'E'*32).replace('D'*32,'E'*32)
+    changed=changed.replace('/actual/first','/actual/second').replace('TC_Default','TC_Normalmap')
+    b=row('b.t3d','3'*32,'4'*32,changed)
+    assert proof.material_text(a,cls)!=proof.material_text(b,cls)
+    # Other reflected classes receive no generated-ID policy at all.
+    assert proof.material_text(a,'/Script/Engine.Material')!=proof.material_text(same,'/Script/Engine.Material')

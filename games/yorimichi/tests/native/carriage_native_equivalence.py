@@ -196,31 +196,45 @@ def material_capture(U, editor, packages, output, package):
 
 
 def material_text(binding, class_path):
-    """Normalize only two class-specific editor/cache identities; retain raw T3D.
+    """@cc [owner:fontanierh,label:correctness] carriage-material-cache-identities
+    Only depth1 MIC.ParameterStateId/MIC.LightingGuid and Texture2D.LightingGuid
+    MAY normalize, each exactly once with the exported32-hex grammar. Every
+    other GUID, nested property, shader/source/texture field and pixel MUST stay
+    strict. This finite fixture MUST NOT certify static-lighting or texture-
+    streaming build identity, baked lighting, production streaming or runtime.
 
-    MIC.ParameterStateId is NewGuid change detection. Texture2D inherits Texture's
-    PostEditChangeProperty -> SetLightingGuid -> BuildLightingGuid -> NewGuid;
-    LightingGuid links distributed-lighting/streaming build data, outside this
-    fixture's shader/source-pixel scope. Guid.cpp exports exactly 32 hex digits.
-    Source.Id, compression/settings, all shading fields and every other GUID stay
-    strict. This MUST NOT certify baked lighting or production streaming/runtime.
+    Installed UE5.8 source, paths relative to Engine/Source:
+    Runtime/Engine/Public/Materials/MaterialInterface.h:606,1061 documents the
+    editor-only distributed-lighting cache identity and SetLightingGuid/NewGuid.
+    Private/Materials/MaterialInterface.cpp:201,1080,1095 (under Runtime/Engine)
+    regenerate it on construction, duplication and every property notification.
+    MaterialInstance.cpp:3505,4787 forwards both notifications to Super;
+    MaterialInstanceConstant.cpp:70 also creates ParameterStateId after Super.
+    Public/Materials/MaterialInterface.h:1068 and Private/Components/
+    StaticMeshComponent.cpp:1190 include material GUID chains in precomputed-
+    lighting/texture-streaming build dependencies, outside this fixture scope.
+    Raw T3D and PNG evidence remains unchanged; no blanket GUID rule applies.
     """
     payload = artifact(binding)
-    field = {'/Script/Engine.MaterialInstanceConstant': 'ParameterStateId',
-             '/Script/Engine.Texture2D': 'LightingGuid'}.get(class_path)
-    if field is None: return payload
-    lines = payload.decode('utf-8').splitlines(keepends=True); depth = 0; found = 0
+    fields = {'/Script/Engine.MaterialInstanceConstant': ('ParameterStateId', 'LightingGuid'),
+              '/Script/Engine.Texture2D': ('LightingGuid',)}.get(class_path)
+    if fields is None: return payload
+    lines = payload.decode('utf-8').splitlines(keepends=True); depth = 0; found = dict.fromkeys(fields, 0)
     for index, line in enumerate(lines):
         stripped = line.strip()
-        if stripped.startswith('Begin Object'): depth += 1
-        if field + '=' in line:
-            require(depth == 1 and re.fullmatch(r'[ \t]+' + field + r'=[0-9A-Fa-f]{32}\r?\n?', line),
-                    'Unexpected class-specific generated-ID grammar/scope')
-            require(found == 0, 'Duplicate class-specific generated identity')
-            lines[index] = re.sub(r'(?<=' + field + r'=)[0-9A-Fa-f]{32}', '0' * 32, line); found += 1
+        if stripped.startswith('Begin Object'):
+            if depth == 0:
+                require(stripped.startswith('Begin Object Class=' + class_path + ' '), 'Material export class differs')
+            depth += 1
+        for field in fields:
+            if field + '=' in line:
+                require(depth == 1 and re.fullmatch(r'[ \t]+' + field + r'=[0-9A-Fa-f]{32}\r?\n?', line),
+                        'Unexpected class-specific generated-ID grammar/scope')
+                require(found[field] == 0, 'Duplicate class-specific generated identity')
+                lines[index] = re.sub(r'(?<=' + field + r'=)[0-9A-Fa-f]{32}', '0' * 32, line); found[field] += 1
         if stripped == 'End Object': depth -= 1
         require(depth >= 0, 'Malformed actual material object text')
-    require(found == 1 and depth == 0, 'Missing complete object/class-specific generated identity')
+    require(all(count == 1 for count in found.values()) and depth == 0, 'Missing complete object/class-specific generated identity')
     return ''.join(lines).encode('utf-8')
 
 
