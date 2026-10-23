@@ -58,6 +58,18 @@ def original_finishing(data):
     return ast.unparse(module)+'\n'
 
 
+def legacy_bounds(root,packets):
+    """Whole immutable source bounds include every original packet and its authored frame."""
+    import numpy as np
+    lows=[];highs=[];triangles=0
+    if not packets:raise ValueError('Missing complete original source packet inventory')
+    for row in packets:
+        meta,piece=mesh_ir.decode((root/row['path']).read_bytes())
+        matrix=np.asarray(meta['matrix']);positions=piece['positions']@matrix[:3,:3].T+matrix[:3,3]
+        lows.append(positions.min(0));highs.append(positions.max(0));triangles+=piece['triangles']
+    return dict(min=np.min(lows,axis=0).tolist(),max=np.max(highs,axis=0).tolist(),triangles=triangles)
+
+
 def probe_geometry(out,groups):
     import numpy as np
     from atelier.conventions import to_unreal
@@ -148,8 +160,10 @@ def prepare(original,atomic,output,content,baseline,project,native_files):
             for name in regular_files(a):copy_file(a/name,b/name)
         primary=out/'village-original/assets'/(parent+'.fbx');primary.parent.mkdir(parents=True,exist_ok=True)
         copy_file(old/'data/village/assets'/(parent+'.fbx'),primary)
-        _,piece=mesh_ir.decode((old/'baseline'/parent/baseline_packets[parent]['packets'][0]['path']).read_bytes())
-        legacy[parent]=dict(collision_boxes=census['census'][parent]['collision_hulls'],max=piece['positions'].max(0).tolist())
+        bounds=legacy_bounds(old/'baseline'/parent,baseline_packets[parent]['packets'])
+        if bounds['triangles']!=census['census'][parent]['source_triangles']:
+            raise ValueError('Original source packet inventory omits whole geometry: '+parent)
+        legacy[parent]=dict(collision_boxes=census['census'][parent]['collision_hulls'],max=bounds['max'])
     atomic_json(out/'village-original/manifest.json',legacy)
     recipe=load('native_fixture_village_recipe',GAME/'village_atomic_build.py');ctx=SimpleNamespace(out=out)
     step=next(step for step in recipe.steps(ctx) if step.name=='world.village.assembled');step.commands[0].fn(ctx,io.StringIO())
@@ -158,10 +172,11 @@ def prepare(original,atomic,output,content,baseline,project,native_files):
     atomic_json(out/'native-probe-geometry.json',probe_geometry(out,groups))
     scripts=[Path(__file__),Path(__file__).with_name('village_native_equivalence.py'),GAME/'unreal/Scripts/import_village_atomic.py',
         GAME/'unreal/Scripts/atomic_equivalence_capture.py',GAME/'unreal/Scripts/mesh_import.py',GAME/'village_atomic_products.py',
-        GAME/'tools/atomic_equivalence.py',GAME/'unreal/Source/Yorimichi/NativeAtomicEquivalence.cpp']
+        GAME/'tools/atomic_equivalence.py',GAME/'unreal/Source/Yorimichi/NativeAtomicEquivalence.cpp',
+        GAME/'unreal/Source/Yorimichi/NativeAtomicEquivalence.h']
     closure=set(scripts)
     for script in scripts:
-        if script.suffix=='.py':closure.update(local_imports(script,(GAME/'world',GAME/'world/regions',GAME,GAME/'unreal/Scripts')))
+        if script.suffix=='.py':closure.update(local_imports(script,(GAME/'world',GAME/'world/regions',GAME,GAME/'unreal/Scripts',REPO/'platform/studio',REPO/'platform/harness')))
     frozen=[archive/name for name in regular_files(archive)]
     frozen.extend(out/name for name in regular_files(out))
     frozen.extend([project,*native_files])

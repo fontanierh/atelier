@@ -57,10 +57,17 @@ def query(point,normal,*,capsule=False):
 def controls_for(logical,original,pieces,geometry):
     before=[];after=[];seams=[]
     def pair(key,kind,component,candidates):
+        found=None
         for candidate in candidates:
-            value=query(candidate['point'],candidate['normal'],capsule='capsule' in kind)
-            if probe(component,value).get('blocking') is True and probe(original,value).get('blocking') is True:break
-        else:raise ValueError('No actual positive original/current selected-component control: '+key)
+            # A reflected source frame can put either triangle winding first.
+            # Probe both exact directions without changing collision/two-sided policy.
+            for direction in (1.,-1.):
+                value=query(candidate['point'],[direction*v for v in candidate['normal']],capsule='capsule' in kind)
+                if probe(component,value).get('blocking') is True and probe(original,value).get('blocking') is True:
+                    found=value;break
+            if found is not None:break
+        if found is None:raise ValueError('No actual positive original/current selected-component control: '+key)
+        value=found
         before.append(dict(id=key,kind=kind,input=value,target=original.get_path_name()))
         after.append(dict(id=key,kind=kind,input=value,target=component.get_path_name()))
         return key

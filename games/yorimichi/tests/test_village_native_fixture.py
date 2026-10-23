@@ -55,3 +55,34 @@ def test_native_fixture_has_no_subprocess_or_git_authority_and_calls_real_owner(
     assert 'owner.receive(out)' in source and 'owner.retire(received,runtime_members=members)' in source
     assert 'capture.capture(' in source and "policy_scope='fixture'" in source
     assert 'retained-original' in source and 'physical_retirement=retired' in source
+
+
+def test_positive_probe_selection_handles_reflected_winding_without_changing_collision_policy():
+    from types import SimpleNamespace
+    file=GAME/'tests/native/village_native_equivalence.py';tree=ast.parse(file.read_text())
+    nodes=[node for node in tree.body if isinstance(node,ast.FunctionDef) and node.name in ('query','controls_for')]
+    def part(path):return SimpleNamespace(get_path_name=lambda:path)
+    original=part('original');child=part('current')
+    def observed(component,query):
+        if query['start'][0]>1000:return dict(blocking=False)
+        return dict(blocking=query['start'][2]>query['end'][2])
+    scope=dict(probe=observed)
+    exec(compile(ast.Module(body=nodes,type_ignores=[]),str(file),'exec'),scope)
+    geometry=dict(pieces={'Piece':[dict(point=[0.,0.,0.],normal=[0.,0.,-1.])]},seams=[],negative=[10000.,10000.,10000.])
+    before,after,seams=scope['controls_for']('Whole',original,{'Piece':child},geometry)
+    assert not seams and len(before)==len(after)==4
+    for a,b in zip(before,after):
+        assert a['input']==b['input'] and a['input']['trace_complex'] is True
+        assert a['target']=='original' and b['target']=='current'
+        if a['kind'].endswith('_positive'):assert a['input']['start'][2]>a['input']['end'][2]
+
+
+def test_original_whole_bounds_include_all_packets_and_original_frames(tmp_path):
+    root=tmp_path.resolve()
+    piece=dict(positions=np.asarray([[0,0,0],[1,0,0],[0,1,1]]),normals=np.tile([0,0,1],(3,1)),
+        faces=[[0,1,2]],materials=[0],smooth=[False],uvs=[('UVMap',np.zeros((3,2)))],colours=[])
+    for key,height in [('First',0.),('Second',10.)]:
+        matrix=np.eye(4);matrix[2,3]=height
+        mesh_ir.write(root/(key+'.npz'),mesh_ir.encode(piece,key=key,slots=['VillagePalette'],matrix=matrix.tolist(),options={}))
+    result=host.legacy_bounds(root,[{'path':'First.npz'},{'path':'Second.npz'}])
+    assert result==dict(min=[0.,0.,0.],max=[1.,1.,11.],triangles=2)
