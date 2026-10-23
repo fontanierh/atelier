@@ -126,3 +126,8 @@ tier = "t0"
 id = "b4b.roots.a_damaged_usage_record_refuses_a_root_drop"
 tests = ["atelier-build-v2::roots/a_damaged_usage_record_refuses_a_root_drop"]
 tier = "t0"
+
+[[scenarios]]
+id = "b4b.roots.a_clock_rollback_cannot_lower_an_unknown_tombstone"
+tests = ["atelier-build-v2::roots/a_clock_rollback_cannot_lower_an_unknown_tombstone"]
+tier = "t0"

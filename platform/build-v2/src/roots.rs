@@ -1159,6 +1159,13 @@ impl RootStore {
         let scan = self.journal_buckets();
         view.damaged.extend(scan.damaged);
         let today = UseBucket::ceil_day(self.clock.now())?;
+        let mut newest: BTreeMap<String, UseBucket> = BTreeMap::new();
+        for (key, bucket) in &scan.buckets {
+            let entry = newest.entry(key.clone()).or_insert_with(|| bucket.clone());
+            if *entry < *bucket {
+                *entry = bucket.clone();
+            }
+        }
         for (key, bucket) in scan.buckets {
             if let Some(floor) = view.unknown.get(&key) {
                 if bucket <= *floor {
@@ -1179,9 +1186,20 @@ impl RootStore {
         // An entry that used a key at an unknown time invalidates any stored bucket and leaves a
         // floor, so dropping that journal later cannot resurrect an older dated bucket.
         for key in scan.unknowns {
-            view.unknown
-                .entry(key.clone())
-                .or_insert_with(|| today.clone());
+            let mut floor = today.clone();
+            for candidate in [
+                view.unknown.get(&key),
+                view.results.get(&key),
+                newest.get(&key),
+            ]
+            .into_iter()
+            .flatten()
+            {
+                if *candidate > floor {
+                    floor = candidate.clone();
+                }
+            }
+            view.unknown.insert(key.clone(), floor);
             view.results.remove(&key);
         }
         Ok(view)
@@ -1267,6 +1285,13 @@ impl RootStore {
             return Ok(());
         }
         let today = UseBucket::ceil_day(self.clock.now())?;
+        let mut newest: BTreeMap<String, UseBucket> = BTreeMap::new();
+        for (key, bucket) in &scan.buckets {
+            let entry = newest.entry(key.clone()).or_insert_with(|| bucket.clone());
+            if *entry < *bucket {
+                *entry = bucket.clone();
+            }
+        }
         let mut changed = false;
         for (key, bucket) in scan.buckets {
             if let Some(floor) = usage.unknown.get(&key) {
@@ -1287,12 +1312,21 @@ impl RootStore {
             }
         }
         for key in scan.unknowns {
-            let floor = usage
-                .unknown
-                .get(&key)
-                .filter(|floor| **floor >= today)
-                .cloned()
-                .unwrap_or_else(|| today.clone());
+            // The floor must cover every dated observation it invalidates, or a clock rollback
+            // would let an older journal clear it later with a pre-existing bucket.
+            let mut floor = today.clone();
+            for candidate in [
+                usage.unknown.get(&key),
+                usage.results.get(&key),
+                newest.get(&key),
+            ]
+            .into_iter()
+            .flatten()
+            {
+                if *candidate > floor {
+                    floor = candidate.clone();
+                }
+            }
             if usage.unknown.get(&key) != Some(&floor) {
                 usage.unknown.insert(key.clone(), floor);
                 changed = true;

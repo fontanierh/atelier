@@ -2200,3 +2200,42 @@ fn a_damaged_usage_record_refuses_a_root_drop() {
         "the root stays when usage cannot be trusted"
     );
 }
+
+#[test]
+fn a_clock_rollback_cannot_lower_an_unknown_tombstone() {
+    use std::io::Write;
+    let workspace = Workspace::new();
+    let clock = TestClock::at(9 * 86_400);
+    let store = workspace.open_at("yorimichi", &clock);
+    let mut dated = begin(&store, RootKind::Main, "dated", 1);
+    dated.use_result("unit.a", &key(1)).unwrap();
+    let dated_journal = only_session(&workspace.store(), "yorimichi");
+
+    clock.set(86_400);
+    let legacy = begin(&store, RootKind::Main, "legacy", 1);
+    let legacy_journal = session_files(&workspace.store(), "yorimichi")
+        .into_iter()
+        .find(|path| path != &dated_journal)
+        .unwrap();
+    let mut file = fs::OpenOptions::new()
+        .append(true)
+        .open(&legacy_journal)
+        .unwrap();
+    writeln!(file, "{{\"unit\":\"unit.a\",\"key\":\"{}\"}}", key(1)).unwrap();
+    drop(file);
+    legacy.abandon().unwrap();
+
+    assert_eq!(
+        usage_of(&store).unknown[&key(1)].as_str(),
+        "1970-01-10",
+        "the floor covers the dated observation it invalidated, not just the rolled-back today"
+    );
+    assert!(!usage_of(&store).results.contains_key(&key(1)));
+
+    dated.abandon().unwrap();
+    assert!(
+        !usage_of(&store).results.contains_key(&key(1)),
+        "the pre-existing day-10 bucket must not clear the floor"
+    );
+    assert!(usage_of(&store).unknown.contains_key(&key(1)));
+}
