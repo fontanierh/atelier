@@ -2074,4 +2074,34 @@ def steps(ctx):
                        needs=[s.name for s in result if s.name.startswith('unreal.') and not s.explicit] + ['data.stage', 'data.content'],
                        outputs=[content / 'Data/Network/session.json'],
                        about='matching multiplayer code, imported assets and staged gameplay data'))
+    declare_owned_content(result)
     return result + [cook_step(ctx, result), package_step(ctx, result)]
+
+
+# Unreal imports whose saved packages (LogSavePackage, across every recorded run) land only in Content folders that
+# no other step writes. Those folders and the step's explicit outputs are its complete outputs, so it publishes and
+# restores like a source action; a run that saves elsewhere stays local (build.py checks each run's log). Imports
+# sharing a folder (Japan/*, a character's root with its adventure import, SkatePark) are left unpublished.
+OWNED_CONTENT = {
+    'unreal.adventure': ('Adventure',), 'unreal.belmonte_track': ('BelmonteTrack',),
+    'unreal.belmonte_train': ('BelmonteTrain',), 'unreal.cairo_adventure': ('CairoAdventure',),
+    'unreal.cairo_bike': ('CairoBike',), 'unreal.cairo_horse': ('CairoHorse',), 'unreal.crater_cloud': ('CraterPark/Cloud',),
+    'unreal.craterpark': ('CraterPark/Materials', 'CraterPark/Meshes'), 'unreal.ferry': ('Ferry',),
+    'unreal.fox_hunter': ('FoxHunter',), 'unreal.fx': ('FX',), 'unreal.gondola': ('Gondola',),
+    'unreal.hippodrome': ('Hippodrome',), 'unreal.horses': ('Horses',), 'unreal.kart': ('Japan/Kart',),
+    'unreal.modori_bike': ('ModoriBike',), 'unreal.modori_horse': ('ModoriHorse',), 'unreal.nox_bike': ('NoxBike',),
+    'unreal.nox_horse': ('NoxHorse',), 'unreal.paul_bike': ('PaulBike',), 'unreal.paul_horse': ('PaulHorse',),
+    'unreal.skate_clips': ('SkateRide',), 'unreal.swordcamp': ('SwordCamp',),
+}
+
+
+def declare_owned_content(steps):
+    content = GAME / 'unreal' / 'Content'
+    for step in steps:
+        folders = OWNED_CONTENT.get(step.name)
+        if not folders or step.products or step.checkpoint_outputs or step.batch:
+            continue
+        owned = tuple(content / folder for folder in folders)
+        step.checkpoint_outputs = owned + tuple(
+            Path(output) for output in step.outputs
+            if not any(Path(output) == root or root in Path(output).parents for root in owned))

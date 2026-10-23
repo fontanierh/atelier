@@ -1594,7 +1594,18 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             record['checkpoint_migrated_from'] = compatible_portable
             record['checkpoint_migration_result'] = record.get('result', compatible_portable)
             record['restored_from'] = compatible_portable
-        if actions is not None and restore_source != 'compatible-local':
+        unowned = []
+        if (actions is not None and not from_cache and step.checkpoint_outputs and getattr(ctx, 'uproject', None)
+                and any(isinstance(c, UnrealScript) for c in step.commands)):
+            # An Unreal import publishes only when every package it saved lies in its declared outputs.
+            from .unreal_saves import outside
+            unowned = ([str(root) for root in step.checkpoint_outputs if not Path(root).exists()]
+                       + outside(log_path, ctx.uproject.parent / 'Content', task_cache.declared(ctx, step)))
+            if unowned:
+                record.pop('checkpoint_key', None)
+                echo(f'{print_} saved outside its declared outputs or left one empty ({unowned[0]}); '
+                     'result kept local, not published')
+        if actions is not None and restore_source != 'compatible-local' and not unowned:
             try:
                 task_cache.publish(ctx, step, current, record, store=actions.store, done=done, produced=True)
             except (OSError, ValueError, RuntimeError) as error:

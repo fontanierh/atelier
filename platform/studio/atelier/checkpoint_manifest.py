@@ -158,7 +158,8 @@ def record(ctx, step, stamp, *, store=None):
             _guard(ctx, 'export-zen')
     with store.locked():
         value = actions.load(store, key) if key is not None else None
-        if actions.key(ctx, step, stamp['fingerprint']) is not None and value is None:
+        # A stamp that claims a certificate must have it published; a keyless (local-only) stamp is legacy state.
+        if key is not None and actions.key(ctx, step, stamp['fingerprint']) is not None and value is None:
             raise CheckpointError('Completed task lacks its published artifact certificate')
         if value is not None:
             if value['task'] != step.name or value['fingerprint'] != stamp['fingerprint'] or value['stamp'].get('checkpoint_inventory') != stamp.get('checkpoint_inventory'):
