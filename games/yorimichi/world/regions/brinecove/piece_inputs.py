@@ -1,7 +1,7 @@
 """Convert completed coastal components into separate bounded mesh inputs, never exports."""
 
 
-def finish_parts(builder, asset, rim, root, *, paving=None, seam=None):
+def finish_parts(builder, asset, rim, root, *, paving=None, seam=None, query_output=None):
     import bpy
     from atelier.model_export import mesh_object
     from brinecove import geometry_finish as finish, layout
@@ -33,4 +33,8 @@ def finish_parts(builder, asset, rim, root, *, paving=None, seam=None):
     if seam is not None: counts['seam'] = seam
     value = plan(objects, root, parent='SM_BC_' + asset, metadata=metadata, diagnostics=counts,
                  options=dict(export_apply=True, export_image_format='NONE'))
+    if query_output is not None:
+        import region_query
+        owner = 'SM_BC_' + asset
+        region_query.save(query_output, [region_query.capture_group(objects, owner=owner)], owner=owner, stage='final')
     return value, counts, parts

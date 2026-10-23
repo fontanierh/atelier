@@ -65,6 +65,21 @@ def test_capture_reads_actual_loop_triangles_instead_of_reconstructing_polygon_f
     assert captured['positions'].tobytes() == points.tobytes()
 
 
+def test_query_only_group_composition_preserves_each_piece_and_never_merges_meshes(query, monkeypatch):
+    first, second = object(), object()
+    row = surfaces()[0]
+    other = {**row, 'positions': row['positions'] + np.asarray([3, 0, 0], dtype='<f4')}
+    monkeypatch.setattr(query, 'capture', lambda obj: row if obj is first else other)
+    group = query.capture_group([first, second], owner='Harbor')
+    assert group['positions'].tobytes() == np.concatenate([row['positions'], other['positions']]).tobytes()
+    assert group['triangles'].tolist() == [*row['triangles'].tolist(), *(other['triangles'] + 4).tolist()]
+    expected = np.concatenate([query.triangles([row]), query.triangles([other])])
+    np.testing.assert_array_equal(query.triangles([group]), expected)
+    with pytest.raises(ValueError, match='unique'): query.capture_group([first, first], owner='Harbor')
+    other['matrix'] = np.eye(4)
+    with pytest.raises(ValueError, match='frame'): query.capture_group([first, second], owner='Harbor')
+
+
 @pytest.mark.parametrize('mutation', ['float_indices', 'outside_index', 'nan', 'singular', 'wrong_owner', 'duplicate'])
 def test_invalid_or_foreign_geometry_refuses_before_publication(query, tmp_path, mutation):
     rows = surfaces()
