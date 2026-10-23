@@ -374,12 +374,15 @@ def test_any_retained_checkpoint_restores_one_task_by_fingerprint(fixture, monke
     (ctx.out / 'tree/asset.bin').write_bytes(b'stale')
     (ctx.out / 'tree/extra.bin').write_bytes(b'stale extra')
     monkeypatch.setattr(cp, 'Store', lambda game: fixture.store)
-    monkeypatch.setattr(build_checkpoints, '_guard', lambda ctx, operation, task: dict(
-        key=task, cloned=store_reuse.clone_worker(ctx, task)))
+    monkeypatch.setattr(build_checkpoints, '_guard', lambda *a: pytest.fail('store clone spawned a child'))
     index, messages = store_reuse.Catalogue('fixture'), []
     tree = steps[0]
+    import time
+    started = time.perf_counter()
     reused = store_reuse.restore_checkpoint(ctx, tree, build.fingerprint(tree, {}), index, echo=messages.append)
+    elapsed = time.perf_counter() - started
     assert reused[0] == key and 'restored from checkpoint' in messages[-1]
+    assert elapsed < 0.2, f'{elapsed:.3f} s for one in-process store clone'
     assert (ctx.out / 'tree/asset.bin').read_bytes() == b'tree' and not (ctx.out / 'tree/extra.bin').exists()
     assert not (ctx.out / 'house').exists()
     assert store_reuse.restore_checkpoint(ctx, tree, '0' * 64, index, echo=messages.append) is None

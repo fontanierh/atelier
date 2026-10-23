@@ -33,7 +33,13 @@ class Catalogue:
 
 
 def restore_checkpoint(ctx, step, fingerprint, index, *, echo=print):
-    """Clone one task's outputs from any retained checkpoint certifying this exact fingerprint."""
+    """@cc [owner:fontanierh,label:safety;performance] in-process-store-clone
+    Clone one task's outputs from any retained checkpoint certifying this exact fingerprint.
+    The clone MUST only rebuild that task's declared roots from size-checked digest-named blobs
+    in staging and swap them in, inside the build process that already holds the build lock;
+    it MUST NOT spawn a child or wait for admission. The stamp MUST still certify against the
+    restored outputs before it is adopted.
+    """
     from .checkpoint_actions import certified, compile_present, declared, label
     from .build import outputs_present
     from .build_cache import atomic_json
@@ -52,11 +58,10 @@ def restore_checkpoint(ctx, step, fingerprint, index, *, echo=print):
             prefixes = [label(ctx, Path(p)) for p in declared(ctx, step)]
             request = ctx.out / '.state/clone-requests' / (step.name + '.json')
             atomic_json(request, dict(task=step.name, checkpoint=key, outputs=prefixes))
-            from .build_checkpoints import _guard
-            _guard(ctx, 'clone-step', step.name)
             saved = index.store.load(key)
-            stamp = {**saved['stamps'], **saved.get('incremental_stamps', {})}.get(step.name)
             build_index = getattr(ctx, 'build_hash_index', None)
+            checkpoint_clone(ctx, read_json(request), store=index.store, manifest=saved, hashes=build_index)
+            stamp = {**saved['stamps'], **saved.get('incremental_stamps', {})}.get(step.name)
             with hashing(ctx, build_index.digest if build_index is not None else None):
                 good = (stamp and stamp.get('fingerprint') == fingerprint and outputs_present(step)
                         and compile_present(ctx, step) and certified(ctx, step, fingerprint, stamp))
@@ -86,12 +91,16 @@ def swap(destination, staged):
             aside.unlink()
 
 
-def checkpoint_clone(ctx, request):
-    """Rebuild each declared output root from digest-named blobs, then swap it into place."""
+def checkpoint_clone(ctx, request, *, store=None, manifest=None, hashes=None):
+    """Rebuild each declared output root from digest-named blobs, then swap it into place.
+
+    In the build process, store, manifest and the build's open hash index are passed in.
+    """
+    from contextlib import nullcontext
     from .build_cache import copy_file
     from .checkpoint_store import Store, roots, safe_destination as safe
-    store = Store(ctx.game)
-    manifest = store.load(request['checkpoint'])
+    store = store or Store(ctx.game)
+    manifest = manifest if manifest is not None else store.load(request['checkpoint'])
     allowed = roots(ctx)
     from .checkpoint_store import identity
     same_path = manifest['checkout'] == identity(str(paths.REPO.resolve()))
@@ -130,10 +139,11 @@ def checkpoint_clone(ctx, request):
         swap(destination, staged)
         from .build_hashes import HashIndex
         from .checkpoint_store import RESTORED_HASHES
-        with HashIndex(ctx.out / RESTORED_HASHES) as hashes:  # Clones keep the recorded metadata.
+        # Clones keep the recorded metadata, so their digests are known without a read.
+        with (nullcontext(hashes) if hashes is not None else HashIndex(ctx.out / RESTORED_HASHES)) as index:
             for member, entry in members.items():
                 if entry['kind'] == 'file':
-                    hashes.record(destination if member == prefix else destination / member[len(prefix) + 1:], entry['sha256'])
+                    index.record(destination if member == prefix else destination / member[len(prefix) + 1:], entry['sha256'])
     return len(request['outputs'])
 
 
