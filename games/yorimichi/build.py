@@ -758,7 +758,7 @@ def hippodrome_steps(out):
         Step('world.hippodrome', [Python(region / 'build.py')],
              inputs=[region, ASSETS / 'hippodrome' / 'props', REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari_stable' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK, REGIONS / 'forest/ecotone.py', REGIONS / 'forest/specs.py',
                      *NORTH_LAYOUT],
-             needs=['world.layout', 'world.treehouse_trees'], outputs=[out / 'hippodrome' / 'region' / 'hippodrome.json'],
+             needs=['world.layout', 'world.treehouse_trees.data'], outputs=[out / 'hippodrome' / 'region' / 'hippodrome.json'],
              about='hippodrome course meshes (platform, skirt, track, rails, lane), its Tripo structures and venue data'),
         digest_step(out, 'world.hippodrome', 'meshes', 'what unreal.hippodrome reads of the course', out / 'hippodrome', ['region']),
         Step('unreal.hippodrome', [UnrealScript(SCRIPTS / 'import_hippodrome.py', 'HIPPODROME IMPORT COMPLETE', null_rhi=True)],
@@ -782,7 +782,7 @@ def hidamari_stable_steps(out):
              inputs=[region / 'build.py', region / 'layout.py', *kit, REGIONS / 'hippodrome' / 'layout.py',
                      REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK,
                      REGIONS / 'forest/ecotone.py', REGIONS / 'forest/specs.py', *NORTH_LAYOUT, YORI],
-             needs=['world.layout', 'world.treehouse_trees'], heavy=True, explicit=True,
+             needs=['world.layout', 'world.treehouse_trees.data'], heavy=True, explicit=True,
              outputs=[root / 'hidamari-stable.blend', root / 'placements.json', root / 'manifest.json',
                       *(root / 'glb' / f'SM_HS_{m}_LOD{k}.glb' for m in ('Stable', 'StallDoor', 'RoomDoor') for k in (0, 1, 2)),
                       *(root / 'glb' / f'SM_HS_{m}.glb' for m in ('Ground', 'Road', 'RoadSign')), root / 'glb' / 'SM_HS_Stable_Collision.glb'],
@@ -1026,9 +1026,7 @@ def world_steps(ctx):
     return [*texture_steps(ctx),
         # ------------------------------------------------------------ world
         # The tree house's tall canopy trees come first: its layout sizes them from trees.json.
-        Step('world.treehouse_trees', [Blender(TREEHOUSE / 'trees.py', threads=4)], inputs=[TREEHOUSE / 'trees.py', WORLD / 'asset_mesh.py'],
-             needs=['world.textures'], outputs=[out / 'treehouse' / 'trees' / 'trees.json'],
-             about='tree house canopy trees (four autumn crowns) and their recoloured leaf atlases', heavy=True),
+        *_load_helper_module('yorimichi_treehouse_atomic',GAME/'treehouse_atomic_build.py').canopy_steps(ctx),
         Step('world.layout', [Python(WORLD / 'gen_world.py')],
              inputs=[WORLD / 'gen_world.py', REGIONS / 'forest/ecotone.py', REGIONS / 'forest/specs.py', REGIONS / 'houses' / 'layout.py', WORLD / 'torii_clearance.py', YORI,
                      REGIONS / 'village' / 'layout.py', REGIONS / 'mega' / 'layout.py',
@@ -1039,7 +1037,7 @@ def world_steps(ctx):
                      REGIONS / 'megapark' / 'trail.py', REGIONS / 'megapark' / 'gate.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK,
                      REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari_stable' / 'layout.py', REGIONS / 'hidamari' / 'forest_backdrop.py', WORLD / 'farhills_grid.py',
                      *belmonte_train_corridor(out)],
-             needs=['world.treehouse_trees', *crater_geometry], cutoff=True,
+             needs=['world.treehouse_trees.data', *crater_geometry], reads=['treehouse.canopy_dimensions'], cutoff=True,
              outputs=[out / 'world.json', out / 'heightmap.npy', out / 'heightmap.bin', out / 'farhills.npy', out / 'treehouse' / 'layout.json',
                       out / 'megapark' / 'trail.json'],
              about='terrain heightfield, road, scatter and every region layout -> world.json (dependents see these files)'),
@@ -1098,7 +1096,7 @@ def world_steps(ctx):
                        if entry['name'].startswith('SM_BM_BT_Terrain_')),
                      REGIONS / 'megapark' / 'gate.py', ASSETS / 'megapark' / 'map.json',
                      ASSETS / 'megapark' / 'geometry', ASSETS / 'megapark' / 'collision'],
-             needs=['world.layout', 'world.treehouse_trees'], after=['world.hidamari'],
+             needs=['world.layout', 'world.treehouse_trees.data'], after=['world.hidamari'],
              outputs=[out / 'zeppelin' / 'manifest.json'], about='airship and its four stations', heavy=True),
         digest_step(out, 'world.zeppelin', 'meshes', 'the zeppelin meshes unreal.world reads', out / 'zeppelin', ['manifest.json', 'assets']),
         Step('world.hidamari_textures', [Python(TOOLS / 'hidamari_textures.py', ('finish',))],
@@ -1117,19 +1115,8 @@ def world_steps(ctx):
              inputs=[TOOLS / 'treehouse_textures.py', ASSETS / 'treehouse' / 'textures'],
              outputs=[out / 'treehouse' / 'textures' / 'textures.json'], pool_roots=[out / 'treehouse' / 'textures'],
              about='tree house textures: seamless detail maps and pictures from the Sunburst paintings'),
-        Step('world.treehouse_props', [Blender(TREEHOUSE / 'props.py', threads=4)],
-             inputs=[TREEHOUSE / 'props.py', TOOLS / 'treehouse_props.py', ASSETS / 'treehouse' / 'props'],
-             outputs=[out / 'treehouse' / 'props' / 'props.json'], about='the 13 Tripo props fitted to their sizes', heavy=True),
-        Step('world.treehouse', [Blender(TREEHOUSE / 'build.py', threads=4)],
-             inputs=[TREEHOUSE / 'build.py', TREEHOUSE / 'tmesh.py', TREEHOUSE / 'dressing.py', GAME / 'treehouse_pieces.py',
-                     WORLD / 'mesh_pieces.py', paths.STUDIO / 'atelier/mesh_cells.py',
-                     paths.STUDIO / 'atelier/mesh_partition.py', REGIONS / 'village' / 'mesh.py', *TREEHOUSE_LAYOUT, *VILLAGE_LAYOUT],
-             needs=['world.layout', 'world.treehouse_trees'],
-             outputs=[out / 'treehouse' / 'manifest.json', out / 'treehouse' / 'runtime.json', out / 'treehouse/pieces.json'],
-             products=[Product('treehouse.meshes', (out / 'treehouse/assets', out / 'treehouse/manifest.json', out / 'treehouse/pieces.json')),
-                       Product('treehouse.runtime', (out / 'treehouse/runtime.json',))],
-             verify=lambda: treehouse_pieces.sources_present(out),
-             about='the tree house: ten places, bridges, rooms and their dressing, lights, sunbeams', heavy=True),
+        *_load_helper_module('yorimichi_treehouse_atomic',GAME/'treehouse_atomic_build.py').prop_steps(ctx),
+        *_load_helper_module('yorimichi_treehouse_atomic',GAME/'treehouse_atomic_build.py').surface_steps(ctx),
         *_load_helper_module('yorimichi_island_atomic', GAME/'terrain_atomic_build.py').steps(ctx),
         Step('world.village', [Blender(REGIONS / 'village' / 'build.py')], inputs=[REGIONS / 'village', YORI], needs=['world.layout'],
              outputs=[out / 'village' / 'manifest.json'], about='Momiji Hamlet', heavy=True),
@@ -1988,6 +1975,8 @@ def steps(ctx):
                                     if path not in step.inputs]
             if isinstance(command, (Python, Blender)) and WORLD in Path(command.script).parents:
                 step.inputs += [f for f in scanner.local_imports(command.script, (WORLD, REGIONS)) if f not in step.inputs]
+        if TREEHOUSE/'layout.py' in step.inputs and any(isinstance(command,(Python,Blender)) for command in step.commands):
+            if 'treehouse.canopy_dimensions' not in step.reads:step.reads.append('treehouse.canopy_dimensions')
         # Native geometry reuse hashes its complete native-only source closure.
         for command in step.commands:
             if not isinstance(command, UnrealScript):

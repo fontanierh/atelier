@@ -74,6 +74,7 @@ def surface_steps(ctx):
         reads=('treehouse.surface_source.'+parent,)) for parent in SURFACES]
     result.extend(G.steps(ctx,region='treehouse_surfaces',assets=assets,after=['world.treehouse.source_data']))
     result.append(assemble(ctx,'surfaces',['treehouse_surfaces.atomic','treehouse.surface_metadata'],
-        [Product('treehouse.surfaces',(ctx.out/'treehouse/assets',ctx.out/'treehouse/pieces.json',
-            ctx.out/'treehouse/surfaces.json',ctx.out/'treehouse/runtime.json',ctx.out/'treehouse/manifest.json'))]))
+        [Product('treehouse.meshes',(ctx.out/'treehouse/assets',ctx.out/'treehouse/pieces.json',
+            ctx.out/'treehouse/surfaces.json',ctx.out/'treehouse/manifest.json')),
+         Product('treehouse.runtime',(ctx.out/'treehouse/runtime.json',))]))
     return result

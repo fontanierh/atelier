@@ -155,15 +155,16 @@ def test_whole_task_presence_requires_all_current_saved_groups_and_parent_absenc
     assert not P.present(out, content)
 
 
-def test_treehouse_recipe_declares_complete_piece_products_and_actual_helpers(monkeypatch):
+def test_treehouse_recipe_declares_complete_piece_products_and_actual_helpers(monkeypatch,tmp_path):
     from atelier import build
     monkeypatch.setenv('ATELIER_SKIP_ADVENTURE','1')
     from types import SimpleNamespace
-    steps = build.load_recipe('yorimichi').steps(SimpleNamespace(game='yorimichi', out=Path('/tmp/treehouse-recipe'), uproject=None))
+    steps = build.load_recipe('yorimichi').steps(SimpleNamespace(game='yorimichi', out=tmp_path.resolve(), uproject=None))
     by_name = {step.name:step for step in steps}
     producer, native = by_name['world.treehouse'], by_name['unreal.treehouse']
-    assert GAME/'world/mesh_pieces.py' in producer.inputs
-    assert GAME/'world/regions/treehouse/dressing.py' in producer.inputs
+    canonical=by_name['world.treehouse.source_data']
+    assert GAME/'world/mesh_pieces.py' in canonical.inputs
+    assert GAME/'world/regions/treehouse/dressing.py' in canonical.inputs
     assert GAME/'treehouse_pieces.py' in producer.inputs and GAME/'treehouse_pieces.py' in native.inputs
     assert native.reads == ['treehouse.meshes', 'materials.shared']
     assert {p.name for p in producer.products} == {'treehouse.meshes','treehouse.runtime'}

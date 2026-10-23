@@ -4,6 +4,7 @@
 #include "SouthwestPieces.h"
 #include "LakePieces.h"
 #include "TreehousePieces.h"
+#include "TreehouseSurfacePieces.h"
 #include "JapanGameplayCollision.h"
 #include "AtelierData.h"
 #include "HarborLook.h"
@@ -405,6 +406,13 @@ void AJapanWorld::Load()
     const bool DressingReady=JapanTreehousePieces::Read(
         AtelierReadJson(AtelierDataPath(TEXT("treehouse/pieces.json"))),DressingPieces);
     if (!DressingReady) Incomplete.Add(TEXT("complete treehouse dressing pieces"));
+    TMap<FString,TArray<FString>> TreehouseSurfaces;
+    TMap<FString,FBox> TreehouseLogicalBounds;
+    TSet<FString> LoadedStructurePieces;
+    const bool TreehouseSurfacesReady=JapanTreehouseSurfacePieces::Read(
+        AtelierReadJson(AtelierDataPath(TEXT("treehouse/surfaces.json"))),TreehouseSurfaces,&TreehouseLogicalBounds);
+    if(!TreehouseSurfacesReady || !DressingReady || TreehouseSurfaces.FindChecked(TEXT("TH_Dressing"))!=DressingPieces)
+        Incomplete.Add(TEXT("complete consistent Treehouse surface pieces"));
     if (Root->TryGetObjectField(TEXT("instances"), Inst))
     {
         for (const auto& Pair : (*Inst)->Values)
@@ -441,6 +449,12 @@ void AJapanWorld::Load()
                 if(!Paths){Incomplete.Add(TEXT("lake pieces ")+Key);continue;}
                 MeshPaths=*Paths;
             }
+            else if(Key==TEXT("TH_Structure"))
+            {
+                const auto* Paths=TreehouseSurfaces.Find(Key);
+                if(!Paths){Incomplete.Add(TEXT("Treehouse structure pieces"));continue;}
+                MeshPaths=*Paths;
+            }
             else if (Key==TEXT("TH_Dressing"))
             {
                 if (!DressingReady) continue;
@@ -457,6 +471,7 @@ void AJapanWorld::Load()
                 if(JapanSouthwestPieces::IsParent(Key))LoadedSouthwestPieces.Add(MeshPath);
                 if(JapanLakePieces::IsParent(Key))LoadedLakePieces.Add(MeshPath);
                 if (Key==TEXT("TH_Dressing")) LoadedDressingPieces.Add(MeshPath);
+                if(Key==TEXT("TH_Structure"))LoadedStructurePieces.Add(MeshPath);
                 const bool bGrass = Key.StartsWith(TEXT("Grass"));
                 const bool bBush = Key.StartsWith(TEXT("Bush"));
                 const bool bTree = Key.StartsWith(TEXT("Tree"));
@@ -491,6 +506,7 @@ void AJapanWorld::Load()
                         H->ComponentTags.Add(FName(*(TEXT("CityPiece:")+Mesh->GetName())));
                     }
                     if (Key==TEXT("TH_Dressing")) H->ComponentTags.Add(TEXT("TreehouseDressing"));
+                    if(Key==TEXT("TH_Structure"))H->ComponentTags.Add(TEXT("TreehouseStructure"));
                     if(JapanSouthwestPieces::IsParent(Key))H->ComponentTags.Add(FName(*(TEXT("SouthwestSurface:")+Key)));
                     if(JapanLakePieces::IsParent(Key))H->ComponentTags.Add(FName(*(TEXT("LakeSurface:")+Key)));
                     H->SetMobility(EComponentMobility::Static);
@@ -604,6 +620,8 @@ void AJapanWorld::Load()
     }
     if (DressingReady && LoadedDressingPieces.Num()!=DressingPieces.Num())
         Incomplete.Add(TEXT("loaded treehouse dressing pieces"));
+    if(TreehouseSurfacesReady && LoadedStructurePieces.Num()!=TreehouseSurfaces.FindChecked(TEXT("TH_Structure")).Num())
+        Incomplete.Add(TEXT("loaded Treehouse structure pieces"));
     if(SouthwestReady)
     {
         int32 Expected=0;

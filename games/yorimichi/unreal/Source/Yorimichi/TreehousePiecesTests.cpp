@@ -1,4 +1,5 @@
 #include "TreehousePieces.h"
+#include "TreehouseSurfacePieces.h"
 #if WITH_DEV_AUTOMATION_TESTS
 #include "Misc/AutomationTest.h"
 
@@ -34,6 +35,44 @@ bool FTreehousePieceMembershipTest::RunTest(const FString&)
     UVs[4]=MakeShared<FJsonValueString>(TEXT("Piece4"));Root->SetArrayField(TEXT("uv_channels"),UVs);
     Pieces[1]->AsObject()->SetStringField(TEXT("name"),TEXT("TH_Dressing"));
     TestFalse(TEXT("Whole parent cannot enter bounded roster"),JapanTreehousePieces::Read(Root,Paths));
+    return true;
+}
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FTreehouseSurfaceMembershipTest,"Yorimichi.TreehousePieces.SurfaceMembership",
+    EAutomationTestFlags_ApplicationContextMask|EAutomationTestFlags::EngineFilter)
+bool FTreehouseSurfaceMembershipTest::RunTest(const FString&)
+{
+    auto Manifest=MakeShared<FJsonObject>();auto Parents=MakeShared<FJsonObject>();auto Assets=MakeShared<FJsonObject>();
+    Manifest->SetNumberField(TEXT("schema"),1);Manifest->SetBoolField(TEXT("complete"),true);
+    Manifest->SetObjectField(TEXT("parents"),Parents);Manifest->SetObjectField(TEXT("assets"),Assets);
+    for(const FString& Parent:JapanTreehouseSurfacePieces::Parents())
+    {
+        const bool Bounded=Parent==TEXT("TH_Structure") || Parent==TEXT("TH_Dressing");
+        const FString Name=Bounded?Parent+TEXT("_cell_-1_0"):Parent;
+        const FString Folder=Parent==TEXT("TH_Structure")?TEXT("structure"):Parent==TEXT("TH_Dressing")?TEXT("dressing"):
+            Parent==TEXT("TH_Frame")?TEXT("frame"):TEXT("trunks");
+        Parents->SetArrayField(Parent,{MakeShared<FJsonValueString>(Name)});
+        auto Row=MakeShared<FJsonObject>();Row->SetStringField(TEXT("parent"),Parent);
+        Row->SetStringField(TEXT("fbx"),TEXT("assets/")+Folder+TEXT("/")+Name+TEXT(".fbx"));
+        Row->SetStringField(TEXT("sha256"),FString::ChrN(64,TEXT('a')));Row->SetNumberField(TEXT("triangles"),12);
+        Row->SetNumberField(TEXT("collision_hulls"),0);
+        TArray<TSharedPtr<FJsonValue>> UVs={MakeShared<FJsonValueString>(TEXT("UVMap"))};
+        if(Parent==TEXT("TH_Frame") || Parent==TEXT("TH_Dressing"))
+            for(int32 I=1;I<5;++I)UVs.Add(MakeShared<FJsonValueString>(FString::Printf(TEXT("Piece%d"),I)));
+        Row->SetArrayField(TEXT("uv_channels"),UVs);
+        Row->SetArrayField(TEXT("min"),{MakeShared<FJsonValueNumber>(-2.),MakeShared<FJsonValueNumber>(-1.),MakeShared<FJsonValueNumber>(0.)});
+        Row->SetArrayField(TEXT("max"),{MakeShared<FJsonValueNumber>(2.),MakeShared<FJsonValueNumber>(1.),MakeShared<FJsonValueNumber>(3.)});
+        Assets->SetObjectField(Name,Row);
+    }
+    TMap<FString,TArray<FString>> Paths;TMap<FString,FBox> Bounds;
+    TestTrue(TEXT("Complete original four logical surfaces"),JapanTreehouseSurfacePieces::Read(Manifest,Paths,&Bounds));
+    TestEqual(TEXT("Separate structure asset path"),Paths[TEXT("TH_Structure")][0],
+        FString(TEXT("/Game/Japan/Treehouse/StructurePieces/TH_Structure_cell_-1_0.TH_Structure_cell_-1_0")));
+    auto Structure=Assets->GetObjectField(TEXT("TH_Structure_cell_-1_0"));Structure->SetNumberField(TEXT("triangles"),32769);
+    TestFalse(TEXT("Whole oversized structure cannot return"),JapanTreehouseSurfacePieces::Read(Manifest,Paths));
+    TestTrue(TEXT("Failure publishes no partial native roster"),Paths.IsEmpty());
+    Structure->SetNumberField(TEXT("triangles"),12);auto Frame=Assets->GetObjectField(TEXT("TH_Frame"));
+    Frame->SetArrayField(TEXT("uv_channels"),{MakeShared<FJsonValueString>(TEXT("UVMap"))});
+    TestFalse(TEXT("Original five-channel fade bake is mandatory"),JapanTreehouseSurfacePieces::Read(Manifest,Paths));
     return true;
 }
 #endif
