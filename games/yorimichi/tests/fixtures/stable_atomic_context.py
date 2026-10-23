@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import yori  # noqa: E402
 from atelier.atomic_files import atomic_json  # noqa: E402
 from atelier.build_inputs import local_imports  # noqa: E402
+from atelier.build_cache import copy_file  # noqa: E402
 from atelier.export_manifest import real_directory, sha  # noqa: E402
 from island_atomic_equivalence import baseline_packets, captured, signature  # noqa: E402
 from village import mesh as kernel  # noqa: E402
@@ -33,6 +34,7 @@ PARTS = ('barn', 'gate', 'yard', 'paddock')
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--donor', type=Path, required=True)
     args = parser.parse_args(sys.argv[sys.argv.index('--')+1:])
     output = real_directory(args.output)
     if output.exists(): raise ValueError('Fresh original Stable fixture required')
@@ -42,7 +44,18 @@ def main():
     paths = set(local_imports(source, (GAME / 'world', GAME / 'world/regions')))
     paths.update((Path(__file__), fixture, Path(__file__).with_name('island_atomic_equivalence.py')))
     paths.add(GAME / 'world/regions/hidamari/fonts/NotoSansJP.ttf')
+    paths.add(GAME / 'assets/vehicles/belmonte-train/line.json')
+    donor = real_directory(args.donor)
+    inputs = [donor / name for name in ('world.json', 'heightmap.npy', 'farhills.npy')]
+    for path in inputs:
+        real_directory(path.parent)
+        if path.is_symlink() or not path.is_file(): raise ValueError('Missing original Stable query input')
+    paths.update(inputs)
     before = {str(path): sha(path) for path in sorted(paths)}
+    for path in inputs:
+        target = output / 'data' / path.name; target.parent.mkdir(parents=True, exist_ok=True)
+        copy_file(path, target)
+        assert sha(target) == before[str(path)]
     yori.OUT = output / 'data'
     tree = ast.parse(original)
     entry = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'main')
