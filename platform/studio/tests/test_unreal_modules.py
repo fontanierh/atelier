@@ -2,6 +2,8 @@ import contextlib, io, json, os, sys, tempfile, types, unittest
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+
 from atelier import build as builder, paths, unreal_modules, unreal_script_guard as guard
 from atelier.build import Call, Step, UnrealScript, check_modules
 
@@ -243,6 +245,7 @@ class GuardTests(unittest.TestCase):
             self.assertEqual(guard.undeclared([str(tools), '/engine/libUnrealEditor-Engine.dylib'], [str(game)]), [])
             self.assertEqual(guard.undeclared([str(alias)], [str(game)]), [os.path.realpath(game)])
 
+    @pytest.mark.macos_only  # dyld's image list is the only source of loaded libraries.
     def test_this_process_libraries_are_listed(self):
         self.assertTrue(any('python' in path.lower() or 'libsystem' in path.lower() for path in guard.loaded_libraries()))
 

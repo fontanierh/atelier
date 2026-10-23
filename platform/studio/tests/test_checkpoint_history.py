@@ -47,9 +47,12 @@ def test_rewritten_or_incomplete_history_is_a_miss(original, monkeypatch, change
         if change == 'no-inputs': stamp.pop('input_state')
         else: stamp['touched'] = True
         path.write_text(json.dumps(stamp))
-        # Keep the test focused on malformed content rather than newer metadata.
-        boundary = time.time_ns(); origin = store.directory / 'candidate-sources' / (key + '.json')
+        # Keep the test focused on malformed content rather than newer metadata. The boundary
+        # comes from the catalogue itself: a filesystem clock rounds a fresh touch down, so a
+        # boundary read just before it can land after the stamp it was meant to precede.
+        origin = store.directory / 'candidate-sources' / (key + '.json')
         origin.touch()
+        boundary = origin.stat().st_mtime_ns - 1
     else:
         original_signature = history.signature
         calls = []
