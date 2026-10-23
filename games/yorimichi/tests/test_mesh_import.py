@@ -232,6 +232,9 @@ def test_hidamari_terrain_reimport_replaces_seed_slots_and_keeps_terrain_materia
         def nested(path, **kwargs):
             if Path(path).name == 'import_wanderer.py':
                 return {}
+            if Path(path).name == 'import_southwest.py' and kwargs.get('init_globals', {}).get('SEA_ONLY'):
+                sea_calls.append('sea')
+                return {}
             return real_run_path(path, **kwargs)
         monkeypatch.setattr(runpy, 'run_path', nested)
         run_city = owner['main']
@@ -410,8 +413,11 @@ def test_world_without_city_retains_terrain_import_binding_and_collision(tmp_pat
         return rock
     monkeypatch.setitem(sys.modules, 'forest_ground', SimpleNamespace(coast_instance=lambda *args: object(),
                                                                    coast_rock_instance=coast_rock_instance))
-    monkeypatch.setitem(sys.modules, 'import_southwest', SimpleNamespace(sea_plane=lambda: calls.append(('sea',))))
-    monkeypatch.setattr(runpy, 'run_path', lambda *args, **kwargs: {})
+    def run_path(path, **kwargs):
+        if Path(path).name == 'import_southwest.py' and kwargs.get('init_globals', {}).get('SEA_ONLY'):
+            calls.append(('sea',))
+        return {}
+    monkeypatch.setattr(runpy, 'run_path', run_path)
     owner = dict(__file__=str(script), OUT=str(tmp_path), os=os,
                  glob=SimpleNamespace(glob=lambda pattern: []), EAL=library, unreal=unreal, FOLIAGE=set(),
                  purge=lambda: pytest.fail("Upfront purge would destroy reusable packages"), material_bindings=lambda: {}, instance=lambda *args: forest,

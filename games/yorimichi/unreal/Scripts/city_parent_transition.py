@@ -151,6 +151,34 @@ def _remove_previous_purge(tree):
     return True
 
 
+SEA_PLANE_HANDOFF = ast.parse(
+    'runpy.run_path(os.path.join(os.path.dirname(__file__), "import_southwest.py"),\n'
+    '               init_globals={"SEA_ONLY": True}, run_name="__main__")').body[0]
+
+
+def _remove_sea_plane_owner(tree):
+    """Normalize only the sea plane and M_Sea handoff, at its exact location.
+
+    `unreal.world` now writes /Game/Japan/Assets/Sea and M_Sea itself: it runs the
+    south-west script with SEA_ONLY, immediately before the sailboat dispatch, and
+    nothing else in main() may move.
+    """
+    owners = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == 'main']
+    if len(owners) != 1:
+        return False
+    body = owners[0].body
+    matches = [i for i, node in enumerate(body) if ast.dump(node) == ast.dump(SEA_PLANE_HANDOFF)]
+    if len(matches) != 1:
+        return False
+    index = matches[0]
+    following = body[index + 1] if index + 1 < len(body) else None
+    if (not isinstance(following, ast.If) or 'sailboat' not in ast.unparse(following.test)
+            or following.orelse or not following.body):
+        return False
+    del body[index]
+    return True
+
+
 def _replace_map_creation(old, new):
     """Normalize only the reviewed owned-map startup; all population/save AST remains."""
     owners = [[node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == 'build_level']
@@ -200,8 +228,10 @@ def excluded_packages(previous, current):
     the exact original three-parent delegation, its forward extension to six,
     literal product membership with its cardinality error, exact finite Harbor
     material wrapper/call substitutions, its exact ferry ownership docstring,
-    removal of the upfront main() purge call and exact replacement of original or
-    recorded alternate Slice startup with an unsaved blank map MAY differ.
+    removal of the upfront main() purge call, exact replacement of original or
+    recorded alternate Slice startup with an unsaved blank map and the exact sea
+    plane and M_Sea handoff of unreal.world, its SEA_ONLY dispatch immediately
+    before the sailboat dispatch, MAY differ.
     All remaining imports, actor population, finishing and save validation MUST
     remain identical; every remaining AST MUST agree. These six generated
     parent packages MUST be excluded from historical admission. No other source,
@@ -221,7 +251,8 @@ def excluded_packages(previous, current):
             if path == SETUP:
                 purge_removed = _remove_previous_purge(old)
                 map_replaced = _replace_map_creation(old, new)
-                if not (purge_removed or map_replaced):
+                sea_handed = _remove_sea_plane_owner(new)
+                if not (purge_removed or map_replaced or sea_handed):
                     return None
             elif path == PRODUCTS:
                 if not _extend_sources(old, new) or not _material_wrapper(new, path):

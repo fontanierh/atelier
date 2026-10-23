@@ -226,8 +226,9 @@ def main():
             if bs: bs.set_editor_property("collision_trace_flag", unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
             EAL.save_loaded_asset(terrain)
     # The sea plane and M_Sea are this step's too; the south-west props import only reads M_Village.
-    from import_southwest import sea_plane
-    sea_plane()
+    # Dispatch it like the other world imports so this step's owner closure does not change.
+    runpy.run_path(os.path.join(os.path.dirname(__file__), "import_southwest.py"),
+                   init_globals={"SEA_ONLY": True}, run_name="__main__")
     if os.path.exists(os.path.join(OUT,"sailboat","manifest.json")):
         runpy.run_path(os.path.join(os.path.dirname(__file__),"import_sailboat.py"),run_name="__main__")
     if W.get("zeppelin"):

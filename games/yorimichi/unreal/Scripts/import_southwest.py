@@ -94,4 +94,5 @@ def main():
         if body:body.set_editor_property('collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
         EAL.save_loaded_asset(mesh);report[name]=mesh.get_path_name();unreal.log('SOUTHWEST imported '+name)
     (OUT/'import-report.json').write_text(json.dumps(report,indent=2));unreal.log('SOUTHWEST IMPORT COMPLETE %d meshes'%len(report))
-if __name__=='__main__':main()
+if __name__=='__main__':
+    sea_plane() if globals().get('SEA_ONLY') else main()

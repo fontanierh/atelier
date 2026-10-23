@@ -16,9 +16,9 @@ import content_ownership as owned  # noqa: E402
 
 
 def main_body(name):
-    """Everything after `def main():` in an import script."""
+    """The body of `def main():` in an import script, without its module epilogue."""
     text = (SCRIPTS / name).read_text()
-    return text.split('def main():', 1)[1]
+    return text.split('def main():', 1)[1].split('if __name__', 1)[0]
 
 
 def test_no_shared_package_has_two_writers():
@@ -43,7 +43,7 @@ def test_the_owner_scripts_write_the_declared_packages():
     """The table follows the code: each package is still created by its declared step."""
     needles = {
         '/Game/Japan/Terrain': ('import_hidamari.py', "import_mesh(ROOT/'terrain.fbx'"),
-        '/Game/Japan/Assets/Sea': ('setup_project.py', 'sea_plane()'),
+        '/Game/Japan/Assets/Sea': ('setup_project.py', '{"SEA_ONLY": True}'),
         '/Game/Japan/Materials/MI_Coast': ('import_hidamari.py', 'coast_instance()'),
         '/Game/Japan/Materials/MI_Sand': ('import_hidamari.py', 'sand_material()'),
         '/Game/Japan/Materials/M_ForestGround': ('import_hidamari.py', 'coast_instance()'),
