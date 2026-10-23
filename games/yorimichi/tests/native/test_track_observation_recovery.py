@@ -116,7 +116,7 @@ def test_saved_archives_are_exact_and_current_package_reads_are_explicit(tmp_pat
         with pytest.raises((ValueError,FileNotFoundError)):recovery.rebuild_saved_archives(descriptor,'SM_TK_Test',spec)
 
 
-@pytest.mark.parametrize('fault',[None,'data_changed','new_whole255'])
+@pytest.mark.parametrize('fault',[None,'data_changed','new_whole255','carry_without_source'])
 def test_host_finalizer_binds_new_report_sha_and_never_accepts_failed_verifier(tmp_path,monkeypatch,fault):
     from atelier.atomic_files import atomic_json
     spec=tmp_path/'old-spec.json';atomic_json(spec,dict(source='frozen'))
@@ -124,7 +124,8 @@ def test_host_finalizer_binds_new_report_sha_and_never_accepts_failed_verifier(t
     plan=tmp_path/'plan.json';atomic_json(plan,dict(metadata=dict(spec=recovery.binding(spec)),validation_inputs={},host_before=state))
     plan_row=recovery.binding(plan)
     data=tmp_path/'data.json';body=dict(plan=plan_row,failed_old_whole=255,observation_validation_only=True,
-        cleanup_pending=True,complete=False,native_complete=False,native=state['native'])
+        cleanup_pending=True,complete=False,native_complete=False,native=state['native'],source_input_identity_carry=False)
+    if fault=='carry_without_source':body['source_input_identity_carry']=True
     atomic_json(data,body);data_sha=recovery.proof.sha(data)
     guard=tmp_path/'new-guard';guard.mkdir()
     atomic_json(guard/'memory-health-tree.json',dict(state='child_exited',cleanup_complete=True,processes=[],footprint_bytes=0))
@@ -141,3 +142,66 @@ def test_host_finalizer_binds_new_report_sha_and_never_accepts_failed_verifier(t
     else:
         with pytest.raises(ValueError):recovery.finalize(plan,plan_row['sha256'],data,guard,whole,output)
         assert not output.exists()
+
+
+
+def carry_fixture(tmp_path):
+    import hashlib
+    runtime=dict(meshes={});spec=dict(schema=1,original_track=str(tmp_path/'original'),current_track=str(tmp_path/'current'),inputs={})
+    digest=hashlib.sha256(b'exact GLB').hexdigest()
+    for index in range(137):
+        name=f'SM_TK_Test_{index:03}';levels=3 if index<88 else 2
+        runtime['meshes'][name]=dict(lods=[f'meshes/{name}_LOD{level}.glb'for level in range(levels)],
+            screen_sizes=[1.,.5,.1][:levels],materials=['MI_TK_Bank'])
+        for phase in ('original','current'):
+            for relative in runtime['meshes'][name]['lods']:spec['inputs'][str(Path(spec[phase+'_track'])/relative)]=digest
+    return spec,runtime
+
+
+@pytest.mark.parametrize('fault',[None,'one_glb_vector','vector_omission','runtime_value','missing_mesh','missing_lod','runtime_type'])
+def test_exact137_362_input_vectors_refuse_partial_or_changed_carry(tmp_path,fault):
+    import copy
+    spec,runtime=carry_fixture(tmp_path);current=copy.deepcopy(runtime)
+    key=next(iter(spec['inputs']))
+    if fault=='one_glb_vector':spec['inputs'][key]='a'*64
+    elif fault=='vector_omission':spec['inputs'].pop(key)
+    elif fault=='runtime_value':current['new_unobserved_runtime_field']=True
+    elif fault=='missing_mesh':current['meshes'].pop(next(iter(current['meshes'])))
+    elif fault=='missing_lod':current['meshes'][next(iter(current['meshes']))]['lods'].pop()
+    elif fault=='runtime_type':runtime['typed_field']=1;current['typed_field']=True
+    if fault is None:
+        vector=recovery.input_identity_vectors(spec,runtime,current)
+        assert len(vector['rows'])==362 and vector['logical_meshes']==137
+    else:
+        with pytest.raises(ValueError):recovery.input_identity_vectors(spec,runtime,current)
+
+
+def test_declared_vector_equality_does_not_replace_actual_glb_byte_validation(tmp_path):
+    import hashlib
+    spec,runtime=carry_fixture(tmp_path)
+    first=next(iter(spec['inputs']));path=Path(first);path.parent.mkdir(parents=True);path.write_bytes(b'changed actual GLB')
+    # The declared vectors alone still agree; the independent actual-byte gate refuses.
+    assert recovery.input_identity_vectors(spec,runtime,runtime)['authored_lods']==362
+    one=dict(schema=1,inputs={first:hashlib.sha256(b'exact GLB').hexdigest()})
+    with pytest.raises(ValueError):recovery.proof.bound_inputs(one)
+
+
+@pytest.mark.parametrize('fault',[None,'owner_byte','owner_missing','cpp_byte'])
+def test_current_source_binding_is_exact_scoped_owner_bytes(tmp_path,fault):
+    import hashlib
+    observed=tmp_path/'observed';current=tmp_path/'current';inputs={};paths={}
+    for relative in ('unreal/Scripts/import_belmonte_track.py','unreal/Scripts/import_belmonte.py',
+                     'unreal/Source/Yorimichi/BelmonteTrack.cpp','unreal/Source/Yorimichi/BelmonteTrack.h'):
+        old=observed/relative;new=current/'games/yorimichi'/relative
+        for path in (old,new):path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(('actual '+relative).encode())
+        inputs[str(old)]=hashlib.sha256(old.read_bytes()).hexdigest();paths[Path(relative).name]=new
+    spec=dict(inputs=inputs,importer=str(observed/'unreal/Scripts/import_belmonte_track.py'),
+              material_owner=str(observed/'unreal/Scripts/import_belmonte.py'))
+    if fault=='owner_byte':paths['import_belmonte_track.py'].write_bytes(b'changed owner')
+    elif fault=='owner_missing':paths['import_belmonte.py'].unlink()
+    elif fault=='cpp_byte':paths['BelmonteTrack.cpp'].write_bytes(b'changed scoped runtime')
+    if fault is None:
+        bindings=recovery.current_owner_bindings(spec,current)
+        assert len(bindings)==4 and not any('NativeAtomicEquivalence' in key for key in bindings)
+    else:
+        with pytest.raises((ValueError,FileNotFoundError)):recovery.current_owner_bindings(spec,current)

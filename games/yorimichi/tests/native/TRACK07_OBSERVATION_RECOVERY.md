@@ -42,3 +42,25 @@ Every new report says `failed_old_whole: 255`, `observation_validation_only: tru
 is not an independently executed original/current equivalence proof. The parent
 must separately admit any necessary current native observation or bounded cleanup
 with exact referencer preflight; this tooling performs neither.
+
+## Conditional source input identity carry
+
+Pass `--current-source CURRENT_CHECKOUT` to **both host prepare and host finalize**
+to request the narrow carry. The checkout must remain at its pinned actual clean
+head. The two production Python owners and the `BelmonteTrack.cpp/.h` files
+explicitly present in the old spec must match the observed source SHA exactly.
+No other C++/observer change is normalized or claimed unchanged, and this does not
+claim that current main was compiled or executed in the observed native process.
+
+The admitted data verifier always requires exact original/current runtime JSON
+values/types and complete137/362 GLB vectors from the same old spec. Every vector
+member must have both absolute paths in the declared input map, equal SHA values,
+and actual bytes validated by the independent before/after `bound_inputs` gate.
+The raw native records/archive/slot/query checks remain mandatory independently
+of this carry. A conditional `source_input_identity_carry: true` therefore means
+identical consumed inputs and only the named current source files, in the actual
+old observed native environment. It is **not** a second native execution:
+`independent_paired_native_execution`, `original_current_equivalence`,
+`current_compiled_main_claim`, `native_complete` and `normal_task_reuse` stay false.
+Old whole255 and cleanup pending remain explicit. Fresh production runtime
+acceptance remains a separate BV1 obligation.
