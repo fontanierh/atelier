@@ -289,6 +289,8 @@ def hydrate(ctx, steps, store, *, echo=print, resume=None):
             journal.unlink()
         return None
     placed = result.get('placed', 0)
+    from .store_retention import touch
+    touch(store, plan['key'])
     echo(f'checkpoint restore: {placed} files hydrated, {len(plan["stamps"])} certificates staged, '
          f'{time.monotonic() - started:.1f} s')
     if plan['token'] and not placed:

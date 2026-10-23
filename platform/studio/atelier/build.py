@@ -831,6 +831,10 @@ def _build(ctx, wanted, *, force, touch, echo, index, steps=None, produced=None,
         if completed and checkpoint.get('steps') is not None:
             from .checkpoint_manifest import finish
             finish(ctx, checkpoint['steps'])
+    if completed and getattr(ctx, 'checkpoint_settings', None) is not None:
+        from . import store_retention
+        from .checkpoint_store import Store
+        store_retention.maybe_collect(Store(ctx.game), echo=echo)
     if invalid:
         echo('FAILED: products changed after their owner completed: ' + ', '.join(invalid))
         return 1

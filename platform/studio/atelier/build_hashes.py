@@ -31,6 +31,7 @@ class HashIndex:
     def __init__(self, path=None, *, read_only=False, verify=False):
         self.connection = None
         self.memory = {}
+        self.resolved = {}  # Path spelling -> resolved key; realpath dominated warm planning.
         self.read_only = read_only
         self.verify = verify
         if path is None:
@@ -90,7 +91,11 @@ class HashIndex:
         before = path.stat()
         if not stat.S_ISREG(before.st_mode):
             raise ValueError(f'Not a regular file: {path}')
-        key, stamp = str(path.resolve()), repr(signature(before))
+        spelling = str(path)
+        key = self.resolved.get(spelling)
+        if key is None:
+            key = self.resolved[spelling] = str(path.resolve())
+        stamp = repr(signature(before))
         value = None
         entry = self.memory.get(key)
         # Whole-second metadata cannot provide a useful persistent change token.

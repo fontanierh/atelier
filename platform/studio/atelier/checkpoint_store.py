@@ -172,12 +172,12 @@ def certificates(ctx, steps, *, include_incremental=False, hashes=None):
     from .build import fingerprint, order, outputs_present, result
     from .build_plan import read_stamp
     from .checkpoint_actions import compile_present, certified, local_incremental
-    done, records = {}, {}
+    done, records, tools = {}, {}, {}  # One tool enumeration per pass, as in the build loop.
     with HashIndex(hashes) as index, hashing(ctx, index.digest):
         for step in order(steps, [s.name for s in steps]):
             stamp = read_stamp(ctx.stamps / (step.name + '.json'))
             try:
-                current = fingerprint(step, done, index=index, tool_cache={})
+                current = fingerprint(step, done, index=index, tool_cache=tools)
                 products = build_products.records(step, hasher=index.digest)
                 good = (stamp.get('fingerprint') == current and not stamp.get('touched')
                         and outputs_present(step) and compile_present(ctx, step) and (certified(ctx, step, current, stamp) or (include_incremental and local_incremental(ctx, step, current, stamp))) and (not step.products or stamp.get('products') == products)

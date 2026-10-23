@@ -49,6 +49,8 @@ def restore_checkpoint(ctx, step, fingerprint, index, *, echo=print):
             stamp = {**saved['stamps'], **saved.get('incremental_stamps', {})}.get(step.name)
             if (stamp and stamp.get('fingerprint') == fingerprint and outputs_present(step)
                     and compile_present(ctx, step) and certified(ctx, step, fingerprint, stamp)):
+                from .store_retention import touch
+                touch(index.store, key)
                 echo(f'{step.name}: restored from checkpoint {key[:12]} ({time.monotonic() - started:.1f} s)')
                 return key, stamp
             echo(f'{step.name}: checkpoint {key[:12]} outputs did not certify; building normally')

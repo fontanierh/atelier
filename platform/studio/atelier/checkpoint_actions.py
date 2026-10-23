@@ -455,6 +455,8 @@ class Actions:
             raise CheckpointError('Task restoration journal changed')
         # Parent execution writes its normal fresh certificate after all output/read checks.
         journal.unlink()
+        from .store_retention import touch
+        touch(self.store, value['key'])
         return True
 
 
