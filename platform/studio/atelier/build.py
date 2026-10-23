@@ -946,20 +946,34 @@ def _prepared_build(ctx, wanted, *, force, touch, echo, verify, rebuild_reason, 
     ctx.record_cook_recovery = record_cook_recovery
     ctx.rebuild_touched = rebuild_touched
     from . import build_checkpoints
-    ctx.rebuild_reason = build_checkpoints.reason(rebuild_reason)
+    try:
+        ctx.rebuild_reasons, ctx.rebuild_reason = build_checkpoints.reasons(rebuild_reason)
+    except build_checkpoints.CheckpointError as error:
+        raise SystemExit(str(error)) from error
     ctx.checkpoint_settings = build_checkpoints.configured(ctx)
     checkpoint_steps = None
     if ctx.checkpoint_settings is not None:
         if touch:
             raise SystemExit('--touch cannot certify checkpoint builds. Use the normal build command.')
-        if force and not ctx.rebuild_reason:
+        if force and not (ctx.rebuild_reason or ctx.rebuild_reasons):
             raise SystemExit('--force requires --rebuild-reason for checkpoint builds; normal builds restore matching results.')
         checkpoint_steps = load_recipe(game).steps(ctx)
         check_source_launch(checkpoint_steps)
+        unknown = sorted(set(ctx.rebuild_reasons) - {s.name for s in checkpoint_steps})
+        if unknown:
+            raise SystemExit(f'--rebuild-reason names unknown tasks: {", ".join(unknown)}')
+        # A bare reason covers the tasks named on the command line and those with no result at
+        # launch; any other task the budget stops needs its own STEP=REASON.
+        ctx.cold_at_launch = {s.name for s in checkpoint_steps if not (ctx.stamps / (s.name + '.json')).exists()} | set(wanted)
         if force and (len(wanted) != 1 or wanted[0] not in {s.name for s in checkpoint_steps}):
             raise SystemExit('--force requires one exact task and --rebuild-reason; broad forced rebuilds are retired.')
         ctx.checkpoint_force_task = wanted[0] if force else None
-        if getattr(ctx, 'cook_mode', CookMode.DEFAULT) is CookMode.FULL and not ctx.rebuild_reason:
+        if force:  # The one forced task is named on the command line, so any given reason covers it.
+            forced_reason = ctx.rebuild_reasons.get(wanted[0]) or ctx.rebuild_reason
+            if not forced_reason:
+                raise SystemExit(f'--force needs a rebuild reason for {wanted[0]}')
+            ctx.rebuild_reasons[wanted[0]] = forced_reason
+        if getattr(ctx, 'cook_mode', CookMode.DEFAULT) is CookMode.FULL and not (ctx.rebuild_reason or ctx.rebuild_reasons):
             raise SystemExit('A diagnostic full cook requires --rebuild-reason; normal builds cook incrementally.')
     # Pure refusal checks precede metadata creation. Unconfigured games keep their
     # existing lifecycle and never acquire a checkpoint-only output lock.

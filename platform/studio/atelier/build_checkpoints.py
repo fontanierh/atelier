@@ -73,6 +73,35 @@ def reason(value):
     return value
 
 
+def reasons(values):
+    """--rebuild-reason values: STEP=REASON scopes one task; one bare REASON covers launch-cold tasks."""
+    import re
+    if values is None or isinstance(values, str):
+        values = [] if values is None else [values]
+    scoped, bare = {}, None
+    for value in values:
+        match = re.fullmatch(r'([A-Za-z0-9_][A-Za-z0-9_.:-]*)=(.+)', value or '')
+        if match:
+            scoped[match[1]] = reason(match[2])
+        elif bare is not None:
+            raise CheckpointError('Give at most one bare --rebuild-reason; scope the others as STEP=REASON')
+        else:
+            bare = reason(value)
+    return scoped, bare
+
+
+def reason_for(ctx, step):
+    """The rebuild reason that covers this task, and why it applies, or (None, None)."""
+    scoped = getattr(ctx, 'rebuild_reasons', {}).get(step.name)
+    if scoped:
+        return scoped, 'named'
+    bare = getattr(ctx, 'rebuild_reason', None)
+    cold = getattr(ctx, 'cold_at_launch', None)
+    if bare and (cold is None or step.name in cold):
+        return bare, 'requested or cold at launch'
+    return None, None
+
+
 def _guard(ctx, operation, key=None):
     """@cc [owner:fontanierh,label:safety] checkpoint-transfer-invocation
     Native-file copies MUST enter the normal owned-child admission/guard lifecycle with
@@ -345,7 +374,10 @@ def protect(ctx, step, *, estimate=None, echo=print):
     """@cc [owner:fontanierh,label:performance] no-silent-cold-rebuild
     A configured build MUST attempt normal cache restoration before spending native work.
     An unknown cold native job or native work exceeding the retained rebuild budget MUST stop
-    before command preparation/admission unless this invocation records an explicit rebuild reason.
+    before command preparation/admission unless this invocation records an explicit rebuild reason
+    covering that task: one naming it (STEP=REASON), or a bare reason only for tasks named on the
+    command line or with no result when the build launched. Each use MUST be logged with its
+    task and scope.
     Cache hits/current steps MUST NOT spend the rebuild budget. No override may weaken guards.
     """
     settings = getattr(ctx, 'checkpoint_settings', None)
@@ -354,7 +386,7 @@ def protect(ctx, step, *, estimate=None, echo=print):
     from .build import Call
     if not any(not isinstance(c, Call) for c in step.commands):
         return
-    recorded_reason = getattr(ctx, 'rebuild_reason', None)
+    recorded_reason, scope = reason_for(ctx, step)
     if estimate is None:
         retained = ctx.out / '.state/checkpoint.json' if hasattr(ctx, 'out') else None
         if retained is not None and retained.is_file():
@@ -368,13 +400,14 @@ def protect(ctx, step, *, estimate=None, echo=print):
         duration = 'unknown cold cost' if unknown_cold else f'{spent + estimated:.0f}s retained rebuild estimate'
         raise CheckpointError(f'{step.name}: stopped before a costly rebuild ({duration}). '
                               'Run the same build with --plan --explain to inspect invalidation. '
-                              'Repair checkpoint access, or rerun with --rebuild-reason "why this rebuild is necessary". '
+                              f'Repair checkpoint access, or rerun with --rebuild-reason {step.name}="why this rebuild is necessary". '
                               'No native work was launched for this task.')
     ctx.checkpoint_rebuild_seconds = spent + estimated
-    if recorded_reason:
+    if recorded_reason and (unknown_cold or exceeds):
+        echo(f'{step.name}: rebuild reason applied ({scope}): {recorded_reason}')
         ctx.logs.mkdir(parents=True, exist_ok=True)
         with (ctx.logs / 'rebuild-decisions.jsonl').open('a') as handle:
-            handle.write(json.dumps(dict(step=step.name, reason=recorded_reason, time=time.time(),
+            handle.write(json.dumps(dict(step=step.name, reason=recorded_reason, scope=scope, time=time.time(),
                                          estimated_seconds=known)) + '\n')
 
 

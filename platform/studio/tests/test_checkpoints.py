@@ -266,6 +266,32 @@ def test_large_or_unknown_cold_jobs_require_a_recorded_reason(tmp_path):
     assert json.loads((tmp_path / 'rebuild-decisions.jsonl').read_text())['reason'] == ctx.rebuild_reason
 
 
+def test_rebuild_reason_covers_only_the_tasks_it_names_or_that_were_cold(tmp_path):
+    ctx = SimpleNamespace(checkpoint_settings=dict(rebuild_budget_seconds=60), logs=tmp_path, uproject=None,
+                          rebuild_reasons={'native.terrain': 'terrain recipe rewrite'}, rebuild_reason='new region',
+                          cold_at_launch={'native.region'})
+    def native(name):
+        return build.Step(name, [build.UnrealScript(Path('import.py'), 'done')], heavy=True,
+                          checkpoint_outputs=(tmp_path / name,))
+    messages = []
+    build_checkpoints.protect(ctx, native('native.terrain'), estimate=900, echo=messages.append)
+    build_checkpoints.protect(ctx, native('native.region'), echo=messages.append)
+    # An already-built task invalidated by the same run still stops at the budget.
+    with pytest.raises(cp.CheckpointError, match='--rebuild-reason native.world='):
+        build_checkpoints.protect(ctx, native('native.world'), estimate=900, echo=messages.append)
+    assert messages == ['native.terrain: rebuild reason applied (named): terrain recipe rewrite',
+                        'native.region: rebuild reason applied (requested or cold at launch): new region']
+    decisions = [json.loads(line) for line in (tmp_path / 'rebuild-decisions.jsonl').read_text().splitlines()]
+    assert [(d['step'], d['scope']) for d in decisions] == [('native.terrain', 'named'), ('native.region', 'requested or cold at launch')]
+
+
+def test_rebuild_reasons_parse_scoped_and_one_bare_value():
+    assert build_checkpoints.reasons(['a.b=why', 'plain reason', 'c=x=y']) == ({'a.b': 'why', 'c': 'x=y'}, 'plain reason')
+    assert build_checkpoints.reasons('legacy single value') == ({}, 'legacy single value')
+    with pytest.raises(cp.CheckpointError, match='at most one bare'):
+        build_checkpoints.reasons(['one', 'two'])
+
+
 def test_guard_failure_cannot_publish_receipt_or_certificates(fixture, monkeypatch):
     _, _, key = snapshot(fixture)
     ctx, steps = fixture.checkout('receiver')
