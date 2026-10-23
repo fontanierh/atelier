@@ -22,13 +22,14 @@ def files(root):
     return result
 
 
-def payloads(parent, values):
+def payloads(parent, values, *, suffix='.npz'):
     parent = name(parent)
+    if suffix not in ('.npz','.mesh'):raise ValueError('Unsupported planned geometry encoding')
     result = set()
     for value in values:
-        if (not isinstance(value, str) or not value.endswith('.npz')
-                or value != name(Path(value).stem) + '.npz'
-                or not (value == parent + '.npz' or value.startswith(parent + '_'))):
+        if (not isinstance(value, str) or not value.endswith(suffix)
+                or value != name(Path(value).stem) + suffix
+                or not (value == parent + suffix or value.startswith(parent + '_'))):
             raise ValueError('Foreign logical payload ownership')
         if value.casefold() in {v.casefold() for v in result}:
             raise ValueError('Duplicate logical payload ownership')
@@ -38,7 +39,7 @@ def payloads(parent, values):
     return result
 
 
-def begin(root, parent, expected):
+def begin(root, parent, expected, *, suffix='.npz'):
     """@cc [owner:fontanierh,label:correctness] planner-owned-retirement-preflight
     Refuse foreign files, directories and links before writing any payload. A previous
     complete plan or this owner's exact transaction journal MUST establish ownership
@@ -47,18 +48,18 @@ def begin(root, parent, expected):
     """
     root = real_directory(root)
     current = files(root)
-    wanted = payloads(parent, expected)
+    wanted = payloads(parent, expected,suffix=suffix)
     owned = set()
     if PLAN in current:
         previous = json.loads((root / PLAN).read_text())
         if previous.get('parent') != parent or previous.get('schema') != 1 or previous.get('complete') is not True:
             raise ValueError('Foreign previous logical plan')
-        owned.update(payloads(parent, [row['payload'] for row in previous['pieces']]))
+        owned.update(payloads(parent, [row['payload'] for row in previous['pieces']],suffix=suffix))
     if JOURNAL in current:
         journal = json.loads((root / JOURNAL).read_text())
         if set(journal) != {'schema', 'parent', 'payloads'} or journal['schema'] != 1 or journal['parent'] != parent:
             raise ValueError('Foreign logical planning transaction')
-        owned.update(payloads(parent, journal['payloads']))
+        owned.update(payloads(parent, journal['payloads'],suffix=suffix))
     if current - owned - {PLAN, JOURNAL}:
         raise ValueError('Foreign members in logical planning output')
     root.mkdir(parents=True, exist_ok=True)
@@ -66,15 +67,15 @@ def begin(root, parent, expected):
     return wanted
 
 
-def finish(root, value):
+def finish(root, value, *, suffix='.npz'):
     root = real_directory(root)
     current = files(root)
     journal = json.loads((root / JOURNAL).read_text())
     parent = value['parent']
     if journal.get('schema') != 1 or journal.get('parent') != parent:
         raise ValueError('Foreign logical planning transaction')
-    owned = payloads(parent, journal['payloads'])
-    wanted = payloads(parent, [row['payload'] for row in value['pieces']])
+    owned = payloads(parent, journal['payloads'],suffix=suffix)
+    wanted = payloads(parent, [row['payload'] for row in value['pieces']],suffix=suffix)
     if not wanted <= current or not wanted <= owned or current - owned - {PLAN, JOURNAL}:
         raise ValueError('Logical planning ownership changed before publication')
     atomic_json(root / PLAN, value)

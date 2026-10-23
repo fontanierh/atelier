@@ -7,13 +7,14 @@ from pathlib import Path
 from atelier.atomic_files import atomic_json
 from atelier.build_inputs import local_imports
 from atelier.build_batch_source import support as batch_support
-from atelier.build import Batch, Blender, Call, Product, Step
+from atelier.build import Batch, Blender, Call, Product, Python, Step
 from atelier import export_assembly, export_tasks
 from atelier.model_files import member
 
 GAME = Path(__file__).resolve().parent
 WORLD = GAME / 'world'
 EXPORTER = WORLD / 'export_region_piece.py'
+ENCODED_EXPORTER = WORLD / 'export_encoded_piece.py'
 
 
 @dataclass(frozen=True)
@@ -26,10 +27,13 @@ class LogicalAsset:
     needs: tuple = ()
     suffix: str = '.fbx'
     products: tuple = ()
+    encoding: str = 'mesh_ir'
 
 
-def inventory(root, parent):
+def inventory(root, parent, *, encoding='mesh_ir'):
     """Read task identities only; the owning ordinary task verifies all geometry payloads."""
+    if encoding not in ('mesh_ir','encoded_glb'):raise ValueError('Unknown logical mesh encoding')
+    suffix='.mesh' if encoding=='encoded_glb' else '.npz'
     root = Path(root)
     path = root / 'plan.json'
     # Discovery describes cold tasks without creating or admitting their outputs.
@@ -42,11 +46,12 @@ def inventory(root, parent):
     if (value.get('schema') != 1 or value.get('parent') != parent or value.get('complete') is not True
             or value.get('triangle_limit') != export_tasks.TRIANGLE_LIMIT or not value.get('pieces')):
         raise ValueError('Incomplete or foreign logical geometry plan')
+    if encoding=='encoded_glb' and value.get('kind')!='encoded_glb':raise ValueError('Wrong logical mesh data encoding')
     seen, rows = set(), []
     total = 0
     for row in value['pieces']:
         key = export_tasks.name(row['name'])
-        if (key.casefold() in seen or member(row['payload']) != key + '.npz'
+        if (key.casefold() in seen or member(row['payload']) != key + suffix
                 or type(row['triangles']) is not int or not 0 < row['triangles'] <= export_tasks.TRIANGLE_LIMIT):
             raise ValueError('Invalid or duplicate atomic geometry member')
         seen.add(key.casefold()); total += row['triangles']
@@ -74,33 +79,43 @@ def steps(ctx, *, region, assets, after=(), inputs=()):
     for asset in assets:
         if asset.suffix not in export_tasks.PRIMARY:
             raise ValueError('Unsupported atomic region format')
+        if asset.encoding not in ('mesh_ir','encoded_glb') or (asset.encoding=='encoded_glb' and asset.suffix!='.glb'):
+            raise ValueError('Unsupported logical source encoding/primary combination')
+        encoded=asset.encoding=='encoded_glb'
         root = ctx.out / 'planned_exports' / region / asset.key
         task = f'world.{region}.geometry.{asset.key}'
         product = f'{region}.geometry.{asset.key}'
-        def complete(root=root):
+        def complete(root=root,encoded=encoded):
             import sys
             if str(WORLD) not in sys.path: sys.path.insert(0, str(WORLD))
-            from region_mesh_parts import present
+            if encoded:
+                from encoded_region_plan import present
+            else:
+                from region_mesh_parts import present
             return present(root)
-        planners.append(Step(task, [Blender(asset.script, (*asset.args, '--output', str(root)),
-                    threads=3, factory_startup=True, env=(('PYTHONHASHSEED', '0'),))],
-            inputs=[*local_imports(asset.script, (WORLD, WORLD / 'regions')), *batch_support().values(), *asset.inputs], needs=list(asset.needs), reads=list(asset.reads),
-            after=list(after), products=[Product(product, (root,)), *asset.products], cache=True, toolchain=True,
-            heavy=True, batch=Batch(region + ' logical geometry'), verify=complete,
+        arguments=(*asset.args,'--output',str(root))
+        command=(Python(asset.script,arguments) if encoded else Blender(asset.script,arguments,
+                    threads=3,factory_startup=True,env=(('PYTHONHASHSEED','0'),)))
+        planners.append(Step(task, [command],
+            inputs=[*local_imports(asset.script, (WORLD, WORLD / 'regions')), *(batch_support().values() if not encoded else ()), *asset.inputs], needs=list(asset.needs), reads=list(asset.reads),
+            after=list(after), products=[Product(product, (root,)), *asset.products], cache=True, toolchain=not encoded,
+            heavy=True, batch=None if encoded else Batch(region + ' logical geometry'), verify=complete,
             about='construct only logical mesh ' + asset.key))
-        logical.append((asset.key, root, task, product))
-        rows = inventory(root, asset.key)
+        logical.append((asset.key, root, task, product,asset.encoding))
+        rows = inventory(root, asset.key,encoding=asset.encoding)
         atomic = export_tasks.steps(ctx, prefix=f'world.{region}.export',
             assets=[export_tasks.Asset(key, payload, asset.suffix) for key, payload in rows],
-            script=EXPORTER, inputs=[WORLD / 'mesh_pieces.py', *inputs], after=[barrier])
+            script=ENCODED_EXPORTER if encoded else EXPORTER,
+            runtime='python' if encoded else 'blender',
+            inputs=[*(() if encoded else (WORLD/'mesh_pieces.py',)),*inputs],after=[barrier])
         exports.extend(atomic)
         children.extend((step, key) for step, (key, _) in zip(atomic, rows))
         products.extend(step.products[0].name for step in atomic)
     discovery = ctx.out / 'planned_exports' / region / 'discovery.json'
     def discover(ctx, log):
         rows = {}
-        for parent, root, _, _ in logical:
-            found = inventory(root, parent)
+        for parent, root, _, _,encoding in logical:
+            found = inventory(root, parent,encoding=encoding)
             if not found: raise ValueError('Missing logical geometry plan: ' + parent)
             rows[parent] = [key for key, _ in found]
         atomic_json(discovery, dict(schema=1, parents=rows))
@@ -113,15 +128,19 @@ def steps(ctx, *, region, assets, after=(), inputs=()):
     def assemble(ctx, log):
         expected = []
         parents, ownership = {}, {}
-        for parent, root, _, _ in logical:
-            rows = inventory(root, parent)
+        for parent, root, _, _,encoding in logical:
+            rows = inventory(root, parent,encoding=encoding)
             if not rows: raise ValueError('Missing logical geometry plan: ' + parent)
             expected.extend(key for key, _ in rows)
             parents[parent] = [key for key, _ in rows]
         if expected != [key for _, key in children]:
             raise ValueError('Region export roster changed without completed recipe expansion')
-        for parent, root, _, _ in logical:
+        for parent, root, _, _,encoding in logical:
             plan = json.loads((root / 'plan.json').read_text())
+            if encoding=='encoded_glb':
+                ownership[parent]={key:plan[key] for key in ('kind','source_triangles',
+                    'source_render_triangles','source_collision_triangles','pieces')}
+                continue
             ownership[parent] = {key: plan[key] for key in (
                 'source_triangles', 'source_polygons', 'source_collision_hulls', 'slots', 'matrix')}
             ownership[parent]['pieces'] = [{key: row[key] for key in (
