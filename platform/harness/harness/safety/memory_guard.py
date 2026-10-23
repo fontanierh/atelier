@@ -52,29 +52,38 @@ class ProcfsUsage:
 
 def _procfs_usage(pid):
     def gone():return ProcessLookupError(errno.ESRCH,'Cannot sample process',pid)
-    try:raw=(PROCFS/str(pid)/'stat').read_bytes()
-    except OSError:raise gone()
+    def broken(entry):return RuntimeError(f'Cannot read {entry} for process {pid}')
+    def read(entry,text=False):
+        # Only a missing entry proves the process left. A refused or failed read, or a short or
+        # non-numeric value, is telemetry loss and must never certify an empty tree.
+        path=PROCFS/str(pid)/entry
+        try:return path.read_text() if text else path.read_bytes()
+        except FileNotFoundError:raise gone() from None
+    raw=read('stat')
     end=raw.rfind(b')')
     fields=raw[end+2:].split() if end>=0 else []
-    if len(fields)<20:raise gone()
+    if len(fields)<20:raise broken('stat')
     if fields[0] in (b'Z',b'X',b'x'):raise gone()          # reaped or not, it no longer owns memory
-    try:resident=int((PROCFS/str(pid)/'statm').read_text().split()[1])*os.sysconf('SC_PAGE_SIZE')
-    except (OSError,ValueError,IndexError):raise gone()
+    try:
+        user,system,started=int(fields[11]),int(fields[12]),int(fields[19])
+        resident=int(read('statm',True).split()[1])*os.sysconf('SC_PAGE_SIZE')
+    except (IndexError,ValueError):raise broken('stat or statm') from None
     wired=0
-    try:
-        for line in (PROCFS/str(pid)/'status').read_text().splitlines():
-            if line.startswith('VmLck:'):wired=int(line.split()[1])*1024;break
-    except (OSError,ValueError,IndexError):pass
+    for line in read('status',True).splitlines():
+        if line.startswith('VmLck:'):
+            try:wired=int(line.split()[1])*1024
+            except (IndexError,ValueError):raise broken('status') from None
+            break
     read_bytes=written_bytes=0
-    try:
-        for line in (PROCFS/str(pid)/'io').read_text().splitlines():
-            key,_,value=line.partition(':')
+    for line in read('io',True).splitlines():
+        key,_,value=line.partition(':')
+        try:
             if key=='read_bytes':read_bytes=int(value)
             elif key=='write_bytes':written_bytes=int(value)
-    except (OSError,ValueError):pass
+        except ValueError:raise broken('io') from None
     value=ProcfsUsage()
-    value.user,value.system=int(fields[11]),int(fields[12])
-    value.started,value.exited=int(fields[19]),0
+    value.user,value.system=user,system
+    value.started,value.exited=started,0
     value.resident=value.footprint=resident
     value.wired,value.pageins=wired,0
     value.read_bytes,value.written_bytes=read_bytes,written_bytes
@@ -86,8 +95,16 @@ def _procfs_usage(pid):
 def children(pid):
     """The live children of pid; one born during the call is caught on the next tick."""
     if not DARWIN:
-        try:return [int(p) for p in (PROCFS/str(pid)/'task'/str(pid)/'children').read_text().split()]
-        except (OSError,ValueError):return []
+        # A task lists only the children it created itself, so a child spawned from a worker
+        # thread appears under that thread alone. Every task is read and unioned, or the guard
+        # would miss such a process entirely and could certify an empty tree while it lives.
+        try:tasks=[entry for entry in (PROCFS/str(pid)/'task').iterdir() if entry.name.isdigit()]
+        except FileNotFoundError:raise ProcessLookupError(errno.ESRCH,'Cannot sample process',pid)
+        found=set()
+        for task in tasks:
+            try:found.update(int(value) for value in (task/'children').read_text().split())
+            except FileNotFoundError:continue  # That thread exited; its children were reparented.
+        return sorted(found)
     size=ctypes.sizeof(ctypes.c_int);count=LIB.proc_listpids(PROC_PPID_ONLY,pid,None,0)
     if count<=0:return []
     buf=(ctypes.c_int*(count//size+64))();count=LIB.proc_listpids(PROC_PPID_ONLY,pid,buf,ctypes.sizeof(buf))
@@ -97,7 +114,7 @@ def name(pid):
     """The executable's name ('UnrealEditor', 'dotnet'), or '' once it is gone."""
     if not DARWIN:
         try:return (PROCFS/str(pid)/'comm').read_text().strip()
-        except OSError:return ''
+        except FileNotFoundError:return ''
     buf=ctypes.create_string_buffer(256)
     return buf.value.decode(errors='replace') if LIB.proc_name(pid,buf,256)>0 else ''
 
@@ -112,8 +129,11 @@ def owned_children(parent,parent_start):
     and a child has the same start on both sides of a second listing, so a reused pid (the parent's or a child's)
     never brings in another process's children."""
     if _started(parent)!=parent_start:return []
-    first=children(parent);starts={c:_started(c) for c in first}
-    again=set(children(parent))
+    try:first=children(parent)
+    except ProcessLookupError:return []          # The parent left between the identity checks.
+    starts={c:_started(c) for c in first}
+    try:again=set(children(parent))
+    except ProcessLookupError:return []
     if _started(parent)!=parent_start:return []
     return [(c,s) for c,s in starts.items() if s is not None and c in again and _started(c)==s]
 

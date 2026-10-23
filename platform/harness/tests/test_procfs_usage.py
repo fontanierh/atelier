@@ -4,6 +4,10 @@ A synthetic procfs tree is injected, so these assertions run on any host and cov
 fields the guard reads: resident size, pinned start identity, CPU ticks and children.
 """
 import os
+import subprocess
+import sys
+import threading
+import time
 
 import pytest
 
@@ -62,3 +66,63 @@ def test_a_process_with_no_children_or_comm_yields_empty_values(procfs):
     fake(procfs, 77)
     (procfs / '77' / 'comm').unlink()
     assert guard.children(77) == [] and guard.name(77) == ''
+
+
+def test_a_child_of_any_worker_thread_is_listed(procfs):
+    """Each task records only its own children, so a worker thread's child must still appear."""
+    folder = fake(procfs, 77)
+    (folder / 'task' / '77' / 'children').write_text('12' + NEWLINE)
+    worker = folder / 'task' / '78'
+    worker.mkdir()
+    (worker / 'children').write_text('13 14' + NEWLINE)
+    assert guard.children(77) == [12, 13, 14]
+
+
+def test_a_refused_or_failed_read_is_not_process_absence(procfs):
+    """Only a missing entry means gone. A refused read or malformed telemetry is a failure, so a
+    dead-looking sample can never certify an empty owned tree."""
+    folder = fake(procfs, 77)
+    (folder / 'stat').unlink()
+    (folder / 'stat').mkdir()
+    with pytest.raises(OSError) as refused:
+        guard.usage(77)
+    assert not isinstance(refused.value, ProcessLookupError)
+    (folder / 'task' / '77' / 'children').mkdir()
+    with pytest.raises(OSError) as refused:
+        guard.children(77)
+    assert not isinstance(refused.value, ProcessLookupError)
+    (folder / 'task').rename(folder / 'tasks-gone')
+    with pytest.raises(ProcessLookupError):
+        guard.children(77)
+
+
+def test_malformed_procfs_values_fail_instead_of_reporting_absence(procfs):
+    folder = fake(procfs, 77)
+    (folder / 'stat').write_bytes(b'77 (python3) S 0 1' + NEWLINE.encode())
+    with pytest.raises(RuntimeError, match='stat'):
+        guard.usage(77)
+    fake(procfs, 78, rss_pages=3)
+    (procfs / '78' / 'statm').write_text('not numbers' + NEWLINE)
+    with pytest.raises(RuntimeError, match='statm'):
+        guard.usage(78)
+
+
+
+@pytest.mark.skipif(not sys.platform.startswith('linux'), reason='reads the real /proc')
+def test_a_child_spawned_by_a_worker_thread_is_discovered():
+    """The kernel records a child under the thread that created it, so a parent's own task entry
+    is not enough; the live tree must still contain a worker thread's child."""
+    spawned = []
+    worker = threading.Thread(target=lambda: spawned.append(
+        subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)'])))
+    worker.start()
+    worker.join()
+    try:
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline and spawned[0].pid not in guard.children(os.getpid()):
+            time.sleep(0.02)
+        assert spawned[0].pid in guard.children(os.getpid())
+    finally:
+        spawned[0].kill()
+        spawned[0].wait()
+
