@@ -17,6 +17,15 @@ are preserved. Its byte/path/normalized-mode contract makes no source-mtime prom
 The former v1 writer/output excludes this one file and orders after its explicit leaf.
 All still-v1 staging keeps its existing `copy2` behavior.
 
+`ControllerClaims` derives only actual declared fixed files, not broad install permissions.
+Legacy workspace capture omits those files while preserving shared parent directories.
+Action publication, receiving roots and candidate scopes refuse exact, normalized-alias
+or ancestor overlap before mutation; an overlapping action is rejected whole, not trimmed.
+Disjoint derived packages remain eligible. Retention checks existing completed metadata
+against current fixed declarations without rehashing or recertifying outputs. Controller
+labels never obtain v1 action keys, stamps or historical success certificates. These fences
+do not authorize legacy writers or substitute for pending B3 reader custody.
+
 `controller::ControllerRequest::parse` validates bounded strict control data and the
 supported fixed JSON data contract. `controller::prepare` reuses A4, explicit source
 capture and the frozen Python worker implementation. `prepared.plan()` creates no

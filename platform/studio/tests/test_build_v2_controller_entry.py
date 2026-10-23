@@ -18,6 +18,13 @@ def marker():
         }]}, {'data.copy': {}}, {}, ('Game',))
 
 
+def test_controller_discovery_leaves_injected_legacy_recipe_selection_unchanged(monkeypatch):
+    def absent(game):
+        raise FileNotFoundError('a legacy test/caller owns this recipe provider')
+    monkeypatch.setattr(paths, 'game_dir', absent)
+    assert entry.exact_selection('injected', ['legacy.step']) is None
+
+
 def test_controller_exact_selection_validates_unselected_owners_before_invocation(tmp_path, monkeypatch):
     from atelier import mesh_export_contract
     owned = marker()

@@ -13,9 +13,16 @@ from .controller_client import ensure_controller, invoke_controller
 from .controller_recipe import ControllerTarget
 
 
-def discover(game):
+def discover(game, *, checkout=None):
     """Load the game's pure controller declarations without a runtime build Context."""
-    file = paths.game_dir(game) / 'build_v2.py'
+    if checkout is None:
+        try:
+            directory = paths.game_dir(game)
+        except FileNotFoundError:
+            return {}  # No controller declaration; legacy callers retain their own discovery.
+    else:
+        directory = Path(checkout) / 'games' / game
+    file = directory / 'build_v2.py'
     if not file.is_file():
         return {}
     spec = importlib.util.spec_from_file_location('atelier_controller_recipe_' + game, file)

@@ -1,4 +1,4 @@
-"""Build-time artifact publication; merge retention reads only completed metadata."""
+"""Build-time publication; retention reads completed and current ownership metadata."""
 from contextlib import contextmanager
 import fcntl
 import os
@@ -40,6 +40,8 @@ def _workspace(ctx, store):
     from . import checkpoint_actions as actions
     from .checkpoint_store import tracked_paths
     allowed = roots(ctx)
+    from .build_v2.controller_claims import for_context
+    controller_claims = for_context(ctx)
     workspace_id = identity([ctx.game, str(paths.REPO.resolve()), str(ctx.out)])
     pointer = safe_destination(store.directory, 'workspaces/' + workspace_id + '.json')
     previous = {}
@@ -73,7 +75,7 @@ def _workspace(ctx, store):
             names = sorted([*leaves, *directories])
             for name in names:
                 path = base / name
-                if path in source_files or excluded(path.relative_to(root)):
+                if path in source_files or excluded(path.relative_to(root)) or controller_claims.excludes(path):
                     continue
                 info = path.lstat()
                 member = label + '/' + path.relative_to(root).as_posix()
@@ -140,7 +142,7 @@ def record(ctx, step, stamp, *, store=None):
     """
     from . import checkpoint_actions as actions
     from .build import UnrealCompile, UnrealPackage
-    if getattr(ctx, 'checkpoint_settings', None) is None:
+    if getattr(step, 'controller', None) is not None or getattr(ctx, 'checkpoint_settings', None) is None:
         return
     store = store or Store(ctx.game)
     key = stamp.get('checkpoint_key')
@@ -190,6 +192,8 @@ def finish(ctx, steps):
     with store.locked():
         workspace = _workspace(ctx, store)
         for step in steps:
+            if getattr(step, 'controller', None) is not None:
+                continue
             target = safe_destination(folder(ctx.out), 'tasks/' + step.name + '.json')
             stamp_path = ctx.stamps / (step.name + '.json')
             if not target.is_file() or not stamp_path.is_file():
@@ -235,14 +239,17 @@ def finish(ctx, steps):
                         steps=sorted({*records, *incremental}), actions=entries, files=files,
                         blob_observations={d: v for d, v in workspace['blob_observations'].items() if d in digests})
         key = store.save(manifest)
+        from .build_v2.controller_claims import for_context
         atomic_json(folder(ctx.out) / 'ready.json', dict(schema=1, game=ctx.game,
                     checkout=manifest['checkout'], key=key,
-                    stamps=_stamp_identities(ctx.out), observations=observations))
+                    stamps=_stamp_identities(ctx.out, excluded=for_context(ctx).units), observations=observations))
 
 
-def _stamp_identities(out):
+def _stamp_identities(out, *, excluded=()):
     result = {}
     for path in safe_destination(out, 'stamps').glob('*.json'):
+        if path.stem in excluded:
+            continue
         if path.is_symlink() or not path.is_file():
             raise CheckpointError('Nonregular producer stamp')
         stamp = read_json(path)
@@ -254,11 +261,15 @@ def _stamp_identities(out):
 def retain(source, out, game):
     """@cc [owner:fontanierh,label:correctness;performance] manifest-only-merge-retention
     Merge retention MUST read only build-published metadata under stopped-producer exclusion.
+    Current fixed controller declarations MAY be read solely to refuse overlapping legacy
+    certificates; they MUST NOT recertify outputs or create a replacement certificate.
     It MUST NOT hash/copy generated files, re-certify task outputs, walk the workspace, export
     Zen, or launch a capture worker. Missing/stale evidence MUST refuse promptly and direct the
     caller to the normal incremental build, never silently perform a full capture or forge proof.
     """
     from .build_snapshot import require_complete
+    from .build_v2.controller_claims import for_source
+    claims = for_source(source, game)
     with writer(out):
         require_complete(out, game=game)
         path = folder(out) / 'ready.json'
@@ -267,7 +278,7 @@ def retain(source, out, game):
         ready = read_json(path)
         if ready.get('schema') != 1 or ready.get('game') != game or ready.get('checkout') != identity(str(source.resolve())):
             raise CheckpointError('Retention manifest belongs to another producer')
-        observed = _stamp_identities(out)
+        observed = _stamp_identities(out, excluded=claims.units)
         if observed != ready.get('stamps'):
             raise CheckpointError('Build-published retention evidence is incomplete or stale; run the normal incremental build once')
         from .checkpoint_actions import check_observations
@@ -282,6 +293,17 @@ def retain(source, out, game):
         check_observations(ready.get('observations', {}))
         store = Store(game)
         manifest = store.load(ready['key'])
+        if claims.files:
+            try:
+                member_claims = claims.legacy_members(Path(source), Path(out), game)
+                # Directory records preserve shared parents, not destructive root authority.
+                member_claims.refuse_overlap([Path('/') / member for member, entry in manifest['files'].items()
+                                             if entry['kind'] != 'directory'
+                                             or member_claims.excludes(Path('/') / member)])
+            except ValueError as error:
+                raise CheckpointError('Retained legacy manifest overlaps controller ownership or unknown roots') from error
+            if set(claims.units) & (set(manifest['stamps']) | set(manifest.get('incremental_stamps', {}))):
+                raise CheckpointError('Controller targets cannot retain legacy certificates')
         certified = {n: identity(s) for n, s in {**manifest['stamps'], **manifest.get('incremental_stamps', {})}.items()}
         if manifest['checkout'] != ready['checkout'] or any(observed.get(n) != value for n, value in certified.items()):
             raise CheckpointError('Retention certificate differs from its published manifest')
