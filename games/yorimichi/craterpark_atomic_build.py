@@ -43,6 +43,12 @@ def steps(ctx):
     script = REGION / 'atomic_inputs.py'
     config = load('crater_atomic_selection', REGION / 'v4_config.py')
     selection = config.input_paths()
+    legacy_ground = []
+    if not config.selected():
+        source = GAME / 'assets/craterpark'
+        scene = json.loads((source / 'scene.json').read_text())
+        legacy_ground = [source / m['npz'] for m in scene['meshes']
+                         if m['role'] == 'mountain' and not m['helper']]
     result = [Step('world.craterpark.inputs', [Python(script, ('--source',
         str(ctx.out / 'craterpark/v2/geometry.npz'), '--output', str(projected)))],
         inputs=[*local_imports(script, (WORLD, REGIONS)), *selection], needs=['world.craterpark_geometry'],
@@ -68,7 +74,7 @@ def steps(ctx):
     script = REGION / 'assemble.py'
     result.append(Step('world.craterpark', [Python(script, ('--out', str(ctx.out)))],
         inputs=[*local_imports(script, (WORLD, REGIONS)), GAME / 'assets/craterpark/scene.json',
-                GAME / 'assets/craterpark/drop-in.json', *selection],
+                GAME / 'assets/craterpark/drop-in.json', *selection, *legacy_ground],
         reads=['craterpark.atomic', 'craterpark.source_inputs', *('craterpark.metadata.' + r['name'] for r in rows)],
         products=[assembly_product], cache=True, about='assemble separate park meshes, placements and original course metadata'))
     return result

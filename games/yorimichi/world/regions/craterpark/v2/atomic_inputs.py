@@ -85,6 +85,7 @@ def project(source, output):
                 name = spec['name'] if len(triangles) <= 32768 else spec['name'] + f'_Piece{start // 32768:03d}'
                 path = output / (name + '.npz')
                 packet(path, dict(triangles=triangles[start:start + 32768],
+                    native_origin=export.origin_of(triangles.reshape(-1,3)),
                     spec=np.asarray(json.dumps(dict(spec, name=name, kind='collision', logical_parent=spec['name'])))))
                 assets.append(dict(name=name, packet=path.name, sha256=sha(path), kind='collision'))
         seed = 'SM_CP_ImportSeed'

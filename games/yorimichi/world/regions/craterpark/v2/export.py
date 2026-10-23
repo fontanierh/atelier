@@ -67,14 +67,16 @@ def line_npz(mesh, line, path):
     return path
 
 
-def mesh_object(out, name, vertices, faces, materials, face_materials, uvs=None, normals=None, ao=None):
+def mesh_object(out, name, vertices, faces, materials, face_materials, uvs=None, normals=None, ao=None, *, native_origin=None):
     """An FBX about a local origin on a 32 m grid, native units, Y up (craterpark/build.py export_mesh), with the
     analytic per-vertex `normals` as custom split normals. Returns its build.json entry (r4's common keys)."""
     import bpy
     bpy.ops.object.select_all(action='SELECT')
     bpy.ops.object.delete(use_global=False)
     vertices = np.asarray(vertices, 'f8'); faces = np.asarray(faces, 'i8')
-    origin = origin_of(vertices[np.unique(faces)])
+    origin = origin_of(vertices[np.unique(faces)]) if native_origin is None else np.asarray(native_origin, 'f8')
+    if origin.shape != (3,) or not np.isfinite(origin).all():
+        raise ValueError('Invalid canonical park origin')
     t = vertices[faces] - origin
     flat = np.linalg.norm(np.cross(t[:, 1] - t[:, 0], t[:, 2] - t[:, 0]), axis=1) <= FOLDED
     if flat.any():          # generate.py drops these already; never let one reach the importer's triangle check

@@ -30,8 +30,8 @@ def main(argv=None):
         elif spec['kind'] == 'collision':
             triangles = data['triangles']; vertices = triangles.reshape(-1, 3)
             obj, entry = export.mesh_object(None, name, vertices, np.arange(len(vertices)).reshape(-1, 3),
-                                            ['M_Collision'], np.zeros(len(triangles), 'i4'))
-            entry.update(source_triangles=len(triangles), role=spec['role'], one_sided=False)
+                                            ['M_Collision'], np.zeros(len(triangles), 'i4'), native_origin=data['native_origin'])
+            entry.update(source_triangles=len(triangles), source_parent=spec['logical_parent'], role=spec['role'], one_sided=False)
         elif spec['kind'] == 'seed' and name == 'SM_CP_ImportSeed':
             obj, entry = export.mesh_object(None, name, np.asarray([[0,0,0],[1,0,0],[0,0,1]], 'f8'),
                 np.asarray([[0,2,1]]), ['M_Collision'], [0], np.asarray([[0,0],[1,0],[0,1]], 'f8'))

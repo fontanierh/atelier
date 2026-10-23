@@ -62,6 +62,8 @@ def test_projection_conserves_channels_collision_order_and_one_edit_locality(tmp
             np.load(output/'UC_CP_Riding_Piece001.npz') as second:
         assert len(first['triangles']) == 32768 and len(second['triangles']) == 2
         assert np.array_equal(np.concatenate([first['triangles'],second['triangles']]), data['c0'])
+        assert np.array_equal(first['native_origin'], second['native_origin'])
+        assert np.array_equal(first['native_origin'], atomic_inputs.export.origin_of(data['c0'].reshape(-1,3)))
 
 
 def test_projection_link_refusal_precedes_any_write(tmp_path, old_selection):

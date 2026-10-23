@@ -19,8 +19,8 @@ import numpy as np
 GAME = Path(__file__).resolve().parents[2]
 sys.path[:0] = [str(GAME / 'world'), str(GAME / 'world/regions'), str(Path(__file__).resolve().parent)]
 import yori  # noqa: E402,F401
-from megapark import build as mega, atomic_common  # noqa: E402
-from craterpark.v2 import export as crater, atomic_inputs, dsl  # noqa: E402
+from megapark import build as mega, atomic_common, plan_asset as mega_plan  # noqa: E402
+from craterpark.v2 import export as crater, atomic_inputs, dsl, plan_asset as crater_plan  # noqa: E402
 from craterpark import placement  # noqa: E402
 from atelier import mesh_ir  # noqa: E402
 from atelier.build_inputs import local_imports  # noqa: E402
@@ -111,6 +111,8 @@ def main(argv=None):
     old.main()
     source = json.loads((mega.SOURCE / 'map.json').read_text())
     letters = old.letters()
+    letters_input = root / 'letters-data.npz'
+    np.savez(letters_input, **dict(zip(('vertices','faces','normals','uv'),letters)))
     new_calls = {}; model_entries = []
     def compare(*values):
         name = values[0]
@@ -138,9 +140,10 @@ def main(argv=None):
         key = entry['name']; values = originals[key]
         old.OUT = root / 'controls'; (old.OUT / 'fbx').mkdir(parents=True, exist_ok=True)
         original_export(key, *values)
-        obj, _ = mega.mesh_object(key, *values)
         planned = root / 'plans' / key
-        value = plan(obj, planned, options=dict(atomic_common.OPTIONS, use_tspace=bool(values[4])))
+        mega_plan.main(['--asset',key,'--letters',str(letters_input),
+                        '--metadata',str(root/'mega-metadata'/(key+'.json')),'--output',str(planned)])
+        value = validate(planned)
         combined = dict(render=Counter(), collision=Counter())
         for row in value['pieces']:
             product = root / 'exports' / row['name']
@@ -188,9 +191,10 @@ def main(argv=None):
                       np.searchsorted(slots, mesh.material), mesh.UV, mesh.N, mesh.AO)
             control = root / 'cp-controls'; (control / 'fbx').mkdir(parents=True, exist_ok=True)
             old_cp.export_mesh(control, *values)
-            obj, _ = crater.mesh_object(None, *values)
             planned = root / 'cp-plans' / key
-            value = plan(obj, planned, options=dict(atomic_common.OPTIONS, use_tspace=True, colors_type='SRGB'))
+            crater_plan.main(['--input',str(projected/(key+'.npz')),
+                              '--metadata',str(root/'cp-metadata'/(key+'.json')),'--output',str(planned)])
+            value = validate(planned)
             combined = dict(render=Counter(), collision=Counter())
             for row in value['pieces']:
                 product = root / 'cp-exports' / row['name']
@@ -212,10 +216,39 @@ def main(argv=None):
                     with np.load(projected / row['packet']) as packet:
                         chunks.append(packet['triangles'])
             assert np.array_equal(np.concatenate(chunks), original[f'c{i}'])
+    crater_collision_fbx = []
+    with np.load(args.geometry) as original:
+        index = json.loads(str(original['index']))
+        for i,spec in enumerate(index['collision']):
+            parent=spec['name']; triangles=np.asarray(original[f'c{i}'],'f8')
+            vertices=triangles.reshape(-1,3)
+            control=root/'cp-collision-controls';(control/'fbx').mkdir(parents=True,exist_ok=True)
+            entry=old_cp.export_mesh(control,parent,vertices,np.arange(len(vertices)).reshape(-1,3),
+                                     ['M_Collision'],np.zeros(len(triangles),'i4'))
+            combined=dict(render=Counter(),collision=Counter()); children=[]
+            for asset in inventory['assets']:
+                if asset['kind']!='collision' or not (asset['name']==parent or asset['name'].startswith(parent+'_Piece')):
+                    continue
+                key=asset['name'];planned=root/'cp-collision-plans'/key
+                metadata=root/'cp-collision-metadata'/(key+'.json')
+                crater_plan.main(['--input',str(projected/asset['packet']),'--metadata',str(metadata),'--output',str(planned)])
+                assert json.loads(metadata.read_text())['entry']['native_origin']==entry['native_origin']
+                value=validate(planned)
+                for row in value['pieces']:
+                    product=root/'cp-collision-exports'/row['name']
+                    export_region_piece.main(['--input',str(planned/row['payload']),'--output',str(product)])
+                    decoded=fbx_corners.read(product/(row['name']+'.fbx'))
+                    for kind in combined:
+                        combined[kind].update(decoded[kind])
+                    children.append(row['name'])
+            expected=fbx_corners.read(control/'fbx'/(parent+'.fbx'))
+            assert fbx_corners.polygon_cycles(combined)==fbx_corners.polygon_cycles(expected),parent
+            crater_collision_fbx.append(dict(name=parent,triangles=len(triangles),pieces=len(children),children=children))
+            print('CRATER COLLISION FBX CORNER CONSERVATION',crater_collision_fbx[-1],flush=True)
     after = {str(p): dict(sha256=sha(p), size=p.stat().st_size, mtime_ns=p.stat().st_mtime_ns) for p in watched}
     assert before == after, 'Donor source changed during proof'
     result = dict(complete=True, baseline_revision=baseline_revision, baseline_files={str(k):v for k,v in baseline_files.items()}, original_inputs=before, mega_logical=len(new_calls),
-                  mega_fbx=native_metrics, crater_fbx=crater_fbx, crater_logical=len(render), crater_triangles=sum(n for n,_ in render),
+                  mega_fbx=native_metrics, crater_fbx=crater_fbx, crater_collision_fbx=crater_collision_fbx, crater_logical=len(render), crater_triangles=sum(n for n,_ in render),
                   crater_max=max(n for n,_ in render), projected_assets=len(inventory['assets']))
     (root / 'result.json').write_text(json.dumps(result, indent=2)+'\n')
     print('PARK ATOMIC EQUIVALENCE COMPLETE', result['mega_logical'], result['crater_logical'], flush=True)
