@@ -33,23 +33,47 @@ def proof_paths(build, repo):
     return sorted(result)
 
 
+def proof_snapshot(build, repo):
+    """Byte-bound complete proof membership, with checkout-independent path labels."""
+    build,repo=export_manifest.real_directory(build),export_manifest.real_directory(repo)
+    files={}
+    for path in proof_paths(build,repo):
+        export_manifest.real_directory(path.parent)
+        if path.is_symlink() or not path.is_file():raise ValueError('Missing regular terminal proof member')
+        label=('generated/'+path.relative_to(build).as_posix() if path.is_relative_to(build)
+               else 'source/'+path.relative_to(repo).as_posix())
+        if label in files:raise ValueError('Duplicate terminal proof member')
+        files[label]=export_manifest.sha(path)
+    return dict(schema=1,files=files)
+
+
 def steps(ctx, *, site_inputs):
     graph = load('ferry_terminal_export_graph', GAME / 'region_exports.py')
     folder = ctx.out / 'ferry/terminals'
     data = folder / 'source-data'; queries = folder / 'query-data'
     harbor = ctx.out / 'hidamari/query-data/HD_Harbor.npz'
     keys = (*MODELS, 'hidamari_collision', 'brinecove_collision', 'hidamari_walk', 'brinecove_walk', 'primitives')
-    result = [Step('world.ferry_terminals.sources', [Python(REGION / 'terminal_sources.py', (
+    proof=ctx.out/'digests/ferry-terminal-proof.json'
+    def bind_proof(ctx,log):
+        import export_digest
+        export_manifest.real_directory(proof.parent,create=True)
+        if proof.is_symlink() or (proof.exists() and not proof.is_file()):raise ValueError('Invalid terminal proof cutoff output')
+        export_digest.record(proof,proof_snapshot(ctx.out,GAME.parents[1]),log)
+    result = [Step('world.ferry_terminals.proof_inputs',[Call('bind complete final terminal source proof',bind_proof)],
+        inputs=[Path(__file__),GAME/'export_digest.py',REGION/'site_inputs.py',WORLD/'regions/hidamari/ferry_source.py'],
+        needs=['world.ferry_site','world.hidamari_ferry_cut'],
+        deferred_inputs=[DeferredInputs('terminal-final-query-proof',proof_paths,(ctx.out,GAME.parents[1]),
+            support=(Path(__file__),REGION/'site_inputs.py',WORLD/'regions/hidamari/ferry_source.py'))],
+        outputs=[proof],cutoff=True,about='legacy deferred membership cutoff before portable source/query consumers'),
+        Step('world.ferry_terminals.sources', [Python(REGION / 'terminal_sources.py', (
         '--site', str(folder / 'site.json'), '--world-hidamari', str(folder / 'world_hidamari.npz'),
         '--world-brinecove', str(folder / 'world_brinecove.npz'), '--harbor-query', str(harbor),
         '--output', str(data), '--proof', str(folder / 'source-proof.json')))],
         inputs=[*local_imports(REGION / 'terminal_sources.py', (WORLD,)), KIT / 'build.py', KIT.parent / 'build.py',
-                *site_inputs, *(WORLD / 'regions' / owner / 'ferry_terminal.py' for owner in ('hidamari', 'brinecove'))],
-        needs=['world.ferry_site', 'world.hidamari_ferry_cut'], reads=['hidamari.query.HD_Harbor'],
-        deferred_inputs=[DeferredInputs('terminal-final-query-proof', proof_paths, (ctx.out, GAME.parents[1]),
-            support=(Path(__file__), REGION / 'site_inputs.py', WORLD / 'regions/hidamari/ferry_source.py'))],
+                *site_inputs,proof, *(WORLD / 'regions' / owner / 'ferry_terminal.py' for owner in ('hidamari', 'brinecove'))],
+        needs=['world.ferry_terminals.proof_inputs'], reads=['hidamari.query.HD_Harbor'],
         products=[*[Product('ferry_terminals.source.' + key, (data / (key + '.json'),)) for key in keys],
-                  Product('ferry_terminals.query_proof', (folder / 'source-proof.json',))], cache=True,
+                  Product('ferry_terminals.query_proof', (folder / 'source-proof.json',))],cache=True,
         about='selected original terminal programs, exact scalar plans and verified final Harbor ground queries')]
     assets = [graph.LogicalAsset(key, REGION / 'plan_terminal.py', args=(
         '--asset', key, '--source', str(data / (key + '.json')),
@@ -60,19 +84,17 @@ def steps(ctx, *, site_inputs):
     result.append(Step('world.ferry_terminals.audit', [Blender(REGION / 'terminal_audit.py', (
         '--sources', str(data), '--queries', str(queries), '--harbor-query', str(harbor),
         '--output', str(folder / 'atomic-audit.json')), threads=3, factory_startup=True)],
-        inputs=[*local_imports(REGION / 'terminal_audit.py', (WORLD,)), KIT / 'build.py', KIT.parent / 'build.py', *site_inputs],
-        needs=['world.ferry_site'], reads=['ferry_terminals.query_proof',
+        inputs=[*local_imports(REGION / 'terminal_audit.py', (WORLD,)), KIT / 'build.py', KIT.parent / 'build.py', *site_inputs,proof],
+        needs=['world.ferry_terminals.proof_inputs'], reads=['ferry_terminals.query_proof',
             *('ferry_terminals.source.' + key for key in MODELS),
             *('ferry_terminals.source.' + key for key in ('primitives', 'hidamari_collision', 'brinecove_collision', 'hidamari_walk', 'brinecove_walk')),
             *('ferry_terminals.query.' + key for key in MODELS),
             *('ferry_ship.query.' + key for key in ('FY_Hull', 'FY_Superstructure', 'FY_Funnel', 'FY_Lifeboats', 'FY_Rails', 'FY_Masts', 'FY_Fittings')),
             'hidamari.query.HD_Harbor'],
-        deferred_inputs=[DeferredInputs('terminal-audit-site-proof', proof_paths, (ctx.out, GAME.parents[1]),
-            support=(Path(__file__), REGION / 'site_inputs.py', WORLD / 'regions/hidamari/ferry_source.py'))],
         products=[Product('ferry_terminals.audit', (folder / 'atomic-audit.json',)),
                   Product('ferry_terminals.walk', (folder / 'walk.json',)),
                   *(Product('ferry_terminals.collision_data.' + owner, (folder / (owner + '-collision-data.json'),))
-                    for owner in ('hidamari', 'brinecove'))], heavy=True, cache=True,
+                    for owner in ('hidamari', 'brinecove'))], heavy=True,cache=True,
         about='all original closure, seating, coplanar, carried, ship-contact, headroom and walking gates'))
     for owner, key in (('hidamari', 'FT_HD_Collision'), ('brinecove', 'FT_BC_Collision')):
         destination = ctx.out / 'exports/world.ferry_terminals.collision' / key

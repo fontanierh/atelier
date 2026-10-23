@@ -35,9 +35,10 @@ def test_normal_terminal_graph_has_one_selected_factory_per_mesh_and_original_co
         assert step.cache and step.commands[0].factory_startup and step.commands[0].threads == 3
         assert len(step.products) == 1
     assert rows['world.ferry_terminals.geometry'].replan
-    assert rows['world.ferry_terminals.sources'].deferred_inputs
-    assert rows['world.ferry_terminals.audit'].deferred_inputs
-    assert 'world.hidamari_ferry_cut' in rows['world.ferry_terminals.sources'].needs
+    assert rows['world.ferry_terminals.proof_inputs'].deferred_inputs
+    assert not rows['world.ferry_terminals.sources'].deferred_inputs
+    assert not rows['world.ferry_terminals.audit'].deferred_inputs
+    assert 'world.hidamari_ferry_cut' in rows['world.ferry_terminals.proof_inputs'].needs
 
 
 def fixture_source(program):

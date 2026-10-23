@@ -141,7 +141,8 @@ def test_normal_build_includes_the_whole_ferry_pipeline():
     world_order = {s.name for s in build.order(list(rows.values()), ['unreal.world'])}
     assert {'world.ferry_probes', 'world.ferry_site', 'world.hidamari_ferry_cut'} <= world_order
     assert 'unreal.ferry' not in world_order
-    assert Path('/build/ferry/terminals/assets/FT_HD_Brow.fbx') in rows['world.ferry_terminals'].outputs
+    assert Path('/build/ferry/terminals/atomic-assets') in rows['world.ferry_terminals'].products[0].paths
+    assert 'ferry_terminals.source.FT_HD_Brow' in rows['world.ferry_terminals.geometry.FT_HD_Brow'].reads
     assert all(c.threads == 3 for key, step in rows.items() if 'ferry' in key
                for c in step.commands if isinstance(c, build.Blender))
 
