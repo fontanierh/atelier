@@ -3,6 +3,7 @@ import importlib.util
 from pathlib import Path
 from atelier.build import Batch,Blender,Product,Python,Step
 from atelier.build_inputs import local_imports
+from atelier.build_batch_source import support as batch_support
 
 GAME=Path(__file__).resolve().parent
 WORLD=GAME/'world';REGIONS=WORLD/'regions'
@@ -70,7 +71,7 @@ def steps(ctx):
         script=WORLD/'bake_forest_tree.py'
         bakes.append(Step('world.forest.impostor.'+name,[Blender(script,('--parameters',str(file),'--frame',str(frame),
             '--views',str(views),'--output',str(bake)),threads=3,factory_startup=True)],
-            inputs=[*local_imports(script,(WORLD,REGIONS)),file,*textures],reads=['forest.record.'+name],
+            inputs=[*local_imports(script,(WORLD,REGIONS)),*batch_support().values(),file,*textures],reads=['forest.record.'+name],
             products=[Product(product,(bake,)),Product('forest.impostor_views.'+name,(views,))],
             cache=True,heavy=True,batch=Batch('forest impostor data'),
             about='only this species: canonical four-view color/normal atlas and measured billboard geometry'))

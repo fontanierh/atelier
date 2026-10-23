@@ -3,6 +3,7 @@ import importlib.util
 from pathlib import Path
 from atelier.build import Batch,Blender,Product,Python,Step
 from atelier.build_inputs import local_imports
+from atelier.build_batch_source import support as batch_support
 
 GAME=Path(__file__).resolve().parent;WORLD=GAME/'world';REGIONS=WORLD/'regions';REGION=REGIONS/'skatepark'
 BOARD=('SM_SkateDeck','SM_SkateTruck','SM_SkateWheel')
@@ -48,7 +49,7 @@ def steps(ctx):
                 product='skatepark.roundtrip.'+key;roundtrips.append(product)
                 result.append(Step('world.skatepark.roundtrip.'+key,[Blender(verify,('--input',str(payload),
                     '--export',str(ctx.out/'exports'/prefix/key),'--output',str(output)),threads=3,factory_startup=True)],
-                    inputs=[*local_imports(verify,(WORLD,REGIONS)),payload],reads=[prefix+'.'+key],
+                    inputs=[*local_imports(verify,(WORLD,REGIONS)),*batch_support().values(),payload],reads=[prefix+'.'+key],
                     products=[Product(product,(output,))],cache=True,heavy=True,batch=Batch('skate atomic FBX roundtrips')))
     script=REGION/'assemble_atomic.py'
     result.append(Step('world.skatepark',[Python(script,('--out',str(ctx.out)))],

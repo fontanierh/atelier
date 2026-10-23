@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from atelier.build import Batch, Blender, Product, Python, Step
 from atelier.build_inputs import local_imports
+from atelier.build_batch_source import support as batch_support
 
 GAME = Path(__file__).resolve().parent
 WORLD = GAME / 'world'
@@ -36,7 +37,7 @@ def steps(ctx):
     letters_script = REGION / 'letters_data.py'
     result = [Step('world.megapark.letters_data', [Blender(letters_script, ('--output', str(letters)),
                    threads=3, factory_startup=True)],
-        inputs=[*local_imports(letters_script, (WORLD, REGIONS)), SOURCE / 'map.json',
+        inputs=[*local_imports(letters_script, (WORLD, REGIONS)), *batch_support().values(), SOURCE / 'map.json',
                 *(SOURCE / m['npz'] for m in source['models'] if m['asset_id'] == sign.MODEL), ctx.out / 'megapark/lettering/NotoSansJP-Black.ttf'],
         needs=['world.megapark_restyle'], products=[Product('megapark.letters_data', (letters,))],
         cache=True, heavy=True, batch=Batch('megapark logical geometry'), about='canonical lettering source/query data before mesh exports')]
