@@ -69,13 +69,22 @@ def _procfs_usage(pid):
         resident=int(read('statm',True).split()[1])*os.sysconf('SC_PAGE_SIZE')
     except (IndexError,ValueError):raise broken('stat or statm') from None
     wired=0
-    for line in read('status',True).splitlines():
+    # Locked memory and byte counters are optional accounting: a kernel may refuse them (for
+    # example /proc/<pid>/io needs ptrace access) without the process having gone anywhere.
+    # A missing entry is still absence, and a malformed required value was rejected above.
+    try:status=read('status',True)
+    except ProcessLookupError:raise
+    except OSError:status=''
+    for line in status.splitlines():
         if line.startswith('VmLck:'):
             try:wired=int(line.split()[1])*1024
             except (IndexError,ValueError):raise broken('status') from None
             break
     read_bytes=written_bytes=0
-    for line in read('io',True).splitlines():
+    try:counters=read('io',True)
+    except ProcessLookupError:raise
+    except OSError:counters=''
+    for line in counters.splitlines():
         key,_,value=line.partition(':')
         try:
             if key=='read_bytes':read_bytes=int(value)

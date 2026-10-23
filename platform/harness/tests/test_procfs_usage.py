@@ -134,3 +134,17 @@ def test_a_child_spawned_by_a_worker_thread_is_discovered():
             spawned[0].kill()
             spawned[0].wait()
 
+
+
+def test_refused_optional_counters_are_not_a_failed_sample(procfs):
+    """/proc/<pid>/io needs ptrace access and may be refused for a live process, so its absence
+    from the sample must not fail the guard or read as the process being gone."""
+    folder = fake(procfs, 77, rss_pages=4)
+    (folder / 'io').unlink()
+    (folder / 'io').mkdir()
+    (folder / 'status').unlink()
+    (folder / 'status').mkdir()
+    value = guard.usage(77)
+    assert value.resident == 4 * PAGE
+    assert (value.read_bytes, value.written_bytes, value.wired) == (0, 0, 0)
+
