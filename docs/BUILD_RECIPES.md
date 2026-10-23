@@ -519,7 +519,24 @@ nearest-neighbour queries and native import/query adapters are not implemented. 
 those contracts exist. Native Unreal products remain ineligible for portable caching.
 
 
-### Native candidate scopes
+### Automatic native candidate retention
 
-`CandidateScope` remains a typed recipe field, but donor retention, ranking and staging are retired.
-A task is reused only from its own action entry under its exact input key; otherwise it runs.
+A native owner with a typed `CandidateScope` automatically retains its finalized mesh and
+asset-group packages after ordinary task success. The catalogue includes complete package
+sidecars, declared metadata, and the original task input evidence. A later failed task does
+not erase that earlier result. No explicit checkpoint capture or Git revision match is needed
+for discovery; each receiver still validates its actual source, policy, package and native state.
+
+Retention requires a clean capture revision and original input evidence. Unsupported policies,
+missing metadata, changed packages, or an incomplete collision/LOD group remain ordinary misses.
+The catalogue contains historical hints, not portable native action certificates or receiving
+success stamps. Failed-task partial preparation uses its own independently validated unit records.
+
+Local discovery ranks coherent donors by exact current task fingerprint, matching declared
+metadata bytes, then scoped package coverage and recency. The coverage fallback is a heuristic:
+a larger inventory can still contain older versions. Ranking caches compact immutable metadata
+within one build, but staging always revalidates the actual selected manifest and files.
+One receiving invocation still uses one donor bundle, and local candidates precede remote search.
+Independently matching versions spread across donors are not yet combined. Each donor retains
+its own original stamp; files are never merged under invented producer evidence. These limits
+remain separate from successful per-mesh admission.
