@@ -1,8 +1,10 @@
 """Pure fault injection for Track input/owner/receiving proof boundaries; no native jobs."""
 import ast
 import copy
+import hashlib
 import json
 from pathlib import Path
+import subprocess
 import sys
 from types import SimpleNamespace
 
@@ -32,6 +34,79 @@ def test_complete_code_inputs_accept_empty_init_without_weakening_artifact_rules
     with pytest.raises(ValueError): proof.check_input(path, digest)
     path.unlink(); path.symlink_to(tmp_path / 'missing')
     with pytest.raises(ValueError): proof.check_input(path, digest)
+
+
+def test_unreal_import_closure_is_stdlib_only_with_actual_bound_validators(tmp_path):
+    code = r'''
+import importlib.abc, importlib.util, json, pathlib, sys, types
+native = pathlib.Path(sys.argv[1]); game = native.parents[1]
+sys.path[:0] = [str(native), str(game/'unreal/Scripts')]
+class BlockHost(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname == 'atomic_equivalence' or fullname.split('.')[0] in ('numpy','mesh_ir') or fullname == 'atelier.mesh_ir':
+            raise ModuleNotFoundError('host-only import forbidden: '+fullname)
+sys.meta_path.insert(0, BlockHost())
+unreal = types.ModuleType('unreal')
+unreal.EditorAssetLibrary = types.SimpleNamespace()
+unreal.MaterialEditingLibrary = types.SimpleNamespace()
+unreal.AssetToolsHelpers = types.SimpleNamespace(get_asset_tools=lambda: object())
+unreal.AssetRegistryHelpers = types.SimpleNamespace(get_asset_registry=lambda: object())
+sys.modules['unreal'] = unreal
+import track_native_equivalence as p
+import atomic_equivalence_capture as capture
+material = p.definitions(game/'unreal/Scripts/import_belmonte.py','actual_material_import')
+owner_tree = p.owner_tree(game/'unreal/Scripts/import_belmonte_track.py',
+    '/Game/AtelierValidation/Track_0123456789ab/Prerequisites/Materials')
+owner = types.ModuleType('actual_track_owner'); owner.__file__ = str(game/'unreal/Scripts/import_belmonte_track.py')
+exec(compile(owner_tree,owner.__file__,'exec'),owner.__dict__)
+assert callable(capture.capture) and callable(material.parent) and callable(material.textures) and callable(material.surfaces)
+assert callable(owner.main) and callable(owner.import_mesh)
+assert 'numpy' not in sys.modules and 'atelier.mesh_ir' not in sys.modules and 'atomic_equivalence' not in sys.modules
+folder = pathlib.Path(sys.argv[2]); path=folder/'exact.json';path.write_bytes(b'actual bound data')
+row=dict(path=str(path),sha256=p.sha(path));assert p.artifact(row)==b'actual bound data'
+for changed in [dict(row,sha256='0'*64),dict(path='relative',sha256=row['sha256'])]:
+    try:p.artifact(changed)
+    except ValueError:pass
+    else:raise AssertionError('weakened exact artifact gate')
+try:p.canonical(dict(value=float('nan')))
+except ValueError:pass
+else:raise AssertionError('nonfinite evidence admitted')
+path.write_bytes(b'')
+try:p.artifact(dict(path=str(path),sha256=p.sha(path)))
+except ValueError:pass
+else:raise AssertionError('empty geometry evidence admitted')
+assert p.canonical({'b':(1,True,None),'a':.25})==b'{"a":0.25,"b":[1,true,null]}'
+print('ACTUAL UNREAL IMPORT CLOSURE AND EXACT IO VERIFIED')
+'''
+    result = subprocess.run([sys.executable, '-I', '-S', '-c', code, str(HERE), str(tmp_path)],
+                            cwd=tmp_path, capture_output=True, text=True, timeout=30)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert 'ACTUAL UNREAL IMPORT CLOSURE AND EXACT IO VERIFIED' in result.stdout
+
+
+def test_generic_io_extraction_preserves_exact_original_validator_bodies():
+    # Exact definition source identities recorded before extraction; no historical Git required by CI.
+    expected = {
+        'EvidenceError': '8456bcaf241ccc231f59b76d8101dc07264d6ccde6adfb996cc16e98e5677dea',
+        'require': '0c0d05b86810d5dbd9590930b03b3b7c9c532d9d206b4190ac28a098012735c4',
+        'finite': '5c90abd3835e00a61f275994091b717969965a44b49efde053c3a7ac23a52602',
+        'canonical': '06d641bfd3cee30579d8f5ffea3cc20a357fbd809e46b6813914e342dc3a972c',
+        'artifact': '0f191d319dd037ec93da355428f92725b8880fb04322a491a260f225e8a74cb0',
+        'json_artifact': '71b3fc2cc0f4e7d0f3316c5d9a1a13884b161b1c9911bd0825cf318a6c8660f7',
+        'source_binding': '85a8687efe7b7a0b51796cdbd650b8480abdd973c64c9115af4c8de93f74fa44',
+        'component_bounds': '2f3cb8df42e15cc6ecf5474d6b8e219efef7d10f3007d7663b4733a3468b2fcd',
+        'native_raw_set': 'b4ed43b62e87d11669f984aa05142b309d3e7805af1e1d4d107bf93bba0c514f',
+        'compare_native': '93db0a2072d0d1d50dfc83453ab1a2931bb1d9d316131a80cba49cd1ac2e35dd',
+    }
+    tools = HERE.parents[1] / 'tools'
+    found = {}
+    for filename in ('atomic_equivalence_io.py', 'atomic_equivalence.py'):
+        text = (tools / filename).read_text(); lines = text.splitlines()
+        for node in ast.parse(text).body:
+            if isinstance(node, (ast.FunctionDef, ast.ClassDef)) and node.name in expected:
+                body = '\n'.join(lines[node.lineno - 1:node.end_lineno]).encode()
+                found[node.name] = hashlib.sha256(body).hexdigest()
+    assert found == expected
 
 
 def test_production_census_retains_every_authored_lod_but_never_injects_marker():

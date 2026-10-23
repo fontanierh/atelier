@@ -24,7 +24,7 @@ import yori  # noqa: E402,F401
 from atelier.atomic_files import atomic_json  # noqa: E402
 from atelier.export_manifest import real_directory  # noqa: E402
 from atelier.mesh_geometry import SIDECARS  # noqa: E402
-from atomic_equivalence import MAX_ARTIFACT_BYTES, artifact, canonical, component_bounds, native_raw_set, require  # noqa: E402
+from atomic_equivalence_io import MAX_ARTIFACT_BYTES, artifact, canonical, require  # noqa: E402
 
 IMPORTER_SHA = 'b311b7322b0030c1d5f4bd44e03f82f2ed092e8001389a8f6e67370119ebe892'
 SOURCE_COUNT, SOURCE_LODS = 138, 363
@@ -190,6 +190,7 @@ def owner_tree(path, material_root=None):
 
 
 def whole_bounds(record):
+    from atomic_equivalence import component_bounds
     require(isinstance(record.get('component_policies'), list) and len(record['component_policies']) == 1,
             'Each whole Track mesh needs one actual fixture component')
     row = json.loads(artifact(record['component_policies'][0]))
@@ -201,6 +202,12 @@ def whole_bounds(record):
             and all(b >= a for a, b in zip(*box)), 'Missing Track physical mesh box')
     return canonical(dict(component_bounds=physical, logical_bounds=logical, mesh_bounds=box,
                           scale=row['bounds_scale'], coordinated=row['lod_coordinated']))
+
+
+def native_raw_set(record, logical):
+    """The complete generic geometry validator remains host-only and unchanged."""
+    from atomic_equivalence import native_raw_set as read
+    return read(record, logical)
 
 
 def compare(records, runtime):

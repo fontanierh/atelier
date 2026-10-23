@@ -129,7 +129,8 @@ def prepare(args):
     for name in ('NativeAtomicEquivalence.cpp', 'NativeAtomicEquivalence.h', 'BelmonteTrack.cpp', 'BelmonteTrack.h'):
         bind(args.receiving / 'games/yorimichi/unreal/Source/Yorimichi' / name)
     for path in (Path(__file__), Path(__file__).with_name('run_track_native_equivalence.py'),
-                 Path(proof.__file__), GAME / 'tools/atomic_equivalence.py'):
+                 Path(proof.__file__), GAME / 'tools/atomic_equivalence.py',
+                 GAME / 'tools/atomic_equivalence_io.py'):
         bind(path)
     control_rows = {name: controls(name, runtime, source / 'selected') for name in inventory}
     proof.validate_controls(control_rows, runtime)

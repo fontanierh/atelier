@@ -48,7 +48,12 @@ is untouched. This path mapping is an explicit fixture limitation.
 
 ## Native boundary owned by the parent
 
-No native command has been launched for this harness. Before any future launch,
+The first native attempt refused during script import before any fixture mutation because
+embedded Python lacks host NumPy. Native imports now use the exact shared stdlib
+evidence IO definitions; geometry/Git validators are imported only by host comparisons.
+An isolated interpreter test blocks NumPy, mesh IR and the host aggregate module while
+loading the actual capture, material and Track importer definitions. The frozen input
+vector includes the new IO module. Before any further launch,
 the parent must verify its stopped receiver/caller boundary, ordinary capacity
 rules and a current successful native build. Record the exact engine executable,
 engine build ID, loaded module file identities and successful compile fingerprint
