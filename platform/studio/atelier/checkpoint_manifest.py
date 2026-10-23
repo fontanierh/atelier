@@ -14,7 +14,7 @@ from .build_hashes import digest_file, signature
 
 
 def folder(out):
-    path = safe_destination(out, '.state/retention')
+    path = safe_destination(Path(out).resolve(), '.state/retention')
     if path.is_symlink() or path.exists() and not path.is_dir():
         raise CheckpointError('Retention metadata root must be a real directory')
     return path
