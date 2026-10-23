@@ -18,17 +18,19 @@ class Asset:
             raise ValueError('An export requires a mesh format and a declared geometry payload')
 
 
-def steps(ctx, *, prefix, assets, script, inputs=(), reads=(), after=()):
+def steps(ctx, *, prefix, assets, script, inputs=(), reads=(), after=(), runtime='blender'):
     """@cc [owner:fontanierh,label:correctness;performance] independent-atomic-export-task
     Each selected asset MUST have a separate ordinary cached source action, complete inputs,
     a single primary mesh and an exclusive product root. Assembly MUST consume the individual
     products rather than conceal a whole-region geometry callback inside a small-export name.
     """
-    from .build import Batch, Blender, Product, Step
+    from .build import Batch, Blender, Product, Python, Step
     from .build_inputs import local_imports
     from .build_batch_source import support as batch_support
     if not isinstance(prefix, str) or not re.fullmatch(r'[A-Za-z][A-Za-z0-9_-]*(?:\.[A-Za-z][A-Za-z0-9_-]*)*', prefix):
         raise ValueError('Atomic export prefix must be a canonical task namespace')
+    if runtime not in ('blender','python'):
+        raise ValueError('Unknown atomic export runtime')
     source_inputs = local_imports(script) if Path(script).is_file() else [script]
     assets = tuple(assets)
     if len({a.key.casefold() for a in assets}) != len(assets):
@@ -37,13 +39,15 @@ def steps(ctx, *, prefix, assets, script, inputs=(), reads=(), after=()):
     for asset in assets:
         folder = ctx.out / 'exports' / prefix / asset.key
         args = ('--input', str(asset.source), '--output', str(folder), '--format', asset.suffix)
+        command = (Python(script,args) if runtime=='python' else
+                   Blender(script,args,threads=3,factory_startup=True,env=(('PYTHONHASHSEED','0'),)))
         result.append(Step(
             prefix + '.' + asset.key,
-            [Blender(script, args, threads=3, factory_startup=True,
-                     env=(('PYTHONHASHSEED', '0'),))],
-            inputs=[*source_inputs, *batch_support().values(), *inputs, asset.source], reads=list(reads), after=list(after),
+            [command],
+            inputs=[*source_inputs, *(batch_support().values() if runtime=='blender' else ()), *inputs, asset.source], reads=list(reads), after=list(after),
             products=[Product(prefix + '.' + asset.key, (folder,))],
-            cache=True, toolchain=True, batch=Batch(prefix + ' atomic exports'), heavy=True,
+            cache=True, toolchain=runtime=='blender', batch=Batch(prefix+' atomic exports') if runtime=='blender' else None,
+            heavy=runtime=='blender',
             verify=lambda folder=folder, key=asset.key: present(folder, key=key),
             about='independent bounded export ' + asset.key))
     return result
