@@ -17,7 +17,8 @@ import time
 from . import build_products, paths
 from .build_cache import atomic_json, copy_file
 from .native_protocol import (SCHEMA, MAX_MANIFEST, MAX_FILES, MAX_BYTES, HEX, IGNORED, CheckpointError,
-                              canonical, identity, read_json, relative, context, excluded, safe_destination, validate)
+                              ManifestTooLarge, canonical, identity, read_json, relative, context, excluded,
+                              safe_destination, validate)
 from .build_hashes import HashIndex, signature
 
 JOURNAL = '.checkpoint-in-progress.json'

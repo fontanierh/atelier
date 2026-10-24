@@ -1,17 +1,19 @@
 """Build-time CAS publication and metadata-only merge retention with real small artifacts."""
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
-from atelier import build, build_checkpoints, build_products, checkpoint_actions as actions
-from atelier import checkpoint_manifest as manifests, checkpoint_store as cp, paths
+from atelier import build, build_cache, build_checkpoints, build_products, checkpoint_actions as actions
+from atelier import checkpoint_manifest as manifests, checkpoint_store as cp, native_protocol, paths
 from atelier.atomic_files import atomic_json
 from test_checkpoints import fixture  # noqa: F401
 
 
-def published(fixture, monkeypatch):
-    ctx, steps = fixture.checkout('producer')
+def prepared(fixture, monkeypatch, name='producer'):
+    """Publish every certificate and record, and stop just before one manifest publication."""
+    ctx, steps = fixture.checkout(name)
     ctx.checkpoint_settings = {}
     fixture.produce(ctx, steps)
     monkeypatch.setattr(manifests, 'Store', lambda game: fixture.store)
@@ -24,6 +26,12 @@ def published(fixture, monkeypatch):
             manifests.record(ctx, step, stamp, store=fixture.store)
             done[step.name] = build.result(step, stamp['fingerprint'], stamp)
             build_products.feed_results(done, stamp['products'])
+    return ctx, steps
+
+
+def published(fixture, monkeypatch, name='producer'):
+    ctx, steps = prepared(fixture, monkeypatch, name)
+    with manifests.writer(ctx.out):
         manifests.finish(ctx, steps)
     return ctx, steps
 
@@ -291,3 +299,254 @@ def test_unconfigured_build_does_not_acquire_checkpoint_metadata_lock(tmp_path, 
     monkeypatch.setattr(manifests, 'writer', lambda *a: pytest.fail('unconfigured build acquired checkpoint writer'))
     assert build.build('fixture') == 0
     assert not (ctx.out / '.state/retention').exists()
+
+
+def publication_limit(store, ctx, manifest_size):
+    """A limit below the assembled manifest, above every file the publication re-reads."""
+    directories = (ctx.stamps, manifests.folder(ctx.out) / 'tasks', store.directory / 'actions',
+                   store.directory / 'workspaces')
+    reread = max(path.stat().st_size for directory in directories for path in directory.glob('*.json'))
+    limit = (reread + manifest_size) // 2
+    assert reread < limit < manifest_size, (reread, limit, manifest_size)
+    return limit
+
+
+class CapBelow(cp.Store):
+    """Set the limit one byte below the manifest the run actually assembles.
+
+    A run that drops a step assembles a smaller candidate than the store's previous manifest, so a
+    cap derived from that older, bigger manifest can sit above the candidate and let it publish.
+    """
+
+    def __init__(self, game, directory, monkeypatch):
+        super().__init__(game, directory)
+        self.monkeypatch, self.sizes = monkeypatch, []
+
+    def save(self, manifest):
+        self.sizes.append(len(native_protocol.canonical(manifest)))
+        self.monkeypatch.setattr(native_protocol, 'MAX_MANIFEST', self.sizes[-1] - 1)
+        return super().save(manifest)
+
+
+def test_a_manifest_that_fits_is_published(fixture, monkeypatch):
+    ctx, _ = published(fixture, monkeypatch)
+    ready = json.loads((manifests.folder(ctx.out) / 'ready.json').read_text())
+    assert fixture.store.load(ready['key'])['game'] == 'fixture'
+
+
+def test_an_oversized_first_manifest_publishes_nothing(fixture, monkeypatch, capsys):
+    donor, _ = published(fixture, monkeypatch, 'donor')
+    size = len(native_protocol.canonical(fixture.store.load(
+        json.loads((manifests.folder(donor.out) / 'ready.json').read_text())['key'])))
+    ctx, steps = prepared(fixture, monkeypatch, 'producer-oversized')
+    manifests_before = sorted(fixture.store.manifests.glob('*.json'))
+    blobs_before = sorted(path for path in fixture.store.blobs.rglob('*') if path.is_file())
+    monkeypatch.setattr(native_protocol, 'MAX_MANIFEST', publication_limit(fixture.store, ctx, size))
+    capsys.readouterr()
+    manifests.finish(ctx, steps)
+    assert 'checkpoint not published; receivers keep the previous checkpoint' in capsys.readouterr().out
+    assert not (manifests.folder(ctx.out) / 'ready.json').exists()
+    assert sorted(fixture.store.manifests.glob('*.json')) == manifests_before
+    assert sorted(path for path in fixture.store.blobs.rglob('*') if path.is_file()) == blobs_before
+    assert all((ctx.stamps / (step.name + '.json')).is_file() for step in steps)
+
+
+def test_an_oversized_manifest_keeps_the_previous_checkpoint_bytes(fixture, monkeypatch, capsys):
+    ctx, steps = prepared(fixture, monkeypatch)
+    manifests.finish(ctx, steps)
+    ready = manifests.folder(ctx.out) / 'ready.json'
+    before = ready.read_bytes()
+    size = len(native_protocol.canonical(fixture.store.load(json.loads(before)['key'])))
+    manifests_before = {path.name: path.read_bytes() for path in fixture.store.manifests.glob('*.json')}
+    blobs_before = sorted(path.name for path in fixture.store.blobs.rglob('*') if path.is_file())
+    monkeypatch.setattr(native_protocol, 'MAX_MANIFEST', publication_limit(fixture.store, ctx, size))
+    capsys.readouterr()
+    manifests.finish(ctx, steps)
+    assert 'checkpoint not published; receivers keep the previous checkpoint' in capsys.readouterr().out
+    assert ready.read_bytes() == before
+    assert {path.name: path.read_bytes() for path in fixture.store.manifests.glob('*.json')} == manifests_before
+    assert sorted(path.name for path in fixture.store.blobs.rglob('*') if path.is_file()) == blobs_before
+
+
+def test_the_member_byte_total_is_not_a_skip(fixture, monkeypatch):
+    ctx, steps = prepared(fixture, monkeypatch)
+    sizes = [path.stat().st_size for path in ctx.out.rglob('asset.bin')]
+    limit = sum(sizes) - 1     # Above every single member, below their total.
+    assert max(sizes) <= limit
+    monkeypatch.setattr(native_protocol, 'MAX_BYTES', limit)
+    with pytest.raises(cp.CheckpointError) as caught:
+        manifests.finish(ctx, steps)
+    assert not isinstance(caught.value, cp.ManifestTooLarge)
+    assert 'exceeds its size limit' in str(caught.value)
+    assert not (manifests.folder(ctx.out) / 'ready.json').exists()
+
+
+def test_a_publication_io_error_is_not_a_skip(fixture, monkeypatch):
+    ctx, steps = prepared(fixture, monkeypatch)
+    fixture.store.manifests.write_text('not a directory')
+    with pytest.raises(OSError):
+        manifests.finish(ctx, steps)
+    assert not (manifests.folder(ctx.out) / 'ready.json').exists()
+
+
+def test_a_corrupt_certificate_is_not_a_skip(fixture, monkeypatch):
+    ctx, steps = prepared(fixture, monkeypatch)
+    stamp = cp.read_json(ctx.stamps / 'tree.json'); stamp['fingerprint'] = 'not-hex'
+    atomic_json(ctx.stamps / 'tree.json', stamp)
+    record = cp.read_json(manifests.folder(ctx.out) / 'tasks/tree.json'); record['stamp'] = stamp
+    atomic_json(manifests.folder(ctx.out) / 'tasks/tree.json', record)
+    with pytest.raises(cp.CheckpointError, match='certificate'):
+        manifests.finish(ctx, steps)
+    assert not (manifests.folder(ctx.out) / 'ready.json').exists()
+    assert not list(fixture.store.manifests.glob('*.json'))
+
+
+def test_an_oversized_manifest_that_is_also_corrupt_is_refused_not_skipped(fixture, monkeypatch, capsys):
+    ctx, steps = prepared(fixture, monkeypatch)
+    manifests.finish(ctx, steps)
+    ready = manifests.folder(ctx.out) / 'ready.json'
+    before = ready.read_bytes()
+    size = len(native_protocol.canonical(fixture.store.load(json.loads(before)['key'])))
+    # A keyless record carries its stamp straight into the manifest, so the corrupt certificate is
+    # the one `validate` sees last, after the size gate would have fired in the old ordering.
+    stamp = cp.read_json(ctx.stamps / 'tree.json'); stamp['fingerprint'] = 'not-hex'
+    atomic_json(ctx.stamps / 'tree.json', stamp)
+    record_path = manifests.folder(ctx.out) / 'tasks/tree.json'
+    record = cp.read_json(record_path); record['stamp'] = stamp; record['action'] = None
+    atomic_json(record_path, record)
+    monkeypatch.setattr(native_protocol, 'MAX_MANIFEST', publication_limit(fixture.store, ctx, size))
+    manifests_before = sorted(fixture.store.manifests.glob('*.json'))
+    capsys.readouterr()
+    with pytest.raises(cp.CheckpointError) as caught:
+        manifests.finish(ctx, steps)
+    assert not isinstance(caught.value, cp.ManifestTooLarge)
+    assert 'certificate' in str(caught.value)
+    assert 'checkpoint not published' not in capsys.readouterr().out
+    assert sorted(fixture.store.manifests.glob('*.json')) == manifests_before
+    assert ready.read_bytes() == before
+
+
+class LateCorruption(cp.Store):
+    """A stored manifest carrying corruption that the producer's own finish cannot construct.
+
+    finish puts a finished step in exactly one of ``stamps`` and ``incremental_stamps``, and never
+    writes ``historical_stamps``, so these two manifests exist only when they come back from a store.
+    """
+
+    def __init__(self, game, directory, corruption):
+        super().__init__(game, directory)
+        self.corruption = corruption
+
+    def save(self, manifest):
+        doctored = dict(manifest)
+        name = sorted(doctored['stamps'])[0]
+        stamp = doctored['stamps'][name]
+        if self.corruption == 'incremental':
+            doctored['incremental_stamps'] = {name: stamp}
+        elif self.corruption == 'historical':
+            doctored['historical_stamps'] = {name: stamp}
+        elif self.corruption == 'certificate':
+            doctored['stamps'] = {**doctored['stamps'], name: dict(stamp, fingerprint='not-hex')}
+        else:
+            raise AssertionError(self.corruption)
+        return super().save(doctored)
+
+
+@pytest.mark.parametrize('corruption, message', [
+    ('certificate', 'invalid or touched certificate'),
+    ('incremental', 'Invalid incremental checkpoint state'),
+    ('historical', 'Invalid historical candidate evidence'),
+])
+def test_an_oversized_manifest_with_late_corruption_is_refused_not_skipped(
+        fixture, monkeypatch, capsys, corruption, message):
+    ctx, steps = prepared(fixture, monkeypatch)
+    with manifests.writer(ctx.out):
+        manifests.finish(ctx, steps)
+    ready = manifests.folder(ctx.out) / 'ready.json'
+    before = ready.read_bytes()
+    size = len(native_protocol.canonical(fixture.store.load(json.loads(before)['key'])))
+    manifests_before = sorted(fixture.store.manifests.glob('*.json'))
+    monkeypatch.setattr(manifests, 'Store',
+                        lambda game: LateCorruption(game, fixture.store.directory, corruption))
+    monkeypatch.setattr(native_protocol, 'MAX_MANIFEST', publication_limit(fixture.store, ctx, size))
+    capsys.readouterr()
+    with pytest.raises(cp.CheckpointError, match=message) as caught:
+        manifests.finish(ctx, steps)
+    assert not isinstance(caught.value, cp.ManifestTooLarge)
+    assert 'checkpoint not published' not in capsys.readouterr().out
+    assert sorted(fixture.store.manifests.glob('*.json')) == manifests_before
+    assert ready.read_bytes() == before
+
+
+def build_project(tmp_path, monkeypatch):
+    """A real build with checkpoints enabled and its commands replaced: nothing native runs."""
+    repo = tmp_path.resolve(); (repo / 'uv.lock').write_text('lock')
+    monkeypatch.setattr(paths, 'REPO', repo)
+    monkeypatch.setattr(paths, 'ENGINE_PLUGINS', repo / 'plugins')
+    monkeypatch.setattr(paths, 'build_root', lambda: repo / 'build')
+    monkeypatch.setenv('ATELIER_CACHE', str(repo / 'cache'))
+    ctx = SimpleNamespace(game='fixture', out=repo / 'build/fixture', logs=repo / 'build/fixture/logs',
+                          stamps=repo / 'build/fixture/stamps', cook_mode=build.CookMode.DEFAULT)
+    steps = []
+    for name in ('mesh', 'extra'):
+        source = repo / (name + '.txt'); source.write_text(name)
+        script = repo / (name + '.py'); script.write_text('# ' + name)
+        steps.append(build.Step(name, [build.Python(script)], inputs=[source],
+                                products=[build.Product(name, (ctx.out / name,))]))
+    monkeypatch.setattr(build, 'Context', lambda *a, **kw: ctx)
+    monkeypatch.setattr(build, 'load_recipe', lambda _: SimpleNamespace(steps=lambda ctx: steps))
+    monkeypatch.setattr(build_checkpoints, 'configured', lambda ctx: {})
+    monkeypatch.setattr(build_checkpoints, 'prepare', lambda *a, **kw: None)
+    monkeypatch.setattr(build_cache, 'tool_context', lambda *a, **kw: dict(tool='fixed'))
+    behaviour, ran = {}, []
+
+    def run(ctx, step, command, log, *args, **kw):
+        failure = behaviour.get(step.name)
+        if failure is not None:
+            raise failure
+        ran.append(step.name)
+        (ctx.out / step.name).mkdir(parents=True, exist_ok=True)
+        (ctx.out / step.name / 'data').write_text(step.name)
+
+    monkeypatch.setattr(build, 'run_command', run)
+    messages = []
+    return SimpleNamespace(ctx=ctx, repo=repo, behaviour=behaviour, ran=ran, messages=messages,
+                           run=lambda **kw: build.build('fixture', echo=messages.append, **kw))
+
+
+def test_a_skipped_publication_leaves_a_successful_build_successful(tmp_path, monkeypatch, capsys):
+    p = build_project(tmp_path, monkeypatch)
+    assert p.run() == 0
+    ready = manifests.folder(p.ctx.out) / 'ready.json'
+    assert ready.is_file(), 'the first build must publish its checkpoint'
+    before = ready.read_bytes()
+    store = cp.Store('fixture')
+    size = len(native_protocol.canonical(store.load(json.loads(before)['key'])))
+    monkeypatch.setattr(native_protocol, 'MAX_MANIFEST', publication_limit(store, p.ctx, size))
+    (p.repo / 'mesh.txt').write_text('changed mesh')
+    capsys.readouterr()
+    assert p.run() == 0, p.messages
+    out = capsys.readouterr().out
+    assert 'checkpoint not published; receivers keep the previous checkpoint' in out, p.messages
+    assert ready.read_bytes() == before
+
+
+def test_a_skipped_publication_never_turns_a_failure_into_success(tmp_path, monkeypatch, capsys):
+    p = build_project(tmp_path, monkeypatch)
+    assert p.run() == 0
+    ready = manifests.folder(p.ctx.out) / 'ready.json'
+    before = ready.read_bytes()
+    store = cp.Store('fixture')
+    manifests_before = sorted(store.manifests.glob('*.json'))
+    capped = CapBelow('fixture', store.directory, monkeypatch)
+    monkeypatch.setattr(manifests, 'Store', lambda game: capped)
+    p.behaviour['extra'] = RuntimeError('fixture failure')
+    (p.repo / 'mesh.txt').write_text('changed mesh')
+    (p.repo / 'extra.txt').write_text('changed extra')
+    capsys.readouterr()
+    assert p.run() == 1, p.messages
+    out = capsys.readouterr().out
+    assert 'checkpoint not published; receivers keep the previous checkpoint' in out, p.messages
+    assert capped.sizes, 'the failing run must still assemble a candidate manifest'
+    assert sorted(store.manifests.glob('*.json')) == manifests_before
+    assert ready.read_bytes() == before
