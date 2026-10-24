@@ -65,6 +65,8 @@
     "platform/studio/atelier/build_v2/legacy_client.py",
     "platform/studio/atelier/build_v2/legacy_qualification.py",
     "platform/studio/atelier/build_v2/legacy_entry.py",
+    "platform/studio/atelier/build_v2/controller_entry.py",
+    "platform/studio/atelier/build_v2/controller_recipe.py",
     "platform/studio/atelier/build_v2/python_worker.py",
     "platform/studio/atelier/build_v2/python_job.py",
     "platform/studio/atelier/build_v2/protocol.py",

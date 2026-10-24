@@ -50,16 +50,15 @@ def test_captured_declaration_path_scope_is_write_free_and_default_unchanged(tmp
 
 
 def test_managed_selector_never_hides_global_declarations_or_persisted_management(tmp_path, monkeypatch):
-    from atelier import paths
-    from atelier.build_v2 import controller_entry, legacy_entry
-    monkeypatch.setattr(paths, 'REPO', tmp_path)
-    monkeypatch.setattr(controller_entry, 'discover', lambda game: {'data.stage.racing_courses': object()})
+    from atelier.build_v2 import legacy_entry
+    monkeypatch.setattr(legacy_entry, '_checkout', lambda: tmp_path)
+    monkeypatch.setattr(legacy_entry, 'controller_names', lambda game, checkout: ('data.stage.racing_courses',))
     assert legacy_entry.managed('example', [])
     assert legacy_entry.managed('example', ['data.stage'])
     assert legacy_entry.managed('example', ['legacy.only'])
     assert not legacy_entry.managed('example', ['data.stage.racing_courses'])
     assert not list(tmp_path.iterdir())
-    monkeypatch.setattr(controller_entry, 'discover', lambda game: {})
+    monkeypatch.setattr(legacy_entry, 'controller_names', lambda game, checkout: ())
     assert not legacy_entry.managed('example', ['legacy.only'])
     (tmp_path / 'build/build-v2').mkdir(parents=True)
     assert not legacy_entry.managed('example', ['legacy.only'])
@@ -82,7 +81,29 @@ def test_normal_managed_entry_preflight_refuses_before_context_or_host_writes(mo
     monkeypatch.setattr(build, 'Context', lambda *args, **kwargs: pytest.fail('Context constructed'))
     with pytest.raises(ValueError, match='unsupported captured declaration'):
         build.build('example', ['data.stage'])
-    assert observed == ['barrier', 'captured-preflight']
+    assert observed == ['captured-preflight']  # Barrier belongs to the fresh captured dependency scope.
+
+
+def test_managed_classification_uses_captured_original_bytes_without_pycache_or_mkdir(tmp_path, monkeypatch):
+    from atelier import paths
+    from atelier.build_v2 import controller_entry, legacy_entry
+    monkeypatch.setattr(controller_entry, 'discover', lambda *args, **kwargs: pytest.fail('live declaration loader ran'))
+    original = paths.REPO
+    for name in legacy_entry.CLASSIFICATION_FILES:
+        destination = tmp_path / name
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes((original / name).read_bytes())
+    declaration = tmp_path / 'games/example/build_v2.py'
+    declaration.parent.mkdir(parents=True)
+    declaration.write_text('from atelier import paths\nOUT = paths.build_dir("example")\ndef targets(): return {}\n')
+    assert legacy_entry.controller_names('example', tmp_path) == ()
+    assert not (tmp_path / 'build').exists()
+    assert not list(tmp_path.rglob('__pycache__'))
+    declaration.write_text('def targets(): return []\n')
+    with pytest.raises(ValueError, match='invalid game controller'):
+        legacy_entry.controller_names('example', tmp_path)
+    assert not (tmp_path / 'build').exists()
+    assert not list(tmp_path.rglob('__pycache__'))
 
 
 def test_unmanaged_normal_entry_reaches_original_context_without_host(monkeypatch):

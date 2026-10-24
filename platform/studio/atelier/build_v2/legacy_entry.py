@@ -18,6 +18,37 @@ from .controller_client import (
 )
 from .legacy_client import CLOCK_ID, host_budgets, scheduler_request
 
+CLASSIFICATION_FILES = (
+    'platform/studio/atelier/__init__.py', 'platform/studio/atelier/paths.py',
+    'platform/studio/atelier/build_v2/__init__.py',
+    'platform/studio/atelier/build_v2/controller_entry.py',
+    'platform/studio/atelier/build_v2/controller_recipe.py',
+    'platform/studio/atelier/build_v2/controller_client.py',
+    'platform/harness/harness/__init__.py', 'platform/harness/harness/compat.py',
+)
+
+
+def _checkout():
+    return Path(__file__).resolve(strict=True).parents[4]
+
+
+def controller_names(game, checkout):
+    """Captured original declaration bytes and the existing strict validator, no pycache."""
+    from .legacy_qualification import CapturedCode, captured_recipe_imports
+    declaration = f'games/{game}/build_v2.py'
+    try:
+        source = capture_named_sources(checkout, (declaration,))
+    except FileNotFoundError:
+        return ()
+    dependencies = capture_named_sources(checkout, CLASSIFICATION_FILES)
+    codes = [CapturedCode(str(checkout / name), raw)
+             for name, raw in (*source.files, *dependencies.files)]
+    with captured_recipe_imports(codes, checkout=checkout):
+        from atelier import paths as declaration_paths
+        from atelier.build_v2.controller_entry import discover
+        with declaration_paths.captured_declaration(game):
+            return tuple(discover(game, checkout=checkout))
+
 
 def managed(game, wanted):
     """Classify globally declared/persisted management without creating state.
@@ -25,22 +56,20 @@ def managed(game, wanted):
     Exact controller-only requests retain their existing transactional route. A legacy
     selector cannot erase management or an old epoch, and never dispatches a course.
     """
-    from atelier import paths
-    from .controller_entry import discover
-    declarations = discover(game)
+    checkout = _checkout()
+    declarations = controller_names(game, checkout)
     if wanted and declarations and all(name in declarations for name in wanted):
         return False
     # Cargo/test listings or a helper distribution alone are not saved checkout
     # ownership. The authoritative B3 metadata root includes lock-only management.
-    state = paths.REPO / 'build/build-v2/install'
+    state = checkout / 'build/build-v2/install'
     return bool(declarations) or state.exists() or state.is_symlink()
 
 
 def prepare_discovery(game, wanted, *, verify=False, max_heavy_commands=None, fail_fast=False):
     """Captured source-only global declaration preflight, before helper/control writes."""
-    from atelier import paths
     from .legacy_qualification import CapturedCode, captured_spec
-    checkout = paths.REPO.resolve(strict=True)
+    checkout = _checkout()
     name = f'games/{game}/legacy_qualification.py'
     initial = capture_named_sources(checkout, (name,))
     spec = captured_spec('_atelier_original_discovery_profile',
@@ -94,13 +123,15 @@ def execute(game, wanted, *, discovery_source, verify=False, max_heavy_commands=
     manufacture Finish. No controller-owned task is implicitly dispatched here.
     See test_build_v2_legacy_entry.py.
     """
-    from atelier import paths
     from atelier.harness.capacity_protocol import boot_id
     from atelier.harness.safety.cancellation import termination_cleanup
-    checkout = paths.REPO.resolve(strict=True)
+    checkout = _checkout()
     request = scheduler_request(game, wanted, verify=verify,
                                 max_heavy_commands=max_heavy_commands, fail_fast=fail_fast)
     operational = operational_environment(os.environ)
+    build_root = Path(operational['build_root']) if operational['build_root'] else checkout / 'build'
+    if build_root != checkout / 'build':
+        raise ValueError('managed discovery supports only the anchored default build root')
     context = original_python_context()
     interpreter_role = Path(os.path.abspath(sys.executable))
     interpreter = interpreter_role.resolve(strict=True)
@@ -115,7 +146,7 @@ def execute(game, wanted, *, discovery_source, verify=False, max_heavy_commands=
     if f'games/{game}/legacy_qualification.py' not in dict(issuer.files):
         raise ValueError('managed entry has no captured fixed game issuer')
     budgets = host_budgets(enclosing_deadline_ns=enclosing_deadline_ns)
-    helper = ensure_controller(checkout, paths.build_root() / 'build-v2/controller/helpers', echo=echo)
+    helper = ensure_controller(checkout, build_root / 'build-v2/controller/helpers', echo=echo)
     if helper.source != captured.digest or capture_controller(checkout).digest != captured.digest:
         raise ValueError('controller source changed during managed startup')
     if capture_named_sources(checkout, source_names).digest != issuer.digest:
@@ -129,7 +160,7 @@ def execute(game, wanted, *, discovery_source, verify=False, max_heavy_commands=
     request_bytes = _read_at(control, 'request.json', 64 * 1024, owned=True)
     config = {
         'version': 2, 'nonce': nonce, 'selection': nonce, 'checkout': str(checkout),
-        'output': str(paths.build_root() / game), 'distribution': str(control / 'distribution'),
+        'output': str(build_root / game), 'distribution': str(control / 'distribution'),
         'source_identity': captured.digest, 'interpreter': str(interpreter),
         'interpreter_digest': hashlib.sha256(image).hexdigest(),
         'interpreter_role': str(interpreter_role), 'python_context': context,

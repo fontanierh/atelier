@@ -1013,7 +1013,6 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, veri
                 or cook_memory_gib is not None or recover_cook is not None
                 or record_cook_recovery or rebuild_touched or rebuild_reason is not None):
             raise ValueError('managed legacy discovery does not support mutation/recovery overrides')
-        require_complete(paths.build_root() / game, game=game)
         discovery = legacy_entry.prepare_discovery(game, wanted, verify=verify,
                                                max_heavy_commands=max_heavy_commands,
                                                fail_fast=fail_fast)

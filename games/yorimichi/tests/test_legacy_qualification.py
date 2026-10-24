@@ -1,6 +1,8 @@
 """Finite provider capture; real fresh-process Graph proof lives in the Rust T1a case."""
 from pathlib import Path
 import importlib.util
+import signal
+import pytest
 
 
 def test_current_discovery_provider_roster_uses_static_imports_within_capture_bound(monkeypatch):
@@ -27,3 +29,45 @@ def test_current_discovery_provider_roster_uses_static_imports_within_capture_bo
     assert all((paths.REPO / name).is_file() for name in names)
     assert len(names) <= 256
     assert not writes
+
+
+def test_owned_fixture_cleanup_excludes_shared_descendants_and_exec_transitions():
+    from atelier import paths
+    from atelier.harness.safety.tree_guard import OwnedTree
+    spec = importlib.util.spec_from_file_location(
+        'owned_entry_fixture', paths.REPO / 'games/yorimichi/tests/legacy_host_entry_case.py')
+    fixture = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(fixture)
+
+    class Table:
+        def __init__(self):
+            self.names = {pid: 'python' for pid in range(1, 7)}
+            self.edges = {1: [2, 3, 5], 3: [4], 5: [6]}
+            self.unknown = set()
+        def started(self, pid):
+            return pid * 10 if pid in self.names else None
+        def name(self, pid):
+            if pid in self.unknown:
+                raise OSError('unknown executable observation')
+            return self.names[pid]
+        def owned_children(self, pid, start):
+            return [(child, child * 10) for child in self.edges.get(pid, [])]
+
+    api = Table()
+    tree = OwnedTree(api, 1, 10)
+    tree.discover()  # All ordinary actors were independently observed before exec.
+    api.names[3] = 'zenserver'
+    api.names[5] = 'UnrealTraceServer'
+    sent = []
+    fixture.signal_readonly_owned(tree, signal.SIGTERM, send=lambda pid, number: sent.append((pid, number)))
+    assert {pid for pid, _ in sent} == {1, 2}
+    assert all(number == signal.SIGTERM for _, number in sent)
+    sent.clear()
+    fixture.signal_readonly_owned(tree, signal.SIGKILL, send=lambda pid, number: sent.append((pid, number)))
+    assert {pid for pid, _ in sent} == {1, 2}
+    assert all(number == signal.SIGKILL for _, number in sent)
+    api.unknown.add(2)
+    sent.clear()
+    with pytest.raises(OSError, match='unknown executable'):
+        fixture.signal_readonly_owned(tree, signal.SIGTERM, send=lambda pid, number: sent.append((pid, number)))
+    assert not sent

@@ -22,6 +22,11 @@ from atelier.harness.safety import process_tree
 from atelier.harness.safety.tree_guard import OwnedTree
 
 
+def signal_readonly_owned(tree, number, *, send=os.kill):
+    """Use the existing fresh shared-exclusion-aware target policy, never a group sweep."""
+    tree.stop_owned(send=lambda pid, ignored: send(pid, number))
+
+
 def observed_call(arguments, environment, evidence):
     """Linux test-owned readonly actors only; never a production cleanup authority."""
     boot = boot_id()
@@ -62,12 +67,7 @@ def observed_call(arguments, environment, evidence):
                     remaining = [key for key in tree.parents if tree.same(key)]
                     if not remaining:
                         break
-                    for pid, start in remaining:
-                        if process_tree.started(pid) == start:
-                            try:
-                                os.kill(pid, number)
-                            except ProcessLookupError:
-                                pass
+                    signal_readonly_owned(tree, number)
                     end = time.monotonic() + 2
                     while time.monotonic() < end:
                         tree.discover()
@@ -170,17 +170,10 @@ def main(binary):
     assert not (REPO / 'build/yorimichi/stamps').exists()
     assert not (REPO / 'build/build-v2/install/index.json').exists()
     assert not (REPO / 'build/build-v2/install/receipts').exists()
-    raw_record = (REPO / 'build/build-v2/install/legacy-epoch.json').read_bytes()
-    record = json.loads(raw_record)
-    write_control(evidence, 'selection-observation.json', {
-        'digest': hashlib.sha256(raw_record).hexdigest(), 'version': record['version'],
-        'frame': record['frame'], 'permissions_issued': record['permissions_issued'],
-        'transition_count': record['transition_count'], 'verified_complete': record['verified_complete'],
-        'dirty': record['dirty'],
-    })
-    assert record['version'] == 2 and record['frame'] is None
-    assert record['permissions_issued'] == 0 and record['transition_count'] == 1
-    assert not record['verified_complete'] and record['dirty'] == []
+    epoch = REPO / 'build/build-v2/install/legacy-epoch.json'
+    epoch_present = epoch.exists() or epoch.is_symlink()
+    write_control(evidence, 'selection-observation.json', {'epoch_present': epoch_present})
+    assert not epoch_present
     print('HOSTED_REAL_ENTRY_GRAPH_HELD no mutation permission or completion certified', flush=True)
 
 

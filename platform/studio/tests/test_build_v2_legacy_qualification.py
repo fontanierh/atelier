@@ -178,3 +178,44 @@ def test_recipe_direct_spec_loads_captured_bytes_at_original_path_and_refuses_un
             outside.unlink()
         assert not written.exists()
     assert importlib.util.spec_from_file_location is original
+
+
+def test_private_declarations_ignore_poisoned_preloaded_graph_context_and_paths(monkeypatch):
+    from atelier import build_products, paths
+    from atelier.build_v2 import controller_entry
+    from atelier.build_v2.controller_client import capture_named_sources
+    from atelier.build_v2.legacy_entry import original_python_context
+    from atelier.build_v2.legacy_qualification import captured_recipe_imports
+    from atelier.source_imports import ImportScanner
+    root = paths.REPO
+    names = tuple(source.relative_to(root).as_posix() for source in
+                  ImportScanner().local_imports(root / 'platform/studio/atelier/build.py'))
+    source = capture_named_sources(root, names)
+    codes = [CapturedCode(str(root / name), raw) for name, raw in source.files]
+    context = original_python_context()
+    called = []
+    def poisoned(*args, **kwargs):
+        called.append('preloaded-object-executed')
+        raise AssertionError('preloaded declaration object executed')
+    monkeypatch.setattr(build_products.Graph, 'select', poisoned)
+    monkeypatch.setattr(controller_entry, 'declaration_context', poisoned)
+    monkeypatch.setattr(paths, 'build_root', poisoned)
+    monkeypatch.setattr(paths, 'build_dir', poisoned)
+    before_path = list(sys.path)
+    before_modules = {name: sys.modules.get(name) for name in (
+        'atelier', 'atelier.build_products', 'atelier.paths', 'atelier.build_v2.controller_entry')}
+    with captured_recipe_imports(codes, checkout=root, platform_roots=context['platform_roots']):
+        from atelier import build as fresh_build, build_products as fresh_products, paths as fresh_paths
+        from atelier.build_v2 import controller_entry as fresh_entry
+        assert fresh_products is not build_products and fresh_paths is not paths
+        step = fresh_build.Step('existing-declaration', [])
+        assert fresh_products.Graph([step]).select(['existing-declaration']) == [step]
+        assert fresh_entry.declaration_context('sandbox').game == 'sandbox'
+        with fresh_paths.captured_declaration('sandbox'):
+            assert fresh_paths.build_dir('sandbox') == root / 'build/sandbox'
+    assert not called
+    assert sys.path == before_path
+    assert all(sys.modules.get(name) is module for name, module in before_modules.items())
+    assert build_products.Graph.select is poisoned
+    assert controller_entry.declaration_context is poisoned
+    assert paths.build_root is poisoned and paths.build_dir is poisoned

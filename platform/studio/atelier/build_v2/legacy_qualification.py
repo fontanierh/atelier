@@ -236,26 +236,89 @@ class NamedCapturedImports(importlib.abc.MetaPathFinder):
 
 
 @contextmanager
+def _private_declarations(names):
+    """Reversible module bindings for the finite captured declaration dependency set.
+
+    Keep this executing control-provider module stable; declaration modules/classes are
+    fresh. No old module object, package attribute, memo dictionary or import finder is
+    mutated into a claimed captured origin. Original objects are restored on every exit.
+    """
+    import threading
+    if threading.active_count() != 1:
+        raise UnsupportedOrigin('captured declaration reload requires a single Python thread')
+    protected = {name.split('.')[0] for name in names}
+    names = set(names) | {name for name in sys.modules if name.split('.')[0] in protected}
+    names.discard(__name__)
+    if len(names) > MAX_BINDINGS:
+        raise UnsupportedOrigin('captured declaration module snapshot exceeds bound')
+    missing = object()
+    previous = {name: sys.modules.get(name, missing) for name in names}
+    attributes = {}
+    for name in names:
+        parent, _, child = name.rpartition('.')
+        module = sys.modules.get(parent)
+        if isinstance(module, types.ModuleType):
+            attributes[(module, child)] = vars(module).get(child, missing)
+    memos = {name: getattr(sys, name, missing)
+             for name in ('_atelier_module_cache', '_atelier_json_cache')}
+    original_path, path_values = sys.path, list(sys.path)
+    for name in names:
+        sys.modules.pop(name, None)
+    for module, child in attributes:
+        vars(module).pop(child, None)
+    for name in memos:
+        setattr(sys, name, {})
+    try:
+        yield
+    finally:
+        for name in names:
+            sys.modules.pop(name, None)
+        for name, value in previous.items():
+            if value is not missing:
+                sys.modules[name] = value
+        for (module, child), value in attributes.items():
+            if value is missing:
+                vars(module).pop(child, None)
+            else:
+                vars(module)[child] = value
+        for name, value in memos.items():
+            if value is missing:
+                vars(sys).pop(name, None)
+            else:
+                setattr(sys, name, value)
+        original_path[:] = path_values
+        sys.path = original_path
+
+
+@contextmanager
 def captured_recipe_imports(sources, *, checkout, platform_roots=()):
     """@cc [owner:fontanierh,label:safety] captured-recipe-preexec-routing
     The fixed profile's named normal/spec imports MUST compile captured bytes at their
-    original logical filenames. Unknown checkout sources, foreign preloaded game helpers
-    and unqualified custom source loaders MUST refuse before execution. Installed context
+    original logical filenames. The finite declaration modules MUST reload privately from
+    that capture rather than execute preloaded objects; module/package/memo/path bindings
+    MUST restore on exit. Unknown checkout sources and custom source loaders MUST refuse
+    before execution. Installed context
     MUST remain separate from project code; existing Harness aliases MUST preserve their
     canonical class identity. Source routing MUST NOT confer task/cleanup qualification.
     See test_recipe_direct_spec_loads_captured_bytes_at_original_path_and_refuses_unknown_prewrite.
+    See test_private_declarations_ignore_poisoned_preloaded_graph_context_and_paths.
 
     The isolated scheduler is single threaded at this boundary. This does not qualify
     arbitrary exec, task callbacks or import effects: the fixed game profile must name
     those effects before entry. Unknown checkout spec loads refuse before execution.
     """
-    from atelier.harness import compat
     checkout = Path(checkout).resolve(strict=True)
     by_path = {source.filename: source for source in sources}
     if not by_path or len(by_path) > 256 or len(by_path) != len(sources):
         raise UnsupportedOrigin('recipe capture path set is invalid')
     if any(not Path(name).is_relative_to(checkout) for name in by_path):
         raise UnsupportedOrigin('recipe capture has a foreign logical source')
+    alias_source = by_path.get(str(checkout / 'platform/harness/harness/compat.py'))
+    compat = None
+    if alias_source is not None:
+        alias_spec = captured_spec('_atelier_captured_harness_aliases', alias_source)
+        compat = importlib.util.module_from_spec(alias_spec)
+        alias_spec.loader.exec_module(compat)
     modules = {}
     for filename, source in by_path.items():
         relative = Path(filename).relative_to(checkout)
@@ -278,15 +341,6 @@ def captured_recipe_imports(sources, *, checkout, platform_roots=()):
                 parts.pop()
             if parts and all(part.isidentifier() for part in parts):
                 modules['.'.join(parts)] = source
-                aliases = ['.'.join(parts)]
-                if parts[0] == 'world':
-                    aliases.append('.'.join(parts[1:]))
-                for alias in aliases:
-                    loaded = sys.modules.get(alias)
-                    if loaded is not None:
-                        loader = getattr(loaded, '__loader__', None)
-                        if not isinstance(loader, CapturedLoader) or loader.captured != source:
-                            raise UnsupportedOrigin('preloaded game helper has no matching captured origin')
     namespaces = {}
     for name, source in modules.items():
         parts = name.split('.')
@@ -305,7 +359,7 @@ def captured_recipe_imports(sources, *, checkout, platform_roots=()):
         def find_spec(self, fullname, path=None, target=None):
             # Preserve existing Harness alias class identities through its actual
             # alias loader, rather than executing a second copy under the alias.
-            if fullname.startswith('atelier.'):
+            if compat is not None and fullname.startswith('atelier.'):
                 target_name = compat.canonical(fullname)
                 if target_name is not None:
                     if target_name not in self.modules:
@@ -355,13 +409,20 @@ def captured_recipe_imports(sources, *, checkout, platform_roots=()):
         return original(name, location, loader=loader,
                         submodule_search_locations=submodule_search_locations)
 
+    previous_finders = list(sys.meta_path)
     sys.meta_path.insert(0, finder)
     importlib.util.spec_from_file_location = fixed_spec
     bytecode = sys.dont_write_bytecode
     sys.dont_write_bytecode = True
     try:
-        yield
+        names = set(modules) | set(namespaces)
+        names.update(name.removeprefix('world.') for name in (*modules, *namespaces)
+                     if name.startswith('world.'))
+        names.update('atelier.' + name.removeprefix('atelier.harness.')
+                     for name in modules if name.startswith('atelier.harness.'))
+        with _private_declarations(names):
+            yield
     finally:
         importlib.util.spec_from_file_location = original
-        sys.meta_path.remove(finder)
+        sys.meta_path[:] = previous_finders
         sys.dont_write_bytecode = bytecode

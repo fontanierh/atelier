@@ -117,10 +117,11 @@ controller declarations or the B3 install metadata root do, including lock-only 
 Exact controller-only execution and genuinely unmanaged normal execution retain their routes.
 
 The host already creates the exact default output directory and checkpoint writer. Repeating
-that mkdir is not a legitimate new task. Discovery therefore stays read-only under Prepared,
-with no active frame, mutation permission, settlement, replay credit or Finish. It ends Held
+that mkdir is not a legitimate new task. Discovery therefore stays read-only under held guards,
+without creating an epoch, active frame, mutation permission, settlement, replay credit or Finish. It ends Held
 before `Context`, HashIndex, checkpoint/store preparation, restoration or any task. An existing
-epoch requires repair and is not discarded. This checkpoint does not complete the originally
+epoch requires repair and is not discarded. Read-only discovery does not create a needless
+new incomplete epoch. This checkpoint does not complete the originally
 proposed operational DiscoveryControl frame or same-scope repair; it cannot activate mixed mode.
 Course-order verification, all mutation/batch/replan/final-graph hooks, complete repair,
 content-child custody and peak-history/provider binding remain separate unfinished work.
@@ -135,5 +136,13 @@ approved operational variables. No game key or worker bundle is changed by this 
 The Linux T1a `legacy_host_entry` bridge uses the original checkout's `.venv/bin/python`
 and actual compiled source-bound controller. Its Python fixture explicitly prepares the normal
 verified helper cache, then exercises the ordinary console entry through captured Graph discovery
-to typed Held. Prepared has no frame or mutation permission; no task settlement, replay, Finish,
+to typed Held. No new epoch or mutation permission is persisted; no task settlement, replay, Finish,
 native work or build success is certified. The existing T1a budget is unchanged.
+
+Declaration imports run in a private reversible scope over the finite captured dependency set.
+Preloaded `Graph`, context and path helpers cannot supply executed declaration code; fresh modules
+come from captured loaders at original logical filenames. Original module/package/path bindings
+and the two existing in-memory recipe memo objects are restored afterward. No persistent cache
+is cleared. Classification uses captured original controller declarations with the existing strict
+validator and suppresses game bytecode writes. Legacy complete-state barriers run inside the fresh
+declaration scope before recipe discovery and still before helper/bootstrap mutation.

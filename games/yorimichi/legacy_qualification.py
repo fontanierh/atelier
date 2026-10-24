@@ -72,12 +72,9 @@ def discover(manifest, request, *, captured_files=None):
     """Enter actual load_recipe/steps/Graph over the exact named captured providers."""
     from atelier.build_v2.controller_client import _read_at, _captured_source
     from atelier.build_v2.legacy_qualification import (
-        CapturedCode, IdentityBinding, UnsupportedOrigin, captured_recipe_imports, verify_callable,
+        CapturedCode, IdentityBinding, captured_recipe_imports, verify_callable,
     )
-    import sys
     import importlib
-    if getattr(sys, '_atelier_module_cache', None) or getattr(sys, '_atelier_json_cache', None):
-        raise UnsupportedOrigin('preloaded recipe memo has no fresh captured origin')
     checkout = Path(manifest['checkout'])
     files = (list(captured_files) if captured_files is not None else
              [(name, _read_at(manifest['issuer_root'], name, 8 * 1024 * 1024))
@@ -88,15 +85,17 @@ def discover(manifest, request, *, captured_files=None):
     with captured_recipe_imports(sources, checkout=checkout,
                                  platform_roots=manifest['python_context']['platform_roots']):
         from atelier import build, build_products, paths
+        from atelier.build_snapshot import require_complete
         from atelier.build_v2.controller_entry import declaration_context
-        # The original normal entry already imported build. Compare that actual
-        # callable with the captured original filename, not pycache/source mtime.
+        # Also check the fresh loader's callable/environment at the original
+        # filename; no preloaded module or pycache timestamp supplies its origin.
         recipe_loader = next(source for source in sources
                              if source.filename == str(checkout / 'platform/studio/atelier/build.py'))
         verify_callable(build.load_recipe, recipe_loader, qualname='load_recipe',
                         namespace=build.__dict__, globals_={
                             'paths': IdentityBinding(paths), 'importlib': IdentityBinding(importlib)})
         with paths.captured_declaration('yorimichi'):
+            require_complete(paths.build_root() / 'yorimichi', game='yorimichi')
             steps = build.load_recipe('yorimichi').steps(declaration_context('yorimichi'))
             build.check_declarations(steps)
             graph = build_products.Graph(steps)
@@ -105,7 +104,7 @@ def discover(manifest, request, *, captured_files=None):
 
 
 def run(*, manifest, request, client, custody):
-    """Prepare selection, discover read-only, then hold before task/control permission.
+    """Discover read-only, then hold without a new epoch or task/control permission.
 
     No completion/Finish is issued: selected course ordering, mutation profiles, batch and
     replan/final Graph/repair are not yet implemented. An old epoch is not superseded here.
@@ -119,17 +118,9 @@ def run(*, manifest, request, client, custody):
     output = checkout / 'build/yorimichi'
     if Path(manifest['output']) != output:
         raise AuthorityRefused('discovery supports only the anchored default project output')
-    # This binds operational source only, never a third action key/fingerprint encoder.
-    source_plan = manifest['issuer_digest']
-    client.request({'type': 'prepare_selection', 'observation': {
-        'project': 'yorimichi', 'selector': request['wanted'], 'source_plan': source_plan,
-        'request_digest': manifest['scheduler_request']['digest'],
-        'issuer': manifest['issuer_digest'], 'controller_source': manifest['source_digest'],
-        'roots': ['build'], 'sources': [],
-    }})
     # The host already created the exact output root and writer. Repeating that
     # mkdir is not a genuine mutating task, and cannot justify a whole-output claim.
-    # No Advance/BeginAttempt or settled/replay credit is fabricated for discovery.
+    # No Prepare/Advance/BeginAttempt or settled/replay credit is fabricated.
     selected = discover(manifest, request)
     print(f'Managed captured recipe discovery: {len(selected)} selected declarations; '
           'HELD Unsupported before Context/task preparation', flush=True)
