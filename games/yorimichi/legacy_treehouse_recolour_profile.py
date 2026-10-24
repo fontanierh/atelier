@@ -84,12 +84,29 @@ def _recolour_source(checkout, source, script, trees):
                     for node in ast.walk(branch))
                 or not any(isinstance(node, ast.ImportFrom) and node.module == 'treehouse'
                            and any(alias.name == 'trees' for alias in node.names)
-                           for node in ast.walk(branch))
-                or not any(isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
-                           and isinstance(node.func.value, ast.Name) and node.func.value.id == 'trees'
-                           and node.func.attr == 'recolour' and not node.args and not node.keywords
                            for node in ast.walk(branch))):
-            raise UnsupportedTreehouseRecolour('canopy_data --recolour dispatch differs')
+            raise UnsupportedTreehouseRecolour('canopy_data --recolour imports differ')
+        expected_main = (
+            'root=real_directory(args.recolour)',
+            'trees.OUT=root',
+            'trees.recolour()',
+        )
+        relevant_main = [
+            node for node in ast.walk(branch)
+            if (isinstance(node, ast.Assign) and any(
+                isinstance(target, ast.Name) and target.id == 'root'
+                or isinstance(target, ast.Attribute) and isinstance(target.value, ast.Name)
+                and target.value.id == 'trees' and target.attr == 'OUT'
+                for target in node.targets))
+            or (isinstance(node, ast.Expr) and isinstance(node.value, ast.Call)
+                and isinstance(node.value.func, ast.Attribute)
+                and isinstance(node.value.func.value, ast.Name)
+                and node.value.func.value.id == 'trees' and node.value.func.attr == 'recolour')
+        ]
+        if [ast.dump(node, include_attributes=False) for node in relevant_main] != [
+                ast.dump(node, include_attributes=False)
+                for node in ast.parse(';'.join(expected_main)).body]:
+            raise UnsupportedTreehouseRecolour('canopy_data real destination/recolour chain differs')
         tree_source = _source(checkout, trees)
         tree_ast = ast.parse(tree_source, filename=str(trees))
         assignment = next(node for node in tree_ast.body if isinstance(node, ast.Assign)
@@ -99,14 +116,32 @@ def _recolour_source(checkout, source, script, trees):
             raise UnsupportedTreehouseRecolour('fixed canopy recolour keys differ')
         function = next(node for node in tree_ast.body
                         if isinstance(node, ast.FunctionDef) and node.name == 'recolour')
-        written = []
+        expected_io = (
+            "src=bpy.data.images.load(str(yori.TEXTURES/'T_leaf_maple.png'));w,h=src.size",
+            "path=OUT/f'T_leaf_{name}.png';img.filepath_raw=str(path);img.file_format='PNG';img.save()",
+        )
+        relevant_io = []
         for node in ast.walk(function):
-            if (isinstance(node, ast.Assign) and any(isinstance(target, ast.Name) and target.id == 'path'
-                                                     for target in node.targets)
-                    and isinstance(node.value, ast.BinOp) and isinstance(node.value.op, ast.Div)):
-                written.append(node.value)
-        if len(written) != 1:
-            raise UnsupportedTreehouseRecolour('recolour output construction differs')
+            if isinstance(node, ast.Assign):
+                targets = node.targets
+                if any(isinstance(target, ast.Name) and target.id in {'src', 'path'}
+                       or isinstance(target, ast.Attribute) and isinstance(target.value, ast.Name)
+                       and target.value.id == 'img' and target.attr in {'filepath_raw', 'file_format'}
+                       for target in targets):
+                    relevant_io.append(node)
+                elif any(isinstance(target, ast.Tuple) and any(
+                        isinstance(element, ast.Name) and element.id in {'w', 'h'}
+                        for element in target.elts) for target in targets):
+                    relevant_io.append(node)
+            elif (isinstance(node, ast.Expr) and isinstance(node.value, ast.Call)
+                  and isinstance(node.value.func, ast.Attribute)
+                  and isinstance(node.value.func.value, ast.Name) and node.value.func.value.id == 'img'
+                  and node.value.func.attr == 'save'):
+                relevant_io.append(node)
+        if [ast.dump(node, include_attributes=False) for node in relevant_io] != [
+                ast.dump(node, include_attributes=False)
+                for node in ast.parse(';'.join(expected_io)).body]:
+            raise UnsupportedTreehouseRecolour('recolour exact image input/output/save expressions differ')
     except (OSError, SyntaxError, ValueError, TypeError, StopIteration) as error:
         raise UnsupportedTreehouseRecolour('recolour source roles are missing or invalid') from error
 
@@ -191,11 +226,8 @@ def qualify_treehouse_recolour(step, *, checkout: Path, output_root: Path) -> Tr
     # Pre-read fixed declared source roles before the existing inert import scanner.
     _recolour_source(checkout, _source(checkout, script), script, trees)
     for source in step.inputs:
-        try:
+        if source != produced[0]:
             _source(checkout, source)
-        except UnsupportedTreehouseRecolour:
-            if Path(source) != produced[0]:
-                raise
     local = build_inputs.local_imports(script, (world, regions))
     code = []
     for path in local:
