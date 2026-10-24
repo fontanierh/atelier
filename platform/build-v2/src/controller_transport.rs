@@ -82,6 +82,7 @@ impl Invocation {
 pub struct ExecutionSettings {
     pub cache_root: PathBuf,
     pub interpreter: PathBuf,
+    pub blender: Option<PathBuf>,
     pub owner: ProcessIdentity,
     pub provenance: Provenance,
     pub worktree_id: String,
@@ -334,6 +335,7 @@ pub fn run(inherited: [File; 3]) -> Result<(), String> {
         ExecutionContext {
             cache_root: execution.cache_root,
             interpreter: execution.interpreter,
+            blender: execution.blender,
             owner: execution.owner,
             provenance: execution.provenance,
             worktree_id: execution.worktree_id,

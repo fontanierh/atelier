@@ -3,6 +3,7 @@
 #[cfg(all(test, target_os = "macos"))]
 #[path = "../tests/support/python_backend_cases.rs"]
 mod tests;
+use crate::blender_ops::{self, BLENDER_EXPORT_KIND, BLENDER_PLAN_KIND, BlenderPlanSpec};
 use crate::checkout_locks::BuildGuard;
 use crate::completion::{CompletionWork, FrozenCompletion};
 use crate::graph::{BuildGraph, SelectedGraph};
@@ -50,12 +51,52 @@ pub struct PythonIo {
     pub receipt_writes: usize,
 }
 
+fn validator_identity(unit: &PreparedUnit) -> crate::keys::ImplementationIdentity {
+    crate::keys::ImplementationIdentity {
+        version: unit.ingredients().validator_version.clone(),
+        digest: unit.ingredients().validator_digest.clone(),
+    }
+}
+fn check_unit_identity(unit: &PreparedUnit) -> Result<(), String> {
+    match unit.ingredients().op.kind.as_str() {
+        "py_data" => check_py_data_unit_identity(unit),
+        kind @ (BLENDER_PLAN_KIND | BLENDER_EXPORT_KIND) => {
+            blender_ops::check_blender_identity(unit, kind, &validator_identity(unit))?;
+            if kind == BLENDER_PLAN_KIND {
+                let contract = unit
+                    .ingredients()
+                    .output_groups
+                    .first()
+                    .ok_or("missing Blender group")?;
+                BlenderPlanSpec::new(contract.clone()).validate_ingredients(unit.ingredients())
+            } else {
+                blender_ops::BlenderExportSpec::default().validate_ingredients(unit.ingredients())
+            }
+        }
+        _ => Err("unregistered executable op".into()),
+    }
+}
+fn validate_fixed_outputs(
+    unit: &PreparedUnit,
+    outputs: &[crate::results::FrozenOutput<'_>],
+) -> Result<(), String> {
+    match unit.ingredients().op.kind.as_str() {
+        "py_data" => validate_py_data_unit_outputs(unit, outputs),
+        BLENDER_EXPORT_KIND => {
+            blender_ops::validate_blender_export_outputs(unit, &validator_identity(unit), outputs)
+        }
+        BLENDER_PLAN_KIND if outputs.is_empty() => check_unit_identity(unit),
+        _ => Err("fixed output set outside registered op".into()),
+    }
+}
+
 /// Only this backend constructs a checked view. The origin remains private and sealed.
 pub struct PythonChecked {
     unit: String,
     key: String,
     items: Vec<StoredItem>,
     current: bool,
+    groups: BTreeMap<String, ValidatedGroup>,
 }
 
 /// Caller-owned cache and checkout policy; opening either stays lazy behind Current.
@@ -80,6 +121,7 @@ enum Origin {
 }
 
 struct SelectedSource {
+    group: Option<String>,
     producer: String,
     item: String,
     input: PreparedInput,
@@ -157,16 +199,49 @@ impl PythonSources<'_> {
             )
         })?;
         let stored = |envelope: &ResultEnvelope| {
-            let item = envelope
-                .result
-                .outputs
-                .iter()
-                .find(|item| item.item.id == selected.item)
-                .ok_or_else(|| {
-                    refusal(SourceErrorKind::Unavailable, "selected item absent".into())
-                })?;
-            same_view(&selected.input, item)
-                .map_err(|message| refusal(SourceErrorKind::Changed, message))
+            if let Some(group) = &selected.group {
+                let contract = envelope
+                    .result
+                    .ingredients
+                    .output_groups
+                    .iter()
+                    .find(|c| &c.id == group)
+                    .ok_or_else(|| {
+                        refusal(
+                            SourceErrorKind::Changed,
+                            "selected group contract absent".into(),
+                        )
+                    })?;
+                let stored = envelope
+                    .result
+                    .output_groups
+                    .iter()
+                    .find(|g| &g.id == group)
+                    .ok_or_else(|| {
+                        refusal(
+                            SourceErrorKind::Changed,
+                            "selected group metadata absent".into(),
+                        )
+                    })?;
+                let identity = crate::groups::recorded_identity(contract, stored)
+                    .map_err(|message| refusal(SourceErrorKind::Changed, message))?;
+                let item = identity
+                    .project(&selected.item)
+                    .map_err(|message| refusal(SourceErrorKind::Changed, message))?;
+                same_view(&selected.input, &item)
+                    .map_err(|message| refusal(SourceErrorKind::Changed, message))
+            } else {
+                let item = envelope
+                    .result
+                    .outputs
+                    .iter()
+                    .find(|item| item.item.id == selected.item)
+                    .ok_or_else(|| {
+                        refusal(SourceErrorKind::Unavailable, "selected item absent".into())
+                    })?;
+                same_view(&selected.input, item)
+                    .map_err(|message| refusal(SourceErrorKind::Changed, message))
+            }
         };
         let outcome =
             match origin {
@@ -356,7 +431,6 @@ pub struct PythonBackend<'a> {
     root: Box<dyn FnMut(&str, &ResultEnvelope) -> Result<(), String> + 'a>,
     origins: BTreeMap<String, Origin>,
     prepared: BTreeMap<String, PreparedUnit>,
-    empty_groups: BTreeMap<String, ValidatedGroup>,
     needed_items: BTreeMap<String, BTreeSet<String>>,
     io: Rc<RefCell<PythonIo>>,
 }
@@ -407,7 +481,6 @@ impl<'a> PythonBackend<'a> {
             root: Box::new(root),
             origins: BTreeMap::new(),
             prepared: BTreeMap::new(),
-            empty_groups: BTreeMap::new(),
             needed_items,
             io: Rc::new(RefCell::new(PythonIo::default())),
         }
@@ -499,6 +572,7 @@ impl<'a> PythonBackend<'a> {
             key: unit.key().into(),
             items,
             current,
+            groups: BTreeMap::new(),
         }
     }
 
@@ -508,7 +582,7 @@ impl<'a> PythonBackend<'a> {
         unit: &PreparedUnit,
         final_demands: &FinalDemands,
     ) -> Result<Lookup<PythonChecked, PythonTicket>, String> {
-        check_py_data_unit_identity(unit)?;
+        check_unit_identity(unit)?;
         let id = Self::unit_id(unit);
         if self.prepared.contains_key(&id) {
             return Err(format!("duplicate backend lookup: {id}"));
@@ -586,8 +660,9 @@ impl<'a> PythonBackend<'a> {
             Err(error) => return Ok(Self::miss(error, None, current)),
         };
         self.io.borrow_mut().cache_lookups += 1;
-        if final_demands.is_empty()
-            || (current.is_some() && !final_demands.contains(&Demand::Stored))
+        if unit.ingredients().output_groups.is_empty()
+            && (final_demands.is_empty()
+                || (current.is_some() && !final_demands.contains(&Demand::Stored)))
         {
             match transaction.lookup_recorded() {
                 Ok(Some(record)) => {
@@ -617,14 +692,12 @@ impl<'a> PythonBackend<'a> {
         } else {
             match transaction.lookup_groups() {
                 Ok(Some((envelope, groups))) => {
-                    if !groups.is_empty() {
-                        return Err("dynamic groups outside static Python backend".into());
-                    }
                     if let Some(observed) = &current {
                         agree_current(observed, &envelope.result.outputs)?;
                     }
-                    let checked =
+                    let mut checked =
                         self.checked(unit, envelope.result.outputs.clone(), current.is_some());
+                    checked.groups = groups;
                     self.origins.insert(
                         id,
                         Origin::Cached {
@@ -688,7 +761,7 @@ impl Backend for PythonBackend<'_> {
         CheckedView {
             key: &checked.key,
             items: &checked.items,
-            groups: &self.empty_groups,
+            groups: &checked.groups,
         }
     }
 
@@ -696,7 +769,7 @@ impl Backend for PythonBackend<'_> {
         &mut self,
         checked: PythonChecked,
     ) -> (Vec<StoredItem>, BTreeMap<String, ValidatedGroup>) {
-        (checked.items, BTreeMap::new())
+        (checked.items, checked.groups)
     }
 
     /// @cc [owner:fontanierh,label:correctness] conditional-python-input-authority
@@ -735,26 +808,26 @@ impl Backend for PythonBackend<'_> {
             let InputPayload::Item { files, .. } = &input.payload else {
                 continue;
             };
-            let Some(Input::Content {
-                source:
-                    ContentSource::Item {
-                        unit: producer,
-                        item,
-                    },
-                ..
-            }) = declaration.inputs.iter().find(|declared| {
-                matches!(declared,
-                    Input::Content { name, .. } if *name == input.wire.name)
-            })
-            else {
-                return Err(InputFailure::Invalid(
-                    "unsupported static item source".into(),
-                ));
+            let source = declaration
+                .inputs
+                .iter()
+                .find_map(|declared| match declared {
+                    Input::Content { name, source, .. } if *name == input.wire.name => Some(source),
+                    _ => None,
+                })
+                .ok_or_else(|| InputFailure::Invalid("missing declared item source".into()))?;
+            let (producer, item, group) = match source {
+                ContentSource::Item { unit, item } => (unit, item, None),
+                ContentSource::GroupMember { unit, group, piece } => {
+                    (unit, piece, Some(group.clone()))
+                }
+                _ => return Err(InputFailure::Invalid("unsupported item source".into())),
             };
             for file in files {
                 logical_views.push((
                     file.digest.clone(),
                     SelectedSource {
+                        group: group.clone(),
                         producer: producer.clone(),
                         item: item.clone(),
                         input: input.clone(),
@@ -763,6 +836,7 @@ impl Backend for PythonBackend<'_> {
                 selected
                     .entry(file.digest.clone())
                     .or_insert_with(|| SelectedSource {
+                        group: group.clone(),
                         producer: producer.clone(),
                         item: item.clone(),
                         input: input.clone(),
@@ -831,8 +905,20 @@ impl Backend for PythonBackend<'_> {
             .ok_or("completed work has no local lease")?
             .freeze(
                 actual,
-                |outputs| validate_py_data_unit_outputs(&unit, outputs),
-                |_, _, _| Err("dynamic groups outside static Python backend".into()),
+                |outputs| validate_fixed_outputs(&unit, outputs),
+                |contract, _, objects| {
+                    if unit.ingredients().op.kind != BLENDER_PLAN_KIND {
+                        return Err("output group outside registered Blender planner".into());
+                    }
+                    let spec = BlenderPlanSpec::new(contract.clone());
+                    blender_ops::validate_blender_plan_outputs(
+                        &unit,
+                        &spec,
+                        &validator_identity(&unit),
+                        objects,
+                    )
+                    .map(|_| ())
+                },
             )
             .map_err(|error| error.to_string())?;
         let observed_current = ticket.current.take();
@@ -872,7 +958,11 @@ impl Backend for PythonBackend<'_> {
         } else {
             false
         };
-        let checked = self.checked(&unit, frozen.result().result.outputs.clone(), still_current);
+        let mut checked =
+            self.checked(&unit, frozen.result().result.outputs.clone(), still_current);
+        checked.groups = frozen
+            .available_groups()
+            .map_err(|error| error.to_string())?;
         self.origins.insert(id, Origin::Local(frozen));
         self.io.borrow_mut().publications += 1;
         Ok(Published {

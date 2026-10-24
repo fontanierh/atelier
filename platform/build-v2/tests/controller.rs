@@ -260,6 +260,7 @@ fn controller_cancelled_before_run_keeps_state_absent() {
         &parsed,
         ExecutionContext {
             cache_root: space.0.join("cache"),
+            blender: None,
             interpreter: PathBuf::from("/fixture/not-executed-python"),
             // No lease is opened or identity authority claimed in this early-cancellation case.
             owner: ProcessIdentity {

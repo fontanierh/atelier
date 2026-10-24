@@ -22,9 +22,9 @@ for _path in (REPO / 'platform' / 'studio', REGIONS, WORLD):
         sys.path.remove(str(_path))
     sys.path.insert(0, str(_path))
 
-from atelier.paths import build_dir  # noqa: E402
+from atelier.paths import build_root  # noqa: E402
 
-OUT = build_dir('yorimichi')
+OUT = build_root() / 'yorimichi'
 TEXTURES = OUT / 'textures'        # gen_textures.py
 REVIEW = OUT / 'review'            # check renders, never needed by the game
 ASSETS = GAME / 'assets'

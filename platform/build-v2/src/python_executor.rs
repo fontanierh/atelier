@@ -460,6 +460,7 @@ pub struct PythonExecution {
 pub struct PythonExecutor<L> {
     launcher: L,
     config: PythonExecution,
+    blender: Option<PythonExecution>,
     scripted_fixture: bool,
 }
 
@@ -470,8 +471,14 @@ impl<L> PythonExecutor<L> {
         Self {
             launcher,
             config,
+            blender: None,
             scripted_fixture: false,
         }
+    }
+
+    pub fn with_blender(mut self, config: PythonExecution) -> Self {
+        self.blender = Some(config);
+        self
     }
 
     #[cfg(test)]
@@ -479,6 +486,7 @@ impl<L> PythonExecutor<L> {
         Self {
             launcher,
             config,
+            blender: None,
             scripted_fixture: true,
         }
     }
@@ -525,10 +533,24 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
                 continue;
             }
             let compatibility = work.compatibility();
-            let worker = self.config.bundle.identity();
+            let config = if compatibility.worker_version == self.config.bundle.identity().version {
+                Some(&self.config)
+            } else {
+                self.blender.as_ref().filter(|config| {
+                    compatibility.worker_version == config.bundle.identity().version
+                })
+            };
+            let Some(config) = config else {
+                stopped |= emit(Event::Failed {
+                    work,
+                    reason: "no registered worker for keyed runtime".into(),
+                }) == Flow::Stop;
+                continue;
+            };
+            let worker = config.bundle.identity();
             if compatibility.worker_version != worker.version
                 || compatibility.worker_digest != worker.digest
-                || compatibility.profile != self.config.profile
+                || compatibility.profile != config.profile
             {
                 stopped |= emit(Event::Failed {
                     work,
@@ -546,22 +568,21 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
                 }) == Flow::Stop;
                 continue;
             }
-            let command = match self.config.bundle.command(&self.config.interpreter, scope) {
+            let command = match config.bundle.command(&config.interpreter, scope) {
                 Ok(command) => command,
                 Err(reason) => {
                     stopped |= emit(Event::Failed { work, reason }) == Flow::Stop;
                     continue;
                 }
             };
-            work.inputs().io.borrow_mut().worker_files_written +=
-                crate::python_worker::PYTHON_WORKER_FILES.len();
+            work.inputs().io.borrow_mut().worker_files_written += config.bundle.file_count();
             let spec = JobSpec {
                 job: work.inputs().staged.request().clone(),
                 worker_version: worker.version,
                 command,
-                purpose: "build-v2 static Python unit".into(),
-                memory_gib: self.config.memory_gib,
-                limits: self.config.limits,
+                purpose: format!("build-v2 {} unit", compatibility.op_kind),
+                memory_gib: config.memory_gib,
+                limits: config.limits,
                 report_root,
                 custody: vec![], // Inputs are independent; no checkout read guard survives staging.
             };

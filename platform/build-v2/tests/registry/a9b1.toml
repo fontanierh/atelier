@@ -172,3 +172,8 @@ tests = ["atelier-build-v2/python_executor::production_tests::production_driver_
 id = "a9b1.production_cancellation_settles_original_work_and_blocks_later_dispatch"
 tier = "t0"
 tests = ["atelier-build-v2/python_executor::production_tests::production_cancellation_settles_original_work_and_blocks_later_dispatch"]
+
+[[scenarios]]
+id = "a9b1.blender_bundle_binds_all_five_files_and_uses_original_three_thread_command"
+tier = "t0"
+tests = ["atelier-build-v2/python_worker::tests::blender_bundle_binds_all_five_files_and_uses_original_three_thread_command"]

@@ -1,5 +1,8 @@
 //! Normal-caller request preparation. This composes existing declaration/source/worker
 //! mechanisms; cache lookup, scheduling and publication stay in their existing owners.
+use crate::blender_ops::{
+    self, BLENDER_EXPORT_KIND, BLENDER_PLAN_KIND, BlenderExportSpec, BlenderPlanSpec,
+};
 use crate::explain::{BuildSummary, Recorder};
 use crate::failure_policy::Limits;
 use crate::graph::{BuildGraph, Target};
@@ -13,11 +16,11 @@ use crate::py_data::{ContentSlotSpec, PyDataClass, PyDataSpec, py_data_validator
 use crate::python_backend::{CacheAccess, PythonBackend, PythonIo};
 use crate::python_executor::{PythonExecution, PythonExecutor};
 use crate::python_sources::{CapturedSources, capture_sources};
-use crate::python_worker::{PYTHON_WORKER_FILES, PythonWorkerBundle};
+use crate::python_worker::{BLENDER_WORKER_FILES, PYTHON_WORKER_FILES, PythonWorkerBundle};
 use crate::results::ResultStore;
 use crate::roots::{BuildSession, RootKind, RootStore};
 use crate::scheduler::{self, Control, Demand, FinalDemands, Runtime, State};
-use crate::schema::{ContentSource, Declaration, Input, Provenance};
+use crate::schema::{ContentSource, Declaration, Destination, Input, Provenance, Unit};
 use crate::source_hashes::SourceHashCache;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
@@ -91,17 +94,26 @@ impl ControllerRequest {
             return Err("controller staged names must cover exactly the declared units".into());
         }
         for unit in &self.declaration.units {
-            if unit.op.kind != "py_data"
-                || unit.op.version != "1"
-                || !unit.output_groups.is_empty()
-                || unit.outputs.iter().any(|item| item.class != "JsonData")
-                || !unit.params.is_empty()
+            if unit.op.version != "1"
                 || unit
                     .inputs
                     .iter()
                     .any(|input| !matches!(input, Input::Content { .. }))
             {
-                return Err("unsupported normal-controller data contract".into());
+                return Err("unsupported normal-controller op/input contract".into());
+            }
+            match unit.op.kind.as_str() {
+                "py_data"
+                    if unit.output_groups.is_empty()
+                        && unit.outputs.iter().all(|item| item.class == "JsonData")
+                        && unit.params.is_empty() => {}
+                BLENDER_PLAN_KIND if unit.output_groups.len() == 1 && unit.outputs.is_empty() => {
+                    blender_plan_spec(self, unit)?.definition()?;
+                }
+                BLENDER_EXPORT_KIND if unit.output_groups.is_empty() => {
+                    BlenderExportSpec::default().definition()?;
+                }
+                _ => return Err("unsupported normal-controller data contract".into()),
             }
             let slots: BTreeSet<_> = unit
                 .inputs
@@ -120,6 +132,32 @@ impl ControllerRequest {
         }
         Ok(())
     }
+}
+
+fn blender_plan_spec(request: &ControllerRequest, unit: &Unit) -> Result<BlenderPlanSpec, String> {
+    let group = unit
+        .output_groups
+        .first()
+        .ok_or("missing fixed Blender group")?;
+    let mut spec = BlenderPlanSpec::new(group.clone());
+    for (name, required) in &request.data_contract.content_slots {
+        spec.inputs.insert(
+            name.clone(),
+            crate::validate::InputRule {
+                role: crate::validate::InputRole::Content,
+                required: *required,
+                allow_absent_file: false,
+                allow_selector: false,
+                require_whole_reason: true,
+                item_classes: BTreeSet::from([
+                    "Data".into(),
+                    "JsonData".into(),
+                    "GeometryPayload".into(),
+                ]),
+            },
+        );
+    }
+    Ok(spec)
 }
 
 pub(crate) fn object(value: &Value) -> Result<&Map<String, Value>, String> {
@@ -176,6 +214,7 @@ pub struct PreparedController {
     pub graph: BuildGraph,
     pub sources: CapturedSources,
     pub worker: PythonWorkerBundle,
+    pub blender_worker: Option<PythonWorkerBundle>,
     pub runtimes: BTreeMap<String, Runtime>,
     pub targets: Vec<Target>,
     pub demands: BTreeMap<String, FinalDemands>,
@@ -203,6 +242,22 @@ pub fn prepare(request: &ControllerRequest) -> Result<PreparedController, String
     }
     let mut registry = BTreeMap::new();
     spec.register(&mut registry)?;
+    if let Some(unit) = request
+        .declaration
+        .units
+        .iter()
+        .find(|unit| unit.op.kind == BLENDER_PLAN_KIND)
+    {
+        blender_plan_spec(request, unit)?.register(&mut registry)?;
+    }
+    if request
+        .declaration
+        .units
+        .iter()
+        .any(|unit| unit.op.kind == BLENDER_EXPORT_KIND)
+    {
+        BlenderExportSpec::default().register(&mut registry)?;
+    }
     let graph = BuildGraph::validate(
         request.declaration.clone(),
         &registry,
@@ -236,27 +291,73 @@ pub fn prepare(request: &ControllerRequest) -> Result<PreparedController, String
         PYTHON_WORKER_FILES,
     )?;
     let worker = PythonWorkerBundle::from_snapshot(&worker_sources.snapshot)?;
+    let native = selected
+        .order()
+        .iter()
+        .any(|id| graph.unit(id).is_some_and(|unit| unit.op.kind != "py_data"));
+    let blender_worker = if native {
+        let source = capture_sources(
+            &request.checkout.join(WORKER_DIRECTORY),
+            BLENDER_WORKER_FILES,
+        )?;
+        Some(PythonWorkerBundle::from_blender_snapshot(&source.snapshot)?)
+    } else {
+        None
+    };
     let mut runtimes = BTreeMap::new();
     for id in selected.order() {
+        let unit = graph.unit(id).ok_or("selected unit missing")?;
+        let (worker, validator, profile) = if unit.op.kind == "py_data" {
+            (
+                worker.identity(),
+                py_data_validator_identity(),
+                "normal-python-data",
+            )
+        } else {
+            (
+                blender_worker
+                    .as_ref()
+                    .ok_or("missing Blender worker")?
+                    .identity(),
+                blender_ops::blender_validator_identity(&sources.snapshot)?,
+                "normal-blender",
+            )
+        };
         runtimes.insert(
             id.clone(),
             Runtime {
-                worker: worker.identity(),
-                validator: py_data_validator_identity(),
+                worker,
+                validator,
                 staged_inputs: request.staged_inputs[id].clone(),
-                profile: "normal-python-data".into(),
+                profile: profile.into(),
             },
         );
     }
     let demands = selected
         .roots()
         .iter()
-        .map(|id| (id.clone(), BTreeSet::from([Demand::Checkout])))
+        .map(|id| {
+            (
+                id.clone(),
+                BTreeSet::from([
+                    if graph.unit(id).is_some_and(|unit| {
+                        unit.outputs
+                            .iter()
+                            .any(|item| item.destination == Destination::Checkout)
+                    }) {
+                        Demand::Checkout
+                    } else {
+                        Demand::Stored
+                    },
+                ]),
+            )
+        })
         .collect();
     Ok(PreparedController {
         graph,
         sources,
         worker,
+        blender_worker,
         runtimes,
         targets,
         demands,
@@ -283,6 +384,7 @@ pub fn source_identity() -> Option<&'static str> {
 pub struct ExecutionContext {
     pub cache_root: PathBuf,
     pub interpreter: PathBuf,
+    pub blender: Option<PathBuf>,
     /// Actual controller identity supplied by the normal caller's authoritative OS probe.
     pub owner: ProcessIdentity,
     pub provenance: Provenance,
@@ -398,10 +500,19 @@ pub fn execute<L: WorkerLauncher + Send>(
         graph,
         sources,
         worker,
+        blender_worker,
         runtimes,
         targets,
         demands,
     } = prepare(request)?;
+    if blender_worker.is_some()
+        && !context
+            .blender
+            .as_ref()
+            .is_some_and(|path| path.is_absolute())
+    {
+        return Err("selected Blender units require an absolute execution.blender locator".into());
+    }
     if control.cancelled() {
         return Ok(ExecutionObservation::cancelled_before_work());
     }
@@ -478,6 +589,18 @@ pub fn execute<L: WorkerLauncher + Send>(
             limits: context.limits,
         },
     );
+    if let Some(bundle) = blender_worker {
+        executor = executor.with_blender(PythonExecution {
+            interpreter: context
+                .blender
+                .clone()
+                .ok_or("missing Blender execution locator")?,
+            bundle,
+            profile: "normal-blender".into(),
+            memory_gib: context.memory_gib,
+            limits: context.limits,
+        });
+    }
     let recorder = Recorder::default();
     let report = scheduler::run(
         schedule,

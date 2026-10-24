@@ -255,7 +255,7 @@ class PathGuard:
                         'unlink': 'write', 'chmod': 'write', 'chown': 'write', 'utime': 'write',
                         'mkfifo': 'write', 'mknod': 'write', 'rename': 'write', 'replace': 'write'}
 
-    def __init__(self, job_dir, subpaths, literals, report):
+    def __init__(self, job_dir, subpaths, literals, report, write_subpaths=None):
         self.job_dir = job_dir
         self.reads = [job_dir] + [os.path.normpath(path) for path in subpaths]
         # Directory literals ('/', '/etc', ...) are kernel startup needs, not readable here: opening
@@ -263,7 +263,11 @@ class PathGuard:
         self.literals = {os.path.normpath(path) for path in literals if not os.path.isdir(path)}
         self.metadata = {ancestor for path in self.reads + sorted(literals) for ancestor in _ancestors(path)}
         self.metadata |= {os.path.normpath(path) for path in literals}
-        self.writes = os.path.join(job_dir, 'output')
+        self.writes = ([os.path.join(job_dir, 'output')] if write_subpaths is None
+                       else list(write_subpaths))
+        if not self.writes or any(not os.path.isabs(path) or path == job_dir
+                                  or not _inside(path, job_dir) for path in self.writes):
+            raise ValueError('Worker write roots must be proper job-local directories')
         self.report = report
         self.checked = threading.local()
 
@@ -280,7 +284,7 @@ class PathGuard:
 
     def allowed(self, access, path):
         if access == 'write':
-            return _inside(path, self.writes)
+            return any(_inside(path, root) for root in self.writes)
         if path in self.literals or any(_inside(path, root) for root in self.reads):
             return True
         return access == 'metadata' and path in self.metadata
@@ -432,7 +436,8 @@ def main(config, report):
         seed = 0
     fix_clock_and_entropy(seed)
     context = JobContext(config['inputs'], config['outputs'], config['params'], seed)
-    guard = PathGuard(job_dir, config['read_subpaths'], config['read_literals'], report)
+    guard = PathGuard(job_dir, config['read_subpaths'], config['read_literals'], report,
+                      config.get('write_subpaths'))
     guard.install()
     try:
         spec = importlib.util.spec_from_file_location('atelier_job_entry', os.path.join(job_dir, config['script']))
