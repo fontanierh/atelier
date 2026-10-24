@@ -173,6 +173,77 @@ FIoHash AssetSignature(const FAssetData& Asset)
     Writer.EndObject();
     return Writer.Save().AsObject().GetHash();
 }
+bool CanonicalizeMetadata(UE::Cook::FCookMetadataState& Metadata)
+{
+    // Native indices and array order encode a graph, not plugin identity. Retain
+    // every node/type/size/custom value and edge (including multiplicity), but
+    // rewrite all indices into one name-ordered representation before comparing.
+    static_assert(UE::Cook::ECookMetadataStateVersion::LatestVersion == UE::Cook::ECookMetadataStateVersion::AdjustCustomFieldLayout,
+        "Review all native metadata fields and index remapping for a new format");
+    const auto& Original = Metadata.GetPluginHierarchy();
+    const int32 Count = Original.PluginsEnabledAtCook.Num();
+    const int32 FieldCount = Original.CustomFieldEntries.Num();
+    if (Count > 65536 || FieldCount > 256) return false;
+    TArray<int32> Order, Fields;
+    for (int32 I = 0; I < Count; ++I) Order.Add(I);
+    for (int32 I = 0; I < FieldCount; ++I) Fields.Add(I);
+    Order.Sort([&](int32 A, int32 B) { return Original.PluginsEnabledAtCook[A].Name < Original.PluginsEnabledAtCook[B].Name; });
+    Fields.Sort([&](int32 A, int32 B) { return Original.CustomFieldEntries[A].Name < Original.CustomFieldEntries[B].Name; });
+    TArray<uint16> Remap; Remap.SetNum(Count);
+    TArray<uint8> FieldRemap; FieldRemap.SetNum(FieldCount);
+    for (int32 I = 0; I < Count; ++I)
+    {
+        const FString& Name = Original.PluginsEnabledAtCook[Order[I]].Name;
+        if (Name.IsEmpty() || (I > 0 && Name == Original.PluginsEnabledAtCook[Order[I - 1]].Name)) return false;
+        Remap[Order[I]] = uint16(I);
+    }
+    for (int32 I = 0; I < FieldCount; ++I)
+    {
+        const FString& Name = Original.CustomFieldEntries[Fields[I]].Name;
+        if (Name.IsEmpty() || (I > 0 && Name == Original.CustomFieldEntries[Fields[I - 1]].Name)) return false;
+        FieldRemap[Fields[I]] = uint8(I);
+    }
+    UE::Cook::FCookMetadataPluginHierarchy Canonical = Original;
+    Canonical.PluginsEnabledAtCook.Empty(); Canonical.PluginDependencies.Empty();
+    Canonical.RootPlugins.Empty(); Canonical.CustomFieldEntries.Empty();
+    for (int32 Old : Fields) Canonical.CustomFieldEntries.Add(Original.CustomFieldEntries[Old]);
+    TArray<uint8> UsedDependencies; UsedDependencies.Init(0, Original.PluginDependencies.Num());
+    for (int32 Old : Order)
+    {
+        UE::Cook::FCookMetadataPluginEntry Entry = Original.PluginsEnabledAtCook[Old];
+        if (Entry.DependencyIndexStart > Entry.DependencyIndexEnd || Entry.DependencyIndexEnd > uint32(Original.PluginDependencies.Num())) return false;
+        TArray<uint16> Children;
+        for (uint32 I = Entry.DependencyIndexStart; I < Entry.DependencyIndexEnd; ++I)
+        {
+            if (UsedDependencies[I] != 0) return false;
+            UsedDependencies[I] = 1;
+            const uint16 Child = Original.PluginDependencies[I];
+            if (!Remap.IsValidIndex(Child)) return false;
+            Children.Add(Remap[Child]);
+        }
+        Children.Sort();
+        Entry.DependencyIndexStart = Canonical.PluginDependencies.Num();
+        Canonical.PluginDependencies.Append(Children);
+        Entry.DependencyIndexEnd = Canonical.PluginDependencies.Num();
+        const auto Values = Entry.CustomFields; Entry.CustomFields.Empty();
+        for (const auto& Pair : Values)
+        {
+            if (!FieldRemap.IsValidIndex(Pair.Key)) return false;
+            Entry.CustomFields.Add(FieldRemap[Pair.Key], Pair.Value);
+        }
+        Entry.CustomFields.KeySort([](uint8 A, uint8 B) { return A < B; });
+        Canonical.PluginsEnabledAtCook.Add(MoveTemp(Entry));
+    }
+    if (UsedDependencies.Contains(0)) return false;
+    for (uint16 Root : Original.RootPlugins)
+    {
+        if (!Remap.IsValidIndex(Root)) return false;
+        Canonical.RootPlugins.Add(Remap[Root]);
+    }
+    Canonical.RootPlugins.Sort();
+    Metadata.SetPluginHierarchyInfo(MoveTemp(Canonical));
+    return true;
+}
 bool SaveRegistry(FAssetRegistryState& State, const FString& Path,
     const FAssetRegistrySerializationOptions& Options)
 {
@@ -248,6 +319,7 @@ FString AtelierZenFinaliseRequest(const FString& RequestJson)
             || H->Metadata.GetAssociatedDevelopmentAssetRegistryHash()
                 != UE::Cook::FCookMetadataState::ComputeHashOfDevelopmentAssetRegistry(MakeMemoryView(RegistryBytes)))
             return Fail(TEXT("unsupported_staged_metadata_or_broken_registry_linkage"));
+        if (!CanonicalizeMetadata(H->Metadata)) return Fail(TEXT("invalid_metadata_plugin_index_graph"));
         UE::Cook::FCookMetadataState Normalized = H->Metadata;
         Normalized.SetAssociatedDevelopmentAssetRegistryHash(0);
         FBufferArchive Serialized; if (!Normalized.Serialize(Serialized)) return Fail(TEXT("metadata_normalization_failed"));
