@@ -116,7 +116,7 @@ def original_python_context():
 def operational_environment(environment):
     """Only the reviewed operational context crosses isolated scheduler startup."""
     allowed = {'ATELIER_AGENT', 'ATELIER_CACHE', 'ATELIER_BUILD_ROOT'}
-    if any(key.startswith(('PYTHON', 'LD_', 'DYLD_', 'NODE_'))
+    if any(key.startswith(('PYTHON', 'LD_', 'DYLD_', 'NODE_', 'OPENSSL_'))
            or (key.startswith('ATELIER_') and key not in allowed) for key in environment):
         raise ValueError('unsupported injected interpreter environment')
     path = environment.get('PATH', '')

@@ -78,6 +78,7 @@ def _bind_captured_runtime(step, *, checkout, issuer_files, code_inputs=(), nest
         names.add('platform/studio/atelier/build_v2/legacy_tool_action.py')
         names.add('platform/studio/atelier/build_v2/python_worker.py')
         names.add('platform/studio/atelier/build_v2/protocol.py')
+        names.add('platform/studio/atelier/build_products.py')
         if tuple(legacy_outputs) != tuple(step.outputs) or step.products or not step.cutoff or step.cache:
             raise ValueError('nested legacy action differs from its original cutoff/output role')
     for name in list(names):

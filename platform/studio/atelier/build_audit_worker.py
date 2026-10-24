@@ -51,6 +51,9 @@ class Observer:
         self.realpath_codes = {getattr(getattr(os.path, name, None), '__code__', None)
                                for name in ('realpath', '_joinrealpath', '_realpath')}
         self.realpath_codes.discard(None)
+        self.cleanup_codes = frozenset((shutil.rmtree.__code__, shutil._rmtree_safe_fd.__code__))
+        self.cleanup_globals = shutil.__dict__
+        self._nested_process = None
         self.directory_guard_code = None
         helper = Path(__file__).with_name('export_manifest.py')
         if (helper, False) in self.inputs:
@@ -101,6 +104,18 @@ class Observer:
                 self.failed = True
                 if self.first_refusal is None:
                     self.first_refusal = f'{operation} {label or ""}: {reason}'.strip()
+                    try:
+                        frame = sys._getframe(1)
+                        for _ in range(10):
+                            if frame is None:
+                                break
+                            code = frame.f_code
+                            print('audit_first_origin v1 function=' + code.co_qualname[:100]
+                                  + ' file=' + Path(code.co_filename).name[:100]
+                                  + ' line=' + str(frame.f_lineno), file=sys.stderr, flush=True)
+                            frame = frame.f_back
+                    except BaseException:
+                        pass
             if item not in self.seen:
                 if len(self.seen) >= 20000:
                     self.failed = True
@@ -110,9 +125,46 @@ class Observer:
         if reason:
             raise PermissionError(f'Input audit: {operation} {label or ""}: {reason}')
 
-    def path(self, value, dir_fd=None):
-        if isinstance(value, int) or dir_fd not in (None, -1):
+    def owned_cleanup_descriptor(self, descriptor):
+        """Resolve only actual stdlib rmtree descriptors inside this owned scratch."""
+        frame = sys._getframe(1)
+        allowed = False
+        for _ in range(8):
+            if frame is None:
+                break
+            if (frame.f_code in self.cleanup_codes
+                    and frame.f_globals is self.cleanup_globals):
+                allowed = True
+                break
+            frame = frame.f_back
+        if not allowed or type(descriptor) is not int:
             self.record('descriptor access', reason='opaque file descriptors are unsupported')
+        previous = getattr(self.local, 'busy', False)
+        self.local.busy = True
+        try:
+            info = os.fstat(descriptor)
+            if sys.platform == 'darwin':
+                import fcntl
+                path = Path(os.fsdecode(fcntl.fcntl(descriptor, 50, b'\0' * 1024).split(b'\0', 1)[0]))
+            else:
+                path = Path(os.readlink('/proc/self/fd/' + str(descriptor)))
+            current = path.lstat()
+            if (not path.is_absolute() or not path.is_relative_to(self.scratch)
+                    or not stat.S_ISDIR(info.st_mode) or not stat.S_ISDIR(current.st_mode)
+                    or (info.st_dev, info.st_ino) != (current.st_dev, current.st_ino)):
+                self.record('descriptor access', reason='cleanup descriptor is not the owned scratch directory')
+            return path
+        finally:
+            self.local.busy = previous
+
+    def path(self, value, dir_fd=None):
+        if isinstance(value, int):
+            return self.owned_cleanup_descriptor(value)
+        if dir_fd not in (None, -1):
+            root = self.owned_cleanup_descriptor(dir_fd)
+            if type(value) not in (str, bytes) or Path(os.fsdecode(value)).name != os.fsdecode(value):
+                self.record('descriptor access', reason='cleanup path is not a closed relative leaf')
+            value = root / os.fsdecode(value)
         if value is None:
             value = '.'
         previous = getattr(self.local, 'busy', False)
@@ -162,6 +214,10 @@ class Observer:
             self.local.busy = False
 
     def observe(self, event, args):
+        if event == 'subprocess.Popen' and self._nested_process is not None:
+            if self._nested_process(args):
+                self.record('checked nested tool')
+                return
         if event == 'import' and args[1] is not None:
             # ExtensionFileLoader does not open a shared library through Python's open event.
             # CPython reports its filename here before loading it, so its bytes still need a key.
@@ -243,6 +299,9 @@ class Observer:
         target = frame.f_locals.get('self')
         if type(target) is not type(self.scratch) or not target.is_absolute():
             return False
+        if (target.is_relative_to(self.scratch) and '..' not in target.parts
+                and path in target.parents):
+            return True
         return any(target == source and path in source.parents for source, _ in self.inputs)
 
     def declared_directory_metadata(self, path):
@@ -273,9 +332,19 @@ class Observer:
                    for source, directory in self.inputs)
 
     def checked_open(self, function, path, *args, **kwargs):
-        # CPython's open event omits dir_fd. Check that argument before letting os.open emit it.
+        # A real stdlib rmtree opens owned child directories through its held parent.
+        # Direct producer descriptors, foreign roots and non-directory flags refuse.
         if kwargs.get('dir_fd') is not None and not getattr(self.local, 'busy', False):
-            self.record('descriptor access', reason='dir_fd opens are unsupported')
+            root = self.owned_cleanup_descriptor(kwargs['dir_fd'])
+            if (type(path) not in (str, bytes) or Path(os.fsdecode(path)).name != os.fsdecode(path)
+                    or not args or args[0] & (os.O_WRONLY | os.O_RDWR | os.O_CREAT | os.O_TRUNC)):
+                self.record('descriptor access', reason='unsupported cleanup descriptor open')
+            self.read(root / os.fsdecode(path), directory=True)
+            self.local.busy = True
+            try:
+                return function(path, *args, **kwargs)
+            finally:
+                self.local.busy = False
         return function(path, *args, **kwargs)
 
     def checked_find_spec(self, function, fullname, path=None, target=None):

@@ -724,3 +724,51 @@ def test_declared_code_namespace_ancestor_is_only_an_actual_import_probe(action,
         assert a.output.read_text() == 'input'
     else:
         assert a.report()['violations']
+
+
+def test_original_stdlib_temp_directory_cleanup_is_confined_to_owned_scratch(action):
+    a = action
+    a.code('''import tempfile
+with tempfile.TemporaryDirectory() as directory:
+    nested = Path(directory) / 'nested'
+    nested.mkdir()
+    (nested / 'data').write_text(source.read_text())
+output.write_text('completed owned scratch cleanup')
+''')
+    assert a.run() == 0, a.messages
+    assert a.report()['passed'] and a.report()['violations'] == []
+
+
+def test_stdlib_cleanup_cannot_use_a_declared_read_directory_as_owned_scratch(action):
+    a = action
+    foreign = a.root / 'read-only'; foreign.mkdir(); retained = foreign / 'retained'
+    retained.write_bytes(b'keep')
+    a.step.inputs.append(foreign)
+    a.code(f'''import shutil
+try:
+    shutil.rmtree({str(foreign)!r})
+except PermissionError:
+    pass
+output.write_text('caught refusal')
+''')
+    assert a.run() == 1, a.messages
+    assert retained.read_bytes() == b'keep' and not a.report()['passed']
+    assert any(v['operation'] == 'descriptor access' for v in a.report()['violations'])
+
+
+def test_direct_producer_descriptor_listing_of_owned_scratch_stays_unsupported(action):
+    a = action
+    a.code('''import os
+fd = os.open(os.environ['TMPDIR'], os.O_RDONLY)
+try:
+    try:
+        list(os.scandir(fd))
+    except PermissionError:
+        pass
+finally:
+    os.close(fd)
+output.write_text('caught direct descriptor refusal')
+''')
+    assert a.run() == 1, a.messages
+    assert not a.report()['passed']
+    assert any(v['operation'] == 'descriptor access' for v in a.report()['violations'])

@@ -15,6 +15,8 @@ def test_managed_original_operational_context_is_closed_and_does_not_leak_enviro
                   {'PYTHONHASHSEED': '0'}, {'PYTHONINSPECT': '1'},
                   {'PYTHONUSERBASE': '/user-base'}, {'LD_AUDIT': '/loader.so'},
                   {'NODE_OPTIONS': '--require injected.js'}, {'NODE_PATH': '/injected'},
+                  {'OPENSSL_CONF': '/foreign.cnf'}, {'OPENSSL_CONF_INCLUDE': '/foreign'},
+                  {'OPENSSL_MODULES': '/foreign-modules'},
                   {'ATELIER_CRATERPARK_EDITOR_LINES': 'different-line'},
                   {'ATELIER_CAPACITY_CLIENT': 'legacy'}, {'ATELIER_BUILD_ROOT': 'relative'},
                   {'PATH': '/usr/bin:'}, {'PATH': 'relative:/bin'}):
