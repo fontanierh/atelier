@@ -12,6 +12,10 @@ from atelier import build, build_products, export_assembly, export_manifest, mod
 
 
 PARENTS = ('Tree_Canopy_Maple', 'Tree_Canopy_Crimson', 'Tree_Canopy_Amber', 'Tree_Canopy_Ginkgo')
+PROP_PARENTS = tuple('TH_P_' + slug for slug in (
+    'backpack', 'barrel', 'basket', 'bell', 'bookshelf', 'crate_desk', 'futon',
+    'globe', 'kamado', 'log_table', 'planter', 'stump_kettle', 'telescope'))
+PARENTS_BY_REGION = {'treehouse_trees': PARENTS, 'treehouse_props': PROP_PARENTS}
 
 
 @pytest.fixture(scope='module')
@@ -23,12 +27,15 @@ def profile():
     return module
 
 
-@pytest.fixture(scope='module')
-def declarations(tmp_path_factory):
+@pytest.fixture(scope='module', params=['treehouse_trees', 'treehouse_props'])
+def declarations(tmp_path_factory, request):
     from atelier.build_v2.controller_entry import declaration_context
     root = tmp_path_factory.mktemp('treehouse-assembly-cold') / 'yorimichi'
-    for parent, triangles in zip(PARENTS, (2664, 2568, 2544, 2344)):
-        folder = root / 'planned_exports/treehouse_trees' / parent
+    region = request.param
+    parents = PARENTS_BY_REGION[region]
+    for parent in parents:
+        triangles = 1
+        folder = root / 'planned_exports' / region / parent
         folder.mkdir(parents=True)
         (folder / 'plan.json').write_text(json.dumps(dict(
             schema=1, parent=parent, complete=True, triangle_limit=32768,
@@ -39,17 +46,37 @@ def declarations(tmp_path_factory):
     steps = build.load_recipe('yorimichi').steps(ctx)
     build.check_declarations(steps)
     graph = build_products.Graph(steps)
-    selected = graph.select(['world.treehouse_trees.assembled'])
-    step = next(step for step in selected if step.name == 'world.treehouse_trees.assembled')
-    return SimpleNamespace(root=root, step=step)
+    selected = graph.select([f'world.{region}.assembled'])
+    step = next(step for step in selected if step.name == f'world.{region}.assembled')
+    assert [value.name for value in steps if value.name.startswith(f'world.{region}.export.')] == [
+        f'world.{region}.export.{parent}' for parent in parents]
+    return SimpleNamespace(root=root, step=step, region=region, parents=parents)
+
+
+@pytest.fixture(scope='module')
+def cold_declarations(tmp_path_factory):
+    from atelier.build_v2.controller_entry import declaration_context
+    root = tmp_path_factory.mktemp('treehouse-assembly-plan-free') / 'yorimichi'
+    ctx = declaration_context('yorimichi')
+    ctx.out = root
+    steps = build.load_recipe('yorimichi').steps(ctx)
+    build.check_declarations(steps)
+    build_products.Graph(steps)
+    result = {}
+    for region in PARENTS_BY_REGION:
+        assert not any(step.name.startswith(f'world.{region}.export.') for step in steps)
+        result[region] = next(step for step in steps if step.name == f'world.{region}.assembled')
+    assert not root.exists()
+    return SimpleNamespace(root=root, steps=result)
 
 
 @pytest.fixture(scope='module')
 def observation(profile, declarations):
     result = profile.qualify_treehouse_assembly(declarations.step, checkout=paths.REPO,
                                                 output_root=declarations.root)
-    assert not (declarations.root / 'atomic_regions/treehouse_trees').exists()
-    assert all(not (path / 'payload.npz').exists() for path in result.produced_inputs)
+    assert not (declarations.root / 'atomic_regions' / declarations.region).exists()
+    assert all(not (path / f'{parent}.npz').exists() for parent, path, *_ in result.logical)
+    assert all(not path.exists() for *_, path in result.children)
     return result
 
 
@@ -110,18 +137,19 @@ def rebound(step, root, checkout=None):
 
 
 def test_actual_graph_binds_exact_logical_children_and_products(declarations, observation):
-    assert observation.step == 'world.treehouse_trees.assembled'
-    assert observation.region == 'treehouse_trees'
-    assert observation.products == (('treehouse_trees.atomic',
-                                    (declarations.root / 'atomic_regions/treehouse_trees',)),)
+    region = declarations.region
+    assert observation.step == f'world.{region}.assembled'
+    assert observation.region == region
+    assert observation.products == ((f'{region}.atomic',
+                                    (declarations.root / 'atomic_regions' / region,)),)
     assert observation.code_inputs == tuple(declarations.step.inputs)
     assert observation.logical == tuple(
-        (parent, declarations.root / f'planned_exports/treehouse_trees/{parent}',
-         f'world.treehouse_trees.geometry.{parent}', f'treehouse_trees.geometry.{parent}', 'mesh_ir')
-        for parent in PARENTS)
+        (parent, declarations.root / f'planned_exports/{region}/{parent}',
+         f'world.{region}.geometry.{parent}', f'{region}.geometry.{parent}', 'mesh_ir')
+        for parent in declarations.parents)
     assert observation.children == tuple(
-        (parent, parent, f'world.treehouse_trees.export.{parent}', f'world.treehouse_trees.export.{parent}',
-         declarations.root / f'exports/world.treehouse_trees.export/{parent}') for parent in PARENTS)
+        (parent, parent, f'world.{region}.export.{parent}', f'world.{region}.export.{parent}',
+         declarations.root / f'exports/world.{region}.export/{parent}') for parent in declarations.parents)
     assert observation.produced_inputs == tuple(row[4] for row in observation.children) + tuple(
         row[1] for row in observation.logical)
     assert observation.callback.qualname == 'steps.<locals>.assemble'
@@ -138,9 +166,10 @@ def test_positive_observation_returns_no_executable_callback(profile, declaratio
 def test_warm_produced_and_destination_bytes_are_preserved(profile, declarations, tmp_path):
     root = tmp_path / 'warm'
     step = rebound(fresh(declarations), root)
-    paths_to_make = [root / f'planned_exports/treehouse_trees/{parent}/plan.json' for parent in PARENTS]
-    paths_to_make += [root / f'exports/world.treehouse_trees.export/{parent}/{parent}.fbx' for parent in PARENTS]
-    paths_to_make.append(root / 'atomic_regions/treehouse_trees/manifest.json')
+    region = declarations.region
+    paths_to_make = [root / f'planned_exports/{region}/{parent}/plan.json' for parent in declarations.parents]
+    paths_to_make += [root / f'exports/world.{region}.export/{parent}/{parent}.fbx' for parent in declarations.parents]
+    paths_to_make.append(root / f'atomic_regions/{region}/manifest.json')
     for path in paths_to_make:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(b'foreign generated bytes')
@@ -223,9 +252,9 @@ def test_wrong_inputs_are_refused(profile, declarations, change):
 def test_wrong_callback_or_inventory_binding_is_refused(profile, declarations, monkeypatch, change):
     step = fresh(declarations)
     current = cells(step)
-    if change.startswith('logical-') or change in ('destination', 'region'):
+    if change.startswith('logical-') or change in ('encoding', 'destination', 'region'):
         logical = list(current['logical'])
-        if change.startswith('logical-'):
+        if change.startswith('logical-') or change == 'encoding':
             row = list(logical[0])
             index = 0 if change.endswith('parent') else 1 if change.endswith('root') else 4
             row[index] = 'other' if index != 1 else row[1].with_name('other')
@@ -373,8 +402,9 @@ def test_linked_output_is_refused_without_changes(profile, declarations, tmp_pat
     foreign.mkdir()
     marker = foreign / 'marker'
     marker.write_bytes(b'preserve output')
-    destination = root / 'atomic_regions/treehouse_trees'
-    produced = root / 'exports/world.treehouse_trees.export/Tree_Canopy_Maple'
+    region, parent = declarations.region, declarations.parents[0]
+    destination = root / 'atomic_regions' / region
+    produced = root / f'exports/world.{region}.export' / parent
     if kind == 'destination':
         destination.parent.mkdir(parents=True)
         destination.symlink_to(foreign, target_is_directory=True)
@@ -385,7 +415,7 @@ def test_linked_output_is_refused_without_changes(profile, declarations, tmp_pat
         produced.parent.mkdir(parents=True)
         produced.symlink_to(foreign, target_is_directory=True)
     else:
-        produced = root / 'planned_exports/treehouse_trees/Tree_Canopy_Maple'
+        produced = root / 'planned_exports' / region / parent
         produced.parent.mkdir(parents=True)
         produced.symlink_to(foreign, target_is_directory=True)
     with pytest.raises(profile.UnsupportedTreehouseAssembly):
@@ -397,7 +427,7 @@ def test_runtime_inputs_helper_is_never_called(profile, declarations, monkeypatc
     def forbidden():
         raise AssertionError('unchecked runtime_inputs executed')
     monkeypatch.setattr(export_assembly, 'runtime_inputs', forbidden)
-    assert qualify(profile, fresh(declarations), declarations.root).step == 'world.treehouse_trees.assembled'
+    assert qualify(profile, fresh(declarations), declarations.root).step == f'world.{declarations.region}.assembled'
 
 
 @pytest.mark.parametrize('change', ['same-shape', 'init', 'new', 'getattribute', 'finalizer'])
@@ -457,3 +487,61 @@ def test_poisoned_cache_parameters_getter_is_never_called(profile, declarations)
 def test_missing_source_is_honest_refusal(profile, declarations, tmp_path):
     with pytest.raises(profile.UnsupportedTreehouseAssembly):
         qualify(profile, fresh(declarations), declarations.root, tmp_path / 'absent')
+
+
+def test_cold_actual_graph_refuses_missing_export_roster(profile, declarations, cold_declarations):
+    with pytest.raises(profile.UnsupportedTreehouseAssembly, match='reads differ'):
+        qualify(profile, cold_declarations.steps[declarations.region], cold_declarations.root)
+    assert not cold_declarations.root.exists()
+
+
+@pytest.mark.parametrize('name', ['world.treehouse_surfaces.assembled', 'world.other.assembled',
+                                 'world.treehouse_props.future.assembled'])
+def test_only_two_fixed_region_variants_are_supported(profile, declarations, name):
+    with pytest.raises(profile.UnsupportedTreehouseAssembly):
+        qualify(profile, replace(fresh(declarations), name=name), declarations.root)
+
+
+@pytest.mark.parametrize('change', ['default-type', 'commands-type', 'products-type', 'child-after',
+                                    'logical-order', 'logical-count'])
+def test_exact_types_order_and_defaults_are_refused(profile, declarations, change):
+    step = fresh(declarations)
+    if change == 'default-type':
+        step = replace(step, heavy=0)
+    elif change == 'commands-type':
+        step = replace(step, commands=tuple(step.commands))
+    elif change == 'products-type':
+        step = replace(step, products=tuple(step.products))
+    elif change == 'child-after':
+        children = list(cells(step)['children'])
+        child, key = children[-1]
+        children[-1] = (replace(child, after=[]), key)
+        step = with_cells(step, {'children': children})
+    else:
+        logical = list(cells(step)['logical'])
+        if change == 'logical-order':
+            logical[-1], logical[-2] = logical[-2], logical[-1]
+        else:
+            logical.pop()
+        step = with_cells(step, {'logical': logical})
+    with pytest.raises(profile.UnsupportedTreehouseAssembly):
+        qualify(profile, step, declarations.root)
+
+
+def test_every_child_is_independently_qualified_before_assembly_bindings(
+        profile, declarations, monkeypatch):
+    import legacy_treehouse_export_profile as child_profile
+    reached = []
+    original_child = child_profile.qualify_treehouse_export
+    original_verify = profile._verify
+    def child(step, **kwargs):
+        result = original_child(step, **kwargs)
+        reached.append(step.name)
+        return result
+    def verify(*args, **kwargs):
+        assert reached == [f'world.{declarations.region}.export.{parent}' for parent in declarations.parents]
+        return original_verify(*args, **kwargs)
+    monkeypatch.setattr(child_profile, 'qualify_treehouse_export', child)
+    monkeypatch.setattr(profile, '_verify', verify)
+    assert qualify(profile, fresh(declarations), declarations.root).children
+    assert len(reached) == len(declarations.parents)
