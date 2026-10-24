@@ -395,7 +395,13 @@ FString AtelierZenFinaliseRequest(const FString& RequestJson)
             {
                 FSerializedShaderArchive Archive; TArray<uint8> Code; bool Full = false;
                 Chunk->CopyToArchiveAndClear(Archive, Code, Full, MAX_int64, MAX_int64, ESource::PreviousIncremental);
-                if (Full || !Destination.AppendFromArchive(Archive, TConstArrayView64<uint8>(Code.GetData(), Code.Num()), ESource::PreviousIncremental))
+                if (Full) return Fail(TEXT("native_selected_shader_chunk_exceeded_bounds"));
+                // CreateNamedChunk selects code but preserves the parent's full
+                // association set for shared maps. Remove unselected owners from
+                // the public transfer archive before merging either history.
+                for (const auto& Pair : SourceMembership)
+                    if (!H->Packages.Contains(Pair.Key)) Archive.GetShaderMapAssetAssociations().RemoveAsset(Pair.Key);
+                if (!Destination.AppendFromArchive(Archive, TConstArrayView64<uint8>(Code.GetData(), Code.Num()), ESource::PreviousIncremental))
                     return Fail(TEXT("native_selected_shader_append_failed"));
             }
         }
