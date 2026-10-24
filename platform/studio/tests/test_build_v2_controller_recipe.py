@@ -70,3 +70,68 @@ def test_controller_marker_requires_complete_exact_output_contract(tmp_path):
     changed.declaration['units'][0]['outputs'][0]['destination'] = 'store'
     with pytest.raises(ValueError, match='checkout JsonData'):
         changed.outputs(tmp_path)
+
+
+@pytest.mark.parametrize('kind', ['output', 'checkpoint', 'pool', 'required_product', 'optional_product'])
+def test_controller_and_default_graph_refuse_existing_parent_alias_with_absent_leaf(tmp_path, kind):
+    from atelier.build_products import Graph, Product
+    (tmp_path / 'Game').mkdir()
+    alias = tmp_path / 'Alias'
+    alias.symlink_to(tmp_path / 'Game', target_is_directory=True)
+    owned = marker()
+    step = build.Step(owned.unit, [], outputs=list(owned.outputs(tmp_path)), controller=owned)
+    other = build.Step('unselected.legacy', [])
+    if kind == 'output':
+        other.outputs = [alias / 'copy.json']
+    elif kind == 'checkpoint':
+        other.checkpoint_outputs = (alias,)  # An ancestor claims the future owned file too.
+    elif kind == 'pool':
+        other.pool_roots = (alias,)
+    elif kind == 'required_product':
+        other.products = (Product('legacy.mesh', (alias / 'copy.json',)),)
+    else:
+        other.products = (Product('legacy.mesh', (tmp_path / 'Elsewhere/main.bin',),
+                                  optional_paths=(alias / 'copy.json',)),)
+    assert not step.outputs[0].exists()
+    for validate in (lambda: validate_markers([step, other], tmp_path), lambda: Graph([step, other])):
+        with pytest.raises(ValueError, match='controller output ownership overlaps'):
+            validate()
+    assert not step.outputs[0].exists()
+
+
+def test_controller_alias_witness_is_fresh_and_never_rewrites_disjoint_system_anchor_paths(tmp_path):
+    from atelier.build_products import Graph
+    (tmp_path / 'Game').mkdir()
+    (tmp_path / 'Elsewhere').mkdir()
+    anchor = tmp_path / 'SystemAlias'
+    anchor.symlink_to(tmp_path, target_is_directory=True)
+    alias = tmp_path / 'Alias'
+    alias.symlink_to(tmp_path / 'Elsewhere', target_is_directory=True)
+    owned = marker()
+    step = build.Step(owned.unit, [], outputs=list(owned.outputs(tmp_path)), controller=owned)
+    other = build.Step('legacy.package', [], outputs=[alias / 'copy.json', anchor / 'Packages/game.pak'])
+    original = list(other.outputs)
+    validate_markers([step, other], tmp_path)
+    Graph([step, other])
+    assert other.outputs == original  # Comparison never substitutes a canonical execution path.
+    assert not (tmp_path / 'Packages').exists()
+    alias.unlink()
+    alias.symlink_to(tmp_path / 'Game', target_is_directory=True)
+    for validate in (lambda: validate_markers([step, other], tmp_path), lambda: Graph([step, other])):
+        with pytest.raises(ValueError, match='ownership overlaps'):
+            validate()
+    assert other.outputs == original
+
+
+@pytest.mark.parametrize('target', ['missing', 'loop'])
+def test_controller_ownership_refuses_uncertain_existing_ancestor_resolution(tmp_path, target):
+    from atelier.build_products import Graph
+    owned = marker()
+    step = build.Step(owned.unit, [], outputs=list(owned.outputs(tmp_path)), controller=owned)
+    alias = tmp_path / 'Alias'
+    alias.symlink_to(alias if target == 'loop' else tmp_path / 'Missing', target_is_directory=True)
+    other = build.Step('legacy.output', [], outputs=[alias / 'out.json'])
+    for validate in (lambda: validate_markers([step, other], tmp_path), lambda: Graph([step, other])):
+        with pytest.raises(ValueError, match='cannot establish controller output ownership alias'):
+            validate()
+    assert not (tmp_path / 'Game').exists()

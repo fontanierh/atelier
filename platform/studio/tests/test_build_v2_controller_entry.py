@@ -153,3 +153,33 @@ def test_mixed_checkpoint_custody_refuses_before_old_workspace_restore(tmp_path,
                               verify=False, rebuild_reason=None, rebuild_touched=False,
                               record_cook_recovery=False, max_heavy_commands=None)
     assert not (tmp_path / 'build').exists()
+
+
+def test_controller_parent_alias_refuses_before_queries_checkpoints_dispatch_or_writes(tmp_path, monkeypatch):
+    from atelier import build_spatial
+    owned = marker()
+    step = build.Step(owned.unit, [], outputs=list(owned.outputs(tmp_path)), controller=owned)
+    (tmp_path / 'Game').mkdir()
+    alias = tmp_path / 'Alias'
+    alias.symlink_to(tmp_path / 'Game', target_is_directory=True)
+    other = build.Step('unselected.legacy', [], outputs=[alias / 'copy.json'])
+    monkeypatch.setattr(paths, 'REPO', tmp_path)
+    monkeypatch.setattr(paths, 'game_dir', lambda game: tmp_path)
+    monkeypatch.setattr(paths, 'build_root', lambda: tmp_path / 'build')
+    monkeypatch.setattr(paths, 'uproject', lambda game: tmp_path / 'source.uproject')
+    monkeypatch.setattr(entry, 'discover', lambda game: {owned.unit: owned})
+    monkeypatch.setattr(build, 'load_recipe', lambda game: SimpleNamespace(steps=lambda ctx: [step, other]))
+    reached = []
+    def forbidden(*args, **kwargs):
+        reached.append(True)
+        raise AssertionError('ownership preflight reached runtime/query/checkpoint/dispatch')
+    monkeypatch.setattr(build, 'Context', forbidden)
+    monkeypatch.setattr(build, '_prepared_build', forbidden)
+    monkeypatch.setattr(build_spatial, 'bind', forbidden)
+    monkeypatch.setattr(entry, 'execute', forbidden)
+    with pytest.raises(ValueError, match='controller output ownership overlaps'):
+        build.build('fixture', [owned.unit], echo=lambda _: None)
+    assert reached == []
+    assert not (tmp_path / 'Game/copy.json').exists()
+    assert not (tmp_path / 'build').exists()
+    assert set(tmp_path.iterdir()) == {tmp_path / 'Game', alias}

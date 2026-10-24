@@ -53,6 +53,66 @@ def _claim(path):
     return unicodedata.normalize('NFD', os.path.abspath(path)).casefold()
 
 
+def _resolved_output_claim(path):
+    """Existing-ancestor alias witness only; never an execution destination or retained label."""
+    prefix = Path(path)
+    if not prefix.is_absolute():
+        prefix = Path.cwd() / prefix
+    missing = []
+    while True:
+        try:
+            prefix.lstat()
+            break
+        except FileNotFoundError:
+            if prefix.parent == prefix:
+                raise ValueError('cannot establish controller output ownership anchor') from None
+            missing.append(prefix.name)
+            prefix = prefix.parent
+        except OSError as error:
+            raise ValueError('cannot establish controller output ownership alias') from error
+    try:
+        # Strict resolution of the existing frontier rejects dangling links, loops and
+        # inaccessible anchors; absent output tails remain valid declaration metadata.
+        resolved = prefix.resolve(strict=True)
+    except (OSError, RuntimeError) as error:
+        raise ValueError('cannot establish controller output ownership alias') from error
+    return _claim(resolved.joinpath(*reversed(missing)))
+
+
+def validate_controller_ownership(steps):
+    """@cc [owner:fontanierh,label:correctness] controller-output-alias-ownership
+    Global controller-involved ownership MUST reject lexical or existing-ancestor alias
+    overlaps before queries, checkpoint restoration or dispatch, including absent output
+    tails. Alias witnesses MUST be fresh per validation, metadata-only and comparison-only;
+    logical execution paths and virtual retained claims MUST stay unchanged. Failed or
+    uncertain resolution MUST refuse. See the alias/prewrite/fresh-validation cases in
+    test_build_v2_controller_recipe.py. This is not an atomic filesystem/reader custody proof.
+    """
+    steps = tuple(steps)
+    if not any(getattr(step, 'controller', None) is not None for step in steps):
+        return
+    resolved = {}
+    claims = []
+    for step in steps:
+        controller = getattr(step, 'controller', None) is not None
+        roots = [*step.outputs, *getattr(step, 'checkpoint_outputs', ()), *getattr(step, 'pool_roots', ())]
+        for product in getattr(step, 'products', ()):
+            roots.extend(product.paths)
+            roots.extend(product.optional_paths)
+        for path in roots:
+            path = Path(path)
+            if path not in resolved:
+                resolved[path] = _resolved_output_claim(path)
+            claims.append((step.name, _claim(path), resolved[path], controller))
+    for owner, logical, physical, _ in (claim for claim in claims if claim[3]):
+        for other, other_logical, other_physical, _ in claims:
+            if owner == other and logical == other_logical:
+                continue  # Repeated metadata for the very same declared owner/path.
+            for first, second in ((logical, other_logical), (physical, other_physical)):
+                if first == second or first.startswith(second + '/') or second.startswith(first + '/'):
+                    raise ValueError(f'controller output ownership overlaps: {owner} and {other}')
+
+
 def validate_markers(steps, checkout):
     """@cc [owner:fontanierh,label:correctness] explicit-controller-step-ownership
     Controller steps MUST be explicit typed markers with complete matching output
@@ -66,7 +126,6 @@ def validate_markers(steps, checkout):
     if not any(getattr(step, 'controller', None) is not None for step in steps):
         return
     controller_names = {step.name for step in steps if getattr(step, 'controller', None) is not None}
-    claims = []
     for step in steps:
         if set(step.needs) & controller_names:
             raise ValueError('v1 content needs cannot use controller input keys; an explicit content bridge is required')
@@ -84,14 +143,4 @@ def validate_markers(steps, checkout):
             if {_claim(path) for path in step.outputs} != {_claim(path) for path in expected}:
                 raise ValueError('controller step outputs differ from its complete declaration')
             marker.request(checkout)  # Also rejects non-data/unbounded serialization.
-        roots = [*step.outputs, *getattr(step, 'checkpoint_outputs', ()), *getattr(step, 'pool_roots', ())]
-        for product in getattr(step, 'products', ()):
-            roots.extend(product.paths)
-            roots.extend(product.optional_paths)
-        for path in roots:
-            claims.append((step.name, _claim(path), marker is not None))
-    for owner, path, _ in (claim for claim in claims if claim[2]):
-        for other, other_path, _ in claims:
-            if owner != other and (
-                    path == other_path or path.startswith(other_path + '/') or other_path.startswith(path + '/')):
-                raise ValueError(f'controller output ownership overlaps: {owner} and {other}')
+    validate_controller_ownership(steps)

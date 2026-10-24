@@ -152,7 +152,9 @@ class Catalogue:
     """@cc [owner:fontanierh,label:correctness] fresh-catalogue-ownership
     Every product and legacy output root MUST participate in ownership validation, even when no
     query selects it. Resolved-path memoization MUST stay local to one validation, so filesystem
-    aliases are checked again at the next checkpoint.
+    aliases are checked again at the next checkpoint. Controller-involved output aliases MUST
+    also pass the shared marker ownership comparison before queries or bindings; see the
+    controller/default-Graph alias cases in test_build_v2_controller_recipe.py.
 
     Validate ownership without resolving queries or scheduling actions.
     """
@@ -161,6 +163,9 @@ class Catalogue:
         from . import build_audit, build_deferred
         from .build import declared_inputs, required_inputs
         self.steps = list(steps)
+        # Direct catalogue/graph callers need the same controller boundary before queries.
+        from .build_v2.controller_recipe import validate_controller_ownership
+        validate_controller_ownership(self.steps)
         self.by_name = {}
         self.owners = {}
         owned_paths = []
