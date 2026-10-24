@@ -1074,7 +1074,7 @@ class TextureAuthority:
             # integrators also progressed for 93s before a missing-output refusal.
             # Use one finite allowance for this fixed, qualified original role.
             world = getattr(self, 'data_steps', {}).get('world.layout')
-            if world is not None and self.step.name == world.step == 'world.layout':
+            if world is not None and self.step is world[0] and self.step.name == world[1].step == 'world.layout':
                 return 600.
         return 120.
 

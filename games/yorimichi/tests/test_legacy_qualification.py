@@ -1008,8 +1008,63 @@ def test_streamed_output_resamples_work_deadline_between_chunks(tmp_path, monkey
 ])
 def test_original_world_work_budget_is_role_bound(tmp_path, qualified, step, nested, native, expected):
     authority = _output_witness_authority(tmp_path)
-    authority.step = SimpleNamespace(name=step)
+    from atelier.build import Step
+    authority.step = Step(step, [])
     authority.runtime = SimpleNamespace(nested_tool=object() if nested else None)
-    authority.data_steps = {'world.layout': SimpleNamespace(step='world.layout')} if qualified else {}
+    authority.data_steps = {'world.layout': (authority.step, SimpleNamespace(step='world.layout'))} if qualified else {}
     authority.native_launch = SimpleNamespace(work_seconds=native) if native is not None else None
     assert authority.command_timeout() == expected
+
+
+def test_world_work_budget_requires_the_actual_registered_step_identity(tmp_path):
+    from atelier.build import Step
+    authority = _output_witness_authority(tmp_path)
+    registered = Step('world.layout', [])
+    authority.data_steps = {'world.layout': (registered, SimpleNamespace(step='world.layout'))}
+    authority.runtime = SimpleNamespace(nested_tool=None)
+    authority.native_launch = None
+    authority.step = Step('world.layout', [])
+    assert authority.step == registered and authority.step is not registered
+    assert authority.command_timeout() == 120.
+    authority.step = registered
+    assert authority.command_timeout() == 600.
+
+
+def test_world_budget_matches_recorded_launch_and_original_guard_adapter(tmp_path, monkeypatch):
+    # Scripted RPC/guard boundaries only: no admission, child, cleanup or output proof.
+    import io
+    from atelier import build, build_source
+    from atelier.build_v2.legacy_client import authority_now_ns
+    from atelier.harness import capacity_runtime
+    authority = _output_witness_authority(tmp_path)
+    step = build.Step('world.layout', [build.Python(tmp_path / 'gen_world.py')])
+    authority.step = step
+    authority.data_steps = {step.name: (step, SimpleNamespace(step=step.name))}
+    authority.runtime, authority.native_launch = SimpleNamespace(nested_tool=None), None
+    authority.nonce, authority.invocation = 'a' * 32, 'b' * 32
+    authority.guard_relative = 'build/build-v2/legacy-host/' + authority.nonce + '/guards/world'
+    authority.guard_directory = tmp_path / authority.guard_relative
+    authority.audit_root = authority.guard_directory / 'audit'
+    authority.metadata_scopes, authority.launch_context = {}, None
+    authority.custody = {'build': 10, 'content': 11, 'writer': 12}
+    authority.manifest['work_deadline_ns'] = authority_now_ns() + 3600_000_000_000
+    authority.audit_argv = lambda spec: ['checked-python', str(spec)]
+    operations, guards, returns = [], [], []
+    authority.client = SimpleNamespace(request=lambda operation: operations.append(operation))
+    authority.guard_returned = returns.append
+    monkeypatch.delenv('ATELIER_CAPACITY_CLIENT', raising=False)
+    monkeypatch.setattr(capacity_runtime, 'read_configuration', lambda path: {'schema': 2})
+    def guarded(argv, folder, **options):
+        assert operations[-1]['type'] == 'begin_attempt'
+        launch = operations[-1]['attempt']['execution']['launch']
+        assert launch['execution_ns'] == int(options['timeout'] * 1_000_000_000) == 600_000_000_000
+        assert options['custody_fds'] == (10, 11, 12)
+        guards.append(options)
+        (folder / 'stdout.log').write_text('scripted adapter return, not native proof\n')
+        return 0
+    monkeypatch.setattr(build_source.guarded, 'run', guarded)
+    ctx = SimpleNamespace(game='yorimichi', logs=tmp_path / 'logs', legacy_authority=authority)
+    with authority.audit_directory():
+        build_source.run_argv(ctx, step, step.commands[0], authority.expected_argv,
+                              authority.expected_environment, io.StringIO(), None, None)
+    assert len(guards) == 1 and returns == [0]
