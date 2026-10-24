@@ -14,6 +14,15 @@ class BootstrapRefused(RuntimeError):
     """No project import, selection discovery or mutation is permitted after refusal."""
 
 
+def validate_issuer_files(issuer_files):
+    """Validate only the host-relayed named issuer roster, never source/task authority."""
+    from atelier.build_v2.controller_client import _relative, MAX_NAMED_ISSUER_FILES
+    if (type(issuer_files) is not list or not 0 < len(issuer_files) <= MAX_NAMED_ISSUER_FILES
+            or any(_relative(name) != name for name in issuer_files)
+            or len(set(issuer_files)) != len(issuer_files)):
+        raise BootstrapRefused('private issuer capture names are invalid')
+
+
 def restore_custody_fds(descriptors):
     """@cc [owner:fontanierh,label:safety] legacy-bootstrap-cloexec-before-project
     The isolated bootstrap MUST restore CLOEXEC on exactly the five inherited channel and
@@ -160,7 +169,7 @@ def main(arguments=None):
         # Only this exact host-verified captured distribution can supply startup providers.
         distribution = Path(__file__).resolve(strict=True).parents[4]
         sys.path.insert(0, str(distribution / 'platform/studio'))
-        from atelier.build_v2.controller_client import _json, _open_root, _read_at, _relative, MAX_CONTROL_BYTES
+        from atelier.build_v2.controller_client import _json, _open_root, _read_at, MAX_CONTROL_BYTES
         from atelier.build_v2.legacy_client import (
             AuthorityLost, LegacyChannel, LegacyClient, _fields, _identity, _integer,
             CLOCK_ID, authority_now_ns, validate_scheduler_request,
@@ -180,10 +189,7 @@ def main(arguments=None):
             raise BootstrapRefused('unsupported private startup version')
         restore_python_context(manifest)
         issuer_files = manifest['issuer_files']
-        if (type(issuer_files) is not list or not 0 < len(issuer_files) <= 256
-                or any(_relative(name) != name for name in issuer_files)
-                or len(set(issuer_files)) != len(issuer_files)):
-            raise BootstrapRefused('private issuer capture names are invalid')
+        validate_issuer_files(issuer_files)
         for field in ('checkout', 'output', 'distribution', 'issuer_root'):
             value = manifest[field]
             if type(value) is not str or not Path(value).is_absolute() or str(Path(value).resolve(strict=True)) != value:

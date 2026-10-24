@@ -9,6 +9,18 @@ import pytest
 from atelier.build_v2.legacy_bootstrap import BootstrapRefused, restore_custody_fds, startup_arguments
 
 
+def test_startup_issuer_roster_accepts_512_and_refuses_513_duplicate_or_noncanonical_names():
+    from atelier.build_v2.legacy_bootstrap import validate_issuer_files
+    names = [f'games/example/provider_{index}.py' for index in range(513)]
+    validate_issuer_files(names[:512])
+    for invalid in (names, [*names[:511], names[0]], [], tuple(names[:512])):
+        with pytest.raises(BootstrapRefused, match='issuer capture names'):
+            validate_issuer_files(invalid)
+    for invalid in (['../provider.py'], ['/provider.py'], ['games/./provider.py']):
+        with pytest.raises(ValueError, match='normalized relative'):
+            validate_issuer_files(invalid)
+
+
 def test_bootstrap_restores_only_five_owned_descriptors_before_observations(tmp_path):
     command_r, command_w = os.pipe()
     reply_r, reply_w = os.pipe()
