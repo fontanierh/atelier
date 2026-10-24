@@ -37,6 +37,9 @@ pub struct HostConfig {
     pub source_identity: String,
     pub interpreter: PathBuf,
     pub interpreter_digest: String,
+    pub interpreter_role: PathBuf,
+    pub python_context: PythonContext,
+    pub operational_environment: OperationalEnvironment,
     pub game_issuer: GameIssuer,
     pub control_directory: String,
     pub deadline_ns: u64,
@@ -45,6 +48,33 @@ pub struct HostConfig {
     pub boot: String,
     pub clock_domain: String,
     pub scheduler_request: SchedulerRequest,
+}
+/// Installed interpreter context observed by the captured original constructor.
+/// These paths are platform context, not game inputs or a new semantic issuer.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct PythonContext {
+    pub platform_roots: Vec<PathBuf>,
+    pub purelib: PathBuf,
+    pub platlib: PathBuf,
+}
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct OperationalEnvironment {
+    #[serde(deserialize_with = "required_optional")]
+    pub agent: Option<String>,
+    #[serde(deserialize_with = "required_optional")]
+    pub cache: Option<PathBuf>,
+    #[serde(deserialize_with = "required_optional")]
+    pub build_root: Option<PathBuf>,
+    pub path: String,
+}
+fn required_optional<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    Option::<T>::deserialize(deserializer)
 }
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -405,7 +435,14 @@ fn strict_record<T: serde::de::DeserializeOwned>(bytes: &[u8]) -> io::Result<T> 
                 }
             }
             serde_json::Value::Array(values) => {
-                let strings = ["files", "selector", "roots", "members", "args"];
+                let strings = [
+                    "files",
+                    "selector",
+                    "roots",
+                    "members",
+                    "args",
+                    "platform_roots",
+                ];
                 if !strings.contains(&key) {
                     for value in values {
                         if !value.is_object() {
@@ -436,6 +473,8 @@ fn strict_record<T: serde::de::DeserializeOwned>(bytes: &[u8]) -> io::Result<T> 
             "monitor",
             "launch",
             "scheduler",
+            "python_context",
+            "operational_environment",
         ]
         .contains(&key)
             && !v.is_null()
@@ -535,6 +574,110 @@ struct StartupManifest<'a> {
     clock_domain: &'static str,
     work_deadline_ns: u64,
     scheduler_request: &'a SchedulerRequest,
+    interpreter: &'a Path,
+    interpreter_digest: &'a str,
+    interpreter_role: &'a Path,
+    python_context: &'a PythonContext,
+    operational_environment: &'a OperationalEnvironment,
+}
+fn absolute_context_path(path: &Path) -> io::Result<()> {
+    use std::path::Component;
+    if !path.is_absolute()
+        || path.as_os_str().len() > 4096
+        || path.to_str().is_none_or(|s| s.contains('\0'))
+        || path
+            .components()
+            .any(|p| matches!(p, Component::ParentDir | Component::CurDir))
+    {
+        return Err(error("installed context requires bounded absolute paths"));
+    }
+    Ok(())
+}
+impl PythonContext {
+    fn validate(&self) -> io::Result<()> {
+        if self.platform_roots.is_empty() || self.platform_roots.len() > 32 {
+            return Err(error("invalid installed interpreter roots"));
+        }
+        let mut roots = std::collections::BTreeSet::new();
+        for root in &self.platform_roots {
+            absolute_context_path(root)?;
+            let real = root.canonicalize()?;
+            if !real.is_dir() || real.parent().is_none() || !roots.insert(root) {
+                return Err(error(
+                    "installed platform root is missing, broad or duplicated",
+                ));
+            }
+        }
+        // Match C2c: retain the original scheme spelling, but validate the real
+        // directory against real approved roots. Missing schemes never disappear.
+        let real_roots: Vec<_> = self
+            .platform_roots
+            .iter()
+            .map(|p| p.canonicalize())
+            .collect::<io::Result<_>>()?;
+        for library in [&self.purelib, &self.platlib] {
+            absolute_context_path(library)?;
+            let real = library.canonicalize()?;
+            if !real.is_dir() || !real_roots.iter().any(|root| real.starts_with(root)) {
+                return Err(error(
+                    "installed library is absent or outside interpreter roots",
+                ));
+            }
+        }
+        Ok(())
+    }
+}
+impl OperationalEnvironment {
+    fn validate(&self) -> io::Result<()> {
+        if self
+            .agent
+            .as_ref()
+            .is_some_and(|s| s.len() > 128 || s.contains('\0') || s.contains('\n'))
+            || self.path.len() > 16384
+            || self.path.contains('\0')
+        {
+            return Err(error("invalid closed operational environment"));
+        }
+        for path in [&self.cache, &self.build_root].into_iter().flatten() {
+            absolute_context_path(path)?;
+        }
+        let entries: Vec<_> = std::env::split_paths(&self.path).collect();
+        if entries.is_empty() || entries.len() > 64 {
+            return Err(error("invalid operational PATH"));
+        }
+        for path in entries {
+            absolute_context_path(&path)?;
+            if !path.canonicalize()?.is_dir() {
+                return Err(error(
+                    "operational PATH entry is not an installed directory",
+                ));
+            }
+        }
+        Ok(())
+    }
+    pub(crate) fn apply(&self, command: &mut std::process::Command) -> io::Result<()> {
+        self.validate()?;
+        command.env_clear().env("PATH", &self.path);
+        if let Some(value) = &self.agent {
+            command.env("ATELIER_AGENT", value);
+        }
+        if let Some(value) = &self.cache {
+            command.env("ATELIER_CACHE", value);
+        }
+        if let Some(value) = &self.build_root {
+            command.env("ATELIER_BUILD_ROOT", value);
+        }
+        Ok(())
+    }
+}
+fn validate_interpreter_role(role: &Path, image: &Path) -> io::Result<()> {
+    absolute_context_path(role)?;
+    if role.canonicalize()? != image || !image.is_file() {
+        return Err(error(
+            "original interpreter role does not name the pinned image",
+        ));
+    }
+    Ok(())
 }
 fn validate_config(c: &HostConfig) -> io::Result<Deadline> {
     if c.nonce.is_empty()
@@ -552,6 +695,9 @@ fn validate_config(c: &HostConfig) -> io::Result<Deadline> {
         return Err(error("invalid host invocation identity"));
     }
     relative_path(&c.control_directory, true).map_err(error)?;
+    validate_interpreter_role(&c.interpreter_role, &c.interpreter)?;
+    c.python_context.validate()?;
+    c.operational_environment.validate()?;
     if c.clock_domain != CLOCK_DOMAIN {
         return Err(error("incompatible absolute clock domain"));
     }
@@ -700,6 +846,11 @@ fn run_inner(config: HostConfig) -> io::Result<()> {
         scheduler_request: &config.scheduler_request,
         clock_domain: CLOCK_DOMAIN,
         work_deadline_ns: config.deadline_ns - config.cleanup_budget_ns,
+        interpreter: &config.interpreter,
+        interpreter_digest: &config.interpreter_digest,
+        interpreter_role: &config.interpreter_role,
+        python_context: &config.python_context,
+        operational_environment: &config.operational_environment,
     };
     let manifest_path = format!("{}/startup.json", config.control_directory);
     fs.publish_metadata(
@@ -707,14 +858,17 @@ fn run_inner(config: HostConfig) -> io::Result<()> {
         &serde_json::to_vec(&manifest).map_err(error)?,
     )?;
     let bootstrap = config.distribution.join(BOOTSTRAP);
+    validate_interpreter_role(&config.interpreter_role, &config.interpreter)?;
+    config.python_context.validate()?;
     let mut child = SchedulerChild::spawn(
-        &config.interpreter,
+        &config.interpreter_role,
         &bootstrap,
         &fs.absolute(&manifest_path),
         &config.checkout,
         &fs.absolute(&format!("{}/scheduler.log", config.control_directory)),
         custody,
         deadline,
+        &config.operational_environment,
     )?;
     let result = (|| {
         let startup = work_deadline.cap(config.startup_budget_ns)?;
@@ -1067,6 +1221,152 @@ pub fn run_config(mut inherited: File) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn installed_context_fixture(label: &str) -> PathBuf {
+        static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+        let root = std::env::temp_dir().canonicalize().unwrap().join(format!(
+            "atelier-host-startup-{}-{}-{}",
+            label,
+            std::process::id(),
+            NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+        ));
+        std::fs::create_dir(&root).unwrap();
+        root
+    }
+    #[test]
+    fn original_interpreter_role_is_preserved_and_retargeted_image_refuses() {
+        let root = installed_context_fixture("role");
+        let image = root.join("installed-python");
+        let other = root.join("other-python");
+        std::fs::write(&image, b"installed identity").unwrap();
+        std::fs::write(&other, b"different identity").unwrap();
+        let bin = root.join("venv/bin");
+        std::fs::create_dir_all(&bin).unwrap();
+        let role = bin.join("python");
+        std::os::unix::fs::symlink(&image, &role).unwrap();
+        validate_interpreter_role(&role, &image).unwrap();
+        let environment = OperationalEnvironment {
+            agent: None,
+            cache: None,
+            build_root: None,
+            path: bin.to_str().unwrap().into(),
+        };
+        let command =
+            launch::isolated_command(&role, &root.join("frozen-bootstrap.py"), &environment)
+                .unwrap();
+        assert_eq!(command.get_program(), role.as_os_str());
+        let args: Vec<_> = command.get_args().collect();
+        assert_eq!(
+            args,
+            [
+                std::ffi::OsStr::new("-I"),
+                std::ffi::OsStr::new("-S"),
+                root.join("frozen-bootstrap.py").as_os_str()
+            ]
+        );
+        std::fs::remove_file(&role).unwrap();
+        std::os::unix::fs::symlink(&other, &role).unwrap();
+        assert!(validate_interpreter_role(&role, &image).is_err());
+        assert!(validate_interpreter_role(Path::new("relative/python"), &image).is_err());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+    #[test]
+    fn installed_scheme_folders_keep_lexical_roles_but_require_real_vetted_containment() {
+        let root = installed_context_fixture("libraries");
+        let platform = root.join("venv");
+        let site = platform.join("lib/python3/site-packages");
+        std::fs::create_dir_all(&site).unwrap();
+        let alias = root.join("venv-role");
+        std::os::unix::fs::symlink(&platform, &alias).unwrap();
+        let lexical = alias.join("lib/python3/site-packages");
+        let mut context = PythonContext {
+            platform_roots: vec![platform],
+            purelib: lexical.clone(),
+            platlib: lexical.clone(),
+        };
+        context.validate().unwrap();
+        let encoded = serde_json::to_value(&context).unwrap();
+        assert_eq!(encoded["purelib"], lexical.to_str().unwrap());
+        assert_eq!(encoded["platlib"], lexical.to_str().unwrap());
+        context.platlib = root.join("missing");
+        assert!(context.validate().is_err());
+        std::fs::create_dir(root.join("outside")).unwrap();
+        context.platlib = root.join("outside");
+        assert!(context.validate().is_err());
+        context.platlib = lexical;
+        context.platform_roots = vec![PathBuf::from("/")];
+        assert!(context.validate().is_err());
+        for bad in [
+            br#"{"platform_roots":[],"purelib":"/a","platlib":"/a","site":true}"#.as_slice(),
+            br#"{"platform_roots":[],"purelib":"/a","platlib":"/a","purelib":"/b"}"#.as_slice(),
+            br#"[[],"/a","/a"]"#.as_slice(),
+        ] {
+            assert!(strict_record::<PythonContext>(bad).is_err());
+        }
+        std::fs::remove_dir_all(root).unwrap();
+    }
+    #[test]
+    fn closed_operational_environment_sets_only_vetted_values_without_inheritance() {
+        let root = installed_context_fixture("environment");
+        let environment = OperationalEnvironment {
+            agent: Some("hosted-issuer".into()),
+            cache: Some(root.join("cache")),
+            build_root: Some(root.join("build")),
+            path: root.to_str().unwrap().into(),
+        };
+        let mut command = std::process::Command::new("unused-no-spawn");
+        command
+            .env("PYTHONPATH", "/untrusted")
+            .env("DYLD_INSERT_LIBRARIES", "/untrusted");
+        environment.apply(&mut command).unwrap();
+        let values: BTreeMap<_, _> = command
+            .get_envs()
+            .map(|(k, v)| (k.to_str().unwrap(), v.unwrap().to_str().unwrap()))
+            .collect();
+        assert_eq!(values.len(), 4);
+        assert_eq!(values["ATELIER_AGENT"], "hosted-issuer");
+        assert_eq!(
+            values["ATELIER_CACHE"],
+            root.join("cache").to_str().unwrap()
+        );
+        assert_eq!(
+            values["ATELIER_BUILD_ROOT"],
+            root.join("build").to_str().unwrap()
+        );
+        assert_eq!(values["PATH"], root.to_str().unwrap());
+        let absent = OperationalEnvironment {
+            agent: None,
+            cache: None,
+            build_root: None,
+            path: environment.path.clone(),
+        };
+        absent.apply(&mut command).unwrap();
+        assert_eq!(command.get_envs().count(), 1);
+        for bad in ["", ":/usr/bin", "relative", "/usr/bin:"] {
+            let value = OperationalEnvironment {
+                path: bad.into(),
+                ..absent.clone()
+            };
+            assert!(value.validate().is_err());
+        }
+        assert!(strict_record::<OperationalEnvironment>(br#"{"agent":null,"cache":null,"build_root":null,"path":"/usr/bin","PYTHONPATH":"/bad"}"#).is_err());
+        // Nested positional records cannot exploit serde's tuple-compatible struct decoder.
+        assert!(
+            strict_record::<serde_json::Value>(br#"{"python_context":[[],"/a","/a"]}"#).is_err()
+        );
+        assert!(
+            strict_record::<serde_json::Value>(
+                br#"{"operational_environment":[null,null,null,"/usr/bin"]}"#
+            )
+            .is_err()
+        );
+        assert!(
+            strict_record::<OperationalEnvironment>(
+                br#"{"cache":null,"build_root":null,"path":"/usr/bin"}"#
+            )
+            .is_err()
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
     #[test]
     fn closed_host_codec_refuses_duplicate_unknown_positional_and_unbound_launch_records() {
         let good=br#"{"version":2,"nonce":"nonce","selection":"selection","sequence":1,"frame":null,"previous_digest":null,"operation":{"type":"observe","witnesses":[],"record_offset":null}}"#;

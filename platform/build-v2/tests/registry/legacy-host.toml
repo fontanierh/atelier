@@ -1,6 +1,24 @@
 schema_version = 1
 
 [[scenarios]]
+id = "legacy-host.original_interpreter_role_is_preserved_and_retargeted_image_refuses"
+tests = ["atelier-build-v2/legacy_host::tests::original_interpreter_role_is_preserved_and_retargeted_image_refuses"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.installed_scheme_folders_keep_lexical_roles_but_require_real_vetted_containment"
+tests = ["atelier-build-v2/legacy_host::tests::installed_scheme_folders_keep_lexical_roles_but_require_real_vetted_containment"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.closed_operational_environment_sets_only_vetted_values_without_inheritance"
+tests = ["atelier-build-v2/legacy_host::tests::closed_operational_environment_sets_only_vetted_values_without_inheritance"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
 id = "legacy-host.continuous_selection_survives_each_durable_cut_and_finishes_only_after_fresh_validation"
 tests = ["atelier-build-v2/legacy_epoch::selection::tests::continuous_selection_survives_each_durable_cut_and_finishes_only_after_fresh_validation"]
 platforms = ["darwin", "linux"]

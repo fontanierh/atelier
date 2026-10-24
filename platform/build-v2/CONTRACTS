@@ -470,3 +470,16 @@ Guard-return capacity close remains an explicit captured-provider observation AN
 matched raw guards/custody; self-generated wrapper flags MUST NOT issue cleanup authority.
 See legacy_host_launch.rs and legacy_epoch/selection.rs corrective regressions. These source
 fixtures do not prove real native cleanup, current full-default support or Darwin activation.
+
+@cc [owner:fontanierh,label:correctness;safety] legacy-host-installed-startup-context
+The original lexical interpreter role MUST launch verbatim with -I -S and resolve to the pinned
+canonical interpreter image/hash. The captured constructor MUST supply its actual original
+installed-library context; child -S sysconfig, arbitrary metadata or assigning sys.executable
+MUST NOT substitute that provenance. Both purelib and platlib MUST remain explicit and retain
+their lexical roles while their real existing directories are checked under real vetted platform
+roots, following C2c. No site/.pth/editable-hook or environment fallback is allowed. The host
+MUST clear inherited environment and set only the closed original AGENT/CACHE/BUILD_ROOT/PATH
+operational context. Unknown fields/overrides, missing libraries, relative/empty PATH entries and
+retargeted interpreter roles MUST refuse before project discovery. No custody, deadline, key or
+controller fulfillment authority is added. See legacy_host::tests startup-context cases;
+full production entry/discovery and actual native acceptance remain separate hosted/integration proof.

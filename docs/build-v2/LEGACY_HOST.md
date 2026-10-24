@@ -83,3 +83,21 @@ partial-frame/transport ambiguity the host closes permission immediately; it sen
 Refused frame that could consume the cleanup reserve. A previously validated complete covering
 directory inventory proves an old covered child either present or absent, without inventing a
 contradictory absent child inside that inventory.
+
+Startup now carries the original lexical interpreter role separately from the canonical image
+and its hash. The host launches that role verbatim with `-I -S`; it never assigns a synthetic
+`sys.executable`. The captured original constructor supplies `python_context` with its actual
+C2c platform roots and explicit `purelib`/`platlib`. Rust retains lexical scheme spellings and
+checks real existing-directory containment, including refusal of missing schemes. This metadata
+validation does not independently discover or certify the original interpreter's sysconfig.
+The captured bootstrap must apply the vetted context without `site`, `.pth` or editable hooks.
+
+`operational_environment` is a required closed object containing `agent`, `cache`, `build_root`
+(each explicitly nullable), and vetted `path`. The launcher clears its inherited environment
+before applying only `ATELIER_AGENT`, `ATELIER_CACHE`, `ATELIER_BUILD_ROOT` and `PATH` values;
+it refuses unknown fields and empty/relative/missing PATH directories. Unsupported original
+overrides must be refused by the captured constructor rather than silently omitted. No new
+source key, worker context, controller-order/repair permission or native execution is introduced.
+The three Rust startup tests exercise the real command factory and metadata validators without
+claiming an actual Python launch or production-discovery proof; the coupled hosted entry test
+must establish the latter separately and stop at typed Held/Unsupported, without Finish.

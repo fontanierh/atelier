@@ -694,6 +694,16 @@ pub(crate) struct SchedulerChild {
     deadline: Deadline,
     reaped: bool,
 }
+pub(crate) fn isolated_command(
+    interpreter_role: &Path,
+    bootstrap: &Path,
+    environment: &crate::legacy_host::OperationalEnvironment,
+) -> io::Result<Command> {
+    let mut command = Command::new(interpreter_role);
+    command.args(["-I", "-S"]).arg(bootstrap);
+    environment.apply(&mut command)?;
+    Ok(command)
+}
 impl SchedulerChild {
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn spawn(
@@ -704,6 +714,7 @@ impl SchedulerChild {
         log: &Path,
         custody: TripleCustody,
         deadline: Deadline,
+        environment: &crate::legacy_host::OperationalEnvironment,
     ) -> io::Result<Self> {
         if deadline.expired() {
             return Err(invalid("host deadline expired"));
@@ -734,8 +745,7 @@ impl SchedulerChild {
             .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
             .open(log)?;
         let stderr = stdout.try_clone()?;
-        let mut command = Command::new(interpreter);
-        command.args(["-I", "-S"]).arg(bootstrap);
+        let mut command = isolated_command(interpreter, bootstrap, environment)?;
         for (name, fd) in [
             "--command-fd",
             "--reply-fd",
@@ -751,8 +761,6 @@ impl SchedulerChild {
         command
             .arg("--startup-manifest")
             .arg(manifest)
-            .env_clear()
-            .env("PATH", "/usr/bin:/bin")
             .current_dir(checkout)
             .stdin(Stdio::null())
             .stdout(stdout)
