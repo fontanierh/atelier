@@ -459,6 +459,9 @@ def test_texture_prepared_only_null_frame_preserves_host_qualification_path(scri
     authority.client, authority.nonce = case.client(), 'e' * 32
     authority.attempt = 'prepare-' + authority.nonce
     authority.step = SimpleNamespace(name='world.textures.leaf_broad')
+    authority.metadata = 'control.textures.scheduler'
+    authority.steps = {authority.step.name: authority.step}
+    authority.profiles = {authority.step.name: SimpleNamespace(output=case.root / 'build/yorimichi/textures/T_leaf_broad.png')}
     authority.build = SimpleNamespace(fingerprint_state=lambda *a, **k: ('f' * 64, {}), required_inputs=lambda step: [])
     authority.hashlib = __import__('hashlib')
     monkeypatch.setattr(module, '_prior_record', lambda client: {'frame': None, 'binding': {}})
@@ -466,7 +469,7 @@ def test_texture_prepared_only_null_frame_preserves_host_qualification_path(scri
     authority.before_prepare(ctx, [], ['data.stage'])
     calls = authority.client.calls
     assert [item['type'] for item in calls] == ['supersede', 'begin_attempt']
-    assert calls[0]['initial_frame']['tasks'][0]['id'] == authority.step.name
+    assert [task['id'] for task in calls[0]['initial_frame']['tasks']] == [authority.metadata, authority.step.name]
     assert calls[1]['attempt']['execution'] == {'kind': 'in_process'}
     assert not (ctx.out / '.state').exists()
 
@@ -511,3 +514,114 @@ def test_selected_runtime_key_and_roster_bind_used_helpers_but_not_unrelated_iss
     assert str(root) not in str(before['captured_python_runtime'])
     assert build_audit.NATIVE not in build_audit.captured_runtime_inputs(step)
 
+
+def test_texture_group_frame_separates_shared_metadata_and_products_and_settles_after_close(scripted_index_provider, monkeypatch):
+    case = scripted_index_provider
+    module = case.profile
+    authority = module.TextureAuthority.__new__(module.TextureAuthority)
+    authority.checkout, authority.manifest, authority.request = case.root, case.manifest, case.request
+    authority.client, authority.nonce = case.client(), 'a' * 32
+    authority.metadata = 'control.textures.scheduler'
+    authority.attempt = authority.preparation_attempt = 'prepare-' + authority.nonce
+    authority.hashlib = __import__('hashlib')
+    authority.steps = {name: SimpleNamespace(name=name) for name in
+                       ('world.textures.leaf_broad', 'world.textures.leaf_cedar')}
+    authority.profiles = {name: SimpleNamespace(output=case.root / 'build/yorimichi/textures' / (name + '.png'))
+                          for name in authority.steps}
+    authority.runtimes = {name: object() for name in authority.steps}
+    authority.completed = {}
+    authority.build = SimpleNamespace(fingerprint_state=lambda *a, **k: ('f' * 64, {}), required_inputs=lambda step: [])
+    monkeypatch.setattr(module, '_prior_record', lambda client: None)
+    ctx = SimpleNamespace(out=case.root / 'build/yorimichi')
+    authority.before_prepare(ctx, [], ['data.stage'])
+    frame = authority.client.calls[1]['observation']
+    assert len(frame['tasks']) == 3
+    shared, *products = frame['tasks']
+    assert shared['id'] == authority.metadata
+    assert all('/textures/' not in claim['path'] for claim in shared['writes'])
+    assert [len(task['writes']) for task in products] == [1, 1]
+    assert authority.client.calls[-1]['attempt']['members'] == [authority.metadata, *authority.steps]
+    monkeypatch.setattr(authority, '_check_certificate', lambda ctx, step: 'f' * 64)
+    invocations = []
+    for step in authority.steps.values():
+        authority.before_task(ctx, step)
+        invocations.append((authority.invocation, authority.guard_relative))
+        authority.after_task(ctx, step, None)
+    assert len(set(invocations)) == 2
+    assert not any(call['type'] == 'settle' for call in authority.client.calls)
+    authority.checkpoint_complete(ctx, [])
+    assert not any(call['type'] == 'settle' for call in authority.client.calls)
+    authority.after_index(ctx)
+    settled = [call['observation']['task'] for call in authority.client.calls if call['type'] == 'settle']
+    assert settled == [*authority.steps, authority.metadata]
+    assert all(call['observation']['attempt'] == authority.preparation_attempt
+               for call in authority.client.calls if call['type'] == 'settle')
+    with pytest.raises(ValueError, match='invalidated'):
+        authority.after_checkpoint(ctx, ['changed'])
+
+
+def test_texture_same_frame_continuation_requeues_only_settled_members_before_new_intent(scripted_index_provider, monkeypatch):
+    case = scripted_index_provider
+    module = case.profile
+    authority = module.TextureAuthority.__new__(module.TextureAuthority)
+    authority.checkout, authority.manifest, authority.request = case.root, case.manifest, case.request
+    authority.client, authority.nonce = case.client(), 'b' * 32
+    authority.metadata = 'control.textures.scheduler'
+    authority.attempt = authority.preparation_attempt = 'prepare-' + authority.nonce
+    authority.hashlib = __import__('hashlib')
+    step = SimpleNamespace(name='world.textures.leaf_broad')
+    authority.steps = {step.name: step}
+    authority.profiles = {step.name: SimpleNamespace(output=case.root / 'build/yorimichi/textures/T_leaf_broad.png')}
+    authority.build = SimpleNamespace(fingerprint_state=lambda *a, **k: ('f' * 64, {}), required_inputs=lambda step: [])
+    monkeypatch.setattr(module, '_prior_record', lambda client: None)
+    ctx = SimpleNamespace(out=case.root / 'build/yorimichi')
+    authority.before_prepare(ctx, [], ['data.stage'])
+    frame = authority.client.calls[1]['observation']
+    binding = authority.client.calls[0]['observation']
+    authority.client.calls.clear()
+    old = {'binding': binding, 'frame': {'scope': frame, 'pending': [step.name],
+                                       'settled': [{'task': authority.metadata}]}}
+    monkeypatch.setattr(module, '_prior_record', lambda client: old)
+    authority.before_prepare(ctx, [], ['data.stage'])
+    assert [call['type'] for call in authority.client.calls] == ['prepare_selection', 'requeue', 'begin_attempt']
+    assert authority.client.calls[1]['members'] == [authority.metadata]
+    assert authority.client.calls[2]['attempt']['members'] == [authority.metadata, step.name]
+    assert not (ctx.out / '.state').exists()
+
+
+def test_texture_failed_final_certificate_never_settles_earlier_members_or_metadata(scripted_index_provider, monkeypatch):
+    case = scripted_index_provider
+    authority = case.profile.TextureAuthority.__new__(case.profile.TextureAuthority)
+    authority.client = case.client()
+    authority.completed = {'world.textures.leaf_broad': 'attempt-one', 'world.textures.leaf_cedar': 'attempt-two'}
+    authority.steps = {name: SimpleNamespace(name=name) for name in authority.completed}
+    def check(ctx, step):
+        if step.name.endswith('leaf_cedar'):
+            raise ValueError('changed original certificate')
+        return 'f' * 64
+    monkeypatch.setattr(authority, '_check_certificate', check)
+    with pytest.raises(ValueError, match='changed original certificate'):
+        authority.after_checkpoint(SimpleNamespace(), [])
+    assert authority.client.calls == []
+
+
+def test_actual_texture_read_aggregate_has_no_commands_outputs_or_extra_controls():
+    from dataclasses import replace
+    from atelier import build, build_products, paths
+    from atelier.build_v2.legacy_client import AuthorityRefused
+    from atelier.build_v2.legacy_qualification import CapturedCode, captured_spec
+    path = paths.REPO / 'games/yorimichi/legacy_qualification.py'
+    spec = captured_spec('texture_aggregate_constraints', CapturedCode(str(path), path.read_bytes()))
+    profile = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(profile)
+    recipe = build.load_recipe('yorimichi')
+    steps = recipe.texture_steps(SimpleNamespace(out=paths.REPO / 'build/yorimichi'))
+    graph = build_products.Graph(steps)
+    aggregate = graph.by_name['world.textures']
+    products = [step.products[0].name for step in steps if step.products]
+    assert profile.qualify_texture_aggregate(aggregate, build=build, graph=graph, products=products) is aggregate
+    for mutation in ({'commands': [build.Python(recipe.WORLD / 'gen_textures.py')]},
+                     {'outputs': [paths.REPO / 'build/yorimichi/textures']},
+                     {'reads': list(reversed(products))}, {'cache': True}, {'replan': True}):
+        with pytest.raises(AuthorityRefused):
+            profile.qualify_texture_aggregate(replace(aggregate, **mutation), build=build, graph=graph, products=products)

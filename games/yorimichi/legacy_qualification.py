@@ -1,6 +1,6 @@
 """Yorimichi's managed declaration and closed hash-index preparation profile.
 
-The existing recipe and one normal operational metadata task are entered. Game/native
+The existing recipe and finite audited texture tasks are entered. Other game/native
 tasks remain unsupported. The named files below are code providers, not a certificate
 that every data.stage prerequisite can execute or repair.
 """
@@ -50,7 +50,7 @@ CODE_SEEDS = (
     'world/regions/ferry/__init__.py', 'world/regions/hidamari_stable/__init__.py',
     'world/regions/swordcamp/__init__.py',
     'world/regions/belmonte/source.py',
-    'world/regions/village/atomic_sources.py', 'world/gen_textures.py',
+    'world/regions/village/atomic_sources.py', 'world/gen_textures.py', 'legacy_texture_profile.py',
 )
 
 
@@ -316,9 +316,29 @@ def run(*, manifest, request, client, custody):
 
 
 
+def qualify_texture_aggregate(step, *, build, graph, products):
+    """Recognize only the existing no-command read boundary; this grants no permission.
+
+    The original scheduler must still own read-key computation, product observations,
+    stamp publication and finalization. No callback, output ownership or task execution
+    is inferred from this pure declaration observation.
+    """
+    from atelier.build_v2.legacy_client import AuthorityRefused
+    expected = build.Step('world.textures', [], reads=list(products))
+    actual, defaults = vars(step), vars(expected)
+    if (type(step) is not build.Step or set(actual) - {'_query_bindings'} != set(defaults) - {'_query_bindings'}
+            or any(actual[name] != value for name, value in defaults.items()
+                   if name not in {'about', '_query_bindings'})
+            or actual.get('_query_bindings')):
+        raise AuthorityRefused('texture aggregate is not the original closed no-command read boundary')
+    if graph.prerequisites(step) != ['world.textures.' + name.removeprefix('texture.') for name in products]:
+        raise AuthorityRefused('texture aggregate dependency order differs from its actual producers')
+    return step
+
+
 class TextureAuthority:
     """@cc [owner:fontanierh,label:correctness;safety] original-closed-texture-task
-    Only the exact first texture script/arguments/spec/product and complete scheduler
+    Only the finite qualified texture scripts/arguments/spec/products and complete scheduler
     metadata scope MAY qualify. Every preparation/launch MUST first pass the live Rust
     authority; this object/metadata alone MUST NOT grant permission. Original scheduler,
     fingerprint, cache, audit, stamp and final output checks MUST remain the certifiers.
@@ -335,36 +355,43 @@ class TextureAuthority:
         self.custody, self.build, self.files = custody, build, files
         self.checkout = Path(manifest['checkout'])
         self.nonce = manifest['nonce']
-        self.step = next((s for s in selected if s.controller is None), None)
-        s = self.step
-        if (s is None or s.name != 'world.textures.leaf_broad' or s.heavy or s.replan or not s.audit or not s.cache
-                or s.batch is not None or s.verify is not None or s.references or s.reads or s.queries
-                or graph.prerequisites(s) or s.needs or s.after or s.pool_roots or s.optional_inputs or s.deferred_inputs
-                or len(s.commands) != 1 or type(s.commands[0]) is not build.Python
-                or Path(s.commands[0].script) != self.checkout / 'games/yorimichi/world/gen_textures.py'
-                or len(s.outputs) != 1 or s.outputs[0] != self.checkout / 'build/yorimichi/textures/T_leaf_broad.png'):
-            raise AuthorityRefused('first actual selected task is outside the closed texture family')
-        command = s.commands[0]
-        expected_args = ('--texture', 'leaf_broad', '--spec',
-                         str(self.checkout / 'games/yorimichi/world/textures/leaf_broad.json'),
-                         '--output', str(self.checkout / 'build/yorimichi/textures/T_leaf_broad.png'))
-        if (set(vars(command)) != {'script', 'args'} or tuple(map(str, command.args)) != expected_args
-                or len(s.products) != 1 or s.products[0].name != 'texture.leaf_broad'
-                or list(s.products[0].paths) != s.outputs or s.products[0].optional_paths):
-            raise AuthorityRefused('texture script/settings/output role differs from the finite profile')
-        self.controllers = {s.name: s.controller.request(self.checkout) for s in selected if s.controller is not None}
+        from legacy_texture_profile import qualify_texture_step, ROSTER
         from atelier.build_audit import _bind_captured_runtime
-        self.runtime = _bind_captured_runtime(self.step, checkout=self.checkout,
-                                             issuer_files=manifest['issuer_files'])
-        self.guard_relative = 'build/build-v2/legacy-host/' + self.nonce + '/guards/texture'
-        self.guard_directory = self.checkout / self.guard_relative
-        self.audit_root = self.guard_directory / 'audit'
-        self.invocation = hashlib.sha256((self.nonce + ':texture').encode()).hexdigest()[:32]
+        # Qualify each RAW declaration before attaching its private runtime descriptor.
+        names = {'world.textures.' + name for name in ROSTER}
+        self.profiles, self.steps, self.runtimes = {}, {}, {}
+        for step in selected:
+            if step.name not in names:
+                continue
+            profile = qualify_texture_step(step, checkout=self.checkout,
+                                           output_root=self.checkout / 'build/yorimichi')
+            if graph.prerequisites(step):
+                raise AuthorityRefused('texture has unqualified prerequisite effects')
+            self.profiles[step.name], self.steps[step.name] = profile, step
+            self.runtimes[step.name] = _bind_captured_runtime(
+                step, checkout=self.checkout, issuer_files=manifest['issuer_files'])
+        first = next((step for step in selected if step.controller is None), None)
+        if first is None or first.name not in self.steps:
+            raise AuthorityRefused('first actual selected task is outside the closed texture family')
+        self.controllers = {step.name: step.controller.request(self.checkout)
+                            for step in selected if step.controller is not None}
+        following = next((step.name for step in selected
+                          if step.controller is None and step.name not in self.steps), None)
+        next_family = next((step.name for step in selected
+                            if step.controller is None and step.name not in self.steps
+                            and step.name != 'world.textures'), None)
+        print(f'Managed texture group declarations: {len(self.steps)}; next actual boundary: {following}; '
+              f'first nontexture task: {next_family}', flush=True)
+        self.metadata = 'control.textures.scheduler'
         self.attempt = 'prepare-' + self.nonce
-        self.returned = None
-        self.launch_context = None
+        self.preparation_attempt = self.attempt
+        self.completed = {}
         self.begun = False
         self.hashlib = hashlib
+        self.step = first
+        self.runtime = self.runtimes[first.name]
+        self.returned = None
+        self.launch_context = None
 
     def witness(self, name):
         import os
@@ -389,31 +416,36 @@ class TextureAuthority:
         import os
         from atelier.build_v2.legacy_client import AuthorityRefused
         from atelier.build_hashes import HashIndex
-        self.step_key, _ = self.build.fingerprint_state(self.step, {}, index=HashIndex(verify=True), tool_cache={})
-        # The unsupported historical broad-purge/action-restore path cannot run on
-        # a generic control grant, even if its journal is malformed or linked.
+        self.keys = {name: self.build.fingerprint_state(step, {}, index=HashIndex(verify=True),
+                                                       tool_cache={})[0]
+                     for name, step in self.steps.items()}
+        # Historical broad purge and interrupted checkpoint replacement need their
+        # separately reviewed recovery profiles; no generic metadata grant covers them.
         journal = ctx.out / '.checkpoint-in-progress.json'
         if journal.exists() or journal.is_symlink():
             raise AuthorityRefused('pending checkpoint restore needs its separately qualified recovery family')
         info = os.lstat(ctx.out)
         anchor = {'path': 'build/yorimichi', 'device': info.st_dev, 'inode': info.st_ino}
         self.paths = ['build/yorimichi/.state', 'build/yorimichi/logs', 'build/yorimichi/stamps',
-                      'build/yorimichi/.checkpoint-in-progress.json',
-                      'build/yorimichi/textures/T_leaf_broad.png']
-        claims = [{'path': name, 'canonical': name, 'anchor': anchor} for name in self.paths]
+                      'build/yorimichi/.checkpoint-in-progress.json']
+        def claims(paths):
+            return [{'path': name, 'canonical': name, 'anchor': anchor} for name in paths]
+        tasks = [{'id': self.metadata, 'replay': 'closed_replay', 'writes': claims(self.paths)}]
+        for name, profile in self.profiles.items():
+            tasks.append({'id': name, 'replay': 'closed_replay',
+                          'writes': claims([profile.output.relative_to(self.checkout).as_posix()])})
         inputs = []
-        for path in self.build.required_inputs(self.step):
-            inputs.extend(self.witness(Path(path).relative_to(self.checkout).as_posix()))
+        for step in self.steps.values():
+            for path in self.build.required_inputs(step):
+                inputs.extend(self.witness(Path(path).relative_to(self.checkout).as_posix()))
         inputs.extend(self.witness('games/yorimichi/game.toml'))
         inputs.extend(self.witness('uv.lock'))
-        # required_inputs intentionally retains fingerprint list multiplicity (the
-        # script can also be an explicit input). Epoch file observations are a
-        # unique path set, not a new fingerprint encoding.
+        # Operational witnesses are unique paths, not another task fingerprint.
         inputs = list({item['path']: item for item in inputs}.values())
-        frame = {'profile': 'named_assembly', 'topology': self.step_key, 'inputs': inputs,
-                 'tasks': [{'id': self.step.name, 'replay': 'closed_replay', 'writes': claims}]}
+        frame = {'profile': 'named_assembly', 'topology': self.manifest['issuer_digest'],
+                 'inputs': inputs, 'tasks': tasks}
         observation = {'project': self.request['game'], 'selector': self.request['wanted'],
-                       'source_plan': self.step_key,
+                       'source_plan': self.manifest['issuer_digest'],
                        'request_digest': self.manifest['scheduler_request']['digest'],
                        'issuer': self.manifest['issuer_digest'], 'controller_source': self.manifest['source_digest'],
                        'roots': ['build/yorimichi'],
@@ -422,23 +454,24 @@ class TextureAuthority:
         if old is not None:
             previous_frame = old.get('frame')
             scope = None if previous_frame is None else previous_frame['scope']
-            allowed = {'control.hash-index.prepare', self.step.name}
+            allowed = {'control.hash-index.prepare', self.metadata, *self.steps}
             if scope is not None and any(task['id'] not in allowed for task in scope['tasks']):
                 raise AuthorityRefused('old epoch includes an unqualified game-family repair scope')
             same = all(old['binding'].get(key) == value for key, value in observation.items() if key != 'sources')
             if same and scope == frame:
                 self.client.request({'type': 'prepare_selection', 'observation': observation})
-                if not old['frame']['pending']:
-                    # Requeue explicitly before the original warm scheduler's metadata
-                    # work. No fabricated zero-write/no-permission warm claim.
-                    self.client.request({'type': 'requeue', 'members': [self.step.name]})
+                settled = [item['task'] for item in old['frame']['settled']]
+                if settled:
+                    # Resume all actual members under new permission. Pending failed
+                    # members remain pending; no settled credit grants another launch.
+                    self.client.request({'type': 'requeue', 'members': settled})
             else:
                 self.client.request({'type': 'supersede', 'observation': observation, 'initial_frame': frame})
         else:
             self.client.request({'type': 'prepare_selection', 'observation': observation})
             self.client.request({'type': 'advance', 'observation': frame})
         self.client.request({'type': 'begin_attempt', 'attempt': {'id': self.attempt,
-                             'members': [self.step.name], 'execution': {'kind': 'in_process'}, 'guard': None}})
+                             'members': [self.metadata, *self.steps], 'execution': {'kind': 'in_process'}, 'guard': None}})
         self.begun = True
 
     def writer(self, output):
@@ -464,23 +497,38 @@ class TextureAuthority:
 
     def before_task(self, ctx, step):
         from atelier.build_v2.legacy_client import AuthorityRefused
-        if step is not self.step:
-            raise AuthorityRefused('next actual selected family is not yet qualified; completed task retained')
+        if self.steps.get(step.name) is not step:
+            raise AuthorityRefused('next actual selected family is not yet qualified; completed tasks retained')
+        self.step = step
+        self.step_key = self.keys[step.name]
+        self.runtime = self.runtimes[step.name]
+        token = self.hashlib.sha256(step.name.encode()).hexdigest()[:20]
+        self.guard_relative = 'build/build-v2/legacy-host/' + self.nonce + '/guards/' + token
+        self.guard_directory = self.checkout / self.guard_relative
+        self.audit_root = self.guard_directory / 'audit'
+        self.invocation = self.hashlib.sha256((self.nonce + ':' + step.name).encode()).hexdigest()[:32]
+        self.attempt = self.preparation_attempt
+        self.returned = None
+        self.launch_context = None
 
     def after_task(self, ctx, step, code):
         from atelier.build_v2.legacy_client import AuthorityRefused
-        from atelier.build_plan import read_stamp
-        from atelier import build_products
         if code is not None or self.returned not in (None, 0):
             raise AuthorityRefused('texture task failed; original outputs/certificates remain fenced')
+        self._check_certificate(ctx, step)
+        self.completed[step.name] = self.attempt
+
+    def _check_certificate(self, ctx, step):
+        from atelier.build_plan import read_stamp
+        from atelier import build_products
         index = ctx.build_hash_index
         key = self.build.fingerprint(step, {}, index=index, tool_cache=ctx.build_tool_cache)
         stamp = read_stamp(ctx.stamps / (step.name + '.json'))
-        if (key != self.step_key or stamp.get('fingerprint') != key
+        if (key != self.keys[step.name] or stamp.get('fingerprint') != key
                 or not self.build.outputs_present(step)
                 or not build_products.valid_records(step, stamp.get('products', {}), hasher=index.digest)):
-            raise AuthorityRefused('original texture completion is no longer current')
-        self.completed = True
+            raise ValueError('original texture completion is no longer current: ' + step.name)
+        return key
 
     def checkpoint_complete(self, ctx, invalid):
         self.final_invalid = invalid
@@ -495,24 +543,23 @@ class TextureAuthority:
             self.after_checkpoint(ctx, self.final_invalid)
 
     def after_checkpoint(self, ctx, invalid):
-        if not getattr(self, 'completed', False):
-            return
         if invalid:
-            raise ValueError('original final output checkpoint invalidated the texture certificate')
-        from atelier.build_plan import read_stamp
-        from atelier import build_products
-        index = ctx.build_hash_index
-        key = self.build.fingerprint(self.step, {}, index=index, tool_cache=ctx.build_tool_cache)
-        stamp = read_stamp(ctx.stamps / (self.step.name + '.json'))
-        if key != self.step_key or stamp.get('fingerprint') != key or not build_products.valid_records(
-                self.step, stamp.get('products', {}), hasher=index.digest):
-            raise ValueError('texture certificate changed during original finalization')
+            raise ValueError('original final output checkpoint invalidated texture certificates')
+        # Original finalization and HashIndex.close precede ANY member settlement.
+        # Validate the complete successful prefix first, then retain its exact products.
+        keys = {name: self._check_certificate(ctx, self.steps[name]) for name in self.completed}
+        for name, attempt in self.completed.items():
+            outputs = self.witness(self.profiles[name].output.relative_to(self.checkout).as_posix())
+            self.client.request({'type': 'settle', 'observation': {'task': name, 'attempt': attempt,
+                                 'inputs': keys[name], 'outputs': outputs}})
+            print('Managed original game task settled: ' + name, flush=True)
         outputs = []
         for name in self.paths:
             outputs.extend(self.witness(name))
-        self.client.request({'type': 'settle', 'observation': {'task': self.step.name, 'attempt': self.attempt,
-                             'inputs': key, 'outputs': outputs}})
-        print('Managed original game task settled: ' + self.step.name, flush=True)
+        self.client.request({'type': 'settle', 'observation': {'task': self.metadata,
+                             'attempt': self.preparation_attempt,
+                             'inputs': self.manifest['issuer_digest'], 'outputs': outputs}})
+        print('Managed original scheduler metadata settled', flush=True)
 
     def runtime_roots(self):
         import sysconfig
@@ -563,7 +610,7 @@ class TextureAuthority:
             if queue_ns <= now:
                 raise ValueError('texture guard queue/work does not fit the original authority deadline')
             self.queue_deadline_ns = queue_ns
-            self.attempt = 'texture-' + self.nonce
+            self.attempt = 'texture-' + self.nonce + '-' + self.hashlib.sha256(self.step.name.encode()).hexdigest()[:20]
             launch = {'scheduler': {'pid': os.getpid(), 'boot': boot_id(), 'started': str(process_start(os.getpid()))},
                       'program': self.expected_argv[0], 'args': self.expected_argv[1:],
                       'environment_digest': self.hashlib.sha256(__import__('json').dumps(self.expected_environment,
@@ -571,7 +618,7 @@ class TextureAuthority:
                       'kind': 'job', 'threads': 1, 'memory_bytes': 10 * 1024**3,
                       'execution_ns': execution_ns, 'queue_deadline_ns': queue_ns}
             self.client.request({'type': 'begin_attempt', 'attempt': {'id': self.attempt,
-                'members': [self.step.name], 'execution': {'kind': 'guarded', 'directory': self.guard_relative,
+                'members': [self.metadata, self.step.name], 'execution': {'kind': 'guarded', 'directory': self.guard_relative,
                  'invocation': self.invocation, 'launch': launch}, 'guard': None}})
             self.audit_root.mkdir(parents=True, mode=0o700)
             yield self.audit_root
