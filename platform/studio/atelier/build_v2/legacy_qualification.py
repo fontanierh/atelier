@@ -276,6 +276,7 @@ class NamedCapturedImports(importlib.abc.MetaPathFinder):
             raise UnsupportedOrigin('named module closure is invalid')
         self.modules = dict(modules)
         self.preview_standard = True
+        self.on_refusal = None
         self.protected_names = frozenset(name.split('.')[0] for name in modules)
         self.checkout = Path(checkout).resolve(strict=True)
         self.platform_roots = tuple(Path(root).resolve(strict=True) for root in platform_roots)
@@ -283,13 +284,18 @@ class NamedCapturedImports(importlib.abc.MetaPathFinder):
         if any(not Path(source.filename).is_relative_to(self.checkout) for source in modules.values()):
             raise UnsupportedOrigin('named module has a foreign logical path')
 
+    def refuse(self, message):
+        if self.on_refusal is not None:
+            self.on_refusal()
+        raise UnsupportedOrigin(message)
+
     def find_spec(self, fullname, path=None, target=None):
         if fullname in self.modules:
             source = self.modules[fullname]
             return captured_spec(fullname, source)
         if fullname.split('.')[0] in self.protected_names:
             # Do not let a later legacy alias/custom finder execute an unregistered sibling.
-            raise UnsupportedOrigin('imported checkout code is outside the named capture')
+            self.refuse('imported checkout code is outside the named capture')
         if not self.preview_standard:
             # The existing audit owns standard resolver probes. A one-shot child
             # additionally checks every executed project code object pre-exec.
@@ -303,7 +309,7 @@ class NamedCapturedImports(importlib.abc.MetaPathFinder):
                 actual = Path(candidate).resolve()
                 if (actual.is_relative_to(self.checkout)
                         and not any(actual.is_relative_to(root) for root in self.platform_roots)):
-                    raise UnsupportedOrigin('imported checkout code is outside the named capture')
+                    self.refuse('imported checkout code is outside the named capture')
         return None
 
 
@@ -366,7 +372,7 @@ def _private_declarations(names):
 
 
 @contextmanager
-def captured_recipe_imports(sources, *, checkout, platform_roots=(), audited_imports=False):
+def captured_recipe_imports(sources, *, checkout, platform_roots=(), audited_imports=False, on_refusal=None):
     """@cc [owner:fontanierh,label:safety] captured-recipe-preexec-routing
     The fixed profile's named normal/spec imports MUST compile captured bytes at their
     original logical filenames. The finite declaration modules MUST reload privately from
@@ -439,7 +445,7 @@ def captured_recipe_imports(sources, *, checkout, platform_roots=(), audited_imp
                     target_name = compat.canonical(fullname)
                     if target_name is not None:
                         if target_name not in self.modules:
-                            raise UnsupportedOrigin('Harness alias is outside the named capture')
+                            self.refuse('Harness alias is outside the named capture')
                         return compat._LegacyHarness().find_spec(fullname, path, target)
                 # Existing providers insert WORLD or REGIONS. These two fixed aliases
                 # can name only already captured files/namespaces, never ambient code.
@@ -447,7 +453,7 @@ def captured_recipe_imports(sources, *, checkout, platform_roots=(), audited_imp
                     candidates = [prefix + fullname for prefix in ('world.', 'world.regions.')
                                   if prefix + fullname in self.modules or prefix + fullname in namespaces]
                     if len(candidates) > 1:
-                        raise UnsupportedOrigin('recipe import has ambiguous WORLD/REGIONS aliases')
+                        self.refuse('recipe import has ambiguous WORLD/REGIONS aliases')
                     if candidates:
                         canonical = candidates[0]
                         if canonical in self.modules:
@@ -463,6 +469,7 @@ def captured_recipe_imports(sources, *, checkout, platform_roots=(), audited_imp
 
         finder = RecipeFinder(modules, checkout=checkout, platform_roots=platform_roots)
         finder.preview_standard = not audited_imports
+        finder.on_refusal = on_refusal
         original = importlib.util.spec_from_file_location
         unspecified = object()
 
@@ -488,13 +495,13 @@ def captured_recipe_imports(sources, *, checkout, platform_roots=(), audited_imp
                                     importlib.machinery.SourceFileLoader,
                                     importlib.machinery.SourcelessFileLoader,
                                     importlib.machinery.ExtensionFileLoader):
-                                raise UnsupportedOrigin('installed spec supplied an unqualified custom loader')
+                                finder.refuse('installed spec supplied an unqualified custom loader')
                             return original_spec(name, location, loader, submodule_search_locations)
-                        raise UnsupportedOrigin('recipe spec source is outside the named capture')
+                        finder.refuse('recipe spec source is outside the named capture')
                     if real_location != Path(filename):
-                        raise UnsupportedOrigin('recipe spec uses an unreviewed logical alias')
+                        finder.refuse('recipe spec uses an unreviewed logical alias')
                     if loader is not None and type(loader) is not CapturedLoader:
-                        raise UnsupportedOrigin('recipe supplied an unqualified source loader')
+                        finder.refuse('recipe supplied an unqualified source loader')
                     loader = CapturedLoader(name, source)
             return original_spec(name, location, loader, submodule_search_locations)
 

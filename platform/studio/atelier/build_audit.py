@@ -1,6 +1,6 @@
 """Prepare and validate an opt-in Python input audit, separately from the action's outputs."""
 from contextlib import contextmanager, ExitStack
-from dataclasses import replace
+from dataclasses import replace, dataclass, field
 import json
 import os
 from pathlib import Path
@@ -14,7 +14,61 @@ from . import paths
 
 WORKER = Path(__file__).with_name('build_audit_worker.py')
 NATIVE = Path(__file__).with_name('build_audit_native.py')
-SUPPORT = (Path(__file__), WORKER, NATIVE, Path(__file__).parent / 'build_v2/legacy_action.py')
+SUPPORT = (Path(__file__), WORKER, NATIVE)
+_CAPTURED_ORIGIN = object()
+_CAPTURED_WORKER = (
+    'platform/studio/atelier/__init__.py',
+    'platform/studio/atelier/build_audit_worker.py',
+    'platform/studio/atelier/build_v2/__init__.py',
+    'platform/studio/atelier/build_v2/legacy_action.py',
+    'platform/studio/atelier/build_v2/legacy_bootstrap.py',
+    'platform/studio/atelier/build_v2/legacy_client.py',
+    'platform/studio/atelier/build_v2/legacy_qualification.py',
+    'platform/studio/atelier/build_v2/controller_client.py',
+)
+
+
+@dataclass(frozen=True)
+class _CapturedRuntime:
+    root: Path
+    files: tuple[str, ...]
+    _origin: object = field(repr=False, compare=False)
+
+
+def captured_runtime_inputs(step):
+    runtime = getattr(step, '_captured_audit_runtime', None)
+    if runtime is None:
+        return ()
+    if type(runtime) is not _CapturedRuntime or runtime._origin is not _CAPTURED_ORIGIN:
+        raise ValueError('unqualified captured audit runtime descriptor')
+    return tuple(runtime.root / name for name in runtime.files)
+
+
+def _bind_captured_runtime(step, *, checkout, issuer_files):
+    """Fixed issuer semantic descriptor only; never a mutation/launch capability.
+
+    Use the existing step inputs and named worker helpers/initializers. This private
+    mode is not a recipe flag and cannot execute without the real bound authority.
+    """
+    from .build import required_inputs
+    root = Path(checkout)
+    names = {path.relative_to(root).as_posix() for path in map(Path, required_inputs(step))
+             if path.suffix == '.py' and path not in SUPPORT}
+    names.update(_CAPTURED_WORKER)
+    for name in list(names):
+        parent = (root / name).parent
+        while parent != root:
+            initializer = parent / '__init__.py'
+            if initializer.is_symlink():
+                raise ValueError('linked captured worker package initializer')
+            if initializer.is_file():
+                names.add(initializer.relative_to(root).as_posix())
+            parent = parent.parent
+    if not names <= set(issuer_files):
+        raise ValueError('selected worker code is outside the original named issuer capture')
+    runtime = _CapturedRuntime(root, tuple(sorted(names)), _CAPTURED_ORIGIN)
+    step._captured_audit_runtime = runtime
+    return runtime
 
 
 def validate(step):
@@ -56,6 +110,12 @@ def tool_context(step, hasher, *, cache=None):
     from . import build, build_cache, build_inputs, engine
     if type(step.commands[0]) is not build.UnrealScript:
         context = build_cache.tool_context(step, hasher, cache=cache)
+        runtime = getattr(step, '_captured_audit_runtime', None)
+        if runtime is not None:
+            inputs = captured_runtime_inputs(step)
+            context = {**context, 'captured_python_runtime': {
+                'version': 'captured-audited-python/1', 'flags': ['-I', '-S', '-B'],
+                'files': [(name, hasher(path)) for name, path in zip(runtime.files, inputs)]}}
         if type(step.commands[0]) is build.Blender:
             # A native host may have executed bytecode before the bootstrap. Unlike the
             # portable source-cache identity, this observation context includes __pycache__.
@@ -202,6 +262,9 @@ def prepared(ctx, step, products, *, receipt=None):
     output_roots = [Path(p).resolve() for product in step.products for p in product.paths]
     report_path = ctx.logs / f'{step.name}.audit.json'
     authority = getattr(ctx, 'legacy_authority', None)
+    runtime = getattr(step, '_captured_audit_runtime', None)
+    if runtime is not None and (authority is None or getattr(authority, 'runtime', None) is not runtime):
+        raise ValueError('captured audit runtime requires its original fixed issuer authority')
     temporary_scope = (authority.audit_directory() if authority is not None else
                        tempfile.TemporaryDirectory(dir=ctx.logs, prefix='.audit-'))
     with temporary_scope as temporary, ExitStack() as cleanup:
@@ -259,6 +322,7 @@ def prepared(ctx, step, products, *, receipt=None):
                 raise ValueError('managed captured audit supports the qualified Python family only')
             argv = authority.audit_argv(spec)
             config['legacy_environment'] = dict(authority.action_environment(env))
+            config['legacy_code_files'] = list(runtime.files)
             env = tuple(config['legacy_environment'].items())
             spec.write_text(json.dumps(config))
             spec.chmod(0o600)

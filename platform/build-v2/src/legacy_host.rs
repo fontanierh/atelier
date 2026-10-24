@@ -800,10 +800,13 @@ impl OperationalEnvironment {
         }
         for path in entries {
             absolute_context_path(&path)?;
-            if !path.canonicalize()?.is_dir() {
-                return Err(error(
-                    "operational PATH entry is not an installed directory",
-                ));
+            match path.canonicalize() {
+                Ok(real) if real.is_dir() => {}
+                // Ordinary exec search skips absent absolute entries. Preserve
+                // their exact spelling/order; do not create/filter/rewrite PATH.
+                Err(e) if e.kind() == io::ErrorKind::NotFound => {}
+                Ok(_) => return Err(error("operational PATH entry is not a directory")),
+                Err(e) => return Err(e),
             }
         }
         Ok(())
@@ -1647,6 +1650,49 @@ mod tests {
         };
         absent.apply(&mut command).unwrap();
         assert_eq!(command.get_envs().count(), 1);
+        let missing = root.join("absent/nested/bin");
+        let original_path =
+            std::env::join_paths([root.as_path(), missing.as_path(), root.as_path()])
+                .unwrap()
+                .into_string()
+                .unwrap();
+        let normal_absence = OperationalEnvironment {
+            path: original_path.clone(),
+            ..absent.clone()
+        };
+        normal_absence.apply(&mut command).unwrap();
+        assert_eq!(
+            command
+                .get_envs()
+                .find(|(key, _)| *key == "PATH")
+                .unwrap()
+                .1
+                .unwrap(),
+            std::ffi::OsStr::new(&original_path)
+        );
+        assert!(!missing.exists());
+        let file = root.join("existing-file");
+        std::fs::write(&file, b"not a directory").unwrap();
+        assert!(
+            OperationalEnvironment {
+                path: file.to_str().unwrap().into(),
+                ..absent.clone()
+            }
+            .validate()
+            .is_err()
+        );
+        let loop_a = root.join("loop-a");
+        let loop_b = root.join("loop-b");
+        std::os::unix::fs::symlink(&loop_b, &loop_a).unwrap();
+        std::os::unix::fs::symlink(&loop_a, &loop_b).unwrap();
+        assert!(
+            OperationalEnvironment {
+                path: loop_a.to_str().unwrap().into(),
+                ..absent.clone()
+            }
+            .validate()
+            .is_err()
+        );
         for bad in ["", ":/usr/bin", "relative", "/usr/bin:"] {
             let value = OperationalEnvironment {
                 path: bad.into(),

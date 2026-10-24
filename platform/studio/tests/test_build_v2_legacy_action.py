@@ -26,3 +26,9 @@ def test_unknown_action_checkout_code_refuses_before_exec_and_installed_context_
         check('exec', (compile('value = 2', str(tmp_path / 'unknown.py'), 'exec'),))
     with pytest.raises(UnsupportedOrigin):
         check.require_clean()
+
+
+
+def test_unmanaged_audit_support_does_not_hash_unused_captured_runtime():
+    from atelier import build_audit
+    assert build_audit.SUPPORT == (Path(build_audit.__file__), build_audit.WORKER, build_audit.NATIVE)

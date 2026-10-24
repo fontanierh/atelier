@@ -593,7 +593,7 @@ def _hash_path(digest, path, skip=True, shadow=False):
 
 def required_inputs(step, *, observation=None):
     named = step.products or step.reads or step.references
-    from .build_audit import SUPPORT
+    from .build_audit import SUPPORT, captured_runtime_inputs
     from . import build_spatial
     batch_code = [Path(__file__).with_name(name) for name in ('build_batches.py', 'build_batch_worker.py')] if step.batch else []
     if step.deferred_inputs and observation is None:
@@ -601,7 +601,8 @@ def required_inputs(step, *, observation=None):
     inputs = step.inputs if observation is None else observation.paths
     return [*inputs, *batch_code, *(c.script for c in step.commands if named and hasattr(c, 'script')),
             *(p for c in step.commands for p in getattr(c, 'runs', list)()),
-            *(SUPPORT if step.audit else ()), *([Path(build_spatial.__file__)] if step.queries else ())]
+            *(SUPPORT if step.audit else ()), *captured_runtime_inputs(step),
+            *([Path(build_spatial.__file__)] if step.queries else ())]
 
 
 def declared_inputs(step):
@@ -1110,9 +1111,22 @@ def _prepared_build(ctx, wanted, *, force, touch, echo, verify, rebuild_reason, 
                 raise SystemExit(str(error)) from None
         from .build_hashes import HashIndex
         from .build_expansion import execute
+        if authority is None:
+            with HashIndex(ctx.out / '.state' / 'file-hashes.sqlite3', verify=verify) as index:
+                return execute(ctx, wanted, force=force, touch=touch, echo=echo, index=index,
+                               steps=checkpoint_steps, max_heavy_commands=max_heavy_commands)
+        failure = None
         with HashIndex(ctx.out / '.state' / 'file-hashes.sqlite3', verify=verify) as index:
-            return execute(ctx, wanted, force=force, touch=touch, echo=echo, index=index,
-                           steps=checkpoint_steps, max_heavy_commands=max_heavy_commands)
+            try:
+                code = execute(ctx, wanted, force=force, touch=touch, echo=echo, index=index,
+                               steps=checkpoint_steps, max_heavy_commands=max_heavy_commands)
+            except BaseException:
+                failure = sys.exc_info()  # Preserve original traceback through positive index close.
+        # A close error exits above, never settling uncertain metadata effects.
+        authority.after_index(ctx)
+        if failure is not None:
+            raise failure[1].with_traceback(failure[2])
+        return code
 
 
 def run_light(argv, env, extra):
@@ -1178,12 +1192,16 @@ def _build(ctx, wanted, *, force, touch, echo, index, steps=None, produced=None,
             from .checkpoint_manifest import finish
             finish(ctx, checkpoint['steps'])
         authority = getattr(ctx, 'legacy_authority', None)
-        if authority is not None:
-            authority.after_checkpoint(ctx, invalid)
+        if authority is not None and not completed:
+            authority.checkpoint_complete(ctx, invalid)
     if completed and code != 76 and getattr(ctx, 'checkpoint_settings', None) is not None:
         from . import store_retention
         from .checkpoint_store import Store
+        if authority is not None:
+            authority.before_collection(ctx)
         store_retention.maybe_collect(Store(ctx.game), echo=echo)
+    if authority is not None:
+        authority.checkpoint_complete(ctx, invalid)
     if invalid:
         echo('FAILED: products changed after their owner completed: ' + ', '.join(invalid))
         return 1

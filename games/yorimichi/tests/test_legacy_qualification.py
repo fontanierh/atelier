@@ -49,7 +49,7 @@ def scripted_index_provider(tmp_path):
             if operation['type'] == 'advance':
                 self.frame = 1
             return {}
-    return SimpleNamespace(root=tmp_path, run=lambda client: profile._control_index(manifest, request, client),
+    return SimpleNamespace(root=tmp_path, profile=profile, manifest=manifest, request=request, run=lambda client: profile._control_index(manifest, request, client),
                            client=ScriptedClient)
 
 
@@ -447,3 +447,67 @@ def test_texture_guard_uses_the_recorded_queue_deadline_without_reset(tmp_path, 
     monkeypatch.setattr(legacy_client, 'authority_now_ns', lambda: 20_000_000_000)
     with pytest.raises(ValueError, match='deadline expired'):
         authority.guard_options(authority.expected_argv, authority.expected_environment, 'job')
+
+
+def test_texture_prepared_only_null_frame_preserves_host_qualification_path(scripted_index_provider, monkeypatch):
+    # Scripted protocol observations exercise the actual Python cut handling only;
+    # the real Rust prepare/Supersede rules remain the permission authority.
+    case = scripted_index_provider
+    module = case.profile
+    authority = module.TextureAuthority.__new__(module.TextureAuthority)
+    authority.checkout, authority.manifest, authority.request = case.root, case.manifest, case.request
+    authority.client, authority.nonce = case.client(), 'e' * 32
+    authority.attempt = 'prepare-' + authority.nonce
+    authority.step = SimpleNamespace(name='world.textures.leaf_broad')
+    authority.build = SimpleNamespace(fingerprint_state=lambda *a, **k: ('f' * 64, {}), required_inputs=lambda step: [])
+    authority.hashlib = __import__('hashlib')
+    monkeypatch.setattr(module, '_prior_record', lambda client: {'frame': None, 'binding': {}})
+    ctx = SimpleNamespace(out=case.root / 'build/yorimichi')
+    authority.before_prepare(ctx, [], ['data.stage'])
+    calls = authority.client.calls
+    assert [item['type'] for item in calls] == ['supersede', 'begin_attempt']
+    assert calls[0]['initial_frame']['tasks'][0]['id'] == authority.step.name
+    assert calls[1]['attempt']['execution'] == {'kind': 'in_process'}
+    assert not (ctx.out / '.state').exists()
+
+
+def test_selected_runtime_key_and_roster_bind_used_helpers_but_not_unrelated_issuer(tmp_path, monkeypatch):
+    import ast
+    from atelier.build_v2.legacy_qualification import CapturedCode
+    import importlib.util
+    from types import SimpleNamespace
+    from atelier import build, build_audit, paths
+    from atelier.build_v2.legacy_qualification import captured_spec
+    root = paths.REPO
+    catalogue_path = root / 'games/yorimichi/world/texture_catalog.py'
+    def load(name, path):
+        spec = captured_spec(name, CapturedCode(str(path), path.read_bytes()))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+    tree = ast.parse((root / 'games/yorimichi/build.py').read_bytes())
+    factory = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'texture_steps')
+    namespace = {'Step': build.Step, 'Python': build.Python, 'Product': build.Product,
+                 'WORLD': catalogue_path.parent, 'ASSETS': root / 'games/yorimichi/assets',
+                 '_load_helper_module': load}
+    exec(compile(ast.Module(body=[factory], type_ignores=[]), str(root / 'games/yorimichi/build.py'), 'exec'), namespace)
+    step = namespace['texture_steps'](SimpleNamespace(out=tmp_path / 'out'))[0]
+    monkeypatch.setattr(build_audit.build_cache if hasattr(build_audit, 'build_cache') else __import__('atelier.build_cache', fromlist=['tool_context']),
+                        'tool_context', lambda *a, **k: {'normal': 'unchanged'})
+    original = build_audit.tool_context(step, lambda path: 'original')
+    assert original == {'normal': 'unchanged'}
+    profile = load('actual_game_profile_runtime_test', root / 'games/yorimichi/legacy_qualification.py')
+    issuer = profile.source_names(root)
+    runtime = build_audit._bind_captured_runtime(step, checkout=root, issuer_files=issuer)
+    assert 'games/yorimichi/world/gen_textures.py' in runtime.files
+    assert set(build_audit._CAPTURED_WORKER) <= set(runtime.files)
+    assert 'games/yorimichi/village_atomic_build.py' in issuer
+    assert 'games/yorimichi/village_atomic_build.py' not in runtime.files
+    assert len(runtime.files) < len(issuer)
+    before = build_audit.tool_context(step, lambda path: 'original')
+    after = build_audit.tool_context(step, lambda path: 'changed' if Path(path).name == 'legacy_qualification.py' else 'original')
+    assert before != after
+    assert before['captured_python_runtime']['flags'] == ['-I', '-S', '-B']
+    assert str(root) not in str(before['captured_python_runtime'])
+    assert build_audit.NATIVE not in build_audit.captured_runtime_inputs(step)
+

@@ -127,16 +127,6 @@ def discover(manifest, request, *, captured_files=None, consumer=None):
                 'calls': [getattr(command.fn, '__module__', '') + '.' + getattr(command.fn, '__qualname__', '')
                           for command in first.commands if type(command).__name__ == 'Call'],
             }
-            if (first is not None and first.name == 'world.textures.leaf_broad'
-                    and not graph.prerequisites(first) and not first.references
-                    and blocker['commands'] == ['Python']):
-                from atelier.build_hashes import HashIndex
-                from atelier.build_cache import Store
-                # The actual existing fingerprint API and an in-memory verification
-                # index: no new encoder, persistent index write or cache authority.
-                key, _ = build.fingerprint_state(first, {}, index=HashIndex(verify=True), tool_cache={})
-                candidate = Store().action(key)
-                blocker.update(fingerprint=key, candidate_present=candidate.is_file() and not candidate.is_symlink())
         if consumer is not None:
             # Pure declaration mode ends before any qualified normal preparation.
             # The finite captured import scope remains active for execution.
@@ -363,6 +353,9 @@ class TextureAuthority:
                 or list(s.products[0].paths) != s.outputs or s.products[0].optional_paths):
             raise AuthorityRefused('texture script/settings/output role differs from the finite profile')
         self.controllers = {s.name: s.controller.request(self.checkout) for s in selected if s.controller is not None}
+        from atelier.build_audit import _bind_captured_runtime
+        self.runtime = _bind_captured_runtime(self.step, checkout=self.checkout,
+                                             issuer_files=manifest['issuer_files'])
         self.guard_relative = 'build/build-v2/legacy-host/' + self.nonce + '/guards/texture'
         self.guard_directory = self.checkout / self.guard_relative
         self.audit_root = self.guard_directory / 'audit'
@@ -427,7 +420,8 @@ class TextureAuthority:
                        'sources': self.witness('games/yorimichi/legacy_qualification.py')}
         old = _prior_record(self.client)
         if old is not None:
-            scope = old.get('frame', {}).get('scope')
+            previous_frame = old.get('frame')
+            scope = None if previous_frame is None else previous_frame['scope']
             allowed = {'control.hash-index.prepare', self.step.name}
             if scope is not None and any(task['id'] not in allowed for task in scope['tasks']):
                 raise AuthorityRefused('old epoch includes an unqualified game-family repair scope')
@@ -480,7 +474,6 @@ class TextureAuthority:
         if code is not None or self.returned not in (None, 0):
             raise AuthorityRefused('texture task failed; original outputs/certificates remain fenced')
         index = ctx.build_hash_index
-        index.close()  # commit/close is inside the operational task, before settlement
         key = self.build.fingerprint(step, {}, index=index, tool_cache=ctx.build_tool_cache)
         stamp = read_stamp(ctx.stamps / (step.name + '.json'))
         if (key != self.step_key or stamp.get('fingerprint') != key
@@ -488,6 +481,18 @@ class TextureAuthority:
                 or not build_products.valid_records(step, stamp.get('products', {}), hasher=index.digest)):
             raise AuthorityRefused('original texture completion is no longer current')
         self.completed = True
+
+    def checkpoint_complete(self, ctx, invalid):
+        self.final_invalid = invalid
+        self.finalized = True
+
+    def before_collection(self, ctx):
+        from atelier.build_v2.legacy_client import AuthorityRefused
+        raise AuthorityRefused('global retention collection needs its separately qualified finalization scope')
+
+    def after_index(self, ctx):
+        if getattr(self, 'finalized', False):
+            self.after_checkpoint(ctx, self.final_invalid)
 
     def after_checkpoint(self, ctx, invalid):
         if not getattr(self, 'completed', False):
@@ -516,12 +521,8 @@ class TextureAuthority:
                            sysconfig.get_path('stdlib'), sysconfig.get_path('platstdlib')]))
 
     def audit_argv(self, specification):
-        from atelier.build_v2.legacy_action import BOOTSTRAP
-        raw = dict(self.files)['platform/studio/atelier/build_v2/controller_client.py']
-        client = Path(self.manifest['distribution']) / 'platform/studio/atelier/build_v2/controller_client.py'
-        startup = self.checkout / ('build/build-v2/legacy-host/' + self.nonce + '/startup.json')
-        return [self.manifest['interpreter_role'], '-I', '-S', '-B', '-c', BOOTSTRAP,
-                str(client), self.hashlib.sha256(raw).hexdigest(), str(startup), str(specification)]
+        from atelier.build_v2.legacy_action import worker_argv
+        return worker_argv(self.manifest, specification, self.files)
 
     def action_environment(self, extra):
         from atelier.build_source import environment
