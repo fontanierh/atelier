@@ -106,25 +106,36 @@ The startup manifest also borrows `issuer_files` directly from the existing host
 `GameIssuer.files`. The child must use only this exact named captured roster to check the same
 framed issuer digest; it must not rediscover a live closure or substitute an unbound sidecar list.
 
-The coupled Python entry is a discovery-only checkpoint. Normal managed legacy selections
-carry their original request and captured provider through pure global declaration preflight,
-the verified controller image, actual Rust-owned startup, and the pinned nonsite scheduler.
-The fixed game provider uses the existing recipe factory and `Graph`; unknown computed
-source loads refuse before execution. The original preflight source object is retained and
-revalidated before bootstrap, rather than recapturing changed code under an old preflight.
-Plain Cargo/test output metadata does not itself classify a checkout as managed; global
-controller declarations or the B3 install metadata root do, including lock-only metadata.
-Exact controller-only execution and genuinely unmanaged normal execution retain their routes.
+The coupled Python entry currently supports captured discovery, selected-controller order,
+and one closed operational preparation family. Normal managed selections carry their original
+request and captured provider through pure global declaration preflight, the verified controller
+image, actual Rust-owned startup, and the pinned nonsite scheduler. Unknown computed source loads
+refuse before execution. Global controller declarations or the B3 install metadata root classify
+management, including lock-only metadata; selectors cannot hide an old epoch. Exact controller-only
+and genuinely unmanaged execution retain their routes.
 
-The host already creates the exact default output directory and checkpoint writer. Repeating
-that mkdir is not a legitimate new task. Discovery therefore stays read-only under held guards,
-without creating an epoch, active frame, mutation permission, settlement, replay credit or Finish. It ends Held
-before `Context`, HashIndex, checkpoint/store preparation, restoration or any task. An existing
-epoch requires repair and is not discarded. Read-only discovery does not create a needless
-new incomplete epoch. This checkpoint does not complete the originally
-proposed operational DiscoveryControl frame or same-scope repair; it cannot activate mixed mode.
-Course-order verification, all mutation/batch/replan/final-graph hooks, complete repair,
-content-child custody and peak-history/provider binding remain separate unfinished work.
+Controllers selected by the original Graph use the original controller path before the legacy
+host. Their private original requests and observed keys are checked again by Rust through the
+same controller preparation/A3 and cache-free receipt validation under the actual build+EX guards.
+An existing epoch suppresses controller dispatch: only the sealed selection permit allows the
+fresh Current observation after resume or Supersede. An unselected course is never dispatched,
+and controller keys never enter legacy fingerprints.
+
+Read-only discovery receives no mutation permission. The existing HashIndex constructor/close
+is a separate closed ControlPreparation task covering exactly its SQLite file and three possible
+sidecars. Permission precedes mutation; complete file/absence observations follow close before
+settlement. The disposable index's ordinary memory fallback remains valid and does not certify
+cache availability. Same-source continuation revalidates settlement without replay; a changed
+source cohort requires the existing Supersede and complete ClosedReplay, preserving the counter
+and dropping old settlement credit. Unknown old scopes remain fenced.
+
+This is a partial operational checkpoint, not target completion: game/native task execution,
+restoration, batches, replan, final Graph validation, full repair and Finish remain unsupported.
+The first actual independent game task is an audited light Python texture producer with no
+matching retained action in the observed checkout. Its captured worker/body, guarded light-child
+custody and original certification/finalization remain required before it may run. Existing
+Linux discovery-fixture assertions must be reconciled with this newer Mac debug checkpoint before
+claiming a new hosted integration pass. Earlier immutable discovery proofs remain unchanged.
 
 The hosted entry fixture first verifies the normally compiled binary's captured source identity
 and publishes only its ordinary helper-cache receipt as explicit fixture setup. The tested path

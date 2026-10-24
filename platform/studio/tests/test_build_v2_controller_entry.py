@@ -8,6 +8,14 @@ from atelier.build_v2 import controller_entry as entry
 from atelier.build_v2.controller_recipe import ControllerTarget
 
 
+@pytest.fixture(autouse=True)
+def original_fixture_checkout(tmp_path, monkeypatch):
+    # These injected recipe callers own this temporary checkout. Real local build
+    # metadata must not reclassify the fixture as the developer's managed checkout.
+    from atelier.build_v2 import legacy_entry
+    monkeypatch.setattr(legacy_entry, '_checkout', lambda: tmp_path)
+
+
 def marker():
     return ControllerTarget('data.copy', 'fixture', {
         'schema_version': 2, 'cache_version': 'v2-1', 'units': [{
@@ -16,6 +24,36 @@ def marker():
             'outputs': [{'id': 'copy', 'logical_path': '/Game/Data/copy.json', 'class': 'JsonData',
                          'destination': 'checkout', 'files': [{'path': 'copy.json', 'install_path': 'Game/copy.json'}]}],
         }]}, {'data.copy': {}}, {}, ('Game',))
+
+
+@pytest.mark.parametrize('outcome', ['current', 'executed', 'stored_hit'])
+def test_mixed_obligation_reuses_original_controller_observation_without_python_key(outcome, tmp_path, monkeypatch):
+    monkeypatch.setattr(paths, 'REPO', tmp_path)
+    original = marker().request(tmp_path)
+    observed = {'state': 'observed', 'cancelled': False, 'report': {'observation': {
+        'summary': {'units': [{'unit': 'data.copy', 'key': 'a' * 64, 'outcome': outcome,
+                               'unsatisfied_checkout': False}]},
+        'cancellation_requested': False, 'final_requirements_satisfied': True,
+        'source_finalization': 'complete', 'root_finalization': 'not_opened'}}}
+    calls = []
+    def invoke(owned, **kwargs):
+        calls.append(owned.request(tmp_path))
+        return observed
+    monkeypatch.setattr(entry, '_invoke_marker', invoke)
+    assert entry.fulfill_for_legacy(original, echo=lambda _: None) == {
+        'unit': 'data.copy', 'key': 'a' * 64, 'request': original}
+    assert calls == [original]
+    observed['report']['observation']['root_finalization'] = 'incomplete'
+    with pytest.raises(ValueError, match='finalization is incomplete'):
+        entry.fulfill_for_legacy(original, echo=lambda _: None)
+    assert len(calls) == 2  # Each caller invokes once; no internal retry/fallback.
+    observed['report']['observation']['root_finalization'] = 'complete'
+    observed['report']['observation']['summary']['units'][0]['unsatisfied_checkout'] = True
+    with pytest.raises(ValueError, match='no fulfilled observation'):
+        entry.fulfill_for_legacy(original, echo=lambda _: None)
+    with pytest.raises(ValueError, match='unsupported original'):
+        entry.fulfill_for_legacy({**original, 'foreign': True}, echo=lambda _: None)
+    assert len(calls) == 3
 
 
 def test_controller_discovery_leaves_injected_legacy_recipe_selection_unchanged(monkeypatch):

@@ -195,7 +195,7 @@ def main(arguments=None):
                               'source_digest', 'issuer_digest', 'issuer_root', 'issuer_profile',
                               'host', 'root', 'locks', 'deadline_ns', 'work_deadline_ns', 'clock_domain', 'scheduler_request',
                               'interpreter', 'interpreter_digest', 'interpreter_role', 'python_context',
-                              'operational_environment', 'issuer_files'))
+                              'operational_environment', 'issuer_files', 'controller_obligations'))
             if (type(manifest['version']) is not int or manifest['version'] != 2
                     or manifest['clock_domain'] != CLOCK_ID):
                 raise BootstrapRefused('unsupported private startup version')

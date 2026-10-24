@@ -11,9 +11,10 @@ import subprocess
 import sys
 import sysconfig
 import uuid
+from dataclasses import dataclass
 
 from .controller_client import (
-    MAX_BINARY_BYTES, ControllerSource, _private_root, _read_at, capture_controller, capture_named_sources,
+    MAX_BINARY_BYTES, MAX_CONTROL_BYTES, ControllerSource, _private_root, _read_at, capture_controller, capture_named_sources,
     ensure_controller, verified_controller, write_control,
 )
 from .legacy_client import CLOCK_ID, host_budgets, scheduler_request
@@ -27,6 +28,12 @@ CLASSIFICATION_FILES = (
     'platform/studio/atelier/build_v2/controller_client.py',
     'platform/harness/harness/__init__.py', 'platform/harness/harness/compat.py',
 )
+
+
+@dataclass(frozen=True)
+class ManagedDiscovery:
+    source: ControllerSource
+    controllers: tuple
 
 
 def _checkout():
@@ -92,8 +99,8 @@ def prepare_discovery(game, wanted, *, verify=False, max_heavy_commands=None, fa
     manifest = {'checkout': str(checkout), 'issuer_digest': captured.digest,
                 'python_context': original_python_context()}
     with diagnostic_phase('entry.preflight'):
-        profile.discover(manifest, request, captured_files=captured.files)
-    return captured
+        observed = profile.discover(manifest, request, captured_files=captured.files)
+    return ManagedDiscovery(captured, tuple(observed['controllers']))
 
 
 def original_python_context():
@@ -128,7 +135,9 @@ def execute(game, wanted, *, discovery_source, verify=False, max_heavy_commands=
     the original bounded request and captured named provider bytes. It MUST preserve the
     original lexical interpreter role, installed C2c context and closed operational
     environment. Host failure/uncertainty MUST NOT fall back to the legacy scheduler or
-    manufacture Finish. No controller-owned task is implicitly dispatched here.
+    manufacture Finish. Only controllers selected by the original captured Graph may
+    run through the original controller path; a pending epoch MUST suppress that
+    dispatch and require the host's fresh Current check under its sealed repair permit.
     See test_build_v2_legacy_entry.py.
     """
     from atelier.harness.capacity_protocol import boot_id
@@ -146,9 +155,9 @@ def execute(game, wanted, *, discovery_source, verify=False, max_heavy_commands=
         interpreter = interpreter_role.resolve(strict=True)
         image = _read_at(interpreter.parent, interpreter.name, MAX_BINARY_BYTES)
         captured = capture_controller(checkout)
-        if not isinstance(discovery_source, ControllerSource):
+        if not isinstance(discovery_source, ManagedDiscovery):
             raise ValueError('managed startup requires the original captured discovery source')
-        issuer = discovery_source
+        issuer = discovery_source.source
         source_names = tuple(name for name, _ in issuer.files)
         if capture_named_sources(checkout, source_names).digest != issuer.digest:
             raise ValueError('game discovery source changed after original global preflight')
@@ -157,6 +166,14 @@ def execute(game, wanted, *, discovery_source, verify=False, max_heavy_commands=
         budgets = host_budgets(enclosing_deadline_ns=enclosing_deadline_ns)
     with diagnostic_phase('entry.helper'):
         helper = ensure_controller(checkout, build_root / 'build-v2/controller/helpers', echo=echo)
+    from .controller_entry import fulfill_for_legacy
+    epoch = checkout / 'build/build-v2/install/legacy-epoch.json'
+    # Presence is only a routing observation. Rust validates/resumes the real
+    # epoch before any permission; no controller may run under a pending epoch.
+    repairing = epoch.exists() or epoch.is_symlink()
+    obligations = ([{'unit': original['targets'][0], 'key': None, 'request': original}
+                    for original in discovery_source.controllers] if repairing else
+                   [fulfill_for_legacy(original, echo=echo) for original in discovery_source.controllers])
     if helper.source != captured.digest or capture_controller(checkout).digest != captured.digest:
         raise ValueError('controller source changed during managed startup')
     if capture_named_sources(checkout, source_names).digest != issuer.digest:
@@ -168,6 +185,17 @@ def execute(game, wanted, *, discovery_source, verify=False, max_heavy_commands=
     write_control(control, 'request.json', request)
     os.chmod(control / 'request.json', 0o400)
     request_bytes = _read_at(control, 'request.json', 64 * 1024, owned=True)
+    controller_bindings = []
+    if obligations:
+        (control / 'controller-obligations').mkdir(mode=0o700)
+    for index, obligation in enumerate(obligations):
+        filename = f'controller-obligations/{index}.json'
+        write_control(control / 'controller-obligations', f'{index}.json', obligation['request'])
+        os.chmod(control / filename, 0o400)
+        raw = _read_at(control, filename, MAX_CONTROL_BYTES, owned=True)
+        controller_bindings.append({'unit': obligation['unit'], 'key': obligation['key'],
+                                    'request': {'path': f'build/build-v2/legacy-host/{nonce}/{filename}',
+                                                'digest': hashlib.sha256(raw).hexdigest(), 'size': len(raw)}})
     config = {
         'version': 2, 'nonce': nonce, 'selection': nonce, 'checkout': str(checkout),
         'output': str(build_root / game), 'distribution': str(control / 'distribution'),
@@ -175,6 +203,7 @@ def execute(game, wanted, *, discovery_source, verify=False, max_heavy_commands=
         'interpreter_digest': hashlib.sha256(image).hexdigest(),
         'interpreter_role': str(interpreter_role), 'python_context': context,
         'operational_environment': operational,
+        'controller_obligations': controller_bindings,
         'game_issuer': {'project': game, 'root': str(control / 'issuer'),
                         'files': [name for name, _ in issuer.files], 'digest': issuer.digest,
                         'profile': f'games/{game}/legacy_qualification.py'},

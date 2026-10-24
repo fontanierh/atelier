@@ -836,6 +836,27 @@ impl ReceiptReader {
         self.current_locked(unit)
     }
 
+    /// Read-only initial mixed ordering gate. The real host owns both guards;
+    /// any existing legacy epoch or install journal requires its separate repair
+    /// capability and cannot be bypassed by this startup observation.
+    pub(crate) fn receipt_status_legacy_startup(
+        &self,
+        guard: &BuildGuard,
+        writer: &crate::checkout_locks::ContentWriteGuard,
+        unit: &PreparedUnit,
+    ) -> Result<CurrentStatus, InstallError> {
+        self.guard_root(guard)?;
+        if !guard.owns_writer(writer) {
+            return Err(invalid("foreign initial legacy writer"));
+        }
+        if self.fs.occupied(JOURNAL)? || self.fs.occupied(crate::checkout_locks::LEGACY_EPOCH)? {
+            return Err(recovery(
+                "initial legacy receipt gate requires clean checkout",
+            ));
+        }
+        self.current_locked(unit)
+    }
+
     /// @cc [owner:fontanierh,label:correctness;safety] current-identity-observation-releases-custody
     /// Identity observation MUST reuse complete Current validation and retain no guard or FD.
     /// Returning metadata MUST NOT certify future byte availability; staging separately reacquires

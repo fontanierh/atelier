@@ -1,4 +1,4 @@
-"""Finite provider capture; real fresh-process Graph proof lives in the Rust T1a case."""
+"""Finite provider and scripted operational checks; real entry evidence is separate."""
 from pathlib import Path
 import ast
 from contextlib import contextmanager
@@ -7,6 +7,98 @@ import signal
 import json
 from types import SimpleNamespace
 import pytest
+
+
+@pytest.fixture
+def scripted_index_provider(tmp_path):
+    """Production control-family code with scripted RPCs; not Rust authority proof."""
+    from atelier import paths
+    from atelier.source_imports import ImportScanner
+    from atelier.build_v2.controller_client import capture_named_sources
+    from atelier.build_v2.legacy_qualification import CapturedCode, captured_spec
+    name = 'games/yorimichi/legacy_qualification.py'
+    raw = (paths.REPO / name).read_bytes()
+    spec = captured_spec('scripted_index_profile', CapturedCode(str(paths.REPO / name), raw))
+    profile = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(profile)
+    members = {source.relative_to(paths.REPO).as_posix() for source in
+               ImportScanner().local_imports(paths.REPO / 'platform/studio/atelier/build_hashes.py')}
+    members.add(name)
+    for member in members:
+        target = tmp_path / member
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes((paths.REPO / member).read_bytes())
+    captured = capture_named_sources(tmp_path, sorted(members))
+    captured.materialize(tmp_path / 'issuer')
+    (tmp_path / 'build/yorimichi').mkdir(parents=True)
+    manifest = {'checkout': str(tmp_path), 'issuer_root': str(tmp_path / 'issuer'),
+                'issuer_files': list(sorted(members)), 'issuer_digest': captured.digest,
+                'source_digest': 'b' * 64, 'nonce': 'c' * 32,
+                'scheduler_request': {'digest': 'd' * 64},
+                'python_context': {'platform_roots': []}}
+    request = {'game': 'yorimichi', 'wanted': ['data.stage'], 'options': {'verify': False}}
+    class ScriptedClient:
+        record_digest = None
+        frame = None
+        def __init__(self, deny=False):
+            self.calls, self.deny = [], deny
+        def request(self, operation):
+            self.calls.append(operation)
+            if operation['type'] == 'begin_attempt' and self.deny:
+                raise RuntimeError('scripted intent refusal')
+            if operation['type'] == 'advance':
+                self.frame = 1
+            return {}
+    return SimpleNamespace(root=tmp_path, run=lambda client: profile._control_index(manifest, request, client),
+                           client=ScriptedClient)
+
+
+def test_actual_hash_index_provider_refuses_before_write_when_intent_is_not_granted(scripted_index_provider):
+    case = scripted_index_provider
+    client = case.client(deny=True)
+    with pytest.raises(RuntimeError, match='intent refusal'):
+        case.run(client)
+    assert [item['type'] for item in client.calls] == ['prepare_selection', 'advance', 'begin_attempt']
+    assert not (case.root / 'build/yorimichi/.state').exists()
+
+
+def test_actual_hash_index_provider_closes_and_validates_complete_scope_before_settlement(scripted_index_provider):
+    case = scripted_index_provider
+    client = case.client()
+    case.run(client)
+    assert [item['type'] for item in client.calls] == ['prepare_selection', 'advance', 'begin_attempt', 'settle']
+    scope = client.calls[1]['observation']['tasks'][0]['writes']
+    outputs = client.calls[-1]['observation']['outputs']
+    assert [item['path'] for item in scope] == [item['path'] for item in outputs]
+    assert outputs[0]['fact']['kind'] == 'file'
+    assert all(item['fact']['kind'] == 'absent' for item in outputs[1:])
+    assert (case.root / outputs[0]['path']).read_bytes().startswith(b'SQLite format 3')
+
+
+def test_actual_hash_index_provider_refuses_link_before_intent_and_preserves_foreign_bytes(scripted_index_provider):
+    case = scripted_index_provider
+    state = case.root / 'build/yorimichi/.state'
+    state.mkdir()
+    foreign = case.root / 'foreign'
+    foreign.write_bytes(b'preserve foreign bytes')
+    (state / 'file-hashes.sqlite3').symlink_to(foreign)
+    client = case.client()
+    with pytest.raises(OSError):
+        case.run(client)
+    assert 'begin_attempt' not in [item['type'] for item in client.calls]
+    assert foreign.read_bytes() == b'preserve foreign bytes'
+
+
+def test_actual_hash_index_provider_keeps_normal_memory_fallback_and_corrupt_hint_bytes(scripted_index_provider):
+    case = scripted_index_provider
+    state = case.root / 'build/yorimichi/.state'
+    state.mkdir()
+    hint = state / 'file-hashes.sqlite3'
+    hint.write_bytes(b'not a SQLite database; preserve this hint')
+    client = case.client()
+    case.run(client)
+    assert client.calls[-1]['type'] == 'settle'
+    assert hint.read_bytes() == b'not a SQLite database; preserve this hint'
 
 
 @pytest.fixture

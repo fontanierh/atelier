@@ -95,16 +95,23 @@ def execute(step, *, echo=print):
     marker = step.controller
     if not isinstance(marker, ControllerTarget):
         raise ValueError('normal controller dispatch requires its typed marker')
+    return _result_code(_invoke_marker(marker, echo=echo), echo=echo)
+
+
+def _invoke_marker(marker, *, echo):
     checkout = paths.REPO
     state = paths.build_root() / 'build-v2' / 'controller'
     helper = ensure_controller(checkout, state / 'helpers', echo=echo)
-    result = invoke_controller(checkout, helper, marker, state / 'runs', {
+    return invoke_controller(checkout, helper, marker, state / 'runs', {
         'cache_root': str(paths.cache_dir('build-v2', create=False).absolute()),
         'interpreter': str(Path(sys.executable).absolute()), 'provenance': provenance(checkout),
         # Retention namespace only, explicitly excluded from A3 item identities.
         'worktree_id': hashlib.sha256(str(checkout).encode()).hexdigest(),
         'memory_gib': 2, 'job_seconds': 120, 'cleanup_seconds': 30, 'overall_seconds': 1800,
     }, echo=echo)
+
+
+def _result_code(result, *, echo):
     report = result['report']
     if report is not None:
         observation = report['observation']
@@ -119,3 +126,35 @@ def execute(step, *, echo=print):
     echo('Build controller did not certify target fulfillment; retained report/logs describe the incomplete boundary')
     echo(f"Private failure diagnostic locator: {result.get('diagnostic_log', 'none retained')}")
     return 130 if result['cancelled'] else 1
+
+
+def fulfill_for_legacy(request, *, echo=print):
+    """Use the original controller, returning observations for Rust's fresh Current gate.
+
+    The returned key is never an adopted receipt or permission: the legacy host must
+    independently prepare the original request and validate Current under its own guards.
+    """
+    expected = {'version', 'checkout', 'project', 'allowed_install_roots', 'declaration',
+                'targets', 'data_contract', 'staged_inputs'}
+    if (type(request) is not dict or set(request) != expected or request['version'] != 1
+            or request['checkout'] != str(paths.REPO) or type(request['targets']) is not list
+            or len(request['targets']) != 1 or set(request['data_contract']) != {'content_slots'}):
+        raise ValueError('unsupported original controller obligation')
+    marker = ControllerTarget(request['targets'][0], request['project'], request['declaration'],
+                              request['staged_inputs'], request['data_contract']['content_slots'],
+                              tuple(request['allowed_install_roots']))
+    if marker.request(paths.REPO) != request:
+        raise ValueError('controller obligation does not preserve its original declaration')
+    result = _invoke_marker(marker, echo=echo)
+    if _result_code(result, echo=echo) != 0:
+        raise ValueError('selected controller obligation did not complete')
+    observation = result['report']['observation']
+    if (observation['source_finalization'] != 'complete'
+            or observation['root_finalization'] not in ('complete', 'not_opened')):
+        raise ValueError('selected controller finalization is incomplete; completed work retained')
+    summary = observation['summary']
+    units = [] if summary is None else [unit for unit in summary['units'] if unit['unit'] == marker.unit]
+    if (len(units) != 1 or units[0]['unsatisfied_checkout']
+            or units[0]['outcome'] not in ('current', 'executed', 'stored_hit')):
+        raise ValueError('selected controller obligation has no fulfilled observation')
+    return {'unit': marker.unit, 'key': units[0]['key'], 'request': request}

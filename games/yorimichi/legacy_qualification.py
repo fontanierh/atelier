@@ -1,7 +1,8 @@
-"""Yorimichi's initial managed declaration profile; tasks remain unsupported.
+"""Yorimichi's managed declaration and closed hash-index preparation profile.
 
-Only the existing recipe's discovery is entered. The named files below are code
-providers, not a certificate that every data.stage prerequisite can execute/repair.
+The existing recipe and one normal operational metadata task are entered. Game/native
+tasks remain unsupported. The named files below are code providers, not a certificate
+that every data.stage prerequisite can execute or repair.
 """
 from pathlib import Path
 
@@ -114,28 +115,201 @@ def discover(manifest, request, *, captured_files=None):
                 graph = build_products.Graph(steps)
             with diagnostic_phase('discovery.select'):
                 selected = graph.select(request['wanted'])
-    return selected
+            controllers = [step.controller.request(checkout) for step in selected
+                           if step.controller is not None]
+            names = [step.name for step in selected]
+            # Diagnostic scheduling labels/family names only, never permission,
+            # source identity, arbitrary repr or raw command/input values.
+            first = next((step for step in selected if step.controller is None), None)
+            blocker = None if first is None else {
+                'unit': first.name, 'heavy': first.heavy, 'replan': first.replan,
+                'commands': [type(command).__name__ for command in first.commands],
+                'calls': [getattr(command.fn, '__module__', '') + '.' + getattr(command.fn, '__qualname__', '')
+                          for command in first.commands if type(command).__name__ == 'Call'],
+            }
+            if (first is not None and first.name == 'world.textures.leaf_broad'
+                    and not graph.prerequisites(first) and not first.references
+                    and blocker['commands'] == ['Python']):
+                from atelier.build_hashes import HashIndex
+                from atelier.build_cache import Store
+                # The actual existing fingerprint API and an in-memory verification
+                # index: no new encoder, persistent index write or cache authority.
+                key, _ = build.fingerprint_state(first, {}, index=HashIndex(verify=True), tool_cache={})
+                candidate = Store().action(key)
+                blocker.update(fingerprint=key, candidate_present=candidate.is_file() and not candidate.is_symlink())
+    return {'selected': names, 'controllers': controllers, 'first_legacy': blocker}
+
+
+def _prior_record(client):
+    """Bounded correlated observations only; the Rust host validates/resumes authority."""
+    import hashlib
+    from atelier.build_v2.controller_client import _json
+    if client.record_digest is None:
+        return None
+    raw = bytearray()
+    while True:
+        page = client.request({'type': 'observe', 'witnesses': [], 'record_offset': len(raw)})['record_page']
+        raw.extend(bytes.fromhex(page['hex']))
+        if len(raw) == page['total']:
+            break
+    if hashlib.sha256(raw).hexdigest() != client.record_digest:
+        raise ValueError('prior selection observation changed')
+    return _json(bytes(raw))
+
+
+def _control_index(manifest, request, client):
+    """@cc [owner:fontanierh,label:correctness;safety] closed-normal-hash-index-preparation
+    The existing HashIndex constructor/close MUST run only after its exact four SQLite
+    claims receive permission, and settlement MUST observe every file/absence after close.
+    The disposable hint's memory fallback MUST remain valid without certifying cache
+    availability. Same-source continuation MUST revalidate old outputs; source changes
+    MUST use Supersede with complete ClosedReplay and no counter reset/old settled credit.
+    Unknown prior scopes MUST refuse. No game/native/restore or Graph Finish permission
+    is granted. See test_legacy_qualification.py control-index regressions.
+    """
+    import hashlib
+    import os
+    import stat
+    import sqlite3
+    import _sqlite3
+    import types
+    from atelier.build_v2.controller_client import _read_at, MAX_SOURCE_TOTAL_BYTES
+    from atelier.build_v2.legacy_client import AuthorityRefused
+    from atelier.build_v2.legacy_qualification import CapturedCode, IdentityBinding, captured_recipe_imports, verify_callable
+    checkout = Path(manifest['checkout'])
+    base = 'build/yorimichi'
+    paths = tuple(base + '/.state/file-hashes.sqlite3' + suffix for suffix in ('', '-journal', '-wal', '-shm'))
+    task = 'control.hash-index.prepare'
+    files = [(name, _read_at(manifest['issuer_root'], name, 8 * 1024 * 1024)) for name in manifest['issuer_files']]
+
+    def witness(name):
+        try:
+            raw = _read_at(checkout, name, MAX_SOURCE_TOTAL_BYTES)
+        except FileNotFoundError:
+            return {'path': name, 'fact': {'kind': 'absent'}}
+        mode = stat.S_IMODE(os.lstat(checkout / name).st_mode)
+        return {'path': name, 'fact': {'kind': 'file', 'digest': hashlib.sha256(raw).hexdigest(),
+                                     'size': len(raw), 'mode': mode}}
+
+    anchor = os.lstat(checkout / base)
+    if not stat.S_ISDIR(anchor.st_mode):
+        raise AuthorityRefused('control preparation output anchor is not a real directory')
+    anchor = {'path': base, 'device': anchor.st_dev, 'inode': anchor.st_ino}
+    claims = [{'path': name, 'canonical': name, 'anchor': anchor} for name in paths]
+    source = f'games/{request["game"]}/legacy_qualification.py'
+    observation = {'project': request['game'], 'selector': request['wanted'],
+                   'source_plan': manifest['issuer_digest'],
+                   'request_digest': manifest['scheduler_request']['digest'],
+                   'issuer': manifest['issuer_digest'], 'controller_source': manifest['source_digest'],
+                   'roots': [base + '/.state'], 'sources': [witness(source)]}
+    frame = {'profile': 'control_preparation', 'topology': manifest['issuer_digest'], 'inputs': [],
+             'tasks': [{'id': task, 'replay': 'closed_replay', 'writes': claims}]}
+    old = _prior_record(client)
+    if old is not None:
+        previous = old.get('frame')
+        if previous is not None:
+            scope = previous['scope']
+            if (scope['profile'] != 'control_preparation' or len(scope['tasks']) != 1
+                    or scope['tasks'][0]['id'] != task
+                    or scope['tasks'][0]['replay'] != 'closed_replay'
+                    or [item['path'] for item in scope['tasks'][0]['writes']] != list(paths)):
+                raise AuthorityRefused('existing epoch is outside the exact hash-index repair family')
+        same = all(old['binding'].get(key) == observation[key] for key in observation if key != 'sources')
+        expected_sources = {name: witness(name) for name, _ in files}
+        same = same and {item['path']: item for item in old['binding']['sources']} == expected_sources
+        if not same:
+            client.request({'type': 'supersede', 'observation': observation, 'initial_frame': frame})
+            previous = None  # No old settled credit; the same complete claims replay.
+        else:
+            client.request({'type': 'prepare_selection', 'observation': observation})
+            if previous is not None and not previous['pending']:
+                settled = previous['settled']
+                if len(settled) != 1 or settled[0]['task'] != task:
+                    raise AuthorityRefused('existing control settlement is incomplete')
+                client.request({'type': 'observe', 'witnesses': settled[0]['outputs'], 'record_offset': None})
+                print('Managed hash-index preparation: prior settlement revalidated; no replay', flush=True)
+                return
+    else:
+        client.request({'type': 'prepare_selection', 'observation': observation})
+        previous = None
+    if client.frame is None:
+        client.request({'type': 'advance', 'observation': frame})
+    attempt = 'index-' + manifest['nonce']
+    # Every possible SQLite sidecar is checked before the closed replay permission.
+    for name in paths:
+        witness(name)
+    client.request({'type': 'begin_attempt', 'attempt': {
+        'id': attempt, 'members': [task], 'execution': {'kind': 'in_process'}, 'guard': None}})
+    sources = [CapturedCode(str(checkout / name), raw) for name, raw in files if name.endswith('.py')]
+    with captured_recipe_imports(sources, checkout=checkout,
+                                 platform_roots=manifest['python_context']['platform_roots']):
+        from atelier import build_hashes
+        code = next(item for item in sources if item.filename == str(checkout / 'platform/studio/atelier/build_hashes.py'))
+        if (sqlite3.connect is not _sqlite3.connect or sqlite3.Connection is not _sqlite3.Connection
+                or type(sqlite3.connect) is not types.BuiltinFunctionType):
+            raise AuthorityRefused('installed SQLite entry differs from the checked platform provider')
+        verify_callable(build_hashes.HashIndex.__init__, code, qualname='HashIndex.__init__',
+                        namespace=build_hashes.__dict__, defaults=(None,),
+                        keyword_defaults={'read_only': False, 'verify': False},
+                        globals_={'Path': IdentityBinding(Path), 'sqlite3': IdentityBinding(sqlite3)},
+                        builtins_={'OSError': IdentityBinding(OSError)})
+        verify_callable(build_hashes.HashIndex.close, code, qualname='HashIndex.close',
+                        namespace=build_hashes.__dict__, globals_={'sqlite3': IdentityBinding(sqlite3)})
+        for method in ('__enter__', '__exit__'):
+            verify_callable(getattr(build_hashes.HashIndex, method), code,
+                            qualname='HashIndex.' + method, namespace=build_hashes.__dict__)
+        # Execute the actual normal implementation, not a second index/cache.
+        with build_hashes.HashIndex(checkout / paths[0], verify=request['options']['verify']) as index:
+            usable = index.connection is not None
+    if usable:
+        try:
+            with sqlite3.connect((checkout / paths[0]).as_uri() + '?mode=ro', uri=True, timeout=.1) as database:
+                names = {row[0] for row in database.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+                usable = (database.execute('PRAGMA quick_check').fetchall() == [('ok',)]
+                          and names == {'hashes_v1', 'memos_v1'})
+        except sqlite3.Error:
+            usable = False
+    # This is a disposable hint, not an output/cache authority. Preserve the
+    # actual constructor's memory fallback and every existing byte on failure.
+    # Settlement certifies complete bounded effects, never a usable cached digest.
+    outputs = [witness(name) for name in paths]
+    client.request({'type': 'settle', 'observation': {
+        'task': task, 'attempt': attempt, 'inputs': manifest['issuer_digest'], 'outputs': outputs}})
+    print('Managed hash-index preparation: actual normal implementation settled; '
+          f'hint={"usable" if usable else "unavailable"}; no game task permission', flush=True)
 
 
 def run(*, manifest, request, client, custody):
-    """Discover read-only, then hold without a new epoch or task/control permission.
+    """Discover, fulfill controller order, and prepare/repair one real metadata task.
 
-    No completion/Finish is issued: selected course ordering, mutation profiles, batch and
-    replan/final Graph/repair are not yet implemented. An old epoch is not superseded here.
+    No target completion/Finish is issued: game/native mutation, batch, replan and final
+    Graph validation remain unsupported. Only exact hash-index claims may replay.
     """
     from atelier.build_v2.legacy_client import AuthorityRefused
     if request['game'] != 'yorimichi' or set(custody) != {'build', 'content', 'writer'}:
         raise AuthorityRefused('unsupported managed declaration profile')
-    if client.record_digest is not None:
-        raise AuthorityRefused('existing selection requires qualified ordinary repair')
     checkout = Path(manifest['checkout'])
     output = checkout / 'build/yorimichi'
     if Path(manifest['output']) != output:
         raise AuthorityRefused('discovery supports only the anchored default project output')
     # The host already created the exact output root and writer. Repeating that
     # mkdir is not a genuine mutating task, and cannot justify a whole-output claim.
-    # No Prepare/Advance/BeginAttempt or settled/replay credit is fabricated.
+    # Read-only discovery itself receives no mutation/replay credit. The separate
+    # closed hash-index task below uses real original operations and permissions.
     selected = discover(manifest, request)
-    print(f'Managed captured recipe discovery: {len(selected)} selected declarations; '
-          'HELD Unsupported before Context/task preparation', flush=True)
-    raise AuthorityRefused('selected task/control preparation and course obligations remain unsupported')
+    obligations = manifest['controller_obligations']
+    if len(obligations) != len(selected['controllers']):
+        raise AuthorityRefused('selected controller obligations do not match the actual Graph')
+    import json
+    from atelier.build_v2.controller_client import _read_at
+    for index, (binding, original) in enumerate(zip(obligations, selected['controllers'])):
+        if binding['unit'] != original['targets'][0]:
+            raise AuthorityRefused('selected controller ordering differs from original Graph')
+        bound = json.loads(_read_at(checkout, binding['request']['path'], 2 * 1024 * 1024))
+        if bound != original:
+            raise AuthorityRefused('selected controller declaration changed after fulfillment')
+    _control_index(manifest, request, client)
+    print('Managed next unsupported selected task: ' + json.dumps(selected['first_legacy'], sort_keys=True)[:768], flush=True)
+    print(f'Managed captured recipe discovery: {len(selected["selected"])} selected declarations; '
+          'HELD Unsupported before game-task dispatch', flush=True)
+    raise AuthorityRefused('selected game-task execution, repair and final Graph completion remain unsupported')

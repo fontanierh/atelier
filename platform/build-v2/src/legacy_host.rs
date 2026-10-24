@@ -55,6 +55,7 @@ pub struct HostConfig {
     pub interpreter_role: PathBuf,
     pub python_context: PythonContext,
     pub operational_environment: OperationalEnvironment,
+    pub controller_obligations: Vec<ControllerObligation>,
     pub game_issuer: GameIssuer,
     pub control_directory: String,
     pub deadline_ns: u64,
@@ -97,6 +98,14 @@ pub struct SchedulerRequest {
     pub path: String,
     pub digest: String,
     pub size: u64,
+}
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ControllerObligation {
+    pub request: SchedulerRequest,
+    pub unit: String,
+    #[serde(deserialize_with = "required_optional")]
+    pub key: Option<String>,
 }
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -458,6 +467,13 @@ fn strict_record<T: serde::de::DeserializeOwned>(bytes: &[u8]) -> io::Result<T> 
         match v {
             serde_json::Value::Object(m) => {
                 for (k, value) in m {
+                    if k == "attempt"
+                        && m.get("type").and_then(serde_json::Value::as_str)
+                            == Some("begin_attempt")
+                        && !value.is_object()
+                    {
+                        return Err(error("positional begin-attempt record"));
+                    }
                     walk(value, k, key)?;
                 }
             }
@@ -488,7 +504,6 @@ fn strict_record<T: serde::de::DeserializeOwned>(bytes: &[u8]) -> io::Result<T> 
             "operation",
             "observation",
             "initial_frame",
-            "attempt",
             "root",
             "process",
             "parent",
@@ -610,6 +625,113 @@ struct StartupManifest<'a> {
     interpreter_role: &'a Path,
     python_context: &'a PythonContext,
     operational_environment: &'a OperationalEnvironment,
+    controller_obligations: &'a [ControllerObligation],
+}
+
+fn verify_controller_obligations(
+    config: &HostConfig,
+    original: &OrdinaryRequest,
+    build: &crate::checkout_locks::BuildGuard,
+    write: &crate::checkout_locks::ContentWriteGuard,
+    permit: Option<&epoch::SelectionPermit<'_, '_>>,
+) -> io::Result<()> {
+    use crate::install::{CurrentStatus, InstallPolicy, ProjectNamespace, ReceiptReader};
+    use crate::keys::{KeyContext, ProducedGroups, ProducedItems};
+    if config.controller_obligations.len() > 64 {
+        return Err(error("too many original controller obligations"));
+    }
+    let fs = RootFs::open(&config.checkout)?;
+    let mut units = std::collections::BTreeSet::new();
+    for (index, obligation) in config.controller_obligations.iter().enumerate() {
+        if !units.insert(&obligation.unit)
+            || obligation
+                .key
+                .as_ref()
+                .is_some_and(|key| !valid_digest(key))
+            || (obligation.key.is_none() && permit.is_none())
+            || !valid_digest(&obligation.request.digest)
+            || obligation.request.size == 0
+            || obligation.request.size > crate::controller::MAX_CONTROL_BYTES as u64
+            || obligation.request.path
+                != format!(
+                    "{}/controller-obligations/{index}.json",
+                    config.control_directory
+                )
+        {
+            return Err(error("invalid original controller obligation binding"));
+        }
+        let bytes = read_bounded(
+            &fs,
+            &obligation.request.path,
+            crate::controller::MAX_CONTROL_BYTES,
+            true,
+        )?;
+        if bytes.len() as u64 != obligation.request.size
+            || sha256(&bytes) != obligation.request.digest
+        {
+            return Err(error("original controller obligation request changed"));
+        }
+        let request = crate::controller::ControllerRequest::parse(&bytes).map_err(error)?;
+        if request.checkout != config.checkout
+            || request.project != original.game
+            || request.targets != [obligation.unit.clone()]
+        {
+            return Err(error("foreign controller obligation request"));
+        }
+        let prepared = crate::controller::prepare(&request).map_err(error)?;
+        let selected = prepared
+            .graph
+            .select(&prepared.targets, &prepared.sources.snapshot)
+            .map_err(error)?;
+        if selected.order() != [obligation.unit.clone()] {
+            return Err(error("initial controller obligation must be independent"));
+        }
+        let runtime = prepared
+            .runtimes
+            .get(&obligation.unit)
+            .ok_or_else(|| error("missing controller obligation runtime"))?;
+        let unit = crate::keys::prepare(
+            prepared.graph.declaration(),
+            selected.validation(),
+            &obligation.unit,
+            &KeyContext {
+                snapshot: &prepared.sources.snapshot,
+                versions: &prepared.sources.versions,
+                produced: &ProducedItems::new(),
+                produced_groups: &ProducedGroups::new(),
+                staged_inputs: &runtime.staged_inputs,
+                worker: &runtime.worker,
+                validator: &runtime.validator,
+            },
+            &mut crate::source_hashes::SourceHashCache::default(),
+        )
+        .map_err(error)?;
+        if obligation.key.as_ref().is_some_and(|key| unit.key() != key) {
+            return Err(error(
+                "controller obligation source/key changed after fulfillment",
+            ));
+        }
+        let reader = ReceiptReader::open(
+            &config.checkout,
+            InstallPolicy {
+                project: ProjectNamespace::new(&request.project).map_err(error)?,
+                allowed_install_roots: request.allowed_install_roots,
+            },
+        )
+        .map_err(error)?;
+        let current = if let Some(permit) = permit {
+            reader.receipt_status_selection(build, write, permit, &unit)
+        } else {
+            reader.receipt_status_legacy_startup(build, write, &unit)
+        }
+        .map_err(error)?;
+        if !matches!(current, CurrentStatus::Current(_)) {
+            return Err(error(
+                "controller obligation is not Current under legacy custody",
+            ));
+        }
+    }
+    Ok(())
 }
 fn absolute_context_path(path: &Path) -> io::Result<()> {
     use std::path::Component;
@@ -854,6 +976,10 @@ fn run_inner(config: HostConfig) -> io::Result<()> {
     }
     let existing = epoch::Selection::inspect(&build, &write)
         .map_err(|e| error(format!("host existing selection: {e}")))?;
+    if existing.is_none() {
+        verify_controller_obligations(&config, &original, &build, &write, None)
+            .map_err(|e| error(format!("host controller obligation: {e}")))?;
+    }
     let selection_id = existing
         .as_ref()
         .map_or(config.selection.as_str(), |old| old.selection.as_str());
@@ -893,6 +1019,7 @@ fn run_inner(config: HostConfig) -> io::Result<()> {
         interpreter_role: &config.interpreter_role,
         python_context: &config.python_context,
         operational_environment: &config.operational_environment,
+        controller_obligations: &config.controller_obligations,
     };
     let manifest_path = format!("{}/startup.json", config.control_directory);
     fs.publish_private_metadata(
@@ -1036,12 +1163,26 @@ fn run_inner(config: HostConfig) -> io::Result<()> {
                         )
                         .map_err(error)?
                     });
+                    verify_controller_obligations(
+                        &config,
+                        &original,
+                        &build,
+                        &write,
+                        Some(&selection.as_ref().unwrap().permit()),
+                    )?;
                     "prepared"
                 }
                 Operation::Advance { observation } => {
                     let s = selection
                         .as_mut()
                         .ok_or_else(|| error("selection not prepared"))?;
+                    verify_controller_obligations(
+                        &config,
+                        &original,
+                        &build,
+                        &write,
+                        Some(&s.permit()),
+                    )?;
                     let frame = issuer
                         .frame(observation, s.binding(), &fs, work_deadline)
                         .map_err(error)?;
@@ -1049,6 +1190,16 @@ fn run_inner(config: HostConfig) -> io::Result<()> {
                     "frame"
                 }
                 Operation::BeginAttempt { attempt } => {
+                    let s = selection
+                        .as_ref()
+                        .ok_or_else(|| error("selection not prepared"))?;
+                    verify_controller_obligations(
+                        &config,
+                        &original,
+                        &build,
+                        &write,
+                        Some(&s.permit()),
+                    )?;
                     if let epoch::AttemptKind::Guarded {
                         directory, launch, ..
                     } = &attempt.execution
@@ -1151,6 +1302,13 @@ fn run_inner(config: HostConfig) -> io::Result<()> {
                         )
                         .map_err(error)?,
                     );
+                    verify_controller_obligations(
+                        &config,
+                        &original,
+                        &build,
+                        &write,
+                        Some(&selection.as_ref().unwrap().permit()),
+                    )?;
                     "superseded"
                 }
                 Operation::Finish {
@@ -1346,6 +1504,7 @@ mod tests {
             interpreter_role: Path::new("/role/python"),
             python_context: &context,
             operational_environment: &environment,
+            controller_obligations: &[],
         };
         let encoded = serde_json::to_value(&manifest).unwrap();
         assert_eq!(
@@ -1516,6 +1675,20 @@ mod tests {
     }
     #[test]
     fn closed_host_codec_refuses_duplicate_unknown_positional_and_unbound_launch_records() {
+        let settle = serde_json::json!({"version": 2, "nonce": "nonce", "selection": "selection",
+            "sequence": 1, "frame": null, "previous_digest": null,
+            "operation": {"type": "settle", "observation": {"task": "control.hash-index.prepare",
+                "attempt": "original-attempt", "inputs": "a".repeat(64),
+                "outputs": [{"path": "build/fixture/.state/index", "fact": {"kind": "absent"}}]}}});
+        assert!(strict_record::<Request>(&serde_json::to_vec(&settle).unwrap()).is_ok());
+        let mut begin = serde_json::json!({"version": 2, "nonce": "nonce", "selection": "selection",
+            "sequence": 1, "frame": null, "previous_digest": null,
+            "operation": {"type": "begin_attempt", "attempt": {"id": "original-attempt",
+                "members": ["control.hash-index.prepare"], "execution": {"kind": "in_process"}, "guard": null}}});
+        assert!(strict_record::<Request>(&serde_json::to_vec(&begin).unwrap()).is_ok());
+        begin["operation"]["attempt"] =
+            serde_json::json!(["original-attempt", ["member"], {"kind": "in_process"}, null]);
+        assert!(strict_record::<Request>(&serde_json::to_vec(&begin).unwrap()).is_err());
         let issuer = br#"{"game_issuer":{"project":"fixture","root":"/captured/issuer","files":["games/fixture/legacy_qualification.py"],"digest":"digest","profile":"games/fixture/legacy_qualification.py"}}"#;
         #[derive(Deserialize)]
         #[serde(deny_unknown_fields)]
