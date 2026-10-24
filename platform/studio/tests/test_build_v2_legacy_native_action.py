@@ -31,7 +31,9 @@ def test_original_native_worker_argv_preserves_flags_and_binds_exact_bootstrap()
 def test_native_runtime_uses_selected_code_in_original_input_encoder_without_python_worker(tmp_path, monkeypatch):
     script = tmp_path / 'producer.py'
     script.write_text('value = 1\n')
-    names = {'producer.py', *native._WORKER}
+    helper = tmp_path / 'selected_helper.py'
+    helper.write_text('selected = 1\n')
+    names = {'producer.py', 'selected_helper.py', *native._WORKER}
     for name in native._WORKER:
         path = tmp_path / name
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -40,10 +42,13 @@ def test_native_runtime_uses_selected_code_in_original_input_encoder_without_pyt
                       products=[build.Product('result', (tmp_path / 'result',))], cache=True, heavy=True)
     assert native.captured_native_inputs(step) == ()
     monkeypatch.setattr(build_cache, 'tool_context', lambda *a, **k: {'checked': 'fixture-tool-context'})
-    runtime = native._bind_native_runtime(step, checkout=tmp_path, issuer_files=sorted(names))
+    runtime = native._bind_native_runtime(step, checkout=tmp_path, issuer_files=sorted(names), code_inputs=(helper,))
     assert set(runtime.files) == names - {'platform/studio/atelier/build_batch_worker.py'}
     assert not any(name.endswith(('build_audit_worker.py', 'legacy_bootstrap.py')) for name in runtime.files)
     assert set(native.captured_native_inputs(step)) <= set(build.required_inputs(step))
+    first = build.fingerprint(step, {})
+    helper.write_text('selected = 2\n')
+    assert build.fingerprint(step, {}) != first
     first = build.fingerprint(step, {})
     (tmp_path / 'platform/studio/atelier/build_v2/legacy_native_action.py').write_text('value = 2\n')
     assert build.fingerprint(step, {}) != first
@@ -563,3 +568,27 @@ def test_standalone_original_argv_preserves_arguments_without_batch_worker(tmp_p
         native.action_argv(build.Blender(tmp_path / 'unknown.py'), SimpleNamespace(blender='pinned'),
             runtime=runtime, startup=Path('/s'), specification=Path('/r'),
             specification_digest='a' * 64, capture_file=Path('/c'), capture_digest='b' * 64)
+
+
+@pytest.mark.parametrize('fault', ['foreign', 'link', 'duplicate', 'relative', 'not-python'])
+def test_native_extra_selected_code_refuses_unknown_or_aliased_roles(tmp_path, fault):
+    script = tmp_path / 'producer.py'; script.write_text('pass\n')
+    helper = tmp_path / 'selected.py'; helper.write_text('selected = 1\n')
+    names = {'producer.py', 'selected.py', *native._WORKER}
+    for name in native._WORKER:
+        path = tmp_path / name; path.parent.mkdir(parents=True, exist_ok=True); path.write_text('pass\n')
+    step = build.Step('fixed-native', [build.Blender(script, threads=3, factory_startup=True)])
+    roles = (helper,)
+    if fault == 'foreign':
+        names.remove('selected.py')
+    elif fault == 'link':
+        helper.unlink(); helper.symlink_to(script)
+    elif fault == 'duplicate':
+        roles = (helper, helper)
+    elif fault == 'relative':
+        roles = (Path('selected.py'),)
+    else:
+        roles = (tmp_path / 'selected.json',)
+    with pytest.raises((OSError, ValueError)):
+        native._bind_native_runtime(step, checkout=tmp_path, issuer_files=sorted(names), code_inputs=roles)
+    assert native.captured_native_inputs(step) == ()

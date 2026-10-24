@@ -38,12 +38,35 @@ def captured_native_inputs(step):
     return tuple(runtime.root / name for name in (*runtime.files, *runtime.validators))
 
 
-def _bind_native_runtime(step, *, checkout, issuer_files, verifier=None):
-    """Observe code roles only AFTER raw declaration qualification, never grant work."""
+def _bind_native_runtime(step, *, checkout, issuer_files, verifier=None, code_inputs=()):
+    """@cc [owner:fontanierh,label:correctness;safety] native-selected-executable-closure
+    Only the fixed issuer's independently qualified source closure MAY supplement
+    original projected inputs. Extra code MUST be anchored, nofollow, regular and
+    present in the frozen issuer; its actual bytes MUST enter the existing input
+    encoder and worker roster, without authorizing tasks, outputs or new execution.
+    The original projection and default callers MUST remain unchanged.
+    """
     from atelier.build import required_inputs
     root = Path(checkout)
     names = {path.relative_to(root).as_posix() for path in map(Path, required_inputs(step))
              if path.suffix == '.py'}
+    # The original recipe may deliberately omit unused import projections. The
+    # fixed family observer still supplies its complete independently checked
+    # executable closure, using the SAME existing task input encoder.
+    from .controller_client import _relative, _read_at, MAX_SOURCE_FILE_BYTES
+    if type(code_inputs) is not tuple:
+        raise ValueError('native selected code closure is not an immutable observation')
+    extra = []
+    for source in code_inputs:
+        source = Path(source)
+        if not source.is_absolute() or source.suffix != '.py':
+            raise ValueError('native selected code is not an absolute Python source role')
+        name = _relative(source.relative_to(root).as_posix())
+        if name not in issuer_files or name in extra:
+            raise ValueError('native selected code is duplicate or outside the frozen issuer')
+        _read_at(root, name, MAX_SOURCE_FILE_BYTES)  # anchored, regular, nofollow/current bytes
+        extra.append(name)
+    names.update(extra)
     names.update(_WORKER if step.batch is not None else _ACTION_WORKER)
     for name in tuple(names):
         parent = (root / name).parent

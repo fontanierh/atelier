@@ -412,13 +412,14 @@ class TextureAuthority:
             self.output_paths[step.name] = tuple(path for _, roots in profile.products for path in roots)
             self.generated_inputs.update(profile.produced_inputs)
         from legacy_treehouse_recolour_profile import qualify_treehouse_recolour
-        self.single_native = {}
+        self.single_native, self.native_qualifiers = {}, {}
         for step in selected:
             if not exports_ready or step.name != 'world.treehouse_trees.recolour':
                 continue
             profile = qualify_treehouse_recolour(step, checkout=self.checkout,
                                                 output_root=self.checkout / 'build/yorimichi')
             self.single_native[step.name] = profile
+            self.native_qualifiers[step.name] = qualify_treehouse_recolour
             self.native_steps[step.name], self.native_profiles[step.name] = step, profile
             self.output_paths[step.name] = tuple(path for _, roots in profile.products for path in roots)
             self.generated_inputs.update(profile.produced_inputs)
@@ -790,9 +791,8 @@ class TextureAuthority:
                                                         tool_cache=ctx.build_tool_cache)
         if step.name in self.single_native:
             from dataclasses import replace
-            from legacy_treehouse_recolour_profile import qualify_treehouse_recolour
-            actual = qualify_treehouse_recolour(replace(step), checkout=self.checkout,
-                                                output_root=self.checkout / 'build/yorimichi')
+            actual = self.native_qualifiers[step.name](replace(step), checkout=self.checkout,
+                                                       output_root=self.checkout / 'build/yorimichi')
             if actual != self.single_native[step.name]:
                 raise AuthorityRefused('standalone native declaration changed before permission')
         if step.name in self.data_steps:
