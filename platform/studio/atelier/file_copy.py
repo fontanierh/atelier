@@ -5,6 +5,8 @@ import os
 import shutil
 import sys
 
+from .atomic_files import _MANAGED_TEMPORARY
+
 
 @cache
 def clone_function():
@@ -15,9 +17,17 @@ def clone_function():
 
 
 def copy_file(source, destination):
-    """An APFS clone when available, otherwise a byte copy. Never a mutable hard/symbolic link."""
+    """@cc [owner:fontanierh,label:correctness;safety] managed-observable-independent-copy
+    Managed scratch execution MUST use the existing Python copy fallback without
+    granting ctypes access. Default unmanaged clone/fallback selection MUST remain
+    unchanged. Both paths MUST preserve independent exact bytes and mode0644;
+    private scope MUST NOT grant access to undeclared sources or destinations.
+    See test_file_copy and the original-observer managed-copy regression.
+    """
     destination.parent.mkdir(parents=True, exist_ok=True)
-    if sys.platform == 'darwin':
+    # Managed bodies use the existing observable Python copy path. No ctypes
+    # load/symbol access is granted by private scratch or product ownership.
+    if sys.platform == 'darwin' and _MANAGED_TEMPORARY.get() is None:
         if clone_function()(os.fsencode(source), os.fsencode(destination), 0) == 0:
             destination.chmod(0o644)
             return

@@ -313,7 +313,8 @@ def qualify_treehouse_assembly(step, *, checkout: Path, output_root: Path) -> Tr
         globals_={'ctypes': IdentityBinding(ctypes)})
     _verify(file_copy.copy_file, copy_code, qualname='copy_file',
         globals_={'clone_function': IdentityBinding(file_copy.clone_function), 'os': IdentityBinding(os),
-                  'shutil': IdentityBinding(shutil), 'sys': IdentityBinding(sys)})
+                  'shutil': IdentityBinding(shutil), 'sys': IdentityBinding(sys),
+                  '_MANAGED_TEMPORARY': IdentityBinding(atomic_files._MANAGED_TEMPORARY)})
     _verify(export_assembly.destination_members, assembly_code, qualname='destination_members',
         globals_={'json': IdentityBinding(json), 'name': IdentityBinding(export_manifest.name),
                   'regular_files': IdentityBinding(model_files.regular_files)},

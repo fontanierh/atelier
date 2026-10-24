@@ -1,8 +1,8 @@
-"""Captured code for the original guarded Blender batch, never an executor or issuer.
+"""Captured code for original guarded Blender actions, never an executor or issuer.
 
 The scheduler still owns member selection, ACKs, product checks and publication. This
 module only binds the used loader bytes to existing task inputs and installs a finite
-captured-code scope around the original batch worker.
+captured-code scope around the original batch worker or exact standalone script.
 """
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -80,8 +80,10 @@ def worker_argv(command, ctx, *, startup, specification, specification_digest, c
     """@cc [owner:fontanierh,label:correctness;safety] captured-original-native-worker-argv
     Preserve native flags and bind exact private bootstrap arguments in the real argv.
     The original factory/threads/environment and worker role MUST remain unchanged.
-    Only the exact batch worker MAY be replaced by the source-bound bootstrap; unknown
-    scripts or argument shapes MUST refuse. Private names MUST NOT become task keys.
+    The batch adapter MUST accept only the exact original worker with no arguments.
+    The standalone adapter MUST bind its exact script to the selected private runtime
+    and preserve original arguments. Unknown roles MUST refuse; private names MUST NOT
+    become task keys.
     """
     import json
     from atelier.build import Blender
@@ -774,7 +776,7 @@ def _fatal_native_audit(check):
 
 
 def main(manifest, specification, expected):
-    """Run only the original named batch worker inside its finite captured code scope."""
+    """Run the exact original batch worker or standalone action within its captured scope."""
     import hashlib
     import importlib.util
     import json

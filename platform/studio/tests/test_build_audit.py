@@ -657,3 +657,17 @@ def test_declared_script_resolution_does_not_grant_parent_metadata_or_unknown_pa
         assert a.output.read_text() == 'input'
     else:
         assert a.report()['violations']
+
+
+def test_managed_file_copy_remains_in_original_observer_without_ffi_permission(action, monkeypatch):
+    a = action
+    wrapper = a.root / 'owned-copy-audit-wrapper.py'
+    wrapper.write_text("import json,sys\nfrom pathlib import Path\nfrom atelier.atomic_files import managed_temporaries\nfrom atelier.build_audit_worker import execute\nspec=json.loads(Path(sys.argv[1]).read_text())\nwith managed_temporaries(Path(spec['scratch'])/'atomic-tmp'):\n    execute(spec)\n")
+    monkeypatch.setattr(build_audit, 'WORKER', wrapper)
+    a.code('from atelier.file_copy import copy_file\ncopy_file(source, output)')
+    from atelier.build_inputs import local_imports
+    a.step.inputs.extend(local_imports(a.script, (a.root,)))
+    assert a.run() == 0, a.messages
+    assert a.output.read_bytes() == b'input'
+    assert a.report()['passed'] and not a.report()['violations']
+    assert a.output.stat().st_mode & 0o777 == 0o644
