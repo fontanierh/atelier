@@ -229,6 +229,82 @@ impl RootFs {
         }
     }
 
+    /// Anchored persistent operational lock; never remove or replace this inode.
+    pub(crate) fn persistent_lock_file(&self, path: &str) -> io::Result<File> {
+        let (parent, leaf) = self.parent(path)?;
+        let file = opened(
+            &parent,
+            &leaf,
+            libc::O_RDWR | libc::O_CREAT | libc::O_NONBLOCK,
+            0o600,
+        )?;
+        if !file.metadata()?.is_file() {
+            return Err(invalid("operational lock is not regular"));
+        }
+        parent.sync_all()?;
+        let named = self
+            .observe(path)?
+            .ok_or_else(|| invalid("operational lock vanished"))?;
+        if !named.same_inode(&FileObservation::from_metadata(&file.metadata()?)) {
+            return Err(invalid("operational lock inode changed"));
+        }
+        Ok(file)
+    }
+
+    /// Bounded names in one anchored metadata directory, never a payload-tree walk.
+    pub(crate) fn metadata_names(&self, path: &str, maximum: usize) -> io::Result<Vec<String>> {
+        use std::os::fd::IntoRawFd;
+        let (parent, leaf) = self.parent(path)?;
+        let directory = opened(&parent, &leaf, libc::O_RDONLY | libc::O_DIRECTORY, 0)?;
+        let fd = directory.into_raw_fd();
+        let stream = unsafe { libc::fdopendir(fd) };
+        if stream.is_null() {
+            unsafe {
+                libc::close(fd);
+            }
+            return Err(io::Error::last_os_error());
+        }
+        struct Owned(*mut libc::DIR);
+        impl Drop for Owned {
+            fn drop(&mut self) {
+                unsafe {
+                    libc::closedir(self.0);
+                }
+            }
+        }
+        let owned = Owned(stream);
+        let mut result = Vec::new();
+        loop {
+            #[cfg(target_os = "linux")]
+            unsafe {
+                *libc::__errno_location() = 0;
+            }
+            #[cfg(target_os = "macos")]
+            unsafe {
+                *libc::__error() = 0;
+            }
+            let entry = unsafe { libc::readdir(owned.0) };
+            if entry.is_null() {
+                let e = io::Error::last_os_error();
+                if e.raw_os_error() != Some(0) {
+                    return Err(e);
+                }
+                break;
+            }
+            let value = unsafe { std::ffi::CStr::from_ptr((*entry).d_name.as_ptr()) }
+                .to_str()
+                .map_err(|error| invalid(error.to_string()))?;
+            if value == "." || value == ".." {
+                continue;
+            }
+            if result.len() >= maximum {
+                return Err(invalid("metadata namespace exceeds bound"));
+            }
+            result.push(value.to_string());
+        }
+        Ok(result)
+    }
+
     pub fn file(&self, path: &str) -> io::Result<File> {
         let (parent, leaf) = self.parent(path)?;
         let file = opened(&parent, &leaf, libc::O_RDONLY | libc::O_NONBLOCK, 0)?;

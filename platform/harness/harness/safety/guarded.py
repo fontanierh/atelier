@@ -298,7 +298,7 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
         on_slot=None, watch=(), progress=0., track_tree=False, fitting_gib=None, pass_fds=(), aggregate_tree=False,
         on_poll=None, admission=None, performance=False, invocation_id=None, worker_binding=None,
         completion_path=None, compile_memory_gib=None, script_memory_gib=None, launch_context=None,
-        queue_seconds=None, custody_fds=(), owned_services=False):
+        queue_seconds=None, custody_fds=(), owned_services=False, logical_folder=None):
     """@cc [owner:fontanierh,label:correctness] diagnostic-execution-timings
     Timing diagnostics MUST NOT certify outputs or guess command execution duration. Publication
     MUST require clearing the prior report; failure to clear MUST suppress publication without
@@ -311,8 +311,17 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
     Run one guarded child. The optional invocation_id is a UUID hex string. Admission time ends at GO acknowledgement
     (or spawn for an ungated child). Child lifetime includes gated startup. Execution duration
     stays unknown without an independently pinned gate-consumption event.
+
+    A fixed provider MAY supply logical_folder to retain the existing stable task request
+    identity while folder is a fresh report namespace. It MUST bind the original actual
+    task/kind/checkout folder string; it MUST NOT supply a caller UUID, priority or ready time.
+    The same logical_folder MUST reach every internal no-GO requeue unchanged. None retains
+    the existing behavior. Actual reports MUST remain under folder, never logical_folder.
     """
     entered = time.monotonic()
+    if logical_folder is not None and (not isinstance(logical_folder, (str, Path)) or not str(logical_folder)
+                                       or '\0' in str(logical_folder) or admission is not None):
+        raise ValueError('logical_folder requires an original task folder and automatic admission')
     if type(owned_services) is not bool:
         raise ValueError('owned_services must be an explicit bool')
     if owned_services and not lock:
@@ -371,6 +380,7 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
                                 _requeue=previous, _queue_deadline=None if queue_seconds is None else entered + queue_seconds,
                                 **({'compile_memory_gib': compile_memory_gib} if compile_memory_gib is not None else {}),
                                 **({'script_memory_gib': script_memory_gib} if script_memory_gib is not None else {}),
+                                **({'logical_folder': logical_folder} if logical_folder is not None else {}),
                                 **({'_completion': completion} if completion is not None else {}))
                 break
             except CapacityOfferLost as error:
@@ -448,7 +458,7 @@ def _run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_g
         on_slot=None, watch=(), progress=0., track_tree=False, fitting_gib=None, pass_fds=(), aggregate_tree=False,
         on_poll=None, admission=None, performance=False, *, worker_binding=None, _timings, _completion=None,
         _requeue=None, _queue_deadline=None, compile_memory_gib=None, script_memory_gib=None, _launch_nonce=None,
-        custody_fds=(), _invocation=None, owned_services=False):
+        custody_fds=(), _invocation=None, owned_services=False, logical_folder=None):
     """@cc [owner:fontanierh,label:safety] compile-tree-monitor-lifecycle
     Aggregate mode MUST release the command only after a matching monitor readiness receipt, and MUST
     require a successful matching terminal receipt proving observed tree exit before returning success.
@@ -526,7 +536,8 @@ def _run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_g
                                        purpose=purpose or (Path(command[0]).name if command else kind),
                                        performance=performance, command=command, small_gib=small_gib,
                                        **({'compile_memory_gib': compile_memory_gib} if compile_memory_gib is not None else {}),
-                                       **({'script_memory_gib': script_memory_gib} if script_memory_gib is not None else {}))
+                                       **({'script_memory_gib': script_memory_gib} if script_memory_gib is not None else {}),
+                                       **({'logical_folder': logical_folder} if logical_folder is not None else {}))
         if admission is not None and getattr(admission, 'mode', None) == 'capacity':
             selected = getattr(admission, 'guard_limit_gib', None)
             if selected is not None:

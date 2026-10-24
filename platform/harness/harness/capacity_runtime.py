@@ -112,7 +112,8 @@ def validate_session_profile(admission, *, kind, command, limit_gib):
 
 
 def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, config=None, performance=False,
-                       command=None, small_gib=None, compile_memory_gib=None, script_memory_gib=None):
+                       command=None, small_gib=None, compile_memory_gib=None, script_memory_gib=None,
+                       logical_folder=None):
     """@cc [owner:fontanierh,label:safety] configured-capacity-never-falls-back
     A configured common launcher MUST refuse invalid profiles or unavailable admission. The full
     reservation MUST cover its existing guard ceiling; profiles MUST NOT raise that guard limit or
@@ -137,7 +138,14 @@ def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, c
     the finite 10–24 GiB guard limit, with the complete managed CPU budget and exclusion. It
     MUST NOT select a bounded Blender worker envelope or change configured profiles.
     Other compile requests and legacy/maintenance profiles MUST retain their configured reservation.
+    A provider-bound logical_folder MAY replace only folder's existing UUID5 request-identity
+    ingredient, preserving its original string without canonicalization. None MUST retain the
+    old identity. Actual report paths, resources, guard ceilings, queue age policy, checkout,
+    kind, admission mode and worker settings MUST NOT be changed by this identity separation.
     """
+    if logical_folder is not None and (not isinstance(logical_folder, (str, Path)) or not str(logical_folder)
+                                       or '\0' in str(logical_folder)):
+        raise ValueError('logical_folder requires the original task folder')
     if script_memory_gib is not None and (kind != 'job' or type(script_memory_gib) not in (int, float)
             or not math.isfinite(script_memory_gib) or not GAME_GIB <= script_memory_gib <= GAME_MAX_GIB
             or script_memory_gib != limit_gib or compile_memory_gib is not None):
@@ -235,7 +243,8 @@ def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, c
     from atelier.harness.capacity_client import AdmissionSession
     # The broker keeps an uncharged request's ready age when a controller is refused or
     # restarted. Its independent run nonce fences the previous attempt's exec gate.
-    request_id = uuid.uuid5(uuid.NAMESPACE_URL, str(REPO) + '\n' + kind + '\n' + str(folder or '')).hex
+    identity_folder = folder if logical_folder is None else logical_folder
+    request_id = uuid.uuid5(uuid.NAMESPACE_URL, str(REPO) + '\n' + kind + '\n' + str(identity_folder or '')).hex
     request = dict(id=request_id, owner=os.environ.get('ATELIER_AGENT') or 'launcher', checkout=str(REPO),
                    purpose=str(purpose or kind), phase=kind,
                    resources=asdict(resources), locks=sorted(set(locks) | {'checkout:' + str(REPO)}),

@@ -17,6 +17,7 @@ def test_staging_copies_required_sources_and_preserves_unrelated_data(tmp_path, 
     monkeypatch.setattr(data, 'REGIONS', tmp_path / 'regions')
     monkeypatch.setattr(data, 'ASSETS', tmp_path / 'assets')
     monkeypatch.setattr(data, 'RACING_COURSES', tmp_path / 'courses.json')
+    data.RACING_COURSES.write_bytes(course_bytes)
     scene = data.ASSETS / 'belmonte/source.json'
     scene.parent.mkdir(parents=True)
     scene.write_bytes(scene_bytes)
@@ -38,6 +39,10 @@ def test_staging_copies_required_sources_and_preserves_unrelated_data(tmp_path, 
     retained = destination / 'SkateRide/clips.json'
     retained.parent.mkdir(parents=True)
     retained.write_bytes(b'keep source data')
+    controller_owned = destination / data.RACING_RUNTIME
+    controller_owned.parent.mkdir(parents=True)
+    controller_owned.write_bytes(b'keep controller-owned bytes')
+    previous_course_stamp = controller_owned.stat().st_mtime_ns
 
     log = io.StringIO()
     recipe.stage_data(ctx, log)
@@ -47,6 +52,8 @@ def test_staging_copies_required_sources_and_preserves_unrelated_data(tmp_path, 
         assert target.read_bytes() == content
         assert target.stat().st_mtime_ns == 2_000_000_000
     assert retained.read_bytes() == b'keep source data'
+    assert controller_owned.read_bytes() == b'keep controller-owned bytes'
+    assert controller_owned.stat().st_mtime_ns == previous_course_stamp
     assert log.getvalue().splitlines() == [f'staged {rel}' for rel in data.staged(ctx.out)]
 
 
@@ -98,3 +105,74 @@ def test_map_required_outputs_cover_runtime_sources_and_auxiliary_files(tmp_path
         assert not build.outputs_present(producer), output.name
         output.write_bytes(b'map output placeholder')
     assert build.outputs_present(producer)
+
+
+def test_staging_factory_declares_character_helper_roster_and_present_adventures(tmp_path, monkeypatch):
+    recipe = build.load_recipe('yorimichi')
+    ctx = SimpleNamespace(game='yorimichi', out=tmp_path / 'build', uproject=None)
+    original_steps = recipe.steps(ctx)
+    chars = tmp_path / 'characters'
+    pipeline = chars / 'pipeline'
+    pipeline.mkdir(parents=True)
+    helper = pipeline / 'definition.py'
+    helper.write_bytes((recipe.PIPELINE / 'definition.py').read_bytes())
+    for source in sorted(recipe.CHARS.glob('*/character.toml')):
+        target = chars / source.parent.name / source.name
+        target.parent.mkdir()
+        target.write_bytes(source.read_bytes())
+        adventure = source.with_name('adventure.toml')
+        if adventure.exists():
+            target.with_name('adventure.toml').write_bytes(adventure.read_bytes())
+    monkeypatch.setattr(recipe, 'CHARS', chars)
+    monkeypatch.setattr(recipe, 'PIPELINE', pipeline)
+
+    def projection():
+        # The real existing factory supplies declarations. Project only the new inputs
+        # when exercising the unchanged fingerprint; no map/mesh/native output is built.
+        actual = next(step for step in recipe.staging_steps(ctx) if step.name == 'data.stage')
+        # Validate the real complete declaration, not just the fingerprint helper. In
+        # particular reads-only consumers cannot bypass Graph's optional-input rule.
+        steps = [actual if step.name == actual.name else step for step in original_steps]
+        assert build.build_products.Graph(steps).by_name[actual.name] is actual
+        roster = sorted(chars.glob('*/character.toml'))
+        assert helper in actual.inputs and set(roster) <= set(actual.inputs)
+        adventures = [path.with_name('adventure.toml') for path in roster]
+        assert not actual.optional_inputs
+        assert all((path in actual.inputs) == path.exists() for path in adventures)
+        return replace(actual, inputs=[p for p in actual.inputs if p.is_relative_to(chars)])
+
+    def fingerprint():
+        actual = projection()
+        return build.fingerprint(actual, {name: name for name in actual.needs})
+
+    initial = fingerprint()
+    original = helper.read_bytes()
+    helper.write_bytes(original + b'\n# changed staging helper implementation\n')
+    assert fingerprint() != initial
+    helper.write_bytes(original)
+    assert fingerprint() == initial
+
+    character = next(iter(sorted(chars.glob('*/character.toml'))))
+    original = character.read_bytes()
+    character.write_bytes(original + b'\n# changed character configuration bytes\n')
+    assert fingerprint() != initial
+    character.write_bytes(original)
+    assert fingerprint() == initial
+
+    absent = next(path.with_name('adventure.toml') for path in sorted(chars.glob('*/character.toml'))
+                  if not path.with_name('adventure.toml').exists())
+    absent.write_bytes(b'')  # Presence must change identity even when there are no file bytes.
+    assert fingerprint() != initial
+    present_empty = fingerprint()
+    absent.write_bytes(b'# changed present adventure bytes\n')
+    assert fingerprint() != present_empty
+    absent.unlink()
+    assert fingerprint() == initial
+
+    future = chars / 'future-member' / 'character.toml'
+    future.parent.mkdir()
+    future.write_bytes(b'id = "future-member"\n')
+    assert future in projection().inputs and future.with_name('adventure.toml') not in projection().inputs
+    assert fingerprint() != initial
+    future.unlink()
+    assert fingerprint() == initial

@@ -1,11 +1,20 @@
 """Small original metadata recovery cannot become active-workspace capture or new success."""
 import json
+import os
 from pathlib import Path
 import time
 
 import pytest
 
 from atelier import checkpoint_history as history, native_protocol as protocol
+
+
+def catalogue_after_stamp(path, origin):
+    """Establish explicit fixture ordering without assuming filesystem/wall-clock ticks agree."""
+    info = path.stat()
+    boundary = max(info.st_mtime_ns, info.st_ctime_ns) + 10**9
+    os.utime(origin, ns=(boundary + 10**9, boundary + 10**9))
+    return boundary
 
 
 @pytest.fixture
@@ -15,12 +24,15 @@ def original(tmp_path, monkeypatch):
     path = source / 'build/sample/stamps/unreal.mesh.json'; path.parent.mkdir(parents=True)
     stamp = dict(fingerprint='a' * 64, time=1., input_state={'inputs': {'<repo>/import.py': 'b' * 64}})
     path.write_text(json.dumps(stamp))
-    boundary = time.time_ns()
     value = dict(schema=1, game='sample', checkout=protocol.identity(str(source.resolve())), context={}, files={}, stamps={},
                  steps=['unreal.mesh'], candidate_only=True, source_revision='d' * 40)
     key = protocol.identity(value)
     store = protocol.ReadStore('sample')
-    protocol.atomic_json(store.directory / 'candidate-sources' / (key + '.json'), value)
+    origin = store.directory / 'candidate-sources' / (key + '.json')
+    protocol.atomic_json(origin, value)
+    boundary = catalogue_after_stamp(path, origin)
+    monkeypatch.setattr(history.time, 'time_ns', lambda: origin.stat().st_mtime_ns + 10**9)
+    assert max(path.stat().st_ctime_ns, path.stat().st_mtime_ns) < boundary < origin.stat().st_mtime_ns < time.time_ns()
     return source, path, stamp, boundary, key, store
 
 
@@ -39,7 +51,9 @@ def test_recovers_only_original_history_without_writing_producer(original):
 @pytest.mark.parametrize('change', ['rewritten', 'linked', 'missing', 'no-inputs', 'touched', 'moving'])
 def test_rewritten_or_incomplete_history_is_a_miss(original, monkeypatch, change):
     source, path, stamp, boundary, key, store = original
-    if change == 'rewritten': path.write_text(path.read_text())
+    if change == 'rewritten':
+        path.write_text(path.read_text())
+        os.utime(path, ns=(boundary, boundary))  # A rewrite is not older, even within one FS tick.
     elif change == 'missing': path.unlink()
     elif change == 'linked':
         other = path.with_suffix('.copy'); path.rename(other); path.symlink_to(other)
@@ -47,12 +61,9 @@ def test_rewritten_or_incomplete_history_is_a_miss(original, monkeypatch, change
         if change == 'no-inputs': stamp.pop('input_state')
         else: stamp['touched'] = True
         path.write_text(json.dumps(stamp))
-        # Keep the test focused on malformed content rather than newer metadata. The boundary
-        # comes from the catalogue itself: a filesystem clock rounds a fresh touch down, so a
-        # boundary read just before it can land after the stamp it was meant to precede.
+        # Keep this negative focused on malformed content, with explicit metadata ordering.
         origin = store.directory / 'candidate-sources' / (key + '.json')
-        origin.touch()
-        boundary = origin.stat().st_mtime_ns - 1
+        boundary = catalogue_after_stamp(path, origin)
     else:
         original_signature = history.signature
         calls = []
@@ -63,6 +74,8 @@ def test_rewritten_or_incomplete_history_is_a_miss(original, monkeypatch, change
     result = history.recover('sample', key, source, ['unreal.mesh'], before_ns=boundary)
     assert result['checkpoint'] == key and result['recovered'] == []
     assert 'unreal.mesh' in result['missed']
+    if change == 'moving':
+        assert len(calls) == 4  # The injected metadata change, not the initial boundary, refused it.
 
 
 def test_boundary_after_snapshot_cannot_recover_later_history(original):

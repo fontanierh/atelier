@@ -1,0 +1,50 @@
+schema_version = 1
+
+[[scenarios]]
+id = "i1.controller-strict-request"
+tier = "t0"
+tests = ["atelier-build-v2::controller/strict_request_refuses_unknown_fields_and_unsupported_ops"]
+
+[[scenarios]]
+id = "i1.controller-readonly-preparation"
+tier = "t0"
+tests = ["atelier-build-v2::controller/prepare_plan_has_no_state_writes_and_uses_existing_worker_identity"]
+
+[[pending]]
+id = "i1.normal-course-first-warm-edit"
+task = "I1-min: real normal course target; requires C5c/Q3 and installer/reader ownership gates"
+
+[[scenarios]]
+id = "i1.controller-early-cancellation"
+tier = "t0"
+tests = ["atelier-build-v2::controller/controller_cancelled_before_run_keeps_state_absent"]
+
+[[scenarios]]
+id = "i1.controller-owned-fds"
+tier = "t0"
+tests = ["atelier-build-v2/controller_transport::tests::handoff_rejects_wrong_access_public_alias_and_occupied_report"]
+
+[[scenarios]]
+id = "i1.controller-startup-liveness"
+tier = "t0"
+tests = ["atelier-build-v2/controller_transport::tests::startup_release_and_parent_eof_are_observed_before_dispatch"]
+
+[[scenarios]]
+id = "i1.controller-selected-source-scope"
+tier = "t0"
+tests = ["atelier-build-v2::controller/selected_source_capture_excludes_unrelated_units_without_weakening_global_structure"]
+
+[[scenarios]]
+id = "i1.failure-diagnostic-retention"
+tier = "t0"
+tests = ["atelier-build-v2/session_lifecycle::diagnostic_tests::failure_retention_bounds_utf8_and_preserves_each_attempts_first_diagnostic"]
+
+[[scenarios]]
+id = "i1.failure-diagnostic-driver-artifact"
+tier = "t0"
+tests = ["atelier-build-v2/python_executor::production_tests::production_failure_diagnostics_retain_worker_protocol_and_prepare_without_publication"]
+
+[[scenarios]]
+id = "i1.failure-diagnostic-write-refusal"
+tier = "t0"
+tests = ["atelier-build-v2/python_executor::production_tests::diagnostic_write_failure_preserves_existing_record_and_original_failed_outcome"]

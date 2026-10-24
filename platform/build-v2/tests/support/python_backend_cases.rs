@@ -1085,7 +1085,7 @@ fn actual_python_later_independent_failure_preserves_completed_publication_and_c
 }
 
 #[test]
-fn production_dispatch_refuses_missing_custodian_before_worker_or_publication() {
+fn production_submission_failure_preserves_no_worker_or_publication() {
     let space = Space::new();
     space.set("ops/a.py", A.as_bytes());
     space.set("data/raw", b"must not execute");
@@ -1154,15 +1154,11 @@ fn production_dispatch_refuses_missing_custodian_before_worker_or_publication() 
         &mut SourceHashCache::default(),
     )
     .unwrap();
-    assert!(
-        report
-            .fatal
-            .is_some_and(|reason| reason.contains("custodian registration unavailable"))
-    );
-    assert!(matches!(report.states["a"], State::Failed(_)));
+    assert!(report.fatal.is_none());
+    assert!(matches!(&report.states["a"], State::Failed(reason) if !reason.is_empty()));
     let io = backend.finish().unwrap();
     assert_eq!(io.launches, 0);
-    assert_eq!(io.worker_files_written, 0);
+    assert_eq!(io.worker_files_written, PYTHON_WORKER_FILES.len());
     assert_eq!(io.publications, 0);
     assert!(!space.path("checkout/Game/a.bin").exists());
 }

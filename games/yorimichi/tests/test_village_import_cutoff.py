@@ -15,7 +15,7 @@ def sha(path):
 
 
 @pytest.fixture
-def village_build(tmp_path, monkeypatch, recipe_graph):
+def village_build(tmp_path, monkeypatch, recipe_graph, unmanaged_builder_checkout):
     out, regions = tmp_path / 'build', tmp_path / 'regions'
     folder = out / 'village'
     assets = folder / 'assets'

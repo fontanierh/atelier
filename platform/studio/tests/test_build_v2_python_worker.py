@@ -444,3 +444,37 @@ def test_directory_changes_are_refused_so_relative_checks_stay_anchored(tmp_path
         script = (f'import os\ndef run(context):\n    try:\n        {body}\n    except BaseException:\n        pass\n'
                   '    context.output("piece.txt").write_text("ran")\n')
         assert 'os.chdir' in failure(loop.run(stage(tmp_path / f'job{index}', script=script)), 'dependency')
+
+
+@pytest.mark.parametrize('neighbor', [
+    '/private/etc/ssl/cert.pem',
+    '/private/etc/ssl/certs/example.pem',
+    '/private/etc/hosts',
+])
+def test_openssl_platform_config_literal_never_grants_neighbor_data_reads(monkeypatch, neighbor):
+    """Inspect the actual generated profile; this portable test does not execute Seatbelt."""
+    import re
+    from pathlib import PurePosixPath
+
+    monkeypatch.setattr(python_worker, 'interpreter_roots', lambda: ['/installed/python'])
+    monkeypatch.setattr(python_worker, 'interpreter_executables', lambda: ['/installed/python/bin/python'])
+    monkeypatch.setattr(python_worker, '_links', lambda path: [])
+    profile = python_worker.sandbox_profile('/staged-job')
+    read_rule = next(line for line in profile.splitlines() if line.startswith('(allow file-read* '))
+    # Parse only generated filter operands, not a second sandbox-policy implementation.
+    operands = re.findall(r'\((literal|subpath) ("(?:[^"\\]|\\.)*")\)', read_rule)
+    literals = [json.loads(value) for kind, value in operands if kind == 'literal']
+    subpaths = [json.loads(value) for kind, value in operands if kind == 'subpath']
+    assert literals.count('/private/etc/ssl/openssl.cnf') == 1
+    assert '/etc/ssl/openssl.cnf' not in literals  # No unneeded alias grant.
+    assert neighbor not in literals
+    assert not any(PurePosixPath(neighbor).is_relative_to(path) for path in subpaths)
+    assert '/private/etc' not in subpaths and '/private/etc/ssl' not in subpaths
+    assert '(deny default)' in profile
+    assert '(deny file-read* network* (with send-signal SIGKILL))' in profile
+    assert '(allow network' not in profile and '(allow mach-lookup' not in profile
+    assert 'OPENSSL_CONF' not in python_worker.JOB_ENVIRONMENT
+    assert next(line for line in profile.splitlines() if line.startswith('(allow process-exec ')) == (
+        '(allow process-exec (literal "/installed/python/bin/python"))')
+    assert next(line for line in profile.splitlines() if line.startswith('(allow file-write* ')) == (
+        '(allow file-write* (subpath "/staged-job/output") (literal "/dev/null"))')

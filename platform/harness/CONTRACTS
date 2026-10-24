@@ -21,3 +21,14 @@ and the independent aggregate monitor, with live aggregate and actual-child guar
 GO. Default behavior MUST have no exceptions. Arbitrary PID adoption, post-exec registration,
 PID-reuse inheritance and public mutable allowlists MUST NOT grant ownership. Lost registration,
 acknowledgment or guard telemetry MUST fail closed and retain ordinary pinned cleanup/admission.
+
+@cc [owner:fontanierh,label:correctness;safety] stable-logical-task-fresh-reports
+A fixed legacy provider MAY bind logical_folder to the original actual task/kind/checkout folder
+string when each invocation uses a fresh physical report namespace. It MUST replace ONLY the
+existing folder ingredient in UUID5 request identity, without canonicalization, new UUID/priority,
+ready-time or resource/profile/admission changes. None MUST preserve existing behavior. Every
+internal no-GO retry MUST receive the same logical identity; actual reports MUST stay under the
+fresh physical folder. Provider history MUST distinguish actual raw/failed peaks and verified
+completed metrics, never manufacture successful peak or cleanup evidence from a locator. See
+test_fresh_report_names_keep_original_logical_identity_and_resource_request and
+test_logical_folder_survives_every_internal_requeue_while_reports_stay_fresh.

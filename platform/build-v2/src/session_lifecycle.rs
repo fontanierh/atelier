@@ -20,7 +20,7 @@ use crate::failure_policy::{
 };
 use crate::guard_adapter::{AttemptEvent, CleanupReceipt, LaunchEvent, StoppedBy};
 use crate::leases::ProcessIdentity;
-use crate::protocol::JobOutputs;
+use crate::protocol::{FailureKind, JobOutputs};
 use crate::worker_lifecycle::{AttemptRecord, Custody, LifecycleError, WorkerFault};
 use crate::worker_session::Event as WorkerEvent;
 use std::time::Duration;
@@ -217,6 +217,39 @@ impl Refusal {
     }
 }
 
+/// Nonsemantic, bounded failure text. Policy continues to consume only the original event/kind.
+#[derive(Clone, Debug, PartialEq, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FailureSource {
+    Worker,
+    Protocol,
+    Prepare,
+}
+
+#[derive(Clone, Debug, PartialEq, serde::Serialize)]
+pub struct FailureDiagnostic {
+    pub source: FailureSource,
+    pub kind: Option<FailureKind>,
+    pub message: String,
+    pub truncated: bool,
+}
+
+impl FailureDiagnostic {
+    /// Retention only: this does not change wire bounds or validate a protocol message.
+    pub fn retained(source: FailureSource, kind: Option<FailureKind>, message: &str) -> Self {
+        let mut end = message.len().min(4096);
+        while !message.is_char_boundary(end) {
+            end -= 1;
+        }
+        Self {
+            source,
+            kind,
+            message: message[..end].into(),
+            truncated: end != message.len(),
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct UnitAttemptRecord {
     pub attempt: u32,
@@ -225,9 +258,17 @@ pub struct UnitAttemptRecord {
     pub custody: Custody,
     /// The time of the quiescence evidence that settled this attempt while its session lived on.
     pub quiescent: Option<f64>,
+    /// First failure observed for this attempt; never cleanup evidence or policy input.
+    pub diagnostic: Option<FailureDiagnostic>,
 }
 
 impl UnitAttemptRecord {
+    fn retain_diagnostic(&mut self, diagnostic: FailureDiagnostic) {
+        if self.diagnostic.is_none() {
+            self.diagnostic = Some(diagnostic);
+        }
+    }
+
     fn settled(&self) -> bool {
         self.custody != Custody::Pending || self.quiescent.is_some()
     }
@@ -542,6 +583,14 @@ impl SessionLifecycle {
             .position(|s| s.record.attempt == session)
     }
 
+    fn retain_diagnostic(&mut self, index: usize, session: u32, diagnostic: FailureDiagnostic) {
+        if let Some(attempt) = self.units[index].attempts.last_mut() {
+            if attempt.session == session {
+                attempt.retain_diagnostic(diagnostic);
+            }
+        }
+    }
+
     fn unit_index(&self, unit: &str) -> Option<usize> {
         self.units.iter().position(|u| u.plan.id == unit)
     }
@@ -630,6 +679,17 @@ impl SessionLifecycle {
                 reason,
             } => {
                 let failure = format!("the attempt's job request could not be prepared: {reason}");
+                if let Some(index) = self.unit_index(&unit) {
+                    if self.session_index(session) == self.live()
+                        && self.units[index].session == Some(session)
+                    {
+                        self.retain_diagnostic(
+                            index,
+                            session,
+                            FailureDiagnostic::retained(FailureSource::Prepare, None, &failure),
+                        );
+                    }
+                }
                 self.registered(now, session, &unit, Some(failure), &mut out)?;
             }
             SessionInput::MonitorRegistered { session, unit, ok } => {
@@ -1090,6 +1150,7 @@ impl SessionLifecycle {
                     session,
                     custody: Custody::Pending,
                     quiescent: None,
+                    diagnostic: None,
                 });
                 let slot = &mut self.sessions[s];
                 slot.active = Some(index);
@@ -1569,6 +1630,7 @@ impl SessionLifecycle {
         out: &mut Vec<SessionCommand>,
     ) -> Result<(), LifecycleError> {
         let active = self.sessions[s].active;
+        let session = self.sessions[s].record.attempt;
         match event {
             Ok(WorkerEvent::Ready { .. }) => {
                 self.sessions[s].ready = true;
@@ -1593,6 +1655,15 @@ impl SessionLifecycle {
                         }
                     }
                     Err(failure) => {
+                        self.retain_diagnostic(
+                            index,
+                            session,
+                            FailureDiagnostic::retained(
+                                FailureSource::Worker,
+                                Some(failure.kind.clone()),
+                                &failure.message,
+                            ),
+                        );
                         self.decide(now, index, PolicyEvent::WorkerFailed(failure.kind), out)?
                     }
                 }
@@ -1605,7 +1676,14 @@ impl SessionLifecycle {
             }
             // A broken protocol poisons the session in every phase: it stops and never serves
             // another unit (build-v2-worker-session-order).
-            Err(WorkerFault::Protocol(_)) => {
+            Err(WorkerFault::Protocol(message)) => {
+                if let Some(index) = active {
+                    self.retain_diagnostic(
+                        index,
+                        session,
+                        FailureDiagnostic::retained(FailureSource::Protocol, None, &message),
+                    );
+                }
                 self.sessions[s].poisoned = true;
                 match active {
                     Some(index)
@@ -1664,5 +1742,43 @@ impl SessionLifecycle {
             }
         }
         held
+    }
+}
+
+#[cfg(test)]
+mod diagnostic_tests {
+    use super::*;
+
+    #[test]
+    fn failure_retention_bounds_utf8_and_preserves_each_attempts_first_diagnostic() {
+        let message = format!("{}éZ", "x".repeat(4095));
+        let capped =
+            FailureDiagnostic::retained(FailureSource::Worker, Some(FailureKind::Job), &message);
+        assert_eq!(capped.message, "x".repeat(4095));
+        assert!(capped.truncated);
+        let exact = FailureDiagnostic::retained(FailureSource::Protocol, None, &"é".repeat(2048));
+        assert_eq!(exact.message.len(), 4096);
+        assert!(!exact.truncated);
+        let mut attempts = vec![UnitAttemptRecord {
+            attempt: 1,
+            session: 7,
+            custody: Custody::Released,
+            quiescent: None,
+            diagnostic: None,
+        }];
+        attempts[0].retain_diagnostic(capped.clone());
+        attempts[0].retain_diagnostic(exact.clone()); // Later cleanup/protocol noise cannot win.
+        attempts.push(UnitAttemptRecord {
+            attempt: 2,
+            session: 8,
+            custody: Custody::Released,
+            quiescent: None,
+            diagnostic: None,
+        });
+        attempts[1].retain_diagnostic(exact.clone());
+        assert_eq!(attempts[0].diagnostic, Some(capped));
+        assert_eq!(attempts[1].diagnostic, Some(exact));
+        assert_eq!((attempts[0].attempt, attempts[0].session), (1, 7));
+        assert_eq!((attempts[1].attempt, attempts[1].session), (2, 8));
     }
 }

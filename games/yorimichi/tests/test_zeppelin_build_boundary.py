@@ -46,7 +46,7 @@ def test_targeted_zeppelin_keeps_selection_order_and_complete_source_closure(tmp
 
 
 @pytest.mark.parametrize('legacy', [False, True], ids=['independent-exports', 'old-city-export-edge'])
-def test_builder_rechecks_actual_dependencies_after_layout_cutoff(tmp_path, monkeypatch, legacy):
+def test_builder_rechecks_actual_dependencies_after_layout_cutoff(tmp_path, monkeypatch, legacy, unmanaged_builder_checkout):
     out = tmp_path / 'out'
     ctx = SimpleNamespace(game='yorimichi', out=out, logs=out/'logs', stamps=out/'stamps', uproject=None)
     production = next(s for s in RECIPE.steps(ctx) if s.name == 'world.zeppelin')

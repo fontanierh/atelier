@@ -43,9 +43,9 @@ tests = ["atelier-build-v2/python_backend::tests::changed_current_source_refuses
 platforms = ["darwin"]
 
 [[scenarios]]
-id = "a9b1.production_dispatch_refuses_missing_custodian_before_worker_or_publication"
+id = "a9b1.production_submission_failure_preserves_no_worker_or_publication"
 tier = "t0"
-tests = ["atelier-build-v2/python_backend::tests::production_dispatch_refuses_missing_custodian_before_worker_or_publication"]
+tests = ["atelier-build-v2/python_backend::tests::production_submission_failure_preserves_no_worker_or_publication"]
 platforms = ["darwin"]
 
 [[scenarios]]
@@ -137,3 +137,38 @@ id = "a9b1.failed_submission_keeps_abort_reason_without_claiming_user_cancellati
 tier = "t0"
 tests = ["atelier-build-v2/python_backend::tests::failed_submission_keeps_abort_reason_without_claiming_user_cancellation"]
 platforms = ["darwin"]
+
+[[scenarios]]
+id = "a9b1.production_defaults_fit_after_startup_and_require_both_registrations"
+tier = "t0"
+tests = ["atelier-build-v2/python_executor::tests::production_defaults_fit_after_startup_and_require_both_registrations"]
+
+[[scenarios]]
+id = "a9b1.sole_session_acceptance_requires_exact_terminal_and_positive_cleanup"
+tier = "t0"
+tests = ["atelier-build-v2/python_executor::tests::sole_session_acceptance_requires_exact_terminal_and_positive_cleanup"]
+
+[[scenarios]]
+id = "a9b1.production_dispatch_registers_original_leases_and_waits_for_full_cleanup"
+tier = "t0"
+tests = ["atelier-build-v2/python_executor::production_tests::production_dispatch_registers_original_leases_and_waits_for_full_cleanup"]
+
+[[scenarios]]
+id = "a9b1.production_dispatch_missing_monitor_or_failed_registration_never_runs"
+tier = "t0"
+tests = ["atelier-build-v2/python_executor::production_tests::production_dispatch_missing_monitor_or_failed_registration_never_runs"]
+
+[[scenarios]]
+id = "a9b1.production_crash_retry_refuses_old_staging_before_a_second_run"
+tier = "t0"
+tests = ["atelier-build-v2/python_executor::production_tests::production_crash_retry_refuses_old_staging_before_a_second_run"]
+
+[[scenarios]]
+id = "a9b1.production_driver_rejects_wrong_key_and_unheld_custody_before_admission"
+tier = "t0"
+tests = ["atelier-build-v2/python_executor::production_tests::production_driver_rejects_wrong_key_and_unheld_custody_before_admission"]
+
+[[scenarios]]
+id = "a9b1.production_cancellation_settles_original_work_and_blocks_later_dispatch"
+tier = "t0"
+tests = ["atelier-build-v2/python_executor::production_tests::production_cancellation_settles_original_work_and_blocks_later_dispatch"]

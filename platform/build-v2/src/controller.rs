@@ -1,0 +1,529 @@
+//! Normal-caller request preparation. This composes existing declaration/source/worker
+//! mechanisms; cache lookup, scheduling and publication stay in their existing owners.
+use crate::explain::{BuildSummary, Recorder};
+use crate::failure_policy::Limits;
+use crate::graph::{BuildGraph, Target};
+use crate::guard_adapter::WorkerLauncher;
+use crate::install::{
+    CheckoutInstaller, InstallError, InstallPolicy, OwnershipSnapshot, ProjectNamespace,
+    ReceiptReader,
+};
+use crate::leases::ProcessIdentity;
+use crate::py_data::{ContentSlotSpec, PyDataClass, PyDataSpec, py_data_validator_identity};
+use crate::python_backend::{CacheAccess, PythonBackend, PythonIo};
+use crate::python_executor::{PythonExecution, PythonExecutor};
+use crate::python_sources::{CapturedSources, capture_sources};
+use crate::python_worker::{PYTHON_WORKER_FILES, PythonWorkerBundle};
+use crate::results::ResultStore;
+use crate::roots::{BuildSession, RootKind, RootStore};
+use crate::scheduler::{self, Control, Demand, FinalDemands, Runtime, State};
+use crate::schema::{ContentSource, Declaration, Input, Provenance};
+use crate::source_hashes::SourceHashCache;
+use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value};
+use std::cell::RefCell;
+use std::collections::{BTreeMap, BTreeSet};
+use std::path::PathBuf;
+
+pub const CONTROL_VERSION: u32 = 1;
+pub const MAX_CONTROL_BYTES: usize = 2 * 1024 * 1024;
+const WORKER_DIRECTORY: &str = "platform/studio/atelier/build_v2";
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct DataContract {
+    /// Explicit implementation-owned slot rules, never guessed from observed files.
+    pub content_slots: BTreeMap<String, bool>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ControllerRequest {
+    pub version: u32,
+    pub checkout: PathBuf,
+    pub project: String,
+    pub allowed_install_roots: Vec<String>,
+    pub declaration: Declaration,
+    pub targets: Vec<String>,
+    pub data_contract: DataContract,
+    pub staged_inputs: BTreeMap<String, BTreeMap<String, String>>,
+}
+
+impl ControllerRequest {
+    /// @cc [owner:fontanierh,label:correctness] bounded-normal-controller-request
+    /// Requests MUST be bounded, versioned, duplicate-free and object-only at every
+    /// typed record position before any state creation; real array fields remain arrays. The
+    /// initial caller MUST accept only explicit fixed JsonData/py_data declarations;
+    /// unsupported formats/groups MUST refuse, never be silently relabeled. Installed
+    /// tool facts MUST NOT be supplied as semantic parameters by this controller.
+    /// See tests/controller.rs strict_request_refuses_unknown_fields_and_unsupported_ops.
+    pub fn parse(bytes: &[u8]) -> Result<Self, String> {
+        if bytes.len() > MAX_CONTROL_BYTES {
+            return Err("controller request exceeds its size bound".into());
+        }
+        crate::py_data::validate_py_data_payload("JsonData", "request.json", bytes)
+            .map_err(|_| "invalid controller request JSON".to_string())?;
+        let document: Value = serde_json::from_slice(bytes)
+            .map_err(|_| "invalid controller request JSON".to_string())?;
+        object_records(&document)?;
+        let request: Self = serde_json::from_value(document)
+            .map_err(|_| "invalid controller request shape".to_string())?;
+        request.check()?;
+        Ok(request)
+    }
+
+    pub fn check(&self) -> Result<(), String> {
+        if self.version != CONTROL_VERSION || !self.checkout.is_absolute() {
+            return Err("unsupported controller version or checkout locator".into());
+        }
+        ProjectNamespace::new(&self.project).map_err(|error| error.to_string())?;
+        if self.project.is_empty()
+            || self.targets.is_empty()
+            || self.targets.len() > 256
+            || self.declaration.units.is_empty()
+            || self.declaration.units.len() > 256
+            || self.allowed_install_roots.is_empty()
+        {
+            return Err("controller declaration/target bounds are invalid".into());
+        }
+        let units: BTreeSet<_> = self.declaration.units.iter().map(|unit| &unit.id).collect();
+        if self.staged_inputs.keys().collect::<BTreeSet<_>>() != units {
+            return Err("controller staged names must cover exactly the declared units".into());
+        }
+        for unit in &self.declaration.units {
+            if unit.op.kind != "py_data"
+                || unit.op.version != "1"
+                || !unit.output_groups.is_empty()
+                || unit.outputs.iter().any(|item| item.class != "JsonData")
+                || !unit.params.is_empty()
+                || unit
+                    .inputs
+                    .iter()
+                    .any(|input| !matches!(input, Input::Content { .. }))
+            {
+                return Err("unsupported normal-controller data contract".into());
+            }
+            let slots: BTreeSet<_> = unit
+                .inputs
+                .iter()
+                .map(|input| match input {
+                    Input::Content { name, .. } | Input::Reference { name, .. } => name,
+                })
+                .collect();
+            let staged = &self.staged_inputs[&unit.id];
+            if staged.keys().collect::<BTreeSet<_>>() != slots {
+                return Err(
+                    "controller staged paths must cover exactly the unit input slots".into(),
+                );
+            }
+            crate::keys::safe_staged_paths(staged, &unit.code)?;
+        }
+        Ok(())
+    }
+}
+
+pub(crate) fn object(value: &Value) -> Result<&Map<String, Value>, String> {
+    value
+        .as_object()
+        .ok_or_else(|| "control record must be a JSON object".into())
+}
+
+fn records(value: Option<&Value>) -> Result<Vec<&Value>, String> {
+    let Some(Value::Array(values)) = value else {
+        return Ok(vec![]);
+    };
+    for value in values {
+        object(value)?;
+    }
+    Ok(values.iter().collect())
+}
+
+/// serde's struct decoder also accepts positional arrays. Like protocol v1, control
+/// data requires object-only record positions before typed decoding; real array fields
+/// and arbitrary semantic JSON values are left intact. Wrong/missing field types stay
+/// serde errors. No record values are interpreted as identity ingredients here.
+pub(crate) fn object_records(document: &Value) -> Result<(), String> {
+    let request = object(document)?;
+    if let Some(contract) = request.get("data_contract") {
+        object(contract)?;
+    }
+    if let Some(declaration) = request.get("declaration") {
+        let declaration = object(declaration)?;
+        for unit in records(declaration.get("units"))? {
+            let unit = object(unit)?;
+            if let Some(op) = unit.get("op") {
+                object(op)?;
+            }
+            for input in records(unit.get("inputs"))? {
+                let input = object(input)?;
+                for field in ["source", "producer"] {
+                    if let Some(value) = input.get(field).filter(|value| !value.is_null()) {
+                        object(value)?;
+                    }
+                }
+            }
+            for item in records(unit.get("outputs"))? {
+                let item = object(item)?;
+                records(item.get("files"))?;
+            }
+            records(unit.get("output_groups"))?;
+        }
+    }
+    Ok(())
+}
+
+pub struct PreparedController {
+    pub graph: BuildGraph,
+    pub sources: CapturedSources,
+    pub worker: PythonWorkerBundle,
+    pub runtimes: BTreeMap<String, Runtime>,
+    pub targets: Vec<Target>,
+    pub demands: BTreeMap<String, FinalDemands>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct PlanObservation {
+    pub version: u32,
+    pub selected: Vec<String>,
+    /// No readonly store accessor is assumed. This is never a fabricated miss/hit.
+    pub reuse: &'static str,
+}
+
+/// @cc [owner:fontanierh,label:correctness] normal-controller-shared-preparation
+/// Preparation MUST use A4 structural/selected validation, explicit nofollow source
+/// capture and the exact frozen Python worker bundle. It MUST NOT create checkout,
+/// cache, root, lease, job or helper state, or perform output materialization. Plan
+/// reuse status MUST remain unknown without authoritative readonly lookup. See
+/// tests/controller.rs prepare_plan_has_no_state_writes_and_uses_existing_worker_identity.
+pub fn prepare(request: &ControllerRequest) -> Result<PreparedController, String> {
+    request.check()?;
+    let mut spec = PyDataSpec::new().with_output_classes([PyDataClass::JsonData]);
+    for (slot, required) in &request.data_contract.content_slots {
+        spec = spec.with_content_slot(slot, ContentSlotSpec::broad(*required));
+    }
+    let mut registry = BTreeMap::new();
+    spec.register(&mut registry)?;
+    let graph = BuildGraph::validate(
+        request.declaration.clone(),
+        &registry,
+        &request.allowed_install_roots,
+    )
+    .map_err(|error| error.to_string())?;
+    let targets: Vec<_> = request.targets.iter().cloned().map(Target::Unit).collect();
+    let source_scope = graph.source_scope(&targets)?;
+    let mut names = BTreeSet::new();
+    for unit in request
+        .declaration
+        .units
+        .iter()
+        .filter(|unit| source_scope.contains(&unit.id))
+    {
+        names.extend(unit.code.iter().map(String::as_str));
+        for input in &unit.inputs {
+            if let Input::Content {
+                source: ContentSource::File { path, .. },
+                ..
+            } = input
+            {
+                names.insert(path.as_str());
+            }
+        }
+    }
+    let sources = capture_sources(&request.checkout, names)?;
+    let selected = graph.select(&targets, &sources.snapshot)?;
+    let worker_sources = capture_sources(
+        &request.checkout.join(WORKER_DIRECTORY),
+        PYTHON_WORKER_FILES,
+    )?;
+    let worker = PythonWorkerBundle::from_snapshot(&worker_sources.snapshot)?;
+    let mut runtimes = BTreeMap::new();
+    for id in selected.order() {
+        runtimes.insert(
+            id.clone(),
+            Runtime {
+                worker: worker.identity(),
+                validator: py_data_validator_identity(),
+                staged_inputs: request.staged_inputs[id].clone(),
+                profile: "normal-python-data".into(),
+            },
+        );
+    }
+    let demands = selected
+        .roots()
+        .iter()
+        .map(|id| (id.clone(), BTreeSet::from([Demand::Checkout])))
+        .collect();
+    Ok(PreparedController {
+        graph,
+        sources,
+        worker,
+        runtimes,
+        targets,
+        demands,
+    })
+}
+
+impl PreparedController {
+    pub fn plan(&self) -> Result<PlanObservation, String> {
+        let selected = self.graph.select(&self.targets, &self.sources.snapshot)?;
+        Ok(PlanObservation {
+            version: CONTROL_VERSION,
+            selected: selected.order().to_vec(),
+            reuse: "unknown_readonly_store_unavailable",
+        })
+    }
+}
+
+pub fn source_identity() -> Option<&'static str> {
+    option_env!("ATELIER_CONTROLLER_SOURCE_SHA256")
+        .filter(|value| crate::source_hashes::valid_digest(value))
+}
+
+/// Execution/control context only; installed interpreter facts never enter A3 ingredients.
+pub struct ExecutionContext {
+    pub cache_root: PathBuf,
+    pub interpreter: PathBuf,
+    /// Actual controller identity supplied by the normal caller's authoritative OS probe.
+    pub owner: ProcessIdentity,
+    pub provenance: Provenance,
+    pub worktree_id: String,
+    pub memory_gib: u32,
+    pub limits: Limits,
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Finalization {
+    NotOpened,
+    Complete,
+    Incomplete,
+}
+
+#[derive(Clone, Debug, Default, Serialize)]
+pub struct IoObservation {
+    pub cache_opens: usize,
+    pub cache_lookups: usize,
+    pub staged_jobs: usize,
+    pub input_clones: usize,
+    /// Observed guard ChildStarted attempts, not successful Runs or a complete count on uncertainty.
+    pub observed_worker_attempts: usize,
+    pub worker_attempts_by_unit: BTreeMap<String, usize>,
+    pub worker_files_written: usize,
+    pub publications: usize,
+    pub installs: usize,
+    pub receipt_writes: usize,
+}
+impl From<PythonIo> for IoObservation {
+    fn from(io: PythonIo) -> Self {
+        Self {
+            cache_opens: io.cache_opens,
+            cache_lookups: io.cache_lookups,
+            staged_jobs: io.staged_jobs,
+            input_clones: io.input_clones,
+            observed_worker_attempts: io.launches,
+            worker_attempts_by_unit: io.launches_by_unit,
+            worker_files_written: io.worker_files_written,
+            publications: io.publications,
+            installs: io.installs,
+            receipt_writes: io.receipt_writes,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct ExecutionObservation {
+    pub version: u32,
+    pub summary: Option<BuildSummary>,
+    pub io: IoObservation,
+    pub final_requirements_satisfied: bool,
+    pub cancellation_requested: bool,
+    pub scheduler_error: bool,
+    pub source_finalization: Finalization,
+    pub root_finalization: Finalization,
+}
+
+impl ExecutionObservation {
+    fn cancelled_before_work() -> Self {
+        Self {
+            version: CONTROL_VERSION,
+            summary: None,
+            io: IoObservation::default(),
+            final_requirements_satisfied: false,
+            cancellation_requested: true,
+            scheduler_error: false,
+            source_finalization: Finalization::NotOpened,
+            root_finalization: Finalization::NotOpened,
+        }
+    }
+}
+
+/// @cc [owner:fontanierh,label:correctness] normal-controller-existing-engine
+/// Execution MUST compose the existing A9 scheduler, PythonBackend/production executor,
+/// B3 checkout locks, A7 observer and lazy B4 session. Current MUST NOT open the cache.
+/// Root callbacks MUST bind current scheduling labels; source origins MUST finish before
+/// partial-session commit(None). Scheduler fulfillment, cancellation and external finalization
+/// MUST remain separate observations. No fixture constructor, second scheduler, key encoder,
+/// fallback executor or pruning roster is permitted. See controller_cancelled_before_run_keeps_state_absent;
+/// real normal first/warm/edit and cancellation proof remain I1-min/C5c pending.
+pub fn execute<L: WorkerLauncher + Send>(
+    request: &ControllerRequest,
+    context: ExecutionContext,
+    launcher: L,
+    control: &dyn Control,
+) -> Result<ExecutionObservation, String> {
+    request.check()?;
+    if context.owner.pid != std::process::id()
+        || context.owner.started.is_empty()
+        || context.owner.boot.is_empty()
+        || !context.cache_root.is_absolute()
+        || !context.interpreter.is_absolute()
+        || !crate::source_hashes::valid_digest(&context.worktree_id)
+        || context.memory_gib == 0
+        || context.limits.job.is_zero()
+        || context.limits.cleanup.is_zero()
+        || !context.limits.overall.is_some_and(|overall| {
+            context
+                .limits
+                .job
+                .checked_add(context.limits.cleanup)
+                .is_some_and(|minimum| overall >= minimum)
+        })
+    {
+        return Err("invalid normal controller execution context".into());
+    }
+    if control.cancelled() {
+        return Ok(ExecutionObservation::cancelled_before_work());
+    }
+    let PreparedController {
+        graph,
+        sources,
+        worker,
+        runtimes,
+        targets,
+        demands,
+    } = prepare(request)?;
+    if control.cancelled() {
+        return Ok(ExecutionObservation::cancelled_before_work());
+    }
+    let policy = InstallPolicy {
+        project: ProjectNamespace::new(&request.project).map_err(|error| error.to_string())?,
+        allowed_install_roots: request.allowed_install_roots.clone(),
+    };
+    let reader = ReceiptReader::open(&request.checkout, policy.clone())
+        .map_err(|error| error.to_string())?;
+    let guard = reader
+        .locks()
+        .try_build_exclusive()
+        .map_err(|error| error.to_string())?;
+    let ownership = OwnershipSnapshot::from_projects([(policy.project.clone(), &graph)])
+        .map_err(|error| error.to_string())?;
+    reader
+        .recover(&guard, &ownership)
+        .map_err(|error| error.to_string())?;
+    let schedule = scheduler::Request::select(
+        &graph,
+        &targets,
+        &sources.snapshot,
+        &sources.versions,
+        &runtimes,
+        &demands,
+    )?;
+    let roots: RefCell<Option<BuildSession>> = RefCell::new(None);
+    let mut backend = PythonBackend::new(
+        &graph,
+        schedule.selected(),
+        &sources.snapshot,
+        &reader,
+        &guard,
+        &ownership,
+        context.owner.clone(),
+        context.provenance.clone(),
+        || {
+            let results = ResultStore::open(&context.cache_root).map_err(InstallError::Cache)?;
+            let checkout =
+                CheckoutInstaller::open(&request.checkout, &context.cache_root, policy.clone())?;
+            Ok(CacheAccess { results, checkout })
+        },
+        |unit, envelope| {
+            let mut session = roots.borrow_mut();
+            if session.is_none() {
+                let store = RootStore::open(&context.cache_root, &request.project)
+                    .map_err(|error| error.to_string())?;
+                *session = Some(
+                    store
+                        .begin_session(
+                            RootKind::Worktree {
+                                id: context.worktree_id.clone(),
+                            },
+                            context.provenance.clone(),
+                            context.owner.clone(),
+                        )
+                        .map_err(|error| error.to_string())?,
+                );
+            }
+            session
+                .as_mut()
+                .ok_or("retention session unavailable")?
+                .use_result(unit, &envelope.result.key)
+                .map_err(|error| error.to_string())
+        },
+    );
+    let mut executor = PythonExecutor::new(
+        launcher,
+        PythonExecution {
+            interpreter: context.interpreter.clone(),
+            bundle: worker,
+            profile: "normal-python-data".into(),
+            memory_gib: context.memory_gib,
+            limits: context.limits,
+        },
+    );
+    let recorder = Recorder::default();
+    let report = scheduler::run(
+        schedule,
+        &mut recorder.backend(&mut backend),
+        &mut recorder.executor(&mut executor),
+        control,
+        &mut SourceHashCache::default(),
+    );
+    let before_finish = backend.io();
+    let (io, source_finalization) = match backend.finish() {
+        Ok(io) => (io, Finalization::Complete),
+        Err(_) => (before_finish, Finalization::Incomplete),
+    };
+    let root_finalization = match roots.into_inner() {
+        None => Finalization::NotOpened,
+        Some(session) => match session.commit(None) {
+            Ok(_) => Finalization::Complete,
+            Err(_) => Finalization::Incomplete,
+        },
+    };
+    let (summary, final_requirements_satisfied, scheduler_error) = match report {
+        Ok(report) => {
+            let fulfilled = report.fatal.is_none()
+                && report.unsatisfied.is_empty()
+                && report.states.values().all(|state| {
+                    matches!(
+                        state,
+                        State::Identity | State::Current | State::Hit | State::Executed(_)
+                    )
+                });
+            (
+                Some(recorder.summarize(&report, &BTreeMap::new(), Some(&io.launches_by_unit))?),
+                fulfilled,
+                false,
+            )
+        }
+        Err(_) => (None, false, true),
+    };
+    Ok(ExecutionObservation {
+        version: CONTROL_VERSION,
+        summary,
+        io: io.into(),
+        final_requirements_satisfied,
+        cancellation_requested: control.cancelled(),
+        scheduler_error,
+        source_finalization,
+        root_finalization,
+    })
+}
