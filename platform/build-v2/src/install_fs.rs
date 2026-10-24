@@ -100,6 +100,9 @@ impl RootFs {
     pub fn absolute(&self, relative: &str) -> PathBuf {
         self.path.join(relative)
     }
+    pub(crate) fn root_metadata(&self) -> io::Result<fs::Metadata> {
+        self.directory.metadata()
+    }
 
     fn parent(&self, path: &str) -> io::Result<(File, String)> {
         relative_path(path, true).map_err(invalid)?;

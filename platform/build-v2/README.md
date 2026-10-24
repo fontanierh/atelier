@@ -1018,3 +1018,7 @@ no `OPENSSL_CONF` override skips configuration. Profile-only portable tests insp
 they do not prove successful Mac execution. Both stopped M1 attempts have independent later OS
 reports binding their child to its guarded parent and recording that exact denied config read.
 Original receipts remain unchanged, and neither op-body progress nor a successful build is claimed.
+
+The dormant [legacy operational epoch](../../docs/build-v2/LEGACY_EPOCH.md) adds strict control-state
+fencing and private same-scope repair demands. It has no production plan issuer, caller, repair CLI
+or bootstrap; it does not activate mixed/default builds or qualify arbitrary legacy/native work.

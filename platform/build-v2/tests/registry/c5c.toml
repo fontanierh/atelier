@@ -294,3 +294,18 @@ tier = "t0"
 id = "c5c.session.a_receipt_past_its_units_overall_deadline_in_any_phase_releases_nothing"
 tests = ["atelier-build-v2::session_lifecycle/a_receipt_past_its_units_overall_deadline_in_any_phase_releases_nothing"]
 tier = "t0"
+
+[[scenarios]]
+id = "c5c.resident.the_resident_window_setup_binds_every_input_without_launching"
+tests = ["atelier-build-v2::resident_window_setup/the_resident_window_setup_binds_every_input_without_launching"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.resident.the_session_lifecycle_accepts_every_resident_window_case"
+tests = ["atelier-build-v2::resident_window_setup/the_session_lifecycle_accepts_every_resident_window_case"]
+tier = "t0"
+
+[[scenarios]]
+id = "c5c.resident.the_running_marker_is_found_only_where_the_job_writes_its_output"
+tests = ["atelier-build-v2::resident_window_setup/the_running_marker_is_found_only_where_the_job_writes_its_output"]
+tier = "t0"

@@ -1338,6 +1338,8 @@ def world_steps(ctx):
                     *crater_geometry],
              reads=['brinecove.map', 'belmonte.ground', 'belmonte.query.SM_BM_NorthCountry', 'belmonte.query.SM_BM_NorthApron'],
              outputs=[out / 'map' / 'map.json', out / 'map' / 'map.png',
+                      out / 'map' / 'rough.png', out / 'map' / 'rough.jpg',
+                      out / 'map' / 'map.jpg', out / 'map' / 'map_lines.json',
                       *(out / 'map' / 'atlas' / f'{key}.png' for key in ('world', 'momiji_coast', 'momiji_woods', 'hidamari', 'temple_island',
                                                                      'northern_foothills', 'volcanic_highlands', 'haras_valley',
                                                                      'brinecove'))],

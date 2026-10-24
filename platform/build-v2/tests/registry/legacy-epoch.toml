@@ -1,0 +1,61 @@
+schema_version = 1
+
+[[scenarios]]
+id = "legacy-epoch.durable_begin_cut_fences_readers_and_default_recovery"
+tests = ["atelier-build-v2/legacy_epoch::tests::durable_begin_cut_fences_readers_and_default_recovery"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-epoch.durable_settlement_cut_preserves_independent_work_and_repair_demands"
+tests = ["atelier-build-v2/legacy_epoch::tests::durable_settlement_cut_preserves_independent_work_and_repair_demands"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-epoch.durable_finish_cuts_resume_or_leave_only_verified_absence"
+tests = ["atelier-build-v2/legacy_epoch::tests::durable_finish_cuts_resume_or_leave_only_verified_absence"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-epoch.repair_requires_unchanged_source_plan_root_and_positive_attempt_cleanup"
+tests = ["atelier-build-v2/legacy_epoch::tests::repair_requires_unchanged_source_plan_root_and_positive_attempt_cleanup"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-epoch.fresh_settlement_and_finalization_refuse_late_source_output_and_record_changes"
+tests = ["atelier-build-v2/legacy_epoch::tests::fresh_settlement_and_finalization_refuse_late_source_output_and_record_changes"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-epoch.settled_drift_requeues_before_replay_without_rerunning_valid_independent_outputs"
+tests = ["atelier-build-v2/legacy_epoch::tests::settled_drift_requeues_before_replay_without_rerunning_valid_independent_outputs"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-epoch.strict_records_refuse_positional_duplicate_unknown_and_unbounded_state"
+tests = ["atelier-build-v2/legacy_epoch::tests::strict_records_refuse_positional_duplicate_unknown_and_unbounded_state"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-epoch.occupied_epoch_names_are_never_overwritten_or_implicitly_adopted"
+tests = ["atelier-build-v2/legacy_epoch::tests::occupied_epoch_names_are_never_overwritten_or_implicitly_adopted"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-epoch.exact_own_permit_reuses_receipt_validation_without_sh_or_install_journal_bypass"
+tests = ["atelier-build-v2/legacy_epoch::tests::exact_own_permit_reuses_receipt_validation_without_sh_or_install_journal_bypass"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-epoch.legacy_exec_pair_is_same_ofd_and_cloexec"
+tests = ["atelier-build-v2/checkout_locks::tests::legacy_exec_pair_is_same_ofd_and_cloexec"]
+platforms = ["darwin", "linux"]
+tier = "t0"

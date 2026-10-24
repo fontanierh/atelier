@@ -24,6 +24,7 @@
     "platform/build-v2/src/keys.rs",
     "platform/build-v2/src/launch.rs",
     "platform/build-v2/src/leases.rs",
+    "platform/build-v2/src/legacy_epoch.rs",
     "platform/build-v2/src/lib.rs",
     "platform/build-v2/src/paths.rs",
     "platform/build-v2/src/plans.rs",

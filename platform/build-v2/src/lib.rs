@@ -25,6 +25,8 @@ pub mod integrity;
 pub mod keys;
 pub mod launch;
 pub mod leases;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+mod legacy_epoch;
 mod paths;
 pub mod plans;
 pub mod protocol;

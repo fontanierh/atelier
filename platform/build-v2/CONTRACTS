@@ -2,6 +2,22 @@
 The crate MUST remain independent of production v1 until a separately validated caller cutover.
 A0 schemas MUST NOT decide cache hits, launch native tools or publish results.
 
+@cc [owner:fontanierh,label:correctness;safety] legacy-operational-epoch-fence
+The dormant legacy epoch MUST remain separate from install journals, keys and result authority.
+Production qualification MUST refuse until a separately reviewed finite adapter issues private
+source/plan/ownership/settlement/cleanup/finalization evidence; records and booleans MUST NOT issue it.
+Begin MUST hold real build+EX custody, publish all pending tasks no-replace and fsync before work.
+Transitions MUST verify prior identity, persist before memory assignment and preserve the marker
+on errors/drop BEFORE verified barrier removal. Repair MUST bind unchanged scope/source/root, demand replay or verified restore
+for unverified tasks, and preserve revalidated independent results. Clearing MUST require fresh
+complete settlement, positive cleanup and finalization, then exact-owned removal and parent fsync.
+Any epoch entry MUST fence SH readers and default B3 mutators; the private exact-own EX observation
+MUST retain the separate install-journal blocker and shared receipt validator without nested SH.
+This unit fences Rust admission only; Python/v1 reader/producer admission, actual bootstrap and
+the production normal-repair issuer remain separate activation gates. No caller/bootstrap/CLI/native
+activation is authorized by this module. See legacy_epoch::tests
+and docs/build-v2/LEGACY_EPOCH.md for concrete fixture and platform proof limits.
+
 @cc [owner:fontanierh,label:correctness] build-v2-summary-observation
 Explanations MUST consume existing typed decisions and compact original-ingredient metadata without
 extra source/payload/cache reads, execution capabilities or provenance/platform key additions.

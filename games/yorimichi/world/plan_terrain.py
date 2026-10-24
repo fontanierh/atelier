@@ -25,6 +25,24 @@ def plan_selected(obj, output):
     return plan(obj, output, partition='spatial' if obj.name in ('Terrain', 'FarHills') else 'whole', options=OPTIONS, cell_metres=CELL_METRES.get(obj.name, 128.))
 
 
+# Before the atomic split these joined Terrain and inherited its zero-filled UVMap.
+ZERO_UV_ASSETS = ('Guardrail', 'Wires')
+
+
+def zero_uvmap(result):
+    """@cc [owner:fontanierh,label:correctness] island-atomic-zero-uvmap
+    A standalone Guardrail or Wires piece MUST carry exactly one `UVMap` with every loop
+    at (0, 0), as when it was joined into Terrain. A constructor that already made a UV
+    layer MUST be refused, never overwritten or given a second layer.
+    """
+    mesh = result.data
+    if len(mesh.uv_layers):
+        raise ValueError('Island ' + result.name + ' constructor already has a UV layer')
+    uv = mesh.uv_layers.new(name='UVMap').data
+    for index in range(len(mesh.loops)):
+        uv[index].uv = (0.0, 0.0)
+
+
 def construct(key, source, *, heightmap=None, final=None):
     import bpy
     import build_terrain
@@ -36,6 +54,8 @@ def construct(key, source, *, heightmap=None, final=None):
                                                city=source.get('city', True))
     if result is None or not len(result.data.polygons):
         raise ValueError('Enabled island constructor produced no geometry')
+    if key in ZERO_UV_ASSETS:
+        zero_uvmap(result)
     return result
 
 

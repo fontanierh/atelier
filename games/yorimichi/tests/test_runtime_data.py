@@ -74,3 +74,34 @@ def test_staging_implementation_is_a_narrow_fingerprint_input(tmp_path):
     previous = build.fingerprint(contract, done)
     source.write_text(source.read_text() + '\n# a staging implementation change\n')
     assert build.fingerprint(contract, done) != previous
+
+
+def test_map_required_outputs_cover_runtime_sources_and_auxiliary_files(tmp_path):
+    recipe = build.load_recipe('yorimichi')
+    ctx = SimpleNamespace(game='yorimichi', out=tmp_path, uproject=None)
+    steps = recipe.steps(ctx)
+    producer = next(step for step in steps if step.name == 'world.map')
+    stage = next(step for step in steps if step.name == 'data.stage')
+    assert producer in build.order(steps, ['data.stage'])
+    assert producer.name in stage.needs
+
+    required = {ctx.out / 'map' / name for name in
+                ('rough.png', 'rough.jpg', 'map.jpg', 'map_lines.json')}
+    assert required <= set(producer.outputs)
+    for rel in ('map/map.jpg', 'map/map_lines.json'):
+        assert rel in recipe.runtime_data.staged(ctx.out)
+        source = recipe.runtime_data.staged_source(ctx.out, rel)
+        assert source in required
+        assert [step.name for step in steps if source in step.outputs] == [producer.name]
+
+    # Exercise the ordinary required-output check with every old representative present.
+    # These private placeholders test declaration completeness, not rendered map validity.
+    for output in producer.outputs:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_bytes(b'map output placeholder')
+    assert build.outputs_present(producer)
+    for output in sorted(required):
+        output.unlink()
+        assert not build.outputs_present(producer), output.name
+        output.write_bytes(b'map output placeholder')
+    assert build.outputs_present(producer)
