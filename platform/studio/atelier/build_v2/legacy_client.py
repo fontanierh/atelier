@@ -8,6 +8,7 @@ import struct
 import time
 
 MAX_FRAME_BYTES = 64 * 1024
+MAX_RECORD_BYTES = 4 * 1024 * 1024
 MAX_DEPTH = 24
 MAX_VALUES = 8192
 CLOCK_ID = 'posix-clock-monotonic-v1'
@@ -394,7 +395,7 @@ class LegacyClient:
                 else:
                     _fields(page, ('offset', 'next', 'total', 'hex'))
                     for field in ('offset', 'next', 'total'):
-                        _integer(page[field], 256 * 1024)
+                        _integer(page[field], MAX_RECORD_BYTES)
                     if (page['offset'] != offset or not offset <= page['next'] <= page['total']
                             or (page['next'] == offset and offset < page['total'])
                             or page['next'] - offset > 16384 or type(page['hex']) is not str

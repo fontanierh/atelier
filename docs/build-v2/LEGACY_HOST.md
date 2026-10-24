@@ -15,7 +15,7 @@ restore, stamp migration, batch preparation, discovery/control writes and finali
 qualified scope before mutation. Per-member stamps while a shared worker lives are provisional;
 positive shared guard cleanup and fresh member checks precede settlement. Frame changes use
 rename-over, never a finish/begin gap. Active caps remain64tasks/16roots/128writes per task,
-256attempts/256KiB record/1024witnesses per check. Every durable transition consumes the explicit
+256attempts/4MiB durable record/1024witnesses per check. Every durable transition consumes the explicit
 MAX_TRANSITIONS=65,536 operational limit; this is not a measured graph-size claim.
 
 A normal source-fix rerun uses Supersede under the same real guards, checks every recorded
@@ -208,3 +208,9 @@ private verifier. The controller distribution remains capped at 256 files. This 
 does not change source digest framing, the 8 MiB file/32 MiB total bounds, link/duplicate/readonly
 checks or any control, witness, guard or admission limit. It accommodates a measured finite
 normal import closure; it does not certify task semantics or successful Graph discovery.
+
+The durable record's 4 MiB resource bound applies equally to anchored reads, strict decode,
+encode and atomic replacement. It does not enlarge the 64 KiB transport record, task,
+attempt, witness or transition limits, or omit cleanup/source/recovery evidence. Prior
+records use the same schema and must pass the same validation; oversized records refuse.
+Paged observations retain their existing 16 KiB chunks and exact digest correlation.

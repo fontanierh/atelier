@@ -226,3 +226,34 @@ def test_original_rebuild_reasons_are_bounded_request_data_not_permission():
         record = {**request, 'options': {**request['options'], 'rebuild_reason': bad}}
         with pytest.raises(AuthorityLost):
             validate_scheduler_request(record)
+
+
+@pytest.mark.parametrize('total', [256 * 1024 + 1, protocol.MAX_RECORD_BYTES,
+                                   protocol.MAX_RECORD_BYTES + 1])
+def test_paged_durable_record_bound_is_independent_of_wire_bound(total):
+    host_read, child_write, child_read, host_write = endpoints()
+    channel = LegacyChannel(child_write, child_read, deadline_ns=authority_now_ns() + 2_000_000_000)
+    try:
+        client = started_client(host_write, channel)
+        client.record_digest = 'a' * 64
+        reply = {'version': 2, 'type': 'ack', 'nonce': 'nonce', 'selection': 'persistent-selection',
+                 'sequence': 1, 'record_digest': 'a' * 64, 'frame': None,
+                 'transition_count': 0, 'permission': 'observed',
+                 'record_page': {'offset': total, 'next': total, 'total': total, 'hex': ''}}
+        encoded = encode_record(reply)
+        assert len(encoded) < protocol.MAX_FRAME_BYTES
+        os.write(host_write, encoded)
+        operation = {'type': 'observe', 'witnesses': [], 'record_offset': total}
+        if total > protocol.MAX_RECORD_BYTES:
+            with pytest.raises(AuthorityLost):
+                client.request(operation)
+            assert channel.failed and client.sequence == 1
+        else:
+            assert client.request(operation)['record_page']['total'] == total
+            assert client.sequence == 2
+        with pytest.raises(AuthorityLost):
+            encode_record({'text': 'x' * (protocol.MAX_FRAME_BYTES + 1)})
+    finally:
+        channel.close()
+        os.close(host_read)
+        os.close(host_write)

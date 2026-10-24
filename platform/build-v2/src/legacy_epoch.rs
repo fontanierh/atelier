@@ -17,7 +17,7 @@ use std::io::{self, Read};
 use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
 use std::path::Path;
 
-const MAX_BYTES: usize = 256 * 1024;
+const MAX_BYTES: usize = 4 * 1024 * 1024;
 const MAX_TASKS: usize = 64;
 const INSTALL_JOURNAL: &str = "build/build-v2/install/journal.json";
 
@@ -1078,7 +1078,15 @@ mod tests {
         let mut value: serde_json::Value = serde_json::from_slice(&raw).unwrap();
         value["plan"]["tasks"][0] = serde_json::json!(["a", "closed_replay", ["products/a"]]);
         assert!(decode(&serde_json::to_vec(&value).unwrap()).is_err());
-        assert!(decode(&vec![b' '; MAX_BYTES + 1]).is_err());
+        // The durable resource bound is independent of task/wire authority. Existing
+        // records remain readable; a record above the former 256 KiB limit is valid.
+        let mut padded = raw.clone();
+        padded.resize(256 * 1024 + 1, b' ');
+        assert!(decode(&padded).is_ok());
+        padded.resize(MAX_BYTES, b' ');
+        assert!(decode(&padded).is_ok());
+        padded.push(b' ');
+        assert!(decode(&padded).is_err());
         let mut bad = e.record.clone();
         bad.pending.push("a".into());
         assert!(validate_record(&bad).is_err());
