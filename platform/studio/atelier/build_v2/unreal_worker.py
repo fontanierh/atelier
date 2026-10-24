@@ -68,6 +68,7 @@ WORKER_VERSION = 'atelier-unreal-job-1'
 EXPECTED_CONTEXT = 'Atelier/expected-context.json'
 CONTEXT_REPORT = 'unreal-context.json'
 IMPORT_EVIDENCE = 'evidence/imports.json'
+READ_EVIDENCE = 'evidence/reads.json'
 EVIDENCE_VERSION = 1
 GAME = '/Game/'
 INPUT_CONTENT = 'in/content/Game/'
@@ -149,6 +150,28 @@ def ddc_problem(policy, nodes):
         if not allowed:
             return f'a {node["kind"]} node at {path!r} is outside the v2 DDC folder'
     return None if local else 'no cache node is inside the v2 DDC folder'
+
+
+def validate_read_report(report, declared, platform_roots=(), generated=()):
+    """@cc [owner:fontanierh,label:correctness] unreal-observed-input-closure
+    Observed unknown reads MUST fail before Completed. Generated files MUST be attested
+    outputs of this job. This best-effort report MUST NOT certify unobserved native IO.
+    """
+    if (not isinstance(report, dict) or set(report) != {'version', 'best_effort', 'files'}
+            or type(report['version']) is not int or report['version'] != 1
+            or report['best_effort'] is not True or not isinstance(report['files'], list)):
+        raise JobRefused('dependency', 'missing or malformed native read report')
+    allowed = {Path(path).resolve() for path in (*declared, *generated)}
+    roots = tuple(Path(path).resolve() for path in platform_roots)
+    unknown = []
+    for item in report['files']:
+        if not isinstance(item, str) or not Path(item).is_absolute():
+            raise JobRefused('dependency', 'native read report contains a non-absolute path')
+        path = Path(item).resolve()
+        if path not in allowed and not any(path.is_relative_to(root) for root in roots):
+            unknown.append(item)
+    if unknown:
+        raise JobRefused('dependency', f'opened undeclared files: {sorted(set(unknown))}')
 
 
 def log(message):
@@ -266,8 +289,13 @@ class Editor:
         return {'graph': graph['graph'], 'nodes': nodes}
 
     def begin_job(self):
+        if not self.library.begin_read_recording():
+            raise JobRefused('dependency', 'native read recording is unavailable')
         self.library.begin_ensure_count()
         self.library.begin_save_recording()
+
+    def read_report(self):
+        return json.loads(self.library.end_read_recording())
 
     def ensures(self):
         """Failed ensures since `begin_job` (the editor runs with -nocrashreports, so none is reported elsewhere)."""
@@ -351,6 +379,7 @@ class Worker:
         self.responses = responses
         self.project = editor.project_dir()
         self.content = self.project / 'Content'
+        self.read_platform_roots = ()
 
     def send(self, message):
         protocol.write_frame(self.responses, protocol.RESPONSE, message)
@@ -386,6 +415,7 @@ class Worker:
         problem = ddc_problem(expected['ddc'], graph['nodes'])
         if problem:
             raise StartRefused(f"the editor's cache graph is not the v2 graph: {problem}")
+        self.read_platform_roots = (self.editor.engine_dir(), Path(expected['ddc']['dir']))
         if any(self.content.iterdir()) or self.editor.registry_game_assets():
             raise StartRefused('/Game is not empty at startup')
 
@@ -509,10 +539,12 @@ class Worker:
             entry['run'](Context(job_dir, inputs, input_packages, job['params'], sorted(packages), self.content))
             self.editor.finish_background_work()
             saved = self.editor.saved_packages()
+            read_report = self.editor.read_report()
             recording = False
         finally:
             if recording:
                 touched.update(item['package'] for item in self.editor.saved_packages())
+                self.editor.read_report()
         # Every file a save attested, with the package that saved it: in save order, so a file's
         # latest attestation wins, and a later save that leaves a companion alone keeps its hash.
         files_of, attested, shared = {}, {}, set()
@@ -524,6 +556,11 @@ class Worker:
                 if owner != item['package']:
                     shared.add(resolved)
                 attested[resolved] = (item['package'], digest)
+        write_atomic(job_dir / READ_EVIDENCE, read_report)
+        declared_reads = [job_dir / path for path in job['code']]
+        declared_reads += [job_dir / item['path'] for item in job['inputs']]
+        declared_reads += list(staged)
+        validate_read_report(read_report, declared_reads, self.read_platform_roots, attested)
         # The registry forgets every saved file at reset, even one the op deleted afterwards.
         moved.extend(Path(filename) for filenames in files_of.values() for filename in filenames)
         names = set(files_of)

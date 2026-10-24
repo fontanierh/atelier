@@ -276,6 +276,23 @@ FString UAtelierBuildWorkerLibrary::NativeContext()
     return Write(MakeShared<FJsonValueObject>(Context));
 }
 
+extern bool BeginAtelierReadRecording();
+extern TArray<FString> EndAtelierReadRecording();
+
+bool UAtelierBuildWorkerLibrary::BeginReadRecording()
+{
+    return BeginAtelierReadRecording();
+}
+
+FString UAtelierBuildWorkerLibrary::EndReadRecording()
+{
+    const TSharedRef<FJsonObject> Report = MakeShared<FJsonObject>();
+    Report->SetNumberField(TEXT("version"), 1);
+    Report->SetBoolField(TEXT("best_effort"), true);
+    Report->SetField(TEXT("files"), Strings(EndAtelierReadRecording()));
+    return Write(MakeShared<FJsonValueObject>(Report));
+}
+
 void UAtelierBuildWorkerLibrary::BeginSaveRecording()
 {
     GSaved.Reset();

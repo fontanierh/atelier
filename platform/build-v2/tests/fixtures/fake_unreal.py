@@ -250,6 +250,14 @@ class AtelierBuildWorkerLibrary:
                            'nodes': cache_nodes(ddc['graph'])})
 
     @staticmethod
+    def begin_read_recording():
+        return True
+
+    @staticmethod
+    def end_read_recording():
+        return json.dumps({'version': 1, 'best_effort': True, 'files': []})
+
+    @staticmethod
     def begin_save_recording():
         global recording
         recording = []
