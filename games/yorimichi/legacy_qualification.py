@@ -339,6 +339,14 @@ def qualify_texture_aggregate(step, *, build, graph, products):
     return step
 
 
+def _complete_treehouse_export_roster(steps):
+    """Availability only: strict raw-role qualification still precedes any permission."""
+    parents = ('Tree_Canopy_Maple', 'Tree_Canopy_Crimson', 'Tree_Canopy_Amber', 'Tree_Canopy_Ginkgo')
+    expected = {'world.treehouse_trees.export.' + parent for parent in parents}
+    actual = {step.name for step in steps if step.name.startswith('world.treehouse_trees.export.')}
+    return actual == expected
+
+
 class TextureAuthority:
     """@cc [owner:fontanierh,label:correctness;safety] original-closed-texture-task
     Only the finite qualified texture scripts/arguments/spec/products and complete scheduler
@@ -391,8 +399,9 @@ class TextureAuthority:
             self.generated_inputs.update(profile.produced_inputs)
         from legacy_treehouse_export_profile import qualify_treehouse_export
         export_names = {'world.treehouse_trees.export.' + parent for parent in parents}
+        exports_ready = _complete_treehouse_export_roster(selected)
         for step in selected:
-            if step.name not in export_names:
+            if not exports_ready or step.name not in export_names:
                 continue
             profile = qualify_treehouse_export(step, checkout=self.checkout,
                                               output_root=self.checkout / 'build/yorimichi')
@@ -411,7 +420,8 @@ class TextureAuthority:
             self.discovery_profile = profile
             self.call_steps[self.discovery.name], self.call_profiles[self.discovery.name] = self.discovery, profile
         from legacy_treehouse_assembly_profile import qualify_treehouse_assembly
-        self.assembly = next((step for step in selected if step.name == 'world.treehouse_trees.assembled'), None)
+        self.assembly = (next((step for step in selected if step.name == 'world.treehouse_trees.assembled'), None)
+                         if exports_ready else None)
         if self.assembly is not None:
             profile = qualify_treehouse_assembly(self.assembly, checkout=self.checkout,
                                                 output_root=self.checkout / 'build/yorimichi')
@@ -433,7 +443,7 @@ class TextureAuthority:
         from legacy_treehouse_data_profile import qualify_treehouse_data
         self.data_steps = {}
         for step in selected:
-            if step.name != 'world.treehouse_trees.data':
+            if not exports_ready or step.name != 'world.treehouse_trees.data':
                 continue
             profile = qualify_treehouse_data(step, checkout=self.checkout,
                                             output_root=self.checkout / 'build/yorimichi')
@@ -510,7 +520,14 @@ class TextureAuthority:
                       'build/yorimichi/.checkpoint-in-progress.json']
         def claims(paths):
             return [{'path': name, 'canonical': name, 'anchor': anchor} for name in paths]
-        tasks = [{'id': self.metadata, 'replay': 'closed_replay', 'writes': claims(self.paths)}]
+        # Subdivide the SAME complete claim union, not its observations. Each
+        # root settles in one bounded message after ALL original finalization;
+        # every actual attempt retains all four metadata members.
+        self.metadata_scopes = dict(zip(
+            (self.metadata, self.metadata + '.logs', self.metadata + '.stamps', self.metadata + '.journal'),
+            ([path] for path in self.paths)))
+        tasks = [{'id': name, 'replay': 'closed_replay', 'writes': claims(paths)}
+                 for name, paths in self.metadata_scopes.items()]
         for name, paths in self.output_paths.items():
             tasks.append({'id': name, 'replay': 'closed_replay',
                           'writes': claims([path.relative_to(self.checkout).as_posix() for path in paths])})
@@ -537,12 +554,13 @@ class TextureAuthority:
         if old is not None:
             previous_frame = old.get('frame')
             scope = None if previous_frame is None else previous_frame['scope']
-            allowed = {'control.hash-index.prepare', self.metadata, *self.steps}
+            allowed = {'control.hash-index.prepare', *self.metadata_scopes, *self.steps}
             if scope is not None and any(task['id'] not in allowed for task in scope['tasks']):
                 raise AuthorityRefused('old epoch includes an unqualified game-family repair scope')
             same = all(old['binding'].get(key) == value for key, value in observation.items() if key != 'sources')
-            if same and scope == frame and not expanded:
-                self.client.request({'type': 'prepare_selection', 'observation': observation})
+            if same and scope == frame:
+                if not expanded:
+                    self.client.request({'type': 'prepare_selection', 'observation': observation})
                 settled = [item['task'] for item in old['frame']['settled']]
                 if settled:
                     # Resume all actual members under new permission. Pending failed
@@ -553,12 +571,21 @@ class TextureAuthority:
                     self.client.request({'type': 'prepare_selection', 'observation': observation})
                 self.client.request({'type': 'advance', 'observation': frame})
             else:
+                if expanded:
+                    raise AuthorityRefused('live expansion changed a scope with unfinished tasks; no Supersede or new permission')
                 self.client.request({'type': 'supersede', 'observation': observation, 'initial_frame': frame})
         else:
             self.client.request({'type': 'prepare_selection', 'observation': observation})
             self.client.request({'type': 'advance', 'observation': frame})
+        if expanded:
+            # A same-frame replay retains all old attempts. Bind a fresh id to
+            # this exact live protocol sequence; no counter/frame reset.
+            sequence = self.client.sequence
+            if type(sequence) is not int or sequence <= 0:
+                raise AuthorityRefused('live preparation lacks its exact protocol sequence')
+            self.attempt = self.preparation_attempt = 'prepare-' + self.nonce + '-' + str(sequence)
         self.client.request({'type': 'begin_attempt', 'attempt': {'id': self.attempt,
-                             'members': [self.metadata, *self.steps], 'execution': {'kind': 'in_process'}, 'guard': None}})
+                             'members': [*self.metadata_scopes, *self.steps], 'execution': {'kind': 'in_process'}, 'guard': None}})
         self.begun = True
 
     def expanded(self, ctx, steps, wanted):
@@ -634,7 +661,7 @@ class TextureAuthority:
             self.validate_call(step, step.commands[0])
             self.attempt = 'call-' + self.nonce + '-' + token
             self.client.request({'type': 'begin_attempt', 'attempt': {
-                'id': self.attempt, 'members': [self.metadata, step.name],
+                'id': self.attempt, 'members': [*self.metadata_scopes, step.name],
                 'execution': {'kind': 'in_process'}, 'guard': None}})
 
     def call_scope(self, ctx, step, command):
@@ -762,12 +789,13 @@ class TextureAuthority:
             self.client.request({'type': 'settle', 'observation': {'task': name, 'attempt': attempt,
                                  'inputs': keys[name], 'outputs': outputs}})
             print('Managed original game task settled: ' + name, flush=True)
-        outputs = []
-        for name in self.paths:
-            outputs.extend(self.witness(name))
-        self.client.request({'type': 'settle', 'observation': {'task': self.metadata,
-                             'attempt': self.preparation_attempt,
-                             'inputs': self.manifest['issuer_digest'], 'outputs': outputs}})
+        for task, paths in self.metadata_scopes.items():
+            outputs = []
+            for name in paths:
+                outputs.extend(self.witness(name))
+            self.client.request({'type': 'settle', 'observation': {'task': task,
+                                 'attempt': self.preparation_attempt,
+                                 'inputs': self.manifest['issuer_digest'], 'outputs': outputs}})
         print('Managed original scheduler metadata settled', flush=True)
 
     def runtime_roots(self):
@@ -827,7 +855,7 @@ class TextureAuthority:
                       'kind': 'job', 'threads': 1, 'memory_bytes': 10 * 1024**3,
                       'execution_ns': execution_ns, 'queue_deadline_ns': queue_ns}
             self.client.request({'type': 'begin_attempt', 'attempt': {'id': self.attempt,
-                'members': [self.metadata, self.step.name], 'execution': {'kind': 'guarded', 'directory': self.guard_relative,
+                'members': [*self.metadata_scopes, self.step.name], 'execution': {'kind': 'guarded', 'directory': self.guard_relative,
                  'invocation': self.invocation, 'launch': launch}, 'guard': None}})
             self.audit_root.mkdir(parents=True, mode=0o700)
             yield self.audit_root
@@ -853,7 +881,7 @@ class TextureAuthority:
         # Explicit complete member scope BEFORE write_plan unlinks any stamp.
         self.client.request({'type': 'begin_attempt', 'attempt': {
             'id': 'native-prepare-' + self.nonce + '-' + session.nonce,
-            'members': [self.metadata, *launch.members],
+            'members': [*self.metadata_scopes, *launch.members],
             'execution': {'kind': 'in_process'}, 'guard': None}})
         self.native_launch = launch
 

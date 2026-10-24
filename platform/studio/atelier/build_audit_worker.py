@@ -41,6 +41,10 @@ class Observer:
         self.sealed = False
         self.local = threading.local()
         self.lock = threading.RLock()
+        self.resolve_code = Path.resolve.__code__
+        self.realpath_codes = {getattr(getattr(os.path, name, None), '__code__', None)
+                               for name in ('realpath', '_joinrealpath', '_realpath')}
+        self.realpath_codes.discard(None)
 
     # Kernel device nodes are not recipe inputs. CPython reads entropy to name a temporary file
     # and libraries seed themselves from it; macOS reaches the same entropy through getentropy
@@ -181,10 +185,38 @@ class Observer:
             return function(path, *args, **kwargs)
         self.local.busy = True
         try:
-            self.read(self.path(path, kwargs.get('dir_fd')), metadata=True)
+            checked = self.path(path, kwargs.get('dir_fd'))
+            if self.input_resolution_metadata(checked):
+                self.record('input resolution metadata', checked)
+            else:
+                self.read(checked, metadata=True)
             return function(path, *args, **kwargs)
         finally:
             self.local.busy = False
+
+    def input_resolution_metadata(self, path):
+        """@cc [owner:fontanierh,label:correctness;safety] declared-input-resolver-metadata
+        Only the retained actual stdlib resolver code chain normalizing one exact
+        declared input MAY inspect its ancestor metadata. This MUST NOT grant parent
+        directory data/listing/write permission; direct metadata calls, replaced
+        resolver code and unknown targets MUST retain the original refusal. See
+        test_build_audit.py declared-script and resolver-boundary regressions.
+        """
+        frame = sys._getframe(2)
+        if frame.f_code not in self.realpath_codes:
+            return False
+        for _ in range(8):
+            if frame is None:
+                return False
+            if frame.f_code not in self.realpath_codes:
+                break
+            frame = frame.f_back
+        if frame is None or frame.f_code is not self.resolve_code:
+            return False
+        target = frame.f_locals.get('self')
+        if type(target) is not type(self.scratch) or not target.is_absolute():
+            return False
+        return any(target == source and path in source.parents for source, _ in self.inputs)
 
     def checked_open(self, function, path, *args, **kwargs):
         # CPython's open event omits dir_fd. Check that argument before letting os.open emit it.

@@ -73,6 +73,8 @@ def test_native_shared_intent_precedes_files_and_uses_one_recorded_bound(tmp_pat
             assert not launch.directory.exists()
             calls.append(record)
     a = SimpleNamespace(checkout=tmp_path, nonce='a' * 32, metadata='control.scheduler',
+                        metadata_scopes={'control.scheduler': ['state'], 'control.scheduler.logs': ['logs'],
+                                         'control.scheduler.stamps': ['stamps'], 'control.scheduler.journal': ['journal']},
                         custody={'build': 10, 'content': 11, 'writer': 12}, client=Client(),
                         manifest={'distribution': str(tmp_path / 'distribution'), 'source_digest': 'b' * 64,
                                   'issuer_digest': 'c' * 64, 'scheduler_request': {'digest': 'd' * 64},
@@ -92,7 +94,7 @@ def test_native_shared_intent_precedes_files_and_uses_one_recorded_bound(tmp_pat
     ctx = SimpleNamespace(blender=str(bundle / 'MacOS/Blender'))
     with launch.prepared(ctx, command) as (argv, environment, descriptors):
         assert descriptors == ()  # Checkout locks go to monitor custody, NEVER worker pass_fds.
-        assert len(calls) == 1 and calls[0]['attempt']['members'] == [a.metadata, step.name]
+        assert len(calls) == 1 and calls[0]['attempt']['members'] == [*a.metadata_scopes, step.name]
         intent = calls[0]['attempt']['execution']['launch']
         assert intent['execution_ns'] == int(expected * 1e9) and launch.work_seconds == expected
         assert intent['threads'] == 3 and intent['memory_bytes'] == 10 * 1024**3

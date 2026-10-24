@@ -91,7 +91,7 @@ class NativeBatchLaunch:
                       'kind': 'job', 'threads': command.threads, 'memory_bytes': 10 * 1024**3,
                       'execution_ns': self.execution_ns, 'queue_deadline_ns': self.queue_deadline_ns}
             a.client.request({'type': 'begin_attempt', 'attempt': {'id': self.attempt,
-                'members': [a.metadata, *self.members], 'execution': {'kind': 'guarded',
+                'members': [*a.metadata_scopes, *self.members], 'execution': {'kind': 'guarded',
                 'directory': self.relative, 'invocation': self.invocation, 'launch': launch}, 'guard': None}})
             # No context/report directory exists before its durable launch intent.
             self.directory.mkdir(parents=True, mode=0o700)

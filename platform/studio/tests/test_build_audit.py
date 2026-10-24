@@ -635,3 +635,25 @@ with managed_temporaries(Path(spec['scratch']) / 'atomic-tmp'):
     assert a.run() == 1
     assert a.source.read_text() == 'input'
     assert not a.report()['passed'] and a.report()['violations']
+
+
+@pytest.mark.parametrize('operation,success', [('resolve', True), ('direct-stat', False),
+                                            ('foreign-resolve', False), ('replaced-resolver', False)])
+def test_declared_script_resolution_does_not_grant_parent_metadata_or_unknown_paths(action, operation, success):
+    a = action
+    folder = a.root / 'games'; folder.mkdir()
+    script = folder / 'generate.py'
+    expression = {'resolve': 'Path(__file__).resolve()',
+                  'direct-stat': 'Path(__file__).parent.stat()',
+                  'foreign-resolve': 'Path(__file__).with_name("undeclared.py").resolve()',
+                  'replaced-resolver': 'import os\ndef foreign(path, *, strict=False):\n    Path(path).parent.stat()\n    return str(path)\nos.path.realpath = foreign\nPath(__file__).resolve()'}[operation]
+    script.write_text('from pathlib import Path\nimport sys\nsource, output = map(Path, sys.argv[1:])\n'
+                      + expression + '\noutput.write_text(source.read_text())\n')
+    a.step.commands = [Python(script, (a.source, a.output))]
+    result = a.run()
+    assert result == (0 if success else 1), a.messages
+    assert a.report()['passed'] is success
+    if success:
+        assert a.output.read_text() == 'input'
+    else:
+        assert a.report()['violations']

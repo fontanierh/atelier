@@ -472,7 +472,7 @@ def test_texture_prepared_only_null_frame_preserves_host_qualification_path(scri
     authority.before_prepare(ctx, [], ['data.stage'])
     calls = authority.client.calls
     assert [item['type'] for item in calls] == ['supersede', 'begin_attempt']
-    assert [task['id'] for task in calls[0]['initial_frame']['tasks']] == [authority.metadata, authority.step.name]
+    assert [task['id'] for task in calls[0]['initial_frame']['tasks']] == [*authority.metadata_scopes, authority.step.name]
     assert calls[1]['attempt']['execution'] == {'kind': 'in_process'}
     assert not (ctx.out / '.state').exists()
 
@@ -545,12 +545,13 @@ def test_texture_group_frame_separates_shared_metadata_and_products_and_settles_
     authority.output_paths = {name: (profile.output,) for name, profile in authority.profiles.items()}
     authority.before_prepare(ctx, [], ['data.stage'])
     frame = authority.client.calls[1]['observation']
-    assert len(frame['tasks']) == 3
-    shared, *products = frame['tasks']
-    assert shared['id'] == authority.metadata
-    assert all('/textures/' not in claim['path'] for claim in shared['writes'])
+    assert len(frame['tasks']) == 6
+    shared, products = frame['tasks'][:4], frame['tasks'][4:]
+    assert [task['id'] for task in shared] == list(authority.metadata_scopes)
+    assert [claim['path'] for task in shared for claim in task['writes']] == authority.paths
+    assert all('/textures/' not in claim['path'] for task in shared for claim in task['writes'])
     assert [len(task['writes']) for task in products] == [1, 1]
-    assert authority.client.calls[-1]['attempt']['members'] == [authority.metadata, *authority.steps]
+    assert authority.client.calls[-1]['attempt']['members'] == [*authority.metadata_scopes, *authority.steps]
     monkeypatch.setattr(authority, '_check_certificate', lambda ctx, step: 'f' * 64)
     invocations = []
     for step in authority.steps.values():
@@ -563,7 +564,7 @@ def test_texture_group_frame_separates_shared_metadata_and_products_and_settles_
     assert not any(call['type'] == 'settle' for call in authority.client.calls)
     authority.after_index(ctx)
     settled = [call['observation']['task'] for call in authority.client.calls if call['type'] == 'settle']
-    assert settled == [*authority.steps, authority.metadata]
+    assert settled == [*authority.steps, *authority.metadata_scopes]
     assert all(call['observation']['attempt'] == authority.preparation_attempt
                for call in authority.client.calls if call['type'] == 'settle')
     with pytest.raises(ValueError, match='invalidated'):
@@ -592,7 +593,8 @@ def test_texture_same_frame_continuation_requeues_only_settled_members_before_ne
     frame = authority.client.calls[1]['observation']
     binding = authority.client.calls[0]['observation']
     authority.client.calls.clear()
-    old = {'binding': binding, 'frame': {'scope': frame, 'pending': [step.name],
+    pending = [step.name, *list(authority.metadata_scopes)[1:]]
+    old = {'binding': binding, 'frame': {'scope': frame, 'pending': pending,
                                        'settled': [{'task': authority.metadata}]}}
     monkeypatch.setattr(module, '_prior_record', lambda client: old)
     authority.texture_steps = dict(authority.steps)
@@ -601,8 +603,25 @@ def test_texture_same_frame_continuation_requeues_only_settled_members_before_ne
     authority.before_prepare(ctx, [], ['data.stage'])
     assert [call['type'] for call in authority.client.calls] == ['prepare_selection', 'requeue', 'begin_attempt']
     assert authority.client.calls[1]['members'] == [authority.metadata]
-    assert authority.client.calls[2]['attempt']['members'] == [authority.metadata, step.name]
+    assert authority.client.calls[2]['attempt']['members'] == [*authority.metadata_scopes, step.name]
     assert not (ctx.out / '.state').exists()
+    # A live replan with the SAME exact frame keeps pending future tasks and
+    # requeues only prior settlements. It never requests fresh-host Supersede.
+    authority.client.calls.clear()
+    authority.client.sequence = 73
+    authority.before_prepare(ctx, [], ['data.stage'], expanded=True)
+    assert [call['type'] for call in authority.client.calls] == ['requeue', 'begin_attempt']
+    assert authority.client.calls[0]['members'] == [authority.metadata]
+    assert authority.client.calls[1]['attempt']['id'] == 'prepare-' + authority.nonce + '-73'
+    assert old['frame']['pending'] == pending  # No fake future settlement/drop.
+    authority.client.calls.clear()
+    changed = json.loads(json.dumps(old))
+    changed['frame']['scope']['topology'] = 'e' * 64
+    monkeypatch.setattr(module, '_prior_record', lambda client: changed)
+    from atelier.build_v2.legacy_client import AuthorityRefused
+    with pytest.raises(AuthorityRefused, match='unfinished tasks'):
+        authority.before_prepare(ctx, [], ['data.stage'], expanded=True)
+    assert authority.client.calls == [] and not (ctx.out / '.state').exists()
 
 
 def test_texture_failed_final_certificate_never_settles_earlier_members_or_metadata(scripted_index_provider, monkeypatch):
@@ -747,3 +766,69 @@ def test_pure_native_child_view_retains_actual_objects_unknown_fields_and_restor
     with pytest.raises(AuthorityRefused, match='descriptor changed'):
         with authority.raw_native_members():
             pytest.fail('accepted forged child metadata')
+
+
+def test_actual_cold_and_partial_canopy_factory_defers_every_post_discovery_permission(tmp_path):
+    """Declaration metadata only: no native payloads, stamps, receipts or Current claim."""
+    from atelier import paths
+    source = paths.REPO / 'games/yorimichi/legacy_qualification.py'
+    spec = importlib.util.spec_from_file_location('_cold_followup_gate', source)
+    profile = importlib.util.module_from_spec(spec); spec.loader.exec_module(profile)
+    factory = paths.REPO / 'games/yorimichi/treehouse_atomic_build.py'
+    spec = importlib.util.spec_from_file_location('_actual_cold_canopy_factory', factory)
+    recipe = importlib.util.module_from_spec(spec); spec.loader.exec_module(recipe)
+    root = tmp_path / 'real-cold-output'
+    ctx = SimpleNamespace(out=root)
+    cold = recipe.canopy_steps(ctx)
+    assert not root.exists()
+    assert not profile._complete_treehouse_export_roster(cold)
+    assert any(step.name == 'world.treehouse_trees.assembled' for step in cold)
+    def plan(parent):
+        folder = root / 'planned_exports/treehouse_trees' / parent
+        folder.mkdir(parents=True)
+        (folder / 'plan.json').write_text(json.dumps(dict(
+            schema=1, parent=parent, complete=True, triangle_limit=32768,
+            source_triangles=1, pieces=[dict(name=parent, payload=parent+'.npz', triangles=1)])))
+    for parent in recipe.TREES[:2]:
+        plan(parent)
+    partial = recipe.canopy_steps(ctx)
+    assert len([step for step in partial if step.name.startswith('world.treehouse_trees.export.')]) == 2
+    assert not profile._complete_treehouse_export_roster(partial)
+    for parent in recipe.TREES[2:]:
+        plan(parent)
+    complete = recipe.canopy_steps(ctx)
+    assert profile._complete_treehouse_export_roster(complete)
+    from atelier import build
+    assert not profile._complete_treehouse_export_roster([
+        *complete, build.Step('world.treehouse_trees.export.Foreign', [])])
+    assert not list(root.rglob('*.npz')) and not (root / 'stamps').exists()
+
+
+def test_source_fix_subdivides_retained_metadata_claim_union_without_dropping_old_scope(scripted_index_provider, monkeypatch):
+    case=scripted_index_provider;module=case.profile
+    authority=module.TextureAuthority.__new__(module.TextureAuthority)
+    authority.checkout,authority.manifest,authority.request=case.root,case.manifest,case.request
+    authority.client,authority.nonce=case.client(),'f'*32
+    authority.metadata='control.textures.scheduler'
+    authority.attempt=authority.preparation_attempt='prepare-'+authority.nonce
+    authority.hashlib=__import__('hashlib');authority.steps={};authority.texture_steps={}
+    authority.output_paths={};authority.generated_inputs=set()
+    authority.build=SimpleNamespace(required_inputs=lambda step: [])
+    ctx=SimpleNamespace(out=case.root/'build/yorimichi')
+    monkeypatch.setattr(module,'_prior_record',lambda client:None)
+    authority.before_prepare(ctx,[],['data.stage'])
+    binding=authority.client.calls[0]['observation'];new_frame=authority.client.calls[1]['observation']
+    old_claims=[claim for task in new_frame['tasks'] for claim in task['writes']]
+    old={'binding':{**binding,'source_plan':'1'*64},'frame':{'scope':{**new_frame,'tasks':[
+        {'id':authority.metadata,'replay':'closed_replay','writes':old_claims}]},
+        'pending':[authority.metadata],'settled':[]}}
+    monkeypatch.setattr(module,'_prior_record',lambda client:old)
+    authority.client.calls.clear()
+    authority.before_prepare(ctx,[],['data.stage'])
+    assert [call['type'] for call in authority.client.calls]==['supersede','begin_attempt']
+    replacement=authority.client.calls[0]['initial_frame']
+    assert len(replacement['tasks'])==4
+    assert [claim for task in replacement['tasks'] for claim in task['writes']]==old_claims
+    assert all(task['replay']=='closed_replay' for task in replacement['tasks'])
+    assert authority.client.calls[1]['attempt']['members']==list(authority.metadata_scopes)
+    assert old['frame']['pending']==[authority.metadata] and not (ctx.out/'.state').exists()
