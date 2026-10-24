@@ -789,6 +789,21 @@ def test_actual_captured_graph_qualifies_data_before_private_runtime_without_tas
         assert len(authority.native_profiles[harbor.name].code_inputs) == 94
         assert set(authority.native_profiles[harbor.name].produced_inputs) <= authority.generated_inputs
         assert authority.output_paths['world.brinecove.sources'] == (paths.REPO/'build/yorimichi/digests/brinecove-source-library.json',)
+        for name in ('world.brinecove.rim_data', 'world.brinecove.placements'):
+            data, observed = authority.data_steps[name]
+            assert data is authority.steps[name] and build.audit_enabled(data)
+            assert set(observed.produced_inputs) <= authority.generated_inputs
+            assert set(authority.runtimes[name].files) <= set(manifest['issuer_files'])
+        components = ('Rocks', 'Harbor', 'TownLower', 'Market', 'TownUpper', 'Landmarks', 'Ships', 'Props', 'Understory')
+        for parent in components:
+            name = 'world.brinecove.geometry.SM_BC_' + parent
+            native = authority.native_steps[name]
+            observed = authority.native_profiles[name]
+            assert native is authority.steps[name] and native.batch.group == 'brinecove logical geometry'
+            assert name not in authority.single_native and len(observed.products) == 3
+            validator = paths.REPO/'games/yorimichi/region_exports.py'
+            assert observed.verifier.filename == str(validator) and validator in build.required_inputs(native)
+        assert 'world.brinecove.geometry.SM_BC_Ground' not in authority.native_steps
         for actual in authority.call_steps.values():
             authority.validate_call(actual, actual.commands[0])
         assert all(vars(member)['_captured_native_runtime'] is authority.native_runtimes[name]

@@ -56,7 +56,14 @@ CODE_SEEDS = (
     'world/regions/treehouse/canopy_data.py', 'legacy_treehouse_assembly_profile.py',
     'legacy_treehouse_recolour_profile.py', 'legacy_treehouse_library_profile.py',
     'world/regions/treehouse/assemble_atomic.py',
-    'world/regions/craterpark/v2/editor_generate.py', 'legacy_craterpark_geometry_profile.py', 'legacy_craterpark_layout_profile.py', 'legacy_world_layout_profile.py', 'legacy_farhills_profile.py', 'legacy_hidamari_layout_profile.py', 'legacy_hidamari_projection_profile.py', 'legacy_hidamari_harbor_source_profile.py', 'legacy_brinecove_sources_profile.py',
+    'world/regions/craterpark/v2/editor_generate.py', 'legacy_craterpark_geometry_profile.py', 'legacy_craterpark_layout_profile.py', 'legacy_world_layout_profile.py', 'legacy_farhills_profile.py', 'legacy_hidamari_layout_profile.py', 'legacy_hidamari_projection_profile.py', 'legacy_hidamari_harbor_source_profile.py', 'legacy_brinecove_sources_profile.py', 'legacy_brinecove_data_profile.py', 'legacy_brinecove_component_profile.py',
+    'world/regions/brinecove/rim_data.py', 'world/regions/brinecove/placement_data.py',
+    'world/regions/brinecove/plan_component.py', 'world/regions/brinecove/procedural/__init__.py',
+    'world/regions/brinecove/procedural/terrain_dressing.py', 'world/regions/brinecove/procedural/harbor.py',
+    'world/regions/brinecove/procedural/lower_town.py', 'world/regions/brinecove/procedural/market.py',
+    'world/regions/brinecove/procedural/upper_town.py', 'world/regions/brinecove/procedural/landmarks.py',
+    'world/regions/brinecove/procedural/ships.py', 'world/regions/brinecove/procedural/props.py',
+    'world/regions/brinecove/procedural/vegetation.py',
 )
 
 
@@ -624,6 +631,42 @@ class TextureAuthority:
             self.call_runtimes[brine_source.name] = vars(brine_source)['_captured_call_runtime']
             self.steps[brine_source.name] = brine_source
             self.output_paths[brine_source.name] = profile.output_paths
+        from legacy_brinecove_data_profile import qualify_brinecove_data
+        for name in ('world.brinecove.rim_data', 'world.brinecove.placements'):
+            step = next((item for item in selected if item.name == name), None)
+            if step is None or 'world.brinecove.sources' not in self.call_steps:
+                continue
+            available = {*self.steps, *self.pending_tools, 'world.textures'}
+            if any(item not in available for item in graph.prerequisites(step)):
+                continue
+            profile = qualify_brinecove_data(step, checkout=self.checkout,
+                                             output_root=self.checkout / 'build/yorimichi')
+            self.python_qualifiers[name] = qualify_brinecove_data
+            self.data_steps[name] = (step, profile)
+            self.runtimes[name] = _bind_captured_runtime(
+                step, checkout=self.checkout, issuer_files=manifest['issuer_files'],
+                code_inputs=profile.code_inputs)
+            self.steps[name] = step
+            self.output_paths[name] = tuple(path for _, roots in profile.products for path in roots)
+            self.generated_inputs.update(profile.produced_inputs)
+        from legacy_brinecove_component_profile import qualify_brinecove_component, COMPONENTS
+        component_names = {'world.brinecove.geometry.SM_BC_' + name for name in COMPONENTS}
+        for step in selected:
+            if step.name not in component_names or 'world.brinecove.placements' not in self.data_steps:
+                continue
+            available = {*self.steps, *self.pending_tools, 'world.textures'}
+            if any(item not in available for item in graph.prerequisites(step)):
+                continue
+            profile = qualify_brinecove_component(step, checkout=self.checkout,
+                                                  output_root=self.checkout / 'build/yorimichi')
+            self.native_qualifiers[step.name] = qualify_brinecove_component
+            self.native_steps[step.name], self.native_profiles[step.name] = step, profile
+            self.native_runtimes[step.name] = _bind_native_runtime(
+                step, checkout=self.checkout, issuer_files=manifest['issuer_files'],
+                verifier=profile.verifier, code_inputs=profile.code_inputs)
+            self.steps[step.name] = step
+            self.output_paths[step.name] = tuple(path for _, roots in profile.products for path in roots)
+            self.generated_inputs.update(profile.produced_inputs)
         self.dones = {}
         self.native_launch = None
         first = next((step for step in selected if step.controller is None), None)
@@ -790,8 +833,6 @@ class TextureAuthority:
         # Use the EXISTING transport codec on the complete candidate including
         # current real correlation; no witness truncation or second encoder.
         from atelier.build_v2.legacy_client import encode_record
-        if len(tasks) > 64 or len(inputs) > 1024:
-            raise AuthorityRefused('qualified frame exceeds its finite task/input count before permission')
         envelope = {'version': 2, 'nonce': self.nonce, 'selection': self.client.selection,
                     'sequence': self.client.sequence, 'frame': self.client.frame,
                     'previous_digest': self.client.record_digest}
@@ -801,6 +842,8 @@ class TextureAuthority:
                       for operation in operations)
         print(f'Managed frame forecast: tasks={len(tasks)} inputs={len(inputs)} '
               f'largest_initial_wire_bytes={largest}', flush=True)
+        if len(tasks) > 64 or len(inputs) > 2048:
+            raise AuthorityRefused(f'qualified frame exceeds finite count before permission: tasks={len(tasks)} inputs={len(inputs)}')
         if old is not None:
             previous_frame = old.get('frame')
             scope = None if previous_frame is None else previous_frame['scope']

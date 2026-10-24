@@ -15,8 +15,11 @@ restore, stamp migration, batch preparation, discovery/control writes and finali
 qualified scope before mutation. Per-member stamps while a shared worker lives are provisional;
 positive shared guard cleanup and fresh member checks precede settlement. Frame changes use
 rename-over, never a finish/begin gap. Active caps remain64tasks/16roots/128writes per task,
-256attempts/4MiB durable record/1024witnesses per check. Every durable transition consumes the explicit
-MAX_TRANSITIONS=65,536 operational limit; this is not a measured graph-size claim.
+256attempts/4MiB durable record/2048witnesses per check. Every durable transition consumes the explicit
+MAX_TRANSITIONS=65,536 operational limit; this is not a measured graph-size claim. The witness count
+is a finite validation resource bound: the measured 62-task coastal frame has 1,066
+complete input facts and a 226,302-byte initial message. No facts are omitted, and
+the independent 64-task, 256KiB transport, structural and 4MiB record bounds remain.
 
 A normal source-fix rerun uses Supersede under the same real guards, checks every recorded
 attempt's cleanup and carries every old attempted-unsettled physical/canonical claim into a

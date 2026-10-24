@@ -14,7 +14,7 @@ use std::collections::BTreeSet;
 use std::io::{self, Read};
 
 pub(crate) const MAX_TRANSITIONS: u64 = 65_536;
-pub(crate) const MAX_WITNESSES: usize = 1024;
+pub(crate) const MAX_WITNESSES: usize = 2048;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
@@ -1590,6 +1590,31 @@ mod tests {
             1,
         );
         assert!(decode(duplicate.as_bytes()).is_err());
+        // The measured normal coastal frame has 1,066 complete input facts.
+        // They must fit without dropping witnesses or changing task/wire bounds.
+        let mut measured = f.frame_observation("out/a");
+        measured.inputs = (0..1066)
+            .map(|index| Witness {
+                path: format!("raw-{index:04}"),
+                fact: Fact::Absent,
+            })
+            .collect();
+        assert!(qualify_frame(measured, &f.qualified(), &f.fs(), f.deadline()).is_ok());
+        let mut bounded: Vec<_> = (0..MAX_WITNESSES)
+            .map(|index| Witness {
+                path: format!("raw-{index:04}"),
+                fact: Fact::Absent,
+            })
+            .collect();
+        assert!(witness_shape(&bounded, true).is_ok());
+        bounded.push(Witness {
+            path: "one-more".into(),
+            fact: Fact::Absent,
+        });
+        assert!(witness_shape(&bounded, true).is_err());
+        bounded.pop();
+        bounded[1] = bounded[0].clone();
+        assert!(witness_shape(&bounded, true).is_err());
         let mut scope = f.frame_observation("out/a");
         scope.tasks = vec![scope.tasks[0].clone(); 65];
         assert!(qualify_frame(scope, &f.qualified(), &f.fs(), f.deadline()).is_err());
