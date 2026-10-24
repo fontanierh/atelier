@@ -4,7 +4,7 @@ import os
 
 import pytest
 
-from atelier.build_v2.controller_client import capture_named_sources
+from atelier.build_v2.controller_client import capture_named_sources, MAX_NAMED_ISSUER_FILES
 
 
 def test_named_issuer_capture_reuses_distribution_framing_without_ambient_discovery(tmp_path):
@@ -34,7 +34,7 @@ def test_named_issuer_capture_reuses_distribution_framing_without_ambient_discov
 def test_named_issuer_capture_refuses_links_missing_ambiguous_or_unbounded_names(tmp_path):
     (tmp_path / 'real.py').write_bytes(b'VALUE = 1\n')
     (tmp_path / 'alias.py').symlink_to('real.py')
-    for names in ((), ('real.py', 'real.py'), ('../real.py',), ('/real.py',), ('real.py',) * 257):
+    for names in ((), ('real.py', 'real.py'), ('../real.py',), ('/real.py',), ('real.py',) * 513):
         with pytest.raises(ValueError):
             capture_named_sources(tmp_path, names)
     with pytest.raises(OSError):
@@ -43,3 +43,27 @@ def test_named_issuer_capture_refuses_links_missing_ambiguous_or_unbounded_names
         capture_named_sources(tmp_path, ('absent.py',))
     with pytest.raises(ValueError):
         capture_named_sources(tmp_path, iter(('real.py',)))
+
+
+def test_named_issuer_count_boundary_preserves_byte_duplicate_and_link_refusals(tmp_path, monkeypatch):
+    from atelier.build_v2 import controller_client as client
+    names = tuple(f'provider_{i}.py' for i in range(513))
+    for name in names:
+        (tmp_path / name).write_bytes(b'VALUE = 1\n')
+    accepted = capture_named_sources(tmp_path, names[:512])
+    assert len(accepted.files) == MAX_NAMED_ISSUER_FILES == 512
+    with pytest.raises(ValueError, match='bounded'):
+        capture_named_sources(tmp_path, names)
+    with pytest.raises(ValueError, match='duplicate'):
+        capture_named_sources(tmp_path, (*names[:511], names[0]))
+    (tmp_path / names[0]).unlink()
+    (tmp_path / names[0]).symlink_to(names[-1])
+    with pytest.raises(OSError):
+        capture_named_sources(tmp_path, names[:512])
+    monkeypatch.setattr(client, 'MAX_SOURCE_FILE_BYTES', 8)
+    with pytest.raises(ValueError):
+        capture_named_sources(tmp_path, (names[1],))
+    monkeypatch.setattr(client, 'MAX_SOURCE_FILE_BYTES', 16)
+    monkeypatch.setattr(client, 'MAX_SOURCE_TOTAL_BYTES', 15)
+    with pytest.raises(ValueError, match='size bound'):
+        capture_named_sources(tmp_path, names[1:3])

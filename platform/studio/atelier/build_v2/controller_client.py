@@ -20,6 +20,7 @@ import uuid
 MAX_CONTROL_BYTES = 2 * 1024 * 1024
 MAX_SOURCE_FILE_BYTES = 8 * 1024 * 1024
 MAX_SOURCE_TOTAL_BYTES = 32 * 1024 * 1024
+MAX_NAMED_ISSUER_FILES = 512
 MAX_BINARY_BYTES = 256 * 1024 * 1024
 SOURCE_MANIFEST = 'platform/build-v2/controller-sources.json'
 
@@ -191,10 +192,12 @@ def capture_named_sources(root, names):
     A game issuer capture MUST read only its fixed profile's explicit normalized file names
     through the same anchored nofollow/stable bounded reader and digest framing as the
     controller distribution. It MUST NOT discover an ambient directory closure or treat this
-    byte capture as a semantic task/cleanup qualification. Installed tool context MUST NOT be
+    byte capture as a semantic task/cleanup qualification. Its fixed 512-file count MUST NOT
+    change the separate controller-distribution 256-file bound or existing byte bounds.
+    Installed tool context MUST NOT be
     silently injected into game action identities. See test_build_v2_legacy_capture.py.
     """
-    if type(names) not in (tuple, list) or not 0 < len(names) <= 256:
+    if type(names) not in (tuple, list) or not 0 < len(names) <= MAX_NAMED_ISSUER_FILES:
         raise ValueError('issuer closure needs bounded explicit source names')
     names = [_relative(name) for name in names]
     if len(set(names)) != len(names):

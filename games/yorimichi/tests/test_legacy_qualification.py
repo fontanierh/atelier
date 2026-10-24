@@ -7,7 +7,7 @@ import pytest
 
 def test_current_discovery_provider_roster_uses_static_imports_within_capture_bound(monkeypatch):
     from atelier import paths
-    from atelier.build_v2.controller_client import capture_named_sources
+    from atelier.build_v2.controller_client import capture_named_sources, MAX_NAMED_ISSUER_FILES
     from atelier.build_v2.legacy_qualification import CapturedCode, captured_spec
     writes = []
     def refuse_write(path, *args, **kwargs):
@@ -26,6 +26,9 @@ def test_current_discovery_provider_roster_uses_static_imports_within_capture_bo
     assert 'games/yorimichi/legacy_qualification.py' in names
     assert 'platform/studio/atelier/build.py' in names
     assert 'platform/studio/atelier/build_products.py' in names
+    assert 'games/yorimichi/world/regions/belmonte/source.py' in names
+    assert 'games/yorimichi/world/regions/belmonte/query_surface.py' in names
+    assert 'games/yorimichi/world/regions/belmonte/terrain.py' in names
     for package in ('train', 'regions/brinecove', 'regions/ferry',
                     'regions/hidamari_stable', 'regions/swordcamp'):
         assert f'games/yorimichi/world/{package}/__init__.py' in names
@@ -41,7 +44,7 @@ def test_current_discovery_provider_roster_uses_static_imports_within_capture_bo
                 assert initializer.relative_to(paths.REPO).as_posix() in names
             parent = parent.parent
     assert all((paths.REPO / name).is_file() for name in names)
-    assert len(names) <= 256
+    assert len(names) <= MAX_NAMED_ISSUER_FILES == 512
     assert not writes
 
 

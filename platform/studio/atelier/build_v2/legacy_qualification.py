@@ -15,6 +15,7 @@ import struct
 import sys
 import types
 from contextlib import contextmanager
+from .controller_client import MAX_NAMED_ISSUER_FILES
 
 MAX_CODE_BYTES = 8 * 1024 * 1024
 MAX_BINDINGS = 1024
@@ -203,7 +204,7 @@ class NamedCapturedImports(importlib.abc.MetaPathFinder):
     establish import-time mutation scope before installing/using these source loaders.
     """
     def __init__(self, modules, *, checkout, platform_roots=()):
-        if (type(modules) is not dict or not 0 < len(modules) <= 256
+        if (type(modules) is not dict or not 0 < len(modules) <= MAX_NAMED_ISSUER_FILES
                 or any(type(name) is not str or not name or any(not p.isidentifier() for p in name.split('.'))
                        or not isinstance(source, CapturedCode) for name, source in modules.items())):
             raise UnsupportedOrigin('named module closure is invalid')
@@ -309,7 +310,7 @@ def captured_recipe_imports(sources, *, checkout, platform_roots=()):
     """
     checkout = Path(checkout).resolve(strict=True)
     by_path = {source.filename: source for source in sources}
-    if not by_path or len(by_path) > 256 or len(by_path) != len(sources):
+    if not by_path or len(by_path) > MAX_NAMED_ISSUER_FILES or len(by_path) != len(sources):
         raise UnsupportedOrigin('recipe capture path set is invalid')
     if any(not Path(name).is_relative_to(checkout) for name in by_path):
         raise UnsupportedOrigin('recipe capture has a foreign logical source')
@@ -365,15 +366,20 @@ def captured_recipe_imports(sources, *, checkout, platform_roots=()):
                     if target_name not in self.modules:
                         raise UnsupportedOrigin('Harness alias is outside the named capture')
                     return compat._LegacyHarness().find_spec(fullname, path, target)
-            # Existing recipes also put WORLD on sys.path, so both yori and
-            # regions.<name> may name an already captured world helper/package.
-            canonical = 'world.' + fullname
-            if canonical in self.modules and fullname not in self.modules:
-                return captured_spec(fullname, self.modules[canonical])
-            if canonical in namespaces and fullname not in namespaces:
-                spec = importlib.machinery.ModuleSpec(fullname, None, is_package=True)
-                spec.submodule_search_locations = [namespaces[canonical]]
-                return spec
+            # Existing providers insert WORLD or REGIONS. These two fixed aliases
+            # can name only already captured files/namespaces, never ambient code.
+            if fullname not in self.modules and fullname not in namespaces:
+                candidates = [prefix + fullname for prefix in ('world.', 'world.regions.')
+                              if prefix + fullname in self.modules or prefix + fullname in namespaces]
+                if len(candidates) > 1:
+                    raise UnsupportedOrigin('recipe import has ambiguous WORLD/REGIONS aliases')
+                if candidates:
+                    canonical = candidates[0]
+                    if canonical in self.modules:
+                        return captured_spec(fullname, self.modules[canonical])
+                    spec = importlib.machinery.ModuleSpec(fullname, None, is_package=True)
+                    spec.submodule_search_locations = [namespaces[canonical]]
+                    return spec
             if fullname in namespaces:
                 spec = importlib.machinery.ModuleSpec(fullname, None, is_package=True)
                 spec.submodule_search_locations = [namespaces[fullname]]
@@ -425,6 +431,8 @@ def captured_recipe_imports(sources, *, checkout, platform_roots=()):
         names = set(modules) | set(namespaces)
         names.update(name.removeprefix('world.') for name in (*modules, *namespaces)
                      if name.startswith('world.'))
+        names.update(name.removeprefix('world.regions.') for name in (*modules, *namespaces)
+                     if name.startswith('world.regions.'))
         names.update('atelier.' + name.removeprefix('atelier.harness.')
                      for name in modules if name.startswith('atelier.harness.'))
         with _private_declarations(names):

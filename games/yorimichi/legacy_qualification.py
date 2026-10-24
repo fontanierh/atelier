@@ -48,12 +48,14 @@ CODE_SEEDS = (
     'world/train/__init__.py', 'world/regions/brinecove/__init__.py',
     'world/regions/ferry/__init__.py', 'world/regions/hidamari_stable/__init__.py',
     'world/regions/swordcamp/__init__.py',
+    'world/regions/belmonte/source.py',
 )
 
 
 def source_names(checkout):
     """Use the existing static local-import resolver, never execute a recipe to capture it."""
     from atelier.source_imports import ImportScanner
+    from atelier.build_v2.controller_client import MAX_NAMED_ISSUER_FILES
     checkout = Path(checkout)
     game = checkout / 'games/yorimichi'
     scanner = ImportScanner()
@@ -68,7 +70,7 @@ def source_names(checkout):
     for seed in ('build.py', 'build_products.py', 'build_v2/controller_entry.py'):
         for source in scanner.local_imports(checkout / 'platform/studio/atelier' / seed):
             names.add(source.relative_to(checkout).as_posix())
-    if len(names) > 256:
+    if len(names) > MAX_NAMED_ISSUER_FILES:
         raise ValueError('Yorimichi declaration code exceeds the bounded issuer capture')
     return tuple(sorted(names))
 

@@ -44,6 +44,24 @@ def test_controller_sources_are_named_frozen_and_location_independent(tmp_path):
         frozen.materialize(destination)
 
 
+def test_controller_distribution_keeps_256_file_limit_separate_from_named_issuer(tmp_path):
+    names = source(tmp_path)
+    folder = tmp_path / 'platform/studio/atelier'
+    folder.mkdir(parents=True)
+    for index in range(252):
+        name = f'platform/studio/atelier/distribution_fixture_{index}.py'
+        (tmp_path / name).write_bytes(b'VALUE = 1\n')
+        names[name] = b'VALUE = 1\n'
+    manifest = tmp_path / client.SOURCE_MANIFEST
+    manifest.write_text(json.dumps({'version': 1, 'files': sorted(names)[:256]}))
+    captured = client.capture_controller(tmp_path)
+    assert len(captured.files) == 257  # 256 listed files plus the separately captured manifest.
+    assert client.SOURCE_MANIFEST in dict(captured.files)
+    manifest.write_text(json.dumps({'version': 1, 'files': sorted(names)}))
+    with pytest.raises(ValueError):
+        client.capture_controller(tmp_path)
+
+
 @pytest.mark.parametrize('change', ['link', 'parent_link', 'path_dependency', 'build_script', 'workspace', 'duplicate'])
 def test_controller_source_capture_refuses_links_and_undeclared_build_dependencies(tmp_path, change):
     names = source(tmp_path)

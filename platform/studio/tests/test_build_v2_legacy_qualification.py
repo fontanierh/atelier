@@ -246,3 +246,66 @@ def test_captured_package_loader_preserves_default_path_and_explicit_plain_modul
         assert explicit.__path__ == explicit_paths
         assert explicit.ORIGIN == str(package / '__init__.py')
     assert 'captured_declaration_package' not in sys.modules
+
+
+def test_named_issuer_imports_accept_512_and_refuse_513_or_duplicate_paths(tmp_path):
+    from atelier.build_v2.legacy_qualification import NamedCapturedImports, captured_recipe_imports
+    sources = [CapturedCode(str(tmp_path / f'provider_{i}.py'), b'VALUE = 1\n')
+               for i in range(513)]
+    modules = {f'provider_{i}': source for i, source in enumerate(sources)}
+    assert len(NamedCapturedImports(dict(list(modules.items())[:512]), checkout=tmp_path).modules) == 512
+    with pytest.raises(UnsupportedOrigin, match='invalid'):
+        NamedCapturedImports(modules, checkout=tmp_path)
+    with captured_recipe_imports(sources[:512], checkout=tmp_path):
+        pass  # Admission only: no captured module or recipe body is executed.
+    with pytest.raises(UnsupportedOrigin, match='invalid'):
+        with captured_recipe_imports(sources, checkout=tmp_path):
+            pass
+    with pytest.raises(UnsupportedOrigin, match='invalid'):
+        with captured_recipe_imports([*sources[:511], sources[0]], checkout=tmp_path):
+            pass
+
+
+def test_captured_regions_alias_reloads_poisoned_bindings_and_restores_them(tmp_path, monkeypatch):
+    from types import ModuleType
+    from atelier.build_v2.legacy_qualification import captured_recipe_imports
+    region = tmp_path / 'games/example/world/regions/belmonte'
+    region.mkdir(parents=True)
+    helper = region / 'query_surface.py'
+    helper.write_bytes(b'VALUE = "captured"\nORIGIN = __file__\n')
+    unknown = region / 'unknown.py'
+    marker = tmp_path / 'unexpected-execution'
+    unknown.write_text(f'open({str(marker)!r}, "w").write("ran")\n')
+    old_package, old_helper = ModuleType('belmonte'), ModuleType('belmonte.query_surface')
+    old_package.__path__ = [str(region)]
+    old_helper.VALUE = 'poisoned'
+    old_package.query_surface = old_helper
+    monkeypatch.setitem(sys.modules, 'belmonte', old_package)
+    monkeypatch.setitem(sys.modules, 'belmonte.query_surface', old_helper)
+    with captured_recipe_imports([CapturedCode(str(helper), helper.read_bytes())], checkout=tmp_path):
+        loaded_helper = importlib.import_module('belmonte.query_surface')
+        assert loaded_helper.VALUE == 'captured' and loaded_helper is not old_helper
+        assert loaded_helper.ORIGIN == str(helper)
+        assert loaded_helper.__name__ == 'belmonte.query_surface'
+        with pytest.raises(UnsupportedOrigin, match='outside the named capture'):
+            importlib.import_module('belmonte.unknown')
+        assert not marker.exists()
+    assert sys.modules['belmonte'] is old_package
+    assert sys.modules['belmonte.query_surface'] is old_helper
+    assert old_package.query_surface is old_helper and old_helper.VALUE == 'poisoned'
+    assert 'belmonte.unknown' not in sys.modules
+
+
+def test_captured_world_regions_alias_ambiguity_refuses_before_exec(tmp_path):
+    from atelier.build_v2.legacy_qualification import captured_recipe_imports
+    paths = [tmp_path / 'games/example/world/same.py',
+             tmp_path / 'games/example/world/regions/same.py']
+    marker = tmp_path / 'unexpected-execution'
+    content = f'open({str(marker)!r}, "w").write("ran")\n'.encode()
+    for path in paths:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
+    with captured_recipe_imports([CapturedCode(str(path), content) for path in paths], checkout=tmp_path):
+        with pytest.raises(UnsupportedOrigin, match='ambiguous WORLD/REGIONS'):
+            importlib.import_module('same')
+        assert not marker.exists()
