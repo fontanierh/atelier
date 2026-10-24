@@ -131,3 +131,9 @@ is the existing `atelier build ... data.stage` console entry, not a test-mode ho
 scheme paths are added directly without site processing. CPython's bounded built-in UTF-8
 `LC_CTYPE` coercion is distinguished from ambient forwarding; Rust still passes only the four
 approved operational variables. No game key or worker bundle is changed by this startup context.
+
+The Linux T1a `legacy_host_entry` bridge uses the original checkout's `.venv/bin/python`
+and actual compiled source-bound controller. Its Python fixture explicitly prepares the normal
+verified helper cache, then exercises the ordinary console entry through captured Graph discovery
+to typed Held. Prepared has no frame or mutation permission; no task settlement, replay, Finish,
+native work or build success is certified. The existing T1a budget is unchanged.
