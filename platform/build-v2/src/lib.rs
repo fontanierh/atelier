@@ -52,3 +52,6 @@ pub mod validate;
 pub mod verify;
 pub mod worker_lifecycle;
 pub mod worker_session;
+
+pub mod legacy_host;
+pub(crate) mod legacy_host_launch;

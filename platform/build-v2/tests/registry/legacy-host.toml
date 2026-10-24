@@ -1,0 +1,73 @@
+schema_version = 1
+
+[[scenarios]]
+id = "legacy-host.continuous_selection_survives_each_durable_cut_and_finishes_only_after_fresh_validation"
+tests = ["atelier-build-v2/legacy_epoch::selection::tests::continuous_selection_survives_each_durable_cut_and_finishes_only_after_fresh_validation"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.source_fix_supersede_carries_exact_dirty_claims_count_and_no_settled_credit"
+tests = ["atelier-build-v2/legacy_epoch::selection::tests::source_fix_supersede_carries_exact_dirty_claims_count_and_no_settled_credit"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.prepared_only_shortcut_never_hides_prior_permission_across_frames"
+tests = ["atelier-build-v2/legacy_epoch::selection::tests::prepared_only_shortcut_never_hides_prior_permission_across_frames"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.missing_guard_cleanup_is_unknown_and_cannot_be_hidden_by_source_change"
+tests = ["atelier-build-v2/legacy_epoch::selection::tests::missing_guard_cleanup_is_unknown_and_cannot_be_hidden_by_source_change"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.strict_v2_state_caps_and_transition_overflow_refuse_without_removing_barrier"
+tests = ["atelier-build-v2/legacy_epoch::selection::tests::strict_v2_state_caps_and_transition_overflow_refuse_without_removing_barrier"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.closed_host_codec_refuses_duplicate_unknown_positional_and_unbound_launch_records"
+tests = ["atelier-build-v2/legacy_host::tests::closed_host_codec_refuses_duplicate_unknown_positional_and_unbound_launch_records"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.live_exact_duplicate_reuses_one_ack_without_reexecuting_or_cross_host_resumption"
+tests = ["atelier-build-v2/legacy_host::tests::live_exact_duplicate_reuses_one_ack_without_reexecuting_or_cross_host_resumption"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.capture_digest_checks_actual_readonly_named_bytes_and_changes_with_helper_bytes"
+tests = ["atelier-build-v2/legacy_host::tests::capture_digest_checks_actual_readonly_named_bytes_and_changes_with_helper_bytes"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.triple_custody_duplicates_keep_all_same_descriptions_locked_and_cloexec"
+tests = ["atelier-build-v2/legacy_host_launch::tests::triple_custody_duplicates_keep_all_same_descriptions_locked_and_cloexec"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.guard_receipt_requires_unique_correlated_cleanup_and_refuses_pressure_archive_chain"
+tests = ["atelier-build-v2/legacy_host_launch::tests::guard_receipt_requires_unique_correlated_cleanup_and_refuses_pressure_archive_chain"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.exact_identity_and_expired_absolute_deadline_never_become_fixture_authority"
+tests = ["atelier-build-v2/legacy_host_launch::tests::exact_identity_and_expired_absolute_deadline_never_become_fixture_authority"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.actual_ex_receipt_verifier_keeps_install_journal_and_short_permit_barriers"
+tests = ["atelier-build-v2/legacy_epoch::selection::tests::actual_ex_receipt_verifier_keeps_install_journal_and_short_permit_barriers"]
+platforms = ["darwin", "linux"]
+tier = "t0"

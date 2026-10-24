@@ -1022,3 +1022,7 @@ Original receipts remain unchanged, and neither op-body progress nor a successfu
 The dormant [legacy operational epoch](../../docs/build-v2/LEGACY_EPOCH.md) adds strict control-state
 fencing and private same-scope repair demands. It has no production plan issuer, caller, repair CLI
 or bootstrap; it does not activate mixed/default builds or qualify arbitrary legacy/native work.
+
+The continuous legacy authority-parent implementation is described in
+[LEGACY_HOST.md](../../docs/build-v2/LEGACY_HOST.md). It remains a coupled integration checkpoint:
+no ordinary mixed caller activation or full-default/repair acceptance is implied by its Rust tests.

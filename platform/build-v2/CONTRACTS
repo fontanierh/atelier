@@ -440,3 +440,20 @@ files MUST NOT be published as CI artifacts or added to the strict controller/A7
 See session_lifecycle::diagnostic_tests, python_executor::production_tests failure diagnostic
 cases and test_build_v2_controller_entry.py failed-target locator test. Actual historical M1 call1
 cause remains unknown; no functional retry or fullmixed activation is certified by these tests.
+
+@cc [owner:fontanierh,label:safety] build-v2-continuous-legacy-authority
+The operational v2 legacy selection fence MUST remain continuously present across every task,
+frame, replan and Supersede. A real same-root build guard, EX guard and anchored writer lock
+MUST outlive the owned scheduler and uncertain shutdown. Only the captured reviewed semantic
+provider MAY qualify normal task/graph observations; JSON, metadata hashes, stamps, child reap
+and absent guard files MUST NOT issue semantic or cleanup authority. Permission MUST persist
+before ACK, source-fixed Supersede MUST retain all attempted-unsettled canonical claims and
+checked transition count, and guarded attempts MUST correlate to actual unique positive cleanup.
+One shared guard attempt MUST bind the complete member set, never fictitious per-member report
+copies. The single private channel MUST NOT reconnect or auto-retry; ambiguity permits no new
+work, and a lost terminal Finish ACK remains caller failure/unknown. The host MUST add no outer
+admission or aggregate descendant memory guard and MUST never signal a guard-containing group.
+See legacy_epoch/selection.rs and legacy_host.rs/legacy_host_launch.rs tests. Full production
+qualification, final graph streaming, all C7 child/reader coverage, pressure-requeue cleanup chains
+and actual mixed normal/repair acceptance remain coupled integration gates; source unit tests
+are not native or full-default activation proof. Existing v1/dormant state is never silently adopted.
