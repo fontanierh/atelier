@@ -105,6 +105,9 @@ def test_recipe_selection_declares_data_and_geometry_dependencies(selection, tmp
     geometry = by_name['world.craterpark_geometry']
     assert selection in geometry.inputs
     assert geometry.commands[0].script.name == 'v4_generate.py'
+    assert geometry.outputs == [tmp_path / 'craterpark/v2' / name for name in
+                                ('geometry.npz', 'geometry-report.json', 'lines')]
+    assert geometry.cutoff and geometry.heavy and not geometry.cache
     layout = by_name['world.craterpark_layout']
     assert layout.cutoff and layout.needs == ['world.craterpark_geometry']
     assert selection in layout.inputs

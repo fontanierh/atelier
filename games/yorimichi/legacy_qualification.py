@@ -56,6 +56,7 @@ CODE_SEEDS = (
     'world/regions/treehouse/canopy_data.py', 'legacy_treehouse_assembly_profile.py',
     'legacy_treehouse_recolour_profile.py', 'legacy_treehouse_library_profile.py',
     'world/regions/treehouse/assemble_atomic.py',
+    'world/regions/craterpark/v2/editor_generate.py',
 )
 
 

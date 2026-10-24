@@ -163,7 +163,7 @@ def craterpark_v2_steps(out):
     return [
         Step('world.craterpark_geometry', [Python(v2 / runner, arguments)],
              inputs=[v2, *common, *volcano, *craterpark_v4.input_paths()],
-             outputs=[geometry / 'geometry.npz', geometry / 'geometry-report.json'],
+             outputs=[geometry / 'geometry.npz', geometry / 'geometry-report.json', geometry / 'lines'],
              about='Crater Park v2: layout -> conforming surfaces, solids, rails, render tiles and collision (numpy)',
              cutoff=True, heavy=True),
         *_load_helper_module('yorimichi_craterpark_atomic', GAME/'craterpark_atomic_build.py').steps(SimpleNamespace(out=out)),
