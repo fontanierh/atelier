@@ -11,7 +11,14 @@ fn original_production_entry_reaches_captured_graph_then_held_without_mutation_p
         .parent()
         .unwrap();
     let python = checkout.join(".venv/bin/python");
-    let fixture = checkout.join("platform/studio/tests/legacy_host_entry_case.py");
+    let fixture_name = Path::new(env!("ATELIER_LEGACY_ENTRY_TEST_SCRIPT"));
+    assert!(
+        fixture_name
+            .components()
+            .all(|part| matches!(part, std::path::Component::Normal(_))),
+        "hosted test locator must be repository-relative"
+    );
+    let fixture = checkout.join(fixture_name);
     let binary = Path::new(env!("CARGO_BIN_EXE_atelier-build-v2"));
     assert!(python.is_file(), "hosted original Python setup is required");
     assert!(fixture.is_file(), "captured-entry fixture must be present");
