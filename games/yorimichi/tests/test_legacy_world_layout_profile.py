@@ -115,7 +115,10 @@ def test_actual_factory_full_graph_and_abi(profile, declarations, stage):
         'step', 'script', 'arguments', 'raw_inputs', 'produced_inputs', 'code_inputs', 'output_paths', 'products')
     assert observed.script == step.commands[0].script
     assert observed.arguments == () and observed.products == ()
-    assert len(observed.raw_inputs) == 46 and len(observed.code_inputs) == 82
+    assert len(observed.raw_inputs) == 49 and len(observed.code_inputs) == 82
+    # clear_far_forest/footprint and gate terrain sample these committed raw assets.
+    megapark = paths.REPO / 'games/yorimichi/assets/megapark'
+    assert all(megapark / name in observed.raw_inputs for name in ('map.json', 'geometry', 'collision'))
     scanner = build._FastImportScanner.__bases__[0]()
     world = paths.REPO / 'games/yorimichi/world'
     assert observed.code_inputs == tuple(scanner.local_imports(observed.script, (world, world / 'regions', paths.STUDIO)))
@@ -173,7 +176,7 @@ def finite_checkout(profile, step, tmp_path):
         dest = checkout / source.relative_to(paths.REPO)
         if source.suffix == '.bin':
             dest.write_bytes(b'finite raw terrain fixture')
-        elif source.name == 'geometry':
+        elif source.name in ('geometry', 'collision'):
             dest.mkdir(parents=True)
     root = tmp_path.resolve() / 'output'
     return checkout, rebound(step, root, checkout), root

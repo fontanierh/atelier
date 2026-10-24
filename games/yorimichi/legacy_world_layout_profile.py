@@ -122,7 +122,7 @@ RECIPE_DIGESTS = {
 
     'function:local_imports': 'b16827b19c9ec0f80228f21d369b4412ba0b2626d2e7117570af0fe8ba3804aa',
     'function:belmonte_train_corridor': 'db565b451044762cfadd657ea1f2434348d5bb91699ecfbe4119e75aa98fd632',
-    'function:world_steps': 'ce3e19e63781e6d32f457178333c76d452785b167eb8bde96e5dca8b6d146807',
+    'function:world_steps': 'e0c66580d89bc6bb2b019e9dcd39bbbdb1d597a6fa2f06c3739159f7556af3e9',
     'assignment:GAME': 'c1fd8717a5ba75944ea2ab756a826c928f37e4d09c8df0b4b5ecd50571f84dbb',
     'assignment:WORLD': '12574000f07cf0e48410791ecd814d26eb908d4d94356d7fadb766d1252711f9',
     'assignment:REGIONS': '681755203859b40ea7a6f69813dcd7b8374111a7b4952ca112164344049a062c',
@@ -173,6 +173,9 @@ RAW_PREFIX = (
     'games/yorimichi/world/regions/hidamari_stable/layout.py',
     'games/yorimichi/world/regions/hidamari/forest_backdrop.py',
     'games/yorimichi/world/farhills_grid.py',
+    'games/yorimichi/assets/megapark/map.json',
+    'games/yorimichi/assets/megapark/geometry',
+    'games/yorimichi/assets/megapark/collision',
     'games/yorimichi/world/train/corridor.py',
     'games/yorimichi/world/train/earthworks.py',
     'games/yorimichi/world/train/station_site.py',
@@ -388,7 +391,8 @@ def qualify_world_layout(step, *, checkout: Path, output_root: Path) -> WorldLay
         raise UnsupportedWorldLayout('unsupported raw editor/terrain membership') from error
     raw.extend(data / name for name in names)
     for path in raw:
-        _role(checkout, path, directory=path == game / 'assets/craterpark/geometry')
+        _role(checkout, path, directory=path in (game / 'assets/craterpark/geometry',
+                game / 'assets/megapark/geometry', game / 'assets/megapark/collision'))
     # Never treat the generated NPZ or canopy JSON as a source or raw-data content candidate.
     factory = [*raw, produced[0]]
     # The original recipe wrapper excludes plants for gen_world, while the

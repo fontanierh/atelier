@@ -1080,6 +1080,7 @@ def world_steps(ctx):
                      TREEHOUSE / 'screen.py', REGIONS / 'megapark' / 'placement.py', REGIONS / 'megapark' / 'forest.py',
                      REGIONS / 'megapark' / 'trail.py', REGIONS / 'megapark' / 'gate.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK,
                      REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari_stable' / 'layout.py', REGIONS / 'hidamari' / 'forest_backdrop.py', WORLD / 'farhills_grid.py',
+                     ASSETS / 'megapark' / 'map.json', ASSETS / 'megapark' / 'geometry', ASSETS / 'megapark' / 'collision',
                      *belmonte_train_corridor(out), *craterpark_v4.input_paths(),
                      *([out / 'craterpark/v2/geometry.npz'] if craterpark_v4.selected() else [])],
              needs=['world.treehouse_trees.data', *crater_geometry], reads=['treehouse.canopy_dimensions'], cutoff=True,
