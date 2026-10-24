@@ -37,7 +37,7 @@ def declarations(tmp_path_factory):
         enriched = next(step for step in graph.select(['world.craterpark_geometry'])
                         if step.name == 'world.craterpark_geometry')
     assert not root.exists()
-    return SimpleNamespace(root=root, raw=raw, enriched=enriched, recipe=recipe)
+    return SimpleNamespace(root=root, raw=raw, enriched=enriched, recipe=recipe, steps=steps)
 
 
 @pytest.fixture(params=('raw', 'enriched'))
@@ -389,3 +389,34 @@ def test_actual_layout_declares_generated_geometry_and_tracks_its_bytes(declarat
     before = build.fingerprint(layout, {'world.craterpark_geometry': 'producer-identity'})
     geometry.write_bytes(b'changed generated geometry fixture')
     assert build.fingerprint(layout, {'world.craterpark_geometry': 'producer-identity'}) != before
+
+
+def test_actual_world_layout_declares_selected_raw_generated_reads_and_preview(declarations, tmp_path, monkeypatch):
+    for name in ('ATELIER_CRATERPARK_V4_DESIGN', 'ATELIER_CRATERPARK_EDITOR_PARK', 'ATELIER_CRATERPARK_EDITOR_LINES'):
+        monkeypatch.delenv(name, raising=False)
+    world = next(step for step in declarations.steps if step.name == 'world.layout')
+    geometry = declarations.root / 'craterpark/v2/geometry.npz'
+    assert world.inputs.count(geometry) == 1
+    for path in declarations.recipe.craterpark_v4.input_paths():
+        assert world.inputs.count(path) == 1
+    assert world.reads == ['treehouse.canopy_dimensions']
+    assert 'world.craterpark_layout' in world.needs and 'world.craterpark_geometry' in world.needs
+    preview = declarations.root / 'map_preview.png'
+    assert world.outputs[-1] == preview and world.outputs.count(preview) == 1
+    # Cross the ACTUAL producer's unconditional save with the ACTUAL declaration.
+    import ast
+    tree = ast.parse((paths.REPO / 'games/yorimichi/world/gen_world.py').read_bytes())
+    writes = [call for call in ast.walk(tree) if isinstance(call, ast.Call)
+              and isinstance(call.func, ast.Attribute) and call.func.attr == 'save'
+              and call.args and any(isinstance(node, ast.Constant) and node.value == 'map_preview.png'
+                                    for node in ast.walk(call.args[0]))]
+    assert len(writes) == 1
+    # Existing required-output policy refuses six former representative outputs
+    # without the mandatory preview. These bytes assert presence only, not validity.
+    mapped = [tmp_path / path.relative_to(declarations.root) for path in world.outputs]
+    observed = replace(world, outputs=mapped)
+    for path in mapped[:-1]:
+        path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(b'presence-only fixture')
+    assert not build.outputs_present(observed)
+    mapped[-1].write_bytes(b'presence-only preview fixture')
+    assert build.outputs_present(observed)

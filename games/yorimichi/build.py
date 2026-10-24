@@ -1080,10 +1080,11 @@ def world_steps(ctx):
                      TREEHOUSE / 'screen.py', REGIONS / 'megapark' / 'placement.py', REGIONS / 'megapark' / 'forest.py',
                      REGIONS / 'megapark' / 'trail.py', REGIONS / 'megapark' / 'gate.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK,
                      REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari_stable' / 'layout.py', REGIONS / 'hidamari' / 'forest_backdrop.py', WORLD / 'farhills_grid.py',
-                     *belmonte_train_corridor(out)],
+                     *belmonte_train_corridor(out), *craterpark_v4.input_paths(),
+                     *([out / 'craterpark/v2/geometry.npz'] if craterpark_v4.selected() else [])],
              needs=['world.treehouse_trees.data', *crater_geometry], reads=['treehouse.canopy_dimensions'], cutoff=True,
              outputs=[out / 'world.json', out / 'heightmap.npy', out / 'heightmap.bin', out / 'farhills.npy', out / 'treehouse' / 'layout.json',
-                      out / 'megapark' / 'trail.json'],
+                      out / 'megapark' / 'trail.json', out / 'map_preview.png'],
              about='terrain heightfield, road, scatter and every region layout -> world.json (dependents see these files)'),
         Step('world.forest_textures', [Python(TOOLS / 'forest_textures.py')],
              # Only the twig atlases it reads: a new rock or ground painting leaves the forest current.
