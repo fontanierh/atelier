@@ -40,6 +40,8 @@ def scripted_index_provider(tmp_path):
     class ScriptedClient:
         record_digest = None
         frame = None
+        selection = 'scripted-selection'
+        sequence = 1
         def __init__(self, deny=False):
             self.calls, self.deny = [], deny
         def request(self, operation):
@@ -729,9 +731,17 @@ def test_actual_captured_graph_qualifies_data_before_private_runtime_without_tas
     def consume(build, graph, steps, ordered, files):
         authority = profile.TextureAuthority(manifest, request, client, {}, build, graph, steps, ordered, files)
         world, world_observation = authority.data_steps['world.layout']
+        far = authority.native_steps['world.farhills']
+        far_observation = authority.native_profiles[far.name]
+        assert far is authority.steps[far.name]
+        assert authority.single_native[far.name] is far_observation
+        assert far.reads == ['treehouse.canopy_dimensions']
+        assert len(far_observation.code_inputs) == 71 and len(far_observation.produced_inputs) == 6
+        assert set(far_observation.produced_inputs) <= authority.generated_inputs
+        assert {p.relative_to(paths.REPO).as_posix() for p in far_observation.code_inputs} <= set(authority.native_runtimes[far.name].files)
         assert world.reads == ['treehouse.canopy_dimensions'] and world.products == []
         assert not world.heavy and not world.audit and world.cutoff and not world.cache
-        assert len(world_observation.code_inputs) == 82 and len(world_observation.output_paths) == 7
+        assert len(world_observation.code_inputs) == 83 and len(world_observation.output_paths) == 9
         assert world_observation.produced_inputs[0] == paths.REPO / 'build/yorimichi/craterpark/v2/geometry.npz'
         assert authority.runtimes[world.name].legacy_outputs == tuple(world.outputs)
         assert world_observation.output_paths == authority.output_paths[world.name]
@@ -1067,4 +1077,89 @@ def test_world_budget_matches_recorded_launch_and_original_guard_adapter(tmp_pat
     with authority.audit_directory():
         build_source.run_argv(ctx, step, step.commands[0], authority.expected_argv,
                               authority.expected_environment, io.StringIO(), None, None)
+    assert len(guards) == 1 and returns == [0]
+
+
+@pytest.mark.parametrize('fault', ['step', 'profile'])
+def test_standalone_native_refuses_changed_actual_storage_before_launch(tmp_path, fault):
+    from atelier import build
+    from atelier.build_v2.legacy_client import AuthorityRefused
+    authority = _output_witness_authority(tmp_path)
+    step = build.Step('world.farhills', [build.Blender(tmp_path / 'farhills_surface.py',
+        threads=3, factory_startup=True)], heavy=True, cache=True)
+    profile = SimpleNamespace(step=step.name)
+    authority.native_launch = None
+    authority.single_native, authority.native_profiles = {step.name: profile}, {step.name: profile}
+    authority.native_steps = {step.name: step}
+    if fault == 'step':
+        authority.native_steps[step.name] = build.Step(step.name, step.commands, heavy=True, cache=True)
+    else:
+        authority.native_profiles[step.name] = SimpleNamespace(step=step.name)
+    with pytest.raises(AuthorityRefused, match='Step/profile storage'):
+        authority.prepare_native_command(SimpleNamespace(), step, step.commands[0])
+    assert not list(tmp_path.iterdir())
+
+
+def test_actual_farhills_storage_reaches_original_native_single_intent_and_guard(tmp_path, monkeypatch):
+    """Actual declaration/profile; scripted channel+guard are plumbing, not native proof."""
+    import io
+    from atelier import build, build_products, build_source, build_audit, paths
+    from atelier.build_v2.controller_client import capture_controller
+    from atelier.build_v2.controller_entry import declaration_context
+    from atelier.build_v2.legacy_client import authority_now_ns
+    from atelier.build_v2.legacy_qualification import CapturedCode, captured_spec
+    from atelier.build_v2.legacy_native_action import _bind_native_runtime
+    from atelier.harness import capacity_runtime
+    for key in ('ATELIER_CRATERPARK_EDITOR_PARK', 'ATELIER_CRATERPARK_EDITOR_LINES', 'ATELIER_CRATERPARK_V4_DESIGN'):
+        monkeypatch.delenv(key, raising=False)
+    source = paths.REPO / 'games/yorimichi/legacy_farhills_profile.py'
+    spec = captured_spec('_actual_farhills_single_observation', CapturedCode(str(source), source.read_bytes()))
+    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    ctx = declaration_context('yorimichi')
+    graph = build_products.Graph(build.load_recipe('yorimichi').steps(ctx))
+    step = graph.by_name['world.farhills']
+    profile = module.qualify_farhills(step, checkout=paths.REPO, output_root=ctx.out)
+    assert profile.step == step.name and len(profile.produced_inputs) == 6
+    # Control files stay in owned tmp; no Rust host or worker is executed here.
+    authority = _output_witness_authority(tmp_path)
+    authority.step, authority.nonce = step, 'a' * 32
+    authority.single_native = {step.name: profile}
+    authority.native_profiles, authority.native_steps = {step.name: profile}, {step.name: step}
+    issuer_names = tuple(sorted(set(path.relative_to(paths.REPO).as_posix() for path in profile.code_inputs)
+                                | set(__import__('atelier.build_v2.legacy_native_action', fromlist=['_ACTION_WORKER'])._ACTION_WORKER)))
+    runtime = _bind_native_runtime(step, checkout=paths.REPO, issuer_files=issuer_names, code_inputs=profile.code_inputs)
+    authority.native_runtimes, authority.native_launch = {step.name: runtime}, None
+    authority.metadata_scopes = {'control.scheduler': ['private-state']}
+    authority.custody = {'build': 10, 'content': 11, 'writer': 12}
+    captured = capture_controller(paths.REPO)
+    authority.manifest.update(source_digest=captured.digest, issuer_digest='c' * 64,
+        scheduler_request={'digest': 'd' * 64}, distribution=str(tmp_path / 'distribution'),
+        work_deadline_ns=authority_now_ns()+3600_000_000_000)
+    captured.materialize(tmp_path / 'distribution')
+    authority.files = captured.files
+    calls, returns, guards = [], [], []
+    authority.client = SimpleNamespace(request=lambda operation: calls.append(operation))
+    authority.guard_returned = returns.append
+    bundle = tmp_path / 'Blender.app/Contents'
+    ctx = SimpleNamespace(blender=str(bundle/'MacOS/Blender'), game='yorimichi',
+                          out=tmp_path/'output', logs=tmp_path/'output/logs', legacy_authority=authority)
+    monkeypatch.delenv('ATELIER_CAPACITY_CLIENT', raising=False)
+    monkeypatch.setattr(capacity_runtime, 'read_configuration', lambda path: {'schema': 2})
+    monkeypatch.setattr(build_audit, 'installation', lambda command: [bundle])
+    def guarded(argv, directory, **options):
+        intent = calls[-1]['attempt']
+        assert intent['members'] == ['control.scheduler', step.name]
+        assert intent['execution']['launch']['execution_ns'] == int(options['timeout']*1e9) == 600_000_000_000
+        assert options['custody_fds'] == (10, 11, 12) and 'pass_fds' not in options
+        assert 0 < options['queue_seconds'] <= 1800
+        assert not hasattr(authority.native_launch, 'session')
+        (directory/'stdout.log').write_text('scripted native adapter return, not child/output proof\n')
+        guards.append(options)
+        return 0
+    monkeypatch.setattr(build_source.guarded, 'run', guarded)
+    with authority.prepare_native_command(ctx, step, step.commands[0]) as (argv, environment, fds):
+        assert len(calls) == 1 and fds == ()
+        assert authority.native_launch.members == [step.name]
+        assert argv[argv.index('--')+1:] == list(step.commands[0].args) == []
+        build_source.run_argv(ctx, step, step.commands[0], argv, environment, io.StringIO(), ('job', None), None)
     assert len(guards) == 1 and returns == [0]

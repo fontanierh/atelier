@@ -1,7 +1,7 @@
 """Yorimichi's managed declaration and closed hash-index preparation profile.
 
-The existing recipe and finite audited texture tasks are entered. Other game/native
-tasks remain unsupported. The named files below are code providers, not a certificate
+The existing recipe and explicitly qualified finite original task families are entered.
+Every other game/native family remains unsupported. The named files below are code providers, not a certificate
 that every data.stage prerequisite can execute or repair.
 """
 from pathlib import Path
@@ -15,7 +15,7 @@ CODE_SEEDS = (
     'skatepark_build.py', 'treehouse_pieces.py', 'export_digest.py', 'city_inputs.py',
     'city_tile_products.py', 'city_harbor_inputs.py', 'tools/racing_assets.py',
     'tools/package_cook.py', 'tools/game_binary.py', 'world/source_registry.py',
-    'world/yori.py', 'world/gen_world.py', 'world/craterpark_layout.py', 'world/texture_catalog.py', 'world/train/bake_manifest.py',
+    'world/yori.py', 'world/gen_world.py', 'world/farhills_surface.py', 'world/craterpark_layout.py', 'world/texture_catalog.py', 'world/train/bake_manifest.py',
     'world/regions/brinecove/foliage_names.py', 'world/regions/craterpark/v2/v4_config.py',
     'world/regions/craterpark/v2/trees.py', 'unreal/Scripts/horse_data.py',
     'craterpark_atomic_build.py', 'forest_atomic_build.py', 'props_atomic_build.py',
@@ -56,7 +56,7 @@ CODE_SEEDS = (
     'world/regions/treehouse/canopy_data.py', 'legacy_treehouse_assembly_profile.py',
     'legacy_treehouse_recolour_profile.py', 'legacy_treehouse_library_profile.py',
     'world/regions/treehouse/assemble_atomic.py',
-    'world/regions/craterpark/v2/editor_generate.py', 'legacy_craterpark_geometry_profile.py', 'legacy_craterpark_layout_profile.py', 'legacy_world_layout_profile.py',
+    'world/regions/craterpark/v2/editor_generate.py', 'legacy_craterpark_geometry_profile.py', 'legacy_craterpark_layout_profile.py', 'legacy_world_layout_profile.py', 'legacy_farhills_profile.py',
 )
 
 
@@ -538,6 +538,25 @@ class TextureAuthority:
                 code_inputs=profile.code_inputs, legacy_outputs=profile.output_paths)
             self.output_paths[step.name] = profile.output_paths
             self.generated_inputs.update(profile.produced_inputs)
+        from legacy_farhills_profile import qualify_farhills
+        for step in selected:
+            if step.name != 'world.farhills':
+                continue
+            available = {*self.steps, *self.pending_tools, 'world.textures'}
+            if ('world.layout' not in self.data_steps
+                    or any(name not in available for name in graph.prerequisites(step))):
+                continue  # Future cold roles stay unsupported until their real producers qualify.
+            profile = qualify_farhills(step, checkout=self.checkout,
+                                       output_root=self.checkout / 'build/yorimichi')
+            self.single_native[step.name] = profile
+            self.native_qualifiers[step.name] = qualify_farhills
+            self.native_steps[step.name], self.native_profiles[step.name] = step, profile
+            self.native_runtimes[step.name] = _bind_native_runtime(
+                step, checkout=self.checkout, issuer_files=manifest['issuer_files'],
+                code_inputs=profile.code_inputs)
+            self.steps[step.name] = step
+            self.output_paths[step.name] = tuple(path for _, roots in profile.products for path in roots)
+            self.generated_inputs.update(profile.produced_inputs)
         self.dones = {}
         self.native_launch = None
         first = next((step for step in selected if step.controller is None), None)
@@ -701,6 +720,20 @@ class TextureAuthority:
                        'roots': ['build/yorimichi'],
                        'sources': self.witness('games/yorimichi/legacy_qualification.py')}
         old = _prior_record(self.client)
+        # Use the EXISTING transport codec on the complete candidate including
+        # current real correlation; no witness truncation or second encoder.
+        from atelier.build_v2.legacy_client import encode_record
+        if len(tasks) > 64 or len(inputs) > 1024:
+            raise AuthorityRefused('qualified frame exceeds its finite task/input count before permission')
+        envelope = {'version': 2, 'nonce': self.nonce, 'selection': self.client.selection,
+                    'sequence': self.client.sequence, 'frame': self.client.frame,
+                    'previous_digest': self.client.record_digest}
+        operations = ({'type': 'advance', 'observation': frame},
+                      {'type': 'supersede', 'observation': observation, 'initial_frame': frame})
+        largest = max(len(encode_record({**envelope, 'operation': operation})) - 4
+                      for operation in operations)
+        print(f'Managed frame forecast: tasks={len(tasks)} inputs={len(inputs)} '
+              f'largest_initial_wire_bytes={largest}', flush=True)
         if old is not None:
             previous_frame = old.get('frame')
             scope = None if previous_frame is None else previous_frame['scope']
@@ -1081,7 +1114,10 @@ class TextureAuthority:
     def prepare_native_command(self, ctx, step, command):
         from atelier.build_v2.legacy_client import AuthorityRefused
         native = getattr(self, 'native_launch', None)
-        if native is None and step.name in self.single_native and self.native_steps.get(step.name) is step:
+        if native is None and step.name in self.single_native:
+            if (self.native_steps.get(step.name) is not step
+                    or self.native_profiles.get(step.name) is not self.single_native[step.name]):
+                raise AuthorityRefused('standalone native Step/profile storage differs from its qualification')
             from atelier.build_v2.legacy_native_launch import NativeSingleLaunch
             native = NativeSingleLaunch(self, ctx, step, command, self.native_runtimes[step.name])
             self.native_launch = native

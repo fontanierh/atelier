@@ -153,7 +153,17 @@ def action_argv(command, ctx, *, runtime, **bindings):
             or not command.script.is_absolute()
             or command.script.relative_to(runtime.root).as_posix() not in runtime.files):
         raise ValueError('standalone native script is outside its selected captured runtime')
-    return worker_argv(command, ctx, _action=True, **bindings)
+    argv = worker_argv(command, ctx, _action=True, **bindings)
+    # The strict captured worker always parses an explicit script-argument tail.
+    # Blender adds it only for nonempty args; an empty separator preserves [].
+    if not command.args and '--' not in argv:
+        argv.append('--')
+    return argv
+
+
+def _require_action_arguments(argv, expected):
+    if '--' not in argv or argv[argv.index('--') + 1:] != expected:
+        raise ValueError('standalone native script/arguments differ from the original command')
 
 
 def _registered_tool_provider(name, module, modules, builtin_names, tool, caller_globals):
@@ -849,9 +859,9 @@ def main(manifest, specification, expected):
             raise ValueError('unsupported original standalone native action')
         worker = Path(action['script'])
         if (not worker.is_absolute() or not worker.is_relative_to(checkout)
-                or worker.relative_to(checkout).as_posix() not in files
-                or '--' not in sys.argv or sys.argv[sys.argv.index('--') + 1:] != action['args']):
+                or worker.relative_to(checkout).as_posix() not in files):
             raise ValueError('standalone native script/arguments differ from the original command')
+        _require_action_arguments(sys.argv, action['args'])
         batch = temporary.parent
         namespace = Path(manifest['output']) / '.state/native-actions'
     if (not batch.is_absolute() or batch.parent != namespace

@@ -592,3 +592,19 @@ def test_native_extra_selected_code_refuses_unknown_or_aliased_roles(tmp_path, f
     with pytest.raises((OSError, ValueError)):
         native._bind_native_runtime(step, checkout=tmp_path, issuer_files=sorted(names), code_inputs=roles)
     assert native.captured_native_inputs(step) == ()
+
+
+@pytest.mark.parametrize('arguments', [(), ('--recolour', '/owned/output')])
+def test_standalone_argv_empty_or_nonempty_tail_reaches_actual_worker_parser(tmp_path, arguments):
+    command = build.Blender(tmp_path/'producer.py', args=arguments, threads=3, factory_startup=True)
+    runtime = native._NativeRuntime(tmp_path, ('producer.py', *native._ACTION_WORKER), native._ORIGIN)
+    argv = native.action_argv(command, SimpleNamespace(blender='checked-blender'), runtime=runtime,
+        startup=Path('/owned/startup.json'), specification=Path('/owned/spec.json'),
+        specification_digest='a'*64, capture_file=Path('/owned/controller_client.py'), capture_digest='b'*64)
+    assert argv.count('--') == 1 and argv[argv.index('--')+1:] == list(arguments)
+    native._require_action_arguments(argv, list(arguments))  # SAME parser invoked by captured main.
+    with pytest.raises(ValueError, match='script/arguments'):
+        native._require_action_arguments(argv+['unexpected'], list(arguments))
+    with pytest.raises(ValueError, match='script/arguments'):
+        native._require_action_arguments(argv[:argv.index('--')], list(arguments))
+    assert command.args == arguments  # No producer flags/argument identity changed.
