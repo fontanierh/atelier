@@ -133,11 +133,29 @@ scheme paths are added directly without site processing. CPython's bounded built
 `LC_CTYPE` coercion is distinguished from ambient forwarding; Rust still passes only the four
 approved operational variables. No game key or worker bundle is changed by this startup context.
 
-The Linux T1a `legacy_host_entry` bridge uses the original checkout's `.venv/bin/python`
-and actual compiled source-bound controller. Its Python fixture explicitly prepares the normal
-verified helper cache, then exercises the ordinary console entry through captured Graph discovery
-to typed Held. No new epoch or mutation permission is persisted; no task settlement, replay, Finish,
-native work or build success is certified. The existing T1a budget is unchanged.
+The real-recipe Linux integration runs as one separately named required hosted step after the
+normal Rust tiers, using the original checkout's `.venv/bin/python`, existing Python fixture
+and already compiled source-bound controller. Its explicit helper-cache setup precedes the
+ordinary console entry through captured Graph discovery to typed Held. The duplicate Rust bridge
+and its registry row are removed: pure T0 is unchanged, T1a remains 38 cases with its existing
+30-second bound, and this separate integration is neither a tier pass nor a native exclusion.
+Its own explicit result and source/binary/identity evidence must be checked separately.
+
+The same `4336da5e` hosted game-suite evidence measured actual recipe calls at 36.832 and
+37.122 seconds; another observation reached 46.58 seconds. The real entry performs two recipe
+passes, so the initial 18-second fixture allowance was not justified by those measurements.
+This integration alone allows 180 seconds for its caller, followed by the existing bounded
+two-second TERM and two-second KILL cleanup within a four-minute step. That covers up to
+46.58 × 2 seconds plus startup/observation overhead; it is an operational test allowance,
+not a production-fit guarantee, and does not automatically grow on failure. Production host
+whole/startup/cleanup budgets remain 48 hours/60 seconds/600 seconds, with guards unchanged.
+
+The positive integration still requires the actual CLI/host/scheduler identities to terminate
+normally without fixture cleanup, the exact flushed control locator, captured Graph and typed
+Held, and absence of a new epoch, HashIndex, stamps, publication, receipts and course output.
+Failure preserves bounded logs, pinned identities and diagnostic Unknown; cleanup or a missing
+pass record cannot certify success. No mutation permission, settlement, replay, Finish, native
+work or target/build success is certified by this read-only integration.
 
 Declaration imports run in a private reversible scope over the finite captured dependency set.
 Preloaded `Graph`, context and path helpers cannot supply executed declaration code; fresh modules

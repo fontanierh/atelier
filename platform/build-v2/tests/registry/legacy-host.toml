@@ -7,12 +7,6 @@ platforms = ["darwin", "linux"]
 tier = "t0"
 
 [[scenarios]]
-id = "legacy-host.original_production_entry_graph_held"
-tests = ["atelier-build-v2::legacy_host_entry/original_production_entry_reaches_captured_graph_then_held_without_mutation_permission"]
-platforms = ["linux"]
-tier = "t1a"
-
-[[scenarios]]
 id = "legacy-host.startup_manifest_relays_exact_host_verified_issuer_roster_without_discovery"
 tests = ["atelier-build-v2/legacy_host::tests::startup_manifest_relays_exact_host_verified_issuer_roster_without_discovery"]
 platforms = ["darwin", "linux"]
