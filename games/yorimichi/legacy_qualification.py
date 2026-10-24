@@ -15,7 +15,7 @@ CODE_SEEDS = (
     'skatepark_build.py', 'treehouse_pieces.py', 'export_digest.py', 'city_inputs.py',
     'city_tile_products.py', 'city_harbor_inputs.py', 'tools/racing_assets.py',
     'tools/package_cook.py', 'tools/game_binary.py', 'world/source_registry.py',
-    'world/yori.py', 'world/texture_catalog.py', 'world/train/bake_manifest.py',
+    'world/yori.py', 'world/craterpark_layout.py', 'world/texture_catalog.py', 'world/train/bake_manifest.py',
     'world/regions/brinecove/foliage_names.py', 'world/regions/craterpark/v2/v4_config.py',
     'world/regions/craterpark/v2/trees.py', 'unreal/Scripts/horse_data.py',
     'craterpark_atomic_build.py', 'forest_atomic_build.py', 'props_atomic_build.py',
@@ -56,7 +56,7 @@ CODE_SEEDS = (
     'world/regions/treehouse/canopy_data.py', 'legacy_treehouse_assembly_profile.py',
     'legacy_treehouse_recolour_profile.py', 'legacy_treehouse_library_profile.py',
     'world/regions/treehouse/assemble_atomic.py',
-    'world/regions/craterpark/v2/editor_generate.py', 'legacy_craterpark_geometry_profile.py',
+    'world/regions/craterpark/v2/editor_generate.py', 'legacy_craterpark_geometry_profile.py', 'legacy_craterpark_layout_profile.py',
 )
 
 
@@ -497,6 +497,26 @@ class TextureAuthority:
             # tool. The ordinary preparation boundary must bind its real identity
             # before this role joins any mutation frame or original fingerprint.
             self.pending_tools[step.name] = (step, profile)
+        from legacy_craterpark_layout_profile import qualify_craterpark_layout
+        for step in selected:
+            if step.name != 'world.craterpark_layout':
+                continue
+            # The static dependent role can qualify with an absent generated input.
+            # Its exact qualified producer and ORIGINAL scheduler still establish
+            # fresh produced bytes/key before execution; no missing-key credit.
+            available = {*self.steps, *self.pending_tools, 'world.textures'}
+            if any(name not in available for name in graph.prerequisites(step)):
+                continue
+            profile = qualify_craterpark_layout(step, checkout=self.checkout,
+                                                output_root=self.checkout / 'build/yorimichi')
+            self.python_qualifiers[step.name] = qualify_craterpark_layout
+            self.data_steps[step.name] = (step, profile)
+            self.steps[step.name] = step
+            self.runtimes[step.name] = _bind_captured_runtime(
+                step, checkout=self.checkout, issuer_files=manifest['issuer_files'],
+                code_inputs=profile.code_inputs, legacy_outputs=profile.output_paths)
+            self.output_paths[step.name] = profile.output_paths
+            self.generated_inputs.update(profile.produced_inputs)
         self.dones = {}
         self.native_launch = None
         first = next((step for step in selected if step.controller is None), None)

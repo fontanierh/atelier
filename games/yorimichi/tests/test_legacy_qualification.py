@@ -728,6 +728,15 @@ def test_actual_captured_graph_qualifies_data_before_private_runtime_without_tas
     client = SimpleNamespace(request=lambda *args: pytest.fail('pure qualification requested permission'))
     def consume(build, graph, steps, ordered, files):
         authority = profile.TextureAuthority(manifest, request, client, {}, build, graph, steps, ordered, files)
+        layout, layout_observation = authority.data_steps['world.craterpark_layout']
+        produced = paths.REPO / 'build/yorimichi/craterpark/v2/geometry.npz'
+        assert layout_observation.produced_inputs == (produced,)
+        assert produced in build.required_inputs(layout) and produced in authority.generated_inputs
+        assert authority.output_paths[layout.name] == layout_observation.output_paths
+        assert layout.products == [] and layout.cutoff and layout.heavy and not layout.cache and not layout.audit
+        assert authority.runtimes[layout.name].nested_tool is None
+        assert authority.runtimes[layout.name].legacy_outputs == tuple(layout.outputs)
+        build.audit_enabled(layout)
         step, observation = authority.data_steps['world.treehouse_trees.data']
         assert step.audit is False and step.heavy is False and step.batch is None
         assert step is authority.steps[step.name] and build.audit_enabled(step)

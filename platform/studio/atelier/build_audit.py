@@ -79,8 +79,12 @@ def _bind_captured_runtime(step, *, checkout, issuer_files, code_inputs=(), nest
         names.add('platform/studio/atelier/build_v2/python_worker.py')
         names.add('platform/studio/atelier/build_v2/protocol.py')
         names.add('platform/studio/atelier/build_products.py')
-        if tuple(legacy_outputs) != tuple(step.outputs) or step.products or not step.cutoff or step.cache:
-            raise ValueError('nested legacy action differs from its original cutoff/output role')
+    if nested_tool is not None or legacy_outputs:
+        from .build import Python
+        if (not legacy_outputs or tuple(legacy_outputs) != tuple(step.outputs)
+                or step.products or not step.cutoff or step.cache
+                or len(step.commands) != 1 or type(step.commands[0]) is not Python):
+            raise ValueError('captured legacy Python action differs from its original cutoff/output role')
     for name in list(names):
         parent = (root / name).parent
         while parent != root:
@@ -104,9 +108,12 @@ def validate(step):
     if not enabled(step):
         return
     runtime = getattr(step, '_captured_audit_runtime', None)
-    legacy = bool(captured_runtime_inputs(step) and runtime.nested_tool is not None
+    legacy = bool(captured_runtime_inputs(step) and runtime.legacy_outputs
+                  and len(step.commands) == 1 and type(step.commands[0]) is Python
                   and runtime.legacy_outputs == tuple(step.outputs) and not step.products
                   and step.cutoff and not step.cache)
+    if runtime is not None and runtime.legacy_outputs and not legacy:
+        raise ValueError('captured legacy Python output/command role changed')
     if ((not step.products and not legacy) or len(step.commands) != 1
             or type(step.commands[0]) not in (Python, Blender, UnrealScript)):
         raise ValueError(f'{step.name}: audit requires named products and exactly one Python, Blender or UnrealScript command')
@@ -176,7 +183,7 @@ def roots(ctx, step):
     """Audit ownership permits native products, but never permits restoring native cache entries."""
     from .build import Python, UnrealScript
     runtime = getattr(step, '_captured_audit_runtime', None)
-    if captured_runtime_inputs(step) and runtime.nested_tool is not None:
+    if captured_runtime_inputs(step) and runtime.legacy_outputs:
         if (not runtime.legacy_outputs or runtime.legacy_outputs != tuple(step.outputs)
                 or step.products or not step.cutoff or step.cache):
             raise ValueError('nested legacy output declaration changed')
@@ -307,7 +314,7 @@ def prepared(ctx, step, products, *, receipt=None):
     inputs = [*required_inputs(step), *(p for name in step.reads for p in products[name].roots())]
     runtime = getattr(step, '_captured_audit_runtime', None)
     output_roots = ([Path(p).resolve() for p in runtime.legacy_outputs]
-                    if runtime is not None and runtime.nested_tool is not None else
+                    if runtime is not None and runtime.legacy_outputs else
                     [Path(p).resolve() for product in step.products for p in product.paths])
     report_path = ctx.logs / f'{step.name}.audit.json'
     authority = getattr(ctx, 'legacy_authority', None)

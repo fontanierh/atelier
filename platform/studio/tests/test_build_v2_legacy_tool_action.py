@@ -243,3 +243,37 @@ def test_profile_grants_only_keyed_node_installation_and_exact_default_config(tm
     assert f'(subpath "{config.parent}")' not in profile
     assert '(allow file-read-metadata (with report))' not in profile
     assert '(deny file-read* network* (with send-signal SIGKILL)' in profile
+
+
+def test_private_plain_legacy_python_requires_exact_original_cutoff_outputs(tmp_path):
+    from atelier import build, build_audit
+    root = tmp_path / 'checkout'; root.mkdir()
+    script = root / 'layout.py'; script.write_text('pass\n')
+    output = root / 'build/game/layout.json'
+    step = build.Step('actual.layout', [build.Python(script)], inputs=[script],
+                      outputs=[output], heavy=True, cutoff=True)
+    names = [*build_audit._CAPTURED_WORKER, 'layout.py']
+    runtime = build_audit._bind_captured_runtime(step, checkout=root, issuer_files=names,
+                                                legacy_outputs=tuple(step.outputs))
+    build_audit.validate(step)
+    build_audit.roots(SimpleNamespace(out=output.parent), step)
+    assert runtime.nested_tool is None and runtime.legacy_outputs == (output,)
+    assert 'platform/studio/atelier/build_v2/legacy_tool_action.py' not in runtime.files
+    assert not step.audit and not step.cache and not step.products and step.cutoff
+    original = step.commands
+    for commands in ([], [build.Blender(script)]):
+        step.commands = commands
+        with pytest.raises(ValueError, match='role changed'):
+            build_audit.validate(step)
+    step.commands = original
+    step.outputs.append(root / 'foreign.json')
+    with pytest.raises(ValueError, match='role changed'):
+        build_audit.validate(step)
+    step.outputs.pop()
+    with pytest.raises(ValueError, match='outside'):
+        build_audit.roots(SimpleNamespace(out=root / 'different'), step)
+    # Public recipe flags alone cannot acquire the private unnamed-output route.
+    public = build.Step('ordinary.layout', [build.Python(script)], inputs=[script],
+                        outputs=[output], heavy=True, cutoff=True, audit=True)
+    with pytest.raises(ValueError, match='named products'):
+        build_audit.validate(public)
