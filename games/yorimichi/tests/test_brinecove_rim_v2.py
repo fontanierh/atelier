@@ -90,3 +90,20 @@ def test_declared_code_is_complete_without_fixed_source_hashes():
     assert rim['outputs'][0]['files'] == [{'path': 'final-rim.json',
         'install_path': 'build/yorimichi/brinecove-data/final-rim.json'}]
     assert rim['params'] == {}
+
+
+def test_d2_canopy_uses_complete_declared_code_and_original_parameter_basename():
+    from atelier.build_inputs import local_imports
+    recipe = load('v2_native_recipe', GAME / 'build_v2.py')
+    roots = (GAME / 'world', GAME / 'world/regions', REPO / 'platform/studio')
+    for script, code in ((recipe.CANOPY_PLAN_SCRIPT, recipe.CANOPY_PLAN_CODE),
+                         (recipe.CANOPY_EXPORT_SCRIPT, recipe.CANOPY_EXPORT_CODE)):
+        assert set(local_imports(REPO / script, roots)) == {REPO / name for name in code}
+    plan, export = recipe.canopy_units()
+    assert plan['outputs'] == [] and len(plan['output_groups']) == 1
+    assert plan['output_groups'][0]['parent'] == recipe.CANOPY_NAME
+    assert Path(recipe.CANOPY_INPUTS['parameters'][1]).stem == recipe.CANOPY_NAME
+    assert export['inputs'][0]['source'] == {'kind': 'group_member', 'unit': recipe.CANOPY_PLAN,
+        'group': 'geometry', 'piece': recipe.CANOPY_NAME}
+    assert export['outputs'][0]['destination'] == 'store'
+    assert all('install_path' not in item for item in export['outputs'][0]['files'])

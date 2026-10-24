@@ -246,6 +246,10 @@ impl Fixture {
     }
 
     fn prepared(&self) -> PreparedUnit {
+        self.prepared_with_worker(PYTHON_JOB_LOOP_VERSION)
+    }
+
+    fn prepared_with_worker(&self, worker: &str) -> PreparedUnit {
         let validated = validate(
             &self.declaration,
             &registry(),
@@ -267,7 +271,7 @@ impl Fixture {
                 produced: &self.produced,
                 produced_groups: &BTreeMap::new(),
                 staged_inputs: &self.staged,
-                worker: &identity(PYTHON_JOB_LOOP_VERSION),
+                worker: &identity(worker),
                 validator: &identity("validator-1"),
             },
             &mut SourceHashCache::default(),
@@ -300,6 +304,50 @@ fn files_below(root: &Path) -> Vec<String> {
     }
     found.sort();
     found
+}
+
+#[test]
+fn only_keyed_blender_worker_receives_empty_private_runtime_scratch() {
+    let space = Workspace::new();
+    let fixture = Fixture::new("assets/demo");
+    let plain = stage(
+        &fixture.prepared(),
+        &fixture.snapshot,
+        &fixture.objects,
+        &space.path("plain"),
+        "plain",
+    )
+    .unwrap();
+    assert!(!plain.job_dir().join(".blender-runtime").exists());
+    let native = stage(
+        &fixture.prepared_with_worker(BLENDER_JOB_LOOP_VERSION),
+        &fixture.snapshot,
+        &fixture.objects,
+        &space.path("native"),
+        "native",
+    )
+    .unwrap();
+    let scratch = native.job_dir().join(".blender-runtime");
+    assert!(fs::read_dir(&scratch).unwrap().next().is_none());
+    assert_eq!(mode(&scratch), 0o700);
+    assert_eq!(mode(native.job_dir()), 0o555);
+    assert_eq!(mode(&native.job_dir().join("ops/piece.py")), 0o444);
+    let mut poisoned = Fixture::new("assets/demo");
+    let name = ".blender-runtime/seed.py";
+    poisoned.declaration.units[0].code.push(name.into());
+    poisoned
+        .snapshot
+        .insert(name.into(), SnapshotEntry::File(b"# preseeded".to_vec()));
+    assert!(
+        stage(
+            &poisoned.prepared_with_worker(BLENDER_JOB_LOOP_VERSION),
+            &poisoned.snapshot,
+            &poisoned.objects,
+            &space.path("poisoned"),
+            "poisoned"
+        )
+        .is_err()
+    );
 }
 
 #[test]

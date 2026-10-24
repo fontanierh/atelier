@@ -1,6 +1,6 @@
 //! The explicit project worker implementation, independent of installed Python/platform identity.
 use crate::keys::{ImplementationIdentity, canonical_bytes};
-use crate::launch::{PYTHON_JOB_LOOP_VERSION, WorkerCommand};
+use crate::launch::{BLENDER_JOB_LOOP_VERSION, PYTHON_JOB_LOOP_VERSION, WorkerCommand};
 use crate::source_hashes::sha256;
 use crate::validate::{SnapshotEntry, SourceSnapshot};
 use std::collections::BTreeMap;
@@ -10,11 +10,24 @@ use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 use std::path::Path;
 
 pub const PYTHON_WORKER_FILES: [&str; 3] = ["protocol.py", "python_job.py", "python_worker.py"];
+pub const BLENDER_WORKER_FILES: [&str; 5] = [
+    "protocol.py",
+    "python_job.py",
+    "python_worker.py",
+    "blender_job.py",
+    "blender_worker.py",
+];
+
+enum WorkerKind {
+    Python,
+    Blender,
+}
 
 /// Private bytes and their implementation identity; never a locator or a caller's digest claim.
 pub struct PythonWorkerBundle {
     files: BTreeMap<String, Vec<u8>>,
     identity: ImplementationIdentity,
+    kind: WorkerKind,
 }
 
 #[cfg(test)]
@@ -73,6 +86,81 @@ mod tests {
         fs::set_permissions(root.join("worker"), fs::Permissions::from_mode(0o755)).unwrap();
         fs::remove_dir_all(root).unwrap();
     }
+
+    #[test]
+    fn blender_bundle_binds_all_five_files_and_uses_original_three_thread_command() {
+        let mut snapshot: SourceSnapshot = BLENDER_WORKER_FILES
+            .into_iter()
+            .map(|name| {
+                (
+                    name.into(),
+                    SnapshotEntry::File(format!("# frozen {name}\n").into_bytes()),
+                )
+            })
+            .collect();
+        let bundle = PythonWorkerBundle::from_blender_snapshot(&snapshot).unwrap();
+        assert_eq!(bundle.identity().version, BLENDER_JOB_LOOP_VERSION);
+        assert_eq!(bundle.file_count(), 5);
+        let identity = bundle.identity();
+        for name in BLENDER_WORKER_FILES {
+            let mut changed = snapshot.clone();
+            changed.insert(
+                name.into(),
+                SnapshotEntry::File(b"changed implementation".to_vec()),
+            );
+            assert_ne!(
+                PythonWorkerBundle::from_blender_snapshot(&changed)
+                    .unwrap()
+                    .identity()
+                    .digest,
+                identity.digest,
+                "unbound worker source {name}"
+            );
+            changed.remove(name);
+            assert!(PythonWorkerBundle::from_blender_snapshot(&changed).is_err());
+        }
+        snapshot.insert("extra.py".into(), SnapshotEntry::File(vec![]));
+        assert!(PythonWorkerBundle::from_blender_snapshot(&snapshot).is_err());
+        assert!(PythonWorkerBundle::from_snapshot(&snapshot).is_err());
+        let root = std::env::temp_dir().canonicalize().unwrap().join(format!(
+            "atelier-v2-blender-bundle-{}-{}",
+            std::process::id(),
+            NEXT.fetch_add(1, Ordering::Relaxed)
+        ));
+        fs::create_dir(&root).unwrap();
+        let command = bundle
+            .command(Path::new("/installed/Blender"), &root)
+            .unwrap();
+        let expected = WorkerCommand::blender_job_loop(
+            "/installed/Blender".into(),
+            root.join("worker/blender_worker.py"),
+        )
+        .unwrap();
+        assert_eq!(command.program, expected.program);
+        assert_eq!(
+            command.args,
+            expected
+                .args
+                .iter()
+                .map(std::ffi::OsString::from)
+                .collect::<Vec<_>>()
+        );
+        assert_eq!(command.env, expected.env);
+        assert_eq!(command.cwd, expected.cwd);
+        for name in BLENDER_WORKER_FILES {
+            let path = root.join("worker").join(name);
+            assert_eq!(
+                fs::read(&path).unwrap(),
+                format!("# frozen {name}\n").as_bytes()
+            );
+            assert_eq!(
+                fs::metadata(path).unwrap().permissions().mode() & 0o777,
+                0o444
+            );
+        }
+        fs::set_permissions(root.join("worker"), fs::Permissions::from_mode(0o755)).unwrap();
+        fs::remove_dir_all(root).unwrap();
+    }
 }
 
 impl PythonWorkerBundle {
@@ -111,7 +199,48 @@ impl PythonWorkerBundle {
                 version: PYTHON_JOB_LOOP_VERSION.into(),
                 digest,
             },
+            kind: WorkerKind::Python,
         })
+    }
+
+    /// @cc [owner:fontanierh,label:correctness;safety] frozen-blender-worker-implementation
+    /// The native bundle MUST contain exactly the existing five Blender/Python job-loop
+    /// sources and bind every byte/name to the Blender worker identity. Launch MUST use
+    /// those readonly materialized bytes through the original three-thread Blender
+    /// command, not a live source path or caller-defined worker. Installed tool paths
+    /// MUST remain execution context rather than source identity ingredients.
+    pub fn from_blender_snapshot(snapshot: &SourceSnapshot) -> Result<Self, String> {
+        if snapshot.len() != BLENDER_WORKER_FILES.len() {
+            return Err("Blender worker requires exactly its five implementation files".into());
+        }
+        let mut files = BTreeMap::new();
+        for name in BLENDER_WORKER_FILES {
+            let Some(SnapshotEntry::File(bytes)) = snapshot.get(name) else {
+                return Err(format!(
+                    "Blender worker implementation is not frozen regular data: {name}"
+                ));
+            };
+            files.insert(name.to_string(), bytes.clone());
+        }
+        let digests: BTreeMap<_, _> = files
+            .iter()
+            .map(|(name, bytes)| (name, sha256(bytes)))
+            .collect();
+        let digest = sha256(&canonical_bytes(&serde_json::json!({
+            "domain":"atelier-static-blender-worker", "version":1, "files":digests,
+        }))?);
+        Ok(Self {
+            files,
+            identity: ImplementationIdentity {
+                version: BLENDER_JOB_LOOP_VERSION.into(),
+                digest,
+            },
+            kind: WorkerKind::Blender,
+        })
+    }
+
+    pub(crate) fn file_count(&self) -> usize {
+        self.files.len()
     }
 
     pub fn identity(&self) -> ImplementationIdentity {
@@ -141,10 +270,16 @@ impl PythonWorkerBundle {
         }
         fs::set_permissions(&directory, fs::Permissions::from_mode(0o555))
             .map_err(|error| error.to_string())?;
-        let command = WorkerCommand::python_job_loop(
-            interpreter.to_path_buf(),
-            directory.join("python_worker.py"),
-        )
+        let command = match self.kind {
+            WorkerKind::Python => WorkerCommand::python_job_loop(
+                interpreter.to_path_buf(),
+                directory.join("python_worker.py"),
+            ),
+            WorkerKind::Blender => WorkerCommand::blender_job_loop(
+                interpreter.to_path_buf(),
+                directory.join("blender_worker.py"),
+            ),
+        }
         .map_err(|error| error.to_string())?;
         Ok(crate::guard_adapter::WorkerCommand {
             program: command.program,

@@ -156,6 +156,15 @@ class Platform:
         """Further sandbox allowances this platform needs, each a reviewed profile rule; none here."""
         return []
 
+    def write_subpaths(self, job_dir):
+        """@cc [owner:fontanierh,label:safety] fixed-worker-private-write-roots
+        Write roots MUST come only from the fixed worker platform, never project
+        message fields. Python MUST retain output-only writes; Blender MAY add only
+        its fresh reserved job-local runtime directory. Kernel and Python checks
+        MUST receive the same roots. Scratch MUST NOT enter published inventories.
+        """
+        return [os.path.join(job_dir, 'output')]
+
 
 def sandbox_profile(job_dir, platform=None):
     """@cc [owner:fontanierh,label:safety] exact-platform-openssl-config
@@ -180,7 +189,7 @@ def sandbox_profile(job_dir, platform=None):
         f'(allow process-exec {" ".join(f"(literal {_quote(path)})" for path in platform.executables())})',
         f'(allow file-read* {subpaths} {" ".join(f"(literal {_quote(path)})" for path in literals)})',
         f'(allow file-read-metadata {" ".join(f"(literal {_quote(path)})" for path in metadata)})',
-        f'(allow file-write* (subpath {_quote(os.path.join(job_dir, "output"))}) (literal "/dev/null"))',
+        f'(allow file-write* {" ".join(f"(subpath {_quote(path)})" for path in platform.write_subpaths(job_dir))} (literal "/dev/null"))',
         '(allow file-ioctl (literal "/dev/dtracehelper"))',
         '(allow sysctl-read)',
         *platform.extra_rules(),
@@ -212,7 +221,8 @@ def job_config(job, job_dir, result_fd, platform=None):
             'outputs': [_job_relative(item['path'], 'output') for item in job['outputs']],
             'params': job['params'], 'platform_roots': platform.import_roots(),
             'site_libraries': platform.site_libraries(), 'read_subpaths': platform.reads()[0],
-            'read_literals': platform.reads()[1], 'result_fd': result_fd}
+            'read_literals': platform.reads()[1], 'write_subpaths': platform.write_subpaths(job_dir),
+            'result_fd': result_fd}
 
 
 def output_files(job_dir):

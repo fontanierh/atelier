@@ -16,8 +16,10 @@ Each job runs a new Blender from the same installed binary, in the staged job fo
         --python-use-system-env --python-expr <blender_job.py + python_job.py source>
 
 with the configuration on stdin, the declared environment only, and every Blender user folder
-(`BLENDER_USER_*`, and `HOME`) pointed at a path inside the job folder that does not exist, so no
-user preferences, add-ons, extensions or caches load. On macOS the child runs under the same
+(`BLENDER_USER_*`, and `HOME`) pointed at an initially absent path inside its fresh private
+runtime folder, so no existing preferences, add-ons, extensions or caches load. That fixed
+job-local scratch is separate from published outputs and never reused between jobs. On macOS
+the child runs under the same
 deny-default kill-on-deny profile as a Python job, with the Blender application bundle as its
 platform: it may read the bundle, the platform files and its job folder, write only `output/`, and
 execute only the Blender binary. A clean process per job means no state carries from one job to
@@ -31,6 +33,7 @@ Installed Blender and its bundled add-ons are execution platform, not key ingred
 import argparse
 import importlib.util
 import os
+import stat
 from pathlib import Path
 import sys
 
@@ -58,7 +61,8 @@ JOB_FLAGS = BLENDER_FLAGS + ('--python-use-system-env',)
 # Staged code could occupy that path, so a job whose folder already holds it is refused.
 USER_FOLDERS = ('BLENDER_USER_RESOURCES', 'BLENDER_USER_CONFIG', 'BLENDER_USER_SCRIPTS',
                 'BLENDER_USER_DATAFILES', 'BLENDER_USER_EXTENSIONS', 'HOME')
-MISSING_USER_FOLDER = '.no-user-folder'
+RUNTIME_DIRECTORY = '.blender-runtime'
+MISSING_USER_FOLDER = RUNTIME_DIRECTORY + '/user'
 # Platform files Blender reads at startup beyond the Python job's: ICU data, and the system-wide
 # (not per-user) CoreFoundation preferences. Neither is in the home folder.
 BLENDER_READ_SUBPATHS = ('/usr/share/icu',)
@@ -117,6 +121,9 @@ class BlenderPlatform(python_worker.Platform):
     def import_roots(self):
         return sorted(set(python_worker.interpreter_roots()) | {self.bundle})
 
+    def write_subpaths(self, job_dir):
+        return [*super().write_subpaths(job_dir), os.path.join(job_dir, RUNTIME_DIRECTORY)]
+
 
 class BlenderWorker(python_worker.Worker):
     VERSION = WORKER_VERSION
@@ -134,17 +141,22 @@ class BlenderWorker(python_worker.Worker):
         environment = dict(python_worker.JOB_ENVIRONMENT)
         missing = os.path.join(job_dir, MISSING_USER_FOLDER)
         environment.update({name: missing for name in USER_FOLDERS})
+        environment['TMPDIR'] = os.path.join(job_dir, RUNTIME_DIRECTORY, 'tmp')
         return environment
 
     def check_job_folder(self, job_dir):
-        # lstat, so a dangling link there is refused too. The child cannot create the path later:
-        # it writes only output/.
+        # The controller reserves this one empty real directory before sealing the
+        # job root. Never chmod that root or adopt preseeded code/user state.
+        root = os.path.join(job_dir, RUNTIME_DIRECTORY)
         try:
-            os.lstat(os.path.join(job_dir, MISSING_USER_FOLDER))
-        except FileNotFoundError:
-            return
-        raise python_worker.JobRefused(
-            'protocol', f'the job folder holds {MISSING_USER_FOLDER}, reserved as the missing Blender user folder')
+            info = os.lstat(root)
+            if (not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid()
+                    or info.st_mode & 0o077 or os.listdir(root)):
+                raise ValueError('not an empty private directory')
+        except (OSError, ValueError):
+            raise python_worker.JobRefused(
+                'protocol', f'{RUNTIME_DIRECTORY} is not fresh reserved Blender runtime scratch') from None
+        os.mkdir(os.path.join(root, 'tmp'), 0o700)
 
 
 def serve(request_fd, response_fd, sandboxed, blender):

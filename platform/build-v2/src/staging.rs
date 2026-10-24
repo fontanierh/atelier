@@ -243,7 +243,7 @@ fn stage_item(
 }
 
 /// Every directory below `root` except `output/`, deepest first.
-fn staged_directories(root: &Path) -> Result<Vec<PathBuf>, String> {
+fn staged_directories(root: &Path, scratch: Option<&Path>) -> Result<Vec<PathBuf>, String> {
     let mut found = vec![];
     let mut pending = vec![root.to_path_buf()];
     while let Some(directory) = pending.pop() {
@@ -251,6 +251,7 @@ fn staged_directories(root: &Path) -> Result<Vec<PathBuf>, String> {
             let entry = entry.map_err(|error| io_error(&directory, error))?;
             let path = entry.path();
             if path != root.join("output")
+                && scratch != Some(path.as_path())
                 && entry
                     .file_type()
                     .map_err(|error| io_error(&path, error))?
@@ -273,7 +274,9 @@ fn staged_directories(root: &Path) -> Result<Vec<PathBuf>, String> {
 /// from certified sources with their recorded size and executable bit: pinned CAS objects, checkout
 /// descriptors under read custody, or sealed local snapshots. Checkout read custody MUST end after
 /// independent job clones are staged, before worker execution; absent optional inputs
-/// create nothing. Every staged file and directory except `output/` MUST be read-only. Unsafe
+/// create nothing. The fixed Blender worker additionally receives one empty private
+/// `.blender-runtime/` directory for isolated native startup state. Every other staged
+/// file and directory except `output/` MUST be read-only. Unsafe
 /// paths, links, shape mismatches and incomplete items MUST fail the staging. An object source's
 /// refusal MUST reach the caller as `StageError::Source` with its typed kind and the digest asked
 /// for, never flattened or retried by copying; every other failure is `StageError::Staging`. The
@@ -349,7 +352,15 @@ fn stage_into(
     }
     let output = job_dir.join("output");
     fs::create_dir(&output).map_err(|error| io_error(&output, error))?;
-    for directory in staged_directories(job_dir)? {
+    let scratch = if ingredients.worker_version == crate::launch::BLENDER_JOB_LOOP_VERSION {
+        let path = job_dir.join(".blender-runtime");
+        fs::create_dir(&path).map_err(|error| io_error(&path, error))?;
+        set_mode(&path, 0o700)?;
+        Some(path)
+    } else {
+        None
+    };
+    for directory in staged_directories(job_dir, scratch.as_deref())? {
         set_mode(&directory, 0o555)?;
     }
     let folder = job_dir.to_str().ok_or("the job folder is not UTF-8")?;

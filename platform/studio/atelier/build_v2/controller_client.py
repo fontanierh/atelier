@@ -433,8 +433,10 @@ def invoke_controller(checkout, executable, marker, runs, execution, *, echo=pri
     execution = dict(execution)
     allowed = {'cache_root', 'interpreter', 'provenance', 'worktree_id', 'memory_gib',
                'job_seconds', 'cleanup_seconds', 'overall_seconds'}
-    if set(execution) != allowed:
+    if set(execution) - {'blender'} != allowed:
         raise ValueError('invalid controller execution options')
+    if 'blender' in execution and (not isinstance(execution['blender'], str) or not Path(execution['blender']).is_absolute()):
+        raise ValueError('invalid Blender execution locator')
     for key in ('memory_gib', 'job_seconds', 'cleanup_seconds', 'overall_seconds'):
         if type(execution[key]) is not int or not 0 < execution[key] < 2**32:
             raise ValueError('invalid controller execution bound')
