@@ -457,3 +457,16 @@ See legacy_epoch/selection.rs and legacy_host.rs/legacy_host_launch.rs tests. Fu
 qualification, final graph streaming, all C7 child/reader coverage, pressure-requeue cleanup chains
 and actual mixed normal/repair acceptance remain coupled integration gates; source unit tests
 are not native or full-default activation proof. Existing v1/dormant state is never silently adopted.
+
+@cc [owner:fontanierh,label:correctness;safety] legacy-host-deadline-and-dirty-disposition
+Absolute deadlines MUST use the same explicit posix-clock-monotonic-v1 clock on both sides,
+resampled across IO and suspend, with cleanup time reserved before any further work permission.
+Owned protocol endpoints MUST be nonblocking; partial IO, EAGAIN and EINTR MUST retain the
+absolute bound. FD sanitization MUST cover actual descriptors above lowered soft limits, keep
+Rust's exec-error pipe open until exec and refuse unsupported/unknown enumeration results.
+A dirty file/directory claim MUST NOT clear on an incomplete descendant list or directory inode:
+its exact absence/file or complete bounded tree disposition MUST be independently checked.
+Guard-return capacity close remains an explicit captured-provider observation AND independently
+matched raw guards/custody; self-generated wrapper flags MUST NOT issue cleanup authority.
+See legacy_host_launch.rs and legacy_epoch/selection.rs corrective regressions. These source
+fixtures do not prove real native cleanup, current full-default support or Darwin activation.

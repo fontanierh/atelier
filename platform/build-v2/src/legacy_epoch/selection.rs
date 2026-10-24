@@ -5,13 +5,13 @@ use super::{
 use crate::checkout_locks::{BuildGuard, ContentWriteGuard, LEGACY_EPOCH};
 use crate::install_fs::{FileObservation, RootFs};
 use crate::leases::ProcessIdentity;
+use crate::legacy_host_launch::Deadline;
 use crate::paths::{Claims, claim};
 use crate::source_hashes::{sha256, valid_digest};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeSet;
 use std::io::{self, Read};
-use std::time::Instant;
 
 pub(crate) const MAX_TRANSITIONS: u64 = 65_536;
 pub(crate) const MAX_WITNESSES: usize = 1024;
@@ -84,6 +84,7 @@ pub(crate) struct SelectionObservation {
     pub source_plan: String,
     pub request_digest: String,
     pub issuer: String,
+    pub controller_source: String,
     pub roots: Vec<String>,
     pub sources: Vec<Witness>,
 }
@@ -106,6 +107,14 @@ pub(crate) struct GuardBinding {
     pub directory: String,
     pub child: ProcessIdentity,
     pub monitor: ProcessIdentity,
+    pub controller: ProcessIdentity,
+    pub locks: Vec<crate::legacy_host_launch::LockIdentity>,
+    pub controller_source: String,
+    pub issuer_source: String,
+    pub request_digest: String,
+    pub returncode: i32,
+    pub process_digest: String,
+    pub tree_digest: String,
 }
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
@@ -212,6 +221,7 @@ fn binding_shape(binding: &SelectionObservation) -> Result<(), EpochError> {
         || !valid_digest(&binding.source_plan)
         || !valid_digest(&binding.request_digest)
         || !valid_digest(&binding.issuer)
+        || !valid_digest(&binding.controller_source)
         || binding.roots.is_empty()
         || binding.roots.len() > 16
     {
@@ -308,11 +318,11 @@ use std::os::unix::fs::MetadataExt;
 pub(crate) fn check_witnesses(
     fs: &RootFs,
     values: &[Witness],
-    deadline: Instant,
+    deadline: Deadline,
 ) -> Result<(), EpochError> {
     witness_shape(values, false)?;
     for value in values {
-        if Instant::now() >= deadline {
+        if deadline.expired() {
             return Err(EpochError::Changed);
         }
         match &value.fact {
@@ -340,7 +350,7 @@ pub(crate) fn check_witnesses(
                 let mut buffer = [0u8; 65536];
                 let mut total = 0u64;
                 loop {
-                    if Instant::now() >= deadline {
+                    if deadline.expired() {
                         return Err(EpochError::Changed);
                     }
                     let n = file.read(&mut buffer)?;
@@ -370,7 +380,7 @@ pub(crate) fn check_witnesses(
 pub(crate) fn qualify_selection(
     binding: SelectionObservation,
     fs: &RootFs,
-    deadline: Instant,
+    deadline: Deadline,
 ) -> Result<QualifiedSelection, EpochError> {
     binding_shape(&binding)?;
     check_witnesses(fs, &binding.sources, deadline)?;
@@ -380,7 +390,7 @@ pub(crate) fn qualify_frame(
     scope: FrameObservation,
     selection: &QualifiedSelection,
     fs: &RootFs,
-    deadline: Instant,
+    deadline: Deadline,
 ) -> Result<QualifiedFrame, EpochError> {
     frame_shape(&scope, &selection.0)?;
     check_witnesses(fs, &scope.inputs, deadline)?;
@@ -492,10 +502,29 @@ fn validate(record: &Record) -> Result<(), EpochError> {
                     }
                     claim(&mut reports, directory, &a.id).map_err(|_| EpochError::Invalid)?;
                     if let Some(g) = &a.guard {
+                        if [
+                            &g.controller_source,
+                            &g.issuer_source,
+                            &g.request_digest,
+                            &g.process_digest,
+                            &g.tree_digest,
+                        ]
+                        .iter()
+                        .any(|v| !valid_digest(v))
+                        {
+                            return invalid();
+                        }
+
                         if g.directory != *directory
                             || g.invocation != *invocation
                             || g.child.boot != g.monitor.boot
                             || g.child.pid == g.monitor.pid
+                            || g.controller != launch.scheduler
+                            || g.child.boot != launch.scheduler.boot
+                            || g.controller_source != record.binding.controller_source
+                            || g.issuer_source != record.binding.issuer
+                            || g.request_digest != record.binding.request_digest
+                            || g.locks.len() != 3
                         {
                             return invalid();
                         }
@@ -621,7 +650,7 @@ pub(crate) struct Selection<'a> {
     fs: RootFs,
     record: Record,
     observation: FileObservation,
-    deadline: Instant,
+    deadline: Deadline,
 }
 impl<'a> Selection<'a> {
     fn guards(build: &BuildGuard, write: &ContentWriteGuard) -> Result<RootFs, EpochError> {
@@ -639,7 +668,7 @@ impl<'a> Selection<'a> {
         write: &'a ContentWriteGuard,
         qualified: QualifiedSelection,
         id: &str,
-        deadline: Instant,
+        deadline: Deadline,
         mut cut: impl FnMut(Cut) -> io::Result<()>,
     ) -> Result<Self, EpochError> {
         let fs = Self::guards(build, write)?;
@@ -713,7 +742,7 @@ impl<'a> Selection<'a> {
         build: &'a BuildGuard,
         write: &'a ContentWriteGuard,
         qualified: &QualifiedSelection,
-        deadline: Instant,
+        deadline: Deadline,
     ) -> Result<Self, EpochError> {
         let fs = Self::guards(build, write)?;
         let (record, observation) = Self::load(&fs)?;
@@ -870,28 +899,26 @@ impl<'a> Selection<'a> {
         if a.guard.is_some() {
             return invalid();
         }
-        crate::legacy_host_launch::verify_guard_start(&self.fs, &guard)?;
+        if let AttemptKind::Guarded { launch, .. } = &a.execution {
+            if guard.child.boot != launch.scheduler.boot
+                || guard.monitor.boot != launch.scheduler.boot
+            {
+                return Err(EpochError::CleanupUnknown);
+            }
+        } else {
+            return Err(EpochError::Invalid);
+        }
+        // Raw authoritative receipt/provenance checks occurred in FrozenIssuer; this
+        // method only persists that validated observation under exact attempt membership.
         a.guard = Some(guard);
         self.save(next, Cut::GuardBound, cut)
     }
     fn cleanup_attempt(&self, attempt: &GuardAttempt) -> Result<(), EpochError> {
         match &attempt.execution {
             AttemptKind::InProcess => Ok(()),
-            AttemptKind::Guarded {
-                directory,
-                invocation,
-                ..
-            } => {
-                let derived;
-                let binding = if let Some(binding) = attempt.guard.as_ref() {
-                    binding
-                } else {
-                    derived = crate::legacy_host_launch::read_cleanup_binding(
-                        &self.fs, directory, invocation,
-                    )?;
-                    &derived
-                };
-                crate::legacy_host_launch::verify_guard_cleanup(&self.fs, binding)
+            AttemptKind::Guarded { .. } => {
+                let binding = attempt.guard.as_ref().ok_or(EpochError::CleanupUnknown)?;
+                crate::legacy_host_launch::verify_persisted_guard(&self.fs, binding)
             }
         }
     }
@@ -922,6 +949,12 @@ impl<'a> Selection<'a> {
             .find(|a| a.id == settled.attempt && a.members.contains(&task.id))
             .ok_or(EpochError::Invalid)?;
         self.cleanup_attempt(attempt)?;
+        if attempt.guard.as_ref().is_some_and(|g| g.returncode != 0)
+            && frame.scope.profile != Profile::NativeBatch
+        {
+            return Err(EpochError::Pending);
+        }
+
         for old in &frame.attempts {
             if old.members.contains(&task.id) {
                 self.cleanup_attempt(old)?;
@@ -941,6 +974,16 @@ impl<'a> Selection<'a> {
         }
         check_witnesses(&self.fs, &frame.scope.inputs, self.deadline)?;
         check_witnesses(&self.fs, &settled.outputs, self.deadline)?;
+        // A repaired directory cannot be certified by one arbitrary descendant.
+        // EVERY declared write (including carried old claims) needs complete disposition.
+        for item in &task.writes {
+            complete_disposition(&self.fs, item, &settled.outputs, self.deadline)?;
+        }
+        for dirty in &self.record.dirty {
+            if task.writes.iter().any(|w| covers(w, dirty)) {
+                complete_disposition(&self.fs, dirty, &settled.outputs, self.deadline)?;
+            }
+        }
         let mut next = self.record.clone();
         next.dirty
             .retain(|d| !task.writes.iter().any(|w| covers(w, d)));
@@ -977,7 +1020,7 @@ impl<'a> Selection<'a> {
         write: &'a ContentWriteGuard,
         new: QualifiedSelection,
         initial: Option<QualifiedFrame>,
-        deadline: Instant,
+        deadline: Deadline,
         cut: impl FnMut(Cut) -> io::Result<()>,
     ) -> Result<Self, EpochError> {
         let fs = Self::guards(build, write)?;
@@ -1111,6 +1154,68 @@ impl<'a> Selection<'a> {
         Ok(())
     }
 }
+fn complete_disposition(
+    fs: &RootFs,
+    claim: &WriteClaim,
+    outputs: &[Witness],
+    deadline: Deadline,
+) -> Result<(), EpochError> {
+    let exact = outputs
+        .iter()
+        .find(|w| w.path == claim.path)
+        .ok_or(EpochError::Pending)?;
+    match &exact.fact {
+        Fact::Absent | Fact::File { .. } => {
+            check_witnesses(fs, std::slice::from_ref(exact), deadline)
+        }
+        Fact::Directory { .. } => {
+            let expected: BTreeSet<_> = outputs
+                .iter()
+                .filter(|w| w.path == claim.path || w.path.starts_with(&(claim.path.clone() + "/")))
+                .map(|w| w.path.clone())
+                .collect();
+            let mut pending = vec![claim.path.clone()];
+            let mut actual = BTreeSet::new();
+            let mut folded = BTreeSet::new();
+            while let Some(path) = pending.pop() {
+                if deadline.expired() {
+                    return Err(EpochError::Changed);
+                }
+                if actual.len() >= MAX_WITNESSES
+                    || !actual.insert(path.clone())
+                    || !folded.insert(crate::paths::folded(&path))
+                {
+                    return Err(EpochError::Invalid);
+                }
+                match fs.directory_identity(&path) {
+                    Ok(Some(_)) => {
+                        for name in fs.metadata_names(&path, MAX_WITNESSES)? {
+                            pending.push(format!("{path}/{name}"));
+                        }
+                    }
+                    Err(e) if e.raw_os_error() == Some(libc::ENOTDIR) => {
+                        fs.file(&path)?;
+                    }
+                    Ok(None) => return Err(EpochError::Changed),
+                    Err(e) => return Err(e.into()),
+                }
+            }
+            if actual != expected {
+                return Err(EpochError::Pending);
+            }
+            let witnesses: Vec<_> = outputs
+                .iter()
+                .filter(|w| expected.contains(&w.path))
+                .cloned()
+                .collect();
+            if witnesses.iter().any(|w| matches!(w.fact, Fact::Absent)) {
+                return Err(EpochError::Invalid);
+            }
+            check_witnesses(fs, &witnesses, deadline)
+        }
+    }
+}
+
 fn covers(new: &WriteClaim, old: &WriteClaim) -> bool {
     new.anchor == old.anchor
         && (new.canonical == old.canonical
@@ -1148,8 +1253,8 @@ mod tests {
         fn fs(&self) -> RootFs {
             RootFs::open(&self.root).unwrap()
         }
-        fn deadline(&self) -> Instant {
-            Instant::now() + Duration::from_secs(30)
+        fn deadline(&self) -> Deadline {
+            Deadline::after(Duration::from_secs(30))
         }
         fn witness(&self, path: &str) -> Witness {
             let bytes = fs::read(self.root.join(path)).unwrap();
@@ -1170,6 +1275,7 @@ mod tests {
                 source_plan: sha256(&fs::read(self.root.join("source")).unwrap()),
                 request_digest: sha256(b"request"),
                 issuer: sha256(b"fixed-test-provider"),
+                controller_source: sha256(b"fixed-test-controller"),
                 roots: vec!["out".into()],
                 sources: vec![self.witness("source")],
             }
@@ -1537,5 +1643,67 @@ mod tests {
             |_| Ok(()),
         )
         .unwrap();
+    }
+    #[test]
+    fn dirty_directory_requires_complete_tree_or_exact_absence_not_one_child() {
+        let f = Fixture::new();
+        let build = f.locks.try_build_exclusive().unwrap();
+        let write = build.try_legacy_write_content().unwrap();
+        let mut s = Selection::prepare(
+            &build,
+            &write,
+            f.qualified(),
+            "selection",
+            f.deadline(),
+            |_| Ok(()),
+        )
+        .unwrap();
+        s.advance(f.frame("out/tree"), |_| Ok(())).unwrap();
+        s.begin_attempt(f.attempt(), |_| Ok(())).unwrap();
+        fs::create_dir(f.root.join("out/tree")).unwrap();
+        fs::write(f.root.join("out/tree/a"), b"a").unwrap();
+        fs::write(f.root.join("out/tree/leftover"), b"old partial").unwrap();
+        let partial = SettlementObservation {
+            task: "copy".into(),
+            attempt: "attempt1".into(),
+            inputs: sha256(b"inputs"),
+            outputs: vec![f.witness("out/tree/a")],
+        };
+        assert!(s.settle(partial.clone(), |_| Ok(())).is_err());
+        let m = fs::metadata(f.root.join("out/tree")).unwrap();
+        let root = Witness {
+            path: "out/tree".into(),
+            fact: Fact::Directory {
+                device: m.dev(),
+                inode: m.ino(),
+            },
+        };
+        let mut incomplete = partial.clone();
+        incomplete.outputs.push(root.clone());
+        assert!(s.settle(incomplete, |_| Ok(())).is_err());
+        let mut complete = partial;
+        complete
+            .outputs
+            .extend([root, f.witness("out/tree/leftover")]);
+        s.settle(complete, |_| Ok(())).unwrap();
+        s.requeue(&["copy".into()], |_| Ok(())).unwrap();
+        let mut attempt = f.attempt();
+        attempt.id = "attempt2".into();
+        s.begin_attempt(attempt, |_| Ok(())).unwrap();
+        fs::remove_dir_all(f.root.join("out/tree")).unwrap();
+        s.settle(
+            SettlementObservation {
+                task: "copy".into(),
+                attempt: "attempt2".into(),
+                inputs: sha256(b"inputs"),
+                outputs: vec![Witness {
+                    path: "out/tree".into(),
+                    fact: Fact::Absent,
+                }],
+            },
+            |_| Ok(()),
+        )
+        .unwrap();
+        assert!(s.record.frame.as_ref().unwrap().pending.is_empty());
     }
 }

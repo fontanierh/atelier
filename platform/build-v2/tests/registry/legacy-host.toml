@@ -71,3 +71,45 @@ id = "legacy-host.actual_ex_receipt_verifier_keeps_install_journal_and_short_per
 tests = ["atelier-build-v2/legacy_epoch::selection::tests::actual_ex_receipt_verifier_keeps_install_journal_and_short_permit_barriers"]
 platforms = ["darwin", "linux"]
 tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.absolute_clock_domain_refuses_mach_origin_and_rechecks_after_elapsed_sleep"
+tests = ["atelier-build-v2/legacy_host_launch::tests::absolute_clock_domain_refuses_mach_origin_and_rechecks_after_elapsed_sleep"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.fresh_default_output_needs_no_plan_and_refuses_aliases_or_missing_overrides"
+tests = ["atelier-build-v2/legacy_host_launch::tests::fresh_default_output_needs_no_plan_and_refuses_aliases_or_missing_overrides"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.game_issuer_private_capsule_cannot_substitute_different_original_profile_bytes"
+tests = ["atelier-build-v2/legacy_host::tests::game_issuer_private_capsule_cannot_substitute_different_original_profile_bytes"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.dirty_directory_requires_complete_tree_or_exact_absence_not_one_child"
+tests = ["atelier-build-v2/legacy_epoch::selection::tests::dirty_directory_requires_complete_tree_or_exact_absence_not_one_child"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.fd_inventory_rejects_full_truncated_duplicate_and_unknown_rows"
+tests = ["atelier-build-v2/legacy_host_launch::tests::fd_inventory_rejects_full_truncated_duplicate_and_unknown_rows"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.child_sanitizer_covers_high_inheritable_fd_above_lowered_limit_and_preserves_exec_error"
+tests = ["atelier-build-v2/legacy_host_launch::tests::child_sanitizer_covers_high_inheritable_fd_above_lowered_limit_and_preserves_exec_error"]
+platforms = ["linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.nonblocking_reply_pipe_stopped_reader_cannot_cross_absolute_deadline"
+tests = ["atelier-build-v2/legacy_host_launch::tests::nonblocking_reply_pipe_stopped_reader_cannot_cross_absolute_deadline"]
+platforms = ["darwin", "linux"]
+tier = "t0"
