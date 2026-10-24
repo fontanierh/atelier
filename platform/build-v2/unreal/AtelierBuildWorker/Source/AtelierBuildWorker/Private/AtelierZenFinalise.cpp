@@ -157,7 +157,10 @@ FIoHash PackageSignature(const FAssetPackageData& Data)
     FAssetPackageData Canonical = Data;
     Canonical.ChunkHashes.KeySort([](const FIoChunkId& A, const FIoChunkId& B) { return A < B; });
     FCbWriter Writer;
+    Writer.BeginObject();
+    Writer.SetName("package");
     Canonical.NetworkWrite(Writer);
+    Writer.EndObject();
     return Writer.Save().AsObject().GetHash();
 }
 FIoHash AssetSignature(const FAssetData& Asset)
