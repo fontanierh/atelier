@@ -687,7 +687,7 @@ class TextureAuthority:
         self.launch_context = None
         if step.name in self.call_steps:
             self.validate_call(step, step.commands[0])
-            self.attempt = 'call-' + self.nonce + '-' + token
+            self.attempt = 'call-' + self.nonce + '-' + token + '-' + str(self.client.sequence)
             self.client.request({'type': 'begin_attempt', 'attempt': {
                 'id': self.attempt, 'members': [*self.metadata_scopes, step.name],
                 'execution': {'kind': 'in_process'}, 'guard': None}})
@@ -695,8 +695,7 @@ class TextureAuthority:
     def call_scope(self, ctx, step, command):
         self.validate_call(step, command)
         from atelier.atomic_files import managed_temporaries
-        token = self.hashlib.sha256(step.name.encode()).hexdigest()[:20]
-        return managed_temporaries(ctx.out / '.state/batches' / ('call-' + self.nonce + '-' + token) / 'atomic-tmp')
+        return managed_temporaries(ctx.out / '.state/batches' / self.attempt / 'atomic-tmp')
 
     def raw_native_members(self):
         """Private descriptor-only view for pure child-role revalidation.

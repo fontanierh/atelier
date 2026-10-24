@@ -839,3 +839,36 @@ def test_source_fix_subdivides_retained_metadata_claim_union_without_dropping_ol
     assert all(task['replay']=='closed_replay' for task in replacement['tasks'])
     assert authority.client.calls[1]['attempt']['members']==list(authority.metadata_scopes)
     assert old['frame']['pending']==[authority.metadata] and not (ctx.out/'.state').exists()
+
+
+def test_actual_call_current_continuation_uses_unique_attempt_without_erasing_previous(scripted_index_provider):
+    import hashlib
+    from atelier import build
+    case = scripted_index_provider
+    authority = case.profile.TextureAuthority.__new__(case.profile.TextureAuthority)
+    step = build.Step('world.treehouse_trees.geometry', [build.Call('original discovery', lambda ctx: 76)])
+    authority.steps = authority.call_steps = {step.name: step}
+    authority.native_steps = authority.data_steps = authority.single_native = {}
+    authority.dones = {}; authority.keys = {step.name: 'e' * 64}
+    authority.runtimes = {}; authority.hashlib = hashlib
+    authority.checkout = case.root; authority.nonce = 'f' * 32
+    authority.aggregate = None
+    authority.preparation_attempt = 'original-prepare'
+    authority.metadata_scopes = {'control.state': [], 'control.logs': [], 'control.stamps': [], 'control.journal': []}
+    authority.validate_call = lambda actual, command: None
+    authority.build = SimpleNamespace(fingerprint=lambda *args, **kwargs: 'e' * 64)
+    calls = []
+    class Client:
+        sequence = 10
+        def request(self, record):
+            assert record['type'] == 'begin_attempt'
+            calls.append(record)
+            self.sequence += 1
+    authority.client = Client()
+    ctx = SimpleNamespace(build_hash_index=None, build_tool_cache=None)
+    for unused in range(2):
+        authority.before_task(ctx, step, done={})
+    ids = [record['attempt']['id'] for record in calls]
+    assert len(set(ids)) == 2 and ids[0].endswith('-10') and ids[1].endswith('-11')
+    assert all(record['attempt']['members'] == [*authority.metadata_scopes, step.name] for record in calls)
+    assert all(record['attempt']['execution'] == {'kind': 'in_process'} for record in calls)
