@@ -54,7 +54,7 @@ CODE_SEEDS = (
     'world/regions/treehouse/plan_tree.py', 'legacy_treehouse_discovery_profile.py', 'legacy_treehouse_export_profile.py',
     'world/export_region_piece.py', 'legacy_treehouse_data_profile.py',
     'world/regions/treehouse/canopy_data.py', 'legacy_treehouse_assembly_profile.py',
-    'legacy_treehouse_recolour_profile.py',
+    'legacy_treehouse_recolour_profile.py', 'legacy_treehouse_library_profile.py',
 )
 
 
@@ -453,12 +453,21 @@ class TextureAuthority:
                 step, checkout=self.checkout, issuer_files=manifest['issuer_files'],
                 verifier=getattr(self.native_profiles[name], 'verifier', None))
         from legacy_treehouse_data_profile import qualify_treehouse_data
-        self.data_steps = {}
+        from legacy_treehouse_library_profile import qualify_treehouse_library
+        self.data_steps, self.python_qualifiers = {}, {}
         for step in selected:
-            if not exports_ready or step.name != 'world.treehouse_trees.data':
+            qualifier = (qualify_treehouse_data if step.name == 'world.treehouse_trees.data'
+                         else qualify_treehouse_library if step.name in
+                         {'world.treehouse_trees', 'world.treehouse_props', 'world.treehouse'} else None)
+            if not exports_ready or qualifier is None:
                 continue
-            profile = qualify_treehouse_data(step, checkout=self.checkout,
-                                            output_root=self.checkout / 'build/yorimichi')
+            # The ordinary Graph remains the product/owner authority. Future
+            # roles without a complete qualified producer roster receive no task.
+            if any(name not in self.steps for name in graph.prerequisites(step)):
+                continue
+            profile = qualifier(step, checkout=self.checkout,
+                                output_root=self.checkout / 'build/yorimichi')
+            self.python_qualifiers[step.name] = qualifier
             self.data_steps[step.name] = (step, profile)
             self.steps[step.name] = step
             self.runtimes[step.name] = _bind_captured_runtime(
@@ -660,9 +669,8 @@ class TextureAuthority:
                 raise AuthorityRefused('standalone native declaration changed before permission')
         if step.name in self.data_steps:
             from dataclasses import replace
-            from legacy_treehouse_data_profile import qualify_treehouse_data
-            actual = qualify_treehouse_data(replace(step), checkout=self.checkout,
-                                           output_root=self.checkout / 'build/yorimichi')
+            actual = self.python_qualifiers[step.name](replace(step), checkout=self.checkout,
+                                                       output_root=self.checkout / 'build/yorimichi')
             if actual != self.data_steps[step.name][1]:
                 raise AuthorityRefused('plain Python source/arguments/owned products changed before permission')
         self.step_key = self.keys[step.name]
