@@ -225,7 +225,9 @@ def test_captured_package_loader_preserves_default_path_and_explicit_plain_modul
     from atelier.build_v2.legacy_qualification import captured_recipe_imports
     package = tmp_path / 'platform/studio/captured_declaration_package'
     package.mkdir(parents=True)
-    source = CapturedCode(str(package / '__init__.py'), b'ORIGIN = __file__\n')
+    content = b'ORIGIN = __file__\n'
+    (package / '__init__.py').write_bytes(content)
+    source = CapturedCode(str(package / '__init__.py'), content)
     with captured_recipe_imports([source], checkout=tmp_path):
         loaded_package = importlib.import_module('captured_declaration_package')
         assert loaded_package.__path__ == [str(package)]

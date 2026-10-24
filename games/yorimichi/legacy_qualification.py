@@ -43,6 +43,11 @@ CODE_SEEDS = (
     'world/regions/belmonte/model_sources.py', 'world/regions/zeppelin/atomic.py',
     'world/regions/hippodrome/atomic.py', 'world/regions/hidamari_stable/catalogue.py',
     'world/regions/hidamari/logical_catalogue.py',
+    # Direct-spec seeds still execute in their original real package hierarchy.
+    # These initializers are code inputs even when static imports never name them.
+    'world/train/__init__.py', 'world/regions/brinecove/__init__.py',
+    'world/regions/ferry/__init__.py', 'world/regions/hidamari_stable/__init__.py',
+    'world/regions/swordcamp/__init__.py',
 )
 
 

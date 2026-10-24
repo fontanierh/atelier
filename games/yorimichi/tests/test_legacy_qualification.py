@@ -26,6 +26,20 @@ def test_current_discovery_provider_roster_uses_static_imports_within_capture_bo
     assert 'games/yorimichi/legacy_qualification.py' in names
     assert 'platform/studio/atelier/build.py' in names
     assert 'platform/studio/atelier/build_products.py' in names
+    for package in ('train', 'regions/brinecove', 'regions/ferry',
+                    'regions/hidamari_stable', 'regions/swordcamp'):
+        assert f'games/yorimichi/world/{package}/__init__.py' in names
+    for name in names:
+        boundary = (paths.REPO / 'games/yorimichi' if name.startswith('games/') else
+                    paths.REPO / ('platform/studio' if name.startswith('platform/studio/')
+                                  else 'platform/harness'))
+        parent = (paths.REPO / name).parent
+        while parent != boundary:
+            assert parent.is_relative_to(boundary)
+            initializer = parent / '__init__.py'
+            if initializer.is_file():
+                assert initializer.relative_to(paths.REPO).as_posix() in names
+            parent = parent.parent
     assert all((paths.REPO / name).is_file() for name in names)
     assert len(names) <= 256
     assert not writes
