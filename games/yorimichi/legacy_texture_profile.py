@@ -198,6 +198,8 @@ def qualify_texture_step(step, *, checkout: Path, output_root: Path) -> TextureT
         _regular_source(source)
     support = tuple(path for path in code if path != script)
     expected_inputs = [spec, *support, *raw[1:]]
-    if step.inputs != expected_inputs:
+    # Full recipe enrichment appends the main script at this exact position. Accept
+    # both real declarations without trimming, set normalization or role changes.
+    if step.inputs not in (expected_inputs, [*expected_inputs, script]):
         raise UnsupportedTexture(f'{step.name}: spec, code or asset membership/order differs')
     return TextureTask(step.name, texture, script, arguments, output, product.name, raw, code)
