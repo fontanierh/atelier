@@ -862,9 +862,15 @@ capture supplies complete descriptor observations; later live-edit acceptance re
 
 `python_worker` binds exactly the frozen worker, job bootstrap and protocol files into its implementation
 identity, then materializes those same files read-only under each unit's local lease. Installed Python
-and dependencies remain platform context. `python_executor` uses C5b's existing lifecycle and refuses
-production dispatch until actual custodian registration is available; its scripted-bridge constructor
-exists only in test builds. Scripted admission cannot prove real guarded batching or cleanup custody.
+and dependencies remain platform context. `python_executor` uses one independent C5c session per
+original miss ticket. The existing exclusive build guard is duplicated for the monitor only; actual
+worker and correlated monitor identities must be durably added to both original leases before Run.
+Normal unit limits remain 120 seconds of execution, 30 seconds of cleanup and 1800 seconds overall;
+the session backstop is their checked execution-plus-cleanup sum (150 seconds). It does not reuse a
+resident worker or accept quiescence in place of full guard cleanup. A crash retry that would need
+fresh staging refuses before a second Run and preserves partial evidence. The scripted-bridge
+constructor exists only in test builds. Portable synthetic guard tests verify this production path's
+registration and settlement gates, not actual admission, sandbox execution or monitor cleanup.
 
 This unused checkpoint includes real sandbox/I/O T1a cases and independent-harness integration.
 Dynamic cold targets, conditional regeneration of unavailable recorded payloads,
