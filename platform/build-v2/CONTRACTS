@@ -483,3 +483,11 @@ operational context. Unknown fields/overrides, missing libraries, relative/empty
 retargeted interpreter roles MUST refuse before project discovery. No custody, deadline, key or
 controller fulfillment authority is added. See legacy_host::tests startup-context cases;
 full production entry/discovery and actual native acceptance remain separate hosted/integration proof.
+
+@cc [owner:fontanierh,label:correctness;safety] closed-issuer-file-count-policy
+Controller distribution verification MUST keep its fixed 256 named-file cap. Only the private
+game-issuer verification caller MAY use the fixed 512 named-file policy; no input/config limit
+or arbitrary authority is accepted. Both MUST keep the identical length/name/content digest,
+8 MiB per-file and 32 MiB total bounds, unique names, readonly/nofollow observations and actual
+byte checks. A larger finite issuer roster is not task, cleanup, repair or Graph authority.
+See legacy_host::tests::issuer_count_512_does_not_change_controller_256_or_named_byte_authority.

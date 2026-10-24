@@ -22,6 +22,21 @@ pub const MAX_MESSAGE_BYTES: usize = 64 * 1024;
 const SOURCE_MANIFEST: &str = "platform/build-v2/controller-sources.json";
 const BOOTSTRAP: &str = "platform/studio/atelier/build_v2/legacy_bootstrap.py";
 const PROVIDER: &str = "platform/studio/atelier/build_v2/legacy_qualification.py";
+const MAX_CONTROLLER_FILES: usize = 256;
+const MAX_NAMED_ISSUER_FILES: usize = 512;
+#[derive(Clone, Copy)]
+enum CaptureKind {
+    Controller,
+    Issuer,
+}
+impl CaptureKind {
+    fn maximum(self) -> usize {
+        match self {
+            Self::Controller => MAX_CONTROLLER_FILES,
+            Self::Issuer => MAX_NAMED_ISSUER_FILES,
+        }
+    }
+}
 
 /// Startup/config data is not an epoch proof. The compiled distribution identity,
 /// owned spawn and captured issuer are independently verified before authority exists.
@@ -149,8 +164,9 @@ fn capture_digest(
     fs: &RootFs,
     names: &[String],
     manifest: Option<(&str, Vec<u8>)>,
+    kind: CaptureKind,
 ) -> io::Result<String> {
-    if names.is_empty() || names.len() > 256 {
+    if names.is_empty() || names.len() > kind.maximum() {
         return Err(error("source closure count"));
     }
     let mut files = BTreeMap::new();
@@ -235,12 +251,23 @@ impl FrozenIssuer {
         {
             return Err(error("host source closure missing bootstrap/provider"));
         }
-        let actual = capture_digest(&fs, &parsed.files, Some((SOURCE_MANIFEST, manifest)))?;
+        let actual = capture_digest(
+            &fs,
+            &parsed.files,
+            Some((SOURCE_MANIFEST, manifest)),
+            CaptureKind::Controller,
+        )?;
         if actual != config.source_identity {
             return Err(error("captured controller source identity mismatch"));
         }
         let gamefs = RootFs::open(&config.game_issuer.root)?;
-        if capture_digest(&gamefs, &config.game_issuer.files, None)? != config.game_issuer.digest {
+        if capture_digest(
+            &gamefs,
+            &config.game_issuer.files,
+            None,
+            CaptureKind::Issuer,
+        )? != config.game_issuer.digest
+        {
             return Err(error("captured game issuer identity mismatch"));
         }
         if !config
@@ -1513,13 +1540,13 @@ mod tests {
         std::fs::write(root.join("provider.py"), b"# captured first\n").unwrap();
         let fs = RootFs::open(&root).unwrap();
         let names = vec!["provider.py".to_string()];
-        assert!(capture_digest(&fs, &names, None).is_err());
+        assert!(capture_digest(&fs, &names, None, CaptureKind::Controller).is_err());
         std::fs::set_permissions(
             root.join("provider.py"),
             std::fs::Permissions::from_mode(0o400),
         )
         .unwrap();
-        let first = capture_digest(&fs, &names, None).unwrap();
+        let first = capture_digest(&fs, &names, None, CaptureKind::Controller).unwrap();
         std::fs::set_permissions(
             root.join("provider.py"),
             std::fs::Permissions::from_mode(0o600),
@@ -1531,10 +1558,82 @@ mod tests {
             std::fs::Permissions::from_mode(0o400),
         )
         .unwrap();
-        assert_ne!(first, capture_digest(&fs, &names, None).unwrap());
-        assert!(capture_digest(&fs, &["provider.py".into(), "provider.py".into()], None).is_err());
+        assert_ne!(
+            first,
+            capture_digest(&fs, &names, None, CaptureKind::Controller).unwrap()
+        );
+        assert!(
+            capture_digest(
+                &fs,
+                &["provider.py".into(), "provider.py".into()],
+                None,
+                CaptureKind::Controller
+            )
+            .is_err()
+        );
         std::os::unix::fs::symlink("provider.py", root.join("alias.py")).unwrap();
-        assert!(capture_digest(&fs, &["alias.py".into()], None).is_err());
+        assert!(capture_digest(&fs, &["alias.py".into()], None, CaptureKind::Controller).is_err());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+    #[test]
+    fn issuer_count_512_does_not_change_controller_256_or_named_byte_authority() {
+        use std::os::unix::fs::PermissionsExt;
+        let root = installed_context_fixture("issuer-count");
+        let mut names = Vec::new();
+        let mut reference = Sha256::new();
+        for index in 0..513u16 {
+            let name = format!("source-{index:04}.py");
+            let bytes = index.to_be_bytes();
+            std::fs::write(root.join(&name), bytes).unwrap();
+            std::fs::set_permissions(root.join(&name), std::fs::Permissions::from_mode(0o400))
+                .unwrap();
+            if index < 512 {
+                reference.update((name.len() as u64).to_be_bytes());
+                reference.update(name.as_bytes());
+                reference.update((bytes.len() as u64).to_be_bytes());
+                reference.update(bytes);
+            }
+            names.push(name);
+        }
+        let fs = RootFs::open(&root).unwrap();
+        let admitted = capture_digest(&fs, &names[..512], None, CaptureKind::Issuer).unwrap();
+        assert_eq!(admitted, format!("{:x}", reference.finalize()));
+        assert_eq!(
+            capture_digest(&fs, &names[..256], None, CaptureKind::Issuer).unwrap(),
+            capture_digest(&fs, &names[..256], None, CaptureKind::Controller).unwrap()
+        );
+        assert_eq!(
+            capture_digest(&fs, &names, None, CaptureKind::Issuer)
+                .unwrap_err()
+                .to_string(),
+            "source closure count"
+        );
+        assert_eq!(
+            capture_digest(&fs, &names[..257], None, CaptureKind::Controller)
+                .unwrap_err()
+                .to_string(),
+            "source closure count"
+        );
+        let mut duplicate = names[..511].to_vec();
+        duplicate.push(names[0].clone());
+        assert_eq!(
+            capture_digest(&fs, &duplicate, None, CaptureKind::Issuer)
+                .unwrap_err()
+                .to_string(),
+            "duplicate captured source name"
+        );
+        std::os::unix::fs::symlink(&names[0], root.join("alias.py")).unwrap();
+        assert!(capture_digest(&fs, &["alias.py".into()], None, CaptureKind::Issuer).is_err());
+        std::fs::set_permissions(root.join(&names[0]), std::fs::Permissions::from_mode(0o600))
+            .unwrap();
+        assert!(capture_digest(&fs, &names[..512], None, CaptureKind::Issuer).is_err());
+        std::fs::write(root.join(&names[0]), b"changed actual source bytes").unwrap();
+        std::fs::set_permissions(root.join(&names[0]), std::fs::Permissions::from_mode(0o400))
+            .unwrap();
+        assert_ne!(
+            admitted,
+            capture_digest(&fs, &names[..512], None, CaptureKind::Issuer).unwrap()
+        );
         std::fs::remove_dir_all(root).unwrap();
     }
     #[test]
