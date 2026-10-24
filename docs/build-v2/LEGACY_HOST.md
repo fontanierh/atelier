@@ -101,3 +101,7 @@ source key, worker context, controller-order/repair permission or native executi
 The three Rust startup tests exercise the real command factory and metadata validators without
 claiming an actual Python launch or production-discovery proof; the coupled hosted entry test
 must establish the latter separately and stop at typed Held/Unsupported, without Finish.
+
+The startup manifest also borrows `issuer_files` directly from the existing host-verified
+`GameIssuer.files`. The child must use only this exact named captured roster to check the same
+framed issuer digest; it must not rediscover a live closure or substitute an unbound sidecar list.

@@ -567,6 +567,7 @@ struct StartupManifest<'a> {
     issuer_digest: &'a str,
     issuer_root: &'a Path,
     issuer_profile: &'a str,
+    issuer_files: &'a [String],
     host: &'a ProcessIdentity,
     root: &'a RootIdentity,
     locks: &'a [LockIdentity; 3],
@@ -839,6 +840,7 @@ fn run_inner(config: HostConfig) -> io::Result<()> {
         issuer_digest: &issuer.game,
         issuer_root: &config.game_issuer.root,
         issuer_profile: &issuer.profile,
+        issuer_files: &config.game_issuer.files,
         host: &host,
         root: &root,
         locks: custody.identities(),
@@ -1231,6 +1233,87 @@ mod tests {
         ));
         std::fs::create_dir(&root).unwrap();
         root
+    }
+    #[test]
+    fn startup_manifest_relays_exact_host_verified_issuer_roster_without_discovery() {
+        let files = vec![
+            "games/fixture/build.py".into(),
+            "games/fixture/legacy_qualification.py".into(),
+        ];
+        let identity = ProcessIdentity {
+            pid: 1,
+            boot: "fixture-boot".into(),
+            started: "fixture-start".into(),
+        };
+        let root = RootIdentity {
+            device: 1,
+            inode: 2,
+        };
+        let locks = [
+            LockIdentity {
+                role: "build".into(),
+                device: 1,
+                inode: 3,
+            },
+            LockIdentity {
+                role: "content".into(),
+                device: 1,
+                inode: 4,
+            },
+            LockIdentity {
+                role: "writer".into(),
+                device: 1,
+                inode: 5,
+            },
+        ];
+        let request = SchedulerRequest {
+            path: "request.json".into(),
+            digest: sha256(b"request"),
+            size: 7,
+        };
+        let context = PythonContext {
+            platform_roots: vec!["/installed".into()],
+            purelib: "/installed/site".into(),
+            platlib: "/installed/site".into(),
+        };
+        let environment = OperationalEnvironment {
+            agent: None,
+            cache: None,
+            build_root: None,
+            path: "/usr/bin".into(),
+        };
+        let manifest = StartupManifest {
+            version: VERSION,
+            nonce: "fixture-nonce",
+            selection: "fixture-selection",
+            checkout: Path::new("/checkout"),
+            output: Path::new("/checkout/build/fixture"),
+            distribution: Path::new("/frozen"),
+            source_digest: "controller",
+            issuer_digest: "issuer",
+            issuer_root: Path::new("/issuer"),
+            issuer_profile: "games/fixture/legacy_qualification.py",
+            issuer_files: &files,
+            host: &identity,
+            root: &root,
+            locks: &locks,
+            deadline_ns: 3,
+            clock_domain: CLOCK_DOMAIN,
+            work_deadline_ns: 2,
+            scheduler_request: &request,
+            interpreter: Path::new("/image/python"),
+            interpreter_digest: "image",
+            interpreter_role: Path::new("/role/python"),
+            python_context: &context,
+            operational_environment: &environment,
+        };
+        let encoded = serde_json::to_value(&manifest).unwrap();
+        assert_eq!(
+            encoded["issuer_files"],
+            serde_json::to_value(&files).unwrap()
+        );
+        assert_eq!(encoded["issuer_profile"], files[1]);
+        assert_eq!(manifest.issuer_files.as_ptr(), files.as_ptr());
     }
     #[test]
     fn original_interpreter_role_is_preserved_and_retargeted_image_refuses() {

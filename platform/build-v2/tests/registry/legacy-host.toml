@@ -1,6 +1,12 @@
 schema_version = 1
 
 [[scenarios]]
+id = "legacy-host.startup_manifest_relays_exact_host_verified_issuer_roster_without_discovery"
+tests = ["atelier-build-v2/legacy_host::tests::startup_manifest_relays_exact_host_verified_issuer_roster_without_discovery"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
 id = "legacy-host.original_interpreter_role_is_preserved_and_retargeted_image_refuses"
 tests = ["atelier-build-v2/legacy_host::tests::original_interpreter_role_is_preserved_and_retargeted_image_refuses"]
 platforms = ["darwin", "linux"]
