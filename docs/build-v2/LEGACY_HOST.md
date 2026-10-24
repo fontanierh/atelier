@@ -44,3 +44,35 @@ unknown cleanup rather than trusting only the final PID. Missing guard receipts 
 of no launch. No cold/default graph coverage, native geometry or parent-death acceptance follows
 from the bounded Rust fixtures. MAC1 native validation remains deferred. Failed trials, retained
 claims and earlier source/evidence are preserved.
+
+Both processes use the explicitly tagged `posix-clock-monotonic-v1` domain: Rust
+`clock_gettime(CLOCK_MONOTONIC)` and Python `clock_gettime_ns(CLOCK_MONOTONIC)`. Darwin's
+`time.monotonic_ns()` uses another numeric origin and must not be mixed with it. The host
+resamples the shared absolute clock before every poll/read/write, source check and shutdown
+bound; it does not retain a conversion to `Instant` across sleep. An unknown tag refuses.
+
+A fresh default checkout needs no prior plan invocation: under real build+EX, the host may
+create only the empty canonical `build/{project}` directory chain required for its third lock.
+It validates the captured original game's strict name and rejects aliases, special paths,
+external roots and arbitrary missing overrides. This creates no Content, stamps or payload.
+Private captured game-provider bytes must also match every original named checkout source;
+those freshness witnesses remain mandatory in the selection. A private capsule hash alone
+cannot substitute a different provider or omit its code/helper closure.
+
+Guard cleanup now requires a counted `guard_returned` observation from the exact captured
+provider that actually observed a normal outer automatic-full-capacity `guarded.run` return.
+That is a provider capacity-close attestation, not a guard-issued receipt or code-zero success.
+The host independently binds actual raw process/tree hashes, child/start/monitor/controller,
+host boot, unique invocation namespace and all three actual lock identities. Wrapper
+`cleanup.json`/`custodian.json` selfassertions and optional timing diagnostics are insufficient.
+Nonzero normal return may establish cleanup but cannot settle an ordinary task as successful;
+only a separately verified completed member of a supported shared batch can retain its result.
+An exception, lost provider or missing observation stays unknown. Pressure archive chains still
+refuse until their complete positive evidence is supported; missing files never prove no launch.
+
+Dirty claims clear only after exact-file/absence or complete bounded tree disposition. One
+arbitrary descendant or a directory inode cannot establish a repaired old subtree. Work requests
+stop at overall deadline minus the reserved cleanup interval; shutdown keeps the whole bound.
+Linux sanitizes the complete child FD table using CLOEXEC-only close_range. Darwin inventories
+actual descriptors independent of soft limits and relies on this private standalone single-thread
+source callgraph; no arbitrary threaded embedding or atomic Darwin std-pipe claim is made.
