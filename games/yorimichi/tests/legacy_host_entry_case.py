@@ -1,7 +1,7 @@
-"""Hosted T1a fixture: ordinary managed CLI over the real source-bound Rust binary.
+"""Required hosted real-entry integration over the actual source-bound Rust binary.
 
-This script is invoked by the Rust registry case, not collected as an independent
-pytest case. Helper cache publication is fixture setup, not tested Cargo bootstrap.
+This script runs separately from pure T1a, not as an independent pytest case.
+Helper cache publication is fixture setup, not tested Cargo bootstrap.
 There is no production test mode: the real entry/host/bootstrap/provider are used.
 """
 import hashlib
@@ -21,6 +21,26 @@ from atelier.paths import REPO
 from atelier.harness.capacity_protocol import boot_id
 from atelier.harness.safety import process_tree
 from atelier.harness.safety.tree_guard import OwnedTree
+
+CALLER_ALLOWANCE_SECONDS = 180
+# Retained same-head recipe passes took 36.832/37.122s (up to 46.58s), and
+# this genuine route performs two. This fixed test allowance is not a production
+# duration/fit guarantee or an automatically growing budget. TERM/KILL remain 2s each.
+INTEGRATION_CASE = 'normal_managed_entry_readonly_graph_held'
+
+
+def integration_context(environment):
+    """Exact CI provenance only; never an execution/production opt-in or permission."""
+    head = environment.get('ATELIER_LEGACY_INTEGRATION_HEAD', '')
+    run = environment.get('GITHUB_RUN_ID', '')
+    attempt = environment.get('GITHUB_RUN_ATTEMPT', '')
+    job = environment.get('GITHUB_JOB', '')
+    if (len(head) != 40 or any(char not in '0123456789abcdef' for char in head)
+            or not run.isdecimal() or int(run) < 1 or not attempt.isdecimal() or int(attempt) < 1
+            or not 0 < len(job) <= 64 or any(not (char.isascii() and (char.isalnum() or char in '_-')) for char in job)):
+        raise AssertionError('real integration requires exact hosted head/run/job provenance')
+    return {'version': 1, 'case': INTEGRATION_CASE, 'head': head, 'run_id': run,
+            'run_attempt': attempt, 'job': job, 'step_id': 'real_entry_integration'}
 
 
 def signal_readonly_owned(tree, number, *, send=os.kill):
@@ -90,7 +110,7 @@ def observed_call(arguments, environment, evidence):
             assert started is not None, 'owned normal CLI identity unavailable'
             assert os.getpgid(process.pid) == process.pid, 'readonly test caller has no private session'
             tree = OwnedTree(process_tree, process.pid, started)
-            deadline = time.monotonic() + 18
+            deadline = time.monotonic() + CALLER_ALLOWANCE_SECONDS
             while True:
                 tree.discover()
                 assert not tree.excluded(), 'unexpected shared service below readonly fixture'
@@ -156,6 +176,7 @@ def observed_call(arguments, environment, evidence):
 
 def main(binary):
     assert sys.platform.startswith('linux'), 'this test-owned lifecycle case is Linux-only'
+    provenance = integration_context(os.environ)
     binary = Path(binary).resolve(strict=True)
     captured = capture_controller(REPO)
     raw = binary.read_bytes()
@@ -240,6 +261,13 @@ def main(binary):
     epoch_present = epoch.exists() or epoch.is_symlink()
     write_control(evidence, 'selection-observation.json', {'epoch_present': epoch_present})
     assert not epoch_present
+    # One integration result exists only after EVERY original positive assertion.
+    # It certifies this readonly Graph/Held case, never normal target completion.
+    write_control(evidence, 'integration-result.json', {
+        **provenance, 'integration_count': 1, 'verdict': 'readonly_graph_held',
+        'source': captured.digest, 'binary': digest, 'normal_cli_returncode': code,
+        'target_complete': False,
+    })
     print('HOSTED_REAL_ENTRY_GRAPH_HELD no mutation permission or completion certified', flush=True)
 
 
