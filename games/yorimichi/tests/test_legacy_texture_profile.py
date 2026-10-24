@@ -19,10 +19,9 @@ def profile():
 
 
 @pytest.fixture(scope='module')
-def declarations():
+def declarations(tmp_path_factory):
     recipe = build.load_recipe('yorimichi')
-    output_root = paths.REPO / 'build/yorimichi'
-    (output_root / 'textures').mkdir(parents=True, exist_ok=True)
+    output_root = tmp_path_factory.mktemp('texture-profile-cold') / 'yorimichi'
     ctx = SimpleNamespace(out=output_root)
     steps = recipe.texture_steps(ctx)
     return SimpleNamespace(recipe=recipe, root=output_root,
@@ -34,6 +33,7 @@ def declarations():
 def tasks(profile, declarations):
     assert len(declarations.textures) == 22
     assert set(declarations.textures) == {f'world.textures.{name}' for name in profile.ROSTER}
+    assert not declarations.root.exists(), 'cold fixture must begin with an absent output root'
     before = {name: (step.outputs[0].exists(),
                      step.outputs[0].read_bytes() if step.outputs[0].is_file() else None,
                      step.outputs[0].lstat() if step.outputs[0].exists() else None)
@@ -46,6 +46,7 @@ def tasks(profile, declarations):
                     step.outputs[0].lstat() if step.outputs[0].exists() else None)
              for name, step in declarations.textures.items()}
     assert after == before, 'qualification must not create, alter or adopt an existing output'
+    assert not declarations.root.exists(), 'cold qualification must not create the absent output root'
     return qualified
 
 
@@ -110,8 +111,9 @@ def test_observation_is_frozen_and_does_not_adopt_output(profile, tasks, tmp_pat
     output.parent.mkdir()
     output.write_bytes(b'foreign output; never a certificate')
     step = declarations_step('white', output)
+    before = (output.read_bytes(), output.lstat())
     assert qualify(profile, step, tmp_path).output == output
-    assert output.read_bytes() == b'foreign output; never a certificate'
+    assert (output.read_bytes(), output.lstat()) == before
 
 
 def declarations_step(name, output=None):
@@ -269,14 +271,13 @@ def test_linked_source_is_refused_without_changing_foreign_bytes(profile, declar
         target.symlink_to(path)
     foreign = tmp_path / 'foreign'
     foreign.write_bytes(b'preserve source')
-    declarations.root.mkdir(parents=True, exist_ok=True)
     linked = checkout / 'games/yorimichi' / relative
     linked.unlink()
     linked.symlink_to(foreign)
     with pytest.raises((profile.UnsupportedTexture, FileNotFoundError)):
         profile.qualify_texture_step(step, checkout=checkout, output_root=declarations.root)
     assert foreign.read_bytes() == b'preserve source'
-    assert not any((declarations.root / 'textures').iterdir())
+    assert not declarations.root.exists()
 
 
 @pytest.mark.parametrize('relative', ['world/textures', 'assets/environment',
@@ -301,7 +302,7 @@ def test_linked_checkout_is_refused_without_resolving_away_spelling(profile, dec
     (real / 'games').mkdir(parents=True)
     linked = tmp_path / 'linked'
     linked.symlink_to(real, target_is_directory=True)
-    with pytest.raises(profile.UnsupportedTexture):
+    with pytest.raises((profile.UnsupportedTexture, OSError)):
         profile.qualify_texture_step(declarations.textures['world.textures.white'],
                                      checkout=linked, output_root=declarations.root)
 
@@ -330,12 +331,11 @@ def test_linked_output_anchor_is_refused_without_touching_existing_bytes(profile
 
 def test_missing_source_is_not_absence_authority(profile, declarations, tmp_path):
     checkout = tmp_path / 'checkout'
-    declarations.root.mkdir(parents=True, exist_ok=True)
     step = declarations.textures['world.textures.white']
     with pytest.raises((FileNotFoundError, profile.UnsupportedTexture)):
         profile.qualify_texture_step(step, checkout=checkout, output_root=declarations.root)
     assert not checkout.exists()
-    assert not any((declarations.root / 'textures').iterdir())
+    assert not declarations.root.exists()
 
 
 def test_changed_generator_role_or_catalogue_is_refused(profile, declarations, monkeypatch):

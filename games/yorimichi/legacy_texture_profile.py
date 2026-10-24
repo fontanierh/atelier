@@ -72,25 +72,30 @@ def _regular_source(path):
 
 
 def _closed_anchors(checkout, output_root, game, world, assets_root):
-    """Refuse linked source parents and output aliases before any source is executed."""
-    for parent in game.parents:
-        if parent == checkout:
-            break
-        _directory(parent)
-    _directory(checkout)
+    """Refuse linked source parents and existing output aliases without creating a tail."""
+    from atelier.build_v2.controller_client import _open_root
+    descriptor = _open_root(checkout)
+    os.close(descriptor)
     for path in (game, world, world / 'textures', assets_root, assets_root / 'environment',
                  assets_root / 'environment/textures'):
         _directory(path)
-    from atelier.build_v2.controller_client import _open_root
-    for path in (output_root, output_root.parent):
-        descriptor = _open_root(path)
-        os.close(descriptor)
-        _directory(path)
-    # The factory places the sole required file directly in this directory. Do not
-    # create it, adopt existing bytes, or allow a linked destination ancestor.
-    _directory(output_root)
-    if output_root.name != 'textures':
-        _directory(output_root / 'textures')
+    for path in (output_root, output_root / 'textures'):
+        # An absent tail is normal on a cold build. Validate the nearest existing
+        # directory instead; never mkdir or resolve the caller's spelling.
+        current = path
+        while True:
+            try:
+                info = current.lstat()
+            except FileNotFoundError:
+                if current == current.parent:
+                    raise UnsupportedTexture(f'texture output has no real ancestor: {path}') from None
+                current = current.parent
+                continue
+            if not stat.S_ISDIR(info.st_mode):
+                raise UnsupportedTexture(f'texture output ancestor is linked: {current}')
+            descriptor = _open_root(current)
+            os.close(descriptor)
+            break
 
 
 def qualify_texture_step(step, *, checkout: Path, output_root: Path) -> TextureTask:
@@ -127,7 +132,9 @@ def qualify_texture_step(step, *, checkout: Path, output_root: Path) -> TextureT
     # mechanism. Captured integration uses the same original logical filenames.
     from importlib.util import module_from_spec, spec_from_file_location
     from atelier.source_imports import ImportScanner
-    loader = spec_from_file_location('yorimichi_texture_catalog_qualification', world / 'texture_catalog.py')
+    catalogue_path = world / 'texture_catalog.py'
+    _regular_source(catalogue_path)
+    loader = spec_from_file_location('yorimichi_texture_catalog_qualification', catalogue_path)
     catalogue = module_from_spec(loader)
     loader.loader.exec_module(catalogue)
     if catalogue.TEXTURES != ROSTER:
@@ -175,6 +182,19 @@ def qualify_texture_step(step, *, checkout: Path, output_root: Path) -> TextureT
     if script not in code or len(set(code)) != len(code):
         raise UnsupportedTexture(f'{step.name}: generator resolved through an alias or duplicate role')
     for source in code:
+        try:
+            relative = source.relative_to(checkout)
+        except ValueError:
+            raise UnsupportedTexture(f'{step.name}: code escapes the captured checkout: {source}') from None
+        # Scanner ancestry covers package parents and the checkout; every resolved
+        # module must also remain a regular file at the original logical spelling.
+        current = source
+        while current != checkout:
+            if not current.is_relative_to(checkout) or current.is_symlink():
+                raise UnsupportedTexture(f'{step.name}: code path is linked or outside checkout: {current}')
+            current = current.parent
+        if source.is_symlink() or source.name != relative.name:
+            raise UnsupportedTexture(f'{step.name}: code role differs from captured filename')
         _regular_source(source)
     support = tuple(path for path in code if path != script)
     expected_inputs = [spec, *support, *raw[1:]]
