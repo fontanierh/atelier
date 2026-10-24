@@ -483,7 +483,7 @@ def _native_execution_check(sources, *, checkout, installation):
             diagnostics.add(digest)
             def label(value):
                 return value[:160] if type(value) is str and value.isascii() else '<unknown>'
-            frames, frame = [], sys._getframe(2)
+            frames, imports, frame = [], [], sys._getframe(2)
             for _ in range(8):
                 if frame is None: break
                 filename = frame.f_code.co_filename
@@ -491,9 +491,22 @@ def _native_execution_check(sources, *, checkout, installation):
                         if Path(filename).is_absolute() and Path(filename).is_relative_to(checkout)
                         else 'tool/' + tool_path(filename)[1].as_posix() if tool_path(filename) else 'outside')
                 frames.append({'role': role[:200], 'function': label(frame.f_code.co_name)})
+                spec = frame.f_locals.get('spec')
+                if type(spec) is importlib.machinery.ModuleSpec:
+                    origin = spec.origin
+                    location = tool_path(origin) if type(origin) is str else None
+                    module = frame.f_locals.get('module')
+                    namespace = vars(module) if type(module) is types.ModuleType else {}
+                    imports.append({'name': label(spec.name),
+                        'origin': 'tool/' + location[1].as_posix()[:160] if location else 'outside',
+                        'loader': type(spec.loader).__module__ + '.' + type(spec.loader).__qualname__,
+                        'registration_bindings': {key: {'type': type(namespace[key]).__name__,
+                            'module': label(getattr(namespace[key], '__module__', None)),
+                            'name': label(getattr(namespace[key], '__name__', None))}
+                            for key in ('_module', '_cython_generator_type', '_cython_coroutine_type') if key in namespace}})
                 frame = frame.f_back
             row = {'sha256':digest, 'name':label(code.co_name), 'names':list(map(label, code.co_names[:32])),
-                   'constant_types':[type(value).__name__ for value in code.co_consts[:32]], 'callers':frames}
+                   'constant_types':[type(value).__name__ for value in code.co_consts[:32]], 'callers':frames, 'imports':imports}
             raw = json.dumps(row, separators=(',', ':'), ensure_ascii=True)
             if len(raw.encode()) <= 4096:
                 sys.stderr.write('native_code_refused ' + raw + '\n'); sys.stderr.flush()
@@ -542,7 +555,78 @@ def _native_execution_check(sources, *, checkout, installation):
                 return frame
             frame = frame.f_back
         return None
+    def checked_numpy_registration(code):
+        """@cc [owner:fontanierh,label:safety;correctness] installed-cython-abc-registration
+        Only the exact Cython ABC template emitted by an actively initializing
+        named NumPy-random extension MAY execute. The real frozen loader frame,
+        module/spec/loader identity, anchored installed image and embedded literal
+        MUST agree. The complete Blender bundle stays in the existing tool key;
+        a synthetic code hash, module spelling or namespace alone is insufficient.
+        """
+        template = ('if _cython_generator_type is not None:\n'
+            '    try: Generator = _module.Generator\n'
+            '    except AttributeError: pass\n'
+            '    else: Generator.register(_cython_generator_type)\n'
+            'if _cython_coroutine_type is not None:\n'
+            '    try: Coroutine = _module.Coroutine\n'
+            '    except AttributeError: pass\n'
+            '    else: Coroutine.register(_cython_coroutine_type)\n')
+        if (code.co_filename != '<string>'
+                or not _same_code(code, compile(template, '<string>', 'exec', dont_inherit=True))):
+            return False
+        import _imp
+        external = sys.modules.get('_frozen_importlib_external')
+        allowed = {'_common', '_bounded_integers', '_generator', '_mt19937',
+                   '_pcg64', '_philox', '_sfc64', 'bit_generator', 'mtrand'}
+        frame = execution_caller()
+        for _ in range(8):
+            if frame is None:
+                return False
+            if frame.f_code.co_qualname == 'ExtensionFileLoader.exec_module':
+                break
+            frame = frame.f_back
+        else:
+            return False
+        loader, module = frame.f_locals.get('self'), frame.f_locals.get('module')
+        if (external is None or frame.f_globals is not vars(external)
+                or type(loader) is not importlib.machinery.ExtensionFileLoader
+                or type(module) is not types.ModuleType
+                or frame.f_globals.get('_imp') is not _imp
+                or type(_imp.exec_dynamic) is not types.BuiltinFunctionType
+                or _imp.exec_dynamic.__self__ is not _imp):
+            return False
+        spec = vars(module).get('__spec__')
+        if (type(spec) is not importlib.machinery.ModuleSpec or spec.loader is not loader
+                or spec.name != loader.name or sys.modules.get(spec.name) is not module
+                or not spec.name.startswith('numpy.random.') or spec.name.rsplit('.', 1)[-1] not in allowed
+                or getattr(spec, '_initializing', None) is not True
+                or type(spec.origin) is not str or spec.origin != loader.path):
+            return False
+        image = Path(spec.origin)
+        location = tool_path(str(image))
+        if (location is None or not image.is_absolute() or '..' in image.parts
+                or image.parent.name != 'random' or image.parent.parent.name != 'numpy'
+                or image.parents[2].name != 'site-packages'
+                or image.name not in {loader.name.rsplit('.', 1)[-1] + suffix
+                                     for suffix in importlib.machinery.EXTENSION_SUFFIXES}):
+            return False
+        # Compile the ACTUAL installed frozen loader source under its original
+        # frozen filename; matching a mutable loader accessor is not authority.
+        source = image.parents[3] / 'importlib/_bootstrap_external.py'
+        source_location = tool_path(str(source))
+        if source_location is None:
+            return False
+        raw = _read_at(source_location[0], source_location[1].as_posix(), MAX_SOURCE_FILE_BYTES)
+        loader_tree = compile(raw, frame.f_code.co_filename, 'exec', dont_inherit=True,
+                              optimize=sys.flags.optimize)
+        if not any(_same_code(frame.f_code, target) for target in children(loader_tree)):
+            return False
+        image_raw = _read_at(location[0], location[1].as_posix(), MAX_SOURCE_FILE_BYTES)
+        return (b'\0' + template.encode() + b'\0') in image_raw
+
     def checked_tool_caller(code):
+        if checked_numpy_registration(code):
+            return True
         caller = execution_caller()
         if caller is None:
             return False

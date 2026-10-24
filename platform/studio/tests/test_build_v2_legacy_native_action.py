@@ -661,3 +661,41 @@ def dataclass(cls=None, *, frozen=False, **kwargs):
             exec(source.compiled(), vars(module))
         if flag_spoof:
             assert decorator == 'dataclass(frozen=True)' and dc.seen == [False]
+
+
+@pytest.mark.parametrize('altered,forged_spec', [(False, False), (True, False), (False, True)])
+def test_numpy_registration_template_requires_real_initializing_extension_frame(tmp_path, monkeypatch, altered, forged_spec):
+    import ast
+    import inspect
+    import sys
+    from importlib.machinery import ExtensionFileLoader, ModuleSpec, EXTENSION_SUFFIXES
+    from types import ModuleType
+    from atelier.build_v2.legacy_qualification import UnsupportedOrigin
+    tree = ast.parse(inspect.getsource(native._native_execution_check))
+    handler = next(node for node in ast.walk(tree)
+                   if isinstance(node, ast.FunctionDef) and node.name == 'checked_numpy_registration')
+    assignment = next(node for node in handler.body if isinstance(node, ast.Assign))
+    template = ast.literal_eval(assignment.value)
+    tool = tmp_path/'Contents'; image = tool/'python/lib/python3.13/site-packages/numpy/random'/('_common'+EXTENSION_SUFFIXES[0])
+    image.parent.mkdir(parents=True)
+    image.write_bytes(b'\0'+template.encode()+b'\0')
+    module = ModuleType('numpy.random._common')
+    loader = ExtensionFileLoader(module.__name__, str(image))
+    spec = ModuleSpec(module.__name__, loader, origin=str(image)); spec._initializing = True
+    module.__spec__ = spec
+    monkeypatch.setitem(sys.modules, module.__name__, module)
+    check = native._native_execution_check([], checkout=tmp_path/'checkout', installation=[tool])
+    code = compile(template + ('\nforeign = 1\n' if altered else ''), '<string>', 'exec', dont_inherit=True)
+    if forged_spec:
+        # Even matching image bytes and genuine loader/spec objects do not mint
+        # the active independently compiled frozen-loader execution frame.
+        namespace = {'check': check, 'code': code, 'module': module}
+        exec(compile('def exec_module(self, module):\n check("exec", (code,))\n',
+                     '<frozen importlib._bootstrap_external>', 'exec'), namespace)
+        invoke = lambda: namespace['exec_module'](loader, module)
+    else:
+        invoke = lambda: check('exec', (code,))
+    with pytest.raises(UnsupportedOrigin):
+        invoke()
+    with pytest.raises(UnsupportedOrigin, match='sticky'):
+        check.require_clean()
