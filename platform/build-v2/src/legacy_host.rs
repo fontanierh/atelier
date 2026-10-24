@@ -465,6 +465,7 @@ fn strict_record<T: serde::de::DeserializeOwned>(bytes: &[u8]) -> io::Result<T> 
                 let strings = [
                     "files",
                     "selector",
+                    "wanted",
                     "roots",
                     "members",
                     "args",
@@ -1479,6 +1480,42 @@ mod tests {
     }
     #[test]
     fn closed_host_codec_refuses_duplicate_unknown_positional_and_unbound_launch_records() {
+        // The original ordinary request carries a real string selector array;
+        // empty defaults alone did not exercise this pre-host admission path.
+        let ordinary = r#"{"version":2,"game":"fixture","wanted":["data.stage"],"options":{"verify":false,"max_heavy_commands":null,"fail_fast":false}}"#;
+        let decoded = strict_record::<OrdinaryRequest>(ordinary.as_bytes()).unwrap();
+        assert_eq!(decoded.version, 2);
+        assert_eq!(decoded.game, "fixture");
+        assert_eq!(decoded.wanted, ["data.stage"]);
+        assert!(!decoded.options.verify && !decoded.options.fail_fast);
+        assert_eq!(decoded.options.max_heavy_commands, None);
+        let default = ordinary.replace(r#"["data.stage"]"#, "[]");
+        assert!(
+            strict_record::<OrdinaryRequest>(default.as_bytes())
+                .unwrap()
+                .wanted
+                .is_empty()
+        );
+        for bad in [
+            ordinary.replace(r#"["data.stage"]"#, r#"["data.stage",7]"#),
+            ordinary.replace(r#"["data.stage"]"#, r#"["data.stage",{}]"#),
+            ordinary.replace(
+                r#"{"verify":false,"max_heavy_commands":null,"fail_fast":false}"#,
+                "[false,null,false]",
+            ),
+            ordinary.replace(
+                r#""game":"fixture""#,
+                r#""game":"fixture","game":"fixture""#,
+            ),
+            ordinary.replace(r#""game":"fixture""#, r#""game":"fixture","extra":true"#),
+            ordinary.replace(r#""verify":false"#, r#""verify":false,"verify":false"#),
+            ordinary.replace(r#""verify":false"#, r#""verify":false,"override":true"#),
+        ] {
+            assert!(
+                strict_record::<OrdinaryRequest>(bad.as_bytes()).is_err(),
+                "{bad}"
+            );
+        }
         let good=br#"{"version":2,"nonce":"nonce","selection":"selection","sequence":1,"frame":null,"previous_digest":null,"operation":{"type":"observe","witnesses":[],"record_offset":null}}"#;
         assert!(strict_record::<Request>(good).is_ok());
         for bad in [
