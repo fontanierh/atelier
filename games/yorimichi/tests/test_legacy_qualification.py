@@ -738,6 +738,20 @@ def test_actual_captured_graph_qualifies_data_before_private_runtime_without_tas
         assert far.reads == ['treehouse.canopy_dimensions']
         assert len(far_observation.code_inputs) == 71 and len(far_observation.produced_inputs) == 6
         assert set(far_observation.produced_inputs) <= authority.generated_inputs
+        city = authority.native_steps['world.hidamari.layout_data']
+        city_observation = authority.native_profiles[city.name]
+        assert city is authority.steps[city.name] and authority.single_native[city.name] is city_observation
+        assert city.commands[0].env == (('PYTHONHASHSEED', '0'),)
+        assert city.reads == ['terrain.FarHills.final', 'treehouse.canopy_dimensions']
+        assert len(city_observation.code_inputs) == 71 and len(city_observation.produced_inputs) == 7
+        assert set(city_observation.produced_inputs) <= authority.generated_inputs
+        assert {p.relative_to(paths.REPO).as_posix() for p in city_observation.code_inputs} <= set(authority.native_runtimes[city.name].files)
+        for asset in ('HD_CivicGardens', 'HD_Streets', 'HD_PlazaShopApproaches', 'HD_Wires', 'HD_LaneEdges'):
+            projection, observed = authority.data_steps['world.hidamari.data.' + asset]
+            assert projection is authority.steps[projection.name] and build.audit_enabled(projection)
+            assert observed.produced_inputs == (paths.REPO/'build/yorimichi/hidamari/layout-data.json',)
+            assert graph.owners['hidamari.city_data'] == city.name
+            assert set(authority.runtimes[projection.name].files) <= set(manifest['issuer_files'])
         assert {p.relative_to(paths.REPO).as_posix() for p in far_observation.code_inputs} <= set(authority.native_runtimes[far.name].files)
         assert world.reads == ['treehouse.canopy_dimensions'] and world.products == []
         assert not world.heavy and not world.audit and world.cutoff and not world.cache
@@ -1100,7 +1114,10 @@ def test_standalone_native_refuses_changed_actual_storage_before_launch(tmp_path
     assert not list(tmp_path.iterdir())
 
 
-def test_actual_farhills_storage_reaches_original_native_single_intent_and_guard(tmp_path, monkeypatch):
+@pytest.mark.parametrize('profile_file,qualifier,step_name,produced_count', [
+    ('legacy_farhills_profile.py', 'qualify_farhills', 'world.farhills', 6),
+    ('legacy_hidamari_layout_profile.py', 'qualify_hidamari_layout', 'world.hidamari.layout_data', 7)])
+def test_actual_standalone_storage_reaches_original_native_single_intent_and_guard(tmp_path, monkeypatch, profile_file, qualifier, step_name, produced_count):
     """Actual declaration/profile; scripted channel+guard are plumbing, not native proof."""
     import io
     from atelier import build, build_products, build_source, build_audit, paths
@@ -1112,14 +1129,14 @@ def test_actual_farhills_storage_reaches_original_native_single_intent_and_guard
     from atelier.harness import capacity_runtime
     for key in ('ATELIER_CRATERPARK_EDITOR_PARK', 'ATELIER_CRATERPARK_EDITOR_LINES', 'ATELIER_CRATERPARK_V4_DESIGN'):
         monkeypatch.delenv(key, raising=False)
-    source = paths.REPO / 'games/yorimichi/legacy_farhills_profile.py'
+    source = paths.REPO / 'games/yorimichi' / profile_file
     spec = captured_spec('_actual_farhills_single_observation', CapturedCode(str(source), source.read_bytes()))
     module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
     ctx = declaration_context('yorimichi')
     graph = build_products.Graph(build.load_recipe('yorimichi').steps(ctx))
-    step = graph.by_name['world.farhills']
-    profile = module.qualify_farhills(step, checkout=paths.REPO, output_root=ctx.out)
-    assert profile.step == step.name and len(profile.produced_inputs) == 6
+    step = graph.by_name[step_name]
+    profile = getattr(module, qualifier)(step, checkout=paths.REPO, output_root=ctx.out)
+    assert profile.step == step.name and len(profile.produced_inputs) == produced_count
     # Control files stay in owned tmp; no Rust host or worker is executed here.
     authority = _output_witness_authority(tmp_path)
     authority.step, authority.nonce = step, 'a' * 32
@@ -1160,6 +1177,10 @@ def test_actual_farhills_storage_reaches_original_native_single_intent_and_guard
     with authority.prepare_native_command(ctx, step, step.commands[0]) as (argv, environment, fds):
         assert len(calls) == 1 and fds == ()
         assert authority.native_launch.members == [step.name]
-        assert argv[argv.index('--')+1:] == list(step.commands[0].args) == []
+        assert argv[argv.index('--')+1:] == list(step.commands[0].args)
+        if step_name == 'world.hidamari.layout_data':
+            assert dict(environment)['PYTHONHASHSEED'] == '0'
+            assert graph.owners['terrain.FarHills.final'] == 'world.farhills'
+            assert graph.owners['treehouse.canopy_dimensions'] == 'world.treehouse_trees.data'
         build_source.run_argv(ctx, step, step.commands[0], argv, environment, io.StringIO(), ('job', None), None)
     assert len(guards) == 1 and returns == [0]

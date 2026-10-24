@@ -15,7 +15,7 @@ CODE_SEEDS = (
     'skatepark_build.py', 'treehouse_pieces.py', 'export_digest.py', 'city_inputs.py',
     'city_tile_products.py', 'city_harbor_inputs.py', 'tools/racing_assets.py',
     'tools/package_cook.py', 'tools/game_binary.py', 'world/source_registry.py',
-    'world/yori.py', 'world/gen_world.py', 'world/farhills_surface.py', 'world/craterpark_layout.py', 'world/texture_catalog.py', 'world/train/bake_manifest.py',
+    'world/yori.py', 'world/gen_world.py', 'world/farhills_surface.py', 'world/regions/hidamari/layout_data.py', 'world/regions/hidamari/city_data.py', 'world/craterpark_layout.py', 'world/texture_catalog.py', 'world/train/bake_manifest.py',
     'world/regions/brinecove/foliage_names.py', 'world/regions/craterpark/v2/v4_config.py',
     'world/regions/craterpark/v2/trees.py', 'unreal/Scripts/horse_data.py',
     'craterpark_atomic_build.py', 'forest_atomic_build.py', 'props_atomic_build.py',
@@ -56,7 +56,7 @@ CODE_SEEDS = (
     'world/regions/treehouse/canopy_data.py', 'legacy_treehouse_assembly_profile.py',
     'legacy_treehouse_recolour_profile.py', 'legacy_treehouse_library_profile.py',
     'world/regions/treehouse/assemble_atomic.py',
-    'world/regions/craterpark/v2/editor_generate.py', 'legacy_craterpark_geometry_profile.py', 'legacy_craterpark_layout_profile.py', 'legacy_world_layout_profile.py', 'legacy_farhills_profile.py',
+    'world/regions/craterpark/v2/editor_generate.py', 'legacy_craterpark_geometry_profile.py', 'legacy_craterpark_layout_profile.py', 'legacy_world_layout_profile.py', 'legacy_farhills_profile.py', 'legacy_hidamari_layout_profile.py', 'legacy_hidamari_projection_profile.py',
 )
 
 
@@ -555,6 +555,44 @@ class TextureAuthority:
                 step, checkout=self.checkout, issuer_files=manifest['issuer_files'],
                 code_inputs=profile.code_inputs)
             self.steps[step.name] = step
+            self.output_paths[step.name] = tuple(path for _, roots in profile.products for path in roots)
+            self.generated_inputs.update(profile.produced_inputs)
+        from legacy_hidamari_layout_profile import qualify_hidamari_layout
+        for step in selected:
+            if step.name != 'world.hidamari.layout_data':
+                continue
+            available = {*self.steps, *self.pending_tools, 'world.textures'}
+            if ('world.farhills' not in self.single_native
+                    or any(name not in available for name in graph.prerequisites(step))):
+                continue  # Original named terrain/canopy producers remain prerequisites.
+            profile = qualify_hidamari_layout(step, checkout=self.checkout,
+                                              output_root=self.checkout / 'build/yorimichi')
+            self.single_native[step.name] = profile
+            self.native_qualifiers[step.name] = qualify_hidamari_layout
+            self.native_steps[step.name], self.native_profiles[step.name] = step, profile
+            self.native_runtimes[step.name] = _bind_native_runtime(
+                step, checkout=self.checkout, issuer_files=manifest['issuer_files'],
+                code_inputs=profile.code_inputs)
+            self.steps[step.name] = step
+            self.output_paths[step.name] = tuple(path for _, roots in profile.products for path in roots)
+            self.generated_inputs.update(profile.produced_inputs)
+        from legacy_hidamari_projection_profile import qualify_hidamari_projection, ASSETS as CITY_PROJECTIONS
+        projection_names = {'world.hidamari.data.' + name for name in CITY_PROJECTIONS}
+        for step in selected:
+            if step.name not in projection_names:
+                continue
+            available = {*self.steps, *self.pending_tools, 'world.textures'}
+            if ('world.hidamari.layout_data' not in self.single_native
+                    or any(name not in available for name in graph.prerequisites(step))):
+                continue  # No city product is inferred from ordering or future declarations.
+            profile = qualify_hidamari_projection(step, checkout=self.checkout,
+                                                  output_root=self.checkout / 'build/yorimichi')
+            self.python_qualifiers[step.name] = qualify_hidamari_projection
+            self.data_steps[step.name] = (step, profile)
+            self.steps[step.name] = step
+            self.runtimes[step.name] = _bind_captured_runtime(
+                step, checkout=self.checkout, issuer_files=manifest['issuer_files'],
+                code_inputs=profile.code_inputs)
             self.output_paths[step.name] = tuple(path for _, roots in profile.products for path in roots)
             self.generated_inputs.update(profile.produced_inputs)
         self.dones = {}
