@@ -1007,7 +1007,7 @@ attempt's `source`, optional worker `kind`, `message` and `truncated` flag. A mi
 means the cause is unknown. These records do not certify cleanup or cache publication and are
 not included in public CI artifacts or semantic keys. Successful `Completed` observations do
 not create this failure file. The first M1 failed call predates this retention and its cause
-remains unknown; no retry or default mixed-build activation follows from this diagnostic API.
+remains unknown; these diagnostics do not imply a successful build.
 
 The Python sandbox permits the installed platform's OpenSSL configuration through the single
 canonical read literal `/private/etc/ssl/openssl.cnf`, as it permits installed interpreter files.
@@ -1018,11 +1018,3 @@ no `OPENSSL_CONF` override skips configuration. Profile-only portable tests insp
 they do not prove successful Mac execution. Both stopped M1 attempts have independent later OS
 reports binding their child to its guarded parent and recording that exact denied config read.
 Original receipts remain unchanged, and neither op-body progress nor a successful build is claimed.
-
-The dormant [legacy operational epoch](../../docs/build-v2/LEGACY_EPOCH.md) adds strict control-state
-fencing and private same-scope repair demands. It has no production plan issuer, caller, repair CLI
-or bootstrap; it does not activate mixed/default builds or qualify arbitrary legacy/native work.
-
-The continuous legacy authority-parent implementation is described in
-[LEGACY_HOST.md](../../docs/build-v2/LEGACY_HOST.md). It remains a coupled integration checkpoint:
-no ordinary mixed caller activation or full-default/repair acceptance is implied by its Rust tests.
