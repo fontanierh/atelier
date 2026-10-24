@@ -167,5 +167,14 @@ def test_recipe_direct_spec_loads_captured_bytes_at_original_path_and_refuses_un
         assert module.VALUE == 17 and module.ORIGIN == str(known)
         with pytest.raises(UnsupportedOrigin, match='outside the named capture'):
             importlib.util.spec_from_file_location('unreviewed_helper', unknown)
+        outside = tmp_path.parent / (tmp_path.name + '-outside-alias.py')
+        outside.symlink_to(known)
+        try:
+            # A lexical path outside the checkout must not reload live checkout
+            # bytes under an alias, even when its real target is already captured.
+            with pytest.raises(UnsupportedOrigin, match='outside the named capture'):
+                importlib.util.spec_from_file_location('outside_alias', outside)
+        finally:
+            outside.unlink()
         assert not written.exists()
     assert importlib.util.spec_from_file_location is original

@@ -332,11 +332,11 @@ def captured_recipe_imports(sources, *, checkout, platform_roots=()):
     def fixed_spec(name, location=None, *, loader=None, submodule_search_locations=None):
         if location is not None:
             filename = str(Path(location).absolute())
-            if Path(filename).is_relative_to(checkout):
+            real_location = Path(filename).resolve(strict=True)
+            if Path(filename).is_relative_to(checkout) or real_location.is_relative_to(checkout):
                 source = by_path.get(filename)
                 if source is None:
-                    real = Path(filename).resolve(strict=True)
-                    installed = any(Path(filename).is_relative_to(role) and real.is_relative_to(root)
+                    installed = any(Path(filename).is_relative_to(role) and real_location.is_relative_to(root)
                                     for role, root in zip(finder.platform_roles, finder.platform_roots))
                     if installed:
                         if loader is not None and type(loader) not in (
@@ -347,6 +347,8 @@ def captured_recipe_imports(sources, *, checkout, platform_roots=()):
                         return original(name, location, loader=loader,
                                         submodule_search_locations=submodule_search_locations)
                     raise UnsupportedOrigin('recipe spec source is outside the named capture')
+                if real_location != Path(filename):
+                    raise UnsupportedOrigin('recipe spec uses an unreviewed logical alias')
                 if loader is not None and type(loader) is not CapturedLoader:
                     raise UnsupportedOrigin('recipe supplied an unqualified source loader')
                 loader = CapturedLoader(name, source)

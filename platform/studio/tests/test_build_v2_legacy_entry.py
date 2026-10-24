@@ -12,6 +12,8 @@ def test_managed_original_operational_context_is_closed_and_does_not_leak_enviro
     assert operational_environment({'PATH': '/usr/bin'}) == {
         'path': '/usr/bin', 'agent': None, 'cache': None, 'build_root': None}
     for extra in ({'PYTHONPATH': '/project'}, {'DYLD_INSERT_LIBRARIES': '/library'},
+                  {'PYTHONHASHSEED': '0'}, {'PYTHONINSPECT': '1'},
+                  {'PYTHONUSERBASE': '/user-base'}, {'LD_AUDIT': '/loader.so'},
                   {'ATELIER_CAPACITY_CLIENT': 'legacy'}, {'ATELIER_BUILD_ROOT': 'relative'},
                   {'PATH': '/usr/bin:'}, {'PATH': 'relative:/bin'}):
         with pytest.raises(ValueError):
