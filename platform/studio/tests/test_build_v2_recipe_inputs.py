@@ -81,3 +81,13 @@ def test_absent_optional_source_keeps_identity_and_links_refuse(tmp_path):
 def test_needs_bind_every_prerequisite_root(tmp_path):
     result = _lower(_row('b.use', needs=['a.make']), tmp_path)
     assert {i['source']['item'] for i in result['inputs']} == {'product0', 'output0'}
+
+
+def test_deferred_folder_holding_own_output_is_not_a_self_edge(tmp_path):
+    provider = {'name': 'proof', 'collect': None, 'settings': [], 'support': [],
+                'owners': [{'root': 'build/g/self.json', 'producer': 'b.use'}]}
+    rows, roots, products = _graph()
+    row = _row('b.use', deferred=[provider], outputs=['build/g/self.json'])
+    rows['b.use'] = row
+    roots = [*roots, ('build/g/self.json', 'b.use', 'output0')]
+    assert ri.lower_inputs(row, rows=rows, roots=roots, products=products, checkout=tmp_path)['inputs'] == []

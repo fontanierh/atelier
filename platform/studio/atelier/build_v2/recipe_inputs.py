@@ -168,6 +168,8 @@ def lower_inputs(row, *, rows, roots, products, checkout):
         if provider['collect'] is not None:
             code.add(_path(provider['collect']['source']))
         for owner in provider['owners']:
+            if owner['producer'] == name:
+                continue  # a collector's folder may hold this step's own output, which is never its input
             for root, producer, item in roots:
                 if producer == owner['producer'] and (_under(root, owner['root']) or _under(owner['root'], root)):
                     upstream(producer, item, [root])
