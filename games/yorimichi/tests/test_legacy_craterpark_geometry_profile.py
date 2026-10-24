@@ -369,3 +369,23 @@ def test_no_producer_selector_frontend_or_node_probe_execution(profile, declarat
     finally:
         sys.settrace(previous)
     assert calls == traced == []
+
+
+def test_actual_layout_declares_generated_geometry_and_tracks_its_bytes(declarations, tmp_path, monkeypatch):
+    for name in ('ATELIER_CRATERPARK_V4_DESIGN', 'ATELIER_CRATERPARK_EDITOR_PARK', 'ATELIER_CRATERPARK_EDITOR_LINES'):
+        monkeypatch.delenv(name, raising=False)
+    steps = declarations.recipe.craterpark_v2_steps(tmp_path)
+    layout = next(step for step in steps if step.name == 'world.craterpark_layout')
+    geometry = tmp_path / 'craterpark/v2/geometry.npz'
+    assert layout.needs == ['world.craterpark_geometry']
+    assert layout.inputs.count(geometry) == 1
+    assert layout.outputs == [tmp_path / 'craterpark/layout-identity.json']
+    graph = build_products.Graph(steps)
+    assert [step.name for step in graph.select([layout.name])] == ['world.craterpark_geometry', layout.name]
+    # Finite bytes exercise the ORIGINAL fingerprint, not geometry validity or
+    # a completion/authority certificate. No native producer runs in this test.
+    geometry.parent.mkdir(parents=True)
+    geometry.write_bytes(b'first generated geometry fixture')
+    before = build.fingerprint(layout, {'world.craterpark_geometry': 'producer-identity'})
+    geometry.write_bytes(b'changed generated geometry fixture')
+    assert build.fingerprint(layout, {'world.craterpark_geometry': 'producer-identity'}) != before

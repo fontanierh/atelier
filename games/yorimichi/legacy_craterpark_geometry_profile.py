@@ -174,7 +174,7 @@ def _source_contract(checkout, game, v2):
                   and len(node.items[0].context_expr.args) == 1
                   and isinstance(node.items[0].context_expr.args[0], ast.Constant)
                   and node.items[0].context_expr.args[0].value == 'recipe.enrich']
-    if (len(factories) != 1 or _digest(factories[0]) != '7cd5de15c4d34cbb0012c55c927bc7b8b2c718b35637f6fd5c87f327c86ca8a3'
+    if (len(factories) != 1 or _digest(factories[0]) != '37cace5591aef1dd4d0b9a939617be977435f2b7738819f6500b0702979100d6'
             or len(enrichment) != 1 or _digest(enrichment[0]) != '8ddab7ffccde79c9135970b994ec7bf8fcf37ec934b0ec46f77e0e4d6bd71da4'):
         raise UnsupportedCraterparkGeometry('original constructor or enrichment structure differs')
     for relative, expected in (

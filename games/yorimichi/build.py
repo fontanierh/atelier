@@ -168,7 +168,7 @@ def craterpark_v2_steps(out):
              cutoff=True, heavy=True),
         *_load_helper_module('yorimichi_craterpark_atomic', GAME/'craterpark_atomic_build.py').steps(SimpleNamespace(out=out)),
         *([Step('world.craterpark_layout', [Python(WORLD / 'craterpark_layout.py')],
-                inputs=[WORLD / 'craterpark_layout.py', *CRATERPARK, *craterpark_v4.input_paths()],
+                inputs=[WORLD / 'craterpark_layout.py', *CRATERPARK, *craterpark_v4.input_paths(), geometry / 'geometry.npz'],
                 needs=['world.craterpark_geometry'], outputs=[out / 'craterpark' / 'layout-identity.json'],
                 cutoff=True, heavy=True,
                 about='validated Crater Park landform, exclusion and spawn identity for island consumers')]
