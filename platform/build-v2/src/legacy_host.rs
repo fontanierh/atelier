@@ -716,7 +716,6 @@ fn run_inner(config: HostConfig) -> io::Result<()> {
         custody,
         deadline,
     )?;
-    let last_sequence = std::cell::Cell::new(0u64);
     let result = (|| {
         let startup = work_deadline.cap(config.startup_budget_ns)?;
         let hello: Hello = strict_record(&read_message(&child, startup)?)?;
@@ -762,7 +761,6 @@ fn run_inner(config: HostConfig) -> io::Result<()> {
                 continue;
             }
             let request: Request = strict_record(&raw)?;
-            last_sequence.set(request.sequence);
             if channel.finished
                 || request.version != VERSION
                 || request.nonce != config.nonce
@@ -1009,25 +1007,9 @@ fn run_inner(config: HostConfig) -> io::Result<()> {
         }
         Ok(())
     })();
-    if result.is_err() {
-        let observed = epoch::Selection::inspect(&build, &write).ok().flatten();
-        let refused = Reply {
-            version: VERSION,
-            nonce: config.nonce.clone(),
-            selection: selection_id.into(),
-            r#type: "refused".into(),
-            sequence: last_sequence.get(),
-            record_digest: observed.as_ref().map(|r| r.digest.clone()),
-            frame: observed.as_ref().and_then(|r| r.frame),
-            transition_count: observed.as_ref().map_or(0, |r| r.count),
-            permission: "none".into(),
-            record_page: None,
-        };
-        let _ = send_message(&child, &refused, deadline);
-    }
-    child.close_permission_channel();
-    // EOF/refusal never promotes the operation. Retain all guards while the child drains.
-    let shutdown = deadline.cap(config.cleanup_budget_ns).unwrap_or(deadline);
+    // A partial transport frame cannot be repaired by another Refused frame.
+    // Closing permission immediately preserves the entire reserved drain interval.
+    let shutdown = child.begin_drain(config.cleanup_budget_ns);
     while !shutdown.expired() {
         if let Some(status) = child.wait()? {
             return if result.is_ok() && status.success() {

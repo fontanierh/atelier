@@ -981,7 +981,18 @@ impl<'a> Selection<'a> {
         }
         for dirty in &self.record.dirty {
             if task.writes.iter().any(|w| covers(w, dirty)) {
-                complete_disposition(&self.fs, dirty, &settled.outputs, self.deadline)?;
+                // The already independently validated COMPLETE covering tree proves
+                // every covered old child either present in its inventory or absent.
+                // Requiring an extra Absent child inside that exact tree would itself
+                // contradict complete membership and make ordinary deletion unrepairable.
+                let complete_cover = task.writes.iter().filter(|w| covers(w, dirty)).any(|w| {
+                    settled.outputs.iter().any(|proof| {
+                        proof.path == w.path && matches!(proof.fact, Fact::Directory { .. })
+                    })
+                });
+                if !complete_cover {
+                    complete_disposition(&self.fs, dirty, &settled.outputs, self.deadline)?;
+                }
             }
         }
         let mut next = self.record.clone();
@@ -1705,5 +1716,59 @@ mod tests {
         )
         .unwrap();
         assert!(s.record.frame.as_ref().unwrap().pending.is_empty());
+    }
+    #[test]
+    fn complete_covering_directory_proves_deleted_old_dirty_child_without_fake_absent_member() {
+        let f = Fixture::new();
+        fs::create_dir(f.root.join("out/tree")).unwrap();
+        let build = f.locks.try_build_exclusive().unwrap();
+        let write = build.try_legacy_write_content().unwrap();
+        let mut old = Selection::prepare(
+            &build,
+            &write,
+            f.qualified(),
+            "selection",
+            f.deadline(),
+            |_| Ok(()),
+        )
+        .unwrap();
+        old.advance(f.frame("out/tree/old.json"), |_| Ok(()))
+            .unwrap();
+        old.begin_attempt(f.attempt(), |_| Ok(())).unwrap();
+        fs::write(f.root.join("out/tree/old.json"), b"partial").unwrap();
+        drop(old);
+        fs::write(f.root.join("source"), b"fixed source").unwrap();
+        let mut s = Selection::supersede(
+            &build,
+            &write,
+            f.qualified(),
+            Some(f.frame("out/tree")),
+            f.deadline(),
+            |_| Ok(()),
+        )
+        .unwrap();
+        s.begin_attempt(f.attempt(), |_| Ok(())).unwrap();
+        fs::remove_file(f.root.join("out/tree/old.json")).unwrap();
+        fs::write(f.root.join("out/tree/new.json"), b"fixed output").unwrap();
+        let m = fs::metadata(f.root.join("out/tree")).unwrap();
+        let directory = Witness {
+            path: "out/tree".into(),
+            fact: Fact::Directory {
+                device: m.dev(),
+                inode: m.ino(),
+            },
+        };
+        let mut proof = SettlementObservation {
+            task: "copy".into(),
+            attempt: "attempt1".into(),
+            inputs: sha256(b"fixed"),
+            outputs: vec![directory],
+        };
+        assert!(s.settle(proof.clone(), |_| Ok(())).is_err());
+        assert_eq!(s.record.dirty.len(), 1);
+        proof.outputs.push(f.witness("out/tree/new.json"));
+        s.settle(proof, |_| Ok(())).unwrap();
+        assert!(s.record.dirty.is_empty());
+        assert!(!f.root.join("out/tree/old.json").exists());
     }
 }

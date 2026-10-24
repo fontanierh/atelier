@@ -113,3 +113,15 @@ id = "legacy-host.nonblocking_reply_pipe_stopped_reader_cannot_cross_absolute_de
 tests = ["atelier-build-v2/legacy_host_launch::tests::nonblocking_reply_pipe_stopped_reader_cannot_cross_absolute_deadline"]
 platforms = ["darwin", "linux"]
 tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.partial_ack_closes_permission_before_reserved_drain_without_second_frame"
+tests = ["atelier-build-v2/legacy_host_launch::tests::partial_ack_closes_permission_before_reserved_drain_without_second_frame"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.complete_covering_directory_proves_deleted_old_dirty_child_without_fake_absent_member"
+tests = ["atelier-build-v2/legacy_epoch::selection::tests::complete_covering_directory_proves_deleted_old_dirty_child_without_fake_absent_member"]
+platforms = ["darwin", "linux"]
+tier = "t0"

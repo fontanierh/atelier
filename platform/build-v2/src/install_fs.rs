@@ -293,7 +293,7 @@ impl RootFs {
             }
             let value = unsafe { std::ffi::CStr::from_ptr((*entry).d_name.as_ptr()) }
                 .to_str()
-                .map_err(invalid)?;
+                .map_err(|error| invalid(error.to_string()))?;
             if value == "." || value == ".." {
                 continue;
             }
