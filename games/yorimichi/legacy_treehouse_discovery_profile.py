@@ -10,15 +10,20 @@ from pathlib import Path, PurePosixPath
 import re
 import stat
 import tempfile
+import types
 
 from atelier.build_v2.legacy_qualification import CallableObservation
 
 
 PARENTS = ('Tree_Canopy_Maple', 'Tree_Canopy_Crimson', 'Tree_Canopy_Amber', 'Tree_Canopy_Ginkgo')
+PROP_PARENTS = tuple('TH_P_' + slug for slug in (
+    'backpack', 'barrel', 'basket', 'bell', 'bookshelf', 'crate_desk', 'futon',
+    'globe', 'kamado', 'log_table', 'planter', 'stump_kettle', 'telescope'))
+PARENTS_BY_REGION = {'treehouse_trees': PARENTS, 'treehouse_props': PROP_PARENTS}
 
 
 class UnsupportedTreehouseDiscovery(ValueError):
-    """The declaration is outside the reviewed four-parent discovery role."""
+    """The declaration is outside the reviewed tree and prop discovery roles."""
 
 
 @dataclass(frozen=True)
@@ -31,6 +36,14 @@ class TreehouseDiscovery:
     logical: tuple[tuple[str, Path, str, str, str], ...]
     callback: CallableObservation
     inventory: CallableObservation
+
+
+def _exact(actual, expected):
+    if type(actual) is not type(expected):
+        return False
+    if type(expected) in (list, tuple):
+        return len(actual) == len(expected) and all(_exact(a, b) for a, b in zip(actual, expected))
+    return actual == expected
 
 
 def _source(checkout, path):
@@ -53,6 +66,8 @@ def _output(path, *, directory=False):
                 raise UnsupportedTreehouseDiscovery(f'discovery output has no real ancestor: {path}') from None
             current = current.parent
             continue
+        except OSError as error:
+            raise UnsupportedTreehouseDiscovery('discovery output ancestry is invalid') from error
         valid = stat.S_ISDIR(info.st_mode) if directory or current != path else stat.S_ISREG(info.st_mode)
         if not valid:
             raise UnsupportedTreehouseDiscovery(f'discovery output is linked or has an invalid role: {current}')
@@ -73,6 +88,8 @@ def _captured(checkout, path):
 
 def _verify(function, captured, **bindings):
     from atelier.build_v2.legacy_qualification import UnsupportedOrigin, verify_callable
+    if type(function) is not types.FunctionType:
+        raise UnsupportedTreehouseDiscovery('discovery requires an original source function')
     try:
         return verify_callable(function, captured, namespace=function.__globals__, **bindings)
     except UnsupportedOrigin as error:
@@ -81,21 +98,24 @@ def _verify(function, captured, **bindings):
 
 def qualify_treehouse_discovery(step, *, checkout: Path, output_root: Path) -> TreehouseDiscovery:
     """@cc [owner:fontanierh,label:correctness;safety] closed-treehouse-discovery-observation
-    Qualification MUST bind only the actual four-parent discovery Step, its exact logical
-    closure/products/inputs and independently source-checked helper callables/constants.
+    Qualification MUST bind only the actual tree and prop discovery Steps with four and thirteen
+    parents respectively, their exact logical closure/products/inputs and independently source-checked helper callables/constants.
     Fixed sources MUST use bounded anchored nofollow reads before compilation; cold output
     tails MUST remain absent and warm bytes untouched. Inert import discovery is not claimed
     as pre-execution coverage. No callback/helper execution, replan/child/cache/completion
     authority or output adoption is returned. See focused actual-Graph and poisoning tests.
     """
-    from atelier import atomic_files, build, build_products, export_assembly, export_tasks, model_files
+    from atelier import atomic_files, build, build_products, export_tasks, model_files
     from atelier.build_v2.controller_client import _open_root
     from atelier.build_v2.legacy_qualification import IdentityBinding
 
     checkout, output_root = Path(checkout), Path(output_root)
-    if (type(step) is not build.Step or step.name != 'world.treehouse_trees.geometry'
+    variants = {f'world.{region}.geometry': (region, parents)
+                for region, parents in PARENTS_BY_REGION.items()}
+    if (type(step) is not build.Step or type(step.name) is not str or step.name not in variants
             or not checkout.is_absolute() or not output_root.is_absolute()
-            or checkout == Path(checkout.anchor) or output_root == Path(output_root.anchor)):
+            or checkout == Path(checkout.anchor) or output_root == Path(output_root.anchor)
+            or '..' in checkout.parts or '..' in output_root.parts):
         raise UnsupportedTreehouseDiscovery('not the exact Treehouse discovery Step and absolute anchors')
     try:
         descriptor = _open_root(checkout)
@@ -105,13 +125,13 @@ def qualify_treehouse_discovery(step, *, checkout: Path, output_root: Path) -> T
     game = checkout / 'games/yorimichi'
     studio = checkout / 'platform/studio/atelier'
     region_source = game / 'region_exports.py'
-    discovery = output_root / 'planned_exports/treehouse_trees/discovery.json'
-    region = 'treehouse_trees'
-    logical = tuple((parent, output_root / 'planned_exports/treehouse_trees' / parent,
-                     f'world.treehouse_trees.geometry.{parent}', f'treehouse_trees.geometry.{parent}', 'mesh_ir')
-                    for parent in PARENTS)
+    region, parents = variants[step.name]
+    discovery = output_root / 'planned_exports' / region / 'discovery.json'
+    logical = tuple((parent, output_root / 'planned_exports' / region / parent,
+                     f'world.{region}.geometry.{parent}', f'{region}.geometry.{parent}', 'mesh_ir')
+                    for parent in parents)
     produced = tuple(row[1] for row in logical)
-    if len(set(produced)) != 4 or any(root == discovery or root in discovery.parents or discovery in root.parents
+    if len(set(produced)) != len(parents) or any(root == discovery or root in discovery.parents or discovery in root.parents
                                      for root in produced):
         raise UnsupportedTreehouseDiscovery('discovery produced roots overlap')
     for root in produced:
@@ -127,35 +147,38 @@ def qualify_treehouse_discovery(step, *, checkout: Path, output_root: Path) -> T
         'replan': True, 'controller': None,
     }
     dynamic = {'name', 'commands', 'inputs', 'about', 'products', 'reads'}
-    if (set(vars(step)) - dynamic != set(defaults)
-            or any(vars(step)[name] != value for name, value in defaults.items())
-            or getattr(step, '_query_bindings', None) not in (None, ())
-            or step.reads != [row[3] for row in logical]):
+    if (set(vars(step)) != set(defaults) | dynamic
+            or any(not _exact(vars(step)[name], value) for name, value in defaults.items())
+            or not _exact(step.reads, [row[3] for row in logical])
+            or not _exact(step.about, 'discover all completed logical mesh plans before any export')):
         raise UnsupportedTreehouseDiscovery('discovery Step controls, flags or reads differ')
-    if len(step.commands) != 1 or type(step.commands[0]) is not build.Call:
+    if type(step.commands) is not list or len(step.commands) != 1 or type(step.commands[0]) is not build.Call:
         raise UnsupportedTreehouseDiscovery('discovery requires exactly one original Call')
     call = step.commands[0]
-    if type(call.name) is not str or call.name != 'discover treehouse_trees' or set(vars(call)) != {'name', 'fn'}:
+    if type(call.name) is not str or call.name != 'discover ' + region or set(vars(call)) != {'name', 'fn'}:
         raise UnsupportedTreehouseDiscovery('discovery Call identity differs')
-    runtime = export_assembly.runtime_inputs()
-    runtime_root = Path(runtime[0]).parent
-    expected_inputs = [region_source, *(studio / path.relative_to(runtime_root) for path in runtime)]
+    # These are the original source roles in their exact declaration order.
+    # Qualification must not execute runtime_inputs() to discover them.
+    expected_inputs = [region_source, *(studio / name for name in (
+        'export_assembly.py', 'atomic_files.py', 'file_copy.py', 'export_manifest.py', 'model_files.py'))]
     if type(step.inputs) is not list or len(step.inputs) != len(expected_inputs) or any(
             type(actual) is not type(expected) or actual != expected
             for actual, expected in zip(step.inputs, expected_inputs)):
         raise UnsupportedTreehouseDiscovery('discovery original code-input membership/order differs')
-    if len(step.products) != 1:
+    if type(step.products) is not list or len(step.products) != 1:
         raise UnsupportedTreehouseDiscovery('discovery requires one original product')
     product = step.products[0]
     if (type(product) is not build_products.Product
             or set(vars(product)) != {'name', 'paths', 'collection', 'bounds', 'optional_paths'}
-            or product.name != 'treehouse_trees.geometry_inventory' or product.paths != (discovery,)
-            or product.collection is not None or product.bounds is not None or product.optional_paths):
+            or not _exact(product.name, region + '.geometry_inventory')
+            or not _exact(product.paths, (discovery,))
+            or product.collection is not None or product.bounds is not None
+            or not _exact(product.optional_paths, ())):
         raise UnsupportedTreehouseDiscovery('discovery product or owned root differs')
 
     # Original inputs plus export_tasks.py, the only additional checked provider used by
     # inventory, in first-use order with no duplicate path roles.
-    code_inputs = tuple(dict.fromkeys([*expected_inputs, studio / 'export_tasks.py']))
+    code_inputs = (*expected_inputs, studio / 'export_tasks.py')
     for source in code_inputs:
         _source(checkout, source)
     region_code = _captured(checkout, region_source)
@@ -163,12 +186,16 @@ def qualify_treehouse_discovery(step, *, checkout: Path, output_root: Path) -> T
     model_code = _captured(checkout, studio / 'model_files.py')
     atomic_code = _captured(checkout, studio / 'atomic_files.py')
 
+    if type(call.fn) is not types.FunctionType:
+        raise UnsupportedTreehouseDiscovery('discovery Call requires the original source function')
     namespace = call.fn.__globals__
     inventory = namespace.get('inventory')
     atomic_json = namespace.get('atomic_json')
-    if inventory is None or atomic_json is None:
+    if type(inventory) is not types.FunctionType or type(atomic_json) is not types.FunctionType:
         raise UnsupportedTreehouseDiscovery('discovery globals lack original helpers')
     export_module = inventory.__globals__.get('export_tasks')
+    if type(export_tasks.name) is not types.FunctionType:
+        raise UnsupportedTreehouseDiscovery('inventory name helper is not the original source function')
     export_manifest = export_tasks.name.__globals__
     if (export_module is not export_tasks or export_tasks.name is not export_manifest.get('name')
             or export_tasks.real_directory is not export_manifest.get('real_directory')
