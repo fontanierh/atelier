@@ -671,3 +671,32 @@ def test_managed_file_copy_remains_in_original_observer_without_ffi_permission(a
     assert a.output.read_bytes() == b'input'
     assert a.report()['passed'] and not a.report()['violations']
     assert a.output.stat().st_mode & 0o777 == 0o644
+
+
+@pytest.mark.parametrize('operation,passed', [('validator', True), ('direct', False),
+    ('unknown', False), ('listing', False), ('replaced', False), ('globals', False), ('write', False)])
+def test_declared_directory_validator_ancestor_metadata_stays_source_bound(action, operation, passed):
+    a = action
+    directory = a.root / 'plans/one'; directory.mkdir(parents=True)
+    (directory / 'record.json').write_text('known input')
+    expression = {
+        'validator': 'real_directory(directory)',
+        'globals': 'import atelier.export_manifest as helper\nhelper.reversed=lambda values: iter(values)\nreal_directory(directory)',
+        'write': 'real_directory(directory)\n(directory.parent/"foreign.txt").write_text("undeclared")',
+        'direct': 'directory.parent.stat()',
+        'unknown': 'real_directory(directory.with_name("unknown"))',
+        'listing': 'real_directory(directory)\nlist(directory.parent.iterdir())',
+        'replaced': 'def foreign(path):\n    Path(path).parent.stat()\nreal_directory.__code__=foreign.__code__\nreal_directory(directory)',
+    }[operation]
+    a.code('from atelier.export_manifest import real_directory\ndirectory=Path(' + repr(str(directory)) + ')\n'
+           + expression + '\noutput.write_text(source.read_text())')
+    from atelier.build_inputs import local_imports
+    a.step.inputs.extend([directory, *local_imports(a.script, (a.root,))])
+    assert a.run() == (0 if passed else 1), a.messages
+    report = a.report()
+    assert report['passed'] is passed
+    if passed:
+        assert a.output.read_text() == 'input'
+        assert any(row['operation'] == 'input directory validation metadata' for row in report['accesses'])
+    else:
+        assert report['violations']

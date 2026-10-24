@@ -45,6 +45,25 @@ class Observer:
         self.realpath_codes = {getattr(getattr(os.path, name, None), '__code__', None)
                                for name in ('realpath', '_joinrealpath', '_realpath')}
         self.realpath_codes.discard(None)
+        self.directory_guard_code = None
+        helper = Path(__file__).with_name('export_manifest.py')
+        if (helper, False) in self.inputs:
+            # This named framework helper is already a declared code input. Load
+            # it through the active captured loader BEFORE installing the observer,
+            # then retain its actual code/global/builtin identities, never a name.
+            import builtins
+            import types
+            from atelier.export_manifest import real_directory
+            if (type(real_directory) is types.FunctionType
+                    and real_directory.__code__.co_filename == str(helper)
+                    and real_directory.__globals__.get('Path') is Path
+                    and real_directory.__globals__.get('stat') is stat):
+                self.directory_guard_code = real_directory.__code__
+                self.directory_guard_globals = {'Path': Path, 'stat': stat}
+                self.directory_guard_builtins = {name: getattr(builtins, name) for name in
+                                                 ('reversed', 'FileNotFoundError', 'ValueError')}
+        self.metadata_codes = {Path.stat.__code__, Path.lstat.__code__}
+
 
     # Kernel device nodes are not recipe inputs. CPython reads entropy to name a temporary file
     # and libraries seed themselves from it; macOS reaches the same entropy through getentropy
@@ -188,6 +207,8 @@ class Observer:
             checked = self.path(path, kwargs.get('dir_fd'))
             if self.input_resolution_metadata(checked):
                 self.record('input resolution metadata', checked)
+            elif self.declared_directory_metadata(checked):
+                self.record('input directory validation metadata', checked)
             else:
                 self.read(checked, metadata=True)
             return function(path, *args, **kwargs)
@@ -217,6 +238,33 @@ class Observer:
         if type(target) is not type(self.scratch) or not target.is_absolute():
             return False
         return any(target == source and path in source.parents for source, _ in self.inputs)
+
+    def declared_directory_metadata(self, path):
+        """@cc [owner:fontanierh,label:correctness;safety] declared-directory-validation-metadata
+        Only the retained actual declared framework directory validator through
+        original pathlib stat/lstat code MAY inspect ancestor metadata for an EXACT
+        declared directory input. Its code/globals/builtins MUST remain bound;
+        unknown targets, direct calls, replacement helpers and directory listing,
+        contents or writes MUST retain the original checks. This is no input grant.
+        """
+        if self.directory_guard_code is None:
+            return False
+        frame = sys._getframe(2)
+        for _ in range(4):
+            if frame is None or frame.f_code not in self.metadata_codes:
+                break
+            frame = frame.f_back
+        if frame is None or frame.f_code is not self.directory_guard_code:
+            return False
+        if (any(frame.f_globals.get(name) is not value for name, value in self.directory_guard_globals.items())
+                or any(frame.f_globals.get(name, frame.f_builtins.get(name)) is not value
+                       for name, value in self.directory_guard_builtins.items())):
+            return False
+        target = frame.f_locals.get('path')
+        if type(target) is not type(self.scratch) or not target.is_absolute():
+            return False
+        return any(directory and target == source and path in source.parents
+                   for source, directory in self.inputs)
 
     def checked_open(self, function, path, *args, **kwargs):
         # CPython's open event omits dir_fd. Check that argument before letting os.open emit it.
