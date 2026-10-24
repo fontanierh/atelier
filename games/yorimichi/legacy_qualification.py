@@ -54,6 +54,7 @@ CODE_SEEDS = (
     'world/regions/treehouse/plan_tree.py', 'legacy_treehouse_discovery_profile.py', 'legacy_treehouse_export_profile.py',
     'world/export_region_piece.py', 'legacy_treehouse_data_profile.py',
     'world/regions/treehouse/canopy_data.py', 'legacy_treehouse_assembly_profile.py',
+    'legacy_treehouse_recolour_profile.py',
 )
 
 
@@ -408,6 +409,17 @@ class TextureAuthority:
             self.native_steps[step.name], self.native_profiles[step.name] = step, profile
             self.output_paths[step.name] = tuple(path for _, roots in profile.products for path in roots)
             self.generated_inputs.update(profile.produced_inputs)
+        from legacy_treehouse_recolour_profile import qualify_treehouse_recolour
+        self.single_native = {}
+        for step in selected:
+            if not exports_ready or step.name != 'world.treehouse_trees.recolour':
+                continue
+            profile = qualify_treehouse_recolour(step, checkout=self.checkout,
+                                                output_root=self.checkout / 'build/yorimichi')
+            self.single_native[step.name] = profile
+            self.native_steps[step.name], self.native_profiles[step.name] = step, profile
+            self.output_paths[step.name] = tuple(path for _, roots in profile.products for path in roots)
+            self.generated_inputs.update(profile.produced_inputs)
         self.steps.update(self.native_steps)
         from legacy_treehouse_discovery_profile import qualify_treehouse_discovery
         from atelier.build_v2.legacy_call import bind_captured_call
@@ -439,7 +451,7 @@ class TextureAuthority:
         for name, step in self.native_steps.items():
             self.native_runtimes[name] = _bind_native_runtime(
                 step, checkout=self.checkout, issuer_files=manifest['issuer_files'],
-                verifier=self.native_profiles[name].verifier)
+                verifier=getattr(self.native_profiles[name], 'verifier', None))
         from legacy_treehouse_data_profile import qualify_treehouse_data
         self.data_steps = {}
         for step in selected:
@@ -639,6 +651,13 @@ class TextureAuthority:
                 raise AuthorityRefused('native dispatch lacks original scheduler input observations')
             self.keys[step.name] = self.build.fingerprint(step, done, index=ctx.build_hash_index,
                                                         tool_cache=ctx.build_tool_cache)
+        if step.name in self.single_native:
+            from dataclasses import replace
+            from legacy_treehouse_recolour_profile import qualify_treehouse_recolour
+            actual = qualify_treehouse_recolour(replace(step), checkout=self.checkout,
+                                                output_root=self.checkout / 'build/yorimichi')
+            if actual != self.single_native[step.name]:
+                raise AuthorityRefused('standalone native declaration changed before permission')
         if step.name in self.data_steps:
             from dataclasses import replace
             from legacy_treehouse_data_profile import qualify_treehouse_data
@@ -909,8 +928,12 @@ class TextureAuthority:
     def prepare_native_command(self, ctx, step, command):
         from atelier.build_v2.legacy_client import AuthorityRefused
         native = getattr(self, 'native_launch', None)
+        if native is None and step.name in self.single_native and self.native_steps.get(step.name) is step:
+            from atelier.build_v2.legacy_native_launch import NativeSingleLaunch
+            native = NativeSingleLaunch(self, ctx, step, command, self.native_runtimes[step.name])
+            self.native_launch = native
         if native is None:
-            raise AuthorityRefused('native command has no qualified original shared batch intent')
+            raise AuthorityRefused('native command has no qualified original launch intent')
         return native.prepared(ctx, command)
 
     def guard_options(self, argv, environment, kind):

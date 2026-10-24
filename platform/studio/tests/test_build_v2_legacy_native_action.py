@@ -41,7 +41,7 @@ def test_native_runtime_uses_selected_code_in_original_input_encoder_without_pyt
     assert native.captured_native_inputs(step) == ()
     monkeypatch.setattr(build_cache, 'tool_context', lambda *a, **k: {'checked': 'fixture-tool-context'})
     runtime = native._bind_native_runtime(step, checkout=tmp_path, issuer_files=sorted(names))
-    assert set(runtime.files) == names
+    assert set(runtime.files) == names - {'platform/studio/atelier/build_batch_worker.py'}
     assert not any(name.endswith(('build_audit_worker.py', 'legacy_bootstrap.py')) for name in runtime.files)
     assert set(native.captured_native_inputs(step)) <= set(build.required_inputs(step))
     first = build.fingerprint(step, {})
@@ -52,8 +52,9 @@ def test_native_runtime_uses_selected_code_in_original_input_encoder_without_pyt
         build.required_inputs(step)
 
 
+@pytest.mark.parametrize('standalone', [False, True])
 @pytest.mark.parametrize('original,expected', [(0., 600.), (300., 300.), (900., 600.)])
-def test_native_shared_intent_precedes_files_and_uses_one_recorded_bound(tmp_path, monkeypatch, original, expected):
+def test_native_shared_intent_precedes_files_and_uses_one_recorded_bound(tmp_path, monkeypatch, original, expected, standalone):
     import hashlib
     import os
     from atelier.build_v2 import legacy_client
@@ -92,6 +93,16 @@ def test_native_shared_intent_precedes_files_and_uses_one_recorded_bound(tmp_pat
                                                       ('PYTHONHASHSEED', '0')))
     command.timeout = original
     ctx = SimpleNamespace(blender=str(bundle / 'MacOS/Blender'))
+    if standalone:
+        from atelier.build_v2.legacy_native_launch import NativeSingleLaunch
+        command = build.Blender(tmp_path / 'producer.py', args=('--recolour', '/owned/output'),
+                                threads=3, factory_startup=True)
+        command.timeout = original
+        step.commands = [command]
+        runtime = native._NativeRuntime(tmp_path, ('producer.py', *native._ACTION_WORKER), native._ORIGIN)
+        ctx.out, ctx.logs = tmp_path / 'output', tmp_path / 'output/logs'
+        launch = NativeSingleLaunch(a, ctx, step, command, runtime)
+        assert not hasattr(launch, 'session')
     with launch.prepared(ctx, command) as (argv, environment, descriptors):
         assert descriptors == ()  # Checkout locks go to monitor custody, NEVER worker pass_fds.
         assert len(calls) == 1 and calls[0]['attempt']['members'] == [*a.metadata_scopes, step.name]
@@ -100,10 +111,11 @@ def test_native_shared_intent_precedes_files_and_uses_one_recorded_bound(tmp_pat
         assert intent['threads'] == 3 and intent['memory_bytes'] == 10 * 1024**3
         assert (intent['program'], intent['args']) == (argv[0], argv[1:])
         assert os.stat(launch.context).st_mode & 0o777 == 0o600
-        assert hashlib.sha256(launch.context.read_bytes()).hexdigest() in argv[-1]
-        assert session.guard == launch.directory
+        assert hashlib.sha256(launch.context.read_bytes()).hexdigest() in argv[8]
+        assert standalone or session.guard == launch.directory
         options = launch.guard_options(argv, dict(environment), 'job')
-        assert options['logical_folder'] == tmp_path / 'original-stable-batch.guard'
+        assert options['logical_folder'] == (ctx.logs / (step.name + '.guard') if standalone
+                                              else tmp_path / 'original-stable-batch.guard')
         assert options['custody_fds'] == (10, 11, 12) and options['queue_seconds'] == 1800.
         monkeypatch.setattr(legacy_client, 'authority_now_ns', lambda: 11_000_000_000)
         assert launch.guard_options(argv, dict(environment), 'job')['queue_seconds'] == 1790.
@@ -535,3 +547,19 @@ def dataclass(cls):
     forged = ModuleType('sdk'); monkeypatch.setitem(sys.modules, 'sdk', forged)
     with pytest.raises(UnsupportedOrigin):
         exec(compile(sdk_raw+'\npoison=True\n', str(sdk_path), 'exec', dont_inherit=True), vars(forged))
+
+
+def test_standalone_original_argv_preserves_arguments_without_batch_worker(tmp_path):
+    script = tmp_path / 'producer.py'
+    command = build.Blender(script, args=('--recolour', '/owned/output'), threads=3, factory_startup=True)
+    runtime = native._NativeRuntime(tmp_path, ('producer.py', *native._ACTION_WORKER), native._ORIGIN)
+    argv = native.action_argv(command, SimpleNamespace(blender='pinned-blender'), runtime=runtime,
+        startup=Path('/owned/startup'), specification=Path('/owned/spec'),
+        specification_digest='a' * 64, capture_file=Path('/owned/capture'), capture_digest='b' * 64)
+    assert argv[:7] == command.argv(SimpleNamespace(blender='pinned-blender'))[:7]
+    assert argv[7] == '--python-expr' and argv[-3:] == ['--', '--recolour', '/owned/output']
+    assert not any(name.endswith('/build_batch_worker.py') for name in runtime.files)
+    with pytest.raises(ValueError, match='selected captured runtime'):
+        native.action_argv(build.Blender(tmp_path / 'unknown.py'), SimpleNamespace(blender='pinned'),
+            runtime=runtime, startup=Path('/s'), specification=Path('/r'),
+            specification_digest='a' * 64, capture_file=Path('/c'), capture_digest='b' * 64)

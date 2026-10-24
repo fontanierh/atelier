@@ -1,6 +1,6 @@
 """One original batch launch intent; no process owner, scheduler or product key encoder."""
 from pathlib import Path
-from .legacy_native_action import _NativeRuntime, _ORIGIN, worker_argv
+from .legacy_native_action import _NativeRuntime, _ORIGIN, worker_argv, action_argv
 
 # Whole guarded work cap, distinct from the original between-action batch budget.
 NATIVE_WORK_SECONDS = 600.
@@ -32,6 +32,8 @@ class NativeBatchLaunch:
         self.invocation = hashlib.sha256((authority.nonce + ':native:' + session.nonce).encode()).hexdigest()[:32]
         self.attempt = 'native-' + authority.nonce + '-' + session.nonce
         self.logical = session.guard
+        self.atomic_temporary = session.folder / 'atomic-tmp'
+        self.action = None
 
     def prepared(self, ctx, command):
         """@cc [owner:fontanierh,label:correctness;safety] native-shared-original-launch-intent
@@ -66,12 +68,13 @@ class NativeBatchLaunch:
                       'binary': str(Path(ctx.blender).resolve()),
                       'installation': list(map(str, build_audit.installation(command))),
                       'code_files': list(self.files),
-                      'atomic_temporary': str(self.session.folder / 'atomic-tmp')}
+                      'atomic_temporary': str(self.atomic_temporary), 'action': self.action}
             raw = (json.dumps(config, sort_keys=True, separators=(',', ':')) + '\n').encode()
             capture = Path(a.manifest['distribution']) / 'platform/studio/atelier/build_v2/controller_client.py'
             capture_raw = dict(a.files)['platform/studio/atelier/build_v2/controller_client.py']
             startup = a.checkout / ('build/build-v2/legacy-host/' + a.nonce + '/startup.json')
-            self.argv = worker_argv(command, ctx, startup=startup, specification=self.context,
+            argv_builder = worker_argv if self.action is None else self._action_argv
+            self.argv = argv_builder(command, ctx, startup=startup, specification=self.context,
                                     specification_digest=hashlib.sha256(raw).hexdigest(),
                                     capture_file=capture, capture_digest=hashlib.sha256(capture_raw).hexdigest())
             self.launch_context = prepare(environment(command.env))
@@ -100,7 +103,8 @@ class NativeBatchLaunch:
                 stream.write(raw)
                 stream.flush()
                 os.fsync(stream.fileno())
-            self.session.guard = self.directory  # Original polling reads the ACTUAL report.
+            if self.action is None:
+                self.session.guard = self.directory  # Original polling reads the ACTUAL report.
             a.guard_directory, a.guard_relative = self.directory, self.relative
             a.invocation, a.attempt, a.returned = self.invocation, self.attempt, None
             yield self.argv, tuple(self.environment.items()), ()
@@ -116,3 +120,27 @@ class NativeBatchLaunch:
         return {'custody_fds': tuple(self.authority.custody.values()), 'aggregate_tree': True,
                 'launch_context': self.launch_context, 'invocation_id': self.invocation,
                 'logical_folder': self.logical, 'queue_seconds': remaining}
+
+
+class NativeSingleLaunch(NativeBatchLaunch):
+    """One original nonbatch command; shared intent preparation without a Session."""
+    def __init__(self, authority, ctx, step, command, runtime):
+        import hashlib
+        import uuid
+        if (type(runtime) is not _NativeRuntime or runtime._origin is not _ORIGIN
+                or step.batch is not None or len(step.commands) != 1 or step.commands[0] is not command):
+            raise ValueError('standalone native launch differs from its qualified original Step')
+        self.authority, self.runtime = authority, runtime
+        self.members, self.files = [step.name], runtime.files
+        nonce = uuid.uuid4().hex
+        self.relative = 'build/build-v2/legacy-host/' + authority.nonce + '/guards/native-single-' + nonce
+        self.directory = authority.checkout / self.relative
+        self.context = self.directory / 'native-context.json'
+        self.invocation = hashlib.sha256((authority.nonce + ':single:' + nonce).encode()).hexdigest()[:32]
+        self.attempt = 'native-single-' + authority.nonce + '-' + nonce
+        self.logical = ctx.logs / (step.name + '.guard')
+        self.atomic_temporary = ctx.out / '.state/native-actions' / nonce / 'atomic-tmp'
+        self.action = {'script': str(command.script), 'args': list(command.args)}
+
+    def _action_argv(self, command, ctx, **bindings):
+        return action_argv(command, ctx, runtime=self.runtime, **bindings)

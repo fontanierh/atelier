@@ -17,6 +17,8 @@ _WORKER = (
     'platform/studio/atelier/build_v2/legacy_qualification.py',
 )
 
+_ACTION_WORKER = tuple(name for name in _WORKER if not name.endswith('/build_batch_worker.py'))
+
 
 @dataclass(frozen=True)
 class _NativeRuntime:
@@ -42,7 +44,7 @@ def _bind_native_runtime(step, *, checkout, issuer_files, verifier=None):
     root = Path(checkout)
     names = {path.relative_to(root).as_posix() for path in map(Path, required_inputs(step))
              if path.suffix == '.py'}
-    names.update(_WORKER)
+    names.update(_WORKER if step.batch is not None else _ACTION_WORKER)
     for name in tuple(names):
         parent = (root / name).parent
         while parent != root:
@@ -74,7 +76,7 @@ def _bind_native_runtime(step, *, checkout, issuer_files, verifier=None):
 
 
 def worker_argv(command, ctx, *, startup, specification, specification_digest, capture_file,
-                capture_digest):
+                capture_digest, _action=False):
     """@cc [owner:fontanierh,label:correctness;safety] captured-original-native-worker-argv
     Preserve native flags and bind exact private bootstrap arguments in the real argv.
     The original factory/threads/environment and worker role MUST remain unchanged.
@@ -90,10 +92,11 @@ def worker_argv(command, ctx, *, startup, specification, specification_digest, c
     # imported from the captured distribution. Resolve the expected role via ctx.
     from atelier import paths
     expected = paths.STUDIO / 'atelier/build_batch_worker.py'
-    if command.script != expected or command.args or argv.count('--python') != 1:
+    if ((not _action and (command.script != expected or command.args))
+            or argv.count('--python') != 1):
         raise ValueError('unsupported original native worker role or arguments')
     index = argv.index('--python')
-    if argv[index + 1] != str(expected):
+    if argv[index + 1] != str(command.script if _action else expected):
         raise ValueError('native argv script differs from the original worker role')
     values = json.dumps([str(capture_file), capture_digest, str(startup), str(specification),
                          specification_digest], separators=(',', ':'))
@@ -118,6 +121,14 @@ for name,relative,package in [('atelier','platform/studio/atelier/__init__.py',T
 sys.modules['atelier.build_v2.legacy_native_action'].main(s,spec,expected)
 '''.replace('VALUES', repr(values))
     return [*argv[:index], '--python-expr', bootstrap, *argv[index + 2:]]
+
+
+def action_argv(command, ctx, *, runtime, **bindings):
+    if (type(runtime) is not _NativeRuntime or runtime._origin is not _ORIGIN
+            or not command.script.is_absolute()
+            or command.script.relative_to(runtime.root).as_posix() not in runtime.files):
+        raise ValueError('standalone native script is outside its selected captured runtime')
+    return worker_argv(command, ctx, _action=True, **bindings)
 
 
 def _registered_tool_provider(name, module, modules, builtin_names, tool, caller_globals):
@@ -774,7 +785,7 @@ def main(manifest, specification, expected):
     if hashlib.sha256(raw).hexdigest() != expected:
         raise ValueError('native worker context changed after launch intent')
     spec = _json(raw)
-    if set(spec) != {'version', 'source', 'issuer', 'request', 'binary', 'installation', 'code_files', 'atomic_temporary'} or type(spec['version']) is not int or spec['version'] != 1:
+    if set(spec) != {'version', 'source', 'issuer', 'request', 'binary', 'installation', 'code_files', 'atomic_temporary', 'action'} or type(spec['version']) is not int or spec['version'] != 1:
         raise ValueError('unsupported captured native worker context')
     if (spec['source'] != manifest['source_digest'] or spec['issuer'] != manifest['issuer_digest']
             or spec['request'] != manifest['scheduler_request']['digest']):
@@ -782,7 +793,8 @@ def main(manifest, specification, expected):
     files = spec['code_files']
     if (type(files) is not list or not 0 < len(files) <= MAX_NAMED_ISSUER_FILES
             or any(type(name) is not str for name in files) or len(set(files)) != len(files)
-            or not set(files) <= set(manifest['issuer_files']) or not set(_WORKER) <= set(files)):
+            or not set(files) <= set(manifest['issuer_files'])
+            or not set(_WORKER if spec['action'] is None else _ACTION_WORKER) <= set(files)):
         raise ValueError('native worker code roster is not the selected captured closure')
     all_files = [(name, _read_at(manifest['issuer_root'], name, 8 * 1024 * 1024))
                  for name in manifest['issuer_files']]
@@ -799,18 +811,34 @@ def main(manifest, specification, expected):
             or bundle.name != 'Contents' or [str(bundle)] != installation):
         raise ValueError('running native image differs from its checked original Blender role')
     import os
-    batch = Path(os.environ.get('ATELIER_BATCH', ''))
     temporary = Path(spec['atomic_temporary'])
-    if (not batch.is_absolute() or batch.parent != Path(manifest['output']) / '.state/batches'
+    action = spec['action']
+    if action is None:
+        batch = Path(os.environ.get('ATELIER_BATCH', ''))
+        worker = checkout / 'platform/studio/atelier/build_batch_worker.py'
+        namespace = Path(manifest['output']) / '.state/batches'
+    else:
+        if (type(action) is not dict or set(action) != {'script', 'args'}
+                or type(action['script']) is not str or type(action['args']) is not list
+                or any(type(arg) is not str for arg in action['args']) or 'ATELIER_BATCH' in os.environ):
+            raise ValueError('unsupported original standalone native action')
+        worker = Path(action['script'])
+        if (not worker.is_absolute() or not worker.is_relative_to(checkout)
+                or worker.relative_to(checkout).as_posix() not in files
+                or '--' not in sys.argv or sys.argv[sys.argv.index('--') + 1:] != action['args']):
+            raise ValueError('standalone native script/arguments differ from the original command')
+        batch = temporary.parent
+        namespace = Path(manifest['output']) / '.state/native-actions'
+    if (not batch.is_absolute() or batch.parent != namespace
             or len(batch.name) != 32 or any(c not in '0123456789abcdef' for c in batch.name)
             or temporary != batch / 'atomic-tmp'):
-        raise ValueError('native atomic scratch differs from its original owned batch namespace')
+        raise ValueError('native atomic scratch differs from its original owned namespace')
     _preloaded(manifest, installation, sys._getframe(1))
     from atelier.build_v2.legacy_qualification import CapturedCode, captured_recipe_imports, captured_spec
     sources = [CapturedCode(str(checkout / name), data) for name, data in all_files if name in files]
     check = _native_execution_check(sources, checkout=checkout, installation=installation)
     sys.addaudithook(_fatal_native_audit(check))
-    worker = str(checkout / 'platform/studio/atelier/build_batch_worker.py')
+    worker = str(worker)
     source = next(item for item in sources if item.filename == worker)
     with captured_recipe_imports(sources, checkout=checkout, platform_roots=installation,
                                  on_refusal=check.mark_failed):
