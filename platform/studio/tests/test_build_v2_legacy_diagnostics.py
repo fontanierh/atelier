@@ -10,13 +10,16 @@ from atelier.build_v2 import legacy_qualification as phases
 
 
 @pytest.fixture
-def records(monkeypatch):
+def records(monkeypatch, capsys):
     output = io.StringIO()
     clock = iter(range(1000, 10000))
     monkeypatch.setattr(phases, '_diagnostic_records', 0)
     monkeypatch.setattr(phases, '_diagnostic_now', lambda: next(clock))
-    monkeypatch.setattr(sys, 'stderr', output)
-    return output
+    class CapturedRecords:
+        def getvalue(self):
+            output.write(capsys.readouterr().err)
+            return output.getvalue()
+    return CapturedRecords()
 
 
 def test_closed_phase_records_are_numeric_ascii_and_count_bounded(records):
