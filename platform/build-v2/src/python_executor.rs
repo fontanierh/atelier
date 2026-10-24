@@ -213,6 +213,14 @@ mod tests {
                 ..limits
             },
             Limits {
+                overall: None,
+                ..limits
+            },
+            Limits {
+                overall: Some(Duration::from_secs(149)),
+                ..limits
+            },
+            Limits {
                 job: Duration::MAX,
                 ..limits
             },
@@ -296,16 +304,19 @@ mod tests {
 /// The production builder is shared with pure limits preflight. This is not a resident session:
 /// each unit waits for the full guard receipt, with no quiescence-based release.
 fn production_config(limits: Limits) -> Result<SessionConfig, String> {
-    if limits.job.is_zero()
-        || limits.cleanup.is_zero()
-        || limits.overall.is_some_and(|span| span.is_zero())
-    {
+    let overall = limits
+        .overall
+        .ok_or("production Python requires a bounded overall limit")?;
+    if limits.job.is_zero() || limits.cleanup.is_zero() || overall.is_zero() {
         return Err("production Python limits must be positive".into());
     }
     let lifetime = limits
         .job
         .checked_add(limits.cleanup)
         .ok_or("production Python session lifetime overflow")?;
+    if overall < lifetime {
+        return Err("production Python overall limit cannot cover execution and cleanup".into());
+    }
     Ok(SessionConfig {
         custodian: true,
         ..SessionConfig::single(limits.cleanup, lifetime)
@@ -441,6 +452,8 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
     /// reserved before submission, and lifecycle abort diagnostics MUST remain failures rather
     /// than appear as user cancellation. See failed_submission_keeps_abort_reason_without_claiming_user_cancellation
     /// and actual_python_first_build_and_current_noop_have_real_zero_launch_and_write_evidence.
+    /// Production limits MUST have positive job/cleanup and a bounded positive overall covering
+    /// their checked sum before admission; see production_defaults_fit_after_startup_and_require_both_registrations.
     /// Production MUST retain exclusive build custody through the existing monitor and forbid Run
     /// without both registrations. Retry preparation MUST refuse attempts after the first without
     /// modifying partial bytes. Scripted fixture execution proves sandbox/I/O only, never actual

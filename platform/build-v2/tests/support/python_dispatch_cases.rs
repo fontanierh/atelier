@@ -81,6 +81,8 @@ struct Seen {
     durable_pairs: usize,
     custody: usize,
     cancelled: bool,
+    partial: Option<PathBuf>,
+    partial_verified: bool,
 }
 struct Synthetic {
     root: PathBuf,
@@ -150,7 +152,12 @@ impl Write for Input {
                         .join(INSTALL_METADATA)
                         .join("completions"),
                 ] {
-                    let records = LeaseStore::open(&root).unwrap().leases().unwrap();
+                    let records = LeaseStore::open(&root)
+                        .unwrap()
+                        .lock()
+                        .unwrap()
+                        .leases()
+                        .unwrap();
                     let registered: Vec<_> = records
                         .iter()
                         .filter(|record| record.workers.contains(&identity(101)))
@@ -168,6 +175,9 @@ impl Write for Input {
                 assert_eq!(correlation.invocation, "a".repeat(32));
                 assert_eq!(correlation.receipts, s.report);
                 if matches!(s.mode, Mode::Crash) {
+                    let partial = Path::new(&job.job_dir).join("output/partial.bin");
+                    std::fs::write(&partial, b"retained first-attempt bytes").unwrap();
+                    s.seen.lock().unwrap().partial = Some(partial);
                     s.finish(CleanupReceipt::Confirmed);
                     return Ok(());
                 }
@@ -269,7 +279,7 @@ impl WorkerLauncher for Synthetic {
                 .join("checkout")
                 .join(INSTALL_METADATA)
                 .join("completions");
-            let records = LeaseStore::open(&local)?.leases()?;
+            let records = LeaseStore::open(&local)?.lock()?.leases()?;
             let path = local.join("leases").join(format!("{}.json", records[0].id));
             std::fs::rename(&path, path.with_extension("retained"))?;
             std::fs::create_dir(path)?;
@@ -360,7 +370,7 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
 }
 fn dispatch(mode: Mode, later: bool) -> (scheduler::Report, PythonIo, Arc<Mutex<Seen>>) {
     let space = Space::new();
-    let declaration:Declaration=toml::from_str(r#"
+    let mut declaration:Declaration=toml::from_str(r#"
 schema_version=2
 cache_version="dispatch-proof"
 [[units]]
@@ -494,6 +504,18 @@ outputs=[{id="out",logical_path="/Data/A",class="JsonData",destination="store",f
     )
     .unwrap();
     let io = backend.finish().unwrap();
+    if matches!(mode, Mode::Crash) {
+        let mut observed = seen.lock().unwrap();
+        let path = observed
+            .partial
+            .as_ref()
+            .expect("first crash wrote a partial sentinel");
+        assert_eq!(
+            std::fs::read(path).unwrap(),
+            b"retained first-attempt bytes"
+        );
+        observed.partial_verified = true;
+    }
     assert_eq!(io.publications, 0);
     assert_eq!(io.installs, 0);
     (report, io, seen)
@@ -530,6 +552,7 @@ fn production_crash_retry_refuses_old_staging_before_a_second_run() {
     assert_eq!(seen.runs, 1);
     assert_eq!(seen.submissions, 2);
     assert_eq!(seen.completed_events, 0);
+    assert!(seen.partial_verified);
 }
 
 #[test]
