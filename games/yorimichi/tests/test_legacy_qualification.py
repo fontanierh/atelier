@@ -466,6 +466,9 @@ def test_texture_prepared_only_null_frame_preserves_host_qualification_path(scri
     authority.hashlib = __import__('hashlib')
     monkeypatch.setattr(module, '_prior_record', lambda client: {'frame': None, 'binding': {}})
     ctx = SimpleNamespace(out=case.root / 'build/yorimichi')
+    authority.texture_steps = dict(authority.steps)
+    authority.generated_inputs = set()
+    authority.output_paths = {name: (profile.output,) for name, profile in authority.profiles.items()}
     authority.before_prepare(ctx, [], ['data.stage'])
     calls = authority.client.calls
     assert [item['type'] for item in calls] == ['supersede', 'begin_attempt']
@@ -531,9 +534,13 @@ def test_texture_group_frame_separates_shared_metadata_and_products_and_settles_
     authority.runtimes = {name: object() for name in authority.steps}
     authority.completed = {}
     authority.aggregate, authority.aggregate_done = None, None
+    authority.native_steps, authority.native_launch, authority.dones = {}, None, {}
     authority.build = SimpleNamespace(fingerprint_state=lambda *a, **k: ('f' * 64, {}), required_inputs=lambda step: [])
     monkeypatch.setattr(module, '_prior_record', lambda client: None)
     ctx = SimpleNamespace(out=case.root / 'build/yorimichi')
+    authority.texture_steps = dict(authority.steps)
+    authority.generated_inputs = set()
+    authority.output_paths = {name: (profile.output,) for name, profile in authority.profiles.items()}
     authority.before_prepare(ctx, [], ['data.stage'])
     frame = authority.client.calls[1]['observation']
     assert len(frame['tasks']) == 3
@@ -576,6 +583,9 @@ def test_texture_same_frame_continuation_requeues_only_settled_members_before_ne
     authority.build = SimpleNamespace(fingerprint_state=lambda *a, **k: ('f' * 64, {}), required_inputs=lambda step: [])
     monkeypatch.setattr(module, '_prior_record', lambda client: None)
     ctx = SimpleNamespace(out=case.root / 'build/yorimichi')
+    authority.texture_steps = dict(authority.steps)
+    authority.generated_inputs = set()
+    authority.output_paths = {name: (profile.output,) for name, profile in authority.profiles.items()}
     authority.before_prepare(ctx, [], ['data.stage'])
     frame = authority.client.calls[1]['observation']
     binding = authority.client.calls[0]['observation']
@@ -583,6 +593,9 @@ def test_texture_same_frame_continuation_requeues_only_settled_members_before_ne
     old = {'binding': binding, 'frame': {'scope': frame, 'pending': [step.name],
                                        'settled': [{'task': authority.metadata}]}}
     monkeypatch.setattr(module, '_prior_record', lambda client: old)
+    authority.texture_steps = dict(authority.steps)
+    authority.generated_inputs = set()
+    authority.output_paths = {name: (profile.output,) for name, profile in authority.profiles.items()}
     authority.before_prepare(ctx, [], ['data.stage'])
     assert [call['type'] for call in authority.client.calls] == ['prepare_selection', 'requeue', 'begin_attempt']
     assert authority.client.calls[1]['members'] == [authority.metadata]
@@ -595,6 +608,7 @@ def test_texture_failed_final_certificate_never_settles_earlier_members_or_metad
     authority = case.profile.TextureAuthority.__new__(case.profile.TextureAuthority)
     authority.client = case.client()
     authority.aggregate, authority.aggregate_done = None, None
+    authority.native_steps, authority.native_launch, authority.dones = {}, None, {}
     authority.completed = {'world.textures.leaf_broad': 'attempt-one', 'world.textures.leaf_cedar': 'attempt-two'}
     authority.steps = {name: SimpleNamespace(name=name) for name in authority.completed}
     def check(ctx, step):
@@ -653,6 +667,8 @@ def test_actual_aggregate_reuses_original_product_keys_and_detects_changed_reads
     (ctx.stamps / (aggregate.name + '.json')).write_text(json.dumps({'fingerprint': key}))
     authority = module.TextureAuthority.__new__(module.TextureAuthority)
     authority.build, authority.steps, authority.aggregate = build, textures, aggregate
+    authority.texture_steps = textures
+    authority.native_steps, authority.dones = {}, {}
     authority.aggregate_done = None
     authority.completed = {name: 'original-attempt' for name in textures}
     authority.preparation_attempt = 'original-preparation'

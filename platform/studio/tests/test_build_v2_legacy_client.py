@@ -213,3 +213,16 @@ def test_ordinary_host_lifetime_is_bounded_without_shortening_native_limits(monk
     for invalid in (True, 1.0, now, now + 660_000_000_000):
         with pytest.raises(AuthorityLost):
             protocol.host_budgets(enclosing_deadline_ns=invalid)
+
+
+def test_original_rebuild_reasons_are_bounded_request_data_not_permission():
+    from atelier.build_v2.legacy_client import scheduler_request, validate_scheduler_request, AuthorityLost
+    reason = 'world.closed.task=First guarded cold migration with no verified checkpoint'
+    request = scheduler_request('fixture', ['data.stage'], rebuild_reason=[reason])
+    assert request['options']['rebuild_reason'] == [reason]
+    assert validate_scheduler_request(request) == request
+    assert 'rebuild_reason' not in scheduler_request('fixture', [])['options']
+    for bad in (True, [True], ['bad\nreason'], ['x'] * 65, ['x' * 1025]):
+        record = {**request, 'options': {**request['options'], 'rebuild_reason': bad}}
+        with pytest.raises(AuthorityLost):
+            validate_scheduler_request(record)

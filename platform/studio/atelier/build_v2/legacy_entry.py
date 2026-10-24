@@ -77,9 +77,11 @@ def managed(game, wanted):
         return bool(declarations) or state.exists() or state.is_symlink()
 
 
-def prepare_discovery(game, wanted, *, verify=False, max_heavy_commands=None, fail_fast=False):
+def prepare_discovery(game, wanted, *, verify=False, max_heavy_commands=None, fail_fast=False, rebuild_reason=None):
     """Captured source-only global declaration preflight, before helper/control writes."""
     from .legacy_qualification import CapturedCode, captured_spec
+    from atelier.build_checkpoints import reasons
+    reasons(rebuild_reason)  # Original side-effect-free policy validation, never a bypass.
     checkout = _checkout()
     name = f'games/{game}/legacy_qualification.py'
     with diagnostic_phase('entry.profile'):
@@ -95,7 +97,7 @@ def prepare_discovery(game, wanted, *, verify=False, max_heavy_commands=None, fa
     if dict(captured.files).get(name) != dict(initial.files)[name]:
         raise ValueError('game discovery profile changed during capture')
     request = scheduler_request(game, wanted, verify=verify,
-                                max_heavy_commands=max_heavy_commands, fail_fast=fail_fast)
+                                max_heavy_commands=max_heavy_commands, fail_fast=fail_fast, rebuild_reason=rebuild_reason)
     manifest = {'checkout': str(checkout), 'issuer_digest': captured.digest,
                 'python_context': original_python_context()}
     with diagnostic_phase('entry.preflight'):
@@ -129,7 +131,7 @@ def operational_environment(environment):
 
 
 def execute(game, wanted, *, discovery_source, verify=False, max_heavy_commands=None,
-            fail_fast=False, echo=print, enclosing_deadline_ns=None):
+            fail_fast=False, rebuild_reason=None, echo=print, enclosing_deadline_ns=None):
     """@cc [owner:fontanierh,label:safety] original-managed-host-entry
     The normal managed entry MUST start only a verified immutable controller image over
     the original bounded request and captured named provider bytes. It MUST preserve the
@@ -144,7 +146,7 @@ def execute(game, wanted, *, discovery_source, verify=False, max_heavy_commands=
     from atelier.harness.safety.cancellation import termination_cleanup
     checkout = _checkout()
     request = scheduler_request(game, wanted, verify=verify,
-                                max_heavy_commands=max_heavy_commands, fail_fast=fail_fast)
+                                max_heavy_commands=max_heavy_commands, fail_fast=fail_fast, rebuild_reason=rebuild_reason)
     operational = operational_environment(os.environ)
     build_root = Path(operational['build_root']) if operational['build_root'] else checkout / 'build'
     if build_root != checkout / 'build':

@@ -599,9 +599,13 @@ def required_inputs(step, *, observation=None):
     if step.deferred_inputs and observation is None:
         raise ValueError(f'{step.name}: deferred inputs require an explicit input observation')
     inputs = step.inputs if observation is None else observation.paths
+    native = ()
+    if getattr(step, '_captured_native_runtime', None) is not None:
+        from .build_v2.legacy_native_action import captured_native_inputs
+        native = captured_native_inputs(step)
     return [*inputs, *batch_code, *(c.script for c in step.commands if named and hasattr(c, 'script')),
             *(p for c in step.commands for p in getattr(c, 'runs', list)()),
-            *(SUPPORT if step.audit else ()), *captured_runtime_inputs(step),
+            *(SUPPORT if step.audit else ()), *captured_runtime_inputs(step), *native,
             *([Path(build_spatial.__file__)] if step.queries else ())]
 
 
@@ -1012,14 +1016,14 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, veri
     if not dry and legacy_entry.managed(game, wanted):
         if (force or touch or cook_mode is not None or cook_reason is not None
                 or cook_memory_gib is not None or recover_cook is not None
-                or record_cook_recovery or rebuild_touched or rebuild_reason is not None):
+                or record_cook_recovery or rebuild_touched):
             raise ValueError('managed legacy discovery does not support mutation/recovery overrides')
         discovery = legacy_entry.prepare_discovery(game, wanted, verify=verify,
                                                max_heavy_commands=max_heavy_commands,
-                                               fail_fast=fail_fast)
+                                               fail_fast=fail_fast, rebuild_reason=rebuild_reason)
         return legacy_entry.execute(game, wanted, discovery_source=discovery, verify=verify,
                                     max_heavy_commands=max_heavy_commands, fail_fast=fail_fast,
-                                    echo=echo)
+                                    rebuild_reason=rebuild_reason, echo=echo)
     controller = exact_selection(game, wanted)
     if controller is not None:
         if (force or touch or verify or cook_mode is not None or cook_reason is not None or cook_memory_gib is not None
@@ -1335,7 +1339,7 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
         """Run, restore or confirm one planned step; a non-None value is its exit code."""
         nonlocal ran, restored, saved_seconds, heavy_commands
         if authority is not None:
-            authority.before_task(ctx, step)
+            authority.before_task(ctx, step, done=done)
         print_ = f'{step.name:34s}'
         stamp = ctx.stamps / f'{step.name}.json'
         journal = ctx.stamps / f'{step.name}.restore.json'

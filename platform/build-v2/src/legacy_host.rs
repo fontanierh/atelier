@@ -121,6 +121,8 @@ struct OrdinaryOptions {
     verify: bool,
     max_heavy_commands: Option<u32>,
     fail_fast: bool,
+    #[serde(default)]
+    rebuild_reason: Vec<String>,
 }
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -482,6 +484,7 @@ fn strict_record<T: serde::de::DeserializeOwned>(bytes: &[u8]) -> io::Result<T> 
                     "files",
                     "selector",
                     "wanted",
+                    "rebuild_reason",
                     "roots",
                     "members",
                     "args",
@@ -953,6 +956,12 @@ fn run_inner(config: HostConfig) -> io::Result<()> {
             .iter()
             .any(|name| name.is_empty() || name.len() > 256 || name.contains('\0'))
         || original.options.max_heavy_commands == Some(0)
+        || original.options.rebuild_reason.len() > 64
+        || original.options.rebuild_reason.iter().any(|reason| {
+            reason.is_empty()
+                || reason.chars().count() > 1024
+                || reason.chars().any(|c| c.is_control())
+        })
     {
         return Err(error(
             "unsupported original scheduler project/selection/options",
@@ -1764,6 +1773,24 @@ mod tests {
         assert_eq!(decoded.wanted, ["data.stage"]);
         assert!(!decoded.options.verify && !decoded.options.fail_fast);
         assert_eq!(decoded.options.max_heavy_commands, None);
+        assert!(decoded.options.rebuild_reason.is_empty());
+        let reasoned = ordinary.replace(
+            "\"fail_fast\":false",
+            "\"fail_fast\":false,\"rebuild_reason\":[\"task=first qualified cold native build\"]",
+        );
+        let parsed = strict_record::<OrdinaryRequest>(reasoned.as_bytes()).unwrap();
+        assert_eq!(
+            parsed.options.rebuild_reason,
+            ["task=first qualified cold native build"]
+        );
+        assert!(
+            strict_record::<OrdinaryRequest>(
+                reasoned
+                    .replace("[\"task=first qualified cold native build\"]", "[true]")
+                    .as_bytes()
+            )
+            .is_err()
+        );
         let default = ordinary.replace(r#"["data.stage"]"#, "[]");
         assert!(
             strict_record::<OrdinaryRequest>(default.as_bytes())

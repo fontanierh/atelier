@@ -50,7 +50,8 @@ CODE_SEEDS = (
     'world/regions/ferry/__init__.py', 'world/regions/hidamari_stable/__init__.py',
     'world/regions/swordcamp/__init__.py',
     'world/regions/belmonte/source.py',
-    'world/regions/village/atomic_sources.py', 'world/gen_textures.py', 'legacy_texture_profile.py',
+    'world/regions/village/atomic_sources.py', 'world/gen_textures.py', 'legacy_texture_profile.py', 'legacy_treehouse_profile.py',
+    'world/regions/treehouse/plan_tree.py',
 )
 
 
@@ -69,7 +70,7 @@ def source_names(checkout):
             names.add(source.relative_to(checkout).as_posix())
     # Capture the actual scheduler/declaration code even when a recipe imports only a
     # subset of its names; no helper implementation is inferred from a Git revision.
-    for seed in ('build.py', 'build_products.py', 'build_v2/controller_entry.py'):
+    for seed in ('build.py', 'build_products.py', 'build_v2/controller_entry.py', 'build_batch_worker.py'):
         for source in scanner.local_imports(checkout / 'platform/studio/atelier' / seed):
             names.add(source.relative_to(checkout).as_posix())
     if len(names) > MAX_NAMED_ISSUER_FILES:
@@ -309,7 +310,7 @@ def run(*, manifest, request, client, custody):
         ctx.fail_fast = request['options']['fail_fast']
         ctx.legacy_authority = authority
         return build._prepared_build(ctx, request['wanted'], force=False, touch=False, echo=print,
-                    verify=request['options']['verify'], rebuild_reason=None, rebuild_touched=False,
+                    verify=request['options']['verify'], rebuild_reason=request['options'].get('rebuild_reason'), rebuild_touched=False,
                     record_cook_recovery=False, max_heavy_commands=request['options']['max_heavy_commands'],
                     prepared_steps=steps)
     return discover(manifest, request, consumer=execute_original)
@@ -370,6 +371,27 @@ class TextureAuthority:
             self.profiles[step.name], self.steps[step.name] = profile, step
             self.runtimes[step.name] = _bind_captured_runtime(
                 step, checkout=self.checkout, issuer_files=manifest['issuer_files'])
+        self.texture_steps = dict(self.steps)
+        self.generated_inputs = set()
+        self.output_paths = {name: (profile.output,) for name, profile in self.profiles.items()}
+        self.native_steps, self.native_profiles, self.native_runtimes = {}, {}, {}
+        from legacy_treehouse_profile import qualify_treehouse_planner
+        from atelier.build_v2.legacy_native_action import _bind_native_runtime
+        parents = ('Tree_Canopy_Maple', 'Tree_Canopy_Crimson', 'Tree_Canopy_Amber', 'Tree_Canopy_Ginkgo')
+        native_names = {'world.treehouse_trees.geometry.' + parent for parent in parents}
+        for step in selected:
+            if step.name not in native_names:
+                continue
+            profile = qualify_treehouse_planner(step, checkout=self.checkout,
+                                               output_root=self.checkout / 'build/yorimichi')
+            self.native_steps[step.name], self.native_profiles[step.name] = step, profile
+            self.native_runtimes[step.name] = _bind_native_runtime(
+                step, checkout=self.checkout, issuer_files=manifest['issuer_files'], verifier=profile.verifier)
+            self.output_paths[step.name] = tuple(path for _, roots in profile.products for path in roots)
+            self.generated_inputs.update(profile.produced_inputs)
+        self.steps.update(self.native_steps)
+        self.dones = {}
+        self.native_launch = None
         first = next((step for step in selected if step.controller is None), None)
         if first is None or first.name not in self.steps:
             raise AuthorityRefused('first actual selected task is outside the closed texture family')
@@ -380,7 +402,7 @@ class TextureAuthority:
         next_family = next((step.name for step in selected
                             if step.controller is None and step.name not in self.steps
                             and step.name != 'world.textures'), None)
-        print(f'Managed texture group declarations: {len(self.steps)}; next actual boundary: {following}; '
+        print(f'Managed texture group declarations: {len(self.texture_steps)}; next actual boundary: {following}; '
               f'first nontexture task: {next_family}', flush=True)
         self.aggregate = next((step for step in selected if step.name == 'world.textures'), None)
         if self.aggregate is not None:
@@ -394,7 +416,7 @@ class TextureAuthority:
         self.begun = False
         self.hashlib = hashlib
         self.step = first
-        self.runtime = self.runtimes[first.name]
+        self.runtime = self.runtimes.get(first.name)
         self.returned = None
         self.launch_context = None
 
@@ -423,7 +445,7 @@ class TextureAuthority:
         from atelier.build_hashes import HashIndex
         self.keys = {name: self.build.fingerprint_state(step, {}, index=HashIndex(verify=True),
                                                        tool_cache={})[0]
-                     for name, step in self.steps.items()}
+                     for name, step in self.texture_steps.items()}
         # Historical broad purge and interrupted checkpoint replacement need their
         # separately reviewed recovery profiles; no generic metadata grant covers them.
         journal = ctx.out / '.checkpoint-in-progress.json'
@@ -436,13 +458,16 @@ class TextureAuthority:
         def claims(paths):
             return [{'path': name, 'canonical': name, 'anchor': anchor} for name in paths]
         tasks = [{'id': self.metadata, 'replay': 'closed_replay', 'writes': claims(self.paths)}]
-        for name, profile in self.profiles.items():
+        for name, paths in self.output_paths.items():
             tasks.append({'id': name, 'replay': 'closed_replay',
-                          'writes': claims([profile.output.relative_to(self.checkout).as_posix()])})
+                          'writes': claims([path.relative_to(self.checkout).as_posix() for path in paths])})
         inputs = []
         for step in self.steps.values():
             for path in self.build.required_inputs(step):
-                inputs.extend(self.witness(Path(path).relative_to(self.checkout).as_posix()))
+                # Produced texture bytes are observed by the ORIGINAL fingerprint at
+                # native dispatch, not frozen as absent cold raw-source inputs.
+                if Path(path) not in self.generated_inputs:
+                    inputs.extend(self.witness(Path(path).relative_to(self.checkout).as_posix()))
         inputs.extend(self.witness('games/yorimichi/game.toml'))
         inputs.extend(self.witness('uv.lock'))
         # Operational witnesses are unique paths, not another task fingerprint.
@@ -500,10 +525,10 @@ class TextureAuthority:
             raise ValueError('selected controller changed within the original scheduling graph')
         # Every permission request was independently gated by fresh Rust Current.
 
-    def before_task(self, ctx, step):
+    def before_task(self, ctx, step, *, done=None):
         from atelier.build_v2.legacy_client import AuthorityRefused
         if step is self.aggregate:
-            if set(self.completed) != set(self.steps):
+            if not set(self.texture_steps) <= set(self.completed):
                 raise AuthorityRefused('texture aggregate reached before its complete successful product set')
             self.step, self.runtime = step, None
             self.attempt, self.returned = self.preparation_attempt, None
@@ -512,8 +537,16 @@ class TextureAuthority:
         if self.steps.get(step.name) is not step:
             raise AuthorityRefused('next actual selected family is not yet qualified; completed tasks retained')
         self.step = step
+        if done is not None:
+            self.dones[step.name] = dict(done)
+        if step.name in self.native_steps:
+            if done is None:
+                raise AuthorityRefused('native dispatch lacks original scheduler input observations')
+            self.keys[step.name] = self.build.fingerprint(step, done, index=ctx.build_hash_index,
+                                                        tool_cache=ctx.build_tool_cache)
         self.step_key = self.keys[step.name]
-        self.runtime = self.runtimes[step.name]
+        self.runtime = self.runtimes.get(step.name)
+        self.native_launch = None
         token = self.hashlib.sha256(step.name.encode()).hexdigest()[:20]
         self.guard_relative = 'build/build-v2/legacy-host/' + self.nonce + '/guards/' + token
         self.guard_directory = self.checkout / self.guard_relative
@@ -526,7 +559,7 @@ class TextureAuthority:
     def after_task(self, ctx, step, code, *, done=None):
         from atelier.build_v2.legacy_client import AuthorityRefused
         if code is not None or self.returned not in (None, 0):
-            raise AuthorityRefused('texture task failed; original outputs/certificates remain fenced')
+            raise AuthorityRefused('qualified task failed; original outputs/certificates remain fenced')
         if step is self.aggregate:
             if done is None:
                 raise AuthorityRefused('aggregate lacks the original scheduler product observations')
@@ -536,6 +569,8 @@ class TextureAuthority:
             self._check_aggregate(ctx)
             print('Managed texture aggregate observed: zero commands; original read identity/stamp', flush=True)
             return
+        if done is not None:
+            self.dones[step.name] = dict(done)
         self._check_certificate(ctx, step)
         self.completed[step.name] = self.attempt
 
@@ -543,7 +578,7 @@ class TextureAuthority:
         from atelier.build_plan import read_stamp
         from atelier import build_products
         index = ctx.build_hash_index
-        key = self.build.fingerprint(step, {}, index=index, tool_cache=ctx.build_tool_cache)
+        key = self.build.fingerprint(step, self.dones.get(step.name, {}), index=index, tool_cache=ctx.build_tool_cache)
         stamp = read_stamp(ctx.stamps / (step.name + '.json'))
         if (key != self.keys[step.name] or stamp.get('fingerprint') != key
                 or not self.build.outputs_present(step)
@@ -559,7 +594,7 @@ class TextureAuthority:
         # Reuse the ORIGINAL product inventory/identity and fingerprint encoders,
         # replacing observations from every actual producer with fresh facts.
         fresh = dict(self.aggregate_done)
-        for step in self.steps.values():
+        for step in self.texture_steps.values():
             build_products.feed_results(fresh, build_products.records(step, hasher=ctx.build_hash_index.digest))
         key = self.build.fingerprint(self.aggregate, fresh, index=ctx.build_hash_index,
                                      tool_cache=ctx.build_tool_cache)
@@ -587,7 +622,9 @@ class TextureAuthority:
         keys = {name: self._check_certificate(ctx, self.steps[name]) for name in self.completed}
         self._check_aggregate(ctx)
         for name, attempt in self.completed.items():
-            outputs = self.witness(self.profiles[name].output.relative_to(self.checkout).as_posix())
+            outputs = []
+            for path in self.output_paths[name]:
+                outputs.extend(self.witness(path.relative_to(self.checkout).as_posix()))
             self.client.request({'type': 'settle', 'observation': {'task': name, 'attempt': attempt,
                                  'inputs': keys[name], 'outputs': outputs}})
             print('Managed original game task settled: ' + name, flush=True)
@@ -662,8 +699,63 @@ class TextureAuthority:
             yield self.audit_root
         return owned()
 
+    def before_native_batch(self, ctx, session):
+        """@cc [owner:fontanierh,label:correctness;safety] complete-original-native-batch-members
+        Every actual candidate MUST be an original qualified Step before write_plan
+        invalidates stamps. Complete member preparation/launch intents MUST precede
+        effects. Member observations MUST follow original guard closure, verify_completed
+        and applicable mesh finalization; final publication/index close MUST precede
+        epoch settlement. Failed native attempts MUST NOT receive normal member credit.
+        See test_build_batches shared Session ordering and retained runtime evidence.
+        """
+        from atelier.build_v2.legacy_client import AuthorityRefused
+        from atelier.build_v2.legacy_native_launch import NativeBatchLaunch
+        for step, key, _ in session.candidates:
+            if self.native_steps.get(step.name) is not step:
+                raise AuthorityRefused('original batch includes an unqualified native member')
+            self.keys[step.name] = key
+            self.dones[step.name] = dict(session.done)
+        launch = NativeBatchLaunch(self, session, self.native_runtimes)
+        # Explicit complete member scope BEFORE write_plan unlinks any stamp.
+        self.client.request({'type': 'begin_attempt', 'attempt': {
+            'id': 'native-prepare-' + self.nonce + '-' + session.nonce,
+            'members': [self.metadata, *launch.members],
+            'execution': {'kind': 'in_process'}, 'guard': None}})
+        self.native_launch = launch
+
+    def native_batch_observed(self, ctx, session, completed, code):
+        from atelier.build_v2.legacy_client import AuthorityRefused
+        launch = self.native_launch
+        if launch is None or launch.session is not session:
+            raise AuthorityRefused('native batch result has no original shared launch binding')
+        if self.returned != 0:
+            # Preserve original completed stamps/facts, but never certify a member
+            # under a failed native attempt in this named-assembly frame.
+            self.native_partial = {name: self.keys[name] for name in completed}
+            return
+        for name in completed:
+            if name not in launch.members:
+                raise AuthorityRefused('original native completion has a foreign member')
+            self.dones[name] = dict(session.done)
+            self._check_certificate(ctx, self.native_steps[name])
+            self.completed[name] = self.attempt
+
+    def command_timeout(self):
+        native = getattr(self, 'native_launch', None)
+        return native.work_seconds if native is not None else 120.
+
+    def prepare_native_command(self, ctx, step, command):
+        from atelier.build_v2.legacy_client import AuthorityRefused
+        native = getattr(self, 'native_launch', None)
+        if native is None:
+            raise AuthorityRefused('native command has no qualified original shared batch intent')
+        return native.prepared(ctx, command)
+
     def guard_options(self, argv, environment, kind):
         from atelier.build_v2.legacy_client import authority_now_ns
+        native = getattr(self, 'native_launch', None)
+        if native is not None:
+            return native.guard_options(argv, environment, kind)
         if list(argv) != self.expected_argv or environment != self.expected_environment or kind != 'job':
             raise ValueError('original audit command/environment differs from persisted launch intent')
         remaining = (self.queue_deadline_ns - authority_now_ns()) / 1e9

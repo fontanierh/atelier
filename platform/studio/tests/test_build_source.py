@@ -144,6 +144,8 @@ def test_managed_light_command_keeps_normal_guard_and_only_attests_observed_retu
     events = []
     class BoundProvider:
         guard_directory = tmp_path / 'private-reports'
+        def command_timeout(self):
+            return 120.
         def guard_options(self, argv, env, kind):
             events.append('intent-bound-options')
             return {'custody_fds': (10, 11, 12), 'queue_seconds': 30., 'logical_folder': tmp_path / 'normal-task.guard'}

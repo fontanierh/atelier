@@ -58,6 +58,9 @@ def prepared(ctx, step, command, *, products=None, audit_receipt=None):
         from . import build_audit
         with build_audit.prepared(ctx, step, products, receipt=audit_receipt) as action:
             yield action
+    elif getattr(ctx, 'legacy_authority', None) is not None:
+        with ctx.legacy_authority.prepare_native_command(ctx, step, command) as action:
+            yield action
     else:
         yield command.argv(ctx), getattr(command, 'env', ()), ()
 
@@ -93,7 +96,7 @@ def run_argv(ctx, step, command, argv, env, log, request, slots, *, pass_fds=())
         callback = getattr(command, 'on_poll', None)
         managed = authority.guard_options(argv, env, kind) if authority is not None else {}
         code = guarded.run(argv, folder, purpose=f'atelier build {ctx.game} {step.name}', env=env,
-                           small_gib=small_gib, kind=kind, on_slot=note, timeout=(120. if authority is not None else getattr(command, 'timeout', 0.)),
+                           small_gib=small_gib, kind=kind, on_slot=note, timeout=(authority.command_timeout() if authority is not None else getattr(command, 'timeout', 0.)),
                            watch=getattr(command, 'watch', ()), progress=getattr(command, 'progress', 0.),
                            **inherited, **managed, **({'on_poll': callback} if callback is not None else {}))
         if authority is not None:

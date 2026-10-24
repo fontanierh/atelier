@@ -260,7 +260,7 @@ def _identity(value):
         raise AuthorityLost('authority process identity is invalid')
 
 
-def scheduler_request(game, wanted, *, verify=False, max_heavy_commands=None, fail_fast=False):
+def scheduler_request(game, wanted, *, verify=False, max_heavy_commands=None, fail_fast=False, rebuild_reason=None):
     """Original ordinary selection/options, never an alternate target or scheduling policy.
 
     The existing build entry performs its option checks first and explicitly refuses options
@@ -270,6 +270,8 @@ def scheduler_request(game, wanted, *, verify=False, max_heavy_commands=None, fa
     record = {'version': 2, 'game': game, 'wanted': list(wanted),
               'options': {'verify': verify, 'max_heavy_commands': max_heavy_commands,
                           'fail_fast': fail_fast}}
+    if rebuild_reason is not None:
+        record['options']['rebuild_reason'] = [rebuild_reason] if isinstance(rebuild_reason, str) else list(rebuild_reason)
     return validate_scheduler_request(record)
 
 
@@ -284,7 +286,15 @@ def validate_scheduler_request(record):
                    for name in record['wanted'])):
         raise AuthorityLost('unsupported original scheduler selection')
     options = record['options']
-    _fields(options, ('verify', 'max_heavy_commands', 'fail_fast'))
+    expected = ('verify', 'max_heavy_commands', 'fail_fast')
+    if type(options) is dict and 'rebuild_reason' in options:
+        expected += ('rebuild_reason',)
+    _fields(options, expected)
+    reasons = options.get('rebuild_reason', [])
+    if (type(reasons) is not list or len(reasons) > 64
+            or any(type(value) is not str or not value or len(value) > 1024
+                   or any(ord(c) < 32 for c in value) for value in reasons)):
+        raise AuthorityLost('unsupported original rebuild reason record')
     if type(options['verify']) is not bool or type(options['fail_fast']) is not bool:
         raise AuthorityLost('unsupported original scheduler options')
     maximum = options['max_heavy_commands']
