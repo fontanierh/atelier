@@ -101,7 +101,7 @@ def hidamari_export(out, mesh, layout):
         (folder / 'assets' / f'{name}.fbx').write_bytes(fbx(int(year), ids, vertices))
 
 
-def test_a_rerun_export_reimports_only_what_its_meshes_changed(tmp_path, monkeypatch):
+def test_a_rerun_export_reimports_only_what_its_meshes_changed(tmp_path, monkeypatch, unmanaged_builder_checkout):
     out = tmp_path / 'build'
     ctx = SimpleNamespace(game='yorimichi', out=out, logs=out / 'logs', stamps=out / 'stamps', uproject=None)
     state, imported = {'mesh': [5., 6.], 'layout': {'run': 1}}, []
@@ -131,7 +131,7 @@ def test_a_rerun_export_reimports_only_what_its_meshes_changed(tmp_path, monkeyp
 
 
 @pytest.fixture
-def props_build(tmp_path, monkeypatch):
+def props_build(tmp_path, monkeypatch, unmanaged_builder_checkout):
     """Run the recipe's real cutoff with a deterministic stand-in for Blender and native world import."""
     out = tmp_path / 'build'
     folder = out / 'hidamari/props'

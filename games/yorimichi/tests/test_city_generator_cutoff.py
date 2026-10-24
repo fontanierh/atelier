@@ -10,7 +10,7 @@ from test_volcano_layers import RECIPE
 
 
 @pytest.fixture
-def city_build(tmp_path, monkeypatch):
+def city_build(tmp_path, monkeypatch, unmanaged_builder_checkout):
     out = tmp_path / 'build'
     source = tmp_path / 'producer.py'
     source.write_text('1')
@@ -186,7 +186,7 @@ def test_recipe_keeps_generator_code_and_existing_unreal_cutoffs(tmp_path):
     assert desktop.products[0].name == 'city.native_pieces'
 
 
-def test_source_specific_cutoffs_rebuild_only_the_changed_city_parent(tmp_path, monkeypatch):
+def test_source_specific_cutoffs_rebuild_only_the_changed_city_parent(tmp_path, monkeypatch, unmanaged_builder_checkout):
     out = tmp_path/'build'
     folder = out/'hidamari'
     (folder/'assets').mkdir(parents=True)

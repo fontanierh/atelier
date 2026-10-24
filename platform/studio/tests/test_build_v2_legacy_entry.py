@@ -36,6 +36,7 @@ def test_captured_declaration_path_scope_is_write_free_and_default_unchanged(tmp
     monkeypatch.setenv('ATELIER_BUILD_ROOT', str(tmp_path / 'build'))
     monkeypatch.setenv('ATELIER_CACHE', str(tmp_path / 'cache'))
     monkeypatch.setattr(paths, 'GAMES', tmp_path / 'games')
+    (tmp_path / 'games/example').mkdir(parents=True)
     with paths.captured_declaration('example'):
         assert paths.build_dir('example') == tmp_path / 'build/example'
         assert not (tmp_path / 'build').exists()
@@ -43,7 +44,8 @@ def test_captured_declaration_path_scope_is_write_free_and_default_unchanged(tmp
                           lambda: paths.content_data('example')):
             with pytest.raises(ValueError):
                 forbidden()
-        assert not list(tmp_path.iterdir())
+        assert set(tmp_path.iterdir()) == {tmp_path / 'games'}
+        assert not (tmp_path / 'games/example/unreal').exists()
     assert paths.build_dir('example').is_dir()
     assert paths.cache_dir('metadata').is_dir()
     assert paths.content_data('example').is_dir()

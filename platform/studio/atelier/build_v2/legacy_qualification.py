@@ -382,8 +382,17 @@ def captured_recipe_imports(sources, *, checkout, platform_roots=()):
 
     finder = RecipeFinder(modules, checkout=checkout, platform_roots=platform_roots)
     original = importlib.util.spec_from_file_location
+    unspecified = object()
 
-    def fixed_spec(name, location=None, *, loader=None, submodule_search_locations=None):
+    def original_spec(name, location, loader, locations):
+        # importlib distinguishes omitted (infer __init__.py package) from explicit
+        # None (plain module). Preserve that distinction through the wrapper.
+        options = {'loader': loader}
+        if locations is not unspecified:
+            options['submodule_search_locations'] = locations
+        return original(name, location, **options)
+
+    def fixed_spec(name, location=None, *, loader=None, submodule_search_locations=unspecified):
         if location is not None:
             filename = str(Path(location).absolute())
             real_location = Path(filename).resolve(strict=True)
@@ -398,16 +407,14 @@ def captured_recipe_imports(sources, *, checkout, platform_roots=()):
                                 importlib.machinery.SourcelessFileLoader,
                                 importlib.machinery.ExtensionFileLoader):
                             raise UnsupportedOrigin('installed spec supplied an unqualified custom loader')
-                        return original(name, location, loader=loader,
-                                        submodule_search_locations=submodule_search_locations)
+                        return original_spec(name, location, loader, submodule_search_locations)
                     raise UnsupportedOrigin('recipe spec source is outside the named capture')
                 if real_location != Path(filename):
                     raise UnsupportedOrigin('recipe spec uses an unreviewed logical alias')
                 if loader is not None and type(loader) is not CapturedLoader:
                     raise UnsupportedOrigin('recipe supplied an unqualified source loader')
                 loader = CapturedLoader(name, source)
-        return original(name, location, loader=loader,
-                        submodule_search_locations=submodule_search_locations)
+        return original_spec(name, location, loader, submodule_search_locations)
 
     previous_finders = list(sys.meta_path)
     sys.meta_path.insert(0, finder)

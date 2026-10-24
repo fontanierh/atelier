@@ -219,3 +219,28 @@ def test_private_declarations_ignore_poisoned_preloaded_graph_context_and_paths(
     assert build_products.Graph.select is poisoned
     assert controller_entry.declaration_context is poisoned
     assert paths.build_root is poisoned and paths.build_dir is poisoned
+
+
+def test_captured_package_loader_preserves_default_path_and_explicit_plain_module(tmp_path):
+    from atelier.build_v2.legacy_qualification import captured_recipe_imports
+    package = tmp_path / 'platform/studio/captured_declaration_package'
+    package.mkdir(parents=True)
+    source = CapturedCode(str(package / '__init__.py'), b'ORIGIN = __file__\n')
+    with captured_recipe_imports([source], checkout=tmp_path):
+        loaded_package = importlib.import_module('captured_declaration_package')
+        assert loaded_package.__path__ == [str(package)]
+        assert loaded_package.ORIGIN == str(package / '__init__.py')
+        plain_spec = importlib.util.spec_from_file_location(
+            'explicit_plain', package / '__init__.py', submodule_search_locations=None)
+        plain = importlib.util.module_from_spec(plain_spec)
+        plain_spec.loader.exec_module(plain)
+        assert not hasattr(plain, '__path__')
+        assert plain.ORIGIN == str(package / '__init__.py')
+        explicit_paths = [str(package / 'explicit-search')]
+        explicit_spec = importlib.util.spec_from_file_location(
+            'explicit_package', package / '__init__.py', submodule_search_locations=explicit_paths)
+        explicit = importlib.util.module_from_spec(explicit_spec)
+        explicit_spec.loader.exec_module(explicit)
+        assert explicit.__path__ == explicit_paths
+        assert explicit.ORIGIN == str(package / '__init__.py')
+    assert 'captured_declaration_package' not in sys.modules
