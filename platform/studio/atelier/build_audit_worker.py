@@ -308,7 +308,8 @@ class Observer:
         """@cc [owner:fontanierh,label:correctness;safety] declared-directory-validation-metadata
         Only the retained actual declared framework directory validator through
         original pathlib stat/lstat code MAY inspect ancestor metadata for an EXACT
-        declared directory input. Its code/globals/builtins MUST remain bound;
+        declared directory input or the exact parent of a declared file input.
+        Its code/globals/builtins MUST remain bound;
         unknown targets, direct calls, replacement helpers and directory listing,
         contents or writes MUST retain the original checks. This is no input grant.
         """
@@ -328,8 +329,8 @@ class Observer:
         target = frame.f_locals.get('path')
         if type(target) is not type(self.scratch) or not target.is_absolute():
             return False
-        return any(directory and target == source and path in source.parents
-                   for source, directory in self.inputs)
+        return any((target == source if directory else target == source.parent)
+                   and path in source.parents for source, directory in self.inputs)
 
     def checked_open(self, function, path, *args, **kwargs):
         # A real stdlib rmtree opens owned child directories through its held parent.

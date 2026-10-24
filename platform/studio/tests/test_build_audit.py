@@ -675,7 +675,8 @@ def test_managed_file_copy_remains_in_original_observer_without_ffi_permission(a
 
 @pytest.mark.parametrize('operation,passed', [('validator', True), ('direct', False),
     ('unknown', False), ('listing', False), ('replaced', False), ('globals', False), ('write', False)])
-def test_declared_directory_validator_ancestor_metadata_stays_source_bound(action, operation, passed):
+@pytest.mark.parametrize('input_kind', ['directory', 'file'])
+def test_declared_directory_validator_ancestor_metadata_stays_source_bound(action, operation, passed, input_kind):
     a = action
     directory = a.root / 'plans/one'; directory.mkdir(parents=True)
     (directory / 'record.json').write_text('known input')
@@ -691,7 +692,8 @@ def test_declared_directory_validator_ancestor_metadata_stays_source_bound(actio
     a.code('from atelier.export_manifest import real_directory\ndirectory=Path(' + repr(str(directory)) + ')\n'
            + expression + '\noutput.write_text(source.read_text())')
     from atelier.build_inputs import local_imports
-    a.step.inputs.extend([directory, *local_imports(a.script, (a.root,))])
+    a.step.inputs.extend([directory if input_kind == 'directory' else directory/'record.json',
+                          *local_imports(a.script, (a.root,))])
     assert a.run() == (0 if passed else 1), a.messages
     report = a.report()
     assert report['passed'] is passed
@@ -772,3 +774,23 @@ output.write_text('caught direct descriptor refusal')
     assert a.run() == 1, a.messages
     assert not a.report()['passed']
     assert any(v['operation'] == 'descriptor access' for v in a.report()['violations'])
+
+
+@pytest.mark.parametrize('operation', ['listing', 'sibling-read', 'direct', 'ancestor-target'])
+def test_declared_file_parent_validation_does_not_become_directory_permission(action, operation):
+    a = action
+    directory = a.root/'terrain/final';directory.mkdir(parents=True)
+    payload = directory/'surface.npz';payload.write_bytes(b'owned declared payload')
+    (directory/'sibling.txt').write_text('not declared')
+    expression = {'listing':'list(directory.iterdir())',
+                  'sibling-read':'(directory/"sibling.txt").read_text()',
+                  'direct':'directory.stat()',
+                  'ancestor-target':'real_directory(directory.parent)'}[operation]
+    a.code('from atelier.export_manifest import real_directory\ndirectory=Path('+repr(str(directory))+')\n'
+           'real_directory(directory)\n'+expression+'\noutput.write_text(source.read_text())')
+    from atelier.build_inputs import local_imports
+    a.step.inputs.extend([payload,*local_imports(a.script,(a.root,))])
+    assert a.run()==1,a.messages
+    report=a.report()
+    assert not report['passed'] and report['violations']
+    assert any(row['operation']=='input directory validation metadata' for row in report['accesses'])
