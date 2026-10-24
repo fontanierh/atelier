@@ -357,7 +357,7 @@ def clear_outputs(outputs):
         checked(root)
 
 
-def execute(spec, *, blender=False, before=None, after=None):
+def execute(spec, *, blender=False, before=None, after=None, execution_scope=None):
     """Execute once; the observer remains armed until this fresh process exits.
 
     ``before``/``after`` are framework-only checks, never recipe callbacks. Native adapters use
@@ -384,7 +384,9 @@ def execute(spec, *, blender=False, before=None, after=None):
     observer.install()
     succeeded = False
     try:
-        runpy.run_path(script, run_name='__main__')
+        from contextlib import nullcontext
+        with (execution_scope(observer) if execution_scope is not None else nullcontext()):
+            runpy.run_path(script, run_name='__main__')
         succeeded = True
     except SystemExit as error:
         succeeded = error.code in (None, 0)

@@ -34,6 +34,8 @@ class _CapturedRuntime:
     root: Path
     files: tuple[str, ...]
     _origin: object = field(repr=False, compare=False)
+    nested_tool: object = None
+    legacy_outputs: tuple[Path, ...] = ()
 
 
 def captured_runtime_inputs(step):
@@ -58,7 +60,7 @@ def enabled(step):
     return step.audit or bool(runtime)
 
 
-def _bind_captured_runtime(step, *, checkout, issuer_files):
+def _bind_captured_runtime(step, *, checkout, issuer_files, code_inputs=(), nested_tool=None, legacy_outputs=()):
     """Fixed issuer semantic descriptor only; never a mutation/launch capability.
 
     Use the existing step inputs and named worker helpers/initializers. This private
@@ -68,7 +70,16 @@ def _bind_captured_runtime(step, *, checkout, issuer_files):
     root = Path(checkout)
     names = {path.relative_to(root).as_posix() for path in map(Path, required_inputs(step))
              if path.suffix == '.py' and path not in SUPPORT}
+    names.update(Path(path).relative_to(root).as_posix() for path in code_inputs)
     names.update(_CAPTURED_WORKER)
+    if nested_tool is not None:
+        from .build_v2.legacy_tool_action import checked_node
+        checked_node(nested_tool)
+        names.add('platform/studio/atelier/build_v2/legacy_tool_action.py')
+        names.add('platform/studio/atelier/build_v2/python_worker.py')
+        names.add('platform/studio/atelier/build_v2/protocol.py')
+        if tuple(legacy_outputs) != tuple(step.outputs) or step.products or not step.cutoff or step.cache:
+            raise ValueError('nested legacy action differs from its original cutoff/output role')
     for name in list(names):
         parent = (root / name).parent
         while parent != root:
@@ -80,7 +91,7 @@ def _bind_captured_runtime(step, *, checkout, issuer_files):
             parent = parent.parent
     if not names <= set(issuer_files):
         raise ValueError('selected worker code is outside the original named issuer capture')
-    runtime = _CapturedRuntime(root, tuple(sorted(names)), _CAPTURED_ORIGIN)
+    runtime = _CapturedRuntime(root, tuple(sorted(names)), _CAPTURED_ORIGIN, nested_tool, tuple(legacy_outputs))
     step._captured_audit_runtime = runtime
     return runtime
 
@@ -91,7 +102,11 @@ def validate(step):
         raise ValueError(f'{step.name}: audit must be a boolean')
     if not enabled(step):
         return
-    if (not step.products or len(step.commands) != 1
+    runtime = getattr(step, '_captured_audit_runtime', None)
+    legacy = bool(captured_runtime_inputs(step) and runtime.nested_tool is not None
+                  and runtime.legacy_outputs == tuple(step.outputs) and not step.products
+                  and step.cutoff and not step.cache)
+    if ((not step.products and not legacy) or len(step.commands) != 1
             or type(step.commands[0]) not in (Python, Blender, UnrealScript)):
         raise ValueError(f'{step.name}: audit requires named products and exactly one Python, Blender or UnrealScript command')
     if type(step.commands[0]) is not Python:
@@ -127,6 +142,9 @@ def tool_context(step, hasher, *, cache=None):
         runtime = getattr(step, '_captured_audit_runtime', None)
         if runtime is not None:
             inputs = captured_runtime_inputs(step)
+            if runtime.nested_tool is not None:
+                from .build_v2.legacy_tool_action import node_identity
+                context = {**context, 'nested_tool': node_identity(runtime.nested_tool, hasher)}
             context = {**context, 'captured_python_runtime': {
                 'version': 'captured-audited-python/1', 'flags': ['-I', '-S', '-B'],
                 'files': [(name, hasher(path)) for name, path in zip(runtime.files, inputs)]}}
@@ -155,6 +173,18 @@ def tool_context(step, hasher, *, cache=None):
 def roots(ctx, step):
     """Audit ownership permits native products, but never permits restoring native cache entries."""
     from .build import Python, UnrealScript
+    runtime = getattr(step, '_captured_audit_runtime', None)
+    if captured_runtime_inputs(step) and runtime.nested_tool is not None:
+        if (not runtime.legacy_outputs or runtime.legacy_outputs != tuple(step.outputs)
+                or step.products or not step.cutoff or step.cache):
+            raise ValueError('nested legacy output declaration changed')
+        for path in runtime.legacy_outputs:
+            path = Path(path)
+            if not path.is_absolute() or not path.is_relative_to(ctx.out) or path == ctx.out:
+                raise ValueError('nested legacy output is outside the owned build root')
+            if any(p.is_symlink() for p in (path, *path.parents)):
+                raise ValueError('linked nested legacy output')
+        return
     if type(step.commands[0]) is Python:
         from .build_cache import roots as portable_roots
         return portable_roots(ctx, step)
@@ -273,7 +303,10 @@ def prepared(ctx, step, products, *, receipt=None):
     roots(ctx, step)
     command = step.commands[0]
     inputs = [*required_inputs(step), *(p for name in step.reads for p in products[name].roots())]
-    output_roots = [Path(p).resolve() for product in step.products for p in product.paths]
+    runtime = getattr(step, '_captured_audit_runtime', None)
+    output_roots = ([Path(p).resolve() for p in runtime.legacy_outputs]
+                    if runtime is not None and runtime.nested_tool is not None else
+                    [Path(p).resolve() for product in step.products for p in product.paths])
     report_path = ctx.logs / f'{step.name}.audit.json'
     authority = getattr(ctx, 'legacy_authority', None)
     runtime = getattr(step, '_captured_audit_runtime', None)
@@ -337,6 +370,11 @@ def prepared(ctx, step, products, *, receipt=None):
             argv = authority.audit_argv(spec)
             config['legacy_environment'] = dict(authority.action_environment(env))
             config['legacy_code_files'] = list(runtime.files)
+            if runtime.nested_tool is not None:
+                from .build_v2.legacy_tool_action import node_spec
+                config['legacy_nested_tool'] = node_spec(runtime.nested_tool, ctx.build_hash_index.digest)
+                config['inputs'].extend((str(path), False) for path in
+                                       (runtime.nested_tool.image, *runtime.nested_tool.libraries))
             env = tuple(config['legacy_environment'].items())
             spec.write_text(json.dumps(config))
             spec.chmod(0o600)

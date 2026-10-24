@@ -103,6 +103,7 @@ def main(manifest, specification):
              for name in manifest['issuer_files']]
     if _captured_source(files).digest != manifest['issuer_digest']:
         raise ValueError('captured action issuer changed')
+    nested_tool = spec.pop('legacy_nested_tool', None)
     selected = spec.pop('legacy_code_files')
     if (type(selected) is not list or not selected or len(selected) != len(set(selected))
             or not set(selected) <= dict(files).keys() or any(not name.endswith('.py') for name in selected)):
@@ -138,7 +139,13 @@ def main(manifest, specification):
             # installs. Atomic JSON writes then remain inside that exact scope;
             # sibling temporary files never acquire product ownership.
             from atelier.atomic_files import managed_temporaries
+            from contextlib import nullcontext
+            def before(observer):
+                if nested_tool is None:
+                    return nullcontext()
+                from atelier.build_v2.legacy_tool_action import node_execution
+                return node_execution(nested_tool, scratch=spec['scratch'], sources=sources, observer=observer)
             with managed_temporaries(Path(spec['scratch']) / 'atomic-tmp'):
-                build_audit_worker.execute(spec, after=source_check.require_clean)
+                build_audit_worker.execute(spec, after=source_check.require_clean, execution_scope=before)
         finally:
             runpy.run_path = original_run

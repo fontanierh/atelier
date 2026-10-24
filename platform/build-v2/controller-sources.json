@@ -63,6 +63,7 @@
     "platform/studio/atelier/build_v2/controller_client.py",
     "platform/studio/atelier/build_v2/legacy_bootstrap.py",
     "platform/studio/atelier/build_v2/legacy_action.py",
+    "platform/studio/atelier/build_v2/legacy_tool_action.py",
     "platform/studio/atelier/build_v2/legacy_native_action.py",
     "platform/studio/atelier/build_v2/legacy_client.py",
     "platform/studio/atelier/build_v2/legacy_qualification.py",
