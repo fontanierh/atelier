@@ -29,7 +29,7 @@ CODE_DIGESTS = {'games/yorimichi/world/coast_water.py': '69cd33cb542a1250b15de84
  'games/yorimichi/world/random_stream.py': 'c8416c00a0e4efe014de70817ec3ba0dcd9e0d406746ab7f4da120c0b650fd3d',
  'games/yorimichi/world/region_mesh_parts.py': 'd93f2c4deb9c2c08bd730b7a4f1476b0ccf7a3dc7de2f604363c2ce8d4cc4725',
  'games/yorimichi/world/region_plan_files.py': '7451f36a391a5bd6a4c7e12a489b3ec8da64df3a14843257b7626e3958b736c6',
- 'games/yorimichi/world/region_query.py': 'fb645387a09910a3cbd05803ae57a3aa61440ce4082c268fd1483806e6bf0172',
+ 'games/yorimichi/world/region_query.py': 'fa96910b6715daa5ed9cde939b9a8ed7b9677ea869983c385849e2785e3dce15',
  'games/yorimichi/world/regions/belmonte/__init__.py': '296904b68a50f536419d21b83547f9083406e242cd304d16104ccdc270561614',
  'games/yorimichi/world/regions/belmonte/ground_names.py': '2929a49d9149ae30a5d440e2804eea38dcb04fae545717c5ac2716c7f3634ca1',
  'games/yorimichi/world/regions/belmonte/layout.py': 'f04288a374d62e254990724334f8359474d7a9dc1d4f0ab1596061a797748117',

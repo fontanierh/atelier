@@ -8,6 +8,7 @@ import zipfile
 
 import numpy as np
 
+from atelier.atomic_files import managed_temporary_parent
 from atelier.export_manifest import name, real_directory
 
 MAX_BYTES = 256 * 1024 * 1024
@@ -143,6 +144,11 @@ def _decode(payload, *, owner, stage):
 
 
 def save(path, surfaces, *, owner, stage):
+    """@cc [owner:fontanierh,label:correctness;safety] scoped-region-query-temporaries
+    Query bytes, unchanged-file identity and default sibling replacement MUST stay
+    unchanged. Managed calls MUST use their existing held temporary scope on the
+    destination filesystem, without enlarging the exact product ownership.
+    """
     payload = encode(surfaces, owner=owner, stage=stage)
     path = Path(path); real_directory(path.parent)
     if path.exists() or path.is_symlink():
@@ -151,7 +157,7 @@ def save(path, surfaces, *, owner, stage):
         if path.read_bytes() == payload:
             return False
     path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(dir=path.parent, prefix='.query-', delete=False) as stream:
+    with tempfile.NamedTemporaryFile(dir=managed_temporary_parent(path), prefix='.query-', delete=False) as stream:
         temporary = Path(stream.name)
         try:
             stream.write(payload); stream.flush(); temporary.replace(path)

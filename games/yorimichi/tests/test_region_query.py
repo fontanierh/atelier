@@ -111,3 +111,39 @@ def test_linked_input_output_and_unknown_fields_refuse(query, tmp_path):
     arrays['metadata'] = np.frombuffer(json.dumps(meta).encode(), dtype=np.uint8)
     stream = io.BytesIO(); np.savez_compressed(stream, **arrays)
     with pytest.raises(ValueError, match='foreign'): query.decode(stream.getvalue(), owner='Harbor', stage='raw')
+
+
+def test_query_save_uses_existing_scoped_temp_and_preserves_default_bytes_mode_mtime(query,tmp_path,monkeypatch):
+    from atelier.atomic_files import managed_temporaries
+    default=tmp_path/'default/query.npz';managed=tmp_path/'managed/query.npz';scratch=tmp_path/'scratch'
+    default.parent.mkdir();managed.parent.mkdir()
+    original=query.tempfile.NamedTemporaryFile;observed=[]
+    def temporary(*args,**kwargs):
+        observed.append(Path(kwargs['dir']))
+        return original(*args,**kwargs)
+    monkeypatch.setattr(query.tempfile,'NamedTemporaryFile',temporary)
+    assert query.save(default,surfaces(),owner='Harbor',stage='raw')
+    with managed_temporaries(scratch):
+        assert query.save(managed,surfaces(),owner='Harbor',stage='raw')
+        before=managed.stat().st_mtime_ns
+        assert not query.save(managed,surfaces(),owner='Harbor',stage='raw')
+        assert managed.stat().st_mtime_ns==before
+    assert observed==[default.parent,scratch]
+    assert default.read_bytes()==managed.read_bytes() and default.stat().st_mode==managed.stat().st_mode
+    assert list(scratch.iterdir())==[]
+    other=tmp_path/'after/query.npz';other.parent.mkdir()
+    assert query.save(other,surfaces(),owner='Harbor',stage='raw') and observed[-1]==other.parent
+
+
+def test_query_save_refuses_cross_filesystem_before_temp_creation(query,tmp_path,monkeypatch):
+    from atelier.atomic_files import managed_temporaries
+    target=tmp_path/'products/query.npz';target.parent.mkdir();scratch=tmp_path/'scratch'
+    original=Path.lstat
+    def metadata(path,*args,**kwargs):
+        info=original(path,*args,**kwargs)
+        return SimpleNamespace(st_mode=info.st_mode,st_dev=info.st_dev+1) if path==target.parent else info
+    with managed_temporaries(scratch):
+        monkeypatch.setattr(Path,'lstat',metadata)
+        with pytest.raises(ValueError,match='same-filesystem'):
+            query.save(target,surfaces(),owner='Harbor',stage='raw')
+    assert not target.exists() and list(scratch.iterdir())==[]

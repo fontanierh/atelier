@@ -722,7 +722,16 @@ def test_actual_captured_graph_qualifies_data_before_private_runtime_without_tas
     spec = captured_spec('_actual_data_runtime_profile',
                          CapturedCode(str(paths.REPO / name), (paths.REPO / name).read_bytes()))
     profile = importlib.util.module_from_spec(spec); spec.loader.exec_module(profile)
-    captured = capture_named_sources(paths.REPO, profile.source_names(paths.REPO))
+    named = profile.source_names(paths.REPO)
+    assert 'games/yorimichi/world/regions/hidamari/logical/__init__.py' in named
+    for name in named:
+        parent = (paths.REPO/name).parent
+        while parent != paths.REPO:
+            initializer = parent/'__init__.py'
+            if initializer.is_file():
+                assert initializer.relative_to(paths.REPO).as_posix() in named
+            parent = parent.parent
+    captured = capture_named_sources(paths.REPO, named)
     manifest = {'checkout': str(paths.REPO), 'issuer_digest': captured.digest,
                 'issuer_files': [name for name, _ in captured.files], 'nonce': 'e' * 32,
                 'python_context': original_python_context()}
@@ -774,7 +783,12 @@ def test_actual_captured_graph_qualifies_data_before_private_runtime_without_tas
         assert set(observation.produced_inputs) <= authority.generated_inputs
         assert tuple(path for _, roots in observation.products for path in roots) == authority.output_paths[step.name]
         assert build.required_inputs(step) and step.name not in authority.native_steps
-        assert set(authority.call_steps) == {'world.treehouse_trees.geometry', 'world.treehouse_trees.assembled'}
+        assert set(authority.call_steps) == {'world.treehouse_trees.geometry', 'world.treehouse_trees.assembled', 'world.brinecove.sources'}
+        harbor = authority.native_steps['world.hidamari.source.HD_Harbor']
+        assert harbor.batch.group == 'hidamari logical geometry' and harbor.name not in authority.single_native
+        assert len(authority.native_profiles[harbor.name].code_inputs) == 94
+        assert set(authority.native_profiles[harbor.name].produced_inputs) <= authority.generated_inputs
+        assert authority.output_paths['world.brinecove.sources'] == (paths.REPO/'build/yorimichi/digests/brinecove-source-library.json',)
         for actual in authority.call_steps.values():
             authority.validate_call(actual, actual.commands[0])
         assert all(vars(member)['_captured_native_runtime'] is authority.native_runtimes[name]
@@ -1184,3 +1198,68 @@ def test_actual_standalone_storage_reaches_original_native_single_intent_and_gua
             assert graph.owners['treehouse.canopy_dimensions'] == 'world.treehouse_trees.data'
         build_source.run_argv(ctx, step, step.commands[0], argv, environment, io.StringIO(), ('job', None), None)
     assert len(guards) == 1 and returns == [0]
+
+
+def test_actual_harbor_source_uses_original_single_member_session_and_guard_intents(tmp_path,monkeypatch):
+    """Real factory/profile/Session, scripted permission+guard only; no worker/product proof."""
+    import io
+    from dataclasses import replace
+    from atelier import build,build_products,build_batches,build_audit,build_source,paths
+    from atelier.build_v2.controller_entry import declaration_context
+    from atelier.build_v2.controller_client import capture_controller
+    from atelier.build_v2.legacy_qualification import CapturedCode,captured_spec
+    from atelier.build_v2.legacy_native_action import _bind_native_runtime
+    from atelier.build_v2.legacy_client import authority_now_ns
+    from atelier.harness import capacity_runtime
+    for key in ('ATELIER_CRATERPARK_EDITOR_PARK','ATELIER_CRATERPARK_EDITOR_LINES','ATELIER_CRATERPARK_V4_DESIGN'):
+        monkeypatch.delenv(key,raising=False)
+    path=paths.REPO/'games/yorimichi/legacy_hidamari_harbor_source_profile.py'
+    spec=captured_spec('_real_harbor_session_profile',CapturedCode(str(path),path.read_bytes()))
+    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    realctx=declaration_context('yorimichi');graph=build_products.Graph(build.load_recipe('yorimichi').steps(realctx))
+    ordered=graph.select(['data.stage']);position=next(i for i,s in enumerate(ordered) if s.name=='world.hidamari.source.HD_Harbor')
+    step=ordered[position];assert not build_batches.compatible(step,ordered[position+1])
+    observed=module.qualify_hidamari_harbor_source(step,checkout=paths.REPO,output_root=realctx.out)
+    issuer_path=paths.REPO/'games/yorimichi/legacy_qualification.py'
+    issuer_spec=captured_spec('_actual_harbor_issuer_names',CapturedCode(str(issuer_path),issuer_path.read_bytes()))
+    issuer=importlib.util.module_from_spec(issuer_spec);issuer_spec.loader.exec_module(issuer)
+    issuer_names=issuer.source_names(paths.REPO)
+    runtime=_bind_native_runtime(step,checkout=paths.REPO,issuer_files=issuer_names,code_inputs=observed.code_inputs)
+    a=_output_witness_authority(tmp_path);a.nonce='d'*32;a.keys={};a.dones={}
+    a.native_steps={step.name:step};a.native_profiles={step.name:observed};a.native_runtimes={step.name:runtime}
+    a.native_qualifiers={step.name:module.qualify_hidamari_harbor_source}
+    # Pure revalidation uses the real original checkout/output; control writes use
+    # independent owned fixture directories, not the game's stamps or outputs.
+    a.checkout=paths.REPO
+    out=tmp_path/'output';ctx=SimpleNamespace(game='yorimichi',out=out,logs=out/'logs',stamps=out/'stamps')
+    session=build_batches.Session(ctx,[(step,'e'*64,{})],{},None,{},lambda *args:None,{})
+    calls=[]
+    def request(op):
+        if not calls:assert not session.folder.exists()
+        calls.append(op)
+    a.client=SimpleNamespace(request=request)
+    a.metadata_scopes={'control.scheduler':['state']};a.custody={'build':10,'content':11,'writer':12}
+    a.before_native_batch(ctx,session)
+    assert calls[0]['attempt']['members']==['control.scheduler',step.name]
+    session.write_plan()
+    plan=__import__('json').loads((session.folder/'plan.json').read_text())
+    assert len(plan['actions'])==1 and plan['actions'][0]['name']==step.name
+    captured=capture_controller(paths.REPO);captured.materialize(tmp_path/'distribution');a.files=captured.files
+    a.manifest.update(distribution=str(tmp_path/'distribution'),source_digest=captured.digest,
+        issuer_digest='b'*64,scheduler_request={'digest':'c'*64},work_deadline_ns=authority_now_ns()+3600_000_000_000)
+    # Redirect only operational fixture namespace, preserving real Step/runtime.
+    launch=a.native_launch;launch.directory=tmp_path/'guard';launch.context=launch.directory/'native-context.json'
+    bundle=tmp_path/'Blender.app/Contents';ctx.blender=str(bundle/'MacOS/Blender')
+    monkeypatch.delenv('ATELIER_CAPACITY_CLIENT',raising=False)
+    monkeypatch.setattr(capacity_runtime,'read_configuration',lambda path:{'schema':2})
+    monkeypatch.setattr(build_audit,'installation',lambda command:[bundle])
+    command=replace(step.commands[0],script=build_batches.WORKER,args=(),env=(*step.commands[0].env,('ATELIER_BATCH',str(session.folder))))
+    with a.prepare_native_command(ctx,step,command) as (argv,environment,fds):
+        assert len(calls)==2 and calls[-1]['attempt']['members']==['control.scheduler',step.name]
+        intent=calls[-1]['attempt']['execution']['launch'];assert intent['execution_ns']==600_000_000_000
+        assert step.batch.max_seconds==240 and launch.session is session and launch.members==[step.name]
+        assert dict(environment)['PYTHONHASHSEED']=='0' and fds==()
+        options=a.guard_options(argv,dict(environment),'job')
+        assert options['custody_fds']==(10,11,12) and 0<options['queue_seconds']<=1800
+        assert session.guard==launch.directory
+    assert not (ctx.stamps/(step.name+'.json')).exists()

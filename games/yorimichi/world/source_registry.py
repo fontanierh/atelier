@@ -2,6 +2,7 @@
 import json
 from pathlib import Path
 import tempfile
+from atelier.atomic_files import managed_temporary_parent
 
 
 def models(library, prefix):
@@ -20,11 +21,13 @@ def publish(library, output, prefix):
     Unrelated registry entries MUST NOT change these bytes. Production verification MUST read
     this declared snapshot, never silently fall back to the whole registry on a missing snapshot.
     Model and provenance bytes MUST remain separate inputs of the consuming action.
+    Managed calls MUST use only their existing owned temporary scope on the same
+    filesystem; unmanaged calls retain sibling temporaries and identical JSON bytes.
     """
     value = {'files': models(library, prefix)}
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(mode='w', dir=output.parent, prefix='.source-registry-', delete=False) as stream:
+    with tempfile.NamedTemporaryFile(mode='w', dir=managed_temporary_parent(output), prefix='.source-registry-', delete=False) as stream:
         temporary = Path(stream.name)
         try:
             json.dump(value, stream, sort_keys=True, separators=(',', ':'))

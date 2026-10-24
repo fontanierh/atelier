@@ -15,7 +15,7 @@ CODE_SEEDS = (
     'skatepark_build.py', 'treehouse_pieces.py', 'export_digest.py', 'city_inputs.py',
     'city_tile_products.py', 'city_harbor_inputs.py', 'tools/racing_assets.py',
     'tools/package_cook.py', 'tools/game_binary.py', 'world/source_registry.py',
-    'world/yori.py', 'world/gen_world.py', 'world/farhills_surface.py', 'world/regions/hidamari/layout_data.py', 'world/regions/hidamari/city_data.py', 'world/craterpark_layout.py', 'world/texture_catalog.py', 'world/train/bake_manifest.py',
+    'world/yori.py', 'world/gen_world.py', 'world/farhills_surface.py', 'world/regions/hidamari/layout_data.py', 'world/regions/hidamari/city_data.py', 'world/regions/hidamari/plan_asset.py', 'world/regions/hidamari/logical/HD_Harbor.py', 'world/regions/hidamari/logical/__init__.py', 'world/craterpark_layout.py', 'world/texture_catalog.py', 'world/train/bake_manifest.py',
     'world/regions/brinecove/foliage_names.py', 'world/regions/craterpark/v2/v4_config.py',
     'world/regions/craterpark/v2/trees.py', 'unreal/Scripts/horse_data.py',
     'craterpark_atomic_build.py', 'forest_atomic_build.py', 'props_atomic_build.py',
@@ -56,7 +56,7 @@ CODE_SEEDS = (
     'world/regions/treehouse/canopy_data.py', 'legacy_treehouse_assembly_profile.py',
     'legacy_treehouse_recolour_profile.py', 'legacy_treehouse_library_profile.py',
     'world/regions/treehouse/assemble_atomic.py',
-    'world/regions/craterpark/v2/editor_generate.py', 'legacy_craterpark_geometry_profile.py', 'legacy_craterpark_layout_profile.py', 'legacy_world_layout_profile.py', 'legacy_farhills_profile.py', 'legacy_hidamari_layout_profile.py', 'legacy_hidamari_projection_profile.py',
+    'world/regions/craterpark/v2/editor_generate.py', 'legacy_craterpark_geometry_profile.py', 'legacy_craterpark_layout_profile.py', 'legacy_world_layout_profile.py', 'legacy_farhills_profile.py', 'legacy_hidamari_layout_profile.py', 'legacy_hidamari_projection_profile.py', 'legacy_hidamari_harbor_source_profile.py', 'legacy_brinecove_sources_profile.py',
 )
 
 
@@ -595,6 +595,35 @@ class TextureAuthority:
                 code_inputs=profile.code_inputs)
             self.output_paths[step.name] = tuple(path for _, roots in profile.products for path in roots)
             self.generated_inputs.update(profile.produced_inputs)
+        from legacy_hidamari_harbor_source_profile import qualify_hidamari_harbor_source
+        for step in selected:
+            if step.name != 'world.hidamari.source.HD_Harbor':
+                continue
+            available = {*self.steps, *self.pending_tools, 'world.textures'}
+            if ('world.farhills' not in self.single_native
+                    or any(name not in available for name in graph.prerequisites(step))):
+                continue
+            profile = qualify_hidamari_harbor_source(step, checkout=self.checkout,
+                                                    output_root=self.checkout / 'build/yorimichi')
+            self.native_qualifiers[step.name] = qualify_hidamari_harbor_source
+            self.native_steps[step.name], self.native_profiles[step.name] = step, profile
+            self.native_runtimes[step.name] = _bind_native_runtime(
+                step, checkout=self.checkout, issuer_files=manifest['issuer_files'],
+                code_inputs=profile.code_inputs)
+            self.steps[step.name] = step
+            self.output_paths[step.name] = tuple(path for _, roots in profile.products for path in roots)
+            self.generated_inputs.update(profile.produced_inputs)
+        from legacy_brinecove_sources_profile import qualify_brinecove_sources
+        brine_source = next((step for step in selected if step.name == 'world.brinecove.sources'), None)
+        if brine_source is not None and 'world.hidamari.source.HD_Harbor' in self.native_steps:
+            profile = qualify_brinecove_sources(brine_source, checkout=self.checkout,
+                                                output_root=self.checkout / 'build/yorimichi')
+            bind_captured_call(brine_source, checkout=self.checkout,
+                               issuer_files=manifest['issuer_files'], code_inputs=profile.code_inputs)
+            self.call_steps[brine_source.name], self.call_profiles[brine_source.name] = brine_source, profile
+            self.call_runtimes[brine_source.name] = vars(brine_source)['_captured_call_runtime']
+            self.steps[brine_source.name] = brine_source
+            self.output_paths[brine_source.name] = profile.output_paths
         self.dones = {}
         self.native_launch = None
         first = next((step for step in selected if step.controller is None), None)
@@ -934,10 +963,15 @@ class TextureAuthority:
                 or set(vars(step)) != {field.name for field in fields(step) if field.init} | {'_captured_call_runtime'}):
             raise AuthorityRefused('in-process callback differs from its exact original role/runtime')
         captured_call_inputs(step)
-        qualifier = qualify_treehouse_discovery if step is self.discovery else qualify_treehouse_assembly
-        with self.raw_native_members():
-            actual = qualifier(replace(step), checkout=self.checkout,
-                               output_root=self.checkout / 'build/yorimichi')
+        if step.name == 'world.brinecove.sources':
+            from legacy_brinecove_sources_profile import qualify_brinecove_sources
+            actual = qualify_brinecove_sources(replace(step), checkout=self.checkout,
+                                               output_root=self.checkout / 'build/yorimichi')
+        else:
+            qualifier = qualify_treehouse_discovery if step is self.discovery else qualify_treehouse_assembly
+            with self.raw_native_members():
+                actual = qualifier(replace(step), checkout=self.checkout,
+                                   output_root=self.checkout / 'build/yorimichi')
         if actual != self.call_profiles[step.name]:
             raise AuthorityRefused('callback source, helper or original child closure changed before execution')
 
@@ -1100,6 +1134,13 @@ class TextureAuthority:
         for step, key, _ in session.candidates:
             if self.native_steps.get(step.name) is not step:
                 raise AuthorityRefused('original batch includes an unqualified native member')
+            qualifier = getattr(self, 'native_qualifiers', {}).get(step.name)
+            if qualifier is not None:
+                from dataclasses import replace
+                actual = qualifier(replace(step), checkout=self.checkout,
+                                   output_root=self.checkout / 'build/yorimichi')
+                if actual != self.native_profiles[step.name]:
+                    raise AuthorityRefused('native batch member differs from its original pure observation')
             self.keys[step.name] = key
             self.dones[step.name] = dict(session.done)
         launch = NativeBatchLaunch(self, session, self.native_runtimes)
