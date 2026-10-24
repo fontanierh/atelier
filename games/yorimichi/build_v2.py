@@ -24,12 +24,33 @@ COURSE_INPUTS = {
                 'inputs/venue/meshes/SM_BM_BHip_Course.glb'),
 }
 
+RIM_TARGET = 'world.brinecove.rim_data'
+RIM_SCRIPT = 'games/yorimichi/world/regions/brinecove/stage_rim_v2.py'
+RIM_CODE = (
+    RIM_SCRIPT,
+    'games/yorimichi/world/regions/brinecove/__init__.py',
+    'games/yorimichi/world/regions/brinecove/rim_data.py',
+    'games/yorimichi/world/regions/brinecove/boundary.py',
+    'games/yorimichi/world/regions/brinecove/region.py',
+    'games/yorimichi/world/regions/brinecove/rim_schema.py',
+    'games/yorimichi/world/terrain_product.py',
+    'games/yorimichi/world/yori.py',
+    'platform/studio/atelier/__init__.py',
+    'platform/studio/atelier/atomic_files.py',
+    'platform/studio/atelier/export_manifest.py',
+    'platform/studio/atelier/model_files.py',
+    'platform/studio/atelier/paths.py',
+)
+# Temporary migration input: an independently copied and validated content file,
+# not a FarHills result/receipt. The complete graph replaces it with a producer edge.
+RIM_INPUT = 'build/v2-migration-inputs/yorimichi/far-final.npz'
+
 
 def declaration():
     """@cc [owner:fontanierh,label:correctness] course-leaf-declared-closure
-    Discovery MUST return a fresh declaration with the complete shared course validator,
-    venue scene and checksum-bound geometry, without reading assets or writing state.
-    The sole checkout output MUST own the existing runtime path. Source timestamps and
+    Discovery MUST return fresh explicit declarations with the complete shared course
+    validator and coastal projection closures, without reading assets or writing state.
+    Checkout outputs MUST own their existing runtime paths. Source timestamps and
     installed Python/NumPy identities MUST NOT be semantic parameters. See
     test_course_declaration_is_pure_complete_and_independent in test_racing_courses.py.
     """
@@ -55,6 +76,21 @@ def declaration():
                 'files': [{'path': 'belmonte_courses.json',
                            'install_path': 'games/yorimichi/unreal/Content/Data/' + COURSE_RUNTIME_PATH}],
             }],
+        }, {
+            'id': RIM_TARGET,
+            'op': {'kind': 'py_data', 'version': '1'},
+            'script': RIM_SCRIPT,
+            'code': list(RIM_CODE),
+            'params': {},
+            'inputs': [{'role': 'content', 'name': 'far_final',
+                        'source': {'kind': 'file', 'path': RIM_INPUT},
+                        'whole': 'The original projection validates and consumes the complete terrain product.'}],
+            'outputs': [{
+                'id': 'rim', 'logical_path': '/Game/Data/brinecove/final-rim.json',
+                'class': 'JsonData', 'destination': 'checkout',
+                'files': [{'path': 'final-rim.json',
+                           'install_path': 'build/yorimichi/brinecove-data/final-rim.json'}],
+            }],
         }],
     }
 
@@ -66,7 +102,10 @@ def staged_inputs():
 
 def targets():
     from atelier.build_v2.controller_recipe import ControllerTarget
-    return {COURSE_TARGET: ControllerTarget(
-        unit=COURSE_TARGET, project='yorimichi', declaration=declaration(),
-        staged_inputs={COURSE_TARGET: staged_inputs()}, content_slots={slot: True for slot in COURSE_INPUTS},
-        allowed_install_roots=('games/yorimichi/unreal/Content/Data',))}
+    return {name: ControllerTarget(
+        unit=name, project='yorimichi', declaration=declaration(),
+        staged_inputs={COURSE_TARGET: staged_inputs(), RIM_TARGET: {'far_final': 'inputs/far-final.npz'}},
+        content_slots={slot: False for slot in (*COURSE_INPUTS, 'far_final')},
+        allowed_install_roots=('games/yorimichi/unreal/Content/Data',
+                               'build/yorimichi/brinecove-data'))
+        for name in (COURSE_TARGET, RIM_TARGET)}
