@@ -700,3 +700,27 @@ def test_declared_directory_validator_ancestor_metadata_stays_source_bound(actio
         assert any(row['operation'] == 'input directory validation metadata' for row in report['accesses'])
     else:
         assert report['violations']
+
+
+@pytest.mark.parametrize('operation,passed', [('import', True), ('direct', False), ('unknown', False), ('query', False),
+    ('data', False), ('write', False), ('namespace', False), ('forged', False)])
+def test_declared_code_namespace_ancestor_is_only_an_actual_import_probe(action, operation, passed):
+    a = action
+    search = a.root / 'search'; package = search / 'nested'; package.mkdir(parents=True)
+    code = package / 'declared.py'; code.write_text('value=1\n')
+    (search / 'foreign.py').write_text('value=2\n')
+    expression = {'import': 'import fractions', 'direct': 'list(search.iterdir())',
+                  'unknown': 'import foreign', 'query': 'import importlib.util\nimportlib.util.find_spec("fractions")',
+                  'data': 'import fractions\n(search/"foreign.py").read_text()',
+                  'write': 'import fractions\n(search/"foreign.py").write_text("changed")',
+                  'namespace': 'import nested',
+                  'forged': 'import importlib._bootstrap_external as external,os\ndef fake(finder):\n    os.listdir(finder.path)\nexternal.FileFinder._fill_cache=fake\nimport fractions'}[operation]
+    a.code('import sys\nsearch=Path(' + repr(str(search)) + ')\nsys.path.insert(0,str(search))\n'
+           + expression + '\noutput.write_text(source.read_text())')
+    a.step.inputs.append(code)
+    assert a.run() == (0 if passed else 1), a.messages
+    assert a.report()['passed'] is passed
+    if passed:
+        assert a.output.read_text() == 'input'
+    else:
+        assert a.report()['violations']

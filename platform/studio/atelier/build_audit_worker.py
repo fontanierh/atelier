@@ -35,6 +35,12 @@ class Observer:
         self.file_finder = external.FileFinder.find_spec
         self.import_roots = {Path(p or '.').resolve() for p in sys.path}
         self.import_roots.update(p.parent for p, directory in self.inputs if not directory)
+        # Namespace search may start above a declared Python module. These roots
+        # authorize ONLY the retained actual import resolver's directory probes;
+        # module contents, namespace packages and direct IO still pass read().
+        self.import_roots.update(parent for p, directory in self.inputs
+                                 if not directory and p.suffix == '.py' for parent in p.parents)
+        self.fill_cache_code = external.FileFinder._fill_cache.__code__
         self.seen = set()
         self.failed = False
         self.first_refusal = None
@@ -173,7 +179,7 @@ class Observer:
             # CPython's import finder lists search directories before opening a module. These are
             # resolver probes, not recipe directory queries; actual module reads are still checked.
             frame = sys._getframe(2)
-            importing = (frame.f_code is external.FileFinder._fill_cache.__code__
+            importing = (frame.f_code is self.fill_cache_code
                          and frame.f_back is not None and frame.f_back.f_code is self.file_finder.__code__
                          and getattr(self.local, 'resolving', False) and path in self.import_roots)
             if importing:
