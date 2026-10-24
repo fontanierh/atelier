@@ -80,6 +80,38 @@ def test_retry_keeps_logical_identity_while_unrelated_actions_are_distinct(clien
     assert first['id'] != other['id']
 
 
+@pytest.mark.parametrize('schema', [1, 2])
+def test_fresh_report_names_keep_original_logical_identity_and_resource_request(client, monkeypatch, schema):
+    configure_schema(client, monkeypatch, schema)
+    client[2]()
+    # Preserve the ORIGINAL string ingredient, including spelling; never resolve it here.
+    logical = 'logs/../logs/original-mesh.guard'
+    options = dict(kind='job', limit_gib=10, timeout=120,
+                   command=['Blender', '-b', '--threads', '3'], small_gib=1.0)
+    original = runtime.configured_session(folder=logical, **options)
+    none = runtime.configured_session(folder=logical, logical_folder=None, **options)
+    first = runtime.configured_session(folder='private/reports/attempt-one', logical_folder=logical, **options)
+    second = runtime.configured_session(folder='private/reports/attempt-two', logical_folder=logical, **options)
+    assert original == none == first == second  # Resources, flags, seconds and locks unchanged too.
+    assert runtime.configured_session(folder='private/reports/attempt-one', **options)['id'] != first['id']
+    other = runtime.configured_session(folder='private/reports/attempt-one',
+                                       logical_folder='logs/other-task.guard', **options)
+    assert other['id'] != first['id']
+    other_kind = runtime.configured_session(folder='private/reports/attempt-one', logical_folder=logical,
+                                            **(options | {'kind': 'compile'}))
+    assert other_kind['id'] != first['id']
+    normalized = runtime.configured_session(folder='private/reports/attempt-one',
+                                            logical_folder='logs/original-mesh.guard', **options)
+    assert normalized['id'] != first['id']
+
+
+@pytest.mark.parametrize('logical', ['', 0, True, object(), 'logs/invalid\0folder'])
+def test_logical_identity_refuses_invalid_original_folder_before_configuration(client, logical):
+    with pytest.raises(ValueError, match='logical_folder'):
+        runtime.configured_session(kind='job', limit_gib=10, timeout=0, logical_folder=logical)
+    assert client[3] == []
+
+
 def test_profile_cannot_hide_a_larger_actual_guard(client):
     client[2]()
     with pytest.raises(ValueError, match='smaller than the actual guard'):
