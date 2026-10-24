@@ -15,7 +15,7 @@ CODE_SEEDS = (
     'skatepark_build.py', 'treehouse_pieces.py', 'export_digest.py', 'city_inputs.py',
     'city_tile_products.py', 'city_harbor_inputs.py', 'tools/racing_assets.py',
     'tools/package_cook.py', 'tools/game_binary.py', 'world/source_registry.py',
-    'world/yori.py', 'world/craterpark_layout.py', 'world/texture_catalog.py', 'world/train/bake_manifest.py',
+    'world/yori.py', 'world/gen_world.py', 'world/craterpark_layout.py', 'world/texture_catalog.py', 'world/train/bake_manifest.py',
     'world/regions/brinecove/foliage_names.py', 'world/regions/craterpark/v2/v4_config.py',
     'world/regions/craterpark/v2/trees.py', 'unreal/Scripts/horse_data.py',
     'craterpark_atomic_build.py', 'forest_atomic_build.py', 'props_atomic_build.py',
@@ -56,7 +56,7 @@ CODE_SEEDS = (
     'world/regions/treehouse/canopy_data.py', 'legacy_treehouse_assembly_profile.py',
     'legacy_treehouse_recolour_profile.py', 'legacy_treehouse_library_profile.py',
     'world/regions/treehouse/assemble_atomic.py',
-    'world/regions/craterpark/v2/editor_generate.py', 'legacy_craterpark_geometry_profile.py', 'legacy_craterpark_layout_profile.py',
+    'world/regions/craterpark/v2/editor_generate.py', 'legacy_craterpark_geometry_profile.py', 'legacy_craterpark_layout_profile.py', 'legacy_world_layout_profile.py',
 )
 
 
@@ -510,6 +510,26 @@ class TextureAuthority:
             profile = qualify_craterpark_layout(step, checkout=self.checkout,
                                                 output_root=self.checkout / 'build/yorimichi')
             self.python_qualifiers[step.name] = qualify_craterpark_layout
+            self.data_steps[step.name] = (step, profile)
+            self.steps[step.name] = step
+            self.runtimes[step.name] = _bind_captured_runtime(
+                step, checkout=self.checkout, issuer_files=manifest['issuer_files'],
+                code_inputs=profile.code_inputs, legacy_outputs=profile.output_paths)
+            self.output_paths[step.name] = profile.output_paths
+            self.generated_inputs.update(profile.produced_inputs)
+        from legacy_world_layout_profile import qualify_world_layout
+        for step in selected:
+            if step.name != 'world.layout':
+                continue
+            # Preserve unsupported selectors/families until their real boundary;
+            # only the exact already-qualified default producers supply this role.
+            available = {*self.steps, *self.pending_tools, 'world.textures'}
+            if ('world.craterpark_layout' not in self.steps
+                    or any(name not in available for name in graph.prerequisites(step))):
+                continue
+            profile = qualify_world_layout(step, checkout=self.checkout,
+                                           output_root=self.checkout / 'build/yorimichi')
+            self.python_qualifiers[step.name] = qualify_world_layout
             self.data_steps[step.name] = (step, profile)
             self.steps[step.name] = step
             self.runtimes[step.name] = _bind_captured_runtime(
