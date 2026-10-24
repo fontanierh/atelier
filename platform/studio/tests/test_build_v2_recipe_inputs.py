@@ -54,11 +54,15 @@ def test_deferred_binds_all_owning_roots_and_keys_support(tmp_path):
     provider = {'name': 'pieces', 'collect': {'source': 'tools/collect.py', 'qualname': 'collect', 'line': 1},
                 'settings': [{'path': 'build/g'}], 'support': ['tools/collect.py', 'tools/helper.py'],
                 'owners': [{'root': 'build/g/a', 'producer': 'a.make'}, {'root': 'build/g/log.txt', 'producer': 'a.make'}]}
-    result = _lower(_row('b.use', deferred=[provider]), tmp_path)
+    result = _lower(_row('b.use', deferred=[provider], needs=['a.make']), tmp_path)
     assert {(i['source']['unit'], i['source']['item']) for i in result['inputs']} == {
         ('a.make', 'product0'), ('a.make', 'output0')}
     assert {'tools/collect.py', 'tools/helper.py'} <= set(result['code'])
-    assert result['deferred'] == [provider]
+    assert result['deferred'][0]['bound_generated_roots'] == ['build/g/a', 'build/g/log.txt']
+    assert result['deferred'][0]['observed_source_roots'] == []
+    # Without an ancestor edge nothing generated is bound (no cycle through a downstream producer).
+    unrelated = _lower(_row('c.use', deferred=[provider]), tmp_path)
+    assert unrelated['inputs'] == [] and unrelated['deferred'][0]['bound_generated_roots'] == []
 
 
 def test_unknown_external_data_and_missing_source_refuse_by_name(tmp_path):
@@ -81,3 +85,15 @@ def test_absent_optional_source_keeps_identity_and_links_refuse(tmp_path):
 def test_needs_bind_every_prerequisite_root(tmp_path):
     result = _lower(_row('b.use', needs=['a.make']), tmp_path)
     assert {i['source']['item'] for i in result['inputs']} == {'product0', 'output0'}
+
+
+def test_deferred_folder_holding_own_output_is_not_a_self_edge(tmp_path):
+    provider = {'name': 'proof', 'collect': None, 'settings': [{'path': 'build/g'}, {'path': '.'}], 'support': [],
+                'owners': [{'root': 'build/g/self.json', 'producer': 'b.use'}]}
+    rows, roots, products = _graph()
+    row = _row('b.use', deferred=[provider], outputs=['build/g/self.json'])
+    rows['b.use'] = row
+    roots = [*roots, ('build/g/self.json', 'b.use', 'output0')]
+    result = ri.lower_inputs(row, rows=rows, roots=roots, products=products, checkout=tmp_path)
+    assert result['inputs'] == []
+    assert result['deferred'][0]['observed_source_roots'] == ['.']

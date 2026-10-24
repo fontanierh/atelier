@@ -65,6 +65,30 @@ def _archive(rows_by_name, owner, item):
     return [producer['outputs'][index]], [f'outputs/{index}.tree.tar']
 
 
+_ANCESTORS = {}
+
+
+def _ancestors(name, rows_by_name, products):
+    """Transitive prerequisites through needs, after, reads and references (memoised per graph)."""
+    memo = _ANCESTORS.setdefault(id(rows_by_name), {})
+    if name in memo:
+        return memo[name]
+    seen, todo = set(), [name]
+    while todo:
+        current = rows_by_name.get(todo.pop())
+        if current is None:
+            continue
+        direct = [*current['needs'], *current['after'],
+                  *(products[r['product']][0] for kind in ('reads', 'references')
+                    for r in current[kind] if r['product'] in products)]
+        for parent in direct:
+            if parent not in seen and parent != name:
+                seen.add(parent)
+                todo.append(parent)
+    memo[name] = seen
+    return seen
+
+
 def lower_inputs(row, *, rows, roots, products, checkout):
     """@cc [owner:fontanierh,label:correctness] recipe-inputs-complete-identity
     Return {inputs, staged, paths, slots, code, tools, deferred} for one row. Every consumed
@@ -163,24 +187,36 @@ def lower_inputs(row, *, rows, roots, products, checkout):
             raise Unsupported(f'{name}: external {root} data {entry["path"]} needs a declared external source unit')
         consumed(entry['path'], entry['optional'])
     deferred = []
+    ancestors = _ancestors(name, rows_by_name, products) if row['deferred'] else set()
     for provider in row['deferred']:
         code.update(map(_path, provider['support']))
         if provider['collect'] is not None:
             code.add(_path(provider['collect']['source']))
-        for owner in provider['owners']:
-            for root, producer, item in roots:
-                if producer == owner['producer'] and (_under(root, owner['root']) or _under(owner['root'], root)):
-                    upstream(producer, item, [root])
+        # Membership is data-dependent (collectors read upstream manifests), so the static bound is every
+        # ANCESTOR producer root under a selected folder: never this step's own or a downstream output.
+        generated_roots, source_roots = [], []
         def settings_paths(value):
             if isinstance(value, dict) and 'path' in value:
                 if value.get('root', 'checkout') != 'checkout':
                     raise Unsupported(f'{name}: deferred {provider["name"]} reads external {value["root"]} data '
                                       f'{value["path"]}; it needs a declared external source unit')
-                consumed(value['path'])
+                path = value['path']
+                bound = [(root, producer, item) for root, producer, item in roots
+                         if producer in ancestors and (path == '.' or _under(root, path) or _under(path, root))]
+                for root, producer, item in bound:
+                    upstream(producer, item, [root])
+                    generated_roots.append(root)
+                if path == '.':
+                    source_roots.append(path)  # the whole checkout: the runtime keys observed members
+                elif not any(_under(path, root) or _under(root, path) for root, _, _ in roots):
+                    consumed(path)  # a source folder: every member is keyed now, no runtime observation needed
             elif isinstance(value, list):
                 for item in value:
                     settings_paths(item)
         settings_paths(provider['settings'])
-        deferred.append(deepcopy(provider))
+        descriptor = deepcopy(provider)
+        descriptor['bound_generated_roots'] = sorted(set(generated_roots))
+        descriptor['observed_source_roots'] = sorted(set(source_roots))
+        deferred.append(descriptor)
     return {'inputs': inputs, 'staged': staged, 'paths': paths, 'slots': slots,
             'code': sorted(code), 'tools': sorted(set(tools)), 'deferred': deferred}
