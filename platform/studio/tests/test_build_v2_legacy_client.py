@@ -49,7 +49,7 @@ def test_strict_authority_records_refuse_positional_duplicates_and_nonfinite(pay
 
 
 def test_authority_encoding_bounds_aggregate_text_before_serialization():
-    for record in ({'text': 'a' * 65537}, {'many': ['a' * 24000] * 3},
+    for record in ({'text': 'a' * (protocol.MAX_FRAME_BYTES + 1)}, {'many': ['a' * (protocol.MAX_FRAME_BYTES // 2)] * 3},
                    {'bad': '\ud800'}, {'too_large': 2**64}):
         with pytest.raises(AuthorityLost):
             encode_record(record)
@@ -257,3 +257,52 @@ def test_paged_durable_record_bound_is_independent_of_wire_bound(total):
         channel.close()
         os.close(host_read)
         os.close(host_write)
+
+
+def test_large_original_channel_roundtrip_remains_nonblocking_and_finite():
+    import threading
+    host_read, child_write, child_read, host_write = endpoints()
+    deadline = authority_now_ns() + 2_000_000_000
+    child = LegacyChannel(child_write, child_read, deadline_ns=deadline)
+    host = LegacyChannel(host_write, host_read, deadline_ns=deadline)
+    request = {'witnesses': [{'path': 'inputs/' + str(n) + '/' + 'a' * 64, 'fact': {'kind': 'absent'}} for n in range(1024)]}
+    assert 65536 < len(encode_record(request)) < protocol.MAX_FRAME_BYTES
+    reply = {'observed': 'x' * 100000}
+    assert 65536 < len(encode_record(reply)) < protocol.MAX_FRAME_BYTES
+    seen = []
+    def serve():
+        try:
+            seen.append(host.receive())
+            host._write(encode_record(reply))
+        except BaseException as error:
+            seen.append(error)
+    thread = threading.Thread(target=serve)
+    thread.start()
+    try:
+        assert child.exchange(request, verify=lambda value: value) == reply
+    finally:
+        child.close(); host.close()
+        thread.join(1)
+    assert not thread.is_alive() and seen == [request]
+
+
+def test_large_blocked_partial_write_expires_and_cannot_grant_another_exchange():
+    host_read, child_write, child_read, host_write = endpoints()
+    channel = LegacyChannel(child_write, child_read, deadline_ns=authority_now_ns() + 50_000_000)
+    request = {'data': 'x' * 200000}
+    try:
+        with pytest.raises(AuthorityLost, match='deadline'):
+            channel.exchange(request, verify=lambda value: value)
+        assert channel.failed
+        os.set_blocking(host_read, False)
+        partial = os.read(host_read, 256000)
+        assert 0 < len(partial) < len(encode_record(request))
+        with pytest.raises(AuthorityLost):
+            channel.exchange({'next': True}, verify=lambda value: value)
+    finally:
+        channel.close(); os.close(host_read); os.close(host_write)
+
+
+def test_larger_transport_does_not_remove_structural_value_budget():
+    with pytest.raises(AuthorityLost, match='structural'):
+        encode_record({'values': [0] * protocol.MAX_VALUES})

@@ -14,6 +14,8 @@ def test_managed_original_operational_context_is_closed_and_does_not_leak_enviro
     for extra in ({'PYTHONPATH': '/project'}, {'DYLD_INSERT_LIBRARIES': '/library'},
                   {'PYTHONHASHSEED': '0'}, {'PYTHONINSPECT': '1'},
                   {'PYTHONUSERBASE': '/user-base'}, {'LD_AUDIT': '/loader.so'},
+                  {'NODE_OPTIONS': '--require injected.js'}, {'NODE_PATH': '/injected'},
+                  {'ATELIER_CRATERPARK_EDITOR_LINES': 'different-line'},
                   {'ATELIER_CAPACITY_CLIENT': 'legacy'}, {'ATELIER_BUILD_ROOT': 'relative'},
                   {'PATH': '/usr/bin:'}, {'PATH': 'relative:/bin'}):
         with pytest.raises(ValueError):

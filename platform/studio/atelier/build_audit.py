@@ -136,7 +136,8 @@ def installation(command):
 
 def tool_context(step, hasher, *, cache=None):
     """Fingerprint the native Python installation without granting portable cache eligibility."""
-    from . import build, build_cache, build_inputs, engine
+    from . import build, build_cache, build_inputs, build_products, engine
+    hasher = hasher or build_products.file_digest
     if type(step.commands[0]) is not build.UnrealScript:
         context = build_cache.tool_context(step, hasher, cache=cache)
         runtime = getattr(step, '_captured_audit_runtime', None)

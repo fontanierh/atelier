@@ -9,6 +9,8 @@ import stat
 import subprocess
 import sys
 import threading
+import io
+from . import python_worker
 
 _ORIGIN = object()
 
@@ -70,8 +72,9 @@ def node_libraries(image):
                 role = Path(name)
             if not role.is_absolute() or not role.is_relative_to('/opt/homebrew'):
                 raise ValueError('nested tool library is outside the supported installed context')
+            role = Path(os.path.abspath(role))
             real = role.resolve(strict=True)
-            if not stat.S_ISREG(real.lstat().st_mode):
+            if not real.is_relative_to('/opt/homebrew') or not stat.S_ISREG(real.lstat().st_mode):
                 raise ValueError('nested tool library is not a real file')
             found[str(role)] = role
             if str(real) not in found:
@@ -127,11 +130,14 @@ def _verify(spec):
     libraries = spec['libraries']
     if type(libraries) is not list or not 0 < len(libraries) <= 64:
         raise ValueError('captured nested tool runtime roster differs')
+    if len({item.get('path') for item in libraries if type(item) is dict}) != len(libraries):
+        raise ValueError('duplicate nested tool runtime role')
     for item in libraries:
         if type(item) is not dict or set(item) != {'path', 'digest'}:
             raise ValueError('captured nested tool runtime record differs')
         path = Path(item['path'])
         if (not path.is_absolute() or not path.is_relative_to('/opt/homebrew')
+                or not path.resolve(strict=True).is_relative_to('/opt/homebrew')
                 or hashlib.sha256(_read(path.resolve(strict=True))).hexdigest() != item['digest']):
             raise ValueError('captured nested tool runtime bytes changed')
     paths = []
@@ -150,7 +156,6 @@ def _verify(spec):
 
 
 def _profile(directory, output, role, image, sources, libraries):
-    from . import python_worker
     class NodePlatform(python_worker.Platform):
         def executables(self):
             return sorted(set([str(role), str(image), *python_worker._links(str(role))]))
@@ -215,7 +220,8 @@ def node_execution(spec, *, scratch, sources, observer):
         if (args or set(kwargs) != {'stdout', 'stderr', 'timeout', 'check'}
                 or not _same_code(caller.f_code, expected[0])
                 or caller.f_globals.get('__file__') != provider
-                or type(argv) is not list or len(argv) != 6
+                or type(kwargs.get('stdout')) is not io.TextIOWrapper
+                or type(argv) is not list or len(argv) != 6 or any(type(v) is not str for v in argv)
                 or argv[:3] != [str(role), '--max-old-space-size=1024', str(tool_sources[0])]
                 or kwargs['stderr'] != subprocess.STDOUT or kwargs['check'] is not False
                 or kwargs['timeout'] != 600):
@@ -229,16 +235,16 @@ def node_execution(spec, *, scratch, sources, observer):
             observer.record('subprocess', reason='nested tool scratch roles differ')
             raise ValueError('nested tool scratch roles differ')
         from .controller_client import _open_root
-        descriptor = _open_root(directory)
-        os.close(descriptor)
-        info = os.fstat(kwargs['stdout'].fileno())
-        expected_log = output / 'node.log'
-        if (not stat.S_ISREG(info.st_mode) or not expected_log.is_file()
-                or (expected_log.stat().st_dev, expected_log.stat().st_ino) != (info.st_dev, info.st_ino)):
-            raise ValueError('nested tool stdout is not its owned log')
         previous_busy = getattr(observer.local, 'busy', False)
         observer.local.busy = True
         try:
+            descriptor = _open_root(directory)
+            os.close(descriptor)
+            info = os.fstat(kwargs['stdout'].fileno())
+            expected_log = output / 'node.log'
+            if (not stat.S_ISREG(info.st_mode) or not expected_log.is_file()
+                    or (expected_log.stat().st_dev, expected_log.stat().st_ino) != (info.st_dev, info.st_ino)):
+                raise ValueError('nested tool stdout is not its owned log')
             _verify(spec)
             profile = _profile(directory, output, role, image, tool_sources,
                                [p['path'] for p in spec['libraries']])

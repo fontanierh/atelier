@@ -210,7 +210,11 @@ checks or any control, witness, guard or admission limit. It accommodates a meas
 normal import closure; it does not certify task semantics or successful Graph discovery.
 
 The durable record's 4 MiB resource bound applies equally to anchored reads, strict decode,
-encode and atomic replacement. It does not enlarge the 64 KiB transport record, task,
+encode and atomic replacement. It does not enlarge task,
 attempt, witness or transition limits, or omit cleanup/source/recovery evidence. Prior
 records use the same schema and must pass the same validation; oversized records refuse.
-Paged observations retain their existing 16 KiB chunks and exact digest correlation.
+The separate transport resource bound is 256 KiB with a 32,768-value budget;
+complete ordinary directory input witnesses are retained without paging or truncation.
+Depth24, typed shapes/correlation, nonblocking partial transfers and absolute deadlines
+remain enforced. Paged prior-record observations retain their existing 16 KiB chunks
+and exact digest correlation.

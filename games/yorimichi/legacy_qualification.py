@@ -56,7 +56,7 @@ CODE_SEEDS = (
     'world/regions/treehouse/canopy_data.py', 'legacy_treehouse_assembly_profile.py',
     'legacy_treehouse_recolour_profile.py', 'legacy_treehouse_library_profile.py',
     'world/regions/treehouse/assemble_atomic.py',
-    'world/regions/craterpark/v2/editor_generate.py',
+    'world/regions/craterpark/v2/editor_generate.py', 'legacy_craterpark_geometry_profile.py',
 )
 
 
@@ -476,6 +476,27 @@ class TextureAuthority:
                 step, checkout=self.checkout, issuer_files=manifest['issuer_files'])
             self.output_paths[step.name] = tuple(path for _, roots in profile.products for path in roots)
             self.generated_inputs.update(profile.produced_inputs)
+        from legacy_craterpark_geometry_profile import qualify_craterpark_geometry
+        self.pending_tools = {}
+        for step in selected:
+            if step.name != 'world.craterpark_geometry':
+                continue
+            # Other original editor/design/legacy variants remain unqualified;
+            # they cannot prevent the earlier supported prefix from settling.
+            expected = self.checkout / 'games/yorimichi/world/regions/craterpark/v2/editor_generate.py'
+            park = self.checkout / 'games/yorimichi/tools/craterpark_editor/shipped.json'
+            if (len(step.commands) != 1 or step.commands[0].script != expected
+                    or step.commands[0].args != ('--park', str(park))):
+                continue
+            if any(name not in self.steps and name != self.aggregate.name
+                   for name in graph.prerequisites(step)):
+                continue
+            profile = qualify_craterpark_geometry(step, checkout=self.checkout,
+                                                 output_root=self.checkout / 'build/yorimichi')
+            # Source-only graph qualification does not inspect or launch an installed
+            # tool. The ordinary preparation boundary must bind its real identity
+            # before this role joins any mutation frame or original fingerprint.
+            self.pending_tools[step.name] = (step, profile)
         self.dones = {}
         self.native_launch = None
         first = next((step for step in selected if step.controller is None), None)
@@ -525,10 +546,26 @@ class TextureAuthority:
         return [{'path': name, 'fact': {'kind': 'file', 'digest': self.hashlib.sha256(raw).hexdigest(),
                                       'size': len(raw), 'mode': stat.S_IMODE(info.st_mode)}}]
 
+    def activate_tools(self):
+        from atelier.build_v2.legacy_tool_action import bind_node
+        from atelier.build_audit import _bind_captured_runtime
+        from legacy_craterpark_geometry_profile import qualify_craterpark_geometry
+        for name, (step, profile) in self.pending_tools.items():
+            tool = bind_node(profile.tool_sources, profile.script.parent / 'editor/frontend.py')
+            self.python_qualifiers[name] = qualify_craterpark_geometry
+            self.data_steps[name] = (step, profile)
+            self.steps[name] = step
+            self.runtimes[name] = _bind_captured_runtime(
+                step, checkout=self.checkout, issuer_files=self.manifest['issuer_files'],
+                code_inputs=profile.code_inputs, nested_tool=tool, legacy_outputs=profile.output_paths)
+            self.output_paths[name] = profile.output_paths
+
     def before_prepare(self, ctx, steps, wanted, *, expanded=False):
         import os
         from atelier.build_v2.legacy_client import AuthorityRefused
         from atelier.build_hashes import HashIndex
+        if getattr(self, 'pending_tools', None):
+            self.activate_tools()
         self.keys = {name: self.build.fingerprint_state(step, {}, index=HashIndex(verify=True),
                                                        tool_cache={})[0]
                      for name, step in self.texture_steps.items()}
@@ -869,7 +906,7 @@ class TextureAuthority:
             self.launch_context = prepare(self.base_environment)
             self.expected_environment = dict(self.launch_context.environment)
             now = authority_now_ns()
-            execution_ns = 120 * 1_000_000_000
+            execution_ns = int(self.command_timeout() * 1_000_000_000)
             queue_ns = min(now + 1800 * 1_000_000_000,
                            self.manifest['work_deadline_ns'] - execution_ns)
             if queue_ns <= now:
@@ -932,7 +969,10 @@ class TextureAuthority:
 
     def command_timeout(self):
         native = getattr(self, 'native_launch', None)
-        return native.work_seconds if native is not None else 120.
+        if native is not None:
+            return native.work_seconds
+        runtime = getattr(self, 'runtime', None)
+        return 600. if runtime is not None and runtime.nested_tool is not None else 120.
 
     def prepare_native_command(self, ctx, step, command):
         from atelier.build_v2.legacy_client import AuthorityRefused

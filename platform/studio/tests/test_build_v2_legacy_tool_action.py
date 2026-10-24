@@ -122,3 +122,36 @@ def test_private_legacy_runtime_retains_cutoff_and_exact_original_output_roots(t
     step.cutoff = False
     with pytest.raises(ValueError):
         build_audit.validate(step)
+
+
+def test_original_legacy_fingerprint_and_current_include_nested_tool_bytes(tmp_path, monkeypatch):
+    from atelier import build, build_audit, build_cache, build_plan, paths
+    script = tmp_path / 'producer.py'; script.write_text('pass\n')
+    product = tmp_path / 'geometry.npz'; product.write_bytes(b'output')
+    image = tmp_path / 'bin/node'; image.parent.mkdir(); image.write_bytes(b'image')
+    library = tmp_path / 'libnode.1.dylib'; library.write_bytes(b'library')
+    sources = []
+    for name in ('bridge.cjs', 'pieces.cjs', 'terrain.cjs', 'pin.json'):
+        p = tmp_path / name; p.write_bytes(b'code'); sources.append(p)
+    monkeypatch.setattr(tools.shutil, 'which', lambda name: str(image))
+    monkeypatch.setattr(tools, 'node_libraries', lambda path: (library,))
+    tool = tools.bind_node(sources, script)
+    step = build.Step('actual.geometry', [build.Python(script)], inputs=[script], outputs=[product],
+                      heavy=True, cutoff=True)
+    # This unit fixture supplies the existing private descriptor without issuing any
+    # task/epoch authority. Production constructs it only after the pure fixed role.
+    step._captured_audit_runtime = build_audit._CapturedRuntime(
+        paths.REPO, build_audit._CAPTURED_WORKER, build_audit._CAPTURED_ORIGIN, tool, (product,))
+    monkeypatch.setattr(build_cache, 'tool_context', lambda *a, **kw: {'fixed': 'original Python installation'})
+    key = build.fingerprint(step, {})
+    stamps = tmp_path / 'stamps'; stamps.mkdir()
+    import json
+    (stamps / 'actual.geometry.json').write_text(json.dumps({'fingerprint': key}))
+    ctx = SimpleNamespace(out=tmp_path, stamps=stamps, game='fixture')
+    assert build_plan.inspect(ctx, [step], [step.name])['steps'][0]['status'] == 'current'
+    for path in (image, library, sources[0]):
+        old = path.read_bytes(); path.write_bytes(old + b'changed')
+        assert build.fingerprint(step, {}) != key
+        assert build_plan.inspect(ctx, [step], [step.name])['steps'][0]['status'] == 'run'
+        path.write_bytes(old)
+    assert build.fingerprint(step, {}) == key and not step.cache and not step.products

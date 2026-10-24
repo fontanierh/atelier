@@ -274,7 +274,7 @@ class Observer:
 
     def checked_open(self, function, path, *args, **kwargs):
         # CPython's open event omits dir_fd. Check that argument before letting os.open emit it.
-        if kwargs.get('dir_fd') is not None:
+        if kwargs.get('dir_fd') is not None and not getattr(self.local, 'busy', False):
             self.record('descriptor access', reason='dir_fd opens are unsupported')
         return function(path, *args, **kwargs)
 

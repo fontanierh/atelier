@@ -140,10 +140,11 @@ def main(manifest, specification):
             # sibling temporary files never acquire product ownership.
             from atelier.atomic_files import managed_temporaries
             from contextlib import nullcontext
+            if nested_tool is not None:
+                from atelier.build_v2.legacy_tool_action import node_execution
             def before(observer):
                 if nested_tool is None:
                     return nullcontext()
-                from atelier.build_v2.legacy_tool_action import node_execution
                 return node_execution(nested_tool, scratch=spec['scratch'], sources=sources, observer=observer)
             with managed_temporaries(Path(spec['scratch']) / 'atomic-tmp'):
                 build_audit_worker.execute(spec, after=source_check.require_clean, execution_scope=before)

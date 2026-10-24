@@ -18,7 +18,7 @@ use std::os::fd::AsRawFd;
 use std::path::{Path, PathBuf};
 
 const VERSION: u32 = 2;
-pub const MAX_MESSAGE_BYTES: usize = 64 * 1024;
+pub const MAX_MESSAGE_BYTES: usize = 256 * 1024;
 const SOURCE_MANIFEST: &str = "platform/build-v2/controller-sources.json";
 const BOOTSTRAP: &str = "platform/studio/atelier/build_v2/legacy_bootstrap.py";
 const PROVIDER: &str = "platform/studio/atelier/build_v2/legacy_qualification.py";
@@ -1730,6 +1730,14 @@ mod tests {
     }
     #[test]
     fn closed_host_codec_refuses_duplicate_unknown_positional_and_unbound_launch_records() {
+        let large = serde_json::json!({"version":2,"nonce":"nonce","selection":"selection",
+            "sequence":1,"frame":null,"previous_digest":null,
+            "operation":{"type":"observe","record_offset":null,"witnesses":
+                (0..1024).map(|n| serde_json::json!({"path":format!("inputs/{n}/{}", "a".repeat(64)),
+                    "fact":{"kind":"absent"}})).collect::<Vec<_>>()}});
+        let bytes = serde_json::to_vec(&large).unwrap();
+        assert!(bytes.len() > 64 * 1024 && bytes.len() < MAX_MESSAGE_BYTES);
+        assert!(strict_record::<Request>(&bytes).is_ok());
         let settle = serde_json::json!({"version": 2, "nonce": "nonce", "selection": "selection",
             "sequence": 1, "frame": null, "previous_digest": null,
             "operation": {"type": "settle", "observation": {"task": "control.hash-index.prepare",

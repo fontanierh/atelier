@@ -706,8 +706,10 @@ def test_actual_aggregate_reuses_original_product_keys_and_detects_changed_reads
         authority._check_aggregate(ctx)
 
 
-def test_actual_captured_graph_qualifies_data_before_private_runtime_without_task_permission():
+def test_actual_captured_graph_qualifies_data_before_private_runtime_without_task_permission(monkeypatch):
     """The real current factory crosses the pure issuer boundary; no RPC or tasks run."""
+    monkeypatch.delenv('ATELIER_CRATERPARK_EDITOR_PARK', raising=False)
+    monkeypatch.delenv('ATELIER_CRATERPARK_V4_DESIGN', raising=False)
     from atelier import paths
     from atelier.build_v2.controller_client import capture_named_sources
     from atelier.build_v2.legacy_entry import original_python_context
@@ -742,6 +744,8 @@ def test_actual_captured_graph_qualifies_data_before_private_runtime_without_tas
         assert library.commands[0].script.relative_to(paths.REPO).as_posix() in manifest['issuer_files']
         assert set(vars(library)['_captured_audit_runtime'].files) <= set(manifest['issuer_files'])
         assert library_observation.kind == 'trees'
+        assert set(authority.pending_tools) == {'world.craterpark_geometry'}
+        assert 'world.craterpark_geometry' not in authority.steps
         assert not authority.begun
         return 'qualified-without-permission'
     assert profile.discover(manifest, request, captured_files=captured.files, consumer=consume) == 'qualified-without-permission'
