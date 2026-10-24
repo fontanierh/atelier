@@ -1,245 +1,110 @@
-"""Normal selected-target dispatch has no v1 certificate or fallback path."""
+"""Ordinary build selection invokes the real v2 engine without an older scheduler."""
+from copy import deepcopy
+from dataclasses import replace
 from types import SimpleNamespace
-
 import pytest
-
-from atelier import build, build_plan, paths
+from atelier import build, paths
 from atelier.build_v2 import controller_entry as entry
-from atelier.build_v2.controller_recipe import ControllerTarget
+from atelier.build_v2.controller_recipe import ControllerTarget, ControllerSelection
 
 
-@pytest.fixture(autouse=True)
-def original_fixture_checkout(tmp_path, monkeypatch):
-    # These injected recipe callers own this temporary checkout. Real local build
-    # metadata must not reclassify the fixture as the developer's managed checkout.
-    from atelier.build_v2 import legacy_entry
-    monkeypatch.setattr(legacy_entry, '_checkout', lambda: tmp_path)
-
-
-def marker():
-    return ControllerTarget('data.copy', 'fixture', {
+def marker(name='data.rim'):
+    return ControllerTarget(name, 'fixture', {
         'schema_version': 2, 'cache_version': 'v2-1', 'units': [{
-            'id': 'data.copy', 'op': {'kind': 'py_data', 'version': '1'},
-            'script': 'ops/copy.py', 'code': ['ops/copy.py'], 'inputs': [],
-            'outputs': [{'id': 'copy', 'logical_path': '/Game/Data/copy.json', 'class': 'JsonData',
-                         'destination': 'checkout', 'files': [{'path': 'copy.json', 'install_path': 'Game/copy.json'}]}],
-        }]}, {'data.copy': {}}, {}, ('Game',))
+            'id': name, 'op': {'kind': 'py_data', 'version': '1'},
+            'script': 'ops/body.py', 'code': ['ops/body.py'], 'inputs': [],
+            'outputs': [{'id': 'data', 'logical_path': '/Game/Data/'+name+'.json', 'class': 'JsonData',
+                'destination': 'checkout', 'files': [{'path': name+'.json', 'install_path': 'Game/'+name+'.json'}]}],
+        }]}, {name: {}}, {}, ('Game',))
 
 
-@pytest.mark.parametrize('outcome', ['current', 'executed', 'stored_hit'])
-def test_mixed_obligation_reuses_original_controller_observation_without_python_key(outcome, tmp_path, monkeypatch):
+def observed():
+    return {'state': 'observed', 'cancelled': False, 'report': {'observation': {
+        'summary': {'units': []}, 'cancellation_requested': False,
+        'final_requirements_satisfied': True, 'source_finalization': 'complete', 'root_finalization': 'complete'}}}
+
+
+def test_normal_build_never_discovers_or_invokes_old_scheduler(tmp_path, monkeypatch):
     monkeypatch.setattr(paths, 'REPO', tmp_path)
-    original = marker().request(tmp_path)
-    observed = {'state': 'observed', 'cancelled': False, 'report': {'observation': {
-        'summary': {'units': [{'unit': 'data.copy', 'key': 'a' * 64, 'outcome': outcome,
-                               'unsatisfied_checkout': False}]},
-        'cancellation_requested': False, 'final_requirements_satisfied': True,
-        'source_finalization': 'complete', 'root_finalization': 'not_opened'}}}
-    calls = []
-    def invoke(owned, **kwargs):
-        calls.append(owned.request(tmp_path))
-        return observed
-    monkeypatch.setattr(entry, '_invoke_marker', invoke)
-    assert entry.fulfill_for_legacy(original, echo=lambda _: None) == {
-        'unit': 'data.copy', 'key': 'a' * 64, 'request': original}
-    assert calls == [original]
-    observed['report']['observation']['root_finalization'] = 'incomplete'
-    with pytest.raises(ValueError, match='finalization is incomplete'):
-        entry.fulfill_for_legacy(original, echo=lambda _: None)
-    assert len(calls) == 2  # Each caller invokes once; no internal retry/fallback.
-    observed['report']['observation']['root_finalization'] = 'complete'
-    observed['report']['observation']['summary']['units'][0]['unsatisfied_checkout'] = True
-    with pytest.raises(ValueError, match='no fulfilled observation'):
-        entry.fulfill_for_legacy(original, echo=lambda _: None)
-    with pytest.raises(ValueError, match='unsupported original'):
-        entry.fulfill_for_legacy({**original, 'foreign': True}, echo=lambda _: None)
-    assert len(calls) == 3
-
-
-def test_controller_discovery_leaves_injected_legacy_recipe_selection_unchanged(monkeypatch):
-    def absent(game):
-        raise FileNotFoundError('a legacy test/caller owns this recipe provider')
-    monkeypatch.setattr(paths, 'game_dir', absent)
-    assert entry.exact_selection('injected', ['legacy.step']) is None
-
-
-def test_controller_exact_selection_validates_unselected_owners_before_invocation(tmp_path, monkeypatch):
-    from atelier import mesh_export_contract
-    owned = marker()
-    step = build.Step(owned.unit, [], outputs=list(owned.outputs(tmp_path)), controller=owned)
-    other = build.Step('unselected.legacy', [], outputs=[tmp_path / 'Elsewhere/output.json'])
-    contexts = []
-    def steps(ctx):
-        contexts.append(ctx)
-        return [step, other]
-    monkeypatch.setattr(paths, 'REPO', tmp_path)
-    monkeypatch.setattr(paths, 'game_dir', lambda game: tmp_path)
-    monkeypatch.setattr(paths, 'build_root', lambda: tmp_path / 'build')
-    monkeypatch.setattr(paths, 'uproject', lambda game: tmp_path / 'source.uproject')
-    monkeypatch.setattr(entry, 'discover', lambda game: {owned.unit: owned})
-    monkeypatch.setattr(build, 'load_recipe', lambda game: SimpleNamespace(steps=steps))
-    def forbidden(*args, **kwargs):
-        raise AssertionError('early controller dispatch created a legacy runtime Context')
+    targets = {name: marker(name) for name in ('data.rim', 'data.course')}
+    monkeypatch.setattr(entry, 'discover', lambda game: targets)
+    def forbidden(*args, **kwargs): raise AssertionError('invoked old recipe/runtime')
     monkeypatch.setattr(build, 'Context', forbidden)
-    checked = []
-    def source_preflight(selected, blender_type):
-        checked.append([item.name for item in selected])
-    monkeypatch.setattr(mesh_export_contract, 'check_steps', source_preflight)
-    assert entry.exact_selection('fixture', [owned.unit]) is step
-    assert checked == [[owned.unit]]  # No unrelated Blender/source closure inspection.
-    assert contexts[0].out == tmp_path / 'build/fixture'
-    assert not hasattr(contexts[0], 'unreal_root')
-    assert not (tmp_path / 'build').exists()
-    other.outputs = [tmp_path / 'Game']
-    with pytest.raises(ValueError, match='ownership overlaps'):
-        entry.exact_selection('fixture', [owned.unit])
-    assert not (tmp_path / 'build').exists()
-
-
-def test_normal_exact_target_bypasses_legacy_context_stamps_and_fallback(tmp_path, monkeypatch):
-    owned = marker()
-    step = build.Step(owned.unit, [], outputs=list(owned.outputs(tmp_path)), controller=owned)
-    calls = []
-    monkeypatch.setattr(entry, 'exact_selection', lambda *args: step)
-    monkeypatch.setattr(entry, 'execute', lambda selected, **kwargs: calls.append(selected.name) or 1)
-    def forbidden(*args, **kwargs):
-        raise AssertionError('controller refusal fell back to the v1 engine')
-    monkeypatch.setattr(build, 'Context', forbidden)
-    assert build.build('fixture', [owned.unit], echo=lambda _: None) == 1
-    assert calls == [owned.unit]
-    with pytest.raises(ValueError, match='legacy force'):
-        build.build('fixture', [owned.unit], touch=True, echo=lambda _: None)
-    with pytest.raises(ValueError, match='legacy force'):
-        build.build('fixture', [owned.unit], fail_fast=True, echo=lambda _: None)
-    assert calls == [owned.unit]
-    assert not list(tmp_path.iterdir())
-
-
-def test_readonly_exact_controller_plan_never_bootstraps_or_opens_context(tmp_path, monkeypatch):
-    owned = marker()
-    step = build.Step(owned.unit, [], outputs=list(owned.outputs(tmp_path)), controller=owned)
-    monkeypatch.setattr(entry, 'exact_selection', lambda *args: step)
-    def forbidden(*args, **kwargs):
-        raise AssertionError('readonly plan performed runtime/bootstrap preparation')
-    monkeypatch.setattr(build, 'Context', forbidden)
-    monkeypatch.setattr(entry, 'ensure_controller', forbidden)
-    monkeypatch.setattr(entry, 'invoke_controller', forbidden)
-    output = []
-    assert build_plan.show('fixture', [owned.unit], explain=True, echo=output.append) == 0
-    assert 'unknown' in output[0]
-    assert 'no helper bootstrap' in output[1]
-    assert not list(tmp_path.iterdir())
-
-
-def test_controller_list_is_explicit_without_runtime_context_or_bootstrap(tmp_path, monkeypatch):
-    owned = marker()
-    step = build.Step(owned.unit, [], outputs=list(owned.outputs(tmp_path)), controller=owned)
-    monkeypatch.setattr(paths, 'REPO', tmp_path)
-    monkeypatch.setattr(entry, 'discover', lambda game: {owned.unit: owned})
-    monkeypatch.setattr(entry, 'declaration_context', lambda game: SimpleNamespace(game=game))
-    monkeypatch.setattr(build, 'load_recipe', lambda game: SimpleNamespace(steps=lambda ctx: [step]))
-    def forbidden(*args, **kwargs):
-        raise AssertionError('controller list created runtime/bootstrap state')
-    monkeypatch.setattr(build, 'Context', forbidden)
-    monkeypatch.setattr(entry, 'ensure_controller', forbidden)
-    monkeypatch.setattr(entry, 'invoke_controller', forbidden)
-    output = []
-    build.list_steps('fixture', echo=output.append)
-    assert 'controller; reuse unknown; no bootstrap' in output[0]
-    assert not list(tmp_path.iterdir())
-
-
-@pytest.mark.parametrize('journal', ['.checkpoint-in-progress.json', '.reuse-in-progress.json',
-                                     '.package-install-in-progress.json', '.portable-snapshot-in-progress.json'])
-def test_controller_exact_build_and_plan_preserve_default_snapshot_barriers(tmp_path, monkeypatch, journal):
-    owned = marker()
-    step = build.Step(owned.unit, [], outputs=list(owned.outputs(tmp_path)), controller=owned)
-    monkeypatch.setattr(paths, 'REPO', tmp_path)
-    monkeypatch.setattr(paths, 'build_root', lambda: tmp_path / 'override')
-    monkeypatch.setattr(entry, 'exact_selection', lambda *args: step)
-    default = tmp_path / 'build/fixture'
-    default.mkdir(parents=True)
-    barrier = default / journal
-    barrier.write_text('{}')
-    def forbidden(*args, **kwargs):
-        raise AssertionError('partial legacy snapshot reached runtime/bootstrap')
-    monkeypatch.setattr(build, 'Context', forbidden)
-    monkeypatch.setattr(entry, 'execute', forbidden)
-    for invoke in [lambda: build.build('fixture', [owned.unit]),
-                   lambda: build_plan.show('fixture', [owned.unit])]:
-        with pytest.raises(SystemExit, match='incomplete|interrupted'):
-            invoke()
-    assert barrier.read_text() == '{}'
-    assert not (tmp_path / 'override').exists()
-    assert not (tmp_path / 'Game').exists()
-
-
-def test_mixed_checkpoint_custody_refuses_before_old_workspace_restore(tmp_path, monkeypatch):
-    from atelier import build_checkpoints
-    owned = marker()
-    leaf = build.Step(owned.unit, [], outputs=list(owned.outputs(tmp_path)), controller=owned)
-    legacy = build.Step('data.stage', [], after=[owned.unit], outputs=[tmp_path / 'Elsewhere/file'])
-    ctx = SimpleNamespace(game='fixture', out=tmp_path / 'build')
-    monkeypatch.setattr(paths, 'REPO', tmp_path)
-    monkeypatch.setattr(build, 'load_recipe', lambda _: SimpleNamespace(steps=lambda _: [leaf, legacy]))
-    monkeypatch.setattr(build_checkpoints, 'configured', lambda _: {'enabled': True})
-    def forbidden(*args, **kwargs):
-        raise AssertionError('mixed selection restored a v1 workspace before custody approval')
-    monkeypatch.setattr(build_checkpoints, 'prepare', forbidden)
-    with pytest.raises(ValueError, match='mixed v1/controller checkpoint'):
-        build._prepared_build(ctx, ['data.stage'], force=False, touch=False, echo=lambda _: None,
-                              verify=False, rebuild_reason=None, rebuild_touched=False,
-                              record_cook_recovery=False, max_heavy_commands=None)
-    assert not (tmp_path / 'build').exists()
-
-
-def test_controller_parent_alias_refuses_before_queries_checkpoints_dispatch_or_writes(tmp_path, monkeypatch):
-    from atelier import build_spatial
-    owned = marker()
-    step = build.Step(owned.unit, [], outputs=list(owned.outputs(tmp_path)), controller=owned)
-    (tmp_path / 'Game').mkdir()
-    alias = tmp_path / 'Alias'
-    alias.symlink_to(tmp_path / 'Game', target_is_directory=True)
-    other = build.Step('unselected.legacy', [], outputs=[alias / 'copy.json'])
-    monkeypatch.setattr(paths, 'REPO', tmp_path)
-    monkeypatch.setattr(paths, 'game_dir', lambda game: tmp_path)
-    monkeypatch.setattr(paths, 'build_root', lambda: tmp_path / 'build')
-    monkeypatch.setattr(paths, 'uproject', lambda game: tmp_path / 'source.uproject')
-    monkeypatch.setattr(entry, 'discover', lambda game: {owned.unit: owned})
-    monkeypatch.setattr(build, 'load_recipe', lambda game: SimpleNamespace(steps=lambda ctx: [step, other]))
-    reached = []
-    def forbidden(*args, **kwargs):
-        reached.append(True)
-        raise AssertionError('ownership preflight reached runtime/query/checkpoint/dispatch')
-    monkeypatch.setattr(build, 'Context', forbidden)
+    monkeypatch.setattr(build, 'load_recipe', forbidden)
     monkeypatch.setattr(build, '_prepared_build', forbidden)
-    monkeypatch.setattr(build_spatial, 'bind', forbidden)
-    monkeypatch.setattr(entry, 'execute', forbidden)
-    with pytest.raises(ValueError, match='controller output ownership overlaps'):
-        build.build('fixture', [owned.unit], echo=lambda _: None)
-    assert reached == []
-    assert not (tmp_path / 'Game/copy.json').exists()
+    calls = []
+    def invoke(selection, **kwargs): calls.append(selection.request(tmp_path)); return observed()
+    monkeypatch.setattr(entry, '_invoke_marker', invoke)
+    assert build.build('fixture', ['data.rim'], echo=lambda _: None) == 0
+    assert len(calls) == 1 and calls[0]['targets'] == ['data.rim']
+    assert {u['id'] for u in calls[0]['declaration']['units']} == set(targets)
     assert not (tmp_path / 'build').exists()
-    assert set(tmp_path.iterdir()) == {tmp_path / 'Game', alias}
 
 
-def test_failed_normal_target_prints_private_diagnostic_locator_without_changing_result(tmp_path, monkeypatch):
-    owned = marker()
-    step = build.Step(owned.unit, [], outputs=list(owned.outputs(tmp_path)), controller=owned)
-    log = tmp_path / 'private-run/controller.log'
+def test_multiple_explicit_targets_share_one_existing_controller_request(tmp_path, monkeypatch):
     monkeypatch.setattr(paths, 'REPO', tmp_path)
-    monkeypatch.setattr(paths, 'build_root', lambda: tmp_path / 'build')
-    monkeypatch.setattr(paths, 'cache_dir', lambda *args, **kwargs: tmp_path / 'cache')
-    monkeypatch.setattr(entry, 'ensure_controller', lambda *args, **kwargs: object())
-    monkeypatch.setattr(entry, 'provenance', lambda _: {})
-    monkeypatch.setattr(entry, 'invoke_controller', lambda *args, **kwargs: {
-        'state': 'observed', 'cancelled': False, 'returncode': 0,
-        'diagnostic_log': str(log), 'report': {'observation': {
-            'summary': None, 'cancellation_requested': False,
-            'final_requirements_satisfied': False,
-        }},
-    })
-    output = []
-    assert entry.execute(step, echo=output.append) == 1  # Helper exit0 is not target success.
-    assert output[-1] == f'Private failure diagnostic locator: {log}'
-    assert not list(tmp_path.iterdir())
+    targets = {name: marker(name) for name in ('data.rim', 'data.course')}
+    monkeypatch.setattr(entry, 'discover', lambda game: targets)
+    selection = entry.exact_selection('fixture', ['data.course', 'data.rim'])
+    request = selection.request(tmp_path)
+    assert request['targets'] == ['data.course', 'data.rim']
+    assert set(request['staged_inputs']) == set(targets)
+    assert request['declaration']['schema_version'] == 2
+
+
+def test_default_full_selector_cannot_succeed_as_partial_subset(tmp_path, monkeypatch):
+    monkeypatch.setattr(paths, 'REPO', tmp_path)
+    monkeypatch.setattr(entry, 'discover', lambda game: {'data.rim': marker()})
+    monkeypatch.setattr(entry, '_invoke_marker', lambda *a, **k: pytest.fail('dispatched missing full target'))
+    with pytest.raises(ValueError, match='unreal.package'):
+        build.build('fixture')
+    assert not (tmp_path / 'build').exists()
+
+
+def test_full_selector_routes_exact_declared_v2_unit(tmp_path, monkeypatch):
+    monkeypatch.setattr(paths, 'REPO', tmp_path)
+    owned = marker('unreal.package')
+    monkeypatch.setattr(entry, 'discover', lambda game: {owned.unit: owned})
+    assert entry.exact_selection('fixture', ()).request(tmp_path)['targets'] == ['unreal.package']
+
+
+@pytest.mark.parametrize('kind', ['unit', 'header', 'project', 'staging', 'contract'])
+def test_conflicting_declaration_data_refuses(tmp_path, kind):
+    first = marker(); second = deepcopy(first)
+    if kind == 'unit': second.declaration['units'][0]['script'] = 'ops/foreign.py'
+    elif kind == 'header': second.declaration['cache_version'] = 'other'
+    elif kind == 'project': second = replace(second, project='other')
+    elif kind == 'staging': second.staged_inputs[first.unit] = {'other': 'input'}
+    else:
+        first.content_slots['source'] = False; second.content_slots['source'] = True
+    with pytest.raises(ValueError, match='conflict'):
+        ControllerSelection((first, second), (first.unit,)).request(tmp_path)
+
+
+def test_duplicate_selector_refuses(tmp_path):
+    with pytest.raises(ValueError, match='unique'):
+        ControllerSelection((marker(),), ('data.rim', 'data.rim')).request(tmp_path)
+
+
+def test_readonly_plan_does_not_bootstrap_engine_or_claim_hit(tmp_path, monkeypatch):
+    monkeypatch.setattr(paths, 'REPO', tmp_path)
+    monkeypatch.setattr(entry, 'discover', lambda game: {'data.rim': marker()})
+    monkeypatch.setattr(entry, 'execute', lambda *a, **k: pytest.fail('plan executed'))
+    lines = []
+    assert build.build('fixture', ['data.rim'], dry=True, echo=lines.append) == 0
+    assert 'unknown' in lines[0] and not (tmp_path / 'build').exists()
+
+
+def test_unimplemented_option_refuses_instead_of_old_fallback(monkeypatch):
+    monkeypatch.setattr(build, '_prepared_build', lambda *a, **k: pytest.fail('fallback'))
+    with pytest.raises(ValueError, match='no v2 implementation'):
+        build.build('fixture', ['data.rim'], touch=True)
+
+
+@pytest.mark.parametrize('state', ['incomplete', 'cancelled'])
+def test_incomplete_or_cancelled_controller_never_reports_success(tmp_path, monkeypatch, state):
+    result = observed()
+    if state == 'incomplete': result['report']['observation']['final_requirements_satisfied'] = False
+    else: result['cancelled'] = True
+    monkeypatch.setattr(entry, '_invoke_marker', lambda *a, **k: result)
+    assert entry.execute(marker(), echo=lambda _: None) == (130 if state == 'cancelled' else 1)

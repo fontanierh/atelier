@@ -35,44 +35,12 @@ class Observer:
         self.file_finder = external.FileFinder.find_spec
         self.import_roots = {Path(p or '.').resolve() for p in sys.path}
         self.import_roots.update(p.parent for p, directory in self.inputs if not directory)
-        # Namespace search may start above a declared Python module. These roots
-        # authorize ONLY the retained actual import resolver's directory probes;
-        # module contents, namespace packages and direct IO still pass read().
-        self.import_roots.update(parent for p, directory in self.inputs
-                                 if not directory and p.suffix == '.py' for parent in p.parents)
-        self.fill_cache_code = external.FileFinder._fill_cache.__code__
         self.seen = set()
         self.failed = False
         self.first_refusal = None
         self.sealed = False
         self.local = threading.local()
         self.lock = threading.RLock()
-        self.resolve_code = Path.resolve.__code__
-        self.realpath_codes = {getattr(getattr(os.path, name, None), '__code__', None)
-                               for name in ('realpath', '_joinrealpath', '_realpath')}
-        self.realpath_codes.discard(None)
-        self.cleanup_codes = frozenset((shutil.rmtree.__code__, shutil._rmtree_safe_fd.__code__))
-        self.cleanup_globals = shutil.__dict__
-        self._nested_process = None
-        self.directory_guard_code = None
-        helper = Path(__file__).with_name('export_manifest.py')
-        if (helper, False) in self.inputs:
-            # This named framework helper is already a declared code input. Load
-            # it through the active captured loader BEFORE installing the observer,
-            # then retain its actual code/global/builtin identities, never a name.
-            import builtins
-            import types
-            from atelier.export_manifest import real_directory
-            if (type(real_directory) is types.FunctionType
-                    and real_directory.__code__.co_filename == str(helper)
-                    and real_directory.__globals__.get('Path') is Path
-                    and real_directory.__globals__.get('stat') is stat):
-                self.directory_guard_code = real_directory.__code__
-                self.directory_guard_globals = {'Path': Path, 'stat': stat}
-                self.directory_guard_builtins = {name: getattr(builtins, name) for name in
-                                                 ('reversed', 'FileNotFoundError', 'ValueError')}
-        self.metadata_codes = {Path.stat.__code__, Path.lstat.__code__}
-
 
     # Kernel device nodes are not recipe inputs. CPython reads entropy to name a temporary file
     # and libraries seed themselves from it; macOS reaches the same entropy through getentropy
@@ -104,18 +72,6 @@ class Observer:
                 self.failed = True
                 if self.first_refusal is None:
                     self.first_refusal = f'{operation} {label or ""}: {reason}'.strip()
-                    try:
-                        frame = sys._getframe(1)
-                        for _ in range(10):
-                            if frame is None:
-                                break
-                            code = frame.f_code
-                            print('audit_first_origin v1 function=' + code.co_qualname[:100]
-                                  + ' file=' + Path(code.co_filename).name[:100]
-                                  + ' line=' + str(frame.f_lineno), file=sys.stderr, flush=True)
-                            frame = frame.f_back
-                    except BaseException:
-                        pass
             if item not in self.seen:
                 if len(self.seen) >= 20000:
                     self.failed = True
@@ -125,46 +81,9 @@ class Observer:
         if reason:
             raise PermissionError(f'Input audit: {operation} {label or ""}: {reason}')
 
-    def owned_cleanup_descriptor(self, descriptor):
-        """Resolve only actual stdlib rmtree descriptors inside this owned scratch."""
-        frame = sys._getframe(1)
-        allowed = False
-        for _ in range(8):
-            if frame is None:
-                break
-            if (frame.f_code in self.cleanup_codes
-                    and frame.f_globals is self.cleanup_globals):
-                allowed = True
-                break
-            frame = frame.f_back
-        if not allowed or type(descriptor) is not int:
-            self.record('descriptor access', reason='opaque file descriptors are unsupported')
-        previous = getattr(self.local, 'busy', False)
-        self.local.busy = True
-        try:
-            info = os.fstat(descriptor)
-            if sys.platform == 'darwin':
-                import fcntl
-                path = Path(os.fsdecode(fcntl.fcntl(descriptor, 50, b'\0' * 1024).split(b'\0', 1)[0]))
-            else:
-                path = Path(os.readlink('/proc/self/fd/' + str(descriptor)))
-            current = path.lstat()
-            if (not path.is_absolute() or not path.is_relative_to(self.scratch)
-                    or not stat.S_ISDIR(info.st_mode) or not stat.S_ISDIR(current.st_mode)
-                    or (info.st_dev, info.st_ino) != (current.st_dev, current.st_ino)):
-                self.record('descriptor access', reason='cleanup descriptor is not the owned scratch directory')
-            return path
-        finally:
-            self.local.busy = previous
-
     def path(self, value, dir_fd=None):
-        if isinstance(value, int):
-            return self.owned_cleanup_descriptor(value)
-        if dir_fd not in (None, -1):
-            root = self.owned_cleanup_descriptor(dir_fd)
-            if type(value) not in (str, bytes) or Path(os.fsdecode(value)).name != os.fsdecode(value):
-                self.record('descriptor access', reason='cleanup path is not a closed relative leaf')
-            value = root / os.fsdecode(value)
+        if isinstance(value, int) or dir_fd not in (None, -1):
+            self.record('descriptor access', reason='opaque file descriptors are unsupported')
         if value is None:
             value = '.'
         previous = getattr(self.local, 'busy', False)
@@ -214,10 +133,6 @@ class Observer:
             self.local.busy = False
 
     def observe(self, event, args):
-        if event == 'subprocess.Popen' and self._nested_process is not None:
-            if self._nested_process(args):
-                self.record('checked nested tool')
-                return
         if event == 'import' and args[1] is not None:
             # ExtensionFileLoader does not open a shared library through Python's open event.
             # CPython reports its filename here before loading it, so its bytes still need a key.
@@ -235,7 +150,7 @@ class Observer:
             # CPython's import finder lists search directories before opening a module. These are
             # resolver probes, not recipe directory queries; actual module reads are still checked.
             frame = sys._getframe(2)
-            importing = (frame.f_code is self.fill_cache_code
+            importing = (frame.f_code is external.FileFinder._fill_cache.__code__
                          and frame.f_back is not None and frame.f_back.f_code is self.file_finder.__code__
                          and getattr(self.local, 'resolving', False) and path in self.import_roots)
             if importing:
@@ -266,86 +181,15 @@ class Observer:
             return function(path, *args, **kwargs)
         self.local.busy = True
         try:
-            checked = self.path(path, kwargs.get('dir_fd'))
-            if self.input_resolution_metadata(checked):
-                self.record('input resolution metadata', checked)
-            elif self.declared_directory_metadata(checked):
-                self.record('input directory validation metadata', checked)
-            else:
-                self.read(checked, metadata=True)
+            self.read(self.path(path, kwargs.get('dir_fd')), metadata=True)
             return function(path, *args, **kwargs)
         finally:
             self.local.busy = False
 
-    def input_resolution_metadata(self, path):
-        """@cc [owner:fontanierh,label:correctness;safety] declared-input-resolver-metadata
-        Only the retained actual stdlib resolver code chain normalizing one exact
-        declared input MAY inspect its ancestor metadata. This MUST NOT grant parent
-        directory data/listing/write permission; direct metadata calls, replaced
-        resolver code and unknown targets MUST retain the original refusal. See
-        test_build_audit.py declared-script and resolver-boundary regressions.
-        """
-        frame = sys._getframe(2)
-        if frame.f_code not in self.realpath_codes:
-            return False
-        for _ in range(8):
-            if frame is None:
-                return False
-            if frame.f_code not in self.realpath_codes:
-                break
-            frame = frame.f_back
-        if frame is None or frame.f_code is not self.resolve_code:
-            return False
-        target = frame.f_locals.get('self')
-        if type(target) is not type(self.scratch) or not target.is_absolute():
-            return False
-        if (target.is_relative_to(self.scratch) and '..' not in target.parts
-                and path in target.parents):
-            return True
-        return any(target == source and path in source.parents for source, _ in self.inputs)
-
-    def declared_directory_metadata(self, path):
-        """@cc [owner:fontanierh,label:correctness;safety] declared-directory-validation-metadata
-        Only the retained actual declared framework directory validator through
-        original pathlib stat/lstat code MAY inspect ancestor metadata for an EXACT
-        declared directory input or the exact parent of a declared file input.
-        Its code/globals/builtins MUST remain bound;
-        unknown targets, direct calls, replacement helpers and directory listing,
-        contents or writes MUST retain the original checks. This is no input grant.
-        """
-        if self.directory_guard_code is None:
-            return False
-        frame = sys._getframe(2)
-        for _ in range(4):
-            if frame is None or frame.f_code not in self.metadata_codes:
-                break
-            frame = frame.f_back
-        if frame is None or frame.f_code is not self.directory_guard_code:
-            return False
-        if (any(frame.f_globals.get(name) is not value for name, value in self.directory_guard_globals.items())
-                or any(frame.f_globals.get(name, frame.f_builtins.get(name)) is not value
-                       for name, value in self.directory_guard_builtins.items())):
-            return False
-        target = frame.f_locals.get('path')
-        if type(target) is not type(self.scratch) or not target.is_absolute():
-            return False
-        return any((target == source if directory else target == source.parent)
-                   and path in source.parents for source, directory in self.inputs)
-
     def checked_open(self, function, path, *args, **kwargs):
-        # A real stdlib rmtree opens owned child directories through its held parent.
-        # Direct producer descriptors, foreign roots and non-directory flags refuse.
-        if kwargs.get('dir_fd') is not None and not getattr(self.local, 'busy', False):
-            root = self.owned_cleanup_descriptor(kwargs['dir_fd'])
-            if (type(path) not in (str, bytes) or Path(os.fsdecode(path)).name != os.fsdecode(path)
-                    or not args or args[0] & (os.O_WRONLY | os.O_RDWR | os.O_CREAT | os.O_TRUNC)):
-                self.record('descriptor access', reason='unsupported cleanup descriptor open')
-            self.read(root / os.fsdecode(path), directory=True)
-            self.local.busy = True
-            try:
-                return function(path, *args, **kwargs)
-            finally:
-                self.local.busy = False
+        # CPython's open event omits dir_fd. Check that argument before letting os.open emit it.
+        if kwargs.get('dir_fd') is not None:
+            self.record('descriptor access', reason='dir_fd opens are unsupported')
         return function(path, *args, **kwargs)
 
     def checked_find_spec(self, function, fullname, path=None, target=None):
@@ -427,7 +271,7 @@ def clear_outputs(outputs):
         checked(root)
 
 
-def execute(spec, *, blender=False, before=None, after=None, execution_scope=None):
+def execute(spec, *, blender=False, before=None, after=None):
     """Execute once; the observer remains armed until this fresh process exits.
 
     ``before``/``after`` are framework-only checks, never recipe callbacks. Native adapters use
@@ -454,9 +298,7 @@ def execute(spec, *, blender=False, before=None, after=None, execution_scope=Non
     observer.install()
     succeeded = False
     try:
-        from contextlib import nullcontext
-        with (execution_scope(observer) if execution_scope is not None else nullcontext()):
-            runpy.run_path(script, run_name='__main__')
+        runpy.run_path(script, run_name='__main__')
         succeeded = True
     except SystemExit as error:
         succeeded = error.code in (None, 0)

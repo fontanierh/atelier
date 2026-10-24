@@ -29,7 +29,6 @@ from .build_products import Product
 from .build_deferred import DeferredInputs
 from .build_spatial import BBoxQuery
 from .build_cook import CookMode
-from .build_v2.controller_recipe import ControllerTarget, validate_markers
 from .play_limits import GAME_GIB, GAME_MAX_GIB
 from atelier.harness.safety import guarded
 from atelier.harness.safety.render_lock import GiB, slot_count
@@ -440,7 +439,6 @@ class Step:
     checkpoint_outputs: tuple = field(default=(), repr=False)  # complete additional output roots, never representative samples
     candidate_scope: object = field(default=None, repr=False, compare=False)  # generic compatibility candidates; native validation still required
     replan: bool = field(default=False, kw_only=True)  # reload recipe after a completed source planner
-    controller: ControllerTarget | None = field(default=None, kw_only=True)  # explicit Rust-owned execution, never a v1 stamp
 
 
 def outputs_present(step):
@@ -459,8 +457,6 @@ def check_source_launch(steps):
     tool-context inventory. This declaration check MUST NOT add fingerprint
     fields or change command representations.
     """
-    steps = tuple(steps)
-    validate_markers(steps, paths.REPO)
     for step in steps:
         if type(getattr(step, 'replan', False)) is not bool or (getattr(step, 'replan', False) and (not step.products or not step.commands
                 or any(not isinstance(c, (Call, Python, Blender)) for c in step.commands))):
@@ -475,16 +471,6 @@ def check_modules(steps):
     check_source_launch(steps)
     from .mesh_export_contract import check_steps
     check_steps(steps, Blender)
-    _check_module_declarations(steps)
-
-
-def check_declarations(steps):
-    """Global metadata preflight without inspecting unrelated actions' source closures."""
-    check_source_launch(steps)
-    _check_module_declarations(steps)
-
-
-def _check_module_declarations(steps):
     for step in steps:
         for command in step.commands:
             if isinstance(command, UnrealScript):
@@ -591,31 +577,17 @@ def _hash_path(digest, path, skip=True, shadow=False):
         digest.update(b'missing:' + str(path).encode())
 
 
-def audit_enabled(step):
-    from .build_audit import enabled
-    return enabled(step)
-
-
 def required_inputs(step, *, observation=None):
     named = step.products or step.reads or step.references
-    from .build_audit import SUPPORT, captured_runtime_inputs, enabled as audit_enabled
+    from .build_audit import SUPPORT
     from . import build_spatial
     batch_code = [Path(__file__).with_name(name) for name in ('build_batches.py', 'build_batch_worker.py')] if step.batch else []
     if step.deferred_inputs and observation is None:
         raise ValueError(f'{step.name}: deferred inputs require an explicit input observation')
     inputs = step.inputs if observation is None else observation.paths
-    native = ()
-    if getattr(step, '_captured_native_runtime', None) is not None:
-        from .build_v2.legacy_native_action import captured_native_inputs
-        native = captured_native_inputs(step)
-    call = ()
-    if getattr(step, '_captured_call_runtime', None) is not None:
-        from .build_v2.legacy_call import captured_call_inputs
-        call = captured_call_inputs(step)
     return [*inputs, *batch_code, *(c.script for c in step.commands if named and hasattr(c, 'script')),
             *(p for c in step.commands for p in getattr(c, 'runs', list)()),
-            *(SUPPORT if audit_enabled(step) else ()), *captured_runtime_inputs(step), *native, *call,
-            *([Path(build_spatial.__file__)] if step.queries else ())]
+            *(SUPPORT if step.audit else ()), *([Path(build_spatial.__file__)] if step.queries else ())]
 
 
 def declared_inputs(step):
@@ -656,8 +628,6 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, 
     input bytes and named (Merkle) fingerprints MUST compute directly. The value MUST be exactly
     what the direct computation returned.
     """
-    if step.controller is not None:
-        raise ValueError(f'{step.name}: controller-owned step cannot use v1 fingerprint or stamp dispatch')
     named = bool(step.products or step.reads or step.references)
     if index is None or named or _input_bytes or getattr(index, 'verify', False):
         return _fingerprint_state(step, done, capture=capture, index=index, tool_cache=tool_cache,
@@ -715,14 +685,14 @@ def _fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None,
                                         'members': [str(p) for p in observation.members]}), sort_keys=True)
         digest.update(b'deferred-inputs-v1\0' + metadata.encode())
         state['deferred_inputs'] = json.loads(metadata)
-    if step.cache or audit_enabled(step):
+    if step.cache or step.audit:
         build_inputs.validate_imports(step, [*inputs, *step.optional_inputs])
     for item in inputs:
         replacement = _input_bytes.get(Path(item)) if _input_bytes else None
         if named:
             # Named actions hash a Merkle inventory, not the legacy byte stream. This permits
             # file memoization and includes directory membership and every explicitly selected input.
-            options = {'complete': True} if audit_enabled(step) else {}
+            options = {'complete': True} if step.audit else {}
             manifest = (dict(schema=1, files={'0/.': dict(kind='file', size=len(replacement), sha256=hashlib.sha256(replacement).hexdigest())})
                         if replacement is not None else build_inputs.inventory(item, hasher=hasher, **options) if Path(item).exists() else None)
             value = build_products.identity(manifest)
@@ -760,7 +730,7 @@ def _fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None,
         digest.update(json.dumps({'products': declarations, 'reads': consumed}, sort_keys=True).encode())
         state['products'] = declarations
         state['reads'] = consumed
-    if audit_enabled(step):
+    if step.audit:
         state['audit'] = 1
         digest.update(b'python-input-audit-v1\0')
     if step.queries:
@@ -773,8 +743,8 @@ def _fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None,
     if spatial_outputs:
         state['spatial_outputs'] = spatial_outputs
         digest.update(json.dumps(spatial_outputs, sort_keys=True).encode())
-    if step.cache or audit_enabled(step) or step.toolchain:
-        if audit_enabled(step):
+    if step.cache or step.audit or step.toolchain:
+        if step.audit:
             from .build_audit import tool_context
         else:
             from .build_cache import tool_context
@@ -851,16 +821,12 @@ def run_command(ctx, step, command, log, request=None, slots=None, *, products=N
     if isinstance(command, UnrealScript):
         command.validate_step(step)
     if isinstance(command, Call):
-        authority = getattr(ctx, 'legacy_authority', None)
-        if authority is not None:
-            with authority.call_scope(ctx, step, command):
-                return command.fn(ctx, log)
         return command.fn(ctx, log)
     if isinstance(command, (Python, Blender)):
         source_request = request or (slot_request(ctx, step) if step.heavy else None)
         return build_source.run(ctx, step, command, log, source_request, slots,
                                 products=products, audit_receipt=audit_receipt)
-    if audit_enabled(step):
+    if step.audit:
         from . import build_audit
         with build_audit.prepared(ctx, step, products, receipt=audit_receipt) as (argv, env, descriptors):
             return run_argv(ctx, step, command, argv, env, log, request, slots, pass_fds=descriptors)
@@ -1004,71 +970,26 @@ def slot_summary(slots):
 def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, verify=False, cook_mode=None, cook_reason=None,
           max_heavy_commands=None, recover_cook=None, record_cook_recovery=False, rebuild_touched=False, cook_memory_gib=None,
           rebuild_reason=None, fail_fast=False):
-    """@cc [owner:fontanierh,label:correctness] rebuild-touched-certificates
-    An explicit touched-only rebuild MUST replace only explicitly named touched certificates through normal
-    execution or verified product restoration, without changing action keys or skipping guards.
-    Current proven certificates MUST remain current. Planning MUST explain the same rebuild rule.
-    The repair MUST NOT combine with force, touch or cook recording/recovery.
+    """@cc [owner:fontanierh,label:correctness] default-build-is-v2
+    The ordinary build command MUST route directly to the existing v2 engine, with
+    no compatibility host or old scheduler/cache fallback. An unavailable full target
+    MUST refuse instead of reporting a migrated subset as the whole build.
     """
-    cook_memory_limit(cook_memory_gib, wanted)
-    if cook_memory_gib is not None and (touch or recover_cook is not None):
-        raise ValueError('--cook-memory-gib cannot combine with touch or certification-only recovery')
-    if rebuild_touched and (force or touch or recover_cook is not None or record_cook_recovery):
-        raise ValueError('Rebuilding touched prerequisites is a separate build, without force/touch/cook recovery')
-    if recover_cook is not None and (force or dry or touch or cook_mode is not None or max_heavy_commands is not None):
-        raise ValueError('Cook recovery requires ordinary execution without force/touch/experimental/budget flags')
-    if recover_cook is not None and list(wanted) not in (['unreal.cook'], ['unreal.package']):
-        raise ValueError('Cook recovery selects exactly unreal.cook or unreal.package')
-    if record_cook_recovery and (recover_cook is not None or list(wanted) not in (['unreal.cook'], ['unreal.package'])):
-        raise ValueError('Record cook recovery selects unreal.cook or unreal.package, without --recover-cook')
-    if max_heavy_commands is not None and (type(max_heavy_commands) is not int or max_heavy_commands < 1):
-        raise ValueError('max_heavy_commands must be a positive integer')
-    from .build_snapshot import require_complete
-    from .build_v2.controller_entry import exact_selection, execute as execute_controller
-    from .build_v2 import legacy_entry
-    if not dry and legacy_entry.managed(game, wanted):
-        if (force or touch or cook_mode is not None or cook_reason is not None
-                or cook_memory_gib is not None or recover_cook is not None
-                or record_cook_recovery or rebuild_touched):
-            raise ValueError('managed legacy discovery does not support mutation/recovery overrides')
-        discovery = legacy_entry.prepare_discovery(game, wanted, verify=verify,
-                                               max_heavy_commands=max_heavy_commands,
-                                               fail_fast=fail_fast, rebuild_reason=rebuild_reason)
-        return legacy_entry.execute(game, wanted, discovery_source=discovery, verify=verify,
-                                    max_heavy_commands=max_heavy_commands, fail_fast=fail_fast,
-                                    rebuild_reason=rebuild_reason, echo=echo)
-    controller = exact_selection(game, wanted)
-    if controller is not None:
-        if (force or touch or verify or cook_mode is not None or cook_reason is not None or cook_memory_gib is not None
-                or recover_cook is not None or record_cook_recovery or rebuild_touched or rebuild_reason is not None
-                or max_heavy_commands is not None or fail_fast):
-            raise ValueError('controller target does not support legacy force/touch/verify/cook/recovery flags')
-        require_complete(paths.build_root() / game, game=game)
-        if dry:
-            echo(f'{controller.name:34s} unknown (readonly controller/cache observation unavailable; no bootstrap performed)')
-            return 0
-        return execute_controller(controller, echo=echo)
+    from .build_v2.controller_entry import exact_selection, execute
+    unsupported = (force or touch or verify or cook_mode is not None or cook_reason is not None
+                   or cook_memory_gib is not None or recover_cook is not None or record_cook_recovery
+                   or rebuild_touched or rebuild_reason is not None or max_heavy_commands is not None or fail_fast)
+    if unsupported:
+        raise ValueError('requested build option has no v2 implementation yet')
+    selection = exact_selection(game, wanted)
     if dry:
-        require_complete(paths.build_root() / game, game=game)
-        from .build_plan import show
-        return show(game, wanted, force=force, echo=echo, verify=verify,
-                    **({'rebuild_touched': True} if rebuild_touched else {}),
-                    **({'cook_mode': cook_mode, 'cook_reason': cook_reason} if cook_mode is not None else {}),
-                    **({'cook_memory_gib': cook_memory_gib} if cook_memory_gib is not None else {}))
-    ctx = Context(game, **({'cook_mode': cook_mode, 'cook_reason': cook_reason} if cook_mode is not None else {}),
-                  **({'recover_cook': recover_cook} if recover_cook is not None else {}),
-                  **({'cook_memory_gib': cook_memory_gib} if cook_memory_gib is not None else {}))
-    ctx.fail_fast = fail_fast  # Default: finish and publish every step a failure does not block.
-    # TERM/HUP unwind the build, so running children are stopped and completed results stay published.
-    from atelier.harness.safety.cancellation import termination_cleanup
-    with termination_cleanup():
-        return _prepared_build(ctx, wanted, force=force, touch=touch, echo=echo, verify=verify,
-                               rebuild_reason=rebuild_reason, rebuild_touched=rebuild_touched,
-                               record_cook_recovery=record_cook_recovery, max_heavy_commands=max_heavy_commands)
+        echo(f'{selection.name:34s} unknown (readonly v2 cache observation unavailable)')
+        return 0
+    return execute(selection, echo=echo)
 
 
 def _prepared_build(ctx, wanted, *, force, touch, echo, verify, rebuild_reason, rebuild_touched,
-                    record_cook_recovery, max_heavy_commands, prepared_steps=None):
+                    record_cook_recovery, max_heavy_commands):
     from .build_snapshot import require_complete
     game = ctx.game
     ctx.record_cook_recovery = record_cook_recovery
@@ -1085,10 +1006,8 @@ def _prepared_build(ctx, wanted, *, force, touch, echo, verify, rebuild_reason, 
             raise SystemExit('--touch cannot certify checkpoint builds. Use the normal build command.')
         if force and not (ctx.rebuild_reason or ctx.rebuild_reasons):
             raise SystemExit('--force requires --rebuild-reason for checkpoint builds; normal builds restore matching results.')
-        checkpoint_steps = prepared_steps if prepared_steps is not None else load_recipe(game).steps(ctx)
+        checkpoint_steps = load_recipe(game).steps(ctx)
         check_source_launch(checkpoint_steps)
-        if any(step.controller is not None for step in build_products.Graph(checkpoint_steps).select(wanted)) and not getattr(ctx, 'legacy_authority', None):
-            raise ValueError('mixed v1/controller checkpoint and reader custody is not yet accepted; no checkpoint restoration started')
         unknown = sorted(set(ctx.rebuild_reasons) - {s.name for s in checkpoint_steps})
         if unknown:
             raise SystemExit(f'--rebuild-reason names unknown tasks: {", ".join(unknown)}')
@@ -1116,11 +1035,7 @@ def _prepared_build(ctx, wanted, *, force, touch, echo, verify, rebuild_reason, 
     require_complete(paths.build_root() / game, game=game)
     from contextlib import nullcontext
     from .checkpoint_manifest import writer
-    authority = getattr(ctx, 'legacy_authority', None)
-    if authority is not None:
-        authority.before_prepare(ctx, checkpoint_steps, wanted)
-    with (authority.writer(ctx.out) if authority is not None else
-          writer(ctx.out) if ctx.checkpoint_settings is not None else nullcontext()):
+    with writer(ctx.out) if ctx.checkpoint_settings is not None else nullcontext():
         if checkpoint_steps is not None:
             try:
                 build_checkpoints.prepare(ctx, checkpoint_steps, echo=echo)
@@ -1128,22 +1043,9 @@ def _prepared_build(ctx, wanted, *, force, touch, echo, verify, rebuild_reason, 
                 raise SystemExit(str(error)) from None
         from .build_hashes import HashIndex
         from .build_expansion import execute
-        if authority is None:
-            with HashIndex(ctx.out / '.state' / 'file-hashes.sqlite3', verify=verify) as index:
-                return execute(ctx, wanted, force=force, touch=touch, echo=echo, index=index,
-                               steps=checkpoint_steps, max_heavy_commands=max_heavy_commands)
-        failure = None
         with HashIndex(ctx.out / '.state' / 'file-hashes.sqlite3', verify=verify) as index:
-            try:
-                code = execute(ctx, wanted, force=force, touch=touch, echo=echo, index=index,
-                               steps=checkpoint_steps, max_heavy_commands=max_heavy_commands)
-            except BaseException:
-                failure = sys.exc_info()  # Preserve original traceback through positive index close.
-        # A close error exits above, never settling uncertain metadata effects.
-        authority.after_index(ctx)
-        if failure is not None:
-            raise failure[1].with_traceback(failure[2])
-        return code
+            return execute(ctx, wanted, force=force, touch=touch, echo=echo, index=index,
+                           steps=checkpoint_steps, max_heavy_commands=max_heavy_commands)
 
 
 def run_light(argv, env, extra):
@@ -1208,17 +1110,10 @@ def _build(ctx, wanted, *, force, touch, echo, index, steps=None, produced=None,
         if completed and code != 76 and checkpoint.get('steps') is not None:
             from .checkpoint_manifest import finish
             finish(ctx, checkpoint['steps'])
-        authority = getattr(ctx, 'legacy_authority', None)
-        if authority is not None and not completed:
-            authority.checkpoint_complete(ctx, invalid)
     if completed and code != 76 and getattr(ctx, 'checkpoint_settings', None) is not None:
         from . import store_retention
         from .checkpoint_store import Store
-        if authority is not None:
-            authority.before_collection(ctx)
         store_retention.maybe_collect(Store(ctx.game), echo=echo)
-    if authority is not None:
-        authority.checkpoint_complete(ctx, invalid)
     if invalid:
         echo('FAILED: products changed after their owner completed: ' + ', '.join(invalid))
         return 1
@@ -1285,9 +1180,6 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
     rebuild_names = touched_targets(ctx, steps, wanted)
     check_modules(steps)
     plan = order(steps, list(wanted))
-    authority = getattr(ctx, 'legacy_authority', None)
-    if any(step.controller is not None for step in plan) and authority is None:
-        raise ValueError('mixed v1/controller execution custody is not yet accepted; no v1 task dispatch started')
     from .build_cook import validate_selection
     validate_selection(ctx, plan, touch=touch)
     declared_products = {p.name: p for s in steps for p in s.products}
@@ -1298,9 +1190,9 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             build_batches.validate(step)
         except ValueError as error:
             raise SystemExit(str(error)) from error
-        if step.cache or audit_enabled(step):
+        if step.cache or step.audit:
             try:
-                if audit_enabled(step):
+                if step.audit:
                     from .build_audit import roots
                     roots(ctx, step)
                 else:
@@ -1351,8 +1243,6 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
     def attempt(position, step):
         """Run, restore or confirm one planned step; a non-None value is its exit code."""
         nonlocal ran, restored, saved_seconds, heavy_commands
-        if authority is not None:
-            authority.before_task(ctx, step, done=done)
         print_ = f'{step.name:34s}'
         stamp = ctx.stamps / f'{step.name}.json'
         journal = ctx.stamps / f'{step.name}.restore.json'
@@ -1652,14 +1542,11 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                             return yield_build(step)
                         heavy_commands += 1
                     from .build_timings import clear_launch_report, launch_receipt
-                    launch_folder = (authority.guard_directory if authority is not None else
-                                     ctx.logs / f'{step.name}.guard')
-                    # Managed reports live in a fresh intent-bound namespace. Do not
-                    # unlink anything there before the host records that intent.
-                    fresh_launch = (not isinstance(command, Call) and
-                                    (authority is not None or step.heavy and clear_launch_report(launch_folder)))
+                    launch_folder = ctx.logs / f'{step.name}.guard'
+                    fresh_launch = (step.heavy and not isinstance(command, Call)
+                                    and clear_launch_report(launch_folder))
                     command_started = time.monotonic()
-                    audited = {'products': declared_products, 'audit_receipt': audit_receipt} if audit_enabled(step) else {}
+                    audited = {'products': declared_products, 'audit_receipt': audit_receipt} if step.audit else {}
                     phases = run_command(ctx, step, command, log, request, slots, **audited)
                     timing = {'kind': type(command).__name__, 'seconds': round(time.monotonic() - command_started, 3),
                               'scope': 'command invocation'}
@@ -1667,12 +1554,8 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                         timing['phases'] = phases
                     if fresh_launch:
                         launch = launch_receipt(launch_folder)
-                        if authority is not None and launch is not None and launch['invocation_id'] != authority.invocation:
-                            launch = None
                         if launch is not None:
                             timing['launcher'] = launch
-                            if authority is not None:
-                                timing['guard_report'] = str(launch_folder.relative_to(paths.REPO))
                             try:
                                 from . import build_tree_observations
                                 observation = build_tree_observations.read(launch_folder, launch['invocation_id'], current)
@@ -1847,9 +1730,6 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
         for position, step in enumerate(plan):
             if step.name in completed_batches or step.name in stopped:
                 continue
-            if step.controller is not None and authority is not None:
-                authority.current_controller(step)
-                continue
             by = sorted(upstream.get(step.name, set()) & stopped)
             if by:
                 blocked[step.name] = by
@@ -1861,8 +1741,6 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             attempted.add(step.name)
             batch_failed.clear()
             code = attempt(position, step)
-            if authority is not None:
-                authority.after_task(ctx, step, code, done=done)
             running = None
             if code is None:
                 continue
@@ -1887,23 +1765,6 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
 
 
 def list_steps(game, echo=print):
-    """@cc [owner:fontanierh,label:correctness] readonly-controller-step-list
-    Controller-aware listing MUST use source-only declarations, validate global metadata
-    and explicitly report controller ownership with reuse unknown. It MUST NOT construct
-    a runtime Context, bootstrap a helper or create build/cache state. See
-    test_controller_list_is_explicit_without_runtime_context_or_bootstrap.
-    """
-    from .build_v2.controller_entry import discover, declaration_context
-    if discover(game):
-        steps = load_recipe(game).steps(declaration_context(game))
-        check_declarations(steps)
-    else:
-        steps = load_recipe(game).steps(Context(game, create=False))
-    for s in steps:
-        needs = f'  (needs {", ".join(s.needs)})' if s.needs else ''
-        needs += f'  (after {", ".join(s.after)})' if s.after else ''
-        needs += f'  (products {", ".join(p.name for p in s.products)})' if s.products else ''
-        needs += f'  (reads {", ".join(s.reads)})' if s.reads else ''
-        needs += f'  (references {", ".join(s.references)})' if s.references else ''
-        marker = ' [controller; reuse unknown; no bootstrap]' if s.controller is not None else ''
-        echo(f'{s.name:34s} {s.about}{marker}{needs}')
+    from .build_v2.controller_entry import discover
+    for name in discover(game):
+        echo(name)

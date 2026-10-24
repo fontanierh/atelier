@@ -279,9 +279,6 @@ def run(ctx, candidates, done, *, index, tool_cache, echo, products, wanted=()):
         raise ValueError('Audited batch actions require separate fresh native processes')
     session = Session(ctx, candidates, done, index, tool_cache, echo, products)
     first = candidates[0][0]
-    authority = getattr(ctx, 'legacy_authority', None)
-    if authority is not None:
-        authority.before_native_batch(ctx, session)
     session.write_plan()
     command = replace(first.commands[0], script=WORKER,
                       env=(*first.commands[0].env, ('ATELIER_BATCH', str(session.folder))))
@@ -318,19 +315,14 @@ def run(ctx, candidates, done, *, index, tool_cache, echo, products, wanted=()):
                     break
     if session.error:
         echo('Batch failed: ' + session.error)
-        code = 1
-    elif outcome.get('status') == 'yield':
+        return set(session.completed), 1
+    if outcome.get('status') == 'yield':
         echo('Batch yielded: ' + outcome['reason'] + '. Completed results are saved.')
         resume = shlex.join(['atelier', 'build', ctx.game, *wanted])
         echo(f'BATCH YIELDED: {len(session.completed)} of {len(candidates)} actions done; '
              f'recheck Waiting, then resume with {resume}')
-        code = 75
-    elif len(session.completed) != len(candidates):
+        return set(session.completed), 75
+    if len(session.completed) != len(candidates):
         echo('Batch ended without a receipt for every action')
-        code = 1
-    else:
-        code = 0
-    completed = set(session.completed)
-    if authority is not None:
-        authority.native_batch_observed(ctx, session, completed, code)
-    return completed, code
+        return set(session.completed), 1
+    return set(session.completed), 0

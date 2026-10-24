@@ -1,6 +1,6 @@
 """Prepare and validate an opt-in Python input audit, separately from the action's outputs."""
 from contextlib import contextmanager, ExitStack
-from dataclasses import replace, dataclass, field
+from dataclasses import replace
 import json
 import os
 from pathlib import Path
@@ -15,106 +15,15 @@ from . import paths
 WORKER = Path(__file__).with_name('build_audit_worker.py')
 NATIVE = Path(__file__).with_name('build_audit_native.py')
 SUPPORT = (Path(__file__), WORKER, NATIVE)
-_CAPTURED_ORIGIN = object()
-_CAPTURED_WORKER = (
-    'platform/studio/atelier/__init__.py',
-    'platform/studio/atelier/build_audit_worker.py',
-    'platform/studio/atelier/atomic_files.py',
-    'platform/studio/atelier/build_v2/__init__.py',
-    'platform/studio/atelier/build_v2/legacy_action.py',
-    'platform/studio/atelier/build_v2/legacy_bootstrap.py',
-    'platform/studio/atelier/build_v2/legacy_client.py',
-    'platform/studio/atelier/build_v2/legacy_qualification.py',
-    'platform/studio/atelier/build_v2/controller_client.py',
-)
-
-
-@dataclass(frozen=True)
-class _CapturedRuntime:
-    root: Path
-    files: tuple[str, ...]
-    _origin: object = field(repr=False, compare=False)
-    nested_tool: object = None
-    legacy_outputs: tuple[Path, ...] = ()
-
-
-def captured_runtime_inputs(step):
-    runtime = getattr(step, '_captured_audit_runtime', None)
-    if runtime is None:
-        return ()
-    if type(runtime) is not _CapturedRuntime or runtime._origin is not _CAPTURED_ORIGIN:
-        raise ValueError('unqualified captured audit runtime descriptor')
-    return tuple(runtime.root / name for name in runtime.files)
-
-
-def enabled(step):
-    """@cc [owner:fontanierh,label:correctness;safety] fixed-issuer-observed-python
-    Only original audit opt-in or the private fixed-issuer runtime MAY enable this
-    existing observer. Original recipe flags MUST remain unchanged; runtime/support
-    identities and observation mode MUST enter the original fingerprint. Unknown
-    descriptors MUST refuse. Observer completeness and normal guarded lifecycle MUST
-    remain required before certification; this predicate grants no mutation authority.
-    See test_build_v2_legacy_action.py and test_build_audit.py.
-    """
-    runtime = captured_runtime_inputs(step)
-    return step.audit or bool(runtime)
-
-
-def _bind_captured_runtime(step, *, checkout, issuer_files, code_inputs=(), nested_tool=None, legacy_outputs=()):
-    """Fixed issuer semantic descriptor only; never a mutation/launch capability.
-
-    Use the existing step inputs and named worker helpers/initializers. This private
-    mode is not a recipe flag and cannot execute without the real bound authority.
-    """
-    from .build import required_inputs
-    root = Path(checkout)
-    names = {path.relative_to(root).as_posix() for path in map(Path, required_inputs(step))
-             if path.suffix == '.py' and path not in SUPPORT}
-    names.update(Path(path).relative_to(root).as_posix() for path in code_inputs)
-    names.update(_CAPTURED_WORKER)
-    if nested_tool is not None:
-        from .build_v2.legacy_tool_action import checked_node
-        checked_node(nested_tool)
-        names.add('platform/studio/atelier/build_v2/legacy_tool_action.py')
-        names.add('platform/studio/atelier/build_v2/python_worker.py')
-        names.add('platform/studio/atelier/build_v2/protocol.py')
-        names.add('platform/studio/atelier/build_products.py')
-    if nested_tool is not None or legacy_outputs:
-        from .build import Python
-        if (not legacy_outputs or tuple(legacy_outputs) != tuple(step.outputs)
-                or step.products or not step.cutoff or step.cache
-                or len(step.commands) != 1 or type(step.commands[0]) is not Python):
-            raise ValueError('captured legacy Python action differs from its original cutoff/output role')
-    for name in list(names):
-        parent = (root / name).parent
-        while parent != root:
-            initializer = parent / '__init__.py'
-            if initializer.is_symlink():
-                raise ValueError('linked captured worker package initializer')
-            if initializer.is_file():
-                names.add(initializer.relative_to(root).as_posix())
-            parent = parent.parent
-    if not names <= set(issuer_files):
-        raise ValueError('selected worker code is outside the original named issuer capture')
-    runtime = _CapturedRuntime(root, tuple(sorted(names)), _CAPTURED_ORIGIN, nested_tool, tuple(legacy_outputs))
-    step._captured_audit_runtime = runtime
-    return runtime
 
 
 def validate(step):
     from .build import Blender, Python, UnrealScript
     if type(step.audit) is not bool:
         raise ValueError(f'{step.name}: audit must be a boolean')
-    if not enabled(step):
+    if not step.audit:
         return
-    runtime = getattr(step, '_captured_audit_runtime', None)
-    legacy = bool(captured_runtime_inputs(step) and runtime.legacy_outputs
-                  and len(step.commands) == 1 and type(step.commands[0]) is Python
-                  and runtime.legacy_outputs == tuple(step.outputs) and not step.products
-                  and step.cutoff and not step.cache)
-    if runtime is not None and runtime.legacy_outputs and not legacy:
-        raise ValueError('captured legacy Python output/command role changed')
-    if ((not step.products and not legacy) or len(step.commands) != 1
+    if (not step.products or len(step.commands) != 1
             or type(step.commands[0]) not in (Python, Blender, UnrealScript)):
         raise ValueError(f'{step.name}: audit requires named products and exactly one Python, Blender or UnrealScript command')
     if type(step.commands[0]) is not Python:
@@ -144,19 +53,9 @@ def installation(command):
 
 def tool_context(step, hasher, *, cache=None):
     """Fingerprint the native Python installation without granting portable cache eligibility."""
-    from . import build, build_cache, build_inputs, build_products, engine
-    hasher = hasher or build_products.file_digest
+    from . import build, build_cache, build_inputs, engine
     if type(step.commands[0]) is not build.UnrealScript:
         context = build_cache.tool_context(step, hasher, cache=cache)
-        runtime = getattr(step, '_captured_audit_runtime', None)
-        if runtime is not None:
-            inputs = captured_runtime_inputs(step)
-            if runtime.nested_tool is not None:
-                from .build_v2.legacy_tool_action import node_identity
-                context = {**context, 'nested_tool': node_identity(runtime.nested_tool, hasher)}
-            context = {**context, 'captured_python_runtime': {
-                'version': 'captured-audited-python/1', 'flags': ['-I', '-S', '-B'],
-                'files': [(name, hasher(path)) for name, path in zip(runtime.files, inputs)]}}
         if type(step.commands[0]) is build.Blender:
             # A native host may have executed bytecode before the bootstrap. Unlike the
             # portable source-cache identity, this observation context includes __pycache__.
@@ -182,18 +81,6 @@ def tool_context(step, hasher, *, cache=None):
 def roots(ctx, step):
     """Audit ownership permits native products, but never permits restoring native cache entries."""
     from .build import Python, UnrealScript
-    runtime = getattr(step, '_captured_audit_runtime', None)
-    if captured_runtime_inputs(step) and runtime.legacy_outputs:
-        if (not runtime.legacy_outputs or runtime.legacy_outputs != tuple(step.outputs)
-                or step.products or not step.cutoff or step.cache):
-            raise ValueError('nested legacy output declaration changed')
-        for path in runtime.legacy_outputs:
-            path = Path(path)
-            if not path.is_absolute() or not path.is_relative_to(ctx.out) or path == ctx.out:
-                raise ValueError('nested legacy output is outside the owned build root')
-            if any(p.is_symlink() for p in (path, *path.parents)):
-                raise ValueError('linked nested legacy output')
-        return
     if type(step.commands[0]) is Python:
         from .build_cache import roots as portable_roots
         return portable_roots(ctx, step)
@@ -312,18 +199,9 @@ def prepared(ctx, step, products, *, receipt=None):
     roots(ctx, step)
     command = step.commands[0]
     inputs = [*required_inputs(step), *(p for name in step.reads for p in products[name].roots())]
-    runtime = getattr(step, '_captured_audit_runtime', None)
-    output_roots = ([Path(p).resolve() for p in runtime.legacy_outputs]
-                    if runtime is not None and runtime.legacy_outputs else
-                    [Path(p).resolve() for product in step.products for p in product.paths])
+    output_roots = [Path(p).resolve() for product in step.products for p in product.paths]
     report_path = ctx.logs / f'{step.name}.audit.json'
-    authority = getattr(ctx, 'legacy_authority', None)
-    runtime = getattr(step, '_captured_audit_runtime', None)
-    if runtime is not None and (authority is None or getattr(authority, 'runtime', None) is not runtime):
-        raise ValueError('captured audit runtime requires its original fixed issuer authority')
-    temporary_scope = (authority.audit_directory() if authority is not None else
-                       tempfile.TemporaryDirectory(dir=ctx.logs, prefix='.audit-'))
-    with temporary_scope as temporary, ExitStack() as cleanup:
+    with tempfile.TemporaryDirectory(dir=ctx.logs, prefix='.audit-') as temporary, ExitStack() as cleanup:
         control = Path(temporary).resolve()
         from .build_spatial import manifest
         action_inputs = control / 'action-inputs.json'
@@ -342,9 +220,8 @@ def prepared(ctx, step, products, *, receipt=None):
             'inputs': [*((str(Path(p).resolve()), Path(p).is_dir()) for p in inputs),
                        *((str(Path(p).resolve()), False) for p in step.optional_inputs)],
             'outputs': list(map(str, output_roots)), 'scratch': str(scratch),
-            'runtime': (authority.runtime_roots() if authority is not None else
-                        sorted({str(Path(sysconfig.get_path(name)).resolve())
-                                for name in ('stdlib', 'platstdlib', 'purelib', 'platlib')})),
+            'runtime': sorted({str(Path(sysconfig.get_path(name)).resolve())
+                               for name in ('stdlib', 'platstdlib', 'purelib', 'platlib')}),
             'labels': [(str(scratch), 'scratch'), (str(ctx.out.resolve()), 'build'),
                        (str(paths.REPO.resolve()), 'repo')],
         }
@@ -373,20 +250,6 @@ def prepared(ctx, step, products, *, receipt=None):
                ('XDG_CACHE_HOME', str(scratch / 'cache')), ('PYTHONPYCACHEPREFIX', str(scratch / 'bytecode')),
                ('PYTHONDONTWRITEBYTECODE', '1'), ('ATELIER_ACTION_INPUTS', str(action_inputs)))
         env = (*command_env, *env, *((('ATELIER_AUDIT_SPEC', str(spec)),) if native else ()))
-        if authority is not None:
-            if native:
-                raise ValueError('managed captured audit supports the qualified Python family only')
-            argv = authority.audit_argv(spec)
-            config['legacy_environment'] = dict(authority.action_environment(env))
-            config['legacy_code_files'] = list(runtime.files)
-            if runtime.nested_tool is not None:
-                from .build_v2.legacy_tool_action import node_spec
-                config['legacy_nested_tool'] = node_spec(runtime.nested_tool, ctx.build_hash_index.digest)
-                config['inputs'].extend((str(path), False) for path in
-                                       (runtime.nested_tool.image, *runtime.nested_tool.libraries))
-            env = tuple(config['legacy_environment'].items())
-            spec.write_text(json.dumps(config))
-            spec.chmod(0o600)
         receiver.thread.start()
         try:
             yield argv, env, (write_fd,)

@@ -10,7 +10,7 @@ from types import SimpleNamespace
 
 from atelier import paths
 from .controller_client import ensure_controller, invoke_controller
-from .controller_recipe import ControllerTarget
+from .controller_recipe import ControllerTarget, ControllerSelection
 
 
 def discover(game, *, checkout=None):
@@ -19,7 +19,7 @@ def discover(game, *, checkout=None):
         try:
             directory = paths.game_dir(game)
         except FileNotFoundError:
-            return {}  # No controller declaration; legacy callers retain their own discovery.
+            return {}
     else:
         directory = Path(checkout) / 'games' / game
     file = directory / 'build_v2.py'
@@ -46,29 +46,22 @@ def declaration_context(game):
 
 
 def exact_selection(game, wanted):
-    """@cc [owner:fontanierh,label:correctness] normal-controller-global-preflight
-    Early exact-target dispatch MUST validate the complete normal recipe graph and
-    cross-owner declarations before invoking a helper, without creating a legacy Context,
-    checkpoints, stamps or tool identities. Its selected typed marker MUST match the pure
-    game declaration. Unsupported mixed predecessors MUST NOT fall back or be skipped.
-    See test_controller_exact_selection_validates_unselected_owners_before_invocation.
+    """@cc [owner:fontanierh,label:correctness] direct-v2-default-selection
+    Normal builds MUST select only real v2 units and invoke the existing Rust engine.
+    Missing full/default selectors MUST refuse explicitly, never call an older scheduler
+    or substitute a partial selection. Discovery MUST NOT construct a runtime Context.
     """
-    if not wanted:
-        return None
     candidates = discover(game)
-    if not candidates or any(name not in candidates for name in wanted):
-        return None
-    from atelier import build, build_products
-    steps = build.load_recipe(game).steps(declaration_context(game))
-    build.check_declarations(steps)
-    selected = build_products.Graph(steps).select(wanted)
-    if len(selected) != 1 or selected[0].controller is None:
-        raise ValueError('controller exact dispatch requires one independent declared leaf')
-    build.check_modules(selected)
-    marker = selected[0].controller
-    if marker.request(paths.REPO) != candidates[marker.unit].request(paths.REPO):
-        raise ValueError('normal recipe and controller declarations disagree')
-    return selected[0]
+    names = tuple(wanted) if wanted else ('unreal.package',)
+    if not candidates:
+        raise ValueError(f'{game}: no v2 build declaration')
+    missing = [name for name in names if name not in candidates]
+    if missing:
+        raise ValueError(f'{game}: v2 target is not implemented: ' + ', '.join(missing))
+    selection = ControllerSelection(tuple(candidates.values()), names)
+    selection.request(paths.REPO)  # Strict finite control assembly; Rust still owns graph validation.
+    return selection
+
 
 
 def provenance(checkout):
@@ -90,25 +83,39 @@ def provenance(checkout):
     }
 
 
-def execute(step, *, echo=print):
-    """Execute the existing normal target through the sole Rust controller; never v1 fallback."""
-    marker = step.controller
-    if not isinstance(marker, ControllerTarget):
-        raise ValueError('normal controller dispatch requires its typed marker')
-    return _result_code(_invoke_marker(marker, echo=echo), echo=echo)
+def execute(selection, *, echo=print):
+    """Execute a direct selection through the existing Rust scheduler/store/executor/install."""
+    if not isinstance(selection, (ControllerTarget, ControllerSelection)):
+        raise ValueError('normal build requires a typed v2 selection')
+    return _result_code(_invoke_marker(selection, echo=echo), echo=echo)
+
 
 
 def _invoke_marker(marker, *, echo):
     checkout = paths.REPO
     state = paths.build_root() / 'build-v2' / 'controller'
     helper = ensure_controller(checkout, state / 'helpers', echo=echo)
-    return invoke_controller(checkout, helper, marker, state / 'runs', {
+    request = marker.request(checkout)
+    kinds = {unit['op']['kind'] for unit in request['declaration']['units']}
+    blender = any(kind.startswith('blender') for kind in kinds)
+    unreal = any(kind.startswith('unreal') or kind in ('cook', 'package', 'compile') for kind in kinds)
+    options = {
         'cache_root': str(paths.cache_dir('build-v2', create=False).absolute()),
         'interpreter': str(Path(sys.executable).absolute()), 'provenance': provenance(checkout),
         # Retention namespace only, explicitly excluded from A3 item identities.
         'worktree_id': hashlib.sha256(str(checkout).encode()).hexdigest(),
-        'memory_gib': 2, 'job_seconds': 120, 'cleanup_seconds': 30, 'overall_seconds': 1800,
-    }, echo=echo)
+        'memory_gib': 16 if unreal else 10 if blender else 8,
+        'job_seconds': 7200 if unreal else 900,
+        'cleanup_seconds': 60 if (unreal or blender) else 30,
+        'overall_seconds': 28800 if (unreal or blender) else 1800,
+    }
+    if blender or unreal:
+        from atelier import engine
+        if blender:
+            options['blender'] = str(Path(engine.blender()).absolute())
+        if unreal:
+            options['unreal'] = str(engine.unreal_cmd().absolute())
+    return invoke_controller(checkout, helper, marker, state / 'runs', options, echo=echo)
 
 
 def _result_code(result, *, echo):
@@ -126,35 +133,3 @@ def _result_code(result, *, echo):
     echo('Build controller did not certify target fulfillment; retained report/logs describe the incomplete boundary')
     echo(f"Private failure diagnostic locator: {result.get('diagnostic_log', 'none retained')}")
     return 130 if result['cancelled'] else 1
-
-
-def fulfill_for_legacy(request, *, echo=print):
-    """Use the original controller, returning observations for Rust's fresh Current gate.
-
-    The returned key is never an adopted receipt or permission: the legacy host must
-    independently prepare the original request and validate Current under its own guards.
-    """
-    expected = {'version', 'checkout', 'project', 'allowed_install_roots', 'declaration',
-                'targets', 'data_contract', 'staged_inputs'}
-    if (type(request) is not dict or set(request) != expected or request['version'] != 1
-            or request['checkout'] != str(paths.REPO) or type(request['targets']) is not list
-            or len(request['targets']) != 1 or set(request['data_contract']) != {'content_slots'}):
-        raise ValueError('unsupported original controller obligation')
-    marker = ControllerTarget(request['targets'][0], request['project'], request['declaration'],
-                              request['staged_inputs'], request['data_contract']['content_slots'],
-                              tuple(request['allowed_install_roots']))
-    if marker.request(paths.REPO) != request:
-        raise ValueError('controller obligation does not preserve its original declaration')
-    result = _invoke_marker(marker, echo=echo)
-    if _result_code(result, echo=echo) != 0:
-        raise ValueError('selected controller obligation did not complete')
-    observation = result['report']['observation']
-    if (observation['source_finalization'] != 'complete'
-            or observation['root_finalization'] not in ('complete', 'not_opened')):
-        raise ValueError('selected controller finalization is incomplete; completed work retained')
-    summary = observation['summary']
-    units = [] if summary is None else [unit for unit in summary['units'] if unit['unit'] == marker.unit]
-    if (len(units) != 1 or units[0]['unsatisfied_checkout']
-            or units[0]['outcome'] not in ('current', 'executed', 'stored_hit')):
-        raise ValueError('selected controller obligation has no fulfilled observation')
-    return {'unit': marker.unit, 'key': units[0]['key'], 'request': request}
