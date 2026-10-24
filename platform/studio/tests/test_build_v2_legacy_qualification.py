@@ -1,11 +1,12 @@
 """Captured callable observations do not bless arbitrary functions or shadow a game's paths."""
 import importlib.util
+import sys
 from pathlib import Path
 
 import pytest
 
 from atelier.build_v2.legacy_qualification import (
-    CapturedCode, IdentityBinding, UnsupportedOrigin, captured_spec, verify_callable,
+    CapturedCode, IdentityBinding, NamedCapturedImports, UnsupportedOrigin, captured_spec, verify_callable,
 )
 
 
@@ -116,3 +117,28 @@ def test_origin_requires_all_loaded_global_and_builtin_bindings(tmp_path):
     ns['tuple'] = lambda value: ()
     with pytest.raises(UnsupportedOrigin, match='builtin'):
         verify_callable(ns['run'], captured, qualname='run', namespace=ns, **expected)
+
+
+def test_named_imports_use_captured_packages_and_refuse_unknown_project_code_before_exec(tmp_path, monkeypatch):
+    package = tmp_path / 'named_legacy_fixture'
+    package.mkdir()
+    marker = tmp_path / 'unexpected-write'
+    (package / '__init__.py').write_text('raise RuntimeError("mutable package ran")')
+    (package / 'helper.py').write_text('raise RuntimeError("mutable helper ran")')
+    (package / 'unreviewed.py').write_text(f'from pathlib import Path\nPath({str(marker)!r}).write_text("bad")')
+    finder = NamedCapturedImports({
+        'named_legacy_fixture': CapturedCode(str(package / '__init__.py'), b'ROOT = __file__\n'),
+        'named_legacy_fixture.helper': CapturedCode(str(package / 'helper.py'), b'VALUE = 7\n'),
+    }, checkout=tmp_path)
+    monkeypatch.syspath_prepend(str(tmp_path))
+    monkeypatch.setattr(sys, 'meta_path', [finder, *sys.meta_path])
+    try:
+        import named_legacy_fixture.helper as helper
+        assert helper.VALUE == 7 and helper.__file__ == str(package / 'helper.py')
+        with pytest.raises(UnsupportedOrigin, match='outside the named capture'):
+            importlib.import_module('named_legacy_fixture.unreviewed')
+        assert not marker.exists()
+    finally:
+        for name in tuple(sys.modules):
+            if name == 'named_legacy_fixture' or name.startswith('named_legacy_fixture.'):
+                del sys.modules[name]

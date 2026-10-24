@@ -6,10 +6,11 @@ These comparisons do not certify arbitrary Python effects, cleanup or a complete
 from dataclasses import dataclass
 import dis
 import hashlib
+import importlib.abc
 import importlib.machinery
 import importlib.util
 import math
-from pathlib import PurePath, PurePosixPath, PureWindowsPath, PosixPath, WindowsPath
+from pathlib import Path, PurePath, PurePosixPath, PureWindowsPath, PosixPath, WindowsPath
 import struct
 import sys
 import types
@@ -32,7 +33,8 @@ class CapturedCode:
     def __post_init__(self):
         if (type(self.filename) is not str or not self.filename or '\0' in self.filename
                 or not PurePath(self.filename).is_absolute() or type(self.content) is not bytes
-                or len(self.content) > MAX_CODE_BYTES):
+                or '..' in PurePath(self.filename).parts
+                or str(PurePath(self.filename)) != self.filename or len(self.content) > MAX_CODE_BYTES):
             raise UnsupportedOrigin('invalid captured code identity')
 
     @property
@@ -189,3 +191,40 @@ def captured_spec(name, captured):
         raise UnsupportedOrigin('invalid named captured module')
     return importlib.util.spec_from_file_location(name, captured.filename,
                                                  loader=CapturedLoader(name, captured))
+
+
+class NamedCapturedImports(importlib.abc.MetaPathFinder):
+    """Pre-exec import routing for an explicit frozen profile, not semantic qualification.
+
+    Standard imports of registered names compile their captured bytes at logical original
+    paths. Unknown checkout imports refuse; direct spec/exec sites still require their named
+    captured_spec adapter and are NOT covered by this finder. The provider must separately
+    establish import-time mutation scope before installing/using these source loaders.
+    """
+    def __init__(self, modules, *, checkout):
+        if (type(modules) is not dict or not 0 < len(modules) <= 256
+                or any(type(name) is not str or not name or any(not p.isidentifier() for p in name.split('.'))
+                       or not isinstance(source, CapturedCode) for name, source in modules.items())):
+            raise UnsupportedOrigin('named module closure is invalid')
+        self.modules = dict(modules)
+        self.protected_names = frozenset(name.split('.')[0] for name in modules)
+        self.checkout = Path(checkout).resolve(strict=True)
+        if any(not Path(source.filename).is_relative_to(self.checkout) for source in modules.values()):
+            raise UnsupportedOrigin('named module has a foreign logical path')
+
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname in self.modules:
+            source = self.modules[fullname]
+            return captured_spec(fullname, source)
+        if fullname.split('.')[0] in self.protected_names:
+            # Do not let a later legacy alias/custom finder execute an unregistered sibling.
+            raise UnsupportedOrigin('imported checkout code is outside the named capture')
+        # Observe the standard candidate only; never execute an unknown project loader.
+        spec = importlib.machinery.PathFinder.find_spec(fullname, path)
+        if spec is not None:
+            candidates = ([spec.origin] if spec.origin not in (None, 'built-in', 'frozen') else [])
+            candidates += list(spec.submodule_search_locations or ())
+            for candidate in candidates:
+                if Path(candidate).resolve().is_relative_to(self.checkout):
+                    raise UnsupportedOrigin('imported checkout code is outside the named capture')
+        return None

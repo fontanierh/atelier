@@ -1822,7 +1822,14 @@ def unreal_steps(ctx):
 
 
 def staging_steps(ctx):
-    """Runtime data copied into Content/Data after its producers complete."""
+    """@cc [owner:fontanierh,label:correctness] runtime-stage-character-source-closure
+    data.stage MUST declare the character definition implementation and every current
+    character.toml, with each corresponding adventure.toml as an optional file carrying
+    distinct absent/present identity. Fresh roster membership MUST feed the existing input
+    provider. This correction MAY invalidate an old incomplete stamp once; it MUST NOT adopt
+    missing historical provenance or add an operational SourcePlan/v2 key to v1 fingerprints.
+    See test_staging_factory_declares_character_helper_roster_and_optional_adventures.
+    """
     out = ctx.out
     course = controller_recipe.targets()[controller_recipe.COURSE_TARGET]
     return [
@@ -1830,10 +1837,12 @@ def staging_steps(ctx):
              about='validated exact racing course bytes through the normal build-v2 controller'),
         Step('data.stage', [Call('stage_data', stage_data)],
              inputs=[GAME / 'runtime_data.py', REGIONS / 'skatepark' / 'park.json', ASSETS / 'ui/fonts/atlas-serif.ttf',
+                     PIPELINE / 'definition.py', *sorted(CHARS.glob('*/character.toml')),
                      runtime_data.RACING_COURSES, runtime_data.RACING_VALIDATOR, ASSETS / 'belmonte/source.json',
                      *runtime_data.courses.surface_inputs(),
                      *local_imports(runtime_data.courses.SOURCE_READER),
                      *(CHARS / 'portraits' / f'{c.id}.png' for c in definition.movers() if c.playable)],
+             optional_inputs=[path.with_name('adventure.toml') for path in sorted(CHARS.glob('*/character.toml'))],
              needs=['world.ferry_service', 'world.gondola_service', 'world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark', 'world.craterpark', 'world.crater_cloud', 'world.bike',
                     *[f'characters.{key(c)}_{kind}' for c in definition.movers() for kind, wanted in
                       (('bike', c.playable), ('grips', (GRIPS / c.id).is_dir())) if wanted]],

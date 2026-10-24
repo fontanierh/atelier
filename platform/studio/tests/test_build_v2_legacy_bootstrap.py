@@ -3,7 +3,7 @@ import os
 
 import pytest
 
-from atelier.build_v2.legacy_bootstrap import BootstrapRefused, restore_custody_fds
+from atelier.build_v2.legacy_bootstrap import BootstrapRefused, restore_custody_fds, startup_arguments
 
 
 def test_bootstrap_restores_only_five_owned_descriptors_before_observations(tmp_path):
@@ -47,3 +47,16 @@ def test_bootstrap_refuses_aliases_standard_missing_and_wrong_kind_before_discov
     finally:
         for fd in fds:
             os.close(fd)
+
+
+def test_exact_host_bootstrap_argv_has_no_module_site_or_ambient_option_fallback():
+    arguments = ['--command-fd', '3', '--reply-fd', '4', '--build-fd', '5', '--content-fd', '6',
+                 '--writer-fd', '7', '--startup-manifest', '/private/control/startup.json']
+    fds, path = startup_arguments(arguments)
+    assert fds == {'command': 3, 'reply': 4, 'build': 5, 'content': 6, 'writer': 7}
+    assert path == '/private/control/startup.json'
+    for changed in (arguments + ['--extra', 'permission'], arguments[2:],
+                    ['--command-fd', 'NaN', *arguments[2:]],
+                    [*arguments[:-1], 'relative/startup.json']):
+        with pytest.raises(BootstrapRefused):
+            startup_arguments(changed)

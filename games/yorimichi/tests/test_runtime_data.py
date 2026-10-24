@@ -105,3 +105,63 @@ def test_map_required_outputs_cover_runtime_sources_and_auxiliary_files(tmp_path
         assert not build.outputs_present(producer), output.name
         output.write_bytes(b'map output placeholder')
     assert build.outputs_present(producer)
+
+
+def test_staging_factory_declares_character_helper_roster_and_optional_adventures(tmp_path, monkeypatch):
+    recipe = build.load_recipe('yorimichi')
+    chars = tmp_path / 'characters'
+    pipeline = chars / 'pipeline'
+    pipeline.mkdir(parents=True)
+    helper = pipeline / 'definition.py'
+    helper.write_bytes((recipe.PIPELINE / 'definition.py').read_bytes())
+    for source in sorted(recipe.CHARS.glob('*/character.toml')):
+        target = chars / source.parent.name / source.name
+        target.parent.mkdir()
+        target.write_bytes(source.read_bytes())
+        adventure = source.with_name('adventure.toml')
+        if adventure.exists():
+            target.with_name('adventure.toml').write_bytes(adventure.read_bytes())
+    monkeypatch.setattr(recipe, 'CHARS', chars)
+    monkeypatch.setattr(recipe, 'PIPELINE', pipeline)
+    ctx = SimpleNamespace(game='yorimichi', out=tmp_path / 'build', uproject=None)
+
+    def projection():
+        # The real existing factory supplies declarations. Project only the new inputs
+        # when exercising the unchanged fingerprint; no map/mesh/native output is built.
+        actual = next(step for step in recipe.staging_steps(ctx) if step.name == 'data.stage')
+        roster = sorted(chars.glob('*/character.toml'))
+        assert helper in actual.inputs and set(roster) <= set(actual.inputs)
+        assert actual.optional_inputs == [path.with_name('adventure.toml') for path in roster]
+        return replace(actual, inputs=[p for p in actual.inputs if p.is_relative_to(chars)])
+
+    def fingerprint():
+        actual = projection()
+        return build.fingerprint(actual, {name: name for name in actual.needs})
+
+    initial = fingerprint()
+    original = helper.read_bytes()
+    helper.write_bytes(original + b'\n# changed staging helper implementation\n')
+    assert fingerprint() != initial
+    helper.write_bytes(original)
+    assert fingerprint() == initial
+
+    character = next(iter(sorted(chars.glob('*/character.toml'))))
+    original = character.read_bytes()
+    character.write_bytes(original + b'\n# changed character configuration bytes\n')
+    assert fingerprint() != initial
+    character.write_bytes(original)
+    assert fingerprint() == initial
+
+    absent = next(p for p in projection().optional_inputs if not p.exists())
+    absent.write_bytes(b'# newly present optional adventure\n')
+    assert fingerprint() != initial
+    absent.unlink()
+    assert fingerprint() == initial
+
+    future = chars / 'future-member' / 'character.toml'
+    future.parent.mkdir()
+    future.write_bytes(b'id = "future-member"\n')
+    assert future in projection().inputs and future.with_name('adventure.toml') in projection().optional_inputs
+    assert fingerprint() != initial
+    future.unlink()
+    assert fingerprint() == initial

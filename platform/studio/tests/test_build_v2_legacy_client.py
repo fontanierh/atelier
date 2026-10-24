@@ -1,11 +1,12 @@
 """Portable private-pipe framing/failure tests, not a production host/cleanup proof."""
 import os
-import time
 
 import pytest
 
+from atelier.build_v2 import legacy_client as protocol
 from atelier.build_v2.legacy_client import (
     AuthorityLost, AuthorityRefused, LegacyChannel, LegacyClient, decode_record, encode_record,
+    authority_now_ns, scheduler_request, validate_scheduler_request,
 )
 
 
@@ -17,7 +18,7 @@ def endpoints():
 
 def test_original_private_channel_observes_one_reply_and_never_retries_after_eof():
     host_read, child_write, child_read, host_write = endpoints()
-    channel = LegacyChannel(child_write, child_read, deadline=time.monotonic() + 2)
+    channel = LegacyChannel(child_write, child_read, deadline_ns=authority_now_ns() + 2_000_000_000)
     try:
         os.write(host_write, encode_record({'type': 'ack', 'sequence': 1}))
         assert channel.exchange({'sequence': 1}, verify=lambda v: v) == {'type': 'ack', 'sequence': 1}
@@ -46,11 +47,18 @@ def test_strict_authority_records_refuse_positional_duplicates_and_nonfinite(pay
         decode_record(payload)
 
 
+def test_authority_encoding_bounds_aggregate_text_before_serialization():
+    for record in ({'text': 'a' * 65537}, {'many': ['a' * 24000] * 3},
+                   {'bad': '\ud800'}, {'too_large': 2**64}):
+        with pytest.raises(AuthorityLost):
+            encode_record(record)
+
+
 def test_truncated_reply_and_failed_closed_verifier_latch_original_channel():
     for reply, verify in [(b'\0\0\0\x10{}', lambda v: v),
                           (encode_record({'type': 'wrong'}), lambda v: (_ for _ in ()).throw(AuthorityLost('wrong reply')))]:
         host_read, child_write, child_read, host_write = endpoints()
-        channel = LegacyChannel(child_write, child_read, deadline=time.monotonic() + 2)
+        channel = LegacyChannel(child_write, child_read, deadline_ns=authority_now_ns() + 2_000_000_000)
         try:
             os.write(host_write, reply)
             os.close(host_write)
@@ -66,7 +74,7 @@ def test_truncated_reply_and_failed_closed_verifier_latch_original_channel():
 
 def test_failed_send_is_typed_unknown_and_cannot_reconnect():
     host_read, child_write, child_read, host_write = endpoints()
-    channel = LegacyChannel(child_write, child_read, deadline=time.monotonic() + 2)
+    channel = LegacyChannel(child_write, child_read, deadline_ns=authority_now_ns() + 2_000_000_000)
     os.close(host_read)
     try:
         with pytest.raises(AuthorityLost, match='could not be completed'):
@@ -82,6 +90,7 @@ def test_failed_send_is_typed_unknown_and_cannot_reconnect():
 def started_client(host_write, channel):
     host = {'pid': 42, 'boot': 'test-boot', 'started': '100'}
     ready = {'version': 2, 'type': 'ready', 'nonce': 'nonce', 'host': host,
+             'clock_domain': protocol.CLOCK_ID,
              'deadline_ns': 999, 'selection': 'persistent-selection', 'record_digest': None,
              'frame': None, 'transition_count': 0}
     os.write(host_write, encode_record(ready))
@@ -92,7 +101,7 @@ def started_client(host_write, channel):
 @pytest.mark.parametrize('fault', ['nonce', 'sequence', 'permission', 'refused', 'extra', 'bool'])
 def test_versioned_client_refuses_uncorrelated_or_wrong_permission_without_state_advance(fault):
     host_read, child_write, child_read, host_write = endpoints()
-    channel = LegacyChannel(child_write, child_read, deadline=time.monotonic() + 2)
+    channel = LegacyChannel(child_write, child_read, deadline_ns=authority_now_ns() + 2_000_000_000)
     try:
         client = started_client(host_write, channel)
         reply = {'version': 2, 'type': 'ack', 'nonce': 'nonce', 'selection': 'persistent-selection',
@@ -124,7 +133,7 @@ def test_versioned_client_refuses_uncorrelated_or_wrong_permission_without_state
 
 def test_versioned_client_keeps_original_record_observation_and_finish_is_terminal():
     host_read, child_write, child_read, host_write = endpoints()
-    channel = LegacyChannel(child_write, child_read, deadline=time.monotonic() + 2)
+    channel = LegacyChannel(child_write, child_read, deadline_ns=authority_now_ns() + 2_000_000_000)
     try:
         client = started_client(host_write, channel)
         reply = {'version': 2, 'type': 'ack', 'nonce': 'nonce', 'selection': 'persistent-selection',
@@ -146,3 +155,58 @@ def test_versioned_client_keeps_original_record_observation_and_finish_is_termin
         channel.close()
         os.close(host_read)
         os.close(host_write)
+
+
+def test_original_default_request_has_no_synthetic_task_and_options_remain_explicit():
+    request = scheduler_request('ordinary_game', (), verify=True, max_heavy_commands=3)
+    assert request['wanted'] == [] and request['options'] == {
+        'verify': True, 'max_heavy_commands': 3, 'fail_fast': False}
+    assert validate_scheduler_request(decode_record(encode_record(request)[4:])) == request
+    for replacement in ([2, 'ordinary_game', [], {}], request | {'extra': 'unchecked'},
+                        request | {'options': [True, 3, False]},
+                        request | {'options': dict(request['options'], max_heavy_commands=True)}):
+        with pytest.raises(AuthorityLost):
+            validate_scheduler_request(replacement)
+
+
+def test_authority_deadline_uses_explicit_posix_clock_and_only_relative_wait_duration(monkeypatch):
+    calls = []
+    def clock(domain):
+        calls.append(domain)
+        return 1_000_000_000
+    def wrong_clock():
+        raise AssertionError('mach-absolute Python monotonic domain must not be used')
+    monkeypatch.setattr(protocol.time, 'clock_gettime_ns', clock)
+    monkeypatch.setattr(protocol.time, 'monotonic', wrong_clock)
+    monkeypatch.setattr(protocol.time, 'monotonic_ns', wrong_clock)
+    host_read, child_write, child_read, host_write = endpoints()
+    try:
+        with pytest.raises(AuthorityLost, match='deadline'):
+            LegacyChannel(child_write, child_read, deadline_ns=3_000_000_000, clock_domain='mach-absolute')
+        channel = LegacyChannel(child_write, child_read, deadline_ns=3_000_000_000)
+        waits = []
+        def ready(read, write, errors, timeout):
+            waits.append(timeout)
+            return read, write, []
+        monkeypatch.setattr(protocol.select, 'select', ready)
+        channel._wait(child_write, writing=True)
+        assert waits == [.05] and calls and set(calls) == {protocol.time.CLOCK_MONOTONIC}
+        channel.close()
+    finally:
+        os.close(host_read)
+        os.close(host_write)
+
+
+def test_ordinary_host_lifetime_is_bounded_without_shortening_native_limits(monkeypatch):
+    now = 1_000_000_000
+    monkeypatch.setattr(protocol, 'authority_now_ns', lambda: now)
+    ordinary = protocol.host_budgets()
+    assert ordinary == {'clock_domain': 'posix-clock-monotonic-v1',
+                        'deadline_ns': now + 48 * 60 * 60 * 1_000_000_000,
+                        'startup_budget_ns': 60_000_000_000, 'cleanup_budget_ns': 600_000_000_000}
+    earlier = now + 1000_000_000_000
+    assert protocol.host_budgets(enclosing_deadline_ns=earlier)['deadline_ns'] == earlier
+    assert protocol.host_budgets(enclosing_deadline_ns=ordinary['deadline_ns'] + 1) == ordinary
+    for invalid in (True, 1.0, now, now + 660_000_000_000):
+        with pytest.raises(AuthorityLost):
+            protocol.host_budgets(enclosing_deadline_ns=invalid)
