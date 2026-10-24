@@ -234,3 +234,35 @@ def test_native_precision_finishing_preserves_legacy_format_on_warm_hits(parent,
     before=rebuilds[:]
     scope['finish_uv_precision'](mesh,subsystem,parent)
     assert rebuilds==before  # A warm current hit must not rebuild the render data again.
+
+
+@pytest.mark.parametrize('kind,region,factory,names',[
+    ('trees','treehouse_trees','canopy_steps',('Tree_Canopy_Maple','Tree_Canopy_Crimson','Tree_Canopy_Amber','Tree_Canopy_Ginkgo')),
+    ('props','treehouse_props','prop_steps',tuple('TH_P_'+slug for slug in ('backpack','barrel','basket','bell','bookshelf','crate_desk','futon','globe','kamado','log_table','planter','stump_kettle','telescope'))),
+    ('surfaces','treehouse_surfaces','surface_steps',('TH_Structure','TH_Frame','TH_Trunks','TH_Dressing'))])
+def test_actual_library_factory_declares_raw_geometry_and_export_reads_in_real_audit_scope(tmp_path,kind,region,factory,names):
+    from atelier import build_audit
+    recipe=module('treehouse_direct_library_reads_'+kind,GAME/'treehouse_atomic_build.py')
+    for parent in names:
+        folder=tmp_path/'planned_exports'/region/parent;folder.mkdir(parents=True)
+        (folder/'plan.json').write_text(json.dumps(dict(schema=1,parent=parent,complete=True,
+            triangle_limit=32768,source_triangles=1,pieces=[dict(name=parent,payload=parent+'.npz',triangles=1)])))
+    ctx=SimpleNamespace(out=tmp_path.resolve(),logs=tmp_path/'logs',stamps=tmp_path/'stamps')
+    ctx.logs.mkdir()
+    steps=getattr(recipe,factory)(ctx);step=steps[-1]
+    existing=({'trees':['treehouse_trees.atomic','treehouse.canopy_dimensions','treehouse.canopy_recolours'],
+               'props':['treehouse_props.atomic',*('treehouse.prop_data.'+name for name in names)],
+               'surfaces':['treehouse_surfaces.atomic','treehouse.surface_metadata']})[kind]
+    direct=[s.products[0].name for s in steps if s.name.startswith(('world.'+region+'.geometry.','world.'+region+'.export.'))]
+    assert step.reads==existing+direct and len(direct)==2*len(names)
+    products={p.name:p for s in steps for p in s.products}
+    for name in direct:
+        for path in products[name].roots():path.mkdir(parents=True,exist_ok=True)
+    # Read the ORIGINAL preparer's actual private request. No action executes and
+    # its missing report must remain a failure rather than a fabricated success.
+    with pytest.raises(RuntimeError,match='audit incomplete or failed'):
+        with build_audit.prepared(ctx,step,products) as (argv,env,fds):
+            spec=json.loads(Path(argv[-1]).read_bytes())
+            roots={Path(path) for path,is_directory in spec['inputs'] if is_directory}
+            assert all(path in roots for name in direct for path in products[name].roots())
+            assert ctx.out not in roots
