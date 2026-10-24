@@ -1,9 +1,7 @@
-"""Explicit normal-build markers. They carry declarations, never v1 certificates."""
+"""Pure v2 target declarations and request assembly; Rust owns validation and build decisions."""
 from dataclasses import dataclass
 import json
-import os
 from pathlib import Path
-import unicodedata
 
 from .controller_client import MAX_CONTROL_BYTES, _relative
 
@@ -37,8 +35,8 @@ class ControllerTarget:
             raise ValueError('controller marker requires one declared fixed target')
         result = []
         for item in units[0].get('outputs', ()):
-            if item.get('destination') != 'checkout' or item.get('class') != 'JsonData':
-                raise ValueError('initial controller marker requires checkout JsonData outputs')
+            if item.get('destination') != 'checkout':
+                raise ValueError('target output requires an explicit checkout destination')
             for member in item.get('files', ()):
                 install = _relative(member.get('install_path'))
                 result.append(Path(checkout) / install)
@@ -46,101 +44,55 @@ class ControllerTarget:
             raise ValueError('controller marker needs complete unique output ownership')
         return tuple(result)
 
+@dataclass(frozen=True)
+class ControllerSelection:
+    """One explicit selection over a complete pure declaration, with no Python action key."""
+    members: tuple[ControllerTarget, ...]
+    targets: tuple[str, ...]
 
-def _claim(path):
-    # Conservative metadata collision detection across the legacy boundary. Rust
-    # still validates authoritative install policy; this is not APFS equivalence.
-    return unicodedata.normalize('NFD', os.path.abspath(path)).casefold()
+    @property
+    def name(self):
+        return ', '.join(self.targets)
 
-
-def _resolved_output_claim(path):
-    """Existing-ancestor alias witness only; never an execution destination or retained label."""
-    prefix = Path(path)
-    if not prefix.is_absolute():
-        prefix = Path.cwd() / prefix
-    missing = []
-    while True:
-        try:
-            prefix.lstat()
-            break
-        except FileNotFoundError:
-            if prefix.parent == prefix:
-                raise ValueError('cannot establish controller output ownership anchor') from None
-            missing.append(prefix.name)
-            prefix = prefix.parent
-        except OSError as error:
-            raise ValueError('cannot establish controller output ownership alias') from error
-    try:
-        # Strict resolution of the existing frontier rejects dangling links, loops and
-        # inaccessible anchors; absent output tails remain valid declaration metadata.
-        resolved = prefix.resolve(strict=True)
-    except (OSError, RuntimeError) as error:
-        raise ValueError('cannot establish controller output ownership alias') from error
-    return _claim(resolved.joinpath(*reversed(missing)))
-
-
-def validate_controller_ownership(steps):
-    """@cc [owner:fontanierh,label:correctness] controller-output-alias-ownership
-    Global controller-involved ownership MUST reject lexical or existing-ancestor alias
-    overlaps before queries, checkpoint restoration or dispatch, including absent output
-    tails. Alias witnesses MUST be fresh per validation, metadata-only and comparison-only;
-    logical execution paths and virtual retained claims MUST stay unchanged. Failed or
-    uncertain resolution MUST refuse. See the alias/prewrite/fresh-validation cases in
-    test_build_v2_controller_recipe.py. This is not an atomic filesystem/reader custody proof.
-    """
-    steps = tuple(steps)
-    if not any(getattr(step, 'controller', None) is not None for step in steps):
-        return
-    resolved = {}
-    claims = []
-    for step in steps:
-        controller = getattr(step, 'controller', None) is not None
-        roots = [*step.outputs, *getattr(step, 'checkpoint_outputs', ()), *getattr(step, 'pool_roots', ())]
-        for product in getattr(step, 'products', ()):
-            roots.extend(product.paths)
-            roots.extend(product.optional_paths)
-        for path in roots:
-            path = Path(path)
-            if path not in resolved:
-                resolved[path] = _resolved_output_claim(path)
-            claims.append((step.name, _claim(path), resolved[path], controller))
-    for owner, logical, physical, _ in (claim for claim in claims if claim[3]):
-        for other, other_logical, other_physical, _ in claims:
-            if owner == other and logical == other_logical:
-                continue  # Repeated metadata for the very same declared owner/path.
-            for first, second in ((logical, other_logical), (physical, other_physical)):
-                if first == second or first.startswith(second + '/') or second.startswith(first + '/'):
-                    raise ValueError(f'controller output ownership overlaps: {owner} and {other}')
-
-
-def validate_markers(steps, checkout):
-    """@cc [owner:fontanierh,label:correctness] explicit-controller-step-ownership
-    Controller steps MUST be explicit typed markers with complete matching output
-    ownership and no v1 commands, key inputs, cache, checkpoints or tool dispatch.
-    Their owned paths MUST NOT overlap another step's declared output roots. Empty
-    commands alone MUST NOT imply controller ownership or a successful completion.
-    See test_build_v2_controller_recipe.py. Rust validates the complete selected
-    declaration before execution; v1 checkpoint/reader custody remains an activation gate.
-    """
-    steps = tuple(steps)
-    if not any(getattr(step, 'controller', None) is not None for step in steps):
-        return
-    controller_names = {step.name for step in steps if getattr(step, 'controller', None) is not None}
-    for step in steps:
-        if set(step.needs) & controller_names:
-            raise ValueError('v1 content needs cannot use controller input keys; an explicit content bridge is required')
-        marker = getattr(step, 'controller', None)
-        if marker is not None:
-            if not isinstance(marker, ControllerTarget) or marker.unit != step.name:
-                raise ValueError('invalid explicit controller step marker')
-            forbidden = ('commands', 'inputs', 'deferred_inputs', 'optional_inputs', 'needs', 'products',
-                         'reads', 'references', 'queries', 'pool_roots', 'cache', 'audit', 'toolchain',
-                         'batch', 'heavy', 'cutoff', 'replan', 'checkpoint_outputs', 'checkpoint_restore',
-                         'checkpoint_previous_needs', 'candidate_scope', 'verify', 'cook_recovery')
-            if any(getattr(step, field, None) for field in forbidden):
-                raise ValueError('controller step cannot use v1 execution/key/cache machinery')
-            expected = marker.outputs(checkout)
-            if {_claim(path) for path in step.outputs} != {_claim(path) for path in expected}:
-                raise ValueError('controller step outputs differ from its complete declaration')
-            marker.request(checkout)  # Also rejects non-data/unbounded serialization.
-    validate_controller_ownership(steps)
+    def request(self, checkout):
+        """@cc [owner:fontanierh,label:correctness] direct-v2-selection-request
+        Preserve all declared units and original target/control data. Conflicting unit,
+        staged-slot, project or contract declarations MUST refuse. Explicit selectors
+        MUST remain selectors, never source keys, receipts or guessed cache outcomes.
+        """
+        if not self.members or not self.targets or len(set(self.targets)) != len(self.targets):
+            raise ValueError('v2 requires a nonempty unique target selection')
+        units, staged, slots, roots = {}, {}, {}, set()
+        base = None
+        for member in self.members:
+            if not isinstance(member, ControllerTarget):
+                raise ValueError('invalid v2 target declaration')
+            request = member.request(checkout)
+            header = {key: value for key, value in request['declaration'].items() if key != 'units'}
+            identity = (request['version'], request['checkout'], request['project'], header)
+            if base is None:
+                base = identity
+            elif identity != base:
+                raise ValueError('conflicting v2 project/declaration headers')
+            roots.update(request['allowed_install_roots'])
+            for unit in request['declaration']['units']:
+                name = unit['id']
+                if name in units and units[name] != unit:
+                    raise ValueError('conflicting v2 unit: ' + name)
+                units[name] = unit
+            for name, value in request['staged_inputs'].items():
+                if name in staged and staged[name] != value:
+                    raise ValueError('conflicting v2 staged inputs: ' + name)
+                staged[name] = value
+            for name, value in request['data_contract']['content_slots'].items():
+                if name in slots and slots[name] != value:
+                    raise ValueError('conflicting v2 content contract: ' + name)
+                slots[name] = value
+        if any(name not in units for name in self.targets):
+            raise ValueError('selected v2 target is not declared')
+        version, source, project, header = base
+        return {'version': version, 'checkout': source, 'project': project,
+                'allowed_install_roots': sorted(roots),
+                'declaration': {**header, 'units': list(units.values())},
+                'targets': list(self.targets), 'data_contract': {'content_slots': slots},
+                'staged_inputs': staged}

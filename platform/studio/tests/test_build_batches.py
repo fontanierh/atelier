@@ -15,10 +15,6 @@ from atelier import build, build_batches, build_plan
 
 @pytest.fixture
 def project(tmp_path, monkeypatch):
-    # This is an UNMANAGED isolated test checkout. A real managed epoch in the
-    # developer's source checkout must not turn fixture tasks into production work.
-    from atelier.build_v2 import legacy_entry
-    monkeypatch.setattr(legacy_entry, '_checkout', lambda: tmp_path)
     out = tmp_path / 'out'
     ctx = SimpleNamespace(game='standin', out=out, stamps=out / 'stamps', logs=out / 'logs')
     steps, launches = [], []
@@ -449,37 +445,3 @@ def test_failed_source_batch_does_not_publish_portable_authority(portable):
     for step in p.steps[4:]:
         record = build_plan.read_stamp(p.ctx.stamps / (step.name + '.json'))
         assert store.action(record['fingerprint']).is_file()
-
-
-def test_managed_batch_intent_precedes_stamp_invalidation_and_observation_follows_verification(project, monkeypatch):
-    """Actual shared Session/worker flow; hook ordering is not real guard authority."""
-    p = project
-    p.ctx.stamps.mkdir(parents=True)
-    p.ctx.logs.mkdir(parents=True)
-    for step in p.steps[:2]:
-        build_batches.atomic_json(p.ctx.stamps / (step.name + '.json'), {'old': True})
-    events = []
-    original = build_batches.Session.verify_completed
-    def verify(session):
-        original(session)
-        events.append('verified-after-owned-fixture-child')
-    monkeypatch.setattr(build_batches.Session, 'verify_completed', verify)
-    class Authority:
-        def before_native_batch(self, ctx, session):
-            assert all(build_plan.read_stamp(ctx.stamps / (step.name + '.json')) == {'old': True}
-                       for step, _, _ in session.candidates)
-            assert not session.folder.exists()
-            events.append('complete-member-intent-before-any-write-plan')
-        def native_batch_observed(self, ctx, session, completed, code):
-            assert events[-1] == 'verified-after-owned-fixture-child'
-            assert completed == {step.name for step in p.steps[:2]} and code == 0
-            events.append('observation-only-no-settlement')
-    p.ctx.legacy_authority = Authority()
-    candidates = [(step, build.fingerprint(step, {}), {}) for step in p.steps[:2]]
-    from atelier.build_hashes import HashIndex
-    with HashIndex() as index:
-        completed, code = build_batches.run(p.ctx, candidates, {}, index=index, tool_cache={},
-                                            echo=p.messages.append, products={})
-    assert code == 0 and len(completed) == 2
-    assert events == ['complete-member-intent-before-any-write-plan', 'verified-after-owned-fixture-child',
-                      'observation-only-no-settlement']

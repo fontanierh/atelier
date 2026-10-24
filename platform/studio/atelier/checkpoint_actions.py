@@ -220,8 +220,6 @@ def blender_user_identity(ctx):
 
 
 def key(ctx, step, fingerprint, *, require_outputs=True):
-    if getattr(step, 'controller', None) is not None:
-        raise CheckpointError('Controller targets cannot have legacy action keys')
     outputs = declared(ctx, step)
     # A package-owned result keeps the certificate key (no declared roots); its files are the entry's roots.
     if not outputs and require_outputs and not packaged(ctx, step):
@@ -258,7 +256,6 @@ def snapshot(ctx, step, store, *, save_blobs, observations=None, scope=None):
     declarations, files = [], {}
     sources = source_scopes(tracked_paths())
     outputs = declared(ctx, step) if scope is None else list(scope)
-    reject_controller_overlap(ctx, outputs)
     for root in outputs:
         name = label(ctx, root)
         if root in sources:
@@ -437,10 +434,6 @@ def restore_worker(ctx, step, store, action_key, *, labels=None, hashes=None):
         raise CheckpointError('Task restoration cannot replace tracked source')
     if [r['path'] for r in value['roots']] != expected:
         raise CheckpointError('Task output declarations changed')
-    # Check complete destructive roots and receiving membership before any journal,
-    # stamp removal, clone or deletion. A disjoint derived package remains valid.
-    reject_controller_overlap(ctx, [destination(ctx, name) for name in expected])
-    reject_controller_overlap(ctx, [destination(ctx, name) for name in value['files']])
     journal = ctx.out / JOURNAL
     receipt = dict(schema=1, game=ctx.game, key=action_key, task=task, operation='action')
     from .build_snapshot import require_complete
@@ -618,10 +611,7 @@ def validate_ownership(ctx, steps):
     """Extra checkpoint roots obey the same disjoint ownership rule as named products."""
     declared_roots = []
     for step in steps:
-        if getattr(step, 'controller', None) is not None:
-            continue
         for root in declared(ctx, step):
-            reject_controller_overlap(ctx, [root])
             label(ctx, root)  # Must lie within locally allowed generated directories.
             # Case-insensitive APFS aliases cannot have separate owners.
             name = str(root.absolute()).casefold()
@@ -629,14 +619,6 @@ def validate_ownership(ctx, steps):
                 if owner != step.name and (name == previous or name.startswith(previous + '/') or previous.startswith(name + '/')):
                     raise CheckpointError('Checkpoint output scopes overlap: ' + owner + ' and ' + step.name)
             declared_roots.append((step.name, name))
-
-
-def reject_controller_overlap(ctx, paths):
-    from .build_v2.controller_claims import for_context
-    try:
-        for_context(ctx).refuse_overlap(paths)
-    except ValueError as error:
-        raise CheckpointError(str(error)) from error
 
 
 def install(store, value):

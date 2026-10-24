@@ -65,56 +65,6 @@ jobs:
         run: cargo nextest run --locked --profile t1a --filter-expr "$(cat ../../build/build-v2/tiers/t1a.filter)" --no-tests=fail
       - name: Verify both tier results and the combined roster
         run: python3 tools/check_registry.py --registry-dir tests/registry --listing ../../build/build-v2/test-list.json --result t0=../../build/build-v2/nextest/ci/junit.xml --result t1a=../../build/build-v2/nextest/t1a/junit.xml
-      - name: Real managed entry integration (readonly Graph then Held)
-        id: real_entry_integration
-        timeout-minutes: 4
-        env:
-          ATELIER_LEGACY_INTEGRATION_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: ../../.venv/bin/python ../../games/yorimichi/tests/legacy_host_entry_case.py ../../build/build-v2/debug/atelier-build-v2
-      - name: Bind and require the real integration result
-        if: always()
-        env:
-          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
-          INTEGRATION_STEP_OUTCOME: ${{ steps.real_entry_integration.outcome }}
-        run: |
-          python3 - <<'PY'
-          import hashlib, json, os
-          from pathlib import Path
-          folder = Path('../../build/build-v2/legacy-host-entry-test')
-          folder.mkdir(parents=True, exist_ok=True)
-          expected = {'version': 1, 'case': 'normal_managed_entry_readonly_graph_held',
-                      'head': os.environ['EXPECTED_HEAD'], 'run_id': os.environ['GITHUB_RUN_ID'],
-                      'run_attempt': os.environ['GITHUB_RUN_ATTEMPT'], 'job': os.environ['GITHUB_JOB'],
-                      'step_id': 'real_entry_integration'}
-          outcome = os.environ['INTEGRATION_STEP_OUTCOME']
-          valid = False
-          try:
-              result_bytes = (folder / 'integration-result.json').read_bytes()
-              if len(result_bytes) > 4096:
-                  raise ValueError('integration result exceeds its fixed metadata bound')
-              record = json.loads(result_bytes)
-              if not isinstance(record, dict):
-                  raise ValueError('integration result is not a record')
-              binary = Path('../../build/build-v2/debug/atelier-build-v2')
-              valid = (outcome == 'success' and all(record.get(k) == v for k, v in expected.items())
-                       and type(record.get('integration_count')) is int and record['integration_count'] == 1
-                       and record.get('verdict') == 'readonly_graph_held'
-                       and record.get('target_complete') is False
-                       and type(record.get('normal_cli_returncode')) is int
-                       and record['normal_cli_returncode'] != 0
-                       and bool(os.environ.get('ATELIER_CONTROLLER_SOURCE_SHA256'))
-                       and record.get('source') == os.environ['ATELIER_CONTROLLER_SOURCE_SHA256']
-                       and record.get('binary') == hashlib.sha256(binary.read_bytes()).hexdigest())
-          except (OSError, ValueError, TypeError):
-              pass
-          binding = {**expected, 'step_outcome': outcome, 'verified_integration_count': 1 if valid else 0}
-          descriptor = os.open(folder / 'ci-step-binding.json', os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-          with os.fdopen(descriptor, 'w') as stream:
-              json.dump(binding, stream, separators=(',', ':'))
-              stream.write('\n')
-          if not valid:
-              raise SystemExit('real integration did not produce its exact-head successful result')
-          PY
       - name: Keep collection and result evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2, Node 24
@@ -127,12 +77,4 @@ jobs:
             build/build-v2/tiers/
             build/build-v2/nextest/ci/junit.xml
             build/build-v2/nextest/t1a/junit.xml
-          retention-days: 7
-      - name: Keep separate real integration evidence
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2, Node 24
-        with:
-          name: build-v2-real-entry-${{ matrix.os }}
-          path: build/build-v2/legacy-host-entry-test/
-          if-no-files-found: error
           retention-days: 7

@@ -128,8 +128,6 @@ def certificates(ctx, steps, *, include_incremental=False, hashes=None):
     done, records, tools = {}, {}, {}  # One tool enumeration per pass, as in the build loop.
     with HashIndex(hashes) as index, hashing(ctx, index.digest):
         for step in order(steps, [s.name for s in steps]):
-            if getattr(step, 'controller', None) is not None:
-                continue  # Controller identities never become legacy action certificates.
             stamp = read_stamp(ctx.stamps / (step.name + '.json'))
             try:
                 current = fingerprint(step, done, index=index, tool_cache=tools)
@@ -170,8 +168,6 @@ def historical_candidates(ctx, steps):
     """Unmodified old task evidence; never a current fingerprint or success certificate."""
     result = {}
     for step in steps:
-        if getattr(step, 'controller', None) is not None:
-            continue
         try:
             stamp = read_json(safe_destination(ctx.stamps, step.name + '.json'))
             if (isinstance(stamp, dict) and not stamp.get('touched')
@@ -212,19 +208,10 @@ def capture(ctx, steps, store, *, echo=print, allow_seed=False, candidate_only=F
                 checkpoint_actions.publish(ctx, step, record['fingerprint'], record, store=store, done=done)
             done[step.name] = result(step, record['fingerprint'], record)
             build_products.feed_results(done, record.get('products', {}))
-    from .build_v2.controller_claims import for_context
-    controller_claims = for_context(ctx)
     actions = {}
     for action_path in sorted((store.directory / 'actions').glob('*.json')):
         if not action_path.with_suffix('.conflict').exists():
-            action = checkpoint_actions.load(store, action_path.stem)
-            if controller_claims.files and action is not None:
-                try:
-                    checkpoint_actions.reject_controller_overlap(ctx, [checkpoint_actions.destination(ctx, name)
-                        for name in [*[root['path'] for root in action['roots']], *action['files']]])
-                except CheckpointError:
-                    continue  # Reject a complete historical action, never trim its certificate.
-            actions[action_path.stem] = action
+            actions[action_path.stem] = checkpoint_actions.load(store, action_path.stem)
     allowed, files, observations = roots(ctx), {}, []
     if candidate_only:
         allowed = {name: value for name, value in allowed.items() if name in ('generated', 'content')}
@@ -233,7 +220,7 @@ def capture(ctx, steps, store, *, echo=print, allow_seed=False, candidate_only=F
         started = spoken = time.monotonic()
         for label, (root, _) in allowed.items():
             for path in members(root):
-                if path in source_paths or controller_claims.excludes(path):
+                if path in source_paths:
                     continue
                 info = path.lstat()
                 member = label + '/' + path.relative_to(root).as_posix()
@@ -260,8 +247,7 @@ def capture(ctx, steps, store, *, echo=print, allow_seed=False, candidate_only=F
                     echo(f'checkpoint: {len(files)} files saved, {time.monotonic() - started:.0f}s elapsed')
                     spoken = time.monotonic()
         names = {label + '/' + p.relative_to(root).as_posix()
-                 for label, (root, _) in allowed.items() for p in members(root)
-                 if p not in source_paths and not controller_claims.excludes(p)}
+                 for label, (root, _) in allowed.items() for p in members(root) if p not in source_paths}
         if (names != set(files) or any(signature(p.lstat()) != info for p, info in observations)
                 or certificates(ctx, steps, include_incremental=True) != before
                 or (historical_candidates(ctx, steps) != history)):
