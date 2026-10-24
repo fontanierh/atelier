@@ -67,3 +67,23 @@ def atomic_json(path, value):
             temporary.replace(path)
         finally:
             temporary.unlink(missing_ok=True)
+
+
+def managed_temporary_parent(destination):
+    """@cc [owner:fontanierh,label:correctness;safety] managed-assembly-temporary-parent
+    Select only the held managed scratch or the original sibling directory.
+
+    This grants no writes; the already-qualified caller owns both destination and
+    scratch. Unknown retained scratch files remain untouched for epoch recovery.
+    """
+    scope = _MANAGED_TEMPORARY.get()
+    if scope is None:
+        return destination.parent
+    directory, descriptor, device, inode = scope
+    current, held = directory.lstat(), os.fstat(descriptor)
+    if (current.st_dev, current.st_ino) != (device, inode) or (held.st_dev, held.st_ino) != (device, inode):
+        raise ValueError('managed assembly temporary directory changed')
+    parent = destination.parent.lstat()
+    if not stat.S_ISDIR(parent.st_mode) or parent.st_dev != device:
+        raise ValueError('managed assembly temporary requires a real same-filesystem destination')
+    return directory

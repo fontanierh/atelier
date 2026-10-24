@@ -106,3 +106,28 @@ def test_runtime_input_closure_names_the_executed_copy_helper():
     from atelier import export_assembly
     names = {path.name for path in export_assembly.runtime_inputs()}
     assert 'file_copy.py' in names and 'build_cache.py' not in names
+
+
+def test_managed_assembly_uses_closed_scratch_and_replay_preserves_unknown_partial(tmp_path, monkeypatch):
+    from atelier import atomic_files
+    one = item(tmp_path, 'One')
+    target = tmp_path / 'assembled'
+    scratch = tmp_path / '.state/owned/atomic-tmp'
+    seen = []
+    original = assembly.tempfile.NamedTemporaryFile
+    def named(*args, **kwargs):
+        if kwargs.get('prefix') == '.assemble-':
+            seen.append(Path(kwargs['dir']))
+        return original(*args, **kwargs)
+    monkeypatch.setattr(assembly.tempfile, 'NamedTemporaryFile', named)
+    with atomic_files.managed_temporaries(scratch):
+        retained = scratch / '.assemble-prior-unknown'
+        retained.write_bytes(b'unknown interrupted metadata')
+        assembly.assemble([one], target)
+        before = (target / 'One.fbx').stat().st_mtime_ns
+        assembly.assemble([one], target)
+        assert (target / 'One.fbx').read_bytes() == b'validated source'
+        assert (target / 'One.fbx').stat().st_mtime_ns == before
+        assert retained.read_bytes() == b'unknown interrupted metadata'
+    assert seen == [scratch]
+    assert sorted(path.name for path in target.iterdir()) == ['One.fbx', 'manifest.json']

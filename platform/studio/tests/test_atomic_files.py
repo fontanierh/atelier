@@ -81,3 +81,22 @@ def test_managed_scope_checks_complete_held_directory_identity(tmp_path, monkeyp
     with pytest.raises(ValueError, match='absolute owned path'):
         with atomic_files.managed_temporaries(tmp_path / '.state/../outside'):
             pytest.fail('entered parent-traversing path')
+
+
+def test_assembly_temporary_parent_defaults_scope_samefs_and_retains_unknown(tmp_path, monkeypatch):
+    target = tmp_path / 'products/file.fbx'; target.parent.mkdir()
+    assert atomic_files.managed_temporary_parent(target) == target.parent
+    scratch = tmp_path / '.state/owned'
+    with atomic_files.managed_temporaries(scratch):
+        retained = scratch / '.assemble-previous'; retained.write_bytes(b'partial')
+        assert atomic_files.managed_temporary_parent(target) == scratch
+        actual = Path.lstat
+        def changed(path, *args, **kwargs):
+            info = actual(path, *args, **kwargs)
+            return SimpleNamespace(st_dev=info.st_dev + 1, st_mode=info.st_mode) if path == target.parent else info
+        with monkeypatch.context() as patch:
+            patch.setattr(Path, 'lstat', changed)
+            with pytest.raises(ValueError, match='same-filesystem'):
+                atomic_files.managed_temporary_parent(target)
+        assert retained.read_bytes() == b'partial'
+    assert atomic_files.managed_temporary_parent(target) == target.parent

@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 import tempfile
 
-from .atomic_files import atomic_json
+from .atomic_files import atomic_json, managed_temporary_parent
 from .file_copy import copy_file
 from .export_manifest import name, real_directory, sha, validate
 from .model_files import regular_files, retain_files
@@ -90,7 +90,7 @@ def assemble(items, destination):
         primary = receipt['primary']
         source, target = item.root / primary, destination / primary
         if not target.is_file() or sha(target) != receipt['sha256']:
-            with tempfile.NamedTemporaryFile(prefix='.assemble-', dir=destination, delete=False) as temporary:
+            with tempfile.NamedTemporaryFile(prefix='.assemble-', dir=managed_temporary_parent(target), delete=False) as temporary:
                 staging = Path(temporary.name)
             try:
                 staging.unlink()

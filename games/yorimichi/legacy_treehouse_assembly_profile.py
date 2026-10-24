@@ -326,6 +326,7 @@ def qualify_treehouse_assembly(step, *, checkout: Path, output_root: Path) -> Tr
     _verify(export_assembly.assemble, assembly_code, qualname='assemble',
         globals_={'Path': IdentityBinding(Path), 'atomic_json': IdentityBinding(atomic_files.atomic_json),
                   'copy_file': IdentityBinding(file_copy.copy_file),
+                  'managed_temporary_parent': IdentityBinding(atomic_files.managed_temporary_parent),
                   'destination_members': IdentityBinding(export_assembly.destination_members),
                   'name': IdentityBinding(export_manifest.name),
                   'real_directory': IdentityBinding(export_manifest.real_directory),
@@ -333,6 +334,10 @@ def qualify_treehouse_assembly(step, *, checkout: Path, output_root: Path) -> Tr
                   'sha': IdentityBinding(export_manifest.sha), 'tempfile': IdentityBinding(tempfile),
                   'validate': IdentityBinding(export_manifest.validate)},
         builtins_=_builtins(ValueError=ValueError, dict=dict, len=len, tuple=tuple))
+    _verify(atomic_files.managed_temporary_parent, atomic_code, qualname='managed_temporary_parent',
+        globals_={'_MANAGED_TEMPORARY': IdentityBinding(atomic_files._MANAGED_TEMPORARY),
+                  'os': IdentityBinding(os), 'stat': IdentityBinding(stat)},
+        builtins_=_builtins(ValueError=ValueError))
     _verify(atomic_files.atomic_json, atomic_code, qualname='atomic_json',
         globals_={'tempfile': IdentityBinding(tempfile), 'Path': IdentityBinding(Path),
                   'json': IdentityBinding(json), 'os': IdentityBinding(os),
