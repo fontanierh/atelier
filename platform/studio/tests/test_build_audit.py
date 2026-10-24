@@ -606,3 +606,32 @@ def test_read_product_grants_optional_root_presence_and_bytes_but_not_siblings(a
     assert a.run() == 1
     assert a.report()['violations'] and not a.report()['passed']
     assert not (a.ctx.stamps / 'generate.json').exists()
+
+
+def test_managed_atomic_scope_stays_inside_original_audit_scratch(action, monkeypatch):
+    """Exercise the real observer/atomic helper in a one-shot Python test child."""
+    a = action
+    wrapper = a.root / 'owned-audit-wrapper.py'
+    wrapper.write_text('''import json, sys
+from pathlib import Path
+from atelier.atomic_files import managed_temporaries
+from atelier.build_audit_worker import execute
+spec = json.loads(Path(sys.argv[1]).read_text())
+with managed_temporaries(Path(spec['scratch']) / 'atomic-tmp'):
+    execute(spec)
+''')
+    monkeypatch.setattr(build_audit, 'WORKER', wrapper)
+    a.code('from atelier.atomic_files import atomic_json\natomic_json(output, {"source": source.read_text()})')
+    from atelier.build_inputs import local_imports
+    a.step.inputs.extend(local_imports(a.script, (a.root,)))
+    assert a.run() == 0, a.messages
+    assert json.loads(a.output.read_bytes()) == {'source': 'input'}
+    report = a.report()
+    assert report['passed'] and not report['violations']
+    assert any(row['operation'] == 'write' and row['path'].startswith('<scratch>/atomic-tmp/')
+               for row in report['accesses'])
+    assert not any(row.get('violation') for row in report['accesses'])
+    a.code('from atelier.atomic_files import atomic_json\natomic_json(source, {"outside": True})')
+    assert a.run() == 1
+    assert a.source.read_text() == 'input'
+    assert not a.report()['passed'] and a.report()['violations']

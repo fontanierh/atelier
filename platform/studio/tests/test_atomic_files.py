@@ -30,13 +30,13 @@ def test_default_sibling_temporary_and_managed_scope_reset_preserve_bytes(tmp_pa
 def test_managed_scratch_refuses_cross_device_without_replace_or_tempfile(tmp_path, monkeypatch):
     target = tmp_path / 'output.json'; target.write_text('old')
     with atomic_files.managed_temporaries(tmp_path / '.state/scratch'):
-        descriptor = atomic_files._MANAGED_TEMPORARY.get()[1]
-        original = atomic_files.os.fstat
-        def observed(fd):
-            stat = original(fd)
-            return stat if fd == descriptor else SimpleNamespace(st_dev=stat.st_dev+1, st_ino=stat.st_ino)
+        original = Path.lstat
+        def observed(path, *args, **kwargs):
+            info = original(path, *args, **kwargs)
+            return (SimpleNamespace(st_dev=info.st_dev+1, st_ino=info.st_ino, st_mode=info.st_mode)
+                    if path == target.parent else info)
         with monkeypatch.context() as patch:
-            patch.setattr(atomic_files.os, 'fstat', observed)
+            patch.setattr(Path, 'lstat', observed)
             patch.setattr(atomic_files.tempfile, 'NamedTemporaryFile', lambda *a, **k: pytest.fail('created cross-device temp'))
             with pytest.raises(ValueError, match='different filesystems'):
                 atomic_files.atomic_json(target, {'new':True})

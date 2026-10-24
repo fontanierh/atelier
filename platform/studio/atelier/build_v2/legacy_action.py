@@ -134,6 +134,11 @@ def main(manifest, specification):
         # gets a live-source fallback, and the original implementation is restored.
         runpy.run_path = captured_run
         try:
-            build_audit_worker.execute(spec, after=source_check.require_clean)
+            # Prepare only the owned audit scratch before the original observer
+            # installs. Atomic JSON writes then remain inside that exact scope;
+            # sibling temporary files never acquire product ownership.
+            from atelier.atomic_files import managed_temporaries
+            with managed_temporaries(Path(spec['scratch']) / 'atomic-tmp'):
+                build_audit_worker.execute(spec, after=source_check.require_clean)
         finally:
             runpy.run_path = original_run

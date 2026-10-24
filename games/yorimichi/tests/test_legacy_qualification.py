@@ -535,6 +535,7 @@ def test_texture_group_frame_separates_shared_metadata_and_products_and_settles_
     authority.completed = {}
     authority.aggregate, authority.aggregate_done = None, None
     authority.native_steps, authority.native_launch, authority.dones = {}, None, {}
+    authority.data_steps = {}
     authority.build = SimpleNamespace(fingerprint_state=lambda *a, **k: ('f' * 64, {}), required_inputs=lambda step: [])
     monkeypatch.setattr(module, '_prior_record', lambda client: None)
     ctx = SimpleNamespace(out=case.root / 'build/yorimichi')
@@ -682,3 +683,61 @@ def test_actual_aggregate_reuses_original_product_keys_and_detects_changed_reads
     next(iter(textures.values())).outputs[0].write_bytes(b'changed product after aggregate')
     with pytest.raises(ValueError, match='aggregate read identity'):
         authority._check_aggregate(ctx)
+
+
+def test_actual_captured_graph_qualifies_data_before_private_runtime_without_task_permission():
+    """The real current factory crosses the pure issuer boundary; no RPC or tasks run."""
+    from atelier import paths
+    from atelier.build_v2.controller_client import capture_named_sources
+    from atelier.build_v2.legacy_entry import original_python_context
+    from atelier.build_v2.legacy_client import scheduler_request
+    from atelier.build_v2.legacy_qualification import CapturedCode, captured_spec
+    name = 'games/yorimichi/legacy_qualification.py'
+    spec = captured_spec('_actual_data_runtime_profile',
+                         CapturedCode(str(paths.REPO / name), (paths.REPO / name).read_bytes()))
+    profile = importlib.util.module_from_spec(spec); spec.loader.exec_module(profile)
+    captured = capture_named_sources(paths.REPO, profile.source_names(paths.REPO))
+    manifest = {'checkout': str(paths.REPO), 'issuer_digest': captured.digest,
+                'issuer_files': [name for name, _ in captured.files], 'nonce': 'e' * 32,
+                'python_context': original_python_context()}
+    request = scheduler_request('yorimichi', ['data.stage'])
+    client = SimpleNamespace(request=lambda *args: pytest.fail('pure qualification requested permission'))
+    def consume(build, graph, steps, ordered, files):
+        authority = profile.TextureAuthority(manifest, request, client, {}, build, graph, steps, ordered, files)
+        step, observation = authority.data_steps['world.treehouse_trees.data']
+        assert step.audit is False and step.heavy is False and step.batch is None
+        assert step is authority.steps[step.name] and build.audit_enabled(step)
+        assert set(observation.produced_inputs) <= authority.generated_inputs
+        assert tuple(path for _, roots in observation.products for path in roots) == authority.output_paths[step.name]
+        assert build.required_inputs(step) and step.name not in authority.native_steps
+        assert not authority.begun
+        return 'qualified-without-permission'
+    assert profile.discover(manifest, request, captured_files=captured.files, consumer=consume) == 'qualified-without-permission'
+
+
+def test_pure_native_child_view_retains_actual_objects_unknown_fields_and_restores_on_refusal(scripted_index_provider):
+    from atelier import build
+    from atelier.build_v2 import legacy_native_action as native
+    from atelier.build_v2.legacy_client import AuthorityRefused
+    case = scripted_index_provider
+    script = case.root / 'producer.py'; script.write_text('pass\n')
+    names = {'producer.py', *native._WORKER}
+    for name in native._WORKER:
+        path = case.root / name; path.parent.mkdir(parents=True, exist_ok=True); path.write_text('pass\n')
+    member = build.Step('actual', [build.Blender(script, threads=3, factory_startup=True)],
+                        products=[build.Product('result', (case.root / 'owned',))], cache=True, heavy=True)
+    runtime = native._bind_native_runtime(member, checkout=case.root, issuer_files=names)
+    authority = case.profile.TextureAuthority.__new__(case.profile.TextureAuthority)
+    authority.native_steps, authority.native_runtimes = {'actual': member}, {'actual': runtime}
+    member.unknown = 'must remain visible to the strict raw qualifier'
+    with pytest.raises(RuntimeError, match='original pure refusal'):
+        with authority.raw_native_members():
+            assert authority.native_steps['actual'] is member
+            assert '_captured_native_runtime' not in vars(member)
+            assert member.unknown == 'must remain visible to the strict raw qualifier'
+            raise RuntimeError('original pure refusal')
+    assert member._captured_native_runtime is runtime and 'unknown' in vars(member)
+    member._captured_native_runtime = SimpleNamespace(files=runtime.files)
+    with pytest.raises(AuthorityRefused, match='descriptor changed'):
+        with authority.raw_native_members():
+            pytest.fail('accepted forged child metadata')

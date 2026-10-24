@@ -52,7 +52,8 @@ CODE_SEEDS = (
     'world/regions/belmonte/source.py',
     'world/regions/village/atomic_sources.py', 'world/gen_textures.py', 'legacy_texture_profile.py', 'legacy_treehouse_profile.py',
     'world/regions/treehouse/plan_tree.py', 'legacy_treehouse_discovery_profile.py', 'legacy_treehouse_export_profile.py',
-    'world/export_region_piece.py',
+    'world/export_region_piece.py', 'legacy_treehouse_data_profile.py',
+    'world/regions/treehouse/canopy_data.py',
 )
 
 
@@ -386,8 +387,6 @@ class TextureAuthority:
             profile = qualify_treehouse_planner(step, checkout=self.checkout,
                                                output_root=self.checkout / 'build/yorimichi')
             self.native_steps[step.name], self.native_profiles[step.name] = step, profile
-            self.native_runtimes[step.name] = _bind_native_runtime(
-                step, checkout=self.checkout, issuer_files=manifest['issuer_files'], verifier=profile.verifier)
             self.output_paths[step.name] = tuple(path for _, roots in profile.products for path in roots)
             self.generated_inputs.update(profile.produced_inputs)
         from legacy_treehouse_export_profile import qualify_treehouse_export
@@ -398,8 +397,6 @@ class TextureAuthority:
             profile = qualify_treehouse_export(step, checkout=self.checkout,
                                               output_root=self.checkout / 'build/yorimichi')
             self.native_steps[step.name], self.native_profiles[step.name] = step, profile
-            self.native_runtimes[step.name] = _bind_native_runtime(
-                step, checkout=self.checkout, issuer_files=manifest['issuer_files'], verifier=profile.verifier)
             self.output_paths[step.name] = tuple(path for _, roots in profile.products for path in roots)
             self.generated_inputs.update(profile.produced_inputs)
         self.steps.update(self.native_steps)
@@ -415,6 +412,25 @@ class TextureAuthority:
                                issuer_files=manifest['issuer_files'], code_inputs=profile.code_inputs)
             self.steps[self.discovery.name] = self.discovery
             self.output_paths[self.discovery.name] = tuple(path for _, roots in profile.products for path in roots)
+            self.generated_inputs.update(profile.produced_inputs)
+        # All pure declaration/callback qualification precedes the private native
+        # descriptors: closures keep the actual original child Step identities.
+        for name, step in self.native_steps.items():
+            self.native_runtimes[name] = _bind_native_runtime(
+                step, checkout=self.checkout, issuer_files=manifest['issuer_files'],
+                verifier=self.native_profiles[name].verifier)
+        from legacy_treehouse_data_profile import qualify_treehouse_data
+        self.data_steps = {}
+        for step in selected:
+            if step.name != 'world.treehouse_trees.data':
+                continue
+            profile = qualify_treehouse_data(step, checkout=self.checkout,
+                                            output_root=self.checkout / 'build/yorimichi')
+            self.data_steps[step.name] = (step, profile)
+            self.steps[step.name] = step
+            self.runtimes[step.name] = _bind_captured_runtime(
+                step, checkout=self.checkout, issuer_files=manifest['issuer_files'])
+            self.output_paths[step.name] = tuple(path for _, roots in profile.products for path in roots)
             self.generated_inputs.update(profile.produced_inputs)
         self.dones = {}
         self.native_launch = None
@@ -580,11 +596,18 @@ class TextureAuthority:
         self.step = step
         if done is not None:
             self.dones[step.name] = dict(done)
-        if step.name in self.native_steps or step is getattr(self, 'discovery', None):
+        if step.name in self.native_steps or step.name in self.data_steps or step is getattr(self, 'discovery', None):
             if done is None:
                 raise AuthorityRefused('native dispatch lacks original scheduler input observations')
             self.keys[step.name] = self.build.fingerprint(step, done, index=ctx.build_hash_index,
                                                         tool_cache=ctx.build_tool_cache)
+        if step.name in self.data_steps:
+            from dataclasses import replace
+            from legacy_treehouse_data_profile import qualify_treehouse_data
+            actual = qualify_treehouse_data(replace(step), checkout=self.checkout,
+                                           output_root=self.checkout / 'build/yorimichi')
+            if actual != self.data_steps[step.name][1]:
+                raise AuthorityRefused('plain Python source/arguments/owned products changed before permission')
         self.step_key = self.keys[step.name]
         self.runtime = self.runtimes.get(step.name)
         self.native_launch = None
@@ -607,6 +630,34 @@ class TextureAuthority:
         self.validate_call(step, command)
         from atelier.atomic_files import managed_temporaries
         return managed_temporaries(ctx.out / '.state/batches' / ('discovery-' + self.nonce) / 'atomic-tmp')
+
+    def raw_native_members(self):
+        """Private descriptor-only view for pure child-role revalidation.
+
+        Original child objects/fields/unknown attributes remain intact. Only this
+        issuer's exact already-checked runtime object is temporarily absent while
+        the pure qualifier runs; it is restored even when qualification refuses.
+        This view neither executes callbacks nor requests any task permission.
+        """
+        from contextlib import contextmanager
+        from atelier.build_v2.legacy_client import AuthorityRefused
+        from atelier.build_v2.legacy_native_action import captured_native_inputs
+        @contextmanager
+        def original():
+            removed = []
+            try:
+                for name, member in self.native_steps.items():
+                    expected = self.native_runtimes[name]
+                    if vars(member).get('_captured_native_runtime') is not expected:
+                        raise AuthorityRefused('original child runtime descriptor changed before pure revalidation')
+                    captured_native_inputs(member)  # Private type/origin, not raw attribute trust.
+                    del member._captured_native_runtime
+                    removed.append((member, expected))
+                yield
+            finally:
+                for member, expected in removed:
+                    member._captured_native_runtime = expected
+        return original()
 
     def validate_call(self, step, command):
         from dataclasses import replace

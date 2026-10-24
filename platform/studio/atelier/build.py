@@ -591,9 +591,14 @@ def _hash_path(digest, path, skip=True, shadow=False):
         digest.update(b'missing:' + str(path).encode())
 
 
+def audit_enabled(step):
+    from .build_audit import enabled
+    return enabled(step)
+
+
 def required_inputs(step, *, observation=None):
     named = step.products or step.reads or step.references
-    from .build_audit import SUPPORT, captured_runtime_inputs
+    from .build_audit import SUPPORT, captured_runtime_inputs, enabled as audit_enabled
     from . import build_spatial
     batch_code = [Path(__file__).with_name(name) for name in ('build_batches.py', 'build_batch_worker.py')] if step.batch else []
     if step.deferred_inputs and observation is None:
@@ -609,7 +614,7 @@ def required_inputs(step, *, observation=None):
         call = captured_call_inputs(step)
     return [*inputs, *batch_code, *(c.script for c in step.commands if named and hasattr(c, 'script')),
             *(p for c in step.commands for p in getattr(c, 'runs', list)()),
-            *(SUPPORT if step.audit else ()), *captured_runtime_inputs(step), *native, *call,
+            *(SUPPORT if audit_enabled(step) else ()), *captured_runtime_inputs(step), *native, *call,
             *([Path(build_spatial.__file__)] if step.queries else ())]
 
 
@@ -710,14 +715,14 @@ def _fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None,
                                         'members': [str(p) for p in observation.members]}), sort_keys=True)
         digest.update(b'deferred-inputs-v1\0' + metadata.encode())
         state['deferred_inputs'] = json.loads(metadata)
-    if step.cache or step.audit:
+    if step.cache or audit_enabled(step):
         build_inputs.validate_imports(step, [*inputs, *step.optional_inputs])
     for item in inputs:
         replacement = _input_bytes.get(Path(item)) if _input_bytes else None
         if named:
             # Named actions hash a Merkle inventory, not the legacy byte stream. This permits
             # file memoization and includes directory membership and every explicitly selected input.
-            options = {'complete': True} if step.audit else {}
+            options = {'complete': True} if audit_enabled(step) else {}
             manifest = (dict(schema=1, files={'0/.': dict(kind='file', size=len(replacement), sha256=hashlib.sha256(replacement).hexdigest())})
                         if replacement is not None else build_inputs.inventory(item, hasher=hasher, **options) if Path(item).exists() else None)
             value = build_products.identity(manifest)
@@ -755,7 +760,7 @@ def _fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None,
         digest.update(json.dumps({'products': declarations, 'reads': consumed}, sort_keys=True).encode())
         state['products'] = declarations
         state['reads'] = consumed
-    if step.audit:
+    if audit_enabled(step):
         state['audit'] = 1
         digest.update(b'python-input-audit-v1\0')
     if step.queries:
@@ -768,8 +773,8 @@ def _fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None,
     if spatial_outputs:
         state['spatial_outputs'] = spatial_outputs
         digest.update(json.dumps(spatial_outputs, sort_keys=True).encode())
-    if step.cache or step.audit or step.toolchain:
-        if step.audit:
+    if step.cache or audit_enabled(step) or step.toolchain:
+        if audit_enabled(step):
             from .build_audit import tool_context
         else:
             from .build_cache import tool_context
@@ -855,7 +860,7 @@ def run_command(ctx, step, command, log, request=None, slots=None, *, products=N
         source_request = request or (slot_request(ctx, step) if step.heavy else None)
         return build_source.run(ctx, step, command, log, source_request, slots,
                                 products=products, audit_receipt=audit_receipt)
-    if step.audit:
+    if audit_enabled(step):
         from . import build_audit
         with build_audit.prepared(ctx, step, products, receipt=audit_receipt) as (argv, env, descriptors):
             return run_argv(ctx, step, command, argv, env, log, request, slots, pass_fds=descriptors)
@@ -1293,9 +1298,9 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             build_batches.validate(step)
         except ValueError as error:
             raise SystemExit(str(error)) from error
-        if step.cache or step.audit:
+        if step.cache or audit_enabled(step):
             try:
-                if step.audit:
+                if audit_enabled(step):
                     from .build_audit import roots
                     roots(ctx, step)
                 else:
@@ -1654,7 +1659,7 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                     fresh_launch = (not isinstance(command, Call) and
                                     (authority is not None or step.heavy and clear_launch_report(launch_folder)))
                     command_started = time.monotonic()
-                    audited = {'products': declared_products, 'audit_receipt': audit_receipt} if step.audit else {}
+                    audited = {'products': declared_products, 'audit_receipt': audit_receipt} if audit_enabled(step) else {}
                     phases = run_command(ctx, step, command, log, request, slots, **audited)
                     timing = {'kind': type(command).__name__, 'seconds': round(time.monotonic() - command_started, 3),
                               'scope': 'command invocation'}

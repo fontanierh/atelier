@@ -19,6 +19,7 @@ _CAPTURED_ORIGIN = object()
 _CAPTURED_WORKER = (
     'platform/studio/atelier/__init__.py',
     'platform/studio/atelier/build_audit_worker.py',
+    'platform/studio/atelier/atomic_files.py',
     'platform/studio/atelier/build_v2/__init__.py',
     'platform/studio/atelier/build_v2/legacy_action.py',
     'platform/studio/atelier/build_v2/legacy_bootstrap.py',
@@ -42,6 +43,19 @@ def captured_runtime_inputs(step):
     if type(runtime) is not _CapturedRuntime or runtime._origin is not _CAPTURED_ORIGIN:
         raise ValueError('unqualified captured audit runtime descriptor')
     return tuple(runtime.root / name for name in runtime.files)
+
+
+def enabled(step):
+    """@cc [owner:fontanierh,label:correctness;safety] fixed-issuer-observed-python
+    Only original audit opt-in or the private fixed-issuer runtime MAY enable this
+    existing observer. Original recipe flags MUST remain unchanged; runtime/support
+    identities and observation mode MUST enter the original fingerprint. Unknown
+    descriptors MUST refuse. Observer completeness and normal guarded lifecycle MUST
+    remain required before certification; this predicate grants no mutation authority.
+    See test_build_v2_legacy_action.py and test_build_audit.py.
+    """
+    runtime = captured_runtime_inputs(step)
+    return step.audit or bool(runtime)
 
 
 def _bind_captured_runtime(step, *, checkout, issuer_files):
@@ -75,7 +89,7 @@ def validate(step):
     from .build import Blender, Python, UnrealScript
     if type(step.audit) is not bool:
         raise ValueError(f'{step.name}: audit must be a boolean')
-    if not step.audit:
+    if not enabled(step):
         return
     if (not step.products or len(step.commands) != 1
             or type(step.commands[0]) not in (Python, Blender, UnrealScript)):

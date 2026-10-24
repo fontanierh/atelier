@@ -54,8 +54,8 @@ def environment(extra=()):
 
 @contextmanager
 def prepared(ctx, step, command, *, products=None, audit_receipt=None):
-    if step.audit:
-        from . import build_audit
+    from . import build_audit
+    if build_audit.enabled(step):
         with build_audit.prepared(ctx, step, products, receipt=audit_receipt) as action:
             yield action
     elif getattr(ctx, 'legacy_authority', None) is not None:

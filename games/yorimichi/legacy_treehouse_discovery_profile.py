@@ -198,6 +198,7 @@ def qualify_treehouse_discovery(step, *, checkout: Path, output_root: Path) -> T
     _verify(atomic_json, atomic_code, qualname='atomic_json',
             globals_={'tempfile': IdentityBinding(tempfile), 'Path': IdentityBinding(Path),
                       'json': IdentityBinding(json), 'os': IdentityBinding(os),
+                      'stat': IdentityBinding(stat),
                       '_MANAGED_TEMPORARY': IdentityBinding(atomic_files._MANAGED_TEMPORARY)},
             builtins_={'ValueError': IdentityBinding(ValueError)})
     inventory_observation = _verify(
