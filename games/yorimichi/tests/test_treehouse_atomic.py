@@ -58,6 +58,35 @@ def test_cold_treehouse_query_data_and_independent_logical_inputs(tmp_path):
     assert {p.name for p in canonical.products}=={'treehouse.surface_metadata',*('treehouse.surface_source.'+parent for parent in S.PARENTS)}
 
 
+def test_actual_recolour_factory_requires_every_written_atlas_before_current(tmp_path):
+    from atelier import build, build_cache
+    recipe=module('treehouse_required_recolour',GAME/'treehouse_atomic_build.py')
+    steps=recipe.canopy_steps(SimpleNamespace(out=tmp_path.resolve()))
+    step=next(step for step in steps if step.name=='world.treehouse_trees.recolour')
+    source=ast.parse((GAME/'world/regions/treehouse/trees.py').read_bytes())
+    colours=next(ast.literal_eval(node.value) for node in source.body if isinstance(node,ast.Assign)
+                 and any(isinstance(target,ast.Name) and target.id=='RECOLOUR' for target in node.targets))
+    root=tmp_path/'treehouse-data/canopy/recoloured'
+    assert tuple(colours)==('crimson','amber')
+    assert step.outputs==[root/('T_leaf_'+colour+'.png') for colour in colours]
+    assert step.products==[build.Product('treehouse.canopy_recolours',(root,))]
+    assert all(path.is_relative_to(step.products[0].paths[0]) for path in step.outputs)
+    # Existing product directory or one representative image cannot be Current.
+    root.mkdir(parents=True)
+    assert not build.outputs_present(step)
+    step.outputs[0].write_bytes(b'focused presence fixture, no native image generation')
+    assert not build.outputs_present(step)
+    step.outputs[1].write_bytes(b'focused presence fixture, no native image generation')
+    assert build.outputs_present(step)
+    # Exercise the real product/required-output ownership check without rendering.
+    assert build_cache.roots(SimpleNamespace(out=tmp_path.resolve()),step)==[
+        root.relative_to(tmp_path)]
+    for absent in step.outputs:
+        retained=absent.read_bytes();absent.unlink()
+        assert not build.outputs_present(step)
+        absent.write_bytes(retained)
+
+
 def source_fixture(out):
     root=out/'treehouse';parents={};assets={}
     for parent in S.PARENTS:
