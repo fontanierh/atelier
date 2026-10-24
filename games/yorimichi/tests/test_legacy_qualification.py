@@ -300,6 +300,7 @@ def test_current_discovery_provider_roster_uses_static_imports_within_capture_bo
     assert 'games/yorimichi/world/regions/village/catalogue.py' in names
     assert 'games/yorimichi/world/gen_textures.py' in names
     assert 'games/yorimichi/world/surface_textures.py' in names
+    assert 'games/yorimichi/world/regions/treehouse/assemble_atomic.py' in names
     assert 'platform/studio/atelier/build_v2/legacy_action.py' in names
     for package in ('train', 'regions/brinecove', 'regions/ferry',
                     'regions/hidamari_stable', 'regions/swordcamp'):
@@ -735,6 +736,12 @@ def test_actual_captured_graph_qualifies_data_before_private_runtime_without_tas
             authority.validate_call(actual, actual.commands[0])
         assert all(vars(member)['_captured_native_runtime'] is authority.native_runtimes[name]
                    for name, member in authority.native_steps.items())
+        library, library_observation = authority.data_steps['world.treehouse_trees']
+        assert library.audit is False and library.heavy is False and library.batch is None
+        assert build.audit_enabled(library)
+        assert library.commands[0].script.relative_to(paths.REPO).as_posix() in manifest['issuer_files']
+        assert set(vars(library)['_captured_audit_runtime'].files) <= set(manifest['issuer_files'])
+        assert library_observation.kind == 'trees'
         assert not authority.begun
         return 'qualified-without-permission'
     assert profile.discover(manifest, request, captured_files=captured.files, consumer=consume) == 'qualified-without-permission'

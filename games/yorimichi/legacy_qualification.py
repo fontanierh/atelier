@@ -55,6 +55,7 @@ CODE_SEEDS = (
     'world/export_region_piece.py', 'legacy_treehouse_data_profile.py',
     'world/regions/treehouse/canopy_data.py', 'legacy_treehouse_assembly_profile.py',
     'legacy_treehouse_recolour_profile.py', 'legacy_treehouse_library_profile.py',
+    'world/regions/treehouse/assemble_atomic.py',
 )
 
 
