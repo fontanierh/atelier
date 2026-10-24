@@ -12,3 +12,7 @@ unicode-casefold = "0.2"
 unicode-normalization = "0.1"
 sha2 = "0.10"
 libc = "0.2"
+
+# Keep normal debug helpers/checks while compiling the measured SHA hot path.
+[profile.dev.package.sha2]
+opt-level = 3
