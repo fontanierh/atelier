@@ -105,3 +105,29 @@ must establish the latter separately and stop at typed Held/Unsupported, without
 The startup manifest also borrows `issuer_files` directly from the existing host-verified
 `GameIssuer.files`. The child must use only this exact named captured roster to check the same
 framed issuer digest; it must not rediscover a live closure or substitute an unbound sidecar list.
+
+The coupled Python entry is a discovery-only checkpoint. Normal managed legacy selections
+carry their original request and captured provider through pure global declaration preflight,
+the verified controller image, actual Rust-owned startup, and the pinned nonsite scheduler.
+The fixed game provider uses the existing recipe factory and `Graph`; unknown computed
+source loads refuse before execution. The original preflight source object is retained and
+revalidated before bootstrap, rather than recapturing changed code under an old preflight.
+Plain Cargo/test output metadata does not itself classify a checkout as managed; global
+controller declarations or the B3 install metadata root do, including lock-only metadata.
+Exact controller-only execution and genuinely unmanaged normal execution retain their routes.
+
+The host already creates the exact default output directory and checkpoint writer. Repeating
+that mkdir is not a legitimate new task. Discovery therefore stays read-only under Prepared,
+with no active frame, mutation permission, settlement, replay credit or Finish. It ends Held
+before `Context`, HashIndex, checkpoint/store preparation, restoration or any task. An existing
+epoch requires repair and is not discarded. This checkpoint does not complete the originally
+proposed operational DiscoveryControl frame or same-scope repair; it cannot activate mixed mode.
+Course-order verification, all mutation/batch/replan/final-graph hooks, complete repair,
+content-child custody and peak-history/provider binding remain separate unfinished work.
+
+The hosted entry fixture first verifies the normally compiled binary's captured source identity
+and publishes only its ordinary helper-cache receipt as explicit fixture setup. The tested path
+is the existing `atelier build ... data.stage` console entry, not a test-mode host. Installed
+scheme paths are added directly without site processing. CPython's bounded built-in UTF-8
+`LC_CTYPE` coercion is distinguished from ambient forwarding; Rust still passes only the four
+approved operational variables. No game key or worker bundle is changed by this startup context.

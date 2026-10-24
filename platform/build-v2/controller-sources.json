@@ -63,6 +63,13 @@
     "platform/studio/atelier/build_v2/controller_client.py",
     "platform/studio/atelier/build_v2/legacy_bootstrap.py",
     "platform/studio/atelier/build_v2/legacy_client.py",
-    "platform/studio/atelier/build_v2/legacy_qualification.py"
+    "platform/studio/atelier/build_v2/legacy_qualification.py",
+    "platform/studio/atelier/build_v2/legacy_entry.py",
+    "platform/studio/atelier/build_v2/python_worker.py",
+    "platform/studio/atelier/build_v2/python_job.py",
+    "platform/studio/atelier/build_v2/protocol.py",
+    "platform/studio/atelier/paths.py",
+    "platform/studio/atelier/source_imports.py",
+    "platform/studio/atelier/file_identity.py"
   ]
 }

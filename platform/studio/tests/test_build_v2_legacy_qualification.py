@@ -142,3 +142,30 @@ def test_named_imports_use_captured_packages_and_refuse_unknown_project_code_bef
         for name in tuple(sys.modules):
             if name == 'named_legacy_fixture' or name.startswith('named_legacy_fixture.'):
                 del sys.modules[name]
+
+
+def test_recipe_direct_spec_loads_captured_bytes_at_original_path_and_refuses_unknown_prewrite(tmp_path):
+    from atelier.build_v2.legacy_qualification import captured_recipe_imports
+    known = tmp_path / 'games/example/helper.py'
+    known.parent.mkdir(parents=True)
+    known.write_text('raise RuntimeError("mutable source executed")')
+    unknown = known.with_name('unreviewed.py')
+    written = tmp_path / 'unreviewed-write'
+    unknown.write_text(f'from pathlib import Path\nPath({str(written)!r}).touch()')
+    # A platform source supplies the finite normal-import mapping; direct game helper
+    # names are chosen by the existing recipe, and still require captured exact paths.
+    platform = tmp_path / 'platform/studio/example_platform.py'
+    platform.parent.mkdir(parents=True)
+    platform.write_text('raise RuntimeError("mutable platform executed")')
+    sources = [CapturedCode(str(known), b'VALUE = 17\nORIGIN = __file__\n'),
+               CapturedCode(str(platform), b'VALUE = 23\n')]
+    original = importlib.util.spec_from_file_location
+    with captured_recipe_imports(sources, checkout=tmp_path):
+        spec = importlib.util.spec_from_file_location('original_recipe_helper', known)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        assert module.VALUE == 17 and module.ORIGIN == str(known)
+        with pytest.raises(UnsupportedOrigin, match='outside the named capture'):
+            importlib.util.spec_from_file_location('unreviewed_helper', unknown)
+        assert not written.exists()
+    assert importlib.util.spec_from_file_location is original

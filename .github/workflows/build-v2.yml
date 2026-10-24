@@ -30,6 +30,17 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
+      - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
+        with:
+          version: '0.10.0'
+          python-version: '3.12'
+          enable-cache: false
+      - name: Prepare original Python context and frozen controller identity
+        run: |
+          uv sync --frozen --managed-python
+          source_digest=$(uv run python -c 'from atelier.paths import REPO; from atelier.build_v2.controller_client import capture_controller; print(capture_controller(REPO).digest)')
+          printf 'ATELIER_CONTROLLER_SOURCE_SHA256=%s\n' "$source_digest" >> "$GITHUB_ENV"
+          printf 'ATELIER_LEGACY_ENTRY_TEST_SCRIPT=%s\n' 'games/yorimichi/tests/legacy_host_entry_case.py' >> "$GITHUB_ENV"
       - name: Install pinned nextest binary
         uses: taiki-e/install-action@a4d3f3f761dcd95cce1b72cb61cb6d1963438177 # v2
         with:
@@ -37,7 +48,9 @@ jobs:
       - name: Check formatting
         run: cargo fmt --check
       - name: Compile interfaces and fixtures
-        run: cargo test --locked --no-run -j 3
+        run: |
+          cargo build --locked --bin atelier-build-v2 -j 3
+          cargo test --locked --no-run -j 3
       - name: Collect every test and derive the tier plans
         run: |
           cargo nextest list --locked --profile ci --message-format json > ../../build/build-v2/test-list.json
@@ -65,4 +78,5 @@ jobs:
             build/build-v2/tiers/
             build/build-v2/nextest/ci/junit.xml
             build/build-v2/nextest/t1a/junit.xml
+            build/build-v2/legacy-host-entry-test/
           retention-days: 7

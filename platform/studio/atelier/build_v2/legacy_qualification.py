@@ -14,6 +14,7 @@ from pathlib import Path, PurePath, PurePosixPath, PureWindowsPath, PosixPath, W
 import struct
 import sys
 import types
+from contextlib import contextmanager
 
 MAX_CODE_BYTES = 8 * 1024 * 1024
 MAX_BINDINGS = 1024
@@ -201,7 +202,7 @@ class NamedCapturedImports(importlib.abc.MetaPathFinder):
     captured_spec adapter and are NOT covered by this finder. The provider must separately
     establish import-time mutation scope before installing/using these source loaders.
     """
-    def __init__(self, modules, *, checkout):
+    def __init__(self, modules, *, checkout, platform_roots=()):
         if (type(modules) is not dict or not 0 < len(modules) <= 256
                 or any(type(name) is not str or not name or any(not p.isidentifier() for p in name.split('.'))
                        or not isinstance(source, CapturedCode) for name, source in modules.items())):
@@ -209,6 +210,8 @@ class NamedCapturedImports(importlib.abc.MetaPathFinder):
         self.modules = dict(modules)
         self.protected_names = frozenset(name.split('.')[0] for name in modules)
         self.checkout = Path(checkout).resolve(strict=True)
+        self.platform_roots = tuple(Path(root).resolve(strict=True) for root in platform_roots)
+        self.platform_roles = tuple(Path(root).absolute() for root in platform_roots)
         if any(not Path(source.filename).is_relative_to(self.checkout) for source in modules.values()):
             raise UnsupportedOrigin('named module has a foreign logical path')
 
@@ -225,6 +228,138 @@ class NamedCapturedImports(importlib.abc.MetaPathFinder):
             candidates = ([spec.origin] if spec.origin not in (None, 'built-in', 'frozen') else [])
             candidates += list(spec.submodule_search_locations or ())
             for candidate in candidates:
-                if Path(candidate).resolve().is_relative_to(self.checkout):
+                actual = Path(candidate).resolve()
+                if (actual.is_relative_to(self.checkout)
+                        and not any(actual.is_relative_to(root) for root in self.platform_roots)):
                     raise UnsupportedOrigin('imported checkout code is outside the named capture')
         return None
+
+
+@contextmanager
+def captured_recipe_imports(sources, *, checkout, platform_roots=()):
+    """@cc [owner:fontanierh,label:safety] captured-recipe-preexec-routing
+    The fixed profile's named normal/spec imports MUST compile captured bytes at their
+    original logical filenames. Unknown checkout sources, foreign preloaded game helpers
+    and unqualified custom source loaders MUST refuse before execution. Installed context
+    MUST remain separate from project code; existing Harness aliases MUST preserve their
+    canonical class identity. Source routing MUST NOT confer task/cleanup qualification.
+    See test_recipe_direct_spec_loads_captured_bytes_at_original_path_and_refuses_unknown_prewrite.
+
+    The isolated scheduler is single threaded at this boundary. This does not qualify
+    arbitrary exec, task callbacks or import effects: the fixed game profile must name
+    those effects before entry. Unknown checkout spec loads refuse before execution.
+    """
+    from atelier.harness import compat
+    checkout = Path(checkout).resolve(strict=True)
+    by_path = {source.filename: source for source in sources}
+    if not by_path or len(by_path) > 256 or len(by_path) != len(sources):
+        raise UnsupportedOrigin('recipe capture path set is invalid')
+    if any(not Path(name).is_relative_to(checkout) for name in by_path):
+        raise UnsupportedOrigin('recipe capture has a foreign logical source')
+    modules = {}
+    for filename, source in by_path.items():
+        relative = Path(filename).relative_to(checkout)
+        for prefix, package in (('platform/studio', ''), ('platform/harness', 'atelier.')):
+            try:
+                local = relative.relative_to(prefix)
+            except ValueError:
+                continue
+            parts = list(local.with_suffix('').parts)
+            if parts[-1] == '__init__':
+                parts.pop()
+            name = package + '.'.join(parts)
+            modules[name] = source
+        if len(relative.parts) > 2 and relative.parts[0] == 'games':
+            # Only the game provider's captured paths supply these conventional
+            # recipe imports. No filename is found by an ambient module search.
+            local = relative.parts[2:]
+            parts = list(Path(*local).with_suffix('').parts)
+            if parts[-1] == '__init__':
+                parts.pop()
+            if parts and all(part.isidentifier() for part in parts):
+                modules['.'.join(parts)] = source
+                aliases = ['.'.join(parts)]
+                if parts[0] == 'world':
+                    aliases.append('.'.join(parts[1:]))
+                for alias in aliases:
+                    loaded = sys.modules.get(alias)
+                    if loaded is not None:
+                        loader = getattr(loaded, '__loader__', None)
+                        if not isinstance(loader, CapturedLoader) or loader.captured != source:
+                            raise UnsupportedOrigin('preloaded game helper has no matching captured origin')
+    namespaces = {}
+    for name, source in modules.items():
+        parts = name.split('.')
+        package = Path(source.filename).name == '__init__.py'
+        for count in range(1, len(parts)):
+            prefix = '.'.join(parts[:count])
+            if prefix not in modules:
+                directory = Path(source.filename).parents[len(parts) - count - (0 if package else 1)]
+                if (directory / '__init__.py').exists():
+                    raise UnsupportedOrigin('recipe package initializer is outside the named capture')
+                previous = namespaces.setdefault(prefix, str(directory))
+                if previous != str(directory):
+                    raise UnsupportedOrigin('recipe namespace has ambiguous original paths')
+
+    class RecipeFinder(NamedCapturedImports):
+        def find_spec(self, fullname, path=None, target=None):
+            # Preserve existing Harness alias class identities through its actual
+            # alias loader, rather than executing a second copy under the alias.
+            if fullname.startswith('atelier.'):
+                target_name = compat.canonical(fullname)
+                if target_name is not None:
+                    if target_name not in self.modules:
+                        raise UnsupportedOrigin('Harness alias is outside the named capture')
+                    return compat._LegacyHarness().find_spec(fullname, path, target)
+            # Existing recipes also put WORLD on sys.path, so both yori and
+            # regions.<name> may name an already captured world helper/package.
+            canonical = 'world.' + fullname
+            if canonical in self.modules and fullname not in self.modules:
+                return captured_spec(fullname, self.modules[canonical])
+            if canonical in namespaces and fullname not in namespaces:
+                spec = importlib.machinery.ModuleSpec(fullname, None, is_package=True)
+                spec.submodule_search_locations = [namespaces[canonical]]
+                return spec
+            if fullname in namespaces:
+                spec = importlib.machinery.ModuleSpec(fullname, None, is_package=True)
+                spec.submodule_search_locations = [namespaces[fullname]]
+                return spec
+            return super().find_spec(fullname, path, target)
+
+    finder = RecipeFinder(modules, checkout=checkout, platform_roots=platform_roots)
+    original = importlib.util.spec_from_file_location
+
+    def fixed_spec(name, location=None, *, loader=None, submodule_search_locations=None):
+        if location is not None:
+            filename = str(Path(location).absolute())
+            if Path(filename).is_relative_to(checkout):
+                source = by_path.get(filename)
+                if source is None:
+                    real = Path(filename).resolve(strict=True)
+                    installed = any(Path(filename).is_relative_to(role) and real.is_relative_to(root)
+                                    for role, root in zip(finder.platform_roles, finder.platform_roots))
+                    if installed:
+                        if loader is not None and type(loader) not in (
+                                importlib.machinery.SourceFileLoader,
+                                importlib.machinery.SourcelessFileLoader,
+                                importlib.machinery.ExtensionFileLoader):
+                            raise UnsupportedOrigin('installed spec supplied an unqualified custom loader')
+                        return original(name, location, loader=loader,
+                                        submodule_search_locations=submodule_search_locations)
+                    raise UnsupportedOrigin('recipe spec source is outside the named capture')
+                if loader is not None and type(loader) is not CapturedLoader:
+                    raise UnsupportedOrigin('recipe supplied an unqualified source loader')
+                loader = CapturedLoader(name, source)
+        return original(name, location, loader=loader,
+                        submodule_search_locations=submodule_search_locations)
+
+    sys.meta_path.insert(0, finder)
+    importlib.util.spec_from_file_location = fixed_spec
+    bytecode = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    try:
+        yield
+    finally:
+        importlib.util.spec_from_file_location = original
+        sys.meta_path.remove(finder)
+        sys.dont_write_bytecode = bytecode

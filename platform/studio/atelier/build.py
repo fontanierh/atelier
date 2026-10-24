@@ -1007,6 +1007,19 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, veri
         raise ValueError('max_heavy_commands must be a positive integer')
     from .build_snapshot import require_complete
     from .build_v2.controller_entry import exact_selection, execute as execute_controller
+    from .build_v2 import legacy_entry
+    if not dry and legacy_entry.managed(game, wanted):
+        if (force or touch or cook_mode is not None or cook_reason is not None
+                or cook_memory_gib is not None or recover_cook is not None
+                or record_cook_recovery or rebuild_touched or rebuild_reason is not None):
+            raise ValueError('managed legacy discovery does not support mutation/recovery overrides')
+        require_complete(paths.build_root() / game, game=game)
+        discovery = legacy_entry.prepare_discovery(game, wanted, verify=verify,
+                                               max_heavy_commands=max_heavy_commands,
+                                               fail_fast=fail_fast)
+        return legacy_entry.execute(game, wanted, discovery_source=discovery, verify=verify,
+                                    max_heavy_commands=max_heavy_commands, fail_fast=fail_fast,
+                                    echo=echo)
     controller = exact_selection(game, wanted)
     if controller is not None:
         if (force or touch or verify or cook_mode is not None or cook_reason is not None or cook_memory_gib is not None

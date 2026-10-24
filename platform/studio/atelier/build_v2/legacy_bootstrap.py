@@ -64,6 +64,85 @@ def startup_arguments(arguments):
     return descriptors, manifest
 
 
+def restore_python_context(manifest):
+    """Validate the original constructor's installed context without executing site hooks.
+
+    This is installed platform context, never a game input or task qualification. The
+    lexical executable role is observed, not assigned to sys.executable. See
+    test_legacy_bootstrap_original_interpreter_context_without_site_hooks.
+    """
+    import hashlib
+    from pathlib import Path
+    import sys
+    from atelier.build_v2.controller_client import _read_at, MAX_BINARY_BYTES
+    from atelier.build_v2.legacy_client import _fields
+
+    def absolute(value):
+        if (type(value) is not str or not value or '\0' in value
+                or not os.path.isabs(value) or os.path.normpath(value) != value):
+            raise BootstrapRefused('invalid original interpreter context path')
+        return Path(value)
+
+    image = absolute(manifest['interpreter'])
+    role = absolute(manifest['interpreter_role'])
+    if (image.resolve(strict=True) != image or role.resolve(strict=True) != image
+            or os.path.abspath(sys.executable) != str(role)
+            or Path(sys.executable).resolve(strict=True) != image):
+        raise BootstrapRefused('executed interpreter differs from original role/image')
+    raw = _read_at(image.parent, image.name, MAX_BINARY_BYTES)
+    if hashlib.sha256(raw).hexdigest() != manifest['interpreter_digest']:
+        raise BootstrapRefused('executed interpreter image changed')
+    context = manifest['python_context']
+    _fields(context, ('platform_roots', 'purelib', 'platlib'))
+    roots = context['platform_roots']
+    if type(roots) is not list or not 0 < len(roots) <= 32:
+        raise BootstrapRefused('invalid original interpreter platform roots')
+    real_roots = []
+    for value in roots:
+        path = absolute(value).resolve(strict=True)
+        if not path.is_dir():
+            raise BootstrapRefused('original interpreter platform root is not a directory')
+        real_roots.append(path)
+    libraries = []
+    for key in ('purelib', 'platlib'):
+        lexical = absolute(context[key])
+        real = lexical.resolve(strict=True)
+        if not real.is_dir() or not any(real.is_relative_to(root) for root in real_roots):
+            raise BootstrapRefused('original interpreter library is outside platform roots')
+        if str(lexical) not in libraries:
+            libraries.append(str(lexical))
+    environment = manifest['operational_environment']
+    _fields(environment, ('agent', 'cache', 'build_root', 'path'))
+    expected = {'PATH': environment['path']}
+    if (type(environment['path']) is not str or not environment['path']
+            or any(not p or not os.path.isabs(p) for p in environment['path'].split(os.pathsep))):
+        raise BootstrapRefused('invalid original operational PATH')
+    for key, name in (('agent', 'ATELIER_AGENT'), ('cache', 'ATELIER_CACHE'),
+                      ('build_root', 'ATELIER_BUILD_ROOT')):
+        value = environment[key]
+        if value is not None:
+            if type(value) is not str or not value or '\0' in value:
+                raise BootstrapRefused('invalid original operational context')
+            if key != 'agent':
+                absolute(value)
+            expected[name] = value
+    actual = dict(os.environ)
+    # CPython may coerce the empty/C locale at its built-in startup, before this
+    # script runs. Rust still supplied only the four closed variables; this is not
+    # an ambient locale passthrough or an added launcher setting.
+    if 'LC_CTYPE' in actual:
+        if actual.pop('LC_CTYPE') not in ('C.UTF-8', 'C.utf8', 'UTF-8'):
+            raise BootstrapRefused('unexpected interpreter locale coercion')
+    if actual != expected:
+        raise BootstrapRefused('inherited operational environment differs from original context')
+    # Direct path insertion deliberately does not execute .pth, sitecustomize or user hooks.
+    for library in libraries:
+        if library not in sys.path:
+            sys.path.append(library)
+    return tuple(libraries)
+
+
+
 def main(arguments=None):
     # No project/site import, thread or subprocess precedes this restoration. The host's
     # -I -S invocation is mandatory; ordinary imports of this module are test primitives.
@@ -81,7 +160,7 @@ def main(arguments=None):
         # Only this exact host-verified captured distribution can supply startup providers.
         distribution = Path(__file__).resolve(strict=True).parents[4]
         sys.path.insert(0, str(distribution / 'platform/studio'))
-        from atelier.build_v2.controller_client import _json, _open_root, _read_at, MAX_CONTROL_BYTES
+        from atelier.build_v2.controller_client import _json, _open_root, _read_at, _relative, MAX_CONTROL_BYTES
         from atelier.build_v2.legacy_client import (
             AuthorityLost, LegacyChannel, LegacyClient, _fields, _identity, _integer,
             CLOCK_ID, authority_now_ns, validate_scheduler_request,
@@ -93,10 +172,18 @@ def main(arguments=None):
         manifest = _json(_read_at(manifest_path.parent, manifest_path.name, MAX_CONTROL_BYTES, owned=True))
         _fields(manifest, ('version', 'nonce', 'selection', 'checkout', 'output', 'distribution',
                           'source_digest', 'issuer_digest', 'issuer_root', 'issuer_profile',
-                          'host', 'root', 'locks', 'deadline_ns', 'work_deadline_ns', 'clock_domain', 'scheduler_request'))
+                          'host', 'root', 'locks', 'deadline_ns', 'work_deadline_ns', 'clock_domain', 'scheduler_request',
+                          'interpreter', 'interpreter_digest', 'interpreter_role', 'python_context',
+                          'operational_environment', 'issuer_files'))
         if (type(manifest['version']) is not int or manifest['version'] != 2
                 or manifest['clock_domain'] != CLOCK_ID):
             raise BootstrapRefused('unsupported private startup version')
+        restore_python_context(manifest)
+        issuer_files = manifest['issuer_files']
+        if (type(issuer_files) is not list or not 0 < len(issuer_files) <= 256
+                or any(_relative(name) != name for name in issuer_files)
+                or len(set(issuer_files)) != len(issuer_files)):
+            raise BootstrapRefused('private issuer capture names are invalid')
         for field in ('checkout', 'output', 'distribution', 'issuer_root'):
             value = manifest[field]
             if type(value) is not str or not Path(value).is_absolute() or str(Path(value).resolve(strict=True)) != value:

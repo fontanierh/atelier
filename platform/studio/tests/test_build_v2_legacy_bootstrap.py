@@ -1,5 +1,8 @@
 """Portable descriptor primitives only; no production exec/guard/cleanup claim."""
 import os
+import hashlib
+from pathlib import Path
+import sys
 
 import pytest
 
@@ -60,3 +63,43 @@ def test_exact_host_bootstrap_argv_has_no_module_site_or_ambient_option_fallback
                     [*arguments[:-1], 'relative/startup.json']):
         with pytest.raises(BootstrapRefused):
             startup_arguments(changed)
+
+
+def test_legacy_bootstrap_original_interpreter_context_without_site_hooks(tmp_path, monkeypatch):
+    from atelier.build_v2.legacy_bootstrap import restore_python_context
+    from atelier.build_v2.legacy_client import AuthorityLost
+    image = Path(sys.executable).resolve()
+    library = tmp_path / 'venv/lib'
+    library.mkdir(parents=True)
+    forbidden = tmp_path / 'site-hook-ran'
+    (library / 'hook.pth').write_text(f"import pathlib; pathlib.Path({str(forbidden)!r}).touch()\n")
+    context = {'interpreter': str(image), 'interpreter_role': os.path.abspath(sys.executable),
+               'interpreter_digest': hashlib.sha256(image.read_bytes()).hexdigest(),
+               'python_context': {'platform_roots': [str(tmp_path)],
+                                  'purelib': str(library), 'platlib': str(library)},
+               'operational_environment': {'agent': 'test-owner', 'cache': None,
+                                           'build_root': None, 'path': '/usr/bin:/bin'}}
+    monkeypatch.setattr(sys, 'path', list(sys.path))
+    monkeypatch.setattr(os, 'environ', {'ATELIER_AGENT': 'test-owner', 'PATH': '/usr/bin:/bin'})
+    executable = sys.executable
+    assert restore_python_context(context) == (str(library),)
+    assert sys.path.count(str(library)) == 1
+    assert not forbidden.exists()
+    assert sys.executable == executable
+    monkeypatch.setitem(os.environ, 'LC_CTYPE', 'C.UTF-8')
+    assert restore_python_context(context) == (str(library),)
+    monkeypatch.setitem(os.environ, 'LC_CTYPE', 'unreviewed-locale')
+    with pytest.raises(BootstrapRefused, match='locale coercion'):
+        restore_python_context(context)
+    monkeypatch.delitem(os.environ, 'LC_CTYPE')
+    before = list(sys.path)
+    for broken in ({**context, 'interpreter_digest': '0' * 64},
+                   {**context, 'interpreter_role': str(tmp_path / 'missing-python')},
+                   {**context, 'python_context': {**context['python_context'], 'purelib': '/'}},
+                   {**context, 'python_context': {**context['python_context'], 'unknown': True}}):
+        with pytest.raises((BootstrapRefused, AuthorityLost, ValueError, OSError)):
+            restore_python_context(broken)
+        assert sys.path == before
+    monkeypatch.setitem(os.environ, 'PYTHONPATH', str(tmp_path))
+    with pytest.raises(BootstrapRefused, match='environment differs'):
+        restore_python_context(context)
