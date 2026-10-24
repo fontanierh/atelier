@@ -105,3 +105,9 @@ must establish the latter separately and stop at typed Held/Unsupported, without
 The startup manifest also borrows `issuer_files` directly from the existing host-verified
 `GameIssuer.files`. The child must use only this exact named captured roster to check the same
 framed issuer digest; it must not rediscover a live closure or substitute an unbound sidecar list.
+
+The Linux T1a `legacy_host_entry` bridge uses the original checkout's `.venv/bin/python`
+and actual compiled source-bound controller. Its Python fixture explicitly prepares the normal
+verified helper cache, then exercises the ordinary console entry through captured Graph discovery
+to typed Held. Prepared has no frame or mutation permission; no task settlement, replay, Finish,
+native work or build success is certified. The existing T1a budget is unchanged.
