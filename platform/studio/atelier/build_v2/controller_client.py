@@ -171,6 +171,11 @@ def capture_controller(root):
     if (set(config) != {'build'} or set(config['build']) - {'jobs', 'target-dir'}
             or type(config['build'].get('jobs')) is not int or not 1 <= config['build']['jobs'] <= 3):
         raise ValueError('controller Cargo configuration needs explicit closure support')
+    return _captured_source(files)
+
+
+def _captured_source(files):
+    """The existing distribution framing, also used by an explicit game issuer closure."""
     digest = hashlib.sha256()
     for name, content in sorted(files):
         encoded = name.encode()
@@ -179,6 +184,29 @@ def capture_controller(root):
         digest.update(len(content).to_bytes(8, 'big'))
         digest.update(content)
     return ControllerSource(digest.hexdigest(), tuple(files))
+
+
+def capture_named_sources(root, names):
+    """@cc [owner:fontanierh,label:correctness;safety] finite-named-issuer-capture
+    A game issuer capture MUST read only its fixed profile's explicit normalized file names
+    through the same anchored nofollow/stable bounded reader and digest framing as the
+    controller distribution. It MUST NOT discover an ambient directory closure or treat this
+    byte capture as a semantic task/cleanup qualification. Installed tool context MUST NOT be
+    silently injected into game action identities. See test_build_v2_legacy_capture.py.
+    """
+    if type(names) not in (tuple, list) or not 0 < len(names) <= 256:
+        raise ValueError('issuer closure needs bounded explicit source names')
+    names = [_relative(name) for name in names]
+    if len(set(names)) != len(names):
+        raise ValueError('duplicate issuer source name')
+    files, total = [], 0
+    for name in sorted(names):
+        raw = _read_at(root, name, MAX_SOURCE_FILE_BYTES)
+        total += len(raw)
+        if total > MAX_SOURCE_TOTAL_BYTES:
+            raise ValueError('issuer source closure exceeds its size bound')
+        files.append((name, raw))
+    return _captured_source(files)
 
 
 def write_control(directory, name, record):
