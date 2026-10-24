@@ -322,6 +322,14 @@ impl BuildGuard {
     }
 }
 
+impl LegacyExecCustody {
+    // Only the owned legacy-host launcher consumes this private pair. Never expose it
+    // as an ordinary worker pass_fds or raw-guard-adoption constructor.
+    pub(crate) fn into_host_files(self) -> [File; 2] {
+        [self.build, self.content]
+    }
+}
+
 impl ContentReadGuard {
     /// Same open file description, CLOEXEC set, and no manual LOCK_UN on guard drop.
     /// The existing monitor must retain the duplicate while any owned reader is alive
