@@ -393,6 +393,64 @@ def test_linked_output_is_refused_without_changes(profile, declarations, tmp_pat
     assert marker.read_bytes() == b'preserve output'
 
 
+def test_runtime_inputs_helper_is_never_called(profile, declarations, monkeypatch):
+    def forbidden():
+        raise AssertionError('unchecked runtime_inputs executed')
+    monkeypatch.setattr(export_assembly, 'runtime_inputs', forbidden)
+    assert qualify(profile, fresh(declarations), declarations.root).step == 'world.treehouse_trees.assembled'
+
+
+@pytest.mark.parametrize('change', ['same-shape', 'init', 'new', 'getattribute', 'finalizer'])
+def test_item_constructor_or_access_spoof_is_refused(profile, declarations, monkeypatch, change):
+    if change == 'same-shape':
+        from dataclasses import dataclass
+        @dataclass(frozen=True)
+        class Counterfeit:
+            key: str
+            root: Path
+        monkeypatch.setattr(export_assembly, 'Item', Counterfeit)
+    else:
+        def foreign(*args, **kwargs):
+            raise AssertionError('foreign Item code executed')
+        attribute = '__del__' if change == 'finalizer' else f'__{change}__'
+        monkeypatch.setattr(export_assembly.Item, attribute, foreign, raising=False)
+    with pytest.raises(profile.UnsupportedTreehouseAssembly):
+        qualify(profile, fresh(declarations), declarations.root)
+
+
+@pytest.mark.parametrize('kind', ['python-wrapper', 'cache-public-spoof', 'ambiguous'])
+def test_clone_cache_wrapper_spoof_is_refused(profile, declarations, monkeypatch, kind):
+    import atelier.file_copy as file_copy
+    authentic = file_copy.clone_function.__wrapped__
+    if kind == 'python-wrapper':
+        def forged(*args, **kwargs):
+            raise AssertionError('forged clone wrapper called')
+        forged.__wrapped__ = authentic
+        monkeypatch.setattr(file_copy, 'clone_function', forged)
+    else:
+        import functools
+        def foreign():
+            raise AssertionError('foreign cache body called')
+        wrapper = functools.cache(foreign)
+        wrapper.__wrapped__ = authentic
+        monkeypatch.setattr(file_copy, 'clone_function', wrapper)
+        if kind == 'ambiguous':
+            import gc
+            monkeypatch.setattr(gc, 'get_referents', lambda value: [])
+
+
+def test_poisoned_cache_parameters_getter_is_never_called(profile, declarations):
+    import atelier.file_copy as file_copy
+    def forbidden():
+        raise AssertionError('poisoned cache_parameters getter executed')
+    file_copy.clone_function.cache_parameters = forbidden
+    try:
+        with pytest.raises(profile.UnsupportedTreehouseAssembly):
+            qualify(profile, fresh(declarations), declarations.root)
+    finally:
+        del file_copy.clone_function.cache_parameters
+
+
 def test_missing_source_is_honest_refusal(profile, declarations, tmp_path):
     with pytest.raises(profile.UnsupportedTreehouseAssembly):
         qualify(profile, fresh(declarations), declarations.root, tmp_path / 'absent')
