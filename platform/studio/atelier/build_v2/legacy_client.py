@@ -308,10 +308,14 @@ class LegacyClient:
                    'guard_returned': 'guard_observed', 'supersede': 'superseded', 'finish': 'finished'}
 
     @classmethod
-    def handshake(cls, channel, hello, *, expected_host, deadline_ns):
+    def handshake(cls, channel, hello, *, expected_host, deadline_ns, work_deadline_ns):
         _identity(expected_host)
+        if (type(deadline_ns) is not int or type(work_deadline_ns) is not int
+                or not 0 < work_deadline_ns < deadline_ns
+                or channel.deadline_ns != work_deadline_ns):
+            raise AuthorityLost('authority channel has a different work cutoff')
         def ready(value):
-            _fields(value, ('version', 'type', 'nonce', 'host', 'deadline_ns', 'clock_domain', 'selection',
+            _fields(value, ('version', 'type', 'nonce', 'host', 'deadline_ns', 'work_deadline_ns', 'clock_domain', 'selection',
                             'record_digest', 'frame', 'transition_count'))
             _identity(value['host'])
             if (type(value['version']) is not int or value['version'] != 2
@@ -320,6 +324,8 @@ class LegacyClient:
                     or value['clock_domain'] != CLOCK_ID
                     or type(value['deadline_ns']) is not int
                     or value['deadline_ns'] != deadline_ns
+                    or type(value['work_deadline_ns']) is not int
+                    or value['work_deadline_ns'] != work_deadline_ns
                     or type(value['selection']) is not str or not 0 < len(value['selection']) <= 128):
                 raise AuthorityLost('authority startup identity differs')
             _digest(value['record_digest'])

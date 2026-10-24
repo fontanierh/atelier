@@ -1,5 +1,6 @@
 """Portable private-pipe framing/failure tests, not a production host/cleanup proof."""
 import os
+from types import SimpleNamespace
 
 import pytest
 
@@ -91,11 +92,13 @@ def started_client(host_write, channel):
     host = {'pid': 42, 'boot': 'test-boot', 'started': '100'}
     ready = {'version': 2, 'type': 'ready', 'nonce': 'nonce', 'host': host,
              'clock_domain': protocol.CLOCK_ID,
-             'deadline_ns': 999, 'selection': 'persistent-selection', 'record_digest': None,
+             'deadline_ns': channel.deadline_ns + 1_000_000_000, 'work_deadline_ns': channel.deadline_ns,
+             'selection': 'persistent-selection', 'record_digest': None,
              'frame': None, 'transition_count': 0}
     os.write(host_write, encode_record(ready))
     return LegacyClient.handshake(channel, {'version': 2, 'type': 'hello', 'nonce': 'nonce'},
-                                  expected_host=host, deadline_ns=999)
+                                  expected_host=host, deadline_ns=ready['deadline_ns'],
+                                  work_deadline_ns=ready['work_deadline_ns'])
 
 
 @pytest.mark.parametrize('fault', ['nonce', 'sequence', 'permission', 'refused', 'extra', 'bool'])
@@ -176,9 +179,9 @@ def test_authority_deadline_uses_explicit_posix_clock_and_only_relative_wait_dur
         return 1_000_000_000
     def wrong_clock():
         raise AssertionError('mach-absolute Python monotonic domain must not be used')
-    monkeypatch.setattr(protocol.time, 'clock_gettime_ns', clock)
-    monkeypatch.setattr(protocol.time, 'monotonic', wrong_clock)
-    monkeypatch.setattr(protocol.time, 'monotonic_ns', wrong_clock)
+    monkeypatch.setattr(protocol, 'time', SimpleNamespace(
+        clock_gettime_ns=clock, CLOCK_MONOTONIC=protocol.time.CLOCK_MONOTONIC,
+        monotonic=wrong_clock, monotonic_ns=wrong_clock))
     host_read, child_write, child_read, host_write = endpoints()
     try:
         with pytest.raises(AuthorityLost, match='deadline'):

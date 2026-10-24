@@ -93,7 +93,7 @@ def main(arguments=None):
         manifest = _json(_read_at(manifest_path.parent, manifest_path.name, MAX_CONTROL_BYTES, owned=True))
         _fields(manifest, ('version', 'nonce', 'selection', 'checkout', 'output', 'distribution',
                           'source_digest', 'issuer_digest', 'issuer_root', 'issuer_profile',
-                          'host', 'root', 'locks', 'deadline_ns', 'clock_domain', 'scheduler_request'))
+                          'host', 'root', 'locks', 'deadline_ns', 'work_deadline_ns', 'clock_domain', 'scheduler_request'))
         if (type(manifest['version']) is not int or manifest['version'] != 2
                 or manifest['clock_domain'] != CLOCK_ID):
             raise BootstrapRefused('unsupported private startup version')
@@ -149,16 +149,19 @@ def main(arguments=None):
         if actual_parent != manifest['host']:
             raise BootstrapRefused('original authority parent identity changed')
         deadline = manifest['deadline_ns']
-        if type(deadline) is not int or deadline <= authority_now_ns():
+        work_deadline = manifest['work_deadline_ns']
+        if (type(deadline) is not int or type(work_deadline) is not int
+                or not authority_now_ns() < work_deadline < deadline):
             raise BootstrapRefused('private authority deadline expired')
         hello = {'version': 2, 'type': 'hello', 'nonce': nonce, 'process': identity(os.getpid()),
                  'clock_domain': CLOCK_ID,
                  'parent': actual_parent, 'source_digest': manifest['source_digest'],
                  'issuer_digest': manifest['issuer_digest'], 'root': manifest['root'],
                  'locks': expected_locks}
-        channel = LegacyChannel(descriptors['command'], descriptors['reply'], deadline_ns=deadline,
+        channel = LegacyChannel(descriptors['command'], descriptors['reply'], deadline_ns=work_deadline,
                                 clock_domain=manifest['clock_domain'])
-        client = LegacyClient.handshake(channel, hello, expected_host=actual_parent, deadline_ns=deadline)
+        client = LegacyClient.handshake(channel, hello, expected_host=actual_parent,
+                                       deadline_ns=deadline, work_deadline_ns=work_deadline)
 
         # This one captured, game-owned provider is the reviewed semantic issuer. It must
         # prepare DiscoveryControl BEFORE importing the recipe or constructing Context.
