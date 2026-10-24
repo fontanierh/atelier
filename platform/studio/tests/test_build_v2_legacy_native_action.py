@@ -611,6 +611,7 @@ def test_standalone_argv_empty_or_nonempty_tail_reaches_actual_worker_parser(tmp
 
 
 @pytest.mark.parametrize('decorator,accepted,flag_spoof', [('dataclass(frozen=True)', True, False),
+    ('dataclass', True, False), ('dataclass()', False, False),
     ('dataclass(frozen=False)', False, False), ('dataclass(frozen=True, slots=True)', False, False),
     ('dataclass(frozen=True)', False, True)])
 def test_captured_frozen_dataclass_requires_exact_static_decorator_and_process_flags(tmp_path, monkeypatch, decorator, accepted, flag_spoof):

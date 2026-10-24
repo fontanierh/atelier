@@ -557,7 +557,7 @@ def _native_execution_check(sources, *, checkout, installation):
     def checked_dataclass(code, caller, compilation):
         """@cc [owner:fontanierh,label:safety;correctness] captured-frozen-dataclass-origin
         Captured generated wrappers MUST bind the actual module/code to its named
-        captured bytes, exact static frozen decorator and actual process flags.
+        captured bytes, exact static plain/frozen decorator and actual process flags.
         Installed generator/process frames, builder, fields and whole template MUST
         independently match; anonymous code or metadata alone MUST NOT grant exec.
         """
@@ -614,16 +614,20 @@ def _native_execution_check(sources, *, checkout, installation):
             if not isinstance(decorator, ast.Name) or decorator.id != 'dataclass':
                 return False
         else:
-            # The observed captured role is a static frozen dataclass. Bind the
+            # The finite captured roles are static plain/frozen dataclasses. Bind the
             # exact decorator AND the actual installed process flags, not its name.
-            if (not isinstance(decorator, ast.Call) or not isinstance(decorator.func, ast.Name)
-                    or decorator.func.id != 'dataclass' or decorator.args
-                    or len(decorator.keywords) != 1 or decorator.keywords[0].arg != 'frozen'
-                    or not isinstance(decorator.keywords[0].value, ast.Constant)
-                    or decorator.keywords[0].value.value is not True):
+            if isinstance(decorator, ast.Name) and decorator.id == 'dataclass':
+                frozen = False
+            elif (isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Name)
+                    and decorator.func.id == 'dataclass' and not decorator.args
+                    and len(decorator.keywords) == 1 and decorator.keywords[0].arg == 'frozen'
+                    and isinstance(decorator.keywords[0].value, ast.Constant)
+                    and decorator.keywords[0].value.value is True):
+                frozen = True
+            else:
                 return False
             flags = {'init': True, 'repr': True, 'eq': True, 'order': False,
-                     'unsafe_hash': False, 'frozen': True, 'match_args': True,
+                     'unsafe_hash': False, 'frozen': frozen, 'match_args': True,
                      'kw_only': False, 'slots': False, 'weakref_slot': False}
             if any(process.f_locals.get(name) is not value for name, value in flags.items()):
                 return False
