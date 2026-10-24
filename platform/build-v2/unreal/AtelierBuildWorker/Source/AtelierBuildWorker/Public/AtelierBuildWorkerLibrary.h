@@ -16,6 +16,8 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static FString NativeContext();
     /** {graph, nodes: [{kind, path, local, status}]}: every cache store of the effective DDC graph, from its stats tree (full paths). */
     UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static FString DdcGraph();
+    /** Fixed selected registry/shader globals builder; native producer checks precede a completed report. */
+    UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static FString ZenFinaliseRequest(const FString& RequestJson);
     /** Fixed native capture/verify/restore. Refusals never certify package completeness or globals. */
     UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static FString ZenPackageRequest(const FString& RequestJson);
     /** False means recording is unavailable; the job must refuse. */

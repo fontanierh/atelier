@@ -7,8 +7,9 @@ public class AtelierBuildWorker : ModuleRules
     {
         PrivateIncludePaths.Add(Path.Combine(EngineDirectory, "Source/Developer/IoStoreUtilities/Internal"));
         PrivateIncludePaths.Add(Path.Combine(EngineDirectory, "Source/Developer/Zen/Internal"));
+        PrivateIncludePaths.Add(Path.Combine(EngineDirectory, "Source/Runtime/RenderCore/Internal"));
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
         PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine" });
-        PrivateDependencyModuleNames.AddRange(new string[] { "AssetRegistry", "DerivedDataCache", "InterchangeEngine", "Json", "IoStoreUtilities", "Zen", "Projects", "RHI", "UnrealEd" });
+        PrivateDependencyModuleNames.AddRange(new string[] { "AssetRegistry", "DerivedDataCache", "InterchangeEngine", "Json", "IoStoreUtilities", "Zen", "RenderCore", "TargetPlatform", "CookMetadata", "Projects", "RHI", "UnrealEd" });
     }
 }

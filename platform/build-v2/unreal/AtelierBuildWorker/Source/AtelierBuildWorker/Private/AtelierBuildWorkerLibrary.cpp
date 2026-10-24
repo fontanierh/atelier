@@ -1,4 +1,5 @@
 #include "AtelierBuildWorkerLibrary.h"
+#include "AtelierZenFinalise.h"
 
 #include "AssetCompilingManager.h"
 #include "HAL/FileManager.h"
@@ -532,4 +533,9 @@ int32 UAtelierBuildWorkerLibrary::EnsureCount()
 void UAtelierBuildWorkerLibrary::ForgetFiles(const TArray<FString>& Files)
 {
     IAssetRegistry::GetChecked().ScanModifiedAssetFiles(Files);
+}
+
+FString UAtelierBuildWorkerLibrary::ZenFinaliseRequest(const FString& RequestJson)
+{
+    return AtelierZenFinaliseRequest(RequestJson);
 }
