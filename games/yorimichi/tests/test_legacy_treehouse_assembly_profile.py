@@ -437,18 +437,21 @@ def test_clone_cache_wrapper_spoof_is_refused(profile, declarations, monkeypatch
         if kind == 'ambiguous':
             import gc
             monkeypatch.setattr(gc, 'get_referents', lambda value: [])
+    with pytest.raises(profile.UnsupportedTreehouseAssembly):
+        qualify(profile, fresh(declarations), declarations.root)
 
 
 def test_poisoned_cache_parameters_getter_is_never_called(profile, declarations):
     import atelier.file_copy as file_copy
     def forbidden():
         raise AssertionError('poisoned cache_parameters getter executed')
+    original = file_copy.clone_function.cache_parameters
     file_copy.clone_function.cache_parameters = forbidden
     try:
         with pytest.raises(profile.UnsupportedTreehouseAssembly):
             qualify(profile, fresh(declarations), declarations.root)
     finally:
-        del file_copy.clone_function.cache_parameters
+        file_copy.clone_function.cache_parameters = original
 
 
 def test_missing_source_is_honest_refusal(profile, declarations, tmp_path):
