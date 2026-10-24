@@ -266,7 +266,10 @@ def qualify_treehouse_assembly(step, *, checkout: Path, output_root: Path) -> Tr
         builtins_=_builtins(ValueError=ValueError, dict=dict, len=len, tuple=tuple))
     _verify(atomic_files.atomic_json, atomic_code, qualname='atomic_json',
         globals_={'tempfile': IdentityBinding(tempfile), 'Path': IdentityBinding(Path),
-                  'json': IdentityBinding(json), 'os': IdentityBinding(os)})
+                  'json': IdentityBinding(json), 'os': IdentityBinding(os),
+                  'stat': IdentityBinding(stat),
+                  '_MANAGED_TEMPORARY': IdentityBinding(atomic_files._MANAGED_TEMPORARY)},
+        builtins_=_builtins(ValueError=ValueError))
     inventory = call.fn.__globals__.get('inventory')
     inventory_observation = _verify(inventory, region_code, qualname='inventory',
         keyword_defaults={'encoding': 'mesh_ir'}, closures={},

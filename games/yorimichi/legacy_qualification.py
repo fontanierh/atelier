@@ -53,7 +53,7 @@ CODE_SEEDS = (
     'world/regions/village/atomic_sources.py', 'world/gen_textures.py', 'legacy_texture_profile.py', 'legacy_treehouse_profile.py',
     'world/regions/treehouse/plan_tree.py', 'legacy_treehouse_discovery_profile.py', 'legacy_treehouse_export_profile.py',
     'world/export_region_piece.py', 'legacy_treehouse_data_profile.py',
-    'world/regions/treehouse/canopy_data.py',
+    'world/regions/treehouse/canopy_data.py', 'legacy_treehouse_assembly_profile.py',
 )
 
 
@@ -404,14 +404,25 @@ class TextureAuthority:
         from atelier.build_v2.legacy_call import bind_captured_call
         self.discovery = next((step for step in selected if step.name == 'world.treehouse_trees.geometry'), None)
         self.discovery_profile = None
+        self.call_steps, self.call_profiles, self.call_runtimes = {}, {}, {}
         if self.discovery is not None:
             profile = qualify_treehouse_discovery(self.discovery, checkout=self.checkout,
                                                  output_root=self.checkout / 'build/yorimichi')
             self.discovery_profile = profile
-            bind_captured_call(self.discovery, checkout=self.checkout,
+            self.call_steps[self.discovery.name], self.call_profiles[self.discovery.name] = self.discovery, profile
+        from legacy_treehouse_assembly_profile import qualify_treehouse_assembly
+        self.assembly = next((step for step in selected if step.name == 'world.treehouse_trees.assembled'), None)
+        if self.assembly is not None:
+            profile = qualify_treehouse_assembly(self.assembly, checkout=self.checkout,
+                                                output_root=self.checkout / 'build/yorimichi')
+            self.call_steps[self.assembly.name], self.call_profiles[self.assembly.name] = self.assembly, profile
+        for name, step in self.call_steps.items():
+            profile = self.call_profiles[name]
+            bind_captured_call(step, checkout=self.checkout,
                                issuer_files=manifest['issuer_files'], code_inputs=profile.code_inputs)
-            self.steps[self.discovery.name] = self.discovery
-            self.output_paths[self.discovery.name] = tuple(path for _, roots in profile.products for path in roots)
+            self.call_runtimes[name] = vars(step)['_captured_call_runtime']
+            self.steps[name] = step
+            self.output_paths[name] = tuple(path for _, roots in profile.products for path in roots)
             self.generated_inputs.update(profile.produced_inputs)
         # All pure declaration/callback qualification precedes the private native
         # descriptors: closures keep the actual original child Step identities.
@@ -596,7 +607,7 @@ class TextureAuthority:
         self.step = step
         if done is not None:
             self.dones[step.name] = dict(done)
-        if step.name in self.native_steps or step.name in self.data_steps or step is getattr(self, 'discovery', None):
+        if step.name in self.native_steps or step.name in self.data_steps or step.name in self.call_steps:
             if done is None:
                 raise AuthorityRefused('native dispatch lacks original scheduler input observations')
             self.keys[step.name] = self.build.fingerprint(step, done, index=ctx.build_hash_index,
@@ -619,9 +630,9 @@ class TextureAuthority:
         self.attempt = self.preparation_attempt
         self.returned = None
         self.launch_context = None
-        if step is getattr(self, 'discovery', None):
+        if step.name in self.call_steps:
             self.validate_call(step, step.commands[0])
-            self.attempt = 'discovery-' + self.nonce
+            self.attempt = 'call-' + self.nonce + '-' + token
             self.client.request({'type': 'begin_attempt', 'attempt': {
                 'id': self.attempt, 'members': [self.metadata, step.name],
                 'execution': {'kind': 'in_process'}, 'guard': None}})
@@ -629,7 +640,8 @@ class TextureAuthority:
     def call_scope(self, ctx, step, command):
         self.validate_call(step, command)
         from atelier.atomic_files import managed_temporaries
-        return managed_temporaries(ctx.out / '.state/batches' / ('discovery-' + self.nonce) / 'atomic-tmp')
+        token = self.hashlib.sha256(step.name.encode()).hexdigest()[:20]
+        return managed_temporaries(ctx.out / '.state/batches' / ('call-' + self.nonce + '-' + token) / 'atomic-tmp')
 
     def raw_native_members(self):
         """Private descriptor-only view for pure child-role revalidation.
@@ -660,15 +672,22 @@ class TextureAuthority:
         return original()
 
     def validate_call(self, step, command):
-        from dataclasses import replace
+        from dataclasses import fields, replace
         from legacy_treehouse_discovery_profile import qualify_treehouse_discovery
+        from legacy_treehouse_assembly_profile import qualify_treehouse_assembly
+        from atelier.build_v2.legacy_call import captured_call_inputs
         from atelier.build_v2.legacy_client import AuthorityRefused
-        if step is not self.discovery or command is not step.commands[0]:
-            raise AuthorityRefused('in-process callback is outside the exact discovery role')
-        actual = qualify_treehouse_discovery(replace(step), checkout=self.checkout,
-                                            output_root=self.checkout / 'build/yorimichi')
-        if actual != self.discovery_profile:
-            raise AuthorityRefused('discovery callback source or closure changed before execution')
+        if (self.call_steps.get(step.name) is not step or command is not step.commands[0]
+                or vars(step).get('_captured_call_runtime') is not self.call_runtimes[step.name]
+                or set(vars(step)) != {field.name for field in fields(step) if field.init} | {'_captured_call_runtime'}):
+            raise AuthorityRefused('in-process callback differs from its exact original role/runtime')
+        captured_call_inputs(step)
+        qualifier = qualify_treehouse_discovery if step is self.discovery else qualify_treehouse_assembly
+        with self.raw_native_members():
+            actual = qualifier(replace(step), checkout=self.checkout,
+                               output_root=self.checkout / 'build/yorimichi')
+        if actual != self.call_profiles[step.name]:
+            raise AuthorityRefused('callback source, helper or original child closure changed before execution')
 
     def after_task(self, ctx, step, code, *, done=None):
         from atelier.build_v2.legacy_client import AuthorityRefused

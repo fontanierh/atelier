@@ -536,6 +536,7 @@ def test_texture_group_frame_separates_shared_metadata_and_products_and_settles_
     authority.aggregate, authority.aggregate_done = None, None
     authority.native_steps, authority.native_launch, authority.dones = {}, None, {}
     authority.data_steps = {}
+    authority.call_steps = {}
     authority.build = SimpleNamespace(fingerprint_state=lambda *a, **k: ('f' * 64, {}), required_inputs=lambda step: [])
     monkeypatch.setattr(module, '_prior_record', lambda client: None)
     ctx = SimpleNamespace(out=case.root / 'build/yorimichi')
@@ -710,6 +711,11 @@ def test_actual_captured_graph_qualifies_data_before_private_runtime_without_tas
         assert set(observation.produced_inputs) <= authority.generated_inputs
         assert tuple(path for _, roots in observation.products for path in roots) == authority.output_paths[step.name]
         assert build.required_inputs(step) and step.name not in authority.native_steps
+        assert set(authority.call_steps) == {'world.treehouse_trees.geometry', 'world.treehouse_trees.assembled'}
+        for actual in authority.call_steps.values():
+            authority.validate_call(actual, actual.commands[0])
+        assert all(vars(member)['_captured_native_runtime'] is authority.native_runtimes[name]
+                   for name, member in authority.native_steps.items())
         assert not authority.begun
         return 'qualified-without-permission'
     assert profile.discover(manifest, request, captured_files=captured.files, consumer=consume) == 'qualified-without-permission'
