@@ -82,6 +82,39 @@ def test_all_actual_factory_tasks_bind_exact_roles_and_input_order(profile, decl
         assert task.code_inputs == code
 
 
+def test_full_recipe_enriched_inputs_accept_exact_appended_script(profile, declarations, tasks):
+    from atelier.build_v2.controller_entry import declaration_context
+    recipe = build.load_recipe('yorimichi')
+    ctx = declaration_context('yorimichi')
+    ctx.out = declarations.root
+    steps = recipe.steps(ctx)
+    enriched = {step.name: step for step in steps if step.name in declarations.textures}
+    assert len(enriched) == 22
+    for name, step in enriched.items():
+        assert step.inputs == [*declarations.textures[name].inputs, tasks[name].script]
+        observed = profile.qualify_texture_step(
+            step, checkout=paths.REPO, output_root=declarations.root)
+        assert observed == tasks[name]
+        assert observed.raw_inputs == tasks[name].raw_inputs
+        assert observed.code_inputs == tasks[name].code_inputs
+
+
+@pytest.mark.parametrize('change', ['wrong-position', 'duplicate', 'extra'])
+def test_enriched_input_order_stays_closed(profile, declarations, change):
+    step = declarations.textures['world.textures.white']
+    script = step.commands[0].script
+    inputs = [*step.inputs, script]
+    if change == 'wrong-position':
+        inputs.remove(script)
+        inputs.insert(1, script)
+    elif change == 'duplicate':
+        inputs.append(script)
+    else:
+        inputs.append(declarations.recipe.WORLD / 'textures/bark.json')
+    with pytest.raises(profile.UnsupportedTexture):
+        qualify(profile, replace(step, inputs=inputs))
+
+
 def test_asset_backed_tasks_have_only_their_selected_members(profile, tasks):
     expected = {
         'world.textures.bark': ('tree-bark.jpg',),
