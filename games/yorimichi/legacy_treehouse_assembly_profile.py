@@ -1,4 +1,4 @@
-"""Observation-only qualification of the exact four-child Treehouse assembly.
+"""Observation-only qualification of the fixed Treehouse tree and prop assemblies.
 
 No assembly, inventory, copy, retention or validator callback is executed. Child
 exports are independently qualified before any IdentityBinding is constructed.
@@ -21,10 +21,14 @@ from atelier.build_v2.legacy_qualification import CallableObservation
 
 
 PARENTS = ('Tree_Canopy_Maple', 'Tree_Canopy_Crimson', 'Tree_Canopy_Amber', 'Tree_Canopy_Ginkgo')
+PROP_PARENTS = tuple('TH_P_' + slug for slug in (
+    'backpack', 'barrel', 'basket', 'bell', 'bookshelf', 'crate_desk', 'futon',
+    'globe', 'kamado', 'log_table', 'planter', 'stump_kettle', 'telescope'))
+PARENTS_BY_REGION = {'treehouse_trees': PARENTS, 'treehouse_props': PROP_PARENTS}
 
 
 class UnsupportedTreehouseAssembly(ValueError):
-    """The declaration is outside the reviewed four-child assembly role."""
+    """The declaration is outside the two reviewed fixed-roster assembly roles."""
 
 
 @dataclass(frozen=True)
@@ -133,9 +137,9 @@ def _verify(function, captured, *, qualname, **bindings):
 
 def qualify_treehouse_assembly(step, *, checkout: Path, output_root: Path) -> TreehouseAssembly:
     """@cc [owner:fontanierh,label:correctness;safety] closed-treehouse-assembly-observation
-    Qualification MUST bind only the actual four-child assembly, independently qualifying
-    each original raw export before IdentityBinding and checking complete source/helper/
-    closure/constant roles. Bounded nofollow fixed sources and cold/warm preservation are
+    Qualification MUST bind only the actual four-tree and thirteen-prop assemblies,
+    independently qualifying each original raw export before IdentityBinding and checking
+    complete source/helper/closure/constant roles. Bounded nofollow fixed sources and cold/warm preservation are
     mandatory; no callback/helper execution, future child, runtime/cache/frame/Finish
     authority or generated-output adoption is returned. See actual-Graph/poisoning tests.
     """
@@ -144,7 +148,9 @@ def qualify_treehouse_assembly(step, *, checkout: Path, output_root: Path) -> Tr
     from atelier.build_v2.legacy_qualification import IdentityBinding
 
     checkout, output_root = Path(checkout), Path(output_root)
-    if (type(step) is not build.Step or step.name != 'world.treehouse_trees.assembled'
+    variants = {f'world.{region}.assembled': (region, parents)
+                for region, parents in PARENTS_BY_REGION.items()}
+    if (type(step) is not build.Step or type(step.name) is not str or step.name not in variants
             or not checkout.is_absolute() or not output_root.is_absolute()
             or checkout == Path(checkout.anchor) or output_root == Path(output_root.anchor)):
         raise UnsupportedTreehouseAssembly('not the exact Treehouse assembly and absolute anchors')
@@ -156,17 +162,18 @@ def qualify_treehouse_assembly(step, *, checkout: Path, output_root: Path) -> Tr
     game = checkout / 'games/yorimichi'
     studio = checkout / 'platform/studio/atelier'
     region_source = game / 'region_exports.py'
-    region = 'treehouse_trees'
-    destination = output_root / 'atomic_regions/treehouse_trees'
-    logical = tuple((parent, output_root / 'planned_exports/treehouse_trees' / parent,
-                     f'world.treehouse_trees.geometry.{parent}', f'treehouse_trees.geometry.{parent}', 'mesh_ir')
-                    for parent in PARENTS)
-    children = tuple((parent, parent, f'world.treehouse_trees.export.{parent}',
-                      f'world.treehouse_trees.export.{parent}', output_root / 'exports/world.treehouse_trees.export' / parent)
-                     for parent in PARENTS)
+    region, parents = variants[step.name]
+    destination = output_root / 'atomic_regions' / region
+    logical = tuple((parent, output_root / 'planned_exports' / region / parent,
+                     f'world.{region}.geometry.{parent}', f'{region}.geometry.{parent}', 'mesh_ir')
+                    for parent in parents)
+    children = tuple((parent, parent, f'world.{region}.export.{parent}',
+                      f'world.{region}.export.{parent}', output_root / 'exports' / f'world.{region}.export' / parent)
+                     for parent in parents)
     produced = (*(row[4] for row in children), *(row[1] for row in logical))
-    if len(set(produced)) != 8 or any(root == destination or root in destination.parents or destination in root.parents
-                                     for root in produced):
+    if (len(set(produced)) != 2 * len(parents)
+            or any(root == destination or root in destination.parents or destination in root.parents
+                   for root in produced)):
         raise UnsupportedTreehouseAssembly('assembly produced/destination roles overlap')
     for root in produced:
         _output(root, directory=True)
@@ -182,14 +189,15 @@ def qualify_treehouse_assembly(step, *, checkout: Path, output_root: Path) -> Tr
     dynamic = {'name', 'commands', 'inputs', 'needs', 'about', 'products', 'reads'}
     expected_reads = [row[3] for row in children] + [row[3] for row in logical]
     if (set(vars(step)) - dynamic != set(defaults)
-            or any(vars(step)[name] != value for name, value in defaults.items())
+            or any(type(vars(step)[name]) is not type(value) or vars(step)[name] != value
+                   for name, value in defaults.items())
             or getattr(step, '_query_bindings', None) not in (None, ())
-            or step.needs != ['world.treehouse_trees.geometry'] or step.reads != expected_reads):
+            or step.needs != [f'world.{region}.geometry'] or step.reads != expected_reads):
         raise UnsupportedTreehouseAssembly('assembly controls, needs or ordered reads differ')
-    if len(step.commands) != 1 or type(step.commands[0]) is not build.Call:
+    if type(step.commands) is not list or len(step.commands) != 1 or type(step.commands[0]) is not build.Call:
         raise UnsupportedTreehouseAssembly('assembly requires one original Call')
     call = step.commands[0]
-    if call.name != 'assemble treehouse_trees' or type(call.name) is not str or set(vars(call)) != {'name', 'fn'}:
+    if call.name != f'assemble {region}' or type(call.name) is not str or set(vars(call)) != {'name', 'fn'}:
         raise UnsupportedTreehouseAssembly('assembly Call identity differs')
     expected_inputs = [region_source, *(studio / name for name in
         ('export_assembly.py', 'atomic_files.py', 'file_copy.py', 'export_manifest.py', 'model_files.py'))]
@@ -197,12 +205,12 @@ def qualify_treehouse_assembly(step, *, checkout: Path, output_root: Path) -> Tr
             type(actual) is not type(expected) or actual != expected
             for actual, expected in zip(step.inputs, expected_inputs))):
         raise UnsupportedTreehouseAssembly('assembly original source input order differs')
-    if len(step.products) != 1:
+    if type(step.products) is not list or len(step.products) != 1:
         raise UnsupportedTreehouseAssembly('assembly requires one original Product')
     product = step.products[0]
     if (type(product) is not build_products.Product
             or set(vars(product)) != {'name', 'paths', 'collection', 'bounds', 'optional_paths'}
-            or product.name != 'treehouse_trees.atomic' or product.paths != (destination,)
+            or product.name != f'{region}.atomic' or product.paths != (destination,)
             or product.collection is not None or product.bounds is not None or product.optional_paths):
         raise UnsupportedTreehouseAssembly('assembly product or destination ownership differs')
     code_inputs = tuple(expected_inputs)
@@ -222,7 +230,8 @@ def qualify_treehouse_assembly(step, *, checkout: Path, output_root: Path) -> Tr
     if (set(cells) != {'logical', 'children', 'destination', 'region'}
             or cells['destination'] != destination or cells['region'] != region):
         raise UnsupportedTreehouseAssembly('assembly closure names or destination differ')
-    if cells['logical'] != list(logical) or type(cells['children']) is not list or len(cells['children']) != 4:
+    if (cells['logical'] != list(logical) or type(cells['children']) is not list
+            or len(cells['children']) != len(parents)):
         raise UnsupportedTreehouseAssembly('assembly logical/children closure differs')
     from legacy_treehouse_export_profile import UnsupportedTreehouseExport, qualify_treehouse_export
     for (child, child_key), row in zip(cells['children'], children):
