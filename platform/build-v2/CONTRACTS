@@ -126,7 +126,12 @@ Each Python job MUST run in its own child of the job loop, in its staged folder,
 environment only, loading only installed platform modules and the unit's declared code; the checkout
 MUST NOT be on its import path. The child keeps `-P -s -S` and runs no `.pth` file: installed
 libraries come only from the loop's own purelib and platlib folders, passed in the child's private
-configuration and appended after the standard library, and the child MUST fail the job as
+configuration and appended after the standard library. The installed OpenSSL configuration MAY be
+read through the exact canonical literal /private/etc/ssl/openssl.cnf as platform context, not a
+new keyed game input; this MUST NOT grant neighboring files, an etc/ssl directory, Mach lookups,
+network access or an OPENSSL_CONF override. See the portable profile inspection in
+test_build_v2_python_worker.py; actual sandbox execution remains separate guarded evidence.
+The child MUST fail the job as
 `dependency` before running it when any such folder is missing, relative, not a folder, or resolves
 (symbolic links included) outside the approved platform roots. Installed libraries stay platform
 context and never enter a key. On macOS the child MUST run under a deny-default sandbox that lets

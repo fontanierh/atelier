@@ -1008,3 +1008,13 @@ means the cause is unknown. These records do not certify cleanup or cache public
 not included in public CI artifacts or semantic keys. Successful `Completed` observations do
 not create this failure file. The first M1 failed call predates this retention and its cause
 remains unknown; no retry or default mixed-build activation follows from this diagnostic API.
+
+The Python sandbox permits the installed platform's OpenSSL configuration through the single
+canonical read literal `/private/etc/ssl/openssl.cnf`, as it permits installed interpreter files.
+The worker source change updates its semantic bundle identity normally. The installed config
+contents remain platform context, not a new game input or automatic installed-tool key. Neighboring
+certificates/hosts, directory data reads, Mach lookups and network access gain no permission;
+no `OPENSSL_CONF` override skips configuration. Profile-only portable tests inspect this boundary;
+they do not prove successful Mac execution. Both stopped M1 attempts have independent later OS
+reports binding their child to its guarded parent and recording that exact denied config read.
+Original receipts remain unchanged, and neither op-body progress nor a successful build is claimed.
