@@ -1167,7 +1167,8 @@ def world_steps(ctx):
              inputs=[TOOLS / 'craterpark_textures.py', ASSETS / 'craterpark' / 'restyle', ASSETS / 'craterpark' / 'textures',
                      ASSETS / 'craterpark' / 'materials.json', ASSETS / 'craterpark' / 'shrine',
                      REGIONS / 'craterpark' / 'v2' / 'shrine.py', REGIONS / 'craterpark' / 'v2' / 'dsl.py'],
-             outputs=[out / 'craterpark' / 'textures' / 'textures.json'],
+             # The whole folder: it also writes crater_floor.png and the other painted textures that importers read.
+             outputs=[out / 'craterpark' / 'textures'],
              about="Crater Park restyle: painted textures in the island's style, world-aligned ground and concrete"),
         *(craterpark_v2_steps(out) if CRATERPARK_V2 else [
         Step('world.craterpark', [Blender(REGIONS / 'craterpark' / 'build.py', threads=4)],
@@ -1307,7 +1308,7 @@ def world_steps(ctx):
                      out / 'belmonte-train' / 'route' / 'route.json', out / 'belmonte-train' / 'assembly' / 'consist.json',
                      out / 'belmonte-train' / 'furniture', *(out / 'belmonte-train' / v for v in TRAIN_VEHICLES)],
              needs=['world.belmonte_train_route', 'world.belmonte_train', 'world.belmonte_train_assembly'],
-             outputs=[out / 'belmonte-train' / 'service' / 'service.json'],
+             outputs=[out / 'belmonte-train' / 'service' / 'service.json', out / 'belmonte-train' / 'service' / 'glb'],
              verify=lambda: belmonte_train_service_present(out),
              about='Belmonte train service: line, loop, consist, collision boxes and timetable for Unreal'),
         Step('world.belmonte_track_data', [Python(TOOLS / 'belmonte_track_data.py',
