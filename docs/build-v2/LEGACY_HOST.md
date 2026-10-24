@@ -146,3 +146,9 @@ and the two existing in-memory recipe memo objects are restored afterward. No pe
 is cleared. Classification uses captured original controller declarations with the existing strict
 validator and suppresses game bytecode writes. Legacy complete-state barriers run inside the fresh
 declaration scope before recipe discovery and still before helper/bootstrap mutation.
+
+Named game-issuer capture has a fixed 512-file operational bound, separately selected by the
+private verifier. The controller distribution remains capped at 256 files. This count policy
+does not change source digest framing, the 8 MiB file/32 MiB total bounds, link/duplicate/readonly
+checks or any control, witness, guard or admission limit. It accommodates a measured finite
+normal import closure; it does not certify task semantics or successful Graph discovery.

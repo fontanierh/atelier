@@ -1,6 +1,12 @@
 schema_version = 1
 
 [[scenarios]]
+id = "legacy-host.issuer_count_512_does_not_change_controller_256_or_named_byte_authority"
+tests = ["atelier-build-v2/legacy_host::tests::issuer_count_512_does_not_change_controller_256_or_named_byte_authority"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
 id = "legacy-host.original_production_entry_graph_held"
 tests = ["atelier-build-v2::legacy_host_entry/original_production_entry_reaches_captured_graph_then_held_without_mutation_permission"]
 platforms = ["linux"]
