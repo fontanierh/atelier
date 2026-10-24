@@ -80,7 +80,8 @@ def test_native_shared_intent_precedes_files_and_uses_one_recorded_bound(tmp_pat
                         files=[('platform/studio/atelier/build_v2/controller_client.py', b'pinned')])
     step = build.Step('actual-qualified-member', [])
     session = SimpleNamespace(candidates=[(step, 'e' * 64, {})], nonce='f' * 32,
-                              guard=tmp_path / 'original-stable-batch.guard')
+                              guard=tmp_path / 'original-stable-batch.guard',
+                              folder=tmp_path / '.state/batches'/('f' * 32))
     runtime = native._NativeRuntime(tmp_path, native._WORKER, native._ORIGIN)
     from atelier.build_v2.legacy_native_launch import NativeBatchLaunch
     launch = NativeBatchLaunch(a, session, {step.name: runtime})
@@ -268,3 +269,267 @@ def test_multiprocessing_prior_blender_namespace_must_be_exact_inert_default(tmp
     assert not native._registered_tool_provider('__mp_main__', prior, modules, (), tool, {})
     prior.bpy = bpy; prior.__builtins__ = dict(vars(builtins))
     assert not native._registered_tool_provider('__mp_main__', prior, modules, (), tool, {})
+
+
+def test_native_core_registration_rejects_spelling_only_replacement(tmp_path):
+    from types import ModuleType
+    bpy = ModuleType('bpy'); bpy.__file__ = str(tmp_path / 'bpy/__init__.py')
+    binding = ModuleType('_bpy')
+    for key in ('app', 'props', 'types', 'data', 'context', 'msgbus'):
+        value = ModuleType('bpy.' + key)
+        setattr(bpy, key, value); setattr(binding, key, value)
+    modules = {'bpy':bpy, '_bpy':binding}
+    tool = lambda value: bool(value) and Path(value).is_relative_to(tmp_path)
+    assert native._registered_tool_provider('bpy.app', bpy.app, modules, (), tool, {})
+    forged = ModuleType('bpy.app'); forged.callback = lambda: None
+    assert not native._registered_tool_provider('bpy.app', forged, modules, (), tool, {})
+    modules['_bpy'] = ModuleType('_bpy')
+    assert not native._registered_tool_provider('_bpy', modules['_bpy'], modules, (), tool, {})
+
+
+def test_unknown_tool_local_namespace_with_callback_is_not_native_provider(tmp_path):
+    from types import ModuleType
+    from importlib.machinery import ModuleSpec
+    module = ModuleType('unknown_namespace')
+    module.__spec__ = ModuleSpec(module.__name__, loader=None, is_package=True)
+    module.__spec__.submodule_search_locations = [str(tmp_path)]
+    module.callback = lambda: None
+    assert not native._registered_tool_provider(module.__name__, module, {}, (), lambda value: True, {})
+
+
+def test_actual_preload_gate_refuses_forged_namespace_code(tmp_path, monkeypatch, capsys):
+    import json
+    import sys
+    from types import ModuleType
+    from importlib.machinery import ModuleSpec
+    module = ModuleType('forged_namespace')
+    module.__spec__ = ModuleSpec(module.__name__, loader=None, is_package=True)
+    module.__spec__.submodule_search_locations = [str(tmp_path / 'Contents')]
+    module.callback = lambda: None
+    monkeypatch.setattr(sys, 'modules', {module.__name__:module, **sys.modules})
+    monkeypatch.setattr(sys, 'argv', ['blender', '--python-expr', 'pass'])
+    caller = SimpleNamespace(f_code=compile('pass', '<string>', 'exec'), f_globals=vars(sys.modules['__main__']))
+    with pytest.raises(ValueError, match='unclassified preloaded providers'):
+        native._preloaded({'distribution': str(tmp_path / 'distribution')}, [tmp_path / 'Contents'], caller)
+    record = json.loads(capsys.readouterr().err.split('native_preload_unclassified ', 1)[1].splitlines()[0])
+    assert any(row['name'] == 'forged_namespace' for row in record['modules'])
+
+
+def test_selected_callback_helpers_use_existing_key_without_native_or_python_worker(tmp_path, monkeypatch):
+    from atelier.build_v2.legacy_call import bind_captured_call
+    from atelier.build_v2.legacy_qualification import UnsupportedOrigin
+    owner = tmp_path / 'callback.py'; helper = tmp_path / 'helper.py'
+    owner.write_text('def run(ctx, log): return None\n'); helper.write_text('setting = 1\n')
+    step = build.Step('exact-callback', [build.Call('discover fixed', lambda ctx, log: None)], inputs=[owner])
+    original = build.fingerprint(step, {})
+    bind_captured_call(step, checkout=tmp_path, issuer_files=['callback.py','helper.py'], code_inputs=[owner,helper])
+    assert set(build.required_inputs(step)) == {owner,helper}
+    first = build.fingerprint(step, {})
+    assert first != original
+    helper.write_text('setting = 2\n')
+    assert build.fingerprint(step, {}) != first
+    step._captured_call_runtime = SimpleNamespace(files=(helper,))
+    with pytest.raises(UnsupportedOrigin, match='fixed issuer'):
+        build.required_inputs(step)
+
+
+def test_native_future_executable_scope_rejects_external_and_forged_tool_code_stickily(tmp_path):
+    from atelier.build_v2.legacy_qualification import CapturedCode, UnsupportedOrigin
+    root = tmp_path / 'checkout'; tool = tmp_path / 'Contents'; root.mkdir(); tool.mkdir()
+    source = CapturedCode(str(root / 'owner.py'), b'value = 1\n')
+    provider = tool / 'provider.py'; provider.write_text('value = 2\n')
+    check = native._native_execution_check([source], checkout=root, installation=[tool])
+    check('exec', (source.compiled(),))
+    check('exec', (compile(provider.read_bytes(), str(provider), 'exec', dont_inherit=True),))
+    for code in (compile('value = 3', '/external/extension.py', 'exec'),
+                 compile('value = 3', str(provider), 'exec'), compile('value = 3', '<string>', 'exec')):
+        with pytest.raises(UnsupportedOrigin):
+            check('exec', (code,))
+    with pytest.raises(UnsupportedOrigin, match='sticky'):
+        check.require_clean()
+    with pytest.raises(UnsupportedOrigin):
+        check('import', ('external_native', '/external/provider.so'))
+
+
+def test_native_anonymous_templates_require_actual_installed_caller_code(tmp_path):
+    from atelier.build_v2.legacy_qualification import UnsupportedOrigin
+    tool = tmp_path / 'Contents'; tool.mkdir()
+    path = tool / 'provider.py'
+    raw = b'def call(check, code):\n    check("exec", (code,))\n'
+    path.write_bytes(raw)
+    namespace = {}; exec(compile(raw, str(path), 'exec', dont_inherit=True), namespace)
+    check = native._native_execution_check([], checkout=tmp_path / 'checkout', installation=[tool])
+    with pytest.raises(UnsupportedOrigin):
+        namespace['call'](check, compile('value = 1', '<string>', 'exec'))
+    # A producer cannot gain the same permission by using an installed filename.
+    forged = {}; exec(compile('def call(check, code):\n check("exec", (code,))\n', str(path), 'exec'), forged)
+    with pytest.raises(UnsupportedOrigin):
+        forged['call'](check, compile('value = 2', '<string>', 'exec'))
+
+
+def test_exact_installed_namespace_is_inert_and_parent_bound(tmp_path, monkeypatch):
+    from types import ModuleType
+    from importlib.machinery import NamespaceLoader, ModuleSpec
+    scripts = tmp_path / 'Contents/Resources/5.2/scripts'
+    bpy = ModuleType('bpy'); bpy.__file__ = str(scripts / 'modules/bpy/__init__.py')
+    name = 'bl_operators.node_editor'; path = scripts / 'startup/bl_operators/node_editor'
+    import sys
+    parent = ModuleType('bl_operators'); parent.__path__ = [str(path.parent)]
+    monkeypatch.setitem(sys.modules, 'bl_operators', parent)
+    module = ModuleType(name); loader = NamespaceLoader(name, [str(path)], lambda *a: None)
+    module.__loader__ = loader; module.__package__ = name; module.__file__ = None; module.__path__ = [str(path)]
+    module.__spec__ = ModuleSpec(name, loader, is_package=True); module.__spec__.submodule_search_locations = module.__path__
+    parent.node_editor = module
+    modules = {'bpy':bpy, 'bl_operators':parent, name:module}
+    tool = lambda value: bool(value) and Path(value).is_relative_to(tmp_path / 'Contents')
+    assert native._registered_tool_provider(name, module, modules, (), tool, {})
+    module.callback = lambda: None
+    assert not native._registered_tool_provider(name, module, modules, (), tool, {})
+    del module.callback
+    module.__path__ = [str(tmp_path / 'external')]
+    assert not native._registered_tool_provider(name, module, modules, (), tool, {})
+
+
+def test_native_factory_templates_require_exact_embedded_literal_and_captured_caller(tmp_path):
+    from atelier.build_v2.legacy_qualification import CapturedCode, UnsupportedOrigin
+    tool = tmp_path / 'Contents'; (tool/'MacOS').mkdir(parents=True)
+    texts = (('addon_utils.disable_all()', 'eval'), ('bl_app_template_utils.reset()', 'eval'),
+             ('bpy.utils.refresh_script_paths()\naddon_utils.reset_all()', 'exec'))
+    (tool/'MacOS/Blender').write_bytes(b'fixture-binary\0' + b'\0'.join(text.encode() for text, _ in texts) + b'\0')
+    owner = CapturedCode(str(tmp_path/'checkout/owner.py'), b'def call(check, code):\n    check("exec", (code,))\n')
+    namespace = {}; exec(owner.compiled(), namespace)
+    check = native._native_execution_check([owner], checkout=tmp_path/'checkout', installation=[tool])
+    for text, mode in texts:
+        namespace['call'](check, compile(text, '<string>', mode, dont_inherit=True))
+    check.require_clean()
+    with pytest.raises(UnsupportedOrigin):
+        namespace['call'](check, compile('addon_utils.unknown()', '<string>', 'eval'))
+    (tool/'MacOS/Blender').write_bytes(b'unrelated fixed image')
+    refused = native._native_execution_check([owner], checkout=tmp_path/'checkout', installation=[tool])
+    with pytest.raises(UnsupportedOrigin):
+        namespace['call'](refused, compile(texts[0][0], '<string>', 'eval'))
+
+
+def test_embedded_native_audit_refusal_cannot_be_swallowed_as_normal_exit(monkeypatch, capsys):
+    import os
+    class OwnedExit(BaseException): pass
+    exits = []
+    def exit_(code):
+        exits.append(code)
+        raise OwnedExit()
+    monkeypatch.setattr(os, '_exit', exit_)
+    def check(event, args): raise ValueError('refused provider')
+    observed = native._fatal_native_audit(check)
+    with pytest.raises(OwnedExit):
+        observed('exec', ())
+    assert exits == [1]
+    assert capsys.readouterr().err == 'native source-origin refusal: ValueError\n'
+
+
+def test_installed_namedtuple_template_checks_full_caller_fields_and_tuple_namespace():
+    import collections
+    source = Path(collections.__file__).read_bytes()
+    compilation = compile(source, collections.namedtuple.__code__.co_filename, 'exec', dont_inherit=True)
+    fields = ('module_finder', 'name', 'ispkg')
+    namespace = {'_tuple_new':tuple.__new__, '__builtins__':{}, '__name__':'namedtuple_ModuleInfo'}
+    caller = SimpleNamespace(f_code=collections.namedtuple.__code__,
+                             f_locals={'typename':'ModuleInfo','field_names':fields,'namespace':namespace})
+    code = compile('lambda _cls, module_finder, name, ispkg: _tuple_new(_cls, (module_finder, name, ispkg))', '<string>', 'eval')
+    assert native._checked_namedtuple(code, caller, compilation)
+    namespace['_tuple_new'] = lambda *a: None
+    assert not native._checked_namedtuple(code, caller, compilation)
+    namespace['_tuple_new'] = tuple.__new__
+    caller.f_locals['field_names'] = ('name', 'name')
+    assert not native._checked_namedtuple(code, caller, compilation)
+    caller.f_locals['field_names'] = ('name;import_os',)
+    assert not native._checked_namedtuple(code, caller, compilation)
+    caller.f_locals['field_names'] = fields
+    assert not native._checked_namedtuple(compile('lambda: __import__("os")','<string>','eval'), caller, compilation)
+
+
+def test_typing_eval_is_backed_by_installed_cycles_annotation_and_checked_callbacks(tmp_path, monkeypatch):
+    import builtins, sys, types, typing
+    from atelier.build_v2.legacy_qualification import UnsupportedOrigin
+    path = tmp_path/'Contents/Resources/5.2/scripts/addons_core/cycles/properties.py'
+    path.parent.mkdir(parents=True)
+    raw = b"from __future__ import annotations\ndef update_render_passes(): pass\nclass Settings:\n    value: EnumProperty(name='Mode', translation_context=i18n_contexts.id_light, update=update_render_passes)\n"
+    path.write_bytes(raw)
+    module = types.ModuleType('cycles.properties'); module.__file__ = str(path); module.EnumProperty = len
+    module.i18n_contexts = types.SimpleNamespace(id_light='Light')
+    exec(compile(raw, str(path), 'exec', dont_inherit=True), vars(module))
+    monkeypatch.setitem(sys.modules, 'cycles.properties', module)
+    props = types.SimpleNamespace(EnumProperty=len)
+    app = types.SimpleNamespace(translations=types.SimpleNamespace(contexts=module.i18n_contexts))
+    core = types.SimpleNamespace(bpy_struct=object)
+    bpy = types.SimpleNamespace(props=props, app=app, types=core, __file__=str(tmp_path/'Contents/Resources/5.2/scripts/modules/bpy/__init__.py'))
+    monkeypatch.setitem(sys.modules, 'bpy', bpy)
+    monkeypatch.setitem(sys.modules, '_bpy', types.SimpleNamespace(props=props, app=app, types=core))
+    original = builtins.eval
+    def hints():
+        check = native._native_execution_check([], checkout=tmp_path/'checkout',
+                    installation=[tmp_path/'Contents', Path(typing.__file__).resolve().parent])
+        observed = []
+        def evaluated(code, globalns=None, localns=None):
+            if type(code) is types.CodeType and code.co_filename == '<string>':
+                check('exec', (code,)); observed.append(True)
+                return int  # Observation fixture never calls the fake property/callback.
+            return original(code, globalns, localns)
+        check.wrapper_code = evaluated.__code__  # Same exact-code skip as production audit wrapper.
+        with monkeypatch.context() as patch:
+            patch.setattr(builtins, 'eval', evaluated)
+            result = typing.get_type_hints(module.Settings)
+        check.require_clean()
+        assert observed == [True]
+        return result
+    assert hints() == {'value':int}
+    module.i18n_contexts.id_light = 'Foreign'
+    with pytest.raises(UnsupportedOrigin): hints()
+    module.i18n_contexts.id_light = 'Light'
+    module.Settings.__annotations__['value'] = "EnumProperty(name='Foreign', translation_context=i18n_contexts.id_light, update=update_render_passes)"
+    with pytest.raises(UnsupportedOrigin): hints()
+    module.Settings.__annotations__['value'] = "EnumProperty(name='Mode', translation_context=i18n_contexts.id_light, update=update_render_passes)"
+    module.update_render_passes = lambda: None
+    with pytest.raises(UnsupportedOrigin): hints()
+
+
+def test_installed_dataclass_wrapper_binds_static_class_and_whole_generator(tmp_path, monkeypatch):
+    import sys
+    from types import ModuleType
+    from atelier.build_v2.legacy_qualification import UnsupportedOrigin
+    tool = tmp_path / 'tool'; tool.mkdir()
+    dc_path = tool / 'dataclasses.py'
+    dc_raw = '''class _FuncBuilder:
+ def __init__(self, globals):
+  self.names=['__init__']; self.src=[' def __init__(self):\\n  pass']; self.globals=globals
+  self.locals={}; self.overwrite_errors={}; self.unconditional_adds={}
+ def add_fns_to_class(self, cls):
+  txt='def __create_fn__():\\n'+'\\n'.join(self.src)+'\\n return ('+','.join(self.names)+',)'
+  code=compile(txt,'<string>','exec',dont_inherit=True)
+  check('exec',(code,))
+def _process_class(cls):
+ func_builder=_FuncBuilder(vars(sys.modules[cls.__module__]))
+ func_builder.add_fns_to_class(cls)
+ return cls
+def dataclass(cls):
+ def wrap(cls): return _process_class(cls)
+ return wrap(cls)
+'''
+    dc_path.write_text(dc_raw)
+    dc = ModuleType('dataclasses'); dc.__dict__['sys'] = sys
+    monkeypatch.setitem(sys.modules, 'dataclasses', dc)
+    exec(compile(dc_raw, str(dc_path), 'exec', dont_inherit=True), vars(dc))
+    sdk_path = tool / 'sdk.py'
+    sdk_raw = 'from dataclasses import dataclass\n@dataclass\nclass Actual:\n value: str\n'
+    sdk_path.write_text(sdk_raw)
+    sdk = ModuleType('sdk'); monkeypatch.setitem(sys.modules, 'sdk', sdk)
+    check = native._native_execution_check([], checkout=tmp_path/'checkout', installation=[tool])
+    dc.check = check
+    exec(compile(sdk_raw, str(sdk_path), 'exec', dont_inherit=True), vars(sdk))
+    check.require_clean()
+    # A genuine builder and matching anonymous wrapper outside the live source
+    # decoration stack still cannot mint execution permission.
+    with pytest.raises(UnsupportedOrigin):
+        dc._FuncBuilder(vars(sdk)).add_fns_to_class(sdk.Actual)
+    forged = ModuleType('sdk'); monkeypatch.setitem(sys.modules, 'sdk', forged)
+    with pytest.raises(UnsupportedOrigin):
+        exec(compile(sdk_raw+'\npoison=True\n', str(sdk_path), 'exec', dont_inherit=True), vars(forged))

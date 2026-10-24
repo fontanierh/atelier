@@ -603,9 +603,13 @@ def required_inputs(step, *, observation=None):
     if getattr(step, '_captured_native_runtime', None) is not None:
         from .build_v2.legacy_native_action import captured_native_inputs
         native = captured_native_inputs(step)
+    call = ()
+    if getattr(step, '_captured_call_runtime', None) is not None:
+        from .build_v2.legacy_call import captured_call_inputs
+        call = captured_call_inputs(step)
     return [*inputs, *batch_code, *(c.script for c in step.commands if named and hasattr(c, 'script')),
             *(p for c in step.commands for p in getattr(c, 'runs', list)()),
-            *(SUPPORT if step.audit else ()), *captured_runtime_inputs(step), *native,
+            *(SUPPORT if step.audit else ()), *captured_runtime_inputs(step), *native, *call,
             *([Path(build_spatial.__file__)] if step.queries else ())]
 
 
@@ -842,6 +846,10 @@ def run_command(ctx, step, command, log, request=None, slots=None, *, products=N
     if isinstance(command, UnrealScript):
         command.validate_step(step)
     if isinstance(command, Call):
+        authority = getattr(ctx, 'legacy_authority', None)
+        if authority is not None:
+            with authority.call_scope(ctx, step, command):
+                return command.fn(ctx, log)
         return command.fn(ctx, log)
     if isinstance(command, (Python, Blender)):
         source_request = request or (slot_request(ctx, step) if step.heavy else None)

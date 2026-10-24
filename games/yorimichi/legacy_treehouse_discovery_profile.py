@@ -197,7 +197,9 @@ def qualify_treehouse_discovery(step, *, checkout: Path, output_root: Path) -> T
         raise UnsupportedTreehouseDiscovery('discovery atomic_json helper differs')
     _verify(atomic_json, atomic_code, qualname='atomic_json',
             globals_={'tempfile': IdentityBinding(tempfile), 'Path': IdentityBinding(Path),
-                      'json': IdentityBinding(json), 'os': IdentityBinding(os)})
+                      'json': IdentityBinding(json), 'os': IdentityBinding(os),
+                      '_MANAGED_TEMPORARY': IdentityBinding(atomic_files._MANAGED_TEMPORARY)},
+            builtins_={'ValueError': IdentityBinding(ValueError)})
     inventory_observation = _verify(
         inventory, region_code, qualname='inventory', keyword_defaults={'encoding': 'mesh_ir'}, closures={},
         globals_={'Path': IdentityBinding(Path), 'os': IdentityBinding(os), 'json': IdentityBinding(json),

@@ -231,3 +231,56 @@ def test_discovered_cache_hits_restore_without_execution_or_protection(protected
         stamp=json.loads((p.ctx.stamps/(name+'.json')).read_text())
         assert stamp['restore_source'] in ('checkpoint', 'local')
     assert (p.out/'all.fbx').read_bytes() == b'OneTwo'
+
+
+def test_managed_replan_closes_original_index_and_settles_before_new_frame_and_hint(tmp_path, monkeypatch):
+    from atelier import build_expansion, build_hashes
+    events = []
+    class Index:
+        verify = True
+        def close(self): events.append('index-closed')
+        def __enter__(self): return self
+        def __exit__(self, *args): self.close()
+    old = Index()
+    class Authority:
+        def after_index(self, ctx):
+            assert events[-1] == 'index-closed'
+            events.append('old-frame-settled')
+        def expanded(self, ctx, steps, wanted):
+            assert events[-1] == 'recipe-reloaded'
+            events.append('new-qualified-frame-before-hint')
+    ctx = SimpleNamespace(game='fixture', out=tmp_path, legacy_authority=Authority())
+    calls = []
+    def run(ctx, wanted, **kwargs):
+        calls.append(kwargs['index'])
+        if len(calls) == 1:
+            ctx.recipe_expansion = ('actual-planner', 'a' * 64)
+            return 76
+        assert events[-1] == 'hint-reopened'
+        return 0
+    monkeypatch.setattr(build, '_build', run)
+    monkeypatch.setattr(build, 'load_recipe', lambda game: SimpleNamespace(
+        steps=lambda ctx: events.append('recipe-reloaded') or []))
+    monkeypatch.setattr(build_hashes, 'HashIndex', lambda *a, **k: events.append('hint-reopened') or Index())
+    assert build_expansion.execute(ctx, [], steps=[], force=False, touch=False, echo=lambda *a: None,
+                                   index=old, max_heavy_commands=None) == 0
+    assert events == ['index-closed', 'old-frame-settled', 'recipe-reloaded',
+                      'new-qualified-frame-before-hint', 'hint-reopened', 'index-closed']
+    assert calls[0] is old and calls[1] is not old
+
+
+def test_managed_replan_settlement_error_does_not_reload_or_reopen(tmp_path, monkeypatch):
+    from atelier import build_expansion
+    events = []
+    class Authority:
+        def after_index(self, ctx): raise ValueError('incomplete original finalization')
+    ctx = SimpleNamespace(game='fixture', legacy_authority=Authority())
+    def run(ctx, wanted, **kwargs):
+        ctx.recipe_expansion = ('actual-planner', 'a' * 64)
+        return 76
+    monkeypatch.setattr(build, '_build', run)
+    monkeypatch.setattr(build, 'load_recipe', lambda *a: pytest.fail('reloaded before settlement'))
+    with pytest.raises(ValueError, match='incomplete original finalization'):
+        build_expansion.execute(ctx, [], steps=[], force=False, touch=False, echo=lambda *a: None,
+                               index=SimpleNamespace(close=lambda: events.append('closed')), max_heavy_commands=None)
+    assert events == ['closed']

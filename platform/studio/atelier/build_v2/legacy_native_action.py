@@ -13,7 +13,6 @@ _WORKER = (
     'platform/studio/atelier/build_batch_worker.py',
     'platform/studio/atelier/build_v2/__init__.py',
     'platform/studio/atelier/build_v2/controller_client.py',
-    'platform/studio/atelier/build_v2/legacy_action.py',
     'platform/studio/atelier/build_v2/legacy_native_action.py',
     'platform/studio/atelier/build_v2/legacy_qualification.py',
 )
@@ -124,8 +123,56 @@ sys.modules['atelier.build_v2.legacy_native_action'].main(s,spec,expected)
 def _registered_tool_provider(name, module, modules, builtin_names, tool, caller_globals):
     """Exact observed Blender registrations; namespace paths never authorize child code."""
     import types
+    # bpy.__init__ imports these exact objects from the embedded _bpy module
+    # and registers app/handlers/translations/types in sys.modules. A spelling
+    # or origin-less ModuleType is never equivalent to those native bindings.
+    core = {'bpy.app': ('app',), 'bpy.app.handlers': ('app', 'handlers'),
+            'bpy.app.timers': ('app', 'timers'), 'bpy.app.translations': ('app', 'translations'),
+            'bpy.app.icons': ('app', 'icons'), 'bpy.props': ('props',), 'bpy.types': ('types',)}
+    if name in core or name == '_bpy':
+        bpy = modules.get('bpy')
+        binding = modules.get('_bpy')
+        if not (bpy and binding and tool(getattr(bpy, '__file__', ''))):
+            return False
+        if any(getattr(bpy, key, None) is not getattr(binding, key, None)
+               or getattr(bpy, key, None) is None for key in ('app', 'props', 'types', 'data', 'context', 'msgbus')):
+            return False
+        if name == '_bpy':
+            return module is binding and type(module) is types.ModuleType
+        expected = binding
+        for member in core[name]:
+            expected = getattr(expected, member, None)
+            if expected is None:
+                return False
+        return module is expected
     if type(module) is not types.ModuleType:
         return False
+    namespaces = {'bl_operators.node_editor': 'startup/bl_operators/node_editor',
+                  'io_scene_gltf2.blender.com': 'addons_core/io_scene_gltf2/blender/com'}
+    if name in namespaces:
+        import importlib.machinery
+        bpy = modules.get('bpy')
+        origin = getattr(bpy, '__file__', None)
+        if not origin or not tool(origin):
+            return False
+        expected = (Path(origin).parents[2] / namespaces[name]).resolve()
+        info = getattr(module, '__spec__', None)
+        loader = getattr(module, '__loader__', None)
+        parent, _, member = name.rpartition('.')
+        if (type(loader) is not importlib.machinery.NamespaceLoader or info is None
+                or info.loader is not loader or info.name != name or info.origin is not None
+                or getattr(module, '__file__', None) is not None or module.__package__ != name
+                or getattr(modules.get(parent), member, None) is not module
+                or tuple(Path(p).resolve() for p in module.__path__) != (expected,)
+                or tuple(Path(p).resolve() for p in info.submodule_search_locations) != (expected,)
+                or not tool(str(expected))):
+            return False
+        standard = {'__name__', '__doc__', '__package__', '__loader__', '__spec__', '__file__', '__path__'}
+        # A namespace initializer executes no code; only ordinary imported child
+        # module bindings may be present beyond its standard import fields.
+        return all(type(value) is types.ModuleType and modules.get(name + '.' + key) is value
+                   and value.__name__ == name + '.' + key
+                   for key, value in vars(module).items() if key not in standard)
     if name == '__mp_main__':
         owner = modules.get('multiprocessing')
         if owner is None or not tool(getattr(owner, '__file__', '')):
@@ -274,10 +321,6 @@ def _preloaded(manifest, installation, caller):
             elif (getattr(info, 'loader', None) is importlib.machinery.FrozenImporter
                   and info.origin == 'frozen' and importlib.machinery.FrozenImporter.find_spec(name) is not None):
                 pass
-            elif name in {'_bpy', 'bpy', 'bpy.app', 'bpy.app.handlers', 'bpy.app.timers',
-                          'bpy.app.translations', 'bpy.app.icons', 'bpy.props', 'bpy.types'}:
-                if getattr(info, 'origin', None) not in (None, 'built-in'):
-                    raise ValueError('native Blender binding has an unknown origin')
             elif name in {'typing.io', 'typing.re'}:
                 parent = sys.modules.get('typing')
                 parent_origin = getattr(parent, '__file__', None)
@@ -285,9 +328,7 @@ def _preloaded(manifest, installation, caller):
                         and getattr(parent, name.rsplit('.', 1)[1], None) is module):
                     raise ValueError('native typing namespace differs')
             else:
-                locations = getattr(info, 'submodule_search_locations', None)
-                if not locations or not all(tool(path) for path in locations):
-                    raise ValueError('native startup origin is not a checked tool module')
+                raise ValueError('native startup origin is not an exact checked tool provider')
             for locations in (getattr(module, '__path__', None), getattr(info, 'submodule_search_locations', None)):
                 if locations is not None and not all(tool(path) for path in locations):
                     raise ValueError('native startup package search escapes its installation')
@@ -346,6 +387,381 @@ def _preloaded(manifest, installation, caller):
         raise ValueError('native startup contains unclassified preloaded providers')
 
 
+def _checked_namedtuple(code, caller, compilation):
+    """Only the actual installed namedtuple tuple.__new__ template may synthesize code."""
+    import keyword
+    from atelier.build_v2.legacy_qualification import _same_code
+    import types
+    def children(current):
+        yield current
+        for child in current.co_consts:
+            if type(child) is types.CodeType:
+                yield from children(child)
+    if (caller.f_code.co_qualname != 'namedtuple' or compilation is None
+            or not any(_same_code(caller.f_code, target) for target in children(compilation))):
+        return False
+    values = caller.f_locals
+    typename, fields, namespace = values.get('typename'), values.get('field_names'), values.get('namespace')
+    def identifier(value):
+        return type(value) is str and 0 < len(value) <= 128 and value.isascii() and value.isidentifier() and not keyword.iskeyword(value)
+    if (not identifier(typename) or type(fields) is not tuple or not 0 < len(fields) <= 128
+            or len(set(fields)) != len(fields) or not all(identifier(value) for value in fields)
+            or type(namespace) is not dict or set(namespace) != {'_tuple_new', '__builtins__', '__name__'}
+            or namespace['_tuple_new'] is not tuple.__new__ or namespace['__builtins__'] != {}
+            or namespace['__name__'] != 'namedtuple_' + typename):
+        return False
+    arguments = ', '.join(fields) + (',' if len(fields) == 1 else '')
+    template = f'lambda _cls, {arguments}: _tuple_new(_cls, ({arguments}))'
+    return _same_code(code, compile(template, '<string>', 'eval', dont_inherit=True))
+
+
+def _native_execution_check(sources, *, checkout, installation):
+    """Native-only sticky executable origins; namespace search paths grant no code."""
+    import importlib.machinery
+    import sys
+    import types
+    from atelier.build_v2.legacy_qualification import _same_code, UnsupportedOrigin
+    from atelier.build_v2.controller_client import _read_at, MAX_SOURCE_FILE_BYTES, MAX_SOURCE_TOTAL_BYTES
+    roots = tuple(Path(root).resolve() for root in installation)
+    expected = {source.filename: source.compiled() for source in sources}
+    installed, total = {}, [0]
+    diagnostics = set()
+    def diagnose(code):
+        # Bounded names/type roles only; never source/constant values or environment.
+        try:
+            import hashlib, json, marshal
+            digest = hashlib.sha256(marshal.dumps(code)).hexdigest()
+            if digest in diagnostics or len(diagnostics) >= 16:
+                return
+            diagnostics.add(digest)
+            def label(value):
+                return value[:160] if type(value) is str and value.isascii() else '<unknown>'
+            frames, frame = [], sys._getframe(2)
+            for _ in range(8):
+                if frame is None: break
+                filename = frame.f_code.co_filename
+                role = ('captured/' + Path(filename).relative_to(checkout).as_posix()
+                        if Path(filename).is_absolute() and Path(filename).is_relative_to(checkout)
+                        else 'tool/' + tool_path(filename)[1].as_posix() if tool_path(filename) else 'outside')
+                frames.append({'role': role[:200], 'function': label(frame.f_code.co_name)})
+                frame = frame.f_back
+            row = {'sha256':digest, 'name':label(code.co_name), 'names':list(map(label, code.co_names[:32])),
+                   'constant_types':[type(value).__name__ for value in code.co_consts[:32]], 'callers':frames}
+            raw = json.dumps(row, separators=(',', ':'), ensure_ascii=True)
+            if len(raw.encode()) <= 4096:
+                sys.stderr.write('native_code_refused ' + raw + '\n'); sys.stderr.flush()
+        except Exception:
+            pass
+    def refused():
+        check.failed = True
+        code = sys._getframe(1).f_locals.get('code')
+        if type(code) is types.CodeType:
+            diagnose(code)
+        raise UnsupportedOrigin('native executable provider is outside its checked code scope')
+    def tool_path(filename):
+        path = Path(filename)
+        if not path.is_absolute():
+            return None
+        resolved = path.resolve()
+        return next(((root, resolved.relative_to(root)) for root in roots
+                     if resolved.is_relative_to(root)), None)
+    def tool_compilation(filename):
+        if filename in installed:
+            return installed[filename]
+        location = tool_path(filename)
+        if location is None or not filename.endswith('.py'):
+            return None
+        raw = _read_at(location[0], location[1].as_posix(), MAX_SOURCE_FILE_BYTES)
+        total[0] += len(raw)
+        if total[0] > MAX_SOURCE_TOTAL_BYTES:
+            refused()
+        code = compile(raw, filename, 'exec', dont_inherit=True, optimize=sys.flags.optimize)
+        installed[filename] = code
+        return code
+    def children(code):
+        yield code
+        for child in code.co_consts:
+            if type(child) is types.CodeType:
+                yield from children(child)
+    def execution_caller():
+        frame = sys._getframe(1)
+        for _ in range(8):
+            if frame is None:
+                return None
+            if frame.f_code is check.__code__:
+                frame = frame.f_back
+                if frame is not None and frame.f_code is getattr(check, 'wrapper_code', None):
+                    frame = frame.f_back
+                return frame
+            frame = frame.f_back
+        return None
+    def checked_tool_caller(code):
+        caller = execution_caller()
+        if caller is None:
+            return False
+        filename = caller.f_code.co_filename
+        if Path(filename).name == '__init__.py' and Path(filename).parent.name == 'collections':
+            return _checked_namedtuple(code, caller, tool_compilation(filename))
+        if Path(filename).name == 'typing.py':
+            return checked_cycles_annotation(code, caller, tool_compilation(filename))
+        if Path(filename).name == 'dataclasses.py':
+            return checked_dataclass(code, caller, tool_compilation(filename))
+        return False
+    def checked_dataclass(code, caller, compilation):
+        # CPython 3.13 builds all methods in one wrapper. Bind the complete
+        # wrapper to the actual installed generator AND the static SDK class
+        # currently being decorated, rather than granting anonymous exec.
+        import ast
+        dc = sys.modules.get('dataclasses')
+        if (dc is None or compilation is None
+                or caller.f_code.co_qualname != '_FuncBuilder.add_fns_to_class'
+                or not any(_same_code(caller.f_code, item) for item in children(compilation))):
+            return False
+        builder, cls = caller.f_locals.get('self'), caller.f_locals.get('cls')
+        if (type(builder) is not getattr(dc, '_FuncBuilder', None) or type(cls) is not type
+                or set(vars(builder)) != {'names', 'src', 'globals', 'locals',
+                                          'overwrite_errors', 'unconditional_adds'}):
+            return False
+        process = caller.f_back
+        if (process is None or process.f_code.co_qualname != '_process_class'
+                or not any(_same_code(process.f_code, item) for item in children(compilation))
+                or process.f_locals.get('func_builder') is not builder
+                or process.f_locals.get('cls') is not cls):
+            return False
+        frame = process.f_back
+        for _ in range(4):
+            if frame is None:
+                return False
+            if frame.f_code.co_filename != caller.f_code.co_filename:
+                break
+            if not any(_same_code(frame.f_code, item) for item in children(compilation)):
+                return False
+            frame = frame.f_back
+        if frame is None or frame.f_code.co_name != '<module>':
+            return False
+        module = sys.modules.get(cls.__module__)
+        filename = frame.f_code.co_filename
+        original = tool_compilation(filename)
+        location = tool_path(filename)
+        if (module is None or frame.f_globals is not vars(module)
+                or builder.globals is not vars(module) or original is None or location is None
+                or not _same_code(frame.f_code, original)):
+            return False
+        raw = _read_at(location[0], location[1].as_posix(), MAX_SOURCE_FILE_BYTES)
+        classes = [node for node in ast.parse(raw).body
+                   if isinstance(node, ast.ClassDef) and node.name == cls.__name__]
+        if (len(classes) != 1 or len(classes[0].decorator_list) != 1
+                or not isinstance(classes[0].decorator_list[0], ast.Name)
+                or classes[0].decorator_list[0].id != 'dataclass'
+                or vars(module).get('dataclass') is not dc.dataclass):
+            return False
+        fields = [node.target.id for node in classes[0].body
+                  if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name)]
+        if list(vars(cls).get('__annotations__', {})) != fields:
+            return False
+        if (type(builder.src) is not list or type(builder.names) is not list
+                or not 0 < len(builder.src) == len(builder.names) <= 16
+                or not all(type(value) is str for value in builder.src + builder.names)
+                or any(name not in {'__init__', '__repr__', '__eq__', '__lt__', '__le__',
+                                    '__gt__', '__ge__', '__hash__', '__setattr__', '__delattr__'}
+                       for name in builder.names)
+                or type(builder.locals) is not dict
+                or not all(type(name) is str and name.isidentifier() for name in builder.locals)):
+            return False
+        text = (f'def __create_fn__({",".join(builder.locals)}):\n'
+                + '\n'.join(builder.src) + f'\n return ({",".join(builder.names)},)')
+        if len(text.encode()) > 65536 or caller.f_locals.get('txt') != text:
+            return False
+        return _same_code(code, compile(text, '<string>', 'exec', dont_inherit=True))
+    def checked_cycles_annotation(code, caller, compilation):
+        import ast, builtins
+        typing = sys.modules.get('typing')
+        ref = caller.f_locals.get('self')
+        if (caller.f_code.co_qualname != 'ForwardRef._evaluate' or compilation is None
+                or not any(_same_code(caller.f_code, target) for target in children(compilation))
+                or typing is None or type(ref) is not typing.ForwardRef
+                or ref.__forward_code__ is not code or type(ref.__forward_arg__) is not str
+                or len(ref.__forward_arg__) > 16384):
+            return False
+        frame, base, owner = caller.f_back, None, None
+        for _ in range(6):
+            if frame is None: break
+            if frame.f_code.co_qualname == 'get_type_hints':
+                if not any(_same_code(frame.f_code, target) for target in children(compilation)):
+                    return False
+                base = frame.f_locals.get('base')
+                owner = frame.f_locals.get('obj')
+                break
+            frame = frame.f_back
+        bpy, binding = sys.modules.get('bpy'), sys.modules.get('_bpy')
+        struct = getattr(getattr(binding, 'types', None), 'bpy_struct', None)
+        if (not isinstance(base, type) or not isinstance(owner, type) or not isinstance(struct, type)
+                or not issubclass(owner, struct)):
+            return False
+        module = sys.modules.get(base.__module__)
+        filename = getattr(module, '__file__', None)
+        bpy_file = getattr(bpy, '__file__', None)
+        if not bpy_file or tool_path(bpy_file) is None:
+            return False
+        script_root = Path(bpy_file).resolve().parents[2]
+        def sdk_module(value):
+            path = getattr(value, '__file__', None)
+            if not path or tool_path(path) is None:
+                return False
+            resolved = Path(path).resolve()
+            if not resolved.is_relative_to(script_root):
+                return False
+            relative = resolved.relative_to(script_root)
+            return relative.parts[0] in {'addons_core', 'startup', 'modules'}
+        if (not sdk_module(module) or getattr(module, base.__name__, None) is not base
+                or not sdk_module(sys.modules.get(owner.__module__))):
+            return False
+        namespaces = [caller.f_locals.get('globalns'), caller.f_locals.get('localns')]
+        if any(type(namespace) is not dict for namespace in namespaces) or not any(namespace is vars(module) for namespace in namespaces):
+            return False
+        for namespace in namespaces:
+            if namespace is vars(module): continue
+            actual = {key:value for key,value in namespace.items() if key != '__builtins__'}
+            if (set(actual) != set(vars(base)) or any(actual[key] is not value for key,value in vars(base).items())
+                    or namespace.get('__builtins__', vars(builtins)) is not vars(builtins)):
+                return False
+        location = tool_path(filename)
+        raw = _read_at(location[0], location[1].as_posix(), MAX_SOURCE_FILE_BYTES)
+        tree = ast.parse(raw, filename)
+        wanted = ast.parse(ref.__forward_arg__, mode='eval')
+        if sum(1 for _ in ast.walk(wanted)) > 1024:
+            return False
+        shape = ast.dump(wanted.body, include_attributes=False)
+        def annotation(node):
+            value = node.annotation
+            if isinstance(value, ast.Constant) and type(value.value) is str:
+                value = ast.parse(value.value, mode='eval').body
+            return ast.dump(value, include_attributes=False)
+        if not any(annotation(node) == shape for node in ast.walk(tree) if isinstance(node, ast.AnnAssign)):
+            return False
+        if not _same_code(code, compile(ref.__forward_arg__, '<string>', 'eval', dont_inherit=True)):
+            return False
+        target = tool_compilation(filename)
+        bpy, binding = sys.modules.get('bpy'), sys.modules.get('_bpy')
+        if bpy is None or binding is None or bpy.props is not binding.props:
+            return False
+        for node in ast.walk(wanted):
+            if not isinstance(node, ast.Name): continue
+            name = node.id
+            value = namespaces[1].get(name, namespaces[0].get(name, vars(builtins).get(name)))
+            if getattr(binding.props, name, None) is value and value is not None:
+                if type(value) is not types.BuiltinFunctionType:
+                    return False
+            elif value is getattr(getattr(getattr(binding, 'app', None), 'translations', None), 'contexts', None) and value is not None:
+                if getattr(getattr(getattr(bpy, 'app', None), 'translations', None), 'contexts', None) is not value:
+                    return False
+                attributes = [item.attr for item in ast.walk(wanted) if isinstance(item, ast.Attribute)
+                              and isinstance(item.value, ast.Name) and item.value.id == name]
+                if not attributes or any(item != 'id_light' for item in attributes) or value.id_light != 'Light':
+                    return False
+            elif type(value) is types.FunctionType:
+                callback_module = sys.modules.get(value.__module__)
+                if not sdk_module(callback_module) or value.__globals__ is not vars(callback_module) or value.__closure__:
+                    return False
+                callback_code = tool_compilation(callback_module.__file__)
+                if not any(_same_code(value.__code__, child) for child in children(callback_code)):
+                    return False
+            elif isinstance(value, type):
+                if getattr(module, name, None) is not value or not any(isinstance(c, ast.ClassDef) and c.name == value.__name__ for c in ast.walk(tree)):
+                    return False
+            elif type(value) is types.ModuleType:
+                if value is not bpy:
+                    return False
+            elif type(value) not in (bool, int, float, str, tuple, list, dict, set, type(None)):
+                return False
+        return True
+    factory_text = (('addon_utils.disable_all()', 'eval', False), ('bl_app_template_utils.reset()', 'eval', False),
+                    ('bpy.utils.refresh_script_paths()\naddon_utils.reset_all()', 'exec', False),
+                    ('bpy.utils._on_exit()', 'eval', True))
+    factory_checked = set()
+    def checked_factory_expression(code):
+        template = next(((text, c_only) for text, mode, c_only in factory_text
+                     if _same_code(code, compile(text, '<string>', mode, dont_inherit=True))), None)
+        if template is None or len(roots) != 1:
+            return False
+        text, c_only = template
+        caller_frame = execution_caller()
+        if c_only and caller_frame is not None:
+            return False
+        caller = None if caller_frame is None else caller_frame.f_code
+        if caller is not None:
+            target = expected.get(caller.co_filename)
+            if target is None or not any(_same_code(caller, child) for child in children(target)):
+                return False
+        if text not in factory_checked:
+            import mmap
+            binary = roots[0] / 'MacOS/Blender'
+            with binary.open('rb') as stream, mmap.mmap(stream.fileno(), 0, access=mmap.ACCESS_READ) as image:
+                if image.find(text.encode() + b'\0') < 0:
+                    return False
+            factory_checked.add(text)
+        return True
+    def check(event, arguments):
+        try:
+            if event == 'import' and len(arguments) > 1 and arguments[1]:
+                filename = arguments[1]
+                if type(filename) is not str or (filename not in expected and tool_path(filename) is None):
+                    refused()
+            if event != 'exec':
+                return
+            code = arguments[0]
+            filename = code.co_filename
+            target = expected.get(filename)
+            if target is not None:
+                if not _same_code(code, target):
+                    refused()
+                return
+            if filename.startswith('<frozen ') and filename.endswith('>'):
+                name = filename[8:-1]
+                frozen = importlib.machinery.FrozenImporter.get_code(name)
+                if frozen is None or not _same_code(code, frozen):
+                    refused()
+                return
+            if Path(filename).is_absolute():
+                target = tool_compilation(filename)
+                if target is None or not _same_code(code, target):
+                    refused()
+            elif filename in {'<string>', '<stdin>'}:
+                if not checked_tool_caller(code) and not checked_factory_expression(code):
+                    refused()
+            else:
+                refused()
+        except (OSError, ValueError, ImportError, TypeError, AttributeError):
+            check.failed = True
+            raise
+    check.failed = False
+    check.mark_failed = lambda: setattr(check, 'failed', True)
+    def require_clean():
+        if check.failed:
+            raise UnsupportedOrigin('native source-origin violation remains sticky')
+    check.require_clean = require_clean
+    return check
+
+
+def _fatal_native_audit(check):
+    """An embedded interpreter must not swallow origin refusal during C teardown."""
+    import os, sys
+    exit_process, write, flush, base, type_ = os._exit, sys.stderr.write, sys.stderr.flush, BaseException, type
+    def checked(event, arguments):
+        try:
+            check(event, arguments)
+        except base as error:
+            try:
+                write('native source-origin refusal: ' + type_(error).__name__ + '\n'); flush()
+            except base:
+                pass
+            # Only this owned worker exits. Its existing independent C7 monitor
+            # retains custody/capacity until actual descendant cleanup is positive.
+            exit_process(1)
+    check.wrapper_code = checked.__code__
+    return checked
+
+
 def main(manifest, specification, expected):
     """Run only the original named batch worker inside its finite captured code scope."""
     import hashlib
@@ -358,7 +774,7 @@ def main(manifest, specification, expected):
     if hashlib.sha256(raw).hexdigest() != expected:
         raise ValueError('native worker context changed after launch intent')
     spec = _json(raw)
-    if set(spec) != {'version', 'source', 'issuer', 'request', 'binary', 'installation', 'code_files'} or type(spec['version']) is not int or spec['version'] != 1:
+    if set(spec) != {'version', 'source', 'issuer', 'request', 'binary', 'installation', 'code_files', 'atomic_temporary'} or type(spec['version']) is not int or spec['version'] != 1:
         raise ValueError('unsupported captured native worker context')
     if (spec['source'] != manifest['source_digest'] or spec['issuer'] != manifest['issuer_digest']
             or spec['request'] != manifest['scheduler_request']['digest']):
@@ -382,12 +798,18 @@ def main(manifest, specification, expected):
     if (binary != Path(spec['binary']).resolve() or binary.parent.name != 'MacOS'
             or bundle.name != 'Contents' or [str(bundle)] != installation):
         raise ValueError('running native image differs from its checked original Blender role')
+    import os
+    batch = Path(os.environ.get('ATELIER_BATCH', ''))
+    temporary = Path(spec['atomic_temporary'])
+    if (not batch.is_absolute() or batch.parent != Path(manifest['output']) / '.state/batches'
+            or len(batch.name) != 32 or any(c not in '0123456789abcdef' for c in batch.name)
+            or temporary != batch / 'atomic-tmp'):
+        raise ValueError('native atomic scratch differs from its original owned batch namespace')
     _preloaded(manifest, installation, sys._getframe(1))
     from atelier.build_v2.legacy_qualification import CapturedCode, captured_recipe_imports, captured_spec
-    from atelier.build_v2.legacy_action import captured_execution_check
     sources = [CapturedCode(str(checkout / name), data) for name, data in all_files if name in files]
-    check = captured_execution_check(sources, checkout=checkout, platform_roots=installation)
-    sys.addaudithook(check)
+    check = _native_execution_check(sources, checkout=checkout, installation=installation)
+    sys.addaudithook(_fatal_native_audit(check))
     worker = str(checkout / 'platform/studio/atelier/build_batch_worker.py')
     source = next(item for item in sources if item.filename == worker)
     with captured_recipe_imports(sources, checkout=checkout, platform_roots=installation,
@@ -395,7 +817,8 @@ def main(manifest, specification, expected):
         info = captured_spec('__main__', source)
         module = importlib.util.module_from_spec(info)
         sys.modules['__main__'] = module
-        with checked_actions(check):
+        from atelier import atomic_files
+        with atomic_files.managed_temporaries(temporary), checked_actions(check):
             info.loader.exec_module(module)
             check.require_clean()
 

@@ -51,7 +51,8 @@ CODE_SEEDS = (
     'world/regions/swordcamp/__init__.py',
     'world/regions/belmonte/source.py',
     'world/regions/village/atomic_sources.py', 'world/gen_textures.py', 'legacy_texture_profile.py', 'legacy_treehouse_profile.py',
-    'world/regions/treehouse/plan_tree.py',
+    'world/regions/treehouse/plan_tree.py', 'legacy_treehouse_discovery_profile.py', 'legacy_treehouse_export_profile.py',
+    'world/export_region_piece.py',
 )
 
 
@@ -389,7 +390,32 @@ class TextureAuthority:
                 step, checkout=self.checkout, issuer_files=manifest['issuer_files'], verifier=profile.verifier)
             self.output_paths[step.name] = tuple(path for _, roots in profile.products for path in roots)
             self.generated_inputs.update(profile.produced_inputs)
+        from legacy_treehouse_export_profile import qualify_treehouse_export
+        export_names = {'world.treehouse_trees.export.' + parent for parent in parents}
+        for step in selected:
+            if step.name not in export_names:
+                continue
+            profile = qualify_treehouse_export(step, checkout=self.checkout,
+                                              output_root=self.checkout / 'build/yorimichi')
+            self.native_steps[step.name], self.native_profiles[step.name] = step, profile
+            self.native_runtimes[step.name] = _bind_native_runtime(
+                step, checkout=self.checkout, issuer_files=manifest['issuer_files'], verifier=profile.verifier)
+            self.output_paths[step.name] = tuple(path for _, roots in profile.products for path in roots)
+            self.generated_inputs.update(profile.produced_inputs)
         self.steps.update(self.native_steps)
+        from legacy_treehouse_discovery_profile import qualify_treehouse_discovery
+        from atelier.build_v2.legacy_call import bind_captured_call
+        self.discovery = next((step for step in selected if step.name == 'world.treehouse_trees.geometry'), None)
+        self.discovery_profile = None
+        if self.discovery is not None:
+            profile = qualify_treehouse_discovery(self.discovery, checkout=self.checkout,
+                                                 output_root=self.checkout / 'build/yorimichi')
+            self.discovery_profile = profile
+            bind_captured_call(self.discovery, checkout=self.checkout,
+                               issuer_files=manifest['issuer_files'], code_inputs=profile.code_inputs)
+            self.steps[self.discovery.name] = self.discovery
+            self.output_paths[self.discovery.name] = tuple(path for _, roots in profile.products for path in roots)
+            self.generated_inputs.update(profile.produced_inputs)
         self.dones = {}
         self.native_launch = None
         first = next((step for step in selected if step.controller is None), None)
@@ -439,7 +465,7 @@ class TextureAuthority:
         return [{'path': name, 'fact': {'kind': 'file', 'digest': self.hashlib.sha256(raw).hexdigest(),
                                       'size': len(raw), 'mode': stat.S_IMODE(info.st_mode)}}]
 
-    def before_prepare(self, ctx, steps, wanted):
+    def before_prepare(self, ctx, steps, wanted, *, expanded=False):
         import os
         from atelier.build_v2.legacy_client import AuthorityRefused
         from atelier.build_hashes import HashIndex
@@ -488,13 +514,17 @@ class TextureAuthority:
             if scope is not None and any(task['id'] not in allowed for task in scope['tasks']):
                 raise AuthorityRefused('old epoch includes an unqualified game-family repair scope')
             same = all(old['binding'].get(key) == value for key, value in observation.items() if key != 'sources')
-            if same and scope == frame:
+            if same and scope == frame and not expanded:
                 self.client.request({'type': 'prepare_selection', 'observation': observation})
                 settled = [item['task'] for item in old['frame']['settled']]
                 if settled:
                     # Resume all actual members under new permission. Pending failed
                     # members remain pending; no settled credit grants another launch.
                     self.client.request({'type': 'requeue', 'members': settled})
+            elif same and previous_frame is not None and not previous_frame['pending']:
+                if not expanded:
+                    self.client.request({'type': 'prepare_selection', 'observation': observation})
+                self.client.request({'type': 'advance', 'observation': frame})
             else:
                 self.client.request({'type': 'supersede', 'observation': observation, 'initial_frame': frame})
         else:
@@ -503,6 +533,17 @@ class TextureAuthority:
         self.client.request({'type': 'begin_attempt', 'attempt': {'id': self.attempt,
                              'members': [self.metadata, *self.steps], 'execution': {'kind': 'in_process'}, 'guard': None}})
         self.begun = True
+
+    def expanded(self, ctx, steps, wanted):
+        from atelier import build_products
+        self.build.check_declarations(steps)
+        graph = build_products.Graph(steps)
+        selected = graph.select(wanted)
+        # Same authority/guards/channel; only the freshly qualified current frame
+        # changes. No old settled credit grants newly discovered tasks permission.
+        self.__init__(self.manifest, self.request, self.client, self.custody,
+                      self.build, graph, steps, selected, self.files)
+        self.before_prepare(ctx, steps, wanted, expanded=True)
 
     def writer(self, output):
         """Borrow only the host's same-OFD writer; never acquire/unlock another lock."""
@@ -539,7 +580,7 @@ class TextureAuthority:
         self.step = step
         if done is not None:
             self.dones[step.name] = dict(done)
-        if step.name in self.native_steps:
+        if step.name in self.native_steps or step is getattr(self, 'discovery', None):
             if done is None:
                 raise AuthorityRefused('native dispatch lacks original scheduler input observations')
             self.keys[step.name] = self.build.fingerprint(step, done, index=ctx.build_hash_index,
@@ -555,10 +596,32 @@ class TextureAuthority:
         self.attempt = self.preparation_attempt
         self.returned = None
         self.launch_context = None
+        if step is getattr(self, 'discovery', None):
+            self.validate_call(step, step.commands[0])
+            self.attempt = 'discovery-' + self.nonce
+            self.client.request({'type': 'begin_attempt', 'attempt': {
+                'id': self.attempt, 'members': [self.metadata, step.name],
+                'execution': {'kind': 'in_process'}, 'guard': None}})
+
+    def call_scope(self, ctx, step, command):
+        self.validate_call(step, command)
+        from atelier.atomic_files import managed_temporaries
+        return managed_temporaries(ctx.out / '.state/batches' / ('discovery-' + self.nonce) / 'atomic-tmp')
+
+    def validate_call(self, step, command):
+        from dataclasses import replace
+        from legacy_treehouse_discovery_profile import qualify_treehouse_discovery
+        from atelier.build_v2.legacy_client import AuthorityRefused
+        if step is not self.discovery or command is not step.commands[0]:
+            raise AuthorityRefused('in-process callback is outside the exact discovery role')
+        actual = qualify_treehouse_discovery(replace(step), checkout=self.checkout,
+                                            output_root=self.checkout / 'build/yorimichi')
+        if actual != self.discovery_profile:
+            raise AuthorityRefused('discovery callback source or closure changed before execution')
 
     def after_task(self, ctx, step, code, *, done=None):
         from atelier.build_v2.legacy_client import AuthorityRefused
-        if code is not None or self.returned not in (None, 0):
+        if (code is not None and not (step is getattr(self, 'discovery', None) and code == 76)) or self.returned not in (None, 0):
             raise AuthorityRefused('qualified task failed; original outputs/certificates remain fenced')
         if step is self.aggregate:
             if done is None:
@@ -613,6 +676,7 @@ class TextureAuthority:
     def after_index(self, ctx):
         if getattr(self, 'finalized', False):
             self.after_checkpoint(ctx, self.final_invalid)
+            self.finalized = False
 
     def after_checkpoint(self, ctx, invalid):
         if invalid:

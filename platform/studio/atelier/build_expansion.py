@@ -18,31 +18,49 @@ def execute(ctx, wanted, *, steps, force, touch, echo, index, max_heavy_commands
     known = {step.name for step in steps or ()}
     ctx.expansion_heavy_commands = 0
     ctx.expansion_completed = {}
-    try:
-        while True:
-            code = build._build(ctx, wanted, force=force, touch=touch, echo=echo, index=index,
-                                steps=steps, max_heavy_commands=max_heavy_commands)
-            if code != REPLAN:
-                return code
-            token = getattr(ctx, 'recipe_expansion', None)
-            if token is None or token in seen:
-                raise ValueError('Planner expansion repeated without a new completed result')
-            seen.add(token)
-            echo('Discovering independently cached exports after ' + token[0])
-            steps = build.load_recipe(ctx.game).steps(ctx)
-            build.check_modules(steps)
-            if hasattr(ctx, 'cold_at_launch'):
-                ctx.cold_at_launch.update(step.name for step in steps if step.name not in known
-                                         and not (ctx.stamps / (step.name + '.json')).exists())
-                # Keep the same read/need propagation as launch classification, using
-                # the expanded graph. Ordering-only edges never confer a reason.
-                from .build_products import Graph
-                try:
-                    graph = Graph(steps)
-                    ctx.rebuild_upstream = {s.name: {*s.needs, *(graph.owners[n] for n in s.reads)} for s in graph.steps}
-                except (ValueError, KeyError):
-                    ctx.rebuild_upstream = {s.name: set(s.needs) for s in steps}
-            known.update(step.name for step in steps)
-    finally:
-        for field in ('expansion_completed', 'expansion_heavy_commands', 'recipe_expansion'):
-            ctx.__dict__.pop(field, None)
+    from contextlib import ExitStack
+    with ExitStack() as managed_indexes:
+        try:
+            while True:
+                code = build._build(ctx, wanted, force=force, touch=touch, echo=echo, index=index,
+                                    steps=steps, max_heavy_commands=max_heavy_commands)
+                if code != REPLAN:
+                    return code
+                token = getattr(ctx, 'recipe_expansion', None)
+                if token is None or token in seen:
+                    raise ValueError('Planner expansion repeated without a new completed result')
+                authority = getattr(ctx, 'legacy_authority', None)
+                if authority is not None:
+                    # A pass cannot Advance while original metadata/index writes
+                    # are still live. Keep the existing expansion loop/seen budget.
+                    index.close()
+                    authority.after_index(ctx)
+                seen.add(token)
+                echo('Discovering independently cached exports after ' + token[0])
+                if authority is None:
+                    steps = build.load_recipe(ctx.game).steps(ctx)
+                else:
+                    from . import paths
+                    with paths.captured_declaration(ctx.game):
+                        steps = build.load_recipe(ctx.game).steps(ctx)
+                build.check_modules(steps)
+                if authority is not None:
+                    authority.expanded(ctx, steps, wanted)
+                    from .build_hashes import HashIndex
+                    index = managed_indexes.enter_context(HashIndex(
+                        ctx.out / '.state' / 'file-hashes.sqlite3', verify=index.verify))
+                if hasattr(ctx, 'cold_at_launch'):
+                    ctx.cold_at_launch.update(step.name for step in steps if step.name not in known
+                                             and not (ctx.stamps / (step.name + '.json')).exists())
+                    # Keep the same read/need propagation as launch classification, using
+                    # the expanded graph. Ordering-only edges never confer a reason.
+                    from .build_products import Graph
+                    try:
+                        graph = Graph(steps)
+                        ctx.rebuild_upstream = {s.name: {*s.needs, *(graph.owners[n] for n in s.reads)} for s in graph.steps}
+                    except (ValueError, KeyError):
+                        ctx.rebuild_upstream = {s.name: set(s.needs) for s in steps}
+                known.update(step.name for step in steps)
+        finally:
+            for field in ('expansion_completed', 'expansion_heavy_commands', 'recipe_expansion'):
+                ctx.__dict__.pop(field, None)

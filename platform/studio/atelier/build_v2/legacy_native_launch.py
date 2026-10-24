@@ -65,7 +65,8 @@ class NativeBatchLaunch:
                       'request': a.manifest['scheduler_request']['digest'],
                       'binary': str(Path(ctx.blender).resolve()),
                       'installation': list(map(str, build_audit.installation(command))),
-                      'code_files': list(self.files)}
+                      'code_files': list(self.files),
+                      'atomic_temporary': str(self.session.folder / 'atomic-tmp')}
             raw = (json.dumps(config, sort_keys=True, separators=(',', ':')) + '\n').encode()
             capture = Path(a.manifest['distribution']) / 'platform/studio/atelier/build_v2/controller_client.py'
             capture_raw = dict(a.files)['platform/studio/atelier/build_v2/controller_client.py']
