@@ -124,7 +124,12 @@ and install::tests::scope_allocator_preserves_occupied_transaction_and_quarantin
 @cc [owner:fontanierh,label:correctness] build-v2-python-job-isolation
 Each Python job MUST run in its own child of the job loop, in its staged folder, with the declared
 environment only, loading only installed platform modules and the unit's declared code; the checkout
-MUST NOT be on its import path. On macOS the child MUST run under a deny-default sandbox that lets
+MUST NOT be on its import path. The child keeps `-P -s -S` and runs no `.pth` file: installed
+libraries come only from the loop's own purelib and platlib folders, passed in the child's private
+configuration and appended after the standard library, and the child MUST fail the job as
+`dependency` before running it when any such folder is missing, relative, not a folder, or resolves
+(symbolic links included) outside the approved platform roots. Installed libraries stay platform
+context and never enter a key. On macOS the child MUST run under a deny-default sandbox that lets
 it execute only the interpreter, and any undeclared read, Python-level existence check (of a present
 or missing path), listing, network use or process start MUST fail the job as `dependency` rather
 than return a value; writes outside `output/` MUST fail. The production loop entry MUST have no
@@ -151,8 +156,8 @@ accidental undeclared dependencies, not an adversarial Python jail, and these ch
 all nondeterminism or absence probes. This scope MUST NOT excuse an ordinary API bug in a supported
 check. Unit code MUST NOT derive outputs from real clocks, file timestamps or native entropy;
 clean-room and determinism fixtures remain required. See
-platform/studio/tests/test_build_v2_python_worker.py, test_build_v2_python_sandbox.py and
-tests/staging.rs.
+platform/studio/tests/test_build_v2_python_worker.py, test_build_v2_python_sandbox.py,
+test_build_v2_python_job_libraries.py and tests/staging.rs.
 
 Private transaction directories MUST actually be empty before cleanup clears the journal;
 unknown private leaves MUST preserve the active barrier and evidence. Only checkout output-parent

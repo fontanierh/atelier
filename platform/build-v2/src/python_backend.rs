@@ -310,18 +310,36 @@ pub struct PythonCompletion {
 }
 impl PythonTicket {
     pub(crate) fn register(&mut self, process: &ProcessIdentity) -> Result<(), String> {
-        self.local
+        let local = self
+            .local
             .as_mut()
-            .ok_or("local lease missing before Run")?
+            .ok_or("local lease missing before Run")?;
+        register_python_worker(local, self.transaction.as_mut(), process)
+    }
+}
+
+/// @cc [owner:fontanierh,label:safety] python-worker-lease-registration
+/// The caller MUST bind the matching current unit's original leases and the actual
+/// guard-observed identity. This only appends retention claims (local first, then the optional
+/// CAS lease) and validates no identity, cleanup or availability. An Err MUST forbid Run and
+/// keeps any earlier local success or CAS failure claims. See
+/// tests/support/python_backend_cases.rs
+/// (`actual_python_first_build_and_current_noop_have_real_zero_launch_and_write_evidence`) and
+/// examples/resident_window.rs.
+pub fn register_python_worker(
+    local: &mut CompletionWork,
+    transaction: Option<&mut WriteTransaction>,
+    process: &ProcessIdentity,
+) -> Result<(), String> {
+    local
+        .add_worker(process.clone())
+        .map_err(|error| error.to_string())?;
+    if let Some(transaction) = transaction {
+        transaction
             .add_worker(process.clone())
             .map_err(|error| error.to_string())?;
-        if let Some(transaction) = &mut self.transaction {
-            transaction
-                .add_worker(process.clone())
-                .map_err(|error| error.to_string())?;
-        }
-        Ok(())
     }
+    Ok(())
 }
 
 pub struct PythonBackend<'a> {
