@@ -1,9 +1,183 @@
 """Finite provider capture; real fresh-process Graph proof lives in the Rust T1a case."""
 from pathlib import Path
+import ast
+from contextlib import contextmanager
 import importlib.util
 import signal
 import json
+from types import SimpleNamespace
 import pytest
+
+
+@pytest.fixture
+def finite_recipe_steps(monkeypatch):
+    """Execute only the actual steps AST with finite constructors, never a recipe import/job."""
+    from atelier import paths
+    from atelier.build_v2 import legacy_qualification as phases
+    source = paths.REPO / 'games/yorimichi/build.py'
+    node = next(n for n in ast.parse(source.read_bytes()).body
+                if isinstance(n, ast.FunctionDef) and n.name == 'steps')
+
+    def prepare(fail=None):
+        trace, stack, snapshots = [], [], {}
+        original = RuntimeError('original-constructor-sentinel')
+        ctx = SimpleNamespace(out=Path('/virtual/out'), uproject=Path('/virtual/game.uproject'))
+        @contextmanager
+        def phase(label):
+            assert label in phases._DIAGNOSTIC_PHASES
+            trace.append(('begin', label))
+            stack.append(label)
+            try:
+                yield
+            except BaseException:
+                trace.append(('raised', label))
+                raise
+            else:
+                trace.append(('returned', label))
+            finally:
+                assert stack.pop() == label
+        monkeypatch.setattr(phases, 'diagnostic_phase', phase)
+        class Name(str):
+            def startswith(self, prefix):
+                trace.append(('filter', str(self), prefix, stack[-1]))
+                return super().startswith(prefix)
+        class Sequence(list):
+            def __add__(self, other):
+                trace.append(('add', tuple(str(s.name) for s in self), tuple(str(s.name) for s in other)))
+                return Sequence(list.__add__(self, other))
+        def step(name, commands=(), **kwargs):
+            fields = dict(name=Name(name), commands=list(commands), inputs=[], outputs=[],
+                          reads=[], needs=[], after=[], explicit=False, candidate_scope=None)
+            fields.update(kwargs)
+            return SimpleNamespace(**fields)
+        world, regions, game, assets = map(Path, ('/virtual/world', '/virtual/world/regions',
+                                                  '/virtual/game', '/virtual/assets'))
+        studio, scripts, treehouse = map(Path, ('/virtual/platform/studio', '/virtual/scripts',
+                                                '/virtual/world/regions/treehouse'))
+        class Python:
+            def __init__(self, script):
+                self.script = script
+        class Blender(Python):
+            pass
+        # Keep the fake Unreal descriptor distinct from Python, as in the real recipe.
+        class UnrealScript:
+            def __init__(self, script):
+                self.script = script
+        fbx = studio / 'atelier/blender/fbx.py'
+        imported = world / 'helper.py'
+        class Scanner:
+            def __init__(self):
+                trace.append(('scanner',))
+            def local_imports(self, *args):
+                trace.append(('scan', str(args[0])))
+                return [fbx]
+        values = {
+            'ferry': [step('ferry.data'), step('unreal.ferry')],
+            'gondola': [step('gondola.data'), step('unreal.gondola')],
+            'world': [step('world.entry', [Blender(world / 'shape.py'), UnrealScript(scripts / 'native.py')],
+                           needs=['unreal.world'], inputs=[world / 'shorelines.py', treehouse / 'layout.py'])],
+            'character': [step('character.entry')], 'sound': [step('sound.entry')],
+            'unreal': [step('unreal.entry')], 'staging': [step('data.stage')],
+            'adventure': [step('adventure.entry')], 'hippodrome': [step('hippodrome.entry')],
+            'belmonte': [step('belmonte.skip0'), step('belmonte.skip1'), step('belmonte.skip2'), step('belmonte.keep')],
+            'brinecove': [step('brinecove.skip0'), step('brinecove.skip1'), step('brinecove.keep')],
+            'fit': [step('fit.entry')], 'pawn': [step('pawn.entry')],
+            'cook': [step('cook')], 'package': [step('package')],
+        }
+        def constructor(name):
+            def call(*args):
+                trace.append(('call', name))
+                if name in ('adventure', 'belmonte', 'brinecove'):
+                    assert args == (ctx.out,)
+                elif name == 'fit':
+                    assert len(args) == 2 and args[0] is ctx.out
+                elif name == 'pawn':
+                    assert len(args) == 1
+                elif name in ('cook', 'package'):
+                    assert len(args) == 2 and args[0] is ctx
+                else:
+                    assert args == (ctx,)
+                if fail == name:
+                    raise original
+                if name in ('fit', 'pawn', 'cook', 'package'):
+                    snapshots[name] = (args[-1], tuple(str(s.name) for s in args[-1]))
+                return values[name][0] if name in ('cook', 'package') else Sequence(values[name])
+            return call
+        def helper(name, path):
+            trace.append(('helper', name))
+            if name == 'yorimichi_network_identity':
+                assert path == game / 'network_identity.py'
+                return SimpleNamespace(stage=object(), content_files=object())
+            assert name == 'yorimichi_content_policy' and path == game / 'content_policy.py'
+            return SimpleNamespace(archive=object(), retired=object(), music_enabled=lambda: False)
+        def own(result):
+            trace.append(('ownership', tuple(str(s.name) for s in result)))
+        namespace = dict(Path=Path, SimpleNamespace=SimpleNamespace, Step=step,
+                         Call=lambda *args: args, DeferredInputs=lambda *args, **kwargs: (args, kwargs),
+                         WORLD=world, REGIONS=regions, GAME=game, ASSETS=assets, SCRIPTS=scripts,
+                         TREEHOUSE=treehouse, paths=SimpleNamespace(STUDIO=studio),
+                         build_inputs=SimpleNamespace(ImportScanner=Scanner), Python=Python,
+                         Blender=Blender, UnrealScript=UnrealScript, CandidateScope=lambda **kwargs: kwargs,
+                         craterpark_v4=SimpleNamespace(selected=lambda: False),
+                         local_imports=lambda *args: [imported], _mentions_import_village=lambda path: False,
+                         _load_helper_module=helper, declare_owned_content=own,
+                         music_selector_members=object(), os=SimpleNamespace(environ={}),
+                         native_source_inputs=lambda: object())
+        for name, function in (('ferry', 'ferry_steps'), ('gondola', 'gondola_steps'),
+                               ('world', 'world_steps'), ('character', 'character_steps'),
+                               ('sound', 'sound_effect_steps'), ('unreal', 'unreal_steps'),
+                               ('staging', 'staging_steps'), ('adventure', 'adventure_steps'),
+                               ('hippodrome', 'hippodrome_steps'), ('belmonte', 'belmonte_steps'),
+                               ('brinecove', 'brinecove_steps'), ('fit', 'fit_steps'),
+                               ('pawn', 'pawn_steps'), ('cook', 'cook_step'), ('package', 'package_step')):
+            namespace[function] = constructor(name)
+        exec(compile(ast.Module(body=[node], type_ignores=[]), str(source), 'exec'), namespace)
+        return SimpleNamespace(run=namespace['steps'], trace=trace, snapshots=snapshots, values=values,
+                               original=original, ctx=ctx,
+                               expected_inputs=[world / 'shorelines.py', treehouse / 'layout.py',
+                                                fbx.parent / '__init__.py', fbx, imported,
+                                                assets / 'vehicles/belmonte-train/line.json'])
+    return prepare
+
+
+def test_actual_recipe_steps_preserve_constructor_filter_result_and_enrichment_order(finite_recipe_steps):
+    case = finite_recipe_steps()
+    result = case.run(case.ctx)
+    expected = ['world.entry', 'character.entry', 'sound.entry', 'ferry.data', 'gondola.data',
+                'unreal.entry', 'data.stage', 'adventure.entry', 'hippodrome.entry',
+                'belmonte.keep', 'brinecove.keep', 'unreal.ferry', 'unreal.gondola',
+                'fit.entry', 'pawn.entry', 'data.content', 'data.network', 'cook', 'package']
+    assert [str(s.name) for s in result] == expected
+    assert [event[1] for event in case.trace if event[0] == 'call'] == [
+        'ferry', 'gondola', 'world', 'character', 'sound', 'unreal', 'staging', 'adventure',
+        'hippodrome', 'belmonte', 'brinecove', 'fit', 'pawn', 'cook', 'package']
+    filters = [event[1] for event in case.trace if event[0] == 'filter' and event[-1] == 'recipe.steps']
+    assert filters == ['ferry.data', 'unreal.ferry', 'gondola.data', 'unreal.gondola'] * 2
+    ordered = [event[:2] for event in case.trace if event[0] == 'call'
+               or (event[0] == 'filter' and event[-1] == 'recipe.steps')]
+    assert ordered.index(('call', 'sound')) < ordered.index(('filter', 'ferry.data')) < ordered.index(('call', 'unreal'))
+    assert ordered.index(('call', 'brinecove')) < len(ordered) - 1 - ordered[::-1].index(('filter', 'ferry.data')) < ordered.index(('call', 'fit'))
+    assert case.snapshots['fit'][1] == tuple(expected[:13])
+    assert case.snapshots['pawn'][1] == tuple(expected[:14])
+    assert case.snapshots['fit'][0] is case.snapshots['pawn'][0]
+    world = case.values['world'][0]
+    assert world.after == ['unreal.north'] and world.inputs == case.expected_inputs
+    assert world.reads == ['treehouse.canopy_dimensions']
+    assert result[-4].needs == ['unreal.entry', 'unreal.ferry', 'unreal.gondola', 'data.stage']
+    assert result[-3].needs == ['unreal.entry', 'unreal.ferry', 'unreal.gondola', 'data.stage', 'data.content']
+    assert case.trace[-2:] == [('returned', 'recipe.return'), ('returned', 'recipe.steps')]
+
+
+@pytest.mark.parametrize('failed', ['gondola', 'world', 'staging', 'fit', 'pawn', 'cook', 'package'])
+def test_actual_recipe_steps_keep_original_raised_constructor_and_stop_later_calls(finite_recipe_steps, failed):
+    case = finite_recipe_steps(failed)
+    with pytest.raises(RuntimeError) as caught:
+        case.run(case.ctx)
+    assert caught.value is case.original
+    calls = [event[1] for event in case.trace if event[0] == 'call']
+    assert calls[-1] == failed
+    assert case.trace[-1] == ('raised', 'recipe.steps')
+    assert ('returned', 'recipe.steps') not in case.trace
 
 
 def test_current_discovery_provider_roster_uses_static_imports_within_capture_bound(monkeypatch):

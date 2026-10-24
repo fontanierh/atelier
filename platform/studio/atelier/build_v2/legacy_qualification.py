@@ -30,6 +30,10 @@ _DIAGNOSTIC_PHASES = frozenset((
     'imports.execute', 'imports.restore', 'bindings.snapshot', 'bindings.restore',
     'discovery.bytes', 'discovery.load', 'discovery.steps', 'discovery.graph',
     'discovery.select', 'bootstrap.context', 'bootstrap.handshake', 'bootstrap.issuer',
+    'recipe.steps', 'recipe.ferry', 'recipe.gondola', 'recipe.world', 'recipe.character',
+    'recipe.sound', 'recipe.unreal', 'recipe.staging', 'recipe.adventure',
+    'recipe.hippodrome', 'recipe.belmonte', 'recipe.brinecove', 'recipe.fit', 'recipe.pawn',
+    'recipe.order', 'recipe.enrich', 'recipe.content', 'recipe.ownership', 'recipe.return',
 ))
 _diagnostic_records = 0
 

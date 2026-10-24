@@ -2006,104 +2006,131 @@ def ferry_steps(ctx):
 
 def steps(ctx):
     """Compose the recipe in its established order; packaging is explicit and optional sources remain optional."""
-    ferry = ferry_steps(ctx)
-    gondola = gondola_steps(ctx)
-    result = (world_steps(ctx) + character_steps(ctx) + sound_effect_steps(ctx)
-              + [step for step in ferry if not step.name.startswith('unreal.')]
-              + [step for step in gondola if not step.name.startswith('unreal.')]
-              + unreal_steps(ctx) + staging_steps(ctx) + adventure_steps(ctx.out) + hippodrome_steps(ctx) + belmonte_steps(ctx.out)[3:]
-              + brinecove_steps(ctx.out)[2:] + [step for step in ferry if step.name.startswith('unreal.')]
-              + [step for step in gondola if step.name.startswith('unreal.')])
-    result += fit_steps(ctx.out, result)
-    result += pawn_steps(result)
-    # A step layered on the world brings the volcano with it: a targeted build that reimports the world reimports it too.
-    for step in result:
-        if 'unreal.world' in step.needs + step.after and step.name != 'unreal.north':
-            step.after.append('unreal.north')
-    # world.layout is a cutoff step, and the scripts behind it and its dependents import across regions (the volcano
-    # reads Belmonte's terrain): each such step also hashes every module its scripts import.
-    scanner = build_inputs.ImportScanner()
-    for step in result:
-        for command in step.commands:
-            if isinstance(command, Blender):
-                # Exporter implementation bytes belong only to mesh-export actions.
-                fbx_helper = paths.STUDIO / 'atelier' / 'blender' / 'fbx.py'
-                if fbx_helper in scanner.local_imports(command.script):
-                    step.inputs += [path for path in (fbx_helper.parent / '__init__.py', fbx_helper)
-                                    if path not in step.inputs]
-            if isinstance(command, (Python, Blender)) and WORLD in Path(command.script).parents:
-                step.inputs += [f for f in local_imports(command.script, (WORLD, REGIONS), scanner) if f not in step.inputs]
-        if TREEHOUSE/'layout.py' in step.inputs and any(isinstance(command,(Python,Blender)) for command in step.commands):
-            if 'treehouse.canopy_dimensions' not in step.reads:step.reads.append('treehouse.canopy_dimensions')
-        # Native geometry reuse hashes its complete native-only source closure.
-        for command in step.commands:
-            if not isinstance(command, UnrealScript):
-                continue
-            code = scanner.local_imports(command.script, (SCRIPTS, WORLD, REGIONS))
-            if any(_mentions_import_village(file) for file in code):
-                code = sorted(set(code + scanner.local_imports(SCRIPTS / 'import_village.py', (SCRIPTS, WORLD))))
-            common_mesh = SCRIPTS / 'mesh_import.py' in code
-            native_reuse = paths.STUDIO / 'atelier' / 'unreal_mesh_reuse.py' in code
-            if common_mesh or native_reuse:
-                step.inputs += [file for file in code if file not in step.inputs]
-            if common_mesh:
-                # Candidate staging is read-only metadata. Package adoption remains
-                # per mesh, with current source/options/native validation.
-                content_root = GAME / 'unreal' / 'Content'
-                roots = {Path(output).parent for output in step.outputs
-                         if Path(output).suffix == '.uasset' and Path(output).is_relative_to(content_root)}
-                if step.name in {'unreal.world', 'unreal.north', 'unreal.southwest', 'unreal.kei', 'unreal.bike', 'unreal.forest'}:
-                    roots.add(content_root / 'Japan' / 'Assets')
-                roots = {root for root in roots if not any(other != root and other in root.parents for other in roots)}
-                if roots and step.candidate_scope is None:
-                    step.candidate_scope = CandidateScope(directories=tuple(sorted(roots)))
-        if step.name in ('unreal.belmonte', 'unreal.brinecove'):
-            region = step.name.removeprefix('unreal.')
-            namespace = {'belmonte': 'Belmonte', 'brinecove': 'Brinecove'}[region]
-            step.candidate_scope = CandidateScope(
-                files=(ctx.out / region / 'build-report.json', ctx.out / region / 'runtime.json'),
-                directories=(GAME / 'unreal' / 'Content' / namespace / 'Meshes',))
-        # Shorelines preserve natural cover from the committed railway geometry.
-        rail_line = ASSETS / 'vehicles' / 'belmonte-train' / 'line.json'
-        if WORLD / 'shorelines.py' in step.inputs and rail_line not in step.inputs:
-            step.inputs.append(rail_line)
-        # Scripts that import placement validate the raw geometry themselves. Its cutoff
-        # covers their complete consumed landform, site and spawn values, after validating
-        # current source provenance; render-only changes can therefore leave them current.
-        if (craterpark_v4.selected() and REGIONS / 'craterpark' / 'placement.py' in step.inputs
-                and step.name not in ('world.craterpark_geometry', 'world.craterpark', 'world.craterpark_layout')
-                and 'world.craterpark_layout' not in step.needs):
-            step.needs.append('world.craterpark_layout')
-        if SCRIPTS / 'import_village.py' in step.inputs and SCRIPTS / 'mesh_import.py' not in step.inputs:
-            step.inputs.append(SCRIPTS / 'mesh_import.py')
-        if step.name in ('unreal.forest', 'unreal.treehouse', 'unreal.see_through'):
-            step.reads.append('materials.shared')
-    identity = _load_helper_module('yorimichi_network_identity', GAME / 'network_identity.py')
-    content = GAME / 'unreal' / 'Content'
-    policy = _load_helper_module('yorimichi_content_policy', GAME / 'content_policy.py')
-    result.append(Step('data.content', [Call('archive_retired_content', policy.archive)],
-                       inputs=[GAME / 'content_policy.py'],
-                       deferred_inputs=[DeferredInputs(
-                           'music-selectors', music_selector_members,
-                           (os.environ.get('YORIMICHI_MUSIC_CATEGORIES', ''),
-                            os.environ.get('YORIMICHI_MUSIC_STYLES', ''),
-                            os.environ.get('YORIMICHI_MUSIC_GROUPS', ''),
-                            os.environ.get('YORIMICHI_MUSIC_LIMIT', '0'),
-                            policy.music_enabled()),
-                           support=(GAME / 'build.py',))],
-                       needs=[s.name for s in result if s.name.startswith('unreal.') and not s.explicit] + ['data.stage'],
-                       outputs=[ctx.out / 'runtime-content.json'],
-                       verify=lambda: not any(policy.retired(content)),
-                       about='archive retired generated imports before multiplayer identity and cooking'))
-    result.append(Step('data.network', [Call('network_identity', identity.stage)],
-                       inputs=[GAME / 'network_identity.py', ctx.uproject],
-                       deferred_inputs=[DeferredInputs('content', identity.content_files, (content,),
-                                                       support=(GAME / 'network_identity.py',)), native_source_inputs()],
-                       needs=[s.name for s in result if s.name.startswith('unreal.') and not s.explicit] + ['data.stage', 'data.content'],
-                       outputs=[content / 'Data/Network/session.json'],
-                       about='matching multiplayer code, imported assets and staged gameplay data'))
-    declare_owned_content(result)
-    return result + [cook_step(ctx, result), package_step(ctx, result)]
+    from atelier.build_v2.legacy_qualification import diagnostic_phase
+    with diagnostic_phase('recipe.steps'):
+        with diagnostic_phase('recipe.ferry'):
+            ferry = ferry_steps(ctx)
+        with diagnostic_phase('recipe.gondola'):
+            gondola = gondola_steps(ctx)
+        with diagnostic_phase('recipe.world'):
+            result = world_steps(ctx)
+        with diagnostic_phase('recipe.character'):
+            result = result + character_steps(ctx)
+        with diagnostic_phase('recipe.sound'):
+            result = result + sound_effect_steps(ctx)
+        result = result + [step for step in ferry if not step.name.startswith('unreal.')]
+        result = result + [step for step in gondola if not step.name.startswith('unreal.')]
+        with diagnostic_phase('recipe.unreal'):
+            result = result + unreal_steps(ctx)
+        with diagnostic_phase('recipe.staging'):
+            result = result + staging_steps(ctx)
+        with diagnostic_phase('recipe.adventure'):
+            result = result + adventure_steps(ctx.out)
+        with diagnostic_phase('recipe.hippodrome'):
+            result = result + hippodrome_steps(ctx)
+        with diagnostic_phase('recipe.belmonte'):
+            result = result + belmonte_steps(ctx.out)[3:]
+        with diagnostic_phase('recipe.brinecove'):
+            result = result + brinecove_steps(ctx.out)[2:]
+        result = result + [step for step in ferry if step.name.startswith('unreal.')]
+        result = result + [step for step in gondola if step.name.startswith('unreal.')]
+        with diagnostic_phase('recipe.fit'):
+            result += fit_steps(ctx.out, result)
+        with diagnostic_phase('recipe.pawn'):
+            result += pawn_steps(result)
+        with diagnostic_phase('recipe.order'):
+            # A step layered on the world brings the volcano with it: a targeted build that reimports the world reimports it too.
+            for step in result:
+                if 'unreal.world' in step.needs + step.after and step.name != 'unreal.north':
+                    step.after.append('unreal.north')
+        with diagnostic_phase('recipe.enrich'):
+            # world.layout is a cutoff step, and the scripts behind it and its dependents import across regions (the volcano
+            # reads Belmonte's terrain): each such step also hashes every module its scripts import.
+            scanner = build_inputs.ImportScanner()
+            for step in result:
+                for command in step.commands:
+                    if isinstance(command, Blender):
+                        # Exporter implementation bytes belong only to mesh-export actions.
+                        fbx_helper = paths.STUDIO / 'atelier' / 'blender' / 'fbx.py'
+                        if fbx_helper in scanner.local_imports(command.script):
+                            step.inputs += [path for path in (fbx_helper.parent / '__init__.py', fbx_helper)
+                                            if path not in step.inputs]
+                    if isinstance(command, (Python, Blender)) and WORLD in Path(command.script).parents:
+                        step.inputs += [f for f in local_imports(command.script, (WORLD, REGIONS), scanner) if f not in step.inputs]
+                if TREEHOUSE/'layout.py' in step.inputs and any(isinstance(command,(Python,Blender)) for command in step.commands):
+                    if 'treehouse.canopy_dimensions' not in step.reads:step.reads.append('treehouse.canopy_dimensions')
+                # Native geometry reuse hashes its complete native-only source closure.
+                for command in step.commands:
+                    if not isinstance(command, UnrealScript):
+                        continue
+                    code = scanner.local_imports(command.script, (SCRIPTS, WORLD, REGIONS))
+                    if any(_mentions_import_village(file) for file in code):
+                        code = sorted(set(code + scanner.local_imports(SCRIPTS / 'import_village.py', (SCRIPTS, WORLD))))
+                    common_mesh = SCRIPTS / 'mesh_import.py' in code
+                    native_reuse = paths.STUDIO / 'atelier' / 'unreal_mesh_reuse.py' in code
+                    if common_mesh or native_reuse:
+                        step.inputs += [file for file in code if file not in step.inputs]
+                    if common_mesh:
+                        # Candidate staging is read-only metadata. Package adoption remains
+                        # per mesh, with current source/options/native validation.
+                        content_root = GAME / 'unreal' / 'Content'
+                        roots = {Path(output).parent for output in step.outputs
+                                 if Path(output).suffix == '.uasset' and Path(output).is_relative_to(content_root)}
+                        if step.name in {'unreal.world', 'unreal.north', 'unreal.southwest', 'unreal.kei', 'unreal.bike', 'unreal.forest'}:
+                            roots.add(content_root / 'Japan' / 'Assets')
+                        roots = {root for root in roots if not any(other != root and other in root.parents for other in roots)}
+                        if roots and step.candidate_scope is None:
+                            step.candidate_scope = CandidateScope(directories=tuple(sorted(roots)))
+                if step.name in ('unreal.belmonte', 'unreal.brinecove'):
+                    region = step.name.removeprefix('unreal.')
+                    namespace = {'belmonte': 'Belmonte', 'brinecove': 'Brinecove'}[region]
+                    step.candidate_scope = CandidateScope(
+                        files=(ctx.out / region / 'build-report.json', ctx.out / region / 'runtime.json'),
+                        directories=(GAME / 'unreal' / 'Content' / namespace / 'Meshes',))
+                # Shorelines preserve natural cover from the committed railway geometry.
+                rail_line = ASSETS / 'vehicles' / 'belmonte-train' / 'line.json'
+                if WORLD / 'shorelines.py' in step.inputs and rail_line not in step.inputs:
+                    step.inputs.append(rail_line)
+                # Scripts that import placement validate the raw geometry themselves. Its cutoff
+                # covers their complete consumed landform, site and spawn values, after validating
+                # current source provenance; render-only changes can therefore leave them current.
+                if (craterpark_v4.selected() and REGIONS / 'craterpark' / 'placement.py' in step.inputs
+                        and step.name not in ('world.craterpark_geometry', 'world.craterpark', 'world.craterpark_layout')
+                        and 'world.craterpark_layout' not in step.needs):
+                    step.needs.append('world.craterpark_layout')
+                if SCRIPTS / 'import_village.py' in step.inputs and SCRIPTS / 'mesh_import.py' not in step.inputs:
+                    step.inputs.append(SCRIPTS / 'mesh_import.py')
+                if step.name in ('unreal.forest', 'unreal.treehouse', 'unreal.see_through'):
+                    step.reads.append('materials.shared')
+        with diagnostic_phase('recipe.content'):
+            identity = _load_helper_module('yorimichi_network_identity', GAME / 'network_identity.py')
+            content = GAME / 'unreal' / 'Content'
+            policy = _load_helper_module('yorimichi_content_policy', GAME / 'content_policy.py')
+            result.append(Step('data.content', [Call('archive_retired_content', policy.archive)],
+                               inputs=[GAME / 'content_policy.py'],
+                               deferred_inputs=[DeferredInputs(
+                                   'music-selectors', music_selector_members,
+                                   (os.environ.get('YORIMICHI_MUSIC_CATEGORIES', ''),
+                                    os.environ.get('YORIMICHI_MUSIC_STYLES', ''),
+                                    os.environ.get('YORIMICHI_MUSIC_GROUPS', ''),
+                                    os.environ.get('YORIMICHI_MUSIC_LIMIT', '0'),
+                                    policy.music_enabled()),
+                                   support=(GAME / 'build.py',))],
+                               needs=[s.name for s in result if s.name.startswith('unreal.') and not s.explicit] + ['data.stage'],
+                               outputs=[ctx.out / 'runtime-content.json'],
+                               verify=lambda: not any(policy.retired(content)),
+                               about='archive retired generated imports before multiplayer identity and cooking'))
+            result.append(Step('data.network', [Call('network_identity', identity.stage)],
+                               inputs=[GAME / 'network_identity.py', ctx.uproject],
+                               deferred_inputs=[DeferredInputs('content', identity.content_files, (content,),
+                                                               support=(GAME / 'network_identity.py',)), native_source_inputs()],
+                               needs=[s.name for s in result if s.name.startswith('unreal.') and not s.explicit] + ['data.stage', 'data.content'],
+                               outputs=[content / 'Data/Network/session.json'],
+                               about='matching multiplayer code, imported assets and staged gameplay data'))
+        with diagnostic_phase('recipe.ownership'):
+            declare_owned_content(result)
+        with diagnostic_phase('recipe.return'):
+            return result + [cook_step(ctx, result), package_step(ctx, result)]
 
 
 # Unreal imports whose saved packages (LogSavePackage, across every recorded run) land only in Content folders that
