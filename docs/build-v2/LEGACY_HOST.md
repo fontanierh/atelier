@@ -76,3 +76,10 @@ stop at overall deadline minus the reserved cleanup interval; shutdown keeps the
 Linux sanitizes the complete child FD table using CLOEXEC-only close_range. Darwin inventories
 actual descriptors independent of soft limits and relies on this private standalone single-thread
 source callgraph; no arbitrary threaded embedding or atomic Darwin std-pipe claim is made.
+
+This is a correctness boundary for the exact trusted frozen provider, not a forgery-proof boundary
+against a malicious same-UID scheduler that can fabricate files or write the private pipe. On any
+partial-frame/transport ambiguity the host closes permission immediately; it sends no replacement
+Refused frame that could consume the cleanup reserve. A previously validated complete covering
+directory inventory proves an old covered child either present or absent, without inventing a
+contradictory absent child inside that inventory.

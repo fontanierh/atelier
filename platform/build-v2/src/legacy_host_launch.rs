@@ -11,7 +11,7 @@ use std::io::{self, Read};
 use std::os::fd::{AsRawFd, FromRawFd, RawFd};
 use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
 use std::os::unix::process::CommandExt;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::{Child, Command, ExitStatus, Stdio};
 use std::time::Duration;
 
@@ -793,8 +793,8 @@ impl SchedulerChild {
     pub(crate) fn identity(&self) -> &ProcessIdentity {
         &self.identity
     }
-    pub(crate) fn close_permission_channel(&mut self) {
-        self.replies.take();
+    pub(crate) fn begin_drain(&mut self, cleanup_budget_ns: u64) -> Deadline {
+        begin_permission_drain(&mut self.replies, self.deadline, cleanup_budget_ns)
     }
     pub(crate) fn verify_custody(&self) -> io::Result<()> {
         self.custody.verify_writer()
@@ -836,6 +836,17 @@ impl Drop for SchedulerChild {
         }
     }
 }
+/// On ambiguity no second frame can repair a partial ACK. Close permission FIRST,
+/// then start actual reserved shutdown; never spend cleanup time draining this pipe.
+fn begin_permission_drain(
+    pipe: &mut Option<std::io::PipeWriter>,
+    overall: Deadline,
+    cleanup_budget_ns: u64,
+) -> Deadline {
+    pipe.take();
+    overall.cap(cleanup_budget_ns).unwrap_or(overall)
+}
+
 /// Deadline-bounded exact pipe reads/writes; no reader thread outlives the authority scope.
 pub(crate) fn read_exact(fd: RawFd, bytes: &mut [u8], deadline: Deadline) -> io::Result<()> {
     let mut offset = 0;
@@ -945,6 +956,7 @@ pub(crate) fn write_all(fd: RawFd, bytes: &[u8], deadline: Deadline) -> io::Resu
 mod tests {
     use super::*;
     use crate::checkout_locks::CheckoutLocks;
+    use std::path::PathBuf;
     use std::sync::atomic::{AtomicU64, Ordering};
     static NEXT: AtomicU64 = AtomicU64::new(0);
     fn root() -> PathBuf {
@@ -1230,5 +1242,50 @@ mod tests {
         assert!(write_all(writer.as_raw_fd(), &[0u8; 65536], deadline).is_err());
         assert!(deadline.expired());
         drop(reader);
+    }
+    #[test]
+    fn partial_ack_closes_permission_before_reserved_drain_without_second_frame() {
+        let (mut reader, writer) = std::io::pipe().unwrap();
+        let flags = unsafe { libc::fcntl(writer.as_raw_fd(), libc::F_GETFL) };
+        assert_eq!(
+            unsafe { libc::fcntl(writer.as_raw_fd(), libc::F_SETFL, flags | libc::O_NONBLOCK) },
+            0
+        );
+        let fill = [1u8; 4096];
+        let mut queued = 0usize;
+        loop {
+            let n =
+                unsafe { libc::write(writer.as_raw_fd(), fill.as_ptr() as *const _, fill.len()) };
+            if n < 0 {
+                assert_eq!(io::Error::last_os_error().kind(), io::ErrorKind::WouldBlock);
+                break;
+            }
+            queued += n as usize;
+        }
+        let mut room = [0u8; 4096];
+        reader.read_exact(&mut room).unwrap();
+        queued -= room.len();
+        let overall = Deadline::after(Duration::from_secs(5));
+        let work = overall.cap(20_000_000).unwrap();
+        let mut permission = Some(writer);
+        // Actual maximum frame plus length header: at least part reaches the stopped
+        // reader, then the OWNED nonblocking write hits its WORK deadline.
+        assert!(
+            write_all(
+                permission.as_ref().unwrap().as_raw_fd(),
+                &[2u8; 65540],
+                work
+            )
+            .is_err()
+        );
+        assert!(work.expired());
+        let drain = begin_permission_drain(&mut permission, overall, 4_000_000_000);
+        assert!(permission.is_none());
+        assert!(drain.remaining().is_ok());
+        let mut retained = Vec::new();
+        reader.read_to_end(&mut retained).unwrap();
+        assert!(retained.len() > queued);
+        assert!(retained.len() < queued + 65540);
+        assert!(overall.remaining().is_ok());
     }
 }
