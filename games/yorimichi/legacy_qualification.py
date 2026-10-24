@@ -75,6 +75,7 @@ def discover(manifest, request, *, captured_files=None):
         CapturedCode, IdentityBinding, UnsupportedOrigin, captured_recipe_imports, verify_callable,
     )
     import sys
+    import importlib
     if getattr(sys, '_atelier_module_cache', None) or getattr(sys, '_atelier_json_cache', None):
         raise UnsupportedOrigin('preloaded recipe memo has no fresh captured origin')
     checkout = Path(manifest['checkout'])
@@ -94,7 +95,7 @@ def discover(manifest, request, *, captured_files=None):
                              if source.filename == str(checkout / 'platform/studio/atelier/build.py'))
         verify_callable(build.load_recipe, recipe_loader, qualname='load_recipe',
                         namespace=build.__dict__, globals_={
-                            'paths': IdentityBinding(paths), 'importlib': IdentityBinding(build.importlib)})
+                            'paths': IdentityBinding(paths), 'importlib': IdentityBinding(importlib)})
         with paths.captured_declaration('yorimichi'):
             steps = build.load_recipe('yorimichi').steps(declaration_context('yorimichi'))
             build.check_declarations(steps)
