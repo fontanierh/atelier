@@ -17,6 +17,7 @@ from .controller_client import (
     ensure_controller, verified_controller, write_control,
 )
 from .legacy_client import CLOCK_ID, host_budgets, scheduler_request
+from .legacy_qualification import diagnostic_phase
 
 CLASSIFICATION_FILES = (
     'platform/studio/atelier/__init__.py', 'platform/studio/atelier/paths.py',
@@ -37,13 +38,15 @@ def controller_names(game, checkout):
     from .legacy_qualification import CapturedCode, captured_recipe_imports
     declaration = f'games/{game}/build_v2.py'
     try:
-        source = capture_named_sources(checkout, (declaration,))
+        with diagnostic_phase('classification.capture'):
+            source = capture_named_sources(checkout, (declaration,))
     except FileNotFoundError:
         return ()
-    dependencies = capture_named_sources(checkout, CLASSIFICATION_FILES)
+    with diagnostic_phase('classification.capture'):
+        dependencies = capture_named_sources(checkout, CLASSIFICATION_FILES)
     codes = [CapturedCode(str(checkout / name), raw)
              for name, raw in (*source.files, *dependencies.files)]
-    with captured_recipe_imports(codes, checkout=checkout):
+    with diagnostic_phase('classification.import'), captured_recipe_imports(codes, checkout=checkout):
         from atelier import paths as declaration_paths
         from atelier.build_v2.controller_entry import discover
         with declaration_paths.captured_declaration(game):
@@ -56,14 +59,15 @@ def managed(game, wanted):
     Exact controller-only requests retain their existing transactional route. A legacy
     selector cannot erase management or an old epoch, and never dispatches a course.
     """
-    checkout = _checkout()
-    declarations = controller_names(game, checkout)
-    if wanted and declarations and all(name in declarations for name in wanted):
-        return False
-    # Cargo/test listings or a helper distribution alone are not saved checkout
-    # ownership. The authoritative B3 metadata root includes lock-only management.
-    state = checkout / 'build/build-v2/install'
-    return bool(declarations) or state.exists() or state.is_symlink()
+    with diagnostic_phase('managed'):
+        checkout = _checkout()
+        declarations = controller_names(game, checkout)
+        if wanted and declarations and all(name in declarations for name in wanted):
+            return False
+        # Cargo/test listings or a helper distribution alone are not saved checkout
+        # ownership. The authoritative B3 metadata root includes lock-only management.
+        state = checkout / 'build/build-v2/install'
+        return bool(declarations) or state.exists() or state.is_symlink()
 
 
 def prepare_discovery(game, wanted, *, verify=False, max_heavy_commands=None, fail_fast=False):
@@ -71,20 +75,24 @@ def prepare_discovery(game, wanted, *, verify=False, max_heavy_commands=None, fa
     from .legacy_qualification import CapturedCode, captured_spec
     checkout = _checkout()
     name = f'games/{game}/legacy_qualification.py'
-    initial = capture_named_sources(checkout, (name,))
-    spec = captured_spec('_atelier_original_discovery_profile',
-                         CapturedCode(str(checkout / name), dict(initial.files)[name]))
-    profile = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(profile)
-    names = profile.source_names(checkout)
-    captured = capture_named_sources(checkout, names)
+    with diagnostic_phase('entry.profile'):
+        initial = capture_named_sources(checkout, (name,))
+        spec = captured_spec('_atelier_original_discovery_profile',
+                             CapturedCode(str(checkout / name), dict(initial.files)[name]))
+        profile = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(profile)
+    with diagnostic_phase('entry.names'):
+        names = profile.source_names(checkout)
+    with diagnostic_phase('entry.capture'):
+        captured = capture_named_sources(checkout, names)
     if dict(captured.files).get(name) != dict(initial.files)[name]:
         raise ValueError('game discovery profile changed during capture')
     request = scheduler_request(game, wanted, verify=verify,
                                 max_heavy_commands=max_heavy_commands, fail_fast=fail_fast)
     manifest = {'checkout': str(checkout), 'issuer_digest': captured.digest,
                 'python_context': original_python_context()}
-    profile.discover(manifest, request, captured_files=captured.files)
+    with diagnostic_phase('entry.preflight'):
+        profile.discover(manifest, request, captured_files=captured.files)
     return captured
 
 
@@ -132,21 +140,23 @@ def execute(game, wanted, *, discovery_source, verify=False, max_heavy_commands=
     build_root = Path(operational['build_root']) if operational['build_root'] else checkout / 'build'
     if build_root != checkout / 'build':
         raise ValueError('managed discovery supports only the anchored default build root')
-    context = original_python_context()
-    interpreter_role = Path(os.path.abspath(sys.executable))
-    interpreter = interpreter_role.resolve(strict=True)
-    image = _read_at(interpreter.parent, interpreter.name, MAX_BINARY_BYTES)
-    captured = capture_controller(checkout)
-    if not isinstance(discovery_source, ControllerSource):
-        raise ValueError('managed startup requires the original captured discovery source')
-    issuer = discovery_source
-    source_names = tuple(name for name, _ in issuer.files)
-    if capture_named_sources(checkout, source_names).digest != issuer.digest:
-        raise ValueError('game discovery source changed after original global preflight')
-    if f'games/{game}/legacy_qualification.py' not in dict(issuer.files):
-        raise ValueError('managed entry has no captured fixed game issuer')
-    budgets = host_budgets(enclosing_deadline_ns=enclosing_deadline_ns)
-    helper = ensure_controller(checkout, build_root / 'build-v2/controller/helpers', echo=echo)
+    with diagnostic_phase('entry.capture'):
+        context = original_python_context()
+        interpreter_role = Path(os.path.abspath(sys.executable))
+        interpreter = interpreter_role.resolve(strict=True)
+        image = _read_at(interpreter.parent, interpreter.name, MAX_BINARY_BYTES)
+        captured = capture_controller(checkout)
+        if not isinstance(discovery_source, ControllerSource):
+            raise ValueError('managed startup requires the original captured discovery source')
+        issuer = discovery_source
+        source_names = tuple(name for name, _ in issuer.files)
+        if capture_named_sources(checkout, source_names).digest != issuer.digest:
+            raise ValueError('game discovery source changed after original global preflight')
+        if f'games/{game}/legacy_qualification.py' not in dict(issuer.files):
+            raise ValueError('managed entry has no captured fixed game issuer')
+        budgets = host_budgets(enclosing_deadline_ns=enclosing_deadline_ns)
+    with diagnostic_phase('entry.helper'):
+        helper = ensure_controller(checkout, build_root / 'build-v2/controller/helpers', echo=echo)
     if helper.source != captured.digest or capture_controller(checkout).digest != captured.digest:
         raise ValueError('controller source changed during managed startup')
     if capture_named_sources(checkout, source_names).digest != issuer.digest:
@@ -184,10 +194,12 @@ def execute(game, wanted, *, discovery_source, verify=False, max_heavy_commands=
     descriptor = os.open(control / 'config.json', os.O_RDONLY | os.O_NOFOLLOW)
     try:
         with verified_controller(helper) as binary, termination_cleanup():
-            process = subprocess.Popen([str(binary), '--legacy-config-fd', str(descriptor)],
-                                       pass_fds=(descriptor,), cwd=checkout)
+            with diagnostic_phase('entry.spawn'):
+                process = subprocess.Popen([str(binary), '--legacy-config-fd', str(descriptor)],
+                                           pass_fds=(descriptor,), cwd=checkout)
             try:
-                code = process.wait()
+                with diagnostic_phase('entry.wait'):
+                    code = process.wait()
             except BaseException:
                 try:
                     if process.poll() is None:

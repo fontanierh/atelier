@@ -80,16 +80,17 @@ def discover(manifest, request, *, captured_files=None):
     """Enter actual load_recipe/steps/Graph over the exact named captured providers."""
     from atelier.build_v2.controller_client import _read_at, _captured_source
     from atelier.build_v2.legacy_qualification import (
-        CapturedCode, IdentityBinding, captured_recipe_imports, verify_callable,
+        CapturedCode, IdentityBinding, captured_recipe_imports, verify_callable, diagnostic_phase,
     )
     import importlib
     checkout = Path(manifest['checkout'])
-    files = (list(captured_files) if captured_files is not None else
-             [(name, _read_at(manifest['issuer_root'], name, 8 * 1024 * 1024))
-              for name in manifest['issuer_files']])
-    if _captured_source(files).digest != manifest['issuer_digest']:
-        raise ValueError('captured recipe issuer changed')
-    sources = [CapturedCode(str(checkout / name), raw) for name, raw in files if name.endswith('.py')]
+    with diagnostic_phase('discovery.bytes'):
+        files = (list(captured_files) if captured_files is not None else
+                 [(name, _read_at(manifest['issuer_root'], name, 8 * 1024 * 1024))
+                  for name in manifest['issuer_files']])
+        if _captured_source(files).digest != manifest['issuer_digest']:
+            raise ValueError('captured recipe issuer changed')
+        sources = [CapturedCode(str(checkout / name), raw) for name, raw in files if name.endswith('.py')]
     with captured_recipe_imports(sources, checkout=checkout,
                                  platform_roots=manifest['python_context']['platform_roots']):
         from atelier import build, build_products, paths
@@ -104,10 +105,15 @@ def discover(manifest, request, *, captured_files=None):
                             'paths': IdentityBinding(paths), 'importlib': IdentityBinding(importlib)})
         with paths.captured_declaration('yorimichi'):
             require_complete(paths.build_root() / 'yorimichi', game='yorimichi')
-            steps = build.load_recipe('yorimichi').steps(declaration_context('yorimichi'))
-            build.check_declarations(steps)
-            graph = build_products.Graph(steps)
-            selected = graph.select(request['wanted'])
+            with diagnostic_phase('discovery.load'):
+                recipe = build.load_recipe('yorimichi')
+            with diagnostic_phase('discovery.steps'):
+                steps = recipe.steps(declaration_context('yorimichi'))
+            with diagnostic_phase('discovery.graph'):
+                build.check_declarations(steps)
+                graph = build_products.Graph(steps)
+            with diagnostic_phase('discovery.select'):
+                selected = graph.select(request['wanted'])
     return selected
 
 

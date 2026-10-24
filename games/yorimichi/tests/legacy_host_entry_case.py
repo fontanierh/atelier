@@ -14,7 +14,8 @@ import signal
 import time
 
 from atelier.build_v2.controller_client import (
-    ControllerExecutable, _private_root, capture_controller, verified_controller, write_control,
+    ControllerExecutable, _private_root, _read_at, _open_root, _json,
+    capture_controller, verified_controller, write_control,
 )
 from atelier.paths import REPO
 from atelier.harness.capacity_protocol import boot_id
@@ -25,6 +26,52 @@ from atelier.harness.safety.tree_guard import OwnedTree
 def signal_readonly_owned(tree, number, *, send=os.kill):
     """Use the existing fresh shared-exclusion-aware target policy, never a group sweep."""
     tree.stop_owned(send=lambda pid, ignored: send(pid, number))
+
+
+def retain_control_diagnostics(checkout, evidence):
+    """Fixture-only bounded evidence, never host/task/cleanup authority or a scope search."""
+    result = {'locator': 'unknown', 'retained': []}
+    try:
+        stdout = _read_at(evidence, 'stdout.log', 256 * 1024, owned=True).decode()
+        locators = [line.removeprefix('Managed legacy authority control: ')
+                    for line in stdout.splitlines() if line.startswith('Managed legacy authority control: ')]
+        if len(locators) != 1:
+            return result
+        control = Path(locators[0])
+        if (control.parent != checkout / 'build/build-v2/legacy-host' or len(control.name) != 32
+                or any(char not in '0123456789abcdef' for char in control.name)):
+            return result
+        result['locator'] = 'bound'
+        for name, bound in (('startup.json', 2 * 1024 * 1024),
+                            ('request.json', 2 * 1024 * 1024), ('scheduler.log', 256 * 1024)):
+            try:
+                raw = _read_at(control, name, bound, owned=True)
+                if name == 'startup.json':
+                    startup = _json(raw)
+                    # Original identity metadata only: never copy operational environment,
+                    # paths, source capsules or request/settings values into CI evidence.
+                    fields = ('version', 'nonce', 'source_digest', 'issuer_digest', 'host',
+                              'root', 'locks', 'clock_domain', 'deadline_ns', 'work_deadline_ns')
+                    write_control(evidence, 'failed-control-binding.json',
+                                  {key: startup[key] for key in fields if key in startup})
+                elif name == 'request.json':
+                    write_control(evidence, 'failed-request-binding.json',
+                                  {'size': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()})
+                else:
+                    root = _open_root(evidence, private=True)
+                    try:
+                        fd = os.open('failed-scheduler.log', os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                                     0o600, dir_fd=root)
+                        with os.fdopen(fd, 'wb') as copy:
+                            copy.write(raw)
+                    finally:
+                        os.close(root)
+                result['retained'].append(name)
+            except Exception:
+                result['unknown_member'] = True
+    except Exception:
+        result['locator'] = 'unknown'
+    return result
 
 
 def observed_call(arguments, environment, evidence):
@@ -132,8 +179,27 @@ def main(binary):
     owned_course = REPO / 'games/yorimichi/unreal/Content/Data/racing/belmonte_courses.json'
     assert not owned_course.exists(), 'case requires the fresh hosted checkout output'
     evidence = _private_root(REPO / 'build/build-v2/legacy-host-entry-test')
-    code, tree, boot = observed_call(
-        [str(REPO / '.venv/bin/atelier'), 'build', 'yorimichi', 'data.stage'], environment, evidence)
+    caller_started = time.clock_gettime_ns(time.CLOCK_MONOTONIC)
+    outcome = 'raised'
+    try:
+        code, tree, boot = observed_call(
+            [str(REPO / '.venv/bin/atelier'), 'build', 'yorimichi', 'data.stage'], environment, evidence)
+        outcome = 'returned'
+    finally:
+        # observed_call's existing finally has already recorded owned cleanup observations.
+        # Missing/uncertain control data stays diagnostic Unknown, never passing evidence.
+        retained = retain_control_diagnostics(REPO, evidence)
+        try:
+            write_control(evidence, 'fixture-call-observation.json', {
+                'clock_domain': 'posix-clock-monotonic-v1', 'started_ns': caller_started,
+                'ended_ns': time.clock_gettime_ns(time.CLOCK_MONOTONIC),
+                'outcome': outcome, 'control_diagnostics': retained,
+            })
+        except Exception:
+            try:
+                print('HOSTED_DIAGNOSTIC_NOT_RETAINED', file=sys.stderr, flush=True)
+            except Exception:
+                pass
     stdout = (evidence / 'stdout.log').read_text()
     stderr = (evidence / 'stderr.log').read_text()
     sys.stdout.write(stdout)

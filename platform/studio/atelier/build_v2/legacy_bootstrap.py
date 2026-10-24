@@ -174,87 +174,89 @@ def main(arguments=None):
             AuthorityLost, LegacyChannel, LegacyClient, _fields, _identity, _integer,
             CLOCK_ID, authority_now_ns, validate_scheduler_request,
         )
-        from atelier.build_v2.legacy_qualification import CapturedCode, captured_spec
+        from atelier.build_v2.legacy_qualification import CapturedCode, captured_spec, diagnostic_phase
         from atelier.harness.capacity_protocol import boot_id, process_start
 
-        manifest_path = Path(startup_path)
-        manifest = _json(_read_at(manifest_path.parent, manifest_path.name, MAX_CONTROL_BYTES, owned=True))
-        _fields(manifest, ('version', 'nonce', 'selection', 'checkout', 'output', 'distribution',
-                          'source_digest', 'issuer_digest', 'issuer_root', 'issuer_profile',
-                          'host', 'root', 'locks', 'deadline_ns', 'work_deadline_ns', 'clock_domain', 'scheduler_request',
-                          'interpreter', 'interpreter_digest', 'interpreter_role', 'python_context',
-                          'operational_environment', 'issuer_files'))
-        if (type(manifest['version']) is not int or manifest['version'] != 2
-                or manifest['clock_domain'] != CLOCK_ID):
-            raise BootstrapRefused('unsupported private startup version')
-        restore_python_context(manifest)
-        issuer_files = manifest['issuer_files']
-        validate_issuer_files(issuer_files)
-        for field in ('checkout', 'output', 'distribution', 'issuer_root'):
-            value = manifest[field]
-            if type(value) is not str or not Path(value).is_absolute() or str(Path(value).resolve(strict=True)) != value:
-                raise BootstrapRefused('private startup root is not canonical')
-        checkout = Path(manifest['checkout'])
-        if Path(manifest['distribution']) != distribution:
-            raise BootstrapRefused('private startup distribution differs from executed bootstrap')
-        nonce = manifest['nonce']
-        if type(nonce) is not str or len(nonce) != 32 or any(c not in '0123456789abcdef' for c in nonce):
-            raise BootstrapRefused('private startup nonce is invalid')
-        control = checkout / 'build/build-v2/legacy-host' / nonce
-        if manifest_path != control / 'startup.json':
-            raise BootstrapRefused('private startup manifest has a different invocation scope')
-        _fields(manifest['root'], ('device', 'inode'))
-        for value in manifest['root'].values():
-            _integer(value, 2**64 - 1)
-        root_fd = _open_root(checkout)
-        try:
-            root = os.fstat(root_fd)
-        finally:
-            os.close(root_fd)
-        if manifest['root'] != {'device': root.st_dev, 'inode': root.st_ino}:
-            raise BootstrapRefused('private startup checkout identity changed')
-        expected_locks = [{'role': role, 'device': device, 'inode': inode}
-                          for role, device, inode in lock_observations if role in ROLES[2:]]
-        if type(manifest['locks']) is not list or len(manifest['locks']) != 3:
-            raise BootstrapRefused('private startup custody shape differs')
-        for binding in manifest['locks']:
-            _fields(binding, ('role', 'device', 'inode'))
-            _integer(binding['device'], 2**64 - 1)
-            _integer(binding['inode'], 2**64 - 1)
-        if manifest['locks'] != expected_locks:
-            raise BootstrapRefused('private startup custody observations differ')
-        request_binding = manifest['scheduler_request']
-        _fields(request_binding, ('path', 'digest', 'size'))
-        if (request_binding['path'] != f'build/build-v2/legacy-host/{nonce}/request.json'
-                or type(request_binding['size']) is not int
-                or not 0 < request_binding['size'] <= MAX_CONTROL_BYTES):
-            raise BootstrapRefused('original scheduler request has a different invocation scope')
-        raw_request = _read_at(control, 'request.json', MAX_CONTROL_BYTES, owned=True)
-        if (len(raw_request) != request_binding['size']
-                or hashlib.sha256(raw_request).hexdigest() != request_binding['digest']):
-            raise BootstrapRefused('original scheduler request changed')
-        request = validate_scheduler_request(_json(raw_request))
-        _identity(manifest['host'])
-        boot = boot_id()
-        def identity(pid):
-            return {'pid': pid, 'boot': boot, 'started': str(process_start(pid))}
-        actual_parent = identity(os.getppid())
-        if actual_parent != manifest['host']:
-            raise BootstrapRefused('original authority parent identity changed')
-        deadline = manifest['deadline_ns']
-        work_deadline = manifest['work_deadline_ns']
-        if (type(deadline) is not int or type(work_deadline) is not int
-                or not authority_now_ns() < work_deadline < deadline):
-            raise BootstrapRefused('private authority deadline expired')
-        hello = {'version': 2, 'type': 'hello', 'nonce': nonce, 'process': identity(os.getpid()),
-                 'clock_domain': CLOCK_ID,
-                 'parent': actual_parent, 'source_digest': manifest['source_digest'],
-                 'issuer_digest': manifest['issuer_digest'], 'root': manifest['root'],
-                 'locks': expected_locks}
+        with diagnostic_phase('bootstrap.context'):
+            manifest_path = Path(startup_path)
+            manifest = _json(_read_at(manifest_path.parent, manifest_path.name, MAX_CONTROL_BYTES, owned=True))
+            _fields(manifest, ('version', 'nonce', 'selection', 'checkout', 'output', 'distribution',
+                              'source_digest', 'issuer_digest', 'issuer_root', 'issuer_profile',
+                              'host', 'root', 'locks', 'deadline_ns', 'work_deadline_ns', 'clock_domain', 'scheduler_request',
+                              'interpreter', 'interpreter_digest', 'interpreter_role', 'python_context',
+                              'operational_environment', 'issuer_files'))
+            if (type(manifest['version']) is not int or manifest['version'] != 2
+                    or manifest['clock_domain'] != CLOCK_ID):
+                raise BootstrapRefused('unsupported private startup version')
+            restore_python_context(manifest)
+            issuer_files = manifest['issuer_files']
+            validate_issuer_files(issuer_files)
+            for field in ('checkout', 'output', 'distribution', 'issuer_root'):
+                value = manifest[field]
+                if type(value) is not str or not Path(value).is_absolute() or str(Path(value).resolve(strict=True)) != value:
+                    raise BootstrapRefused('private startup root is not canonical')
+            checkout = Path(manifest['checkout'])
+            if Path(manifest['distribution']) != distribution:
+                raise BootstrapRefused('private startup distribution differs from executed bootstrap')
+            nonce = manifest['nonce']
+            if type(nonce) is not str or len(nonce) != 32 or any(c not in '0123456789abcdef' for c in nonce):
+                raise BootstrapRefused('private startup nonce is invalid')
+            control = checkout / 'build/build-v2/legacy-host' / nonce
+            if manifest_path != control / 'startup.json':
+                raise BootstrapRefused('private startup manifest has a different invocation scope')
+            _fields(manifest['root'], ('device', 'inode'))
+            for value in manifest['root'].values():
+                _integer(value, 2**64 - 1)
+            root_fd = _open_root(checkout)
+            try:
+                root = os.fstat(root_fd)
+            finally:
+                os.close(root_fd)
+            if manifest['root'] != {'device': root.st_dev, 'inode': root.st_ino}:
+                raise BootstrapRefused('private startup checkout identity changed')
+            expected_locks = [{'role': role, 'device': device, 'inode': inode}
+                              for role, device, inode in lock_observations if role in ROLES[2:]]
+            if type(manifest['locks']) is not list or len(manifest['locks']) != 3:
+                raise BootstrapRefused('private startup custody shape differs')
+            for binding in manifest['locks']:
+                _fields(binding, ('role', 'device', 'inode'))
+                _integer(binding['device'], 2**64 - 1)
+                _integer(binding['inode'], 2**64 - 1)
+            if manifest['locks'] != expected_locks:
+                raise BootstrapRefused('private startup custody observations differ')
+            request_binding = manifest['scheduler_request']
+            _fields(request_binding, ('path', 'digest', 'size'))
+            if (request_binding['path'] != f'build/build-v2/legacy-host/{nonce}/request.json'
+                    or type(request_binding['size']) is not int
+                    or not 0 < request_binding['size'] <= MAX_CONTROL_BYTES):
+                raise BootstrapRefused('original scheduler request has a different invocation scope')
+            raw_request = _read_at(control, 'request.json', MAX_CONTROL_BYTES, owned=True)
+            if (len(raw_request) != request_binding['size']
+                    or hashlib.sha256(raw_request).hexdigest() != request_binding['digest']):
+                raise BootstrapRefused('original scheduler request changed')
+            request = validate_scheduler_request(_json(raw_request))
+            _identity(manifest['host'])
+            boot = boot_id()
+            def identity(pid):
+                return {'pid': pid, 'boot': boot, 'started': str(process_start(pid))}
+            actual_parent = identity(os.getppid())
+            if actual_parent != manifest['host']:
+                raise BootstrapRefused('original authority parent identity changed')
+            deadline = manifest['deadline_ns']
+            work_deadline = manifest['work_deadline_ns']
+            if (type(deadline) is not int or type(work_deadline) is not int
+                    or not authority_now_ns() < work_deadline < deadline):
+                raise BootstrapRefused('private authority deadline expired')
+            hello = {'version': 2, 'type': 'hello', 'nonce': nonce, 'process': identity(os.getpid()),
+                     'clock_domain': CLOCK_ID,
+                     'parent': actual_parent, 'source_digest': manifest['source_digest'],
+                     'issuer_digest': manifest['issuer_digest'], 'root': manifest['root'],
+                     'locks': expected_locks}
         channel = LegacyChannel(descriptors['command'], descriptors['reply'], deadline_ns=work_deadline,
                                 clock_domain=manifest['clock_domain'])
-        client = LegacyClient.handshake(channel, hello, expected_host=actual_parent,
-                                       deadline_ns=deadline, work_deadline_ns=work_deadline)
+        with diagnostic_phase('bootstrap.handshake'):
+            client = LegacyClient.handshake(channel, hello, expected_host=actual_parent,
+                                           deadline_ns=deadline, work_deadline_ns=work_deadline)
 
         # This one captured, game-owned provider is the reviewed semantic issuer. It must
         # prepare DiscoveryControl BEFORE importing the recipe or constructing Context.
@@ -268,8 +270,9 @@ def main(arguments=None):
         module = importlib.util.module_from_spec(spec)
         sys.modules[spec.name] = module
         spec.loader.exec_module(module)
-        result = module.run(manifest=manifest, request=request, client=client,
-                            custody={role: descriptors[role] for role in ('build', 'content', 'writer')})
+        with diagnostic_phase('bootstrap.issuer'):
+            result = module.run(manifest=manifest, request=request, client=client,
+                                custody={role: descriptors[role] for role in ('build', 'content', 'writer')})
         if type(result) is not int or result != 0 or not client.finished:
             raise AuthorityLost('legacy scheduler did not verify terminal finalization')
         return 0

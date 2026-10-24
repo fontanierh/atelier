@@ -10,10 +10,12 @@ import importlib.abc
 import importlib.machinery
 import importlib.util
 import math
+import os
 from pathlib import Path, PurePath, PurePosixPath, PureWindowsPath, PosixPath, WindowsPath
 import struct
 import sys
 import types
+import time
 from contextlib import contextmanager
 from .controller_client import MAX_NAMED_ISSUER_FILES
 
@@ -21,6 +23,62 @@ MAX_CODE_BYTES = 8 * 1024 * 1024
 MAX_BINDINGS = 1024
 MAX_DEPTH = 24
 _PATH_TYPES = (PurePosixPath, PureWindowsPath, PosixPath, WindowsPath)
+_DIAGNOSTIC_PHASES = frozenset((
+    'managed', 'classification.capture', 'classification.import',
+    'entry.profile', 'entry.names', 'entry.capture', 'entry.preflight',
+    'entry.helper', 'entry.spawn', 'entry.wait', 'imports.prepare',
+    'imports.execute', 'imports.restore', 'bindings.snapshot', 'bindings.restore',
+    'discovery.bytes', 'discovery.load', 'discovery.steps', 'discovery.graph',
+    'discovery.select', 'bootstrap.context', 'bootstrap.handshake', 'bootstrap.issuer',
+))
+_diagnostic_records = 0
+
+
+def _diagnostic_now():
+    try:
+        return time.clock_gettime_ns(time.CLOCK_MONOTONIC)
+    except Exception:
+        return None
+
+
+def _diagnostic_event(phase, event, started):
+    global _diagnostic_records
+    try:
+        if (type(phase) is not str or phase not in _DIAGNOSTIC_PHASES
+                or type(event) is not str or event not in ('begin', 'returned', 'raised')
+                or _diagnostic_records >= 128 or type(started) is not int):
+            return
+        _diagnostic_records += 1  # Bound attempts too, including failed writes.
+        now = _diagnostic_now()
+        if type(now) is not int:
+            return
+        line = (f'legacy_phase v1 pid={os.getpid()} clock=posix-clock-monotonic-v1 '
+                f'at_ns={now} elapsed_ns={max(0, now - started)} phase={phase} event={event}\n')
+        if len(line.encode('ascii')) <= 384:
+            sys.stderr.write(line)
+            sys.stderr.flush()
+    except Exception:
+        pass  # Diagnostics never replace execution/refusal/cleanup outcomes.
+
+
+@contextmanager
+def diagnostic_phase(phase):
+    """@cc [owner:fontanierh,label:correctness;safety] bounded-legacy-phase-diagnostics
+    Fixed phase records MUST contain only closed ASCII labels and numeric PID/common-clock
+    observations, at most 128 records of 384 bytes per process. IO/clock errors MUST NOT
+    replace the original execution exception/result. Returned/raised markers MUST NOT
+    confer task, output, cleanup or timing-fit authority. This stable module/counter MUST
+    survive private declaration restoration. See test_build_v2_legacy_diagnostics.py.
+    """
+    started = _diagnostic_now()
+    _diagnostic_event(phase, 'begin', started)
+    try:
+        yield
+    except BaseException:
+        _diagnostic_event(phase, 'raised', started)
+        raise
+    else:
+        _diagnostic_event(phase, 'returned', started)
 
 
 class UnsupportedOrigin(ValueError):
@@ -244,51 +302,54 @@ def _private_declarations(names):
     fresh. No old module object, package attribute, memo dictionary or import finder is
     mutated into a claimed captured origin. Original objects are restored on every exit.
     """
-    import threading
-    if threading.active_count() != 1:
-        raise UnsupportedOrigin('captured declaration reload requires a single Python thread')
-    protected = {name.split('.')[0] for name in names}
-    names = set(names) | {name for name in sys.modules if name.split('.')[0] in protected}
-    names.discard(__name__)
-    if len(names) > MAX_BINDINGS:
-        raise UnsupportedOrigin('captured declaration module snapshot exceeds bound')
-    missing = object()
-    previous = {name: sys.modules.get(name, missing) for name in names}
-    attributes = {}
-    for name in names:
-        parent, _, child = name.rpartition('.')
-        module = sys.modules.get(parent)
-        if isinstance(module, types.ModuleType):
-            attributes[(module, child)] = vars(module).get(child, missing)
-    memos = {name: getattr(sys, name, missing)
-             for name in ('_atelier_module_cache', '_atelier_json_cache')}
-    original_path, path_values = sys.path, list(sys.path)
-    for name in names:
-        sys.modules.pop(name, None)
-    for module, child in attributes:
-        vars(module).pop(child, None)
-    for name in memos:
-        setattr(sys, name, {})
-    try:
-        yield
-    finally:
+    with diagnostic_phase('bindings.snapshot'):
+        import threading
+        if threading.active_count() != 1:
+            raise UnsupportedOrigin('captured declaration reload requires a single Python thread')
+        protected = {name.split('.')[0] for name in names}
+        names = set(names) | {name for name in sys.modules if name.split('.')[0] in protected}
+        names.discard(__name__)
+        if len(names) > MAX_BINDINGS:
+            raise UnsupportedOrigin('captured declaration module snapshot exceeds bound')
+        missing = object()
+        previous = {name: sys.modules.get(name, missing) for name in names}
+        attributes = {}
+        for name in names:
+            parent, _, child = name.rpartition('.')
+            module = sys.modules.get(parent)
+            if isinstance(module, types.ModuleType):
+                attributes[(module, child)] = vars(module).get(child, missing)
+        memos = {name: getattr(sys, name, missing)
+                 for name in ('_atelier_module_cache', '_atelier_json_cache')}
+        original_path, path_values = sys.path, list(sys.path)
         for name in names:
             sys.modules.pop(name, None)
-        for name, value in previous.items():
-            if value is not missing:
-                sys.modules[name] = value
-        for (module, child), value in attributes.items():
-            if value is missing:
-                vars(module).pop(child, None)
-            else:
-                vars(module)[child] = value
-        for name, value in memos.items():
-            if value is missing:
-                vars(sys).pop(name, None)
-            else:
-                setattr(sys, name, value)
-        original_path[:] = path_values
-        sys.path = original_path
+        for module, child in attributes:
+            vars(module).pop(child, None)
+        for name in memos:
+            setattr(sys, name, {})
+    try:
+        with diagnostic_phase('imports.execute'):
+            yield
+    finally:
+        with diagnostic_phase('bindings.restore'):
+            for name in names:
+                sys.modules.pop(name, None)
+            for name, value in previous.items():
+                if value is not missing:
+                    sys.modules[name] = value
+            for (module, child), value in attributes.items():
+                if value is missing:
+                    vars(module).pop(child, None)
+                else:
+                    vars(module)[child] = value
+            for name, value in memos.items():
+                if value is missing:
+                    vars(sys).pop(name, None)
+                else:
+                    setattr(sys, name, value)
+            original_path[:] = path_values
+            sys.path = original_path
 
 
 @contextmanager
@@ -308,125 +369,126 @@ def captured_recipe_imports(sources, *, checkout, platform_roots=()):
     arbitrary exec, task callbacks or import effects: the fixed game profile must name
     those effects before entry. Unknown checkout spec loads refuse before execution.
     """
-    checkout = Path(checkout).resolve(strict=True)
-    by_path = {source.filename: source for source in sources}
-    if not by_path or len(by_path) > MAX_NAMED_ISSUER_FILES or len(by_path) != len(sources):
-        raise UnsupportedOrigin('recipe capture path set is invalid')
-    if any(not Path(name).is_relative_to(checkout) for name in by_path):
-        raise UnsupportedOrigin('recipe capture has a foreign logical source')
-    alias_source = by_path.get(str(checkout / 'platform/harness/harness/compat.py'))
-    compat = None
-    if alias_source is not None:
-        alias_spec = captured_spec('_atelier_captured_harness_aliases', alias_source)
-        compat = importlib.util.module_from_spec(alias_spec)
-        alias_spec.loader.exec_module(compat)
-    modules = {}
-    for filename, source in by_path.items():
-        relative = Path(filename).relative_to(checkout)
-        for prefix, package in (('platform/studio', ''), ('platform/harness', 'atelier.')):
-            try:
-                local = relative.relative_to(prefix)
-            except ValueError:
-                continue
-            parts = list(local.with_suffix('').parts)
-            if parts[-1] == '__init__':
-                parts.pop()
-            name = package + '.'.join(parts)
-            modules[name] = source
-        if len(relative.parts) > 2 and relative.parts[0] == 'games':
-            # Only the game provider's captured paths supply these conventional
-            # recipe imports. No filename is found by an ambient module search.
-            local = relative.parts[2:]
-            parts = list(Path(*local).with_suffix('').parts)
-            if parts[-1] == '__init__':
-                parts.pop()
-            if parts and all(part.isidentifier() for part in parts):
-                modules['.'.join(parts)] = source
-    namespaces = {}
-    for name, source in modules.items():
-        parts = name.split('.')
-        package = Path(source.filename).name == '__init__.py'
-        for count in range(1, len(parts)):
-            prefix = '.'.join(parts[:count])
-            if prefix not in modules:
-                directory = Path(source.filename).parents[len(parts) - count - (0 if package else 1)]
-                if (directory / '__init__.py').exists():
-                    raise UnsupportedOrigin('recipe package initializer is outside the named capture')
-                previous = namespaces.setdefault(prefix, str(directory))
-                if previous != str(directory):
-                    raise UnsupportedOrigin('recipe namespace has ambiguous original paths')
+    with diagnostic_phase('imports.prepare'):
+        checkout = Path(checkout).resolve(strict=True)
+        by_path = {source.filename: source for source in sources}
+        if not by_path or len(by_path) > MAX_NAMED_ISSUER_FILES or len(by_path) != len(sources):
+            raise UnsupportedOrigin('recipe capture path set is invalid')
+        if any(not Path(name).is_relative_to(checkout) for name in by_path):
+            raise UnsupportedOrigin('recipe capture has a foreign logical source')
+        alias_source = by_path.get(str(checkout / 'platform/harness/harness/compat.py'))
+        compat = None
+        if alias_source is not None:
+            alias_spec = captured_spec('_atelier_captured_harness_aliases', alias_source)
+            compat = importlib.util.module_from_spec(alias_spec)
+            alias_spec.loader.exec_module(compat)
+        modules = {}
+        for filename, source in by_path.items():
+            relative = Path(filename).relative_to(checkout)
+            for prefix, package in (('platform/studio', ''), ('platform/harness', 'atelier.')):
+                try:
+                    local = relative.relative_to(prefix)
+                except ValueError:
+                    continue
+                parts = list(local.with_suffix('').parts)
+                if parts[-1] == '__init__':
+                    parts.pop()
+                name = package + '.'.join(parts)
+                modules[name] = source
+            if len(relative.parts) > 2 and relative.parts[0] == 'games':
+                # Only the game provider's captured paths supply these conventional
+                # recipe imports. No filename is found by an ambient module search.
+                local = relative.parts[2:]
+                parts = list(Path(*local).with_suffix('').parts)
+                if parts[-1] == '__init__':
+                    parts.pop()
+                if parts and all(part.isidentifier() for part in parts):
+                    modules['.'.join(parts)] = source
+        namespaces = {}
+        for name, source in modules.items():
+            parts = name.split('.')
+            package = Path(source.filename).name == '__init__.py'
+            for count in range(1, len(parts)):
+                prefix = '.'.join(parts[:count])
+                if prefix not in modules:
+                    directory = Path(source.filename).parents[len(parts) - count - (0 if package else 1)]
+                    if (directory / '__init__.py').exists():
+                        raise UnsupportedOrigin('recipe package initializer is outside the named capture')
+                    previous = namespaces.setdefault(prefix, str(directory))
+                    if previous != str(directory):
+                        raise UnsupportedOrigin('recipe namespace has ambiguous original paths')
 
-    class RecipeFinder(NamedCapturedImports):
-        def find_spec(self, fullname, path=None, target=None):
-            # Preserve existing Harness alias class identities through its actual
-            # alias loader, rather than executing a second copy under the alias.
-            if compat is not None and fullname.startswith('atelier.'):
-                target_name = compat.canonical(fullname)
-                if target_name is not None:
-                    if target_name not in self.modules:
-                        raise UnsupportedOrigin('Harness alias is outside the named capture')
-                    return compat._LegacyHarness().find_spec(fullname, path, target)
-            # Existing providers insert WORLD or REGIONS. These two fixed aliases
-            # can name only already captured files/namespaces, never ambient code.
-            if fullname not in self.modules and fullname not in namespaces:
-                candidates = [prefix + fullname for prefix in ('world.', 'world.regions.')
-                              if prefix + fullname in self.modules or prefix + fullname in namespaces]
-                if len(candidates) > 1:
-                    raise UnsupportedOrigin('recipe import has ambiguous WORLD/REGIONS aliases')
-                if candidates:
-                    canonical = candidates[0]
-                    if canonical in self.modules:
-                        return captured_spec(fullname, self.modules[canonical])
+        class RecipeFinder(NamedCapturedImports):
+            def find_spec(self, fullname, path=None, target=None):
+                # Preserve existing Harness alias class identities through its actual
+                # alias loader, rather than executing a second copy under the alias.
+                if compat is not None and fullname.startswith('atelier.'):
+                    target_name = compat.canonical(fullname)
+                    if target_name is not None:
+                        if target_name not in self.modules:
+                            raise UnsupportedOrigin('Harness alias is outside the named capture')
+                        return compat._LegacyHarness().find_spec(fullname, path, target)
+                # Existing providers insert WORLD or REGIONS. These two fixed aliases
+                # can name only already captured files/namespaces, never ambient code.
+                if fullname not in self.modules and fullname not in namespaces:
+                    candidates = [prefix + fullname for prefix in ('world.', 'world.regions.')
+                                  if prefix + fullname in self.modules or prefix + fullname in namespaces]
+                    if len(candidates) > 1:
+                        raise UnsupportedOrigin('recipe import has ambiguous WORLD/REGIONS aliases')
+                    if candidates:
+                        canonical = candidates[0]
+                        if canonical in self.modules:
+                            return captured_spec(fullname, self.modules[canonical])
+                        spec = importlib.machinery.ModuleSpec(fullname, None, is_package=True)
+                        spec.submodule_search_locations = [namespaces[canonical]]
+                        return spec
+                if fullname in namespaces:
                     spec = importlib.machinery.ModuleSpec(fullname, None, is_package=True)
-                    spec.submodule_search_locations = [namespaces[canonical]]
+                    spec.submodule_search_locations = [namespaces[fullname]]
                     return spec
-            if fullname in namespaces:
-                spec = importlib.machinery.ModuleSpec(fullname, None, is_package=True)
-                spec.submodule_search_locations = [namespaces[fullname]]
-                return spec
-            return super().find_spec(fullname, path, target)
+                return super().find_spec(fullname, path, target)
 
-    finder = RecipeFinder(modules, checkout=checkout, platform_roots=platform_roots)
-    original = importlib.util.spec_from_file_location
-    unspecified = object()
+        finder = RecipeFinder(modules, checkout=checkout, platform_roots=platform_roots)
+        original = importlib.util.spec_from_file_location
+        unspecified = object()
 
-    def original_spec(name, location, loader, locations):
-        # importlib distinguishes omitted (infer __init__.py package) from explicit
-        # None (plain module). Preserve that distinction through the wrapper.
-        options = {'loader': loader}
-        if locations is not unspecified:
-            options['submodule_search_locations'] = locations
-        return original(name, location, **options)
+        def original_spec(name, location, loader, locations):
+            # importlib distinguishes omitted (infer __init__.py package) from explicit
+            # None (plain module). Preserve that distinction through the wrapper.
+            options = {'loader': loader}
+            if locations is not unspecified:
+                options['submodule_search_locations'] = locations
+            return original(name, location, **options)
 
-    def fixed_spec(name, location=None, *, loader=None, submodule_search_locations=unspecified):
-        if location is not None:
-            filename = str(Path(location).absolute())
-            real_location = Path(filename).resolve(strict=True)
-            if Path(filename).is_relative_to(checkout) or real_location.is_relative_to(checkout):
-                source = by_path.get(filename)
-                if source is None:
-                    installed = any(Path(filename).is_relative_to(role) and real_location.is_relative_to(root)
-                                    for role, root in zip(finder.platform_roles, finder.platform_roots))
-                    if installed:
-                        if loader is not None and type(loader) not in (
-                                importlib.machinery.SourceFileLoader,
-                                importlib.machinery.SourcelessFileLoader,
-                                importlib.machinery.ExtensionFileLoader):
-                            raise UnsupportedOrigin('installed spec supplied an unqualified custom loader')
-                        return original_spec(name, location, loader, submodule_search_locations)
-                    raise UnsupportedOrigin('recipe spec source is outside the named capture')
-                if real_location != Path(filename):
-                    raise UnsupportedOrigin('recipe spec uses an unreviewed logical alias')
-                if loader is not None and type(loader) is not CapturedLoader:
-                    raise UnsupportedOrigin('recipe supplied an unqualified source loader')
-                loader = CapturedLoader(name, source)
-        return original_spec(name, location, loader, submodule_search_locations)
+        def fixed_spec(name, location=None, *, loader=None, submodule_search_locations=unspecified):
+            if location is not None:
+                filename = str(Path(location).absolute())
+                real_location = Path(filename).resolve(strict=True)
+                if Path(filename).is_relative_to(checkout) or real_location.is_relative_to(checkout):
+                    source = by_path.get(filename)
+                    if source is None:
+                        installed = any(Path(filename).is_relative_to(role) and real_location.is_relative_to(root)
+                                        for role, root in zip(finder.platform_roles, finder.platform_roots))
+                        if installed:
+                            if loader is not None and type(loader) not in (
+                                    importlib.machinery.SourceFileLoader,
+                                    importlib.machinery.SourcelessFileLoader,
+                                    importlib.machinery.ExtensionFileLoader):
+                                raise UnsupportedOrigin('installed spec supplied an unqualified custom loader')
+                            return original_spec(name, location, loader, submodule_search_locations)
+                        raise UnsupportedOrigin('recipe spec source is outside the named capture')
+                    if real_location != Path(filename):
+                        raise UnsupportedOrigin('recipe spec uses an unreviewed logical alias')
+                    if loader is not None and type(loader) is not CapturedLoader:
+                        raise UnsupportedOrigin('recipe supplied an unqualified source loader')
+                    loader = CapturedLoader(name, source)
+            return original_spec(name, location, loader, submodule_search_locations)
 
-    previous_finders = list(sys.meta_path)
-    sys.meta_path.insert(0, finder)
-    importlib.util.spec_from_file_location = fixed_spec
-    bytecode = sys.dont_write_bytecode
-    sys.dont_write_bytecode = True
+        previous_finders = list(sys.meta_path)
+        sys.meta_path.insert(0, finder)
+        importlib.util.spec_from_file_location = fixed_spec
+        bytecode = sys.dont_write_bytecode
+        sys.dont_write_bytecode = True
     try:
         names = set(modules) | set(namespaces)
         names.update(name.removeprefix('world.') for name in (*modules, *namespaces)
@@ -438,6 +500,7 @@ def captured_recipe_imports(sources, *, checkout, platform_roots=()):
         with _private_declarations(names):
             yield
     finally:
-        importlib.util.spec_from_file_location = original
-        sys.meta_path[:] = previous_finders
-        sys.dont_write_bytecode = bytecode
+        with diagnostic_phase('imports.restore'):
+            importlib.util.spec_from_file_location = original
+            sys.meta_path[:] = previous_finders
+            sys.dont_write_bytecode = bytecode

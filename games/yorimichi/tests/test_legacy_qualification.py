@@ -2,6 +2,7 @@
 from pathlib import Path
 import importlib.util
 import signal
+import json
 import pytest
 
 
@@ -90,3 +91,66 @@ def test_owned_fixture_cleanup_excludes_shared_descendants_and_exec_transitions(
     with pytest.raises(OSError, match='unknown executable'):
         fixture.signal_readonly_owned(tree, signal.SIGTERM, send=lambda pid, number: sent.append((pid, number)))
     assert not sent
+
+
+def _entry_fixture():
+    from atelier import paths
+    spec = importlib.util.spec_from_file_location(
+        'retained_entry_fixture', paths.REPO / 'games/yorimichi/tests/legacy_host_entry_case.py')
+    fixture = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(fixture)
+    return fixture
+
+
+def test_fixture_retains_only_exact_bounded_control_diagnostics_without_env_or_request_values(tmp_path):
+    fixture = _entry_fixture()
+    control = tmp_path / 'build/build-v2/legacy-host' / ('a' * 32)
+    evidence = tmp_path / 'evidence'
+    control.mkdir(parents=True, mode=0o700)
+    evidence.mkdir(mode=0o700)
+    def private(path, raw):
+        path.write_bytes(raw)
+        path.chmod(0o600)
+    private(evidence / 'stdout.log', f'Managed legacy authority control: {control}\n'.encode())
+    private(control / 'startup.json', json.dumps({
+        'version': 2, 'nonce': 'a' * 32, 'host': {'pid': 7, 'boot': 'boot', 'started': '9'},
+        'operational_environment': {'agent': 'DO_NOT_COPY_PRIVATE_VALUE'},
+    }).encode())
+    private(control / 'request.json', b'{"private":"DO_NOT_COPY_PRIVATE_VALUE"}')
+    raw_log = b'legacy_phase v1 fixed retained diagnostic\n'
+    private(control / 'scheduler.log', raw_log)
+    result = fixture.retain_control_diagnostics(tmp_path, evidence)
+    assert result == {'locator': 'bound', 'retained': ['startup.json', 'request.json', 'scheduler.log']}
+    binding = (evidence / 'failed-control-binding.json').read_bytes()
+    request = (evidence / 'failed-request-binding.json').read_bytes()
+    assert b'DO_NOT_COPY_PRIVATE_VALUE' not in binding + request
+    assert (evidence / 'failed-scheduler.log').read_bytes() == raw_log
+    assert (evidence / 'failed-scheduler.log').stat().st_mode & 0o777 == 0o600
+    assert 'cleanup' not in result and 'complete' not in result
+
+
+@pytest.mark.parametrize('fault', ['missing-locator', 'multiple-locators', 'linked-log', 'oversized-log'])
+def test_fixture_unknown_control_diagnostics_do_not_follow_links_search_or_invent_cleanup(tmp_path, fault):
+    fixture = _entry_fixture()
+    control = tmp_path / 'build/build-v2/legacy-host' / ('b' * 32)
+    evidence = tmp_path / 'evidence'
+    control.mkdir(parents=True, mode=0o700)
+    evidence.mkdir(mode=0o700)
+    line = f'Managed legacy authority control: {control}\n'
+    (evidence / 'stdout.log').write_text('' if fault == 'missing-locator' else
+                                       line * (2 if fault == 'multiple-locators' else 1))
+    (evidence / 'stdout.log').chmod(0o600)
+    outside = tmp_path / 'outside'
+    outside.write_bytes(b'private-unrelated-original')
+    outside.chmod(0o600)
+    if fault == 'linked-log':
+        (control / 'scheduler.log').symlink_to(outside)
+    elif fault == 'oversized-log':
+        (control / 'scheduler.log').write_bytes(b'x' * (256 * 1024 + 1))
+        (control / 'scheduler.log').chmod(0o600)
+    result = fixture.retain_control_diagnostics(tmp_path, evidence)
+    assert result['retained'] == []
+    assert result['locator'] == ('unknown' if 'locator' in fault else 'bound')
+    assert not (evidence / 'failed-scheduler.log').exists()
+    assert outside.read_bytes() == b'private-unrelated-original'
+    assert 'cleanup' not in result and 'complete' not in result
