@@ -16,6 +16,8 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static FString NativeContext();
     /** {graph, nodes: [{kind, path, local, status}]}: every cache store of the effective DDC graph, from its stats tree (full paths). */
     UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static FString DdcGraph();
+    /** Fixed native capture/verify/restore. Refusals never certify package completeness or globals. */
+    UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static FString ZenPackageRequest(const FString& RequestJson);
     /** False means recording is unavailable; the job must refuse. */
     UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static bool BeginReadRecording();
     /** {version:1, best_effort:true, files:[absolute path]}; IO bypassing IPlatformFile is not observable. */
