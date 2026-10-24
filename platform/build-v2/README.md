@@ -999,3 +999,12 @@ The engine-wide writes the T2 probes measured are named proof gaps in `build-v2-
 - the shared filesystem DDC, which a session refused for its graph may already have written at startup.
 
 D2 unused Blender op definitions and in-job bodies support the initial schema-2 MeshIR → FBX route. See [Blender op contracts](../../docs/build-v2/BLENDER_OPS.md) for ownership, frozen validation and pending native acceptance.
+
+Failed Python targets retain bounded, attempt-specific diagnostics privately in the original
+leased guard parent as `diagnostic.json`. The normal CLI prints the private controller-log
+locator; that log points to the diagnostic file, or reports a retention error. Read each
+attempt's `source`, optional worker `kind`, `message` and `truncated` flag. A missing message
+means the cause is unknown. These records do not certify cleanup or cache publication and are
+not included in public CI artifacts or semantic keys. Successful `Completed` observations do
+not create this failure file. The first M1 failed call predates this retention and its cause
+remains unknown; no retry or default mixed-build activation follows from this diagnostic API.

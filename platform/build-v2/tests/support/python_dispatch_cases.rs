@@ -67,6 +67,9 @@ fn identity(pid: u32) -> ProcessIdentity {
 #[derive(Clone, Copy)]
 enum Mode {
     Complete,
+    WorkerFailure,
+    DiagnosticCollision,
+    ProtocolFailure,
     Held,
     MissingMonitor,
     RegistrationFailure,
@@ -83,6 +86,8 @@ struct Seen {
     cancelled: bool,
     partial: Option<PathBuf>,
     partial_verified: bool,
+    report_root: Option<PathBuf>,
+    diagnostic: Option<serde_json::Value>,
 }
 struct Synthetic {
     root: PathBuf,
@@ -181,9 +186,26 @@ impl Write for Input {
                     s.finish(CleanupReceipt::Confirmed);
                     return Ok(());
                 }
+                if matches!(s.mode, Mode::ProtocolFailure) {
+                    s.response(Response::Completed {
+                        job_id: "sentinel-foreign-job".into(),
+                        outputs: JobOutputs { files: vec![] },
+                    });
+                    return Ok(());
+                }
                 s.response(Response::Started {
                     job_id: job.job_id.clone(),
                 });
+                if matches!(s.mode, Mode::WorkerFailure | Mode::DiagnosticCollision) {
+                    s.response(Response::Failed {
+                        job_id: job.job_id,
+                        failure: protocol::WorkerFailure {
+                            kind: protocol::FailureKind::Dependency,
+                            message: "sentinel-worker-dependency-original-é".into(),
+                        },
+                    });
+                    return Ok(());
+                }
                 if matches!(s.mode, Mode::Cancel) {
                     s.seen.lock().unwrap().cancelled = true;
                     return Ok(());
@@ -267,11 +289,18 @@ impl WorkerLauncher for Synthetic {
         events: mpsc::Sender<AttemptEvent>,
     ) -> io::Result<Attempt> {
         self.seen.lock().unwrap().submissions += 1;
+        self.seen.lock().unwrap().report_root = request.report_dir.parent().map(Path::to_path_buf);
         self.seen.lock().unwrap().custody += request.custody.len();
         assert_eq!(request.custody.len(), 1);
         assert_eq!(request.execution_limit, Duration::from_secs(150));
         assert!(!command.env.keys().any(|key| key.contains("CUSTODY")));
         std::fs::create_dir(&request.report_dir)?;
+        if matches!(self.mode, Mode::DiagnosticCollision) {
+            use std::os::unix::fs::PermissionsExt;
+            let existing = request.report_dir.parent().unwrap().join("diagnostic.json");
+            std::fs::write(&existing, br#"{"sentinel":"original retained record"}"#)?;
+            std::fs::set_permissions(existing, std::fs::Permissions::from_mode(0o600))?;
+        }
         if matches!(self.mode, Mode::RegistrationFailure) {
             // Reserve the real local lease filename so its durable worker write fails.
             let local = self
@@ -516,6 +545,23 @@ outputs=[{id="out",logical_path="/Data/A",class="JsonData",destination="store",f
         );
         observed.partial_verified = true;
     }
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut observed = seen.lock().unwrap();
+        let path = observed
+            .report_root
+            .as_ref()
+            .unwrap()
+            .join("diagnostic.json");
+        if path.exists() {
+            assert_eq!(
+                std::fs::metadata(&path).unwrap().permissions().mode() & 0o777,
+                0o600
+            );
+            observed.diagnostic =
+                Some(serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap());
+        }
+    }
     assert_eq!(io.publications, 0);
     assert_eq!(io.installs, 0);
     (report, io, seen)
@@ -664,4 +710,104 @@ fn production_cancellation_settles_original_work_and_blocks_later_dispatch() {
     assert_eq!(seen.submissions, 1);
     assert_eq!(seen.completed_events, 0);
     assert_eq!(io.launches_by_unit["a"], 1);
+}
+
+#[test]
+fn production_failure_diagnostics_retain_worker_protocol_and_prepare_without_publication() {
+    use crate::failure_policy::Stop;
+    use crate::scheduler::State;
+    for mode in [Mode::WorkerFailure, Mode::ProtocolFailure, Mode::Crash] {
+        let (report, io, seen) = dispatch(mode, false);
+        assert_eq!(io.publications, 0);
+        assert_eq!(io.installs, 0);
+        assert_eq!(io.receipt_writes, 0);
+        assert!(
+            report.fatal.is_none(),
+            "positive sole-session cleanup remains accepted"
+        );
+        assert!(matches!(report.states["a"], State::Failed(_)));
+        let seen = seen.lock().unwrap();
+        assert_eq!(seen.completed_events, 0);
+        let artifact = seen
+            .diagnostic
+            .as_ref()
+            .expect("failed original scope retains private diagnostic");
+        assert_eq!(artifact["unit"], "a");
+        assert_eq!(artifact["diagnostic"], "retained");
+        let attempts = artifact["attempts"].as_array().unwrap();
+        match mode {
+            Mode::WorkerFailure => {
+                assert_eq!(attempts.len(), 1);
+                assert_eq!(attempts[0]["diagnostic"]["source"], "worker");
+                assert_eq!(attempts[0]["diagnostic"]["kind"], "dependency");
+                assert_eq!(
+                    attempts[0]["diagnostic"]["message"],
+                    "sentinel-worker-dependency-original-é"
+                );
+                assert_eq!(seen.runs, 1);
+            }
+            Mode::ProtocolFailure => {
+                assert_eq!(attempts[0]["diagnostic"]["source"], "protocol");
+                assert!(
+                    attempts[0]["diagnostic"]["message"]
+                        .as_str()
+                        .unwrap()
+                        .contains("sentinel-foreign-job")
+                );
+                assert!(attempts[0]["diagnostic"]["kind"].is_null());
+            }
+            Mode::Crash => {
+                assert_eq!(attempts.len(), 2);
+                assert_eq!(attempts[0]["attempt"], 1);
+                assert!(attempts[0]["diagnostic"].is_null()); // A crash did not supply a worker message.
+                assert_eq!(attempts[1]["attempt"], 2);
+                assert_eq!(attempts[1]["diagnostic"]["source"], "prepare");
+                assert_eq!(
+                    attempts[1]["diagnostic"]["message"],
+                    "the attempt's job request could not be prepared: fresh retry staging is unsupported; prior output retained"
+                );
+                assert!(seen.partial_verified);
+                assert_eq!(seen.runs, 1);
+            }
+            _ => unreachable!(),
+        }
+        // Policy's exact reason is still the existing kind-based stop, not retained text.
+        if matches!(mode, Mode::WorkerFailure) {
+            assert!(format!("{:?}", report.states["a"]).contains(&format!(
+                "{:?}",
+                Stop::WorkerReported(protocol::FailureKind::Dependency)
+            )));
+        }
+    }
+    for mode in [Mode::Complete, Mode::Held] {
+        let (_, _, seen) = dispatch(mode, false);
+        assert!(
+            seen.lock().unwrap().diagnostic.is_none(),
+            "Completed never writes failure diagnostics, even if cleanup is held"
+        );
+    }
+}
+
+#[test]
+fn diagnostic_write_failure_preserves_existing_record_and_original_failed_outcome() {
+    let (expected, _, _) = dispatch(Mode::WorkerFailure, false);
+    let (actual, io, seen) = dispatch(Mode::DiagnosticCollision, false);
+    assert_eq!(actual.states["a"], expected.states["a"]);
+    assert_eq!(io.publications, 0);
+    assert_eq!(io.installs, 0);
+    assert_eq!(
+        seen.lock().unwrap().diagnostic.as_ref().unwrap()["sentinel"],
+        "original retained record"
+    );
+    let (_, _, missing) = dispatch(Mode::RegistrationFailure, false);
+    let missing = missing.lock().unwrap();
+    let record = missing.diagnostic.as_ref().unwrap();
+    assert_eq!(record["diagnostic"], "none retained");
+    assert!(
+        record["attempts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|a| a["diagnostic"].is_null())
+    );
 }

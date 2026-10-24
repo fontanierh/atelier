@@ -36,6 +36,47 @@ fn record_launches(io: &mut PythonIo, unit: &str, report: Option<&worker_lifecyc
     }
 }
 
+/// Private post-driver evidence only. It cannot certify policy, cleanup or publication.
+/// No replace: a later observer cannot overwrite the original invocation's retained record.
+fn retain_failure_diagnostics(
+    root: &std::path::Path,
+    unit: &str,
+    key: &str,
+    job: &str,
+    attempts: &[crate::session_lifecycle::UnitAttemptRecord],
+) -> std::io::Result<PathBuf> {
+    use std::io::Write;
+    use std::os::unix::fs::OpenOptionsExt;
+    let path = root.join("diagnostic.json");
+    let temporary = root.join(".diagnostic.pending");
+    let bytes = serde_json::to_vec(&serde_json::json!({
+        "version": 1, "unit": unit, "key": key, "job_id": job,
+        "diagnostic": if attempts.iter().any(|a| a.diagnostic.is_some()) {
+            "retained"
+        } else { "none retained" },
+        "attempts": attempts.iter().map(|a| serde_json::json!({
+            "attempt": a.attempt, "session": a.session, "diagnostic": a.diagnostic,
+        })).collect::<Vec<_>>(),
+    }))?;
+    let mut file = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .mode(0o600)
+        .custom_flags(libc::O_NOFOLLOW)
+        .open(&temporary)?;
+    // The private parent was reserved by this invocation before admission. Only this newly
+    // created temporary is removed; occupied destination/temporary names are never replaced.
+    let saved = (|| {
+        file.write_all(&bytes)?;
+        file.sync_all()?;
+        std::fs::hard_link(&temporary, &path)?;
+        File::open(root)?.sync_all()?;
+        Ok(path)
+    })();
+    let _ = std::fs::remove_file(&temporary);
+    saved
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -59,6 +100,7 @@ mod tests {
                 cleanup: CleanupState::NotNeeded,
             },
             attempts: vec![attempt],
+            unit_attempts: vec![],
             outputs: None,
             abort: Some("submission failed".into()),
         };
@@ -260,6 +302,7 @@ mod tests {
                     session: 1,
                     custody: Custody::Released,
                     quiescent: None,
+                    diagnostic: None,
                 }],
                 outputs: Some(JobOutputs {
                     files: vec!["out.json".into()],
@@ -400,6 +443,7 @@ fn sole_released_report(
     Ok(worker_lifecycle::Report {
         outcome: record.outcome,
         attempts: report.sessions,
+        unit_attempts: record.attempts,
         outputs: record.outputs,
         abort: record.abort,
     })
@@ -552,9 +596,15 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
                 cancel.close();
             }
 
+            let diagnostic_root = spec.report_root.clone();
+            let diagnostic_job = spec.job.job_id.clone();
+            // Compact metadata only, populated after the driver returns even if the adapter
+            // subsequently refuses held/inconsistent cleanup. No report field grants authority.
+            let diagnostics = std::sync::Mutex::new((false, Vec::new()));
             let result = std::thread::scope(|scope| {
                 let launcher = &mut self.launcher;
                 let ticket = work.ticket_mut();
+                let diagnostics = &diagnostics;
                 let driver = scope.spawn(move || {
                     if let Some(session) = production {
                         let expected = unit.clone();
@@ -586,7 +636,15 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
                             published,
                         )
                         .map_err(|error| format!("{error:?}"))
-                        .and_then(|report| sole_released_report(&unit, report))
+                        .and_then(|report| {
+                            if let Some(record) = report.units.iter().find(|r| r.unit == unit) {
+                                *diagnostics.lock().unwrap() = (
+                                    record.outcome.end == End::Completed,
+                                    record.attempts.clone(),
+                                );
+                            }
+                            sole_released_report(&unit, report)
+                        })
                     } else {
                         worker_lifecycle::run_job(
                             launcher,
@@ -595,6 +653,12 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
                             inbox,
                             &mut |identity| ticket.register(identity),
                         )
+                        .inspect(|report| {
+                            *diagnostics.lock().unwrap() = (
+                                report.outcome.end == End::Completed,
+                                report.unit_attempts.clone(),
+                            );
+                        })
                         .map_err(|error| format!("{error:?}"))
                     }
                 });
@@ -608,6 +672,39 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
                     .join()
                     .map_err(|_| "Python lifecycle driver panicked".to_string())?
             });
+            let (completed, diagnostics) = diagnostics.into_inner().unwrap_or_default();
+            if !completed
+                && !result
+                    .as_ref()
+                    .is_ok_and(|r| r.outcome.end == End::Completed)
+            {
+                match retain_failure_diagnostics(
+                    &diagnostic_root,
+                    work.unit(),
+                    work.prepared().key(),
+                    &diagnostic_job,
+                    &diagnostics,
+                ) {
+                    Ok(path) => {
+                        use std::io::Write;
+                        let status = if diagnostics.iter().any(|a| a.diagnostic.is_some()) {
+                            "retained"
+                        } else {
+                            "none retained"
+                        };
+                        let _ = writeln!(
+                            std::io::stderr().lock(),
+                            "Python failure diagnostic: {status}; {}",
+                            path.display()
+                        );
+                    }
+                    Err(error) => {
+                        use std::io::Write;
+                        let _ =
+                            writeln!(std::io::stderr().lock(), "diagnostic not retained: {error}");
+                    }
+                }
+            }
             record_launches(
                 &mut work.inputs().io.borrow_mut(),
                 work.unit(),

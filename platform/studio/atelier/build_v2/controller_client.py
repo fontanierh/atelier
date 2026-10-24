@@ -530,7 +530,8 @@ def invoke_controller(checkout, executable, marker, runs, execution, *, echo=pri
         except (OSError, ValueError):
             pass  # Retain incomplete bytes and the paired spawn receipt; no guessed counters.
         result = {'state': 'observed' if report is not None and code == 0 else 'incomplete',
-                  'cancelled': cancelled, 'returncode': code, 'report': report}
+                  'cancelled': cancelled, 'returncode': code, 'report': report,
+                  'diagnostic_log': str(directory / 'controller.log')}
         write_control(directory, 'client.json', {
             'version': 1, 'state': result['state'], 'cancelled': cancelled,
             'gate_released': released, 'returncode': code,

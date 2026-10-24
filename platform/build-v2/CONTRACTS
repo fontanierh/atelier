@@ -406,3 +406,16 @@ without claiming another semantic geometry decode or reading live producer files
 formats, roles, incomplete/aliased/linked outputs and ownership-widening settings MUST refuse.
 See tests/blender_ops.rs and platform/studio/tests/test_build_v2_blender_ops.py. Native geometry
 fidelity/determinism, dynamic dispatch and production activation remain separate pending acceptance.
+
+@cc [owner:fontanierh,label:correctness] bounded-private-failure-diagnostics
+Failure diagnostics MUST retain at most 4096 UTF8 bytes on the original unit attempt, mark
+truncation explicitly and preserve the first diagnostic of each attempt through later errors
+and retries. This metadata MUST NOT affect policy, custody, keys, cache or publication decisions.
+Flattened driver reports MUST preserve attempt association. Only failed post-driver observations
+MAY write a private 0600 no-replace diagnostic.json under their original owned guard parent;
+Completed MUST NOT write it. Diagnostic IO failure MUST NOT change or mask the original outcome.
+Missing diagnostics MUST stay explicitly unknown, never evidence of cleanup. Messages and private
+files MUST NOT be published as CI artifacts or added to the strict controller/A7 report wire.
+See session_lifecycle::diagnostic_tests, python_executor::production_tests failure diagnostic
+cases and test_build_v2_controller_entry.py failed-target locator test. Actual historical M1 call1
+cause remains unknown; no functional retry or fullmixed activation is certified by these tests.

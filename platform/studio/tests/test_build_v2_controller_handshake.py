@@ -75,6 +75,7 @@ if MODE == 'replace_report':
 def test_owned_helper_startup_records_actual_child_and_preserves_no_op_claim_boundary(tmp_path):
     checkout, executable, marker, execution = fixture(tmp_path)
     result = client.invoke_controller(checkout, executable, marker, tmp_path / 'runs', execution, echo=lambda _: None)
+    assert result['diagnostic_log'] == str(next((tmp_path / 'runs').iterdir()) / 'controller.log')
     assert result['state'] == 'observed'
     assert result['returncode'] == 0
     assert result['report']['observation']['final_requirements_satisfied'] is False

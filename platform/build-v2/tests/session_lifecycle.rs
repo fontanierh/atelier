@@ -278,7 +278,8 @@ fn units_run_in_order_one_session_at_a_time() {
             attempt: 1,
             session: 1,
             custody: Custody::Released,
-            quiescent: None
+            quiescent: None,
+            diagnostic: None
         }]
     );
     assert_eq!(sim.lifecycle.unit("b").unwrap().attempts[0].session, 2);

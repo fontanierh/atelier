@@ -183,3 +183,25 @@ def test_controller_parent_alias_refuses_before_queries_checkpoints_dispatch_or_
     assert not (tmp_path / 'Game/copy.json').exists()
     assert not (tmp_path / 'build').exists()
     assert set(tmp_path.iterdir()) == {tmp_path / 'Game', alias}
+
+
+def test_failed_normal_target_prints_private_diagnostic_locator_without_changing_result(tmp_path, monkeypatch):
+    owned = marker()
+    step = build.Step(owned.unit, [], outputs=list(owned.outputs(tmp_path)), controller=owned)
+    log = tmp_path / 'private-run/controller.log'
+    monkeypatch.setattr(paths, 'REPO', tmp_path)
+    monkeypatch.setattr(paths, 'build_root', lambda: tmp_path / 'build')
+    monkeypatch.setattr(paths, 'cache_dir', lambda *args, **kwargs: tmp_path / 'cache')
+    monkeypatch.setattr(entry, 'ensure_controller', lambda *args, **kwargs: object())
+    monkeypatch.setattr(entry, 'provenance', lambda _: {})
+    monkeypatch.setattr(entry, 'invoke_controller', lambda *args, **kwargs: {
+        'state': 'observed', 'cancelled': False, 'returncode': 0,
+        'diagnostic_log': str(log), 'report': {'observation': {
+            'summary': None, 'cancellation_requested': False,
+            'final_requirements_satisfied': False,
+        }},
+    })
+    output = []
+    assert entry.execute(step, echo=output.append) == 1  # Helper exit0 is not target success.
+    assert output[-1] == f'Private failure diagnostic locator: {log}'
+    assert not list(tmp_path.iterdir())

@@ -117,4 +117,5 @@ def execute(step, *, echo=print):
                 echo('Target requirements fulfilled; retention finalization is incomplete and claims remain protected')
             return 0
     echo('Build controller did not certify target fulfillment; retained report/logs describe the incomplete boundary')
+    echo(f"Private failure diagnostic locator: {result.get('diagnostic_log', 'none retained')}")
     return 130 if result['cancelled'] else 1
