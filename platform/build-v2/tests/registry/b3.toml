@@ -125,3 +125,9 @@ id = "b3.installs.unknown_private_cleanup_leaves_preserve_journal_and_block_read
 tests = ["atelier-build-v2::installs/unknown_private_cleanup_leaves_preserve_journal_and_block_readers"]
 platforms = ["darwin"]
 tier = "t0"
+
+[[scenarios]]
+id = "b3.locks.unknown_install_metadata_refuses_readers_writers_without_mutation"
+tests = ["atelier-build-v2/checkout_locks::tests::unknown_install_metadata_refuses_readers_writers_without_mutation"]
+platforms = ["darwin", "linux"]
+tier = "t0"

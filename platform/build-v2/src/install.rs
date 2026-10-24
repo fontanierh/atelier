@@ -608,7 +608,7 @@ impl ReceiptReader {
     }
     fn guard(&self, guard: &BuildGuard) -> Result<(), InstallError> {
         self.guard_root(guard)?;
-        crate::checkout_locks::require_no_legacy_epoch(guard.root())?;
+        crate::checkout_locks::require_known_install_metadata(guard.root())?;
         Ok(())
     }
     fn guard_root(&self, guard: &BuildGuard) -> Result<(), InstallError> {
@@ -793,67 +793,6 @@ impl ReceiptReader {
     ) -> Result<CurrentStatus, InstallError> {
         self.guard(guard)?;
         let _reader = self.locks.try_read_content()?;
-        self.current_locked(unit)
-    }
-
-    /// Private already-EX observation for the exact active/repair epoch only.
-    /// The B3 install journal remains an unconditional blocker; receipt parsing is shared.
-    pub(crate) fn receipt_status_exclusive(
-        &self,
-        guard: &BuildGuard,
-        writer: &crate::checkout_locks::ContentWriteGuard,
-        permit: &crate::legacy_epoch::EpochPermit<'_, '_>,
-        unit: &PreparedUnit,
-    ) -> Result<CurrentStatus, InstallError> {
-        self.guard_root(guard)?;
-        permit
-            .verify(guard, writer)
-            .map_err(|_| invalid("foreign or changed legacy epoch permit"))?;
-        if self.fs.occupied(JOURNAL)? {
-            return Err(recovery("install journal blocks legacy epoch observation"));
-        }
-        self.current_locked(unit)
-    }
-
-    /// Exact v2-selection counterpart of receipt_status_exclusive; no SH reacquire,
-    /// caller receipt adoption or install-journal bypass.
-    pub(crate) fn receipt_status_selection(
-        &self,
-        guard: &BuildGuard,
-        writer: &crate::checkout_locks::ContentWriteGuard,
-        permit: &crate::legacy_epoch::selection::SelectionPermit<'_, '_>,
-        unit: &PreparedUnit,
-    ) -> Result<CurrentStatus, InstallError> {
-        self.guard_root(guard)?;
-        permit
-            .verify(guard, writer)
-            .map_err(|_| invalid("foreign or changed legacy selection permit"))?;
-        if self.fs.occupied(JOURNAL)? {
-            return Err(recovery(
-                "install journal blocks legacy selection observation",
-            ));
-        }
-        self.current_locked(unit)
-    }
-
-    /// Read-only initial mixed ordering gate. The real host owns both guards;
-    /// any existing legacy epoch or install journal requires its separate repair
-    /// capability and cannot be bypassed by this startup observation.
-    pub(crate) fn receipt_status_legacy_startup(
-        &self,
-        guard: &BuildGuard,
-        writer: &crate::checkout_locks::ContentWriteGuard,
-        unit: &PreparedUnit,
-    ) -> Result<CurrentStatus, InstallError> {
-        self.guard_root(guard)?;
-        if !guard.owns_writer(writer) {
-            return Err(invalid("foreign initial legacy writer"));
-        }
-        if self.fs.occupied(JOURNAL)? || self.fs.occupied(crate::checkout_locks::LEGACY_EPOCH)? {
-            return Err(recovery(
-                "initial legacy receipt gate requires clean checkout",
-            ));
-        }
         self.current_locked(unit)
     }
 

@@ -34,12 +34,10 @@ RIM_CODE = (
     'games/yorimichi/world/regions/brinecove/region.py',
     'games/yorimichi/world/regions/brinecove/rim_schema.py',
     'games/yorimichi/world/terrain_product.py',
-    'games/yorimichi/world/yori.py',
     'platform/studio/atelier/__init__.py',
     'platform/studio/atelier/atomic_files.py',
     'platform/studio/atelier/export_manifest.py',
     'platform/studio/atelier/model_files.py',
-    'platform/studio/atelier/paths.py',
 )
 # Temporary migration input: an independently copied and validated content file,
 # not a FarHills result/receipt. The complete graph replaces it with a producer edge.

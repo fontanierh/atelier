@@ -2,22 +2,6 @@
 The crate MUST remain independent of production v1 until a separately validated caller cutover.
 A0 schemas MUST NOT decide cache hits, launch native tools or publish results.
 
-@cc [owner:fontanierh,label:correctness;safety] legacy-operational-epoch-fence
-The dormant legacy epoch MUST remain separate from install journals, keys and result authority.
-Production qualification MUST refuse until a separately reviewed finite adapter issues private
-source/plan/ownership/settlement/cleanup/finalization evidence; records and booleans MUST NOT issue it.
-Begin MUST hold real build+EX custody, publish all pending tasks no-replace and fsync before work.
-Transitions MUST verify prior identity, persist before memory assignment and preserve the marker
-on errors/drop BEFORE verified barrier removal. Repair MUST bind unchanged scope/source/root, demand replay or verified restore
-for unverified tasks, and preserve revalidated independent results. Clearing MUST require fresh
-complete settlement, positive cleanup and finalization, then exact-owned removal and parent fsync.
-Any epoch entry MUST fence SH readers and default B3 mutators; the private exact-own EX observation
-MUST retain the separate install-journal blocker and shared receipt validator without nested SH.
-This unit fences Rust admission only; Python/v1 reader/producer admission, actual bootstrap and
-the production normal-repair issuer remain separate activation gates. No caller/bootstrap/CLI/native
-activation is authorized by this module. See legacy_epoch::tests
-and docs/build-v2/LEGACY_EPOCH.md for concrete fixture and platform proof limits.
-
 @cc [owner:fontanierh,label:correctness] build-v2-summary-observation
 Explanations MUST consume existing typed decisions and compact original-ingredient metadata without
 extra source/payload/cache reads, execution capabilities or provenance/platform key additions.
@@ -441,56 +425,8 @@ See session_lifecycle::diagnostic_tests, python_executor::production_tests failu
 cases and test_build_v2_controller_entry.py failed-target locator test. Actual historical M1 call1
 cause remains unknown; no functional retry or fullmixed activation is certified by these tests.
 
-@cc [owner:fontanierh,label:safety] build-v2-continuous-legacy-authority
-The operational v2 legacy selection fence MUST remain continuously present across every task,
-frame, replan and Supersede. A real same-root build guard, EX guard and anchored writer lock
-MUST outlive the owned scheduler and uncertain shutdown. Only the captured reviewed semantic
-provider MAY qualify normal task/graph observations; JSON, metadata hashes, stamps, child reap
-and absent guard files MUST NOT issue semantic or cleanup authority. Permission MUST persist
-before ACK, source-fixed Supersede MUST retain all attempted-unsettled canonical claims and
-checked transition count, and guarded attempts MUST correlate to actual unique positive cleanup.
-One shared guard attempt MUST bind the complete member set, never fictitious per-member report
-copies. The single private channel MUST NOT reconnect or auto-retry; ambiguity permits no new
-work, and a lost terminal Finish ACK remains caller failure/unknown. The host MUST add no outer
-admission or aggregate descendant memory guard and MUST never signal a guard-containing group.
-See legacy_epoch/selection.rs and legacy_host.rs/legacy_host_launch.rs tests. Full production
-qualification, final graph streaming, all C7 child/reader coverage, pressure-requeue cleanup chains
-and actual mixed normal/repair acceptance remain coupled integration gates; source unit tests
-are not native or full-default activation proof. Existing v1/dormant state is never silently adopted.
-
-@cc [owner:fontanierh,label:correctness;safety] legacy-host-deadline-and-dirty-disposition
-Absolute deadlines MUST use the same explicit posix-clock-monotonic-v1 clock on both sides,
-resampled across IO and suspend, with cleanup time reserved before any further work permission.
-Owned protocol endpoints MUST be nonblocking; partial IO, EAGAIN and EINTR MUST retain the
-absolute bound. FD sanitization MUST cover actual descriptors above lowered soft limits, keep
-Rust's exec-error pipe open until exec and refuse unsupported/unknown enumeration results.
-A dirty file/directory claim MUST NOT clear on an incomplete descendant list or directory inode:
-its exact absence/file or complete bounded tree disposition MUST be independently checked.
-Guard-return capacity close remains an explicit captured-provider observation AND independently
-matched raw guards/custody; self-generated wrapper flags MUST NOT issue cleanup authority.
-See legacy_host_launch.rs and legacy_epoch/selection.rs corrective regressions. These source
-fixtures do not prove real native cleanup, current full-default support or Darwin activation.
-
-@cc [owner:fontanierh,label:correctness;safety] legacy-host-installed-startup-context
-The original lexical interpreter role MUST launch verbatim with -I -S and resolve to the pinned
-canonical interpreter image/hash. The captured constructor MUST supply its actual original
-installed-library context; child -S sysconfig, arbitrary metadata or assigning sys.executable
-MUST NOT substitute that provenance. Both purelib and platlib MUST remain explicit and retain
-their lexical roles while their real existing directories are checked under real vetted platform
-roots, following C2c. No site/.pth/editable-hook or environment fallback is allowed. The host
-MUST clear inherited environment and set only the closed original AGENT/CACHE/BUILD_ROOT/PATH
-operational context. Unknown fields/overrides, missing libraries, empty/relative PATH entries,
-existing nondirectories, non-ENOENT lookup uncertainty and retargeted interpreter roles MUST refuse before project discovery. No custody, deadline, key or
-controller fulfillment authority is added. See legacy_host::tests startup-context cases;
-full production entry/discovery and actual native acceptance remain separate hosted/integration proof.
-Original PATH bytes/order MUST remain unchanged. Lexically absolute ENOENT entries MAY remain
-as ordinary OS lookup skips them; validation MUST NOT create/filter/reorder/rewrite entries.
-This operational absence MUST NOT change interpreter/tool pinning or claim a binary identity.
-
-@cc [owner:fontanierh,label:correctness;safety] closed-issuer-file-count-policy
-Controller distribution verification MUST keep its fixed 256 named-file cap. Only the private
-game-issuer verification caller MAY use the fixed 512 named-file policy; no input/config limit
-or arbitrary authority is accepted. Both MUST keep the identical length/name/content digest,
-8 MiB per-file and 32 MiB total bounds, unique names, readonly/nofollow observations and actual
-byte checks. A larger finite issuer roster is not task, cleanup, repair or Graph authority.
-See legacy_host::tests::issuer_count_512_does_not_change_controller_256_or_named_byte_authority.
+@cc [owner:fontanierh,label:correctness;safety] unknown-install-metadata-refusal
+Reader and writer admission MUST refuse unknown install-control entries before interpreting
+receipts or mutating installed products. Unknown regular files, directories and links MUST
+remain untouched; current install journals retain exclusive recovery semantics. No old control
+format or completion credit is adopted. See checkout_locks::tests::unknown_install_metadata_refuses_readers_writers_without_mutation.

@@ -9,11 +9,7 @@ sys.path[:0] = [str(_root / 'platform/studio'),
                 str(_root / 'games/yorimichi/world'),
                 str(_root / 'games/yorimichi/world/regions')]
 
-# The original import bootstrap computes unused authoring paths. Keep that
-# computation read-only; execution and output ownership belong to the v2 worker.
-from atelier.paths import captured_declaration
-with captured_declaration('yorimichi'):
-    from brinecove import rim_data
+from brinecove import rim_data
 
 
 def run(context):

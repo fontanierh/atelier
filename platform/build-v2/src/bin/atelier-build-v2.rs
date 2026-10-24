@@ -1,28 +1,7 @@
 //! Thin private controller entry. Normal route activation retains its production gates.
 fn main() {
     let args: Vec<_> = std::env::args_os().skip(1).collect();
-    if args.len() == 2 && args[0] == "--legacy-config-fd" {
-        use std::os::fd::FromRawFd;
-        let result = (|| {
-            let fd = args[1]
-                .to_string_lossy()
-                .parse::<i32>()
-                .map_err(|_| "invalid legacy config descriptor".to_string())?;
-            if fd < 3 || unsafe { libc::fcntl(fd, libc::F_GETFD) } < 0 {
-                return Err("invalid legacy config descriptor".into());
-            }
-            if unsafe { libc::fcntl(fd, libc::F_SETFD, libc::FD_CLOEXEC) } < 0 {
-                return Err("cannot protect legacy config descriptor".into());
-            }
-            // Single owned entry descriptor, never a lock/guard adoption operation.
-            atelier_build_v2::legacy_host::run_config(unsafe { std::fs::File::from_raw_fd(fd) })
-        })();
-        match result {
-            Ok(()) => return,
-            Err(e) => eprintln!("legacy authority refused: {e}"),
-        }
-        std::process::exit(2);
-    } else if args.len() == 1 && args[0] == "--identity" {
+    if args.len() == 1 && args[0] == "--identity" {
         if let Some(source) = atelier_build_v2::controller::source_identity() {
             println!("{source}");
             return;
