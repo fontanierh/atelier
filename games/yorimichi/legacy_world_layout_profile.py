@@ -122,7 +122,7 @@ RECIPE_DIGESTS = {
 
     'function:local_imports': 'b16827b19c9ec0f80228f21d369b4412ba0b2626d2e7117570af0fe8ba3804aa',
     'function:belmonte_train_corridor': 'db565b451044762cfadd657ea1f2434348d5bb91699ecfbe4119e75aa98fd632',
-    'function:world_steps': 'e0c66580d89bc6bb2b019e9dcd39bbbdb1d597a6fa2f06c3739159f7556af3e9',
+    'function:world_steps': 'ee1b71a0d43550a2a827a2437c0a48b32cef810877019b77e33c2d000864133e',
     'assignment:GAME': 'c1fd8717a5ba75944ea2ab756a826c928f37e4d09c8df0b4b5ecd50571f84dbb',
     'assignment:WORLD': '12574000f07cf0e48410791ecd814d26eb908d4d94356d7fadb766d1252711f9',
     'assignment:REGIONS': '681755203859b40ea7a6f69813dcd7b8374111a7b4952ca112164344049a062c',
@@ -347,7 +347,8 @@ def qualify_world_layout(step, *, checkout: Path, output_root: Path) -> WorldLay
     data = park.parent / 'data'
     outputs = tuple(output_root / name for name in (
         'world.json', 'heightmap.npy', 'heightmap.bin', 'farhills.npy',
-        'treehouse/layout.json', 'megapark/trail.json', 'map_preview.png'))
+        'treehouse/layout.json', 'megapark/trail.json', 'map_preview.png',
+        'zeppelin/layout.json', 'treehouse/removed.json'))
     produced = (output_root / 'craterpark/v2/geometry.npz',
                 output_root / 'treehouse-data/canopy/trees.json')
     defaults = dict(deferred_inputs=[], needs=['world.treehouse_trees.data', 'world.craterpark_layout', 'world.craterpark_geometry'],

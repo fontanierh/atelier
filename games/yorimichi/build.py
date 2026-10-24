@@ -1085,7 +1085,8 @@ def world_steps(ctx):
                      *([out / 'craterpark/v2/geometry.npz'] if craterpark_v4.selected() else [])],
              needs=['world.treehouse_trees.data', *crater_geometry], reads=['treehouse.canopy_dimensions'], cutoff=True,
              outputs=[out / 'world.json', out / 'heightmap.npy', out / 'heightmap.bin', out / 'farhills.npy', out / 'treehouse' / 'layout.json',
-                      out / 'megapark' / 'trail.json', out / 'map_preview.png'],
+                      out / 'megapark' / 'trail.json', out / 'map_preview.png',
+                      out / 'zeppelin' / 'layout.json', out / 'treehouse' / 'removed.json'],
              about='terrain heightfield, road, scatter and every region layout -> world.json (dependents see these files)'),
         Step('world.forest_textures', [Python(TOOLS / 'forest_textures.py')],
              # Only the twig atlases it reads: a new rock or ground painting leaves the forest current.

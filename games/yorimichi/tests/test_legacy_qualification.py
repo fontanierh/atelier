@@ -997,3 +997,19 @@ def test_streamed_output_resamples_work_deadline_between_chunks(tmp_path, monkey
     with pytest.raises(ValueError, match='deadline expired'):
         authority.witness(path.name)
     assert len(reads) == 1 and reads[0][1] == 1024 * 1024
+
+
+@pytest.mark.parametrize('qualified,step,nested,native,expected', [
+    (True, 'world.layout', False, None, 600.),
+    (False, 'world.layout', False, None, 120.),
+    (True, 'world.other', False, None, 120.),
+    (False, 'world.craterpark_geometry', True, None, 600.),
+    (True, 'world.layout', False, 240., 240.),
+])
+def test_original_world_work_budget_is_role_bound(tmp_path, qualified, step, nested, native, expected):
+    authority = _output_witness_authority(tmp_path)
+    authority.step = SimpleNamespace(name=step)
+    authority.runtime = SimpleNamespace(nested_tool=object() if nested else None)
+    authority.data_steps = {'world.layout': SimpleNamespace(step='world.layout')} if qualified else {}
+    authority.native_launch = SimpleNamespace(work_seconds=native) if native is not None else None
+    assert authority.command_timeout() == expected

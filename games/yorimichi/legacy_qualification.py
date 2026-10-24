@@ -1057,11 +1057,26 @@ class TextureAuthority:
             self.completed[name] = self.attempt
 
     def command_timeout(self):
+        """@cc [owner:fontanierh,label:safety;correctness] qualified-command-work-budget
+        The recorded launch intent and actual guard MUST use the same finite work
+        allowance within the original absolute selection deadline. The calibrated
+        World allowance MUST require its qualified role, with normal queue,
+        memory and cleanup custody preserved; no live deadline is extended.
+        """
         native = getattr(self, 'native_launch', None)
         if native is not None:
             return native.work_seconds
         runtime = getattr(self, 'runtime', None)
-        return 600. if runtime is not None and runtime.nested_tool is not None else 120.
+        if runtime is not None:
+            if runtime.nested_tool is not None:
+                return 600.
+            # Retained normal V1 world.layout took 147s; the audited original
+            # integrators also progressed for 93s before a missing-output refusal.
+            # Use one finite allowance for this fixed, qualified original role.
+            world = getattr(self, 'data_steps', {}).get('world.layout')
+            if world is not None and self.step.name == world.step == 'world.layout':
+                return 600.
+        return 120.
 
     def prepare_native_command(self, ctx, step, command):
         from atelier.build_v2.legacy_client import AuthorityRefused

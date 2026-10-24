@@ -42,6 +42,12 @@ def declarations(tmp_path_factory):
         build.check_declarations(steps)
         graph = build_products.Graph(steps)
         enriched = next(s for s in graph.select([raw.name]) if s.name == raw.name)
+        region = graph.by_name[graph.owners['zeppelin.region']]
+        zeppelin = next(p for p in region.products if p.name == 'zeppelin.region')
+        assert zeppelin.paths == (root / 'zeppelin/assets', root / 'zeppelin/manifest.json',
+            root / 'zeppelin/logical-pieces.json', root / 'zeppelin/rotor-clearance.json')
+        assert root / 'zeppelin/layout.json' in raw.outputs
+        assert all(not (root / 'zeppelin/layout.json').is_relative_to(p) for p in zeppelin.paths)
         owner = graph.by_name[graph.owners['treehouse.canopy_dimensions']]
         canopy = next(p for p in owner.products if p.name == 'treehouse.canopy_dimensions')
         assert tuple(canopy.paths) == (root / 'treehouse-data/canopy/trees.json',)
@@ -129,6 +135,9 @@ def test_actual_factory_full_graph_and_abi(profile, declarations, stage):
         [*factory, *(p for p in observed.code_inputs if p not in factory
                     and p != paths.REPO / 'games/yorimichi/world/regions/megapark/plants.py')])
     assert observed.output_paths == tuple(step.outputs)
+    assert len(observed.output_paths) == 9
+    assert declarations.root / 'zeppelin/layout.json' in observed.output_paths
+    assert declarations.root / 'treehouse/removed.json' in observed.output_paths
     from atelier.build_v2.controller_entry import declaration_context
     context = declaration_context('yorimichi')
     context.out = declarations.root
@@ -145,7 +154,8 @@ def test_warm_produced_excluded_before_read(profile, declarations, stage, tmp_pa
              root / 'treehouse-data/canopy/trees.json': b'finite canopy fixture',
              **{root / name: b'finite output fixture' for name in (
                  'world.json', 'heightmap.npy', 'heightmap.bin', 'farhills.npy',
-                 'treehouse/layout.json', 'megapark/trail.json', 'map_preview.png')}}
+                 'treehouse/layout.json', 'megapark/trail.json', 'map_preview.png',
+                 'zeppelin/layout.json', 'treehouse/removed.json')}}
     for p, data in files.items():
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_bytes(data)
@@ -212,6 +222,7 @@ def test_rebound_alias_checks_reached(profile, declarations, tmp_path, monkeypat
 
 @pytest.mark.parametrize('relative', ['', 'world.json', 'heightmap.npy', 'heightmap.bin', 'farhills.npy',
     'treehouse', 'treehouse/layout.json', 'megapark/trail.json', 'map_preview.png',
+                 'zeppelin/layout.json', 'treehouse/removed.json',
     'craterpark/v2', 'craterpark/v2/geometry.npz', 'treehouse-data/canopy/trees.json'])
 def test_output_aliases_reached(profile, declarations, tmp_path, relative):
     root = tmp_path.resolve() / 'output'
@@ -422,3 +433,29 @@ def test_relevant_source_role_counter_mutations(profile, declarations, tmp_path,
     source.write_text(original.replace(before, after))
     with pytest.raises(profile.UnsupportedWorldLayout, match='source structure differs'):
         qualify(profile, step, root, checkout)
+
+
+@pytest.mark.parametrize('relative,parent,names', [
+    ('world/regions/zeppelin/layout.py', 'zeppelin', {'layout.json'}),
+    ('world/regions/treehouse/layout.py', 'treehouse', {'layout.json', 'removed.json'}),
+    ('world/regions/megapark/trail.py', 'megapark', {'trail.json'}),
+])
+def test_direct_world_integrator_writes_are_declared(declarations, relative, parent, names):
+    import ast
+    tree = ast.parse((paths.REPO / 'games/yorimichi' / relative).read_bytes())
+    integrate = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'integrate')
+    assignments = [n.value for n in ast.walk(integrate) if isinstance(n, ast.Assign)
+                   and any(isinstance(t, ast.Name) and t.id == 'out' for t in n.targets)]
+    assert len(assignments) == 1
+    assert ast.unparse(assignments[0]) == "yori.OUT / " + repr(parent)
+    writes = set()
+    for call in ast.walk(integrate):
+        if isinstance(call, ast.Call) and isinstance(call.func, ast.Attribute) and call.func.attr == 'write_text':
+            target = call.func.value
+            assert isinstance(target, ast.BinOp) and isinstance(target.op, ast.Div)
+            assert isinstance(target.left, ast.Name) and target.left.id == 'out'
+            writes.add(ast.literal_eval(target.right))
+    assert writes == names
+    assert {declarations.root / parent / name for name in writes} <= set(declarations.raw.outputs)
+    # Standalone __main__ backup/repair branches are deliberately outside this call.
+    assert not any('source' in path.relative_to(declarations.root).parts for path in declarations.raw.outputs)

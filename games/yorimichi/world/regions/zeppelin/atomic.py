@@ -19,6 +19,11 @@ LOGICAL=(('ZP_Airship','ship'),('ZP_Motors','motors'),('ZP_Propeller','propeller
 
 
 def steps(ctx,*,query_inputs=(),query_reads=(),query_needs=(),**kwargs):
+    """@cc [owner:fontanierh,label:correctness;safety] zeppelin-assembly-owns-only-its-writes
+    The region assembly product MUST cover its assets and three emitted reports,
+    while preserving the independently owned world-layout sibling layout.json.
+    Product restoration MUST NOT replace their shared parent directory.
+    """
     result=[];assets=[]
     for key,kind in LOGICAL:
         query=ctx.out/'zeppelin_queries'/(key+'.json')
@@ -68,5 +73,8 @@ def steps(ctx,*,query_inputs=(),query_reads=(),query_needs=(),**kwargs):
         log.write('Complete Zeppelin file-only assembly\n')
     result.append(Step('world.zeppelin',[Call('assemble Zeppelin',assemble)],
         inputs=[Path(__file__),*export_assembly.runtime_inputs()],reads=['zeppelin.atomic','zeppelin.rotor_clearance'],
-        products=[Product('zeppelin.region',(ctx.out/'zeppelin',))]))
+        # World layout owns zeppelin/layout.json. Restore only this assembly's
+        # actual writes, preserving the independently produced layout sibling.
+        products=[Product('zeppelin.region',(ctx.out/'zeppelin/assets',ctx.out/'zeppelin/manifest.json',
+            ctx.out/'zeppelin/logical-pieces.json',ctx.out/'zeppelin/rotor-clearance.json'))]))
     return result
