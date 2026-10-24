@@ -608,3 +608,55 @@ def test_standalone_argv_empty_or_nonempty_tail_reaches_actual_worker_parser(tmp
     with pytest.raises(ValueError, match='script/arguments'):
         native._require_action_arguments(argv[:argv.index('--')], list(arguments))
     assert command.args == arguments  # No producer flags/argument identity changed.
+
+
+@pytest.mark.parametrize('decorator,accepted,flag_spoof', [('dataclass(frozen=True)', True, False),
+    ('dataclass(frozen=False)', False, False), ('dataclass(frozen=True, slots=True)', False, False),
+    ('dataclass(frozen=True)', False, True)])
+def test_captured_frozen_dataclass_requires_exact_static_decorator_and_process_flags(tmp_path, monkeypatch, decorator, accepted, flag_spoof):
+    import sys
+    from types import ModuleType
+    from atelier.build_v2.legacy_qualification import CapturedCode, UnsupportedOrigin
+    tool = tmp_path/'tool'; tool.mkdir()
+    dc_path = tool/'dataclasses.py'
+    dc_raw = '''class _FuncBuilder:
+ def __init__(self, globals):
+  self.names=['__init__']; self.src=[' def __init__(self):\\n  pass']; self.globals=globals
+  self.locals={}; self.overwrite_errors={}; self.unconditional_adds={}
+ def add_fns_to_class(self, cls):
+  txt='def __create_fn__():\\n'+'\\n'.join(self.src)+'\\n return ('+','.join(self.names)+',)'
+  code=compile(txt,'<string>','exec',dont_inherit=True)
+  check('exec',(code,))
+def _process_class(cls, init=True, repr=True, eq=True, order=False, unsafe_hash=False,
+                   frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False):
+ seen.append(frozen)
+ func_builder=_FuncBuilder(vars(sys.modules[cls.__module__]))
+ func_builder.add_fns_to_class(cls)
+ return cls
+def dataclass(cls=None, *, frozen=False, **kwargs):
+ def wrap(cls): return _process_class(cls,frozen=frozen,**kwargs)
+ return wrap if cls is None else wrap(cls)
+'''
+    if flag_spoof:
+        dc_raw = dc_raw.replace('return _process_class(cls,frozen=frozen,**kwargs)',
+                                'return _process_class(cls,frozen=False,**kwargs)')
+    dc_path.write_text(dc_raw)
+    dc = ModuleType('dataclasses'); dc.sys, dc.seen = sys, []
+    monkeypatch.setitem(sys.modules, 'dataclasses', dc)
+    exec(compile(dc_raw, str(dc_path), 'exec', dont_inherit=True), vars(dc))
+    checkout = tmp_path/'checkout'; checkout.mkdir()
+    filename = checkout/'captured_mesh.py'
+    raw = ('from dataclasses import dataclass\n@'+decorator+
+           '\nclass Mesh:\n vertices: object\n indices: object\n offsets: object\n').encode()
+    source = CapturedCode(str(filename), raw)
+    module = ModuleType('captured_mesh'); monkeypatch.setitem(sys.modules, 'captured_mesh', module)
+    check = native._native_execution_check([source], checkout=checkout, installation=[tool])
+    dc.check = check
+    if accepted:
+        exec(source.compiled(), vars(module))
+        check.require_clean()
+    else:
+        with pytest.raises(UnsupportedOrigin):
+            exec(source.compiled(), vars(module))
+        if flag_spoof:
+            assert decorator == 'dataclass(frozen=True)' and dc.seen == [False]

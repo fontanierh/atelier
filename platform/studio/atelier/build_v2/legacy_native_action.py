@@ -469,6 +469,7 @@ def _native_execution_check(sources, *, checkout, installation):
     from atelier.build_v2.legacy_qualification import _same_code, UnsupportedOrigin
     from atelier.build_v2.controller_client import _read_at, MAX_SOURCE_FILE_BYTES, MAX_SOURCE_TOTAL_BYTES
     roots = tuple(Path(root).resolve() for root in installation)
+    captured_sources = {source.filename: source for source in sources}
     expected = {source.filename: source.compiled() for source in sources}
     installed, total = {}, [0]
     diagnostics = set()
@@ -554,6 +555,12 @@ def _native_execution_check(sources, *, checkout, installation):
             return checked_dataclass(code, caller, tool_compilation(filename))
         return False
     def checked_dataclass(code, caller, compilation):
+        """@cc [owner:fontanierh,label:safety;correctness] captured-frozen-dataclass-origin
+        Captured generated wrappers MUST bind the actual module/code to its named
+        captured bytes, exact static frozen decorator and actual process flags.
+        Installed generator/process frames, builder, fields and whole template MUST
+        independently match; anonymous code or metadata alone MUST NOT grant exec.
+        """
         # CPython 3.13 builds all methods in one wrapper. Bind the complete
         # wrapper to the actual installed generator AND the static SDK class
         # currently being decorated, rather than granting anonymous exec.
@@ -587,20 +594,39 @@ def _native_execution_check(sources, *, checkout, installation):
             return False
         module = sys.modules.get(cls.__module__)
         filename = frame.f_code.co_filename
-        original = tool_compilation(filename)
-        location = tool_path(filename)
+        captured = captured_sources.get(filename)
+        location = None if captured is not None else tool_path(filename)
+        original = expected[filename] if captured is not None else tool_compilation(filename)
         if (module is None or frame.f_globals is not vars(module)
-                or builder.globals is not vars(module) or original is None or location is None
+                or builder.globals is not vars(module) or original is None
+                or (captured is None and location is None)
                 or not _same_code(frame.f_code, original)):
             return False
-        raw = _read_at(location[0], location[1].as_posix(), MAX_SOURCE_FILE_BYTES)
+        raw = (captured.content if captured is not None else
+               _read_at(location[0], location[1].as_posix(), MAX_SOURCE_FILE_BYTES))
         classes = [node for node in ast.parse(raw).body
                    if isinstance(node, ast.ClassDef) and node.name == cls.__name__]
         if (len(classes) != 1 or len(classes[0].decorator_list) != 1
-                or not isinstance(classes[0].decorator_list[0], ast.Name)
-                or classes[0].decorator_list[0].id != 'dataclass'
                 or vars(module).get('dataclass') is not dc.dataclass):
             return False
+        decorator = classes[0].decorator_list[0]
+        if captured is None:
+            if not isinstance(decorator, ast.Name) or decorator.id != 'dataclass':
+                return False
+        else:
+            # The observed captured role is a static frozen dataclass. Bind the
+            # exact decorator AND the actual installed process flags, not its name.
+            if (not isinstance(decorator, ast.Call) or not isinstance(decorator.func, ast.Name)
+                    or decorator.func.id != 'dataclass' or decorator.args
+                    or len(decorator.keywords) != 1 or decorator.keywords[0].arg != 'frozen'
+                    or not isinstance(decorator.keywords[0].value, ast.Constant)
+                    or decorator.keywords[0].value.value is not True):
+                return False
+            flags = {'init': True, 'repr': True, 'eq': True, 'order': False,
+                     'unsafe_hash': False, 'frozen': True, 'match_args': True,
+                     'kw_only': False, 'slots': False, 'weakref_slot': False}
+            if any(process.f_locals.get(name) is not value for name, value in flags.items()):
+                return False
         fields = [node.target.id for node in classes[0].body
                   if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name)]
         if list(vars(cls).get('__annotations__', {})) != fields:
