@@ -64,9 +64,15 @@ class ControllerSelection:
             raise ValueError('v2 requires a nonempty unique target selection')
         units, staged, slots, roots = {}, {}, {}, set()
         base = None
+        seen = set()
         for member in self.members:
             if not isinstance(member, ControllerTarget):
                 raise ValueError('invalid v2 target declaration')
+            shared = (member.project, id(member.declaration), id(member.staged_inputs),
+                      id(member.content_slots), member.allowed_install_roots)
+            if shared in seen:
+                continue  # One shared graph may expose thousands of selectable roots.
+            seen.add(shared)
             request = member.request(checkout)
             header = {key: value for key, value in request['declaration'].items() if key != 'units'}
             identity = (request['version'], request['checkout'], request['project'], header)
