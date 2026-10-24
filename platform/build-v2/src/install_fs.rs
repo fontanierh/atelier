@@ -455,7 +455,17 @@ impl RootFs {
     }
 
     pub fn publish_metadata(&self, path: &str, bytes: &[u8]) -> io::Result<()> {
-        let (parent, temporary) = self.temporary(path, bytes, 0o444)?;
+        self.publish_metadata_mode(path, bytes, 0o444)
+    }
+
+    /// Private startup control uses the same durable no-replace publication,
+    /// while satisfying the isolated child's owned-control read contract.
+    pub(crate) fn publish_private_metadata(&self, path: &str, bytes: &[u8]) -> io::Result<()> {
+        self.publish_metadata_mode(path, bytes, 0o400)
+    }
+
+    fn publish_metadata_mode(&self, path: &str, bytes: &[u8], mode: u32) -> io::Result<()> {
+        let (parent, temporary) = self.temporary(path, bytes, mode)?;
         let leaf = path.rsplit('/').next().unwrap();
         let result = unsafe {
             libc::linkat(

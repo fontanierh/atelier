@@ -136,6 +136,11 @@ def restore_python_context(manifest):
                 absolute(value)
             expected[name] = value
     actual = dict(os.environ)
+    if sys.platform == 'darwin':
+        # macOS injects this at exec even after Rust env_clear. Match the
+        # existing isolated Python job: remove it, never forward it to the game.
+        actual.pop('__CF_USER_TEXT_ENCODING', None)
+        os.environ.pop('__CF_USER_TEXT_ENCODING', None)
     # CPython may coerce the empty/C locale at its built-in startup, before this
     # script runs. Rust still supplied only the four closed variables; this is not
     # an ambient locale passthrough or an added launcher setting.
@@ -143,7 +148,13 @@ def restore_python_context(manifest):
         if actual.pop('LC_CTYPE') not in ('C.UTF-8', 'C.utf8', 'UTF-8'):
             raise BootstrapRefused('unexpected interpreter locale coercion')
     if actual != expected:
-        raise BootstrapRefused('inherited operational environment differs from original context')
+        # Names only, bounded; never values or a dump of the caller environment.
+        extra = ','.join(sorted(set(actual) - set(expected)))[:128]
+        missing = ','.join(sorted(set(expected) - set(actual)))[:128]
+        changed = ','.join(sorted(key for key in set(actual) & set(expected)
+                                  if actual[key] != expected[key]))[:128]
+        raise BootstrapRefused('inherited operational environment differs from original context'
+                               f' (extra={extra}; missing={missing}; changed={changed})')
     # Direct path insertion deliberately does not execute .pth, sitecustomize or user hooks.
     for library in libraries:
         if library not in sys.path:

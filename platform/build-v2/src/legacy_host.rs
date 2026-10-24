@@ -454,11 +454,11 @@ fn strict_record<T: serde::de::DeserializeOwned>(bytes: &[u8]) -> io::Result<T> 
     if !v.is_object() {
         return Err(error("control record must be an object"));
     }
-    fn walk(v: &serde_json::Value, key: &str) -> io::Result<()> {
+    fn walk(v: &serde_json::Value, key: &str, parent: &str) -> io::Result<()> {
         match v {
             serde_json::Value::Object(m) => {
                 for (k, value) in m {
-                    walk(value, k)?;
+                    walk(value, k, key)?;
                 }
             }
             serde_json::Value::Array(values) => {
@@ -479,7 +479,7 @@ fn strict_record<T: serde::de::DeserializeOwned>(bytes: &[u8]) -> io::Result<T> 
                     }
                 }
                 for value in values {
-                    walk(value, "")?;
+                    walk(value, "", key)?;
                 }
             }
             _ => {}
@@ -505,6 +505,8 @@ fn strict_record<T: serde::de::DeserializeOwned>(bytes: &[u8]) -> io::Result<T> 
             "operational_environment",
         ]
         .contains(&key)
+            // GameIssuer.root is a typed path, unlike identity/root records.
+            && !(parent == "game_issuer" && key == "root")
             && !v.is_null()
             && !v.is_object()
         {
@@ -512,7 +514,7 @@ fn strict_record<T: serde::de::DeserializeOwned>(bytes: &[u8]) -> io::Result<T> 
         }
         Ok(())
     }
-    walk(&v, "")?;
+    walk(&v, "", "")?;
     serde_json::from_slice(bytes).map_err(error)
 }
 fn read_message(child: &SchedulerChild, deadline: Deadline) -> io::Result<Vec<u8>> {
@@ -795,7 +797,8 @@ fn run(config: HostConfig) -> Result<(), String> {
 }
 fn run_inner(config: HostConfig) -> io::Result<()> {
     launch::install_cancellation()?;
-    let deadline = validate_config(&config)?;
+    let deadline =
+        validate_config(&config).map_err(|e| error(format!("host configuration: {e}")))?;
     let work_deadline = Deadline::new(
         config
             .deadline_ns
@@ -834,21 +837,30 @@ fn run_inner(config: HostConfig) -> io::Result<()> {
     // these are request values, never semantic qualification flags.
     crate::py_data::validate_py_data_payload("JsonData", "scheduler-request.json", &request_bytes)
         .map_err(error)?;
-    let issuer = FrozenIssuer::verify(&config, &original)?;
+    let issuer = FrozenIssuer::verify(&config, &original)
+        .map_err(|e| error(format!("host frozen source verification: {e}")))?;
     deadline.remaining()?;
-    let locks = CheckoutLocks::open(&config.checkout).map_err(error)?;
-    let build = locks.try_build_exclusive().map_err(error)?;
-    let write = build.try_legacy_write_content().map_err(error)?;
+    let locks = CheckoutLocks::open(&config.checkout)
+        .map_err(|e| error(format!("host checkout locks: {e}")))?;
+    let build = locks
+        .try_build_exclusive()
+        .map_err(|e| error(format!("host build admission: {e}")))?;
+    let write = build
+        .try_legacy_write_content()
+        .map_err(|e| error(format!("host content admission: {e}")))?;
     let fs = RootFs::open(&config.checkout)?;
     if fs.occupied("build/build-v2/install/journal.json")? {
         return Err(error("install journal blocks legacy authority"));
     }
-    let existing = epoch::Selection::inspect(&build, &write).map_err(error)?;
+    let existing = epoch::Selection::inspect(&build, &write)
+        .map_err(|e| error(format!("host existing selection: {e}")))?;
     let selection_id = existing
         .as_ref()
         .map_or(config.selection.as_str(), |old| old.selection.as_str());
-    launch::prepare_default_output(&build, &write, &config.output, &config.game_issuer.project)?;
-    let custody = TripleCustody::acquire(&build, &write, &config.output)?;
+    launch::prepare_default_output(&build, &write, &config.output, &config.game_issuer.project)
+        .map_err(|e| error(format!("host operational output preparation: {e}")))?;
+    let custody = TripleCustody::acquire(&build, &write, &config.output)
+        .map_err(|e| error(format!("host writer custody: {e}")))?;
     fs.mkdirs(&config.control_directory, 0o700)?;
     let host = launch::process_identity(std::process::id())?;
     let metadata = fs.root_metadata()?;
@@ -883,7 +895,7 @@ fn run_inner(config: HostConfig) -> io::Result<()> {
         operational_environment: &config.operational_environment,
     };
     let manifest_path = format!("{}/startup.json", config.control_directory);
-    fs.publish_metadata(
+    fs.publish_private_metadata(
         &manifest_path,
         &serde_json::to_vec(&manifest).map_err(error)?,
     )?;
@@ -1342,6 +1354,30 @@ mod tests {
         );
         assert_eq!(encoded["issuer_profile"], files[1]);
         assert_eq!(manifest.issuer_files.as_ptr(), files.as_ptr());
+        // The real isolated reader requires private owned metadata, rather than
+        // the general install metadata's publicly readable 0444 mode.
+        let directory = installed_context_fixture("private-startup");
+        let fs = RootFs::open(&directory).unwrap();
+        let bytes = serde_json::to_vec(&manifest).unwrap();
+        fs.publish_private_metadata("startup.json", &bytes).unwrap();
+        use std::os::unix::fs::MetadataExt;
+        let metadata = std::fs::metadata(directory.join("startup.json")).unwrap();
+        assert_eq!(metadata.mode() & 0o777, 0o400);
+        assert_eq!(metadata.nlink(), 1);
+        assert_eq!(metadata.uid(), unsafe { libc::geteuid() });
+        assert_eq!(
+            read_bounded(&fs, "startup.json", 65536, true).unwrap(),
+            bytes
+        );
+        assert!(
+            fs.publish_private_metadata("startup.json", b"replacement")
+                .is_err()
+        );
+        assert_eq!(
+            std::fs::read(directory.join("startup.json")).unwrap(),
+            bytes
+        );
+        std::fs::remove_dir_all(directory).unwrap();
     }
     #[test]
     fn original_interpreter_role_is_preserved_and_retargeted_image_refuses() {
@@ -1480,6 +1516,26 @@ mod tests {
     }
     #[test]
     fn closed_host_codec_refuses_duplicate_unknown_positional_and_unbound_launch_records() {
+        let issuer = br#"{"game_issuer":{"project":"fixture","root":"/captured/issuer","files":["games/fixture/legacy_qualification.py"],"digest":"digest","profile":"games/fixture/legacy_qualification.py"}}"#;
+        #[derive(Deserialize)]
+        #[serde(deny_unknown_fields)]
+        struct IssuerRecord {
+            game_issuer: GameIssuer,
+        }
+        assert_eq!(
+            strict_record::<IssuerRecord>(issuer)
+                .unwrap()
+                .game_issuer
+                .root,
+            Path::new("/captured/issuer")
+        );
+        for root in ["[]", "{}", "42"] {
+            let bad = String::from_utf8(issuer.to_vec())
+                .unwrap()
+                .replace(r#""/captured/issuer""#, root);
+            assert!(strict_record::<IssuerRecord>(bad.as_bytes()).is_err());
+        }
+        assert!(strict_record::<serde_json::Value>(br#"{"root":"/not-an-identity"}"#).is_err());
         // The original ordinary request carries a real string selector array;
         // empty defaults alone did not exercise this pre-host admission path.
         let ordinary = r#"{"version":2,"game":"fixture","wanted":["data.stage"],"options":{"verify":false,"max_heavy_commands":null,"fail_fast":false}}"#;

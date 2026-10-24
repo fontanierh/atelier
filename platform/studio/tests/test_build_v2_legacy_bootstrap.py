@@ -104,6 +104,17 @@ def test_legacy_bootstrap_original_interpreter_context_without_site_hooks(tmp_pa
     with pytest.raises(BootstrapRefused, match='locale coercion'):
         restore_python_context(context)
     monkeypatch.delitem(os.environ, 'LC_CTYPE')
+    original_platform = sys.platform
+    monkeypatch.setattr(sys, 'platform', 'darwin')
+    monkeypatch.setitem(os.environ, '__CF_USER_TEXT_ENCODING', '0x1F5:0x0:0x0')
+    assert restore_python_context(context) == (str(library),)
+    assert '__CF_USER_TEXT_ENCODING' not in os.environ
+    monkeypatch.setattr(sys, 'platform', 'linux')
+    monkeypatch.setitem(os.environ, '__CF_USER_TEXT_ENCODING', 'untrusted')
+    with pytest.raises(BootstrapRefused, match='environment differs'):
+        restore_python_context(context)
+    monkeypatch.delitem(os.environ, '__CF_USER_TEXT_ENCODING')
+    monkeypatch.setattr(sys, 'platform', original_platform)
     before = list(sys.path)
     for broken in ({**context, 'interpreter_digest': '0' * 64},
                    {**context, 'interpreter_role': str(tmp_path / 'missing-python')},
