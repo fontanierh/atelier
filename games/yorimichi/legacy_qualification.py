@@ -527,10 +527,61 @@ class TextureAuthority:
         self.returned = None
         self.launch_context = None
 
+    def _file_witness(self, name):
+        """Stream a generated regular file; source-capture byte limits are unrelated.
+
+        The existing SHA256/Fact format is retained. Every parent and final leaf is
+        opened nofollow; descriptor and named identity, size and the original work
+        deadline are checked throughout. No cached observation grants authority.
+        """
+        import os
+        import stat
+        from atelier.build_v2.controller_client import _open_root, _relative, _stamp
+        from atelier.build_v2.legacy_client import authority_now_ns
+        parts = _relative(name).split('/')
+        parent = _open_root(self.checkout)
+        descriptor = None
+        deadline = getattr(self, 'manifest', {}).get('work_deadline_ns')
+        def check_deadline():
+            if deadline is not None and authority_now_ns() >= deadline:
+                raise ValueError('operational output witness work deadline expired')
+        try:
+            check_deadline()
+            for part in parts[:-1]:
+                child = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=parent)
+                os.close(parent)
+                parent = child
+            descriptor = os.open(parts[-1], os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=parent)
+            before = os.fstat(descriptor)
+            if not stat.S_ISREG(before.st_mode) or before.st_size < 0:
+                raise ValueError('operational output is not a regular file')
+            digest, size = self.hashlib.sha256(), 0
+            while True:
+                check_deadline()
+                chunk = os.read(descriptor, min(1024 * 1024, before.st_size + 1 - size))
+                if not chunk:
+                    break
+                size += len(chunk)
+                if size > before.st_size:
+                    raise ValueError('operational output grew during observation')
+                digest.update(chunk)
+            named = os.stat(parts[-1], dir_fd=parent, follow_symlinks=False)
+            if (size != before.st_size or _stamp(before) != _stamp(os.fstat(descriptor))
+                    or _stamp(before) != _stamp(named)):
+                raise ValueError('operational output changed during observation')
+            check_deadline()
+            return {'path': name, 'fact': {'kind': 'file', 'digest': digest.hexdigest(),
+                                          'size': size, 'mode': stat.S_IMODE(before.st_mode)}}
+        finally:
+            if descriptor is not None:
+                os.close(descriptor)
+            os.close(parent)
+
     def witness(self, name):
         import os
         import stat
-        from atelier.build_v2.controller_client import _read_at, MAX_SOURCE_TOTAL_BYTES
+        from atelier.build_v2.controller_client import _relative
+        name = _relative(name)
         try:
             info = os.lstat(self.checkout / name)
         except FileNotFoundError:
@@ -542,9 +593,7 @@ class TextureAuthority:
                 if len(result) > 2048:
                     raise ValueError('texture operational output inventory exceeds its finite bound')
             return result
-        raw = _read_at(self.checkout, name, MAX_SOURCE_TOTAL_BYTES)
-        return [{'path': name, 'fact': {'kind': 'file', 'digest': self.hashlib.sha256(raw).hexdigest(),
-                                      'size': len(raw), 'mode': stat.S_IMODE(info.st_mode)}}]
+        return [self._file_witness(name)]
 
     def activate_tools(self):
         from atelier.build_v2.legacy_tool_action import bind_node

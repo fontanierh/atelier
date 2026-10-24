@@ -537,6 +537,7 @@ def test_texture_group_frame_separates_shared_metadata_and_products_and_settles_
     authority.aggregate, authority.aggregate_done = None, None
     authority.native_steps, authority.native_launch, authority.dones = {}, None, {}
     authority.data_steps = {}
+    authority.single_native = {}
     authority.call_steps = {}
     authority.build = SimpleNamespace(fingerprint_state=lambda *a, **k: ('f' * 64, {}), required_inputs=lambda step: [])
     monkeypatch.setattr(module, '_prior_record', lambda client: None)
@@ -876,3 +877,107 @@ def test_actual_call_current_continuation_uses_unique_attempt_without_erasing_pr
     assert len(set(ids)) == 2 and ids[0].endswith('-10') and ids[1].endswith('-11')
     assert all(record['attempt']['members'] == [*authority.metadata_scopes, step.name] for record in calls)
     assert all(record['attempt']['execution'] == {'kind': 'in_process'} for record in calls)
+
+
+def _output_witness_authority(root):
+    import hashlib
+    from atelier import paths
+    from atelier.build_v2.legacy_client import authority_now_ns
+    from atelier.build_v2.legacy_qualification import CapturedCode, captured_spec
+    source = paths.REPO / 'games/yorimichi/legacy_qualification.py'
+    spec = captured_spec('streamed_output_witness_profile', CapturedCode(str(source), source.read_bytes()))
+    profile = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(profile)
+    authority = profile.TextureAuthority.__new__(profile.TextureAuthority)
+    authority.checkout, authority.hashlib = root, hashlib
+    authority.manifest = {'work_deadline_ns': authority_now_ns() + 60_000_000_000}
+    return authority
+
+
+def test_generated_output_witness_streams_above_source_capture_limit(tmp_path, monkeypatch):
+    import hashlib
+    import os
+    from atelier.build_v2.controller_client import MAX_SOURCE_TOTAL_BYTES, _read_at
+    path = tmp_path / 'geometry.npz'
+    block = b'generated-geometry' * 65536
+    digest = hashlib.sha256()
+    with path.open('wb') as output:
+        for _ in range(32):
+            output.write(block)
+            digest.update(block)
+    assert path.stat().st_size > MAX_SOURCE_TOTAL_BYTES
+    with pytest.raises(ValueError, match='size bound'):
+        _read_at(tmp_path, path.name, MAX_SOURCE_TOTAL_BYTES)
+    actual_read, sizes = os.read, []
+    def read(descriptor, size):
+        sizes.append(size)
+        return actual_read(descriptor, size)
+    monkeypatch.setattr(os, 'read', read)
+    result = _output_witness_authority(tmp_path).witness(path.name)
+    assert result == [{'path': path.name, 'fact': {'kind': 'file', 'digest': digest.hexdigest(),
+                       'size': len(block) * 32, 'mode': path.stat().st_mode & 0o7777}}]
+    assert sizes and max(sizes) <= 1024 * 1024
+
+
+@pytest.mark.parametrize('fault', ['grow', 'replace', 'same-size'])
+def test_streamed_output_refuses_mutation_or_named_replacement(tmp_path, monkeypatch, fault):
+    import os
+    path = tmp_path / 'geometry.npz'; path.write_bytes(b'g' * (2 * 1024 * 1024))
+    authority = _output_witness_authority(tmp_path)
+    actual_read, changed = os.read, False
+    def read(descriptor, size):
+        nonlocal changed
+        chunk = actual_read(descriptor, size)
+        if chunk and not changed:
+            changed = True
+            if fault == 'replace':
+                replacement = tmp_path / 'replacement'; replacement.write_bytes(path.read_bytes())
+                replacement.replace(path)
+            elif fault == 'grow':
+                with path.open('ab') as stream:
+                    stream.write(b'x')
+            else:
+                with path.open('r+b') as stream:
+                    stream.write(b'x')
+        return chunk
+    monkeypatch.setattr(os, 'read', read)
+    with pytest.raises(ValueError, match='grew|changed'):
+        authority.witness(path.name)
+
+
+def test_streamed_output_refuses_aliases_and_expired_deadline(tmp_path, monkeypatch):
+    import os
+    from atelier.build_v2 import legacy_client
+    actual = tmp_path / 'real'; actual.mkdir(); (actual / 'file').write_bytes(b'output')
+    (tmp_path / 'parent-alias').symlink_to(actual, target_is_directory=True)
+    (tmp_path / 'file-alias').symlink_to(actual / 'file')
+    authority = _output_witness_authority(tmp_path)
+    for name in ('parent-alias/file', 'file-alias'):
+        with pytest.raises(OSError):
+            authority.witness(name)
+    with pytest.raises(ValueError, match='normalized relative'):
+        authority.witness('../foreign')
+    reads = []
+    monkeypatch.setattr(os, 'read', lambda *args: reads.append(args))
+    monkeypatch.setattr(legacy_client, 'authority_now_ns', lambda: authority.manifest['work_deadline_ns'])
+    with pytest.raises(ValueError, match='deadline expired'):
+        authority.witness('real/file')
+    assert reads == []
+
+
+def test_streamed_output_resamples_work_deadline_between_chunks(tmp_path, monkeypatch):
+    import os
+    from atelier.build_v2 import legacy_client
+    path = tmp_path / 'geometry.npz'; path.write_bytes(b'g' * (2 * 1024 * 1024))
+    authority = _output_witness_authority(tmp_path)
+    authority.manifest['work_deadline_ns'] = 5
+    ticks = iter((0, 0, 5))
+    monkeypatch.setattr(legacy_client, 'authority_now_ns', lambda: next(ticks))
+    original, reads = os.read, []
+    def read(*args):
+        reads.append(args)
+        return original(*args)
+    monkeypatch.setattr(os, 'read', read)
+    with pytest.raises(ValueError, match='deadline expired'):
+        authority.witness(path.name)
+    assert len(reads) == 1 and reads[0][1] == 1024 * 1024
