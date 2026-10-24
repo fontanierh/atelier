@@ -50,7 +50,7 @@ CODE_SEEDS = (
     'world/regions/ferry/__init__.py', 'world/regions/hidamari_stable/__init__.py',
     'world/regions/swordcamp/__init__.py',
     'world/regions/belmonte/source.py',
-    'world/regions/village/atomic_sources.py',
+    'world/regions/village/atomic_sources.py', 'world/gen_textures.py',
 )
 
 
@@ -77,7 +77,7 @@ def source_names(checkout):
     return tuple(sorted(names))
 
 
-def discover(manifest, request, *, captured_files=None):
+def discover(manifest, request, *, captured_files=None, consumer=None):
     """Enter actual load_recipe/steps/Graph over the exact named captured providers."""
     from atelier.build_v2.controller_client import _read_at, _captured_source
     from atelier.build_v2.legacy_qualification import (
@@ -137,6 +137,10 @@ def discover(manifest, request, *, captured_files=None):
                 key, _ = build.fingerprint_state(first, {}, index=HashIndex(verify=True), tool_cache={})
                 candidate = Store().action(key)
                 blocker.update(fingerprint=key, candidate_present=candidate.is_file() and not candidate.is_symlink())
+        if consumer is not None:
+            # Pure declaration mode ends before any qualified normal preparation.
+            # The finite captured import scope remains active for execution.
+            return consumer(build, graph, steps, selected, files)
     return {'selected': names, 'controllers': controllers, 'first_legacy': blocker}
 
 
@@ -280,10 +284,11 @@ def _control_index(manifest, request, client):
 
 
 def run(*, manifest, request, client, custody):
-    """Discover, fulfill controller order, and prepare/repair one real metadata task.
+    """Run the original scheduler through one qualified audited texture task.
 
-    No target completion/Finish is issued: game/native mutation, batch, replan and final
-    Graph validation remain unsupported. Only exact hash-index claims may replay.
+    Course order remains independently checked by Rust. Unknown subsequent task
+    families stop before mutation; batches, replan and whole-Graph Finish remain
+    unsupported. The exact closed texture scope supports ordinary source-fix repair.
     """
     from atelier.build_v2.legacy_client import AuthorityRefused
     if request['game'] != 'yorimichi' or set(custody) != {'build', 'content', 'writer'}:
@@ -294,22 +299,311 @@ def run(*, manifest, request, client, custody):
         raise AuthorityRefused('discovery supports only the anchored default project output')
     # The host already created the exact output root and writer. Repeating that
     # mkdir is not a genuine mutating task, and cannot justify a whole-output claim.
-    # Read-only discovery itself receives no mutation/replay credit. The separate
-    # closed hash-index task below uses real original operations and permissions.
-    selected = discover(manifest, request)
-    obligations = manifest['controller_obligations']
-    if len(obligations) != len(selected['controllers']):
-        raise AuthorityRefused('selected controller obligations do not match the actual Graph')
-    import json
-    from atelier.build_v2.controller_client import _read_at
-    for index, (binding, original) in enumerate(zip(obligations, selected['controllers'])):
-        if binding['unit'] != original['targets'][0]:
-            raise AuthorityRefused('selected controller ordering differs from original Graph')
-        bound = json.loads(_read_at(checkout, binding['request']['path'], 2 * 1024 * 1024))
-        if bound != original:
-            raise AuthorityRefused('selected controller declaration changed after fulfillment')
-    _control_index(manifest, request, client)
-    print('Managed next unsupported selected task: ' + json.dumps(selected['first_legacy'], sort_keys=True)[:768], flush=True)
-    print(f'Managed captured recipe discovery: {len(selected["selected"])} selected declarations; '
-          'HELD Unsupported before game-task dispatch', flush=True)
-    raise AuthorityRefused('selected game-task execution, repair and final Graph completion remain unsupported')
+    # Read-only discovery itself receives no mutation/replay credit. The fixed
+    # texture profile records normal preparation and its child before their effects.
+    def execute_original(build, graph, steps, ordered, files):
+        selected = {'controllers': [s.controller.request(checkout) for s in ordered if s.controller is not None]}
+        obligations = manifest['controller_obligations']
+        if len(obligations) != len(selected['controllers']):
+            raise AuthorityRefused('selected controller obligations do not match the actual Graph')
+        import json
+        from atelier.build_v2.controller_client import _read_at
+        for index, (binding, original) in enumerate(zip(obligations, selected['controllers'])):
+            if binding['unit'] != original['targets'][0]:
+                raise AuthorityRefused('selected controller ordering differs from original Graph')
+            bound = json.loads(_read_at(checkout, binding['request']['path'], 2 * 1024 * 1024))
+            if bound != original:
+                raise AuthorityRefused('selected controller declaration changed after fulfillment')
+        authority = TextureAuthority(manifest, request, client, custody, build, graph, steps, ordered, files)
+        ctx = build.Context(request['game'], create=False)
+        ctx.fail_fast = request['options']['fail_fast']
+        ctx.legacy_authority = authority
+        return build._prepared_build(ctx, request['wanted'], force=False, touch=False, echo=print,
+                    verify=request['options']['verify'], rebuild_reason=None, rebuild_touched=False,
+                    record_cook_recovery=False, max_heavy_commands=request['options']['max_heavy_commands'],
+                    prepared_steps=steps)
+    return discover(manifest, request, consumer=execute_original)
+
+
+
+class TextureAuthority:
+    """@cc [owner:fontanierh,label:correctness;safety] original-closed-texture-task
+    Only the exact first texture script/arguments/spec/product and complete scheduler
+    metadata scope MAY qualify. Every preparation/launch MUST first pass the live Rust
+    authority; this object/metadata alone MUST NOT grant permission. Original scheduler,
+    fingerprint, cache, audit, stamp and final output checks MUST remain the certifiers.
+    Source fixes MUST preserve old claims/positive cleanup/counters via Supersede. Warm
+    metadata work MUST use explicit permission, never a fabricated zero-work claim.
+    Settle MUST follow final certificate revalidation; unknown subsequent families MUST
+    stop before mutation without Finish. See finite profile/source/queue regressions and
+    the separately retained real cold/failure/repair/current observations.
+    """
+    def __init__(self, manifest, request, client, custody, build, graph, steps, selected, files):
+        import hashlib
+        from atelier.build_v2.legacy_client import AuthorityRefused
+        self.manifest, self.request, self.client = manifest, request, client
+        self.custody, self.build, self.files = custody, build, files
+        self.checkout = Path(manifest['checkout'])
+        self.nonce = manifest['nonce']
+        self.step = next((s for s in selected if s.controller is None), None)
+        s = self.step
+        if (s is None or s.name != 'world.textures.leaf_broad' or s.heavy or s.replan or not s.audit or not s.cache
+                or s.batch is not None or s.verify is not None or s.references or s.reads or s.queries
+                or graph.prerequisites(s) or s.needs or s.after or s.pool_roots or s.optional_inputs or s.deferred_inputs
+                or len(s.commands) != 1 or type(s.commands[0]) is not build.Python
+                or Path(s.commands[0].script) != self.checkout / 'games/yorimichi/world/gen_textures.py'
+                or len(s.outputs) != 1 or s.outputs[0] != self.checkout / 'build/yorimichi/textures/T_leaf_broad.png'):
+            raise AuthorityRefused('first actual selected task is outside the closed texture family')
+        command = s.commands[0]
+        expected_args = ('--texture', 'leaf_broad', '--spec',
+                         str(self.checkout / 'games/yorimichi/world/textures/leaf_broad.json'),
+                         '--output', str(self.checkout / 'build/yorimichi/textures/T_leaf_broad.png'))
+        if (set(vars(command)) != {'script', 'args'} or tuple(map(str, command.args)) != expected_args
+                or len(s.products) != 1 or s.products[0].name != 'texture.leaf_broad'
+                or list(s.products[0].paths) != s.outputs or s.products[0].optional_paths):
+            raise AuthorityRefused('texture script/settings/output role differs from the finite profile')
+        self.controllers = {s.name: s.controller.request(self.checkout) for s in selected if s.controller is not None}
+        self.guard_relative = 'build/build-v2/legacy-host/' + self.nonce + '/guards/texture'
+        self.guard_directory = self.checkout / self.guard_relative
+        self.audit_root = self.guard_directory / 'audit'
+        self.invocation = hashlib.sha256((self.nonce + ':texture').encode()).hexdigest()[:32]
+        self.attempt = 'prepare-' + self.nonce
+        self.returned = None
+        self.launch_context = None
+        self.begun = False
+        self.hashlib = hashlib
+
+    def witness(self, name):
+        import os
+        import stat
+        from atelier.build_v2.controller_client import _read_at, MAX_SOURCE_TOTAL_BYTES
+        try:
+            info = os.lstat(self.checkout / name)
+        except FileNotFoundError:
+            return [{'path': name, 'fact': {'kind': 'absent'}}]
+        if stat.S_ISDIR(info.st_mode):
+            result = [{'path': name, 'fact': {'kind': 'directory', 'device': info.st_dev, 'inode': info.st_ino}}]
+            for path in sorted((self.checkout / name).iterdir()):
+                result.extend(self.witness(path.relative_to(self.checkout).as_posix()))
+                if len(result) > 2048:
+                    raise ValueError('texture operational output inventory exceeds its finite bound')
+            return result
+        raw = _read_at(self.checkout, name, MAX_SOURCE_TOTAL_BYTES)
+        return [{'path': name, 'fact': {'kind': 'file', 'digest': self.hashlib.sha256(raw).hexdigest(),
+                                      'size': len(raw), 'mode': stat.S_IMODE(info.st_mode)}}]
+
+    def before_prepare(self, ctx, steps, wanted):
+        import os
+        from atelier.build_v2.legacy_client import AuthorityRefused
+        from atelier.build_hashes import HashIndex
+        self.step_key, _ = self.build.fingerprint_state(self.step, {}, index=HashIndex(verify=True), tool_cache={})
+        # The unsupported historical broad-purge/action-restore path cannot run on
+        # a generic control grant, even if its journal is malformed or linked.
+        journal = ctx.out / '.checkpoint-in-progress.json'
+        if journal.exists() or journal.is_symlink():
+            raise AuthorityRefused('pending checkpoint restore needs its separately qualified recovery family')
+        info = os.lstat(ctx.out)
+        anchor = {'path': 'build/yorimichi', 'device': info.st_dev, 'inode': info.st_ino}
+        self.paths = ['build/yorimichi/.state', 'build/yorimichi/logs', 'build/yorimichi/stamps',
+                      'build/yorimichi/.checkpoint-in-progress.json',
+                      'build/yorimichi/textures/T_leaf_broad.png']
+        claims = [{'path': name, 'canonical': name, 'anchor': anchor} for name in self.paths]
+        inputs = []
+        for path in self.build.required_inputs(self.step):
+            inputs.extend(self.witness(Path(path).relative_to(self.checkout).as_posix()))
+        inputs.extend(self.witness('games/yorimichi/game.toml'))
+        inputs.extend(self.witness('uv.lock'))
+        # required_inputs intentionally retains fingerprint list multiplicity (the
+        # script can also be an explicit input). Epoch file observations are a
+        # unique path set, not a new fingerprint encoding.
+        inputs = list({item['path']: item for item in inputs}.values())
+        frame = {'profile': 'named_assembly', 'topology': self.step_key, 'inputs': inputs,
+                 'tasks': [{'id': self.step.name, 'replay': 'closed_replay', 'writes': claims}]}
+        observation = {'project': self.request['game'], 'selector': self.request['wanted'],
+                       'source_plan': self.step_key,
+                       'request_digest': self.manifest['scheduler_request']['digest'],
+                       'issuer': self.manifest['issuer_digest'], 'controller_source': self.manifest['source_digest'],
+                       'roots': ['build/yorimichi'],
+                       'sources': self.witness('games/yorimichi/legacy_qualification.py')}
+        old = _prior_record(self.client)
+        if old is not None:
+            scope = old.get('frame', {}).get('scope')
+            allowed = {'control.hash-index.prepare', self.step.name}
+            if scope is not None and any(task['id'] not in allowed for task in scope['tasks']):
+                raise AuthorityRefused('old epoch includes an unqualified game-family repair scope')
+            same = all(old['binding'].get(key) == value for key, value in observation.items() if key != 'sources')
+            if same and scope == frame:
+                self.client.request({'type': 'prepare_selection', 'observation': observation})
+                if not old['frame']['pending']:
+                    # Requeue explicitly before the original warm scheduler's metadata
+                    # work. No fabricated zero-write/no-permission warm claim.
+                    self.client.request({'type': 'requeue', 'members': [self.step.name]})
+            else:
+                self.client.request({'type': 'supersede', 'observation': observation, 'initial_frame': frame})
+        else:
+            self.client.request({'type': 'prepare_selection', 'observation': observation})
+            self.client.request({'type': 'advance', 'observation': frame})
+        self.client.request({'type': 'begin_attempt', 'attempt': {'id': self.attempt,
+                             'members': [self.step.name], 'execution': {'kind': 'in_process'}, 'guard': None}})
+        self.begun = True
+
+    def writer(self, output):
+        """Borrow only the host's same-OFD writer; never acquire/unlock another lock."""
+        from contextlib import contextmanager
+        import os
+        import stat
+        @contextmanager
+        def borrowed():
+            fd = self.custody['writer']
+            info = os.fstat(fd)
+            named = os.lstat(output / '.state/retention/writer.lock')
+            if (not stat.S_ISREG(info.st_mode) or os.get_inheritable(fd)
+                    or (info.st_dev, info.st_ino) != (named.st_dev, named.st_ino)):
+                raise ValueError('host checkpoint writer does not match its current original path')
+            yield
+        return borrowed()
+
+    def current_controller(self, step):
+        if step.controller.request(self.checkout) != self.controllers.get(step.name):
+            raise ValueError('selected controller changed within the original scheduling graph')
+        # Every permission request was independently gated by fresh Rust Current.
+
+    def before_task(self, ctx, step):
+        from atelier.build_v2.legacy_client import AuthorityRefused
+        if step is not self.step:
+            raise AuthorityRefused('next actual selected family is not yet qualified; completed task retained')
+
+    def after_task(self, ctx, step, code):
+        from atelier.build_v2.legacy_client import AuthorityRefused
+        from atelier.build_plan import read_stamp
+        from atelier import build_products
+        if code is not None or self.returned not in (None, 0):
+            raise AuthorityRefused('texture task failed; original outputs/certificates remain fenced')
+        index = ctx.build_hash_index
+        index.close()  # commit/close is inside the operational task, before settlement
+        key = self.build.fingerprint(step, {}, index=index, tool_cache=ctx.build_tool_cache)
+        stamp = read_stamp(ctx.stamps / (step.name + '.json'))
+        if (key != self.step_key or stamp.get('fingerprint') != key
+                or not self.build.outputs_present(step)
+                or not build_products.valid_records(step, stamp.get('products', {}), hasher=index.digest)):
+            raise AuthorityRefused('original texture completion is no longer current')
+        self.completed = True
+
+    def after_checkpoint(self, ctx, invalid):
+        if not getattr(self, 'completed', False):
+            return
+        if invalid:
+            raise ValueError('original final output checkpoint invalidated the texture certificate')
+        from atelier.build_plan import read_stamp
+        from atelier import build_products
+        index = ctx.build_hash_index
+        key = self.build.fingerprint(self.step, {}, index=index, tool_cache=ctx.build_tool_cache)
+        stamp = read_stamp(ctx.stamps / (self.step.name + '.json'))
+        if key != self.step_key or stamp.get('fingerprint') != key or not build_products.valid_records(
+                self.step, stamp.get('products', {}), hasher=index.digest):
+            raise ValueError('texture certificate changed during original finalization')
+        outputs = []
+        for name in self.paths:
+            outputs.extend(self.witness(name))
+        self.client.request({'type': 'settle', 'observation': {'task': self.step.name, 'attempt': self.attempt,
+                             'inputs': key, 'outputs': outputs}})
+        print('Managed original game task settled: ' + self.step.name, flush=True)
+
+    def runtime_roots(self):
+        import sysconfig
+        context = self.manifest['python_context']
+        return sorted(set([*context['platform_roots'], context['purelib'], context['platlib'],
+                           sysconfig.get_path('stdlib'), sysconfig.get_path('platstdlib')]))
+
+    def audit_argv(self, specification):
+        from atelier.build_v2.legacy_action import BOOTSTRAP
+        raw = dict(self.files)['platform/studio/atelier/build_v2/controller_client.py']
+        client = Path(self.manifest['distribution']) / 'platform/studio/atelier/build_v2/controller_client.py'
+        startup = self.checkout / ('build/build-v2/legacy-host/' + self.nonce + '/startup.json')
+        return [self.manifest['interpreter_role'], '-I', '-S', '-B', '-c', BOOTSTRAP,
+                str(client), self.hashlib.sha256(raw).hexdigest(), str(startup), str(specification)]
+
+    def action_environment(self, extra):
+        from atelier.build_source import environment
+        actual = environment(extra)
+        if self.launch_context is None:
+            return actual
+        if actual != self.base_environment:
+            raise ValueError('audit scratch environment changed after launch preparation')
+        return dict(self.launch_context.environment)
+
+    def audit_directory(self):
+        from contextlib import contextmanager
+        from atelier.build_v2.legacy_client import authority_now_ns
+        import os
+        from atelier.harness.capacity_protocol import boot_id
+        from atelier.harness.capacity_protocol import process_start
+        @contextmanager
+        def owned():
+            from atelier.harness import capacity_runtime
+            settings = capacity_runtime.read_configuration(capacity_runtime.DEFAULT_CONFIG)
+            if settings.get('schema') != 2 or 'ATELIER_CAPACITY_CLIENT' in os.environ:
+                raise ValueError('texture provider requires fresh automatic full-capacity mode')
+            spec = self.audit_root / 'request.json'
+            scratch = self.audit_root / 'scratch'
+            extras = tuple((name, str(scratch / member)) for name, member in (
+                ('HOME', 'home'), ('TMPDIR', 'tmp'), ('TMP', 'tmp'), ('TEMP', 'tmp'),
+                ('XDG_CACHE_HOME', 'cache'), ('PYTHONPYCACHEPREFIX', 'bytecode')))
+            extras += (('PYTHONDONTWRITEBYTECODE', '1'), ('ATELIER_ACTION_INPUTS', str(self.audit_root / 'action-inputs.json')))
+            self.expected_argv = self.audit_argv(spec)
+            from atelier.harness.safety.launch_ownership import prepare
+            self.base_environment = self.action_environment(extras)
+            self.launch_context = prepare(self.base_environment)
+            self.expected_environment = dict(self.launch_context.environment)
+            now = authority_now_ns()
+            execution_ns = 120 * 1_000_000_000
+            queue_ns = min(now + 1800 * 1_000_000_000,
+                           self.manifest['work_deadline_ns'] - execution_ns)
+            if queue_ns <= now:
+                raise ValueError('texture guard queue/work does not fit the original authority deadline')
+            self.queue_deadline_ns = queue_ns
+            self.attempt = 'texture-' + self.nonce
+            launch = {'scheduler': {'pid': os.getpid(), 'boot': boot_id(), 'started': str(process_start(os.getpid()))},
+                      'program': self.expected_argv[0], 'args': self.expected_argv[1:],
+                      'environment_digest': self.hashlib.sha256(__import__('json').dumps(self.expected_environment,
+                                             sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
+                      'kind': 'job', 'threads': 1, 'memory_bytes': 10 * 1024**3,
+                      'execution_ns': execution_ns, 'queue_deadline_ns': queue_ns}
+            self.client.request({'type': 'begin_attempt', 'attempt': {'id': self.attempt,
+                'members': [self.step.name], 'execution': {'kind': 'guarded', 'directory': self.guard_relative,
+                 'invocation': self.invocation, 'launch': launch}, 'guard': None}})
+            self.audit_root.mkdir(parents=True, mode=0o700)
+            yield self.audit_root
+        return owned()
+
+    def guard_options(self, argv, environment, kind):
+        from atelier.build_v2.legacy_client import authority_now_ns
+        if list(argv) != self.expected_argv or environment != self.expected_environment or kind != 'job':
+            raise ValueError('original audit command/environment differs from persisted launch intent')
+        remaining = (self.queue_deadline_ns - authority_now_ns()) / 1e9
+        if remaining <= 0:
+            raise ValueError('persisted texture queue deadline expired before normal admission')
+        return {'custody_fds': tuple(self.custody.values()), 'aggregate_tree': True,
+                'launch_context': self.launch_context,
+                'invocation_id': self.invocation, 'logical_folder': self.checkout / 'build/yorimichi/logs' / (self.step.name + '.guard'),
+                'queue_seconds': remaining}
+
+    def guard_returned(self, code):
+        import json
+        from atelier.build_v2.controller_client import _read_at
+        from atelier.harness.capacity_protocol import boot_id
+        # This attests the observed OUTER normal return of the fixed automatic
+        # full-capacity call, not rc0 or a self-generated cleanup receipt.
+        raw_process = _read_at(self.checkout, self.guard_relative + '/memory-health.json', 2 * 1024 * 1024)
+        raw_tree = _read_at(self.checkout, self.guard_relative + '/memory-health-tree.json', 2 * 1024 * 1024)
+        process, tree = json.loads(raw_process), json.loads(raw_tree)
+        monitor = tree['monitor']
+        observation = {'directory': self.guard_relative, 'invocation': self.invocation,
+                       'child': {'pid': process['pid'], 'started': str(process['process_start']), 'boot': boot_id()},
+                       'monitor': {'pid': monitor[0], 'started': str(monitor[1]), 'boot': boot_id()},
+                       'controller_source': self.manifest['source_digest'], 'issuer_source': self.manifest['issuer_digest'],
+                       'request_digest': self.manifest['scheduler_request']['digest'], 'returncode': code,
+                       'process_digest': self.hashlib.sha256(raw_process).hexdigest(),
+                       'tree_digest': self.hashlib.sha256(raw_tree).hexdigest()}
+        self.client.request({'type': 'guard_returned', 'attempt': self.attempt, 'observation': observation})
+        self.returned = code

@@ -19,6 +19,10 @@ import time
 from contextlib import contextmanager
 from .controller_client import MAX_NAMED_ISSUER_FILES
 
+# The standard factory captured before the private direct-spec wrapper is installed.
+# A CapturedCode spec never resolves/reads its logical original file during action execution.
+_CAPTURED_SPEC_FACTORY = importlib.util.spec_from_file_location
+
 MAX_CODE_BYTES = 8 * 1024 * 1024
 MAX_BINDINGS = 1024
 MAX_DEPTH = 24
@@ -253,8 +257,8 @@ def captured_spec(name, captured):
     """
     if type(name) is not str or not name or not isinstance(captured, CapturedCode):
         raise UnsupportedOrigin('invalid named captured module')
-    return importlib.util.spec_from_file_location(name, captured.filename,
-                                                 loader=CapturedLoader(name, captured))
+    return _CAPTURED_SPEC_FACTORY(name, captured.filename,
+                                  loader=CapturedLoader(name, captured))
 
 
 class NamedCapturedImports(importlib.abc.MetaPathFinder):
@@ -271,6 +275,7 @@ class NamedCapturedImports(importlib.abc.MetaPathFinder):
                        or not isinstance(source, CapturedCode) for name, source in modules.items())):
             raise UnsupportedOrigin('named module closure is invalid')
         self.modules = dict(modules)
+        self.preview_standard = True
         self.protected_names = frozenset(name.split('.')[0] for name in modules)
         self.checkout = Path(checkout).resolve(strict=True)
         self.platform_roots = tuple(Path(root).resolve(strict=True) for root in platform_roots)
@@ -285,6 +290,10 @@ class NamedCapturedImports(importlib.abc.MetaPathFinder):
         if fullname.split('.')[0] in self.protected_names:
             # Do not let a later legacy alias/custom finder execute an unregistered sibling.
             raise UnsupportedOrigin('imported checkout code is outside the named capture')
+        if not self.preview_standard:
+            # The existing audit owns standard resolver probes. A one-shot child
+            # additionally checks every executed project code object pre-exec.
+            return None
         # Observe the standard candidate only; never execute an unknown project loader.
         spec = importlib.machinery.PathFinder.find_spec(fullname, path)
         if spec is not None:
@@ -357,7 +366,7 @@ def _private_declarations(names):
 
 
 @contextmanager
-def captured_recipe_imports(sources, *, checkout, platform_roots=()):
+def captured_recipe_imports(sources, *, checkout, platform_roots=(), audited_imports=False):
     """@cc [owner:fontanierh,label:safety] captured-recipe-preexec-routing
     The fixed profile's named normal/spec imports MUST compile captured bytes at their
     original logical filenames. The finite declaration modules MUST reload privately from
@@ -453,6 +462,7 @@ def captured_recipe_imports(sources, *, checkout, platform_roots=()):
                 return super().find_spec(fullname, path, target)
 
         finder = RecipeFinder(modules, checkout=checkout, platform_roots=platform_roots)
+        finder.preview_standard = not audited_imports
         original = importlib.util.spec_from_file_location
         unspecified = object()
 

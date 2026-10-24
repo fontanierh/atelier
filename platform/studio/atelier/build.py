@@ -1050,7 +1050,7 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, veri
 
 
 def _prepared_build(ctx, wanted, *, force, touch, echo, verify, rebuild_reason, rebuild_touched,
-                    record_cook_recovery, max_heavy_commands):
+                    record_cook_recovery, max_heavy_commands, prepared_steps=None):
     from .build_snapshot import require_complete
     game = ctx.game
     ctx.record_cook_recovery = record_cook_recovery
@@ -1067,9 +1067,9 @@ def _prepared_build(ctx, wanted, *, force, touch, echo, verify, rebuild_reason, 
             raise SystemExit('--touch cannot certify checkpoint builds. Use the normal build command.')
         if force and not (ctx.rebuild_reason or ctx.rebuild_reasons):
             raise SystemExit('--force requires --rebuild-reason for checkpoint builds; normal builds restore matching results.')
-        checkpoint_steps = load_recipe(game).steps(ctx)
+        checkpoint_steps = prepared_steps if prepared_steps is not None else load_recipe(game).steps(ctx)
         check_source_launch(checkpoint_steps)
-        if any(step.controller is not None for step in build_products.Graph(checkpoint_steps).select(wanted)):
+        if any(step.controller is not None for step in build_products.Graph(checkpoint_steps).select(wanted)) and not getattr(ctx, 'legacy_authority', None):
             raise ValueError('mixed v1/controller checkpoint and reader custody is not yet accepted; no checkpoint restoration started')
         unknown = sorted(set(ctx.rebuild_reasons) - {s.name for s in checkpoint_steps})
         if unknown:
@@ -1098,7 +1098,11 @@ def _prepared_build(ctx, wanted, *, force, touch, echo, verify, rebuild_reason, 
     require_complete(paths.build_root() / game, game=game)
     from contextlib import nullcontext
     from .checkpoint_manifest import writer
-    with writer(ctx.out) if ctx.checkpoint_settings is not None else nullcontext():
+    authority = getattr(ctx, 'legacy_authority', None)
+    if authority is not None:
+        authority.before_prepare(ctx, checkpoint_steps, wanted)
+    with (authority.writer(ctx.out) if authority is not None else
+          writer(ctx.out) if ctx.checkpoint_settings is not None else nullcontext()):
         if checkpoint_steps is not None:
             try:
                 build_checkpoints.prepare(ctx, checkpoint_steps, echo=echo)
@@ -1173,6 +1177,9 @@ def _build(ctx, wanted, *, force, touch, echo, index, steps=None, produced=None,
         if completed and code != 76 and checkpoint.get('steps') is not None:
             from .checkpoint_manifest import finish
             finish(ctx, checkpoint['steps'])
+        authority = getattr(ctx, 'legacy_authority', None)
+        if authority is not None:
+            authority.after_checkpoint(ctx, invalid)
     if completed and code != 76 and getattr(ctx, 'checkpoint_settings', None) is not None:
         from . import store_retention
         from .checkpoint_store import Store
@@ -1243,7 +1250,8 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
     rebuild_names = touched_targets(ctx, steps, wanted)
     check_modules(steps)
     plan = order(steps, list(wanted))
-    if any(step.controller is not None for step in plan):
+    authority = getattr(ctx, 'legacy_authority', None)
+    if any(step.controller is not None for step in plan) and authority is None:
         raise ValueError('mixed v1/controller execution custody is not yet accepted; no v1 task dispatch started')
     from .build_cook import validate_selection
     validate_selection(ctx, plan, touch=touch)
@@ -1308,6 +1316,8 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
     def attempt(position, step):
         """Run, restore or confirm one planned step; a non-None value is its exit code."""
         nonlocal ran, restored, saved_seconds, heavy_commands
+        if authority is not None:
+            authority.before_task(ctx, step)
         print_ = f'{step.name:34s}'
         stamp = ctx.stamps / f'{step.name}.json'
         journal = ctx.stamps / f'{step.name}.restore.json'
@@ -1607,9 +1617,12 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                             return yield_build(step)
                         heavy_commands += 1
                     from .build_timings import clear_launch_report, launch_receipt
-                    launch_folder = ctx.logs / f'{step.name}.guard'
-                    fresh_launch = (step.heavy and not isinstance(command, Call)
-                                    and clear_launch_report(launch_folder))
+                    launch_folder = (authority.guard_directory if authority is not None else
+                                     ctx.logs / f'{step.name}.guard')
+                    # Managed reports live in a fresh intent-bound namespace. Do not
+                    # unlink anything there before the host records that intent.
+                    fresh_launch = (not isinstance(command, Call) and
+                                    (authority is not None or step.heavy and clear_launch_report(launch_folder)))
                     command_started = time.monotonic()
                     audited = {'products': declared_products, 'audit_receipt': audit_receipt} if step.audit else {}
                     phases = run_command(ctx, step, command, log, request, slots, **audited)
@@ -1619,8 +1632,12 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                         timing['phases'] = phases
                     if fresh_launch:
                         launch = launch_receipt(launch_folder)
+                        if authority is not None and launch is not None and launch['invocation_id'] != authority.invocation:
+                            launch = None
                         if launch is not None:
                             timing['launcher'] = launch
+                            if authority is not None:
+                                timing['guard_report'] = str(launch_folder.relative_to(paths.REPO))
                             try:
                                 from . import build_tree_observations
                                 observation = build_tree_observations.read(launch_folder, launch['invocation_id'], current)
@@ -1795,6 +1812,9 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
         for position, step in enumerate(plan):
             if step.name in completed_batches or step.name in stopped:
                 continue
+            if step.controller is not None and authority is not None:
+                authority.current_controller(step)
+                continue
             by = sorted(upstream.get(step.name, set()) & stopped)
             if by:
                 blocked[step.name] = by
@@ -1806,6 +1826,8 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             attempted.add(step.name)
             batch_failed.clear()
             code = attempt(position, step)
+            if authority is not None:
+                authority.after_task(ctx, step, code)
             running = None
             if code is None:
                 continue

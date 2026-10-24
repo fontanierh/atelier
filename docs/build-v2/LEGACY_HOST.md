@@ -129,13 +129,30 @@ cache availability. Same-source continuation revalidates settlement without repl
 source cohort requires the existing Supersede and complete ClosedReplay, preserving the counter
 and dropping old settlement credit. Unknown old scopes remain fenced.
 
-This is a partial operational checkpoint, not target completion: game/native task execution,
-restoration, batches, replan, final Graph validation, full repair and Finish remain unsupported.
-The first actual independent game task is an audited light Python texture producer with no
-matching retained action in the observed checkout. Its captured worker/body, guarded light-child
-custody and original certification/finalization remain required before it may run. Existing
-Linux discovery-fixture assertions must be reconciled with this newer Mac debug checkpoint before
-claiming a new hosted integration pass. Earlier immutable discovery proofs remain unchanged.
+The first audited game profile now reaches the original `world.textures.leaf_broad` task.
+It qualifies only that existing exact Python script, arguments, raw spec, single PNG product,
+and scheduler metadata scope. The original scheduler retains fingerprint/cache/current checks,
+audit, output records, stamp/checkpoint publication and final certificate revalidation. The
+host records preparation before its writes and a fresh launch intent before audit/child setup.
+The worker compiles named captured code at original filenames, keeps normal audit resolver
+checks, and rejects unmatched executing checkout code. Source-origin violations remain sticky
+even if the producer catches them. No unknown task/native/batch/replan is qualified.
+
+Light execution uses the existing automatic full-capacity `guarded.run`, same-OFD build/content/
+writer monitor custody and the original prepared launch context. Only its observed outer normal
+return plus independently checked actual raw process/tree/custody evidence supplies cleanup
+binding; nonzero command return remains task failure. Exceptions and unknown/archive chains
+remain fenced. The recorded queue deadline never resets during preparation. Actual report paths
+and matching invocation timing diagnostics accompany original command records; timings remain
+diagnostic, not body-duration or cleanup authority.
+
+The actual local normal path has a first-task cold success, a caught-but-sticky source-origin
+failure with no stamp/cache certificate, ordinary source-fix repair, and original warm Current
+with unchanged PNG/stamp and no new guarded task. Warm metadata requeue/permission/settlement
+are counted honestly. Settle follows the original final output checkpoint, not just child return.
+The next selected `leaf_cedar` still refuses before mutation. No whole-target Finish or fullmixed
+activation is claimed. Required Linux discovery-integration expectations remain to be reconciled
+with this newer actual Mac task path before a new hosted integration pass can be claimed.
 
 The hosted entry fixture first verifies the normally compiled binary's captured source identity
 and publishes only its ordinary helper-cache receipt as explicit fixture setup. The tested path

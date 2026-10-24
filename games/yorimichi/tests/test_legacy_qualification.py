@@ -298,6 +298,9 @@ def test_current_discovery_provider_roster_uses_static_imports_within_capture_bo
     assert 'games/yorimichi/world/regions/belmonte/terrain.py' in names
     assert 'games/yorimichi/world/regions/village/atomic_sources.py' in names
     assert 'games/yorimichi/world/regions/village/catalogue.py' in names
+    assert 'games/yorimichi/world/gen_textures.py' in names
+    assert 'games/yorimichi/world/surface_textures.py' in names
+    assert 'platform/studio/atelier/build_v2/legacy_action.py' in names
     for package in ('train', 'regions/brinecove', 'regions/ferry',
                     'regions/hidamari_stable', 'regions/swordcamp'):
         assert f'games/yorimichi/world/{package}/__init__.py' in names
@@ -420,3 +423,27 @@ def test_fixture_unknown_control_diagnostics_do_not_follow_links_search_or_inven
     assert not (evidence / 'failed-scheduler.log').exists()
     assert outside.read_bytes() == b'private-unrelated-original'
     assert 'cleanup' not in result and 'complete' not in result
+
+
+def test_texture_guard_uses_the_recorded_queue_deadline_without_reset(tmp_path, monkeypatch):
+    from atelier import paths
+    from atelier.build_v2 import legacy_client
+    from atelier.build_v2.legacy_qualification import CapturedCode, captured_spec
+    path = paths.REPO / 'games/yorimichi/legacy_qualification.py'
+    spec = captured_spec('finite_texture_deadline_profile', CapturedCode(str(path), path.read_bytes()))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    authority = module.TextureAuthority.__new__(module.TextureAuthority)
+    authority.expected_argv, authority.expected_environment = ['python', 'actual-args'], {'closed': 'context'}
+    authority.queue_deadline_ns = 20_000_000_000
+    authority.custody = {'build': 10, 'content': 11, 'writer': 12}
+    authority.launch_context, authority.invocation = object(), 'a' * 32
+    authority.checkout, authority.step = tmp_path, SimpleNamespace(name='world.textures.leaf_broad')
+    monkeypatch.setattr(legacy_client, 'authority_now_ns', lambda: 15_000_000_000)
+    options = authority.guard_options(authority.expected_argv, authority.expected_environment, 'job')
+    assert options['queue_seconds'] == 5.
+    assert options['custody_fds'] == (10, 11, 12)
+    assert options['launch_context'] is authority.launch_context
+    monkeypatch.setattr(legacy_client, 'authority_now_ns', lambda: 20_000_000_000)
+    with pytest.raises(ValueError, match='deadline expired'):
+        authority.guard_options(authority.expected_argv, authority.expected_environment, 'job')

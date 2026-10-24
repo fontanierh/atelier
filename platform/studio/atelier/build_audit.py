@@ -14,7 +14,7 @@ from . import paths
 
 WORKER = Path(__file__).with_name('build_audit_worker.py')
 NATIVE = Path(__file__).with_name('build_audit_native.py')
-SUPPORT = (Path(__file__), WORKER, NATIVE)
+SUPPORT = (Path(__file__), WORKER, NATIVE, Path(__file__).parent / 'build_v2/legacy_action.py')
 
 
 def validate(step):
@@ -201,7 +201,10 @@ def prepared(ctx, step, products, *, receipt=None):
     inputs = [*required_inputs(step), *(p for name in step.reads for p in products[name].roots())]
     output_roots = [Path(p).resolve() for product in step.products for p in product.paths]
     report_path = ctx.logs / f'{step.name}.audit.json'
-    with tempfile.TemporaryDirectory(dir=ctx.logs, prefix='.audit-') as temporary, ExitStack() as cleanup:
+    authority = getattr(ctx, 'legacy_authority', None)
+    temporary_scope = (authority.audit_directory() if authority is not None else
+                       tempfile.TemporaryDirectory(dir=ctx.logs, prefix='.audit-'))
+    with temporary_scope as temporary, ExitStack() as cleanup:
         control = Path(temporary).resolve()
         from .build_spatial import manifest
         action_inputs = control / 'action-inputs.json'
@@ -220,8 +223,9 @@ def prepared(ctx, step, products, *, receipt=None):
             'inputs': [*((str(Path(p).resolve()), Path(p).is_dir()) for p in inputs),
                        *((str(Path(p).resolve()), False) for p in step.optional_inputs)],
             'outputs': list(map(str, output_roots)), 'scratch': str(scratch),
-            'runtime': sorted({str(Path(sysconfig.get_path(name)).resolve())
-                               for name in ('stdlib', 'platstdlib', 'purelib', 'platlib')}),
+            'runtime': (authority.runtime_roots() if authority is not None else
+                        sorted({str(Path(sysconfig.get_path(name)).resolve())
+                                for name in ('stdlib', 'platstdlib', 'purelib', 'platlib')})),
             'labels': [(str(scratch), 'scratch'), (str(ctx.out.resolve()), 'build'),
                        (str(paths.REPO.resolve()), 'repo')],
         }
@@ -250,6 +254,14 @@ def prepared(ctx, step, products, *, receipt=None):
                ('XDG_CACHE_HOME', str(scratch / 'cache')), ('PYTHONPYCACHEPREFIX', str(scratch / 'bytecode')),
                ('PYTHONDONTWRITEBYTECODE', '1'), ('ATELIER_ACTION_INPUTS', str(action_inputs)))
         env = (*command_env, *env, *((('ATELIER_AUDIT_SPEC', str(spec)),) if native else ()))
+        if authority is not None:
+            if native:
+                raise ValueError('managed captured audit supports the qualified Python family only')
+            argv = authority.audit_argv(spec)
+            config['legacy_environment'] = dict(authority.action_environment(env))
+            env = tuple(config['legacy_environment'].items())
+            spec.write_text(json.dumps(config))
+            spec.chmod(0o600)
         receiver.thread.start()
         try:
             yield argv, env, (write_fd,)

@@ -9,6 +9,14 @@ from atelier import build, build_checkpoints, paths
 from atelier.build import Call, Product, Step
 
 
+@pytest.fixture(autouse=True)
+def independent_virtual_checkout(tmp_path, monkeypatch):
+    # These tests inject a synthetic recipe/Context. The real source checkout now
+    # has managed install metadata; it is not the virtual producer under test.
+    from atelier.build_v2 import legacy_entry
+    monkeypatch.setattr(legacy_entry, '_checkout', lambda: tmp_path)
+
+
 @pytest.fixture
 def project(tmp_path, monkeypatch):
     repo = tmp_path.resolve()
