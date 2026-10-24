@@ -1845,7 +1845,7 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             batch_failed.clear()
             code = attempt(position, step)
             if authority is not None:
-                authority.after_task(ctx, step, code)
+                authority.after_task(ctx, step, code, done=done)
             running = None
             if code is None:
                 continue

@@ -129,14 +129,21 @@ cache availability. Same-source continuation revalidates settlement without repl
 source cohort requires the existing Supersede and complete ClosedReplay, preserving the counter
 and dropping old settlement credit. Unknown old scopes remain fenced.
 
-The first audited game profile now reaches the original `world.textures.leaf_broad` task.
-It qualifies only that existing exact Python script, arguments, raw spec, single PNG product,
-and scheduler metadata scope. The original scheduler retains fingerprint/cache/current checks,
-audit, output records, stamp/checkpoint publication and final certificate revalidation. The
-host records preparation before its writes and a fresh launch intent before audit/child setup.
-The worker compiles named captured code at original filenames, keeps normal audit resolver
-checks, and rejects unmatched executing checkout code. Source-origin violations remain sticky
-even if the producer catches them. No unknown task/native/batch/replan is qualified.
+The finite audited texture profile covers the existing 22 individual texture tasks and their
+original no-command `world.textures` read aggregate. Qualification observes the actual factory
+or its exact normal enrichment (the main script appended to inputs), before attaching the
+private runtime descriptor. It never trims or normalizes an unknown declaration. Each producer
+keeps its normal arguments, raw spec/assets, product roles, fingerprint, audit, cache and stamp
+checks. Only the selected code/helper bytes and actual isolated worker flags enter the existing
+canonical task-key path; unrelated declaration providers do not become worker code inputs.
+
+A bounded frame contains one shared scheduler-metadata member and the 22 independently owned
+PNG/JPEG members. Each guarded attempt names metadata plus its exact producer, with a fresh
+report directory and the original logical admission identity. Original final certificate checks
+and positive HashIndex close precede product and metadata settlement. An aggregate owns no
+product or native attempt: its actual original read vector, fresh product inventories and stamp
+are checked through the existing fingerprint encoder before metadata settlement. Unknown next
+families remain fenced; no whole-Graph Finish is implied by a successful prefix.
 
 Light execution uses the existing automatic full-capacity `guarded.run`, same-OFD build/content/
 writer monitor custody and the original prepared launch context. Only its observed outer normal
@@ -146,13 +153,16 @@ remain fenced. The recorded queue deadline never resets during preparation. Actu
 and matching invocation timing diagnostics accompany original command records; timings remain
 diagnostic, not body-duration or cleanup authority.
 
-The actual local normal path has a first-task cold success, a caught-but-sticky source-origin
-failure with no stamp/cache certificate, ordinary source-fix repair, and original warm Current
-with unchanged PNG/stamp and no new guarded task. Warm metadata requeue/permission/settlement
-are counted honestly. Settle follows the original final output checkpoint, not just child return.
-The next selected `leaf_cedar` still refuses before mutation. No whole-target Finish or fullmixed
-activation is claimed. Required Linux discovery-integration expectations remain to be reconciled
-with this newer actual Mac task path before a new hosted integration pass can be claimed.
+Actual local normal `data.stage` evidence includes 21 newly guarded textures and one Current
+texture; all 22 products and metadata settled, with the aggregate still held at that checkpoint.
+Changing one spec seed rebuilt only that texture, leaving 21 Current. Reverting the exact bytes
+restored its prior checkpoint action without a guarded worker. A subsequent normal run restored
+the original aggregate metadata action (zero commands), then held before the Treehouse Maple
+planner. All original selected counts and native/metadata work are reported separately. The
+operational epoch remains `verified_complete=false`; no full-target success or downstream cutoff
+is claimed. The earlier caught-but-sticky source-origin failure, source-fix repair and warm
+Current remain separate evidence. Required Linux integration expectations still need honest
+reconciliation with this actual Mac path before another hosted integration pass is claimed.
 
 The hosted entry fixture first verifies the normally compiled binary's captured source identity
 and publishes only its ordinary helper-cache receipt as explicit fixture setup. The tested path

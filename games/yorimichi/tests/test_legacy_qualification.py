@@ -530,6 +530,7 @@ def test_texture_group_frame_separates_shared_metadata_and_products_and_settles_
                           for name in authority.steps}
     authority.runtimes = {name: object() for name in authority.steps}
     authority.completed = {}
+    authority.aggregate, authority.aggregate_done = None, None
     authority.build = SimpleNamespace(fingerprint_state=lambda *a, **k: ('f' * 64, {}), required_inputs=lambda step: [])
     monkeypatch.setattr(module, '_prior_record', lambda client: None)
     ctx = SimpleNamespace(out=case.root / 'build/yorimichi')
@@ -593,6 +594,7 @@ def test_texture_failed_final_certificate_never_settles_earlier_members_or_metad
     case = scripted_index_provider
     authority = case.profile.TextureAuthority.__new__(case.profile.TextureAuthority)
     authority.client = case.client()
+    authority.aggregate, authority.aggregate_done = None, None
     authority.completed = {'world.textures.leaf_broad': 'attempt-one', 'world.textures.leaf_cedar': 'attempt-two'}
     authority.steps = {name: SimpleNamespace(name=name) for name in authority.completed}
     def check(ctx, step):
@@ -625,3 +627,42 @@ def test_actual_texture_read_aggregate_has_no_commands_outputs_or_extra_controls
                      {'reads': list(reversed(products))}, {'cache': True}, {'replan': True}):
         with pytest.raises(AuthorityRefused):
             profile.qualify_texture_aggregate(replace(aggregate, **mutation), build=build, graph=graph, products=products)
+
+
+def test_actual_aggregate_reuses_original_product_keys_and_detects_changed_reads(tmp_path):
+    from atelier import build, build_products, paths
+    from atelier.build_hashes import HashIndex
+    from atelier.build_v2.legacy_qualification import CapturedCode, captured_spec
+    source = paths.REPO / 'games/yorimichi/legacy_qualification.py'
+    spec = captured_spec('actual_aggregate_metadata_flow', CapturedCode(str(source), source.read_bytes()))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    factory = build.load_recipe('yorimichi')
+    steps = factory.texture_steps(SimpleNamespace(out=tmp_path))
+    textures = {step.name: step for step in steps if step.products}
+    aggregate = next(step for step in steps if step.name == 'world.textures')
+    done = {}
+    for step in textures.values():
+        step.outputs[0].parent.mkdir(parents=True, exist_ok=True)
+        step.outputs[0].write_bytes(step.name.encode())
+        build_products.feed_results(done, build_products.records(step))
+    index = HashIndex()
+    ctx = SimpleNamespace(build_hash_index=index, build_tool_cache={}, stamps=tmp_path / 'stamps')
+    ctx.stamps.mkdir()
+    key = build.fingerprint(aggregate, done, index=index, tool_cache={})
+    (ctx.stamps / (aggregate.name + '.json')).write_text(json.dumps({'fingerprint': key}))
+    authority = module.TextureAuthority.__new__(module.TextureAuthority)
+    authority.build, authority.steps, authority.aggregate = build, textures, aggregate
+    authority.aggregate_done = None
+    authority.completed = {name: 'original-attempt' for name in textures}
+    authority.preparation_attempt = 'original-preparation'
+    authority.before_task(ctx, aggregate)
+    authority.after_task(ctx, aggregate, None, done=done)
+    assert authority.runtime is None and authority.attempt == authority.preparation_attempt
+    assert authority.aggregate_key == key and set(authority.completed) == set(textures)
+    assert aggregate.commands == [] and aggregate.outputs == []
+    index.close()
+    authority._check_aggregate(ctx)
+    next(iter(textures.values())).outputs[0].write_bytes(b'changed product after aggregate')
+    with pytest.raises(ValueError, match='aggregate read identity'):
+        authority._check_aggregate(ctx)

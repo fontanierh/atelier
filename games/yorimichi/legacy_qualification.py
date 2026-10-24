@@ -382,6 +382,11 @@ class TextureAuthority:
                             and step.name != 'world.textures'), None)
         print(f'Managed texture group declarations: {len(self.steps)}; next actual boundary: {following}; '
               f'first nontexture task: {next_family}', flush=True)
+        self.aggregate = next((step for step in selected if step.name == 'world.textures'), None)
+        if self.aggregate is not None:
+            qualify_texture_aggregate(self.aggregate, build=build, graph=graph,
+                                      products=['texture.' + name for name in ROSTER])
+        self.aggregate_done = None
         self.metadata = 'control.textures.scheduler'
         self.attempt = 'prepare-' + self.nonce
         self.preparation_attempt = self.attempt
@@ -497,6 +502,13 @@ class TextureAuthority:
 
     def before_task(self, ctx, step):
         from atelier.build_v2.legacy_client import AuthorityRefused
+        if step is self.aggregate:
+            if set(self.completed) != set(self.steps):
+                raise AuthorityRefused('texture aggregate reached before its complete successful product set')
+            self.step, self.runtime = step, None
+            self.attempt, self.returned = self.preparation_attempt, None
+            self.launch_context = None
+            return
         if self.steps.get(step.name) is not step:
             raise AuthorityRefused('next actual selected family is not yet qualified; completed tasks retained')
         self.step = step
@@ -511,10 +523,19 @@ class TextureAuthority:
         self.returned = None
         self.launch_context = None
 
-    def after_task(self, ctx, step, code):
+    def after_task(self, ctx, step, code, *, done=None):
         from atelier.build_v2.legacy_client import AuthorityRefused
         if code is not None or self.returned not in (None, 0):
             raise AuthorityRefused('texture task failed; original outputs/certificates remain fenced')
+        if step is self.aggregate:
+            if done is None:
+                raise AuthorityRefused('aggregate lacks the original scheduler product observations')
+            self.aggregate_done = dict(done)
+            self.aggregate_key = self.build.fingerprint(step, done, index=ctx.build_hash_index,
+                                                         tool_cache=ctx.build_tool_cache)
+            self._check_aggregate(ctx)
+            print('Managed texture aggregate observed: zero commands; original read identity/stamp', flush=True)
+            return
         self._check_certificate(ctx, step)
         self.completed[step.name] = self.attempt
 
@@ -529,6 +550,22 @@ class TextureAuthority:
                 or not build_products.valid_records(step, stamp.get('products', {}), hasher=index.digest)):
             raise ValueError('original texture completion is no longer current: ' + step.name)
         return key
+
+    def _check_aggregate(self, ctx):
+        if self.aggregate_done is None:
+            return
+        from atelier import build_products
+        from atelier.build_plan import read_stamp
+        # Reuse the ORIGINAL product inventory/identity and fingerprint encoders,
+        # replacing observations from every actual producer with fresh facts.
+        fresh = dict(self.aggregate_done)
+        for step in self.steps.values():
+            build_products.feed_results(fresh, build_products.records(step, hasher=ctx.build_hash_index.digest))
+        key = self.build.fingerprint(self.aggregate, fresh, index=ctx.build_hash_index,
+                                     tool_cache=ctx.build_tool_cache)
+        stamp = read_stamp(ctx.stamps / (self.aggregate.name + '.json'))
+        if key != self.aggregate_key or stamp.get('fingerprint') != key:
+            raise ValueError('original aggregate read identity/stamp changed before metadata settlement')
 
     def checkpoint_complete(self, ctx, invalid):
         self.final_invalid = invalid
@@ -548,6 +585,7 @@ class TextureAuthority:
         # Original finalization and HashIndex.close precede ANY member settlement.
         # Validate the complete successful prefix first, then retain its exact products.
         keys = {name: self._check_certificate(ctx, self.steps[name]) for name in self.completed}
+        self._check_aggregate(ctx)
         for name, attempt in self.completed.items():
             outputs = self.witness(self.profiles[name].output.relative_to(self.checkout).as_posix())
             self.client.request({'type': 'settle', 'observation': {'task': name, 'attempt': attempt,
