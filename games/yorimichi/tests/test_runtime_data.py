@@ -107,8 +107,10 @@ def test_map_required_outputs_cover_runtime_sources_and_auxiliary_files(tmp_path
     assert build.outputs_present(producer)
 
 
-def test_staging_factory_declares_character_helper_roster_and_optional_adventures(tmp_path, monkeypatch):
+def test_staging_factory_declares_character_helper_roster_and_present_adventures(tmp_path, monkeypatch):
     recipe = build.load_recipe('yorimichi')
+    ctx = SimpleNamespace(game='yorimichi', out=tmp_path / 'build', uproject=None)
+    original_steps = recipe.steps(ctx)
     chars = tmp_path / 'characters'
     pipeline = chars / 'pipeline'
     pipeline.mkdir(parents=True)
@@ -123,15 +125,20 @@ def test_staging_factory_declares_character_helper_roster_and_optional_adventure
             target.with_name('adventure.toml').write_bytes(adventure.read_bytes())
     monkeypatch.setattr(recipe, 'CHARS', chars)
     monkeypatch.setattr(recipe, 'PIPELINE', pipeline)
-    ctx = SimpleNamespace(game='yorimichi', out=tmp_path / 'build', uproject=None)
 
     def projection():
         # The real existing factory supplies declarations. Project only the new inputs
         # when exercising the unchanged fingerprint; no map/mesh/native output is built.
         actual = next(step for step in recipe.staging_steps(ctx) if step.name == 'data.stage')
+        # Validate the real complete declaration, not just the fingerprint helper. In
+        # particular reads-only consumers cannot bypass Graph's optional-input rule.
+        steps = [actual if step.name == actual.name else step for step in original_steps]
+        assert build.build_products.Graph(steps).by_name[actual.name] is actual
         roster = sorted(chars.glob('*/character.toml'))
         assert helper in actual.inputs and set(roster) <= set(actual.inputs)
-        assert actual.optional_inputs == [path.with_name('adventure.toml') for path in roster]
+        adventures = [path.with_name('adventure.toml') for path in roster]
+        assert not actual.optional_inputs
+        assert all((path in actual.inputs) == path.exists() for path in adventures)
         return replace(actual, inputs=[p for p in actual.inputs if p.is_relative_to(chars)])
 
     def fingerprint():
@@ -152,16 +159,20 @@ def test_staging_factory_declares_character_helper_roster_and_optional_adventure
     character.write_bytes(original)
     assert fingerprint() == initial
 
-    absent = next(p for p in projection().optional_inputs if not p.exists())
-    absent.write_bytes(b'# newly present optional adventure\n')
+    absent = next(path.with_name('adventure.toml') for path in sorted(chars.glob('*/character.toml'))
+                  if not path.with_name('adventure.toml').exists())
+    absent.write_bytes(b'')  # Presence must change identity even when there are no file bytes.
     assert fingerprint() != initial
+    present_empty = fingerprint()
+    absent.write_bytes(b'# changed present adventure bytes\n')
+    assert fingerprint() != present_empty
     absent.unlink()
     assert fingerprint() == initial
 
     future = chars / 'future-member' / 'character.toml'
     future.parent.mkdir()
     future.write_bytes(b'id = "future-member"\n')
-    assert future in projection().inputs and future.with_name('adventure.toml') in projection().optional_inputs
+    assert future in projection().inputs and future.with_name('adventure.toml') not in projection().inputs
     assert fingerprint() != initial
     future.unlink()
     assert fingerprint() == initial

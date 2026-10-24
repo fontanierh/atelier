@@ -40,9 +40,11 @@ does not claim a new native export or acceptance run.
 
 Runtime staging also tracks the character roster that determines its bike and portrait paths.
 `data.stage` declares `assets/characters/pipeline/definition.py`, every current
-`assets/characters/*/character.toml`, and each corresponding `adventure.toml` as an optional
-input. Adding or removing a character, changing configuration bytes, or making an adventure
-file appear changes the ordinary input observation. The existing fingerprint and optional-file
-providers handle this; no separate operational-plan digest is used as a task key. Older stamps
+`assets/characters/*/character.toml`, and only corresponding **present** `adventure.toml`
+paths in deterministic input membership. Absent paths are not required inputs. Adding or removing
+a character, changing configuration bytes, or adding/removing even an empty adventure file changes
+the existing labeled Merkle input observation (this consumer already reads named products).
+No new named product or separate operational-plan digest is used as a task key. A future operational
+SourcePlan must still retain explicit absent-path witnesses for execution/repair. Older stamps
 that omitted these inputs can miss once. This does not establish a rebuild-count or timing result,
 and the remaining staging copies retain their existing byte and mtime behavior.
