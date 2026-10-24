@@ -49,6 +49,7 @@ CODE_SEEDS = (
     'world/regions/ferry/__init__.py', 'world/regions/hidamari_stable/__init__.py',
     'world/regions/swordcamp/__init__.py',
     'world/regions/belmonte/source.py',
+    'world/regions/village/atomic_sources.py',
 )
 
 

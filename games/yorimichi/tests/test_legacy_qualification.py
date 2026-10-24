@@ -29,6 +29,8 @@ def test_current_discovery_provider_roster_uses_static_imports_within_capture_bo
     assert 'games/yorimichi/world/regions/belmonte/source.py' in names
     assert 'games/yorimichi/world/regions/belmonte/query_surface.py' in names
     assert 'games/yorimichi/world/regions/belmonte/terrain.py' in names
+    assert 'games/yorimichi/world/regions/village/atomic_sources.py' in names
+    assert 'games/yorimichi/world/regions/village/catalogue.py' in names
     for package in ('train', 'regions/brinecove', 'regions/ferry',
                     'regions/hidamari_stable', 'regions/swordcamp'):
         assert f'games/yorimichi/world/{package}/__init__.py' in names

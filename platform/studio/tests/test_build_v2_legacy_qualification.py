@@ -250,7 +250,7 @@ def test_captured_package_loader_preserves_default_path_and_explicit_plain_modul
 
 def test_named_issuer_imports_accept_512_and_refuse_513_or_duplicate_paths(tmp_path):
     from atelier.build_v2.legacy_qualification import NamedCapturedImports, captured_recipe_imports
-    sources = [CapturedCode(str(tmp_path / f'provider_{i}.py'), b'VALUE = 1\n')
+    sources = [CapturedCode(str(tmp_path / 'platform/studio' / f'provider_{i}.py'), b'VALUE = 1\n')
                for i in range(513)]
     modules = {f'provider_{i}': source for i, source in enumerate(sources)}
     assert len(NamedCapturedImports(dict(list(modules.items())[:512]), checkout=tmp_path).modules) == 512
