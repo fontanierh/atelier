@@ -40,6 +40,12 @@ class TreehouseAssembly:
     inventory: CallableObservation
 
 
+@dataclass(frozen=True)
+class _ItemReference:
+    key: str
+    root: Path
+
+
 def _source(checkout, path):
     from atelier.build_v2.controller_client import MAX_SOURCE_FILE_BYTES, _read_at
     try:
@@ -75,6 +81,39 @@ def _output(path, *, directory):
 def _captured(checkout, path):
     from atelier.build_v2.legacy_qualification import CapturedCode
     return CapturedCode(str(path), _source(checkout, path))
+
+
+def _item_method(actual, expected, name, item_class):
+    if type(actual) is not type(expected):
+        raise UnsupportedTreehouseAssembly(f'assembly Item {name} type differs')
+    if type(actual) is not types.FunctionType:
+        if actual is not expected:
+            raise UnsupportedTreehouseAssembly(f'assembly Item {name} inherited method differs')
+        return
+    if (type(expected) is not types.FunctionType or actual.__defaults__ != expected.__defaults__
+            or actual.__kwdefaults__ != expected.__kwdefaults__):
+        raise UnsupportedTreehouseAssembly(f'assembly Item {name} defaults differ')
+    fields_ = ('co_argcount', 'co_posonlyargcount', 'co_kwonlyargcount', 'co_nlocals',
+               'co_stacksize', 'co_flags', 'co_code', 'co_consts', 'co_names',
+               'co_varnames', 'co_freevars', 'co_cellvars', 'co_linetable', 'co_exceptiontable')
+    if any(getattr(actual.__code__, field) != getattr(expected.__code__, field) for field in fields_):
+        raise UnsupportedTreehouseAssembly(f'assembly Item {name} code differs')
+    if (actual.__code__.co_freevars != ('__dataclass_builtins_object__',)
+            and (actual.__closure__ is None) != (expected.__closure__ is None)):
+        raise UnsupportedTreehouseAssembly(f'assembly Item {name} closure shape differs')
+    if actual.__closure__ is not None:
+        try:
+            actual_cells = [cell.cell_contents for cell in actual.__closure__]
+            expected_cells = [cell.cell_contents for cell in expected.__closure__]
+        except ValueError as error:
+            raise UnsupportedTreehouseAssembly(f'assembly Item {name} has an empty closure') from error
+        expected_cells = [
+            item_class if name == 'cls' and value is _ItemReference else value
+            for name, value in zip(actual.__code__.co_freevars, expected_cells)
+        ]
+        if any(type(actual_value) is not type(expected_value) or actual_value != expected_value
+               for actual_value, expected_value in zip(actual_cells, expected_cells)):
+            raise UnsupportedTreehouseAssembly(f'assembly Item {name} closure values differ')
 
 
 def _builtins(**values):
@@ -152,9 +191,8 @@ def qualify_treehouse_assembly(step, *, checkout: Path, output_root: Path) -> Tr
     call = step.commands[0]
     if call.name != 'assemble treehouse_trees' or type(call.name) is not str or set(vars(call)) != {'name', 'fn'}:
         raise UnsupportedTreehouseAssembly('assembly Call identity differs')
-    runtime = export_assembly.runtime_inputs()
-    runtime_root = Path(runtime[0]).parent
-    expected_inputs = [region_source, *(studio / path.relative_to(runtime_root) for path in runtime)]
+    expected_inputs = [region_source, *(studio / name for name in
+        ('export_assembly.py', 'atomic_files.py', 'file_copy.py', 'export_manifest.py', 'model_files.py'))]
     if (type(step.inputs) is not list or len(step.inputs) != len(expected_inputs) or any(
             type(actual) is not type(expected) or actual != expected
             for actual, expected in zip(step.inputs, expected_inputs))):
@@ -201,12 +239,19 @@ def qualify_treehouse_assembly(step, *, checkout: Path, output_root: Path) -> Tr
 
     # Base-source helper bindings are intentionally exact; Inventory owns any later
     # managed-temp atomic_json rebind rather than this profile accepting another shape.
-    if (type(export_assembly.Item) is not type
+    if (type(export_assembly.Item) is not type or export_assembly.Item is _ItemReference
+            or export_assembly.Item.__module__ != export_assembly.__name__
+            or export_assembly.Item.__qualname__ != 'Item'
+            or export_assembly.Item.__bases__ != (object,)
+            or export_assembly.Item.__dict__.keys() != _ItemReference.__dict__.keys()
             or export_assembly.Item.__dataclass_fields__.keys() != {'key', 'root'}
             or export_assembly.Item.__dataclass_params__.frozen is not True
             or any(field.default is not MISSING or field.default_factory is not MISSING
                    for field in fields(export_assembly.Item))):
         raise UnsupportedTreehouseAssembly('assembly Item declaration differs')
+    for name in ('__init__', '__new__', '__getattribute__', '__setattr__', '__delattr__'):
+        _item_method(getattr(export_assembly.Item, name), getattr(_ItemReference, name), name,
+                     export_assembly.Item)
     manifest = export_manifest.__dict__
     if (type(manifest.get('PRIMARY')) is not set or manifest['PRIMARY'] != {'.fbx', '.glb'}
             or type(manifest.get('TRIANGLE_LIMIT')) is not int or manifest['TRIANGLE_LIMIT'] != 32768
@@ -240,7 +285,31 @@ def qualify_treehouse_assembly(step, *, checkout: Path, output_root: Path) -> Tr
                   'sha': IdentityBinding(export_manifest.sha)},
         builtins_=_builtins(ValueError=ValueError, type=type, int=int, isinstance=isinstance,
                             list=list, len=len, any=any, float=float, zip=zip))
-    _verify(file_copy.clone_function.__wrapped__, copy_code, qualname='clone_function',
+    clone = file_copy.clone_function
+    import _functools
+    if type(clone) is not _functools._lru_cache_wrapper:
+        raise UnsupportedTreehouseAssembly('assembly clone_function is not the real cache wrapper')
+    try:
+        cache_info = _functools._lru_cache_wrapper.__dict__['cache_info'](clone)
+    except (AttributeError, TypeError) as error:
+        raise UnsupportedTreehouseAssembly('assembly cache wrapper state is uninspectable') from error
+    import gc
+    referents = gc.get_referents(clone)
+    dictionaries = [value for value in referents if value is clone.__dict__]
+    internal = [value for value in referents if type(value) is types.FunctionType]
+    from functools import lru_cache
+    reference_parameters = lru_cache(maxsize=None, typed=False)(
+        lambda: None).__dict__['cache_parameters']
+    parameters = clone.__dict__.get('cache_parameters')
+    if (type(parameters) is not types.FunctionType
+            or parameters.__code__ != reference_parameters.__code__
+            or parameters.__defaults__ != reference_parameters.__defaults__
+            or parameters.__kwdefaults__ != reference_parameters.__kwdefaults__
+            or [cell.cell_contents for cell in parameters.__closure__ or ()] != [None, False]
+            or cache_info.maxsize is not None or len(dictionaries) != 1
+            or len(internal) != 1 or internal[0] is not clone.__dict__.get('__wrapped__')):
+        raise UnsupportedTreehouseAssembly('assembly cache wrapper state is ambiguous or spoofed')
+    _verify(clone.__wrapped__, copy_code, qualname='clone_function',
         globals_={'ctypes': IdentityBinding(ctypes)})
     _verify(file_copy.copy_file, copy_code, qualname='copy_file',
         globals_={'clone_function': IdentityBinding(file_copy.clone_function), 'os': IdentityBinding(os),
