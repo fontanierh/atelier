@@ -218,3 +218,67 @@ def test_blender_action_entrypoint_bootstraps_and_ignores_engine_arguments(tmp_p
     assert result.returncode == 1
     assert 'FileNotFoundError' in result.stderr and 'world.json' in result.stderr
     assert 'ModuleNotFoundError' not in result.stderr and 'unrecognized arguments' not in result.stderr
+
+
+def test_original_farhills_declares_its_transitive_physical_terrain_reads(tmp_path, monkeypatch):
+    from atelier import build, build_products
+    from types import SimpleNamespace
+    monkeypatch.delenv('ATELIER_CRATERPARK_EDITOR_PARK', raising=False)
+    monkeypatch.delenv('ATELIER_CRATERPARK_EDITOR_LINES', raising=False)
+    monkeypatch.delenv('ATELIER_CRATERPARK_V4_DESIGN', raising=False)
+    recipe = build.load_recipe('yorimichi')
+    graph = build_products.Graph(recipe.steps(SimpleNamespace(game='yorimichi', out=tmp_path, uproject=None)))
+    step = graph.by_name['world.farhills']
+    assert step.commands[0].script == GAME / 'world/farhills_surface.py'
+    assert step.commands[0].threads == 3 and step.commands[0].factory_startup
+    assert step.commands[0].args == () and step.heavy and step.cache
+    assert all(p in step.inputs for p in recipe.craterpark_v4.input_paths())
+    assert tmp_path / 'craterpark/v2/geometry.npz' in step.inputs
+    assert all(GAME / 'assets' / p in step.inputs for p in
+               ('belmonte/source.json', 'megapark/map.json', 'megapark/geometry', 'megapark/collision'))
+    assert [product.name for product in step.products] == [
+        'terrain.FarHills.natural', 'terrain.FarHills.final', 'terrain.FarHills.provenance']
+
+
+def test_terrain_product_managed_temporary_preserves_default_bytes_and_scope(tmp_path, monkeypatch):
+    import terrain_product
+    from atelier.atomic_files import managed_temporaries
+    mesh = Mesh.from_polygons([[0., 0., 0.], [1., 0., 0.], [0., 1., 0.]], [[0, 1, 2]])
+    identity = dict(owner='FarHills', stage='final', city=True)
+    default, scoped, again = (tmp_path / name / 'final.npz' for name in ('default', 'scoped', 'again'))
+    actual, observed = terrain_product.zipfile.ZipFile, []
+    def observe(path, *args, **kwargs):
+        observed.append(Path(path))
+        return actual(path, *args, **kwargs)
+    monkeypatch.setattr(terrain_product.zipfile, 'ZipFile', observe)
+    save(default, mesh, **identity)
+    scratch = tmp_path / 'private-metadata' / 'atomic-tmp'
+    with managed_temporaries(scratch):
+        retained = scratch / 'retained-unknown'
+        retained.write_bytes(b'preserve for exact epoch recovery')
+        save(scoped, mesh, **identity)
+    save(again, mesh, **identity)
+    assert observed == [default.with_suffix('.npz.tmp'), scratch / 'final.npz.tmp', again.with_suffix('.npz.tmp')]
+    assert default.read_bytes() == scoped.read_bytes() == again.read_bytes()
+    assert list(scratch.iterdir()) == [retained]
+    assert retained.read_bytes() == b'preserve for exact epoch recovery'
+    assert not any(path.exists() for path in observed)
+
+
+def test_terrain_product_managed_cross_device_refuses_before_temporary(tmp_path, monkeypatch):
+    import stat
+    from types import SimpleNamespace
+    from atelier.atomic_files import managed_temporaries
+    destination = tmp_path / 'products' / 'final.npz'
+    destination.parent.mkdir()
+    scratch = tmp_path / 'metadata' / 'atomic-tmp'
+    mesh = Mesh.from_polygons([[0., 0., 0.], [1., 0., 0.], [0., 1., 0.]], [[0, 1, 2]])
+    original = Path.lstat
+    with managed_temporaries(scratch):
+        def different_device(path, *args, **kwargs):
+            info = original(path, *args, **kwargs)
+            return SimpleNamespace(st_mode=stat.S_IFDIR, st_dev=info.st_dev+1) if path == destination.parent else info
+        monkeypatch.setattr(Path, 'lstat', different_device)
+        with pytest.raises(ValueError, match='same-filesystem'):
+            save(destination, mesh, owner='FarHills', stage='final', city=True)
+    assert not destination.exists() and not list(scratch.iterdir())

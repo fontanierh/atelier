@@ -1105,7 +1105,11 @@ def world_steps(ctx):
                      *(ASSETS / 'belmonte' / entry['path'] for entry in _read_json(ASSETS / 'belmonte/source.json')['meshes']
                        if entry['name'].startswith('SM_BM_BT_Terrain_')),
                      REGIONS / 'megapark' / 'placement.py', REGIONS / 'megapark' / 'trail.py', REGIONS / 'megapark' / 'gate.py',
-                     out / 'world.json', out / 'heightmap.npy', out / 'farhills.npy', out / 'megapark' / 'trail.json'],
+                     out / 'world.json', out / 'heightmap.npy', out / 'farhills.npy', out / 'megapark' / 'trail.json',
+                     *craterpark_v4.input_paths(),
+                     *([out / 'craterpark/v2/geometry.npz'] if craterpark_v4.selected() else []),
+                     ASSETS / 'belmonte/source.json', ASSETS / 'megapark/map.json',
+                     ASSETS / 'megapark/geometry', ASSETS / 'megapark/collision'],
              needs=['world.layout', *crater_geometry],
              products=[Product('terrain.FarHills.natural', (out / 'terrain/FarHills/natural.npz',)),
                        Product('terrain.FarHills.final', (out / 'terrain/FarHills/final.npz',)),

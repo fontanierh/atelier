@@ -121,7 +121,7 @@ def test_actual_factory_full_graph_and_abi(profile, declarations, stage):
         'step', 'script', 'arguments', 'raw_inputs', 'produced_inputs', 'code_inputs', 'output_paths', 'products')
     assert observed.script == step.commands[0].script
     assert observed.arguments == () and observed.products == ()
-    assert len(observed.raw_inputs) == 49 and len(observed.code_inputs) == 82
+    assert len(observed.raw_inputs) == 49 and len(observed.code_inputs) == 83
     # clear_far_forest/footprint and gate terrain sample these committed raw assets.
     megapark = paths.REPO / 'games/yorimichi/assets/megapark'
     assert all(megapark / name in observed.raw_inputs for name in ('map.json', 'geometry', 'collision'))
