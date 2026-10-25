@@ -267,15 +267,19 @@ def persistent_cook_view(view, protected, source_key, state_root):
     return destination, remapped
 
 
-def cook_argv(engine, project, packages, source_key):
+def cook_argv(engine, project, packages, source_key, *, global_data=False):
     if (not isinstance(packages, list) or not packages or packages != sorted(set(packages))
             or any(not isinstance(name, str) or not re.fullmatch(r'/(?:[A-Za-z0-9_]+/)+[A-Za-z0-9_]+', name)
                    or name.startswith('/Script/') for name in packages)):
         raise Refused('source-cook requires an exact canonical package roster')
     if not re.fullmatch('[a-f0-9]{64}', source_key):
         raise Refused('source-cook key is not the complete controller input key')
+    selection = (['-NoDefaultMaps', '-NoGameAlwaysCook', '-SkipHardReferences', '-SkipSoftReferences']
+                 if global_data else ['-cooksinglepackagenorefs'])
+    shader_settings = ['-ini:Game:[/Script/UnrealEd.ProjectPackagingSettings]:bShareMaterialShaderCode=True',
+                       '-ini:Game:[/Script/UnrealEd.ProjectPackagingSettings]:bSharedMaterialNativeLibraries=False']
     return [str(engine / 'Engine/Binaries/Mac/UnrealEditor-Cmd'), str(project), '-run=cook',
-            '-targetplatform=Mac', '-package=' + '+'.join(packages), '-cooksinglepackagenorefs',
+            '-targetplatform=Mac', '-package=' + '+'.join(packages), *selection, *shader_settings,
             '-Cook.DependencyTracking=1', '-ZenStore', '-ZenStoreProject=AtelierV2_' + source_key,
             '-unattended', '-nop4', '-nosplash', '-nullrhi', '-stdout', '-FullStdOutLogOutput']
 
@@ -304,7 +308,7 @@ class CookCallbacks:
 
 def source_cook(params, view, project, engine, source_key, state, job_dir, run, environment, export_project, source_digest):
     packages = params['packages']
-    argv = cook_argv(engine, project, packages, source_key)
+    argv = cook_argv(engine, project, packages, source_key, global_data='global_data' in params)
     record_outputs = params['record_outputs']
     if not isinstance(record_outputs, dict) or set(record_outputs) != set(packages):
         raise Refused('source-cook record outputs differ from the selected package roster')

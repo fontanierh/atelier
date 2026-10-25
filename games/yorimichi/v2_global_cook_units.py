@@ -7,6 +7,7 @@ PROJECT = 'games/yorimichi/unreal/Yorimichi.uproject'
 SEED = '/Engine/EngineResources/DefaultTexture'
 UNIT = 'unreal.cook.global.mac-default-texture-v1'
 RECORD = 'records/global-seed.cb'
+SEMANTIC_GLOBALS = 'build/yorimichi/global-cook/mac/semantic'
 COOK_ROOT = 'games/yorimichi/unreal/Saved/Cooked/Mac'
 
 
@@ -92,15 +93,18 @@ def author_unit(*, checkout, editor, plugins):
         compiled('plugin_' + str(index), reference, str(PurePosixPath(descriptor).parent / 'Binaries/Mac'))
     recipe = {'version': 1, 'commands': [], 'paths': paths, 'verify': None,
               'outputs': [{'path': RECORD, 'kind': 'file', 'file': RECORD, 'required': True},
-                          {'path': COOK_ROOT, 'kind': 'tree', 'file': 'global-cook.tree.tar', 'required': True}]}
+                          {'path': COOK_ROOT, 'kind': 'tree', 'file': 'global-cook.tree.tar', 'required': True},
+                          {'path': SEMANTIC_GLOBALS, 'kind': 'tree', 'file': 'global-data.tree.tar', 'required': True}]}
     unit = {'id': UNIT, 'op': {'kind': 'unreal.cook.produce', 'version': '1'}, 'script': cook.SCRIPT,
             'code': sorted(code), 'inputs': inputs,
             'params': {'project': PROJECT, 'packages': [SEED], 'record_outputs': {SEED: RECORD},
-                       'cook_root': COOK_ROOT, 'recipe': recipe},
+                       'cook_root': COOK_ROOT, 'global_data': SEMANTIC_GLOBALS, 'recipe': recipe},
             'outputs': [{'id': 'seed', 'logical_path': SEED, 'class': 'NativeCookRecord',
                          'destination': 'store', 'files': [{'path': RECORD, 'required': True}]},
+                        {'id': 'metadata', 'logical_path': '/Cook/Transport/Mac', 'class': 'Data',
+                         'destination': 'store', 'files': [{'path': 'global-cook.tree.tar', 'required': True}]},
                         {'id': 'global', 'logical_path': '/Cook/Global/Mac', 'class': 'Data',
-                         'destination': 'store', 'files': [{'path': 'global-cook.tree.tar', 'required': True}]}]}
+                         'destination': 'store', 'files': [{'path': 'global-data.tree.tar', 'required': True}]}]}
     return {'units': [unit], 'staged_inputs': {UNIT: {row['name']: 'inputs/' + row['name'] for row in inputs}},
             'content_slots': {row['name']: False for row in inputs},
             'global': {'unit': UNIT, 'item': 'global'}, 'record': {'unit': UNIT, 'item': 'seed'}}

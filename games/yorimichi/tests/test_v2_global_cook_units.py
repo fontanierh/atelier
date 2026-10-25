@@ -34,7 +34,7 @@ def test_global_source_binds_actual_modules_sources_and_fixed_engine_seed():
     assert result['record'] == {'unit': unit['id'], 'item': 'seed'}
     recipe = unit['params']['recipe']
     assert recipe['commands'] == [] and recipe['verify'] is None
-    assert [(r['kind'], r['required']) for r in recipe['outputs']] == [('file', True), ('tree', True)]
+    assert [(r['kind'], r['required']) for r in recipe['outputs']] == [('file', True), ('tree', True), ('tree', True)]
     assert recipe['paths']['games/yorimichi/unreal/Binaries/Mac'] == 'inputs/editor/editor.tree.tar'
     assert recipe['paths']['games/yorimichi/unreal/Plugins/HorseRacing/Binaries/Mac'] == 'inputs/plugin_0/plugin.tree.tar'
     sources = {i['source']['path'] for i in unit['inputs'] if i['source']['kind'] == 'file'}
@@ -78,13 +78,20 @@ def test_existing_prepare_and_export_preserve_complete_produced_modules_and_glob
     (view / cook.RECORD).write_bytes(b'raw-CB-transport')
     cooked = view / cook.COOK_ROOT; cooked.mkdir()
     (cooked / 'ue.projectstore').write_bytes(b'owned-marker-transport')
-    (cooked / 'ScriptObjects.bin').write_bytes(b'complete-global-transport')
+    (cooked / 'CookedSettings.txt').write_bytes(b'complete-private-transport')
+    semantic = view / cook.SEMANTIC_GLOBALS; semantic.mkdir(parents=True)
+    for name in ('ShaderAssetInfo-Global-SF_METAL_SM5.assetinfo.json',
+                 'ShaderArchive-Global-SF_METAL_SM5.ushaderbytecode', 'ShaderTypeInfo-Global-SF_METAL_SM5.stinfo'):
+        (semantic / name).write_bytes(name.encode())
     output = job / 'output'; output.mkdir()
     def no_native(*args, **kwargs): raise AssertionError('transport test cannot launch native cook')
     worker.export_outputs(unit['params']['recipe'], view, output, no_native, raw_roots=(cook.RECORD,))
     assert (output / cook.RECORD).read_bytes() == b'raw-CB-transport'
     restored = tmp_path / 'restored'; recipe_job.unpack_root(output / 'global-cook.tree.tar', restored)
-    assert {p.name for p in restored.iterdir()} == {'ue.projectstore', 'ScriptObjects.bin'}
+    assert {p.name for p in restored.iterdir()} == {'ue.projectstore', 'CookedSettings.txt'}
+    semantic_copy = tmp_path / 'semantic-copy'; recipe_job.unpack_root(output / 'global-data.tree.tar', semantic_copy)
+    assert len(list(semantic_copy.iterdir())) == 3
+    assert not (semantic_copy / 'ue.projectstore').exists()
     assert str(cooked) in writes and str(view / cook.RECORD) in writes and protected
 
 
