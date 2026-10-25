@@ -65,6 +65,7 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
                 "Material",
                 "MaterialInstance",
                 "MaterialParameterCollection",
+                "Blueprint",
                 "Map",
                 "NativeCookRecord",
             ]

@@ -81,6 +81,27 @@ def island(rows, geometry, *, checkout):
     return native
 
 
+def _package_dependencies(native):
+    classes = {'Texture', 'StaticMesh', 'SkeletalMesh', 'Skeleton', 'PhysicsAsset',
+               'Material', 'MaterialInstance', 'MaterialParameterCollection', 'Map', 'Sound', 'Animation'}
+    by_id = {unit['id']: unit for unit in native['units']}
+    result = {}
+    for package, reference in native['packages'].items():
+        if not package.startswith('/Game/') or reference['unit'] not in by_id:
+            continue
+        unit = by_id[reference['unit']]
+        deps = []
+        for incoming in unit['inputs']:
+            source = incoming['source']
+            owner = by_id.get(source.get('unit')) if source['kind'] == 'item' else None
+            if owner:
+                deps.extend(item['logical_path'] for item in owner['outputs']
+                            if item['id'] == source['item'] and item['class'] in classes)
+        result[package] = {'unit': reference['unit'], 'item': reference['item'],
+                           'package': package, 'dependencies': sorted(set(deps))}
+    return result
+
+
 def lower(rows, geometry, *, checkout):
     """Game-authored replacements; unknown native families remain compiler refusals."""
     selected = {row['id'] for row in rows}
@@ -94,4 +115,20 @@ def lower(rows, geometry, *, checkout):
         return None
     native['aliases']['unreal.materials'] = tuple(unit['id'] for unit in native['units']
                                                 if unit['id'].startswith('unreal.materials.'))
+    foliage_ids = [name for name in selected if name.startswith('unreal.foliage.')]
+    if foliage_ids:
+        import importlib.util
+        from pathlib import Path
+        path = Path(checkout) / 'games/yorimichi/v2_foliage_units.py'
+        spec = importlib.util.spec_from_file_location('native_foliage_units', path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        foliage = module.foliage_units(rows, checkout=checkout, natives=_package_dependencies(native))
+        native['units'].extend(foliage['units'])
+        native['staged_inputs'].update(foliage['staged'])
+        native['content_slots'].update(foliage['slots'])
+        native['packages'].update(foliage['packages'])
+        for name in foliage_ids:
+            owner = name.removeprefix('unreal.foliage.')
+            native['aliases'][name] = ('unreal.foliage.finish.' + owner,)
     return native

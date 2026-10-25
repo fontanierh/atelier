@@ -99,18 +99,33 @@ impl UnrealLocations {
             .transpose()
             .map_err(|e| e.to_string())?
             .unwrap_or_default();
+        let produced = crate::native_modules::prepare(unit, staged,
+            &staged.job_dir().parent().ok_or("missing native module scope")?.join("native-modules"),
+            &self.build_id)?;
+        let mut project_plugins = plugins(&self.plugins)?;
+        let (editor, modules) = if let Some(produced) = produced {
+            if self.editor_binaries.is_some() || !self.modules.is_empty() {
+                return Err("native modules have two distinct binary authorities".into());
+            }
+            for plugin in produced.plugins {
+                if project_plugins.iter().any(|existing| existing.name == plugin.name) {
+                    return Err("native plugin has two distinct binary authorities".into());
+                }
+                project_plugins.push(plugin);
+            }
+            (produced.editor, produced.modules)
+        } else {
+            (unreal::Binaries {identity: unreal::tree_identity(&editor_dir, None)
+                .map_err(|e| e.to_string())?, dir: editor_dir}, self.modules.clone())
+        };
         Ok(UnrealExecutionContext {
             context: UnrealContext {
                 engine_root: self.engine_root.clone(),
                 build_id: self.build_id.clone(),
-                editor: unreal::Binaries {
-                    identity: unreal::tree_identity(&editor_dir, None)
-                        .map_err(|e| e.to_string())?,
-                    dir: editor_dir,
-                },
-                modules: self.modules.clone(),
+                editor,
+                modules,
                 engine_plugins: plugins(&self.engine_plugins)?,
-                plugins: plugins(&self.plugins)?,
+                plugins: project_plugins,
                 settings,
                 ddc: unreal::UnrealDdc::open(&store, &self.build_id).map_err(|e| e.to_string())?,
                 worker,
@@ -580,7 +595,7 @@ pub fn check_unit(unit: &PreparedUnit) -> Result<(), String> {
         let item = &value.logical_outputs[0];
         if !matches!(
             item.class.as_str(),
-            "Material" | "MaterialInstance" | "MaterialParameterCollection" | "Map"
+            "Material" | "MaterialInstance" | "MaterialParameterCollection" | "Map" | "Blueprint"
         ) {
             return Err("unsupported authored native asset class".into());
         }
@@ -942,6 +957,7 @@ fn body_request(mut request: crate::protocol::JobRequest) -> crate::protocol::Jo
     if request.op.kind != AUTHOR {
         request.params.remove("settings");
     }
+    request.params.remove("native_modules");
     request
 }
 
@@ -1011,6 +1027,7 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
         "Material",
         "MaterialInstance",
         "MaterialParameterCollection",
+        "Blueprint",
         "Map",
     ]
     .into_iter()
@@ -1103,6 +1120,7 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
                         required: false,
                     },
                 ),
+                ("native_modules".into(), ParamRule {kind: ParamKind::Object, required: false}),
             ]),
         },
     );
@@ -1140,6 +1158,7 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
             "package_sources",
             "partners",
             "input_roots",
+            "native_modules",
         ] {
             params.insert(
                 name.into(),

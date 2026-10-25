@@ -28,6 +28,7 @@
     "platform/build-v2/src/leases.rs",
     "platform/build-v2/src/lib.rs",
     "platform/build-v2/src/native_chains.rs",
+    "platform/build-v2/src/native_modules.rs",
     "platform/build-v2/src/native_tool_ops.rs",
     "platform/build-v2/src/native_tools.rs",
     "platform/build-v2/src/native_verify.rs",

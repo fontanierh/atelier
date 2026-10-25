@@ -49,3 +49,33 @@ tier = "t0"
 id = "native.zen.only_exact_canonical_native_locators_are_interpreted"
 tests = ["atelier-build-v2/results::zen_cook::tests::only_exact_canonical_native_locators_are_interpreted"]
 tier = "t0"
+
+[[scenarios]]
+id = "native.modules.materializes_independent_editor_and_plugin_context"
+tests = ["atelier-build-v2/native_modules::tests::materializes_independent_editor_and_plugin_context"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.modules.an_existing_scope_refuses_and_is_kept"
+tests = ["atelier-build-v2/native_modules::tests::an_existing_scope_refuses_and_is_kept"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.modules.wrong_build_modules_or_slots_refuse_and_clean_the_scope"
+tests = ["atelier-build-v2/native_modules::tests::wrong_build_modules_or_slots_refuse_and_clean_the_scope"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.modules.staged_bytes_must_equal_keyed_digests"
+tests = ["atelier-build-v2/native_modules::tests::staged_bytes_must_equal_keyed_digests"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.modules.archive_members_cannot_escape_overwrite_or_go_unlisted"
+tests = ["atelier-build-v2/native_modules::tests::archive_members_cannot_escape_overwrite_or_go_unlisted"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.modules.nested_folders_materialize_in_order"
+tests = ["atelier-build-v2/native_modules::tests::nested_folders_materialize_in_order"]
+tier = "t0"
