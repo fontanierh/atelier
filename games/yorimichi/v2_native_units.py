@@ -200,7 +200,9 @@ def _join_native_families(native, rows, geometry, selected, *, checkout):
         gaps.extend('treehouse.geometry:' + parent for parent in followers['unrepresented_parents'])
         if (len(sources) == 3 and not followers['missing_material_packages']
                 and not followers['unrepresented_parents']):
-            _complete_treehouse(native, geometry, checkout=checkout)
+            _complete_mesh_family(native, geometry, family='treehouse', export_prefixes=(
+                'world.treehouse_trees.export.', 'world.treehouse_props.export.',
+                'world.treehouse_surfaces.export.'), checkout=checkout)
         else:
             gaps.append('treehouse.complete_native_membership_and_selection')
     if 'unreal.brinecove' in selected:
@@ -220,44 +222,45 @@ def _join_native_families(native, rows, geometry, selected, *, checkout):
     return native
 
 
-def _complete_treehouse(native, geometry, *, checkout):
+def _complete_mesh_family(native, geometry, *, family, export_prefixes, checkout, fixed=None):
     """Select the full finished roster through existing before-key follower expansion."""
     import ast
     from pathlib import Path
-    script = 'games/yorimichi/world/treehouse_index_v2.py'
+    script = 'games/yorimichi/world/native_roster_v2.py'
     line = next(node.lineno for node in ast.parse((Path(checkout) / script).read_text()).body
                 if isinstance(node, ast.FunctionDef) and node.name == 'write_index')
     families = {}
     for template in geometry['templates']:
-        if not template['unit_prefix'].startswith(('world.treehouse_trees.export.',
-                'world.treehouse_props.export.', 'world.treehouse_surfaces.export.')):
+        if not template['unit_prefix'].startswith(export_prefixes):
             continue
         if len(template.get('followers', ())) != 2:
-            raise ValueError('Treehouse completion requires every raw/finish chain')
+            raise ValueError(family + ' completion requires every raw/finish chain')
         parent = template['unit_prefix'].rsplit('.', 1)[-1]
         families[parent] = {'destination': template['followers'][1]['unit']['params']['destination'],
-            'members': {'derived_items': {'root': 'build/v2-derived/native-treehouse/' + parent,
+            'members': {'derived_items': {'root': 'build/v2-derived/native-' + family + '/' + parent,
                 'templates': [{key: template[key] for key in ('producer', 'group', 'unit_prefix')}
-                              | {'follower': 1, 'item': 'asset'}]}}}
-    fixed = {package: reference for package, reference in native['packages'].items()
-             if reference['unit'].startswith('unreal.treehouse.')}
+                              | {'follower': 1, 'item': template['followers'][1]['unit']['outputs'][0]['id']}]}}}
+    if fixed is None:
+        static = {unit['id'] for unit in native['units']}
+        fixed = {package: reference for package, reference in native['packages'].items()
+                 if reference['unit'].startswith('unreal.' + family + '.') and reference['unit'] in static}
     inputs = [{'role': 'content', 'name': 'fixed' + str(index), 'source': {
         'kind': 'item', 'unit': ref['unit'], 'item': ref['item']}}
         for index, ref in enumerate(fixed.values())]
-    output = 'build/yorimichi/treehouse/import-report.json'
-    unit = {'id': 'unreal.treehouse.complete', 'op': {'kind': 'recipe.python', 'version': '1'},
+    output = 'build/yorimichi/' + family + '/import-report.json'
+    unit = {'id': 'unreal.' + family + '.complete', 'op': {'kind': 'recipe.python', 'version': '1'},
         'script': 'platform/studio/atelier/build_v2/recipe_job.py',
         'code': [script, 'platform/studio/atelier/build_v2/recipe_job.py'], 'inputs': inputs,
         'params': {'recipe': {'version': 1, 'paths': {}, 'verify': None,
             'commands': [{'kind': 'call', 'call': {'source': script, 'qualname': 'write_index', 'line': line,
                 'captures': [], 'defaults': [families, sorted(fixed), {'path': output}], 'kwdefaults': {}}}],
-            'outputs': [{'path': output, 'kind': 'file', 'file': 'treehouse-native.tree.tar', 'required': True}]}},
-        'outputs': [{'id': 'roster', 'logical_path': '/Build/Treehouse/NativeRoster', 'class': 'Data',
-            'destination': 'store', 'files': [{'path': 'treehouse-native.tree.tar', 'required': True}]}]}
+            'outputs': [{'path': output, 'kind': 'file', 'file': 'native-roster.tree.tar', 'required': True}]}},
+        'outputs': [{'id': 'roster', 'logical_path': '/Build/' + family + '/NativeRoster', 'class': 'Data',
+            'destination': 'store', 'files': [{'path': 'native-roster.tree.tar', 'required': True}]}]}
     native['units'].append(unit)
     native['staged_inputs'][unit['id']] = {row['name']: 'inputs/' + row['name'] for row in inputs}
     native['content_slots'].update({row['name']: False for row in inputs})
-    native['aliases']['unreal.treehouse'] = (unit['id'],)
+    native['aliases']['unreal.' + family] = (unit['id'],)
 
 
 
@@ -319,7 +322,7 @@ def lower(rows, geometry, *, checkout):
     elif 'unreal.materials' in selected:
         native = shared_materials(rows, checkout=checkout)
         native['aliases'] = {}
-    elif selected & {'unreal.treehouse', 'unreal.brinecove', 'unreal.sounds', 'unreal.crater_cloud', 'unreal.skate_board', 'unreal.fx', 'unreal.skate_data'}:
+    elif selected & {'unreal.treehouse', 'unreal.brinecove', 'unreal.sounds', 'unreal.crater_cloud', 'unreal.skate_board', 'unreal.fx', 'unreal.skate_data', 'unreal.kei', 'unreal.village', 'unreal.lake'}:
         native = {'units': [], 'staged_inputs': {}, 'content_slots': {}, 'packages': {},
                   'targets': (), 'aliases': {}, 'missing_roles': []}
         if 'unreal.treehouse' in selected:
@@ -358,6 +361,51 @@ def lower(rows, geometry, *, checkout):
             native['aliases'].update(family['aliases'])
     if 'unreal.sounds' in selected:
         native = _join_audio(native, rows, native.get('geometry', geometry), checkout=checkout)
+    if selected & {'unreal.kei', 'unreal.village', 'unreal.lake'}:
+        package = '/Game/Japan/Materials/M_Village'
+        kei_module = _family_module(checkout, 'v2_kei_units')
+        if 'unreal.kei' in selected:
+            kei = kei_module.attach_followers(native.get('geometry', geometry), rows=rows, checkout=checkout)
+            _append_family(native, kei)
+            native['geometry'] = kei['geometry']
+            _complete_mesh_family(native, native['geometry'], family='kei',
+                export_prefixes=('world.vehicle_kei.export.',), checkout=checkout,
+                fixed={package: native['packages'][package]})
+        else:
+            # Village and Lake share this same original material owner without
+            # requiring the unrelated four-car source graph.
+            from pathlib import Path
+            unit, reference = kei_module._material(Path(checkout), None)
+            native['units'].append(unit)
+            native['staged_inputs'][unit['id']] = {}
+            native['packages'][package] = reference
+        if 'unreal.village' in selected:
+            resident = deepcopy(next(unit for unit in native['units']
+                                     if unit['id'] == 'unreal.village.material.M_Village'))
+            resident_package = '/Game/Japan/Materials/M_VillageResident'
+            resident['id'] = 'unreal.village.material.M_VillageResident'
+            resident['params']['args'].update(function='resident_material', expected_package=resident_package)
+            resident['outputs'][0].update(logical_path=resident_package,
+                files=kei_module._files(resident_package, store=False))
+            native['units'].append(resident)
+            native['staged_inputs'][resident['id']] = {}
+            native['packages'][resident_package] = {'unit': resident['id'], 'item': 'asset', 'package': resident_package}
+            extended = _family_module(checkout, 'v2_village_units').attach_followers(
+                native.get('geometry', geometry), _package_dependencies(native), checkout=checkout)
+            native['geometry'] = extended
+            native.setdefault('follower_module_requirements', {}).update(extended.pop('module_requirements', {}))
+            _complete_mesh_family(native, extended, family='village', export_prefixes=('world.village.export.',),
+                checkout=checkout, fixed={path: native['packages'][path] for path in (package, resident_package)})
+        if 'unreal.lake' in selected:
+            extended = _family_module(checkout, 'v2_lake_units').attach_followers(
+                native.get('geometry', geometry), _package_dependencies(native), checkout=checkout)
+            _append_family(native, {key: extended[key] for key in
+                ('units', 'staged_inputs', 'content_slots', 'packages')})
+            native['geometry'] = extended
+            native.setdefault('follower_module_requirements', {}).update(extended.pop('module_requirements', {}))
+            _complete_mesh_family(native, extended, family='lake', export_prefixes=('world.lake.export.',),
+                checkout=checkout, fixed={path: native['packages'][path] for path in
+                    (package, '/Game/Japan/Materials/M_ForestLakeWater')})
     if selected & {'unreal.treehouse', 'unreal.brinecove'}:
         native = _join_native_families(native, rows, geometry, selected, checkout=checkout)
     return native

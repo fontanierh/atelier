@@ -196,7 +196,7 @@ def test_completed_audio_index_executes_real_callback_with_resolved_native_items
 def test_treehouse_completed_index_requires_actual_finished_primary_and_preserves_cold_output(tmp_path):
     import json
     import hashlib
-    script = 'games/yorimichi/world/treehouse_index_v2.py'
+    script = 'games/yorimichi/world/native_roster_v2.py'
     spec = importlib.util.spec_from_file_location('treehouse_index_test', ROOT / script)
     body = importlib.util.module_from_spec(spec); spec.loader.exec_module(body)
     member = tmp_path / 'member'; member.mkdir()
@@ -209,7 +209,48 @@ def test_treehouse_completed_index_requires_actual_finished_primary_and_preserve
     body.write_index(families, ['/Game/Japan/Treehouse/Materials/M_TreeHouse'], output)
     report = json.loads(output.read_text())
     assert report['meshes']['/Game/Japan/Assets/Tree_Canopy_Maple']['sha256'] == hashlib.sha256(asset.read_bytes()).hexdigest()
+    families['Tree_Canopy_Maple']['destination'] = '/Game/Japan/Assets/Tree_Canopy_Maple'
+    body.write_index(families, [], output)
+    assert json.loads(output.read_text())['assets'] == ['/Game/Japan/Assets/Tree_Canopy_Maple']
+    families['Tree_Canopy_Maple']['members'] = [(source, 'Foreign')]
+    with pytest.raises(ValueError, match='single declared'):
+        body.write_index(families, [], output)
+    families['Tree_Canopy_Maple']['members'] = [(source, 'Tree_Canopy_Maple')]
     saved = output.read_bytes(); asset.unlink()
     with pytest.raises(ValueError, match='primary package'):
         body.write_index(families, [], output)
     assert output.read_bytes() == saved
+
+
+def test_real_kei_village_lake_composition_has_one_palette_and_complete_dynamic_targets():
+    import ast
+    recipe = load('build')
+    ctx = SimpleNamespace(out=ROOT / 'build/yorimichi', uproject=GAME / 'unreal/Yorimichi.uproject')
+    steps = [*recipe.texture_steps(ctx), *load('vehicle_atomic_build').steps(ctx, 'kei'),
+             *load('village_atomic_build').steps(ctx), *load('lake_atomic_build').steps(ctx)]
+    tree = ast.parse((GAME / 'build.py').read_text())
+    steps.append(recipe.foliage_build.unreal_steps(ctx, (), ())[0])
+    for name in ('unreal.kei', 'unreal.village', 'unreal.lake'):
+        call = next(node for node in ast.walk(tree) if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name) and node.func.id == 'Step' and node.args
+            and isinstance(node.args[0], ast.Constant) and node.args[0].value == name)
+        steps.append(eval(compile(ast.Expression(call), str(GAME / 'build.py'), 'eval'),
+                          {**vars(recipe), 'ctx': ctx, 'out': ctx.out}))
+    source_rows = extract(steps, checkout=ROOT, build_root=ROOT / 'build')
+    geometry = load('v2_geometry_templates').geometry_templates(source_rows, checkout=ROOT)
+    result = load('v2_native_units').lower(source_rows, geometry, checkout=ROOT)
+    units = {unit['id']: unit for unit in result['units']}
+    palette = '/Game/Japan/Materials/M_Village'
+    assert sum(output['logical_path'] == palette for unit in units.values() for output in unit['outputs']) == 1
+    assert units['unreal.village.material.M_VillageResident']['params']['args']['function'] == 'resident_material'
+    assert len(result['follower_module_requirements']) == 17
+    for family, count, item in (('kei', 4, 'mesh'), ('village', 12, 'asset'), ('lake', 5, 'asset')):
+        assert result['aliases']['unreal.' + family] == ('unreal.' + family + '.complete',)
+        index = units['unreal.' + family + '.complete']
+        families = index['params']['recipe']['commands'][0]['call']['defaults'][0]
+        assert len(families) == count
+        assert all(row['members']['derived_items']['templates'][0]['follower'] == 1
+                   and row['members']['derived_items']['templates'][0]['item'] == item for row in families.values())
+        assert all(incoming['source']['unit'] in units for incoming in index['inputs'])
+    for template in result['geometry']['templates']:
+        assert len(template['followers']) == 2
