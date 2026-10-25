@@ -254,8 +254,12 @@ def test_glb_consumer_preserves_exact_options_and_refuses_truncated_serializer(t
 
 def test_per_piece_options_cannot_widen_owned_outputs_or_silently_override_selection():
     assert ops.export_options({'axis_forward': '-Y'}, {'axis_up': 'Z'}) == {'axis_forward': '-Y', 'axis_up': 'Z'}
+    assert ops.export_options({'object_types': ['MESH']}, {}) == {}
+    assert ops.export_options({}, {'object_types': ('MESH',)}) == {}
     for options in [{'filepath': 'foreign.fbx'}, {'use_selection': False}, {'bake_anim': True},
-                    {'object_types': ['LIGHT']}, {'batch_mode': 'SCENE'}, {'path_mode': 'COPY'}]:
+                    {'object_types': ['LIGHT']}, {'object_types': ['MESH', 'LIGHT']},
+                    {'object_types': []}, {'object_types': 'MESH'}, {'object_types': [True]},
+                    {'batch_mode': 'SCENE'}, {'path_mode': 'COPY'}]:
         with pytest.raises(ValueError):
             ops.export_options(options, {})
 

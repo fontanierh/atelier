@@ -58,6 +58,9 @@ def validate_mesh_options(options, *, output_format='fbx', finite_materials=Fals
         elif key == 'scene_world_color':
             valid = (isinstance(value, (list, tuple)) and len(value) == 3
                      and all(type(v) in (int, float) and 0 <= v <= 1 and math.isfinite(v) for v in value))
+        elif key == 'object_types':
+            valid = (isinstance(value, (list, tuple)) and len(value) == 1
+                     and type(value[0]) is str and value[0] == 'MESH')
         elif key in ('use_batch_own_dir', 'embed_textures', 'bake_anim'):
             valid = value is False
         else:
@@ -69,6 +72,10 @@ def validate_mesh_options(options, *, output_format='fbx', finite_materials=Fals
             result[key] = list(value)
     if 'axis_forward' in result and 'axis_up' in result and result['axis_forward'][-1] == result['axis_up'][-1]:
         raise ValueError('Export forward/up axes must be independent')
+    # Existing producers record this fixed selection in their payload. It is
+    # redundant with the exporter's unconditional mesh-only ownership; never
+    # pass a source-supplied object selection through as an exporter override.
+    result.pop('object_types', None)
     return result
 
 
