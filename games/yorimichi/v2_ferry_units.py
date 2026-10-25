@@ -168,7 +168,7 @@ def ferry_units(rows, *, checkout):
             inputs.append(dict(slot)); roots.update(binding)
         author(f'unreal.ferry.instance.{name}', {'action': 'instance', 'name': name, 'parent': native(parent)['name'],
                                                  'manifests': [slot['name'] for slot, _ in manifests]},
-               inputs, roots, 'MaterialInstanceConstant', MATERIALS + name, [parent])
+               inputs, roots, 'MaterialInstance', MATERIALS + name, [parent])
     passes = (('Ship', 'world.ferry_ship', ship_item, ship_roots, BUILD, ship_palette, list(ship_sources.BUILDERS)),
               ('Terminals', 'world.ferry_terminals', terminal_item, terminal_roots, BUILD + '/terminals',
                [*ship_palette, *terminal_palette], list(models)))

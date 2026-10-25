@@ -25,9 +25,14 @@ body = load(units.SCRIPT, 'ferry_body_test')
 
 @pytest.fixture(scope='module')
 def rows():
-    """The actual ferry rows; reads/needs on producers outside the ferry family are dropped only for extraction."""
+    """Actual ferry and Harbor-cut rows; unrelated dependencies are dropped only for extraction."""
     factory = load('games/yorimichi/build.py', 'ferry_build_test')
     steps = factory.ferry_steps(NS(out=ROOT / 'build/yorimichi'))
+    city = load('games/yorimichi/hidamari_build.py', 'ferry_harbor_build_test')
+    cuts = [step for step in city.mesh_steps(NS(out=ROOT / 'build/yorimichi'))
+            if any(product.name == 'hidamari.harbor_cut' for product in step.products)]
+    assert len(cuts) == 1
+    steps += cuts
     names, produced = {s.name for s in steps}, {p.name for s in steps for p in s.products}
     for step in steps:
         step.reads = [r for r in step.reads if r in produced]; step.needs = [n for n in step.needs if n in names]
@@ -65,6 +70,9 @@ def test_units_bind_exact_roots_and_original_policies(rows, result):
     brow = by_id['unreal.ferry.mesh.FT_HD_Brow']['params']['args']
     assert len(brow['materials']) == 41 and brow['folder'] == 'Terminals'
     fy = by_id['unreal.ferry.instance.FY_Brass']
+    instances = [unit for name, unit in by_id.items() if name.startswith('unreal.ferry.instance.')]
+    assert len(instances) == 41
+    assert {unit['outputs'][0]['class'] for unit in instances} == {'MaterialInstance'}
     assert fy['params']['args']['manifests'] == ['ship_manifest', 'terminal_manifest']
     assert by_id['unreal.ferry.instance.FT_Brass']['params']['args']['manifests'] == ['terminal_manifest']
     wake = by_id['unreal.ferry.mesh.FY_Wake']
@@ -271,8 +279,10 @@ def test_normal_provider_selects_every_ferry_package_without_monolithic_owner(ro
     units = {unit['id']: unit for unit in result['units']}
     targets = set(result['aliases']['unreal.ferry'])
     assert len(units) == 88
-    assert targets == {reference['unit'] for reference in result['packages'].values()}
-    assert all(units[name]['op']['kind'] in ('unreal.author', 'unreal.finish') for name in targets)
+    package_targets = {reference['unit'] for reference in result['packages'].values()}
+    assert targets == package_targets | {'unreal.ferry.preflight'}
+    assert any(row['id'] == 'unreal.ferry.preflight' for row in result['rows'])
+    assert all(units[name]['op']['kind'] in ('unreal.author', 'unreal.finish') for name in package_targets)
     assert set(result['staged_inputs']) == set(units)
     assert all('Interchange.FeatureFlags.Import.FBX=0' not in value
                for unit in units.values() for value in unit['params'].get('settings', ()))
