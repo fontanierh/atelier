@@ -307,7 +307,8 @@ def compile_rows(rows, *, project, targets, install_roots=(), checkout=None, geo
             if native or archive:
                 unit['script'] = NATIVE_SCRIPT
                 unit['code'] = sorted(set(unit['code']) | {NATIVE_SCRIPT,
-                    'platform/studio/atelier/build_v2/unreal_tool_ops.py'})
+                    'platform/studio/atelier/build_v2/unreal_tool_ops.py',
+                    'platform/studio/atelier/build_v2/recipe_native_paths.py'})
                 unit['op']['kind'] = ('unreal.compile' if native['tool_kind'] == 'UnrealCompile'
                                      else 'unreal.game') if native else 'package.archive'
                 if native:
@@ -384,6 +385,14 @@ def compile_rows(rows, *, project, targets, install_roots=(), checkout=None, geo
         follower_module_requirements = {name: value for name, value in follower_module_requirements.items() if name in prefixes}
     if errors:
         raise Unsupported('\n'.join(error for _, error in errors))
+    # Template inputs are authored declarations too: register their finite slots
+    # before Rust validates and instantiates the actual selected group members.
+    for template in geometry['templates']:
+        slots.setdefault(template['payload_slot'], False)
+        for follower in template.get('followers', ()):
+            for incoming in follower['unit']['inputs']:
+                if incoming['role'] == 'content':
+                    slots.setdefault(incoming['name'], False)
     from .recipe_native_modules import attach, attach_followers
     attach(units, rows, module_requirements, checkout=checkout, staged=staged, slots=slots)
     attach_followers(geometry['templates'], units, rows, follower_module_requirements,

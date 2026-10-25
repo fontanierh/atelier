@@ -133,7 +133,9 @@ def test_compiler_preserves_follower_module_requirements_through_ordinary_rows(t
               'follower_module_requirements': {'world.example.export.Parent': [{'name': 'Game'}]}}
     marker = compile_rows([editor], project='game', targets=['editor'], checkout=tmp_path,
                           geometry={'groups': {}, 'templates': [
-                              {'unit_prefix': 'world.example.export.Parent', 'followers': [follower]}]}, native=native)
+                              {'unit_prefix': 'world.example.export.Parent', 'payload_slot': 'selected_payload',
+                               'followers': [follower]}]}, native=native)
+    assert marker.content_slots['selected_payload'] is False
     bound = marker.templates[0]['followers'][0]
     assert bound['unit']['params']['native_modules']['editor']['slot'] == 'compiled_editor'
     assert bound['unit']['inputs'][0]['source'] == {'kind': 'item', 'unit': 'editor', 'item': 'output0'}
