@@ -8,8 +8,9 @@ directory deletes never run. ``args.action`` selects
 - ``clip``: one clip by make_clip from its own member (every key and bone, root lock, curves, both compressions);
 - ``verify``: one clip's compressed every-frame pose and curve measurement (sample_poses, measure, check_curves);
 - ``still``: a still clip's component-space poses (dump_still's document);
-- ``control``: the compression control: CONTROL re-keyed by make_clip in the transient package under the engine's
-  default bone compression, measured compressed and raw;
+- ``control``: the compression control, an unreal.finish: the finished CONTROL clip duplicated into its own
+  store-only /Game/_Raw/SkateRideVerify/ControlDefaultCompression under the engine's default bone compression,
+  measured compressed and raw (it must show a compressed error; the exact clip must not);
 - ``manifest``: Content/Data/SkateRide/clips.json (setup's head and main's manifest) from the finished assets;
 - ``report``: skate-ride/clips-verify.json (main's report) from every clip measurement and the control.
 """
@@ -26,7 +27,32 @@ DEST = '/Game/SkateRide'
 IMPORT = ('log', 'enum', 'set_any', 'finish_compilation', 'create', 'check_rider', 'compression_assets', 'curve_keys',
           'round_list', 'set_default_frame_rate', 'make_clip', 'curve_identifier_maker', 'mirror_rows', 'mirror_table')
 VERIFY = ('finish_compilation', 'options', 'sample_poses', 'curve_value', 'measure', 'check_curves', 'step_keys')
-MANIFEST, REPORT, DATA = 'data/clips.json', 'data/clips-verify.json', 'data/verify.json'
+MANIFEST, REPORT, DATA, CONTROL_DATA = 'data/clips.json', 'data/clips-verify.json', 'data/verify.json', 'data/control.json'
+CONTROL_COPY = '/Game/_Raw/SkateRideVerify/ControlDefaultCompression'
+KEYS = ('translation_cm', 'rotation_rad', 'scale')
+
+
+def accepted(measurement, limits):
+    """One clip measurement against verify_clips.LIMITS (its rotation already counts Euler-key storage by its distance
+    to the stored key, as measure does): finite, within every limit, no missing curve, a finite curve error."""
+    problems = [k for k in KEYS if not math.isfinite(measurement[k]) or measurement[k] > limits[k]]
+    if not math.isfinite(measurement['curve_error']):
+        problems.append('curve_error')
+    if measurement['curves_missing']:
+        problems.append('curves_missing ' + ','.join(measurement['curves_missing']))
+    return problems
+
+
+def control_accepted(control):
+    """The control proves compressed data was measured: actual raw and compressed errors, all finite, and a non-zero
+    compressed error under the engine's default compression."""
+    if not isinstance(control, dict) or 'error' in control or not all(
+            isinstance(control.get(part), dict) and set(KEYS) <= set(control[part]) for part in ('compressed', 'raw')):
+        return ['incomplete control']
+    values = [control[part][k] for part in ('compressed', 'raw') for k in KEYS]
+    if not all(isinstance(v, (int, float)) and math.isfinite(v) for v in values):
+        return ['nonfinite control']
+    return [] if max(control['compressed'][k] for k in KEYS) > 0 else ['control shows no compressed error']
 
 
 def _path(asset):
@@ -254,7 +280,11 @@ def verify(context, unreal, args):
     sequence = _load(unreal, context, args['sequence'], unreal.AnimSequence, f'{DEST}/Clips/B{value.bank}/{value.name}')
     scope = _verify(context, unreal)
     scope['finish_compilation']()
-    return {DATA: _measure(scope, unreal, value, rig, pose, sequence, record)[1]}
+    measurement = _measure(scope, unreal, value, rig, pose, sequence, record)[1]
+    problems = accepted(measurement, scope['LIMITS'])
+    if problems:
+        raise ValueError(f'{value.name}: compressed pose differs from the simulation: {problems}')
+    return {DATA: measurement}
 
 
 def still_document(source):
@@ -282,31 +312,32 @@ def still(context, unreal, args):
     return {DATA: scope['dump_still'](value.name, rig, scope['sample_poses'](sequence, value.fps, value.frame_count), value.fps)}
 
 
-class _Transient:
-    """AssetTools whose create_asset makes the sequence in the transient package (never a /Game package)."""
-    def __init__(self, unreal, skeleton, mesh):
-        self.unreal, self.skeleton, self.mesh = unreal, skeleton, mesh
-    def create_asset(self, name, folder, cls, factory):
-        value = self.unreal.new_object(cls, name=name)
-        value.set_editor_property('skeleton', self.skeleton)
-        return value
+def _source(context):
+    """The finish source slot: a declared slot name, or the exact-piece derived token of the finished CONTROL clip."""
+    source = context.params['source']
+    if isinstance(source, str):
+        return source
+    rows = _roster(source)
+    if len(rows) != 1:
+        raise ValueError('The control source must be exactly one finished clip')
+    return next(iter(rows.values()))
 
 
 def control(context, unreal, args):
-    _start(unreal, context, [], (DATA,))
-    scope = _import(context, unreal)
-    value, meta, record = _member(context, args['members'], scope['CONTROL'])
-    _, rig, pose = _rig(context, args['bundle'])
-    skeleton, mesh, bone, curve = _settings(unreal, context, args)
-    if value.name != scope['CONTROL']:
-        raise ValueError('The control member is not import_clips.CONTROL')
-    scope['AT'] = _Transient(unreal, skeleton, mesh)
-    copy, _, _ = scope['make_clip'](value, meta, rig, pose, skeleton, mesh, bone, curve, scope['curve_identifier_maker']())
-    if not copy.get_path_name().startswith('/Engine/Transient.'):
-        raise ValueError('The control copy is not transient')
+    params = context.params
+    if params['destination'] != CONTROL_COPY:
+        raise ValueError('The control owns only ' + CONTROL_COPY)
+    _start(unreal, context, [CONTROL_COPY], (CONTROL_DATA,))
     checks = _verify(context, unreal)
+    value, _, _ = _member(context, args['members'], checks['CONTROL'])
+    _, rig, pose = _rig(context, args['bundle'])
+    original = _load(unreal, context, _source(context), unreal.AnimSequence, f'{DEST}/Clips/B{value.bank}/{value.name}')
+    # verify_clips.control: a copy of CONTROL under the engine's default bone compression (here its own declared package).
+    copy = unreal.EditorAssetLibrary.duplicate_asset(_path(original), CONTROL_COPY)
+    if not isinstance(copy, unreal.AnimSequence):
+        raise ValueError('control duplicate')
     default = None
-    for path in checks['CONTROL_SETTINGS']:
+    for path in checks['CONTROL_SETTINGS']:     # loaded directly: the commandlet's asset registry does not list engine content
         default = unreal.load_object(None, path)
         if default is not None:
             break
@@ -318,8 +349,13 @@ def control(context, unreal, args):
     worst, where, _, _ = checks['measure'](value, rig, pose, compressed)
     raw = checks['sample_poses'](copy, value.fps, value.frame_count, unreal.AnimDataEvalType.RAW)
     raw_worst, _, _, _ = checks['measure'](value, rig, pose, raw)
-    return {DATA: dict(clip=value.name, compression=default.get_path_name(), compressed=worst, compressed_where=where,
-                       raw=raw_worst, copy='transient make_clip re-key')}
+    if not unreal.EditorAssetLibrary.save_loaded_asset(copy, False):
+        raise ValueError('control save')
+    result = dict(clip=value.name, compression=default.get_path_name(), compressed=worst, compressed_where=where, raw=raw_worst)
+    problems = control_accepted(result)
+    if problems:
+        raise ValueError(f'compression control: {problems}')
+    return {CONTROL_DATA: result}
 
 
 def _statements(source, function, names):
@@ -388,15 +424,20 @@ def report(context, unreal, args):
     for token in args['verify']:
         for name, slot in _roster(token).items():
             measured[name] = _json(context, slot, DATA)
-    control_value = _json(context, args['control'], DATA)
+    control_value = _json(context, args['control'], CONTROL_DATA)
     path = _code(context, SCRIPTS + '/verify_clips.py')
     scope = {'LIMITS': _members(context).constants(path, ('LIMITS',))['LIMITS'], 'rig': rig,
              'state': {'clips': measured, 'control': control_value}, 'manifest': {'partial': False}}
     exec(compile(_statements(path.read_text(), 'main', ('clips', 'overall', 'worst_clip', 'over', 'stored_all', 'report')),
                  'main', 'exec'), scope)
-    if scope['report']['clips'] != args['count']:
+    result = scope['report']
+    if result['clips'] != args['count']:
         raise ValueError('The skate clip verification is not over the complete roster')
-    return {REPORT: scope['report']}
+    problems = [f'{n}: {p}' for n, m in sorted(measured.items()) for p in accepted(m, scope['LIMITS'])]
+    problems += control_accepted(result['control'])
+    if result['passed'] is not True or problems or result['curves_missing'] or not math.isfinite(result['curve_max_error']):
+        raise ValueError(f"The skate clips do not pass their verification: passed={result['passed']} {problems[:20]}")
+    return {REPORT: result}
 
 
 ACTIONS = {'rider': rider, 'bone': compression, 'curve': compression, 'mirror': mirror, 'clip': clip, 'verify': verify,
@@ -408,18 +449,21 @@ def run(context):
     Each job MUST author or finish exactly its declared /Game/SkateRide owner or its
     one JSON document from declared inputs, by the original import_clips and
     verify_clips functions: the rider with check_rider, both compressions, the
-    mirror table, every clip key and curve, every-frame compressed measurement, the
-    transient control and the complete manifest and report. It MUST NOT run the
-    originals' main, setup, state, batching or directory deletes.
+    mirror table, every clip key and curve, every-frame compressed measurement
+    refused beyond the original LIMITS or with missing curves, the private control
+    copy that must show a compressed error, and the complete manifest and a report
+    that MUST pass. It MUST NOT run the originals' main, setup, state, batching or
+    directory deletes.
     """
     import unreal
     params = context.params
     args = params.get('args')
     if not isinstance(args, dict) or args.get('action') not in ACTIONS:
         raise ValueError('Unsupported skate clip action')
-    if args['action'] == 'rider':
-        if params.get('op') != 'finish' or params.get('kind') != 'skeletal_mesh':
-            raise ValueError('The rider is finished by unreal.finish(skeletal_mesh)')
+    finishes = {'rider': 'skeletal_mesh', 'control': 'animation'}
+    if args['action'] in finishes:
+        if params.get('op') != 'finish' or params.get('kind') != finishes[args['action']]:
+            raise ValueError(f"The {args['action']} is finished by unreal.finish({finishes[args['action']]})")
     elif set(params) - {'args', 'settings', 'input_roots'}:
         raise ValueError('Unexpected skate author parameters')
     return ACTIONS[args['action']](context, unreal, args)

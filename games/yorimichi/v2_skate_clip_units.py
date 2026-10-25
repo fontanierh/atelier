@@ -6,7 +6,8 @@ package-manifest.json names every clip. From that whole Item (world/skate_clip_m
 - one FileSet per clip bank (Clips/B<bank>): each member is one clip's bytes, metadata and clips.json record, followed
   by its UAnimSequence (the original make_clip) and its every-frame compressed pose and curve measurement;
 - fixed natives: SK_SkateRider/SKEL_SkateRider (raw glTF skeletal import, check_rider), ACL_SkateRideExact,
-  CC_SkateRideExact, MDT_SkateRider, the four still pose documents, the transient compression control, and the
+  CC_SkateRideExact, MDT_SkateRider, the four still pose documents, the compression control (a store-only private
+  copy of the finished CONTROL clip under the default compression, with its measurement), and the
   complete Content/Data/SkateRide/clips.json and skate-ride/clips-verify.json.
 """
 from copy import deepcopy
@@ -33,6 +34,7 @@ EMITTER = 'platform/studio/atelier/build_v2/file_groups.py'
 CLIPS_FILE = GAME + '/unreal/Content/Data/SkateRide/clips.json'
 DEST = '/Game/SkateRide'
 RAW = '/Game/_Raw/SkateRide/SK_SkateRider'
+CONTROL_COPY = '/Game/_Raw/SkateRideVerify/ControlDefaultCompression'
 RECIPE_OP = {'kind': 'recipe.python', 'version': '1'}
 IMPORT_MARKER, VERIFY_MARKER = 'SKATE RIDE CLIPS BATCH COMPLETE', 'SKATE RIDE CLIPS VERIFY COMPLETE'
 
@@ -248,10 +250,16 @@ def skate_clip_units(rows, *, checkout):
                [deepcopy(members_inputs[bank]), deepcopy(bundle_input)],
                {f'members_b{bank}': dict(members_roots[f'members_b{bank}']), 'bundle': dict(bundle_root)})
     control = import_constants['CONTROL']
-    author('unreal.skate_clips.control', {'action': 'control', 'members': f'members_b{where[control]}', **shared_args},
-           [data('data', '/Internal/SkateRide/Control')],
-           [deepcopy(members_inputs[where[control]]), deepcopy(bundle_input), *deepcopy(shared)],
-           {f'members_b{where[control]}': dict(members_roots[f'members_b{where[control]}']), 'bundle': dict(bundle_root)})
+    # verify_clips.control's copy, as its own store-only private package: the finished CONTROL clip (exact piece join)
+    # duplicated under the engine's default compression, with its measurement as the finish's Data report.
+    add({'id': 'unreal.skate_clips.control', 'op': {'kind': 'unreal.finish', 'version': '1'}, 'script': SCRIPT, 'code': code,
+         'params': {'op': 'finish', 'kind': 'animation', 'source': token(where[control], 0, 'asset', control),
+                    'destination': CONTROL_COPY, 'args': {'action': 'control', 'members': f'members_b{where[control]}', 'bundle': 'bundle'}},
+         'outputs': [_output('asset', CONTROL_COPY, 'Animation', store=True),
+                     {'id': 'report', 'logical_path': '/Internal/SkateRide/Control', 'class': 'Data', 'destination': 'store',
+                      'files': [{'path': 'data/control.json', 'required': True}]}]},
+        [deepcopy(members_inputs[where[control]]), deepcopy(bundle_input)],
+        {f'members_b{where[control]}': dict(members_roots[f'members_b{where[control]}']), 'bundle': dict(bundle_root)})
     author('unreal.skate_clips.manifest',
            {'action': 'manifest', **shared_args, 'mirror': 'mirror', 'members': [f'members_b{b}' for b in banks],
             'clips': [token(b, 0, 'asset') for b in banks]},
@@ -262,7 +270,7 @@ def skate_clip_units(rows, *, checkout):
                                          'verify': [token(b, 1, 'data') for b in banks]},
            [{'id': 'report', 'logical_path': '/Internal/SkateRide/Verify', 'class': 'JsonData', 'destination': 'store',
              'files': [{'path': 'data/clips-verify.json', 'required': True}]}],
-           [deepcopy(bundle_input), _item('control', 'unreal.skate_clips.control', 'data')], {'bundle': dict(bundle_root)})
+           [deepcopy(bundle_input), _item('control', 'unreal.skate_clips.control', 'report')], {'bundle': dict(bundle_root)})
     packages[CLIPS_FILE] = {'unit': 'unreal.skate_clips.manifest', 'item': 'manifest'}
     packages[verify_file] = {'unit': 'unreal.skate_clips.report', 'item': 'report'}
     slots = {i['name']: False for u in [*units, *(f['unit'] for t in templates for f in t['followers'])] for i in u['inputs']}
