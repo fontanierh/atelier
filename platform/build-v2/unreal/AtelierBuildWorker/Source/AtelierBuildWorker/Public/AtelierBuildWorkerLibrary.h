@@ -8,12 +8,18 @@
  * Python as unreal.AtelierBuildWorkerLibrary.<snake_case>. Results that are structures are JSON text.
  */
 class UStaticMesh;
+class USkeletalMesh;
+class USkeleton;
+class UPhysicsAsset;
 
 UCLASS()
 class ATELIERBUILDWORKER_API UAtelierBuildWorkerLibrary : public UBlueprintFunctionLibrary
 {
     GENERATED_BODY()
 public:
+    /** Bind freshly duplicated job-owned skeletal partners; Python exposes neither skeleton setter nor all preview setters. */
+    UFUNCTION(BlueprintCallable, Category = "Atelier|Build")
+    static bool BindSkeletalPartners(USkeletalMesh* Mesh, USkeleton* Skeleton, UPhysicsAsset* PhysicsAsset);
     /** Actual cooked complex collision, with the same bounds and triangle checks as receivers. */
     UFUNCTION(BlueprintCallable, Category = "Atelier|Build")
     static bool ValidateMeshCollision(UStaticMesh* Mesh, int32 ExpectedTriangles, bool HasAuthoredHulls);

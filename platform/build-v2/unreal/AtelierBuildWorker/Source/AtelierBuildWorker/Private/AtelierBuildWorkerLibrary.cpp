@@ -1,6 +1,9 @@
 #include "AtelierBuildWorkerLibrary.h"
 #include "AtelierZenFinalise.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/SkeletalMesh.h"
+#include "Animation/Skeleton.h"
+#include "PhysicsEngine/PhysicsAsset.h"
 #include "PhysicsEngine/BodySetup.h"
 #include "Chaos/TriangleMeshImplicitObject.h"
 
@@ -560,4 +563,24 @@ bool UAtelierBuildWorkerLibrary::ValidateMeshCollision(UStaticMesh* Mesh, int32 
         Triangles += Geometry->Elements().GetNumTriangles();
     }
     return Triangles == ExpectedTriangles;
+}
+
+bool UAtelierBuildWorkerLibrary::BindSkeletalPartners(USkeletalMesh* Mesh, USkeleton* Skeleton, UPhysicsAsset* PhysicsAsset)
+{
+    // Callers duplicate into their declared outputs first. These typed setters do
+    // not save files; ordinary C3 output/dirty-input/save verification still applies.
+    const auto GameObject = [](const UObject* Object)
+    {
+        return IsValid(Object) && Object->GetOutermost()->GetName().StartsWith(TEXT("/Game/"));
+    };
+    if (!GameObject(Mesh) || !GameObject(Skeleton) || (PhysicsAsset && !GameObject(PhysicsAsset))) return false;
+    Mesh->SetSkeleton(Skeleton);
+    Skeleton->SetPreviewMesh(Mesh, true);
+    if (PhysicsAsset)
+    {
+        Mesh->SetPhysicsAsset(PhysicsAsset);
+        PhysicsAsset->SetPreviewMesh(Mesh, true);
+    }
+    return Mesh->GetSkeleton() == Skeleton && Skeleton->GetPreviewMesh() == Mesh &&
+        (!PhysicsAsset || (Mesh->GetPhysicsAsset() == PhysicsAsset && PhysicsAsset->GetPreviewMesh() == Mesh));
 }
