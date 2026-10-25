@@ -377,3 +377,16 @@ def test_cook_verifier_cannot_take_authority_from_semantic_params(tmp_path):
                           'zen_request': {'record_path': '/arbitrary'}})
     with pytest.raises(FileNotFoundError):
         loop.execute(request, set(), [])
+
+
+def test_native_data_result_owns_one_exact_finite_json_output():
+    from atelier.build_v2.unreal_worker import encode_data_result
+    assert encode_data_result({'data/adventure.json': {'pose': [1, 2, 3]}}, ['data/adventure.json']) == {
+        'data/adventure.json': b'{\n "pose": [\n  1,\n  2,\n  3\n ]\n}\n'}
+    for result, outputs in [({}, ['data/adventure.json']),
+                            ({'data/a.json': 1, 'data/b.json': 2}, ['data/a.json']),
+                            ({'data/a.json': float('nan')}, ['data/a.json']),
+                            ({'../escape.json': 1}, ['../escape.json']),
+                            ({'content/Game/A.uasset': 1}, ['content/Game/A.uasset'])]:
+        with pytest.raises(JobRefused):
+            encode_data_result(result, outputs)

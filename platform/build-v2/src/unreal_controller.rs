@@ -498,6 +498,7 @@ fn package(path: &str) -> Result<String, String> {
 fn declared_packages(unit: &PreparedUnit) -> Result<BTreeSet<String>, String> {
     let mut result = BTreeSet::new();
     for item in &unit.ingredients().logical_outputs {
+        if item.class == "JsonData" { continue; }
         package(&item.logical_path)?;
         for file in &item.files {
             let Some(relative) = file.path.strip_prefix("content/Game/") else {
@@ -593,9 +594,17 @@ pub fn check_unit(unit: &PreparedUnit) -> Result<(), String> {
             return Err("authored native asset needs one keyed body and exact output item".into());
         }
         let item = &value.logical_outputs[0];
+        if item.class == "JsonData" {
+            if item.files.len() != 1 || !item.files[0].required
+                || !item.files[0].path.starts_with("data/") || !item.files[0].path.ends_with(".json") {
+                return Err("native data author needs one required explicit data JSON file".into());
+            }
+            return Ok(());
+        }
         if !matches!(
             item.class.as_str(),
             "Material" | "MaterialInstance" | "MaterialParameterCollection" | "Map" | "Blueprint"
+                | "BlendSpace1D" | "AdventureMoveSet" | "AnimBoneCompressionSettings"
         ) {
             return Err("unsupported authored native asset class".into());
         }
@@ -754,6 +763,11 @@ pub fn validate_outputs(
         if output.object.size() == 0 {
             return Err("empty native package output".into());
         }
+        if output.item.class == "JsonData" {
+            let mut bytes = Vec::new();
+            output.object.reader().map_err(|e| e.to_string())?.read_to_end(&mut bytes).map_err(|e| e.to_string())?;
+            serde_json::from_slice::<serde_json::Value>(&bytes).map_err(|e| e.to_string())?;
+        }
         if output.path.ends_with(".uasset") || output.path.ends_with(".umap") {
             let mut magic = [0; 4];
             output
@@ -867,7 +881,8 @@ fn prepare_inner(
     } else {
         declared_packages(unit)?
     };
-    if (!verification && packages.is_empty())
+    let data_author = ingredients.op.kind == AUTHOR && ingredients.logical_outputs.iter().all(|item| item.class == "JsonData");
+    if (!verification && !data_author && packages.is_empty())
         || ingredients
             .logical_outputs
             .iter()
@@ -876,7 +891,7 @@ fn prepare_inner(
         return Err("native unit needs complete explicit package outputs".into());
     }
     for output in &staged.request().outputs {
-        if !verification && !output.path.starts_with("content/Game/") {
+        if !verification && !data_author && !output.path.starts_with("content/Game/") {
             return Err("native outputs must use the fixed C3 content namespace".into());
         }
     }
@@ -1028,6 +1043,10 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
         "MaterialInstance",
         "MaterialParameterCollection",
         "Blueprint",
+        "BlendSpace1D",
+        "AdventureMoveSet",
+        "AnimBoneCompressionSettings",
+        "JsonData",
         "Map",
     ]
     .into_iter()

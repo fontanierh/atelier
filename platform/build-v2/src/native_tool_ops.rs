@@ -66,6 +66,10 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
                 "MaterialInstance",
                 "MaterialParameterCollection",
                 "Blueprint",
+                "BlendSpace1D",
+                "AdventureMoveSet",
+                "AnimBoneCompressionSettings",
+                "JsonData",
                 "Map",
                 "NativeCookRecord",
             ]
