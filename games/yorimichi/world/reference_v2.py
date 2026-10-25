@@ -151,8 +151,8 @@ def mesh(context, unreal, args):
     skeleton = library.duplicate_asset(_path(raw.get_editor_property('skeleton')), skeleton_package)
     if not isinstance(asset, unreal.SkeletalMesh) or not isinstance(skeleton, unreal.Skeleton):
         raise ValueError('Reference skeletal duplicate failed: ' + destination)
-    asset.set_skeleton(skeleton)
-    skeleton.set_editor_property('preview_skeletal_mesh', asset)
+    if not unreal.AtelierBuildWorkerLibrary.bind_skeletal_partners(asset, skeleton, None):
+        raise ValueError('Reference skeletal partner binding failed')
     slots = list(asset.materials)
     for slot in slots:
         if args['owner'] == 'Reference' and not any(name.startswith('Reference_') for name in materials):

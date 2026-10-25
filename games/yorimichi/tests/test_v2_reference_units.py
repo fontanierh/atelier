@@ -232,10 +232,21 @@ class Mesh(Asset):
     def set_editor_property(self, key, value):
         if key == 'skeleton': raise RuntimeError('SkeletalMesh skeleton is read-only')
         super().set_editor_property(key, value)
-    def set_skeleton(self, value): self.props['skeleton'] = value
     @property
     def materials(self): return self.props['materials']
     def get_bounds(self): return NS(box_extent=NS(x=40., y=20.))
+
+
+def bind_partners(mesh, skeleton, physics):
+    def values(asset): return vars(asset).get('props', vars(asset).get('values'))
+    assert not mesh.path.startswith('/Game/_Raw/') and not skeleton.path.startswith('/Game/_Raw/')
+    values(mesh)['skeleton'] = skeleton
+    values(skeleton)['preview_skeletal_mesh'] = mesh
+    if physics is not None:
+        assert not physics.path.startswith('/Game/_Raw/')
+        values(mesh)['physics_asset'] = physics
+        values(physics)['preview_skeletal_mesh'] = mesh
+    return True
 
 
 @pytest.fixture
@@ -250,7 +261,7 @@ def editor(tmp_path, monkeypatch):
                set_material_instance_vector_parameter_value=lambda mi, k, v: state.params.setdefault(mi.path, {}).update({k: v}),
                set_material_instance_scalar_parameter_value=lambda mi, k, v: state.params.setdefault(mi.path, {}).update({k: v}),
                update_material_instance=lambda mi: None)
-    unreal = NS(Material=Material, MaterialInstanceConstant=Instance, MaterialInstanceConstantFactoryNew=lambda: None,
+    unreal = NS(AtelierBuildWorkerLibrary=NS(bind_skeletal_partners=bind_partners), Material=Material, MaterialInstanceConstant=Instance, MaterialInstanceConstantFactoryNew=lambda: None,
                 AnimSequence=Sequence, Skeleton=Skeleton, SkeletalMesh=Mesh, StaticMesh=Mesh, LinearColor=lambda *v: v,
                 MaterialEditingLibrary=graph, AssetToolsHelpers=NS(get_asset_tools=lambda: NS(create_asset=create)),
                 EditorAssetLibrary=NS(load_asset=lambda p: assets.get(p.split('.', 1)[0]), does_asset_exist=lambda p: p in assets,
