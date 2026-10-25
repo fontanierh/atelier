@@ -338,3 +338,48 @@ def test_every_kind_refuses_a_destination_inside_the_scope_before_writing(tmp_pa
     with pytest.raises(ValueError, match='aliases the clone scope'):
         group.materialize(packed, tmp_path / 'scope' / 'inside')
     assert unpacks == [] and list((tmp_path / 'scope').iterdir()) == []
+
+
+class Cancelled(Exception):
+    pass
+
+
+def test_cancellation_is_checked_and_forwarded_only_when_supplied(tmp_path, monkeypatch):
+    source = archive(tmp_path, 'editor', FILES)
+    forwarded = []
+    real_unpack, real_inventory = recipe_job.unpack_root, recipe_job.inventory
+    def unpack(archive_path, destination, **options):
+        forwarded.append(('unpack', sorted(options)))
+        return real_unpack(archive_path, destination)
+    def inventory(root, **options):
+        forwarded.append(('inventory', sorted(options)))
+        return real_inventory(root)
+    monkeypatch.setattr(clones.recipe_job, 'unpack_root', unpack)
+    checks = []
+    group = clones.CommonRootClones(tmp_path / 'scope', inventory=inventory)
+    group.materialize(source, tmp_path / 'plain')  # no callback: the old two-argument invocations
+    assert forwarded and all(options == [] for _, options in forwarded)
+    forwarded.clear()
+    group.materialize(source, tmp_path / 'checked', check_cancelled=lambda: checks.append(1))
+    assert forwarded and all(options == ['check_cancelled'] for _, options in forwarded)
+    assert len(checks) >= 1 + 3  # at least one archive hash chunk and every repeated clone member
+    calls = iter(range(100))
+    def cancel_at_second_clone():
+        if next(calls) == 2:  # past the hash chunk and the first member
+            raise Cancelled()
+    with pytest.raises(Cancelled):
+        group.materialize(source, tmp_path / 'cancelled', check_cancelled=cancel_at_second_clone)
+    assert not os.path.lexists(tmp_path / 'cancelled')
+    assert group.materialize(source, tmp_path / 'after')['snapshot'] == 'reused'  # the snapshot is intact
+    assert real_inventory(tmp_path / 'after') == real_inventory(tmp_path / 'plain')
+
+
+def test_a_cancelled_first_unpack_leaves_no_snapshot_or_destination(tmp_path):
+    source = archive(tmp_path, 'editor', FILES)
+    group = clones.CommonRootClones(tmp_path / 'scope')
+    def cancel():
+        raise Cancelled()
+    with pytest.raises(Cancelled):
+        group.materialize(source, tmp_path / 'first', check_cancelled=cancel)  # during the archive hash
+    assert not os.path.lexists(tmp_path / 'first') and list((tmp_path / 'scope').iterdir()) == []
+    assert group.materialize(source, tmp_path / 'again')['snapshot'] == 'created'
