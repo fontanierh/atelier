@@ -610,7 +610,8 @@ pub fn check_unit(unit: &PreparedUnit) -> Result<(), String> {
         (FINISH, OP_VERSION) => "finish",
         _ => return Err("unsupported native operation/version".into()),
     };
-    if value.script != ENTRY || !value.code.contains_key(ENTRY) || !value.output_groups.is_empty() {
+    if (value.op.kind == RAW_IMPORT && value.script != ENTRY)
+        || !value.code.contains_key(&value.script) || !value.output_groups.is_empty() {
         return Err("native unit has an unsupported body/group contract".into());
     }
     if value.params.get("op").and_then(|v| v.as_str()) != Some(action) {
@@ -922,8 +923,7 @@ fn prepare_inner(
         env: command.env,
         cwd: command.cwd,
     };
-    let mut request = staged.request().clone();
-    request.params.remove("settings");
+    let request = body_request(staged.request().clone());
     Ok(PreparedUnrealLaunch {
         command,
         worker,
@@ -934,6 +934,15 @@ fn prepare_inner(
         context_verified: Cell::new(false),
         native_source_digest: native_source_digest(unit)?,
     })
+}
+
+fn body_request(mut request: crate::protocol::JobRequest) -> crate::protocol::JobRequest {
+    // Raw/finish and the fixed Zen body receive their own schema; author bodies
+    // also validate their declared startup settings alongside authored arguments.
+    if request.op.kind != AUTHOR {
+        request.params.remove("settings");
+    }
+    request
 }
 
 #[cfg(test)]
@@ -961,6 +970,19 @@ mod tests {
         assert_eq!(registry.len(), 4);
         assert!(registry[&(RAW_IMPORT.into(), OP_VERSION.into())].params["destination"].required);
         assert!(register(&mut registry, &BTreeMap::new()).is_err());
+        let request: crate::protocol::JobRequest = serde_json::from_value(serde_json::json!({
+            "job_id":"job", "unit":"material", "op":{"kind":AUTHOR,"version":"1"},
+            "job_dir":"/job", "script":"game/material.py", "code":["game/material.py"],
+            "inputs":[], "outputs":[], "params":{"args":{"asset":"M"},"settings":[]}
+        })).unwrap();
+        let authored = body_request(request.clone());
+        assert_eq!(authored.params, request.params);
+        for kind in [RAW_IMPORT, FINISH, VERIFY] {
+            let mut typed = request.clone();
+            typed.op.kind = kind.into();
+            assert!(!body_request(typed).params.contains_key("settings"));
+        }
+        assert!(request.params.contains_key("settings"));
     }
 }
 
