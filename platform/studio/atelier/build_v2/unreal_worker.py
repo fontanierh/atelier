@@ -12,7 +12,9 @@ The script is the session's frozen, read-only copy of this file, beside a frozen
 path; the source tree is never run. It speaks protocol version 1 (`protocol.py`) on the two inherited pipes, made close-on-exec at once
 so no helper process the editor starts inherits them. Stdout and stderr are the editor's logs.
 
-**Unreal is not sandboxed.** Per-job isolation is detection only:
+Filesystem isolation inside Unreal uses per-job detection. Fixed resident import/finish sessions
+add a kernel fork/exec denial after startup and before Hello; their jobs cannot start helpers.
+Per-job checks remain:
 - each job's input packages are copied into the session's empty `/Game` at their logical paths,
   read-only, and removed afterwards;
 - the packages saved during the job must be exactly the declared output packages (a package saved
@@ -57,6 +59,7 @@ import runpy
 import shutil
 import stat
 import sys
+import shlex
 
 if __package__:
     from . import protocol
@@ -493,6 +496,7 @@ class Worker:
         self.project = editor.project_dir()
         self.content = self.project / 'Content'
         self.read_platform_roots = ()
+        self.resident = False
 
     def send(self, message):
         protocol.write_frame(self.responses, protocol.RESPONSE, message)
@@ -597,6 +601,14 @@ class Worker:
             problem = self.reset(job, touched, moved, state)
         except Exception as error:  # the editor is in an unknown state: reply, then retire
             problem = f'reset raised {type(error).__name__}: {error}'
+        if not problem and self.resident:
+            try:
+                write_atomic(Path(job['job_dir']) / '.unreal-runtime/reset.json',
+                             {'version': 1, 'job_id': job_id})
+            except Exception as error:
+                problem = f'reset receipt raised {type(error).__name__}: {error}'
+        if problem and reply['type'] == 'completed':
+            reply = {'type': 'failed', 'job_id': job_id, 'failure': {'kind': 'job', 'message': problem}}
         self.send(reply)
         return problem
 
@@ -828,20 +840,38 @@ class _PythonState:
         self.argv = list(sys.argv)
         self.environ = dict(os.environ)
         self.cwd = os.getcwd()
-        self.modules = set(sys.modules)
+        self.modules = dict(sys.modules)
 
     def restore(self, job_dir):
+        if any(sys.modules.get(name) is not module for name, module in self.modules.items()):
+            raise JobRefused('dependency', 'the job replaced or removed a baseline Python module')
         sys.path[:] = self.path
         sys.argv[:] = self.argv
         os.environ.clear()
         os.environ.update(self.environ)
         os.chdir(self.cwd)
-        for name in set(sys.modules) - self.modules:
+        for name in set(sys.modules) - self.modules.keys():
             module = sys.modules.get(name)
             location = getattr(module, '__file__', None) or ''
             # Modules the job brought in from its own folder never outlive it.
             if location and Path(location).resolve().is_relative_to(job_dir.resolve()):
                 del sys.modules[name]
+
+
+def resident_no_fork():
+    """Apply a kernel restriction after native startup and before a resident session's Hello.
+
+    This only removes fork/exec authority. Existing per-job declared read/import and save checks
+    remain in force; failure to install the restriction refuses the session before any Run.
+    """
+    import ctypes
+    library = ctypes.CDLL('/usr/lib/libsandbox.dylib', use_errno=True)
+    library.sandbox_init.argtypes = [ctypes.c_char_p, ctypes.c_uint64, ctypes.POINTER(ctypes.c_char_p)]
+    library.sandbox_init.restype = ctypes.c_int
+    error = ctypes.c_char_p()
+    profile = b'(version 1)(allow default)(deny process-fork)(deny process-exec)'
+    if library.sandbox_init(profile, 0, ctypes.byref(error)) != 0:
+        raise StartRefused('the resident kernel no-fork restriction could not be installed')
 
 
 def main():
@@ -854,6 +884,10 @@ def main():
         responses = os.fdopen(response_fd, 'wb', buffering=0)
         worker = Worker(editor, requests, responses)
         worker.start()
+        tokens = shlex.split(editor.command_line())
+        if tokens.count('--resident-no-fork') == 1:
+            resident_no_fork()
+            worker.resident = True
     except StartRefused as refusal:
         log(f'refusing to start: {refusal}')
         raise SystemExit(3)

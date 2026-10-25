@@ -11,6 +11,63 @@ from atelier.build_v2 import unreal_worker
 from atelier.build_v2.unreal_worker import Editor, JobRefused, StartRefused, Worker
 
 
+@pytest.mark.macos_only
+def test_resident_kernel_restriction_denies_native_fork_and_exec():
+    import subprocess
+    source = f'''
+import ctypes, os, sys
+sys.path.insert(0, {str(Path(unreal_worker.__file__).parents[2])!r})
+from atelier.build_v2.unreal_worker import resident_no_fork
+resident_no_fork()
+libc = ctypes.CDLL(None, use_errno=True)
+pid = libc.fork()
+if pid == 0:
+    os._exit(3)
+if pid > 0:
+    os.waitpid(pid, 0)
+    raise AssertionError('native fork was permitted')
+assert ctypes.get_errno() == 1
+try:
+    os.posix_spawn(sys.executable, [sys.executable, '-c', 'pass'], dict(os.environ))
+except PermissionError:
+    pass
+else:
+    raise AssertionError('native spawn was permitted')
+'''
+    result = subprocess.run([sys.executable, '-c', source], capture_output=True, text=True, timeout=20)
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize('reset_problem', [None, 'package remains loaded'])
+def test_resident_reset_receipt_is_required_before_a_completed_reply(tmp_path, monkeypatch, reset_problem):
+    value, _project = worker(tmp_path)
+    request = job(tmp_path, [])
+    runtime = Path(request['job_dir']) / '.unreal-runtime'
+    runtime.mkdir()
+    value.resident = True
+    messages = []
+    monkeypatch.setattr(value, 'send', messages.append)
+    monkeypatch.setattr(value, 'execute', lambda *_args: [])
+    monkeypatch.setattr(value, 'reset', lambda *_args: reset_problem)
+    assert value.run(request) == reset_problem
+    receipt = runtime / 'reset.json'
+    if reset_problem:
+        assert messages[-1]['type'] == 'failed'
+        assert not receipt.exists()
+    else:
+        assert messages[-1]['type'] == 'completed'
+        assert json.loads(receipt.read_bytes()) == {'version': 1, 'job_id': request['job_id']}
+
+
+def test_python_baseline_module_replacement_refuses_resident_reset(tmp_path, monkeypatch):
+    module = types.ModuleType('c3_resident_baseline')
+    monkeypatch.setitem(sys.modules, module.__name__, module)
+    state = unreal_worker._PythonState()
+    monkeypatch.setitem(sys.modules, module.__name__, types.ModuleType(module.__name__))
+    with pytest.raises(JobRefused, match='baseline Python module'):
+        state.restore(tmp_path)
+
+
 def test_protocol_descriptors_must_appear_once_and_be_pipes(tmp_path):
     read, write = os.pipe()
     try:
