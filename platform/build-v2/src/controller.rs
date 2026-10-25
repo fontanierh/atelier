@@ -29,7 +29,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 
 pub const CONTROL_VERSION: u32 = 1;
-pub const MAX_CONTROL_BYTES: usize = 2 * 1024 * 1024;
+pub const MAX_CONTROL_BYTES: usize = 64 * 1024 * 1024;
 const WORKER_DIRECTORY: &str = "platform/studio/atelier/build_v2";
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -82,9 +82,9 @@ impl ControllerRequest {
         ProjectNamespace::new(&self.project).map_err(|error| error.to_string())?;
         if self.project.is_empty()
             || self.targets.is_empty()
-            || self.targets.len() > 256
+            || self.targets.len() > 8192
             || self.declaration.units.is_empty()
-            || self.declaration.units.len() > 256
+            || self.declaration.units.len() > 8192
             || self.allowed_install_roots.is_empty()
         {
             return Err("controller declaration/target bounds are invalid".into());
@@ -107,6 +107,12 @@ impl ControllerRequest {
                     if unit.output_groups.is_empty()
                         && unit.outputs.iter().all(|item| item.class == "JsonData")
                         && unit.params.is_empty() => {}
+                "recipe.python" | "recipe.blender"
+                    if unit.output_groups.is_empty()
+                        && unit.outputs.iter().all(|item| item.class == "Data") =>
+                {
+                    crate::recipe_ops::validate_params(&unit.params)?;
+                }
                 BLENDER_PLAN_KIND if unit.output_groups.len() == 1 && unit.outputs.is_empty() => {
                     blender_plan_spec(self, unit)?.definition()?;
                 }
@@ -215,6 +221,7 @@ pub struct PreparedController {
     pub sources: CapturedSources,
     pub worker: PythonWorkerBundle,
     pub blender_worker: Option<PythonWorkerBundle>,
+    pub recipe_workers: Vec<(PythonWorkerBundle, bool)>,
     pub runtimes: BTreeMap<String, Runtime>,
     pub targets: Vec<Target>,
     pub demands: BTreeMap<String, FinalDemands>,
@@ -242,6 +249,7 @@ pub fn prepare(request: &ControllerRequest) -> Result<PreparedController, String
     }
     let mut registry = BTreeMap::new();
     spec.register(&mut registry)?;
+    crate::recipe_ops::register(&mut registry, &request.data_contract.content_slots)?;
     if let Some(unit) = request
         .declaration
         .units
@@ -291,10 +299,14 @@ pub fn prepare(request: &ControllerRequest) -> Result<PreparedController, String
         PYTHON_WORKER_FILES,
     )?;
     let worker = PythonWorkerBundle::from_snapshot(&worker_sources.snapshot)?;
-    let native = selected
-        .order()
-        .iter()
-        .any(|id| graph.unit(id).is_some_and(|unit| unit.op.kind != "py_data"));
+    let native = selected.order().iter().any(|id| {
+        graph.unit(id).is_some_and(|unit| {
+            matches!(
+                unit.op.kind.as_str(),
+                BLENDER_PLAN_KIND | BLENDER_EXPORT_KIND
+            )
+        })
+    });
     let blender_worker = if native {
         let source = capture_sources(
             &request.checkout.join(WORKER_DIRECTORY),
@@ -304,10 +316,47 @@ pub fn prepare(request: &ControllerRequest) -> Result<PreparedController, String
     } else {
         None
     };
+    let mut recipe_workers = Vec::new();
+    for (kind, blender) in [("recipe.python", false), ("recipe.blender", true)] {
+        if selected
+            .order()
+            .iter()
+            .any(|id| graph.unit(id).is_some_and(|unit| unit.op.kind == kind))
+        {
+            let names: &[&str] = if blender {
+                &crate::recipe_ops::BLENDER_FILES
+            } else {
+                &crate::recipe_ops::FILES
+            };
+            let source = capture_sources(
+                &request.checkout.join(WORKER_DIRECTORY),
+                names.iter().copied(),
+            )?;
+            recipe_workers.push((
+                PythonWorkerBundle::from_recipe_snapshot(&source.snapshot, blender)?,
+                blender,
+            ));
+        }
+    }
     let mut runtimes = BTreeMap::new();
     for id in selected.order() {
         let unit = graph.unit(id).ok_or("selected unit missing")?;
-        let (worker, validator, profile) = if unit.op.kind == "py_data" {
+        let (worker, validator, profile) = if unit.op.kind.starts_with("recipe.") {
+            let blender = unit.op.kind == "recipe.blender";
+            let bundle = recipe_workers
+                .iter()
+                .find(|(_, native)| *native == blender)
+                .ok_or("missing recipe worker")?;
+            (
+                bundle.0.identity(),
+                crate::recipe_ops::validator(),
+                if blender {
+                    "recipe-blender"
+                } else {
+                    "recipe-python"
+                },
+            )
+        } else if unit.op.kind == "py_data" {
             (
                 worker.identity(),
                 py_data_validator_identity(),
@@ -358,6 +407,7 @@ pub fn prepare(request: &ControllerRequest) -> Result<PreparedController, String
         sources,
         worker,
         blender_worker,
+        recipe_workers,
         runtimes,
         targets,
         demands,
@@ -501,11 +551,12 @@ pub fn execute<L: WorkerLauncher + Send>(
         sources,
         worker,
         blender_worker,
+        recipe_workers,
         runtimes,
         targets,
         demands,
     } = prepare(request)?;
-    if blender_worker.is_some()
+    if (blender_worker.is_some() || recipe_workers.iter().any(|(_, blender)| *blender))
         && !context
             .blender
             .as_ref()
@@ -597,6 +648,26 @@ pub fn execute<L: WorkerLauncher + Send>(
                 .ok_or("missing Blender execution locator")?,
             bundle,
             profile: "normal-blender".into(),
+            memory_gib: context.memory_gib,
+            limits: context.limits,
+        });
+    }
+    for (bundle, blender) in recipe_workers {
+        executor = executor.with_recipe(PythonExecution {
+            interpreter: if blender {
+                context
+                    .blender
+                    .clone()
+                    .ok_or("missing Blender execution locator")?
+            } else {
+                context.interpreter.clone()
+            },
+            bundle,
+            profile: if blender {
+                "recipe-blender".into()
+            } else {
+                "recipe-python".into()
+            },
             memory_gib: context.memory_gib,
             limits: context.limits,
         });

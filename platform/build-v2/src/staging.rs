@@ -352,8 +352,19 @@ fn stage_into(
     }
     let output = job_dir.join("output");
     fs::create_dir(&output).map_err(|error| io_error(&output, error))?;
-    let scratch = if ingredients.worker_version == crate::launch::BLENDER_JOB_LOOP_VERSION {
-        let path = job_dir.join(".blender-runtime");
+    let scratch = if matches!(
+        ingredients.worker_version.as_str(),
+        crate::launch::BLENDER_JOB_LOOP_VERSION
+            | crate::recipe_ops::PYTHON_VERSION
+            | crate::recipe_ops::BLENDER_VERSION
+    ) {
+        let path = job_dir.join(
+            if ingredients.worker_version.starts_with("atelier-recipe-") {
+                ".recipe-runtime"
+            } else {
+                ".blender-runtime"
+            },
+        );
         fs::create_dir(&path).map_err(|error| io_error(&path, error))?;
         set_mode(&path, 0o700)?;
         Some(path)

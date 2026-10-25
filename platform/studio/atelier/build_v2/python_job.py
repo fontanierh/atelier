@@ -66,14 +66,14 @@ def _frozen(value):
 class JobContext:
     """The op's whole view of its job. See the module docstring."""
 
-    __slots__ = ('_inputs', '_outputs', '_params', '_seed')
-    output_dir = Path('output')
+    __slots__ = ('_inputs', '_outputs', '_params', '_seed', 'output_dir')
 
     def __init__(self, inputs, outputs, params, seed):
         self._inputs = MappingProxyType({name: None if path is None else Path(path) for name, path in inputs.items()})
         self._outputs = tuple(outputs)
         self._params = _frozen(params)
         self._seed = seed
+        self.output_dir = Path('output')
 
     @property
     def inputs(self):
@@ -255,8 +255,11 @@ class PathGuard:
                         'unlink': 'write', 'chmod': 'write', 'chown': 'write', 'utime': 'write',
                         'mkfifo': 'write', 'mknod': 'write', 'rename': 'write', 'replace': 'write'}
 
-    def __init__(self, job_dir, subpaths, literals, report, write_subpaths=None):
+    def __init__(self, job_dir, subpaths, literals, report, write_subpaths=None, relative_root=None, mkdir_existing=()):
         self.job_dir = job_dir
+        self.relative_root = relative_root or job_dir
+        if not _inside(self.relative_root, job_dir):
+            raise ValueError("worker cwd is outside the job")
         self.reads = [job_dir] + [os.path.normpath(path) for path in subpaths]
         # Directory literals ('/', '/etc', ...) are kernel startup needs, not readable here: opening
         # one would give a descriptor for probing undeclared names relative to it.
@@ -268,6 +271,9 @@ class PathGuard:
         if not self.writes or any(not os.path.isabs(path) or path == job_dir
                                   or not _inside(path, job_dir) for path in self.writes):
             raise ValueError('Worker write roots must be proper job-local directories')
+        self.mkdir_existing = frozenset(mkdir_existing)
+        if any(not _inside(path, job_dir) or not os.path.isdir(path) or os.path.islink(path) for path in self.mkdir_existing):
+            raise ValueError("mkdir context must contain only existing owned directories")
         self.report = report
         self.checked = threading.local()
 
@@ -280,7 +286,7 @@ class PathGuard:
 
     def resolve(self, path):
         # Lexical only: the guard itself must not stat or follow anything. Jobs cannot create links.
-        return os.path.normpath(os.path.join(self.job_dir, os.fsdecode(path)))
+        return os.path.normpath(os.path.join(self.relative_root, os.fsdecode(path)))
 
     def allowed(self, access, path):
         if access == 'write':
@@ -334,6 +340,8 @@ class PathGuard:
             writes = (isinstance(mode, str) and any(char in mode for char in 'wax+')) or (
                 isinstance(flags, int) and flags & self.WRITE_FLAGS)
             self.check('write' if writes else 'read', path)
+        elif event == 'os.mkdir' and self.resolve(args[0]) in self.mkdir_existing:
+            return  # This already-existing directory cannot be removed or otherwise mutated.
         elif event in self.MUTATIONS:
             for index in self.MUTATIONS[event]:
                 self.check('write', args[index])
@@ -345,6 +353,12 @@ class PathGuard:
             if path is _NO_PATH:  # os.listdir() / os.scandir(): the working folder
                 self.check(access, '.')
                 return function()
+            if name == 'mkdir' and dir_fd is None and self.resolve(path) in self.mkdir_existing:
+                self.checked.skip = True
+                try:
+                    return function(path, *args, **kwargs)
+                finally:
+                    self.checked.skip = False
             kind = access
             if name == 'open':
                 flags = args[0] if args else kwargs.get('flags', 0)
@@ -434,10 +448,34 @@ def main(config, report):
     seed = config['params'].get('seed', 0)
     if isinstance(seed, bool) or not isinstance(seed, int):
         seed = 0
+    if config.get('working_directory'):
+        # NumPy's pinned installed initializer imports secrets to define its C
+        # generators. Initialize that platform module before refusing entropy;
+        # producer calls still run after the guard and fixed seed are installed.
+        try:
+            import numpy as np
+            import numpy.random
+        except ModuleNotFoundError as error:
+            if error.name != 'numpy':
+                raise
+        else:
+            np.random.seed(seed)
+            original_rng = np.random.default_rng
+            def declared_rng(value=None):
+                if value is None:
+                    raise DeterminismError('numpy default_rng requires an explicit seed')
+                return original_rng(value)
+            np.random.default_rng = declared_rng
     fix_clock_and_entropy(seed)
     context = JobContext(config['inputs'], config['outputs'], config['params'], seed)
+    working = config.get('working_directory', job_dir)
+    if not os.path.isabs(working) or not _inside(working, job_dir):
+        raise ValueError('worker cwd is not job owned')
+    if working != job_dir:
+        context.output_dir = Path(job_dir) / 'output'
+        os.chdir(working)
     guard = PathGuard(job_dir, config['read_subpaths'], config['read_literals'], report,
-                      config.get('write_subpaths'))
+                      config.get('write_subpaths'), working, config.get('mkdir_existing', ()))
     guard.install()
     try:
         spec = importlib.util.spec_from_file_location('atelier_job_entry', os.path.join(job_dir, config['script']))

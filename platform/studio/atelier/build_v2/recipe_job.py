@@ -1,0 +1,305 @@
+"""Execute one declared producer in its private project view and encode complete roots.
+
+The controller keys this implementation and all declared project code. Archives never
+follow links, represent optional absence explicitly, and restore only their named root.
+"""
+import ast
+from collections.abc import Mapping
+import hashlib
+import importlib
+import importlib.util
+import io
+import json
+import os
+from pathlib import Path, PurePosixPath
+import runpy
+import shutil
+import stat
+import sys
+import tarfile
+import types
+
+RUNTIME = '.recipe-runtime'
+MANIFEST = 'atelier-root.json'
+
+
+def relative(value):
+    if (not isinstance(value, str) or not value or '\\' in value
+            or PurePosixPath(value).is_absolute() or str(PurePosixPath(value)) != value
+            or any(part in ('', '.', '..') for part in value.split('/'))):
+        raise ValueError('noncanonical recipe path')
+    return value
+
+
+def inventory(root):
+    """Complete, sorted nofollow membership, with stable regular bytes and modes."""
+    root = Path(root)
+    if not os.path.lexists(root):
+        return []
+    rows = []
+    def visit(path, name):
+        before = path.lstat()
+        if stat.S_ISDIR(before.st_mode):
+            rows.append((name, 'directory', 0, 0o755, None))
+            for child in sorted(path.iterdir(), key=lambda p: p.name):
+                visit(child, name + '/' + child.name if name else child.name)
+        elif stat.S_ISREG(before.st_mode):
+            digest = hashlib.sha256()
+            count = 0
+            fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+            with os.fdopen(fd, 'rb') as stream:
+                opened = os.fstat(stream.fileno())
+                if (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino):
+                    raise ValueError('root changed while opening')
+                for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+                    digest.update(chunk)
+                    count += len(chunk)
+                after = os.fstat(stream.fileno())
+            named = path.lstat()
+            fields = lambda s: (s.st_dev, s.st_ino, s.st_size, s.st_mtime_ns, s.st_ctime_ns)
+            if fields(before) != fields(after) or fields(after) != fields(named) or count != before.st_size:
+                raise ValueError('root changed while reading')
+            rows.append((name, 'file', count, 0o755 if before.st_mode & 0o111 else 0o644, digest.hexdigest()))
+        else:
+            raise ValueError('root contains a link or special file')
+    visit(root, '')
+    return rows
+
+
+def pack_root(root, destination, *, required=True):
+    rows = inventory(root)
+    if not rows and required:
+        raise ValueError('required recipe output is absent')
+    manifest = {'version': 1, 'kind': rows[0][1] if rows else 'absent',
+                'entries': [list(row) for row in rows]}
+    encoded = json.dumps(manifest, sort_keys=True, separators=(',', ':')).encode('ascii')
+    destination = Path(destination)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with destination.open('xb') as output, tarfile.open(fileobj=output, mode='w', format=tarfile.USTAR_FORMAT) as archive:
+        entry = tarfile.TarInfo(MANIFEST)
+        entry.size, entry.mode = len(encoded), 0o644
+        archive.addfile(entry, io.BytesIO(encoded))
+        for name, kind, size, mode, digest in rows:
+            entry = tarfile.TarInfo('root' + ('/' + name if name else ''))
+            entry.mode, entry.size = mode, size
+            if kind == 'directory':
+                entry.type = tarfile.DIRTYPE
+                archive.addfile(entry)
+            else:
+                fd = os.open(Path(root) / name if name else root, os.O_RDONLY | os.O_NOFOLLOW)
+                with os.fdopen(fd, 'rb') as stream:
+                    archive.addfile(entry, stream)
+    if inventory(root) != rows:
+        raise ValueError('recipe output changed while archiving')
+    return manifest
+
+
+def unpack_root(source, destination):
+    """Validate the complete archive before creating its independently copied root."""
+    destination = Path(destination)
+    if os.path.lexists(destination):
+        raise ValueError('archive destination already exists')
+    with tarfile.open(source, 'r:') as archive:
+        members = archive.getmembers()
+        if not members or members[0].name != MANIFEST or not members[0].isreg() or members[0].size > 16 * 1024 * 1024:
+            raise ValueError('missing bounded root manifest')
+        manifest = json.loads(archive.extractfile(members[0]).read())
+        if set(manifest) != {'version', 'kind', 'entries'} or manifest['version'] != 1:
+            raise ValueError('invalid root manifest')
+        rows = manifest['entries']
+        if not isinstance(rows, list) or len(rows) > 1_000_000 or len(members) != len(rows) + 1:
+            raise ValueError('incomplete root membership')
+        expected_kind = rows[0][1] if rows else 'absent'
+        if manifest['kind'] != expected_kind or expected_kind not in ('absent', 'file', 'directory'):
+            raise ValueError('invalid root kind')
+        seen = set()
+        for member, row in zip(members[1:], rows):
+            if not isinstance(row, list) or len(row) != 5:
+                raise ValueError('invalid root member')
+            name, kind, size, mode, digest = row
+            if name:
+                relative(name)
+            if name in seen or (not seen and name != ''):
+                raise ValueError('duplicate or missing archive root')
+            if name and name.rpartition('/')[0] not in seen:
+                raise ValueError('archive parent is missing')
+            seen.add(name)
+            if (member.name != 'root' + ('/' + name if name else '') or member.linkname
+                    or member.mode != mode or member.size != size or mode not in (0o644, 0o755)
+                    or not ((kind == 'file' and member.isreg() and isinstance(digest, str) and len(digest) == 64)
+                            or (kind == 'directory' and member.isdir() and size == 0 and digest is None))):
+                raise ValueError('archive member differs from manifest')
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        for member, row in zip(members[1:], rows):
+            name, kind, size, mode, digest = row
+            path = destination / name if name else destination
+            if kind == 'directory':
+                path.mkdir(mode=0o755)
+            else:
+                actual = hashlib.sha256()
+                with archive.extractfile(member) as incoming, path.open('xb') as outgoing:
+                    for chunk in iter(lambda: incoming.read(1024 * 1024), b''):
+                        actual.update(chunk)
+                        outgoing.write(chunk)
+                if actual.hexdigest() != digest:
+                    raise ValueError('archive payload digest mismatch')
+                path.chmod(mode)
+    return manifest
+
+
+def prepare_view(job, job_dir):
+    """Trusted outer worker materializes only frozen code and declared staged inputs."""
+    root = Path(job_dir) / RUNTIME
+    if not root.is_dir() or root.is_symlink() or any(root.iterdir()):
+        raise ValueError('recipe runtime is not a fresh reserved directory')
+    view = root / 'view'
+    view.mkdir()
+    (root / 'tmp').mkdir()
+    recipe = job['params']['recipe']
+    protected = []
+    def target(name):
+        result = view / relative(name)
+        result.parent.mkdir(parents=True, exist_ok=True)
+        return result
+    for name in job['code']:
+        source = Path(job_dir) / relative(name)
+        if not stat.S_ISREG(source.lstat().st_mode):
+            raise ValueError('code is not a regular staged file')
+        result = target(name)
+        shutil.copyfile(source, result)
+        result.chmod(0o444)
+        protected.append(str(result))
+    declared = {item['path']: item for item in job['inputs']}
+    for logical, staged in recipe['paths'].items():
+        relative(staged)
+        if not any(staged == path or staged.startswith(path + '/') for path in declared):
+            raise ValueError('recipe mapping is outside declared inputs')
+        source = Path(job_dir) / staged
+        result = target(logical)
+        if not os.path.lexists(source):
+            continue
+        if staged.endswith('.tree.tar'):
+            unpack_root(source, result)
+        else:
+            if not stat.S_ISREG(source.lstat().st_mode):
+                raise ValueError('raw mapped input is not a regular file')
+            if result.exists():
+                if result.read_bytes() != source.read_bytes():
+                    raise ValueError('code/input mapping collision')
+            else:
+                shutil.copyfile(source, result)
+        protected.append(str(result))
+    writes = []
+    for row in recipe['outputs']:
+        path = target(row['path'])
+        if any(path == Path(p) or path.is_relative_to(p) or Path(p).is_relative_to(path) for p in protected):
+            raise ValueError('output overlaps frozen inputs/code')
+        writes.append(str(path))
+    return view, protected, writes
+
+
+def _value(value, view):
+    if isinstance(value, (list, tuple)):
+        return [_value(v, view) for v in value]
+    if not isinstance(value, Mapping):
+        return value
+    if set(value) == {'path'}:
+        return view / relative(value['path'])
+    if set(value) == {'text'}:
+        return value['text'].replace('<checkout>', str(view))
+    if 'module' in value:
+        module = importlib.import_module(value['module'])
+        if 'source' in value and 'root' not in value and Path(module.__file__) != view / relative(value['source']):
+            raise ValueError('callback module differs from declared source')
+        return module
+    if set(value) == {'set'}:
+        return set(_value(value['set'], view))
+    if set(value) == {'callable'}:
+        return bind(value['callable'], view)
+    if set(value) == {'type'}:
+        module, _, name = value['type'].rpartition('.')
+        return getattr(importlib.import_module(module), name)
+    if set(value) == {'record', 'fields'}:
+        raise ValueError('callback record requires an explicit declared class binding')
+    return {k: _value(v, view) for k, v in value.items()}
+
+
+def bind(binding, view):
+    source = view / relative(binding['source'])
+    namespace = runpy.run_path(str(source), run_name='atelier_recipe_callback_source')
+    tree = ast.parse(source.read_text(), filename=str(source))
+    nodes = [node for node in ast.walk(tree) if isinstance(node, (ast.FunctionDef, ast.Lambda))
+             and node.lineno == binding['line']]
+    if len(nodes) != 1:
+        raise ValueError('callback source location is ambiguous')
+    node = nodes[0]
+    if isinstance(node, ast.FunctionDef):
+        node.decorator_list = []
+        code = compile(ast.fix_missing_locations(ast.Module(body=[node], type_ignores=[])), str(source), 'exec')
+        exec(code, namespace)
+        function = namespace[node.name]
+    else:
+        function = eval(compile(ast.Expression(node), str(source), 'eval'), namespace)
+    captures = binding['captures']
+    freevars = []
+    # Recompile the actual nested body inside a factory to retain Python's freevar semantics.
+    qualname = binding['qualname'].split('.')[-1]
+    original = next((c for c in _codes(compile(tree, str(source), 'exec'))
+                     if c.co_firstlineno == binding['line'] and c.co_name == qualname), None)
+    if original is None or len(original.co_freevars) != len(captures):
+        raise ValueError('callback closure does not match current source')
+    for value in captures:
+        cell = (lambda x: lambda: x)(_value(value, view)).__closure__[0]
+        freevars.append(cell)
+    result = types.FunctionType(original, namespace, original.co_name,
+                                tuple(_value(binding['defaults'], view)), tuple(freevars) or None)
+    result.__kwdefaults__ = _value(binding['kwdefaults'], view)
+    return result
+
+
+def _codes(code):
+    yield code
+    for value in code.co_consts:
+        if isinstance(value, types.CodeType):
+            yield from _codes(value)
+
+
+def run(context):
+    recipe = context.params['recipe']
+    view = Path.cwd()
+    output = context.output_dir.absolute()
+    game_roots = sorted({view / '/'.join(path.split('/')[:2]) for path in recipe['paths']
+                         if path.startswith('games/')})
+    sys.path[:0] = [str(view / 'platform/studio'), *map(str, game_roots), str(view)]
+    old = list(sys.argv), dict(os.environ)
+    try:
+        for command in recipe['commands']:
+            if command['kind'] == 'call':
+                bind(command['call'], view)()
+                continue
+            if command['kind'] not in ('python', 'blender'):
+                raise ValueError('unregistered recipe command')
+            if command['kind'] == 'blender' and 'bpy' not in sys.modules:
+                raise ValueError('Blender command requires the Blender worker')
+            script = view / relative(command['script'])
+            sys.path.insert(0, str(script.parent))
+            sys.argv[:] = [str(script), *map(str, _value(command['args'], view))]
+            for key, value in command['env']:
+                os.environ[key] = str(_value(value, view))
+            try:
+                runpy.run_path(str(script), run_name='__main__')
+            except SystemExit as error:
+                if error.code not in (None, 0):
+                    raise
+        if recipe['verify'] is not None and not bind(recipe['verify'], view)():
+            raise ValueError('original producer verification refused outputs')
+        for row in recipe['outputs']:
+            pack_root(view / relative(row['path']), output / relative(row['file']),
+                      required=row.get('required', True))
+        if recipe.get('geometry'):
+            geometry = recipe['geometry']
+            shutil.copytree(view / relative(geometry['source']), output / 'geometry')
+    finally:
+        sys.argv[:] = old[0]
+        os.environ.clear()
+        os.environ.update(old[1])

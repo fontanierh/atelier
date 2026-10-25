@@ -34,6 +34,7 @@ pub mod python_backend;
 pub mod python_executor;
 pub mod python_sources;
 pub mod python_worker;
+pub mod recipe_ops;
 pub mod results;
 pub mod roots;
 pub mod scheduler;

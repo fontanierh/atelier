@@ -59,6 +59,7 @@ fn validator_identity(unit: &PreparedUnit) -> crate::keys::ImplementationIdentit
 }
 fn check_unit_identity(unit: &PreparedUnit) -> Result<(), String> {
     match unit.ingredients().op.kind.as_str() {
+        "recipe.python" | "recipe.blender" => crate::recipe_ops::check(unit),
         "py_data" => check_py_data_unit_identity(unit),
         kind @ (BLENDER_PLAN_KIND | BLENDER_EXPORT_KIND) => {
             blender_ops::check_blender_identity(unit, kind, &validator_identity(unit))?;
@@ -81,6 +82,7 @@ fn validate_fixed_outputs(
     outputs: &[crate::results::FrozenOutput<'_>],
 ) -> Result<(), String> {
     match unit.ingredients().op.kind.as_str() {
+        "recipe.python" | "recipe.blender" => crate::recipe_ops::validate_outputs(unit, outputs),
         "py_data" => validate_py_data_unit_outputs(unit, outputs),
         BLENDER_EXPORT_KIND => {
             blender_ops::validate_blender_export_outputs(unit, &validator_identity(unit), outputs)
