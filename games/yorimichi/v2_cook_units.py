@@ -97,8 +97,8 @@ def author_units(packages, *, checkout, dependencies=()):
                 paths['games/yorimichi/unreal/Content/' + relative + suffix] = (
                     'inputs/' + slot + '/content/Game/' + relative + suffix)
         recipe = {'version': 1, 'commands': [], 'paths': paths, 'verify': None,
-                  'outputs': [{'path': record, 'file': record},
-                              {'path': COOK_ROOT, 'file': 'cook-root.tree.tar'}]}
+                  'outputs': [{'path': record, 'kind': 'file', 'file': record, 'required': True},
+                              {'path': COOK_ROOT, 'kind': 'tree', 'file': 'cook-root.tree.tar', 'required': True}]}
         units.append({'id': producer, 'op': {'kind': 'unreal.cook.produce', 'version': '1'},
             'script': SCRIPT, 'code': sorted(code), 'inputs': inputs,
             'params': {'project': PROJECT, 'packages': [package], 'record_outputs': {package: record},
