@@ -88,6 +88,7 @@
     "platform/studio/atelier/build_v2/recipe_media.py",
     "platform/studio/atelier/build_v2/recipe_native_paths.py",
     "platform/studio/atelier/build_v2/recipe_node.py",
+    "platform/studio/atelier/build_v2/recipe_root_clones.py",
     "platform/studio/atelier/build_v2/recipe_worker.py",
     "platform/studio/atelier/build_v2/unreal_inputs.py",
     "platform/studio/atelier/build_v2/unreal_ops.py",
