@@ -132,7 +132,7 @@ def run(context):
     assert loop.run(first)['type'] == 'completed'
     assert loop.run(second)['type'] == 'completed'
     names, folders, salted = __import__('json').loads(output(first))
-    assert names == sorted(set(python_worker.JOB_ENVIRONMENT) | set(blender_worker.USER_FOLDERS) | {'TMPDIR'})
+    assert names == sorted(set(python_worker.JOB_ENVIRONMENT) | set(blender_worker.SDK_ENVIRONMENT) | set(blender_worker.USER_FOLDERS) | {'TMPDIR'})
     assert folders == [str(Path(os.path.realpath(tmp_path / 'one')) / blender_worker.MISSING_USER_FOLDER)]
     assert not (tmp_path / 'one' / blender_worker.MISSING_USER_FOLDER).exists()
     # The declared hash seed reaches the job's Python; the second job's own folder differs, the hash not.
@@ -361,3 +361,17 @@ def test_background_render_registration_has_exact_native_service_and_bundle_boun
     assert profile.splitlines()[-1] == '(deny network-bind)'
     outside_bundle = blender_worker.BlenderPlatform(str(tmp_path / 'plain/Blender'))
     assert not any(line.startswith('(allow file-issue-extension') for line in outside_bundle.extra_rules())
+
+
+def test_blender_native_startup_identity_is_fixed_and_never_inherited(tmp_path, blender, monkeypatch):
+    from atelier.build_v2 import recipe_worker
+    monkeypatch.setenv('USER', 'host-identity-must-not-leak')
+    worker = blender_worker.BlenderWorker(None, None, sandboxed=True, blender=str(blender))
+    recipe = recipe_worker.RecipeWorker(None, None, True, blender=str(blender))
+    for environment in (worker.child_environment(str(tmp_path / 'job')),
+                        recipe.child_environment(str(tmp_path / 'job'))):
+        assert environment['USER'] == 'atelier-job'
+        assert 'host-identity-must-not-leak' not in environment.values()
+        assert 'PATH' not in environment and 'PYTHONPATH' not in environment
+        assert environment['HOME'].startswith(str(tmp_path / 'job'))
+    assert 'USER' not in python_worker.Worker(None, None, True).child_environment(str(tmp_path / 'job'))
