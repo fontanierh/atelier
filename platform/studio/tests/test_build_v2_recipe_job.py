@@ -83,6 +83,54 @@ def test_view_uses_declared_mapping_and_refuses_output_input_overlap(tmp_path):
     assert (tmp_path / 'inputs/raw').read_text() == 'input'
 
 
+def test_view_materializer_restores_complete_roots_before_overlap_checks(tmp_path):
+    import shutil
+    from atelier.build_v2.recipe_root_clones import CommonRootClones
+    source=tmp_path/'source';source.mkdir();(source/'payload').write_bytes(b'complete root')
+    archive=tmp_path/'input.tree.tar';job.pack_root(source,archive)
+    cache=CommonRootClones(tmp_path/'common',clone=shutil.copyfile)
+    for name in ('first','second'):
+        directory=tmp_path/name;directory.mkdir();(directory/job.RUNTIME).mkdir()
+        (directory/'input.tree.tar').write_bytes(archive.read_bytes())
+        request={'code':[],'inputs':[{'path':'input.tree.tar'}],
+                 'params':{'recipe':{'paths':{'data':'input.tree.tar'},'outputs':[{'path':'data/forbidden'}]}}}
+        with pytest.raises(ValueError,match='output overlaps'):
+            job.prepare_view(request,directory,materializer=cache.materialize)
+        assert (directory/job.RUNTIME/'view/data/payload').read_bytes()==b'complete root'
+
+
+def test_root_unpack_and_inventory_cancel_during_bounded_file_reads(tmp_path):
+    source=tmp_path/'source';source.mkdir();(source/'large').write_bytes(b'x'*(4*1024*1024))
+    archive=tmp_path/'input.tree.tar';job.pack_root(source,archive);destination=tmp_path/'restored'
+    def cancel_unpack():
+        p=destination/'large'
+        if p.exists()and p.stat().st_size>=1024*1024:raise RuntimeError('cancelled during payload')
+    with pytest.raises(RuntimeError,match='cancelled during payload'):
+        job.unpack_root(archive,destination,check_cancelled=cancel_unpack)
+    assert 0<(destination/'large').stat().st_size<4*1024*1024
+    checks=[]
+    def cancel_inventory():
+        checks.append(True)
+        if len(checks)==4:raise RuntimeError('cancelled inventory')
+    with pytest.raises(RuntimeError,match='cancelled inventory'):
+        job.inventory(source,check_cancelled=cancel_inventory)
+    assert (source/'large').stat().st_size==4*1024*1024
+
+
+def test_view_cancellation_interrupts_raw_directory_copy(tmp_path):
+    (tmp_path/job.RUNTIME).mkdir();source=tmp_path/'inputs';source.mkdir()
+    (source/'large').write_bytes(b'x'*(4*1024*1024))
+    request={'code':[],'inputs':[{'path':'inputs'}],
+             'params':{'recipe':{'paths':{'data':'inputs'},'outputs':[]}}}
+    target=tmp_path/job.RUNTIME/'view/data/large'
+    def check():
+        if target.exists()and target.stat().st_size>=1024*1024:raise RuntimeError('cancelled raw copy')
+    with pytest.raises(RuntimeError,match='cancelled raw copy'):
+        job.prepare_view(request,tmp_path,check_cancelled=check)
+    assert 0<target.stat().st_size<4*1024*1024
+    assert (source/'large').stat().st_size==4*1024*1024
+
+
 def test_existing_parent_mkdir_is_noop_only_and_other_writes_remain_refused(tmp_path):
     from atelier.build_v2.python_job import PathGuard
     output = tmp_path / 'build' / 'product'
