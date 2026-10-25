@@ -332,7 +332,7 @@ def run(context):
                 raise ValueError('Blender command requires the Blender worker')
             script = view / relative(command['script'])
             sys.path.insert(0, str(script.parent))
-            sys.argv[:] = [str(script), *map(str, _value(command['args'], view))]
+            sys.argv[:] = [str(script), *(['--'] if command['kind'] == 'blender' else []), *map(str, _value(command['args'], view))]
             for key, value in command['env']:
                 os.environ[key] = str(_value(value, view))
             try:
