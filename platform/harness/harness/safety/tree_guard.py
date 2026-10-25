@@ -7,9 +7,11 @@ except exact invocation-owned private roots registered through a pre-exec gate.
 Individual game guards and the outer render lock remain required.
 """
 import argparse
+from collections import deque
 import json
 import os
 from pathlib import Path
+import select
 import signal
 import stat
 import sys
@@ -26,14 +28,78 @@ def adopt_reporters(launch_nonce):
     return Reporters(launch_nonce)
 
 
+class ExitWatches:
+    """@cc [owner:fontanierh,label:safety] aggregate-kernel-exit-evidence
+    The aggregate monitor MUST bind each discovered descendant's kernel NOTE_EXIT watch only while
+    its exact start matches before and after registration, beside the positive parent edge it was
+    discovered through. Only a fired watch MAY be published as an exit; missing processes, failed or
+    raced registration and PID reuse MUST stay unknown. Fired events are drained before any new
+    registration, so a reused PID never inherits an earlier identity's watch or exit.
+    """
+    WINDOW = 64  # Bounded within MAX_FRAME; older exits are counted as omitted, never published as proof.
+
+    def __init__(self, started):
+        self.started = started
+        self.queue = select.kqueue() if sys.platform == 'darwin' else None
+        self.watched, self.fired, self.total = {}, deque(maxlen=self.WINDOW), 0
+
+    def drain(self):
+        while self.queue is not None:
+            events = self.queue.control(None, 64, 0)
+            for event in events:
+                entry = self.watched.pop(event.ident, None)
+                if (entry is not None and event.fflags & select.KQ_NOTE_EXIT
+                        and not event.flags & select.KQ_EV_ERROR):
+                    self.fired.append(entry)  # The immutable identity and edge bound with the watch.
+                    self.total += 1
+            if len(events) < 64:
+                return
+
+    def bind(self, pin, parent):
+        if self.queue is None or parent is None:
+            return
+        if pin[0] in self.watched and self.watched[pin[0]][0] != pin:
+            self.drain()
+            self.watched.pop(pin[0], None)  # An unretrieved earlier identity stays unknown.
+        if pin[0] in self.watched:
+            return
+        try:
+            if self.started(pin[0]) != pin[1]:
+                return
+            self.queue.control([select.kevent(pin[0], filter=select.KQ_FILTER_PROC,
+                                              flags=select.KQ_EV_ADD | select.KQ_EV_ONESHOT,
+                                              fflags=select.KQ_NOTE_EXIT)], 0, 0)
+        except OSError:
+            return
+        if self.started(pin[0]) != pin[1]:
+            try:
+                self.queue.control([select.kevent(pin[0], filter=select.KQ_FILTER_PROC,
+                                                  flags=select.KQ_EV_DELETE)], 0, 0)
+            except OSError:
+                pass
+            return
+        self.watched[pin[0]] = (pin, parent)
+
+    def evidence(self):
+        """The newest fired exits as [pid, start, parent pid, parent start], and how many older ones are omitted."""
+        self.drain()
+        return [[*pin, *parent] for pin, parent in self.fired], self.total - len(self.fired)
+
+    def close(self):
+        if self.queue is not None:
+            self.queue.close()
+            self.queue = None
+
+
 class OwnedTree:
-    def __init__(self, api, pid, started, reporters=None):
+    def __init__(self, api, pid, started, reporters=None, exits=None):
         self.api = api
         self.root = (pid, started)
         self.parents = {self.root: None}
         self.depth = {self.root: 0}
         self.shared = set()
         self.reporters = reporters
+        self.exits = exits
         from .owned_service import Registrations
         self.services = Registrations(api, self.root)
 
@@ -63,6 +129,8 @@ class OwnedTree:
         return result
 
     def discover(self):
+        if self.exits is not None:
+            self.exits.drain()
         excluded = self.excluded()
         pending = [key for key in self.parents if key not in excluded and self.same(key)]
         seen = set()
@@ -78,6 +146,8 @@ class OwnedTree:
                 if child not in self.parents:
                     self.parents[child] = parent
                     self.depth[child] = self.depth[parent] + 1
+                    if self.exits is not None:
+                        self.exits.bind(child, parent)
                 if child not in excluded:
                     pending.append(child)
         if self.reporters is not None and self.reporters.observe(self, seen):
@@ -98,8 +168,12 @@ class OwnedTree:
             except ProcessLookupError:
                 continue
             if value.started == key[1] and not value.exited:
-                samples.append(dict(pid=key[0], started=key[1], footprint_bytes=value.footprint,
-                                    name=self.api.name(key[0]), depth=self.depth[key]))
+                sample = dict(pid=key[0], started=key[1], footprint_bytes=value.footprint,
+                              name=self.api.name(key[0]), depth=self.depth[key])
+                if self.exits is not None:
+                    parent = self.parents[key]
+                    sample['parent'] = list(parent) if parent is not None else None
+                samples.append(sample)
         return samples
 
     def stop_owned(self, send=os.kill, exclude_pid=None):
@@ -345,6 +419,7 @@ def run_child(pid, started, report, duration=None, limit_gib=10., controller=Non
     from atelier.harness.safety import process_tree
     adopted = adopt_reporters(launch_nonce)
     tree = OwnedTree(process_tree, pid, started, adopted)
+    tree.exits = ExitWatches(process_tree.started)
     report = Path(report)
     began, peak = time.monotonic(), 0
     limit = int(limit_gib * 1024**3)
@@ -407,6 +482,7 @@ def run_child(pid, started, report, duration=None, limit_gib=10., controller=Non
                 value['owned_services'] = tree.services.evidence()
             if controller is not None:
                 value['controller'] = list(controller)
+            value['exits'], value['exits_omitted'] = tree.exits.evidence()
             if state != 'running':
                 value['cleanup_complete'] = drain_owned(tree)
                 # drain_owned may have ended helpers from the pre-cleanup sample. Publish
@@ -426,6 +502,7 @@ def run_child(pid, started, report, duration=None, limit_gib=10., controller=Non
                 if not value['cleanup_complete']:
                     value['termination_reason'], value['state'] = state, 'cleanup_incomplete'
                     state = 'cleanup_incomplete'
+                value['exits'], value['exits_omitted'] = tree.exits.evidence()  # with helpers the drain ended
                 value['observed_monotonic'] = time.monotonic()
                 value['time'] = time.time()
             write_report(report, value)

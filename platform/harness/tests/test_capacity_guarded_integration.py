@@ -66,10 +66,15 @@ def test_real_broker_exec_and_release_with_actual_guard_receipts(tmp_path, broke
     assert own['state'] == 'released' and own['charged'] is False
 
 
-def test_failed_heartbeat_drains_real_monitors_before_terminal_close(tmp_path, broker):
-    # Deliberately lose live ancestry in this private broker. Only its existing exclusive
-    # terminal-tree policy can settle the independently guarded owned cleanup afterward.
+@pytest.mark.parametrize('monitor_edges', [False, True])
+def test_failed_heartbeat_drains_real_monitors_before_terminal_close(tmp_path, broker, monkeypatch, monitor_edges):
+    # Deliberately lose the broker's own live ancestry reads. Without the aggregate monitor's
+    # edges only the existing exclusive terminal-tree policy can settle the guarded cleanup;
+    # with them, the monitor's positive discovery edges resolve the same helper's ancestry.
     broker.parent = lambda pin: None
+    if not monitor_edges:
+        from atelier.harness import capacity_protocol
+        monkeypatch.setattr(capacity_protocol, 'guard_evidence', lambda record: ((), ()))
     request = dict(id='failed-heartbeat', resources=asdict(Resources(512, 1000, 16, 1)),
                    locks=['checkout:test'], seconds=10)
     session = AdmissionSession(broker.socket_path, request)
@@ -91,7 +96,7 @@ def test_failed_heartbeat_drains_real_monitors_before_terminal_close(tmp_path, b
     assert terminal['processes'] == [] and terminal['footprint_bytes'] == 0
     report = status(broker.socket_path)
     own = next(record for record in report['records'] if record['id'] == 'failed-heartbeat')
-    assert own['ancestry_unknown'] is True and own['state'] == 'released' and not own['charged']
+    assert own['ancestry_unknown'] is (not monitor_edges) and own['state'] == 'released' and not own['charged']
     assert report['charged_count'] == 0
 
 

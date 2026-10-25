@@ -257,13 +257,23 @@ class CapacityBroker:
             raise wire.CapacityError('Capacity process batch exceeds its limit')
         return pins
 
-    def _watch(self, record, pins):
+    def _watch(self, record, pins, *, edges=(), exits=()):
+        """Retain pins; resolve ancestry from positive edges; record the aggregate monitor's exits.
+
+        ``edges``/``exits`` come only from a bound aggregate receipt. A monitor edge is used only where
+        the broker's own read failed; ancestry still needs a positive chain to the verified root.
+        A monitor exit applies only to an already retained identity whose known edge agrees.
+        """
         pins = [wire.identity(pin) for pin in pins]
         roster = {tuple(pin) for pin in record.get('roster', [])}
         verified = {tuple(pin) for pin in record.get('verified_roster', [])}
         if len(roster | set(pins)) > wire.MAX_RETAINED:
             raise wire.CapacityError('Retained process roster exceeds its limit')
-        pending = {}
+        # Records from before re-resolvable ancestry keep their sticky unknown.
+        legacy_unknown = record.get('ancestry_unknown') is True and 'unresolved' not in record
+        pending = {tuple(pin): tuple(parent) if parent is not None else None
+                   for pin, parent in record.get('unresolved', [])}
+        edges = dict(edges)
         for value in pins:
             pin = wire.identity(value)
             if pin == tuple(record['principal']):
@@ -276,16 +286,52 @@ class CapacityBroker:
         if root in roster:
             verified.add(root)  # start() separately validated its direct-parent edge.
             pending.pop(root, None)
+        exited = {tuple(pin) for pin in record.get('exited', [])}
+        for pin, parent in exits:
+            if pin not in roster or pin == root or (pending.get(pin) or parent) != parent:
+                continue
+            if pin in pending:
+                pending[pin] = parent
+            if pin not in exited:
+                record.setdefault('exited', []).append(list(pin))
+                exited.add(pin)
+        for pin, parent in list(pending.items()):
+            if parent is None and pin in edges:
+                pending[pin] = edges[pin]
         while pending:
             found = [pin for pin, parent in pending.items() if parent in verified]
             if not found:
-                record['ancestry_unknown'] = True
                 break
             for pin in found:
                 verified.add(pin)
                 del pending[pin]
         record['roster'] = [list(pin) for pin in sorted(roster)]
         record['verified_roster'] = [list(pin) for pin in sorted(verified)]
+        record['unresolved'] = [[list(pin), list(parent) if parent is not None else None]
+                                for pin, parent in sorted(pending.items())]
+        record['ancestry_unknown'] = legacy_unknown or bool(pending)
+
+    def _terminal_guard_evidence(self, record):
+        """The bound aggregate receipt's final exits, for helpers that left after the last live check.
+
+        Exits are immutable facts about exact identities, so this needs the receipt's owner and ceiling,
+        not freshness. Unreadable, foreign or malformed receipts add nothing.
+        """
+        try:
+            item = wire.fields(record.get('guards', {}).get('tree_guard'), ('pid', 'start', 'report'))
+            wire.identity((item['pid'], item['start']))
+            receipt = wire.decode(wire.guard_report(wire.text(item['report'], maximum=4096)))
+            if (wire.identity((receipt.get('owner'), receipt.get('owner_started'))) != tuple(record['child'])
+                    or receipt.get('limit_bytes') != record['limit_bytes']):
+                return
+            processes = receipt.get('processes') or []
+            if type(processes) is not list or any(type(v) is not dict or 'pid' not in v or 'started' not in v
+                                                  for v in processes):
+                return
+            edges, exits = wire.guard_evidence(receipt)
+        except (OSError, ValueError, KeyError, TypeError, wire.CapacityError):
+            return
+        self._watch(record, [], edges=edges, exits=exits)
 
     def _root_exited(self, record):
         pin = record.get('child')
@@ -319,6 +365,7 @@ class CapacityBroker:
                      'Capacity paths cannot contain symlinks',
                      'Guard ceiling exceeds the reserved memory envelope',
                      'Invalid retained guard roster', 'Invalid retained guard process identity',
+                     'Invalid aggregate exit evidence',
                      'Invalid capacity message', 'Invalid capacity protocol fields',
                      'Invalid capacity integer', 'A pinned process identity is required'}
             reason = str(error) if isinstance(error, wire.CapacityError) and str(error) in known else type(error).__name__
@@ -554,7 +601,7 @@ class CapacityBroker:
         else:
             facts = self._guard_health(record)
             if facts is not None:
-                self._watch(record, facts.roster)
+                self._watch(record, facts.roster, edges=facts.edges, exits=facts.exits)
                 record.update(measured_memory_mib=facts.footprint_bytes // 1024**2, measured_at=time.time())
             completion = self._check_completion(record, reconcile=True)
             if completion is not None:
@@ -1096,7 +1143,7 @@ class CapacityBroker:
                                 if self.started(child[0]) != child[1] or self.started(principal[0]) != principal[1]:
                                     raise wire.CapacityError('Launcher/controller changed before admission')
                                 record['child'] = list(child)
-                                self._watch(record, [child, *facts.roster])
+                                self._watch(record, [child, *facts.roster], edges=facts.edges, exits=facts.exits)
                                 record.update(state='running', child=list(child), guards=guards,
                                               limit_bytes=message['limit_bytes'], heartbeat=self._clock(),
                                               measured_memory_mib=facts.footprint_bytes // 1024**2, measured_at=time.time())
@@ -1125,6 +1172,7 @@ class CapacityBroker:
                                     raise wire.CapacityError('Invalid direct-parent exit witness')
                                 # This authenticated adapter reports its actual Popen wait status.
                                 record.setdefault('exited', []).append(record['child']) if record['child'] not in record.get('exited', []) else None
+                            self._terminal_guard_evidence(record)
                             self._refresh(state, now)
                             if record['state'] != 'released':
                                 record['state'] = 'uncertain'

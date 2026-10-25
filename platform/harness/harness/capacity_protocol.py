@@ -261,6 +261,9 @@ class ExitWatch:
     Missing processes, failed registration and PID reuse MUST remain unknown, never exited.
     A positive event MUST remain cached after promptly closing its kernel descriptor.
     This watch proves only the retained identity's exit, not undiscovered descendants' exit.
+    The only other exit witness is the bound aggregate monitor's own watch under the same rule
+    (aggregate-kernel-exit-evidence), consumed from its identity-validated receipt for exact
+    retained identities only, never for missing, new or reused ones.
     """
     def __init__(self, pin, *, started=process_start):
         self.pin, self.handle, self.exited = identity(pin), None, False
@@ -357,6 +360,28 @@ def guard_report(path):
 class GuardFacts:
     roster: tuple
     footprint_bytes: int
+    edges: tuple = ()  # ((pin, parent), ...): positive edges the aggregate monitor discovered
+    exits: tuple = ()  # ((pin, parent), ...): its own fired kernel exit watches
+
+
+def guard_evidence(record):
+    """Parent edges and fired exits from one aggregate receipt whose identity the caller validated.
+
+    Receipts without these fields add no evidence. Malformed evidence refuses; it is never partially read.
+    """
+    edges = []
+    for value in record.get('processes') or ():
+        if value.get('parent') is not None:
+            edges.append((identity([value['pid'], value['started']]), identity(value['parent'])))
+    values = record.get('exits', [])
+    if type(values) is not list or len(values) > MAX_ROSTER:
+        raise CapacityError('Invalid aggregate exit evidence')
+    exits = []
+    for value in values:
+        if type(value) is not list or len(value) != 4:
+            raise CapacityError('Invalid aggregate exit evidence')
+        exits.append((identity(value[:2]), identity(value[2:])))
+    return tuple(edges), tuple(exits)
 
 
 def validate_guards(guards, child, owner, limit_bytes, reserved_mib, *, started=process_start,
@@ -364,7 +389,7 @@ def validate_guards(guards, child, owner, limit_bytes, reserved_mib, *, started=
     integer(limit_bytes, minimum=1)
     if limit_bytes > reserved_mib * 1024**2:
         raise CapacityError('Guard ceiling exceeds the reserved memory envelope')
-    roster, footprint = [], 0
+    roster, footprint, edges, exits = [], 0, (), ()
     for kind in ('process_guard', 'tree_guard'):
         item = fields(guards[kind], ('pid', 'start', 'report'))
         monitor = identity((item['pid'], item['start']))
@@ -388,9 +413,10 @@ def validate_guards(guards, child, owner, limit_bytes, reserved_mib, *, started=
                     raise CapacityError('Invalid retained guard process identity')
                 roster.append(identity([value['pid'], value['started']]))
             footprint = integer(record.get('footprint_bytes'))
+            edges, exits = guard_evidence(record)
         if started(monitor[0]) != monitor[1] or not alive(monitor):
             raise CapacityError('Capacity guard identity changed during validation')
-    return GuardFacts(tuple(roster), footprint)
+    return GuardFacts(tuple(roster), footprint, edges, exits)
 
 
 
