@@ -67,6 +67,15 @@ def test_actual_recipe_packet_ownership_and_complete_source_dependencies(declara
         token = hull['params']['args']['source_export']['derived_items']['templates'][0]
         assert token['piece'].endswith('_Collision') and 'follower' not in token
         assert hull['outputs'][0]['logical_path'] in result['packages']
+    raws = [u for u in result['units'] if u['id'].startswith('unreal.belmonte.hull.raw.')]
+    assert len(raws) == len(hulls)
+    for raw in raws:
+        assert raw['script'] == units.OPS
+        assert raw['params']['source'] == 'source'
+        assert raw['params']['input_roots']['source']['archive_member'] == 'hull.tree.tar'
+        source = next(u for u in result['units'] if u['id'] == raw['inputs'][0]['source']['unit'])
+        assert source['op']['kind'] == 'recipe.python'
+        assert source['params']['recipe']['commands'][0]['call']['defaults'][0]['derived_items']['templates'][0]['piece'].endswith('_Collision')
     assert {t['unit_prefix'] for t in result['templates']} <= {t['unit_prefix'] for t in result['geometry']['templates']}
     assert set(result['groups']) <= set(result['geometry']['groups'])
     authors = [u for u in result['units'] if u['op']['kind']=='unreal.author']
@@ -295,6 +304,47 @@ def test_material_members_validate_every_pixel_and_descriptor_before_publication
         else:
             members.project_materials(source,pixels,output,kind)
             assert {p.name for p in output.iterdir()}==({'MI_BM_Ground.json'} if kind=='materials' else {filename})
+
+
+@pytest.mark.parametrize('damage', [None, 'selection', 'bytes', 'role', 'foreign'])
+def test_selected_hull_recipe_source_reaches_fixed_raw_input(tmp_path, damage):
+    import shutil
+    from atelier.build_v2 import recipe_job, unreal_inputs, unreal_ops
+    entry, plan = actual_plan(tmp_path)
+    piece = entry['name'] + '_Collision'
+    payload = tmp_path / 'payload'
+    payload.mkdir()
+    shutil.copyfile(plan / (piece + '.mesh'), payload / (piece + '.mesh'))
+    stage = load('games/yorimichi/world/stage_encoded_export_v2.py', 'belmonte_hull_export_test')
+    export = DataContext({'payload': payload}, tmp_path / 'export',
+        {'payload_member': piece + '.mesh', 'payload_encoding': 'encoded_glb', 'payload_role': 'collision'},
+        [piece + '.glb', 'export.json'])
+    stage.run(export)
+    members = load(units.MEMBERS, 'belmonte_hull_members_test')
+    children = [(NS(products=[NS(paths=(export.output_dir,))]), piece)]
+    if damage == 'selection': children[0] = (children[0][0], entry['name'])
+    elif damage == 'bytes': (export.output_dir / (piece + '.glb')).write_bytes(b'changed')
+    elif damage == 'foreign': (export.output_dir / 'Foreign.glb').write_bytes(b'foreign')
+    elif damage == 'role':
+        path = export.output_dir / 'export.json'
+        receipt = json.loads(path.read_bytes()); receipt['metadata']['role'] = 'render'
+        path.write_text(json.dumps(receipt))
+    projected = tmp_path / 'projected'
+    if damage:
+        with pytest.raises(ValueError): members.project_hull(children, projected, entry['name'])
+        assert not projected.exists()
+        return
+    members.project_hull(children, projected, entry['name'])
+    job = tmp_path / 'job'; source = job / 'inputs/source'; source.mkdir(parents=True)
+    recipe_job.pack_root(projected, source / 'hull.tree.tar')
+    content = job / 'Content'; content.mkdir()
+    runtime = job / 'runtime'; runtime.mkdir()
+    staged = unreal_inputs.stage_inputs(job, [{'name': 'source', 'path': 'inputs/source', 'identity': {'state': 'digest'}}],
+        content, runtime_dir=runtime, root_bindings={'source': {'archive_member': 'hull.tree.tar', 'name': piece}})
+    context = NS(inputs=staged['inputs'], packages=staged['packages'], job_dir=str(job), params={'source': 'source'})
+    selected = Path(unreal_ops._input(context, 'source'))
+    assert selected.name == piece + '.glb'
+    assert selected.read_bytes() == (export.output_dir / selected.name).read_bytes()
 
 
 @pytest.mark.parametrize('action',['parent','join_parent','instance','ground_instance','tv'])

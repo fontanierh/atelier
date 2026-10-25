@@ -61,6 +61,28 @@ def project_render(source=None, output=None, parent=None):
     validate(output)
 
 
+def project_hull(exports=(), output=None, parent=None):
+    """@cc [owner:fontanierh,label:correctness] belmonte-selected-hull-source
+    Exactly the resolved whole collision export MUST be validated and copied for
+    the fixed raw importer. No sibling render member or guessed child is accepted.
+    """
+    from atelier.export_manifest import validate as validate_export
+    if len(exports) != 1 or exports[0][1] != parent + '_Collision':
+        raise ValueError('Belmonte hull requires its exact selected collision export')
+    child, piece = exports[0]
+    source = Path(child.products[0].paths[0])
+    receipt = validate_export(source, key=piece)
+    filename = piece + '.glb'
+    if (receipt['primary'] != filename or receipt['metadata'].get('role') != 'collision'
+            or receipt['metadata'].get('parent') != parent
+            or {p.name for p in source.iterdir()} != {filename, 'export.json'}):
+        raise ValueError('Belmonte hull export membership or role differs')
+    output = Path(output)
+    output.mkdir(parents=True, exist_ok=False)
+    for name in (filename, 'export.json'):
+        shutil.copyfile(source / name, output / name)
+
+
 def project_materials(source=None, textures=None, output=None, kind=None):
     """@cc [owner:fontanierh,label:correctness] belmonte-native-material-members
     Actual generated material descriptors and every selected texture digest MUST

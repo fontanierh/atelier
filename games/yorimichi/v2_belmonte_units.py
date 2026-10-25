@@ -241,9 +241,19 @@ def attach_followers(geometry, *, rows, checkout, natives):
             finish_id = 'unreal.belmonte.hull.finish.' + parent
             raw_package = '/Game/_Raw/Belmonte/' + piece; package = ROOT + '/Meshes/' + piece
             hull_token = selected(template, piece)
-            add({'id': raw_id, 'op': {'kind': 'unreal.raw_import', 'version': '1'}, 'script': BODY, 'code': native_code,
-                 'inputs': [], 'params': {'op': 'raw_import', 'kind': 'static_mesh', 'source': hull_token,
-                 'destination': raw_package}, 'outputs': [_output('raw', raw_package, 'RawStaticMesh', store=True)]})
+            source_id = 'world.belmonte.hull.source.' + parent
+            folder = 'generated/belmonte/hulls/' + parent
+            add({'id': source_id, 'op': {'kind': 'recipe.python', 'version': '1'}, 'script': recipe_script,
+                 'code': recipe_code, 'inputs': [], 'params': {'recipe': {'version': 1, 'paths': {}, 'verify': None,
+                     'commands': [call('project_hull', (hull_token, root / folder, parent))],
+                     'outputs': [{'kind': 'tree', 'path': folder, 'file': 'hull.tree.tar', 'required': True}]}},
+                 'outputs': [{'id': 'source', 'logical_path': '/Internal/Belmonte/HullSource/' + parent,
+                     'class': 'Data', 'destination': 'store', 'files': [{'path': 'hull.tree.tar', 'required': True}]}]})
+            add({'id': raw_id, 'op': {'kind': 'unreal.raw_import', 'version': '1'}, 'script': OPS, 'code': _code(root),
+                 'inputs': [incoming('source', source_id, 'source')],
+                 'params': {'op': 'raw_import', 'kind': 'static_mesh', 'source': 'source',
+                     'input_roots': {'source': {'archive_member': 'hull.tree.tar', 'name': piece}},
+                     'destination': raw_package}, 'outputs': [_output('raw', raw_package, 'RawStaticMesh', store=True)]})
             hull_refs = dependencies([ROOT + '/Materials/MI_BM_Ground'])
             hull_native = {slot: ref['package'] for slot, ref in hull_refs}
             hull_extra = [descriptor for _, ref in hull_refs for descriptor in ref.get('derived_dependencies', [])]

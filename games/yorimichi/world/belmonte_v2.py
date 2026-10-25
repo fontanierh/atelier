@@ -1,6 +1,5 @@
 """Belmonte per-package native mesh bodies over certified current GLB exports."""
 import ast
-from copy import copy
 import hashlib
 import json
 from pathlib import Path
@@ -99,11 +98,6 @@ def run(context):
     p = context.params
     if 'op' not in p:
         return author(context, unreal)
-    if p.get('op') == 'raw_import':
-        from atelier.build_v2.unreal_ops import raw_import
-        selected = _slot(p['source'])
-        wrapper = copy(context); wrapper.params = dict(p, source=selected)
-        return raw_import(wrapper, unreal)
     if (p.get('op') != 'finish' or p.get('kind') != 'static_mesh'
             or set(p) - {'op', 'kind', 'source', 'destination', 'package_sources', 'args', 'settings'}):
         raise ValueError('Unsupported Belmonte operation')
