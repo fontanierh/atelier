@@ -23,6 +23,17 @@ MOVERS = DEFINITION.movers()
 COMPRESSION = {'unit': 'unreal.animation.compression', 'item': 'asset', 'package': characters.COMPRESSION}
 
 
+def test_actual_character_export_roster_captures_the_consumed_world_module():
+    from atelier import build
+    script = GAME / 'assets/characters/pipeline/export.py'
+    steps = [build.Step('characters.' + name,
+        [build.Blender(script, ('--character', name), threads=3)])
+        for name in ('cairo', 'modori', 'nox', 'paul', 'sword_trainer', 'fox_hunter')]
+    rows = extract(steps, checkout=ROOT, build_root=ROOT / 'build')
+    assert len(rows) == 6
+    assert all('games/yorimichi/world/yori.py' in row['code'] for row in rows)
+
+
 @pytest.fixture(scope='module')
 def rows():
     steps = [step for character in MOVERS for step in recipe.mover_import_steps(character, ROOT / 'build/yorimichi')]

@@ -28,6 +28,24 @@ def _helper_module(tmp_path):
     return script
 
 
+def test_nested_game_pipeline_captures_literal_world_imports_without_execution(tmp_path):
+    game = tmp_path / 'games/example'
+    pipeline = game / 'assets/characters/pipeline'
+    pipeline.mkdir(parents=True)
+    (game / 'world').mkdir()
+    (game / 'world/yori.py').write_text('raise RuntimeError("source capture must not execute this")\n')
+    (pipeline / 'rig.py').write_text('import yori\n')
+    script = pipeline / 'export.py'
+    script.write_text('import rig\n')
+    step = build.Step('characters.example', [build.Blender(script, threads=3)])
+    result, = rd.extract([step], checkout=tmp_path, build_root=tmp_path / 'build')
+    assert result['code'] == [
+        'games/example/assets/characters/pipeline/export.py',
+        'games/example/assets/characters/pipeline/rig.py',
+        'games/example/world/yori.py',
+    ]
+
+
 def _steps(tmp_path):
     script = _helper_module(tmp_path)
     out = tmp_path / 'build' / 'game'

@@ -50,6 +50,21 @@ def test_references_are_conservative_content_edges(tmp_path):
     assert [i['source'] for i in result['inputs']] == [{'kind': 'item', 'unit': 'a.make', 'item': 'product0'}]
 
 
+def test_generated_python_cache_does_not_change_source_directory_inputs(tmp_path):
+    folder = tmp_path / 'pipeline'; folder.mkdir()
+    (folder / 'source.py').write_text('VALUE = 1\n')
+    (folder / 'definition.json').write_text('{}')
+    row = _row('b.use', inputs=[{'path': 'pipeline', 'root': 'checkout', 'optional': False}])
+    before = _lower(row, tmp_path)
+    cache = folder / '__pycache__'; cache.mkdir()
+    bytecode = cache / 'source.cpython-312.pyc'; bytecode.write_bytes(b'host timestamps and paths')
+    assert _lower(row, tmp_path) == before
+    bytecode.write_bytes(b'another host/interpreter cache')
+    assert _lower(row, tmp_path) == before
+    (folder / 'definition.json').write_text('{"changed": true}')
+    assert 'pipeline/definition.json' in [i['source'].get('path') for i in before['inputs']]
+
+
 def test_deferred_binds_all_owning_roots_and_keys_support(tmp_path):
     provider = {'name': 'pieces', 'collect': {'source': 'tools/collect.py', 'qualname': 'collect', 'line': 1},
                 'settings': [{'path': 'build/g'}], 'support': ['tools/collect.py', 'tools/helper.py'],

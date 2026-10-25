@@ -30,7 +30,7 @@ def _under(path, root):
 
 
 def _source_members(checkout, path):
-    """Complete regular-file membership of a checkout source path; links and specials refuse."""
+    """Complete source membership, excluding Python's derived cache directories; aliases refuse."""
     absolute = Path(checkout) / path
     try:
         info = absolute.lstat()
@@ -46,6 +46,9 @@ def _source_members(checkout, path):
         for name in names:
             if (Path(directory) / name).is_symlink():
                 raise Unsupported(f'linked source directory {Path(directory, name).relative_to(checkout)}')
+        # Staged source modules are keyed as code. Interpreter bytecode caches
+        # are derived host artifacts and must not become consumed source inputs.
+        names[:] = [name for name in names if name != '__pycache__']
         for name in sorted(files):
             member = Path(directory) / name
             if member.is_symlink() or not member.is_file():

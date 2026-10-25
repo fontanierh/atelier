@@ -195,8 +195,21 @@ def _code(step, scanner, paths, import_roots):
             scripts.append(Path(source))
     # Explicit Python helper inputs carry their complete literal import closure too.
     scripts.extend(Path(p) for p in step.inputs if Path(p).suffix == '.py')
+    roots = list(import_roots)
+    roots.append(paths.checkout / 'platform/studio')
     for script in scripts:
-        files.update(scanner.local_imports(script, import_roots))
+        try:
+            relative = script.relative_to(paths.checkout)
+        except ValueError:
+            continue
+        if len(relative.parts) >= 3 and relative.parts[0] == 'games':
+            game = paths.checkout / 'games' / relative.parts[1]
+            # These are the existing game script/module roots. Resolve literal
+            # imports there so a nested pipeline cannot omit its world helpers.
+            roots.extend((game, game / 'world', game / 'world/regions', game / 'unreal/Scripts'))
+    roots = tuple(dict.fromkeys(roots))
+    for script in scripts:
+        files.update(scanner.local_imports(script, roots))
     if step.batch is not None:
         files.update(Path(build.__file__).with_name(n) for n in ('build_batches.py', 'build_batch_worker.py'))
     if step.audit:
