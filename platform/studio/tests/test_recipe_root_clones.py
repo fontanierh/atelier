@@ -230,3 +230,95 @@ def test_the_native_tool_sibling_load_of_a_staged_copy_shares_and_reuses(tmp_pat
     finally:
         sys.modules.pop(spec.name, None)
     assert clones.recipe_job is recipe_job  # the normal package import is unchanged
+
+
+@pytest.fixture
+def unpacks(monkeypatch):
+    calls = []
+    real = clones.recipe_job.unpack_root
+    monkeypatch.setattr(clones.recipe_job, 'unpack_root', lambda source, destination: (calls.append(destination), real(source, destination)))
+    return calls
+
+
+def test_later_roots_materialize_as_clones_without_another_unpack(tmp_path, unpacks):
+    source = archive(tmp_path, 'editor', FILES)
+    calls = []
+    real = clones._clonefile()
+    group = clones.CommonRootClones(tmp_path / 'scope', clone=lambda a, b: (calls.append(b), real(a, b)))
+    views = tmp_path / 'views'
+    views.mkdir()
+    expected = recipe_job.inventory(unpacked(tmp_path, source, 'reference'))
+    unpacks.clear()
+    results = [group.materialize(source, views / name) for name in ('a', 'b', 'c')]
+    assert [r['snapshot'] for r in results] == ['created', 'reused', 'reused']
+    assert unpacks == [views / 'a'] and len(calls) == 3 * 3  # one snapshot, then two clone-only roots
+    assert all(recipe_job.inventory(views / n) == expected for n in 'abc')
+    assert (views / 'b/Binaries/UnrealEditor-Game.dylib').stat().st_mode & 0o777 == 0o755
+    assert (views / 'b/Config').stat().st_mode & 0o777 == 0o755
+    (views / 'b/Config/Game.ini').write_bytes(b'mutated')  # independent: the snapshot and siblings keep bytes
+    assert recipe_job.inventory(views / 'c') == recipe_job.inventory(views / 'a') == expected
+    assert group.materialize(source, views / 'd')['snapshot'] == 'reused'
+    assert recipe_job.inventory(views / 'd') == expected
+
+
+@pytest.mark.parametrize('kind', ['file', 'absent'])
+def test_file_and_absent_roots_keep_the_original_codec(tmp_path, unpacks, kind):
+    source = tmp_path / ('single.' + kind)
+    if kind == 'file':
+        source.write_bytes(b'payload')
+    packed = tmp_path / 'single.tree.tar'
+    recipe_job.pack_root(source, packed, required=False)
+    group = clones.CommonRootClones(tmp_path / 'scope')
+    assert group.materialize(packed, tmp_path / 'out')['snapshot'] == 'none'
+    assert unpacks == [tmp_path / 'out'] and not list((tmp_path / 'scope').iterdir())
+    assert (tmp_path / 'out').read_bytes() == b'payload' if kind == 'file' else not os.path.lexists(tmp_path / 'out')
+
+
+def test_materialize_refuses_aliases_existing_destinations_and_malformed_authority(tmp_path, unpacks):
+    source = archive(tmp_path, 'editor', FILES)
+    group = clones.CommonRootClones(tmp_path / 'scope')
+    (tmp_path / 'taken').mkdir()
+    (tmp_path / 'linked').symlink_to(tmp_path / 'taken')
+    for destination, match in [(tmp_path / 'taken', 'fresh destination'), (tmp_path / 'linked' / 'x', 'fresh destination'),
+                               (tmp_path / 'scope' / 'x', 'aliases'), (Path('relative'), 'fresh destination')]:
+        with pytest.raises(ValueError, match=match):
+            group.materialize(source, destination)
+    plain = tmp_path / 'plain.tree.tar'
+    with tarfile.open(plain, 'w') as tar:
+        tar.add(tmp_path / 'taken', arcname='root', recursive=False)
+    with pytest.raises(ValueError, match='manifest'):
+        group.materialize(plain, tmp_path / 'fresh')
+    assert unpacks == [] and not os.path.lexists(tmp_path / 'fresh')
+
+
+@pytest.mark.parametrize('failure', ['clone', 'snapshot'])
+def test_a_failed_clone_or_changed_snapshot_refuses_without_unpack_or_copy(tmp_path, unpacks, failure):
+    source = archive(tmp_path, 'editor', FILES)
+    fail = [False]
+    real = clones._clonefile()
+    def clone(a, b):
+        if fail[0]:
+            raise OSError(45, 'Operation not supported')
+        real(a, b)
+    group = clones.CommonRootClones(tmp_path / 'scope', clone=clone)
+    stats = group.materialize(source, tmp_path / 'first')
+    if failure == 'clone':
+        fail[0] = True
+    else:
+        changed = tmp_path / 'scope' / stats['archive'] / 'root' / 'Config/Game.ini'
+        changed.chmod(0o644)
+        changed.write_bytes(b'[Game]\n')
+    with pytest.raises((OSError, ValueError)):
+        group.materialize(source, tmp_path / 'second')
+    assert unpacks == [tmp_path / 'first'] and not os.path.lexists(tmp_path / 'second')
+
+
+def test_a_rewritten_archive_path_gets_its_own_snapshot(tmp_path, unpacks):
+    a = archive(tmp_path, 'a', FILES)
+    b = archive(tmp_path, 'b', {**FILES, 'Config/Game.ini': (b'[Other]\n', 0o644)})
+    group = clones.CommonRootClones(tmp_path / 'scope')
+    first = group.materialize(a, tmp_path / 'one')
+    a.write_bytes(b.read_bytes())
+    second = group.materialize(a, tmp_path / 'two')
+    assert second['snapshot'] == 'created' and second['archive'] != first['archive']
+    assert (tmp_path / 'two/Config/Game.ini').read_bytes() == b'[Other]\n'

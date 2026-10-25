@@ -42,8 +42,8 @@ def _identity(info):
     return (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns, stat.S_IMODE(info.st_mode))
 
 
-def archive_authority(archive):
-    """(sha256, manifest rows) of one stable archive, read through a single descriptor.
+def _read_authority(archive):
+    """(sha256, decoded manifest) of one stable archive, read through a single descriptor.
 
     The archive is a canonical absolute path without linked ancestors, naming one ordinary single-link file
     whose named and opened identities stay equal before and after reading.
@@ -73,8 +73,13 @@ def archive_authority(archive):
     if not (_identity(before) == _identity(after) == _identity(archive.lstat())) or after.st_nlink != 1:
         raise ValueError('recipe root archive changed while reading')
     if (not isinstance(manifest, dict) or set(manifest) != {'version', 'kind', 'entries'} or manifest['version'] != 1
-            or not isinstance(manifest['entries'], list) or not manifest['entries']
-            or manifest['kind'] != 'directory'):
+            or not isinstance(manifest['entries'], list)):
+        raise ValueError('invalid root manifest')
+    return hasher.hexdigest(), manifest
+
+
+def _directory_rows(manifest):
+    if not manifest['entries'] or manifest['kind'] != 'directory':
         raise ValueError('invalid shareable root manifest')
     rows = []
     for row in manifest['entries']:
@@ -88,7 +93,13 @@ def archive_authority(archive):
         rows.append(tuple(row))
     if rows[0][:2] != ('', 'directory'):
         raise ValueError('shareable root must be a directory')
-    return hasher.hexdigest(), rows
+    return rows
+
+
+def archive_authority(archive):
+    """(sha256, manifest rows) of one stable directory-ROOT archive."""
+    key, manifest = _read_authority(archive)
+    return key, _directory_rows(manifest)
 
 
 class CommonRootClones:
@@ -217,6 +228,62 @@ class CommonRootClones:
         if [tuple(row) for row in self.inventory(root)] != rows:
             raise ValueError('shared root differs from its manifest after cloning')
         return {'archive': key, 'snapshot': 'reused', 'files': len(files), 'bytes': sum(s for _, s, _ in files)}
+
+    def materialize(self, archive, destination):
+        """Create a fresh verified ROOT at ``destination`` from ``archive``, for the view's own input.
+
+        File and absent ROOTs keep the original codec. The first directory ROOT of an archive digest is
+        byte-unpacked by the original codec, then becomes the snapshot; later ones are independent clones of
+        that snapshot with their manifest modes, never unpacked or copied again, and must inventory exactly.
+        """
+        self._check_scope()
+        destination = Path(destination)
+        parent = destination.parent
+        if (not destination.is_absolute() or os.path.lexists(destination) or parent.resolve() != parent
+                or not parent.is_dir()):
+            raise ValueError('materialized root needs a fresh destination under a canonical directory')
+        key, manifest = _read_authority(archive)
+        if manifest['kind'] in ('file', 'absent'):
+            recipe_job.unpack_root(archive, destination)  # Unshared: the original codec, unchanged.
+            return {'archive': key, 'snapshot': 'none', 'files': 0, 'bytes': 0}
+        rows = _directory_rows(manifest)
+        for other in (self.scope, Path(archive)):
+            if destination == other or destination.is_relative_to(other) or other.is_relative_to(destination):
+                raise ValueError('materialized root aliases the clone scope or its archive')
+        files = [(name, size, mode) for name, kind, size, mode, _ in rows if kind == 'file']
+        stats = {'archive': key, 'files': len(files), 'bytes': sum(size for _, size, _ in files)}
+        if key not in self.snapshots:
+            recipe_job.unpack_root(archive, destination)
+            try:
+                if [tuple(row) for row in self.inventory(destination)] != rows:
+                    raise ValueError('unpacked root differs from its archive manifest')
+                self._snapshot(key, destination, rows)
+            except BaseException:
+                shutil.rmtree(destination, ignore_errors=True)  # Only the fresh destination this call created.
+                raise
+            return {**stats, 'snapshot': 'created'}
+        if self.snapshots[key][0] != rows:
+            raise ValueError('archive digest names another manifest')
+        self._verify_snapshot(key)
+        if self.clone is None:
+            raise ValueError('independent clones are unavailable on this volume')
+        snapshot = self.scope / key / 'root'
+        destination.mkdir(mode=0o755)
+        try:
+            for name, kind, _, mode, _ in rows[1:]:
+                if kind == 'directory':
+                    (destination / name).mkdir(mode=0o755)
+                else:
+                    self.clone(snapshot / name, destination / name)
+                    (destination / name).chmod(mode)
+            self._check_scope()
+            self._verify_snapshot(key)
+            if [tuple(row) for row in self.inventory(destination)] != rows:
+                raise ValueError('materialized root differs from its archive manifest')
+        except BaseException:
+            shutil.rmtree(destination, ignore_errors=True)  # Only the fresh destination this call created.
+            raise
+        return {**stats, 'snapshot': 'reused'}
 
     def _remove(self, path):
         """Remove part of this instance's own verified scope; links are unlinked, never followed."""
