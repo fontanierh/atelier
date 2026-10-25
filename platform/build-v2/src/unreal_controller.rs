@@ -604,7 +604,7 @@ pub fn check_unit(unit: &PreparedUnit) -> Result<(), String> {
         if !matches!(
             item.class.as_str(),
             "Material" | "MaterialInstance" | "MaterialParameterCollection" | "Map" | "Blueprint"
-                | "BlendSpace1D" | "AdventureMoveSet" | "AnimBoneCompressionSettings"
+                | "BlendSpace1D" | "AdventureMoveSet" | "AnimBoneCompressionSettings" | "WandererDefinition"
         ) {
             return Err("unsupported authored native asset class".into());
         }
@@ -1045,6 +1045,7 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
         "Blueprint",
         "BlendSpace1D",
         "AdventureMoveSet",
+        "WandererDefinition",
         "AnimBoneCompressionSettings",
         "JsonData",
         "Map",
@@ -1187,6 +1188,7 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
                 },
             );
         }
+        params.insert("create_physics_asset".into(), ParamRule {kind: ParamKind::Bool, required: false});
         for name in ["skeleton", "physics_asset"] {
             params.insert(
                 name.into(),

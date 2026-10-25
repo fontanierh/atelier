@@ -146,6 +146,8 @@ def _invoke_marker(marker, *, echo):
             plugin = ensure_native_worker(checkout, Path(options['cache_root']) / 'native-worker-bootstrap', root, echo=echo)
             options['unreal'] = {'engine_root': str(root), 'build_id': modules['BuildId'],
                                  'plugins': {'AtelierBuildWorker': str(plugin)}}
+            if 'unreal.cook.produce' in kinds:
+                options['native_export_project'] = str(plugin.parent.parent / 'AtelierWorkerHost.uproject')
     return invoke_controller(checkout, helper, marker, state / 'runs', options, echo=echo)
 
 

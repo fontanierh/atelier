@@ -172,3 +172,46 @@ def test_produced_mesh_item_requires_exact_receipt_membership_and_bytes(tmp_path
     (root / 'foreign').write_bytes(b'unknown')
     with pytest.raises(ValueError, match='complete export receipt'):
         ops._input(ctx, 'source')
+
+
+@pytest.mark.parametrize('create', [True, False])
+def test_skeletal_import_preserves_explicit_physics_creation(tmp_path, create):
+    class Options(Asset):
+        def __init__(self):
+            super().__init__()
+            self.properties['skeletal_mesh_import_data'] = Asset()
+    class Skeletal(Asset):
+        pass
+    source = tmp_path / 'mesh.fbx'
+    source.write_bytes(b'fbx')
+    ctx = context(tmp_path, kind='skeletal_mesh', create_physics_asset=create)
+    ctx.inputs['source'] = str(source)
+    unreal = FakeUnreal(['/Game/Raw/T_Test.T_Test'], {'/Game/Raw/T_Test': Skeletal()})
+    unreal.FbxImportUI = Options
+    unreal.FBXImportType = SimpleNamespace(FBXIT_SKELETAL_MESH='skeletal')
+    unreal.SkeletalMesh = Skeletal
+    captured = []
+    original = unreal.import_asset_tasks
+    def importing(tasks):
+        captured.append(tasks[0].properties['options'].properties['create_physics_asset'])
+        original(tasks)
+    unreal.import_asset_tasks = importing
+    ops.raw_import(ctx, unreal)
+    assert captured == [create]
+    ctx.params['create_physics_asset'] = 1
+    with pytest.raises(ValueError, match='skeletal-only boolean'):
+        ops.raw_import(ctx, unreal)
+
+
+def test_original_fbx_enum_properties_are_explicit_tokens(monkeypatch):
+    import sys
+    fake = SimpleNamespace(FBXNormalImportMethod=SimpleNamespace(FBXNIM_IMPORT_NORMALS=object()),
+        VertexColorImportOption=SimpleNamespace(REPLACE=object()),
+        FBXAnimationLengthImportType=SimpleNamespace(FBXALIT_EXPORTED_TIME=object()))
+    monkeypatch.setitem(sys.modules, 'unreal', fake)
+    for owner, member in [('FBXNormalImportMethod', 'FBXNIM_IMPORT_NORMALS'),
+                          ('VertexColorImportOption', 'REPLACE'),
+                          ('FBXAnimationLengthImportType', 'FBXALIT_EXPORTED_TIME')]:
+        assert ops._editor_value({'unreal_enum': owner + '.' + member}) is getattr(getattr(fake, owner), member)
+    with pytest.raises(ValueError, match='Unsupported authored Unreal enum'):
+        ops._editor_value({'unreal_enum': 'Foreign.RUN'})

@@ -68,6 +68,7 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
                 "Blueprint",
                 "BlendSpace1D",
                 "AdventureMoveSet",
+                "WandererDefinition",
                 "AnimBoneCompressionSettings",
                 "JsonData",
                 "Map",
