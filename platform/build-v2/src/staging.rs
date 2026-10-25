@@ -188,6 +188,10 @@ fn parents(root: &Path, path: &Path) -> Result<(), String> {
     Ok(())
 }
 
+/// @cc [owner:fontanierh,label:correctness;performance] ephemeral-job-input-writes
+/// Job inputs MUST be written completely into fresh read-only files before dispatch, but MUST NOT
+/// require a per-file durable flush: these disposable copies never certify results or recovery.
+/// Durable leases, frozen result publication and checkout-install journals remain separate authorities.
 fn write_new(path: &Path, bytes: &[u8]) -> Result<(), String> {
     let mut file = OpenOptions::new()
         .write(true)
@@ -196,9 +200,7 @@ fn write_new(path: &Path, bytes: &[u8]) -> Result<(), String> {
         .custom_flags(libc::O_NOFOLLOW)
         .open(path)
         .map_err(|error| io_error(path, error))?;
-    file.write_all(bytes)
-        .and_then(|()| file.sync_all())
-        .map_err(|error| io_error(path, error))
+    file.write_all(bytes).map_err(|error| io_error(path, error))
 }
 
 fn set_mode(path: &Path, mode: u32) -> Result<(), String> {
