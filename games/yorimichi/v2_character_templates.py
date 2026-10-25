@@ -164,7 +164,7 @@ def character_templates(rows, *, checkout, natives):
                                                           has_cloth, tuple(clip_rates)))],
                      'outputs': [{'kind': 'tree', 'path': folder, 'file': 'members.tree.tar', 'required': True}],
                      'file_group': {'source': folder, 'parent': parent, 'extensions': EXTENSIONS[kind.split('_')[0]]}}},
-                 'outputs': [{'id': 'members', 'logical_path': f'/Internal/Characters/{k}/{kind}', 'class': 'Data',
+                 'outputs': [{'id': 'archive', 'logical_path': f'/Internal/Characters/{k}/{kind}', 'class': 'Data',
                               'destination': 'store', 'files': [{'path': 'members.tree.tar', 'required': True}]}],
                  'output_groups': [contract]}, [incoming])
             groups[producer_id] = {'contract': contract, 'source': folder}

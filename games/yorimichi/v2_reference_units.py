@@ -140,7 +140,7 @@ def reference_units(rows, *, checkout, natives):
                  'commands': [_call(root, 'project', (*args, root / folder, kind))],
                  'outputs': [{'kind': 'tree', 'path': folder, 'file': 'members.tree.tar', 'required': True}],
                  'file_group': {'source': folder, 'parent': f'Reference_{kind}', 'extensions': ['.json']}}},
-             'outputs': [{'id': 'members', 'logical_path': f'/Internal/Reference/{kind}', 'class': 'Data',
+             'outputs': [{'id': 'archive', 'logical_path': f'/Internal/Reference/{kind}', 'class': 'Data',
                           'destination': 'store', 'files': [{'path': 'members.tree.tar', 'required': True}]}],
              'output_groups': [contract]}, [whole()])
         groups[producer_id] = {'contract': contract, 'source': folder}

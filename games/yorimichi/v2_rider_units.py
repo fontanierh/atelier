@@ -149,7 +149,7 @@ def rider_units(rows, *, checkout, natives):
                                                       rate, roster))],
                  'outputs': [{'kind': 'tree', 'path': folder, 'file': 'members.tree.tar', 'required': True}],
                  'file_group': {'source': folder, 'parent': parent, 'extensions': ['.json']}}},
-             'outputs': [{'id': 'members', 'logical_path': f'/Internal/Ride/{k}/{ride}', 'class': 'Data', 'destination': 'store',
+             'outputs': [{'id': 'archive', 'logical_path': f'/Internal/Ride/{k}/{ride}', 'class': 'Data', 'destination': 'store',
                           'files': [{'path': 'members.tree.tar', 'required': True}]}],
              'output_groups': [contract]}, [whole])
         groups[producer_id] = {'contract': contract, 'source': folder}

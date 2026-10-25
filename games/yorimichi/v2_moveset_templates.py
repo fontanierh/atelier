@@ -153,7 +153,7 @@ def moveset_templates(rows, *, checkout, natives):
                                                           kind, dict(rates)))],
                      'outputs': [{'kind': 'tree', 'path': folder, 'file': 'members.tree.tar', 'required': True}],
                      'file_group': {'source': folder, 'parent': parent, 'extensions': ['.json']}}},
-                 'outputs': [{'id': 'members', 'logical_path': f'/Internal/Moveset/{k}/{kind}', 'class': 'Data',
+                 'outputs': [{'id': 'archive', 'logical_path': f'/Internal/Moveset/{k}/{kind}', 'class': 'Data',
                               'destination': 'store', 'files': [{'path': 'members.tree.tar', 'required': True}]}],
                  'output_groups': [contract]}, inputs)
             groups[producer_id] = {'contract': contract, 'source': folder}
