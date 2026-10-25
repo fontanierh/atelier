@@ -306,7 +306,12 @@ compiled-output identity. See tests/unreal.rs
 @cc [owner:fontanierh,label:safety] build-v2-unreal-ddc
 Every Unreal session MUST cache derived data only in the persistent, v2-owned folder
 `<store root>/unreal-ddc/<engine BuildId>`, never in job or session scratch and never emptied per
-job. Its command line MUST pass `-nowrite -NoZenAutoLaunch` and the inline graph
+job. Ordinary import/finish/author sessions MUST pass `-nowrite -NoZenAutoLaunch`.
+Only the fixed native cook verifier, issued with private source-cook evidence, MAY omit
+`-NoZenAutoLaunch` for the installed SDK's normal Zen package-store service lifetime; its
+session compatibility profile MUST have the distinct `-native-store` suffix. This exception
+MUST NOT enable Zen DDC, skip namespace/CB checks, or create an unknown namespace.
+Every session MUST retain `-nowrite` and the inline graph
 `-DDC=(InstalledEnginePak,V2Local=(Type=FileSystem,Path=<that folder>))`, and those flags, the graph
 and the folder MUST be in the session profile, so a change to any of them is a new session and never
 a reuse of an old one. The DDC is rebuildable acceleration only: no reuse, key or receipt decision

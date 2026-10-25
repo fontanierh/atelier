@@ -815,7 +815,9 @@ pub fn prepare_verify(
     if unit.ingredients().op.kind != VERIFY {
         return Err("verification context used for another operation".into());
     }
-    let launch = prepare_inner(unit, staged, sources, scope, execution)?;
+    let mut launch = prepare_inner(unit, staged, sources, scope, execution)?;
+    native_store_transport(&mut launch.command.args)?;
+    launch.profile.push_str("-native-store");
     let carrier = authority.carrier(&launch.keepalive.root().join("Atelier.uproject"))?;
     let directory = staged.job_dir().join(".unreal-runtime");
     fs::create_dir_all(&directory).map_err(|e| e.to_string())?;
@@ -839,6 +841,18 @@ pub fn prepare_verify(
         .map_err(|e| e.to_string())?;
     file.sync_all().map_err(|e| e.to_string())?;
     Ok(launch)
+}
+
+/// Only the fixed, privately authorized native restore operation uses the SDK's
+/// normal Zen lifetime. Its DDC graph stays exactly filesystem/pak, not Zen-backed.
+fn native_store_transport(args: &mut Vec<std::ffi::OsString>) -> Result<(), String> {
+    if args.iter().filter(|arg| *arg == "-NoZenAutoLaunch").count() != 1
+        || !args.iter().any(|arg| arg.to_string_lossy().starts_with("-DDC=(InstalledEnginePak,V2Local=(Type=FileSystem,Path="))
+    {
+        return Err("native store session lacks the fixed isolated DDC command".into());
+    }
+    args.retain(|arg| arg != "-NoZenAutoLaunch");
+    Ok(())
 }
 
 fn prepare_inner(
@@ -984,6 +998,16 @@ mod tests {
     #[test]
     fn native_package_names_refuse_aliases_and_non_game_names() {
         assert_eq!(package("/Game/Raw/Mesh_01").unwrap(), "/Game/Raw/Mesh_01");
+        let ordinary: Vec<std::ffi::OsString> = ["-nowrite", "-NoZenAutoLaunch",
+            "-DDC=(InstalledEnginePak,V2Local=(Type=FileSystem,Path=/owned/ddc))"]
+            .into_iter().map(Into::into).collect();
+        let mut native = ordinary.clone();
+        native_store_transport(&mut native).unwrap();
+        assert!(ordinary.iter().any(|arg| arg == "-NoZenAutoLaunch"));
+        assert!(!native.iter().any(|arg| arg == "-NoZenAutoLaunch"));
+        assert_eq!(native, vec![ordinary[0].clone(), ordinary[2].clone()]);
+        assert!(native_store_transport(&mut native).is_err());
+        assert!(native_store_transport(&mut vec!["-NoZenAutoLaunch".into()]).is_err());
         for value in [
             "/Engine/Foo",
             "/Game/../Foo",
