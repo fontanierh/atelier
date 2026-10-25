@@ -269,7 +269,10 @@ def main(argv=None, run=None):
     and invocation, where the tree is in a supported terminal form with an explicitly empty, zero
     post-drain sample, no unresolved reporters and, when custody was requested, explicit release of
     exactly its lock files. Failures and missing, stale, malformed or contradictory receipts MUST be
-    unconfirmed, whatever stopped the run. See tests/test_build_v2_guarded_worker.py.
+    unconfirmed, whatever stopped the run. A literal Blender executable MUST reserve
+    GPU capacity equal to its actual requested memory guard through automatic full job
+    admission; this MUST NOT relabel it as a game or change CPU/worker settings. Other
+    programs MUST retain the existing default. See tests/test_build_v2_guarded_worker.py.
     """
     args = _parser().parse_args(argv)
     if run is None:
@@ -350,6 +353,7 @@ def main(argv=None, run=None):
                          pass_fds=(args.request_fd, args.response_fd), queue_seconds=args.queue_wait,
                          invocation_id=invocation,
                          **({'script_memory_gib': args.memory_gib} if args.memory_gib > 10 else {}),
+                         **({'job_gpu_gib': args.memory_gib} if Path(spec['program']).name.lower() == 'blender' else {}),
                          **({'custody_fds': tuple(args.custody_fd)} if args.custody_fd else {}))
     except BaseException as caught:  # every unwind is classified below; nothing is retried here
         error = caught
