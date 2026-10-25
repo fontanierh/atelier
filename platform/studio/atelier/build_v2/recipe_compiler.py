@@ -121,6 +121,7 @@ def compile_rows(rows, *, project, targets, install_roots=(), checkout=None, geo
     native = native or {'units': [], 'staged_inputs': {}, 'content_slots': {}, 'aliases': {}}
     aliases = native.get('aliases', {})
     module_requirements = native.get('module_requirements', {})
+    follower_module_requirements = native.get('follower_module_requirements', {})
     rows = [row for row in rows if row['id'] not in aliases]
     rows.extend(deepcopy(native.get('rows', [])))
     for row in rows:
@@ -287,8 +288,10 @@ def compile_rows(rows, *, project, targets, install_roots=(), checkout=None, geo
             errors.append(f'{name}: {error}')
     if errors:
         raise Unsupported('\n'.join(errors))
-    from .recipe_native_modules import attach
+    from .recipe_native_modules import attach, attach_followers
     attach(units, rows, module_requirements, checkout=checkout, staged=staged, slots=slots)
+    attach_followers(geometry['templates'], units, rows, follower_module_requirements,
+                     checkout=checkout, slots=slots)
     declaration = {'schema_version': 2, 'cache_version': 'v2-1', 'units': units}
     # Rust checks the complete global declaration before selecting these roots.
     return ControllerTarget(targets[0], project, declaration, staged, slots,

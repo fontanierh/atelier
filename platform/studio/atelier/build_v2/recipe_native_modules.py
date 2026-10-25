@@ -75,3 +75,23 @@ def attach(units, rows, requirements, *, checkout, staged, slots):
             incoming(descriptor_slot, {'kind': 'file', 'path': path})
             context['plugins'].append({'name': name, 'slot': binary_slot, 'archive': archive, 'descriptor_slot': descriptor_slot, 'subset': shared})
         unit['params']['native_modules'] = context
+
+
+def attach_followers(templates, units, rows, requirements, *, checkout, slots):
+    """Bind each requested finish template through the same produced-module path."""
+    remaining = set(requirements)
+    for template in templates:
+        prefix = template['unit_prefix']
+        if prefix not in requirements:
+            continue
+        remaining.remove(prefix)
+        finishes = [follower for follower in template.get('followers', ())
+                    if follower['unit']['op']['kind'] == 'unreal.finish']
+        if len(finishes) != 1:
+            raise ValueError('native follower modules require exactly one finish: ' + prefix)
+        follower = finishes[0]
+        unit_id = follower['unit']['id']
+        attach([*units, follower['unit']], rows, {unit_id: requirements[prefix]},
+               checkout=checkout, staged={unit_id: follower['staged_inputs']}, slots=slots)
+    if remaining:
+        raise ValueError('native module requirements name absent export templates: ' + ', '.join(sorted(remaining)))

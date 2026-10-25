@@ -182,6 +182,20 @@ def _join_native_families(native, rows, geometry, selected, *, checkout):
         followers = _family_module(checkout, 'v2_treehouse_native_units').attach_followers(
             geometry, native['packages'], native['units'], checkout=checkout)
         geometry = followers['geometry']
+        # Exact UCX vertex readback is provided by the produced Yorimichi module.
+        import json
+        from pathlib import Path
+        descriptor = json.loads((Path(checkout) / 'games/yorimichi/unreal/Yorimichi.uproject').read_text())
+        modules = [{'name': module['Name'], 'kind': module['Type'],
+                    'loading_phase': module.get('LoadingPhase', 'Default')}
+                   for module in descriptor['Modules'] if module['Name'] == 'Yorimichi']
+        if not modules:
+            raise ValueError('Treehouse collision readback requires the declared Yorimichi module')
+        native.setdefault('follower_module_requirements', {}).update({
+            template['unit_prefix']: modules for template in geometry['templates']
+            if template['unit_prefix'].startswith(('world.treehouse_trees.export.',
+                'world.treehouse_props.export.', 'world.treehouse_surfaces.export.'))
+            and template.get('followers')})
         gaps.extend('treehouse.material:' + package for package in followers['missing_material_packages'])
         gaps.extend('treehouse.geometry:' + parent for parent in followers['unrepresented_parents'])
         if (len(sources) == 3 and not followers['missing_material_packages']

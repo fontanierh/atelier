@@ -118,3 +118,22 @@ def test_game_compile_declares_redistributed_files_beside_mac_binary_archive(tmp
         'games/game/unreal/Binaries/Mac','games/game/unreal/Samples/Tools/helper.sh']
     assert unit['outputs'][0]['files'] == [{'path':'outputs/0.mac.zip'}]
     assert unit['outputs'][1]['files'] == [{'path':'outputs/1.tree.tar'}]
+
+
+def test_compiler_preserves_follower_module_requirements_through_ordinary_rows(tmp_path):
+    import json
+    project = tmp_path / 'games/game/unreal/Game.uproject'
+    project.parent.mkdir(parents=True)
+    project.write_text(json.dumps({'Modules': [{'Name': 'Game', 'Type': 'Runtime'}]}))
+    editor = row('editor', outputs=['games/game/unreal/Binaries/Mac'])
+    editor['commands'] = [{'kind': 'UnrealCompile', 'target': 'GameEditor', 'config': 'Development'}]
+    follower = {'unit': {'id': '$export.finish', 'op': {'kind': 'unreal.finish', 'version': '1'},
+                         'inputs': [], 'params': {}}, 'staged_inputs': {}}
+    native = {'units': [], 'staged_inputs': {}, 'content_slots': {}, 'aliases': {},
+              'follower_module_requirements': {'world.example.export.Parent': [{'name': 'Game'}]}}
+    marker = compile_rows([editor], project='game', targets=['editor'], checkout=tmp_path,
+                          geometry={'groups': {}, 'templates': [
+                              {'unit_prefix': 'world.example.export.Parent', 'followers': [follower]}]}, native=native)
+    bound = marker.templates[0]['followers'][0]
+    assert bound['unit']['params']['native_modules']['editor']['slot'] == 'compiled_editor'
+    assert bound['unit']['inputs'][0]['source'] == {'kind': 'item', 'unit': 'editor', 'item': 'output0'}

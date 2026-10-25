@@ -73,3 +73,32 @@ def test_project_local_plugin_keeps_its_separate_compiled_product(tmp_path):
     attach(units, rows, required, checkout=tmp_path, staged=staged, slots=slots)
     context = units[1]['params']['native_modules']['plugins'][0]
     assert context['archive'] == 'products/0-0.tree.tar' and not context['subset']
+
+
+def test_finished_template_binds_actual_compiled_module_items_before_expansion(tmp_path):
+    from atelier.build_v2.recipe_native_modules import attach_followers
+    rows, units, staged, slots, required = fixture(tmp_path)
+    finish = {'unit': {'id': '$export.finish', 'op': {'kind': 'unreal.finish', 'version': '1'},
+                       'inputs': [], 'params': {}}, 'staged_inputs': {}}
+    templates = [{'unit_prefix': 'world.example.export.Parent', 'followers': [finish]}]
+    attach_followers(templates, units, rows, {'world.example.export.Parent': required['pawn']},
+                     checkout=tmp_path, slots=slots)
+    assert finish['unit']['params']['native_modules']['editor']['archive'] == 'outputs/0.tree.tar'
+    assert finish['unit']['inputs'][0]['source'] == {'kind': 'item', 'unit': 'editor', 'item': 'output0'}
+    assert set(finish['staged_inputs']) == set(slots)
+    assert all('$' not in row['source'].get('unit', '') for row in finish['unit']['inputs'])
+
+
+@pytest.mark.parametrize('broken', ['absent', 'no_finish', 'two_finishes'])
+def test_template_module_request_cannot_silently_omit_a_finish(tmp_path, broken):
+    from atelier.build_v2.recipe_native_modules import attach_followers
+    rows, units, staged, slots, required = fixture(tmp_path)
+    finish = {'unit': {'id': '$export.finish', 'op': {'kind': 'unreal.finish', 'version': '1'},
+                       'inputs': [], 'params': {}}, 'staged_inputs': {}}
+    templates = [{'unit_prefix': 'world.example.export.Parent', 'followers': [finish]}]
+    if broken == 'absent': templates.clear()
+    elif broken == 'no_finish': templates[0]['followers'].clear()
+    else: templates[0]['followers'].append(deepcopy(finish))
+    with pytest.raises(ValueError, match='absent|exactly one'):
+        attach_followers(templates, units, rows, {'world.example.export.Parent': required['pawn']},
+                         checkout=tmp_path, slots=slots)
