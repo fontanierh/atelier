@@ -398,7 +398,7 @@ def test_declared_fbx_media_policy_survives_payload_decode_and_export_options(mo
     options = {'path_mode': mode, 'apply_scale_options': 'FBX_SCALE_ALL',
                'apply_unit_scale': True, 'axis_forward': '-Y', 'axis_up': 'Z',
                'colors_type': 'SRGB', 'mesh_smooth_type': 'FACE',
-               'scene_world_color': [.05, .05, .05], 'use_custom_props': False, 'embed_textures': False}
+               'scene_world_color': [.05, .05, .05], 'use_custom_props': False, 'embed_textures': False, 'bake_anim': False}
     raw = mesh_ir.encode(piece, key=meta['asset'], slots=meta['slots'], matrix=meta['matrix'],
                          options=options, collisions=meta['collisions'])
     decoded, _, facts = decode_mesh_payload(raw, output_format='fbx')
@@ -539,3 +539,10 @@ def test_receipt_policy_is_exact_keyed_projection_json_including_frozen_values()
     with pytest.raises(ValueError): check(receipt, None)
     receipt['metadata'].pop('native_policy')
     with pytest.raises(ValueError): check(receipt, frozen)
+
+
+@pytest.mark.parametrize('value', [True, 0, 1, None, 'false'])
+def test_bake_anim_only_admits_original_literal_false(value):
+    for payload_options, declared_options in [({'bake_anim': value}, {}), ({}, {'bake_anim': value})]:
+        with pytest.raises(ValueError, match='bake_anim'):
+            ops.export_options(payload_options, declared_options, output_format='fbx')
