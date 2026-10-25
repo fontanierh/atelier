@@ -43,7 +43,7 @@ def _closure(root, *paths):
     return code
 
 
-def author_units(cooked, *, editor, game, plugins, global_data, checkout, complete=False):
+def author_units(cooked, *, editor, game, plugins, global_data, checkout, complete=False, data=()):
     """@cc [owner:fontanierh,label:correctness] package-from-verified-cooked-set
     Packaging MUST compose only the exact freshly verified CookedPackage Items it
     is given, with the actual produced game MacZIP, editor/plugin module ROOTs and
@@ -69,7 +69,7 @@ def author_units(cooked, *, editor, game, plugins, global_data, checkout, comple
     if type(complete) is not bool:
         raise ValueError('complete states whether the cooked roster covers the whole game')
     base = _load(root, 'games/yorimichi/v2_global_cook_units.py', 'package_global_cook_policy')
-    declared = base.author_unit(checkout=root, editor=editor, plugins=plugins)['units'][0]
+    declared = base.author_unit(checkout=root, editor=editor, plugins=plugins, data=data)['units'][0]
     inputs = list(declared['inputs'])
     paths = dict(declared['params']['recipe']['paths'])
     code = set(declared['code']) | _closure(root, FINALISE)
