@@ -203,64 +203,9 @@ def test_the_packaged_launcher_retries_only_an_early_startup_segfault(tmp_path, 
         assert 'crashed at startup' in note.read_text() and 'crashed at startup' in result.stderr
 
 
-def test_content_changes_rerun_the_package_while_current_prerequisites_stay_current(tmp_path, monkeypatch):
-    recipe = build.load_recipe('yorimichi')
-    ctx = SimpleNamespace(game='yorimichi', out=tmp_path, logs=tmp_path/'logs', stamps=tmp_path/'stamps',
-                          uproject=tmp_path/'Yorimichi.uproject', unreal_root=tmp_path/'UE')
-    content = tmp_path/'import_world.py'; content.write_text('v1')
-    world = build.Step('unreal.world', [], inputs=[content], heavy=True)
-    data = build.Step('data.stage', [])
-    cpp = tmp_path/'game.cpp'; cpp.write_text('v1')
-    cook = build.Step('unreal.cook', [], inputs=[cpp], needs=['unreal.world', 'data.stage'], explicit=True)
-    package = recipe.package_step(ctx, [world, data])
-    assert {recipe.TOOLS/'package_archive.py', recipe.TOOLS/'desktop_preview.py'} <= set(package.inputs)
-    source = tmp_path/'desktop_preview.py'; source.write_text('profile v1')
-    package = build.Step(package.name, [], inputs=[source], needs=package.needs, explicit=True, outputs=package.outputs,
-                         verify=package.verify)
-    steps = [world, data, cook, package]
-    ctx.stamps.mkdir()
-
-    def stamp_all():
-        done = {}
-        for step in steps:
-            done[step.name] = build.fingerprint(step, done)
-            (ctx.stamps/f'{step.name}.json').write_text(json.dumps({'fingerprint': done[step.name]}))
-    (tmp_path/'package').mkdir()
-    (tmp_path/'package'/'Yorimichi-macOS-x.zip').write_bytes(b'zip')
-    (tmp_path/'package'/'SHA256SUMS').write_text('')
-    (tmp_path/'package'/'manifest.json').write_text(json.dumps({'files': [{'file': 'Yorimichi-macOS-x.zip', 'bytes': 3}]}))
-    stamp_all()
-    monkeypatch.setattr(build, 'Context', lambda game, **kwargs: ctx)
-    monkeypatch.setattr(build, 'load_recipe', lambda game: SimpleNamespace(steps=lambda context: steps))
-
-    def plan():
-        lines = []
-        assert build.build('yorimichi', ['unreal.package'], dry=True, echo=lines.append) == 0
-        return {line.split()[0]: ' '.join(line.split()[1:]) for line in lines if line.split()[0] in {s.name for s in steps}}
-    current = {'unreal.world': 'current', 'data.stage': 'current', 'unreal.cook': 'current', 'unreal.package': 'current'}
-    assert plan() == current
-
-    # The world is reimported elsewhere: it stays current; the cook and its download must be renewed.
-    content.write_text('v2')
-    done = {}
-    for step in steps[:2]:
-        done[step.name] = build.fingerprint(step, done)
-        (ctx.stamps/f'{step.name}.json').write_text(json.dumps({'fingerprint': done[step.name]}))
-    assert plan() == {**current, 'unreal.cook': 'run', 'unreal.package': 'run'}
-
-    # A launcher or profile edit reruns only the package.
-    stamp_all()
-    source.write_text('profile v2')
-    assert plan() == {**current, 'unreal.package': 'run'}
-
-    stamp_all()
-    cpp.write_text('v2')
-    assert plan() == {**current, 'unreal.cook': 'run', 'unreal.package': 'run'}
-
-    # A missing part makes the package stale even with a current stamp.
-    stamp_all()
-    (tmp_path/'package'/'Yorimichi-macOS-x.zip').unlink()
-    assert plan()['unreal.package'] == 'run'
+# The default CLI uses v2 rather than the retired v1 fingerprint/stamp planner.
+# Normal routing/refusal coverage lives in test_build_v2_controller_entry.py; content,
+# order-only edges and parameter key semantics live in build-v2/tests/keys.rs.
 
 
 def test_uat_gets_the_headless_user_directory_build_sh_would_export(tmp_path, monkeypatch):
