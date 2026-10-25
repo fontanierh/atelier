@@ -9,6 +9,7 @@ use std::io::Cursor;
 use std::path::Path;
 
 use anyhow::{Context, Result, bail};
+use glam::{DMat4, DQuat, DVec3};
 use image::codecs::png::{CompressionType, FilterType, PngEncoder};
 use image::{ImageFormat, ImageReader, imageops};
 use serde_json::{Value, json};
@@ -130,6 +131,173 @@ impl Glb {
         Ok(())
     }
 
+    /// A file holding only `json`, such as a skeleton built in code.
+    pub fn from_json(json: Value) -> Self {
+        Self { json, bin: Vec::new(), replaced: HashMap::new() }
+    }
+
+    /// The index of the node named `name`.
+    pub fn node(&self, name: &str) -> Result<usize> {
+        items(&self.json, "nodes")
+            .position(|node| node["name"].as_str() == Some(name))
+            .with_context(|| format!("no node is named {name}"))
+    }
+
+    pub fn rename_node(&mut self, node: usize, name: &str) {
+        self.json["nodes"][node]["name"] = json!(name);
+    }
+
+    /// Each node's parent.
+    pub fn parents(&self) -> Vec<Option<usize>> {
+        let mut parents = vec![None; items(&self.json, "nodes").count()];
+        for (i, node) in items(&self.json, "nodes").enumerate() {
+            for child in items(node, "children") {
+                parents[index(child)] = Some(i);
+            }
+        }
+        parents
+    }
+
+    /// Each node's rest transform, relative to its parent.
+    pub fn rest(&self) -> Result<Vec<Trs>> {
+        items(&self.json, "nodes")
+            .map(|node| {
+                if node.get("matrix").is_some() {
+                    bail!("node {} has a matrix; only translation, rotation and scale are read", node["name"]);
+                }
+                let numbers = |key: &str, default: &[f64]| -> Vec<f64> {
+                    node.get(key).map_or(default.to_vec(), |v| v.as_array().unwrap().iter().map(number).collect())
+                };
+                let (t, r, s) = (numbers("translation", &[0.0; 3]), numbers("rotation", &[0., 0., 0., 1.]), numbers("scale", &[1.0; 3]));
+                Ok(Trs {
+                    translation: DVec3::from_slice(&t),
+                    rotation: DQuat::from_slice(&r).normalize(),
+                    scale: DVec3::from_slice(&s),
+                })
+            })
+            .collect()
+    }
+
+    /// Each node's world matrix, given every node's transform relative to its parent.
+    pub fn worlds(&self, locals: &[Trs]) -> Vec<DMat4> {
+        let parents = self.parents();
+        let mut worlds: Vec<Option<DMat4>> = vec![None; locals.len()];
+        fn world(i: usize, locals: &[Trs], parents: &[Option<usize>], worlds: &mut [Option<DMat4>]) -> DMat4 {
+            if let Some(known) = worlds[i] {
+                return known;
+            }
+            let parent = parents[i].map_or(DMat4::IDENTITY, |p| world(p, locals, parents, worlds));
+            let result = parent * locals[i].matrix();
+            worlds[i] = Some(result);
+            result
+        }
+        (0..locals.len()).map(|i| world(i, locals, &parents, &mut worlds)).collect()
+    }
+
+    /// The animation named `name`, one frame per key: its frame rate, and every node's transform in each frame.
+    pub fn sample(&self, name: &str) -> Result<(f64, Vec<Vec<Trs>>)> {
+        let animation = items(&self.json, "animations")
+            .find(|animation| animation["name"].as_str() == Some(name))
+            .with_context(|| format!("no animation is named {name}"))?;
+        let rest = self.rest()?;
+        let mut frames: Vec<Vec<Trs>> = Vec::new();
+        let mut fps = 0.0;
+        for channel in items(animation, "channels") {
+            let sampler = &animation["samplers"][index(&channel["sampler"])];
+            if sampler["interpolation"].as_str().unwrap_or("LINEAR") != "LINEAR" {
+                bail!("{name}: only linear keys are read");
+            }
+            let times = self.floats(index(&sampler["input"]))?;
+            let values = self.floats(index(&sampler["output"]))?;
+            if frames.is_empty() {
+                fps = ((times.len() - 1) as f64 / (times[times.len() - 1] - times[0]) as f64).round();
+                frames = vec![rest.clone(); times.len()];
+            }
+            let evenly = times.iter().enumerate().all(|(k, &time)| (time as f64 - k as f64 / fps).abs() < 1e-4);
+            if times.len() != frames.len() || !evenly {
+                bail!("{name}: every channel needs one key per frame");
+            }
+            let node = index(&channel["target"]["node"]);
+            let width = values.len() / times.len();
+            for (frame, value) in frames.iter_mut().zip(values.chunks(width)) {
+                let value: Vec<f64> = value.iter().map(|&v| v as f64).collect();
+                let trs = &mut frame[node];
+                match channel["target"]["path"].as_str() {
+                    Some("translation") => trs.translation = DVec3::from_slice(&value),
+                    Some("rotation") => trs.rotation = DQuat::from_slice(&value).normalize(),
+                    Some("scale") => trs.scale = DVec3::from_slice(&value),
+                    path => bail!("{name}: cannot read {path:?} channels"),
+                }
+            }
+        }
+        if frames.is_empty() {
+            bail!("{name} has no channels");
+        }
+        Ok((fps, frames))
+    }
+
+    /// Adds an animation keyed once per frame at `fps`.
+    pub fn add_animation(&mut self, name: &str, fps: f64, tracks: &[(usize, Track)]) {
+        let count = tracks.first().map_or(0, |(_, track)| track.len());
+        let times: Vec<f32> = (0..count).map(|k| (k as f64 / fps) as f32).collect();
+        let input = self.add_floats(&times, "SCALAR", true);
+        let (mut samplers, mut channels) = (Vec::new(), Vec::new());
+        for (node, track) in tracks {
+            let (path, kind, values): (&str, &str, Vec<f32>) = match track {
+                Track::Translation(v) => ("translation", "VEC3", v.iter().flat_map(|p| p.to_array()).map(|x| x as f32).collect()),
+                Track::Rotation(v) => ("rotation", "VEC4", v.iter().flat_map(|q| q.to_array()).map(|x| x as f32).collect()),
+            };
+            let output = self.add_floats(&values, kind, false);
+            channels.push(json!({ "sampler": samplers.len(), "target": { "node": node, "path": path } }));
+            samplers.push(json!({ "input": input, "output": output, "interpolation": "LINEAR" }));
+        }
+        let animation = json!({ "name": name, "samplers": samplers, "channels": channels });
+        match self.json.get_mut("animations").and_then(Value::as_array_mut) {
+            Some(animations) => animations.push(animation),
+            None => self.json["animations"] = json!([animation]),
+        }
+    }
+
+    fn floats(&self, accessor: usize) -> Result<Vec<f32>> {
+        let accessor = &self.json["accessors"][accessor];
+        let width = match accessor["type"].as_str() {
+            Some("SCALAR") => 1,
+            Some("VEC3") => 3,
+            Some("VEC4") => 4,
+            kind => bail!("cannot read {kind:?} accessors"),
+        };
+        let view = &self.json["bufferViews"][index(&accessor["bufferView"])];
+        if accessor["componentType"] != 5126 || view.get("byteStride").is_some_and(|stride| stride != width * 4) {
+            bail!("only tightly packed float accessors are read");
+        }
+        let start = accessor["byteOffset"].as_u64().unwrap_or(0) as usize;
+        let bytes = &self.view(index(&accessor["bufferView"]))[start..start + index(&accessor["count"]) * width * 4];
+        Ok(bytes.chunks(4).map(|b| f32::from_le_bytes(b.try_into().unwrap())).collect())
+    }
+
+    fn add_floats(&mut self, values: &[f32], kind: &str, bounds: bool) -> usize {
+        let views = self.json.as_object_mut().unwrap().entry("bufferViews").or_insert(json!([]));
+        let view = views.as_array().unwrap().len();
+        views.as_array_mut().unwrap().push(json!({ "buffer": 0, "byteLength": values.len() * 4 }));
+        self.replaced.insert(view, values.iter().flat_map(|v| v.to_le_bytes()).collect());
+        let width = match kind {
+            "SCALAR" => 1,
+            "VEC3" => 3,
+            _ => 4,
+        };
+        let mut accessor = json!({ "bufferView": view, "componentType": 5126, "count": values.len() / width, "type": kind });
+        if bounds {
+            let columns = |pick: fn(f32, f32) -> f32| -> Vec<f32> {
+                (0..width).map(|c| values.iter().skip(c).step_by(width).copied().reduce(pick).unwrap()).collect()
+            };
+            accessor["min"] = json!(columns(f32::min));
+            accessor["max"] = json!(columns(f32::max));
+        }
+        let accessors = self.json.as_object_mut().unwrap().entry("accessors").or_insert(json!([]));
+        accessors.as_array_mut().unwrap().push(accessor);
+        accessors.as_array().unwrap().len() - 1
+    }
+
     fn view(&self, index: usize) -> &[u8] {
         if let Some(bytes) = self.replaced.get(&index) {
             return bytes;
@@ -238,4 +406,37 @@ fn chunk(kind: &[u8; 4], content: &[u8]) -> Vec<u8> {
     out.extend_from_slice(kind);
     out.extend_from_slice(content);
     out
+}
+
+fn number(value: &Value) -> f64 {
+    value.as_f64().expect("a glTF number")
+}
+
+/// A node's transform relative to its parent.
+#[derive(Clone, Copy)]
+pub struct Trs {
+    pub translation: DVec3,
+    pub rotation: DQuat,
+    pub scale: DVec3,
+}
+
+impl Trs {
+    pub fn matrix(&self) -> DMat4 {
+        DMat4::from_scale_rotation_translation(self.scale, self.rotation, self.translation)
+    }
+}
+
+/// One node's keys in an animation, one per frame.
+pub enum Track {
+    Translation(Vec<DVec3>),
+    Rotation(Vec<DQuat>),
+}
+
+impl Track {
+    fn len(&self) -> usize {
+        match self {
+            Track::Translation(keys) => keys.len(),
+            Track::Rotation(keys) => keys.len(),
+        }
+    }
 }

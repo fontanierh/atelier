@@ -9,8 +9,16 @@
 //! `<folder name>.glb` and records in `asset.toml` a checksum of the inputs: the settings, the folder's `src/` and
 //! this crate. A check reports a folder whose `.glb` is missing or whose inputs no longer match that checksum.
 
+mod animation;
+mod animations {
+    pub mod idle;
+}
 mod character;
+mod characters;
 mod glb;
+mod pose;
+mod retarget;
+mod rig;
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -25,7 +33,18 @@ use toml_edit::DocumentMut;
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 enum Asset {
+    Animation(animation::Settings),
     Character(character::Settings),
+}
+
+impl Asset {
+    /// The other assets whose exports this one reads, by folder relative to `assets/`.
+    fn reads(&self) -> Vec<&'static str> {
+        match self {
+            Asset::Animation(_) => Vec::new(),
+            Asset::Character(_) => character::ANIMATIONS.iter().map(|animation| animation.folder()).collect(),
+        }
+    }
 }
 
 /// The checksum `export` writes into `asset.toml`.
@@ -33,6 +52,9 @@ const CHECKSUM: &str = "inputs_sha256";
 
 /// This crate's folder, whose files are inputs of every export.
 const EXPORTER: &str = env!("CARGO_MANIFEST_DIR");
+
+/// The game's `assets/` folder.
+const ASSETS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets");
 
 /// An asset folder's parsed `asset.toml`.
 struct Folder {
@@ -73,6 +95,12 @@ impl Folder {
                 digest.update(Sha256::digest(fs::read(&file)?));
             }
         }
+        for folder in self.asset.reads() {
+            let output = Folder::read(&Path::new(ASSETS).join(folder))?.output();
+            digest.update(folder.as_bytes());
+            digest.update([0]);
+            digest.update(Sha256::digest(fs::read(&output).with_context(|| format!("reading {}", output.display()))?));
+        }
         Ok(format!("{:x}", digest.finalize()))
     }
 
@@ -88,8 +116,15 @@ impl Folder {
     }
 
     fn export(mut self) -> Result<()> {
+        for folder in self.asset.reads() {
+            let read = Folder::read(&Path::new(ASSETS).join(folder))?;
+            if !read.problems()?.is_empty() {
+                bail!("{}: export assets/{folder} first, its export is out of date", self.path.display());
+            }
+        }
         let output = self.output();
         match &self.asset {
+            Asset::Animation(settings) => animation::export(&self.path, settings, &output)?,
             Asset::Character(settings) => character::export(&self.path, settings, &output)?,
         }
         self.document[CHECKSUM] = toml_edit::value(self.inputs_checksum()?);
@@ -144,11 +179,11 @@ fn main() -> Result<ExitCode> {
     if args.is_empty() || args.iter().any(|arg| arg.starts_with('-')) {
         bail!("usage: cargo export [--check] FOLDER...");
     }
-    let mut stale = 0;
+    let (mut stale, mut exports) = (0, Vec::new());
     for arg in &args {
         let path = fs::canonicalize(arg).with_context(|| format!("finding {arg}"))?;
         if !check {
-            Folder::read(&path)?.export()?;
+            exports.push(Folder::read(&path)?);
             continue;
         }
         for folder in asset_folders(&path)? {
@@ -157,6 +192,11 @@ fn main() -> Result<ExitCode> {
                 stale += 1;
             }
         }
+    }
+    // Animations first: characters read their exports.
+    exports.sort_by_key(|folder| !matches!(folder.asset, Asset::Animation(_)));
+    for folder in exports {
+        folder.export()?;
     }
     Ok(if stale == 0 { ExitCode::SUCCESS } else { ExitCode::FAILURE })
 }

@@ -4,8 +4,10 @@ Everything the game loads, each next to the sources it is exported from.
 
 ```text
 assets/
+  animations/
+    idle/                   the idle, on the rig
   characters/
-    nox/                    Nox, the playable character
+    nox/                    Nox, the playable character, with every animation fitted to him
 ```
 
 ## An asset folder
@@ -24,7 +26,8 @@ The game loads only `<asset-name>.glb`. The browser build leaves out `asset.toml
 `src/` holds everything that goes into the export, so the `.glb` can be exported again exactly from a clone. A
 source made by hand, such as `characters/nox/src/model.glb`, is committed as it is.
 
-Assets have no scripts of their own. `kind` picks one exporter in `../tools/export/`, and the other settings in
+An asset's `.rs` files in `src/` are part of the exporter, which includes them when it compiles
+(`../tools/README.md` says what each kind's file implements). Assets have no scripts of their own. `kind` picks one exporter in `../tools/export/`, and the other settings in
 `asset.toml` are what that exporter reads (`../tools/README.md` lists the kinds and their settings). The exporter
 writes `inputs_sha256`; do not edit it.
 

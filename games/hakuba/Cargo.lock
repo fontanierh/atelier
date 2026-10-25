@@ -3048,6 +3048,7 @@ name = "hakuba_export"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "glam",
  "image",
  "serde",
  "serde_json",
