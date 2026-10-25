@@ -81,13 +81,14 @@ BLENDER_READ_LITERALS = ('/Library/Preferences/.GlobalPreferences.plist',)
 # Background Metal rendering creates a Cocoa GHOST context lazily at the first render.
 # AppKit registers this fixed executable with LaunchServices and connects to WindowServer;
 # denying those exact SDK endpoints aborts _RegisterApplication before rendering starts.
+# AppKit also checks the exact system setup sentinel metadata while registering the app.
 # These are native platform services, not an allowance for arbitrary Mach names or job IO.
 BLENDER_RENDER_SERVICES = ('com.apple.windowserver.active',
                            'com.apple.coreservices.launchservicesd',
                            'com.apple.lsd.mapdb', 'com.apple.lsd.modifydb')
 BLENDER_RULES = (
     '(allow iokit-open-user-client (iokit-user-client-class "AGXDeviceUserClient" "IOSurfaceRootUserClient"))',
-    '(allow file-read-metadata (literal "/tmp") (literal "/private/tmp") (literal "/Applications/Xcode.app"))',
+    '(allow file-read-metadata (literal "/tmp") (literal "/private/tmp") (literal "/Applications/Xcode.app") (literal "/private/var/db/.AppleSetupDone"))',
     '(allow file-read-data (literal "/dev/urandom"))',
     '(allow mach-lookup ' + ' '.join('(global-name ' + python_worker._quote(name) + ')'
                                     for name in BLENDER_RENDER_SERVICES) + ')',
