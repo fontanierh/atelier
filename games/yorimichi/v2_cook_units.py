@@ -1,5 +1,6 @@
 """Per-package stock cook declarations followed by sealed native verification."""
 import hashlib
+from copy import deepcopy
 from pathlib import Path
 import re
 
@@ -32,10 +33,12 @@ def _reference(value, package=None):
     return {**value, 'package': package}
 
 
-def author_units(packages, *, checkout, dependencies=()):
+def author_units(packages, *, checkout, dependencies=(), source_context=None):
     """@cc [owner:fontanierh,label:correctness] per-package-sealed-cook-declarations
     Each selected finished package MUST feed a distinct source cook and sealed
     verifier. Every supplied transitive native dependency MUST be staged explicitly.
+    A supplied source context MUST preserve the actual global cook code, compiled
+    modules, source Config and runtime Data inputs with collision-free path bindings.
     Raw native CB bytes MUST remain NativeCookRecord; cook-tree transport metadata
     MUST NOT issue source authority. Only the private engine MAY derive source keys
     and receipts. Declaration MUST NOT inspect generated Content or launch tools.
@@ -66,6 +69,36 @@ def author_units(packages, *, checkout, dependencies=()):
                    'platform/studio/atelier/build_zen.py', 'platform/studio/atelier/build_cook.py'):
         code.update(path.relative_to(root).as_posix() for path in scanner.local_imports(
             root / helper, (root / 'platform/studio', root / 'platform/harness')))
+    context_inputs, context_paths = [], {}
+    if source_context is not None:
+        context = deepcopy(source_context)
+        recipe = context.get('params', {}).get('recipe', {})
+        if (context.get('op') != {'kind': 'unreal.cook.produce', 'version': '1'}
+                or context.get('script') != SCRIPT or context.get('params', {}).get('project') != PROJECT
+                or recipe.get('version') != 1 or recipe.get('commands') != [] or recipe.get('verify') is not None
+                or not isinstance(recipe.get('paths'), dict) or not isinstance(context.get('inputs'), list)):
+            raise ValueError('source cook requires the exact authored global source context')
+        names = set()
+        for incoming in context['inputs']:
+            name = incoming.get('name')
+            if (not isinstance(name, str) or not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', name)
+                    or name in names or incoming.get('role') != 'content'):
+                raise ValueError('source context input names must be unique content roles')
+            names.add(name)
+            incoming['name'] = 'context_' + name
+            context_inputs.append(incoming)
+        for path, value in recipe['paths'].items():
+            if (not isinstance(path, str) or path.startswith('/')
+                    or any(p in ('', '.', '..') for p in path.split('/'))
+                    or not isinstance(value, str) or not value.startswith('inputs/')
+                    or any(p in ('', '.', '..') for p in value.split('/'))):
+                raise ValueError('source context requires canonical explicit input paths')
+            parts = value.split('/')
+            if len(parts) < 2 or parts[1] not in names:
+                raise ValueError('source context path has no declared input')
+            parts[1] = 'context_' + parts[1]
+            context_paths[path] = '/'.join(parts)
+        code.update(context['code'])
     units, staged, slots, outputs = [], {}, {}, {}
     for package in sorted(selected):
         required = set(shared) | {package}
@@ -97,6 +130,11 @@ def author_units(packages, *, checkout, dependencies=()):
             for suffix in (extension, *SIDECARS):
                 paths['games/yorimichi/unreal/Content/' + relative + suffix] = (
                     'inputs/' + slot + '/content/Game/' + relative + suffix)
+        for path, value in context_paths.items():
+            if any(path == present or path.startswith(present + '/') or present.startswith(path + '/') for present in paths):
+                raise ValueError('source context path overlaps a selected native package: ' + path)
+            paths[path] = value
+        inputs.extend(deepcopy(context_inputs))
         recipe = {'version': 1, 'commands': [], 'paths': paths, 'verify': None,
                   'outputs': [{'path': record, 'kind': 'file', 'file': record, 'required': True},
                               {'path': COOK_ROOT, 'kind': 'tree', 'file': 'cook-root.tree.tar', 'required': True}]}

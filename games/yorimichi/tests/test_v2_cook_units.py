@@ -84,3 +84,53 @@ def test_recipe_runs_actual_prepare_and_raw_cb_tree_export_consumers(tmp_path):
     worker.recipe_job.unpack_root(output / 'cook-root.tree.tar', restored)
     assert (restored / 'ue.projectstore').read_bytes() == b'cook-metadata'
     assert set(writes) == {str(view / record), str(cooked)}
+
+
+def source_context():
+    path = ROOT / 'games/yorimichi/v2_global_cook_units.py'
+    spec = importlib.util.spec_from_file_location('cook_shared_source_context', path)
+    global_cook = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(global_cook)
+    return global_cook.author_unit(checkout=ROOT,
+        editor={'unit': 'unreal.compile', 'item': 'editor', 'file': 'editor.tree.tar'},
+        plugins={'HorseRacing': {'unit': 'unreal.plugin.HorseRacing', 'item': 'modules',
+            'file': 'plugin.tree.tar', 'descriptor_path': 'games/yorimichi/unreal/Plugins/HorseRacing/HorseRacing.uplugin'}},
+        data=[{'unit': 'data.stage', 'item': 'output0', 'file': 'outputs/0.tree.tar',
+               'path': 'games/yorimichi/unreal/Content/Data/racing/belmonte_courses.json'}])['units'][0]
+
+
+def test_per_package_cook_uses_the_same_actual_global_modules_config_and_data_context():
+    from copy import deepcopy
+    original = source_context()
+    before = deepcopy(original)
+    result = cook.author_units([ref('/Game/A'), ref('/Game/B')], checkout=ROOT, source_context=original)
+    for source in result['units'][::2]:
+        by_name = {i['name']: i for i in source['inputs']}
+        for incoming in original['inputs']:
+            expected = {**incoming, 'name': 'context_' + incoming['name']}
+            assert by_name[expected['name']] == expected
+        paths = source['params']['recipe']['paths']
+        for path, value in original['params']['recipe']['paths'].items():
+            assert paths[path] == value.replace('inputs/', 'inputs/context_', 1)
+        assert set(original['code']) <= set(source['code'])
+        assert source['params']['packages'] in (['/Game/A'], ['/Game/B'])
+        assert len(source['outputs']) == 2  # Its own CB and transport, never global output claims.
+    assert original == before
+    assert result['units'][0]['id'] != result['units'][2]['id']
+
+
+@pytest.mark.parametrize('damage', ['overlap', 'slot', 'duplicate', 'escape', 'project'])
+def test_source_context_cannot_alias_native_outputs_or_omit_its_declared_source_role(damage):
+    context = source_context()
+    if damage == 'overlap':
+        context['params']['recipe']['paths']['games/yorimichi/unreal/Content/A.uasset'] = 'inputs/project'
+    elif damage == 'slot':
+        context['params']['recipe']['paths'][cook.PROJECT] = 'inputs/missing'
+    elif damage == 'duplicate':
+        context['inputs'].append(dict(context['inputs'][0]))
+    elif damage == 'escape':
+        context['params']['recipe']['paths'][cook.PROJECT] = 'inputs/project/../outside'
+    else:
+        context['params']['project'] = 'other.uproject'
+    with pytest.raises(ValueError):
+        cook.author_units([ref('/Game/A')], checkout=ROOT, source_context=context)
