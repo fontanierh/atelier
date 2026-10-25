@@ -90,7 +90,7 @@ def attach_followers(geometry,natives,*,checkout):
         raw={'id':'$export.raw','op':{'kind':'unreal.raw_import','version':'1'},'script':texture.OPS,'code':texture._code(root),
             'inputs':[{'role':'content','name':'source','source':{'kind':'item','unit':'$export','item':'asset'},'whole':'Raw import reads exactly the selected certified FBX and its receipt.'}],
             'params':{'op':'raw_import','kind':'static_mesh','source':'source','destination':raw_package,
-                'settings':['-ForceDPCVars=Interchange.FeatureFlags.Import.FBX=0,Editor.AsyncStaticMeshCompilation=0']},'outputs':[island._item(raw_package,raw=True)]}
+                'settings':['-ForceDPCVars=Interchange.FeatureFlags.Import.FBX=false,Editor.AsyncStaticMeshCompilation=0']},'outputs':[island._item(raw_package,raw=True)]}
         inputs=[{'role':'content','name':'raw','source':{'kind':'item','unit':'$previous','item':'raw'},'whole':'Finish duplicates and validates the exact imported source package.'},
             {'role':'content','name':'source_export','source':{'kind':'item','unit':'$export','item':'asset'},'whole':'Current source primary and receipt certify this selected child.'},
             {'role':'content','name':'payload','source':{'kind':'group_member','unit':producer,'group':'geometry','piece':'$piece'},'whole':'All selected geometry/collision/channel facts are validated.'},
