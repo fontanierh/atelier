@@ -37,7 +37,7 @@ def test_normal_build_never_discovers_or_invokes_old_scheduler(tmp_path, monkeyp
     monkeypatch.setattr(entry, '_invoke_marker', invoke)
     assert build.build('fixture', ['data.rim'], echo=lambda _: None) == 0
     assert len(calls) == 1 and calls[0]['targets'] == ['data.rim']
-    assert {u['id'] for u in calls[0]['declaration']['units']} == set(targets)
+    assert {u['id'] for u in calls[0]['declaration']['units']} == {'data.rim'}
     assert not (tmp_path / 'build').exists()
 
 
@@ -108,3 +108,25 @@ def test_incomplete_or_cancelled_controller_never_reports_success(tmp_path, monk
     else: result['cancelled'] = True
     monkeypatch.setattr(entry, '_invoke_marker', lambda *a, **k: result)
     assert entry.execute(marker(), echo=lambda _: None) == (130 if state == 'cancelled' else 1)
+
+
+@pytest.mark.parametrize('kind', ['recipe.python', 'recipe.blender'])
+def test_non_unreal_selection_has_no_unused_unreal_work_deadline(tmp_path, monkeypatch, kind):
+    from atelier import engine
+    monkeypatch.setattr(paths, 'REPO', tmp_path)
+    monkeypatch.setattr(paths, 'build_root', lambda: tmp_path / 'build')
+    monkeypatch.setattr(paths, 'cache_dir', lambda *a, **k: tmp_path / 'cache')
+    monkeypatch.setattr(entry, 'ensure_controller', lambda *a, **k: tmp_path / 'controller')
+    monkeypatch.setattr(entry, 'provenance', lambda _: {})
+    monkeypatch.setattr(entry.shutil, 'which', lambda _: None)
+    monkeypatch.setattr(engine, 'blender', lambda: tmp_path / 'Blender')
+    monkeypatch.setattr(engine, 'unreal_root', lambda: pytest.fail('unused Unreal SDK lookup'))
+    selected = marker(); selected.declaration['units'][0]['op']['kind'] = kind
+    captured = []
+    monkeypatch.setattr(entry, 'invoke_controller', lambda *a, **k: captured.append(a[4]) or observed())
+    entry._invoke_marker(selected, echo=lambda _: None)
+    options, = captured
+    assert 'unreal_job_seconds' not in options and 'unreal_memory_gib' not in options
+    assert 'unreal' not in options
+    assert options['overall_seconds'] >= options['job_seconds'] + options['cleanup_seconds']
+    assert options['overall_seconds'] == (28800 if kind == 'recipe.blender' else 1800)
