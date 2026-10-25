@@ -225,28 +225,30 @@ def test_control_acceptance_needs_actual_nonzero_compressed_error():
     assert body.control_accepted({**good, 'raw': {**good['raw'], 'scale': float('nan')}}) == ['nonfinite control']
 
 
-def test_rider_binds_its_skeleton_through_set_skeleton(tmp_path, monkeypatch):
+def test_rider_binds_its_skeleton_through_the_worker_library(tmp_path, monkeypatch):
     class Asset:
         def __init__(self, path, **props): self.path, self.props = path, dict(props)
         def get_path_name(self): return self.path + '.' + self.path.rsplit('/', 1)[1]
         def get_editor_property(self, key): return self.props[key]
-        def set_editor_property(self, key, value): self.props[key] = value
-    class Skeleton(Asset): pass
-    class SkeletalMesh(Asset):
         def set_editor_property(self, key, value):
-            if key == 'skeleton':
-                raise RuntimeError('SkeletalMesh.skeleton is read-only')
-            super().set_editor_property(key, value)
-        def set_skeleton(self, value): self.props['skeleton'] = value
-        @property
-        def skeleton(self): return self.props['skeleton']
+            if key in ('skeleton', 'preview_skeletal_mesh'):
+                raise RuntimeError(f'{key} is read-only')
+            self.props[key] = value
+    class Skeleton(Asset): pass
+    class SkeletalMesh(Asset): pass   # no set_skeleton, as in the real Python API
+    bound = []
+    def bind(mesh, skeleton, physics):
+        bound.append((mesh, skeleton, physics))
+        mesh.props['skeleton'], skeleton.props['preview_skeletal_mesh'] = skeleton, mesh
+        return True
     raw_skeleton = Skeleton('/Game/_Raw/SkateRide/SK_SkateRider_Skeleton')
     assets = {units.RAW: SkeletalMesh(units.RAW, skeleton=raw_skeleton), raw_skeleton.path: raw_skeleton}
     def duplicate(source, destination):
         assets[destination] = type(assets[source])(destination, **assets[source].props); return assets[destination]
     library = NS(load_asset=assets.get, does_asset_exist=lambda p: p in assets, duplicate_asset=duplicate,
                  save_loaded_asset=lambda a, *_: True)
-    unreal = NS(EditorAssetLibrary=library, SkeletalMesh=SkeletalMesh, Skeleton=Skeleton)
+    unreal = NS(EditorAssetLibrary=library, SkeletalMesh=SkeletalMesh, Skeleton=Skeleton,
+                AtelierBuildWorkerLibrary=NS(bind_skeletal_partners=bind))
     checked = []
     monkeypatch.setattr(body, '_rig', lambda context, slot: (None, 'rig', 'pose'))
     monkeypatch.setattr(body, '_import', lambda context, unreal: {'check_rider': lambda *a: checked.append(a)})
@@ -257,5 +259,11 @@ def test_rider_binds_its_skeleton_through_set_skeleton(tmp_path, monkeypatch):
                          'partners': {'skeleton': '/Game/SkateRide/SKEL_SkateRider'}, 'args': {'action': 'rider', 'bundle': 'bundle'}})
     mesh = body.rider(context, unreal, context.params['args'])
     skeleton = assets['/Game/SkateRide/SKEL_SkateRider']
-    assert mesh.skeleton is skeleton and skeleton.props['preview_skeletal_mesh'] is mesh
+    assert bound == [(mesh, skeleton, None)]
+    assert mesh.props['skeleton'] is skeleton and skeleton.props['preview_skeletal_mesh'] is mesh
     assert checked == [('rig', 'pose', mesh, skeleton)]
+    bound.clear(); checked.clear()
+    unreal.AtelierBuildWorkerLibrary = NS(bind_skeletal_partners=lambda *a: False)
+    with pytest.raises(ValueError, match='could not bind'):
+        body.rider(context, unreal, context.params['args'])
+    assert checked == []

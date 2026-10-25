@@ -202,9 +202,10 @@ def rider(context, unreal, args):
     skeleton = E.duplicate_asset(_path(raw.get_editor_property('skeleton')), skeleton_package)
     if not isinstance(mesh, unreal.SkeletalMesh) or not isinstance(skeleton, unreal.Skeleton):
         raise ValueError('Skate rider duplicate failed')
-    mesh.set_skeleton(skeleton)   # SkeletalMesh.Skeleton is read-only to Python; its BlueprintSetter is SetSkeleton
-    skeleton.set_editor_property('preview_skeletal_mesh', mesh)
-    if mesh.skeleton != skeleton:
+    # Python exposes neither SkeletalMesh.set_skeleton nor a writable skeleton; the worker library binds both ways.
+    if not unreal.AtelierBuildWorkerLibrary.bind_skeletal_partners(mesh, skeleton, None):
+        raise ValueError('SK_SkateRider could not bind SKEL_SkateRider')
+    if mesh.get_editor_property('skeleton') != skeleton:
         raise ValueError('SK_SkateRider is not on SKEL_SkateRider')
     if not E.save_loaded_asset(skeleton, False) or not E.save_loaded_asset(mesh, False):
         raise ValueError('Skate rider save failed')
