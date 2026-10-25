@@ -119,6 +119,7 @@ class RecipeWorker(python_worker.Worker):
         config['code'] = [*config['code'], *self.aliases]
         config['working_directory'] = str(self.view)
         config['mkdir_existing'] = self.parents
+        config['managed_atomic_directory'] = str(Path(job_dir) / recipe_job.RUNTIME / 'tmp')
         if self.node_config is not None:
             config['node_context'] = self.node_config
         if self.media_config is not None:

@@ -191,3 +191,41 @@ def test_original_blender_argument_separator_is_preserved_by_generic_command_com
         'paths': {}, 'outputs': [], 'verify': None}})
     job.run(context)
     assert json.loads((view / 'argv.json').read_text()) == ['actual-role']
+
+
+@pytest.mark.parametrize('raised', [False, True])
+def test_recipe_atomic_scope_reuses_bootstrap_held_scratch_and_resets_on_every_exit(tmp_path, monkeypatch, raised):
+    import os
+    from types import SimpleNamespace
+    from atelier import atomic_files
+    view = tmp_path / job.RUNTIME / 'view'
+    helper = view / 'platform/studio/atelier/atomic_files.py'
+    helper.parent.mkdir(parents=True)
+    helper.write_bytes(Path(atomic_files.__file__).read_bytes())
+    scratch = tmp_path / job.RUNTIME / 'tmp'
+    scratch.mkdir()
+    descriptor = os.open(scratch, os.O_RDONLY | os.O_DIRECTORY)
+    info = os.fstat(descriptor)
+    script = view / 'body.py'
+    script.write_text("from pathlib import Path\nfrom atelier.atomic_files import atomic_json\natomic_json(Path(__file__).with_name('result.json'), {'value': 1})\n" + ("raise RuntimeError('original error')\n" if raised else ''))
+    monkeypatch.chdir(view)
+    real_open = os.open
+    def without_root_anchor(path, flags, *args, **kwargs):
+        assert os.fspath(path) != '/', 'scope must not reopen the filesystem root under PathGuard'
+        return real_open(path, flags, *args, **kwargs)
+    monkeypatch.setattr(os, 'open', without_root_anchor)
+    context = SimpleNamespace(output_dir=tmp_path / 'output',
+        _atomic_temporary=(scratch, descriptor, info.st_dev, info.st_ino),
+        params={'recipe': {'paths': {}, 'commands': [{'kind':'python','script':'body.py','args':[],'env':[],'threads':3}],
+                           'outputs':[], 'verify':None}})
+    try:
+        if raised:
+            with pytest.raises(RuntimeError, match='original error'):
+                job.run(context)
+        else:
+            job.run(context)
+        assert atomic_files._MANAGED_TEMPORARY.get() is None
+        assert json.loads((view / 'result.json').read_text()) == {'value': 1}
+        assert list(scratch.iterdir()) == []
+    finally:
+        os.close(descriptor)

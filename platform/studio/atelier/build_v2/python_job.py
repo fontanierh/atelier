@@ -38,6 +38,7 @@ import fcntl
 import importlib.util
 import json
 import os
+import stat
 from pathlib import Path
 import sys
 import threading
@@ -494,6 +495,19 @@ def main(config, report):
         exec(compile(values['source'], '<build-v2 fixed media bootstrap>', 'exec'), namespace)
         node = namespace['MediaExecution'](values['sdk'], view=values['view'], scratch=values['scratch'],
                                             inputs=values['inputs'], writes=values['writes'])
+    atomic_fd = None
+    if config.get('managed_atomic_directory') is not None:
+        directory = Path(config['managed_atomic_directory'])
+        expected = Path(job_dir) / '.recipe-runtime' / 'tmp'
+        if directory != expected or directory.resolve(strict=True) != directory:
+            raise ValueError('atomic scratch must be the existing canonical reserved recipe directory')
+        atomic_fd = os.open(directory, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC)
+        info = os.fstat(atomic_fd)
+        named = directory.lstat()
+        if not stat.S_ISDIR(info.st_mode) or (info.st_dev, info.st_ino) != (named.st_dev, named.st_ino):
+            os.close(atomic_fd)
+            raise ValueError('atomic scratch identity changed')
+        context._atomic_temporary = (directory, atomic_fd, info.st_dev, info.st_ino)
     guard = PathGuard(job_dir, config['read_subpaths'], config['read_literals'], report,
                       config.get('write_subpaths'), working, config.get('mkdir_existing', ()), None if node is None else node.allow_subprocess)
     guard.install()
@@ -522,6 +536,9 @@ def main(config, report):
     except BaseException as error:  # noqa: BLE001 - every op failure is reported, never swallowed
         traceback.print_exc()
         return report({'status': 'failed', 'kind': 'job', 'message': f'{type(error).__name__}: {error}'})
+    finally:
+        if atomic_fd is not None:
+            os.close(atomic_fd)
     return report({'status': 'ok'})
 
 
