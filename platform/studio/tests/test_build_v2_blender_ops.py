@@ -445,3 +445,21 @@ def test_recipe_geometry_refuses_missing_or_incompatible_format_before_body(geom
     from atelier.build_v2 import recipe_job
     with pytest.raises(ValueError, match='exact export format'):
         recipe_job.run(SimpleNamespace(params={'recipe': {'geometry': geometry}}))
+
+
+@pytest.mark.parametrize('fault', [None, 'overlap', 'missing', 'unknown_policy'])
+def test_explicit_authored_plan_keeps_complete_disjoint_face_ownership(tmp_path, fault):
+    root, value = planned(tmp_path)
+    value['partition'] = 'explicit'
+    if fault == 'overlap':
+        value['pieces'][1]['source_faces'] = [0]
+    elif fault == 'missing':
+        value['pieces'][1]['source_faces'] = []
+    elif fault == 'unknown_policy':
+        value['partition'] = 'implicit'
+    (root / 'plan.json').write_text(json.dumps(value))
+    if fault is None:
+        assert ops.verify_plan(root, parent='Whole', limits=LIMITS) == value
+    else:
+        with pytest.raises(ValueError):
+            ops.verify_plan(root, parent='Whole', limits=LIMITS)

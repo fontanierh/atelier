@@ -55,7 +55,7 @@ def verify_plan(root, *, parent, limits, output_format='fbx'):
     if (type(manifest) is not dict or set(manifest) != PLAN_FIELDS or type(manifest.get('schema')) is not int or manifest['schema'] != 1
             or 'kind' in manifest or manifest.get('complete') is not True
             or manifest.get('parent') != name(parent) or manifest.get('triangle_limit') != TRIANGLE_LIMIT
-            or manifest.get('partition') not in ('whole', 'spatial', 'logical')):
+            or manifest.get('partition') not in ('whole', 'spatial', 'logical', 'explicit')):
         raise ValueError('Unsupported or incomplete MeshIR plan')
     if (type(manifest['source_triangles']) is not int or manifest['source_triangles'] <= 0
             or type(manifest['source_collision_hulls']) is not int or manifest['source_collision_hulls'] < 0

@@ -393,3 +393,19 @@ fn receipt_binding_uses_selected_output_content_digest_and_complete_fixed_owners
     wrong["metadata"]["foreign"] = "unowned metadata".into();
     assert!(validate_receipt_metadata(&wrong, &item, "A", &primary, &payload).is_err());
 }
+
+#[test]
+fn explicit_authored_partitions_still_require_complete_disjoint_face_ownership() {
+    let mut value = plan_metadata();
+    value["partition"] = "explicit".into();
+    validate_plan_metadata(&value).unwrap();
+    for fault in 0..3 {
+        let mut broken = value.clone();
+        match fault {
+            0 => broken["pieces"][1]["source_faces"] = serde_json::json!([0]),
+            1 => broken["pieces"][1]["source_faces"] = serde_json::json!([]),
+            _ => broken["partition"] = "implicit".into(),
+        }
+        assert!(validate_plan_metadata(&broken).is_err(), "fault {fault}");
+    }
+}

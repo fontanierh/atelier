@@ -595,7 +595,7 @@ pub fn validate_plan_metadata(raw: &Value) -> Result<(), String> {
     }
     match raw["partition"].as_str() {
         Some("whole") if rows.len() == 1 && rows[0]["name"] == raw["parent"] => Ok(()),
-        Some("logical" | "spatial") => Ok(()),
+        Some("logical" | "spatial" | "explicit") => Ok(()),
         _ => Err("unsupported/inconsistent whole partition policy".into()),
     }
 }
