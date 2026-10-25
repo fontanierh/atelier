@@ -78,7 +78,7 @@ def test_producer_checks_original_glb_settings_without_authorizing_fbx(tmp_path,
         with pytest.raises(ValueError):
             mesh_facts(raw)  # The FBX consumer still refuses GLB settings/materials.
     (root / 'plan.json').write_text(json.dumps(value))
-    assert ops.verify_plan(root, parent='Whole', limits=LIMITS) == value
+    assert ops.verify_plan(root, parent='Whole', limits=LIMITS, output_format='glb') == value
 
 
 @pytest.mark.parametrize('options', [dict(export_apply=1), dict(export_image_format='JPEG'),
@@ -390,3 +390,58 @@ def test_frozen_job_world_color_reaches_the_real_shared_validator_as_a_list():
     assert type(actual['scene_world_color']) is list
     assert validate_world_color(actual['scene_world_color']) == [0, 0.25, 1]
     assert context.params['options']['scene_world_color'] == frozen
+
+
+@pytest.mark.parametrize('mode', ['RELATIVE', 'STRIP'])
+def test_declared_fbx_media_policy_survives_payload_decode_and_export_options(mode):
+    meta, piece = mesh_ir.decode(payload())
+    options = {'path_mode': mode, 'apply_scale_options': 'FBX_SCALE_ALL',
+               'apply_unit_scale': True, 'axis_forward': '-Y', 'axis_up': 'Z',
+               'colors_type': 'SRGB', 'mesh_smooth_type': 'FACE',
+               'scene_world_color': [.05, .05, .05], 'use_custom_props': False}
+    raw = mesh_ir.encode(piece, key=meta['asset'], slots=meta['slots'], matrix=meta['matrix'],
+                         options=options, collisions=meta['collisions'])
+    decoded, _, facts = decode_mesh_payload(raw, output_format='fbx')
+    assert decoded['options'] == facts['options'] == options
+    assert ops.export_options(decoded['options'], {}, output_format='fbx') == options
+
+
+@pytest.mark.parametrize('mode', ['COPY', 'ABSOLUTE', 'AUTO', 'strip'])
+def test_unknown_or_resource_copying_fbx_media_policies_refuse(mode):
+    with pytest.raises(ValueError, match='path_mode'):
+        ops.export_options({'path_mode': mode}, {}, output_format='fbx')
+
+
+@pytest.mark.parametrize('declared', ['fbx', 'glb'])
+def test_recipe_geometry_checks_declared_format_against_actual_payload_before_completion(tmp_path, monkeypatch, declared):
+    from atelier.build_v2 import recipe_job
+    root, manifest = planned(tmp_path)
+    for row in manifest['pieces']:
+        path = root / row['payload']
+        meta, piece = mesh_ir.decode(path.read_bytes())
+        raw = mesh_ir.encode(piece, key=meta['asset'], slots=meta['slots'], matrix=meta['matrix'],
+                             options={'export_apply': True, 'export_image_format': 'NONE'})
+        path.write_bytes(raw)
+        row['sha256'] = hashlib.sha256(raw).hexdigest()
+    (root / 'plan.json').write_text(json.dumps(manifest))
+    output = tmp_path / 'output'
+    output.mkdir()
+    monkeypatch.chdir(tmp_path)
+    context = SimpleNamespace(output_dir=output, params={'plan_limits': LIMITS,
+        'recipe': {'paths': {}, 'outputs': [], 'commands': [], 'verify': None,
+                   'geometry': {'source': 'plan', 'encoding': 'mesh_ir', 'format': declared, 'parent': 'Whole'}}})
+    if declared == 'glb':
+        recipe_job.run(context)
+        assert (output / 'geometry/plan.json').read_bytes() == (root / 'plan.json').read_bytes()
+    else:
+        with pytest.raises(ValueError, match='export_apply'):
+            recipe_job.run(context)
+        assert not (output / 'geometry').exists()
+
+
+@pytest.mark.parametrize('geometry', [{'encoding': 'mesh_ir'}, {'encoding': 'mesh_ir', 'format': 'GLB'},
+                                      {'encoding': 'encoded_glb', 'format': 'fbx'}])
+def test_recipe_geometry_refuses_missing_or_incompatible_format_before_body(geometry):
+    from atelier.build_v2 import recipe_job
+    with pytest.raises(ValueError, match='exact export format'):
+        recipe_job.run(SimpleNamespace(params={'recipe': {'geometry': geometry}}))
