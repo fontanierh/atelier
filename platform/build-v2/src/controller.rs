@@ -1051,7 +1051,20 @@ fn resolve_derived(
                     additions.truncate(start);
                     return Ok(());
                 };
+                let selected_piece = template
+                    .get("piece")
+                    .map(|value| value.as_str().ok_or("invalid selected derived piece"))
+                    .transpose()?;
+                if let Some(piece) = selected_piece {
+                    crate::paths::relative_path(piece, false)?;
+                    if !children.iter().any(|(name, _, _)| name == piece) {
+                        return Err("selected derived piece is absent".into());
+                    }
+                }
                 for (piece, child, items) in children {
+                    if selected_piece.is_some_and(|selected| selected != piece) {
+                        continue;
+                    }
                     let item = if let Some(name) = template.get("item") {
                         let name = name.as_str().ok_or("invalid derived item name")?;
                         if !items.iter().any(|item| item == name) {
@@ -1307,5 +1320,56 @@ fn add_io(current: &mut IoObservation, previous: &IoObservation) {
             .worker_attempts_by_unit
             .entry(id.clone())
             .or_default() += count;
+    }
+}
+
+#[cfg(test)]
+mod selected_derived_tests {
+    use super::*;
+
+    #[test]
+    fn a_named_derived_native_uses_only_the_actual_selected_child() {
+        let expanded = BTreeMap::from([(
+            ("planner".into(), "clips".into(), "clip".into(), Some(1)),
+            vec![
+                (
+                    "Idle".into(),
+                    "actual-idle.finish".into(),
+                    vec!["animation".into()],
+                ),
+                (
+                    "Glide".into(),
+                    "actual-glide.finish".into(),
+                    vec!["animation".into()],
+                ),
+            ],
+        )]);
+        let declaration = serde_json::json!({"derived_items":{"root":"derived/reference", "templates":[{
+            "producer":"planner", "group":"clips", "unit_prefix":"clip", "follower":1,
+            "item":"animation", "piece":"Glide"}]}});
+        let mut unresolved = declaration.clone();
+        let mut additions = Vec::new();
+        resolve_derived(&mut unresolved, &BTreeMap::new(), &mut additions).unwrap();
+        assert_eq!(unresolved, declaration);
+        assert!(additions.is_empty());
+        let mut value = declaration.clone();
+        resolve_derived(&mut value, &expanded, &mut additions).unwrap();
+        assert_eq!(
+            additions,
+            vec![(
+                "derived_0".into(),
+                "actual-glide.finish".into(),
+                "derived/reference/Glide".into(),
+                "animation".into()
+            )]
+        );
+        assert_eq!(value["derived_items"]["members"][0]["piece"], "Glide");
+        let mut missing = declaration;
+        missing["derived_items"]["templates"][0]["piece"] = "Missing".into();
+        assert!(
+            resolve_derived(&mut missing, &expanded, &mut Vec::new())
+                .unwrap_err()
+                .contains("absent")
+        );
     }
 }

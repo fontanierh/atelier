@@ -445,3 +445,10 @@ Reader and writer admission MUST refuse unknown install-control entries before i
 receipts or mutating installed products. Unknown regular files, directories and links MUST
 remain untouched; current install journals retain exclusive recovery semantics. No old control
 format or completion credit is adopted. See checkout_locks::tests::unknown_install_metadata_refuses_readers_writers_without_mutation.
+
+@cc [owner:fontanierh,label:correctness] selected-derived-member-binding
+A named derived-member selector MUST resolve only the actual validated child for that
+piece and requested output Item, before the consumer key is formed. An unexpanded
+group MUST remain unresolved; a missing named member in an expanded group MUST fail.
+Sibling children MUST NOT become the selected consumer's content inputs, and no
+caller-invented future child unit ID MAY substitute for the expansion's actual ID.

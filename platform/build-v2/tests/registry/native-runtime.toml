@@ -109,3 +109,8 @@ tier = "t0"
 id = "native-followers.dynamic-record-key-substitution"
 tests = ["atelier-build-v2/native_chains::substitution_tests::native_cook_record_keys_bind_the_expanded_piece_and_refuse_aliases"]
 tier = "t0"
+
+[[scenarios]]
+id = "native.derived.selected_member"
+tests = ["atelier-build-v2/controller::selected_derived_tests::a_named_derived_native_uses_only_the_actual_selected_child"]
+tier = "t0"
