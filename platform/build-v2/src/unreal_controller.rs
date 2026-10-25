@@ -173,10 +173,24 @@ pub struct PreparedUnrealLaunch {
 }
 
 impl PreparedUnrealLaunch {
-    /// Restrict the already-started editor before Hello; only fixed import/finish jobs share it.
+    /// Restrict the already-started editor before Hello; only fixed native jobs share it.
     pub fn enable_resident(&mut self) -> Result<(), String> {
-        if !matches!(self.request.op.kind.as_str(), RAW_IMPORT | FINISH) {
-            return Err("only fixed import/finish operations may share an editor".into());
+        if !matches!(self.request.op.kind.as_str(), RAW_IMPORT | FINISH | VERIFY) {
+            return Err("only fixed import/finish/verify operations may share an editor".into());
+        }
+        if self.request.op.kind == VERIFY {
+            use std::os::unix::fs::OpenOptionsExt;
+            use std::io::Write;
+            if !self.profile.ends_with("-native-store") {
+                return Err("resident verifier lacks its private native-store preparation".into());
+            }
+            let path = self.keepalive.root().join("Atelier/native-store-startup.json");
+            let mut file = fs::OpenOptions::new().write(true).create_new(true).mode(0o400)
+                .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC).open(path).map_err(|e| e.to_string())?;
+            file.write_all(&serde_json::to_vec(&serde_json::json!({"version":1,
+                "job_dir":self.request.job_dir,"native_source_digest":self.native_source_digest}))
+                .map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
+            file.sync_all().map_err(|e| e.to_string())?;
         }
         self.command.args.push("--resident-no-fork".into());
         Ok(())
@@ -189,7 +203,8 @@ impl PreparedUnrealLaunch {
             || self.worker.version != owner.worker.version
             || self.worker.digest != owner.worker.digest
             || self.native_source_digest != owner.native_source_digest
-            || !matches!(self.request.op.kind.as_str(), RAW_IMPORT | FINISH)
+            || self.keepalive.expected() != owner.keepalive.expected()
+            || !matches!(self.request.op.kind.as_str(), RAW_IMPORT | FINISH | VERIFY)
         {
             return Err("resident job differs from verified native session".into());
         }
@@ -815,13 +830,33 @@ pub fn prepare_verify(
     execution: &UnrealExecutionContext,
     authority: &crate::native_verify::NativeVerifyContext,
 ) -> Result<PreparedUnrealLaunch, String> {
+    prepare_verify_in_session(unit, staged, sources, scope, execution, authority, None)
+}
+
+pub(crate) fn prepare_verify_in_session(
+    unit: &PreparedUnit,
+    staged: &StagedJob,
+    sources: &SourceSnapshot,
+    scope: &Path,
+    execution: &UnrealExecutionContext,
+    authority: &crate::native_verify::NativeVerifyContext,
+    owner: Option<&PreparedUnrealLaunch>,
+) -> Result<PreparedUnrealLaunch, String> {
     if unit.ingredients().op.kind != VERIFY {
         return Err("verification context used for another operation".into());
     }
     let mut launch = prepare_inner(unit, staged, sources, scope, execution)?;
     native_store_transport(&mut launch.command.args)?;
     launch.profile.push_str("-native-store");
-    let carrier = authority.carrier(&launch.keepalive.root().join("Atelier.uproject"))?;
+    let runtime = if let Some(owner) = owner {
+        if owner.request.op.kind != VERIFY || owner.profile != launch.profile
+            || owner.keepalive.expected() != launch.keepalive.expected()
+            || owner.native_source_digest != launch.native_source_digest {
+            return Err("resident verifier differs from the issued native session".into());
+        }
+        owner.keepalive.root()
+    } else { launch.keepalive.root() };
+    let carrier = authority.carrier(&runtime.join("Atelier.uproject"))?;
     let directory = staged.job_dir().join(".unreal-runtime");
     fs::create_dir_all(&directory).map_err(|e| e.to_string())?;
     if fs::symlink_metadata(&directory)

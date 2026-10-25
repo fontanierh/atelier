@@ -965,6 +965,50 @@ def resident_no_fork():
         raise StartRefused('the resident kernel no-fork restriction could not be installed')
 
 
+def warm_native_store(editor):
+    """@cc [owner:fontanierh,label:correctness;safety] resident-native-store-startup
+    Only immutable controller startup metadata MAY select this warmup. It MUST
+    bind the compiled worker and certified source CB, use read-only verify, and
+    never restore or publish a completion. The caller MUST recheck the full
+    context/DDC, then install kernel NoFork before Hello. Each actual restore
+    MUST still use its own private carrier after Started.
+
+    This never restores a package or emits a completion. Actual restore/readback
+    still runs after Started with each job's separately issued private carrier.
+    """
+    path = editor.project_dir() / 'Atelier/native-store-startup.json'
+    if not path.exists() and not path.is_symlink():
+        return
+    info = path.lstat()
+    if (path.resolve() != path or not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid()
+            or info.st_nlink != 1 or stat.S_IMODE(info.st_mode) != 0o400 or info.st_size > 65536):
+        raise StartRefused('native-store startup control is not an immutable owned file')
+    control = json.loads(path.read_bytes())
+    if (not isinstance(control, dict) or set(control) != {'version', 'job_dir', 'native_source_digest'}
+            or type(control['version']) is not int or control['version'] != 1
+            or not isinstance(control['job_dir'], str)
+            or not isinstance(control['native_source_digest'], str)
+            or not re.fullmatch('[a-f0-9]{64}', control['native_source_digest'])
+            or editor.native_context().get('worker_source_digest') != control['native_source_digest']):
+        raise StartRefused('native-store warmup differs from the keyed native implementation')
+    job = Path(control['job_dir'])
+    if not job.is_absolute() or job.resolve() != job:
+        raise StartRefused('native-store warmup job is not an anchored private scope')
+    carrier = trusted_verify_context(job)
+    request = dict(carrier['request'], mode='verify')
+    record = Path(request['record_path'])
+    if sha256(record) != carrier['record_sha256']:
+        raise StartRefused('native-store warmup record differs from its certified source')
+    report = json.loads(editor.library.zen_package_request(json.dumps(request, sort_keys=True, separators=(',', ':'))))
+    if (not isinstance(report, dict) or report.get('status') != 'verified' or report.get('mode') != 'verify'
+            or report.get('root_hash') != request['expected_root_hash']
+            or report.get('native_stored_key') != request['expected_stored_key']
+            or sha256(record) != carrier['record_sha256']):
+        raise StartRefused('read-only native-store warmup refused the bound source record')
+    log('native-store transport warmed read-only before resident NoFork')
+    return True
+
+
 def main():
     import unreal  # inside the editor
 
@@ -977,6 +1021,8 @@ def main():
         worker.start()
         tokens = shlex.split(editor.command_line())
         if tokens.count('--resident-no-fork') == 1:
+            if warm_native_store(editor):
+                worker.start()  # Recheck the complete context/DDC after SDK initialization.
             resident_no_fork()
             worker.resident = True
     except StartRefused as refusal:
