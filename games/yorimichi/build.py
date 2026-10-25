@@ -1398,7 +1398,10 @@ def character_steps(ctx):
         *[step for character in definition.movers() for step in mover_export_steps(character, out)],
         *[step for character in definition.movers() for step in mover_grips_step(character)],
         Step('characters.fox_hunter', [Blender(CHARS / 'fox-hunter' / 'export_unreal.py', threads=4)],
-             inputs=[CHARS / 'fox-hunter', NAMES], outputs=[out / 'fox_hunter' / 'export.json'], about='the fox hunter: mesh and 15 clips', heavy=True),
+             inputs=[CHARS / 'fox-hunter', NAMES], outputs=[out / 'fox_hunter' / 'export.json'],
+             products=[Product('characters.fox_hunter.export', tuple(out / 'fox_hunter' / name
+                               for name in ('export.json', 'fbx', 'textures')))],
+             about='the fox hunter: mesh and 15 clips', heavy=True),
         Step('characters.wanderer', [Blender(CHARS / 'wanderer' / 'build.py', ('--animations', '--export', '--no-render'), threads=4)],
              inputs=[CHARS / 'wanderer'], products=[Product('characters.wanderer.export', (out / 'wanderer',))],
              about='the villagers (procedural model and clips)', heavy=True),
