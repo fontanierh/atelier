@@ -223,3 +223,39 @@ def test_control_acceptance_needs_actual_nonzero_compressed_error():
     assert body.control_accepted({'clip': 'C', 'error': 'boom'}) == ['incomplete control']
     assert body.control_accepted(None) == ['incomplete control']
     assert body.control_accepted({**good, 'raw': {**good['raw'], 'scale': float('nan')}}) == ['nonfinite control']
+
+
+def test_rider_binds_its_skeleton_through_set_skeleton(tmp_path, monkeypatch):
+    class Asset:
+        def __init__(self, path, **props): self.path, self.props = path, dict(props)
+        def get_path_name(self): return self.path + '.' + self.path.rsplit('/', 1)[1]
+        def get_editor_property(self, key): return self.props[key]
+        def set_editor_property(self, key, value): self.props[key] = value
+    class Skeleton(Asset): pass
+    class SkeletalMesh(Asset):
+        def set_editor_property(self, key, value):
+            if key == 'skeleton':
+                raise RuntimeError('SkeletalMesh.skeleton is read-only')
+            super().set_editor_property(key, value)
+        def set_skeleton(self, value): self.props['skeleton'] = value
+        @property
+        def skeleton(self): return self.props['skeleton']
+    raw_skeleton = Skeleton('/Game/_Raw/SkateRide/SK_SkateRider_Skeleton')
+    assets = {units.RAW: SkeletalMesh(units.RAW, skeleton=raw_skeleton), raw_skeleton.path: raw_skeleton}
+    def duplicate(source, destination):
+        assets[destination] = type(assets[source])(destination, **assets[source].props); return assets[destination]
+    library = NS(load_asset=assets.get, does_asset_exist=lambda p: p in assets, duplicate_asset=duplicate,
+                 save_loaded_asset=lambda a, *_: True)
+    unreal = NS(EditorAssetLibrary=library, SkeletalMesh=SkeletalMesh, Skeleton=Skeleton)
+    checked = []
+    monkeypatch.setattr(body, '_rig', lambda context, slot: (None, 'rig', 'pose'))
+    monkeypatch.setattr(body, '_import', lambda context, unreal: {'check_rider': lambda *a: checked.append(a)})
+    (tmp_path / 'inputs/raw').mkdir(parents=True)
+    context = NS(outputs={'/Game/SkateRide/SK_SkateRider': {}, '/Game/SkateRide/SKEL_SkateRider': {}},
+                 inputs={'raw': str(tmp_path / 'inputs/raw')}, packages={'raw': [units.RAW]}, job_dir=str(tmp_path),
+                 params={'op': 'finish', 'kind': 'skeletal_mesh', 'source': 'raw', 'destination': '/Game/SkateRide/SK_SkateRider',
+                         'partners': {'skeleton': '/Game/SkateRide/SKEL_SkateRider'}, 'args': {'action': 'rider', 'bundle': 'bundle'}})
+    mesh = body.rider(context, unreal, context.params['args'])
+    skeleton = assets['/Game/SkateRide/SKEL_SkateRider']
+    assert mesh.skeleton is skeleton and skeleton.props['preview_skeletal_mesh'] is mesh
+    assert checked == [('rig', 'pose', mesh, skeleton)]
