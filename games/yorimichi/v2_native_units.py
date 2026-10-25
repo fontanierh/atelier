@@ -272,6 +272,17 @@ def _complete_mesh_family(native, geometry, *, family, export_prefixes, checkout
 
 def _join_world_parts(native, rows, geometry, *, checkout):
     """Compose the actual World asset owners; completion waits for every callback family."""
+    existing = {unit['id'] for unit in native['units']}
+    resident_package = '/Game/Japan/Materials/M_VillageResident'
+    if resident_package not in native['packages']:
+        resident = deepcopy(next(unit for unit in native['units'] if unit['id'] == 'unreal.village.material.M_Village'))
+        resident['id'] = 'unreal.village.material.M_VillageResident'
+        resident['params']['args'].update(function='resident_material', expected_package=resident_package)
+        resident['outputs'][0].update(logical_path=resident_package,
+            files=_family_module(checkout, 'v2_kei_units')._files(resident_package, store=False))
+        native['units'].append(resident)
+        native['staged_inputs'][resident['id']] = {}
+        native['packages'][resident_package] = {'unit': resident['id'], 'item': 'asset', 'package': resident_package}
     source = _family_source_reference(rows, 'characters.wanderer', 'wanderer', 'build.json')
     compression = _family_module(checkout, 'v2_moveset_units').compression_unit(checkout=checkout)
     if not any(unit['id'] == compression['id'] for unit in native['units']):
@@ -287,7 +298,7 @@ def _join_world_parts(native, rows, geometry, *, checkout):
     wanderer['content_slots'] = {incoming['name']: False for unit in wanderer['units']
                                   for incoming in unit['inputs']}
     _append_family(native, wanderer)
-    for family in ('props', 'sailboat', 'zeppelin'):
+    for family in ('props', 'sailboat', 'zeppelin', 'hidamari'):
         extended = _family_module(checkout, 'v2_' + family + '_units').attach_followers(
             geometry, _package_dependencies(native), checkout=checkout)
         if 'units' in extended:
@@ -296,7 +307,19 @@ def _join_world_parts(native, rows, geometry, *, checkout):
         native.setdefault('follower_module_requirements', {}).update(extended.pop('module_requirements', {}))
         geometry = extended
     native['geometry'] = geometry
-    native.setdefault('missing_roles', []).append('world.hidamari_non_north_materials_and_props')
+    assembly = next(row for row in rows if row['id'] == 'world.hidamari_props')
+    prerequisites = [{'unit': assembly['id'], 'item': product.get('native_item', 'product' + str(index))}
+                     for index, product in enumerate(assembly['products'])]
+    if not prerequisites:
+        raise ValueError('World requires the complete original Hidamari prop assembly products')
+    prerequisites.extend({'unit': unit['id'], 'item': output['id']} for unit in native['units']
+                         for output in unit['outputs'] if output['class'] == 'Map')
+    fixed = {package: ref for package, ref in native['packages'].items()
+             if ref['unit'] not in existing or package in (
+                 '/Game/Japan/Materials/M_Village', resident_package)}
+    _complete_mesh_family(native, geometry, family='world', export_prefixes=(
+        'world.props.export.', 'world.vehicle_sailboat.export.', 'world.zeppelin.export.',
+        'world.hidamari_props.export.'), checkout=checkout, fixed=fixed, prerequisites=prerequisites)
     return native
 
 
