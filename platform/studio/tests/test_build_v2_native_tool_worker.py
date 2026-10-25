@@ -764,7 +764,10 @@ def additional_plugin_view(tmp_path):
 def test_canonical_additional_plugins_copy_only_verified_bytes_and_keep_originals(additional_plugin_view):
     view, project, plugin, binary, protected = additional_plugin_view
     before = {path: path.read_bytes() for path in (plugin, binary)}
-    result = tool.canonical_project_plugins(view, project, protected)
+    relocations = {}
+    result = tool.canonical_project_plugins(view, project, protected, relocations=relocations)
+    assert relocations == {plugin.parent.relative_to(view).as_posix():
+                           (project.parent / "Plugins/Move").relative_to(view).as_posix()}
     destination = project.parent / 'Plugins/Move'
     assert json.loads(project.read_bytes()) == {'Modules': [{'Name': 'Game'}], 'AdditionalPluginDirectories': []}
     assert (destination/'Move.uplugin').read_bytes() == before[plugin]
@@ -831,3 +834,58 @@ def test_uat_first_failure_survives_secondary_lifecycle_close_error(tmp_path, mo
                          cwd=tmp_path, environment={}, run=run)
     assert caught.value is first
     assert caught.value.__notes__ == ['UAT lifecycle close also failed: PermissionError']
+
+
+@pytest.mark.parametrize('defect', [None, 'changed', 'alias', 'unknown'])
+def test_game_receipt_relocates_all_verified_plugin_paths_only(tmp_path, defect):
+    view = tmp_path / 'view'
+    project = view / 'games/game/Game.uproject'
+    project.parent.mkdir(parents=True); project.write_text('{}')
+    mappings, entries = {}, []
+    for name in ('Driving', 'Skate', 'Core', 'FX', 'Animation', 'Stream', 'Bridge'):
+        old = view / 'platform/plugins' / name
+        new = project.parent / 'Plugins' / name
+        for root in (old, new):
+            root.mkdir(parents=True); (root / (name + '.uplugin')).write_text('{}')
+        mappings[old.relative_to(view).as_posix()] = new.relative_to(view).as_posix()
+        entries.append({'Path': '$(ProjectDir)/../../platform/plugins/' + name + '/' + name + '.uplugin', 'Type': 'UFS'})
+    receipt = project.parent / 'Binaries/Mac/Game.target'
+    receipt.parent.mkdir(parents=True)
+    value = {'TargetName': 'Game', 'TargetType': 'Game', 'BuildProducts': [], 'RuntimeDependencies': entries}
+    receipt.write_text(json.dumps(value)); before = receipt.read_bytes()
+    canonical = project.parent / 'Plugins/Driving/Driving.uplugin'
+    if defect == 'changed': canonical.write_text('changed')
+    elif defect == 'alias':
+        canonical.unlink(); canonical.symlink_to(view / 'platform/plugins/Driving/Driving.uplugin')
+    elif defect == 'unknown': del mappings['platform/plugins/Driving']
+    if defect:
+        with pytest.raises(tool.Refused): tool.canonical_package_receipt(view, project, 'Game', mappings)
+        assert receipt.read_bytes() == before
+    else:
+        assert tool.canonical_package_receipt(view, project, 'Game', mappings) == 7
+        for row in value['RuntimeDependencies']:
+            name = row['Path'].split('/')[-1]
+            row['Path'] = '$(ProjectDir)/Plugins/' + name[:-8] + '/' + name
+        assert json.loads(receipt.read_bytes()) == value
+
+
+def test_uat_game_view_binds_actual_verified_plugin_copy_map(additional_plugin_view, monkeypatch):
+    view, project, plugin, binary, protected = additional_plugin_view
+    runtime = view.parent / '.recipe-runtime'; runtime.mkdir()
+    relocations = {}
+    tool.canonical_project_plugins(view, project, protected, relocations=relocations)
+    staged = view.parent / 'inputs/game'; staged.mkdir(parents=True)
+    archive = staged / 'binary.mac.zip'; archive.write_bytes(b'frozen game input')
+    original_receipt = {'TargetName': 'Game', 'TargetType': 'Game', 'BuildProducts': [],
+                        'RuntimeDependencies': [{'Path': '$(ProjectDir)/../../../platform/plugins/Activities/Move/Move.uplugin', 'Type': 'UFS'}]}
+    def restore(source, destination, run):
+        destination.mkdir(parents=True)
+        (destination / 'Game.target').write_text(json.dumps(original_receipt))
+    monkeypatch.setattr(tool, 'restore_mac_zip', restore)
+    package_view, package_project = tool.package_project_view(
+        {'inputs': [{'name': 'game', 'path': 'inputs/game'}]}, view.parent, view, project, None,
+        relocations=relocations, target='Game')
+    result = json.loads((package_project.parent / 'Binaries/Mac/Game.target').read_bytes())
+    assert result['RuntimeDependencies'] == [{'Path': '$(ProjectDir)/Plugins/Move/Move.uplugin', 'Type': 'UFS'}]
+    assert archive.read_bytes() == b'frozen game input'
+    assert plugin.read_bytes() == (package_project.parent / 'Plugins/Move/Move.uplugin').read_bytes()
