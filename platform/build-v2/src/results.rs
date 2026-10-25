@@ -695,38 +695,9 @@ impl WriteTransaction {
         let mut outputs = Vec::new();
         for (item, proof) in self.unit.ingredients().logical_outputs.iter().zip(proofs) {
             proof.check().map_err(ResultError::Validation)?;
-            if Path::new(&proof.locator().lifetime_marker)
-                != self
-                    .store
-                    .objects
-                    .root()
-                    .join("zen-cook/markers")
-                    .join(self.unit.key())
-            {
-                return Err(invalid(
-                    "native Zen marker is outside its v2 result-owned location",
-                ));
-            }
-            if Path::new(&proof.locator().record_path)
-                != self
-                    .store
-                    .objects
-                    .root()
-                    .join("zen-cook/records")
-                    .join(format!("{}.cb", self.unit.key()))
-                || Path::new(&proof.locator().project_file)
-                    != self
-                        .store
-                        .objects
-                        .root()
-                        .join("zen-cook/projects")
-                        .join(self.unit.key())
-                        .join("Atelier.uproject")
-            {
-                return Err(invalid(
-                    "native Zen record/project is outside its result-owned location",
-                ));
-            }
+            proof
+                .validate_store_layout(self.store.objects.root())
+                .map_err(ResultError::Validation)?;
             if proof.item() != item || !proof.locator().matches(&self.unit, item) {
                 return Err(invalid(
                     "independent native proof binds another source/package",
@@ -816,6 +787,9 @@ impl WriteTransaction {
         }
         for (output, proof) in envelope.result.outputs.iter().zip(proofs) {
             proof.check().map_err(ResultError::Validation)?;
+            proof
+                .validate_store_layout(self.store.objects.root())
+                .map_err(ResultError::Validation)?;
             if &output.item != proof.item()
                 || !proof.locator().matches(&self.unit, &output.item)
                 || output.external_locator.as_deref()

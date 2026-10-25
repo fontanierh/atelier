@@ -4,7 +4,7 @@
 //! issue VerifiedPackage. The verifier body invokes the native library directly;
 //! missing native support fails the job. Cook writers cannot issue this token.
 use crate::completion::FrozenCompletion;
-use crate::keys::{PreparedUnit, canonical_bytes};
+use crate::keys::{ImplementationIdentity, PreparedUnit, canonical_bytes};
 use crate::schema::{Destination, Item, StoredItem};
 use crate::source_hashes::{sha256, valid_digest};
 use serde::{Deserialize, Serialize};
@@ -12,6 +12,45 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::io::Read;
 use std::path::Path;
+
+// Keep the authority boundary self-contained while the shared backend owns its
+// public native_tools module wiring. Both use this exact source bundle issuer.
+#[path = "native_tools.rs"]
+mod native_tool_source;
+
+pub fn producer_worker_identity() -> Result<ImplementationIdentity, String> {
+    use crate::validate::{SnapshotEntry, SourceSnapshot};
+    let snapshot: SourceSnapshot = [
+        (
+            "protocol.py",
+            include_bytes!("../../studio/atelier/build_v2/protocol.py").as_slice(),
+        ),
+        (
+            "recipe_job.py",
+            include_bytes!("../../studio/atelier/build_v2/recipe_job.py").as_slice(),
+        ),
+        (
+            "unreal_tool_ops.py",
+            include_bytes!("../../studio/atelier/build_v2/unreal_tool_ops.py").as_slice(),
+        ),
+        (
+            "native_tool_worker.py",
+            include_bytes!("../../studio/atelier/build_v2/native_tool_worker.py").as_slice(),
+        ),
+    ]
+    .into_iter()
+    .map(|(name, bytes)| (name.into(), SnapshotEntry::File(bytes.to_vec())))
+    .collect();
+    Ok(native_tool_source::NativeToolBundle::from_snapshot(&snapshot)?.identity())
+}
+
+fn fixed_producer_worker(version: &str, digest: &str) -> Result<(), String> {
+    let expected = producer_worker_identity()?;
+    if version != expected.version || digest != expected.digest {
+        return Err("source cook was not executed by the exact fixed native tool worker".into());
+    }
+    Ok(())
+}
 
 pub const VERIFY_OP: &str = "unreal.cook.verify";
 pub const VERIFY_SCRIPT: &str = "platform/studio/atelier/build_v2/zen_verify.py";
@@ -66,6 +105,7 @@ pub fn validator_identity() -> crate::keys::ImplementationIdentity {
         ("zen_cook.rs", sha256(include_bytes!("zen_cook.rs"))),
         ("results.rs", sha256(include_bytes!("results.rs"))),
         ("verify.rs", sha256(include_bytes!("verify.rs"))),
+        ("native_tools.rs", sha256(include_bytes!("native_tools.rs"))),
     ]);
     crate::keys::ImplementationIdentity {
         version: "atelier-zen-validator-1".into(),
@@ -169,7 +209,11 @@ impl CookLocator {
         Ok(value)
     }
     pub fn matches(&self, unit: &PreparedUnit, item: &Item) -> bool {
-        self.source_key == unit.key()
+        unit.ingredients()
+            .params
+            .get("source_key")
+            .and_then(|value| value.as_str())
+            == Some(self.source_key.as_str())
             && item.destination == Destination::External
             && item.class == "CookedPackage"
             && item.files.is_empty()
@@ -258,6 +302,10 @@ impl<'a> VerifiedPackage<'a> {
                 "source origin requires an actual fixed normal cook producer completion".into(),
             );
         }
+        fixed_producer_worker(
+            &source.ingredients.worker_version,
+            &source.ingredients.worker_digest,
+        )?;
         let source_item = consumed_native_record(&source.outputs, unit.inputs())?;
         let source_digest = &source_item.files[0].digest;
         for object in producer.certified_objects()? {
@@ -285,7 +333,7 @@ impl<'a> VerifiedPackage<'a> {
             return Err("Zen proof is not the independent fixed native verifier".into());
         }
         let p = &ingredients.params;
-        if p.get("source_key").and_then(|v| v.as_str()) != Some(unit.key())
+        if p.get("source_key").and_then(|v| v.as_str()) != Some(source.key.as_str())
             || p.get("package").and_then(|v| v.as_str()) != Some(item.logical_path.as_str())
             || p.get("dependency_key") != unit.ingredients().params.get("dependency_key")
             || !matches!(
@@ -328,6 +376,7 @@ impl<'a> VerifiedPackage<'a> {
         let locator = report.locator;
         locator.validate()?;
         if report.version != 1
+            || locator.source_key != source.key
             || !locator.matches(unit, item)
             || !native_hash(&report.record_io_hash)
             || !valid_digest(&report.record_sha256)
@@ -348,6 +397,16 @@ impl<'a> VerifiedPackage<'a> {
             source_unit: unit.request("", "").unit,
             record_sha256: report.record_sha256,
         })
+    }
+
+    pub(crate) fn validate_store_layout(&self, store_root: &Path) -> Result<(), String> {
+        let source = &self.producer.result().result;
+        validate_native_layout(
+            &self.locator,
+            store_root,
+            &source.key,
+            &source.ingredients.params,
+        )
     }
     pub fn locator(&self) -> &CookLocator {
         &self.locator
@@ -390,6 +449,72 @@ impl<'a> VerifiedPackage<'a> {
         }
         self.witness().check()
     }
+}
+
+/// Derive all native paths from the actual fixed producer declaration. Neither
+/// locator text nor an unrelated external result key can choose persistence paths.
+fn validate_native_layout(
+    locator: &CookLocator,
+    store_root: &Path,
+    producer_key: &str,
+    params: &crate::schema::Params,
+) -> Result<(), String> {
+    if locator.source_key != producer_key {
+        return Err("native namespace does not bind the completed source producer".into());
+    }
+    let logical_project = params
+        .get("project")
+        .and_then(|value| value.as_str())
+        .ok_or("source producer has no original logical project")?;
+    crate::paths::relative_path(logical_project, false)?;
+    if Path::new(logical_project)
+        .extension()
+        .and_then(|part| part.to_str())
+        != Some("uproject")
+    {
+        return Err("source producer project is not a project descriptor".into());
+    }
+    let packages = params
+        .get("packages")
+        .and_then(|value| value.as_array())
+        .ok_or("source producer has no exact package roster")?;
+    let names = packages
+        .iter()
+        .map(|value| value.as_str().ok_or("non-string cook package"))
+        .collect::<Result<Vec<_>, _>>()?;
+    if names.is_empty()
+        || names.windows(2).any(|pair| pair[0] >= pair[1])
+        || !names.contains(&locator.package.as_str())
+    {
+        return Err("native package is outside the actual producer roster".into());
+    }
+    let root = store_root.join("zen-cook");
+    let project = root
+        .join("projects")
+        .join(producer_key)
+        .join("view")
+        .join(logical_project);
+    let marker = project
+        .parent()
+        .ok_or("source project has no directory")?
+        .join("Saved/Cooked/Mac/ue.projectstore");
+    let suffix = if names.len() == 1 {
+        String::new()
+    } else {
+        format!("-{}", sha256(locator.package.as_bytes()))
+    };
+    let record = root
+        .join("records")
+        .join(format!("{producer_key}{suffix}.cb"));
+    if Path::new(&locator.project_file) != project
+        || Path::new(&locator.lifetime_marker) != marker
+        || Path::new(&locator.record_path) != record
+    {
+        return Err(
+            "native project, marker or record differs from the fixed stock-cook layout".into(),
+        );
+    }
+    Ok(())
 }
 
 /// Rechecked at publication, never constructed from external locator text.
@@ -438,6 +563,127 @@ mod tests {
             record_path: "/store/zen-cook/records/key.cb".into(),
             project_file: "/store/zen-cook/projects/key/Atelier.uproject".into(),
         }
+    }
+    #[test]
+    fn external_result_key_is_independent_from_the_completed_source_key() {
+        use crate::keys::{KeyContext, prepare};
+        use crate::schema::{Declaration, Op, Unit};
+        use crate::source_hashes::SourceHashCache;
+        use crate::validate::{SnapshotEntry, SourceSnapshot, ValidatedDeclaration};
+        let locator = locator();
+        let item = Item {
+            id: "cooked".into(),
+            logical_path: locator.package.clone(),
+            class: "CookedPackage".into(),
+            destination: Destination::External,
+            files: vec![],
+        };
+        let declaration = Declaration {
+            schema_version: 2,
+            cache_version: "test".into(),
+            units: vec![Unit {
+                id: "external".into(),
+                op: Op {
+                    kind: "unreal.cook.package".into(),
+                    version: "1".into(),
+                },
+                script: "cook.py".into(),
+                code: vec!["cook.py".into()],
+                inputs: vec![],
+                params: BTreeMap::from([
+                    ("source_key".into(), serde_json::json!(locator.source_key)),
+                    (
+                        "dependency_key".into(),
+                        serde_json::json!(locator.dependency_key),
+                    ),
+                ]),
+                outputs: vec![item.clone()],
+                output_groups: vec![],
+                conditional: None,
+            }],
+        };
+        let snapshot: SourceSnapshot =
+            BTreeMap::from([("cook.py".into(), SnapshotEntry::File(b"# fixed".to_vec()))]);
+        let validated = ValidatedDeclaration {
+            order: vec!["external".into()],
+            files: vec![],
+        };
+        let identity = validator_identity();
+        let context = KeyContext {
+            snapshot: &snapshot,
+            versions: &BTreeMap::new(),
+            produced: &BTreeMap::new(),
+            produced_groups: &BTreeMap::new(),
+            staged_inputs: &BTreeMap::new(),
+            worker: &identity,
+            validator: &identity,
+        };
+        let prepared = prepare(
+            &declaration,
+            &validated,
+            "external",
+            &context,
+            &mut SourceHashCache::default(),
+        )
+        .unwrap();
+        assert_ne!(prepared.key(), locator.source_key);
+        assert!(locator.matches(&prepared, &item));
+        let mut wrong = locator.clone();
+        wrong.source_key = prepared.key().into();
+        assert!(!wrong.matches(&prepared, &item));
+    }
+    #[test]
+    fn source_producer_requires_exact_fixed_worker_not_an_operation_label() {
+        let worker = producer_worker_identity().unwrap();
+        assert!(fixed_producer_worker(&worker.version, &worker.digest).is_ok());
+        assert!(fixed_producer_worker("arbitrary-writer", &worker.digest).is_err());
+        assert!(fixed_producer_worker(&worker.version, &sha256(b"writer spoof")).is_err());
+    }
+    #[test]
+    fn stock_native_paths_derive_from_producer_project_key_and_selected_package() {
+        let mut value = locator();
+        let key = value.source_key.clone();
+        let root = Path::new("/store");
+        let project =
+            format!("/store/zen-cook/projects/{key}/view/games/test/unreal/Test.uproject");
+        value.project_file = project;
+        value.lifetime_marker = format!(
+            "/store/zen-cook/projects/{key}/view/games/test/unreal/Saved/Cooked/Mac/ue.projectstore"
+        );
+        value.record_path = format!("/store/zen-cook/records/{key}.cb");
+        let mut params = BTreeMap::from([
+            (
+                "project".into(),
+                serde_json::json!("games/test/unreal/Test.uproject"),
+            ),
+            ("packages".into(), serde_json::json!([value.package])),
+        ]);
+        assert!(validate_native_layout(&value, root, &key, &params).is_ok());
+        let mut wrong = value.clone();
+        wrong.lifetime_marker = format!("/store/zen-cook/markers/{key}");
+        assert!(validate_native_layout(&wrong, root, &key, &params).is_err());
+        assert!(validate_native_layout(&value, root, &"e".repeat(64), &params).is_err());
+        params.insert(
+            "project".into(),
+            serde_json::json!("../foreign/Test.uproject"),
+        );
+        assert!(validate_native_layout(&value, root, &key, &params).is_err());
+        params.insert(
+            "project".into(),
+            serde_json::json!("games/test/unreal/Test.uproject"),
+        );
+        params.insert(
+            "packages".into(),
+            serde_json::json!(["/Game/Other", value.package]),
+        );
+        assert!(validate_native_layout(&value, root, &key, &params).is_err());
+        value.record_path = format!(
+            "/store/zen-cook/records/{key}-{}.cb",
+            sha256(value.package.as_bytes())
+        );
+        assert!(validate_native_layout(&value, root, &key, &params).is_ok());
+        params.insert("packages".into(), serde_json::json!(["/Game/Other"]));
+        assert!(validate_native_layout(&value, root, &key, &params).is_err());
     }
     #[test]
     fn producer_origin_requires_exact_consumed_native_bytes_and_role() {
