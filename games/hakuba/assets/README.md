@@ -22,7 +22,7 @@ Every asset is one folder, named in kebab case:
 The game loads only `<asset-name>.glb`. The browser build leaves out `asset.toml` and `src/` (see `../Trunk.toml`).
 
 `src/` holds everything that goes into the export, so the `.glb` can be exported again exactly from a clone. A
-source made by hand, such as `characters/nox/src/Nox.glb`, is committed as it is.
+source made by hand, such as `characters/nox/src/model.glb`, is committed as it is.
 
 Assets have no scripts of their own. `kind` picks one exporter in `../tools/export/`, and the other settings in
 `asset.toml` are what that exporter reads (`../tools/README.md` lists the kinds and their settings). The exporter
