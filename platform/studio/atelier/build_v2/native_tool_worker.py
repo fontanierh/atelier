@@ -493,6 +493,63 @@ Path(control['report']).write_text(json.dumps(result,sort_keys=True,separators=(
 """
 
 
+def package_runtime(job_dir):
+    """@cc [owner:fontanierh,label:correctness;safety] private-package-bootstrap-roles
+    Only the fixed controller carrier and its exact hashed read-only history archives
+    MAY precede view construction. This validates bootstrap layout, never native
+    authority; the sealed Rust source evidence and finalization checks remain required.
+    Unknown entries, links, writable files and paths outside these roles MUST refuse.
+    """
+    root = job_dir / recipe_job.RUNTIME
+    info = root.lstat()
+    if not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o022:
+        raise Refused('package bootstrap runtime is not its owned directory')
+    def readonly(path, mode, digest=None):
+        with os.fdopen(os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK), 'rb') as stream:
+            before = os.fstat(stream.fileno())
+            if (not stat.S_ISREG(before.st_mode) or stat.S_IMODE(before.st_mode) != mode
+                    or before.st_uid != os.getuid() or before.st_nlink != 1):
+                raise Refused('package bootstrap file is not its read-only regular role')
+            if digest is None:
+                if before.st_size > 64 * 1024 * 1024:
+                    raise Refused('package bootstrap carrier exceeds bound')
+                raw = stream.read()
+            elif (not isinstance(digest, str) or not re.fullmatch('[a-f0-9]{64}', digest)
+                  or hashlib.file_digest(stream, 'sha256').hexdigest() != digest):
+                raise Refused('package bootstrap archive differs from its carrier')
+            after = os.fstat(stream.fileno())
+        identity = lambda info: (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns)
+        if identity(before) != identity(after) or identity(after) != identity(path.lstat()):
+            raise Refused('package bootstrap file changed while checked')
+        return raw if digest is None else None
+    carrier = json.loads(readonly(root / 'native-packages.json', 0o400))
+    if (not isinstance(carrier, dict) or carrier.get('version') != 1
+            or not isinstance(carrier.get('packages'), list) or not carrier['packages']):
+        raise Refused('package bootstrap carrier has no selected packages')
+    global_archive = root / 'global-metadata.tree.tar'
+    if carrier.get('global_metadata_archive') != str(global_archive):
+        raise Refused('package bootstrap global archive has the wrong role')
+    readonly(global_archive, 0o444, carrier.get('global_metadata_sha256'))
+    histories = root / 'native-histories'
+    info = histories.lstat()
+    if not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o022:
+        raise Refused('package bootstrap histories are not an owned directory')
+    names = set()
+    for row in carrier['packages']:
+        slot = row.get('slot') if isinstance(row, dict) else None
+        if not isinstance(slot, str) or not re.fullmatch('[A-Za-z0-9_.-]+', slot):
+            raise Refused('package bootstrap history slot is invalid')
+        name = slot + '.tree.tar'
+        archive = histories / name
+        if name in names or row.get('metadata_archive') != str(archive):
+            raise Refused('package bootstrap history archive has the wrong role')
+        names.add(name)
+        readonly(archive, 0o444, row.get('metadata_sha256'))
+    if {path.name for path in histories.iterdir()} != names:
+        raise Refused('package bootstrap histories contain unknown entries')
+    return ('native-packages.json', 'global-metadata.tree.tar', 'native-histories')
+
+
 def finalise_package(job, params, view, project, engine, job_dir, run, environment, source_key):
     carrier_path = job_dir / '.recipe-runtime/native-packages.json'
     info = carrier_path.lstat()
@@ -594,7 +651,8 @@ def dispatch(job, job_dir, engine, run, *, source_key=None, zen_state_root=None,
     recipe = params['recipe']
     if recipe['version'] != 1 or output.is_symlink() or not output.is_dir() or any(output.iterdir()):
         raise Refused('native job needs an empty staged output and recipe version 1')
-    view, protected, writes = recipe_job.prepare_view(job, job_dir)
+    reserved = package_runtime(job_dir) if kind == 'unreal.package' and params.get('native_global') else ()
+    view, protected, writes = recipe_job.prepare_view(job, job_dir, reserved=reserved)
     restore_native_inputs(recipe, view, run)
     raw_roots = ()
     if kind == 'unreal.cook.produce':
