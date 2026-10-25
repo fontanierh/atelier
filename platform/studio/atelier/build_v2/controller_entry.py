@@ -124,8 +124,6 @@ def _invoke_marker(marker, *, echo):
         'worktree_id': hashlib.sha256(str(checkout).encode()).hexdigest(),
         'memory_gib': 8,
         'blender_memory_gib': 10,
-        'unreal_memory_gib': _native_memory_gib(request),
-        'unreal_job_seconds': 7200,
         'job_seconds': 900,
         'cleanup_seconds': 60 if (unreal or blender) else 30,
         'overall_seconds': 28800 if (unreal or blender) else 1800,
@@ -142,6 +140,7 @@ def _invoke_marker(marker, *, echo):
         if blender:
             options['blender'] = str(Path(engine.blender()).absolute())
         if unreal:
+            options.update(unreal_memory_gib=_native_memory_gib(request), unreal_job_seconds=7200)
             root = engine.unreal_root().absolute()
             modules = json.loads((root / 'Engine/Binaries/Mac/UnrealEditor.modules').read_text())
             from .native_bootstrap import ensure_native_worker
