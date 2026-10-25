@@ -322,12 +322,14 @@ def run(context):
 def test_background_render_registration_has_exact_native_service_and_bundle_bounds(tmp_path, blender):
     platform = blender_worker.BlenderPlatform(str(blender))
     profile = python_worker.sandbox_profile(str(tmp_path / 'job'), platform)
-    rules = [line for line in profile.splitlines() if line.startswith('(allow mach-lookup')]
+    rules = [line for line in profile.splitlines() if line.startswith('(allow mach-lookup (global-name')]
     assert rules == ['(allow mach-lookup ' + ' '.join('(global-name "' + service + '")'
                        for service in blender_worker.BLENDER_RENDER_SERVICES) + ')']
     assert set(blender_worker.BLENDER_RENDER_SERVICES) == {
         'com.apple.windowserver.active', 'com.apple.coreservices.launchservicesd',
         'com.apple.lsd.mapdb', 'com.apple.lsd.modifydb'}
+    compiler = [line for line in profile.splitlines() if '(xpc-service-name' in line]
+    assert compiler == ['(allow mach-lookup (xpc-service-name "com.apple.MTLCompilerService"))']
     extension = [line for line in profile.splitlines() if line.startswith('(allow file-issue-extension')]
     assert extension == ['(allow file-issue-extension (require-all '
         '(extension-class "com.apple.app-sandbox.read") (literal "' + platform.bundle + '")))']
