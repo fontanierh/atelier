@@ -205,3 +205,28 @@ def test_an_archive_behind_a_linked_parent_or_with_another_link_refuses(tmp_path
         group.share(source, root)
     with pytest.raises(ValueError, match='canonical unlinked path'):
         clones.archive_authority(Path(source.name))  # relative
+
+
+def test_the_native_tool_sibling_load_of_a_staged_copy_shares_and_reuses(tmp_path):
+    import importlib.util
+    import shutil
+    staged = tmp_path / 'frozen'
+    staged.mkdir()
+    for name in ('recipe_root_clones.py', 'recipe_job.py'):
+        shutil.copyfile(Path(clones.__file__).with_name(name), staged / name)
+    # The exact NativeTool._sibling shape: a top-level module named after the frozen file, no package.
+    spec = importlib.util.spec_from_file_location('atelier_native_recipe_root_clones', staged / 'recipe_root_clones.py')
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    try:
+        spec.loader.exec_module(module)
+        assert Path(module.recipe_job.__file__) == staged / 'recipe_job.py'  # the adjacent codec only
+        source = archive(tmp_path, 'editor', FILES)
+        group = module.CommonRootClones(tmp_path / 'scope')
+        assert group.share(source, unpacked(tmp_path, source, 'a'))['snapshot'] == 'created'
+        second = unpacked(tmp_path, source, 'b')
+        assert group.share(source, second)['snapshot'] == 'reused'
+        assert recipe_job.inventory(second) == recipe_job.inventory(unpacked(tmp_path, source, 'c'))
+    finally:
+        sys.modules.pop(spec.name, None)
+    assert clones.recipe_job is recipe_job  # the normal package import is unchanged

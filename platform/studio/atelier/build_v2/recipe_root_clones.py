@@ -6,6 +6,7 @@ share storage until written. It is execution context for one group: never adopte
 """
 import ctypes
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -14,7 +15,12 @@ import stat
 import sys
 import tarfile
 
-from . import recipe_job
+if __package__:
+    from . import recipe_job
+else:  # NativeTool loads frozen helpers as top-level siblings: bind only the adjacent codec file.
+    _spec = importlib.util.spec_from_file_location('atelier_root_clones_root_codec', Path(__file__).with_name('recipe_job.py'))
+    recipe_job = importlib.util.module_from_spec(_spec)
+    _spec.loader.exec_module(recipe_job)
 
 MANIFEST_LIMIT = 16 * 1024 * 1024
 
