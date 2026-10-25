@@ -174,7 +174,8 @@ def test_crown_then_finish_assemble_the_original_lod_chain(case):
 
 
 @pytest.mark.parametrize('failure', ['triangles', 'bounds', 'lod_bounds', 'palette', 'outputs', 'fresh', 'crown_input',
-                                     'material_package', 'save', 'unknown_slot', 'trunk'])
+                                     'material_package', 'save', 'unknown_slot', 'trunk',
+                                     'base_crown_slot', 'missing_slot'])
 def test_invalid_state_cannot_finish(case, failure, tmp_path):
     state, finish, crown = case
     body.run(crown)
@@ -188,6 +189,9 @@ def test_invalid_state_cannot_finish(case, failure, tmp_path):
     elif failure == 'material_package': finish.packages['material_Bark'] = ['/Game/Japan/Materials/MI_Leaf']
     elif failure == 'save': state.save_ok = False
     elif failure == 'unknown_slot': state.assets[RAWS[1]].static_materials[0].values['imported_material_slot_name'] = 'Other'
+    elif failure == 'base_crown_slot':  # restore_authored_slots' invariant: no crown slot on the base
+        state.assets[RAWS[0]].static_materials.append(deepcopy(state.assets[RAWS[2]].static_materials[0]))
+    elif failure == 'missing_slot': state.assets[RAWS[0]].static_materials.pop()
     elif failure == 'trunk':
         shutil.rmtree(tmp_path / 'inputs'); finish.inputs['manifest'] = str(manifest(tmp_path, import_trunk_collision=True))
     with pytest.raises(ValueError):
