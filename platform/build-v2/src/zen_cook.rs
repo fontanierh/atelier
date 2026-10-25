@@ -38,6 +38,10 @@ pub fn producer_worker_identity() -> Result<ImplementationIdentity, String> {
             "native_tool_worker.py",
             include_bytes!("../../studio/atelier/build_v2/native_tool_worker.py").as_slice(),
         ),
+        (
+            "zen_package_finalise.py",
+            include_bytes!("../../studio/atelier/build_v2/zen_package_finalise.py").as_slice(),
+        ),
     ]
     .into_iter()
     .map(|(name, bytes)| (name.into(), SnapshotEntry::File(bytes.to_vec())))
@@ -681,7 +685,7 @@ impl<'a> VerifiedPackage<'a> {
 
 /// Derive all native paths from the actual fixed producer declaration. Neither
 /// locator text nor an unrelated external result key can choose persistence paths.
-fn validate_native_layout(
+pub(crate) fn validate_native_layout(
     locator: &CookLocator,
     store_root: &Path,
     producer_key: &str,
@@ -745,11 +749,15 @@ fn validate_native_layout(
 }
 
 /// Rechecked at publication, never constructed from external locator text.
+#[derive(Clone)]
 pub(crate) struct NativeArtifactWitness {
     locator: CookLocator,
     record_sha256: String,
 }
 impl NativeArtifactWitness {
+    pub(crate) fn locator(&self) -> &CookLocator {
+        &self.locator
+    }
     pub(crate) fn check(&self) -> Result<(), String> {
         let marker =
             fs::symlink_metadata(&self.locator.lifetime_marker).map_err(|e| e.to_string())?;
