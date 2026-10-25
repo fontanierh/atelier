@@ -41,7 +41,7 @@ def finalise(*, destination, packages, histories, global_histories, global_files
     fields = ('project', 'oplog', 'project_file', 'lifetime_marker')
     if (not isinstance(destination, dict) or any(not isinstance(destination.get(key), str) or not destination[key] for key in fields)
             or destination['oplog'] != 'Mac' or not _hash(input_key, 64)
-            or not isinstance(packages, list) or not packages or not histories or not global_histories or not global_files):
+            or not isinstance(packages, list) or not packages or not histories or not global_histories or not isinstance(global_files, list)):
         raise Refused('native finalization requires an actual global destination and complete package/global inputs')
     for path in (destination['project_file'], destination['lifetime_marker'], runtime_project):
         value = Path(path)

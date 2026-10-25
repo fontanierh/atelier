@@ -289,3 +289,15 @@ def test_semantic_global_projection_keeps_complete_shader_bytes_excludes_transpo
     (content/'ShaderArchive-Global-SF_METAL_SM5.ushaderbytecode').symlink_to(content/'ShaderArchive-Global-SF_METAL_SM6.ushaderbytecode')
     with pytest.raises(Refused, match='alias'):
         semantic_global_data(source,tmp_path/'alias')
+
+
+def test_global_cook_keeps_global_shader_saving_and_explicit_shader_archive_policy():
+    from pathlib import Path
+    engine, project, key = Path('/engine'), Path('/view/Game.uproject'), 'a' * 64
+    normal = tool.cook_argv(engine, project, ['/Game/Asset'], key)
+    global_args = tool.cook_argv(engine, project, ['/Engine/EngineResources/DefaultTexture'], key, global_data=True)
+    assert '-cooksinglepackagenorefs' in normal and '-cooksinglepackagenorefs' not in global_args
+    assert {'-NoDefaultMaps', '-NoGameAlwaysCook', '-SkipHardReferences', '-SkipSoftReferences'} <= set(global_args)
+    for args in (normal, global_args):
+        assert '-ini:Game:[/Script/UnrealEd.ProjectPackagingSettings]:bShareMaterialShaderCode=True' in args
+        assert '-ini:Game:[/Script/UnrealEd.ProjectPackagingSettings]:bSharedMaterialNativeLibraries=False' in args
