@@ -16,6 +16,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import tarfile
 import time
 import zipfile
 
@@ -1073,6 +1074,9 @@ def dispatch(job, job_dir, engine, run, *, source_key=None, zen_state_root=None,
     reserved = package_runtime(job_dir) if kind == 'unreal.package' and params.get('native_global') else ()
     view, protected, writes = recipe_job.prepare_view(job, job_dir, reserved=reserved)
     restore_native_inputs(recipe, view, run)
+    if cook_session is not None:
+        if kind != 'unreal.cook.produce':raise Refused('common source ROOTs require the fixed cook operation')
+        cook_session.share_prepared_roots(job, view)
     raw_roots = ()
     plugin_relocations = {}
     if kind in ('unreal.cook.produce', 'unreal.package'):
@@ -1191,6 +1195,37 @@ class CookSdkSession:
         self.sequence = 0
         self.signature = None
         self.pending = b''
+        self.root_clones = None
+        self.project_archives = []
+
+    def share_prepared_roots(self, job, view):
+        # prepare_view has already validated the complete ROOT payload. The cache
+        # independently hashes that exact archive and inventories the actual copy.
+        self.project_archives = []
+        project_parent = Path(job['params']['project']).parent
+        for logical, staged in job['params']['recipe']['paths'].items():
+            if not staged.endswith('.tree.tar'):continue
+            archive = Path(job['job_dir']) / recipe_job.relative(staged)
+            root = Path(view) / recipe_job.relative(logical)
+            if root.is_symlink():raise Refused('shared source ROOT is a link')
+            if root.is_dir():
+                if self.root_clones is None:
+                    self.root_clones = _sibling('recipe_root_clones').CommonRootClones(self.folder / 'common-roots')
+                result = self.root_clones.share(archive, root)
+                print('source common ROOT '+result['snapshot']+': '+str(result['bytes'])+' bytes/'+str(result['files'])+' files',file=sys.stderr,flush=True)
+                if Path(logical).is_relative_to(project_parent):
+                    self.project_archives.append((archive, Path(logical).relative_to(project_parent)))
+            elif root.is_file():
+                continue  # File ROOTs use the unchanged validated codec, not a directory cache.
+            else:
+                # Only an explicit absent ROOT may be missing after validated unpack.
+                with tarfile.open(archive,'r:') as stream:
+                    first=stream.next()
+                    if first is None or first.name!=recipe_job.MANIFEST or first.size>16*1024*1024:
+                        raise Refused('missing source ROOT lacks its explicit absent manifest')
+                    manifest=json.loads(stream.extractfile(first).read())
+                if manifest!={'version':1,'kind':'absent','entries':[]}:
+                    raise Refused('validated source ROOT disappeared before sharing')
 
     def context(self, project):
         value = json.loads(project.read_bytes())
@@ -1217,6 +1252,11 @@ class CookSdkSession:
         self.signature = signature
         host = self.folder / 'sdk-host'
         shutil.copytree(project.parent, host)
+        # The operational SDK host is another independent copy of the SAME verified
+        # common ROOTs, not another physical gigabyte of identical DLL data.
+        for archive, relative in self.project_archives:
+            result=self.root_clones.share(archive, host / relative)
+            print('source SDK ROOT '+result['snapshot']+': '+str(result['bytes'])+' bytes',file=sys.stderr,flush=True)
         # No first producer's native payload may seed SDK/module startup state.
         # Each exact /Game view is mounted only by the fixed per-unit native call.
         content = host / 'Content'

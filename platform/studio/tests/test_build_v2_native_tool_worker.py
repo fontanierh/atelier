@@ -1025,3 +1025,66 @@ def test_source_sdk_close_reaps_own_process_without_waiting_for_inherited_pipe_e
         os.fstat(held_service_write)
     finally:
         os.close(held_service_write)
+
+
+def test_source_group_common_roots_use_validated_copies_and_clone_sdk_host(tmp_path,monkeypatch):
+    import shutil
+    from types import SimpleNamespace
+    from atelier.build_v2.recipe_root_clones import CommonRootClones
+    source=tmp_path/'editor';source.mkdir();(source/'Game.dylib').write_bytes(b'compiled immutable module')
+    session=tmp_path/'session';session.mkdir()
+    sdk=tool.CookSdkSession(SimpleNamespace(engine=tmp_path/'engine'),session)
+    sdk.root_clones=CommonRootClones(session/'common-roots',clone=shutil.copyfile)
+    copies=[]
+    for name in ('first','second'):
+        directory=tmp_path/name;directory.mkdir();request=job(directory,'unreal.cook.produce')
+        request['params']['recipe']['outputs']=[{'path':'record.cb','file':'record.cb'}]
+        archive=directory/'inputs/editor/outputs/0.tree.tar';archive.parent.mkdir(parents=True)
+        tool.recipe_job.pack_root(source,archive)
+        request['inputs']=[{'name':'editor','path':'inputs/editor'}]
+        request['params']['recipe']['paths']={'Binaries/Mac':'inputs/editor/outputs/0.tree.tar'}
+        view,_,_=tool.recipe_job.prepare_view(request,directory)
+        sdk.share_prepared_roots(request,view);copies.append(view/'Binaries/Mac/Game.dylib')
+    assert len(sdk.root_clones.snapshots)==1
+    assert copies[0].stat().st_ino!=copies[1].stat().st_ino
+    def popen(command,**kwargs):
+        host=session/'sdk-host/Binaries/Mac/Game.dylib'
+        assert host.read_bytes()==source.joinpath('Game.dylib').read_bytes()
+        assert host.stat().st_ino not in [p.stat().st_ino for p in copies]
+        return SimpleNamespace(poll=lambda:0,returncode=0)
+    monkeypatch.setattr(tool.subprocess,'Popen',popen)
+    monkeypatch.setattr(sdk,'exchange',lambda *args,**kwargs:{'status':'ready'})
+    sdk.start(view/'Game.uproject',{},'a'*64,tmp_path/'bootstrap/Host.uproject');sdk.close()
+    copies[1].write_bytes(b'independent later write')
+    assert copies[0].read_bytes()==b'compiled immutable module'
+    assert source.joinpath('Game.dylib').read_bytes()==b'compiled immutable module'
+
+
+def test_source_group_missing_directory_is_not_a_cache_fallback(tmp_path):
+    import shutil
+    from types import SimpleNamespace
+    request=job(tmp_path,'unreal.cook.produce')
+    request['params']['recipe']['outputs']=[{'path':'record.cb','file':'record.cb'}]
+    source=tmp_path/'source';source.mkdir();(source/'module').write_bytes(b'keyed')
+    archive=tmp_path/'inputs/editor/root.tree.tar';archive.parent.mkdir(parents=True)
+    tool.recipe_job.pack_root(source,archive)
+    request['inputs']=[{'name':'editor','path':'inputs/editor'}]
+    request['params']['recipe']['paths']={'Binaries/Mac':'inputs/editor/root.tree.tar'}
+    view,_,_=tool.recipe_job.prepare_view(request,tmp_path)
+    shutil.rmtree(view/'Binaries/Mac')
+    session=tmp_path/'session';session.mkdir();sdk=tool.CookSdkSession(SimpleNamespace(),session)
+    with pytest.raises(tool.Refused,match='disappeared'):
+        sdk.share_prepared_roots(request,view)
+    assert sdk.child is None and sdk.root_clones is None
+
+
+def test_source_dispatch_clone_refusal_precedes_persistent_namespace(tmp_path,monkeypatch):
+    from types import SimpleNamespace
+    request=job(tmp_path,'unreal.cook.produce')
+    def refuse(job,view):
+        assert (view/'Game.uproject').is_file()
+        raise ValueError('verified clone failed')
+    monkeypatch.setattr(tool,'persistent_cook_view',lambda *a,**kw:pytest.fail('must not create namespace'))
+    with pytest.raises(ValueError,match='verified clone failed'):
+        tool.dispatch(request,tmp_path,tmp_path/'engine',lambda *a,**kw:None,
+                      cook_session=SimpleNamespace(share_prepared_roots=refuse))
