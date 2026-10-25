@@ -444,13 +444,42 @@ class Editor:
 class Context:
     """What an op sees: its params, staged inputs and declared outputs; no repository paths."""
 
-    def __init__(self, job_dir, inputs, packages, params, outputs, content_dir):
+    def __init__(self, job_dir, inputs, packages, params, outputs, content_dir, *, zen_request=None):
         self.job_dir = Path(job_dir)
         self.inputs = inputs  # name -> logical package (staged) or job-folder path
         self.packages = packages  # name -> logical package, for staged package inputs
         self.params = params
         self.outputs = outputs  # declared output packages
         self.content_dir = Path(content_dir)
+        if zen_request is not None:
+            self.zen_request = zen_request
+
+
+def trusted_verify_context(job_dir):
+    """Read only the private execution carrier; semantic params cannot supply it."""
+    path = Path(job_dir) / '.unreal-runtime/native-verify.json'
+    info = path.lstat()
+    if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid() or info.st_nlink != 1
+            or stat.S_IMODE(info.st_mode) != 0o400 or info.st_size > 4 * 1024 * 1024):
+        raise JobRefused('protocol', 'native verifier carrier is not an immutable owned control file')
+    value = json.loads(path.read_bytes())
+    if (not isinstance(value, dict) or set(value) != {'version', 'request', 'record_sha256', 'producer_key'}
+            or type(value['version']) is not int or value['version'] != 1
+            or any(not isinstance(value[name], str) or not re.fullmatch('[a-f0-9]{64}', value[name])
+                   for name in ('record_sha256', 'producer_key'))):
+        raise JobRefused('protocol', 'malformed private native verifier carrier')
+    request = value['request']
+    fields = {'version', 'mode', 'project', 'oplog', 'source_package', 'expected_stored_key',
+              'expected_root_hash', 'record_path', 'project_file', 'marker_path', 'input_key',
+              'runtime_project_file'}
+    if (not isinstance(request, dict) or set(request) != fields or type(request['version']) is not int
+            or request['version'] != 1 or request['mode'] not in ('verify', 'restore')):
+        raise JobRefused('protocol', 'invalid native readback request')
+    for name in ('record_path', 'project_file', 'marker_path', 'runtime_project_file'):
+        path = Path(request[name])
+        if not path.is_absolute() or '..' in path.parts or path.is_symlink():
+            raise JobRefused('protocol', 'native verifier path is not canonical owned execution metadata')
+    return value
 
 
 class Worker:
@@ -576,6 +605,8 @@ class Worker:
             raise JobRefused('protocol', 'output/ is not empty before the job')
         if content_has_files(self.content):
             raise JobRefused('dependency', '/Game is not empty before the job')
+        if job['op']['kind'] == 'unreal.cook.verify':
+            return self.execute_verifier(job)
         declared, required = {}, set()
         for item in job['outputs']:
             path = _job_relative(item['path'], 'output')
@@ -699,6 +730,58 @@ class Worker:
         write_atomic(job_dir / IMPORT_EVIDENCE, {'version': EVIDENCE_VERSION, 'packages': [
             {'package': name, 'imports': imports[name]} for name in sorted(names)]})
         return sorted(files)
+
+    def execute_verifier(self, job):
+        job_dir = Path(job['job_dir'])
+        if (job['op']['version'] != '1'
+                or job['script'] != 'platform/studio/atelier/build_v2/zen_verify.py'
+                or job['script'] not in job['code']
+                or job['outputs'] != [{'path': 'zen-verified.json', 'required': True}]):
+            raise JobRefused('protocol', 'unsupported native verification body or report inventory')
+        carrier = trusted_verify_context(job_dir)
+        request = carrier['request']
+        if Path(request['runtime_project_file']) != self.project / 'Atelier.uproject':
+            raise JobRefused('protocol', 'native verification runtime differs from its own scratch project')
+        records = [Path(request[name]) for name in ('record_path', 'project_file', 'marker_path')]
+        if sha256(records[0]) != carrier['record_sha256']:
+            raise JobRefused('dependency', 'native CB differs from certified producer bytes')
+        before = {path: sha256(path) for path in records}
+        declared_reads = [job_dir / path for path in job['code']] + records
+        self.settings = self.editor.settings()
+        self.editor.begin_job()
+        recording = True
+        try:
+            with declared_python(job_dir, job['code'], records,
+                    [*self.read_platform_roots, Path(sys.base_prefix), Path(sys.prefix)]):
+                entry = runpy.run_path(str(job_dir / job['script']), run_name='atelier_native_verify')
+                if not callable(entry.get('run')):
+                    raise JobRefused('protocol', 'fixed verifier has no run entry')
+                entry['run'](Context(job_dir, {}, {}, job['params'], [], self.content,
+                                     zen_request=request))
+                self.editor.finish_background_work()
+                saved = self.editor.saved_packages()
+                report = self.editor.read_report()
+                recording = False
+        finally:
+            if recording:
+                self.editor.read_report()
+        if saved or self.editor.dirty_packages() or self.editor.ensures() or content_has_files(self.content):
+            raise JobRefused('dependency', 'native verification mutated package/editor state')
+        validate_read_report(report, declared_reads, self.read_platform_roots)
+        if any(sha256(path) != digest for path, digest in before.items()):
+            raise JobRefused('dependency', 'native verification changed its source record or lifetime metadata')
+        output = job_dir / 'output'
+        if sorted(path.name for path in output.iterdir()) != ['zen-verified.json']:
+            raise JobRefused('dependency', 'native verifier wrote an unexpected output')
+        target = output / 'zen-verified.json'
+        if target.is_symlink() or not target.is_file() or target.stat().st_nlink != 1:
+            raise JobRefused('dependency', 'native verifier report is linked or missing')
+        proof = json.loads(target.read_bytes())
+        if proof.get('record_sha256') != carrier['record_sha256']:
+            raise JobRefused('dependency', 'native verification report binds another CB')
+        write_atomic(job_dir / READ_EVIDENCE, report)
+        write_atomic(job_dir / IMPORT_EVIDENCE, {'version': EVIDENCE_VERSION, 'packages': []})
+        return ['zen-verified.json']
 
     def reset(self, job, touched, moved, state):
         """Return the editor to its between-jobs state; returns the first problem, or None."""

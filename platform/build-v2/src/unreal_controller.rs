@@ -19,6 +19,7 @@ use std::path::PathBuf;
 pub const RAW_IMPORT: &str = "unreal.raw_import";
 pub const FINISH: &str = "unreal.finish";
 pub const AUTHOR: &str = "unreal.author";
+pub const VERIFY: &str = crate::results::zen_cook::VERIFY_OP;
 pub const OP_VERSION: &str = "1";
 pub const ENTRY: &str = "platform/studio/atelier/build_v2/unreal_ops.py";
 
@@ -418,7 +419,7 @@ fn package(path: &str) -> Result<String, String> {
         || parts[0] != ""
         || parts[1] != "Game"
         || parts[2..].iter().any(|part| {
-            part.is_empty() || !part.bytes().all(|c| c.is_ascii_alphanumeric() || c == b'_')
+            part.is_empty() || !part.bytes().all(|c| c.is_ascii_alphanumeric() || b"_-".contains(&c))
         })
     {
         return Err(format!("invalid native package {path}"));
@@ -488,6 +489,24 @@ fn native_source_digest(unit: &PreparedUnit) -> Result<String, String> {
 pub fn check_unit(unit: &PreparedUnit) -> Result<(), String> {
     let value = unit.ingredients();
     native_source_digest(unit)?;
+    if value.op.kind == VERIFY {
+        let expected = crate::results::zen_cook::validator_identity();
+        if value.op.version != OP_VERSION
+            || value.validator_version != expected.version
+            || value.validator_digest != expected.digest
+            || value.script != crate::results::zen_cook::VERIFY_SCRIPT
+            || value.code != crate::results::zen_cook::verifier_code_digests()
+            || !value.output_groups.is_empty()
+            || value.logical_outputs.len() != 1
+            || value.logical_outputs[0].files.len() != 1
+            || value.logical_outputs[0].files[0].path != crate::results::zen_cook::VERIFY_REPORT
+            || !value.logical_outputs[0].files[0].required
+            || !matches!(value.logical_outputs[0].destination, crate::schema::Destination::Store)
+        {
+            return Err("native verifier differs from its fixed implementation/report contract".into());
+        }
+        return Ok(());
+    }
     let expected = validator_identity();
     if value.validator_version != expected.version || value.validator_digest != expected.digest {
         return Err("native validator identity differs from registered implementation".into());
@@ -503,16 +522,17 @@ pub fn check_unit(unit: &PreparedUnit) -> Result<(), String> {
         let item = &value.logical_outputs[0];
         if !matches!(
             item.class.as_str(),
-            "Material" | "MaterialInstance" | "MaterialParameterCollection"
+            "Material" | "MaterialInstance" | "MaterialParameterCollection" | "Map"
         ) {
             return Err("unsupported authored native asset class".into());
         }
         package(&item.logical_path)?;
         let primary = format!(
-            "content/Game/{}.uasset",
+            "content/Game/{}.{}",
             item.logical_path
                 .strip_prefix("/Game/")
-                .ok_or("nonGame asset")?
+                .ok_or("nonGame asset")?,
+            if item.class == "Map" { "umap" } else { "uasset" }
         );
         if !item
             .files
@@ -684,8 +704,51 @@ pub fn prepare(
     scope: &Path,
     execution: &UnrealExecutionContext,
 ) -> Result<PreparedUnrealLaunch, String> {
+    if unit.ingredients().op.kind == VERIFY {
+        return Err("native verification requires source-backed execution custody".into());
+    }
+    prepare_inner(unit, staged, sources, scope, execution)
+}
+
+/// Source-backed custody is private execution metadata, never a semantic parameter.
+pub fn prepare_verify(
+    unit: &PreparedUnit,
+    staged: &StagedJob,
+    sources: &SourceSnapshot,
+    scope: &Path,
+    execution: &UnrealExecutionContext,
+    authority: &crate::native_verify::NativeVerifyContext,
+) -> Result<PreparedUnrealLaunch, String> {
+    if unit.ingredients().op.kind != VERIFY {
+        return Err("verification context used for another operation".into());
+    }
+    let launch = prepare_inner(unit, staged, sources, scope, execution)?;
+    let carrier = authority.carrier(&launch.keepalive.root().join("Atelier.uproject"))?;
+    let directory = staged.job_dir().join(".unreal-runtime");
+    fs::create_dir_all(&directory).map_err(|e| e.to_string())?;
+    if fs::symlink_metadata(&directory).map_err(|e| e.to_string())?.file_type().is_symlink() {
+        return Err("linked native runtime scope".into());
+    }
+    use std::io::Write;
+    use std::os::unix::fs::OpenOptionsExt;
+    let mut file = fs::OpenOptions::new().write(true).create_new(true)
+        .mode(0o400).custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
+        .open(directory.join("native-verify.json")).map_err(|e| e.to_string())?;
+    file.write_all(&serde_json::to_vec(&carrier).map_err(|e| e.to_string())?)
+        .map_err(|e| e.to_string())?;
+    file.sync_all().map_err(|e| e.to_string())?;
+    Ok(launch)
+}
+
+fn prepare_inner(
+    unit: &PreparedUnit,
+    staged: &StagedJob,
+    sources: &SourceSnapshot,
+    scope: &Path,
+    execution: &UnrealExecutionContext,
+) -> Result<PreparedUnrealLaunch, String> {
     let ingredients = unit.ingredients();
-    if !matches!(ingredients.op.kind.as_str(), RAW_IMPORT | FINISH | AUTHOR)
+    if !matches!(ingredients.op.kind.as_str(), RAW_IMPORT | FINISH | AUTHOR | VERIFY)
         || ingredients.op.version != OP_VERSION
         || (ingredients.op.kind == RAW_IMPORT && ingredients.script != ENTRY)
     {
@@ -710,8 +773,9 @@ pub fn prepare(
     if declared_settings != execution.context.settings {
         return Err("loaded native settings differ from keyed settings".into());
     }
-    let packages = declared_packages(unit)?;
-    if packages.is_empty()
+    let verification = ingredients.op.kind == VERIFY;
+    let packages = if verification { BTreeSet::new() } else { declared_packages(unit)? };
+    if (!verification && packages.is_empty())
         || ingredients
             .logical_outputs
             .iter()
@@ -720,7 +784,7 @@ pub fn prepare(
         return Err("native unit needs complete explicit package outputs".into());
     }
     for output in &staged.request().outputs {
-        if !output.path.starts_with("content/Game/") {
+        if !verification && !output.path.starts_with("content/Game/") {
             return Err("native outputs must use the fixed C3 content namespace".into());
         }
     }
@@ -820,14 +884,14 @@ mod tests {
     fn native_registry_is_fixed_and_never_replaces_an_existing_definition() {
         let mut registry = OpRegistry::new();
         register(&mut registry, &BTreeMap::from([("source".into(), false)])).unwrap();
-        assert_eq!(registry.len(), 2);
+        assert_eq!(registry.len(), 4);
         assert!(registry[&(RAW_IMPORT.into(), OP_VERSION.into())].params["destination"].required);
         assert!(register(&mut registry, &BTreeMap::new()).is_err());
     }
 }
 
 pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Result<(), String> {
-    if [RAW_IMPORT, FINISH, AUTHOR]
+    if [RAW_IMPORT, FINISH, AUTHOR, VERIFY]
         .iter()
         .any(|kind| registry.contains_key(&(kind.to_string(), OP_VERSION.into())))
     {
@@ -851,10 +915,24 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
         "Material",
         "MaterialInstance",
         "MaterialParameterCollection",
+        "Map",
     ]
     .into_iter()
     .map(Into::into)
     .collect();
+    registry.insert((VERIFY.into(), OP_VERSION.into()), OpDefinition {
+        inputs: slots.iter().map(|(name, broad)| (name.clone(), InputRule {
+            role: InputRole::Content, required: false, allow_absent_file: false,
+            allow_selector: true, require_whole_reason: *broad,
+            item_classes: BTreeSet::from(["CookedPackage".into(), "Data".into()]),
+        })).collect(),
+        output_classes: BTreeSet::from(["Data".into()]),
+        params: BTreeMap::from([
+            ("package".into(), ParamRule {kind: ParamKind::String, required: true}),
+            ("mode".into(), ParamRule {kind: ParamKind::String, required: true}),
+            ("settings".into(), ParamRule {kind: ParamKind::Array, required: false}),
+        ]),
+    });
     registry.insert(
         (AUTHOR.into(), OP_VERSION.into()),
         OpDefinition {
@@ -929,6 +1007,7 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
         }
         for name in [
             "properties",
+            "args",
             "fbx",
             "package_sources",
             "partners",
