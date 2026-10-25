@@ -146,8 +146,16 @@ def _finite_bounds(value):
             and all(a <= b for a, b in zip(*value)))
 
 
+
+def selected_policy(value):
+    """Retain the exact JSON object from the keyed selected projection, including frozen values."""
+    if not hasattr(value, 'items'):
+        raise ValueError('Selected semantic metadata must be an explicit object')
+    return json.loads(json.dumps(dict(value), default=dict, sort_keys=True, allow_nan=False))
+
+
 def validate_export_receipt(receipt_bytes, primary_bytes, *, asset,
-                            primary_digest, payload_digest, facts, primary_name=None):
+                            primary_digest, payload_digest, facts, primary_name=None, native_policy=None):
     """Validate in-job receipt binding and binary framing, not native FBX geometry fidelity.
 
     The producer supplies the just-written bytes and their computed digests. The caller checks
@@ -178,7 +186,10 @@ def validate_export_receipt(receipt_bytes, primary_bytes, *, asset,
     metadata = receipt['metadata']
     expected = dict(geometry_sha256=payload_digest, slots=facts['slots'], polygons=facts['polygons'],
                     collision_hulls=facts['collision_hulls'], uv_channels=facts['uv_channels'])
-    if (metadata != expected or facts['asset'] != asset
+    if native_policy is not None:
+        expected['native_policy'] = selected_policy(native_policy)
+    if (json.dumps(metadata, sort_keys=True, allow_nan=False) != json.dumps(expected, sort_keys=True, allow_nan=False)
+            or facts['asset'] != asset
             or receipt['triangles'] != facts['triangles']
             or receipt['bounds'] != [facts['min'], facts['max']]):
         raise ValueError('Export receipt differs from its selected geometry payload')

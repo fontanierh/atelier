@@ -49,7 +49,7 @@ def steps(ctx):
         assets.append(graph.LogicalAsset('SM_BC_' + key, script,
             args=('--asset', key, '--builder', function, '--context', str(parameters),
                   '--rim', str(rim), '--paving-output', str(paving), '--query-output', str(query)),
-            inputs=tuple(sorted(code)), reads=('brinecove.rim_data',), suffix='.glb',
+            inputs=tuple(sorted(code)), reads=('brinecove.rim_data',), suffix='.glb', encoding='mesh_set',
             products=(Product('brinecove.query.SM_BC_' + key, (query,)), Product(product, (paving,)))))
     ground_script = REGION / 'plan_ground.py'
     ground_query = ctx.out / 'terrain/Brinecove/final.npz'
@@ -57,7 +57,7 @@ def steps(ctx):
     arguments = ['--rim', str(rim), '--query-output', str(ground_query), '--surface-output', str(surface)]
     for path in paving_files: arguments.extend(('--paving', str(path)))
     assets.append(graph.LogicalAsset('SM_BC_Ground', ground_script, args=tuple(arguments),
-        reads=('brinecove.rim_data', *paving_products), suffix='.glb',
+        reads=('brinecove.rim_data', *paving_products), suffix='.glb', encoding='mesh_set',
         products=(Product('brinecove.query.SM_BC_Ground', (surface,)), Product('terrain.Brinecove.final', (ground_query,)))))
     for slug in HEROES:
         name = 'SM_BC_Hero_' + ''.join(part.title() for part in slug.split('-'))

@@ -234,6 +234,8 @@ fn planner_contract_reserves_worker_visible_root_parent_and_bounds() {
     assert!(spec.validate_ingredients(&i).is_err());
     let mut invalid = spec.clone();
     invalid.group.encoding = PlanEncoding::MeshSet;
+    assert!(invalid.definition().is_ok());
+    invalid.group.encoding = PlanEncoding::EncodedGlb;
     assert!(invalid.definition().is_err());
     invalid = spec.clone();
     invalid.group.max_member_bytes = MAX_MESH_IR_BYTES + 1;
@@ -253,6 +255,15 @@ fn planner_contract_reserves_worker_visible_root_parent_and_bounds() {
 fn piece_contract_refuses_broad_extra_inputs_wrong_roles_formats_and_incomplete_auxiliary_sets() {
     let (_, unit, _) = prepared(b"planner", b"A", b"B");
     let spec = BlenderExportSpec::default();
+    let mut mesh_set = unit.ingredients().clone();
+    mesh_set
+        .params
+        .insert("payload_encoding".into(), "mesh_set".into());
+    mesh_set.params.insert(
+        "payload_metadata".into(),
+        serde_json::json!({"collision":true}),
+    );
+    assert!(spec.validate_ingredients(&mesh_set).is_ok());
     let mut glb = unit.ingredients().clone();
     glb.params.insert("format".into(), "glb".into());
     glb.logical_outputs[0].files[0].path = "asset.glb".into();
@@ -261,7 +272,7 @@ fn piece_contract_refuses_broad_extra_inputs_wrong_roles_formats_and_incomplete_
     assert!(spec.validate_ingredients(&glb).is_err());
     for (field, value) in [
         ("format", "glb"),
-        ("payload_encoding", "mesh_set"),
+        ("payload_encoding", "encoded_glb"),
         ("payload_role", "collision"),
     ] {
         let mut i = unit.ingredients().clone();
@@ -408,4 +419,84 @@ fn explicit_authored_partitions_still_require_complete_disjoint_face_ownership()
         }
         assert!(validate_plan_metadata(&broken).is_err(), "fault {fault}");
     }
+}
+
+#[test]
+fn mesh_set_metadata_preserves_heterogeneous_slots_and_exact_runtime_membership() {
+    let mut value = plan_metadata();
+    value.as_object_mut().unwrap().remove("partition");
+    value.as_object_mut().unwrap().remove("collision_owner");
+    value["kind"] = "mesh_set".into();
+    value["source_collision_hulls"] = 0.into();
+    value["metadata"] =
+        serde_json::json!({"Whole_A":{"collision":true},"Whole_B":{"collision":false}});
+    value["diagnostics"] = serde_json::json!({"count":2});
+    for row in value["pieces"].as_array_mut().unwrap() {
+        row.as_object_mut().unwrap().remove("source_faces");
+        row.as_object_mut()
+            .unwrap()
+            .remove("source_material_indices");
+        row["collision_hulls"] = 0.into();
+    }
+    let bytes = serde_json::to_vec(&value).unwrap();
+    assert_eq!(
+        parse_mesh_set_plan_metadata(&bytes, 1024 * 1024).unwrap(),
+        value
+    );
+    for fault in 0..6 {
+        let mut bad = value.clone();
+        match fault {
+            0 => {
+                bad["metadata"].as_object_mut().unwrap().remove("Whole_B");
+            }
+            1 => bad["slots"] = serde_json::json!(["One"]),
+            2 => bad["pieces"][0]["source_faces"] = serde_json::json!([0]),
+            3 => bad["pieces"][0]["collision_hulls"] = 1.into(),
+            4 => bad["source_polygons"] = 3.into(),
+            _ => bad["pieces"][0]["name"] = "Foreign".into(),
+        }
+        assert!(validate_mesh_set_metadata(&bad).is_err(), "fault {fault}");
+    }
+}
+
+#[test]
+fn selected_policy_receipt_matches_exact_keyed_object_and_types() {
+    let item = output("A");
+    let primary = sha256(b"FBX bytes");
+    let payload = sha256(b"selected geometry");
+    let policy =
+        serde_json::json!({"collision":true,"lods":false,"material_kinds":{"One":"opaque"}});
+    let mut value = serde_json::json!({"schema":1,"asset":"A","primary":"asset.fbx","triangles":1,"bounds":[[0,0,0],[1,1,0]],
+        "sha256":primary,"metadata":{"geometry_sha256":payload,"slots":["One"],"polygons":1,"collision_hulls":0,"uv_channels":[],"native_policy":policy}});
+    validate_receipt_metadata_with_policy(&value, &item, "A", &primary, &payload, Some(&policy))
+        .unwrap();
+    parse_export_receipt(&serde_json::to_vec(&value).unwrap()).unwrap();
+    assert!(validate_receipt_metadata(&value, &item, "A", &primary, &payload).is_err());
+    value["metadata"]["native_policy"]["collision"] = 1.into();
+    assert!(
+        validate_receipt_metadata_with_policy(
+            &value,
+            &item,
+            "A",
+            &primary,
+            &payload,
+            Some(&policy)
+        )
+        .is_err()
+    );
+    value["metadata"]
+        .as_object_mut()
+        .unwrap()
+        .remove("native_policy");
+    assert!(
+        validate_receipt_metadata_with_policy(
+            &value,
+            &item,
+            "A",
+            &primary,
+            &payload,
+            Some(&policy)
+        )
+        .is_err()
+    );
 }

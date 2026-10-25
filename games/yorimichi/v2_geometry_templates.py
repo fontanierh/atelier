@@ -58,7 +58,7 @@ def geometry_templates(rows, *, checkout):
                 owned = [p for p in declared['products'] if p['id'] == product] if declared else []
                 if len(owned) != 1 or owned[0]['paths'] != [location['path']]:
                     raise Unsupported(f'{producer}: logical parent differs from its declared product')
-                if encoding not in ('mesh_ir', 'encoded_glb'):
+                if encoding not in ('mesh_ir', 'mesh_set', 'encoded_glb'):
                     raise Unsupported(f'{producer}: unsupported geometry payload encoding {encoding}')
                 export_format = declared.get('export_format')
                 if export_format not in ('fbx', 'glb') or (encoding == 'encoded_glb' and export_format != 'glb'):

@@ -11,7 +11,7 @@ from pathlib import Path, PurePosixPath
 
 from atelier import mesh_ir, mesh_collision
 from atelier.export_manifest import TRIANGLE_LIMIT, name
-from .blender_validate import MAX_RECEIPT_BYTES, PLAN_FIELDS, MEMBER_FIELDS, decode_mesh_payload, mesh_facts, validate_member_row, validate_export_receipt, validate_mesh_options
+from .blender_validate import MAX_RECEIPT_BYTES, PLAN_FIELDS, MEMBER_FIELDS, decode_mesh_payload, mesh_facts, validate_member_row, validate_export_receipt, validate_mesh_options, selected_policy
 
 
 def _json(raw):
@@ -26,11 +26,13 @@ def _member(value):
     return value
 
 
-def verify_plan(root, *, parent, limits, output_format='fbx'):
+def verify_plan(root, *, parent, limits, output_format='fbx', plan_encoding='mesh_ir'):
     """@cc [owner:fontanierh,label:correctness] d2-producer-verifies-emitted-plan
     The producer MUST verify its complete emitted set before Completed, fully decoding each
     selected MeshIR with the existing decoder, binding hashes and preserving exact face/material/
-    collision ownership against the explicitly declared export format. Unknown, missing, aliased
+    collision ownership against the explicitly declared export format and plan encoding.
+    Mesh sets MUST retain independent object slot tables and the complete semantic roster;
+    they MUST NOT invent a shared face partition or material-index table. Unknown, missing, aliased
     or linked files and over-limit groups MUST fail.
     B2 MUST independently check the later frozen inventory and bindings; this is in-job proof only.
     See test_build_v2_blender_ops.py.
@@ -52,14 +54,20 @@ def verify_plan(root, *, parent, limits, output_format='fbx'):
     if not manifest_path.is_file() or manifest_path.stat().st_size > limits['max_manifest_bytes']:
         raise ValueError('Missing or oversized plan manifest')
     manifest = _json(manifest_path.read_bytes())
-    if (type(manifest) is not dict or set(manifest) != PLAN_FIELDS or type(manifest.get('schema')) is not int or manifest['schema'] != 1
-            or 'kind' in manifest or manifest.get('complete') is not True
+    if plan_encoding not in ('mesh_ir', 'mesh_set'):
+        raise ValueError('Unsupported declared geometry encoding')
+    mesh_set = plan_encoding == 'mesh_set'
+    fields = (PLAN_FIELDS - {'partition', 'collision_owner'} | {'kind', 'metadata', 'diagnostics'}
+              if mesh_set else PLAN_FIELDS)
+    if (type(manifest) is not dict or set(manifest) != fields or type(manifest.get('schema')) is not int or manifest['schema'] != 1
+            or (manifest.get('kind') != 'mesh_set' if mesh_set else 'kind' in manifest)
+            or manifest.get('complete') is not True
             or manifest.get('parent') != name(parent) or manifest.get('triangle_limit') != TRIANGLE_LIMIT
-            or manifest.get('partition') not in ('whole', 'spatial', 'logical', 'explicit')):
+            or (not mesh_set and manifest.get('partition') not in ('whole', 'spatial', 'logical', 'explicit'))):
         raise ValueError('Unsupported or incomplete MeshIR plan')
     if (type(manifest['source_triangles']) is not int or manifest['source_triangles'] <= 0
             or type(manifest['source_collision_hulls']) is not int or manifest['source_collision_hulls'] < 0
-            or (manifest['collision_owner'] is not None and type(manifest['collision_owner']) is not str)
+            or (manifest.get('collision_owner') is not None and type(manifest['collision_owner']) is not str)
             or not isinstance(manifest['slots'], list) or not manifest['slots']
             or any(type(slot) is not str or not slot for slot in manifest['slots'])
             or not isinstance(manifest['matrix'], list) or len(manifest['matrix']) != 4
@@ -70,14 +78,15 @@ def verify_plan(root, *, parent, limits, output_format='fbx'):
     rows = manifest.get('pieces')
     if not isinstance(rows, list) or not 0 < len(rows) <= limits['max_pieces']:
         raise ValueError('Invalid plan piece count')
-    names, files, faces = set(), {'plan.json'}, set()
+    names, files, faces, all_slots = set(), {'plan.json'}, set(), set()
+    member_fields = MEMBER_FIELDS - {'source_faces', 'source_material_indices'} if mesh_set else MEMBER_FIELDS
     total_bytes = manifest_path.stat().st_size
     triangles = polygons = 0
     source_polygons = manifest.get('source_polygons')
     if type(source_polygons) is not int or source_polygons <= 0:
         raise ValueError('Missing complete source polygon inventory')
     for row in rows:
-        if type(row) is not dict or set(row) != MEMBER_FIELDS:
+        if type(row) is not dict or set(row) != member_fields:
             raise ValueError('Invalid plan member')
         if (any(type(row[field]) is not int or row[field] < minimum
                 for field, minimum in [('triangles', 1), ('polygons', 1), ('collision_hulls', 0)])
@@ -86,9 +95,11 @@ def verify_plan(root, *, parent, limits, output_format='fbx'):
                        for field in ('min', 'max'))
                 or not isinstance(row['slots'], list) or not row['slots']
                 or any(type(slot) is not str or not slot for slot in row['slots'])
-                or not isinstance(row['source_material_indices'], list)):
+                or (not mesh_set and not isinstance(row['source_material_indices'], list))):
             raise ValueError('Mistyped piece metadata')
         asset = name(row.get('name'))
+        if mesh_set and not (asset == parent or asset.startswith(parent + '_')):
+            raise ValueError('Mesh-set member lies outside its declared parent')
         if asset.casefold() in names:
             raise ValueError('Aliased plan identity')
         names.add(asset.casefold())
@@ -104,12 +115,14 @@ def verify_plan(root, *, parent, limits, output_format='fbx'):
             raise ValueError('Emitted payload hash differs from the plan')
         facts = mesh_facts(raw, expected_asset=asset, output_format=output_format)
         validate_member_row(facts, row, manifest)
-        membership = row.get('source_faces')
-        if (not isinstance(membership, list) or len(membership) != facts['polygons']
-                or any(type(i) is not int or not 0 <= i < source_polygons for i in membership)
-                or membership != sorted(set(membership)) or faces.intersection(membership)):
-            raise ValueError('Missing, duplicated or overlapping source-face ownership')
-        faces.update(membership)
+        all_slots.update(facts['slots'])
+        if not mesh_set:
+            membership = row.get('source_faces')
+            if (not isinstance(membership, list) or len(membership) != facts['polygons']
+                    or any(type(i) is not int or not 0 <= i < source_polygons for i in membership)
+                    or membership != sorted(set(membership)) or faces.intersection(membership)):
+                raise ValueError('Missing, duplicated or overlapping source-face ownership')
+            faces.update(membership)
         triangles += facts['triangles']
         polygons += facts['polygons']
         total_bytes += len(raw)
@@ -118,14 +131,22 @@ def verify_plan(root, *, parent, limits, output_format='fbx'):
     if total_bytes > limits['max_total_bytes']:
         raise ValueError('Plan total byte budget exceeded')
     if (triangles != manifest.get('source_triangles') or polygons != source_polygons
-            or faces != set(range(source_polygons))):
+            or (not mesh_set and faces != set(range(source_polygons)))):
         raise ValueError('Incomplete geometry ownership')
     hulls = manifest.get('source_collision_hulls')
     if type(hulls) is not int or hulls < 0:
         raise ValueError('Invalid source collision inventory')
     if (hulls and manifest.get('collision_owner') != rows[0]['name']) or (not hulls and manifest.get('collision_owner') is not None):
         raise ValueError('Whole collision owner must be the explicit first piece')
-    if manifest['partition'] == 'whole' and [row['name'] for row in rows] != [parent]:
+    if mesh_set and (hulls != 0 or sorted(all_slots) != manifest['slots']
+                     or not isinstance(manifest['metadata'], dict)
+                     or set(manifest['metadata']) != {row['name'] for row in rows}
+                     or any(not isinstance(value, dict) for value in manifest['metadata'].values())
+                     or not isinstance(manifest['diagnostics'], dict)):
+        raise ValueError('Mesh-set material or semantic inventory is incomplete')
+    if mesh_set:
+        json.dumps({'metadata': manifest['metadata'], 'diagnostics': manifest['diagnostics']}, allow_nan=False)
+    if manifest.get('partition') == 'whole' and [row['name'] for row in rows] != [parent]:
         raise ValueError('Whole geometry must retain its existing whole owner')
     return manifest
 
@@ -177,9 +198,14 @@ def run_plan(context, producer):
 def run_export_piece(context):
     """Fully decode one selected payload, restore exactly its geometry and emit FBX + receipt."""
     output_format = context.params['format']
-    if (output_format not in ('fbx', 'glb') or context.params['payload_encoding'] != 'mesh_ir'
+    if (output_format not in ('fbx', 'glb') or context.params['payload_encoding'] not in ('mesh_ir', 'mesh_set')
             or context.params['payload_role'] != 'geometry' or set(context.inputs) != {'payload'}):
         raise ValueError('Only one selected MeshIR geometry payload to FBX or GLB is supported')
+    policy = None
+    if context.params['payload_encoding'] == 'mesh_set':
+        policy = selected_policy(context.params.get('payload_metadata'))
+    elif 'payload_metadata' in context.params:
+        raise ValueError('Semantic projection metadata requires its mesh-set encoding')
     root = context.inputs['payload']
     member = _member(context.params['payload_member'])
     if root is None or root.is_symlink() or not root.is_dir():
@@ -213,9 +239,11 @@ def run_export_piece(context):
                    bounds=[facts['min'], facts['max']], sha256=primary_digest,
                    metadata=dict(geometry_sha256=payload_digest, slots=meta['slots'], polygons=len(piece['faces']),
                                  collision_hulls=len(meta['collisions']), uv_channels=facts['uv_channels']))
+    if policy is not None:
+        receipt['metadata']['native_policy'] = policy
     raw = json.dumps(receipt, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
     validate_export_receipt(raw, primary, asset=asset, primary_digest=primary_digest,
-                            payload_digest=payload_digest, facts=facts, primary_name=primary_name)
+                            payload_digest=payload_digest, facts=facts, primary_name=primary_name, native_policy=policy)
     if len(raw) > MAX_RECEIPT_BYTES:
         raise ValueError('Export receipt exceeds its fixed bound')
     context.output('export.json').write_bytes(raw)
