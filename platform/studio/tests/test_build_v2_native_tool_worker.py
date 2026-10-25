@@ -794,3 +794,40 @@ def test_canonical_plugin_projection_refuses_unearned_roles_before_descriptor_ch
     with pytest.raises(tool.Refused):
         tool.canonical_project_plugins(view, project, protected)
     assert project.read_bytes() == original
+
+
+def test_uat_logs_and_actual_lifecycle_close_use_owned_runtime_with_readonly_job(tmp_path, monkeypatch):
+    runtime = tmp_path / tool.recipe_job.RUNTIME
+    runtime.mkdir()
+    monkeypatch.setattr(tool.ops, 'package_environment', lambda engine, env: dict(env))
+    tmp_path.chmod(0o555)
+    original = {'uebp_LogFolder': '/Library/Logs/ambient'}
+    def run(argv, **kwargs):
+        assert argv == ['RunUAT']
+        assert kwargs['env']['uebp_LogFolder'] == str(runtime / 'uat/logs')
+        (runtime / 'uat/logs/Log.txt').write_text('actual UAT role')
+    try:
+        tool.run_package(['RunUAT'], job_dir=tmp_path, engine=tmp_path / 'engine',
+                         cwd=runtime, environment=original, run=run)
+        assert json.loads((runtime / 'uat/zen-lifecycle.json').read_bytes())['schema'] == 1
+        assert not (tmp_path / 'zen-lifecycle.json').exists()
+        assert original == {'uebp_LogFolder': '/Library/Logs/ambient'}
+    finally:
+        tmp_path.chmod(0o755)
+
+
+def test_uat_first_failure_survives_secondary_lifecycle_close_error(tmp_path, monkeypatch):
+    (tmp_path / tool.recipe_job.RUNTIME).mkdir()
+    monkeypatch.setattr(tool.ops, 'package_environment', lambda engine, env: dict(env))
+    class Lifecycle:
+        def close(self):
+            raise PermissionError('secondary scratch failure')
+    monkeypatch.setattr(tool.ops, 'package_lifecycle', lambda *args: Lifecycle())
+    first = RuntimeError('first UAT setup failure')
+    def run(*args, **kwargs):
+        raise first
+    with pytest.raises(RuntimeError, match='first UAT setup failure') as caught:
+        tool.run_package(['RunUAT'], job_dir=tmp_path, engine=tmp_path / 'engine',
+                         cwd=tmp_path, environment={}, run=run)
+    assert caught.value is first
+    assert caught.value.__notes__ == ['UAT lifecycle close also failed: PermissionError']

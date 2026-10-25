@@ -888,6 +888,34 @@ def finalise_package(job, params, view, project, engine, job_dir, run, environme
 
 
 
+
+def run_package(argv, *, job_dir, engine, cwd, environment, run):
+    """@cc [owner:fontanierh,label:correctness;safety] owned-uat-operational-context
+    UAT logs and Zen lifetime reports MUST use fresh owned runtime scratch, never
+    ambient system paths or the immutable staged job root. Lifecycle close MUST
+    run on success and failure without masking the original UAT exception.
+    """
+    scope = job_dir / recipe_job.RUNTIME / 'uat'
+    scope.mkdir(mode=0o700)
+    logs = scope / 'logs'
+    logs.mkdir(mode=0o700)
+    environment = ops.package_environment(engine, environment)
+    # RunUAT.sh otherwise derives this from HOME, which is absent in the managed
+    # worker environment and consequently selects the system /Library/Logs root.
+    environment['uebp_LogFolder'] = str(logs)
+    lifecycle = ops.package_lifecycle(scope, engine, environment)
+    try:
+        run(argv, cwd=cwd, env=environment, lifecycle=lifecycle)
+    except BaseException as error:
+        try:
+            lifecycle.close()
+        except Exception as cleanup_error:
+            error.add_note('UAT lifecycle close also failed: ' + type(cleanup_error).__name__)
+        raise
+    else:
+        lifecycle.close()
+
+
 def compile_candidate(job, fresh, protected, candidate):
     """@cc [owner:fontanierh,label:correctness] incremental-compile-current-inputs
     A compile candidate MUST match every current declared input before UBT. Missing
@@ -1017,12 +1045,8 @@ def dispatch(job, job_dir, engine, run, *, source_key=None, zen_state_root=None,
         archive = _path(package_view, params['archive'])
         argv = ops.package_argv(engine, packaging_project, target, archive, cooked_root=package_cooked,
                                 cooked_files=inventory, configuration=configuration)
-        environment = ops.package_environment(engine, environment)
-        lifecycle = ops.package_lifecycle(job_dir, engine, environment)
-        try:
-            run(argv, cwd=package_view, env=environment, lifecycle=lifecycle)
-        finally:
-            lifecycle.close()
+        run_package(argv, job_dir=job_dir, engine=engine, cwd=package_view,
+                    environment=environment, run=run)
         ops.verify_cooked_files(package_cooked, inventory)
         if package_view != view:
             archive.rename(_path(view, params["archive"]))
