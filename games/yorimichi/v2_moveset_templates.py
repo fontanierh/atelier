@@ -4,8 +4,9 @@ Per import_adventure_moveset.py target unreal.<k>_adventure, the generated roste
 export Item becomes FileSet groups written by one projector each: ``clips`` (the merged library's clips, at
 adventure/bake.py FPS) and, on every character but the donor, ``own`` (the donor's [donor] clips and gestures
 retargeted onto it, at the donor's rate). The donor plays its own imported clips (natives['donor']) and declares
-no own group. Each selected child packages its FBX member; followers import it on the character's skeleton at the
-group's committed rate and finish it with the shared compression. The three speed blends, the merged definition and
+no own group. Each selected child unpacks its own member (FBX plus receipt, and its clip metadata); followers import it on the
+character's skeleton at the group's committed rate and finish it with the shared compression, each consuming only
+its own member, never the whole export. The three speed blends, the merged definition and
 the move record are the fixed units of v2_moveset_units, on the derived clip and own Items.
 ``natives = {reference: {skeleton, glide, equipment, record, export}, <id>: {skeleton, base}, donor: {package: ref}}``.
 """
@@ -151,7 +152,7 @@ def moveset_templates(rows, *, checkout, natives):
                      'commands': [_call(root, 'project', (root / base_out / 'export.json', root / base_out / 'fbx', root / folder,
                                                           kind, dict(rates)))],
                      'outputs': [{'path': folder, 'file': 'members.tree.tar', 'required': True}],
-                     'file_group': {'source': folder, 'parent': parent, 'extensions': ['.fbx']}}},
+                     'file_group': {'source': folder, 'parent': parent, 'extensions': ['.json']}}},
                  'outputs': [{'id': 'members', 'logical_path': f'/Internal/Moveset/{k}/{kind}', 'class': 'Data',
                               'destination': 'store', 'files': [{'path': 'members.tree.tar', 'required': True}]}],
                  'output_groups': [contract]}, inputs)
@@ -161,7 +162,7 @@ def moveset_templates(rows, *, checkout, natives):
             package = f'{dest}/A_$piece'
             raw = _Inputs(); raw.item('source', '$export', 'asset'); raw.native('skeleton', skeleton)
             finish = _Inputs(); finish.item('raw', '$previous', 'raw_animation'); finish.native('skeleton', skeleton)
-            finish.item('compression', COMPRESSION_UNIT, 'asset'); finish.data('export', export)
+            finish.item('compression', COMPRESSION_UNIT, 'asset'); finish.item('meta', '$export', 'asset')
             followers = [
                 {'id': '$export.raw', 'op': {'kind': 'unreal.raw_import', 'version': '1'}, 'script': OPS, 'code': ops_code,
                  'inputs': raw.items,
@@ -173,18 +174,19 @@ def moveset_templates(rows, *, checkout, natives):
                 {'id': '$export.finish', 'op': {'kind': 'unreal.finish', 'version': '1'}, 'script': SCRIPT, 'code': code,
                  'inputs': finish.items,
                  'params': {'op': 'finish', 'kind': 'animation', 'source': 'raw', 'destination': package,
-                            'input_roots': dict(finish.roots),
-                            'args': {'action': 'clip', 'name': '$piece', 'kind': kind, 'fps': rate, 'export': 'export',
+                            'input_roots': {'meta': {'archive_member': 'meta.tree.tar', 'name': 'meta'}},
+                            'args': {'action': 'clip', 'name': '$piece', 'kind': kind, 'fps': rate, 'meta': 'meta',
                                      'skeleton': 'skeleton', 'compression': 'compression'}},
                  'outputs': [{'id': 'animation', 'logical_path': package, 'class': 'Animation',
                               'destination': 'checkout', 'files': _files(package)}]}]
             templates.append({'producer': producer_id, 'group': 'members', 'unit_prefix': prefix, 'op': dict(RECIPE_OP),
                 'script': RECIPE, 'code': recipe_code, 'derive_payload': False, 'payload_slot': 'payload',
                 'staged_path': 'inputs/payload', 'output_class': 'Data', 'logical_namespace': f'/Internal/Moveset/{k}/Selected/{kind}',
-                'files': [{'path': 'member.tree.tar', 'required': True}],
+                'files': [{'path': 'member.tree.tar', 'required': True}, {'path': 'meta.tree.tar', 'required': True}],
                 'params': {'recipe': {'version': 1, 'paths': {'selected': 'inputs/payload'}, 'verify': None,
-                    'commands': [_call(root, 'select', (root / 'selected', root / 'member', '$piece'))],
-                    'outputs': [{'path': 'member', 'file': 'member.tree.tar', 'required': True}]}},
+                    'commands': [_call(root, 'select', (root / 'selected', root / 'member', root / 'meta', '$piece'))],
+                    'outputs': [{'path': 'member', 'file': 'member.tree.tar', 'required': True},
+                                {'path': 'meta', 'file': 'meta.tree.tar', 'required': True}]}},
                 'followers': [{'unit': unit, 'staged_inputs': {i['name']: 'inputs/' + i['name'] for i in unit['inputs']}}
                               for unit in followers]})
         clips, own = token(k, 'clips'), (token(k, 'own') if 'own' in rates else {})
