@@ -63,6 +63,21 @@ def _data(context, slot, name):
     return json.loads(path.read_bytes())
 
 
+def _roster(value):
+    """{name: slot}: a keyed slot map, or the provider's resolved derived_items {root, members: [{piece, slot}]}."""
+    if isinstance(value, dict) and set(value) == {'derived_items'}:
+        rows = value['derived_items'].get('members') if isinstance(value['derived_items'], dict) else None
+        if not isinstance(rows, list) or any(not isinstance(r, dict) or 'piece' not in r or 'slot' not in r for r in rows):
+            raise ValueError('Move-set derived roster is unresolved')
+        roster = {r['piece']: r['slot'] for r in rows}
+        if len(roster) != len(rows):
+            raise ValueError('Duplicate move-set derived member')
+        return roster
+    if not isinstance(value, dict):
+        raise ValueError('Move-set roster must be a slot map')
+    return dict(value)
+
+
 def _fresh(unreal, package):
     if unreal.EditorAssetLibrary.does_asset_exist(package):
         raise ValueError('Move-set destination must be fresh: ' + package)
@@ -138,6 +153,12 @@ def clip(context, unreal, args):
         raise ValueError('Clip duplicate failed: ' + destination)
     if sequence.get_editor_property('skeleton') != skeleton:
         raise ValueError('Clip is not on the declared skeleton: ' + destination)
+    if 'frames' not in args:
+        # A derived member: its frames and rate are the declared export's entry for it.
+        entry = _data(context, args['export'], 'export.json')[args['kind']][args['name']]
+        if entry['fps'] != args['fps']:
+            raise ValueError('Clip rate differs from its declared group: ' + args['name'])
+        args = {**args, 'frames': entry['frames']}
     length = sequence.get_editor_property('sequence_length')
     if abs(length - args['frames'] / args['fps']) >= .002:
         raise ValueError(f'Clip length {length} differs from {args["frames"]} frames at {args["fps"]} fps')
@@ -163,7 +184,7 @@ def blend(context, unreal, args):
     config, reference = _sources(context, args)
     size = config['body'] / config['reference_scale']
     samples = reference['moves']['blends'][args['kind']]
-    clips = {name: slot for name, slot in args['clips'].items()}
+    clips = _roster(args['clips'])
     if any(sample['clip'] not in clips for sample in samples):
         raise ValueError('A blend sample has no declared finished clip')
     skeleton = _load(unreal, context, args['skeleton'])
@@ -177,8 +198,8 @@ def blend(context, unreal, args):
 
 
 def _clips(unreal, context, args):
-    clips = {name: _load(unreal, context, slot) for name, slot in args['clips'].items()}
-    clips.update({'Own' + name: _load(unreal, context, slot) for name, slot in args['own'].items()})
+    clips = {name: _load(unreal, context, slot) for name, slot in _roster(args['clips']).items()}
+    clips.update({'Own' + name: _load(unreal, context, slot) for name, slot in _roster(args['own']).items()})
     return clips
 
 
