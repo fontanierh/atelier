@@ -43,6 +43,7 @@ def test_global_source_binds_actual_modules_sources_and_fixed_engine_seed():
     assert {p.relative_to(ROOT).as_posix() for p in (ROOT / 'games/yorimichi/unreal/Config').rglob('*') if p.is_file()} <= sources
     compiled = [i for i in unit['inputs'] if i['source']['kind'] == 'item']
     assert len(compiled) == 2 and all(i['whole'] for i in compiled)
+    assert all(incoming.get('whole') for incoming in unit['inputs'])  # NativeTool admission includes source File roles.
     assert not any('Binaries' in p for p in sources)
     assert len([p for p in unit['code'] if p.startswith('platform/build-v2/unreal/AtelierBuildWorker/')]) == 8
     assert not any(key in unit['params'] for key in ('source_key', 'namespace', 'receipt'))

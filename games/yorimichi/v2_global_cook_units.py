@@ -58,7 +58,8 @@ def author_unit(*, checkout, editor, plugins, data=()):
         actual = root / path
         if not actual.is_file() or actual.is_symlink() or actual.resolve() != actual:
             raise ValueError('global cook source is missing or aliased: ' + path)
-        inputs.append({'role': 'content', 'name': name, 'source': {'kind': 'file', 'path': path}})
+        inputs.append({'role': 'content', 'name': name, 'source': {'kind': 'file', 'path': path},
+                       'whole': 'The stock cooker consumes this complete project, Config or plugin descriptor source file.'})
         paths[path] = 'inputs/' + name
     def compiled(name, reference, destination):
         file = _produced(reference)
