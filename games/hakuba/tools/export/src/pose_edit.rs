@@ -1,9 +1,9 @@
-//! Editing poses: turning bones with everything below them, moving the body, and bending legs to reach a goal. The
-//! retarget and every animation's changes share these.
+//! Changing a pose: turning bones with everything below them, moving the body, and bending legs so the feet land on
+//! chosen spots. The retarget and every animation's changes share these.
 
 use glam::{DMat3, DVec3};
 
-use crate::pose::{Joint, Pose, hinge_frame, level, place};
+use crate::pose::{Joint, Pose, hinge_frame, level, place, turn};
 use crate::rig::{self, RIG};
 
 /// How far a leg may straighten, as a fraction of its full length: a straight leg has no bend to aim its knee by.
@@ -25,11 +25,32 @@ impl Leg {
         Self { thigh: bone("thigh"), shin: bone("shin"), foot: bone("foot"), toe: bone("toe") }
     }
 
+    /// Which way the knee sticks out from the straight line between the hip and the ankle in `pose`.
+    pub fn knee_direction(&self, pose: &Pose) -> DVec3 {
+        let position = |i: usize| pose[i].unwrap().position;
+        let along = (position(self.foot) - position(self.thigh)).normalize();
+        let bent = position(self.shin) - position(self.thigh);
+        bent - along * bent.dot(along)
+    }
+
     /// The thigh's and the shin's lengths.
     fn lengths(&self, rest: &Pose) -> (f64, f64) {
         let position = |i: usize| rest[i].unwrap().position;
         (position(self.thigh).distance(position(self.shin)), position(self.shin).distance(position(self.foot)))
     }
+}
+
+/// The body's left in `pose`: level, from the right shoulder to the left.
+pub fn body_left(pose: &Pose) -> DVec3 {
+    let position = |name: &str| pose[rig::index(name)].unwrap().position;
+    level(position("upper_arm_l") - position("upper_arm_r")).normalize()
+}
+
+/// The turn, for [`repose`], that bends bone `i` forward by `degrees` about the body's `left`, taken in the bone's
+/// parent's frame in `pose`.
+pub fn bend_forward(pose: &Pose, i: usize, left: DVec3, degrees: f64) -> (usize, DMat3) {
+    let parent = rig::parent(i).expect("only the pelvis has no parent");
+    (i, turn(pose[parent].unwrap().rotation.transpose() * left, degrees))
 }
 
 /// `pose` with its pelvis moved by `shift` and each bone in `turns` turned by its rotation, given in the bone's parent
@@ -52,8 +73,31 @@ pub fn repose(pose: &Pose, rest: &Pose, shift: DVec3, turns: &[(usize, DMat3)]) 
     moved
 }
 
+/// A foot to put on a spot: its leg, where its ankle goes, which way its knee points, and how far the knee then turns
+/// about the line from the hip to the ankle.
+pub struct Foot {
+    pub leg: Leg,
+    pub ankle: DVec3,
+    pub knee: DVec3,
+    pub knee_turn_deg: f64,
+}
+
+/// Puts each foot's ankle on its spot: lowers the whole `pose` as far as the legs need to reach, then bends each leg.
+/// Returns how far the worst ankle lands from its spot.
+pub fn plant(pose: &mut Pose, rest: &Pose, feet: &[Foot]) -> f64 {
+    let goals: Vec<(Leg, DVec3)> = feet.iter().map(|foot| (foot.leg, foot.ankle)).collect();
+    lower_to_reach(pose, rest, &goals);
+    let mut worst: f64 = 0.0;
+    for foot in feet {
+        let axis = (foot.ankle - pose[foot.leg.thigh].unwrap().position).normalize();
+        let pole = turn(axis, foot.knee_turn_deg) * foot.knee;
+        worst = worst.max(bend(pose, rest, foot.leg, foot.ankle, pole));
+    }
+    worst
+}
+
 /// Lowers the whole `pose` as far as the leg that needs it most must go to reach its goal, and no further.
-pub fn lower_to_reach(pose: &mut Pose, rest: &Pose, goals: &[(Leg, DVec3)]) {
+fn lower_to_reach(pose: &mut Pose, rest: &Pose, goals: &[(Leg, DVec3)]) {
     let mut drop: f64 = 0.0;
     for (leg, goal) in goals {
         let (upper, lower) = leg.lengths(rest);

@@ -1,10 +1,8 @@
 //! The idle: the skeleton its source clip is on, and how a character changes it.
 
 use anyhow::{Result, bail};
-use glam::DMat3;
-
-use crate::pose::{Pose, UP, level, turn};
-use crate::pose_edit::{Leg, bend, lower_to_reach, repose};
+use crate::pose::{Pose, UP};
+use crate::pose_edit::{Foot, Leg, bend_forward, body_left, plant, repose};
 use crate::rig::{self, Bones, Fingers, Limbs, Skeleton};
 
 /// The skeleton of `source.glb`: which of its bones plays each rig bone. It has no bone between its spine and chest.
@@ -102,44 +100,33 @@ pub fn apply(stance: &Stance, rest: &Pose, frames: &mut [Pose]) -> Result<()> {
     if frames.len() <= REFERENCE_FRAME {
         bail!("the idle is shorter than the stance's reference frame");
     }
-    let bone = rig::index;
     let reference = frames[REFERENCE_FRAME].clone();
-    let at = |pose: &Pose, i: usize| pose[i].unwrap();
-    let left = level(at(&reference, bone("upper_arm_l")).position - at(&reference, bone("upper_arm_r")).position).normalize();
+    let left = body_left(&reference);
     let shift = left.cross(UP) * stance.hips_forward_cm / 100.0;
-    // Each turn bends its bone forward, about the body's left in the bone's parent frame.
-    let turns: Vec<(usize, DMat3)> = [
+    let turns = [
         ("spine", stance.lean_deg),
         ("spine_mid", stance.upper_back_deg),
         ("upper_arm_l", stance.arm_swing_deg[0]),
         ("upper_arm_r", stance.arm_swing_deg[1]),
     ]
-    .iter()
-    .map(|&(name, degrees)| {
-        let parent = rig::parent(bone(name)).unwrap();
-        (bone(name), turn(at(&reference, parent).rotation.transpose() * left, degrees))
-    })
-    .collect();
-    // Each leg, its side's sign along the left, and the direction its knee bends toward in the reference frame.
-    let legs = [(Leg::on("l"), 1.0), (Leg::on("r"), -1.0)].map(|(leg, sign)| {
-        let (hip, knee) = (at(&reference, leg.thigh).position, at(&reference, leg.shin).position);
-        let along = (at(&reference, leg.foot).position - hip).normalize();
-        let bent = knee - hip;
-        (leg, sign, bent - along * bent.dot(along))
-    });
-    let reference_pelvis = at(&reference, bone("pelvis")).rotation;
+    .map(|(name, degrees)| bend_forward(&reference, rig::index(name), left, degrees));
+    // Each leg, its side (1 on the left), and which way its knee points in the reference frame.
+    let legs = [(Leg::on("l"), 1.0), (Leg::on("r"), -1.0)].map(|(leg, side)| (leg, side, leg.knee_direction(&reference)));
+    let pelvis = rig::index("pelvis");
+    let reference_pelvis = reference[pelvis].unwrap().rotation;
 
     let mut worst: f64 = 0.0;
     for frame in frames.iter_mut() {
-        let goals = legs.map(|(leg, sign, _)| (leg, at(frame, leg.foot).position + left * sign * stance.foot_spacing_cm / 200.0));
-        let pelvis_turn = at(frame, bone("pelvis")).rotation * reference_pelvis.transpose();
+        // The knees follow the pelvis's turn since the reference frame.
+        let pelvis_turn = frame[pelvis].unwrap().rotation * reference_pelvis.transpose();
+        let feet = legs.map(|(leg, side, knee)| Foot {
+            leg,
+            ankle: frame[leg.foot].unwrap().position + left * side * stance.foot_spacing_cm / 200.0,
+            knee: pelvis_turn * knee,
+            knee_turn_deg: -side * stance.knees_out_deg,
+        });
         *frame = repose(frame, rest, shift, &turns);
-        lower_to_reach(frame, rest, &goals);
-        for ((leg, sign, knee), (_, goal)) in legs.iter().zip(goals) {
-            let axis = (goal - at(frame, leg.thigh).position).normalize();
-            let pole = turn(axis, -sign * stance.knees_out_deg) * (pelvis_turn * *knee);
-            worst = worst.max(bend(frame, rest, *leg, goal, pole));
-        }
+        worst = worst.max(plant(frame, rest, &feet));
     }
     if worst > ANKLE_TOLERANCE {
         bail!("the stance misses an ankle by {:.3} mm", worst * 1000.0);
