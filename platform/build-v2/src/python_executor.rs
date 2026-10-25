@@ -1213,6 +1213,7 @@ impl<L: WorkerLauncher + Send> PythonExecutor<L> {
             });
         }
         cancel.close();
+        let (published, records) = std::sync::mpsc::channel();
         let result = std::thread::scope(|scope| {
             let launcher = &mut self.launcher;
             let mut tickets: BTreeMap<_, _> = work
@@ -1225,7 +1226,6 @@ impl<L: WorkerLauncher + Send> PythonExecutor<L> {
             let jobs = &jobs;
             let launches = &launches;
             let driver = scope.spawn(move || {
-                let (published, _records) = std::sync::mpsc::channel();
                 let mut previous: Option<usize> = None;
                 worker_lifecycle::run_session_ready_checked(
                     launcher,
@@ -1285,6 +1285,16 @@ impl<L: WorkerLauncher + Send> PythonExecutor<L> {
                 .map_err(|e| format!("{e:?}"))
             });
             while !driver.is_finished() {
+                if records
+                    .try_iter()
+                    .any(|record: crate::session_lifecycle::UnitRecord| {
+                        record.outcome.end != End::Completed
+                            || record.abort.is_some()
+                            || record.refused.is_some()
+                    })
+                {
+                    cancel.cancel_all();
+                }
                 if control.cancelled() {
                     cancel.cancel_all();
                 }

@@ -811,13 +811,15 @@ class Worker:
                 removed.append(path)
             for name in folders:
                 Path(directory, name).rmdir()
-        if removed:
-            self.editor.forget(removed)
         remaining = self.editor.unload(sorted(touched | set(self.editor.loaded_game_packages())))
         if remaining:
             problems.append(f'packages still loaded after unload: {remaining}')
         if self.editor.loaded_game_packages():
             problems.append(f'/Game packages still loaded: {self.editor.loaded_game_packages()}')
+        # A force rescan while duplicate/import objects are still loaded can rediscover
+        # those in-memory assets. Remove their disk entries only after synchronous GC.
+        if removed:
+            self.editor.forget(removed)
         if self.editor.registry_game_assets():
             problems.append('the asset registry still lists /Game assets')
         before = getattr(self, 'settings', None)
