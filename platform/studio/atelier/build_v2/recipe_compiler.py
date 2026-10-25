@@ -262,6 +262,48 @@ def recipe_steps(game, *, checkout, build_root):
     return module.steps(context)
 
 
+def compile_source_prerequisites(game, *, checkout, build_root):
+    """Select the real source work required by the usual package target.
+
+    This selector is production prerequisite work, not full package completion.
+    It neither creates a synthetic successful join nor adopts previous stamps.
+    """
+    from dataclasses import replace
+    from atelier.build_products import Graph
+    from .recipe_dependencies import extract
+    from .recipe_external_inputs import import_external_inputs
+    from atelier import paths
+    import importlib.util
+    from pathlib import Path
+    steps = recipe_steps(game, checkout=checkout, build_root=build_root)
+    selected = Graph(steps).select(('unreal.package',))
+    rows = extract(selected, checkout=checkout, build_root=build_root)
+    blocked = {row['id'] for row in rows if row['id'].startswith('unreal.')}
+    while True:
+        extra = {row['id'] for row in rows if any(parent in blocked for parent in
+            (*row['needs'], *row['after'], *(read['producer'] for read in row['reads']),
+             *(read['producer'] for read in row.get('references', []))))}
+        if extra <= blocked:
+            break
+        blocked |= extra
+    rows = [row for row in rows if row['id'] not in blocked]
+    if any(any(command['kind'].startswith('Unreal') or command['kind'] == 'PackageArchive'
+               for command in row['commands']) for row in rows):
+        raise Unsupported('source prerequisite selector contains a native command')
+    rows, _receipt = import_external_inputs(rows, checkout=checkout, source_cache=paths.cache_dir(create=False))
+    path = Path(checkout) / 'games' / game / 'v2_geometry_templates.py'
+    spec = importlib.util.spec_from_file_location('atelier_source_templates_' + game, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    geometry = module.geometry_templates(rows, checkout=checkout)
+    rows = module.apply_derived(rows, geometry['derived'])
+    ids = tuple(row['id'] for row in rows)
+    _, actual_targets = _without_joins(rows, ids)
+    marker = compile_rows(rows, project=game, targets=actual_targets, checkout=checkout,
+        install_roots=(f'build/{game}',), geometry=geometry)
+    return replace(marker, unit='world.source-prerequisites', selection_targets=actual_targets)
+
+
 def compile_game(game, *, checkout, build_root, targets=('unreal.package',)):
     """Compose authored declarations; all execution remains in the v2 engine."""
     from atelier.build_products import Graph

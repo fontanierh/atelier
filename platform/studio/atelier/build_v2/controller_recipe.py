@@ -15,13 +15,14 @@ class ControllerTarget:
     content_slots: dict
     allowed_install_roots: tuple
     templates: tuple = ()
+    selection_targets: tuple = ()
 
     def request(self, checkout):
         """Strict Rust control data; this Python layer computes no item identity."""
         value = {
             'version': 1, 'checkout': str(checkout), 'project': self.project,
             'allowed_install_roots': list(self.allowed_install_roots),
-            'declaration': self.declaration, 'targets': [self.unit],
+            'declaration': self.declaration, 'targets': list(self.selection_targets or (self.unit,)),
             'data_contract': {'content_slots': self.content_slots},
             'staged_inputs': self.staged_inputs,
         }
@@ -102,13 +103,16 @@ class ControllerSelection:
                 if name in slots and slots[name] != value:
                     raise ValueError('conflicting v2 content contract: ' + name)
                 slots[name] = value
-        if any(name not in units for name in self.targets):
+        aliases = {member.unit: member.selection_targets for member in self.members
+                   if member.selection_targets}
+        selected = tuple(dict.fromkeys(unit for name in self.targets for unit in aliases.get(name, (name,))))
+        if any(name not in units for name in selected):
             raise ValueError('selected v2 target is not declared')
         version, source, project, header = base
         result = {'version': version, 'checkout': source, 'project': project,
                 'allowed_install_roots': sorted(roots),
                 'declaration': {**header, 'units': list(units.values())},
-                'targets': list(self.targets), 'data_contract': {'content_slots': slots},
+                'targets': list(selected), 'data_contract': {'content_slots': slots},
                 'staged_inputs': staged}
         if templates:
             result['templates'] = list(templates.values())
