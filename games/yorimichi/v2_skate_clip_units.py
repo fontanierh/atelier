@@ -178,7 +178,7 @@ def skate_clip_units(rows, *, checkout):
                  'commands': [_call(root, 'project', (root / package, root / MANIFEST, root / SCRIPTS, root / generated, bank))],
                  'outputs': [{'path': generated, 'kind': 'tree', 'file': 'members.tree.tar', 'required': True}],
                  'file_group': {'source': generated, 'parent': f'SkateRide_B{bank}', 'extensions': ['.json']}}},
-             'outputs': [{'id': 'members', 'logical_path': f'/Internal/SkateRide/B{bank}', 'class': 'Data',
+             'outputs': [{'id': 'archive', 'logical_path': f'/Internal/SkateRide/B{bank}', 'class': 'Data',
                           'destination': 'store', 'files': [{'path': 'members.tree.tar', 'required': True}]}],
              'output_groups': [contract]}, [deepcopy(whole), {'role': 'content', 'name': 'manifest',
                                                               'source': {'kind': 'file', 'path': MANIFEST}}])
@@ -235,7 +235,7 @@ def skate_clip_units(rows, *, checkout):
                 'outputs': [{'path': 'member', 'kind': 'tree', 'file': 'member.tree.tar', 'required': True}]}},
             'followers': [{'unit': u, 'staged_inputs': {i['name']: 'inputs/' + i['name'] for i in u['inputs']}}
                           for u in (clip_unit, verify_unit)]})
-    members_inputs = {bank: _item(f'members_b{bank}', f'skate_clips.members.b{bank}', 'members') for bank in banks}
+    members_inputs = {bank: _item(f'members_b{bank}', f'skate_clips.members.b{bank}', 'archive') for bank in banks}
     members_roots = {f'members_b{bank}': {'archive_member': 'members.tree.tar', 'name': f'members_b{bank}'} for bank in banks}
     import_constants = _body(root).constants(root / ORIGINALS[0], ('STILLS', 'CONTROL'))
     where = {name: bank for bank, names in banks.items() for name in names}

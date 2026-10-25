@@ -210,7 +210,7 @@ def attach_followers(geometry, *, rows, checkout):
              'verify': None, 'commands': [_call(root, 'project', (root / REGION, sorted(specs), root / generated))],
              'outputs': [{'path': generated, 'kind': 'tree', 'file': 'members.tree.tar', 'required': True}],
              'file_group': {'source': generated, 'parent': 'Hippodrome_paints', 'extensions': ['.json']}}},
-         'outputs': [{'id': 'members', 'logical_path': '/Internal/Hippodrome/paints', 'class': 'Data',
+         'outputs': [{'id': 'archive', 'logical_path': '/Internal/Hippodrome/paints', 'class': 'Data',
                       'destination': 'store', 'files': [{'path': 'members.tree.tar', 'required': True}]}],
          'output_groups': [contract]}, [whole])
     groups = {'hippodrome.members.paints': {'contract': contract, 'source': generated}}

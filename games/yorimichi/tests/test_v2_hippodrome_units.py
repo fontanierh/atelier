@@ -51,7 +51,10 @@ def actual():
 
 @pytest.fixture(scope='module')
 def declared(actual):
-    return units.attach_followers(actual[1], rows=actual[0], checkout=ROOT)
+    result = units.attach_followers(actual[1], rows=actual[0], checkout=ROOT)
+    for unit in result['units']:
+        assert not {o['id'] for o in unit['outputs']} & {g['id'] for g in unit.get('output_groups', [])}
+    return result
 
 
 def test_every_child_and_owner_from_the_actual_rows(declared):

@@ -144,7 +144,7 @@ def fox_units(rows, *, checkout, natives):
                  'commands': [_call(root, 'project', (*args, root / generated, kind))],
                  'outputs': [{'path': generated, 'kind': 'tree', 'file': 'members.tree.tar', 'required': True}],
                  'file_group': {'source': generated, 'parent': f'FoxHunter_{kind}', 'extensions': ['.json']}}},
-             'outputs': [{'id': 'members', 'logical_path': f'/Internal/FoxHunter/{kind}', 'class': 'Data',
+             'outputs': [{'id': 'archive', 'logical_path': f'/Internal/FoxHunter/{kind}', 'class': 'Data',
                           'destination': 'store', 'files': [{'path': 'members.tree.tar', 'required': True}]}],
              'output_groups': [contract]}, deepcopy(sources))
         groups[unit_id] = {'contract': contract, 'source': generated}

@@ -60,7 +60,7 @@ def megapark_templates(rows,*,checkout,natives=None):
         projected.append({'id':producer,'op':{'kind':'recipe.python','version':'1'},'script':RECIPE,'code':sorted(code),'inputs':deepcopy(incoming),
             'params':{'file_root':'output/files','recipe':{'version':1,'paths':dict(paths),'commands':[_call(root,'project',(root/park.BUILD/'build.json',root/park.BUILD/'textures',root/source_map,root/folder,kind,tuple(park.restyled(root))))],
                 'outputs':[{'kind':'tree','path':folder,'file':'members.tree.tar','required':True}],'verify':None,'file_group':{'source':folder,'parent':parent,'extensions':['.json']}}},
-            'outputs':[{'id':'members','logical_path':'/Internal/MegaPark/'+kind,'class':'Data','destination':'store','files':[{'path':'members.tree.tar','required':True}]}],'output_groups':[contract]})
+            'outputs':[{'id':'archive','logical_path':'/Internal/MegaPark/'+kind,'class':'Data','destination':'store','files':[{'path':'members.tree.tar','required':True}]}],'output_groups':[contract]})
         groups[producer]={'contract':contract,'source':folder}
     packages=fixed['packages'];native_inputs=[park._native(ref) for ref in packages.values() if ref['package']!=park.LEVEL]
     native_by_path={ref['package']:park._native(ref)['name'] for ref in packages.values() if ref['package']!=park.LEVEL}

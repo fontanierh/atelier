@@ -45,7 +45,15 @@ def rows():
 
 @pytest.fixture(scope='module')
 def declared(rows):
-    return units.skate_clip_units(rows, checkout=ROOT)
+    result = units.skate_clip_units(rows, checkout=ROOT)
+    by_id = {unit['id']: unit for unit in result['units']}
+    for unit in result['units']:
+        assert not {o['id'] for o in unit['outputs']} & {g['id'] for g in unit.get('output_groups', [])}
+        for incoming in unit['inputs']:
+            source = incoming['source']
+            if source.get('kind') == 'item' and source.get('unit', '').startswith('skate_clips.members.'):
+                assert source['item'] in {o['id'] for o in by_id[source['unit']]['outputs']}
+    return result
 
 
 def test_every_owner_from_the_actual_rows(declared):

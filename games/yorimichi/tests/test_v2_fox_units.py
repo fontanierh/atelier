@@ -46,7 +46,10 @@ def rows():
 
 @pytest.fixture(scope='module')
 def declared(rows):
-    return units.fox_units(rows, checkout=ROOT, natives={'compression': COMPRESSION})
+    result = units.fox_units(rows, checkout=ROOT, natives={'compression': COMPRESSION})
+    for unit in result['units']:
+        assert not {o['id'] for o in unit['outputs']} & {g['id'] for g in unit.get('output_groups', [])}
+    return result
 
 
 def test_every_package_from_the_actual_rows(declared):

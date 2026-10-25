@@ -28,6 +28,8 @@ def bundle(rows):return templates.megapark_templates(rows,checkout=ROOT)
 
 
 def test_actual_cold_bundle_has_fixed_texture_owners_and_generated_author_template(rows,bundle):
+    for unit in bundle['units']:
+        assert not {o['id'] for o in unit['outputs']} & {g['id'] for g in unit.get('output_groups', [])}
     assert len(bundle['units'])==825 and len(bundle['packages'])==413 and len(bundle['templates'])==1
     by_id={u['id']:u for u in bundle['units']}
     assert sum(u['id'].startswith('unreal.megapark.texture.raw.') for u in bundle['units'])==409
