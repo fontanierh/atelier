@@ -68,6 +68,32 @@ def test_python_baseline_module_replacement_refuses_resident_reset(tmp_path, mon
         state.restore(tmp_path)
 
 
+def test_registry_rescan_follows_actual_package_unload_and_synchronous_gc(tmp_path):
+    value, project = worker(tmp_path)
+    source = project / 'Content/Raw.uasset'
+    source.write_bytes(b'owned input fixture')
+    events = []
+    class Registry:
+        loaded = True
+        stale = True
+        def loaded_game_packages(self):
+            return ['/Game/Raw'] if self.loaded else []
+        def unload(self, packages):
+            assert packages == ['/Game/Raw'] and not source.exists()
+            events.append('unload-and-gc')
+            self.loaded = False
+            return []
+        def forget(self, files):
+            assert files == [source]
+            events.append('rescan')
+            self.stale = self.loaded
+        def registry_game_assets(self):
+            return int(self.stale)
+    value.editor = Registry()
+    assert value.reset(job(tmp_path, []), {'/Game/Raw'}, [], unreal_worker._PythonState()) is None
+    assert events == ['unload-and-gc', 'rescan']
+
+
 def test_protocol_descriptors_must_appear_once_and_be_pipes(tmp_path):
     read, write = os.pipe()
     try:
