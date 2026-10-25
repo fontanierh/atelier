@@ -195,7 +195,7 @@ def reference_units(rows, *, checkout, natives):
          'params': {'input_roots': {'meta': dict(meta_root)}, 'settings': [],
                     'args': {'action': 'instance', 'name': '$piece', 'meta': 'meta', 'folder': MATERIALS,
                              'masters': {'false': 'master_false', 'true': 'master_true'}, 'images': deepcopy(images)}},
-         'outputs': [_output('asset', f'{MATERIALS}/MI_$piece', 'MaterialInstanceConstant')]}], files=('meta',))
+         'outputs': [_output('asset', f'{MATERIALS}/MI_$piece', 'MaterialInstance')]}], files=('meta',))
     raw_clip = '/Game/_Raw/Adventure/Reference/$piece'   # raw glTF: the destination names the one animation
     template('clips', [
         {'id': '$export.raw', 'op': {'kind': 'unreal.raw_import', 'version': '1'}, 'script': OPS, 'code': ops_code,
