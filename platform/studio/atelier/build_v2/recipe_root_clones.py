@@ -1,8 +1,10 @@
 """Independent APFS clones of one SDK group's identical unpacked recipe ROOTs.
 
-A batch can unpack the same large archive into many job views. After each view's own verified unpack, this
-replaces the second and later copies' files with independent clones of one private snapshot, so their bytes
-share storage until written. It is execution context for one group: never adopted, never persistent CAS.
+A batch can unpack the same large archive into many job views. ``materialize`` stands in for a view's unpack:
+the first directory ROOT of an archive digest is byte-unpacked once and becomes a private snapshot, and later
+ones are built only from independent clones of it. ``share`` instead replaces the files of a ROOT that was
+already unpacked. Either way the copies share storage until written. It is execution context for one group:
+never adopted, never persistent CAS.
 """
 import ctypes
 import hashlib
@@ -104,12 +106,16 @@ def archive_authority(archive):
 
 class CommonRootClones:
     """@cc [owner:fontanierh,label:correctness;safety] verified-common-root-clones
-    Sharing MUST key on the actual archive bytes' digest and its complete manifest, never on Item identity,
-    and MUST first prove the current ROOT inventories exactly to that manifest. The first such ROOT is cloned
-    into a private immutable snapshot inside this instance's own fresh scope. A later exact ROOT MUST replace
-    only its own equivalent regular files, each with an independent clone carrying the manifest mode, and MUST
-    re-inventory to the manifest afterwards. Changed, aliased or malformed archives, ROOTs or snapshots, and any
-    clone failure, MUST refuse without a byte-copy fallback, links or changes outside the ROOT's own files.
+    Reuse MUST key on the actual archive bytes' digest and its complete manifest, never on Item identity.
+    The snapshot of a digest MUST come from a directory ROOT that inventories exactly to that manifest: for
+    ``materialize``, the original codec's validated unpack; for ``share``, the current ROOT, proven first. It is
+    a private immutable snapshot inside this instance's own fresh scope. A later ``materialize`` of the same
+    digest MUST build its fresh destination only from independent clones carrying the manifest modes, never
+    unpacking or copying bytes, and MUST inventory exactly to the manifest before it is returned. A later
+    ``share`` MUST replace only that ROOT's own equivalent regular files with such clones and re-inventory.
+    File and absent ROOTs MUST keep the original codec. Destinations overlapping the scope or archive, changed,
+    aliased or malformed archives, ROOTs or snapshots, and any clone failure, MUST refuse before writing, without
+    a byte-copy fallback, links or changes outside the ROOT's own files.
     """
     def __init__(self, scope, *, inventory=recipe_job.inventory, clone=None):
         scope = Path(scope)
@@ -242,14 +248,14 @@ class CommonRootClones:
         if (not destination.is_absolute() or os.path.lexists(destination) or parent.resolve() != parent
                 or not parent.is_dir()):
             raise ValueError('materialized root needs a fresh destination under a canonical directory')
+        for other in (self.scope, Path(archive)):  # Refused for every kind, before anything is written.
+            if destination == other or destination.is_relative_to(other) or other.is_relative_to(destination):
+                raise ValueError('materialized root aliases the clone scope or its archive')
         key, manifest = _read_authority(archive)
         if manifest['kind'] in ('file', 'absent'):
             recipe_job.unpack_root(archive, destination)  # Unshared: the original codec, unchanged.
             return {'archive': key, 'snapshot': 'none', 'files': 0, 'bytes': 0}
         rows = _directory_rows(manifest)
-        for other in (self.scope, Path(archive)):
-            if destination == other or destination.is_relative_to(other) or other.is_relative_to(destination):
-                raise ValueError('materialized root aliases the clone scope or its archive')
         files = [(name, size, mode) for name, kind, size, mode, _ in rows if kind == 'file']
         stats = {'archive': key, 'files': len(files), 'bytes': sum(size for _, size, _ in files)}
         if key not in self.snapshots:
