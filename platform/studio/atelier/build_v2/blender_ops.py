@@ -1,8 +1,8 @@
-"""Unused D2 job bodies: existing MeshIR schema 2 to one independent FBX export.
+"""D2 job bodies: existing MeshIR to one independent explicitly selected FBX or GLB export.
 
 Project entry scripts call these functions inside C2b's fresh, declared-code job. They do not
-create tasks, cache entries, workers or installed files. MeshSet, encoded GLB and material-graph
-GLB routes are explicitly pending. Nothing here imports a v1 build/cache controller.
+create tasks, cache entries, workers or installed files. MeshSet remains unsupported; encoded
+GLB uses its separate lossless body. Nothing here imports a v1 build/cache controller.
 """
 import hashlib
 import json
@@ -172,9 +172,10 @@ def run_plan(context, producer):
 
 def run_export_piece(context):
     """Fully decode one selected payload, restore exactly its geometry and emit FBX + receipt."""
-    if (context.params['format'] != 'fbx' or context.params['payload_encoding'] != 'mesh_ir'
+    output_format = context.params['format']
+    if (output_format not in ('fbx', 'glb') or context.params['payload_encoding'] != 'mesh_ir'
             or context.params['payload_role'] != 'geometry' or set(context.inputs) != {'payload'}):
-        raise ValueError('Only one selected MeshIR geometry payload to FBX is supported')
+        raise ValueError('Only one selected MeshIR geometry payload to FBX or GLB is supported')
     root = context.inputs['payload']
     member = _member(context.params['payload_member'])
     if root is None or root.is_symlink() or not root.is_dir():
@@ -186,17 +187,21 @@ def run_export_piece(context):
             or payload_path.stat().st_size > mesh_ir.MAX_BYTES):
         raise ValueError('Missing or invalid selected geometry payload')
     original = payload_path.read_bytes()
-    meta, piece, facts = decode_mesh_payload(original)
+    meta, piece, facts = decode_mesh_payload(original, output_format=output_format)
     asset = name(meta['asset'])
-    primary_names = [path for path in context.outputs if path.endswith('.fbx')]
+    primary_names = [path for path in context.outputs if path.endswith('.' + output_format)]
     if (member != asset + '.npz' or len(context.outputs) != 2 or len(primary_names) != 1
             or set(context.outputs) != {primary_names[0], 'export.json'}):
         raise ValueError('Selected member and complete export outputs differ')
     primary_name = _member(primary_names[0])
     name(primary_name[:-4])
-    options = export_options(meta['options'], context.params.get('options', {}))
+    options = export_options(meta['options'], context.params.get('options', {}),
+                             output_format=output_format, finite_materials=meta['schema'] == 3)
     _export_mesh(asset, meta, piece, context.output(primary_name), options)
-    verify_emitted_fbx(context.output(primary_name), expected_meshes=1 + len(meta['collisions']))
+    if output_format == 'fbx':
+        verify_emitted_fbx(context.output(primary_name), expected_meshes=1 + len(meta['collisions']))
+    else:
+        verify_emitted_glb(context.output(primary_name), expected_meshes=1 + len(meta['collisions']))
     primary = context.output(primary_name).read_bytes()
     primary_digest = hashlib.sha256(primary).hexdigest()
     payload_digest = hashlib.sha256(original).hexdigest()
@@ -229,14 +234,30 @@ def verify_emitted_fbx(path, *, expected_meshes):
         raise ValueError('Emitted FBX mesh inventory differs from the selected render/UCX set')
 
 
+def verify_emitted_glb(path, *, expected_meshes):
+    """Check complete GLB framing and the selected render/collision inventory before completion."""
+    from atelier.gltf import glb_parts
+    data = path.read_bytes()
+    doc, _binary = glb_parts(data)
+    if (len(doc.get('meshes', [])) != expected_meshes or doc.get('skins') or doc.get('animations')
+            or doc.get('images') or any('uri' in row for row in doc.get('buffers', []))):
+        raise ValueError('Emitted GLB differs from the image-free selected mesh inventory')
+
+
 def _export_mesh(asset, meta, piece, primary, options):
     import bpy
     from mathutils import Matrix
     from atelier.blender.fbx import export_atomic_fbx
     from .blender_geometry import create_mesh
-    actual = export_options(meta['options'], options)
+    output_format = primary.suffix[1:]
+    actual = export_options(meta['options'], options, output_format=output_format,
+                            finite_materials=meta['schema'] == 3)
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    piece['slots'] = [bpy.data.materials.get(label) or bpy.data.materials.new(label) for label in meta['slots']]
+    if meta['schema'] == 3:
+        from atelier.mesh_materials import restore
+        piece['slots'] = [restore(label, spec) for label, spec in zip(meta['slots'], meta['material_specs'])]
+    else:
+        piece['slots'] = [bpy.data.materials.get(label) or bpy.data.materials.new(label) for label in meta['slots']]
     obj = bpy.data.objects.new(asset, create_mesh(asset, piece))
     bpy.context.collection.objects.link(obj)
     obj.matrix_world = Matrix(meta['matrix'])
@@ -271,16 +292,23 @@ def _export_mesh(asset, meta, piece, primary, options):
     for item in selected:
         item.select_set(True)
     bpy.context.view_layer.objects.active = obj
-    actual.update(filepath=str(primary), use_selection=True, object_types={'MESH'}, bake_anim=False)
-    export_atomic_fbx(**actual)
+    if output_format == 'glb':
+        from atelier.blender.gltf import export_atomic_glb
+        export_atomic_glb(primary, options=actual, finite_materials=meta['schema'] == 3)
+    else:
+        actual.update(filepath=str(primary), use_selection=True, object_types={'MESH'}, bake_anim=False)
+        export_atomic_fbx(**actual)
 
 
-def export_options(payload_options, declared_options):
+def export_options(payload_options, declared_options, *, output_format='fbx', finite_materials=False):
     """Per-piece settings may not widen the fixed export ownership or enable another format."""
     if not hasattr(payload_options, 'items') or not hasattr(declared_options, 'items'):
         raise ValueError('Export options must be explicit objects')
-    actual = validate_mesh_options(payload_options)
-    actual.update(validate_mesh_options(declared_options))
+    check = lambda value: validate_mesh_options(value, output_format=output_format, finite_materials=finite_materials)
+    actual = check(payload_options)
+    actual.update(check(declared_options))
+    if output_format == 'glb':
+        return check(actual)
     if any(key in actual for key in ('filepath', 'use_selection', 'object_types', 'bake_anim')):
         raise ValueError('Export options cannot override fixed selected-mesh ownership')
     if (actual.get('path_mode', 'RELATIVE') != 'RELATIVE'

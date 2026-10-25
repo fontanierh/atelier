@@ -225,6 +225,33 @@ def test_receipt_and_binary_framing_check_never_claims_native_fidelity():
                                 payload_digest=source_digest, facts=facts)
 
 
+@pytest.mark.parametrize('material_graph', [False, True])
+def test_glb_consumer_preserves_exact_options_and_refuses_truncated_serializer(tmp_path, monkeypatch, material_graph):
+    from test_mesh_materials import spec
+    root = tmp_path / 'selected'
+    root.mkdir()
+    out = tmp_path / 'output'
+    out.mkdir()
+    meta, piece = mesh_ir.decode(payload())
+    options = dict(export_apply=True, export_image_format='AUTO' if material_graph else 'NONE')
+    raw = mesh_ir.encode(piece, key='Part', slots=meta['slots'], matrix=meta['matrix'], options=options,
+                         material_specs=[spec()] if material_graph else None)
+    (root / 'Part.npz').write_bytes(raw)
+    context = SimpleNamespace(params=dict(format='glb', payload_encoding='mesh_ir', payload_role='geometry',
+                                          payload_member='Part.npz'), inputs={'payload': root},
+                              outputs=['Part.glb', 'export.json'], output=lambda name: out / name)
+    called = []
+    def truncated(asset, metadata, _piece, path, actual):
+        called.append((asset, metadata['schema'], path.name, actual))
+        path.write_bytes(b'truncated')
+    monkeypatch.setattr(ops, '_export_mesh', truncated)
+    with pytest.raises((ValueError, __import__('struct').error)):
+        ops.run_export_piece(context)
+    assert called == [('Part', 3 if material_graph else 2, 'Part.glb', options)]
+    assert not (out / 'export.json').exists()
+    assert (root / 'Part.npz').read_bytes() == raw
+
+
 def test_per_piece_options_cannot_widen_owned_outputs_or_silently_override_selection():
     assert ops.export_options({'axis_forward': '-Y'}, {'axis_up': 'Z'}) == {'axis_forward': '-Y', 'axis_up': 'Z'}
     for options in [{'filepath': 'foreign.fbx'}, {'use_selection': False}, {'bake_anim': True},
