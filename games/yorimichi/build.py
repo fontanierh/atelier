@@ -553,6 +553,30 @@ def native_source_inputs():
                           support=(GAME / 'compile_inputs.py', Path(build_inputs.__file__)))
 
 
+
+def editor_compile_products():
+    """@cc [owner:fontanierh,label:correctness] complete-editor-plugin-output-roots
+    The editor compile MUST own complete Mac binary roots for both project-local
+    and shared source plugins, including HorseRacing's receipt-listed module map
+    and dylib. Declare optional absence without reading generated Binaries; retain
+    separate named products for compiled native-module consumers.
+    """
+    descriptors = sorted(path for folder in (GAME / 'unreal/Plugins', paths.ENGINE_PLUGINS)
+                         for path in folder.rglob('*.uplugin'))
+    names = set()
+    products = []
+    for descriptor in descriptors:
+        if descriptor.is_symlink() or descriptor.resolve() != descriptor or not descriptor.is_file():
+            raise ValueError('Editor plugin descriptor is missing or aliased')
+        name = descriptor.stem
+        if name.casefold() in names:
+            raise ValueError('Ambiguous editor plugin output owner')
+        names.add(name.casefold())
+        products.append(Product('unreal.compile.' + name, (),
+                                optional_paths=(descriptor.parent / 'Binaries/Mac',)))
+    return products
+
+
 def cook_step(ctx, steps):
     from atelier.build_cook_recovery import CookRecovery
     out = ctx.out
@@ -1523,6 +1547,7 @@ def unreal_steps(ctx):
         Step('unreal.compile', [UnrealCompile('YorimichiEditor')],
              inputs=[ctx.uproject, *compile_inputs.files(native_source_inputs().settings[0])],
              deferred_inputs=[native_source_inputs()],
+             outputs=[GAME / 'unreal/Binaries/Mac'], products=editor_compile_products(),
              needs=['skate.runtime'], heavy=True,
              about='the Yorimichi C++ modules (editor target)'),
         # The game binary is its own unit: the cook runs with -skipbuild and restores this result instead of
