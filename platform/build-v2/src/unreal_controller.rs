@@ -472,6 +472,9 @@ fn keyed_digests(unit: &PreparedUnit, staged: &StagedJob) -> Result<BTreeSet<Str
                     result.extend(archive_digests(&path)?);
                 }
             }
+            InputPayload::NativeCooked(_) => {
+                return Err("native cooked inputs require the fixed packaging adapter".into());
+            }
             InputPayload::Absent => {}
         }
     }
@@ -847,7 +850,10 @@ pub fn prepare_verify(
 /// normal Zen lifetime. Its DDC graph stays exactly filesystem/pak, not Zen-backed.
 fn native_store_transport(args: &mut Vec<std::ffi::OsString>) -> Result<(), String> {
     if args.iter().filter(|arg| *arg == "-NoZenAutoLaunch").count() != 1
-        || !args.iter().any(|arg| arg.to_string_lossy().starts_with("-DDC=(InstalledEnginePak,V2Local=(Type=FileSystem,Path="))
+        || !args.iter().any(|arg| {
+            arg.to_string_lossy()
+                .starts_with("-DDC=(InstalledEnginePak,V2Local=(Type=FileSystem,Path=")
+        })
     {
         return Err("native store session lacks the fixed isolated DDC command".into());
     }
@@ -998,9 +1004,14 @@ mod tests {
     #[test]
     fn native_package_names_refuse_aliases_and_non_game_names() {
         assert_eq!(package("/Game/Raw/Mesh_01").unwrap(), "/Game/Raw/Mesh_01");
-        let ordinary: Vec<std::ffi::OsString> = ["-nowrite", "-NoZenAutoLaunch",
-            "-DDC=(InstalledEnginePak,V2Local=(Type=FileSystem,Path=/owned/ddc))"]
-            .into_iter().map(Into::into).collect();
+        let ordinary: Vec<std::ffi::OsString> = [
+            "-nowrite",
+            "-NoZenAutoLaunch",
+            "-DDC=(InstalledEnginePak,V2Local=(Type=FileSystem,Path=/owned/ddc))",
+        ]
+        .into_iter()
+        .map(Into::into)
+        .collect();
         let mut native = ordinary.clone();
         native_store_transport(&mut native).unwrap();
         assert!(ordinary.iter().any(|arg| arg == "-NoZenAutoLaunch"));

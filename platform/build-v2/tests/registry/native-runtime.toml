@@ -84,3 +84,8 @@ tier = "t0"
 id = "native.zen.independent_verifier_uses_normal_key_encoding_and_exact_cb_content"
 tests = ["atelier-build-v2/native_verify::tests::independent_verifier_uses_normal_key_encoding_and_exact_cb_content"]
 tier = "t0"
+
+[[scenarios]]
+id = "native.cooked_content_identity"
+tests = ["atelier-build-v2/keys::native_cooked_tests::native_content_excludes_namespace_but_binds_complete_package_identity"]
+tier = "t0"

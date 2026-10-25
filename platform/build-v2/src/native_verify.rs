@@ -15,6 +15,263 @@ pub struct NativeVerifyContext {
     producer_key: String,
 }
 
+/// Unforgeable input issuer: a fresh native witness plus the certified producer metadata.
+#[derive(Clone)]
+pub(crate) struct NativePackageInput {
+    row: Value,
+    witness: crate::results::zen_cook::NativeArtifactWitness,
+    archive: std::path::PathBuf,
+    metadata: StoredFile,
+}
+impl NativePackageInput {
+    pub(crate) fn from_source(
+        slot: &str,
+        witness: crate::results::zen_cook::NativeArtifactWitness,
+        source: &SourceCookEvidence<'_>,
+        archive: &Path,
+    ) -> Result<Self, String> {
+        source.check()?;
+        witness.check()?;
+        crate::paths::relative_path(slot, false)?;
+        if slot.contains('/') {
+            return Err("native package slot is not one component".into());
+        }
+        let metadata = metadata_file(&source.result().result)?;
+        let report = report_from_archive(archive, &metadata)?;
+        let producer = &source.result().result;
+        let locator = witness.locator();
+        let rows = report
+            .get("packages")
+            .and_then(Value::as_array)
+            .ok_or("native history lacks captures")?
+            .iter()
+            .filter(|row| {
+                row.get("source_package").and_then(Value::as_str) == Some(&locator.package)
+            })
+            .collect::<Vec<_>>();
+        if rows.len() != 1
+            || text(&report, "source_key")? != producer.key
+            || text(rows[0], "record_sha256")? != locator.record_sha256
+            || text(rows[0], "native_stored_key")? != locator.dependency_key
+            || text(rows[0], "root_hash")? != locator.entry_hash
+            || text(rows[0], "input_key")? != producer.key
+            || !producer.outputs.iter().any(|item| {
+                item.item.class == "NativeCookRecord"
+                    && item.item.logical_path == locator.package
+                    && item.files.len() == 1
+                    && item.files[0].digest == locator.record_sha256
+            })
+        {
+            return Err(
+                "native history differs from the actual consumed and freshly restored CB".into(),
+            );
+        }
+        let row = json!({"slot":slot,"locator":locator,"record_sha256":locator.record_sha256,
+            "metadata_archive":archive,"metadata_sha256":metadata.digest});
+        Ok(Self {
+            row,
+            witness,
+            archive: archive.into(),
+            metadata,
+        })
+    }
+    pub(crate) fn check(&self) -> Result<(), String> {
+        self.witness.check()?;
+        report_from_archive(&self.archive, &self.metadata)?;
+        Ok(())
+    }
+}
+
+/// Issued only from freshly sealed package origins and certified global source output.
+pub(crate) struct NativePackageContext {
+    packages: Vec<NativePackageInput>,
+    destination: CookLocator,
+    global_slot: String,
+    global_archive: std::path::PathBuf,
+    global_metadata: StoredFile,
+}
+impl NativePackageContext {
+    /// @cc [owner:fontanierh,label:correctness;safety] private-native-package-carrier
+    /// Package locators MUST come from freshly sealed native completions. History archives
+    /// MUST be independent certified source-cook metadata copies, never mutable project reads.
+    /// Destination MUST derive from the actual global producer's certificate/seed CB/layout.
+    /// Its semantic Data input MUST be a distinct emitted global shader ROOT, excluding
+    /// namespace-bearing transport metadata. Only the executor MAY late-bind SDK locations.
+    pub(crate) fn from_source(
+        source: &SourceCookEvidence<'_>,
+        archive: &Path,
+        global: &crate::keys::PreparedInput,
+        store_root: &Path,
+        packages: Vec<NativePackageInput>,
+    ) -> Result<Self, String> {
+        source.check()?;
+        for package in &packages {
+            package.check()?;
+        }
+        if packages.is_empty() {
+            return Err("native package composition has no verified packages".into());
+        }
+        let producer = &source.result().result;
+        let file = metadata_file(producer)?;
+        let semantic_root = producer
+            .ingredients
+            .params
+            .get("global_data")
+            .and_then(Value::as_str)
+            .ok_or("global source cook lacks a distinct semantic global-data output")?;
+        let semantic_file = producer
+            .ingredients
+            .params
+            .get("recipe")
+            .and_then(|value| value.get("outputs"))
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter(|row| row.get("path").and_then(Value::as_str) == Some(semantic_root))
+            .collect::<Vec<_>>();
+        if semantic_file.len() != 1 {
+            return Err("semantic global-data output mapping is ambiguous".into());
+        }
+        let semantic_name = text(semantic_file[0], "file")?;
+        if semantic_name == file.path {
+            return Err("namespace transport metadata is not semantic global data".into());
+        }
+        let matching = producer
+            .outputs
+            .iter()
+            .filter(|item| {
+                item.item.class == "Data"
+                    && item.files.len() == 1
+                    && item.files[0].path == semantic_name
+                    && item.external_locator.is_none()
+            })
+            .collect::<Vec<_>>();
+        if matching.len() != 1
+            || !matches!(&global.payload, crate::keys::InputPayload::Item { class, files, .. }
+            if class=="Data" && files==&matching[0].files)
+        {
+            return Err("global data item is not the distinct certified semantic output".into());
+        }
+        let metadata = report_from_archive(archive, &file)?;
+        if metadata.get("version").and_then(Value::as_u64) != Some(1)
+            || text(&metadata, "source_key")? != producer.key
+        {
+            return Err("global native metadata differs from actual source evidence".into());
+        }
+        let rows = metadata
+            .get("packages")
+            .and_then(Value::as_array)
+            .ok_or("global cook metadata omits package capture")?;
+        if rows.len() != 1 {
+            return Err("global source cook must identify its one seed record".into());
+        }
+        let row = &rows[0];
+        let package = text(row, "source_package")?;
+        let records: Vec<_> = producer
+            .outputs
+            .iter()
+            .filter(|item| {
+                item.item.class == "NativeCookRecord"
+                    && item.item.logical_path == package
+                    && item.files.len() == 1
+                    && item.external_locator.is_none()
+            })
+            .collect();
+        if records.len() != 1
+            || records[0].files[0].digest != text(row, "record_sha256")?
+            || text(row, "input_key")? != producer.key
+            || text(row, "status")? != "verified"
+        {
+            return Err(
+                "global native namespace lacks its certified source-cook seed record".into(),
+            );
+        }
+        let destination = CookLocator {
+            version: 2,
+            project: text(row, "project")?.into(),
+            oplog: "Mac".into(),
+            package: package.into(),
+            source_key: producer.key.clone(),
+            record_sha256: text(row, "record_sha256")?.into(),
+            dependency_key: text(row, "native_stored_key")?.into(),
+            entry_hash: text(row, "root_hash")?.into(),
+            installed_entry_hash: text(row, "root_hash")?.into(),
+            lifetime_marker: text(row, "marker_path")?.into(),
+            record_path: text(row, "record_path")?.into(),
+            project_file: text(row, "project_file")?.into(),
+        };
+        destination.validate()?;
+        crate::results::zen_cook::validate_native_layout(
+            &destination,
+            store_root,
+            &producer.key,
+            &producer.ingredients.params,
+        )?;
+        for path in [
+            &destination.record_path,
+            &destination.project_file,
+            &destination.lifetime_marker,
+        ] {
+            let path = Path::new(path);
+            if path.canonicalize().map_err(|e| e.to_string())? != path
+                || !fs::symlink_metadata(path)
+                    .map_err(|e| e.to_string())?
+                    .is_file()
+            {
+                return Err("global native namespace has a missing/aliased physical role".into());
+            }
+        }
+        Ok(Self {
+            packages,
+            destination,
+            global_slot: global.wire.name.clone(),
+            global_archive: archive.into(),
+            global_metadata: file,
+        })
+    }
+    pub(crate) fn write_carrier(
+        &self,
+        job_dir: &Path,
+        export_project: &Path,
+    ) -> Result<(), String> {
+        use std::io::Write;
+        if !export_project.is_absolute()
+            || export_project.canonicalize().map_err(|e| e.to_string())? != export_project
+            || !fs::symlink_metadata(export_project)
+                .map_err(|e| e.to_string())?
+                .is_file()
+        {
+            return Err("native packaging exporter is not a canonical compiled project".into());
+        }
+        let parent = job_dir.join(".recipe-runtime");
+        if !fs::symlink_metadata(&parent)
+            .map_err(|e| e.to_string())?
+            .is_dir()
+            || parent.canonicalize().map_err(|e| e.to_string())? != parent
+        {
+            return Err("native packaging carrier requires its reserved owned runtime".into());
+        }
+        for package in &self.packages {
+            package.check()?;
+        }
+        report_from_archive(&self.global_archive, &self.global_metadata)?;
+        let rows: Vec<_> = self.packages.iter().map(|package| &package.row).collect();
+        let value = json!({"version":1,"packages":rows,"destination":self.destination,
+            "globals":[self.global_slot],"export_project":export_project,
+            "global_metadata_archive":self.global_archive,"global_metadata_sha256":self.global_metadata.digest});
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .mode(0o400)
+            .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
+            .open(parent.join("native-packages.json"))
+            .map_err(|e| e.to_string())?;
+        file.write_all(&serde_json::to_vec(&value).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+        file.sync_all().map_err(|e| e.to_string())
+    }
+}
+
 pub const PACKAGE_OP: &str = "unreal.cook.package";
 
 pub(crate) fn register(

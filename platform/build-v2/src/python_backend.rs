@@ -125,7 +125,11 @@ pub struct CacheAccess {
 }
 
 enum Origin {
-    External(ResultEnvelope),
+    External(
+        ResultEnvelope,
+        crate::results::zen_cook::NativeArtifactWitness,
+        String,
+    ),
     Current(CurrentIdentities),
     Recorded {
         transaction: WriteTransaction,
@@ -342,7 +346,7 @@ impl PythonSources<'_> {
                     stored(envelope)?;
                     use_source(&transaction.pinned_objects())
                 }
-                Origin::External(_) => Err(refusal(
+                Origin::External(..) => Err(refusal(
                     SourceErrorKind::Unavailable,
                     "external native items require their typed native consumer".into(),
                 )),
@@ -393,6 +397,8 @@ impl ObjectSource for PythonSources<'_> {
 /// The original optional CAS miss ticket; local write custody starts before staging, not at Run.
 pub struct PythonTicket {
     verification: Option<VerificationTicket>,
+    native_inputs: Vec<crate::results::zen_cook::NativeArtifactWitness>,
+    native_histories: Vec<crate::native_verify::NativePackageInput>,
     transaction: Option<WriteTransaction>,
     local: Option<CompletionWork>,
     cache_failure: Option<ResultError>,
@@ -412,6 +418,7 @@ pub(crate) struct NativeVerification {
 }
 
 pub struct PythonInputs {
+    pub(crate) native_packaging: Option<crate::native_verify::NativePackageContext>,
     pub(crate) native_verification: Option<NativeVerification>,
     // Same open description as the existing build guard; monitor custody only.
     pub(crate) custody: std::fs::File,
@@ -564,7 +571,7 @@ impl<'a> PythonBackend<'a> {
                 Origin::Installed(mut plan) => plan
                     .finish_sources(|result| (self.root)(&id, result))
                     .map_err(|error| error.to_string()),
-                Origin::Current(_) | Origin::Local(_) | Origin::External(_) => Ok(()),
+                Origin::Current(_) | Origin::Local(_) | Origin::External(..) => Ok(()),
             };
             if let Err(error) = outcome {
                 failures.push(format!("{id}: {error}"));
@@ -688,6 +695,8 @@ impl<'a> PythonBackend<'a> {
                 Ok(RestoreLookup::Miss(transaction)) => Ok(Lookup::Miss {
                     reason: NonHitReason::MissingRecord,
                     ticket: PythonTicket {
+                        native_inputs: Vec::new(),
+                        native_histories: Vec::new(),
                         verification: None,
                         transaction: Some(transaction),
                         local: None,
@@ -715,6 +724,8 @@ impl<'a> PythonBackend<'a> {
             return Ok(Lookup::Miss {
                 reason: NonHitReason::MissingRecord,
                 ticket: PythonTicket {
+                    native_inputs: Vec::new(),
+                    native_histories: Vec::new(),
                     verification: None,
                     transaction: Some(transaction),
                     local: None,
@@ -777,6 +788,8 @@ impl<'a> PythonBackend<'a> {
         Ok(Lookup::Miss {
             reason: NonHitReason::MissingRecord,
             ticket: PythonTicket {
+                native_inputs: Vec::new(),
+                native_histories: Vec::new(),
                 verification: None,
                 transaction: Some(transaction),
                 local: None,
@@ -798,6 +811,8 @@ impl<'a> PythonBackend<'a> {
         Lookup::Miss {
             reason,
             ticket: PythonTicket {
+                native_inputs: Vec::new(),
+                native_histories: Vec::new(),
                 verification: None,
                 transaction,
                 local: None,
@@ -867,6 +882,67 @@ impl Backend for PythonBackend<'_> {
             .graph
             .unit(&Self::unit_id(unit))
             .ok_or_else(|| InputFailure::Invalid("missing declared unit".into()))?;
+        let mut native_packages = Vec::new();
+        let mut native_history_sources = Vec::new();
+        for input in unit.inputs() {
+            let InputPayload::NativeCooked(expected) = &input.payload else {
+                continue;
+            };
+            if unit.ingredients().op.kind != "unreal.package" {
+                return Err(InputFailure::Invalid(
+                    "cooked native inputs require the fixed package operation".into(),
+                ));
+            }
+            let (producer, item) = declaration
+                .inputs
+                .iter()
+                .find_map(|row| match row {
+                    Input::Content {
+                        name,
+                        source: ContentSource::Item { unit, item },
+                        ..
+                    } if name == &input.wire.name => Some((unit, item)),
+                    _ => None,
+                })
+                .ok_or_else(|| {
+                    InputFailure::Invalid("native package requires a direct item edge".into())
+                })?;
+            let Some(Origin::External(envelope, witness, source_producer)) =
+                self.origins.get(producer)
+            else {
+                return Err(InputFailure::Unavailable(
+                    "native package lacks a freshly sealed restore result".into(),
+                ));
+            };
+            witness.check().map_err(InputFailure::Unavailable)?;
+            let actual = crate::keys::NativeCookedIdentity::from_locator(witness.locator())
+                .map_err(InputFailure::Invalid)?;
+            let stored = envelope
+                .result
+                .outputs
+                .iter()
+                .find(|row| &row.item.id == item)
+                .ok_or_else(|| {
+                    InputFailure::Invalid("sealed native package item missing".into())
+                })?;
+            if &actual != expected
+                || stored.item.logical_path != actual.package
+                || !stored.files.is_empty()
+                || stored.item.class != "CookedPackage"
+            {
+                return Err(InputFailure::Invalid(
+                    "sealed native input differs from the prepared content identity".into(),
+                ));
+            }
+            native_packages.push((input.wire.name.clone(), witness.clone()));
+            ticket.native_inputs.push(witness.clone());
+            native_history_sources.push((input.wire.name.clone(), source_producer.clone()));
+        }
+        if unit.ingredients().op.kind == "unreal.package" && native_packages.is_empty() {
+            return Err(InputFailure::Invalid(
+                "native packaging requires the complete typed verified package roster".into(),
+            ));
+        }
         let mut selected = BTreeMap::new();
         let mut logical_views = Vec::new();
         for input in unit.inputs() {
@@ -988,6 +1064,115 @@ impl Backend for PythonBackend<'_> {
             StageError::Staging(message) => InputFailure::Invalid(message),
         })?;
         drop(sources);
+        let mut native_histories = Vec::new();
+        for ((slot, producer), (_, witness)) in native_history_sources.iter().zip(native_packages) {
+            crate::paths::relative_path(slot, false).map_err(InputFailure::Invalid)?;
+            if slot.contains('/') {
+                return Err(InputFailure::Invalid(
+                    "native history slot is not a single component".into(),
+                ));
+            }
+            let origin = self.origins.get_mut(producer).ok_or_else(|| {
+                InputFailure::Unavailable("native history producer missing".into())
+            })?;
+            let evidence = match origin {
+                Origin::Local(completion) => {
+                    crate::results::zen_cook::SourceCookEvidence::from_local(completion)
+                }
+                Origin::Cached { transaction, .. } | Origin::Recorded { transaction, .. } => {
+                    crate::results::zen_cook::SourceCookEvidence::from_cached(transaction)
+                        .and_then(|value| value.ok_or("native history producer unavailable".into()))
+                }
+                _ => Err("native history lacks actual source-cook evidence".into()),
+            }
+            .map_err(InputFailure::Unavailable)?;
+            let directory = staged.job_dir().join(".recipe-runtime/native-histories");
+            if !directory.exists() {
+                std::fs::create_dir(&directory)
+                    .map_err(|e| InputFailure::Invalid(e.to_string()))?;
+            }
+            let archive = directory.join(format!("{slot}.tree.tar"));
+            evidence
+                .clone_metadata(&archive)
+                .map_err(InputFailure::Unavailable)?;
+            let history = crate::native_verify::NativePackageInput::from_source(
+                slot, witness, &evidence, &archive,
+            )
+            .map_err(InputFailure::Invalid)?;
+            ticket.native_histories.push(history.clone());
+            native_histories.push(history);
+        }
+        let native_packaging = if !native_histories.is_empty() {
+            let slot = unit
+                .ingredients()
+                .params
+                .get("native_global")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| {
+                    InputFailure::Invalid(
+                        "native package composition requires the declared global data slot".into(),
+                    )
+                })?;
+            let global = unit
+                .inputs()
+                .iter()
+                .find(|input| input.wire.name == slot)
+                .ok_or_else(|| InputFailure::Invalid("native global data slot missing".into()))?;
+            let producer = declaration
+                .inputs
+                .iter()
+                .find_map(|row| match row {
+                    Input::Content {
+                        name,
+                        source: ContentSource::Item { unit, .. },
+                        ..
+                    } if name == slot => Some(unit),
+                    _ => None,
+                })
+                .ok_or_else(|| {
+                    InputFailure::Invalid(
+                        "native global data requires its actual producer edge".into(),
+                    )
+                })?;
+            let root = ticket
+                .transaction
+                .as_ref()
+                .ok_or_else(|| InputFailure::Unavailable("package CAS lease missing".into()))?
+                .objects_root()
+                .to_owned();
+            let origin = self.origins.get_mut(producer).ok_or_else(|| {
+                InputFailure::Unavailable("global source evidence missing".into())
+            })?;
+            let evidence = match origin {
+                Origin::Local(completion) => {
+                    crate::results::zen_cook::SourceCookEvidence::from_local(completion)
+                }
+                Origin::Cached { transaction, .. } | Origin::Recorded { transaction, .. } => {
+                    crate::results::zen_cook::SourceCookEvidence::from_cached(transaction)
+                        .and_then(|value| value.ok_or("global source output is unavailable".into()))
+                }
+                _ => Err("global namespace must come from an actual source-cook completion".into()),
+            }
+            .map_err(InputFailure::Unavailable)?;
+            let archive = staged
+                .job_dir()
+                .join(".recipe-runtime/global-metadata.tree.tar");
+            evidence
+                .clone_metadata(&archive)
+                .map_err(InputFailure::Unavailable)?;
+            Some(
+                crate::native_verify::NativePackageContext::from_source(
+                    &evidence,
+                    &archive,
+                    global,
+                    &root,
+                    native_histories,
+                )
+                .map_err(InputFailure::Invalid)?,
+            )
+        } else {
+            None
+        };
         let native_verification = if let Some(verification) = &ticket.verification {
             let transaction = ticket.transaction.as_mut().ok_or_else(|| {
                 InputFailure::Unavailable("native publication needs its original CAS ticket".into())
@@ -1045,6 +1230,7 @@ impl Backend for PythonBackend<'_> {
         self.io.borrow_mut().staged_jobs += 1;
         Ok(StagedInputs {
             inputs: PythonInputs {
+                native_packaging,
                 native_verification,
                 custody,
                 staged,
@@ -1062,6 +1248,12 @@ impl Backend for PythonBackend<'_> {
         let unit = work.prepared().clone();
         let id = work.unit().to_string();
         let (mut ticket, inputs) = work.into_parts();
+        for witness in &ticket.native_inputs {
+            witness.check()?;
+        }
+        for history in &ticket.native_histories {
+            history.check()?;
+        }
         let actual = staging::collect_outputs(&inputs.staged, &completed.reported)?;
         if let Some(mut verification) = ticket.verification.take() {
             let mut frozen = verification
@@ -1087,7 +1279,7 @@ impl Backend for PythonBackend<'_> {
                 })
                 .map_err(|e| e.to_string())?;
             self.io.borrow_mut().publications += 1;
-            let envelope = {
+            let (envelope, witness) = {
                 let origin = self
                     .origins
                     .get_mut(&verification.source)
@@ -1114,14 +1306,19 @@ impl Backend for PythonBackend<'_> {
                     .transaction
                     .take()
                     .ok_or("native external CAS lease missing")?;
-                transaction
+                let witness = proof.witness();
+                let envelope = transaction
                     .stage_external(&[proof])
                     .map_err(|e| e.to_string())?
                     .publish(|record| (self.root)(&id, record))
-                    .map_err(|e| e.to_string())?
+                    .map_err(|e| e.to_string())?;
+                (envelope, witness)
             };
             let checked = self.checked(&unit, envelope.result.outputs.clone(), false);
-            self.origins.insert(id, Origin::External(envelope));
+            self.origins.insert(
+                id,
+                Origin::External(envelope, witness, verification.source.clone()),
+            );
             self.io.borrow_mut().publications += 1;
             return Ok(Published {
                 checked,

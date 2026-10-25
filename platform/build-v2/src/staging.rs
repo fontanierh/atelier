@@ -340,6 +340,14 @@ fn stage_into(
                 parents(job_dir, &destination)?;
                 write_new(&destination, bytes)?;
             }
+            (InputPayload::NativeCooked(identity), Some(InputKind::Item)) => {
+                parents(job_dir, &destination)?;
+                fs::create_dir(&destination).map_err(|error| io_error(&destination, error))?;
+                write_new(
+                    &destination.join("native.json"),
+                    &crate::keys::canonical_bytes(identity)?,
+                )?;
+            }
             (InputPayload::Item { files, .. }, Some(InputKind::Item)) => {
                 parents(job_dir, &destination)?;
                 fs::create_dir(&destination).map_err(|error| io_error(&destination, error))?;
