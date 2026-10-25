@@ -63,7 +63,7 @@ def exact_selection(game, wanted):
     missing = [name for name in names if name not in candidates]
     if missing:
         raise ValueError(f'{game}: v2 target is not implemented: ' + ', '.join(missing))
-    selection = ControllerSelection(tuple(candidates.values()), names)
+    selection = ControllerSelection(tuple(candidates[name] for name in names), names)
     selection.request(paths.REPO)  # Strict finite control assembly; Rust still owns graph validation.
     return selection
 
