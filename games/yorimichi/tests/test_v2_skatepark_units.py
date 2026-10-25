@@ -308,7 +308,22 @@ def test_native_gate_requires_exact_assembled_runtime_and_actual_report_roster(t
     pack_root(build_file, build_archive); pack_root(runtime_file, runtime_archive)
     if damage:
         with pytest.raises(ValueError):
-            members.complete(build_archive, runtime_archive, logical, values['park'], values['board'], trees, tmp_path / 'out')
+            members.complete(build_file, runtime_file, logical, values['park'], values['board'], trees, tmp_path / 'out')
     else:
-        members.complete(build_archive, runtime_archive, logical, values['park'], values['board'], trees, tmp_path / 'out')
+        members.complete(build_file, runtime_file, logical, values['park'], values['board'], trees, tmp_path / 'out')
         assert len(json.loads((tmp_path / 'out/native.json').read_text())['meshes']) == 10
+
+
+def test_production_recipe_view_supplies_decoded_texture_root(tmp_path):
+    from atelier.build_v2.recipe_job import prepare_view
+    import shutil
+    archive = textures(tmp_path)
+    job = tmp_path / 'job'; staged = job / 'inputs/textures/products/0-0.tree.tar'
+    staged.parent.mkdir(parents=True); shutil.copyfile(archive, staged)
+    (job / '.recipe-runtime').mkdir()
+    view, _, _ = prepare_view({'code': [], 'inputs': [{'path': 'inputs/textures'}], 'params': {'recipe': {
+        'paths': {'textures': 'inputs/textures/products/0-0.tree.tar'},
+        'outputs': [{'path': 'members', 'file': 'members.tree.tar', 'required': True}]}}}, job)
+    assert (view / 'textures').is_dir()
+    members.project(view / 'textures', view / 'members', 'materials')
+    assert members.read_json(view / 'members/painted.json')['entry']['metallic'] == 0.
