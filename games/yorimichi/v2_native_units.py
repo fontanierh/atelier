@@ -322,7 +322,7 @@ def lower(rows, geometry, *, checkout):
     elif 'unreal.materials' in selected:
         native = shared_materials(rows, checkout=checkout)
         native['aliases'] = {}
-    elif selected & {'unreal.treehouse', 'unreal.brinecove', 'unreal.sounds', 'unreal.crater_cloud', 'unreal.skate_board', 'unreal.fx', 'unreal.skate_data', 'unreal.kei', 'unreal.village', 'unreal.lake'}:
+    elif selected & {'unreal.treehouse', 'unreal.brinecove', 'unreal.sounds', 'unreal.crater_cloud', 'unreal.skate_board', 'unreal.fx', 'unreal.skate_data', 'unreal.kei', 'unreal.village', 'unreal.lake', 'unreal.houses', 'unreal.southwest', 'unreal.mega'}:
         native = {'units': [], 'staged_inputs': {}, 'content_slots': {}, 'packages': {},
                   'targets': (), 'aliases': {}, 'missing_roles': []}
         if 'unreal.treehouse' in selected:
@@ -361,7 +361,7 @@ def lower(rows, geometry, *, checkout):
             native['aliases'].update(family['aliases'])
     if 'unreal.sounds' in selected:
         native = _join_audio(native, rows, native.get('geometry', geometry), checkout=checkout)
-    if selected & {'unreal.kei', 'unreal.village', 'unreal.lake'}:
+    if selected & {'unreal.kei', 'unreal.village', 'unreal.lake', 'unreal.houses', 'unreal.southwest', 'unreal.mega'}:
         package = '/Game/Japan/Materials/M_Village'
         kei_module = _family_module(checkout, 'v2_kei_units')
         if 'unreal.kei' in selected:
@@ -406,6 +406,17 @@ def lower(rows, geometry, *, checkout):
             _complete_mesh_family(native, extended, family='lake', export_prefixes=('world.lake.export.',),
                 checkout=checkout, fixed={path: native['packages'][path] for path in
                     (package, '/Game/Japan/Materials/M_ForestLakeWater')})
+    for family in ('houses', 'southwest', 'mega'):
+        if 'unreal.' + family not in selected:
+            continue
+        extended = _family_module(checkout, 'v2_' + family + '_units').attach_followers(
+            native.get('geometry', geometry), _package_dependencies(native), checkout=checkout)
+        native['geometry'] = extended
+        native.setdefault('follower_module_requirements', {}).update(extended.pop('module_requirements', {}))
+        required = ['/Game/Japan/Materials/M_Village']
+        if family == 'houses': required.append('/Game/Japan/Materials/MI_Ground')
+        _complete_mesh_family(native, extended, family=family, export_prefixes=('world.' + family + '.export.',),
+            checkout=checkout, fixed={path: native['packages'][path] for path in required})
     if selected & {'unreal.treehouse', 'unreal.brinecove'}:
         native = _join_native_families(native, rows, geometry, selected, checkout=checkout)
     return native
