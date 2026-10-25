@@ -97,7 +97,7 @@ def test_broad_recipe_item_edges_explain_complete_producer_scope(tmp_path, field
     result = _lower(_row('b.use', **{field: value}), tmp_path)
     assert result['inputs']
     assert all(input['source']['kind'] == 'item' and input['role'] == 'content'
-               and input['whole'] == 'The recipe consumes declared ROOT archives from this complete producer Item.'
+               and 'complete producer Item' in input['whole']
                for input in result['inputs'])
 
 

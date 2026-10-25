@@ -822,7 +822,7 @@ fn prepare_inner(
         ingredients.op.kind.as_str(),
         RAW_IMPORT | FINISH | AUTHOR | VERIFY
     ) || ingredients.op.version != OP_VERSION
-        || ingredients.script != ENTRY
+        || (ingredients.op.kind == RAW_IMPORT && ingredients.script != ENTRY)
     {
         return Err("unsupported fixed native operation".into());
     }
