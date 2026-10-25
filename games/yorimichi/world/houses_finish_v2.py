@@ -13,6 +13,7 @@ from pathlib import Path
 from atelier.build_v2.blender_validate import decode_mesh_payload
 from atelier.export_manifest import validate as validate_export
 from island_finish_v2 import _identity, _pairs, _selected
+from village_atomic_products import ground_native_count
 
 DESTINATION = '/Game/Japan/Assets'
 MATERIALS = {'Village': '/Game/Japan/Materials/M_Village', 'Ground': '/Game/Japan/Materials/MI_Ground'}
@@ -52,13 +53,16 @@ def source_facts(context):
             or not members[0].is_file() or not 0 < members[0].stat().st_size <= 128 * 1024 * 1024):
         raise ValueError('Houses require exactly the selected bounded MeshIR payload')
     raw = members[0].read_bytes(); digest = hashlib.sha256(raw).hexdigest()
-    _metadata, _piece, facts = decode_mesh_payload(raw, expected_asset=parent, output_format='fbx')
+    metadata, piece, facts = decode_mesh_payload(raw, expected_asset=parent, output_format='fbx')
     slots = ['Village'] if parent in HOUSES else ['Ground', 'Village']
     if (sorted(facts['slots']) != slots or len(facts['uv_channels']) != 1
             or receipt['triangles'] != facts['triangles'] or receipt['bounds'] != [facts['min'], facts['max']]
             or receipt['metadata'] != {'geometry_sha256': digest, 'slots': facts['slots'], 'polygons': facts['polygons'],
                 'collision_hulls': facts['collision_hulls'], 'uv_channels': facts['uv_channels']}):
         raise ValueError('Houses source receipt differs from its selected geometry, slots or UV set')
+    # The same installed legacy FBX triangle-removal rule applies to these
+    # triangular lot faces; never accept arbitrary missing native geometry.
+    facts['native_triangles'] = ground_native_count(metadata, piece)['native_triangles']
     return receipt, facts
 
 
@@ -138,7 +142,7 @@ def run(context):
                 or [mesh.get_material(i) for i in range(len(names))] != [materials[n] for n in names]
                 or body.get_editor_property('collision_trace_flag') != trace or mesh.get_num_lods() != 1
                 or editor.get_num_uv_channels(mesh, 0) != 1
-                or not (triangles == facts['triangles'] if not lot else 0 < triangles <= facts['triangles'])):
+                or triangles != facts['native_triangles']):
             raise ValueError(f'{parent}: current geometry/material/UV/collision invariant failed')
         if not validation.validate_collision(mesh, triangles, not lot):
             raise ValueError(f'{parent}: original cooked LOD0 collision validation failed')

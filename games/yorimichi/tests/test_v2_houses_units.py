@@ -109,13 +109,15 @@ class Mesh(Asset):
     def get_bounding_box(self): return NS(max=NS(z=self.max_z))
 
 
-def case(tmp_path, monkeypatch, *, lot=False):
+def case(tmp_path, monkeypatch, *, lot=False, degenerate=False):
     parent = 'HouseLot_2' if lot else 'House_B'
     slots = ['Village', 'Ground'] if lot else ['Village']
     source = tmp_path / 'source'; payload = tmp_path / 'payload'; source.mkdir(); payload.mkdir()
     piece = dict(positions=[[0., 0., 0.], [1., 0., 0.], [0., 1., 2.], [1., 1., 0.]], faces=[[0, 1, 2], [1, 3, 2]],
                  normals=[[0., 0., 1.]] * 6, materials=[0, len(slots) - 1], smooth=[False, False],
                  uvs=[('UVMap', [[0., 0.], [1., 0.], [0., 1.], [1., 0.], [1., 1.], [0., 1.]])], colours=[])
+    if degenerate:
+        piece['positions'][3] = list(piece['positions'][1])
     tetra = dict(positions=[[0., 0., 0.], [1., 0., 0.], [0., 1., 0.], [0., 0., 1.]], faces=[[0, 1, 2], [0, 3, 1], [1, 3, 2], [0, 2, 3]],
                  normals=[[0., 0., 1.]] * 12, materials=[0] * 4, smooth=[False] * 4, uvs=[], colours=[])
     hulls = [] if lot else [mesh_collision.encode(tetra, slots=['Hull'], matrix=np.eye(4).tolist())]
@@ -189,3 +191,18 @@ def test_invalid_sources_or_native_state_never_complete(tmp_path, monkeypatch, d
     else: context.params['args']['lot'] = True
     with pytest.raises(ValueError):
         body.run(context)
+
+
+def test_lot_cannot_certify_arbitrary_missing_native_triangles(tmp_path, monkeypatch):
+    state, context = case(tmp_path, monkeypatch, lot=True)
+    state.raw.triangles = 1
+    with pytest.raises(ValueError, match='geometry'):
+        body.run(context)
+    assert not state.saves
+
+
+def test_lot_uses_exact_existing_fbx_degenerate_projection(tmp_path, monkeypatch):
+    state, context = case(tmp_path, monkeypatch, lot=True, degenerate=True)
+    state.raw.triangles = 1
+    mesh = body.run(context)
+    assert mesh.triangles == 1 and state.saves == [mesh.path]
