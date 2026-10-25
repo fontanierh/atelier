@@ -39,7 +39,7 @@ class Refused(ValueError):
     pass
 
 
-def canonical_project_plugins(view, project, protected):
+def canonical_project_plugins(view, project, protected, *, relocations=None):
     """@cc [owner:fontanierh,label:correctness;safety] canonical-derived-native-plugins
     Cook/package execution MAY independently copy code-only additional plugins
     into the owned derived project's Plugins directory, retaining descriptor names,
@@ -105,6 +105,8 @@ def canonical_project_plugins(view, project, protected):
         if _tree(source) != inventory or _tree(destination) != inventory:
             raise Refused('native plugin source changed during independent projection')
         result.extend(str(destination / relative) for relative in files)
+        if relocations is not None:
+            relocations[source.relative_to(view).as_posix()] = destination.relative_to(view).as_posix()
     if project.read_bytes() != original:
         raise Refused('native project source changed during plugin projection')
     descriptor['AdditionalPluginDirectories'] = []
@@ -389,7 +391,7 @@ def staged_mac_zip(job, job_dir, slot):
     return archives[0]
 
 
-def package_project_view(job, job_dir, view, project, run):
+def package_project_view(job, job_dir, view, project, run, *, relocations=None, target=None):
     """Use independent game binaries for UAT while retaining the editor input for finalisation."""
     archive = staged_mac_zip(job, job_dir, 'game')
     destination = job_dir / '.recipe-runtime/package-view'
@@ -400,7 +402,61 @@ def package_project_view(job, job_dir, view, project, run):
     if binaries.exists():
         shutil.rmtree(binaries)  # Only the new independent package-view copy.
     restore_mac_zip(archive, binaries, run)
+    if relocations:
+        canonical_package_receipt(destination, packaging_project, target, relocations)
     return destination, packaging_project
+
+
+
+def canonical_package_receipt(view, project, target, relocations):
+    """@cc [owner:fontanierh,label:correctness;safety] canonical-package-plugin-receipt
+    Only the derived Game receipt MAY rebind paths from the verified canonical
+    plugin copy map. Every referenced source and destination file MUST be regular,
+    unlinked, owned-view paths with identical bytes. Other receipt fields and
+    frozen original products MUST remain unchanged; unknown external paths refuse.
+    """
+    ops._target(target)
+    receipt = project.parent / 'Binaries/Mac' / (target + '.target')
+    if receipt.resolve() != receipt or not stat.S_ISREG(receipt.lstat().st_mode) or receipt.stat().st_nlink != 1:
+        raise Refused('packaging receipt is not a regular owned file')
+    original = receipt.read_bytes()
+    value = json.loads(original)
+    if value.get('TargetName') != target or value.get('TargetType') != 'Game':
+        raise Refused('packaging receipt target differs from the declared game')
+    roots = [(_path(view, old), _path(view, new)) for old, new in relocations.items()]
+    changed = 0
+    for role in ('BuildProducts', 'RuntimeDependencies'):
+        for row in value.get(role, []):
+            text = row.get('Path')
+            if not isinstance(text, str) or not text.startswith('$(ProjectDir)/'):
+                continue
+            source = Path(os.path.abspath(project.parent / text.removeprefix('$(ProjectDir)/')))
+            if source.is_relative_to(project.parent):
+                continue
+            matches = [(old, new) for old, new in roots if source.is_relative_to(old)]
+            if len(matches) != 1:
+                raise Refused('game receipt references an unknown external plugin path')
+            old, new = matches[0]
+            destination = new / source.relative_to(old)
+            for path in (source, destination):
+                info = path.lstat()
+                if (not path.is_relative_to(view) or path.resolve() != path
+                        or not stat.S_ISREG(info.st_mode) or info.st_nlink != 1):
+                    raise Refused('game receipt plugin path is aliased or outside its owned view')
+            if _digest(source) != _digest(destination):
+                raise Refused('game receipt canonical plugin bytes differ')
+            row['Path'] = '$(ProjectDir)/' + destination.relative_to(project.parent).as_posix()
+            changed += 1
+    if receipt.read_bytes() != original:
+        raise Refused('game receipt changed during canonical path projection')
+    if changed:
+        temporary = receipt.with_name('.' + receipt.name + '.native-plugin-layout')
+        with temporary.open('xb') as stream:
+            stream.write((json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n').encode())
+            stream.flush(); os.fsync(stream.fileno())
+        temporary.chmod(stat.S_IMODE(receipt.stat().st_mode))
+        temporary.replace(receipt)
+    return changed
 
 
 def export_outputs(recipe, view, output, run, raw_roots=()):
@@ -1009,8 +1065,10 @@ def dispatch(job, job_dir, engine, run, *, source_key=None, zen_state_root=None,
     view, protected, writes = recipe_job.prepare_view(job, job_dir, reserved=reserved)
     restore_native_inputs(recipe, view, run)
     raw_roots = ()
+    plugin_relocations = {}
     if kind in ('unreal.cook.produce', 'unreal.package'):
-        protected = canonical_project_plugins(view, _path(view, params['project']), protected)
+        protected = canonical_project_plugins(view, _path(view, params['project']), protected,
+                                              relocations=plugin_relocations)
     if kind == 'unreal.cook.produce':
         if (export_project is None or not Path(export_project).is_absolute() or Path(export_project).suffix != '.uproject'
                 or not Path(export_project).is_file() or Path(export_project).is_symlink()):
@@ -1039,7 +1097,8 @@ def dispatch(job, job_dir, engine, run, *, source_key=None, zen_state_root=None,
         # Inventory comes from the controller's frozen upstream item, not a writer report.
         inventory = finalise_package(job, params, view, project, engine, job_dir, run, environment, source_key) if params.get('native_global') else params.get('cooked_files')
         cooked = project.parent / 'Saved/Cooked/Mac'
-        package_view, packaging_project = (package_project_view(job, job_dir, view, project, run)
+        package_view, packaging_project = (package_project_view(job, job_dir, view, project, run,
+                                                                relocations=plugin_relocations, target=target)
                                            if params.get('native_global') else (view, project))
         package_cooked = packaging_project.parent / 'Saved/Cooked/Mac'
         archive = _path(package_view, params['archive'])
