@@ -169,6 +169,25 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
     for rule in definition.inputs.values_mut() {
         rule.item_classes
             .insert(crate::blender_ops::MESH_EXPORT_CLASS.into());
+        // These are opaque, already-certified inputs here; recipe outputs remain Data.
+        // External cooked packages require their separate native adapter.
+        rule.item_classes.extend(
+            [
+                "StaticMesh",
+                "SkeletalMesh",
+                "Skeleton",
+                "PhysicsAsset",
+                "Animation",
+                "Texture",
+                "Sound",
+                "Material",
+                "MaterialInstance",
+                "MaterialParameterCollection",
+                "Map",
+            ]
+            .into_iter()
+            .map(Into::into),
+        );
     }
     definition.params.remove("seed");
     for (name, kind) in [
