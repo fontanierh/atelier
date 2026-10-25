@@ -115,7 +115,7 @@ def select_texture(source=None, output=None, piece=None):
 def export_packet(source=None, output=None, payload=None, metadata=None, piece=None, planner=None):
     """Run the original selected-packet planner, then the fixed validated FBX exporter."""
     from atelier.build_v2.blender_ops import run_export_piece, verify_plan
-    from v2_geometry_templates import LIMITS
+    from atelier.build_v2.file_groups import LIMITS
     source, output, payload, metadata = map(Path, (source, output, payload, metadata))
     if not NAME.fullmatch(piece) or {p.name for p in source.iterdir()} != {piece + '.npz'}:
         raise ValueError('Expected exactly one selected canonical CraterPark packet')
