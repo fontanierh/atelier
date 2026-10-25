@@ -99,7 +99,7 @@ def verify_plan(root, *, parent, limits):
         raw = path.read_bytes()
         if hashlib.sha256(raw).hexdigest() != row.get('sha256'):
             raise ValueError('Emitted payload hash differs from the plan')
-        facts = mesh_facts(raw, expected_asset=asset)
+        facts = mesh_facts(raw, expected_asset=asset, output_format=None)
         validate_member_row(facts, row, manifest)
         membership = row.get('source_faces')
         if (not isinstance(membership, list) or len(membership) != facts['polygons']
