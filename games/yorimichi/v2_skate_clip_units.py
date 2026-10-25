@@ -251,15 +251,14 @@ def skate_clip_units(rows, *, checkout):
                {f'members_b{bank}': dict(members_roots[f'members_b{bank}']), 'bundle': dict(bundle_root)})
     control = import_constants['CONTROL']
     # verify_clips.control's copy, as its own store-only private package: the finished CONTROL clip (exact piece join)
-    # duplicated under the engine's default compression, with its measurement as the finish's Data report.
-    add({'id': 'unreal.skate_clips.control', 'op': {'kind': 'unreal.finish', 'version': '1'}, 'script': SCRIPT, 'code': code,
-         'params': {'op': 'finish', 'kind': 'animation', 'source': token(where[control], 0, 'asset', control),
-                    'destination': CONTROL_COPY, 'args': {'action': 'control', 'members': f'members_b{where[control]}', 'bundle': 'bundle'}},
-         'outputs': [_output('asset', CONTROL_COPY, 'Animation', store=True),
-                     {'id': 'report', 'logical_path': '/Internal/SkateRide/Control', 'class': 'Data', 'destination': 'store',
-                      'files': [{'path': 'data/control.json', 'required': True}]}]},
-        [deepcopy(members_inputs[where[control]]), deepcopy(bundle_input)],
-        {f'members_b{where[control]}': dict(members_roots[f'members_b{where[control]}']), 'bundle': dict(bundle_root)})
+    # duplicated under the engine's default compression; then its measurement, compressed and raw, as JSON.
+    author('unreal.skate_clips.control.copy', {'action': 'control_copy', 'sequence': token(where[control], 0, 'asset', control)},
+           [_output('asset', CONTROL_COPY, 'Animation', store=True)], [])
+    author('unreal.skate_clips.control', {'action': 'control', 'copy': 'copy', 'members': f'members_b{where[control]}', 'bundle': 'bundle'},
+           [{'id': 'report', 'logical_path': '/Internal/SkateRide/Control', 'class': 'JsonData', 'destination': 'store',
+             'files': [{'path': 'data/control.json', 'required': True}]}],
+           [_item('copy', 'unreal.skate_clips.control.copy', 'asset'), deepcopy(members_inputs[where[control]]), deepcopy(bundle_input)],
+           {f'members_b{where[control]}': dict(members_roots[f'members_b{where[control]}']), 'bundle': dict(bundle_root)})
     author('unreal.skate_clips.manifest',
            {'action': 'manifest', **shared_args, 'mirror': 'mirror', 'members': [f'members_b{b}' for b in banks],
             'clips': [token(b, 0, 'asset') for b in banks]},

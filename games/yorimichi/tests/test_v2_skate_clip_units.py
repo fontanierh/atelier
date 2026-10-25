@@ -56,7 +56,7 @@ def test_every_owner_from_the_actual_rows(declared):
         'skate_clips.rig', 'skate_clips.members.b0', 'skate_clips.members.b1', 'unreal.skate_clips.rider.raw',
         'unreal.skate_clips.rider', 'unreal.skate_clips.ACL_SkateRideExact', 'unreal.skate_clips.CC_SkateRideExact',
         'unreal.skate_clips.MDT_SkateRider', *(f'unreal.skate_clips.still.{n}' for n in constants['STILLS']),
-        'unreal.skate_clips.control', 'unreal.skate_clips.manifest', 'unreal.skate_clips.report'])
+        'unreal.skate_clips.control.copy', 'unreal.skate_clips.control', 'unreal.skate_clips.manifest', 'unreal.skate_clips.report'])
     package = found['skate_clips.members.b0']['inputs'][0]
     assert package['source'] == {'kind': 'item', 'unit': 'skate.runtime', 'item': 'output1'} and 'whole' in package
     assert found['skate_clips.members.b0']['params']['recipe']['paths']['build/yorimichi/skate-simulation/package'] == \
@@ -78,11 +78,13 @@ def test_every_owner_from_the_actual_rows(declared):
     for template in declared['templates']:
         for follower in template['followers']:
             assert all(i['source']['unit'] not in ('skate.runtime', template['producer']) for i in follower['unit']['inputs'])
-    control = found['unreal.skate_clips.control']
-    assert control['op'] == {'kind': 'unreal.finish', 'version': '1'} and control['params']['kind'] == 'animation'
-    assert control['params']['source']['derived_items']['templates'][0]['piece'] == constants['CONTROL']
-    assert [(o['logical_path'], o['destination']) for o in control['outputs']] == [
-        (units.CONTROL_COPY, 'store'), ('/Internal/SkateRide/Control', 'store')]
+    copy, control = found['unreal.skate_clips.control.copy'], found['unreal.skate_clips.control']
+    assert copy['op'] == control['op'] == {'kind': 'unreal.author', 'version': '1'} and copy['inputs'] == []
+    assert copy['params']['args']['sequence']['derived_items']['templates'][0]['piece'] == constants['CONTROL']
+    assert [(o['logical_path'], o['class'], o['destination']) for o in copy['outputs']] == [(units.CONTROL_COPY, 'Animation', 'store')]
+    assert [(o['class'], o['files'][0]['path']) for o in control['outputs']] == [('JsonData', 'data/control.json')]
+    assert {i['name']: i['source']['unit'] for i in control['inputs']}['copy'] == 'unreal.skate_clips.control.copy'
+    assert all(isinstance(u['params'].get('source', ''), str) for u in declared['units'])
     assert {i['source']['unit']: i['source']['item'] for i in found['unreal.skate_clips.report']['inputs']}['unreal.skate_clips.control'] == 'report'
     assert declared['aliases']['unreal.skate_clips'] == tuple(found)
 
