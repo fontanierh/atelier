@@ -37,12 +37,22 @@ def _identity(info):
 
 
 def archive_authority(archive):
-    """(sha256, manifest rows) of one stable archive, read through a single descriptor."""
+    """(sha256, manifest rows) of one stable archive, read through a single descriptor.
+
+    The archive is a canonical absolute path without linked ancestors, naming one ordinary single-link file
+    whose named and opened identities stay equal before and after reading.
+    """
+    archive = Path(archive)
+    if not archive.is_absolute() or archive.resolve() != archive:
+        raise ValueError('recipe root archive is not a canonical unlinked path')
+    named = archive.lstat()
+    if not stat.S_ISREG(named.st_mode) or named.st_nlink != 1:
+        raise ValueError('recipe root archive is not an ordinary single-link file')
     fd = os.open(archive, os.O_RDONLY | os.O_NOFOLLOW)
     with os.fdopen(fd, 'rb') as stream:
         before = os.fstat(stream.fileno())
-        if not stat.S_ISREG(before.st_mode):
-            raise ValueError('recipe root archive is not a regular file')
+        if _identity(before) != _identity(named):
+            raise ValueError('recipe root archive changed while opening')
         hasher = hashlib.sha256()
         for chunk in iter(lambda: stream.read(1024 * 1024), b''):
             hasher.update(chunk)
@@ -54,7 +64,7 @@ def archive_authority(archive):
                 raise ValueError('missing bounded root manifest')
             manifest = json.loads(tar.extractfile(first).read())
         after = os.fstat(stream.fileno())
-    if _identity(before) != _identity(after):
+    if not (_identity(before) == _identity(after) == _identity(archive.lstat())) or after.st_nlink != 1:
         raise ValueError('recipe root archive changed while reading')
     if (not isinstance(manifest, dict) or set(manifest) != {'version', 'kind', 'entries'} or manifest['version'] != 1
             or not isinstance(manifest['entries'], list) or not manifest['entries']
@@ -92,8 +102,24 @@ class CommonRootClones:
             raise ValueError('root clone scope needs a canonical owned parent')
         scope.mkdir(mode=0o700)  # Fresh: never adopt an earlier or foreign scope.
         self.scope, self.inventory = scope, inventory
+        self._binding = self._observed()
         self.clone = clone if clone is not None else _clonefile()
         self.snapshots = {}  # archive digest -> (rows, {name: identity})
+
+    def _observed(self):
+        parent, scope = self.scope.parent.lstat(), self.scope.lstat()
+        if not stat.S_ISDIR(parent.st_mode) or not stat.S_ISDIR(scope.st_mode) or scope.st_uid != os.getuid():
+            raise ValueError('root clone scope is not an owned directory')
+        return (parent.st_dev, parent.st_ino), (scope.st_dev, scope.st_ino)
+
+    def _check_scope(self):
+        """The exact fresh scope this instance created, reached without any linked ancestor."""
+        try:
+            same = self.scope.resolve() == self.scope and self._observed() == self._binding
+        except OSError:
+            same = False
+        if not same:
+            raise ValueError('root clone scope was replaced or aliased')
 
     def _canonical_root(self, root, archive):
         root, archive = Path(root), Path(archive)
@@ -124,6 +150,7 @@ class CommonRootClones:
         if self.clone is None:
             raise ValueError('independent clones are unavailable on this volume')
         snapshot = self.scope / key / 'root'
+        self._check_scope()
         snapshot.parent.mkdir(mode=0o700)
         try:
             directories = []
@@ -149,6 +176,7 @@ class CommonRootClones:
             raise
 
     def share(self, archive, root):
+        self._check_scope()
         key, rows = archive_authority(archive)
         root = self._canonical_root(root, archive)
         current = [tuple(row) for row in self.inventory(root)]
@@ -160,6 +188,7 @@ class CommonRootClones:
             return {'archive': key, 'snapshot': 'created', 'files': len(files), 'bytes': sum(s for _, s, _ in files)}
         if self.snapshots[key][0] != rows:
             raise ValueError('archive digest names another manifest')
+        self._check_scope()
         self._verify_snapshot(key)
         observed = {name: _identity((root / name).lstat()) for name, _, _ in files}
         if [tuple(row) for row in self.inventory(root)] != rows:
@@ -184,12 +213,22 @@ class CommonRootClones:
         return {'archive': key, 'snapshot': 'reused', 'files': len(files), 'bytes': sum(s for _, s, _ in files)}
 
     def _remove(self, path):
+        """Remove part of this instance's own verified scope; links are unlinked, never followed."""
+        path = Path(path)
+        self._check_scope()
+        if path != self.scope and not path.is_relative_to(self.scope):
+            raise ValueError('root clone removal is outside its own scope')
         if not os.path.lexists(path):
             return
+        if path.is_symlink() or path.resolve() != path:
+            raise ValueError('root clone removal reached a link')
         for folder, directories, _ in os.walk(path):
-            os.chmod(folder, 0o700)
+            os.chmod(folder, 0o700, follow_symlinks=False)
             for directory in directories:
-                os.chmod(os.path.join(folder, directory), 0o700)
+                child = os.path.join(folder, directory)
+                if not os.path.islink(child):
+                    os.chmod(child, 0o700, follow_symlinks=False)
+        self._check_scope()
         shutil.rmtree(path)
 
     def discard(self):
