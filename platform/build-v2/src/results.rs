@@ -672,9 +672,12 @@ impl WriteTransaction {
     }
 
     /// @cc [owner:fontanierh,label:correctness] independently-verified-external-cook
-    /// External cook publication MUST require the fixed independent native verifier's
-    /// sealed frozen completion, exact source/package/native-key binding, complete
-    /// persisted verification record and v2-owned immutable retained native record.
+    /// External cook publication MUST require an actual fixed normal cook producer's
+    /// sealed completion consumed as a typed NativeCookRecord, plus the independent
+    /// native restore verifier's sealed completion and exact record-byte/source/package/
+    /// native-key binding. Recorded dependency keys or input-key echoes alone MUST NOT
+    /// prove source origin. Both producer and verifier records MUST be complete and
+    /// persisted, with the retained native record immutable and owned by v2.
     /// Unknown locators and generic writer reports MUST NOT grant lookup or publication.
     /// The retained native bytes and lifetime marker MUST be rechecked at publication.
     /// Stage one independently native-verified external package result. No files or
@@ -731,29 +734,34 @@ impl WriteTransaction {
             }
             // The native verification record must already be durably stored. A
             // local writer report or a lost report publication grants no locator.
-            let proof_path = self.store.record_path(proof.proof_key());
-            let metadata = fs::symlink_metadata(&proof_path)?;
-            if !metadata.is_file() || !metadata.permissions().readonly() {
-                return Err(invalid("native verification record is not immutable"));
-            }
-            let persisted: ResultEnvelope = serde_json::from_slice(&fs::read(proof_path)?)
-                .map_err(|error| invalid(error.to_string()))?;
-            if persisted.version != ENVELOPE_VERSION
-                || persisted.result.schema_version != RESULT_SCHEMA_VERSION
-                || persisted.result.key != proof.proof_key()
-                || persisted.result.outputs != proof.report().result.outputs
-                || persisted.result.ingredients != proof.report().result.ingredients
-            {
-                return Err(invalid(
-                    "native verification record differs from its frozen proof",
-                ));
-            }
-            for file in persisted.files() {
-                self.store
-                    .objects
-                    .check_recorded(&ObjectDigest::from_hex(&file.digest)?, file.size)?;
+            for expected in [proof.producer_report(), proof.report()] {
+                let proof_path = self.store.record_path(&expected.result.key);
+                let metadata = fs::symlink_metadata(&proof_path)?;
+                if !metadata.is_file() || !metadata.permissions().readonly() {
+                    return Err(invalid(
+                        "native producer/verification record is not immutable",
+                    ));
+                }
+                let persisted: ResultEnvelope = serde_json::from_slice(&fs::read(proof_path)?)
+                    .map_err(|error| invalid(error.to_string()))?;
+                if persisted.version != ENVELOPE_VERSION
+                    || persisted.result.schema_version != RESULT_SCHEMA_VERSION
+                    || persisted.result.key != expected.result.key
+                    || persisted.result.outputs != expected.result.outputs
+                    || persisted.result.ingredients != expected.result.ingredients
+                {
+                    return Err(invalid(
+                        "native producer/verification record differs from its frozen proof",
+                    ));
+                }
+                for file in persisted.files() {
+                    self.store
+                        .objects
+                        .check_recorded(&ObjectDigest::from_hex(&file.digest)?, file.size)?;
+                }
             }
             self.upstream.insert(proof.proof_key().to_string());
+            self.upstream.insert(proof.producer_key().to_string());
             outputs.push(StoredItem {
                 item: item.clone(),
                 files: Vec::new(),

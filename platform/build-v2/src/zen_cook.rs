@@ -5,7 +5,7 @@
 //! missing native support fails the job. Cook writers cannot issue this token.
 use crate::completion::FrozenCompletion;
 use crate::keys::{PreparedUnit, canonical_bytes};
-use crate::schema::{Destination, Item};
+use crate::schema::{Destination, Item, StoredItem};
 use crate::source_hashes::{sha256, valid_digest};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -48,13 +48,13 @@ def run(context):
             or (request['expected_root_hash'] and report.get('root_hash') != request['expected_root_hash'])):
         raise ValueError('Independent native package verification refused or differed')
     locator = dict(version=1, project=request['project'], oplog=request['oplog'], package=p['package'],
-                   source_key=p['source_key'], dependency_key=report['native_stored_key'], entry_hash=report['root_hash'],
+                   source_key=p['source_key'], dependency_key=report['native_stored_key'], entry_hash=report['root_hash'], installed_entry_hash=report['installed_root_hash'],
                    lifetime_marker=request['marker_path'], record_path=request['record_path'], project_file=request['project_file'])
     record_path = Path(request['record_path'])
     record_path.chmod(0o444)
     with record_path.open('rb') as source:
         record_sha256 = hashlib.file_digest(source, 'sha256').hexdigest()
-    result = dict(version=1, locator=locator, record_io_hash=report['record_io_hash'], record_sha256=record_sha256, attachments=report['attachments'], mode=p['mode'])
+    result = dict(version=1, locator=locator, record_io_hash=report['record_io_hash'], record_sha256=record_sha256, attachments=report['attachments'], mode=p['mode'], source_dependency_evaluation=report['source_dependency_evaluation'])
     target = Path(context.job_dir) / 'output' / 'zen-verified.json'
     target.write_text(json.dumps(result, sort_keys=True, separators=(',', ':')), encoding='utf-8')
 "#;
@@ -101,6 +101,7 @@ pub struct CookLocator {
     /// Unreal FIoHash, not an Atelier SHA256 or guessed dependency fingerprint.
     pub dependency_key: String,
     pub entry_hash: String,
+    pub installed_entry_hash: String,
     /// Durable v2-owned Zen oplog marker. The native verifier must compare the
     /// actual server markerpath, not merely test this file's existence.
     pub lifetime_marker: String,
@@ -121,6 +122,7 @@ impl CookLocator {
             || !valid_digest(&self.source_key)
             || !native_hash(&self.dependency_key)
             || !native_hash(&self.entry_hash)
+            || !native_hash(&self.installed_entry_hash)
             || self.oplog != "Mac"
             || self.project != format!("AtelierV2_{}", self.source_key)
             || self.project.len() > 100
@@ -128,8 +130,9 @@ impl CookLocator {
                 .project
                 .bytes()
                 .all(|c| c.is_ascii_alphanumeric() || c == b'_')
-            || !self.package.starts_with("/Game/")
-            || self.package[6..].split('/').any(|part| {
+            || !self.package.starts_with('/')
+            || self.package.starts_with("/Script/")
+            || self.package[1..].split('/').any(|part| {
                 part.is_empty() || !part.bytes().all(|c| c.is_ascii_alphanumeric() || c == b'_')
             })
             || [&self.lifetime_marker, &self.record_path, &self.project_file]
@@ -191,6 +194,42 @@ struct NativeReport {
     record_sha256: String,
     attachments: u64,
     mode: String,
+    source_dependency_evaluation: String,
+}
+
+fn consumed_native_record<'a>(
+    items: &'a [StoredItem],
+    inputs: &[crate::keys::PreparedInput],
+) -> Result<&'a StoredItem, String> {
+    let records = items
+        .iter()
+        .filter(|item| {
+            item.item.class == "NativeCookRecord"
+                && item.item.destination == Destination::Store
+                && item.files.len() == 1
+                && item.external_locator.is_none()
+        })
+        .filter(|item| {
+            inputs.iter().any(|input| match &input.payload {
+                crate::keys::InputPayload::Item {
+                    logical_path,
+                    class,
+                    files,
+                } => {
+                    logical_path == &item.item.logical_path
+                        && class == &item.item.class
+                        && files == &item.files
+                }
+                _ => false,
+            })
+        })
+        .collect::<Vec<_>>();
+    if records.len() != 1 {
+        return Err(
+            "source unit must consume exactly one actual completed native cook record".into(),
+        );
+    }
+    Ok(records[0])
 }
 
 /// A live borrow of the independently verified frozen native result. There is no
@@ -198,6 +237,7 @@ struct NativeReport {
 pub struct VerifiedPackage<'a> {
     locator: CookLocator,
     proof: &'a FrozenCompletion,
+    producer: &'a FrozenCompletion,
     item: Item,
     source_unit: String,
     record_sha256: String,
@@ -206,8 +246,23 @@ impl<'a> VerifiedPackage<'a> {
     pub fn from_verifier(
         unit: &PreparedUnit,
         item: &Item,
+        producer: &'a FrozenCompletion,
         proof: &'a FrozenCompletion,
     ) -> Result<Self, String> {
+        let source = &producer.result().result;
+        if producer.refused
+            || source.ingredients.op.kind != "unreal.cook.produce"
+            || source.ingredients.op.version != "1"
+        {
+            return Err(
+                "source origin requires an actual fixed normal cook producer completion".into(),
+            );
+        }
+        let source_item = consumed_native_record(&source.outputs, unit.inputs())?;
+        let source_digest = &source_item.files[0].digest;
+        for object in producer.certified_objects()? {
+            object.check_frozen().map_err(|e| e.to_string())?;
+        }
         let record = &proof.result().result;
         let ingredients = &record.ingredients;
         if proof.refused
@@ -276,6 +331,9 @@ impl<'a> VerifiedPackage<'a> {
             || !locator.matches(unit, item)
             || !native_hash(&report.record_io_hash)
             || !valid_digest(&report.record_sha256)
+            || report.record_sha256 != *source_digest
+            || report.source_dependency_evaluation != "recorded_only"
+            || report.mode != "restore"
             || report.attachments == 0
             || report.attachments > 1_000_000
             || p.get("mode").and_then(|v| v.as_str()) != Some(report.mode.as_str())
@@ -285,6 +343,7 @@ impl<'a> VerifiedPackage<'a> {
         Ok(Self {
             locator,
             proof,
+            producer,
             item: item.clone(),
             source_unit: unit.request("", "").unit,
             record_sha256: report.record_sha256,
@@ -302,6 +361,12 @@ impl<'a> VerifiedPackage<'a> {
     pub(crate) fn report(&self) -> &super::ResultEnvelope {
         self.proof.result()
     }
+    pub(crate) fn producer_report(&self) -> &super::ResultEnvelope {
+        self.producer.result()
+    }
+    pub(crate) fn producer_key(&self) -> &str {
+        &self.producer.result().result.key
+    }
     pub(crate) fn proof_key(&self) -> &str {
         &self.proof.result().result.key
     }
@@ -312,10 +377,15 @@ impl<'a> VerifiedPackage<'a> {
         }
     }
     pub(crate) fn check(&self) -> Result<(), String> {
-        if self.proof.refused {
+        if self.proof.refused || self.producer.refused {
             return Err("native verifier completion was refused".into());
         }
-        for object in self.proof.certified_objects()? {
+        for object in self
+            .producer
+            .certified_objects()?
+            .into_iter()
+            .chain(self.proof.certified_objects()?)
+        {
             object.check_frozen().map_err(|e| e.to_string())?;
         }
         self.witness().check()
@@ -363,10 +433,68 @@ mod tests {
             source_key: key,
             dependency_key: "b".repeat(40),
             entry_hash: "c".repeat(40),
+            installed_entry_hash: "d".repeat(40),
             lifetime_marker: "/store/zen-cook/markers/key".into(),
             record_path: "/store/zen-cook/records/key.cb".into(),
             project_file: "/store/zen-cook/projects/key/Atelier.uproject".into(),
         }
+    }
+    #[test]
+    fn producer_origin_requires_exact_consumed_native_bytes_and_role() {
+        use crate::keys::{InputPayload, PreparedInput};
+        use crate::protocol::StagedInput;
+        use crate::schema::{ContentIdentity, OutputFile, StoredFile};
+        let item = StoredItem {
+            item: Item {
+                id: "record".into(),
+                logical_path: "/CookRecords/Test".into(),
+                class: "NativeCookRecord".into(),
+                destination: Destination::Store,
+                files: vec![OutputFile {
+                    path: "record.cb".into(),
+                    install_path: None,
+                    required: true,
+                }],
+            },
+            files: vec![StoredFile {
+                path: "record.cb".into(),
+                digest: "a".repeat(64),
+                size: 6,
+                mode: 0o644,
+            }],
+            external_locator: None,
+        };
+        let input = PreparedInput {
+            wire: StagedInput {
+                name: "record".into(),
+                path: "in/record".into(),
+                identity: ContentIdentity::Digest {
+                    digest: "b".repeat(64),
+                },
+            },
+            payload: InputPayload::Item {
+                logical_path: item.item.logical_path.clone(),
+                class: item.item.class.clone(),
+                files: item.files.clone(),
+            },
+        };
+        assert!(consumed_native_record(&[item.clone()], &[input.clone()]).is_ok());
+        assert!(consumed_native_record(&[item.clone()], &[]).is_err());
+        assert!(consumed_native_record(&[item.clone(), item.clone()], &[input.clone()]).is_err());
+        let mut wrong = input.clone();
+        if let InputPayload::Item { files, .. } = &mut wrong.payload {
+            files[0].digest = "c".repeat(64);
+        }
+        assert!(consumed_native_record(&[item.clone()], &[wrong]).is_err());
+        let mut wrong = input.clone();
+        if let InputPayload::Item { files, .. } = &mut wrong.payload {
+            files[0].mode = 0o755;
+        }
+        assert!(consumed_native_record(&[item.clone()], &[wrong]).is_err());
+        let mut metadata = item.clone();
+        metadata.item.class = "JsonData".into();
+        assert!(consumed_native_record(&[metadata.clone()], &[input.clone()]).is_err());
+        assert!(consumed_native_record(&[metadata, item], &[input]).is_ok());
     }
     #[test]
     fn retained_native_record_changes_and_missing_marker_refuse_publication() {
