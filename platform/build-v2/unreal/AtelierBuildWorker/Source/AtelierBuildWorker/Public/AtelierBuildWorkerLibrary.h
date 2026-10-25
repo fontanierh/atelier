@@ -7,11 +7,16 @@
  * What the build-v2 Unreal job loop (platform/studio/atelier/build_v2/unreal_worker.py) asks of the editor, seen from
  * Python as unreal.AtelierBuildWorkerLibrary.<snake_case>. Results that are structures are JSON text.
  */
+class UStaticMesh;
+
 UCLASS()
 class ATELIERBUILDWORKER_API UAtelierBuildWorkerLibrary : public UBlueprintFunctionLibrary
 {
     GENERATED_BODY()
 public:
+    /** Actual cooked complex collision, with the same bounds and triangle checks as receivers. */
+    UFUNCTION(BlueprintCallable, Category = "Atelier|Build")
+    static bool ValidateMeshCollision(UStaticMesh* Mesh, int32 ExpectedTriangles, bool HasAuthoredHulls);
     /** {build_id, modules: [project module], plugins: {name: base dir}, libraries: [loaded module file], rhi}. */
     UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static FString NativeContext();
     /** {graph, nodes: [{kind, path, local, status}]}: every cache store of the effective DDC graph, from its stats tree (full paths). */
