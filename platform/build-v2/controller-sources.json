@@ -4,6 +4,7 @@
     "platform/build-v2/.cargo/config.toml",
     "platform/build-v2/Cargo.lock",
     "platform/build-v2/Cargo.toml",
+    "platform/build-v2/examples/plans/village_edges.plan.json",
     "platform/build-v2/src/bin/atelier-build-v2.rs",
     "platform/build-v2/src/blender_ops.rs",
     "platform/build-v2/src/checkout_locks.rs",
@@ -80,6 +81,7 @@
     "platform/studio/atelier/build_v2/unreal_inputs.py",
     "platform/studio/atelier/build_v2/unreal_ops.py",
     "platform/studio/atelier/build_v2/unreal_tool_ops.py",
+    "platform/studio/atelier/build_v2/unreal_worker.py",
     "platform/studio/atelier/file_identity.py",
     "platform/studio/atelier/paths.py",
     "platform/studio/atelier/source_imports.py"
