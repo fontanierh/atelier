@@ -124,6 +124,12 @@ def test_fixed_verifier_returns_report_without_python_write_permission(tmp_path,
         result = runpy.run_path(str(root / 'verify.py'))['run'](context)
     assert result['record_sha256'] == hashlib.sha256(record.read_bytes()).hexdigest()
     assert list((root / 'output').iterdir()) == []
+    monkeypatch.setattr(sys.modules['unreal'].AtelierBuildWorkerLibrary, 'zen_package_request',
+                        lambda raw: json.dumps({'status':'refused','error':'exact_native_refusal'}))
+    with unreal_worker.declared_python(root, ['verify.py'], [record], [Path(sys.base_prefix)]):
+        with pytest.raises(ValueError, match='exact_native_refusal'):
+            runpy.run_path(str(root / 'verify.py'))['run'](context)
+    assert list((root / 'output').iterdir()) == []
 
 
 def test_protocol_descriptors_must_appear_once_and_be_pipes(tmp_path):

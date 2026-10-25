@@ -28,7 +28,11 @@ def run(context):
             or any(report.get(k) != request[k] for k in ('mode', 'project', 'oplog', 'source_package', 'input_key', 'runtime_project_file'))
             or report.get('native_stored_key') != request['expected_stored_key']
             or (request['expected_root_hash'] and report.get('root_hash') != request['expected_root_hash'])):
-        raise ValueError('Independent native package verification refused or differed')
+        detail = {key: str(report.get(key, ''))[:160] for key in ('status', 'error')}
+        detail['mismatched_fields'] = [key for key in ('mode', 'project', 'oplog', 'source_package', 'input_key', 'runtime_project_file') if report.get(key) != request[key]]
+        detail['stored_key_matches'] = report.get('native_stored_key') == request['expected_stored_key']
+        detail['root_hash_matches'] = report.get('root_hash') == request['expected_root_hash']
+        raise ValueError('Independent native package verification refused or differed: ' + json.dumps(detail, sort_keys=True))
     record_path = Path(request['record_path'])
     with record_path.open('rb') as source:
         record_sha256 = hashlib.file_digest(source, 'sha256').hexdigest()
