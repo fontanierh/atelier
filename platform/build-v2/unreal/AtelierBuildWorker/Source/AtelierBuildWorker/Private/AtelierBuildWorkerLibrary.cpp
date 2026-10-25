@@ -49,6 +49,7 @@
 #include "UObject/PackageFileSummary.h"
 #include "UObject/Package.h"
 #include "UObject/UObjectIterator.h"
+#include "UObject/ICookInfo.h"
 #include "UObject/UObjectGlobals.h"
 
 namespace
@@ -672,6 +673,9 @@ FString UAtelierBuildWorkerLibrary::SourceCookRequest(const FString& RequestJson
     int32 Code = -1;
     {
         TGuardValue<bool> Cooking(PRIVATE_GIsRunningCookCommandlet, true);
+        // Public SDK hook paired with setting IsRunningCookCommandlet. The cooker
+        // consumes/unsubscribes this startup listener once per commandlet Main.
+        UE::Cook::InitializeCookGlobals();
         UClass* Class = FindObject<UClass>(nullptr, TEXT("/Script/UnrealEd.CookCommandlet"));
         if (Class && Class->IsChildOf(UCommandlet::StaticClass()))
         {
