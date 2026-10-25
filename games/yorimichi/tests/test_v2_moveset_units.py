@@ -286,3 +286,22 @@ def test_record_returns_only_its_json_value(editor, tmp_path, monkeypatch):
     context.outputs = ['/Game/Paul/Other']
     with pytest.raises(ValueError, match='only its JsonData'):
         body.run(context)
+
+
+def test_a_scalar_native_member_is_resolved_by_identity_without_guessing_a_future_unit():
+    token = {'derived_items': {'root': 'derived/reference', 'templates': [
+        {'producer': 'reference.clips', 'group': 'clips', 'unit_prefix': 'reference.clip', 'follower': 1, 'item': 'animation'}]}}
+    reference = {'derived': token, 'piece': 'Glide', 'package': '/Game/Adventure/Reference/A_Reference_Glide'}
+    declared = movesets._native(reference, 'glide')
+    inputs = movesets._Inputs()
+    binding = inputs.native('glide', declared)
+    assert inputs.items == []
+    assert binding['derived_native']['items']['derived_items']['templates'][0]['piece'] == 'Glide'
+    assert 'piece' not in token['derived_items']['templates'][0]
+    resolved = {'derived_native': {'package': reference['package'], 'items': {'derived_items': {
+        'root': 'derived/reference', 'members': [{'piece': 'Glide', 'slot': 'derived_0'}]}}}}
+    context = NS(inputs={'derived_0': 'input'}, packages={'derived_0': reference['package']})
+    assert body._selected(context, resolved) == reference['package']
+    context.packages['derived_0'] = '/Game/Adventure/Other'
+    with pytest.raises(ValueError, match='differs'):
+        body._selected(context, resolved)

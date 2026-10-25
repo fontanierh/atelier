@@ -34,13 +34,24 @@ def _package(value):
 
 
 def _selected(context, slot):
+    expected = None
+    if isinstance(slot, dict) and set(slot) == {'derived_native'}:
+        binding = slot['derived_native']
+        rows = binding.get('items', {}).get('derived_items', {}).get('members')
+        if (not isinstance(rows, list) or len(rows) != 1
+                or not isinstance(rows[0], dict) or not isinstance(rows[0].get('slot'), str)):
+            raise ValueError('Move-set native selection must resolve exactly one actual member')
+        expected, slot = _package(binding['package']), rows[0]['slot']
     if not isinstance(slot, str) or slot not in context.inputs or context.inputs[slot] is None:
         raise ValueError('Missing declared move-set input: ' + str(slot))
     packages = context.packages.get(slot)
     packages = [packages] if isinstance(packages, str) else packages
     if not isinstance(packages, (list, tuple)) or len(packages) != 1:
         raise ValueError('Move-set native input must be exactly one declared package: ' + slot)
-    return _package(packages[0])
+    actual = _package(packages[0])
+    if expected is not None and actual != expected:
+        raise ValueError('Move-set selected native package differs from its declared identity')
+    return actual
 
 
 def _load(unreal, context, slot, cls=None):
