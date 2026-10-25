@@ -120,9 +120,10 @@ class CommonRootClones:
     digest MUST build its fresh destination only from independent clones carrying the manifest modes, never
     unpacking or copying bytes, and MUST inventory exactly to the manifest before it is returned. A later
     ``share`` MUST replace only that ROOT's own equivalent regular files with such clones and re-inventory.
-    File and absent ROOTs MUST keep the original codec. Destinations overlapping the scope or archive, changed,
-    aliased or malformed archives, ROOTs or snapshots, and any clone failure, MUST refuse before writing, without
-    a byte-copy fallback, links or changes outside the ROOT's own files.
+    File and absent ROOTs MUST keep the original codec. Destinations overlapping the scope or archive MUST
+    refuse before writing. Changed, aliased or malformed archives, ROOTs or snapshots, and any clone failure,
+    MUST refuse without a byte-copy fallback, links or changes outside the ROOT's own files; a failed
+    materialization MUST remove only the fresh destination it created.
     """
     def __init__(self, scope, *, inventory=recipe_job.inventory, clone=None):
         scope = Path(scope)
