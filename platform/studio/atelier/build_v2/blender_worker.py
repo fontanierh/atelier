@@ -78,10 +78,19 @@ BLENDER_READ_LITERALS = ('/Library/Preferences/.GlobalPreferences.plist',)
 #   the extensions add-on at startup) probes IPv6 support by binding a local socket. This later rule
 #   only replaces the kill with a plain refusal for binds; connections and all other network use
 #   still end the job, and job code cannot create sockets at all.
+# Background Metal rendering creates a Cocoa GHOST context lazily at the first render.
+# AppKit registers this fixed executable with LaunchServices and connects to WindowServer;
+# denying those exact SDK endpoints aborts _RegisterApplication before rendering starts.
+# These are native platform services, not an allowance for arbitrary Mach names or job IO.
+BLENDER_RENDER_SERVICES = ('com.apple.windowserver.active',
+                           'com.apple.coreservices.launchservicesd',
+                           'com.apple.lsd.mapdb', 'com.apple.lsd.modifydb')
 BLENDER_RULES = (
     '(allow iokit-open-user-client (iokit-user-client-class "AGXDeviceUserClient" "IOSurfaceRootUserClient"))',
     '(allow file-read-metadata (literal "/tmp") (literal "/private/tmp") (literal "/Applications/Xcode.app"))',
     '(allow file-read-data (literal "/dev/urandom"))',
+    '(allow mach-lookup ' + ' '.join('(global-name ' + python_worker._quote(name) + ')'
+                                    for name in BLENDER_RENDER_SERVICES) + ')',
     '(deny network-bind)',
 )
 
@@ -116,7 +125,18 @@ class BlenderPlatform(python_worker.Platform):
         return subpaths, literals + [self.blender, *BLENDER_READ_LITERALS] + links
 
     def extra_rules(self):
-        return list(BLENDER_RULES)
+        """@cc [owner:fontanierh,label:safety] background-render-sdk-registration
+        Background rendering MAY register only the installed Blender bundle for a read-only
+        LaunchServices extension and access the fixed native rendering service names. This
+        MUST NOT allow arbitrary Mach endpoints, extension targets, file writes or processes.
+        Ordinary job code remains subject to the existing Python and filesystem guards.
+        """
+        registration = []
+        if Path(self.bundle).suffix == '.app':
+            registration = ['(allow file-issue-extension (require-all '
+                '(extension-class "com.apple.app-sandbox.read") '
+                '(literal ' + python_worker._quote(self.bundle) + ')))']
+        return [*registration, *BLENDER_RULES]
 
     def import_roots(self):
         return sorted(set(python_worker.interpreter_roots()) | {self.bundle})

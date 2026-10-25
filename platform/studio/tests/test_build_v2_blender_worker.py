@@ -317,3 +317,24 @@ def run(context):
         script = f'import os, random, uuid\ndef run(context):\n    {call}\n'
         assert loop.run(stage(tmp_path / f'entropy{index}', script=script))['failure']['kind'] == 'dependency'
     loop.close()
+
+
+def test_background_render_registration_has_exact_native_service_and_bundle_bounds(tmp_path, blender):
+    platform = blender_worker.BlenderPlatform(str(blender))
+    profile = python_worker.sandbox_profile(str(tmp_path / 'job'), platform)
+    rules = [line for line in profile.splitlines() if line.startswith('(allow mach-lookup')]
+    assert rules == ['(allow mach-lookup ' + ' '.join('(global-name "' + service + '")'
+                       for service in blender_worker.BLENDER_RENDER_SERVICES) + ')']
+    assert set(blender_worker.BLENDER_RENDER_SERVICES) == {
+        'com.apple.windowserver.active', 'com.apple.coreservices.launchservicesd',
+        'com.apple.lsd.mapdb', 'com.apple.lsd.modifydb'}
+    extension = [line for line in profile.splitlines() if line.startswith('(allow file-issue-extension')]
+    assert extension == ['(allow file-issue-extension (require-all '
+        '(extension-class "com.apple.app-sandbox.read") (literal "' + platform.bundle + '")))']
+    ordinary = python_worker.sandbox_profile(str(tmp_path / 'job'))
+    assert '(allow mach-lookup' not in ordinary and '(allow file-issue-extension' not in ordinary
+    assert 'com.apple.pasteboard' not in profile and 'com.apple.tccd' not in profile
+    assert '(allow process*)' not in profile and '(allow network*)' not in profile
+    assert profile.splitlines()[-1] == '(deny network-bind)'
+    outside_bundle = blender_worker.BlenderPlatform(str(tmp_path / 'plain/Blender'))
+    assert not any(line.startswith('(allow file-issue-extension') for line in outside_bundle.extra_rules())
