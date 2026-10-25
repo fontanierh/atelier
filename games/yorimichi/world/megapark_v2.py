@@ -108,18 +108,23 @@ def parent(context, unreal, args):
 
 
 def instance(context, unreal, args):
-    key = args['key']
-    package = f'{ROOT}/Materials/MI_{key[2:]}'
-    _owned(context, package); _fresh(unreal, package)
-    report = json.loads(_data(context, args['build'], 'build.json').read_bytes())
-    restyle = json.loads(_data(context, args['restyle'], 'textures.json').read_bytes())
-    p = report['materials'][key]
-    channels = p.get('retail_texture_ids', {})
-    if p.get('alpha_mode', 0) != args['alpha'] or set(channels) != set(args['textures']):
-        raise ValueError(f'{key}: generated material spec differs from its declared member')
-    textures = {role: _load(unreal, context, slot, unreal.Texture) for role, slot in args['textures'].items()}
-    if any(_path(textures[role]) != f'{ROOT}/Textures/T_{tid[2:]}' for role, tid in channels.items()):
-        raise ValueError(f'{key}: declared texture inputs differ from the material channels')
+    if 'spec' in args:
+        selected=_data(context,args['spec'],args['piece']+'.json');spec=json.loads(selected.read_bytes(),object_pairs_hook=_pairs)
+        if set(spec)!={'key','material','lightmap_norm'} or args['piece']!='MI_'+spec['key'][2:]:raise ValueError('MegaPark selected material spec differs')
+        key=spec['key'];p=spec['material'];alpha=p.get('alpha_mode',0);channels=p.get('retail_texture_ids',{})
+        if type(alpha) is not int or alpha not in (0,1,2) or set(channels)-set(ALIASES) or set(channels.values())-set(args['texture_inputs']):raise ValueError('Invalid actual MegaPark material spec')
+        restyle={'lightmaps':{channels.get('lightmap'):spec['lightmap_norm']}}
+        args={**args,'key':key,'alpha':alpha,'parent':args['parents'][str(alpha)],'textures':{role:args['texture_inputs'][tid] for role,tid in channels.items()}}
+    else:
+        key=args['key'];report=json.loads(_data(context,args['build'],'build.json').read_bytes())
+        restyle_path=_data(context,args['restyle'],directory=True) if Path(context.inputs[args['restyle']]).is_dir() else None
+        restyle=json.loads((restyle_path/'textures.json' if restyle_path else _data(context,args['restyle'],'textures.json')).read_bytes())
+        p=report['materials'][key];channels=p.get('retail_texture_ids',{})
+    package=f'{ROOT}/Materials/MI_{key[2:]}'
+    _owned(context,package);_fresh(unreal,package)
+    if p.get('alpha_mode',0)!=args['alpha'] or set(channels)!=set(args['textures']):raise ValueError(f'{key}: generated material spec differs from declared member')
+    textures={role:_load(unreal,context,slot,unreal.Texture) for role,slot in args['textures'].items()}
+    if any(_path(textures[role])!=f'{ROOT}/Textures/T_{tid[2:]}' for role,tid in channels.items()):raise ValueError('MegaPark declared texture differs')
     base = _load(unreal, context, args['parent'], unreal.Material)
     if _path(base) != f'{ROOT}/Materials/{PARENTS[args["alpha"]]}':
         raise ValueError(f'{key}: instance parent differs from its alpha mode')
@@ -213,7 +218,11 @@ def mesh(context, unreal, args):
         raise ValueError('MegaPark mesh finish must own exactly its original piece package')
     _owned(context, destination)
     entry = source_facts(context, args, piece)
-    mis = {key: _load(unreal, context, slot, unreal.MaterialInterface) for key, slot in args['materials'].items()}
+    material_slots=args['materials']
+    if isinstance(material_slots,dict) and 'derived_items' in material_slots:
+        members=_derived(material_slots);material_slots={('0x'+row['piece'][3:]):row['slot'] for row in members}
+        if any(not row['piece'].startswith('MI_') for row in members) or len(material_slots)!=len(members):raise ValueError('MegaPark actual MI roster differs')
+    mis={key:_load(unreal,context,slot,unreal.MaterialInterface) for key,slot in material_slots.items()}
     if set(args['native_inputs']) != {slot for slot in context.inputs if slot.startswith('native')}:
         raise ValueError('MegaPark finish input membership differs from its declared native closure')
     for slot, package in args['native_inputs'].items():
@@ -253,25 +262,36 @@ def mesh(context, unreal, args):
                     sum((getattr(box.max, k) - v) ** 2 for k, v in zip('xyz', hi)) ** .5)
         if not error < .05:
             raise ValueError(f'{piece}: bounds differ by {error} cm')
+        return error
     validate()
     if not library.save_loaded_asset(asset):
         raise ValueError('Could not save current park mesh ' + piece)
     primary = Path(context.content_dir) / (destination.removeprefix('/Game/') + '.uasset')
     if any(part.is_symlink() for part in (primary, *primary.parents)) or not primary.is_file():
         raise ValueError('MegaPark native save did not leave its actual regular primary package')
-    validate()
+    error=validate()
+    if args.get('audit'):
+        binary='data/imported-geometry/'+piece+'.bin';report_path='data/imported-reports/'+piece+'.json'
+        if set(getattr(context,'data_outputs',()))!={binary,report_path} or len(context.data_outputs)!=2:raise ValueError('MegaPark finish requires its exact declared native audit outputs')
+        observer=getattr(getattr(unreal,'MeshImportAudit',None),'dump_mesh_triangles',None)
+        if not callable(observer):raise ValueError('Produced YorimichiImport MeshImportAudit unavailable')
+        origin=original(context,unreal,('ue',))['ue'](entry['origin'])
+        if not observer(asset,origin,str(Path(context.job_dir)/'output'/binary)):raise ValueError('Actual MegaPark triangle dump failed')
+        editor=unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
+        return {report_path:{'name':piece,'triangles':asset.get_num_triangles(0),'bounds_error_cm':error,'uv_channels':editor.get_num_uv_channels(asset,0),'collision':collision,'placed':args['parent'] not in ('SM_MP_Seam','UC_MP_Seam')}}
     return asset
 
 
 def level(context, unreal, args):
     _owned(context, LEVEL); _fresh(unreal, LEVEL)
     report = json.loads(_data(context, args['build'], 'build.json').read_bytes())
-    pieces = args['pieces']
-    if not isinstance(pieces, dict) or set(pieces) != {'root', 'members'}:
-        raise ValueError('MegaPark level needs its expanded finished piece roster')
-    placed = {row['piece']: row['slot'] for row in pieces['members']}
+    piece_members=_derived(args['pieces']);placed={row['piece']:row['slot'] for row in piece_members}
+    if 'materials' in args:
+        for row in _derived(args['materials']):
+            asset=_load(unreal,context,row['slot'],unreal.MaterialInterface)
+            if _path(asset)!=ROOT+'/Materials/'+row['piece']:raise ValueError('MegaPark level actual MI differs')
     entries = [(e, False) for e in report['render']] + [(e, True) for e in report['collision']]
-    if len(placed) != len(pieces['members']) or set(placed) != {e['name'] for e, _ in entries}:
+    if len(placed) != len(piece_members) or set(placed) != {e['name'] for e, _ in entries}:
         raise ValueError('MegaPark level pieces differ from the assembled render/collision roster')
     meshes = {name: _load(unreal, context, slot, unreal.StaticMesh) for name, slot in placed.items()}
     if any(_path(m) != f'{ROOT}/Meshes/{name}' for name, m in meshes.items()):
@@ -327,7 +347,36 @@ def level(context, unreal, args):
     return world
 
 
-ACTIONS = {'parent': parent, 'instance': instance, 'mesh': mesh, 'level': level}
+def _derived(value):
+    if isinstance(value,dict) and set(value)=={'derived_items'}:value=value['derived_items']
+    if not isinstance(value,dict) or set(value)!={'root','members'} or not isinstance(value['members'],list):raise ValueError('MegaPark requires actual expanded derived members')
+    rows=value['members']
+    if any(not isinstance(row,dict) or set(row)!={'piece','root','slot'} for row in rows) or len({r['piece'] for r in rows})!=len(rows) or len({r['slot'] for r in rows})!=len(rows):raise ValueError('Duplicate MegaPark derived member')
+    return rows
+
+
+def texture(context,unreal,args):
+    tid=args['tid'];name='T_'+tid[2:];package=ROOT+'/Textures/'+name
+    _owned(context,package);_fresh(unreal,package)
+    source=_selected(context,'raw')
+    if source!='/Game/_Raw/MegaPark/Textures/'+name:raise ValueError('MegaPark texture raw owner differs')
+    folder=_data(context,args['roles'],directory=True);path=folder/(name+'.json')
+    if {p.name for p in folder.iterdir()}!={name+'.json'} or path.is_symlink():raise ValueError('MegaPark selected texture role member differs')
+    spec=json.loads(path.read_bytes(),object_pairs_hook=_pairs)
+    if set(spec)!={'tid','roles'} or spec['tid']!=tid or not isinstance(spec['roles'],list) or len(set(spec['roles']))!=len(spec['roles']) or set(spec['roles'])-set(ALIASES):raise ValueError('Invalid MegaPark actual texture roles')
+    roles=set(spec['roles']);normal=bool(roles&{'normal','detail'});linear=bool(roles&{'lightmap','normal','detail','specular'})
+    raw=_load(unreal,context,'raw',unreal.Texture);asset=unreal.EditorAssetLibrary.duplicate_asset(source,package)
+    if not isinstance(asset,unreal.Texture) or asset is raw or _path(asset)!=package:raise ValueError('MegaPark texture duplicate failed')
+    asset.set_editor_property('srgb',not linear and not normal)
+    asset.set_editor_property('compression_settings',unreal.TextureCompressionSettings.TC_NORMALMAP if normal else unreal.TextureCompressionSettings.TC_DEFAULT)
+    if 'lightmap' in roles:
+        asset.set_editor_property('address_x',unreal.TextureAddress.TA_CLAMP);asset.set_editor_property('address_y',unreal.TextureAddress.TA_CLAMP)
+    from atelier import native_packages
+    native_packages.save(asset,unreal.EditorAssetLibrary,context.content_dir)
+    return asset
+
+
+ACTIONS = {'parent': parent, 'instance': instance, 'mesh': mesh, 'level': level, 'texture':texture}
 
 
 def run(context):
@@ -337,15 +386,16 @@ def run(context):
     parameters, mesh finishing and level layout: a spec equal to its declared
     member, a fresh duplicate of each raw piece with exact triangles, slots and
     bounds, and only finished pieces placed. It MUST NOT run the original top
-    level, cache, retirement or reports.
+    level, cache, retirement or receiving reports. Declared audit outputs MUST
+    come from the native triangle dumper and actual checked mesh properties.
     """
     import unreal
     params = context.params
     args = params.get('args')
     if not isinstance(args, dict) or args.get('action') not in ACTIONS:
         raise ValueError('Unsupported MegaPark action')
-    if args['action'] == 'mesh':
-        if params.get('op') != 'finish' or params.get('kind') != 'static_mesh':
+    if args['action'] in ('mesh','texture'):
+        if params.get('op') != 'finish' or params.get('kind') != ('static_mesh' if args['action']=='mesh' else 'texture'):
             raise ValueError('MegaPark pieces are finished by unreal.finish(static_mesh)')
     elif set(params) - {'args', 'settings', 'input_roots'}:
         raise ValueError('Unexpected MegaPark author parameters')

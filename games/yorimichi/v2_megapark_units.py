@@ -145,8 +145,9 @@ def megapark_units(rows, *, checkout, members=None, natives=None):
     """
     checkout = Path(checkout)
     by_id = _check_original(checkout, rows)
-    if not isinstance(members, dict) or set(members) != {'materials'} or not isinstance(members['materials'], dict) \
-            or not members['materials']:
+    dynamic=isinstance(members,dict) and set(members)=={'materials','texture_roles'} and members['materials']=={}
+    if not dynamic and (not isinstance(members, dict) or set(members) != {'materials'} or not isinstance(members['materials'], dict) \
+            or not members['materials']):
         raise DynamicMembership('MegaPark material instances need the generated roster as keyed members')
     textures, render, collision, _seam = catalogue(checkout)
     restyle = restyled(checkout)
@@ -165,7 +166,7 @@ def megapark_units(rows, *, checkout, members=None, natives=None):
         raise Unsupported('restyled MegaPark images need the declared restyle textures Item (natives["restyle"])')
     library_item, library_roots = _product(by_id['world.megapark'], 'megapark.library')
     restyle_row = by_id['world.megapark_restyle']
-    if str(restyle_row['outputs'][0]) != BUILD + '/textures/textures.json':
+    if str(restyle_row['outputs'][0]) not in (BUILD+'/textures',BUILD + '/textures/textures.json'):
         raise Unsupported('world.megapark_restyle no longer publishes textures.json first')
     code, ops_code = _code_closure(checkout), list(_code(checkout))
     editor = _modules(checkout, [])[0]
@@ -182,7 +183,7 @@ def megapark_units(rows, *, checkout, members=None, natives=None):
             owned[package] = {'unit': unit['id'], 'item': item_id, 'package': package,
                               'dependencies': [deepcopy(owned[p]) for p in dependencies]}
 
-    def texture(name, source, roots, member, *, linear, normal, clamp):
+    def texture(name, source, roots, member, *, linear, normal, clamp, tid=None):
         raw_package, package = f'{RAW}/Textures/{name}', f'{ROOT}/Textures/{name}'
         raw_id = f'unreal.megapark.texture.raw.{name}'
         params = {'op': 'raw_import', 'kind': 'texture', 'source': 'source', 'destination': raw_package}
@@ -194,11 +195,15 @@ def megapark_units(rows, *, checkout, members=None, natives=None):
                       'TextureCompressionSettings.' + ('TC_NORMALMAP' if normal else 'TC_DEFAULT')}}
         if clamp:
             properties.update(address_x={'unreal_enum': 'TextureAddress.TA_CLAMP'}, address_y={'unreal_enum': 'TextureAddress.TA_CLAMP'})
-        add({'id': f'unreal.megapark.texture.{name}', 'op': {'kind': 'unreal.finish', 'version': '1'}, 'script': OPS,
-             'code': ops_code, 'params': {'op': 'finish', 'kind': 'texture', 'source': 'raw', 'destination': package,
-                                          'package_sources': {'raw': raw_package}, 'properties': properties},
-             'outputs': [_output('texture', package, 'Texture')]}, [_item('raw', raw_id, 'raw_texture')],
-            package=package, item_id='texture')
+        finish={'id':f'unreal.megapark.texture.{name}','op':{'kind':'unreal.finish','version':'1'},'script':OPS,'code':ops_code,
+            'params':{'op':'finish','kind':'texture','source':'raw','destination':package,'package_sources':{'raw':raw_package},'properties':properties},
+            'outputs':[_output('texture',package,'Texture')]}
+        incoming=[_item('raw',raw_id,'raw_texture')]
+        if dynamic and tid is not None:
+            role=members['texture_roles'];finish.update(script=SCRIPT,code=code)
+            finish['params'].pop('properties');finish['params']['args']={'action':'texture','tid':tid,'roles':'roles'}
+            incoming.append({'role':'content','name':'roles','source':{'kind':'group_member','unit':role['unit'],'group':role['group'],'piece':name}})
+        add(finish,incoming,package=package,item_id='texture')
 
     for tid, png in textures.items():
         used = roles.get(tid, set())
@@ -207,10 +212,10 @@ def megapark_units(rows, *, checkout, members=None, natives=None):
         if tid in restyle:
             source = _item('source', restyle_ref['unit'], restyle_ref['item'])
             roots = {'source': dict(restyle_ref['root'])} if 'root' in restyle_ref else None
-            texture('T_' + tid[2:], source, roots, restyle[tid], **flags)
+            texture('T_' + tid[2:], source, roots, restyle[tid], tid=tid, **flags)
         else:
             source = {'role': 'content', 'name': 'source', 'source': {'kind': 'file', 'path': f'{SOURCE}/{png}'}}
-            texture('T_' + tid[2:], source, None, None, **flags)
+            texture('T_' + tid[2:], source, None, None, tid=tid, **flags)
     for name, (png, linear, normal) in DEFAULTS.items():
         source = _item('source', 'world.megapark', library_item)
         texture(name, source, {'source': {'archive_member': library_roots[f'{BUILD}/{png}'], 'name': png}}, None,
@@ -226,7 +231,7 @@ def megapark_units(rows, *, checkout, members=None, natives=None):
     build_json = _item('build', 'world.megapark', library_item)
     build_root = {'build': {'archive_member': library_roots[f'{BUILD}/build.json'], 'name': 'build.json'}}
     lightmaps = _item('restyle', restyle_row['id'], 'output0')
-    lightmap_root = {'restyle': {'archive_member': 'outputs/0.tree.tar', 'name': 'textures.json'}}
+    lightmap_root = {'restyle': {'archive_member': 'outputs/0.tree.tar', 'name': 'textures' if str(restyle_row['outputs'][0])==BUILD+'/textures' else 'textures.json'}}
     for key, spec in sorted(members['materials'].items()):
         parent = f'{ROOT}/Materials/{PARENTS[spec["alpha"]]}'
         maps = sorted({f'{ROOT}/Textures/T_{tid[2:]}' for tid in spec['textures'].values()})
@@ -238,7 +243,7 @@ def megapark_units(rows, *, checkout, members=None, natives=None):
                  'textures': {role: _native(owned[f'{ROOT}/Textures/T_{tid[2:]}'])['name'] for role, tid in spec['textures'].items()},
                  'defaults': {n: _native(owned[p])['name'] for n, p in zip(DEFAULTS, defaults)},
                  'build': 'build', 'restyle': 'restyle'}, 'settings': []},
-             'outputs': [_output('asset', package, 'MaterialInstanceConstant')]},
+             'outputs': [_output('asset', package, 'MaterialInstance')]},
             [*(_native(owned[p]) for p in dict.fromkeys(closure)), dict(build_json), dict(lightmaps)],
             {**build_root, **lightmap_root}, package=package, dependencies=closure)
     add({'id': 'unreal.megapark.level', 'op': {'kind': 'unreal.author', 'version': '1'}, 'script': SCRIPT, 'code': code,
@@ -265,10 +270,11 @@ def attach_followers(geometry, natives, *, rows, checkout):
     checkout = Path(checkout).resolve()
     _textures, render, collision, seam = catalogue(checkout)
     parents = {*render, *collision, *seam}
+    material_items=(natives or {}).get('material_items')
     if not isinstance(natives, dict) or not natives:
         raise Unsupported('MegaPark pieces need the supplied MI roster')
     instances = sorted(p for p in natives if p.startswith(ROOT + '/Materials/MI_'))
-    if not instances:
+    if not instances and material_items is None:
         raise Unsupported('MegaPark pieces need at least one supplied MI_ instance')
     dependencies = {}
 
@@ -291,6 +297,9 @@ def attach_followers(geometry, natives, *, rows, checkout):
         return slot
 
     materials = {}
+    if material_items is not None:
+        for package,ref in natives.items():
+            if isinstance(package,str) and package.startswith((ROOT+'/Textures/',ROOT+'/Materials/')) and isinstance(ref,dict):dependency(ref)
     for package in instances:
         if natives[package].get('package') != package:
             raise Unsupported('MegaPark instance ref names another package: ' + package)
@@ -339,10 +348,12 @@ def attach_followers(geometry, natives, *, rows, checkout):
                              'input_roots': {'metadata': {'archive_member': metadata_member, 'name': parent + '.json'}},
                              'args': {'action': 'mesh', 'parent': parent, 'collision': parent.startswith('UC_'),
                                       'payload': 'payload', 'source_export': 'source_export', 'metadata': 'metadata',
-                                      'materials': materials,
+                                      'materials': material_items if material_items is not None else materials, 'audit': True,
                                       'native_inputs': {slot: ref['package'] for slot, ref in dependencies.values()}},
                              'settings': list(SETTINGS)},
-                  'outputs': [island._item(destination, raw=False)]}
+                  'outputs': [island._item(destination, raw=False),{'id':'geometry','logical_path':'/Internal/MegaPark/ImportedGeometry/$piece','class':'Data','destination':'store',
+                      'files':[{'path':'data/imported-geometry/$piece.bin','required':True}]},{'id':'report','logical_path':'/Internal/MegaPark/ImportedReports/$piece','class':'Data','destination':'store',
+                      'files':[{'path':'data/imported-reports/$piece.json','required':True}]}]}
         template['followers'] = [{'unit': raw, 'staged_inputs': {'source': 'inputs/source'}},
                                  {'unit': finish, 'staged_inputs': {i['name']: 'inputs/' + i['name'] for i in inputs}}]
         requirements[template['unit_prefix']] = editor
