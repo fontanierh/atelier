@@ -219,6 +219,9 @@ def compile_rows(rows, *, project, targets, install_roots=(), checkout=None, geo
             node_entries = [path for path in code if path.endswith('/bridge.cjs')]
             node_entries += [source['path'] for source in row['inputs']
                              if source['path'].endswith('/bridge.cjs')]
+            node_entries += [item['source']['path'] for item in inputs
+                             if item['source']['kind'] == 'file'
+                             and item['source']['path'].endswith('/bridge.cjs')]
             for entry in dict.fromkeys(node_entries):
                 frontend = entry.rsplit('/', 1)[0] + '/'
                 tools.append({'kind': 'node.frontend', 'entry': entry,

@@ -65,3 +65,18 @@ def test_duplicate_or_escaping_ownership_refuses():
     unit = row('source', outputs=['build/game/data.json'])
     with pytest.raises(Unsupported, match='duplicate recipe unit'):
         compile_rows([unit, unit], project='game', targets=['source'])
+
+
+def test_declared_frontend_directory_gets_fixed_node_role_after_file_lowering(tmp_path):
+    frontend = tmp_path / 'editor'
+    frontend.mkdir()
+    for filename in ('bridge.cjs', 'pieces.cjs', 'terrain.cjs'):
+        (frontend / filename).write_text('// declared frontend source')
+    unit = row('frontend', inputs=[{'path': 'editor', 'root': 'checkout', 'optional': False}],
+               outputs=['build/game/mesh.json'])
+    request = compile_rows([unit], project='game', targets=['frontend'], checkout=tmp_path).request(tmp_path)
+    lowered = request['declaration']['units'][0]
+    assert lowered['params']['recipe']['tools'] == [{'kind': 'node.frontend', 'entry': 'editor/bridge.cjs',
+        'sources': ['editor/bridge.cjs', 'editor/pieces.cjs', 'editor/terrain.cjs']}]
+    declared = {item['source']['path'] for item in lowered['inputs']}
+    assert set(lowered['params']['recipe']['tools'][0]['sources']) <= declared
