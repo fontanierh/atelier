@@ -93,8 +93,7 @@ def test_original_constructor_format_survives_dependency_rows_and_templates(monk
     template = out['templates'][0]
     assert template['files'][0]['path'] == '$piece' + suffix
     if encoding == 'mesh_ir':
-        assert template['params'] == {'format': suffix[1:],
-            'options': {'path_mode': 'RELATIVE'} if suffix == '.fbx' else {}}
+        assert template['params'] == {'format': suffix[1:], 'options': {}}
 
 
 @pytest.mark.parametrize('declared', [None, 'png', 'GLB'])

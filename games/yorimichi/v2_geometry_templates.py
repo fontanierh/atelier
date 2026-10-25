@@ -74,8 +74,7 @@ def geometry_templates(rows, *, checkout):
                     'unit_prefix': f'world.{region}.export.{parent}',
                     'op': {'kind': 'blender_export_piece', 'version': '1'},
                     'script': EXPORT_SCRIPT, 'code': code,
-                    'params': {'format': export_format,
-                               'options': {'path_mode': 'RELATIVE'} if export_format == 'fbx' else {}},
+                    'params': {'format': export_format, 'options': {}},
                     'payload_slot': 'payload', 'staged_path': 'inputs/payload',
                     'output_class': 'StaticMeshSource', 'logical_namespace': f'/Sources/{region}',
                     'files': [{'path': '$piece.' + export_format}, {'path': 'export.json'}]}
