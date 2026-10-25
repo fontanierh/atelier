@@ -176,6 +176,51 @@ def verify_cooked_files(cooked_root, files):
     return tuple(sorted(expected))
 
 
+def verify_cooked_after_uat(cooked_root, files, project):
+    """@cc [owner:fontanierh,label:correctness;safety] generated-uat-crypto-cache
+    The fixed package caller MUST first verify the complete upstream cooked inventory, then run actual
+    successful UAT. Afterwards ONLY its exact project Metadata/Crypto.json MAY be newly generated, and only
+    with the supported Mac no-key/no-signing schema. Its ordinary single-link bytes MUST remain stable
+    while checked. Changed upstream files, every other extra entry, aliases and unsupported crypto settings
+    MUST still refuse. This operational cache never certifies native cook provenance or a new cooked Item.
+    """
+    root = _absolute(cooked_root)
+    project = _target(project)
+    name = project + '/Metadata/Crypto.json'
+    expected = dict(files)
+    path = root / name
+    if name not in expected and os.path.lexists(path):
+        before = path.lstat()
+        if (not stat.S_ISREG(before.st_mode) or before.st_nlink != 1
+                or before.st_uid != os.getuid() or before.st_size > 4096):
+            raise ValueError('Generated UAT crypto cache is not a bounded owned regular file')
+        with os.fdopen(os.open(path,os.O_RDONLY|os.O_NOFOLLOW),'rb') as stream:
+            opened = os.fstat(stream.fileno())
+            raw = stream.read(4097)
+            after = os.fstat(stream.fileno())
+        fields = lambda s:(s.st_dev,s.st_ino,s.st_mode,s.st_size,s.st_mtime_ns,s.st_ctime_ns)
+        if not (fields(before)==fields(opened)==fields(after)==fields(path.lstat())) or len(raw)!=before.st_size:
+            raise ValueError('Generated UAT crypto cache changed while reading')
+        def unique(pairs):
+            value={}
+            for key,item in pairs:
+                if key in value:raise ValueError('Duplicate UAT crypto cache field')
+                value[key]=item
+            return value
+        value=json.loads(raw.decode('utf-8'),object_pairs_hook=unique)
+        flags={'bEnablePakSigning':False,'bEnablePakIndexEncryption':False,
+               'bEnablePakIniEncryption':False,'bEnablePakUAssetEncryption':False,
+               'bEnablePakFullAssetEncryption':False,'bDataCryptoRequired':True,
+               'PakEncryptionRequired':True,'PakSigningRequired':True}
+        if (not isinstance(value,dict) or set(value)!=set(flags)|{'EncryptionKey','SigningKey','SecondaryEncryptionKeys'}
+                or any(type(value[key])is not bool or value[key]is not flag for key,flag in flags.items())
+                or value['EncryptionKey']!={'Name':None,'Guid':None,'Key':None}
+                or value['SigningKey']is not None or value['SecondaryEncryptionKeys']is not None):
+            raise ValueError('Unsupported generated UAT crypto settings')
+        expected[name]=hashlib.sha256(raw).hexdigest()
+    return verify_cooked_files(root,expected)
+
+
 def package_argv(engine_root, project, target, archive, *, cooked_root, cooked_files,
                  configuration='Development'):
     """Stage/package an independently completed cooked set; never run a cook or compile."""

@@ -1123,7 +1123,7 @@ def dispatch(job, job_dir, engine, run, *, source_key=None, zen_state_root=None,
                                 cooked_files=inventory, configuration=configuration)
         run_package(argv, job_dir=job_dir, engine=engine, cwd=package_view,
                     environment=environment, run=run)
-        ops.verify_cooked_files(package_cooked, inventory)
+        ops.verify_cooked_after_uat(package_cooked, inventory, packaging_project.stem)
         if package_view != view:
             archive.rename(_path(view, params["archive"]))
     elif kind == 'package.archive':

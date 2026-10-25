@@ -115,3 +115,61 @@ def test_cooked_census_accepts_empty_sdk_directories_but_not_links(tmp_path):
     (cooked / 'alias').symlink_to(empty, target_is_directory=True)
     with pytest.raises(ValueError, match='link'):
         ops.verify_cooked_files(cooked, inventory)
+
+
+def uat_crypto():
+    return {'EncryptionKey':{'Name':None,'Guid':None,'Key':None},'SigningKey':None,
+            'SecondaryEncryptionKeys':None,'bEnablePakSigning':False,'bEnablePakIndexEncryption':False,
+            'bEnablePakIniEncryption':False,'bEnablePakUAssetEncryption':False,
+            'bEnablePakFullAssetEncryption':False,'bDataCryptoRequired':True,
+            'PakEncryptionRequired':True,'PakSigningRequired':True}
+
+
+def test_post_uat_census_accepts_only_the_exact_generated_default_crypto_cache(tmp_path):
+    root=tmp_path/'Cooked';root.mkdir();(root/'global.bin').write_bytes(b'globals')
+    expected={'global.bin':hashlib.sha256(b'globals').hexdigest()}
+    ops.verify_cooked_files(root,expected)  # Fixed caller's required before-UAT preflight.
+    crypto=root/'Game/Metadata/Crypto.json';crypto.parent.mkdir(parents=True)
+    crypto.write_text(json.dumps(uat_crypto()))
+    with pytest.raises(ValueError,match='complete upstream inventory'):
+        ops.verify_cooked_files(root,expected)  # General upstream census remains strict.
+    assert ops.verify_cooked_after_uat(root,expected,'Game')==tuple(sorted((root/'global.bin',crypto)))
+    assert len(expected)==1
+    (root/'unlisted.bin').write_bytes(b'unknown')
+    with pytest.raises(ValueError,match='complete upstream inventory'):
+        ops.verify_cooked_after_uat(root,expected,'Game')
+    (root/'unlisted.bin').unlink();(root/'global.bin').write_bytes(b'changed')
+    with pytest.raises(ValueError,match='upstream identity'):
+        ops.verify_cooked_after_uat(root,expected,'Game')
+
+
+@pytest.mark.parametrize('change',[
+    lambda v:v.update(bEnablePakSigning=True),
+    lambda v:v.update(bEnablePakSigning=0),
+    lambda v:v['EncryptionKey'].update(Key='unsupported test key'),
+    lambda v:v.update(SigningKey={}),
+    lambda v:v.update(SecondaryEncryptionKeys=[]),
+    lambda v:v.update(unexpected=False),
+])
+def test_generated_uat_crypto_refuses_nondefault_or_untyped_settings(tmp_path,change):
+    root=tmp_path/'Cooked';root.mkdir();(root/'global.bin').write_bytes(b'globals')
+    expected={'global.bin':hashlib.sha256(b'globals').hexdigest()}
+    crypto=root/'Game/Metadata/Crypto.json';crypto.parent.mkdir(parents=True)
+    value=uat_crypto();change(value);crypto.write_text(json.dumps(value))
+    with pytest.raises(ValueError,match='Unsupported generated'):
+        ops.verify_cooked_after_uat(root,expected,'Game')
+
+
+def test_generated_uat_crypto_refuses_duplicates_aliases_and_foreign_projects(tmp_path):
+    root=tmp_path/'Cooked';root.mkdir();(root/'global.bin').write_bytes(b'globals')
+    expected={'global.bin':hashlib.sha256(b'globals').hexdigest()}
+    crypto=root/'Game/Metadata/Crypto.json';crypto.parent.mkdir(parents=True)
+    crypto.write_text(json.dumps(uat_crypto()).replace('"SigningKey": null','"SigningKey": null, "SigningKey": null'))
+    with pytest.raises(ValueError,match='Duplicate'):
+        ops.verify_cooked_after_uat(root,expected,'Game')
+    crypto.unlink();source=tmp_path/'valid.json';source.write_text(json.dumps(uat_crypto()));crypto.symlink_to(source)
+    with pytest.raises(ValueError,match='regular'):
+        ops.verify_cooked_after_uat(root,expected,'Game')
+    crypto.unlink();crypto.write_text(json.dumps(uat_crypto()))
+    with pytest.raises(ValueError,match='complete upstream inventory'):
+        ops.verify_cooked_after_uat(root,expected,'Other')
