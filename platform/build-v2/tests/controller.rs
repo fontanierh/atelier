@@ -377,3 +377,19 @@ fn controller_cancelled_before_run_keeps_state_absent() {
     assert!(matches!(result.root_finalization, Finalization::NotOpened));
     assert_eq!(fs::read_dir(&space.0).unwrap().count(), 0);
 }
+
+
+#[test]
+fn game_finish_bodies_use_the_registered_native_contract() {
+    let space = Space::new();
+    let mut value = request(&space.0);
+    let unit = &mut value["declaration"]["units"][0];
+    unit["script"] = json!("games/fixture/finish.py");
+    unit["code"] = json!(["games/fixture/finish.py"]);
+    unit["op"]["kind"] = json!("unreal.finish");
+    assert!(parse(&value).is_ok());
+    value["declaration"]["units"][0]["op"]["kind"] = json!("unreal.author");
+    assert!(parse(&value).is_ok());
+    value["declaration"]["units"][0]["op"]["kind"] = json!("unreal.raw_import");
+    assert!(parse(&value).is_err());
+}
