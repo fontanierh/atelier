@@ -155,3 +155,53 @@ def test_a_tampered_snapshot_or_failed_clone_refuses_without_a_copy_fallback(tmp
     snapshot.write_bytes(b'[Game]\n')  # same bytes, but no longer the recorded immutable file
     with pytest.raises(ValueError, match='snapshot changed'):
         group.share(source, root)
+
+
+def foreign_tree(path):
+    path.mkdir(parents=True)
+    (path / 'precious.txt').write_bytes(b'foreign')
+    (path / 'precious.txt').chmod(0o400)
+    return {p: (p.read_bytes() if p.is_file() else None, p.stat().st_mode) for p in [path, *path.rglob('*')]}
+
+
+def unchanged(tree):
+    return all(p.exists() and (p.read_bytes() if p.is_file() else None, p.stat().st_mode) == value
+               for p, value in tree.items())
+
+
+def test_a_replaced_scope_is_never_shared_into_or_removed(tmp_path):
+    source = archive(tmp_path, 'editor', FILES)
+    group = clones.CommonRootClones(tmp_path / 'scope')
+    group.share(source, unpacked(tmp_path, source, 'a'))
+    (tmp_path / 'scope').rename(tmp_path / 'moved-scope')
+    tree = foreign_tree(tmp_path / 'scope')  # someone else's directory now holds the scope path
+    with pytest.raises(ValueError, match='replaced or aliased'):
+        group.share(source, unpacked(tmp_path, source, 'b'))
+    with pytest.raises(ValueError, match='replaced or aliased'):
+        group.discard()
+    assert unchanged(tree)
+
+
+def test_a_scope_reached_through_a_replaced_ancestor_link_is_never_removed(tmp_path):
+    (tmp_path / 'parent').mkdir()
+    group = clones.CommonRootClones(tmp_path / 'parent' / 'scope')
+    (tmp_path / 'parent').rename(tmp_path / 'moved-parent')
+    tree = foreign_tree(tmp_path / 'elsewhere' / 'scope')
+    (tmp_path / 'parent').symlink_to(tmp_path / 'elsewhere')  # the ancestor now aliases foreign storage
+    with pytest.raises(ValueError, match='replaced or aliased'):
+        group.discard()
+    assert unchanged(tree) and (tmp_path / 'moved-parent' / 'scope').is_dir()
+
+
+def test_an_archive_behind_a_linked_parent_or_with_another_link_refuses(tmp_path):
+    source = archive(tmp_path, 'editor', FILES)
+    group = clones.CommonRootClones(tmp_path / 'scope')
+    root = unpacked(tmp_path, source, 'a')
+    (tmp_path / 'staged').symlink_to(tmp_path)
+    with pytest.raises(ValueError, match='canonical unlinked path'):
+        group.share(tmp_path / 'staged' / source.name, root)
+    os.link(source, tmp_path / 'second-name.tree.tar')
+    with pytest.raises(ValueError, match='single-link'):
+        group.share(source, root)
+    with pytest.raises(ValueError, match='canonical unlinked path'):
+        clones.archive_authority(Path(source.name))  # relative
