@@ -315,6 +315,12 @@ def verify_encoded_plan(root, *, parent, limits):
 
 def run(context):
     recipe = context.params['recipe']
+    geometry = recipe.get('geometry')
+    if geometry is not None:
+        if (geometry.get('format') not in ('fbx', 'glb')
+                or geometry.get('encoding') not in ('mesh_ir', 'encoded_glb')
+                or (geometry['encoding'] == 'encoded_glb' and geometry['format'] != 'glb')):
+            raise ValueError('Recipe geometry requires its declared encoding and exact export format')
     view = Path.cwd()
     output = context.output_dir.absolute()
     game_roots = sorted({view / '/'.join(path.split('/')[:2]) for path in recipe['paths']
@@ -360,7 +366,8 @@ def run(context):
                 verify_encoded_plan(root, parent=geometry['parent'], limits=context.params['plan_limits'])
             elif geometry['encoding'] == 'mesh_ir':
                 from atelier.build_v2.blender_ops import verify_plan
-                verify_plan(root, parent=geometry['parent'], limits=context.params['plan_limits'])
+                verify_plan(root, parent=geometry['parent'], limits=context.params['plan_limits'],
+                            output_format=geometry['format'])
             else:
                 raise ValueError('unsupported geometry encoding')
             shutil.copytree(root, output / 'geometry')
