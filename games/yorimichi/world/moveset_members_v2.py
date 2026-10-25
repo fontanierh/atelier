@@ -1,11 +1,14 @@
 """Project a character's actual adventure export (adventure/retarget.py) into FileSet groups, and select one member.
 
 ``project`` reads the complete declared export Item (export.json, fbx/) and writes one group's members as
-<name>.fbx copies of fbx/A_<name>.fbx: ``clips`` (the merged library's clips, at bake.FPS) or ``own`` (the donor's
-clips retargeted onto a non-donor, at the donor's rate). Before any output it checks the export rate, each member's
-rate against its committed group, each FBX, and that the donor carries no own clips. ``select`` packages exactly
-the engine-selected member with an export receipt, the source form raw_import accepts.
+<name>.json, each the clip's own export entry with fbx/A_<name>.fbx's bytes: ``clips`` (the merged library's clips,
+at bake.FPS) or ``own`` (the donor's clips retargeted onto a non-donor, at the donor's rate). Before any output it
+checks the export rate, each member's rate against its committed group, each FBX, and that the donor carries no
+own clips. ``select`` unpacks exactly the engine-selected member: member/ (the FBX with an export receipt, the
+source form raw_import accepts) and meta/meta.json (its name, kind, frames and fps), so each clip owner consumes
+only its own member, never the whole export.
 """
+import base64
 import hashlib
 import json
 from pathlib import Path
@@ -47,7 +50,7 @@ def members(export, fbx, *, rates):
             path = Path(fbx) / f'A_{name}.fbx'
             if path.is_symlink() or path.resolve() != path or not path.is_file():
                 raise ValueError(f'Adventure {kind} FBX is absent: {name}')
-            rows[name] = path
+            rows[name] = (path, {'name': name, 'kind': kind, 'frames': entry['frames'], 'fps': entry['fps']})
     if set(result.get('clips', ())) & set(result.get('own', ())):
         raise ValueError('An adventure clip and own clip share A_ names')
     return result
@@ -66,17 +69,28 @@ def project(export=None, fbx=None, output=None, kind=None, rates=None):
     if output.exists():
         raise ValueError('Adventure member output must be fresh')
     output.mkdir(parents=True)
-    for name, path in rows[kind].items():
-        shutil.copyfile(path, output / (name + '.fbx'))
+    for name, (path, meta) in rows[kind].items():
+        member = {**meta, 'fbx': base64.b64encode(path.read_bytes()).decode('ascii'),
+                  'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}
+        (output / (name + '.json')).write_text(json.dumps(member, sort_keys=True, separators=(',', ':')) + '\n')
 
 
-def select(selected=None, destination=None, piece=None):
-    """Package exactly the engine-selected member, with the export receipt a raw import reads."""
+def select(selected=None, destination=None, metadata=None, piece=None):
+    """Unpack exactly the engine-selected member: its FBX with the export receipt a raw import reads, and its
+    own clip metadata for the finish."""
     found = sorted(Path(selected).iterdir()) if Path(selected).is_dir() else []
-    if (len(found) != 1 or found[0].stem != piece or found[0].is_symlink() or not found[0].is_file()
-            or destination.exists()):
-        raise ValueError('Adventure selected member must be one fresh regular file named by its piece')
+    if (len(found) != 1 or found[0].name != piece + '.json' or found[0].is_symlink() or not found[0].is_file()
+            or destination.exists() or metadata.exists()):
+        raise ValueError('Adventure selected member must be one fresh regular <piece>.json')
+    member = _json(found[0])
+    if set(member) != {'name', 'kind', 'frames', 'fps', 'fbx', 'sha256'} or member['name'] != piece:
+        raise ValueError('Adventure selected member differs from its piece')
+    data = base64.b64decode(member['fbx'], validate=True)
+    if hashlib.sha256(data).hexdigest() != member['sha256']:
+        raise ValueError('Adventure selected member bytes differ from their checksum')
     destination.mkdir(parents=True)
-    shutil.copyfile(found[0], destination / found[0].name)
-    receipt = {'primary': found[0].name, 'sha256': hashlib.sha256(found[0].read_bytes()).hexdigest()}
-    (destination / 'export.json').write_text(json.dumps(receipt, sort_keys=True) + '\n')
+    (destination / (piece + '.fbx')).write_bytes(data)
+    (destination / 'export.json').write_text(json.dumps({'primary': piece + '.fbx', 'sha256': member['sha256']}, sort_keys=True) + '\n')
+    metadata.mkdir(parents=True)
+    meta = {key: member[key] for key in ('name', 'kind', 'frames', 'fps')}
+    (metadata / 'meta.json').write_text(json.dumps(meta, sort_keys=True) + '\n')

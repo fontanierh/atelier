@@ -154,10 +154,10 @@ def clip(context, unreal, args):
     if sequence.get_editor_property('skeleton') != skeleton:
         raise ValueError('Clip is not on the declared skeleton: ' + destination)
     if 'frames' not in args:
-        # A derived member: its frames and rate are the declared export's entry for it.
-        entry = _data(context, args['export'], 'export.json')[args['kind']][args['name']]
-        if entry['fps'] != args['fps']:
-            raise ValueError('Clip rate differs from its declared group: ' + args['name'])
+        # A derived member: its frames and rate are its own selected member's metadata.
+        entry = _data(context, args['meta'], 'meta.json')
+        if entry['name'] != args['name'] or entry['kind'] != args['kind'] or entry['fps'] != args['fps']:
+            raise ValueError('Clip rate or identity differs from its declared group: ' + args['name'])
         args = {**args, 'frames': entry['frames']}
     length = sequence.get_editor_property('sequence_length')
     if abs(length - args['frames'] / args['fps']) >= .002:

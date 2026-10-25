@@ -61,9 +61,13 @@ def test_groups_follow_committed_rates_and_the_donor(declared):
     raw, finish = (f['unit'] for f in keys['unreal.moveset.nox.own']['followers'])
     assert raw['params']['fbx']['custom_sample_rate'] == 60
     assert raw['params']['input_roots'] == {'source': {'archive_member': 'member.tree.tar', 'name': 'member'}}
-    assert finish['params']['args'] == {'action': 'clip', 'name': '$piece', 'kind': 'own', 'fps': 60, 'export': 'export',
+    assert finish['params']['args'] == {'action': 'clip', 'name': '$piece', 'kind': 'own', 'fps': 60, 'meta': 'meta',
                                         'skeleton': 'skeleton', 'compression': 'compression'}
-    assert finish['params']['input_roots'] == {'export': {'archive_member': 'products/0-0.tree.tar', 'name': 'export.json'}}
+    # Each clip owner consumes only its own selected member, never the whole export Product.
+    assert finish['params']['input_roots'] == {'meta': {'archive_member': 'meta.tree.tar', 'name': 'meta'}}
+    for follower in (raw, finish):
+        assert all(i['source']['unit'] != 'characters.nox_adventure' for i in follower['inputs'])
+    assert {i['name']: i['source']['unit'] for i in finish['inputs']}['meta'] == '$export'
     assert finish['outputs'][0]['logical_path'] == MOVERS[2].adventure['dest'] + '/A_$piece'
 
 
@@ -120,10 +124,11 @@ def test_projection_emits_actual_fbx_members(tmp_path):
     root, rates = export_tree(tmp_path), {'clips': 30, 'own': 60}
     found = {}
     for kind in ('clips', 'own'):
-        manifest = emit(project(root, tmp_path, kind, rates), tmp_path / 'files' / kind, parent='Nox_' + kind, extensions=['.fbx'])
+        manifest = emit(project(root, tmp_path, kind, rates), tmp_path / 'files' / kind, parent='Nox_' + kind, extensions=['.json'])
         found[kind] = sorted(p['payload'] for p in manifest['pieces'])
-    assert found == {'clips': ['Idle.fbx', 'Walk.fbx'], 'own': ['DoubleJump.fbx']}
-    assert (tmp_path / 'files/own/DoubleJump.fbx').read_bytes() == b'DoubleJump'
+    assert found == {'clips': ['Idle.json', 'Walk.json'], 'own': ['DoubleJump.json']}
+    member = json.loads((tmp_path / 'files/own/DoubleJump.json').read_text())
+    assert {k: member[k] for k in ('name', 'kind', 'frames', 'fps')} == {'name': 'DoubleJump', 'kind': 'own', 'frames': 45, 'fps': 60}
 
 
 @pytest.mark.parametrize('damage', ['clip_rate', 'own_rate', 'donor_own', 'missing_own', 'fbx', 'overlap'])
@@ -141,11 +146,19 @@ def test_projection_refuses_an_export_that_differs(tmp_path, damage):
     assert not (tmp_path / 'out').exists()
 
 
-def test_select_packages_one_member_with_its_export_receipt(tmp_path):
-    selected = tmp_path / 'selected'; selected.mkdir(); (selected / 'Walk.fbx').write_bytes(b'walk')
-    members.select(selected, tmp_path / 'member', 'Walk')
+def test_select_unpacks_one_member_and_its_own_metadata(tmp_path):
+    root = export_tree(tmp_path)
+    output = project(root, tmp_path, 'clips', {'clips': 30, 'own': 60})
+    selected = tmp_path / 'selected'; selected.mkdir(); (selected / 'Walk.json').write_bytes((output / 'Walk.json').read_bytes())
+    members.select(selected, tmp_path / 'member', tmp_path / 'meta', 'Walk')
+    assert (tmp_path / 'member/Walk.fbx').read_bytes() == b'Walk'
     assert json.loads((tmp_path / 'member/export.json').read_text()) == {
-        'primary': 'Walk.fbx', 'sha256': hashlib.sha256(b'walk').hexdigest()}
+        'primary': 'Walk.fbx', 'sha256': hashlib.sha256(b'Walk').hexdigest()}
+    assert json.loads((tmp_path / 'meta/meta.json').read_text()) == {'name': 'Walk', 'kind': 'clips', 'frames': 40, 'fps': 30}
+    damaged = json.loads((selected / 'Walk.json').read_text()); damaged['sha256'] = '0' * 64
+    (selected / 'Walk.json').write_text(json.dumps(damaged))
+    with pytest.raises(ValueError):
+        members.select(selected, tmp_path / 'member2', tmp_path / 'meta2', 'Walk')
 
 
 # ---- derived rosters in the bodies ----------------------------------------------------------------------------------
@@ -157,18 +170,18 @@ def test_roster_reads_resolved_derived_items():
         body._roster({'derived_items': {'root': 'r', 'templates': []}})
 
 
-def test_derived_clip_finish_reads_frames_from_the_declared_export(editor, tmp_path):
+def test_derived_clip_finish_reads_frames_from_its_own_member(editor, tmp_path):
     skeleton, settings = Asset('/Game/Nox/SK_Nox_Skeleton'), Asset(body.COMPRESSION)
     raw = AnimSequence('/Game/_Raw/Moveset/nox/A_DoubleJump', skeleton=skeleton, sequence_length=45 / 60,
                        enable_root_motion=True, bone_compression_settings=None)
     editor.assets.update({raw.path: raw, skeleton.path: skeleton, settings.path: settings})
-    export = editor.root / 'inputs/export'; export.mkdir(parents=True)
-    (export / 'export.json').write_text(json.dumps({'own': {'DoubleJump': {'frames': 45, 'fps': 60}}}))
+    meta = editor.root / 'inputs/meta'; meta.mkdir(parents=True)
+    (meta / 'meta.json').write_text(json.dumps({'name': 'DoubleJump', 'kind': 'own', 'frames': 45, 'fps': 60}))
     destination = '/Game/Nox/Adventure/A_DoubleJump'
-    context = NS(job_dir=str(editor.root), inputs={'raw': 'x', 'skeleton': 'x', 'compression': 'x', 'export': str(export)},
+    context = NS(job_dir=str(editor.root), inputs={'raw': 'x', 'skeleton': 'x', 'compression': 'x', 'meta': str(meta)},
                  packages={'raw': [raw.path], 'skeleton': [skeleton.path], 'compression': [settings.path]}, outputs=[destination],
                  params={'op': 'finish', 'kind': 'animation', 'source': 'raw', 'destination': destination,
-                         'args': {'action': 'clip', 'name': 'DoubleJump', 'kind': 'own', 'fps': 60, 'export': 'export',
+                         'args': {'action': 'clip', 'name': 'DoubleJump', 'kind': 'own', 'fps': 60, 'meta': 'meta',
                                   'skeleton': 'skeleton', 'compression': 'compression'}})
     clip = body.run(context)
     assert clip.path == destination and clip.props['bone_compression_settings'] is settings
