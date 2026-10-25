@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 import hashlib
 import importlib.util
 import json
+import shutil
 from pathlib import Path
 import subprocess
 import sys
@@ -97,7 +98,7 @@ def _invoke_marker(marker, *, echo):
     helper = ensure_controller(checkout, state / 'helpers', echo=echo)
     request = marker.request(checkout)
     kinds = {unit['op']['kind'] for unit in request['declaration']['units']}
-    blender = any(kind.startswith('blender') for kind in kinds)
+    blender = any(kind.startswith('blender') or kind == 'recipe.blender' for kind in kinds)
     unreal = any(kind.startswith('unreal') or kind in ('cook', 'package', 'compile') for kind in kinds)
     options = {
         'cache_root': str(paths.cache_dir('build-v2', create=False).absolute()),
@@ -109,12 +110,19 @@ def _invoke_marker(marker, *, echo):
         'cleanup_seconds': 60 if (unreal or blender) else 30,
         'overall_seconds': 28800 if (unreal or blender) else 1800,
     }
+    node = shutil.which('node')
+    if node:
+        options['node'] = str(Path(node).absolute())
     if blender or unreal:
         from atelier import engine
         if blender:
             options['blender'] = str(Path(engine.blender()).absolute())
         if unreal:
-            options['unreal'] = str(engine.unreal_cmd().absolute())
+            root = engine.unreal_root().absolute()
+            modules = json.loads((root / 'Engine/Binaries/Mac/UnrealEditor.modules').read_text())
+            plugin = checkout / 'platform/build-v2/unreal/AtelierBuildWorker'
+            options['unreal'] = {'engine_root': str(root), 'build_id': modules['BuildId'],
+                                 'plugins': {'AtelierBuildWorker': str(plugin)}}
     return invoke_controller(checkout, helper, marker, state / 'runs', options, echo=echo)
 
 

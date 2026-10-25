@@ -836,6 +836,7 @@ pub fn run_job_prepared<L: WorkerLauncher>(
         inbox,
         &mut |_, worker| register(worker),
         &mut |_, attempt, _| prepare(attempt),
+        &mut |_| Ok(()),
         published,
         Some(unit),
     )?;
@@ -917,6 +918,30 @@ pub fn run_session_prepared<L: WorkerLauncher>(
     )
 }
 
+/// Check actual worker startup evidence after Ready and durable registration, before Run.
+/// A refusal sends no Run and follows the existing owned cancellation/cleanup path.
+pub fn run_session_ready_checked<L: WorkerLauncher>(
+    launcher: &mut L,
+    clock: &dyn Clock,
+    spec: &SessionSpec,
+    inbox: JobInbox,
+    register: &mut dyn FnMut(&UnitId, &ProcessIdentity) -> Result<(), String>,
+    prepare: &mut dyn FnMut(&UnitId, u32) -> Result<JobRequest, String>,
+    before_run: &mut dyn FnMut(&UnitId) -> Result<(), String>,
+    published: Sender<UnitRecord>,
+) -> Result<SessionReport, LifecycleError> {
+    run_session_with_check(
+        launcher,
+        clock,
+        spec,
+        inbox,
+        register,
+        &mut |unit, attempt, _| prepare(unit, attempt),
+        before_run,
+        published,
+    )
+}
+
 type Prepare<'a> = dyn FnMut(&UnitId, u32, &JobRequest) -> Result<JobRequest, String> + 'a;
 
 fn run_session_with<L: WorkerLauncher>(
@@ -926,6 +951,28 @@ fn run_session_with<L: WorkerLauncher>(
     inbox: JobInbox,
     register: &mut dyn FnMut(&UnitId, &ProcessIdentity) -> Result<(), String>,
     prepare: &mut Prepare<'_>,
+    published: Sender<UnitRecord>,
+) -> Result<SessionReport, LifecycleError> {
+    run_session_with_check(
+        launcher,
+        clock,
+        spec,
+        inbox,
+        register,
+        prepare,
+        &mut |_| Ok(()),
+        published,
+    )
+}
+
+fn run_session_with_check<L: WorkerLauncher>(
+    launcher: &mut L,
+    clock: &dyn Clock,
+    spec: &SessionSpec,
+    inbox: JobInbox,
+    register: &mut dyn FnMut(&UnitId, &ProcessIdentity) -> Result<(), String>,
+    prepare: &mut Prepare<'_>,
+    before_run: &mut dyn FnMut(&UnitId) -> Result<(), String>,
     published: Sender<UnitRecord>,
 ) -> Result<SessionReport, LifecycleError> {
     if spec.config.quiescence.is_some() && spec.key.sandbox != JobSandbox::NoFork {
@@ -957,7 +1004,7 @@ fn run_session_with<L: WorkerLauncher>(
         key: Some(&spec.key),
     };
     drive(
-        launcher, clock, &shared, inbox, register, prepare, published, None,
+        launcher, clock, &shared, inbox, register, prepare, before_run, published, None,
     )
 }
 
@@ -994,6 +1041,7 @@ fn drive<L: WorkerLauncher>(
     inbox: JobInbox,
     register: &mut dyn FnMut(&UnitId, &ProcessIdentity) -> Result<(), String>,
     prepare: &mut Prepare<'_>,
+    before_run: &mut dyn FnMut(&UnitId) -> Result<(), String>,
     published: Sender<UnitRecord>,
     only: Option<(UnitPlan, JobRequest)>,
 ) -> Result<SessionReport, LifecycleError> {
@@ -1149,7 +1197,13 @@ fn drive<L: WorkerLauncher>(
                         continue;
                     };
                     let request = match prepared.remove(&unit) {
-                        Some(job) => entry.session.run(job).map_err(fault_of),
+                        Some(job) => before_run(&unit)
+                            .map_err(|reason| {
+                                WorkerFault::Protocol(format!(
+                                    "worker startup check refused: {reason}"
+                                ))
+                            })
+                            .and_then(|()| entry.session.run(job).map_err(fault_of)),
                         None => Err(WorkerFault::Protocol(format!(
                             "no job request for unit {unit}"
                         ))),

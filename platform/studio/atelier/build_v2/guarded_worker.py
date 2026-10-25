@@ -349,14 +349,11 @@ def main(argv=None, run=None):
                          limit_gib=args.memory_gib, kind='job', on_slot=on_slot, on_poll=on_poll,
                          pass_fds=(args.request_fd, args.response_fd), queue_seconds=args.queue_wait,
                          invocation_id=invocation,
+                         **({'script_memory_gib': args.memory_gib} if args.memory_gib > 10 else {}),
                          **({'custody_fds': tuple(args.custody_fd)} if args.custody_fd else {}))
     except BaseException as caught:  # every unwind is classified below; nothing is retried here
         error = caught
-    for fd in (args.request_fd, args.response_fd):
-        try:
-            os.close(fd)
-        except OSError:
-            pass
+        print('guarded worker launch refused: ' + _describe(caught), file=sys.stderr, flush=True)
     process = _read(args.report / 'memory-health.json')
     tree = _read(args.report / 'memory-health-tree.json')
     child = state['child']
@@ -383,6 +380,11 @@ def main(argv=None, run=None):
             confirmed, reason = False, 'the cleanup record is not durable: ' + _describe(caught)
     state['finished'] = True
     emit('finished', cleanup='confirmed' if confirmed else 'unconfirmed', reason=reason)
+    for fd in (args.request_fd, args.response_fd):
+        try:
+            os.close(fd)
+        except OSError:
+            pass
     # The monitor holds its own custody duplicates; closing ours never ends exclusion early.
     for fd in args.custody_fd:
         try:

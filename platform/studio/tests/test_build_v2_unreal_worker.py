@@ -158,6 +158,9 @@ def test_the_cache_graph_may_hold_only_the_v2_folder_the_engine_pak_and_memory()
     v2 = {'kind': 'File System', 'path': '/store/unreal-ddc/5.8'}
     pak = {'kind': 'Pak File', 'path': '/engine/Engine/DerivedDataCache/Compressed.ddp'}
     assert unreal_worker.ddc_problem(policy, [pak, v2]) is None
+    assert unreal_worker.ddc_problem(policy, [{'kind': 'Async', 'path': ''}, pak, v2]) is None
+    assert unreal_worker.ddc_problem(policy, [v2, {'kind': 'Async', 'path': '/foreign'}]) is not None
+    assert unreal_worker.ddc_problem(policy, [{'kind': 'Async', 'path': ''}, pak]) is not None
     assert unreal_worker.ddc_problem(policy, [v2, {'kind': 'Memory', 'path': ''}]) is None
     assert 'no cache node' in unreal_worker.ddc_problem(policy, [pak])
     for bad in ({'kind': 'Zen', 'path': ''}, {'kind': 'File System', 'path': '/shared/DerivedDataCache'},
@@ -205,3 +208,57 @@ def test_a_declared_setting_matches_the_editor_value_as_text_or_an_exact_number(
     assert same('Verbose', 'Verbose', numeric=False)
     assert not same('01', '1', numeric=False)
     assert not same('0.5', '0.500000', numeric=False)
+
+
+def test_scoped_python_guard_refuses_unknown_reads_and_restores_afterwards(tmp_path):
+    root = tmp_path / 'job'
+    root.mkdir()
+    (root / 'output').mkdir()
+    known = root / 'known'
+    known.write_bytes(b'keyed')
+    outside = tmp_path / 'outside'
+    outside.write_bytes(b'not keyed')
+    with pytest.raises(JobRefused, match='undeclared Python'):
+        with unreal_worker.declared_python(root, [], [known], [Path(sys.base_prefix)]):
+            assert known.read_bytes() == b'keyed'
+            try:
+                outside.read_bytes()
+            except JobRefused:
+                pass  # A caught refusal must not make the job successful.
+    assert outside.read_bytes() == b'not keyed'
+    # The first job's permanent audit dispatcher is inactive for the next job.
+    with unreal_worker.declared_python(root, [], [known], [Path(sys.base_prefix)]):
+        assert known.read_bytes() == b'keyed'
+
+
+def test_long_native_sidecar_suffix_has_one_package_owner():
+    for suffix in ('.m.ubulk', '.upayload'):
+        assert unreal_worker.package_owning('content/Game/A' + suffix, 'content/Game/') == '/Game/A'
+
+
+def test_empty_editor_content_scaffolding_has_no_packages_but_links_are_not_empty(tmp_path):
+    from atelier.build_v2.unreal_worker import content_has_files
+    (tmp_path / 'Developers' / 'user' / 'Collections').mkdir(parents=True)
+    assert not content_has_files(tmp_path)
+    target = tmp_path / 'Developers' / 'asset.uasset'
+    target.write_bytes(b'package')
+    assert content_has_files(tmp_path)
+    target.unlink()
+    (tmp_path / 'alias').symlink_to(tmp_path / 'Developers', target_is_directory=True)
+    assert content_has_files(tmp_path)
+
+
+def test_generated_native_save_reads_require_actual_package_new_name_and_owned_saved_root(tmp_path):
+    from atelier.build_v2.unreal_worker import generated_save_reads
+    folder = tmp_path / 'Saved'
+    folder.mkdir()
+    good = folder / ('Asset' + 'A' * 32 + '.tmp')
+    other = folder / ('Other' + 'A' * 32 + '.tmp')
+    external = tmp_path / good.name
+    saved = [{'package': '/Game/Asset'}]
+    report = {'files': [str(good), str(other), str(external)]}
+    assert generated_save_reads(report, saved, folder, set()) == [good]
+    assert generated_save_reads(report, saved, folder, {good.name}) == []
+    assert generated_save_reads(report, [], folder, set()) == []
+    good.symlink_to(external)
+    assert generated_save_reads(report, saved, folder, set()) == []

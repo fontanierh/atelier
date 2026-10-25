@@ -16,6 +16,16 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static FString NativeContext();
     /** {graph, nodes: [{kind, path, local, status}]}: every cache store of the effective DDC graph, from its stats tree (full paths). */
     UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static FString DdcGraph();
+    /** Publish exact native ReferencedSet then EndCook; source dependency evaluation stays separate. */
+    UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static FString ZenEndCookRequest(const FString& RequestJson);
+    /** Fixed selected registry/shader globals builder; native producer checks precede a completed report. */
+    UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static FString ZenFinaliseRequest(const FString& RequestJson);
+    /** Fixed native capture/verify/restore. Refusals never certify package completeness or globals. */
+    UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static FString ZenPackageRequest(const FString& RequestJson);
+    /** False means recording is unavailable; the job must refuse. */
+    UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static bool BeginReadRecording();
+    /** {version:1, best_effort:true, files:[absolute path]}; IO bypassing IPlatformFile is not observable. */
+    UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static FString EndReadRecording();
     /** Start recording every package save (UPackage::PackageSavedWithContextEvent). */
     UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static void BeginSaveRecording();
     /** Stop recording; [{package, filename, files: {path: sha1}}] saved since BeginSaveRecording, in order, hashed after each save's writes were flushed. */

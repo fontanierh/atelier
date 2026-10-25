@@ -433,10 +433,12 @@ def invoke_controller(checkout, executable, marker, runs, execution, *, echo=pri
     execution = dict(execution)
     allowed = {'cache_root', 'interpreter', 'provenance', 'worktree_id', 'memory_gib',
                'job_seconds', 'cleanup_seconds', 'overall_seconds'}
-    if set(execution) - {'blender', 'unreal'} != allowed:
+    if set(execution) - {'blender', 'unreal', 'node'} != allowed:
         raise ValueError('invalid controller execution options')
     if 'blender' in execution and (not isinstance(execution['blender'], str) or not Path(execution['blender']).is_absolute()):
         raise ValueError('invalid Blender execution locator')
+    if 'node' in execution and (not isinstance(execution['node'], str) or not Path(execution['node']).is_absolute()):
+        raise ValueError('invalid Node execution locator')
     if 'unreal' in execution:
         native = execution['unreal']
         if (not isinstance(native, dict) or set(native) - {'engine_root', 'build_id', 'editor_binaries', 'modules', 'engine_plugins', 'plugins', 'config_sources'}

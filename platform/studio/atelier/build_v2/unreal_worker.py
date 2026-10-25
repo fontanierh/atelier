@@ -45,6 +45,7 @@ inside, `output/`.
 The editor surface is `Editor`: the `unreal` module plus the editor-only `AtelierBuildWorker`
 plugin library, whose functions this file defines by use (the T0 stand-in implements the same).
 """
+from contextlib import contextmanager
 from decimal import Decimal
 import hashlib
 import importlib.util
@@ -64,15 +65,64 @@ else:  # run by the editor as a script: load the sibling module by path
     protocol = importlib.util.module_from_spec(_spec)
     _spec.loader.exec_module(protocol)
 
+def _bundle_module(name):
+    spec = importlib.util.spec_from_file_location('atelier_c3_' + name,
+                                                Path(__file__).with_name(name + '.py'))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+@contextmanager
+def declared_python(job_dir, code, reads, platform_roots):
+    """Reuse C2's path/import checks for the project Python body inside C3.
+
+    A caught refusal remains sticky. The audit hook is inactive outside this scope;
+    all wrapped process functions and import hooks are restored before reset.
+    """
+    helper = _bundle_module('python_job')
+    class Guard(helper.PathGuard):
+        failed = None
+        def violation(self, access, path):
+            self.failed = f'undeclared Python {access}: {path}'
+            raise JobRefused('dependency', self.failed)
+    root = str(job_dir)
+    guard = Guard(root, [str(p) for p in platform_roots],
+                  {str(p) for p in reads}, lambda _: None)
+    # Staged job bytes are already immutable. Scratch content contains only this
+    # job's staged inputs and native saves; Python itself cannot write there.
+    guard.reads += [str(p) for p in reads if Path(p).is_dir()]
+    finder = helper.DeclaredCodeFinder(root, set(code), [str(p) for p in platform_roots])
+    originals = {name: getattr(os, name) for name in guard.DESCRIPTOR_CALLS if hasattr(os, name)}
+    meta, hooks = list(sys.meta_path), list(sys.path_hooks)
+    active = [True]
+    guard.original_readlink = os.readlink
+    sys.addaudithook(lambda event, args: guard.audit(event, args) if active[0] else None)
+    try:
+        for name, function in originals.items():
+            setattr(os, name, guard.wrap(name, function, guard.DESCRIPTOR_CALLS[name]))
+        sys.meta_path.insert(0, finder)
+        yield
+        if guard.failed:
+            raise JobRefused('dependency', guard.failed)
+    finally:
+        active[0] = False
+        for name, function in originals.items():
+            setattr(os, name, function)
+        sys.meta_path[:] = meta
+        sys.path_hooks[:] = hooks
+
+
 WORKER_VERSION = 'atelier-unreal-job-1'
 EXPECTED_CONTEXT = 'Atelier/expected-context.json'
 CONTEXT_REPORT = 'unreal-context.json'
 IMPORT_EVIDENCE = 'evidence/imports.json'
+READ_EVIDENCE = 'evidence/reads.json'
 EVIDENCE_VERSION = 1
 GAME = '/Game/'
 INPUT_CONTENT = 'in/content/Game/'
 OUTPUT_CONTENT = 'content/Game/'
-PACKAGE_FILES = ('.uasset', '.umap', '.uexp', '.ubulk', '.uptnl')
+PACKAGE_FILES = ('.uasset', '.umap', '.uexp', '.m.ubulk', '.ubulk', '.uptnl', '.upayload')
 PRIMARY_FILES = ('.uasset', '.umap')
 INI_SETTING = re.compile(r'-ini:([^:\[\]]+):\[([^\]]+)\]:([^=]+)=(.*)')
 
@@ -106,7 +156,8 @@ def worker_identity():
     script, module = Path(__file__).resolve(), Path(protocol.__file__).resolve()
     if module.parent != script.parent:
         return f'protocol loaded from outside the bundle: {module}'
-    digests = {'protocol.py': sha256(module), script.name: sha256(script)}
+    digests = {name: sha256(script.with_name(name)) for name in
+               ('protocol.py', 'python_job.py', 'recipe_job.py', 'unreal_inputs.py', 'unreal_worker.py')}
     canonical = json.dumps({'domain': 'atelier-unreal-worker', 'version': 1, 'files': digests},
                            sort_keys=True, separators=(',', ':'))
     return hashlib.sha256(canonical.encode()).hexdigest()
@@ -142,13 +193,66 @@ def ddc_problem(policy, nodes):
             local = local or allowed
         elif node['kind'] == 'Pak File':
             allowed = path == policy['engine_pak']
-        elif node['kind'] == 'Memory':
+        elif node['kind'] in ('Memory', 'Async'):
             allowed = not path
         else:
             allowed = False
         if not allowed:
             return f'a {node["kind"]} node at {path!r} is outside the v2 DDC folder'
     return None if local else 'no cache node is inside the v2 DDC folder'
+
+
+def validate_read_report(report, declared, platform_roots=(), generated=()):
+    """@cc [owner:fontanierh,label:correctness] unreal-observed-input-closure
+    Observed unknown reads MUST fail before Completed. Generated files MUST be attested
+    outputs of this job. This best-effort report MUST NOT certify unobserved native IO.
+    """
+    if (not isinstance(report, dict) or set(report) != {'version', 'best_effort', 'files'}
+            or type(report['version']) is not int or report['version'] != 1
+            or report['best_effort'] is not True or not isinstance(report['files'], list)):
+        raise JobRefused('dependency', 'missing or malformed native read report')
+    allowed = {Path(path).resolve() for path in (*declared, *generated)}
+    roots = tuple(Path(path).resolve() for path in platform_roots)
+    unknown = []
+    for item in report['files']:
+        if not isinstance(item, str) or not Path(item).is_absolute():
+            raise JobRefused('dependency', 'native read report contains a non-absolute path')
+        path = Path(item).resolve()
+        if path not in allowed and not any(path.is_relative_to(root) for root in roots):
+            unknown.append(item)
+    if unknown:
+        raise JobRefused('dependency', f'opened undeclared files: {sorted(set(unknown))}')
+
+
+def generated_save_reads(report, saved, folder, before):
+    """UE SavePackage uses Saved/<package-leaf[:32]><FGuid Digits>.tmp.
+
+    Only a new direct temporary for an actually attested package save is generated state.
+    Preexisting names, aliases, other roots and other names remain undeclared reads.
+    """
+    folder = Path(folder)
+    if folder.resolve() != folder or folder.is_symlink():
+        return []
+    prefixes = {item['package'].rsplit('/', 1)[-1][:32] for item in saved}
+    result = []
+    for raw in report.get('files', ()):
+        path = Path(raw)
+        if path.parent == folder and path.name not in before and any(
+                re.fullmatch(re.escape(prefix) + r'[0-9A-F]{32}\.tmp', path.name)
+                for prefix in prefixes):
+            if path.is_symlink():
+                continue
+            result.append(path)
+    return result
+
+
+def content_has_files(root):
+    """Empty editor-created folder scaffolding is not package content; links are never empty."""
+    with os.scandir(root) as entries:
+        for entry in entries:
+            if not entry.is_dir(follow_symlinks=False) or content_has_files(entry.path):
+                return True
+    return False
 
 
 def log(message):
@@ -266,8 +370,13 @@ class Editor:
         return {'graph': graph['graph'], 'nodes': nodes}
 
     def begin_job(self):
+        if not self.library.begin_read_recording():
+            raise JobRefused('dependency', 'native read recording is unavailable')
         self.library.begin_ensure_count()
         self.library.begin_save_recording()
+
+    def read_report(self):
+        return json.loads(self.library.end_read_recording())
 
     def ensures(self):
         """Failed ensures since `begin_job` (the editor runs with -nocrashreports, so none is reported elsewhere)."""
@@ -351,6 +460,7 @@ class Worker:
         self.responses = responses
         self.project = editor.project_dir()
         self.content = self.project / 'Content'
+        self.read_platform_roots = ()
 
     def send(self, message):
         protocol.write_frame(self.responses, protocol.RESPONSE, message)
@@ -380,13 +490,16 @@ class Worker:
                   'rhi': native['rhi'], 'ddc': expected['ddc']}
         graph = self.editor.ddc_graph()
         write_atomic(self.project.parent / CONTEXT_REPORT,
-                     {'version': EVIDENCE_VERSION, 'loaded': loaded, 'ddc_graph': graph, 'settings_read': reads})
+                     {'version': EVIDENCE_VERSION, 'loaded': loaded, 'ddc_graph': graph, 'settings_read': reads,
+                      **({'native_worker_source_digest': native['worker_source_digest']}
+                         if 'worker_source_digest' in native else {})})
         if loaded != {**expected, 'modules': sorted(expected['modules']), 'plugins': sorted(expected['plugins'])}:
             raise StartRefused('the editor loaded a different native context than the session declared')
         problem = ddc_problem(expected['ddc'], graph['nodes'])
         if problem:
             raise StartRefused(f"the editor's cache graph is not the v2 graph: {problem}")
-        if any(self.content.iterdir()) or self.editor.registry_game_assets():
+        self.read_platform_roots = (self.editor.engine_dir(), Path(expected['ddc']['dir']))
+        if content_has_files(self.content) or self.editor.registry_game_assets():
             raise StartRefused('/Game is not empty at startup')
 
     def observed_setting(self, token, cvars, reads):
@@ -461,7 +574,7 @@ class Worker:
             raise JobRefused('protocol', 'the job folder is not a staged absolute folder with output/')
         if any((job_dir / 'output').iterdir()):
             raise JobRefused('protocol', 'output/ is not empty before the job')
-        if any(self.content.iterdir()):
+        if content_has_files(self.content):
             raise JobRefused('dependency', '/Game is not empty before the job')
         declared, required = {}, set()
         for item in job['outputs']:
@@ -473,46 +586,39 @@ class Worker:
         required = {package_of(path, OUTPUT_CONTENT) for path, need in declared.items() if need} - {None}
         if job['script'] not in job['code']:
             raise JobRefused('protocol', 'the entry script is outside the declared code')
-        staged, inputs, input_packages = {}, {}, {}
-        for item in job['inputs']:
-            path = _job_relative(item['path'], 'input')
-            source = job_dir / path
-            present = item['identity']['state'] != 'absent'
-            if present != os.path.lexists(source):
-                raise JobRefused('protocol', f'input {item["name"]!r} does not match its staged presence')
-            package = package_of(path, INPUT_CONTENT)
-            if path.startswith(INPUT_CONTENT) and present:
-                if not path.endswith(PACKAGE_FILES):
-                    raise JobRefused('protocol', f'input {path!r} is not a package file')
-                target = self.content / path[len(INPUT_CONTENT):]
-                target.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(source, target)
-                os.chmod(target, 0o444)
-                staged[target] = sha256(target)
-                if package:
-                    input_packages[item['name']] = package
-                    touched.add(package)
-                    if package in packages:
-                        raise JobRefused('protocol', f'{package} is both an input and an output')
-                inputs[item['name']] = package or str(target)
-            else:
-                inputs[item['name']] = str(source) if present else None
+        helper = _bundle_module('unreal_inputs')
+        try:
+            prepared = helper.stage_inputs(job_dir, job['inputs'], self.content,
+                runtime_dir=job_dir / '.unreal-runtime', output_packages=packages,
+                root_bindings=job['params'].get('input_roots', {}))
+        except (OSError, ValueError) as error:
+            raise JobRefused('dependency', str(error)) from error
+        staged, inputs, input_packages = (prepared['staged_files'], prepared['inputs'], prepared['packages'])
+        for values in input_packages.values():
+            touched.update(values)
         if staged:
             self.editor.scan(staged)
         self.settings = self.editor.settings()
+        save_folder = self.project.parent / 'user' / 'Saved'
+        save_before = set(os.listdir(save_folder)) if save_folder.is_dir() else set()
         self.editor.begin_job()
         recording = True
         try:
-            entry = runpy.run_path(str(job_dir / job['script']), run_name='atelier_unreal_job')
-            if not callable(entry.get('run')):
-                raise JobRefused('protocol', 'the entry script defines no run(context)')
-            entry['run'](Context(job_dir, inputs, input_packages, job['params'], sorted(packages), self.content))
+            with declared_python(job_dir, job['code'],
+                    [*prepared['declared_reads'], self.content],
+                    [*self.read_platform_roots, Path(sys.base_prefix), Path(sys.prefix)]):
+                entry = runpy.run_path(str(job_dir / job['script']), run_name='atelier_unreal_job')
+                if not callable(entry.get('run')):
+                    raise JobRefused('protocol', 'the entry script defines no run(context)')
+                entry['run'](Context(job_dir, inputs, input_packages, job['params'], sorted(packages), self.content))
             self.editor.finish_background_work()
             saved = self.editor.saved_packages()
+            read_report = self.editor.read_report()
             recording = False
         finally:
             if recording:
                 touched.update(item['package'] for item in self.editor.saved_packages())
+                self.editor.read_report()
         # Every file a save attested, with the package that saved it: in save order, so a file's
         # latest attestation wins, and a later save that leaves a companion alone keeps its hash.
         files_of, attested, shared = {}, {}, set()
@@ -524,6 +630,12 @@ class Worker:
                 if owner != item['package']:
                     shared.add(resolved)
                 attested[resolved] = (item['package'], digest)
+        write_atomic(job_dir / READ_EVIDENCE, read_report)
+        declared_reads = [job_dir / path for path in job['code']]
+        declared_reads += prepared['declared_reads']
+        declared_reads += list(staged)
+        generated = [*attested, *generated_save_reads(read_report, saved, save_folder, save_before)]
+        validate_read_report(read_report, declared_reads, self.read_platform_roots, generated)
         # The registry forgets every saved file at reset, even one the op deleted afterwards.
         moved.extend(Path(filename) for filenames in files_of.values() for filename in filenames)
         names = set(files_of)
