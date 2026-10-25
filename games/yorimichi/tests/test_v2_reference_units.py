@@ -229,6 +229,10 @@ class Instance(Asset): pass
 class Sequence(Asset): pass
 class Skeleton(Asset): pass
 class Mesh(Asset):
+    def set_editor_property(self, key, value):
+        if key == 'skeleton': raise RuntimeError('SkeletalMesh skeleton is read-only')
+        super().set_editor_property(key, value)
+    def set_skeleton(self, value): self.props['skeleton'] = value
     @property
     def materials(self): return self.props['materials']
     def get_bounds(self): return NS(box_extent=NS(x=40., y=20.))

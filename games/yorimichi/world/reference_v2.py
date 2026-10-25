@@ -151,7 +151,7 @@ def mesh(context, unreal, args):
     skeleton = library.duplicate_asset(_path(raw.get_editor_property('skeleton')), skeleton_package)
     if not isinstance(asset, unreal.SkeletalMesh) or not isinstance(skeleton, unreal.Skeleton):
         raise ValueError('Reference skeletal duplicate failed: ' + destination)
-    asset.set_editor_property('skeleton', skeleton)
+    asset.set_skeleton(skeleton)
     skeleton.set_editor_property('preview_skeletal_mesh', asset)
     slots = list(asset.materials)
     for slot in slots:
