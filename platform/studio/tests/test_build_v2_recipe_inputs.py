@@ -87,6 +87,20 @@ def test_needs_bind_every_prerequisite_root(tmp_path):
     assert {i['source']['item'] for i in result['inputs']} == {'product0', 'output0'}
 
 
+@pytest.mark.parametrize('field,value', [
+    ('needs', ['a.make']),
+    ('reads', [{'producer': 'a.make', 'product': 'a.data', 'paths': ['build/g/a']}]),
+    ('references', [{'producer': 'a.make', 'product': 'a.data', 'paths': ['build/g/a']}]),
+    ('inputs', [{'path': 'build/g/a/x.json', 'root': 'checkout', 'optional': False}]),
+])
+def test_broad_recipe_item_edges_explain_complete_producer_scope(tmp_path, field, value):
+    result = _lower(_row('b.use', **{field: value}), tmp_path)
+    assert result['inputs']
+    assert all(input['source']['kind'] == 'item' and input['role'] == 'content'
+               and input['whole'] == 'The recipe consumes declared ROOT archives from this complete producer Item.'
+               for input in result['inputs'])
+
+
 def test_deferred_folder_holding_own_output_is_not_a_self_edge(tmp_path):
     provider = {'name': 'proof', 'collect': None, 'settings': [{'path': 'build/g'}, {'path': '.'}], 'support': [],
                 'owners': [{'root': 'build/g/self.json', 'producer': 'b.use'}]}

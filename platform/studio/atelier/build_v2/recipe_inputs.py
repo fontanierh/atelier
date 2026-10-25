@@ -97,6 +97,7 @@ def lower_inputs(row, *, rows, roots, products, checkout):
     byte MUST have an identity: generated roots as producer items, source files and complete
     source-directory members as file inputs, deferred collectors with ALL owning producer
     roots, references as content edges. Unknown external data MUST refuse by name.
+    Broad recipe Item edges MUST explicitly state their complete producer Item scope.
     """
     name = row['id']
     rows_by_name = rows if isinstance(rows, dict) else {r['id']: r for r in rows}
@@ -109,7 +110,9 @@ def lower_inputs(row, *, rows, roots, products, checkout):
             raise Unsupported(f'{name}: action reads its own unpublished output')
         if (owner, item) not in incoming:
             slot = f'item{len(incoming)}'
-            inputs.append({'role': 'content', 'name': slot, 'source': {'kind': 'item', 'unit': owner, 'item': item}})
+            inputs.append({'role': 'content', 'name': slot,
+                           'source': {'kind': 'item', 'unit': owner, 'item': item},
+                           'whole': 'The recipe consumes declared ROOT archives from this complete producer Item.'})
             staged[slot] = f'inputs/{slot}'
             slots[slot] = False
             incoming[(owner, item)] = slot
