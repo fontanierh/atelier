@@ -116,7 +116,6 @@ class Mesh(Asset):
     def set_editor_property(self, key, value):
         if key == 'skeleton': raise RuntimeError('SkeletalMesh skeleton is read-only')
         super().set_editor_property(key, value)
-    def set_skeleton(self, value): self.values['skeleton'] = value
 class Sequence(Asset): pass
 class Blend(Asset): pass
 class Definition(Asset): pass
@@ -138,6 +137,18 @@ def export_item(tmp_path, clips=('Idle', 'Walk', 'Jog', 'Run', 'CrouchIdle', 'Cr
     return root, model, manifest
 
 
+def bind_partners(mesh, skeleton, physics):
+    def values(asset): return vars(asset).get('props', vars(asset).get('values'))
+    assert not mesh.path.startswith('/Game/_Raw/') and not skeleton.path.startswith('/Game/_Raw/')
+    values(mesh)['skeleton'] = skeleton
+    values(skeleton)['preview_skeletal_mesh'] = mesh
+    if physics is not None:
+        assert not physics.path.startswith('/Game/_Raw/')
+        values(mesh)['physics_asset'] = physics
+        values(physics)['preview_skeletal_mesh'] = mesh
+    return True
+
+
 def editor(tmp_path, monkeypatch, assets, bones):
     state = NS(saves=[], configured=[])
     def create(name, folder, cls, factory):
@@ -156,7 +167,7 @@ def editor(tmp_path, monkeypatch, assets, bones):
     children = {}
     for bone, parent in bones.items():
         if parent: children.setdefault(parent, []).append(bone)
-    unreal = NS(Material=Material, MaterialInterface=Material, SkeletalMesh=Mesh, Skeleton=Skeleton, PhysicsAsset=Physics,
+    unreal = NS(AtelierBuildWorkerLibrary=NS(bind_skeletal_partners=bind_partners), Material=Material, MaterialInterface=Material, SkeletalMesh=Mesh, Skeleton=Skeleton, PhysicsAsset=Physics,
         AnimSequence=Sequence, BlendSpace1D=Blend, WandererDefinition=Definition, MaterialFactoryNew=lambda: None,
         MaterialExpressionVertexColor=0, MaterialExpressionCustom=0, MaterialExpressionConstant=0, MaterialExpressionMultiply=0,
         CustomMaterialOutputType=NS(CMOT_FLOAT3=3), CustomInput=Props, MaterialEditingLibrary=graph,

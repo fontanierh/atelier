@@ -191,10 +191,21 @@ class SkeletalMesh(Asset):
     def set_editor_property(self, key, value):
         if key == 'skeleton': raise RuntimeError('SkeletalMesh skeleton is read-only')
         super().set_editor_property(key, value)
-    def set_skeleton(self, value): self.props['skeleton'] = value
     @property
     def materials(self): return self.props.get('materials', [])
 class AnimSequence(Asset): pass
+
+
+def bind_partners(mesh, skeleton, physics):
+    def values(asset): return vars(asset).get('props', vars(asset).get('values'))
+    assert not mesh.path.startswith('/Game/_Raw/') and not skeleton.path.startswith('/Game/_Raw/')
+    values(mesh)['skeleton'] = skeleton
+    values(skeleton)['preview_skeletal_mesh'] = mesh
+    if physics is not None:
+        assert not physics.path.startswith('/Game/_Raw/')
+        values(mesh)['physics_asset'] = physics
+        values(physics)['preview_skeletal_mesh'] = mesh
+    return True
 
 
 @pytest.fixture
@@ -210,7 +221,7 @@ def editor(tmp_path, monkeypatch):
            set_material_instance_texture_parameter_value=lambda mi, k, v: mi.props.update({k: v}),
            get_material_instance_texture_parameter_value=lambda mi, k: mi.props[k],
            update_material_instance=lambda mi: None)
-    unreal = NS(Material=Material, Texture2D=Texture2D, Skeleton=Skeleton, SkeletalMesh=SkeletalMesh,
+    unreal = NS(AtelierBuildWorkerLibrary=NS(bind_skeletal_partners=bind_partners), Material=Material, Texture2D=Texture2D, Skeleton=Skeleton, SkeletalMesh=SkeletalMesh,
                 AnimSequence=AnimSequence, MaterialInstanceConstant=MaterialInstanceConstant,
                 MaterialInstanceConstantFactoryNew=lambda: None, LinearColor=lambda *c: tuple(c), MaterialEditingLibrary=M,
                 AssetToolsHelpers=NS(get_asset_tools=lambda: NS(create_asset=create)),

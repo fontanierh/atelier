@@ -135,7 +135,6 @@ class SkeletalMesh(Asset):
     def set_editor_property(self, name, value):
         if name == 'skeleton': raise RuntimeError('SkeletalMesh skeleton is read-only')
         super().set_editor_property(name, value)
-    def set_skeleton(self, value): self.props['skeleton'] = value
     @property
     def materials(self): return self.props['materials']
     def get_all_morph_target_names(self): return []
@@ -149,6 +148,18 @@ class AnimSequence(Asset): pass
 class Slot(Asset):
     @property
     def material_interface(self): return self.props['material_interface']
+
+
+def bind_partners(mesh, skeleton, physics):
+    def values(asset): return vars(asset).get('props', vars(asset).get('values'))
+    assert not mesh.path.startswith('/Game/_Raw/') and not skeleton.path.startswith('/Game/_Raw/')
+    values(mesh)['skeleton'] = skeleton
+    values(skeleton)['preview_skeletal_mesh'] = mesh
+    if physics is not None:
+        assert not physics.path.startswith('/Game/_Raw/')
+        values(mesh)['physics_asset'] = physics
+        values(physics)['preview_skeletal_mesh'] = mesh
+    return True
 
 
 @pytest.fixture
@@ -171,7 +182,7 @@ def editor(tmp_path, monkeypatch):
     assets, saves = {}, []
     def duplicate(source, destination):
         copy = type(assets[source])(destination, **assets[source].props); assets[destination] = copy; return copy
-    unreal = NS(SkeletalMesh=SkeletalMesh, Skeleton=Skeleton, PhysicsAsset=PhysicsAsset, AnimSequence=AnimSequence,
+    unreal = NS(AtelierBuildWorkerLibrary=NS(bind_skeletal_partners=bind_partners), SkeletalMesh=SkeletalMesh, Skeleton=Skeleton, PhysicsAsset=PhysicsAsset, AnimSequence=AnimSequence,
                 EditorAssetLibrary=NS(load_asset=lambda p: assets.get(p.split('.', 1)[0]), does_asset_exist=lambda p: p in assets,
                                       duplicate_asset=duplicate, save_loaded_asset=lambda a, d=True: saves.append(a.path) or True),
                 SkeletalMeshEditorSubsystem=NS(set_allow_cpu_access=lambda mesh, value: mesh.props.update(cpu=value)),

@@ -210,8 +210,8 @@ def mesh(context, unreal, args):
     skeleton = library.duplicate_asset(_path(raw.get_editor_property('skeleton')), partners['skeleton'])
     if not isinstance(skeleton, unreal.Skeleton):
         raise ValueError('Skeleton duplicate failed')
-    asset.set_skeleton(skeleton)
-    skeleton.set_editor_property('preview_skeletal_mesh', asset)
+    if not unreal.AtelierBuildWorkerLibrary.bind_skeletal_partners(asset, skeleton, None):
+        raise ValueError('Character skeletal partner binding failed')
     raw_physics = raw.get_editor_property('physics_asset')
     if 'physics_asset' in partners:
         if raw_physics is None:
@@ -219,8 +219,8 @@ def mesh(context, unreal, args):
         physics = library.duplicate_asset(_path(raw_physics), partners['physics_asset'])
         if not isinstance(physics, unreal.PhysicsAsset):
             raise ValueError('Physics asset duplicate failed')
-        asset.set_editor_property('physics_asset', physics)
-        physics.set_editor_property('preview_skeletal_mesh', asset)
+        if not unreal.AtelierBuildWorkerLibrary.bind_skeletal_partners(asset, skeleton, physics):
+            raise ValueError('Character physics partner binding failed')
     elif raw_physics is not None:
         raise ValueError('[unreal] physics_asset = false, but the raw import made a physics asset')
     if args['cpu_access']:

@@ -180,10 +180,8 @@ def mesh(context, unreal, args):
     if (not isinstance(asset, unreal.SkeletalMesh) or not isinstance(skeleton, unreal.Skeleton)
             or not isinstance(physics, unreal.PhysicsAsset)):
         raise ValueError('Wanderer skeletal bundle duplicate failed')
-    asset.set_skeleton(skeleton)
-    skeleton.set_editor_property('preview_skeletal_mesh', asset)
-    asset.set_editor_property('physics_asset', physics)
-    physics.set_editor_property('preview_skeletal_mesh', asset)
+    if not unreal.AtelierBuildWorkerLibrary.bind_skeletal_partners(asset, skeleton, physics):
+        raise ValueError('Wanderer skeletal partner binding failed')
     slots = list(asset.get_editor_property('materials'))
     if len(slots) != 1 or len(model['materials']) != 1:
         raise ValueError('The reference character should have one palette material')
