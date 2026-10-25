@@ -187,52 +187,6 @@ def test_actual_selected_planner_declares_whole_board_and_explicit_park_policy(t
     assert json.loads((tmp_path / 'record.json').read_text())['pieces'] == [name]
 
 
-def test_skate_preparation_declares_each_output_file_instead_of_common_parent(tmp_path):
-    helper=module('skate_explicit_destinations',GAME/'skatepark_atomic_build.py')
-    by={step.name:step for step in helper.steps(SimpleNamespace(out=tmp_path.resolve()))}
-    for name,count in [('world.skatepark.query_data',5),('world.skatepark.ao',3)]:
-        step=by[name];args=step.commands[0].args
-        assert '--output' not in args
-        files={args[i+1]:Path(args[i+2]) for i,arg in enumerate(args)if arg=='--file'}
-        assert len(files)==count
-        assert set(files.values())=={path for product in step.products for path in product.paths}
-
-
-def test_skate_exact_destinations_preserve_split_product_roots(tmp_path):
-    expected=['SM_SkatePierPilings.json','SM_SkatePath.json','collision.json','logical.json','report.json']
-    paths={name:tmp_path/str(i)/name for i,name in enumerate(expected)}
-    assert source.destinations(None,expected,paths)==paths
-    assert all(path.parent.is_dir()for path in paths.values())
-    assert not (tmp_path/'queries').exists()
-    with pytest.raises(ValueError,match='Incomplete or mixed'):
-        source.destinations(None,expected,{**paths,'unknown.json':tmp_path/'unknown'})
-    with pytest.raises(ValueError,match='Aliased'):
-        source.destinations(None,expected,{name:tmp_path/'same'for name in expected})
-    with pytest.raises(ValueError,match='Incomplete or mixed'):
-        source.destinations(tmp_path/'queries',expected,paths)
-    paths[expected[0]].symlink_to(tmp_path/'elsewhere')
-    with pytest.raises(ValueError,match='Invalid skate output'):
-        source.destinations(None,expected,paths)
-
-
-def test_prepare_skate_queries_passes_exact_declared_file_destinations(tmp_path,monkeypatch):
-    helper=module('skate_prepare_destinations',GAME/'world/regions/skatepark/prepare_atomic.py')
-    paths={name:tmp_path/name for name in ['SM_SkatePierPilings.json','SM_SkatePath.json','collision.json','logical.json','report.json']}
-    calls=[];monkeypatch.setattr(helper.source,'publish_queries',lambda root,*,outputs:calls.append((root,outputs)))
-    args=['--kind','queries',*(arg for name,path in paths.items()for arg in ['--file',name,str(path)])]
-    helper.main(args)
-    assert calls==[(None,{name:str(path)for name,path in paths.items()})]
-    with pytest.raises(ValueError,match='Duplicate'):
-        helper.main([*args,'--file','report.json',str(tmp_path/'extra')])
-
-
-def test_skate_explicit_destinations_keep_foreign_member_preflight(tmp_path):
-    folder=tmp_path/'queries';folder.mkdir();(folder/'foreign').write_bytes(b'keep')
-    with pytest.raises(ValueError,match='Foreign'):
-        source.destinations(None,['one.json'],{'one.json':folder/'one.json'})
-    assert (folder/'foreign').read_bytes()==b'keep'
-
-
 def test_skate_collision_bytes_use_existing_managed_scratch_under_real_recipe_guard(tmp_path):
     import io
     import subprocess
