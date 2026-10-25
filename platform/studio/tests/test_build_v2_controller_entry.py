@@ -27,6 +27,10 @@ def observed():
 def test_normal_build_never_discovers_or_invokes_old_scheduler(tmp_path, monkeypatch):
     monkeypatch.setattr(paths, 'REPO', tmp_path)
     targets = {name: marker(name) for name in ('data.rim', 'data.course')}
+    from copy import deepcopy
+    conflicting = deepcopy(targets['data.rim'].declaration['units'][0])
+    conflicting['params'] = {'unrequested_conflict': True}
+    targets['data.course'].declaration['units'].append(conflicting)
     monkeypatch.setattr(entry, 'discover', lambda game, **kwargs: targets)
     def forbidden(*args, **kwargs): raise AssertionError('invoked old recipe/runtime')
     monkeypatch.setattr(build, 'Context', forbidden)
@@ -37,7 +41,7 @@ def test_normal_build_never_discovers_or_invokes_old_scheduler(tmp_path, monkeyp
     monkeypatch.setattr(entry, '_invoke_marker', invoke)
     assert build.build('fixture', ['data.rim'], echo=lambda _: None) == 0
     assert len(calls) == 1 and calls[0]['targets'] == ['data.rim']
-    assert {u['id'] for u in calls[0]['declaration']['units']} == set(targets)
+    assert {u['id'] for u in calls[0]['declaration']['units']} == {'data.rim'}
     assert not (tmp_path / 'build').exists()
 
 
