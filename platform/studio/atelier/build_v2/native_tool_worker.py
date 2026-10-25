@@ -315,7 +315,7 @@ def cook_argv(engine, project, packages, source_key, *, global_data=False):
     selection = (['-NoDefaultMaps', '-NoGameAlwaysCook', '-SkipHardReferences', '-SkipSoftReferences']
                  if global_data else ['-cooksinglepackagenorefs'])
     shader_settings = ['-ini:Game:[/Script/UnrealEd.ProjectPackagingSettings]:bShareMaterialShaderCode=True',
-                       '-ini:Game:[/Script/UnrealEd.ProjectPackagingSettings]:bSharedMaterialNativeLibraries=False']
+                       '-ini:Game:[/Script/UnrealEd.ProjectPackagingSettings]:bSharedMaterialNativeLibraries=True']
     return [str(engine / 'Engine/Binaries/Mac/UnrealEditor-Cmd'), str(project), '-run=cook',
             '-targetplatform=Mac', '-package=' + '+'.join(packages), *selection, *shader_settings,
             '-Cook.DependencyTracking=1', '-ZenStore', '-ZenStoreProject=AtelierV2_' + source_key,

@@ -83,8 +83,8 @@ def test_histories_use_frozen_archives_and_selected_package_rosters(tmp_path, sh
             (root / (stem + '-' + library + '-SF_METAL_SM5-METAL_SM5' + suffix)).write_bytes(stem.encode())
     cooked = tmp_path / 'cooked'
     if not shaderless:
-        shaders(cooked / 'FixtureGame/Content', 'FixtureGame')
-    metadata = cooked / 'FixtureGame/Metadata'; metadata.mkdir(parents=True)
+        shaders(cooked / 'FixtureGame/Metadata/ShaderLibrarySource', 'FixtureGame')
+    metadata = cooked / 'FixtureGame/Metadata'; metadata.mkdir(parents=True, exist_ok=True)
     (metadata / 'DevelopmentAssetRegistry.bin').write_bytes(b'registry')
     (metadata / 'CookMetadata.ucookmeta').write_bytes(b'metadata')
     # Private transport bytes are retained in the archive but never shader inputs.

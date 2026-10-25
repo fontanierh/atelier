@@ -192,7 +192,10 @@ def prepare_histories(*, carrier, global_root, folder, project_name, library, un
         root = folder / ('history-' + str(index))
         unpack(Path(archive), root)
         project = root / project_name
-        _, history = shaders(project / 'Content', library, folder / ('shaders-' + str(index)), formats, allow_shaderless=True)
+        # The stock cooker retains archive-capable source code here before removing
+        # Content's .ushaderbytecode during native library packaging.
+        _, history = shaders(project / 'Metadata/ShaderLibrarySource', library,
+                             folder / ('shaders-' + str(index)), formats, allow_shaderless=True)
         for key, filename in (('registry', 'DevelopmentAssetRegistry.bin'), ('metadata', 'CookMetadata.ucookmeta')):
             source = project / 'Metadata' / filename
             digest = hashlib.sha256(source.read_bytes()).hexdigest()
