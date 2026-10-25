@@ -70,3 +70,45 @@ def test_changed_source_or_incomplete_native_finalization_refuses(tmp_path, caus
     with pytest.raises(Refused):
         finalise(**args, call=call)
     assert all(method != 'zen_end_cook_request' for method, _ in calls)
+
+
+def test_histories_use_frozen_archives_and_selected_package_rosters(tmp_path):
+    from atelier.build_v2 import recipe_job
+    from atelier.build_v2.zen_package_finalise import prepare_histories
+    def shaders(root, library):
+        root.mkdir(parents=True)
+        for stem, suffix in (('ShaderAssetInfo', '.assetinfo.json'), ('ShaderArchive', '.ushaderbytecode'),
+                             ('ShaderTypeInfo', '.stinfo')):
+            (root / (stem + '-' + library + '-SF_METAL_SM5' + suffix)).write_bytes(stem.encode())
+    cooked = tmp_path / 'cooked'
+    shaders(cooked / 'FixtureGame/Content', 'FixtureGame')
+    metadata = cooked / 'FixtureGame/Metadata'; metadata.mkdir()
+    (metadata / 'DevelopmentAssetRegistry.bin').write_bytes(b'registry')
+    (metadata / 'CookMetadata.ucookmeta').write_bytes(b'metadata')
+    # Private transport bytes are retained in the archive but never shader inputs.
+    (cooked / 'ue.projectstore').write_bytes(b'private locator')
+    archive = tmp_path / 'metadata.tree.tar'; recipe_job.pack_root(cooked, archive)
+    global_root = tmp_path / 'global'; shaders(global_root / 'Content', 'Global')
+    carrier = {'version': 1, 'packages': [
+        {'locator': {'package': name}, 'metadata_archive': str(archive),
+         'metadata_sha256': hashlib.sha256(archive.read_bytes()).hexdigest()}
+        for name in ('/Game/A', '/Game/B')]}
+    result = prepare_histories(carrier=carrier, global_root=global_root, folder=tmp_path / 'projection',
+                              project_name='FixtureGame', library='FixtureGame', unpack=recipe_job.unpack_root)
+    assert result['formats'] == ['SF_METAL_SM5']
+    assert len(result['histories']) == 1
+    assert result['histories'][0]['packages'] == ['/Game/A', '/Game/B']
+    assert len(result['histories'][0]['files']) == 3
+    assert result['global_histories'][0]['packages'] == []
+    assert all('ue.projectstore' not in str(row) for row in result['histories'])
+
+
+def test_missing_global_shader_triple_refuses_before_package_archive_use(tmp_path):
+    from atelier.build_v2.zen_package_finalise import prepare_histories
+    content = tmp_path / 'global/Content'; content.mkdir(parents=True)
+    (content / 'ShaderArchive-Global-SF_METAL_SM5.ushaderbytecode').write_bytes(b'shaders')
+    with pytest.raises((Refused, FileNotFoundError)):
+        prepare_histories(carrier={'version': 1, 'packages': [{'locator': {'package': '/Game/A'}}]},
+                          global_root=content.parent, folder=tmp_path / 'projection',
+                          project_name='FixtureGame', library='FixtureGame',
+                          unpack=lambda *_: pytest.fail('incomplete globals precede package archive reads'))

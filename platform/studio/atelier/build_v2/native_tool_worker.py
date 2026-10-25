@@ -442,6 +442,102 @@ def source_cook(params, view, project, engine, source_key, state, job_dir, run, 
     return tuple(record_outputs.values())
 
 
+PACKAGE_FINALISE_SOURCE = """import importlib.util, json, os
+from pathlib import Path
+import unreal
+control=json.loads(Path(os.environ['ATELIER_NATIVE_PACKAGE_FINALISE']).read_bytes())
+actual=json.loads(unreal.AtelierBuildWorkerLibrary.native_context())
+if actual.get('worker_source_digest') != control['native_source_digest']:
+    raise RuntimeError('native package exporter does not match keyed implementation')
+spec=importlib.util.spec_from_file_location('atelier_fixed_finalise',control['helper'])
+helper=importlib.util.module_from_spec(spec);spec.loader.exec_module(helper)
+def call(method,request):
+    return json.loads(getattr(unreal.AtelierBuildWorkerLibrary,method)(json.dumps(request,sort_keys=True,separators=(',',':'))))
+result=helper.finalise(**control['arguments'],call=call)
+Path(control['report']).write_text(json.dumps(result,sort_keys=True,separators=(',',':')))
+"""
+
+
+def finalise_package(job, params, view, project, engine, job_dir, run, environment, source_key):
+    carrier_path = job_dir / '.recipe-runtime/native-packages.json'
+    info = carrier_path.lstat()
+    if (not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or stat.S_IMODE(info.st_mode) != 0o400
+            or info.st_size > 64 * 1024 * 1024):
+        raise Refused('native package composition requires the controller private carrier')
+    carrier = json.loads(carrier_path.read_bytes())
+    slot = params.get('native_global')
+    if (carrier.get('version') != 1 or carrier.get('globals') != [slot]
+            or not isinstance(slot, str) or not isinstance(carrier.get('packages'), list) or not carrier['packages']):
+        raise Refused('native package carrier differs from declared global input')
+    global_inputs = [row for row in job['inputs'] if row['name'] == slot]
+    if len(global_inputs) != 1:
+        raise Refused('native global input is missing or ambiguous')
+    staged = job_dir / recipe_job.relative(global_inputs[0]['path'])
+    archive = staged / 'global-data.tree.tar' if staged.is_dir() else staged
+    scope = job_dir / '.recipe-runtime/native-finalise'
+    scope.mkdir(mode=0o700)
+    global_root = scope / 'global-input'
+    recipe_job.unpack_root(archive, global_root)
+    helper = _sibling('zen_package_finalise')
+    histories = helper.prepare_histories(carrier=carrier, global_root=global_root, folder=scope / 'histories',
+                                        project_name=project.stem, library=project.stem, unpack=recipe_job.unpack_root)
+    bootstrap = Path(carrier['export_project'])
+    plugin = bootstrap.parent / 'Plugins/AtelierBuildWorker/AtelierBuildWorker.uplugin'
+    if not plugin.is_file() or plugin.is_symlink():
+        raise Refused('native package exporter lacks the actual compiled worker plugin')
+    descriptor = json.loads(project.read_bytes())
+    plugin_dirs = [str((project.parent / path).resolve()) for path in descriptor.get('AdditionalPluginDirectories', [])]
+    plugin_dirs.append(str(plugin.parent.parent))
+    descriptor['AdditionalPluginDirectories'] = sorted(set(plugin_dirs))
+    plugins = [row for row in descriptor.get('Plugins', []) if row.get('Name') != 'AtelierBuildWorker']
+    descriptor['Plugins'] = [*plugins, {'Name': 'AtelierBuildWorker', 'Enabled': True}]
+    runtime_project = project.with_name('AtelierV2Finalise.uproject')
+    with runtime_project.open('x') as stream:
+        json.dump(descriptor, stream, sort_keys=True)
+    arguments = dict(destination=carrier['destination'], packages=carrier['packages'], **histories,
+                     global_files=[], output_dir=str(scope / 'composed'), library=project.stem,
+                     runtime_project=str(runtime_project), input_key=source_key)
+    request, script, report = scope / 'request.json', scope / 'finalise.py', scope / 'report.json'
+    request.write_text(json.dumps({'arguments': arguments, 'helper': str(Path(helper.__file__).resolve()),
+                                  'native_source_digest': native_source_digest(job, job_dir), 'report': str(report)}, sort_keys=True))
+    script.write_text(PACKAGE_FINALISE_SOURCE); script.chmod(0o444)
+    run([str(engine / 'Engine/Binaries/Mac/UnrealEditor-Cmd'), str(runtime_project), '-run=pythonscript',
+         '-script=' + str(script), '-unattended', '-nop4', '-nosplash', '-nullrhi', '-stdout', '-FullStdOutLogOutput'],
+        cwd=view, env=dict(environment, ATELIER_NATIVE_PACKAGE_FINALISE=str(request)))
+    result = json.loads(report.read_bytes())
+    endcook = result.get('endcook', {})
+    if (endcook.get('status') != 'finalized' or endcook.get('input_key') != source_key
+            or endcook.get('project') != carrier['destination']['project']
+            or endcook.get('oplog') != 'Mac' or endcook.get('packages') != len(carrier['packages'])):
+        raise Refused('native EndCook did not certify the complete selected package set')
+    metadata_archive = carrier.get('global_metadata_archive')
+    helper._file(metadata_archive, carrier.get('global_metadata_sha256'))
+    cooked = project.parent / 'Saved/Cooked/Mac'
+    recipe_job.unpack_root(Path(metadata_archive), cooked)
+    # The private source transport is an execution context. Replace its registry
+    # and shader globals with the selected, native-composed values, never a union
+    # of source-history package memberships.
+    for composition, base in ((result['composition'], scope / 'composed'),
+                              (result['global_composition'], scope / 'composed-global')):
+        for row in composition['files']:
+            relative = recipe_job.relative(row['path'])
+            source = base / relative
+            helper._file(source, row['sha256'])
+            destination = cooked / project.stem / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            if destination.exists():
+                if not stat.S_ISREG(destination.lstat().st_mode):
+                    raise Refused('native final globals overlap a non-file transport entry')
+                destination.unlink()
+            with source.open('rb') as incoming, destination.open('xb') as outgoing:
+                shutil.copyfileobj(incoming, outgoing)
+            helper._file(destination, row['sha256'])
+    marker = cooked / 'ue.projectstore'
+    if not marker.is_file() or marker.is_symlink():
+        raise Refused('native final package lacks the certified projectstore context')
+    return {path.relative_to(cooked).as_posix(): _digest(path) for path in cooked.rglob('*') if path.is_file()}
+
+
 def dispatch(job, job_dir, engine, run, *, source_key=None, zen_state_root=None, export_project=None):
     """@cc [owner:fontanierh,label:correctness;safety] fixed-native-tool-routes
     Only the five fixed version-1 operations MAY dispatch. SDK/interpreter locators
@@ -483,7 +579,7 @@ def dispatch(job, job_dir, engine, run, *, source_key=None, zen_state_root=None,
         _covers(roots, receipt_files(engine, project, target, configuration, role, owned_root=view))
     elif kind == 'unreal.package':
         # Inventory comes from the controller's frozen upstream item, not a writer report.
-        inventory = params.get('cooked_files')
+        inventory = finalise_package(job, params, view, project, engine, job_dir, run, environment, source_key) if params.get('native_global') else params.get('cooked_files')
         cooked = project.parent / 'Saved/Cooked/Mac'
         archive = _path(view, params['archive'])
         argv = ops.package_argv(engine, project, target, archive, cooked_root=cooked,

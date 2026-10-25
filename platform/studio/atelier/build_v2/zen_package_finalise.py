@@ -114,3 +114,74 @@ def finalise(*, destination, packages, histories, global_histories, global_files
         runtime_project_file=runtime_project, input_key=input_key, packages=chosen, globals=files,
         output_dir=str(ending)), 'finalized')
     return {'composition': composed, 'global_composition': global_composed, 'endcook': report, 'packages': chosen, 'globals': files}
+
+
+def prepare_histories(*, carrier, global_root, folder, project_name, library, unpack):
+    """Project complete certified transport archives onto selected native SDK histories.
+
+    Archive paths and digests must come from the controller's private carrier. Only
+    the selected package list enters each history; transport namespaces never do.
+    The SDK still validates registry linkage, native dependencies and shader ownership.
+    """
+    if (not isinstance(carrier, dict) or carrier.get('version') != 1
+            or not isinstance(carrier.get('packages'), list) or not carrier['packages']
+            or not re.fullmatch('[A-Za-z0-9_-]+', project_name)
+            or not re.fullmatch('[A-Za-z0-9_-]+', library)):
+        raise Refused('package histories require the controller carrier and explicit native project')
+    folder, global_root = Path(folder), Path(global_root)
+    if not folder.is_absolute() or folder.resolve() != folder or folder.exists() or folder.is_symlink():
+        raise Refused('package history projection needs a fresh owned scope')
+    folder.mkdir(mode=0o700)
+
+    def shaders(content, name, output, formats=None):
+        if not content.is_dir() or content.is_symlink():
+            raise Refused('declared shader content directory is absent or linked')
+        pattern = re.compile(r'ShaderArchive-' + re.escape(name) + r'-([A-Za-z0-9_]+)\.ushaderbytecode')
+        found = sorted(match.group(1) for path in content.iterdir() if (match := pattern.fullmatch(path.name)))
+        if not found or len(found) != len(set(found)) or (formats is not None and found != formats):
+            raise Refused('native shader format roster differs or is incomplete')
+        output.mkdir(mode=0o700)
+        files = {}
+        for shader_format in found:
+            for stem, suffix in (('ShaderAssetInfo', '.assetinfo.json'), ('ShaderArchive', '.ushaderbytecode'),
+                                 ('ShaderTypeInfo', '.stinfo')):
+                filename = stem + '-' + name + '-' + shader_format + suffix
+                source = content / filename
+                info = source.lstat()
+                if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or not info.st_size:
+                    raise Refused('native shader history is incomplete or aliased')
+                digest = hashlib.sha256(source.read_bytes()).hexdigest()
+                _file(source, digest)
+                target = output / filename
+                with target.open('xb') as stream:
+                    stream.write(source.read_bytes())
+                _file(target, digest)
+                files[filename] = digest
+        return found, {'content_dir': str(output), 'files': files, 'packages': []}
+
+    formats, global_history = shaders(global_root / 'Content', 'Global', folder / 'global')
+    histories, archives, names = [], {}, set()
+    for row in carrier['packages']:
+        locator = row.get('locator')
+        name = locator.get('package') if isinstance(locator, dict) else None
+        if not isinstance(name, str) or name in names:
+            raise Refused('selected native package history is missing or duplicated')
+        names.add(name)
+        archive = _file(row.get('metadata_archive'), row.get('metadata_sha256'))
+        identity = (archive, row['metadata_sha256'])
+        if identity in archives:
+            archives[identity]['packages'].append(name)
+            continue
+        index = len(histories)
+        root = folder / ('history-' + str(index))
+        unpack(Path(archive), root)
+        project = root / project_name
+        _, history = shaders(project / 'Content', library, folder / ('shaders-' + str(index)), formats)
+        for key, filename in (('registry', 'DevelopmentAssetRegistry.bin'), ('metadata', 'CookMetadata.ucookmeta')):
+            source = project / 'Metadata' / filename
+            digest = hashlib.sha256(source.read_bytes()).hexdigest()
+            history[key] = {'path': _file(source, digest), 'sha256': digest}
+        history['packages'] = [name]
+        archives[identity] = history
+        histories.append(history)
+    return {'histories': histories, 'global_histories': [global_history], 'formats': formats}
