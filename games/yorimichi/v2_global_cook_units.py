@@ -9,6 +9,7 @@ UNIT = 'unreal.cook.global.mac-default-texture-v1'
 RECORD = 'records/global-seed.cb'
 SEMANTIC_GLOBALS = 'build/yorimichi/global-cook/mac/semantic'
 COOK_ROOT = 'games/yorimichi/unreal/Saved/Cooked/Mac'
+PROJECT_PLUGINS = 'games/yorimichi/unreal/Plugins/'
 
 
 def _relative(value):
@@ -90,6 +91,14 @@ def author_unit(*, checkout, editor, plugins):
             raise ValueError('global cook plugin descriptor identity differs or aliases')
         descriptors.add(descriptor.casefold())
         source('plugin_descriptor_' + str(index), descriptor)
+        if 'binaries_in_editor' in reference:
+            # Shared AdditionalPluginDirectories modules live in the project Binaries/Mac
+            # editor root already mapped above; only their descriptor is a separate input.
+            if (reference['binaries_in_editor'] is not True or descriptor.startswith(PROJECT_PLUGINS)
+                    or {key: reference.get(key) for key in ('unit', 'item', 'file')}
+                    != {key: editor.get(key) for key in ('unit', 'item', 'file')}):
+                raise ValueError('shared plugin binaries must be the exact editor module root')
+            continue
         compiled('plugin_' + str(index), reference, str(PurePosixPath(descriptor).parent / 'Binaries/Mac'))
     recipe = {'version': 1, 'commands': [], 'paths': paths, 'verify': None,
               'outputs': [{'path': RECORD, 'kind': 'file', 'file': RECORD, 'required': True},

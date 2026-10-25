@@ -16,6 +16,7 @@ pub enum PlanEncoding {
     MeshIr,
     MeshSet,
     EncodedGlb,
+    FileSet,
 }
 
 /// Fixed before execution. Runtime names/membership must never replace this contract.
@@ -46,6 +47,9 @@ pub struct MemberProjection {
     pub payload: String,
     pub encoding: PlanEncoding,
     pub role: Option<EncodedRole>,
+    /// Only this selected member's validated runtime policy; siblings stay outside its key.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<Value>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -265,6 +269,7 @@ fn check_recorded(
         if !valid_digest(&file.digest)
             || ![0o644, 0o755].contains(&file.mode)
             || file.size > contract.max_member_bytes
+            || (contract.encoding == PlanEncoding::FileSet && file.mode != 0o644)
         {
             return Err("invalid group member digest/mode/size".into());
         }
@@ -291,11 +296,27 @@ fn check_recorded(
         if (projection.encoding == PlanEncoding::EncodedGlb) != projection.role.is_some() {
             return Err("wrong projected payload role".into());
         }
+        if matches!(
+            projection.encoding,
+            PlanEncoding::MeshSet | PlanEncoding::FileSet
+        ) != projection.metadata.is_some()
+            || projection
+                .metadata
+                .as_ref()
+                .is_some_and(|value| !value.is_object())
+        {
+            return Err("wrong projected member metadata".into());
+        }
         let suffix = match contract.encoding {
             PlanEncoding::EncodedGlb => ".mesh",
             _ => ".npz",
         };
-        if projection.payload != format!("{piece}{suffix}")
+        let matching_payload = if contract.encoding == PlanEncoding::FileSet {
+            relative_path(&projection.payload, true).is_ok()
+        } else {
+            projection.payload == format!("{piece}{suffix}")
+        };
+        if !matching_payload
             || !expected.insert(projection.payload.as_str())
             || !by_path.contains_key(projection.payload.as_str())
         {
@@ -306,6 +327,102 @@ fn check_recorded(
         return Err("foreign or incomplete group membership".into());
     }
     Ok(())
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct FileSetManifest {
+    schema: u32,
+    kind: String,
+    parent: String,
+    complete: bool,
+    pieces: Vec<FileSetMember>,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct FileSetMember {
+    name: String,
+    payload: String,
+    sha256: String,
+    metadata: Value,
+}
+
+fn parse_file_set(
+    contract: &OutputGroupContract,
+    bytes: &[u8],
+    files: &[StoredFile],
+) -> Result<PlanRoster, String> {
+    // Existing strict finite JSON checker also rejects duplicate nested metadata
+    // keys. Typed decoding below closes all schema/member fields.
+    crate::py_data::validate_py_data_payload("JsonData", &contract.manifest, bytes)?;
+    let value: FileSetManifest = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
+    if value.schema != 1
+        || value.kind != "file_set"
+        || value.parent != contract.parent
+        || !value.complete
+        || value.pieces.is_empty()
+        || value.pieces.len() as u64 > contract.max_pieces
+    {
+        return Err("incomplete, foreign or oversized file-set".into());
+    }
+    let mut projections = BTreeMap::new();
+    for row in value.pieces {
+        name(&row.name)?;
+        relative_path(&row.payload, true)?;
+        if !row.metadata.is_object() || !valid_digest(&row.sha256) {
+            return Err("invalid file-set member metadata or digest".into());
+        }
+        let file = files
+            .iter()
+            .find(|file| file.path == row.payload)
+            .ok_or("missing file-set payload")?;
+        if file.digest != row.sha256
+            || projections
+                .insert(
+                    row.name,
+                    MemberProjection {
+                        payload: row.payload,
+                        encoding: PlanEncoding::FileSet,
+                        role: None,
+                        metadata: Some(row.metadata),
+                    },
+                )
+                .is_some()
+        {
+            return Err("file-set digest differs or duplicate member".into());
+        }
+    }
+    let mut files = files.to_vec();
+    files.sort_by(|a, b| a.path.cmp(&b.path));
+    let stored = StoredOutputGroup {
+        id: contract.id.clone(),
+        files,
+        projections,
+    };
+    check_recorded(contract, &stored)?;
+    Ok(PlanRoster {
+        raw: serde_json::from_slice(bytes).map_err(|e| e.to_string())?,
+        stored,
+    })
+}
+
+/// Exact ordinary bytes only. No mesh decoder, file-format or native validity claim.
+pub fn validate_file_set_outputs(
+    contract: &OutputGroupContract,
+    objects: &BTreeMap<String, &PreparedObject>,
+) -> Result<ValidatedGroup, String> {
+    if contract.encoding != PlanEncoding::FileSet {
+        return Err("ordinary file validator requires file_set".into());
+    }
+    validate_frozen(contract, objects, |_, objects| {
+        if objects
+            .values()
+            .any(|object| normalized_mode(object.source_mode()) != 0o644)
+        {
+            return Err("ordinary file-set members must not be executable".into());
+        }
+        Ok(())
+    })
 }
 
 /// Parse the existing plan envelope, never reinterpret its opaque geometry payloads.
@@ -319,6 +436,9 @@ pub fn parse_manifest(
     if bytes.len() as u64 > contract.max_manifest_bytes {
         return Err("manifest byte budget exceeded".into());
     }
+    if contract.encoding == PlanEncoding::FileSet {
+        return parse_file_set(contract, bytes, files);
+    }
     let raw: Value = serde_json::from_slice(bytes).map_err(|error| error.to_string())?;
     if integer(&raw, "schema")? != 1
         || text(&raw, "parent")? != contract.parent
@@ -331,6 +451,7 @@ pub fn parse_manifest(
         PlanEncoding::MeshIr => None,
         PlanEncoding::MeshSet => Some("mesh_set"),
         PlanEncoding::EncodedGlb => Some("encoded_glb"),
+        PlanEncoding::FileSet => unreachable!("file-set parsed above"),
     };
     if raw.get("kind").and_then(Value::as_str) != expected_kind
         || (expected_kind.is_none() && raw.get("kind").is_some())
@@ -351,6 +472,24 @@ pub fn parse_manifest(
     if contract.encoding == PlanEncoding::MeshSet && integer(&raw, "source_collision_hulls")? != 0 {
         return Err("mesh-set cannot duplicate whole collision ownership".into());
     }
+    let metadata = if contract.encoding == PlanEncoding::MeshSet {
+        let metadata = raw
+            .get("metadata")
+            .and_then(Value::as_object)
+            .ok_or("missing mesh-set member metadata")?;
+        let names: BTreeSet<_> = rows
+            .iter()
+            .map(|row| text(row, "name"))
+            .collect::<Result<_, _>>()?;
+        if metadata.keys().map(String::as_str).collect::<BTreeSet<_>>() != names
+            || metadata.values().any(|value| !value.is_object())
+        {
+            return Err("mesh-set metadata membership differs".into());
+        }
+        Some(metadata)
+    } else {
+        None
+    };
     for (index, row) in rows.iter().enumerate() {
         let piece = text(row, "name")?;
         name(piece)?;
@@ -401,6 +540,7 @@ pub fn parse_manifest(
                     payload: payload.into(),
                     encoding: contract.encoding.clone(),
                     role,
+                    metadata: metadata.map(|entries| entries[piece].clone()),
                 },
             )
             .is_some()
@@ -567,6 +707,7 @@ mod tests {
                 payload: "Sibling.npz".into(),
                 encoding: PlanEncoding::MeshIr,
                 role: None,
+                metadata: None,
             },
         );
         let second = restore_recorded(&contract, &changed, |_| Ok(())).unwrap();
@@ -858,6 +999,7 @@ mod tests {
                 payload: "Sibling.npz".into(),
                 encoding: PlanEncoding::MeshIr,
                 role: None,
+                metadata: None,
             },
         );
         groups.insert(
@@ -949,6 +1091,58 @@ mod tests {
         );
     }
     #[test]
+    fn mesh_set_policy_keys_only_the_selected_member() {
+        let (mut contract, mut stored) = fixture();
+        contract.encoding = PlanEncoding::MeshSet;
+        for projection in stored.projections.values_mut() {
+            projection.encoding = PlanEncoding::MeshSet;
+            projection.metadata = Some(serde_json::json!({"collision": true, "lods": false}));
+        }
+        stored.files.push(StoredFile {
+            path: "Sibling.npz".into(),
+            digest: "e".repeat(64),
+            size: 10,
+            mode: 0o644,
+        });
+        stored.projections.insert(
+            "Sibling".into(),
+            MemberProjection {
+                payload: "Sibling.npz".into(),
+                encoding: PlanEncoding::MeshSet,
+                role: None,
+                metadata: Some(serde_json::json!({"collision": false})),
+            },
+        );
+        let key = |stored: &StoredOutputGroup| {
+            let (declaration, registry, snapshot) = key_fixture(&contract);
+            let groups = BTreeMap::from([(
+                ("planner".into(), "geometry".into()),
+                restore_recorded(&contract, stored, |_| Ok(())).unwrap(),
+            )]);
+            prepared(
+                &declaration,
+                &registry,
+                &snapshot,
+                &groups,
+                "export.Village_Edges",
+            )
+            .unwrap()
+            .key()
+            .to_owned()
+        };
+        let before = key(&stored);
+        stored.projections.get_mut("Sibling").unwrap().metadata =
+            Some(serde_json::json!({"collision": true}));
+        assert_eq!(before, key(&stored));
+        stored
+            .projections
+            .get_mut("Village_Edges")
+            .unwrap()
+            .metadata = Some(serde_json::json!({"collision": false, "lods": false}));
+        assert_ne!(before, key(&stored));
+    }
+
+    #[test]
     fn cached_member_keys_bind_equal_byte_payload_type_and_role_without_plan_reads() {
         let (contract, stored) = fixture();
         let key = |contract: &OutputGroupContract, stored: &StoredOutputGroup| {
@@ -977,6 +1171,11 @@ mod tests {
             .get_mut("Village_Edges")
             .unwrap()
             .encoding = PlanEncoding::MeshSet;
+        mesh_set
+            .projections
+            .get_mut("Village_Edges")
+            .unwrap()
+            .metadata = Some(serde_json::json!({"collision": true}));
         assert_eq!(stored.files, mesh_set.files);
         assert_ne!(mesh_ir, key(&mesh_set_contract, &mesh_set));
         let mut encoded_contract = contract;
@@ -1417,5 +1616,145 @@ mod tests {
         )
         .unwrap();
         assert!(begin(&store, &unit).lookup_groups().is_err());
+    }
+    fn file_fixture() -> (OutputGroupContract, Vec<u8>, Vec<StoredFile>) {
+        let (mut contract, _) = fixture();
+        contract.encoding = PlanEncoding::FileSet;
+        contract.class = "GeometryPayload".into(); // fixture input rule, no geometry assertion
+        let bytes = serde_json::to_vec(&serde_json::json!({"schema":1,"kind":"file_set",
+            "parent":contract.parent,"complete":true,"pieces":[
+            {"name":"Village_Edges","payload":"Village_Edges.wav","sha256":sha256(b"RIFF-WAVE"),"metadata":{"format":"wav"}},
+            {"name":"Sibling","payload":"Sibling.png","sha256":sha256(b"PNG"),"metadata":{}}]})).unwrap();
+        let files = vec![
+            StoredFile {
+                path: "plan.json".into(),
+                digest: sha256(&bytes),
+                size: bytes.len() as u64,
+                mode: 0o644,
+            },
+            StoredFile {
+                path: "Village_Edges.wav".into(),
+                digest: sha256(b"RIFF-WAVE"),
+                size: 9,
+                mode: 0o644,
+            },
+            StoredFile {
+                path: "Sibling.png".into(),
+                digest: sha256(b"PNG"),
+                size: 3,
+                mode: 0o644,
+            },
+        ];
+        (contract, bytes, files)
+    }
+
+    #[test]
+    fn file_set_is_strict_complete_ordinary_members_without_geometry_claims() {
+        let (contract, bytes, files) = file_fixture();
+        let roster = parse_manifest(&contract, &bytes, &files).unwrap();
+        assert!(roster.raw().get("source_triangles").is_none());
+        let token = restore_recorded(&contract, roster.stored(), |_| Ok(())).unwrap();
+        let selected = token.project("Village_Edges").unwrap();
+        assert_eq!(selected.files.len(), 1);
+        assert_eq!(selected.files[0].path, "Village_Edges.wav");
+        for mutation in ["missing", "foreign", "alias", "mode", "metadata", "digest"] {
+            let mut changed = roster.stored().clone();
+            match mutation {
+                "missing" => {
+                    changed.files.pop();
+                }
+                "foreign" => changed.files.push(StoredFile {
+                    path: "Extra.fbx".into(),
+                    digest: "a".repeat(64),
+                    size: 1,
+                    mode: 0o644,
+                }),
+                "alias" => {
+                    changed.files[1].path = "PLAN.JSON".into();
+                }
+                "mode" => {
+                    changed.files[1].mode = 0o755;
+                }
+                "metadata" => {
+                    changed.projections.get_mut("Sibling").unwrap().metadata =
+                        Some(serde_json::json!([]));
+                }
+                _ => {
+                    changed.files[1].digest = "invalid".into();
+                }
+            }
+            assert!(
+                restore_recorded(&contract, &changed, |_| Ok(())).is_err(),
+                "{mutation}"
+            );
+        }
+        for raw in [
+            String::from_utf8(bytes.clone())
+                .unwrap()
+                .replace("\"complete\":true", "\"complete\":true,\"complete\":true"),
+            String::from_utf8(bytes.clone()).unwrap().replace(
+                "\"format\":\"wav\"",
+                "\"format\":\"wav\",\"format\":\"wav\"",
+            ),
+        ] {
+            assert!(parse_manifest(&contract, raw.as_bytes(), &files).is_err());
+        }
+        let mut raw: Value = serde_json::from_slice(&bytes).unwrap();
+        raw["source_triangles"] = 1.into();
+        assert!(parse_manifest(&contract, &serde_json::to_vec(&raw).unwrap(), &files).is_err());
+    }
+
+    #[test]
+    fn file_set_selected_child_keys_exclude_parent_and_sibling_but_bind_selected_bytes_and_metadata()
+     {
+        let (contract, bytes, files) = file_fixture();
+        let stored = parse_manifest(&contract, &bytes, &files).unwrap().stored;
+        let (declaration, registry, mut snapshot) = key_fixture(&contract);
+        let key = |stored: &StoredOutputGroup, snapshot: &crate::validate::SourceSnapshot| {
+            let groups = BTreeMap::from([(
+                ("planner".into(), "geometry".into()),
+                restore_recorded(&contract, stored, |_| Ok(())).unwrap(),
+            )]);
+            prepared(
+                &declaration,
+                &registry,
+                snapshot,
+                &groups,
+                "export.Village_Edges",
+            )
+            .unwrap()
+            .key()
+            .to_owned()
+        };
+        let first = key(&stored, &snapshot);
+        snapshot.insert(
+            "ops/plan.py".into(),
+            crate::validate::SnapshotEntry::File(b"changed planner".to_vec()),
+        );
+        assert_eq!(first, key(&stored, &snapshot));
+        let mut changed = stored.clone();
+        changed
+            .files
+            .iter_mut()
+            .find(|f| f.path == "Sibling.png")
+            .unwrap()
+            .digest = "a".repeat(64);
+        changed.projections.get_mut("Sibling").unwrap().metadata =
+            Some(serde_json::json!({"changed":true}));
+        assert_eq!(first, key(&changed, &snapshot));
+        changed
+            .files
+            .iter_mut()
+            .find(|f| f.path == "Village_Edges.wav")
+            .unwrap()
+            .digest = "b".repeat(64);
+        assert_ne!(first, key(&changed, &snapshot));
+        let mut metadata = stored;
+        metadata
+            .projections
+            .get_mut("Village_Edges")
+            .unwrap()
+            .metadata = Some(serde_json::json!({"format":"other"}));
+        assert_ne!(first, key(&metadata, &snapshot));
     }
 }

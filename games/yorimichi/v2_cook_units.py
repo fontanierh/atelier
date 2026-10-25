@@ -90,7 +90,8 @@ def author_units(packages, *, checkout, dependencies=()):
             slot = 'native_' + str(index)
             reference = all_refs[dependency]
             inputs.append({'role': 'content', 'name': slot, 'source': {
-                'kind': 'item', 'unit': reference['unit'], 'item': reference['item']}})
+                'kind': 'item', 'unit': reference['unit'], 'item': reference['item']},
+                'whole': 'The stock cooker consumes the complete finished native package and every declared sidecar.'})
             relative = dependency.removeprefix('/Game/')
             extension = '.umap' if reference.get('class') == 'Map' or '/Maps/' in dependency else '.uasset'
             for suffix in (extension, *SIDECARS):

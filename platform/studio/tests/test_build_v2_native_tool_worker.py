@@ -340,6 +340,18 @@ def test_actual_ditto_roundtrip_keeps_framework_links_and_executable_mode(tmp_pa
     assert tool._tree(destination) == before
 
 
+def test_global_cook_keeps_global_shader_saving_and_explicit_shader_archive_policy():
+    from pathlib import Path
+    engine, project, key = Path('/engine'), Path('/view/Game.uproject'), 'a' * 64
+    normal = tool.cook_argv(engine, project, ['/Game/Asset'], key)
+    global_args = tool.cook_argv(engine, project, ['/Engine/EngineResources/DefaultTexture'], key, global_data=True)
+    assert '-cooksinglepackagenorefs' in normal and '-cooksinglepackagenorefs' not in global_args
+    assert {'-NoDefaultMaps', '-NoGameAlwaysCook', '-SkipHardReferences', '-SkipSoftReferences'} <= set(global_args)
+    for args in (normal, global_args):
+        assert '-ini:Game:[/Script/UnrealEd.ProjectPackagingSettings]:bShareMaterialShaderCode=True' in args
+        assert '-ini:Game:[/Script/UnrealEd.ProjectPackagingSettings]:bSharedMaterialNativeLibraries=True' in args
+
+
 def test_semantic_global_projection_keeps_complete_shader_bytes_excludes_transport(tmp_path):
     from atelier.build_v2.native_tool_worker import semantic_global_data, Refused
     import pytest
@@ -375,18 +387,6 @@ def test_semantic_global_projection_keeps_complete_shader_bytes_excludes_transpo
     (content/'ShaderArchive-Global-SF_METAL_SM5-METAL_SM5.ushaderbytecode').symlink_to(content/'ShaderArchive-Global-SF_METAL_SM6-METAL_SM6.ushaderbytecode')
     with pytest.raises(Refused, match='alias'):
         semantic_global_data(source,tmp_path/'alias','Game')
-
-
-def test_global_cook_keeps_global_shader_saving_and_explicit_shader_archive_policy():
-    from pathlib import Path
-    engine, project, key = Path('/engine'), Path('/view/Game.uproject'), 'a' * 64
-    normal = tool.cook_argv(engine, project, ['/Game/Asset'], key)
-    global_args = tool.cook_argv(engine, project, ['/Engine/EngineResources/DefaultTexture'], key, global_data=True)
-    assert '-cooksinglepackagenorefs' in normal and '-cooksinglepackagenorefs' not in global_args
-    assert {'-NoDefaultMaps', '-NoGameAlwaysCook', '-SkipHardReferences', '-SkipSoftReferences'} <= set(global_args)
-    for args in (normal, global_args):
-        assert '-ini:Game:[/Script/UnrealEd.ProjectPackagingSettings]:bShareMaterialShaderCode=True' in args
-        assert '-ini:Game:[/Script/UnrealEd.ProjectPackagingSettings]:bSharedMaterialNativeLibraries=True' in args
 
 
 def test_package_composes_verified_inputs_before_uat_without_reading_source_namespace(tmp_path, monkeypatch):
@@ -504,3 +504,84 @@ def test_archive_consumes_the_produced_app_and_controller_key(tmp_path, monkeypa
     assert calls[0][-2:] == ['--revision', 'v2-' + 'f' * 64]
     assert '--cook-receipt' not in calls[0]
     assert archive.read_bytes() == b'produced app'
+
+
+def test_compile_candidate_revalidates_inputs_and_runs_current_ubt(tmp_path, monkeypatch):
+    from pathlib import Path
+    old_job = tmp_path / 'old/job'; old_job.mkdir(parents=True)
+    old = job(old_job)
+    old_view, _, _ = tool.recipe_job.prepare_view(old, old_job)
+    source = old_view / 'Source.cpp'; source.write_bytes(b'current source')
+    retained = old_view / 'Intermediate'; retained.mkdir(); (retained / 'compiled.pch').write_bytes(b'preserved')
+    cleanup = old_job.parent / 'guard/attempt-1/cleanup.json'; cleanup.parent.mkdir(parents=True)
+    cleanup.write_text('{"confirmed":true}')
+    fresh_job = tmp_path / 'fresh/job'; fresh_job.mkdir(parents=True)
+    current = job(fresh_job)
+    incoming = fresh_job / 'inputs/source'; incoming.parent.mkdir(); incoming.write_bytes(b'current source')
+    current['inputs'] = [{'name': 'source', 'path': 'inputs/source'}]
+    current['params']['recipe']['paths'] = {'Source.cpp': 'inputs/source'}
+    monkeypatch.setenv('ATELIER_V2_COMPILE_VIEW', str(old_view))
+    calls = []
+    def run(argv, *, cwd, **kwargs):
+        calls.append(cwd)
+        assert cwd == old_view and (cwd / 'Intermediate/compiled.pch').read_bytes() == b'preserved'
+        binaries = cwd / 'Binaries/Mac'; binaries.mkdir(parents=True)
+        (binaries / 'Game.dylib').write_bytes(b'current compiled bytes')
+        (binaries / 'UnrealEditor.modules').write_text(json.dumps({'BuildId': 'sdk', 'Modules': {'Game': 'Game.dylib'}}))
+        (binaries / 'GameEditor.target').write_text(json.dumps({'TargetName': 'GameEditor', 'Platform': 'Mac',
+            'Configuration': 'Development', 'BuildProducts': [{'Path': '$(ProjectDir)/Binaries/Mac/Game.dylib'}]}))
+    assert tool.dispatch(current, fresh_job, tmp_path / 'engine', run) == ['binaries.tree.tar']
+    assert calls == [old_view]
+    assert (old_job / 'Game.uproject').read_bytes() == b'{}'
+    assert (fresh_job / 'output/binaries.tree.tar').is_file()
+
+
+@pytest.mark.parametrize('broken', ['cleanup', 'link'])
+def test_compile_candidate_refuses_changed_inputs_and_unconfirmed_cleanup(tmp_path, broken):
+    candidate = tmp_path / 'previous/job/.recipe-runtime/view'; candidate.mkdir(parents=True)
+    cleanup = candidate.parents[2] / 'guard/attempt-1/cleanup.json'; cleanup.parent.mkdir(parents=True)
+    cleanup.write_text('{"confirmed":true}')
+    fresh = tmp_path / 'fresh'; fresh.mkdir()
+    (fresh / 'Source.cpp').write_bytes(b'new')
+    (candidate / 'Source.cpp').write_bytes(b'new' if broken != 'inputs' else b'old')
+    request = {'code': [], 'params': {'recipe': {'paths': {'Source.cpp': 'inputs/source'}}}}
+    if broken == 'cleanup': cleanup.write_text('{"confirmed":false}')
+    if broken == 'link':
+        alias = tmp_path / 'alias'; alias.symlink_to(candidate); candidate = alias
+    with pytest.raises(tool.Refused):
+        tool.compile_candidate(request, fresh, [str(fresh / 'Source.cpp')], candidate)
+
+
+def test_game_receipt_keeps_owned_runtime_dependencies_portable(tmp_path):
+    project = tmp_path / 'view/Game.uproject'; project.parent.mkdir(); project.write_text('{}')
+    binaries = project.parent / 'Binaries/Mac'; binaries.mkdir(parents=True)
+    (binaries / 'Game').write_bytes(b'actual compiled binary')
+    descriptor = project.parent / 'Plugins/Owned/Owned.uplugin'
+    descriptor.parent.mkdir(parents=True); descriptor.write_text('{}')
+    receipt = binaries / 'Game.target'
+    receipt.write_text(json.dumps({'TargetName': 'Game', 'Platform': 'Mac', 'Configuration': 'Development',
+        'BuildProducts': [{'Path': str(binaries / 'Game')}],
+        'RuntimeDependencies': [{'Path': str(descriptor)}]}))
+    actual = tool.receipt_files(tmp_path / 'engine', project, 'Game', 'Development', 'game', owned_root=project.parent)
+    assert set(actual) == {receipt, binaries / 'Game'}
+    portable = json.loads(receipt.read_bytes())
+    assert portable['BuildProducts'][0]['Path'] == '$(ProjectDir)/Binaries/Mac/Game'
+    assert portable['RuntimeDependencies'][0]['Path'] == '$(ProjectDir)/Plugins/Owned/Owned.uplugin'
+    assert str(project.parent) not in receipt.read_text()
+
+
+def test_compile_candidate_clones_new_declared_input_and_accepts_code_readonly_mode(tmp_path):
+    old = tmp_path / 'old/job/.recipe-runtime/view'; old.mkdir(parents=True)
+    cleanup = old.parents[2] / 'guard/attempt-1/cleanup.json'; cleanup.parent.mkdir(parents=True)
+    cleanup.write_text('{"confirmed":true}')
+    fresh = tmp_path / 'fresh/job/.recipe-runtime/view'; fresh.mkdir(parents=True)
+    (fresh / 'new.cpp').write_bytes(b'new declared source'); (fresh / 'new.cpp').chmod(0o444)
+    (fresh / 'shared.py').write_bytes(b'same bytes')
+    (old / 'shared.py').write_bytes(b'same bytes'); (old / 'shared.py').chmod(0o444)
+    (old / 'new.cpp').write_bytes(b'prior source')
+    (fresh / 'tools').mkdir(); (fresh / 'tools/check.py').write_bytes(b'# frozen verifier')
+    request = {'code': ['tools/check.py'], 'params': {'recipe': {'paths': {'new.cpp':'inputs/new','shared.py':'inputs/shared'}}}}
+    view, protected = tool.compile_candidate(request, fresh, [str(fresh / 'new.cpp')], old)
+    assert view == old and protected == [str(old / 'new.cpp')]
+    assert (old / 'new.cpp').read_bytes() == b'new declared source'
+    assert (old / 'tools/check.py').read_bytes() == b'# frozen verifier'

@@ -100,8 +100,10 @@ impl BlenderPlanSpec {
     }
     pub fn definition(&self) -> Result<OpDefinition, String> {
         self.group.validate()?;
-        if self.group.encoding != PlanEncoding::MeshIr
-            || self.group.class != MESH_PAYLOAD_CLASS
+        if !matches!(
+            self.group.encoding,
+            PlanEncoding::MeshIr | PlanEncoding::MeshSet
+        ) || self.group.class != MESH_PAYLOAD_CLASS
             || self.group.manifest != "plan.json"
             || self.group.root_param != "output_root"
         {
@@ -230,6 +232,7 @@ impl BlenderExportSpec {
         .collect();
         params.insert("seed".into(), rule(ParamKind::Integer, false));
         params.insert("options".into(), rule(ParamKind::Object, false));
+        params.insert("payload_metadata".into(), rule(ParamKind::Object, false));
         Ok(OpDefinition {
             inputs,
             params,
@@ -271,13 +274,30 @@ impl BlenderExportSpec {
         {
             return Err("piece exporter requires one selected Item directory".into());
         }
-        for (name, expected) in [
-            ("payload_encoding", "mesh_ir"),
-            ("payload_role", "geometry"),
-        ] {
-            if ingredients.params.get(name).and_then(|v| v.as_str()) != Some(expected) {
-                return Err(format!("unsupported piece {name}; expected {expected}"));
+        if !matches!(
+            ingredients
+                .params
+                .get("payload_encoding")
+                .and_then(Value::as_str),
+            Some("mesh_ir" | "mesh_set")
+        ) || ingredients
+            .params
+            .get("payload_role")
+            .and_then(Value::as_str)
+            != Some("geometry")
+        {
+            return Err("unsupported selected geometry encoding or role".into());
+        }
+        let has_policy = ingredients
+            .params
+            .get("payload_metadata")
+            .is_some_and(Value::is_object);
+        if ingredients.params["payload_encoding"] == "mesh_set" {
+            if !has_policy {
+                return Err("mesh-set requires keyed selected semantic metadata".into());
             }
+        } else if ingredients.params.contains_key("payload_metadata") {
+            return Err("semantic projection metadata requires mesh-set encoding".into());
         }
         let format = ingredients
             .params
@@ -595,9 +615,130 @@ pub fn validate_plan_metadata(raw: &Value) -> Result<(), String> {
     }
     match raw["partition"].as_str() {
         Some("whole") if rows.len() == 1 && rows[0]["name"] == raw["parent"] => Ok(()),
-        Some("logical" | "spatial") => Ok(()),
+        Some("logical" | "spatial" | "explicit") => Ok(()),
         _ => Err("unsupported/inconsistent whole partition policy".into()),
     }
+}
+
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+#[allow(dead_code)]
+struct MeshSetWire {
+    schema: u32,
+    kind: String,
+    parent: String,
+    complete: bool,
+    triangle_limit: u64,
+    source_triangles: u64,
+    source_polygons: u64,
+    source_collision_hulls: u64,
+    slots: Vec<String>,
+    matrix: [[f64; 4]; 4],
+    pieces: Vec<MeshSetMemberWire>,
+    metadata: BTreeMap<String, BTreeMap<String, Value>>,
+    diagnostics: BTreeMap<String, Value>,
+}
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+#[allow(dead_code)]
+struct MeshSetMemberWire {
+    name: String,
+    payload: String,
+    sha256: String,
+    triangles: u64,
+    polygons: u64,
+    collision_hulls: u64,
+    slots: Vec<String>,
+    min: [f64; 3],
+    max: [f64; 3],
+}
+
+pub fn parse_mesh_set_plan_metadata(raw: &[u8], max_bytes: u64) -> Result<Value, String> {
+    if raw.len() as u64 > max_bytes {
+        return Err("mesh-set manifest byte bound exceeded".into());
+    }
+    let _: MeshSetWire = serde_json::from_slice(raw).map_err(|e| e.to_string())?;
+    let value: Value = serde_json::from_slice(raw).map_err(|e| e.to_string())?;
+    validate_mesh_set_metadata(&value)?;
+    Ok(value)
+}
+
+/// Frozen metadata preserves heterogeneous per-object slots and the complete runtime roster.
+/// Geometry/channel semantics remain with the keyed full producer/selected-consumer decoder.
+pub fn validate_mesh_set_metadata(raw: &Value) -> Result<(), String> {
+    let _: MeshSetWire = serde_json::from_value(raw.clone()).map_err(|e| e.to_string())?;
+    if unsigned(raw, "schema")? != 1
+        || raw["kind"] != "mesh_set"
+        || raw["complete"] != true
+        || unsigned(raw, "triangle_limit")? != 32768
+        || unsigned(raw, "source_collision_hulls")? != 0
+        || unsigned(raw, "source_triangles")? == 0
+        || unsigned(raw, "source_polygons")? == 0
+        || !strings(&raw["slots"])
+        || !raw["matrix"]
+            .as_array()
+            .is_some_and(|rows| rows.len() == 4 && rows.iter().all(|row| vector(row, 4)))
+    {
+        return Err("unsupported mesh-set header/frame".into());
+    }
+    let parent = raw["parent"]
+        .as_str()
+        .filter(|v| !v.is_empty())
+        .ok_or("missing mesh-set parent")?;
+    let rows = raw["pieces"].as_array().ok_or("missing mesh-set pieces")?;
+    if rows.is_empty() {
+        return Err("empty mesh-set".into());
+    }
+    let mut names = BTreeSet::new();
+    let mut folded = BTreeSet::new();
+    let mut slots = BTreeSet::new();
+    let (mut triangles, mut polygons) = (0u64, 0u64);
+    for row in rows {
+        let name = row["name"].as_str().ok_or("missing mesh-set member name")?;
+        let count = unsigned(row, "triangles")?;
+        if !(name == parent || name.starts_with(&format!("{parent}_")))
+            || !names.insert(name)
+            || !folded.insert(name.to_lowercase())
+            || row["payload"] != format!("{name}.npz")
+            || !row["sha256"].as_str().is_some_and(valid_digest)
+            || count == 0
+            || count > 32768
+            || unsigned(row, "polygons")? == 0
+            || unsigned(row, "collision_hulls")? != 0
+            || !strings(&row["slots"])
+            || !vector(&row["min"], 3)
+            || !vector(&row["max"], 3)
+            || row["min"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .zip(row["max"].as_array().unwrap())
+                .any(|(a, b)| a.as_f64().unwrap() > b.as_f64().unwrap())
+        {
+            return Err("invalid mesh-set member/material/bounds ownership".into());
+        }
+        for slot in row["slots"].as_array().unwrap() {
+            slots.insert(slot.as_str().unwrap());
+        }
+        triangles = triangles
+            .checked_add(count)
+            .ok_or("mesh-set triangle overflow")?;
+        polygons = polygons
+            .checked_add(unsigned(row, "polygons")?)
+            .ok_or("mesh-set polygon overflow")?;
+    }
+    let metadata = raw["metadata"]
+        .as_object()
+        .ok_or("missing mesh-set semantic roster")?;
+    let union: Vec<Value> = slots.into_iter().map(|v| Value::String(v.into())).collect();
+    if triangles != unsigned(raw, "source_triangles")?
+        || polygons != unsigned(raw, "source_polygons")?
+        || raw["slots"] != Value::Array(union)
+        || metadata.keys().map(String::as_str).collect::<BTreeSet<_>>() != names
+    {
+        return Err("incomplete mesh-set polygon/material/semantic inventory".into());
+    }
+    Ok(())
 }
 
 /// @cc [owner:fontanierh,label:correctness] d2-frozen-plan-binding
@@ -643,6 +784,8 @@ pub fn validate_geometry_outputs(
         }
         let strict = if contract.encoding == PlanEncoding::MeshIr {
             parse_blender_plan_metadata(&bytes, contract.max_manifest_bytes)?
+        } else if contract.encoding == PlanEncoding::MeshSet {
+            parse_mesh_set_plan_metadata(&bytes, contract.max_manifest_bytes)?
         } else if contract.encoding == PlanEncoding::EncodedGlb {
             crate::py_data::validate_py_data_payload("JsonData", "plan.json", &bytes)?;
             serde_json::from_slice(&bytes).map_err(|e| e.to_string())?
@@ -703,6 +846,8 @@ struct ReceiptMetadataWire {
     polygons: u64,
     collision_hulls: u64,
     uv_channels: Vec<String>,
+    #[serde(default)]
+    native_policy: Option<BTreeMap<String, Value>>,
 }
 
 /// Strict bounded receipt schema, including duplicate typed fields at both object levels.
@@ -724,6 +869,24 @@ pub fn validate_receipt_metadata(
     selected_asset: &str,
     primary_digest: &str,
     payload_digest: &str,
+) -> Result<(), String> {
+    validate_receipt_metadata_with_policy(
+        receipt,
+        item,
+        selected_asset,
+        primary_digest,
+        payload_digest,
+        None,
+    )
+}
+
+pub fn validate_receipt_metadata_with_policy(
+    receipt: &Value,
+    item: &Item,
+    selected_asset: &str,
+    primary_digest: &str,
+    payload_digest: &str,
+    native_policy: Option<&Value>,
 ) -> Result<(), String> {
     validate_export_item(item)?;
     let object = receipt.as_object().ok_or("receipt must be an object")?;
@@ -772,14 +935,20 @@ pub fn validate_receipt_metadata(
         .keys()
         .map(String::as_str)
         .collect::<BTreeSet<_>>();
-    if fields
-        != BTreeSet::from([
-            "geometry_sha256",
-            "slots",
-            "polygons",
-            "collision_hulls",
-            "uv_channels",
-        ])
+    let mut expected_fields = BTreeSet::from([
+        "geometry_sha256",
+        "slots",
+        "polygons",
+        "collision_hulls",
+        "uv_channels",
+    ]);
+    if let Some(policy) = native_policy {
+        if !policy.is_object() || metadata.get("native_policy") != Some(policy) {
+            return Err("receipt semantic metadata differs from keyed selected projection".into());
+        }
+        expected_fields.insert("native_policy");
+    }
+    if fields != expected_fields
         || metadata["geometry_sha256"] != payload_digest
         || !strings(&metadata["slots"])
         || unsigned(metadata, "polygons")? == 0
@@ -835,7 +1004,7 @@ pub fn validate_blender_export_outputs(
         return Err("frozen receipt size differs".into());
     }
     let value = parse_export_receipt(&raw)?;
-    validate_receipt_metadata(
+    validate_receipt_metadata_with_policy(
         &value,
         item,
         payload
@@ -844,6 +1013,7 @@ pub fn validate_blender_export_outputs(
             .ok_or("selected payload must be MeshIR")?,
         primary.object.digest().as_hex(),
         &payload.digest,
+        unit.ingredients().params.get("payload_metadata"),
     )?;
     if primary_name.ends_with(".glb") {
         let mut header = [0u8; 12];

@@ -211,7 +211,9 @@ class _FastImportScanner(source_imports.ImportScanner):
                     bases = (source.parents[level - 1],)
                 for name in names:
                     parts = name.split('.') if name else []
-                    for base in bases:
+                    package_base = None if level else source_imports.package_import_base(source, name)
+                    candidates = bases if package_base is None else (*bases, package_base)
+                    for base in dict.fromkeys(candidates):
                         found, missed = self._resolve_with_missed(base, parts)
                         direct_missed.extend(missed)
                         if found:
@@ -438,6 +440,7 @@ class Step:
     checkpoint_restore: object = field(default=None, repr=False)  # optional non-destructive recertification callback
     checkpoint_outputs: tuple = field(default=(), repr=False)  # complete additional output roots, never representative samples
     candidate_scope: object = field(default=None, repr=False, compare=False)  # generic compatibility candidates; native validation still required
+    export_format: str | None = field(default=None, kw_only=True)  # exact declared atomic primary format
     replan: bool = field(default=False, kw_only=True)  # reload recipe after a completed source planner
 
 

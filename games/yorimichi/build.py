@@ -553,6 +553,29 @@ def native_source_inputs():
                           support=(GAME / 'compile_inputs.py', Path(build_inputs.__file__)))
 
 
+
+def editor_compile_products():
+    """@cc [owner:fontanierh,label:correctness] complete-editor-plugin-output-roots
+    The editor compile MUST own a complete Mac binary root for each project-local
+    source plugin, including HorseRacing's receipt-listed module map and dylib, as
+    a separate named product for compiled native-module consumers. Shared
+    AdditionalPluginDirectories plugins MUST NOT claim separate roots: the real
+    receipt places their modules and module map in the project Binaries/Mac output.
+    """
+    descriptors = sorted((GAME / 'unreal/Plugins').rglob('*.uplugin'))
+    names = set()
+    products = []
+    for descriptor in descriptors:
+        if descriptor.is_symlink() or descriptor.resolve() != descriptor or not descriptor.is_file():
+            raise ValueError('Editor plugin descriptor is missing or aliased')
+        name = descriptor.stem
+        if name.casefold() in names:
+            raise ValueError('Ambiguous editor plugin output owner')
+        names.add(name.casefold())
+        products.append(Product('unreal.compile.' + name, (descriptor.parent / 'Binaries/Mac',)))
+    return products
+
+
 def cook_step(ctx, steps):
     from atelier.build_cook_recovery import CookRecovery
     out = ctx.out
@@ -1142,7 +1165,7 @@ def world_steps(ctx):
         hidamari_props_import_step(out),
         Step('world.treehouse_textures', [Python(TOOLS / 'treehouse_textures.py', ('finish',))],
              inputs=[TOOLS / 'treehouse_textures.py', ASSETS / 'treehouse' / 'textures'],
-             outputs=[out / 'treehouse' / 'textures' / 'textures.json'], pool_roots=[out / 'treehouse' / 'textures'],
+             outputs=[out / 'treehouse' / 'textures'], pool_roots=[out / 'treehouse' / 'textures'],
              about='tree house textures: seamless detail maps and pictures from the Sunburst paintings'),
         *_load_helper_module('yorimichi_treehouse_atomic',GAME/'treehouse_atomic_build.py').prop_steps(ctx),
         *_load_helper_module('yorimichi_treehouse_atomic',GAME/'treehouse_atomic_build.py').surface_steps(ctx),
@@ -1158,16 +1181,16 @@ def world_steps(ctx):
              about='2048x2048 Sunburst UV texture atlas for the Kasa Ronin and roadside mini-camp'),
         *_load_helper_module('yorimichi_swordcamp_atomic', GAME / 'swordcamp_build.py').steps(ctx),
         Step('world.megapark_restyle', [Python(TOOLS / 'megapark_textures.py', ('finish',))],
-             inputs=[TOOLS / 'megapark_textures.py', ASSETS / 'megapark' / 'restyle', ASSETS / 'megapark' / 'map.json',
-                     REGIONS / 'megapark' / 'sign.py', REGIONS / 'hidamari' / 'fonts' / 'NotoSansJP.ttf'],
-             outputs=[out / 'megapark' / 'textures' / 'textures.json', out / 'megapark' / 'lettering' / 'NotoSansJP-Black.ttf'],
+             inputs=_load_helper_module('yorimichi_megapark_finish_inputs', TOOLS / 'megapark_textures.py').finish_inputs(),
+             outputs=[out / 'megapark' / 'textures', out / 'megapark' / 'lettering' / 'NotoSansJP-Black.ttf'],
              about='Mega Park restyle: island-style rock, earth, paint and signs, lightmap levels, the 寄り道 font'),
         *_load_helper_module('yorimichi_megapark_atomic', GAME/'megapark_atomic_build.py').steps(ctx),
         Step('world.craterpark_restyle', [Python(TOOLS / 'craterpark_textures.py', ('finish',))],
              inputs=[TOOLS / 'craterpark_textures.py', ASSETS / 'craterpark' / 'restyle', ASSETS / 'craterpark' / 'textures',
                      ASSETS / 'craterpark' / 'materials.json', ASSETS / 'craterpark' / 'shrine',
                      REGIONS / 'craterpark' / 'v2' / 'shrine.py', REGIONS / 'craterpark' / 'v2' / 'dsl.py'],
-             outputs=[out / 'craterpark' / 'textures' / 'textures.json'],
+             # The whole folder: it also writes crater_floor.png and the other painted textures that importers read.
+             outputs=[out / 'craterpark' / 'textures'],
              about="Crater Park restyle: painted textures in the island's style, world-aligned ground and concrete"),
         *(craterpark_v2_steps(out) if CRATERPARK_V2 else [
         Step('world.craterpark', [Blender(REGIONS / 'craterpark' / 'build.py', threads=4)],
@@ -1307,7 +1330,7 @@ def world_steps(ctx):
                      out / 'belmonte-train' / 'route' / 'route.json', out / 'belmonte-train' / 'assembly' / 'consist.json',
                      out / 'belmonte-train' / 'furniture', *(out / 'belmonte-train' / v for v in TRAIN_VEHICLES)],
              needs=['world.belmonte_train_route', 'world.belmonte_train', 'world.belmonte_train_assembly'],
-             outputs=[out / 'belmonte-train' / 'service' / 'service.json'],
+             outputs=[out / 'belmonte-train' / 'service' / 'service.json', out / 'belmonte-train' / 'service' / 'glb'],
              verify=lambda: belmonte_train_service_present(out),
              about='Belmonte train service: line, loop, consist, collision boxes and timetable for Unreal'),
         Step('world.belmonte_track_data', [Python(TOOLS / 'belmonte_track_data.py',
@@ -1477,7 +1500,8 @@ def sound_effect_steps(ctx):
              outputs=[out / 'audio' / 'music' / 'manifest.json'], explicit=True,
              about='select fetched Suno tracks for the optional music import'),
         Step('fx.textures', [Python(ASSETS / 'fx' / 'gen_textures.py')], inputs=[ASSETS / 'fx'],
-             outputs=[out / 'combat_fx' / 'T_FX_Glow.png'], about='glow, spark, ring, dust and trail sprites'),
+             outputs=[out / 'combat_fx' / 'T_FX_Glow.png'], products=[Product('fx.textures', (out / 'combat_fx',))],
+             about='glow, spark, ring, dust and trail sprites'),
     ]
 
 
@@ -1517,10 +1541,11 @@ def unreal_steps(ctx):
                                       '--output', out / 'skate-simulation/verification.json'))],
              inputs=[SKATE_TOOLS / 'simulation_package.py', SKATE_TOOLS / 'motion_text.py', SKATE_TOOLS / 'runtime_text.py',
                      SKATE_DATA],
-             outputs=[out / 'skate-simulation/verification.json', out / 'skate-simulation/package' / 'package-manifest.json'],
+             outputs=[out / 'skate-simulation/verification.json', out / 'skate-simulation/package'],
              about="assemble the Skate plugin's simulation package and verify every payload"),
-        Step('unreal.compile', [UnrealCompile('YorimichiEditor')], inputs=[ctx.uproject],
-             deferred_inputs=[native_source_inputs()],
+        Step('unreal.compile', [UnrealCompile('YorimichiEditor')],
+             inputs=[ctx.uproject, *compile_inputs.files(native_source_inputs().settings[0])],
+             outputs=[GAME / 'unreal/Binaries/Mac'], products=editor_compile_products(),
              needs=['skate.runtime'], heavy=True,
              about='the Yorimichi C++ modules (editor target)'),
         # The game binary is its own unit: the cook runs with -skipbuild and restores this result instead of
@@ -1528,8 +1553,8 @@ def unreal_steps(ctx):
         # membership, the project descriptor, the installed engine build and the toolchain context.
         Step('unreal.game_binary',
              [UnrealGame('Yorimichi', products=GAME_BINARY_PRODUCTS), Call('verify game binary', game_binary.verify)],
-             inputs=[ctx.uproject, *engine_version(ctx), TOOLS / 'game_binary.py'],
-             deferred_inputs=[native_source_inputs()],
+             inputs=[ctx.uproject, *engine_version(ctx), TOOLS / 'game_binary.py',
+                     *compile_inputs.files(native_source_inputs().settings[0])],
              checkpoint_restore=game_binary.relocate, heavy=True,
              about='the Yorimichi game binary, app bundle and redistributed files; the cook does not build'),
         *unreal_modules.steps(ctx, IMPORT_CODE + SAVED_TYPES + CONTACT_TYPES + ('Yorimichi',)),

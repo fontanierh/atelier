@@ -14,7 +14,7 @@ from .controller_client import ensure_controller, invoke_controller
 from .controller_recipe import ControllerTarget, ControllerSelection
 
 
-def discover(game, *, checkout=None):
+def discover(game, *, checkout=None, wanted=()):
     """Load the game's pure controller declarations without a runtime build Context."""
     if checkout is None:
         try:
@@ -30,6 +30,10 @@ def discover(game, *, checkout=None):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     targets = module.targets()
+    missing = [name for name in wanted if name not in targets]
+    if missing and hasattr(module, 'compile_target'):
+        for name in missing:
+            targets[name] = module.compile_target(name)
     if not isinstance(targets, dict) or any(
             not isinstance(marker, ControllerTarget) or name != marker.unit for name, marker in targets.items()):
         raise ValueError('invalid game controller target declarations')
@@ -52,14 +56,14 @@ def exact_selection(game, wanted):
     Missing full/default selectors MUST refuse explicitly, never call an older scheduler
     or substitute a partial selection. Discovery MUST NOT construct a runtime Context.
     """
-    candidates = discover(game)
     names = tuple(wanted) if wanted else ('unreal.package',)
+    candidates = discover(game, wanted=names)
     if not candidates:
         raise ValueError(f'{game}: no v2 build declaration')
     missing = [name for name in names if name not in candidates]
     if missing:
         raise ValueError(f'{game}: v2 target is not implemented: ' + ', '.join(missing))
-    selection = ControllerSelection(tuple(candidates.values()), names)
+    selection = ControllerSelection(tuple(candidates[name] for name in names), names)
     selection.request(paths.REPO)  # Strict finite control assembly; Rust still owns graph validation.
     return selection
 
@@ -92,6 +96,19 @@ def execute(selection, *, echo=print):
 
 
 
+def _native_memory_gib(request):
+    """Individual textures/shaders use the normal guard; maps and tool jobs keep 16 GiB."""
+    light = {'RawTexture', 'Texture', 'Material', 'MaterialInstance', 'MaterialParameterCollection'}
+    native = [unit for unit in request['declaration']['units'] if unit['op']['kind'].startswith('unreal.')]
+    if native and all(unit['op']['kind'] in {'unreal.compile', 'unreal.game'} for unit in native):
+        return 10  # The established three-worker compile guard; reserve its full actual ceiling.
+    if native and all(unit['op']['kind'] in {'unreal.raw_import', 'unreal.finish', 'unreal.author'}
+                      and unit['outputs'] and all(item['class'] in light for item in unit['outputs'])
+                      for unit in native):
+        return 10
+    return 16
+
+
 def _invoke_marker(marker, *, echo):
     checkout = paths.REPO
     state = paths.build_root() / 'build-v2' / 'controller'
@@ -105,11 +122,18 @@ def _invoke_marker(marker, *, echo):
         'interpreter': str(Path(sys.executable).absolute()), 'provenance': provenance(checkout),
         # Retention namespace only, explicitly excluded from A3 item identities.
         'worktree_id': hashlib.sha256(str(checkout).encode()).hexdigest(),
-        'memory_gib': 16 if unreal else 10 if blender else 8,
-        'job_seconds': 7200 if unreal else 900,
+        'memory_gib': 8,
+        'blender_memory_gib': 10,
+        'unreal_memory_gib': _native_memory_gib(request),
+        'unreal_job_seconds': 7200,
+        'job_seconds': 900,
         'cleanup_seconds': 60 if (unreal or blender) else 30,
         'overall_seconds': 28800 if (unreal or blender) else 1800,
     }
+    for tool in ('ffmpeg', 'ffprobe'):
+        executable = shutil.which(tool)
+        if executable:
+            options[tool] = str(Path(executable).absolute())
     node = shutil.which('node')
     if node:
         options['node'] = str(Path(node).absolute())
@@ -120,9 +144,12 @@ def _invoke_marker(marker, *, echo):
         if unreal:
             root = engine.unreal_root().absolute()
             modules = json.loads((root / 'Engine/Binaries/Mac/UnrealEditor.modules').read_text())
-            plugin = checkout / 'platform/build-v2/unreal/AtelierBuildWorker'
+            from .native_bootstrap import ensure_native_worker
+            plugin = ensure_native_worker(checkout, Path(options['cache_root']) / 'native-worker-bootstrap', root, echo=echo)
             options['unreal'] = {'engine_root': str(root), 'build_id': modules['BuildId'],
                                  'plugins': {'AtelierBuildWorker': str(plugin)}}
+            if 'unreal.cook.produce' in kinds:
+                options['native_export_project'] = str(plugin.parent.parent / 'AtelierWorkerHost.uproject')
     return invoke_controller(checkout, helper, marker, state / 'runs', options, echo=echo)
 
 

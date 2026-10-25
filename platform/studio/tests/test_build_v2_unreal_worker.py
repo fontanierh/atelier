@@ -392,6 +392,32 @@ def test_long_native_sidecar_suffix_has_one_package_owner():
         assert unreal_worker.package_owning('content/Game/A' + suffix, 'content/Game/') == '/Game/A'
 
 
+def test_declared_runpy_finds_only_staged_project_helpers_and_restores_path(tmp_path):
+    import runpy
+    root = tmp_path / 'job'
+    scripts = root / 'games/example/unreal/Scripts'
+    studio = root / 'platform/studio/c3_fixture_package'
+    scripts.mkdir(parents=True)
+    studio.mkdir(parents=True)
+    entry = scripts / 'entry.py'
+    helper = scripts / 'c3_staged_leaf.py'
+    package = studio / '__init__.py'
+    entry.write_text('import c3_staged_leaf\nimport c3_fixture_package\nVALUE = c3_staged_leaf.VALUE + c3_fixture_package.VALUE\n')
+    helper.write_text('VALUE = 17\n')
+    package.write_text('VALUE = 25\n')
+    files = [entry, helper, package]
+    before = list(sys.path)
+    try:
+        with unreal_worker.declared_python(root, [p.relative_to(root).as_posix() for p in files],
+                                           files, [Path(sys.base_prefix)], entry=entry.relative_to(root).as_posix()):
+            assert runpy.run_path(str(entry))['VALUE'] == 42
+        assert sys.path == before
+        assert not list(root.rglob('__pycache__'))
+    finally:
+        sys.modules.pop('c3_staged_leaf', None)
+        sys.modules.pop('c3_fixture_package', None)
+
+
 def test_empty_editor_content_scaffolding_has_no_packages_but_links_are_not_empty(tmp_path):
     from atelier.build_v2.unreal_worker import content_has_files
     (tmp_path / 'Developers' / 'user' / 'Collections').mkdir(parents=True)
@@ -454,6 +480,19 @@ def test_cook_verifier_cannot_take_authority_from_semantic_params(tmp_path):
                           'zen_request': {'record_path': '/arbitrary'}})
     with pytest.raises(FileNotFoundError):
         loop.execute(request, set(), [])
+
+
+def test_native_data_result_owns_one_exact_finite_json_output():
+    from atelier.build_v2.unreal_worker import encode_data_result
+    assert encode_data_result({'data/adventure.json': {'pose': [1, 2, 3]}}, ['data/adventure.json']) == {
+        'data/adventure.json': b'{\n "pose": [\n  1,\n  2,\n  3\n ]\n}\n'}
+    for result, outputs in [({}, ['data/adventure.json']),
+                            ({'data/a.json': 1, 'data/b.json': 2}, ['data/a.json']),
+                            ({'data/a.json': float('nan')}, ['data/a.json']),
+                            ({'../escape.json': 1}, ['../escape.json']),
+                            ({'content/Game/A.uasset': 1}, ['content/Game/A.uasset'])]:
+        with pytest.raises(JobRefused):
+            encode_data_result(result, outputs)
 
 
 def test_fixed_native_zen_metadata_roles_are_exact_regular_sdk_files(tmp_path):

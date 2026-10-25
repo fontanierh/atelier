@@ -141,6 +141,19 @@ impl NativeToolBundle {
         }
         fs::set_permissions(&directory, fs::Permissions::from_mode(0o555))
             .map_err(|error| error.to_string())?;
+        let mut environment = BTreeMap::from([
+            ("LC_ALL".into(), "C".into()),
+            ("TZ".into(), "UTC".into()),
+            ("PATH".into(), "/usr/bin:/bin:/usr/sbin:/sbin".into()),
+        ]);
+        // Execution-only incremental workspace; current worker validates all inputs
+        // and still invokes UBT. It never changes keys or certifies old success.
+        if let Some(candidate) = std::env::var_os("ATELIER_V2_COMPILE_VIEW") {
+            if !Path::new(&candidate).is_absolute() {
+                return Err("native compile view must be absolute".into());
+            }
+            environment.insert("ATELIER_V2_COMPILE_VIEW".into(), candidate.to_string_lossy().into_owned());
+        }
         Ok(crate::guard_adapter::WorkerCommand {
             program: interpreter.to_path_buf(),
             args: vec![
@@ -150,11 +163,7 @@ impl NativeToolBundle {
                 "--engine-root".into(),
                 engine_root.as_os_str().to_owned(),
             ],
-            env: BTreeMap::from([
-                ("LC_ALL".into(), "C".into()),
-                ("TZ".into(), "UTC".into()),
-                ("PATH".into(), "/usr/bin:/bin:/usr/sbin:/sbin".into()),
-            ]),
+            env: environment,
             cwd: "/".into(),
         })
     }

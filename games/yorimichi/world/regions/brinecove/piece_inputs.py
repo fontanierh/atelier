@@ -2,9 +2,15 @@
 
 
 def finish_parts(builder, asset, rim, root, *, paving=None, seam=None, query_output=None):
+    """@cc [owner:fontanierh,label:correctness] coastal-selected-native-policy
+    Every emitted object MUST retain its collision flag, original no-LOD default and
+    material kinds derived from the constructor labels through the assembly's kind rule.
+    Native consumers MUST NOT infer these policies from geometry counts or slot spellings.
+    """
     import bpy
     from atelier.model_export import mesh_object
     from brinecove import geometry_finish as finish, layout
+    from brinecove.runtime_data import kind
     from region_mesh_set import plan
     settled = finish.settle(rim)
     parts, outside, drowned, degenerate = finish.split(builder, asset, None if asset == 'Ground' else settled,
@@ -26,7 +32,10 @@ def finish_parts(builder, asset, rim, root, *, paving=None, seam=None, query_out
         objects.append(obj)
         water = getattr(part, 'parent_water', all(s.startswith(
             ('water', 'mist', 'spray', 'foam', 'waterfall')) for s in part.mats))
-        metadata[obj.name] = dict(component=asset, collision=not soft, shadow=not water,
+        known_kinds = {material.name: kind(label) for label, material in materials.items()}
+        metadata[obj.name] = dict(component=asset, collision=not soft, lods=False,
+                                  material_kinds={slot.name: known_kinds[slot.name] for slot in obj.data.materials},
+                                  shadow=not water,
                                   cull_cm=0 if asset in ('Ground', 'Rocks') else 120000)
     counts = dict(outside=outside, drowned=drowned, degenerate=degenerate,
                   raw_triangles=sum(len(face) - 2 for face in builder.faces))

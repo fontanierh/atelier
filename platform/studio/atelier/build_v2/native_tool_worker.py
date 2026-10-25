@@ -90,6 +90,19 @@ def receipt_files(engine, project, target, configuration, kind, *, owned_root=No
         return tuple(sorted(files))
     receipt = project.parent / 'Binaries/Mac' / (target + '.target')
     value = json.loads(receipt.read_bytes())
+    changed = False
+    for group in ('BuildProducts', 'RuntimeDependencies'):
+        for index, row in enumerate(value.get(group, [])):
+            raw = row.get('Path') if isinstance(row, dict) else row
+            if isinstance(raw, str) and raw.startswith('/') and ops._inside(Path(raw), (owned_root,)):
+                portable = '$(ProjectDir)/' + os.path.relpath(raw, project.parent).replace(os.sep, '/')
+                if isinstance(row, dict):
+                    row['Path'] = portable
+                else:
+                    value[group][index] = portable
+                changed = True
+    if changed:
+        receipt.write_text(json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n')
     if (value.get('TargetName'), value.get('Platform'), value.get('Configuration')) != (target, 'Mac', configuration):
         raise Refused('game receipt target/platform/configuration differs')
     files = {receipt}
@@ -97,7 +110,7 @@ def receipt_files(engine, project, target, configuration, kind, *, owned_root=No
     if not isinstance(products, list) or not products:
         raise Refused('game receipt lacks complete products')
     for row in [*products, *value.get('RuntimeDependencies', [])]:
-        path = ops._receipt_path(row['Path'], project=project.parent, engine=engine / 'Engine', receipt=receipt)
+        path = ops._receipt_path(row['Path'] if isinstance(row, dict) else row, project=project.parent, engine=engine / 'Engine', receipt=receipt)
         if ops._inside(path, (engine / 'Engine',)):
             if not path.exists():
                 raise Refused('installed runtime product is absent')
@@ -640,6 +653,77 @@ def finalise_package(job, params, view, project, engine, job_dir, run, environme
     return {path.relative_to(cooked).as_posix(): _digest(path) for path in cooked.rglob('*') if path.is_file()}
 
 
+
+def compile_candidate(job, fresh, protected, candidate):
+    """@cc [owner:fontanierh,label:correctness] incremental-compile-current-inputs
+    A compile candidate MUST match every current declared input before UBT. Missing
+    or changed inputs MUST be independently refreshed from current staging. Only
+    this owned derived view and frozen worker code MAY change; original staged inputs remain untouched. Reuse
+    MUST still run current UBT, validate its receipt and publish through the new guard.
+    A candidate is execution context, never evidence of prior task success.
+    """
+    candidate = Path(candidate)
+    if (not candidate.is_absolute() or candidate.name != 'view'
+            or candidate.parent.name != recipe_job.RUNTIME
+            or candidate.parent.parent.name != 'job'
+            or len(candidate.parents) < 4 or len(fresh.parents) < 4
+            or candidate.parents[3] != fresh.parents[3]
+            or candidate.resolve(strict=True) != candidate
+            or candidate.stat().st_uid != os.getuid()):
+        raise Refused('compile candidate is not an owned closed native view')
+    cleanups = sorted((candidate.parent.parent.parent / 'guard').glob('attempt-*/cleanup.json'))
+    if not cleanups or any(json.loads(path.read_bytes()).get('confirmed') is not True for path in cleanups):
+        raise Refused('compile candidate lacks confirmed prior guard cleanup')
+    # Each mapped input includes its COMPLETE frozen membership, not only a receipt
+    # or current Git revision. Current staged bytes refresh changed source inputs.
+    mapped = [fresh / relative for relative in job['params']['recipe']['paths']]
+    for source in mapped:
+        target = candidate / source.relative_to(fresh)
+        if not os.path.lexists(target):
+            if target.parent.resolve(strict=False) != target.parent:
+                raise Refused('compile candidate input ancestor is aliased')
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if source.is_dir():
+                shutil.copytree(source, target)
+            else:
+                shutil.copyfile(source, target)
+                shutil.copymode(source, target, follow_symlinks=False)
+        if target.resolve(strict=True) != target:
+            raise Refused('compile candidate input is aliased')
+        expected, actual = _tree(source), _tree(target)
+        staged = job['params']['recipe']['paths'][source.relative_to(fresh).as_posix()]
+        # File inputs key their bytes. A source also staged as worker code is 0444;
+        # that harmless materialization mode must not invalidate the same bytes.
+        if source.is_file() and not staged.endswith('.tree.tar'):
+            expected = [row[:-1] if row[1] == 'file' else row for row in expected]
+            actual = [row[:-1] if row[1] == 'file' else row for row in actual]
+        if expected != actual:
+            # This is an ordinary incremental source update. Original prior staged
+            # inputs and CAS products remain untouched; only this derived view changes.
+            if target.is_dir():
+                shutil.rmtree(target)
+            else:
+                target.unlink()
+            if source.is_dir():
+                shutil.copytree(source, target)
+            else:
+                shutil.copyfile(source, target)
+                shutil.copymode(source, target, follow_symlinks=False)
+            if _tree(source) != _tree(target):
+                raise Refused('compile candidate input refresh differs from current staging')
+    for name in job['code']:
+        source, target = fresh / name, candidate / name
+        if os.path.lexists(target) and (target.is_symlink() or not target.is_file()):
+            raise Refused('compile candidate code path is not a regular file')
+        if target.parent.resolve(strict=False) != target.parent:
+            raise Refused('compile candidate code ancestor is aliased')
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if target.exists():
+            target.chmod(0o644)
+        shutil.copyfile(source, target)
+        target.chmod(0o444)
+    return candidate, [str(candidate / Path(name).relative_to(fresh)) for name in protected]
+
 def dispatch(job, job_dir, engine, run, *, source_key=None, zen_state_root=None, export_project=None):
     """@cc [owner:fontanierh,label:correctness;safety] fixed-native-tool-routes
     Only the five fixed version-1 operations MAY dispatch. SDK/interpreter locators
@@ -666,6 +750,9 @@ def dispatch(job, job_dir, engine, run, *, source_key=None, zen_state_root=None,
                 or not Path(export_project).is_file() or Path(export_project).is_symlink()):
             raise Refused('source-cook needs the existing owned compiled C3 export project')
         view, protected = persistent_cook_view(view, protected, source_key, zen_state_root)
+    candidate = os.environ.get('ATELIER_V2_COMPILE_VIEW')
+    if candidate and kind in ('unreal.compile', 'unreal.game'):
+        view, protected = compile_candidate(job, view, protected, candidate)
     frozen_inputs = {name: _tree(Path(name)) for name in protected}
     # Runtime modules are loaded only from the same explicitly frozen source view.
     sys.path[:0] = [str(view / 'platform/studio'), str(view / 'platform/harness'), str(view)]

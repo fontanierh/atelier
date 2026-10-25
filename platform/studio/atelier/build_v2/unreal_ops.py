@@ -46,6 +46,15 @@ def _input(context, name, *, package=False):
     path = Path(value)
     if not path.is_absolute() or not path.is_relative_to(Path(context.job_dir)):
         raise ValueError('Expected a staged regular source input')
+    member = context.params.get('source_member') if name == context.params.get('source') else None
+    if member is not None:
+        if (not isinstance(member, str) or not member or Path(member).is_absolute() or '\\' in member
+                or any(part in ('', '.', '..') for part in member.split('/')) or not path.is_dir()):
+            raise ValueError('Source member requires an exact relative member of a declared directory')
+        selected = path.joinpath(*member.split('/'))
+        if selected.resolve() != selected or not selected.is_relative_to(path) or selected.is_symlink():
+            raise ValueError('Source member traverses an alias')
+        path = selected
     if path.is_dir():
         # A produced source Item is a complete source file + original public
         # export receipt, never a guessed first member of a directory.
@@ -84,7 +93,8 @@ def _editor_value(value):
     if isinstance(value, dict) and set(value) == {'unreal_enum'}:
         import unreal
         owner, separator, member = value['unreal_enum'].partition('.')
-        if not separator or owner not in ('TextureMipGenSettings', 'TextureGroup', 'CollisionTraceFlag'):
+        if not separator or owner not in ('TextureMipGenSettings', 'TextureGroup', 'CollisionTraceFlag', 'FBXNormalImportMethod',
+                                     'VertexColorImportOption', 'FBXAnimationLengthImportType'):
             raise ValueError('Unsupported authored Unreal enum')
         return getattr(getattr(unreal, owner), member)
     return value
@@ -120,10 +130,13 @@ def raw_import(context, unreal):
     saves, required output files, import tables and scratch cleanup before Completed.
     """
     p = context.params
-    _fields(p, {'op', 'kind', 'source', 'destination'}, {'properties', 'fbx', 'skeleton', 'physics_asset', 'package_sources', 'input_roots'})
+    _fields(p, {'op', 'kind', 'source', 'destination'}, {'properties', 'fbx', 'skeleton', 'physics_asset', 'create_physics_asset', 'source_member', 'package_sources', 'input_roots'})
     kind = p['kind']
     if kind not in _KINDS:
         raise ValueError('Unsupported raw import kind')
+    if 'create_physics_asset' in p and (kind != 'skeletal_mesh' or type(p['create_physics_asset']) is not bool
+                                      or 'physics_asset' in p):
+        raise ValueError('Explicit physics creation is a skeletal-only boolean without a supplied physics asset')
     source = _input(context, p['source'])
     destination = _output(context, p['destination'])
     folder, _, name = destination.rpartition('/')
@@ -163,7 +176,7 @@ def raw_import(context, unreal):
             _set(options, {'create_physics_asset': False,
                            'physics_asset': _load(unreal, _input(context, p['physics_asset'], package=True), 'PhysicsAsset')})
         elif kind == 'skeletal_mesh':
-            _set(options, {'create_physics_asset': True})
+            _set(options, {'create_physics_asset': p.get('create_physics_asset', True)})
         data = options.get_editor_property({'static_mesh': 'static_mesh_import_data',
                                            'skeletal_mesh': 'skeletal_mesh_import_data',
                                            'animation': 'anim_sequence_import_data'}[kind])

@@ -77,7 +77,7 @@ def _bundle_module(name):
 
 
 @contextmanager
-def declared_python(job_dir, code, reads, platform_roots):
+def declared_python(job_dir, code, reads, platform_roots, *, entry=None):
     """Reuse C2's path/import checks for the project Python body inside C3.
 
     A caught refusal remains sticky. The audit hook is inactive outside this scope;
@@ -97,13 +97,24 @@ def declared_python(job_dir, code, reads, platform_roots):
     guard.reads += [str(p) for p in reads if Path(p).is_dir()]
     finder = helper.DeclaredCodeFinder(root, set(code), [str(p) for p in platform_roots])
     originals = {name: getattr(os, name) for name in guard.DESCRIPTOR_CALLS if hasattr(os, name)}
-    meta, hooks = list(sys.meta_path), list(sys.path_hooks)
+    meta, hooks, search = list(sys.meta_path), list(sys.path_hooks), list(sys.path)
+    project_roots = [str(Path(root) / Path(entry).parent)] if entry is not None else []
+    for relative in sorted(code):
+        path = Path(relative)
+        project_roots.append(str(Path(root) / path.parent))
+        if path.parts[:2] == ('platform', 'studio'):
+            project_roots.append(str(Path(root) / 'platform/studio'))
+        if len(path.parts) > 2 and path.parts[0] == 'games':
+            project_roots.append(str(Path(root).joinpath(*path.parts[:2])))
     bytecode = sys.dont_write_bytecode
     active = [True]
     guard.original_readlink = os.readlink
     sys.addaudithook(lambda event, args: guard.audit(event, args) if active[0] else None)
     try:
         sys.dont_write_bytecode = True
+        # Search locations do not authorize code: the finder still checks every
+        # imported origin against the exact frozen closure.
+        sys.path[:] = list(dict.fromkeys(project_roots + search))
         for name, function in originals.items():
             setattr(os, name, guard.wrap(name, function, guard.DESCRIPTOR_CALLS[name]))
         sys.meta_path.insert(0, finder)
@@ -117,6 +128,7 @@ def declared_python(job_dir, code, reads, platform_roots):
             setattr(os, name, function)
         sys.meta_path[:] = meta
         sys.path_hooks[:] = hooks
+        sys.path[:] = search
 
 
 WORKER_VERSION = 'atelier-unreal-job-1'
@@ -485,15 +497,32 @@ class Editor:
         return remaining
 
 
+def encode_data_result(result, outputs):
+    """@cc [owner:fontanierh,label:correctness] native-derived-json-is-explicit
+    Serialize only the sole exact declared finite JSON result returned by the keyed
+    native body. The body MUST receive no filesystem write capability; native reads,
+    input integrity, unsaved changes and cleanup MUST retain ordinary C3 admission.
+    """
+    if (len(outputs) != 1 or not isinstance(result, dict) or set(result) != set(outputs)
+            or any(not isinstance(path, str) or _job_relative(path, 'output') != path
+                   or not path.startswith('data/') or not path.endswith('.json') for path in outputs)):
+        raise JobRefused('dependency', 'native data result differs from its exact declared JSON output')
+    try:
+        return {path: (json.dumps(result[path], indent=1, allow_nan=False) + '\n').encode('utf-8') for path in outputs}
+    except (TypeError, ValueError) as error:
+        raise JobRefused('job', 'native data result is not finite JSON') from error
+
+
 class Context:
     """What an op sees: its params, staged inputs and declared outputs; no repository paths."""
 
-    def __init__(self, job_dir, inputs, packages, params, outputs, content_dir, *, zen_request=None):
+    def __init__(self, job_dir, inputs, packages, params, outputs, content_dir, *, zen_request=None, data_outputs=()):
         self.job_dir = Path(job_dir)
         self.inputs = inputs  # name -> logical package (staged) or job-folder path
         self.packages = packages  # name -> logical package, for staged package inputs
         self.params = params
         self.outputs = outputs  # declared output packages
+        self.data_outputs = tuple(data_outputs)  # exact relative JSON result names
         self.content_dir = Path(content_dir)
         if zen_request is not None:
             self.zen_request = zen_request
@@ -660,12 +689,17 @@ class Worker:
             raise JobRefused('dependency', '/Game is not empty before the job')
         if job['op']['kind'] == 'unreal.cook.verify':
             return self.execute_verifier(job)
-        declared, required = {}, set()
+        declared, required, data_outputs = {}, set(), []
         for item in job['outputs']:
             path = _job_relative(item['path'], 'output')
+            if job['op']['kind'] == 'unreal.author' and path.startswith('data/') and path.endswith('.json'):
+                data_outputs.append(path)
+                continue
             if not path.startswith(OUTPUT_CONTENT) or not path.endswith(PACKAGE_FILES):
                 raise JobRefused('protocol', f'output {path!r} is not a package file under {OUTPUT_CONTENT}')
             declared[path] = item['required']
+        if data_outputs and (declared or len(data_outputs) != 1 or not all(item['required'] for item in job['outputs'])):
+            raise JobRefused('protocol', 'a native data author owns one required JSON result and no packages')
         packages = {package_of(path, OUTPUT_CONTENT) for path in declared} - {None}
         required = {package_of(path, OUTPUT_CONTENT) for path, need in declared.items() if need} - {None}
         if job['script'] not in job['code']:
@@ -690,11 +724,12 @@ class Worker:
         try:
             with declared_python(job_dir, job['code'],
                     [*prepared['declared_reads'], self.content],
-                    [*self.read_platform_roots, Path(sys.base_prefix), Path(sys.prefix)]):
+                    [*self.read_platform_roots, Path(sys.base_prefix), Path(sys.prefix)], entry=job['script']):
                 entry = runpy.run_path(str(job_dir / job['script']), run_name='atelier_unreal_job')
                 if not callable(entry.get('run')):
                     raise JobRefused('protocol', 'the entry script defines no run(context)')
-                entry['run'](Context(job_dir, inputs, input_packages, job['params'], sorted(packages), self.content))
+                result = entry['run'](Context(job_dir, inputs, input_packages, job['params'], sorted(packages),
+                                              self.content, data_outputs=data_outputs))
             self.editor.finish_background_work()
             saved = self.editor.saved_packages()
             read_report = self.editor.read_report()
@@ -780,6 +815,14 @@ class Worker:
             target.parent.mkdir(parents=True, exist_ok=True)
             moved.append(path)
             shutil.move(path, target)
+        if data_outputs:
+            encoded = encode_data_result(result, data_outputs)
+            for relative, data in encoded.items():
+                target = job_dir / 'output' / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                with target.open('xb') as stream:
+                    stream.write(data)
+            files.update({relative: job_dir / 'output' / relative for relative in encoded})
         write_atomic(job_dir / IMPORT_EVIDENCE, {'version': EVIDENCE_VERSION, 'packages': [
             {'package': name, 'imports': imports[name]} for name in sorted(names)]})
         return sorted(files)
@@ -806,7 +849,7 @@ class Worker:
         recording = True
         try:
             with declared_python(job_dir, job['code'], records,
-                    [*self.read_platform_roots, Path(sys.base_prefix), Path(sys.prefix)]):
+                    [*self.read_platform_roots, Path(sys.base_prefix), Path(sys.prefix)], entry=job['script']):
                 entry = runpy.run_path(str(job_dir / job['script']), run_name='atelier_native_verify')
                 if not callable(entry.get('run')):
                     raise JobRefused('protocol', 'fixed verifier has no run entry')

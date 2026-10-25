@@ -343,7 +343,7 @@ One editor MUST run one job at a time, starting each with an empty `/Game` and e
 Input packages MUST be copied read-only to their logical paths and removed afterwards. The packages
 saved during a job MUST be exactly its declared output packages (an undeclared save or file is a
 `dependency` failure, a missing required package or an unsaved change is a `job` failure, and a
-changed input is a `dependency` failure). Every output file MUST belong to a package saved during
+changed input is a `dependency` failure). Every native package output file MUST belong to a package saved during
 the job, companion files included; a package file written any other way is a `dependency` failure.
 Every collected file MUST hold exactly the bytes its package's last save wrote: the plugin MUST take
 each save's file hashes only after an explicit flush of the save's writes
@@ -359,6 +359,12 @@ Those SHA1 hashes are an integrity check only and MUST NOT become a key ingredie
 output file MUST exist when the job ends (otherwise a `job` failure), and a file written into
 `output/` directly is a `dependency` failure. Outputs MUST be moved out of `/Game` into `output/`. A failed job's `output/` MAY hold partially
 moved files, so the controller MUST collect `output/` only from a completed job.
+An `unreal.author` unit MAY instead own one required `JsonData` file under `data/`:
+the keyed body MUST return the exact named finite JSON value without file-write permission.
+The trusted worker serializes only that declared result after ordinary native read, input,
+save, dirty-package and ensure checks; the job MUST save no package. Native context verification,
+positive reset, guard cleanup and frozen-result publication MUST still apply. See
+`test_native_data_result_owns_one_exact_finite_json_output`.
 A package saved more than once to the same file counts once; one saved to more than one file is a
 `dependency` failure. A failed ensure during the job is a `job` failure. After every job the worker
 MUST restore its Python state, empty `/Game` and the asset registry, unload every package the job

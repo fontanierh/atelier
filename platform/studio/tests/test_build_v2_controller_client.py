@@ -235,3 +235,22 @@ def test_busy_bootstrap_refuses_without_unbounded_wait_or_guard_submission(tmp_p
         with pytest.raises(RuntimeError, match='already active'):
             client.ensure_controller(checkout, state, echo=lambda _: None)
     assert sorted(p.name for p in state.iterdir()) == ['.bootstrap.lock']
+
+
+def test_real_controller_manifest_contains_transitive_literal_rust_includes():
+    import re
+    root = Path(__file__).resolve().parents[3]
+    manifest = json.loads((root / client.SOURCE_MANIFEST).read_text())
+    named = set(manifest['files'])
+    pending, seen = list(named), set()
+    include = re.compile(r'include_(?:str|bytes)!\s*\(\s*("(?:[^"\\]|\\.)*")\s*\)')
+    while pending:
+        name = pending.pop()
+        if name in seen or not name.endswith('.rs'):
+            continue
+        seen.add(name)
+        for match in include.finditer((root / name).read_text()):
+            target = ((root / name).parent / json.loads(match[1])).resolve(strict=True)
+            relative = target.relative_to(root).as_posix()
+            assert relative in named, f'{name} embeds source omitted by controller manifest: {relative}'
+            pending.append(relative)

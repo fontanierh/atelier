@@ -443,6 +443,7 @@ FString AtelierZenFinaliseRequest(const FString& RequestJson)
         Histories.Add(MoveTemp(H));
     }
     TSet<FString> ExpectedFiles;
+    TSet<FString> DiagnosticFiles;
     TSet<FAssetIdentifier> Visited;
     if (!IFileManager::Get().MakeDirectory(*(Output / TEXT("Content")), true)
         || !IFileManager::Get().MakeDirectory(*(Output / TEXT("Metadata/ShaderLibrarySource")), true)
@@ -649,6 +650,20 @@ FString AtelierZenFinaliseRequest(const FString& RequestJson)
                     return Fail(TEXT("native_shader_library_missing_empty_or_duplicate"));
                 ExpectedFiles.Add(Relative);
             }
+            // The fixed Metal writer also creates an optional shader-source debug ZIP.
+            // Census/hash it explicitly, while keeping it out of EndCook runtime globals.
+            const FString DebugName = (Library + TEXT("_") + Format).ToLower() + TEXT(".zip");
+            const FString DebugRelative = TEXT("Metadata/ShaderDebug/") + DebugName;
+            const FString DebugPath = Output / DebugRelative;
+            if (IFileManager::Get().FileExists(*DebugPath))
+            {
+                struct stat Info{};
+                if (!SameOwnedDirectory(FPaths::ConvertRelativePathToFull(Output / TEXT("MetaData/ShaderDebug")),
+                        FPaths::ConvertRelativePathToFull(Output / TEXT("Metadata/ShaderDebug")))
+                    || lstat(TCHAR_TO_UTF8(*DebugPath), &Info) != 0 || !S_ISREG(Info.st_mode) || Info.st_nlink != 1)
+                    return Fail(TEXT("native_shader_debug_file_is_not_owned_regular_output"));
+                ExpectedFiles.Add(DebugRelative); DiagnosticFiles.Add(DebugRelative);
+            }
         }
     }
     // The package-store entry covers every target shader format; compare their complete union.
@@ -674,6 +689,10 @@ FString AtelierZenFinaliseRequest(const FString& RequestJson)
         Row->SetNumberField(TEXT("bytes"), Bytes.Num()); Manifest.Add(MakeShared<FJsonValueObject>(Row));
     }
     Report->SetArrayField(TEXT("files"), Manifest);
+    TArray<FString> DebugNames = DiagnosticFiles.Array(); DebugNames.Sort();
+    TArray<TSharedPtr<FJsonValue>> Diagnostics;
+    for (const FString& Name : DebugNames) Diagnostics.Add(MakeShared<FJsonValueString>(Name));
+    Report->SetArrayField(TEXT("diagnostic_files"), Diagnostics);
     Report->SetBoolField(TEXT("global_library"), GlobalLibrary);
     Report->SetBoolField(TEXT("native_libraries"), NativeLibraries);
     Report->SetNumberField(TEXT("packages"), Owner.Num());

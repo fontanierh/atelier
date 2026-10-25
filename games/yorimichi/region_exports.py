@@ -5,9 +5,6 @@ import os
 from pathlib import Path
 
 from atelier.atomic_files import atomic_json
-from atelier.build_inputs import local_imports
-from atelier.build_batch_source import support as batch_support
-from atelier.build import Batch, Blender, Call, Product, Python, Step
 from atelier import export_assembly, export_tasks, paths
 from atelier.model_files import member
 
@@ -32,7 +29,7 @@ class LogicalAsset:
 
 def inventory(root, parent, *, encoding='mesh_ir'):
     """Read task identities only; the owning ordinary task verifies all geometry payloads."""
-    if encoding not in ('mesh_ir','encoded_glb'):raise ValueError('Unknown logical mesh encoding')
+    if encoding not in ('mesh_ir','mesh_set','encoded_glb'):raise ValueError('Unknown logical mesh encoding')
     suffix='.mesh' if encoding=='encoded_glb' else '.npz'
     root = Path(root)
     path = root / 'plan.json'
@@ -46,7 +43,8 @@ def inventory(root, parent, *, encoding='mesh_ir'):
     if (value.get('schema') != 1 or value.get('parent') != parent or value.get('complete') is not True
             or value.get('triangle_limit') != export_tasks.TRIANGLE_LIMIT or not value.get('pieces')):
         raise ValueError('Incomplete or foreign logical geometry plan')
-    if encoding=='encoded_glb' and value.get('kind')!='encoded_glb':raise ValueError('Wrong logical mesh data encoding')
+    if value.get('kind') != {'mesh_ir': None, 'mesh_set': 'mesh_set', 'encoded_glb': 'encoded_glb'}[encoding]:
+        raise ValueError('Wrong logical mesh data encoding')
     seen, rows = set(), []
     total = 0
     for row in value['pieces']:
@@ -70,6 +68,10 @@ def steps(ctx, *, region, assets, after=(), inputs=()):
     the build controller's successful planner expansion. Assembly MUST require all planners and
     all current export products; it MUST NOT reconstruct missing geometry inline or export it.
     """
+    from atelier.build_inputs import local_imports
+    from atelier.build_batch_source import support as batch_support
+    from atelier.build import Batch, Blender, Call, Product, Python, Step
+
     export_tasks.name(region)
     assets = tuple(assets)
     if not assets or len({export_tasks.name(a.key).casefold() for a in assets}) != len(assets):
@@ -79,7 +81,7 @@ def steps(ctx, *, region, assets, after=(), inputs=()):
     for asset in assets:
         if asset.suffix not in export_tasks.PRIMARY:
             raise ValueError('Unsupported atomic region format')
-        if asset.encoding not in ('mesh_ir','encoded_glb') or (asset.encoding=='encoded_glb' and asset.suffix!='.glb'):
+        if asset.encoding not in ('mesh_ir','mesh_set','encoded_glb') or (asset.encoding=='encoded_glb' and asset.suffix!='.glb'):
             raise ValueError('Unsupported logical source encoding/primary combination')
         encoded=asset.encoding=='encoded_glb'
         root = ctx.out / 'planned_exports' / region / asset.key
@@ -100,7 +102,7 @@ def steps(ctx, *, region, assets, after=(), inputs=()):
             inputs=[*local_imports(asset.script, (WORLD, WORLD / 'regions', paths.STUDIO)), *(batch_support().values() if not encoded else ()), *asset.inputs], needs=list(asset.needs), reads=list(asset.reads),
             after=list(after), products=[Product(product, (root,)), *asset.products], cache=True, toolchain=not encoded,
             heavy=True, batch=None if encoded else Batch(region + ' logical geometry'), verify=complete,
-            about='construct only logical mesh ' + asset.key))
+            about='construct only logical mesh ' + asset.key, export_format=asset.suffix.removeprefix('.')))
         logical.append((asset.key, root, task, product,asset.encoding))
         rows = inventory(root, asset.key,encoding=asset.encoding)
         atomic = export_tasks.steps(ctx, prefix=f'world.{region}.export',

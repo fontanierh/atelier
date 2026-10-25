@@ -54,6 +54,37 @@ tier = "t0"
 id = "native.zen.only_exact_canonical_native_locators_are_interpreted"
 tests = ["atelier-build-v2/results::zen_cook::tests::only_exact_canonical_native_locators_are_interpreted"]
 tier = "t0"
+
+[[scenarios]]
+id = "native.modules.materializes_independent_editor_and_plugin_context"
+tests = ["atelier-build-v2/native_modules::tests::materializes_independent_editor_and_plugin_context"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.modules.an_existing_scope_refuses_and_is_kept"
+tests = ["atelier-build-v2/native_modules::tests::an_existing_scope_refuses_and_is_kept"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.modules.wrong_build_modules_or_slots_refuse_and_clean_the_scope"
+tests = ["atelier-build-v2/native_modules::tests::wrong_build_modules_or_slots_refuse_and_clean_the_scope"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.modules.staged_bytes_must_equal_keyed_digests"
+tests = ["atelier-build-v2/native_modules::tests::staged_bytes_must_equal_keyed_digests"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.modules.archive_members_cannot_escape_overwrite_or_go_unlisted"
+tests = ["atelier-build-v2/native_modules::tests::archive_members_cannot_escape_overwrite_or_go_unlisted"]
+tier = "t0"
+
+[[scenarios]]
+id = "native.modules.nested_folders_materialize_in_order"
+tests = ["atelier-build-v2/native_modules::tests::nested_folders_materialize_in_order"]
+tier = "t0"
+
 [[scenarios]]
 id = "native.zen.independent_verifier_uses_normal_key_encoding_and_exact_cb_content"
 tests = ["atelier-build-v2/native_verify::tests::independent_verifier_uses_normal_key_encoding_and_exact_cb_content"]
@@ -62,4 +93,9 @@ tier = "t0"
 [[scenarios]]
 id = "native.cooked_content_identity"
 tests = ["atelier-build-v2/keys::native_cooked_tests::native_content_excludes_namespace_but_binds_complete_package_identity"]
+tier = "t0"
+
+[[scenarios]]
+id = "native-followers.dynamic-record-key-substitution"
+tests = ["atelier-build-v2/native_chains::substitution_tests::native_cook_record_keys_bind_the_expanded_piece_and_refuse_aliases"]
 tier = "t0"

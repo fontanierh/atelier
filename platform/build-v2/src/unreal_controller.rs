@@ -99,18 +99,33 @@ impl UnrealLocations {
             .transpose()
             .map_err(|e| e.to_string())?
             .unwrap_or_default();
+        let produced = crate::native_modules::prepare(unit, staged,
+            &staged.job_dir().parent().ok_or("missing native module scope")?.join("native-modules"),
+            &self.build_id)?;
+        let mut project_plugins = plugins(&self.plugins)?;
+        let (editor, modules) = if let Some(produced) = produced {
+            if self.editor_binaries.is_some() || !self.modules.is_empty() {
+                return Err("native modules have two distinct binary authorities".into());
+            }
+            for plugin in produced.plugins {
+                if project_plugins.iter().any(|existing| existing.name == plugin.name) {
+                    return Err("native plugin has two distinct binary authorities".into());
+                }
+                project_plugins.push(plugin);
+            }
+            (produced.editor, produced.modules)
+        } else {
+            (unreal::Binaries {identity: unreal::tree_identity(&editor_dir, None)
+                .map_err(|e| e.to_string())?, dir: editor_dir}, self.modules.clone())
+        };
         Ok(UnrealExecutionContext {
             context: UnrealContext {
                 engine_root: self.engine_root.clone(),
                 build_id: self.build_id.clone(),
-                editor: unreal::Binaries {
-                    identity: unreal::tree_identity(&editor_dir, None)
-                        .map_err(|e| e.to_string())?,
-                    dir: editor_dir,
-                },
-                modules: self.modules.clone(),
+                editor,
+                modules,
                 engine_plugins: plugins(&self.engine_plugins)?,
-                plugins: plugins(&self.plugins)?,
+                plugins: project_plugins,
                 settings,
                 ddc: unreal::UnrealDdc::open(&store, &self.build_id).map_err(|e| e.to_string())?,
                 worker,
@@ -486,6 +501,7 @@ fn package(path: &str) -> Result<String, String> {
 fn declared_packages(unit: &PreparedUnit) -> Result<BTreeSet<String>, String> {
     let mut result = BTreeSet::new();
     for item in &unit.ingredients().logical_outputs {
+        if item.class == "JsonData" { continue; }
         package(&item.logical_path)?;
         for file in &item.files {
             let Some(relative) = file.path.strip_prefix("content/Game/") else {
@@ -582,9 +598,17 @@ pub fn check_unit(unit: &PreparedUnit) -> Result<(), String> {
             return Err("authored native asset needs one keyed body and exact output item".into());
         }
         let item = &value.logical_outputs[0];
+        if item.class == "JsonData" {
+            if item.files.len() != 1 || !item.files[0].required
+                || !item.files[0].path.starts_with("data/") || !item.files[0].path.ends_with(".json") {
+                return Err("native data author needs one required explicit data JSON file".into());
+            }
+            return Ok(());
+        }
         if !matches!(
             item.class.as_str(),
-            "Material" | "MaterialInstance" | "MaterialParameterCollection" | "Map"
+            "Material" | "MaterialInstance" | "MaterialParameterCollection" | "Map" | "Blueprint"
+                | "BlendSpace1D" | "AdventureMoveSet" | "AnimBoneCompressionSettings" | "WandererDefinition" | "SoundAttenuation" | "DataAsset"
         ) {
             return Err("unsupported authored native asset class".into());
         }
@@ -615,9 +639,7 @@ pub fn check_unit(unit: &PreparedUnit) -> Result<(), String> {
         _ => return Err("unsupported native operation/version".into()),
     };
     if (value.op.kind == RAW_IMPORT && value.script != ENTRY)
-        || !value.code.contains_key(&value.script)
-        || !value.output_groups.is_empty()
-    {
+        || !value.code.contains_key(&value.script) || !value.output_groups.is_empty() {
         return Err("native unit has an unsupported body/group contract".into());
     }
     if value.params.get("op").and_then(|v| v.as_str()) != Some(action) {
@@ -744,6 +766,11 @@ pub fn validate_outputs(
         }
         if output.object.size() == 0 {
             return Err("empty native package output".into());
+        }
+        if output.item.class == "JsonData" {
+            let mut bytes = Vec::new();
+            output.object.reader().map_err(|e| e.to_string())?.read_to_end(&mut bytes).map_err(|e| e.to_string())?;
+            serde_json::from_slice::<serde_json::Value>(&bytes).map_err(|e| e.to_string())?;
         }
         if output.path.ends_with(".uasset") || output.path.ends_with(".umap") {
             let mut magic = [0; 4];
@@ -875,7 +902,8 @@ fn prepare_inner(
     } else {
         declared_packages(unit)?
     };
-    if (!verification && packages.is_empty())
+    let data_author = ingredients.op.kind == AUTHOR && ingredients.logical_outputs.iter().all(|item| item.class == "JsonData");
+    if (!verification && !data_author && packages.is_empty())
         || ingredients
             .logical_outputs
             .iter()
@@ -884,7 +912,7 @@ fn prepare_inner(
         return Err("native unit needs complete explicit package outputs".into());
     }
     for output in &staged.request().outputs {
-        if !verification && !output.path.starts_with("content/Game/") {
+        if !verification && !data_author && !output.path.starts_with("content/Game/") {
             return Err("native outputs must use the fixed C3 content namespace".into());
         }
     }
@@ -946,7 +974,7 @@ fn prepare_inner(
         env: command.env,
         cwd: command.cwd,
     };
-    let request = body_request(staged.request().clone());
+    let request = body_request(staged.request().clone())?;
     Ok(PreparedUnrealLaunch {
         command,
         worker,
@@ -959,13 +987,19 @@ fn prepare_inner(
     })
 }
 
-fn body_request(mut request: crate::protocol::JobRequest) -> crate::protocol::JobRequest {
+fn body_request(mut request: crate::protocol::JobRequest) -> Result<crate::protocol::JobRequest, String> {
     // Raw/finish and the fixed Zen body receive their own schema; author bodies
     // also validate their declared startup settings alongside authored arguments.
     if request.op.kind != AUTHOR {
         request.params.remove("settings");
     }
-    request
+    if let Some(modules) = request.params.remove("native_modules") {
+        // Locations::build already materialized and verified these exact context inputs.
+        // Keep complete keyed/staged verification; only the authored body's view omits them.
+        let slots = crate::native_modules::body_input_slots(&modules)?;
+        request.inputs.retain(|input| !slots.contains(&input.name));
+    }
+    Ok(request)
 }
 
 #[cfg(test)]
@@ -1012,16 +1046,32 @@ mod tests {
             "job_id":"job", "unit":"material", "op":{"kind":AUTHOR,"version":"1"},
             "job_dir":"/job", "script":"game/material.py", "code":["game/material.py"],
             "inputs":[], "outputs":[], "params":{"args":{"asset":"M"},"settings":[]}
-        }))
-        .unwrap();
-        let authored = body_request(request.clone());
+        })).unwrap();
+        let authored = body_request(request.clone()).unwrap();
         assert_eq!(authored.params, request.params);
         for kind in [RAW_IMPORT, FINISH, VERIFY] {
             let mut typed = request.clone();
             typed.op.kind = kind.into();
-            assert!(!body_request(typed).params.contains_key("settings"));
+            assert!(!body_request(typed).unwrap().params.contains_key("settings"));
         }
         assert!(request.params.contains_key("settings"));
+        let mut bound = request.clone();
+        bound.params.insert("native_modules".into(), serde_json::json!({
+            "editor":{"slot":"compiled_editor","archive":"binaries.tree.tar",
+                "modules":[{"name":"Game","kind":"Runtime","loading_phase":"Default"}]},
+            "plugins":[{"name":"Owned","slot":"compiled_plugin_Owned","archive":"binaries.tree.tar",
+                "descriptor_slot":"compiled_descriptor_Owned"}]}));
+        for name in ["source", "compiled_editor", "compiled_plugin_Owned", "compiled_descriptor_Owned", "compiled_semantic_asset"] {
+            bound.inputs.push(crate::protocol::StagedInput { name:name.into(), path:format!("inputs/{name}"),
+                identity:crate::schema::ContentIdentity::Digest{digest:crate::source_hashes::sha256(name.as_bytes())} });
+        }
+        let body = body_request(bound.clone()).unwrap();
+        assert_eq!(body.inputs.iter().map(|input| input.name.as_str()).collect::<Vec<_>>(), ["source", "compiled_semantic_asset"]);
+        assert!(!body.params.contains_key("native_modules"));
+        assert!(body.params.contains_key("settings"));
+        assert_eq!(bound.inputs.len(), 5);
+        bound.params.insert("native_modules".into(), serde_json::json!({"editor":{},"unknown":true}));
+        assert!(body_request(bound).is_err());
     }
 }
 
@@ -1050,6 +1100,14 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
         "Material",
         "MaterialInstance",
         "MaterialParameterCollection",
+        "Blueprint",
+        "BlendSpace1D",
+        "AdventureMoveSet",
+        "WandererDefinition",
+        "AnimBoneCompressionSettings",
+                "SoundAttenuation",
+                "DataAsset",
+        "JsonData",
         "Map",
     ]
     .into_iter()
@@ -1142,6 +1200,7 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
                         required: false,
                     },
                 ),
+                ("native_modules".into(), ParamRule {kind: ParamKind::Object, required: false}),
             ]),
         },
     );
@@ -1179,6 +1238,7 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
             "package_sources",
             "partners",
             "input_roots",
+            "native_modules",
         ] {
             params.insert(
                 name.into(),
@@ -1188,7 +1248,8 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
                 },
             );
         }
-        for name in ["skeleton", "physics_asset"] {
+        params.insert("create_physics_asset".into(), ParamRule {kind: ParamKind::Bool, required: false});
+        for name in ["skeleton", "physics_asset", "source_member"] {
             params.insert(
                 name.into(),
                 ParamRule {

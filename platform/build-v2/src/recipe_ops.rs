@@ -44,8 +44,18 @@ struct Recipe {
     #[serde(default)]
     geometry: Option<Value>,
     #[serde(default)]
+    file_group: Option<Value>,
+    #[serde(default)]
     tools: Vec<Tool>,
 }
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct FileGroup {
+    source: String,
+    parent: String,
+    extensions: Vec<String>,
+}
+
 #[derive(Deserialize)]
 #[serde(tag = "kind", deny_unknown_fields)]
 enum Tool {
@@ -80,7 +90,7 @@ pub fn validate_params(params: &BTreeMap<String, Value>) -> Result<(), String> {
     if params.keys().any(|name| {
         !matches!(
             name.as_str(),
-            "recipe" | "geometry_root" | "parent" | "plan_limits"
+            "recipe" | "geometry_root" | "file_root" | "parent" | "plan_limits"
         )
     }) {
         return Err("recipe requires its sole typed recipe object".into());
@@ -88,8 +98,33 @@ pub fn validate_params(params: &BTreeMap<String, Value>) -> Result<(), String> {
     let recipe: Recipe =
         serde_json::from_value(params.get("recipe").ok_or("missing recipe")?.clone())
             .map_err(|e| e.to_string())?;
-    if recipe.version != 1 || recipe.commands.is_empty() || recipe.outputs.is_empty() {
+    if recipe.version != 1
+        || (recipe.commands.is_empty() && recipe.file_group.is_none())
+        || (recipe.outputs.is_empty() && recipe.file_group.is_none())
+    {
         return Err("empty or unknown recipe".into());
+    }
+    if let Some(group) = recipe.file_group {
+        let group: FileGroup = serde_json::from_value(group).map_err(|e| e.to_string())?;
+        crate::groups::name(&group.parent)?;
+        let mut extensions = std::collections::BTreeSet::new();
+        if !relative(&group.source)
+            || group.extensions.is_empty()
+            || group.extensions.len() > 64
+            || params.get("file_root").and_then(Value::as_str) != Some("output/files")
+        {
+            return Err("invalid ordinary file-group descriptor or root".into());
+        }
+        for extension in group.extensions {
+            if extension.len() < 2
+                || extension.len() > 16
+                || !extension.starts_with('.')
+                || !extension[1..].bytes().all(|b| b.is_ascii_alphanumeric())
+                || !extensions.insert(extension)
+            {
+                return Err("invalid or duplicate ordinary file extension".into());
+            }
+        }
     }
     for (logical, staged) in recipe.paths {
         if !relative(&logical) || !relative(&staged) {
@@ -183,6 +218,14 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
                 "Material",
                 "MaterialInstance",
                 "MaterialParameterCollection",
+                "Blueprint",
+                "BlendSpace1D",
+                "AdventureMoveSet",
+                "WandererDefinition",
+                "AnimBoneCompressionSettings",
+                "SoundAttenuation",
+                "DataAsset",
+                "JsonData",
                 "Map",
             ]
             .into_iter()
@@ -192,6 +235,7 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
     definition.params.remove("seed");
     for (name, kind) in [
         ("geometry_root", ParamKind::String),
+        ("file_root", ParamKind::String),
         ("parent", ParamKind::String),
         ("plan_limits", ParamKind::Object),
     ] {
@@ -224,6 +268,14 @@ pub fn group_validator(
     code: &BTreeMap<String, String>,
     encoding: &crate::groups::PlanEncoding,
 ) -> Result<ImplementationIdentity, String> {
+    if *encoding == crate::groups::PlanEncoding::FileSet {
+        return Ok(ImplementationIdentity {
+            version: "recipe-file-set-1".into(),
+            digest: sha256(
+                b"recipe-file-set-1:strict-complete-frozen-ordinary-files:selected-metadata",
+            ),
+        });
+    }
     if *encoding == crate::groups::PlanEncoding::EncodedGlb {
         return crate::encoded_ops::identity_from_code(code);
     }
@@ -256,7 +308,10 @@ pub fn check(unit: &PreparedUnit) -> Result<(), String> {
         || (i.output_groups.len() > 1
             || (!i.output_groups.is_empty()
                 && i.op.kind != "recipe.blender"
-                && i.output_groups[0].encoding != crate::groups::PlanEncoding::EncodedGlb))
+                && !matches!(
+                    i.output_groups[0].encoding,
+                    crate::groups::PlanEncoding::EncodedGlb | crate::groups::PlanEncoding::FileSet
+                )))
         || i.logical_outputs.iter().any(|item| item.class != "Data")
     {
         return Err("unsupported recipe runtime identity".into());
@@ -266,4 +321,49 @@ pub fn check(unit: &PreparedUnit) -> Result<(), String> {
 pub fn validate_outputs(unit: &PreparedUnit, outputs: &[FrozenOutput<'_>]) -> Result<(), String> {
     check(unit)?;
     crate::py_data::validate_py_data_outputs(outputs)
+}
+
+/// Recipe file-set validation binds the existing complete frozen byte inventory.
+/// This does not decode audio, image, character or native payload semantics.
+pub fn validate_file_group(
+    contract: &crate::groups::OutputGroupContract,
+    objects: &BTreeMap<String, &crate::store::PreparedObject>,
+) -> Result<crate::groups::ValidatedGroup, String> {
+    crate::groups::validate_file_set_outputs(contract, objects)
+}
+
+#[cfg(test)]
+mod file_set_tests {
+    use super::*;
+    #[test]
+    fn ordinary_file_recipe_descriptor_is_closed_and_does_not_require_mesh_decoder() {
+        let identity =
+            group_validator(&BTreeMap::new(), &crate::groups::PlanEncoding::FileSet).unwrap();
+        assert_eq!(identity.version, "recipe-file-set-1");
+        let recipe = serde_json::json!({"version":1,"commands":[{"kind":"python","script":"produce.py","args":[],"env":[],"threads":1}],
+            "paths":{},"outputs":[],"verify":null,"file_group":{"source":"generated/audio","parent":"Audio","extensions":[".wav"]}});
+        let params = BTreeMap::from([
+            ("recipe".into(), recipe.clone()),
+            ("file_root".into(), "output/files".into()),
+        ]);
+        validate_params(&params).unwrap();
+        let mut projection = params.clone();
+        projection.get_mut("recipe").unwrap()["commands"] = serde_json::json!([]);
+        validate_params(&projection).unwrap();
+        projection.get_mut("recipe").unwrap().as_object_mut().unwrap().remove("file_group");
+        assert!(validate_params(&projection).is_err());
+        for value in [
+            serde_json::json!({"source":"../outside","parent":"Audio","extensions":[".wav"]}),
+            serde_json::json!({"source":"generated/audio","parent":"Audio","extensions":[".wav",".wav"]}),
+            serde_json::json!({"source":"generated/audio","parent":"Audio","extensions":["../wav"]}),
+            serde_json::json!({"source":"generated/audio","parent":"Audio","extensions":[".wav"],"callback":"unknown"}),
+        ] {
+            let mut changed = params.clone();
+            changed.get_mut("recipe").unwrap()["file_group"] = value;
+            assert!(validate_params(&changed).is_err());
+        }
+        let mut wrong = params;
+        wrong.insert("file_root".into(), "files".into());
+        assert!(validate_params(&wrong).is_err());
+    }
 }

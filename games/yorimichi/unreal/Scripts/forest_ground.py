@@ -13,7 +13,12 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'world'))
 import yori  # noqa: E402
 
 
-def material(*, rock=False):
+def material(*, rock=False, south_join_m=None):
+    """@cc [owner:fontanierh,label:correctness] explicit-forest-join-input
+    A provided south_join_m MUST determine the original graph without reading
+    ambient generated metadata. The no-argument owner MUST retain its existing
+    generated metadata read and graph behavior.
+    """
     if rock:return rock_material()
     E=U.EditorAssetLibrary;M=U.MaterialEditingLibrary;AT=U.AssetToolsHelpers.get_asset_tools()
     name='M_ForestGround'
@@ -31,7 +36,9 @@ def material(*, rock=False):
     detail=E.load_asset('/Game/Japan/Textures/T_ground_detail');assert detail
     tex=node(U.MaterialExpressionTextureObject,texture=detail)
     # The forest floor brightens over the 300 m north of Belmonte's southern join (belmonte/appearance.py far_palette).
-    join=json.loads((yori.OUT/'hidamari/north_snow.json').read_text())['south_join_m']*100
+    if south_join_m is None:
+        south_join_m=json.loads((yori.OUT/'hidamari/north_snow.json').read_text())['south_join_m']
+    join=south_join_m*100
     base=node(U.MaterialExpressionCustom,output_type=U.CustomMaterialOutputType.CMOT_FLOAT3,
               code=f'float n=smoothstep({join:.0f}.,{join+30000:.0f}.,-P.y);'+'''
 float3 colour=lerp(float3(.055,.11,.035),float3(.105,.145,.055),n);
@@ -59,23 +66,28 @@ colour=lerp(colour,coast,Alpha);
     return m
 
 
-def rock_material():
-    """Colour fractures on the rock slot; shared meadow materials stay separate."""
+def rock_material(*, texture=None):
+    """@cc [owner:fontanierh,label:correctness] explicit-finished-coast-texture
+    A provided texture MUST be consumed without importing, mutating or saving it.
+    Only the owned rock material may be saved. The no-argument authoring owner
+    retains its original texture preparation and graph construction.
+    """
     import hashlib
     import coast_rock_look as look
     from material_assets import create,save_material
     E=U.EditorAssetLibrary;M=U.MaterialEditingLibrary
-    source=yori.ASSETS/look.TEXTURE
-    assert hashlib.sha256(source.read_bytes()).hexdigest()==look.TEXTURE_SHA256
-    task=U.AssetImportTask();task.filename=str(source)
-    task.destination_path='/Game/Japan/Textures';task.destination_name='T_CoastRock'
-    task.automated=True;task.replace_existing=True;task.save=True
-    U.AssetToolsHelpers.get_asset_tools().import_asset_tasks([task])
-    texture=E.load_asset('/Game/Japan/Textures/T_CoastRock');assert texture
-    texture.set_editor_property('srgb',True)
-    texture.set_editor_property('max_texture_size',1024)
-    texture.set_editor_property('mip_gen_settings',U.TextureMipGenSettings.TMGS_SIMPLE_AVERAGE)
-    E.save_loaded_asset(texture)
+    if texture is None:
+        source=yori.ASSETS/look.TEXTURE
+        assert hashlib.sha256(source.read_bytes()).hexdigest()==look.TEXTURE_SHA256
+        task=U.AssetImportTask();task.filename=str(source)
+        task.destination_path='/Game/Japan/Textures';task.destination_name='T_CoastRock'
+        task.automated=True;task.replace_existing=True;task.save=True
+        U.AssetToolsHelpers.get_asset_tools().import_asset_tasks([task])
+        texture=E.load_asset('/Game/Japan/Textures/T_CoastRock');assert texture
+        texture.set_editor_property('srgb',True)
+        texture.set_editor_property('max_texture_size',1024)
+        texture.set_editor_property('mip_gen_settings',U.TextureMipGenSettings.TMGS_SIMPLE_AVERAGE)
+        E.save_loaded_asset(texture)
     m=create('M_CoastRock',U.Material,U.MaterialFactoryNew())
 
     def node(cls,**props):
