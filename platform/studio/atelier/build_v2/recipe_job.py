@@ -6,7 +6,7 @@ follow links, represent optional absence explicitly, and restore only their name
 import ast
 from collections.abc import Mapping
 import hashlib
-from dataclasses import is_dataclass
+from dataclasses import dataclass, is_dataclass
 import importlib
 import importlib.util
 import io
@@ -206,11 +206,50 @@ def prepare_view(job, job_dir, *, reserved=()):
     return view, protected, writes
 
 
+@dataclass(frozen=True)
+class RecipePaths:
+    """Declarative paths only; permissions still come from the existing job guard."""
+    game: str
+    out: Path
+    game_dir: Path
+    uproject: Path | None
+    unreal_root: None = None
+
+
+class RecipeStdout:
+    """Write-only progress output, without access to the worker's stream object."""
+    __slots__ = ()
+
+    def write(self, value):
+        if not isinstance(value, str):
+            raise TypeError('recipe progress must be text')
+        return sys.stdout.write(value)
+
+    def flush(self):
+        sys.stdout.flush()
+
+
 def _value(value, view, namespace=None):
     if isinstance(value, (list, tuple)):
         return [_value(v, view, namespace) for v in value]
     if not isinstance(value, Mapping):
         return value
+    if set(value) == {'recipe_context'}:
+        fields = value['recipe_context']
+        if set(fields) != {'game', 'out', 'game_dir', 'uproject', 'unreal_root'} or fields['unreal_root'] is not None:
+            raise ValueError('unsupported recipe path context')
+        if (not isinstance(fields['game'], str) or '/' in fields['game']
+                or relative(fields['game']) != fields['game']
+                or any(not isinstance(fields[k], Mapping) or set(fields[k]) != {'path'}
+                       for k in ('out', 'game_dir'))
+                or (fields['uproject'] is not None and (not isinstance(fields['uproject'], Mapping)
+                    or set(fields['uproject']) != {'path'}))):
+            raise ValueError('invalid recipe path context fields')
+        return RecipePaths(**{k: _value(v, view, namespace) for k, v in fields.items()})
+    if set(value) == {'recipe_stdout'}:
+        if value['recipe_stdout'] is not True:
+            raise ValueError('invalid recipe stdout descriptor')
+        return RecipeStdout()
     if set(value) == {'path'}:
         return view / relative(value['path'])
     if set(value) == {'text'}:
