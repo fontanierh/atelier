@@ -88,7 +88,14 @@ def real_family_rows():
             and isinstance(node.args[0], ast.Constant) and node.args[0].value == name)
         return eval(compile(ast.Expression(call), str(GAME / 'build.py'), 'eval'),
                     {**vars(recipe), 'ctx': ctx, 'out': ctx.out, 'region': GAME / 'world/regions/brinecove'})
-    source_steps += [original_step(name) for name in ('world.treehouse_textures', 'world.brinecove.meshes', 'unreal.treehouse', 'unreal.brinecove')]
+    source_steps += [original_step(name) for name in ('world.treehouse_textures', 'unreal.treehouse')]
+    # This fixture exercises original declarations/product roles, not whole-game
+    # dependency selection; the omitted Brine source frontier is checked by the
+    # full-target compiler. Keep the selected factories' real products unchanged.
+    for step in recipe.brinecove_steps(ctx.out):
+        if step.name in ('world.brinecove', 'unreal.brinecove'):
+            step.reads = []; step.needs = []; step.after = []
+            source_steps.append(step)
     return extract(source_steps, checkout=ROOT, build_root=ROOT / 'build')
 
 
@@ -98,14 +105,18 @@ def test_joined_actual_rows_expose_all_family_gaps_without_incomplete_import_ali
     palette['outputs'] = ['build/yorimichi/treehouse/textures/textures.json']
     geometry = load('v2_geometry_templates').geometry_templates(source_rows, checkout=ROOT)
     result = load('v2_native_units').lower(source_rows, geometry, checkout=ROOT)
-    assert 'unreal.treehouse' not in result['aliases'] and 'unreal.brinecove' not in result['aliases']
+    assert 'unreal.treehouse' not in result['aliases']
+    assert result['aliases']['unreal.brinecove'] == ('unreal.brinecove.complete',)
     assert any(role.startswith('treehouse.palette:') for role in result['missing_roles'])
     assert any('complete directory ROOT' in role for role in result['missing_roles'])
-    assert 'brinecove.hero_material_descriptors' in result['missing_roles']
-    assert 'brinecove.geometry_templates' in result['missing_roles']
     assert 'treehouse.complete_native_membership_and_selection' in result['missing_roles']
-    assert 'brinecove.complete_native_membership_and_selection' in result['missing_roles']
+    assert not any(role.startswith('brinecove.') for role in result['missing_roles'])
     assert any(unit['id'] == 'unreal.brinecove.material.M_Brinecove' for unit in result['units'])
+    assert len([t for t in result['geometry']['templates']
+                if t['unit_prefix'].startswith('world.brinecove.selected.')]) == 3
+    assert all('world.brinecove.selected.' not in owner for owner in result['module_requirements'])
+    assert all(result['follower_module_requirements'][t['unit_prefix']]
+               for t in result['geometry']['templates'] if t['unit_prefix'].startswith('world.brinecove.selected.'))
     props = load('v2_native_units')._family_source_reference(source_rows, 'world.treehouse_props', 'treehouse/props', 'props.json')
     trees = load('v2_native_units')._family_source_reference(source_rows, 'world.treehouse_trees', 'treehouse/trees', 'trees.json')
     assert props == {'unit': 'world.treehouse_props', 'item': 'product0', 'file': 'products/0-0.tree.tar', 'member': 'props.json'}

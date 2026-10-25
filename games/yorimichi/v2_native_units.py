@@ -272,17 +272,18 @@ def _join_native_families(native, rows, geometry, selected, *, checkout):
         else:
             gaps.append('treehouse.complete_native_membership_and_selection')
     if 'unreal.brinecove' in selected:
-        material = _family_module(checkout, 'v2_brinecove_material_units').author_units(
-            native['packages'], checkout=checkout)
-        _append_family(native, material)
-        gaps.extend('brinecove.' + role for role in material['missing_roles'])
-        followers = _family_module(checkout, 'v2_brinecove_native_units').attach_followers(
-            geometry, native['packages'], native['units'], checkout=checkout)
-        geometry = followers['geometry']
-        gaps.extend('brinecove.material:' + package for package in followers['missing_material_packages'])
-        if not any(t['unit_prefix'].startswith('world.brinecove.export.') for t in geometry['templates']):
-            gaps.append('brinecove.geometry_templates')
-        gaps.append('brinecove.complete_native_membership_and_selection')
+        family = _family_module(checkout, 'v2_brinecove_templates').attach_followers(
+            geometry, rows=rows, checkout=checkout, natives=_package_dependencies(native))
+        geometry = family['geometry']
+        requirements = family.pop('module_requirements', {})
+        fixed = {unit['id'] for unit in family['units']}
+        family['module_requirements'] = {name: value for name, value in requirements.items() if name in fixed}
+        native.setdefault('follower_module_requirements', {}).update(
+            {name: value for name, value in requirements.items() if name not in fixed})
+        _append_family(native, family)
+        native['aliases'].update(family['aliases'])
+        # The source runtime ROOT is provenance; data.stage remains its sole installer.
+        native.setdefault('source_joins', {})['brinecove'] = family['source_join']
     native['geometry'] = geometry
     native['missing_roles'] = sorted(set(gaps))
     return native
@@ -781,6 +782,19 @@ def lower(rows, geometry, *, checkout):
         native['rider_tokens'] = family['tokens']
     if selected & {'unreal.treehouse', 'unreal.brinecove'}:
         native = _join_native_families(native, rows, geometry, selected, checkout=checkout)
+    if 'unreal.belmonte' in selected:
+        family = _family_module(checkout, 'v2_belmonte_units').attach_followers(
+            native['geometry'], rows=rows, checkout=checkout, natives=_package_dependencies(native))
+        current = family['geometry']
+        requirements = family.pop('module_requirements', {})
+        fixed = {unit['id'] for unit in family['units']}
+        family['module_requirements'] = {name: value for name, value in requirements.items() if name in fixed}
+        native.setdefault('follower_module_requirements', {}).update(
+            {name: value for name, value in requirements.items() if name not in fixed})
+        _append_family(native, family)
+        native['geometry'] = current
+        native['aliases'].update(family['aliases'])
+        native.setdefault('source_joins', {})['belmonte'] = family['source_join']
     if 'unreal.craterpark' in selected:
         from pathlib import Path
         from atelier.build import Call, Step
@@ -912,10 +926,10 @@ def lower(rows, geometry, *, checkout):
             if slug in family['tokens'] and unit['op']['kind'].startswith('unreal.'):
                 unit['params'].setdefault('args', {})['closure'] = {
                     key: deepcopy(value) for key, value in family['tokens'][slug].items() if key != 'clips'}
-            if action in ('mesh', 'tack', 'record') or any(incoming['name'] == 'skeleton' for incoming in unit['inputs']):
+            if action in ('mesh', 'tack', 'roster', 'report') or any(incoming['name'] == 'skeleton' for incoming in unit['inputs']):
                 for index, reference in enumerate(shared):
                     _stage_native_closure(family, unit, 'closure_shared_' + str(index), reference)
-            if action == 'record':
+            if action in ('roster', 'report'):
                 unit['params']['args']['closure'] = deepcopy(family['tokens'])
         for template in family['templates']:
             slug = template['unit_prefix'].split('.')[2]

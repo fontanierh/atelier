@@ -68,8 +68,15 @@ def attach_followers(geometry, *, rows, checkout, natives):
             result['module_requirements'][unit['id']] = modules
     def call(name, defaults):
         import importlib.util
+        import sys
         spec = importlib.util.spec_from_file_location('belmonte_declaration', root / MEMBERS)
-        module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+        module = importlib.util.module_from_spec(spec)
+        previous = list(sys.path)
+        try:
+            sys.path[:0] = [str(path) for path in imports]
+            spec.loader.exec_module(module)
+        finally:
+            sys.path[:] = previous
         function = getattr(module, name); function.__defaults__ = tuple(defaults)
         row = extract([Step('members', [Call(name, function)])], checkout=root, build_root=root / 'build', import_roots=imports)[0]
         return {'kind': 'call', 'call': _binding(row['commands'][0]['fn'])}

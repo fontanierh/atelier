@@ -10,8 +10,15 @@ MATERIALS = '/Game/Brinecove/Materials/'
 
 
 def _load(root, path, name):
+    import sys
     spec = importlib.util.spec_from_file_location(name, root / path)
-    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    module = importlib.util.module_from_spec(spec)
+    previous = list(sys.path)
+    try:
+        sys.path[:0] = [str(root / 'games/yorimichi'), str(root / 'games/yorimichi/world')]
+        spec.loader.exec_module(module)
+    finally:
+        sys.path[:] = previous
     return module
 
 
