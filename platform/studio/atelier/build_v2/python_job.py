@@ -67,7 +67,7 @@ def _frozen(value):
 class JobContext:
     """The op's whole view of its job. See the module docstring."""
 
-    __slots__ = ('_inputs', '_outputs', '_params', '_seed', 'output_dir')
+    __slots__ = ('_inputs', '_outputs', '_params', '_seed', 'output_dir', '_atomic_temporary')
 
     def __init__(self, inputs, outputs, params, seed):
         self._inputs = MappingProxyType({name: None if path is None else Path(path) for name, path in inputs.items()})
@@ -75,6 +75,7 @@ class JobContext:
         self._params = _frozen(params)
         self._seed = seed
         self.output_dir = Path('output')
+        self._atomic_temporary = None
 
     @property
     def inputs(self):
