@@ -321,6 +321,14 @@ def run(context):
                          if path.startswith('games/')})
     sys.path[:0] = [str(view / 'platform/studio'), *map(str, game_roots), str(view)]
     old = list(sys.argv), dict(os.environ)
+    atomic = None
+    token = None
+    held = getattr(context, '_atomic_temporary', None)
+    if held is not None and (view / 'platform/studio/atelier/atomic_files.py').is_file():
+        # The fixed bootstrap already opened/validated this exact reserved directory,
+        # before PathGuard. Reuse the shared helper's held-fd scope, never reopen '/'.
+        from atelier import atomic_files as atomic
+        token = atomic._MANAGED_TEMPORARY.set(held)
     try:
         for command in recipe['commands']:
             if command['kind'] == 'call':
@@ -357,6 +365,8 @@ def run(context):
                 raise ValueError('unsupported geometry encoding')
             shutil.copytree(root, output / 'geometry')
     finally:
+        if token is not None:
+            atomic._MANAGED_TEMPORARY.reset(token)
         sys.argv[:] = old[0]
         os.environ.clear()
         os.environ.update(old[1])
