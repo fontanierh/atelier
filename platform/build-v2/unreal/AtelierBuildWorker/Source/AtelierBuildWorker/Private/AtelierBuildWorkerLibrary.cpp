@@ -241,6 +241,7 @@ namespace
 FString UAtelierBuildWorkerLibrary::NativeContext()
 {
     const TSharedRef<FJsonObject> Context = MakeShared<FJsonObject>();
+    Context->SetStringField(TEXT("worker_source_digest"), UTF8_TO_TCHAR(ATELIER_BUILD_WORKER_SOURCE_DIGEST));
     FModuleManifest Engine;
     const FString EngineBinaries = FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries"), FPlatformProcess::GetBinariesSubdirectory());
     Context->SetStringField(TEXT("build_id"), FModuleManifest::TryRead(FModuleManifest::GetFileName(EngineBinaries, false), Engine) ? Engine.BuildId : FString());
