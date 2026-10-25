@@ -408,7 +408,8 @@ def lower(rows, geometry, *, checkout):
         spec = importlib.util.spec_from_file_location('native_foliage_units', path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        foliage = module.foliage_units(rows, checkout=checkout, natives=_package_dependencies(native))
+        foliage = module.foliage_units(rows, checkout=checkout, natives=_package_dependencies(native),
+                                       owners=sorted(name.removeprefix('unreal.foliage.') for name in foliage_ids))
         native['units'].extend(foliage['units'])
         native['staged_inputs'].update(foliage['staged'])
         native['content_slots'].update(foliage['slots'])

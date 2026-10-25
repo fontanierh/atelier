@@ -64,6 +64,28 @@ def test_each_key_becomes_one_store_only_raw_import_of_its_export_item(rows):
     assert not any(ref.get('key', '').endswith('_Seed') for ref in result['packages'].values())
 
 
+def test_one_owner_uses_only_its_real_rows_and_keeps_the_full_build_declarations(rows):
+    owner = 'Tree_Broad_A'
+    entry = foliage.roster(ROOT)[owner]
+    wanted = {'world.foliage.' + owner, *('world.foliage.export.' + key for key, _ in entry['chain'])}
+    selected = [row for row in rows if row['id'] in wanted]
+    required = {foliage.PARENT, foliage.WHITE, *('/Game/Japan/Materials/MI_' + key for key in entry['materials'])}
+    supplied = {key: value for key, value in natives().items() if key in required}
+    result = foliage.foliage_units(selected, checkout=ROOT, natives=supplied, owners=(owner,))
+    full = build(rows)
+    expected_ids = {'unreal.foliage.finish.' + owner, 'unreal.foliage.crown.' + owner,
+                    *('unreal.foliage.raw.' + key for key, _ in entry['chain'])}
+    assert {unit['id'] for unit in result['units']} == expected_ids
+    assert result['units'] == [unit for unit in full['units'] if unit['id'] in expected_ids]
+    assert all(ref['owner'] == owner for ref in result['packages'].values())
+
+
+@pytest.mark.parametrize('owners', [(), ('missing',), ('Tree_Broad_A', 'Tree_Broad_A'), 'Tree_Broad_A'])
+def test_invalid_owner_selection_refuses(rows, owners):
+    with pytest.raises(foliage.Unsupported, match='owner selection'):
+        foliage.foliage_units(rows, checkout=ROOT, natives=natives(), owners=owners)
+
+
 def test_tree_finish_owns_base_and_lods_and_consumes_raw_manifest_palette_and_crown(rows):
     result = build(rows)
     by_id = {unit['id']: unit for unit in result['units']}

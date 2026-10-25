@@ -123,20 +123,31 @@ def _root(owner):
     return {'manifest': {'archive_member': 'products/0-0.tree.tar', 'name': owner}}
 
 
-def foliage_units(rows, *, checkout, natives):
+def foliage_units(rows, *, checkout, natives, owners=None):
     """@cc [owner:fontanierh,label:correctness] authored-c3-foliage-units
-    Every fixed mesh LOD and far crown of every foliage owner MUST become one
+    Every fixed mesh LOD and far crown of each selected foliage owner (all owners
+    by default) MUST become one
     independent store-only RawImport consuming its exact export Item with the
     original FBX options. One keyed Finish per owner MUST consume exactly its raw LOD
     Items, its assembled manifest Item, its shared MI_<slot> palette and its crown
     MaterialInstance, and own the stable base and LOD packages. The roster MUST come
     from committed source specs, never a generated-folder scan; a missing native
-    Item or reshaped source row refuses.
+    Item or reshaped source row refuses. An explicit owner selection MUST be nonempty,
+    unique and drawn from the committed roster; unselected owners MUST introduce no
+    declarations or require their source/native inputs.
     """
     by_id = {row['id']: row for row in rows}
     if len(by_id) != len(rows):
         raise Unsupported('duplicate source row')
-    owners = roster(checkout)
+    all_owners = roster(checkout)
+    if owners is None:
+        owners = all_owners
+    else:
+        if (not isinstance(owners, (list, tuple)) or not owners
+                or any(not isinstance(owner, str) or owner not in all_owners for owner in owners)
+                or len(set(owners)) != len(owners)):
+            raise Unsupported('invalid foliage owner selection')
+        owners = {owner: entry for owner, entry in all_owners.items() if owner in owners}
     code = _code(checkout)
     body = sorted({*code, FINISH, HELPERS})
     units, staged, slots, packages = [], {}, {}, {}
