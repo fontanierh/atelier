@@ -46,6 +46,9 @@ pub struct MemberProjection {
     pub payload: String,
     pub encoding: PlanEncoding,
     pub role: Option<EncodedRole>,
+    /// Only this selected member's validated runtime policy; siblings stay outside its key.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<Value>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -291,6 +294,14 @@ fn check_recorded(
         if (projection.encoding == PlanEncoding::EncodedGlb) != projection.role.is_some() {
             return Err("wrong projected payload role".into());
         }
+        if (projection.encoding == PlanEncoding::MeshSet) != projection.metadata.is_some()
+            || projection
+                .metadata
+                .as_ref()
+                .is_some_and(|value| !value.is_object())
+        {
+            return Err("wrong projected member metadata".into());
+        }
         let suffix = match contract.encoding {
             PlanEncoding::EncodedGlb => ".mesh",
             _ => ".npz",
@@ -351,6 +362,24 @@ pub fn parse_manifest(
     if contract.encoding == PlanEncoding::MeshSet && integer(&raw, "source_collision_hulls")? != 0 {
         return Err("mesh-set cannot duplicate whole collision ownership".into());
     }
+    let metadata = if contract.encoding == PlanEncoding::MeshSet {
+        let metadata = raw
+            .get("metadata")
+            .and_then(Value::as_object)
+            .ok_or("missing mesh-set member metadata")?;
+        let names: BTreeSet<_> = rows
+            .iter()
+            .map(|row| text(row, "name"))
+            .collect::<Result<_, _>>()?;
+        if metadata.keys().map(String::as_str).collect::<BTreeSet<_>>() != names
+            || metadata.values().any(|value| !value.is_object())
+        {
+            return Err("mesh-set metadata membership differs".into());
+        }
+        Some(metadata)
+    } else {
+        None
+    };
     for (index, row) in rows.iter().enumerate() {
         let piece = text(row, "name")?;
         name(piece)?;
@@ -401,6 +430,7 @@ pub fn parse_manifest(
                     payload: payload.into(),
                     encoding: contract.encoding.clone(),
                     role,
+                    metadata: metadata.map(|entries| entries[piece].clone()),
                 },
             )
             .is_some()
@@ -567,6 +597,7 @@ mod tests {
                 payload: "Sibling.npz".into(),
                 encoding: PlanEncoding::MeshIr,
                 role: None,
+                metadata: None,
             },
         );
         let second = restore_recorded(&contract, &changed, |_| Ok(())).unwrap();
@@ -858,6 +889,7 @@ mod tests {
                 payload: "Sibling.npz".into(),
                 encoding: PlanEncoding::MeshIr,
                 role: None,
+                metadata: None,
             },
         );
         groups.insert(
@@ -949,6 +981,58 @@ mod tests {
         );
     }
     #[test]
+    fn mesh_set_policy_keys_only_the_selected_member() {
+        let (mut contract, mut stored) = fixture();
+        contract.encoding = PlanEncoding::MeshSet;
+        for projection in stored.projections.values_mut() {
+            projection.encoding = PlanEncoding::MeshSet;
+            projection.metadata = Some(serde_json::json!({"collision": true, "lods": false}));
+        }
+        stored.files.push(StoredFile {
+            path: "Sibling.npz".into(),
+            digest: "e".repeat(64),
+            size: 10,
+            mode: 0o644,
+        });
+        stored.projections.insert(
+            "Sibling".into(),
+            MemberProjection {
+                payload: "Sibling.npz".into(),
+                encoding: PlanEncoding::MeshSet,
+                role: None,
+                metadata: Some(serde_json::json!({"collision": false})),
+            },
+        );
+        let key = |stored: &StoredOutputGroup| {
+            let (declaration, registry, snapshot) = key_fixture(&contract);
+            let groups = BTreeMap::from([(
+                ("planner".into(), "geometry".into()),
+                restore_recorded(&contract, stored, |_| Ok(())).unwrap(),
+            )]);
+            prepared(
+                &declaration,
+                &registry,
+                &snapshot,
+                &groups,
+                "export.Village_Edges",
+            )
+            .unwrap()
+            .key()
+            .to_owned()
+        };
+        let before = key(&stored);
+        stored.projections.get_mut("Sibling").unwrap().metadata =
+            Some(serde_json::json!({"collision": true}));
+        assert_eq!(before, key(&stored));
+        stored
+            .projections
+            .get_mut("Village_Edges")
+            .unwrap()
+            .metadata = Some(serde_json::json!({"collision": false, "lods": false}));
+        assert_ne!(before, key(&stored));
+    }
+
+    #[test]
     fn cached_member_keys_bind_equal_byte_payload_type_and_role_without_plan_reads() {
         let (contract, stored) = fixture();
         let key = |contract: &OutputGroupContract, stored: &StoredOutputGroup| {
@@ -977,6 +1061,11 @@ mod tests {
             .get_mut("Village_Edges")
             .unwrap()
             .encoding = PlanEncoding::MeshSet;
+        mesh_set
+            .projections
+            .get_mut("Village_Edges")
+            .unwrap()
+            .metadata = Some(serde_json::json!({"collision": true}));
         assert_eq!(stored.files, mesh_set.files);
         assert_ne!(mesh_ir, key(&mesh_set_contract, &mesh_set));
         let mut encoded_contract = contract;

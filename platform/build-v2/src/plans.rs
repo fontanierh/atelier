@@ -106,8 +106,12 @@ impl ChildTemplate {
         payload: &str,
         encoding: &PlanEncoding,
         role: Option<&EncodedRole>,
+        metadata: Option<&serde_json::Value>,
     ) -> Unit {
         let mut params = self.params.clone();
+        if let Some(metadata) = metadata {
+            params.insert("payload_metadata".into(), metadata.clone());
+        }
         params.insert(
             "payload_role".into(),
             match role {
@@ -186,6 +190,7 @@ impl RegisteredTemplate {
         if template.params.contains_key("payload_member")
             || template.params.contains_key("payload_encoding")
             || template.params.contains_key("payload_role")
+            || template.params.contains_key("payload_metadata")
         {
             return Err("template overrides derived member parameters".into());
         }
@@ -203,6 +208,7 @@ impl RegisteredTemplate {
             "TemplateValidation",
             "TemplateValidation.npz",
             &contract.encoding,
+            None,
             None,
         );
         let followers = crate::native_chains::instantiate(
@@ -334,6 +340,7 @@ impl RegisteredTemplate {
                 &projection.payload,
                 &projection.encoding,
                 projection.role.as_ref(),
+                projection.metadata.as_ref(),
             );
             let followers =
                 crate::native_chains::instantiate(&self.template.followers, piece, &child.id)?;
@@ -503,6 +510,7 @@ mod tests {
                         payload,
                         encoding: PlanEncoding::MeshIr,
                         role: None,
+                        metadata: None,
                     },
                 )
             })
@@ -578,7 +586,7 @@ mod tests {
             .unwrap()
             .item_classes
             .insert("Mesh".into());
-        let mut raw = template.child("$piece", "unused", &contract.encoding, None);
+        let mut raw = template.child("$piece", "unused", &contract.encoding, None, None);
         raw.id = "raw.Village.$piece".into();
         raw.params.clear();
         raw.inputs = vec![Input::Content {
@@ -871,7 +879,7 @@ mod tests {
         );
         // The first new member is valid; the second collides with an existing unit owner.
         let mut decl = base.declaration().clone();
-        let mut owner = template.child("C", "C.npz", &contract.encoding, None);
+        let mut owner = template.child("C", "C.npz", &contract.encoding, None, None);
         owner.id = "export.Village.C".into();
         owner
             .params
@@ -898,6 +906,18 @@ mod tests {
                 .expand(&base, &token(&wrong, &["A"]), None, &registry, &[])
                 .is_err()
         );
+    }
+
+    #[test]
+    fn selected_metadata_is_injected_as_a_reserved_child_parameter() {
+        let (base, registry, template, contract) = fixture();
+        let policy = serde_json::json!({"collision": true, "lods": false});
+        let child = template.child("A", "A.npz", &PlanEncoding::MeshSet, None, Some(&policy));
+        assert_eq!(child.params.get("payload_metadata"), Some(&policy));
+        let mut overridden = template;
+        overridden.params.insert("payload_metadata".into(), policy);
+        assert!(RegisteredTemplate::register(&base, overridden, &registry, &[]).is_err());
+        assert_eq!(contract.encoding, PlanEncoding::MeshIr);
     }
 
     #[test]
