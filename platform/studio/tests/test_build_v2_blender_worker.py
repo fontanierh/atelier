@@ -334,6 +334,10 @@ def test_background_render_registration_has_exact_native_service_and_bundle_boun
     ordinary = python_worker.sandbox_profile(str(tmp_path / 'job'))
     assert '(allow mach-lookup' not in ordinary and '(allow file-issue-extension' not in ordinary
     assert 'com.apple.pasteboard' not in profile and 'com.apple.tccd' not in profile
+    setup = [line for line in profile.splitlines() if '/private/var/db/.AppleSetupDone' in line]
+    assert len(setup) == 1 and setup[0].startswith('(allow file-read-metadata ')
+    assert '(literal "/private/var/db/.AppleSetupDone")' in setup[0]
+    assert '(subpath "/private/var/db")' not in profile
     assert '(allow process*)' not in profile and '(allow network*)' not in profile
     assert profile.splitlines()[-1] == '(deny network-bind)'
     outside_bundle = blender_worker.BlenderPlatform(str(tmp_path / 'plain/Blender'))
