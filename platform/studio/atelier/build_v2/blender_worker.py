@@ -57,6 +57,10 @@ BLENDER_FLAGS = ('--factory-startup', '-b', '--threads', str(THREADS), '--python
 # other JOB_ENVIRONMENT settings apply. The environment holds only declared names (no PYTHONPATH or
 # PYTHONHOME), so this adds no ambient input.
 JOB_FLAGS = BLENDER_FLAGS + ('--python-use-system-env',)
+# Bundled glog initializes before main and dereferences a missing account lookup
+# result when USER is absent. A fixed SDK identity avoids that lookup without
+# exposing the caller's account or granting directory-service access.
+SDK_ENVIRONMENT = {'USER': 'atelier-job'}
 # Folders Blender would otherwise take from the user's home; each points at a missing job-local path.
 # Staged code could occupy that path, so a job whose folder already holds it is refused.
 USER_FOLDERS = ('BLENDER_USER_RESOURCES', 'BLENDER_USER_CONFIG', 'BLENDER_USER_SCRIPTS',
@@ -174,7 +178,7 @@ class BlenderWorker(python_worker.Worker):
         return [self.blender, *JOB_FLAGS, '--python-expr', expression]
 
     def child_environment(self, job_dir):
-        environment = dict(python_worker.JOB_ENVIRONMENT)
+        environment = {**python_worker.JOB_ENVIRONMENT, **SDK_ENVIRONMENT}
         missing = os.path.join(job_dir, MISSING_USER_FOLDER)
         environment.update({name: missing for name in USER_FOLDERS})
         environment['TMPDIR'] = os.path.join(job_dir, RUNTIME_DIRECTORY, 'tmp')
