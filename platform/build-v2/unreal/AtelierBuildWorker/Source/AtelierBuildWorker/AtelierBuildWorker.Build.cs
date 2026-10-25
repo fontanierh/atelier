@@ -27,6 +27,8 @@ public class AtelierBuildWorker : ModuleRules
         PrivateIncludePaths.Add(Path.Combine(EngineDirectory, "Source/Developer/IoStoreUtilities/Internal"));
         PrivateIncludePaths.Add(Path.Combine(EngineDirectory, "Source/Developer/Zen/Internal"));
         PrivateIncludePaths.Add(Path.Combine(EngineDirectory, "Source/Runtime/RenderCore/Internal"));
+        // Each native verifier owns file-local helpers; keep translation units separate.
+        bUseUnity = false;
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
         PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine" });
         PrivateDependencyModuleNames.AddRange(new string[] { "Chaos", "PhysicsCore", "AssetRegistry", "DerivedDataCache", "InterchangeEngine", "Json", "IoStoreUtilities", "Zen", "RenderCore", "TargetPlatform", "CookMetadata", "Projects", "RHI", "UnrealEd" });
