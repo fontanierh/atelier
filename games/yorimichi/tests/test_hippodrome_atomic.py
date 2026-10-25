@@ -3,6 +3,7 @@ import hashlib
 import importlib
 import json
 from pathlib import Path
+import runpy
 import sys
 import types
 
@@ -73,6 +74,20 @@ def test_selected_constructor_input_closures_exclude_siblings():
         closure=set(local_imports(row.script,(GAME/'world',GAME/'world/regions')))
         assert GAME/'world/regions/hippodrome/build.py' not in closure
         assert not any(other.script in closure for other in rows if other.key!=row.key)
+
+
+def test_query_cli_string_destination_preserves_exact_projection(tmp_path,monkeypatch):
+    import numpy as np
+    from hippodrome import project_queries
+    monkeypatch.setattr(project_queries.H,'north_height',
+                        lambda x,y:np.asarray(x)*.001+np.asarray(y)*.003+35.)
+    expected=tmp_path/'expected.json';actual=tmp_path/'actual.json'
+    project_queries.project(expected)
+    monkeypatch.setattr(sys,'argv',[project_queries.__file__,'--output',str(actual)])
+    runpy.run_path(project_queries.__file__,run_name='__main__')
+    assert actual.read_bytes()==expected.read_bytes()
+    value=json.loads(actual.read_text())
+    assert value['schema']==1 and value['ground']
 
 
 def test_complete_file_assembly_and_actual_serialized_corner_conservation(tmp_path,monkeypatch):
