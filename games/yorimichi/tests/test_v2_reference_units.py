@@ -268,7 +268,7 @@ def editor(tmp_path, monkeypatch):
                                       duplicate_asset=duplicate, save_loaded_asset=lambda a, d=True: state.saves.append(a.path) or True))
     monkeypatch.setitem(sys.modules, 'unreal', unreal)
     target = tmp_path / units.COMPRESSION_SCRIPT; target.parent.mkdir(parents=True)
-    target.write_text('def apply_to(sequence): sequence.set_editor_property("bone_compression_settings", _settings)\n')
+    target.write_bytes((ROOT / units.COMPRESSION_SCRIPT).read_bytes())
     return NS(assets=assets, state=state, root=tmp_path)
 
 

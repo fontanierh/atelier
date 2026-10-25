@@ -125,6 +125,12 @@ def _replacement_closure(units, templates, targets, module_requirements, followe
     """Select an authored replacement by its actual Item and derived-member edges."""
     by_id = {unit['id']: unit for unit in units}
     exports = {(t['producer'], t['group'], t['unit_prefix']): t for t in templates}
+    fixed_followers = {}
+    for key, value in exports.items():
+        for follower in value.get('followers', ()):
+            name = follower['unit']['id']
+            if '$' not in name:
+                fixed_followers.setdefault(name, set()).add(key)
     selected, selected_templates, missing = set(), set(), set()
     compilers = [row['id'] for row in rows if any(c['kind'] == 'UnrealCompile' for c in row['commands'])]
     def modules():
@@ -165,6 +171,12 @@ def _replacement_closure(units, templates, targets, module_requirements, followe
             return
         selected.add(name)
         if name not in by_id:
+            if name in fixed_followers:
+                owners = fixed_followers[name]
+                if len(owners) != 1:
+                    raise Unsupported('replacement follower has ambiguous templates: ' + name)
+                template(next(iter(owners)))
+                return
             missing.add(name)
             return
         dependencies(by_id[name])

@@ -5,6 +5,7 @@ existing static import scanner. Unknown command types, reads or path roots refus
 """
 from dataclasses import fields, is_dataclass
 import inspect
+import os
 from pathlib import Path
 
 from atelier import build, build_products
@@ -21,6 +22,8 @@ ROW_KEYS = ('id', 'commands', 'code', 'inputs', 'deferred', 'reads', 'references
 class _Paths:
     def __init__(self, checkout, build_root):
         self.checkout = Path(checkout).resolve()
+        self.checkout_text = str(self.checkout)
+        self.checkout_prefix = self.checkout_text.rstrip('/') + '/'
         self.build_root = Path(build_root).resolve()
         if not self.build_root.is_relative_to(self.checkout):
             raise Unsupported(f'build root {build_root} is outside the checkout')
@@ -50,6 +53,13 @@ class _Paths:
     def rel(self, value, *, step, what):
         if not isinstance(value, (str, Path)):
             raise Unsupported(f'{step}: {what} of type {type(value).__name__}')
+        text = os.fspath(value)
+        # Common code/input paths are already absolute and lexically normal.
+        # Preserve the existing resolve path for '..', outside roots and aliases.
+        if text.startswith(self.checkout_prefix) and '//' not in text and '..' not in text.split('/'):
+            return os.path.normpath(text)[len(self.checkout_prefix):] or '.'
+        if text == self.checkout_text:
+            return '.'
         path = Path(value)
         if not path.is_absolute():
             path = self.checkout / path

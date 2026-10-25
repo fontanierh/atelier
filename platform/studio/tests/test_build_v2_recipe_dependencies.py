@@ -7,6 +7,19 @@ from atelier.build_products import Product
 from atelier.build_v2 import recipe_dependencies as rd
 
 
+def test_relative_lowering_keeps_cold_normalized_paths_and_root_boundaries(tmp_path):
+    paths = rd._Paths(tmp_path, tmp_path / 'build')
+    def lower(value): return paths.rel(value, step='cold', what='input')
+    assert lower(str(tmp_path) + '/cold//member') == 'cold/member'
+    assert lower(str(tmp_path) + '/cold/./member') == 'cold/member'
+    assert lower(str(tmp_path) + '/cold/../other') == 'other'
+    assert lower(str(tmp_path) + '/.') == '.'
+    assert lower(str(tmp_path) + '/') == '.'
+    assert not (tmp_path / 'cold').exists()
+    with pytest.raises(rd.Unsupported, match='outside the checkout'):
+        lower(str(tmp_path) + '-other/member')
+
+
 def _helper_module(tmp_path):
     (tmp_path / 'tools').mkdir(exist_ok=True)
     (tmp_path / 'tools' / 'helper.py').write_text('VALUE = 1\n')

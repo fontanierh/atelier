@@ -81,7 +81,7 @@ def island(rows, geometry, *, checkout):
     return native
 
 
-def _package_dependencies(native):
+def _package_dependencies(native, *, include_derived=False):
     """Preserve explicit finished partners; raw import packages are private intermediates."""
     classes = {'Texture', 'StaticMesh', 'SkeletalMesh', 'Skeleton', 'PhysicsAsset',
                'Material', 'MaterialInstance', 'MaterialParameterCollection', 'Map', 'Sound', 'Animation', 'DataAsset', 'BlendSpace1D', 'AdventureMoveSet', 'AnimBoneCompressionSettings', 'AnimCurveCompressionSettings', 'MirrorDataTable',
@@ -103,7 +103,7 @@ def _package_dependencies(native):
                             and not item['logical_path'].startswith('/Game/_Raw/'))
         result[package] = {'unit': reference['unit'], 'item': reference['item'],
                            'package': package, 'dependencies': sorted(set(deps))}
-        if reference.get('derived_dependencies'):
+        if include_derived and reference.get('derived_dependencies'):
             result[package]['derived_dependencies'] = deepcopy(reference['derived_dependencies'])
     return result
 
@@ -969,6 +969,14 @@ def lower(rows, geometry, *, checkout):
         family = _family_module(checkout, 'v2_train_units').train_units(rows, checkout=checkout)
         requirements = family.pop('module_requirements', {})
         native.setdefault('follower_module_requirements', {}).update(requirements)
+        _append_family(native, family)
+        current = deepcopy(native['geometry'])
+        current['groups'].update(family['groups']); current['templates'].extend(family['templates'])
+        native['geometry'] = current
+        native['aliases'].update(family['aliases'])
+    if 'unreal.belmonte_track' in selected:
+        family = _family_module(checkout, 'v2_track_units').track_units(rows, checkout=checkout,
+            natives=_package_dependencies(native, include_derived=True))
         _append_family(native, family)
         current = deepcopy(native['geometry'])
         current['groups'].update(family['groups']); current['templates'].extend(family['templates'])

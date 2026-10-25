@@ -172,6 +172,27 @@ def test_required_unsupported_producer_still_refuses_replacement_selection():
         compile_rows(rows, project='game', targets=['old.import'], native=native)
 
 
+def test_replacement_closure_selects_fixed_native_and_cook_template_followers():
+    from atelier.build_v2.recipe_compiler import _replacement_closure
+    def unit(name, *dependencies):
+        return {'id': name, 'inputs': [{'source': {'kind': 'item', 'unit': owner, 'item': 'asset'}}
+                                      for owner in dependencies], 'params': {}}
+    units = [unit('source'), unit('package', 'cook.verify')]
+    template = {'producer': 'source', 'group': 'geometry', 'unit_prefix': 'export.car',
+                'followers': [{'unit': unit('native.car', '$export')},
+                              {'unit': unit('cook.source', 'native.car')},
+                              {'unit': unit('cook.verify', 'cook.source')}]}
+    selected, templates, missing = _replacement_closure(units, [template], ['package'], {}, {}, [])
+    assert not missing
+    assert selected == {'source', 'package', 'native.car', 'cook.source', 'cook.verify'}
+    assert templates == {('source', 'geometry', 'export.car')}
+    foreign = unit('package', 'undeclared')
+    assert _replacement_closure([units[0], foreign], [template], ['package'], {}, {}, [])[2] == {'undeclared'}
+    other = {**deepcopy(template), 'unit_prefix': 'export.other'}
+    with pytest.raises(Unsupported, match='ambiguous templates'):
+        _replacement_closure(units, [template, other], ['package'], {}, {}, [])
+
+
 def test_full_unreplaced_selector_does_not_silently_drop_unsupported_required_work():
     rows, native = replacement_fixture()
     full = row('full', outputs=['build/game/full'])
