@@ -8,9 +8,9 @@ directory deletes never run. ``args.action`` selects
 - ``clip``: one clip by make_clip from its own member (every key and bone, root lock, curves, both compressions);
 - ``verify``: one clip's compressed every-frame pose and curve measurement (sample_poses, measure, check_curves);
 - ``still``: a still clip's component-space poses (dump_still's document);
-- ``control``: the compression control, an unreal.finish: the finished CONTROL clip duplicated into its own
-  store-only /Game/_Raw/SkateRideVerify/ControlDefaultCompression under the engine's default bone compression,
-  measured compressed and raw (it must show a compressed error; the exact clip must not);
+- ``control_copy``: the finished CONTROL clip (exact piece token) duplicated into its own store-only
+  /Game/_Raw/SkateRideVerify/ControlDefaultCompression under the engine's default bone compression;
+- ``control``: that copy measured compressed and raw (it must show a compressed error), without writes;
 - ``manifest``: Content/Data/SkateRide/clips.json (setup's head and main's manifest) from the finished assets;
 - ``report``: skate-ride/clips-verify.json (main's report) from every clip measurement and the control.
 """
@@ -312,45 +312,51 @@ def still(context, unreal, args):
     return {DATA: scope['dump_still'](value.name, rig, scope['sample_poses'](sequence, value.fps, value.frame_count), value.fps)}
 
 
-def _source(context):
-    """The finish source slot: a declared slot name, or the exact-piece derived token of the finished CONTROL clip."""
-    source = context.params['source']
-    if isinstance(source, str):
-        return source
-    rows = _roster(source)
-    if len(rows) != 1:
-        raise ValueError('The control source must be exactly one finished clip')
-    return next(iter(rows.values()))
-
-
-def control(context, unreal, args):
-    params = context.params
-    if params['destination'] != CONTROL_COPY:
-        raise ValueError('The control owns only ' + CONTROL_COPY)
-    _start(unreal, context, [CONTROL_COPY], (CONTROL_DATA,))
-    checks = _verify(context, unreal)
-    value, _, _ = _member(context, args['members'], checks['CONTROL'])
-    _, rig, pose = _rig(context, args['bundle'])
-    original = _load(unreal, context, _source(context), unreal.AnimSequence, f'{DEST}/Clips/B{value.bank}/{value.name}')
-    # verify_clips.control: a copy of CONTROL under the engine's default bone compression (here its own declared package).
-    copy = unreal.EditorAssetLibrary.duplicate_asset(_path(original), CONTROL_COPY)
-    if not isinstance(copy, unreal.AnimSequence):
-        raise ValueError('control duplicate')
-    default = None
+def _defaults(unreal, checks):
+    """verify_clips.CONTROL_SETTINGS: the first engine default bone compression that loads."""
     for path in checks['CONTROL_SETTINGS']:     # loaded directly: the commandlet's asset registry does not list engine content
         default = unreal.load_object(None, path)
         if default is not None:
-            break
-    if default is None:
-        raise ValueError('no default bone compression settings')
-    copy.set_editor_property('bone_compression_settings', default)
+            return default
+    raise ValueError('no default bone compression settings')
+
+
+def control_copy(context, unreal, args):
+    """verify_clips.control's copy: the finished CONTROL clip under the engine's default bone compression, as its own
+    private store-only package."""
+    _start(unreal, context, [CONTROL_COPY])
+    checks = _verify(context, unreal)
+    rows = _roster(args['sequence'])
+    if list(rows) != [checks['CONTROL']]:
+        raise ValueError('The control copy reads exactly the finished CONTROL clip')
+    original = _load(unreal, context, rows[checks['CONTROL']], unreal.AnimSequence)
+    if not _path(original).startswith(DEST + '/Clips/B') or not _path(original).endswith('/' + checks['CONTROL']):
+        raise ValueError('The control source is not the finished CONTROL clip')
+    copy = unreal.EditorAssetLibrary.duplicate_asset(_path(original), CONTROL_COPY)
+    if not isinstance(copy, unreal.AnimSequence):
+        raise ValueError('control duplicate')
+    copy.set_editor_property('bone_compression_settings', _defaults(unreal, checks))
+    checks['finish_compilation']()
+    if not unreal.EditorAssetLibrary.save_loaded_asset(copy, False):
+        raise ValueError('control save')
+    return copy
+
+
+def control(context, unreal, args):
+    """The control's measurement of its copy, compressed and raw, without writes."""
+    _start(unreal, context, [], (CONTROL_DATA,))
+    checks = _verify(context, unreal)
+    value, _, _ = _member(context, args['members'], checks['CONTROL'])
+    _, rig, pose = _rig(context, args['bundle'])
+    copy = _load(unreal, context, args['copy'], unreal.AnimSequence, CONTROL_COPY)
+    default = _defaults(unreal, checks)
+    if copy.get_editor_property('bone_compression_settings') != default:
+        raise ValueError('The control copy is not under the default bone compression')
     checks['finish_compilation']()
     compressed = checks['sample_poses'](copy, value.fps, value.frame_count)
     worst, where, _, _ = checks['measure'](value, rig, pose, compressed)
     raw = checks['sample_poses'](copy, value.fps, value.frame_count, unreal.AnimDataEvalType.RAW)
     raw_worst, _, _, _ = checks['measure'](value, rig, pose, raw)
-    if not unreal.EditorAssetLibrary.save_loaded_asset(copy, False):
-        raise ValueError('control save')
     result = dict(clip=value.name, compression=default.get_path_name(), compressed=worst, compressed_where=where, raw=raw_worst)
     problems = control_accepted(result)
     if problems:
@@ -441,7 +447,7 @@ def report(context, unreal, args):
 
 
 ACTIONS = {'rider': rider, 'bone': compression, 'curve': compression, 'mirror': mirror, 'clip': clip, 'verify': verify,
-           'still': still, 'control': control, 'manifest': manifest, 'report': report}
+           'still': still, 'control_copy': control_copy, 'control': control, 'manifest': manifest, 'report': report}
 
 
 def run(context):
@@ -460,7 +466,7 @@ def run(context):
     args = params.get('args')
     if not isinstance(args, dict) or args.get('action') not in ACTIONS:
         raise ValueError('Unsupported skate clip action')
-    finishes = {'rider': 'skeletal_mesh', 'control': 'animation'}
+    finishes = {'rider': 'skeletal_mesh'}
     if args['action'] in finishes:
         if params.get('op') != 'finish' or params.get('kind') != finishes[args['action']]:
             raise ValueError(f"The {args['action']} is finished by unreal.finish({finishes[args['action']]})")
