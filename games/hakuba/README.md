@@ -57,4 +57,5 @@ games/hakuba/
 
 ## Conventions
 
-Bevy and glTF use metres with Y up. A character's front faces +Z, the glTF convention.
+Bevy and glTF use metres with Y up. A character's front faces +Z, the glTF convention. The world's map uses x east, y
+north and z up; the export turns it into the game's frame as (x, z, -y), so north is -Z.

@@ -18,6 +18,7 @@ mod pose;
 mod pose_edit;
 mod retarget;
 mod rig;
+mod world;
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -34,13 +35,14 @@ use toml_edit::DocumentMut;
 enum Asset {
     Animation(animation::Settings),
     Character(character::Settings),
+    World(world::Settings),
 }
 
 impl Asset {
     /// The other assets whose exports this one reads, by folder relative to `assets/`.
     fn reads(&self) -> Vec<&'static str> {
         match self {
-            Asset::Animation(_) => Vec::new(),
+            Asset::Animation(_) | Asset::World(_) => Vec::new(),
             Asset::Character(_) => character::ANIMATIONS.iter().map(|animation| animation.folder()).collect(),
         }
     }
@@ -125,6 +127,7 @@ impl Folder {
         match &self.asset {
             Asset::Animation(settings) => animation::export(&self.path, settings, &output)?,
             Asset::Character(settings) => character::export(&self.path, settings, &output)?,
+            Asset::World(settings) => world::export(&self.path, settings, &output)?,
         }
         self.document[CHECKSUM] = toml_edit::value(self.inputs_checksum()?);
         fs::write(self.path.join("asset.toml"), self.document.to_string())?;

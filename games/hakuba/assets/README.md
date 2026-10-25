@@ -8,6 +8,7 @@ assets/
     idle/                   the idle, on the rig
   characters/
     nox/                    Nox, the playable character, with every animation fitted to him
+  world/                    the ground and the road around the spawn, in tiles
 ```
 
 ## An asset folder
@@ -21,7 +22,8 @@ Every asset is one folder, named in kebab case:
   src/                      everything the .glb is exported from
 ```
 
-The game loads only `<asset-name>.glb`. The browser build copies only that file (see `../Trunk.toml`).
+The game loads `<asset-name>.glb` and what the export writes beside it, such as the world's `tiles/`. The browser
+build copies the folder without `src/` and `asset.toml` (see `../Trunk.toml`).
 
 `src/` holds every input of the export, so a clone can export the `.glb` again exactly. A source made by hand, such
 as `characters/nox/src/model.glb`, is committed as it is. A `.rs` file in `src/` is part of the exporter: the
@@ -44,4 +46,4 @@ cargo export --check assets            # lists every export whose inputs changed
 
 ## Storage
 
-`.glb` files are stored in Git LFS (`../.gitattributes`). `git push` uploads them.
+`.glb` and `.bin` files are stored in Git LFS (`../.gitattributes`). `git push` uploads them.

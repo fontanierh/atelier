@@ -258,6 +258,56 @@ impl Glb {
         }
     }
 
+    /// Adds a material of one colour, with no shine.
+    pub fn add_material(&mut self, name: &str, colour: [f32; 3]) -> usize {
+        let material = json!({
+            "name": name,
+            "pbrMetallicRoughness": { "baseColorFactor": [colour[0], colour[1], colour[2], 1.0], "metallicFactor": 0.0, "roughnessFactor": 1.0 },
+        });
+        push(&mut self.json, "materials", material)
+    }
+
+    /// Adds a mesh of triangles and a node in the default scene showing it.
+    pub fn add_mesh(&mut self, name: &str, mesh: &Mesh) {
+        let mut attributes = json!({
+            "POSITION": self.add_floats(&flat(&mesh.positions), "VEC3", true),
+            "NORMAL": self.add_floats(&flat(&mesh.normals), "VEC3", false),
+        });
+        if !mesh.uvs.is_empty() {
+            attributes["TEXCOORD_0"] = json!(self.add_floats(&flat(&mesh.uvs), "VEC2", false));
+        }
+        if !mesh.colours.is_empty() {
+            attributes["COLOR_0"] = json!(self.add_floats(&flat(&mesh.colours), "VEC3", false));
+        }
+        let indices = self.add_indices(&mesh.indices);
+        let primitive = json!({ "attributes": attributes, "indices": indices, "material": mesh.material });
+        let index = push(&mut self.json, "meshes", json!({ "name": name, "primitives": [primitive] }));
+        let node = push(&mut self.json, "nodes", json!({ "name": name, "mesh": index }));
+        self.add_to_scene(node);
+    }
+
+    /// Adds an empty node named `name` at `translation`, turned by `rotation`, to the default scene.
+    pub fn add_marker(&mut self, name: &str, translation: DVec3, rotation: DQuat) {
+        let node = json!({ "name": name, "translation": translation.to_array(), "rotation": rotation.to_array() });
+        let node = push(&mut self.json, "nodes", node);
+        self.add_to_scene(node);
+    }
+
+    fn add_to_scene(&mut self, node: usize) {
+        if self.json.get("scenes").is_none() {
+            self.json["scenes"] = json!([{ "nodes": [] }]);
+            self.json["scene"] = json!(0);
+        }
+        self.json["scenes"][0]["nodes"].as_array_mut().unwrap().push(json!(node));
+    }
+
+    fn add_indices(&mut self, indices: &[u32]) -> usize {
+        let bytes: Vec<u8> = indices.iter().flat_map(|i| i.to_le_bytes()).collect();
+        let view = push(&mut self.json, "bufferViews", json!({ "buffer": 0, "byteLength": bytes.len(), "target": 34963 }));
+        self.replaced.insert(view, bytes);
+        push(&mut self.json, "accessors", json!({ "bufferView": view, "componentType": 5125, "count": indices.len(), "type": "SCALAR" }))
+    }
+
     fn floats(&self, accessor: usize) -> Result<Vec<f32>> {
         let accessor = &self.json["accessors"][accessor];
         let width = match accessor["type"].as_str() {
@@ -282,6 +332,7 @@ impl Glb {
         self.replaced.insert(view, values.iter().flat_map(|v| v.to_le_bytes()).collect());
         let width = match kind {
             "SCALAR" => 1,
+            "VEC2" => 2,
             "VEC3" => 3,
             _ => 4,
         };
@@ -315,7 +366,7 @@ impl Glb {
         for_each_accessor_ref(&mut gltf, |reference| {
             kept.insert(index(reference));
         });
-        let accessors = gltf["accessors"].as_array().unwrap().clone();
+        let accessors = gltf.get("accessors").and_then(Value::as_array).cloned().unwrap_or_default();
         if kept.iter().any(|&i| accessors[i].get("sparse").is_some()) {
             bail!("sparse accessors are not supported");
         }
@@ -383,6 +434,29 @@ fn view_holders(gltf: &mut Value) -> impl Iterator<Item = &mut Value> {
         }
     }
     holders.into_iter()
+}
+
+/// Appends `item` to the array `key` of `gltf`, making the array if needed, and returns its index.
+fn push(gltf: &mut Value, key: &str, item: Value) -> usize {
+    let array = gltf.as_object_mut().unwrap().entry(key).or_insert(json!([])).as_array_mut().unwrap();
+    array.push(item);
+    array.len() - 1
+}
+
+fn flat<const N: usize>(values: &[[f32; N]]) -> Vec<f32> {
+    values.iter().flatten().copied().collect()
+}
+
+/// Triangles to add with [`Glb::add_mesh`]: per vertex a position, a normal, and optionally texture coordinates and a
+/// colour; three indices per triangle, counter-clockwise seen from the front.
+#[derive(Default)]
+pub struct Mesh {
+    pub positions: Vec<[f32; 3]>,
+    pub normals: Vec<[f32; 3]>,
+    pub uvs: Vec<[f32; 2]>,
+    pub colours: Vec<[f32; 3]>,
+    pub indices: Vec<u32>,
+    pub material: usize,
 }
 
 fn items<'a>(value: &'a Value, key: &str) -> impl Iterator<Item = &'a Value> {

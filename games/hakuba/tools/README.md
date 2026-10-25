@@ -23,6 +23,7 @@ tools/
       animations.rs         every animation, each from its asset folder
       character.rs          the `character` kind and the `Character` trait
       characters.rs         every character
+      world.rs              the `world` kind
       glb.rs                reading, editing and writing .glb files
 ```
 
@@ -69,6 +70,19 @@ every animation fitted to it with the character's changes. Its rig bones are ren
 | `source`       | the model, relative to the asset folder     |
 | `height_m`     | how tall the character stands in the game   |
 | `texture_size` | the largest side of any texture, in pixels  |
+
+**`world`** builds the ground from a heightmap and the road along the course in `src/layout.rs`, and cuts both
+into square tiles under `tiles/`. Each tile is written in full detail and in middle detail, for seeing from afar.
+The road lies a few centimetres above the ground triangles under it; the export fails if it comes closer anywhere.
+`<folder name>.glb` holds a node per tile, at its centre, and the spawn.
+
+| Setting             | Meaning                                                           |
+|---------------------|-------------------------------------------------------------------|
+| `heightmap`         | the ground's heights, relative to the folder                       |
+| `heightmap_samples` | how many heights each row and column has                          |
+| `heightmap_step_m`  | the distance between neighbouring heights                         |
+| `tile_steps`        | how many heights apart tile edges are                             |
+| `tiles`             | the first and last tile exported, each as `[column, row]`         |
 
 ## Inputs checksum
 
