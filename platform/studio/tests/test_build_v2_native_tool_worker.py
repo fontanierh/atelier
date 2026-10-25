@@ -972,3 +972,27 @@ def test_source_sdk_host_injects_worker_only_in_independent_readonly_descriptor_
 
 def test_fixed_source_sdk_program_compiles_before_native_launch():
     compile(tool.SOURCE_COOK_SESSION,'fixed-source-sdk-session.py','exec')
+
+
+@pytest.mark.parametrize("mutate", [False, True])
+def test_source_sdk_cook_checks_exact_retained_overlay_inputs(tmp_path, monkeypatch, mutate):
+    from types import SimpleNamespace
+    project=tmp_path/'own/Game.uproject';project.parent.mkdir();project.write_text('{}')
+    content=project.parent/'Content';content.mkdir();asset=content/'A.uasset';asset.write_bytes(b'keyed native input')
+    host=tmp_path/'host';host.mkdir();(host/'Content').mkdir()
+    sdk=tool.CookSdkSession(SimpleNamespace(),tmp_path/'session')
+    sdk.project=host/'Game.uproject'
+    monkeypatch.setattr(sdk,'start',lambda *args,**kwargs:None)
+    def exchange(mode,**kwargs):
+        assert mode=='cook' and kwargs['request']['project_file']==str(project)
+        assert not list((host/'Content').iterdir())
+        if mutate:asset.write_bytes(b'unexpected mutation')
+        return dict(status='cooked',game_unloaded=True,source_key='a'*64,project_file=str(project),
+                    package='/Game/A',project='AtelierV2_'+'a'*64)
+    monkeypatch.setattr(sdk,'exchange',exchange)
+    if mutate:
+        with pytest.raises(tool.Refused,match='retained native inputs'):
+            sdk.cook(project,{},'b'*64,tmp_path/'Bootstrap.uproject','a'*64,'/Game/A',None,tmp_path/'log')
+    else:
+        sdk.cook(project,{},'b'*64,tmp_path/'Bootstrap.uproject','a'*64,'/Game/A',None,tmp_path/'log')
+        assert asset.read_bytes()==b'keyed native input'

@@ -623,22 +623,26 @@ FString UAtelierBuildWorkerLibrary::SourceCookRequest(const FString& RequestJson
         return false;
     };
     if (!UnloadGame()) return Finish(TEXT("refused"), TEXT("prior_game_packages_loaded"));
-    if (FPackageName::MountPointExists(TEXT("/Game/")))
-        FPackageName::UnRegisterMountPoint(TEXT("/Game/"), FPaths::ProjectContentDir());
     IAssetRegistry& Registry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry")).Get();
     TArray<FAssetData> Remaining;
     Registry.GetAssetsByPath(FName(TEXT("/Game")), Remaining, true);
     if (!Remaining.IsEmpty()) return Finish(TEXT("refused"), TEXT("prior_game_registry_retained"));
     // ProjectDir/SavedDir are cached by the SDK. Keep the one real runtime
-    // project stable; the producer independently stages each unit's exact Content
-    // into it and verifies it unchanged. Namespace provenance points at the unit's
-    // immutable retained project, not the shared operational runtime view.
+    // project stable, with a removable /Game overlay onto this producer's exact
+    // immutable Content. Namespace provenance also points at that retained project.
     UE::FZenStoreHttpClient Namespace;
     if (!Namespace.TryCreateProject(TEXT("AtelierV2_") + Key, FStringView(), TEXT("Mac"),
             FPaths::ConvertRelativePathToFull(FPaths::RootDir()), FPaths::ConvertRelativePathToFull(FPaths::EngineDir()),
             FPaths::GetPath(Project), Project))
         return Finish(TEXT("refused"), TEXT("source_namespace_creation_failed"));
-    FPackageName::RegisterMountPoint(TEXT("/Game/"), FPaths::ProjectContentDir());
+    const FString ContentRoot = FPaths::GetPath(Project) / TEXT("Content/");
+    const auto Mount = FPackageName::RegisterMountPoint(TEXT("/Game/"), ContentRoot);
+    Registry.ScanPathsSynchronous({TEXT("/Game")}, true);
+    if (!FPackageName::DoesPackageExist(Package))
+    {
+        FPackageName::UnRegisterMountPoint(Mount);
+        return Finish(TEXT("refused"), TEXT("declared_source_package_not_found"));
+    }
     const FString SavedCommandLine(FCommandLine::Get());
     const FString Args = TEXT("-targetplatform=Mac -package=") + Package
         + TEXT(" -OutputDir=\"") + FPaths::GetPath(Project) + TEXT("/Saved/Cooked/[Platform]\"")
@@ -664,7 +668,7 @@ FString UAtelierBuildWorkerLibrary::SourceCookRequest(const FString& RequestJson
     }
     FCommandLine::Set(*SavedCommandLine);
     const bool Clean = UnloadGame();
-    FPackageName::UnRegisterMountPoint(TEXT("/Game/"), FPaths::ProjectContentDir());
+    FPackageName::UnRegisterMountPoint(Mount);
     Remaining.Reset(); Registry.GetAssetsByPath(FName(TEXT("/Game")), Remaining, true);
     Report->SetStringField(TEXT("source_key"), Key);
     Report->SetStringField(TEXT("project_file"), Project);
