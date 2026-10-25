@@ -5,7 +5,7 @@ import math
 from pathlib import Path
 import tempfile
 import numpy as np
-from atelier.atomic_files import atomic_json
+from atelier.atomic_files import atomic_json, managed_temporary_parent
 from atelier.export_manifest import real_directory
 from atelier.model_files import regular_files
 
@@ -79,7 +79,7 @@ def write_bytes(path,payload):
     real_directory(path.parent,create=True)
     if path.is_symlink() or (path.exists() and not path.is_file()):raise ValueError('Invalid canonical skate source member')
     if path.is_file() and path.read_bytes()==payload:return
-    with tempfile.NamedTemporaryFile(dir=path.parent,prefix='.query-',delete=False) as stream:
+    with tempfile.NamedTemporaryFile(dir=managed_temporary_parent(path),prefix='.query-',delete=False) as stream:
         temporary=Path(stream.name);stream.write(payload)
     try:temporary.replace(path)
     finally:temporary.unlink(missing_ok=True)

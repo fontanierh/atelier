@@ -9,7 +9,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import yori  # noqa: E402,F401
 import numpy as np  # noqa: E402
-from atelier.atomic_files import atomic_json  # noqa: E402
+from atelier.atomic_files import atomic_json, managed_temporary_parent  # noqa: E402
 from atelier.export_manifest import real_directory  # noqa: E402
 from village.layout import BUILDINGS  # noqa: E402
 from village.catalogue import ASSETS  # noqa: E402
@@ -97,7 +97,7 @@ def publish(world, heightmap, output, random_contexts):
         raise ValueError('Village requires the complete final square heightmap')
     values = project(world, random_contexts)
     for key, value in values.items(): atomic_json(output / (key + '.json'), value)
-    temporary = output / '.heightmap.npy.tmp'
+    temporary = managed_temporary_parent(output / 'heightmap.npy') / '.heightmap.npy.tmp'
     with temporary.open('wb') as stream: np.save(stream, heightmap, allow_pickle=False)
     temporary.replace(output / 'heightmap.npy')
     placements = {key: world['instances'][key] for key in ASSETS}

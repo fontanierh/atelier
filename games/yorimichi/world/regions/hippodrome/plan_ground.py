@@ -1,7 +1,7 @@
 """Selected Hippodrome logical geometry."""
 import sys
 from pathlib import Path
-sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
+sys.path[:0]=[str(Path(__file__).resolve().parents[i]) for i in (2,1)]
 from hippodrome.ground_data import construct as geometry
 from hippodrome.mesh_data import encoded_glb
 from hippodrome.query_context import height

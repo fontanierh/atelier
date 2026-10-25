@@ -85,3 +85,21 @@ def test_normal_graph_has_twelve_explicit_factories_and_separate_selected_inputs
         assert not any(p.name == 'construction-contexts.json' for p in step.inputs)
     assert steps[-2].name == 'world.village' and steps[-1].name == 'world.village.import'
     check_modules(steps)
+
+
+def test_heightmap_temporary_uses_existing_managed_scratch_without_changing_npy(tmp_path,monkeypatch):
+    import io
+    import numpy as np
+    from atelier.atomic_files import managed_temporaries
+    from village.atomic_sources import publish
+    scratch=tmp_path/'scratch';scratch.mkdir();output=tmp_path/'projection'
+    value=np.arange(9,dtype=np.float64).reshape(3,3)
+    save=np.save;names=[]
+    def record(stream,*args,**kwargs):
+        names.append(Path(stream.name));return save(stream,*args,**kwargs)
+    monkeypatch.setattr(np,'save',record)
+    with managed_temporaries(scratch):publish(world(),value,output,contexts())
+    assert names[0].parent==scratch
+    expected=io.BytesIO();save(expected,value,allow_pickle=False)
+    assert (output/'heightmap.npy').read_bytes()==expected.getvalue()
+    assert list(scratch.iterdir())==[]
