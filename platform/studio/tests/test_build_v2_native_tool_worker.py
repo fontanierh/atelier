@@ -536,7 +536,7 @@ def test_compile_candidate_revalidates_inputs_and_runs_current_ubt(tmp_path, mon
     assert (fresh_job / 'output/binaries.tree.tar').is_file()
 
 
-@pytest.mark.parametrize('broken', ['inputs', 'cleanup', 'link'])
+@pytest.mark.parametrize('broken', ['cleanup', 'link'])
 def test_compile_candidate_refuses_changed_inputs_and_unconfirmed_cleanup(tmp_path, broken):
     candidate = tmp_path / 'previous/job/.recipe-runtime/view'; candidate.mkdir(parents=True)
     cleanup = candidate.parents[2] / 'guard/attempt-1/cleanup.json'; cleanup.parent.mkdir(parents=True)
@@ -575,9 +575,10 @@ def test_compile_candidate_clones_new_declared_input_and_accepts_code_readonly_m
     cleanup = old.parents[2] / 'guard/attempt-1/cleanup.json'; cleanup.parent.mkdir(parents=True)
     cleanup.write_text('{"confirmed":true}')
     fresh = tmp_path / 'fresh/job/.recipe-runtime/view'; fresh.mkdir(parents=True)
-    (fresh / 'new.cpp').write_bytes(b'new declared source')
+    (fresh / 'new.cpp').write_bytes(b'new declared source'); (fresh / 'new.cpp').chmod(0o444)
     (fresh / 'shared.py').write_bytes(b'same bytes')
     (old / 'shared.py').write_bytes(b'same bytes'); (old / 'shared.py').chmod(0o444)
+    (old / 'new.cpp').write_bytes(b'prior source')
     request = {'code': [], 'params': {'recipe': {'paths': {'new.cpp':'inputs/new','shared.py':'inputs/shared'}}}}
     view, protected = tool.compile_candidate(request, fresh, [str(fresh / 'new.cpp')], old)
     assert view == old and protected == [str(old / 'new.cpp')]

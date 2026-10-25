@@ -656,9 +656,9 @@ def finalise_package(job, params, view, project, engine, job_dir, run, environme
 
 def compile_candidate(job, fresh, protected, candidate):
     """@cc [owner:fontanierh,label:correctness] incremental-compile-current-inputs
-    A compile candidate MUST match every current declared input before reuse. Missing
-    inputs MUST be independently cloned from current staging. Only
-    frozen worker code MAY refresh existing files; original staged inputs remain untouched. Reuse
+    A compile candidate MUST match every current declared input before UBT. Missing
+    or changed inputs MUST be independently refreshed from current staging. Only
+    this owned derived view and frozen worker code MAY change; original staged inputs remain untouched. Reuse
     MUST still run current UBT, validate its receipt and publish through the new guard.
     A candidate is execution context, never evidence of prior task success.
     """
@@ -675,7 +675,7 @@ def compile_candidate(job, fresh, protected, candidate):
     if not cleanups or any(json.loads(path.read_bytes()).get('confirmed') is not True for path in cleanups):
         raise Refused('compile candidate lacks confirmed prior guard cleanup')
     # Each mapped input includes its COMPLETE frozen membership, not only a receipt
-    # or current Git revision. Changed inputs refuse this optional candidate.
+    # or current Git revision. Current staged bytes refresh changed source inputs.
     mapped = [fresh / relative for relative in job['params']['recipe']['paths']]
     for source in mapped:
         target = candidate / source.relative_to(fresh)
@@ -687,6 +687,9 @@ def compile_candidate(job, fresh, protected, candidate):
                 shutil.copytree(source, target)
             else:
                 shutil.copyfile(source, target)
+                shutil.copymode(source, target, follow_symlinks=False)
+        if target.resolve(strict=True) != target:
+            raise Refused('compile candidate input is aliased')
         expected, actual = _tree(source), _tree(target)
         staged = job['params']['recipe']['paths'][source.relative_to(fresh).as_posix()]
         # File inputs key their bytes. A source also staged as worker code is 0444;
@@ -695,7 +698,19 @@ def compile_candidate(job, fresh, protected, candidate):
             expected = [row[:-1] if row[1] == 'file' else row for row in expected]
             actual = [row[:-1] if row[1] == 'file' else row for row in actual]
         if expected != actual:
-            raise Refused('compile candidate differs from current declared inputs')
+            # This is an ordinary incremental source update. Original prior staged
+            # inputs and CAS products remain untouched; only this derived view changes.
+            if target.is_dir():
+                shutil.rmtree(target)
+            else:
+                target.unlink()
+            if source.is_dir():
+                shutil.copytree(source, target)
+            else:
+                shutil.copyfile(source, target)
+                shutil.copymode(source, target, follow_symlinks=False)
+            if _tree(source) != _tree(target):
+                raise Refused('compile candidate input refresh differs from current staging')
     for name in job['code']:
         source, target = fresh / name, candidate / name
         if target.exists() and (target.is_symlink() or not target.is_file()):
