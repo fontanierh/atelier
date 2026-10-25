@@ -164,3 +164,30 @@ def test_complete_root_rejects_physical_hardlinks(tmp_path):
     os.link(source, tmp_path / 'alias')
     with pytest.raises(ValueError, match='hard link'):
         job.pack_root(source, tmp_path / 'out.tar')
+
+
+def test_recipe_worker_announces_the_selected_runtime_before_initializing_protocol_identity():
+    from atelier.build_v2.recipe_worker import RecipeWorker, BLENDER_VERSION, PYTHON_VERSION
+    blender = RecipeWorker(io.BytesIO(), io.BytesIO(), True, blender='/installed/Blender')
+    assert blender.version == BLENDER_VERSION
+    python = RecipeWorker(io.BytesIO(), io.BytesIO(), True)
+    assert python.version == PYTHON_VERSION
+    fixture = RecipeWorker(io.BytesIO(), io.BytesIO(), False, blender='/installed/Blender')
+    assert fixture.version == BLENDER_VERSION + '+unsandboxed-test'
+
+
+def test_original_blender_argument_separator_is_preserved_by_generic_command_composition(tmp_path, monkeypatch):
+    import sys
+    from types import ModuleType, SimpleNamespace
+    view = tmp_path / job.RUNTIME / 'view'
+    view.mkdir(parents=True)
+    script = view / 'original.py'
+    script.write_text("import json, sys\nfrom pathlib import Path\nPath(__file__).with_name('argv.json').write_text(json.dumps(sys.argv[sys.argv.index('--')+1:]))\n")
+    monkeypatch.setitem(sys.modules, 'bpy', ModuleType('bpy'))
+    monkeypatch.setattr(sys, 'path', list(sys.path))
+    monkeypatch.chdir(view)
+    context = SimpleNamespace(output_dir=tmp_path / 'output', params={'recipe': {
+        'commands': [{'kind': 'blender', 'script': 'original.py', 'args': ['actual-role'], 'env': [], 'threads': 3}],
+        'paths': {}, 'outputs': [], 'verify': None}})
+    job.run(context)
+    assert json.loads((view / 'argv.json').read_text()) == ['actual-role']
