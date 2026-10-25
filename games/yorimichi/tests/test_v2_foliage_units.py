@@ -54,6 +54,7 @@ def test_each_key_becomes_one_store_only_raw_import_of_its_export_item(rows):
         package = unit['params']['destination']; ref = result['packages'][package]; key = ref['key']
         assert package == f'/Game/_Raw/Foliage/{ref["owner"]}/{key}'
         assert unit['params'] == {'op': 'raw_import', 'kind': 'static_mesh', 'source': 'source', 'destination': package,
+                                  'fbx': foliage.FBX, 'settings': ['-ForceDPCVars=Interchange.FeatureFlags.Import.FBX=0'],
                                   'input_roots': {'source': {'archive_member': 'products/0-0.tree.tar', 'name': key}}}
         assert unit['inputs'] == [{'role': 'content', 'name': 'source', 'source': {
             'kind': 'item', 'unit': 'world.foliage.export.' + key, 'item': 'product0'}}]
@@ -84,7 +85,7 @@ def test_tree_finish_owns_base_and_lods_and_consumes_raw_manifest_palette_and_cr
     assert set(args['materials']) == set(foliage.roster(ROOT)['Tree_Broad_A']['materials'])
     assert finish['params']['input_roots'] == {'manifest': {'archive_member': 'products/0-0.tree.tar', 'name': 'Tree_Broad_A'}}
     crown = by_id['unreal.foliage.crown.Tree_Broad_A']
-    assert crown['op'] == {'kind': 'unreal.author', 'version': '1'} and crown['params']['op'] == 'crown'
+    assert crown['op'] == {'kind': 'unreal.author', 'version': '1'} and crown['params']['args']['action'] == 'crown'
     assert [(o['logical_path'], o['class']) for o in crown['outputs']] == [
         ('/Game/Japan/FoliageLODs/Tree_Broad_A/MI_Tree_Broad_A_Crown', 'MaterialInstance')]
     assert {item['name']: item['source']['unit'] for item in crown['inputs'][1:]} == {
@@ -92,6 +93,52 @@ def test_tree_finish_owns_base_and_lods_and_consumes_raw_manifest_palette_and_cr
     grass = by_id['unreal.foliage.finish.Grass_A']
     assert grass['params']['args']['crown'] is None and 'unreal.foliage.crown.Grass_A' not in by_id
     assert len(result['units']) == 84 + 18 + 10
+
+
+# The controller registry's admitted params (unreal_controller.rs register): any other key refuses.
+AUTHOR = {'args', 'settings', 'input_roots'}
+NATIVE = {'op', 'kind', 'source', 'destination', 'properties', 'args', 'fbx', 'package_sources', 'partners',
+          'input_roots', 'skeleton', 'physics_asset', 'materials', 'lod_build_settings', 'settings'}
+
+
+def test_every_declaration_uses_only_registered_params(rows):
+    for unit in build(rows)['units']:
+        params = unit['params']
+        if unit['op']['kind'] == 'unreal.author':
+            assert set(params) <= AUTHOR and 'args' in params and params['settings'] == []
+        else:
+            assert set(params) <= NATIVE and {'op', 'kind', 'source', 'destination'} <= set(params)
+            assert params['op'] == unit['op']['kind'].removeprefix('unreal.') and params['kind'] == 'static_mesh'
+        assert all(isinstance(params[key], list) for key in ('settings', 'materials') if key in params)
+
+
+def test_fbx_options_equal_the_original_mesh_import():
+    source = (GAME / 'unreal/Scripts/mesh_import.py').read_text()
+    for key, value in foliage.FBX.items():
+        assert f'{key}={value!r}' in source
+    assert 'Interchange.FeatureFlags.Import.FBX 0' in (GAME / 'unreal/Scripts/import_foliage.py').read_text()
+
+
+def test_shared_material_and_crown_dependencies_are_staged_transitively(rows):
+    supplied = natives()
+    bark = '/Game/Japan/Materials/MI_Bark'
+    assert bark in supplied
+    supplied[bark]['dependencies'] = ['/Game/Japan/Materials/M_Painted', '/Game/Japan/Textures/T_bark']
+    supplied['/Game/Japan/Textures/T_bark'] = {'unit': 'native.T_bark', 'item': 'texture'}
+    supplied[foliage.PARENT]['dependencies'] = ['/Game/Japan/Materials/MPC_Wind']
+    supplied['/Game/Japan/Materials/MPC_Wind'] = {'unit': 'native.MPC_Wind', 'item': 'collection', 'package': '/Game/Japan/Materials/MPC_Wind'}
+    by_id = {unit['id']: unit for unit in foliage.foliage_units(rows, checkout=ROOT, natives=supplied)['units']}
+    owner = next(unit['id'].removeprefix('unreal.foliage.finish.') for unit in by_id.values()
+                 if unit['id'].startswith('unreal.foliage.finish.Tree') and 'material_Bark' in unit['params']['args']['materials'].values())
+    names = {item['name']: item['source']['unit'] for item in by_id['unreal.foliage.finish.' + owner]['inputs']}
+    assert {names['native_Japan_Materials_M_Painted'], names['native_Japan_Textures_T_bark'],
+            names['native_Japan_Textures_T_white'], names['native_Japan_Materials_MPC_Wind']} == {
+        'native.M_Painted', 'native.T_bark', 'native.T_white', 'native.MPC_Wind'}
+    crown = {item['name'] for item in by_id['unreal.foliage.crown.' + owner]['inputs']}
+    assert crown == {'manifest', 'parent', 'white', 'native_Japan_Materials_MPC_Wind'}
+    del supplied['/Game/Japan/Materials/MPC_Wind']
+    with pytest.raises(foliage.Unsupported, match='MPC_Wind'):
+        foliage.foliage_units(rows, checkout=ROOT, natives=supplied)
 
 
 def test_missing_shared_native_item_refuses(rows):

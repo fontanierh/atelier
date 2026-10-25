@@ -9,7 +9,9 @@ store-only; the raw FBX options equal ``Scripts/mesh_import.py``. One keyed
 assembled ``world.foliage.<owner>`` manifest Item, the shared ``MI_<slot>`` palette and,
 for trees, its far crown MaterialInstance, and owns the base and LOD packages.
 Shared native packages (``MI_<slot>``, ``M_Painted``, ``T_white``) are other units'
-Items; callers pass them as ``natives`` {package: {unit, item}}.
+Items; callers pass them as ``natives`` {package: {unit, item, dependencies?}}, where
+``dependencies`` names the native packages that one loads (parent, textures, collections),
+each itself in ``natives``. Every consumer stages the complete transitive closure.
 """
 import importlib.util
 import json
@@ -23,6 +25,13 @@ EXPORTS = 'build/yorimichi/exports/world.foliage.export'
 FINISH = GAME + '/world/foliage_finish_v2.py'
 HELPERS = GAME + '/unreal/Scripts/foliage_material.py'
 PARENT, WHITE = '/Game/Japan/Materials/M_Painted', '/Game/Japan/Textures/T_white'
+# Scripts/mesh_import.py's static-mesh FBX options and its startup FBX importer choice (the
+# legacy FbxFactory, not Interchange). The two enum options (vertex colours REPLACE, normals
+# IMPORT_NORMALS) are fixed by unreal_ops' raw_import body; its property ABI cannot spell them.
+FBX = {'combine_meshes': True, 'generate_lightmap_u_vs': False, 'auto_generate_collision': False,
+       'convert_scene': True, 'convert_scene_unit': True, 'import_uniform_scale': 1.0, 'build_nanite': False,
+       'one_convex_hull_per_ucx': True}
+SETTINGS = ['-ForceDPCVars=Interchange.FeatureFlags.Import.FBX=0']
 
 
 def _module(name, path):
@@ -83,10 +92,31 @@ def _row(rows, unit, path, script):
 
 def _native(natives, package):
     ref = natives.get(package)
-    if not isinstance(ref, dict) or set(ref) != {'unit', 'item'} or not all(
-            isinstance(ref[key], str) and ref[key] for key in ref):
+    if (not isinstance(ref, dict) or not {'unit', 'item'} <= set(ref) <= {'unit', 'item', 'package', 'dependencies'}
+            or not all(isinstance(ref[key], str) and ref[key] for key in ('unit', 'item'))
+            or ref.get('package', package) != package
+            or not isinstance(ref.get('dependencies', []), list)):
         raise Unsupported(f'missing exact native Item for {package}')
-    return {'kind': 'item', **ref}
+    return {'kind': 'item', 'unit': ref['unit'], 'item': ref['item']}
+
+
+def _closure(natives, roots):
+    """Every transitive native dependency of ``roots`` (excluding them), in stable order."""
+    seen, order, stack = set(roots), [], list(reversed(roots))
+    while stack:
+        package = stack.pop()
+        _native(natives, package)
+        for dependency in natives[package].get('dependencies', []):
+            if not isinstance(dependency, str) or not dependency.startswith('/Game/'):
+                raise Unsupported(f'invalid native dependency of {package}')
+            if dependency not in seen:
+                seen.add(dependency); order.append(dependency); stack.append(dependency)
+    return order
+
+
+def _dependencies(natives, packages):
+    return [{'role': 'content', 'name': 'native_' + package.removeprefix('/Game/').replace('/', '_'),
+             'source': _native(natives, package)} for package in packages]
 
 
 def _root(owner):
@@ -135,6 +165,7 @@ def foliage_units(rows, *, checkout, natives):
                  'inputs': [{'role': 'content', 'name': 'source',
                              'source': {'kind': 'item', 'unit': row['id'], 'item': 'product0'}}],
                  'params': {'op': 'raw_import', 'kind': 'static_mesh', 'source': 'source', 'destination': package,
+                            'fbx': dict(FBX), 'settings': list(SETTINGS),
                             'input_roots': {'source': {'archive_member': 'products/0-0.tree.tar', 'name': key}}},
                  'outputs': [_output('raw_static_mesh', package, 'RawStaticMesh', store=True)]}, ['source'])
             packages[package] = {'unit': unit_id, 'item': 'raw_static_mesh', 'owner': owner, 'key': key, 'level': level}
@@ -153,15 +184,20 @@ def foliage_units(rows, *, checkout, natives):
             crown_package = f'{folder}/MI_{owner}_Crown'
             crown_inputs = [manifest, {'role': 'content', 'name': 'parent', 'source': _native(natives, PARENT)},
                             {'role': 'content', 'name': 'white', 'source': _native(natives, WHITE)}]
+            crown_inputs += _dependencies(natives, _closure(natives, [PARENT, WHITE]))
             add({'id': crown_id, 'op': {'kind': 'unreal.author', 'version': '1'}, 'script': FINISH, 'code': body,
                  'inputs': crown_inputs,
-                 'params': {'op': 'crown', 'input_roots': _root(owner),
-                            'args': {'owner': owner, 'manifest': 'manifest', 'parent': 'parent', 'white': 'white'}},
+                 'params': {'args': {'action': 'crown', 'owner': owner, 'manifest': 'manifest', 'parent': 'parent',
+                                     'white': 'white'}, 'settings': [], 'input_roots': _root(owner)},
                  'outputs': [_output('material', crown_package, 'MaterialInstance', store=False)]},
                 [item['name'] for item in crown_inputs])
             packages[crown_package] = {'unit': crown_id, 'item': 'material', 'owner': owner}
             inputs.append({'role': 'content', 'name': 'crown',
                            'source': {'kind': 'item', 'unit': crown_id, 'item': 'material'}})
+        shared = ['/Game/Japan/Materials/MI_' + key for key in entry['materials']]
+        # The crown MaterialInstance loads M_Painted and T_white: stage them and every closure.
+        extra = ([PARENT, WHITE] if crown else []) + _closure(natives, shared + ([PARENT, WHITE] if crown else []))
+        inputs += _dependencies(natives, [package for package in dict.fromkeys(extra) if package not in shared])
         finish_id = 'unreal.foliage.finish.' + owner
         outputs = [_output('static_mesh', base, 'StaticMesh', store=False)]
         outputs += [_output(f'lod{level}', f'{folder}/{owner}_LOD{level}', 'StaticMesh', store=False)

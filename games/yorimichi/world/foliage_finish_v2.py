@@ -1,8 +1,8 @@
 """Finish one foliage owner from declared raw LOD meshes; no source import, receive loop or cache access.
 
-``op: finish`` owns the base /Game/Japan/Assets/<owner> mesh and its /Game/Japan/FoliageLODs/<owner>
+``op: finish`` (unreal.finish) owns the base /Game/Japan/Assets/<owner> mesh and its /Game/Japan/FoliageLODs/<owner>
 LOD meshes, with import_foliage.py's slots, CPU access, collision, LOD screens, triangle,
-bounds and lightmap policy. ``op: crown`` authors the far crown's MaterialInstance exactly as
+bounds and lightmap policy. ``args.action: crown`` (unreal.author) authors the far crown's MaterialInstance exactly as
 import_foliage_lods.crown_material does. Both read only the assembled manifest.json Item.
 """
 import importlib.util
@@ -112,8 +112,9 @@ def crown(context):
     import unreal
     params = context.params
     args = params.get('args')
-    if (set(params) - {'op', 'args', 'settings', 'input_roots'} or params.get('op') != 'crown' or not isinstance(args, dict)
-            or set(args) != {'owner', 'manifest', 'parent', 'white'} or not NAME.fullmatch(str(args['owner']))):
+    if (set(params) - {'args', 'settings', 'input_roots'} or not isinstance(args, dict)
+            or set(args) != {'action', 'owner', 'manifest', 'parent', 'white'} or args['action'] != 'crown'
+            or not NAME.fullmatch(str(args['owner']))):
         raise ValueError('Unexpected foliage crown parameters')
     owner = args['owner']
     data = _manifest(context, args['manifest'], owner)
@@ -318,9 +319,9 @@ def finish(context):
 
 
 def run(context):
-    op = context.params.get('op')
-    if op == 'finish':
+    params = context.params
+    if params.get('op') == 'finish':
         return finish(context)
-    if op == 'crown':
+    if 'op' not in params and isinstance(params.get('args'), dict) and params['args'].get('action') == 'crown':
         return crown(context)
     raise ValueError('Unsupported foliage finish body operation')

@@ -149,7 +149,7 @@ def case(tmp_path, monkeypatch):
                                  'materials': {'Bark': 'material_Bark', 'Leaf': 'material_Leaf'}, 'crown': 'crown'}})
     crown = NS(job_dir=str(tmp_path), inputs={'manifest': str(root), 'parent': 'item', 'white': 'item'},
                packages={'manifest': [], 'parent': ['/Game/Japan/Materials/M_Painted'], 'white': ['/Game/Japan/Textures/T_white']},
-               outputs=[CROWN], params={'op': 'crown', 'settings': {}, 'args': {'owner': OWNER, 'manifest': 'manifest',
+               outputs=[CROWN], params={'settings': [], 'args': {'action': 'crown', 'owner': OWNER, 'manifest': 'manifest',
                                                                                 'parent': 'parent', 'white': 'white'}})
     return state, finish, crown
 
@@ -204,5 +204,6 @@ def test_crown_refuses_foreign_inputs_and_existing_destination(case):
     crown.packages['parent'] = ['/Game/Japan/Materials/M_Painted']; state.assets[CROWN] = Instance(CROWN)
     with pytest.raises(ValueError, match='fresh'):
         body.run(crown)
-    with pytest.raises(ValueError, match='Unsupported'):
-        body.run(NS(params={'op': 'other'}))
+    for params in ({'op': 'other'}, {'op': 'crown', 'args': {'action': 'crown'}}, {'args': {'action': 'other'}}):
+        with pytest.raises(ValueError, match='Unsupported'):
+            body.run(NS(params=params))
