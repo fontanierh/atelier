@@ -29,7 +29,7 @@ OPTION_BOOLEANS = frozenset(('apply_unit_scale', 'use_space_transform', 'bake_sp
 OPTION_ENUMS = dict(apply_scale_options={'FBX_SCALE_NONE', 'FBX_SCALE_UNITS', 'FBX_SCALE_CUSTOM', 'FBX_SCALE_ALL'},
                     axis_forward={'X', 'Y', 'Z', '-X', '-Y', '-Z'}, axis_up={'X', 'Y', 'Z', '-X', '-Y', '-Z'},
                     mesh_smooth_type={'OFF', 'FACE', 'EDGE'}, colors_type={'NONE', 'SRGB', 'LINEAR'},
-                    path_mode={'RELATIVE', 'STRIP'}, batch_mode={'OFF'})
+                    path_mode={'RELATIVE', 'STRIP', 'COPY'}, batch_mode={'OFF'})
 
 
 def validate_mesh_options(options, *, output_format='fbx', finite_materials=False):

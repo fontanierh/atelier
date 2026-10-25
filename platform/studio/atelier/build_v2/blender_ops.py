@@ -343,7 +343,9 @@ def export_options(payload_options, declared_options, *, output_format='fbx', fi
         return check(actual)
     if any(key in actual for key in ('filepath', 'use_selection', 'object_types')):
         raise ValueError('Export options cannot override fixed selected-mesh ownership')
-    if (actual.get('path_mode', 'RELATIVE') not in ('RELATIVE', 'STRIP')
+    # This route restores schema2 labels into a fresh image-free scene. COPY is
+    # the original terrain policy and has no media resources to copy here.
+    if (actual.get('path_mode', 'RELATIVE') not in ('RELATIVE', 'STRIP', 'COPY')
             or actual.get('batch_mode', 'OFF') != 'OFF' or actual.get('use_batch_own_dir', False) is not False):
-        raise ValueError('This FBX slice supports one relative-media primary, not batched/copied resources')
+        raise ValueError('This FBX slice supports one image-free primary without batch outputs')
     return validate_mesh_options(actual)

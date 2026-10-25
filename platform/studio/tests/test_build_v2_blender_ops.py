@@ -263,7 +263,7 @@ def test_per_piece_options_cannot_widen_owned_outputs_or_silently_override_selec
     for options in [{'filepath': 'foreign.fbx'}, {'use_selection': False}, {'bake_anim': True},
                     {'object_types': ['LIGHT']}, {'object_types': ['MESH', 'LIGHT']},
                     {'object_types': []}, {'object_types': 'MESH'}, {'object_types': [True]},
-                    {'batch_mode': 'SCENE'}, {'path_mode': 'COPY'}]:
+                    {'batch_mode': 'SCENE'}, {'path_mode': 'ABSOLUTE'}]:
         with pytest.raises(ValueError):
             ops.export_options(options, {})
 
@@ -400,7 +400,7 @@ def test_frozen_job_world_color_reaches_the_real_shared_validator_as_a_list():
     assert context.params['options']['scene_world_color'] == frozen
 
 
-@pytest.mark.parametrize('mode', ['RELATIVE', 'STRIP'])
+@pytest.mark.parametrize('mode', ['RELATIVE', 'STRIP', 'COPY'])
 def test_declared_fbx_media_policy_survives_payload_decode_and_export_options(mode):
     meta, piece = mesh_ir.decode(payload())
     options = {'path_mode': mode, 'apply_scale_options': 'FBX_SCALE_ALL',
@@ -414,10 +414,22 @@ def test_declared_fbx_media_policy_survives_payload_decode_and_export_options(mo
     assert ops.export_options(decoded['options'], {}, output_format='fbx') == options
 
 
-@pytest.mark.parametrize('mode', ['COPY', 'ABSOLUTE', 'AUTO', 'strip'])
-def test_unknown_or_resource_copying_fbx_media_policies_refuse(mode):
+@pytest.mark.parametrize('mode', ['ABSOLUTE', 'AUTO', 'copy', 'strip', True, None])
+def test_unknown_or_absolute_fbx_media_policies_refuse(mode):
     with pytest.raises(ValueError, match='path_mode'):
         ops.export_options({'path_mode': mode}, {}, output_format='fbx')
+
+
+def test_copy_policy_cannot_admit_graph_materials_embedding_or_batches():
+    options = {'path_mode': 'COPY', 'embed_textures': False, 'batch_mode': 'OFF'}
+    assert ops.export_options(options, {}) == options
+    for kwargs in ({'output_format': 'glb'}, {'finite_materials': True}):
+        with pytest.raises(ValueError):
+            ops.export_options(options, {}, **kwargs)
+    for override in ({'embed_textures': True}, {'embed_textures': 0},
+                     {'batch_mode': 'SCENE'}, {'use_batch_own_dir': True}):
+        with pytest.raises(ValueError):
+            ops.export_options(options, override)
 
 
 @pytest.mark.parametrize('declared', ['fbx', 'glb'])
