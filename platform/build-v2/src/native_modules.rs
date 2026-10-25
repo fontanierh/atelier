@@ -1,8 +1,8 @@
 //! Produced game-native editor modules and plugins, materialized from a unit's own keyed inputs.
 //!
 //! A unit that loads game-native classes declares `params.native_modules`:
-//! `{editor: {slot, archive, modules: [{name, kind, loading_phase}]},
-//!   plugins: [{name, slot, archive, descriptor_slot}]}`. Each `slot` names one of the unit's
+//! `{editor: {slot, archive, modules: [{name, kind, loading_phase}], subset?: false},
+//!   plugins: [{name, slot, archive, descriptor_slot, subset?: false}]}`. Each `slot` names one of the unit's
 //! content Items and `archive` the exact `.tree.tar` member of it: a complete deterministic
 //! directory ROOT archive (the same format `unreal_controller::archive_digests` reads) holding a
 //! produced `Binaries/Mac` folder. Each plugin's `descriptor_slot` is its own declared input file
@@ -47,6 +47,8 @@ struct EditorRequest {
     slot: String,
     archive: String,
     modules: Vec<Module>,
+    #[serde(default)]
+    subset: bool,
 }
 
 #[derive(serde::Deserialize)]
@@ -56,6 +58,8 @@ struct PluginRequest {
     slot: String,
     archive: String,
     descriptor_slot: String,
+    #[serde(default)]
+    subset: bool,
 }
 
 #[derive(serde::Deserialize)]
@@ -77,7 +81,10 @@ struct Staged<'a> {
 /// inputs: exact keyed `.tree.tar` members and descriptor files, verified against their keyed
 /// digests, decoded completely into a new owned scope with no links, special files, traversal,
 /// unlisted members or overwrites. The editor manifest MUST carry this engine's BuildId and
-/// exactly the requested modules with their binaries; each plugin MUST be its own descriptor plus
+/// exactly the requested modules with their binaries by default. Explicit subset mode MUST first
+/// verify the complete original ROOT, BuildId and every listed library, then copy only requested
+/// modules into a fresh Binaries folder with a truthful filtered manifest. Plugin subset mode
+/// MUST require every descriptor module; each plugin MUST be its own descriptor plus
 /// its produced Binaries. Identities MUST be computed from the materialized copies.
 pub fn prepare(
     unit: &PreparedUnit,
@@ -140,7 +147,7 @@ fn materialize_into(
         if !name_ok(&module.name) || !name_ok(&module.kind) || !name_ok(&module.loading_phase) {
             return Err(format!("invalid native module {:?}", module.name));
         }
-        if !names.insert(module.name.as_str()) {
+        if !names.insert(module.name.clone()) {
             return Err(format!("native module {} is requested twice", module.name));
         }
     }
@@ -148,9 +155,17 @@ fn materialize_into(
         return Err("native editor binaries need at least one requested module".into());
     }
     let dir = scope.join("editor");
-    let files = extract(&archive(inputs, &editor.slot, &editor.archive)?, &dir)?;
-    let libraries = module_libraries(&dir, &files, build_id)?;
-    if libraries.keys().map(String::as_str).collect::<BTreeSet<_>>() != names {
+    let source = if editor.subset {
+        scope.join("editor-source")
+    } else {
+        dir.clone()
+    };
+    let files = extract(&archive(inputs, &editor.slot, &editor.archive)?, &source)?;
+    let libraries = module_libraries(&source, &files, build_id)?;
+    if editor.subset {
+        filter_binaries(&source, &dir, &libraries, &names, build_id)?;
+        fs::remove_dir_all(&source).map_err(|e| e.to_string())?;
+    } else if libraries.keys().cloned().collect::<BTreeSet<_>>() != names {
         return Err("produced editor modules differ from the requested modules".into());
     }
     let identity = unreal::tree_identity(&dir, None).map_err(|e| e.to_string())?;
@@ -158,24 +173,43 @@ fn materialize_into(
     let mut seen = BTreeSet::new();
     for plugin in &request.plugins {
         if !name_ok(&plugin.name) || !seen.insert(plugin.name.as_str()) {
-            return Err(format!("invalid or repeated native plugin {:?}", plugin.name));
+            return Err(format!(
+                "invalid or repeated native plugin {:?}",
+                plugin.name
+            ));
         }
         let descriptor = descriptor(inputs, &plugin.descriptor_slot)?;
         let declared = descriptor_modules(&descriptor)?;
         let folder = scope.join("plugins").join(&plugin.name);
         fs::create_dir_all(folder.parent().expect("plugins folder")).map_err(|e| e.to_string())?;
         fs::create_dir(&folder).map_err(|e| e.to_string())?;
-        write_new(&folder.join(format!("{}.uplugin", plugin.name)), &descriptor, 0o644)?;
+        write_new(
+            &folder.join(format!("{}.uplugin", plugin.name)),
+            &descriptor,
+            0o644,
+        )?;
         fs::create_dir(folder.join("Binaries")).map_err(|e| e.to_string())?;
         let binaries = folder.join("Binaries/Mac");
-        let files = extract(&archive(inputs, &plugin.slot, &plugin.archive)?, &binaries)?;
-        let built = module_libraries(&binaries, &files, build_id)?;
-        if built.keys().any(|name| !declared.contains(name)) {
-            return Err(format!("plugin {} produced a module its descriptor does not declare", plugin.name));
+        let source = if plugin.subset {
+            scope.join(format!("plugin-source-{}", plugin.name))
+        } else {
+            binaries.clone()
+        };
+        let files = extract(&archive(inputs, &plugin.slot, &plugin.archive)?, &source)?;
+        let built = module_libraries(&source, &files, build_id)?;
+        if plugin.subset {
+            filter_binaries(&source, &binaries, &built, &declared, build_id)?;
+            fs::remove_dir_all(&source).map_err(|e| e.to_string())?;
+        } else if built.keys().any(|name| !declared.contains(name)) {
+            return Err(format!(
+                "plugin {} produced a module its descriptor does not declare",
+                plugin.name
+            ));
         }
         plugins.push(Plugin {
             name: plugin.name.clone(),
-            identity: unreal::tree_identity(&folder, Some(&plugin.name)).map_err(|e| e.to_string())?,
+            identity: unreal::tree_identity(&folder, Some(&plugin.name))
+                .map_err(|e| e.to_string())?,
             dir: folder,
         });
     }
@@ -184,6 +218,50 @@ fn materialize_into(
         modules: editor.modules.clone(),
         plugins,
     })
+}
+
+/// Copy an explicit subset only AFTER the complete source archive and module map have passed.
+/// The original archive is untouched and unselected materialized files never enter this tree.
+fn filter_binaries(
+    source: &Path,
+    target: &Path,
+    libraries: &BTreeMap<String, String>,
+    requested: &BTreeSet<String>,
+    build_id: &str,
+) -> Result<(), String> {
+    if requested.is_empty() || requested.iter().any(|name| !libraries.contains_key(name)) {
+        return Err("native module subset is empty or misses a requested compiled module".into());
+    }
+    let selected: BTreeMap<_, _> = requested
+        .iter()
+        .map(|name| (name.clone(), libraries[name].clone()))
+        .collect();
+    fs::create_dir(target).map_err(|e| e.to_string())?;
+    let manifest =
+        serde_json::to_vec(&serde_json::json!({"BuildId": build_id, "Modules": selected}))
+            .map_err(|e| e.to_string())?;
+    write_new(&target.join(MODULES_FILE), &manifest, 0o644)?;
+    for library in selected.values().collect::<BTreeSet<_>>() {
+        let original = source.join(library);
+        let metadata = regular(&original)?;
+        let mut input = fs::File::open(&original).map_err(|e| e.to_string())?;
+        let mut output = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .mode(0o600)
+            .open(target.join(library))
+            .map_err(|e| e.to_string())?;
+        let count = std::io::copy(&mut input, &mut output).map_err(|e| e.to_string())?;
+        if count != metadata.len() {
+            return Err("validated native library changed while copying".into());
+        }
+        output
+            .set_permissions(fs::Permissions::from_mode(
+                metadata.permissions().mode() & 0o777,
+            ))
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(())
 }
 
 fn name_ok(text: &str) -> bool {
@@ -612,6 +690,29 @@ mod tests {
             });
             Case { space, payloads, request }
         }
+        fn binaries(
+            &mut self,
+            slot: &str,
+            build: &str,
+            modules: &[(&str, &str)],
+            missing: Option<&str>,
+        ) {
+            let map: BTreeMap<_, _> = modules.iter().copied().collect();
+            let manifest =
+                serde_json::to_vec(&serde_json::json!({"BuildId": build, "Modules": map})).unwrap();
+            let mut members = vec![(MODULES_FILE, Some(manifest.as_slice()))];
+            let names: BTreeSet<_> = modules.iter().map(|(_, library)| *library).collect();
+            for library in names {
+                if Some(library) != missing {
+                    members.push((library, Some(&b"verified compiled bytes"[..])));
+                }
+            }
+            members.push(("unrelated.bin", Some(&b"verified unselected sibling"[..])));
+            self.payloads.insert(
+                slot.into(),
+                item(&self.space, slot, &[(ARCHIVE, root_tar(&members))]),
+            );
+        }
         fn run(&self) -> Result<PreparedNativeModules, String> {
             let inputs: BTreeMap<&str, Staged<'_>> = self
                 .payloads
@@ -644,6 +745,138 @@ mod tests {
         assert_eq!(plugin.identity, unreal::tree_identity(&plugin.dir, Some("GameTools")).unwrap());
         // The copies are independent of the staged inputs.
         assert!(!fs::symlink_metadata(scope.join("editor/UnrealEditor.modules")).unwrap().file_type().is_symlink());
+    }
+
+    #[test]
+    fn explicit_subsets_validate_complete_archives_then_copy_only_requested_modules() {
+        let mut case = Case::new("subset");
+        let modules = [
+            ("Yorigame", "libUnrealEditor-Yorigame.dylib"),
+            ("GameTools", "libUnrealEditor-GameTools.dylib"),
+            ("OtherTools", "libUnrealEditor-OtherTools.dylib"),
+        ];
+        case.binaries("editor", "b1", &modules, None);
+        case.binaries("plugin", "b1", &modules, None);
+        case.request["editor"]["subset"] = true.into();
+        case.request["plugins"][0]["subset"] = true.into();
+        let original: BTreeMap<_, _> = ["editor", "plugin"]
+            .into_iter()
+            .map(|slot| (slot, fs::read(case.payloads[slot].0.join(ARCHIVE)).unwrap()))
+            .collect();
+        let prepared = case.run().unwrap();
+        for (directory, name) in [
+            (&prepared.editor.dir, "Yorigame"),
+            (&prepared.plugins[0].dir.join("Binaries/Mac"), "GameTools"),
+        ] {
+            let members: BTreeSet<_> = fs::read_dir(directory)
+                .unwrap()
+                .map(|entry| entry.unwrap().file_name().to_str().unwrap().to_owned())
+                .collect();
+            let library = format!("libUnrealEditor-{name}.dylib");
+            assert_eq!(
+                members,
+                BTreeSet::from([MODULES_FILE.to_owned(), library.clone()])
+            );
+            let manifest: serde_json::Value =
+                serde_json::from_slice(&fs::read(directory.join(MODULES_FILE)).unwrap()).unwrap();
+            assert_eq!(
+                manifest,
+                serde_json::json!({"BuildId": "b1", "Modules": {name: library}})
+            );
+            assert_eq!(
+                fs::read(directory.join(library)).unwrap(),
+                b"verified compiled bytes"
+            );
+        }
+        assert!(!case.scope().join("editor-source").exists());
+        assert!(!case.scope().join("plugin-source-GameTools").exists());
+        for (slot, bytes) in original {
+            assert_eq!(
+                fs::read(case.payloads[slot].0.join(ARCHIVE)).unwrap(),
+                bytes
+            );
+        }
+        assert_eq!(
+            prepared.editor.identity,
+            unreal::tree_identity(&prepared.editor.dir, None).unwrap()
+        );
+    }
+
+    #[test]
+    fn subsets_require_every_selected_module_and_verify_even_unselected_binaries() {
+        for damage in [
+            "missing-editor",
+            "missing-plugin",
+            "missing-extra-dll",
+            "wrong-build",
+        ] {
+            let mut case = Case::new(damage);
+            case.request["editor"]["subset"] = true.into();
+            case.request["plugins"][0]["subset"] = true.into();
+            match damage {
+                "missing-editor" => case.request["editor"]["modules"][0]["name"] = "Missing".into(),
+                "missing-plugin" => {
+                    let descriptor = br#"{"Modules":[{"Name":"GameTools"},{"Name":"MissingEditorModule","Type":"Editor"}]}"#.to_vec();
+                    let path = case.payloads["descriptor"].0.clone();
+                    fs::write(&path, &descriptor).unwrap();
+                    case.payloads
+                        .insert("descriptor".into(), (path, InputPayload::Bytes(descriptor)));
+                }
+                "missing-extra-dll" => case.binaries(
+                    "editor",
+                    "b1",
+                    &[
+                        ("Yorigame", "libUnrealEditor-Yorigame.dylib"),
+                        ("OtherTools", "libUnrealEditor-OtherTools.dylib"),
+                    ],
+                    Some("libUnrealEditor-OtherTools.dylib"),
+                ),
+                "wrong-build" => case.binaries(
+                    "plugin",
+                    "b2",
+                    &[("GameTools", "libUnrealEditor-GameTools.dylib")],
+                    None,
+                ),
+                _ => unreachable!(),
+            }
+            assert!(case.run().is_err(), "{damage}");
+            assert!(!case.scope().exists(), "{damage}: partial scope removed");
+        }
+    }
+
+    #[test]
+    fn omitted_or_false_subset_preserves_strict_editor_and_plugin_behavior() {
+        for (slot, explicit_false) in [
+            ("editor", false),
+            ("editor", true),
+            ("plugin", false),
+            ("plugin", true),
+        ] {
+            let mut case = Case::new("strict-extra");
+            let requested = if slot == "editor" {
+                "Yorigame"
+            } else {
+                "GameTools"
+            };
+            let requested_library = format!("libUnrealEditor-{requested}.dylib");
+            case.binaries(
+                slot,
+                "b1",
+                &[
+                    (requested, &requested_library),
+                    ("Extra", "libUnrealEditor-Extra.dylib"),
+                ],
+                None,
+            );
+            if explicit_false {
+                if slot == "editor" {
+                    case.request["editor"]["subset"] = false.into();
+                } else {
+                    case.request["plugins"][0]["subset"] = false.into();
+                }
+            }
+            assert!(case.run().is_err());
+        }
     }
 
     #[test]
