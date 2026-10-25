@@ -444,6 +444,10 @@ fn declared_packages(unit: &PreparedUnit) -> Result<BTreeSet<String>, String> {
 
 pub fn check_unit(unit: &PreparedUnit) -> Result<(), String> {
     let value = unit.ingredients();
+    let expected = validator_identity();
+    if value.validator_version != expected.version || value.validator_digest != expected.digest {
+        return Err("native validator identity differs from registered implementation".into());
+    }
     let action = match (value.op.kind.as_str(), value.op.version.as_str()) {
         (RAW_IMPORT, OP_VERSION) => "raw_import",
         (FINISH, OP_VERSION) => "finish",

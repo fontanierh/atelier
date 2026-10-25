@@ -138,7 +138,7 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
     }
     for kind in ["recipe.python", "recipe.blender"] {
         let mut definition = definition.clone();
-        if kind == "recipe.blender" {
+        if matches!(kind, "recipe.blender" | "recipe.python") {
             definition
                 .output_classes
                 .insert(crate::blender_ops::MESH_PAYLOAD_CLASS.into());
@@ -153,7 +153,13 @@ pub fn validator() -> ImplementationIdentity {
         digest: sha256(b"recipe-root-1:complete-opaque-data:declared-fixed-output-partition"),
     }
 }
-pub fn group_validator(code: &BTreeMap<String, String>) -> Result<ImplementationIdentity, String> {
+pub fn group_validator(
+    code: &BTreeMap<String, String>,
+    encoding: &crate::groups::PlanEncoding,
+) -> Result<ImplementationIdentity, String> {
+    if *encoding == crate::groups::PlanEncoding::EncodedGlb {
+        return crate::encoded_ops::identity_from_code(code);
+    }
     let mut files = BTreeMap::new();
     for name in crate::blender_ops::DECODER_FILES {
         files.insert(
@@ -174,14 +180,16 @@ pub fn check(unit: &PreparedUnit) -> Result<(), String> {
     let expected = if i.output_groups.is_empty() {
         validator()
     } else {
-        group_validator(&i.code)?
+        group_validator(&i.code, &i.output_groups[0].encoding)?
     };
     if !matches!(i.op.kind.as_str(), "recipe.python" | "recipe.blender")
         || i.op.version != "1"
         || i.validator_version != expected.version
         || i.validator_digest != expected.digest
         || (i.output_groups.len() > 1
-            || (!i.output_groups.is_empty() && i.op.kind != "recipe.blender"))
+            || (!i.output_groups.is_empty()
+                && i.op.kind != "recipe.blender"
+                && i.output_groups[0].encoding != crate::groups::PlanEncoding::EncodedGlb))
         || i.logical_outputs.iter().any(|item| item.class != "Data")
     {
         return Err("unsupported recipe runtime identity".into());

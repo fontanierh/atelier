@@ -121,3 +121,46 @@ def test_derived_roster_requires_actual_resolved_member_list(tmp_path):
     assert result[0][0].products[0].paths == (tmp_path / 'build/exports/PieceA',)
     with pytest.raises(ValueError, match='unresolved'):
         job._value({'derived_items': {'root': 'build/exports', 'templates': []}}, tmp_path)
+
+
+def test_callback_decorator_line_and_qualified_current_code_are_bound(tmp_path):
+    source = tmp_path / 'decorated.py'
+    source.write_text('from functools import cache\n@cache\ndef validate(value=1):\n    return value + 2\n')
+    fn = job.bind({'source': 'decorated.py', 'qualname': 'validate', 'line': 2,
+                   'captures': [], 'defaults': [5], 'kwdefaults': {}}, tmp_path)
+    assert fn() == 7
+    with pytest.raises(ValueError, match='closure'):
+        job.bind({'source': 'decorated.py', 'qualname': 'foreign', 'line': 2,
+                  'captures': [], 'defaults': [5], 'kwdefaults': {}}, tmp_path)
+
+
+def test_encoded_geometry_plan_decodes_every_selected_member_and_refuses_tampering(tmp_path):
+    import hashlib
+    from atelier import encoded_glb
+    from test_gltf_partition import model
+    root = tmp_path / 'plan'
+    root.mkdir()
+    packet = encoded_glb.encode(model(), key='Part')
+    identity, _ = encoded_glb.decode(packet)
+    (root / 'Part.mesh').write_bytes(packet)
+    value = dict(schema=1, kind='encoded_glb', complete=True, triangle_limit=32768,
+                 parent='Parent', source_triangles=identity['triangles'],
+                 source_render_triangles=identity['triangles'], source_collision_triangles=0,
+                 pieces=[dict(name='Part', payload='Part.mesh', sha256=hashlib.sha256(packet).hexdigest(),
+                              triangles=identity['triangles'], role='render', bounds=identity['bounds'])])
+    (root / 'plan.json').write_text(json.dumps(value))
+    limits = dict(max_pieces=10, max_manifest_bytes=1024 * 1024,
+                  max_member_bytes=1024 * 1024, max_total_bytes=2 * 1024 * 1024)
+    assert job.verify_encoded_plan(root, parent='Parent', limits=limits) == value
+    (root / 'Part.mesh').write_bytes(packet[:-1] + bytes([packet[-1] ^ 1]))
+    with pytest.raises(ValueError):
+        job.verify_encoded_plan(root, parent='Parent', limits=limits)
+
+
+def test_complete_root_rejects_physical_hardlinks(tmp_path):
+    import os
+    source = tmp_path / 'source'
+    source.write_text('data')
+    os.link(source, tmp_path / 'alias')
+    with pytest.raises(ValueError, match='hard link'):
+        job.pack_root(source, tmp_path / 'out.tar')

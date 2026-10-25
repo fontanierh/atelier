@@ -1,0 +1,11 @@
+schema_version = 1
+
+[[scenarios]]
+id = "d2.encoded.receipt_requires_exact_selected_packet_glb_role_owner_and_bounded_facts"
+tests = ["atelier-build-v2::encoded_ops/receipt_requires_exact_selected_packet_glb_role_owner_and_bounded_facts"]
+tier = "t0"
+
+[[scenarios]]
+id = "d2.encoded.fixed_encoded_decoder_identity_and_registry_bind_actual_required_code"
+tests = ["atelier-build-v2::encoded_ops/fixed_encoded_decoder_identity_and_registry_bind_actual_required_code"]
+tier = "t0"

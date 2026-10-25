@@ -433,10 +433,30 @@ def invoke_controller(checkout, executable, marker, runs, execution, *, echo=pri
     execution = dict(execution)
     allowed = {'cache_root', 'interpreter', 'provenance', 'worktree_id', 'memory_gib',
                'job_seconds', 'cleanup_seconds', 'overall_seconds'}
-    if set(execution) - {'blender'} != allowed:
+    if set(execution) - {'blender', 'unreal'} != allowed:
         raise ValueError('invalid controller execution options')
     if 'blender' in execution and (not isinstance(execution['blender'], str) or not Path(execution['blender']).is_absolute()):
         raise ValueError('invalid Blender execution locator')
+    if 'unreal' in execution:
+        native = execution['unreal']
+        if (not isinstance(native, dict) or set(native) - {'engine_root', 'build_id', 'editor_binaries', 'modules', 'engine_plugins', 'plugins', 'config_sources'}
+                or not {'engine_root', 'build_id', 'plugins'} <= set(native)
+                or not isinstance(native['engine_root'], str) or not Path(native['engine_root']).is_absolute()
+                or not isinstance(native['build_id'], str) or not native['build_id']):
+            raise ValueError('invalid Unreal execution context')
+        if native.get('editor_binaries') is not None and (not isinstance(native['editor_binaries'], str) or not Path(native['editor_binaries']).is_absolute()):
+            raise ValueError('invalid native binary execution locator')
+        for field in ('engine_plugins', 'plugins'):
+            if (not isinstance(native.get(field, {}), dict)
+                    or any(not isinstance(name, str) or not isinstance(path, str) or not Path(path).is_absolute()
+                           for name, path in native.get(field, {}).items())):
+                raise ValueError('invalid native plugin locations')
+        if not isinstance(native.get('config_sources', {}), dict):
+            raise ValueError('invalid native Config bindings')
+        if (not isinstance(native.get('modules', []), list)
+                or any(not isinstance(row, dict) or set(row) != {'name', 'kind', 'loading_phase'}
+                       or any(not isinstance(v, str) for v in row.values()) for row in native.get('modules', []))):
+            raise ValueError('invalid native module records')
     for key in ('memory_gib', 'job_seconds', 'cleanup_seconds', 'overall_seconds'):
         if type(execution[key]) is not int or not 0 < execution[key] < 2**32:
             raise ValueError('invalid controller execution bound')
