@@ -77,7 +77,7 @@ def _bundle_module(name):
 
 
 @contextmanager
-def declared_python(job_dir, code, reads, platform_roots, *, entry=None):
+def declared_python(job_dir, code, reads, platform_roots, *, entry=None, writes=()):
     """Reuse C2's path/import checks for the project Python body inside C3.
 
     A caught refusal remains sticky. The audit hook is inactive outside this scope;
@@ -86,14 +86,24 @@ def declared_python(job_dir, code, reads, platform_roots, *, entry=None):
     helper = _bundle_module('python_job')
     class Guard(helper.PathGuard):
         failed = None
+        def resolve(self, path):
+            # Unreal's process cwd is not the staged job directory. Check the
+            # path the actual syscall will use, including native cwd changes.
+            return os.path.normpath(os.path.join(os.getcwd(), os.fsdecode(path)))
         def violation(self, access, path):
             self.failed = f'undeclared Python {access}: {path}'
             raise JobRefused('dependency', self.failed)
     root = str(job_dir)
     guard = Guard(root, [str(p) for p in platform_roots],
                   {str(p) for p in reads}, lambda _: None)
+    guard.writes = []  # C2 defaults to output/; C3 permits only explicit opaque Data files.
+    for path in writes:
+        path = Path(path)
+        if not path.is_absolute() or not path.is_relative_to(Path(root) / 'output/data') or '..' in path.parts:
+            raise JobRefused('protocol', 'native Python write role is outside declared Data outputs')
+        guard.writes.append(str(path))
     # Staged job bytes are already immutable. Scratch content contains only this
-    # job's staged inputs and native saves; Python itself cannot write there.
+    # job's staged inputs and native saves; Python cannot write native Content.
     guard.reads += [str(p) for p in reads if Path(p).is_dir()]
     finder = helper.DeclaredCodeFinder(root, set(code), [str(p) for p in platform_roots])
     originals = {name: getattr(os, name) for name in guard.DESCRIPTOR_CALLS if hasattr(os, name)}
@@ -391,6 +401,25 @@ def _job_relative(path, label):
     return path
 
 
+def collect_data_outputs(output, declared):
+    """Census exact additional Data files, never native-package save evidence."""
+    allowed = set(declared)
+    parents = {str(parent) for name in allowed for parent in Path(name).parents if str(parent) != '.'}
+    found = {}
+    for directory, dirs, files in os.walk(output, followlinks=False):
+        for name in dirs + files:
+            path = Path(directory, name)
+            relative = path.relative_to(output).as_posix()
+            info = path.lstat()
+            if stat.S_ISDIR(info.st_mode) and relative in parents:
+                continue
+            if (relative not in allowed or not stat.S_ISREG(info.st_mode) or info.st_nlink != 1
+                    or info.st_uid != os.getuid() or path.resolve() != path):
+                raise JobRefused('dependency', f'undeclared or aliased Data output {relative}')
+            found[relative] = path
+    return found
+
+
 class Editor:
     """Everything the loop asks of the editor."""
 
@@ -522,7 +551,7 @@ class Context:
         self.packages = packages  # name -> logical package, for staged package inputs
         self.params = params
         self.outputs = outputs  # declared output packages
-        self.data_outputs = tuple(data_outputs)  # exact relative JSON result names
+        self.data_outputs = tuple(data_outputs)  # exact declared relative Data result names
         self.content_dir = Path(content_dir)
         if zen_request is not None:
             self.zen_request = zen_request
@@ -680,6 +709,13 @@ class Worker:
         return problem
 
     def execute(self, job, touched, moved):
+        """@cc [owner:fontanierh,label:correctness;safety] finish-opaque-data-outputs
+        Extra FINISH Data MUST be exact canonical data/ files, never package-save
+        evidence. Python writes MUST stay within those files and use the actual
+        process cwd. Package attestation, declared read checks, complete output
+        census and required files MUST remain enforced. The caller MUST retain
+        reset, positive cleanup and B1 freezing before any result publication.
+        """
         job_dir = Path(job['job_dir'])
         if not job_dir.is_absolute() or not (job_dir / 'output').is_dir():
             raise JobRefused('protocol', 'the job folder is not a staged absolute folder with output/')
@@ -689,17 +725,25 @@ class Worker:
             raise JobRefused('dependency', '/Game is not empty before the job')
         if job['op']['kind'] == 'unreal.cook.verify':
             return self.execute_verifier(job)
-        declared, required, data_outputs = {}, set(), []
+        declared, required, data_outputs, data_required = {}, set(), [], set()
+        data_author = job['op']['kind'] == 'unreal.author'
         for item in job['outputs']:
             path = _job_relative(item['path'], 'output')
-            if job['op']['kind'] == 'unreal.author' and path.startswith('data/') and path.endswith('.json'):
+            if ((data_author and path.startswith('data/') and path.endswith('.json'))
+                    or (job['op']['kind'] == 'unreal.finish' and path.startswith('data/'))):
                 data_outputs.append(path)
+                if item['required']: data_required.add(path)
                 continue
             if not path.startswith(OUTPUT_CONTENT) or not path.endswith(PACKAGE_FILES):
                 raise JobRefused('protocol', f'output {path!r} is not a package file under {OUTPUT_CONTENT}')
             declared[path] = item['required']
-        if data_outputs and (declared or len(data_outputs) != 1 or not all(item['required'] for item in job['outputs'])):
+        if data_author and data_outputs and (declared or len(data_outputs) != 1 or not all(item['required'] for item in job['outputs'])):
             raise JobRefused('protocol', 'a native data author owns one required JSON result and no packages')
+        if job['op']['kind'] == 'unreal.finish' and not declared:
+            raise JobRefused('protocol', 'finish Data outputs need their declared native package')
+        data_paths = [job_dir / 'output' / name for name in data_outputs]
+        for path in data_paths:
+            path.parent.mkdir(parents=True, exist_ok=True)  # trusted bootstrap, before the body guard
         packages = {package_of(path, OUTPUT_CONTENT) for path in declared} - {None}
         required = {package_of(path, OUTPUT_CONTENT) for path, need in declared.items() if need} - {None}
         if job['script'] not in job['code']:
@@ -723,8 +767,9 @@ class Worker:
         recording = True
         try:
             with declared_python(job_dir, job['code'],
-                    [*prepared['declared_reads'], self.content],
-                    [*self.read_platform_roots, Path(sys.base_prefix), Path(sys.prefix)], entry=job['script']):
+                    [*prepared['declared_reads'], self.content, *data_paths],
+                    [*self.read_platform_roots, Path(sys.base_prefix), Path(sys.prefix)], entry=job['script'],
+                    writes=data_paths if job['op']['kind'] == 'unreal.finish' else ()):
                 entry = runpy.run_path(str(job_dir / job['script']), run_name='atelier_unreal_job')
                 if not callable(entry.get('run')):
                     raise JobRefused('protocol', 'the entry script defines no run(context)')
@@ -753,7 +798,7 @@ class Worker:
         declared_reads = [job_dir / path for path in job['code']]
         declared_reads += prepared['declared_reads']
         declared_reads += list(staged)
-        generated = [*attested, *generated_save_reads(read_report, saved, save_folder, save_before)]
+        generated = [*attested, *data_paths, *generated_save_reads(read_report, saved, save_folder, save_before)]
         validate_read_report(read_report, declared_reads, self.read_platform_roots, generated)
         # The registry forgets every saved file at reset, even one the op deleted afterwards.
         moved.extend(Path(filename) for filenames in files_of.values() for filename in filenames)
@@ -769,8 +814,9 @@ class Worker:
             raise JobRefused('job', f'the editor reported {ensures} failed ensure(s) during the job')
         if names - packages:
             raise JobRefused('dependency', f'saved undeclared packages: {sorted(names - packages)}')
-        if any((job_dir / 'output').iterdir()):
-            raise JobRefused('dependency', 'the job wrote into output/ directly; only package saves produce outputs')
+        data_files = collect_data_outputs(job_dir / 'output', data_outputs)
+        if data_author and data_files:
+            raise JobRefused('dependency', 'a JSON data author must return its data instead of writing output/')
         if required - names:
             raise JobRefused('job', f'did not save declared packages: {sorted(required - names)}')
         dirty = sorted(name for name in self.editor.dirty_packages() if name.startswith(GAME))
@@ -815,14 +861,23 @@ class Worker:
             target.parent.mkdir(parents=True, exist_ok=True)
             moved.append(path)
             shutil.move(path, target)
-        if data_outputs:
-            encoded = encode_data_result(result, data_outputs)
+        if data_outputs and (data_author or isinstance(result, dict)):
+            returned = data_outputs if data_author else sorted(result)
+            if any(name not in data_outputs or not name.endswith('.json') for name in returned):
+                raise JobRefused('dependency', 'native data return names undeclared JSON outputs')
+            encoded = encode_data_result(result, returned)
             for relative, data in encoded.items():
                 target = job_dir / 'output' / relative
+                if target.exists() or target.is_symlink():
+                    raise JobRefused('dependency', 'returned native JSON would overwrite an existing Data output')
                 target.parent.mkdir(parents=True, exist_ok=True)
                 with target.open('xb') as stream:
                     stream.write(data)
-            files.update({relative: job_dir / 'output' / relative for relative in encoded})
+            data_files.update({relative: job_dir / 'output' / relative for relative in encoded})
+        missing_data = sorted(data_required - data_files.keys())
+        if missing_data:
+            raise JobRefused('job', f'required Data outputs are missing: {missing_data}')
+        files.update(data_files)
         write_atomic(job_dir / IMPORT_EVIDENCE, {'version': EVIDENCE_VERSION, 'packages': [
             {'package': name, 'imports': imports[name]} for name in sorted(names)]})
         return sorted(files)

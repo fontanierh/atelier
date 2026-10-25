@@ -1,6 +1,11 @@
 schema_version = 1
 
 [[scenarios]]
+id = "native.finish.opaque_data_files"
+tests = ["atelier-build-v2/unreal_controller::tests::finish_opaque_data_is_canonical_and_never_native_or_external"]
+tier = "t0"
+
+[[scenarios]]
 id = "native.resident.context_partition"
 tests = ["atelier-build-v2/python_executor::tests::resident_groups_bind_settings_and_context_inputs_not_job_payloads"]
 tier = "t0"
