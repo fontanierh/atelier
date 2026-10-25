@@ -29,7 +29,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 
 pub const CONTROL_VERSION: u32 = 1;
-pub const MAX_CONTROL_BYTES: usize = 2 * 1024 * 1024;
+pub const MAX_CONTROL_BYTES: usize = 64 * 1024 * 1024;
 const WORKER_DIRECTORY: &str = "platform/studio/atelier/build_v2";
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -43,6 +43,8 @@ pub struct DataContract {
 #[serde(deny_unknown_fields)]
 pub struct ControllerRequest {
     pub version: u32,
+    #[serde(default)]
+    pub templates: Vec<crate::plans::ChildTemplate>,
     pub checkout: PathBuf,
     pub project: String,
     pub allowed_install_roots: Vec<String>,
@@ -82,9 +84,9 @@ impl ControllerRequest {
         ProjectNamespace::new(&self.project).map_err(|error| error.to_string())?;
         if self.project.is_empty()
             || self.targets.is_empty()
-            || self.targets.len() > 256
+            || self.targets.len() > 8192
             || self.declaration.units.is_empty()
-            || self.declaration.units.len() > 256
+            || self.declaration.units.len() > 8192
             || self.allowed_install_roots.is_empty()
         {
             return Err("controller declaration/target bounds are invalid".into());
@@ -107,6 +109,12 @@ impl ControllerRequest {
                     if unit.output_groups.is_empty()
                         && unit.outputs.iter().all(|item| item.class == "JsonData")
                         && unit.params.is_empty() => {}
+                "recipe.python" | "recipe.blender"
+                    if unit.output_groups.len() <= 1
+                        && unit.outputs.iter().all(|item| item.class == "Data") =>
+                {
+                    crate::recipe_ops::validate_params(&unit.params)?;
+                }
                 BLENDER_PLAN_KIND if unit.output_groups.len() == 1 && unit.outputs.is_empty() => {
                     blender_plan_spec(self, unit)?.definition()?;
                 }
@@ -182,6 +190,13 @@ fn records(value: Option<&Value>) -> Result<Vec<&Value>, String> {
 /// serde errors. No record values are interpreted as identity ingredients here.
 pub(crate) fn object_records(document: &Value) -> Result<(), String> {
     let request = object(document)?;
+    for template in records(request.get("templates"))? {
+        let template = object(template)?;
+        if let Some(op) = template.get("op") {
+            object(op)?;
+        }
+        records(template.get("files"))?;
+    }
     if let Some(contract) = request.get("data_contract") {
         object(contract)?;
     }
@@ -215,6 +230,7 @@ pub struct PreparedController {
     pub sources: CapturedSources,
     pub worker: PythonWorkerBundle,
     pub blender_worker: Option<PythonWorkerBundle>,
+    pub recipe_workers: Vec<(PythonWorkerBundle, bool)>,
     pub runtimes: BTreeMap<String, Runtime>,
     pub targets: Vec<Target>,
     pub demands: BTreeMap<String, FinalDemands>,
@@ -234,14 +250,14 @@ pub struct PlanObservation {
 /// cache, root, lease, job or helper state, or perform output materialization. Plan
 /// reuse status MUST remain unknown without authoritative readonly lookup. See
 /// tests/controller.rs prepare_plan_has_no_state_writes_and_uses_existing_worker_identity.
-pub fn prepare(request: &ControllerRequest) -> Result<PreparedController, String> {
-    request.check()?;
+pub(crate) fn registry(request: &ControllerRequest) -> Result<crate::validate::OpRegistry, String> {
     let mut spec = PyDataSpec::new().with_output_classes([PyDataClass::JsonData]);
     for (slot, required) in &request.data_contract.content_slots {
         spec = spec.with_content_slot(slot, ContentSlotSpec::broad(*required));
     }
     let mut registry = BTreeMap::new();
     spec.register(&mut registry)?;
+    crate::recipe_ops::register(&mut registry, &request.data_contract.content_slots)?;
     if let Some(unit) = request
         .declaration
         .units
@@ -255,9 +271,19 @@ pub fn prepare(request: &ControllerRequest) -> Result<PreparedController, String
         .units
         .iter()
         .any(|unit| unit.op.kind == BLENDER_EXPORT_KIND)
+        || request
+            .templates
+            .iter()
+            .any(|template| template.op.kind == BLENDER_EXPORT_KIND)
     {
         BlenderExportSpec::default().register(&mut registry)?;
     }
+    Ok(registry)
+}
+
+pub fn prepare(request: &ControllerRequest) -> Result<PreparedController, String> {
+    request.check()?;
+    let registry = registry(request)?;
     let graph = BuildGraph::validate(
         request.declaration.clone(),
         &registry,
@@ -284,6 +310,9 @@ pub fn prepare(request: &ControllerRequest) -> Result<PreparedController, String
             }
         }
     }
+    for template in &request.templates {
+        names.extend(template.code.iter().map(String::as_str));
+    }
     let sources = capture_sources(&request.checkout, names)?;
     let selected = graph.select(&targets, &sources.snapshot)?;
     let worker_sources = capture_sources(
@@ -291,10 +320,14 @@ pub fn prepare(request: &ControllerRequest) -> Result<PreparedController, String
         PYTHON_WORKER_FILES,
     )?;
     let worker = PythonWorkerBundle::from_snapshot(&worker_sources.snapshot)?;
-    let native = selected
-        .order()
-        .iter()
-        .any(|id| graph.unit(id).is_some_and(|unit| unit.op.kind != "py_data"));
+    let native = selected.order().iter().any(|id| {
+        graph.unit(id).is_some_and(|unit| {
+            matches!(
+                unit.op.kind.as_str(),
+                BLENDER_PLAN_KIND | BLENDER_EXPORT_KIND
+            )
+        })
+    });
     let blender_worker = if native {
         let source = capture_sources(
             &request.checkout.join(WORKER_DIRECTORY),
@@ -304,10 +337,61 @@ pub fn prepare(request: &ControllerRequest) -> Result<PreparedController, String
     } else {
         None
     };
+    let mut recipe_workers = Vec::new();
+    for (kind, blender) in [("recipe.python", false), ("recipe.blender", true)] {
+        if selected
+            .order()
+            .iter()
+            .any(|id| graph.unit(id).is_some_and(|unit| unit.op.kind == kind))
+        {
+            let names: &[&str] = if blender {
+                &crate::recipe_ops::BLENDER_FILES
+            } else {
+                &crate::recipe_ops::FILES
+            };
+            let source = capture_sources(
+                &request.checkout.join(WORKER_DIRECTORY),
+                names.iter().copied(),
+            )?;
+            recipe_workers.push((
+                PythonWorkerBundle::from_recipe_snapshot(&source.snapshot, blender)?,
+                blender,
+            ));
+        }
+    }
     let mut runtimes = BTreeMap::new();
     for id in selected.order() {
         let unit = graph.unit(id).ok_or("selected unit missing")?;
-        let (worker, validator, profile) = if unit.op.kind == "py_data" {
+        let (worker, validator, profile) = if unit.op.kind.starts_with("recipe.") {
+            let blender = unit.op.kind == "recipe.blender";
+            let bundle = recipe_workers
+                .iter()
+                .find(|(_, native)| *native == blender)
+                .ok_or("missing recipe worker")?;
+            (
+                bundle.0.identity(),
+                if unit.output_groups.is_empty() {
+                    crate::recipe_ops::validator()
+                } else {
+                    let code = unit
+                        .code
+                        .iter()
+                        .map(|name| match sources.snapshot.get(name) {
+                            Some(crate::validate::SnapshotEntry::File(bytes)) => {
+                                Ok((name.clone(), crate::source_hashes::sha256(bytes)))
+                            }
+                            _ => Err("missing recipe group code"),
+                        })
+                        .collect::<Result<BTreeMap<_, _>, _>>()?;
+                    crate::recipe_ops::group_validator(&code)?
+                },
+                if blender {
+                    "recipe-blender"
+                } else {
+                    "recipe-python"
+                },
+            )
+        } else if unit.op.kind == "py_data" {
             (
                 worker.identity(),
                 py_data_validator_identity(),
@@ -358,6 +442,7 @@ pub fn prepare(request: &ControllerRequest) -> Result<PreparedController, String
         sources,
         worker,
         blender_worker,
+        recipe_workers,
         runtimes,
         targets,
         demands,
@@ -381,6 +466,7 @@ pub fn source_identity() -> Option<&'static str> {
 }
 
 /// Execution/control context only; installed interpreter facts never enter A3 ingredients.
+#[derive(Clone)]
 pub struct ExecutionContext {
     pub cache_root: PathBuf,
     pub interpreter: PathBuf,
@@ -467,11 +553,12 @@ impl ExecutionObservation {
 /// MUST remain separate observations. No fixture constructor, second scheduler, key encoder,
 /// fallback executor or pruning roster is permitted. See controller_cancelled_before_run_keeps_state_absent;
 /// real normal first/warm/edit and cancellation proof remain I1-min/C5c pending.
-pub fn execute<L: WorkerLauncher + Send>(
+fn execute_static<L: WorkerLauncher + Send>(
     request: &ControllerRequest,
     context: ExecutionContext,
     launcher: L,
     control: &dyn Control,
+    group_output: &mut crate::keys::ProducedGroups,
 ) -> Result<ExecutionObservation, String> {
     request.check()?;
     if context.owner.pid != std::process::id()
@@ -501,11 +588,12 @@ pub fn execute<L: WorkerLauncher + Send>(
         sources,
         worker,
         blender_worker,
+        recipe_workers,
         runtimes,
         targets,
         demands,
     } = prepare(request)?;
-    if blender_worker.is_some()
+    if (blender_worker.is_some() || recipe_workers.iter().any(|(_, blender)| *blender))
         && !context
             .blender
             .as_ref()
@@ -601,6 +689,26 @@ pub fn execute<L: WorkerLauncher + Send>(
             limits: context.limits,
         });
     }
+    for (bundle, blender) in recipe_workers {
+        executor = executor.with_recipe(PythonExecution {
+            interpreter: if blender {
+                context
+                    .blender
+                    .clone()
+                    .ok_or("missing Blender execution locator")?
+            } else {
+                context.interpreter.clone()
+            },
+            bundle,
+            profile: if blender {
+                "recipe-blender".into()
+            } else {
+                "recipe-python".into()
+            },
+            memory_gib: context.memory_gib,
+            limits: context.limits,
+        });
+    }
     let recorder = Recorder::default();
     let report = scheduler::run(
         schedule,
@@ -622,7 +730,8 @@ pub fn execute<L: WorkerLauncher + Send>(
         },
     };
     let (summary, final_requirements_satisfied, scheduler_error) = match report {
-        Ok(report) => {
+        Ok(mut report) => {
+            *group_output = std::mem::take(&mut report.groups);
             let fulfilled = report.fatal.is_none()
                 && report.unsatisfied.is_empty()
                 && report.states.values().all(|state| {
@@ -649,4 +758,260 @@ pub fn execute<L: WorkerLauncher + Send>(
         source_finalization,
         root_finalization,
     })
+}
+
+fn unresolved_derived(value: &Value) -> bool {
+    match value {
+        Value::Object(object) => {
+            object
+                .get("derived_items")
+                .is_some_and(|v| v.get("templates").is_some())
+                || object.values().any(unresolved_derived)
+        }
+        Value::Array(values) => values.iter().any(unresolved_derived),
+        _ => false,
+    }
+}
+
+fn resolve_derived(
+    value: &mut Value,
+    expanded: &BTreeMap<(String, String, String), Vec<(String, String)>>,
+    additions: &mut Vec<(String, String, String, String)>,
+) -> Result<(), String> {
+    if let Some(descriptor) = value
+        .as_object()
+        .and_then(|v| v.get("derived_items"))
+        .cloned()
+    {
+        if let Some(templates) = descriptor.get("templates").and_then(Value::as_array) {
+            let root = descriptor
+                .get("root")
+                .and_then(Value::as_str)
+                .ok_or("missing derived logical root")?;
+            crate::paths::relative_path(root, false)?;
+            let start = additions.len();
+            let mut rows = Vec::new();
+            for template in templates {
+                let get = |key| {
+                    template
+                        .get(key)
+                        .and_then(Value::as_str)
+                        .ok_or("invalid derived template binding")
+                };
+                let key = (
+                    get("producer")?.to_string(),
+                    get("group")?.to_string(),
+                    get("unit_prefix")?.to_string(),
+                );
+                let Some(children) = expanded.get(&key) else {
+                    additions.truncate(start);
+                    return Ok(());
+                };
+                for (piece, child) in children {
+                    let slot = format!("derived_{}", additions.len());
+                    let logical = format!("{root}/{piece}");
+                    rows.push(serde_json::json!({"piece":piece,"root":logical,"slot":slot}));
+                    additions.push((slot, child.clone(), logical, "asset".into()));
+                }
+            }
+            *value = serde_json::json!({"derived_items":{"root":root,"members":rows}});
+            return Ok(());
+        }
+    }
+    match value {
+        Value::Object(values) => {
+            for child in values.values_mut() {
+                resolve_derived(child, expanded, additions)?;
+            }
+        }
+        Value::Array(values) => {
+            for child in values {
+                resolve_derived(child, expanded, additions)?;
+            }
+        }
+        _ => (),
+    }
+    Ok(())
+}
+
+/// Execute discovery prerequisites and derived members through the same A9 engine.
+/// Only complete validated groups supply children; unresolved captured rosters never execute.
+pub fn execute<L: WorkerLauncher + Send>(
+    request: &ControllerRequest,
+    context: ExecutionContext,
+    mut launcher: L,
+    control: &dyn Control,
+) -> Result<ExecutionObservation, String> {
+    let mut request = request.clone();
+    let mut pending = request.templates.clone();
+    let mut previous_io = IoObservation::default();
+    let mut expanded = BTreeMap::new();
+    if pending.len() > 8192 {
+        return Err("too many authored templates".into());
+    }
+    while !pending.is_empty() {
+        let registry = registry(&request)?;
+        let graph = BuildGraph::validate(
+            request.declaration.clone(),
+            &registry,
+            &request.allowed_install_roots,
+        )
+        .map_err(|e| e.to_string())?;
+        let mut ready = Vec::new();
+        for template in &pending {
+            let scope = graph.source_scope(&[Target::Unit(template.producer.clone())])?;
+            if scope.iter().all(|id| {
+                graph
+                    .unit(id)
+                    .is_some_and(|u| !u.params.values().any(unresolved_derived))
+            }) {
+                ready.push(template.clone());
+            }
+        }
+        if ready.is_empty() {
+            return Err("dynamic discovery has unresolved or cyclic producer dependencies".into());
+        }
+        let mut phase = request.clone();
+        phase.targets = ready
+            .iter()
+            .map(|t| t.producer.clone())
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect();
+        let mut groups = crate::keys::ProducedGroups::new();
+        let mut observation =
+            execute_static(&phase, context.clone(), &mut launcher, control, &mut groups)?;
+        add_io(&mut observation.io, &previous_io);
+        previous_io = observation.io.clone();
+        if !observation.final_requirements_satisfied
+            || control.cancelled()
+            || !matches!(observation.source_finalization, Finalization::Complete)
+            || !matches!(
+                observation.root_finalization,
+                Finalization::Complete | Finalization::NotOpened
+            )
+        {
+            return Ok(observation);
+        }
+        let mut graph = graph;
+        for template in ready {
+            let key = (
+                template.producer.clone(),
+                template.group.clone(),
+                template.unit_prefix.clone(),
+            );
+            let group = groups
+                .get(&(template.producer.clone(), template.group.clone()))
+                .ok_or("successful planner omitted validated complete group")?;
+            let registered = crate::plans::RegisteredTemplate::register(
+                &graph,
+                template.clone(),
+                &registry,
+                &request.allowed_install_roots,
+            )?;
+            let expansion = registered.expand(
+                &graph,
+                group,
+                None,
+                &registry,
+                &request.allowed_install_roots,
+            )?;
+            let children = group
+                .stored()
+                .projections
+                .keys()
+                .map(|piece| (piece.clone(), format!("{}.{piece}", template.unit_prefix)))
+                .collect::<Vec<_>>();
+            for (_, child) in &children {
+                request
+                    .staged_inputs
+                    .insert(child.clone(), registered.staged_inputs());
+            }
+            request
+                .data_contract
+                .content_slots
+                .entry(template.payload_slot.clone())
+                .or_insert(false);
+            expanded.insert(key, children);
+            graph = BuildGraph::validate(
+                expansion.graph().declaration().clone(),
+                &registry,
+                &request.allowed_install_roots,
+            )
+            .map_err(|e| e.to_string())?;
+            pending.retain(|t| t != &template);
+        }
+        request.declaration = graph.declaration().clone();
+        for unit in &mut request.declaration.units {
+            let mut additions = Vec::new();
+            for value in unit.params.values_mut() {
+                resolve_derived(value, &expanded, &mut additions)?;
+            }
+            for (slot, child, logical, item) in additions {
+                if unit.inputs.iter().any(|i| match i {
+                    Input::Content { name, .. } | Input::Reference { name, .. } => name == &slot,
+                }) {
+                    return Err("derived input slot collision".into());
+                }
+                let staged = format!("inputs/{slot}");
+                unit.inputs.push(Input::Content {
+                    name: slot.clone(),
+                    source: ContentSource::Item { unit: child, item },
+                    whole: Some(
+                        "The original assembly consumes this complete validated derived child."
+                            .into(),
+                    ),
+                    conditional: None,
+                });
+                request
+                    .staged_inputs
+                    .get_mut(&unit.id)
+                    .ok_or("missing derived consumer stage map")?
+                    .insert(slot.clone(), staged.clone());
+                request.data_contract.content_slots.insert(slot, false);
+                unit.params
+                    .get_mut("recipe")
+                    .and_then(|v| v.get_mut("paths"))
+                    .and_then(Value::as_object_mut)
+                    .ok_or("derived consumer has no recipe paths")?
+                    .insert(logical, staged.into());
+            }
+        }
+    }
+    request.templates.clear();
+    if request
+        .declaration
+        .units
+        .iter()
+        .any(|u| u.params.values().any(unresolved_derived))
+    {
+        return Err("unresolved derived consumer after complete expansion".into());
+    }
+    let mut result = execute_static(
+        &request,
+        context,
+        &mut launcher,
+        control,
+        &mut crate::keys::ProducedGroups::new(),
+    )?;
+    add_io(&mut result.io, &previous_io);
+    Ok(result)
+}
+
+fn add_io(current: &mut IoObservation, previous: &IoObservation) {
+    current.cache_opens += previous.cache_opens;
+    current.cache_lookups += previous.cache_lookups;
+    current.staged_jobs += previous.staged_jobs;
+    current.input_clones += previous.input_clones;
+    current.observed_worker_attempts += previous.observed_worker_attempts;
+    current.worker_files_written += previous.worker_files_written;
+    current.publications += previous.publications;
+    current.installs += previous.installs;
+    current.receipt_writes += previous.receipt_writes;
+    for (id, count) in &previous.worker_attempts_by_unit {
+        *current
+            .worker_attempts_by_unit
+            .entry(id.clone())
+            .or_default() += count;
+    }
 }

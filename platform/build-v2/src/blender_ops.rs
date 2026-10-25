@@ -50,7 +50,9 @@ pub fn blender_code_files(kind: &str) -> Result<Vec<&'static str>, String> {
     Ok(files)
 }
 
-fn decoder_identity(files: &BTreeMap<&str, String>) -> Result<ImplementationIdentity, String> {
+pub(crate) fn decoder_identity(
+    files: &BTreeMap<&str, String>,
+) -> Result<ImplementationIdentity, String> {
     Ok(ImplementationIdentity {
         version: BLENDER_VALIDATOR_VERSION.into(),
         digest: sha256(&canonical_bytes(&serde_json::json!({
@@ -598,7 +600,14 @@ pub fn validate_blender_plan_outputs(
 ) -> Result<crate::groups::ValidatedGroup, String> {
     check_blender_identity(unit, BLENDER_PLAN_KIND, validator)?;
     spec.validate_ingredients(unit.ingredients())?;
-    crate::groups::validate_frozen(&spec.group, objects, |roster, objects| {
+    validate_geometry_outputs(&spec.group, objects)
+}
+
+pub fn validate_geometry_outputs(
+    contract: &OutputGroupContract,
+    objects: &BTreeMap<String, &crate::store::PreparedObject>,
+) -> Result<crate::groups::ValidatedGroup, String> {
+    crate::groups::validate_frozen(contract, objects, |roster, objects| {
         if objects
             .values()
             .any(|o| crate::keys::normalized_mode(o.source_mode()) != 0o644)
@@ -606,19 +615,19 @@ pub fn validate_blender_plan_outputs(
             return Err("plan data members must not be executable".into());
         }
         let manifest = objects
-            .get(&spec.group.manifest)
+            .get(&contract.manifest)
             .ok_or("missing frozen manifest")?;
         let mut bytes = Vec::new();
         manifest
             .reader()
             .map_err(|e| e.to_string())?
-            .take(spec.group.max_manifest_bytes)
+            .take(contract.max_manifest_bytes)
             .read_to_end(&mut bytes)
             .map_err(|e| e.to_string())?;
         if bytes.len() as u64 != manifest.size() {
             return Err("frozen manifest size differs".into());
         }
-        let strict = parse_blender_plan_metadata(&bytes, spec.group.max_manifest_bytes)?;
+        let strict = parse_blender_plan_metadata(&bytes, contract.max_manifest_bytes)?;
         if &strict != roster.raw() {
             return Err("frozen metadata views differ".into());
         }

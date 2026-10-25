@@ -21,6 +21,8 @@ pub const BLENDER_WORKER_FILES: [&str; 5] = [
 enum WorkerKind {
     Python,
     Blender,
+    RecipePython,
+    RecipeBlender,
 }
 
 /// Private bytes and their implementation identity; never a locator or a caller's digest claim.
@@ -239,6 +241,48 @@ impl PythonWorkerBundle {
         })
     }
 
+    pub fn from_recipe_snapshot(snapshot: &SourceSnapshot, blender: bool) -> Result<Self, String> {
+        let names: &[&str] = if blender {
+            &crate::recipe_ops::BLENDER_FILES
+        } else {
+            &crate::recipe_ops::FILES
+        };
+        if snapshot.len() != names.len() {
+            return Err("recipe worker source set is incomplete".into());
+        }
+        let mut files = BTreeMap::new();
+        for name in names {
+            let Some(SnapshotEntry::File(bytes)) = snapshot.get(*name) else {
+                return Err("recipe worker is not frozen regular data".into());
+            };
+            files.insert(name.to_string(), bytes.clone());
+        }
+        let digests: BTreeMap<_, _> = files
+            .iter()
+            .map(|(name, bytes)| (name, sha256(bytes)))
+            .collect();
+        let version = if blender {
+            crate::recipe_ops::BLENDER_VERSION
+        } else {
+            crate::recipe_ops::PYTHON_VERSION
+        };
+        let digest = sha256(&canonical_bytes(
+            &serde_json::json!({"domain":"atelier-recipe-worker", "version":version, "files":digests}),
+        )?);
+        Ok(Self {
+            files,
+            identity: ImplementationIdentity {
+                version: version.into(),
+                digest,
+            },
+            kind: if blender {
+                WorkerKind::RecipeBlender
+            } else {
+                WorkerKind::RecipePython
+            },
+        })
+    }
+
     pub(crate) fn file_count(&self) -> usize {
         self.files.len()
     }
@@ -271,6 +315,14 @@ impl PythonWorkerBundle {
         fs::set_permissions(&directory, fs::Permissions::from_mode(0o555))
             .map_err(|error| error.to_string())?;
         let command = match self.kind {
+            WorkerKind::RecipePython => WorkerCommand::python_job_loop(
+                interpreter.to_path_buf(),
+                directory.join("recipe_worker.py"),
+            ),
+            WorkerKind::RecipeBlender => WorkerCommand::blender_job_loop(
+                interpreter.to_path_buf(),
+                directory.join("recipe_worker.py"),
+            ),
             WorkerKind::Python => WorkerCommand::python_job_loop(
                 interpreter.to_path_buf(),
                 directory.join("python_worker.py"),

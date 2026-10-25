@@ -33,6 +33,7 @@
     "platform/build-v2/src/python_executor.rs",
     "platform/build-v2/src/python_sources.rs",
     "platform/build-v2/src/python_worker.rs",
+    "platform/build-v2/src/recipe_ops.rs",
     "platform/build-v2/src/results.rs",
     "platform/build-v2/src/roots.rs",
     "platform/build-v2/src/scheduler.rs",
@@ -56,16 +57,18 @@
     "platform/harness/harness/safety/memory_guard.py",
     "platform/studio/atelier/__init__.py",
     "platform/studio/atelier/build_v2/__init__.py",
+    "platform/studio/atelier/build_v2/blender_job.py",
+    "platform/studio/atelier/build_v2/blender_worker.py",
     "platform/studio/atelier/build_v2/controller_client.py",
     "platform/studio/atelier/build_v2/controller_entry.py",
     "platform/studio/atelier/build_v2/controller_recipe.py",
-    "platform/studio/atelier/build_v2/python_worker.py",
-    "platform/studio/atelier/build_v2/python_job.py",
     "platform/studio/atelier/build_v2/protocol.py",
-    "platform/studio/atelier/paths.py",
-    "platform/studio/atelier/source_imports.py",
+    "platform/studio/atelier/build_v2/python_job.py",
+    "platform/studio/atelier/build_v2/python_worker.py",
+    "platform/studio/atelier/build_v2/recipe_job.py",
+    "platform/studio/atelier/build_v2/recipe_worker.py",
     "platform/studio/atelier/file_identity.py",
-    "platform/studio/atelier/build_v2/blender_job.py",
-    "platform/studio/atelier/build_v2/blender_worker.py"
+    "platform/studio/atelier/paths.py",
+    "platform/studio/atelier/source_imports.py"
   ]
 }

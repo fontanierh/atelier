@@ -276,6 +276,8 @@ impl State {
 pub struct Report {
     pub states: BTreeMap<String, State>,
     pub keys: BTreeMap<String, String>,
+    /// Validated complete discovery tokens; identities alone never populate this map.
+    pub groups: ProducedGroups,
     pub lookups: Vec<String>,
     pub batches: Vec<Vec<String>>,
     pub publications: Vec<String>,
@@ -681,5 +683,6 @@ pub fn run<B: Backend, E: Executor<B::Ticket, B::Inputs, B::Completion>>(
             report.unsatisfied.insert(id.clone(), unmet);
         }
     }
+    report.groups = groups;
     Ok(report)
 }

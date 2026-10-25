@@ -3,12 +3,13 @@ use crate::graph::BuildGraph;
 use crate::groups::{EncodedRole, OutputGroupContract, PlanEncoding, ValidatedGroup};
 use crate::schema::*;
 use crate::validate::OpRegistry;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
 /// Authored executable/output contract. Plans supply only piece/member metadata.
 /// Every child uses the same code, op, staged slot and bounded output shape.
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ChildTemplate {
     pub producer: String,
     pub group: String,
@@ -144,7 +145,18 @@ impl ChildTemplate {
                 id: "asset".into(),
                 logical_path: format!("{}/{piece}", self.logical_namespace),
                 class: self.output_class.clone(),
-                files: self.files.clone(),
+                files: self
+                    .files
+                    .iter()
+                    .map(|file| OutputFile {
+                        path: file.path.replace("$piece", piece),
+                        install_path: file
+                            .install_path
+                            .as_ref()
+                            .map(|p| p.replace("$piece", piece)),
+                        required: file.required,
+                    })
+                    .collect(),
                 destination: Destination::Store,
             }],
             output_groups: vec![],

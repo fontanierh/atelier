@@ -301,6 +301,12 @@ class Worker:
                 self.run(request['job'])
             # A cancel for a job that already finished gets no reply.
 
+    def prepare_job(self, job, job_dir):
+        self.check_job_folder(job_dir)
+
+    def configuration(self, job, job_dir, result_fd):
+        return job_config(job, job_dir, result_fd, self.platform)
+
     def run(self, job):
         job_id = job['job_id']
         self.send({'type': 'started', 'job_id': job_id})
@@ -321,7 +327,7 @@ class Worker:
             raise JobRefused('protocol', 'the job folder is not a staged absolute folder with output/')
         if os.listdir(os.path.join(job_dir, 'output')):
             raise JobRefused('protocol', 'output/ is not empty before the job')
-        self.check_job_folder(job_dir)
+        self.prepare_job(job, job_dir)
         if self.sandboxed and not os.access(SANDBOX_EXEC, os.X_OK):
             raise JobRefused('dependency', 'no supported job sandbox on this platform')
         command = self.child_command()
@@ -333,7 +339,7 @@ class Worker:
             # argument limits. The child gets its own log pipe: inherited stdout/stderr files would be
             # undeclared paths to the sandbox; the loop forwards those logs to its own stderr. It stays
             # in the loop's process group, so a guard that stops the worker stops the job too.
-            config = json.dumps(job_config(job, job_dir, result_write, self.platform)).encode('utf-8')
+            config = json.dumps(self.configuration(job, job_dir, result_write)).encode('utf-8')
             child = subprocess.Popen(command, cwd=job_dir, env=self.child_environment(job_dir), stdin=subprocess.PIPE,
                                      stdout=subprocess.PIPE, stderr=subprocess.STDOUT, pass_fds=(result_write,))
         except OSError as error:

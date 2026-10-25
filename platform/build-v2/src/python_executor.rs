@@ -461,6 +461,7 @@ pub struct PythonExecutor<L> {
     launcher: L,
     config: PythonExecution,
     blender: Option<PythonExecution>,
+    recipes: Vec<PythonExecution>,
     scripted_fixture: bool,
 }
 
@@ -472,8 +473,14 @@ impl<L> PythonExecutor<L> {
             launcher,
             config,
             blender: None,
+            recipes: Vec::new(),
             scripted_fixture: false,
         }
+    }
+
+    pub fn with_recipe(mut self, config: PythonExecution) -> Self {
+        self.recipes.push(config);
+        self
     }
 
     pub fn with_blender(mut self, config: PythonExecution) -> Self {
@@ -487,6 +494,7 @@ impl<L> PythonExecutor<L> {
             launcher,
             config,
             blender: None,
+            recipes: Vec::new(),
             scripted_fixture: true,
         }
     }
@@ -533,7 +541,13 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
                 continue;
             }
             let compatibility = work.compatibility();
-            let config = if compatibility.worker_version == self.config.bundle.identity().version {
+            let config = if let Some(config) = self
+                .recipes
+                .iter()
+                .find(|config| config.bundle.identity().version == compatibility.worker_version)
+            {
+                Some(config)
+            } else if compatibility.worker_version == self.config.bundle.identity().version {
                 Some(&self.config)
             } else {
                 self.blender.as_ref().filter(|config| {
