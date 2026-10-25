@@ -276,9 +276,6 @@ impl Glb {
         if !mesh.uvs.is_empty() {
             attributes["TEXCOORD_0"] = json!(self.add_floats(&flat(&mesh.uvs), "VEC2", false));
         }
-        if !mesh.colours.is_empty() {
-            attributes["COLOR_0"] = json!(self.add_floats(&flat(&mesh.colours), "VEC3", false));
-        }
         let indices = self.add_indices(&mesh.indices);
         let primitive = json!({ "attributes": attributes, "indices": indices, "material": mesh.material });
         let index = push(&mut self.json, "meshes", json!({ "name": name, "primitives": [primitive] }));
@@ -447,14 +444,13 @@ fn flat<const N: usize>(values: &[[f32; N]]) -> Vec<f32> {
     values.iter().flatten().copied().collect()
 }
 
-/// Triangles to add with [`Glb::add_mesh`]: per vertex a position, a normal, and optionally texture coordinates and a
-/// colour; three indices per triangle, counter-clockwise seen from the front.
+/// Triangles to add with [`Glb::add_mesh`]: per vertex a position, a normal, and optionally texture coordinates;
+/// three indices per triangle, counter-clockwise seen from the front.
 #[derive(Default)]
 pub struct Mesh {
     pub positions: Vec<[f32; 3]>,
     pub normals: Vec<[f32; 3]>,
     pub uvs: Vec<[f32; 2]>,
-    pub colours: Vec<[f32; 3]>,
     pub indices: Vec<u32>,
     pub material: usize,
 }

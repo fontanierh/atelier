@@ -1,7 +1,8 @@
-//! The world: the ground and the road from `assets/world`, the sea, a sun, and a camera that starts at the spawn
-//! and flies.
+//! The world: the ground and the road from `assets/world`, the sea, Yorimichi's sky, sun and haze, and a camera
+//! that starts at the spawn and flies.
 
 mod fly;
+mod look;
 mod tiles;
 
 use bevy::gltf::{Gltf, GltfNode};
@@ -24,7 +25,7 @@ pub struct WorldPlugin;
 
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((fly::FlyPlugin, tiles::TilesPlugin))
+        app.add_plugins((fly::FlyPlugin, look::LookPlugin, tiles::TilesPlugin))
             .add_systems(OnEnter(Screen::World), spawn_world)
             .add_systems(Update, read_index.run_if(in_state(Screen::World)));
     }
@@ -41,24 +42,17 @@ fn spawn_world(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     commands.insert_resource(Index(assets.load(INDEX)));
-    commands.insert_resource(ClearColor(Color::srgb(0.53, 0.72, 0.9)));
     commands.spawn((
         Name::new("Sea"),
         DespawnOnExit(Screen::World),
         Mesh3d(meshes.add(Plane3d::default().mesh().size(SEA_SIZE_M, SEA_SIZE_M))),
         MeshMaterial3d(materials.add(StandardMaterial {
-            base_color: Color::srgb(0.18, 0.36, 0.52),
-            perceptual_roughness: 0.4,
+            base_color: Color::srgb(0.30, 0.44, 0.58),
+            perceptual_roughness: 1.0,
             ..default()
         })),
     ));
-    commands.spawn((
-        Name::new("Sun"),
-        DespawnOnExit(Screen::World),
-        DirectionalLight { illuminance: light_consts::lux::AMBIENT_DAYLIGHT, shadow_maps_enabled: true, ..default() },
-        Transform::from_xyz(30.0, 60.0, 20.0).looking_at(Vec3::ZERO, Vec3::Y),
-    ));
-    commands.spawn((Name::new("Camera"), DespawnOnExit(Screen::World), Camera3d::default(), Fly::default()));
+    commands.spawn((Name::new("Camera"), DespawnOnExit(Screen::World), Camera3d::default(), Fly::default(), look::camera()));
 }
 
 /// Once the index has loaded: puts the camera at the spawn and adds a [`Tile`] for each tile.
