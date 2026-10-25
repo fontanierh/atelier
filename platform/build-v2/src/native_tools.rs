@@ -59,6 +59,40 @@ impl NativeToolBundle {
         self.identity.clone()
     }
 
+    /// Bind the actual prepared source key and owned persistence scope as execution
+    /// controls. Neither value changes the frozen worker implementation identity.
+    pub fn command_for_cook(
+        &self,
+        interpreter: &Path,
+        engine_root: &Path,
+        owned_scope: &Path,
+        source_key: &str,
+        zen_state_root: &Path,
+        export_project: &Path,
+    ) -> Result<crate::guard_adapter::WorkerCommand, String> {
+        if source_key.len() != 64
+            || !source_key
+                .bytes()
+                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+            || !zen_state_root.is_absolute()
+            || !export_project.is_absolute()
+        {
+            return Err(
+                "cook execution requires a complete source key and absolute owned Zen scope".into(),
+            );
+        }
+        let mut command = self.command(interpreter, engine_root, owned_scope)?;
+        command.args.extend([
+            "--source-key".into(),
+            source_key.into(),
+            "--zen-state-root".into(),
+            zen_state_root.as_os_str().to_owned(),
+            "--export-project".into(),
+            export_project.as_os_str().to_owned(),
+        ]);
+        Ok(command)
+    }
+
     pub fn command(
         &self,
         interpreter: &Path,
@@ -94,7 +128,11 @@ impl NativeToolBundle {
                 "--engine-root".into(),
                 engine_root.as_os_str().to_owned(),
             ],
-            env: BTreeMap::from([("LC_ALL".into(), "C".into()), ("TZ".into(), "UTC".into())]),
+            env: BTreeMap::from([
+                ("LC_ALL".into(), "C".into()),
+                ("TZ".into(), "UTC".into()),
+                ("PATH".into(), "/usr/bin:/bin:/usr/sbin:/sbin".into()),
+            ]),
             cwd: "/".into(),
         })
     }

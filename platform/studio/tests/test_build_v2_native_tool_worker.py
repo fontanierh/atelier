@@ -122,3 +122,83 @@ def test_game_archives_receipt_listed_bundle_with_internal_links(tmp_path):
     assert tool.dispatch(request, tmp_path, tmp_path / 'engine', run) == ['binaries.zip']
     assert commands[0][-1] == '-MaxParallelActions=3'
     assert commands[1][:5] == ['/usr/bin/ditto', '-c', '-k', '--sequesterRsrc', '--keepParent']
+
+
+def test_stock_cook_argv_is_explicit_package_no_refs_and_zen_source_namespace(tmp_path):
+    args = tool.cook_argv(tmp_path / 'engine', tmp_path / 'Game.uproject', ['/Game/Asset'], 'a' * 64)
+    assert '-package=/Game/Asset' in args
+    assert '-cooksinglepackagenorefs' in args
+    assert '-ZenStoreProject=AtelierV2_' + 'a' * 64 in args
+    assert '-cookall' not in args and '-build' not in args
+    with pytest.raises(ValueError, match='canonical package'):
+        tool.cook_argv(tmp_path, tmp_path / 'Game.uproject', ['/Game/A+-run=other'], 'a' * 64)
+
+
+def test_persistent_source_view_never_adopts_existing_key_scope(tmp_path):
+    source = tmp_path / 'source'
+    source.mkdir()
+    (source / 'Game.uproject').write_text('{}')
+    state = tmp_path / 'zen'
+    view, protected = tool.persistent_cook_view(source, [str(source / 'Game.uproject')], 'a' * 64, state)
+    assert view == state / 'projects' / ('a' * 64) / 'view'
+    assert protected == [str(view / 'Game.uproject')]
+    other = tmp_path / 'other'
+    other.mkdir()
+    with pytest.raises(FileExistsError):
+        tool.persistent_cook_view(other, [], 'a' * 64, state)
+    assert other.exists() and (view / 'Game.uproject').read_text() == '{}'
+
+
+def test_mac_zip_validation_refuses_external_links_before_extract(tmp_path):
+    import stat
+    import zipfile
+    archive = tmp_path / 'input.mac.zip'
+    with zipfile.ZipFile(archive, 'w') as stream:
+        info = zipfile.ZipInfo('Game.app/evil')
+        info.create_system = 3
+        info.external_attr = (stat.S_IFLNK | 0o777) << 16
+        stream.writestr(info, '../../outside')
+    calls = []
+    with pytest.raises(ValueError, match='escapes'):
+        tool.restore_mac_zip(archive, tmp_path / 'Game.app', lambda *a, **kw: calls.append(a))
+    assert not calls
+
+
+def test_stock_cook_runs_before_fixed_native_capture_and_raw_record_publication(tmp_path, monkeypatch):
+    from pathlib import Path
+    request = job(tmp_path, 'unreal.cook.produce')
+    request['params'].update(packages=['/Game/Asset'], record_outputs={'/Game/Asset': 'build/record.cb'},
+                             cook_root='build/cook-metadata')
+    request['params']['recipe']['outputs'] = [{'path': 'build/record.cb', 'file': 'record.cb'},
+                                            {'path': 'build/cook-metadata', 'file': 'metadata.tree.tar'}]
+    class Callbacks:
+        def __init__(self, *args):
+            pass
+        def close(self, success):
+            assert success
+    monkeypatch.setattr(tool, 'CookCallbacks', Callbacks)
+    calls = []
+    def run(argv, **kwargs):
+        calls.append(argv)
+        if '-run=cook' in argv:
+            cooked = Path(argv[1]).parent / 'Saved/Cooked/Mac'
+            cooked.mkdir(parents=True)
+            (cooked / 'ue.projectstore').write_bytes(b'stock marker')
+            return
+        assert '-run=pythonscript' in argv
+        export = json.loads(Path(kwargs['env']['ATELIER_NATIVE_COOK_EXPORT']).read_bytes())
+        reports = []
+        for native in export['requests']:
+            Path(native['record_path']).write_bytes(b'native retained CB')
+            reports.append({key: native[key] for key in ('mode', 'project', 'oplog', 'source_package', 'input_key', 'runtime_project_file')})
+            reports[-1].update(version=1, status='verified', source_dependency_evaluation='recorded_only',
+                native_stored_key='a' * 40, root_hash='b' * 40, installed_root_hash='', attachments=1,
+                record_io_hash='c' * 40, request_io_hash='d' * 40)
+        Path(export['report']).write_text(json.dumps(reports))
+    state = tmp_path / 'zen'
+    (tmp_path / 'C3.uproject').write_text('{}')
+    result = tool.dispatch(request, tmp_path, tmp_path / 'engine', run, source_key='a' * 64, zen_state_root=state, export_project=tmp_path / 'C3.uproject')
+    assert result == ['metadata.tree.tar', 'record.cb']
+    assert (tmp_path / 'output/record.cb').read_bytes() == b'native retained CB'
+    assert '-run=cook' in calls[0] and '-run=pythonscript' in calls[1]
+    assert (state / 'records' / ('a' * 64 + '.cb')).stat().st_mode & 0o777 == 0o444
