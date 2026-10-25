@@ -119,3 +119,16 @@ def test_exact_declared_export_format_survives_and_unknown_refuses(tmp_path):
     steps[0].export_format = 'png'
     with pytest.raises(rd.Unsupported, match='unsupported declared export format'):
         rd.extract(steps, checkout=tmp_path, build_root=tmp_path / 'build')
+
+
+def test_declared_python_helper_binds_reached_package_child_transitively(tmp_path):
+    steps, _, _ = _steps(tmp_path)
+    package = tmp_path / 'pkg'
+    package.mkdir()
+    helper = package / 'gate.py'
+    helper.write_text('def later():\n    from pkg import plants\n')
+    (package / 'plants.py').write_text('from . import leaf\n')
+    (package / 'leaf.py').write_text('raise RuntimeError("source capture cannot execute helpers")\n')
+    steps[0].inputs.append(helper)
+    row = rd.extract(steps, checkout=tmp_path, build_root=tmp_path / 'build')[0]
+    assert {'pkg/gate.py', 'pkg/plants.py', 'pkg/leaf.py'} <= set(row['code'])

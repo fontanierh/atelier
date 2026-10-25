@@ -211,7 +211,9 @@ class _FastImportScanner(source_imports.ImportScanner):
                     bases = (source.parents[level - 1],)
                 for name in names:
                     parts = name.split('.') if name else []
-                    for base in bases:
+                    package_base = None if level else source_imports.package_import_base(source, name)
+                    candidates = bases if package_base is None else (*bases, package_base)
+                    for base in dict.fromkeys(candidates):
                         found, missed = self._resolve_with_missed(base, parts)
                         direct_missed.extend(missed)
                         if found:
