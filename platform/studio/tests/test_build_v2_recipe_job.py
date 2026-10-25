@@ -184,8 +184,10 @@ def test_original_blender_argument_separator_is_preserved_by_generic_command_com
     script = view / 'original.py'
     script.write_text("import json, sys\nfrom pathlib import Path\nPath(__file__).with_name('argv.json').write_text(json.dumps(sys.argv[sys.argv.index('--')+1:]))\n")
     monkeypatch.setitem(sys.modules, 'bpy', ModuleType('bpy'))
+    monkeypatch.setattr(sys, 'path', list(sys.path))
+    monkeypatch.chdir(view)
     context = SimpleNamespace(output_dir=tmp_path / 'output', params={'recipe': {
         'commands': [{'kind': 'blender', 'script': 'original.py', 'args': ['actual-role'], 'env': [], 'threads': 3}],
-        'outputs': [], 'verify': None}})
+        'paths': {}, 'outputs': [], 'verify': None}})
     job.run(context)
     assert json.loads((view / 'argv.json').read_text()) == ['actual-role']
