@@ -5,9 +5,6 @@ import os
 from pathlib import Path
 
 from atelier.atomic_files import atomic_json
-from atelier.build_inputs import local_imports
-from atelier.build_batch_source import support as batch_support
-from atelier.build import Batch, Blender, Call, Product, Python, Step
 from atelier import export_assembly, export_tasks, paths
 from atelier.model_files import member
 
@@ -71,6 +68,10 @@ def steps(ctx, *, region, assets, after=(), inputs=()):
     the build controller's successful planner expansion. Assembly MUST require all planners and
     all current export products; it MUST NOT reconstruct missing geometry inline or export it.
     """
+    from atelier.build_inputs import local_imports
+    from atelier.build_batch_source import support as batch_support
+    from atelier.build import Batch, Blender, Call, Product, Python, Step
+
     export_tasks.name(region)
     assets = tuple(assets)
     if not assets or len({export_tasks.name(a.key).casefold() for a in assets}) != len(assets):
