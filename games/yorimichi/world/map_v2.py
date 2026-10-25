@@ -132,7 +132,7 @@ def run(context):
         values = context.packages[slot]
         paths = [values] if isinstance(values, str) else list(values)
         if (len(paths) != 1 or not paths[0].startswith('/Game/') or paths[0] == PACKAGE
-                or paths[0].startswith('/Game/AtelierRaw/') or (slot in native and native[slot] != paths[0])):
+                or paths[0].startswith(('/Game/AtelierRaw/', '/Game/_Raw/')) or (slot in native and native[slot] != paths[0])):
             raise ValueError('map requires one exact finished package per input')
         asset = unreal.EditorAssetLibrary.load_asset(paths[0])
         if asset is None or (slot in mesh_slots and not isinstance(asset, unreal.StaticMesh)):

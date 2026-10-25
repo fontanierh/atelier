@@ -43,7 +43,7 @@ def author_units(*, world, terrain, painterly, dependencies=(), checkout=None):
         package = reference.get('package')
         if (not isinstance(package, str) or not package.startswith('/Game/') or '.' in package
                 or any(part in ('', '.', '..') for part in package[1:].split('/'))
-                or package.startswith('/Game/AtelierRaw/') or package == PACKAGE):
+                or package.startswith(('/Game/AtelierRaw/', '/Game/_Raw/')) or package == PACKAGE):
             raise ValueError('map input requires a finished canonical native package')
         if package in native.values():
             raise ValueError('duplicate map native dependency')

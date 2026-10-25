@@ -19,7 +19,7 @@ else:
 
 SUFFIXES = ('.m.ubulk', '.upayload', '.uasset', '.umap', '.uexp', '.ubulk', '.uptnl')
 PRIMARY = ('.uasset', '.umap')
-PACKAGE = re.compile(r'/Game/(?:[A-Za-z0-9_]+/)*[A-Za-z0-9_]+\Z')
+PACKAGE = re.compile(r'/Game/(?:[A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+\Z')
 
 
 def _relative(value):

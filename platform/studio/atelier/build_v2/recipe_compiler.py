@@ -316,6 +316,30 @@ def compile_source_prerequisites(game, *, checkout, build_root):
     return replace(marker, unit='world.source-prerequisites', selection_targets=actual_targets)
 
 
+def compile_materials(game, *, checkout, build_root):
+    """Compile the real shared library with individual raw, finish and graph owners."""
+    from dataclasses import replace
+    import importlib.util
+    from pathlib import Path
+    from atelier.build_products import Graph
+    from .recipe_dependencies import extract
+    source_steps = Graph(recipe_steps(game, checkout=checkout, build_root=build_root)).select(('world.textures',))
+    rows = extract(source_steps, checkout=checkout, build_root=build_root)
+    _, targets = _without_joins(rows, ('world.textures',))
+    source = compile_rows(rows, project=game, targets=targets, checkout=checkout,
+                          install_roots=(f'build/{game}', f'games/{game}/unreal/Content'))
+    filename = Path(checkout) / 'games' / game / 'v2_native_units.py'
+    spec = importlib.util.spec_from_file_location('atelier_native_units_' + game, filename)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    native = module.shared_materials(rows, checkout=checkout)
+    return replace(source, unit='unreal.materials',
+        declaration={**source.declaration, 'units': [*source.declaration['units'], *native['units']]},
+        staged_inputs={**source.staged_inputs, **native['staged_inputs']},
+        content_slots={**source.content_slots, **native['content_slots']},
+        selection_targets=native['targets'])
+
+
 def compile_game(game, *, checkout, build_root, targets=('unreal.package',)):
     """Compose authored declarations; all execution remains in the v2 engine."""
     from atelier.build_products import Graph
