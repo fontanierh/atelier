@@ -172,10 +172,14 @@ pub struct PreparedUnrealLaunch {
     native_source_digest: String,
 }
 
+fn resident_operation(kind: &str) -> bool {
+    matches!(kind, RAW_IMPORT | FINISH | AUTHOR | VERIFY)
+}
+
 impl PreparedUnrealLaunch {
     /// Restrict the already-started editor before Hello; only fixed native jobs share it.
     pub fn enable_resident(&mut self) -> Result<(), String> {
-        if !matches!(self.request.op.kind.as_str(), RAW_IMPORT | FINISH | AUTHOR | VERIFY) {
+        if !resident_operation(&self.request.op.kind) {
             return Err("only registered import/finish/author/verify operations may share an editor".into());
         }
         if self.request.op.kind == VERIFY {
@@ -204,7 +208,7 @@ impl PreparedUnrealLaunch {
             || self.worker.digest != owner.worker.digest
             || self.native_source_digest != owner.native_source_digest
             || self.keepalive.expected() != owner.keepalive.expected()
-            || !matches!(self.request.op.kind.as_str(), RAW_IMPORT | FINISH | VERIFY)
+            || !resident_operation(&self.request.op.kind)
         {
             return Err("resident job differs from verified native session".into());
         }
