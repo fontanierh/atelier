@@ -153,3 +153,22 @@ def test_animation_requires_a_decoded_declared_skeleton_and_disables_mesh_import
     ctx.packages.clear()
     with pytest.raises(ValueError, match='declared package content'):
         ops.raw_import(ctx, unreal)
+
+
+def test_produced_mesh_item_requires_exact_receipt_membership_and_bytes(tmp_path):
+    import hashlib
+    import json
+    root = tmp_path / 'item'
+    root.mkdir()
+    mesh = root / 'Tree.fbx'
+    mesh.write_bytes(b'fbx')
+    (root / 'export.json').write_text(json.dumps({'primary': mesh.name,
+        'sha256': hashlib.sha256(mesh.read_bytes()).hexdigest()}))
+    ctx = SimpleNamespace(job_dir=tmp_path, inputs={'source': str(root)}, packages={}, params={})
+    assert ops._input(ctx, 'source') == str(mesh)
+    mesh.write_bytes(b'changed')
+    with pytest.raises(ValueError, match='bytes differ'):
+        ops._input(ctx, 'source')
+    (root / 'foreign').write_bytes(b'unknown')
+    with pytest.raises(ValueError, match='complete export receipt'):
+        ops._input(ctx, 'source')

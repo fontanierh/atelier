@@ -710,6 +710,7 @@ fn context_and_import_evidence_are_required_well_formed_and_exact() {
     };
     let write = |loaded: &LoadedContext, nodes: Vec<DdcNode>| {
         let value = ContextReport {
+            native_worker_source_digest: None,
             version: EVIDENCE_VERSION,
             loaded: loaded.clone(),
             ddc_graph: DdcGraph {

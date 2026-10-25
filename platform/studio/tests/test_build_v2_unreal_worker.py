@@ -205,3 +205,29 @@ def test_a_declared_setting_matches_the_editor_value_as_text_or_an_exact_number(
     assert same('Verbose', 'Verbose', numeric=False)
     assert not same('01', '1', numeric=False)
     assert not same('0.5', '0.500000', numeric=False)
+
+
+def test_scoped_python_guard_refuses_unknown_reads_and_restores_afterwards(tmp_path):
+    root = tmp_path / 'job'
+    root.mkdir()
+    (root / 'output').mkdir()
+    known = root / 'known'
+    known.write_bytes(b'keyed')
+    outside = tmp_path / 'outside'
+    outside.write_bytes(b'not keyed')
+    with pytest.raises(JobRefused, match='undeclared Python'):
+        with unreal_worker.declared_python(root, [], [known], [Path(sys.base_prefix)]):
+            assert known.read_bytes() == b'keyed'
+            try:
+                outside.read_bytes()
+            except JobRefused:
+                pass  # A caught refusal must not make the job successful.
+    assert outside.read_bytes() == b'not keyed'
+    # The first job's permanent audit dispatcher is inactive for the next job.
+    with unreal_worker.declared_python(root, [], [known], [Path(sys.base_prefix)]):
+        assert known.read_bytes() == b'keyed'
+
+
+def test_long_native_sidecar_suffix_has_one_package_owner():
+    for suffix in ('.m.ubulk', '.upayload'):
+        assert unreal_worker.package_owning('content/Game/A' + suffix, 'content/Game/') == '/Game/A'

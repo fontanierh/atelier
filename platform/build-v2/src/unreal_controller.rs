@@ -152,14 +152,16 @@ pub struct PreparedUnrealLaunch {
     pub request: crate::protocol::JobRequest,
     packages: BTreeSet<String>,
     context_verified: Cell<bool>,
+    native_source_digest: String,
 }
 
 impl PreparedUnrealLaunch {
     /// C5 must call after Hello, BEFORE the first Run; missing evidence refuses.
     pub fn verify_context(&self) -> Result<(), String> {
-        self.keepalive
-            .verify_context_report()
-            .map_err(|e| e.to_string())?;
+        let report = self.keepalive.verify_context_report().map_err(|e| e.to_string())?;
+        if report.native_worker_source_digest.as_deref() != Some(&self.native_source_digest) {
+            return Err("loaded native worker differs from keyed project implementation".into());
+        }
         self.context_verified.set(true);
         Ok(())
     }
@@ -442,8 +444,32 @@ fn declared_packages(unit: &PreparedUnit) -> Result<BTreeSet<String>, String> {
     Ok(result)
 }
 
+pub const NATIVE_SOURCE_ROOT: &str = "platform/build-v2/unreal/AtelierBuildWorker/";
+
+/// Match the exact raw-source manifest compiled by AtelierBuildWorker.Build.cs.
+fn native_source_digest(unit: &PreparedUnit) -> Result<String, String> {
+    let mut files = BTreeMap::new();
+    for (path, digest) in &unit.ingredients().code {
+        if let Some(relative) = path.strip_prefix(NATIVE_SOURCE_ROOT) {
+            if relative == "AtelierBuildWorker.uplugin" ||
+                (relative.starts_with("Source/") && (relative.ends_with(".cs") || relative.ends_with(".cpp") || relative.ends_with(".h"))) {
+                files.insert(relative, digest);
+            }
+        }
+    }
+    for required in ["AtelierBuildWorker.uplugin", "Source/AtelierBuildWorker/AtelierBuildWorker.Build.cs",
+        "Source/AtelierBuildWorker/Private/AtelierBuildWorkerLibrary.cpp",
+        "Source/AtelierBuildWorker/Private/AtelierBuildWorkerModule.cpp",
+        "Source/AtelierBuildWorker/Public/AtelierBuildWorkerLibrary.h"] {
+        if !files.contains_key(required) { return Err(format!("native implementation source not keyed: {required}")); }
+    }
+    let manifest = files.into_iter().map(|(path, digest)| format!("{path}\0{digest}\n")).collect::<String>();
+    Ok(sha256(manifest.as_bytes()))
+}
+
 pub fn check_unit(unit: &PreparedUnit) -> Result<(), String> {
     let value = unit.ingredients();
+    native_source_digest(unit)?;
     let expected = validator_identity();
     if value.validator_version != expected.version || value.validator_digest != expected.digest {
         return Err("native validator identity differs from registered implementation".into());
@@ -717,6 +743,7 @@ pub fn prepare(
         request,
         packages,
         context_verified: Cell::new(false),
+        native_source_digest: native_source_digest(unit)?,
     })
 }
 
@@ -803,7 +830,7 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
                 },
             );
         }
-        for name in ["properties", "fbx"] {
+        for name in ["properties", "fbx", "package_sources", "partners"] {
             params.insert(
                 name.into(),
                 ParamRule {

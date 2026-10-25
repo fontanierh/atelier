@@ -664,6 +664,9 @@ pub struct LoadedContext {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ContextReport {
+    /// Source manifest compiled into the loaded project worker plugin.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub native_worker_source_digest: Option<String>,
     pub version: u32,
     pub loaded: LoadedContext,
     /// The editor's effective cache graph, read from the editor (never from the command line).

@@ -4,6 +4,8 @@ Declare this file as a job's entry script and project code. ``params.op`` select
 ``raw_import`` or ``finish``; the controller owns keys, dependencies, admission,
 output inventory and installation. These bodies never invoke a build scheduler.
 """
+import hashlib
+import json
 from pathlib import Path
 import re
 
@@ -29,11 +31,38 @@ def _input(context, name, *, package=False):
         raise ValueError('Missing declared Unreal input')
     value = context.inputs[name]
     if package:
-        if context.packages.get(name) != value:
+        packages = context.packages.get(name)
+        if isinstance(packages, str):
+            packages = [packages]
+        if not packages:
             raise ValueError('Expected a declared package content input')
-        return _package(value)
+        selected = context.params.get('package_sources', {}).get(name)
+        if selected is None and len(packages) == 1:
+            selected = packages[0]
+        if selected not in packages:
+            raise ValueError('Package selection must name exactly one declared package content input')
+        return _package(selected)
     path = Path(value)
-    if not path.is_absolute() or not path.is_relative_to(Path(context.job_dir)) or not path.is_file():
+    if not path.is_absolute() or not path.is_relative_to(Path(context.job_dir)):
+        raise ValueError('Expected a staged regular source input')
+    if path.is_dir():
+        # A produced source Item is a complete source file + original public
+        # export receipt, never a guessed first member of a directory.
+        receipt_path = path / 'export.json'
+        if receipt_path.is_symlink() or not receipt_path.is_file():
+            raise ValueError('Source Item has no regular export receipt')
+        receipt = json.loads(receipt_path.read_bytes())
+        primary = receipt.get('primary')
+        if (not isinstance(primary, str) or Path(primary).name != primary
+                or sorted(member.name for member in path.iterdir()) != sorted([primary, 'export.json'])):
+            raise ValueError('Source Item differs from its complete export receipt')
+        path = path / primary
+        if path.is_symlink() or not path.is_file() or path.stat().st_nlink != 1:
+            raise ValueError('Source Item member is linked or missing')
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        if digest != receipt.get('sha256'):
+            raise ValueError('Source Item bytes differ from its export receipt')
+    if path.is_symlink() or not path.is_file():
         raise ValueError('Expected a staged regular source input')
     return str(path)
 
@@ -75,7 +104,7 @@ def raw_import(context, unreal):
     saves, required output files, import tables and scratch cleanup before Completed.
     """
     p = context.params
-    _fields(p, {'op', 'kind', 'source', 'destination'}, {'properties', 'fbx', 'skeleton', 'physics_asset'})
+    _fields(p, {'op', 'kind', 'source', 'destination'}, {'properties', 'fbx', 'skeleton', 'physics_asset', 'package_sources'})
     kind = p['kind']
     if kind not in _KINDS:
         raise ValueError('Unsupported raw import kind')
@@ -139,17 +168,45 @@ def finish(context, unreal):
     Material slots and parent references are declared *content* package inputs.
     """
     p = context.params
-    _fields(p, {'op', 'source', 'destination', 'kind'}, {'properties', 'materials', 'lod_build_settings'})
+    _fields(p, {'op', 'source', 'destination', 'kind'}, {'properties', 'materials', 'lod_build_settings', 'package_sources', 'partners'})
     if p['kind'] not in _KINDS:
         raise ValueError('Unsupported finish kind')
     source = _input(context, p['source'], package=True)
     destination = _output(context, p['destination'])
-    if context.outputs != [destination] or source == destination:
-        raise ValueError('Finish owns exactly one fresh destination package')
+    partners = p.get('partners', {})
+    if not isinstance(partners, dict) or set(partners) - {'skeleton', 'physics_asset'}:
+        raise ValueError('Unknown skeletal finish partner')
+    if partners and p['kind'] != 'skeletal_mesh':
+        raise ValueError('Only skeletal finish accepts partner packages')
+    owned = {destination, *(_output(context, value) for value in partners.values())}
+    if set(context.outputs) != owned or source in owned:
+        raise ValueError('Finish owns exactly its fresh destination package bundle')
     raw = _load(unreal, source, _KINDS[p['kind']])
     asset = unreal.EditorAssetLibrary.duplicate_asset(source, destination)
     if asset is None or not isinstance(asset, type(raw)):
         raise ValueError('Could not duplicate the raw asset')
+    for role, target in partners.items():
+        property_name = 'skeleton' if role == 'skeleton' else 'physics_asset'
+        raw_partner = raw.get_editor_property(property_name)
+        if raw_partner is None:
+            raise ValueError('Missing skeletal source partner')
+        original_path = str(raw_partner.get_path_name()).split('.', 1)[0]
+        declared_packages = {value for values in context.packages.values()
+                             for value in ([values] if isinstance(values, str) else values)}
+        if original_path not in declared_packages:
+            raise ValueError('Skeletal source partner is not a declared content input')
+        partner = unreal.EditorAssetLibrary.duplicate_asset(original_path, _output(context, target))
+        expected = 'Skeleton' if role == 'skeleton' else 'PhysicsAsset'
+        if partner is None or not isinstance(partner, getattr(unreal, expected)):
+            raise ValueError('Could not duplicate skeletal partner')
+        asset.set_editor_property(property_name, partner)
+        partner.set_editor_property('preview_skeletal_mesh', asset)
+        _save(unreal, partner)
+    if p['kind'] == 'skeletal_mesh':
+        for role in ('skeleton', 'physics_asset'):
+            value = raw.get_editor_property(role)
+            if value is not None and role not in partners:
+                raise ValueError('Skeletal finish must own every mutable raw partner')
     _set(asset, p.get('properties', {}))
     if 'materials' in p:
         if p['kind'] != 'static_mesh' or not isinstance(p['materials'], list):
