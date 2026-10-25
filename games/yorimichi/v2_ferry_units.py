@@ -25,7 +25,7 @@ CONTENT = GAME + '/unreal/Content/Ferry'
 RAW = '/Game/_Raw/Ferry'
 MATERIALS = '/Game/Ferry/Materials/'
 FUNCTIONS = ('material_parent', 'wake_material', 'wake_mesh', 'materials')
-SETTINGS = ['-ForceDPCVars=Interchange.FeatureFlags.Import.FBX=0,Editor.AsyncStaticMeshCompilation=0']
+SETTINGS = ['-ForceDPCVars=Interchange.FeatureFlags.Import.FBX=false,Editor.AsyncStaticMeshCompilation=0']
 
 
 def _load(checkout, relative, name):

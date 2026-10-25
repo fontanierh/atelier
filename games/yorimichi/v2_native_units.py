@@ -382,7 +382,7 @@ def lower(rows, geometry, *, checkout):
     elif 'unreal.materials' in selected:
         native = shared_materials(rows, checkout=checkout)
         native['aliases'] = {}
-    elif selected & {'unreal.treehouse', 'unreal.brinecove', 'unreal.sounds', 'unreal.crater_cloud', 'unreal.skate_board', 'unreal.fx', 'unreal.skate_data', 'unreal.kei', 'unreal.village', 'unreal.lake', 'unreal.houses', 'unreal.southwest', 'unreal.mega', 'unreal.swordcamp', 'unreal.kart', 'unreal.world', 'unreal.gondola'}:
+    elif selected & {'unreal.treehouse', 'unreal.brinecove', 'unreal.sounds', 'unreal.crater_cloud', 'unreal.skate_board', 'unreal.fx', 'unreal.skate_data', 'unreal.kei', 'unreal.village', 'unreal.lake', 'unreal.houses', 'unreal.southwest', 'unreal.mega', 'unreal.swordcamp', 'unreal.kart', 'unreal.world', 'unreal.gondola', 'unreal.ferry'}:
         native = {'units': [], 'staged_inputs': {}, 'content_slots': {}, 'packages': {},
                   'targets': (), 'aliases': {}, 'missing_roles': []}
         if 'unreal.treehouse' in selected:
@@ -419,12 +419,14 @@ def lower(rows, geometry, *, checkout):
             family = _family_module(checkout, constructor).author_units(rows, checkout=checkout)
             _append_family(native, family)
             native['aliases'].update(family['aliases'])
-    if 'unreal.gondola' in selected:
-        family = _family_module(checkout, 'v2_gondola_units').gondola_units(rows, checkout=checkout)
+    for name in ('gondola', 'ferry'):
+        if 'unreal.' + name not in selected:
+            continue
+        family = getattr(_family_module(checkout, 'v2_' + name + '_units'), name + '_units')(rows, checkout=checkout)
         family['content_slots'] = {incoming['name']: False for unit in family['units']
                                    for incoming in unit['inputs']}
         _append_family(native, family)
-        native['aliases']['unreal.gondola'] = tuple(sorted({ref['unit'] for ref in family['packages'].values()}))
+        native['aliases']['unreal.' + name] = tuple(sorted({ref['unit'] for ref in family['packages'].values()}))
     if 'unreal.sounds' in selected:
         native = _join_audio(native, rows, native.get('geometry', geometry), checkout=checkout)
     if selected & {'unreal.kei', 'unreal.village', 'unreal.lake', 'unreal.houses', 'unreal.southwest', 'unreal.mega', 'unreal.world'}:

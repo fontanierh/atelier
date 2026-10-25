@@ -263,3 +263,16 @@ def test_mesh_finish_refuses_changed_sources(tmp_path, monkeypatch, damage):
     elif damage == 'fresh': assets[ctx.outputs[0]] = Mesh(ctx.outputs[0])
     with pytest.raises(ValueError):
         body.run(ctx)
+
+
+def test_normal_provider_selects_every_ferry_package_without_monolithic_owner(rows):
+    provider = load('games/yorimichi/v2_native_units.py', 'ferry_provider_test')
+    result = provider.lower(rows, {'groups': {}, 'templates': []}, checkout=ROOT)
+    units = {unit['id']: unit for unit in result['units']}
+    targets = set(result['aliases']['unreal.ferry'])
+    assert len(units) == 88
+    assert targets == {reference['unit'] for reference in result['packages'].values()}
+    assert all(units[name]['op']['kind'] in ('unreal.author', 'unreal.finish') for name in targets)
+    assert set(result['staged_inputs']) == set(units)
+    assert all('Interchange.FeatureFlags.Import.FBX=0' not in value
+               for unit in units.values() for value in unit['params'].get('settings', ()))
