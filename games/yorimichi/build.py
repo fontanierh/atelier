@@ -1546,7 +1546,6 @@ def unreal_steps(ctx):
              about="assemble the Skate plugin's simulation package and verify every payload"),
         Step('unreal.compile', [UnrealCompile('YorimichiEditor')],
              inputs=[ctx.uproject, *compile_inputs.files(native_source_inputs().settings[0])],
-             deferred_inputs=[native_source_inputs()],
              outputs=[GAME / 'unreal/Binaries/Mac'], products=editor_compile_products(),
              needs=['skate.runtime'], heavy=True,
              about='the Yorimichi C++ modules (editor target)'),

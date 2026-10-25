@@ -5,6 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from atelier import build_deferred
 from atelier.build_v2 import native_tool_worker
 from test_volcano_layers import RECIPE
 
@@ -21,7 +22,7 @@ def compile_step(tmp_path):
     return eval(compile(ast.Expression(expression), str(RECIPE.__file__), 'eval'), {**vars(RECIPE), 'ctx': context}), context
 
 
-def test_complete_editor_roots_preserve_original_source_and_deferred_closure(tmp_path):
+def test_complete_editor_roots_bind_explicit_source_and_validate_with_named_products(tmp_path):
     step, ctx = compile_step(tmp_path)
     assert step.outputs == [RECIPE.GAME / 'unreal/Binaries/Mac']
     products = {product.name: product for product in step.products}
@@ -30,10 +31,8 @@ def test_complete_editor_roots_preserve_original_source_and_deferred_closure(tmp
     descriptors = [p for folder in (RECIPE.GAME / 'unreal/Plugins', RECIPE.paths.ENGINE_PLUGINS) for p in folder.rglob('*.uplugin')]
     assert set(products) == {'unreal.compile.' + p.stem for p in descriptors}
     assert step.inputs == [ctx.uproject, *RECIPE.compile_inputs.files(RECIPE.native_source_inputs().settings[0])]
-    provider, = step.deferred_inputs
-    assert provider.name == 'native-source-files'
-    assert provider.settings == RECIPE.native_source_inputs().settings
-    assert provider.support == RECIPE.native_source_inputs().support
+    assert not step.deferred_inputs
+    build_deferred.validate(step)
     assert step.needs == ['skate.runtime'] and step.heavy
     assert len(step.commands) == 1 and step.commands[0].target == 'YorimichiEditor'
 

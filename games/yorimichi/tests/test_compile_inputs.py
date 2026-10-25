@@ -78,7 +78,12 @@ def test_recipe_selects_all_original_native_roots_and_keeps_other_inputs(tmp_pat
     else:
         assert RECIPE.GAME / 'network_identity.py' in step.inputs
         assert any(p.name == 'content' for p in step.deferred_inputs)
-    provider, = [p for p in step.deferred_inputs if p.name == 'native-source-files']
+    if name == 'unreal.compile':
+        assert not step.deferred_inputs
+        build_deferred.validate(step)
+        provider = RECIPE.native_source_inputs()
+    else:
+        provider, = [p for p in step.deferred_inputs if p.name == 'native-source-files']
     assert provider.settings == ((RECIPE.SOURCE, RECIPE.GAME / 'unreal/Config',
                                   RECIPE.GAME / 'unreal/Plugins', paths.ENGINE_PLUGINS),)
     selected = build.Step('selection', [], deferred_inputs=[provider])
