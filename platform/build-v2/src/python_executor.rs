@@ -460,6 +460,16 @@ pub struct PythonExecution {
     pub limits: Limits,
 }
 
+pub struct NativeToolExecution {
+    pub interpreter: PathBuf,
+    pub engine_root: PathBuf,
+    pub bundle: crate::native_tools::NativeToolBundle,
+    pub zen_state_root: PathBuf,
+    pub export_project: Option<PathBuf>,
+    pub memory_gib: u32,
+    pub limits: Limits,
+}
+
 pub struct UnrealExecution {
     pub locations: crate::unreal_controller::UnrealLocations,
     pub sources: crate::validate::SourceSnapshot,
@@ -475,7 +485,9 @@ pub struct PythonExecutor<L> {
     blender: Option<PythonExecution>,
     recipes: Vec<PythonExecution>,
     unreal: Option<UnrealExecution>,
+    native_tool: Option<NativeToolExecution>,
     node: Option<PathBuf>,
+    media: [Option<PathBuf>; 2],
     scripted_fixture: bool,
 }
 
@@ -489,9 +501,21 @@ impl<L> PythonExecutor<L> {
             blender: None,
             recipes: Vec::new(),
             unreal: None,
+            native_tool: None,
             node: None,
+            media: [None, None],
             scripted_fixture: false,
         }
+    }
+
+    pub fn with_native_tool(mut self, config: NativeToolExecution) -> Self {
+        self.native_tool = Some(config);
+        self
+    }
+
+    pub fn with_media(mut self, ffmpeg: Option<PathBuf>, ffprobe: Option<PathBuf>) -> Self {
+        self.media = [ffmpeg, ffprobe];
+        self
     }
 
     pub fn with_node(mut self, path: PathBuf) -> Self {
@@ -522,7 +546,9 @@ impl<L> PythonExecutor<L> {
             blender: None,
             recipes: Vec::new(),
             unreal: None,
+            native_tool: None,
             node: None,
+            media: [None, None],
             scripted_fixture: true,
         }
     }
@@ -590,7 +616,11 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
                         | crate::unreal_controller::AUTHOR
                 )
             });
-            if config.is_none() && native.is_none() {
+            let tool = self.native_tool.as_ref().filter(|tool| {
+                compatibility.worker_version == tool.bundle.identity().version
+                    && crate::native_tool_ops::supports(&compatibility.op_kind)
+            });
+            if config.is_none() && native.is_none() && tool.is_none() {
                 stopped |= emit(Event::Failed {
                     work,
                     reason: "no registered worker for keyed runtime".into(),
@@ -598,7 +628,14 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
                 continue;
             }
             let config = config.unwrap_or(&self.config);
-            let (worker, profile, memory_gib, limits) = if let Some(native) = native {
+            let (worker, profile, memory_gib, limits) = if let Some(tool) = tool {
+                (
+                    tool.bundle.identity(),
+                    "native-tool",
+                    tool.memory_gib,
+                    tool.limits,
+                )
+            } else if let Some(native) = native {
                 (
                     native.worker.clone(),
                     "normal-unreal",
@@ -660,7 +697,39 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
             } else {
                 None
             };
-            let (command, job, written) = if let Some(native) = &native_launch {
+            let (command, job, written) = if let Some(tool) = tool {
+                let command = if compatibility.op_kind == "unreal.cook.produce" {
+                    tool.export_project
+                        .as_ref()
+                        .ok_or_else(|| {
+                            "source cook requires execution.native_export_project".to_string()
+                        })
+                        .and_then(|project| {
+                            tool.bundle.command_for_cook(
+                                &tool.interpreter,
+                                &tool.engine_root,
+                                scope,
+                                work.prepared().key(),
+                                &tool.zen_state_root,
+                                project,
+                            )
+                        })
+                } else {
+                    tool.bundle
+                        .command(&tool.interpreter, &tool.engine_root, scope)
+                };
+                match command {
+                    Ok(command) => (
+                        command,
+                        work.inputs().staged.request().clone(),
+                        crate::native_tools::NATIVE_TOOL_FILES.len(),
+                    ),
+                    Err(reason) => {
+                        stopped |= emit(Event::Failed { work, reason }) == Flow::Stop;
+                        continue;
+                    }
+                }
+            } else if let Some(native) = &native_launch {
                 let prepared = native.lock().map_err(|_| "native launch lock poisoned")?;
                 (
                     prepared.command.clone(),
@@ -675,6 +744,15 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
                                 command
                                     .args
                                     .extend(["--node".into(), path.as_os_str().to_owned()]);
+                            }
+                        }
+                        if worker.version.starts_with("atelier-recipe-") {
+                            for (name, path) in ["--ffmpeg", "--ffprobe"].iter().zip(&self.media) {
+                                if let Some(path) = path {
+                                    command
+                                        .args
+                                        .extend([(*name).into(), path.as_os_str().to_owned()]);
+                                }
                             }
                         }
                         (
@@ -710,7 +788,15 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
                     .map_err(|error| error.to_string())
                     .and_then(|custody| production_spec(&spec, custody))
                 {
-                    Ok(spec) => Some(spec),
+                    Ok(mut spec) => {
+                        if native.is_some()
+                            || tool.is_some()
+                            || compatibility.worker_version.starts_with("atelier-recipe-")
+                        {
+                            spec.key.sandbox = crate::worker_lifecycle::JobSandbox::Other;
+                        }
+                        Some(spec)
+                    }
                     Err(reason) => {
                         stopped |= emit(Event::Failed { work, reason }) == Flow::Stop;
                         continue;

@@ -27,6 +27,8 @@ pub mod keys;
 pub mod launch;
 pub mod leases;
 pub mod native_chains;
+pub mod native_tool_ops;
+pub mod native_tools;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod paths;
 pub mod plans;

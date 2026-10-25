@@ -486,6 +486,14 @@ def main(config, report):
         exec(compile(values['source'], '<build-v2 fixed node bootstrap>', 'exec'), namespace)
         node = namespace['NodeExecution'](values['sdk'], view=values['view'], scratch=values['scratch'],
                                           entry=values['entry'], sources=values['sources'])
+    if config.get('media_context') is not None:
+        if node is not None:
+            raise ValueError('multiple fixed tool contexts')
+        values = config['media_context']
+        namespace = {'__name__': 'atelier_fixed_media_bootstrap'}
+        exec(compile(values['source'], '<build-v2 fixed media bootstrap>', 'exec'), namespace)
+        node = namespace['MediaExecution'](values['sdk'], view=values['view'], scratch=values['scratch'],
+                                            inputs=values['inputs'], writes=values['writes'])
     guard = PathGuard(job_dir, config['read_subpaths'], config['read_literals'], report,
                       config.get('write_subpaths'), working, config.get('mkdir_existing', ()), None if node is None else node.allow_subprocess)
     guard.install()

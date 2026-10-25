@@ -196,3 +196,45 @@ def test_existing_output_hardlink_refuses_before_native_overwrite(setup):
     with pytest.raises(ValueError, match='independent canonical'):
         execution.validate(mono(source, output), (), {})
     assert target.read_bytes() == b'preserve'
+
+
+@pytest.mark.parametrize('variant', ['valid', 'unknown_input', 'broad_write'])
+def test_recipe_worker_composes_only_frozen_media_inputs_and_named_temporary_root(tmp_path, monkeypatch, variant):
+    import io
+    import json
+    from atelier.build_v2 import recipe_worker
+    (tmp_path / '.recipe-runtime').mkdir()
+    (tmp_path / 'source.py').write_text('def run(context): pass\n')
+    (tmp_path / 'inputs').mkdir()
+    (tmp_path / 'inputs/master.wav').write_bytes(b'fixture source, never decoded')
+    logical = 'build/v2-source-inputs/cache/master.wav'
+    descriptor = {'kind': 'media.audio', 'inputs': ['build/v2-source-inputs/cache'],
+                  'writes': ['build/testgame/audio/.tmp']}
+    if variant == 'unknown_input':
+        descriptor['inputs'] = ['undeclared']
+    elif variant == 'broad_write':
+        descriptor['writes'] = ['build']
+    request = {'script': 'source.py', 'code': ['source.py'],
+        'inputs': [{'name': 'master', 'path': 'inputs/master.wav', 'identity': {'state': 'file'}}],
+        'outputs': [{'path': 'products/bank.tree.tar'}],
+        'params': {'recipe': {'paths': {logical: 'inputs/master.wav'},
+            'outputs': [{'path': 'build/testgame/audio/bank'}], 'tools': [descriptor]}}}
+    discovered = []
+    monkeypatch.setattr(recipe_worker.recipe_media, 'discover_media', lambda *args: discovered.append(args) or {'fixture': True})
+    monkeypatch.setattr(recipe_worker.recipe_media, 'permissions', lambda sdk: {})
+    worker = recipe_worker.RecipeWorker(io.BytesIO(), io.BytesIO(), True, ffmpeg='/sdk/ffmpeg', ffprobe='/sdk/ffprobe')
+    if variant != 'valid':
+        with pytest.raises(ValueError, match='audio source/temp'):
+            worker.prepare_job(request, str(tmp_path))
+        assert discovered == []
+        return
+    worker.prepare_job(request, str(tmp_path))
+    config = worker.configuration(request, str(tmp_path), 99)
+    json.dumps(config)  # Native paths must not leak unserializable Path objects into the child protocol.
+    view = tmp_path / '.recipe-runtime/view'
+    assert config['media_context']['inputs'] == [str(view / 'build/v2-source-inputs/cache')]
+    assert str(view / 'build/testgame/audio/.tmp') in config['write_subpaths']
+    assert str(view) not in config['write_subpaths']
+    assert str(view / 'build/v2-source-inputs/cache') not in config['write_subpaths']
+    assert discovered == [('/sdk/ffmpeg', '/sdk/ffprobe')]
+    assert 'MediaExecution' in config['media_context']['source']

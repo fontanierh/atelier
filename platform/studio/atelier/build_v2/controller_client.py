@@ -433,12 +433,20 @@ def invoke_controller(checkout, executable, marker, runs, execution, *, echo=pri
     execution = dict(execution)
     allowed = {'cache_root', 'interpreter', 'provenance', 'worktree_id', 'memory_gib',
                'job_seconds', 'cleanup_seconds', 'overall_seconds'}
-    if set(execution) - {'blender', 'unreal', 'node'} != allowed:
+    if set(execution) - {'blender', 'unreal', 'node', 'native_export_project', 'unreal_memory_gib', 'blender_memory_gib', 'unreal_job_seconds', 'ffmpeg', 'ffprobe'} != allowed:
         raise ValueError('invalid controller execution options')
     if 'blender' in execution and (not isinstance(execution['blender'], str) or not Path(execution['blender']).is_absolute()):
         raise ValueError('invalid Blender execution locator')
+    for name in ('ffmpeg', 'ffprobe'):
+        if name in execution and (not isinstance(execution[name], str) or not Path(execution[name]).is_absolute()):
+            raise ValueError('invalid audio execution locator')
     if 'node' in execution and (not isinstance(execution['node'], str) or not Path(execution['node']).is_absolute()):
         raise ValueError('invalid Node execution locator')
+    if 'native_export_project' in execution and (not isinstance(execution['native_export_project'], str) or not Path(execution['native_export_project']).is_absolute()):
+        raise ValueError('invalid native export project locator')
+    for name in ('unreal_memory_gib', 'blender_memory_gib', 'unreal_job_seconds'):
+        if name in execution and (type(execution[name]) is not int or execution[name] <= 0):
+            raise ValueError('invalid native execution resource')
     if 'unreal' in execution:
         native = execution['unreal']
         if (not isinstance(native, dict) or set(native) - {'engine_root', 'build_id', 'editor_binaries', 'modules', 'engine_plugins', 'plugins', 'config_sources'}

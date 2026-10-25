@@ -64,6 +64,7 @@ fn check_unit_identity(unit: &PreparedUnit) -> Result<(), String> {
         crate::unreal_controller::RAW_IMPORT
         | crate::unreal_controller::FINISH
         | crate::unreal_controller::AUTHOR => crate::unreal_controller::check_unit(unit),
+        kind if crate::native_tool_ops::supports(kind) => crate::native_tool_ops::check(unit),
         "py_data" => check_py_data_unit_identity(unit),
         kind @ (BLENDER_PLAN_KIND | BLENDER_EXPORT_KIND) => {
             blender_ops::check_blender_identity(unit, kind, &validator_identity(unit))?;
@@ -93,6 +94,9 @@ fn validate_fixed_outputs(
         | crate::unreal_controller::FINISH
         | crate::unreal_controller::AUTHOR => {
             crate::unreal_controller::validate_outputs(unit, outputs)
+        }
+        kind if crate::native_tool_ops::supports(kind) => {
+            crate::native_tool_ops::validate_outputs(unit, outputs)
         }
         "py_data" => validate_py_data_unit_outputs(unit, outputs),
         BLENDER_EXPORT_KIND => {

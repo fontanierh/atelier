@@ -23,6 +23,8 @@ pub struct ChildTemplate {
     pub output_class: String,
     pub logical_namespace: String,
     pub files: Vec<OutputFile>,
+    #[serde(default)]
+    pub followers: Vec<crate::native_chains::FollowerTemplate>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -197,12 +199,33 @@ impl RegisteredTemplate {
         )?;
         let mut declaration = base.declaration().clone();
         declaration.schema_version = SCHEMA_VERSION;
-        declaration.units.push(template.child(
+        let child = template.child(
             "TemplateValidation",
             "TemplateValidation.npz",
             &contract.encoding,
             None,
-        ));
+        );
+        let followers = crate::native_chains::instantiate(
+            &template.followers,
+            "TemplateValidation",
+            &child.id,
+        )?;
+        for follower in &followers.units {
+            let stage = &followers.staged_inputs[&follower.id];
+            let names = follower
+                .inputs
+                .iter()
+                .map(|input| match input {
+                    Input::Content { name, .. } | Input::Reference { name, .. } => name.as_str(),
+                })
+                .collect::<BTreeSet<_>>();
+            if stage.keys().map(String::as_str).collect::<BTreeSet<_>>() != names {
+                return Err("native follower staged paths omit/introduce an input".into());
+            }
+            crate::keys::safe_staged_paths(stage, &follower.code)?;
+        }
+        declaration.units.push(child);
+        declaration.units.extend(followers.units);
         crate::validate::validate_structure(&declaration, registry, allowed_install_roots)
             .map_err(|e| e.to_string())?;
         Ok(Self { template, contract })
@@ -213,6 +236,17 @@ impl RegisteredTemplate {
             self.template.payload_slot.clone(),
             self.template.staged_path.clone(),
         )])
+    }
+
+    pub fn staged_inputs_for(
+        &self,
+        piece: &str,
+    ) -> Result<BTreeMap<String, BTreeMap<String, String>>, String> {
+        let export = format!("{}.{piece}", self.template.unit_prefix);
+        let mut all = crate::native_chains::instantiate(&self.template.followers, piece, &export)?
+            .staged_inputs;
+        all.insert(export, self.staged_inputs());
+        Ok(all)
     }
 
     fn check_group(&self, group: &ValidatedGroup) -> Result<(), String> {
@@ -301,7 +335,16 @@ impl RegisteredTemplate {
                 &projection.encoding,
                 projection.role.as_ref(),
             );
-            children.insert(child.id.clone(), child);
+            let followers =
+                crate::native_chains::instantiate(&self.template.followers, piece, &child.id)?;
+            if children.insert(child.id.clone(), child).is_some() {
+                return Err("duplicate expanded export child".into());
+            }
+            for follower in followers.units {
+                if children.insert(follower.id.clone(), follower).is_some() {
+                    return Err("duplicate expanded native follower".into());
+                }
+            }
         }
         declaration.schema_version = SCHEMA_VERSION;
         declaration.units.extend(children.values().cloned());
@@ -399,6 +442,7 @@ mod tests {
             conditional: None,
         };
         let template = ChildTemplate {
+            followers: vec![],
             producer: "planner".into(),
             group: "geometry".into(),
             unit_prefix: "export.Village".into(),
@@ -524,6 +568,84 @@ mod tests {
         assert_eq!(selected.order(), ["planner", "export.Village.A"]);
         assert_eq!(selected.dependencies().len(), 1);
         assert_eq!(registered.staged_inputs()["payload"], "inputs/payload");
+
+        let (base, mut registry, mut template, contract) = fixture();
+        registry
+            .get_mut(&("fixture".into(), "1".into()))
+            .unwrap()
+            .inputs
+            .get_mut("payload")
+            .unwrap()
+            .item_classes
+            .insert("Mesh".into());
+        let mut raw = template.child("$piece", "unused", &contract.encoding, None);
+        raw.id = "raw.Village.$piece".into();
+        raw.params.clear();
+        raw.inputs = vec![Input::Content {
+            name: "payload".into(),
+            source: ContentSource::Item {
+                unit: "$export".into(),
+                item: "asset".into(),
+            },
+            whole: None,
+            conditional: None,
+        }];
+        raw.outputs[0].logical_path = "/Game/Raw/$piece".into();
+        let mut finish = raw.clone();
+        finish.id = "finish.Village.$piece".into();
+        finish.inputs = vec![Input::Content {
+            name: "payload".into(),
+            source: ContentSource::Item {
+                unit: "$previous".into(),
+                item: "asset".into(),
+            },
+            whole: None,
+            conditional: None,
+        }];
+        finish.outputs[0].logical_path = "/Game/Finished/$piece".into();
+        let stage = BTreeMap::from([("payload".into(), "inputs/upstream".into())]);
+        template.followers = vec![
+            crate::native_chains::FollowerTemplate {
+                unit: raw,
+                staged_inputs: stage.clone(),
+            },
+            crate::native_chains::FollowerTemplate {
+                unit: finish,
+                staged_inputs: stage,
+            },
+        ];
+        let registered =
+            RegisteredTemplate::register(&base, template.clone(), &registry, &[]).unwrap();
+        let first = registered
+            .expand(&base, &token(&contract, &["A"]), None, &registry, &[])
+            .unwrap();
+        let selected = first
+            .graph()
+            .select(&[Target::Unit("finish.Village.A".into())], &snapshot)
+            .unwrap();
+        assert_eq!(
+            selected.order(),
+            [
+                "planner",
+                "export.Village.A",
+                "raw.Village.A",
+                "finish.Village.A"
+            ]
+        );
+        assert_eq!(registered.staged_inputs_for("A").unwrap().len(), 3);
+        let next = registered
+            .expand(
+                first.graph(),
+                &token(&contract, &["B"]),
+                Some(first.receipt()),
+                &registry,
+                &[],
+            )
+            .unwrap();
+        assert_eq!(next.removals().len(), 3);
+        assert!(next.graph().unit("raw.Village.A").is_none());
+        template.followers[0].unit.id = "$unknown".into();
+        assert!(RegisteredTemplate::register(&base, template, &registry, &[]).is_err());
     }
 
     #[test]
