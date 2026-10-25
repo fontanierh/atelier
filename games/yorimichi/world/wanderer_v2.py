@@ -180,7 +180,7 @@ def mesh(context, unreal, args):
     if (not isinstance(asset, unreal.SkeletalMesh) or not isinstance(skeleton, unreal.Skeleton)
             or not isinstance(physics, unreal.PhysicsAsset)):
         raise ValueError('Wanderer skeletal bundle duplicate failed')
-    asset.set_editor_property('skeleton', skeleton)
+    asset.set_skeleton(skeleton)
     skeleton.set_editor_property('preview_skeletal_mesh', asset)
     asset.set_editor_property('physics_asset', physics)
     physics.set_editor_property('preview_skeletal_mesh', asset)

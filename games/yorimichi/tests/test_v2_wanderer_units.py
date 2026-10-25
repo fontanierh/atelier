@@ -112,7 +112,11 @@ class Asset(Props):
 class Material(Asset): pass
 class Skeleton(Asset): pass
 class Physics(Asset): pass
-class Mesh(Asset): pass
+class Mesh(Asset):
+    def set_editor_property(self, key, value):
+        if key == 'skeleton': raise RuntimeError('SkeletalMesh skeleton is read-only')
+        super().set_editor_property(key, value)
+    def set_skeleton(self, value): self.values['skeleton'] = value
 class Sequence(Asset): pass
 class Blend(Asset): pass
 class Definition(Asset): pass

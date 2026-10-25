@@ -38,9 +38,9 @@ def rows():
     for step in steps:
         step.needs = [n for n in step.needs if n == 'characters.fox_hunter']; step.after = []; step.reads = []
     found = extract(steps, checkout=ROOT, build_root=ROOT / 'build')
-    # Root's pending Product (#30379), supplied locally until the Root child adopts it.
     producer = next(r for r in found if r['id'] == 'characters.fox_hunter')
-    producer.setdefault('products', []).append({'id': units.PRODUCT, 'paths': list(units.EXPORT_PATHS)})
+    assert [p for p in producer['products'] if p['id'] == units.PRODUCT] == [
+        {'id': units.PRODUCT, 'paths': list(units.EXPORT_PATHS), 'optional_paths': []}]
     return found
 
 

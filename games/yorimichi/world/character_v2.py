@@ -210,7 +210,7 @@ def mesh(context, unreal, args):
     skeleton = library.duplicate_asset(_path(raw.get_editor_property('skeleton')), partners['skeleton'])
     if not isinstance(skeleton, unreal.Skeleton):
         raise ValueError('Skeleton duplicate failed')
-    asset.set_editor_property('skeleton', skeleton)
+    asset.set_skeleton(skeleton)
     skeleton.set_editor_property('preview_skeletal_mesh', asset)
     raw_physics = raw.get_editor_property('physics_asset')
     if 'physics_asset' in partners:

@@ -132,6 +132,10 @@ class Asset:
 
 
 class SkeletalMesh(Asset):
+    def set_editor_property(self, name, value):
+        if name == 'skeleton': raise RuntimeError('SkeletalMesh skeleton is read-only')
+        super().set_editor_property(name, value)
+    def set_skeleton(self, value): self.props['skeleton'] = value
     @property
     def materials(self): return self.props['materials']
     def get_all_morph_target_names(self): return []

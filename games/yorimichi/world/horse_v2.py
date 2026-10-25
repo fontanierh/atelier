@@ -189,7 +189,7 @@ def mesh(context, unreal, args):
     skeleton = library.duplicate_asset(_path(raw.get_editor_property('skeleton')), skeleton_package)
     if not isinstance(asset, unreal.SkeletalMesh) or not isinstance(skeleton, unreal.Skeleton):
         raise ValueError('Horse skeletal duplicate failed: ' + destination)
-    asset.set_editor_property('skeleton', skeleton)
+    asset.set_skeleton(skeleton)
     skeleton.set_editor_property('preview_skeletal_mesh', asset)
     _bind(unreal, context, asset, args['owner'], args)
     if not library.save_loaded_asset(skeleton, False) or not library.save_loaded_asset(asset, False):

@@ -137,7 +137,7 @@ def mesh(context, unreal, args):
     physics = library.duplicate_asset(_path(raw.get_editor_property('physics_asset')), partners['physics_asset'])
     if not isinstance(asset, unreal.SkeletalMesh) or not isinstance(skeleton, unreal.Skeleton) or not isinstance(physics, unreal.PhysicsAsset):
         raise ValueError('Fox skeletal duplicate failed: ' + destination)
-    asset.set_editor_property('skeleton', skeleton); asset.set_editor_property('physics_asset', physics)
+    asset.set_skeleton(skeleton); asset.set_editor_property('physics_asset', physics)
     skeleton.set_editor_property('preview_skeletal_mesh', asset); physics.set_editor_property('preview_skeletal_mesh', asset)
     materials = _roster(args['materials'])
     if sorted(materials) != sorted(facts['materials']):

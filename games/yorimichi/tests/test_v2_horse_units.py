@@ -188,6 +188,10 @@ class Texture2D(Asset): pass
 class Skeleton(Asset): pass
 class MaterialInstanceConstant(Asset): pass
 class SkeletalMesh(Asset):
+    def set_editor_property(self, key, value):
+        if key == 'skeleton': raise RuntimeError('SkeletalMesh skeleton is read-only')
+        super().set_editor_property(key, value)
+    def set_skeleton(self, value): self.props['skeleton'] = value
     @property
     def materials(self): return self.props.get('materials', [])
 class AnimSequence(Asset): pass
