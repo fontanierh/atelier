@@ -61,7 +61,7 @@ def validate_mesh_options(options, *, output_format='fbx', finite_materials=Fals
         elif key == 'object_types':
             valid = (isinstance(value, (list, tuple)) and len(value) == 1
                      and type(value[0]) is str and value[0] == 'MESH')
-        elif key in ('use_batch_own_dir', 'embed_textures', 'bake_anim'):
+        elif key in ('use_batch_own_dir', 'embed_textures', 'bake_anim', 'add_leaf_bones'):
             valid = value is False
         else:
             valid = False
