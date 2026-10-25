@@ -10,9 +10,7 @@
 //! this crate. A check reports a folder whose `.glb` is missing or whose inputs no longer match that checksum.
 
 mod animation;
-mod animations {
-    pub mod idle;
-}
+mod animations;
 mod character;
 mod characters;
 mod glb;

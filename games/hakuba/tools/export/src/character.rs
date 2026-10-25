@@ -8,6 +8,7 @@ use glam::DQuat;
 use serde::{Deserialize, Serialize};
 
 use crate::animation::{self, continuous};
+use crate::animations::Name as Animation;
 use crate::animations::idle::{self, Idle};
 use crate::characters;
 use crate::glb::{Glb, Track, Trs};
@@ -21,7 +22,7 @@ pub trait Character: Skeleton + Idle {}
 impl<T: Skeleton + Idle> Character for T {}
 
 /// The animations every character is exported with.
-pub const ANIMATIONS: [animation::Name; 1] = [animation::Name::Idle];
+pub const ANIMATIONS: [Animation; 1] = [Animation::Idle];
 
 /// The furthest a bone may sit from where the fitted animation places it, in metres.
 const PLACEMENT_TOLERANCE: f64 = 0.001;
@@ -54,7 +55,7 @@ pub fn animate(glb: &mut Glb, character: &impl Character) -> Result<()> {
     let rest_locals = glb.rest()?;
     let rest = rig_pose(&glb.worlds(&rest_locals), &nodes);
 
-    let (fps, clip) = animation::read(animation::Name::Idle)?;
+    let (fps, clip) = animation::read(Animation::Idle)?;
     let mut frames = retarget(&rig_rest(), &clip, &rest)?;
     idle::apply(&character.stance(), &rest, &mut frames)?;
     let tracks = tracks(glb, &nodes, &rest_locals, &frames)?;

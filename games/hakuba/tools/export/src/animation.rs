@@ -8,42 +8,11 @@ use glam::DQuat;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
+use crate::animations::Name;
 use crate::glb::{Glb, Track};
 use crate::pose::{Pose, rig_nodes, rig_pose, rig_rest};
 use crate::retarget::retarget;
-use crate::rig::{self, Bones, RIG, Skeleton};
-
-#[path = "../../../assets/animations/idle/src/source.rs"]
-mod idle_source;
-
-/// Every animation, each with the skeleton its source clip is on.
-#[derive(Clone, Copy, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum Name {
-    Idle,
-}
-
-impl Name {
-    fn source_skeleton(self) -> Bones {
-        match self {
-            Name::Idle => idle_source::Source.bones(),
-        }
-    }
-
-    /// The animation's asset folder, relative to `assets/`.
-    pub fn folder(self) -> &'static str {
-        match self {
-            Name::Idle => "animations/idle",
-        }
-    }
-
-    /// The animation's exported clip on the rig.
-    pub fn output(self) -> PathBuf {
-        let folder = Path::new(crate::ASSETS).join(self.folder());
-        let name = folder.file_name().unwrap().to_string_lossy().into_owned();
-        folder.join(format!("{name}.glb"))
-    }
-}
+use crate::rig::{self, Bones, RIG};
 
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]

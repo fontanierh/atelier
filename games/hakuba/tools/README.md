@@ -18,9 +18,8 @@ tools/
       rig.rs                the rig and the `Skeleton` trait
       pose.rs               poses: each rig bone's world rotation and position
       retarget.rs           moving a clip from one skeleton onto another
-      animation.rs          the `animation` kind, and every animation
-      animations/
-        idle.rs             the `Idle` trait: how a character changes the idle
+      animation.rs          the `animation` kind
+      animations.rs         every animation, each from its asset folder
       character.rs          the `character` kind and the `Character` trait
       characters.rs         every character
       glb.rs                reading, editing and writing .glb files
@@ -39,10 +38,10 @@ optional; a skeleton without them gets them from its neighbours.
 
 ## Characters
 
-A character is a type that implements `Character`: `Skeleton`, plus one trait per animation (`Idle`). Each
-animation trait's methods are the character's changes to that animation, with defaults that change nothing. The
-character's file, `src/<name>.rs` in its asset folder, implements them, and `characters.rs` includes it in the
-`Name` enum. A character missing a trait does not compile.
+A character is a type that implements `Character`: `Skeleton`, plus one trait per animation (`Idle`, defined in
+`assets/animations/idle/src/idle.rs`). Each animation trait's methods are the character's changes to that animation,
+with defaults that change nothing. The character's file, `src/<name>.rs` in its asset folder, implements them, and
+`characters.rs` includes it in the `Name` enum. A character missing a trait does not compile.
 
 ## Kinds
 
@@ -51,7 +50,8 @@ kind's settings. A missing, misspelled or unknown setting fails the export. Each
 `Settings` struct and an `export` function that writes the folder's `.glb`.
 
 **`animation`** retargets a clip onto the rig and writes the rig playing it, named after the folder. Its
-`src/source.rs` implements `Skeleton` for the clip's skeleton; `animation.rs` includes it in the `Name` enum.
+`src/<name>.rs` implements `Skeleton` for the clip's skeleton and defines the trait a character implements to
+change the animation; `animations.rs` includes it in the `Name` enum.
 
 | Setting     | Meaning                                         |
 |-------------|-------------------------------------------------|
