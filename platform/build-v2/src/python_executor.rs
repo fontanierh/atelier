@@ -762,8 +762,25 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
             } else {
                 None
             };
+            if let Some(packaging) = &work.inputs().native_packaging {
+                let result = tool
+                    .and_then(|tool| tool.export_project.as_ref())
+                    .ok_or_else(|| {
+                        "native packaging requires its compiled SDK exporter".to_string()
+                    })
+                    .and_then(|export| {
+                        packaging.write_carrier(work.inputs().staged.job_dir(), export)
+                    });
+                if let Err(reason) = result {
+                    stopped |= emit(Event::Failed { work, reason }) == Flow::Stop;
+                    continue;
+                }
+            }
             let (command, job, written) = if let Some(tool) = tool {
-                let command = if compatibility.op_kind == "unreal.cook.produce" {
+                let command = if matches!(
+                    compatibility.op_kind.as_str(),
+                    "unreal.cook.produce" | "unreal.package"
+                ) {
                     tool.export_project
                         .as_ref()
                         .ok_or_else(|| {
