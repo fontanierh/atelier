@@ -4,7 +4,7 @@ import importlib.util
 import json
 from pathlib import Path
 import sys
-from types import SimpleNamespace as NS
+from types import ModuleType, SimpleNamespace as NS
 
 import pytest
 from atelier.build_v2.recipe_dependencies import extract
@@ -190,6 +190,10 @@ class AnimSequence(Asset):
 
 @pytest.fixture
 def editor(tmp_path, monkeypatch):
+    monkeypatch.setattr(sys, 'path', list(sys.path))
+    fake_yori = ModuleType('yori')
+    fake_yori.OUT = None
+    monkeypatch.setitem(sys.modules, 'yori', fake_yori)
     for relative in (body.COMPRESSION_SCRIPT, body.ORIGINAL):
         target = tmp_path / relative; target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text((ROOT / relative).read_text())
@@ -286,3 +290,22 @@ def test_record_returns_only_its_json_value(editor, tmp_path, monkeypatch):
     context.outputs = ['/Game/Paul/Other']
     with pytest.raises(ValueError, match='only its JsonData'):
         body.run(context)
+
+
+def test_a_scalar_native_member_is_resolved_by_identity_without_guessing_a_future_unit():
+    token = {'derived_items': {'root': 'derived/reference', 'templates': [
+        {'producer': 'reference.clips', 'group': 'clips', 'unit_prefix': 'reference.clip', 'follower': 1, 'item': 'animation'}]}}
+    reference = {'derived': token, 'piece': 'Glide', 'package': '/Game/Adventure/Reference/A_Reference_Glide'}
+    declared = movesets._native(reference, 'glide')
+    inputs = movesets._Inputs()
+    binding = inputs.native('glide', declared)
+    assert inputs.items == []
+    assert binding['derived_native']['items']['derived_items']['templates'][0]['piece'] == 'Glide'
+    assert 'piece' not in token['derived_items']['templates'][0]
+    resolved = {'derived_native': {'package': reference['package'], 'items': {'derived_items': {
+        'root': 'derived/reference', 'members': [{'piece': 'Glide', 'slot': 'derived_0'}]}}}}
+    context = NS(inputs={'derived_0': 'input'}, packages={'derived_0': reference['package']})
+    assert body._selected(context, resolved) == reference['package']
+    context.packages['derived_0'] = '/Game/Adventure/Other'
+    with pytest.raises(ValueError, match='differs'):
+        body._selected(context, resolved)

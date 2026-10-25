@@ -74,6 +74,14 @@ def _files(package, *, store=False, json_file=None):
 
 
 def _native(ref, label, package=None):
+    if isinstance(ref, dict) and set(ref) == {'derived', 'piece', 'package'}:
+        binding = ref['derived'].get('derived_items') if isinstance(ref['derived'], dict) else None
+        if (not isinstance(binding, dict) or len(binding.get('templates', ())) != 1
+                or not isinstance(ref['piece'], str) or not _NAME.fullmatch(ref['piece'])
+                or not isinstance(ref['package'], str) or not ref['package'].startswith('/Game/')
+                or (package is not None and ref['package'] != package)):
+            raise Unsupported(f'missing exact derived native Item for {label}')
+        return ref
     if (not isinstance(ref, dict) or not {'unit', 'item', 'package'} <= set(ref) <= {'unit', 'item', 'package', 'dependencies'}
             or not all(isinstance(ref[k], str) and ref[k] for k in ('unit', 'item', 'package'))
             or (package is not None and ref['package'] != package)):
@@ -97,6 +105,12 @@ class _Inputs:
         self.items, self.roots, self.packages = [], {}, set()
 
     def native(self, slot, ref):
+        if 'derived' in ref:
+            from copy import deepcopy
+            binding = deepcopy(ref['derived'])
+            binding['derived_items']['templates'][0]['piece'] = ref['piece']
+            self.packages.add(ref['package'])
+            return {'derived_native': {'items': binding, 'package': ref['package']}}
         self.items.append({'role': 'content', 'name': slot, 'source': {'kind': 'item', 'unit': ref['unit'], 'item': ref['item']}})
         self.packages.add(ref['package'])
         for dependency in ref.get('dependencies', []):

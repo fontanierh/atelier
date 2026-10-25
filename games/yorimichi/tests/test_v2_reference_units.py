@@ -9,7 +9,6 @@ from types import SimpleNamespace as NS
 
 import numpy as np
 import pytest
-from atelier.build import Product
 from atelier.build_v2.file_groups import emit
 from atelier.build_v2.recipe_dependencies import extract
 
@@ -34,8 +33,6 @@ NATIVES = {'compression': {'unit': 'unreal.animation.compression', 'item': 'asse
 @pytest.fixture(scope='module')
 def rows():
     steps = [s for s in recipe.adventure_steps(ROOT / 'build/yorimichi') if s.name in ('characters.adventure', 'unreal.adventure')]
-    out = ROOT / 'build/yorimichi/adventure'
-    steps[0].products = [Product('characters.adventure.export', (out / 'export.json', out / 'glb'))]
     for step in steps:
         step.needs = [n for n in step.needs if n == 'characters.adventure']; step.after = []
     return extract(steps, checkout=ROOT, build_root=ROOT / 'build')

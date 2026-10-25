@@ -8,7 +8,6 @@ import sys
 from types import SimpleNamespace as NS
 
 import pytest
-from atelier.build import Product
 from atelier.build_v2.file_groups import emit
 from atelier.build_v2.recipe_dependencies import extract
 
@@ -24,13 +23,8 @@ members = importlib.util.module_from_spec(spec); spec.loader.exec_module(members
 
 @pytest.fixture(scope='module')
 def rows():
-    """The actual adventure rows; the export Product root is adding to build.py is supplied here until it lands."""
+    """The actual recipe owns every export metadata and FBX root."""
     steps = recipe.adventure_steps(ROOT / 'build/yorimichi')
-    for step in steps:
-        character = next((c for c in MOVERS if f"characters.{c.id.replace('-', '_')}_adventure" == step.name), None)
-        if character:
-            step.products = [*step.products, Product(step.name + '.export', tuple(
-                ROOT / 'build/yorimichi' / character.output / 'adventure' / n for n in ('export.json', 'fbx')))]
     return extract(steps, checkout=ROOT, build_root=ROOT / 'build')
 
 

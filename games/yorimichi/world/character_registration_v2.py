@@ -7,6 +7,8 @@ only once the BP_<Name> Item it names has been produced by the native author uni
 import argparse
 import json
 import os
+import tempfile
+from atelier.atomic_files import managed_temporary_parent
 from pathlib import Path
 
 FIELDS = ('name', 'id', 'class', 'definition', 'build_step', 'default', 'aliases')
@@ -40,9 +42,14 @@ def write(value, blueprint, output):
     if output.name != 'character.json' or output.parent.name != value['id']:
         raise ValueError('Registration record path differs from Content/Data/<id>/character.json')
     output.parent.mkdir(parents=True, exist_ok=True)
-    temporary = output.parent / 'character.json.partial'
-    temporary.write_text(json.dumps(value, indent=1) + '\n')
-    os.replace(temporary, output)   # whole or absent: a running game may scan at any moment
+    descriptor, name = tempfile.mkstemp(prefix='character-', suffix='.json', dir=managed_temporary_parent(output))
+    temporary = Path(name)
+    try:
+        with os.fdopen(descriptor, 'w') as stream:
+            stream.write(json.dumps(value, indent=1) + '\n')
+        os.replace(temporary, output)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def main(argv=None):

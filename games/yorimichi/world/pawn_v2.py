@@ -95,7 +95,7 @@ def run(context):
     import unreal
     params = context.params
     args = params.get('args')
-    if (set(params) - {'args', 'settings', 'input_roots'} or not isinstance(args, dict) or set(args) != ARGS
+    if (set(params) - {'args', 'settings', 'input_roots'} or not isinstance(args, dict) or set(args) - {'closure'} != ARGS
             or not isinstance(args['inputs'], dict) or set(args['inputs']) != {'definition', 'adventure'}
             or not isinstance(args['defaults'], dict) or not isinstance(args['components'], dict)
             or set(args['components']) != COMPONENTS):

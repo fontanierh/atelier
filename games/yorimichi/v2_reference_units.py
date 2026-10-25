@@ -113,7 +113,7 @@ def reference_units(rows, *, checkout, natives):
     recipe_code = sorted(recipe_code | {BODY, BAKE})
     code = sorted({*_code(root), SCRIPT, ORIGINAL, *(p.relative_to(root).as_posix() for p in ImportScanner().local_imports(
         root / COMPRESSION_SCRIPT, (root / GAME / 'unreal/Scripts', root / 'platform/studio'))), COMPRESSION_SCRIPT})
-    ops_code, editor = list(_code(root)), _modules(root, [])[0]
+    ops_code = list(_code(root))
     units, staged, packages, requirements, templates, groups = [], {}, {}, {}, [], {}
 
     def add(unit, inputs, roots=None):
@@ -122,8 +122,7 @@ def reference_units(rows, *, checkout, natives):
             unit['params']['input_roots'] = roots
         units.append(unit)
         staged[unit['id']] = {i['name']: 'inputs/' + i['name'] for i in inputs}
-        if unit['op']['kind'] != 'recipe.python':
-            requirements[unit['id']] = editor
+        # These bodies use Engine/editor classes only, never project C++ classes.
 
     def whole():
         value = _item('export', producer['id'], export_item)

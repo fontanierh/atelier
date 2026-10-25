@@ -101,7 +101,7 @@ def moveset_templates(rows, *, checkout, natives):
     donor_id, donor_spec = definition.movers()[0].id, definition.movers()[0].donor
     fps = bake_fps(root)
     reference = (natives or {}).get('reference') or {}
-    units, staged, slots, packages, aliases, requirements = [compression_unit(checkout=root, code=code)], {}, {}, {}, {}, {}
+    units, staged, slots, packages, aliases, requirements = [compression_unit(checkout=root, code=code)], {COMPRESSION_UNIT: {}}, {}, {}, {}, {}
     packages[COMPRESSION] = {'unit': COMPRESSION_UNIT, 'item': 'asset', 'package': COMPRESSION}
     templates, groups, tokens = [], {}, {}
 

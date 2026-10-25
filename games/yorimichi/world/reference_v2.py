@@ -155,6 +155,13 @@ def mesh(context, unreal, args):
     skeleton.set_editor_property('preview_skeletal_mesh', asset)
     slots = list(asset.materials)
     for slot in slots:
+        if args['owner'] == 'Reference' and not any(name.startswith('Reference_') for name in materials):
+            # The committed neutral marker rig has no glTF material. Preserve only
+            # its absent/Engine default slot; never substitute an unknown game material.
+            current = slot.get_editor_property('material_interface')
+            if current is not None and not _path(current).startswith('/Engine/'):
+                raise ValueError('Unmaterialed Reference marker has an unknown game material')
+            continue
         key = piece(args['owner'], str(slot.get_editor_property('imported_material_slot_name')))
         bound = _load(unreal, context, materials[key]) if key in materials else None
         if bound is None or _path(bound) != f'{args["material_folder"]}/MI_{key}':

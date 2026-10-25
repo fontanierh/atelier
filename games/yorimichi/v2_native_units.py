@@ -82,6 +82,7 @@ def island(rows, geometry, *, checkout):
 
 
 def _package_dependencies(native):
+    """Preserve explicit finished partners; raw import packages are private intermediates."""
     classes = {'Texture', 'StaticMesh', 'SkeletalMesh', 'Skeleton', 'PhysicsAsset',
                'Material', 'MaterialInstance', 'MaterialParameterCollection', 'Map', 'Sound', 'Animation', 'DataAsset', 'BlendSpace1D', 'AdventureMoveSet', 'AnimBoneCompressionSettings',
                'WandererDefinition', 'SoundAttenuation'}
@@ -91,13 +92,15 @@ def _package_dependencies(native):
         if not package.startswith('/Game/') or reference['unit'] not in by_id:
             continue
         unit = by_id[reference['unit']]
-        deps = []
+        deps = [value['package'] if isinstance(value, dict) else value
+                for value in reference.get('dependencies', ())]
         for incoming in unit['inputs']:
             source = incoming['source']
             owner = by_id.get(source.get('unit')) if source['kind'] == 'item' else None
             if owner:
                 deps.extend(item['logical_path'] for item in owner['outputs']
-                            if item['id'] == source['item'] and item['class'] in classes)
+                            if item['id'] == source['item'] and item['class'] in classes
+                            and not item['logical_path'].startswith('/Game/_Raw/'))
         result[package] = {'unit': reference['unit'], 'item': reference['item'],
                            'package': package, 'dependencies': sorted(set(deps))}
     return result
@@ -150,6 +153,16 @@ def _append_family(native, family):
     native['packages'].update(family['packages'])
     native.setdefault('module_requirements', {}).update(family.get('module_requirements', {}))
     native.setdefault('plugin_requirements', {}).update(family.get('plugin_requirements', {}))
+
+
+def _stage_native_closure(family, unit, slot, reference):
+    source = {'kind': 'item', 'unit': reference['unit'], 'item': reference['item']}
+    if not any(incoming['source'] == source for incoming in unit['inputs']):
+        if any(incoming['name'] == slot for incoming in unit['inputs']):
+            raise ValueError('Native dependency closure aliases an existing input: ' + slot)
+        unit['inputs'].append({'role': 'content', 'name': slot, 'source': source})
+        family['staged_inputs'][unit['id']][slot] = 'inputs/' + slot
+        family.setdefault('content_slots', {})[slot] = False
 
 
 def _transport_preflight(native, family, rows, name, *, checkout):
@@ -434,7 +447,7 @@ def lower(rows, geometry, *, checkout):
     elif 'unreal.materials' in selected:
         native = shared_materials(rows, checkout=checkout)
         native['aliases'] = {}
-    elif selected & {'unreal.treehouse', 'unreal.brinecove', 'unreal.sounds', 'unreal.crater_cloud', 'unreal.skate_board', 'unreal.fx', 'unreal.skate_data', 'unreal.kei', 'unreal.village', 'unreal.lake', 'unreal.houses', 'unreal.southwest', 'unreal.mega', 'unreal.swordcamp', 'unreal.kart', 'unreal.world', 'unreal.gondola', 'unreal.ferry', 'unreal.north', 'unreal.megapark', 'unreal.desktop', 'data.stage'}:
+    elif selected & {'unreal.treehouse', 'unreal.brinecove', 'unreal.sounds', 'unreal.crater_cloud', 'unreal.skate_board', 'unreal.fx', 'unreal.skate_data', 'unreal.kei', 'unreal.village', 'unreal.lake', 'unreal.houses', 'unreal.southwest', 'unreal.mega', 'unreal.swordcamp', 'unreal.kart', 'unreal.world', 'unreal.gondola', 'unreal.ferry', 'unreal.north', 'unreal.megapark', 'unreal.desktop', 'unreal.adventure', 'data.stage'}:
         native = {'units': [], 'staged_inputs': {}, 'content_slots': {}, 'packages': {},
                   'targets': (), 'aliases': {}, 'missing_roles': []}
         if 'unreal.treehouse' in selected:
@@ -610,6 +623,21 @@ def lower(rows, geometry, *, checkout):
         family = character_module.character_templates(rows, checkout=checkout, natives={
             'compression': refs[moveset.COMPRESSION],
             'see_through': refs.get('/Game/SeeThrough/MPC_SeeThrough')})
+        definitions = character_module._definition(checkout)
+        by_key = {character.id.replace('-', '_'): character for character in definitions.movers()}
+        for unit in family['units']:
+            if unit['op']['kind'].startswith('unreal.') and unit['params'].get('args', {}).get('action') in ('mesh', 'base'):
+                key = unit['id'].split('.')[2]
+                if by_key[key].toml.get('see_through'):
+                    _stage_native_closure(family, unit, 'closure_see_through', refs['/Game/SeeThrough/MPC_SeeThrough'])
+                if unit['params']['args']['action'] == 'base' and 'clips' in family['tokens'][by_key[key].id]:
+                    _stage_native_closure(family, unit, 'closure_compression', refs[moveset.COMPRESSION])
+        for template in family['templates']:
+            key = template['unit_prefix'].split('.')[2]
+            if by_key[key].toml.get('see_through') and '.clips_' in template['unit_prefix']:
+                follower = template['followers'][1]
+                temporary = {'staged_inputs': {follower['unit']['id']: follower['staged_inputs']}}
+                _stage_native_closure(temporary, follower['unit'], 'closure_see_through', refs['/Game/SeeThrough/MPC_SeeThrough'])
         _append_family(native, family)
         current = deepcopy(native.get('geometry', geometry))
         current['groups'].update(family['groups'])
@@ -631,6 +659,91 @@ def lower(rows, geometry, *, checkout):
             native['aliases']['unreal.see_through'] = tuple(dict.fromkeys(
                 target for key, character in by_key.items() if character.toml.get('see_through')
                 for target in family['aliases'].get('unreal.' + key, ())))
+    if 'unreal.adventure' in selected:
+        moveset = _family_module(checkout, 'v2_moveset_units')
+        if not any(unit['id'] == moveset.COMPRESSION_UNIT for unit in native['units']):
+            compression = moveset.compression_unit(checkout=checkout)
+            native['units'].append(compression)
+            native['staged_inputs'][compression['id']] = {}
+            native['packages'][moveset.COMPRESSION] = {'unit': compression['id'], 'item': 'asset', 'package': moveset.COMPRESSION}
+        reference = _family_module(checkout, 'v2_reference_units').reference_units(rows,
+            checkout=checkout, natives={'compression': native['packages'][moveset.COMPRESSION]})
+        masters = [ref for package, ref in reference['packages'].items()
+                   if package in ('/Game/Adventure/M_AdventureCharacter', '/Game/Adventure/M_AdventureCharacterMasked')]
+        for unit in reference['units']:
+            action = unit['params'].get('args', {}).get('action')
+            if action in ('mesh', 'prop', 'record'):
+                unit['params']['args']['closure'] = {'images': deepcopy(reference['tokens']['images'])}
+                for index, ref in enumerate(masters):
+                    _stage_native_closure(reference, unit, 'closure_master_' + str(index), ref)
+            if action == 'record':
+                _stage_native_closure(reference, unit, 'closure_compression', native['packages'][moveset.COMPRESSION])
+        _append_family(native, reference)
+        current = deepcopy(native.get('geometry', geometry))
+        current['groups'].update(reference['groups'])
+        current['templates'].extend(reference['templates'])
+        native['geometry'] = current
+        native['aliases'].update(reference['aliases'])
+        native['reference'] = reference['reference']
+    if any(command.get('script') == {'path': 'games/yorimichi/unreal/Scripts/import_adventure_moveset.py'}
+           for row in rows for command in row['commands']):
+        module = _family_module(checkout, 'v2_moveset_templates')
+        definitions = module._definition(checkout)
+        refs = _package_dependencies(native)
+        def concrete(package, seen=frozenset()):
+            if package in seen:
+                raise ValueError('Cyclic declared native item closure: ' + package)
+            reference = deepcopy(refs[package])
+            reference['dependencies'] = [concrete(value, seen | {package}) for value in reference.get('dependencies', ())]
+            return reference
+        reference = deepcopy(native['reference'])
+        reference['equipment'] = [{key: value for key, value in ref.items() if key in
+            ('unit', 'item', 'package', 'dependencies')} for ref in reference['equipment']]
+        supplied = {'reference': reference, 'donor': {}}
+        for character in definitions.movers():
+            supplied[character.id] = {
+                'skeleton': concrete(character.unreal_path + '/SK_' + character.name + '_Skeleton'),
+                'base': concrete(character.adventure['base'])}
+        donor = definitions.movers()[0]
+        spec = donor.donor
+        for piece in {spec['double_jump'], *(entry['clip'] for entry in spec['actions'].values())}:
+            package = spec['folder'] + '/A_' + piece
+            supplied['donor'][package] = {'derived': native['character_tokens'][donor.id]['clips'],
+                                         'piece': piece, 'package': package}
+        family = module.moveset_templates(rows, checkout=checkout, natives=supplied)
+        existing = {unit['id']: unit for unit in native['units']}
+        character_by_key = {character.id.replace('-', '_'): character for character in definitions.movers()}
+        for unit in family['units']:
+            if unit['id'].startswith('unreal.moveset.'):
+                character = character_by_key[unit['id'].split('.')[2]]
+                unit['params']['args']['closure'] = {'character': deepcopy(native['character_tokens'][character.id])}
+                _stage_native_closure(family, unit, 'closure_compression', refs[module.COMPRESSION])
+                if character.toml.get('see_through'):
+                    _stage_native_closure(family, unit, 'closure_see_through', refs['/Game/SeeThrough/MPC_SeeThrough'])
+        family['units'] = [unit for unit in family['units'] if unit['id'] not in existing]
+        family['staged_inputs'] = {name: paths for name, paths in family['staged_inputs'].items() if name not in existing}
+        _append_family(native, family)
+        current = deepcopy(native['geometry'])
+        current['groups'].update(family['groups'])
+        current['templates'].extend(family['templates'])
+        native['geometry'] = current
+        native['aliases'].update(family['aliases'])
+        native['moveset_tokens'] = family['tokens']
+    if any(row['id'].endswith('_pawn') for row in rows):
+        refs = _package_dependencies(native)
+        refs.update({name: ref for name, ref in native['packages'].items() if name.startswith('games/')})
+        family = _family_module(checkout, 'v2_pawn_units').author_units(rows, checkout=checkout, natives=refs)
+        definitions = _family_module(checkout, 'v2_moveset_units')._definition(checkout)
+        for unit in family['units']:
+            character = next(value for value in definitions.movers() if value.id == unit['params']['args']['character'])
+            unit['params']['args']['closure'] = {'character': deepcopy(native['character_tokens'][character.id]),
+                                               'moveset': deepcopy(native['moveset_tokens'][character.id])}
+            _stage_native_closure(family, unit, 'closure_compression', refs['/Game/Japan/Animation/CharacterCompression'])
+            if character.toml.get('see_through'):
+                _stage_native_closure(family, unit, 'closure_see_through', refs['/Game/SeeThrough/MPC_SeeThrough'])
+        _append_family(native, family)
+        native.setdefault('rows', []).extend(family['rows'])
+        native['aliases'].update(family['aliases'])
     if selected & {'unreal.treehouse', 'unreal.brinecove'}:
         native = _join_native_families(native, rows, geometry, selected, checkout=checkout)
     return native
