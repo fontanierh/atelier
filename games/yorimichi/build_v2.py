@@ -153,3 +153,10 @@ def targets():
         allowed_install_roots=('games/yorimichi/unreal/Content/Data',
                                'build/yorimichi/brinecove-data', 'build/yorimichi/treehouse/trees'))
         for name in (COURSE_TARGET, RIM_TARGET, CANOPY_PLAN, CANOPY_EXPORT)}
+
+
+def compile_target(name):
+    """Compile the actual authored closure into v2 declarations, never run the old build loop."""
+    from atelier import paths
+    from atelier.build_v2.recipe_compiler import compile_game
+    return compile_game('yorimichi', checkout=paths.REPO, build_root=paths.build_root(), targets=(name,))

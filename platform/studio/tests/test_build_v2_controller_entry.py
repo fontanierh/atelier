@@ -27,7 +27,7 @@ def observed():
 def test_normal_build_never_discovers_or_invokes_old_scheduler(tmp_path, monkeypatch):
     monkeypatch.setattr(paths, 'REPO', tmp_path)
     targets = {name: marker(name) for name in ('data.rim', 'data.course')}
-    monkeypatch.setattr(entry, 'discover', lambda game: targets)
+    monkeypatch.setattr(entry, 'discover', lambda game, **kwargs: targets)
     def forbidden(*args, **kwargs): raise AssertionError('invoked old recipe/runtime')
     monkeypatch.setattr(build, 'Context', forbidden)
     monkeypatch.setattr(build, 'load_recipe', forbidden)
@@ -44,7 +44,7 @@ def test_normal_build_never_discovers_or_invokes_old_scheduler(tmp_path, monkeyp
 def test_multiple_explicit_targets_share_one_existing_controller_request(tmp_path, monkeypatch):
     monkeypatch.setattr(paths, 'REPO', tmp_path)
     targets = {name: marker(name) for name in ('data.rim', 'data.course')}
-    monkeypatch.setattr(entry, 'discover', lambda game: targets)
+    monkeypatch.setattr(entry, 'discover', lambda game, **kwargs: targets)
     selection = entry.exact_selection('fixture', ['data.course', 'data.rim'])
     request = selection.request(tmp_path)
     assert request['targets'] == ['data.course', 'data.rim']
@@ -54,7 +54,7 @@ def test_multiple_explicit_targets_share_one_existing_controller_request(tmp_pat
 
 def test_default_full_selector_cannot_succeed_as_partial_subset(tmp_path, monkeypatch):
     monkeypatch.setattr(paths, 'REPO', tmp_path)
-    monkeypatch.setattr(entry, 'discover', lambda game: {'data.rim': marker()})
+    monkeypatch.setattr(entry, 'discover', lambda game, **kwargs: {'data.rim': marker()})
     monkeypatch.setattr(entry, '_invoke_marker', lambda *a, **k: pytest.fail('dispatched missing full target'))
     with pytest.raises(ValueError, match='unreal.package'):
         build.build('fixture')
@@ -64,7 +64,7 @@ def test_default_full_selector_cannot_succeed_as_partial_subset(tmp_path, monkey
 def test_full_selector_routes_exact_declared_v2_unit(tmp_path, monkeypatch):
     monkeypatch.setattr(paths, 'REPO', tmp_path)
     owned = marker('unreal.package')
-    monkeypatch.setattr(entry, 'discover', lambda game: {owned.unit: owned})
+    monkeypatch.setattr(entry, 'discover', lambda game, **kwargs: {owned.unit: owned})
     assert entry.exact_selection('fixture', ()).request(tmp_path)['targets'] == ['unreal.package']
 
 
@@ -88,7 +88,7 @@ def test_duplicate_selector_refuses(tmp_path):
 
 def test_readonly_plan_does_not_bootstrap_engine_or_claim_hit(tmp_path, monkeypatch):
     monkeypatch.setattr(paths, 'REPO', tmp_path)
-    monkeypatch.setattr(entry, 'discover', lambda game: {'data.rim': marker()})
+    monkeypatch.setattr(entry, 'discover', lambda game, **kwargs: {'data.rim': marker()})
     monkeypatch.setattr(entry, 'execute', lambda *a, **k: pytest.fail('plan executed'))
     lines = []
     assert build.build('fixture', ['data.rim'], dry=True, echo=lines.append) == 0

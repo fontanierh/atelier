@@ -13,7 +13,7 @@ from .controller_client import ensure_controller, invoke_controller
 from .controller_recipe import ControllerTarget, ControllerSelection
 
 
-def discover(game, *, checkout=None):
+def discover(game, *, checkout=None, wanted=()):
     """Load the game's pure controller declarations without a runtime build Context."""
     if checkout is None:
         try:
@@ -29,6 +29,10 @@ def discover(game, *, checkout=None):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     targets = module.targets()
+    missing = [name for name in wanted if name not in targets]
+    if missing and hasattr(module, 'compile_target'):
+        for name in missing:
+            targets[name] = module.compile_target(name)
     if not isinstance(targets, dict) or any(
             not isinstance(marker, ControllerTarget) or name != marker.unit for name, marker in targets.items()):
         raise ValueError('invalid game controller target declarations')
@@ -51,8 +55,8 @@ def exact_selection(game, wanted):
     Missing full/default selectors MUST refuse explicitly, never call an older scheduler
     or substitute a partial selection. Discovery MUST NOT construct a runtime Context.
     """
-    candidates = discover(game)
     names = tuple(wanted) if wanted else ('unreal.package',)
+    candidates = discover(game, wanted=names)
     if not candidates:
         raise ValueError(f'{game}: no v2 build declaration')
     missing = [name for name in names if name not in candidates]

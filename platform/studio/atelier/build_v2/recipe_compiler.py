@@ -43,8 +43,9 @@ def _command(value):
               'args': deepcopy(value.get('args', [])),
               'env': deepcopy(value.get('env', [])),
               'threads': value.get('threads', 1)}
-    if type(result['threads']) is not int or not 1 <= result['threads'] <= 3:
-        raise Unsupported('Blender execution must use the supported three-worker ceiling')
+    if type(result['threads']) is not int or result['threads'] < 1:
+        raise Unsupported('Blender execution requires a positive worker count')
+    result['threads'] = min(result['threads'], 3)
     return result
 
 
@@ -52,7 +53,34 @@ def _under(path, root):
     return path == root or path.startswith(root + '/')
 
 
-def compile_rows(rows, *, project, targets, install_roots=()):
+def _without_joins(rows, targets):
+    """A declaration-only join is an edge list, not an executable/cacheable body."""
+    joins = {row['id']: row for row in rows if not any(
+        row[field] for field in ('commands', 'products', 'outputs', 'inputs', 'verify'))
+        and not row.get('deferred') and not row.get('references')}
+
+    def expand(name, seen=frozenset()):
+        if name not in joins:
+            return [name]
+        if name in seen:
+            raise Unsupported(f'cyclic declaration join {name}')
+        join = joins[name]
+        return [child for parent in (*join['needs'], *join['after'],
+                                     *(read['producer'] for read in join['reads']))
+                for child in expand(parent, seen | {name})]
+
+    lowered = []
+    for row in rows:
+        if row['id'] in joins:
+            continue
+        row = dict(row)
+        for field in ('needs', 'after'):
+            row[field] = list(dict.fromkeys(child for parent in row[field] for child in expand(parent)))
+        lowered.append(row)
+    return lowered, tuple(dict.fromkeys(child for name in targets for child in expand(name)))
+
+
+def compile_rows(rows, *, project, targets, install_roots=(), checkout=None):
     """@cc [owner:fontanierh,label:correctness] recipe-units-use-real-engine
     Each action MUST become its own unit with complete code, consumed source and
     upstream product identities. No old action fingerprint, stamp, source location
@@ -61,7 +89,10 @@ def compile_rows(rows, *, project, targets, install_roots=()):
     Internal directory products use complete deterministic archives, never a sampled
     existing directory listing. Rust validates, keys, executes and publishes units.
     """
-    rows = tuple(rows)
+    from atelier import paths as project_paths
+    from .recipe_inputs import lower_inputs, Unsupported as InputUnsupported
+    checkout = project_paths.REPO if checkout is None else checkout
+    rows, targets = _without_joins(tuple(rows), targets)
     by_name = {row['id']: row for row in rows}
     if len(by_name) != len(rows):
         raise Unsupported('duplicate recipe unit')
@@ -82,7 +113,7 @@ def compile_rows(rows, *, project, targets, install_roots=()):
             path = _path(path)
             if not any(_under(path, root) and owner == row['id'] for root, owner, _ in roots):
                 roots.append((path, row['id'], f'output{index}'))
-    units, staged, slots = [], {}, {}
+    units, staged, slots, errors = [], {}, {}, []
     for row in rows:
         name = row['id']
         try:
@@ -90,74 +121,13 @@ def compile_rows(rows, *, project, targets, install_roots=()):
             if not commands:
                 raise Unsupported('unit has no executable action')
             runtime = 'blender' if any(c['kind'] == 'blender' for c in commands) else 'python'
-            inputs, stage, paths, incoming = [], {}, {}, set()
-
-            def upstream(owner, item, paths_read):
-                if owner == name:
-                    raise Unsupported('action reads its own unpublished output')
-                pair = (owner, item)
-                if pair not in incoming:
-                    slot = f'item{len(incoming)}'
-                    inputs.append({'role': 'content', 'name': slot,
-                                   'source': {'kind': 'item', 'unit': owner, 'item': item}})
-                    stage[slot] = f'inputs/{slot}'
-                    slots[slot] = False
-                    incoming.add(pair)
-                else:
-                    slot = next(i['name'] for i in inputs if i['source'] == {
-                        'kind': 'item', 'unit': owner, 'item': item})
-                producer = by_name[owner]
-                if item.startswith('product'):
-                    product_index = int(item.removeprefix('product'))
-                    product = producer['products'][product_index]
-                    owned_roots = [*product['paths'], *product['optional_paths']]
-                    archive_names = [f'products/{product_index}-{i}.tree.tar'
-                                     for i in range(len(owned_roots))]
-                else:
-                    output_index = int(item.removeprefix('output'))
-                    owned_roots = [producer['outputs'][output_index]]
-                    archive_names = [f'outputs/{output_index}.tree.tar']
-                for path in paths_read:
-                    matches = [i for i, root in enumerate(owned_roots) if _under(path, root)]
-                    if len(matches) != 1:
-                        raise Unsupported(f'input {path} has no exact product-root binding')
-                    index = matches[0]
-                    paths[_path(owned_roots[index])] = f'{stage[slot]}/{archive_names[index]}'
-
-            for read in row['reads']:
-                if read['product'] not in products:
-                    raise Unsupported(f'unknown product {read["product"]}')
-                owner, item, owned = products[read['product']]
-                if owner != read['producer'] or owned != read['paths']:
-                    raise Unsupported('product read differs from its owning declaration')
-                upstream(owner, item, owned)
-            for dependency in (*row['needs'], *row['after']):
-                if dependency not in by_name:
-                    raise Unsupported(f'unknown prerequisite {dependency}')
-                for root, owner, item in roots:
-                    if owner == dependency:
-                        upstream(owner, item, [root])
-            code = sorted(set(map(_path, row['code'])) | {JOB_SCRIPT})
-            for source in row['inputs']:
-                path = _path(source['path'])
-                if path in code:
-                    continue
-                owners = [(root, owner, item) for root, owner, item in roots if _under(path, root)]
-                if owners:
-                    longest = max(len(root) for root, _, _ in owners)
-                    owners = {entry for entry in owners if len(entry[0]) == longest}
-                    if len(owners) != 1:
-                        raise Unsupported(f'ambiguous generated input {path}')
-                    _, owner, item = owners.pop()
-                    upstream(owner, item, [path])
-                    continue
-                slot = f'file{len(stage)}'
-                inputs.append({'role': 'content', 'name': slot,
-                    'source': {'kind': 'file', 'path': path, 'optional': bool(source['optional'])},
-                    'whole': 'The original producer consumes this complete declared source.'})
-                stage[slot] = f'inputs/{slot}'
-                slots[slot] = False
-                paths[path] = stage[slot]
+            input_row = dict(row)
+            input_row.setdefault('references', [])
+            input_row.setdefault('deferred', [])
+            lowered = lower_inputs(input_row, rows=by_name, roots=roots, products=products, checkout=checkout)
+            inputs, stage, paths = lowered['inputs'], lowered['staged'], lowered['paths']
+            slots.update(lowered['slots'])
+            code = sorted(set(lowered['code']) | {JOB_SCRIPT})
             outputs, emitted, covered = [], [], set()
             for index, product in enumerate(row['products']):
                 files = []
@@ -184,11 +154,14 @@ def compile_rows(rows, *, project, targets, install_roots=()):
             units.append({'id': name, 'op': {'kind': f'recipe.{runtime}', 'version': '1'},
                 'script': JOB_SCRIPT, 'code': code, 'inputs': inputs,
                 'params': {'recipe': {'version': 1, 'commands': commands, 'paths': paths,
-                                     'outputs': emitted, 'verify': _binding(row['verify'])}},
+                                     'outputs': emitted, 'verify': _binding(row['verify']),
+                                     'deferred': lowered['deferred']}},
                 'outputs': outputs})
             staged[name] = stage
-        except Unsupported as error:
-            raise Unsupported(f'{name}: {error}') from error
+        except (Unsupported, InputUnsupported) as error:
+            errors.append(f'{name}: {error}')
+    if errors:
+        raise Unsupported('\n'.join(errors))
     declaration = {'schema_version': 2, 'cache_version': 'v2-1', 'units': units}
     # Rust checks the complete global declaration before selecting these roots.
     return ControllerTarget(targets[0], project, declaration, staged, slots,
@@ -226,6 +199,6 @@ def compile_game(game, *, checkout, build_root, targets=('unreal.package',)):
     steps = recipe_steps(game, checkout=checkout, build_root=build_root)
     selected = Graph(steps).select(targets)
     rows = extract(selected, checkout=checkout, build_root=build_root)
-    return compile_rows(rows, project=game, targets=targets,
+    return compile_rows(rows, project=game, targets=targets, checkout=checkout,
                         install_roots=(f'build/{game}', f'games/{game}/unreal/Content',
                                        f'games/{game}/unreal/Binaries'))
