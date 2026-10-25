@@ -66,44 +66,41 @@ def select(source=None, output=None, piece=None, extension=None):
 
 def complete(build_archive=None, runtime_archive=None, logical=None, park=(), board=(), trees=(), output=None):
     """Require original runtime/source ownership and the complete current native member roster."""
-    from atelier.build_v2.recipe_job import unpack_root
     from skatepark.pieces import runtime_park
     output = Path(output)
     if output.exists(): raise ValueError('Sunset Pier native summary must be fresh')
     output.mkdir(parents=True)
-    source, runtime_file = output / '.build', output / '.runtime'
-    unpack_root(build_archive, source); unpack_root(runtime_archive, runtime_file)
-    try:
-        build, runtime, authored = read_json(source), read_json(runtime_file), read_json(logical)
-        if (hashlib.sha256(logical.read_bytes()).hexdigest() != build['identity']['park_json_sha256']
-                or hashlib.sha256(runtime_file.read_bytes()).hexdigest() != build['identity']['runtime_park_sha256']
-                or runtime != runtime_park(authored, build['pieces']['members'])):
-            raise ValueError('Sunset Pier runtime membership differs from the exact original logical/source contract')
-        expected = {row['name']: row for row in runtime['meshes']}
-        if len(expected) != len(runtime['meshes']): raise ValueError('Duplicate Sunset Pier runtime owner')
-        expected_exports = {'assets/' + name + '.fbx' for name in expected}
-        expected_exports.update('board/' + name + '.fbx' for name in ('SM_SkateDeck', 'SM_SkateTruck', 'SM_SkateWheel'))
-        if set(build['identity']['exports']) != expected_exports:
-            raise ValueError('Sunset Pier source build has a foreign or incomplete export roster')
-        rows = []
-        for values, names, is_board in ((park, set(expected), False), (board, {'SM_SkateDeck', 'SM_SkateTruck', 'SM_SkateWheel'}, True)):
-            found = set()
-            for child, piece in values:
-                if piece in found or piece not in names: raise ValueError('Foreign/duplicate Sunset Pier native owner')
-                found.add(piece)
-                report = read_json(_file(child.products[0].paths[0], 'data/reports/' + piece + '.json'))
-                if (report['name'] != piece or report['triangles'] != build['meshes'][piece]['triangles']
-                        or report['blocks'] is not (False if is_board else expected[piece]['blocks'])
-                        or report['board'] is not is_board
-                        or set(report['materials']) != set(build['material_slots'][piece])
-                        or report['source_sha256'] != build['identity']['exports'][('board/' if is_board else 'assets/') + piece + '.fbx']):
-                    raise ValueError('Sunset Pier native member differs from runtime source')
-                rows.append(report)
-            if found != names: raise ValueError('Incomplete Sunset Pier current native membership')
-        tree_roster = set(runtime.get('trees', {}))
-        if set(trees) != tree_roster: raise ValueError('Missing explicit native island tree owner')
-        for name, path in trees.items():
-            _file(path, 'content/Game/Japan/Assets/' + name + '.uasset')
-        (output / 'native.json').write_text(json.dumps({'meshes': rows, 'trees': sorted(tree_roster)}, sort_keys=True) + '\n')
-    finally:
-        source.unlink(missing_ok=True); runtime_file.unlink(missing_ok=True)
+    source, runtime_file = Path(build_archive), Path(runtime_archive)
+    if any(path.is_symlink() or not path.is_file() for path in (source, runtime_file)):
+        raise ValueError('Sunset Pier requires decoded original build/runtime ROOTs')
+    build, runtime, authored = read_json(source), read_json(runtime_file), read_json(logical)
+    if (hashlib.sha256(logical.read_bytes()).hexdigest() != build['identity']['park_json_sha256']
+            or hashlib.sha256(runtime_file.read_bytes()).hexdigest() != build['identity']['runtime_park_sha256']
+            or runtime != runtime_park(authored, build['pieces']['members'])):
+        raise ValueError('Sunset Pier runtime membership differs from the exact original logical/source contract')
+    expected = {row['name']: row for row in runtime['meshes']}
+    if len(expected) != len(runtime['meshes']): raise ValueError('Duplicate Sunset Pier runtime owner')
+    expected_exports = {'assets/' + name + '.fbx' for name in expected}
+    expected_exports.update('board/' + name + '.fbx' for name in ('SM_SkateDeck', 'SM_SkateTruck', 'SM_SkateWheel'))
+    if set(build['identity']['exports']) != expected_exports:
+        raise ValueError('Sunset Pier source build has a foreign or incomplete export roster')
+    rows = []
+    for values, names, is_board in ((park, set(expected), False), (board, {'SM_SkateDeck', 'SM_SkateTruck', 'SM_SkateWheel'}, True)):
+        found = set()
+        for child, piece in values:
+            if piece in found or piece not in names: raise ValueError('Foreign/duplicate Sunset Pier native owner')
+            found.add(piece)
+            report = read_json(_file(child.products[0].paths[0], 'data/reports/' + piece + '.json'))
+            if (report['name'] != piece or report['triangles'] != build['meshes'][piece]['triangles']
+                    or report['blocks'] is not (False if is_board else expected[piece]['blocks'])
+                    or report['board'] is not is_board
+                    or set(report['materials']) != set(build['material_slots'][piece])
+                    or report['source_sha256'] != build['identity']['exports'][('board/' if is_board else 'assets/') + piece + '.fbx']):
+                raise ValueError('Sunset Pier native member differs from runtime source')
+            rows.append(report)
+        if found != names: raise ValueError('Incomplete Sunset Pier current native membership')
+    tree_roster = set(runtime.get('trees', {}))
+    if set(trees) != tree_roster: raise ValueError('Missing explicit native island tree owner')
+    for name, path in trees.items():
+        _file(path, 'content/Game/Japan/Assets/' + name + '.uasset')
+    (output / 'native.json').write_text(json.dumps({'meshes': rows, 'trees': sorted(tree_roster)}, sort_keys=True) + '\n')
