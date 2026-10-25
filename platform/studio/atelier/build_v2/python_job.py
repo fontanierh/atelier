@@ -282,6 +282,13 @@ class PathGuard:
 
     def violation(self, access, path):
         print(f'build-v2 job stopped: undeclared {access} of {path}', file=sys.stderr, flush=True)
+        frame = sys._getframe(1)
+        for _ in range(12):
+            if frame is None:
+                break
+            print(f'  at {frame.f_code.co_filename}:{frame.f_lineno} ({frame.f_code.co_name})',
+                  file=sys.stderr, flush=True)
+            frame = frame.f_back
         self.report({'status': 'failed', 'kind': 'dependency',
                      'message': f'the job attempted an undeclared {access}; only declared inputs, code, '
                                 'the installed platform and output/ are visible'})

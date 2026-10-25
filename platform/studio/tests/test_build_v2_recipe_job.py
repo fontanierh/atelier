@@ -231,3 +231,42 @@ def test_recipe_atomic_scope_reuses_bootstrap_held_scratch_and_resets_on_every_e
         assert list(scratch.iterdir()) == []
     finally:
         os.close(descriptor)
+
+
+def test_real_recipe_configuration_allows_only_existing_output_parent_mkdir(tmp_path):
+    import subprocess
+    import sys
+    from atelier.build_v2.recipe_worker import RecipeWorker
+    root=tmp_path.resolve()
+    (root/job.RUNTIME).mkdir()
+    (root/'source.py').write_text('def run(context): pass\n')
+    (root/'output').mkdir()
+    request={'script':'source.py','code':['source.py'],'inputs':[],
+             'outputs':[{'path':'products/one.tree.tar'}],
+             'params':{'recipe':{'paths':{},'outputs':[{'path':'build/data/queries/one.json'}]}}}
+    worker=RecipeWorker(io.BytesIO(),io.BytesIO(),True)
+    worker.prepare_job(request,str(root))
+    config=worker.configuration(request,str(root),99)
+    parent=root/job.RUNTIME/'view/build/data/queries'
+    assert str(parent)in config['mkdir_existing']
+    program='''
+import json,sys
+from pathlib import Path
+from atelier.build_v2.python_job import PathGuard
+from atelier.export_manifest import real_directory
+config=json.load(sys.stdin)
+parent=Path(config['working_directory'])/'build/data/queries'
+guard=PathGuard(str(parent.parents[5]),config['read_subpaths'],config['read_literals'],lambda _:None,
+                config['write_subpaths'],config['working_directory'],config['mkdir_existing'])
+guard.install()
+real_directory(parent,create=True)
+parent.mkdir(parents=True,exist_ok=True)
+(parent/'one.json').write_text('declared')
+assert not guard.allowed('write',str(parent))
+assert not guard.allowed('write',str(parent/'unrelated'))
+'''
+    # The guard's job root is explicit; no guessed parent depth belongs in the fixture.
+    program=program.replace("str(parent.parents[5])",repr(str(root)))
+    result=subprocess.run([sys.executable,'-c',program],input=json.dumps(config),text=True,capture_output=True)
+    assert result.returncode==0,result.stdout+result.stderr
+    assert (parent/'one.json').read_text()=='declared'
