@@ -634,7 +634,7 @@ pub fn check_unit(unit: &PreparedUnit) -> Result<(), String> {
         if !matches!(
             item.class.as_str(),
             "Material" | "MaterialInstance" | "MaterialParameterCollection" | "Map" | "Blueprint"
-                | "BlendSpace1D" | "AdventureMoveSet" | "AnimBoneCompressionSettings" | "WandererDefinition" | "SoundAttenuation" | "DataAsset"
+                | "BlendSpace1D" | "AdventureMoveSet" | "Animation" | "AnimBoneCompressionSettings" | "AnimCurveCompressionSettings" | "MirrorDataTable" | "WandererDefinition" | "SoundAttenuation" | "DataAsset"
         ) {
             return Err("unsupported authored native asset class".into());
         }
@@ -1047,6 +1047,14 @@ fn body_request(mut request: crate::protocol::JobRequest) -> Result<crate::proto
     if request.op.kind != AUTHOR {
         request.params.remove("settings");
     }
+    // The expanded closure is already keyed and staged as ordinary input Items.
+    // The fixed importer receives no custom callback arguments.
+    if request.op.kind == RAW_IMPORT
+        && request.params.get("args").and_then(serde_json::Value::as_object)
+            .is_some_and(|args| args.len() == 1 && args.contains_key("closure"))
+    {
+        request.params.remove("args");
+    }
     if let Some(modules) = request.params.remove("native_modules") {
         // Locations::build already materialized and verified these exact context inputs.
         // Keep complete keyed/staged verification; only the authored body's view omits them.
@@ -1112,6 +1120,10 @@ mod tests {
         register(&mut registry, &BTreeMap::from([("source".into(), false)])).unwrap();
         assert_eq!(registry.len(), 4);
         assert!(registry[&(RAW_IMPORT.into(), OP_VERSION.into())].params["destination"].required);
+        for class in ["AnimCurveCompressionSettings", "MirrorDataTable"] {
+            assert!(registry[&(AUTHOR.into(), OP_VERSION.into())].output_classes.contains(class));
+            assert!(registry[&(AUTHOR.into(), OP_VERSION.into())].inputs["source"].item_classes.contains(class));
+        }
         assert!(register(&mut registry, &BTreeMap::new()).is_err());
         let request: crate::protocol::JobRequest = serde_json::from_value(serde_json::json!({
             "job_id":"job", "unit":"material", "op":{"kind":AUTHOR,"version":"1"},
@@ -1126,6 +1138,12 @@ mod tests {
             assert!(!body_request(typed).unwrap().params.contains_key("settings"));
         }
         assert!(request.params.contains_key("settings"));
+        let mut raw_closure = request.clone();
+        raw_closure.op.kind = RAW_IMPORT.into();
+        raw_closure.params.insert("args".into(), serde_json::json!({"closure":{"materials":[]}}));
+        let raw_body = body_request(raw_closure.clone()).unwrap();
+        assert!(!raw_body.params.contains_key("args"));
+        assert!(raw_closure.params.contains_key("args"));
         let mut bound = request.clone();
         bound.params.insert("native_modules".into(), serde_json::json!({
             "editor":{"slot":"compiled_editor","archive":"binaries.tree.tar",
@@ -1176,6 +1194,8 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
         "AdventureMoveSet",
         "WandererDefinition",
         "AnimBoneCompressionSettings",
+                "AnimCurveCompressionSettings",
+                "MirrorDataTable",
                 "SoundAttenuation",
                 "DataAsset",
         "JsonData",

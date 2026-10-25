@@ -223,6 +223,8 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
                 "AdventureMoveSet",
                 "WandererDefinition",
                 "AnimBoneCompressionSettings",
+                "AnimCurveCompressionSettings",
+                "MirrorDataTable",
                 "SoundAttenuation",
                 "DataAsset",
                 "JsonData",
