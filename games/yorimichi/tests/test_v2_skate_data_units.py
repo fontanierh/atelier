@@ -242,3 +242,18 @@ def test_verifier_refuses_config_paths_that_differ_from_declared_native_items(ed
     case.params['args']['configured_assets']['motion_data'] = '/Game/Other.Other'
     with pytest.raises(ValueError, match='configured assets'): body.run(case)
     assert editor.settings.values == editor.original_settings
+
+
+def test_production_family_join_preserves_all_owners_and_required_produced_modules(rows):
+    joined = module(GAME / 'v2_native_units.py', 'skate_join_test').lower(
+        rows, {'groups': {}, 'templates': []}, checkout=ROOT)
+    names = joined['aliases']['unreal.skate_data']
+    assert len(names) == 29
+    assert set(joined['module_requirements']) == set(names)
+    assert all(joined['module_requirements'][name] for name in names)
+    by_id = {unit['id']: unit for unit in joined['units']}
+    verifier = by_id[names[-1]]
+    assert verifier['outputs'][0]['class'] == 'JsonData'
+    assert len(verifier['inputs']) == 29
+    assert {incoming['source']['unit'] for incoming in verifier['inputs']} == {
+        'skate.runtime', *names[:-1]}

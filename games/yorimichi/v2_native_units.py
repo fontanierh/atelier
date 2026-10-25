@@ -83,7 +83,7 @@ def island(rows, geometry, *, checkout):
 
 def _package_dependencies(native):
     classes = {'Texture', 'StaticMesh', 'SkeletalMesh', 'Skeleton', 'PhysicsAsset',
-               'Material', 'MaterialInstance', 'MaterialParameterCollection', 'Map', 'Sound', 'Animation'}
+               'Material', 'MaterialInstance', 'MaterialParameterCollection', 'Map', 'Sound', 'Animation', 'DataAsset'}
     by_id = {unit['id']: unit for unit in native['units']}
     result = {}
     for package, reference in native['packages'].items():
@@ -147,6 +147,8 @@ def _append_family(native, family):
     native['staged_inputs'].update(family['staged_inputs'])
     native['content_slots'].update(family['content_slots'])
     native['packages'].update(family['packages'])
+    native.setdefault('module_requirements', {}).update(family.get('module_requirements', {}))
+    native.setdefault('plugin_requirements', {}).update(family.get('plugin_requirements', {}))
 
 
 def _join_native_families(native, rows, geometry, selected, *, checkout):
@@ -261,7 +263,7 @@ def lower(rows, geometry, *, checkout):
     elif 'unreal.materials' in selected:
         native = shared_materials(rows, checkout=checkout)
         native['aliases'] = {}
-    elif selected & {'unreal.treehouse', 'unreal.brinecove', 'unreal.sounds', 'unreal.crater_cloud', 'unreal.skate_board', 'unreal.fx'}:
+    elif selected & {'unreal.treehouse', 'unreal.brinecove', 'unreal.sounds', 'unreal.crater_cloud', 'unreal.skate_board', 'unreal.fx', 'unreal.skate_data'}:
         native = {'units': [], 'staged_inputs': {}, 'content_slots': {}, 'packages': {},
                   'targets': (), 'aliases': {}, 'missing_roles': []}
         if 'unreal.treehouse' in selected:
@@ -292,7 +294,8 @@ def lower(rows, geometry, *, checkout):
             owner = name.removeprefix('unreal.foliage.')
             native['aliases'][name] = ('unreal.foliage.finish.' + owner,)
     for original, constructor in (('unreal.crater_cloud', 'v2_cloud_units'),
-                                  ('unreal.skate_board', 'v2_board_units'), ('unreal.fx', 'v2_fx_units')):
+                                  ('unreal.skate_board', 'v2_board_units'), ('unreal.fx', 'v2_fx_units'),
+                                  ('unreal.skate_data', 'v2_skate_data_units')):
         if original in selected:
             family = _family_module(checkout, constructor).author_units(rows, checkout=checkout)
             _append_family(native, family)
