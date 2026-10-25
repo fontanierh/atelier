@@ -36,6 +36,10 @@ Hakuba runs as a Mac desktop app and in the browser, so anyone can open a link a
 Run commands from this folder; `rust-toolchain.toml` picks the Rust version and the browser target. The first
 build compiles Bevy and takes a few minutes; later builds only compile Hakuba.
 
+Models and images are stored in Git LFS. Install it once per machine before cloning, or the checkout holds small
+pointer files instead of the real assets: `brew install git-lfs`, then `git lfs install`. In a clone made
+without it, run `git lfs pull`.
+
 ```sh
 trunk serve                  # browser, at http://127.0.0.1:8080 (install once: cargo install --locked trunk)
 cargo run                    # desktop
@@ -70,13 +74,13 @@ what the game loads; `src/` is how it is made and is never loaded or shipped.
 
 ```text
 <asset-name>/
-  asset.toml                what it is, its outputs, provenance, checksum of the inputs at last export
+  asset.toml                what it is, its outputs, how its sources were made, checksum of the inputs at last export
   <asset-name>.glb          what the game loads
   src/
     export.py               the script that writes the .glb (generated assets)
     params.toml             the numbers the script reads
     <asset-name>.blend      a hand-made source (hand-made assets)
-    concepts/               reference images
+    concepts/               generated reference images, each with its prompt and model
 ```
 
 The whole tree:
@@ -116,7 +120,8 @@ Rules:
   to each character's height. Extra bones such as hair hang under the rig's bones.
 - Optimization (mesh simplification, LODs, compressed textures) happens during export, so `assets/` always holds
   the final files.
-- Big binaries (`.blend`, `.glb`, `.ktx2`) are plain git files for now; Git LFS is not set up yet.
+- Binaries (`.glb`, `.blend`, `.ktx2`, `.png`) are stored in Git LFS (`.gitattributes`). The repository's
+  pre-push hook uploads them.
 - Reference videos, old revisions and captures stay out of git, in the archive.
 
 ### Exporting
