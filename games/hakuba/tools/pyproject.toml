@@ -1,0 +1,16 @@
+[project]
+name = "hakuba-tools"
+version = "0.1.0"
+description = "Python shared by Hakuba's asset exporters"
+requires-python = ">=3.12"
+dependencies = [
+    "pillow>=11",
+    "tomlkit>=0.13",
+]
+
+[project.scripts]
+export = "hakuba_tools.export:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

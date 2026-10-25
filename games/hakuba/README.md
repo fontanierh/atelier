@@ -23,9 +23,9 @@ Hakuba runs as a Mac desktop app and in the browser, so anyone can open a link a
 
 ## Plan
 
-1. An empty game with an empty map (this step).
+1. An empty game with an empty map.
 2. The playable characters and their move sets: double jump, backflip, side dashes, sword fighting and the
-   paraglider.
+   paraglider. First Nox as he is (this step), then the shared humanoid rig, then the animations.
 3. The world: terrain, trees, cities, everything else, kept fast and optimized.
 4. Skateboarding and multiplayer. Browser players join too, so networking uses web transports (WebSocket or
    WebTransport).
@@ -42,8 +42,8 @@ cargo run                    # desktop
 ```
 
 Test in the browser by default: what runs there almost always runs on desktop too, while the reverse is not
-true. The browser build loads `index.html`, which holds the canvas the game draws into. When assets arrive, the
-web build serves `assets/` without any `src/` folder.
+true. The browser build loads `index.html`, which holds the canvas the game draws into. `Trunk.toml` copies
+`assets/` into the web build without the `src/` folders and `asset.toml` records.
 
 ## Layout
 
@@ -52,13 +52,15 @@ games/hakuba/
   Cargo.toml                Rust workspace and the game program
   rust-toolchain.toml       Rust version and the browser (wasm) target
   index.html                the page the browser build runs in
+  Trunk.toml                what the browser build copies next to the game
   src/main.rs               builds the app and adds the plugins, nothing else
   crates/                   game code: one crate per feature, each one Bevy plugin
     world/                  the map
+    characters/             the playable characters
     (later) player/ moves/ combat/ skate/ net/
-  tools/                    (later) Python shared by every exporter
-    hakuba_tools/           export runner, Blender runner, mesh, material, texture, rig and glTF helpers
-  assets/                   (later) everything the game loads, plus how each piece is made
+  tools/                    Python shared by every exporter
+    hakuba_tools/           export runner and glTF helpers; (later) Blender runner, mesh, texture and rig helpers
+  assets/                   everything the game loads, plus how each piece is made
 ```
 
 ### Assets
@@ -82,11 +84,12 @@ The whole tree:
 ```text
 assets/
   characters/
-    <character>/            mesh and skeleton, plus clips only this character uses
+    <character>/            mesh bound to the humanoid rig, plus clips only this character uses
+      character.toml        per-character tweaks: hips height, limits, correction layers, clip overrides
       moves.toml            move tuning (jump height, dash speed); Bevy reloads it while the game runs
   animations/
-    <rig>/                  clip libraries shared by every character on that rig
-      locomotion.glb  traversal.glb  glider.glb  sword.glb
+    humanoid/               the shared rig and every clip on it, retargeted onto it once
+      rig.glb  locomotion.glb  traversal.glb  glider.glb  sword.glb
       src/clips/            one source per clip
   world/
     common/                 usable in any region
@@ -108,10 +111,12 @@ Rules:
 - An asset's script, sources and output live in the same folder, so they move, change and get deleted together.
 - An asset starts in its region. When a second region needs it, its folder moves to `world/common/`.
 - A region uses only its own folder and `world/common/`, never another region's.
-- Characters share clips through their rig. All characters on a rig use the same bone names.
+- There is no donor character. Every clip is authored or retargeted once onto the humanoid rig, and every
+  character is bound to that rig, keeping its own proportions. Clips rotate bones; only the hips also move, scaled
+  to each character's height. Extra bones such as hair hang under the rig's bones.
 - Optimization (mesh simplification, LODs, compressed textures) happens during export, so `assets/` always holds
   the final files.
-- Big binaries (`.blend`, `.glb`, `.ktx2`) will use Git LFS.
+- Big binaries (`.blend`, `.glb`, `.ktx2`) are plain git files for now; Git LFS is not set up yet.
 - Reference videos, old revisions and captures stay out of git, in the archive.
 
 ### Exporting
@@ -123,10 +128,12 @@ away, without exporting anything. The Python is something you run before committ
 1. Change an asset's script, parameters or source, for example
    `assets/world/common/trees/pine-a/src/params.toml`.
 2. Export that folder: `uv run --project tools export assets/world/common/trees/pine-a`. The runner reads
-   `asset.toml`, runs `src/export.py` in headless Blender, writes `pine-a.glb` and records the input checksum.
+   `asset.toml`, runs `src/export.py`, checks that it wrote every listed output and records the checksum of
+   `src/` and `tools/` in `asset.toml`. Scripts that need Blender will run it headless.
 3. Commit the sources and the `.glb` together.
 
-A check compares each `asset.toml` checksum with its current inputs and reports out-of-date exports.
+`uv run --project tools export --check assets` compares each recorded checksum with the current inputs and lists
+out-of-date exports.
 
 ## Conventions
 

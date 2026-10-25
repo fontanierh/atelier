@@ -1,0 +1,2 @@
+height_m = 1.78        # the source stands about 1.08 m tall
+texture_size = 2048    # the source's 4K atlases, halved for the browser download

@@ -9,6 +9,7 @@ publish = false
 
 [workspace.dependencies]
 bevy = "0.20.0"
+hakuba_characters = { path = "crates/characters" }
 hakuba_world = { path = "crates/world" }
 
 [package]
@@ -19,6 +20,7 @@ publish.workspace = true
 
 [dependencies]
 bevy.workspace = true
+hakuba_characters.workspace = true
 hakuba_world.workspace = true
 
 # Hakuba stays quick to compile; Bevy and other dependencies are optimized once so the game runs fast in development.

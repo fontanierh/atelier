@@ -1,0 +1,5 @@
+# The browser build serves what the game loads from assets/, without how it is made (src/) or the export records.
+[[hooks]]
+stage = "post_build"
+command = "sh"
+command_arguments = ["-c", "rsync -a --exclude=src/ --exclude=asset.toml assets/ \"$TRUNK_STAGING_DIR/assets/\""]

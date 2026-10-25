@@ -1,9 +1,9 @@
-//! The map. For now it is empty: flat ground, a sun and a camera looking at the origin.
+//! The map. For now it is empty: flat ground to the horizon, a sun and a camera looking at the origin.
 
 use bevy::prelude::*;
 
-/// Side of the square ground, in metres.
-const GROUND_SIZE_M: f32 = 200.0;
+/// Side of the square ground, in metres: wide enough that its edge stays out of sight.
+const GROUND_SIZE_M: f32 = 4000.0;
 
 pub struct WorldPlugin;
 
@@ -41,6 +41,6 @@ fn spawn_empty_map(
     commands.spawn((
         Name::new("Overview camera"),
         Camera3d::default(),
-        Transform::from_xyz(0.0, 12.0, 24.0).looking_at(Vec3::ZERO, Vec3::Y),
+        Transform::from_xyz(0.0, 1.6, 4.0).looking_at(Vec3::new(0.0, 0.9, 0.0), Vec3::Y),
     ));
 }

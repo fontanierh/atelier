@@ -1,0 +1,45 @@
+{
+  "character": "nox",
+  "outfit": "02",
+  "part": "head",
+  "view": "front",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "background": "transparent",
+  "output_format": "png",
+  "endpoint": "/v1/images/edits",
+  "prompt": "EDIT Image 1, Nox's previous FRONT HEAD, into a clearly darker late-night trap-rapper version. Preserve this fictional adult man's warm brown complexion, broad nose, full lips, simple moustache/goatee, basic identity, image scale and the same smooth painted stylised 3D-game finish. The previous image reads too approachable and wholesome. Change the actual face design and hair silhouette as described, not just the background or lighting. Keep the surfaces readable and the same production style as Lucien.\n\nEXPRESSION AND SHAPE: make the face a little leaner and more adult with sharper cheek planes and subtle hollows, retaining his broad nose and full closed lips. Eyelids markedly heavier: the upper lids obscure at least the upper TWO THIRDS of the irises, leaving narrow horizontal almond openings with only a small dark-brown iris strip and very little eye white. Eyes look straight forward with a tired, hazy, detached, guarded stare, relaxed low brows rather than a theatrical angry frown. Subdued mauve-brown under-eye shadows and a tiny asymmetry to lid height, still both eyes level. No bright doe eyes, raised friendly brows, big cheerful catchlights or smile. Neutral lips naturally closed, no exposed teeth. The attitude is cold, sleep-deprived, self-possessed and hard to read. He is clearly an adult, mid-to-late twenties, never a child.\n\nHAIR: keep shoulder-length locs as broad rounded sculptural locks in the existing game style, but give them a flatter, less puffed-up crown and a more irregular hanging fall. BLACK-charcoal throughout: REMOVE EVERY copper/dyed tip from Image 1. Two longer forward locs fall over his OWN RIGHT brow and obscure part of the RIGHT eye (SCREEN LEFT in front); do not arrange all hair neatly away from his face. Other locks naturally fall near cheeks and behind ears, some different lengths. Whole hairstyle remains at rest, no wind, no thin fibres or new busy texture. Preserve complete shoulder-length tips below the jaw.\n\nFACE MARKS AND STUD: a SMALL DARK FOUR-POINT STAR tattoo at his anatomical LEFT temple (SCREEN RIGHT), and TWO SHORT DARK INK TICKS immediately beneath his LEFT eye, small clean readable shapes in the game style. No writing, numerals or tattoo on his right side. Replace the existing left gold stud with ONE broad square icy SILVER stud on the same anatomical LEFT ear; no stud on his right. The stud is simply silver with one structured pale highlight, no sparkle effects.\n\nONLY THE COMPLETE HEAD, FACE, EARS, LEFT EAR STUD AND ALL LOCS. No neck, hoodie, shoulder, chains, collar, body or bust support. This is still the orthographic FRONT head reference, one figure and one view, vertical face centre line, no head tilt or looking up/down. The full head/hair remains the original approximate image height: top near y=75\u201380, eyes near y=516, chin near y=855\u2013860, longest loc tips around y=965\u2013975; all outline inside with clear margins. Keep the facial landmarks in those positions, do not shrink the face.\n\n1024x1024 PNG with actual alpha transparency outside the silhouette, fully opaque head and hair. No backdrop, drawn checkerboard, black or purple scene, cast shadow, glow or coloured lighting. Keep warm brown skin; the mood comes from the narrowed lids, leaner planes, subtle under-eye colour, face marks and hair arrangement. Soft broad sculptural hair highlights, smoothly connected warm skin modelling, quiet lips, matte dark facial-hair shapes, small controlled eye reflection. No photorealism, pores, tiny fibres, paper grain, excessive lines, fantasy accessories, text or multiple panels. ONE DARKER FRONT HEAD, complete locs, no neck.\n",
+  "prompt_file": "front.prompt.txt",
+  "prompt_sha256": "cfaa589dc89fb2a567603bb71d98ed29e95b12f4d9bc6ceb8d2a1ad8f6318b70",
+  "input_images": [
+    {
+      "file": "build/yorimichi/characters/nox/charakuru-r01/head/front.png",
+      "sha256": "e84cc4fa31e17d00b593aa936f1403fb8de450eba5fe1df9d186cd26a67b937a"
+    }
+  ],
+  "owner": "repo-refs-01a11d3f",
+  "execution": "repository Sunburst API client through atelier.ai.ledger",
+  "status": "done",
+  "started_at": "2026-10-11T13:31:51.570349+00:00",
+  "output": "front.png",
+  "output_sha256": "d20b66247c7dc4bb5f8dec651e1af26dee2813a48298cea1c9f6610bdecb8483",
+  "dimensions": [
+    1024,
+    1024
+  ],
+  "genuine_alpha": true,
+  "alpha_extrema": [
+    0,
+    254
+  ],
+  "transparent_fraction": 0.4171,
+  "silhouette_bbox": [
+    80,
+    45,
+    955,
+    976
+  ],
+  "finished_at": "2026-10-11T13:32:31.482593+00:00"
+}

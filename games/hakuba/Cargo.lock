@@ -2978,7 +2978,15 @@ name = "hakuba"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "hakuba_characters",
  "hakuba_world",
+]
+
+[[package]]
+name = "hakuba_characters"
+version = "0.1.0"
+dependencies = [
+ "bevy",
 ]
 
 [[package]]

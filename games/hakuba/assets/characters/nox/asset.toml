@@ -1,0 +1,10 @@
+# Nox, a playable 1.78 m young adult in a black bomber and violet-patterned shirt, with a separately generated head,
+# an earring and 66 rigged hair locks. src/Nox.glb is his approved source from Yorimichi: a Tripo mesh with its Mixamo
+# body rig, local texture repairs and the hair rig. src/references holds the generated images he was made from, each
+# with its prompt; src/provenance the hashes of the authoring inputs and the repairs.
+kind = "character"
+outputs = ["nox.glb"]
+
+[export]
+script = "src/export.py"
+inputs_sha256 = "5ff7f073cb8fca3dd4c01e39dd5965ccbd7b4a7dc9272ac14d6e1896b0d11c22"
