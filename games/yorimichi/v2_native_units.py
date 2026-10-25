@@ -261,7 +261,7 @@ def lower(rows, geometry, *, checkout):
     elif 'unreal.materials' in selected:
         native = shared_materials(rows, checkout=checkout)
         native['aliases'] = {}
-    elif selected & {'unreal.treehouse', 'unreal.brinecove', 'unreal.sounds', 'unreal.crater_cloud', 'unreal.skate_board'}:
+    elif selected & {'unreal.treehouse', 'unreal.brinecove', 'unreal.sounds', 'unreal.crater_cloud', 'unreal.skate_board', 'unreal.fx'}:
         native = {'units': [], 'staged_inputs': {}, 'content_slots': {}, 'packages': {},
                   'targets': (), 'aliases': {}, 'missing_roles': []}
         if 'unreal.treehouse' in selected:
@@ -292,7 +292,7 @@ def lower(rows, geometry, *, checkout):
             owner = name.removeprefix('unreal.foliage.')
             native['aliases'][name] = ('unreal.foliage.finish.' + owner,)
     for original, constructor in (('unreal.crater_cloud', 'v2_cloud_units'),
-                                  ('unreal.skate_board', 'v2_board_units')):
+                                  ('unreal.skate_board', 'v2_board_units'), ('unreal.fx', 'v2_fx_units')):
         if original in selected:
             family = _family_module(checkout, constructor).author_units(rows, checkout=checkout)
             _append_family(native, family)

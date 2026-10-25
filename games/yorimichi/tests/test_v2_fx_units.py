@@ -37,8 +37,10 @@ def complete(rows):
 
 
 def test_actual_producer_without_its_complete_root_refuses(actual):
+    missing = deepcopy(actual)
+    next(row for row in missing if row['id'] == 'fx.textures')['products'] = []
     with pytest.raises(Unsupported, match='complete combat_fx ROOT'):
-        fx.author_units(actual, checkout=ROOT)
+        fx.author_units(missing, checkout=ROOT)
 
 
 def test_roster_comes_from_committed_generator_declarations():

@@ -1501,7 +1501,8 @@ def sound_effect_steps(ctx):
              outputs=[out / 'audio' / 'music' / 'manifest.json'], explicit=True,
              about='select fetched Suno tracks for the optional music import'),
         Step('fx.textures', [Python(ASSETS / 'fx' / 'gen_textures.py')], inputs=[ASSETS / 'fx'],
-             outputs=[out / 'combat_fx' / 'T_FX_Glow.png'], about='glow, spark, ring, dust and trail sprites'),
+             outputs=[out / 'combat_fx' / 'T_FX_Glow.png'], products=[Product('fx.textures', (out / 'combat_fx',))],
+             about='glow, spark, ring, dust and trail sprites'),
     ]
 
 

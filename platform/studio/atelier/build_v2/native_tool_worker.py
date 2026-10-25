@@ -713,10 +713,11 @@ def compile_candidate(job, fresh, protected, candidate):
                 raise Refused('compile candidate input refresh differs from current staging')
     for name in job['code']:
         source, target = fresh / name, candidate / name
-        if target.exists() and (target.is_symlink() or not target.is_file()):
+        if os.path.lexists(target) and (target.is_symlink() or not target.is_file()):
             raise Refused('compile candidate code path is not a regular file')
-        if target.parent.resolve(strict=True) != target.parent:
+        if target.parent.resolve(strict=False) != target.parent:
             raise Refused('compile candidate code ancestor is aliased')
+        target.parent.mkdir(parents=True, exist_ok=True)
         if target.exists():
             target.chmod(0o644)
         shutil.copyfile(source, target)

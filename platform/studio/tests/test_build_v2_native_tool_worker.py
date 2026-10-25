@@ -579,7 +579,9 @@ def test_compile_candidate_clones_new_declared_input_and_accepts_code_readonly_m
     (fresh / 'shared.py').write_bytes(b'same bytes')
     (old / 'shared.py').write_bytes(b'same bytes'); (old / 'shared.py').chmod(0o444)
     (old / 'new.cpp').write_bytes(b'prior source')
-    request = {'code': [], 'params': {'recipe': {'paths': {'new.cpp':'inputs/new','shared.py':'inputs/shared'}}}}
+    (fresh / 'tools').mkdir(); (fresh / 'tools/check.py').write_bytes(b'# frozen verifier')
+    request = {'code': ['tools/check.py'], 'params': {'recipe': {'paths': {'new.cpp':'inputs/new','shared.py':'inputs/shared'}}}}
     view, protected = tool.compile_candidate(request, fresh, [str(fresh / 'new.cpp')], old)
     assert view == old and protected == [str(old / 'new.cpp')]
     assert (old / 'new.cpp').read_bytes() == b'new declared source'
+    assert (old / 'tools/check.py').read_bytes() == b'# frozen verifier'
