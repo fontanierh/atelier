@@ -247,7 +247,7 @@ def job(tmp_path, outputs, **extra):
             'params': {}, 'outputs': [{'path': path, 'required': True} for path in outputs], **extra}
 
 
-@pytest.mark.parametrize('path', ['content/Game/Rock.txt', 'output/Game/Rock.uasset', 'content/Engine/Rock.uasset'])
+@pytest.mark.parametrize('path', ['content/Game/Rock.txt', 'output/Game/Rock.uasset', 'content/Engine/Rock.uasset', 'data/untyped.bin'])
 def test_outputs_must_be_package_files_under_the_game_content_root(tmp_path, path):
     loop, _ = worker(tmp_path)
     with pytest.raises(JobRefused, match='is not a package file') as refusal:
@@ -265,6 +265,81 @@ def test_a_job_never_starts_on_a_non_empty_game_folder_or_output(tmp_path):
     (Path(request['job_dir']) / 'output/stale').write_bytes(b'x')
     with pytest.raises(JobRefused, match='output/ is not empty'):
         loop.execute(request, set(), [])
+
+
+@pytest.mark.parametrize('cause', [None, 'missing', 'unknown', 'package-write'])
+def test_finish_owns_exact_opaque_data_alongside_attested_native_save(tmp_path, monkeypatch, cause):
+    import ctypes
+    import hashlib
+    # Stand in for the SDK's native package save. Python Data writes below still
+    # pass through the real audit guard and the actual runpy body.
+    libc = ctypes.CDLL(None)
+    native_open, native_write, native_close = libc.creat, libc.write, libc.close
+    native_open.argtypes = [ctypes.c_char_p, ctypes.c_uint]
+    native_write.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_size_t]
+    native_close.argtypes = [ctypes.c_int]
+    loop, project = worker(tmp_path)
+    saved = []
+    def save(filename):
+        data = b'\xc1\x83\x2a\x9e mocked SDK save, not a native acceptance proof'
+        fd = native_open(os.fsencode(filename), 0o600)
+        assert fd >= 0
+        try: assert native_write(fd, data, len(data)) == len(data)
+        finally: native_close(fd)
+        saved.append({'package':'/Game/A','filename':filename,
+                      'files':{filename:hashlib.sha1(data).hexdigest()}})
+    monkeypatch.setitem(sys.modules, 'unreal', types.SimpleNamespace(native_save=save))
+    loop.editor = types.SimpleNamespace(settings=lambda:{}, begin_job=lambda:None,
+        finish_background_work=lambda:None, saved_packages=lambda:saved,
+        read_report=lambda:{'version':1,'best_effort':True,'files':[]},
+        dirty_packages=lambda:[], ensures=lambda:0, imports=lambda _:[])
+    request = job(tmp_path, ['content/Game/A.uasset', 'data/geometry/a.bin', 'data/report.json'],
+                  op={'kind':'unreal.finish','version':'1'})
+    root = Path(request['job_dir']); (root/'.unreal-runtime').mkdir()
+    entry = root/'ops/op.py'; entry.parent.mkdir()
+    lines = ['import unreal', 'def run(context):',
+             "    unreal.native_save(str(context.content_dir/'A.uasset'))"]
+    if cause != 'missing': lines.append("    (context.job_dir/'output/data/geometry/a.bin').write_bytes(b'triangles')")
+    if cause == 'unknown':
+        lines += ["    try: (context.job_dir/'output/data/unknown.bin').write_bytes(b'unknown')",
+                  '    except Exception: pass']
+    if cause == 'package-write': lines.append("    (context.content_dir/'A.uasset').write_bytes(b'not a package save')")
+    lines.append("    return {'data/report.json': {'triangles':1}}")
+    entry.write_text('\n'.join(lines)+'\n')
+    if cause:
+        with pytest.raises(JobRefused): loop.execute(request, set(), [])
+    else:
+        assert loop.execute(request, set(), []) == ['content/Game/A.uasset','data/geometry/a.bin','data/report.json']
+        assert (root/'output/data/geometry/a.bin').read_bytes() == b'triangles'
+        assert json.loads((root/'output/data/report.json').read_bytes()) == {'triangles':1}
+        evidence = json.loads((root/'evidence/imports.json').read_bytes())
+        assert [row['package'] for row in evidence['packages']] == ['/Game/A']
+
+
+@pytest.mark.parametrize('cause', ['unknown', 'symlink', 'hardlink', 'directory'])
+def test_native_data_census_rejects_unowned_or_nonregular_files(tmp_path, cause):
+    root = tmp_path/'output'; (root/'data').mkdir(parents=True)
+    target = root/'data/owned.bin'
+    if cause == 'unknown': (root/'data/other.bin').write_bytes(b'unknown')
+    if cause == 'symlink': target.symlink_to(tmp_path/'outside')
+    if cause == 'hardlink':
+        outside = tmp_path/'outside'; outside.write_bytes(b'aliased'); os.link(outside, target)
+    if cause == 'directory': target.mkdir()
+    with pytest.raises(JobRefused): unreal_worker.collect_data_outputs(root, ['data/owned.bin'])
+
+
+def test_c3_data_write_scope_uses_real_process_cwd_and_denies_every_other_output(tmp_path):
+    root = tmp_path/'job'; target = root/'output/data/owned.bin'; target.parent.mkdir(parents=True)
+    with unreal_worker.declared_python(root, [], [], [Path(sys.base_prefix)], writes=[target]):
+        target.write_bytes(b'exact declared output')
+    with pytest.raises(JobRefused, match='undeclared Python write'):
+        with unreal_worker.declared_python(root, [], [], [Path(sys.base_prefix)], writes=[target]):
+            # The editor cwd is outside the job. This must not be interpreted as
+            # the allowed staged file before the actual syscall.
+            Path('output/data/owned.bin').write_bytes(b'outside the job')
+    with pytest.raises(JobRefused, match='undeclared Python write'):
+        with unreal_worker.declared_python(root, [], [], [Path(sys.base_prefix)], writes=[target]):
+            (root/'output/data/other.bin').write_bytes(b'not declared')
 
 
 def test_the_worker_plugin_source_is_outside_every_folder_a_game_or_v1_enumerates():

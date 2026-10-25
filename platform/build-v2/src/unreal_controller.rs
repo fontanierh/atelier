@@ -498,10 +498,21 @@ fn package(path: &str) -> Result<String, String> {
     Ok(path.into())
 }
 
+fn finish_data_output(item: &crate::schema::Item) -> Result<(), String> {
+    if item.class != "Data" || item.files.is_empty() || matches!(item.destination, crate::schema::Destination::External) {
+        return Err("finish data needs explicit ordinary file outputs".into());
+    }
+    for file in &item.files {
+        crate::paths::relative_path(&file.path, false)?;
+        if !file.path.starts_with("data/") { return Err("finish data must stay in data/".into()); }
+    }
+    Ok(())
+}
+
 fn declared_packages(unit: &PreparedUnit) -> Result<BTreeSet<String>, String> {
     let mut result = BTreeSet::new();
     for item in &unit.ingredients().logical_outputs {
-        if item.class == "JsonData" { continue; }
+        if item.class == "JsonData" || (unit.ingredients().op.kind == FINISH && item.class == "Data") { continue; }
         package(&item.logical_path)?;
         for file in &item.files {
             let Some(relative) = file.path.strip_prefix("content/Game/") else {
@@ -665,6 +676,7 @@ pub fn check_unit(unit: &PreparedUnit) -> Result<(), String> {
     };
     let allowed = |actual: &str| {
         actual == class
+            || (action == "finish" && actual == "Data")
             || (kind == "skeletal_mesh" && matches!(actual, "Skeleton" | "PhysicsAsset"))
     };
     if value.logical_outputs.is_empty()
@@ -684,6 +696,10 @@ pub fn check_unit(unit: &PreparedUnit) -> Result<(), String> {
         return Err("native destination is not a declared package".into());
     }
     for item in &value.logical_outputs {
+        if item.class == "Data" {
+            finish_data_output(item)?;
+            continue;
+        }
         let stem = format!(
             "content/Game/{}",
             item.logical_path
@@ -764,7 +780,7 @@ pub fn validate_outputs(
         }) {
             return Err("unowned native frozen output".into());
         }
-        if output.object.size() == 0 {
+        if output.object.size() == 0 && output.item.class != "Data" {
             return Err("empty native package output".into());
         }
         if output.item.class == "JsonData" {
@@ -772,7 +788,7 @@ pub fn validate_outputs(
             output.object.reader().map_err(|e| e.to_string())?.read_to_end(&mut bytes).map_err(|e| e.to_string())?;
             serde_json::from_slice::<serde_json::Value>(&bytes).map_err(|e| e.to_string())?;
         }
-        if output.path.ends_with(".uasset") || output.path.ends_with(".umap") {
+        if output.item.class != "Data" && (output.path.ends_with(".uasset") || output.path.ends_with(".umap")) {
             let mut magic = [0; 4];
             output
                 .object
@@ -903,6 +919,9 @@ fn prepare_inner(
         declared_packages(unit)?
     };
     let data_author = ingredients.op.kind == AUTHOR && ingredients.logical_outputs.iter().all(|item| item.class == "JsonData");
+    let data_files: BTreeSet<_> = ingredients.logical_outputs.iter()
+        .filter(|item| ingredients.op.kind == FINISH && item.class == "Data")
+        .flat_map(|item| item.files.iter().map(|file| file.path.as_str())).collect();
     if (!verification && !data_author && packages.is_empty())
         || ingredients
             .logical_outputs
@@ -912,7 +931,7 @@ fn prepare_inner(
         return Err("native unit needs complete explicit package outputs".into());
     }
     for output in &staged.request().outputs {
-        if !verification && !data_author && !output.path.starts_with("content/Game/") {
+        if !verification && !data_author && !output.path.starts_with("content/Game/") && !data_files.contains(output.path.as_str()) {
             return Err("native outputs must use the fixed C3 content namespace".into());
         }
     }
@@ -1005,6 +1024,23 @@ fn body_request(mut request: crate::protocol::JobRequest) -> Result<crate::proto
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn finish_opaque_data_is_canonical_and_never_native_or_external() {
+        let valid: crate::schema::Item = serde_json::from_value(serde_json::json!({
+            "id":"geometry","logical_path":"/Internal/ImportedGeometry/A","class":"Data","destination":"store",
+            "files":[{"path":"data/imported-geometry/A.bin","required":true}]})).unwrap();
+        assert!(finish_data_output(&valid).is_ok());
+        for path in ["content/Game/A.uasset", "data/../A.bin", "data//A.bin", "/data/A.bin"] {
+            let mut item = valid.clone(); item.files[0].path = path.into();
+            assert!(finish_data_output(&item).is_err(), "accepted {path}");
+        }
+        let mut external = valid.clone(); external.destination = crate::schema::Destination::External;
+        assert!(finish_data_output(&external).is_err());
+        let mut native = valid.clone(); native.class = "StaticMesh".into();
+        assert!(finish_data_output(&native).is_err());
+        let mut empty = valid; empty.files.clear(); assert!(finish_data_output(&empty).is_err());
+    }
 
     #[test]
     fn native_package_names_refuse_aliases_and_non_game_names() {
