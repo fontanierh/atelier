@@ -346,10 +346,14 @@ def test_background_render_registration_has_exact_native_service_and_bundle_boun
     assert len(keyboard) == 2 and keyboard[0].startswith('(allow file-read-metadata ')
     assert keyboard[1] == '(allow file-read-data (require-all (literal "/Library/Keyboard Layouts") (vnode-type DIRECTORY)))'
     assert '(subpath "/Library/Keyboard Layouts")' not in profile
+    methods = [line for line in profile.splitlines() if '/Library/Input Methods' in line]
+    assert len(methods) == 2 and methods[0].startswith('(allow file-read-metadata ')
+    assert methods[1] == '(allow file-read-data (require-all (literal "/Library/Input Methods") (vnode-type DIRECTORY)))'
+    assert '(subpath "/Library/Input Methods")' not in profile
     eligibility = '/private/var/db/eligibilityd/eligibility.plist'
     assert '(allow file-read-data (literal "' + eligibility + '"))' in profile
     roots, literals = platform.reads()
-    for native in (eligibility, '/Library/Keyboard Layouts'):
+    for native in (eligibility, *blender_worker.BLENDER_INPUT_SOURCE_DIRECTORIES):
         assert native not in literals and not any(native.startswith(root + '/') for root in roots)
     assert '(allow process*)' not in profile and '(allow network*)' not in profile
     assert profile.splitlines()[-1] == '(deny network-bind)'
