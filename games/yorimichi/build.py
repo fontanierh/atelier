@@ -1136,7 +1136,7 @@ def world_steps(ctx):
         digest_step(out, 'world.zeppelin', 'meshes', 'the zeppelin meshes unreal.world reads', out / 'zeppelin', ['manifest.json', 'assets']),
         Step('world.hidamari_textures', [Python(TOOLS / 'hidamari_textures.py', ('finish',))],
              inputs=[TOOLS / 'hidamari_textures.py', TOOLS / 'treehouse_textures.py', ASSETS / 'hidamari' / 'textures'],
-             outputs=[out / 'hidamari' / 'textures' / 'textures.json'], pool_roots=[out / 'hidamari' / 'textures'],
+             outputs=[out / 'hidamari' / 'textures'], pool_roots=[out / 'hidamari' / 'textures'],
              about='Hidamari city surfaces: seamless detail maps from the Sunburst paintings'),
         *_load_helper_module('yorimichi_hidamari_props',GAME/'hidamari_prop_build.py').steps(ctx),
         hidamari_props_import_step(out),
@@ -1367,7 +1367,8 @@ def character_steps(ctx):
         Step('characters.fox_hunter', [Blender(CHARS / 'fox-hunter' / 'export_unreal.py', threads=4)],
              inputs=[CHARS / 'fox-hunter', NAMES], outputs=[out / 'fox_hunter' / 'export.json'], about='the fox hunter: mesh and 15 clips', heavy=True),
         Step('characters.wanderer', [Blender(CHARS / 'wanderer' / 'build.py', ('--animations', '--export', '--no-render'), threads=4)],
-             inputs=[CHARS / 'wanderer'], outputs=[out / 'wanderer' / 'build.json'], about='the villagers (procedural model and clips)', heavy=True),
+             inputs=[CHARS / 'wanderer'], products=[Product('characters.wanderer.export', (out / 'wanderer',))],
+             about='the villagers (procedural model and clips)', heavy=True),
     ]
 
 
