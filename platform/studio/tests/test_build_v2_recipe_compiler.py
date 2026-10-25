@@ -103,3 +103,18 @@ def test_declared_frontend_directory_gets_fixed_node_role_after_file_lowering(tm
         'sources': ['editor/bridge.cjs', 'editor/pieces.cjs', 'editor/terrain.cjs']}]
     declared = {item['source']['path'] for item in lowered['inputs']}
     assert set(lowered['params']['recipe']['tools'][0]['sources']) <= declared
+
+
+def test_game_compile_declares_redistributed_files_beside_mac_binary_archive(tmp_path):
+    project = tmp_path / 'games/game/unreal/Game.uproject'
+    project.parent.mkdir(parents=True); project.write_text('{}')
+    source = row('game')
+    source['commands'] = [{'kind':'UnrealGame','target':'Game','config':'Development',
+                           'products':['Binaries/Mac/library.dylib','Samples/Tools/helper.sh']}]
+    marker = compile_rows([source], project='game', targets=['game'], checkout=tmp_path)
+    unit = marker.declaration['units'][0]
+    assert unit['op']['kind'] == 'unreal.game'
+    assert [r['path'] for r in unit['params']['recipe']['outputs']] == [
+        'games/game/unreal/Binaries/Mac','games/game/unreal/Samples/Tools/helper.sh']
+    assert unit['outputs'][0]['files'] == [{'path':'outputs/0.mac.zip'}]
+    assert unit['outputs'][1]['files'] == [{'path':'outputs/1.tree.tar'}]

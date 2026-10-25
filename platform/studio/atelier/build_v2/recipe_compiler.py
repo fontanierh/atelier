@@ -140,6 +140,15 @@ def compile_rows(rows, *, project, targets, install_roots=(), checkout=None, geo
                         root = (descriptor.parent / 'Binaries/Mac').relative_to(checkout).as_posix()
                         row['products'].append({'id': row['id'] + '.' + descriptor.stem,
                                                 'paths': [], 'optional_paths': [root]})
+    # UBT also redistributes explicitly declared game products outside Binaries.
+    for row in rows:
+        game_command = next((command for command in row['commands'] if command['kind'] == 'UnrealGame'), None)
+        if game_command is not None:
+            binary_root = f'games/{project}/unreal/Binaries/Mac'
+            for relative in game_command.get('products', ()):
+                path = f'games/{project}/unreal/' + _path(relative)
+                if not _under(path, binary_root) and path not in row['outputs']:
+                    row['outputs'].append(path)
     rows, targets = _without_joins(tuple(rows), targets)
     by_name = {row['id']: row for row in rows}
     if len(by_name) != len(rows):
@@ -450,6 +459,14 @@ def compile_game(game, *, checkout, build_root, targets=('unreal.package',)):
         native = module.lower(rows, geometry, checkout=checkout)
         if native is not None:
             geometry = native.get('geometry', geometry)
-    return compile_rows(rows, project=game, targets=targets, checkout=checkout, geometry=geometry, native=native,
-                        install_roots=(f'build/{game}', f'games/{game}/unreal/Content',
-                                       f'games/{game}/unreal/Binaries'))
+    try:
+        marker = compile_rows(rows, project=game, targets=targets, checkout=checkout, geometry=geometry, native=native,
+                              install_roots=(f'build/{game}', f'games/{game}/unreal/Content',
+                                             f'games/{game}/unreal/Binaries'))
+    except Unsupported as error:
+        raise Unsupported(f'{len(selected_ids)} original selected recipe rows before v2 expansion; '
+                          f'compilation refused:\n{error}') from error
+    # Public selectors remain the recipe's names; only engine selection targets
+    # become the real replacement owners. Discovery validates this exact binding.
+    from dataclasses import replace
+    return replace(marker, unit=targets[0])

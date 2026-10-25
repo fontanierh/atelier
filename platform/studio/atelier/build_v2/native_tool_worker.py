@@ -90,6 +90,19 @@ def receipt_files(engine, project, target, configuration, kind, *, owned_root=No
         return tuple(sorted(files))
     receipt = project.parent / 'Binaries/Mac' / (target + '.target')
     value = json.loads(receipt.read_bytes())
+    changed = False
+    for group in ('BuildProducts', 'RuntimeDependencies'):
+        for index, row in enumerate(value.get(group, [])):
+            raw = row.get('Path') if isinstance(row, dict) else row
+            if isinstance(raw, str) and raw.startswith('/') and ops._inside(Path(raw), (owned_root,)):
+                portable = '$(ProjectDir)/' + os.path.relpath(raw, project.parent).replace(os.sep, '/')
+                if isinstance(row, dict):
+                    row['Path'] = portable
+                else:
+                    value[group][index] = portable
+                changed = True
+    if changed:
+        receipt.write_text(json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n')
     if (value.get('TargetName'), value.get('Platform'), value.get('Configuration')) != (target, 'Mac', configuration):
         raise Refused('game receipt target/platform/configuration differs')
     files = {receipt}
@@ -97,7 +110,7 @@ def receipt_files(engine, project, target, configuration, kind, *, owned_root=No
     if not isinstance(products, list) or not products:
         raise Refused('game receipt lacks complete products')
     for row in [*products, *value.get('RuntimeDependencies', [])]:
-        path = ops._receipt_path(row['Path'], project=project.parent, engine=engine / 'Engine', receipt=receipt)
+        path = ops._receipt_path(row['Path'] if isinstance(row, dict) else row, project=project.parent, engine=engine / 'Engine', receipt=receipt)
         if ops._inside(path, (engine / 'Engine',)):
             if not path.exists():
                 raise Refused('installed runtime product is absent')
@@ -643,8 +656,9 @@ def finalise_package(job, params, view, project, engine, job_dir, run, environme
 
 def compile_candidate(job, fresh, protected, candidate):
     """@cc [owner:fontanierh,label:correctness] incremental-compile-current-inputs
-    A compile candidate MUST match every current declared input before reuse. Only
-    frozen worker code MAY refresh; original staged inputs remain untouched. Reuse
+    A compile candidate MUST match every current declared input before reuse. Missing
+    inputs MUST be independently cloned from current staging. Only
+    frozen worker code MAY refresh existing files; original staged inputs remain untouched. Reuse
     MUST still run current UBT, validate its receipt and publish through the new guard.
     A candidate is execution context, never evidence of prior task success.
     """
@@ -652,6 +666,7 @@ def compile_candidate(job, fresh, protected, candidate):
     if (not candidate.is_absolute() or candidate.name != 'view'
             or candidate.parent.name != recipe_job.RUNTIME
             or candidate.parent.parent.name != 'job'
+            or len(candidate.parents) < 4 or len(fresh.parents) < 4
             or candidate.parents[3] != fresh.parents[3]
             or candidate.resolve(strict=True) != candidate
             or candidate.stat().st_uid != os.getuid()):
@@ -664,7 +679,22 @@ def compile_candidate(job, fresh, protected, candidate):
     mapped = [fresh / relative for relative in job['params']['recipe']['paths']]
     for source in mapped:
         target = candidate / source.relative_to(fresh)
-        if _tree(source) != _tree(target):
+        if not os.path.lexists(target):
+            if target.parent.resolve(strict=False) != target.parent:
+                raise Refused('compile candidate input ancestor is aliased')
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if source.is_dir():
+                shutil.copytree(source, target)
+            else:
+                shutil.copyfile(source, target)
+        expected, actual = _tree(source), _tree(target)
+        staged = job['params']['recipe']['paths'][source.relative_to(fresh).as_posix()]
+        # File inputs key their bytes. A source also staged as worker code is 0444;
+        # that harmless materialization mode must not invalidate the same bytes.
+        if source.is_file() and not staged.endswith('.tree.tar'):
+            expected = [row[:-1] if row[1] == 'file' else row for row in expected]
+            actual = [row[:-1] if row[1] == 'file' else row for row in actual]
+        if expected != actual:
             raise Refused('compile candidate differs from current declared inputs')
     for name in job['code']:
         source, target = fresh / name, candidate / name

@@ -108,7 +108,14 @@ def _family_module(checkout, name):
     from pathlib import Path
     spec = importlib.util.spec_from_file_location('joined_' + name,
         Path(checkout) / 'games/yorimichi' / (name + '.py'))
-    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    module = importlib.util.module_from_spec(spec)
+    import sys
+    previous = list(sys.path)
+    try:
+        sys.path.insert(0, str(Path(checkout) / 'games/yorimichi'))
+        spec.loader.exec_module(module)
+    finally:
+        sys.path[:] = previous
     return module
 
 
@@ -195,6 +202,56 @@ def _join_native_families(native, rows, geometry, selected, *, checkout):
     return native
 
 
+
+def _join_audio(native, rows, geometry, *, checkout):
+    """Replace the six original sound imports with per-WAV owners and typed footsteps."""
+    import ast
+    from pathlib import Path
+    from copy import deepcopy
+    audio = _family_module(checkout, 'v2_audio_templates').audio_templates(rows, checkout=checkout)
+    if {row['id'] for row in rows} & set(_family_module(checkout, 'v2_audio_units').ROSTER) != set(
+            _family_module(checkout, 'v2_audio_units').ROSTER):
+        raise ValueError('native sounds require all six original audio producers')
+    waves = {key.removeprefix('audio.footsteps.files.'): value for key, value in audio['packages'].items()
+             if key.startswith('audio.footsteps.files.')}
+    footsteps = _family_module(checkout, 'v2_footstep_units').author_units(checkout=checkout, waves=waves)
+    native['units'].extend(audio['units'])
+    native['staged_inputs'].update(audio['staged_inputs'])
+    native['content_slots'].update(audio['content_slots'])
+    _append_family(native, footsteps)
+    native.setdefault('module_requirements', {}).update(footsteps['module_requirements'])
+    geometry = deepcopy(geometry)
+    geometry['templates'].extend(audio['templates'])
+    geometry['groups'].update(audio['groups'])
+    native['geometry'] = geometry
+    native.setdefault('derived_packages', {}).update(audio['packages'])
+    # This pure completed-roster consumer selects EVERY cue's finished children,
+    # including those outside the FootstepSet. Optional unreal.music is a distinct
+    # original target and is not part of unreal.sounds.
+    script = 'games/yorimichi/world/audio_index_v2.py'
+    line = next(node.lineno for node in ast.parse((Path(checkout) / script).read_text()).body
+                if isinstance(node, ast.FunctionDef) and node.name == 'write_index')
+    templates = {template['producer']: template for template in audio['templates']}
+    families = {producer: {'destination': templates[producer]['followers'][0]['unit']['params']['destination'],
+                           'members': deepcopy(token)} for producer, token in audio['packages'].items()}
+    output = 'build/yorimichi/audio-native.json'
+    index = {'id': 'unreal.sounds.complete', 'op': {'kind': 'recipe.python', 'version': '1'},
+        'script': 'platform/studio/atelier/build_v2/recipe_job.py',
+        'code': [script, 'platform/studio/atelier/build_v2/recipe_job.py'],
+        'inputs': [{'role': 'content', 'name': 'footsteps', 'source': {
+            'kind': 'item', 'unit': 'unreal.footsteps.library', 'item': 'asset'}}],
+        'params': {'recipe': {'version': 1, 'paths': {}, 'verify': None,
+            'commands': [{'kind': 'call', 'call': {'source': script, 'qualname': 'write_index', 'line': line,
+                'captures': [], 'defaults': [families, {'path': output}], 'kwdefaults': {}}}],
+            'outputs': [{'path': output, 'kind': 'file', 'file': 'audio-native.tree.tar', 'required': True}]}},
+        'outputs': [{'id': 'roster', 'logical_path': '/Build/Audio/NativeRoster', 'class': 'Data',
+            'destination': 'store', 'files': [{'path': 'audio-native.tree.tar', 'required': True}]}]}
+    native['units'].append(index)
+    native['staged_inputs'][index['id']] = {'footsteps': 'inputs/footsteps'}
+    native['content_slots']['footsteps'] = False
+    native['aliases']['unreal.sounds'] = (index['id'],)
+    return native
+
 def lower(rows, geometry, *, checkout):
     """Game-authored replacements; unknown native families remain compiler refusals."""
     selected = {row['id'] for row in rows}
@@ -204,7 +261,7 @@ def lower(rows, geometry, *, checkout):
     elif 'unreal.materials' in selected:
         native = shared_materials(rows, checkout=checkout)
         native['aliases'] = {}
-    elif selected & {'unreal.treehouse', 'unreal.brinecove'}:
+    elif selected & {'unreal.treehouse', 'unreal.brinecove', 'unreal.sounds', 'unreal.crater_cloud', 'unreal.skate_board'}:
         native = {'units': [], 'staged_inputs': {}, 'content_slots': {}, 'packages': {},
                   'targets': (), 'aliases': {}, 'missing_roles': []}
         if 'unreal.treehouse' in selected:
@@ -234,6 +291,14 @@ def lower(rows, geometry, *, checkout):
         for name in foliage_ids:
             owner = name.removeprefix('unreal.foliage.')
             native['aliases'][name] = ('unreal.foliage.finish.' + owner,)
+    for original, constructor in (('unreal.crater_cloud', 'v2_cloud_units'),
+                                  ('unreal.skate_board', 'v2_board_units')):
+        if original in selected:
+            family = _family_module(checkout, constructor).author_units(rows, checkout=checkout)
+            _append_family(native, family)
+            native['aliases'].update(family['aliases'])
+    if 'unreal.sounds' in selected:
+        native = _join_audio(native, rows, native.get('geometry', geometry), checkout=checkout)
     if selected & {'unreal.treehouse', 'unreal.brinecove'}:
         native = _join_native_families(native, rows, geometry, selected, checkout=checkout)
     return native

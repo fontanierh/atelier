@@ -1555,7 +1555,6 @@ def unreal_steps(ctx):
              [UnrealGame('Yorimichi', products=GAME_BINARY_PRODUCTS), Call('verify game binary', game_binary.verify)],
              inputs=[ctx.uproject, *engine_version(ctx), TOOLS / 'game_binary.py',
                      *compile_inputs.files(native_source_inputs().settings[0])],
-             deferred_inputs=[native_source_inputs()],
              checkpoint_restore=game_binary.relocate, heavy=True,
              about='the Yorimichi game binary, app bundle and redistributed files; the cook does not build'),
         *unreal_modules.steps(ctx, IMPORT_CODE + SAVED_TYPES + CONTACT_TYPES + ('Yorimichi',)),

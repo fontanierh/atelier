@@ -89,3 +89,22 @@ def test_original_targets_are_replaced_only_for_a_stated_complete_roster():
 def test_reshaped_or_partial_references_refuse(change):
     with pytest.raises(ValueError):
         refs(**change)
+
+
+def test_redistributed_game_file_is_an_actual_produced_item_and_root_transport(tmp_path):
+    from atelier.build_v2.recipe_job import pack_root, prepare_view
+    resource = {'unit': 'unreal.game', 'item': 'output1', 'file': 'outputs/1.tree.tar',
+                'path': 'games/yorimichi/unreal/Samples/Tools/helper.sh'}
+    stage = refs(game={'unit': 'unreal.game', 'item': 'output0', 'file': 'outputs/0.mac.zip',
+                       'resources': [resource]})['units'][0]
+    incoming = next(row for row in stage['inputs'] if row['name'] == 'game_resource_0')
+    assert incoming['source'] == {'kind':'item','unit':'unreal.game','item':'output1'}
+    source = tmp_path / 'actual.sh'; source.write_bytes(b'#!/bin/sh\nexit 0\n'); source.chmod(0o755)
+    job = tmp_path / 'job'; archive = job / 'inputs/game_resource_0/outputs/1.tree.tar'
+    archive.parent.mkdir(parents=True); pack_root(source, archive)
+    (job / '.recipe-runtime').mkdir()
+    mapping = stage['params']['recipe']['paths'][resource['path']]
+    view, _, _ = prepare_view({'code': [], 'inputs': [{'path':'inputs/game_resource_0'}],
+        'params': {'recipe': {'paths': {resource['path']:mapping}, 'outputs':[]}}}, job)
+    assert (view / resource['path']).read_bytes() == source.read_bytes()
+    assert (view / resource['path']).stat().st_mode & 0o777 == 0o755

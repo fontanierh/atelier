@@ -133,3 +133,56 @@ def test_join_binds_actual_reordered_product_and_output_indices():
     assert len(treehouse) == 21 and all(len(t['followers']) == 2 for t in treehouse)
     assert 'unreal.treehouse' not in result['aliases']
     assert not any(role.startswith('treehouse.palette:') or role.startswith('treehouse.material:') for role in result['missing_roles'])
+
+
+def test_actual_six_audio_factories_join_all_wave_templates_and_both_footstep_owners():
+    import ast
+    recipe = load('build')
+    ctx = SimpleNamespace(out=ROOT / 'build/yorimichi')
+    tree = ast.parse((GAME / 'build.py').read_text())
+    call = next(node for node in ast.walk(tree) if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name) and node.func.id == 'Step' and node.args
+        and isinstance(node.args[0], ast.Constant) and node.args[0].value == 'unreal.sounds')
+    sound = eval(compile(ast.Expression(call), str(GAME / 'build.py'), 'eval'),
+                 {**vars(recipe), 'ctx': ctx, 'out': ctx.out})
+    source_rows = extract([*recipe.sound_effect_steps(ctx), sound], checkout=ROOT, build_root=ROOT / 'build')
+    result = load('v2_native_units').lower(source_rows, {'groups': {}, 'templates': []}, checkout=ROOT)
+    assert result['aliases']['unreal.sounds'] == ('unreal.sounds.complete',)
+    assert len(result['geometry']['templates']) == 102
+    units = {unit['id']: unit for unit in result['units']}
+    assert len(units) == 105
+    assert units['unreal.footsteps.attenuation']['outputs'][0]['class'] == 'SoundAttenuation'
+    assert units['unreal.footsteps.library']['outputs'][0]['class'] == 'DataAsset'
+    assert result['module_requirements']['unreal.footsteps.library']
+    index = units['unreal.sounds.complete']
+    families = index['params']['recipe']['commands'][0]['call']['defaults'][0]
+    assert len(families) == 102
+    for template in result['geometry']['templates']:
+        family = families[template['producer']]
+        token = family['members']['derived_items']['templates'][0]
+        assert token['producer'] == template['producer'] and token['follower'] == 0 and token['item'] == 'sound'
+        assert family['destination'] == template['followers'][0]['unit']['params']['destination']
+    assert not any(unit['id'] == 'unreal.music' for unit in result['units'])
+
+
+def test_completed_audio_index_executes_real_callback_with_resolved_native_items(tmp_path):
+    from atelier.build_v2.recipe_job import bind
+    from types import SimpleNamespace
+    import ast
+    import json
+    import shutil
+    script = 'games/yorimichi/world/audio_index_v2.py'
+    path = tmp_path / script; path.parent.mkdir(parents=True); shutil.copyfile(ROOT / script, path)
+    output = tmp_path / 'build/audio-native.json'; output.parent.mkdir()
+    member = tmp_path / 'derived/Hit'; member.mkdir(parents=True)
+    line = next(node.lineno for node in ast.parse(path.read_text()).body
+                if isinstance(node, ast.FunctionDef) and node.name == 'write_index')
+    families = {'combat.hit': {'destination': '/Game/Audio/Combat/$piece', 'members': {
+        'derived_items': {'root': 'derived', 'members': [{'piece': 'Hit', 'slot': 'derived_0', 'root': 'derived/Hit'}]}}}}
+    callback = bind({'source': script, 'qualname': 'write_index', 'line': line, 'captures': [],
+                     'defaults': [families, {'path': 'build/audio-native.json'}], 'kwdefaults': {}}, tmp_path)
+    callback()
+    assert json.loads(output.read_text()) == {'schema': 1, 'packages': ['/Game/Audio/Combat/Hit']}
+    member.rmdir()
+    with pytest.raises(ValueError, match='invalid completed member'):
+        callback()

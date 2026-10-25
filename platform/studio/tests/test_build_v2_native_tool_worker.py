@@ -550,3 +550,35 @@ def test_compile_candidate_refuses_changed_inputs_and_unconfirmed_cleanup(tmp_pa
         alias = tmp_path / 'alias'; alias.symlink_to(candidate); candidate = alias
     with pytest.raises(tool.Refused):
         tool.compile_candidate(request, fresh, [str(fresh / 'Source.cpp')], candidate)
+
+
+def test_game_receipt_keeps_owned_runtime_dependencies_portable(tmp_path):
+    project = tmp_path / 'view/Game.uproject'; project.parent.mkdir(); project.write_text('{}')
+    binaries = project.parent / 'Binaries/Mac'; binaries.mkdir(parents=True)
+    (binaries / 'Game').write_bytes(b'actual compiled binary')
+    descriptor = project.parent / 'Plugins/Owned/Owned.uplugin'
+    descriptor.parent.mkdir(parents=True); descriptor.write_text('{}')
+    receipt = binaries / 'Game.target'
+    receipt.write_text(json.dumps({'TargetName': 'Game', 'Platform': 'Mac', 'Configuration': 'Development',
+        'BuildProducts': [{'Path': str(binaries / 'Game')}],
+        'RuntimeDependencies': [{'Path': str(descriptor)}]}))
+    actual = tool.receipt_files(tmp_path / 'engine', project, 'Game', 'Development', 'game', owned_root=project.parent)
+    assert set(actual) == {receipt, binaries / 'Game'}
+    portable = json.loads(receipt.read_bytes())
+    assert portable['BuildProducts'][0]['Path'] == '$(ProjectDir)/Binaries/Mac/Game'
+    assert portable['RuntimeDependencies'][0]['Path'] == '$(ProjectDir)/Plugins/Owned/Owned.uplugin'
+    assert str(project.parent) not in receipt.read_text()
+
+
+def test_compile_candidate_clones_new_declared_input_and_accepts_code_readonly_mode(tmp_path):
+    old = tmp_path / 'old/job/.recipe-runtime/view'; old.mkdir(parents=True)
+    cleanup = old.parents[2] / 'guard/attempt-1/cleanup.json'; cleanup.parent.mkdir(parents=True)
+    cleanup.write_text('{"confirmed":true}')
+    fresh = tmp_path / 'fresh/job/.recipe-runtime/view'; fresh.mkdir(parents=True)
+    (fresh / 'new.cpp').write_bytes(b'new declared source')
+    (fresh / 'shared.py').write_bytes(b'same bytes')
+    (old / 'shared.py').write_bytes(b'same bytes'); (old / 'shared.py').chmod(0o444)
+    request = {'code': [], 'params': {'recipe': {'paths': {'new.cpp':'inputs/new','shared.py':'inputs/shared'}}}}
+    view, protected = tool.compile_candidate(request, fresh, [str(fresh / 'new.cpp')], old)
+    assert view == old and protected == [str(old / 'new.cpp')]
+    assert (old / 'new.cpp').read_bytes() == b'new declared source'

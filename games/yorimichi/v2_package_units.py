@@ -74,6 +74,20 @@ def author_units(cooked, *, editor, game, plugins, global_data, checkout, comple
     paths = dict(declared['params']['recipe']['paths'])
     code = set(declared['code']) | _closure(root, FINALISE)
     inputs.append(_item('game', game, 'UAT stages the complete produced Mac game binaries from one archive.'))
+    for index, resource in enumerate(game.get('resources', ())):
+        if (not isinstance(resource, dict) or set(resource) != {'unit', 'item', 'file', 'path'}
+                or resource['unit'] != game['unit'] or not isinstance(resource['file'], str)
+                or not resource['file'].endswith('.tree.tar')):
+            raise ValueError('game redistribution requires exact produced resource Items')
+        destination = resource['path']
+        if (not isinstance(destination, str) or not destination.startswith('games/yorimichi/unreal/Samples/')
+                or any(part in ('', '.', '..') for part in destination.split('/')) or destination in paths
+                or not isinstance(resource['file'], str) or resource['file'].startswith('/')
+                or any(part in ('', '.', '..') for part in resource['file'].split('/'))):
+            raise ValueError('game redistribution resource path escapes or aliases')
+        slot = 'game_resource_' + str(index)
+        inputs.append(_item(slot, resource, 'UAT consumes the produced redistributed game resource.'))
+        paths[destination] = 'inputs/' + slot + '/' + resource['file']
     inputs.append(_item('global', global_data, 'Native finalisation composes from the complete semantic global ROOT.'))
     for index, (package, reference) in enumerate(sorted(cooked.items())):
         inputs.append(_item('cooked_' + str(index), reference, 'Sealed native package ' + package + '.'))
