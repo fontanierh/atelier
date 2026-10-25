@@ -233,3 +233,96 @@ def test_raw_source_member_selects_only_the_explicit_declared_file(tmp_path):
     ctx.params['source_member'] = 'linked.png'
     with pytest.raises(ValueError, match='alias'):
         ops._input(ctx, 'source')
+
+
+def glb(path, document):
+    import json
+    import struct
+    payload = json.dumps({'asset': {'version': '2.0'}, **document}).encode()
+    payload += b' ' * (-len(payload) % 4)
+    path.write_bytes(struct.pack('<4sIII4s', b'glTF', 2, 20 + len(payload), len(payload), b'JSON') + payload)
+
+
+@pytest.fixture
+def gltf_native():
+    class Skin(Asset):
+        pass
+    class Skeleton(Asset):
+        pass
+    class Animation(Asset):
+        pass
+    class Pipeline(Asset):
+        def __init__(self):
+            super().__init__()
+            self.properties.update({key: Asset() for key in ('material_pipeline', 'mesh_pipeline',
+                'common_skeletal_meshes_and_animations_properties', 'animation_pipeline')})
+            self.properties['material_pipeline'].properties['texture_pipeline'] = Asset()
+    class Stack:
+        def __init__(self):
+            self.pipelines = []
+        def add_pipeline(self, pipeline):
+            self.pipelines.append(pipeline)
+    unreal = FakeUnreal([])
+    unreal.SkeletalMesh, unreal.Skeleton, unreal.AnimSequence = Skin, Skeleton, Animation
+    unreal.InterchangeGenericAssetsPipeline = Pipeline
+    unreal.InterchangePipelineStackOverride = Stack
+    unreal.InterchangeGLTFPipeline = Asset
+    unreal.InterchangeCombineSkeletalMeshesBehavior = SimpleNamespace(BY_SKELETON='by_skeleton')
+    unreal.tasks = []
+    def execute(tasks):
+        unreal.tasks.extend(tasks)
+        tasks[0].properties['imported_object_paths'] = unreal.imported
+    unreal.import_asset_tasks = execute
+    return unreal
+
+
+@pytest.mark.parametrize('kind', ['skeletal_mesh', 'animation'])
+def test_selected_glb_skin_roles_keep_exact_products_and_disable_other_native_factories(tmp_path, gltf_native, kind):
+    source = tmp_path / 'selected.glb'
+    glb(source, {'animations': [{'name': 'T_Test'}]} if kind == 'animation' else {})
+    ctx = context(tmp_path, kind=kind, **({'skeleton': 'rig'} if kind == 'animation' else {'create_physics_asset': False}))
+    ctx.inputs['source'] = str(source)
+    unreal = gltf_native
+    asset = unreal.AnimSequence() if kind == 'animation' else unreal.SkeletalMesh()
+    unreal.assets['/Game/Raw/T_Test'] = asset
+    ctx.outputs = ['/Game/Raw/T_Test']
+    if kind == 'skeletal_mesh':
+        ctx.outputs.append('/Game/Raw/T_Test_Skeleton')
+        unreal.assets[ctx.outputs[-1]] = unreal.Skeleton()
+    else:
+        ctx.inputs['rig'] = '/Game/Rig/Skeleton'
+        ctx.packages['rig'] = '/Game/Rig/Skeleton'
+        unreal.assets[ctx.inputs['rig']] = unreal.Skeleton()
+    unreal.imported = [path + '.' + path.rsplit('/', 1)[-1] for path in ctx.outputs]
+    assert ops.raw_import(ctx, unreal) is asset
+    task, = unreal.tasks
+    pipeline = task.properties['options'].pipelines[0]
+    material = pipeline.properties['material_pipeline']
+    assert material.properties['import_materials'] is False
+    assert material.properties['texture_pipeline'].properties['import_textures'] is False
+    mesh = pipeline.properties['mesh_pipeline'].properties
+    assert mesh['import_static_meshes'] is False and mesh['create_physics_asset'] is False
+    assert mesh['import_skeletal_meshes'] is (kind == 'skeletal_mesh')
+    common = pipeline.properties['common_skeletal_meshes_and_animations_properties'].properties
+    assert common['import_only_animations'] is (kind == 'animation')
+    assert common['add_curve_metadata_to_skeleton'] is False
+    if kind == 'animation':
+        assert common['skeleton'] is unreal.assets['/Game/Rig/Skeleton']
+        assert task.properties['destination_name'] == ''
+    assert len(unreal.saved) == len(ctx.outputs)
+
+
+@pytest.mark.parametrize('document,kind', [
+    ({'buffers': [{'uri': '../outside.bin'}]}, 'skeletal_mesh'),
+    ({'images': [{'uri': 'https://example.invalid/image.png'}]}, 'skeletal_mesh'),
+    ({'animations': [{'name': 'Other'}]}, 'animation'),
+    ({'animations': [{'name': 'T_Test'}, {'name': 'Other'}]}, 'animation'),
+    ({'animations': [{'name': 'T_Test'}]}, 'skeletal_mesh'),
+])
+def test_glb_skin_external_bytes_or_unselected_clips_refuse_before_any_native_import(tmp_path, gltf_native, document, kind):
+    source = tmp_path / 'selected.glb'; glb(source, document)
+    ctx = context(tmp_path, kind=kind, skeleton='rig')
+    ctx.inputs['source'] = str(source)
+    with pytest.raises(ValueError):
+        ops.raw_import(ctx, gltf_native)
+    assert gltf_native.tasks == []

@@ -121,12 +121,80 @@ def _save(unreal, asset):
         raise ValueError('Unreal did not save the produced asset')
 
 
+def _gltf_skin_options(context, unreal, task, source, destination, kind):
+    """@cc [owner:fontanierh,label:correctness] selected-gltf-skinned-raw-import
+    GLB skin imports MUST disable material/texture production. A mesh source MUST
+    contain no animation; an animation source MUST contain exactly its named clip
+    and use one declared immutable Skeleton, with mesh/physics production disabled.
+    Every URI MUST be embedded, and the ordinary complete native product/save checks
+    MUST still run. No rename, namespace scan or input Skeleton mutation is permitted.
+    """
+    import json
+    import struct
+    data = Path(source).read_bytes()
+    if (len(data) < 20 or data[:4] != b'glTF'
+            or struct.unpack_from('<II', data, 4) != (2, len(data))):
+        raise ValueError('Skinned GLTF import requires a complete GLB2 source')
+    size, tag = struct.unpack_from('<I4s', data, 12)
+    if tag != b'JSON' or size > len(data) - 20:
+        raise ValueError('Skinned GLTF source has no complete JSON chunk')
+    document = json.loads(data[20:20 + size])
+    def embedded(value):
+        if isinstance(value, dict):
+            if 'uri' in value and (not isinstance(value['uri'], str) or not value['uri'].startswith('data:')):
+                raise ValueError('Skinned GLTF source requires embedded resource bytes')
+            for child in value.values():
+                embedded(child)
+        elif isinstance(value, list):
+            for child in value:
+                embedded(child)
+    embedded(document)
+    name = destination.rsplit('/', 1)[-1]
+    animations = document.get('animations', [])
+    if (not isinstance(animations, list) or (kind == 'skeletal_mesh' and animations)
+            or (kind == 'animation' and (len(animations) != 1 or animations[0].get('name') != name))):
+        raise ValueError('Skinned GLTF source must select only its declared mesh or named animation')
+    p = context.params
+    if 'fbx' in p or 'physics_asset' in p:
+        raise ValueError('Skinned GLTF import does not accept FBX or supplied physics settings')
+    if kind == 'animation' and 'skeleton' not in p:
+        raise ValueError('GLTF animation requires a declared skeleton content input')
+    generic = unreal.InterchangeGenericAssetsPipeline()
+    generic.set_editor_property('asset_name', name if kind == 'skeletal_mesh' else '')
+    generic.set_editor_property('use_source_name_for_asset', kind == 'skeletal_mesh')
+    material = generic.get_editor_property('material_pipeline')
+    material.set_editor_property('import_materials', False)
+    material.get_editor_property('texture_pipeline').set_editor_property('import_textures', False)
+    mesh = generic.get_editor_property('mesh_pipeline')
+    mesh.set_editor_property('import_static_meshes', False)
+    mesh.set_editor_property('import_skeletal_meshes', kind == 'skeletal_mesh')
+    mesh.set_editor_property('import_morph_targets', False)
+    mesh.set_editor_property('create_physics_asset', p.get('create_physics_asset', False) if kind == 'skeletal_mesh' else False)
+    mesh.set_editor_property('combine_skeletal_meshes_behavior', unreal.InterchangeCombineSkeletalMeshesBehavior.BY_SKELETON)
+    common = generic.get_editor_property('common_skeletal_meshes_and_animations_properties')
+    common.set_editor_property('import_only_animations', kind == 'animation')
+    common.set_editor_property('try_auto_select_skeleton', False)
+    common.set_editor_property('add_curve_metadata_to_skeleton', False)
+    if 'skeleton' in p:
+        common.set_editor_property('skeleton', _load(unreal, _input(context, p['skeleton'], package=True), 'Skeleton'))
+    animation = generic.get_editor_property('animation_pipeline')
+    animation.set_editor_property('import_animations', kind == 'animation')
+    animation.set_editor_property('use30_hz_to_bake_bone_animation', True)
+    stack = unreal.InterchangePipelineStackOverride()
+    stack.add_pipeline(generic)
+    stack.add_pipeline(unreal.InterchangeGLTFPipeline())
+    if kind == 'animation':
+        # Preserve the selected animation's exact GLTF name, without SDK source-name prefixing.
+        task.set_editor_property('destination_name', '')
+    task.set_editor_property('options', stack)
+
+
 def raw_import(context, unreal):
     """@cc [owner:fontanierh,label:correctness] v2-bounded-unreal-raw-import
     One job MUST import one declared source item, use only declared package content
     inputs for skeleton/physics references, and check the fully loaded output class
     and complete imported package membership before returning. Import materials and
-    textures MUST stay disabled for FBX. The worker separately verifies all package
+    textures MUST stay disabled for FBX and selected skinned GLB imports. The worker separately verifies all package
     saves, required output files, import tables and scratch cleanup before Completed.
     """
     p = context.params
@@ -152,7 +220,9 @@ def raw_import(context, unreal):
         _set(asset, p.get('properties', {}))
         _save(unreal, asset)
         return _load(unreal, destination, 'StaticMesh')
-    if kind in ('static_mesh', 'skeletal_mesh', 'animation'):
+    if kind in ('skeletal_mesh', 'animation') and Path(source).suffix.lower() == '.glb':
+        _gltf_skin_options(context, unreal, task, source, destination, kind)
+    elif kind in ('static_mesh', 'skeletal_mesh', 'animation'):
         if Path(source).suffix.lower() != '.fbx':
             raise ValueError('The FBX import operation requires FBX bytes')
         options = unreal.FbxImportUI()
