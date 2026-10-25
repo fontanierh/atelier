@@ -301,3 +301,68 @@ def test_semantic_global_projection_keeps_complete_shader_bytes_excludes_transpo
     (content/'ShaderArchive-Global-SF_METAL_SM5.ushaderbytecode').symlink_to(content/'ShaderArchive-Global-SF_METAL_SM6.ushaderbytecode')
     with pytest.raises(Refused, match='alias'):
         semantic_global_data(source,tmp_path/'alias')
+
+
+def test_package_composes_verified_inputs_before_uat_without_reading_source_namespace(tmp_path, monkeypatch):
+    import hashlib
+    from pathlib import Path
+    from atelier.build_v2 import zen_package_finalise as finaliser
+    runtime = tmp_path / '.recipe-runtime'; runtime.mkdir()
+    view = tmp_path / 'view'; view.mkdir()
+    project = view / 'Fixture.uproject'; project.write_text('{}')
+    bootstrap = tmp_path / 'bootstrap/Worker.uproject'; bootstrap.parent.mkdir(); bootstrap.write_text('{}')
+    plugin = bootstrap.parent / 'Plugins/AtelierBuildWorker/AtelierBuildWorker.uplugin'
+    plugin.parent.mkdir(parents=True); plugin.write_text('{}')
+    def shaders(content, name):
+        content.mkdir(parents=True)
+        for stem, suffix in (('ShaderAssetInfo', '.assetinfo.json'), ('ShaderArchive', '.ushaderbytecode'),
+                             ('ShaderTypeInfo', '.stinfo')):
+            (content / (stem + '-' + name + '-SF_METAL_SM5' + suffix)).write_bytes(stem.encode())
+    source = tmp_path / 'transport'; shaders(source / 'Fixture/Content', 'Fixture')
+    metadata = source / 'Fixture/Metadata'; metadata.mkdir()
+    for name in ('DevelopmentAssetRegistry.bin', 'CookMetadata.ucookmeta'):
+        (metadata / name).write_bytes(name.encode())
+    (source / 'ue.projectstore').write_bytes(b'actual namespace marker')
+    archive = runtime / 'global-metadata.tree.tar'; tool.recipe_job.pack_root(source, archive)
+    globals_root = tmp_path / 'semantic'; shaders(globals_root / 'Content', 'Global')
+    staged = tmp_path / 'inputs/global'; staged.mkdir(parents=True)
+    tool.recipe_job.pack_root(globals_root, staged / 'global-data.tree.tar')
+    record = tmp_path / 'package.cb'; record.write_bytes(b'CB')
+    sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+    destination = {'project': 'AtelierV2_Global', 'oplog': 'Mac', 'project_file': str(bootstrap),
+                   'lifetime_marker': str(source / 'ue.projectstore')}
+    carrier = {'version': 1, 'destination': destination, 'globals': ['global'], 'export_project': str(bootstrap),
+        'global_metadata_archive': str(archive), 'global_metadata_sha256': sha(archive),
+        'packages': [{'metadata_archive': str(archive), 'metadata_sha256': sha(archive),
+            'record_sha256': sha(record), 'locator': {'package': '/Game/A', 'dependency_key': 'a' * 40,
+                'entry_hash': 'b' * 40, 'record_path': str(record), 'record_sha256': sha(record)}}]}
+    carrier_file = runtime / 'native-packages.json'; carrier_file.write_text(json.dumps(carrier)); carrier_file.chmod(0o400)
+    monkeypatch.setattr(tool, 'native_source_digest', lambda *_: 'c' * 64)
+    monkeypatch.setattr(tool, '_sibling', lambda name: finaliser if name == 'zen_package_finalise' else pytest.fail(name))
+    calls = []
+    def run(argv, **kwargs):
+        control = json.loads(Path(kwargs['env']['ATELIER_NATIVE_PACKAGE_FINALISE']).read_bytes())
+        assert Path(argv[1]).name == 'AtelierV2Finalise.uproject'
+        assert json.loads(Path(argv[1]).read_bytes())['Plugins'] == [{'Name': 'AtelierBuildWorker', 'Enabled': True}]
+        def native(method, request):
+            calls.append(method)
+            if method == 'zen_package_request':
+                return {**request, 'status': 'restored', 'native_stored_key': 'a' * 40,
+                        'root_hash': 'b' * 40, 'installed_root_hash': 'd' * 40}
+            if method == 'zen_finalise_request':
+                output = Path(request['output_dir']); output.mkdir()
+                filename = 'Global.metallib' if request['global_library'] else 'AssetRegistry.bin'
+                (output / filename).write_bytes(filename.encode())
+                return {'version': 1, 'status': 'composed', 'packages': 0 if request['global_library'] else 1,
+                        'global_library': request['global_library'], 'native_libraries': True,
+                        'files': [{'path': filename, 'sha256': sha(output / filename)}]}
+            return {'version': 1, 'status': 'finalized', 'project': destination['project'], 'oplog': 'Mac',
+                    'input_key': 'e' * 64, 'packages': 1}
+        result = finaliser.finalise(**control['arguments'], call=native)
+        Path(control['report']).write_text(json.dumps(result))
+    inventory = tool.finalise_package({'inputs': [{'name': 'global', 'path': 'inputs/global'}]},
+        {'native_global': 'global'}, view, project, tmp_path / 'engine', tmp_path, run, {}, 'e' * 64)
+    assert calls == ['zen_package_request', 'zen_finalise_request', 'zen_finalise_request', 'zen_end_cook_request']
+    assert (view / 'Saved/Cooked/Mac/Fixture/AssetRegistry.bin').read_bytes() == b'AssetRegistry.bin'
+    tool.ops.verify_cooked_files(view / 'Saved/Cooked/Mac', inventory)
+    assert project.read_text() == '{}'
