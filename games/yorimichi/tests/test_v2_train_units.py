@@ -56,7 +56,9 @@ def test_cold_constructor_binds_actual_items_and_has_no_guessed_children(actual)
             assert set(follower['staged_inputs']) == {i['name'] for i in unit['inputs']}
             assert all((ROOT / p).is_file() for p in unit['code'])
     materials = next(t for t in value['templates'] if t['unit_prefix'].endswith('.materials'))
-    assert [o['class'] for o in materials['followers'][0]['unit']['outputs']] == ['MaterialInstance', 'Material']
+    assert [[o['class'] for o in f['unit']['outputs']] for f in materials['followers']] == [['Material'], ['MaterialInstance']]
+    assert materials['followers'][1]['unit']['inputs'][1]['source'] == {'kind': 'item', 'unit': '$previous', 'item': 'parent'}
+    assert all(len(f['unit']['outputs']) == 1 for f in materials['followers'])
     for kind, folder, count in [('vehicles', '', 3), ('doors', '/Doors', 1), ('furniture1', '/Furniture', 1), ('furniture2', '/Furniture', 2)]:
         template = next(t for t in value['templates'] if t['unit_prefix'].endswith('.' + kind))
         assert len(template['followers']) == count + 1
@@ -200,13 +202,20 @@ def test_pbr_owner_preserves_sdk_parent_factors_sampler_and_owned_ism_copy(edito
             'images': {'BaseColor': {'piece': 'Bench_Paint_BaseColor', 'reference': reference, 'sampler': {'wrapS': 33071, 'wrapT': 33648}}}}
     if clearcoat: meta['record']['extensions']['KHR_materials_clearcoat'] = {'clearcoatFactor': .6, 'clearcoatRoughnessFactor': .2}
     package, parent = body.ROOT + '/Materials/MI_' + key, body.ROOT + '/Materials/M_' + key
-    args = {'action': 'material', 'name': key, 'meta': 'meta', 'images': derived({'Bench_Paint_BaseColor': 'image'})}
-    ctx = NS(job_dir=str(editor.root), inputs={'meta': stage(editor, meta), 'image':'x'}, packages={'meta':[], 'image':[image.path]},
-             outputs=[package,parent], params={'args':args})
+    selected = stage(editor, meta)
+    parent_args = {'action': 'material_parent', 'name': key, 'meta': 'meta'}
+    parent_ctx = NS(job_dir=str(editor.root), inputs={'meta': selected}, packages={'meta': []},
+                    outputs=[parent], params={'args': parent_args})
+    body.run(parent_ctx)
+    parent_props = deepcopy(editor.assets[parent].props)
+    args = {'action': 'material', 'name': key, 'meta': 'meta', 'parent': 'parent', 'images': derived({'Bench_Paint_BaseColor': 'image'})}
+    ctx = NS(job_dir=str(editor.root), inputs={'meta': selected, 'image':'x', 'parent': 'x'},
+             packages={'meta':[], 'image':[image.path], 'parent': [parent]}, outputs=[package], params={'args':args})
     asset = body.run(ctx)
     assert asset.path == package and editor.saves == [parent, package]
     assert original_parent.props['used_with_instanced_static_meshes'] is False
     assert editor.assets[parent].props['used_with_instanced_static_meshes'] is True
+    assert editor.assets[parent].props == parent_props
     assert asset.props['base_property_overrides'].props == {'override_two_sided': True, 'two_sided': True}
     assert editor.scalars['RoughnessFactor'] == .7 and editor.scalars['EmissiveStrength'] == 5
     assert editor.vectors['BaseColorTexture_TilingMethod'] == [1.,2.,0.,0.]

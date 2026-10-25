@@ -220,21 +220,37 @@ def original(context, unreal, names):
     return scope
 
 
-def material(context, unreal, args):
+def material_parent(context, unreal, args):
     meta = data(context, args['meta']); key = name(args['name'])
     if meta['name'] != key or pbr(meta['record']) != meta['parent']:
         raise ValueError('Train material differs from its selected source')
     E, M = unreal.EditorAssetLibrary, unreal.MaterialEditingLibrary
-    package, parent_path = f'{ROOT}/Materials/MI_{key}', f'{ROOT}/Materials/M_{key}'
-    if set(context.outputs) != {package, parent_path}:
-        raise ValueError('Train material owns exactly its instance and private master')
+    parent_path = f'{ROOT}/Materials/M_{key}'
+    if list(context.outputs) != [parent_path] or set(context.inputs) != {args['meta']}:
+        raise ValueError('Train parent owns exactly its private master')
     default = E.load_asset('/InterchangeAssets/gltf/MaterialInstances/' + meta['parent'])
     if default is None:
         raise ValueError('SDK glTF material parent missing')
     parent = E.duplicate_asset(default.get_base_material().get_path_name(), parent_path)
     if meta['ism']:
         parent.set_editor_property('used_with_instanced_static_meshes', True)
-    M.recompile_material(parent); save(unreal, parent, parent_path)
+    M.recompile_material(parent)
+    return save(unreal, parent, parent_path)
+
+
+def material(context, unreal, args):
+    meta = data(context, args['meta']); key = name(args['name'])
+    if meta['name'] != key or pbr(meta['record']) != meta['parent']:
+        raise ValueError('Train material differs from its selected source')
+    E, M = unreal.EditorAssetLibrary, unreal.MaterialEditingLibrary
+    package, parent_path = f'{ROOT}/Materials/MI_{key}', f'{ROOT}/Materials/M_{key}'
+    if list(context.outputs) != [package]:
+        raise ValueError('Train material owns exactly its instance')
+    parent = load(context, unreal, args['parent'])
+    if parent.get_path_name().split('.')[0] != parent_path:
+        raise ValueError('Train instance requires its exact private parent Item')
+    default = E.load_asset('/InterchangeAssets/gltf/MaterialInstances/' + meta['parent'])
+    if default is None: raise ValueError('SDK glTF material parent missing')
     instance = E.duplicate_asset(default.get_path_name(), package)
     M.set_material_instance_parent(instance, parent)
     r = meta['record']; p = r.get('pbrMetallicRoughness', {}); extensions = r.get('extensions', {})
@@ -375,6 +391,7 @@ def run(context):
             address = {10497: 'TA_WRAP', 33071: 'TA_CLAMP', 33648: 'TA_MIRROR'}[sampler.get(field, 10497)]
             asset.set_editor_property('address_' + axis, getattr(unreal.TextureAddress, address))
         return save(unreal, asset, destination)
+    if args['action'] == 'material_parent': return material_parent(context, unreal, args)
     if args['action'] == 'material': return material(context, unreal, args)
     if args['action'] == 'mesh': return mesh(context, unreal, args)
     if args['action'] == 'record': return record(context, unreal, args)

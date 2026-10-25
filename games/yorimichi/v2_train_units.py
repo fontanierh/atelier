@@ -140,12 +140,15 @@ def train_units(rows, *, checkout):
                     'input_roots': {'meta': dict(selected)}, 'args': {'action': 'texture', 'meta': 'meta'}, 'settings': SETTINGS},
          'outputs': [_output('texture', texture, 'Texture')]}])
     template('materials', [
-        {'id': '$export.author', 'op': {'kind': 'unreal.author', 'version': '1'}, 'script': SCRIPT, 'code': native_code,
+        {'id': '$export.parent', 'op': {'kind': 'unreal.author', 'version': '1'}, 'script': SCRIPT, 'code': native_code,
          'inputs': [_item('meta', '$export', 'asset')],
-         'params': {'input_roots': {'meta': dict(selected)}, 'args': {'action': 'material', 'name': '$piece', 'meta': 'meta',
+         'params': {'input_roots': {'meta': dict(selected)}, 'args': {'action': 'material_parent', 'name': '$piece', 'meta': 'meta'},
+                    'settings': SETTINGS}, 'outputs': [_output('parent', DEST + '/Materials/M_$piece', 'Material')]},
+        {'id': '$export.author', 'op': {'kind': 'unreal.author', 'version': '1'}, 'script': SCRIPT, 'code': native_code,
+         'inputs': [_item('meta', '$export', 'asset'), _item('parent', '$previous', 'parent')],
+         'params': {'input_roots': {'meta': dict(selected)}, 'args': {'action': 'material', 'name': '$piece', 'meta': 'meta', 'parent': 'parent',
                     'images': token('images', 1, 'texture')}, 'settings': SETTINGS},
-         'outputs': [_output('asset', DEST + '/Materials/MI_$piece', 'MaterialInstance'),
-                     _output('parent', DEST + '/Materials/M_$piece', 'Material')]}])
+         'outputs': [_output('asset', DEST + '/Materials/MI_$piece', 'MaterialInstance')]}])
     for kind, folder, count in [('vehicles', '', 3), ('doors', '/Doors', 1), ('furniture1', '/Furniture', 1), ('furniture2', '/Furniture', 2)]:
         followers = []
         for level in range(count):
@@ -161,7 +164,7 @@ def train_units(rows, *, checkout):
                 *(_item(f'level{level}', '$export.raw' + str(level), 'raw_mesh') for level in range(count))],
             'params': {'op': 'finish', 'kind': 'static_mesh', 'source': 'level0', 'destination': destination,
                 'input_roots': {'meta': dict(selected)}, 'args': {'action': 'mesh', 'name': '$piece', 'meta': 'meta',
-                    'levels': ['level' + str(i) for i in range(count)], 'materials': token('materials', 0, 'asset'),
+                    'levels': ['level' + str(i) for i in range(count)], 'materials': token('materials', 1, 'asset'),
                     'parents': token('materials', 0, 'parent'), 'images': token('images', 1, 'texture')}, 'settings': SETTINGS},
             'outputs': [_output('mesh', destination, 'StaticMesh')]})
         template(kind, followers)
@@ -184,7 +187,7 @@ def train_units(rows, *, checkout):
                       'destination': 'store', 'files': [{'path': 'selected.tree.tar', 'required': True}]}]})
     record_unit = {'id': 'unreal.belmonte_train.record', 'op': {'kind': 'unreal.author', 'version': '1'}, 'script': SCRIPT,
         'code': native_code, 'inputs': [_item('meta', 'train.record.selected', 'selected'), _item('board', board, 'asset')],
-        'params': {'input_roots': {'meta': dict(selected)}, 'args': {'action': 'record', 'meta': 'meta', 'meshes': mesh_tokens, 'materials': token('materials', 0, 'asset'),
+        'params': {'input_roots': {'meta': dict(selected)}, 'args': {'action': 'record', 'meta': 'meta', 'meshes': mesh_tokens, 'materials': token('materials', 1, 'asset'),
                     'parents': token('materials', 0, 'parent'), 'images': token('images', 1, 'texture')}, 'settings': SETTINGS},
         'outputs': [{'id': 'service', 'logical_path': '/Game/_Data/belmonte_train/service', 'class': 'JsonData', 'destination': 'checkout',
                      'files': [{'path': 'data/service.json', 'install_path': GAME + '/unreal/Content/Data/belmonte_train/service.json', 'required': True}]},

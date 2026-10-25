@@ -103,6 +103,8 @@ def _package_dependencies(native):
                             and not item['logical_path'].startswith('/Game/_Raw/'))
         result[package] = {'unit': reference['unit'], 'item': reference['item'],
                            'package': package, 'dependencies': sorted(set(deps))}
+        if reference.get('derived_dependencies'):
+            result[package]['derived_dependencies'] = deepcopy(reference['derived_dependencies'])
     return result
 
 
@@ -963,6 +965,15 @@ def lower(rows, geometry, *, checkout):
         native['geometry'] = current
         # The record consumes both the joint steering owner and actual expanded ordinary parts.
         native['aliases']['unreal.bike'] = (module.RECORD_UNIT,)
+    if 'unreal.belmonte_train' in selected:
+        family = _family_module(checkout, 'v2_train_units').train_units(rows, checkout=checkout)
+        requirements = family.pop('module_requirements', {})
+        native.setdefault('follower_module_requirements', {}).update(requirements)
+        _append_family(native, family)
+        current = deepcopy(native['geometry'])
+        current['groups'].update(family['groups']); current['templates'].extend(family['templates'])
+        native['geometry'] = current
+        native['aliases'].update(family['aliases'])
     if 'unreal.skate_clips' in selected:
         family = _family_module(checkout, 'v2_skate_clip_units').skate_clip_units(rows, checkout=checkout)
         _append_family(native, family)
