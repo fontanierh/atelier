@@ -42,6 +42,30 @@ def test_named_product_bytes_are_explicit_content_even_without_needs(tmp_path):
         compile_rows([producer, altered], project='game', targets=['consumer'])
 
 
+def test_authored_recipe_whole_captures_keep_identity_and_selected_scope(tmp_path):
+    source = row('source', products=[{'id': 'source', 'paths': ['build/game/source'], 'optional_paths': []}])
+    incoming = [
+        {'role': 'content', 'name': 'whole', 'source': {'kind': 'item', 'unit': 'source', 'item': 'product0'}},
+        {'role': 'content', 'name': 'file', 'source': {'kind': 'file', 'path': 'assets/settings.json'}},
+        {'role': 'content', 'name': 'field', 'source': {'kind': 'file', 'path': 'assets/settings.json', 'selector': '/value'}},
+        {'role': 'content', 'name': 'authored', 'source': {'kind': 'item', 'unit': 'source', 'item': 'product0'},
+         'whole': 'The original verifier consumes complete membership.'},
+    ]
+    native = {'id': 'captured.recipe', 'op': {'kind': 'recipe.python', 'version': '1'},
+        'script': 'ops/captured.py', 'code': ['ops/captured.py'], 'inputs': deepcopy(incoming),
+        'params': {}, 'outputs': [{'id': 'data', 'class': 'Data', 'logical_path': '/Internal/Captured',
+            'destination': 'store', 'files': [{'path': 'data.tree.tar'}]}]}
+    result = compile_rows([source], project='game', targets=['captured.recipe'], native={
+        'units': [native], 'staged_inputs': {native['id']: {i['name']: 'inputs/' + i['name'] for i in incoming}},
+        'content_slots': {i['name']: False for i in incoming}, 'aliases': {}}).request(tmp_path)
+    actual = next(unit for unit in result['declaration']['units'] if unit['id'] == native['id'])['inputs']
+    assert actual[0]['whole'] and actual[1]['whole']
+    assert 'whole' not in actual[2]
+    assert actual[3]['whole'] == incoming[3]['whole']
+    assert [i['source'] for i in actual] == [i['source'] for i in incoming]
+    assert native['inputs'] == incoming  # Compilation does not mutate the author's declarations.
+
+
 def test_optional_source_remains_explicit_absence_and_never_disappears_from_key(tmp_path):
     unit = row('source', inputs=[{'path': 'assets/settings.json', 'optional': True}],
                outputs=['build/game/data.json'])

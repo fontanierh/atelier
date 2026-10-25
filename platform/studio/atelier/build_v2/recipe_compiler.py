@@ -409,11 +409,36 @@ def compile_rows(rows, *, project, targets, install_roots=(), checkout=None, geo
     attach(units, rows, module_requirements, checkout=checkout, staged=staged, slots=slots)
     attach_followers(geometry['templates'], units, rows, follower_module_requirements,
                      checkout=checkout, slots=slots)
+    for unit in units:
+        _whole_recipe_inputs(unit)
+    for template in geometry['templates']:
+        for follower in template.get('followers', ()):
+            _whole_recipe_inputs(follower['unit'])
     declaration = {'schema_version': 2, 'cache_version': 'v2-1', 'units': units}
     # Rust checks the complete global declaration before selecting these roots.
     return ControllerTarget(targets[0], project, declaration, staged, slots,
                             tuple(install_roots) or (f'build/{project}',),
                             tuple(geometry['templates']), tuple(targets))
+
+
+def _whole_recipe_inputs(unit):
+    """@cc [owner:fontanierh,label:correctness] explicit-whole-recipe-captures
+    Whole file and produced Item dependencies retained by recipe lowering MUST
+    explain their complete captured scope. This MUST NOT narrow their identity,
+    replace authored reasons, or widen existing field/GroupMember selectors.
+    """
+    if unit['op']['kind'] not in ('recipe.python', 'recipe.blender', 'py_data'):
+        return
+    for incoming in unit['inputs']:
+        if incoming['role'] != 'content' or incoming.get('whole') is not None:
+            continue
+        source = incoming['source']
+        if source['kind'] == 'file' and not source.get('selector'):
+            incoming['whole'] = ('Complete declared file ' + source['path']
+                + ' is captured by this recipe; no field selector is authored.')
+        elif source['kind'] == 'item':
+            incoming['whole'] = ('Complete declared output ' + source['unit'] + '/' + source['item']
+                + ' is captured by this recipe; no member projection is authored.')
 
 
 def recipe_steps(game, *, checkout, build_root):
