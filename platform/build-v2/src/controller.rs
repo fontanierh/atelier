@@ -1005,6 +1005,43 @@ fn unresolved_derived(value: &Value) -> bool {
     }
 }
 
+/// Select a sibling by an authored literal prefix transform, never by a guessed unit ID.
+fn selected_derived_piece(value: &Value) -> Result<String, String> {
+    if let Some(piece) = value.as_str() {
+        crate::groups::name(piece)?;
+        return Ok(piece.to_string());
+    }
+    let object = value.as_object().ok_or("invalid selected derived piece")?;
+    if object.len() != 2 || !object.contains_key("value") || !object.contains_key("replace_prefix")
+    {
+        return Err("invalid selected derived piece mapping".into());
+    }
+    let piece = object["value"]
+        .as_str()
+        .ok_or("missing mapped piece value")?;
+    let mapping = object["replace_prefix"]
+        .as_object()
+        .ok_or("invalid piece prefix mapping")?;
+    if mapping.len() != 2 || !mapping.contains_key("from") || !mapping.contains_key("to") {
+        return Err("invalid piece prefix fields".into());
+    }
+    let from = mapping["from"]
+        .as_str()
+        .ok_or("invalid source piece prefix")?;
+    let to = mapping["to"]
+        .as_str()
+        .ok_or("invalid target piece prefix")?;
+    for name in [piece, from, to] {
+        crate::groups::name(name)?;
+    }
+    let suffix = piece
+        .strip_prefix(from)
+        .ok_or("selected piece does not have the declared prefix")?;
+    let selected = format!("{to}{suffix}");
+    crate::groups::name(&selected)?;
+    Ok(selected)
+}
+
 fn resolve_derived(
     value: &mut Value,
     expanded: &BTreeMap<
@@ -1053,16 +1090,19 @@ fn resolve_derived(
                 };
                 let selected_piece = template
                     .get("piece")
-                    .map(|value| value.as_str().ok_or("invalid selected derived piece"))
+                    .map(selected_derived_piece)
                     .transpose()?;
-                if let Some(piece) = selected_piece {
+                if let Some(piece) = selected_piece.as_deref() {
                     crate::paths::relative_path(piece, false)?;
                     if !children.iter().any(|(name, _, _)| name == piece) {
                         return Err("selected derived piece is absent".into());
                     }
                 }
                 for (piece, child, items) in children {
-                    if selected_piece.is_some_and(|selected| selected != piece) {
+                    if selected_piece
+                        .as_deref()
+                        .is_some_and(|selected| selected != piece)
+                    {
                         continue;
                     }
                     let item = if let Some(name) = template.get("item") {
@@ -1370,6 +1410,67 @@ mod selected_derived_tests {
             resolve_derived(&mut missing, &expanded, &mut Vec::new())
                 .unwrap_err()
                 .contains("absent")
+        );
+    }
+    #[test]
+    fn a_mapped_derived_member_binds_only_the_observed_sibling() {
+        let expanded = BTreeMap::from([(
+            (
+                "lods".into(),
+                "geometry".into(),
+                "lod-export".into(),
+                Some(1),
+            ),
+            vec![
+                (
+                    "Tree_LOD1_West".into(),
+                    "actual-lod-west.finish".into(),
+                    vec!["mesh".into()],
+                ),
+                (
+                    "Tree_LOD1_East".into(),
+                    "actual-lod-east.finish".into(),
+                    vec!["mesh".into()],
+                ),
+            ],
+        )]);
+        let declaration = serde_json::json!({"derived_items":{"root":"derived/lod1","templates":[{
+            "producer":"lods","group":"geometry","unit_prefix":"lod-export","follower":1,"item":"mesh",
+            "piece":{"value":"Tree_West","replace_prefix":{"from":"Tree","to":"Tree_LOD1"}}
+        }]}});
+        let mut value = declaration.clone();
+        let mut additions = Vec::new();
+        resolve_derived(&mut value, &expanded, &mut additions).unwrap();
+        assert_eq!(
+            additions,
+            vec![(
+                "derived_0".into(),
+                "actual-lod-west.finish".into(),
+                "derived/lod1/Tree_LOD1_West".into(),
+                "mesh".into()
+            )]
+        );
+        let mut wrong = declaration.clone();
+        wrong["derived_items"]["templates"][0]["piece"]["value"] = "Other_West".into();
+        assert!(
+            resolve_derived(&mut wrong, &expanded, &mut Vec::new())
+                .unwrap_err()
+                .contains("prefix")
+        );
+        let mut missing = declaration.clone();
+        missing["derived_items"]["templates"][0]["piece"]["value"] = "Tree_North".into();
+        assert!(
+            resolve_derived(&mut missing, &expanded, &mut Vec::new())
+                .unwrap_err()
+                .contains("absent")
+        );
+        let mut unexpanded = declaration.clone();
+        resolve_derived(&mut unexpanded, &BTreeMap::new(), &mut Vec::new()).unwrap();
+        assert_eq!(unexpanded, declaration);
+        assert!(
+            selected_derived_piece(&serde_json::json!({"value":"Tree_West", "replace_prefix":{
+            "from":"Tree", "to":"../foreign"}}))
+            .is_err()
         );
     }
 }

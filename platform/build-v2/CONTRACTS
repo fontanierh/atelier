@@ -452,3 +452,7 @@ piece and requested output Item, before the consumer key is formed. An unexpande
 group MUST remain unresolved; a missing named member in an expanded group MUST fail.
 Sibling children MUST NOT become the selected consumer's content inputs, and no
 caller-invented future child unit ID MAY substitute for the expansion's actual ID.
+
+An authored selected-piece prefix transform MUST bind only a canonical observed sibling
+member, preserving the same before-key exact-item and absent/unexpanded behavior.
+The transform MUST NOT introduce a unit ID or stage unselected sibling packages.
