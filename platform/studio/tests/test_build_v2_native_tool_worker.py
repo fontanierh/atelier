@@ -1029,12 +1029,16 @@ def test_source_sdk_close_reaps_own_process_without_waiting_for_inherited_pipe_e
 
 def test_source_group_common_roots_use_validated_copies_and_clone_sdk_host(tmp_path,monkeypatch):
     import shutil
+    from pathlib import Path
     from types import SimpleNamespace
     from atelier.build_v2.recipe_root_clones import CommonRootClones
     source=tmp_path/'editor';source.mkdir();(source/'Game.dylib').write_bytes(b'compiled immutable module')
     session=tmp_path/'session';session.mkdir()
     sdk=tool.CookSdkSession(SimpleNamespace(engine=tmp_path/'engine'),session)
-    sdk.root_clones=CommonRootClones(session/'common-roots',clone=shutil.copyfile)
+    cloned=[]
+    def clone(source,target):
+        cloned.append(Path(target));shutil.copyfile(source,target)
+    sdk.root_clones=CommonRootClones(session/'common-roots',clone=clone)
     copies=[]
     for name in ('first','second'):
         directory=tmp_path/name;directory.mkdir();request=job(directory,'unreal.cook.produce')
@@ -1055,6 +1059,7 @@ def test_source_group_common_roots_use_validated_copies_and_clone_sdk_host(tmp_p
     monkeypatch.setattr(tool.subprocess,'Popen',popen)
     monkeypatch.setattr(sdk,'exchange',lambda *args,**kwargs:{'status':'ready'})
     sdk.start(view/'Game.uproject',{},'a'*64,tmp_path/'bootstrap/Host.uproject');sdk.close()
+    assert session/'sdk-host/Binaries/Mac/Game.dylib' in cloned
     copies[1].write_bytes(b'independent later write')
     assert copies[0].read_bytes()==b'compiled immutable module'
     assert source.joinpath('Game.dylib').read_bytes()==b'compiled immutable module'
