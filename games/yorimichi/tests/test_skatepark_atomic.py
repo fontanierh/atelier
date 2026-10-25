@@ -195,3 +195,29 @@ assert not guard.allowed('write',str(destination.with_name('foreign')))
     assert list((root/recipe_job.RUNTIME/'tmp').iterdir())==[]
     ordinary=tmp_path/'ordinary/collision.json';source.write_bytes(ordinary,b'ordinary sibling semantics')
     assert ordinary.read_bytes()==b'ordinary sibling semantics'
+@pytest.mark.parametrize('name', [*source.BOARD, 'SM_SkateParkFurniture'])
+def test_actual_selected_planner_declares_whole_board_and_explicit_park_policy(tmp_path, monkeypatch, name):
+    fake_bpy = SimpleNamespace(ops=SimpleNamespace(wm=SimpleNamespace(read_factory_settings=lambda **kwargs: None)),
+                               data=SimpleNamespace(materials=SimpleNamespace(new=lambda name: name)))
+    monkeypatch.setitem(sys.modules, 'bpy', fake_bpy)
+    planner = module('selected_skate_policy', GAME / 'world/regions/skatepark/plan_atomic.py')
+    obj = SimpleNamespace(data=SimpleNamespace(materials=[SimpleNamespace(name='SkateParkPalette')]))
+    monkeypatch.setattr(planner.geom, 'to_object', lambda *args: obj)
+    monkeypatch.setattr(planner.geom, 'shade', lambda *args: None)
+    monkeypatch.setattr(planner.source, 'material_objects', lambda path: 'Palette')
+    monkeypatch.setattr(planner, 'capture', lambda data: {
+        'vertex_indices': np.array([0, 1, 2]), 'starts': [0], 'counts': [3],
+        'positions': np.array([[0., 0., 0.], [1., 0., 0.], [0., 1., 0.]])})
+    calls = []
+    def plan(obj, root, **kwargs):
+        calls.append(kwargs)
+        return {'pieces': [{'name': name}]}
+    monkeypatch.setattr(planner, 'plan', plan)
+    planner.main(['--asset', name, '--record', str(tmp_path / 'record.json'),
+                  '--output', str(tmp_path / 'geometry')])
+    assert len(calls) == 1 and calls[0]['options'] == planner.OPTIONS
+    if name in source.BOARD:
+        assert calls[0]['partition'] == 'whole' and calls[0]['face_groups'] is None
+    else:
+        assert calls[0]['partition'] == 'explicit' and calls[0]['face_groups'] == [(name, (0,))]
+    assert json.loads((tmp_path / 'record.json').read_text())['pieces'] == [name]
