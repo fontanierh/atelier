@@ -26,8 +26,8 @@ def test_complete_editor_roots_bind_explicit_source_and_validate_with_named_prod
     step, ctx = compile_step(tmp_path)
     assert step.outputs == [RECIPE.GAME / 'unreal/Binaries/Mac']
     products = {product.name: product for product in step.products}
-    assert products['unreal.compile.HorseRacing'].paths == ()
-    assert products['unreal.compile.HorseRacing'].optional_paths == (RECIPE.GAME / 'unreal/Plugins/HorseRacing/Binaries/Mac',)
+    assert products['unreal.compile.HorseRacing'].paths == (RECIPE.GAME / 'unreal/Plugins/HorseRacing/Binaries/Mac',)
+    assert products['unreal.compile.HorseRacing'].optional_paths == ()
     descriptors = [p for folder in (RECIPE.GAME / 'unreal/Plugins', RECIPE.paths.ENGINE_PLUGINS) for p in folder.rglob('*.uplugin')]
     assert set(products) == {'unreal.compile.' + p.stem for p in descriptors}
     assert step.inputs == [ctx.uproject, *RECIPE.compile_inputs.files(RECIPE.native_source_inputs().settings[0])]
@@ -57,3 +57,11 @@ def test_actual_receipt_consumer_requires_both_project_plugin_products(tmp_path)
     roots += [view / root.relative_to(checkout) for product in step.products for root in product.roots()]
     native_tool_worker._covers(roots, observed)
     assert horse / 'UnrealEditor.modules' in observed and files[1] in observed
+
+
+def test_real_recipe_graph_accepts_complete_editor_product_roots(tmp_path):
+    from atelier.build_products import Graph
+    context = SimpleNamespace(uproject=RECIPE.GAME / 'unreal/Yorimichi.uproject', out=tmp_path)
+    graph = Graph(RECIPE.steps(context))
+    assert graph.owners['unreal.compile.HorseRacing'] == 'unreal.compile'
+    assert any(step.name == 'unreal.compile' for step in graph.select(('unreal.compile',)))

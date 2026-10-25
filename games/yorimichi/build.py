@@ -558,7 +558,7 @@ def editor_compile_products():
     """@cc [owner:fontanierh,label:correctness] complete-editor-plugin-output-roots
     The editor compile MUST own complete Mac binary roots for both project-local
     and shared source plugins, including HorseRacing's receipt-listed module map
-    and dylib. Declare optional absence without reading generated Binaries; retain
+    and dylib. These enabled source plugins MUST produce their binary roots; retain
     separate named products for compiled native-module consumers.
     """
     descriptors = sorted(path for folder in (GAME / 'unreal/Plugins', paths.ENGINE_PLUGINS)
@@ -572,8 +572,7 @@ def editor_compile_products():
         if name.casefold() in names:
             raise ValueError('Ambiguous editor plugin output owner')
         names.add(name.casefold())
-        products.append(Product('unreal.compile.' + name, (),
-                                optional_paths=(descriptor.parent / 'Binaries/Mac',)))
+        products.append(Product('unreal.compile.' + name, (descriptor.parent / 'Binaries/Mac',)))
     return products
 
 
