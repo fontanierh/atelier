@@ -56,6 +56,66 @@ def descriptor(value):
     return value
 
 
+def derived(value):
+    """Only resolved controller members can name generated native dependencies."""
+    if isinstance(value, dict) and set(value) == {'derived_items'}: value = value['derived_items']
+    if not isinstance(value, dict) or set(value) != {'root', 'members'} or not isinstance(value['members'], list):
+        raise ValueError('Brinecove requires resolved native Items')
+    rows = value['members']
+    if (any(not isinstance(row, dict) or set(row) != {'piece', 'root', 'slot'} for row in rows)
+            or len({row['piece'] for row in rows}) != len(rows) or len({row['slot'] for row in rows}) != len(rows)):
+        raise ValueError('Aliased Brinecove native Items')
+    return rows
+
+
+def selected_instance(context):
+    from copy import copy, deepcopy
+    from craterpark_members_v2 import _file, read_json
+    args = context.params['args']
+    if set(args) != {'factory', 'piece', 'parents', 'textures'}:
+        raise ValueError('Unexpected selected Brinecove material arguments')
+    piece = args['piece']; root = Path(context.inputs['spec'])
+    if root.resolve() != root or not root.is_relative_to(Path(context.job_dir)) or not root.is_dir() or context.packages.get('spec') not in ([], ()):
+        raise ValueError('Selected Brinecove spec must be its declared Data Item')
+    if {p.name for p in root.iterdir()} != {piece + '.json'}:
+        raise ValueError('Selected Brinecove spec membership differs')
+    spec = read_json(_file(root, piece + '.json')); entry = descriptor(spec['descriptor'])
+    if set(spec) != {'key', 'descriptor'} or piece != entry['name'] or piece != 'MI_BC_' + spec['key']:
+        raise ValueError('Selected Brinecove spec identity differs')
+    inputs = {slot: ROOT + '/Materials/' + name for name, slot in args['parents'].items()}
+    for row in derived(args['textures']):
+        if row['slot'] in inputs: raise ValueError('Aliased Brinecove dependency slot')
+        inputs[row['slot']] = ROOT + '/Textures/' + row['piece']
+    expected = {ROOT + '/Materials/' + PARENTS[entry['kind']]}
+    if entry.get('texture'): expected.add(ROOT + '/Textures/' + Path(entry['texture']).stem)
+    for field in ('layers', 'normals'):
+        expected.update(ROOT + '/Textures/' + Path(name).stem for name in entry.get(field, {}).values())
+    if not expected <= set(inputs.values()) or set(context.inputs) != {'spec', *inputs}:
+        raise ValueError('Missing actual selected Brinecove dependency')
+    normalized = copy(context); normalized.params = {'settings': [], 'args': {
+        'factory': 'instance', 'asset': piece, 'package': ROOT + '/Materials/' + piece,
+        'inputs': inputs, 'descriptor': deepcopy(entry)}}
+    normalized.inputs = {slot: context.inputs[slot] for slot in inputs}
+    normalized.packages = {slot: context.packages[slot] for slot in inputs}
+    return run(normalized)
+
+
+def texture_finish(context):
+    from copy import copy, deepcopy
+    from atelier.build_v2.unreal_ops import finish
+    import unreal
+    piece = context.params['args']['texture_piece']
+    if not isinstance(piece, str) or not re.fullmatch('T_BC_[A-Za-z0-9_-]+', piece):
+        raise ValueError('Invalid selected coastal texture')
+    if context.params['destination'] != ROOT + '/Textures/' + piece:
+        raise ValueError('Selected coastal texture package differs')
+    normalized = copy(context); normalized.params = deepcopy(context.params)
+    normalized.params.pop('args')
+    normalized.params['properties'] = {'srgb': not piece.endswith('_n'), 'max_texture_size': 1024,
+        'lod_group': {'unreal_enum': 'TextureGroup.TEXTUREGROUP_WORLD'}}
+    return finish(normalized, unreal)
+
+
 def run(context):
     """@cc [owner:fontanierh,label:correctness] individual-brinecove-material-body
     Each invocation MUST author/save only one fresh declared original package.
@@ -66,6 +126,10 @@ def run(context):
     explicit loaded input; missing roles, nonfinite data and failed saves refuse.
     """
     import unreal
+    if context.params.get('args', {}).get('factory') == 'selected_instance':
+        return selected_instance(context)
+    if context.params.get('op') == 'finish' and context.params.get('kind') == 'texture':
+        return texture_finish(context)
     if set(context.params) != {'args', 'settings'} or context.params['settings'] != []:
         raise ValueError('Unexpected Brinecove material settings')
     args = context.params['args']
