@@ -107,3 +107,16 @@ def test_d2_canopy_uses_complete_declared_code_and_original_parameter_basename()
         'group': 'geometry', 'piece': recipe.CANOPY_NAME}
     assert export['outputs'][0]['destination'] == 'store'
     assert all('install_path' not in item for item in export['outputs'][0]['files'])
+
+
+def test_original_rim_script_imports_its_package_without_inherited_region_path(tmp_path):
+    import os
+    import subprocess
+    import sys
+    script = GAME / 'world/regions/brinecove/rim_data.py'
+    command = ('import runpy; '
+               f'value = runpy.run_path({str(script)!r}, run_name="rim_import_check"); '
+               'assert callable(value["project"])')
+    result = subprocess.run([sys.executable, '-B', '-c', command], cwd=tmp_path,
+                            env={**os.environ, 'PYTHONPATH': ''}, capture_output=True, text=True, timeout=15)
+    assert result.returncode == 0, result.stderr
