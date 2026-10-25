@@ -99,24 +99,40 @@ impl UnrealLocations {
             .transpose()
             .map_err(|e| e.to_string())?
             .unwrap_or_default();
-        let produced = crate::native_modules::prepare(unit, staged,
-            &staged.job_dir().parent().ok_or("missing native module scope")?.join("native-modules"),
-            &self.build_id)?;
+        let produced = crate::native_modules::prepare(
+            unit,
+            staged,
+            &staged
+                .job_dir()
+                .parent()
+                .ok_or("missing native module scope")?
+                .join("native-modules"),
+            &self.build_id,
+        )?;
         let mut project_plugins = plugins(&self.plugins)?;
         let (editor, modules) = if let Some(produced) = produced {
             if self.editor_binaries.is_some() || !self.modules.is_empty() {
                 return Err("native modules have two distinct binary authorities".into());
             }
             for plugin in produced.plugins {
-                if project_plugins.iter().any(|existing| existing.name == plugin.name) {
+                if project_plugins
+                    .iter()
+                    .any(|existing| existing.name == plugin.name)
+                {
                     return Err("native plugin has two distinct binary authorities".into());
                 }
                 project_plugins.push(plugin);
             }
             (produced.editor, produced.modules)
         } else {
-            (unreal::Binaries {identity: unreal::tree_identity(&editor_dir, None)
-                .map_err(|e| e.to_string())?, dir: editor_dir}, self.modules.clone())
+            (
+                unreal::Binaries {
+                    identity: unreal::tree_identity(&editor_dir, None)
+                        .map_err(|e| e.to_string())?,
+                    dir: editor_dir,
+                },
+                self.modules.clone(),
+            )
         };
         Ok(UnrealExecutionContext {
             context: UnrealContext {
@@ -180,20 +196,33 @@ impl PreparedUnrealLaunch {
     /// Restrict the already-started editor before Hello; only fixed native jobs share it.
     pub fn enable_resident(&mut self) -> Result<(), String> {
         if !resident_operation(&self.request.op.kind) {
-            return Err("only registered import/finish/author/verify operations may share an editor".into());
+            return Err(
+                "only registered import/finish/author/verify operations may share an editor".into(),
+            );
         }
         if self.request.op.kind == VERIFY {
-            use std::os::unix::fs::OpenOptionsExt;
             use std::io::Write;
+            use std::os::unix::fs::OpenOptionsExt;
             if !self.profile.ends_with("-native-store") {
                 return Err("resident verifier lacks its private native-store preparation".into());
             }
-            let path = self.keepalive.root().join("Atelier/native-store-startup.json");
-            let mut file = fs::OpenOptions::new().write(true).create_new(true).mode(0o400)
-                .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC).open(path).map_err(|e| e.to_string())?;
-            file.write_all(&serde_json::to_vec(&serde_json::json!({"version":1,
+            let path = self
+                .keepalive
+                .root()
+                .join("Atelier/native-store-startup.json");
+            let mut file = fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .mode(0o400)
+                .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
+                .open(path)
+                .map_err(|e| e.to_string())?;
+            file.write_all(
+                &serde_json::to_vec(&serde_json::json!({"version":1,
                 "job_dir":self.request.job_dir,"native_source_digest":self.native_source_digest}))
-                .map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
+                .map_err(|e| e.to_string())?,
+            )
+            .map_err(|e| e.to_string())?;
             file.sync_all().map_err(|e| e.to_string())?;
         }
         self.command.args.push("--resident-no-fork".into());
@@ -518,12 +547,17 @@ fn package(path: &str) -> Result<String, String> {
 }
 
 fn finish_data_output(item: &crate::schema::Item) -> Result<(), String> {
-    if item.class != "Data" || item.files.is_empty() || matches!(item.destination, crate::schema::Destination::External) {
+    if item.class != "Data"
+        || item.files.is_empty()
+        || matches!(item.destination, crate::schema::Destination::External)
+    {
         return Err("finish data needs explicit ordinary file outputs".into());
     }
     for file in &item.files {
         crate::paths::relative_path(&file.path, false)?;
-        if !file.path.starts_with("data/") { return Err("finish data must stay in data/".into()); }
+        if !file.path.starts_with("data/") {
+            return Err("finish data must stay in data/".into());
+        }
     }
     Ok(())
 }
@@ -531,7 +565,11 @@ fn finish_data_output(item: &crate::schema::Item) -> Result<(), String> {
 fn declared_packages(unit: &PreparedUnit) -> Result<BTreeSet<String>, String> {
     let mut result = BTreeSet::new();
     for item in &unit.ingredients().logical_outputs {
-        if item.class == "JsonData" || (unit.ingredients().op.kind == FINISH && item.class == "Data") { continue; }
+        if item.class == "JsonData"
+            || (unit.ingredients().op.kind == FINISH && item.class == "Data")
+        {
+            continue;
+        }
         package(&item.logical_path)?;
         for file in &item.files {
             let Some(relative) = file.path.strip_prefix("content/Game/") else {
@@ -629,16 +667,31 @@ pub fn check_unit(unit: &PreparedUnit) -> Result<(), String> {
         }
         let item = &value.logical_outputs[0];
         if item.class == "JsonData" {
-            if item.files.len() != 1 || !item.files[0].required
-                || !item.files[0].path.starts_with("data/") || !item.files[0].path.ends_with(".json") {
+            if item.files.len() != 1
+                || !item.files[0].required
+                || !item.files[0].path.starts_with("data/")
+                || !item.files[0].path.ends_with(".json")
+            {
                 return Err("native data author needs one required explicit data JSON file".into());
             }
             return Ok(());
         }
         if !matches!(
             item.class.as_str(),
-            "Material" | "MaterialInstance" | "MaterialParameterCollection" | "Map" | "Blueprint"
-                | "BlendSpace1D" | "AdventureMoveSet" | "Animation" | "AnimBoneCompressionSettings" | "AnimCurveCompressionSettings" | "MirrorDataTable" | "WandererDefinition" | "SoundAttenuation" | "DataAsset"
+            "Material"
+                | "MaterialInstance"
+                | "MaterialParameterCollection"
+                | "Map"
+                | "Blueprint"
+                | "BlendSpace1D"
+                | "AdventureMoveSet"
+                | "Animation"
+                | "AnimBoneCompressionSettings"
+                | "AnimCurveCompressionSettings"
+                | "MirrorDataTable"
+                | "WandererDefinition"
+                | "SoundAttenuation"
+                | "DataAsset"
         ) {
             return Err("unsupported authored native asset class".into());
         }
@@ -669,7 +722,9 @@ pub fn check_unit(unit: &PreparedUnit) -> Result<(), String> {
         _ => return Err("unsupported native operation/version".into()),
     };
     if (value.op.kind == RAW_IMPORT && value.script != ENTRY)
-        || !value.code.contains_key(&value.script) || !value.output_groups.is_empty() {
+        || !value.code.contains_key(&value.script)
+        || !value.output_groups.is_empty()
+    {
         return Err("native unit has an unsupported body/group contract".into());
     }
     if value.params.get("op").and_then(|v| v.as_str()) != Some(action) {
@@ -804,10 +859,17 @@ pub fn validate_outputs(
         }
         if output.item.class == "JsonData" {
             let mut bytes = Vec::new();
-            output.object.reader().map_err(|e| e.to_string())?.read_to_end(&mut bytes).map_err(|e| e.to_string())?;
+            output
+                .object
+                .reader()
+                .map_err(|e| e.to_string())?
+                .read_to_end(&mut bytes)
+                .map_err(|e| e.to_string())?;
             serde_json::from_slice::<serde_json::Value>(&bytes).map_err(|e| e.to_string())?;
         }
-        if output.item.class != "Data" && (output.path.ends_with(".uasset") || output.path.ends_with(".umap")) {
+        if output.item.class != "Data"
+            && (output.path.ends_with(".uasset") || output.path.ends_with(".umap"))
+        {
             let mut magic = [0; 4];
             output
                 .object
@@ -869,13 +931,17 @@ pub(crate) fn prepare_verify_in_session(
     native_store_transport(&mut launch.command.args)?;
     launch.profile.push_str("-native-store");
     let runtime = if let Some(owner) = owner {
-        if owner.request.op.kind != VERIFY || owner.profile != launch.profile
+        if owner.request.op.kind != VERIFY
+            || owner.profile != launch.profile
             || owner.keepalive.expected() != launch.keepalive.expected()
-            || owner.native_source_digest != launch.native_source_digest {
+            || owner.native_source_digest != launch.native_source_digest
+        {
             return Err("resident verifier differs from the issued native session".into());
         }
         owner.keepalive.root()
-    } else { launch.keepalive.root() };
+    } else {
+        launch.keepalive.root()
+    };
     let carrier = authority.carrier(&runtime.join("Atelier.uproject"))?;
     let directory = staged.job_dir().join(".unreal-runtime");
     fs::create_dir_all(&directory).map_err(|e| e.to_string())?;
@@ -957,10 +1023,17 @@ fn prepare_inner(
     } else {
         declared_packages(unit)?
     };
-    let data_author = ingredients.op.kind == AUTHOR && ingredients.logical_outputs.iter().all(|item| item.class == "JsonData");
-    let data_files: BTreeSet<_> = ingredients.logical_outputs.iter()
+    let data_author = ingredients.op.kind == AUTHOR
+        && ingredients
+            .logical_outputs
+            .iter()
+            .all(|item| item.class == "JsonData");
+    let data_files: BTreeSet<_> = ingredients
+        .logical_outputs
+        .iter()
         .filter(|item| ingredients.op.kind == FINISH && item.class == "Data")
-        .flat_map(|item| item.files.iter().map(|file| file.path.as_str())).collect();
+        .flat_map(|item| item.files.iter().map(|file| file.path.as_str()))
+        .collect();
     if (!verification && !data_author && packages.is_empty())
         || ingredients
             .logical_outputs
@@ -970,7 +1043,11 @@ fn prepare_inner(
         return Err("native unit needs complete explicit package outputs".into());
     }
     for output in &staged.request().outputs {
-        if !verification && !data_author && !output.path.starts_with("content/Game/") && !data_files.contains(output.path.as_str()) {
+        if !verification
+            && !data_author
+            && !output.path.starts_with("content/Game/")
+            && !data_files.contains(output.path.as_str())
+        {
             return Err("native outputs must use the fixed C3 content namespace".into());
         }
     }
@@ -1045,7 +1122,9 @@ fn prepare_inner(
     })
 }
 
-fn body_request(mut request: crate::protocol::JobRequest) -> Result<crate::protocol::JobRequest, String> {
+fn body_request(
+    mut request: crate::protocol::JobRequest,
+) -> Result<crate::protocol::JobRequest, String> {
     // Raw/finish and the fixed Zen body receive their own schema; author bodies
     // also validate their declared startup settings alongside authored arguments.
     if request.op.kind != AUTHOR {
@@ -1054,7 +1133,10 @@ fn body_request(mut request: crate::protocol::JobRequest) -> Result<crate::proto
     // The expanded closure is already keyed and staged as ordinary input Items.
     // The fixed importer receives no custom callback arguments.
     if request.op.kind == RAW_IMPORT
-        && request.params.get("args").and_then(serde_json::Value::as_object)
+        && request
+            .params
+            .get("args")
+            .and_then(serde_json::Value::as_object)
             .is_some_and(|args| args.len() == 1 && args.contains_key("closure"))
     {
         request.params.remove("args");
@@ -1078,15 +1160,25 @@ mod tests {
             "id":"geometry","logical_path":"/Internal/ImportedGeometry/A","class":"Data","destination":"store",
             "files":[{"path":"data/imported-geometry/A.bin","required":true}]})).unwrap();
         assert!(finish_data_output(&valid).is_ok());
-        for path in ["content/Game/A.uasset", "data/../A.bin", "data//A.bin", "/data/A.bin"] {
-            let mut item = valid.clone(); item.files[0].path = path.into();
+        for path in [
+            "content/Game/A.uasset",
+            "data/../A.bin",
+            "data//A.bin",
+            "/data/A.bin",
+        ] {
+            let mut item = valid.clone();
+            item.files[0].path = path.into();
             assert!(finish_data_output(&item).is_err(), "accepted {path}");
         }
-        let mut external = valid.clone(); external.destination = crate::schema::Destination::External;
+        let mut external = valid.clone();
+        external.destination = crate::schema::Destination::External;
         assert!(finish_data_output(&external).is_err());
-        let mut native = valid.clone(); native.class = "StaticMesh".into();
+        let mut native = valid.clone();
+        native.class = "StaticMesh".into();
         assert!(finish_data_output(&native).is_err());
-        let mut empty = valid; empty.files.clear(); assert!(finish_data_output(&empty).is_err());
+        let mut empty = valid;
+        empty.files.clear();
+        assert!(finish_data_output(&empty).is_err());
     }
 
     #[test]
@@ -1125,15 +1217,24 @@ mod tests {
         assert_eq!(registry.len(), 4);
         assert!(registry[&(RAW_IMPORT.into(), OP_VERSION.into())].params["destination"].required);
         for class in ["AnimCurveCompressionSettings", "MirrorDataTable"] {
-            assert!(registry[&(AUTHOR.into(), OP_VERSION.into())].output_classes.contains(class));
-            assert!(registry[&(AUTHOR.into(), OP_VERSION.into())].inputs["source"].item_classes.contains(class));
+            assert!(
+                registry[&(AUTHOR.into(), OP_VERSION.into())]
+                    .output_classes
+                    .contains(class)
+            );
+            assert!(
+                registry[&(AUTHOR.into(), OP_VERSION.into())].inputs["source"]
+                    .item_classes
+                    .contains(class)
+            );
         }
         assert!(register(&mut registry, &BTreeMap::new()).is_err());
         let request: crate::protocol::JobRequest = serde_json::from_value(serde_json::json!({
             "job_id":"job", "unit":"material", "op":{"kind":AUTHOR,"version":"1"},
             "job_dir":"/job", "script":"game/material.py", "code":["game/material.py"],
             "inputs":[], "outputs":[], "params":{"args":{"asset":"M"},"settings":[]}
-        })).unwrap();
+        }))
+        .unwrap();
         let authored = body_request(request.clone()).unwrap();
         assert_eq!(authored.params, request.params);
         for kind in [RAW_IMPORT, FINISH, VERIFY] {
@@ -1144,26 +1245,52 @@ mod tests {
         assert!(request.params.contains_key("settings"));
         let mut raw_closure = request.clone();
         raw_closure.op.kind = RAW_IMPORT.into();
-        raw_closure.params.insert("args".into(), serde_json::json!({"closure":{"materials":[]}}));
+        raw_closure.params.insert(
+            "args".into(),
+            serde_json::json!({"closure":{"materials":[]}}),
+        );
         let raw_body = body_request(raw_closure.clone()).unwrap();
         assert!(!raw_body.params.contains_key("args"));
         assert!(raw_closure.params.contains_key("args"));
         let mut bound = request.clone();
-        bound.params.insert("native_modules".into(), serde_json::json!({
+        bound.params.insert(
+            "native_modules".into(),
+            serde_json::json!({
             "editor":{"slot":"compiled_editor","archive":"binaries.tree.tar",
                 "modules":[{"name":"Game","kind":"Runtime","loading_phase":"Default"}]},
             "plugins":[{"name":"Owned","slot":"compiled_plugin_Owned","archive":"binaries.tree.tar",
-                "descriptor_slot":"compiled_descriptor_Owned"}]}));
-        for name in ["source", "compiled_editor", "compiled_plugin_Owned", "compiled_descriptor_Owned", "compiled_semantic_asset"] {
-            bound.inputs.push(crate::protocol::StagedInput { name:name.into(), path:format!("inputs/{name}"),
-                identity:crate::schema::ContentIdentity::Digest{digest:crate::source_hashes::sha256(name.as_bytes())} });
+                "descriptor_slot":"compiled_descriptor_Owned"}]}),
+        );
+        for name in [
+            "source",
+            "compiled_editor",
+            "compiled_plugin_Owned",
+            "compiled_descriptor_Owned",
+            "compiled_semantic_asset",
+        ] {
+            bound.inputs.push(crate::protocol::StagedInput {
+                name: name.into(),
+                path: format!("inputs/{name}"),
+                identity: crate::schema::ContentIdentity::Digest {
+                    digest: crate::source_hashes::sha256(name.as_bytes()),
+                },
+            });
         }
         let body = body_request(bound.clone()).unwrap();
-        assert_eq!(body.inputs.iter().map(|input| input.name.as_str()).collect::<Vec<_>>(), ["source", "compiled_semantic_asset"]);
+        assert_eq!(
+            body.inputs
+                .iter()
+                .map(|input| input.name.as_str())
+                .collect::<Vec<_>>(),
+            ["source", "compiled_semantic_asset"]
+        );
         assert!(!body.params.contains_key("native_modules"));
         assert!(body.params.contains_key("settings"));
         assert_eq!(bound.inputs.len(), 5);
-        bound.params.insert("native_modules".into(), serde_json::json!({"editor":{},"unknown":true}));
+        bound.params.insert(
+            "native_modules".into(),
+            serde_json::json!({"editor":{},"unknown":true}),
+        );
         assert!(body_request(bound).is_err());
     }
 }
@@ -1198,10 +1325,10 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
         "AdventureMoveSet",
         "WandererDefinition",
         "AnimBoneCompressionSettings",
-                "AnimCurveCompressionSettings",
-                "MirrorDataTable",
-                "SoundAttenuation",
-                "DataAsset",
+        "AnimCurveCompressionSettings",
+        "MirrorDataTable",
+        "SoundAttenuation",
+        "DataAsset",
         "JsonData",
         "Map",
     ]
@@ -1295,7 +1422,13 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
                         required: false,
                     },
                 ),
-                ("native_modules".into(), ParamRule {kind: ParamKind::Object, required: false}),
+                (
+                    "native_modules".into(),
+                    ParamRule {
+                        kind: ParamKind::Object,
+                        required: false,
+                    },
+                ),
             ]),
         },
     );
@@ -1343,7 +1476,13 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
                 },
             );
         }
-        params.insert("create_physics_asset".into(), ParamRule {kind: ParamKind::Bool, required: false});
+        params.insert(
+            "create_physics_asset".into(),
+            ParamRule {
+                kind: ParamKind::Bool,
+                required: false,
+            },
+        );
         for name in ["skeleton", "physics_asset", "source_member"] {
             params.insert(
                 name.into(),

@@ -352,7 +352,12 @@ mod file_set_tests {
         let mut projection = params.clone();
         projection.get_mut("recipe").unwrap()["commands"] = serde_json::json!([]);
         validate_params(&projection).unwrap();
-        projection.get_mut("recipe").unwrap().as_object_mut().unwrap().remove("file_group");
+        projection
+            .get_mut("recipe")
+            .unwrap()
+            .as_object_mut()
+            .unwrap()
+            .remove("file_group");
         assert!(validate_params(&projection).is_err());
         for value in [
             serde_json::json!({"source":"../outside","parent":"Audio","extensions":[".wav"]}),

@@ -58,7 +58,9 @@ impl NativeToolBundle {
         })
     }
 
-    pub fn files_len(&self) -> usize { self.files.len() }
+    pub fn files_len(&self) -> usize {
+        self.files.len()
+    }
 
     pub fn identity(&self) -> ImplementationIdentity {
         self.identity.clone()
@@ -156,7 +158,10 @@ impl NativeToolBundle {
             if !Path::new(&candidate).is_absolute() {
                 return Err("native compile view must be absolute".into());
             }
-            environment.insert("ATELIER_V2_COMPILE_VIEW".into(), candidate.to_string_lossy().into_owned());
+            environment.insert(
+                "ATELIER_V2_COMPILE_VIEW".into(),
+                candidate.to_string_lossy().into_owned(),
+            );
         }
         Ok(crate::guard_adapter::WorkerCommand {
             program: interpreter.to_path_buf(),

@@ -20,11 +20,20 @@ fn native_session_group(
     content: &std::collections::BTreeMap<String, crate::schema::ContentIdentity>,
     store: bool,
 ) -> Result<Vec<u8>, String> {
-    let modules = params.get("native_modules").cloned().unwrap_or(serde_json::Value::Null);
+    let modules = params
+        .get("native_modules")
+        .cloned()
+        .unwrap_or(serde_json::Value::Null);
     let mut inputs = std::collections::BTreeMap::new();
     if !modules.is_null() {
         for slot in crate::native_modules::body_input_slots(&modules)? {
-            inputs.insert(slot.clone(), content.get(&slot).ok_or("native context slot has no keyed input")?.clone());
+            inputs.insert(
+                slot.clone(),
+                content
+                    .get(&slot)
+                    .ok_or("native context slot has no keyed input")?
+                    .clone(),
+            );
         }
     }
     crate::keys::canonical_bytes(&serde_json::json!({"settings":params.get("settings").cloned().unwrap_or(serde_json::json!([])),
@@ -103,25 +112,66 @@ mod tests {
 
     #[test]
     fn resident_groups_bind_settings_and_context_inputs_not_job_payloads() {
-        use std::collections::BTreeMap;
         use crate::schema::ContentIdentity;
+        use std::collections::BTreeMap;
         let mut params = BTreeMap::new();
         let mut content = BTreeMap::new();
         let plain = native_session_group(&params, &content, false).unwrap();
-        content.insert("asset".into(), ContentIdentity::Digest {digest:"a".repeat(64)});
-        assert_eq!(plain, native_session_group(&params, &content, false).unwrap());
-        assert_ne!(plain, native_session_group(&params, &content, true).unwrap());
-        params.insert("settings".into(), serde_json::json!(["-ForceDPCVars=Bool=false"]));
-        assert_ne!(plain, native_session_group(&params, &content, false).unwrap());
-        params.insert("native_modules".into(), serde_json::json!({"editor":{
-            "slot":"compiled","archive":"editor.tree.tar","modules":[]}}));
+        content.insert(
+            "asset".into(),
+            ContentIdentity::Digest {
+                digest: "a".repeat(64),
+            },
+        );
+        assert_eq!(
+            plain,
+            native_session_group(&params, &content, false).unwrap()
+        );
+        assert_ne!(
+            plain,
+            native_session_group(&params, &content, true).unwrap()
+        );
+        params.insert(
+            "settings".into(),
+            serde_json::json!(["-ForceDPCVars=Bool=false"]),
+        );
+        assert_ne!(
+            plain,
+            native_session_group(&params, &content, false).unwrap()
+        );
+        params.insert(
+            "native_modules".into(),
+            serde_json::json!({"editor":{
+            "slot":"compiled","archive":"editor.tree.tar","modules":[]}}),
+        );
         assert!(native_session_group(&params, &content, false).is_err());
-        content.insert("compiled".into(), ContentIdentity::Digest {digest:"b".repeat(64)});
+        content.insert(
+            "compiled".into(),
+            ContentIdentity::Digest {
+                digest: "b".repeat(64),
+            },
+        );
         let context = native_session_group(&params, &content, false).unwrap();
-        content.insert("asset".into(), ContentIdentity::Digest {digest:"c".repeat(64)});
-        assert_eq!(context, native_session_group(&params, &content, false).unwrap());
-        content.insert("compiled".into(), ContentIdentity::Digest {digest:"d".repeat(64)});
-        assert_ne!(context, native_session_group(&params, &content, false).unwrap());
+        content.insert(
+            "asset".into(),
+            ContentIdentity::Digest {
+                digest: "c".repeat(64),
+            },
+        );
+        assert_eq!(
+            context,
+            native_session_group(&params, &content, false).unwrap()
+        );
+        content.insert(
+            "compiled".into(),
+            ContentIdentity::Digest {
+                digest: "d".repeat(64),
+            },
+        );
+        assert_ne!(
+            context,
+            native_session_group(&params, &content, false).unwrap()
+        );
     }
 
     #[test]
@@ -655,45 +705,132 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
         control: &dyn Control,
         emit: &mut dyn FnMut(Event<PythonTicket, PythonInputs, PythonCompletion>) -> Flow,
     ) -> Result<(), String> {
-        if cfg!(target_os = "macos") && !self.scripted_fixture && self.native_tool.is_some()
-            && work.iter().filter(|unit|unit.compatibility().op_kind=="unreal.cook.produce"
-                && !unit.prepared().ingredients().params.contains_key("global_data")).count()>1 {
-            let mut groups=std::collections::BTreeMap::<Vec<u8>,Vec<_>>::new();let mut other=Vec::new();
+        if cfg!(target_os = "macos")
+            && !self.scripted_fixture
+            && self.native_tool.is_some()
+            && work
+                .iter()
+                .filter(|unit| {
+                    unit.compatibility().op_kind == "unreal.cook.produce"
+                        && !unit
+                            .prepared()
+                            .ingredients()
+                            .params
+                            .contains_key("global_data")
+                })
+                .count()
+                > 1
+        {
+            let mut groups = std::collections::BTreeMap::<Vec<u8>, Vec<_>>::new();
+            let mut other = Vec::new();
             for unit in work {
-                if unit.compatibility().op_kind=="unreal.cook.produce" && !unit.prepared().ingredients().params.contains_key("global_data") {
-                    let ingredients=unit.prepared().ingredients();
-                    let native_slots: std::collections::BTreeSet<_> = unit.prepared().inputs().iter().filter_map(|input| {
-                        match &input.payload { crate::keys::InputPayload::Item{class,..} if class!="Data" && class!="JsonData" => Some(input.wire.name.as_str()), _=>None }
-                    }).collect();
-                    let context: std::collections::BTreeMap<_,_> = ingredients.content.iter().filter(|(name,_)|!native_slots.contains(name.as_str())).collect();
-                    let key=crate::keys::canonical_bytes(&serde_json::json!({"project":ingredients.params.get("project"),"code":ingredients.code,"worker":ingredients.worker_digest,"context":context}))?;
+                if unit.compatibility().op_kind == "unreal.cook.produce"
+                    && !unit
+                        .prepared()
+                        .ingredients()
+                        .params
+                        .contains_key("global_data")
+                {
+                    let ingredients = unit.prepared().ingredients();
+                    let native_slots: std::collections::BTreeSet<_> = unit
+                        .prepared()
+                        .inputs()
+                        .iter()
+                        .filter_map(|input| match &input.payload {
+                            crate::keys::InputPayload::Item { class, .. }
+                                if class != "Data" && class != "JsonData" =>
+                            {
+                                Some(input.wire.name.as_str())
+                            }
+                            _ => None,
+                        })
+                        .collect();
+                    let context: std::collections::BTreeMap<_, _> = ingredients
+                        .content
+                        .iter()
+                        .filter(|(name, _)| !native_slots.contains(name.as_str()))
+                        .collect();
+                    let key = crate::keys::canonical_bytes(
+                        &serde_json::json!({"project":ingredients.params.get("project"),"code":ingredients.code,"worker":ingredients.worker_digest,"context":context}),
+                    )?;
                     groups.entry(key).or_default().push(unit);
-                }else{other.push(unit);}
-            }
-            let mut stopped=false;let mut fatal=None;
-            for mut group in groups.into_values(){while !group.is_empty(){let tail=if group.len()>32{group.split_off(32)}else{Vec::new()};
-                if stopped||fatal.is_some()||control.cancelled(){for unit in group{emit(Event::Cancelled{work:unit});}}
-                else {
-                    let mut forward=|event|{let flow=emit(event);stopped|=flow==Flow::Stop;flow};
-                    let result=if group.len()>1{self.source_cook_batch(group,control,&mut forward)}else{self.batch(group,control,&mut forward)};
-                    if let Err(error)=result{fatal=Some(error);}
+                } else {
+                    other.push(unit);
                 }
-                group=tail;
-            }}
-            if stopped||fatal.is_some()||control.cancelled(){for unit in other{emit(Event::Cancelled{work:unit});}return fatal.map_or(Ok(()),Err);}
-            return self.batch(other,control,emit);
+            }
+            let mut stopped = false;
+            let mut fatal = None;
+            for mut group in groups.into_values() {
+                while !group.is_empty() {
+                    let tail = if group.len() > 32 {
+                        group.split_off(32)
+                    } else {
+                        Vec::new()
+                    };
+                    if stopped || fatal.is_some() || control.cancelled() {
+                        for unit in group {
+                            emit(Event::Cancelled { work: unit });
+                        }
+                    } else {
+                        let mut forward = |event| {
+                            let flow = emit(event);
+                            stopped |= flow == Flow::Stop;
+                            flow
+                        };
+                        let result = if group.len() > 1 {
+                            self.source_cook_batch(group, control, &mut forward)
+                        } else {
+                            self.batch(group, control, &mut forward)
+                        };
+                        if let Err(error) = result {
+                            fatal = Some(error);
+                        }
+                    }
+                    group = tail;
+                }
+            }
+            if stopped || fatal.is_some() || control.cancelled() {
+                for unit in other {
+                    emit(Event::Cancelled { work: unit });
+                }
+                return fatal.map_or(Ok(()), Err);
+            }
+            return self.batch(other, control, emit);
         }
-        let native_kind = |kind: &str| matches!(kind,
-            crate::unreal_controller::RAW_IMPORT | crate::unreal_controller::FINISH |
-            crate::unreal_controller::AUTHOR | crate::native_verify::PACKAGE_OP);
-        if cfg!(target_os="macos") && !self.scripted_fixture && self.unreal.is_some() {
-            let count=work.iter().filter(|unit|native_kind(&unit.compatibility().op_kind)).count();
-            if count>1 && count<work.len() {
-                let (native,other): (Vec<_>,Vec<_>) = work.into_iter().partition(|unit|native_kind(&unit.compatibility().op_kind));
-                let mut stopped=false;
-                let result={let mut forward=|event|{let flow=emit(event);stopped|=flow==Flow::Stop;flow};self.batch(native,control,&mut forward)};
-                if stopped||result.is_err()||control.cancelled(){for unit in other{emit(Event::Cancelled{work:unit});}return result;}
-                return self.batch(other,control,emit);
+        let native_kind = |kind: &str| {
+            matches!(
+                kind,
+                crate::unreal_controller::RAW_IMPORT
+                    | crate::unreal_controller::FINISH
+                    | crate::unreal_controller::AUTHOR
+                    | crate::native_verify::PACKAGE_OP
+            )
+        };
+        if cfg!(target_os = "macos") && !self.scripted_fixture && self.unreal.is_some() {
+            let count = work
+                .iter()
+                .filter(|unit| native_kind(&unit.compatibility().op_kind))
+                .count();
+            if count > 1 && count < work.len() {
+                let (native, other): (Vec<_>, Vec<_>) = work
+                    .into_iter()
+                    .partition(|unit| native_kind(&unit.compatibility().op_kind));
+                let mut stopped = false;
+                let result = {
+                    let mut forward = |event| {
+                        let flow = emit(event);
+                        stopped |= flow == Flow::Stop;
+                        flow
+                    };
+                    self.batch(native, control, &mut forward)
+                };
+                if stopped || result.is_err() || control.cancelled() {
+                    for unit in other {
+                        emit(Event::Cancelled { work: unit });
+                    }
+                    return result;
+                }
+                return self.batch(other, control, emit);
             }
         }
         if cfg!(target_os = "macos")
@@ -703,33 +840,54 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
             && work.iter().all(|unit| {
                 matches!(
                     unit.compatibility().op_kind.as_str(),
-                    crate::unreal_controller::RAW_IMPORT | crate::unreal_controller::FINISH | crate::unreal_controller::AUTHOR | crate::native_verify::PACKAGE_OP
+                    crate::unreal_controller::RAW_IMPORT
+                        | crate::unreal_controller::FINISH
+                        | crate::unreal_controller::AUTHOR
+                        | crate::native_verify::PACKAGE_OP
                 )
             })
         {
             let mut groups = std::collections::BTreeMap::<Vec<u8>, Vec<_>>::new();
             let mut stopped = false;
             for unit in work {
-                let prepared = unit.inputs().native_verification.as_ref().map(|v| &v.unit).unwrap_or_else(|| unit.prepared());
-                match native_session_group(&prepared.ingredients().params, &prepared.ingredients().content,
-                                           unit.inputs().native_verification.is_some()) {
+                let prepared = unit
+                    .inputs()
+                    .native_verification
+                    .as_ref()
+                    .map(|v| &v.unit)
+                    .unwrap_or_else(|| unit.prepared());
+                match native_session_group(
+                    &prepared.ingredients().params,
+                    &prepared.ingredients().content,
+                    unit.inputs().native_verification.is_some(),
+                ) {
                     Ok(key) => groups.entry(key).or_default().push(unit),
-                    Err(reason) => stopped |= emit(Event::Failed {work:unit, reason}) == Flow::Stop,
+                    Err(reason) => {
+                        stopped |= emit(Event::Failed { work: unit, reason }) == Flow::Stop
+                    }
                 }
             }
             let mut fatal = None;
             for group in groups.into_values() {
                 if stopped || fatal.is_some() || control.cancelled() {
-                    for work in group { emit(Event::Cancelled {work}); }
+                    for work in group {
+                        emit(Event::Cancelled { work });
+                    }
                     continue;
                 }
-                let mut forward = |event| { let flow = emit(event); stopped |= flow == Flow::Stop; flow };
+                let mut forward = |event| {
+                    let flow = emit(event);
+                    stopped |= flow == Flow::Stop;
+                    flow
+                };
                 let result = if group.len() > 1 {
                     self.resident_native_batch(group, control, &mut forward)
                 } else {
                     self.batch(group, control, &mut forward)
                 };
-                if let Err(error) = result { fatal = Some(error); }
+                if let Err(error) = result {
+                    fatal = Some(error);
+                }
             }
             return fatal.map_or(Ok(()), Err);
         }
@@ -1218,109 +1376,297 @@ impl<L: WorkerLauncher + Send> PythonExecutor<L> {
     ) -> Result<(), String> {
         use std::io::Write;
         use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
-        let tool = self.native_tool.as_ref().ok_or("missing source cook runtime")?;
+        let tool = self
+            .native_tool
+            .as_ref()
+            .ok_or("missing source cook runtime")?;
         let setup: Result<_, String> = (|| {
             let first = work.first().ok_or("empty source frontier")?;
-            let scope = first.inputs().staged.job_dir().parent().ok_or("missing source lease scope")?;
+            let scope = first
+                .inputs()
+                .staged
+                .job_dir()
+                .parent()
+                .ok_or("missing source lease scope")?;
             let folder = scope.join("source-batch");
-            std::fs::create_dir(&folder).map_err(|e|e.to_string())?;
-            let mut jobs=Vec::new();
+            std::fs::create_dir(&folder).map_err(|e| e.to_string())?;
+            let mut jobs = Vec::new();
             for unit in &work {
-                let keyed=unit.compatibility();
-                if keyed.worker_digest!=tool.bundle.identity().digest || keyed.worker_version!=tool.bundle.identity().version
-                    || keyed.profile!="native-tool" || keyed.op_kind!="unreal.cook.produce" {
+                let keyed = unit.compatibility();
+                if keyed.worker_digest != tool.bundle.identity().digest
+                    || keyed.worker_version != tool.bundle.identity().version
+                    || keyed.profile != "native-tool"
+                    || keyed.op_kind != "unreal.cook.produce"
+                {
                     return Err("source frontier runtime differs from keyed worker".into());
                 }
                 jobs.push(serde_json::json!({"job":unit.inputs().staged.request(),"key":unit.prepared().key(),"seconds":tool.limits.job.as_secs_f64()}));
             }
-            let raw=serde_json::to_vec(&serde_json::json!({"version":1,"jobs":jobs})).map_err(|e|e.to_string())?;
-            if raw.len()>64*1024*1024 {return Err("complete source frontier control exceeds 64MiB".into());}
-            let path=folder.join("control.json");
-            let mut file=std::fs::OpenOptions::new().write(true).create_new(true).mode(0o400)
-                .custom_flags(libc::O_NOFOLLOW|libc::O_CLOEXEC).open(&path).map_err(|e|e.to_string())?;
-            file.write_all(&raw).and_then(|_|file.sync_all()).map_err(|e|e.to_string())?;
-            file.set_permissions(std::fs::Permissions::from_mode(0o400)).map_err(|e|e.to_string())?;
-            let export=tool.export_project.as_ref().ok_or("source frontier requires compiled native exporter")?;
-            let mut command=tool.bundle.command_for_cook(&tool.interpreter,&tool.engine_root,scope,first.prepared().key(),&tool.zen_state_root,export)?;
-            command.args.extend(["--source-batch-control".into(),path.into_os_string()]);
-            let report_root=scope.join("guard");std::fs::create_dir(&report_root).map_err(|e|e.to_string())?;
-            let overall=tool.limits.overall.ok_or("source frontier requires bounded overall deadline")?;
-            let maximum=overall.checked_sub(tool.limits.cleanup).ok_or("source frontier lacks cleanup allowance")?;
-            let job=tool.limits.job.checked_mul(work.len().try_into().map_err(|_|"source frontier count overflow")?)
-                .ok_or("source frontier lifetime overflow")?.min(maximum);
-            let spec=JobSpec {job:first.inputs().staged.request().clone(),worker_version:tool.bundle.identity().version,
-                command,purpose:format!("build-v2 stock source frontier ({} independent units)",work.len()),
-                memory_gib:tool.memory_gib,limits:Limits{job,..tool.limits},report_root,custody:vec![]};
-            let custody=first.inputs().custody.try_clone().map_err(|e|e.to_string())?;
-            let mut session=production_spec(&spec,custody)?;
+            let raw = serde_json::to_vec(&serde_json::json!({"version":1,"jobs":jobs}))
+                .map_err(|e| e.to_string())?;
+            if raw.len() > 64 * 1024 * 1024 {
+                return Err("complete source frontier control exceeds 64MiB".into());
+            }
+            let path = folder.join("control.json");
+            let mut file = std::fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .mode(0o400)
+                .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
+                .open(&path)
+                .map_err(|e| e.to_string())?;
+            file.write_all(&raw)
+                .and_then(|_| file.sync_all())
+                .map_err(|e| e.to_string())?;
+            file.set_permissions(std::fs::Permissions::from_mode(0o400))
+                .map_err(|e| e.to_string())?;
+            let export = tool
+                .export_project
+                .as_ref()
+                .ok_or("source frontier requires compiled native exporter")?;
+            let mut command = tool.bundle.command_for_cook(
+                &tool.interpreter,
+                &tool.engine_root,
+                scope,
+                first.prepared().key(),
+                &tool.zen_state_root,
+                export,
+            )?;
+            command
+                .args
+                .extend(["--source-batch-control".into(), path.into_os_string()]);
+            let report_root = scope.join("guard");
+            std::fs::create_dir(&report_root).map_err(|e| e.to_string())?;
+            let overall = tool
+                .limits
+                .overall
+                .ok_or("source frontier requires bounded overall deadline")?;
+            let maximum = overall
+                .checked_sub(tool.limits.cleanup)
+                .ok_or("source frontier lacks cleanup allowance")?;
+            let job = tool
+                .limits
+                .job
+                .checked_mul(
+                    work.len()
+                        .try_into()
+                        .map_err(|_| "source frontier count overflow")?,
+                )
+                .ok_or("source frontier lifetime overflow")?
+                .min(maximum);
+            let spec = JobSpec {
+                job: first.inputs().staged.request().clone(),
+                worker_version: tool.bundle.identity().version,
+                command,
+                purpose: format!(
+                    "build-v2 stock source frontier ({} independent units)",
+                    work.len()
+                ),
+                memory_gib: tool.memory_gib,
+                limits: Limits { job, ..tool.limits },
+                report_root,
+                custody: vec![],
+            };
+            let custody = first
+                .inputs()
+                .custody
+                .try_clone()
+                .map_err(|e| e.to_string())?;
+            let mut session = production_spec(&spec, custody)?;
             // This is one fixed multi-action execution envelope, NOT live-session
             // quiescence. All source leases stay registered until full tree cleanup.
-            session.key.sandbox=worker_lifecycle::JobSandbox::Other;
-            Ok((spec,session,folder.join("result.json"),tool.bundle.files_len()))
+            session.key.sandbox = worker_lifecycle::JobSandbox::Other;
+            Ok((
+                spec,
+                session,
+                folder.join("result.json"),
+                tool.bundle.files_len(),
+            ))
         })();
-        let (spec,session,result_path,written)=match setup {
-            Ok(v)=>v,
-            Err(reason)=>{for unit in work {emit(Event::Failed{work:unit,reason:reason.clone()});}return Ok(());}
+        let (spec, session, result_path, written) = match setup {
+            Ok(v) => v,
+            Err(reason) => {
+                for unit in work {
+                    emit(Event::Failed {
+                        work: unit,
+                        reason: reason.clone(),
+                    });
+                }
+                return Ok(());
+            }
         };
-        work[0].inputs().io.borrow_mut().worker_files_written+=written;
-        let (cancel,inbox)=worker_lifecycle::session_channel();
-        cancel.submit(worker_lifecycle::SessionUnit{plan:UnitPlan{id:spec.job.unit.clone(),limits:spec.limits},job:spec.job.clone(),key:session.key.clone()});
-        cancel.close();
-        let result=std::thread::scope(|scope| {
-            let launcher=&mut self.launcher;
-            let mut tickets:Vec<_>=work.iter_mut().map(|unit|unit.ticket_mut()).collect();
-            let expected=spec.job.unit.clone();let job=spec.job.clone();
-            let driver=scope.spawn(move|| {
-                let (published,_records)=std::sync::mpsc::channel();
-                worker_lifecycle::run_session_ready_checked(launcher,&SystemClock::new(),&session,inbox,
-                    &mut |id,identity| {if id!=&expected{return Err("foreign source envelope registration".into());}
-                        for ticket in &mut tickets {ticket.register(identity)?;}Ok(())},
-                    &mut |id,attempt| {if id!=&expected||attempt!=1{return Err("source frontier retries require fresh leases".into());}Ok(job.clone())},
-                    &mut |_|Ok(()),published).map_err(|e|format!("{e:?}")).and_then(|report|sole_released_report(&expected,report))
-            });
-            while !driver.is_finished(){if control.cancelled(){cancel.cancel_all();}std::thread::sleep(Duration::from_millis(5));}
-            driver.join().map_err(|_|"source frontier lifecycle panicked".to_string())?
+        work[0].inputs().io.borrow_mut().worker_files_written += written;
+        let (cancel, inbox) = worker_lifecycle::session_channel();
+        cancel.submit(worker_lifecycle::SessionUnit {
+            plan: UnitPlan {
+                id: spec.job.unit.clone(),
+                limits: spec.limits,
+            },
+            job: spec.job.clone(),
+            key: session.key.clone(),
         });
-        let report=match result {
-            Ok(report) if !matches!(report.outcome.cleanup,CleanupState::Unconfirmed(_))
-                && report.attempts.iter().all(|a|a.custody==Custody::Released)=>report,
-            Ok(_)=>{for unit in work {emit(Event::Failed{work:unit,reason:"source frontier cleanup remains held".into()});}return Err("source frontier cleanup remains held".into());}
-            Err(reason)=>{for unit in work {emit(Event::Failed{work:unit,reason:reason.clone()});}return Err(reason);}
+        cancel.close();
+        let result = std::thread::scope(|scope| {
+            let launcher = &mut self.launcher;
+            let mut tickets: Vec<_> = work.iter_mut().map(|unit| unit.ticket_mut()).collect();
+            let expected = spec.job.unit.clone();
+            let job = spec.job.clone();
+            let driver = scope.spawn(move || {
+                let (published, _records) = std::sync::mpsc::channel();
+                worker_lifecycle::run_session_ready_checked(
+                    launcher,
+                    &SystemClock::new(),
+                    &session,
+                    inbox,
+                    &mut |id, identity| {
+                        if id != &expected {
+                            return Err("foreign source envelope registration".into());
+                        }
+                        for ticket in &mut tickets {
+                            ticket.register(identity)?;
+                        }
+                        Ok(())
+                    },
+                    &mut |id, attempt| {
+                        if id != &expected || attempt != 1 {
+                            return Err("source frontier retries require fresh leases".into());
+                        }
+                        Ok(job.clone())
+                    },
+                    &mut |_| Ok(()),
+                    published,
+                )
+                .map_err(|e| format!("{e:?}"))
+                .and_then(|report| sole_released_report(&expected, report))
+            });
+            while !driver.is_finished() {
+                if control.cancelled() {
+                    cancel.cancel_all();
+                }
+                std::thread::sleep(Duration::from_millis(5));
+            }
+            driver
+                .join()
+                .map_err(|_| "source frontier lifecycle panicked".to_string())?
+        });
+        let report = match result {
+            Ok(report)
+                if !matches!(report.outcome.cleanup, CleanupState::Unconfirmed(_))
+                    && report
+                        .attempts
+                        .iter()
+                        .all(|a| a.custody == Custody::Released) =>
+            {
+                report
+            }
+            Ok(_) => {
+                for unit in work {
+                    emit(Event::Failed {
+                        work: unit,
+                        reason: "source frontier cleanup remains held".into(),
+                    });
+                }
+                return Err("source frontier cleanup remains held".into());
+            }
+            Err(reason) => {
+                for unit in work {
+                    emit(Event::Failed {
+                        work: unit,
+                        reason: reason.clone(),
+                    });
+                }
+                return Err(reason);
+            }
         };
-        for unit in &work {record_launches(&mut unit.inputs().io.borrow_mut(),unit.unit(),Some(&report));}
-        if report.abort.is_some() || report.outcome.end!=End::Completed {
-            for unit in work {emit(Event::Failed{work:unit,reason:"source frontier execution did not complete".into()});}return Ok(());
+        for unit in &work {
+            record_launches(
+                &mut unit.inputs().io.borrow_mut(),
+                unit.unit(),
+                Some(&report),
+            );
         }
-        let outcomes: Result<Vec<Result<Vec<String>,String>>,String>=(|| {
+        if report.abort.is_some() || report.outcome.end != End::Completed {
+            for unit in work {
+                emit(Event::Failed {
+                    work: unit,
+                    reason: "source frontier execution did not complete".into(),
+                });
+            }
+            return Ok(());
+        }
+        let outcomes: Result<Vec<Result<Vec<String>, String>>, String> = (|| {
             use std::os::unix::fs::MetadataExt;
-            let mut file=std::fs::OpenOptions::new().read(true).custom_flags(libc::O_NOFOLLOW|libc::O_CLOEXEC|libc::O_NONBLOCK)
-                .open(result_path).map_err(|e|e.to_string())?;
-            let info=file.metadata().map_err(|e|e.to_string())?;
-            if !info.is_file()||info.nlink()!=1||info.len()>64*1024*1024{return Err("invalid source frontier completion file".to_string());}
-            let mut raw=Vec::new();std::io::Read::read_to_end(&mut file,&mut raw).map_err(|e|e.to_string())?;
-            let result:serde_json::Value=serde_json::from_slice(&raw).map_err(|e|e.to_string())?;
-            if result["version"]!=1||result["sdk_processes"]!=1||result["sdk_closed"]!=true{return Err("source SDK completion is not closed".into());}
-            let rows=result["members"].as_array().ok_or("missing source frontier members")?;
-            if rows.len()!=work.len(){return Err("source frontier completion roster differs".into());}
-            let mut outcomes=Vec::new();
-            for (unit,row) in work.iter().zip(rows) {
-                if row["job_id"].as_str()!=Some(&unit.inputs().staged.request().job_id)||row["key"].as_str()!=Some(unit.prepared().key()) {
+            let mut file = std::fs::OpenOptions::new()
+                .read(true)
+                .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC | libc::O_NONBLOCK)
+                .open(result_path)
+                .map_err(|e| e.to_string())?;
+            let info = file.metadata().map_err(|e| e.to_string())?;
+            if !info.is_file() || info.nlink() != 1 || info.len() > 64 * 1024 * 1024 {
+                return Err("invalid source frontier completion file".to_string());
+            }
+            let mut raw = Vec::new();
+            std::io::Read::read_to_end(&mut file, &mut raw).map_err(|e| e.to_string())?;
+            let result: serde_json::Value =
+                serde_json::from_slice(&raw).map_err(|e| e.to_string())?;
+            if result["version"] != 1
+                || result["sdk_processes"] != 1
+                || result["sdk_closed"] != true
+            {
+                return Err("source SDK completion is not closed".into());
+            }
+            let rows = result["members"]
+                .as_array()
+                .ok_or("missing source frontier members")?;
+            if rows.len() != work.len() {
+                return Err("source frontier completion roster differs".into());
+            }
+            let mut outcomes = Vec::new();
+            for (unit, row) in work.iter().zip(rows) {
+                if row["job_id"].as_str() != Some(&unit.inputs().staged.request().job_id)
+                    || row["key"].as_str() != Some(unit.prepared().key())
+                {
                     return Err("source frontier completion belongs to another key/lease".into());
                 }
-                if row["status"]=="completed" {
-                    let files:Vec<String>=serde_json::from_value(row["files"].clone()).map_err(|e|e.to_string())?;
+                if row["status"] == "completed" {
+                    let files: Vec<String> =
+                        serde_json::from_value(row["files"].clone()).map_err(|e| e.to_string())?;
                     outcomes.push(Ok(files));
-                }else{outcomes.push(Err(row["error"].as_str().unwrap_or("source frontier member cancelled").to_owned()));}
+                } else {
+                    outcomes.push(Err(row["error"]
+                        .as_str()
+                        .unwrap_or("source frontier member cancelled")
+                        .to_owned()));
+                }
             }
             Ok(outcomes)
         })();
         match outcomes {
-            Ok(outcomes)=>{let mut stopped=false;for(unit,outcome)in work.into_iter().zip(outcomes){
-                if stopped{emit(Event::Cancelled{work:unit});continue;}
-                let event=match outcome {Ok(reported)=>Event::Completed{work:unit,completion:PythonCompletion{reported}},Err(reason)=>Event::Failed{work:unit,reason}};
-                stopped=emit(event)==Flow::Stop;
-            }}
-            Err(reason)=>{for unit in work {emit(Event::Failed{work:unit,reason:reason.clone()});}}
+            Ok(outcomes) => {
+                let mut stopped = false;
+                for (unit, outcome) in work.into_iter().zip(outcomes) {
+                    if stopped {
+                        emit(Event::Cancelled { work: unit });
+                        continue;
+                    }
+                    let event = match outcome {
+                        Ok(reported) => Event::Completed {
+                            work: unit,
+                            completion: PythonCompletion { reported },
+                        },
+                        Err(reason) => Event::Failed { work: unit, reason },
+                    };
+                    stopped = emit(event) == Flow::Stop;
+                }
+            }
+            Err(reason) => {
+                for unit in work {
+                    emit(Event::Failed {
+                        work: unit,
+                        reason: reason.clone(),
+                    });
+                }
+            }
         }
         Ok(())
     }
@@ -1354,7 +1700,12 @@ impl<L: WorkerLauncher + Send> PythonExecutor<L> {
                 }
                 let job = unit.inputs().staged.job_dir();
                 let scope = job.parent().ok_or("resident job has no leased parent")?;
-                let prepared = unit.inputs().native_verification.as_ref().map(|v| &v.unit).unwrap_or_else(|| unit.prepared());
+                let prepared = unit
+                    .inputs()
+                    .native_verification
+                    .as_ref()
+                    .map(|v| &v.unit)
+                    .unwrap_or_else(|| unit.prepared());
                 let context = native.locations.build(
                     prepared,
                     &unit.inputs().staged,
@@ -1362,13 +1713,31 @@ impl<L: WorkerLauncher + Send> PythonExecutor<L> {
                     &native.cache_root,
                 )?;
                 let mut launch = if let Some(verification) = &unit.inputs().native_verification {
-                    let owner = launches.first().map(|first: &Arc<Mutex<crate::unreal_controller::PreparedUnrealLaunch>>|
-                        first.lock().map_err(|_| "resident launch lock poisoned")).transpose()?;
-                    crate::unreal_controller::prepare_verify_in_session(prepared, &unit.inputs().staged,
-                        &native.sources, scope, &context, &verification.context, owner.as_deref())?
+                    let owner = launches
+                        .first()
+                        .map(
+                            |first: &Arc<Mutex<crate::unreal_controller::PreparedUnrealLaunch>>| {
+                                first.lock().map_err(|_| "resident launch lock poisoned")
+                            },
+                        )
+                        .transpose()?;
+                    crate::unreal_controller::prepare_verify_in_session(
+                        prepared,
+                        &unit.inputs().staged,
+                        &native.sources,
+                        scope,
+                        &context,
+                        &verification.context,
+                        owner.as_deref(),
+                    )?
                 } else {
-                    crate::unreal_controller::prepare(prepared, &unit.inputs().staged,
-                        &native.sources, scope, &context)?
+                    crate::unreal_controller::prepare(
+                        prepared,
+                        &unit.inputs().staged,
+                        &native.sources,
+                        scope,
+                        &context,
+                    )?
                 };
                 launch.enable_resident()?;
                 if let Some(first) = launches.first() {

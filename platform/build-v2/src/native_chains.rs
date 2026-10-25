@@ -40,7 +40,10 @@ fn replace(value: &mut Value, piece: &str, export: &str, previous: &str) -> Resu
                 let mut key = Value::String(key);
                 replace(&mut key, piece, export, previous)?;
                 replace(&mut value, piece, export, previous)?;
-                if values.insert(key.as_str().unwrap().to_string(), value).is_some() {
+                if values
+                    .insert(key.as_str().unwrap().to_string(), value)
+                    .is_some()
+                {
                     return Err("native follower key substitution aliases an authored field".into());
                 }
             }
@@ -88,9 +91,13 @@ mod substitution_tests {
     use super::*;
     #[test]
     fn native_cook_record_keys_bind_the_expanded_piece_and_refuse_aliases() {
-        let mut value = serde_json::json!({"record_outputs":{"/Game/Audio/$piece":"records/$piece.cb"}});
+        let mut value =
+            serde_json::json!({"record_outputs":{"/Game/Audio/$piece":"records/$piece.cb"}});
         replace(&mut value, "Step", "raw.Step", "finish.Step").unwrap();
-        assert_eq!(value["record_outputs"]["/Game/Audio/Step"], "records/Step.cb");
+        assert_eq!(
+            value["record_outputs"]["/Game/Audio/Step"],
+            "records/Step.cb"
+        );
         let mut aliases = serde_json::json!({"$piece":1,"Step":2});
         assert!(replace(&mut aliases, "Step", "raw.Step", "finish.Step").is_err());
     }

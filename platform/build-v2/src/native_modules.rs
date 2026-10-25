@@ -278,7 +278,9 @@ fn filter_binaries(
 }
 
 fn name_ok(text: &str) -> bool {
-    !text.is_empty() && text.len() <= 128 && text.bytes().all(|c| c.is_ascii_alphanumeric() || c == b'_')
+    !text.is_empty()
+        && text.len() <= 128
+        && text.bytes().all(|c| c.is_ascii_alphanumeric() || c == b'_')
 }
 
 fn relative_ok(text: &str) -> bool {
@@ -286,7 +288,9 @@ fn relative_ok(text: &str) -> bool {
         && !text.starts_with('/')
         && !text.contains('\\')
         && !text.contains('\0')
-        && text.split('/').all(|part| !part.is_empty() && part != "." && part != "..")
+        && text
+            .split('/')
+            .all(|part| !part.is_empty() && part != "." && part != "..")
 }
 
 fn input<'a>(inputs: &'a BTreeMap<&str, Staged<'a>>, slot: &str) -> Result<&'a Staged<'a>, String> {
@@ -318,19 +322,29 @@ fn digest_file(path: &Path) -> Result<String, String> {
 }
 
 /// The exact keyed `.tree.tar` member of an Item input, checked against its keyed digest.
-fn archive(inputs: &BTreeMap<&str, Staged<'_>>, slot: &str, member: &str) -> Result<PathBuf, String> {
+fn archive(
+    inputs: &BTreeMap<&str, Staged<'_>>,
+    slot: &str,
+    member: &str,
+) -> Result<PathBuf, String> {
     let staged = input(inputs, slot)?;
     let InputPayload::Item { files, .. } = staged.payload else {
         return Err(format!("native module slot {slot} is not an Item"));
     };
     if !relative_ok(member) || !member.ends_with(".tree.tar") {
-        return Err(format!("native module archive {member:?} is not an exact ROOT archive member"));
+        return Err(format!(
+            "native module archive {member:?} is not an exact ROOT archive member"
+        ));
     }
     let file = files
         .iter()
         .find(|file| file.path == member)
         .ok_or_else(|| format!("native module slot {slot} has no member {member}"))?;
-    if fs::symlink_metadata(&staged.path).map_err(|e| e.to_string())?.file_type().is_symlink() {
+    if fs::symlink_metadata(&staged.path)
+        .map_err(|e| e.to_string())?
+        .file_type()
+        .is_symlink()
+    {
         return Err(format!("native module slot {slot} is linked"));
     }
     let path = staged.path.join(member);
@@ -339,13 +353,19 @@ fn archive(inputs: &BTreeMap<&str, Staged<'_>>, slot: &str, member: &str) -> Res
         if folder == staged.path {
             break;
         }
-        if fs::symlink_metadata(folder).map_err(|e| e.to_string())?.file_type().is_symlink() {
+        if fs::symlink_metadata(folder)
+            .map_err(|e| e.to_string())?
+            .file_type()
+            .is_symlink()
+        {
             return Err("native module archive path traverses a link".into());
         }
         parent = folder.parent();
     }
     if regular(&path)?.len() != file.size || digest_file(&path)? != file.digest {
-        return Err(format!("staged native archive {member} differs from its keyed bytes"));
+        return Err(format!(
+            "staged native archive {member} differs from its keyed bytes"
+        ));
     }
     Ok(path)
 }
@@ -360,23 +380,43 @@ fn descriptor(inputs: &BTreeMap<&str, Staged<'_>>, slot: &str) -> Result<Vec<u8>
             bytes.len() as u64,
         ),
         InputPayload::Item { files, .. } => match files.as_slice() {
-            [file] if file.path.ends_with(".uplugin") && relative_ok(&file.path) && !file.path.contains('/') => {
-                if fs::symlink_metadata(&staged.path).map_err(|e| e.to_string())?.file_type().is_symlink() {
+            [file]
+                if file.path.ends_with(".uplugin")
+                    && relative_ok(&file.path)
+                    && !file.path.contains('/') =>
+            {
+                if fs::symlink_metadata(&staged.path)
+                    .map_err(|e| e.to_string())?
+                    .file_type()
+                    .is_symlink()
+                {
                     return Err(format!("plugin descriptor slot {slot} is linked"));
                 }
                 (staged.path.join(&file.path), file.digest.clone(), file.size)
             }
-            _ => return Err(format!("plugin descriptor slot {slot} is not one .uplugin file")),
+            _ => {
+                return Err(format!(
+                    "plugin descriptor slot {slot} is not one .uplugin file"
+                ));
+            }
         },
-        InputPayload::NativeCooked(_) => return Err(format!("plugin descriptor slot {slot} is a cooked package, not descriptor bytes")),
+        InputPayload::NativeCooked(_) => {
+            return Err(format!(
+                "plugin descriptor slot {slot} is a cooked package, not descriptor bytes"
+            ));
+        }
         InputPayload::Absent => return Err(format!("plugin descriptor slot {slot} is absent")),
     };
     if size > MAX_DESCRIPTOR || regular(&path)?.len() != size {
-        return Err(format!("plugin descriptor slot {slot} differs from its keyed size"));
+        return Err(format!(
+            "plugin descriptor slot {slot} differs from its keyed size"
+        ));
     }
     let bytes = fs::read(&path).map_err(|e| e.to_string())?;
     if format!("{:x}", Sha256::digest(&bytes)) != digest {
-        return Err(format!("plugin descriptor slot {slot} differs from its keyed bytes"));
+        return Err(format!(
+            "plugin descriptor slot {slot} differs from its keyed bytes"
+        ));
     }
     Ok(bytes)
 }
@@ -415,10 +455,13 @@ fn module_libraries(
     if regular(&path)?.len() > MAX_MANIFEST {
         return Err(format!("{MODULES_FILE} is too large"));
     }
-    let value: serde_json::Value = serde_json::from_slice(&fs::read(&path).map_err(|e| e.to_string())?)
-        .map_err(|e| format!("invalid {MODULES_FILE}: {e}"))?;
+    let value: serde_json::Value =
+        serde_json::from_slice(&fs::read(&path).map_err(|e| e.to_string())?)
+            .map_err(|e| format!("invalid {MODULES_FILE}: {e}"))?;
     if value.get("BuildId").and_then(|v| v.as_str()) != Some(build_id) {
-        return Err(format!("produced {MODULES_FILE} was built for another engine BuildId"));
+        return Err(format!(
+            "produced {MODULES_FILE} was built for another engine BuildId"
+        ));
     }
     let modules = value
         .get("Modules")
@@ -428,8 +471,14 @@ fn module_libraries(
     let mut result = BTreeMap::new();
     for (name, library) in modules {
         let library = library.as_str().unwrap_or_default();
-        if !name_ok(name) || !relative_ok(library) || library.contains('/') || !files.contains(library) {
-            return Err(format!("produced module {name} has no binary in its folder"));
+        if !name_ok(name)
+            || !relative_ok(library)
+            || library.contains('/')
+            || !files.contains(library)
+        {
+            return Err(format!(
+                "produced module {name} has no binary in its folder"
+            ));
         }
         result.insert(name.clone(), library.to_owned());
     }
@@ -444,7 +493,8 @@ fn write_new(path: &Path, bytes: &[u8], mode: u32) -> Result<(), String> {
         .open(path)
         .map_err(|e| format!("{}: {e}", path.display()))?;
     file.write_all(bytes).map_err(|e| e.to_string())?;
-    file.set_permissions(fs::Permissions::from_mode(mode)).map_err(|e| e.to_string())
+    file.set_permissions(fs::Permissions::from_mode(mode))
+        .map_err(|e| e.to_string())
 }
 
 fn tar_header(input: &mut impl Read) -> Result<([u8; 512], String, u64), String> {
@@ -457,16 +507,27 @@ fn tar_header(input: &mut impl Read) -> Result<([u8; 512], String, u64), String>
     };
     let name = text(&header[..100])?;
     let prefix = text(&header[345..500])?;
-    let name = if prefix.is_empty() { name } else { format!("{prefix}/{name}") };
+    let name = if prefix.is_empty() {
+        name
+    } else {
+        format!("{prefix}/{name}")
+    };
     let octal = |bytes: &[u8]| -> Result<u64, String> {
-        u64::from_str_radix(text(bytes)?.trim_matches(|c| c == '\0' || c == ' '), 8).map_err(|e| e.to_string())
+        u64::from_str_radix(text(bytes)?.trim_matches(|c| c == '\0' || c == ' '), 8)
+            .map_err(|e| e.to_string())
     };
     let size = octal(&header[124..136])?;
     let claimed = octal(&header[148..156])?;
     let actual: u64 = header
         .iter()
         .enumerate()
-        .map(|(i, b)| if (148..156).contains(&i) { 32 } else { *b as u64 })
+        .map(|(i, b)| {
+            if (148..156).contains(&i) {
+                32
+            } else {
+                *b as u64
+            }
+        })
         .sum();
     if claimed != actual {
         return Err("invalid native root tar checksum".into());
@@ -477,7 +538,9 @@ fn tar_header(input: &mut impl Read) -> Result<([u8; 512], String, u64), String>
 fn tar_padding(input: &mut impl Read, size: u64) -> Result<(), String> {
     let mut padding = [0; 512];
     let count = ((512 - size % 512) % 512) as usize;
-    input.read_exact(&mut padding[..count]).map_err(|e| e.to_string())?;
+    input
+        .read_exact(&mut padding[..count])
+        .map_err(|e| e.to_string())?;
     if padding[..count].iter().any(|b| *b != 0) {
         return Err("invalid native root tar padding".into());
     }
@@ -500,7 +563,10 @@ fn extract(archive: &Path, target: &Path) -> Result<BTreeSet<String>, String> {
         return Err("unsupported root manifest".into());
     }
     if manifest.kind != "directory" {
-        return Err(format!("native binaries must be a directory ROOT, not {:?}", manifest.kind));
+        return Err(format!(
+            "native binaries must be a directory ROOT, not {:?}",
+            manifest.kind
+        ));
     }
     let mut files = BTreeSet::new();
     let mut seen = BTreeSet::new();
@@ -514,18 +580,30 @@ fn extract(archive: &Path, target: &Path) -> Result<BTreeSet<String>, String> {
             return Err("invalid native root member".into());
         }
         let (header, name, actual_size) = tar_header(&mut input)?;
-        let expected = if relative.is_empty() { "root".to_owned() } else { format!("root/{relative}") };
-        if name.trim_end_matches('/') != expected || actual_size != *size || header[157..257].iter().any(|b| *b != 0) {
+        let expected = if relative.is_empty() {
+            "root".to_owned()
+        } else {
+            format!("root/{relative}")
+        };
+        if name.trim_end_matches('/') != expected
+            || actual_size != *size
+            || header[157..257].iter().any(|b| *b != 0)
+        {
             return Err("root member differs from manifest".into());
         }
-        let destination = if relative.is_empty() { target.to_path_buf() } else { target.join(relative) };
+        let destination = if relative.is_empty() {
+            target.to_path_buf()
+        } else {
+            target.join(relative)
+        };
         if kind == "directory" {
             if header[156] != b'5' || *size != 0 || digest.is_some() {
                 return Err("invalid root directory".into());
             }
             // create_dir refuses an existing path and a missing parent: no overwrite, parents first.
             fs::create_dir(&destination).map_err(|e| format!("{}: {e}", destination.display()))?;
-            fs::set_permissions(&destination, fs::Permissions::from_mode(*mode)).map_err(|e| e.to_string())?;
+            fs::set_permissions(&destination, fs::Permissions::from_mode(*mode))
+                .map_err(|e| e.to_string())?;
         } else if kind == "file" {
             if !matches!(header[156], 0 | b'0') {
                 return Err("invalid root file".into());
@@ -541,7 +619,9 @@ fn extract(archive: &Path, target: &Path) -> Result<BTreeSet<String>, String> {
             let mut buffer = [0; 64 * 1024];
             while left > 0 {
                 let take = left.min(buffer.len() as u64) as usize;
-                input.read_exact(&mut buffer[..take]).map_err(|e| e.to_string())?;
+                input
+                    .read_exact(&mut buffer[..take])
+                    .map_err(|e| e.to_string())?;
                 hasher.update(&buffer[..take]);
                 file.write_all(&buffer[..take]).map_err(|e| e.to_string())?;
                 left -= take as u64;
@@ -549,7 +629,8 @@ fn extract(archive: &Path, target: &Path) -> Result<BTreeSet<String>, String> {
             if digest.as_deref() != Some(format!("{:x}", hasher.finalize()).as_str()) {
                 return Err("native root payload differs from keyed manifest".into());
             }
-            file.set_permissions(fs::Permissions::from_mode(*mode)).map_err(|e| e.to_string())?;
+            file.set_permissions(fs::Permissions::from_mode(*mode))
+                .map_err(|e| e.to_string())?;
             tar_padding(&mut input, *size)?;
             files.insert(relative.clone());
         } else {
@@ -580,7 +661,10 @@ mod tests {
             let path = std::env::temp_dir().join(format!(
                 "atelier-native-modules-{label}-{}-{}",
                 std::process::id(),
-                std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos()
             ));
             fs::create_dir_all(&path).unwrap();
             Space(path.canonicalize().unwrap())
@@ -621,13 +705,30 @@ mod tests {
         for (path, bytes) in members {
             entries.push(match bytes {
                 None => serde_json::json!([path, "directory", 0, 0o755, null]),
-                Some(bytes) => serde_json::json!([path, "file", bytes.len(), if path.ends_with(".dylib") { 0o755 } else { 0o644 },
-                                                   format!("{:x}", Sha256::digest(bytes))]),
+                Some(bytes) => serde_json::json!([
+                    path,
+                    "file",
+                    bytes.len(),
+                    if path.ends_with(".dylib") {
+                        0o755
+                    } else {
+                        0o644
+                    },
+                    format!("{:x}", Sha256::digest(bytes))
+                ]),
             });
         }
-        let manifest = serde_json::to_vec(&serde_json::json!({"version": 1, "kind": "directory", "entries": entries})).unwrap();
+        let manifest = serde_json::to_vec(
+            &serde_json::json!({"version": 1, "kind": "directory", "entries": entries}),
+        )
+        .unwrap();
         let mut out = vec![];
-        out.extend(header("atelier-root.json", manifest.len() as u64, b'0', 0o644));
+        out.extend(header(
+            "atelier-root.json",
+            manifest.len() as u64,
+            b'0',
+            0o644,
+        ));
         out.extend(&manifest);
         pad(&mut out);
         out.extend(header("root/", 0, b'5', 0o755));
@@ -635,7 +736,12 @@ mod tests {
             match bytes {
                 None => out.extend(header(&format!("root/{path}/"), 0, b'5', 0o755)),
                 Some(bytes) => {
-                    out.extend(header(&format!("root/{path}"), bytes.len() as u64, b'0', 0o644));
+                    out.extend(header(
+                        &format!("root/{path}"),
+                        bytes.len() as u64,
+                        b'0',
+                        0o644,
+                    ));
                     out.extend(*bytes);
                     pad(&mut out);
                 }
@@ -658,7 +764,14 @@ mod tests {
                 mode: 0o644,
             });
         }
-        (root, InputPayload::Item { logical_path: name.into(), class: "Data".into(), files: stored })
+        (
+            root,
+            InputPayload::Item {
+                logical_path: name.into(),
+                class: "Data".into(),
+                files: stored,
+            },
+        )
     }
 
     const ARCHIVE: &str = "products/0-0.tree.tar";
@@ -671,37 +784,71 @@ mod tests {
 
     impl Case {
         fn new(label: &str) -> Self {
-            Self::with(label, "b1", br#"{"Modules": [{"Name": "GameTools", "Type": "Editor"}]}"#.to_vec(), vec![])
+            Self::with(
+                label,
+                "b1",
+                br#"{"Modules": [{"Name": "GameTools", "Type": "Editor"}]}"#.to_vec(),
+                vec![],
+            )
         }
-        fn with(label: &str, build: &str, descriptor: Vec<u8>, extra: Vec<(&str, Option<&[u8]>)>) -> Self {
+        fn with(
+            label: &str,
+            build: &str,
+            descriptor: Vec<u8>,
+            extra: Vec<(&str, Option<&[u8]>)>,
+        ) -> Self {
             let space = Space::new(label);
             fs::create_dir_all(space.0.join("job/inputs/editor/products")).unwrap();
             fs::create_dir_all(space.0.join("job/inputs/plugin/products")).unwrap();
-            let modules = format!(r#"{{"BuildId": "{build}", "Modules": {{"Yorigame": "libUnrealEditor-Yorigame.dylib"}}}}"#);
+            let modules = format!(
+                r#"{{"BuildId": "{build}", "Modules": {{"Yorigame": "libUnrealEditor-Yorigame.dylib"}}}}"#
+            );
             let mut members: Vec<(&str, Option<&[u8]>)> = vec![
                 (MODULES_FILE, Some(modules.as_bytes())),
-                ("libUnrealEditor-Yorigame.dylib", Some(&b"editor module"[..])),
+                (
+                    "libUnrealEditor-Yorigame.dylib",
+                    Some(&b"editor module"[..]),
+                ),
             ];
             members.extend(extra);
             let editor = item(&space, "editor", &[(ARCHIVE, root_tar(&members))]);
-            let plugin_modules = format!(r#"{{"BuildId": "{build}", "Modules": {{"GameTools": "libUnrealEditor-GameTools.dylib"}}}}"#);
-            let plugin = item(&space, "plugin", &[(ARCHIVE, root_tar(&[
-                (MODULES_FILE, Some(plugin_modules.as_bytes())),
-                ("libUnrealEditor-GameTools.dylib", Some(&b"plugin module"[..])),
-            ]))]);
+            let plugin_modules = format!(
+                r#"{{"BuildId": "{build}", "Modules": {{"GameTools": "libUnrealEditor-GameTools.dylib"}}}}"#
+            );
+            let plugin = item(
+                &space,
+                "plugin",
+                &[(
+                    ARCHIVE,
+                    root_tar(&[
+                        (MODULES_FILE, Some(plugin_modules.as_bytes())),
+                        (
+                            "libUnrealEditor-GameTools.dylib",
+                            Some(&b"plugin module"[..]),
+                        ),
+                    ]),
+                )],
+            );
             let path = space.0.join("job/inputs/descriptor");
             fs::write(&path, &descriptor).unwrap();
             let payloads = BTreeMap::from([
                 ("editor".to_owned(), editor),
                 ("plugin".to_owned(), plugin),
-                ("descriptor".to_owned(), (path, InputPayload::Bytes(descriptor))),
+                (
+                    "descriptor".to_owned(),
+                    (path, InputPayload::Bytes(descriptor)),
+                ),
             ]);
             let request = serde_json::json!({
                 "editor": {"slot": "editor", "archive": ARCHIVE,
                            "modules": [{"name": "Yorigame", "kind": "Runtime", "loading_phase": "Default"}]},
                 "plugins": [{"name": "GameTools", "slot": "plugin", "archive": ARCHIVE, "descriptor_slot": "descriptor"}],
             });
-            Case { space, payloads, request }
+            Case {
+                space,
+                payloads,
+                request,
+            }
         }
         fn binaries(
             &mut self,
@@ -730,9 +877,18 @@ mod tests {
             let inputs: BTreeMap<&str, Staged<'_>> = self
                 .payloads
                 .iter()
-                .map(|(name, (path, payload))| (name.as_str(), Staged { path: path.clone(), payload }))
+                .map(|(name, (path, payload))| {
+                    (
+                        name.as_str(),
+                        Staged {
+                            path: path.clone(),
+                            payload,
+                        },
+                    )
+                })
                 .collect();
-            let request: Request = serde_json::from_value(self.request.clone()).map_err(|e| e.to_string())?;
+            let request: Request =
+                serde_json::from_value(self.request.clone()).map_err(|e| e.to_string())?;
             materialize(&request, &inputs, &self.space.0.join("scope"), "b1")
         }
         fn scope(&self) -> PathBuf {
@@ -746,18 +902,40 @@ mod tests {
         let prepared = case.run().unwrap();
         let scope = case.scope();
         assert_eq!(prepared.editor.dir, scope.join("editor"));
-        assert_eq!(prepared.editor.identity, unreal::tree_identity(&scope.join("editor"), None).unwrap());
+        assert_eq!(
+            prepared.editor.identity,
+            unreal::tree_identity(&scope.join("editor"), None).unwrap()
+        );
         assert_eq!(prepared.modules[0].name, "Yorigame");
-        assert_eq!(fs::read(scope.join("editor/libUnrealEditor-Yorigame.dylib")).unwrap(), b"editor module");
-        let mode = fs::metadata(scope.join("editor/libUnrealEditor-Yorigame.dylib")).unwrap().permissions().mode();
+        assert_eq!(
+            fs::read(scope.join("editor/libUnrealEditor-Yorigame.dylib")).unwrap(),
+            b"editor module"
+        );
+        let mode = fs::metadata(scope.join("editor/libUnrealEditor-Yorigame.dylib"))
+            .unwrap()
+            .permissions()
+            .mode();
         assert_eq!(mode & 0o777, 0o755);
         let plugin = &prepared.plugins[0];
         assert_eq!(plugin.dir, scope.join("plugins/GameTools"));
         assert!(plugin.dir.join("GameTools.uplugin").is_file());
-        assert!(plugin.dir.join("Binaries/Mac/libUnrealEditor-GameTools.dylib").is_file());
-        assert_eq!(plugin.identity, unreal::tree_identity(&plugin.dir, Some("GameTools")).unwrap());
+        assert!(
+            plugin
+                .dir
+                .join("Binaries/Mac/libUnrealEditor-GameTools.dylib")
+                .is_file()
+        );
+        assert_eq!(
+            plugin.identity,
+            unreal::tree_identity(&plugin.dir, Some("GameTools")).unwrap()
+        );
         // The copies are independent of the staged inputs.
-        assert!(!fs::symlink_metadata(scope.join("editor/UnrealEditor.modules")).unwrap().file_type().is_symlink());
+        assert!(
+            !fs::symlink_metadata(scope.join("editor/UnrealEditor.modules"))
+                .unwrap()
+                .file_type()
+                .is_symlink()
+        );
     }
 
     #[test]
@@ -904,13 +1082,25 @@ mod tests {
     #[test]
     fn wrong_build_modules_or_slots_refuse_and_clean_the_scope() {
         let mut cases = vec![];
-        cases.push(("build", Case::with("build", "b2", br#"{"Modules": [{"Name": "GameTools"}]}"#.to_vec(), vec![])));
+        cases.push((
+            "build",
+            Case::with(
+                "build",
+                "b2",
+                br#"{"Modules": [{"Name": "GameTools"}]}"#.to_vec(),
+                vec![],
+            ),
+        ));
         let mut case = Case::new("modules");
         case.request["editor"]["modules"][0]["name"] = "Other".into();
         cases.push(("modules", case));
         let mut case = Case::new("extra");
-        case.request["editor"]["modules"].as_array_mut().unwrap().push(
-            serde_json::json!({"name": "Second", "kind": "Editor", "loading_phase": "Default"}));
+        case.request["editor"]["modules"]
+            .as_array_mut()
+            .unwrap()
+            .push(
+                serde_json::json!({"name": "Second", "kind": "Editor", "loading_phase": "Default"}),
+            );
         cases.push(("extra", case));
         let mut case = Case::new("slot");
         case.request["editor"]["slot"] = "missing".into();
@@ -924,7 +1114,15 @@ mod tests {
         let mut case = Case::new("descslot");
         case.request["plugins"][0]["descriptor_slot"] = "editor".into();
         cases.push(("descslot", case));
-        cases.push(("undeclared", Case::with("undeclared", "b1", br#"{"Modules": [{"Name": "Other"}]}"#.to_vec(), vec![])));
+        cases.push((
+            "undeclared",
+            Case::with(
+                "undeclared",
+                "b1",
+                br#"{"Modules": [{"Name": "Other"}]}"#.to_vec(),
+                vec![],
+            ),
+        ));
         let mut case = Case::new("unknown");
         case.request["editor"]["global"] = "/Users".into();
         cases.push(("unknown", case));
@@ -934,7 +1132,10 @@ mod tests {
         cases.push(("repeat", case));
         for (label, case) in cases {
             assert!(case.run().is_err(), "{label} must refuse");
-            assert!(!case.scope().exists(), "{label} must remove its partial scope");
+            assert!(
+                !case.scope().exists(),
+                "{label} must remove its partial scope"
+            );
         }
     }
 
@@ -946,9 +1147,17 @@ mod tests {
         let last = bytes.iter().rposition(|b| *b == b'e').unwrap();
         bytes[last] = b'E';
         fs::write(&archive, bytes).unwrap();
-        assert!(case.run().unwrap_err().contains("differs from its keyed bytes"));
+        assert!(
+            case.run()
+                .unwrap_err()
+                .contains("differs from its keyed bytes")
+        );
         let case = Case::new("descriptor");
-        fs::write(case.space.0.join("job/inputs/descriptor"), b"{\"Modules\": []}").unwrap();
+        fs::write(
+            case.space.0.join("job/inputs/descriptor"),
+            b"{\"Modules\": []}",
+        )
+        .unwrap();
         assert!(case.run().is_err());
     }
 
@@ -974,20 +1183,34 @@ mod tests {
         pad(&mut extra);
         extra.extend([0u8; 1024]);
         fs::write(space.0.join("extra.tar"), &extra).unwrap();
-        assert!(extract(&space.0.join("extra.tar"), &space.0.join("out3")).unwrap_err().contains("unlisted"));
+        assert!(
+            extract(&space.0.join("extra.tar"), &space.0.join("out3"))
+                .unwrap_err()
+                .contains("unlisted")
+        );
         // An existing target is never overwritten.
         let good = root_tar(&[("a", Some(&b"x"[..]))]);
         fs::write(space.0.join("good.tar"), &good).unwrap();
         fs::create_dir(space.0.join("out4")).unwrap();
         assert!(extract(&space.0.join("good.tar"), &space.0.join("out4")).is_err());
-        assert_eq!(extract(&space.0.join("good.tar"), &space.0.join("out5")).unwrap(), BTreeSet::from(["a".to_owned()]));
+        assert_eq!(
+            extract(&space.0.join("good.tar"), &space.0.join("out5")).unwrap(),
+            BTreeSet::from(["a".to_owned()])
+        );
     }
 
     #[test]
     fn nested_folders_materialize_in_order() {
-        let case = Case::with("nested", "b1", br#"{"Modules": [{"Name": "GameTools"}]}"#.to_vec(),
-                              vec![("Shaders", None), ("Shaders/extra.bin", Some(&b"data"[..]))]);
+        let case = Case::with(
+            "nested",
+            "b1",
+            br#"{"Modules": [{"Name": "GameTools"}]}"#.to_vec(),
+            vec![("Shaders", None), ("Shaders/extra.bin", Some(&b"data"[..]))],
+        );
         let prepared = case.run().unwrap();
-        assert_eq!(fs::read(prepared.editor.dir.join("Shaders/extra.bin")).unwrap(), b"data");
+        assert_eq!(
+            fs::read(prepared.editor.dir.join("Shaders/extra.bin")).unwrap(),
+            b"data"
+        );
     }
 }

@@ -133,7 +133,9 @@ impl Backend for Fake {
             })
         };
         self.source_guard.set(false); // independent capability only; no custody across executor
-        if let Some(flag) = &self.cancel_on_prepare { flag.set(true); }
+        if let Some(flag) = &self.cancel_on_prepare {
+            flag.set(true);
+        }
         outcome
     }
     fn view<'a>(&'a self, c: &'a Checked) -> CheckedView<'a> {
@@ -564,7 +566,14 @@ fn cancellation_during_input_preparation_does_not_stage_remaining_frontier() {
     fake.cancel_on_prepare = Some(flag.clone());
     let demands = BTreeMap::from([("a".into(), Demand::Stored), ("c".into(), Demand::Stored)]);
     let report = build(&f, &["a", "c"], &demands, &mut fake, &mut jobs, &Flag(flag));
-    assert_eq!(trace.borrow().iter().filter(|v| v.starts_with("inputs:")).count(), 1);
+    assert_eq!(
+        trace
+            .borrow()
+            .iter()
+            .filter(|v| v.starts_with("inputs:"))
+            .count(),
+        1
+    );
     assert!(!trace.borrow().iter().any(|v| v.starts_with("execute:")));
     assert_eq!(report.states["a"], State::Cancelled);
     assert_eq!(report.states["c"], State::Cancelled);
