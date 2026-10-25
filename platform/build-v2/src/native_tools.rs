@@ -9,9 +9,10 @@ use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 use std::path::Path;
 
 pub const NATIVE_TOOL_VERSION: &str = "atelier-native-tool-job-1";
-pub const NATIVE_TOOL_FILES: [&str; 5] = [
+pub const NATIVE_TOOL_FILES: [&str; 6] = [
     "protocol.py",
     "recipe_job.py",
+    "recipe_native_paths.py",
     "unreal_tool_ops.py",
     "native_tool_worker.py",
     "zen_package_finalise.py",
@@ -29,7 +30,7 @@ impl NativeToolBundle {
     /// remain execution context, never automatic semantic key ingredients.
     pub fn from_snapshot(snapshot: &SourceSnapshot) -> Result<Self, String> {
         if snapshot.len() != NATIVE_TOOL_FILES.len() {
-            return Err("native tool snapshot requires its exact five source files".into());
+            return Err("native tool snapshot requires its exact six source files".into());
         }
         let mut files = BTreeMap::new();
         for name in NATIVE_TOOL_FILES {
@@ -185,7 +186,7 @@ mod tests {
             .collect();
         let first = NativeToolBundle::from_snapshot(&source).unwrap().identity();
         source.insert(
-            "native_tool_worker.py".into(),
+            "recipe_native_paths.py".into(),
             SnapshotEntry::File(b"# changed\n".to_vec()),
         );
         assert_ne!(

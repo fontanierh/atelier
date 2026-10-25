@@ -31,6 +31,10 @@ pub fn producer_worker_identity() -> Result<ImplementationIdentity, String> {
             include_bytes!("../../studio/atelier/build_v2/recipe_job.py").as_slice(),
         ),
         (
+            "recipe_native_paths.py",
+            include_bytes!("../../studio/atelier/build_v2/recipe_native_paths.py").as_slice(),
+        ),
+        (
             "unreal_tool_ops.py",
             include_bytes!("../../studio/atelier/build_v2/unreal_tool_ops.py").as_slice(),
         ),

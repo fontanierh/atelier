@@ -58,7 +58,7 @@ def _receipt_path(text, *, project, engine, receipt):
     return _absolute(path if path.is_absolute() else receipt.parent / path)
 
 
-def _regular_files(path):
+def _regular_files(path, *, allow_empty=False):
     """An exact file inventory; unsupported links fail rather than vanish from output proof."""
     metadata = path.lstat()
     if stat.S_ISREG(metadata.st_mode):
@@ -67,8 +67,8 @@ def _regular_files(path):
         raise ValueError('UBT output contains a link or unsupported file')
     files = []
     for child in sorted(path.iterdir()):
-        files.extend(_regular_files(child))
-    if not files:
+        files.extend(_regular_files(child, allow_empty=allow_empty))
+    if not files and not allow_empty:
         raise ValueError('UBT output directory is empty')
     return files
 
@@ -149,7 +149,11 @@ def compile_products(engine_root, project, target, *, owned_roots, kind='editor'
 
 
 def verify_cooked_files(cooked_root, files):
-    """Verify the exact upstream inventory supplied by the controller; do not certify cooking."""
+    """Verify every cooked file; empty stock-cooker directories carry no file bytes.
+
+    Links and special entries still refuse, and no unlisted regular file may pass.
+    This observes the controller inventory and does not certify cooking.
+    """
     root = _absolute(cooked_root)
     if not isinstance(files, dict) or not files:
         raise ValueError('Packaging requires a nonempty independently completed cooked inventory')
@@ -167,7 +171,7 @@ def verify_cooked_files(cooked_root, files):
         if actual != digest:
             raise ValueError('Cooked input differs from its upstream identity')
         expected.add(path)
-    if set(_regular_files(root)) != expected:
+    if set(_regular_files(root, allow_empty=True)) != expected:
         raise ValueError('Cooked folder differs from its complete upstream inventory')
     return tuple(sorted(expected))
 

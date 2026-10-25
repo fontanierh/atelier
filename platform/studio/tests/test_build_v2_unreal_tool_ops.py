@@ -100,3 +100,18 @@ def test_uat_environment_uses_existing_headless_repair_and_preserves_explicit_se
     assert original == {'LC_ALL': 'C'}
     assert actual['UE_HEADLESS_USER_DIR'] == str(tmp_path / 'tool-user')
     assert ops.package_environment(tmp_path, {'UE_HEADLESS_USER_DIR': '/explicit'})['UE_HEADLESS_USER_DIR'] == '/explicit'
+
+
+def test_cooked_census_accepts_empty_sdk_directories_but_not_links(tmp_path):
+    cooked = tmp_path / 'Cooked'
+    empty = cooked / 'Game/Metadata/PipelineCaches'
+    empty.mkdir(parents=True)
+    payload = cooked / 'global.bin'
+    payload.write_bytes(b'globals')
+    inventory = {'global.bin': hashlib.sha256(b'globals').hexdigest()}
+    assert ops.verify_cooked_files(cooked, inventory) == (payload,)
+    with pytest.raises(ValueError, match='empty'):
+        ops._regular_files(empty)  # UBT product requirements remain strict.
+    (cooked / 'alias').symlink_to(empty, target_is_directory=True)
+    with pytest.raises(ValueError, match='link'):
+        ops.verify_cooked_files(cooked, inventory)
