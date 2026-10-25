@@ -44,7 +44,12 @@ def _identity(info):
     return (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns, stat.S_IMODE(info.st_mode))
 
 
-def _read_authority(archive):
+def _forward(function, *args, check_cancelled=None):
+    """Call the codec or inventory with the caller's cancellation check, or exactly as before without one."""
+    return function(*args) if check_cancelled is None else function(*args, check_cancelled=check_cancelled)
+
+
+def _read_authority(archive, *, check_cancelled=None):
     """(sha256, decoded manifest) of one stable archive, read through a single descriptor.
 
     The archive is a canonical absolute path without linked ancestors, naming one ordinary single-link file
@@ -63,6 +68,8 @@ def _read_authority(archive):
             raise ValueError('recipe root archive changed while opening')
         hasher = hashlib.sha256()
         for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+            if check_cancelled is not None:
+                check_cancelled()
             hasher.update(chunk)
         stream.seek(0)
         with tarfile.open(fileobj=stream, mode='r:') as tar:
@@ -169,7 +176,7 @@ class CommonRootClones:
         if found != identities:
             raise ValueError('common root snapshot changed')
 
-    def _snapshot(self, key, root, rows):
+    def _snapshot(self, key, root, rows, *, check_cancelled=None):
         if self.clone is None:
             raise ValueError('independent clones are unavailable on this volume')
         snapshot = self.scope / key / 'root'
@@ -183,6 +190,8 @@ class CommonRootClones:
                     target.mkdir(mode=0o700)
                     directories.append(target)
                 else:
+                    if check_cancelled is not None:
+                        check_cancelled()
                     self.clone(root / name, target)
                     target.chmod(0o555 if mode == 0o755 else 0o444)
             for directory in reversed(directories):
@@ -191,7 +200,7 @@ class CommonRootClones:
             for name, kind, *_ in rows:
                 identities[name] = None if kind == 'directory' else _identity((snapshot / name).lstat())
             self.snapshots[key] = (rows, identities)
-            if [tuple(row) for row in self.inventory(snapshot)] != rows:
+            if [tuple(row) for row in _forward(self.inventory, snapshot, check_cancelled=check_cancelled)] != rows:
                 raise ValueError('common root snapshot differs from its manifest')
         except BaseException:
             self.snapshots.pop(key, None)
@@ -235,12 +244,14 @@ class CommonRootClones:
             raise ValueError('shared root differs from its manifest after cloning')
         return {'archive': key, 'snapshot': 'reused', 'files': len(files), 'bytes': sum(s for _, s, _ in files)}
 
-    def materialize(self, archive, destination):
+    def materialize(self, archive, destination, *, check_cancelled=None):
         """Create a fresh verified ROOT at ``destination`` from ``archive``, for the view's own input.
 
         File and absent ROOTs keep the original codec. The first directory ROOT of an archive digest is
         byte-unpacked by the original codec, then becomes the snapshot; later ones are independent clones of
         that snapshot with their manifest modes, never unpacked or copied again, and must inventory exactly.
+        ``check_cancelled`` (raising to cancel) is called per archive hash chunk and repeated clone member, and
+        forwarded to the codec and inventory; without it they are invoked exactly as before.
         """
         self._check_scope()
         destination = Path(destination)
@@ -251,19 +262,19 @@ class CommonRootClones:
         for other in (self.scope, Path(archive)):  # Refused for every kind, before anything is written.
             if destination == other or destination.is_relative_to(other) or other.is_relative_to(destination):
                 raise ValueError('materialized root aliases the clone scope or its archive')
-        key, manifest = _read_authority(archive)
-        if manifest['kind'] in ('file', 'absent'):
-            recipe_job.unpack_root(archive, destination)  # Unshared: the original codec, unchanged.
+        key, manifest = _read_authority(archive, check_cancelled=check_cancelled)
+        if manifest['kind'] in ('file', 'absent'):  # Unshared: the original codec, unchanged.
+            _forward(recipe_job.unpack_root, archive, destination, check_cancelled=check_cancelled)
             return {'archive': key, 'snapshot': 'none', 'files': 0, 'bytes': 0}
         rows = _directory_rows(manifest)
         files = [(name, size, mode) for name, kind, size, mode, _ in rows if kind == 'file']
         stats = {'archive': key, 'files': len(files), 'bytes': sum(size for _, size, _ in files)}
         if key not in self.snapshots:
-            recipe_job.unpack_root(archive, destination)
             try:
-                if [tuple(row) for row in self.inventory(destination)] != rows:
+                _forward(recipe_job.unpack_root, archive, destination, check_cancelled=check_cancelled)
+                if [tuple(row) for row in _forward(self.inventory, destination, check_cancelled=check_cancelled)] != rows:
                     raise ValueError('unpacked root differs from its archive manifest')
-                self._snapshot(key, destination, rows)
+                self._snapshot(key, destination, rows, check_cancelled=check_cancelled)
             except BaseException:
                 shutil.rmtree(destination, ignore_errors=True)  # Only the fresh destination this call created.
                 raise
@@ -280,11 +291,13 @@ class CommonRootClones:
                 if kind == 'directory':
                     (destination / name).mkdir(mode=0o755)
                 else:
+                    if check_cancelled is not None:
+                        check_cancelled()
                     self.clone(snapshot / name, destination / name)
                     (destination / name).chmod(mode)
             self._check_scope()
             self._verify_snapshot(key)
-            if [tuple(row) for row in self.inventory(destination)] != rows:
+            if [tuple(row) for row in _forward(self.inventory, destination, check_cancelled=check_cancelled)] != rows:
                 raise ValueError('materialized root differs from its archive manifest')
         except BaseException:
             shutil.rmtree(destination, ignore_errors=True)  # Only the fresh destination this call created.
