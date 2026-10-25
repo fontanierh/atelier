@@ -19,6 +19,7 @@
 #include "ShaderLibrary/EditorShaderCodeArchive.h"
 #include "UObject/PackageFileSummary.h"
 #include <CommonCrypto/CommonDigest.h>
+#include <sys/stat.h>
 
 namespace
 {
@@ -64,6 +65,28 @@ bool ShaderFormatAndPlatform(const FString& Value)
     TArray<FString> Parts;
     Value.ParseIntoArray(Parts, TEXT("-"), false);
     return Parts.Num() == 2 && Token(Parts[0]) && Token(Parts[1]);
+}
+bool SameOwnedDirectory(const FString& Actual, const FString& Expected)
+{
+    // Metal's stock writer lowercases the complete .metalmap filename. A case alias
+    // is accepted only for this exact parent and the same physical, no-link directory.
+    if (!Actual.Equals(Expected, ESearchCase::IgnoreCase)) return false;
+    auto Directory = [](const FString& Path, struct stat& Result)
+    {
+        if (FPaths::IsRelative(Path)) return false;
+        TArray<FString> Parts; Path.ParseIntoArray(Parts, TEXT("/"), true);
+        FString Current = TEXT("/");
+        for (const FString& Part : Parts)
+        {
+            if (Part == TEXT(".") || Part == TEXT("..")) return false;
+            Current /= Part;
+            if (lstat(TCHAR_TO_UTF8(*Current), &Result) != 0 || !S_ISDIR(Result.st_mode)) return false;
+        }
+        return !Parts.IsEmpty();
+    };
+    struct stat Left{}, Right{};
+    return Directory(Actual, Left) && Directory(Expected, Right)
+        && Left.st_dev == Right.st_dev && Left.st_ino == Right.st_ino;
 }
 bool Pinned(const FObject& Spec, TArray<uint8>& Bytes)
 {
@@ -517,6 +540,9 @@ FString AtelierZenFinaliseRequest(const FString& RequestJson)
     ExpectedFiles.Add(TEXT("Metadata/") + UE::Cook::GetCookMetadataFilename());
     }
     TMap<FName, TSet<FString>> ObservedPackageMaps;
+    // A whole certified global item is current data. SDK incremental loading
+    // deliberately drops NAME_None owners, whose contract is to be re-added each cook.
+    const ESource SourceOrigin = GlobalLibrary ? ESource::CurrentCook : ESource::PreviousIncremental;
     for (const FString& Format : FormatNames)
     {
         FEditorShaderCodeArchive Destination{FName(*Format)};
@@ -539,7 +565,7 @@ FString AtelierZenFinaliseRequest(const FString& RequestJson)
             }
             for (const auto& Pair : SourceMembership) if (H->Packages.Contains(Pair.Key)) Expected.Add(Pair.Key, Pair.Value);
             FEditorShaderCodeArchive Source{FName(*Format)}; Source.OpenLibrary(Library);
-            Source.AddShaderCodeLibraryFromDirectory(H->Content, ESource::PreviousIncremental);
+            Source.AddShaderCodeLibraryFromDirectory(H->Content, SourceOrigin);
             for (const FShaderHash& Hash : Native) if (!Source.HasShaderMap(Hash)) return Fail(TEXT("native_source_shader_map_load_incomplete"));
             TUniquePtr<FEditorShaderCodeArchive> Chunk;
             if (GlobalLibrary)
@@ -550,7 +576,7 @@ FString AtelierZenFinaliseRequest(const FString& RequestJson)
                 Chunk = MakeUnique<FEditorShaderCodeArchive>(FName(*Format)); Chunk->OpenLibrary(Library);
                 for (int32 I = 0; I < Native.Num(); ++I)
                 {
-                    Chunk->AddShaderCode(I, Source, ESource::PreviousIncremental);
+                    Chunk->AddShaderCode(I, Source, SourceOrigin);
                     GlobalMaps.Add(Native[I].ToString());
                 }
             }
@@ -559,14 +585,14 @@ FString AtelierZenFinaliseRequest(const FString& RequestJson)
             if (!Chunk->IsEmpty())
             {
                 FSerializedShaderArchive Archive; TArray<uint8> Code; bool Full = false;
-                Chunk->CopyToArchiveAndClear(Archive, Code, Full, MAX_int64, MAX_int64, ESource::PreviousIncremental);
+                Chunk->CopyToArchiveAndClear(Archive, Code, Full, MAX_int64, MAX_int64, SourceOrigin);
                 if (Full) return Fail(TEXT("native_selected_shader_chunk_exceeded_bounds"));
                 // CreateNamedChunk selects code but preserves the parent's full
                 // association set for shared maps. Remove unselected owners from
                 // the public transfer archive before merging either history.
                 for (const auto& Pair : SourceMembership)
                     if (!H->Packages.Contains(Pair.Key)) Archive.GetShaderMapAssetAssociations().RemoveAsset(Pair.Key);
-                if (!Destination.AppendFromArchive(Archive, TConstArrayView64<uint8>(Code.GetData(), Code.Num()), ESource::PreviousIncremental))
+                if (!Destination.AppendFromArchive(Archive, TConstArrayView64<uint8>(Code.GetData(), Code.Num()), SourceOrigin))
                     return Fail(TEXT("native_selected_shader_append_failed"));
             }
         }
@@ -614,7 +640,7 @@ FString AtelierZenFinaliseRequest(const FString& RequestJson)
                 // Metal's stock writer lowercases the full .metalmap path. Use
                 // its observed filename with the owned output directory's case;
                 // do not let a case alias escape the actual output inventory.
-                if (!FPaths::IsSamePath(FPaths::GetPath(FPaths::ConvertRelativePathToFull(File)),
+                if (!SameOwnedDirectory(FPaths::GetPath(FPaths::ConvertRelativePathToFull(File)),
                         FPaths::ConvertRelativePathToFull(Output / TEXT("Content"))))
                     return Fail(TEXT("native_shader_library_wrote_outside_output"));
                 const FString Name = FPaths::GetCleanFilename(File);
