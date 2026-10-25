@@ -45,6 +45,8 @@ def inventory(root):
             for child in sorted(path.iterdir(), key=lambda p: p.name):
                 visit(child, name + '/' + child.name if name else child.name)
         elif stat.S_ISREG(before.st_mode):
+            if before.st_nlink != 1:
+                raise ValueError('root contains a hard link')
             digest = hashlib.sha256()
             count = 0
             fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
@@ -243,18 +245,14 @@ def bind(binding, view):
     sys.path.insert(0, str(source.parent))
     namespace = runpy.run_path(str(source), run_name='atelier_recipe_callback_source')
     tree = ast.parse(source.read_text(), filename=str(source))
-    nodes = [node for node in ast.walk(tree) if isinstance(node, (ast.FunctionDef, ast.Lambda))
-             and node.lineno == binding['line']]
-    if len(nodes) != 1:
-        raise ValueError('callback source location is ambiguous')
     if binding.get('bound') is not None:
         raise ValueError('bound callable requires an explicit receiver role')
     captures = binding.get('captures', binding.get('closure'))
     freevars = []
     # Recompile the actual nested body inside a factory to retain Python's freevar semantics.
-    qualname = binding['qualname'].split('.')[-1]
-    original = next((c for c in _codes(compile(tree, str(source), 'exec'))
-                     if c.co_firstlineno == binding['line'] and c.co_name == qualname), None)
+    matches = [code for code in _codes(compile(tree, str(source), 'exec'))
+               if code.co_firstlineno == binding['line'] and code.co_qualname == binding['qualname']]
+    original = matches[0] if len(matches) == 1 else None
     if original is None or len(original.co_freevars) != len(captures):
         raise ValueError('callback closure does not match current source')
     for value in captures:
@@ -271,6 +269,48 @@ def _codes(code):
     for value in code.co_consts:
         if isinstance(value, types.CodeType):
             yield from _codes(value)
+
+
+def verify_encoded_plan(root, *, parent, limits):
+    """Reuse the original encoded decoder for every complete planned packet."""
+    from atelier import encoded_glb
+    if root.is_symlink() or not root.is_dir() or any(p.is_symlink() or not p.is_file() or p.stat().st_nlink != 1 for p in root.iterdir()):
+        raise ValueError('encoded plan contains a link or unsupported member')
+    raw = (root / 'plan.json').read_bytes()
+    if len(raw) > limits['max_manifest_bytes']:
+        raise ValueError('encoded manifest exceeds declared bound')
+    value = json.loads(raw)
+    if (value.get('parent') != parent or value.get('kind') != 'encoded_glb'
+            or value.get('schema') != 1 or value.get('complete') is not True
+            or value.get('triangle_limit') != 32768
+            or not 0 < len(value.get('pieces', ())) <= limits['max_pieces']):
+        raise ValueError('incomplete encoded plan')
+    expected = {'plan.json'}
+    totals = {'render': 0, 'collision': 0}
+    total_bytes = len(raw)
+    for row in value['pieces']:
+        name = relative(row['name'])
+        if '/' in name or row['payload'] != name + '.mesh' or row['payload'] in expected:
+            raise ValueError('aliased encoded plan member')
+        expected.add(row['payload'])
+        path = root / row['payload']
+        if path.stat().st_size > limits['max_member_bytes']:
+            raise ValueError('encoded member exceeds declared bound')
+        packet = path.read_bytes()
+        identity, _ = encoded_glb.decode(packet, key=name)
+        if (hashlib.sha256(packet).hexdigest() != row['sha256']
+                or any(identity[field] != row[field] for field in ('triangles', 'role', 'bounds'))):
+            raise ValueError('encoded member differs from complete plan')
+        totals[identity['role']] += identity['triangles']
+        total_bytes += len(packet)
+    if (total_bytes > limits['max_total_bytes'] or not totals['render']
+            or value['source_triangles'] != sum(totals.values())
+            or value['source_render_triangles'] != totals['render']
+            or value['source_collision_triangles'] != totals['collision']
+            or {p.name for p in root.iterdir()} != expected
+            or any(p.is_symlink() or not p.is_file() for p in root.iterdir())):
+        raise ValueError('incomplete encoded plan conservation or membership')
+    return value
 
 
 def run(context):
@@ -307,9 +347,14 @@ def run(context):
                       required=row.get('required', True))
         if recipe.get('geometry'):
             geometry = recipe['geometry']
-            from atelier.build_v2.blender_ops import verify_plan
             root = view / relative(geometry['source'])
-            verify_plan(root, parent=geometry['parent'], limits=context.params['plan_limits'])
+            if geometry['encoding'] == 'encoded_glb':
+                verify_encoded_plan(root, parent=geometry['parent'], limits=context.params['plan_limits'])
+            elif geometry['encoding'] == 'mesh_ir':
+                from atelier.build_v2.blender_ops import verify_plan
+                verify_plan(root, parent=geometry['parent'], limits=context.params['plan_limits'])
+            else:
+                raise ValueError('unsupported geometry encoding')
             shutil.copytree(root, output / 'geometry')
     finally:
         sys.argv[:] = old[0]

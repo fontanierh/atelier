@@ -457,11 +457,21 @@ pub struct PythonExecution {
     pub limits: Limits,
 }
 
+pub struct UnrealExecution {
+    pub locations: crate::unreal_controller::UnrealLocations,
+    pub sources: crate::validate::SourceSnapshot,
+    pub cache_root: PathBuf,
+    pub worker: crate::keys::ImplementationIdentity,
+    pub memory_gib: u32,
+    pub limits: Limits,
+}
+
 pub struct PythonExecutor<L> {
     launcher: L,
     config: PythonExecution,
     blender: Option<PythonExecution>,
     recipes: Vec<PythonExecution>,
+    unreal: Option<UnrealExecution>,
     scripted_fixture: bool,
 }
 
@@ -474,8 +484,14 @@ impl<L> PythonExecutor<L> {
             config,
             blender: None,
             recipes: Vec::new(),
+            unreal: None,
             scripted_fixture: false,
         }
+    }
+
+    pub fn with_unreal(mut self, config: UnrealExecution) -> Self {
+        self.unreal = Some(config);
+        self
     }
 
     pub fn with_recipe(mut self, config: PythonExecution) -> Self {
@@ -495,6 +511,7 @@ impl<L> PythonExecutor<L> {
             config,
             blender: None,
             recipes: Vec::new(),
+            unreal: None,
             scripted_fixture: true,
         }
     }
@@ -554,17 +571,38 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
                     compatibility.worker_version == config.bundle.identity().version
                 })
             };
-            let Some(config) = config else {
+            let native = self.unreal.as_ref().filter(|_| {
+                matches!(
+                    compatibility.op_kind.as_str(),
+                    crate::unreal_controller::RAW_IMPORT | crate::unreal_controller::FINISH
+                )
+            });
+            if config.is_none() && native.is_none() {
                 stopped |= emit(Event::Failed {
                     work,
                     reason: "no registered worker for keyed runtime".into(),
                 }) == Flow::Stop;
                 continue;
+            }
+            let config = config.unwrap_or(&self.config);
+            let (worker, profile, memory_gib, limits) = if let Some(native) = native {
+                (
+                    native.worker.clone(),
+                    "normal-unreal",
+                    native.memory_gib,
+                    native.limits,
+                )
+            } else {
+                (
+                    config.bundle.identity(),
+                    config.profile.as_str(),
+                    config.memory_gib,
+                    config.limits,
+                )
             };
-            let worker = config.bundle.identity();
             if compatibility.worker_version != worker.version
                 || compatibility.worker_digest != worker.digest
-                || compatibility.profile != config.profile
+                || compatibility.profile != profile
             {
                 stopped |= emit(Event::Failed {
                     work,
@@ -582,23 +620,63 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
                 }) == Flow::Stop;
                 continue;
             }
-            let command = match config.bundle.command(&config.interpreter, scope) {
-                Ok(command) => command,
-                Err(reason) => {
-                    stopped |= emit(Event::Failed { work, reason }) == Flow::Stop;
-                    continue;
+            let native_launch = if let Some(native) = native {
+                match native
+                    .locations
+                    .build(
+                        work.prepared(),
+                        &work.inputs().staged,
+                        &native.sources,
+                        &native.cache_root,
+                    )
+                    .and_then(|context| {
+                        crate::unreal_controller::prepare(
+                            work.prepared(),
+                            &work.inputs().staged,
+                            &native.sources,
+                            scope,
+                            &context,
+                        )
+                    }) {
+                    Ok(prepared) => Some(std::sync::Arc::new(std::sync::Mutex::new(prepared))),
+                    Err(reason) => {
+                        stopped |= emit(Event::Failed { work, reason }) == Flow::Stop;
+                        continue;
+                    }
+                }
+            } else {
+                None
+            };
+            let (command, job, written) = if let Some(native) = &native_launch {
+                let prepared = native.lock().map_err(|_| "native launch lock poisoned")?;
+                (
+                    prepared.command.clone(),
+                    prepared.request.clone(),
+                    crate::unreal::UNREAL_WORKER_FILES.len(),
+                )
+            } else {
+                match config.bundle.command(&config.interpreter, scope) {
+                    Ok(command) => (
+                        command,
+                        work.inputs().staged.request().clone(),
+                        config.bundle.file_count(),
+                    ),
+                    Err(reason) => {
+                        stopped |= emit(Event::Failed { work, reason }) == Flow::Stop;
+                        continue;
+                    }
                 }
             };
-            work.inputs().io.borrow_mut().worker_files_written += config.bundle.file_count();
+            work.inputs().io.borrow_mut().worker_files_written += written;
             let spec = JobSpec {
-                job: work.inputs().staged.request().clone(),
+                job,
                 worker_version: worker.version,
                 command,
                 purpose: format!("build-v2 {} unit", compatibility.op_kind),
-                memory_gib: config.memory_gib,
-                limits: config.limits,
+                memory_gib,
+                limits,
                 report_root,
-                custody: vec![], // Inputs are independent; no checkout read guard survives staging.
+                custody: vec![],
             };
             let production = if self.scripted_fixture {
                 None
@@ -636,6 +714,7 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
             // Compact metadata only, populated after the driver returns even if the adapter
             // subsequently refuses held/inconsistent cleanup. No report field grants authority.
             let diagnostics = std::sync::Mutex::new((false, Vec::new()));
+            let before_run = native_launch.clone();
             let result = std::thread::scope(|scope| {
                 let launcher = &mut self.launcher;
                 let ticket = work.ticket_mut();
@@ -665,6 +744,12 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
                                         "fresh retry staging is unsupported; prior output retained"
                                             .into(),
                                     );
+                                }
+                                if let Some(native) = &before_run {
+                                    native
+                                        .lock()
+                                        .map_err(|_| "native launch lock poisoned")?
+                                        .verify_context()?;
                                 }
                                 Ok(job.clone())
                             },
@@ -758,21 +843,35 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
                         continue;
                     }
                     match report.outcome.end {
-                        End::Completed => match report.outputs {
-                            Some(outputs) => Event::Completed {
-                                work,
-                                completion: PythonCompletion {
-                                    reported: outputs.files,
-                                },
-                            },
-                            None => {
-                                fatal = Some("completed lifecycle omitted output manifest".into());
-                                Event::Failed {
-                                    work,
-                                    reason: "completed lifecycle omitted output manifest".into(),
+                        End::Completed => {
+                            if let Some(native) = &native_launch {
+                                let verified = native
+                                    .lock()
+                                    .map_err(|_| "native launch lock poisoned")?
+                                    .verify_completed(&work.inputs().staged);
+                                if let Err(reason) = verified {
+                                    stopped |= emit(Event::Failed { work, reason }) == Flow::Stop;
+                                    continue;
                                 }
                             }
-                        },
+                            match report.outputs {
+                                Some(outputs) => Event::Completed {
+                                    work,
+                                    completion: PythonCompletion {
+                                        reported: outputs.files,
+                                    },
+                                },
+                                None => {
+                                    fatal =
+                                        Some("completed lifecycle omitted output manifest".into());
+                                    Event::Failed {
+                                        work,
+                                        reason: "completed lifecycle omitted output manifest"
+                                            .into(),
+                                    }
+                                }
+                            }
+                        }
                         End::Failed(Stop::Cancelled) => Event::Cancelled { work },
                         End::Failed(reason) => Event::Failed {
                             work,

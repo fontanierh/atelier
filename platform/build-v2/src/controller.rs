@@ -115,6 +115,10 @@ impl ControllerRequest {
                 {
                     crate::recipe_ops::validate_params(&unit.params)?;
                 }
+                crate::unreal_controller::RAW_IMPORT | crate::unreal_controller::FINISH
+                    if unit.output_groups.is_empty()
+                        && unit.script == crate::unreal_controller::ENTRY => {}
+                crate::encoded_ops::KIND if unit.output_groups.is_empty() => {}
                 BLENDER_PLAN_KIND if unit.output_groups.len() == 1 && unit.outputs.is_empty() => {
                     blender_plan_spec(self, unit)?.definition()?;
                 }
@@ -231,6 +235,7 @@ pub struct PreparedController {
     pub worker: PythonWorkerBundle,
     pub blender_worker: Option<PythonWorkerBundle>,
     pub recipe_workers: Vec<(PythonWorkerBundle, bool)>,
+    pub unreal_worker: Option<crate::unreal::UnrealWorkerBundle>,
     pub runtimes: BTreeMap<String, Runtime>,
     pub targets: Vec<Target>,
     pub demands: BTreeMap<String, FinalDemands>,
@@ -257,6 +262,15 @@ pub(crate) fn registry(request: &ControllerRequest) -> Result<crate::validate::O
     }
     let mut registry = BTreeMap::new();
     spec.register(&mut registry)?;
+    crate::encoded_ops::register(&mut registry);
+    if request.declaration.units.iter().any(|u| {
+        matches!(
+            u.op.kind.as_str(),
+            crate::unreal_controller::RAW_IMPORT | crate::unreal_controller::FINISH
+        )
+    }) {
+        crate::unreal_controller::register(&mut registry, &request.data_contract.content_slots)?;
+    }
     crate::recipe_ops::register(&mut registry, &request.data_contract.content_slots)?;
     if let Some(unit) = request
         .declaration
@@ -359,6 +373,31 @@ pub fn prepare(request: &ControllerRequest) -> Result<PreparedController, String
             ));
         }
     }
+    let unreal_worker = if selected.order().iter().any(|id| {
+        graph.unit(id).is_some_and(|u| {
+            matches!(
+                u.op.kind.as_str(),
+                crate::unreal_controller::RAW_IMPORT | crate::unreal_controller::FINISH
+            )
+        })
+    }) {
+        let source = capture_sources(
+            &request.checkout.join(WORKER_DIRECTORY),
+            crate::unreal::UNREAL_WORKER_FILES,
+        )?;
+        let files = crate::unreal::UNREAL_WORKER_FILES
+            .into_iter()
+            .map(|name| match source.snapshot.get(name) {
+                Some(crate::validate::SnapshotEntry::File(bytes)) => {
+                    Ok((name.to_string(), bytes.clone()))
+                }
+                _ => Err("missing frozen Unreal worker source"),
+            })
+            .collect::<Result<BTreeMap<_, _>, _>>()?;
+        Some(crate::unreal::UnrealWorkerBundle::from_files(files).map_err(|e| e.to_string())?)
+    } else {
+        None
+    };
     let mut runtimes = BTreeMap::new();
     for id in selected.order() {
         let unit = graph.unit(id).ok_or("selected unit missing")?;
@@ -383,13 +422,30 @@ pub fn prepare(request: &ControllerRequest) -> Result<PreparedController, String
                             _ => Err("missing recipe group code"),
                         })
                         .collect::<Result<BTreeMap<_, _>, _>>()?;
-                    crate::recipe_ops::group_validator(&code)?
+                    crate::recipe_ops::group_validator(&code, &unit.output_groups[0].encoding)?
                 },
                 if blender {
                     "recipe-blender"
                 } else {
                     "recipe-python"
                 },
+            )
+        } else if matches!(
+            unit.op.kind.as_str(),
+            crate::unreal_controller::RAW_IMPORT | crate::unreal_controller::FINISH
+        ) {
+            (
+                crate::unreal_controller::worker_identity(
+                    unreal_worker.as_ref().ok_or("missing Unreal worker")?,
+                ),
+                crate::unreal_controller::validator_identity(),
+                "normal-unreal",
+            )
+        } else if unit.op.kind == crate::encoded_ops::KIND {
+            (
+                worker.identity(),
+                crate::encoded_ops::identity(&sources.snapshot)?,
+                "normal-python-data",
             )
         } else if unit.op.kind == "py_data" {
             (
@@ -443,6 +499,7 @@ pub fn prepare(request: &ControllerRequest) -> Result<PreparedController, String
         worker,
         blender_worker,
         recipe_workers,
+        unreal_worker,
         runtimes,
         targets,
         demands,
@@ -471,6 +528,7 @@ pub struct ExecutionContext {
     pub cache_root: PathBuf,
     pub interpreter: PathBuf,
     pub blender: Option<PathBuf>,
+    pub unreal: Option<crate::unreal_controller::UnrealLocations>,
     /// Actual controller identity supplied by the normal caller's authoritative OS probe.
     pub owner: ProcessIdentity,
     pub provenance: Provenance,
@@ -589,6 +647,7 @@ fn execute_static<L: WorkerLauncher + Send>(
         worker,
         blender_worker,
         recipe_workers,
+        unreal_worker,
         runtimes,
         targets,
         demands,
@@ -705,6 +764,37 @@ fn execute_static<L: WorkerLauncher + Send>(
             } else {
                 "recipe-python".into()
             },
+            memory_gib: context.memory_gib,
+            limits: context.limits,
+        });
+    }
+    if let Some(bundle) = unreal_worker {
+        let locations = context
+            .unreal
+            .clone()
+            .ok_or("native units require execution.unreal context locations")?;
+        let mut native_sources = BTreeMap::new();
+        for (name, bytes) in bundle.files() {
+            native_sources.insert(
+                format!("{WORKER_DIRECTORY}/{name}"),
+                crate::validate::SnapshotEntry::File(bytes.clone()),
+            );
+        }
+        for name in locations.config_sources.values() {
+            native_sources.insert(
+                name.clone(),
+                sources
+                    .snapshot
+                    .get(name)
+                    .ok_or("native Config source was not declared")?
+                    .clone(),
+            );
+        }
+        executor = executor.with_unreal(crate::python_executor::UnrealExecution {
+            locations,
+            sources: native_sources,
+            cache_root: context.cache_root.clone(),
+            worker: crate::unreal_controller::worker_identity(&bundle),
             memory_gib: context.memory_gib,
             limits: context.limits,
         });

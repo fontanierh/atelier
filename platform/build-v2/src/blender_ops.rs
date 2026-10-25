@@ -627,7 +627,14 @@ pub fn validate_geometry_outputs(
         if bytes.len() as u64 != manifest.size() {
             return Err("frozen manifest size differs".into());
         }
-        let strict = parse_blender_plan_metadata(&bytes, contract.max_manifest_bytes)?;
+        let strict = if contract.encoding == PlanEncoding::MeshIr {
+            parse_blender_plan_metadata(&bytes, contract.max_manifest_bytes)?
+        } else if contract.encoding == PlanEncoding::EncodedGlb {
+            crate::py_data::validate_py_data_payload("JsonData", "plan.json", &bytes)?;
+            serde_json::from_slice(&bytes).map_err(|e| e.to_string())?
+        } else {
+            return Err("unsupported producer geometry encoding".into());
+        };
         if &strict != roster.raw() {
             return Err("frozen metadata views differ".into());
         }

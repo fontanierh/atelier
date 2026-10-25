@@ -60,6 +60,10 @@ fn validator_identity(unit: &PreparedUnit) -> crate::keys::ImplementationIdentit
 fn check_unit_identity(unit: &PreparedUnit) -> Result<(), String> {
     match unit.ingredients().op.kind.as_str() {
         "recipe.python" | "recipe.blender" => crate::recipe_ops::check(unit),
+        crate::encoded_ops::KIND => crate::encoded_ops::check(unit),
+        crate::unreal_controller::RAW_IMPORT | crate::unreal_controller::FINISH => {
+            crate::unreal_controller::check_unit(unit)
+        }
         "py_data" => check_py_data_unit_identity(unit),
         kind @ (BLENDER_PLAN_KIND | BLENDER_EXPORT_KIND) => {
             blender_ops::check_blender_identity(unit, kind, &validator_identity(unit))?;
@@ -80,9 +84,14 @@ fn check_unit_identity(unit: &PreparedUnit) -> Result<(), String> {
 fn validate_fixed_outputs(
     unit: &PreparedUnit,
     outputs: &[crate::results::FrozenOutput<'_>],
+    staged: &StagedJob,
 ) -> Result<(), String> {
     match unit.ingredients().op.kind.as_str() {
         "recipe.python" | "recipe.blender" => crate::recipe_ops::validate_outputs(unit, outputs),
+        crate::encoded_ops::KIND => crate::encoded_ops::validate_outputs(unit, outputs, staged),
+        crate::unreal_controller::RAW_IMPORT | crate::unreal_controller::FINISH => {
+            crate::unreal_controller::validate_outputs(unit, outputs)
+        }
         "py_data" => validate_py_data_unit_outputs(unit, outputs),
         BLENDER_EXPORT_KIND => {
             blender_ops::validate_blender_export_outputs(unit, &validator_identity(unit), outputs)
@@ -907,9 +916,12 @@ impl Backend for PythonBackend<'_> {
             .ok_or("completed work has no local lease")?
             .freeze(
                 actual,
-                |outputs| validate_fixed_outputs(&unit, outputs),
+                |outputs| validate_fixed_outputs(&unit, outputs, &inputs.staged),
                 |contract, _, objects| {
-                    if unit.ingredients().op.kind == "recipe.blender" {
+                    if matches!(
+                        unit.ingredients().op.kind.as_str(),
+                        "recipe.blender" | "recipe.python"
+                    ) {
                         crate::recipe_ops::check(&unit)?;
                         return blender_ops::validate_geometry_outputs(contract, objects)
                             .map(|_| ());

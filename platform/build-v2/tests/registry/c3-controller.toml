@@ -1,0 +1,11 @@
+schema_version = 1
+
+[[scenarios]]
+id = "c3.controller.native_package_names_refuse_aliases_and_non_game_names"
+tests = ["atelier-build-v2/unreal_controller::tests::native_package_names_refuse_aliases_and_non_game_names"]
+tier = "t0"
+
+[[scenarios]]
+id = "c3.controller.native_registry_is_fixed_and_never_replaces_an_existing_definition"
+tests = ["atelier-build-v2/unreal_controller::tests::native_registry_is_fixed_and_never_replaces_an_existing_definition"]
+tier = "t0"
