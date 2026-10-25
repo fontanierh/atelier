@@ -909,6 +909,11 @@ impl Backend for PythonBackend<'_> {
                 actual,
                 |outputs| validate_fixed_outputs(&unit, outputs),
                 |contract, _, objects| {
+                    if unit.ingredients().op.kind == "recipe.blender" {
+                        crate::recipe_ops::check(&unit)?;
+                        return blender_ops::validate_geometry_outputs(contract, objects)
+                            .map(|_| ());
+                    }
                     if unit.ingredients().op.kind != BLENDER_PLAN_KIND {
                         return Err("output group outside registered Blender planner".into());
                     }

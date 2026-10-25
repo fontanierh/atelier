@@ -155,7 +155,18 @@ fn strict_request_refuses_unknown_fields_and_unsupported_ops() {
         "duplicate nested control field accepted"
     );
     raw.resize(2 * 1024 * 1024 + 1, b' ');
+    assert!(ControllerRequest::parse(&raw).is_ok());
+    raw.resize(atelier_build_v2::controller::MAX_CONTROL_BYTES + 1, b' ');
     assert!(ControllerRequest::parse(&raw).is_err());
+    let mut malformed_template = base.clone();
+    malformed_template["templates"] = json!([[]]);
+    assert!(
+        parse(&malformed_template)
+            .unwrap_err()
+            .contains("must be a JSON object")
+    );
+    malformed_template["templates"] = json!([{"producer":"data.copy", "unknown":true}]);
+    assert!(parse(&malformed_template).is_err());
 }
 
 #[test]

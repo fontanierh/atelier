@@ -6,6 +6,7 @@ follow links, represent optional absence explicitly, and restore only their name
 import ast
 from collections.abc import Mapping
 import hashlib
+from dataclasses import is_dataclass
 import importlib
 import importlib.util
 import io
@@ -180,6 +181,9 @@ def prepare_view(job, job_dir):
             continue
         if staged.endswith('.tree.tar'):
             unpack_root(source, result)
+        elif stat.S_ISDIR(source.lstat().st_mode):
+            inventory(source)  # Reject links/special members before copying the complete staged Item.
+            shutil.copytree(source, result)
         else:
             if not stat.S_ISREG(source.lstat().st_mode):
                 raise ValueError('raw mapped input is not a regular file')
@@ -198,9 +202,9 @@ def prepare_view(job, job_dir):
     return view, protected, writes
 
 
-def _value(value, view):
+def _value(value, view, namespace=None):
     if isinstance(value, (list, tuple)):
-        return [_value(v, view) for v in value]
+        return [_value(v, view, namespace) for v in value]
     if not isinstance(value, Mapping):
         return value
     if set(value) == {'path'}:
@@ -212,35 +216,40 @@ def _value(value, view):
         if 'source' in value and 'root' not in value and Path(module.__file__) != view / relative(value['source']):
             raise ValueError('callback module differs from declared source')
         return module
+    if set(value) == {'derived_items'}:
+        descriptor = value['derived_items']
+        if set(descriptor) != {'root', 'members'}:
+            raise ValueError('unresolved derived item roster')
+        return [(types.SimpleNamespace(products=[types.SimpleNamespace(paths=(view / relative(row['root']),))]), row['piece'])
+                for row in descriptor['members']]
     if set(value) == {'set'}:
-        return set(_value(value['set'], view))
+        return set(_value(value['set'], view, namespace))
     if set(value) == {'callable'}:
         return bind(value['callable'], view)
     if set(value) == {'type'}:
         module, _, name = value['type'].rpartition('.')
         return getattr(importlib.import_module(module), name)
     if set(value) == {'record', 'fields'}:
-        raise ValueError('callback record requires an explicit declared class binding')
-    return {k: _value(v, view) for k, v in value.items()}
+        classes = [candidate for candidate in (namespace or {}).values()
+                   if isinstance(candidate, type) and candidate.__name__ == value['record'] and is_dataclass(candidate)]
+        if len(set(classes)) != 1:
+            raise ValueError('callback record has no unique captured class binding')
+        return classes[0](**{key: _value(item, view, namespace) for key, item in value['fields'].items()})
+    return {k: _value(v, view, namespace) for k, v in value.items()}
 
 
 def bind(binding, view):
     source = view / relative(binding['source'])
+    sys.path.insert(0, str(source.parent))
     namespace = runpy.run_path(str(source), run_name='atelier_recipe_callback_source')
     tree = ast.parse(source.read_text(), filename=str(source))
     nodes = [node for node in ast.walk(tree) if isinstance(node, (ast.FunctionDef, ast.Lambda))
              and node.lineno == binding['line']]
     if len(nodes) != 1:
         raise ValueError('callback source location is ambiguous')
-    node = nodes[0]
-    if isinstance(node, ast.FunctionDef):
-        node.decorator_list = []
-        code = compile(ast.fix_missing_locations(ast.Module(body=[node], type_ignores=[])), str(source), 'exec')
-        exec(code, namespace)
-        function = namespace[node.name]
-    else:
-        function = eval(compile(ast.Expression(node), str(source), 'eval'), namespace)
-    captures = binding['captures']
+    if binding.get('bound') is not None:
+        raise ValueError('bound callable requires an explicit receiver role')
+    captures = binding.get('captures', binding.get('closure'))
     freevars = []
     # Recompile the actual nested body inside a factory to retain Python's freevar semantics.
     qualname = binding['qualname'].split('.')[-1]
@@ -249,11 +258,11 @@ def bind(binding, view):
     if original is None or len(original.co_freevars) != len(captures):
         raise ValueError('callback closure does not match current source')
     for value in captures:
-        cell = (lambda x: lambda: x)(_value(value, view)).__closure__[0]
+        cell = (lambda x: lambda: x)(_value(value, view, namespace)).__closure__[0]
         freevars.append(cell)
     result = types.FunctionType(original, namespace, original.co_name,
-                                tuple(_value(binding['defaults'], view)), tuple(freevars) or None)
-    result.__kwdefaults__ = _value(binding['kwdefaults'], view)
+                                tuple(_value(binding['defaults'], view, namespace)), tuple(freevars) or None)
+    result.__kwdefaults__ = _value(binding['kwdefaults'], view, namespace)
     return result
 
 
@@ -298,7 +307,10 @@ def run(context):
                       required=row.get('required', True))
         if recipe.get('geometry'):
             geometry = recipe['geometry']
-            shutil.copytree(view / relative(geometry['source']), output / 'geometry')
+            from atelier.build_v2.blender_ops import verify_plan
+            root = view / relative(geometry['source'])
+            verify_plan(root, parent=geometry['parent'], limits=context.params['plan_limits'])
+            shutil.copytree(root, output / 'geometry')
     finally:
         sys.argv[:] = old[0]
         os.environ.clear()

@@ -100,3 +100,24 @@ def test_existing_parent_mkdir_is_noop_only_and_other_writes_remain_refused(tmp_
     assert not guard.allowed('write', str(output.parent))
     assert not guard.allowed('write', str(output.parent / 'other'))
     assert guard.allowed('write', str(output))
+
+
+def test_nested_callback_binds_actual_freevars_without_evaluating_artificial_defaults(tmp_path):
+    source = tmp_path / 'callback.py'
+    source.write_text('def factory(path):\n    def action(value=3):\n        return path.name, value\n    return action\n')
+    fn = job.bind({'source': 'callback.py', 'qualname': 'factory.<locals>.action', 'line': 2,
+                   'captures': [{'path': 'data/expected'}], 'defaults': [7], 'kwdefaults': {}}, tmp_path)
+    assert fn() == ('expected', 7)
+    with pytest.raises(ValueError, match='closure'):
+        job.bind({'source': 'callback.py', 'qualname': 'factory.<locals>.action', 'line': 2,
+                  'captures': [], 'defaults': [], 'kwdefaults': {}}, tmp_path)
+
+
+def test_derived_roster_requires_actual_resolved_member_list(tmp_path):
+    descriptor = {'derived_items': {'root': 'build/exports', 'members': [
+        {'piece': 'PieceA', 'root': 'build/exports/PieceA', 'slot': 'derived_0'}]}}
+    result = job._value(descriptor, tmp_path)
+    assert result[0][1] == 'PieceA'
+    assert result[0][0].products[0].paths == (tmp_path / 'build/exports/PieceA',)
+    with pytest.raises(ValueError, match='unresolved'):
+        job._value({'derived_items': {'root': 'build/exports', 'templates': []}}, tmp_path)

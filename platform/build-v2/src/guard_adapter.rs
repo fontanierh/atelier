@@ -197,6 +197,19 @@ pub trait WorkerLauncher {
     ) -> io::Result<Self::Attempt>;
 }
 
+impl<T: WorkerLauncher + ?Sized> WorkerLauncher for &mut T {
+    type Attempt = T::Attempt;
+    fn submit(
+        &mut self,
+        attempt: u32,
+        command: &WorkerCommand,
+        request: AdmissionRequest,
+        events: Sender<AttemptEvent>,
+    ) -> io::Result<Self::Attempt> {
+        (**self).submit(attempt, command, request, events)
+    }
+}
+
 pub trait WorkerAttempt {
     /// Ask the guard to stop or withdraw this attempt. `Ok(false)` means the admission owner had
     /// already exited and nothing was signalled. Never certifies cleanup or releases capacity.

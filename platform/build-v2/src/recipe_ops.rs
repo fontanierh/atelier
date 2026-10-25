@@ -37,6 +37,8 @@ struct Recipe {
     verify: Option<Value>,
     #[serde(default)]
     deferred: Vec<Value>,
+    #[serde(default)]
+    geometry: Option<Value>,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -58,7 +60,12 @@ fn relative(path: &str) -> bool {
             .all(|p| !p.is_empty() && p != "." && p != "..")
 }
 pub fn validate_params(params: &BTreeMap<String, Value>) -> Result<(), String> {
-    if params.len() != 1 {
+    if params.keys().any(|name| {
+        !matches!(
+            name.as_str(),
+            "recipe" | "geometry_root" | "parent" | "plan_limits"
+        )
+    }) {
         return Err("recipe requires its sole typed recipe object".into());
     }
     let recipe: Recipe =
@@ -100,7 +107,7 @@ pub fn validate_params(params: &BTreeMap<String, Value>) -> Result<(), String> {
             return Err("unknown/incomplete recipe command".into());
         }
     }
-    let _ = (recipe.verify, recipe.deferred);
+    let _ = (recipe.verify, recipe.deferred, recipe.geometry);
     Ok(())
 }
 pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Result<(), String> {
@@ -111,9 +118,32 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
         spec = spec.with_content_slot(name, ContentSlotSpec::broad(*required));
     }
     let mut definition = spec.build()?;
+    for rule in definition.inputs.values_mut() {
+        rule.item_classes
+            .insert(crate::blender_ops::MESH_EXPORT_CLASS.into());
+    }
     definition.params.remove("seed");
+    for (name, kind) in [
+        ("geometry_root", ParamKind::String),
+        ("parent", ParamKind::String),
+        ("plan_limits", ParamKind::Object),
+    ] {
+        definition.params.insert(
+            name.into(),
+            crate::validate::ParamRule {
+                kind,
+                required: false,
+            },
+        );
+    }
     for kind in ["recipe.python", "recipe.blender"] {
-        registry.insert((kind.into(), "1".into()), definition.clone());
+        let mut definition = definition.clone();
+        if kind == "recipe.blender" {
+            definition
+                .output_classes
+                .insert(crate::blender_ops::MESH_PAYLOAD_CLASS.into());
+        }
+        registry.insert((kind.into(), "1".into()), definition);
     }
     Ok(())
 }
@@ -123,14 +153,35 @@ pub fn validator() -> ImplementationIdentity {
         digest: sha256(b"recipe-root-1:complete-opaque-data:declared-fixed-output-partition"),
     }
 }
+pub fn group_validator(code: &BTreeMap<String, String>) -> Result<ImplementationIdentity, String> {
+    let mut files = BTreeMap::new();
+    for name in crate::blender_ops::DECODER_FILES {
+        files.insert(
+            name,
+            code.get(name)
+                .ok_or("recipe group decoder source missing")?
+                .clone(),
+        );
+    }
+    let decoder = crate::blender_ops::decoder_identity(&files)?;
+    Ok(ImplementationIdentity {
+        version: "recipe-geometry-1".into(),
+        digest: sha256(format!("recipe-geometry-1:{}", decoder.digest).as_bytes()),
+    })
+}
 pub fn check(unit: &PreparedUnit) -> Result<(), String> {
     let i = unit.ingredients();
-    let expected = validator();
+    let expected = if i.output_groups.is_empty() {
+        validator()
+    } else {
+        group_validator(&i.code)?
+    };
     if !matches!(i.op.kind.as_str(), "recipe.python" | "recipe.blender")
         || i.op.version != "1"
         || i.validator_version != expected.version
         || i.validator_digest != expected.digest
-        || !i.output_groups.is_empty()
+        || (i.output_groups.len() > 1
+            || (!i.output_groups.is_empty() && i.op.kind != "recipe.blender"))
         || i.logical_outputs.iter().any(|item| item.class != "Data")
     {
         return Err("unsupported recipe runtime identity".into());
