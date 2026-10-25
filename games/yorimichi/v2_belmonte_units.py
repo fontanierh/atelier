@@ -257,9 +257,16 @@ def attach_followers(geometry, *, rows, checkout, natives):
             result['packages'][package] = hull_ref
         projection = 'world.belmonte.render.' + parent
         contract = dict(group['contract'], root='geometry', root_param='geometry_root')
-        add({'id': projection, 'op': {'kind': 'py_data', 'version': '1'}, 'script': MEMBERS, 'code': closure(MEMBERS),
+        folder = 'generated/belmonte/render/' + parent
+        add({'id': projection, 'op': {'kind': 'recipe.python', 'version': '1'}, 'script': recipe_script, 'code': recipe_code,
              'inputs': [incoming('source', producer, 'product0')],
-             'params': {'parent': parent, 'geometry_root': 'geometry'}, 'outputs': [], 'output_groups': [contract]})
+             'params': {'parent': parent, 'geometry_root': 'output/geometry', 'plan_limits': dict(LIMITS),
+                 'recipe': {'version': 1, 'paths': {'source-plan': 'inputs/source/products/0-0.tree.tar'},
+                     'commands': [call('project_render', (root / 'source-plan', root / folder, parent))],
+                     'verify': None, 'outputs': [{'kind': 'tree', 'path': folder, 'file': 'render.tree.tar', 'required': True}],
+                     'geometry': {'source': folder, 'parent': parent, 'encoding': 'encoded_glb', 'format': 'glb'}}},
+             'outputs': [{'id': 'archive', 'logical_path': '/Internal/Belmonte/Render/' + parent, 'class': 'Data',
+                 'destination': 'store', 'files': [{'path': 'render.tree.tar', 'required': True}]}], 'output_groups': [contract]})
         result['groups'][projection] = {'contract': contract, 'source': 'geometry', 'format': 'glb'}
         render = deepcopy(template); render['producer'] = projection
         render['unit_prefix'] = 'world.belmonte.render_export.' + parent

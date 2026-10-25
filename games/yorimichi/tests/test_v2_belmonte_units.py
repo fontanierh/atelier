@@ -44,8 +44,14 @@ def test_actual_recipe_packet_ownership_and_complete_source_dependencies(declara
     result = units.attach_followers(geometry, rows=rows, checkout=ROOT, natives=refs)
     assert geometry == before and len(result['templates']) == 292
     assert set(result) >= {'units','staged_inputs','content_slots','packages','aliases','module_requirements','templates','groups','geometry','source_join'}
-    projections = [u for u in result['units'] if u['op']['kind'] == 'py_data']
+    projections = [u for u in result['units'] if u['id'].startswith('world.belmonte.render.')]
     assert len(projections) == 290
+    for projection in projections:
+        assert projection['op']['kind'] == 'recipe.python'
+        assert projection['script'] == 'platform/studio/atelier/build_v2/recipe_job.py'
+        assert projection['params']['geometry_root'] == 'output/geometry'
+        assert projection['params']['recipe']['geometry']['encoding'] == 'encoded_glb'
+        assert projection['outputs'][0]['class'] == 'Data'
     for template in [t for t in result['templates'] if t['unit_prefix'].startswith('world.belmonte.render_export.')]:
         raw, finish = [f['unit'] for f in template['followers']]
         assert raw['params']['destination'] == '/Game/_Raw/Belmonte/$piece'
@@ -229,6 +235,47 @@ def test_render_projection_validates_complete_plan_before_role_selection(tmp_pat
         members.run(context)
         result=encoded_region_plan.validate(context.output_dir/'geometry')
         assert result['source_collision_triangles']==0 and all(p['role']=='render' for p in result['pieces'])
+
+
+@pytest.mark.parametrize('damage', [False, True])
+def test_render_projection_runs_authored_recipe_and_geometry_validation(tmp_path, monkeypatch, declaration, damage):
+    import shutil
+    import encoded_region_plan
+    from atelier.build_v2 import recipe_job
+    entry, plan = actual_plan(tmp_path)
+    rows, geometry, refs = declaration
+    result = units.attach_followers(geometry, rows=rows, checkout=ROOT, natives=refs)
+    unit = next(u for u in result['units'] if u['id'] == 'world.belmonte.render.' + entry['name'])
+    view = tmp_path / 'view'
+    view.mkdir()
+    for relative in unit['code']:
+        destination = view / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(ROOT / relative, destination)
+    shutil.copytree(plan, view / 'source-plan')
+    if damage:
+        (view / 'source-plan' / (entry['name'] + '_Collision.mesh')).write_bytes(b'changed')
+    output = tmp_path / 'recipe-output'
+    output.mkdir()
+    monkeypatch.chdir(view)
+    monkeypatch.syspath_prepend(str(view))
+    # recipe_job restores argv/env itself; keep its import-path additions local to this test.
+    monkeypatch.setattr(sys, 'path', list(sys.path))
+    context = NS(params=unit['params'], output_dir=output)
+    if damage:
+        with pytest.raises(ValueError):
+            recipe_job.run(context)
+        assert not (output / 'geometry').exists()
+        assert not (output / 'render.tree.tar').exists()
+    else:
+        recipe_job.run(context)
+        projected = encoded_region_plan.validate(output / 'geometry')
+        assert projected['parent'] == entry['name']
+        assert projected['source_collision_triangles'] == 0
+        assert all(piece['role'] == 'render' for piece in projected['pieces'])
+        restored = tmp_path / 'restored'
+        recipe_job.unpack_root(output / 'render.tree.tar', restored)
+        assert recipe_job.inventory(restored) == recipe_job.inventory(output / 'geometry')
 
 
 @pytest.mark.parametrize('damage',[False,True])

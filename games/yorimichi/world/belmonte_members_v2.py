@@ -37,19 +37,28 @@ def run(context):
     try:
         if unpack_root(archive, scratch)['kind'] != 'directory':
             raise ValueError('Belmonte planner must be a directory')
-        plan = validate(scratch)
-        if plan['parent'] != context.params['parent']:
-            raise ValueError('Belmonte planner belongs to another parent')
-        selected = [row for row in plan['pieces'] if row['role'] == 'render']
-        projected = dict(plan, pieces=selected, source_triangles=plan['source_render_triangles'], source_collision_triangles=0)
-        destination.mkdir()
-        for row in selected:
-            (destination / row['payload']).write_bytes((scratch / row['payload']).read_bytes())
-        (destination / 'plan.json').write_text(json.dumps(projected, sort_keys=True, separators=(',', ':')) + '\n')
-        validate(destination)
+        project_render(scratch, destination, context.params['parent'])
     finally:
         if scratch.exists():
             shutil.rmtree(scratch)
+
+
+def project_render(source=None, output=None, parent=None):
+    """@cc [owner:fontanierh,label:correctness] belmonte-recipe-render-projection
+    The complete keyed planner MUST validate before selecting exact render bytes.
+    The projected group MUST retain its parent and render conservation metadata.
+    """
+    source, output = Path(source), Path(output)
+    plan = validate(source)
+    if plan['parent'] != parent:
+        raise ValueError('Belmonte planner belongs to another parent')
+    selected = [row for row in plan['pieces'] if row['role'] == 'render']
+    projected = dict(plan, pieces=selected, source_triangles=plan['source_render_triangles'], source_collision_triangles=0)
+    output.mkdir(parents=True, exist_ok=False)
+    for row in selected:
+        (output / row['payload']).write_bytes((source / row['payload']).read_bytes())
+    (output / 'plan.json').write_text(json.dumps(projected, sort_keys=True, separators=(',', ':')) + '\n')
+    validate(output)
 
 
 def project_materials(source=None, textures=None, output=None, kind=None):
