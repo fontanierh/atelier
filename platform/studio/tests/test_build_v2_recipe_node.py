@@ -125,3 +125,18 @@ def test_openssl_unknown_compiled_default_refuses(crypto):
     image, _ = crypto; image.write_bytes(b'unknown selected library metadata')
     with pytest.raises(ValueError, match='default directory is not exact'):
         recipe_node._openssl_configuration([str(image)])
+
+
+def test_explicit_absolute_node_role_works_without_path(monkeypatch):
+    role = '/opt/homebrew/Cellar/node/25.6.1/bin/node'
+    monkeypatch.delenv('PATH', raising=False)
+    monkeypatch.setattr(recipe_node.shutil, 'which', lambda _: pytest.fail('explicit SDK must not search PATH'))
+    monkeypatch.setattr(recipe_node.Path, 'resolve', lambda self, **_: self)
+    monkeypatch.setattr(recipe_node.Path, 'is_file', lambda _: True)
+    monkeypatch.setattr(recipe_node, '_links', lambda _: set())
+    monkeypatch.setattr(recipe_node, '_openssl_configuration', lambda _: None)
+    monkeypatch.setattr(recipe_node.subprocess, 'run', lambda *a, **kw: SimpleNamespace(stdout=role + ':\n'))
+    sdk = recipe_node.discover_node(role)
+    assert sdk['executable'] == sdk['image'] == role
+    with pytest.raises(ValueError, match='installed Node'):
+        recipe_node.discover_node('relative/node')

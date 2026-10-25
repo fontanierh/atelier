@@ -71,9 +71,9 @@ def _openssl_configuration(libraries):
     return str(config)
 
 
-def discover_node():
+def discover_node(executable=None):
     """Inspect only installed image dependency metadata, before entering the job."""
-    role = shutil.which('node')
+    role = os.fspath(executable) if executable is not None else shutil.which('node')
     if not role or not Path(role).is_absolute():
         raise ValueError('the recipe frontend requires installed Node')
     image = Path(role).resolve(strict=True)
