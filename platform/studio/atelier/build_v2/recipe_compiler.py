@@ -6,6 +6,7 @@ from .controller_recipe import ControllerTarget
 
 
 JOB_SCRIPT = 'platform/studio/atelier/build_v2/recipe_job.py'
+NATIVE_SCRIPT = 'platform/studio/atelier/build_v2/native_tool_worker.py'
 
 
 class Unsupported(ValueError):
@@ -34,6 +35,11 @@ def _command(value):
     kind = value['kind']
     if kind == 'call':
         return {'kind': 'call', 'call': _binding(value['fn'])}
+    if kind in ('UnrealCompile', 'UnrealGame'):
+        return {**deepcopy(value), 'kind': 'native_tool', 'tool_kind': kind}
+    if kind == 'PackageArchive':
+        return {'kind': 'python', 'script': _path(value['script']['path']),
+                'args': deepcopy(value.get('args', [])), 'env': [], 'threads': 1}
     if kind not in ('python', 'blender'):
         raise Unsupported(f'{kind} requires its native typed execution adapter')
     script = value['script']
@@ -80,7 +86,7 @@ def _without_joins(rows, targets):
     return lowered, tuple(dict.fromkeys(child for name in targets for child in expand(name)))
 
 
-def compile_rows(rows, *, project, targets, install_roots=(), checkout=None):
+def compile_rows(rows, *, project, targets, install_roots=(), checkout=None, geometry=None):
     """@cc [owner:fontanierh,label:correctness] recipe-units-use-real-engine
     Each action MUST become its own unit with complete code, consumed source and
     upstream product identities. No old action fingerprint, stamp, source location
@@ -92,6 +98,20 @@ def compile_rows(rows, *, project, targets, install_roots=(), checkout=None):
     from atelier import paths as project_paths
     from .recipe_inputs import lower_inputs, Unsupported as InputUnsupported
     checkout = project_paths.REPO if checkout is None else checkout
+    geometry = geometry or {'groups': {}, 'templates': []}
+    rows = deepcopy(list(rows))
+    for row in rows:
+        kinds = [command['kind'] for command in row['commands']]
+        if 'UnrealCompile' in kinds or 'UnrealGame' in kinds:
+            if not row['outputs'] and not row['products']:
+                root = f'games/{project}/unreal/Binaries/Mac'
+                row['outputs'] = [root]
+                row['native_output_encoding'] = {root: 'mac-zip'} if 'UnrealGame' in kinds else {}
+                if 'UnrealCompile' in kinds:
+                    for descriptor in sorted((checkout / 'platform/engine/Plugins').rglob('*.uplugin')):
+                        root = (descriptor.parent / 'Binaries/Mac').relative_to(checkout).as_posix()
+                        row['products'].append({'id': row['id'] + '.' + descriptor.stem,
+                                                'paths': [], 'optional_paths': [root]})
     rows, targets = _without_joins(tuple(rows), targets)
     by_name = {row['id']: row for row in rows}
     if len(by_name) != len(rows):
@@ -120,6 +140,8 @@ def compile_rows(rows, *, project, targets, install_roots=(), checkout=None):
             commands = [_command(command) for command in row['commands']]
             if not commands:
                 raise Unsupported('unit has no executable action')
+            native = next((command for command in commands if command['kind'] == 'native_tool'), None)
+            archive = any(command['kind'] == 'PackageArchive' for command in row['commands'])
             runtime = 'blender' if any(c['kind'] == 'blender' for c in commands) else 'python'
             input_row = dict(row)
             input_row.setdefault('references', [])
@@ -145,18 +167,66 @@ def compile_rows(rows, *, project, targets, install_roots=(), checkout=None):
                 path = _path(path)
                 if any(_under(path, root) for root in covered):
                     continue
-                filename = f'outputs/{index}.tree.tar'
+                encoding = row.get('native_output_encoding', {}).get(path)
+                filename = f'outputs/{index}.' + ('mac.zip' if encoding == 'mac-zip' else 'tree.tar')
                 emitted.append({'path': path, 'kind': 'tree', 'file': filename, 'required': True})
+                if encoding:
+                    emitted[-1]['encoding'] = encoding
                 outputs.append({'id': f'output{index}', 'logical_path': f'/Game/_Build/{name}/output{index}',
                                 'class': 'Data', 'destination': 'store', 'files': [{'path': filename}]})
             if not outputs:
                 raise Unsupported('control action needs an explicit completed-result output')
-            units.append({'id': name, 'op': {'kind': f'recipe.{runtime}', 'version': '1'},
+            unit = {'id': name, 'op': {'kind': f'recipe.{runtime}', 'version': '1'},
                 'script': JOB_SCRIPT, 'code': code, 'inputs': inputs,
                 'params': {'recipe': {'version': 1, 'commands': commands, 'paths': paths,
                                      'outputs': emitted, 'verify': _binding(row['verify']),
                                      'deferred': lowered['deferred']}},
-                'outputs': outputs})
+                'outputs': outputs}
+            if native or archive:
+                unit['script'] = NATIVE_SCRIPT
+                unit['code'] = sorted(set(unit['code']) | {NATIVE_SCRIPT,
+                    'platform/studio/atelier/build_v2/unreal_tool_ops.py'})
+                unit['op']['kind'] = ('unreal.compile' if native['tool_kind'] == 'UnrealCompile'
+                                     else 'unreal.game') if native else 'package.archive'
+                if native:
+                    project_files = list((checkout / 'games' / project / 'unreal').glob('*.uproject'))
+                    if len(project_files) != 1:
+                        raise Unsupported('native tool needs exactly one project descriptor')
+                    unit['params'].update(project=project_files[0].relative_to(checkout).as_posix(),
+                        target=native['target'], configuration=native.get('config', 'Development'))
+                    unit['params']['recipe']['commands'] = []
+            if name in geometry['groups']:
+                from atelier.source_imports import ImportScanner
+                group = geometry['groups'][name]
+                contract = deepcopy(group['contract'])
+                unit['output_groups'] = [contract]
+                unit['params'].update(geometry_root='output/geometry', parent=contract['parent'],
+                    plan_limits={key: contract[key] for key in ('max_pieces', 'max_manifest_bytes',
+                                                              'max_member_bytes', 'max_total_bytes')})
+                unit['params']['recipe']['geometry'] = {'source': group['source'],
+                    'encoding': contract['encoding'], 'parent': contract['parent']}
+                decoder = 'platform/studio/atelier/build_v2/blender_ops.py'
+                closure = ImportScanner().local_imports(checkout / decoder,
+                    (checkout / 'platform/studio',))
+                unit['code'] = sorted(set(unit['code']) | {
+                    path.relative_to(checkout).as_posix() for path in closure})
+                if contract['encoding'] == 'encoded_glb':
+                    encoded = 'platform/studio/atelier/encoded_glb.py'
+                    unit['code'] = sorted(set(unit['code']) | {path.relative_to(checkout).as_posix()
+                        for path in ImportScanner().local_imports(checkout / encoded,
+                            (checkout / 'platform/studio',))})
+            tools = []
+            node_entries = [path for path in code if path.endswith('/bridge.cjs')]
+            node_entries += [source['path'] for source in row['inputs']
+                             if source['path'].endswith('/bridge.cjs')]
+            for entry in dict.fromkeys(node_entries):
+                frontend = entry.rsplit('/', 1)[0] + '/'
+                tools.append({'kind': 'node.frontend', 'entry': entry,
+                              'sources': [frontend + filename for filename in
+                                          ('bridge.cjs', 'pieces.cjs', 'terrain.cjs')]})
+            if tools:
+                unit['params']['recipe']['tools'] = tools
+            units.append(unit)
             staged[name] = stage
         except (Unsupported, InputUnsupported) as error:
             errors.append(f'{name}: {error}')
@@ -165,7 +235,8 @@ def compile_rows(rows, *, project, targets, install_roots=(), checkout=None):
     declaration = {'schema_version': 2, 'cache_version': 'v2-1', 'units': units}
     # Rust checks the complete global declaration before selecting these roots.
     return ControllerTarget(targets[0], project, declaration, staged, slots,
-                            tuple(install_roots) or (f'build/{project}',))
+                            tuple(install_roots) or (f'build/{project}',),
+                            tuple(geometry['templates']))
 
 
 def recipe_steps(game, *, checkout, build_root):
@@ -199,6 +270,20 @@ def compile_game(game, *, checkout, build_root, targets=('unreal.package',)):
     steps = recipe_steps(game, checkout=checkout, build_root=build_root)
     selected = Graph(steps).select(targets)
     rows = extract(selected, checkout=checkout, build_root=build_root)
-    return compile_rows(rows, project=game, targets=targets, checkout=checkout,
+    from .recipe_external_inputs import import_external_inputs
+    from atelier import paths
+    rows, _external_receipt = import_external_inputs(rows, checkout=checkout,
+        source_cache=paths.cache_dir(create=False))
+    import importlib.util
+    from pathlib import Path
+    template_source = Path(checkout) / 'games' / game / 'v2_geometry_templates.py'
+    geometry = None
+    if template_source.is_file():
+        spec = importlib.util.spec_from_file_location('atelier_geometry_templates_' + game, template_source)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        geometry = module.geometry_templates(rows, checkout=checkout)
+        rows = module.apply_derived(rows, geometry['derived'])
+    return compile_rows(rows, project=game, targets=targets, checkout=checkout, geometry=geometry,
                         install_roots=(f'build/{game}', f'games/{game}/unreal/Content',
                                        f'games/{game}/unreal/Binaries'))

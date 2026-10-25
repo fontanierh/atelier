@@ -62,7 +62,9 @@ def _archive(rows_by_name, owner, item):
         owned = [*product['paths'], *product['optional_paths']]
         return owned, [f'products/{index}-{i}.tree.tar' for i in range(len(owned))]
     index = int(item.removeprefix('output'))
-    return [producer['outputs'][index]], [f'outputs/{index}.tree.tar']
+    root = producer['outputs'][index]
+    suffix = 'mac.zip' if producer.get('native_output_encoding', {}).get(root) == 'mac-zip' else 'tree.tar'
+    return [root], [f'outputs/{index}.{suffix}']
 
 
 _ANCESTORS = {}
