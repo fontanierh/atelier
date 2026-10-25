@@ -111,7 +111,7 @@ def run(context):
     import unreal
     from atelier.unreal_mesh_reuse import lods_match
     params = context.params
-    if (set(params) - {'op', 'kind', 'source', 'destination', 'package_sources', 'args'}
+    if (set(params) - {'op', 'kind', 'source', 'destination', 'package_sources', 'args', 'input_roots', 'partners'}
             or params.get('op') != 'finish' or params.get('kind') != 'static_mesh'
             or not isinstance(params.get('args'), dict)
             or set(params['args']) != {'materials', 'source_export', 'payload'}):
@@ -128,10 +128,14 @@ def run(context):
     if not isinstance(raw, unreal.StaticMesh):
         raise ValueError('Brinecove raw Item is not a StaticMesh')
     _identity(raw, source)
+    material_slots = params['args']['materials']
+    if isinstance(material_slots, dict) and set(material_slots) == {'derived_items'}:
+        from brinecove_material_v2 import derived
+        material_slots = {row['piece'].removeprefix('MI_BC_'): row['slot'] for row in derived(material_slots)}
     materials = []
     for name in facts['slots']:
         key = name.removeprefix('BC_')
-        slot = params['args']['materials'].get(key)
+        slot = material_slots.get(key)
         package = _selected(context, slot)
         if package != '/Game/Brinecove/Materials/MI_BC_' + key:
             raise ValueError('Brinecove material role differs from original slot')
@@ -195,4 +199,12 @@ def run(context):
     if not E.save_loaded_asset(mesh, True):
         raise ValueError('Brinecove native save failed')
     validate()
+    reports = getattr(context, 'data_outputs', ())
+    if reports:
+        report = 'data/reports/' + facts['asset'] + '.json'
+        if list(reports) != [report]: raise ValueError('Brinecove native report owner differs')
+        box = mesh.get_bounding_box()
+        return {report: {'name': facts['asset'], 'triangles': mesh.get_num_triangles(0),
+            'bounds_cm': [box.min.x, box.min.y, box.min.z, box.max.x, box.max.y, box.max.z],
+            'collision': facts['collision'], 'lods': facts['lods'], 'slots': facts['slots'], 'uv_channels': facts['uv_channels']}}
     return mesh
