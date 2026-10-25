@@ -29,8 +29,7 @@ cargo run                    # desktop
 The game opens on a menu: **World** enters the world, **Character viewer** shows each character and plays its clips.
 Escape goes back to the menu.
 
-Test in the browser by default: what runs there almost always runs on desktop too, while the reverse is not
-true.
+Test in the browser first: what works there almost always works on desktop, but not always the other way round.
 
 ## Layout
 

@@ -82,17 +82,16 @@ impl Stance {
     };
 }
 
-/// The frame whose pose gives the stance's axes: left, forward, and each knee's bend plane.
+/// The frame the stance measures the body from: which way is left and forward, and which way each knee points.
 const REFERENCE_FRAME: usize = 1;
 
 /// The furthest a solved ankle may sit from its goal, in metres.
 const ANKLE_TOLERANCE: f64 = 1e-5;
 
-/// Lays `stance` over the idle `frames` of a skeleton with the rest pose `rest`.
+/// Changes the idle `frames` of a skeleton with the rest pose `rest` by `stance`.
 ///
-/// The hips move forward and the back and arms turn, each bone below following. The body is then lowered as far as
-/// the longer leg needs, never stretching a leg, and each leg bends so its ankle stays on the idle's (moved apart by
-/// the foot spacing), with its knee plane turned outward.
+/// The hips move forward, and the back and arms bend; the bones below follow. Then each foot is put back where the
+/// idle has it, moved apart by the foot spacing, with its knee turned out.
 pub fn apply(stance: &Stance, rest: &Pose, frames: &mut [Pose]) -> Result<()> {
     if *stance == Stance::NONE {
         return Ok(());

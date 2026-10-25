@@ -1,16 +1,16 @@
-//! Moves a clip from one skeleton onto another with different proportions and rest frames.
+//! Copies a clip from one skeleton onto another, whose bones can have other lengths and other rest rotations.
 //!
-//! Both rest poses are T-poses. Each target bone takes its source bone's turn from rest, carried into the target's
-//! frame by a calibration made from the two rest poses:
-//! - a limb or finger is swung so it points where the source's points;
-//! - a hand keeps its palm frame, and a foot its level heading, at its own rest pitch;
+//! Both skeletons rest in a T-pose. Each target bone turns away from its rest pose as its source bone does, adjusted
+//! by comparing the two rest poses:
+//! - a limb or finger points where the source's points;
+//! - a hand keeps the source palm's facing, and a foot its level heading, at its own rest tilt;
 //! - the pelvis, spine, neck and head keep the target's own rest posture.
 //!
-//! A `spine_mid` the source does not have takes half the turn from spine to chest, and a bone the source does not have
-//! follows its parent. The pelvis moves as the source's does, scaled by the ratio of the two hip heights. Each leg is
-//! then solved so its ankle goes where the source's does: near the ground, the source's ankle travel at that scale
-//! from the target's own stance, so planted feet stay planted; high off the ground, where the target's leg reaches
-//! when bent as the source's is. The knee stays in the leg's bend plane.
+//! When the source has no `spine_mid`, the target's takes half the turn from spine to chest; any other bone the source
+//! lacks follows its parent. The pelvis moves as the source's does, scaled by the ratio of the two hip heights. Then
+//! each leg bends so its ankle goes where the source's does. Near the ground, the ankle moves as the source's does,
+//! scaled the same way, from the target's own stance, so planted feet stay planted. Higher up, it goes where the
+//! target's leg reaches when bent like the source's. Each knee keeps the direction it bends in.
 
 use anyhow::{Result, bail};
 use glam::{DMat3, DVec3};

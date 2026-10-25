@@ -42,7 +42,7 @@ optional; a skeleton without them gets them from its neighbours.
 A character is a type that implements `Character`: `Skeleton`, plus one trait per animation (`Idle`, defined in
 `assets/animations/idle/src/idle.rs`). Each animation trait's methods are the character's changes to that animation,
 with defaults that change nothing. The character's file, `src/<name>.rs` in its asset folder, implements them, and
-`characters.rs` includes it in the `Name` enum. A character missing a trait does not compile.
+`characters.rs` includes it in the `Name` enum. If a character lacks one, the exporter fails to compile.
 
 ## Kinds
 

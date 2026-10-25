@@ -23,8 +23,8 @@ fn main() {
                     }),
                     ..default()
                 })
-                // Bevy would ask for a .meta file next to each asset. There are none, and in the browser the server
-                // answers a missing file with index.html, which Bevy cannot read.
+                // Load assets without looking for a .meta file next to each: in the browser, the server answers a
+                // missing file with index.html, which Bevy cannot read.
                 .set(AssetPlugin {
                     meta_check: AssetMetaCheck::Never,
                     ..default()

@@ -16,27 +16,26 @@ Every asset is one folder, named in kebab case:
 
 ```text
 <asset-name>/
-  asset.toml                its kind, the settings its exporter reads, and the checksum of its inputs
+  asset.toml                its kind, its settings, and the checksum of its inputs
   <asset-name>.glb          what the game loads, written by the exporter
-  src/                      every source the .glb is exported from, and nothing else
+  src/                      everything the .glb is exported from
 ```
 
-The game loads only `<asset-name>.glb`. The browser build leaves out `asset.toml` and `src/` (see `../Trunk.toml`).
+The game loads only `<asset-name>.glb`. The browser build copies only that file (see `../Trunk.toml`).
 
-`src/` holds everything that goes into the export, so the `.glb` can be exported again exactly from a clone. A
-source made by hand, such as `characters/nox/src/model.glb`, is committed as it is.
+`src/` holds every input of the export, so a clone can export the `.glb` again exactly. A source made by hand, such
+as `characters/nox/src/model.glb`, is committed as it is. A `.rs` file in `src/` is part of the exporter: the
+exporter compiles it in (`../tools/README.md` says what each kind's file does).
 
-An asset's `.rs` files in `src/` are part of the exporter, which includes them when it compiles
-(`../tools/README.md` says what each kind's file implements). Assets have no scripts of their own. `kind` picks one exporter in `../tools/export/`, and the other settings in
-`asset.toml` are what that exporter reads (`../tools/README.md` lists the kinds and their settings). The exporter
-writes `inputs_sha256`; do not edit it.
+`kind` in `asset.toml` picks the exporter, and the other keys are its settings (`../tools/README.md` lists them).
+The exporter writes `inputs_sha256`; do not edit it.
 
-Optimization, such as smaller textures, happens during export, so the committed `.glb` is the final file.
+The export does all the optimizing, such as shrinking textures, so the committed `.glb` is the final file.
 
 ## Exporting
 
-Exports are not part of the build: the exported `.glb` is committed next to its sources, so every checkout runs
-the game straight away. After changing an asset's settings or sources, export it and commit both together:
+Each `.glb` is committed next to its sources, so a checkout runs the game without exporting anything. After
+changing an asset's settings or sources, export it and commit both together:
 
 ```sh
 cargo export assets/characters/nox     # from games/hakuba
@@ -45,5 +44,4 @@ cargo export --check assets            # lists every export whose inputs changed
 
 ## Storage
 
-`.glb`, `.blend`, `.ktx2` and `.png` files are stored in Git LFS (`../.gitattributes`). The repository's pre-push
-hook uploads them.
+`.glb` files are stored in Git LFS (`../.gitattributes`). `git push` uploads them.
