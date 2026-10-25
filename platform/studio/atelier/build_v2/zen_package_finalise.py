@@ -133,11 +133,19 @@ def prepare_histories(*, carrier, global_root, folder, project_name, library, un
         raise Refused('package history projection needs a fresh owned scope')
     folder.mkdir(mode=0o700)
 
-    def shaders(content, name, output, formats=None):
+    def shaders(content, name, output, formats=None, allow_shaderless=False):
+        if allow_shaderless and not content.exists() and not content.is_symlink():
+            output.mkdir(mode=0o700)
+            return [], {'content_dir': str(output), 'files': {}, 'packages': []}
         if not content.is_dir() or content.is_symlink():
             raise Refused('declared shader content directory is absent or linked')
         pattern = re.compile(r'ShaderArchive-' + re.escape(name) + r'-([A-Za-z0-9_]+-[A-Za-z0-9_]+)\.ushaderbytecode')
         found = sorted(match.group(1) for path in content.iterdir() if (match := pattern.fullmatch(path.name)))
+        if allow_shaderless and not found:
+            if any(path.name.startswith(('ShaderArchive-', 'ShaderAssetInfo-', 'ShaderTypeInfo-')) for path in content.iterdir()):
+                raise Refused('partial or unsupported shader history cannot be shaderless')
+            output.mkdir(mode=0o700)
+            return [], {'content_dir': str(output), 'files': {}, 'packages': []}
         if not found or len(found) != len(set(found)) or (formats is not None and found != formats):
             raise Refused('native shader format roster differs or is incomplete')
         output.mkdir(mode=0o700)
@@ -168,20 +176,28 @@ def prepare_histories(*, carrier, global_root, folder, project_name, library, un
             raise Refused('selected native package history is missing or duplicated')
         names.add(name)
         archive = _file(row.get('metadata_archive'), row.get('metadata_sha256'))
+        source = row.get('source')
+        if not isinstance(source, dict) or set(source) != {'path', 'sha256'}:
+            raise Refused('selected package lacks its certified uncooked primary')
+        _file(source['path'], source['sha256'])
+        selected = {'name': name, 'source': source,
+                    'record': {'path': locator.get('record_path'), 'sha256': row.get('record_sha256')},
+                    'root_hash': locator.get('entry_hash')}
+        _file(selected['record']['path'], selected['record']['sha256'])
         identity = (archive, row['metadata_sha256'])
         if identity in archives:
-            archives[identity]['packages'].append(name)
+            archives[identity]['packages'].append(selected)
             continue
         index = len(histories)
         root = folder / ('history-' + str(index))
         unpack(Path(archive), root)
         project = root / project_name
-        _, history = shaders(project / 'Content', library, folder / ('shaders-' + str(index)), formats)
+        _, history = shaders(project / 'Content', library, folder / ('shaders-' + str(index)), formats, allow_shaderless=True)
         for key, filename in (('registry', 'DevelopmentAssetRegistry.bin'), ('metadata', 'CookMetadata.ucookmeta')):
             source = project / 'Metadata' / filename
             digest = hashlib.sha256(source.read_bytes()).hexdigest()
             history[key] = {'path': _file(source, digest), 'sha256': digest}
-        history['packages'] = [name]
+        history['packages'] = [selected]
         archives[identity] = history
         histories.append(history)
     global_files = []

@@ -10,9 +10,12 @@
 #include "Misc/Paths.h"
 #include "Serialization/BufferArchive.h"
 #include "Serialization/CompactBinaryWriter.h"
+#include "Serialization/CompactBinaryPackage.h"
+#include "Serialization/CompactBinaryValidation.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/MemoryReader.h"
+#include "Serialization/PackageStore.h"
 #include "ShaderLibrary/EditorShaderCodeArchive.h"
 #include "UObject/PackageFileSummary.h"
 #include <CommonCrypto/CommonDigest.h>
@@ -83,7 +86,27 @@ struct FHistory
     FObject Files;
     FString Content;
     TSet<FName> Packages;
+    TMap<FName, TArray<FShaderHash>> PackageShaders;
 };
+bool RecordShaders(const FObject& Spec, const FString& Name, const FString& RootHash, TArray<FShaderHash>& Hashes)
+{
+    TArray<uint8> Bytes;
+    if (!Pinned(Spec, Bytes) || ValidateCompactBinaryPackage(MakeMemoryView(Bytes), ECbValidateMode::All) != ECbValidateError::None)
+        return false;
+    FMemoryReader Reader(Bytes, true); FCbPackage Package;
+    if (!Package.TryLoad(Reader) || Reader.IsError() || Reader.Tell() != Reader.TotalSize()) return false;
+    const FCbObject Container = Package.GetObject();
+    if (!Container || Package.GetObjectHash() != Container.GetHash()) return false;
+    const bool Retained = Container["record_schema"].HasValue();
+    if (Retained && Container["record_schema"].AsString() != "atelier-zen-package-record/1") return false;
+    const FCbObject Entry = Retained ? Container["entry"].AsObject() : Container;
+    if (!Entry || RootHash != LexToString(Entry.GetHash()) || !Entry["packagestoreentry"].IsObject()) return false;
+    const FPackageStoreEntryResource Store = FPackageStoreEntryResource::FromCbObject(Entry["packagestoreentry"].AsObjectView());
+    if (Store.PackageName.ToString() != Name || Store.HasCookError()
+        || !EnumHasAnyFlags(Store.Flags, EPackageStoreEntryFlags::HasPackageData)) return false;
+    Hashes = Store.ShaderMapHashes;
+    return true;
+}
 bool ShaderFile(const FHistory& History, const FString& Relative, TArray<uint8>& Bytes)
 {
     FString Expected;
@@ -323,7 +346,8 @@ FString AtelierZenFinaliseRequest(const FString& RequestJson)
         TUniquePtr<FHistory> H = MakeUnique<FHistory>();
         H->Content = Text(Spec, TEXT("content_dir")); H->Files = Child(Spec, TEXT("files"));
         const TArray<TSharedPtr<FJsonValue>>* Packages = nullptr;
-        if (FPaths::IsRelative(H->Content) || !H->Files || H->Files->Values.Num() != FormatNames.Num() * 3
+        if (FPaths::IsRelative(H->Content) || !H->Files
+            || (H->Files->Values.Num() != FormatNames.Num() * 3 && (GlobalLibrary || !H->Files->Values.IsEmpty()))
             || !Spec->TryGetArrayField(TEXT("packages"), Packages)
             || (GlobalLibrary ? !Packages->IsEmpty() : Packages->IsEmpty()))
             return Fail(TEXT("incomplete_history_roster"));
@@ -362,7 +386,7 @@ FString AtelierZenFinaliseRequest(const FString& RequestJson)
         for (const auto& Value : *Packages)
         {
             const FObject Package = Value->AsObject();
-            if (!Fields(Package, {TEXT("name"), TEXT("source")})) return Fail(TEXT("unknown_selected_package_fields"));
+            if (!Fields(Package, {TEXT("name"), TEXT("source"), TEXT("record"), TEXT("root_hash")})) return Fail(TEXT("unknown_selected_package_fields"));
             const FString Name = Text(Package, TEXT("name"));
             const FName Key(*Name);
             if (!FPackageName::IsValidLongPackageName(Name) || Owner.Contains(Key)) return Fail(TEXT("invalid_or_duplicate_selected_package"));
@@ -372,6 +396,12 @@ FString AtelierZenFinaliseRequest(const FString& RequestJson)
             const FAssetPackageData* Data = H->Registry.GetAssetPackageData(Key);
             if (Reader.IsError() || !Data || Summary.GetSavedHash().IsZero() || Summary.GetSavedHash() != Data->GetPackageSavedHash())
                 return Fail(TEXT("selected_registry_does_not_bind_source_package"));
+            TArray<FShaderHash> ShaderMaps;
+            if (!RecordShaders(Child(Package, TEXT("record")), Name, Text(Package, TEXT("root_hash")), ShaderMaps))
+                return Fail(TEXT("selected_native_record_shader_binding_failed"));
+            if (H->Files->Values.IsEmpty() && !ShaderMaps.IsEmpty())
+                return Fail(TEXT("missing_shader_history_for_native_shader_maps"));
+            H->PackageShaders.Add(Key, MoveTemp(ShaderMaps));
             Owner.Add(Key, Index); H->Packages.Add(Key);
             *Combined.CreateOrGetAssetPackageData(Key) = *Data;
         }
@@ -486,6 +516,7 @@ FString AtelierZenFinaliseRequest(const FString& RequestJson)
     ExpectedFiles.Add(TEXT("Metadata/DevelopmentAssetRegistry.bin"));
     ExpectedFiles.Add(TEXT("Metadata/") + UE::Cook::GetCookMetadataFilename());
     }
+    TMap<FName, TSet<FString>> ObservedPackageMaps;
     for (const FString& Format : FormatNames)
     {
         FEditorShaderCodeArchive Destination{FName(*Format)};
@@ -494,9 +525,18 @@ FString AtelierZenFinaliseRequest(const FString& RequestJson)
         TSet<FString> GlobalMaps;
         for (const auto& H : Histories)
         {
+            // The pinned source record is authoritative even when the cooker emitted no library.
+            // Registry/source-summary and CookMetadata linkage were checked above; no empty
+            // archive or caller-authored shaderless assertion substitutes for these native hashes.
+            if (!GlobalLibrary && H->Files->Values.IsEmpty()) continue;
             FMembership SourceMembership; TArray<FShaderHash> Native;
             if (!Membership(*H, Library, Format, SourceMembership, Native, GlobalLibrary))
                 return Fail(TEXT("shader_membership_or_unassociated_global_input_unsupported"));
+            if (!GlobalLibrary) for (const FName& Package : H->Packages)
+            {
+                const TSet<FString>* Associated = SourceMembership.Find(Package);
+                if (Associated) ObservedPackageMaps.FindOrAdd(Package).Append(*Associated);
+            }
             for (const auto& Pair : SourceMembership) if (H->Packages.Contains(Pair.Key)) Expected.Add(Pair.Key, Pair.Value);
             FEditorShaderCodeArchive Source{FName(*Format)}; Source.OpenLibrary(Library);
             Source.AddShaderCodeLibraryFromDirectory(H->Content, ESource::PreviousIncremental);
@@ -584,6 +624,15 @@ FString AtelierZenFinaliseRequest(const FString& RequestJson)
                 ExpectedFiles.Add(Relative);
             }
         }
+    }
+    // The package-store entry covers every target shader format; compare their complete union.
+    if (!GlobalLibrary) for (const auto& H : Histories) for (const FName& Package : H->Packages)
+    {
+        TSet<FString> Required;
+        for (const FShaderHash& Hash : H->PackageShaders.FindChecked(Package)) Required.Add(Hash.ToString());
+        const TSet<FString>* Associated = ObservedPackageMaps.Find(Package);
+        if ((Associated ? Associated->Num() : 0) != Required.Num()) return Fail(TEXT("shader_associations_differ_from_native_record"));
+        if (Associated) for (const FString& Hash : *Associated) if (!Required.Contains(Hash)) return Fail(TEXT("shader_associations_differ_from_native_record"));
     }
     TArray<FString> Outputs; IFileManager::Get().FindFilesRecursive(Outputs, *Output, TEXT("*"), true, false);
     if (Outputs.Num() != ExpectedFiles.Num()) return Fail(TEXT("global_output_census_incomplete_or_contains_extra_files"));

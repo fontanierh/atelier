@@ -16,13 +16,15 @@ def package_carrier(tmp_path):
     histories = root / 'native-histories'; histories.mkdir()
     global_archive = root / 'global-metadata.tree.tar'
     history = histories / 'texture.tree.tar'
-    for path in (global_archive, history):
+    source = histories / 'texture.source'
+    for path in (global_archive, history, source):
         path.write_bytes(b'certified immutable archive bytes')
         path.chmod(0o444)
     digest = hashlib.sha256(global_archive.read_bytes()).hexdigest()
     carrier = {'version': 1, 'global_metadata_archive': str(global_archive),
                'global_metadata_sha256': digest, 'packages': [{'slot': 'texture',
-               'metadata_archive': str(history), 'metadata_sha256': digest}]}
+               'metadata_archive': str(history), 'metadata_sha256': digest,
+               'source': {'path': str(source), 'sha256': digest}}]}
     path = root / 'native-packages.json'
     path.write_text(json.dumps(carrier)); path.chmod(0o400)
     return request, root, carrier
@@ -56,7 +58,7 @@ def test_actual_package_dispatch_reaches_finalization_with_private_carrier(tmp_p
         tool.dispatch(request, tmp_path, tmp_path / 'engine', lambda *a, **kw: None)
 
 
-@pytest.mark.parametrize('mutation', ['extra', 'history_extra', 'changed', 'writable', 'link', 'escape'])
+@pytest.mark.parametrize('mutation', ['extra', 'history_extra', 'changed', 'writable', 'link', 'escape', 'source_changed', 'source_escape'])
 def test_package_bootstrap_rejects_unknown_changed_or_aliased_roles(tmp_path, mutation):
     request, root, carrier = package_carrier(tmp_path)
     archive = root / 'native-histories/texture.tree.tar'
@@ -72,6 +74,13 @@ def test_package_bootstrap_rejects_unknown_changed_or_aliased_roles(tmp_path, mu
         archive.unlink(); archive.symlink_to(root / 'global-metadata.tree.tar')
     elif mutation == 'escape':
         carrier['packages'][0]['metadata_archive'] = str(tmp_path / 'outside.tree.tar')
+        path = root / 'native-packages.json'; path.chmod(0o600)
+        path.write_text(json.dumps(carrier)); path.chmod(0o400)
+    elif mutation == 'source_changed':
+        source = root / 'native-histories/texture.source'
+        source.chmod(0o644); source.write_bytes(b'changed'); source.chmod(0o444)
+    elif mutation == 'source_escape':
+        carrier['packages'][0]['source']['path'] = str(tmp_path / 'outside.source')
         path = root / 'native-packages.json'; path.chmod(0o600)
         path.write_text(json.dumps(carrier)); path.chmod(0o400)
     with pytest.raises((ValueError, OSError)):
@@ -407,12 +416,14 @@ def test_package_composes_verified_inputs_before_uat_without_reading_source_name
     staged = tmp_path / 'inputs/global'; staged.mkdir(parents=True)
     tool.recipe_job.pack_root(globals_root, staged / 'global-data.tree.tar')
     record = tmp_path / 'package.cb'; record.write_bytes(b'CB')
+    primary = tmp_path / 'uncooked.uasset'; primary.write_bytes(b'uncooked source fixture; no native SDK in this test')
     sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
     destination = {'project': 'AtelierV2_Global', 'oplog': 'Mac', 'project_file': str(bootstrap),
                    'lifetime_marker': str(source / 'ue.projectstore')}
     carrier = {'version': 1, 'destination': destination, 'globals': ['global'], 'export_project': str(bootstrap),
         'global_metadata_archive': str(archive), 'global_metadata_sha256': sha(archive),
         'packages': [{'metadata_archive': str(archive), 'metadata_sha256': sha(archive),
+            'source': {'path': str(primary), 'sha256': sha(primary)},
             'record_sha256': sha(record), 'locator': {'package': '/Game/A', 'dependency_key': 'a' * 40,
                 'entry_hash': 'b' * 40, 'record_path': str(record), 'record_sha256': sha(record)}}]}
     carrier_file = runtime / 'native-packages.json'; carrier_file.write_text(json.dumps(carrier)); carrier_file.chmod(0o400)

@@ -1,6 +1,11 @@
 schema_version = 1
 
 [[scenarios]]
+id = "native.package.exact_uncooked_primary"
+tests = ["atelier-build-v2/native_verify::tests::selected_uncooked_primary_is_exact_unique_and_not_a_sibling"]
+tier = "t0"
+
+[[scenarios]]
 id = "native.verify.certified_metadata_archive"
 tests = ["atelier-build-v2/native_verify::tests::native_transport_metadata_requires_certified_archive_and_exact_root_membership"]
 tier = "t0"
