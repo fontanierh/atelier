@@ -338,6 +338,10 @@ def test_background_render_registration_has_exact_native_service_and_bundle_boun
     assert len(setup) == 1 and setup[0].startswith('(allow file-read-metadata ')
     assert '(literal "/private/var/db/.AppleSetupDone")' in setup[0]
     assert '(subpath "/private/var/db")' not in profile
+    eligibility = '/private/var/db/eligibilityd/eligibility.plist'
+    assert '(allow file-read-data (literal "' + eligibility + '"))' in profile
+    roots, literals = platform.reads()
+    assert eligibility not in literals and not any(eligibility.startswith(root + '/') for root in roots)
     assert '(allow process*)' not in profile and '(allow network*)' not in profile
     assert profile.splitlines()[-1] == '(deny network-bind)'
     outside_bundle = blender_worker.BlenderPlatform(str(tmp_path / 'plain/Blender'))
