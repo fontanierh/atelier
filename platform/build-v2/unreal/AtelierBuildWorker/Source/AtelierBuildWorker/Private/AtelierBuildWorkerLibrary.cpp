@@ -1,4 +1,5 @@
 #include "AtelierBuildWorkerLibrary.h"
+#include "AtelierZenFinalise.h"
 
 #include "AssetCompilingManager.h"
 #include "HAL/FileManager.h"
@@ -240,6 +241,7 @@ namespace
 FString UAtelierBuildWorkerLibrary::NativeContext()
 {
     const TSharedRef<FJsonObject> Context = MakeShared<FJsonObject>();
+    Context->SetStringField(TEXT("worker_source_digest"), UTF8_TO_TCHAR(ATELIER_BUILD_WORKER_SOURCE_DIGEST));
     FModuleManifest Engine;
     const FString EngineBinaries = FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries"), FPlatformProcess::GetBinariesSubdirectory());
     Context->SetStringField(TEXT("build_id"), FModuleManifest::TryRead(FModuleManifest::GetFileName(EngineBinaries, false), Engine) ? Engine.BuildId : FString());
@@ -274,6 +276,23 @@ FString UAtelierBuildWorkerLibrary::NativeContext()
     Context->SetObjectField(TEXT("plugins"), Plugins);
     Context->SetStringField(TEXT("rhi"), GUsingNullRHI ? TEXT("null") : TEXT("other"));
     return Write(MakeShared<FJsonValueObject>(Context));
+}
+
+extern bool BeginAtelierReadRecording();
+extern TArray<FString> EndAtelierReadRecording();
+
+bool UAtelierBuildWorkerLibrary::BeginReadRecording()
+{
+    return BeginAtelierReadRecording();
+}
+
+FString UAtelierBuildWorkerLibrary::EndReadRecording()
+{
+    const TSharedRef<FJsonObject> Report = MakeShared<FJsonObject>();
+    Report->SetNumberField(TEXT("version"), 1);
+    Report->SetBoolField(TEXT("best_effort"), true);
+    Report->SetField(TEXT("files"), Strings(EndAtelierReadRecording()));
+    return Write(MakeShared<FJsonValueObject>(Report));
 }
 
 void UAtelierBuildWorkerLibrary::BeginSaveRecording()
@@ -515,4 +534,9 @@ int32 UAtelierBuildWorkerLibrary::EnsureCount()
 void UAtelierBuildWorkerLibrary::ForgetFiles(const TArray<FString>& Files)
 {
     IAssetRegistry::GetChecked().ScanModifiedAssetFiles(Files);
+}
+
+FString UAtelierBuildWorkerLibrary::ZenFinaliseRequest(const FString& RequestJson)
+{
+    return AtelierZenFinaliseRequest(RequestJson);
 }
