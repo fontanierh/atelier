@@ -1518,7 +1518,7 @@ def unreal_steps(ctx):
                                       '--output', out / 'skate-simulation/verification.json'))],
              inputs=[SKATE_TOOLS / 'simulation_package.py', SKATE_TOOLS / 'motion_text.py', SKATE_TOOLS / 'runtime_text.py',
                      SKATE_DATA],
-             outputs=[out / 'skate-simulation/verification.json', out / 'skate-simulation/package' / 'package-manifest.json'],
+             outputs=[out / 'skate-simulation/verification.json', out / 'skate-simulation/package'],
              about="assemble the Skate plugin's simulation package and verify every payload"),
         Step('unreal.compile', [UnrealCompile('YorimichiEditor')], inputs=[ctx.uproject],
              deferred_inputs=[native_source_inputs()],
