@@ -269,3 +269,35 @@ def test_global_cook_keeps_global_shader_saving_and_explicit_shader_archive_poli
     for args in (normal, global_args):
         assert '-ini:Game:[/Script/UnrealEd.ProjectPackagingSettings]:bShareMaterialShaderCode=True' in args
         assert '-ini:Game:[/Script/UnrealEd.ProjectPackagingSettings]:bSharedMaterialNativeLibraries=False' in args
+
+
+def test_semantic_global_projection_keeps_complete_shader_bytes_excludes_transport(tmp_path):
+    from atelier.build_v2.native_tool_worker import semantic_global_data, Refused
+    import pytest
+    source = tmp_path / 'cooked'
+    content = source / 'Game/Content'
+    content.mkdir(parents=True)
+    roles = {'ShaderAssetInfo':'.assetinfo.json','ShaderArchive':'.ushaderbytecode','ShaderTypeInfo':'.stinfo'}
+    expected = {}
+    for format_ in ('SF_METAL_SM5','SF_METAL_SM6'):
+        for prefix, suffix in roles.items():
+            name = prefix + '-Global-' + format_ + suffix
+            expected[name] = name.encode()
+            (content / name).write_bytes(expected[name])
+    (source / 'ue.projectstore').write_text('namespace A')
+    (source / 'atelier-native-cook.json').write_text('transport only')
+    (source / 'CookStats.txt').write_text('statistics')
+    first = tmp_path / 'first'
+    assert semantic_global_data(source, first) == ['SF_METAL_SM5','SF_METAL_SM6']
+    assert {p.name:p.read_bytes() for p in (first/'Content').iterdir()} == expected
+    assert {p.name for p in first.iterdir()} == {'Content'}
+    (source/'ue.projectstore').write_text('namespace B')
+    second=tmp_path/'second';semantic_global_data(source,second)
+    assert {p.name:p.read_bytes() for p in (second/'Content').iterdir()} == expected
+    (content/'ShaderArchive-Global-SF_METAL_SM5.ushaderbytecode').unlink()
+    with pytest.raises(Refused, match='complete Global'):
+        semantic_global_data(source,tmp_path/'missing')
+    assert not (tmp_path/'missing').exists()
+    (content/'ShaderArchive-Global-SF_METAL_SM5.ushaderbytecode').symlink_to(content/'ShaderArchive-Global-SF_METAL_SM6.ushaderbytecode')
+    with pytest.raises(Refused, match='alias'):
+        semantic_global_data(source,tmp_path/'alias')
