@@ -113,7 +113,7 @@ def validate_session_profile(admission, *, kind, command, limit_gib):
 
 def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, config=None, performance=False,
                        command=None, small_gib=None, compile_memory_gib=None, script_memory_gib=None,
-                       logical_folder=None):
+                       logical_folder=None, job_gpu_gib=None):
     """@cc [owner:fontanierh,label:safety] configured-capacity-never-falls-back
     A configured common launcher MUST refuse invalid profiles or unavailable admission. The full
     reservation MUST cover its existing guard ceiling; profiles MUST NOT raise that guard limit or
@@ -127,6 +127,11 @@ def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, c
     That SMALL memory reservation MUST equal the actual selected guard ceiling; bridge and
     explicit-session limits MUST NOT be changed by this selection. Sealed maintenance MUST retain
     nominal guard ceilings and reserve all managed CPU with performance exclusion for every job.
+    An explicit job_gpu_gib MAY increase only an automatic full job's GPU reservation,
+    with a finite positive selection no larger than its actual selected memory guard.
+    Legacy, missing and maintenance admission MUST refuse this option; profiles and CPU,
+    nominal memory, locks, exclusion and worker settings MUST remain unchanged. A requested GPU
+    reservation MUST fit any selected SMALL envelope or that envelope MUST NOT be selected.
     Full automatic games MAY increase only their session memory reservation to cover a caller's
     explicitly selected guard ceiling within the documented game range. The configured profile
     MUST already cover the default game ceiling; neither the configuration nor the guard changes.
@@ -143,6 +148,9 @@ def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, c
     old identity. Actual report paths, resources, guard ceilings, queue age policy, checkout,
     kind, admission mode and worker settings MUST NOT be changed by this identity separation.
     """
+    if job_gpu_gib is not None and (kind != 'job' or type(job_gpu_gib) not in (int, float)
+            or not math.isfinite(job_gpu_gib) or not 0 < job_gpu_gib <= limit_gib):
+        raise ValueError('Explicit job GPU requires job kind and a finite positive reservation within the guard ceiling')
     if logical_folder is not None and (not isinstance(logical_folder, (str, Path)) or not str(logical_folder)
                                        or '\0' in str(logical_folder)):
         raise ValueError('logical_folder requires the original task folder')
@@ -166,6 +174,8 @@ def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, c
         if selected is None:
             if barrier is not None:
                 raise ValueError('A capacity cutover exists; missing client configuration cannot fall back to slots')
+            if job_gpu_gib is not None:
+                raise ValueError('Explicit job GPU requires full-capacity admission')
             if script_memory_gib is not None:
                 raise ValueError('Explicit script ceiling requires full-capacity admission')
             if compile_memory_gib is not None:
@@ -182,6 +192,8 @@ def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, c
     if (not (bridge or full or maintenance) or not isinstance(value['socket'], str)
             or not Path(value['socket']).is_absolute() or not isinstance(value['profiles'], dict)):
         raise ValueError('unsupported capacity client configuration')
+    if job_gpu_gib is not None and not full:
+        raise ValueError('Explicit job GPU requires full-capacity admission')
     if script_memory_gib is not None and not full:
         raise ValueError('Explicit script ceiling requires full-capacity admission')
     if compile_memory_gib is not None and not full:
@@ -217,6 +229,8 @@ def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, c
     workers = _worker_profile(command) if full or maintenance or kind == 'job' else None
     if script_memory_gib is not None and workers is not None:
         raise ValueError('Explicit script ceiling cannot select a Blender worker envelope')
+    if job_gpu_gib is not None:
+        resources = replace(resources, gpu_mib=max(resources.gpu_mib, math.ceil(job_gpu_gib * 1024)))
     guard_limit_gib = limit_gib
     if full and kind == 'job' and not performance and workers is not None:
         from atelier.harness.safety.render_lock import SMALL_LIMIT_GIB, SMALL_PEAK_GIB

@@ -28,13 +28,15 @@ from atelier.harness.capacity_protocol import process_start
 MONITOR = [999991, 4242]  # stands in for the custody monitor's own pinned identity
 
 def run(command, folder, timeout=0., purpose=None, env=None, limit_gib=10., kind='job', on_slot=None,
-        on_poll=None, pass_fds=(), queue_seconds=None, custody_fds=(), invocation_id=None, script_memory_gib=None):
+        on_poll=None, pass_fds=(), queue_seconds=None, custody_fds=(), invocation_id=None, script_memory_gib=None, job_gpu_gib=None):
     folder = Path(folder)
     folder.mkdir(parents=True, exist_ok=True)
     scenario = os.environ['FAKE_GUARD']
     (folder / 'fake-call.json').write_text(json.dumps(dict(
         pass_fds=list(pass_fds), custody=[list(os.fstat(fd)[1:3][::-1]) for fd in custody_fds],
-        kind=kind, limit_gib=limit_gib, timeout=timeout, queue_seconds=queue_seconds, script_memory_gib=script_memory_gib)))
+        kind=kind, limit_gib=limit_gib, timeout=timeout, queue_seconds=queue_seconds, script_memory_gib=script_memory_gib, job_gpu_gib=job_gpu_gib)))
+    if scenario == 'gpu_probe':
+        raise SystemExit(1)  # No process/admission: inspect only the actual bridge call.
     if scenario == 'queue':
         while True:
             time.sleep(.02)  # stands in for waiting on the broker; TERM unwinds it
@@ -105,7 +107,7 @@ def run(command, folder, timeout=0., purpose=None, env=None, limit_gib=10., kind
 
 
 class Bridge:
-    def __init__(self, tmp_path, scenario, custody=(), memory=1):
+    def __init__(self, tmp_path, scenario, custody=(), memory=1, program=None):
         self.skip_samples = bool(custody)  # a custody readiness receipt is also a sample
         (tmp_path / 'fakeguard.py').write_text(FAKE_GUARD)
         self.report = tmp_path / 'attempt-1'
@@ -116,7 +118,7 @@ class Bridge:
         liveness_r, self.liveness_w = os.pipe()
         spec_r, spec_w = os.pipe()
         self.fd_report = tmp_path / 'worker-fds.json'
-        spec = dict(program=sys.executable, args=[str(WORKER), 'normal'],
+        spec = dict(program=program or sys.executable, args=[str(WORKER), 'normal'],
                     env=dict(PATH=os.environ['PATH'], WORKER_FD_REPORT=str(self.fd_report)))
         os.write(spec_w, json.dumps(spec).encode())
         os.close(spec_w)
@@ -503,3 +505,19 @@ def test_explicit_large_script_reservation_matches_the_actual_guard_ceiling(tmp_
     assert bridge.next()['cleanup'] == 'confirmed'
     assert bridge.finish() == 0
     assert json.loads((bridge.report / 'fake-call.json').read_text())['script_memory_gib'] == 16
+
+
+@darwin
+@pytest.mark.parametrize('program,gpu', [('/Applications/Blender.app/Contents/MacOS/Blender', 10),
+                                        ('/Applications/Blender.app/Contents/MacOS/blender', 10),
+                                        ('/usr/bin/python3', None), ('/tmp/Blender-wrapper', None)])
+def test_literal_blender_job_reserves_full_guard_gpu_without_changing_launch_kind(tmp_path, program, gpu):
+    bridge = Bridge(tmp_path, 'gpu_probe', memory=10, program=program)
+    assert bridge.next()['event'] == 'queued'
+    assert bridge.next()['event'] == 'finished'
+    assert bridge.finish() == 1
+    call = json.loads((bridge.report / 'fake-call.json').read_text())
+    assert call['kind'] == 'job'
+    assert call['limit_gib'] == 10
+    assert call['job_gpu_gib'] == gpu
+    assert call['script_memory_gib'] is None

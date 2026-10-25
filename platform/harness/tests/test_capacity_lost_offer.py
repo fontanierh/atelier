@@ -96,7 +96,8 @@ def test_pressure_requeues_more_than_three_times_under_the_original_deadline(mon
     assert len(calls)==5 and len({c['_queue_deadline'] for c in calls})==1
 
 
-def test_logical_folder_survives_every_internal_requeue_while_reports_stay_fresh(monkeypatch, tmp_path):
+@pytest.mark.parametrize('gpu', [None, 10.])
+def test_logical_folder_survives_every_internal_requeue_while_reports_stay_fresh(monkeypatch, tmp_path, gpu):
     # Exercise the actual outer requeue loop with a synthetic positively unexecuted denial;
     # this is forwarding/report-path proof, not a real capacity or cleanup attestation.
     folder = tmp_path / 'private-invocation'
@@ -113,6 +114,7 @@ def test_logical_folder_survives_every_internal_requeue_while_reports_stay_fresh
         calls.append((args, kwargs))
         actual = args[1]
         assert actual in (folder, second_folder) and kwargs['logical_folder'] == logical
+        assert kwargs.get('job_gpu_gib') == gpu
         for name in ('memory-health.json', 'memory-health-tree.json', 'stdout.log'):
             (actual / name).write_text(actual.name if name == 'stdout.log' else '{}')
         if len(calls) >= 3:
@@ -121,13 +123,13 @@ def test_logical_folder_survives_every_internal_requeue_while_reports_stay_fresh
         error.cleanup = {'no_go': True, 'uncharged_close': True}
         raise error
     monkeypatch.setattr(guarded, '_run', run)
-    assert guarded.run(['ordinary-python'], folder, logical_folder=logical, queue_seconds=123) == 0
+    assert guarded.run(['ordinary-python'], folder, logical_folder=logical, queue_seconds=123, job_gpu_gib=gpu) == 0
     assert len(calls) == 3 and len({kwargs['_queue_deadline'] for _, kwargs in calls}) == 1
     assert all(args == calls[0][0] for args, _ in calls)
     assert len(list(folder.glob('lost-offer-*/no-go.json'))) == 2
     assert (folder / 'stdout.log').exists() and previous.read_text() == '{"peak_bytes":3758096384}'
     assert not (logical / 'stdout.log').exists()
-    assert guarded.run(['ordinary-python'], second_folder, logical_folder=logical, queue_seconds=123) == 0
+    assert guarded.run(['ordinary-python'], second_folder, logical_folder=logical, queue_seconds=123, job_gpu_gib=gpu) == 0
     assert (folder / 'stdout.log').read_text() == folder.name
     assert (second_folder / 'stdout.log').read_text() == second_folder.name
 
