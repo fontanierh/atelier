@@ -26,11 +26,12 @@ def _member(value):
     return value
 
 
-def verify_plan(root, *, parent, limits):
+def verify_plan(root, *, parent, limits, output_format='fbx'):
     """@cc [owner:fontanierh,label:correctness] d2-producer-verifies-emitted-plan
     The producer MUST verify its complete emitted set before Completed, fully decoding each
     selected MeshIR with the existing decoder, binding hashes and preserving exact face/material/
-    collision ownership. Unknown, missing, aliased or linked files and over-limit groups MUST fail.
+    collision ownership against the explicitly declared export format. Unknown, missing, aliased
+    or linked files and over-limit groups MUST fail.
     B2 MUST independently check the later frozen inventory and bindings; this is in-job proof only.
     See test_build_v2_blender_ops.py.
     """
@@ -45,6 +46,8 @@ def verify_plan(root, *, parent, limits):
     paths = list(root.iterdir())
     if any(p.is_symlink() or not p.is_file() or p.stat().st_nlink != 1 for p in paths):
         raise ValueError('Plan contains a link, directory or unsupported member')
+    if output_format not in ('fbx', 'glb'):
+        raise ValueError('Producer requires an explicit FBX or GLB export format')
     manifest_path = root / 'plan.json'
     if not manifest_path.is_file() or manifest_path.stat().st_size > limits['max_manifest_bytes']:
         raise ValueError('Missing or oversized plan manifest')
@@ -99,7 +102,7 @@ def verify_plan(root, *, parent, limits):
         raw = path.read_bytes()
         if hashlib.sha256(raw).hexdigest() != row.get('sha256'):
             raise ValueError('Emitted payload hash differs from the plan')
-        facts = mesh_facts(raw, expected_asset=asset, output_format=None)
+        facts = mesh_facts(raw, expected_asset=asset, output_format=output_format)
         validate_member_row(facts, row, manifest)
         membership = row.get('source_faces')
         if (not isinstance(membership, list) or len(membership) != facts['polygons']
@@ -167,7 +170,8 @@ def run_plan(context, producer):
             raise ValueError('Linked planner output ancestor')
     root.mkdir(parents=True, exist_ok=False)
     producer(root)
-    return verify_plan(root, parent=context.params['parent'], limits=context.params['plan_limits'])
+    return verify_plan(root, parent=context.params['parent'], limits=context.params['plan_limits'],
+                       output_format=context.params.get('format', 'fbx'))
 
 
 def run_export_piece(context):
@@ -311,7 +315,7 @@ def export_options(payload_options, declared_options, *, output_format='fbx', fi
         return check(actual)
     if any(key in actual for key in ('filepath', 'use_selection', 'object_types', 'bake_anim')):
         raise ValueError('Export options cannot override fixed selected-mesh ownership')
-    if (actual.get('path_mode', 'RELATIVE') != 'RELATIVE'
+    if (actual.get('path_mode', 'RELATIVE') not in ('RELATIVE', 'STRIP')
             or actual.get('batch_mode', 'OFF') != 'OFF' or actual.get('use_batch_own_dir', False) is not False):
         raise ValueError('This FBX slice supports one relative-media primary, not batched/copied resources')
     return validate_mesh_options(actual)
