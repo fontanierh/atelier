@@ -119,7 +119,14 @@ impl ControllerRequest {
                 | crate::unreal_controller::FINISH
                 | crate::unreal_controller::AUTHOR
                     if unit.output_groups.is_empty()
-                        && unit.script == crate::unreal_controller::ENTRY => {}
+                        && (unit.op.kind == crate::unreal_controller::AUTHOR
+                            || unit.script == crate::unreal_controller::ENTRY) => {}
+                kind if crate::native_tool_ops::supports(kind)
+                    && unit.output_groups.is_empty()
+                    && unit.script == crate::native_tool_ops::ENTRY =>
+                {
+                    crate::native_tool_ops::validate_params(kind, &unit.params)?;
+                }
                 crate::encoded_ops::KIND if unit.output_groups.is_empty() => {}
                 BLENDER_PLAN_KIND if unit.output_groups.len() == 1 && unit.outputs.is_empty() => {
                     blender_plan_spec(self, unit)?.definition()?;
@@ -202,6 +209,15 @@ pub(crate) fn object_records(document: &Value) -> Result<(), String> {
             object(op)?;
         }
         records(template.get("files"))?;
+        for follower in records(template.get("followers"))? {
+            let follower = object(follower)?;
+            if let Some(unit) = follower.get("unit") {
+                object_records(&serde_json::json!({"declaration":{"units":[unit]}}))?;
+            }
+            if let Some(stage) = follower.get("staged_inputs") {
+                object(stage)?;
+            }
+        }
     }
     if let Some(contract) = request.get("data_contract") {
         object(contract)?;
@@ -238,6 +254,7 @@ pub struct PreparedController {
     pub blender_worker: Option<PythonWorkerBundle>,
     pub recipe_workers: Vec<(PythonWorkerBundle, bool)>,
     pub unreal_worker: Option<crate::unreal::UnrealWorkerBundle>,
+    pub native_tool_worker: Option<crate::native_tools::NativeToolBundle>,
     pub runtimes: BTreeMap<String, Runtime>,
     pub targets: Vec<Target>,
     pub demands: BTreeMap<String, FinalDemands>,
@@ -265,17 +282,29 @@ pub(crate) fn registry(request: &ControllerRequest) -> Result<crate::validate::O
     let mut registry = BTreeMap::new();
     spec.register(&mut registry)?;
     crate::encoded_ops::register(&mut registry);
-    if request.declaration.units.iter().any(|u| {
-        matches!(
-            u.op.kind.as_str(),
-            crate::unreal_controller::RAW_IMPORT
-                | crate::unreal_controller::FINISH
-                | crate::unreal_controller::AUTHOR
+    if request
+        .declaration
+        .units
+        .iter()
+        .chain(
+            request
+                .templates
+                .iter()
+                .flat_map(|template| template.followers.iter().map(|follower| &follower.unit)),
         )
-    }) {
+        .any(|u| {
+            matches!(
+                u.op.kind.as_str(),
+                crate::unreal_controller::RAW_IMPORT
+                    | crate::unreal_controller::FINISH
+                    | crate::unreal_controller::AUTHOR
+            )
+        })
+    {
         crate::unreal_controller::register(&mut registry, &request.data_contract.content_slots)?;
     }
     crate::recipe_ops::register(&mut registry, &request.data_contract.content_slots)?;
+    crate::native_tool_ops::register(&mut registry, &request.data_contract.content_slots)?;
     if let Some(unit) = request
         .declaration
         .units
@@ -330,6 +359,9 @@ pub fn prepare(request: &ControllerRequest) -> Result<PreparedController, String
     }
     for template in &request.templates {
         names.extend(template.code.iter().map(String::as_str));
+        for follower in &template.followers {
+            names.extend(follower.unit.code.iter().map(String::as_str));
+        }
     }
     let sources = capture_sources(&request.checkout, names)?;
     let selected = graph.select(&targets, &sources.snapshot)?;
@@ -404,6 +436,21 @@ pub fn prepare(request: &ControllerRequest) -> Result<PreparedController, String
     } else {
         None
     };
+    let native_tool_worker = if selected.order().iter().any(|id| {
+        graph
+            .unit(id)
+            .is_some_and(|unit| crate::native_tool_ops::supports(&unit.op.kind))
+    }) {
+        let source = capture_sources(
+            &request.checkout.join(WORKER_DIRECTORY),
+            crate::native_tools::NATIVE_TOOL_FILES,
+        )?;
+        Some(crate::native_tools::NativeToolBundle::from_snapshot(
+            &source.snapshot,
+        )?)
+    } else {
+        None
+    };
     let mut runtimes = BTreeMap::new();
     for id in selected.order() {
         let unit = graph.unit(id).ok_or("selected unit missing")?;
@@ -435,6 +482,15 @@ pub fn prepare(request: &ControllerRequest) -> Result<PreparedController, String
                 } else {
                     "recipe-python"
                 },
+            )
+        } else if crate::native_tool_ops::supports(&unit.op.kind) {
+            (
+                native_tool_worker
+                    .as_ref()
+                    .ok_or("missing frozen native tool worker")?
+                    .identity(),
+                crate::native_tool_ops::validator(),
+                "native-tool",
             )
         } else if matches!(
             unit.op.kind.as_str(),
@@ -508,6 +564,7 @@ pub fn prepare(request: &ControllerRequest) -> Result<PreparedController, String
         blender_worker,
         recipe_workers,
         unreal_worker,
+        native_tool_worker,
         runtimes,
         targets,
         demands,
@@ -537,7 +594,13 @@ pub struct ExecutionContext {
     pub interpreter: PathBuf,
     pub blender: Option<PathBuf>,
     pub node: Option<PathBuf>,
+    pub ffmpeg: Option<PathBuf>,
+    pub ffprobe: Option<PathBuf>,
     pub unreal: Option<crate::unreal_controller::UnrealLocations>,
+    pub native_export_project: Option<PathBuf>,
+    pub unreal_memory_gib: Option<u32>,
+    pub blender_memory_gib: Option<u32>,
+    pub unreal_job_seconds: Option<u64>,
     /// Actual controller identity supplied by the normal caller's authoritative OS probe.
     pub owner: ProcessIdentity,
     pub provenance: Provenance,
@@ -647,6 +710,19 @@ fn execute_static<L: WorkerLauncher + Send>(
     {
         return Err("invalid normal controller execution context".into());
     }
+    if context.unreal_memory_gib.is_some_and(|n| n == 0 || n > 24)
+        || context.blender_memory_gib.is_some_and(|n| n == 0 || n > 24)
+        || context.unreal_job_seconds.is_some_and(|n| {
+            n == 0
+                || context.limits.overall.is_none_or(|overall| {
+                    std::time::Duration::from_secs(n)
+                        .checked_add(context.limits.cleanup)
+                        .is_none_or(|minimum| minimum > overall)
+                })
+        })
+    {
+        return Err("invalid typed native execution resources".into());
+    }
     if control.cancelled() {
         return Ok(ExecutionObservation::cancelled_before_work());
     }
@@ -657,6 +733,7 @@ fn execute_static<L: WorkerLauncher + Send>(
         blender_worker,
         recipe_workers,
         unreal_worker,
+        native_tool_worker,
         runtimes,
         targets,
         demands,
@@ -748,6 +825,7 @@ fn execute_static<L: WorkerLauncher + Send>(
     if let Some(path) = &context.node {
         executor = executor.with_node(path.clone());
     }
+    executor = executor.with_media(context.ffmpeg.clone(), context.ffprobe.clone());
     if let Some(bundle) = blender_worker {
         executor = executor.with_blender(PythonExecution {
             interpreter: context
@@ -756,7 +834,7 @@ fn execute_static<L: WorkerLauncher + Send>(
                 .ok_or("missing Blender execution locator")?,
             bundle,
             profile: "normal-blender".into(),
-            memory_gib: context.memory_gib,
+            memory_gib: context.blender_memory_gib.unwrap_or(context.memory_gib),
             limits: context.limits,
         });
     }
@@ -776,7 +854,11 @@ fn execute_static<L: WorkerLauncher + Send>(
             } else {
                 "recipe-python".into()
             },
-            memory_gib: context.memory_gib,
+            memory_gib: if blender {
+                context.blender_memory_gib.unwrap_or(context.memory_gib)
+            } else {
+                context.memory_gib
+            },
             limits: context.limits,
         });
     }
@@ -807,8 +889,37 @@ fn execute_static<L: WorkerLauncher + Send>(
             sources: native_sources,
             cache_root: context.cache_root.clone(),
             worker: crate::unreal_controller::worker_identity(&bundle),
-            memory_gib: context.memory_gib,
-            limits: context.limits,
+            memory_gib: context.unreal_memory_gib.unwrap_or(context.memory_gib),
+            limits: Limits {
+                job: context
+                    .unreal_job_seconds
+                    .map(std::time::Duration::from_secs)
+                    .unwrap_or(context.limits.job),
+                ..context.limits
+            },
+        });
+    }
+    if let Some(bundle) = native_tool_worker {
+        let engine_root = context
+            .unreal
+            .as_ref()
+            .ok_or("native tools require execution.unreal.engine_root")?
+            .engine_root
+            .clone();
+        executor = executor.with_native_tool(crate::python_executor::NativeToolExecution {
+            interpreter: context.interpreter.clone(),
+            engine_root,
+            bundle,
+            zen_state_root: context.cache_root.join("zen-cook"),
+            export_project: context.native_export_project.clone(),
+            memory_gib: context.unreal_memory_gib.unwrap_or(context.memory_gib),
+            limits: Limits {
+                job: context
+                    .unreal_job_seconds
+                    .map(std::time::Duration::from_secs)
+                    .unwrap_or(context.limits.job),
+                ..context.limits
+            },
         });
     }
     let recorder = Recorder::default();
@@ -877,7 +988,10 @@ fn unresolved_derived(value: &Value) -> bool {
 
 fn resolve_derived(
     value: &mut Value,
-    expanded: &BTreeMap<(String, String, String), Vec<(String, String)>>,
+    expanded: &BTreeMap<
+        (String, String, String, Option<usize>),
+        Vec<(String, String, Vec<String>)>,
+    >,
     additions: &mut Vec<(String, String, String, String)>,
 ) -> Result<(), String> {
     if let Some(descriptor) = value
@@ -904,16 +1018,37 @@ fn resolve_derived(
                     get("producer")?.to_string(),
                     get("group")?.to_string(),
                     get("unit_prefix")?.to_string(),
+                    template
+                        .get("follower")
+                        .map(|value| {
+                            value
+                                .as_u64()
+                                .and_then(|n| usize::try_from(n).ok())
+                                .ok_or("invalid derived follower index")
+                        })
+                        .transpose()?,
                 );
                 let Some(children) = expanded.get(&key) else {
                     additions.truncate(start);
                     return Ok(());
                 };
-                for (piece, child) in children {
+                for (piece, child, items) in children {
+                    let item = if let Some(name) = template.get("item") {
+                        let name = name.as_str().ok_or("invalid derived item name")?;
+                        if !items.iter().any(|item| item == name) {
+                            return Err("unknown derived child item".into());
+                        }
+                        name.to_string()
+                    } else {
+                        if items.len() != 1 {
+                            return Err("derived child requires an explicit item name".into());
+                        }
+                        items[0].clone()
+                    };
                     let slot = format!("derived_{}", additions.len());
                     let logical = format!("{root}/{piece}");
                     rows.push(serde_json::json!({"piece":piece,"root":logical,"slot":slot}));
-                    additions.push((slot, child.clone(), logical, "asset".into()));
+                    additions.push((slot, child.clone(), logical, item));
                 }
             }
             *value = serde_json::json!({"derived_items":{"root":root,"members":rows}});
@@ -1001,6 +1136,7 @@ pub fn execute<L: WorkerLauncher + Send>(
                 template.producer.clone(),
                 template.group.clone(),
                 template.unit_prefix.clone(),
+                None,
             );
             let group = groups
                 .get(&(template.producer.clone(), template.group.clone()))
@@ -1024,17 +1160,44 @@ pub fn execute<L: WorkerLauncher + Send>(
                 .keys()
                 .map(|piece| (piece.clone(), format!("{}.{piece}", template.unit_prefix)))
                 .collect::<Vec<_>>();
-            for (_, child) in &children {
+            for (piece, _) in &children {
                 request
                     .staged_inputs
-                    .insert(child.clone(), registered.staged_inputs());
+                    .extend(registered.staged_inputs_for(piece)?);
             }
             request
                 .data_contract
                 .content_slots
                 .entry(template.payload_slot.clone())
                 .or_insert(false);
-            expanded.insert(key, children);
+            for index in 0..template.followers.len() {
+                let mut members = Vec::new();
+                for (piece, export) in &children {
+                    let chain =
+                        crate::native_chains::instantiate(&template.followers, piece, export)?;
+                    let follower = &chain.units[index];
+                    members.push((
+                        piece.clone(),
+                        follower.id.clone(),
+                        follower
+                            .outputs
+                            .iter()
+                            .map(|item| item.id.clone())
+                            .collect(),
+                    ));
+                }
+                expanded.insert(
+                    (key.0.clone(), key.1.clone(), key.2.clone(), Some(index)),
+                    members,
+                );
+            }
+            expanded.insert(
+                key,
+                children
+                    .into_iter()
+                    .map(|(piece, child)| (piece, child, vec!["asset".into()]))
+                    .collect(),
+            );
             graph = BuildGraph::validate(
                 expansion.graph().declaration().clone(),
                 &registry,
@@ -1071,12 +1234,20 @@ pub fn execute<L: WorkerLauncher + Send>(
                     .ok_or("missing derived consumer stage map")?
                     .insert(slot.clone(), staged.clone());
                 request.data_contract.content_slots.insert(slot, false);
-                unit.params
-                    .get_mut("recipe")
-                    .and_then(|v| v.get_mut("paths"))
-                    .and_then(Value::as_object_mut)
-                    .ok_or("derived consumer has no recipe paths")?
-                    .insert(logical, staged.into());
+                if let Some(recipe) = unit.params.get_mut("recipe") {
+                    recipe
+                        .get_mut("paths")
+                        .and_then(Value::as_object_mut)
+                        .ok_or("derived recipe consumer has no path map")?
+                        .insert(logical, staged.into());
+                } else if !matches!(
+                    unit.op.kind.as_str(),
+                    crate::unreal_controller::RAW_IMPORT
+                        | crate::unreal_controller::FINISH
+                        | crate::unreal_controller::AUTHOR
+                ) {
+                    return Err("unsupported derived consumer runtime".into());
+                }
             }
         }
     }

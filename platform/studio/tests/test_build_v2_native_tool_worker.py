@@ -1,0 +1,226 @@
+"""Fixed native TOOL routes; no native execution in these focused tests."""
+import io
+import json
+
+import pytest
+
+from atelier.build_v2 import native_tool_worker as tool
+from atelier.build_v2 import protocol
+
+
+def job(tmp_path, kind='unreal.compile'):
+    (tmp_path / 'output').mkdir()
+    (tmp_path / '.recipe-runtime').mkdir()
+    project = tmp_path / 'Game.uproject'
+    project.write_text('{}')
+    return {'job_id': 'j', 'unit': 'u', 'op': {'kind': kind, 'version': '1'}, 'job_dir': str(tmp_path),
+            'script': '', 'code': ['Game.uproject'], 'inputs': [],
+            'params': {'project': 'Game.uproject', 'target': 'GameEditor',
+                       'recipe': {'version': 1, 'paths': {}, 'commands': [], 'verify': None,
+                                  'outputs': [{'path': 'Binaries/Mac', 'file': 'binaries.tree.tar'}]}},
+            'outputs': [{'path': 'binaries.tree.tar'}]}
+
+
+def test_compile_runs_private_frozen_project_and_exports_complete_receipt(tmp_path):
+    original = job(tmp_path)
+    calls = []
+    def run(argv, **kwargs):
+        calls.append((argv, kwargs))
+        view = kwargs['cwd']
+        root = view / 'Binaries/Mac'
+        root.mkdir(parents=True)
+        (root / 'Game.dylib').write_bytes(b'compiled')
+        (root / 'UnrealEditor.modules').write_text(json.dumps({'BuildId': 'real-receipt-test', 'Modules': {'Game': 'Game.dylib'}}))
+        (root / 'GameEditor.target').write_text(json.dumps({'TargetName': 'GameEditor', 'Platform': 'Mac',
+            'Configuration': 'Development', 'BuildProducts': [{'Path': '$(ProjectDir)/Binaries/Mac/Game.dylib'}]}))
+    result = tool.dispatch(original, tmp_path, tmp_path / 'engine', run)
+    assert result == ['binaries.tree.tar']
+    assert calls[0][0][-1] == '-MaxParallelActions=3'
+    assert str(tmp_path / '.recipe-runtime/view/Game.uproject') in calls[0][0][-3]
+    restored = tmp_path / 'restored'
+    tool.recipe_job.unpack_root(tmp_path / 'output/binaries.tree.tar', restored)
+    assert {p.name for p in restored.iterdir()} == {'Game.dylib', 'GameEditor.target', 'UnrealEditor.modules'}
+
+
+def test_missing_receipt_never_completes(tmp_path):
+    with pytest.raises(FileNotFoundError):
+        tool.dispatch(job(tmp_path), tmp_path, tmp_path / 'engine', lambda *a, **kw: None)
+    assert not list((tmp_path / 'output').iterdir())
+
+
+def test_cook_production_without_fixed_export_hook_refuses(tmp_path):
+    with pytest.raises(tool.Refused, match='source-cook'):
+        tool.dispatch(job(tmp_path, 'unreal.cook.produce'), tmp_path, tmp_path / 'engine', lambda *a, **kw: None)
+
+
+def test_archive_inventory_preserves_internal_link_and_refuses_escape(tmp_path):
+    root = tmp_path / 'Game.app'
+    root.mkdir()
+    (root / 'binary').write_bytes(b'game')
+    (root / 'linked').symlink_to('binary')
+    assert ('linked', 'link', 'binary') in tool._tree(root)
+    (root / 'linked').unlink()
+    (root / 'linked').symlink_to('/etc/passwd')
+    with pytest.raises(tool.Refused, match='escapes'):
+        tool._tree(root)
+
+
+def test_worker_protocol_hello_started_failed_then_shutdown(tmp_path):
+    requests, responses = io.BytesIO(), io.BytesIO()
+    request = job(tmp_path, 'unknown')
+    for value in ({'type': 'run', 'job': request}, {'type': 'shutdown'}):
+        protocol.write_frame(requests, protocol.REQUEST, value)
+    requests.seek(0)
+    tool.Worker(requests, responses, tmp_path / 'engine').serve()
+    responses.seek(0)
+    frames = []
+    while (frame := protocol.read_frame(responses, protocol.RESPONSE)) is not None:
+        frames.append(frame)
+    assert [f['type'] for f in frames] == ['hello', 'started', 'failed', 'stopped']
+    assert frames[0]['worker_version'] == tool.WORKER_VERSION
+
+
+def test_package_refuses_missing_upstream_inventory_before_launch(tmp_path):
+    request = job(tmp_path, 'unreal.package')
+    request['params']['archive'] = 'archive'
+    calls = []
+    with pytest.raises(ValueError, match='independently completed'):
+        tool.dispatch(request, tmp_path, tmp_path / 'engine', lambda *a, **kw: calls.append(a))
+    assert calls == []
+
+
+def test_unknown_version_and_arbitrary_archive_script_refuse(tmp_path):
+    request = job(tmp_path, 'package.archive')
+    request['op']['version'] = '2'
+    with pytest.raises(ValueError, match='unsupported native'):
+        tool.dispatch(request, tmp_path, tmp_path / 'engine', lambda *a, **kw: None)
+    request['op']['version'] = '1'
+    request['params']['recipe']['commands'] = [{'kind': 'python', 'script': 'arbitrary.py', 'env': [], 'args': []}]
+    with pytest.raises(ValueError, match='unknown package archive'):
+        tool.dispatch(request, tmp_path, tmp_path / 'engine', lambda *a, **kw: None)
+
+
+def test_game_archives_receipt_listed_bundle_with_internal_links(tmp_path):
+    request = job(tmp_path, 'unreal.game')
+    request['params']['target'] = 'Game'
+    request['params']['recipe']['outputs'][0]['encoding'] = 'mac-zip'
+    request['params']['recipe']['outputs'][0]['file'] = 'binaries.zip'
+    commands = []
+    def run(argv, **kwargs):
+        commands.append(argv)
+        if argv[0] == '/usr/bin/ditto':
+            Path(argv[-1]).write_bytes(b'zip tool output')
+            return
+        binaries = kwargs['cwd'] / 'Binaries/Mac'
+        app = binaries / 'Game.app'
+        app.mkdir(parents=True)
+        (app / 'game').write_bytes(b'executable')
+        (app / 'linked').symlink_to('game')
+        (binaries / 'Game.target').write_text(json.dumps({'TargetName': 'Game', 'Platform': 'Mac',
+            'Configuration': 'Development', 'BuildProducts': [{'Path': '$(ProjectDir)/Binaries/Mac/Game.app'}]}))
+    from pathlib import Path
+    assert tool.dispatch(request, tmp_path, tmp_path / 'engine', run) == ['binaries.zip']
+    assert commands[0][-1] == '-MaxParallelActions=3'
+    assert commands[1][:5] == ['/usr/bin/ditto', '-c', '-k', '--sequesterRsrc', '--keepParent']
+
+
+def test_stock_cook_argv_is_explicit_package_no_refs_and_zen_source_namespace(tmp_path):
+    args = tool.cook_argv(tmp_path / 'engine', tmp_path / 'Game.uproject', ['/Game/Asset'], 'a' * 64)
+    assert '-package=/Game/Asset' in args
+    assert '-cooksinglepackagenorefs' in args
+    assert '-ZenStoreProject=AtelierV2_' + 'a' * 64 in args
+    assert '-cookall' not in args and '-build' not in args
+    with pytest.raises(ValueError, match='canonical package'):
+        tool.cook_argv(tmp_path, tmp_path / 'Game.uproject', ['/Game/A+-run=other'], 'a' * 64)
+
+
+def test_persistent_source_view_never_adopts_existing_key_scope(tmp_path):
+    source = tmp_path / 'source'
+    source.mkdir()
+    (source / 'Game.uproject').write_text('{}')
+    state = tmp_path / 'zen'
+    view, protected = tool.persistent_cook_view(source, [str(source / 'Game.uproject')], 'a' * 64, state)
+    assert view == state / 'projects' / ('a' * 64) / 'view'
+    assert protected == [str(view / 'Game.uproject')]
+    other = tmp_path / 'other'
+    other.mkdir()
+    with pytest.raises(FileExistsError):
+        tool.persistent_cook_view(other, [], 'a' * 64, state)
+    assert other.exists() and (view / 'Game.uproject').read_text() == '{}'
+
+
+def test_mac_zip_validation_refuses_external_links_before_extract(tmp_path):
+    import stat
+    import zipfile
+    archive = tmp_path / 'input.mac.zip'
+    with zipfile.ZipFile(archive, 'w') as stream:
+        info = zipfile.ZipInfo('Game.app/evil')
+        info.create_system = 3
+        info.external_attr = (stat.S_IFLNK | 0o777) << 16
+        stream.writestr(info, '../../outside')
+    calls = []
+    with pytest.raises(ValueError, match='escapes'):
+        tool.restore_mac_zip(archive, tmp_path / 'Game.app', lambda *a, **kw: calls.append(a))
+    assert not calls
+
+
+def test_stock_cook_runs_before_fixed_native_capture_and_raw_record_publication(tmp_path, monkeypatch):
+    from pathlib import Path
+    request = job(tmp_path, 'unreal.cook.produce')
+    request['params'].update(packages=['/Game/Asset'], record_outputs={'/Game/Asset': 'build/record.cb'},
+                             cook_root='build/cook-metadata')
+    request['params']['recipe']['outputs'] = [{'path': 'build/record.cb', 'file': 'record.cb'},
+                                            {'path': 'build/cook-metadata', 'file': 'metadata.tree.tar'}]
+    class Callbacks:
+        def __init__(self, *args):
+            pass
+        def close(self, success):
+            assert success
+    monkeypatch.setattr(tool, 'CookCallbacks', Callbacks)
+    calls = []
+    def run(argv, **kwargs):
+        calls.append(argv)
+        if '-run=cook' in argv:
+            cooked = Path(argv[1]).parent / 'Saved/Cooked/Mac'
+            cooked.mkdir(parents=True)
+            (cooked / 'ue.projectstore').write_bytes(b'stock marker')
+            return
+        assert '-run=pythonscript' in argv
+        export = json.loads(Path(kwargs['env']['ATELIER_NATIVE_COOK_EXPORT']).read_bytes())
+        reports = []
+        for native in export['requests']:
+            Path(native['record_path']).write_bytes(b'native retained CB')
+            reports.append({key: native[key] for key in ('mode', 'project', 'oplog', 'source_package', 'input_key', 'runtime_project_file')})
+            reports[-1].update(version=1, status='verified', source_dependency_evaluation='recorded_only',
+                native_stored_key='a' * 40, root_hash='b' * 40, installed_root_hash='', attachments=1,
+                record_io_hash='c' * 40, request_io_hash='d' * 40)
+        Path(export['report']).write_text(json.dumps(reports))
+    state = tmp_path / 'zen'
+    (tmp_path / 'C3.uproject').write_text('{}')
+    result = tool.dispatch(request, tmp_path, tmp_path / 'engine', run, source_key='a' * 64, zen_state_root=state, export_project=tmp_path / 'C3.uproject')
+    assert result == ['metadata.tree.tar', 'record.cb']
+    assert (tmp_path / 'output/record.cb').read_bytes() == b'native retained CB'
+    assert '-run=cook' in calls[0] and '-run=pythonscript' in calls[1]
+    assert (state / 'records' / ('a' * 64 + '.cb')).stat().st_mode & 0o777 == 0o444
+
+
+@pytest.mark.skipif(__import__('sys').platform != 'darwin', reason='macOS ditto transport')
+def test_actual_ditto_roundtrip_keeps_framework_links_and_executable_mode(tmp_path):
+    import subprocess
+    root = tmp_path / 'source/Game.app'
+    version = root / 'Contents/Frameworks/Test.framework/Versions/A'
+    version.mkdir(parents=True)
+    executable = version / 'Test'
+    executable.write_bytes(b'not an executable; archive fixture')
+    executable.chmod(0o755)
+    (version.parent / 'Current').symlink_to('A')
+    (version.parent.parent / 'Test').symlink_to('Versions/Current/Test')
+    before = tool._tree(root)
+    archive = tmp_path / 'Game.mac.zip'
+    def run(argv, **kwargs):
+        subprocess.run(argv, cwd=kwargs['cwd'], check=True, timeout=10)
+    run(tool.zip_argv(root, archive), cwd=tmp_path)
+    destination = tmp_path / 'restored/Game.app'
+    destination.parent.mkdir()
+    tool.restore_mac_zip(archive, destination, run)
+    assert tool._tree(destination) == before

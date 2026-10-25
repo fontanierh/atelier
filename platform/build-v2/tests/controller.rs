@@ -201,6 +201,32 @@ fn prepare_plan_has_no_state_writes_and_uses_existing_worker_identity() {
         fs::read(space.0.join("data/source.json")).unwrap(),
         b"{\"valid\":true}\n"
     );
+    for name in atelier_build_v2::native_tools::NATIVE_TOOL_FILES {
+        space.set(
+            &format!("platform/studio/atelier/build_v2/{name}"),
+            format!("# fixed fixture {name}\n").as_bytes(),
+        );
+    }
+    let mut native = request(&space.0);
+    let unit = &mut native["declaration"]["units"][0];
+    unit["op"]["kind"] = json!("unreal.compile");
+    unit["script"] = json!(atelier_build_v2::native_tool_ops::ENTRY);
+    unit["code"] = json!([atelier_build_v2::native_tool_ops::ENTRY]);
+    unit["params"] = json!({"project":"game/Game.uproject", "target":"GameEditor", "recipe":{
+        "version":1,"commands":[],"paths":{"game/Game.uproject":"inputs/raw.json"},
+        "outputs":[{"path":"game/Binaries/Mac","kind":"tree","file":"binary.tree.tar","required":true}],
+        "verify":null,"deferred":[]}});
+    unit["outputs"][0]["class"] = json!("Data");
+    let prepared = prepare(&parse(&native).unwrap()).unwrap();
+    assert_eq!(
+        prepared.runtimes["data.copy"].worker.version,
+        atelier_build_v2::native_tools::NATIVE_TOOL_VERSION
+    );
+    assert!(prepared.native_tool_worker.is_some());
+    assert!(!space.0.join("cache").exists());
+    assert!(!space.0.join("build").exists());
+    native["declaration"]["units"][0]["params"]["project"] = json!("../outside.uproject");
+    assert!(parse(&native).is_err());
 }
 
 #[test]
@@ -273,7 +299,13 @@ fn controller_cancelled_before_run_keeps_state_absent() {
             cache_root: space.0.join("cache"),
             blender: None,
             node: None,
+            ffmpeg: None,
+            ffprobe: None,
             unreal: None,
+            native_export_project: None,
+            unreal_memory_gib: None,
+            blender_memory_gib: None,
+            unreal_job_seconds: None,
             interpreter: PathBuf::from("/fixture/not-executed-python"),
             // No lease is opened or identity authority claimed in this early-cancellation case.
             owner: ProcessIdentity {

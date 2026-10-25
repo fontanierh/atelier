@@ -10,15 +10,16 @@ use std::collections::BTreeMap;
 
 pub const PYTHON_VERSION: &str = "atelier-recipe-python-job-1";
 pub const BLENDER_VERSION: &str = "atelier-recipe-blender-job-1";
-pub const FILES: [&str; 6] = [
+pub const FILES: [&str; 7] = [
     "protocol.py",
     "python_job.py",
     "python_worker.py",
     "recipe_job.py",
     "recipe_worker.py",
     "recipe_node.py",
+    "recipe_media.py",
 ];
-pub const BLENDER_FILES: [&str; 8] = [
+pub const BLENDER_FILES: [&str; 9] = [
     "protocol.py",
     "python_job.py",
     "python_worker.py",
@@ -27,6 +28,7 @@ pub const BLENDER_FILES: [&str; 8] = [
     "recipe_job.py",
     "recipe_worker.py",
     "recipe_node.py",
+    "recipe_media.py",
 ];
 
 #[derive(Deserialize)]
@@ -45,11 +47,15 @@ struct Recipe {
     tools: Vec<Tool>,
 }
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Tool {
-    kind: String,
-    entry: String,
-    sources: Vec<String>,
+#[serde(tag = "kind", deny_unknown_fields)]
+enum Tool {
+    #[serde(rename = "node.frontend")]
+    Node { entry: String, sources: Vec<String> },
+    #[serde(rename = "media.audio")]
+    Media {
+        inputs: Vec<String>,
+        writes: Vec<String>,
+    },
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -99,23 +105,35 @@ pub fn validate_params(params: &BTreeMap<String, Value>) -> Result<(), String> {
         }
         let _ = output.required;
     }
+    if recipe.tools.len() > 1 {
+        return Err("a recipe has more than one fixed tool role".into());
+    }
     for tool in recipe.tools {
-        if tool.kind != "node.frontend"
-            || !relative(&tool.entry)
-            || tool.sources.len() != 3
-            || !tool.sources.contains(&tool.entry)
-            || tool
-                .sources
-                .iter()
-                .collect::<std::collections::BTreeSet<_>>()
-                .len()
-                != 3
-            || tool
-                .sources
-                .iter()
-                .any(|p| !relative(p) || !p.ends_with(".cjs"))
-        {
-            return Err("unsupported nested tool descriptor".into());
+        match tool {
+            Tool::Node { entry, sources } => {
+                if !relative(&entry)
+                    || sources.len() != 3
+                    || !sources.contains(&entry)
+                    || sources
+                        .iter()
+                        .collect::<std::collections::BTreeSet<_>>()
+                        .len()
+                        != 3
+                    || sources.iter().any(|p| !relative(p) || !p.ends_with(".cjs"))
+                {
+                    return Err("unsupported nested Node descriptor".into());
+                }
+            }
+            Tool::Media { inputs, writes } => {
+                if inputs.is_empty()
+                    || inputs.iter().any(|path| !relative(path))
+                    || writes.len() != 1
+                    || !relative(&writes[0])
+                    || !writes[0].ends_with("/audio/.tmp")
+                {
+                    return Err("unsupported nested audio descriptor".into());
+                }
+            }
         }
     }
     for command in recipe.commands {
