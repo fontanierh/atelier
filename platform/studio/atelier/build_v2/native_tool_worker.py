@@ -1239,7 +1239,8 @@ class CookSdkSession:
         env = dict(environment, ATELIER_SOURCE_COOK_FDS=f'{read_request}:{write_response}',
                    ATELIER_NATIVE_SOURCE_DIGEST=source_digest)
         command = [str(self.owner.engine / 'Engine/Binaries/Mac/UnrealEditor-Cmd'),str(descriptor),
-                   '-run=pythonscript','-script='+str(script),'-targetplatform=Mac','-Cook.DependencyTracking=1',
+                   '-run=pythonscript','-RunAsCookCommandlet','-script='+str(script),'-abslog='+str(self.folder/'sdk.log'),'-targetplatform=Mac','-Cook.DependencyTracking=1',
+                   '-LogCmds=LogCook Verbose',
                    '-ini:Game:[/Script/UnrealEd.ProjectPackagingSettings]:bShareMaterialShaderCode=True',
                    '-ini:Game:[/Script/UnrealEd.ProjectPackagingSettings]:bSharedMaterialNativeLibraries=True',
                    '-unattended','-nop4','-nosplash','-nullrhi','-stdout','-FullStdOutLogOutput']
@@ -1324,13 +1325,27 @@ class CookSdkSession:
             if self.child.poll() is None:
                 self.exchange('stop')
                 # The outer normal guard remains the final tree/custody authority.
-                self.child.communicate(timeout=45)
+                # A protected shared SDK service can inherit stdout after the SDK
+                # exits. Reap OUR process, drain available logs, then close OUR
+                # read end; EOF from that unrelated service is not SDK completion.
+                deadline=time.monotonic()+45
+                with selectors.DefaultSelector() as selector:
+                    selector.register(self.child.stdout,selectors.EVENT_READ)
+                    while self.child.poll() is None:
+                        if time.monotonic()>=deadline:
+                            raise Refused('source SDK did not exit within its close deadline')
+                        for key,_ in selector.select(timeout=min(.2,max(0,deadline-time.monotonic()))):
+                            chunk=os.read(key.fileobj.fileno(),65536)
+                            if chunk:
+                                sys.stderr.buffer.write(chunk);sys.stderr.buffer.flush()
+                            else:selector.unregister(key.fileobj)
             if self.child.returncode!=0:raise Refused('source SDK failed during close')
         finally:
             if self.child.poll() is None:
                 self.child.terminate()
                 try:self.child.wait(timeout=5)
                 except subprocess.TimeoutExpired:self.child.kill();self.child.wait()
+            if getattr(self.child,'stdout',None) is not None:self.child.stdout.close()
             os.close(self.request);os.close(self.response)
 
 
@@ -1454,7 +1469,11 @@ class Worker:
             try:sdk.close()
             except Exception as error:close_error=type(error).__name__+': '+str(error)
         if close_error:
-            outcomes=[dict(job_id=row['job']['job_id'],key=row['key'],status='failed',error='source SDK close: '+close_error) for row in jobs]
+            # A failed shutdown invalidates all members, while retaining the first
+            # producer refusal instead of masking it with a secondary close error.
+            outcomes=[dict(job_id=row['job']['job_id'],key=row['key'],status='failed',
+                           error=(outcome.get('error','')+'; ' if outcome.get('error') else '')+'source SDK close: '+close_error)
+                      for row,outcome in zip(jobs,outcomes)]
         result={'version':1,'sdk_processes':int(sdk.child is not None),'members':outcomes,'sdk_closed':close_error is None}
         destination=path.parent/'result.json'
         with destination.open('x') as stream:
