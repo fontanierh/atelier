@@ -380,6 +380,31 @@ def test_semantic_global_projection_keeps_complete_shader_bytes_excludes_transpo
     (source/'ue.projectstore').write_text('namespace B')
     second=tmp_path/'second';semantic_global_data(source,second,'Game')
     assert {p.name:p.read_bytes() for p in (second/'Content').iterdir()} == expected
+    engine = tmp_path / 'engine'; project = tmp_path / 'project'
+    runtime = engine / 'Engine/Content/Internationalization/English/data.bin'
+    runtime.parent.mkdir(parents=True); runtime.write_bytes(b'actual selected culture')
+    project.mkdir(); descriptor = project / 'Game.uproject'; descriptor.write_text('{}')
+    ledger = content.parent / 'zenfs.manifest'
+    rows = ['1' * 24 + ', Engine/Content/Internationalization/English/data.bin, /{engine}/Content/Internationalization/data.bin',
+            '2' * 24 + ', ../project/Game.uproject, /{project}/Game.uproject',
+            '3' * 24 + ', ignored-private-statistics, /{project}/Metadata/CookedSettings.txt']
+    header = ';ServerRoot=private transport, Platform=Mac, CookDirectory=private transport\nFileId, ServerPath, ClientPath\n'
+    ledger.write_text(header + '\n'.join(rows) + '\n')
+    closed = tmp_path / 'closed'
+    semantic_global_data(source, closed, 'Game', engine_root=engine, project_root=project)
+    assert (closed/'RuntimeFiles/Engine/Content/Internationalization/data.bin').read_bytes() == b'actual selected culture'
+    assert (closed/'RuntimeFiles/Project/Game.uproject').read_text() == '{}'
+    assert not any(p.name == 'zenfs.manifest' for p in closed.rglob('*'))
+    runtime.write_bytes(b'ordinary changed runtime bytes')
+    changed = tmp_path / 'changed-runtime'
+    semantic_global_data(source, changed, 'Game', engine_root=engine, project_root=project)
+    assert (changed/'RuntimeFiles/Engine/Content/Internationalization/data.bin').read_bytes() != (closed/'RuntimeFiles/Engine/Content/Internationalization/data.bin').read_bytes()
+    for suffix, invalid in [('escape', rows[0].replace('Engine/Content/Internationalization/English/data.bin', '../outside')),
+                            ('duplicate', rows[0] + '\n' + rows[0]),
+                            ('unknown-project', rows[2].replace('Metadata/CookedSettings.txt', 'unknown.bin'))]:
+        ledger.write_text(header + invalid + '\n')
+        with pytest.raises(ValueError):
+            semantic_global_data(source, tmp_path/suffix, 'Game', engine_root=engine, project_root=project)
     (content/'ShaderArchive-Global-SF_METAL_SM5-METAL_SM5.ushaderbytecode').unlink()
     with pytest.raises(Refused, match='complete Global'):
         semantic_global_data(source,tmp_path/'missing','Game')
@@ -408,6 +433,8 @@ def test_package_composes_verified_inputs_before_uat_without_reading_source_name
     metadata = source / 'Fixture/Metadata'
     for name in ('DevelopmentAssetRegistry.bin', 'CookMetadata.ucookmeta'):
         (metadata / name).write_bytes(name.encode())
+    (metadata / 'zenfs.manifest').write_text(';ServerRoot=fixture, Platform=Mac, CookDirectory=fixture\n'
+        'FileId, ServerPath, ClientPath\n' + '1' * 24 + ', Engine/Config/Base.ini, /{engine}/Config/Base.ini\n')
     (source / 'ue.projectstore').write_bytes(b'actual namespace marker')
     archive = runtime / 'global-metadata.tree.tar'; tool.recipe_job.pack_root(source, archive)
     globals_root = tmp_path / 'semantic'; shaders(globals_root / 'Content', 'Global')

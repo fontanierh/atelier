@@ -344,10 +344,10 @@ class CookCallbacks:
             self.zen.close()
 
 
-def semantic_global_data(cooked, destination, project_name):
+def semantic_global_data(cooked, destination, project_name, *, engine_root=None, project_root=None):
     """@cc [owner:fontanierh,label:correctness] semantic-native-global-output
-    Only complete emitted Global shader source triples and corresponding Engine
-    GlobalShaderCache files MAY enter the semantic ROOT. Namespace markers,
+    Complete emitted Global shader triples, Engine GlobalShaderCache files and
+    cooker-ledger runtime loose bytes MUST enter the semantic ROOT. Namespace markers,
     reports and statistics MUST stay in the separate complete transport ROOT.
     Missing, aliased or ambiguous roles MUST refuse before publication.
     """
@@ -388,10 +388,46 @@ def semantic_global_data(cooked, destination, project_name):
             raise Refused('global shader cache is missing, empty or not a regular file')
         if cache not in caches:
             files.append((cache, Path('Engine') / cache.name)); caches.add(cache)
+    if engine_root is not None or project_root is not None:
+        engine_root, project_root = Path(engine_root), Path(project_root)
+        ledger = _sibling('zen_package_finalise').source_manifest(source_root.parent / 'zenfs.manifest')
+        replaced = {'AssetRegistry.bin', 'Metadata/DevelopmentAssetRegistry.bin', 'Metadata/CookMetadata.ucookmeta',
+                    'Metadata/CookedIniVersion.txt', 'Metadata/CookedSettings.txt', 'Metadata/ValidationCookArtifact.json',
+                    'Metadata/ReferencedSet.txt'}
+        for shader_format in formats:
+            platform = shader_format.split('-')[1]
+            replaced.add('Metadata/ShaderTypeStats-' + platform + '.csv')
+            replaced.add('Metadata/ShaderDebug/global_' + shader_format.lower() + '.zip')
+            for stem, suffix in roles.items():
+                for directory in ('Content', 'Metadata/ShaderLibrarySource'):
+                    replaced.add(directory + '/' + stem + '-Global-' + shader_format + suffix)
+            replaced.update({'Content/global_' + shader_format.lower() + '.0.metallib',
+                             'Content/global_' + shader_format.lower() + '.metalmap'})
+        for row in ledger:
+            client = row['clientpath']
+            domain = 'Engine' if client.startswith('/{engine}/') else 'Project'
+            relative = client.split('}/', 1)[1]
+            if domain == 'Project' and relative in replaced:
+                continue  # Rebuilt from selected histories or kept in certified private transport.
+            if domain == 'Project' and not (relative.startswith('Config/') or relative == project_name + '.uproject'):
+                raise Refused('unknown source-cook project runtime file role')
+            if domain == 'Engine' and relative in {'GlobalShaderCache-' + f.split('-')[1] + '.bin' for f in formats}:
+                continue  # Already copied above from the actual stock cook.
+            source = (engine_root / 'Engine' if domain == 'Engine' else project_root) / relative
+            server = Path(os.path.normpath(engine_root / row['serverpath']))
+            if domain == 'Engine':
+                # The cooker deliberately remaps selected ICU culture data into
+                # its runtime path. Both paths remain within the selected SDK.
+                if not server.is_relative_to(engine_root / 'Engine'):
+                    raise Refused('cooker runtime file escapes the selected engine')
+                source = server
+            if (domain == 'Project' and server != source) or source.resolve() != source:
+                raise Refused('cooker runtime file does not match its anchored declared tool/project role')
+            files.append((source, Path('RuntimeFiles') / domain / relative))
     destination.mkdir(mode=0o700)
     for source, relative in files:
         target = destination / relative
-        target.parent.mkdir(exist_ok=True)
+        target.parent.mkdir(parents=True, exist_ok=True)
         before = source.lstat()
         descriptor = os.open(source, os.O_RDONLY | os.O_NOFOLLOW)
         with os.fdopen(descriptor, 'rb') as incoming, target.open('xb') as outgoing:
@@ -404,6 +440,7 @@ def semantic_global_data(cooked, destination, project_name):
         identity = lambda value: (value.st_dev, value.st_ino, value.st_size, value.st_mtime_ns, value.st_ctime_ns)
         if identity(before) != identity(after) or identity(after) != identity(named):
             raise Refused('global shader artifact changed during projection')
+        target.chmod(stat.S_IMODE(opened.st_mode) & 0o777)
     return sorted(formats)
 
 
@@ -486,7 +523,7 @@ def source_cook(params, view, project, engine, source_key, state, job_dir, run, 
         destination = _path(view, logical)
         if destination == cooked or destination.is_relative_to(cooked) or cooked.is_relative_to(destination):
             raise Refused('semantic global root overlaps complete cook transport')
-        semantic_global_data(cooked, destination, project.stem)
+        semantic_global_data(cooked, destination, project.stem, engine_root=engine, project_root=project.parent)
     return tuple(record_outputs.values())
 
 

@@ -549,7 +549,7 @@ FString UAtelierBuildWorkerLibrary::ZenEndCookRequest(const FString& RequestJson
     FObject Request;
     if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(RequestJson), Request)
         || !ExactFields(Request, {TEXT("version"), TEXT("project"), TEXT("oplog"), TEXT("project_file"),
-            TEXT("marker_path"), TEXT("runtime_project_file"), TEXT("input_key"), TEXT("packages"), TEXT("globals"), TEXT("output_dir")}))
+            TEXT("marker_path"), TEXT("runtime_project_file"), TEXT("input_key"), TEXT("packages"), TEXT("globals"), TEXT("output_dir"), TEXT("source_files")}))
         return Fail(TEXT("unknown_or_missing_endcook_fields"));
     double Version = 0;
     const FString Project = StringField(Request, TEXT("project")), Oplog = StringField(Request, TEXT("oplog"));
@@ -571,6 +571,21 @@ FString UAtelierBuildWorkerLibrary::ZenEndCookRequest(const FString& RequestJson
     TMap<FName, FString> ExpectedRoots;
     TMap<FIoChunkId, FIoHash> Chunks;
     TMap<FIoChunkId, FString> FilePaths;
+    const TArray<TSharedPtr<FJsonValue>>* SourceFiles = nullptr;
+    if (!Request->TryGetArrayField(TEXT("source_files"), SourceFiles) || SourceFiles->Num() > 32768)
+        return Fail(TEXT("invalid_source_file_ledger"));
+    for (const auto& Value : *SourceFiles)
+    {
+        const FObject File = Value->AsObject();
+        if (!ExactFields(File, {TEXT("id"), TEXT("clientpath")})) return Fail(TEXT("invalid_source_file_ledger_row"));
+        const FString Path = StringField(File, TEXT("clientpath"));
+        const FIoChunkId Id = CreateExternalFileChunkId(Path);
+        if (!ClientFilePath(Path) || LexToString(Id) != StringField(File, TEXT("id")) || FilePaths.Contains(Id))
+            return Fail(TEXT("invalid_or_duplicate_source_file_ledger_identity"));
+        // Membership comes only from the certified source cook's frozen zenfs ledger.
+        // Runtime loose bytes are separately supplied as hashed semantic Globals.
+        FilePaths.Add(Id, Path);
+    }
     TArray<FPackageStoreEntryResource> Stores;
     TSet<FPackageId> PackageIds;
     int32 Done = 0;
@@ -1112,6 +1127,7 @@ bool FAtelierZenEndCookRoundTrip::RunTest(const FString&)
         Globals.Add(MakeShared<FJsonValueObject>(Spec));
     }
     Request->SetArrayField(TEXT("globals"), Globals);
+    Request->SetArrayField(TEXT("source_files"), TArray<TSharedPtr<FJsonValue>>());
     // A declared-hash mismatch must refuse before either namespace root is published.
     const FString Saved = Globals[0]->AsObject()->GetStringField(TEXT("sha256"));
     Globals[0]->AsObject()->SetStringField(TEXT("sha256"), FString::ChrN(64, '0'));
