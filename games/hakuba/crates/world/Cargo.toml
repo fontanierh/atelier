@@ -1,4 +1,4 @@
-# The map: ground, sky, sun and the overview camera (src/lib.rs).
+# The world. See README.md.
 [package]
 name = "hakuba_world"
 version.workspace = true
@@ -7,3 +7,4 @@ publish.workspace = true
 
 [dependencies]
 bevy.workspace = true
+hakuba_screens.workspace = true

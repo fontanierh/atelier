@@ -12,7 +12,9 @@ publish = false
 [workspace.dependencies]
 bevy = "0.20.0"
 hakuba_characters = { path = "crates/characters" }
-hakuba_inspect = { path = "crates/inspect" }
+hakuba_menu = { path = "crates/menu" }
+hakuba_screens = { path = "crates/screens" }
+hakuba_viewer = { path = "crates/viewer" }
 hakuba_world = { path = "crates/world" }
 
 [package]
@@ -24,7 +26,9 @@ publish.workspace = true
 [dependencies]
 bevy.workspace = true
 hakuba_characters.workspace = true
-hakuba_inspect.workspace = true
+hakuba_menu.workspace = true
+hakuba_screens.workspace = true
+hakuba_viewer.workspace = true
 hakuba_world.workspace = true
 
 # Development builds: Hakuba's own code is lightly optimized so it compiles fast; the dependencies are compiled once,

@@ -26,8 +26,8 @@ trunk serve                  # browser, at http://127.0.0.1:8080
 cargo run                    # desktop
 ```
 
-In the game, `I` turns the inspect camera on and off: drag to spin around the character, scroll to zoom,
-shift + drag to move up and down.
+The game opens on a menu: **World** enters the world, **Character viewer** shows each character and plays its clips.
+Escape goes back to the menu.
 
 Test in the browser by default: what runs there almost always runs on desktop too, while the reverse is not
 true.
@@ -41,11 +41,13 @@ games/hakuba/
   .cargo/config.toml        the `cargo export` alias
   Cargo.lock                the exact dependency versions
   rust-toolchain.toml       the Rust version and the browser (wasm) target
-  src/main.rs               the game program: builds the app and adds the plugins, nothing else
-  crates/                   the game code, one crate per feature, each one Bevy plugin
-    world/                  the map
-    characters/             the playable characters
-    inspect/                the inspect camera, for checking models up close
+  src/main.rs               the game program, what runs when the game opens: builds the app and adds the plugins
+  crates/                   the game code, one crate per feature, each one Bevy plugin with its own README.md
+    screens/                what every screen shares: which screen is showing, buttons and text
+    menu/                   the menu the game opens on
+    world/                  the world
+    characters/             the playable characters: their models and clips
+    viewer/                 the character viewer
   index.html                the page the browser build runs in, with the canvas the game draws into
   Trunk.toml                what the browser build copies next to the game
   assets/                   everything the game loads, each next to its sources (assets/README.md)

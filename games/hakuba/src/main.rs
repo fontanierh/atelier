@@ -1,7 +1,12 @@
+//! The game program, what runs when the game opens: it builds the app, adds every feature's plugin and opens on the
+//! menu (crates/menu).
+
 use bevy::asset::AssetMetaCheck;
 use bevy::prelude::*;
 use hakuba_characters::CharactersPlugin;
-use hakuba_inspect::InspectPlugin;
+use hakuba_menu::MenuPlugin;
+use hakuba_screens::ScreensPlugin;
+use hakuba_viewer::ViewerPlugin;
 use hakuba_world::WorldPlugin;
 
 fn main() {
@@ -25,6 +30,6 @@ fn main() {
                     ..default()
                 }),
         )
-        .add_plugins((WorldPlugin, CharactersPlugin, InspectPlugin))
+        .add_plugins((ScreensPlugin, MenuPlugin, WorldPlugin, CharactersPlugin, ViewerPlugin))
         .run();
 }

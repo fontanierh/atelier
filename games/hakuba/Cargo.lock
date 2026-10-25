@@ -3033,7 +3033,9 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "hakuba_characters",
- "hakuba_inspect",
+ "hakuba_menu",
+ "hakuba_screens",
+ "hakuba_viewer",
  "hakuba_world",
 ]
 
@@ -3058,10 +3060,27 @@ dependencies = [
 ]
 
 [[package]]
-name = "hakuba_inspect"
+name = "hakuba_menu"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "hakuba_screens",
+]
+
+[[package]]
+name = "hakuba_screens"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
+name = "hakuba_viewer"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "hakuba_characters",
+ "hakuba_screens",
 ]
 
 [[package]]
@@ -3069,6 +3088,7 @@ name = "hakuba_world"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "hakuba_screens",
 ]
 
 [[package]]
