@@ -263,6 +263,7 @@ def test_rider_binds_its_skeleton_through_the_worker_library(tmp_path, monkeypat
     assert mesh.props['skeleton'] is skeleton and skeleton.props['preview_skeletal_mesh'] is mesh
     assert checked == [('rig', 'pose', mesh, skeleton)]
     bound.clear(); checked.clear()
+    for path in context.outputs: assets.pop(path)
     unreal.AtelierBuildWorkerLibrary = NS(bind_skeletal_partners=lambda *a: False)
     with pytest.raises(ValueError, match='could not bind'):
         body.rider(context, unreal, context.params['args'])
