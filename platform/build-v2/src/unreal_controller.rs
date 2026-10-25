@@ -783,7 +783,9 @@ pub fn prepare(
         cwd: command.cwd,
     };
     let mut request = staged.request().clone();
-    request.params.remove("settings");
+    if ingredients.op.kind != AUTHOR {
+        request.params.remove("settings");
+    }
     Ok(PreparedUnrealLaunch {
         command,
         worker,

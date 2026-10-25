@@ -109,11 +109,18 @@ def _invoke_marker(marker, *, echo):
         'interpreter': str(Path(sys.executable).absolute()), 'provenance': provenance(checkout),
         # Retention namespace only, explicitly excluded from A3 item identities.
         'worktree_id': hashlib.sha256(str(checkout).encode()).hexdigest(),
-        'memory_gib': 16 if unreal else 10 if blender else 8,
-        'job_seconds': 7200 if unreal else 900,
+        'memory_gib': 8,
+        'blender_memory_gib': 10,
+        'unreal_memory_gib': 16,
+        'unreal_job_seconds': 7200,
+        'job_seconds': 900,
         'cleanup_seconds': 60 if (unreal or blender) else 30,
         'overall_seconds': 28800 if (unreal or blender) else 1800,
     }
+    for tool in ('ffmpeg', 'ffprobe'):
+        executable = shutil.which(tool)
+        if executable:
+            options[tool] = str(Path(executable).absolute())
     node = shutil.which('node')
     if node:
         options['node'] = str(Path(node).absolute())
@@ -124,7 +131,8 @@ def _invoke_marker(marker, *, echo):
         if unreal:
             root = engine.unreal_root().absolute()
             modules = json.loads((root / 'Engine/Binaries/Mac/UnrealEditor.modules').read_text())
-            plugin = checkout / 'platform/build-v2/unreal/AtelierBuildWorker'
+            from .native_bootstrap import ensure_native_worker
+            plugin = ensure_native_worker(checkout, Path(options['cache_root']) / 'native-worker-bootstrap', root, echo=echo)
             options['unreal'] = {'engine_root': str(root), 'build_id': modules['BuildId'],
                                  'plugins': {'AtelierBuildWorker': str(plugin)}}
     return invoke_controller(checkout, helper, marker, state / 'runs', options, echo=echo)

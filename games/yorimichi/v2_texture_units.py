@@ -2,7 +2,8 @@
 from pathlib import Path, PurePosixPath
 
 OPS = 'platform/studio/atelier/build_v2/unreal_ops.py'
-SUPPORT = ('platform/studio/atelier/interchange_mesh.py', 'platform/studio/atelier/__init__.py')
+SUPPORT = ('platform/studio/atelier/interchange_mesh.py', 'platform/studio/atelier/__init__.py',
+           'platform/studio/atelier/build_v2/native_bootstrap.py')
 PLUGIN = 'platform/build-v2/unreal/AtelierBuildWorker'
 GENERATOR = 'games/yorimichi/world/gen_textures.py'
 KEYS = ('leaf_broad', 'leaf_cedar', 'leaf_pine', 'leaf_ochre', 'leaf_maple', 'leaf_ginkgo',
@@ -112,3 +113,29 @@ def texture_units(rows, *, checkout):
             slots[input_name] = False
         textures[name] = {'unit': finish_id, 'item': 'texture', 'package': package}
     return {'units': units, 'staged': staged, 'slots': slots, 'textures': textures}
+
+
+def coast_rock_units(*, checkout):
+    """The separately authored island texture uses its actual committed bytes."""
+    code = _code(checkout)
+    source = 'games/yorimichi/assets/environment/textures/volcanic-rock.jpg'
+    absolute = Path(checkout) / source
+    if absolute.is_symlink() or not absolute.is_file():
+        raise Unsupported('missing committed coastal rock source')
+    raw_id, final_id = 'unreal.texture.raw.coast_rock', 'unreal.texture.finish.coast_rock'
+    raw_package, package = '/Game/_Raw/Textures/T_CoastRock', '/Game/Japan/Textures/T_CoastRock'
+    units = [
+        {'id': raw_id, 'op': {'kind': 'unreal.raw_import', 'version': '1'}, 'script': OPS, 'code': code,
+         'inputs': [{'role': 'content', 'name': 'source', 'source': {'kind': 'file', 'path': source}}],
+         'params': {'op': 'raw_import', 'kind': 'texture', 'source': 'source', 'destination': raw_package},
+         'outputs': [_output(raw_package, raw=True)]},
+        {'id': final_id, 'op': {'kind': 'unreal.finish', 'version': '1'}, 'script': OPS, 'code': code,
+         'inputs': [{'role': 'content', 'name': 'raw', 'source': {'kind': 'item', 'unit': raw_id, 'item': 'raw_texture'}}],
+         'params': {'op': 'finish', 'kind': 'texture', 'source': 'raw', 'destination': package,
+                    'package_sources': {'raw': raw_package}, 'properties': {'srgb': True, 'max_texture_size': 1024,
+                        'mip_gen_settings': {'unreal_enum': 'TextureMipGenSettings.TMGS_SIMPLE_AVERAGE'}}},
+         'outputs': [_output(package, raw=False)]},
+    ]
+    return {'units': units, 'staged': {raw_id: {'source': 'inputs/source.jpg'}, final_id: {'raw': 'inputs/raw'}},
+            'slots': {'source': False, 'raw': False},
+            'textures': {'T_CoastRock': {'unit': final_id, 'item': 'texture', 'package': package}}}
