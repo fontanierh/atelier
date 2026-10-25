@@ -222,7 +222,7 @@ def _join_native_families(native, rows, geometry, selected, *, checkout):
     return native
 
 
-def _complete_mesh_family(native, geometry, *, family, export_prefixes, checkout, fixed=None):
+def _complete_mesh_family(native, geometry, *, family, export_prefixes, checkout, fixed=None, prerequisites=()):
     """Select the full finished roster through existing before-key follower expansion."""
     import ast
     from pathlib import Path
@@ -247,6 +247,9 @@ def _complete_mesh_family(native, geometry, *, family, export_prefixes, checkout
     inputs = [{'role': 'content', 'name': 'fixed' + str(index), 'source': {
         'kind': 'item', 'unit': ref['unit'], 'item': ref['item']}}
         for index, ref in enumerate(fixed.values())]
+    inputs.extend({'role': 'content', 'name': 'required' + str(index), 'source': {
+        'kind': 'item', 'unit': ref['unit'], 'item': ref['item']}}
+        for index, ref in enumerate(prerequisites))
     output = 'build/yorimichi/' + family + '/import-report.json'
     unit = {'id': 'unreal.' + family + '.complete', 'op': {'kind': 'recipe.python', 'version': '1'},
         'script': 'platform/studio/atelier/build_v2/recipe_job.py',
@@ -322,7 +325,7 @@ def lower(rows, geometry, *, checkout):
     elif 'unreal.materials' in selected:
         native = shared_materials(rows, checkout=checkout)
         native['aliases'] = {}
-    elif selected & {'unreal.treehouse', 'unreal.brinecove', 'unreal.sounds', 'unreal.crater_cloud', 'unreal.skate_board', 'unreal.fx', 'unreal.skate_data', 'unreal.kei', 'unreal.village', 'unreal.lake', 'unreal.houses', 'unreal.southwest', 'unreal.mega'}:
+    elif selected & {'unreal.treehouse', 'unreal.brinecove', 'unreal.sounds', 'unreal.crater_cloud', 'unreal.skate_board', 'unreal.fx', 'unreal.skate_data', 'unreal.kei', 'unreal.village', 'unreal.lake', 'unreal.houses', 'unreal.southwest', 'unreal.mega', 'unreal.swordcamp', 'unreal.kart'}:
         native = {'units': [], 'staged_inputs': {}, 'content_slots': {}, 'packages': {},
                   'targets': (), 'aliases': {}, 'missing_roles': []}
         if 'unreal.treehouse' in selected:
@@ -399,7 +402,7 @@ def lower(rows, geometry, *, checkout):
         if 'unreal.lake' in selected:
             extended = _family_module(checkout, 'v2_lake_units').attach_followers(
                 native.get('geometry', geometry), _package_dependencies(native), checkout=checkout)
-            _append_family(native, {key: extended[key] for key in
+            _append_family(native, {key: extended.pop(key) for key in
                 ('units', 'staged_inputs', 'content_slots', 'packages')})
             native['geometry'] = extended
             native.setdefault('follower_module_requirements', {}).update(extended.pop('module_requirements', {}))
@@ -417,6 +420,28 @@ def lower(rows, geometry, *, checkout):
         if family == 'houses': required.append('/Game/Japan/Materials/MI_Ground')
         _complete_mesh_family(native, extended, family=family, export_prefixes=('world.' + family + '.export.',),
             checkout=checkout, fixed={path: native['packages'][path] for path in required})
+    if 'unreal.swordcamp' in selected:
+        module = _family_module(checkout, 'v2_swordcamp_units')
+        family = module.author_units(rows, checkout=checkout)
+        _append_family(native, family)
+        extended = module.attach_followers(native.get('geometry', geometry),
+            _package_dependencies(native), checkout=checkout)
+        native['geometry'] = extended
+        native.setdefault('follower_module_requirements', {}).update(extended.pop('module_requirements', {}))
+        _complete_mesh_family(native, extended, family='swordcamp',
+            export_prefixes=('world.swordcamp.export.',), checkout=checkout, fixed=family['packages'])
+    if 'unreal.kart' in selected:
+        extended = _family_module(checkout, 'v2_kart_units').attach_followers(
+            native.get('geometry', geometry), _package_dependencies(native), checkout=checkout)
+        family = {key: extended.pop(key) for key in ('units', 'staged_inputs', 'content_slots', 'packages')}
+        _append_family(native, family)
+        native['geometry'] = extended
+        native.setdefault('follower_module_requirements', {}).update(extended.pop('module_requirements', {}))
+        data = [{'unit': unit['id'], 'item': output['id']} for unit in family['units']
+                if unit['id'] in extended['data_targets'] for output in unit['outputs']]
+        _complete_mesh_family(native, extended, family='kart',
+            export_prefixes=('world.vehicle_kart.export.',), checkout=checkout,
+            fixed=family['packages'], prerequisites=data)
     if selected & {'unreal.treehouse', 'unreal.brinecove'}:
         native = _join_native_families(native, rows, geometry, selected, checkout=checkout)
     return native
