@@ -53,8 +53,8 @@ def author_units(sources, packages, *, checkout):
         member = str(Path(sources[role]['member']).parent / filename)
         raw = {'id': raw_id, 'op': {'kind': 'unreal.raw_import', 'version': '1'}, 'script': texture.OPS,
                'code': texture._code(root), 'inputs': [incoming(role)],
-               'params': {'op': 'raw_import', 'kind': 'texture', 'source': role, 'destination': raw_package,
-                          'input_roots': {role: {'archive_member': sources[role]['file'], 'name': member}}},
+               'params': {'op': 'raw_import', 'kind': 'texture', 'source': role, 'destination': raw_package, 'source_member': member,
+                          'input_roots': {role: {'archive_member': sources[role]['file'], 'name': role}}},
                'outputs': [texture._output(raw_package, raw=True)]}
         properties = ({'do_scale_mips_for_alpha_coverage': True,
                        'alpha_coverage_thresholds': {'unreal_type': 'Vector4', 'args': [0, 0, 0, .4]},

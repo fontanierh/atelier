@@ -51,7 +51,8 @@ def test_individual_native_owners_preserve_original_palette_props_light_and_cano
     assert bark['params']['properties']['lod_group'] == {'unreal_enum': 'TextureGroup.TEXTUREGROUP_WORLD'}
     assert bark['params']['properties']['max_texture_size'] == 1024
     raw = by_id['unreal.treehouse.texture.raw.T_TH_bark']
-    assert raw['params']['input_roots']['palette'] == {'archive_member': 'products/0-0.tree.tar', 'name': 'bark.png'}
+    assert raw['params']['input_roots']['palette'] == {'archive_member': 'products/0-0.tree.tar', 'name': 'palette'}
+    assert raw['params']['source_member'] == 'bark.png'
     assert all((ROOT / name).is_file() for unit in result['units'] for name in unit['code'])
 
 
@@ -134,3 +135,42 @@ def test_runtime_uses_actual_metadata_gain_original_glow_and_trunk_roomcut(tmp_p
     assert body.run(context) is result
     assert calls[0] == (name, native_parent, texture, 1.375, glow)
     assert (('RoomCut', 0.) in calls) is room
+
+
+@pytest.mark.parametrize('role,asset,filename', [
+    ('palette', 'T_TH_bark', 'bark.png'),
+    ('props', 'T_TH_P_barrel', 'TH_P_barrel.png'),
+    ('trees', 'T_leaf_crimson', 'T_leaf_crimson.png'),
+])
+def test_real_root_staging_then_actual_ops_selects_exact_png(tmp_path, role, asset, filename):
+    from atelier.build_v2 import unreal_inputs, unreal_ops
+    source_refs = sources()
+    # A nested metadata location proves selection remains relative to the decoded
+    # ROOT, while the ROOT staging name remains a single stable basename.
+    source_refs[role]['member'] = 'nested/' + source_refs[role]['member']
+    declaration = units.author_units(source_refs, supplied(), checkout=ROOT)
+    raw = next(unit for unit in declaration['units'] if unit['id'] == 'unreal.treehouse.texture.raw.' + asset)
+    job = tmp_path / 'job'; job.mkdir()
+    runtime = job / 'runtime'; runtime.mkdir()
+    content = tmp_path / 'Content'; content.mkdir()
+    producer = tmp_path / 'producer'; (producer / 'nested').mkdir(parents=True)
+    (producer / 'nested' / filename).write_bytes(b'EXACT selected pixels')
+    (producer / 'nested/other.png').write_bytes(b'NEIGHBOR pixels')
+    (producer / source_refs[role]['member']).write_text('{}')
+    incoming = job / 'inputs' / role
+    archive = incoming / source_refs[role]['file']; archive.parent.mkdir(parents=True)
+    pack_root(producer, archive)
+    original = archive.read_bytes()
+    staged = unreal_inputs.stage_inputs(job,
+        [{'name': role, 'path': 'inputs/' + role, 'identity': {'state': 'digest'}}], content,
+        runtime_dir=runtime, root_bindings=raw['params']['input_roots'])
+    context = NS(job_dir=str(job), inputs=staged['inputs'], packages=staged['packages'], params=raw['params'])
+    selected = Path(unreal_ops._input(context, role))
+    assert selected == runtime / 'item-0' / role / 'nested' / filename
+    assert selected.is_file() and selected.read_bytes() == b'EXACT selected pixels'
+    assert selected != Path(staged['inputs'][role]) and archive.read_bytes() == original
+    assert staged['packages'][role] == []  # Data pixels do not issue native package authority.
+    context.params = {key: value for key, value in raw['params'].items() if key != 'source_member'}
+    with pytest.raises(ValueError): unreal_ops._input(context, role)
+    context.params = {**raw['params'], 'source_member': '../outside.png'}
+    with pytest.raises(ValueError): unreal_ops._input(context, role)
