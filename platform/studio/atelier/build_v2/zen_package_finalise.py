@@ -26,8 +26,38 @@ def _file(path, digest):
     return str(value)
 
 
+def source_manifest(path):
+    """Read the stock cooker's frozen ledger; its server paths never grant reads."""
+    path = Path(path)
+    if not path.is_absolute() or path.resolve() != path or not stat.S_ISREG(path.lstat().st_mode):
+        raise Refused('stock cooker file ledger is not an anchored regular file')
+    raw = path.read_bytes()
+    digest = hashlib.sha256(raw).hexdigest()
+    _file(path, digest)
+    lines = raw.decode('utf-8-sig').splitlines()
+    if len(lines) < 2 or not lines[0].startswith(';ServerRoot=') or lines[1] != 'FileId, ServerPath, ClientPath':
+        raise Refused('unsupported stock cooker file ledger')
+    rows, ids, paths = [], set(), set()
+    for line in lines[2:]:
+        fields = line.split(', ')
+        if len(fields) != 3:
+            raise Refused('ambiguous stock cooker file ledger row')
+        identity, server, client = fields
+        relative = client.removeprefix('/{engine}/') if client.startswith('/{engine}/') else client.removeprefix('/{project}/') if client.startswith('/{project}/') else ''
+        if (not _hash(identity, 24) or identity in ids or client in paths or not relative
+                or '\\' in relative or any(part in ('', '.', '..') for part in relative.split('/'))
+                or any(ord(c) < 32 for c in client + server)):
+            raise Refused('invalid or duplicate stock cooker file ledger role')
+        rows.append({'id': identity, 'clientpath': client, 'serverpath': server})
+        ids.add(identity); paths.add(client)
+    if not rows or len(rows) > 32768:
+        raise Refused('stock cooker file ledger is empty or too large')
+    _file(path, digest)
+    return rows
+
+
 def finalise(*, destination, packages, histories, global_histories, global_files, output_dir, library, formats,
-             runtime_project, input_key, call):
+             runtime_project, input_key, call, source_files=()):
     """@cc [owner:fontanierh,label:correctness] selected-native-package-finalization
     Only an actual already-owned global-cook namespace MAY be the destination.
     Every selected package MUST come from its separately verified immutable CB;
@@ -129,7 +159,7 @@ def finalise(*, destination, packages, histories, global_histories, global_files
     report = invoke('zen_end_cook_request', dict(version=1, project=destination['project'], oplog='Mac',
         project_file=destination['project_file'], marker_path=destination['lifetime_marker'],
         runtime_project_file=runtime_project, input_key=input_key, packages=chosen, globals=files,
-        output_dir=str(ending)), 'finalized')
+        output_dir=str(ending), source_files=list(source_files)), 'finalized')
     return {'composition': composed, 'global_composition': global_composed, 'endcook': report, 'packages': chosen, 'globals': files}
 
 
@@ -228,5 +258,24 @@ def prepare_histories(*, carrier, global_root, folder, project_name, library, un
         digest = hashlib.sha256(source.read_bytes()).hexdigest()
         global_files.append({'clientpath': '/{engine}/' + filename,
                              'path': _file(source, digest), 'sha256': digest})
+    runtime = global_root / 'RuntimeFiles'
+    if runtime.exists():
+        for source in sorted(runtime.rglob('*')):
+            if source.is_dir() and not source.is_symlink():
+                continue
+            relative = source.relative_to(runtime).as_posix()
+            domain, separator, tail = relative.partition('/')
+            if not separator or domain not in ('Engine', 'Project'):
+                raise Refused('unknown semantic runtime file role')
+            digest = hashlib.sha256(source.read_bytes()).hexdigest()
+            global_files.append({'clientpath': '/{' + domain.lower() + '}/' + tail,
+                                 'path': _file(source, digest), 'sha256': digest})
+    source_files = []
+    if 'global_metadata_archive' in carrier:
+        archive = _file(carrier['global_metadata_archive'], carrier['global_metadata_sha256'])
+        metadata_root = folder / 'global-metadata'
+        unpack(Path(archive), metadata_root)
+        source_files = [{key: row[key] for key in ('id', 'clientpath')} for row in
+                        source_manifest(metadata_root / project_name / 'Metadata/zenfs.manifest')]
     return {'histories': histories, 'global_histories': [global_history], 'formats': formats,
-            'global_files': global_files}
+            'global_files': global_files, 'source_files': source_files}
