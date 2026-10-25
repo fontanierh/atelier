@@ -52,6 +52,7 @@
     "platform/build-v2/src/verify.rs",
     "platform/build-v2/src/worker_lifecycle.rs",
     "platform/build-v2/src/worker_session.rs",
+    "platform/build-v2/src/zen_cook.rs",
     "platform/harness/harness/__init__.py",
     "platform/harness/harness/capacity.py",
     "platform/harness/harness/capacity_protocol.py",
