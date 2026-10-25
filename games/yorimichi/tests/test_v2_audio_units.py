@@ -30,7 +30,8 @@ def rows():
 
 
 def member(producer, path):
-    return {'path': path, 'item': {'unit': producer + '.member', 'item': path}}
+    return {'path': path, 'source': {'kind': 'group_member', 'unit': producer + '.split', 'group': 'waves',
+                                     'piece': path.rsplit('/', 1)[1].removesuffix('.wav')}}
 
 
 def members():
@@ -74,7 +75,18 @@ def test_keyed_members_become_store_raw_and_checkout_finish_units(rows):
         assert result['staged'][raw['id']] == {'source': 'inputs/source'}
         assert result['staged'][finish['id']] == {'raw': 'inputs/raw'}
     raw = by_id['unreal.sound.raw.footsteps.grass.grass_01']
-    assert raw['inputs'][0]['source'] == {'kind': 'item', 'unit': 'audio.footsteps.member', 'item': 'grass/grass_01.wav'}
+    assert raw['inputs'][0]['source'] == {'kind': 'group_member', 'unit': 'audio.footsteps.split',
+                                          'group': 'waves', 'piece': 'grass_01'}
+
+
+def test_legacy_item_is_only_an_explicit_fixed_one_wav_item(rows):
+    roster = members()
+    roster['audio.bike']['files'] = [{'path': 'chain/chain_01.wav', 'item': {'unit': 'fixed.chain', 'item': 'wav'}}]
+    units = {unit['id']: unit for unit in audio.audio_units(rows, checkout=ROOT, members=roster)['units']}
+    assert units['unreal.sound.raw.bike.chain_01']['inputs'][0]['source'] == {'kind': 'item', 'unit': 'fixed.chain', 'item': 'wav'}
+    roster['audio.bike']['files'] = [{'path': 'chain/chain_01.wav', 'item': {'unit': 'audio.bike', 'item': 'product0'}}]
+    with pytest.raises(audio.Unsupported, match='multi-WAV ROOT'):
+        audio.audio_units(rows, checkout=ROOT, members=roster)
 
 
 def test_destinations_and_looping_match_the_original_import_scripts(rows):
@@ -113,7 +125,7 @@ def test_wrong_source_shape_refuses(rows, change):
         audio.audio_units(selected, checkout=ROOT, members=members())
 
 
-@pytest.mark.parametrize('change', ['preview', 'nested', 'absolute', 'suffix', 'item', 'loops', 'empty', 'unselected'])
+@pytest.mark.parametrize('change', ['preview', 'nested', 'absolute', 'suffix', 'item', 'kind', 'extra', 'both', 'loops', 'empty', 'unselected'])
 def test_wrong_member_shape_refuses(rows, change):
     roster = members()
     files = roster['audio.combat']['files']
@@ -121,7 +133,10 @@ def test_wrong_member_shape_refuses(rows, change):
     elif change == 'nested': files[0]['path'] = 'a/b/c.wav'
     elif change == 'absolute': files[0]['path'] = '/tmp/c.wav'
     elif change == 'suffix': files[0]['path'] = 'clash/clash_01.ogg'
-    elif change == 'item': files[0]['item'] = {'unit': 'x'}
+    elif change == 'item': files[0] = {'path': files[0]['path'], 'item': {'unit': 'x'}}
+    elif change == 'kind': files[0]['source']['kind'] = 'file'
+    elif change == 'extra': files[0]['source']['item'] = 'x'
+    elif change == 'both': files[0]['item'] = {'unit': 'x', 'item': 'y'}
     elif change == 'loops': roster['audio.combat']['loops'] = ['clash']
     elif change == 'empty': roster['audio.combat']['files'] = []
     elif change == 'unselected': roster['audio.music'] = {'files': []}
