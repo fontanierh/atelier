@@ -256,6 +256,10 @@ def test_per_piece_options_cannot_widen_owned_outputs_or_silently_override_selec
     assert ops.export_options({'axis_forward': '-Y'}, {'axis_up': 'Z'}) == {'axis_forward': '-Y', 'axis_up': 'Z'}
     assert ops.export_options({'object_types': ['MESH']}, {}) == {}
     assert ops.export_options({}, {'object_types': ('MESH',)}) == {}
+    assert ops.export_options({'add_leaf_bones': False}, {}) == {'add_leaf_bones': False}
+    for value in (True, 0, None, 'false'):
+        with pytest.raises(ValueError):
+            ops.export_options({'add_leaf_bones': value}, {})
     for options in [{'filepath': 'foreign.fbx'}, {'use_selection': False}, {'bake_anim': True},
                     {'object_types': ['LIGHT']}, {'object_types': ['MESH', 'LIGHT']},
                     {'object_types': []}, {'object_types': 'MESH'}, {'object_types': [True]},
