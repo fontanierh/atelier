@@ -509,6 +509,7 @@ def test_package_composes_verified_inputs_before_uat_without_reading_source_name
                     'input_key': 'e' * 64, 'packages': 1}
         result = finaliser.finalise(**control['arguments'], call=native)
         Path(control['report']).write_text(json.dumps(result))
+    (tmp_path / 'engine').mkdir()
     inventory = tool.finalise_package({'inputs': [{'name': 'global', 'path': 'inputs/global'}]},
         {'native_global': 'global'}, view, project, tmp_path / 'engine', tmp_path, run, {}, 'e' * 64)
     assert calls == ['zen_package_request', 'zen_finalise_request', 'zen_finalise_request', 'zen_end_cook_request']
@@ -889,3 +890,85 @@ def test_uat_game_view_binds_actual_verified_plugin_copy_map(additional_plugin_v
     assert result['RuntimeDependencies'] == [{'Path': '$(ProjectDir)/Plugins/Move/Move.uplugin', 'Type': 'UFS'}]
     assert archive.read_bytes() == b'frozen game input'
     assert plugin.read_bytes() == (package_project.parent / 'Plugins/Move/Move.uplugin').read_bytes()
+
+
+@pytest.mark.parametrize('failure', [None, 'second', 'close'])
+def test_source_frontier_preserves_keys_and_waits_for_sdk_close(tmp_path, monkeypatch, failure):
+    from types import SimpleNamespace
+    jobs=[]
+    for index in range(2):
+        folder=tmp_path / str(index);folder.mkdir()
+        request=job(folder,'unreal.cook.produce');request['job_id']=str(index);request['unit']='source.'+str(index)
+        jobs.append({'job':request,'key':str(index+1)*64,'seconds':120.0})
+    scope=tmp_path / 'frontier';scope.mkdir();control=scope/'control.json'
+    control.write_text(json.dumps({'version':1,'jobs':jobs}));control.chmod(0o400)
+    calls=[]
+    class Sdk:
+        def __init__(self,owner,folder):self.child=SimpleNamespace(pid=123);self.owner=owner
+        def close(self):
+            assert not (scope/'result.json').exists()
+            calls.append('closed')
+            if failure=='close':raise RuntimeError('uncertain native close')
+    monkeypatch.setattr(tool,'CookSdkSession',Sdk)
+    def dispatch(request,directory,engine,run,**kwargs):
+        index=int(request['job_id']);assert kwargs['source_key']==jobs[index]['key']
+        assert kwargs['cook_session'].owner.source_deadline>tool.time.monotonic()
+        assert not (scope/'result.json').exists()
+        calls.append(index)
+        if index==1 and failure=='second':raise tool.Refused('second key failed')
+        return ['records/'+str(index)+'.cb','cook-root.tree.tar']
+    monkeypatch.setattr(tool,'dispatch',dispatch)
+    worker=tool.Worker(io.BytesIO(),io.BytesIO(),tmp_path/'engine',source_batch=control)
+    assert worker.source_frontier(jobs[0]['job'])==[]
+    result=json.loads((scope/'result.json').read_bytes())
+    assert [row['key'] for row in result['members']]==[row['key'] for row in jobs]
+    assert calls==[0,1,'closed']
+    assert result['sdk_processes']==1
+    assert [row['status'] for row in result['members']]==(['failed','failed'] if failure=='close' else ['completed','failed'] if failure=='second' else ['completed','completed'])
+
+
+def test_source_frontier_duplicate_actual_key_refuses_before_effect(tmp_path,monkeypatch):
+    request=job(tmp_path,'unreal.cook.produce');scope=tmp_path/'control';scope.mkdir()
+    rows=[{'job':dict(request,job_id=str(index)),'key':'a'*64,'seconds':120} for index in range(2)]
+    path=scope/'control.json';path.write_text(json.dumps({'version':1,'jobs':rows}));path.chmod(0o400)
+    monkeypatch.setattr(tool,'CookSdkSession',lambda *args:pytest.fail('SDK must not start'))
+    with pytest.raises(tool.Refused,match='roster differs'):
+        tool.Worker(io.BytesIO(),io.BytesIO(),tmp_path/'engine',source_batch=path).source_frontier(rows[0]['job'])
+
+
+def test_source_sdk_context_separates_native_payloads_but_binds_module_and_config(tmp_path):
+    from types import SimpleNamespace
+    project=tmp_path/'Game.uproject';project.write_text('{}')
+    (tmp_path/'Content').mkdir();asset=tmp_path/'Content/A.uasset';asset.write_bytes(b'first')
+    config=tmp_path/'Config';config.mkdir();ini=config/'DefaultEngine.ini';ini.write_bytes(b'keyed config')
+    sdk=tool.CookSdkSession(SimpleNamespace(),tmp_path/'session')
+    before=sdk.context(project)
+    asset.write_bytes(b'second own package')
+    assert sdk.context(project)==before
+    loose=tmp_path/'Content/runtime.json';loose.write_bytes(b'common runtime data')
+    assert sdk.context(project)!=before
+    loose.unlink()
+    ini.write_bytes(b'different keyed config')
+    assert sdk.context(project)!=before
+
+
+def test_source_sdk_host_injects_worker_only_in_independent_readonly_descriptor_copy(tmp_path,monkeypatch):
+    from types import SimpleNamespace
+    project=tmp_path/'source/Game.uproject';project.parent.mkdir();project.write_text('{}');project.chmod(0o444)
+    folder=tmp_path/'session';folder.mkdir()
+    owner=SimpleNamespace(engine=tmp_path/'engine')
+    def popen(command,**kwargs):
+        host=folder/'sdk-host/Game.uproject'
+        assert host.read_bytes()!=project.read_bytes() and project.read_bytes()==b'{}'
+        assert json.loads(host.read_bytes())['Plugins']==[{'Name':'AtelierBuildWorker','Enabled':True}]
+        assert len(kwargs['pass_fds'])==2
+        return SimpleNamespace(poll=lambda:0,returncode=0)
+    monkeypatch.setattr(tool.subprocess,'Popen',popen)
+    sdk=tool.CookSdkSession(owner,folder)
+    monkeypatch.setattr(sdk,'exchange',lambda *args,**kwargs:{'status':'ready'})
+    sdk.start(project,{},'a'*64,tmp_path/'bootstrap/Host.uproject')
+    sdk.close()
+
+
+def test_fixed_source_sdk_program_compiles_before_native_launch():
+    compile(tool.SOURCE_COOK_SESSION,'fixed-source-sdk-session.py','exec')

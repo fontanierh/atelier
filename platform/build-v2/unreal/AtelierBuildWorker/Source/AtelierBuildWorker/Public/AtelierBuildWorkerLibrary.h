@@ -31,6 +31,8 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static FString ZenEndCookRequest(const FString& RequestJson);
     /** Fixed selected registry/shader globals builder; native producer checks precede a completed report. */
     UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static FString ZenFinaliseRequest(const FString& RequestJson);
+    /** Fixed stock cooker invocation with per-job project/namespace and complete VM reset. */
+    UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static FString SourceCookRequest(const FString& RequestJson);
     /** Fixed native capture/verify/restore. Refusals never certify package completeness or globals. */
     UFUNCTION(BlueprintCallable, Category = "Atelier|Build") static FString ZenPackageRequest(const FString& RequestJson);
     /** False means recording is unavailable; the job must refuse. */
