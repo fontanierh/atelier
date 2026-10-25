@@ -108,7 +108,11 @@ def _callable(fn, paths, *, step, what):
             content = None
         cells.append(_closure_value(content, paths, step=step, what=what))
     bound = getattr(fn, '__self__', None)
-    return {'source': paths.rel(source, step=step, what=what + ' source'),
+    required = [{'name': p.name, 'kind': p.kind.name} for p in inspect.signature(target).parameters.values()
+                if p.default is inspect.Parameter.empty
+                and p.kind not in (p.VAR_POSITIONAL, p.VAR_KEYWORD)]
+    return {**({'required_parameters': required} if required else {}),
+            'source': paths.rel(source, step=step, what=what + ' source'),
             'qualname': target.__qualname__, 'line': line,
             'defaults': [_closure_value(d, paths, step=step, what=what) for d in defaults],
             'kwdefaults': {k: _closure_value(v, paths, step=step, what=what) for k, v in sorted(kwdefaults.items())},
