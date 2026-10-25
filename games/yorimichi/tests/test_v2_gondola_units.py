@@ -242,3 +242,16 @@ def test_mesh_refuses_changed_state(tmp_path, monkeypatch, damage):
     elif damage == 'folder': ctx.params['args']['folder'] = 'World'
     with pytest.raises(ValueError):
         body.run(ctx)
+
+
+def test_normal_provider_selects_every_finished_gondola_package(rows):
+    provider = load('games/yorimichi/v2_native_units.py', 'gondola_joined_provider')
+    result = provider.lower(rows, {'groups': {}, 'templates': []}, checkout=ROOT)
+    by_id = {unit['id']: unit for unit in result['units']}
+    selected = set(result['aliases']['unreal.gondola'])
+    original = next(row for row in rows if row['id'] == 'unreal.gondola')
+    assert len(result['packages']) == sum(path.endswith('.uasset') for path in original['outputs'])
+    assert selected == {reference['unit'] for reference in result['packages'].values()}
+    assert all(by_id[name]['op']['kind'] in ('unreal.author', 'unreal.finish') for name in selected)
+    assert result['module_requirements'] and all(name in by_id for name in result['module_requirements'])
+    assert set(result['staged_inputs']) == set(by_id)
