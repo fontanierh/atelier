@@ -32,6 +32,30 @@ def preflight(root,expected):
     return root
 
 
+def destinations(root, expected, outputs=None):
+    """@cc [owner:fontanierh,label:correctness] exact-skate-output-destinations
+    Explicit destinations MUST cover the complete named product roster exactly, with
+    distinct paths. They MUST NOT create or write a common undeclared parent directory.
+    """
+    if outputs is None:
+        if root is None:raise ValueError('Missing skate output destinations')
+        root = preflight(root, expected)
+        return {name: root/name for name in expected}
+    if root is not None or set(outputs) != set(expected):
+        raise ValueError('Incomplete or mixed skate output destinations')
+    result = {name: Path(path) for name, path in outputs.items()}
+    if len({path.absolute() for path in result.values()}) != len(result):
+        raise ValueError('Aliased skate output destinations')
+    parents = {}
+    for path in result.values():
+        if path.is_symlink() or (path.exists() and not path.is_file()):
+            raise ValueError('Invalid skate output destination')
+        parents.setdefault(path.parent, []).append(path.name)
+    for parent, names in parents.items():
+        preflight(parent, names)
+    return result
+
+
 def clean(value):
     return json.loads(json.dumps(value,default=float,allow_nan=False))
 
@@ -113,40 +137,40 @@ def material_objects(path):
     return result
 
 
-def publish_ao(root):
+def publish_ao(root=None, *, outputs=None):
     """@cc [owner:fontanierh,label:correctness] canonical-skate-ao-before-exports
     The original Pier/Features joint AO MUST be computed from original source geometry,
     with the exact rays, skip tags and ordered corners. Each owner MUST receive only
     its bound AO values. No rendered export MAY supply shading or riding query data.
     """
     from . import features,geom
-    root=preflight(root,[*(name+'.json' for name in AO),'report.json'])
+    files=destinations(root,[*(name+'.json' for name in AO),'report.json'],outputs)
     if not features.MOD.available():raise ValueError('Production skate geometry requires every committed library model')
     meshes=[features.pier(),features.park_features()]
     values=geom.bake_ao(meshes,meshes,skip_tags=('rail','railing','pole','lamp','coping'))
     report={}
     for mesh in meshes:
         data=values[mesh.name]
-        atomic_json(root/(mesh.name+'.json'),dict(schema=1,name=mesh.name,geometry_sha256=geometry_sha(mesh),values=data))
+        atomic_json(files[mesh.name+'.json'],dict(schema=1,name=mesh.name,geometry_sha256=geometry_sha(mesh),values=data))
         report[mesh.name]={'mean':round(float(np.mean([c for row in data for c in row])),3),
             'max':round(float(np.max([c for row in data for c in row])),3),'corners_over_0.3':int(sum(c>.3 for row in data for c in row))}
         print('SKATE CANONICAL AO COMPLETE',mesh.name,len(data),flush=True)
-    atomic_json(root/'report.json',report)
+    atomic_json(files['report.json'],report)
 
 
-def publish_queries(root):
+def publish_queries(root=None, *, outputs=None):
     from . import features,board,build,layout as L
     from village.layout import sample,upper_surface
-    root=preflight(root,['SM_SkatePierPilings.json','SM_SkatePath.json','collision.json','logical.json','report.json'])
+    files=destinations(root,['SM_SkatePierPilings.json','SM_SkatePath.json','collision.json','logical.json','report.json'],outputs)
     if not features.MOD.available():raise ValueError('Production skate queries require every committed library model')
     world,height=L.load_world();layout=L.path_layout(world,height)
     report=dict(board=build.check_board(board.deck(),board.truck(),board.wheel()))
     pier,feats=features.pier(),features.park_features()
     samples,read=recorder(sample);features.pilings(height,sample_fn=read)
-    atomic_json(root/'SM_SkatePierPilings.json',dict(schema=1,name='SM_SkatePierPilings',samples=samples))
+    atomic_json(files['SM_SkatePierPilings.json'],dict(schema=1,name='SM_SkatePierPilings',samples=samples))
     samples,read=recorder(upper_surface);path,_,rows=features.path(layout,height,surface_fn=read)
     frame={key:np.asarray(layout[key]).tolist() for key in ('P','s','n','z','road')}
-    atomic_json(root/'SM_SkatePath.json',dict(schema=1,name='SM_SkatePath',samples=samples,frame=frame))
+    atomic_json(files['SM_SkatePath.json'],dict(schema=1,name='SM_SkatePath',samples=samples,frame=frame))
     furniture,_=features.gardens('SM_SkateParkFurniture')
     report['furniture_clearance']=build.check_furniture_clearance(furniture,feats)
     rails=L.rails();report['rails']=build.check_rails(rails,[feats]);report['bar_clearance']=build.check_bar_clearance(rails,[pier,feats])
@@ -156,7 +180,7 @@ def publish_queries(root):
             for i in range(1,len(face)-1):
                 triangles.append([[mesh.verts[k][1],mesh.verts[k][2],mesh.verts[k][0]] for k in (face[0],face[i],face[i+1])])
     collision=dict(triangles=triangles,rails=[[[p[1],p[2],p[0]] for p in rail['points']] for rail in rails],spawn=[-28,0,-23],heading=0)
-    write_bytes(root/'collision.json',json.dumps(collision,separators=(',',':')).encode())
+    write_bytes(files['collision.json'],json.dumps(collision,separators=(',',':')).encode())
     report['profiles']=build.check_profiles();report['path']=build.check_path(layout,rows,height)
     report['path']['house_roof_clearance_m'],report['path']['house_lot_clearance_m']=build.house_clearance(layout,world)
     if report['path']['house_lot_clearance_m']<=0:raise ValueError('Skate path crosses a house lot')
@@ -164,8 +188,8 @@ def publish_queries(root):
     logical=build.park_json(layout,rails)
     from .pieces import validate_logical_contract
     validate_logical_contract(Path(__file__).with_name('park.json'),logical)
-    atomic_json(root/'logical.json',logical)
+    atomic_json(files['logical.json'],logical)
     report['park_json']=dict(origin=logical['origin'],rails=len(rails),rail_points=sum(len(r['points']) for r in rails),
         meshes=[row['name'] for row in logical['meshes']],spawns=logical['spawns'],bytes=Path(__file__).with_name('park.json').stat().st_size)
-    atomic_json(root/'report.json',clean(report))
+    atomic_json(files['report.json'],clean(report))
     print('SKATE CANONICAL QUERIES COMPLETE',len(triangles),flush=True)

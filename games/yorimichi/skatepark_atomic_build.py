@@ -22,10 +22,10 @@ def steps(ctx):
     result=[Step('world.skatepark.material_geometry',[Python(script,('--kind','materials',
         '--textures',str(ctx.out/'skatepark/textures/textures.json'),'--output',str(data/'materials.json')))],
         inputs=inputs,reads=['skatepark.textures'],products=[Product('skatepark.material_geometry',(data/'materials.json',))],cache=True),
-        Step('world.skatepark.ao',[Blender(script,('--kind','ao','--output',str(data/'ao')),threads=3,factory_startup=True)],
+        Step('world.skatepark.ao',[Blender(script,('--kind','ao',*(arg for name in ('SM_SkatePier','SM_SkateParkFeatures','report') for arg in ('--file',name+'.json',str(data/'ao'/(name+'.json'))))),threads=3,factory_startup=True)],
             inputs=[*inputs,GAME/'assets/skatepark/modules.json',GAME/'assets/skatepark/modules'],products=[*(Product('skatepark.ao.'+name,(data/'ao'/(name+'.json'),)) for name in ('SM_SkatePier','SM_SkateParkFeatures')),
                 Product('skatepark.ao_report',(data/'ao/report.json',))],cache=True,heavy=True),
-        Step('world.skatepark.query_data',[Blender(script,('--kind','queries','--output',str(data/'queries')),threads=3,factory_startup=True)],
+        Step('world.skatepark.query_data',[Blender(script,('--kind','queries',*(arg for name in ('SM_SkatePierPilings','SM_SkatePath','collision','logical','report') for arg in ('--file',name+'.json',str(data/'queries'/(name+'.json'))))),threads=3,factory_startup=True)],
             inputs=[*inputs,ctx.out/'heightmap.npy',ctx.out/'world.json',REGION/'park.json',GAME/'assets/skatepark/modules.json',GAME/'assets/skatepark/modules'],
             needs=['world.layout'],products=[*(Product('skatepark.terrain.'+name,(data/'queries'/(name+'.json'),)) for name in ('SM_SkatePierPilings','SM_SkatePath')),
                 Product('skatepark.query_metadata',(data/'queries/collision.json',data/'queries/logical.json',data/'queries/report.json'))],cache=True,heavy=True)]

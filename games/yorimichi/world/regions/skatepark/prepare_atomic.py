@@ -12,15 +12,19 @@ from skatepark import atomic_source as source  # noqa: E402
 def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--kind',choices=('ao','queries','materials'),required=True)
-    parser.add_argument('--output',type=Path,required=True)
+    parser.add_argument('--output',type=Path)
+    parser.add_argument('--file',nargs=2,action='append',default=[])
     parser.add_argument('--textures',type=Path)
     args=parser.parse_args(argv if argv is not None else (sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else None))
+    outputs=dict(args.file)
+    if len(outputs)!=len(args.file):raise ValueError('Duplicate skate output name')
     if args.kind=='materials':
+        if args.output is None or outputs:raise ValueError('Material output requires one file')
         real_directory(args.output.parent,create=True)
         if args.output.is_symlink() or (args.output.exists() and not args.output.is_file()):raise ValueError('Invalid skate UV data destination')
         atomic_json(args.output,source.material_projection(args.textures))
-    elif args.kind=='ao':source.publish_ao(args.output)
-    else:source.publish_queries(args.output)
+    elif args.kind=='ao':source.publish_ao(args.output,outputs=outputs or None)
+    else:source.publish_queries(args.output,outputs=outputs or None)
 
 
 if __name__=='__main__':main()
