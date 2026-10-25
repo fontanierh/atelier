@@ -138,7 +138,7 @@ def reference_units(rows, *, checkout, natives):
         add({'id': producer_id, 'op': dict(RECIPE_OP), 'script': RECIPE, 'code': recipe_code,
              'params': {'file_root': 'output/files', 'recipe': {'version': 1, 'paths': dict(paths), 'verify': None,
                  'commands': [_call(root, 'project', (*args, root / folder, kind))],
-                 'outputs': [{'path': folder, 'file': 'members.tree.tar', 'required': True}],
+                 'outputs': [{'kind': 'tree', 'path': folder, 'file': 'members.tree.tar', 'required': True}],
                  'file_group': {'source': folder, 'parent': f'Reference_{kind}', 'extensions': ['.json']}}},
              'outputs': [{'id': 'members', 'logical_path': f'/Internal/Reference/{kind}', 'class': 'Data',
                           'destination': 'store', 'files': [{'path': 'members.tree.tar', 'required': True}]}],
@@ -149,7 +149,7 @@ def reference_units(rows, *, checkout, natives):
     add({'id': views_id, 'op': dict(RECIPE_OP), 'script': RECIPE, 'code': recipe_code,
          'params': {'recipe': {'version': 1, 'paths': dict(paths), 'verify': None,
              'commands': [_call(root, 'views', (*args, root / 'generated/reference/views', clip_name))],
-             'outputs': [{'path': 'generated/reference/views', 'file': 'views.tree.tar', 'required': True}]}},
+             'outputs': [{'kind': 'tree', 'path': 'generated/reference/views', 'file': 'views.tree.tar', 'required': True}]}},
          'outputs': [{'id': 'views', 'logical_path': '/Internal/Reference/Views', 'class': 'Data', 'destination': 'store',
                       'files': [{'path': 'views.tree.tar', 'required': True}]}]}, [whole()])
     views_root = {'archive_member': 'views.tree.tar', 'name': 'views'}
@@ -172,7 +172,7 @@ def reference_units(rows, *, checkout, natives):
             'files': [{'path': f + '.tree.tar', 'required': True} for f in files],
             'params': {'recipe': {'version': 1, 'paths': {'selected': 'inputs/payload'}, 'verify': None,
                 'commands': [_call(root, 'select', (root / 'selected', root / 'member', root / 'meta', '$piece'))],
-                'outputs': [{'path': f, 'file': f + '.tree.tar', 'required': True} for f in files]}},
+                'outputs': [{'kind': 'tree', 'path': f, 'file': f + '.tree.tar', 'required': True} for f in files]}},
             'followers': [{'unit': unit, 'staged_inputs': {i['name']: 'inputs/' + i['name'] for i in unit['inputs']}}
                           for unit in followers]})
     member_root = {'archive_member': 'member.tree.tar', 'name': 'member'}

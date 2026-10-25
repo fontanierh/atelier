@@ -147,7 +147,7 @@ def rider_units(rows, *, checkout, natives):
                            f'{base_out}/fbx': 'inputs/export/' + archives['fbx']},
                  'commands': [_call(root, 'project', (root / base_out / 'export.json', root / base_out / 'fbx', root / folder,
                                                       rate, roster))],
-                 'outputs': [{'path': folder, 'file': 'members.tree.tar', 'required': True}],
+                 'outputs': [{'kind': 'tree', 'path': folder, 'file': 'members.tree.tar', 'required': True}],
                  'file_group': {'source': folder, 'parent': parent, 'extensions': ['.json']}}},
              'outputs': [{'id': 'members', 'logical_path': f'/Internal/Ride/{k}/{ride}', 'class': 'Data', 'destination': 'store',
                           'files': [{'path': 'members.tree.tar', 'required': True}]}],
@@ -175,8 +175,8 @@ def rider_units(rows, *, checkout, natives):
             'files': [{'path': 'member.tree.tar', 'required': True}, {'path': 'meta.tree.tar', 'required': True}],
             'params': {'recipe': {'version': 1, 'paths': {'selected': 'inputs/payload'}, 'verify': None,
                 'commands': [_call(root, 'select', (root / 'selected', root / 'member', root / 'meta', '$piece'))],
-                'outputs': [{'path': 'member', 'file': 'member.tree.tar', 'required': True},
-                            {'path': 'meta', 'file': 'meta.tree.tar', 'required': True}]}},
+                'outputs': [{'kind': 'tree', 'path': 'member', 'file': 'member.tree.tar', 'required': True},
+                            {'kind': 'tree', 'path': 'meta', 'file': 'meta.tree.tar', 'required': True}]}},
             'followers': [{'unit': unit, 'staged_inputs': {i['name']: 'inputs/' + i['name'] for i in unit['inputs']}}
                           for unit in followers]})
         clips = token(k, ride)
