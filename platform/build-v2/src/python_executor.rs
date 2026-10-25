@@ -797,8 +797,12 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
                             )
                         })
                 } else {
-                    tool.bundle
-                        .command(&tool.interpreter, &tool.engine_root, scope)
+                    tool.bundle.command_for_unit(
+                        &tool.interpreter,
+                        &tool.engine_root,
+                        scope,
+                        work.prepared().key(),
+                    )
                 };
                 match command {
                     Ok(command) => (

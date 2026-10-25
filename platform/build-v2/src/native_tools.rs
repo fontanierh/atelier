@@ -60,6 +60,28 @@ impl NativeToolBundle {
         self.identity.clone()
     }
 
+    /// Actual unit identity is execution metadata, never an authored parameter or Git revision.
+    pub fn command_for_unit(
+        &self,
+        interpreter: &Path,
+        engine_root: &Path,
+        owned_scope: &Path,
+        source_key: &str,
+    ) -> Result<crate::guard_adapter::WorkerCommand, String> {
+        if source_key.len() != 64
+            || !source_key
+                .bytes()
+                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+        {
+            return Err("native tool requires the actual complete prepared unit key".into());
+        }
+        let mut command = self.command(interpreter, engine_root, owned_scope)?;
+        command
+            .args
+            .extend(["--source-key".into(), source_key.into()]);
+        Ok(command)
+    }
+
     /// Bind the actual prepared source key and owned persistence scope as execution
     /// controls. Neither value changes the frozen worker implementation identity.
     pub fn command_for_cook(
@@ -82,10 +104,9 @@ impl NativeToolBundle {
                 "cook execution requires a complete source key and absolute owned Zen scope".into(),
             );
         }
-        let mut command = self.command(interpreter, engine_root, owned_scope)?;
+        let mut command =
+            self.command_for_unit(interpreter, engine_root, owned_scope, source_key)?;
         command.args.extend([
-            "--source-key".into(),
-            source_key.into(),
             "--zen-state-root".into(),
             zen_state_root.as_os_str().to_owned(),
             "--export-project".into(),

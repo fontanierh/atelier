@@ -92,6 +92,7 @@
     "platform/studio/atelier/build_v2/unreal_ops.py",
     "platform/studio/atelier/build_v2/unreal_tool_ops.py",
     "platform/studio/atelier/build_v2/unreal_worker.py",
+    "platform/studio/atelier/build_v2/zen_package_finalise.py",
     "platform/studio/atelier/build_v2/zen_verify.py",
     "platform/studio/atelier/file_identity.py",
     "platform/studio/atelier/paths.py",
