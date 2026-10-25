@@ -25,8 +25,8 @@ def load(path, name):
 
 units = load('games/yorimichi/v2_megapark_units.py', 'megapark_units_test')
 body = load(units.SCRIPT, 'megapark_body_test')
-RESTYLE = {'unit': 'world.megapark_restyle', 'item': 'product1',
-           'root': {'archive_member': 'products/1-0.tree.tar', 'name': 'textures'}}
+RESTYLE = {'unit': 'world.megapark_restyle', 'item': 'output0',
+           'root': {'archive_member': 'outputs/0.tree.tar', 'name': 'textures'}}
 
 
 @pytest.fixture(scope='module')
@@ -92,7 +92,7 @@ def test_library_units_bind_original_texture_material_and_level_policy(rows, lib
     names = {i['source']['unit'] for i in masked['inputs']}
     assert 'unreal.megapark.material.M_RetailMasked' in names and 'unreal.megapark.material.M_RetailOpaque' not in names
     assert set(masked['params']['args']['textures']) == {'diffuse', 'normal', 'transparent'}
-    assert masked['params']['input_roots']['restyle'] == {'archive_member': 'outputs/0.tree.tar', 'name': 'textures.json'}
+    assert masked['params']['input_roots']['restyle'] == {'archive_member': 'outputs/0.tree.tar', 'name': 'textures'}
     level = by_id['unreal.megapark.level']
     assert level['outputs'][0]['files'][0]['path'] == 'content/Game/MegaPark/Maps/SuperUltraMegaPark.umap'
     templates = level['params']['args']['pieces']['derived_items']['templates']
