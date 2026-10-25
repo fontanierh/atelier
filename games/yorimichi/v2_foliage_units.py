@@ -31,7 +31,7 @@ PARENT, WHITE = '/Game/Japan/Materials/M_Painted', '/Game/Japan/Textures/T_white
 FBX = {'combine_meshes': True, 'generate_lightmap_u_vs': False, 'auto_generate_collision': False,
        'convert_scene': True, 'convert_scene_unit': True, 'import_uniform_scale': 1.0, 'build_nanite': False,
        'one_convex_hull_per_ucx': True}
-SETTINGS = ['-ForceDPCVars=Interchange.FeatureFlags.Import.FBX=0']
+SETTINGS = ['-ForceDPCVars=Interchange.FeatureFlags.Import.FBX=false']
 
 
 def _module(name, path):

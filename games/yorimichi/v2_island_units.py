@@ -77,7 +77,7 @@ def attach_followers(geometry, packages, native_units, *, checkout):
                         'source': {'kind': 'item', 'unit': '$export', 'item': 'asset'}}],
             'params': {'op': 'raw_import', 'kind': 'static_mesh', 'source': 'source',
                        'destination': raw_package,
-                       'settings': ['-ForceDPCVars=Interchange.FeatureFlags.Import.FBX=0,Editor.AsyncStaticMeshCompilation=0']},
+                       'settings': ['-ForceDPCVars=Interchange.FeatureFlags.Import.FBX=false,Editor.AsyncStaticMeshCompilation=0']},
             'outputs': [_item(raw_package, raw=True)]}
         finish = {'id': '$export.finish', 'op': {'kind': 'unreal.finish', 'version': '1'},
             'script': FINISH, 'code': finish_code,

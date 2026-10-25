@@ -192,7 +192,7 @@ def gondola_units(rows, *, checkout):
                 params = {}
             add({'id': raw_id, 'op': {'kind': 'unreal.raw_import', 'version': '1'}, 'script': OPS, 'code': ops_code,
                  'params': {'op': 'raw_import', 'kind': 'static_mesh', 'source': 'source', 'destination': raw_package, **params,
-                            'settings': ['-ForceDPCVars=Interchange.FeatureFlags.Import.FBX=0,Editor.AsyncStaticMeshCompilation=0']},
+                            'settings': ['-ForceDPCVars=Interchange.FeatureFlags.Import.FBX=false,Editor.AsyncStaticMeshCompilation=0']},
                  'outputs': [_output('raw', raw_package, 'RawStaticMesh', store=True)]}, [source], roots)
             inputs, roots = [item('raw', raw_id, 'raw'), *(native(p) for p in closure)], {}
             lods = {}
@@ -204,7 +204,7 @@ def gondola_units(rows, *, checkout):
                  'params': {'op': 'finish', 'kind': 'static_mesh', 'source': 'raw', 'destination': package,
                             'package_sources': {'raw': raw_package},
                             'args': {'action': 'mesh', 'name': name, 'folder': folder, 'materials': materials, 'lods': lods},
-                            'settings': ['-ForceDPCVars=Interchange.FeatureFlags.Import.FBX=0,Editor.AsyncStaticMeshCompilation=0']},
+                            'settings': ['-ForceDPCVars=Interchange.FeatureFlags.Import.FBX=false,Editor.AsyncStaticMeshCompilation=0']},
                  'outputs': [_output('asset', package, 'StaticMesh')]}, inputs, roots)
             owned[package] = {'unit': finish_id, 'item': 'asset', 'package': package,
                               'dependencies': [dict(owned[p]) for p in closure]}
