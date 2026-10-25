@@ -366,3 +366,24 @@ def test_package_composes_verified_inputs_before_uat_without_reading_source_name
     assert (view / 'Saved/Cooked/Mac/Fixture/AssetRegistry.bin').read_bytes() == b'AssetRegistry.bin'
     tool.ops.verify_cooked_files(view / 'Saved/Cooked/Mac', inventory)
     assert project.read_text() == '{}'
+
+
+def test_uat_game_view_keeps_the_editor_input_unchanged(tmp_path, monkeypatch):
+    view = tmp_path / 'view'; (view / 'Binaries/Mac').mkdir(parents=True)
+    (tmp_path / '.recipe-runtime').mkdir()
+    project = view / 'Fixture.uproject'; project.write_text('{}')
+    editor = view / 'Binaries/Mac/libUnrealEditor-Fixture.dylib'; editor.write_bytes(b'editor')
+    game = tmp_path / 'inputs/game'; game.mkdir(parents=True)
+    archive = game / 'binary.mac.zip'; archive.write_bytes(b'archive')
+    def restore(source, destination, run):
+        assert source == archive
+        destination.mkdir()
+        (destination / 'Fixture.app').write_bytes(b'game')
+    monkeypatch.setattr(tool, 'restore_mac_zip', restore)
+    before = tool._tree(view)
+    package_view, package_project = tool.package_project_view(
+        {'inputs': [{'name': 'game', 'path': 'inputs/game'}]}, tmp_path, view, project, None)
+    assert package_project == package_view / 'Fixture.uproject'
+    assert tool._tree(view) == before
+    assert (package_view / 'Binaries/Mac/Fixture.app').read_bytes() == b'game'
+    assert not (package_view / 'Binaries/Mac/libUnrealEditor-Fixture.dylib').exists()

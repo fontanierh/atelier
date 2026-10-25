@@ -184,6 +184,26 @@ def restore_native_inputs(recipe, view, run):
             source.unlink()
 
 
+def package_project_view(job, job_dir, view, project, run):
+    """Use independent game binaries for UAT while retaining the editor input for finalisation."""
+    incoming = [row for row in job['inputs'] if row['name'] == 'game']
+    if len(incoming) != 1:
+        raise Refused('native package requires the actual produced game binary Item')
+    source = job_dir / recipe_job.relative(incoming[0]['path'])
+    archives = sorted(source.rglob('*.mac.zip')) if source.is_dir() else [source]
+    if len(archives) != 1 or not archives[0].name.endswith('.mac.zip'):
+        raise Refused('game binary Item must contain one complete Mac binary archive')
+    destination = job_dir / '.recipe-runtime/package-view'
+    shutil.copytree(view, destination, symlinks=True)
+    _tree(destination)
+    packaging_project = destination / project.relative_to(view)
+    binaries = packaging_project.parent / 'Binaries/Mac'
+    if binaries.exists():
+        shutil.rmtree(binaries)  # Only the new independent package-view copy.
+    restore_mac_zip(archives[0], binaries, run)
+    return destination, packaging_project
+
+
 def export_outputs(recipe, view, output, run, raw_roots=()):
     """Use ROOT for ordinary roots, regular ditto ZIP payloads for explicit mac-zip roots."""
     for row in recipe['outputs']:
@@ -581,16 +601,21 @@ def dispatch(job, job_dir, engine, run, *, source_key=None, zen_state_root=None,
         # Inventory comes from the controller's frozen upstream item, not a writer report.
         inventory = finalise_package(job, params, view, project, engine, job_dir, run, environment, source_key) if params.get('native_global') else params.get('cooked_files')
         cooked = project.parent / 'Saved/Cooked/Mac'
-        archive = _path(view, params['archive'])
-        argv = ops.package_argv(engine, project, target, archive, cooked_root=cooked,
+        package_view, packaging_project = (package_project_view(job, job_dir, view, project, run)
+                                           if params.get('native_global') else (view, project))
+        package_cooked = packaging_project.parent / 'Saved/Cooked/Mac'
+        archive = _path(package_view, params['archive'])
+        argv = ops.package_argv(engine, packaging_project, target, archive, cooked_root=package_cooked,
                                 cooked_files=inventory, configuration=configuration)
         environment = ops.package_environment(engine, environment)
         lifecycle = ops.package_lifecycle(job_dir, engine, environment)
         try:
-            run(argv, cwd=view, env=environment, lifecycle=lifecycle)
+            run(argv, cwd=package_view, env=environment, lifecycle=lifecycle)
         finally:
             lifecycle.close()
-        ops.verify_cooked_files(cooked, inventory)
+        ops.verify_cooked_files(package_cooked, inventory)
+        if package_view != view:
+            archive.rename(_path(view, params["archive"]))
     elif kind == 'package.archive':
         # The original archive script/arguments are frozen in the original declaration.
         commands = recipe['commands']
