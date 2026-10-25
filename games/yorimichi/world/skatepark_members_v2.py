@@ -4,6 +4,8 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import runpy
+from types import SimpleNamespace
 import shutil
 
 from craterpark_members_v2 import _file, _root, read_json
@@ -11,6 +13,13 @@ from craterpark_members_v2 import _file, _root, read_json
 SURFACES = {'concrete', 'ceramic', 'steel', 'wood', 'basalt', 'mural'}
 ROLES = ('albedo', 'normal', 'roughness')
 KEY = re.compile(r'[a-z][a-z0-9_]*\Z')
+
+
+def pieces_module():
+    source = Path(__file__).parent / 'regions/skatepark/pieces.py'
+    if source.is_symlink() or not source.is_file():
+        raise ValueError('Original Sunset Pier membership source is not staged keyed code')
+    return SimpleNamespace(**runpy.run_path(str(source), run_name='sunset_pier_membership'))
 
 
 def specifications(root):
@@ -66,7 +75,7 @@ def select(source=None, output=None, piece=None, extension=None):
 
 def complete(build_archive=None, runtime_archive=None, logical=None, park=(), board=(), trees=(), output=None):
     """Require original runtime/source ownership and the complete current native member roster."""
-    from skatepark.pieces import runtime_park
+    runtime_park = pieces_module().runtime_park
     output = Path(output)
     if output.exists(): raise ValueError('Sunset Pier native summary must be fresh')
     output.mkdir(parents=True)

@@ -9,7 +9,7 @@ from atelier.export_manifest import validate as validate_export
 from island_finish_v2 import _identity, _pairs, _selected
 from mega_finish_v2 import _path
 from megapark_v2 import _data, _derived, _fresh, _load, _owned
-from skatepark_members_v2 import read_json
+from skatepark_members_v2 import read_json, pieces_module
 
 ROOT = '/Game/SkatePark'
 ORIGINAL = 'games/yorimichi/unreal/Scripts/import_skatepark.py'
@@ -92,7 +92,8 @@ def mesh(context, unreal, args):
     if type(board) is not bool or type(blocks) is not bool or (board and (piece != parent or parent not in BOARD or blocks)):
         raise ValueError('Unknown Sunset Pier board/collision identity')
     if not board:
-        from skatepark.pieces import PARENTS, owned_name
+        source_policy = pieces_module()
+        PARENTS, owned_name = source_policy.PARENTS, source_policy.owned_name
         if parent not in PARENTS or not owned_name(piece) or not (piece == parent or piece.startswith(parent + '_Piece')):
             raise ValueError('Unknown Sunset Pier selected park member')
     destination = ROOT + ('/Board/' if board else '/') + piece
