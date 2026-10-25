@@ -127,3 +127,19 @@ def test_predecessor_fixture_is_bound_to_exact_immutable_git_source():
     # SHA256 of git show 283329c07:games/yorimichi/world/build_terrain.py.
     fixture = GAME / 'tests/fixtures/island-terrain-predecessor-283329c07.txt'
     assert hashlib.sha256(fixture.read_bytes()).hexdigest() == 'c00634b7dadc6ff98fe87ee4759f3a471dbe24cdf4c0c3d935fa835f6f9d6108'
+
+
+def test_heightmap_temporary_uses_existing_managed_scratch_without_changing_npy(tmp_path,monkeypatch):
+    import io
+    from atelier.atomic_files import managed_temporaries
+    scratch=tmp_path/'scratch';scratch.mkdir();output=tmp_path/'projection'
+    value=np.arange(9,dtype=np.float64).reshape(3,3)
+    save=np.save;names=[]
+    def record(stream,*args,**kwargs):
+        names.append(Path(stream.name));return save(stream,*args,**kwargs)
+    monkeypatch.setattr(np,'save',record)
+    with managed_temporaries(scratch):publish(world(),value,output,city=True)
+    assert names[0].parent==scratch
+    expected=io.BytesIO();save(expected,value,allow_pickle=False)
+    assert (output/'heightmap.npy').read_bytes()==expected.getvalue()
+    assert list(scratch.iterdir())==[]

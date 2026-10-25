@@ -1,7 +1,7 @@
 """Publish exact consumed final heights before selected Hippodrome construction."""
 import sys
 from pathlib import Path
-sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
+sys.path[:0]=[str(Path(__file__).resolve().parents[i]) for i in (2,1)]
 import argparse
 from atelier.atomic_files import atomic_json
 from hippodrome import layout as L
