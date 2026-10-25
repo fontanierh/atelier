@@ -21,20 +21,37 @@ def _path(value):
     return value
 
 
-def _binding(value):
+def _binding(value, *, call_context=None):
+    """@cc [owner:fontanierh,label:safety] declared-call-context-only
+    Only Call commands MAY receive required ctx/log arguments, as frozen declarative
+    paths and a write-only progress sink. Unknown required arguments MUST refuse.
+    Context paths MUST NOT add IO permission or recover an ambient SDK capability.
+    """
     if value is None:
         return None
     if value.get('bound') is not None:
         raise Unsupported('bound callback needs an explicit receiver declaration')
-    return {name: deepcopy(value[source]) for name, source in (
+    required = value.get('required_parameters', [])
+    if required and (call_context is None or any(
+            p.get('name') not in ('ctx', 'log')
+            or p.get('kind') not in ('POSITIONAL_OR_KEYWORD', 'KEYWORD_ONLY') for p in required)):
+        raise Unsupported('callback requires unsupported arguments: ' + repr(required))
+    result = {name: deepcopy(value[source]) for name, source in (
         ('source', 'source'), ('qualname', 'qualname'), ('line', 'line'),
         ('captures', 'closure'), ('defaults', 'defaults'), ('kwdefaults', 'kwdefaults'))}
+    arguments = {p['name']: ({'recipe_context': deepcopy(call_context)} if p['name'] == 'ctx'
+                            else {'recipe_stdout': True}) for p in required}
+    result['defaults'] = [arguments[p['name']] for p in required
+                          if p['kind'] == 'POSITIONAL_OR_KEYWORD'] + result['defaults']
+    result['kwdefaults'].update({p['name']: arguments[p['name']] for p in required
+                                 if p['kind'] == 'KEYWORD_ONLY'})
+    return result
 
 
-def _command(value):
+def _command(value, *, call_context=None):
     kind = value['kind']
     if kind == 'call':
-        return {'kind': 'call', 'call': _binding(value['fn'])}
+        return {'kind': 'call', 'call': _binding(value['fn'], call_context=call_context)}
     if kind in ('UnrealCompile', 'UnrealGame'):
         return {**deepcopy(value), 'kind': 'native_tool', 'tool_kind': kind}
     if kind == 'PackageArchive':
@@ -158,7 +175,7 @@ def _replacement_closure(units, templates, targets, module_requirements, followe
     return selected, selected_templates, missing
 
 
-def compile_rows(rows, *, project, targets, install_roots=(), checkout=None, geometry=None, native=None):
+def compile_rows(rows, *, project, targets, install_roots=(), checkout=None, geometry=None, native=None, callback_out=None):
     """@cc [owner:fontanierh,label:correctness] recipe-units-use-real-engine
     Each action MUST become its own unit with complete code, consumed source and
     upstream product identities. No old action fingerprint, stamp, source location
@@ -233,7 +250,16 @@ def compile_rows(rows, *, project, targets, install_roots=(), checkout=None, geo
             continue
         name = row['id']
         try:
-            commands = [_command(command) for command in row['commands']]
+            call_context = None
+            if any(c['kind'] == 'call' and c['fn'].get('required_parameters') for c in row['commands']):
+                projects = sorted((checkout / 'games' / project / 'unreal').glob('*.uproject'))
+                if len(projects) > 1:
+                    raise Unsupported('callback context requires a unique project descriptor')
+                call_context = {'game': project, 'out': {'path': _path(callback_out or f'build/{project}')},
+                                'game_dir': {'path': f'games/{project}'},
+                                'uproject': {'path': projects[0].relative_to(checkout).as_posix()} if projects else None,
+                                'unreal_root': None}
+            commands = [_command(command, call_context=call_context) for command in row['commands']]
             if not commands:
                 raise Unsupported('unit has no executable action')
             native = next((command for command in commands if command['kind'] == 'native_tool'), None)
@@ -433,6 +459,7 @@ def compile_source_prerequisites(game, *, checkout, build_root):
     ids = tuple(row['id'] for row in rows)
     _, actual_targets = _without_joins(rows, ids)
     marker = compile_rows(rows, project=game, targets=actual_targets, checkout=checkout,
+        callback_out=(build_root / game).relative_to(checkout).as_posix(),
         install_roots=(f'build/{game}',), geometry=geometry)
     return replace(marker, unit='world.source-prerequisites', selection_targets=actual_targets)
 
@@ -448,6 +475,7 @@ def compile_materials(game, *, checkout, build_root):
     rows = extract(source_steps, checkout=checkout, build_root=build_root)
     _, targets = _without_joins(rows, ('world.textures',))
     source = compile_rows(rows, project=game, targets=targets, checkout=checkout,
+        callback_out=(build_root / game).relative_to(checkout).as_posix(),
                           install_roots=(f'build/{game}', f'games/{game}/unreal/Content'))
     filename = Path(checkout) / 'games' / game / 'v2_native_units.py'
     spec = importlib.util.spec_from_file_location('atelier_native_units_' + game, filename)
@@ -483,7 +511,8 @@ def compile_island(game, *, checkout, build_root):
     native = load('v2_native_units').island(rows, geometry, checkout=checkout)
     geometry = native['geometry']
     _, targets = _without_joins(rows, tuple(row['id'] for row in rows))
-    source = compile_rows(rows, project=game, targets=targets, checkout=checkout, geometry=geometry,
+    source = compile_rows(rows, project=game, targets=targets, checkout=checkout,
+        callback_out=(build_root / game).relative_to(checkout).as_posix(), geometry=geometry,
         install_roots=(f'build/{game}', f'games/{game}/unreal/Content'))
     return replace(source, unit='unreal.island',
         declaration={**source.declaration, 'units': [*source.declaration['units'], *native['units']]},
@@ -533,7 +562,8 @@ def compile_game(game, *, checkout, build_root, targets=('unreal.package',)):
         if native is not None:
             geometry = native.get('geometry', geometry)
     try:
-        marker = compile_rows(rows, project=game, targets=targets, checkout=checkout, geometry=geometry, native=native,
+        marker = compile_rows(rows, project=game, targets=targets, checkout=checkout,
+            callback_out=(build_root / game).relative_to(checkout).as_posix(), geometry=geometry, native=native,
                               install_roots=(f'build/{game}', f'games/{game}/unreal/Content',
                                              f'games/{game}/unreal/Binaries'))
     except Unsupported as error:
