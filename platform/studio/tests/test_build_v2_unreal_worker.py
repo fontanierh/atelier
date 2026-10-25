@@ -109,7 +109,7 @@ def worker(tmp_path):
 def job(tmp_path, outputs, **extra):
     folder = tmp_path / 'job'
     (folder / 'output').mkdir(parents=True, exist_ok=True)
-    return {'job_id': 'j', 'job_dir': str(folder), 'script': 'ops/op.py', 'code': ['ops/op.py'], 'inputs': [],
+    return {'job_id': 'j', 'op': {'kind': 'unreal.raw_import', 'version': '1'}, 'job_dir': str(folder), 'script': 'ops/op.py', 'code': ['ops/op.py'], 'inputs': [],
             'params': {}, 'outputs': [{'path': path, 'required': True} for path in outputs], **extra}
 
 
@@ -262,3 +262,39 @@ def test_generated_native_save_reads_require_actual_package_new_name_and_owned_s
     assert generated_save_reads(report, [], folder, set()) == []
     good.symlink_to(external)
     assert generated_save_reads(report, saved, folder, set()) == []
+
+
+def test_cook_verifier_requires_owned_private_execution_metadata(tmp_path):
+    runtime = tmp_path / '.unreal-runtime'
+    runtime.mkdir()
+    target = runtime / 'native-verify.json'
+    request = {'version': 1, 'mode': 'restore', 'project': 'AtelierV2_' + 'a' * 64,
+               'oplog': 'Mac', 'source_package': '/Game/A', 'expected_stored_key': 'b' * 40,
+               'expected_root_hash': 'c' * 40, 'input_key': 'a' * 64,
+               **{name: str(tmp_path / name) for name in
+                  ('record_path', 'project_file', 'marker_path', 'runtime_project_file')}}
+    value = {'version': 1, 'request': request, 'record_sha256': 'd' * 64, 'producer_key': 'a' * 64}
+    target.write_text(json.dumps(value))
+    target.chmod(0o400)
+    assert unreal_worker.trusted_verify_context(tmp_path) == value
+    target.chmod(0o600)
+    with pytest.raises(JobRefused, match='immutable owned'):
+        unreal_worker.trusted_verify_context(tmp_path)
+    target.chmod(0o400)
+    link = runtime / 'linked'
+    target.rename(link)
+    target.symlink_to(link)
+    with pytest.raises(JobRefused, match='immutable owned'):
+        unreal_worker.trusted_verify_context(tmp_path)
+
+
+def test_cook_verifier_cannot_take_authority_from_semantic_params(tmp_path):
+    loop, _ = worker(tmp_path)
+    request = job(tmp_path, ['zen-verified.json'],
+                  op={'kind': 'unreal.cook.verify', 'version': '1'},
+                  script='platform/studio/atelier/build_v2/zen_verify.py',
+                  code=['platform/studio/atelier/build_v2/zen_verify.py'],
+                  params={'package': '/Game/A', 'mode': 'restore',
+                          'zen_request': {'record_path': '/arbitrary'}})
+    with pytest.raises(FileNotFoundError):
+        loop.execute(request, set(), [])

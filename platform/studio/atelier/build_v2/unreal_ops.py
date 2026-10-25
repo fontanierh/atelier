@@ -11,7 +11,7 @@ import re
 import sys
 
 
-_PACKAGE = re.compile(r'/Game/(?:[A-Za-z0-9_]+/)*[A-Za-z0-9_]+\Z')
+_PACKAGE = re.compile(r'/Game/(?:[A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+\Z')
 _KINDS = {'static_mesh': 'StaticMesh', 'skeletal_mesh': 'SkeletalMesh',
           'animation': 'AnimSequence', 'texture': 'Texture2D', 'sound': 'SoundWave'}
 
