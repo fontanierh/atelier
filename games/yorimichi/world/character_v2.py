@@ -61,6 +61,21 @@ def _config(context, slot):
     return json.loads(path.read_bytes())
 
 
+def _roster(value):
+    """{name: slot}: a keyed slot map, or the provider's resolved derived_items {root, members: [{piece, slot}]}."""
+    if isinstance(value, dict) and set(value) == {'derived_items'}:
+        rows = value['derived_items'].get('members') if isinstance(value['derived_items'], dict) else None
+        if not isinstance(rows, list) or any(not isinstance(r, dict) or 'piece' not in r or 'slot' not in r for r in rows):
+            raise ValueError('Character derived roster is unresolved')
+        roster = {r['piece']: r['slot'] for r in rows}
+        if len(roster) != len(rows):
+            raise ValueError('Duplicate character derived member')
+        return roster
+    if not isinstance(value, dict):
+        raise ValueError('Character roster must be a slot map')
+    return dict(value)
+
+
 def _fresh(unreal, package):
     if unreal.EditorAssetLibrary.does_asset_exist(package):
         raise ValueError('Character destination must be fresh: ' + package)
@@ -83,6 +98,14 @@ def material(context, unreal, args):
         raise ValueError('Material job owns exactly its declared package')
     config = _config(context, args['export'])
     cfg = config['materials'][args['name']]
+    if 'textures' in args:
+        # The whole character texture roster is staged; the export names this material's own one.
+        roster = _roster(args['textures'])
+        stem = Path(cfg['texture']).stem if cfg['texture'] else None
+        if stem is not None and stem not in roster:
+            raise ValueError('Material texture is not in the declared character textures')
+        args = {**args, **({'texture': roster[stem]} if stem else {})}
+        args.pop('textures')
     if bool(cfg['texture']) != ('texture' in args):
         raise ValueError('Material texture input differs from the export')
     _fresh(unreal, destination)
@@ -164,7 +187,7 @@ def mesh(context, unreal, args):
     if bool(config.get('cloth')) != bool(cloth_package):
         raise ValueError('Cloth collider ownership differs from the export')
     raw = _load(unreal, context, params['source'], unreal.SkeletalMesh)
-    materials = {key: _load(unreal, context, slot) for key, slot in args['materials'].items()}
+    materials = {key: _load(unreal, context, slot) for key, slot in _roster(args['materials']).items()}
     if set(materials) != set(config['materials']):
         raise ValueError('Material inputs differ from the export')
     for package in owned:
@@ -295,7 +318,7 @@ def base(context, unreal, args):
     if list(context.outputs) != [destination]:
         raise ValueError('Base definition job owns exactly its declared package')
     config = _config(context, args['export'])
-    clips = {key: _load(unreal, context, slot) for key, slot in args['clips'].items()}
+    clips = {key: _load(unreal, context, slot) for key, slot in _roster(args['clips']).items()}
     if set(clips) != set(config['clips']):
         raise ValueError('Base definition clips differ from the export')
     body = _load(unreal, context, args['mesh'], unreal.SkeletalMesh)
