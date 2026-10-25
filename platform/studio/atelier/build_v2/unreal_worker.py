@@ -230,6 +230,34 @@ def validate_read_report(report, declared, platform_roots=(), generated=()):
         raise JobRefused('dependency', f'opened undeclared files: {sorted(set(unknown))}')
 
 
+def native_store_metadata_files(engine_dir, *, home=None):
+    """@cc [owner:fontanierh,label:correctness;safety] native-zen-sdk-metadata
+    Only the fixed native verifier MAY classify these five default installed SDK
+    service metadata files as platform reads. No directory, asset, code or other
+    user-settings file MAY be authorized. Aliases and non-regular roles MUST refuse.
+    These runtime SDK locators MUST NOT become semantic asset inputs or certificates.
+    """
+    import pwd
+    version = json.loads((Path(engine_dir) / 'Build/Build.version').read_bytes())
+    numbers = [version.get(key) for key in ('MajorVersion', 'MinorVersion')]
+    if any(type(value) is not int or not 0 <= value < 100 for value in numbers):
+        raise JobRefused('dependency', 'installed SDK has no canonical engine version')
+    home = Path(home) if home is not None else Path(pwd.getpwuid(os.getuid()).pw_dir)
+    epic = home / 'Library/Application Support/Epic'
+    common = epic / 'UnrealEngine/Common/Zen/Install'
+    files = [epic / 'Epic Games/KeyValueStore.ini',
+             epic / f'UnrealEngine/{numbers[0]}.{numbers[1]}/Saved/Zen/zen.version',
+             *(common / name for name in ('security-config.json', 'zen.version', 'zen_plugin_versions.json'))]
+    for path in files:
+        if not path.is_absolute() or path.resolve() != path:
+            raise JobRefused('dependency', 'native SDK metadata role contains an alias')
+        if path.exists():
+            info = path.lstat()
+            if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                raise JobRefused('dependency', 'native SDK metadata role is not a regular file')
+    return files
+
+
 def generated_save_reads(report, saved, folder, before):
     """UE SavePackage uses Saved/<package-leaf[:32]><FGuid Digits>.tmp.
 
@@ -794,7 +822,8 @@ class Worker:
         write_atomic(job_dir / READ_EVIDENCE, report)
         verify_readonly_editor_state(dirty_before, self.editor.dirty_packages(), saved,
                                      self.editor.ensures(), content_has_files(self.content))
-        validate_read_report(report, declared_reads, self.read_platform_roots)
+        sdk_metadata = native_store_metadata_files(self.editor.engine_dir())
+        validate_read_report(report, [*declared_reads, *sdk_metadata], self.read_platform_roots)
         if any(sha256(path) != digest for path, digest in before.items()):
             raise JobRefused('dependency', 'native verification changed its source record or lifetime metadata')
         output = job_dir / 'output'

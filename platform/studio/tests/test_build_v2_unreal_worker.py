@@ -454,3 +454,24 @@ def test_cook_verifier_cannot_take_authority_from_semantic_params(tmp_path):
                           'zen_request': {'record_path': '/arbitrary'}})
     with pytest.raises(FileNotFoundError):
         loop.execute(request, set(), [])
+
+
+def test_fixed_native_zen_metadata_roles_are_exact_regular_sdk_files(tmp_path):
+    engine = tmp_path / 'engine'
+    (engine/'Build').mkdir(parents=True)
+    (engine/'Build/Build.version').write_text(json.dumps({'MajorVersion':5,'MinorVersion':8}))
+    home = tmp_path/'home'
+    paths = unreal_worker.native_store_metadata_files(engine,home=home)
+    assert len(paths)==5
+    for path in paths:
+        path.parent.mkdir(parents=True,exist_ok=True)
+        path.write_bytes(b'SDK metadata fixture')
+    paths = unreal_worker.native_store_metadata_files(engine,home=home)
+    report={'version':1,'best_effort':True,'files':[str(path) for path in paths]}
+    unreal_worker.validate_read_report(report,paths)
+    report['files'].append(str(paths[0].with_name('other.ini')))
+    with pytest.raises(JobRefused,match='undeclared'):
+        unreal_worker.validate_read_report(report,paths)
+    paths[0].unlink();paths[0].symlink_to(paths[1])
+    with pytest.raises(JobRefused,match='alias'):
+        unreal_worker.native_store_metadata_files(engine,home=home)
