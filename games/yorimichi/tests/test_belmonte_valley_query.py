@@ -79,3 +79,30 @@ def test_query_stage_and_numeric_storage_cannot_fall_back_to_another_product(tmp
     assert arrays.read(path,owner='BelmonteValley',stage='natural')['faces'].tobytes()==faces.tobytes()
     with pytest.raises(ValueError):arrays.read(path,owner='BelmonteValley',stage='final')
     with pytest.raises(ValueError):arrays.read(path,owner='Foreign',stage='natural')
+
+
+def test_query_writer_uses_managed_scratch_without_changing_archive_bytes(tmp_path,modules,monkeypatch):
+    from atelier.atomic_files import managed_temporaries
+    arrays,*_=modules
+    faces=np.arange(18,dtype='<f8').reshape(2,3,3);values=faces/18
+    baseline=tmp_path/'baseline'/'BelmonteValley-natural.npz'
+    arrays.write(baseline,faces,values,owner='BelmonteValley',stage='natural')
+    destination=tmp_path/'declared'/baseline.name;destination.parent.mkdir()
+    scratch=tmp_path/'managed';observed=[];original=arrays.tempfile.NamedTemporaryFile
+    def temporary(*args,**kwargs):
+        observed.append(Path(kwargs['dir']))
+        assert Path(kwargs['dir'])==scratch
+        return original(*args,**kwargs)
+    monkeypatch.setattr(arrays.tempfile,'NamedTemporaryFile',temporary)
+    with managed_temporaries(scratch):
+        arrays.write(destination,faces,values,owner='BelmonteValley',stage='natural')
+        before=destination.stat().st_mtime_ns
+        arrays.write(destination,faces,values,owner='BelmonteValley',stage='natural')
+    assert observed==[scratch,scratch]
+    assert destination.read_bytes()==baseline.read_bytes()
+    assert destination.stat().st_mtime_ns==before
+    assert not list(scratch.iterdir())
+    assert [p.name for p in destination.parent.iterdir()]==[destination.name]
+    actual=arrays.read(destination,owner='BelmonteValley',stage='natural')
+    assert actual['faces'].tobytes()==faces.tobytes()
+    assert actual['values'].tobytes()==values.tobytes()
