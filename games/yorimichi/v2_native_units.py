@@ -83,7 +83,8 @@ def island(rows, geometry, *, checkout):
 
 def _package_dependencies(native):
     classes = {'Texture', 'StaticMesh', 'SkeletalMesh', 'Skeleton', 'PhysicsAsset',
-               'Material', 'MaterialInstance', 'MaterialParameterCollection', 'Map', 'Sound', 'Animation', 'DataAsset'}
+               'Material', 'MaterialInstance', 'MaterialParameterCollection', 'Map', 'Sound', 'Animation', 'DataAsset', 'BlendSpace1D', 'AdventureMoveSet', 'AnimBoneCompressionSettings',
+               'WandererDefinition', 'SoundAttenuation'}
     by_id = {unit['id']: unit for unit in native['units']}
     result = {}
     for package, reference in native['packages'].items():
@@ -222,7 +223,7 @@ def _join_native_families(native, rows, geometry, selected, *, checkout):
     return native
 
 
-def _complete_mesh_family(native, geometry, *, family, export_prefixes, checkout, fixed=None):
+def _complete_mesh_family(native, geometry, *, family, export_prefixes, checkout, fixed=None, prerequisites=()):
     """Select the full finished roster through existing before-key follower expansion."""
     import ast
     from pathlib import Path
@@ -247,6 +248,11 @@ def _complete_mesh_family(native, geometry, *, family, export_prefixes, checkout
     inputs = [{'role': 'content', 'name': 'fixed' + str(index), 'source': {
         'kind': 'item', 'unit': ref['unit'], 'item': ref['item']}}
         for index, ref in enumerate(fixed.values())]
+    inputs.extend({'role': 'content', 'name': 'required' + str(index), 'source': {
+        'kind': 'item', 'unit': ref['unit'], 'item': ref['item']}}
+        for index, ref in enumerate(prerequisites))
+    for incoming in inputs:
+        incoming['whole'] = 'The complete finished Item is required to certify this family roster and runtime data.'
     output = 'build/yorimichi/' + family + '/import-report.json'
     unit = {'id': 'unreal.' + family + '.complete', 'op': {'kind': 'recipe.python', 'version': '1'},
         'script': 'platform/studio/atelier/build_v2/recipe_job.py',
@@ -262,6 +268,36 @@ def _complete_mesh_family(native, geometry, *, family, export_prefixes, checkout
     native['content_slots'].update({row['name']: False for row in inputs})
     native['aliases']['unreal.' + family] = (unit['id'],)
 
+
+
+def _join_world_parts(native, rows, geometry, *, checkout):
+    """Compose the actual World asset owners; completion waits for every callback family."""
+    source = _family_source_reference(rows, 'characters.wanderer', 'wanderer', 'build.json')
+    compression = _family_module(checkout, 'v2_moveset_units').compression_unit(checkout=checkout)
+    if not any(unit['id'] == compression['id'] for unit in native['units']):
+        native['units'].append(compression)
+        native['staged_inputs'][compression['id']] = {}
+        native['packages'][compression['outputs'][0]['logical_path']] = {
+            'unit': compression['id'], 'item': 'asset', 'package': compression['outputs'][0]['logical_path']}
+    wanderer = _family_module(checkout, 'v2_wanderer_units').wanderer_units(rows, checkout=checkout,
+        natives={'wanderer': {'unit': source['unit'], 'item': source['item'],
+            'root': {'archive_member': source['file'], 'name': 'wanderer'}},
+            'compression': {'unit': compression['id'], 'item': 'asset',
+                'package': compression['outputs'][0]['logical_path']}})
+    wanderer['content_slots'] = {incoming['name']: False for unit in wanderer['units']
+                                  for incoming in unit['inputs']}
+    _append_family(native, wanderer)
+    for family in ('props', 'sailboat', 'zeppelin'):
+        extended = _family_module(checkout, 'v2_' + family + '_units').attach_followers(
+            geometry, _package_dependencies(native), checkout=checkout)
+        if 'units' in extended:
+            _append_family(native, {key: extended.pop(key) for key in
+                ('units', 'staged_inputs', 'content_slots', 'packages')})
+        native.setdefault('follower_module_requirements', {}).update(extended.pop('module_requirements', {}))
+        geometry = extended
+    native['geometry'] = geometry
+    native.setdefault('missing_roles', []).append('world.hidamari_non_north_materials_and_props')
+    return native
 
 
 def _join_audio(native, rows, geometry, *, checkout):
@@ -299,7 +335,8 @@ def _join_audio(native, rows, geometry, *, checkout):
     index = {'id': 'unreal.sounds.complete', 'op': {'kind': 'recipe.python', 'version': '1'},
         'script': 'platform/studio/atelier/build_v2/recipe_job.py',
         'code': [script, 'platform/studio/atelier/build_v2/recipe_job.py'],
-        'inputs': [{'role': 'content', 'name': 'footsteps', 'source': {
+        'inputs': [{'role': 'content', 'name': 'footsteps',
+            'whole': 'The complete finished FootstepSet is part of the selected sound library.', 'source': {
             'kind': 'item', 'unit': 'unreal.footsteps.library', 'item': 'asset'}}],
         'params': {'recipe': {'version': 1, 'paths': {}, 'verify': None,
             'commands': [{'kind': 'call', 'call': {'source': script, 'qualname': 'write_index', 'line': line,
@@ -322,7 +359,7 @@ def lower(rows, geometry, *, checkout):
     elif 'unreal.materials' in selected:
         native = shared_materials(rows, checkout=checkout)
         native['aliases'] = {}
-    elif selected & {'unreal.treehouse', 'unreal.brinecove', 'unreal.sounds', 'unreal.crater_cloud', 'unreal.skate_board', 'unreal.fx', 'unreal.skate_data', 'unreal.kei', 'unreal.village', 'unreal.lake'}:
+    elif selected & {'unreal.treehouse', 'unreal.brinecove', 'unreal.sounds', 'unreal.crater_cloud', 'unreal.skate_board', 'unreal.fx', 'unreal.skate_data', 'unreal.kei', 'unreal.village', 'unreal.lake', 'unreal.houses', 'unreal.southwest', 'unreal.mega', 'unreal.swordcamp', 'unreal.kart', 'unreal.world'}:
         native = {'units': [], 'staged_inputs': {}, 'content_slots': {}, 'packages': {},
                   'targets': (), 'aliases': {}, 'missing_roles': []}
         if 'unreal.treehouse' in selected:
@@ -361,7 +398,7 @@ def lower(rows, geometry, *, checkout):
             native['aliases'].update(family['aliases'])
     if 'unreal.sounds' in selected:
         native = _join_audio(native, rows, native.get('geometry', geometry), checkout=checkout)
-    if selected & {'unreal.kei', 'unreal.village', 'unreal.lake'}:
+    if selected & {'unreal.kei', 'unreal.village', 'unreal.lake', 'unreal.houses', 'unreal.southwest', 'unreal.mega', 'unreal.world'}:
         package = '/Game/Japan/Materials/M_Village'
         kei_module = _family_module(checkout, 'v2_kei_units')
         if 'unreal.kei' in selected:
@@ -399,13 +436,48 @@ def lower(rows, geometry, *, checkout):
         if 'unreal.lake' in selected:
             extended = _family_module(checkout, 'v2_lake_units').attach_followers(
                 native.get('geometry', geometry), _package_dependencies(native), checkout=checkout)
-            _append_family(native, {key: extended[key] for key in
+            _append_family(native, {key: extended.pop(key) for key in
                 ('units', 'staged_inputs', 'content_slots', 'packages')})
             native['geometry'] = extended
             native.setdefault('follower_module_requirements', {}).update(extended.pop('module_requirements', {}))
             _complete_mesh_family(native, extended, family='lake', export_prefixes=('world.lake.export.',),
                 checkout=checkout, fixed={path: native['packages'][path] for path in
                     (package, '/Game/Japan/Materials/M_ForestLakeWater')})
+    for family in ('houses', 'southwest', 'mega'):
+        if 'unreal.' + family not in selected:
+            continue
+        extended = _family_module(checkout, 'v2_' + family + '_units').attach_followers(
+            native.get('geometry', geometry), _package_dependencies(native), checkout=checkout)
+        native['geometry'] = extended
+        native.setdefault('follower_module_requirements', {}).update(extended.pop('module_requirements', {}))
+        required = ['/Game/Japan/Materials/M_Village']
+        if family == 'houses': required.append('/Game/Japan/Materials/MI_Ground')
+        _complete_mesh_family(native, extended, family=family, export_prefixes=('world.' + family + '.export.',),
+            checkout=checkout, fixed={path: native['packages'][path] for path in required})
+    if 'unreal.swordcamp' in selected:
+        module = _family_module(checkout, 'v2_swordcamp_units')
+        family = module.author_units(rows, checkout=checkout)
+        _append_family(native, family)
+        extended = module.attach_followers(native.get('geometry', geometry),
+            _package_dependencies(native), checkout=checkout)
+        native['geometry'] = extended
+        native.setdefault('follower_module_requirements', {}).update(extended.pop('module_requirements', {}))
+        _complete_mesh_family(native, extended, family='swordcamp',
+            export_prefixes=('world.swordcamp.export.',), checkout=checkout, fixed=family['packages'])
+    if 'unreal.kart' in selected:
+        extended = _family_module(checkout, 'v2_kart_units').attach_followers(
+            native.get('geometry', geometry), _package_dependencies(native), checkout=checkout)
+        family = {key: extended.pop(key) for key in ('units', 'staged_inputs', 'content_slots', 'packages')}
+        _append_family(native, family)
+        native['geometry'] = extended
+        native.setdefault('follower_module_requirements', {}).update(extended.pop('module_requirements', {}))
+        data = [{'unit': unit['id'], 'item': output['id']} for unit in family['units']
+                if unit['id'] in extended['data_targets'] for output in unit['outputs']]
+        _complete_mesh_family(native, extended, family='kart',
+            export_prefixes=('world.vehicle_kart.export.',), checkout=checkout,
+            fixed=family['packages'], prerequisites=data)
+    if 'unreal.world' in selected:
+        native = _join_world_parts(native, rows, native.get('geometry', geometry), checkout=checkout)
     if selected & {'unreal.treehouse', 'unreal.brinecove'}:
         native = _join_native_families(native, rows, geometry, selected, checkout=checkout)
     return native

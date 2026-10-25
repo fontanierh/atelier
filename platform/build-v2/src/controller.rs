@@ -58,7 +58,7 @@ impl ControllerRequest {
     /// @cc [owner:fontanierh,label:correctness] bounded-normal-controller-request
     /// Requests MUST be bounded, versioned, duplicate-free and object-only at every
     /// typed record position before any state creation; real array fields remain arrays. The
-    /// initial caller MUST accept only explicit fixed JsonData/py_data declarations;
+    /// caller MUST accept only the explicitly supported typed operation contracts;
     /// unsupported formats/groups MUST refuse, never be silently relabeled. Installed
     /// tool facts MUST NOT be supplied as semantic parameters by this controller.
     /// See tests/controller.rs strict_request_refuses_unknown_fields_and_unsupported_ops.
@@ -122,7 +122,7 @@ impl ControllerRequest {
                 | crate::unreal_controller::FINISH
                 | crate::unreal_controller::AUTHOR
                     if unit.output_groups.is_empty()
-                        && (unit.op.kind == crate::unreal_controller::AUTHOR
+                        && (matches!(unit.op.kind.as_str(), crate::unreal_controller::AUTHOR | crate::unreal_controller::FINISH)
                             || unit.script == crate::unreal_controller::ENTRY) => {}
                 kind if crate::native_tool_ops::supports(kind)
                     && unit.output_groups.is_empty()

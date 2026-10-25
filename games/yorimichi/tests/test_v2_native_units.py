@@ -254,3 +254,32 @@ def test_real_kei_village_lake_composition_has_one_palette_and_complete_dynamic_
         assert all(incoming['source']['unit'] in units for incoming in index['inputs'])
     for template in result['geometry']['templates']:
         assert len(template['followers']) == 2
+
+
+def test_swordcamp_and_kart_completion_select_all_native_and_runtime_data_outputs():
+    recipe = load('build')
+    ctx = SimpleNamespace(out=ROOT / 'build/yorimichi', uproject=GAME / 'unreal/Yorimichi.uproject')
+    selected = [step for step in recipe.steps(ctx) if step.name.startswith((
+        'world.swordcamp', 'world.kart', 'world.vehicle_kart', 'world.lake')) or step.name in ('unreal.swordcamp', 'unreal.kart', 'unreal.lake')]
+    source_rows = extract(selected, checkout=ROOT, build_root=ROOT / 'build')
+    geometry = load('v2_geometry_templates').geometry_templates(source_rows, checkout=ROOT)
+    result = load('v2_native_units').lower(source_rows, geometry, checkout=ROOT)
+    units = {unit['id']: unit for unit in result['units']}
+    for family, count in (('swordcamp', 14), ('kart', 4)):
+        assert result['aliases']['unreal.' + family] == ('unreal.' + family + '.complete',)
+        complete = units['unreal.' + family + '.complete']
+        members = complete['params']['recipe']['commands'][0]['call']['defaults'][0]
+        assert len(members) == count
+        assert all(value['members']['derived_items']['templates'][0]['follower'] == 1
+                   for value in members.values())
+    assert len(units) == len(result['units'])
+    kart_data = units['unreal.kart.data']
+    kart = units['unreal.kart.complete']
+    assert {row['source']['item'] for row in kart['inputs'] if row['source']['unit'] == kart_data['id']} == {
+        output['id'] for output in kart_data['outputs']}
+    camp = units['unreal.swordcamp.complete']
+    assert {row['source']['unit'] for row in camp['inputs']} == {
+        'unreal.swordcamp.texture.T_SwordCampAtlas',
+        'unreal.swordcamp.material.M_SwordCamp', 'unreal.swordcamp.material.M_RoninBody'}
+    assert all(key.startswith('world.') for key in result['follower_module_requirements'])
+    assert not result.get('module_requirements')

@@ -137,3 +137,43 @@ def test_compiler_preserves_follower_module_requirements_through_ordinary_rows(t
     bound = marker.templates[0]['followers'][0]
     assert bound['unit']['params']['native_modules']['editor']['slot'] == 'compiled_editor'
     assert bound['unit']['inputs'][0]['source'] == {'kind': 'item', 'unit': 'editor', 'item': 'output0'}
+
+
+def replacement_fixture():
+    source = row('source', outputs=['build/game/source'])
+    old = row('old.import', outputs=['games/game/unreal/Content/Old.uasset'])
+    old['commands'] = [{'kind': 'UnrealScript'}]
+    old['needs'] = ['unrelated.import']
+    unrelated = row('unrelated.import', outputs=['games/game/unreal/Content/Unrelated.uasset'])
+    unrelated['commands'] = [{'kind': 'UnrealScript'}]
+    unit = {'id': 'replacement', 'op': {'kind': 'recipe.python', 'version': '1'},
+            'script': 'ops/main.py', 'code': ['ops/main.py'],
+            'inputs': [{'role': 'content', 'name': 'source', 'source': {'kind': 'item', 'unit': 'source', 'item': 'output0'}}],
+            'params': {}, 'outputs': [{'id': 'asset', 'logical_path': '/Build/Replaced', 'class': 'Data',
+                'destination': 'store', 'files': [{'path': 'result.json', 'required': True}]}]}
+    native = {'units': [unit], 'staged_inputs': {'replacement': {'source': 'inputs/source'}},
+              'content_slots': {'source': False}, 'aliases': {'old.import': ['replacement']}}
+    return [source, old, unrelated], native
+
+
+def test_replacement_selector_keeps_actual_v2_edges_instead_of_retired_import_prerequisites():
+    rows, native = replacement_fixture()
+    marker = compile_rows(rows, project='game', targets=['old.import'], native=native)
+    assert {unit['id'] for unit in marker.declaration['units']} == {'source', 'replacement'}
+    assert marker.selection_targets == ('replacement',)
+
+
+def test_required_unsupported_producer_still_refuses_replacement_selection():
+    rows, native = replacement_fixture()
+    rows[0]['commands'] = [{'kind': 'UnrealScript'}]
+    with pytest.raises(Unsupported, match='source: UnrealScript'):
+        compile_rows(rows, project='game', targets=['old.import'], native=native)
+
+
+def test_full_unreplaced_selector_does_not_silently_drop_unsupported_required_work():
+    rows, native = replacement_fixture()
+    full = row('full', outputs=['build/game/full'])
+    full['needs'] = ['unrelated.import']
+    rows.append(full)
+    with pytest.raises(Unsupported, match='unrelated.import: UnrealScript'):
+        compile_rows(rows, project='game', targets=['full'], native=native)

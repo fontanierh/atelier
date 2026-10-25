@@ -104,6 +104,60 @@ def _native_row(unit):
             'replan': False, 'native_items': items, 'native_declaration': unit}
 
 
+def _replacement_closure(units, templates, targets, module_requirements, follower_requirements, rows):
+    """Select an authored replacement by its actual Item and derived-member edges."""
+    by_id = {unit['id']: unit for unit in units}
+    exports = {(t['producer'], t['group'], t['unit_prefix']): t for t in templates}
+    selected, selected_templates, missing = set(), set(), set()
+    compilers = [row['id'] for row in rows if any(c['kind'] == 'UnrealCompile' for c in row['commands'])]
+    def modules():
+        if len(compilers) != 1:
+            raise Unsupported('replacement native modules require their unique editor producer')
+        visit(compilers[0])
+    def template(key):
+        if key in selected_templates:
+            return
+        if key not in exports:
+            raise Unsupported('replacement references an undeclared export template: ' + str(key))
+        selected_templates.add(key)
+        value = exports[key]
+        visit(value['producer'])
+        scan(value.get('params', {}))
+        for follower in value.get('followers', ()):
+            dependencies(follower['unit'])
+        if value['unit_prefix'] in follower_requirements:
+            modules()
+    def scan(value):
+        if isinstance(value, dict):
+            if set(value) == {'derived_items'}:
+                for source in value['derived_items'].get('templates', ()):
+                    template(tuple(source[key] for key in ('producer', 'group', 'unit_prefix')))
+            for item in value.values():
+                scan(item)
+        elif isinstance(value, (list, tuple)):
+            for item in value:
+                scan(item)
+    def dependencies(unit):
+        for incoming in unit['inputs']:
+            source = incoming.get('source', {})
+            if source.get('kind') in ('item', 'group_member') and not source['unit'].startswith('$'):
+                visit(source['unit'])
+        scan(unit.get('params', {}))
+    def visit(name):
+        if name in selected:
+            return
+        selected.add(name)
+        if name not in by_id:
+            missing.add(name)
+            return
+        dependencies(by_id[name])
+        if name in module_requirements:
+            modules()
+    for name in targets:
+        visit(name)
+    return selected, selected_templates, missing
+
+
 def compile_rows(rows, *, project, targets, install_roots=(), checkout=None, geometry=None, native=None):
     """@cc [owner:fontanierh,label:correctness] recipe-units-use-real-engine
     Each action MUST become its own unit with complete code, consumed source and
@@ -120,6 +174,7 @@ def compile_rows(rows, *, project, targets, install_roots=(), checkout=None, geo
     rows = deepcopy(list(rows))
     native = native or {'units': [], 'staged_inputs': {}, 'content_slots': {}, 'aliases': {}}
     aliases = native.get('aliases', {})
+    replacement_selection = bool(targets) and all(target in aliases for target in targets)
     module_requirements = native.get('module_requirements', {})
     follower_module_requirements = native.get('follower_module_requirements', {})
     rows = [row for row in rows if row['id'] not in aliases]
@@ -285,9 +340,24 @@ def compile_rows(rows, *, project, targets, install_roots=(), checkout=None, geo
             units.append(unit)
             staged[name] = stage
         except (Unsupported, InputUnsupported) as error:
-            errors.append(f'{name}: {error}')
+            errors.append((name, f'{name}: {error}'))
+    if replacement_selection:
+        selected, selected_templates, missing = _replacement_closure(
+            units, geometry['templates'], targets, module_requirements, follower_module_requirements, rows)
+        failures = {name for name, _ in errors}
+        unknown = missing - failures
+        if unknown:
+            raise Unsupported('replacement requires undeclared producers: ' + ', '.join(sorted(unknown)))
+        errors = [(name, error) for name, error in errors if name in selected]
+        units = [unit for unit in units if unit['id'] in selected]
+        staged = {name: stage for name, stage in staged.items() if name in selected}
+        geometry = {**geometry, 'templates': [value for value in geometry['templates'] if
+            (value['producer'], value['group'], value['unit_prefix']) in selected_templates]}
+        module_requirements = {name: value for name, value in module_requirements.items() if name in selected}
+        prefixes = {value['unit_prefix'] for value in geometry['templates']}
+        follower_module_requirements = {name: value for name, value in follower_module_requirements.items() if name in prefixes}
     if errors:
-        raise Unsupported('\n'.join(errors))
+        raise Unsupported('\n'.join(error for _, error in errors))
     from .recipe_native_modules import attach, attach_followers
     attach(units, rows, module_requirements, checkout=checkout, staged=staged, slots=slots)
     attach_followers(geometry['templates'], units, rows, follower_module_requirements,
