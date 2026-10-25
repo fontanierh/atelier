@@ -40,7 +40,7 @@ FBX = {'combine_meshes': True, 'generate_lightmap_u_vs': False, 'auto_generate_c
        'remove_degenerates': False,
        'normal_import_method': {'unreal_enum': 'FBXNormalImportMethod.FBXNIM_IMPORT_NORMALS'},
        'vertex_color_import_option': {'unreal_enum': 'VertexColorImportOption.IGNORE'}}
-SETTINGS = ['-ForceDPCVars=Interchange.FeatureFlags.Import.FBX=0,Editor.AsyncStaticMeshCompilation=0,'
+SETTINGS = ['-ForceDPCVars=Interchange.FeatureFlags.Import.FBX=false,Editor.AsyncStaticMeshCompilation=0,'
             'r.GenerateMeshDistanceFields=0,r.MeshCardRepresentation=0']
 
 
