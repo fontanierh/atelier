@@ -433,6 +433,7 @@ fn run_graph(
     // payloads are not read on hits; the independent harness may remember prior observed bytes.
     for (unit, origin) in &backend.origins {
         let (stored, frozen) = match origin {
+            Origin::External(envelope) => (envelope.result.outputs.as_slice(), None),
             Origin::Current(observation) => (observation.items(), None),
             Origin::Recorded { record, .. } => (record.result().result.outputs.as_slice(), None),
             Origin::Cached { envelope, .. } => (envelope.result.outputs.as_slice(), None),

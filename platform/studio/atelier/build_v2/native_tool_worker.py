@@ -212,7 +212,36 @@ def export_outputs(recipe, view, output, run, raw_roots=()):
 
 # This exact builtin body is part of NativeToolBundle's source identity. Requests
 # carry execution destinations only; the controller separately seals producer origin.
-EXPORT_SOURCE = """import json, os\nfrom pathlib import Path\nimport unreal\np=Path(os.environ['ATELIER_NATIVE_COOK_EXPORT'])\nc=json.loads(p.read_text())\nreports=[]\nfor request in c['requests']:\n    report=json.loads(unreal.AtelierBuildWorkerLibrary.zen_package_request(json.dumps(request,sort_keys=True,separators=(',',':'))))\n    if report.get('status')!='verified':\n        raise RuntimeError('native source cook capture refused: '+str(report))\n    reports.append(report)\nPath(c['report']).write_text(json.dumps(reports,sort_keys=True,separators=(',',':')))\n"""
+NATIVE_SOURCE_PREFIX = 'platform/build-v2/unreal/AtelierBuildWorker/'
+
+
+def native_source_digest(job, job_dir):
+    rows = []
+    names = set()
+    for name in sorted(job['code']):
+        if not name.startswith(NATIVE_SOURCE_PREFIX):
+            continue
+        relative = name[len(NATIVE_SOURCE_PREFIX):]
+        if relative == 'AtelierBuildWorker.uplugin' or (relative.startswith('Source/')
+                and relative.endswith(('.cs', '.cpp', '.h'))):
+            path = job_dir / name
+            if path.is_symlink() or not path.is_file():
+                raise Refused('native exporter implementation source is missing or linked')
+            rows.append(relative + '\0' + _digest(path) + '\n')
+            names.add(relative)
+    required = {'AtelierBuildWorker.uplugin', 'Source/AtelierBuildWorker/AtelierBuildWorker.Build.cs',
+                'Source/AtelierBuildWorker/Private/AtelierBuildWorkerLibrary.cpp',
+                'Source/AtelierBuildWorker/Private/AtelierBuildWorkerModule.cpp',
+                'Source/AtelierBuildWorker/Private/AtelierZenFinalise.cpp',
+                'Source/AtelierBuildWorker/Private/AtelierZenPackage.cpp',
+                'Source/AtelierBuildWorker/Public/AtelierBuildWorkerLibrary.h',
+                'Source/AtelierBuildWorker/Public/AtelierZenFinalise.h'}
+    if not required <= names:
+        raise Refused('native source cook must key the complete exporter implementation')
+    return hashlib.sha256(''.join(rows).encode()).hexdigest()
+
+
+EXPORT_SOURCE = """import json, os\nfrom pathlib import Path\nimport unreal\np=Path(os.environ['ATELIER_NATIVE_COOK_EXPORT'])\nc=json.loads(p.read_text())\nactual=json.loads(unreal.AtelierBuildWorkerLibrary.native_context())\nif actual.get('worker_source_digest')!=c['native_source_digest']:\n    raise RuntimeError('native exporter does not match keyed implementation source')\nreports=[]\nfor request in c['requests']:\n    report=json.loads(unreal.AtelierBuildWorkerLibrary.zen_package_request(json.dumps(request,sort_keys=True,separators=(',',':'))))\n    if report.get('status')!='verified':\n        raise RuntimeError('native source cook capture refused: '+str(report))\n    reports.append(report)\nPath(c['report']).write_text(json.dumps(reports,sort_keys=True,separators=(',',':')))\n"""
 
 
 def persistent_cook_view(view, protected, source_key, state_root):
@@ -273,7 +302,7 @@ class CookCallbacks:
             self.zen.close()
 
 
-def source_cook(params, view, project, engine, source_key, state, job_dir, run, environment, export_project):
+def source_cook(params, view, project, engine, source_key, state, job_dir, run, environment, export_project, source_digest):
     packages = params['packages']
     argv = cook_argv(engine, project, packages, source_key)
     record_outputs = params['record_outputs']
@@ -284,7 +313,7 @@ def source_cook(params, view, project, engine, source_key, state, job_dir, run, 
             or not set(record_outputs.values()) <= declared or params['cook_root'] not in declared
             or params['cook_root'] in record_outputs.values()):
         raise Refused('source-cook must declare each native CB and complete cook metadata output')
-    folder = job_dir / 'source-cook'
+    folder = job_dir / '.recipe-runtime/source-cook'
     folder.mkdir()
     callbacks, success = CookCallbacks(folder, engine, environment), False
     try:
@@ -308,7 +337,7 @@ def source_cook(params, view, project, engine, source_key, state, job_dir, run, 
             source_package=package, expected_stored_key='', expected_root_hash='', record_path=str(record),
             project_file=str(project), marker_path=str(marker), input_key=source_key, runtime_project_file=str(export_project)))
     request_file, report_file, script = folder / 'export.json', folder / 'native-report.json', folder / 'export.py'
-    request_file.write_text(json.dumps({'requests': requests, 'report': str(report_file)}, sort_keys=True))
+    request_file.write_text(json.dumps({'requests': requests, 'report': str(report_file), 'native_source_digest': source_digest}, sort_keys=True))
     script.write_text(EXPORT_SOURCE)
     script.chmod(0o444)
     exporting = dict(environment, ATELIER_NATIVE_COOK_EXPORT=str(request_file))
@@ -415,7 +444,7 @@ def dispatch(job, job_dir, engine, run, *, source_key=None, zen_state_root=None,
         args = recipe_job._value(command['args'], view)
         run([sys.executable, '-I', '-B', str(script), *map(str, args)], cwd=view, env=environment)
     else:
-        raw_roots = source_cook(params, view, project, engine, source_key, Path(zen_state_root), job_dir, run, environment, Path(export_project))
+        raw_roots = source_cook(params, view, project, engine, source_key, Path(zen_state_root), job_dir, run, environment, Path(export_project), native_source_digest(job, job_dir))
     if recipe.get('verify') is not None:
         previous = Path.cwd()
         try:

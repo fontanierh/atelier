@@ -61,6 +61,8 @@ fn check_unit_identity(unit: &PreparedUnit) -> Result<(), String> {
     match unit.ingredients().op.kind.as_str() {
         "recipe.python" | "recipe.blender" => crate::recipe_ops::check(unit),
         crate::encoded_ops::KIND => crate::encoded_ops::check(unit),
+        crate::native_verify::PACKAGE_OP => crate::native_verify::check_package(unit),
+        crate::unreal_controller::VERIFY => crate::unreal_controller::check_unit(unit),
         crate::unreal_controller::RAW_IMPORT
         | crate::unreal_controller::FINISH
         | crate::unreal_controller::AUTHOR => crate::unreal_controller::check_unit(unit),
@@ -123,6 +125,7 @@ pub struct CacheAccess {
 }
 
 enum Origin {
+    External(ResultEnvelope),
     Current(CurrentIdentities),
     Recorded {
         transaction: WriteTransaction,
@@ -339,6 +342,10 @@ impl PythonSources<'_> {
                     stored(envelope)?;
                     use_source(&transaction.pinned_objects())
                 }
+                Origin::External(_) => Err(refusal(
+                    SourceErrorKind::Unavailable,
+                    "external native items require their typed native consumer".into(),
+                )),
                 Origin::Local(completion) => use_source(
                     &completion
                         .objects_for(&[&selected.input])
@@ -385,13 +392,27 @@ impl ObjectSource for PythonSources<'_> {
 
 /// The original optional CAS miss ticket; local write custody starts before staging, not at Run.
 pub struct PythonTicket {
+    verification: Option<VerificationTicket>,
     transaction: Option<WriteTransaction>,
     local: Option<CompletionWork>,
     cache_failure: Option<ResultError>,
     current: Option<CurrentIdentities>,
 }
 
+struct VerificationTicket {
+    unit: PreparedUnit,
+    source: String,
+    local: Option<CompletionWork>,
+    transaction: Option<WriteTransaction>,
+}
+
+pub(crate) struct NativeVerification {
+    pub unit: PreparedUnit,
+    pub context: crate::native_verify::NativeVerifyContext,
+}
+
 pub struct PythonInputs {
+    pub(crate) native_verification: Option<NativeVerification>,
     // Same open description as the existing build guard; monitor custody only.
     pub(crate) custody: std::fs::File,
     pub(crate) staged: StagedJob,
@@ -408,7 +429,18 @@ impl PythonTicket {
             .local
             .as_mut()
             .ok_or("local lease missing before Run")?;
-        register_python_worker(local, self.transaction.as_mut(), process)
+        register_python_worker(local, self.transaction.as_mut(), process)?;
+        if let Some(verification) = &mut self.verification {
+            register_python_worker(
+                verification
+                    .local
+                    .as_mut()
+                    .ok_or("missing native verifier lease")?,
+                verification.transaction.as_mut(),
+                process,
+            )?;
+        }
+        Ok(())
     }
 }
 
@@ -532,7 +564,7 @@ impl<'a> PythonBackend<'a> {
                 Origin::Installed(mut plan) => plan
                     .finish_sources(|result| (self.root)(&id, result))
                     .map_err(|error| error.to_string()),
-                Origin::Current(_) | Origin::Local(_) => Ok(()),
+                Origin::Current(_) | Origin::Local(_) | Origin::External(_) => Ok(()),
             };
             if let Err(error) = outcome {
                 failures.push(format!("{id}: {error}"));
@@ -656,6 +688,7 @@ impl<'a> PythonBackend<'a> {
                 Ok(RestoreLookup::Miss(transaction)) => Ok(Lookup::Miss {
                     reason: NonHitReason::MissingRecord,
                     ticket: PythonTicket {
+                        verification: None,
                         transaction: Some(transaction),
                         local: None,
                         cache_failure: None,
@@ -677,6 +710,19 @@ impl<'a> PythonBackend<'a> {
             Err(error) => return Ok(Self::miss(error, None, current)),
         };
         self.io.borrow_mut().cache_lookups += 1;
+        if unit.ingredients().op.kind == crate::native_verify::PACKAGE_OP {
+            // Every native hit needs a fresh restore/readback, not recorded availability.
+            return Ok(Lookup::Miss {
+                reason: NonHitReason::MissingRecord,
+                ticket: PythonTicket {
+                    verification: None,
+                    transaction: Some(transaction),
+                    local: None,
+                    cache_failure: None,
+                    current: None,
+                },
+            });
+        }
         if unit.ingredients().output_groups.is_empty()
             && (final_demands.is_empty()
                 || (current.is_some() && !final_demands.contains(&Demand::Stored)))
@@ -731,6 +777,7 @@ impl<'a> PythonBackend<'a> {
         Ok(Lookup::Miss {
             reason: NonHitReason::MissingRecord,
             ticket: PythonTicket {
+                verification: None,
                 transaction: Some(transaction),
                 local: None,
                 cache_failure: None,
@@ -751,6 +798,7 @@ impl<'a> PythonBackend<'a> {
         Lookup::Miss {
             reason,
             ticket: PythonTicket {
+                verification: None,
                 transaction,
                 local: None,
                 cache_failure: outcome.err(),
@@ -860,7 +908,51 @@ impl Backend for PythonBackend<'_> {
                     });
             }
         }
-        let local = ticket.local.as_ref().unwrap();
+        if unit.ingredients().op.kind == crate::native_verify::PACKAGE_OP {
+            let verifier = unit.native_verifier().map_err(InputFailure::Invalid)?;
+            let identity = self.identity(unit).map_err(InputFailure::Invalid)?;
+            let local = self
+                .reader
+                .begin_completion(self.guard, &verifier, identity)
+                .map_err(|e| InputFailure::Invalid(e.to_string()))?;
+            let identity = self.identity(unit).map_err(InputFailure::Invalid)?;
+            let cache =
+                (self.open_cache)().map_err(|e| InputFailure::Unavailable(e.to_string()))?;
+            let transaction = cache
+                .results
+                .begin(
+                    &verifier,
+                    identity.provenance,
+                    identity.owner,
+                    identity.workers,
+                    identity.upstream_result_keys,
+                )
+                .map_err(|e| InputFailure::Unavailable(e.to_string()))?;
+            let source = declaration
+                .inputs
+                .iter()
+                .find_map(|input| match input {
+                    Input::Content {
+                        source: ContentSource::Item { unit, .. },
+                        ..
+                    } => Some(unit.clone()),
+                    _ => None,
+                })
+                .ok_or_else(|| {
+                    InputFailure::Invalid("native CB has no actual producer edge".into())
+                })?;
+            ticket.verification = Some(VerificationTicket {
+                unit: verifier,
+                source,
+                local: Some(local),
+                transaction: Some(transaction),
+            });
+        }
+        let (effective, local) = if let Some(verification) = &ticket.verification {
+            (&verification.unit, verification.local.as_ref().unwrap())
+        } else {
+            (unit, ticket.local.as_ref().unwrap())
+        };
         let sources = PythonSources {
             origins: RefCell::new(&mut self.origins),
             prepared: &self.prepared,
@@ -882,7 +974,7 @@ impl Backend for PythonBackend<'_> {
                 })?;
         }
         let staged = staging::stage(
-            unit,
+            effective,
             self.snapshot,
             &sources,
             &local.job_dir(),
@@ -896,9 +988,64 @@ impl Backend for PythonBackend<'_> {
             StageError::Staging(message) => InputFailure::Invalid(message),
         })?;
         drop(sources);
+        let native_verification = if let Some(verification) = &ticket.verification {
+            let transaction = ticket.transaction.as_mut().ok_or_else(|| {
+                InputFailure::Unavailable("native publication needs its original CAS ticket".into())
+            })?;
+            let candidate = transaction
+                .lookup_recorded()
+                .map_err(|e| InputFailure::Invalid(e.to_string()))?
+                .map(|record| {
+                    record
+                        .result()
+                        .result
+                        .outputs
+                        .first()
+                        .and_then(|item| item.external_locator.as_deref())
+                        .ok_or_else(|| "native candidate has no locator".to_string())
+                        .and_then(crate::results::zen_cook::CookLocator::decode)
+                })
+                .transpose()
+                .map_err(InputFailure::Invalid)?;
+            let root = transaction.objects_root().to_owned();
+            let metadata = staged.job_dir().join(".unreal-runtime/metadata.tree.tar");
+            let origin = self.origins.get_mut(&verification.source).ok_or_else(|| {
+                InputFailure::Unavailable("native source completion missing".into())
+            })?;
+            let evidence = match origin {
+                Origin::Local(completion) => {
+                    crate::results::zen_cook::SourceCookEvidence::from_local(completion)
+                }
+                Origin::Cached { transaction, .. } | Origin::Recorded { transaction, .. } => {
+                    crate::results::zen_cook::SourceCookEvidence::from_cached(transaction).and_then(
+                        |value| value.ok_or("native source is not available in CAS".into()),
+                    )
+                }
+                _ => Err("native source has no actual producer evidence".into()),
+            }
+            .map_err(InputFailure::Unavailable)?;
+            evidence
+                .clone_metadata(&metadata)
+                .map_err(InputFailure::Unavailable)?;
+            let context = crate::native_verify::NativeVerifyContext::from_source(
+                &evidence,
+                unit,
+                &metadata,
+                &root,
+                candidate.as_ref(),
+            )
+            .map_err(InputFailure::Invalid)?;
+            Some(NativeVerification {
+                unit: verification.unit.clone(),
+                context,
+            })
+        } else {
+            None
+        };
         self.io.borrow_mut().staged_jobs += 1;
         Ok(StagedInputs {
             inputs: PythonInputs {
+                native_verification,
                 custody,
                 staged,
                 io: self.io.clone(),
@@ -916,6 +1063,71 @@ impl Backend for PythonBackend<'_> {
         let id = work.unit().to_string();
         let (mut ticket, inputs) = work.into_parts();
         let actual = staging::collect_outputs(&inputs.staged, &completed.reported)?;
+        if let Some(mut verification) = ticket.verification.take() {
+            let mut frozen = verification
+                .local
+                .take()
+                .ok_or("native verification lease missing")?
+                .freeze(
+                    actual,
+                    |outputs| {
+                        crate::unreal_controller::check_unit(&verification.unit)?;
+                        crate::py_data::validate_py_data_outputs(outputs)
+                    },
+                    |_, _, _| Err("native verification has no output groups".into()),
+                )
+                .map_err(|e| e.to_string())?;
+            let transaction = verification
+                .transaction
+                .take()
+                .ok_or("native verification CAS lease missing")?;
+            frozen
+                .publish_with(transaction, |record| {
+                    (self.root)(&format!("{id}.native-verifier"), record)
+                })
+                .map_err(|e| e.to_string())?;
+            self.io.borrow_mut().publications += 1;
+            let envelope = {
+                let origin = self
+                    .origins
+                    .get_mut(&verification.source)
+                    .ok_or("native source completion lost")?;
+                let evidence = match origin {
+                    Origin::Local(completion) => {
+                        crate::results::zen_cook::SourceCookEvidence::from_local(completion)
+                    }
+                    Origin::Cached { transaction, .. } | Origin::Recorded { transaction, .. } => {
+                        crate::results::zen_cook::SourceCookEvidence::from_cached(transaction)
+                            .and_then(|value| {
+                                value.ok_or("native source CAS proof disappeared".into())
+                            })
+                    }
+                    _ => Err("native source has no current producer proof".into()),
+                }?;
+                let proof = crate::results::zen_cook::VerifiedPackage::from_verifier(
+                    &unit,
+                    &unit.ingredients().logical_outputs[0],
+                    evidence,
+                    &frozen,
+                )?;
+                let transaction = ticket
+                    .transaction
+                    .take()
+                    .ok_or("native external CAS lease missing")?;
+                transaction
+                    .stage_external(&[proof])
+                    .map_err(|e| e.to_string())?
+                    .publish(|record| (self.root)(&id, record))
+                    .map_err(|e| e.to_string())?
+            };
+            let checked = self.checked(&unit, envelope.result.outputs.clone(), false);
+            self.origins.insert(id, Origin::External(envelope));
+            self.io.borrow_mut().publications += 1;
+            return Ok(Published {
+                checked,
+                publication: Publication::Cached,
+            });
+        }
         let mut frozen = ticket
             .local
             .take()

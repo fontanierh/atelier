@@ -15,6 +15,103 @@ pub struct NativeVerifyContext {
     producer_key: String,
 }
 
+pub const PACKAGE_OP: &str = "unreal.cook.package";
+
+pub(crate) fn register(
+    registry: &mut crate::validate::OpRegistry,
+    slots: &std::collections::BTreeMap<String, bool>,
+) {
+    use crate::validate::{InputRole, InputRule, OpDefinition, ParamKind, ParamRule};
+    use std::collections::{BTreeMap, BTreeSet};
+    registry.insert(
+        (PACKAGE_OP.into(), "1".into()),
+        OpDefinition {
+            inputs: slots
+                .iter()
+                .map(|(slot, whole)| {
+                    (
+                        slot.clone(),
+                        InputRule {
+                            role: InputRole::Content,
+                            required: false,
+                            allow_absent_file: false,
+                            allow_selector: false,
+                            require_whole_reason: *whole,
+                            item_classes: BTreeSet::from(["NativeCookRecord".into()]),
+                        },
+                    )
+                })
+                .collect(),
+            output_classes: BTreeSet::from(["CookedPackage".into()]),
+            params: BTreeMap::from([
+                (
+                    "package".into(),
+                    ParamRule {
+                        kind: ParamKind::String,
+                        required: true,
+                    },
+                ),
+                (
+                    "mode".into(),
+                    ParamRule {
+                        kind: ParamKind::String,
+                        required: true,
+                    },
+                ),
+                (
+                    "settings".into(),
+                    ParamRule {
+                        kind: ParamKind::Array,
+                        required: false,
+                    },
+                ),
+            ]),
+        },
+    );
+}
+
+pub(crate) fn check_package(unit: &PreparedUnit) -> Result<(), String> {
+    let i = unit.ingredients();
+    let expected = crate::results::zen_cook::validator_identity();
+    if i.op.kind != PACKAGE_OP
+        || i.op.version != "1"
+        || i.script != crate::results::zen_cook::VERIFY_SCRIPT
+        || i.code != crate::results::zen_cook::verifier_code_digests()
+        || i.validator_version != expected.version
+        || i.validator_digest != expected.digest
+        || i.worker_version != crate::unreal::UNREAL_JOB_LOOP_VERSION
+        || i.worker_digest != crate::results::zen_cook::verifier_worker_digest()?
+        || !i.references.is_empty()
+        || !i.output_groups.is_empty()
+        || i.logical_outputs.len() != 1
+        || i.params
+            .keys()
+            .any(|key| !matches!(key.as_str(), "package" | "mode" | "settings"))
+        || i.params.get("mode").and_then(Value::as_str) != Some("restore")
+    {
+        return Err("external cook unit differs from the fixed native package contract".into());
+    }
+    let item = &i.logical_outputs[0];
+    if item.class != "CookedPackage"
+        || item.destination != crate::schema::Destination::External
+        || !item.files.is_empty()
+        || i.params.get("package").and_then(Value::as_str) != Some(&item.logical_path)
+        || !item.logical_path.starts_with("/Game/")
+    {
+        return Err("external cook output differs from its exact package".into());
+    }
+    let records: Vec<_> = unit.inputs().iter().filter(|input| matches!(
+        &input.payload, crate::keys::InputPayload::Item { class, .. } if class == "NativeCookRecord")).collect();
+    if records.len() != 1 || unit.inputs().len() != 1 {
+        return Err("external cook requires exactly its complete native CB item".into());
+    }
+    if !matches!(&records[0].payload, crate::keys::InputPayload::Item { files, .. } if files.len() == 1)
+    {
+        return Err("external cook CB item has an incomplete file inventory".into());
+    }
+    Ok(())
+}
+
 fn text<'a>(value: &'a Value, field: &str) -> Result<&'a str, String> {
     value
         .get(field)
@@ -326,6 +423,122 @@ mod tests {
     use super::*;
     use std::sync::atomic::{AtomicU64, Ordering};
     static NEXT: AtomicU64 = AtomicU64::new(0);
+    #[test]
+    fn independent_verifier_uses_normal_key_encoding_and_exact_cb_content() {
+        use crate::{keys::*, schema::*, validate::*};
+        use std::collections::{BTreeMap, BTreeSet};
+        let code = crate::results::zen_cook::verifier_code_digests();
+        let checkout = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap();
+        let mut snapshot: SourceSnapshot = code
+            .iter()
+            .map(|(path, digest)| {
+                let bytes = fs::read(checkout.join(path)).unwrap();
+                assert_eq!(&sha256(&bytes), digest);
+                (path.clone(), SnapshotEntry::File(bytes))
+            })
+            .collect();
+        snapshot.insert(
+            "producer.py".into(),
+            SnapshotEntry::File(b"# declaration fixture only\n".to_vec()),
+        );
+        let mut declaration: Declaration = serde_json::from_value(json!({
+            "schema_version":2,"cache_version":"1","units":[
+                {"id":"producer","op":{"kind":"fixture","version":"1"},
+                 "script":"producer.py","code":["producer.py"],"inputs":[],"params":{},
+                 "outputs":[{"id":"record","logical_path":"/CookRecords/Test","class":"NativeCookRecord",
+                    "destination":"store","files":[{"path":"record.cb","required":true}]}]},
+                {"id":"cooked","op":{"kind":PACKAGE_OP,"version":"1"},
+                 "script":crate::results::zen_cook::VERIFY_SCRIPT,"code":code.keys().collect::<Vec<_>>(),
+                 "inputs":[{"role":"content","name":"record","source":{"kind":"item","unit":"producer","item":"record"},"whole":"Complete selected CB."}],
+                 "params":{"package":"/Game/Test","mode":"restore","settings":[]},
+                 "outputs":[{"id":"asset","logical_path":"/Game/Test","class":"CookedPackage","destination":"external","files":[]}]}
+            ]})).unwrap();
+        let mut registry = BTreeMap::from([(
+            ("fixture".into(), "1".into()),
+            OpDefinition {
+                inputs: BTreeMap::new(),
+                params: BTreeMap::new(),
+                output_classes: BTreeSet::from(["NativeCookRecord".into()]),
+            },
+        )]);
+        let slots = BTreeMap::from([("record".into(), false)]);
+        register(&mut registry, &slots);
+        crate::unreal_controller::register(&mut registry, &slots).unwrap();
+        let produced = BTreeMap::from([(
+            ("producer".into(), "record".into()),
+            StoredItem {
+                item: declaration.units[0].outputs[0].clone(),
+                external_locator: None,
+                files: vec![StoredFile {
+                    path: "record.cb".into(),
+                    digest: sha256(b"CB fixture"),
+                    size: 10,
+                    mode: 0o644,
+                }],
+            },
+        )]);
+        let worker = ImplementationIdentity {
+            version: crate::unreal::UNREAL_JOB_LOOP_VERSION.into(),
+            digest: crate::results::zen_cook::verifier_worker_digest().unwrap(),
+        };
+        let validator = crate::results::zen_cook::validator_identity();
+        let stages = BTreeMap::from([("record".into(), "inputs/record".into())]);
+        let context = KeyContext {
+            snapshot: &snapshot,
+            versions: &BTreeMap::new(),
+            produced: &produced,
+            produced_groups: &BTreeMap::new(),
+            staged_inputs: &stages,
+            worker: &worker,
+            validator: &validator,
+        };
+        let observed = validate(&declaration, &registry, &snapshot, &[]).unwrap();
+        let package = prepare(
+            &declaration,
+            &observed,
+            "cooked",
+            &context,
+            &mut Default::default(),
+        )
+        .unwrap();
+        let derived = package.native_verifier().unwrap();
+        assert_ne!(derived.key(), package.key());
+        assert_eq!(derived.ingredients().content, package.ingredients().content);
+        let explicit = &mut declaration.units[1];
+        explicit.id = derived.request("", "").unit;
+        explicit.op.kind = crate::results::zen_cook::VERIFY_OP.into();
+        explicit.outputs = derived.ingredients().logical_outputs.clone();
+        let observed = validate(&declaration, &registry, &snapshot, &[]).unwrap();
+        let expected = prepare(
+            &declaration,
+            &observed,
+            &declaration.units[1].id,
+            &context,
+            &mut Default::default(),
+        )
+        .unwrap();
+        assert_eq!(derived.key(), expected.key());
+        assert_eq!(derived.ingredients(), expected.ingredients());
+        declaration.units[1].op.kind = PACKAGE_OP.into();
+        declaration.units[1].outputs = package.ingredients().logical_outputs.clone();
+        declaration.units[1]
+            .params
+            .insert("mode".into(), "capture".into());
+        let observed = validate(&declaration, &registry, &snapshot, &[]).unwrap();
+        let wrong = prepare(
+            &declaration,
+            &observed,
+            &declaration.units[1].id,
+            &context,
+            &mut Default::default(),
+        )
+        .unwrap();
+        assert!(wrong.native_verifier().is_err());
+    }
     fn member(out: &mut Vec<u8>, name: &str, body: &[u8]) {
         let mut header = [0u8; 512];
         header[..name.len()].copy_from_slice(name.as_bytes());

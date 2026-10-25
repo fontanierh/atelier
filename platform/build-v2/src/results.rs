@@ -539,6 +539,9 @@ pub(crate) fn freeze_partitioned(
 }
 
 impl WriteTransaction {
+    pub(crate) fn objects_root(&self) -> &Path {
+        self.store.objects.root()
+    }
     pub fn lease(&self) -> &LeaseRecord {
         &self.lease
     }

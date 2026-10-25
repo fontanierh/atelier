@@ -36,5 +36,4 @@ def run(context):
                    source_key=request['project'].removeprefix('AtelierV2_'), dependency_key=report['native_stored_key'], entry_hash=report['root_hash'], installed_entry_hash=report['installed_root_hash'],
                    lifetime_marker=request['marker_path'], record_path=request['record_path'], project_file=request['project_file'])
     result = dict(version=1, locator=locator, record_io_hash=report['record_io_hash'], record_sha256=record_sha256, attachments=report['attachments'], mode=p['mode'], source_dependency_evaluation=report['source_dependency_evaluation'])
-    target = Path(context.job_dir) / 'output' / 'zen-verified.json'
-    target.write_text(json.dumps(result, sort_keys=True, separators=(',', ':')), encoding='utf-8')
+    return result

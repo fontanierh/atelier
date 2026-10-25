@@ -94,6 +94,38 @@ def test_registry_rescan_follows_actual_package_unload_and_synchronous_gc(tmp_pa
     assert events == ['unload-and-gc', 'rescan']
 
 
+def test_fixed_verifier_returns_report_without_python_write_permission(tmp_path, monkeypatch):
+    import hashlib
+    import runpy
+    root = tmp_path / 'job'
+    root.mkdir()
+    (root / 'output').mkdir()
+    source = Path(unreal_worker.__file__).with_name('zen_verify.py')
+    (root / 'verify.py').write_bytes(source.read_bytes())
+    record = tmp_path / 'record.cb'
+    record.write_bytes(b'CB fixture only')
+    project = tmp_path / 'project'
+    request = dict(version=1, mode='restore', project='AtelierV2_' + 'a' * 64, oplog='Mac',
+                   source_package='/Game/Test', expected_stored_key='b' * 40, expected_root_hash='c' * 40,
+                   record_path=str(record), project_file=str(project / 'Source.uproject'),
+                   marker_path=str(project / 'ue.projectstore'), input_key='a' * 64,
+                   runtime_project_file=str(project / 'Atelier.uproject'))
+    def native(raw):
+        assert json.loads(raw) == request
+        return json.dumps(dict(request, status='restored', native_stored_key='b' * 40,
+                               root_hash='c' * 40, installed_root_hash='c' * 40,
+                               record_io_hash='d' * 40, attachments=1,
+                               source_dependency_evaluation='recorded_only'))
+    monkeypatch.setitem(sys.modules, 'unreal', types.SimpleNamespace(
+        AtelierBuildWorkerLibrary=types.SimpleNamespace(zen_package_request=native)))
+    context = types.SimpleNamespace(params={'package':'/Game/Test','mode':'restore'}, zen_request=request,
+                                    content_dir=project / 'Content', job_dir=root)
+    with unreal_worker.declared_python(root, ['verify.py'], [record], [Path(sys.base_prefix)]):
+        result = runpy.run_path(str(root / 'verify.py'))['run'](context)
+    assert result['record_sha256'] == hashlib.sha256(record.read_bytes()).hexdigest()
+    assert list((root / 'output').iterdir()) == []
+
+
 def test_protocol_descriptors_must_appear_once_and_be_pipes(tmp_path):
     read, write = os.pipe()
     try:

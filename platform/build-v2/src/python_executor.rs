@@ -662,6 +662,7 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
                     crate::unreal_controller::RAW_IMPORT
                         | crate::unreal_controller::FINISH
                         | crate::unreal_controller::AUTHOR
+                        | crate::native_verify::PACKAGE_OP
                 )
             });
             let tool = self.native_tool.as_ref().filter(|tool| {
@@ -719,15 +720,31 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
                 continue;
             }
             let native_launch = if let Some(native) = native {
+                let prepared_unit = work
+                    .inputs()
+                    .native_verification
+                    .as_ref()
+                    .map(|verification| &verification.unit)
+                    .unwrap_or_else(|| work.prepared());
                 match native
                     .locations
                     .build(
-                        work.prepared(),
+                        prepared_unit,
                         &work.inputs().staged,
                         &native.sources,
                         &native.cache_root,
                     )
                     .and_then(|context| {
+                        if let Some(verification) = &work.inputs().native_verification {
+                            return crate::unreal_controller::prepare_verify(
+                                &verification.unit,
+                                &work.inputs().staged,
+                                &native.sources,
+                                scope,
+                                &context,
+                                &verification.context,
+                            );
+                        }
                         crate::unreal_controller::prepare(
                             work.prepared(),
                             &work.inputs().staged,

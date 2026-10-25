@@ -66,6 +66,41 @@ pub struct PreparedUnit {
 }
 
 impl PreparedUnit {
+    /// Derive only the fixed independent native verifier, preserving exact consumed CB identity.
+    /// The report has its own key/lease and never impersonates the external package completion.
+    pub(crate) fn native_verifier(&self) -> Result<Self, String> {
+        crate::native_verify::check_package(self)?;
+        let mut value = self.clone();
+        value.ingredients.op.kind = crate::results::zen_cook::VERIFY_OP.into();
+        value.ingredients.logical_outputs = vec![Item {
+            id: "verification".into(),
+            logical_path: format!(
+                "/Internal/NativeCookVerification{}",
+                self.ingredients.logical_outputs[0].logical_path
+            ),
+            class: "JsonData".into(),
+            destination: Destination::Store,
+            files: vec![OutputFile {
+                path: crate::results::zen_cook::VERIFY_REPORT.into(),
+                install_path: None,
+                required: true,
+            }],
+        }];
+        value.key = sha256(&canonical_bytes(&serde_json::json!({
+            "domain":"atelier-unit-key", "version":KEY_ENCODING_VERSION,
+            "ingredients":value.ingredients,
+        }))?);
+        value.template.unit = format!("{}.native-verifier", self.template.unit);
+        value.template.op = value.ingredients.op.clone();
+        value.template.outputs = value
+            .ingredients
+            .logical_outputs
+            .iter()
+            .flat_map(|item| item.files.clone())
+            .collect();
+        crate::unreal_controller::check_unit(&value)?;
+        Ok(value)
+    }
     pub fn key(&self) -> &str {
         &self.key
     }

@@ -49,3 +49,7 @@ tier = "t0"
 id = "native.zen.only_exact_canonical_native_locators_are_interpreted"
 tests = ["atelier-build-v2/results::zen_cook::tests::only_exact_canonical_native_locators_are_interpreted"]
 tier = "t0"
+[[scenarios]]
+id = "native.zen.independent_verifier_uses_normal_key_encoding_and_exact_cb_content"
+tests = ["atelier-build-v2/native_verify::tests::independent_verifier_uses_normal_key_encoding_and_exact_cb_content"]
+tier = "t0"
