@@ -98,8 +98,11 @@ def test_package_zip_checksums_and_splits_for_release_assets(tmp_path, monkeypat
         tool.package_zip(tmp_path/'package', log)
     for rel in tool.STAGED_DATA:
         (data/rel).parent.mkdir(parents=True, exist_ok=True); (data/rel).write_text('{}')
-    tool.package_zip(tmp_path/'package', log)
+    with monkeypatch.context() as isolated:
+        isolated.setattr(tool, 'head', lambda *a, **kw: pytest.fail('isolated v2 archive cannot read Git provenance'))
+        tool.package_zip(tmp_path/'package', log, revision='v2-' + 'a' * 64)
     manifest = json.loads((tmp_path/'package'/'manifest.json').read_text())
+    assert manifest['revision'] == 'v2-' + 'a' * 64
     assert manifest['app'] == 'Yorimichi.app' and not manifest['split'] and len(manifest['files']) == 1
     assert recipe.package_present(tmp_path)
     sums = (tmp_path/'package'/'SHA256SUMS').read_text()
