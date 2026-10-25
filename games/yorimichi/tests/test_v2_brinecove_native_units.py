@@ -73,18 +73,67 @@ def case(tmp_path, metadata):
 
 
 def test_actual_encoded_export_decodes_selected_policy_and_geometry(tmp_path):
-    context, _, _ = case(tmp_path, {'collision': True, 'lods': False})
+    context, _, _ = case(tmp_path, {'collision': True, 'lods': False, 'material_kinds': {'Palette': 'opaque'}})
     facts = body.source_facts(context)
     assert facts['collision'] is True and facts['lods'] is False and facts['asset'] == 'SM_BC_Test'
     assert facts['triangles'] > 0 and len(facts['bounds']) == 2
 
 
-@pytest.mark.parametrize('damage', ['policy', 'payload', 'receipt', 'foreign'])
+@pytest.mark.parametrize('damage', ['policy', 'payload', 'receipt', 'foreign', 'wrong_policy', 'malformed_policy'])
 def test_missing_policy_or_changed_selected_source_refuses(tmp_path, damage):
-    context, source, exported = case(tmp_path, {} if damage == 'policy' else {'collision': False, 'lods': True})
+    context, source, exported = case(tmp_path, {} if damage == 'policy' else {'collision': False, 'lods': True, 'material_kinds': {'Palette': 'masked'}})
     if damage == 'payload': source.write_bytes(b'broken')
     elif damage == 'receipt':
         value = json.loads((exported / 'export.json').read_text()); value['metadata']['collision'] = True
         (exported / 'export.json').write_text(json.dumps(value))
     elif damage == 'foreign': (source.parent / 'other').write_bytes(b'x')
+    elif damage in ('wrong_policy', 'malformed_policy'):
+        value = json.loads((exported / 'export.json').read_text())
+        value['metadata']['native_policy'] = ({'collision': True, 'lods': True, 'material_kinds': {'Palette': 'masked'}}
+            if damage == 'wrong_policy' else {'collision': 1, 'lods': True, 'material_kinds': {'Palette': 'masked'}})
+        (exported / 'export.json').write_text(json.dumps(value))
     with pytest.raises(ValueError): body.source_facts(context)
+
+
+def test_mesh_ir_receipt_native_policy_is_required_and_consumed_without_data_unit(tmp_path):
+    import hashlib
+    import numpy as np
+    from atelier import mesh_ir
+    context, source, exported = case(tmp_path, {'collision': True, 'lods': False, 'material_kinds': {'Palette': 'opaque'}})
+    positions = [[i+x, y, 0.] for i in range(8) for x, y in ((0., 0.), (.5, 0.), (0., .5))]
+    piece = {'positions': positions, 'normals': [[0., 0., 1.]] * 24,
+             'faces': [[i, i+1, i+2] for i in range(0, 24, 3)], 'materials': [0] * 8,
+             'smooth': [False] * 8, 'uvs': [], 'colours': []}
+    payload = mesh_ir.encode(piece, key='SM_BC_Test', slots=['Palette'], matrix=np.eye(4).tolist(),
+                            options={'export_apply': False, 'export_image_format': 'NONE'})
+    source.unlink(); (source.parent / 'SM_BC_Test.npz').write_bytes(payload)
+    receipt = json.loads((exported / 'export.json').read_text())
+    receipt['metadata'] = {'geometry_sha256': hashlib.sha256(payload).hexdigest(), 'slots': ['Palette'],
+                           'polygons': 8, 'collision_hulls': 0, 'uv_channels': [],
+                           'native_policy': {'collision': True, 'lods': False, 'material_kinds': {'Palette': 'opaque'}}}
+    (exported / 'export.json').write_text(json.dumps(receipt))
+    assert body.source_facts(context)['collision'] is True
+    del receipt['metadata']['native_policy']
+    (exported / 'export.json').write_text(json.dumps(receipt))
+    with pytest.raises(ValueError, match='explicit keyed collision/LOD policy'):
+        body.source_facts(context)
+
+
+@pytest.mark.parametrize('kind_table', [None, {}, {'Foreign': 'terrain'}, {'Palette': 'invented'}])
+def test_missing_or_malformed_selected_material_kinds_refuse(tmp_path, kind_table):
+    context, _, _ = case(tmp_path, {'collision': False, 'lods': False, 'material_kinds': kind_table})
+    with pytest.raises(ValueError, match='explicit keyed collision/LOD policy'):
+        body.source_facts(context)
+
+
+def test_receipt_native_policy_matches_selected_packet_policy(tmp_path):
+    context, _, exported = case(tmp_path, {'collision': False, 'lods': False, 'material_kinds': {'Palette': 'terrain'}})
+    receipt = json.loads((exported / 'export.json').read_text())
+    receipt['metadata']['native_policy'] = {'collision': False, 'lods': False, 'material_kinds': {'Palette': 'terrain'}}
+    (exported / 'export.json').write_text(json.dumps(receipt))
+    facts = body.source_facts(context)
+    assert facts['material_kinds'] == {'Palette': 'terrain'}
+    receipt['metadata']['native_policy']['material_kinds']['Palette'] = 'opaque'
+    (exported / 'export.json').write_text(json.dumps(receipt))
+    with pytest.raises(ValueError, match='policy differs'):
+        body.source_facts(context)

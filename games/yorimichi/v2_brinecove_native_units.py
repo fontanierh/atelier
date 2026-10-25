@@ -52,7 +52,6 @@ def attach_followers(geometry, packages, native_units, *, checkout):
     required.update(package for package in packages if package.startswith(MATERIALS + 'MI_BC_'))
     missing = sorted(required - set(packages))
     result = deepcopy(geometry)
-    policies = geometry.get('native_policies', {})
     for template in result['templates']:
         if not template['unit_prefix'].startswith('world.brinecove.export.'):
             continue
@@ -97,12 +96,6 @@ def attach_followers(geometry, packages, native_units, *, checkout):
                   *({'role': 'content', 'name': slot, 'source': {'kind': 'item', 'unit': owner, 'item': item}}
                     for (owner, item), slot in dependencies.items())]
         args = {'materials': mapping, 'source_export': 'source_export', 'payload': 'payload'}
-        policy = policies.get(template['producer'])
-        if policy is not None:
-            if not isinstance(policy, dict) or any(not isinstance(policy.get(k), str) or not policy[k] for k in ('unit', 'item', 'file', 'member')):
-                raise ValueError('Brinecove policy requires an explicit finished per-piece Data source')
-            inputs.append({'role': 'content', 'name': 'policy', 'source': {'kind': 'item', 'unit': policy['unit'], 'item': policy['item']}})
-            args['policy'] = {'slot': 'policy', 'file': policy['file'], 'member': policy['member']}
         finish = {'id': '$export.finish', 'op': {'kind': 'unreal.finish', 'version': '1'}, 'script': FINISH,
             'code': sorted(finish_code), 'inputs': inputs,
             'params': {'op': 'finish', 'kind': 'static_mesh', 'source': 'raw', 'destination': destination,

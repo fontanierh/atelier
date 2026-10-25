@@ -47,32 +47,36 @@ def source_facts(context):
         raise ValueError('Invalid selected Brinecove payload')
     raw = selected.read_bytes(); digest = hashlib.sha256(raw).hexdigest()
     primary = (root / receipt['primary']).read_bytes()
-    policy = None
+    metadata = receipt['metadata']
+    if not isinstance(metadata, dict):
+        raise ValueError('Brinecove receipt metadata must be an object')
+    policy = metadata.get('native_policy')
+    geometry_metadata = {key: value for key, value in metadata.items() if key != 'native_policy'}
     if names[0].endswith('.mesh'):
         identity, actual = encoded_glb.decode(raw, key=receipt['asset'])
         if (identity['role'] != 'render' or primary != actual or receipt['triangles'] != identity['triangles']
-                or receipt['bounds'] != identity['bounds'] or receipt['metadata'] != identity['metadata'] | {
+                or receipt['bounds'] != identity['bounds'] or geometry_metadata != {key: value for key, value in identity['metadata'].items() if key != 'native_policy'} | {
                     'role': 'render', 'slots': identity['slots'], 'geometry_sha256': identity['sha256'], 'payload_sha256': digest}):
             raise ValueError('Brinecove encoded receipt/payload differ')
         slots, low_high = identity['slots'], identity['bounds']
-        policy = identity['metadata']
+        original_policy = identity['metadata'].get('native_policy', identity['metadata'])
+        if policy is None:
+            policy = original_policy
+        elif policy != original_policy:
+            raise ValueError('Brinecove receipt policy differs from selected encoded metadata')
     else:
         meta, _, facts = decode_mesh_payload(raw, expected_asset=receipt['asset'], output_format='glb')
         if (meta['collisions'] or receipt['triangles'] != facts['triangles'] or receipt['bounds'] != [facts['min'], facts['max']]
-                or receipt['metadata'] != {'geometry_sha256': digest, 'slots': meta['slots'], 'polygons': facts['polygons'],
+                or geometry_metadata != {'geometry_sha256': digest, 'slots': meta['slots'], 'polygons': facts['polygons'],
                     'collision_hulls': 0, 'uv_channels': facts['uv_channels']}):
             raise ValueError('Brinecove MeshIR receipt differs from actual selected source')
         slots, low_high = meta['slots'], [facts['min'], facts['max']]
-    if 'policy' in args:
-        # The shared existing Data ROOT reader validates this declared member; its
-        # row must bind the selected payload, never a report/path-only assertion.
-        from treehouse_materials_v2 import read_data
-        rows = read_data(context, args['policy'])
-        policy = rows.get(receipt['asset'])
-        if not isinstance(policy, dict) or policy.get('geometry_sha256') != digest:
-            raise ValueError('Brinecove policy does not bind selected payload bytes')
     if (not isinstance(policy, dict) or type(policy.get('collision')) is not bool
-            or type(policy.get('lods')) is not bool):
+            or type(policy.get('lods')) is not bool
+            or not isinstance(policy.get('material_kinds'), dict)
+            or set(policy['material_kinds']) != set(slots)
+            or any(value not in ('terrain', 'opaque', 'masked', 'translucent', 'emissive')
+                   for value in policy['material_kinds'].values())):
         raise ValueError('Brinecove source lacks explicit keyed collision/LOD policy')
     doc, _ = glb_parts(primary)
     primitives = [p for mesh in doc['meshes'] for p in mesh['primitives']]
@@ -80,7 +84,7 @@ def source_facts(context):
     if not uv_sets or any(uv != uv_sets[0] for uv in uv_sets):
         raise ValueError('Brinecove primitives disagree on original UV channels')
     return {'asset': receipt['asset'], 'triangles': receipt['triangles'], 'bounds': low_high,
-            'slots': slots, 'uv_channels': len(uv_sets[0]), 'collision': policy['collision'], 'lods': policy['lods']}
+            'slots': slots, 'material_kinds': policy['material_kinds'], 'uv_channels': len(uv_sets[0]), 'collision': policy['collision'], 'lods': policy['lods']}
 
 
 def _originals():
@@ -110,7 +114,7 @@ def run(context):
     if (set(params) - {'op', 'kind', 'source', 'destination', 'package_sources', 'args'}
             or params.get('op') != 'finish' or params.get('kind') != 'static_mesh'
             or not isinstance(params.get('args'), dict)
-            or set(params['args']) - {'materials', 'source_export', 'payload', 'policy'}):
+            or set(params['args']) != {'materials', 'source_export', 'payload'}):
         raise ValueError('Unexpected Brinecove finish parameters')
     facts = source_facts(context)
     destination = '/Game/Brinecove/Meshes/' + facts['asset']
@@ -151,10 +155,7 @@ def run(context):
     editor = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
     if editor is None:
         raise ValueError('Native StaticMeshEditor unavailable')
-    # Same original material-kind policy: terrain-only and foliage keep imported
-    # precision; every other non-foliage source enables full metre-UV precision.
-    terrain_only = all(name.removeprefix('BC_').startswith(('terrain', 'rock')) for name in facts['slots'])
-    full = not facts['lods'] and not terrain_only
+    full = not facts['lods'] and any(kind != 'terrain' for kind in facts['material_kinds'].values())
     if full:
         settings = editor.get_lod_build_settings(mesh, 0)
         if not settings.get_editor_property('use_full_precision_u_vs'):
