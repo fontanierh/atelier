@@ -1251,7 +1251,11 @@ class CookSdkSession:
             return
         self.signature = signature
         host = self.folder / 'sdk-host'
-        shutil.copytree(project.parent, host)
+        if self.root_clones is not None:
+            if self.root_clones.clone is None:raise Refused('source SDK independent clones are unavailable')
+            shutil.copytree(project.parent, host, copy_function=self.root_clones.clone)
+        else:
+            shutil.copytree(project.parent, host)
         # The operational SDK host is another independent copy of the SAME verified
         # common ROOTs, not another physical gigabyte of identical DLL data.
         for archive, relative in self.project_archives:
