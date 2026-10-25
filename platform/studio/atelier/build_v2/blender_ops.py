@@ -341,7 +341,7 @@ def export_options(payload_options, declared_options, *, output_format='fbx', fi
     actual.update(check(declared_options))
     if output_format == 'glb':
         return check(actual)
-    if any(key in actual for key in ('filepath', 'use_selection', 'object_types', 'bake_anim')):
+    if any(key in actual for key in ('filepath', 'use_selection', 'object_types')):
         raise ValueError('Export options cannot override fixed selected-mesh ownership')
     if (actual.get('path_mode', 'RELATIVE') not in ('RELATIVE', 'STRIP')
             or actual.get('batch_mode', 'OFF') != 'OFF' or actual.get('use_batch_own_dir', False) is not False):
