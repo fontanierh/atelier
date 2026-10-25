@@ -1303,19 +1303,17 @@ class CookSdkSession:
 
     def cook(self,project,environment,source_digest,export_project,source_key,package,callbacks,log_file):
         self.start(project,environment,source_digest,export_project,lifecycle=callbacks)
-        active = self.project.parent / 'Content'
-        if active.exists(): shutil.rmtree(active)
+        # The fixed native entry mounts this exact retained Content as a removable
+        # /Game overlay. The SDK's empty startup Content remains separate.
         source = project.parent / 'Content'
-        if source.exists(): shutil.copytree(source, active)
-        else: active.mkdir()
-        before = _tree(active)
+        before = _tree(source)
         result=self.exchange('cook',request={'version':1,'source_key':source_key,'project_file':str(project),'package':package},lifecycle=callbacks,log_file=log_file)
         if (result.get('status')!='cooked' or not result.get('game_unloaded')
                 or result.get('source_key')!=source_key or result.get('project_file')!=str(project)
                 or result.get('package')!=package or result.get('project')!='AtelierV2_'+source_key):
             raise Refused('stock source cook/reset refused: '+str(result))
-        if _tree(active) != before:
-            raise Refused('stock cook changed its independently copied native inputs')
+        if _tree(source) != before:
+            raise Refused('stock cook changed its retained native inputs')
 
     def capture(self,requests):
         return self.exchange('capture',requests=requests)
