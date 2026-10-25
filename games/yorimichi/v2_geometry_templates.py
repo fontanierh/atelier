@@ -26,6 +26,7 @@ def geometry_templates(rows, *, checkout):
     """@cc [owner:fontanierh,label:correctness] authored-geometry-child-templates
     Logical parents MUST come from original constructor declarations, never existing
     generated plan files. Each parent MUST match its exact producer/product/root.
+    Export formats MUST come from the planner declaration and MUST remain unchanged.
     Runtime piece names belong only to the engine's validated group expansion.
     This compiler MUST NOT run discovery, export, validators or assembly callbacks.
     """
@@ -59,23 +60,25 @@ def geometry_templates(rows, *, checkout):
                     raise Unsupported(f'{producer}: logical parent differs from its declared product')
                 if encoding not in ('mesh_ir', 'encoded_glb'):
                     raise Unsupported(f'{producer}: unsupported geometry payload encoding {encoding}')
+                export_format = declared.get('export_format')
+                if export_format not in ('fbx', 'glb') or (encoding == 'encoded_glb' and export_format != 'glb'):
+                    raise Unsupported(f'{producer}: missing or incompatible declared export format')
                 if producer in groups:
                     raise Unsupported(f'{producer}: planner belongs to multiple export families')
                 group = {'id': 'geometry', 'root': 'geometry', 'root_param': 'geometry_root',
                     'manifest': 'plan.json', 'adapter_version': 'd2.mesh-plan/1',
                     'parent': parent, 'encoding': encoding, 'class': 'GeometryPayload',
                     'logical_namespace': f'/Internal/{region}/{parent}', **LIMITS}
-                groups[producer] = {'contract': group, 'source': location['path']}
-                # The per-piece material-graph GLB route needs its own typed serializer;
-                # it must not be silently relabelled as a legacy FBX body.
+                groups[producer] = {'contract': group, 'source': location['path'], 'format': export_format}
                 template = {'producer': producer, 'group': 'geometry',
                     'unit_prefix': f'world.{region}.export.{parent}',
                     'op': {'kind': 'blender_export_piece', 'version': '1'},
                     'script': EXPORT_SCRIPT, 'code': code,
-                    'params': {'format': 'fbx', 'options': {'path_mode': 'RELATIVE'}},
+                    'params': {'format': export_format,
+                               'options': {'path_mode': 'RELATIVE'} if export_format == 'fbx' else {}},
                     'payload_slot': 'payload', 'staged_path': 'inputs/payload',
                     'output_class': 'StaticMeshSource', 'logical_namespace': f'/Sources/{region}',
-                    'files': [{'path': '$piece.fbx'}, {'path': 'export.json'}]}
+                    'files': [{'path': '$piece.' + export_format}, {'path': 'export.json'}]}
                 if encoding == 'encoded_glb':
                     # The lossless encoded body: unchanged GLB bytes plus the original receipt.
                     # Selected payload fields (member, encoding, role) are injected by the core.

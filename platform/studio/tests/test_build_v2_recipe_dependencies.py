@@ -108,3 +108,14 @@ def test_unstable_closure_object_refuses(tmp_path):
     steps[1].commands = [build.Call('b.stage', lambda ctx, log: opaque)]
     with pytest.raises(rd.Unsupported, match='unsupported Call value of type object'):
         rd.extract(steps, checkout=tmp_path, build_root=tmp_path / 'build')
+
+
+def test_exact_declared_export_format_survives_and_unknown_refuses(tmp_path):
+    steps, _, _ = _steps(tmp_path)
+    steps[0].export_format = 'glb'
+    rows = rd.extract(steps, checkout=tmp_path, build_root=tmp_path / 'build')
+    assert rows[0]['export_format'] == 'glb'
+    assert rows[1]['export_format'] is None
+    steps[0].export_format = 'png'
+    with pytest.raises(rd.Unsupported, match='unsupported declared export format'):
+        rd.extract(steps, checkout=tmp_path, build_root=tmp_path / 'build')

@@ -438,6 +438,7 @@ class Step:
     checkpoint_restore: object = field(default=None, repr=False)  # optional non-destructive recertification callback
     checkpoint_outputs: tuple = field(default=(), repr=False)  # complete additional output roots, never representative samples
     candidate_scope: object = field(default=None, repr=False, compare=False)  # generic compatibility candidates; native validation still required
+    export_format: str | None = field(default=None, kw_only=True)  # exact declared atomic primary format
     replan: bool = field(default=False, kw_only=True)  # reload recipe after a completed source planner
 
 
