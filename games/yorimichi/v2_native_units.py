@@ -744,6 +744,41 @@ def lower(rows, geometry, *, checkout):
         _append_family(native, family)
         native.setdefault('rows', []).extend(family['rows'])
         native['aliases'].update(family['aliases'])
+    if any(command.get('script') == {'path': 'games/yorimichi/unreal/Scripts/import_ride_clips.py'}
+           for row in rows for command in row['commands']):
+        module = _family_module(checkout, 'v2_rider_units')
+        definitions = module._definition(checkout)
+        refs = _package_dependencies(native)
+        supplied = {'compression': refs[module.COMPRESSION]}
+        characters = {character.id.replace('-', '_'): character for character in definitions.movers()}
+        for character in characters.values():
+            supplied[character.id] = {'skeleton': refs[character.unreal_path + '/SK_' + character.name + '_Skeleton']}
+        family = module.rider_units(rows, checkout=checkout, natives=supplied)
+        for unit in family['units']:
+            if unit['id'].startswith('unreal.ride.'):
+                character = characters[unit['id'].split('.')[2]]
+                unit['params']['args']['closure'] = {'character': deepcopy(native['character_tokens'][character.id])}
+                _stage_native_closure(family, unit, 'closure_compression', refs[module.COMPRESSION])
+                if character.toml.get('see_through'):
+                    _stage_native_closure(family, unit, 'closure_see_through', refs['/Game/SeeThrough/MPC_SeeThrough'])
+        for template in family['templates']:
+            character = characters[template['unit_prefix'].split('.')[2]]
+            modules, _plugins = _family_module(checkout, 'v2_character_units')._modules(checkout, list(character.unreal['modules']))
+            native.setdefault('follower_module_requirements', {})[template['unit_prefix']] = modules
+            closure = {key: deepcopy(value) for key, value in native['character_tokens'][character.id].items()
+                       if key in ('materials', 'textures')}
+            for follower in template['followers']:
+                follower['unit']['params'].setdefault('args', {})['closure'] = deepcopy(closure)
+                if character.toml.get('see_through'):
+                    temporary = {'staged_inputs': {follower['unit']['id']: follower['staged_inputs']}}
+                    _stage_native_closure(temporary, follower['unit'], 'closure_see_through', refs['/Game/SeeThrough/MPC_SeeThrough'])
+        _append_family(native, family)
+        current = deepcopy(native['geometry'])
+        current['groups'].update(family['groups'])
+        current['templates'].extend(family['templates'])
+        native['geometry'] = current
+        native['aliases'].update(family['aliases'])
+        native['rider_tokens'] = family['tokens']
     if selected & {'unreal.treehouse', 'unreal.brinecove'}:
         native = _join_native_families(native, rows, geometry, selected, checkout=checkout)
     return native

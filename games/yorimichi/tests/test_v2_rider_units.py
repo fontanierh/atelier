@@ -8,7 +8,6 @@ import sys
 from types import SimpleNamespace as NS
 
 import pytest
-from atelier.build import Product
 from atelier.build_v2.file_groups import emit
 from atelier.build_v2.recipe_dependencies import extract
 
@@ -37,15 +36,12 @@ def natives():
 
 @pytest.fixture(scope='module')
 def rows():
-    """The actual eight ride rows and producers; the export Product Root adds to build.py is supplied here."""
+    """The actual eight ride rows and producers own their complete export Products."""
     out, steps = ROOT / 'build/yorimichi', []
     for character in PLAYABLE:
         for step in recipe.mover_export_steps(character, out) + recipe.mover_import_steps(character, out):
             ride = step.name.rsplit('_', 1)[-1]
             if ride in ('bike', 'horse') and step.name.startswith(('characters.', 'unreal.')):
-                if step.name.startswith('characters.'):
-                    step.products = [*step.products, Product(step.name + '.export', tuple(
-                        out / character.output / ride / n for n in ('export.json', 'fbx')))]
                 steps.append(step)
     names = {s.name for s in steps}
     for step in steps:
