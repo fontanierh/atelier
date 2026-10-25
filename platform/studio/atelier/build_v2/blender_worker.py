@@ -105,6 +105,8 @@ BLENDER_RULES = (
     '(allow file-read-data (literal "/dev/urandom"))',
     '(allow mach-lookup ' + ' '.join('(global-name ' + python_worker._quote(name) + ')'
                                     for name in BLENDER_RENDER_SERVICES) + ')',
+    # Metal compiles the offscreen context shader through this exact Apple SDK XPC service.
+    '(allow mach-lookup (xpc-service-name "com.apple.MTLCompilerService"))',
     '(deny network-bind)',
 )
 
