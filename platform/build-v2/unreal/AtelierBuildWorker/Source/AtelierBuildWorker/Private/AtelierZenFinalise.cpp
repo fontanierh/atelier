@@ -55,6 +55,13 @@ bool Token(const FString& Value)
     for (TCHAR C : Value) if (!FChar::IsAlnum(C) && C != '_' && C != '-') return false;
     return true;
 }
+bool ShaderFormatAndPlatform(const FString& Value)
+{
+    // UE 5.8 FEditorShaderCodeArchive takes the compound format-platform name.
+    TArray<FString> Parts;
+    Value.ParseIntoArray(Parts, TEXT("-"), false);
+    return Parts.Num() == 2 && Token(Parts[0]) && Token(Parts[1]);
+}
 bool Pinned(const FObject& Spec, TArray<uint8>& Bytes)
 {
     if (!Fields(Spec, {TEXT("path"), TEXT("sha256")})) return false;
@@ -298,7 +305,7 @@ FString AtelierZenFinaliseRequest(const FString& RequestJson)
     for (const auto& Value : *Formats)
     {
         const FString Format = Value->AsString();
-        if (!Token(Format) || FormatNames.Contains(Format)) return Fail(TEXT("duplicate_or_invalid_shader_format"));
+        if (!ShaderFormatAndPlatform(Format) || FormatNames.Contains(Format)) return Fail(TEXT("duplicate_or_invalid_shader_format"));
         FormatNames.Add(Format);
     }
     TArray<TUniquePtr<FHistory>> Histories;

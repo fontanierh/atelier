@@ -359,6 +359,13 @@ def run(context):
         for row in recipe['outputs']:
             pack_root(view / relative(row['path']), output / relative(row['file']),
                       required=row.get('required', True))
+        if recipe.get('file_group'):
+            from atelier.build_v2.file_groups import emit
+            group = recipe['file_group']
+            if context.params.get('file_root') != 'output/files':
+                raise ValueError('File group requires its exact declared output root')
+            emit(view / relative(group['source']), output / 'files',
+                 parent=group['parent'], extensions=group['extensions'])
         if recipe.get('geometry'):
             geometry = recipe['geometry']
             root = view / relative(geometry['source'])

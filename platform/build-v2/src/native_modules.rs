@@ -277,6 +277,7 @@ fn descriptor(inputs: &BTreeMap<&str, Staged<'_>>, slot: &str) -> Result<Vec<u8>
             }
             _ => return Err(format!("plugin descriptor slot {slot} is not one .uplugin file")),
         },
+        InputPayload::NativeCooked(_) => return Err(format!("plugin descriptor slot {slot} is a cooked package, not descriptor bytes")),
         InputPayload::Absent => return Err(format!("plugin descriptor slot {slot} is absent")),
     };
     if size > MAX_DESCRIPTOR || regular(&path)?.len() != size {

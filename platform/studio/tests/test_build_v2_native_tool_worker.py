@@ -322,7 +322,7 @@ def test_package_composes_verified_inputs_before_uat_without_reading_source_name
         content.mkdir(parents=True)
         for stem, suffix in (('ShaderAssetInfo', '.assetinfo.json'), ('ShaderArchive', '.ushaderbytecode'),
                              ('ShaderTypeInfo', '.stinfo')):
-            (content / (stem + '-' + name + '-SF_METAL_SM5' + suffix)).write_bytes(stem.encode())
+            (content / (stem + '-' + name + '-SF_METAL_SM5-METAL_SM5' + suffix)).write_bytes(stem.encode())
     source = tmp_path / 'transport'; shaders(source / 'Fixture/Content', 'Fixture')
     metadata = source / 'Fixture/Metadata'; metadata.mkdir()
     for name in ('DevelopmentAssetRegistry.bin', 'CookMetadata.ucookmeta'):
@@ -330,6 +330,8 @@ def test_package_composes_verified_inputs_before_uat_without_reading_source_name
     (source / 'ue.projectstore').write_bytes(b'actual namespace marker')
     archive = runtime / 'global-metadata.tree.tar'; tool.recipe_job.pack_root(source, archive)
     globals_root = tmp_path / 'semantic'; shaders(globals_root / 'Content', 'Global')
+    (globals_root / 'Engine').mkdir()
+    (globals_root / 'Engine/GlobalShaderCache-METAL_SM5.bin').write_bytes(b'engine shaders')
     staged = tmp_path / 'inputs/global'; staged.mkdir(parents=True)
     tool.recipe_job.pack_root(globals_root, staged / 'global-data.tree.tar')
     record = tmp_path / 'package.cb'; record.write_bytes(b'CB')
@@ -370,6 +372,7 @@ def test_package_composes_verified_inputs_before_uat_without_reading_source_name
     assert calls == ['zen_package_request', 'zen_finalise_request', 'zen_finalise_request', 'zen_end_cook_request']
     assert (view / 'Saved/Cooked/Mac/Fixture/AssetRegistry.bin').read_bytes() == b'AssetRegistry.bin'
     tool.ops.verify_cooked_files(view / 'Saved/Cooked/Mac', inventory)
+    assert (view / 'Saved/Cooked/Mac/Engine/GlobalShaderCache-METAL_SM5.bin').read_bytes() == b'engine shaders'
     assert project.read_text() == '{}'
 
 

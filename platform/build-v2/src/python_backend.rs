@@ -1338,6 +1338,9 @@ impl Backend for PythonBackend<'_> {
                         "recipe.blender" | "recipe.python"
                     ) {
                         crate::recipe_ops::check(&unit)?;
+                        if contract.encoding == crate::groups::PlanEncoding::FileSet {
+                            return crate::recipe_ops::validate_file_group(contract, objects).map(|_| ());
+                        }
                         return blender_ops::validate_geometry_outputs(contract, objects)
                             .map(|_| ());
                     }

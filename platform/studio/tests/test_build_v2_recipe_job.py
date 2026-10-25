@@ -231,3 +231,22 @@ def test_recipe_atomic_scope_reuses_bootstrap_held_scratch_and_resets_on_every_e
         assert list(scratch.iterdir()) == []
     finally:
         os.close(descriptor)
+
+
+def test_file_group_projects_actual_completed_outputs_to_selected_members(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    source = tmp_path / 'generated'; source.mkdir()
+    (source / 'Footstep.wav').write_bytes(b'actual source wave bytes')
+    (source / 'Walk.fbx').write_bytes(b'actual source clip bytes')
+    (source / 'notes.txt').write_text('not selected by the explicit extension contract')
+    output = tmp_path / 'output'; output.mkdir()
+    monkeypatch.chdir(tmp_path)
+    context = SimpleNamespace(output_dir=output, params={'file_root': 'output/files', 'recipe': {
+        'version': 1, 'commands': [], 'paths': {}, 'outputs': [], 'verify': None,
+        'file_group': {'source': 'generated', 'parent': 'Assets', 'extensions': ['.wav', '.fbx']}}})
+    job.run(context)
+    manifest = json.loads((output / 'files/plan.json').read_bytes())
+    assert manifest['kind'] == 'file_set'
+    assert {row['name'] for row in manifest['pieces']} == {'Footstep', 'Walk'}
+    assert (output / 'files/Footstep.wav').read_bytes() == (source / 'Footstep.wav').read_bytes()
+    assert not (output / 'files/notes.txt').exists()
