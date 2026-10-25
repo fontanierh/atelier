@@ -1,4 +1,10 @@
 #include "AtelierBuildWorkerLibrary.h"
+#include "AssetRegistry/AssetRegistryState.h"
+#include "CookMetadata.h"
+#include "PackageStoreOptimizer.h"
+#include "UObject/ICookInfo.h"
+#include "UObject/NameBatchSerialization.h"
+#include <CommonCrypto/CommonDigest.h>
 #include "Compression/CompressedBuffer.h"
 #include "Dom/JsonObject.h"
 #include "HAL/FileManager.h"
@@ -451,6 +457,378 @@ FString UAtelierBuildWorkerLibrary::ZenPackageRequest(const FString& RequestJson
     return Encode(Report);
 }
 
+namespace
+{
+FString SHA256Bytes(TConstArrayView<uint8> Bytes)
+{
+    uint8 Digest[CC_SHA256_DIGEST_LENGTH];
+    CC_SHA256(Bytes.GetData(), CC_LONG(Bytes.Num()), Digest);
+    FString Text;
+    for (uint8 Byte : Digest) Text += FString::Printf(TEXT("%02x"), Byte);
+    return Text;
+}
+
+bool ExactFields(const FObject& Object, std::initializer_list<const TCHAR*> Fields)
+{
+    if (!Object || Object->Values.Num() != int32(Fields.size())) return false;
+    for (const TCHAR* Field : Fields) if (!Object->HasField(Field)) return false;
+    return true;
+}
+
+FString StringField(const FObject& Object, const TCHAR* Field)
+{
+    FString Value;
+    if (Object) Object->TryGetStringField(Field, Value);
+    return Value;
+}
+
+bool ClientFilePath(const FString& Path)
+{
+    FString Relative;
+    if (Path.StartsWith(TEXT("/{project}/"))) Relative = Path.Mid(11);
+    else if (Path.StartsWith(TEXT("/{engine}/"))) Relative = Path.Mid(10);
+    else return false;
+    if (Relative.IsEmpty() || Relative.Contains(TEXT("\\"))) return false;
+    for (TCHAR C : Path) if (C < 32) return false;
+    TArray<FString> Parts; Relative.ParseIntoArray(Parts, TEXT("/"), false);
+    for (const FString& Part : Parts) if (Part.IsEmpty() || Part == TEXT(".") || Part == TEXT("..")) return false;
+    return true;
+}
+
+bool SavePackageNoReplace(const FString& Path, const FCbPackage& Package)
+{
+    FBufferArchive Bytes; Package.Save(Bytes);
+    const TUniquePtr<FArchive> Writer(IFileManager::Get().CreateFileWriter(*Path, FILEWRITE_NoReplaceExisting));
+    if (!Writer) return false;
+    Writer->Serialize(Bytes.GetData(), Bytes.Num());
+    if (Writer->IsError() || !Writer->Close()) return false;
+    FCbPackage Readback; FIoHash Hash;
+    return Load(Path, Readback, Hash) && Readback == Package;
+}
+
+bool ScriptObjectsValid(const FIoBuffer& Buffer, int32& Count)
+{
+    if (Buffer.DataSize() > MAX_int32 || Buffer.DataSize() == 0) return false;
+    TArray<uint8> Bytes; Bytes.Append(Buffer.Data(), int32(Buffer.DataSize()));
+    FMemoryReader Reader(Bytes, true);
+    const TArray<FDisplayNameEntryId> Names = LoadNameBatch(Reader);
+    Reader << Count;
+    if (Reader.IsError() || Count < 0 || int64(Count) > (Reader.TotalSize() - Reader.Tell()) / 32) return false;
+    TSet<FPackageObjectIndex> Ids;
+    TArray<FScriptObjectEntry> Entries; Entries.Reserve(Count);
+    for (int32 Index = 0; Index < Count; ++Index)
+    {
+        FScriptObjectEntry Entry{}; Reader << Entry;
+        if (Reader.IsError() || !Names.IsValidIndex(Entry.Mapped.GetIndex()) || !Entry.GlobalIndex.IsScriptImport()
+            || Ids.Contains(Entry.GlobalIndex)) return false;
+        Ids.Add(Entry.GlobalIndex); Entries.Add(Entry);
+    }
+    if (Reader.Tell() != Reader.TotalSize()) return false;
+    for (const FScriptObjectEntry& Entry : Entries)
+        if ((!Entry.OuterIndex.IsNull() && !Ids.Contains(Entry.OuterIndex))
+            || (!Entry.CDOClassIndex.IsNull() && !Ids.Contains(Entry.CDOClassIndex))) return false;
+    return true;
+}
+
+struct FNativeGlobalFile
+{
+    FString ClientPath;
+    FString Path;
+    FString SHA256;
+    FIoChunkId Id;
+    FCbAttachment Attachment;
+};
+}
+
+FString UAtelierBuildWorkerLibrary::ZenEndCookRequest(const FString& RequestJson)
+{
+    const FObject Report = MakeShared<FJsonObject>();
+    Report->SetNumberField(TEXT("version"), 1);
+    Report->SetStringField(TEXT("status"), TEXT("refused"));
+    auto Fail = [&](const FString& Error) { Report->SetStringField(TEXT("error"), Error); return Encode(Report); };
+    FObject Request;
+    if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(RequestJson), Request)
+        || !ExactFields(Request, {TEXT("version"), TEXT("project"), TEXT("oplog"), TEXT("project_file"),
+            TEXT("marker_path"), TEXT("runtime_project_file"), TEXT("input_key"), TEXT("packages"), TEXT("globals"), TEXT("output_dir")}))
+        return Fail(TEXT("unknown_or_missing_endcook_fields"));
+    double Version = 0;
+    const FString Project = StringField(Request, TEXT("project")), Oplog = StringField(Request, TEXT("oplog"));
+    const FString ProjectFile = StringField(Request, TEXT("project_file")), Marker = StringField(Request, TEXT("marker_path"));
+    const FString RuntimeProject = StringField(Request, TEXT("runtime_project_file")), Output = StringField(Request, TEXT("output_dir"));
+    const TArray<TSharedPtr<FJsonValue>>* Packages = nullptr;
+    const TArray<TSharedPtr<FJsonValue>>* GlobalSpecs = nullptr;
+    if (!Request->TryGetNumberField(TEXT("version"), Version) || Version != 1 || !Namespace(Project) || Oplog != TEXT("Mac")
+        || !Absolute(ProjectFile) || !Absolute(Marker) || !Absolute(Output) || !Absolute(RuntimeProject)
+        || !FPaths::IsSamePath(RuntimeProject, FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath()))
+        || !Hex(StringField(Request, TEXT("input_key")), 64) || IFileManager::Get().DirectoryExists(*Output)
+        || IFileManager::Get().FileExists(*Output) || !Request->TryGetArrayField(TEXT("packages"), Packages) || Packages->IsEmpty()
+        || !Request->TryGetArrayField(TEXT("globals"), GlobalSpecs) || GlobalSpecs->IsEmpty())
+        return Fail(TEXT("invalid_endcook_identity_roster_or_output"));
+    UE::FZenStoreHttpClient Client;
+    FString Error;
+    if (!BindNamespace(Client, Project, Oplog, ProjectFile, Marker, Error)) return Fail(TEXT("unknown_namespace:") + Error);
+    Client.InitializeReadOnly(Project, Oplog);
+    TMap<FName, FString> ExpectedRoots;
+    TMap<FIoChunkId, FIoHash> Chunks;
+    TMap<FIoChunkId, FString> FilePaths;
+    TArray<FPackageStoreEntryResource> Stores;
+    TSet<FPackageId> PackageIds;
+    int32 Done = 0;
+    for (const auto& Value : *Packages)
+    {
+        const FObject Spec = Value->AsObject();
+        if (!ExactFields(Spec, {TEXT("name"), TEXT("installed_root_hash")})) return Fail(TEXT("unknown_package_roster_fields"));
+        const FString Name = StringField(Spec, TEXT("name")), Hash = StringField(Spec, TEXT("installed_root_hash")).ToLower();
+        const FName Key(*Name);
+        if (!FPackageName::IsValidLongPackageName(Name) || !Hex(Hash, 40) || ExpectedRoots.Contains(Key))
+            return Fail(TEXT("invalid_or_duplicate_package_roster"));
+        auto Entries = Client.GetOplogEntries(Project, Oplog, TArray<FString>{Name.ToLower()}).Get();
+        if (Entries.Num() != 1 || !Entries[0].IsOk()) return Fail(TEXT("chosen_native_package_missing"));
+        const FCbObject Entry = Entries[0].ConsumeValueOrDie()["entry"].AsObject();
+        if (!Entry || LexToString(Entry.GetHash()) != Hash) return Fail(TEXT("chosen_native_package_root_changed"));
+        bool Resolved = true;
+        FCbPackage Package(Entry, [&](const FIoHash& Blob) -> FSharedBuffer
+        {
+            auto Bytes = Client.ReadChunk(Blob);
+            if (!Bytes.IsOk()) { Resolved = false; return {}; }
+            const FIoBuffer Data = Bytes.ConsumeValueOrDie();
+            if (FIoHash::HashBuffer(Data.GetView()) != Blob) { Resolved = false; return {}; }
+            return FSharedBuffer::Clone(Data.GetData(), Data.DataSize());
+        });
+        FString StoredKey;
+        if (!Resolved || !Validate(Package, Name, Hash, FString(), StoredKey, Error))
+            return Fail(TEXT("chosen_native_package_incomplete:") + Error);
+        if (!Entry["packagedata"].IsArray() || Entry["packagedata"].AsArrayView().Num() == 0)
+            return Fail(TEXT("chosen_package_has_no_native_payload"));
+        for (const ANSICHAR* Group : {"packagedata", "bulkdata", "files"})
+        {
+            if (Entry[Group].HasValue() && !Entry[Group].IsArray()) return Fail(TEXT("invalid_native_chunk_roster"));
+            for (FCbFieldView Chunk : Entry[Group].AsArrayView())
+            {
+                FIoChunkId Id;
+                if (!Chunk.IsObject() || !LoadFromCompactBinary(Chunk["id"], Id) || !Id.IsValid()
+                    || !Chunk["data"].IsBinaryAttachment()) return Fail(TEXT("unretained_or_invalid_native_chunk"));
+                const FIoHash Blob = Chunk["data"].AsAttachment();
+                const FCbAttachment* Attachment = Package.FindAttachment(Blob);
+                if (!Attachment || Blob.IsZero()) return Fail(TEXT("native_chunk_attachment_missing"));
+                const FIoHash* Prior = Chunks.Find(Id);
+                if (Prior && *Prior != Blob) return Fail(TEXT("chosen_native_chunk_ownership_conflict"));
+                const FSharedBuffer Bytes = Raw(*Attachment);
+                if (Chunk["rawsize"].HasValue() && (!Chunk["rawsize"].IsInteger()
+                    || Chunk["rawsize"].AsUInt64(MAX_uint64) != Bytes.GetSize())) return Fail(TEXT("native_chunk_size_mismatch"));
+                auto ById = Client.ReadChunk(Id);
+                if (!ById.IsOk() || FIoHash::HashBuffer(ById.ConsumeValueOrDie().GetView()) != Blob)
+                    return Fail(TEXT("native_chunk_id_mapping_changed"));
+                Chunks.Add(Id, Blob);
+                if (Chunk["clientpath"].HasValue())
+                {
+                    const FString Path(Chunk["clientpath"].AsString());
+                    if (!ClientFilePath(Path) || CreateExternalFileChunkId(Path) != Id) return Fail(TEXT("native_file_id_path_mismatch"));
+                    FilePaths.Add(Id, Path);
+                }
+            }
+        }
+        FPackageStoreEntryResource Store = FPackageStoreEntryResource::FromCbObject(Entry["packagestoreentry"].AsObjectView());
+        PackageIds.Add(Store.PackageId); Stores.Add(MoveTemp(Store)); ExpectedRoots.Add(Key, Hash);
+        UE_LOG(LogTemp, Display, TEXT("Atelier EndCook: verified package %d/%d %s"), ++Done, Packages->Num(), *Name);
+    }
+    for (const FPackageStoreEntryResource& Store : Stores)
+    {
+        for (FPackageId Id : Store.ImportedPackageIds) if (!PackageIds.Contains(Id)) return Fail(TEXT("chosen_imported_package_missing"));
+        for (FPackageId Id : Store.OptionalSegmentImportedPackageIds) if (!PackageIds.Contains(Id)) return Fail(TEXT("chosen_optional_imported_package_missing"));
+    }
+    const FString ReferencedClient = TEXT("/{project}/Metadata/") + FString(UE::Cook::GetReferencedSetFilename());
+    TArray<FNativeGlobalFile> Globals;
+    TSet<FString> ClientNames;
+    TMap<FString, int32> GlobalIndexes;
+    for (const auto& Value : *GlobalSpecs)
+    {
+        const FObject Spec = Value->AsObject();
+        if (!ExactFields(Spec, {TEXT("clientpath"), TEXT("path"), TEXT("sha256")})) return Fail(TEXT("unknown_global_file_fields"));
+        FNativeGlobalFile File;
+        File.ClientPath = StringField(Spec, TEXT("clientpath")); File.Path = StringField(Spec, TEXT("path"));
+        File.SHA256 = StringField(Spec, TEXT("sha256")).ToLower();
+        if (!ClientFilePath(File.ClientPath) || !Absolute(File.Path) || !Hex(File.SHA256, 64)
+            || File.ClientPath == ReferencedClient || ClientNames.Contains(File.ClientPath)) return Fail(TEXT("invalid_global_file_identity"));
+        File.Id = CreateExternalFileChunkId(File.ClientPath);
+        TArray<uint8> Bytes;
+        if (!FFileHelper::LoadFileToArray(Bytes, *File.Path) || SHA256Bytes(Bytes) != File.SHA256)
+            return Fail(TEXT("declared_global_file_hash_changed"));
+        File.Attachment = FCbAttachment(FCompressedBuffer::Compress(FSharedBuffer::Clone(Bytes.GetData(), Bytes.Num())));
+        const FIoHash* Prior = Chunks.Find(File.Id);
+        if (Prior && *Prior != File.Attachment.GetHash()) return Fail(TEXT("global_and_package_file_conflict"));
+        if (FilePaths.Contains(File.Id) && FilePaths[File.Id] != File.ClientPath) return Fail(TEXT("global_file_alias"));
+        Chunks.Add(File.Id, File.Attachment.GetHash()); FilePaths.Add(File.Id, File.ClientPath);
+        ClientNames.Add(File.ClientPath); GlobalIndexes.Add(File.ClientPath, Globals.Num()); Globals.Add(MoveTemp(File));
+        UE_LOG(LogTemp, Display, TEXT("Atelier EndCook: verified global file %d/%d"), Globals.Num(), GlobalSpecs->Num());
+    }
+    const int32* Development = GlobalIndexes.Find(TEXT("/{project}/Metadata/DevelopmentAssetRegistry.bin"));
+    const int32* Runtime = GlobalIndexes.Find(TEXT("/{project}/AssetRegistry.bin"));
+    const int32* Metadata = GlobalIndexes.Find(TEXT("/{project}/Metadata/") + UE::Cook::GetCookMetadataFilename());
+    if (!Development || !Runtime || !Metadata) return Fail(TEXT("required_global_registry_or_metadata_missing"));
+    FAssetRegistryState Registry;
+    TArray<uint8> RegistryBytes;
+    const FSharedBuffer DevelopmentBytes = Raw(Globals[*Development].Attachment);
+    RegistryBytes.Append(static_cast<const uint8*>(DevelopmentBytes.GetData()), DevelopmentBytes.GetSize());
+    FMemoryReader RegistryReader(RegistryBytes, true);
+    FAssetRegistryLoadOptions Options; Options.ParallelWorkers = 3;
+    if (!Registry.Load(RegistryReader, Options) || RegistryReader.IsError() || RegistryReader.Tell() != RegistryReader.TotalSize())
+        return Fail(TEXT("development_registry_decode_failed"));
+    TSet<FName> RegistryPackages;
+    for (const auto& Pair : Registry.GetAssetPackageDataMap())
+    {
+        if (Pair.Key.ToString().StartsWith(TEXT("/Script/"))) continue;
+        if (!ExpectedRoots.Contains(Pair.Key)) return Fail(TEXT("global_registry_contains_unchosen_package"));
+        RegistryPackages.Add(Pair.Key);
+    }
+    if (RegistryPackages.Num() != ExpectedRoots.Num()) return Fail(TEXT("global_registry_omits_chosen_package"));
+    FAssetRegistryState RuntimeRegistry;
+    const FSharedBuffer RuntimeBytes = Raw(Globals[*Runtime].Attachment);
+    TArray<uint8> RuntimeArray; RuntimeArray.Append(static_cast<const uint8*>(RuntimeBytes.GetData()), RuntimeBytes.GetSize());
+    FMemoryReader RuntimeReader(RuntimeArray, true);
+    if (!RuntimeRegistry.Load(RuntimeReader, Options) || RuntimeReader.IsError() || RuntimeReader.Tell() != RuntimeReader.TotalSize())
+        return Fail(TEXT("runtime_registry_decode_failed"));
+    TArray<FAssetData> RuntimeAssets; RuntimeRegistry.GetAllAssets(TSet<FName>(), RuntimeAssets, false);
+    for (const FAssetData& Asset : RuntimeAssets) if (!ExpectedRoots.Contains(Asset.PackageName)) return Fail(TEXT("runtime_registry_contains_unchosen_package"));
+    const FSharedBuffer MetadataBytes = Raw(Globals[*Metadata].Attachment);
+    TArray<uint8> MetadataArray; MetadataArray.Append(static_cast<const uint8*>(MetadataBytes.GetData()), MetadataBytes.GetSize());
+    FMemoryReader MetadataReader(MetadataArray, true);
+    UE::Cook::FCookMetadataState CookMetadata;
+    if (!CookMetadata.Serialize(MetadataReader) || MetadataReader.IsError() || MetadataReader.Tell() != MetadataReader.TotalSize()
+        || !CookMetadata.IsValid() || CookMetadata.GetPlatform() != Oplog
+        || CookMetadata.GetAssociatedDevelopmentAssetRegistryHash() != UE::Cook::FCookMetadataState::ComputeHashOfDevelopmentAssetRegistry(MakeMemoryView(RegistryBytes))
+        || CookMetadata.GetAssociatedDevelopmentAssetRegistryHashPostWriteback() != 0) return Fail(TEXT("global_metadata_registry_linkage_failed"));
+    TArray<FName> Names; ExpectedRoots.GetKeys(Names); Names.Sort(FNameLexicalLess());
+    FString Referenced = TEXT("# Version 1");
+    for (FName Name : Names) Referenced += FString(LINE_TERMINATOR) + Name.ToString().ToLower();
+    const FTCHARToUTF8 ReferencedUTF8(*Referenced);
+    const FSharedBuffer ReferencedRaw = FSharedBuffer::Clone(ReferencedUTF8.Get(), ReferencedUTF8.Length());
+    const FCbAttachment ReferencedBytes(FCompressedBuffer::Compress(ReferencedRaw));
+    const TConstArrayView<uint8> ReferencedView(static_cast<const uint8*>(ReferencedRaw.GetData()), ReferencedRaw.GetSize());
+    const FString ReferencedSHA = SHA256Bytes(ReferencedView);
+    // Zen's local ReferencedSet filter reads the stock file-backed descriptor. Keep its immutable
+    // bytes with the durable namespace marker, never in the removable worker/job directory.
+    const FString ReferencedFile = Marker + TEXT(".referencedset-") + ReferencedSHA + TEXT(".txt");
+    if (!IFileManager::Get().FileExists(*ReferencedFile))
+    {
+        const TUniquePtr<FArchive> Writer(IFileManager::Get().CreateFileWriter(*ReferencedFile, FILEWRITE_NoReplaceExisting));
+        if (!Writer) return Fail(TEXT("durable_referenced_set_not_fresh"));
+        Writer->Serialize(const_cast<void*>(ReferencedRaw.GetData()), ReferencedRaw.GetSize());
+        if (!Writer->Close() || Writer->IsError()) return Fail(TEXT("durable_referenced_set_write_failed"));
+    }
+    TArray<uint8> ReferencedReadback;
+    if (!FFileHelper::LoadFileToArray(ReferencedReadback, *ReferencedFile) || SHA256Bytes(ReferencedReadback) != ReferencedSHA)
+        return Fail(TEXT("durable_referenced_set_readback_failed"));
+    FString ReferencedServerPath = ReferencedFile;
+    if (!FPaths::MakePathRelativeTo(ReferencedServerPath, *FPaths::ConvertRelativePathToFull(FPaths::RootDir())))
+        return Fail(TEXT("durable_referenced_set_server_path_failed"));
+    const FIoChunkId ReferencedId = CreateExternalFileChunkId(ReferencedClient);
+    FCbWriter ReferencedWriter; ReferencedWriter.BeginObject();
+    ReferencedWriter << "key" << UE::Cook::GetReferencedSetOpName();
+    ReferencedWriter.BeginArray("files"); ReferencedWriter.BeginObject();
+    ReferencedWriter << "id" << ReferencedId << "clientpath" << ReferencedClient << "data" << FIoHash::Zero
+        << "serverpath" << ReferencedServerPath;
+    ReferencedWriter.EndObject(); ReferencedWriter.EndArray(); ReferencedWriter.EndObject();
+    FCbPackage ReferencedPackage(ReferencedWriter.Save().AsObject()); ReferencedPackage.AddAttachment(ReferencedBytes);
+    FPackageStoreOptimizer Optimizer; Optimizer.Initialize();
+    const FIoBuffer Script = Optimizer.CreateScriptObjectsBuffer();
+    int32 ScriptCount = 0;
+    if (!ScriptObjectsValid(Script, ScriptCount)) return Fail(TEXT("native_script_objects_decode_failed"));
+    const FCbAttachment ScriptBytes(FCompressedBuffer::Compress(FSharedBuffer::Clone(Script.GetData(), Script.DataSize())));
+    const FIoChunkId ScriptId = CreateIoChunkId(0, 0, EIoChunkType::ScriptObjects);
+    FCbWriter EndWriter; EndWriter.BeginObject(); EndWriter << "key" << "EndCook";
+    EndWriter.BeginArray("files");
+    for (const FNativeGlobalFile& File : Globals)
+    {
+        EndWriter.BeginObject(); EndWriter << "id" << File.Id << "clientpath" << File.ClientPath << "data" << File.Attachment;
+        EndWriter.EndObject();
+    }
+    EndWriter.EndArray(); EndWriter.BeginArray("meta"); EndWriter.BeginObject();
+    EndWriter << "id" << ScriptId << "name" << "ScriptObjects" << "data" << ScriptBytes;
+    EndWriter.EndObject(); EndWriter.EndArray(); EndWriter.EndObject();
+    FCbPackage EndPackage(EndWriter.Save().AsObject()); EndPackage.AddAttachment(ScriptBytes);
+    for (const FNativeGlobalFile& File : Globals) EndPackage.AddAttachment(File.Attachment);
+    if (!IFileManager::Get().MakeDirectory(*Output, true)
+        || !SavePackageNoReplace(Output / TEXT("ReferencedSet.cb"), ReferencedPackage)
+        || !SavePackageNoReplace(Output / TEXT("EndCook.cb"), EndPackage)
+        || !FFileHelper::SaveStringToFile(Referenced, *(Output / UE::Cook::GetReferencedSetFilename()), FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM)
+        || !FFileHelper::SaveStringToFile(RequestJson, *(Output / TEXT("namespace.pending.json")))) return Fail(TEXT("namespace_journal_write_failed"));
+    if (!Client.TryCreateProject(Project, FStringView(), Oplog, FPaths::ConvertRelativePathToFull(FPaths::RootDir()),
+            FPaths::ConvertRelativePathToFull(FPaths::EngineDir()), FPaths::GetPath(ProjectFile), ProjectFile)
+        || !BindNamespace(Client, Project, Oplog, ProjectFile, Marker, Error)) return Fail(TEXT("namespace_changed_before_finalise"));
+    if (!Client.AppendOp(ReferencedPackage).IsOk()) return Fail(TEXT("referenced_set_append_failed_namespace_uncertain"));
+    if (!Client.EndBuildPass(EndPackage).IsOk()) return Fail(TEXT("endcook_append_failed_namespace_uncertain"));
+    auto Roots = Client.GetOplogEntries(Project, Oplog, TArray<FString>{UE::Cook::GetReferencedSetOpName(), TEXT("EndCook")}).Get();
+    if (Roots.Num() != 2 || !Roots[0].IsOk() || !Roots[1].IsOk()
+        || Roots[0].ConsumeValueOrDie()["entry"].AsObject().GetHash() != ReferencedPackage.GetObjectHash()
+        || Roots[1].ConsumeValueOrDie()["entry"].AsObject().GetHash() != EndPackage.GetObjectHash()) return Fail(TEXT("finalised_root_readback_failed_namespace_uncertain"));
+    Chunks.Add(ReferencedId, ReferencedBytes.GetHash()); Chunks.Add(ScriptId, ScriptBytes.GetHash());
+    FilePaths.Add(ReferencedId, ReferencedClient);
+    for (const auto& Chunk : Chunks)
+    {
+        auto Bytes = Client.ReadChunk(Chunk.Key);
+        if (!Bytes.IsOk() || FIoHash::HashBuffer(Bytes.ConsumeValueOrDie().GetView()) != Chunk.Value)
+            return Fail(TEXT("finalised_chunk_readback_failed_namespace_uncertain"));
+    }
+    auto Active = Client.GetOplog(true).Get();
+    if (!Active.IsOk()) return Fail(TEXT("referenced_package_roster_unavailable"));
+    TSet<FName> ActiveNames;
+    const FCbObject ActiveObject = Active.ConsumeValueOrDie();
+    for (FCbFieldView Entry : ActiveObject["entries"].AsArrayView())
+    {
+        if (!Entry["packagestoreentry"].HasValue()) continue;
+        const FString Name = FPackageStoreEntryResource::FromCbObject(Entry["packagestoreentry"].AsObjectView()).PackageName.ToString();
+        const FString* Hash = ExpectedRoots.Find(FName(*Name));
+        if (!Hash || ActiveNames.Contains(FName(*Name)) || LexToString(Entry.AsObjectView().GetHash()) != *Hash)
+        {
+            UE_LOG(LogTemp, Error, TEXT("Atelier EndCook active roster mismatch name=%s actual=%s expected=%s duplicate=%d"),
+                *Name, *LexToString(Entry.AsObjectView().GetHash()), Hash ? **Hash : TEXT("unchosen"), ActiveNames.Contains(FName(*Name)));
+            return Fail(TEXT("referenced_package_roster_differs"));
+        }
+        ActiveNames.Add(FName(*Name));
+    }
+    if (ActiveNames.Num() != ExpectedRoots.Num()) return Fail(TEXT("referenced_package_roster_incomplete"));
+    auto Files = Client.GetFiles().Get();
+    if (!Files.IsOk()) return Fail(TEXT("finalised_file_manifest_unavailable"));
+    TSet<FIoChunkId> ActualFiles;
+    const FCbObject FileObject = Files.ConsumeValueOrDie();
+    for (FCbFieldView File : FileObject["files"].AsArrayView())
+    {
+        FIoChunkId Id;
+        if (!LoadFromCompactBinary(File["id"], Id) || !FilePaths.Contains(Id) || ActualFiles.Contains(Id)
+            || FString(File["clientpath"].AsString()) != FilePaths[Id]) return Fail(TEXT("finalised_file_manifest_differs"));
+        ActualFiles.Add(Id);
+    }
+    if (ActualFiles.Num() != FilePaths.Num()) return Fail(TEXT("finalised_file_manifest_incomplete"));
+    for (const FNativeGlobalFile& File : Globals)
+    {
+        TArray<uint8> Current;
+        if (!FFileHelper::LoadFileToArray(Current, *File.Path) || SHA256Bytes(Current) != File.SHA256)
+            return Fail(TEXT("global_input_changed_during_finalise"));
+    }
+    const FTCHARToUTF8 RequestBytes(*RequestJson);
+    Report->SetStringField(TEXT("request_io_hash"), LexToString(FIoHash::HashBuffer(MakeMemoryView(RequestBytes.Get(), RequestBytes.Length()))));
+    Report->SetStringField(TEXT("project"), Project); Report->SetStringField(TEXT("oplog"), Oplog);
+    Report->SetStringField(TEXT("input_key"), StringField(Request, TEXT("input_key")));
+    Report->SetStringField(TEXT("referenced_set_root_hash"), LexToString(ReferencedPackage.GetObjectHash()));
+    Report->SetStringField(TEXT("endcook_root_hash"), LexToString(EndPackage.GetObjectHash()));
+    Report->SetStringField(TEXT("referenced_set_data_hash"), LexToString(ReferencedBytes.GetHash()));
+    Report->SetStringField(TEXT("referenced_set_path"), ReferencedFile);
+    Report->SetStringField(TEXT("referenced_set_sha256"), ReferencedSHA);
+    Report->SetStringField(TEXT("script_objects_hash"), LexToString(ScriptBytes.GetHash()));
+    Report->SetNumberField(TEXT("script_objects"), ScriptCount); Report->SetNumberField(TEXT("packages"), ExpectedRoots.Num());
+    Report->SetNumberField(TEXT("chunks"), Chunks.Num()); Report->SetNumberField(TEXT("files"), FilePaths.Num());
+    Report->SetStringField(TEXT("scope"), TEXT("zen_namespace"));
+    Report->SetStringField(TEXT("source_dependency_evaluation"), TEXT("recorded_only"));
+    Report->SetStringField(TEXT("status"), TEXT("finalized"));
+    if (!FFileHelper::SaveStringToFile(Encode(Report), *(Output / TEXT("namespace.finalized.json"))))
+    {
+        Report->SetStringField(TEXT("status"), TEXT("refused"));
+        return Fail(TEXT("namespace_receipt_write_failed_namespace_uncertain"));
+    }
+    return Encode(Report);
+}
+
 #if WITH_DEV_AUTOMATION_TESTS
 #include "Misc/AutomationTest.h"
 #include "Misc/CommandLine.h"
@@ -644,6 +1022,107 @@ bool FAtelierZenAuxiliaryRoundTrip::RunTest(const FString&)
     Request->SetStringField(TEXT("record_path"), BrokenPath);
     if (!Call(TEXT("missing_auxiliary"), TEXT("refused"))) return false;
     AddInfo(TEXT("Native zero-hash auxiliary capture/replay and missing-byte refusal passed at ") + Folder);
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FAtelierZenEndCookRoundTrip,
+    "Atelier.Build.ZenPackage.EndCookRoundTrip", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FAtelierZenEndCookRoundTrip::RunTest(const FString&)
+{
+    FString FixtureA, FixtureB, GlobalsRequest;
+    if (!FParse::Value(FCommandLine::Get(), TEXT("AtelierZenFixtureA="), FixtureA)
+        || !FParse::Value(FCommandLine::Get(), TEXT("AtelierZenFixtureB="), FixtureB)
+        || !FParse::Value(FCommandLine::Get(), TEXT("AtelierZenGlobals="), GlobalsRequest))
+    { AddError(TEXT("Explicit retained package and native global fixture inputs required")); return false; }
+    FCbPackage A, B; FIoHash Hash;
+    if (!Load(FixtureA, A, Hash) || !Load(FixtureB, B, Hash)) return false;
+    const FString NameA = FPackageStoreEntryResource::FromCbObject(NativeEntry(A)["packagestoreentry"].AsObjectView()).PackageName.ToString();
+    const FString NameB = FPackageStoreEntryResource::FromCbObject(NativeEntry(B)["packagestoreentry"].AsObjectView()).PackageName.ToString();
+    FString KeyA, KeyB, Error;
+    if (NameA == NameB || !Validate(A, NameA, FString(), FString(), KeyA, Error)
+        || !Validate(B, NameB, FString(), FString(), KeyB, Error)) return false;
+    const FString Project = TEXT("AtelierV2_EndCookTest_") + FGuid::NewGuid().ToString(EGuidFormats::Digits);
+    const FString Folder = FPaths::ConvertRelativePathToFull(FPaths::ProjectSavedDir() / Project);
+    const FString Marker = Folder / TEXT("lifetime");
+    IFileManager::Get().MakeDirectory(*Folder, true);
+    if (!FFileHelper::SaveStringToFile(TEXT("Owned EndCook namespace proof; preserve evidence"), *Marker)) return false;
+    const FString ProjectFile = FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath());
+    UE::FZenStoreHttpClient Client;
+    if (!Client.TryCreateProject(Project, FStringView(), TEXT("Mac"), FPaths::ConvertRelativePathToFull(FPaths::RootDir()),
+            FPaths::ConvertRelativePathToFull(FPaths::EngineDir()), FPaths::GetPath(ProjectFile), ProjectFile)
+        || !Client.TryCreateOplog(Project, TEXT("Mac"), Marker)) return false;
+    const FObject Results = MakeShared<FJsonObject>();
+    auto Keep = [&](const TCHAR* Label, const FString& Text, const TCHAR* Status) -> FObject
+    {
+        FObject Response;
+        if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Response) || !Response) return {};
+        Results->SetObjectField(Label, Response);
+        FFileHelper::SaveStringToFile(Encode(Results), *(Folder / TEXT("results.json")));
+        if (Response->GetStringField(TEXT("status")) != Status)
+        { AddError(FString(Label) + TEXT(": ") + Text); return {}; }
+        return Response;
+    };
+    FObject AResult;
+    for (int32 Index = 0; Index < 2; ++Index)
+    {
+        const FObject Request = MakeShared<FJsonObject>(); Request->SetNumberField(TEXT("version"), 1);
+        for (const auto& Pair : TArray<TPair<FString, FString>>{
+            {TEXT("mode"), TEXT("restore")}, {TEXT("project"), Project}, {TEXT("oplog"), TEXT("Mac")},
+            {TEXT("source_package"), Index == 0 ? NameA : NameB}, {TEXT("expected_stored_key"), Index == 0 ? KeyA : KeyB},
+            {TEXT("expected_root_hash"), LexToString(NativeEntry(Index == 0 ? A : B).GetHash())},
+            {TEXT("record_path"), Index == 0 ? FixtureA : FixtureB}, {TEXT("project_file"), ProjectFile},
+            {TEXT("marker_path"), Marker}, {TEXT("input_key"), FString::ChrN(64, '1')}, {TEXT("runtime_project_file"), ProjectFile}})
+            Request->SetStringField(Pair.Key, Pair.Value);
+        const FObject Response = Keep(Index == 0 ? TEXT("restore_chosen") : TEXT("restore_stale"),
+            UAtelierBuildWorkerLibrary::ZenPackageRequest(Encode(Request)), TEXT("restored"));
+        if (!Response) return false;
+        if (Index == 0) AResult = Response;
+    }
+    FString GlobalsText;
+    if (!FFileHelper::LoadFileToString(GlobalsText, *GlobalsRequest)) return false;
+    const FObject Composed = Keep(TEXT("compose_chosen_globals"), UAtelierBuildWorkerLibrary::ZenFinaliseRequest(GlobalsText), TEXT("composed"));
+    if (!Composed) return false;
+    FObject GlobalInput;
+    if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(GlobalsText), GlobalInput)) return false;
+    const FString GlobalRoot = GlobalInput->GetStringField(TEXT("output_dir"));
+    const FObject Request = MakeShared<FJsonObject>(); Request->SetNumberField(TEXT("version"), 1);
+    for (const auto& Pair : TArray<TPair<FString, FString>>{
+        {TEXT("project"), Project}, {TEXT("oplog"), TEXT("Mac")}, {TEXT("project_file"), ProjectFile},
+        {TEXT("marker_path"), Marker}, {TEXT("runtime_project_file"), ProjectFile},
+        {TEXT("input_key"), FString::ChrN(64, '1')}, {TEXT("output_dir"), Folder / TEXT("finalized")}})
+        Request->SetStringField(Pair.Key, Pair.Value);
+    const FObject Package = MakeShared<FJsonObject>(); Package->SetStringField(TEXT("name"), NameA);
+    Package->SetStringField(TEXT("installed_root_hash"), AResult->GetStringField(TEXT("installed_root_hash")));
+    Request->SetArrayField(TEXT("packages"), TArray<TSharedPtr<FJsonValue>>{MakeShared<FJsonValueObject>(Package)});
+    TArray<TSharedPtr<FJsonValue>> Globals;
+    for (const auto& Value : Composed->GetArrayField(TEXT("files")))
+    {
+        const FObject File = Value->AsObject(), Spec = MakeShared<FJsonObject>();
+        const FString Relative = File->GetStringField(TEXT("path"));
+        Spec->SetStringField(TEXT("clientpath"), TEXT("/{project}/") + Relative);
+        Spec->SetStringField(TEXT("path"), GlobalRoot / Relative);
+        Spec->SetStringField(TEXT("sha256"), File->GetStringField(TEXT("sha256")));
+        Globals.Add(MakeShared<FJsonValueObject>(Spec));
+    }
+    Request->SetArrayField(TEXT("globals"), Globals);
+    // A declared-hash mismatch must refuse before either namespace root is published.
+    const FString Saved = Globals[0]->AsObject()->GetStringField(TEXT("sha256"));
+    Globals[0]->AsObject()->SetStringField(TEXT("sha256"), FString::ChrN(64, '0'));
+    if (!Keep(TEXT("wrong_global_hash"), UAtelierBuildWorkerLibrary::ZenEndCookRequest(Encode(Request)), TEXT("refused"))) return false;
+    Globals[0]->AsObject()->SetStringField(TEXT("sha256"), Saved);
+    if (!Keep(TEXT("finalize_chosen"), UAtelierBuildWorkerLibrary::ZenEndCookRequest(Encode(Request)), TEXT("finalized"))) return false;
+    auto Raw = Client.GetOplog(false).Get();
+    if (!Raw.IsOk()) return false;
+    bool StaleKept = false;
+    const FCbObject RawObject = Raw.ConsumeValueOrDie();
+    for (FCbFieldView Entry : RawObject["entries"].AsArrayView())
+        if (Entry["packagestoreentry"].HasValue()
+            && FPackageStoreEntryResource::FromCbObject(Entry["packagestoreentry"].AsObjectView()).PackageName.ToString() == NameB) StaleKept = true;
+    if (!StaleKept) { AddError(TEXT("Finalise deleted the unselected retained package instead of trimming its reference")); return false; }
+    Results->SetBoolField(TEXT("unselected_raw_package_preserved"), true);
+    FFileHelper::SaveStringToFile(Encode(Results), *(Folder / TEXT("results.json")));
+    AddInfo(TEXT("Exact referenced package roster, all native chunks/globals and stale-package preservation verified at ") + Folder);
     return true;
 }
 
