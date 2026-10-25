@@ -1189,7 +1189,7 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
             );
         }
         params.insert("create_physics_asset".into(), ParamRule {kind: ParamKind::Bool, required: false});
-        for name in ["skeleton", "physics_asset"] {
+        for name in ["skeleton", "physics_asset", "source_member"] {
             params.insert(
                 name.into(),
                 ParamRule {

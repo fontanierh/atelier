@@ -100,6 +100,8 @@ def _native_memory_gib(request):
     """Individual textures/shaders use the normal guard; maps and tool jobs keep 16 GiB."""
     light = {'RawTexture', 'Texture', 'Material', 'MaterialInstance', 'MaterialParameterCollection'}
     native = [unit for unit in request['declaration']['units'] if unit['op']['kind'].startswith('unreal.')]
+    if native and all(unit['op']['kind'] in {'unreal.compile', 'unreal.game'} for unit in native):
+        return 10  # The established three-worker compile guard; reserve its full actual ceiling.
     if native and all(unit['op']['kind'] in {'unreal.raw_import', 'unreal.finish', 'unreal.author'}
                       and unit['outputs'] and all(item['class'] in light for item in unit['outputs'])
                       for unit in native):

@@ -123,3 +123,9 @@ def test_individual_texture_material_ceiling_keeps_the_complete_normal_reservati
     assert _native_memory_gib(request('unreal.author', 'Map')) == 16
     assert _native_memory_gib(request('unreal.cook.produce', 'Data')) == 16
     assert _native_memory_gib(request('unreal.finish', 'StaticMesh')) == 16
+
+
+def test_editor_and_game_compiles_use_the_normal_compile_memory_ceiling():
+    for kind in ('unreal.compile', 'unreal.game'):
+        assert entry._native_memory_gib({'declaration': {'units': [{'op': {'kind': kind}, 'outputs': []}]}}) == 10
+    assert entry._native_memory_gib({'declaration': {'units': [{'op': {'kind': 'unreal.package'}, 'outputs': []}]}}) == 16

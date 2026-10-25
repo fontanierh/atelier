@@ -215,3 +215,21 @@ def test_original_fbx_enum_properties_are_explicit_tokens(monkeypatch):
         assert ops._editor_value({'unreal_enum': owner + '.' + member}) is getattr(getattr(fake, owner), member)
     with pytest.raises(ValueError, match='Unsupported authored Unreal enum'):
         ops._editor_value({'unreal_enum': 'Foreign.RUN'})
+
+
+def test_raw_source_member_selects_only_the_explicit_declared_file(tmp_path):
+    root = tmp_path / 'textures'
+    root.mkdir()
+    (root / 'chosen.png').write_bytes(b'pixel data')
+    (root / 'other.png').write_bytes(b'other pixels')
+    ctx = context(tmp_path, source_member='chosen.png')
+    ctx.inputs['source'] = str(root)
+    assert ops._input(ctx, 'source') == str(root / 'chosen.png')
+    for member in ('../source.png', '/source.png', './chosen.png', 'missing.png'):
+        ctx.params['source_member'] = member
+        with pytest.raises(ValueError):
+            ops._input(ctx, 'source')
+    (root / 'linked.png').symlink_to(root / 'chosen.png')
+    ctx.params['source_member'] = 'linked.png'
+    with pytest.raises(ValueError, match='alias'):
+        ops._input(ctx, 'source')

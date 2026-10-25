@@ -46,6 +46,15 @@ def _input(context, name, *, package=False):
     path = Path(value)
     if not path.is_absolute() or not path.is_relative_to(Path(context.job_dir)):
         raise ValueError('Expected a staged regular source input')
+    member = context.params.get('source_member') if name == context.params.get('source') else None
+    if member is not None:
+        if (not isinstance(member, str) or not member or Path(member).is_absolute() or '\\' in member
+                or any(part in ('', '.', '..') for part in member.split('/')) or not path.is_dir()):
+            raise ValueError('Source member requires an exact relative member of a declared directory')
+        selected = path.joinpath(*member.split('/'))
+        if selected.resolve() != selected or not selected.is_relative_to(path) or selected.is_symlink():
+            raise ValueError('Source member traverses an alias')
+        path = selected
     if path.is_dir():
         # A produced source Item is a complete source file + original public
         # export receipt, never a guessed first member of a directory.
@@ -121,7 +130,7 @@ def raw_import(context, unreal):
     saves, required output files, import tables and scratch cleanup before Completed.
     """
     p = context.params
-    _fields(p, {'op', 'kind', 'source', 'destination'}, {'properties', 'fbx', 'skeleton', 'physics_asset', 'create_physics_asset', 'package_sources', 'input_roots'})
+    _fields(p, {'op', 'kind', 'source', 'destination'}, {'properties', 'fbx', 'skeleton', 'physics_asset', 'create_physics_asset', 'source_member', 'package_sources', 'input_roots'})
     kind = p['kind']
     if kind not in _KINDS:
         raise ValueError('Unsupported raw import kind')
