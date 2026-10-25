@@ -652,12 +652,16 @@ def mover_export_steps(character, out):
     if character.playable:
         steps.append(Step(f'characters.{k}_bike', [Blender(ASSETS / 'vehicles' / 'bike' / 'rider.py', ('--character', character.id), threads=threads)],
                           inputs=[character.folder, NAMES, PIPELINE, ASSETS / 'vehicles' / 'bike', RIDE_COMMON], needs=['world.bike'],
-                          outputs=[out / character.output / 'bike' / 'export.json'], heavy=True,
+                          outputs=[out / character.output / 'bike' / 'export.json'],
+                          products=[Product(f'characters.{k}_bike.export', tuple(out / character.output / 'bike' / name
+                                            for name in ('export.json', 'fbx')))], heavy=True,
                           about=f"Every bike action authored on {character.name}'s rig, and the bike's channels"))
         steps.append(Step(f'characters.{k}_horse', [Blender(ASSETS / 'horses' / 'rider.py', ('--character', character.id), threads=threads)],
                           inputs=[character.folder, NAMES, PIPELINE, HORSES / 'rider.py', RIDE_COMMON, YORI], needs=['world.horses'],
                           outputs=[out / character.output / 'horse' / 'export.json',
-                                   *(out / character.output / 'horse' / 'fbx' / f'A_{c}.fbx' for c in HORSE_RIDER_CLIPS)], heavy=True,
+                                   *(out / character.output / 'horse' / 'fbx' / f'A_{c}.fbx' for c in HORSE_RIDER_CLIPS)],
+                          products=[Product(f'characters.{k}_horse.export', tuple(out / character.output / 'horse' / name
+                                            for name in ('export.json', 'fbx')))], heavy=True,
                           about=f"Every horseback riding action authored on {character.name}'s rig, with its reach errors"))
     # Imports consume exported character content, not the generator implementation identity.
     # FBX timestamps/IDs are normalized by the shared export digest; geometry, skinning,
