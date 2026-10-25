@@ -1142,7 +1142,7 @@ def world_steps(ctx):
         hidamari_props_import_step(out),
         Step('world.treehouse_textures', [Python(TOOLS / 'treehouse_textures.py', ('finish',))],
              inputs=[TOOLS / 'treehouse_textures.py', ASSETS / 'treehouse' / 'textures'],
-             outputs=[out / 'treehouse' / 'textures' / 'textures.json'], pool_roots=[out / 'treehouse' / 'textures'],
+             outputs=[out / 'treehouse' / 'textures'], pool_roots=[out / 'treehouse' / 'textures'],
              about='tree house textures: seamless detail maps and pictures from the Sunburst paintings'),
         *_load_helper_module('yorimichi_treehouse_atomic',GAME/'treehouse_atomic_build.py').prop_steps(ctx),
         *_load_helper_module('yorimichi_treehouse_atomic',GAME/'treehouse_atomic_build.py').surface_steps(ctx),
