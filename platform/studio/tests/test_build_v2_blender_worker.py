@@ -338,6 +338,10 @@ def test_background_render_registration_has_exact_native_service_and_bundle_boun
     assert len(setup) == 1 and setup[0].startswith('(allow file-read-metadata ')
     assert '(literal "/private/var/db/.AppleSetupDone")' in setup[0]
     assert '(subpath "/private/var/db")' not in profile
+    spotlight = '/Library/Application Support/Apple/Spotlight/MailUsesCoreSpotlight'
+    probe = [line for line in profile.splitlines() if spotlight in line]
+    assert len(probe) == 1 and probe[0].startswith('(allow file-read-metadata ')
+    assert '(subpath "/Library/Application Support/Apple")' not in profile
     eligibility = '/private/var/db/eligibilityd/eligibility.plist'
     assert '(allow file-read-data (literal "' + eligibility + '"))' in profile
     roots, literals = platform.reads()
