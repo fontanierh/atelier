@@ -9,7 +9,7 @@ and in the browser.
 - Every change is reviewed by hand.
 - Every folder and file says what it is for, here, in its own README or in a header comment. Nothing is committed
   that the game or its exports do not use.
-- Hakuba builds with plain `cargo` and `trunk`, without the `atelier` command.
+- Hakuba is all Rust and builds with plain `cargo` and `trunk`, without the `atelier` command.
 - Hakuba's code and assets stay in `games/hakuba`.
 
 ## Run
@@ -35,6 +35,7 @@ true.
 games/hakuba/
   README.md                 this file
   Cargo.toml                the Rust workspace, its shared dependencies and the game program
+  .cargo/config.toml        the `cargo export` alias
   Cargo.lock                the exact dependency versions
   rust-toolchain.toml       the Rust version and the browser (wasm) target
   src/main.rs               the game program: builds the app and adds the plugins, nothing else
@@ -44,7 +45,7 @@ games/hakuba/
   index.html                the page the browser build runs in, with the canvas the game draws into
   Trunk.toml                what the browser build copies next to the game
   assets/                   everything the game loads, each next to its sources (assets/README.md)
-  tools/                    the Python that exports assets (tools/README.md)
+  tools/export/             the asset exporter, run with `cargo export` (tools/README.md)
   .gitattributes            which files Git LFS stores
   .gitignore                the build folders
 ```

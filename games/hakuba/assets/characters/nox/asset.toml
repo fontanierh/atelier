@@ -4,4 +4,4 @@ kind = "character"
 source = "src/Nox.glb"
 height_m = 1.78        # the source stands about 1.08 m tall
 texture_size = 2048    # the source's 4K textures, halved for the browser download
-inputs_sha256 = "e5e81805aec481cd404fd0ec63549c335a20075a78697f9f1efe04b5b5488523"
+inputs_sha256 = "ebece7610e845e698e4b2e68a51d54acf706e1fe60db9a36de47c27f965904c0"

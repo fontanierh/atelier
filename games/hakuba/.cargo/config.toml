@@ -1,0 +1,3 @@
+# `cargo export ...` runs the asset exporter (tools/export).
+[alias]
+export = "run --quiet --package hakuba_export --"

@@ -24,7 +24,7 @@ The game loads only `<asset-name>.glb`. The browser build leaves out `asset.toml
 `src/` holds everything that goes into the export, so the `.glb` can be exported again exactly from a clone. A
 source made by hand, such as `characters/nox/src/Nox.glb`, is committed as it is.
 
-Assets have no scripts of their own. `kind` picks one exporter in `../tools/hakuba_tools/`, and the other settings in
+Assets have no scripts of their own. `kind` picks one exporter in `../tools/export/`, and the other settings in
 `asset.toml` are what that exporter reads (`../tools/README.md` lists the kinds and their settings). The exporter
 writes `inputs_sha256`; do not edit it.
 
@@ -36,8 +36,8 @@ Exports are not part of the build: the exported `.glb` is committed next to its 
 the game straight away. After changing an asset's settings or sources, export it and commit both together:
 
 ```sh
-uv run --project tools export assets/characters/nox     # from games/hakuba
-uv run --project tools export --check assets            # lists every export whose inputs changed
+cargo export assets/characters/nox     # from games/hakuba
+cargo export --check assets            # lists every export whose inputs changed
 ```
 
 ## Storage
