@@ -358,9 +358,6 @@ impl UnrealContext {
                 "the editor binaries identity is not a sha256 digest",
             ));
         }
-        if self.modules.is_empty() {
-            return Err(invalid("a session loads at least one project module"));
-        }
         let mut names = BTreeSet::new();
         for module in &self.modules {
             if !name_ok(&module.name) || !name_ok(&module.kind) || !name_ok(&module.loading_phase) {
@@ -733,6 +730,8 @@ impl ScratchProject {
             engine_pak: pak_stamp(&engine_pak(context))?,
         };
         for folder in [
+            "Binaries",
+            "Binaries/Mac",
             "Content",
             "Config",
             "Saved",

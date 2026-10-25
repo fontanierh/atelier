@@ -219,7 +219,9 @@ fn contexts_refuse_what_a_session_cannot_load_honestly() {
     spaced.validate().unwrap();
     refused(&|c| c.build_id.clear(), "BuildId");
     refused(&|c| c.editor.identity = "not-a-digest".into(), "sha256");
-    refused(&|c| c.modules.clear(), "at least one");
+    let mut engine_only = base.clone();
+    engine_only.modules.clear();
+    engine_only.validate().unwrap();
     refused(&|c| c.modules.push(c.modules[0].clone()), "twice");
     refused(&|c| c.plugins.clear(), WORKER_PLUGIN);
     refused(
