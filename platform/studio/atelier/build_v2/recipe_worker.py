@@ -48,6 +48,7 @@ class RecipeWorker(python_worker.Worker):
     VERSION = PYTHON_VERSION
 
     def __init__(self, requests, responses, sandboxed, blender=None, node=None, ffmpeg=None, ffprobe=None):
+        self.VERSION = BLENDER_VERSION if blender else PYTHON_VERSION
         super().__init__(requests, responses, sandboxed)
         self.blender = blender
         self.node = node
