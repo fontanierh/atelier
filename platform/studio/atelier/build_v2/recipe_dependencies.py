@@ -179,6 +179,8 @@ def _code(step, scanner, paths, import_roots):
         source = inspect.getsourcefile(inspect.unwrap(step.verify))
         if source:
             scripts.append(Path(source))
+    # Explicit Python helper inputs carry their complete literal import closure too.
+    scripts.extend(Path(p) for p in step.inputs if Path(p).suffix == '.py')
     for script in scripts:
         files.update(scanner.local_imports(script, import_roots))
     if step.batch is not None:
@@ -186,8 +188,6 @@ def _code(step, scanner, paths, import_roots):
     if step.audit:
         from atelier.build_audit import SUPPORT
         files.update(map(Path, SUPPORT))
-    # Declared Python inputs are code too: a recipe may name helpers the static scanner cannot reach.
-    files.update(Path(p) for p in step.inputs if Path(p).suffix == '.py')
     def code_path(f):
         try:
             return paths.rel(f, step=step.name, what='code file')
