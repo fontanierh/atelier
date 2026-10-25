@@ -158,6 +158,56 @@ pub struct PreparedUnrealLaunch {
 }
 
 impl PreparedUnrealLaunch {
+    /// Restrict the already-started editor before Hello; only fixed import/finish jobs share it.
+    pub fn enable_resident(&mut self) -> Result<(), String> {
+        if !matches!(self.request.op.kind.as_str(), RAW_IMPORT | FINISH) {
+            return Err("only fixed import/finish operations may share an editor".into());
+        }
+        self.command.args.push("--resident-no-fork".into());
+        Ok(())
+    }
+
+    /// A fresh job may borrow only the exact native context already checked in this session.
+    pub fn bind_resident_context(&self, owner: &Self) -> Result<(), String> {
+        if !owner.context_verified.get()
+            || self.profile != owner.profile
+            || self.worker.version != owner.worker.version
+            || self.worker.digest != owner.worker.digest
+            || self.native_source_digest != owner.native_source_digest
+            || !matches!(self.request.op.kind.as_str(), RAW_IMPORT | FINISH)
+        {
+            return Err("resident job differs from verified native session".into());
+        }
+        self.keepalive.verify().map_err(|e| e.to_string())?;
+        self.context_verified.set(true);
+        Ok(())
+    }
+
+    pub fn verify_reset(&self, job_dir: &Path) -> Result<(), String> {
+        use std::io::Read;
+        use std::os::unix::fs::OpenOptionsExt;
+        let path = job_dir.join(".unreal-runtime/reset.json");
+        let mut file = fs::OpenOptions::new()
+            .read(true)
+            .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
+            .open(&path)
+            .map_err(|e| e.to_string())?;
+        let info = file.metadata().map_err(|e| e.to_string())?;
+        if !info.is_file() || info.len() > 1024 {
+            return Err("invalid native reset receipt".into());
+        }
+        let mut bytes = Vec::new();
+        file.by_ref()
+            .take(1025)
+            .read_to_end(&mut bytes)
+            .map_err(|e| e.to_string())?;
+        let value: serde_json::Value = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+        if value != serde_json::json!({"version":1,"job_id":self.request.job_id}) {
+            return Err("native worker did not positively reset this job".into());
+        }
+        Ok(())
+    }
+
     /// C5 must call after Hello, BEFORE the first Run; missing evidence refuses.
     pub fn verify_context(&self) -> Result<(), String> {
         let report = self
@@ -419,7 +469,10 @@ fn package(path: &str) -> Result<String, String> {
         || parts[0] != ""
         || parts[1] != "Game"
         || parts[2..].iter().any(|part| {
-            part.is_empty() || !part.bytes().all(|c| c.is_ascii_alphanumeric() || b"_-".contains(&c))
+            part.is_empty()
+                || !part
+                    .bytes()
+                    .all(|c| c.is_ascii_alphanumeric() || b"_-".contains(&c))
         })
     {
         return Err(format!("invalid native package {path}"));
@@ -501,9 +554,14 @@ pub fn check_unit(unit: &PreparedUnit) -> Result<(), String> {
             || value.logical_outputs[0].files.len() != 1
             || value.logical_outputs[0].files[0].path != crate::results::zen_cook::VERIFY_REPORT
             || !value.logical_outputs[0].files[0].required
-            || !matches!(value.logical_outputs[0].destination, crate::schema::Destination::Store)
+            || !matches!(
+                value.logical_outputs[0].destination,
+                crate::schema::Destination::Store
+            )
         {
-            return Err("native verifier differs from its fixed implementation/report contract".into());
+            return Err(
+                "native verifier differs from its fixed implementation/report contract".into(),
+            );
         }
         return Ok(());
     }
@@ -532,7 +590,11 @@ pub fn check_unit(unit: &PreparedUnit) -> Result<(), String> {
             item.logical_path
                 .strip_prefix("/Game/")
                 .ok_or("nonGame asset")?,
-            if item.class == "Map" { "umap" } else { "uasset" }
+            if item.class == "Map" {
+                "umap"
+            } else {
+                "uasset"
+            }
         );
         if !item
             .files
@@ -726,14 +788,22 @@ pub fn prepare_verify(
     let carrier = authority.carrier(&launch.keepalive.root().join("Atelier.uproject"))?;
     let directory = staged.job_dir().join(".unreal-runtime");
     fs::create_dir_all(&directory).map_err(|e| e.to_string())?;
-    if fs::symlink_metadata(&directory).map_err(|e| e.to_string())?.file_type().is_symlink() {
+    if fs::symlink_metadata(&directory)
+        .map_err(|e| e.to_string())?
+        .file_type()
+        .is_symlink()
+    {
         return Err("linked native runtime scope".into());
     }
     use std::io::Write;
     use std::os::unix::fs::OpenOptionsExt;
-    let mut file = fs::OpenOptions::new().write(true).create_new(true)
-        .mode(0o400).custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
-        .open(directory.join("native-verify.json")).map_err(|e| e.to_string())?;
+    let mut file = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .mode(0o400)
+        .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
+        .open(directory.join("native-verify.json"))
+        .map_err(|e| e.to_string())?;
     file.write_all(&serde_json::to_vec(&carrier).map_err(|e| e.to_string())?)
         .map_err(|e| e.to_string())?;
     file.sync_all().map_err(|e| e.to_string())?;
@@ -748,8 +818,10 @@ fn prepare_inner(
     execution: &UnrealExecutionContext,
 ) -> Result<PreparedUnrealLaunch, String> {
     let ingredients = unit.ingredients();
-    if !matches!(ingredients.op.kind.as_str(), RAW_IMPORT | FINISH | AUTHOR | VERIFY)
-        || ingredients.op.version != OP_VERSION
+    if !matches!(
+        ingredients.op.kind.as_str(),
+        RAW_IMPORT | FINISH | AUTHOR | VERIFY
+    ) || ingredients.op.version != OP_VERSION
         || ingredients.script != ENTRY
     {
         return Err("unsupported fixed native operation".into());
@@ -774,7 +846,11 @@ fn prepare_inner(
         return Err("loaded native settings differ from keyed settings".into());
     }
     let verification = ingredients.op.kind == VERIFY;
-    let packages = if verification { BTreeSet::new() } else { declared_packages(unit)? };
+    let packages = if verification {
+        BTreeSet::new()
+    } else {
+        declared_packages(unit)?
+    };
     if (!verification && packages.is_empty())
         || ingredients
             .logical_outputs
@@ -918,19 +994,51 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
     .into_iter()
     .map(Into::into)
     .collect();
-    registry.insert((VERIFY.into(), OP_VERSION.into()), OpDefinition {
-        inputs: slots.iter().map(|(name, broad)| (name.clone(), InputRule {
-            role: InputRole::Content, required: false, allow_absent_file: false,
-            allow_selector: true, require_whole_reason: *broad,
-            item_classes: BTreeSet::from(["CookedPackage".into(), "Data".into()]),
-        })).collect(),
-        output_classes: BTreeSet::from(["Data".into()]),
-        params: BTreeMap::from([
-            ("package".into(), ParamRule {kind: ParamKind::String, required: true}),
-            ("mode".into(), ParamRule {kind: ParamKind::String, required: true}),
-            ("settings".into(), ParamRule {kind: ParamKind::Array, required: false}),
-        ]),
-    });
+    registry.insert(
+        (VERIFY.into(), OP_VERSION.into()),
+        OpDefinition {
+            inputs: slots
+                .iter()
+                .map(|(name, broad)| {
+                    (
+                        name.clone(),
+                        InputRule {
+                            role: InputRole::Content,
+                            required: false,
+                            allow_absent_file: false,
+                            allow_selector: true,
+                            require_whole_reason: *broad,
+                            item_classes: BTreeSet::from(["CookedPackage".into(), "Data".into()]),
+                        },
+                    )
+                })
+                .collect(),
+            output_classes: BTreeSet::from(["Data".into()]),
+            params: BTreeMap::from([
+                (
+                    "package".into(),
+                    ParamRule {
+                        kind: ParamKind::String,
+                        required: true,
+                    },
+                ),
+                (
+                    "mode".into(),
+                    ParamRule {
+                        kind: ParamKind::String,
+                        required: true,
+                    },
+                ),
+                (
+                    "settings".into(),
+                    ParamRule {
+                        kind: ParamKind::Array,
+                        required: false,
+                    },
+                ),
+            ]),
+        },
+    );
     registry.insert(
         (AUTHOR.into(), OP_VERSION.into()),
         OpDefinition {

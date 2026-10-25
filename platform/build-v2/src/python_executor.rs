@@ -341,6 +341,22 @@ mod tests {
         bad.units[0].outcome.cleanup =
             CleanupState::Unconfirmed(crate::failure_policy::Expiry::CleanupLimit);
         assert!(sole_released_report("a", bad).is_err());
+        let mut resident = valid.units[0].attempts.clone();
+        resident[0].custody = Custody::Pending;
+        resident[0].quiescent = Some(1.0);
+        assert!(resident_attempts_released(&resident, &valid.sessions));
+        resident[0].quiescent = None;
+        assert!(!resident_attempts_released(&resident, &valid.sessions));
+        resident[0].quiescent = Some(1.0);
+        resident[0].custody = Custody::Held("late".into());
+        assert!(!resident_attempts_released(&resident, &valid.sessions));
+        resident[0].custody = Custody::Pending;
+        let mut held = valid.sessions.clone();
+        held[0].custody = Custody::Held("uncertain".into());
+        assert!(!resident_attempts_released(&resident, &held));
+        assert!(!resident_attempts_released(&resident, &[]));
+        resident[0].session = 99;
+        assert!(!resident_attempts_released(&resident, &valid.sessions));
     }
 }
 
@@ -452,6 +468,25 @@ fn sole_released_report(
     })
 }
 
+fn resident_attempts_released(
+    attempts: &[crate::session_lifecycle::UnitAttemptRecord],
+    sessions: &[worker_lifecycle::AttemptRecord],
+) -> bool {
+    !attempts.is_empty()
+        && attempts.iter().all(|attempt| {
+            // A quiescent unit's published snapshot is immutable, including Pending custody.
+            // Its matching final session receipt supplies full cleanup; Held never upgrades.
+            (attempt.custody == Custody::Released
+                || (attempt.custody == Custody::Pending && attempt.quiescent.is_some()))
+                && sessions.iter().any(|session| {
+                    session.attempt == attempt.session
+                        && session.custody == Custody::Released
+                        && session.admitted
+                        && session.worker.is_some()
+                })
+        })
+}
+
 pub struct PythonExecution {
     pub interpreter: PathBuf,
     pub bundle: PythonWorkerBundle,
@@ -558,7 +593,7 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
     for PythonExecutor<L>
 {
     /// @cc [owner:fontanierh,label:safety] static-python-cleanup-before-publication
-    /// Production dispatch MUST use one C5c session per Work and register the actual worker and
+    /// Production dispatch MUST use C5c sessions and register each Work's actual worker and
     /// correlated custody monitor idempotently on both original leases
     /// before Run. Unconfirmed cleanup or any non-Released attempt MUST be fatal before publishing
     /// or starting more work. Cancellation MUST go through the existing lifecycle channel; every
@@ -580,6 +615,19 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
         control: &dyn Control,
         emit: &mut dyn FnMut(Event<PythonTicket, PythonInputs, PythonCompletion>) -> Flow,
     ) -> Result<(), String> {
+        if cfg!(target_os = "macos")
+            && !self.scripted_fixture
+            && work.len() > 1
+            && self.unreal.is_some()
+            && work.iter().all(|unit| {
+                matches!(
+                    unit.compatibility().op_kind.as_str(),
+                    crate::unreal_controller::RAW_IMPORT | crate::unreal_controller::FINISH
+                )
+            })
+        {
+            return self.resident_native_batch(work, control, emit);
+        }
         let mut stopped = false;
         let mut fatal = None;
         for mut work in work {
@@ -1012,5 +1060,376 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
             stopped |= emit(event) == Flow::Stop || fatal.is_some();
         }
         fatal.map_or(Ok(()), Err)
+    }
+}
+
+impl<L: WorkerLauncher + Send> PythonExecutor<L> {
+    /// Fixed C3 import/finish frontiers share an editor only with kernel no-fork, per-job reset
+    /// receipts and fresh C5 quiescence. Publication waits for the entire admitted session's
+    /// positive cleanup and released custody, including jobs already quiescent before shutdown.
+    fn resident_native_batch(
+        &mut self,
+        mut work: Vec<Work<PythonTicket, PythonInputs>>,
+        control: &dyn Control,
+        emit: &mut dyn FnMut(Event<PythonTicket, PythonInputs, PythonCompletion>) -> Flow,
+    ) -> Result<(), String> {
+        use std::collections::BTreeMap;
+        use std::sync::{Arc, Mutex};
+        let native = self
+            .unreal
+            .as_ref()
+            .ok_or("missing resident native execution")?;
+        let mut launches = Vec::new();
+        let setup = (|| {
+            for unit in &work {
+                let compatibility = unit.compatibility();
+                if compatibility.worker_digest != native.worker.digest
+                    || compatibility.worker_version != native.worker.version
+                    || compatibility.profile != "normal-unreal"
+                {
+                    return Err(
+                        "resident job runtime differs from keyed implementation".to_string()
+                    );
+                }
+                let job = unit.inputs().staged.job_dir();
+                let scope = job.parent().ok_or("resident job has no leased parent")?;
+                let context = native.locations.build(
+                    unit.prepared(),
+                    &unit.inputs().staged,
+                    &native.sources,
+                    &native.cache_root,
+                )?;
+                let mut launch = crate::unreal_controller::prepare(
+                    unit.prepared(),
+                    &unit.inputs().staged,
+                    &native.sources,
+                    scope,
+                    &context,
+                )?;
+                launch.enable_resident()?;
+                if let Some(first) = launches.first() {
+                    let first: &Arc<Mutex<crate::unreal_controller::PreparedUnrealLaunch>> = first;
+                    if first
+                        .lock()
+                        .map_err(|_| "resident launch lock poisoned")?
+                        .profile
+                        != launch.profile
+                    {
+                        return Err("incompatible native contexts in resident frontier".into());
+                    }
+                }
+                launches.push(Arc::new(Mutex::new(launch)));
+                unit.inputs().io.borrow_mut().worker_files_written +=
+                    crate::unreal::UNREAL_WORKER_FILES.len();
+            }
+            let first = launches[0]
+                .lock()
+                .map_err(|_| "resident launch lock poisoned")?;
+            let report_root = work[0]
+                .inputs()
+                .staged
+                .job_dir()
+                .parent()
+                .ok_or("missing resident report scope")?
+                .join("guard");
+            std::fs::create_dir(&report_root).map_err(|e| e.to_string())?;
+            let spec = JobSpec {
+                job: first.request.clone(),
+                worker_version: native.worker.version.clone(),
+                command: first.command.clone(),
+                purpose: "build-v2 resident native import/finish frontier".into(),
+                memory_gib: native.memory_gib,
+                limits: native.limits,
+                report_root,
+                custody: vec![],
+            };
+            let custody = work[0]
+                .inputs()
+                .custody
+                .try_clone()
+                .map_err(|e| e.to_string())?;
+            let mut session = production_spec(&spec, custody)?;
+            let quiet = Duration::from_secs(5);
+            let cleanup = native
+                .limits
+                .cleanup
+                .checked_add(quiet)
+                .ok_or("resident cleanup overflow")?;
+            let overall = native
+                .limits
+                .overall
+                .ok_or("resident overall deadline missing")?;
+            let lifetime = native
+                .limits
+                .job
+                .checked_add(quiet)
+                .and_then(|v| v.checked_mul(work.len().try_into().ok()?))
+                .and_then(|v| v.checked_add(native.limits.cleanup))
+                .ok_or("resident lifetime overflow")?;
+            session.config.lifetime = lifetime.min(overall);
+            session.config.quiescence = Some(quiet);
+            session.key.sandbox = worker_lifecycle::JobSandbox::NoFork;
+            let limits = Limits {
+                cleanup,
+                ..native.limits
+            };
+            Ok((session, limits))
+        })();
+        let (session, limits) = match setup {
+            Ok(value) => value,
+            Err(reason) => {
+                for unit in work {
+                    emit(Event::Failed {
+                        work: unit,
+                        reason: reason.clone(),
+                    });
+                }
+                return Ok(());
+            }
+        };
+        let jobs: BTreeMap<_, _> = work
+            .iter()
+            .enumerate()
+            .map(|(index, unit)| {
+                (
+                    unit.unit().to_owned(),
+                    (
+                        index,
+                        launches[index].lock().unwrap().request.clone(),
+                        unit.inputs().staged.job_dir().to_owned(),
+                    ),
+                )
+            })
+            .collect();
+        let (cancel, inbox) = worker_lifecycle::session_channel();
+        for (id, (_, job, _)) in &jobs {
+            cancel.submit(worker_lifecycle::SessionUnit {
+                plan: UnitPlan {
+                    id: id.clone(),
+                    limits,
+                },
+                job: job.clone(),
+                key: session.key.clone(),
+            });
+        }
+        cancel.close();
+        let result = std::thread::scope(|scope| {
+            let launcher = &mut self.launcher;
+            let mut tickets: BTreeMap<_, _> = work
+                .iter_mut()
+                .map(|unit| {
+                    let id = unit.unit().to_owned();
+                    (id, unit.ticket_mut())
+                })
+                .collect();
+            let jobs = &jobs;
+            let launches = &launches;
+            let driver = scope.spawn(move || {
+                let (published, _records) = std::sync::mpsc::channel();
+                let mut previous: Option<usize> = None;
+                worker_lifecycle::run_session_ready_checked(
+                    launcher,
+                    &SystemClock::new(),
+                    &session,
+                    inbox,
+                    &mut |id, identity| {
+                        tickets
+                            .get_mut(id)
+                            .ok_or("foreign resident registration")?
+                            .register(identity)
+                    },
+                    &mut |id, attempt| {
+                        if attempt != 1 {
+                            return Err(
+                                "resident retry needs fresh staging; prior output retained".into(),
+                            );
+                        }
+                        Ok(jobs
+                            .get(id)
+                            .ok_or("foreign resident preparation")?
+                            .1
+                            .clone())
+                    },
+                    &mut |id| {
+                        let (index, _, _) = jobs.get(id).ok_or("foreign resident Run")?;
+                        if let Some(old) = previous {
+                            let old_job = jobs
+                                .values()
+                                .find(|(i, _, _)| *i == old)
+                                .ok_or("missing prior resident job")?;
+                            launches[old]
+                                .lock()
+                                .map_err(|_| "resident launch lock poisoned")?
+                                .verify_reset(&old_job.2)?;
+                        }
+                        if previous.is_none() {
+                            launches[0]
+                                .lock()
+                                .map_err(|_| "resident launch lock poisoned")?
+                                .verify_context()?;
+                        }
+                        if *index != 0 {
+                            let owner = launches[0]
+                                .lock()
+                                .map_err(|_| "resident launch lock poisoned")?;
+                            launches[*index]
+                                .lock()
+                                .map_err(|_| "resident launch lock poisoned")?
+                                .bind_resident_context(&owner)?;
+                        }
+                        previous = Some(*index);
+                        Ok(())
+                    },
+                    published,
+                )
+                .map_err(|e| format!("{e:?}"))
+            });
+            while !driver.is_finished() {
+                if control.cancelled() {
+                    cancel.cancel_all();
+                }
+                std::thread::sleep(Duration::from_millis(5));
+            }
+            driver
+                .join()
+                .map_err(|_| "resident native driver panicked".to_string())?
+        });
+        let report = match result {
+            Ok(report) => report,
+            Err(reason) => {
+                for unit in work {
+                    unit.inputs()
+                        .io
+                        .borrow_mut()
+                        .launches_by_unit
+                        .remove(unit.unit());
+                    emit(Event::Failed {
+                        work: unit,
+                        reason: reason.clone(),
+                    });
+                }
+                return Err(reason);
+            }
+        };
+        let clean = !report.sessions.is_empty()
+            && report.sessions.iter().all(|attempt| {
+                attempt.custody == Custody::Released && attempt.admitted && attempt.worker.is_some()
+            })
+            && report.units.len() == work.len()
+            && report.refused.is_empty();
+        let observed = report
+            .sessions
+            .iter()
+            .filter(|attempt| attempt.worker.is_some())
+            .count();
+        let sessions = report.sessions;
+        work[0].inputs().io.borrow_mut().launches += observed;
+        let mut records: BTreeMap<_, _> = report
+            .units
+            .into_iter()
+            .map(|record| (record.unit.clone(), record))
+            .collect();
+        let report_root = work[0]
+            .inputs()
+            .staged
+            .job_dir()
+            .parent()
+            .ok_or("missing resident evidence parent")?
+            .join("guard");
+        for unit in &work {
+            if let Some(record) = records
+                .get(unit.unit())
+                .filter(|record| record.outcome.end != End::Completed)
+            {
+                use std::io::Write;
+                let _ = writeln!(
+                    std::io::stderr().lock(),
+                    "resident native unit {} failed: {:?}; {:?}; {:?}",
+                    unit.unit(),
+                    record.outcome,
+                    record.abort,
+                    record.attempts
+                );
+                let _ = retain_failure_diagnostics(
+                    &report_root,
+                    unit.unit(),
+                    unit.prepared().key(),
+                    &launches[jobs[unit.unit()].0]
+                        .lock()
+                        .map_err(|_| "resident launch lock poisoned")?
+                        .request
+                        .job_id,
+                    &record.attempts,
+                );
+            }
+        }
+        let mut stopped = false;
+        for (index, unit) in work.into_iter().enumerate() {
+            let record = records.remove(unit.unit());
+            let event = if !clean {
+                unit.inputs()
+                    .io
+                    .borrow_mut()
+                    .launches_by_unit
+                    .remove(unit.unit());
+                Event::Failed {
+                    work: unit,
+                    reason: "resident native session cleanup or membership unconfirmed".into(),
+                }
+            } else if let Some(record) = record {
+                let complete = !record.attempts.is_empty()
+                    && record.refused.is_none()
+                    && record.abort.is_none()
+                    && !matches!(record.outcome.cleanup, CleanupState::Unconfirmed(_))
+                    && resident_attempts_released(&record.attempts, &sessions);
+                unit.inputs()
+                    .io
+                    .borrow_mut()
+                    .launches_by_unit
+                    .insert(unit.unit().into(), record.attempts.len());
+                if complete && record.outcome.end == End::Completed {
+                    let launch = launches[index]
+                        .lock()
+                        .map_err(|_| "resident launch lock poisoned")?;
+                    let checked = launch
+                        .verify_reset(unit.inputs().staged.job_dir())
+                        .and_then(|_| launch.verify_completed(&unit.inputs().staged));
+                    match (checked, record.outputs) {
+                        (Ok(_), Some(outputs)) => Event::Completed {
+                            work: unit,
+                            completion: PythonCompletion {
+                                reported: outputs.files,
+                            },
+                        },
+                        (Err(reason), _) => Event::Failed { work: unit, reason },
+                        _ => Event::Failed {
+                            work: unit,
+                            reason: "resident completion omitted output manifest".into(),
+                        },
+                    }
+                } else {
+                    Event::Failed {
+                        work: unit,
+                        reason: format!(
+                            "resident native job failed: {:?}; {:?}",
+                            record.outcome, record.abort
+                        ),
+                    }
+                }
+            } else {
+                Event::Failed {
+                    work: unit,
+                    reason: "resident native session omitted unit".into(),
+                }
+            };
+            if emit(event) == Flow::Stop {
+                stopped = true;
+            }
+        }
+        if !clean {
+            return Err("resident native cleanup remains unconfirmed".into());
+        }
+        let _ = stopped;
+        Ok(())
     }
 }
