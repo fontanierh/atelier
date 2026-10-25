@@ -24,6 +24,7 @@ NAMESPACE = 'atelier.capacity-broker.v1'
 MAX_FRAME = 65536
 MAX_ROSTER = 512
 MAX_RETAINED = 8192  # Cumulative identities, independent of live-report and RPC batch limits.
+GUARD_REPORT_LIMIT = 1024 * 1024  # Durable monitor receipts: a full roster with its evidence; frames stay MAX_FRAME.
 RESOURCE_FIELDS = frozenset(Resources.__dataclass_fields__)
 _ACTION_NAMES = frozenset(('status', 'reconcile', 'abandon-interrupted', 'owned', 'offer', 'gate', 'start', 'check', 'replace', 'close'))
 
@@ -77,7 +78,7 @@ def encode(value):
     return data
 
 
-def decode(data):
+def decode(data, *, limit=MAX_FRAME):
     def unique(pairs):
         result = {}
         for key, value in pairs:
@@ -86,7 +87,7 @@ def decode(data):
             result[key] = value
         return result
     try:
-        if len(data) > MAX_FRAME:
+        if len(data) > limit:
             raise CapacityError('Capacity message exceeds its limit')
         value = json.loads(data, object_pairs_hook=unique,
                            parse_constant=lambda _: (_ for _ in ()).throw(CapacityError('Nonfinite protocol number')))
@@ -350,7 +351,7 @@ def guard_report(path):
     """
     for attempt in range(3):
         try:
-            return _read_file(path, limit=MAX_FRAME, private=False, guard_report=True)
+            return _read_file(path, limit=GUARD_REPORT_LIMIT, private=False, guard_report=True)
         except _ReplacedReport:
             if attempt == 2:
                 raise CapacityError('Capacity guard report repeatedly replaced while reading') from None
@@ -395,7 +396,7 @@ def validate_guards(guards, child, owner, limit_bytes, reserved_mib, *, started=
         monitor = identity((item['pid'], item['start']))
         if started(monitor[0]) != monitor[1] or not alive(monitor) or not child_of(owner, monitor):
             raise CapacityError('Capacity guard identity is not live and owned')
-        record = decode(guard_report(text(item['report'], maximum=4096)))
+        record = decode(guard_report(text(item['report'], maximum=4096)), limit=GUARD_REPORT_LIMIT)
         observed = record.get('observed_monotonic') if kind == 'tree_guard' else record.get('time')
         now = time.monotonic() if kind == 'tree_guard' else time.time()
         if (type(observed) not in (int, float) or not math.isfinite(observed) or not 0 <= now - observed <= 3
@@ -434,7 +435,7 @@ def require_independent_guards(guards, owner, *, started=process_start, group=No
         if (started(pin[0]) != pin[1] or group(pin[0]) != pin[0] or group(owner[0]) == group(pin[0])
                 or started(pin[0]) != pin[1]):
             raise CapacityError('Capacity guards require independent supervision; update the launching checkout')
-    receipt = decode(guard_report(guards['tree_guard']['report']))
+    receipt = decode(guard_report(guards['tree_guard']['report']), limit=GUARD_REPORT_LIMIT)
     if receipt.get('controller') != list(owner):
         raise CapacityError('Capacity aggregate guard requires controller-loss supervision; update the launching checkout')
 

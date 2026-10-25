@@ -220,3 +220,53 @@ def test_trickled_rpc_response_cannot_extend_absolute_deadline():
             finally:
                 thread.join(timeout=2)
             assert not thread.is_alive() and errors == []
+
+
+class _Dead:
+    def __init__(self, pin):
+        self.pin = pin
+    def poll(self):
+        return False
+    def close(self):
+        pass
+
+
+@pytest.mark.skipif(sys.platform != 'darwin', reason='the aggregate monitor binds kqueue exit watches on macOS')
+@pytest.mark.parametrize('evidence', ['published', 'wrong-start'])
+def test_reaped_helper_exit_from_the_real_monitor_reaches_the_broker(tmp_path, broker, monkeypatch, evidence):
+    # The broker loses the race for every helper: no parent read and a watch that never fires.
+    from atelier.harness import capacity_protocol
+    from atelier.harness.capacity_protocol import ExitWatch
+    created = []
+    def watch(pin):
+        created.append(pin)
+        return ExitWatch(pin) if len(created) == 1 else _Dead(pin)  # only the root's own watch is real
+    broker.watch_factory, broker.parent = watch, (lambda pin: None)
+    if evidence == 'wrong-start':
+        real = capacity_protocol.guard_evidence
+        def shifted(record):
+            edges, exits = real(record)
+            return edges, tuple(((pin[0], pin[1] + 1), parent) for pin, parent in exits)
+        monkeypatch.setattr(capacity_protocol, 'guard_evidence', shifted)
+    request = dict(id='reaped-helper', resources=asdict(Resources(512, 1000, 16, 1)), locks=['checkout:test'], seconds=20)
+    session = AdmissionSession(broker.socket_path, request)
+    code = ('import subprocess,sys,time; '
+            'subprocess.run([sys.executable,"-c","import time; time.sleep(2)"]); time.sleep(3)')
+    folder = tmp_path / 'guard'
+    try:
+        guarded.run([sys.executable, '-c', code], folder, admission=session, limit_gib=.5, timeout=20)
+    except CapacityError:
+        assert evidence == 'wrong-start'
+    with broker._lock:
+        record = broker._load()['records']['reaped-helper']
+        broker.connection.rollback()
+    root = tuple(record['child'])
+    helpers = [tuple(pin) for pin in record['roster'] if tuple(pin) != root]
+    assert helpers, 'the helper never reached the broker roster'
+    exited = {tuple(pin) for pin in record.get('exited', [])}
+    if evidence == 'published':
+        assert set(helpers) <= exited and not record['ancestry_unknown']
+        assert record['state'] == 'released' and record['release_witness']['kind'] == 'retained-kernel-exits'
+    else:
+        assert not set(helpers) & exited
+        assert record.get('release_witness', {}).get('kind') != 'retained-kernel-exits'

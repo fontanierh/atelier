@@ -260,9 +260,11 @@ class CapacityBroker:
     def _watch(self, record, pins, *, edges=(), exits=()):
         """Retain pins; resolve ancestry from positive edges; record the aggregate monitor's exits.
 
-        ``edges``/``exits`` come only from a bound aggregate receipt. A monitor edge is used only where
-        the broker's own read failed; ancestry still needs a positive chain to the verified root.
-        A monitor exit applies only to an already retained identity whose known edge agrees.
+        ``edges``/``exits`` come only from a bound aggregate receipt. Every retained pin keeps the exact
+        parent first known for it. A monitor edge fills only a parent the broker could not read itself.
+        A receipt naming a pin twice, or a parent other than the one already known, is refused whole:
+        none of its evidence applies. A monitor exit applies only to an already retained, non-root pin.
+        Ancestry still needs a positive chain to the verified root.
         """
         pins = [wire.identity(pin) for pin in pins]
         roster = {tuple(pin) for pin in record.get('roster', [])}
@@ -273,7 +275,7 @@ class CapacityBroker:
         legacy_unknown = record.get('ancestry_unknown') is True and 'unresolved' not in record
         pending = {tuple(pin): tuple(parent) if parent is not None else None
                    for pin, parent in record.get('unresolved', [])}
-        edges = dict(edges)
+        parents = {tuple(pin): tuple(parent) for pin, parent in record.get('parents', [])}
         for value in pins:
             pin = wire.identity(value)
             if pin == tuple(record['principal']):
@@ -281,23 +283,35 @@ class CapacityBroker:
             if pin not in roster:
                 roster.add(pin)
                 self._watches[(record['nonce'], pin)] = self.watch_factory(pin)
-                pending[pin] = self.parent(pin)
+                parent = self.parent(pin)
+                pending[pin] = parent
+                if parent is not None:
+                    parents[pin] = tuple(parent)
         root = tuple(record['child']) if 'child' in record else None
         if root in roster:
             verified.add(root)  # start() separately validated its direct-parent edge.
             pending.pop(root, None)
+            parents.setdefault(root, tuple(record['principal']))
+        evidence = [*edges, *exits]
+        named = [pin for pin, _ in edges], [pin for pin, _ in exits]
+        conflict = (any(len(set(group)) != len(group) for group in named)
+                    or any(pin in parents and parents[pin] != parent for pin, parent in evidence)
+                    or any(dict(edges).get(pin, parent) != parent for pin, parent in exits))
+        if conflict:
+            request = record.get('request', {})
+            print('capacity aggregate evidence refused: ' + json.dumps(dict(
+                owner=request.get('owner'), purpose=request.get('purpose'), pid=(root or [None])[0],
+                reason='duplicate or conflicting parent')), file=sys.stderr, flush=True)
+            edges = exits = ()
         exited = {tuple(pin) for pin in record.get('exited', [])}
+        for pin, parent in [*edges, *exits]:
+            if pin in pending and pending[pin] is None:  # never a verified pin whose parent was not retained
+                parents[pin] = pending[pin] = parent
         for pin, parent in exits:
-            if pin not in roster or pin == root or (pending.get(pin) or parent) != parent:
-                continue
-            if pin in pending:
-                pending[pin] = parent
-            if pin not in exited:
+            # A verified pin without a retained parent (an older record) cannot be checked; it stays unknown.
+            if pin in roster and pin != root and parents.get(pin) == parent and pin not in exited:
                 record.setdefault('exited', []).append(list(pin))
                 exited.add(pin)
-        for pin, parent in list(pending.items()):
-            if parent is None and pin in edges:
-                pending[pin] = edges[pin]
         while pending:
             found = [pin for pin, parent in pending.items() if parent in verified]
             if not found:
@@ -307,6 +321,7 @@ class CapacityBroker:
                 del pending[pin]
         record['roster'] = [list(pin) for pin in sorted(roster)]
         record['verified_roster'] = [list(pin) for pin in sorted(verified)]
+        record['parents'] = [[list(pin), list(parent)] for pin, parent in sorted(parents.items()) if pin in roster]
         record['unresolved'] = [[list(pin), list(parent) if parent is not None else None]
                                 for pin, parent in sorted(pending.items())]
         record['ancestry_unknown'] = legacy_unknown or bool(pending)
@@ -320,7 +335,8 @@ class CapacityBroker:
         try:
             item = wire.fields(record.get('guards', {}).get('tree_guard'), ('pid', 'start', 'report'))
             wire.identity((item['pid'], item['start']))
-            receipt = wire.decode(wire.guard_report(wire.text(item['report'], maximum=4096)))
+            receipt = wire.decode(wire.guard_report(wire.text(item['report'], maximum=4096)),
+                                  limit=wire.GUARD_REPORT_LIMIT)
             if (wire.identity((receipt.get('owner'), receipt.get('owner_started'))) != tuple(record['child'])
                     or receipt.get('limit_bytes') != record['limit_bytes']):
                 return
@@ -524,7 +540,8 @@ class CapacityBroker:
             item = wire.fields(record.get('guards', {}).get('tree_guard'), ('pid', 'start', 'report'))
             wire.identity((item['pid'], item['start']))  # Bound at start; terminal monitor may now have exited.
             report = wire.text(item['report'], maximum=4096)
-            receipt = (wire.decode(wire.private_file(report, limit=wire.MAX_FRAME, private=False))
+            receipt = (wire.decode(wire.private_file(report, limit=wire.GUARD_REPORT_LIMIT, private=False),
+                                   limit=wire.GUARD_REPORT_LIMIT)
                        if preserved is None else preserved)
             observed, ready = receipt.get('time'), record.get('first_ready')
             exited = {tuple(pin) for pin in record.get('exited', [])}

@@ -1,5 +1,6 @@
 """The aggregate monitor's own kernel exit watches: producer binding, receipt parsing and broker consumption."""
 import json
+import select
 import os
 import subprocess
 import sys
@@ -140,3 +141,100 @@ def test_reaped_helper_releases_only_with_the_aggregate_monitors_exact_exit(brok
             complete(admission, child, root[1])
         status = client.reconcile(broker.socket_path)
         assert status['charged_count'] == 1 and status['records'][0]['ancestry_unknown']
+
+
+class Dead:
+    """A broker watch that lost the race: bound too late, so it never fires."""
+    def __init__(self, pin):
+        self.pin = pin
+    def poll(self):
+        return False
+    def close(self):
+        pass
+
+
+def test_a_verified_pins_retained_parent_refuses_conflicting_or_duplicate_evidence(broker_factory):
+    root, helper, other = (200, 2000), (201, 2010), (202, 2020)
+    broker = broker_factory(watch=Dead, parent=lambda pin: {helper: root}.get(pin))
+    record = {'principal': [100, 1000], 'child': list(root), 'nonce': 'n', 'request': {}}
+    broker._watch(record, [root, helper])  # the broker read helper -> root itself while it was live
+    assert sorted(map(tuple, record['verified_roster'])) == [root, helper] and not record['ancestry_unknown']
+    for exits, edges in [(((helper, other),), ()),                     # another parent for a verified pin
+                         (((helper, root), (helper, root)), ()),       # duplicate exit evidence
+                         (((helper, root),), ((helper, other),))]:      # the receipt's own edge disagrees
+        broker._watch(record, [], edges=edges, exits=exits)
+        assert record.get('exited', []) == []
+    broker._watch(record, [], exits=((helper, root),))
+    assert record['exited'] == [list(helper)]
+    legacy = {'principal': [100, 1000], 'child': list(root), 'nonce': 'm', 'request': {},
+              'roster': [list(root), list(helper)], 'verified_roster': [list(root), list(helper)]}
+    broker._watch(legacy, [], exits=((helper, root),))  # verified before parents were retained: unknown
+    assert legacy.get('exited', []) == []
+
+
+class FakeQueue:
+    def __init__(self):
+        self.registered, self.events = {}, []
+    def control(self, changes, maxevents, timeout):
+        for change in changes or ():
+            if change.flags & select.KQ_EV_DELETE:
+                self.registered.pop(change.ident, None)
+            else:
+                self.registered[change.ident] = change.fflags
+        if changes:
+            return []
+        events, self.events = self.events[:maxevents], self.events[maxevents:]
+        return events
+    def fire(self, pid):
+        assert self.registered.pop(pid) & select.KQ_NOTE_EXIT
+        self.events.append(SimpleNamespace(ident=pid, fflags=select.KQ_NOTE_EXIT, flags=0))
+    def close(self):
+        pass
+
+
+@darwin
+@pytest.mark.parametrize('old_fired', [False, True])
+def test_a_reused_pid_never_inherits_the_earlier_identitys_watch_or_exit(old_fired):
+    starts = {5: 50}
+    watches = tree_guard.ExitWatches(starts.get)
+    watches.queue.close()
+    watches.queue = queue = FakeQueue()
+    parent = (1, 10)
+    watches.bind((5, 50), parent)
+    if old_fired:
+        queue.fire(5)  # the earlier identity exited; its event is still unretrieved
+    else:
+        queue.registered.pop(5)  # its registration was lost: it must stay unknown
+    starts[5] = 51  # the PID is reused by a new process
+    watches.bind((5, 51), parent)
+    assert watches.watched[5][0] == (5, 51)
+    queue.fire(5)
+    found, omitted = watches.evidence()
+    assert found == ([[5, 50, *parent]] if old_fired else []) + [[5, 51, *parent]] and omitted == 0
+
+
+def test_a_full_pretty_printed_roster_with_evidence_reads_within_the_durable_bound(tmp_path):
+    child, owner, monitor = (90001, 19783708509809), (90000, 19783708509000), (90002, 19783708509900)
+    limit = 12 * 1024**3
+    processes = [dict(pid=91000 + i, started=19783708600000 + i, footprint_bytes=9_876_543_210,
+                      name='clang-compiler-helper-name-xxxx', depth=3, parent=[child[0], child[1]])
+                 for i in range(wire.MAX_ROSTER)]
+    exits = [[92000 + i, 19783708700000 + i, *child] for i in range(tree_guard.ExitWatches.WINDOW)]
+    tree = tmp_path / 'tree.json'
+    tree_guard.write_report(tree, dict(owner=child[0], owner_started=child[1], time=time.time(),
+                                       observed_monotonic=time.monotonic(), elapsed_seconds=1., footprint_bytes=1,
+                                       peak_bytes=1, limit_bytes=limit, state='running', processes=processes,
+                                       exits=exits, exits_omitted=0, controller=list(owner)))
+    process = tmp_path / 'process.json'
+    process.write_text(json.dumps({'time': time.time(), 'state': 'running', 'limit_bytes': limit,
+                                   'pid': child[0], 'process_start': child[1]}))
+    size = tree.stat().st_size
+    assert wire.MAX_FRAME < size < wire.GUARD_REPORT_LIMIT  # the socket frame bound would have refused it
+    guards = {name: {'pid': monitor[0], 'start': monitor[1], 'report': str(report)}
+              for name, report in [('process_guard', process), ('tree_guard', tree)]}
+    facts = wire.validate_guards(guards, child, owner, limit, 12 * 1024, started=lambda pid: monitor[1],
+                                 child_of=lambda *args: True, alive=lambda pin: True)
+    assert len(facts.roster) == wire.MAX_ROSTER and len(facts.edges) == wire.MAX_ROSTER
+    assert len(facts.exits) == tree_guard.ExitWatches.WINDOW
+    with pytest.raises(wire.CapacityError, match='exceeds its limit'):
+        wire.decode(tree.read_bytes())  # frames keep MAX_FRAME
