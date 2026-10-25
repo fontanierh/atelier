@@ -59,7 +59,7 @@ def megapark_templates(rows,*,checkout,natives=None):
         contract={'id':'members','root':'files','root_param':'file_root','manifest':'plan.json','adapter_version':'d2.file-set/1','parent':parent,'encoding':'file_set','class':'Data','logical_namespace':'/Internal/MegaPark/'+kind,**LIMITS}
         projected.append({'id':producer,'op':{'kind':'recipe.python','version':'1'},'script':RECIPE,'code':sorted(code),'inputs':deepcopy(incoming),
             'params':{'file_root':'output/files','recipe':{'version':1,'paths':dict(paths),'commands':[_call(root,'project',(root/park.BUILD/'build.json',root/park.BUILD/'textures',root/source_map,root/folder,kind,tuple(park.restyled(root))))],
-                'outputs':[{'path':folder,'file':'members.tree.tar','required':True}],'verify':None,'file_group':{'source':folder,'parent':parent,'extensions':['.json']}}},
+                'outputs':[{'kind':'tree','path':folder,'file':'members.tree.tar','required':True}],'verify':None,'file_group':{'source':folder,'parent':parent,'extensions':['.json']}}},
             'outputs':[{'id':'members','logical_path':'/Internal/MegaPark/'+kind,'class':'Data','destination':'store','files':[{'path':'members.tree.tar','required':True}]}],'output_groups':[contract]})
         groups[producer]={'contract':contract,'source':folder}
     packages=fixed['packages'];native_inputs=[park._native(ref) for ref in packages.values() if ref['package']!=park.LEVEL]
@@ -74,7 +74,7 @@ def megapark_templates(rows,*,checkout,natives=None):
     templates.append({'producer':MATERIALS,'group':'members','unit_prefix':PREFIX,'op':{'kind':'recipe.python','version':'1'},'script':RECIPE,'code':sorted(code),
         'derive_payload':False,'payload_slot':'spec','staged_path':'inputs/spec','output_class':'Data','logical_namespace':'/Internal/MegaPark/SelectedSpecs','files':[{'path':'member.tree.tar','required':True}],
         'params':{'recipe':{'version':1,'paths':{'selected':'inputs/spec'},'commands':[_call(root,'copy_member',(root/'selected/$piece.json',root/'member.json'))],
-            'outputs':[{'path':'member.json','file':'member.tree.tar','required':True}],'verify':None}},
+            'outputs':[{'kind':'tree','path':'member.json','file':'member.tree.tar','required':True}],'verify':None}},
         'followers':[{'unit':author,'staged_inputs':{i['name']:'inputs/'+i['name'] for i in author['inputs']}}]})
     fixed['units']+=projected
     for unit in projected:fixed['staged_inputs'][unit['id']]={i['name']:'inputs/'+i['name'] for i in unit['inputs']}
@@ -97,7 +97,7 @@ def megapark_templates(rows,*,checkout,natives=None):
     audit={'id':'unreal.megapark.audit','op':{'kind':'recipe.python','version':'1'},'script':RECIPE,'code':sorted(audit_code),'inputs':audit_inputs,
         'params':{'recipe':{'version':1,'paths':audit_paths,'commands':[_call(root,'audit',(root/park.BUILD/'build.json',root/park.BUILD/'letters.npz',root/source_map,root/park.BUILD,
             capture('geometry',follower=1,item='geometry'),capture('reports',follower=1,item='report'),deepcopy(token),root/VERIFIER,root/'native-level'))],
-            'outputs':[{'path':path,'file':'outputs/'+str(i)+'.tree.tar','required':True} for i,path in enumerate(outputs)],'verify':None}},
+            'outputs':[{'kind':'tree','path':path,'file':'outputs/'+str(i)+'.tree.tar','required':True} for i,path in enumerate(outputs)],'verify':None}},
         'outputs':[{'id':'output'+str(i),'logical_path':'/Internal/MegaPark/Audit/'+str(i),'class':'Data','destination':'store','files':[{'path':'outputs/'+str(i)+'.tree.tar','required':True}]} for i in range(len(outputs))]}
     fixed['units'].append(audit);fixed['staged_inputs'][audit['id']]={i['name']:'inputs/'+i['name'] for i in audit_inputs};fixed['content_slots'].update({i['name']:False for i in audit_inputs})
     fixed['audit_unit']=audit['id'];fixed['required_targets']=[audit['id'],'unreal.megapark.level']

@@ -96,7 +96,7 @@ def attach_followers(geometry, *, rows, checkout, natives=None):
         add({'id': owner, 'op': {'kind': 'recipe.python', 'version': '1'}, 'script': RECIPE, 'code': code, 'inputs': [deepcopy(incoming)],
             'params': {'file_root': 'output/files', 'recipe': {'version': 1, 'paths': dict(source_paths), 'verify': None,
                 'commands': [_call(root, 'project', (root / paths[3], root / paths[2], root / paths[1], root / paths[0], root / folder, kind))],
-                'outputs': [{'path': folder, 'file': 'members.tree.tar', 'required': True}],
+                'outputs': [{'kind': 'tree', 'path': folder, 'file': 'members.tree.tar', 'required': True}],
                 'file_group': {'source': folder, 'parent': 'Brinecove_' + kind, 'extensions': ['.mesh'] if kind == 'meshes' else ['.png', '.jpg'] if kind == 'textures' else ['.json']}}},
             'outputs': [data('archive', '/Internal/Brinecove/' + kind, 'members.tree.tar')], 'output_groups': [contract]})
         result['groups'][owner] = {'contract': contract, 'source': folder}
@@ -136,14 +136,14 @@ def attach_followers(geometry, *, rows, checkout, natives=None):
             'logical_namespace': '/Internal/Brinecove/Selected/' + kind, 'files': [{'path': 'member.tree.tar', 'required': True}],
             'params': {'recipe': {'version': 1, 'paths': {'selected': 'inputs/selected'}, 'verify': None,
                 'commands': [_call(root, 'select', (root / 'selected', root / 'member', '$piece', kind))],
-                'outputs': [{'path': 'member', 'file': 'member.tree.tar', 'required': True}]}}, 'followers': [wrap(u) for u in followers]}
+                'outputs': [{'kind': 'tree', 'path': 'member', 'file': 'member.tree.tar', 'required': True}]}}, 'followers': [wrap(u) for u in followers]}
         result['templates'].append(template); result['module_requirements'][template['unit_prefix']] = modules
     folder = 'generated/brinecove/complete'
     gate = {'id': 'unreal.brinecove.complete', 'op': {'kind': 'recipe.python', 'version': '1'}, 'script': RECIPE, 'code': code,
         'inputs': [deepcopy(incoming)], 'params': {'recipe': {'version': 1, 'paths': dict(source_paths), 'verify': None,
             'commands': [_call(root, 'complete', (root / paths[3], root / paths[2], root / paths[1], token('meshes', 1, 'asset'),
                 deepcopy(materials), deepcopy(textures), token('meshes', 1, 'report'), root / folder))],
-            'outputs': [{'path': folder, 'file': 'complete.tree.tar', 'required': True}]}},
+            'outputs': [{'kind': 'tree', 'path': folder, 'file': 'complete.tree.tar', 'required': True}]}},
         'outputs': [data('summary', '/Internal/Brinecove/Complete', 'complete.tree.tar')]}
     add(gate); result['aliases']['unreal.brinecove'] = (gate['id'],)
     result['geometry'].setdefault('templates', []).extend(deepcopy(result['templates']))
