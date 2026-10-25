@@ -184,15 +184,20 @@ def restore_native_inputs(recipe, view, run):
             source.unlink()
 
 
-def package_project_view(job, job_dir, view, project, run):
-    """Use independent game binaries for UAT while retaining the editor input for finalisation."""
-    incoming = [row for row in job['inputs'] if row['name'] == 'game']
+def staged_mac_zip(job, job_dir, slot):
+    incoming = [row for row in job['inputs'] if row['name'] == slot]
     if len(incoming) != 1:
-        raise Refused('native package requires the actual produced game binary Item')
+        raise Refused('native package requires its actual produced ' + slot + ' Item')
     source = job_dir / recipe_job.relative(incoming[0]['path'])
     archives = sorted(source.rglob('*.mac.zip')) if source.is_dir() else [source]
     if len(archives) != 1 or not archives[0].name.endswith('.mac.zip'):
-        raise Refused('game binary Item must contain one complete Mac binary archive')
+        raise Refused(slot + ' Item must contain one complete Mac binary archive')
+    return archives[0]
+
+
+def package_project_view(job, job_dir, view, project, run):
+    """Use independent game binaries for UAT while retaining the editor input for finalisation."""
+    archive = staged_mac_zip(job, job_dir, 'game')
     destination = job_dir / '.recipe-runtime/package-view'
     shutil.copytree(view, destination, symlinks=True)
     _tree(destination)
@@ -200,7 +205,7 @@ def package_project_view(job, job_dir, view, project, run):
     binaries = packaging_project.parent / 'Binaries/Mac'
     if binaries.exists():
         shutil.rmtree(binaries)  # Only the new independent package-view copy.
-    restore_mac_zip(archives[0], binaries, run)
+    restore_mac_zip(archive, binaries, run)
     return destination, packaging_project
 
 
@@ -628,7 +633,18 @@ def dispatch(job, job_dir, engine, run, *, source_key=None, zen_state_root=None,
         if command['script'] not in job['code']:
             raise Refused('archive producer is outside frozen code')
         args = recipe_job._value(command['args'], view)
-        run([sys.executable, '-I', '-B', str(script), *map(str, args)], cwd=view, env=environment)
+        if not isinstance(source_key, str) or not re.fullmatch('[a-f0-9]{64}', source_key):
+            raise Refused('package archive requires its actual controller input key')
+        if len(args) != 2 or args[0] != '--out' or not isinstance(args[1], Path):
+            raise Refused('v2 package archive requires one exact declared output root')
+        package_root = args[1]
+        if (not package_root.is_relative_to(view) or package_root == view
+                or not any(_path(view, row['path']) == package_root for row in recipe['outputs'])):
+            raise Refused('package archive output is outside its declared owned roots')
+        package_root.mkdir(parents=True, exist_ok=False)
+        restore_mac_zip(staged_mac_zip(job, job_dir, 'archive'), package_root / 'archive', run)
+        run([sys.executable, '-I', '-B', str(script), *map(str, args), '--revision', 'v2-' + source_key],
+            cwd=view, env=environment)
     else:
         raw_roots = source_cook(params, view, project, engine, source_key, Path(zen_state_root), job_dir, run, environment, Path(export_project), native_source_digest(job, job_dir))
     if recipe.get('verify') is not None:

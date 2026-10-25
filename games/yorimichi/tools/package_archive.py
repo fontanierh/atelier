@@ -117,7 +117,7 @@ def audio_compatibility(app, log):
     codesign('--verify', '--deep', '--strict')
 
 
-def package_zip(root, log, *, cook_receipt=False):
+def package_zip(root, log, *, cook_receipt=False, revision=None):
     """Assemble an independent download copy. Keep the cook and previous release intact until assembly succeeds."""
     receipt = cook_tool().read_receipt(root) if cook_receipt else None
     archived = sorted((root / 'archive').glob('*/*.app'))
@@ -125,7 +125,7 @@ def package_zip(root, log, *, cook_receipt=False):
     if len(apps) != 1:
         raise RuntimeError(f'expected one packaged .app under {root / "archive"} or {root / "Yorimichi"}')
     staged_data(apps[0])
-    revision = receipt['revision'][:8] if receipt else head(REPO, short=8)
+    revision = receipt['revision'][:8] if receipt else (revision or head(REPO, short=8))
     with tempfile.TemporaryDirectory(prefix='.assemble-', dir=root) as scratch:
         candidate = Path(scratch)
         folder = candidate / 'Yorimichi'; folder.mkdir()
@@ -195,8 +195,9 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('--out', type=Path, required=True, help='the package folder: archive/ in, release files out')
     parser.add_argument('--cook-receipt', action='store_true', help='require the certified cook and preserve its source revision')
+    parser.add_argument('--revision', help='explicit content-addressed build identity for isolated v2 assembly')
     args = parser.parse_args(argv)
-    package_zip(args.out, sys.stdout, cook_receipt=args.cook_receipt)
+    package_zip(args.out, sys.stdout, cook_receipt=args.cook_receipt, revision=args.revision)
     print('PACKAGE ARCHIVE COMPLETE', flush=True)
 
 

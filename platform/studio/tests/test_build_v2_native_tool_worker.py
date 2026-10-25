@@ -387,3 +387,29 @@ def test_uat_game_view_keeps_the_editor_input_unchanged(tmp_path, monkeypatch):
     assert tool._tree(view) == before
     assert (package_view / 'Binaries/Mac/Fixture.app').read_bytes() == b'game'
     assert not (package_view / 'Binaries/Mac/libUnrealEditor-Fixture.dylib').exists()
+
+
+def test_archive_consumes_the_produced_app_and_controller_key(tmp_path, monkeypatch):
+    from pathlib import Path
+    request = job(tmp_path, 'package.archive')
+    script = tmp_path / 'tools/package_archive.py'; script.parent.mkdir(); script.write_text('# keyed package body')
+    request['code'].append('tools/package_archive.py')
+    archive = tmp_path / 'inputs/archive/archive.mac.zip'; archive.parent.mkdir(parents=True); archive.write_bytes(b'produced app')
+    request['inputs'] = [{'name': 'archive', 'path': 'inputs/archive'}]
+    request['params']['recipe'].update(commands=[{'kind': 'python', 'script': 'tools/package_archive.py',
+        'args': ['--out', {'path': 'download'}], 'env': {}}],
+        outputs=[{'path': 'download', 'file': 'download.tree.tar', 'required': True}])
+    request['outputs'] = [{'path': 'download.tree.tar'}]
+    def restore(source, destination, run):
+        assert source == archive
+        destination.mkdir(); (destination / 'app').write_bytes(b'owned app')
+    monkeypatch.setattr(tool, 'restore_mac_zip', restore)
+    calls = []
+    def run(argv, **kwargs):
+        calls.append(argv)
+        assert (kwargs['cwd'] / 'download/archive/app').read_bytes() == b'owned app'
+        (kwargs['cwd'] / 'download/manifest.json').write_text('{}')
+    assert tool.dispatch(request, tmp_path, tmp_path / 'engine', run, source_key='f' * 64) == ['download.tree.tar']
+    assert calls[0][-2:] == ['--revision', 'v2-' + 'f' * 64]
+    assert '--cook-receipt' not in calls[0]
+    assert archive.read_bytes() == b'produced app'
