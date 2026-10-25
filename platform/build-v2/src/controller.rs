@@ -122,8 +122,10 @@ impl ControllerRequest {
                 | crate::unreal_controller::FINISH
                 | crate::unreal_controller::AUTHOR
                     if unit.output_groups.is_empty()
-                        && (matches!(unit.op.kind.as_str(), crate::unreal_controller::AUTHOR | crate::unreal_controller::FINISH)
-                            || unit.script == crate::unreal_controller::ENTRY) => {}
+                        && (matches!(
+                            unit.op.kind.as_str(),
+                            crate::unreal_controller::AUTHOR | crate::unreal_controller::FINISH
+                        ) || unit.script == crate::unreal_controller::ENTRY) => {}
                 kind if crate::native_tool_ops::supports(kind)
                     && unit.output_groups.is_empty()
                     && unit.script == crate::native_tool_ops::ENTRY =>
