@@ -470,8 +470,9 @@ bool Replays(std::shared_ptr<const skate::GameplayResources> A,std::shared_ptr<c
 }
 #endif
 
-bool USkateDataLibrary::Verify(const FString& PackageFolder,const FString& ReportFile,FString& Error)
+bool USkateDataLibrary::VerifyToJson(const FString& PackageFolder,FString& ReportJson,FString& Error)
 {
+    ReportJson.Reset();
     Error.Reset();
     ON_SCOPE_EXIT { if(!Error.IsEmpty())UE_LOG(LogTemp,Error,TEXT("SKATE DATA VERIFY: %s"),*Error); };
 #if WITH_EDITOR
@@ -553,12 +554,25 @@ bool USkateDataLibrary::Verify(const FString& PackageFolder,const FString& Repor
             if(!Referenced.Contains(Full)&&Full!=RuntimePackage){Error=TEXT("Unreferenced skate data package would be cooked: ")+File;return false;}
         }
     }
-    const auto Report=FString::Printf(TEXT("{\"schema\":%d,\"asset\":\"%s\",\"clips\":%llu,\"frames\":%llu,\"bone_samples\":%llu,\"replay_steps\":%llu,\"replay_cases\":12,\"exact\":true,\"negative_control\":true,\"invalid_record_controls\":3,\"runtime_schema\":%d,\"runtime_asset\":\"%s\",\"runtime_files\":%d,\"runtime_bytes\":%llu,\"runtime_exact\":true,\"runtime_negative_control\":true,\"runtime_invalid_record_controls\":3,\"banks\":[%s]}\n"),
+    ReportJson=FString::Printf(TEXT("{\"schema\":%d,\"asset\":\"%s\",\"clips\":%llu,\"frames\":%llu,\"bone_samples\":%llu,\"replay_steps\":%llu,\"replay_cases\":12,\"exact\":true,\"negative_control\":true,\"invalid_record_controls\":3,\"runtime_schema\":%d,\"runtime_asset\":\"%s\",\"runtime_files\":%d,\"runtime_bytes\":%llu,\"runtime_exact\":true,\"runtime_negative_control\":true,\"runtime_invalid_record_controls\":3,\"banks\":[%s]}\n"),
         USkateMotionData::CurrentSchema,*Path.ToString(),uint64(Typed->evaluator->frames.clips.size()),Frames,Samples,Steps,
         USkateRuntimeData::CurrentSchema,*RuntimePath.ToString(),int32(LoadedRuntime.Payloads->size()),RuntimeBytes,*BankPaths);
-    if(!FFileHelper::SaveStringToFile(Report,*ReportFile)){Error=TEXT("Cannot save skate data verification report");return false;}
     Error.Reset();return true;
 #else
     Error=TEXT("Skate data verification requires an editor build");return false;
 #endif
+}
+
+
+bool USkateDataLibrary::Verify(const FString& PackageFolder,const FString& ReportFile,FString& Error)
+{
+    FString ReportJson;
+    if(!VerifyToJson(PackageFolder,ReportJson,Error))return false;
+    if(!FFileHelper::SaveStringToFile(ReportJson,*ReportFile))
+    {
+        Error=TEXT("Cannot save skate data verification report");
+        UE_LOG(LogTemp,Error,TEXT("SKATE DATA VERIFY: %s"),*Error);
+        return false;
+    }
+    return true;
 }
