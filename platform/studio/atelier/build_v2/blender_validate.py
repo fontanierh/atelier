@@ -156,8 +156,8 @@ def validate_export_receipt(receipt_bytes, primary_bytes, *, asset,
     """
     asset = name(asset)
     primary_name = primary_name or asset + '.fbx'
-    if type(primary_name) is not str or not primary_name.endswith('.fbx'):
-        raise ValueError('Invalid declared FBX primary')
+    if type(primary_name) is not str or not primary_name.endswith(('.fbx', '.glb')):
+        raise ValueError('Invalid declared mesh primary')
     name(primary_name[:-4])
     if (type(primary_digest) is not str or len(primary_digest) != 64
             or any(c not in '0123456789abcdef' for c in primary_digest)
@@ -183,6 +183,9 @@ def validate_export_receipt(receipt_bytes, primary_bytes, *, asset,
             or receipt['bounds'] != [facts['min'], facts['max']]):
         raise ValueError('Export receipt differs from its selected geometry payload')
     # Bounded framing check only; do not claim this substitutes for native importer comparisons.
-    if not isinstance(primary_bytes, bytes) or len(primary_bytes) <= len(FBX_HEADER) + 4 or not primary_bytes.startswith(FBX_HEADER):
+    if primary_name.endswith('.glb'):
+        from atelier.gltf import glb_parts
+        glb_parts(primary_bytes)
+    elif not isinstance(primary_bytes, bytes) or len(primary_bytes) <= len(FBX_HEADER) + 4 or not primary_bytes.startswith(FBX_HEADER):
         raise ValueError('Expected an emitted binary FBX primary')
     return receipt
