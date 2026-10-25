@@ -173,7 +173,7 @@ def audio_templates(rows, *, checkout):
             templates.append({'producer': producer, 'group': 'waves', 'unit_prefix': prefix,
                 'op': {'kind': 'unreal.raw_import', 'version': '1'}, 'script': OPS, 'code': native_code,
                 'derive_payload': False, 'params': {'op': 'raw_import', 'kind': 'sound', 'source': 'source',
-                    'destination': raw_folder + '/$piece'}, 'payload_slot': 'source', 'staged_path': 'inputs/source',
+                    'destination': raw_folder + '/$piece', 'source_member': '$piece.wav'}, 'payload_slot': 'source', 'staged_path': 'inputs/source',
                 'output_class': raw_output['class'], 'logical_namespace': raw_folder,
                 'files': raw_output['files'],
                 'followers': [{'unit': finish, 'staged_inputs': {'raw': 'inputs/raw'}}]})

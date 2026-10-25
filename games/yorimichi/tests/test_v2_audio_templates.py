@@ -42,6 +42,7 @@ def test_all_six_actual_producers_have_finite_cue_templates_and_original_loop_se
         assert properties['looping'] is expected
         assert properties.get('streaming') is (False if family == 'audio.footsteps' else None)
         assert template['derive_payload'] is False
+        assert template['params']['source_member'] == '$piece.wav'
         assert template['output_class'] == 'RawSound'
         assert template['params']['destination'] == template['logical_namespace'] + '/$piece'
         follower = template['followers'][0]['unit']
@@ -120,3 +121,30 @@ def test_cue_source_policy_unknown_dynamic_role_refuses(tmp_path):
     path.write_text('LOOPS=[]\ndef main():\n report={}\n report[unknown_role]=[]\n')
     with pytest.raises(audio.Unsupported, match='finite literal'):
         audio.cue_settings('audio.bike', checkout=tmp_path)
+
+
+def test_actual_ops_selects_projected_wav_without_export_receipt(rows, tmp_path):
+    from atelier.build_v2 import unreal_ops
+    job = tmp_path.resolve() / 'job'; source = job / 'inputs/source'
+    source.mkdir(parents=True)
+    selected = source / 'engine_01.wav'
+    with wave.open(str(selected), 'wb') as stream:
+        stream.setnchannels(1); stream.setsampwidth(2); stream.setframerate(48000)
+        stream.writeframes(b'\x01\x00' * 8)
+    # The projected Item is exactly the one validated WAV, not an export-receipt directory.
+    template = next(template for template in audio.audio_templates(rows, checkout=ROOT)['templates']
+                    if template['producer'] == 'audio.kart.files.engine')
+    params = {name: value.replace('$piece', 'engine_01') if isinstance(value, str) else value
+              for name, value in template['params'].items()}
+    context = SimpleNamespace(job_dir=str(job), inputs={'source': str(source)}, packages={}, params=params)
+    assert Path(unreal_ops._input(context, 'source')) == selected
+    assert list(source.iterdir()) == [selected]
+    context.params['source_member'] = 'foreign.wav'
+    with pytest.raises(ValueError, match='regular source'):
+        unreal_ops._input(context, 'source')
+    context.params['source_member'] = '../engine_01.wav'
+    with pytest.raises(ValueError, match='exact relative member'):
+        unreal_ops._input(context, 'source')
+    context.params.pop('source_member')
+    with pytest.raises(ValueError, match='export receipt'):
+        unreal_ops._input(context, 'source')
