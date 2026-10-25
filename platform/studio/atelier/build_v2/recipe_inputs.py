@@ -56,6 +56,12 @@ def _source_members(checkout, path):
 
 def _archive(rows_by_name, owner, item):
     producer = rows_by_name[owner]
+    if 'native_items' in producer:
+        try:
+            files = producer['native_items'][item]
+        except KeyError:
+            raise Unsupported('native producer has no declared item ' + item) from None
+        return [path for path, _ in files], [stored for _, stored in files]
     if item.startswith('product'):
         index = int(item.removeprefix('product'))
         product = producer['products'][index]
@@ -112,7 +118,7 @@ def lower_inputs(row, *, rows, roots, products, checkout):
             slot = f'item{len(incoming)}'
             inputs.append({'role': 'content', 'name': slot,
                            'source': {'kind': 'item', 'unit': owner, 'item': item},
-                           'whole': 'The recipe consumes declared ROOT archives from this complete producer Item.'})
+                           'whole': 'The recipe consumes the complete producer Item, including its files or ROOT archives.'})
             staged[slot] = f'inputs/{slot}'
             slots[slot] = False
             incoming[(owner, item)] = slot

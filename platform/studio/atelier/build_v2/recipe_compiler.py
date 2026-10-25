@@ -86,7 +86,25 @@ def _without_joins(rows, targets):
     return lowered, tuple(dict.fromkeys(child for name in targets for child in expand(name)))
 
 
-def compile_rows(rows, *, project, targets, install_roots=(), checkout=None, geometry=None):
+def _native_row(unit):
+    """Expose real native Item files to ordinary byte-consuming recipe units."""
+    items, products = {}, []
+    for item in unit['outputs']:
+        files = [(file['install_path'], file['path']) for file in item['files'] if 'install_path' in file]
+        if files:
+            items[item['id']] = files
+            products.append({'id': unit['id'] + ':' + item['id'],
+                             'paths': [logical for logical, _ in files], 'optional_paths': [],
+                             'native_item': item['id']})
+    return {'id': unit['id'], 'commands': [{'kind': 'declared_native'}],
+            'code': [], 'inputs': [], 'reads': [], 'references': [], 'deferred': [],
+            'needs': list(dict.fromkeys(incoming['source']['unit'] for incoming in unit['inputs']
+                                       if incoming['source']['kind'] == 'item')),
+            'after': [], 'products': products, 'outputs': [], 'verify': None,
+            'replan': False, 'native_items': items, 'native_declaration': unit}
+
+
+def compile_rows(rows, *, project, targets, install_roots=(), checkout=None, geometry=None, native=None):
     """@cc [owner:fontanierh,label:correctness] recipe-units-use-real-engine
     Each action MUST become its own unit with complete code, consumed source and
     upstream product identities. No old action fingerprint, stamp, source location
@@ -100,6 +118,14 @@ def compile_rows(rows, *, project, targets, install_roots=(), checkout=None, geo
     checkout = project_paths.REPO if checkout is None else checkout
     geometry = geometry or {'groups': {}, 'templates': []}
     rows = deepcopy(list(rows))
+    native = native or {'units': [], 'staged_inputs': {}, 'content_slots': {}, 'aliases': {}}
+    aliases = native.get('aliases', {})
+    rows = [row for row in rows if row['id'] not in aliases]
+    for row in rows:
+        for field in ('needs', 'after'):
+            row[field] = list(dict.fromkeys(child for name in row[field] for child in aliases.get(name, (name,))))
+    targets = tuple(dict.fromkeys(child for name in targets for child in aliases.get(name, (name,))))
+    rows.extend(_native_row(unit) for unit in native['units'])
     for row in rows:
         kinds = [command['kind'] for command in row['commands']]
         if 'UnrealCompile' in kinds or 'UnrealGame' in kinds:
@@ -125,7 +151,7 @@ def compile_rows(rows, *, project, targets, install_roots=(), checkout=None, geo
             name = product['id']
             if name in products:
                 raise Unsupported(f'duplicate product: {name}')
-            item = f'product{index}'
+            item = product.get('native_item', f'product{index}')
             paths = [_path(path) for path in (*product['paths'], *product['optional_paths'])]
             products[name] = (row['id'], item, paths)
             roots.extend((path, row['id'], item) for path in paths)
@@ -133,8 +159,11 @@ def compile_rows(rows, *, project, targets, install_roots=(), checkout=None, geo
             path = _path(path)
             if not any(_under(path, root) and owner == row['id'] for root, owner, _ in roots):
                 roots.append((path, row['id'], f'output{index}'))
-    units, staged, slots, errors = [], {}, {}, []
+    units = deepcopy(native['units'])
+    staged, slots, errors = deepcopy(native['staged_inputs']), dict(native['content_slots']), []
     for row in rows:
+        if 'native_declaration' in row:
+            continue
         name = row['id']
         try:
             commands = [_command(command) for command in row['commands']]
@@ -248,7 +277,7 @@ def compile_rows(rows, *, project, targets, install_roots=(), checkout=None, geo
     # Rust checks the complete global declaration before selecting these roots.
     return ControllerTarget(targets[0], project, declaration, staged, slots,
                             tuple(install_roots) or (f'build/{project}',),
-                            tuple(geometry['templates']))
+                            tuple(geometry['templates']), tuple(targets))
 
 
 def recipe_steps(game, *, checkout, build_root):
@@ -340,6 +369,37 @@ def compile_materials(game, *, checkout, build_root):
         selection_targets=native['targets'])
 
 
+def compile_island(game, *, checkout, build_root):
+    """Select original source prerequisites and actual per-piece native map owners."""
+    from dataclasses import replace
+    import importlib.util
+    from pathlib import Path
+    from atelier.build_products import Graph
+    from .recipe_dependencies import extract
+    steps = recipe_steps(game, checkout=checkout, build_root=build_root)
+    selected = Graph(steps).select(('world.island', 'world.textures', 'world.hidamari.north_masks'))
+    rows = extract(selected, checkout=checkout, build_root=build_root)
+    def load(name):
+        path = Path(checkout) / 'games' / game / (name + '.py')
+        spec = importlib.util.spec_from_file_location('island_compiler_' + name, path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+    template_module = load('v2_geometry_templates')
+    geometry = template_module.geometry_templates(rows, checkout=checkout)
+    rows = template_module.apply_derived(rows, geometry['derived'])
+    native = load('v2_native_units').island(rows, geometry, checkout=checkout)
+    geometry = native['geometry']
+    _, targets = _without_joins(rows, tuple(row['id'] for row in rows))
+    source = compile_rows(rows, project=game, targets=targets, checkout=checkout, geometry=geometry,
+        install_roots=(f'build/{game}', f'games/{game}/unreal/Content'))
+    return replace(source, unit='unreal.island',
+        declaration={**source.declaration, 'units': [*source.declaration['units'], *native['units']]},
+        staged_inputs={**source.staged_inputs, **native['staged_inputs']},
+        content_slots={**source.content_slots, **native['content_slots']},
+        selection_targets=native['targets'])
+
+
 def compile_game(game, *, checkout, build_root, targets=('unreal.package',)):
     """Compose authored declarations; all execution remains in the v2 engine."""
     from atelier.build_products import Graph
@@ -362,6 +422,15 @@ def compile_game(game, *, checkout, build_root, targets=('unreal.package',)):
         spec.loader.exec_module(module)
         geometry = module.geometry_templates(rows, checkout=checkout)
         rows = module.apply_derived(rows, geometry['derived'])
-    return compile_rows(rows, project=game, targets=targets, checkout=checkout, geometry=geometry,
+    native = None
+    native_source = Path(checkout) / 'games' / game / 'v2_native_units.py'
+    if native_source.is_file():
+        spec = importlib.util.spec_from_file_location('full_native_units_' + game, native_source)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        native = module.lower(rows, geometry, checkout=checkout)
+        if native is not None:
+            geometry = native.get('geometry', geometry)
+    return compile_rows(rows, project=game, targets=targets, checkout=checkout, geometry=geometry, native=native,
                         install_roots=(f'build/{game}', f'games/{game}/unreal/Content',
                                        f'games/{game}/unreal/Binaries'))

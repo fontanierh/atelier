@@ -5,7 +5,7 @@ import re
 
 from atelier.export_manifest import validate as validate_export
 
-PACKAGE = re.compile(r'/Game/(?:[A-Za-z0-9_]+/)*[A-Za-z0-9_]+\Z')
+PACKAGE = re.compile(r'/Game/(?:[A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+\Z')
 
 
 def _package(value):

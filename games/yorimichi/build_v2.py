@@ -158,7 +158,9 @@ def targets():
 def compile_target(name):
     """Compile the actual authored closure into v2 declarations, never run the old build loop."""
     from atelier import paths
-    from atelier.build_v2.recipe_compiler import compile_game, compile_source_prerequisites, compile_materials
+    from atelier.build_v2.recipe_compiler import compile_game, compile_source_prerequisites, compile_materials, compile_island
+    if name == 'unreal.island':
+        return compile_island('yorimichi', checkout=paths.REPO, build_root=paths.build_root())
     if name == 'unreal.materials':
         return compile_materials('yorimichi', checkout=paths.REPO, build_root=paths.build_root())
     if name == 'world.source-prerequisites':

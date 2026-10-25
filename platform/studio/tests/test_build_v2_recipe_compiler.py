@@ -22,8 +22,8 @@ def test_generated_file_is_a_product_edge_without_reading_existing_output(tmp_pa
     marker = compile_rows([producer, consumer], project='game', targets=['consumer'])
     request = marker.request(tmp_path)
     unit = request['declaration']['units'][1]
-    assert unit['inputs'] == [{'role': 'content', 'name': 'item0',
-                              'source': {'kind': 'item', 'unit': 'producer', 'item': 'product0'}}]
+    assert len(unit['inputs']) == 1 and unit['inputs'][0]['whole']
+    assert unit['inputs'][0]['source'] == {'kind': 'item', 'unit': 'producer', 'item': 'product0'}
     assert unit['params']['recipe']['paths'] == {
         'build/game/terrain': 'inputs/item0/products/0-0.tree.tar'}
     assert not list(tmp_path.iterdir())
@@ -64,3 +64,29 @@ def test_duplicate_or_escaping_ownership_refuses():
     unit = row('source', outputs=['build/game/data.json'])
     with pytest.raises(Unsupported, match='duplicate recipe unit'):
         compile_rows([unit, unit], project='game', targets=['source'])
+
+
+def test_native_replacement_alias_keeps_individual_items_and_direct_file_bytes(tmp_path):
+    native = {'id': 'native.mesh', 'op': {'kind': 'unreal.finish', 'version': '1'},
+              'script': 'ops/finish.py', 'code': ['ops/finish.py'], 'inputs': [], 'params': {},
+              'outputs': [{'id': 'asset', 'logical_path': '/Game/Mesh', 'class': 'StaticMesh',
+                           'destination': 'checkout', 'files': [{'path': 'content/Game/Mesh.uasset',
+                             'install_path': 'games/game/unreal/Content/Mesh.uasset', 'required': True}]}]}
+    old = row('old.import', outputs=['games/game/unreal/Content/Mesh.uasset'])
+    old['commands'] = [{'kind': 'UnrealScript', 'script': {'path': 'old/import.py'}}]
+    consumer = row('consumer', outputs=['build/game/data.json'])
+    consumer['needs'] = ['old.import']
+    marker = compile_rows([old, consumer], project='game', targets=['consumer'], native={
+        'units': [native], 'staged_inputs': {'native.mesh': {}}, 'content_slots': {},
+        'aliases': {'old.import': ['native.mesh']}})
+    request = marker.request(tmp_path)
+    assert request['declaration']['units'][0] == native
+    unit = request['declaration']['units'][1]
+    assert unit['inputs'][0]['source'] == {'kind': 'item', 'unit': 'native.mesh', 'item': 'asset'}
+    assert unit['params']['recipe']['paths'] == {
+        'games/game/unreal/Content/Mesh.uasset': 'inputs/item0/content/Game/Mesh.uasset'}
+    assert not list(tmp_path.iterdir())
+    alias = compile_rows([old], project='game', targets=['old.import'], native={
+        'units': [native], 'staged_inputs': {'native.mesh': {}}, 'content_slots': {},
+        'aliases': {'old.import': ['native.mesh']}})
+    assert alias.request(tmp_path)['targets'] == ['native.mesh']

@@ -46,3 +46,28 @@ def test_real_shared_library_joins_individual_raw_finish_and_graph_owners():
 def test_missing_texture_does_not_produce_an_incomplete_material_selection():
     with pytest.raises(ValueError, match='all 22'):
         load('v2_native_units').shared_materials(rows()[1:], checkout=ROOT)
+
+
+def test_island_binds_the_actual_finish_follower_and_complete_native_material_inputs():
+    parents = ('Terrain', 'Road', 'Lane', 'Guardrail', 'Wires', 'FarHills', 'Sea')
+    geometry = {'templates': [dict(producer='world.island.geometry.' + parent, group='geometry',
+        unit_prefix='world.island.export.' + parent,
+        op={'kind': 'blender_export_piece', 'version': '1'}) for parent in parents]}
+    graph = load('v2_native_units').island(rows(), geometry, checkout=ROOT)
+    assert graph['targets'] == ('unreal.island.map',)
+    assert all(len(template['followers']) == 2 for template in graph['geometry']['templates'])
+    material_units = {unit['id']: unit for unit in graph['units']}
+    for template in graph['geometry']['templates']:
+        finish = template['followers'][1]['unit']
+        assert finish['script'] == 'games/yorimichi/world/island_finish_v2.py'
+        assert finish['inputs'][0]['source']['unit'] == '$previous'
+        assert finish['inputs'][1]['source']['unit'] == '$export'
+        assert all(incoming['source']['unit'] in material_units for incoming in finish['inputs'][2:])
+        assert not any(incoming['source']['unit'].startswith('unreal.texture.raw.')
+                       for incoming in finish['inputs'][2:])
+    target = material_units['unreal.island.map']
+    assert target['outputs'][0]['class'] == 'Map'
+    assert target['params']['args']['world'] == {'file': 'outputs/0.tree.tar'}
+    assert 'Sea' not in target['params']['args']['terrain']
+    for value in target['params']['args']['terrain'].values():
+        assert value['derived_items']['templates'][0]['follower'] == 1
