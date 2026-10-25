@@ -8,6 +8,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import sys
 
 
 _PACKAGE = re.compile(r'/Game/(?:[A-Za-z0-9_]+/)*[A-Za-z0-9_]+\Z')
@@ -74,13 +75,28 @@ def _output(context, value):
     return value
 
 
+def _editor_value(value):
+    if isinstance(value, dict) and set(value) == {'unreal_type', 'args'}:
+        import unreal
+        if value['unreal_type'] not in ('Vector4', 'Vector', 'LinearColor') or not isinstance(value['args'], list):
+            raise ValueError('Unsupported authored Unreal property type')
+        return getattr(unreal, value['unreal_type'])(*value['args'])
+    if isinstance(value, dict) and set(value) == {'unreal_enum'}:
+        import unreal
+        owner, separator, member = value['unreal_enum'].partition('.')
+        if not separator or owner not in ('TextureMipGenSettings', 'TextureGroup', 'CollisionTraceFlag'):
+            raise ValueError('Unsupported authored Unreal enum')
+        return getattr(getattr(unreal, owner), member)
+    return value
+
+
 def _set(target, values):
     if not isinstance(values, dict):
         raise ValueError('Expected explicit editor properties')
     for name, value in values.items():
         if not isinstance(name, str) or not re.fullmatch('[a-z][a-z0-9_]*', name):
             raise ValueError('Invalid editor property name')
-        target.set_editor_property(name, value)
+        target.set_editor_property(name, _editor_value(value))
 
 
 def _load(unreal, package, kind=None):
@@ -104,7 +120,7 @@ def raw_import(context, unreal):
     saves, required output files, import tables and scratch cleanup before Completed.
     """
     p = context.params
-    _fields(p, {'op', 'kind', 'source', 'destination'}, {'properties', 'fbx', 'skeleton', 'physics_asset', 'package_sources'})
+    _fields(p, {'op', 'kind', 'source', 'destination'}, {'properties', 'fbx', 'skeleton', 'physics_asset', 'package_sources', 'input_roots'})
     kind = p['kind']
     if kind not in _KINDS:
         raise ValueError('Unsupported raw import kind')
@@ -114,6 +130,15 @@ def raw_import(context, unreal):
     task = unreal.AssetImportTask()
     _set(task, {'filename': source, 'destination_path': folder, 'destination_name': name,
                 'automated': True, 'replace_existing': False, 'save': False})
+    if kind == 'static_mesh' and Path(source).suffix.lower() in ('.glb', '.gltf'):
+        if any(field in p for field in ('fbx', 'skeleton', 'physics_asset')) or context.outputs != [destination]:
+            raise ValueError('Geometry-only GLTF import owns exactly one mesh package')
+        sys.path.insert(0, str(Path(context.job_dir) / 'platform/studio'))
+        from atelier.interchange_mesh import import_static_mesh
+        asset = import_static_mesh(source, folder, name)
+        _set(asset, p.get('properties', {}))
+        _save(unreal, asset)
+        return _load(unreal, destination, 'StaticMesh')
     if kind in ('static_mesh', 'skeletal_mesh', 'animation'):
         if Path(source).suffix.lower() != '.fbx':
             raise ValueError('The FBX import operation requires FBX bytes')
@@ -142,6 +167,13 @@ def raw_import(context, unreal):
         data = options.get_editor_property({'static_mesh': 'static_mesh_import_data',
                                            'skeletal_mesh': 'skeletal_mesh_import_data',
                                            'animation': 'anim_sequence_import_data'}[kind])
+        if kind == 'static_mesh':
+            _set(data, {'combine_meshes': True, 'generate_lightmap_u_vs': False,
+                        'auto_generate_collision': False, 'convert_scene': True,
+                        'convert_scene_unit': True, 'import_uniform_scale': 1.0,
+                        'build_nanite': False, 'one_convex_hull_per_ucx': True,
+                        'vertex_color_import_option': unreal.VertexColorImportOption.REPLACE,
+                        'normal_import_method': unreal.FBXNormalImportMethod.FBXNIM_IMPORT_NORMALS})
         _set(data, p.get('fbx', {}))
         _set(task, {'options': options})
     elif any(field in p for field in ('fbx', 'skeleton', 'physics_asset')):
@@ -168,7 +200,7 @@ def finish(context, unreal):
     Material slots and parent references are declared *content* package inputs.
     """
     p = context.params
-    _fields(p, {'op', 'source', 'destination', 'kind'}, {'properties', 'materials', 'lod_build_settings', 'package_sources', 'partners'})
+    _fields(p, {'op', 'source', 'destination', 'kind'}, {'properties', 'materials', 'lod_build_settings', 'package_sources', 'partners', 'input_roots'})
     if p['kind'] not in _KINDS:
         raise ValueError('Unsupported finish kind')
     source = _input(context, p['source'], package=True)

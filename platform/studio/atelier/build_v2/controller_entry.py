@@ -102,7 +102,7 @@ def _invoke_marker(marker, *, echo):
     helper = ensure_controller(checkout, state / 'helpers', echo=echo)
     request = marker.request(checkout)
     kinds = {unit['op']['kind'] for unit in request['declaration']['units']}
-    blender = any(kind.startswith('blender') for kind in kinds)
+    blender = any(kind.startswith('blender') or kind == 'recipe.blender' for kind in kinds)
     unreal = any(kind.startswith('unreal') or kind in ('cook', 'package', 'compile') for kind in kinds)
     options = {
         'cache_root': str(paths.cache_dir('build-v2', create=False).absolute()),

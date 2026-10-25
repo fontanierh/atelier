@@ -558,7 +558,8 @@ class Worker:
         helper = _bundle_module('unreal_inputs')
         try:
             prepared = helper.stage_inputs(job_dir, job['inputs'], self.content,
-                runtime_dir=job_dir / '.unreal-runtime', output_packages=packages)
+                runtime_dir=job_dir / '.unreal-runtime', output_packages=packages,
+                root_bindings=job['params'].get('input_roots', {}))
         except (OSError, ValueError) as error:
             raise JobRefused('dependency', str(error)) from error
         staged, inputs, input_packages = (prepared['staged_files'], prepared['inputs'], prepared['packages'])

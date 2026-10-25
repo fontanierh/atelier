@@ -18,6 +18,7 @@ use std::path::PathBuf;
 
 pub const RAW_IMPORT: &str = "unreal.raw_import";
 pub const FINISH: &str = "unreal.finish";
+pub const AUTHOR: &str = "unreal.author";
 pub const OP_VERSION: &str = "1";
 pub const ENTRY: &str = "platform/studio/atelier/build_v2/unreal_ops.py";
 
@@ -158,7 +159,10 @@ pub struct PreparedUnrealLaunch {
 impl PreparedUnrealLaunch {
     /// C5 must call after Hello, BEFORE the first Run; missing evidence refuses.
     pub fn verify_context(&self) -> Result<(), String> {
-        let report = self.keepalive.verify_context_report().map_err(|e| e.to_string())?;
+        let report = self
+            .keepalive
+            .verify_context_report()
+            .map_err(|e| e.to_string())?;
         if report.native_worker_source_digest.as_deref() != Some(&self.native_source_digest) {
             return Err("loaded native worker differs from keyed project implementation".into());
         }
@@ -451,19 +455,33 @@ fn native_source_digest(unit: &PreparedUnit) -> Result<String, String> {
     let mut files = BTreeMap::new();
     for (path, digest) in &unit.ingredients().code {
         if let Some(relative) = path.strip_prefix(NATIVE_SOURCE_ROOT) {
-            if relative == "AtelierBuildWorker.uplugin" ||
-                (relative.starts_with("Source/") && (relative.ends_with(".cs") || relative.ends_with(".cpp") || relative.ends_with(".h"))) {
+            if relative == "AtelierBuildWorker.uplugin"
+                || (relative.starts_with("Source/")
+                    && (relative.ends_with(".cs")
+                        || relative.ends_with(".cpp")
+                        || relative.ends_with(".h")))
+            {
                 files.insert(relative, digest);
             }
         }
     }
-    for required in ["AtelierBuildWorker.uplugin", "Source/AtelierBuildWorker/AtelierBuildWorker.Build.cs",
+    for required in [
+        "AtelierBuildWorker.uplugin",
+        "Source/AtelierBuildWorker/AtelierBuildWorker.Build.cs",
         "Source/AtelierBuildWorker/Private/AtelierBuildWorkerLibrary.cpp",
         "Source/AtelierBuildWorker/Private/AtelierBuildWorkerModule.cpp",
-        "Source/AtelierBuildWorker/Public/AtelierBuildWorkerLibrary.h"] {
-        if !files.contains_key(required) { return Err(format!("native implementation source not keyed: {required}")); }
+        "Source/AtelierBuildWorker/Public/AtelierBuildWorkerLibrary.h",
+    ] {
+        if !files.contains_key(required) {
+            return Err(format!(
+                "native implementation source not keyed: {required}"
+            ));
+        }
     }
-    let manifest = files.into_iter().map(|(path, digest)| format!("{path}\0{digest}\n")).collect::<String>();
+    let manifest = files
+        .into_iter()
+        .map(|(path, digest)| format!("{path}\0{digest}\n"))
+        .collect::<String>();
     Ok(sha256(manifest.as_bytes()))
 }
 
@@ -473,6 +491,37 @@ pub fn check_unit(unit: &PreparedUnit) -> Result<(), String> {
     let expected = validator_identity();
     if value.validator_version != expected.version || value.validator_digest != expected.digest {
         return Err("native validator identity differs from registered implementation".into());
+    }
+    if value.op.kind == AUTHOR && value.op.version == OP_VERSION {
+        if !value.code.contains_key(&value.script)
+            || !value.output_groups.is_empty()
+            || value.logical_outputs.len() != 1
+            || !value.params.contains_key("args")
+        {
+            return Err("authored native asset needs one keyed body and exact output item".into());
+        }
+        let item = &value.logical_outputs[0];
+        if !matches!(
+            item.class.as_str(),
+            "Material" | "MaterialInstance" | "MaterialParameterCollection"
+        ) {
+            return Err("unsupported authored native asset class".into());
+        }
+        package(&item.logical_path)?;
+        let primary = format!(
+            "content/Game/{}.uasset",
+            item.logical_path
+                .strip_prefix("/Game/")
+                .ok_or("nonGame asset")?
+        );
+        if !item
+            .files
+            .iter()
+            .any(|file| file.required && file.path == primary)
+        {
+            return Err("authored native asset omits required primary".into());
+        }
+        return Ok(());
     }
     let action = match (value.op.kind.as_str(), value.op.version.as_str()) {
         (RAW_IMPORT, OP_VERSION) => "raw_import",
@@ -636,7 +685,7 @@ pub fn prepare(
     execution: &UnrealExecutionContext,
 ) -> Result<PreparedUnrealLaunch, String> {
     let ingredients = unit.ingredients();
-    if !matches!(ingredients.op.kind.as_str(), RAW_IMPORT | FINISH)
+    if !matches!(ingredients.op.kind.as_str(), RAW_IMPORT | FINISH | AUTHOR)
         || ingredients.op.version != OP_VERSION
         || ingredients.script != ENTRY
     {
@@ -776,7 +825,7 @@ mod tests {
 }
 
 pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Result<(), String> {
-    if [RAW_IMPORT, FINISH]
+    if [RAW_IMPORT, FINISH, AUTHOR]
         .iter()
         .any(|kind| registry.contains_key(&(kind.to_string(), OP_VERSION.into())))
     {
@@ -799,10 +848,56 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
         "Sound",
         "Material",
         "MaterialInstance",
+        "MaterialParameterCollection",
     ]
     .into_iter()
     .map(Into::into)
     .collect();
+    registry.insert(
+        (AUTHOR.into(), OP_VERSION.into()),
+        OpDefinition {
+            inputs: slots
+                .iter()
+                .map(|(name, broad)| {
+                    (
+                        name.clone(),
+                        InputRule {
+                            role: InputRole::Content,
+                            required: false,
+                            allow_absent_file: false,
+                            allow_selector: true,
+                            require_whole_reason: *broad,
+                            item_classes: classes.clone(),
+                        },
+                    )
+                })
+                .collect(),
+            output_classes: classes.clone(),
+            params: BTreeMap::from([
+                (
+                    "args".into(),
+                    ParamRule {
+                        kind: ParamKind::Object,
+                        required: true,
+                    },
+                ),
+                (
+                    "settings".into(),
+                    ParamRule {
+                        kind: ParamKind::Array,
+                        required: false,
+                    },
+                ),
+                (
+                    "input_roots".into(),
+                    ParamRule {
+                        kind: ParamKind::Object,
+                        required: false,
+                    },
+                ),
+            ]),
+        },
+    );
     for (kind, action) in [(RAW_IMPORT, "raw_import"), (FINISH, "finish")] {
         let inputs = slots
             .iter()
@@ -830,7 +925,13 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
                 },
             );
         }
-        for name in ["properties", "fbx", "package_sources", "partners"] {
+        for name in [
+            "properties",
+            "fbx",
+            "package_sources",
+            "partners",
+            "input_roots",
+        ] {
             params.insert(
                 name.into(),
                 ParamRule {
