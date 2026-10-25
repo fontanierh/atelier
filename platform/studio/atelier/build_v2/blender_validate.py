@@ -58,7 +58,7 @@ def validate_mesh_options(options, *, output_format='fbx', finite_materials=Fals
         elif key == 'scene_world_color':
             valid = (isinstance(value, (list, tuple)) and len(value) == 3
                      and all(type(v) in (int, float) and 0 <= v <= 1 and math.isfinite(v) for v in value))
-        elif key == 'use_batch_own_dir':
+        elif key in ('use_batch_own_dir', 'embed_textures'):
             valid = value is False
         else:
             valid = False

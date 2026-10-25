@@ -398,7 +398,7 @@ def test_declared_fbx_media_policy_survives_payload_decode_and_export_options(mo
     options = {'path_mode': mode, 'apply_scale_options': 'FBX_SCALE_ALL',
                'apply_unit_scale': True, 'axis_forward': '-Y', 'axis_up': 'Z',
                'colors_type': 'SRGB', 'mesh_smooth_type': 'FACE',
-               'scene_world_color': [.05, .05, .05], 'use_custom_props': False}
+               'scene_world_color': [.05, .05, .05], 'use_custom_props': False, 'embed_textures': False}
     raw = mesh_ir.encode(piece, key=meta['asset'], slots=meta['slots'], matrix=meta['matrix'],
                          options=options, collisions=meta['collisions'])
     decoded, _, facts = decode_mesh_payload(raw, output_format='fbx')
@@ -463,3 +463,9 @@ def test_explicit_authored_plan_keeps_complete_disjoint_face_ownership(tmp_path,
     else:
         with pytest.raises(ValueError):
             ops.verify_plan(root, parent='Whole', limits=LIMITS)
+
+
+@pytest.mark.parametrize('value', [True, 0, 1, None, 'false'])
+def test_embed_textures_only_admits_original_literal_false(value):
+    with pytest.raises(ValueError, match='embed_textures'):
+        ops.export_options({'embed_textures': value}, {}, output_format='fbx')
