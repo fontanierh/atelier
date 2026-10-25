@@ -495,7 +495,7 @@ Path(control['report']).write_text(json.dumps(result,sort_keys=True,separators=(
 
 def package_runtime(job_dir):
     """@cc [owner:fontanierh,label:correctness;safety] private-package-bootstrap-roles
-    Only the fixed controller carrier and its exact hashed read-only history archives
+    Only the fixed controller carrier, exact hashed history archives and uncooked primaries
     MAY precede view construction. This validates bootstrap layout, never native
     authority; the sealed Rust source evidence and finalization checks remain required.
     Unknown entries, links, writable files and paths outside these roles MUST refuse.
@@ -545,6 +545,12 @@ def package_runtime(job_dir):
             raise Refused('package bootstrap history archive has the wrong role')
         names.add(name)
         readonly(archive, 0o444, row.get('metadata_sha256'))
+        source = row.get('source')
+        source_path = histories / (slot + '.source')
+        if not isinstance(source, dict) or set(source) != {'path', 'sha256'} or source['path'] != str(source_path):
+            raise Refused('package bootstrap uncooked primary has the wrong role')
+        names.add(source_path.name)
+        readonly(source_path, 0o444, source['sha256'])
     if {path.name for path in histories.iterdir()} != names:
         raise Refused('package bootstrap histories contain unknown entries')
     return ('native-packages.json', 'global-metadata.tree.tar', 'native-histories')

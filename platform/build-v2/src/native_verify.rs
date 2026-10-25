@@ -22,6 +22,89 @@ pub(crate) struct NativePackageInput {
     witness: crate::results::zen_cook::NativeArtifactWitness,
     archive: std::path::PathBuf,
     metadata: StoredFile,
+    source_path: std::path::PathBuf,
+    source_file: StoredFile,
+}
+
+/// Select the exact uncooked primary from the actual source producer's keyed native input.
+pub(crate) fn package_source(
+    inputs: &[crate::keys::PreparedInput],
+    package: &str,
+) -> Result<(crate::keys::PreparedInput, StoredFile), String> {
+    let mut found = Vec::new();
+    for input in inputs {
+        if let crate::keys::InputPayload::Item {
+            logical_path,
+            class,
+            files,
+        } = &input.payload
+        {
+            if logical_path != package {
+                continue;
+            }
+            let suffix = if class == "Map" { ".umap" } else { ".uasset" };
+            let primary = format!("content{package}{suffix}");
+            for file in files.iter().filter(|file| file.path == primary) {
+                found.push((input.clone(), file.clone()));
+            }
+        }
+    }
+    if found.len() != 1 {
+        return Err("source cook lacks one exact uncooked native primary".into());
+    }
+    Ok(found.remove(0))
+}
+
+fn check_source(path: &Path, expected: &StoredFile) -> Result<(), String> {
+    use sha2::Digest;
+    use std::os::unix::fs::MetadataExt;
+    let mut file = OpenOptions::new()
+        .read(true)
+        .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC | libc::O_NONBLOCK)
+        .open(path)
+        .map_err(|e| e.to_string())?;
+    let before = file.metadata().map_err(|e| e.to_string())?;
+    if !before.is_file()
+        || before.nlink() != 1
+        || before.mode() & 0o222 != 0
+        || before.len() != expected.size
+    {
+        return Err("native history source is not its read-only primary".into());
+    }
+    let mut hash = sha2::Sha256::new();
+    let mut block = [0u8; 65536];
+    let mut size = 0u64;
+    loop {
+        let n = file.read(&mut block).map_err(|e| e.to_string())?;
+        if n == 0 {
+            break;
+        }
+        size = size
+            .checked_add(n as u64)
+            .ok_or("native source size overflow")?;
+        if size > expected.size {
+            return Err("native history source grew while checked".into());
+        }
+        hash.update(&block[..n]);
+    }
+    let identity = |m: &fs::Metadata| {
+        (
+            m.dev(),
+            m.ino(),
+            m.len(),
+            m.mtime(),
+            m.mtime_nsec(),
+            m.ctime(),
+            m.ctime_nsec(),
+        )
+    };
+    if format!("{:x}", hash.finalize()) != expected.digest
+        || identity(&before) != identity(&file.metadata().map_err(|e| e.to_string())?)
+        || identity(&before) != identity(&fs::symlink_metadata(path).map_err(|e| e.to_string())?)
+    {
+        return Err("native history source primary changed".into());
+    }
+    Ok(())
 }
 impl NativePackageInput {
     pub(crate) fn from_source(
@@ -29,6 +112,8 @@ impl NativePackageInput {
         witness: crate::results::zen_cook::NativeArtifactWitness,
         source: &SourceCookEvidence<'_>,
         archive: &Path,
+        prepared_source: &PreparedUnit,
+        source_path: &Path,
     ) -> Result<Self, String> {
         source.check()?;
         witness.check()?;
@@ -40,6 +125,13 @@ impl NativePackageInput {
         let report = report_from_archive(archive, &metadata)?;
         let producer = &source.result().result;
         let locator = witness.locator();
+        if prepared_source.key() != producer.key
+            || prepared_source.ingredients() != &producer.ingredients
+        {
+            return Err("native history source preparation differs from certified producer".into());
+        }
+        let (_, source_file) = package_source(prepared_source.inputs(), &locator.package)?;
+        check_source(source_path, &source_file)?;
         let rows = report
             .get("packages")
             .and_then(Value::as_array)
@@ -67,17 +159,21 @@ impl NativePackageInput {
             );
         }
         let row = json!({"slot":slot,"locator":locator,"record_sha256":locator.record_sha256,
-            "metadata_archive":archive,"metadata_sha256":metadata.digest});
+            "metadata_archive":archive,"metadata_sha256":metadata.digest,
+            "source":{"path":source_path,"sha256":source_file.digest}});
         Ok(Self {
             row,
             witness,
             archive: archive.into(),
             metadata,
+            source_path: source_path.into(),
+            source_file,
         })
     }
     pub(crate) fn check(&self) -> Result<(), String> {
         self.witness.check()?;
         report_from_archive(&self.archive, &self.metadata)?;
+        check_source(&self.source_path, &self.source_file)?;
         Ok(())
     }
 }
@@ -93,6 +189,8 @@ pub(crate) struct NativePackageContext {
 impl NativePackageContext {
     /// @cc [owner:fontanierh,label:correctness;safety] private-native-package-carrier
     /// Package locators MUST come from freshly sealed native completions. History archives
+    /// and uncooked primaries MUST come from that producer's actual keyed input edges,
+    /// with independent read-only clones checked through publication, never mutable Content.
     /// MUST be independent certified source-cook metadata copies, never mutable project reads.
     /// Destination MUST derive from the actual global producer's certificate/seed CB/layout.
     /// Its semantic Data input MUST be a distinct emitted global shader ROOT, excluding
@@ -680,6 +778,71 @@ mod tests {
     use super::*;
     use std::sync::atomic::{AtomicU64, Ordering};
     static NEXT: AtomicU64 = AtomicU64::new(0);
+    #[test]
+    fn selected_uncooked_primary_is_exact_unique_and_not_a_sibling() {
+        use crate::keys::{InputPayload, PreparedInput};
+        use crate::protocol::StagedInput;
+        let primary = StoredFile {
+            path: "content/Game/Test.uasset".into(),
+            digest: sha256(b"source"),
+            size: 6,
+            mode: 0o644,
+        };
+        let mut input = PreparedInput {
+            wire: StagedInput {
+                name: "native".into(),
+                path: "inputs/native".into(),
+                identity: crate::schema::ContentIdentity::Digest {
+                    digest: sha256(b"item"),
+                },
+            },
+            payload: InputPayload::Item {
+                logical_path: "/Game/Test".into(),
+                class: "Texture".into(),
+                files: vec![
+                    primary.clone(),
+                    StoredFile {
+                        path: "content/Game/Test.uexp".into(),
+                        ..primary.clone()
+                    },
+                ],
+            },
+        };
+        assert_eq!(
+            package_source(&[input.clone()], "/Game/Test").unwrap().1,
+            primary
+        );
+        assert!(package_source(&[input.clone()], "/Game/Other").is_err());
+        assert!(package_source(&[input.clone(), input.clone()], "/Game/Test").is_err());
+        if let InputPayload::Item { class, files, .. } = &mut input.payload {
+            *class = "Map".into();
+            files[0].path = "content/Game/Test.umap".into();
+        }
+        assert!(package_source(&[input.clone()], "/Game/Test").is_ok());
+        if let InputPayload::Item { files, .. } = &mut input.payload {
+            files[0].path = "content/Game/Other.umap".into();
+        }
+        assert!(package_source(&[input], "/Game/Test").is_err());
+        use std::os::unix::fs::{PermissionsExt, symlink};
+        let path = std::env::temp_dir().join(format!(
+            "atelier-native-primary-{}-{}",
+            std::process::id(),
+            NEXT.fetch_add(1, Ordering::Relaxed)
+        ));
+        fs::write(&path, b"source").unwrap();
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o444)).unwrap();
+        check_source(&path, &primary).unwrap();
+        let mut wrong = primary.clone();
+        wrong.digest = sha256(b"changed");
+        assert!(check_source(&path, &wrong).is_err());
+        let alias = path.with_extension("alias");
+        symlink(&path, &alias).unwrap();
+        assert!(check_source(&alias, &primary).is_err());
+        fs::remove_file(alias).unwrap();
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o644)).unwrap();
+        assert!(check_source(&path, &primary).is_err());
+        fs::remove_file(path).unwrap();
+    }
     #[test]
     fn independent_verifier_uses_normal_key_encoding_and_exact_cb_content() {
         use crate::{keys::*, schema::*, validate::*};

@@ -1029,6 +1029,50 @@ impl Backend for PythonBackend<'_> {
         } else {
             (unit, ticket.local.as_ref().unwrap())
         };
+        let mut native_sources = Vec::new();
+        for ((slot, producer), (_, witness)) in native_history_sources.iter().zip(&native_packages)
+        {
+            crate::paths::relative_path(slot, false).map_err(InputFailure::Invalid)?;
+            if slot.contains('/') {
+                return Err(InputFailure::Invalid(
+                    "native source slot is not a single component".into(),
+                ));
+            }
+            let prepared = self.prepared.get(producer).ok_or_else(|| {
+                InputFailure::Unavailable("native source producer preparation missing".into())
+            })?;
+            let (input, file) =
+                crate::native_verify::package_source(prepared.inputs(), &witness.locator().package)
+                    .map_err(InputFailure::Invalid)?;
+            let declared = self
+                .graph
+                .unit(producer)
+                .ok_or_else(|| InputFailure::Invalid("native source declaration missing".into()))?;
+            let (owner, item) = declared
+                .inputs
+                .iter()
+                .find_map(|row| match row {
+                    Input::Content {
+                        name,
+                        source: ContentSource::Item { unit, item },
+                        ..
+                    } if name == &input.wire.name => Some((unit.clone(), item.clone())),
+                    _ => None,
+                })
+                .ok_or_else(|| {
+                    InputFailure::Invalid("native source primary requires a real item edge".into())
+                })?;
+            native_sources.push((
+                slot.clone(),
+                file,
+                SelectedSource {
+                    group: None,
+                    producer: owner,
+                    item,
+                    input,
+                },
+            ));
+        }
         let sources = PythonSources {
             origins: RefCell::new(&mut self.origins),
             prepared: &self.prepared,
@@ -1063,6 +1107,21 @@ impl Backend for PythonBackend<'_> {
             StageError::Source(error) => InputFailure::Unavailable(error.to_string()),
             StageError::Staging(message) => InputFailure::Invalid(message),
         })?;
+        if !native_sources.is_empty() {
+            let directory = staged.job_dir().join(".recipe-runtime/native-histories");
+            std::fs::create_dir(&directory).map_err(|e| InputFailure::Invalid(e.to_string()))?;
+            for (slot, file, selected) in &native_sources {
+                let digest = ObjectDigest::from_hex(&file.digest)
+                    .map_err(|e| InputFailure::Invalid(e.to_string()))?;
+                sources
+                    .access(
+                        selected,
+                        &digest,
+                        Some(&directory.join(format!("{slot}.source"))),
+                    )
+                    .map_err(|e| InputFailure::Unavailable(e.to_string()))?;
+            }
+        }
         drop(sources);
         let mut native_histories = Vec::new();
         for ((slot, producer), (_, witness)) in native_history_sources.iter().zip(native_packages) {
@@ -1096,7 +1155,14 @@ impl Backend for PythonBackend<'_> {
                 .clone_metadata(&archive)
                 .map_err(InputFailure::Unavailable)?;
             let history = crate::native_verify::NativePackageInput::from_source(
-                slot, witness, &evidence, &archive,
+                slot,
+                witness,
+                &evidence,
+                &archive,
+                self.prepared.get(producer).ok_or_else(|| {
+                    InputFailure::Unavailable("native source preparation disappeared".into())
+                })?,
+                &directory.join(format!("{slot}.source")),
             )
             .map_err(InputFailure::Invalid)?;
             ticket.native_histories.push(history.clone());

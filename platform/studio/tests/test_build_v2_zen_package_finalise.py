@@ -72,7 +72,8 @@ def test_changed_source_or_incomplete_native_finalization_refuses(tmp_path, caus
     assert all(method != 'zen_end_cook_request' for method, _ in calls)
 
 
-def test_histories_use_frozen_archives_and_selected_package_rosters(tmp_path):
+@pytest.mark.parametrize('shaderless', [False, True])
+def test_histories_use_frozen_archives_and_selected_package_rosters(tmp_path, shaderless):
     from atelier.build_v2 import recipe_job
     from atelier.build_v2.zen_package_finalise import prepare_histories
     def shaders(root, library):
@@ -81,8 +82,9 @@ def test_histories_use_frozen_archives_and_selected_package_rosters(tmp_path):
                              ('ShaderTypeInfo', '.stinfo')):
             (root / (stem + '-' + library + '-SF_METAL_SM5-METAL_SM5' + suffix)).write_bytes(stem.encode())
     cooked = tmp_path / 'cooked'
-    shaders(cooked / 'FixtureGame/Content', 'FixtureGame')
-    metadata = cooked / 'FixtureGame/Metadata'; metadata.mkdir()
+    if not shaderless:
+        shaders(cooked / 'FixtureGame/Content', 'FixtureGame')
+    metadata = cooked / 'FixtureGame/Metadata'; metadata.mkdir(parents=True)
     (metadata / 'DevelopmentAssetRegistry.bin').write_bytes(b'registry')
     (metadata / 'CookMetadata.ucookmeta').write_bytes(b'metadata')
     # Private transport bytes are retained in the archive but never shader inputs.
@@ -91,16 +93,23 @@ def test_histories_use_frozen_archives_and_selected_package_rosters(tmp_path):
     global_root = tmp_path / 'global'; shaders(global_root / 'Content', 'Global')
     (global_root / 'Engine').mkdir()
     (global_root / 'Engine/GlobalShaderCache-METAL_SM5.bin').write_bytes(b'engine shaders')
+    source = tmp_path / 'uncooked.uasset'; source.write_bytes(b'explicit frozen source, not a native execution fixture')
+    record = tmp_path / 'record.cb'; record.write_bytes(b'explicit consumed CB, not a native execution fixture')
     carrier = {'version': 1, 'packages': [
-        {'locator': {'package': name}, 'metadata_archive': str(archive),
+        {'locator': {'package': name, 'record_path': str(record), 'entry_hash': 'a' * 40},
+         'record_sha256': hashlib.sha256(record.read_bytes()).hexdigest(),
+         'source': {'path': str(source), 'sha256': hashlib.sha256(source.read_bytes()).hexdigest()},
+         'metadata_archive': str(archive),
          'metadata_sha256': hashlib.sha256(archive.read_bytes()).hexdigest()}
         for name in ('/Game/A', '/Game/B')]}
     result = prepare_histories(carrier=carrier, global_root=global_root, folder=tmp_path / 'projection',
                               project_name='FixtureGame', library='FixtureGame', unpack=recipe_job.unpack_root)
     assert result['formats'] == ['SF_METAL_SM5-METAL_SM5']
     assert len(result['histories']) == 1
-    assert result['histories'][0]['packages'] == ['/Game/A', '/Game/B']
-    assert len(result['histories'][0]['files']) == 3
+    assert [row['name'] for row in result['histories'][0]['packages']] == ['/Game/A', '/Game/B']
+    assert all(row['source']['path'] == str(source) and row['record']['path'] == str(record)
+               and row['root_hash'] == 'a' * 40 for row in result['histories'][0]['packages'])
+    assert len(result['histories'][0]['files']) == (0 if shaderless else 3)
     assert result['global_histories'][0]['packages'] == []
     assert result['global_files'][0]['clientpath'] == '/{engine}/GlobalShaderCache-METAL_SM5.bin'
     assert all('ue.projectstore' not in str(row) for row in result['histories'])
