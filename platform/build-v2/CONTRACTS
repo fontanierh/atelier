@@ -356,8 +356,12 @@ attestation (so a later save that leaves a companion alone keeps the earlier has
 two packages is a `dependency` failure, and a collected file MUST be attested by its own package's
 save. A mismatch, an unhashed file or another package's attestation is a `dependency` failure.
 Those SHA1 hashes are an integrity check only and MUST NOT become a key ingredient. Every required
-output file MUST exist when the job ends (otherwise a `job` failure), and a file written into
-`output/` directly is a `dependency` failure. Outputs MUST be moved out of `/Game` into `output/`. A failed job's `output/` MAY hold partially
+output file MUST exist when the job ends (otherwise a `job` failure). Native package files written into
+`output/` directly are a `dependency` failure; they MUST be moved out of `/Game` into `output/`.
+An `unreal.finish` unit MAY additionally declare opaque `Data` files at exact `data/` paths:
+only those named files MAY be written directly, their required inventory MUST be complete and
+regular, owned and unaliased, and they MUST NOT count as native package save evidence.
+Unknown files or directories MUST refuse. A failed job's `output/` MAY hold partially
 moved files, so the controller MUST collect `output/` only from a completed job.
 An `unreal.author` unit MAY instead own one required `JsonData` file under `data/`:
 the keyed body MUST return the exact named finite JSON value without file-write permission.
