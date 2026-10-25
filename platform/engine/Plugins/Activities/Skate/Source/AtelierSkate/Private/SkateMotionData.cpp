@@ -294,20 +294,29 @@ bool AttributeTargets(FSkateMetadataBank& Out,const skate::AnimationMetadata& In
 }
 #endif
 
-bool USkateDataLibrary::ImportMotion(const FString& PackageFolder,const FString& AssetFolder,FString& Error)
-{
-    Error.Reset();
-    ON_SCOPE_EXIT { if(!Error.IsEmpty())UE_LOG(LogTemp,Error,TEXT("SKATE MOTION IMPORT: %s"),*Error); };
 #if WITH_EDITOR
-    if(!FPackageName::IsValidLongPackageName(AssetFolder)) {Error=TEXT("Invalid motion asset folder");return false;}
-    std::string SimulationError;std::shared_ptr<const skate::GameplayResources> Resources;
+namespace
+{
+constexpr int32 MotionChunkSize=128;
+bool CompareMotion(const skate::AnimationSource& A,const skate::AnimationSource& B,uint64& Frames,uint64& Samples,std::string& Error);
+int32 MotionBankCount(const skate::AnimationSource& Source)
+{
+    return int32((Source.evaluator->frames.clips.size()+MotionChunkSize-1)/MotionChunkSize);
+}
+FString MotionBankPackage(const FString& Folder,int32 Index)
+{
+    return Folder/FString::Printf(TEXT("Banks/Bank_%03d"),Index);
+}
+bool LoadMotionImport(const FString& PackageFolder,std::shared_ptr<const skate::GameplayResources>& Resources,
+    TArray<FSkateMetadataBank>& Metadata,FString& Error)
+{
+    std::string SimulationError;
     if(!skate::LoadGameplayResources(std::filesystem::u8path(String(PackageFolder)),Resources,SimulationError))
     {Error=Text(SimulationError);return false;}
     const auto& Frames=Resources->animation->evaluator->frames;
-    TStrongObjectPtr<USkateMotionData> Data(Asset<USkateMotionData>(AssetFolder/TEXT("MotionData")));
-    Data->SchemaVersion=USkateMotionData::CurrentSchema;Data->bHasTrajectory=Frames.rig.has_trajectory;
-    Data->Bones=Map(Frames.rig.bones,[](const auto& V){return ToAsset(V);});
-    Data->ReferencePoses=Map(Frames.rig.poses,[](const auto& V){return ToAsset(V);});Data->Metadata.Reset();Data->Banks.Reset();
+    if(Frames.clips.empty()||Frames.clips.size()>MAX_int32)
+    {Error=TEXT("Motion clip count is empty or exceeds the supported range");return false;}
+    Metadata.Reset();
     for(int32 B=0;B<2;++B)
     {
         skate::AnimationMetadata Bank;std::vector<uint8> Bytes;
@@ -315,22 +324,112 @@ bool USkateDataLibrary::ImportMotion(const FString& PackageFolder,const FString&
         {Error=Text(SimulationError);return false;}
         auto Typed=ToAsset(Bank);
         if(!AttributeTargets(Typed,Bank,Frames.rig,SimulationError)) {Error=Text(SimulationError);return false;}
-        Data->Metadata.Add(MoveTemp(Typed));
+        Metadata.Add(MoveTemp(Typed));
     }
-    constexpr int32 ChunkSize=128;int32 Index=0,Chunk=0;USkateMotionBank* Bank=nullptr;
+    return true;
+}
+bool WriteMotionBank(const skate::AnimationSource& Source,int32 BankIndex,const FString& ExpectedPackage,FString& Error)
+{
+    if(BankIndex<0||BankIndex>=MotionBankCount(Source))
+    {Error=TEXT("Motion bank index is out of range");return false;}
+    const auto& Frames=Source.evaluator->frames;
+    const int32 Begin=BankIndex*MotionChunkSize;
+    const int32 End=int32(FMath::Min<int64>(int64(Begin)+MotionChunkSize,int64(Frames.clips.size())));
+    TStrongObjectPtr<USkateMotionBank> Bank(Asset<USkateMotionBank>(ExpectedPackage));Bank->Clips.Reset();
+    int32 Index=0;
     for(const auto& Pair:Frames.clips)
     {
-        if(Index%ChunkSize==0)
-        {
-            if(Bank && !Save(Bank,Error))return false;
-            Bank=Asset<USkateMotionBank>(AssetFolder/FString::Printf(TEXT("Banks/Bank_%03d"),Chunk++));Bank->Clips.Reset();
-            Data->Banks.Add(TSoftObjectPtr<USkateMotionBank>(Bank));
-        }
-        Bank->Clips.Add(ToAsset(*Pair.second));++Index;
-        if(Index%ChunkSize==0)UE_LOG(LogTemp,Display,TEXT("SKATE MOTION IMPORT %d/%d clips"),Index,int32(Frames.clips.size()));
+        if(Index>=End)break;
+        if(Index>=Begin)Bank->Clips.Add(ToAsset(*Pair.second));
+        ++Index;
     }
-    if(Bank && !Save(Bank,Error))return false;
-    if(!Save(Data.Get(),Error))return false;
+    if(!Save(Bank.Get(),Error))return false;
+    if(End%MotionChunkSize==0)UE_LOG(LogTemp,Display,TEXT("SKATE MOTION IMPORT %d/%d clips"),End,int32(Frames.clips.size()));
+    return true;
+}
+bool WriteMotionIndex(const skate::AnimationSource& Source,
+    const TArray<FSkateMetadataBank>& Metadata,const FString& ExpectedPackage,FString& Error)
+{
+    const auto& Frames=Source.evaluator->frames;
+    TStrongObjectPtr<USkateMotionData> Data(Asset<USkateMotionData>(ExpectedPackage));
+    Data->SchemaVersion=USkateMotionData::CurrentSchema;Data->bHasTrajectory=Frames.rig.has_trajectory;
+    Data->Bones=Map(Frames.rig.bones,[](const auto& V){return ToAsset(V);});
+    Data->ReferencePoses=Map(Frames.rig.poses,[](const auto& V){return ToAsset(V);});
+    Data->Metadata=Metadata;Data->Banks.Reset();
+    TArray<TStrongObjectPtr<USkateMotionBank>> Held;TArray<const USkateMotionBank*> Banks;
+    for(int32 B=0;B<MotionBankCount(Source);++B)
+    {
+        const FString Package=MotionBankPackage(FPackageName::GetLongPackagePath(ExpectedPackage),B);
+        auto* Bank=LoadObject<USkateMotionBank>(nullptr,*(Package+TEXT(".")+FPackageName::GetLongPackageAssetName(Package)));
+        const int32 Count=int32(FMath::Min<int64>(MotionChunkSize,int64(Frames.clips.size())-int64(B)*MotionChunkSize));
+        if(!Bank||Bank->GetOutermost()->GetName()!=Package||Bank->Clips.Num()!=Count)
+        {Error=TEXT("Missing or incomplete declared motion bank: ")+Package;return false;}
+        Held.Emplace(Bank);Banks.Add(Bank);Data->Banks.Add(TSoftObjectPtr<USkateMotionBank>(Bank));
+    }
+    int32 Index=0;
+    for(const auto& Pair:Frames.clips)
+    {
+        const auto& Clip=Banks[Index/MotionChunkSize]->Clips[Index%MotionChunkSize];
+        if(Clip.Name!=Text(Pair.second->name)||Clip.Bank!=int32(Pair.second->bank)||Clip.SourceRecord!=int64(Pair.second->record))
+        {Error=TEXT("Declared motion bank chunk/order differs");return false;}
+        ++Index;
+    }
+    std::shared_ptr<const skate::AnimationSource> Decoded;std::string SimulationError;uint64 ComparedFrames=0,Samples=0;
+    if(!DecodeSkateMotion(*Data,Banks,Decoded,SimulationError)||!CompareMotion(Source,*Decoded,ComparedFrames,Samples,SimulationError))
+    {Error=Text(SimulationError);return false;}
+    return Save(Data.Get(),Error);
+}
+bool MotionOutput(const FString& Package,const FString& Name)
+{
+    return Package.StartsWith(TEXT("/Game/"))&&FPackageName::IsValidLongPackageName(Package)
+        &&FPackageName::GetLongPackageAssetName(Package)==Name;
+}
+}
+#endif
+
+bool USkateDataLibrary::ImportMotionBank(const FString& PackageFolder,int32 BankIndex,const FString& ExpectedPackage,FString& Error)
+{
+    Error.Reset();
+    ON_SCOPE_EXIT { if(!Error.IsEmpty())UE_LOG(LogTemp,Error,TEXT("SKATE MOTION IMPORT: %s"),*Error); };
+#if WITH_EDITOR
+    if(BankIndex<0||!MotionOutput(ExpectedPackage,FString::Printf(TEXT("Bank_%03d"),BankIndex))
+        ||FPaths::GetCleanFilename(FPackageName::GetLongPackagePath(ExpectedPackage))!=TEXT("Banks"))
+    {Error=TEXT("Expected package must name exactly the selected motion bank");return false;}
+    std::shared_ptr<const skate::GameplayResources> Resources;TArray<FSkateMetadataBank> Metadata;
+    if(!LoadMotionImport(PackageFolder,Resources,Metadata,Error))return false;
+    return WriteMotionBank(*Resources->animation,BankIndex,ExpectedPackage,Error);
+#else
+    Error=TEXT("Motion import requires an editor build");return false;
+#endif
+}
+
+bool USkateDataLibrary::ImportMotionIndex(const FString& PackageFolder,const FString& ExpectedPackage,FString& Error)
+{
+    Error.Reset();
+    ON_SCOPE_EXIT { if(!Error.IsEmpty())UE_LOG(LogTemp,Error,TEXT("SKATE MOTION IMPORT: %s"),*Error); };
+#if WITH_EDITOR
+    if(!MotionOutput(ExpectedPackage,TEXT("MotionData")))
+    {Error=TEXT("Expected package must name exactly MotionData");return false;}
+    std::shared_ptr<const skate::GameplayResources> Resources;TArray<FSkateMetadataBank> Metadata;
+    if(!LoadMotionImport(PackageFolder,Resources,Metadata,Error))return false;
+    return WriteMotionIndex(*Resources->animation,Metadata,ExpectedPackage,Error);
+#else
+    Error=TEXT("Motion import requires an editor build");return false;
+#endif
+}
+
+bool USkateDataLibrary::ImportMotion(const FString& PackageFolder,const FString& AssetFolder,FString& Error)
+{
+    Error.Reset();
+    ON_SCOPE_EXIT { if(!Error.IsEmpty())UE_LOG(LogTemp,Error,TEXT("SKATE MOTION IMPORT: %s"),*Error); };
+#if WITH_EDITOR
+    if(!FPackageName::IsValidLongPackageName(AssetFolder)) {Error=TEXT("Invalid motion asset folder");return false;}
+    std::shared_ptr<const skate::GameplayResources> Resources;TArray<FSkateMetadataBank> Metadata;
+    if(!LoadMotionImport(PackageFolder,Resources,Metadata,Error))return false;
+    const int32 Chunk=MotionBankCount(*Resources->animation),Index=int32(Resources->animation->evaluator->frames.clips.size());
+    for(int32 B=0;B<Chunk;++B)
+        if(!WriteMotionBank(*Resources->animation,B,MotionBankPackage(AssetFolder,B),Error))return false;
+    if(!WriteMotionIndex(*Resources->animation,Metadata,AssetFolder/TEXT("MotionData"),Error))return false;
     // Banks left by an earlier, larger import would still be cooked from the folder.
     TArray<FString> Stale;const FString BankFolder=FPackageName::LongPackageNameToFilename(AssetFolder/TEXT("Banks"));
     IFileManager::Get().FindFiles(Stale,*(BankFolder/TEXT("*")+FPackageName::GetAssetPackageExtension()),true,false);
