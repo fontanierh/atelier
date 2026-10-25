@@ -949,6 +949,16 @@ def lower(rows, geometry, *, checkout):
         native['geometry'] = current
         # The record consumes both the joint steering owner and actual expanded ordinary parts.
         native['aliases']['unreal.bike'] = (module.RECORD_UNIT,)
+    if 'unreal.skate_clips' in selected:
+        family = _family_module(checkout, 'v2_skate_clip_units').skate_clip_units(rows, checkout=checkout)
+        _append_family(native, family)
+        current = deepcopy(native['geometry'])
+        current['groups'].update(family['groups']); current['templates'].extend(family['templates'])
+        native['geometry'] = current
+        native['aliases'].update(family['aliases'])
+        modules = _family_module(checkout, 'v2_character_units')._modules(checkout, [])[0]
+        native.setdefault('follower_module_requirements', {}).update(
+            {template['unit_prefix']: modules for template in family['templates']})
     if {'data.content', 'data.network'} <= selected:
         module = _family_module(checkout, 'v2_identity_units')
         data = _family_module(checkout, 'v2_cook_pipeline')._data_context(rows, native)
