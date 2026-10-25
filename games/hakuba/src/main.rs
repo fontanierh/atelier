@@ -17,7 +17,8 @@ fn main() {
                     }),
                     ..default()
                 })
-                // Assets have no .meta files; a web server would answer those requests with its fallback page.
+                // Bevy would ask for a .meta file next to each asset. There are none, and in the browser the server
+                // answers a missing file with index.html, which Bevy cannot read.
                 .set(AssetPlugin {
                     meta_check: AssetMetaCheck::Never,
                     ..default()

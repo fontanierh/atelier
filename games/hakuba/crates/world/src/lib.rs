@@ -1,4 +1,4 @@
-//! The map. For now it is empty: flat ground to the horizon, a sun and a camera looking at the origin.
+//! The map: flat ground to the horizon, a sun and a camera looking at the origin.
 
 use bevy::prelude::*;
 
@@ -10,11 +10,11 @@ pub struct WorldPlugin;
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(ClearColor(Color::srgb(0.53, 0.72, 0.9)))
-            .add_systems(Startup, spawn_empty_map);
+            .add_systems(Startup, spawn_map);
     }
 }
 
-fn spawn_empty_map(
+fn spawn_map(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -37,7 +37,6 @@ fn spawn_empty_map(
         },
         Transform::from_xyz(30.0, 60.0, 20.0).looking_at(Vec3::ZERO, Vec3::Y),
     ));
-    // Stands in until the player crate brings a follow camera.
     commands.spawn((
         Name::new("Overview camera"),
         Camera3d::default(),

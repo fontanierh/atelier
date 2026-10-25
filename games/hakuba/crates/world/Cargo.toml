@@ -1,3 +1,4 @@
+# The map: ground, sky, sun and the overview camera (src/lib.rs).
 [package]
 name = "hakuba_world"
 version.workspace = true

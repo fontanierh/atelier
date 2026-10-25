@@ -1,4 +1,4 @@
-//! The playable characters. For now Nox stands at the origin in his rest pose.
+//! The playable characters: Nox stands at the origin.
 
 use bevy::prelude::*;
 

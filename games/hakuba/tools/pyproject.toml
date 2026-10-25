@@ -1,3 +1,4 @@
+# The asset export tools (README.md): the hakuba_tools package and its `export` command.
 [project]
 name = "hakuba-tools"
 version = "0.1.0"

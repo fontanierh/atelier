@@ -1,55 +1,7 @@
-# Nox, a playable 1.78 m young adult in a black bomber and violet-patterned shirt, with a separately generated head,
-# an earring and 66 rigged hair locks. src/Nox.glb is his approved source from Yorimichi: a Tripo mesh with its Mixamo
-# body rig, local texture repairs and the hair rig. src/idle-pose holds the standing pose chosen for him from
-# Yorimichi's idle clip. The generated concept images he was made from, with their prompts, stay out of git; until
-# Yorimichi is removed they are in games/yorimichi/assets/characters/nox/references.
+# Nox, a playable young adult in a black bomber and violet-patterned shirt, with an earring and rigged hair locks.
+# src/Nox.glb is his finished model: mesh, skeleton, skin weights and textures.
 kind = "character"
-outputs = ["nox.glb"]
-
-[export]
-script = "src/export.py"
-inputs_sha256 = "68a2d619f3b43cf708c25fbbfe29a4ea4303dbbf39842fc7b9b72d7097ee349e"
-
-# How src/Nox.glb was made. The raw inputs are kept in the archive, not in git.
-[provenance]
-source_sha256 = "2ddb3b873d51b3971ff881c57e92957ae84c53a720576255209c4a0b00bfa412"
-
-[[provenance.inputs]]
-path = "source/tripo_convert_4d68e977-2e7c-4327-815f-5c695208d271.fbx"
-size = 1929212
-sha256 = "cd54ca8e30b3550404414fd8df4f1caf62fbad6a58702767041bd8c87b6bcc45"
-
-[[provenance.inputs]]
-path = "source/tripo_convert_4d68e977-2e7c-4327-815f-5c695208d271.fbm/tripo_rgb_235fe64d-4b05-406b-9dbb-2ea66c1cce26.jpg"
-size = 3578809
-sha256 = "42a4f4a139e834a73cfc1e9e2ef1cfdd4db2e13ce540e9cfa35d2fa0f40200db"
-
-[[provenance.inputs]]
-path = "source/original-body.zip"
-size = 5288920
-sha256 = "60fc40f636a49f334320e47361a9c36018253c8d380a55903a9c335c589814c4"
-
-[[provenance.inputs]]
-path = "source/Nox-head-v2-Clean-r03.blend"
-size = 7007892
-sha256 = "a4832cafcd090456bcaaafb5406b2283e1638c0b6399b1460e6c59df2e00083c"
-
-[[provenance.inputs]]
-path = "source/chain-decal.png"
-size = 1177969
-sha256 = "0c17570eef055bb29385997aed0233f328e2fe478c6ddd3b228cb0c06b283c7f"
-
-# The last pass: new body skin weights and 25 sparse seat shapes; the garment detail, head, rig and textures are unchanged.
-[provenance.deformation_repair]
-input_sha256 = "f3a8e91b4d081f50fe812c40861105b0c2ac96644a7c4408a78ae14876643606"
-output_sha256 = "2ddb3b873d51b3971ff881c57e92957ae84c53a720576255209c4a0b00bfa412"
-neutral_sha256 = "96631cc498f7ba9a4e6d362d0be72d703fa3c3945d8a4b7de24012c68fa9b794"
-
-# The pinned script that projected the concept images onto his textures.
-[provenance.texture_projection]
-repository = "Bingeljell/image-to-3dlab"
-revision = "7793fd3622bab7d3fd4526ba02433244d5bf02e2"
-files = [
-    { path = "image_to_3dlab/photo_paint.py", sha256 = "a64f11ee0616f3d0457574037979d0d9faf0970814e86c9a69f9ca70c88bc562" },
-    { path = "LICENSE", sha256 = "c95bae1d1ce0235ecccd3560b772ec1efb97f348a79f0fbe0a634f0c2ccefe2c" },
-]
+source = "src/Nox.glb"
+height_m = 1.78        # the source stands about 1.08 m tall
+texture_size = 2048    # the source's 4K textures, halved for the browser download
+inputs_sha256 = "e5e81805aec481cd404fd0ec63549c335a20075a78697f9f1efe04b5b5488523"

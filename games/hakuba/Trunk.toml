@@ -1,4 +1,4 @@
-# The browser build serves what the game loads from assets/, without how it is made (src/) or the export records.
+# The browser build copies assets/ next to the game, without what only the exports use: src/ folders and asset.toml.
 [[hooks]]
 stage = "post_build"
 command = "sh"

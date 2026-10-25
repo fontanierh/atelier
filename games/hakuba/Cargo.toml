@@ -1,3 +1,5 @@
+# The Rust workspace: the game program (src/main.rs) and its feature crates (crates/*), with the dependency
+# versions they share.
 [workspace]
 members = ["crates/*"]
 resolver = "3"
@@ -23,7 +25,8 @@ bevy.workspace = true
 hakuba_characters.workspace = true
 hakuba_world.workspace = true
 
-# Hakuba stays quick to compile; Bevy and other dependencies are optimized once so the game runs fast in development.
+# Development builds: Hakuba's own code is lightly optimized so it compiles fast; the dependencies are compiled once,
+# fully optimized, so the game runs fast.
 [profile.dev]
 opt-level = 1
 
