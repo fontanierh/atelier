@@ -137,6 +137,7 @@ class RecipeWorker(python_worker.Worker):
         temporary = os.path.join(job_dir, recipe_job.RUNTIME, 'tmp')
         environment['TMPDIR'] = temporary
         if self.native:
+            environment.update(self.native.SDK_ENVIRONMENT)
             environment.update({name: os.path.join(temporary, 'user') for name in self.native.USER_FOLDERS})
         return environment
 
