@@ -25,3 +25,14 @@ def test_relative_reached_package_binds_literal_namespace_child_and_its_imports(
     result = scanner_type().local_imports(tmp_path / 'entry.py', (tmp_path,))
     assert set(result) == {tmp_path / name for name in files}
     assert all(isinstance(path, Path) for path in result)
+
+
+def test_package_import_base_is_lexical_and_memo_safe(tmp_path):
+    from atelier import source_imports
+    source = tmp_path / 'domain/megapark/gate.py'
+    assert source_imports.package_import_base(source, 'megapark.plants') == tmp_path / 'domain'
+    assert source_imports.package_import_base(source, 'domain') == tmp_path
+    assert source_imports.package_import_base(source, 'elsewhere.mod') is None
+    # Repeated calls answer identically whether or not the files exist.
+    source.parent.mkdir(parents=True)
+    assert source_imports.package_import_base(source, 'megapark') == tmp_path / 'domain'

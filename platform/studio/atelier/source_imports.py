@@ -35,7 +35,12 @@ def package_import_base(source, module):
     child module even when that package was reached relatively or has no initializer.
     This only supplies an exact package parent for static source capture, never a runtime grant.
     """
-    head = module.partition('.')[0]
+    return _package_base(source, module.partition('.')[0])
+
+
+@lru_cache(maxsize=16384)
+def _package_base(source, head):
+    # Lexical path arithmetic only (no filesystem), so memoizing it never hides an added or removed module.
     return next((parent.parent for parent in source.parents if parent.name == head), None)
 
 
