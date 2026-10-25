@@ -265,13 +265,13 @@ def test_native_summary_requires_complete_actual_source_library(tmp_path):
     report.write_text(json.dumps({'name': 'SM_CP_Test', 'triangles': 3, 'collision': False,
                                  'bounds_error_cm': .001, 'uv_channels': 1}))
     child = NS(products=[NS(paths=[child_root])]); values = [(child, 'SM_CP_Test')]
-    members.native_summary(archive, values, [], tmp_path / 'summary')
+    members.native_summary(build, values, [], tmp_path / 'summary')
     assert json.loads((tmp_path / 'summary/native.json').read_text())['meshes'][0]['triangles'] == 3
     with pytest.raises(ValueError, match='membership'):
-        members.native_summary(archive, [], [], tmp_path / 'missing')
+        members.native_summary(build, [], [], tmp_path / 'missing')
     changed = members.read_json(report); changed['triangles'] = 4; report.write_text(json.dumps(changed))
     with pytest.raises(ValueError, match='differs'):
-        members.native_summary(archive, values, [], tmp_path / 'changed')
+        members.native_summary(build, values, [], tmp_path / 'changed')
 
 
 def test_native_triangle_observation_cannot_be_certified_by_counts_and_bounds(native_case, monkeypatch):
@@ -287,3 +287,20 @@ def test_native_triangle_observation_cannot_be_certified_by_counts_and_bounds(na
     monkeypatch.setattr(unreal.MeshImportAudit, 'dump_mesh_triangles', changed)
     with pytest.raises(AssertionError, match='vertex'):
         body.run(context)
+
+
+def test_real_recipe_view_decodes_source_root_before_member_callback(tmp_path):
+    from atelier.build_v2.recipe_job import prepare_view
+    source = source_archive(tmp_path)
+    job = tmp_path / 'job'; staged = job / 'inputs/source/products/0-0.tree.tar'
+    staged.parent.mkdir(parents=True)
+    import shutil
+    shutil.copyfile(source, staged)
+    descriptor = {'code': [], 'inputs': [{'path': 'inputs/source'}], 'params': {'recipe': {
+        'paths': {'source': 'inputs/source/products/0-0.tree.tar'},
+        'outputs': [{'path': 'selected', 'file': 'selected.tree.tar', 'required': True}]}}}
+    (job / '.recipe-runtime').mkdir()
+    view, _, _ = prepare_view(descriptor, job)
+    assert (view / 'source').is_dir()
+    members.project(view / 'source', view / 'selected', 'render')
+    assert [p.name for p in (view / 'selected').iterdir()] == ['SM_CP_Test.npz']
