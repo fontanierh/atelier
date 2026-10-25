@@ -130,7 +130,9 @@ def attach_followers(geometry, *, rows, checkout, natives=None):
             'params': {'recipe': {'version': 1, 'paths': {'selected': 'inputs/selected'}, 'verify': None,
                 'commands': [command], 'outputs': [{'kind': 'tree', 'path': path, 'file': path + '.tree.tar', 'required': True} for path in outputs]}},
             'followers': [{'unit': unit, 'staged_inputs': {i['name']: 'inputs/' + i['name'] for i in unit['inputs']}} for unit in followers]}
-        result['templates'].append(value); result['module_requirements'][prefix] = modules
+        result['templates'].append(value)
+        if any(unit['op']['kind'] in ('unreal.author', 'unreal.finish') for unit in followers):
+            result['module_requirements'][prefix] = modules
     template('textures', ('member',), _call(root, 'select_texture', (root / 'selected', root / 'member', '$piece')), [raw, finished])
     parents = {}
     for kind in KINDS:

@@ -63,6 +63,9 @@ def test_actual_cold_rows_declare_complete_native_and_source_seams(declared):
             assert declared['staged_inputs'][unit['id']]['catalogue'] == 'inputs/catalogue/materials.json'
     seed = next(t for t in declared['templates'] if t['producer'].endswith('.seed'))
     assert seed['followers'] == []
+    assert seed['unit_prefix'] not in declared['module_requirements']
+    assert all(t['unit_prefix'] in declared['module_requirements'] for t in declared['templates']
+               if any(f['unit']['op']['kind'] in ('unreal.author', 'unreal.finish') for f in t['followers']))
     render = next(t for t in declared['templates'] if t['producer'].endswith('.render'))
     raw, finish = [f['unit'] for f in render['followers']]
     assert raw['inputs'][0]['source'] == {'kind': 'item', 'unit': '$export', 'item': 'asset'}
