@@ -796,7 +796,13 @@ FString UAtelierBuildWorkerLibrary::ZenEndCookRequest(const FString& RequestJson
     {
         FIoChunkId Id;
         if (!LoadFromCompactBinary(File["id"], Id) || !FilePaths.Contains(Id) || ActualFiles.Contains(Id)
-            || FString(File["clientpath"].AsString()) != FilePaths[Id]) return Fail(TEXT("finalised_file_manifest_differs"));
+            || FString(File["clientpath"].AsString()) != FilePaths[Id])
+        {
+            UE_LOG(LogTemp, Error, TEXT("Atelier EndCook file mismatch id=%s actual=%s expected=%s duplicate=%d"),
+                *LexToString(Id), *FString(File["clientpath"].AsString()),
+                FilePaths.Contains(Id) ? *FilePaths[Id] : TEXT("unchosen"), ActualFiles.Contains(Id));
+            return Fail(TEXT("finalised_file_manifest_differs"));
+        }
         ActualFiles.Add(Id);
     }
     if (ActualFiles.Num() != FilePaths.Num()) return Fail(TEXT("finalised_file_manifest_incomplete"));
