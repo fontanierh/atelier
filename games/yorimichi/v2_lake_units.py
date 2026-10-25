@@ -82,7 +82,7 @@ def attach_followers(geometry, natives, *, checkout):
                'code': texture._code(root), 'inputs': [{'role': 'content', 'name': 'source',
                    'source': {'kind': 'item', 'unit': '$export', 'item': 'asset'}}],
                'params': {'op': 'raw_import', 'kind': 'static_mesh', 'source': 'source', 'destination': raw_package,
-                          'settings': ['-ForceDPCVars=Interchange.FeatureFlags.Import.FBX=0,Editor.AsyncStaticMeshCompilation=0']},
+                          'settings': ['-ForceDPCVars=Interchange.FeatureFlags.Import.FBX=false,Editor.AsyncStaticMeshCompilation=0']},
                'outputs': [island._item(raw_package, raw=True)]}
         inputs = [{'role': 'content', 'name': 'raw', 'source': {'kind': 'item', 'unit': '$previous', 'item': 'raw'}},
                   {'role': 'content', 'name': 'source_export', 'source': {'kind': 'item', 'unit': '$export', 'item': 'asset'}},

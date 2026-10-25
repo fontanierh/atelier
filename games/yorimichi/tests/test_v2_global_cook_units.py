@@ -131,3 +131,24 @@ def test_shared_plugin_binaries_reuse_the_editor_root_and_keep_their_descriptor(
 def test_shared_plugin_reference_must_be_the_exact_editor_root(change):
     with pytest.raises(ValueError):
         cook.author_unit(checkout=ROOT, **shared_refs(**change))
+
+
+def test_runtime_data_binds_actual_produced_items_and_exact_destinations():
+    data = [{'unit': 'data.stage', 'item': 'output3', 'file': 'outputs/3.tree.tar',
+             'path': 'games/yorimichi/unreal/Content/Data/world.json'},
+            {'unit': 'unreal.kart.data', 'item': 'data0', 'file': 'cockpit.json',
+             'path': 'games/yorimichi/unreal/Content/Data/kart/cockpit.json'}]
+    unit = cook.author_unit(checkout=ROOT, data=data, **refs())['units'][0]
+    for index, reference in enumerate(data):
+        incoming = next(row for row in unit['inputs'] if row['name'] == 'data_' + str(index))
+        assert incoming['source'] == {'kind': 'item', 'unit': reference['unit'], 'item': reference['item']}
+        assert incoming['whole']
+        assert unit['params']['recipe']['paths'][reference['path']] == 'inputs/data_' + str(index) + '/' + reference['file']
+    for path in ('games/yorimichi/unreal/Content/Other/data.json', '../outside',
+                 '/absolute', 'games/yorimichi/unreal/Content/Data/../outside'):
+        with pytest.raises(ValueError):
+            cook.author_unit(checkout=ROOT, data=[{**data[0], 'path': path}], **refs())
+    with pytest.raises(ValueError, match='aliases'):
+        cook.author_unit(checkout=ROOT, data=[data[0], data[0]], **refs())
+    with pytest.raises(ValueError, match='overlap'):
+        cook.author_unit(checkout=ROOT, data=[data[0], {**data[1], 'path': 'games/yorimichi/unreal/Content/Data'}], **refs())

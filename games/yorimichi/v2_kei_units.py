@@ -31,7 +31,7 @@ FBX = {'combine_meshes': True, 'generate_lightmap_u_vs': False, 'auto_generate_c
        'vertex_color_import_option': {'unreal_enum': 'VertexColorImportOption.REPLACE'},
        'normal_import_method': {'unreal_enum': 'FBXNormalImportMethod.FBXNIM_IMPORT_NORMALS'}}
 # import_kei.py runs `Interchange.FeatureFlags.Import.FBX 0` before importing.
-SETTINGS = ['-ForceDPCVars=Interchange.FeatureFlags.Import.FBX=0']
+SETTINGS = ['-ForceDPCVars=Interchange.FeatureFlags.Import.FBX=false']
 
 
 def cars(checkout):

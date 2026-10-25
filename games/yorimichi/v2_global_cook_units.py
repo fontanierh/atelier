@@ -30,11 +30,12 @@ def _produced(reference):
     return file
 
 
-def author_unit(*, checkout, editor, plugins):
+def author_unit(*, checkout, editor, plugins, data=()):
     """@cc [owner:fontanierh,label:correctness] stock-global-cook-source
     Global cook MUST execute the existing stock source-cook route over the fixed
     engine seed and explicitly produced complete editor/plugin module ROOTs. Project,
-    Config and plugin descriptors MUST be actual source File inputs. SDK/engine
+    Config and plugin descriptors MUST be actual source File inputs. Supplied runtime
+    data MUST be actual produced Items mapped only to their declared Content/Data paths. SDK/engine
     locators MUST stay platform context. Raw CB bytes and full cooked metadata MUST
     remain distinct outputs; declarations MUST NOT mint namespaces, native receipts,
     source keys or global shader/Metal validation claims, nor read ambient Binaries.
@@ -100,6 +101,21 @@ def author_unit(*, checkout, editor, plugins):
                 raise ValueError('shared plugin binaries must be the exact editor module root')
             continue
         compiled('plugin_' + str(index), reference, str(PurePosixPath(descriptor).parent / 'Binaries/Mac'))
+    for index, reference in enumerate(data):
+        if (not isinstance(reference, dict) or set(reference) != {'unit', 'item', 'file', 'path'}
+                or any(not isinstance(reference.get(key), str) or not reference[key] for key in reference)):
+            raise ValueError('global cook runtime data requires exact produced Item and path references')
+        destination, file = _relative(reference['path']), _relative(reference['file'])
+        base = 'games/yorimichi/unreal/Content/Data'
+        if (destination != base and not destination.startswith(base + '/')) or destination in paths:
+            raise ValueError('global cook runtime data escapes or aliases Content/Data')
+        if any(destination.startswith(path + '/') or path.startswith(destination + '/') for path in paths):
+            raise ValueError('global cook runtime data destinations overlap')
+        slot = 'data_' + str(index)
+        inputs.append({'role': 'content', 'name': slot, 'source': {
+            'kind': 'item', 'unit': reference['unit'], 'item': reference['item']},
+            'whole': 'The stock cooker and package stage consume this complete produced runtime data file or ROOT.'})
+        paths[destination] = 'inputs/' + slot + '/' + file
     recipe = {'version': 1, 'commands': [], 'paths': paths, 'verify': None,
               'outputs': [{'path': RECORD, 'kind': 'file', 'file': RECORD, 'required': True},
                           {'path': COOK_ROOT, 'kind': 'tree', 'file': 'global-cook.tree.tar', 'required': True},

@@ -88,7 +88,7 @@ def attach_followers(geometry, natives, *, checkout):
                'code': texture._code(root), 'inputs': [{'role': 'content', 'name': 'source',
                    'source': {'kind': 'item', 'unit': '$export', 'item': 'asset'}}],
                'params': {'op': 'raw_import', 'kind': 'static_mesh', 'source': 'source', 'destination': raw_package,
-                          'settings': ['-ForceDPCVars=Interchange.FeatureFlags.Import.FBX=0,Editor.AsyncStaticMeshCompilation=0']},
+                          'settings': ['-ForceDPCVars=Interchange.FeatureFlags.Import.FBX=false,Editor.AsyncStaticMeshCompilation=0']},
                'outputs': [island._item(raw_package, raw=True)]}
         selected_package = CLOTH if parent == 'SB_Sail' else FOAM if parent == 'SB_Wake' else MATERIAL
         selected_dependencies = {'material': material_refs[selected_package]} if selected_package != MATERIAL else {slot: ref for slot, ref in dependencies.values()}

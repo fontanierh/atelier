@@ -54,7 +54,7 @@ def test_each_key_becomes_one_store_only_raw_import_of_its_export_item(rows):
         package = unit['params']['destination']; ref = result['packages'][package]; key = ref['key']
         assert package == f'/Game/_Raw/Foliage/{ref["owner"]}/{key}'
         assert unit['params'] == {'op': 'raw_import', 'kind': 'static_mesh', 'source': 'source', 'destination': package,
-                                  'fbx': foliage.FBX, 'settings': ['-ForceDPCVars=Interchange.FeatureFlags.Import.FBX=0'],
+                                  'fbx': foliage.FBX, 'settings': ['-ForceDPCVars=Interchange.FeatureFlags.Import.FBX=false'],
                                   'input_roots': {'source': {'archive_member': 'products/0-0.tree.tar', 'name': key}}}
         assert unit['inputs'] == [{'role': 'content', 'name': 'source', 'source': {
             'kind': 'item', 'unit': 'world.foliage.export.' + key, 'item': 'product0'}}]

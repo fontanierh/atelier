@@ -378,7 +378,6 @@ fn controller_cancelled_before_run_keeps_state_absent() {
     assert_eq!(fs::read_dir(&space.0).unwrap().count(), 0);
 }
 
-
 #[test]
 fn game_finish_bodies_use_the_registered_native_contract() {
     let space = Space::new();
