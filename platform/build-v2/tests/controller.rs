@@ -59,6 +59,37 @@ fn parse(value: &Value) -> Result<ControllerRequest, String> {
 
 #[test]
 fn strict_request_refuses_unknown_fields_and_unsupported_ops() {
+    let mut registry = Default::default();
+    atelier_build_v2::recipe_ops::register(
+        &mut registry,
+        &std::collections::BTreeMap::from([("native".into(), true)]),
+    )
+    .unwrap();
+    for kind in ["recipe.python", "recipe.blender"] {
+        let op = &registry[&(kind.into(), "1".into())];
+        for class in [
+            "StaticMesh",
+            "SkeletalMesh",
+            "Skeleton",
+            "PhysicsAsset",
+            "Animation",
+            "Texture",
+            "Sound",
+            "Material",
+            "MaterialInstance",
+            "MaterialParameterCollection",
+            "Map",
+        ] {
+            assert!(op.inputs["native"].item_classes.contains(class));
+            assert!(!op.output_classes.contains(class));
+        }
+        assert!(!op.inputs["native"].item_classes.contains("CookedPackage"));
+        assert!(
+            !op.inputs["native"]
+                .item_classes
+                .contains("ExternalCookedPackage")
+        );
+    }
     let space = Space::new();
     let base = request(&space.0);
     assert!(parse(&base).is_ok());
