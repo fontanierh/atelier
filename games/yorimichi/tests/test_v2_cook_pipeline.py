@@ -81,3 +81,11 @@ def test_replaced_runtime_and_added_registration_rows_survive_the_global_data_jo
     assert data[base + 'world.json']['file'] == 'outputs/0.tree.tar'
     assert data[base + 'cairo/character.json']['unit'] == 'character.registration'
     assert data[base + 'horses/roster.json']['file'] == 'data/roster.json'
+
+
+def test_explicit_network_identity_root_reaches_global_cook_without_ambient_scan():
+    path = 'games/yorimichi/unreal/Content/Data/Network/session.json'
+    reference = {'unit': 'data.network', 'item': 'session', 'file': 'session.tree.tar', 'path': path}
+    native = {'aliases': {'data.network': ('data.network',)}, 'rows': [], 'units': [], 'runtime_data': [reference]}
+    original = {'id': 'data.network', 'outputs': [path], 'products': []}
+    assert pipeline._data_context([original], native) == [reference]

@@ -7,7 +7,7 @@ from pathlib import Path
 
 NATIVE_CLASSES = frozenset(('Texture', 'StaticMesh', 'SkeletalMesh', 'Skeleton', 'PhysicsAsset',
     'Material', 'MaterialInstance', 'MaterialParameterCollection', 'Blueprint', 'Map', 'Sound', 'Animation', 'DataAsset',
-    'BlendSpace1D', 'AdventureMoveSet', 'AnimBoneCompressionSettings', 'WandererDefinition', 'SoundAttenuation'))
+    'BlendSpace1D', 'AdventureMoveSet', 'AnimBoneCompressionSettings', 'AnimCurveCompressionSettings', 'MirrorDataTable', 'WandererDefinition', 'SoundAttenuation'))
 PATHS = 'platform/studio/atelier/build_v2/recipe_native_paths.py'
 
 
@@ -111,6 +111,11 @@ def _data_context(rows, native):
                 if path.startswith('games/yorimichi/unreal/Content/Data/'):
                     if path in data: raise ValueError('duplicate runtime Data output owner: ' + path)
                     data[path] = {'unit': unit['id'], 'item': item['id'], 'file': file['path'], 'path': path}
+    for reference in native.get('runtime_data', ()):
+        path = reference['path']
+        if not path.startswith('games/yorimichi/unreal/Content/Data/') or path in data:
+            raise ValueError('duplicate or foreign explicit runtime Data owner: ' + path)
+        data[path] = deepcopy(reference)
     return list(data.values())
 
 

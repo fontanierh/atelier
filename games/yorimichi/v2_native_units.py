@@ -84,7 +84,7 @@ def island(rows, geometry, *, checkout):
 def _package_dependencies(native):
     """Preserve explicit finished partners; raw import packages are private intermediates."""
     classes = {'Texture', 'StaticMesh', 'SkeletalMesh', 'Skeleton', 'PhysicsAsset',
-               'Material', 'MaterialInstance', 'MaterialParameterCollection', 'Map', 'Sound', 'Animation', 'DataAsset', 'BlendSpace1D', 'AdventureMoveSet', 'AnimBoneCompressionSettings',
+               'Material', 'MaterialInstance', 'MaterialParameterCollection', 'Map', 'Sound', 'Animation', 'DataAsset', 'BlendSpace1D', 'AdventureMoveSet', 'AnimBoneCompressionSettings', 'AnimCurveCompressionSettings', 'MirrorDataTable',
                'WandererDefinition', 'SoundAttenuation'}
     by_id = {unit['id']: unit for unit in native['units']}
     result = {}
@@ -879,6 +879,20 @@ def lower(rows, geometry, *, checkout):
         current['groups'].update(family['groups']); current['templates'].extend(family['templates'])
         native['geometry'] = current
         native['aliases'].update(family['aliases'])
+    if 'unreal.hippodrome' in selected:
+        family = _family_module(checkout, 'v2_hippodrome_units').attach_followers(native['geometry'],
+            rows=rows, checkout=checkout)
+        current = family.pop('geometry')
+        current['templates'].extend(family['templates'])
+        current['groups'].update(family['groups'])
+        requirements = family.pop('module_requirements')
+        fixed = {unit['id'] for unit in family['units']}
+        family['module_requirements'] = {name: value for name, value in requirements.items() if name in fixed}
+        native.setdefault('follower_module_requirements', {}).update(
+            {name: value for name, value in requirements.items() if name not in fixed})
+        _append_family(native, family)
+        native['geometry'] = current
+        native['aliases'].update(family['aliases'])
     if 'unreal.horses' in selected:
         module = _family_module(checkout, 'v2_horse_units')
         refs = _package_dependencies(native)
@@ -935,6 +949,14 @@ def lower(rows, geometry, *, checkout):
         native['geometry'] = current
         # The record consumes both the joint steering owner and actual expanded ordinary parts.
         native['aliases']['unreal.bike'] = (module.RECORD_UNIT,)
+    if {'data.content', 'data.network'} <= selected:
+        module = _family_module(checkout, 'v2_identity_units')
+        data = _family_module(checkout, 'v2_cook_pipeline')._data_context(rows, native)
+        family = module.identity_units(rows, checkout=checkout, native_units=native['units'],
+            geometry=native['geometry'], data=data)
+        _append_family(native, family)
+        native['aliases'].update(family['aliases'])
+        native.setdefault('runtime_data', []).append(family['session'])
     if 'unreal.cook' in selected:
         native = _family_module(checkout, 'v2_cook_pipeline').attach(native, rows, checkout=checkout)
     return native
