@@ -1,5 +1,5 @@
 //! How the world looks, after Yorimichi: a painted sky dome, a low warm sun behind the traveller, a blue haze that
-//! thickens with distance, and the camera's colour grade (tone curve, bloom, vignette).
+//! thickens with distance, and the camera's colour grade (tone curve, bloom, vignette) and painterly filter.
 
 use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::mesh::VertexAttributeValues;
@@ -8,6 +8,8 @@ use bevy::post_process::bloom::Bloom;
 use bevy::post_process::effect_stack::Vignette;
 use bevy::prelude::*;
 use hakuba_screens::Screen;
+
+use crate::painterly::Painterly;
 
 /// The sky's colour straight up, at the horizon, and below it, in sRGB.
 const ZENITH: [f32; 3] = [0.14, 0.32, 0.66];
@@ -55,6 +57,7 @@ pub fn camera() -> impl Bundle {
         Tonemapping::AcesFitted,
         Bloom::NATURAL,
         Vignette { intensity: 0.16, ..default() },
+        Painterly::default(),
         AmbientLight { color: Color::srgb_from_array(AMBIENT), brightness: AMBIENT_BRIGHTNESS, ..default() },
         DistanceFog {
             color: Color::linear_rgb(HAZE[0], HAZE[1], HAZE[2]),
