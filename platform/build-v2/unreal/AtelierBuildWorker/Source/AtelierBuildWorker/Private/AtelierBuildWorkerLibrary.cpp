@@ -609,7 +609,8 @@ FString UAtelierBuildWorkerLibrary::SourceCookRequest(const FString& RequestJson
         FString Text; FJsonSerializer::Serialize(Report.ToSharedRef(), TJsonWriterFactory<>::Create(&Text));
         return Text;
     };
-    if (!IsInGameThread() || !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(RequestJson), Request)
+    if (!IsInGameThread() || !IsRunningCookCommandlet()
+        || !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(RequestJson), Request)
         || !Request || Request->Values.Num() != 4 || Request->GetIntegerField(TEXT("version")) != 1)
         return Finish(TEXT("refused"), TEXT("invalid_request"));
     FString Key, Project, Package;
@@ -676,15 +677,16 @@ FString UAtelierBuildWorkerLibrary::SourceCookRequest(const FString& RequestJson
     FCommandLine::Set(*(TEXT("\"") + Project + TEXT("\" -run=cook ") + Args));
     int32 Code = -1;
     {
-        TGuardValue<bool> Cooking(PRIVATE_GIsRunningCookCommandlet, true);
-        // Public SDK hook paired with setting IsRunningCookCommandlet. The cooker
-        // consumes/unsubscribes this startup listener once per commandlet Main.
-        UE::Cook::InitializeCookGlobals();
+        // RunAsCookCommandlet initializes the FIRST listener before engine startup.
+        // Each stock Main consumes it; only subsequent producer calls reinitialize.
+        static bool bCookStartupConsumed = false;
         UClass* Class = FindObject<UClass>(nullptr, TEXT("/Script/UnrealEd.CookCommandlet"));
         if (Class && Class->IsChildOf(UCommandlet::StaticClass()))
         {
             UCommandlet* Commandlet = NewObject<UCommandlet>(GetTransientPackage(), Class);
             Commandlet->AddToRoot();
+            if (bCookStartupConsumed) UE::Cook::InitializeCookGlobals();
+            bCookStartupConsumed = true;
             Code = Commandlet->Main(Args);
             Commandlet->RemoveFromRoot();
         }

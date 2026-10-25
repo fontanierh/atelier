@@ -892,7 +892,7 @@ def test_uat_game_view_binds_actual_verified_plugin_copy_map(additional_plugin_v
     assert plugin.read_bytes() == (package_project.parent / 'Plugins/Move/Move.uplugin').read_bytes()
 
 
-@pytest.mark.parametrize('failure', [None, 'second', 'close'])
+@pytest.mark.parametrize('failure', [None, 'second', 'close', 'second+close'])
 def test_source_frontier_preserves_keys_and_waits_for_sdk_close(tmp_path, monkeypatch, failure):
     from types import SimpleNamespace
     jobs=[]
@@ -908,14 +908,14 @@ def test_source_frontier_preserves_keys_and_waits_for_sdk_close(tmp_path, monkey
         def close(self):
             assert not (scope/'result.json').exists()
             calls.append('closed')
-            if failure=='close':raise RuntimeError('uncertain native close')
+            if failure in ('close','second+close'):raise RuntimeError('uncertain native close')
     monkeypatch.setattr(tool,'CookSdkSession',Sdk)
     def dispatch(request,directory,engine,run,**kwargs):
         index=int(request['job_id']);assert kwargs['source_key']==jobs[index]['key']
         assert kwargs['cook_session'].owner.source_deadline>tool.time.monotonic()
         assert not (scope/'result.json').exists()
         calls.append(index)
-        if index==1 and failure=='second':raise tool.Refused('second key failed')
+        if index==1 and failure in ('second','second+close'):raise tool.Refused('second key failed')
         return ['records/'+str(index)+'.cb','cook-root.tree.tar']
     monkeypatch.setattr(tool,'dispatch',dispatch)
     worker=tool.Worker(io.BytesIO(),io.BytesIO(),tmp_path/'engine',source_batch=control)
@@ -924,7 +924,9 @@ def test_source_frontier_preserves_keys_and_waits_for_sdk_close(tmp_path, monkey
     assert [row['key'] for row in result['members']]==[row['key'] for row in jobs]
     assert calls==[0,1,'closed']
     assert result['sdk_processes']==1
-    assert [row['status'] for row in result['members']]==(['failed','failed'] if failure=='close' else ['completed','failed'] if failure=='second' else ['completed','completed'])
+    assert [row['status'] for row in result['members']]==(['failed','failed'] if failure in ('close','second+close') else ['completed','failed'] if failure=='second' else ['completed','completed'])
+    if failure=='second+close':
+        assert result['members'][1]['error'].startswith('second key failed; source SDK close:')
 
 
 def test_source_frontier_duplicate_actual_key_refuses_before_effect(tmp_path,monkeypatch):
@@ -962,6 +964,7 @@ def test_source_sdk_host_injects_worker_only_in_independent_readonly_descriptor_
         assert host.read_bytes()!=project.read_bytes() and project.read_bytes()==b'{}'
         assert json.loads(host.read_bytes())['Plugins']==[{'Name':'AtelierBuildWorker','Enabled':True}]
         assert len(kwargs['pass_fds'])==2
+        assert '-RunAsCookCommandlet' in command
         return SimpleNamespace(poll=lambda:0,returncode=0)
     monkeypatch.setattr(tool.subprocess,'Popen',popen)
     sdk=tool.CookSdkSession(owner,folder)
@@ -996,3 +999,29 @@ def test_source_sdk_cook_checks_exact_retained_overlay_inputs(tmp_path, monkeypa
     else:
         sdk.cook(project,{},'b'*64,tmp_path/'Bootstrap.uproject','a'*64,'/Game/A',None,tmp_path/'log')
         assert asset.read_bytes()==b'keyed native input'
+
+
+def test_source_sdk_close_reaps_own_process_without_waiting_for_inherited_pipe_eof(tmp_path,monkeypatch,capsys):
+    import os
+    from types import SimpleNamespace
+    read,held_service_write=os.pipe();request,response=os.pipe()
+    stream=os.fdopen(read,'rb',buffering=0);os.write(held_service_write,b'owned SDK exiting\n')
+    child=SimpleNamespace(stdout=stream,returncode=None)
+    polls=[]
+    def poll():
+        polls.append(1)
+        if len(polls)>=3:child.returncode=0
+        return child.returncode
+    child.poll=poll
+    child.communicate=lambda **kwargs:pytest.fail('shared-service EOF is not owned-process exit')
+    sdk=tool.CookSdkSession(SimpleNamespace(),tmp_path);sdk.child=child
+    sdk.request,sdk.response=request,response
+    monkeypatch.setattr(sdk,'exchange',lambda *args,**kwargs:{'status':'stopped'})
+    try:
+        sdk.close()
+        assert stream.closed and child.returncode==0
+        assert 'owned SDK exiting' in capsys.readouterr().err
+        # This write end remains held by the simulated shared service throughout.
+        os.fstat(held_service_write)
+    finally:
+        os.close(held_service_write)
