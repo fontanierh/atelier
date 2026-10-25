@@ -17,6 +17,7 @@ tools/
       main.rs               the `export` command: reads asset.toml, runs its kind's exporter, records its inputs
       rig.rs                the rig and the `Skeleton` trait
       pose.rs               poses: each rig bone's world rotation and position
+      pose_edit.rs          turning bones, moving the body and bending legs, shared by the retarget and animations
       retarget.rs           moving a clip from one skeleton onto another
       animation.rs          the `animation` kind
       animations.rs         every animation, each from its asset folder

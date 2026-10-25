@@ -10,12 +10,13 @@
 //! follows its parent. The pelvis moves as the source's does, scaled by the ratio of the two hip heights. Each leg is
 //! then solved so its ankle goes where the source's does: near the ground, the source's ankle travel at that scale
 //! from the target's own stance, so planted feet stay planted; high off the ground, where the target's leg reaches
-//! when bent as the source's is.
+//! when bent as the source's is. The knee stays in the leg's bend plane.
 
 use anyhow::{Result, bail};
 use glam::{DMat3, DVec3};
 
-use crate::pose::{Joint, Pose, UP, frame, halfway, level, smoothstep, swing};
+use crate::pose::{Joint, Pose, UP, frame, halfway, level, place, smoothstep, swing};
+use crate::pose_edit::{Leg, bend};
 use crate::rig::{self, RIG};
 
 /// The bones that keep the target's own rest posture.
@@ -132,63 +133,37 @@ pub fn retarget(source_rest: &Pose, clip: &[Pose], target_rest: &Pose) -> Result
         }
 
         // Forward kinematics, the pelvis first.
-        let mut position: Vec<Option<DVec3>> = vec![None; RIG.len()];
+        let mut pose: Pose =
+            rotation.iter().map(|rotation| rotation.map(|rotation| Joint { rotation, position: DVec3::ZERO })).collect();
         let pelvis = bone("pelvis");
         let source_move = |i: usize| c * (source[i].unwrap().position - source_rest[i].unwrap().position) * scale;
-        position[pelvis] = Some(rest_position(pelvis) + source_move(pelvis));
+        pose[pelvis].as_mut().unwrap().position = rest_position(pelvis) + source_move(pelvis);
         for i in 0..RIG.len() {
-            if target_rest[i].is_some() && position[i].is_none() {
-                position[i] = Some(place(i, &rotation, &position, target_rest));
+            if i != pelvis && pose[i].is_some() {
+                let position = place(i, &pose, target_rest);
+                pose[i].as_mut().unwrap().position = position;
             }
         }
 
-        // The legs: each ankle to its goal by two-bone IK, the knee kept in its current bend plane.
-        for side in ["l", "r"] {
-            let [thigh, shin, foot, toe] = ["thigh", "shin", "foot", "toe"].map(|part| bone(&format!("{part}_{side}")));
+        // The legs: each ankle to its goal, the knee kept in its current bend plane.
+        for leg in [Leg::on("l"), Leg::on("r")] {
+            let foot = leg.foot;
             let rise = (source[foot].unwrap().position.y - source_rest[foot].unwrap().position.y) / source_hips;
             let ground = rest_position(foot) + source_move(foot);
             let w = 1.0 - smoothstep(GROUND.0, GROUND.1, rise.abs());
-            let goal = ground * w + position[foot].unwrap() * (1.0 - w);
-            let (hip, knee_before) = (position[thigh].unwrap(), position[shin].unwrap());
-            let upper = rest_position(shin).distance(rest_position(thigh));
-            let lower = rest_position(foot).distance(rest_position(shin));
-            let reach = goal - hip;
-            let distance = reach.length().clamp((upper - lower).abs() + 1e-4, upper + lower - 1e-4);
-            let axis = reach.normalize();
-            let bend = knee_before - hip;
-            let pole = bend - axis * bend.dot(axis);
-            let pole = if pole.length() > 1e-6 { pole.normalize() } else { rotation[pelvis].unwrap().x_axis };
-            let along = (upper * upper - lower * lower + distance * distance) / (2.0 * distance);
-            let knee = hip + axis * along + pole * (upper * upper - along * along).max(0.0).sqrt();
-            let ankle = hip + axis * distance;
-            let thigh_turn = swing(knee_before - hip, knee - hip);
-            rotation[thigh] = Some(thigh_turn * rotation[thigh].unwrap());
-            let shin_now = thigh_turn * (position[foot].unwrap() - knee_before);
-            rotation[shin] = Some(swing(shin_now, ankle - knee) * thigh_turn * rotation[shin].unwrap());
-            position[shin] = Some(knee);
-            position[foot] = Some(ankle);
-            position[toe] = Some(place(toe, &rotation, &position, target_rest));
-            worst_ankle = worst_ankle.max(ankle.distance(goal));
+            let goal = ground * w + pose[foot].unwrap().position * (1.0 - w);
+            let hip = pose[leg.thigh].unwrap().position;
+            let (axis, bent) = ((goal - hip).normalize(), pose[leg.shin].unwrap().position - hip);
+            let straight = (bent - axis * bent.dot(axis)).length() < 1e-6;
+            let pole = if straight { pose[pelvis].unwrap().rotation.x_axis } else { bent };
+            worst_ankle = worst_ankle.max(bend(&mut pose, target_rest, leg, goal, pole));
         }
-
-        frames.push(
-            (0..RIG.len())
-                .map(|i| Some(Joint { rotation: rotation[i]?, position: position[i]? }))
-                .collect(),
-        );
+        frames.push(pose);
     }
     if worst_ankle > ANKLE_TOLERANCE {
         bail!("an ankle misses its goal by {:.1} mm", worst_ankle * 1000.0);
     }
     Ok(frames)
-}
-
-/// Bone `i`'s position: its parent's, plus its rest offset from the parent turned with the parent.
-pub fn place(i: usize, rotation: &[Option<DMat3>], position: &[Option<DVec3>], rest: &Pose) -> DVec3 {
-    let parent = rig::parent(i).expect("only the pelvis has no parent");
-    let (bone_rest, parent_rest) = (rest[i].unwrap(), rest[parent].unwrap());
-    let offset = parent_rest.rotation.transpose() * (bone_rest.position - parent_rest.position);
-    position[parent].unwrap() + rotation[parent].unwrap() * offset
 }
 
 fn is_finger(name: &str) -> bool {

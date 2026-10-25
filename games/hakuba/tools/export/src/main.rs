@@ -15,6 +15,7 @@ mod character;
 mod characters;
 mod glb;
 mod pose;
+mod pose_edit;
 mod retarget;
 mod rig;
 

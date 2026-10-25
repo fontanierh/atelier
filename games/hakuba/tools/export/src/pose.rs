@@ -1,10 +1,10 @@
-//! Poses in world space, and the rotation maths the retarget and the stances share.
+//! Poses in world space, and the rotation maths the retarget and pose editing share.
 
 use anyhow::Result;
 use glam::{DMat3, DMat4, DQuat, DVec3};
 
 use crate::glb::Glb;
-use crate::rig::{Bones, RIG};
+use crate::rig::{self, Bones, RIG};
 
 /// The world's up.
 pub const UP: DVec3 = DVec3::Y;
@@ -26,6 +26,13 @@ impl Joint {
 
 /// A pose of the rig's bones, indexed as [`crate::rig::RIG`]: `None` for a bone the skeleton does not have.
 pub type Pose = Vec<Option<Joint>>;
+
+/// Bone `i`'s position: its parent's in `pose`, plus its rest offset from the parent turned with the parent.
+pub fn place(i: usize, pose: &Pose, rest: &Pose) -> DVec3 {
+    let parent = rig::parent(i).expect("only the pelvis has no parent");
+    let (bone_rest, parent_rest, parent_now) = (rest[i].unwrap(), rest[parent].unwrap(), pose[parent].unwrap());
+    parent_now.position + parent_now.rotation * parent_rest.rotation.transpose() * (bone_rest.position - parent_rest.position)
+}
 
 /// The rotation whose Y axis is `y` and whose Z axis is `z`, made perpendicular to it.
 pub fn frame(y: DVec3, z: DVec3) -> DMat3 {
