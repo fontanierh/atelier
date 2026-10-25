@@ -204,7 +204,7 @@ def compile_rows(rows, *, project, targets, install_roots=(), checkout=None, geo
                     plan_limits={key: contract[key] for key in ('max_pieces', 'max_manifest_bytes',
                                                               'max_member_bytes', 'max_total_bytes')})
                 unit['params']['recipe']['geometry'] = {'source': group['source'],
-                    'encoding': contract['encoding'], 'parent': contract['parent']}
+                    'encoding': contract['encoding'], 'format': group['format'], 'parent': contract['parent']}
                 decoder = 'platform/studio/atelier/build_v2/blender_ops.py'
                 closure = ImportScanner().local_imports(checkout / decoder,
                     (checkout / 'platform/studio',))
@@ -289,7 +289,10 @@ def compile_source_prerequisites(game, *, checkout, build_root):
     from pathlib import Path
     steps = recipe_steps(game, checkout=checkout, build_root=build_root)
     selected = Graph(steps).select(('unreal.package',))
-    rows = extract(selected, checkout=checkout, build_root=build_root)
+    selected_ids = {step.name for step in selected}
+    # Discovery declarations describe formats even when only one planner is selected.
+    declared_rows = extract(steps, checkout=checkout, build_root=build_root)
+    rows = [row for row in declared_rows if row['id'] in selected_ids]
     blocked = {row['id'] for row in rows if row['id'].startswith('unreal.')}
     while True:
         extra = {row['id'] for row in rows if any(parent in blocked for parent in
@@ -317,13 +320,20 @@ def compile_source_prerequisites(game, *, checkout, build_root):
 
 
 def compile_game(game, *, checkout, build_root, targets=('unreal.package',)):
-    """Compose authored declarations; all execution remains in the v2 engine."""
+    """@cc [owner:fontanierh,label:correctness] selected-planner-format-stability
+    A selected planner MUST retain its original discovery group and format metadata even
+    when its discovery barrier is not selected. Only selected units and their templates
+    MUST become executable declarations; metadata extraction MUST NOT run producers.
+    """
     from atelier.build_products import Graph
     from .recipe_dependencies import extract
 
     steps = recipe_steps(game, checkout=checkout, build_root=build_root)
     selected = Graph(steps).select(targets)
-    rows = extract(selected, checkout=checkout, build_root=build_root)
+    selected_ids = {step.name for step in selected}
+    # Discovery declarations describe formats even when only one planner is selected.
+    declared_rows = extract(steps, checkout=checkout, build_root=build_root)
+    rows = [row for row in declared_rows if row['id'] in selected_ids]
     from .recipe_external_inputs import import_external_inputs
     from atelier import paths
     rows, _external_receipt = import_external_inputs(rows, checkout=checkout,
@@ -336,8 +346,11 @@ def compile_game(game, *, checkout, build_root, targets=('unreal.package',)):
         spec = importlib.util.spec_from_file_location('atelier_geometry_templates_' + game, template_source)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        geometry = module.geometry_templates(rows, checkout=checkout)
-        rows = module.apply_derived(rows, geometry['derived'])
+        geometry = module.geometry_templates(declared_rows, checkout=checkout)
+        geometry['groups'] = {key: group for key, group in geometry['groups'].items() if key in selected_ids}
+        geometry['templates'] = [template for template in geometry['templates']
+                                 if template['producer'] in selected_ids]
+        rows = module.apply_derived(rows, [token for token in geometry['derived'] if token['unit'] in selected_ids])
     return compile_rows(rows, project=game, targets=targets, checkout=checkout, geometry=geometry,
                         install_roots=(f'build/{game}', f'games/{game}/unreal/Content',
                                        f'games/{game}/unreal/Binaries'))

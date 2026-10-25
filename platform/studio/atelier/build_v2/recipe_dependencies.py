@@ -15,7 +15,7 @@ class Unsupported(ValueError):
 
 
 ROW_KEYS = ('id', 'commands', 'code', 'inputs', 'deferred', 'reads', 'references', 'needs', 'after', 'products',
-            'outputs', 'verify', 'replan')
+            'outputs', 'verify', 'replan', 'export_format')
 
 
 class _Paths:
@@ -270,6 +270,8 @@ def _row(step, index, owners, scanner, paths, import_roots):
     products = [{'id': p.name, 'paths': [paths.rel(x, step=step.name, what='product') for x in p.paths],
                  'optional_paths': [paths.rel(x, step=step.name, what='product') for x in p.optional_paths]}
                 for p in step.products]
+    if step.export_format not in (None, 'fbx', 'glb'):
+        raise Unsupported(f'{step.name}: unsupported declared export format {step.export_format!r}')
     return {
         'id': step.name,
         'commands': [_command(c, step, step.batch, paths) for c in step.commands],
@@ -284,6 +286,7 @@ def _row(step, index, owners, scanner, paths, import_roots):
         'outputs': [paths.rel(o, step=step.name, what='output') for o in step.outputs],
         'verify': _callable(step.verify, paths, step=step.name, what='verify'),
         'replan': bool(step.replan),
+        'export_format': step.export_format,
     }
 
 

@@ -23,7 +23,8 @@ def test_generated_file_is_a_product_edge_without_reading_existing_output(tmp_pa
     request = marker.request(tmp_path)
     unit = request['declaration']['units'][1]
     assert unit['inputs'] == [{'role': 'content', 'name': 'item0',
-                              'source': {'kind': 'item', 'unit': 'producer', 'item': 'product0'}}]
+                              'source': {'kind': 'item', 'unit': 'producer', 'item': 'product0'},
+                              'whole': 'The recipe consumes declared ROOT archives from this complete producer Item.'}]
     assert unit['params']['recipe']['paths'] == {
         'build/game/terrain': 'inputs/item0/products/0-0.tree.tar'}
     assert not list(tmp_path.iterdir())

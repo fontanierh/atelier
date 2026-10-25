@@ -100,7 +100,7 @@ def steps(ctx, *, region, assets, after=(), inputs=()):
             inputs=[*local_imports(asset.script, (WORLD, WORLD / 'regions', paths.STUDIO)), *(batch_support().values() if not encoded else ()), *asset.inputs], needs=list(asset.needs), reads=list(asset.reads),
             after=list(after), products=[Product(product, (root,)), *asset.products], cache=True, toolchain=not encoded,
             heavy=True, batch=None if encoded else Batch(region + ' logical geometry'), verify=complete,
-            about='construct only logical mesh ' + asset.key))
+            about='construct only logical mesh ' + asset.key, export_format=asset.suffix.removeprefix('.')))
         logical.append((asset.key, root, task, product,asset.encoding))
         rows = inventory(root, asset.key,encoding=asset.encoding)
         atomic = export_tasks.steps(ctx, prefix=f'world.{region}.export',
