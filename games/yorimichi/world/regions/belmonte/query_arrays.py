@@ -6,6 +6,7 @@ import zipfile
 
 import numpy as np
 
+from atelier.atomic_files import managed_temporary_parent
 from atelier.export_manifest import name,real_directory
 
 MAX_BYTES=256*1024*1024
@@ -37,7 +38,7 @@ def write(path,faces,values=None,*,owner,stage):
     result['metadata']=np.frombuffer(json.dumps(dict(schema=1,owner=owner,stage=stage),sort_keys=True).encode(),dtype=np.uint8)
     if path.is_symlink() or path.exists() and not path.is_file():raise ValueError('Query data must be regular')
     path.parent.mkdir(parents=True,exist_ok=True)
-    with tempfile.NamedTemporaryFile(prefix='.query-arrays-',dir=path.parent,delete=False) as stream:
+    with tempfile.NamedTemporaryFile(prefix='.query-arrays-',dir=managed_temporary_parent(path),delete=False) as stream:
         temporary=Path(stream.name);np.savez(stream,**result)
     try:
         if not path.exists() or path.read_bytes()!=temporary.read_bytes():temporary.replace(path)
