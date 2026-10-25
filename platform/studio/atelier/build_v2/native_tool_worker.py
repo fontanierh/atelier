@@ -331,56 +331,66 @@ class CookCallbacks:
             self.zen.close()
 
 
-def semantic_global_data(cooked, destination):
+def semantic_global_data(cooked, destination, project_name):
     """@cc [owner:fontanierh,label:correctness] semantic-native-global-output
-    Only complete emitted Global shader triples MAY enter the semantic global ROOT.
-    Namespace markers, metadata reports, statistics and private paths MUST stay in
-    the separate complete transport ROOT. Missing, aliased or ambiguous roles MUST
-    refuse before publication; this projection MUST NOT fabricate SDK artifacts.
+    Only complete emitted Global shader source triples and corresponding Engine
+    GlobalShaderCache files MAY enter the semantic ROOT. Namespace markers,
+    reports and statistics MUST stay in the separate complete transport ROOT.
+    Missing, aliased or ambiguous roles MUST refuse before publication.
     """
     cooked, destination = Path(cooked), Path(destination)
-    if cooked.is_symlink() or not cooked.is_dir() or os.path.lexists(destination):
+    if (not re.fullmatch('[A-Za-z0-9_-]+', project_name) or cooked.resolve() != cooked
+            or not cooked.is_dir() or os.path.lexists(destination)):
         raise Refused('semantic global projection requires an existing cook and fresh output')
+    source_root = cooked / project_name / 'Metadata/ShaderLibrarySource'
+    if source_root.resolve() != source_root or not source_root.is_dir():
+        raise Refused('stock cooker omitted its canonical global shader source directory')
     roles = {'ShaderAssetInfo': '.assetinfo.json', 'ShaderArchive': '.ushaderbytecode',
              'ShaderTypeInfo': '.stinfo'}
     formats = {}
-    def visit(directory):
-        for path in sorted(directory.iterdir()):
-            info = path.lstat()
-            if stat.S_ISDIR(info.st_mode):
-                visit(path)
-            elif stat.S_ISREG(info.st_mode) and info.st_nlink == 1:
-                if '-Global-' not in path.name:
-                    continue
-                match = re.fullmatch(r'(ShaderAssetInfo|ShaderArchive|ShaderTypeInfo)-Global-([A-Za-z0-9_]+)(\.assetinfo\.json|\.ushaderbytecode|\.stinfo)', path.name)
-                if not match or roles[match[1]] != match[3] or not info.st_size:
-                    raise Refused('unknown or empty emitted global shader role')
-                group = formats.setdefault(match[2], {})
-                if match[1] in group:
-                    raise Refused('ambiguous emitted global shader role')
-                group[match[1]] = path
-            else:
-                raise Refused('cook output contains an alias, hard link or special file')
-    visit(cooked)
+    for path in sorted(source_root.iterdir()):
+        if '-Global-' not in path.name:
+            continue
+        info = path.lstat()
+        match = re.fullmatch(r'(ShaderAssetInfo|ShaderArchive|ShaderTypeInfo)-Global-([A-Za-z0-9_]+-[A-Za-z0-9_]+)(\.assetinfo\.json|\.ushaderbytecode|\.stinfo)', path.name)
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            raise Refused('global shader source role is an alias, hard link or special file')
+        if not match or roles[match[1]] != match[3] or not info.st_size:
+            raise Refused('unknown or empty emitted global shader role')
+        group = formats.setdefault(match[2], {})
+        if match[1] in group:
+            raise Refused('ambiguous emitted global shader role')
+        group[match[1]] = path
     if not formats or any(set(group) != set(roles) for group in formats.values()):
         raise Refused('stock cooker omitted a complete Global shader archive triple')
+    files = [(path, Path('Content') / path.name) for group in formats.values() for path in group.values()]
+    caches = set()
+    for shader_format in formats:
+        platform = shader_format.split('-')[1]
+        cache = cooked / 'Engine' / ('GlobalShaderCache-' + platform + '.bin')
+        if cache.resolve() != cache:
+            raise Refused('global shader cache role contains an alias')
+        info = cache.lstat()
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or not info.st_size:
+            raise Refused('global shader cache is missing, empty or not a regular file')
+        if cache not in caches:
+            files.append((cache, Path('Engine') / cache.name)); caches.add(cache)
     destination.mkdir(mode=0o700)
-    content = destination / 'Content'
-    content.mkdir()
-    for group in formats.values():
-        for source in group.values():
-            before = source.lstat()
-            descriptor = os.open(source, os.O_RDONLY | os.O_NOFOLLOW)
-            with os.fdopen(descriptor, 'rb') as incoming, (content / source.name).open('xb') as outgoing:
-                opened = os.fstat(incoming.fileno())
-                if (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino):
-                    raise Refused('global shader artifact changed before projection')
-                shutil.copyfileobj(incoming, outgoing, 1024 * 1024)
-                after = os.fstat(incoming.fileno())
-            named = source.lstat()
-            identity = lambda value: (value.st_dev, value.st_ino, value.st_size, value.st_mtime_ns, value.st_ctime_ns)
-            if identity(before) != identity(after) or identity(after) != identity(named):
-                raise Refused('global shader artifact changed during projection')
+    for source, relative in files:
+        target = destination / relative
+        target.parent.mkdir(exist_ok=True)
+        before = source.lstat()
+        descriptor = os.open(source, os.O_RDONLY | os.O_NOFOLLOW)
+        with os.fdopen(descriptor, 'rb') as incoming, target.open('xb') as outgoing:
+            opened = os.fstat(incoming.fileno())
+            if (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino):
+                raise Refused('global shader artifact changed before projection')
+            shutil.copyfileobj(incoming, outgoing, 1024 * 1024)
+            after = os.fstat(incoming.fileno())
+        named = source.lstat()
+        identity = lambda value: (value.st_dev, value.st_ino, value.st_size, value.st_mtime_ns, value.st_ctime_ns)
+        if identity(before) != identity(after) or identity(after) != identity(named):
+            raise Refused('global shader artifact changed during projection')
     return sorted(formats)
 
 
@@ -463,7 +473,7 @@ def source_cook(params, view, project, engine, source_key, state, job_dir, run, 
         destination = _path(view, logical)
         if destination == cooked or destination.is_relative_to(cooked) or cooked.is_relative_to(destination):
             raise Refused('semantic global root overlaps complete cook transport')
-        semantic_global_data(cooked, destination)
+        semantic_global_data(cooked, destination, project.stem)
     return tuple(record_outputs.values())
 
 
