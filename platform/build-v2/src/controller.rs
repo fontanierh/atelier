@@ -84,9 +84,9 @@ impl ControllerRequest {
         ProjectNamespace::new(&self.project).map_err(|error| error.to_string())?;
         if self.project.is_empty()
             || self.targets.is_empty()
-            || self.targets.len() > 8192
+            || self.targets.len() > 32768
             || self.declaration.units.is_empty()
-            || self.declaration.units.len() > 8192
+            || self.declaration.units.len() > 32768
             || self.allowed_install_roots.is_empty()
         {
             return Err("controller declaration/target bounds are invalid".into());
@@ -1083,7 +1083,7 @@ pub fn execute<L: WorkerLauncher + Send>(
     let mut pending = request.templates.clone();
     let mut previous_io = IoObservation::default();
     let mut expanded = BTreeMap::new();
-    if pending.len() > 8192 {
+    if pending.len() > 32768 {
         return Err("too many authored templates".into());
     }
     while !pending.is_empty() {

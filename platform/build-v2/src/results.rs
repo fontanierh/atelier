@@ -1,4 +1,6 @@
 //! Per-unit immutable result publication. B3 installs and B4 root policy are separate.
+#[path = "zen_cook.rs"]
+pub mod zen_cook;
 use crate::groups::{
     OutputGroupContract, PlanRoster, RecordedGroupIdentity, StoredOutputGroup, ValidatedGroup,
     recorded_identity, restore_recorded, validate_frozen,
@@ -182,6 +184,8 @@ pub struct StagedResult {
     transaction: WriteTransaction,
     envelope: ResultEnvelope,
     objects: Vec<PreparedObject>,
+    external_verified: bool,
+    external_records: Vec<zen_cook::NativeArtifactWitness>,
 }
 
 fn invalid(reason: impl Into<String>) -> ResultError {
@@ -301,6 +305,16 @@ impl ResultStore {
             return Ok(None);
         };
         let envelope = recorded.envelope;
+        if envelope
+            .result
+            .outputs
+            .iter()
+            .any(|item| item.item.destination == Destination::External)
+        {
+            return Err(invalid(
+                "external Zen lookup requires independent native verification",
+            ));
+        }
         let mut groups = BTreeMap::new();
         for (contract, stored) in unit
             .ingredients()
@@ -374,10 +388,22 @@ fn check_manifest(unit: &PreparedUnit, outputs: &[StoredItem]) -> Result<(), Res
         return Err(invalid("wrong output item count"));
     }
     for (item, stored) in expected.iter().zip(outputs) {
-        if item != &stored.item
-            || stored.external_locator.is_some()
-            || item.destination == Destination::External
-        {
+        if item.destination == Destination::External {
+            let locator = zen_cook::CookLocator::decode(
+                stored
+                    .external_locator
+                    .as_deref()
+                    .ok_or_else(|| invalid("missing native Zen locator"))?,
+            )
+            .map_err(invalid)?;
+            if item != &stored.item || !stored.files.is_empty() || !locator.matches(unit, item) {
+                return Err(invalid(
+                    "external cook manifest differs from its declared source/package",
+                ));
+            }
+            continue;
+        }
+        if item != &stored.item || stored.external_locator.is_some() {
             return Err(invalid(
                 "output declaration differs or requires external adapter",
             ));
@@ -645,6 +671,136 @@ impl WriteTransaction {
         Ok(result)
     }
 
+    /// @cc [owner:fontanierh,label:correctness] independently-verified-external-cook
+    /// External cook publication MUST require an actual fixed normal cook producer's
+    /// sealed completion consumed as a typed NativeCookRecord, plus the independent
+    /// native restore verifier's sealed completion and exact record-byte/source/package/
+    /// native-key binding. Recorded dependency keys or input-key echoes alone MUST NOT
+    /// prove source origin. Both producer and verifier records MUST be complete and
+    /// persisted, with the retained native record immutable and owned by v2.
+    /// Unknown locators and generic writer reports MUST NOT grant lookup or publication.
+    /// The retained native bytes and lifetime marker MUST be rechecked at publication.
+    /// Stage one independently native-verified external package result. No files or
+    /// opaque locator/report callbacks are accepted on this boundary.
+    pub fn stage_external(
+        mut self,
+        proofs: &[zen_cook::VerifiedPackage<'_>],
+    ) -> Result<StagedResult, ResultError> {
+        if !self.unit.ingredients().output_groups.is_empty()
+            || proofs.len() != self.unit.ingredients().logical_outputs.len()
+            || proofs.is_empty()
+        {
+            return Err(invalid("external cook requires an exact fixed package set"));
+        }
+        let mut outputs = Vec::new();
+        for (item, proof) in self.unit.ingredients().logical_outputs.iter().zip(proofs) {
+            proof.check().map_err(ResultError::Validation)?;
+            proof
+                .validate_store_layout(self.store.objects.root())
+                .map_err(ResultError::Validation)?;
+            if proof.item() != item || !proof.locator().matches(&self.unit, item) {
+                return Err(invalid(
+                    "independent native proof binds another source/package",
+                ));
+            }
+            // The native verification record must already be durably stored. A
+            // local writer report or a lost report publication grants no locator.
+            for expected in [proof.producer_report(), proof.report()] {
+                let proof_path = self.store.record_path(&expected.result.key);
+                let metadata = fs::symlink_metadata(&proof_path)?;
+                if !metadata.is_file() || !metadata.permissions().readonly() {
+                    return Err(invalid(
+                        "native producer/verification record is not immutable",
+                    ));
+                }
+                let persisted: ResultEnvelope = serde_json::from_slice(&fs::read(proof_path)?)
+                    .map_err(|error| invalid(error.to_string()))?;
+                if persisted.version != ENVELOPE_VERSION
+                    || persisted.result.schema_version != RESULT_SCHEMA_VERSION
+                    || persisted.result.key != expected.result.key
+                    || persisted.result.outputs != expected.result.outputs
+                    || persisted.result.ingredients != expected.result.ingredients
+                {
+                    return Err(invalid(
+                        "native producer/verification record differs from its frozen proof",
+                    ));
+                }
+                for file in persisted.files() {
+                    self.store
+                        .objects
+                        .check_recorded(&ObjectDigest::from_hex(&file.digest)?, file.size)?;
+                }
+            }
+            self.upstream.insert(proof.proof_key().to_string());
+            self.upstream.insert(proof.producer_key().to_string());
+            outputs.push(StoredItem {
+                item: item.clone(),
+                files: Vec::new(),
+                external_locator: Some(proof.locator().encode().map_err(invalid)?),
+            });
+        }
+        // Retain the independently verified report before publishing its consumer.
+        {
+            let guard = self.store.leases.lock()?;
+            let mut lease = self.lease.clone();
+            lease.result_keys.extend(self.upstream.iter().cloned());
+            guard.save(&lease)?;
+            self.lease = lease;
+        }
+        check_manifest(&self.unit, &outputs)?;
+        let envelope = ResultEnvelope {
+            version: ENVELOPE_VERSION,
+            result: ResultRecord {
+                schema_version: RESULT_SCHEMA_VERSION,
+                unit: self.unit.request("", "").unit,
+                key: self.unit.key().into(),
+                ingredients: self.unit.ingredients().clone(),
+                outputs,
+                output_groups: Vec::new(),
+                provenance: self.provenance.clone(),
+            },
+            upstream_result_keys: self.upstream.clone(),
+        };
+        Ok(StagedResult {
+            transaction: self,
+            envelope,
+            objects: Vec::new(),
+            external_verified: true,
+            external_records: proofs.iter().map(|proof| proof.witness()).collect(),
+        })
+    }
+
+    /// Generic lookup keeps external records unavailable. The caller must supply
+    /// the fixed native verifier's current independently certified package proof.
+    pub fn lookup_external(
+        &mut self,
+        proofs: &[zen_cook::VerifiedPackage<'_>],
+    ) -> Result<Option<ResultEnvelope>, ResultError> {
+        let guard = self.store.leases.lock()?;
+        let Some(recorded) = self.store.read_metadata(&self.unit)? else {
+            return Ok(None);
+        };
+        drop(guard);
+        let envelope = recorded.envelope;
+        if envelope.result.outputs.len() != proofs.len() || proofs.is_empty() {
+            return Err(invalid("missing exact independent Zen proofs"));
+        }
+        for (output, proof) in envelope.result.outputs.iter().zip(proofs) {
+            proof.check().map_err(ResultError::Validation)?;
+            proof
+                .validate_store_layout(self.store.objects.root())
+                .map_err(ResultError::Validation)?;
+            if &output.item != proof.item()
+                || !proof.locator().matches(&self.unit, &output.item)
+                || output.external_locator.as_deref()
+                    != Some(proof.locator().encode().map_err(invalid)?.as_str())
+            {
+                return Err(invalid("native Zen lookup differs from the stored result"));
+            }
+        }
+        Ok(Some(envelope))
+    }
+
     /// Validates exact output membership, freezes each file once, then asks the op
     /// validator to inspect those same bytes. No publication happens on validation failure.
     /// Fixed-only compatibility entrypoint. Group units require the complete actual list.
@@ -721,6 +877,8 @@ impl WriteTransaction {
             transaction: self,
             envelope,
             objects,
+            external_verified: false,
+            external_records: Vec::new(),
         })
     }
 
@@ -777,6 +935,8 @@ impl WriteTransaction {
             transaction: self,
             envelope,
             objects,
+            external_verified: false,
+            external_records: Vec::new(),
         })
     }
 
@@ -829,6 +989,9 @@ impl StagedResult {
         mut observe: impl FnMut(PublicationStep) -> io::Result<()>,
     ) -> Result<ResultEnvelope, ResultError> {
         observe(PublicationStep::Prepared)?;
+        for witness in &self.external_records {
+            witness.check().map_err(ResultError::Validation)?;
+        }
         {
             let guard = self.transaction.store.leases.lock()?;
             let mut updated = self.transaction.lease.clone();
@@ -850,7 +1013,15 @@ impl StagedResult {
         }
         let winner = {
             let _guard = self.transaction.store.leases.lock()?;
-            match self.transaction.store.read(&self.transaction.unit)? {
+            let previous = if self.external_verified {
+                self.transaction
+                    .store
+                    .read_metadata(&self.transaction.unit)?
+                    .map(|recorded| recorded.envelope)
+            } else {
+                self.transaction.store.read(&self.transaction.unit)?
+            };
+            match previous {
                 Some(winner) => {
                     // The producing input key is equal; compare full semantic output view.
                     if winner.result.outputs != self.envelope.result.outputs
@@ -863,6 +1034,9 @@ impl StagedResult {
                     winner
                 }
                 None => {
+                    for witness in &self.external_records {
+                        witness.check().map_err(ResultError::Validation)?;
+                    }
                     self.save_record()?;
                     self.envelope.clone()
                 }
