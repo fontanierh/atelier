@@ -21,7 +21,7 @@ def setup(tmp_path):
             'record_sha256': sha(values['record.cb'])}}], histories=[{'declared': 'history'}],
         global_histories=[{'declared': 'global-history'}], global_files=[{'clientpath': '/{project}/ScriptObjects.bin',
             'path': str(values['ScriptObjects.bin']), 'sha256': sha(values['ScriptObjects.bin'])}],
-        output_dir=str(tmp_path / 'final'), library='Game', formats=['SF_METAL_SM5'],
+        output_dir=str(tmp_path / 'final'), library='Game', formats=['SF_METAL_SM5-METAL_SM5'],
         runtime_project=str(values['runtime.uproject']), input_key='d' * 64)
     calls = []
     def call(method, request):
@@ -79,7 +79,7 @@ def test_histories_use_frozen_archives_and_selected_package_rosters(tmp_path):
         root.mkdir(parents=True)
         for stem, suffix in (('ShaderAssetInfo', '.assetinfo.json'), ('ShaderArchive', '.ushaderbytecode'),
                              ('ShaderTypeInfo', '.stinfo')):
-            (root / (stem + '-' + library + '-SF_METAL_SM5' + suffix)).write_bytes(stem.encode())
+            (root / (stem + '-' + library + '-SF_METAL_SM5-METAL_SM5' + suffix)).write_bytes(stem.encode())
     cooked = tmp_path / 'cooked'
     shaders(cooked / 'FixtureGame/Content', 'FixtureGame')
     metadata = cooked / 'FixtureGame/Metadata'; metadata.mkdir()
@@ -89,24 +89,27 @@ def test_histories_use_frozen_archives_and_selected_package_rosters(tmp_path):
     (cooked / 'ue.projectstore').write_bytes(b'private locator')
     archive = tmp_path / 'metadata.tree.tar'; recipe_job.pack_root(cooked, archive)
     global_root = tmp_path / 'global'; shaders(global_root / 'Content', 'Global')
+    (global_root / 'Engine').mkdir()
+    (global_root / 'Engine/GlobalShaderCache-METAL_SM5.bin').write_bytes(b'engine shaders')
     carrier = {'version': 1, 'packages': [
         {'locator': {'package': name}, 'metadata_archive': str(archive),
          'metadata_sha256': hashlib.sha256(archive.read_bytes()).hexdigest()}
         for name in ('/Game/A', '/Game/B')]}
     result = prepare_histories(carrier=carrier, global_root=global_root, folder=tmp_path / 'projection',
                               project_name='FixtureGame', library='FixtureGame', unpack=recipe_job.unpack_root)
-    assert result['formats'] == ['SF_METAL_SM5']
+    assert result['formats'] == ['SF_METAL_SM5-METAL_SM5']
     assert len(result['histories']) == 1
     assert result['histories'][0]['packages'] == ['/Game/A', '/Game/B']
     assert len(result['histories'][0]['files']) == 3
     assert result['global_histories'][0]['packages'] == []
+    assert result['global_files'][0]['clientpath'] == '/{engine}/GlobalShaderCache-METAL_SM5.bin'
     assert all('ue.projectstore' not in str(row) for row in result['histories'])
 
 
 def test_missing_global_shader_triple_refuses_before_package_archive_use(tmp_path):
     from atelier.build_v2.zen_package_finalise import prepare_histories
     content = tmp_path / 'global/Content'; content.mkdir(parents=True)
-    (content / 'ShaderArchive-Global-SF_METAL_SM5.ushaderbytecode').write_bytes(b'shaders')
+    (content / 'ShaderArchive-Global-SF_METAL_SM5-METAL_SM5.ushaderbytecode').write_bytes(b'shaders')
     with pytest.raises((Refused, FileNotFoundError)):
         prepare_histories(carrier={'version': 1, 'packages': [{'locator': {'package': '/Game/A'}}]},
                           global_root=content.parent, folder=tmp_path / 'projection',

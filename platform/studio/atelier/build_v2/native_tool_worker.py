@@ -530,7 +530,7 @@ def finalise_package(job, params, view, project, engine, job_dir, run, environme
     with runtime_project.open('x') as stream:
         json.dump(descriptor, stream, sort_keys=True)
     arguments = dict(destination=carrier['destination'], packages=carrier['packages'], **histories,
-                     global_files=[], output_dir=str(scope / 'composed'), library=project.stem,
+                     output_dir=str(scope / 'composed'), library=project.stem,
                      runtime_project=str(runtime_project), input_key=source_key)
     request, script, report = scope / 'request.json', scope / 'finalise.py', scope / 'report.json'
     request.write_text(json.dumps({'arguments': arguments, 'helper': str(Path(helper.__file__).resolve()),
@@ -552,21 +552,25 @@ def finalise_package(job, params, view, project, engine, job_dir, run, environme
     # The private source transport is an execution context. Replace its registry
     # and shader globals with the selected, native-composed values, never a union
     # of source-history package memberships.
-    for composition, base in ((result['composition'], scope / 'composed'),
-                              (result['global_composition'], scope / 'composed-global')):
-        for row in composition['files']:
-            relative = recipe_job.relative(row['path'])
-            source = base / relative
-            helper._file(source, row['sha256'])
-            destination = cooked / project.stem / relative
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            if destination.exists():
-                if not stat.S_ISREG(destination.lstat().st_mode):
-                    raise Refused('native final globals overlap a non-file transport entry')
-                destination.unlink()
-            with source.open('rb') as incoming, destination.open('xb') as outgoing:
-                shutil.copyfileobj(incoming, outgoing)
-            helper._file(destination, row['sha256'])
+    for row in result['globals']:
+        client = row['clientpath']
+        if client.startswith('/{project}/'):
+            root, relative = project.stem, client.removeprefix('/{project}/')
+        elif client.startswith('/{engine}/'):
+            root, relative = 'Engine', client.removeprefix('/{engine}/')
+        else:
+            raise Refused('native global client path is outside project and engine roots')
+        source = Path(row['path'])
+        helper._file(source, row['sha256'])
+        destination = cooked / root / recipe_job.relative(relative)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if destination.exists():
+            if not stat.S_ISREG(destination.lstat().st_mode):
+                raise Refused('native final globals overlap a non-file transport entry')
+            destination.unlink()
+        with source.open('rb') as incoming, destination.open('xb') as outgoing:
+            shutil.copyfileobj(incoming, outgoing)
+        helper._file(destination, row['sha256'])
     marker = cooked / 'ue.projectstore'
     if not marker.is_file() or marker.is_symlink():
         raise Refused('native final package lacks the certified projectstore context')

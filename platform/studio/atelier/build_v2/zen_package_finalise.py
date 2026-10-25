@@ -136,7 +136,7 @@ def prepare_histories(*, carrier, global_root, folder, project_name, library, un
     def shaders(content, name, output, formats=None):
         if not content.is_dir() or content.is_symlink():
             raise Refused('declared shader content directory is absent or linked')
-        pattern = re.compile(r'ShaderArchive-' + re.escape(name) + r'-([A-Za-z0-9_]+)\.ushaderbytecode')
+        pattern = re.compile(r'ShaderArchive-' + re.escape(name) + r'-([A-Za-z0-9_]+-[A-Za-z0-9_]+)\.ushaderbytecode')
         found = sorted(match.group(1) for path in content.iterdir() if (match := pattern.fullmatch(path.name)))
         if not found or len(found) != len(set(found)) or (formats is not None and found != formats):
             raise Refused('native shader format roster differs or is incomplete')
@@ -184,4 +184,13 @@ def prepare_histories(*, carrier, global_root, folder, project_name, library, un
         history['packages'] = [name]
         archives[identity] = history
         histories.append(history)
-    return {'histories': histories, 'global_histories': [global_history], 'formats': formats}
+    global_files = []
+    for shader_format in formats:
+        platform = shader_format.split('-')[1]
+        filename = 'GlobalShaderCache-' + platform + '.bin'
+        source = global_root / 'Engine' / filename
+        digest = hashlib.sha256(source.read_bytes()).hexdigest()
+        global_files.append({'clientpath': '/{engine}/' + filename,
+                             'path': _file(source, digest), 'sha256': digest})
+    return {'histories': histories, 'global_histories': [global_history], 'formats': formats,
+            'global_files': global_files}
