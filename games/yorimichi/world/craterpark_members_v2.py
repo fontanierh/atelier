@@ -31,8 +31,11 @@ def _file(root, member):
 
 
 def _root(source, scratch):
-    from atelier.build_v2.recipe_job import unpack_root
+    from atelier.build_v2.recipe_job import inventory, unpack_root
     source = Path(source)
+    if source.is_dir() and not source.is_symlink():
+        inventory(source)
+        return source
     if source.is_symlink() or not source.is_file():
         raise ValueError('Expected a declared CraterPark ROOT archive')
     unpack_root(source, scratch)
@@ -128,6 +131,7 @@ def export_packet(source=None, output=None, payload=None, metadata=None, piece=N
     checked = verify_plan(work, parent=piece, limits=LIMITS, output_format='fbx')
     if len(checked['pieces']) != 1 or checked['pieces'][0]['name'] != piece:
         raise ValueError('Canonical CraterPark packet unexpectedly split')
+    (metadata / 'plan.json').write_text(json.dumps(checked, sort_keys=True, allow_nan=False) + '\n')
     member = checked['pieces'][0]['payload']
     shutil.copyfile(_file(work, member), payload / (piece + '.npz'))
     context = SimpleNamespace(params={'format': 'fbx', 'payload_encoding': 'mesh_ir', 'payload_role': 'geometry',
@@ -140,31 +144,28 @@ def export_packet(source=None, output=None, payload=None, metadata=None, piece=N
 
 def native_summary(build_archive=None, render=(), collision=(), output=None):
     """Require the original assembled source library and every selected native report before the alias completes."""
-    from atelier.build_v2.recipe_job import unpack_root
     output = Path(output)
     if output.exists():
         raise ValueError('CraterPark native summary must be fresh')
     output.mkdir(parents=True)
-    build_file = output / '.build.json'
-    unpack_root(build_archive, build_file)
-    try:
-        build = read_json(build_file)
-        observed = []
-        for kind, values in (('render', render), ('collision', collision)):
-            expected = {entry['name']: entry for entry in build[kind]}
-            if len(expected) != len(build[kind]) or len(values) != len(expected):
-                raise ValueError('CraterPark native membership differs from assembled runtime source')
-            seen = set()
-            for child, piece in values:
-                if piece in seen or piece not in expected:
-                    raise ValueError('CraterPark native report has a foreign or duplicate owner')
-                seen.add(piece)
-                report = read_json(_file(child.products[0].paths[0], 'data/reports/' + piece + '.json'))
-                if (report['name'] != piece or report['triangles'] != expected[piece]['triangles']
-                        or report['collision'] is not (kind == 'collision')
-                        or not 0 <= report['bounds_error_cm'] < .05):
-                    raise ValueError('CraterPark native report differs from assembled source')
-                observed.append(report)
-        (output / 'native.json').write_text(json.dumps({'meshes': observed}, sort_keys=True, allow_nan=False) + '\n')
-    finally:
-        build_file.unlink(missing_ok=True)
+    build_file = Path(build_archive)
+    if build_file.is_symlink() or not build_file.is_file():
+        raise ValueError('CraterPark requires its decoded original build.json ROOT')
+    build = read_json(build_file)
+    observed = []
+    for kind, values in (('render', render), ('collision', collision)):
+        expected = {entry['name']: entry for entry in build[kind]}
+        if len(expected) != len(build[kind]) or len(values) != len(expected):
+            raise ValueError('CraterPark native membership differs from assembled runtime source')
+        seen = set()
+        for child, piece in values:
+            if piece in seen or piece not in expected:
+                raise ValueError('CraterPark native report has a foreign or duplicate owner')
+            seen.add(piece)
+            report = read_json(_file(child.products[0].paths[0], 'data/reports/' + piece + '.json'))
+            if (report['name'] != piece or report['triangles'] != expected[piece]['triangles']
+                    or report['collision'] is not (kind == 'collision')
+                    or not 0 <= report['bounds_error_cm'] < .05):
+                raise ValueError('CraterPark native report differs from assembled source')
+            observed.append(report)
+    (output / 'native.json').write_text(json.dumps({'meshes': observed}, sort_keys=True, allow_nan=False) + '\n')
