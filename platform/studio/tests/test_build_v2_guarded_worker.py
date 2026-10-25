@@ -28,13 +28,13 @@ from atelier.harness.capacity_protocol import process_start
 MONITOR = [999991, 4242]  # stands in for the custody monitor's own pinned identity
 
 def run(command, folder, timeout=0., purpose=None, env=None, limit_gib=10., kind='job', on_slot=None,
-        on_poll=None, pass_fds=(), queue_seconds=None, custody_fds=(), invocation_id=None):
+        on_poll=None, pass_fds=(), queue_seconds=None, custody_fds=(), invocation_id=None, script_memory_gib=None):
     folder = Path(folder)
     folder.mkdir(parents=True, exist_ok=True)
     scenario = os.environ['FAKE_GUARD']
     (folder / 'fake-call.json').write_text(json.dumps(dict(
         pass_fds=list(pass_fds), custody=[list(os.fstat(fd)[1:3][::-1]) for fd in custody_fds],
-        kind=kind, limit_gib=limit_gib, timeout=timeout, queue_seconds=queue_seconds)))
+        kind=kind, limit_gib=limit_gib, timeout=timeout, queue_seconds=queue_seconds, script_memory_gib=script_memory_gib)))
     if scenario == 'queue':
         while True:
             time.sleep(.02)  # stands in for waiting on the broker; TERM unwinds it
@@ -105,7 +105,7 @@ def run(command, folder, timeout=0., purpose=None, env=None, limit_gib=10., kind
 
 
 class Bridge:
-    def __init__(self, tmp_path, scenario, custody=()):
+    def __init__(self, tmp_path, scenario, custody=(), memory=1):
         self.skip_samples = bool(custody)  # a custody readiness receipt is also a sample
         (tmp_path / 'fakeguard.py').write_text(FAKE_GUARD)
         self.report = tmp_path / 'attempt-1'
@@ -121,7 +121,7 @@ class Bridge:
         os.write(spec_w, json.dumps(spec).encode())
         os.close(spec_w)
         inherited = [request_r, response_w, events_w, liveness_r, spec_r, *custody]
-        argv = ['--report', str(self.report), '--purpose', 'bridge test', '--memory-gib', '1', '--timeout', '30',
+        argv = ['--report', str(self.report), '--purpose', 'bridge test', '--memory-gib', str(memory), '--timeout', '30',
                 '--events-fd', str(events_w), '--liveness-fd', str(liveness_r), '--spec-fd', str(spec_r),
                 '--request-fd', str(request_r), '--response-fd', str(response_w)]
         for fd in custody:
@@ -490,3 +490,16 @@ def test_a_fresh_readiness_receipt_of_the_pinned_child_and_this_bridge_names_the
 def test_no_usable_monitor_identity_is_ever_inferred(tree):
     assert monitor_identity(tree, CHILD, CONTROLLER, SINCE, NOW) is None
     assert monitor_identity(readiness(), None, CONTROLLER, SINCE, NOW) is None, 'no pinned child yet'
+
+
+@darwin
+def test_explicit_large_script_reservation_matches_the_actual_guard_ceiling(tmp_path):
+    bridge = Bridge(tmp_path, 'normal', memory=16)
+    assert bridge.next()['event'] == 'queued'
+    assert bridge.next()['event'] == 'admitted'
+    assert bridge.next()['event'] == 'child_started'
+    bridge.hello_then_close()
+    assert bridge.next()['event'] == 'child_exited'
+    assert bridge.next()['cleanup'] == 'confirmed'
+    assert bridge.finish() == 0
+    assert json.loads((bridge.report / 'fake-call.json').read_text())['script_memory_gib'] == 16

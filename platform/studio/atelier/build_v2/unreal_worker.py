@@ -193,7 +193,7 @@ def ddc_problem(policy, nodes):
             local = local or allowed
         elif node['kind'] == 'Pak File':
             allowed = path == policy['engine_pak']
-        elif node['kind'] == 'Memory':
+        elif node['kind'] in ('Memory', 'Async'):
             allowed = not path
         else:
             allowed = False
@@ -222,6 +222,37 @@ def validate_read_report(report, declared, platform_roots=(), generated=()):
             unknown.append(item)
     if unknown:
         raise JobRefused('dependency', f'opened undeclared files: {sorted(set(unknown))}')
+
+
+def generated_save_reads(report, saved, folder, before):
+    """UE SavePackage uses Saved/<package-leaf[:32]><FGuid Digits>.tmp.
+
+    Only a new direct temporary for an actually attested package save is generated state.
+    Preexisting names, aliases, other roots and other names remain undeclared reads.
+    """
+    folder = Path(folder)
+    if folder.resolve() != folder or folder.is_symlink():
+        return []
+    prefixes = {item['package'].rsplit('/', 1)[-1][:32] for item in saved}
+    result = []
+    for raw in report.get('files', ()):
+        path = Path(raw)
+        if path.parent == folder and path.name not in before and any(
+                re.fullmatch(re.escape(prefix) + r'[0-9A-F]{32}\.tmp', path.name)
+                for prefix in prefixes):
+            if path.is_symlink():
+                continue
+            result.append(path)
+    return result
+
+
+def content_has_files(root):
+    """Empty editor-created folder scaffolding is not package content; links are never empty."""
+    with os.scandir(root) as entries:
+        for entry in entries:
+            if not entry.is_dir(follow_symlinks=False) or content_has_files(entry.path):
+                return True
+    return False
 
 
 def log(message):
@@ -468,7 +499,7 @@ class Worker:
         if problem:
             raise StartRefused(f"the editor's cache graph is not the v2 graph: {problem}")
         self.read_platform_roots = (self.editor.engine_dir(), Path(expected['ddc']['dir']))
-        if any(self.content.iterdir()) or self.editor.registry_game_assets():
+        if content_has_files(self.content) or self.editor.registry_game_assets():
             raise StartRefused('/Game is not empty at startup')
 
     def observed_setting(self, token, cvars, reads):
@@ -543,7 +574,7 @@ class Worker:
             raise JobRefused('protocol', 'the job folder is not a staged absolute folder with output/')
         if any((job_dir / 'output').iterdir()):
             raise JobRefused('protocol', 'output/ is not empty before the job')
-        if any(self.content.iterdir()):
+        if content_has_files(self.content):
             raise JobRefused('dependency', '/Game is not empty before the job')
         declared, required = {}, set()
         for item in job['outputs']:
@@ -568,6 +599,8 @@ class Worker:
         if staged:
             self.editor.scan(staged)
         self.settings = self.editor.settings()
+        save_folder = self.project.parent / 'user' / 'Saved'
+        save_before = set(os.listdir(save_folder)) if save_folder.is_dir() else set()
         self.editor.begin_job()
         recording = True
         try:
@@ -601,7 +634,8 @@ class Worker:
         declared_reads = [job_dir / path for path in job['code']]
         declared_reads += prepared['declared_reads']
         declared_reads += list(staged)
-        validate_read_report(read_report, declared_reads, self.read_platform_roots, attested)
+        generated = [*attested, *generated_save_reads(read_report, saved, save_folder, save_before)]
+        validate_read_report(read_report, declared_reads, self.read_platform_roots, generated)
         # The registry forgets every saved file at reset, even one the op deleted afterwards.
         moved.extend(Path(filename) for filenames in files_of.values() for filename in filenames)
         names = set(files_of)

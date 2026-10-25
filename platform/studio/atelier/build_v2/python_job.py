@@ -255,7 +255,7 @@ class PathGuard:
                         'unlink': 'write', 'chmod': 'write', 'chown': 'write', 'utime': 'write',
                         'mkfifo': 'write', 'mknod': 'write', 'rename': 'write', 'replace': 'write'}
 
-    def __init__(self, job_dir, subpaths, literals, report, write_subpaths=None, relative_root=None, mkdir_existing=()):
+    def __init__(self, job_dir, subpaths, literals, report, write_subpaths=None, relative_root=None, mkdir_existing=(), subprocess_allowed=None):
         self.job_dir = job_dir
         self.relative_root = relative_root or job_dir
         if not _inside(self.relative_root, job_dir):
@@ -271,6 +271,7 @@ class PathGuard:
         if not self.writes or any(not os.path.isabs(path) or path == job_dir
                                   or not _inside(path, job_dir) for path in self.writes):
             raise ValueError('Worker write roots must be proper job-local directories')
+        self.subprocess_allowed = subprocess_allowed
         self.mkdir_existing = frozenset(mkdir_existing)
         if any(not _inside(path, job_dir) or not os.path.isdir(path) or os.path.islink(path) for path in self.mkdir_existing):
             raise ValueError("mkdir context must contain only existing owned directories")
@@ -328,6 +329,8 @@ class PathGuard:
             self.violation(access, text)
 
     def audit(self, event, args):
+        if event == 'subprocess.Popen' and self.subprocess_allowed is not None and self.subprocess_allowed(args):
+            return
         if event.startswith(self.REFUSED) or (event == 'ctypes.dlopen' and args[0] is not None):
             self.violation(event, '-')  # loading a named native library is a process-level escape
         if getattr(self.checked, 'skip', False):
@@ -474,8 +477,17 @@ def main(config, report):
     if working != job_dir:
         context.output_dir = Path(job_dir) / 'output'
         os.chdir(working)
+    node = None
+    if config.get('node_context') is not None:
+        # Only the outer frozen worker supplies this implementation and SDK role.
+        # It is bootstrap code, never code obtained from a recipe parameter.
+        values = config['node_context']
+        namespace = {'__name__': 'atelier_fixed_node_bootstrap'}
+        exec(compile(values['source'], '<build-v2 fixed node bootstrap>', 'exec'), namespace)
+        node = namespace['NodeExecution'](values['sdk'], view=values['view'], scratch=values['scratch'],
+                                          entry=values['entry'], sources=values['sources'])
     guard = PathGuard(job_dir, config['read_subpaths'], config['read_literals'], report,
-                      config.get('write_subpaths'), working, config.get('mkdir_existing', ()))
+                      config.get('write_subpaths'), working, config.get('mkdir_existing', ()), None if node is None else node.allow_subprocess)
     guard.install()
     try:
         spec = importlib.util.spec_from_file_location('atelier_job_entry', os.path.join(job_dir, config['script']))
@@ -485,7 +497,11 @@ def main(config, report):
         entry = getattr(module, 'run', None)
         if not callable(entry):
             raise TypeError('the entry script defines no run(context) function')
-        entry(context)
+        if node is None:
+            entry(context)
+        else:
+            with node.install():
+                entry(context)
         if guard.path_hook not in sys.path_hooks or finder not in sys.meta_path:
             # Without them a probe of an undeclared import path could have gone unseen.
             raise UndeclaredModuleError('the job removed the import guards')

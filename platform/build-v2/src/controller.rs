@@ -115,7 +115,9 @@ impl ControllerRequest {
                 {
                     crate::recipe_ops::validate_params(&unit.params)?;
                 }
-                crate::unreal_controller::RAW_IMPORT | crate::unreal_controller::FINISH
+                crate::unreal_controller::RAW_IMPORT
+                | crate::unreal_controller::FINISH
+                | crate::unreal_controller::AUTHOR
                     if unit.output_groups.is_empty()
                         && unit.script == crate::unreal_controller::ENTRY => {}
                 crate::encoded_ops::KIND if unit.output_groups.is_empty() => {}
@@ -266,7 +268,9 @@ pub(crate) fn registry(request: &ControllerRequest) -> Result<crate::validate::O
     if request.declaration.units.iter().any(|u| {
         matches!(
             u.op.kind.as_str(),
-            crate::unreal_controller::RAW_IMPORT | crate::unreal_controller::FINISH
+            crate::unreal_controller::RAW_IMPORT
+                | crate::unreal_controller::FINISH
+                | crate::unreal_controller::AUTHOR
         )
     }) {
         crate::unreal_controller::register(&mut registry, &request.data_contract.content_slots)?;
@@ -377,7 +381,9 @@ pub fn prepare(request: &ControllerRequest) -> Result<PreparedController, String
         graph.unit(id).is_some_and(|u| {
             matches!(
                 u.op.kind.as_str(),
-                crate::unreal_controller::RAW_IMPORT | crate::unreal_controller::FINISH
+                crate::unreal_controller::RAW_IMPORT
+                    | crate::unreal_controller::FINISH
+                    | crate::unreal_controller::AUTHOR
             )
         })
     }) {
@@ -432,7 +438,9 @@ pub fn prepare(request: &ControllerRequest) -> Result<PreparedController, String
             )
         } else if matches!(
             unit.op.kind.as_str(),
-            crate::unreal_controller::RAW_IMPORT | crate::unreal_controller::FINISH
+            crate::unreal_controller::RAW_IMPORT
+                | crate::unreal_controller::FINISH
+                | crate::unreal_controller::AUTHOR
         ) {
             (
                 crate::unreal_controller::worker_identity(
@@ -528,6 +536,7 @@ pub struct ExecutionContext {
     pub cache_root: PathBuf,
     pub interpreter: PathBuf,
     pub blender: Option<PathBuf>,
+    pub node: Option<PathBuf>,
     pub unreal: Option<crate::unreal_controller::UnrealLocations>,
     /// Actual controller identity supplied by the normal caller's authoritative OS probe.
     pub owner: ProcessIdentity,
@@ -736,6 +745,9 @@ fn execute_static<L: WorkerLauncher + Send>(
             limits: context.limits,
         },
     );
+    if let Some(path) = &context.node {
+        executor = executor.with_node(path.clone());
+    }
     if let Some(bundle) = blender_worker {
         executor = executor.with_blender(PythonExecution {
             interpreter: context

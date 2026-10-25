@@ -352,27 +352,34 @@ fn stage_into(
     }
     let output = job_dir.join("output");
     fs::create_dir(&output).map_err(|error| io_error(&output, error))?;
-    let scratch = if matches!(
-        ingredients.worker_version.as_str(),
-        crate::launch::BLENDER_JOB_LOOP_VERSION
-            | crate::recipe_ops::PYTHON_VERSION
-            | crate::recipe_ops::BLENDER_VERSION
-    ) {
-        let path = job_dir.join(
-            if ingredients.worker_version.starts_with("atelier-recipe-") {
-                ".recipe-runtime"
-            } else {
-                ".blender-runtime"
-            },
-        );
+    let runtime_name = match ingredients.worker_version.as_str() {
+        crate::launch::BLENDER_JOB_LOOP_VERSION => Some(".blender-runtime"),
+        crate::unreal::UNREAL_JOB_LOOP_VERSION => Some(".unreal-runtime"),
+        crate::recipe_ops::PYTHON_VERSION
+        | crate::recipe_ops::BLENDER_VERSION
+        | "atelier-native-tool-job-1" => Some(".recipe-runtime"),
+        _ => None,
+    };
+    let scratch = if let Some(name) = runtime_name {
+        let path = job_dir.join(name);
         fs::create_dir(&path).map_err(|error| io_error(&path, error))?;
         set_mode(&path, 0o700)?;
         Some(path)
     } else {
         None
     };
+    let evidence = if ingredients.worker_version == crate::unreal::UNREAL_JOB_LOOP_VERSION {
+        let path = job_dir.join("evidence");
+        fs::create_dir(&path).map_err(|error| io_error(&path, error))?;
+        Some(path)
+    } else {
+        None
+    };
     for directory in staged_directories(job_dir, scratch.as_deref())? {
         set_mode(&directory, 0o555)?;
+    }
+    if let Some(path) = evidence {
+        set_mode(&path, 0o700)?;
     }
     let folder = job_dir.to_str().ok_or("the job folder is not UTF-8")?;
     let mut request = prepared.request(job_id, folder);

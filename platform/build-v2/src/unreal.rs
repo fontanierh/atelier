@@ -132,7 +132,13 @@ pub struct UnrealWorkerBundle {
 }
 
 /// The worker's files, by their name in the bundle; the script runs and imports only its sibling.
-pub const UNREAL_WORKER_FILES: [&str; 2] = ["protocol.py", "unreal_worker.py"];
+pub const UNREAL_WORKER_FILES: [&str; 5] = [
+    "protocol.py",
+    "python_job.py",
+    "recipe_job.py",
+    "unreal_inputs.py",
+    "unreal_worker.py",
+];
 /// The bundle's entry script.
 pub const UNREAL_WORKER_SCRIPT: &str = "unreal_worker.py";
 /// The session folder that holds the frozen bundle.
@@ -287,7 +293,7 @@ impl DdcPolicy {
             let allowed = match node.kind.as_str() {
                 "File System" => inside,
                 "Pak File" => node.path == self.engine_pak,
-                "Memory" => node.path.is_empty(),
+                "Memory" | "Async" => node.path.is_empty(),
                 _ => false,
             };
             if !allowed {

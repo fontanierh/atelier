@@ -10,14 +10,15 @@ use std::collections::BTreeMap;
 
 pub const PYTHON_VERSION: &str = "atelier-recipe-python-job-1";
 pub const BLENDER_VERSION: &str = "atelier-recipe-blender-job-1";
-pub const FILES: [&str; 5] = [
+pub const FILES: [&str; 6] = [
     "protocol.py",
     "python_job.py",
     "python_worker.py",
     "recipe_job.py",
     "recipe_worker.py",
+    "recipe_node.py",
 ];
-pub const BLENDER_FILES: [&str; 7] = [
+pub const BLENDER_FILES: [&str; 8] = [
     "protocol.py",
     "python_job.py",
     "python_worker.py",
@@ -25,6 +26,7 @@ pub const BLENDER_FILES: [&str; 7] = [
     "blender_worker.py",
     "recipe_job.py",
     "recipe_worker.py",
+    "recipe_node.py",
 ];
 
 #[derive(Deserialize)]
@@ -39,6 +41,15 @@ struct Recipe {
     deferred: Vec<Value>,
     #[serde(default)]
     geometry: Option<Value>,
+    #[serde(default)]
+    tools: Vec<Tool>,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Tool {
+    kind: String,
+    entry: String,
+    sources: Vec<String>,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -87,6 +98,25 @@ pub fn validate_params(params: &BTreeMap<String, Value>) -> Result<(), String> {
             return Err("invalid recipe output".into());
         }
         let _ = output.required;
+    }
+    for tool in recipe.tools {
+        if tool.kind != "node.frontend"
+            || !relative(&tool.entry)
+            || tool.sources.len() != 3
+            || !tool.sources.contains(&tool.entry)
+            || tool
+                .sources
+                .iter()
+                .collect::<std::collections::BTreeSet<_>>()
+                .len()
+                != 3
+            || tool
+                .sources
+                .iter()
+                .any(|p| !relative(p) || !p.ends_with(".cjs"))
+        {
+            return Err("unsupported nested tool descriptor".into());
+        }
     }
     for command in recipe.commands {
         let object = command

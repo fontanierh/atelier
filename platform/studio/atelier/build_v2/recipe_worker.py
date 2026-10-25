@@ -16,19 +16,28 @@ def _sibling(name):
 
 python_worker = _sibling('python_worker')
 recipe_job = _sibling('recipe_job')
+recipe_node = _sibling('recipe_node')
 PYTHON_VERSION = 'atelier-recipe-python-job-1'
 BLENDER_VERSION = 'atelier-recipe-blender-job-1'
 
 
 class RecipePlatform:
-    def __init__(self, base, writes, parents):
+    def __init__(self, base, writes, parents, tools=None):
         self.base, self.writes, self.parents = base, writes, parents
+        self.tools = tools or {}
 
     def __getattr__(self, name):
         return getattr(self.base, name)
 
+    def executables(self):
+        return [*self.base.executables(), *self.tools.get('executables', ())]
+
+    def reads(self):
+        roots, literals = self.base.reads()
+        return [*roots, *self.tools.get('read_subpaths', ())], [*literals, *self.tools.get('read_literals', ())]
+
     def extra_rules(self):
-        return [*self.base.extra_rules(), '(allow file-write-create ' + ' '.join('(literal ' + python_worker._quote(path) + ')' for path in self.parents) + ')']
+        return [*self.base.extra_rules(), *self.tools.get('extra_rules', ()), '(allow file-write-create ' + ' '.join('(literal ' + python_worker._quote(path) + ')' for path in self.parents) + ')']
 
     def write_subpaths(self, job_dir):
         return [os.path.join(job_dir, 'output'), os.path.join(job_dir, recipe_job.RUNTIME, 'tmp'), *self.writes]
@@ -37,9 +46,10 @@ class RecipePlatform:
 class RecipeWorker(python_worker.Worker):
     VERSION = PYTHON_VERSION
 
-    def __init__(self, requests, responses, sandboxed, blender=None):
+    def __init__(self, requests, responses, sandboxed, blender=None, node=None):
         super().__init__(requests, responses, sandboxed)
         self.blender = blender
+        self.node = node
         self.native = _sibling('blender_worker') if blender else None
         self.base_platform = self.native.BlenderPlatform(blender) if blender else python_worker.Platform()
         self.platform = self.base_platform
@@ -49,7 +59,25 @@ class RecipeWorker(python_worker.Worker):
     def prepare_job(self, job, job_dir):
         view, self.protected, writes = recipe_job.prepare_view(job, job_dir)
         self.parents = sorted({str(parent) for output in writes for parent in Path(output).parents if parent.is_relative_to(view)})
-        self.platform = RecipePlatform(self.base_platform, writes, self.parents)
+        tools = job['params']['recipe'].get('tools', [])
+        self.node_config = None
+        permissions = None
+        if tools:
+            if len(tools) != 1 or tools[0].get('kind') != 'node.frontend' or not self.node:
+                raise ValueError('declared Node frontend requires its explicit execution locator')
+            descriptor = tools[0]
+            declared = set(job['code']) | set(job['params']['recipe']['paths'])
+            if (set(descriptor) != {'kind', 'entry', 'sources'} or descriptor['entry'] not in descriptor['sources']
+                    or len(descriptor['sources']) != 3 or len(set(descriptor['sources'])) != 3
+                    or any(recipe_job.relative(name) not in declared for name in descriptor['sources'])):
+                raise ValueError('nested Node source is not in frozen declared inputs/code')
+            sdk = recipe_node.discover_node(self.node)
+            permissions = recipe_node.permissions(sdk)
+            self.node_config = {'sdk': sdk, 'view': str(view),
+                'scratch': str(Path(job_dir) / recipe_job.RUNTIME / 'tmp'),
+                'entry': str(view / descriptor['entry']), 'sources': [str(view / name) for name in descriptor['sources']],
+                'source': Path(__file__).with_name('recipe_node.py').read_text(encoding='utf-8')}
+        self.platform = RecipePlatform(self.base_platform, writes, self.parents, permissions)
         self.aliases = [str(Path(recipe_job.RUNTIME) / 'view' / name) for name in job['code']]
         self.view = view
 
@@ -58,6 +86,8 @@ class RecipeWorker(python_worker.Worker):
         config['code'] = [*config['code'], *self.aliases]
         config['working_directory'] = str(self.view)
         config['mkdir_existing'] = self.parents
+        if self.node_config is not None:
+            config['node_context'] = self.node_config
         return config
 
     def child_command(self):
@@ -79,6 +109,7 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else sys.argv[1:]
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--node')
     parser.add_argument('--request-fd', type=int, required=True)
     parser.add_argument('--response-fd', type=int, required=True)
     args = parser.parse_args(argv)
@@ -92,7 +123,7 @@ def main(argv=None):
         blender = None
     else:
         blender = bpy.app.binary_path
-    RecipeWorker(requests, responses, True, blender).serve()
+    RecipeWorker(requests, responses, True, blender, args.node).serve()
 
 
 if __name__ == '__main__':

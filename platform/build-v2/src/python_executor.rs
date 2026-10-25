@@ -427,7 +427,10 @@ fn sole_released_report(
             .iter()
             .any(|attempt| attempt.custody != Custody::Released || attempt.quiescent.is_some())
     {
-        return Err("Python session cleanup remains held or unconfirmed".into());
+        return Err(format!(
+            "Python session cleanup remains held or unconfirmed: outcome={:?}; sessions={:?}; abort={:?}",
+            record.outcome, report.sessions, record.abort
+        ));
     }
     if record.outcome.end == End::Completed
         && (report.sessions.is_empty()
@@ -472,6 +475,7 @@ pub struct PythonExecutor<L> {
     blender: Option<PythonExecution>,
     recipes: Vec<PythonExecution>,
     unreal: Option<UnrealExecution>,
+    node: Option<PathBuf>,
     scripted_fixture: bool,
 }
 
@@ -485,8 +489,14 @@ impl<L> PythonExecutor<L> {
             blender: None,
             recipes: Vec::new(),
             unreal: None,
+            node: None,
             scripted_fixture: false,
         }
+    }
+
+    pub fn with_node(mut self, path: PathBuf) -> Self {
+        self.node = Some(path);
+        self
     }
 
     pub fn with_unreal(mut self, config: UnrealExecution) -> Self {
@@ -512,6 +522,7 @@ impl<L> PythonExecutor<L> {
             blender: None,
             recipes: Vec::new(),
             unreal: None,
+            node: None,
             scripted_fixture: true,
         }
     }
@@ -574,7 +585,9 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
             let native = self.unreal.as_ref().filter(|_| {
                 matches!(
                     compatibility.op_kind.as_str(),
-                    crate::unreal_controller::RAW_IMPORT | crate::unreal_controller::FINISH
+                    crate::unreal_controller::RAW_IMPORT
+                        | crate::unreal_controller::FINISH
+                        | crate::unreal_controller::AUTHOR
                 )
             });
             if config.is_none() && native.is_none() {
@@ -656,11 +669,20 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
                 )
             } else {
                 match config.bundle.command(&config.interpreter, scope) {
-                    Ok(command) => (
-                        command,
-                        work.inputs().staged.request().clone(),
-                        config.bundle.file_count(),
-                    ),
+                    Ok(mut command) => {
+                        if worker.version.starts_with("atelier-recipe-") {
+                            if let Some(path) = &self.node {
+                                command
+                                    .args
+                                    .extend(["--node".into(), path.as_os_str().to_owned()]);
+                            }
+                        }
+                        (
+                            command,
+                            work.inputs().staged.request().clone(),
+                            config.bundle.file_count(),
+                        )
+                    }
                     Err(reason) => {
                         stopped |= emit(Event::Failed { work, reason }) == Flow::Stop;
                         continue;
@@ -724,7 +746,7 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
                         let expected = unit.clone();
                         let job = spec.job.clone();
                         let (published, _records) = std::sync::mpsc::channel();
-                        worker_lifecycle::run_session_prepared(
+                        worker_lifecycle::run_session_ready_checked(
                             launcher,
                             &SystemClock::new(),
                             &session,
@@ -745,13 +767,16 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
                                             .into(),
                                     );
                                 }
+                                Ok(job.clone())
+                            },
+                            &mut |_| {
                                 if let Some(native) = &before_run {
                                     native
                                         .lock()
                                         .map_err(|_| "native launch lock poisoned")?
                                         .verify_context()?;
                                 }
-                                Ok(job.clone())
+                                Ok(())
                             },
                             published,
                         )
@@ -792,6 +817,13 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
                     .join()
                     .map_err(|_| "Python lifecycle driver panicked".to_string())?
             });
+            if let Err(reason) = &result {
+                use std::io::Write;
+                let _ = writeln!(
+                    std::io::stderr().lock(),
+                    "worker preparation/lifecycle refused: {reason}"
+                );
+            }
             let (completed, diagnostics) = diagnostics.into_inner().unwrap_or_default();
             if !completed
                 && !result
