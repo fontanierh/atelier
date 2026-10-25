@@ -231,6 +231,28 @@ def test_scoped_python_guard_refuses_unknown_reads_and_restores_afterwards(tmp_p
         assert known.read_bytes() == b'keyed'
 
 
+@pytest.mark.parametrize('fail', [False, True])
+def test_declared_project_import_never_writes_bytecode_and_restores_setting(tmp_path, monkeypatch, fail):
+    import importlib
+    root = tmp_path / 'job'
+    root.mkdir()
+    module = root / 'c3_bytecode_fixture.py'
+    module.write_text('VALUE = 17\n')
+    monkeypatch.syspath_prepend(str(root))
+    monkeypatch.setattr(sys, 'dont_write_bytecode', False)
+    try:
+        with pytest.raises(RuntimeError) if fail else __import__('contextlib').nullcontext():
+            with unreal_worker.declared_python(root, [module.name], [module], [Path(sys.base_prefix)]):
+                assert importlib.import_module('c3_bytecode_fixture').VALUE == 17
+                assert sys.dont_write_bytecode is True
+                if fail:
+                    raise RuntimeError('original body failure')
+        assert sys.dont_write_bytecode is False
+        assert not (root / '__pycache__').exists()
+    finally:
+        sys.modules.pop('c3_bytecode_fixture', None)
+
+
 def test_long_native_sidecar_suffix_has_one_package_owner():
     for suffix in ('.m.ubulk', '.upayload'):
         assert unreal_worker.package_owning('content/Game/A' + suffix, 'content/Game/') == '/Game/A'

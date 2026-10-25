@@ -95,10 +95,12 @@ def declared_python(job_dir, code, reads, platform_roots):
     finder = helper.DeclaredCodeFinder(root, set(code), [str(p) for p in platform_roots])
     originals = {name: getattr(os, name) for name in guard.DESCRIPTOR_CALLS if hasattr(os, name)}
     meta, hooks = list(sys.meta_path), list(sys.path_hooks)
+    bytecode = sys.dont_write_bytecode
     active = [True]
     guard.original_readlink = os.readlink
     sys.addaudithook(lambda event, args: guard.audit(event, args) if active[0] else None)
     try:
+        sys.dont_write_bytecode = True
         for name, function in originals.items():
             setattr(os, name, guard.wrap(name, function, guard.DESCRIPTOR_CALLS[name]))
         sys.meta_path.insert(0, finder)
@@ -107,6 +109,7 @@ def declared_python(job_dir, code, reads, platform_roots):
             raise JobRefused('dependency', guard.failed)
     finally:
         active[0] = False
+        sys.dont_write_bytecode = bytecode
         for name, function in originals.items():
             setattr(os, name, function)
         sys.meta_path[:] = meta
