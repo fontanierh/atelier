@@ -202,3 +202,25 @@ def test_stock_cook_runs_before_fixed_native_capture_and_raw_record_publication(
     assert (tmp_path / 'output/record.cb').read_bytes() == b'native retained CB'
     assert '-run=cook' in calls[0] and '-run=pythonscript' in calls[1]
     assert (state / 'records' / ('a' * 64 + '.cb')).stat().st_mode & 0o777 == 0o444
+
+
+@pytest.mark.skipif(__import__('sys').platform != 'darwin', reason='macOS ditto transport')
+def test_actual_ditto_roundtrip_keeps_framework_links_and_executable_mode(tmp_path):
+    import subprocess
+    root = tmp_path / 'source/Game.app'
+    version = root / 'Contents/Frameworks/Test.framework/Versions/A'
+    version.mkdir(parents=True)
+    executable = version / 'Test'
+    executable.write_bytes(b'not an executable; archive fixture')
+    executable.chmod(0o755)
+    (version.parent / 'Current').symlink_to('A')
+    (version.parent.parent / 'Test').symlink_to('Versions/Current/Test')
+    before = tool._tree(root)
+    archive = tmp_path / 'Game.mac.zip'
+    def run(argv, **kwargs):
+        subprocess.run(argv, cwd=kwargs['cwd'], check=True, timeout=10)
+    run(tool.zip_argv(root, archive), cwd=tmp_path)
+    destination = tmp_path / 'restored/Game.app'
+    destination.parent.mkdir()
+    tool.restore_mac_zip(archive, destination, run)
+    assert tool._tree(destination) == before

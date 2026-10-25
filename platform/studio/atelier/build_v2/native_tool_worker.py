@@ -137,7 +137,9 @@ def restore_mac_zip(source, destination, run):
             names.add(name)
             parts = Path(name).parts
             if parts[0] == '__MACOSX':
-                if len(parts) < 2 or parts[1] != destination.name:
+                if not ((len(parts) == 1 and member.is_dir())
+                        or (len(parts) >= 2 and parts[1] == destination.name)
+                        or (len(parts) == 2 and parts[1] == '._' + destination.name)):
                     raise Refused('native ZIP resource fork has another root')
             elif parts[0] != destination.name:
                 raise Refused('native ZIP has another root')
