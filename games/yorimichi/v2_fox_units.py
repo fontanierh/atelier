@@ -241,7 +241,7 @@ def fox_units(rows, *, checkout, natives):
     add({'id': definition_id, 'op': {'kind': 'unreal.author', 'version': '1'}, 'script': SCRIPT, 'code': code,
          'params': {'args': {'action': 'definition', 'facts': 'facts', 'mesh': 'mesh', 'blend': 'blend', 'clips': token('clips')},
                     'settings': []},
-         'outputs': [_output('asset', definition, 'FoxHunterDefinition')]},
+         'outputs': [_output('asset', definition, 'DataAsset')]},   # the generic class of the FoxHunterDefinition the body builds
         [_item('facts', body_id, 'body'), _item('mesh', mesh_id, 'mesh'), _item('blend', blend_id, 'asset')],
         {'facts': dict(facts_root)})
     requirements[definition_id] = _modules(root, ['Yorimichi'])[0]

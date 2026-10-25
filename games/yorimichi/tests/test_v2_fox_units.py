@@ -67,7 +67,7 @@ def test_every_package_from_the_actual_rows(declared):
     assert mesh['params']['partners'] == {'skeleton': '/Game/FoxHunter/SK_FoxHunter_Skeleton',
                                           'physics_asset': '/Game/FoxHunter/SK_FoxHunter_PhysicsAsset'}
     assert mesh['params']['args']['materials'] == units.token('materials')
-    assert found['unreal.fox_hunter.definition']['outputs'][0]['class'] == 'FoxHunterDefinition'
+    assert found['unreal.fox_hunter.definition']['outputs'][0]['class'] == 'DataAsset'
     assert declared['module_requirements']['unreal.fox_hunter.definition'][0]['name'] == 'Yorimichi'
     record = found['unreal.fox_hunter.record']
     assert [o['destination'] for o in record['outputs']] == ['store'] and units.REPORT_FILE in declared['packages']
@@ -83,6 +83,20 @@ def test_every_package_from_the_actual_rows(declared):
         for follower in template['followers']:
             assert all(i['source']['unit'] != 'characters.fox_hunter' for i in follower['unit']['inputs'])
     assert declared['aliases']['unreal.fox_hunter'] == tuple(found)
+
+
+# The classes the native controller (platform/build-v2/src/unreal_controller.rs) admits for authored assets.
+AUTHORED = {'Material', 'MaterialInstance', 'MaterialParameterCollection', 'Map', 'Blueprint', 'BlendSpace1D',
+            'AdventureMoveSet', 'AnimBoneCompressionSettings', 'WandererDefinition', 'SoundAttenuation', 'DataAsset', 'JsonData'}
+OTHERS = {'Data', 'RawTexture', 'Texture', 'RawSkeletalMesh', 'Skeleton', 'PhysicsAsset', 'SkeletalMesh', 'RawAnimation', 'Animation'}
+
+
+def test_emitted_output_classes_are_registered(declared):
+    units = [*declared['units'], *(f['unit'] for t in declared['templates'] for f in t['followers'])]
+    for unit in units:
+        allowed = AUTHORED if unit['op']['kind'] == 'unreal.author' else OTHERS
+        assert {o['class'] for o in unit['outputs']} <= allowed, unit['id']
+    assert {t['output_class'] for t in declared['templates']} == {'Data'}
 
 
 @pytest.mark.parametrize('damage', ['importer', 'product', 'compression'])
