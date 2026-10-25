@@ -75,6 +75,13 @@ def _fast_import_names(source, change_token):
 
 
 class _FastImportScanner(source_imports.ImportScanner):
+    """One plan's import resolution: each directory is listed once per scanner.
+
+    A probe whose name is absent from its directory's listing is a miss without a stat; a present name is checked
+    exactly. Misses are kept as (directory, name) entries, and a cached closure stays valid only while every such
+    name is still absent from a fresh listing, so added modules and packages are rediscovered. Resolution per
+    (base, name) is shared; which base wins stays per (source, search), so import precedence is unchanged.
+    """
     def __init__(self):
         super().__init__()
         self._realpaths = {}
@@ -82,8 +89,7 @@ class _FastImportScanner(source_imports.ImportScanner):
         self._direct = {}
         self._closures = {}
         self._call_cache = {}
-        self._missed = {}
-        self._checked_missed = set()
+        self._listings = {}
 
     def _realpath(self, path):
         path = Path(path)
@@ -103,51 +109,74 @@ class _FastImportScanner(source_imports.ImportScanner):
             self._tokens[source] = token
             return token
 
-    def _missed_clear(self, candidates):
-        checked = self._checked_missed
-        for candidate in candidates:
-            if candidate not in checked:
-                if candidate.is_file():
-                    return False
-                checked.add(candidate)
-        return True
+    def _entries(self, directory):
+        try:
+            return self._listings[directory]
+        except KeyError:
+            pass
+        # Case-folded, so a case-insensitive volume never turns a present name into a miss.
+        try:
+            names = frozenset(name.casefold() for name in os.listdir(directory))
+        except (FileNotFoundError, NotADirectoryError):
+            names = frozenset()
+        self._listings[directory] = names
+        return names
+
+    def _is_file(self, directory, name):
+        return name.casefold() in self._entries(directory) and os.path.isfile(os.path.join(directory, name))
+
+    def _missed_clear(self, missed):
+        entries = self._entries
+        return not any(name.casefold() in entries(directory) for directory, name in missed)
 
     def _resolve_with_missed(self, root, parts):
-        key = (root, tuple(parts))
-        if key in self.resolved:
-            return self.resolved[key], self._missed[key]
-        namespace_parents = []
+        key = (os.fspath(root), tuple(parts))
+        try:
+            return self.resolved[key]
+        except KeyError:
+            pass
+        namespace = False
         if root == paths.STUDIO / 'atelier':
             root, parts = paths.STUDIO, ['atelier', *parts]
         if root == paths.STUDIO and parts and parts[0] == 'atelier':
-            namespace_parents = [paths.STUDIO / 'atelier' / '__init__.py']
+            namespace = True
             if len(parts) > 1 and parts[1] == 'harness':
                 root, parts = paths.HARNESS, parts[1:]
             elif len(parts) > 1 and (parts[1] in {'board', 'capacity', 'safety'}
                                     or parts[1].startswith(('board_', 'capacity_'))):
                 root, parts = paths.HARNESS, ['harness', *parts[1:]]
-        target = root.joinpath(*parts)
-        candidates = [target / '__init__.py'] if not parts else [target.with_suffix('.py'), target / '__init__.py']
-        missed = []
-        found = None
-        for candidate in candidates:
-            if candidate.is_file():
-                found = candidate
+        join, entries = os.path.join, self._entries
+        directory, missed, result = os.fspath(root), [], []
+        for part in parts[:-1]:
+            if part.casefold() not in entries(directory):
+                # Nothing below an absent package directory can resolve; its later creation invalidates.
+                missed.append((directory, part))
                 break
-            missed.append(candidate)
-        if found:
-            parents = [root.joinpath(*parts[:i], '__init__.py') for i in range(1, len(parts))]
-            result = [found]
-            for parent_init in [*parents, *namespace_parents]:
-                if parent_init.is_file():
-                    result.append(parent_init)
-                else:
-                    missed.append(parent_init)
+            directory = join(directory, part)
         else:
-            result = []
-        self.resolved[key] = result
-        self._missed[key] = tuple(missed)
-        return result, self._missed[key]
+            if parts:
+                last = parts[-1]
+                candidates = ((directory, last + '.py'), (join(directory, last), '__init__.py'))
+            else:
+                candidates = ((directory, '__init__.py'),)
+            found = None
+            for candidate in candidates:
+                if self._is_file(*candidate):
+                    found = candidate
+                    break
+                missed.append(candidate)
+            if found:
+                result.append(Path(join(*found)))
+                inits = [(join(os.fspath(root), *parts[:i]), '__init__.py') for i in range(1, len(parts))]
+                if namespace:
+                    inits.append((os.fspath(paths.STUDIO / 'atelier'), '__init__.py'))
+                for init in inits:
+                    if self._is_file(*init):
+                        result.append(Path(join(*init)))
+                    else:
+                        missed.append(init)
+        value = self.resolved[key] = (result, tuple(missed))
+        return value
 
     def resolve(self, root, parts):
         return self._resolve_with_missed(root, parts)[0]
@@ -187,6 +216,7 @@ class _FastImportScanner(source_imports.ImportScanner):
         seen, todo = set(), [script]
         all_missed = set()
         bindings = {}
+        resolve = self._resolve_with_missed
         while todo:
             raw = todo.pop()
             source = self._realpath(raw)
@@ -202,9 +232,10 @@ class _FastImportScanner(source_imports.ImportScanner):
                 all_missed.update(direct_missed)
                 continue
             found_all = []
-            direct_missed = []
+            direct_missed = set()
+            parent = source.parent
             for level, names in _fast_import_names(source, self._token(source)):
-                bases = (source.parent, *search)
+                bases = (parent, *search)
                 if level:
                     if level > len(source.parents):
                         raise ValueError(f'Invalid relative import in {source}')
@@ -214,12 +245,12 @@ class _FastImportScanner(source_imports.ImportScanner):
                     package_base = None if level else source_imports.package_import_base(source, name)
                     candidates = bases if package_base is None else (*bases, package_base)
                     for base in dict.fromkeys(candidates):
-                        found, missed = self._resolve_with_missed(base, parts)
-                        direct_missed.extend(missed)
+                        found, missed = resolve(base, parts)
+                        direct_missed.update(missed)
                         if found:
                             found_all.extend(found)
                             break
-            self._direct[direct_key] = (tuple(found_all), tuple(dict.fromkeys(direct_missed)))
+            self._direct[direct_key] = (tuple(found_all), tuple(direct_missed))
             todo.extend(found_all)
             all_missed.update(direct_missed)
         result = tuple(sorted(seen))
@@ -228,7 +259,7 @@ class _FastImportScanner(source_imports.ImportScanner):
         _CLOSURE_CACHE[closure_key] = (
             result,
             tuple((f, self._token(f)) for f in result),
-            tuple(sorted(all_missed)),
+            tuple(all_missed),
             tuple(sorted(bindings.items())),
         )
         return list(result)
