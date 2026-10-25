@@ -55,3 +55,26 @@ def test_megapark_actual_constructor_captures_complete_offline_inputs_and_output
                     if 'lightmap'in p.get('retail_texture_ids',{})
                     and p['retail_texture_ids']['lightmap']in records['textures'])
     assert {module.SOURCE/records['textures'][tid]['png']for tid in expected}<=set(step.inputs)
+
+
+def test_encoded_plan_verifier_binds_without_home_or_build_controller_imports(tmp_path):
+    from types import SimpleNamespace
+    import region_exports
+    step=region_exports.steps(SimpleNamespace(out=CHECKOUT/'build/verifier-home-test'),region='hippodrome',assets=[
+        region_exports.LogicalAsset('SM_HD_FinishPost',GAME/'world/regions/hippodrome/plan_finish_post.py',
+                                    suffix='.glb',encoding='encoded_glb')])[0]
+    row=recipe_dependencies.extract([step],checkout=CHECKOUT,build_root=CHECKOUT/'build')[0]
+    program='''
+import json,sys
+from pathlib import Path
+from atelier.build_v2.recipe_job import bind
+value=json.load(sys.stdin)
+def no_home(cls):raise AssertionError('a source verifier may not load machine/home controls')
+Path.home=classmethod(no_home)
+assert bind(value['binding'],Path(value['view']))() is False
+assert 'atelier.build' not in sys.modules
+'''
+    result=subprocess.run([sys.executable,'-B','-c',program],input=json.dumps({'binding':row['verify'],'view':str(CHECKOUT)}),
+                          cwd=tmp_path,env={k:v for k,v in os.environ.items()if k not in ('HOME','PYTHONPATH')},
+                          capture_output=True,text=True,timeout=20)
+    assert result.returncode==0,result.stdout+result.stderr
