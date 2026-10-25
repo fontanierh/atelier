@@ -26,6 +26,43 @@ def _file(path, digest):
     return str(value)
 
 
+def select_runtime_globals(rows, *, project, engine):
+    """@cc [owner:fontanierh,label:correctness] sdk-owned-config-staging
+    Only Config INI files byte-identical to their selected SDK/project source MAY
+    leave the injected runtime roster, so stock UAT stages their platform roles.
+    All other globals MUST remain selected. Complete captured archives MUST remain
+    untouched; malformed roles, aliases and changed source bytes MUST refuse.
+    """
+    project, engine = Path(project), Path(engine)
+    if (not project.is_absolute() or project.resolve() != project
+            or not stat.S_ISREG(project.lstat().st_mode)
+            or not engine.is_absolute() or engine.resolve() != engine
+            or not stat.S_ISDIR(engine.lstat().st_mode) or not isinstance(rows, list)):
+        raise Refused('runtime globals require the selected canonical project and SDK')
+    selected, seen = [], set()
+    for row in rows:
+        if not isinstance(row, dict) or set(row) != {'clientpath', 'path', 'sha256'}:
+            raise Refused('invalid runtime global descriptor')
+        client = row['clientpath']
+        if not isinstance(client, str):
+            raise Refused('invalid runtime global role')
+        domain = next((part for part in ('engine', 'project') if client.startswith('/{' + part + '}/')), None)
+        tail = client[len(domain) + 4:] if domain else ''
+        parts = tail.split('/')
+        if (not tail or '\\' in tail or any(part in ('', '.', '..') for part in parts)
+                or any(ord(c) < 32 for c in client) or client in seen):
+            raise Refused('invalid or duplicate runtime global role')
+        seen.add(client)
+        _file(row['path'], row['sha256'])
+        config = parts[0] == 'Config' or (parts[0] == 'Plugins' and 'Config' in parts[1:-1])
+        if config and parts[-1].endswith('.ini'):
+            base = engine / 'Engine' if domain == 'engine' else project.parent
+            _file(base.joinpath(*parts), row['sha256'])
+        else:
+            selected.append(row)
+    return selected
+
+
 def source_manifest(path):
     """Read the stock cooker's frozen ledger; its server paths never grant reads."""
     path = Path(path)
