@@ -295,26 +295,28 @@ def horse_units(rows, *, checkout, natives):
             entry['saddles' if part == 'Saddle' else 'reins'][sid] = slot
             record_inputs.append(_item(slot, finish_id, 'mesh'))
         breeds[slug] = (entry, record_inputs)
-    record_id = 'unreal.horses.record'
     record_inputs = [_file('library', LIBRARY), _file('variants', VARIANTS), _item('built', producer_id, produced[f'{OUT}/manifest.json'][0]),
                      *(_item('master_' + key, f'unreal.horses.master.{name}', 'asset') for key, name in MASTERS.items()),
                      *(_item('mask_' + mask, unit_id, 'texture') for mask, unit_id in masks.items()),
                      *(_item('variant_' + vid, unit_id, 'texture') for vid, unit_id in coat_variants.items()),
                      *(i for _, inputs in breeds.values() for i in inputs)]
-    add({'id': record_id, 'op': {'kind': 'unreal.author', 'version': '1'}, 'script': SCRIPT, 'code': code,
-         'params': {'args': {'action': 'record', 'library': 'library', 'variants': 'variants', 'built': 'built',
-                             'masters': {key: 'master_' + key for key in MASTERS},
-                             'masks': {mask: 'mask_' + mask for mask in masks},
-                             'coat_variants': {vid: 'variant_' + vid for vid in coat_variants},
-                             'breeds': {slug: entry for slug, (entry, _) in breeds.items()}},
-                    'settings': []},
-         'outputs': [{'id': 'roster', 'logical_path': '/Game/_Data/horses/roster', 'class': 'JsonData', 'destination': 'checkout',
-                      'files': [{'path': 'data/roster.json', 'install_path': ROSTER_FILE, 'required': True}]},
-                     {'id': 'report', 'logical_path': '/Internal/Horses/Report', 'class': 'JsonData', 'destination': 'store',
-                      'files': [{'path': 'data/unreal_import.json', 'required': True}]}]},
-        record_inputs, {'built': {'archive_member': produced[f'{OUT}/manifest.json'][1], 'name': 'manifest.json'}})
-    packages[ROSTER_FILE] = {'unit': record_id, 'item': 'roster'}
-    packages[REPORT_FILE] = {'unit': record_id, 'item': 'report'}
+    record_args = {'library': 'library', 'variants': 'variants', 'built': 'built',
+                   'masters': {key: 'master_' + key for key in MASTERS},
+                   'masks': {mask: 'mask_' + mask for mask in masks},
+                   'coat_variants': {vid: 'variant_' + vid for vid in coat_variants},
+                   'breeds': {slug: entry for slug, (entry, _) in breeds.items()}}
+    # The data author serializes one JSON per job, so the installed roster and the stored report are two owners
+    # over the same read closure.
+    for item, logical, destination, file, installed in (
+            ('roster', '/Game/_Data/horses/roster', 'checkout', {'path': 'data/roster.json', 'install_path': ROSTER_FILE}, ROSTER_FILE),
+            ('report', '/Internal/Horses/Report', 'store', {'path': 'data/unreal_import.json'}, REPORT_FILE)):
+        unit_id = 'unreal.horses.' + item
+        add({'id': unit_id, 'op': {'kind': 'unreal.author', 'version': '1'}, 'script': SCRIPT, 'code': code,
+             'params': {'args': {'action': item, **deepcopy(record_args)}, 'settings': []},
+             'outputs': [{'id': item, 'logical_path': logical, 'class': 'JsonData', 'destination': destination,
+                          'files': [{**file, 'required': True}]}]},
+            deepcopy(record_inputs), {'built': {'archive_member': produced[f'{OUT}/manifest.json'][1], 'name': 'manifest.json'}})
+        packages[installed] = {'unit': unit_id, 'item': item}
     return {'units': units, 'staged_inputs': staged, 'content_slots': {i['name']: False for u in units for i in u['inputs']},
             'packages': packages, 'aliases': {'unreal.horses': tuple(u['id'] for u in units)},
             'module_requirements': requirements, 'templates': templates, 'groups': groups,

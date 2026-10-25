@@ -65,11 +65,19 @@ def test_every_package_from_the_actual_rows(declared):
     assert reins['params']['skeleton'] == 'skeleton' and {i['name']: i['source']['unit'] for i in reins['inputs']} == {
         'source': 'horses.quarter.views', 'skeleton': 'unreal.horses.quarter.mesh'}
     assert '/Game/Horses/Quarter/Tack/Reins_06/SK_Horse_Quarter_Reins_06' in declared['packages']
-    record = found['unreal.horses.record']
-    assert [o['destination'] for o in record['outputs']] == ['checkout', 'store']
-    assert record['outputs'][0]['files'][0]['install_path'] == units.ROSTER_FILE
-    assert sorted(record['params']['args']['breeds']) == sorted(breeds)
-    assert len(record['params']['args']['coat_variants']) == 16
+    assert 'unreal.horses.record' not in found
+    roster, report = found['unreal.horses.roster'], found['unreal.horses.report']
+    assert [(o['id'], o['class'], o['destination']) for o in roster['outputs']] == [('roster', 'JsonData', 'checkout')]
+    assert [(o['id'], o['class'], o['destination']) for o in report['outputs']] == [('report', 'JsonData', 'store')]
+    assert roster['outputs'][0]['files'] == [{'path': 'data/roster.json', 'install_path': units.ROSTER_FILE, 'required': True}]
+    assert report['outputs'][0]['files'] == [{'path': 'data/unreal_import.json', 'required': True}]
+    same = lambda unit: {**unit['params'], 'args': {**unit['params']['args'], 'action': None}}
+    assert roster['inputs'] == report['inputs'] and same(roster) == same(report)
+    assert list(roster['params']['input_roots']) == ['built'] and roster['params']['input_roots']['built']['name'] == 'manifest.json'
+    assert sorted(roster['params']['args']['breeds']) == sorted(breeds)
+    assert len(roster['params']['args']['coat_variants']) == 16
+    assert declared['packages'][units.ROSTER_FILE] == {'unit': 'unreal.horses.roster', 'item': 'roster'}
+    assert declared['packages'][units.REPORT_FILE] == {'unit': 'unreal.horses.report', 'item': 'report'}
     clips = {t['unit_prefix']: t for t in declared['templates']}['unreal.horses.friesian.clips']
     raw, finish = (f['unit'] for f in clips['followers'])
     assert raw['params']['destination'].endswith('/$piece') and finish['params']['destination'] == '/Game/Horses/Friesian/A_Horse_Friesian_$piece'
@@ -274,3 +282,18 @@ def test_master_runs_only_the_original_function(editor, monkeypatch):
                  params={'args': {'action': 'master', 'key': 'tack_masked'}, 'settings': []})
     assert body.run(context).path == '/Game/Horses/M_HorseTackMasked'
     assert seen == [('make_tack_master', *body.HELPERS)]
+
+
+def test_roster_and_report_each_own_one_json(monkeypatch):
+    seen = []
+    def collect(context, unreal, args, owned):
+        seen.append((args['action'], owned)); return {'breeds': {}}, {'/Game/Horses/A/SK_Horse_A': {'mi': 'tex'}}
+    monkeypatch.setattr(body, '_record', collect)
+    assert body.roster(None, None, {'action': 'roster'}) == {body.ROSTER: {'breeds': {}}}
+    assert body.report(None, None, {'action': 'report'}) == {
+        body.REPORT: {'breeds': {}, 'materials': {'/Game/Horses/A/SK_Horse_A': {'mi': 'tex'}}}}
+    assert seen == [('roster', body.ROSTER), ('report', body.REPORT)]
+    monkeypatch.undo()
+    both = NS(outputs={}, data_outputs=(body.ROSTER, body.REPORT))
+    with pytest.raises(ValueError, match='owns only data/roster.json'):
+        body.roster(both, None, {'action': 'roster'})

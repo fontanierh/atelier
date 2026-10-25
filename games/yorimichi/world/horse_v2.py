@@ -1,4 +1,4 @@
-"""Native bodies for unreal.horses (Scripts/import_horses.py), one declared /Game/Horses package (or record) per job.
+"""Native bodies for unreal.horses (Scripts/import_horses.py), one declared /Game/Horses package (or the roster or report) per job.
 
 ``args.action`` selects
 - ``master``: M_HorseCoat, M_HorseHair, M_HorseTack or M_HorseTackMasked by the original make_*_master, run alone
@@ -10,8 +10,9 @@
 - ``tack``: SK_Horse_<Breed>_<Part>_<sid> from a raw glTF skeletal import on the finished breed skeleton, likewise;
 - ``clip``: A_Horse_<Breed>_<clip> from a raw glTF animation on the breed skeleton: root motion off and the shared
   compression, as import_breed does;
-- ``record``: Data/horses/roster.json (horse_data.roster, checked by roster_problems) and horses/unreal_import.json
-  (the roster with each mesh's instances and the textures they keep), from the loaded finished assets.
+- ``roster``: Data/horses/roster.json (horse_data.roster, checked by roster_problems), and
+- ``report``: horses/unreal_import.json (the roster with each mesh's instances and the textures they keep), each its
+  own job over the same loaded finished assets, since a data author returns one JSON.
 The original top level (its directory delete, registry scans and renames) never runs.
 """
 import ast
@@ -240,9 +241,9 @@ def clip(context, unreal, args):
     return sequence
 
 
-def record(context, unreal, args):
-    if list(context.outputs) or tuple(getattr(context, 'data_outputs', ())) != (ROSTER, REPORT):
-        raise ValueError('The horse record job owns only its roster and report')
+def _record(context, unreal, args, owned):
+    if list(context.outputs) or tuple(getattr(context, 'data_outputs', ())) != (owned,):
+        raise ValueError(f'The horse {args["action"]} job owns only {owned}')
     data = _module(context, HORSE_DATA, 'horse_record_data')
     library, built = _data(context, args['library'], 'manifest.json'), _data(context, args['built'], 'manifest.json')
     variants = _data(context, args['variants'], 'manifest.json')['variants']
@@ -275,10 +276,20 @@ def record(context, unreal, args):
         raise ValueError('Horse roster differs from its contract: ' + '; '.join(problems))
     if not all(materials.values()):
         raise ValueError('A horse mesh carries no material instances')
-    return {ROSTER: roster, REPORT: {**roster, 'materials': materials}}
+    return roster, materials
 
 
-ACTIONS = {'master': master, 'instance': instance, 'mesh': mesh, 'tack': tack, 'clip': clip, 'record': record}
+def roster(context, unreal, args):
+    roster, _ = _record(context, unreal, args, ROSTER)
+    return {ROSTER: roster}
+
+
+def report(context, unreal, args):
+    roster, materials = _record(context, unreal, args, REPORT)
+    return {REPORT: {**roster, 'materials': materials}}
+
+
+ACTIONS = {'master': master, 'instance': instance, 'mesh': mesh, 'tack': tack, 'clip': clip, 'roster': roster, 'report': report}
 
 
 def run(context):
