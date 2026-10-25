@@ -4,6 +4,7 @@
     "platform/build-v2/.cargo/config.toml",
     "platform/build-v2/Cargo.lock",
     "platform/build-v2/Cargo.toml",
+    "platform/build-v2/examples/plans/village_edges.plan.json",
     "platform/build-v2/src/bin/atelier-build-v2.rs",
     "platform/build-v2/src/blender_ops.rs",
     "platform/build-v2/src/checkout_locks.rs",
