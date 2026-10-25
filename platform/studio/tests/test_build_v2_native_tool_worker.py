@@ -747,3 +747,50 @@ def test_universal_metadata_header_binds_only_the_selected_native_architecture(r
     monkeypatch.setattr(tool.subprocess, 'run', universal)
     x=tool.native_module_environment(r['engine'], r['view'], r['project'], {})
     assert x['DYLD_LIBRARY_PATH'] == str(r['physics'].parent)
+
+
+@pytest.fixture
+def additional_plugin_view(tmp_path):
+    view = tmp_path / 'view'; project = view / 'games/game/unreal/Game.uproject'
+    project.parent.mkdir(parents=True)
+    project.write_text(json.dumps({'Modules': [{'Name': 'Game'}], 'AdditionalPluginDirectories': ['../../../platform/plugins']}))
+    plugin = view / 'platform/plugins/Activities/Move/Move.uplugin'; plugin.parent.mkdir(parents=True)
+    plugin.write_text(json.dumps({'CanContainContent': False, 'Modules': [{'Name': 'Move', 'Type': 'Runtime'}]}))
+    binary = plugin.parent / 'Binaries/Mac/libUnrealEditor-Move.dylib'; binary.parent.mkdir(parents=True); binary.write_bytes(b'actual produced module')
+    protected = list(map(str, (project, plugin, binary)))
+    return view, project, plugin, binary, protected
+
+
+def test_canonical_additional_plugins_copy_only_verified_bytes_and_keep_originals(additional_plugin_view):
+    view, project, plugin, binary, protected = additional_plugin_view
+    before = {path: path.read_bytes() for path in (plugin, binary)}
+    result = tool.canonical_project_plugins(view, project, protected)
+    destination = project.parent / 'Plugins/Move'
+    assert json.loads(project.read_bytes()) == {'Modules': [{'Name': 'Game'}], 'AdditionalPluginDirectories': []}
+    assert (destination/'Move.uplugin').read_bytes() == before[plugin]
+    assert (destination/'Binaries/Mac'/binary.name).read_bytes() == before[binary]
+    assert before == {path: path.read_bytes() for path in before}
+    assert str(destination/'Move.uplugin') in result
+    assert str(destination/'Binaries/Mac'/binary.name) in result
+    assert str(destination) not in result  # no future subtree grant
+    assert tool.canonical_project_plugins(view, project, result) == result
+
+
+@pytest.mark.parametrize('change', ['outside', 'descriptor_alias', 'extra_file', 'hardlink', 'content', 'collision'])
+def test_canonical_plugin_projection_refuses_unearned_roles_before_descriptor_change(additional_plugin_view, change):
+    view, project, plugin, binary, protected = additional_plugin_view
+    original = project.read_bytes()
+    if change == 'outside':
+        project.write_text(json.dumps({'AdditionalPluginDirectories': ['../../../../foreign']})); original = project.read_bytes()
+    elif change == 'descriptor_alias':
+        import os
+        real = plugin.with_suffix('.real'); plugin.rename(real); plugin.symlink_to(real)
+    elif change == 'extra_file': (plugin.parent/'unlisted.bin').write_bytes(b'unbound')
+    elif change == 'hardlink':
+        import os
+        os.link(binary, plugin.parent/'linked.bin')
+    elif change == 'content': plugin.write_text(json.dumps({'CanContainContent': True}))
+    else: (project.parent/'Plugins/Move').mkdir(parents=True)
+    with pytest.raises(tool.Refused):
+        tool.canonical_project_plugins(view, project, protected)
+    assert project.read_bytes() == original

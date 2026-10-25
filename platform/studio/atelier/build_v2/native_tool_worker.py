@@ -39,6 +39,84 @@ class Refused(ValueError):
     pass
 
 
+def canonical_project_plugins(view, project, protected):
+    """@cc [owner:fontanierh,label:correctness;safety] canonical-derived-native-plugins
+    Cook/package execution MAY independently copy code-only additional plugins
+    into the owned derived project's Plugins directory, retaining descriptor names,
+    bytes and module bytes. Every copied file MUST be covered by verified frozen
+    inputs; originals MUST remain unchanged. Only the derived project descriptor
+    MAY change its operational search directories. Ambiguous, aliased, outside-view,
+    content-bearing and undeclared roles MUST refuse before SDK execution. Canonical
+    native file-ledger paths MUST retain their existing no-traversal validation.
+    """
+    project = Path(project)
+    if (not project.is_relative_to(view) or project.resolve() != project or not project.is_file()
+            or project.is_symlink() or project.stat().st_nlink != 1):
+        raise Refused('derived native project is not an owned regular file')
+    original = project.read_bytes()
+    descriptor = json.loads(original)
+    directories = descriptor.get('AdditionalPluginDirectories', [])
+    if not directories:
+        return list(protected)
+    if not isinstance(directories, list) or any(not isinstance(name, str) for name in directories):
+        raise Refused('additional native plugin directories require explicit source paths')
+    scopes = []
+    for name in protected:
+        path = Path(name)
+        if path.resolve() != path or not path.is_relative_to(view):
+            raise Refused('native plugin input scope is not anchored in the owned view')
+        scopes.append((path, path.is_dir()))
+    def declared(path):
+        return any(path == source or (directory and path.is_relative_to(source)) for source, directory in scopes)
+    if project.resolve() != project or not declared(project) or project.is_symlink():
+        raise Refused('native project descriptor is not its declared source')
+    targets, plans = set(), []
+    for name in directories:
+        folder = Path(os.path.abspath(project.parent / name))
+        if not folder.is_relative_to(view) or folder.resolve() != folder or not folder.is_dir():
+            raise Refused('additional native plugin root is not its declared owned context')
+        for source in sorted(folder.rglob('*.uplugin')):
+            if source.resolve() != source or not source.is_file() or not declared(source):
+                raise Refused('additional native plugin descriptor is not a declared regular file')
+            spec = json.loads(source.read_bytes())
+            if spec.get('CanContainContent', False) is not False:
+                raise Refused('canonical native plugin relocation supports code-only plugins')
+            plugin = source.stem
+            if not re.fullmatch('[A-Za-z0-9_]+', plugin):
+                raise Refused('native plugin name is not canonical')
+            destination = project.parent / 'Plugins' / plugin
+            if destination in targets or os.path.lexists(destination):
+                raise Refused('native plugin projection collides with a project plugin')
+            targets.add(destination)
+            inventory = _tree(source.parent)
+            copied = []
+            for relative, kind, *_ in inventory:
+                path = source.parent / relative
+                if kind == 'link' or (kind == 'file' and not declared(path)):
+                    raise Refused('native plugin projection contains aliased or undeclared bytes')
+                if kind == 'file': copied.append(relative)
+            plans.append((source.parent, destination, inventory, copied))
+    result = list(protected)
+    for source, destination, inventory, files in plans:
+        if destination.parent.resolve() != destination.parent:
+            raise Refused('canonical native plugin parent is aliased')
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(source, destination)
+        if _tree(source) != inventory or _tree(destination) != inventory:
+            raise Refused('native plugin source changed during independent projection')
+        result.extend(str(destination / relative) for relative in files)
+    if project.read_bytes() != original:
+        raise Refused('native project source changed during plugin projection')
+    descriptor['AdditionalPluginDirectories'] = []
+    temporary = project.with_name('.' + project.name + '.native-plugin-layout')
+    raw = (json.dumps(descriptor, ensure_ascii=False, sort_keys=True, indent=2) + '\n').encode()
+    with temporary.open('xb') as stream:
+        stream.write(raw); stream.flush(); os.fsync(stream.fileno())
+    temporary.chmod(stat.S_IMODE(project.stat().st_mode))
+    temporary.replace(project)
+    return result
+
+
 def native_module_environment(engine, view, project, environment):
     """@cc [owner:fontanierh,label:correctness;safety] relocated-native-sdk-module-paths
     Relocated produced modules MAY receive only selected SDK module directories
@@ -901,6 +979,8 @@ def dispatch(job, job_dir, engine, run, *, source_key=None, zen_state_root=None,
     view, protected, writes = recipe_job.prepare_view(job, job_dir, reserved=reserved)
     restore_native_inputs(recipe, view, run)
     raw_roots = ()
+    if kind in ('unreal.cook.produce', 'unreal.package'):
+        protected = canonical_project_plugins(view, _path(view, params['project']), protected)
     if kind == 'unreal.cook.produce':
         if (export_project is None or not Path(export_project).is_absolute() or Path(export_project).suffix != '.uproject'
                 or not Path(export_project).is_file() or Path(export_project).is_symlink()):
