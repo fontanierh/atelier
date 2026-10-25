@@ -231,3 +231,41 @@ def test_skate_explicit_destinations_keep_foreign_member_preflight(tmp_path):
     with pytest.raises(ValueError,match='Foreign'):
         source.destinations(None,['one.json'],{'one.json':folder/'one.json'})
     assert (folder/'foreign').read_bytes()==b'keep'
+
+
+def test_skate_collision_bytes_use_existing_managed_scratch_under_real_recipe_guard(tmp_path):
+    import io
+    import subprocess
+    from atelier.build_v2.recipe_worker import RecipeWorker
+    from atelier.build_v2 import recipe_job
+    root=tmp_path.resolve();(root/recipe_job.RUNTIME).mkdir();(root/'output').mkdir()
+    (root/'entry.py').write_text('def run(context): pass\n')
+    request={'script':'entry.py','code':['entry.py'],'inputs':[],
+             'outputs':[{'path':'products/query.tree.tar'}],
+             'params':{'recipe':{'paths':{},'outputs':[{'path':'build/data/queries/collision.json'}]}}}
+    worker=RecipeWorker(io.BytesIO(),io.BytesIO(),True)
+    worker.prepare_job(request,str(root));config=worker.configuration(request,str(root),99)
+    program='''
+import importlib.util,json,sys
+from pathlib import Path
+from atelier.atomic_files import managed_temporaries
+from atelier.build_v2.python_job import PathGuard
+values=json.load(sys.stdin);config=values['config']
+spec=importlib.util.spec_from_file_location('skate_source',values['source'])
+module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+root=Path(values['job_dir']);destination=Path(config['working_directory'])/'build/data/queries/collision.json'
+guard=PathGuard(str(root),config['read_subpaths'],config['read_literals'],lambda _:None,
+                config['write_subpaths'],config['working_directory'],config['mkdir_existing'])
+with managed_temporaries(root/'.recipe-runtime/tmp'):
+    guard.install()
+    module.write_bytes(destination,b'exact original collision bytes')
+assert not guard.allowed('write',str(destination.parent))
+assert not guard.allowed('write',str(destination.with_name('foreign')))
+'''
+    payload={'config':config,'source':source.__file__,'job_dir':str(root)}
+    result=subprocess.run([sys.executable,'-c',program],input=json.dumps(payload),text=True,capture_output=True)
+    assert result.returncode==0,result.stdout+result.stderr
+    assert (root/recipe_job.RUNTIME/'view/build/data/queries/collision.json').read_bytes()==b'exact original collision bytes'
+    assert list((root/recipe_job.RUNTIME/'tmp').iterdir())==[]
+    ordinary=tmp_path/'ordinary/collision.json';source.write_bytes(ordinary,b'ordinary sibling semantics')
+    assert ordinary.read_bytes()==b'ordinary sibling semantics'
