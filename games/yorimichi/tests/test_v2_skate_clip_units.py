@@ -29,7 +29,7 @@ BANKS, COUNT = units.roster(ROOT)
 AUTHORED = {'Material', 'MaterialInstance', 'MaterialParameterCollection', 'Map', 'Blueprint', 'BlendSpace1D',
             'AdventureMoveSet', 'AnimBoneCompressionSettings', 'WandererDefinition', 'SoundAttenuation', 'DataAsset', 'JsonData',
             'Animation', 'AnimCurveCompressionSettings', 'MirrorDataTable'}
-OTHERS = {'Data', 'RawSkeletalMesh', 'Skeleton', 'SkeletalMesh'}
+OTHERS = {'Data', 'RawSkeletalMesh', 'Skeleton', 'SkeletalMesh', 'Animation'}
 
 
 @pytest.fixture(scope='module')
@@ -78,6 +78,12 @@ def test_every_owner_from_the_actual_rows(declared):
     for template in declared['templates']:
         for follower in template['followers']:
             assert all(i['source']['unit'] not in ('skate.runtime', template['producer']) for i in follower['unit']['inputs'])
+    control = found['unreal.skate_clips.control']
+    assert control['op'] == {'kind': 'unreal.finish', 'version': '1'} and control['params']['kind'] == 'animation'
+    assert control['params']['source']['derived_items']['templates'][0]['piece'] == constants['CONTROL']
+    assert [(o['logical_path'], o['destination']) for o in control['outputs']] == [
+        (units.CONTROL_COPY, 'store'), ('/Internal/SkateRide/Control', 'store')]
+    assert {i['source']['unit']: i['source']['item'] for i in found['unreal.skate_clips.report']['inputs']}['unreal.skate_clips.control'] == 'report'
     assert declared['aliases']['unreal.skate_clips'] == tuple(found)
 
 
@@ -181,3 +187,37 @@ def test_projection_refuses_a_clip_that_differs_from_the_committed_manifest(pack
     target.write_bytes(target.read_bytes() + b'\0')
     with pytest.raises(ValueError, match='committed checksum'):
         members.members(copy, ROOT / units.MANIFEST, ROOT / units.SCRIPTS, 1)
+
+
+# ---- acceptance against the original LIMITS -------------------------------------------------------------------------
+
+LIMITS = members.constants(ROOT / units.ORIGINALS[1], ('LIMITS',))['LIMITS']
+
+
+def clip_measurement(**changes):
+    value = dict(frames=2, fps=30., translation_cm=.001, rotation_rad=1e-5, scale=0., where={}, curve_error=0.,
+                 curves_missing=[], euler_storage=[], bones={})
+    value.update(changes)
+    return value
+
+
+def test_clip_acceptance_uses_the_original_limits():
+    assert LIMITS == {'translation_cm': .01, 'rotation_rad': 1e-4, 'scale': 1e-4}
+    assert body.accepted(clip_measurement(), LIMITS) == []
+    assert body.accepted(clip_measurement(translation_cm=LIMITS['translation_cm']), LIMITS) == []
+    assert body.accepted(clip_measurement(rotation_rad=2e-4), LIMITS) == ['rotation_rad']
+    assert body.accepted(clip_measurement(scale=float('nan')), LIMITS) == ['scale']
+    assert body.accepted(clip_measurement(curve_error=float('inf')), LIMITS) == ['curve_error']
+    assert body.accepted(clip_measurement(curves_missing=['MIRRORED']), LIMITS) == ['curves_missing MIRRORED']
+    # A curve error is retained for QA but has no original threshold.
+    assert body.accepted(clip_measurement(curve_error=3.), LIMITS) == []
+
+
+def test_control_acceptance_needs_actual_nonzero_compressed_error():
+    good = {'clip': 'C', 'compressed': {'translation_cm': .2, 'rotation_rad': 0., 'scale': 0.},
+            'raw': {'translation_cm': 0., 'rotation_rad': 0., 'scale': 0.}}
+    assert body.control_accepted(good) == []
+    assert body.control_accepted({**good, 'compressed': {k: 0. for k in body.KEYS}}) == ['control shows no compressed error']
+    assert body.control_accepted({'clip': 'C', 'error': 'boom'}) == ['incomplete control']
+    assert body.control_accepted(None) == ['incomplete control']
+    assert body.control_accepted({**good, 'raw': {**good['raw'], 'scale': float('nan')}}) == ['nonfinite control']
