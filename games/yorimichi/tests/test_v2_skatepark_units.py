@@ -327,3 +327,10 @@ def test_production_recipe_view_supplies_decoded_texture_root(tmp_path):
     assert (view / 'textures').is_dir()
     members.project(view / 'textures', view / 'members', 'materials')
     assert members.read_json(view / 'members/painted.json')['entry']['metallic'] == 0.
+
+
+def test_original_membership_load_has_no_host_region_search_dependency(monkeypatch):
+    with monkeypatch.context() as scope:
+        scope.setattr(sys, 'path', [p for p in sys.path if not str(p).startswith(str(GAME))])
+        scope.delitem(sys.modules, 'skatepark.pieces', raising=False)
+        assert tuple(members.pieces_module().PARENTS) == units.PARK

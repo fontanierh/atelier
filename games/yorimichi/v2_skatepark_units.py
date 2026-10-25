@@ -18,6 +18,7 @@ BODY = GAME + '/world/skatepark_members_v2.py'
 FINISH = GAME + '/world/skatepark_finish_v2.py'
 ORIGINAL = GAME + '/unreal/Scripts/import_skatepark.py'
 LOGICAL = GAME + '/world/regions/skatepark/park.json'
+PIECES = GAME + '/world/regions/skatepark/pieces.py'
 RECIPE = 'platform/studio/atelier/build_v2/recipe_job.py'
 ROOT = '/Game/SkatePark'
 VILLAGE = '/Game/Japan/Materials/M_Village'
@@ -107,7 +108,7 @@ def attach_followers(geometry, *, rows, checkout, natives=None):
         value = set(paths)
         for source in paths: value.update(p.relative_to(root).as_posix() for p in scanner.local_imports(root / source, imports))
         return sorted(value)
-    recipe_code = closure([BODY, RECIPE]); native_code = sorted(set(_code(root)) | set(closure([FINISH])) | {ORIGINAL})
+    recipe_code = closure([BODY, RECIPE, PIECES]); native_code = sorted(set(_code(root)) | set(closure([FINISH, PIECES])) | {ORIGINAL})
     modules = _modules(root, [])[0]
     result = {'geometry': deepcopy(geometry), 'units': [], 'staged_inputs': {}, 'content_slots': {},
               'packages': {}, 'aliases': {}, 'module_requirements': {}, 'groups': {}, 'templates': []}
