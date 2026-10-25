@@ -94,6 +94,8 @@ def real_family_rows():
 
 def test_joined_actual_rows_expose_all_family_gaps_without_incomplete_import_aliases():
     source_rows = real_family_rows()
+    palette = next(row for row in source_rows if row['id'] == 'world.treehouse_textures')
+    palette['outputs'] = ['build/yorimichi/treehouse/textures/textures.json']
     geometry = load('v2_geometry_templates').geometry_templates(source_rows, checkout=ROOT)
     result = load('v2_native_units').lower(source_rows, geometry, checkout=ROOT)
     assert 'unreal.treehouse' not in result['aliases'] and 'unreal.brinecove' not in result['aliases']
@@ -131,7 +133,10 @@ def test_join_binds_actual_reordered_product_and_output_indices():
     assert prop['params']['input_roots']['props']['archive_member'] == 'products/1-0.tree.tar'
     treehouse = [t for t in result['geometry']['templates'] if t['unit_prefix'].startswith('world.treehouse_')]
     assert len(treehouse) == 21 and all(len(t['followers']) == 2 for t in treehouse)
-    assert 'unreal.treehouse' not in result['aliases']
+    assert result['aliases']['unreal.treehouse'] == ('unreal.treehouse.complete',)
+    index = by_id['unreal.treehouse.complete']
+    assert len(index['params']['recipe']['commands'][0]['call']['defaults'][0]) == 21
+    assert index['inputs'] and all(i['source']['unit'].startswith('unreal.treehouse.') for i in index['inputs'])
     assert not any(role.startswith('treehouse.palette:') or role.startswith('treehouse.material:') for role in result['missing_roles'])
 
 
@@ -186,3 +191,25 @@ def test_completed_audio_index_executes_real_callback_with_resolved_native_items
     member.rmdir()
     with pytest.raises(ValueError, match='invalid completed member'):
         callback()
+
+
+def test_treehouse_completed_index_requires_actual_finished_primary_and_preserves_cold_output(tmp_path):
+    import json
+    import hashlib
+    script = 'games/yorimichi/world/treehouse_index_v2.py'
+    spec = importlib.util.spec_from_file_location('treehouse_index_test', ROOT / script)
+    body = importlib.util.module_from_spec(spec); spec.loader.exec_module(body)
+    member = tmp_path / 'member'; member.mkdir()
+    asset = member / 'content/Game/Japan/Assets/Tree_Canopy_Maple.uasset'
+    asset.parent.mkdir(parents=True); asset.write_bytes(b'actual native Item')
+    source = SimpleNamespace(products=[SimpleNamespace(paths=(member,))])
+    families = {'Tree_Canopy_Maple': {'destination': '/Game/Japan/Assets/$piece',
+                                    'members': [(source, 'Tree_Canopy_Maple')]}}
+    output = tmp_path / 'report.json'
+    body.write_index(families, ['/Game/Japan/Treehouse/Materials/M_TreeHouse'], output)
+    report = json.loads(output.read_text())
+    assert report['meshes']['/Game/Japan/Assets/Tree_Canopy_Maple']['sha256'] == hashlib.sha256(asset.read_bytes()).hexdigest()
+    saved = output.read_bytes(); asset.unlink()
+    with pytest.raises(ValueError, match='primary package'):
+        body.write_index(families, [], output)
+    assert output.read_bytes() == saved

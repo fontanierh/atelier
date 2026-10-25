@@ -184,9 +184,11 @@ def _join_native_families(native, rows, geometry, selected, *, checkout):
         geometry = followers['geometry']
         gaps.extend('treehouse.material:' + package for package in followers['missing_material_packages'])
         gaps.extend('treehouse.geometry:' + parent for parent in followers['unrepresented_parents'])
-        # Per-piece ownership does not yet prove the original combined retirement,
-        # runtime roster and every selected follower's completion target.
-        gaps.append('treehouse.complete_native_membership_and_selection')
+        if (len(sources) == 3 and not followers['missing_material_packages']
+                and not followers['unrepresented_parents']):
+            _complete_treehouse(native, geometry, checkout=checkout)
+        else:
+            gaps.append('treehouse.complete_native_membership_and_selection')
     if 'unreal.brinecove' in selected:
         material = _family_module(checkout, 'v2_brinecove_material_units').author_units(
             native['packages'], checkout=checkout)
@@ -202,6 +204,46 @@ def _join_native_families(native, rows, geometry, selected, *, checkout):
     native['geometry'] = geometry
     native['missing_roles'] = sorted(set(gaps))
     return native
+
+
+def _complete_treehouse(native, geometry, *, checkout):
+    """Select the full finished roster through existing before-key follower expansion."""
+    import ast
+    from pathlib import Path
+    script = 'games/yorimichi/world/treehouse_index_v2.py'
+    line = next(node.lineno for node in ast.parse((Path(checkout) / script).read_text()).body
+                if isinstance(node, ast.FunctionDef) and node.name == 'write_index')
+    families = {}
+    for template in geometry['templates']:
+        if not template['unit_prefix'].startswith(('world.treehouse_trees.export.',
+                'world.treehouse_props.export.', 'world.treehouse_surfaces.export.')):
+            continue
+        if len(template.get('followers', ())) != 2:
+            raise ValueError('Treehouse completion requires every raw/finish chain')
+        parent = template['unit_prefix'].rsplit('.', 1)[-1]
+        families[parent] = {'destination': template['followers'][1]['unit']['params']['destination'],
+            'members': {'derived_items': {'root': 'build/v2-derived/native-treehouse/' + parent,
+                'templates': [{key: template[key] for key in ('producer', 'group', 'unit_prefix')}
+                              | {'follower': 1, 'item': 'asset'}]}}}
+    fixed = {package: reference for package, reference in native['packages'].items()
+             if reference['unit'].startswith('unreal.treehouse.')}
+    inputs = [{'role': 'content', 'name': 'fixed' + str(index), 'source': {
+        'kind': 'item', 'unit': ref['unit'], 'item': ref['item']}}
+        for index, ref in enumerate(fixed.values())]
+    output = 'build/yorimichi/treehouse/import-report.json'
+    unit = {'id': 'unreal.treehouse.complete', 'op': {'kind': 'recipe.python', 'version': '1'},
+        'script': 'platform/studio/atelier/build_v2/recipe_job.py',
+        'code': [script, 'platform/studio/atelier/build_v2/recipe_job.py'], 'inputs': inputs,
+        'params': {'recipe': {'version': 1, 'paths': {}, 'verify': None,
+            'commands': [{'kind': 'call', 'call': {'source': script, 'qualname': 'write_index', 'line': line,
+                'captures': [], 'defaults': [families, sorted(fixed), {'path': output}], 'kwdefaults': {}}}],
+            'outputs': [{'path': output, 'kind': 'file', 'file': 'treehouse-native.tree.tar', 'required': True}]}},
+        'outputs': [{'id': 'roster', 'logical_path': '/Build/Treehouse/NativeRoster', 'class': 'Data',
+            'destination': 'store', 'files': [{'path': 'treehouse-native.tree.tar', 'required': True}]}]}
+    native['units'].append(unit)
+    native['staged_inputs'][unit['id']] = {row['name']: 'inputs/' + row['name'] for row in inputs}
+    native['content_slots'].update({row['name']: False for row in inputs})
+    native['aliases']['unreal.treehouse'] = (unit['id'],)
 
 
 
