@@ -667,7 +667,9 @@ def mover_export_steps(character, out):
     """
     k, threads = key(character), character.blender['threads']
     steps = [Step(f'characters.{k}', [body_export(character.id, threads=threads)], inputs=[character.folder, NAMES, PIPELINE],
-                  outputs=[out / character.output / 'export.json'], heavy=True,
+                  outputs=[out / character.output / 'export.json'],
+                  products=[Product(f'characters.{k}.export', tuple(out / character.output / name
+                                    for name in ('export.json', 'fbx', 'textures')))], heavy=True,
                   checkpoint_outputs=(out / character.output / 'fbx', out / character.output / 'textures', out / character.output / 'export.json'),
                   about=f"{character.name}'s body, textures and own clips, to FBX")]
     if character.playable:
