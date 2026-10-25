@@ -102,6 +102,99 @@ def _package_dependencies(native):
     return result
 
 
+
+def _family_module(checkout, name):
+    import importlib.util
+    from pathlib import Path
+    spec = importlib.util.spec_from_file_location('joined_' + name,
+        Path(checkout) / 'games/yorimichi' / (name + '.py'))
+    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    return module
+
+
+def _family_source_reference(rows, unit_id, suffix, member):
+    """Resolve the actual required directory ROOT and original archive index."""
+    matches = [row for row in rows if row['id'] == unit_id]
+    if len(matches) != 1:
+        raise ValueError(unit_id + ': missing or ambiguous source producer')
+    row = matches[0]
+    candidates = []
+    for product_index, product in enumerate(row['products']):
+        paths = [*product['paths'], *product['optional_paths']]
+        for path_index, path in enumerate(paths):
+            if path.endswith('/' + suffix) and path in product['paths']:
+                candidates.append({'unit': unit_id, 'item': product.get('native_item', 'product' + str(product_index)),
+                    'file': f'products/{product_index}-{path_index}.tree.tar', 'member': member})
+    for output_index, path in enumerate(row['outputs']):
+        if path.endswith('/' + suffix):
+            candidates.append({'unit': unit_id, 'item': 'output' + str(output_index),
+                               'file': f'outputs/{output_index}.tree.tar', 'member': member})
+    if len(candidates) != 1:
+        raise ValueError(unit_id + ': requires one complete directory ROOT for ' + suffix
+                         + '; a metadata JSON output or pool_roots is insufficient')
+    return candidates[0]
+
+
+def _append_family(native, family):
+    native['units'].extend(family['units'])
+    native['staged_inputs'].update(family['staged_inputs'])
+    native['content_slots'].update(family['content_slots'])
+    native['packages'].update(family['packages'])
+
+
+def _join_native_families(native, rows, geometry, selected, *, checkout):
+    """@cc [owner:fontanierh,label:correctness] real-native-family-composition
+    Family source refs MUST resolve actual required directory outputs/products and
+    their real archive indices. Metadata-only outputs and pool roots MUST NOT imply
+    PNG ownership. Missing hero/material/source/membership roles MUST remain explicit;
+    an incomplete family MUST NOT replace an old importer through an alias.
+    This composition MUST NOT execute producers, native jobs or generated scans.
+    """
+    gaps = list(native.get('missing_roles', ()))
+    geometry = deepcopy(native.get('geometry', geometry))
+    if 'unreal.treehouse' in selected:
+        sources = {}
+        for role, producer, suffix, member in (
+            ('palette', 'world.treehouse_textures', 'treehouse/textures', 'textures.json'),
+            ('props', 'world.treehouse_props', 'treehouse/props', 'props.json'),
+            ('trees', 'world.treehouse_trees', 'treehouse/trees', 'trees.json')):
+            try:
+                sources[role] = _family_source_reference(rows, producer, suffix, member)
+            except ValueError as error:
+                gaps.append('treehouse.' + role + ': ' + str(error))
+        if len(sources) == 3:
+            try:
+                material = _family_module(checkout, 'v2_treehouse_material_units').author_units(
+                    sources, _package_dependencies(native), checkout=checkout)
+            except ValueError as error:
+                gaps.append('treehouse.materials: ' + str(error))
+            else:
+                _append_family(native, material)
+        followers = _family_module(checkout, 'v2_treehouse_native_units').attach_followers(
+            geometry, native['packages'], native['units'], checkout=checkout)
+        geometry = followers['geometry']
+        gaps.extend('treehouse.material:' + package for package in followers['missing_material_packages'])
+        gaps.extend('treehouse.geometry:' + parent for parent in followers['unrepresented_parents'])
+        # Per-piece ownership does not yet prove the original combined retirement,
+        # runtime roster and every selected follower's completion target.
+        gaps.append('treehouse.complete_native_membership_and_selection')
+    if 'unreal.brinecove' in selected:
+        material = _family_module(checkout, 'v2_brinecove_material_units').author_units(
+            native['packages'], checkout=checkout)
+        _append_family(native, material)
+        gaps.extend('brinecove.' + role for role in material['missing_roles'])
+        followers = _family_module(checkout, 'v2_brinecove_native_units').attach_followers(
+            geometry, native['packages'], native['units'], checkout=checkout)
+        geometry = followers['geometry']
+        gaps.extend('brinecove.material:' + package for package in followers['missing_material_packages'])
+        if not any(t['unit_prefix'].startswith('world.brinecove.export.') for t in geometry['templates']):
+            gaps.append('brinecove.geometry_templates')
+        gaps.append('brinecove.complete_native_membership_and_selection')
+    native['geometry'] = geometry
+    native['missing_roles'] = sorted(set(gaps))
+    return native
+
+
 def lower(rows, geometry, *, checkout):
     """Game-authored replacements; unknown native families remain compiler refusals."""
     selected = {row['id'] for row in rows}
@@ -111,6 +204,16 @@ def lower(rows, geometry, *, checkout):
     elif 'unreal.materials' in selected:
         native = shared_materials(rows, checkout=checkout)
         native['aliases'] = {}
+    elif selected & {'unreal.treehouse', 'unreal.brinecove'}:
+        native = {'units': [], 'staged_inputs': {}, 'content_slots': {}, 'packages': {},
+                  'targets': (), 'aliases': {}, 'missing_roles': []}
+        if 'unreal.treehouse' in selected:
+            try:
+                shared = shared_materials(rows, checkout=checkout)
+            except ValueError as error:
+                native['missing_roles'].append('treehouse.shared_materials: ' + str(error))
+            else:
+                _append_family(native, shared)
     else:
         return None
     native['aliases']['unreal.materials'] = tuple(unit['id'] for unit in native['units']
@@ -131,4 +234,6 @@ def lower(rows, geometry, *, checkout):
         for name in foliage_ids:
             owner = name.removeprefix('unreal.foliage.')
             native['aliases'][name] = ('unreal.foliage.finish.' + owner,)
+    if selected & {'unreal.treehouse', 'unreal.brinecove'}:
+        native = _join_native_families(native, rows, geometry, selected, checkout=checkout)
     return native
