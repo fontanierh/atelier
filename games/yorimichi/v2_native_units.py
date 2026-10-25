@@ -152,6 +152,58 @@ def _append_family(native, family):
     native.setdefault('plugin_requirements', {}).update(family.get('plugin_requirements', {}))
 
 
+def _transport_preflight(native, family, rows, name, *, checkout):
+    """@cc [owner:fontanierh,label:correctness] transport-source-before-native-owners
+    Each transport native owner MUST depend on successful execution of the original
+    service validator and Ferry cut check over the original declared source/read
+    closure. Removing the original monolithic importer MUST NOT drop these checks.
+    No prior report or ambient generated file MAY stand in for this produced Item.
+    """
+    from pathlib import Path
+    from atelier.build import Call, Step
+    from atelier.build_v2.recipe_dependencies import extract
+    root = Path(checkout)
+    original, = [row for row in rows if row['id'] == 'unreal.' + name]
+    source = root / 'games/yorimichi/world/transport_preflight_v2.py'
+    body = _family_module(checkout, 'world/transport_preflight_v2')
+    out = root / 'build/yorimichi'
+    report = out / 'native-checks' / (name + '.json')
+    cut = None
+    if name == 'ferry':
+        cuts = {tuple(product['paths']) for row in rows for product in row['products']
+                if product['id'] == 'hidamari.harbor_cut' and not product['optional_paths']}
+        if len(cuts) != 1 or len(next(iter(cuts))) != 1:
+            raise ValueError('Ferry requires its actual independently produced Harbor cut')
+        cut = root / next(iter(cuts))[0]
+    function = getattr(body, name)
+    function.__defaults__ = ((out / 'ferry/service/service.json', cut, out, report)
+                            if name == 'ferry' else (out / 'gondola/runtime.json', out, report))
+    gate_id = 'unreal.' + name + '.preflight'
+    authored, = extract([Step(gate_id, [Call(name + ' source preflight', function)])],
+        checkout=root, build_root=root / 'build',
+        import_roots=(root / 'platform/studio', root / 'games/yorimichi/world', root / 'games/yorimichi/world/regions'))
+    gate = deepcopy(original)
+    gate.update(id=gate_id, commands=authored['commands'], products=[],
+                outputs=[report.relative_to(root).as_posix()], verify=None,
+                code=sorted(set(original['code']) | set(authored['code']) | {source.relative_to(root).as_posix()}))
+    required = [out / 'ferry/service/service.json', cut] if name == 'ferry' else [out / 'gondola/runtime.json']
+    for path in required:
+        incoming = {'path': path.relative_to(root).as_posix(), 'root': 'checkout', 'optional': False}
+        if incoming not in gate['inputs']:
+            gate['inputs'].append(incoming)
+    native.setdefault('rows', []).append(gate)
+    family.setdefault('content_slots', {})['transport_preflight'] = False
+    for unit in family['units']:
+        slot = 'transport_preflight'
+        if any(incoming['name'] == slot for incoming in unit['inputs']):
+            raise ValueError('transport preflight input aliases a native role')
+        unit['inputs'].append({'role': 'content', 'name': slot,
+            'source': {'kind': 'item', 'unit': gate_id, 'item': 'output0'},
+            'whole': 'The original current source service and cut checks must pass before native asset mutation.'})
+        family['staged_inputs'][unit['id']][slot] = 'inputs/' + slot
+    return gate_id
+
+
 def _join_native_families(native, rows, geometry, selected, *, checkout):
     """@cc [owner:fontanierh,label:correctness] real-native-family-composition
     Family source refs MUST resolve actual required directory outputs/products and
@@ -429,8 +481,9 @@ def lower(rows, geometry, *, checkout):
         family = getattr(_family_module(checkout, 'v2_' + name + '_units'), name + '_units')(rows, checkout=checkout)
         family['content_slots'] = {incoming['name']: False for unit in family['units']
                                    for incoming in unit['inputs']}
+        gate = _transport_preflight(native, family, rows, name, checkout=checkout)
         _append_family(native, family)
-        native['aliases']['unreal.' + name] = tuple(sorted({ref['unit'] for ref in family['packages'].values()}))
+        native['aliases']['unreal.' + name] = (gate, *sorted({ref['unit'] for ref in family['packages'].values()}))
     if 'unreal.sounds' in selected:
         native = _join_audio(native, rows, native.get('geometry', geometry), checkout=checkout)
     if selected & {'unreal.kei', 'unreal.village', 'unreal.lake', 'unreal.houses', 'unreal.southwest', 'unreal.mega', 'unreal.world'}:
