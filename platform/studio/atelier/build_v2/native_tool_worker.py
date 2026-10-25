@@ -696,7 +696,7 @@ def semantic_global_data(cooked, destination, project_name, *, engine_root=None,
     return sorted(formats)
 
 
-def source_cook(params, view, project, engine, source_key, state, job_dir, run, environment, export_project, source_digest, *, protected=()):
+def source_cook(params, view, project, engine, source_key, state, job_dir, run, environment, export_project, source_digest, *, protected=(), session=None):
     packages = params['packages']
     argv = cook_argv(engine, project, packages, source_key, global_data='global_data' in params)
     record_outputs = params['record_outputs']
@@ -711,7 +711,12 @@ def source_cook(params, view, project, engine, source_key, state, job_dir, run, 
     folder.mkdir()
     callbacks, success = CookCallbacks(folder, engine, environment), False
     try:
-        run(argv, cwd=view, env=environment, lifecycle=callbacks, log_file=folder / 'stdout.log')
+        if session is None:
+            run(argv, cwd=view, env=environment, lifecycle=callbacks, log_file=folder / 'stdout.log')
+        else:
+            if len(packages) != 1 or 'global_data' in params:
+                raise Refused('source session requires distinct singleton package producers')
+            session.cook(project, environment, source_digest, export_project, source_key, packages[0], callbacks, folder / 'stdout.log')
         success = True
     finally:
         callbacks.close(success)
@@ -729,15 +734,18 @@ def source_cook(params, view, project, engine, source_key, state, job_dir, run, 
         record = records / (source_key + suffix + '.cb')
         requests.append(dict(version=1, mode='capture', project='AtelierV2_' + source_key, oplog='Mac',
             source_package=package, expected_stored_key='', expected_root_hash='', record_path=str(record),
-            project_file=str(project), marker_path=str(marker), input_key=source_key, runtime_project_file=str(export_project)))
+            project_file=str(project), marker_path=str(marker), input_key=source_key, runtime_project_file=str(session.project if session is not None else export_project)))
     request_file, report_file, script = folder / 'export.json', folder / 'native-report.json', folder / 'export.py'
     request_file.write_text(json.dumps({'requests': requests, 'report': str(report_file), 'native_source_digest': source_digest}, sort_keys=True))
     script.write_text(EXPORT_SOURCE)
     script.chmod(0o444)
     exporting = dict(environment, ATELIER_NATIVE_COOK_EXPORT=str(request_file))
-    run([str(engine / 'Engine/Binaries/Mac/UnrealEditor-Cmd'), str(export_project), '-run=pythonscript',
-         '-script=' + str(script), '-unattended', '-nop4', '-nosplash', '-nullrhi', '-stdout',
-         '-FullStdOutLogOutput'], cwd=view, env=exporting)
+    if session is None:
+        run([str(engine / 'Engine/Binaries/Mac/UnrealEditor-Cmd'), str(export_project), '-run=pythonscript',
+             '-script=' + str(script), '-unattended', '-nop4', '-nosplash', '-nullrhi', '-stdout',
+             '-FullStdOutLogOutput'], cwd=view, env=exporting)
+    else:
+        report_file.write_text(json.dumps(session.capture(requests), sort_keys=True))
     reports = json.loads(report_file.read_bytes())
     if not isinstance(reports, list) or len(reports) != len(requests):
         raise Refused('native source-cook export report is incomplete')
@@ -882,6 +890,7 @@ def finalise_package(job, params, view, project, engine, job_dir, run, environme
     helper = _sibling('zen_package_finalise')
     histories = helper.prepare_histories(carrier=carrier, global_root=global_root, folder=scope / 'histories',
                                         project_name=project.stem, library=project.stem, unpack=recipe_job.unpack_root)
+    histories['global_files'] = helper.select_runtime_globals(histories['global_files'], project=project, engine=engine)
     bootstrap = Path(carrier['export_project'])
     plugin = bootstrap.parent / 'Plugins/AtelierBuildWorker/AtelierBuildWorker.uplugin'
     if not plugin.is_file() or plugin.is_symlink():
@@ -1042,7 +1051,7 @@ def compile_candidate(job, fresh, protected, candidate):
         target.chmod(0o444)
     return candidate, [str(candidate / Path(name).relative_to(fresh)) for name in protected]
 
-def dispatch(job, job_dir, engine, run, *, source_key=None, zen_state_root=None, export_project=None):
+def dispatch(job, job_dir, engine, run, *, source_key=None, zen_state_root=None, export_project=None, cook_session=None):
     """@cc [owner:fontanierh,label:correctness;safety] fixed-native-tool-routes
     Only the five fixed version-1 operations MAY dispatch. SDK/interpreter locators
     MUST remain execution context. Compilation MUST use the private frozen project,
@@ -1134,7 +1143,7 @@ def dispatch(job, job_dir, engine, run, *, source_key=None, zen_state_root=None,
         run([sys.executable, '-I', '-B', str(script), *map(str, args), '--revision', 'v2-' + source_key],
             cwd=view, env=environment)
     else:
-        raw_roots = source_cook(params, view, project, engine, source_key, Path(zen_state_root), job_dir, run, environment, Path(export_project), native_source_digest(job, job_dir), protected=protected)
+        raw_roots = source_cook(params, view, project, engine, source_key, Path(zen_state_root), job_dir, run, environment, Path(export_project), native_source_digest(job, job_dir), protected=protected, session=cook_session)
     if recipe.get('verify') is not None:
         previous = Path.cwd()
         try:
@@ -1149,8 +1158,186 @@ def dispatch(job, job_dir, engine, run, *, source_key=None, zen_state_root=None,
     return sorted(str(path.relative_to(output)) for path in output.rglob('*') if path.is_file())
 
 
+SOURCE_COOK_SESSION = r'''import json, os, stat
+import unreal
+request_fd,response_fd=map(int,os.environ['ATELIER_SOURCE_COOK_FDS'].split(':'))
+for fd in (request_fd,response_fd):
+ if not stat.S_ISFIFO(os.fstat(fd).st_mode):raise RuntimeError('source IPC descriptor is not a pipe')
+ os.set_inheritable(fd,False)
+expected=os.environ['ATELIER_NATIVE_SOURCE_DIGEST']
+with os.fdopen(request_fd,'rb',buffering=0) as requests,os.fdopen(response_fd,'wb',buffering=0) as responses:
+ while True:
+  raw=requests.readline(4194305)
+  if not raw or len(raw)>4194304:raise RuntimeError('invalid source session frame')
+  control=json.loads(raw)
+  actual=json.loads(unreal.AtelierBuildWorkerLibrary.native_context())
+  if actual.get('worker_source_digest')!=expected:raise RuntimeError('source cooker native implementation differs')
+  mode=control['mode']
+  if mode=='hello':result={'status':'ready'}
+  elif mode=='cook':result=json.loads(unreal.AtelierBuildWorkerLibrary.source_cook_request(json.dumps(control['request'],sort_keys=True)))
+  elif mode=='capture':result=[json.loads(unreal.AtelierBuildWorkerLibrary.zen_package_request(json.dumps(row,sort_keys=True))) for row in control['requests']]
+  elif mode=='stop':result={'status':'stopped'}
+  else:raise RuntimeError('unknown fixed source session request')
+  responses.write((json.dumps({'id':control['id'],'result':result},sort_keys=True)+'\n').encode())
+  if mode=='stop':break
+'''
+
+
+class CookSdkSession:
+    """One owned SDK, complete per-producer views/namespaces, no early publication."""
+    def __init__(self, owner, folder):
+        self.owner, self.folder = owner, Path(folder)
+        self.child = None
+        self.sequence = 0
+        self.signature = None
+        self.pending = b''
+
+    def context(self, project):
+        value = json.loads(project.read_bytes())
+        value.pop('AdditionalPluginDirectories', None)
+        files = {}
+        for path in sorted(project.parent.rglob('*')):
+            relative = path.relative_to(project.parent)
+            if relative.parts[0] in ('Saved','Intermediate'):
+                continue
+            if relative.parts[0]=='Content' and relative.as_posix().endswith(('.uasset','.umap','.uexp','.ubulk','.uptnl','.upayload')):
+                continue
+            if path.is_file():
+                if path.resolve() != path:
+                    raise Refused('source session context contains an alias')
+                files[relative.as_posix()] = _digest(path)
+        return value, files
+
+    def start(self, project, environment, source_digest, export_project, lifecycle=None):
+        signature = self.context(project)
+        if self.child is not None:
+            if signature != self.signature:
+                raise Refused('source session compiled/config context differs')
+            return
+        self.signature = signature
+        host = self.folder / 'sdk-host'
+        shutil.copytree(project.parent, host)
+        # No first producer's native payload may seed SDK/module startup state.
+        # Each exact /Game view is mounted only by the fixed per-unit native call.
+        content = host / 'Content'
+        if content.exists():
+            for path in content.rglob('*'):
+                if path.is_file() and path.as_posix().endswith(('.uasset','.umap','.uexp','.ubulk','.uptnl','.upayload')):
+                    path.unlink()
+        descriptor = host / project.name
+        value = json.loads(descriptor.read_bytes())
+        worker = Path(export_project).parent / 'Plugins'
+        value['AdditionalPluginDirectories'] = [str(worker)]
+        value['Plugins'] = [row for row in value.get('Plugins', []) if row.get('Name') != 'AtelierBuildWorker'] + [{'Name':'AtelierBuildWorker','Enabled':True}]
+        descriptor.chmod(0o600)
+        descriptor.write_text(json.dumps(value,sort_keys=True))
+        descriptor.chmod(0o444)
+        self.project = descriptor
+        script = self.folder / 'sdk.py'; script.write_text(SOURCE_COOK_SESSION); script.chmod(0o444)
+        read_request,self.request = os.pipe()
+        self.response,write_response = os.pipe()
+        env = dict(environment, ATELIER_SOURCE_COOK_FDS=f'{read_request}:{write_response}',
+                   ATELIER_NATIVE_SOURCE_DIGEST=source_digest)
+        command = [str(self.owner.engine / 'Engine/Binaries/Mac/UnrealEditor-Cmd'),str(descriptor),
+                   '-run=pythonscript','-script='+str(script),'-targetplatform=Mac','-Cook.DependencyTracking=1',
+                   '-ini:Game:[/Script/UnrealEd.ProjectPackagingSettings]:bShareMaterialShaderCode=True',
+                   '-ini:Game:[/Script/UnrealEd.ProjectPackagingSettings]:bSharedMaterialNativeLibraries=True',
+                   '-unattended','-nop4','-nosplash','-nullrhi','-stdout','-FullStdOutLogOutput']
+        try:
+            self.child = subprocess.Popen(command,cwd=host,env=env,stdin=subprocess.DEVNULL,
+                                          stdout=subprocess.PIPE,stderr=subprocess.STDOUT,
+                                          pass_fds=(read_request,write_response))
+        finally:
+            os.close(read_request);os.close(write_response)
+        os.set_blocking(self.request,False);os.set_blocking(self.response,False)
+        self.exchange('hello', lifecycle=lifecycle)
+
+    def exchange(self, mode, *, lifecycle=None, log_file=None, **fields):
+        self.sequence += 1
+        packet = (json.dumps({'id':self.sequence,'mode':mode,**fields},sort_keys=True)+'\n').encode()
+        if len(packet)>4194304:raise Refused('source session request too large')
+        pending = memoryview(packet)
+        started,spoken,buffered = time.monotonic(),time.monotonic(),b''
+        retained = Path(log_file).open('xb') if log_file else None
+        try:
+            with selectors.DefaultSelector() as selector:
+                selector.register(self.request,selectors.EVENT_WRITE)
+                selector.register(self.response,selectors.EVENT_READ)
+                selector.register(self.child.stdout,selectors.EVENT_READ)
+                selector.register(self.owner.requests,selectors.EVENT_READ)
+                while True:
+                    if self.owner.stop or time.monotonic()>self.owner.source_deadline:
+                        raise Refused('source session cancelled or per-unit deadline expired')
+                    for key,_ in selector.select(timeout=1):
+                        if key.fileobj==self.request:
+                            try:pending=pending[os.write(self.request,pending):]
+                            except BlockingIOError:continue
+                            if not pending:selector.unregister(self.request)
+                        elif key.fileobj==self.response:
+                            chunk=os.read(self.response,65536)
+                            if not chunk:raise Refused('source SDK response closed')
+                            self.pending+=chunk
+                            if len(self.pending)>4194304:raise Refused('source SDK response too large')
+                            if b'\n' in self.pending:
+                                raw,self.pending=self.pending.split(b'\n',1)
+                                result=json.loads(raw)
+                                if result.get('id')!=self.sequence:raise Refused('source SDK response correlation differs')
+                                return result['result']
+                        elif key.fileobj is self.owner.requests:
+                            request=protocol.read_frame(self.owner.requests,protocol.REQUEST)
+                            if request and request['type']=='cancel' and request['job_id']!=self.owner.active:continue
+                            self.owner.stop=True;raise Refused('source batch controller cancelled')
+                        else:
+                            chunk=os.read(self.child.stdout.fileno(),65536)
+                            if not chunk:raise Refused('source SDK exited before response')
+                            sys.stderr.buffer.write(chunk);sys.stderr.buffer.flush()
+                            if retained:retained.write(chunk);retained.flush()
+                            if lifecycle:
+                                buffered+=chunk;lines=buffered.split(b'\n');buffered=lines.pop()
+                                for line in lines:lifecycle.line(line.decode('utf-8',errors='replace'))
+                    if lifecycle:lifecycle.poll(self.child.pid)
+                    if time.monotonic()-spoken>=25:
+                        print(f'source SDK {mode}: elapsed={time.monotonic()-started:.0f}s; awaiting native completion',file=sys.stderr,flush=True);spoken=time.monotonic()
+        finally:
+            if retained:retained.close()
+
+    def cook(self,project,environment,source_digest,export_project,source_key,package,callbacks,log_file):
+        self.start(project,environment,source_digest,export_project,lifecycle=callbacks)
+        active = self.project.parent / 'Content'
+        if active.exists(): shutil.rmtree(active)
+        source = project.parent / 'Content'
+        if source.exists(): shutil.copytree(source, active)
+        else: active.mkdir()
+        before = _tree(active)
+        result=self.exchange('cook',request={'version':1,'source_key':source_key,'project_file':str(project),'package':package},lifecycle=callbacks,log_file=log_file)
+        if (result.get('status')!='cooked' or not result.get('game_unloaded')
+                or result.get('source_key')!=source_key or result.get('project_file')!=str(project)
+                or result.get('package')!=package or result.get('project')!='AtelierV2_'+source_key):
+            raise Refused('stock source cook/reset refused: '+str(result))
+        if _tree(active) != before:
+            raise Refused('stock cook changed its independently copied native inputs')
+
+    def capture(self,requests):
+        return self.exchange('capture',requests=requests)
+
+    def close(self):
+        if self.child is None:return
+        try:
+            if self.child.poll() is None:
+                self.exchange('stop')
+                # The outer normal guard remains the final tree/custody authority.
+                self.child.communicate(timeout=45)
+            if self.child.returncode!=0:raise Refused('source SDK failed during close')
+        finally:
+            if self.child.poll() is None:
+                self.child.terminate()
+                try:self.child.wait(timeout=5)
+                except subprocess.TimeoutExpired:self.child.kill();self.child.wait()
+            os.close(self.request);os.close(self.response)
+
+
 class Worker:
-    def __init__(self, requests, responses, engine_root, *, source_key=None, zen_state_root=None, export_project=None):
+    def __init__(self, requests, responses, engine_root, *, source_key=None, zen_state_root=None, export_project=None, source_batch=None):
         self.requests, self.responses = requests, responses
         self.engine = Path(engine_root)
         if not self.engine.is_absolute():
@@ -1158,6 +1345,9 @@ class Worker:
         self.active = None
         self.stop = False
         self.source_key, self.zen_state_root, self.export_project = source_key, zen_state_root, export_project
+        self.source_batch = source_batch
+        self.source_job_seconds = 7200.0
+        self.source_deadline = float("inf")
 
     def send(self, value):
         protocol.write_frame(self.responses, protocol.RESPONSE, value)
@@ -1179,6 +1369,8 @@ class Worker:
                 selector.register(self.requests, selectors.EVENT_READ)
                 logs_open = True
                 while child.poll() is None or logs_open:
+                    if self.source_batch is not None and time.monotonic()>self.source_deadline:
+                        raise Refused("source producer deadline expired")
                     for key, _ in selector.select(timeout=1):
                         if key.fileobj is self.requests:
                             request = protocol.read_frame(self.requests, protocol.REQUEST)
@@ -1222,6 +1414,55 @@ class Worker:
             if retained:
                 retained.close()
 
+    def source_frontier(self, initial):
+        path = Path(self.source_batch)
+        info = path.lstat()
+        if (not path.is_absolute() or path.resolve()!=path or not stat.S_ISREG(info.st_mode)
+                or info.st_nlink!=1 or stat.S_IMODE(info.st_mode)!=0o400 or info.st_size>64*1024*1024):
+            raise Refused('source frontier lacks its immutable private control')
+        control = json.loads(path.read_bytes())
+        jobs = control.get('jobs')
+        if (control.get('version')!=1 or not isinstance(jobs,list) or len(jobs)<2
+                or jobs[0].get('job')!=initial
+                or len({row.get('key') for row in jobs})!=len(jobs)
+                or len({row.get('job',{}).get('job_id') for row in jobs})!=len(jobs)):
+            raise Refused('source frontier control roster differs')
+        for row in jobs:
+            if (set(row)!= {'job','key','seconds'} or not re.fullmatch('[a-f0-9]{64}',row['key'])
+                    or not isinstance(row['seconds'],(float,int)) or isinstance(row['seconds'],bool)
+                    or not 0<row['seconds']<=28800 or row['job']['op']!={'kind':'unreal.cook.produce','version':'1'}
+                    or 'global_data' in row['job']['params']):
+                raise Refused('invalid private source frontier member')
+        folder=path.parent/'sdk-session';folder.mkdir(mode=0o700)
+        sdk=CookSdkSession(self,folder)
+        outcomes=[];failed=False;close_error=None
+        try:
+            for row in jobs:
+                job=row['job']; result={'job_id':job['job_id'],'key':row['key']}
+                if failed or self.stop:
+                    outcomes.append(dict(result,status='cancelled'));continue
+                self.source_deadline=time.monotonic()+float(row['seconds'])
+                print('source frontier starting '+job['unit']+' key='+row['key'][:12],file=sys.stderr,flush=True)
+                try:
+                    files=dispatch(job,Path(job['job_dir']),self.engine,self.command,source_key=row['key'],
+                                   zen_state_root=self.zen_state_root,export_project=self.export_project,cook_session=sdk)
+                    if time.monotonic()>self.source_deadline:raise Refused('source producer deadline expired')
+                    outcomes.append(dict(result,status='completed',files=files))
+                    print('source frontier completed '+job['unit'],file=sys.stderr,flush=True)
+                except (ValueError,OSError,KeyError,TypeError,RuntimeError) as error:
+                    outcomes.append(dict(result,status='failed',error=str(error)));failed=True
+                    print('source frontier failed '+job['unit']+': '+str(error)[:4096],file=sys.stderr,flush=True)
+        finally:
+            try:sdk.close()
+            except Exception as error:close_error=type(error).__name__+': '+str(error)
+        if close_error:
+            outcomes=[dict(job_id=row['job']['job_id'],key=row['key'],status='failed',error='source SDK close: '+close_error) for row in jobs]
+        result={'version':1,'sdk_processes':int(sdk.child is not None),'members':outcomes,'sdk_closed':close_error is None}
+        destination=path.parent/'result.json'
+        with destination.open('x') as stream:
+            json.dump(result,stream,sort_keys=True);stream.flush();os.fsync(stream.fileno())
+        return []
+
     def serve(self):
         self.send({'type': 'hello', 'worker_version': WORKER_VERSION})
         while not self.stop:
@@ -1240,8 +1481,9 @@ class Worker:
                 directory = Path(job['job_dir'])
                 if not directory.is_absolute() or directory.is_symlink():
                     raise Refused('job directory must be owned absolute staging')
-                files = dispatch(job, directory, self.engine, self.command,
-                                 source_key=self.source_key, zen_state_root=self.zen_state_root, export_project=self.export_project)
+                files = (self.source_frontier(job) if self.source_batch is not None else
+                         dispatch(job, directory, self.engine, self.command,
+                                  source_key=self.source_key, zen_state_root=self.zen_state_root, export_project=self.export_project))
                 self.send({'type': 'completed', 'job_id': self.active, 'outputs': {'files': files}})
             except (ValueError, OSError, KeyError, TypeError, RuntimeError) as error:
                 self.send({'type': 'failed', 'job_id': self.active,
@@ -1257,11 +1499,12 @@ def main(argv=None):
     parser.add_argument('--source-key')
     parser.add_argument('--zen-state-root')
     parser.add_argument('--export-project')
+    parser.add_argument('--source-batch-control')
     args = parser.parse_args(argv)
     for fd in (args.request_fd, args.response_fd):
         os.set_inheritable(fd, False)
     with os.fdopen(args.request_fd, 'rb', buffering=0) as requests, os.fdopen(args.response_fd, 'wb', buffering=0) as responses:
-        Worker(requests, responses, args.engine_root, source_key=args.source_key, zen_state_root=args.zen_state_root, export_project=args.export_project).serve()
+        Worker(requests, responses, args.engine_root, source_key=args.source_key, zen_state_root=args.zen_state_root, export_project=args.export_project, source_batch=args.source_batch_control).serve()
 
 
 if __name__ == '__main__':

@@ -427,6 +427,8 @@ pub struct PythonInputs {
 }
 
 /// Only the lifecycle adapter issues this after a completed reply AND confirmed cleanup.
+/// A fixed source frontier may carry per-member replies in its bounded private report;
+/// its whole envelope must complete and release session custody for every member first.
 pub struct PythonCompletion {
     pub(crate) reported: Vec<String>,
 }

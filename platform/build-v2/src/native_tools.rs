@@ -57,6 +57,8 @@ impl NativeToolBundle {
         })
     }
 
+    pub fn files_len(&self) -> usize { self.files.len() }
+
     pub fn identity(&self) -> ImplementationIdentity {
         self.identity.clone()
     }
