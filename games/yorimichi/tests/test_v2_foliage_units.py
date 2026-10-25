@@ -1,4 +1,4 @@
-"""C3 foliage raw imports consume each fixed original LOD export Item only."""
+"""C3 foliage declarations consume fixed original LOD exports and assembled manifests only."""
 from copy import deepcopy
 import json
 from pathlib import Path
@@ -20,55 +20,88 @@ from v2_texture_units import PLUGIN  # noqa: E402
 def rows():
     steps = foliage_build.world_steps(SimpleNamespace(out=ROOT / 'build/yorimichi'))
     return [row for row in extract(steps, checkout=ROOT, build_root=ROOT / 'build')
-            if row['id'].startswith('world.foliage.export.')]
+            if row['id'].startswith('world.foliage.') and row['id'] != 'world.foliage_lods']
+
+
+def natives():
+    roster = foliage.roster(ROOT)
+    packages = {'/Game/Japan/Materials/MI_' + key for entry in roster.values() for key in entry['materials']}
+    packages |= {foliage.PARENT, foliage.WHITE}
+    return {package: {'unit': 'native.' + package.rpartition('/')[2], 'item': 'material'} for package in packages}
+
+
+def build(rows):
+    return foliage.foliage_units(rows, checkout=ROOT, natives=natives())
 
 
 def test_roster_is_every_fixed_mesh_lod_and_crown_of_all_owners():
     roster = foliage.roster(ROOT)
     assert list(roster) == list(foliage_build.catalog.FOLIAGE) and len(roster) == 18
-    for owner, chain in roster.items():
+    for owner, entry in roster.items():
         spec = json.loads((GAME / 'assets/foliage' / (owner + '.json')).read_text())
         count = len(spec['screen_sizes']) + (spec.get('far_crown') is not None)
-        expected = [owner] + [f'{owner}_LOD{level}' for level in range(1, count)]
-        assert [key for key, _ in chain] == expected
-        assert [level for _, level in chain] == list(range(len(chain)))
-    assert len(roster['Tree_Broad_A']) == 6 and len(roster['Grass_A']) == 3
+        assert [key for key, _ in entry['chain']] == [owner] + [f'{owner}_LOD{level}' for level in range(1, count)]
+        assert [level for _, level in entry['chain']] == list(range(count))
+        assert entry['materials'] == spec['materials'] and entry['crown'] == (spec.get('far_crown') is not None)
+    assert len(roster['Tree_Broad_A']['chain']) == 6 and len(roster['Grass_A']['chain']) == 3
 
 
 def test_each_key_becomes_one_store_only_raw_import_of_its_export_item(rows):
-    result = foliage.foliage_units(rows, checkout=ROOT)
-    roster = foliage.roster(ROOT)
-    assert len(result['units']) == len(result['packages']) == sum(map(len, roster.values()))
-    by_id = {unit['id']: unit for unit in result['units']}
-    for package, ref in result['packages'].items():
-        unit = by_id[ref['unit']]
-        key = ref['key']
+    result = build(rows)
+    raws = [unit for unit in result['units'] if unit['op']['kind'] == 'unreal.raw_import']
+    assert len(raws) == 10 * 6 + 8 * 3
+    for unit in raws:
+        package = unit['params']['destination']; ref = result['packages'][package]; key = ref['key']
         assert package == f'/Game/_Raw/Foliage/{ref["owner"]}/{key}'
-        assert unit['op'] == {'kind': 'unreal.raw_import', 'version': '1'}
         assert unit['params'] == {'op': 'raw_import', 'kind': 'static_mesh', 'source': 'source', 'destination': package,
                                   'input_roots': {'source': {'archive_member': 'products/0-0.tree.tar', 'name': key}}}
         assert unit['inputs'] == [{'role': 'content', 'name': 'source', 'source': {
             'kind': 'item', 'unit': 'world.foliage.export.' + key, 'item': 'product0'}}]
         output, = unit['outputs']
         assert output['class'] == 'RawStaticMesh' and output['destination'] == 'store'
-        assert output['logical_path'] == package and output['id'] == ref['item'] == 'raw_static_mesh'
-        assert output['files'][0] == {'path': 'content' + package + '.uasset', 'required': True}
         assert all('install_path' not in file for file in output['files'])
-        assert result['staged'][unit['id']] == {'source': 'inputs/source'}
-    assert not any(ref['key'].endswith('_Seed') for ref in result['packages'].values())
-    assert 'unreal.foliage.raw.Tree_Broad_A_LOD5' in by_id
+    assert not any(ref.get('key', '').endswith('_Seed') for ref in result['packages'].values())
 
 
-def test_final_packages_are_not_claimed_and_the_seam_is_named(rows):
-    result = foliage.foliage_units(rows, checkout=ROOT)
-    assert not any(package.startswith(('/Game/Japan/Assets/', '/Game/Japan/FoliageLODs/'))
-                   for package in result['packages'])
-    assert {unit['op']['kind'] for unit in result['units']} == {'unreal.raw_import'}
-    assert 'set_lod_from_static_mesh' in result['finish_seam'] and 'unreal.author' in result['finish_seam']
+def test_tree_finish_owns_base_and_lods_and_consumes_raw_manifest_palette_and_crown(rows):
+    result = build(rows)
+    by_id = {unit['id']: unit for unit in result['units']}
+    finish = by_id['unreal.foliage.finish.Tree_Broad_A']
+    assert finish['op'] == {'kind': 'unreal.finish', 'version': '1'} and finish['script'] == foliage.FINISH
+    assert {foliage.FINISH, foliage.HELPERS} <= set(finish['code'])
+    assert [(o['id'], o['logical_path'], o['class'], o['destination']) for o in finish['outputs']] == [
+        ('static_mesh', '/Game/Japan/Assets/Tree_Broad_A', 'StaticMesh', 'checkout')] + [
+        (f'lod{i}', f'/Game/Japan/FoliageLODs/Tree_Broad_A/Tree_Broad_A_LOD{i}', 'StaticMesh', 'checkout') for i in range(1, 6)]
+    assert finish['outputs'][0]['files'][0] == {'path': 'content/Game/Japan/Assets/Tree_Broad_A.uasset', 'required': True,
+        'install_path': 'games/yorimichi/unreal/Content/Japan/Assets/Tree_Broad_A.uasset'}
+    sources = {item['name']: item['source'] for item in finish['inputs']}
+    assert sources['manifest'] == {'kind': 'item', 'unit': 'world.foliage.Tree_Broad_A', 'item': 'product0'}
+    assert [sources[f'lod{i}'] for i in range(6)] == [{'kind': 'item', 'unit': 'unreal.foliage.raw.' + key,
+        'item': 'raw_static_mesh'} for key in ['Tree_Broad_A'] + [f'Tree_Broad_A_LOD{i}' for i in range(1, 6)]]
+    assert sources['crown'] == {'kind': 'item', 'unit': 'unreal.foliage.crown.Tree_Broad_A', 'item': 'material'}
+    args = finish['params']['args']
+    assert finish['params']['source'] == 'lod0' and args['levels'] == [f'lod{i}' for i in range(6)]
+    assert set(args['materials']) == set(foliage.roster(ROOT)['Tree_Broad_A']['materials'])
+    assert finish['params']['input_roots'] == {'manifest': {'archive_member': 'products/0-0.tree.tar', 'name': 'Tree_Broad_A'}}
+    crown = by_id['unreal.foliage.crown.Tree_Broad_A']
+    assert crown['op'] == {'kind': 'unreal.author', 'version': '1'} and crown['params']['op'] == 'crown'
+    assert [(o['logical_path'], o['class']) for o in crown['outputs']] == [
+        ('/Game/Japan/FoliageLODs/Tree_Broad_A/MI_Tree_Broad_A_Crown', 'MaterialInstance')]
+    assert {item['name']: item['source']['unit'] for item in crown['inputs'][1:]} == {
+        'parent': 'native.M_Painted', 'white': 'native.T_white'}
+    grass = by_id['unreal.foliage.finish.Grass_A']
+    assert grass['params']['args']['crown'] is None and 'unreal.foliage.crown.Grass_A' not in by_id
+    assert len(result['units']) == 84 + 18 + 10
 
 
-@pytest.mark.parametrize('change', ['missing', 'product', 'optional', 'script', 'format', 'commands'])
-def test_wrong_export_shape_refuses(rows, change):
+def test_missing_shared_native_item_refuses(rows):
+    supplied = natives(); del supplied[foliage.WHITE]
+    with pytest.raises(foliage.Unsupported, match='T_white'):
+        foliage.foliage_units(rows, checkout=ROOT, natives=supplied)
+
+
+@pytest.mark.parametrize('change', ['missing', 'product', 'optional', 'script', 'format', 'commands', 'manifest', 'duplicate'])
+def test_wrong_source_shape_refuses(rows, change):
     selected = deepcopy(rows)
     index = next(i for i, row in enumerate(selected) if row['id'] == 'world.foliage.export.Grass_A_LOD1')
     row = selected[index]
@@ -78,8 +111,11 @@ def test_wrong_export_shape_refuses(rows, change):
     elif change == 'script': row['commands'][0]['script'] = {'path': 'other.py'}
     elif change == 'format': row['commands'][0]['args'][-1] = '.glb'
     elif change == 'commands': row['commands'].append(deepcopy(row['commands'][0]))
+    elif change == 'manifest':
+        next(r for r in selected if r['id'] == 'world.foliage.Grass_A')['products'][0]['id'] = 'other'
+    elif change == 'duplicate': selected.append(deepcopy(row))
     with pytest.raises(foliage.Unsupported):
-        foliage.foliage_units(selected, checkout=ROOT)
+        foliage.foliage_units(selected, checkout=ROOT, natives=natives())
 
 
 def test_construction_never_scans_generated_content_or_mutates_rows(rows, monkeypatch):
@@ -93,5 +129,5 @@ def test_construction_never_scans_generated_content_or_mutates_rows(rows, monkey
     monkeypatch.setattr(Path, 'rglob', scan)
     monkeypatch.setattr(Path, 'glob', forbidden)
     monkeypatch.setattr(Path, 'iterdir', forbidden)
-    assert len(foliage.foliage_units(rows, checkout=ROOT)['units']) == 10 * 6 + 8 * 3
+    assert len(build(rows)['units']) == 112
     assert rows == before
