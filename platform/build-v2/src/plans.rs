@@ -6,6 +6,29 @@ use crate::validate::OpRegistry;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
+fn derive_payload_default() -> bool {
+    true
+}
+fn is_true(value: &bool) -> bool {
+    *value
+}
+fn substitute_piece(value: &mut serde_json::Value, piece: &str) {
+    match value {
+        serde_json::Value::String(text) => *text = text.replace("$piece", piece),
+        serde_json::Value::Array(values) => {
+            for value in values {
+                substitute_piece(value, piece);
+            }
+        }
+        serde_json::Value::Object(values) => {
+            for value in values.values_mut() {
+                substitute_piece(value, piece);
+            }
+        }
+        _ => {}
+    }
+}
+
 /// Authored executable/output contract. Plans supply only piece/member metadata.
 /// Every child uses the same code, op, staged slot and bounded output shape.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -18,6 +41,8 @@ pub struct ChildTemplate {
     pub script: String,
     pub code: Vec<String>,
     pub params: Params,
+    #[serde(default = "derive_payload_default", skip_serializing_if = "is_true")]
+    pub derive_payload: bool,
     pub payload_slot: String,
     pub staged_path: String,
     pub output_class: String,
@@ -109,28 +134,35 @@ impl ChildTemplate {
         metadata: Option<&serde_json::Value>,
     ) -> Unit {
         let mut params = self.params.clone();
-        if let Some(metadata) = metadata {
-            params.insert("payload_metadata".into(), metadata.clone());
+        for value in params.values_mut() {
+            substitute_piece(value, piece);
         }
-        params.insert(
-            "payload_role".into(),
-            match role {
-                Some(EncodedRole::Render) => "render",
-                Some(EncodedRole::Collision) => "collision",
-                None => "geometry",
+        if self.derive_payload {
+            if let Some(metadata) = metadata {
+                params.insert("payload_metadata".into(), metadata.clone());
             }
-            .into(),
-        );
-        params.insert("payload_member".into(), payload.into());
-        params.insert(
-            "payload_encoding".into(),
-            match encoding {
-                PlanEncoding::MeshIr => "mesh_ir",
-                PlanEncoding::MeshSet => "mesh_set",
-                PlanEncoding::EncodedGlb => "encoded_glb",
-            }
-            .into(),
-        );
+            params.insert(
+                "payload_role".into(),
+                match role {
+                    Some(EncodedRole::Render) => "render",
+                    Some(EncodedRole::Collision) => "collision",
+                    None if *encoding == PlanEncoding::FileSet => "file",
+                    None => "geometry",
+                }
+                .into(),
+            );
+            params.insert("payload_member".into(), payload.into());
+            params.insert(
+                "payload_encoding".into(),
+                match encoding {
+                    PlanEncoding::MeshIr => "mesh_ir",
+                    PlanEncoding::MeshSet => "mesh_set",
+                    PlanEncoding::EncodedGlb => "encoded_glb",
+                    PlanEncoding::FileSet => "file_set",
+                }
+                .into(),
+            );
+        }
         Unit {
             id: format!("{}.{piece}", self.unit_prefix),
             op: self.op.clone(),
@@ -149,7 +181,8 @@ impl ChildTemplate {
             }],
             outputs: vec![Item {
                 id: "asset".into(),
-                logical_path: format!("{}/{piece}", self.logical_namespace),
+                logical_path: format!("{}/{piece}", self.logical_namespace)
+                    .replace("$piece", piece),
                 class: self.output_class.clone(),
                 files: self
                     .files
@@ -449,6 +482,7 @@ mod tests {
             conditional: None,
         };
         let template = ChildTemplate {
+            derive_payload: true,
             followers: vec![],
             producer: "planner".into(),
             group: "geometry".into(),
@@ -941,5 +975,76 @@ mod tests {
         let mut bad = template;
         bad.files[1].path = "MESH.FBX".into();
         assert!(RegisteredTemplate::register(&base, bad, &registry, &[]).is_err());
+    }
+    #[test]
+    fn file_set_direct_raw_template_substitutes_piece_without_derived_geometry_params() {
+        let (base, mut registry, mut template, mut contract) = fixture();
+        contract.encoding = PlanEncoding::FileSet;
+        let mut declaration = base.declaration().clone();
+        declaration.units[0].output_groups = vec![contract.clone()];
+        let definition = registry.get_mut(&("fixture".into(), "1".into())).unwrap();
+        definition.params.insert(
+            "destination".into(),
+            ParamRule {
+                kind: ParamKind::String,
+                required: false,
+            },
+        );
+        definition.params.insert(
+            "options".into(),
+            ParamRule {
+                kind: ParamKind::Object,
+                required: false,
+            },
+        );
+        let base = BuildGraph::validate(declaration, &registry, &[]).unwrap();
+        let old = serde_json::to_value(&template).unwrap();
+        assert!(old.get("derive_payload").is_none());
+        assert!(
+            serde_json::from_value::<ChildTemplate>(old)
+                .unwrap()
+                .derive_payload
+        );
+        template.derive_payload = false;
+        template.params = BTreeMap::from([
+            ("destination".into(), "/Game/Raw/$piece".into()),
+            (
+                "options".into(),
+                serde_json::json!({"source_member":"$piece.wav"}),
+            ),
+        ]);
+        template.files = vec![OutputFile {
+            path: "content/Game/Raw/$piece.uasset".into(),
+            install_path: None,
+            required: true,
+        }];
+        let registered =
+            RegisteredTemplate::register(&base, template.clone(), &registry, &[]).unwrap();
+        let child = template.child(
+            "Clip",
+            "Clip.wav",
+            &PlanEncoding::FileSet,
+            None,
+            Some(&serde_json::json!({"kind":"audio"})),
+        );
+        assert_eq!(child.params.len(), 2);
+        assert_eq!(child.params["destination"], "/Game/Raw/Clip");
+        assert_eq!(child.params["options"]["source_member"], "Clip.wav");
+        assert_eq!(
+            child.outputs[0].files[0].path,
+            "content/Game/Raw/Clip.uasset"
+        );
+        assert_eq!(registered.staged_inputs()["payload"], "inputs/payload");
+        template.derive_payload = true;
+        let child = template.child(
+            "Clip",
+            "Clip.wav",
+            &PlanEncoding::FileSet,
+            None,
+            Some(&serde_json::json!({"kind":"audio"})),
+        );
+        assert_eq!(child.params["payload_encoding"], "file_set");
+        assert_eq!(child.params["payload_member"], "Clip.wav");
+        assert_eq!(child.params["payload_metadata"]["kind"], "audio");
     }
 }

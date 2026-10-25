@@ -1,0 +1,21 @@
+schema_version = 1
+
+[[scenarios]]
+id = "file-sets.complete-strict-ordinary-roster"
+tests = ["atelier-build-v2/groups::tests::file_set_is_strict_complete_ordinary_members_without_geometry_claims"]
+tier = "t0"
+
+[[scenarios]]
+id = "file-sets.selected-key-cutoff"
+tests = ["atelier-build-v2/groups::tests::file_set_selected_child_keys_exclude_parent_and_sibling_but_bind_selected_bytes_and_metadata"]
+tier = "t0"
+
+[[scenarios]]
+id = "file-sets.direct-raw-template"
+tests = ["atelier-build-v2/plans::tests::file_set_direct_raw_template_substitutes_piece_without_derived_geometry_params"]
+tier = "t0"
+
+[[scenarios]]
+id = "file-sets.closed-recipe-descriptor"
+tests = ["atelier-build-v2/recipe_ops::file_set_tests::ordinary_file_recipe_descriptor_is_closed_and_does_not_require_mesh_decoder"]
+tier = "t0"
