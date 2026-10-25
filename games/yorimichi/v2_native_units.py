@@ -781,4 +781,62 @@ def lower(rows, geometry, *, checkout):
         native['rider_tokens'] = family['tokens']
     if selected & {'unreal.treehouse', 'unreal.brinecove'}:
         native = _join_native_families(native, rows, geometry, selected, checkout=checkout)
+    if 'unreal.horses' in selected:
+        module = _family_module(checkout, 'v2_horse_units')
+        refs = _package_dependencies(native)
+        if module.COMPRESSION not in refs:
+            moveset = _family_module(checkout, 'v2_moveset_units')
+            compression = moveset.compression_unit(checkout=checkout)
+            native['units'].append(compression)
+            native['staged_inputs'][compression['id']] = {}
+            native['packages'][module.COMPRESSION] = {'unit': compression['id'], 'item': 'asset', 'package': module.COMPRESSION}
+            refs = _package_dependencies(native)
+        family = module.horse_units(rows, checkout=checkout, natives={'compression': refs[module.COMPRESSION]})
+        shared = [reference for package, reference in family['packages'].items()
+                  if package.startswith('/Game/Horses/M_') or package == module.DEST + '/Coats/Masks/T_Coat_Solid_Mask']
+        for unit in family['units']:
+            action = unit['params'].get('args', {}).get('action')
+            slug = unit['id'].split('.')[2] if len(unit['id'].split('.')) > 2 else None
+            if slug in family['tokens'] and unit['op']['kind'].startswith('unreal.'):
+                unit['params'].setdefault('args', {})['closure'] = {
+                    key: deepcopy(value) for key, value in family['tokens'][slug].items() if key != 'clips'}
+            if action in ('mesh', 'tack', 'record') or any(incoming['name'] == 'skeleton' for incoming in unit['inputs']):
+                for index, reference in enumerate(shared):
+                    _stage_native_closure(family, unit, 'closure_shared_' + str(index), reference)
+            if action == 'record':
+                unit['params']['args']['closure'] = deepcopy(family['tokens'])
+        for template in family['templates']:
+            slug = template['unit_prefix'].split('.')[2]
+            if template['unit_prefix'].endswith(('.clips', '.materials')):
+                for follower in template['followers']:
+                    if template['unit_prefix'].endswith('.clips'):
+                        follower['unit']['params'].setdefault('args', {})['closure'] = {
+                            key: deepcopy(value) for key, value in family['tokens'][slug].items() if key != 'clips'}
+                    temporary = {'staged_inputs': {follower['unit']['id']: follower['staged_inputs']}}
+                    for index, reference in enumerate(shared):
+                        _stage_native_closure(temporary, follower['unit'], 'closure_shared_' + str(index), reference)
+        _append_family(native, family)
+        current = deepcopy(native['geometry'])
+        current['groups'].update(family['groups']); current['templates'].extend(family['templates'])
+        native['geometry'] = current
+        native['aliases'].update(family['aliases'])
+        native['horse_tokens'] = family['tokens']
+    if 'unreal.bike' in selected:
+        module = _family_module(checkout, 'v2_bike_units')
+        family = module.attach_followers(native['geometry'], rows=rows, checkout=checkout,
+            natives={name: ref for name, ref in _package_dependencies(native).items() if name == module.MATERIAL})
+        current = family.pop('geometry')
+        requirements = current.pop('module_requirements', {})
+        fixed = {unit['id'] for unit in family['units']}
+        family['module_requirements'] = {name: value for name, value in requirements.items() if name in fixed}
+        prefixes = {template['unit_prefix'] for template in current['templates']
+                    if any(follower['unit']['op']['kind'] == 'unreal.finish' for follower in template.get('followers', ()))}
+        native.setdefault('follower_module_requirements', {}).update(
+            {name: value for name, value in requirements.items() if name in prefixes})
+        _append_family(native, family)
+        native['geometry'] = current
+        # The record consumes both the joint steering owner and actual expanded ordinary parts.
+        native['aliases']['unreal.bike'] = (module.RECORD_UNIT,)
+    if 'unreal.cook' in selected:
+        native = _family_module(checkout, 'v2_cook_pipeline').attach(native, rows, checkout=checkout)
     return native

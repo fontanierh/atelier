@@ -49,6 +49,7 @@ def author_unit(*, checkout, editor, plugins, data=()):
     for helper in (cook.SCRIPT, 'platform/studio/atelier/build_v2/protocol.py',
                    'platform/studio/atelier/build_v2/recipe_job.py',
                    'platform/studio/atelier/build_v2/unreal_tool_ops.py',
+                   'platform/studio/atelier/build_v2/recipe_native_paths.py',
                    'platform/studio/atelier/build_zen.py', 'platform/studio/atelier/build_cook.py'):
         code.update(path.relative_to(root).as_posix() for path in scanner.local_imports(
             root / helper, (root / 'platform/studio', root / 'platform/harness')))

@@ -190,7 +190,7 @@ def horse_units(rows, *, checkout, natives):
                      'commands': [_call(root, 'project', (*args, root / generated, kind))],
                      'outputs': [{'path': generated, 'kind': 'tree', 'file': 'members.tree.tar', 'required': True}],
                      'file_group': {'source': generated, 'parent': f'Horse_{name}_{kind}', 'extensions': ['.json']}}},
-                 'outputs': [{'id': 'members', 'logical_path': f'/Internal/Horses/{name}/{kind}', 'class': 'Data',
+                 'outputs': [{'id': 'archive', 'logical_path': f'/Internal/Horses/{name}/{kind}', 'class': 'Data',
                               'destination': 'store', 'files': [{'path': 'members.tree.tar', 'required': True}]}],
                  'output_groups': [contract]}, deepcopy(sources))
             groups[unit_id] = {'contract': contract, 'source': generated}
@@ -235,7 +235,7 @@ def horse_units(rows, *, checkout, natives):
                         'args': {'action': 'instance', 'name': '$piece', 'meta': 'meta', 'folder': materials_folder,
                                  'hair_colour': list(breed['hair_colour']),
                                  'masters': {key: 'master_' + key for key in MASTERS}, 'images': deepcopy(images)}},
-             'outputs': [_output('asset', f'{materials_folder}/MI_$piece', 'MaterialInstanceConstant')]}], files=('meta',))
+             'outputs': [_output('asset', f'{materials_folder}/MI_$piece', 'MaterialInstance')]}], files=('meta',))
         raw_clip = f'/Game/_Raw/Horses/{name}/Clips/$piece'   # raw glTF: the destination names the one animation
         template('clips', [
             {'id': '$export.raw', 'op': {'kind': 'unreal.raw_import', 'version': '1'}, 'script': OPS, 'code': ops_code,
