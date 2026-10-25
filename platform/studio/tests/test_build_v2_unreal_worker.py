@@ -392,6 +392,32 @@ def test_long_native_sidecar_suffix_has_one_package_owner():
         assert unreal_worker.package_owning('content/Game/A' + suffix, 'content/Game/') == '/Game/A'
 
 
+def test_declared_runpy_finds_only_staged_project_helpers_and_restores_path(tmp_path):
+    import runpy
+    root = tmp_path / 'job'
+    scripts = root / 'games/example/unreal/Scripts'
+    studio = root / 'platform/studio/c3_fixture_package'
+    scripts.mkdir(parents=True)
+    studio.mkdir(parents=True)
+    entry = scripts / 'entry.py'
+    helper = scripts / 'c3_staged_leaf.py'
+    package = studio / '__init__.py'
+    entry.write_text('import c3_staged_leaf\nimport c3_fixture_package\nVALUE = c3_staged_leaf.VALUE + c3_fixture_package.VALUE\n')
+    helper.write_text('VALUE = 17\n')
+    package.write_text('VALUE = 25\n')
+    files = [entry, helper, package]
+    before = list(sys.path)
+    try:
+        with unreal_worker.declared_python(root, [p.relative_to(root).as_posix() for p in files],
+                                           files, [Path(sys.base_prefix)], entry=entry.relative_to(root).as_posix()):
+            assert runpy.run_path(str(entry))['VALUE'] == 42
+        assert sys.path == before
+        assert not list(root.rglob('__pycache__'))
+    finally:
+        sys.modules.pop('c3_staged_leaf', None)
+        sys.modules.pop('c3_fixture_package', None)
+
+
 def test_empty_editor_content_scaffolding_has_no_packages_but_links_are_not_empty(tmp_path):
     from atelier.build_v2.unreal_worker import content_has_files
     (tmp_path / 'Developers' / 'user' / 'Collections').mkdir(parents=True)

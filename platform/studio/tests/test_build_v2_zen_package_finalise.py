@@ -52,6 +52,31 @@ def test_restore_then_native_shader_composition_then_exact_endcook(tmp_path):
     assert result['endcook']['status'] == 'finalized'
 
 
+@pytest.mark.parametrize('cause', [None, 'unknown', 'missing', 'changed'])
+def test_sdk_debug_output_is_censused_and_hashed_but_not_a_runtime_global(tmp_path, cause):
+    args, original, calls, _ = setup(tmp_path)
+    filename = 'Metadata/ShaderDebug/global_sf_metal_sm5-metal_sm5.zip'
+    def call(method, request):
+        report = original(method, request)
+        if method == 'zen_finalise_request' and request['global_library']:
+            source = Path(request['output_dir']) / filename
+            source.parent.mkdir(parents=True); source.write_bytes(b'exact SDK debug artifact')
+            report['files'].append({'path': filename, 'sha256': hashlib.sha256(source.read_bytes()).hexdigest()})
+            report['diagnostic_files'] = [filename]
+            if cause == 'unknown': report['diagnostic_files'] = ['Metadata/unknown.zip']
+            if cause == 'missing': report['files'].pop()
+            if cause == 'changed': source.write_bytes(b'changed')
+        return report
+    if cause:
+        with pytest.raises(Refused): finalise(**args, call=call)
+        assert all(method != 'zen_end_cook_request' for method, _ in calls)
+    else:
+        report = finalise(**args, call=call)
+        assert report['global_composition']['diagnostic_files'] == [filename]
+        assert all(not row['clientpath'].endswith('.zip') for row in calls[-1][1]['globals'])
+        assert (tmp_path / 'final-global' / filename).read_bytes() == b'exact SDK debug artifact'
+
+
 @pytest.mark.parametrize('cause', ['record', 'stored', 'root', 'refused', 'libraries', 'roster', 'global'])
 def test_changed_source_or_incomplete_native_finalization_refuses(tmp_path, cause):
     args, original, calls, values = setup(tmp_path)

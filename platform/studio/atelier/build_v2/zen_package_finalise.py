@@ -94,7 +94,24 @@ def finalise(*, destination, packages, histories, global_histories, global_files
         if row['clientpath'] in names:
             raise Refused('duplicate native global file')
         names.add(row['clientpath']); files.append(dict(row))
-    for row, base in [(row, output) for row in composed.get('files', [])] + [(row, global_output) for row in global_composed.get('files', [])]:
+    projected = []
+    for report, base, name in ((composed, output, library), (global_composed, global_output, 'Global')):
+        diagnostics = report.get('diagnostic_files', [])
+        allowed = {'Metadata/ShaderDebug/' + (name + '_' + fmt).lower() + '.zip' for fmt in formats}
+        if (not isinstance(diagnostics, list) or any(not isinstance(path, str) or path not in allowed for path in diagnostics)
+                or len(diagnostics) != len(set(diagnostics))):
+            raise Refused('native shader diagnostics differ from exact SDK-derived roles')
+        observed = set()
+        for row in report.get('files', []):
+            relative = row.get('path')
+            if relative in diagnostics:
+                _file(base / relative, row['sha256'])
+                observed.add(relative)
+            else:
+                projected.append((row, base))
+        if observed != set(diagnostics):
+            raise Refused('native diagnostic census is incomplete')
+    for row, base in projected:
         relative = row.get('path')
         if (not isinstance(relative, str) or not relative or Path(relative).is_absolute()
                 or any(part in ('', '.', '..') for part in relative.split('/'))):

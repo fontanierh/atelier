@@ -974,7 +974,7 @@ fn prepare_inner(
         env: command.env,
         cwd: command.cwd,
     };
-    let request = body_request(staged.request().clone());
+    let request = body_request(staged.request().clone())?;
     Ok(PreparedUnrealLaunch {
         command,
         worker,
@@ -987,14 +987,19 @@ fn prepare_inner(
     })
 }
 
-fn body_request(mut request: crate::protocol::JobRequest) -> crate::protocol::JobRequest {
+fn body_request(mut request: crate::protocol::JobRequest) -> Result<crate::protocol::JobRequest, String> {
     // Raw/finish and the fixed Zen body receive their own schema; author bodies
     // also validate their declared startup settings alongside authored arguments.
     if request.op.kind != AUTHOR {
         request.params.remove("settings");
     }
-    request.params.remove("native_modules");
-    request
+    if let Some(modules) = request.params.remove("native_modules") {
+        // Locations::build already materialized and verified these exact context inputs.
+        // Keep complete keyed/staged verification; only the authored body's view omits them.
+        let slots = crate::native_modules::body_input_slots(&modules)?;
+        request.inputs.retain(|input| !slots.contains(&input.name));
+    }
+    Ok(request)
 }
 
 #[cfg(test)]
@@ -1042,14 +1047,31 @@ mod tests {
             "job_dir":"/job", "script":"game/material.py", "code":["game/material.py"],
             "inputs":[], "outputs":[], "params":{"args":{"asset":"M"},"settings":[]}
         })).unwrap();
-        let authored = body_request(request.clone());
+        let authored = body_request(request.clone()).unwrap();
         assert_eq!(authored.params, request.params);
         for kind in [RAW_IMPORT, FINISH, VERIFY] {
             let mut typed = request.clone();
             typed.op.kind = kind.into();
-            assert!(!body_request(typed).params.contains_key("settings"));
+            assert!(!body_request(typed).unwrap().params.contains_key("settings"));
         }
         assert!(request.params.contains_key("settings"));
+        let mut bound = request.clone();
+        bound.params.insert("native_modules".into(), serde_json::json!({
+            "editor":{"slot":"compiled_editor","archive":"binaries.tree.tar",
+                "modules":[{"name":"Game","kind":"Runtime","loading_phase":"Default"}]},
+            "plugins":[{"name":"Owned","slot":"compiled_plugin_Owned","archive":"binaries.tree.tar",
+                "descriptor_slot":"compiled_descriptor_Owned"}]}));
+        for name in ["source", "compiled_editor", "compiled_plugin_Owned", "compiled_descriptor_Owned", "compiled_semantic_asset"] {
+            bound.inputs.push(crate::protocol::StagedInput { name:name.into(), path:format!("inputs/{name}"),
+                identity:crate::schema::ContentIdentity::Digest{digest:crate::source_hashes::sha256(name.as_bytes())} });
+        }
+        let body = body_request(bound.clone()).unwrap();
+        assert_eq!(body.inputs.iter().map(|input| input.name.as_str()).collect::<Vec<_>>(), ["source", "compiled_semantic_asset"]);
+        assert!(!body.params.contains_key("native_modules"));
+        assert!(body.params.contains_key("settings"));
+        assert_eq!(bound.inputs.len(), 5);
+        bound.params.insert("native_modules".into(), serde_json::json!({"editor":{},"unknown":true}));
+        assert!(body_request(bound).is_err());
     }
 }
 

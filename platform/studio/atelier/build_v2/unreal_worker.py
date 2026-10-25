@@ -77,7 +77,7 @@ def _bundle_module(name):
 
 
 @contextmanager
-def declared_python(job_dir, code, reads, platform_roots):
+def declared_python(job_dir, code, reads, platform_roots, *, entry=None):
     """Reuse C2's path/import checks for the project Python body inside C3.
 
     A caught refusal remains sticky. The audit hook is inactive outside this scope;
@@ -97,13 +97,24 @@ def declared_python(job_dir, code, reads, platform_roots):
     guard.reads += [str(p) for p in reads if Path(p).is_dir()]
     finder = helper.DeclaredCodeFinder(root, set(code), [str(p) for p in platform_roots])
     originals = {name: getattr(os, name) for name in guard.DESCRIPTOR_CALLS if hasattr(os, name)}
-    meta, hooks = list(sys.meta_path), list(sys.path_hooks)
+    meta, hooks, search = list(sys.meta_path), list(sys.path_hooks), list(sys.path)
+    project_roots = [str(Path(root) / Path(entry).parent)] if entry is not None else []
+    for relative in sorted(code):
+        path = Path(relative)
+        project_roots.append(str(Path(root) / path.parent))
+        if path.parts[:2] == ('platform', 'studio'):
+            project_roots.append(str(Path(root) / 'platform/studio'))
+        if len(path.parts) > 2 and path.parts[0] == 'games':
+            project_roots.append(str(Path(root).joinpath(*path.parts[:2])))
     bytecode = sys.dont_write_bytecode
     active = [True]
     guard.original_readlink = os.readlink
     sys.addaudithook(lambda event, args: guard.audit(event, args) if active[0] else None)
     try:
         sys.dont_write_bytecode = True
+        # Search locations do not authorize code: the finder still checks every
+        # imported origin against the exact frozen closure.
+        sys.path[:] = list(dict.fromkeys(project_roots + search))
         for name, function in originals.items():
             setattr(os, name, guard.wrap(name, function, guard.DESCRIPTOR_CALLS[name]))
         sys.meta_path.insert(0, finder)
@@ -117,6 +128,7 @@ def declared_python(job_dir, code, reads, platform_roots):
             setattr(os, name, function)
         sys.meta_path[:] = meta
         sys.path_hooks[:] = hooks
+        sys.path[:] = search
 
 
 WORKER_VERSION = 'atelier-unreal-job-1'
@@ -712,7 +724,7 @@ class Worker:
         try:
             with declared_python(job_dir, job['code'],
                     [*prepared['declared_reads'], self.content],
-                    [*self.read_platform_roots, Path(sys.base_prefix), Path(sys.prefix)]):
+                    [*self.read_platform_roots, Path(sys.base_prefix), Path(sys.prefix)], entry=job['script']):
                 entry = runpy.run_path(str(job_dir / job['script']), run_name='atelier_unreal_job')
                 if not callable(entry.get('run')):
                     raise JobRefused('protocol', 'the entry script defines no run(context)')
@@ -837,7 +849,7 @@ class Worker:
         recording = True
         try:
             with declared_python(job_dir, job['code'], records,
-                    [*self.read_platform_roots, Path(sys.base_prefix), Path(sys.prefix)]):
+                    [*self.read_platform_roots, Path(sys.base_prefix), Path(sys.prefix)], entry=job['script']):
                 entry = runpy.run_path(str(job_dir / job['script']), run_name='atelier_native_verify')
                 if not callable(entry.get('run')):
                     raise JobRefused('protocol', 'fixed verifier has no run entry')

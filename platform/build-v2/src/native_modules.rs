@@ -62,6 +62,19 @@ struct PluginRequest {
     subset: bool,
 }
 
+/// Exact context-only slots from the same schema already materialized by `prepare`.
+/// This projection grants no module/source authority and never filters by name prefix.
+pub(crate) fn body_input_slots(value: &serde_json::Value) -> Result<BTreeSet<String>, String> {
+    let request: Request = serde_json::from_value(value.clone())
+        .map_err(|e| format!("invalid native_modules parameters: {e}"))?;
+    let mut slots = BTreeSet::from([request.editor.slot]);
+    for plugin in request.plugins {
+        slots.insert(plugin.slot);
+        slots.insert(plugin.descriptor_slot);
+    }
+    Ok(slots)
+}
+
 #[derive(serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 struct RootManifest {
