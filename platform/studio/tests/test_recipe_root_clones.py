@@ -322,3 +322,19 @@ def test_a_rewritten_archive_path_gets_its_own_snapshot(tmp_path, unpacks):
     second = group.materialize(a, tmp_path / 'two')
     assert second['snapshot'] == 'created' and second['archive'] != first['archive']
     assert (tmp_path / 'two/Config/Game.ini').read_bytes() == b'[Other]\n'
+
+
+@pytest.mark.parametrize('kind', ['file', 'absent', 'directory'])
+def test_every_kind_refuses_a_destination_inside_the_scope_before_writing(tmp_path, unpacks, kind):
+    if kind == 'directory':
+        packed = archive(tmp_path, 'editor', FILES)
+    else:
+        source = tmp_path / ('single.' + kind)
+        if kind == 'file':
+            source.write_bytes(b'payload')
+        packed = tmp_path / 'single.tree.tar'
+        recipe_job.pack_root(source, packed, required=False)
+    group = clones.CommonRootClones(tmp_path / 'scope')
+    with pytest.raises(ValueError, match='aliases the clone scope'):
+        group.materialize(packed, tmp_path / 'scope' / 'inside')
+    assert unpacks == [] and list((tmp_path / 'scope').iterdir()) == []
