@@ -132,6 +132,19 @@ def test_fixed_verifier_returns_report_without_python_write_permission(tmp_path,
     assert list((root / 'output').iterdir()) == []
 
 
+def test_native_verification_preserves_exact_startup_dirty_state():
+    check = unreal_worker.verify_readonly_editor_state
+    check(['/Temp/Untitled_0'], ['/Temp/Untitled_0'], [], 0, False)
+    check([], [], [], 0, False)
+    for values in [(['/Game/Bad'], ['/Game/Bad'], [], 0, False),
+                   ([], ['/Temp/New'], [], 0, False),
+                   (['/Temp/Old'], [], [], 0, False),
+                   ([], [], [{}], 0, False), ([], [], [], 1, False),
+                   ([], [], [], 0, True)]:
+        with pytest.raises(JobRefused, match='native verification mutated'):
+            check(*values)
+
+
 def test_protocol_descriptors_must_appear_once_and_be_pipes(tmp_path):
     read, write = os.pipe()
     try:

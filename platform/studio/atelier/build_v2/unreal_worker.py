@@ -261,6 +261,16 @@ def content_has_files(root):
     return False
 
 
+def verify_readonly_editor_state(before, after, saved, ensures, content):
+    """Native verification preserves startup dirty state and never dirties /Game."""
+    if (any(name.startswith(GAME) for name in before) or sorted(before) != sorted(after)
+            or saved or ensures or content):
+        detail = dict(dirty_before=sorted(before)[:8], dirty_after=sorted(after)[:8],
+                      saved_count=len(saved), ensures=ensures, content=content)
+        raise JobRefused('dependency', 'native verification mutated package/editor state: '
+                         + json.dumps(detail, sort_keys=True))
+
+
 def log(message):
     print(f'atelier-unreal-worker: {message}', file=sys.stderr, flush=True)
 
@@ -794,6 +804,7 @@ class Worker:
         before = {path: sha256(path) for path in records}
         declared_reads = [job_dir / path for path in job['code']] + records
         self.settings = self.editor.settings()
+        dirty_before = self.editor.dirty_packages()
         self.editor.begin_job()
         recording = True
         try:
@@ -811,8 +822,9 @@ class Worker:
         finally:
             if recording:
                 self.editor.read_report()
-        if saved or self.editor.dirty_packages() or self.editor.ensures() or content_has_files(self.content):
-            raise JobRefused('dependency', 'native verification mutated package/editor state')
+        write_atomic(job_dir / READ_EVIDENCE, report)
+        verify_readonly_editor_state(dirty_before, self.editor.dirty_packages(), saved,
+                                     self.editor.ensures(), content_has_files(self.content))
         validate_read_report(report, declared_reads, self.read_platform_roots)
         if any(sha256(path) != digest for path, digest in before.items()):
             raise JobRefused('dependency', 'native verification changed its source record or lifetime metadata')
