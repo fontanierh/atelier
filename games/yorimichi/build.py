@@ -556,13 +556,13 @@ def native_source_inputs():
 
 def editor_compile_products():
     """@cc [owner:fontanierh,label:correctness] complete-editor-plugin-output-roots
-    The editor compile MUST own complete Mac binary roots for both project-local
-    and shared source plugins, including HorseRacing's receipt-listed module map
-    and dylib. These enabled source plugins MUST produce their binary roots; retain
-    separate named products for compiled native-module consumers.
+    The editor compile MUST own a complete Mac binary root for each project-local
+    source plugin, including HorseRacing's receipt-listed module map and dylib, as
+    a separate named product for compiled native-module consumers. Shared
+    AdditionalPluginDirectories plugins MUST NOT claim separate roots: the real
+    receipt places their modules and module map in the project Binaries/Mac output.
     """
-    descriptors = sorted(path for folder in (GAME / 'unreal/Plugins', paths.ENGINE_PLUGINS)
-                         for path in folder.rglob('*.uplugin'))
+    descriptors = sorted((GAME / 'unreal/Plugins').rglob('*.uplugin'))
     names = set()
     products = []
     for descriptor in descriptors:

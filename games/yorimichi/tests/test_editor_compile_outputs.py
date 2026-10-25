@@ -28,8 +28,11 @@ def test_complete_editor_roots_bind_explicit_source_and_validate_with_named_prod
     products = {product.name: product for product in step.products}
     assert products['unreal.compile.HorseRacing'].paths == (RECIPE.GAME / 'unreal/Plugins/HorseRacing/Binaries/Mac',)
     assert products['unreal.compile.HorseRacing'].optional_paths == ()
-    descriptors = [p for folder in (RECIPE.GAME / 'unreal/Plugins', RECIPE.paths.ENGINE_PLUGINS) for p in folder.rglob('*.uplugin')]
-    assert set(products) == {'unreal.compile.' + p.stem for p in descriptors}
+    # Real receipt roster: shared AdditionalPluginDirectories modules live in the project Binaries/Mac output.
+    assert set(products) == {'unreal.compile.' + p.stem for p in (RECIPE.GAME / 'unreal/Plugins').rglob('*.uplugin')}
+    assert set(products) == {'unreal.compile.HorseRacing'}
+    shared = {p.stem for p in RECIPE.paths.ENGINE_PLUGINS.rglob('*.uplugin')}
+    assert 'AtelierCore' in shared and not shared & {name.removeprefix('unreal.compile.') for name in products}
     assert step.inputs == [ctx.uproject, *RECIPE.compile_inputs.files(RECIPE.native_source_inputs().settings[0])]
     assert not step.deferred_inputs
     build_deferred.validate(step)
