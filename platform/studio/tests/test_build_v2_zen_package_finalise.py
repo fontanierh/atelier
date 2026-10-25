@@ -7,6 +7,50 @@ import pytest
 from atelier.build_v2.zen_package_finalise import finalise, Refused
 
 
+def runtime_fixture(tmp_path):
+    engine = tmp_path / 'SDK'; engine.mkdir()
+    project = tmp_path / 'Game/Game.uproject'; project.parent.mkdir(); project.write_text('{}')
+    frozen = tmp_path / 'frozen'; frozen.mkdir()
+    rows = []
+    for domain, tail in [('engine', 'Config/Android/BaseAndroid.ini'),
+                         ('project', 'Config/DefaultGame.ini'),
+                         ('project', 'Plugins/Example/Config/DefaultExample.ini'),
+                         ('engine', 'GlobalShaderCache-METAL.bin'),
+                         ('engine', 'Content/Internationalization/icu.dat'),
+                         ('project', 'Content/Data/Config/record.ini')]:
+        source = (engine / 'Engine' if domain == 'engine' else project.parent) / tail
+        source.parent.mkdir(parents=True, exist_ok=True); source.write_bytes(tail.encode())
+        capture = frozen / str(len(rows)); capture.write_bytes(source.read_bytes())
+        rows.append({'clientpath': '/{' + domain + '}/' + tail, 'path': str(capture),
+                     'sha256': hashlib.sha256(capture.read_bytes()).hexdigest()})
+    return rows, project, engine
+
+
+def test_stock_uat_owns_exact_config_roles_without_modifying_capture(tmp_path):
+    from atelier.build_v2.zen_package_finalise import select_runtime_globals
+    rows, project, engine = runtime_fixture(tmp_path)
+    before = [(row.copy(), Path(row['path']).read_bytes()) for row in rows]
+    assert select_runtime_globals(rows, project=project, engine=engine) == rows[3:]
+    assert [(row.copy(), Path(row['path']).read_bytes()) for row in rows] == before
+
+
+@pytest.mark.parametrize('cause', ['capture', 'sdk', 'missing', 'alias', 'duplicate', 'traversal', 'domain'])
+def test_runtime_config_disposition_refuses_changed_or_ambiguous_sources(tmp_path, cause):
+    from atelier.build_v2.zen_package_finalise import select_runtime_globals
+    rows, project, engine = runtime_fixture(tmp_path)
+    counterpart = engine / 'Engine/Config/Android/BaseAndroid.ini'
+    if cause == 'capture': Path(rows[0]['path']).write_bytes(b'changed')
+    if cause == 'sdk': counterpart.write_bytes(b'changed')
+    if cause == 'missing': counterpart.unlink()
+    if cause == 'alias':
+        alternate = counterpart.with_suffix('.saved'); counterpart.rename(alternate); counterpart.symlink_to(alternate)
+    if cause == 'duplicate': rows.append(rows[0].copy())
+    if cause == 'traversal': rows[0]['clientpath'] = '/{engine}/Config/../bad.ini'
+    if cause == 'domain': rows[0]['clientpath'] = '/{unknown}/Config/bad.ini'
+    with pytest.raises((Refused, OSError)):
+        select_runtime_globals(rows, project=project, engine=engine)
+
+
 def setup(tmp_path):
     values = {}
     for name in ('project.uproject', 'ue.projectstore', 'runtime.uproject', 'record.cb', 'ScriptObjects.bin'):
