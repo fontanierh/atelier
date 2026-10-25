@@ -86,17 +86,19 @@ BLENDER_READ_LITERALS = ('/Library/Preferences/.GlobalPreferences.plist',)
 BLENDER_RENDER_SERVICES = ('com.apple.windowserver.active',
                            'com.apple.coreservices.launchservicesd',
                            'com.apple.lsd.mapdb', 'com.apple.lsd.modifydb')
+BLENDER_INPUT_SOURCE_DIRECTORIES = ('/Library/Keyboard Layouts', '/Library/Input Methods')
 BLENDER_METADATA_PATHS = ('/tmp', '/private/tmp', '/Applications/Xcode.app',
                           '/private/var/db/.AppleSetupDone',
                           '/Library/Application Support/Apple/Spotlight/MailUsesCoreSpotlight',
-                          '/Library/Keyboard Layouts')
+                          *BLENDER_INPUT_SOURCE_DIRECTORIES)
 BLENDER_RULES = (
     '(allow iokit-open-user-client (iokit-user-client-class "AGXDeviceUserClient" "IOSurfaceRootUserClient"))',
     '(allow file-read-metadata ' + ' '.join('(literal ' + python_worker._quote(path) + ')'
                                           for path in BLENDER_METADATA_PATHS) + ')',
     # Native Cocoa enumerates installed system keyboard layout names. This grants the
     # directory roster only, never any layout file or a staged Python read role.
-    '(allow file-read-data (require-all (literal "/Library/Keyboard Layouts") (vnode-type DIRECTORY)))',
+    *('(allow file-read-data (require-all (literal ' + python_worker._quote(path)
+      + ') (vnode-type DIRECTORY)))' for path in BLENDER_INPUT_SOURCE_DIRECTORIES),
     # Native AppKit/Metal initialization reads the system eligibility policy. Keep this
     # exact startup role outside reads(), so staged Python receives no such data-read role.
     '(allow file-read-data (literal "/private/var/db/eligibilityd/eligibility.plist"))',
