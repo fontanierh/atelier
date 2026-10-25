@@ -85,3 +85,43 @@ def test_installed_library_links_include_rewritten_intermediate_roles(tmp_path):
     (keg / 'lib.1').symlink_to('lib.1.2')
     (tmp_path / 'opt').symlink_to('keg', target_is_directory=True)
     assert recipe_node._links(tmp_path / 'opt/lib.1') == {str(tmp_path / 'opt'), str(keg / 'lib.1')}
+
+
+@pytest.fixture
+def crypto(tmp_path):
+    config = tmp_path / 'openssl.cnf'; config.write_text('openssl_conf = defaults\n[defaults]\n')
+    image = tmp_path / 'libcrypto.3.dylib'
+    image.write_bytes(b'prefix\0OPENSSLDIR: "' + str(tmp_path).encode() + b'"\0suffix')
+    return image, config
+
+
+def test_selected_openssl_default_is_retained_and_used_in_fixed_environment(crypto, launch):
+    image, config = crypto
+    assert recipe_node._openssl_configuration([str(image)]) == str(config)
+    context, _, _ = launch
+    sdk = dict(context.sdk, openssl_config=str(config))
+    selected = recipe_node.NodeExecution(sdk, view=context.view, scratch=context.scratch,
+                                        entry=context.entry, sources=context.sources)
+    assert selected.environment['OPENSSL_CONF'] == str(config)
+
+
+@pytest.mark.parametrize('name', ['OPENSSL_CONF', 'OPENSSL_CONF_INCLUDE', 'OPENSSL_MODULES'])
+def test_inherited_openssl_overrides_refuse(crypto, monkeypatch, name):
+    monkeypatch.setenv(name, '/foreign/config')
+    with pytest.raises(ValueError, match='environment override'):
+        recipe_node._openssl_configuration([str(crypto[0])])
+
+
+@pytest.mark.parametrize('directive', ['.include other.cnf', 'module = external.dylib',
+                                        'dynamic_path = external.dylib', 'engines = engines',
+                                        'value = $ENV::HOME'])
+def test_openssl_follow_on_configuration_refuses(crypto, directive):
+    image, config = crypto; config.write_text(directive + '\n')
+    with pytest.raises(ValueError, match='include or external provider'):
+        recipe_node._openssl_configuration([str(image)])
+
+
+def test_openssl_unknown_compiled_default_refuses(crypto):
+    image, _ = crypto; image.write_bytes(b'unknown selected library metadata')
+    with pytest.raises(ValueError, match='default directory is not exact'):
+        recipe_node._openssl_configuration([str(image)])

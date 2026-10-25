@@ -9,6 +9,7 @@ import io
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import stat
 import subprocess
@@ -39,6 +40,35 @@ def _links(filename):
         else:
             return found
     raise ValueError('cyclic installed Node library link')
+
+
+def _openssl_configuration(libraries):
+    """The selected libcrypto's single ordinary default, without follow-on reads."""
+    if any(name in os.environ for name in ('OPENSSL_CONF', 'OPENSSL_CONF_INCLUDE', 'OPENSSL_MODULES')):
+        raise ValueError('unsupported OpenSSL environment override')
+    crypto = {Path(path).resolve(strict=True) for path in libraries
+              if Path(path).name == 'libcrypto.3.dylib'}
+    if not crypto:
+        return None
+    if len(crypto) != 1:
+        raise ValueError('ambiguous selected OpenSSL library')
+    image = _file(next(iter(crypto)))
+    if image.stat().st_size > 64 * 1024 * 1024:
+        raise ValueError('selected OpenSSL metadata exceeds bound')
+    matches = re.findall(rb'OPENSSLDIR: "([^"\x00\r\n]+)"', image.read_bytes())
+    if len(matches) != 1:
+        raise ValueError('selected OpenSSL default directory is not exact')
+    directory = Path(matches[0].decode('utf-8'))
+    if not directory.is_absolute() or '..' in directory.parts:
+        raise ValueError('selected OpenSSL default directory is not absolute')
+    config = _file(directory / 'openssl.cnf')
+    if config.stat().st_size > 1024 * 1024:
+        raise ValueError('selected OpenSSL configuration exceeds bound')
+    active = [line.split('#', 1)[0].strip() for line in config.read_text().splitlines()]
+    if any(line.startswith('.include') or re.search(r'^(?:module|dynamic_path|engines)\s*=', line)
+           or '$ENV::' in line for line in active):
+        raise ValueError('unsupported OpenSSL include or external provider configuration')
+    return str(config)
 
 
 def discover_node():
@@ -82,12 +112,16 @@ def discover_node():
     # Include link components as literals; no recursive Homebrew read grant.
     for filename in tuple(files):
         files.update(_links(filename))
-    return {'version': 1, 'executable': role, 'image': str(image), 'read_literals': sorted(files)}
+    config = _openssl_configuration(files)
+    if config:
+        files.add(config)
+    return {'version': 1, 'executable': role, 'image': str(image), 'read_literals': sorted(files),
+            'openssl_config': config}
 
 
 def permissions(sdk):
     """Extra platform permissions for the EXISTING worker sandbox only."""
-    if (set(sdk) != {'version', 'executable', 'image', 'read_literals'} or sdk['version'] != 1
+    if (set(sdk) != {'version', 'executable', 'image', 'read_literals', 'openssl_config'} or sdk['version'] != 1
             or not Path(sdk['executable']).is_absolute()
             or not Path(sdk['image']).is_relative_to('/opt/homebrew')
             or Path(sdk['image']).name != 'node'
@@ -98,6 +132,9 @@ def permissions(sdk):
     for name in sdk['read_literals']:
         if not Path(name).is_absolute() or not Path(name).is_relative_to('/opt/homebrew'):
             raise ValueError('invalid installed Node read literal')
+    if (_openssl_configuration(sdk['read_literals']) != sdk['openssl_config']
+            or (sdk['openssl_config'] and sdk['openssl_config'] not in sdk['read_literals'])):
+        raise ValueError('selected OpenSSL configuration context changed')
     # CPython's close_fds subprocess path forks before its exact allowed exec.
     # PathGuard still refuses raw fork/spawn, and the Node loader forbids children.
     return {'executables': [sdk['image']], 'read_literals': list(sdk['read_literals']),
@@ -132,9 +169,11 @@ class NodeExecution:
                 or len(set(self.sources)) != len(self.sources)
                 or any(not p.is_relative_to(self.view) for p in self.sources)):
             raise ValueError('Node entry and helpers must be exact declared private sources')
-        self.environment = {'LC_ALL': 'C', 'TZ': 'UTC', 'OPENSSL_CONF': '/dev/null',
+        self.environment = {'LC_ALL': 'C', 'TZ': 'UTC',
                             'HOME': str(self.scratch), 'TMPDIR': str(self.scratch),
                             'PATH': str(Path(sdk['image']).parent)}
+        if sdk.get('openssl_config'):
+            self.environment['OPENSSL_CONF'] = sdk['openssl_config']
         self._grant = None
 
     def validate(self, argv, args, kwargs):
