@@ -971,6 +971,8 @@ def dispatch(job, job_dir, engine, run, *, source_key=None, zen_state_root=None,
     kind = job['op']['kind']
     if kind not in KINDS or job['op']['version'] != '1':
         raise Refused('unsupported native tool operation')
+    if job['params']['recipe'].get('native_inputs') is not None:
+        job = _sibling('recipe_native_paths').bind(job, job_dir)
     params, output = job['params'], job_dir / 'output'
     recipe = params['recipe']
     if recipe['version'] != 1 or output.is_symlink() or not output.is_dir() or any(output.iterdir()):
