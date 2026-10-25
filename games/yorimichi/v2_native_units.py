@@ -596,6 +596,41 @@ def lower(rows, geometry, *, checkout):
         native['geometry'] = extended
         _complete_mesh_family(native, extended, family='desktop', export_prefixes=('world.hidamari.export.',),
             checkout=checkout, fixed={}, prerequisites=({'unit': 'unreal.world.complete', 'item': 'roster'},))
+    characters = [row for row in rows if any(command.get('script') == {
+        'path': 'games/yorimichi/unreal/Scripts/import_character.py'} for command in row['commands'])]
+    if characters:
+        moveset = _family_module(checkout, 'v2_moveset_units')
+        if not any(unit['id'] == moveset.COMPRESSION_UNIT for unit in native['units']):
+            compression = moveset.compression_unit(checkout=checkout)
+            native['units'].append(compression)
+            native['staged_inputs'][compression['id']] = {}
+            native['packages'][moveset.COMPRESSION] = {'unit': compression['id'], 'item': 'asset', 'package': moveset.COMPRESSION}
+        refs = _package_dependencies(native)
+        character_module = _family_module(checkout, 'v2_character_templates')
+        family = character_module.character_templates(rows, checkout=checkout, natives={
+            'compression': refs[moveset.COMPRESSION],
+            'see_through': refs.get('/Game/SeeThrough/MPC_SeeThrough')})
+        _append_family(native, family)
+        current = deepcopy(native.get('geometry', geometry))
+        current['groups'].update(family['groups'])
+        current['templates'].extend(family['templates'])
+        native['geometry'] = current
+        native['aliases'].update(family['aliases'])
+        native['character_tokens'] = family['tokens']
+        definitions = character_module._definition(checkout)
+        by_key = {character.id.replace('-', '_'): character for character in definitions.movers()}
+        for template in family['templates']:
+            prefix = template['unit_prefix']
+            if any(follower['unit']['op']['kind'] == 'unreal.finish'
+                   and follower['unit']['params'].get('kind') == 'animation'
+                   for follower in template.get('followers', ())):
+                key = prefix.split('.')[2]
+                modules, _plugins = character_module._modules(checkout, list(by_key[key].unreal['modules']))
+                native.setdefault('follower_module_requirements', {})[prefix] = modules
+        if 'unreal.see_through' in selected:
+            native['aliases']['unreal.see_through'] = tuple(dict.fromkeys(
+                target for key, character in by_key.items() if character.toml.get('see_through')
+                for target in family['aliases'].get('unreal.' + key, ())))
     if selected & {'unreal.treehouse', 'unreal.brinecove'}:
         native = _join_native_families(native, rows, geometry, selected, checkout=checkout)
     return native

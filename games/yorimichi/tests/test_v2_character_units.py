@@ -4,7 +4,7 @@ import importlib.util
 import json
 from pathlib import Path
 import sys
-from types import SimpleNamespace as NS
+from types import ModuleType, SimpleNamespace as NS
 
 import pytest
 from atelier.build_v2.recipe_dependencies import extract
@@ -149,6 +149,10 @@ class Slot(Asset):
 
 @pytest.fixture
 def editor(tmp_path, monkeypatch):
+    monkeypatch.setattr(sys, 'path', list(sys.path))
+    fake_yori = ModuleType('yori')
+    fake_yori.OUT = None
+    monkeypatch.setitem(sys.modules, 'yori', fake_yori)
     export = tmp_path / 'inputs/export'; export.mkdir(parents=True)
     config = {'materials': {'M_Body': {'texture': 'T_Body.png', 'two_sided': False, 'meshes': ['Body'], 'roughness': 1,
                                        'metallic': 0, 'specular': 0}},
