@@ -1052,7 +1052,7 @@ def compile_candidate(job, fresh, protected, candidate):
         target.chmod(0o444)
     return candidate, [str(candidate / Path(name).relative_to(fresh)) for name in protected]
 
-def dispatch(job, job_dir, engine, run, *, source_key=None, zen_state_root=None, export_project=None, cook_session=None):
+def dispatch(job, job_dir, engine, run, *, source_key=None, zen_state_root=None, export_project=None, cook_session=None, check_cancelled=None):
     """@cc [owner:fontanierh,label:correctness;safety] fixed-native-tool-routes
     Only the five fixed version-1 operations MAY dispatch. SDK/interpreter locators
     MUST remain execution context. Compilation MUST use the private frozen project,
@@ -1071,11 +1071,15 @@ def dispatch(job, job_dir, engine, run, *, source_key=None, zen_state_root=None,
     recipe = params['recipe']
     if recipe['version'] != 1 or output.is_symlink() or not output.is_dir() or any(output.iterdir()):
         raise Refused('native job needs an empty staged output and recipe version 1')
+    if cook_session is not None and kind != 'unreal.cook.produce':
+        raise Refused('common source ROOTs require the fixed cook operation')
     reserved = package_runtime(job_dir) if kind == 'unreal.package' and params.get('native_global') else ()
-    view, protected, writes = recipe_job.prepare_view(job, job_dir, reserved=reserved)
+    materializer = (lambda source,destination: cook_session.materialize_root(
+        source,destination,check_cancelled=check_cancelled)) if cook_session is not None else None
+    view, protected, writes = recipe_job.prepare_view(job, job_dir, reserved=reserved,
+                                                    materializer=materializer,check_cancelled=check_cancelled)
     restore_native_inputs(recipe, view, run)
     if cook_session is not None:
-        if kind != 'unreal.cook.produce':raise Refused('common source ROOTs require the fixed cook operation')
         cook_session.share_prepared_roots(job, view)
     raw_roots = ()
     plugin_relocations = {}
@@ -1197,6 +1201,13 @@ class CookSdkSession:
         self.pending = b''
         self.root_clones = None
         self.project_archives = []
+
+    def materialize_root(self, archive, destination, *, check_cancelled=None):
+        if self.root_clones is None:
+            self.root_clones = _sibling('recipe_root_clones').CommonRootClones(self.folder / 'common-roots')
+        result = self.root_clones.materialize(archive,destination,check_cancelled=check_cancelled)
+        print('source ROOT materialized '+result['snapshot']+': '+str(result['bytes'])+' bytes/'+str(result['files'])+' files',file=sys.stderr,flush=True)
+        return result
 
     def share_prepared_roots(self, job, view):
         # prepare_view has already validated the complete ROOT payload. The cache
@@ -1409,6 +1420,18 @@ class Worker:
     def send(self, value):
         protocol.write_frame(self.responses, protocol.RESPONSE, value)
 
+    def check_cancelled(self):
+        if self.stop:raise Refused('cancelled by controller')
+        if self.source_batch is not None and time.monotonic()>self.source_deadline:
+            raise Refused('source producer deadline expired')
+        with selectors.DefaultSelector() as selector:
+            selector.register(self.requests,selectors.EVENT_READ)
+            while selector.select(timeout=0):
+                request=protocol.read_frame(self.requests,protocol.REQUEST)
+                if request is not None and request['type']=='cancel' and request['job_id']!=self.active:continue
+                self.stop=True
+                raise Refused('cancelled by controller' if request else 'controller pipe closed')
+
     def command(self, argv, *, cwd, env=None, lifecycle=None, log_file=None):
         # No new session/group: all descendants remain owned by the C5 outer guard.
         retained = Path(log_file).open('xb') if log_file is not None else None
@@ -1502,7 +1525,8 @@ class Worker:
                 print('source frontier starting '+job['unit']+' key='+row['key'][:12],file=sys.stderr,flush=True)
                 try:
                     files=dispatch(job,Path(job['job_dir']),self.engine,self.command,source_key=row['key'],
-                                   zen_state_root=self.zen_state_root,export_project=self.export_project,cook_session=sdk)
+                                   zen_state_root=self.zen_state_root,export_project=self.export_project,cook_session=sdk,
+                                   check_cancelled=self.check_cancelled)
                     if time.monotonic()>self.source_deadline:raise Refused('source producer deadline expired')
                     outcomes.append(dict(result,status='completed',files=files))
                     print('source frontier completed '+job['unit'],file=sys.stderr,flush=True)
@@ -1544,7 +1568,8 @@ class Worker:
                     raise Refused('job directory must be owned absolute staging')
                 files = (self.source_frontier(job) if self.source_batch is not None else
                          dispatch(job, directory, self.engine, self.command,
-                                  source_key=self.source_key, zen_state_root=self.zen_state_root, export_project=self.export_project))
+                                  source_key=self.source_key, zen_state_root=self.zen_state_root, export_project=self.export_project,
+                                  check_cancelled=self.check_cancelled))
                 self.send({'type': 'completed', 'job_id': self.active, 'outputs': {'files': files}})
             except (ValueError, OSError, KeyError, TypeError, RuntimeError) as error:
                 self.send({'type': 'failed', 'job_id': self.active,

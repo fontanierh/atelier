@@ -554,6 +554,10 @@ pub fn run<B: Backend, E: Executor<B::Ticket, B::Inputs, B::Completion>>(
                 compatibility,
             } in batch
             {
+                if control.cancelled() {
+                    report.states.insert(unit, State::Cancelled);
+                    continue;
+                }
                 match backend.prepare_inputs(&prepared, &mut ticket) {
                     Ok(staged) => {
                         report.effects.staged_units += staged.staged_units;

@@ -32,13 +32,14 @@ def relative(value):
     return value
 
 
-def inventory(root):
+def inventory(root, *, check_cancelled=None):
     """Complete, sorted nofollow membership, with stable regular bytes and modes."""
     root = Path(root)
     if not os.path.lexists(root):
         return []
     rows = []
     def visit(path, name):
+        if check_cancelled is not None:check_cancelled()
         before = path.lstat()
         if stat.S_ISDIR(before.st_mode):
             rows.append((name, 'directory', 0, 0o755, None))
@@ -55,6 +56,7 @@ def inventory(root):
                 if (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino):
                     raise ValueError('root changed while opening')
                 for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+                    if check_cancelled is not None:check_cancelled()
                     digest.update(chunk)
                     count += len(chunk)
                 after = os.fstat(stream.fileno())
@@ -97,13 +99,17 @@ def pack_root(root, destination, *, required=True):
     return manifest
 
 
-def unpack_root(source, destination):
+def unpack_root(source, destination, *, check_cancelled=None):
     """Validate the complete archive before creating its independently copied root."""
     destination = Path(destination)
+    if check_cancelled is not None:check_cancelled()
     if os.path.lexists(destination):
         raise ValueError('archive destination already exists')
     with tarfile.open(source, 'r:') as archive:
-        members = archive.getmembers()
+        members = []
+        for member in archive:
+            if check_cancelled is not None:check_cancelled()
+            members.append(member)
         if not members or members[0].name != MANIFEST or not members[0].isreg() or members[0].size > 16 * 1024 * 1024:
             raise ValueError('missing bounded root manifest')
         manifest = json.loads(archive.extractfile(members[0]).read())
@@ -117,6 +123,7 @@ def unpack_root(source, destination):
             raise ValueError('invalid root kind')
         seen = set()
         for member, row in zip(members[1:], rows):
+            if check_cancelled is not None:check_cancelled()
             if not isinstance(row, list) or len(row) != 5:
                 raise ValueError('invalid root member')
             name, kind, size, mode, digest = row
@@ -134,6 +141,7 @@ def unpack_root(source, destination):
                 raise ValueError('archive member differs from manifest')
         destination.parent.mkdir(parents=True, exist_ok=True)
         for member, row in zip(members[1:], rows):
+            if check_cancelled is not None:check_cancelled()
             name, kind, size, mode, digest = row
             path = destination / name if name else destination
             if kind == 'directory':
@@ -142,6 +150,7 @@ def unpack_root(source, destination):
                 actual = hashlib.sha256()
                 with archive.extractfile(member) as incoming, path.open('xb') as outgoing:
                     for chunk in iter(lambda: incoming.read(1024 * 1024), b''):
+                        if check_cancelled is not None:check_cancelled()
                         actual.update(chunk)
                         outgoing.write(chunk)
                 if actual.hexdigest() != digest:
@@ -150,8 +159,31 @@ def unpack_root(source, destination):
     return manifest
 
 
-def prepare_view(job, job_dir, *, reserved=()):
-    """Trusted outer worker materializes frozen inputs; reserved names are bootstrap-only roles."""
+def prepare_view(job, job_dir, *, reserved=(), materializer=None, check_cancelled=None):
+    """@cc [owner:fontanierh,label:correctness;safety] trusted-root-materialization
+    Only the fixed trusted outer worker MAY provide a materializer callback. It MUST restore the complete
+    root from the actual frozen archive with the same bytes, membership and modes as the ordinary codec;
+    it MUST NOT infer permissions or omit any declared mapping. Default callers use the unchanged codec.
+    A supplied cancellation check MUST run during preparation traversals and bounded file reads, and its
+    refusal MUST propagate before the producer body runs. Reserved names remain bootstrap-only roles.
+    """
+    def check():
+        if check_cancelled is not None:check_cancelled()
+    def copy_file(source, destination):
+        check()
+        if check_cancelled is None:return shutil.copyfile(source, destination)
+        with open(source,'rb') as incoming, open(destination,'wb') as outgoing:
+            for chunk in iter(lambda:incoming.read(1024*1024),b''):
+                check();outgoing.write(chunk)
+        return destination
+    def same_file(source, destination):
+        if check_cancelled is None:return source.read_bytes()==destination.read_bytes()
+        with source.open('rb') as incoming, destination.open('rb') as existing:
+            while True:
+                check();first=incoming.read(1024*1024);second=existing.read(1024*1024)
+                if first!=second:return False
+                if not first:return True
+    check()
     root = Path(job_dir) / RUNTIME
     if (not root.is_dir() or root.is_symlink()
             or any(not isinstance(name, str) or relative(name) != name or '/' in name for name in reserved)
@@ -163,19 +195,22 @@ def prepare_view(job, job_dir, *, reserved=()):
     recipe = job['params']['recipe']
     protected = []
     def target(name):
+        check()
         result = view / relative(name)
         result.parent.mkdir(parents=True, exist_ok=True)
         return result
     for name in job['code']:
+        check()
         source = Path(job_dir) / relative(name)
         if not stat.S_ISREG(source.lstat().st_mode):
             raise ValueError('code is not a regular staged file')
         result = target(name)
-        shutil.copyfile(source, result)
+        copy_file(source, result)
         result.chmod(0o444)
         protected.append(str(result))
     declared = {item['path']: item for item in job['inputs']}
     for logical, staged in recipe['paths'].items():
+        check()
         relative(staged)
         if not any(staged == path or staged.startswith(path + '/') for path in declared):
             raise ValueError('recipe mapping is outside declared inputs')
@@ -184,21 +219,32 @@ def prepare_view(job, job_dir, *, reserved=()):
         if not os.path.lexists(source):
             continue
         if staged.endswith('.tree.tar'):
-            unpack_root(source, result)
+            if materializer is not None:materializer(source,result)
+            elif check_cancelled is not None:unpack_root(source,result,check_cancelled=check_cancelled)
+            else:unpack_root(source,result)
+            check()
         elif stat.S_ISDIR(source.lstat().st_mode):
-            inventory(source)  # Reject links/special members before copying the complete staged Item.
-            shutil.copytree(source, result)
+            inventory(source,check_cancelled=check_cancelled)  # Reject links/special members before copying.
+            if check_cancelled is None:shutil.copytree(source,result)
+            else:
+                def copy_member(source,destination):
+                    copy_file(source,destination);shutil.copystat(source,destination)
+                    return destination
+                def visit_directory(source,names):
+                    check();return []
+                shutil.copytree(source,result,copy_function=copy_member,ignore=visit_directory)
         else:
             if not stat.S_ISREG(source.lstat().st_mode):
                 raise ValueError('raw mapped input is not a regular file')
             if result.exists():
-                if result.read_bytes() != source.read_bytes():
+                if not same_file(source,result):
                     raise ValueError('code/input mapping collision')
             else:
-                shutil.copyfile(source, result)
+                copy_file(source, result)
         protected.append(str(result))
     writes = []
     for row in recipe['outputs']:
+        check()
         path = target(row['path'])
         if any(path == Path(p) or path.is_relative_to(p) or Path(p).is_relative_to(path) for p in protected):
             raise ValueError('output overlaps frozen inputs/code')

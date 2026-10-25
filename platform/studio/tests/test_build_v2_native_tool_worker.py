@@ -1039,6 +1039,14 @@ def test_source_group_common_roots_use_validated_copies_and_clone_sdk_host(tmp_p
     def clone(source,target):
         cloned.append(Path(target));shutil.copyfile(source,target)
     sdk.root_clones=CommonRootClones(session/'common-roots',clone=clone)
+    clone_codec=CommonRootClones.materialize.__globals__['recipe_job']
+    ordinary_unpack=clone_codec.unpack_root
+    unpack_calls=[]
+    def unpack(*args,**kwargs):
+        unpack_calls.append(True)
+        assert len(unpack_calls)==1,'repeated common ROOT must not unpack again'
+        return ordinary_unpack(*args,**kwargs)
+    monkeypatch.setattr(clone_codec,'unpack_root',unpack)
     copies=[]
     for name in ('first','second'):
         directory=tmp_path/name;directory.mkdir();request=job(directory,'unreal.cook.produce')
@@ -1047,9 +1055,10 @@ def test_source_group_common_roots_use_validated_copies_and_clone_sdk_host(tmp_p
         tool.recipe_job.pack_root(source,archive)
         request['inputs']=[{'name':'editor','path':'inputs/editor'}]
         request['params']['recipe']['paths']={'Binaries/Mac':'inputs/editor/outputs/0.tree.tar'}
-        view,_,_=tool.recipe_job.prepare_view(request,directory)
+        view,_,_=tool.recipe_job.prepare_view(request,directory,materializer=sdk.materialize_root)
         sdk.share_prepared_roots(request,view);copies.append(view/'Binaries/Mac/Game.dylib')
     assert len(sdk.root_clones.snapshots)==1
+    assert len(unpack_calls)==1
     assert copies[0].stat().st_ino!=copies[1].stat().st_ino
     def popen(command,**kwargs):
         host=session/'sdk-host/Binaries/Mac/Game.dylib'
@@ -1092,4 +1101,25 @@ def test_source_dispatch_clone_refusal_precedes_persistent_namespace(tmp_path,mo
     monkeypatch.setattr(tool,'persistent_cook_view',lambda *a,**kw:pytest.fail('must not create namespace'))
     with pytest.raises(ValueError,match='verified clone failed'):
         tool.dispatch(request,tmp_path,tmp_path/'engine',lambda *a,**kw:None,
-                      cook_session=SimpleNamespace(share_prepared_roots=refuse))
+                      cook_session=SimpleNamespace(share_prepared_roots=refuse,materialize_root=lambda *a,**kw:None))
+
+
+def test_request_pipe_cancellation_refuses_before_view_preparation(tmp_path):
+    import os
+    import io
+    read,write=os.pipe()
+    try:
+        with os.fdopen(read,'rb',buffering=0)as requests,os.fdopen(write,'wb',buffering=0)as sender:
+            worker=tool.Worker(requests,io.BytesIO(),tmp_path/'engine');worker.active='active'
+            protocol.write_frame(sender,protocol.REQUEST,{'type':'cancel','job_id':'old'})
+            protocol.write_frame(sender,protocol.REQUEST,{'type':'cancel','job_id':'active'})
+            request=job(tmp_path,'unreal.cook.produce')
+            with pytest.raises(tool.Refused,match='cancelled by controller'):
+                tool.dispatch(request,tmp_path,tmp_path/'engine',lambda *a,**kw:pytest.fail('producer ran'),
+                              check_cancelled=worker.check_cancelled)
+            assert worker.stop and not (tmp_path/'.recipe-runtime/view').exists()
+    except BaseException:
+        for fd in(read,write):
+            try:os.close(fd)
+            except OSError:pass
+        raise
