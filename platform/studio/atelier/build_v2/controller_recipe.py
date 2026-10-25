@@ -30,7 +30,7 @@ class ControllerTarget:
             value['templates'] = list(self.templates)
         raw = json.dumps(value, ensure_ascii=False, allow_nan=False).encode()
         if len(raw) > MAX_CONTROL_BYTES:
-            raise ValueError('controller declaration exceeds control size bound')
+            raise ValueError(f'controller declaration is {len(raw)} bytes, limit {MAX_CONTROL_BYTES} bytes')
         return json.loads(raw)
 
     def outputs(self, checkout):

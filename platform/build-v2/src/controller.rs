@@ -29,7 +29,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 
 pub const CONTROL_VERSION: u32 = 1;
-pub const MAX_CONTROL_BYTES: usize = 64 * 1024 * 1024;
+pub const MAX_CONTROL_BYTES: usize = 256 * 1024 * 1024;
 const WORKER_DIRECTORY: &str = "platform/studio/atelier/build_v2";
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
