@@ -103,3 +103,31 @@ def test_missing_or_ambiguous_produced_references_refuse(invalid):
     elif invalid == 'plugin': values['plugins'] = {}
     else: values['plugins']['HorseRacing']['descriptor_path'] = 'platform/engine/Plugins/AtelierCore/AtelierCore.uplugin'
     with pytest.raises(ValueError): cook.author_unit(checkout=ROOT, **values)
+
+
+SHARED = 'platform/engine/Plugins/AtelierCore/AtelierCore.uplugin'
+
+
+def shared_refs(**change):
+    value = refs()
+    value['plugins']['AtelierCore'] = {**value['editor'], 'descriptor_path': SHARED, 'binaries_in_editor': True, **change}
+    return value
+
+
+def test_shared_plugin_binaries_reuse_the_editor_root_and_keep_their_descriptor():
+    unit = cook.author_unit(checkout=ROOT, **shared_refs())['units'][0]
+    paths = unit['params']['recipe']['paths']
+    assert paths['games/yorimichi/unreal/Binaries/Mac'] == 'inputs/editor/editor.tree.tar'
+    assert 'platform/engine/Plugins/AtelierCore/Binaries/Mac' not in paths
+    assert paths['games/yorimichi/unreal/Plugins/HorseRacing/Binaries/Mac'] == 'inputs/plugin_1/plugin.tree.tar'
+    assert SHARED in {i['source']['path'] for i in unit['inputs'] if i['source']['kind'] == 'file'}
+    compiled = [i for i in unit['inputs'] if i['source']['kind'] == 'item']
+    assert [i['name'] for i in compiled] == ['editor', 'plugin_1']
+
+
+@pytest.mark.parametrize('change', [{'unit': 'other'}, {'item': 'modules'}, {'file': 'plugin.tree.tar'},
+                                    {'binaries_in_editor': False}, {'binaries_in_editor': 1},
+                                    {'descriptor_path': 'games/yorimichi/unreal/Plugins/AtelierCore/AtelierCore.uplugin'}])
+def test_shared_plugin_reference_must_be_the_exact_editor_root(change):
+    with pytest.raises(ValueError):
+        cook.author_unit(checkout=ROOT, **shared_refs(**change))
