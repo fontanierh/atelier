@@ -68,6 +68,42 @@ def test_python_baseline_module_replacement_refuses_resident_reset(tmp_path, mon
         state.restore(tmp_path)
 
 
+@pytest.mark.parametrize('cause', [None, 'source', 'record', 'refused', 'changed', 'root'])
+def test_resident_native_transport_warmup_is_readonly_and_binds_private_source(tmp_path, cause):
+    import hashlib
+    project = tmp_path / 'project'; (project / 'Atelier').mkdir(parents=True)
+    root = tmp_path / 'job'; (root / '.unreal-runtime').mkdir(parents=True)
+    record = tmp_path / 'record.cb'; record.write_bytes(b'certified source CB')
+    request = dict(version=1, mode='restore', project='Owned', oplog='Mac', source_package='/Game/A',
+                   expected_stored_key='b'*40, expected_root_hash='c'*40, record_path=str(record),
+                   project_file=str(tmp_path/'Source.uproject'), marker_path=str(tmp_path/'marker'),
+                   input_key='d'*64, runtime_project_file=str(project/'Atelier.uproject'))
+    carrier = root / '.unreal-runtime/native-verify.json'
+    carrier.write_text(json.dumps({'version':1, 'request':request, 'producer_key':'e'*64,
+                                  'record_sha256':hashlib.sha256(record.read_bytes()).hexdigest()})); carrier.chmod(0o400)
+    startup = project / 'Atelier/native-store-startup.json'
+    startup.write_text(json.dumps({'version':1,'job_dir':str(root),'native_source_digest':'a'*64})); startup.chmod(0o400)
+    if cause == 'record': record.write_bytes(b'changed before native SDK')
+    calls = []
+    def native(raw):
+        value = json.loads(raw); calls.append(value)
+        assert value == dict(request, mode='verify')  # Never restore before Started.
+        if cause == 'changed': record.write_bytes(b'changed during read-only SDK call')
+        return json.dumps({'status':'refused' if cause == 'refused' else 'verified', 'mode':'verify',
+                           'root_hash':('f' if cause == 'root' else 'c')*40, 'native_stored_key':'b'*40})
+    editor = types.SimpleNamespace(project_dir=lambda:project,
+        native_context=lambda:{'worker_source_digest':('f' if cause == 'source' else 'a')*64},
+        library=types.SimpleNamespace(zen_package_request=native))
+    before = carrier.read_bytes()
+    if cause:
+        with pytest.raises(StartRefused): unreal_worker.warm_native_store(editor)
+    else:
+        assert unreal_worker.warm_native_store(editor) is True
+    assert carrier.read_bytes() == before
+    assert len(calls) == (0 if cause in ('source', 'record') else 1)
+    assert not (root/'output').exists()
+
+
 def test_registry_rescan_follows_actual_package_unload_and_synchronous_gc(tmp_path):
     value, project = worker(tmp_path)
     source = project / 'Content/Raw.uasset'

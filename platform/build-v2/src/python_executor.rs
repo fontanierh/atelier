@@ -14,6 +14,23 @@ use std::time::Duration;
 #[path = "../tests/support/python_dispatch_cases.rs"]
 mod production_tests;
 
+/// Scheduling partition only; every prepared launch still verifies its actual native profile.
+fn native_session_group(
+    params: &std::collections::BTreeMap<String, serde_json::Value>,
+    content: &std::collections::BTreeMap<String, crate::schema::ContentIdentity>,
+    store: bool,
+) -> Result<Vec<u8>, String> {
+    let modules = params.get("native_modules").cloned().unwrap_or(serde_json::Value::Null);
+    let mut inputs = std::collections::BTreeMap::new();
+    if !modules.is_null() {
+        for slot in crate::native_modules::body_input_slots(&modules)? {
+            inputs.insert(slot.clone(), content.get(&slot).ok_or("native context slot has no keyed input")?.clone());
+        }
+    }
+    crate::keys::canonical_bytes(&serde_json::json!({"settings":params.get("settings").cloned().unwrap_or(serde_json::json!([])),
+        "modules":modules,"inputs":inputs,"native_store":store})).map_err(|e| e.to_string())
+}
+
 /// Only guard ChildStarted identities count, one per attempt (including retries).
 /// Missing reports/uncertain custody cannot certify zero or a complete count.
 fn record_launches(io: &mut PythonIo, unit: &str, report: Option<&worker_lifecycle::Report>) {
@@ -83,6 +100,29 @@ mod tests {
     use crate::failure_policy::Outcome;
     use crate::leases::ProcessIdentity;
     use crate::worker_lifecycle::{AttemptRecord, Report};
+
+    #[test]
+    fn resident_groups_bind_settings_and_context_inputs_not_job_payloads() {
+        use std::collections::BTreeMap;
+        use crate::schema::ContentIdentity;
+        let mut params = BTreeMap::new();
+        let mut content = BTreeMap::new();
+        let plain = native_session_group(&params, &content, false).unwrap();
+        content.insert("asset".into(), ContentIdentity::Digest {digest:"a".repeat(64)});
+        assert_eq!(plain, native_session_group(&params, &content, false).unwrap());
+        assert_ne!(plain, native_session_group(&params, &content, true).unwrap());
+        params.insert("settings".into(), serde_json::json!(["-ForceDPCVars=Bool=false"]));
+        assert_ne!(plain, native_session_group(&params, &content, false).unwrap());
+        params.insert("native_modules".into(), serde_json::json!({"editor":{
+            "slot":"compiled","archive":"editor.tree.tar","modules":[]}}));
+        assert!(native_session_group(&params, &content, false).is_err());
+        content.insert("compiled".into(), ContentIdentity::Digest {digest:"b".repeat(64)});
+        let context = native_session_group(&params, &content, false).unwrap();
+        content.insert("asset".into(), ContentIdentity::Digest {digest:"c".repeat(64)});
+        assert_eq!(context, native_session_group(&params, &content, false).unwrap());
+        content.insert("compiled".into(), ContentIdentity::Digest {digest:"d".repeat(64)});
+        assert_ne!(context, native_session_group(&params, &content, false).unwrap());
+    }
 
     #[test]
     fn launch_evidence_counts_worker_attempts_and_never_turns_uncertainty_into_zero() {
@@ -622,11 +662,35 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
             && work.iter().all(|unit| {
                 matches!(
                     unit.compatibility().op_kind.as_str(),
-                    crate::unreal_controller::RAW_IMPORT | crate::unreal_controller::FINISH
+                    crate::unreal_controller::RAW_IMPORT | crate::unreal_controller::FINISH | crate::native_verify::PACKAGE_OP
                 )
             })
         {
-            return self.resident_native_batch(work, control, emit);
+            let mut groups = std::collections::BTreeMap::<Vec<u8>, Vec<_>>::new();
+            let mut stopped = false;
+            for unit in work {
+                let prepared = unit.inputs().native_verification.as_ref().map(|v| &v.unit).unwrap_or_else(|| unit.prepared());
+                match native_session_group(&prepared.ingredients().params, &prepared.ingredients().content,
+                                           unit.inputs().native_verification.is_some()) {
+                    Ok(key) => groups.entry(key).or_default().push(unit),
+                    Err(reason) => stopped |= emit(Event::Failed {work:unit, reason}) == Flow::Stop,
+                }
+            }
+            let mut fatal = None;
+            for group in groups.into_values() {
+                if stopped || fatal.is_some() || control.cancelled() {
+                    for work in group { emit(Event::Cancelled {work}); }
+                    continue;
+                }
+                let mut forward = |event| { let flow = emit(event); stopped |= flow == Flow::Stop; flow };
+                let result = if group.len() > 1 {
+                    self.resident_native_batch(group, control, &mut forward)
+                } else {
+                    self.batch(group, control, &mut forward)
+                };
+                if let Err(error) = result { fatal = Some(error); }
+            }
+            return fatal.map_or(Ok(()), Err);
         }
         let mut stopped = false;
         let mut fatal = None;
@@ -1131,19 +1195,22 @@ impl<L: WorkerLauncher + Send> PythonExecutor<L> {
                 }
                 let job = unit.inputs().staged.job_dir();
                 let scope = job.parent().ok_or("resident job has no leased parent")?;
+                let prepared = unit.inputs().native_verification.as_ref().map(|v| &v.unit).unwrap_or_else(|| unit.prepared());
                 let context = native.locations.build(
-                    unit.prepared(),
+                    prepared,
                     &unit.inputs().staged,
                     &native.sources,
                     &native.cache_root,
                 )?;
-                let mut launch = crate::unreal_controller::prepare(
-                    unit.prepared(),
-                    &unit.inputs().staged,
-                    &native.sources,
-                    scope,
-                    &context,
-                )?;
+                let mut launch = if let Some(verification) = &unit.inputs().native_verification {
+                    let owner = launches.first().map(|first: &Arc<Mutex<crate::unreal_controller::PreparedUnrealLaunch>>|
+                        first.lock().map_err(|_| "resident launch lock poisoned")).transpose()?;
+                    crate::unreal_controller::prepare_verify_in_session(prepared, &unit.inputs().staged,
+                        &native.sources, scope, &context, &verification.context, owner.as_deref())?
+                } else {
+                    crate::unreal_controller::prepare(prepared, &unit.inputs().staged,
+                        &native.sources, scope, &context)?
+                };
                 launch.enable_resident()?;
                 if let Some(first) = launches.first() {
                     let first: &Arc<Mutex<crate::unreal_controller::PreparedUnrealLaunch>> = first;
@@ -1175,7 +1242,7 @@ impl<L: WorkerLauncher + Send> PythonExecutor<L> {
                 job: first.request.clone(),
                 worker_version: native.worker.version.clone(),
                 command: first.command.clone(),
-                purpose: "build-v2 resident native import/finish frontier".into(),
+                purpose: "build-v2 resident fixed native frontier".into(),
                 memory_gib: native.memory_gib,
                 limits: native.limits,
                 report_root,
