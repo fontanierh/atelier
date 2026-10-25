@@ -96,6 +96,17 @@ def execute(selection, *, echo=print):
 
 
 
+def _native_memory_gib(request):
+    """Individual textures/shaders use the normal guard; maps and tool jobs keep 16 GiB."""
+    light = {'RawTexture', 'Texture', 'Material', 'MaterialInstance', 'MaterialParameterCollection'}
+    native = [unit for unit in request['declaration']['units'] if unit['op']['kind'].startswith('unreal.')]
+    if native and all(unit['op']['kind'] in {'unreal.raw_import', 'unreal.finish', 'unreal.author'}
+                      and unit['outputs'] and all(item['class'] in light for item in unit['outputs'])
+                      for unit in native):
+        return 10
+    return 16
+
+
 def _invoke_marker(marker, *, echo):
     checkout = paths.REPO
     state = paths.build_root() / 'build-v2' / 'controller'
@@ -111,7 +122,7 @@ def _invoke_marker(marker, *, echo):
         'worktree_id': hashlib.sha256(str(checkout).encode()).hexdigest(),
         'memory_gib': 8,
         'blender_memory_gib': 10,
-        'unreal_memory_gib': 16,
+        'unreal_memory_gib': _native_memory_gib(request),
         'unreal_job_seconds': 7200,
         'job_seconds': 900,
         'cleanup_seconds': 60 if (unreal or blender) else 30,

@@ -112,3 +112,14 @@ def test_incomplete_or_cancelled_controller_never_reports_success(tmp_path, monk
     else: result['cancelled'] = True
     monkeypatch.setattr(entry, '_invoke_marker', lambda *a, **k: result)
     assert entry.execute(marker(), echo=lambda _: None) == (130 if state == 'cancelled' else 1)
+
+
+def test_individual_texture_material_ceiling_keeps_the_complete_normal_reservation():
+    from atelier.build_v2.controller_entry import _native_memory_gib
+    def request(kind, cls):
+        return {'declaration': {'units': [{'op': {'kind': kind}, 'outputs': [{'class': cls}]}]}}
+    assert _native_memory_gib(request('unreal.author', 'Material')) == 10
+    assert _native_memory_gib(request('unreal.raw_import', 'RawTexture')) == 10
+    assert _native_memory_gib(request('unreal.author', 'Map')) == 16
+    assert _native_memory_gib(request('unreal.cook.produce', 'Data')) == 16
+    assert _native_memory_gib(request('unreal.finish', 'StaticMesh')) == 16
