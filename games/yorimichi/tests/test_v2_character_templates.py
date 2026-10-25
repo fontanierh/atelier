@@ -20,7 +20,8 @@ from test_v2_character_units import body, editor, mesh_case, recipe  # noqa: E40
 spec = importlib.util.spec_from_file_location('character_members_v2', ROOT / templates.BODY)
 members = importlib.util.module_from_spec(spec); spec.loader.exec_module(members)
 MOVERS = characters._definition(ROOT).movers()
-NATIVES = {'compression': {'unit': 'unreal.animation.compression', 'item': 'asset', 'package': characters.COMPRESSION}}
+NATIVES = {'compression': {'unit': 'unreal.animation.compression', 'item': 'asset', 'package': characters.COMPRESSION},
+           'see_through': {'unit': 'unreal.material.MPC_SeeThrough', 'item': 'asset', 'package': '/Game/SeeThrough/MPC_SeeThrough'}}
 
 
 @pytest.fixture(scope='module')
@@ -91,7 +92,17 @@ def test_templates_and_fixed_units_bind_actual_derived_items(declared):
     assert declared['runtime_refusals'][0]['unit_prefix'] == 'unreal.character.cairo.clips_60'
 
 
-@pytest.mark.parametrize('damage', ['product', 'compression', 'producer'])
+def test_see_through_runs_inside_each_matching_material_owner(declared):
+    keys = {t['unit_prefix']: t for t in declared['templates']}
+    cairo = keys['unreal.character.cairo.materials']['followers'][0]['unit']
+    assert cairo['params']['args']['see_through'] == {'prefixes': ['M_Cairo'], 'collection': 'see_through'}
+    assert cairo['inputs'][-1]['source'] == {'kind': 'item', 'unit': 'unreal.material.MPC_SeeThrough', 'item': 'asset'}
+    assert 'games/yorimichi/unreal/Scripts/see_through.py' in cairo['code']
+    nox = keys['unreal.character.nox.materials']['followers'][0]['unit']
+    assert 'see_through' not in nox['params']['args'] and len(nox['inputs']) == 1
+
+
+@pytest.mark.parametrize('damage', ['product', 'compression', 'producer', 'see_through'])
 def test_declaration_drift_refuses(rows, damage):
     rows, natives = deepcopy(rows), deepcopy(NATIVES)
     found = {r['id']: r for r in rows}
@@ -99,6 +110,8 @@ def test_declaration_drift_refuses(rows, damage):
         found['characters.nox']['products'][0]['paths'].pop()
     elif damage == 'compression':
         natives['compression']['package'] = '/Game/Other'
+    elif damage == 'see_through':
+        natives.pop('see_through')
     else:
         found['characters.paul']['commands'][0]['script'] = {'path': 'games/yorimichi/other.py'}
     with pytest.raises(ValueError):
@@ -188,5 +201,56 @@ def test_mesh_finish_binds_derived_materials(editor):
     assert mesh.materials[0].material_interface.path == '/Game/Paul/M_Body'
     context = mesh_case(editor, physics=False)
     context.params['args']['materials'] = derived()
+    with pytest.raises(ValueError):
+        body.run(context)
+
+
+class Fake:
+    def __init__(self, **values): self.__dict__.update(values)
+    def __getattr__(self, name): return name
+
+
+def material_job(tmp_path, monkeypatch, name, calls):
+    from types import SimpleNamespace as NS
+    from test_v2_character_units import Asset
+    export = tmp_path / 'inputs/export'; export.mkdir(parents=True)
+    (export / 'export.json').write_text(json.dumps({'materials': {name: {
+        'texture': None, 'two_sided': False, 'base_color': [1, 1, 1, 1], 'roughness': 1, 'metallic': 0, 'specular': 0}}}))
+    scripts = tmp_path / body.SCRIPTS; scripts.mkdir(parents=True)
+    (scripts / 'see_through.py').write_text(
+        'import unreal\n'
+        'def collection(): unreal.calls.append("collection")\n'
+        'def character(m): unreal.calls.append("character"); return True\n'
+        'def save(m): unreal.calls.append("cut.save"); return True\n')
+    assets = {}
+    def create(asset, folder, cls, factory):
+        assets[folder + '/' + asset] = Asset(folder + '/' + asset); return assets[folder + '/' + asset]
+    library = Fake(delete_all_material_expressions=lambda m: None, create_material_expression=lambda m, cls: Asset('/Game/n'),
+                   connect_material_property=lambda *a: True, connect_material_expressions=lambda *a: True,
+                   recompile_material=lambda m: calls.append('recompile'))
+    unreal = Fake(calls=calls, Material=Asset, MaterialFactoryNew=lambda: None, MaterialEditingLibrary=library,
+                  LinearColor=lambda *v: v, BlendMode=Fake(), MaterialProperty=Fake(),
+                  AssetToolsHelpers=NS(get_asset_tools=lambda: NS(create_asset=create)),
+                  EditorAssetLibrary=NS(does_asset_exist=lambda p: p in assets,
+                                        save_loaded_asset=lambda a, d=True: calls.append('save') or True))
+    monkeypatch.setitem(sys.modules, 'unreal', unreal)
+    return NS(job_dir=str(tmp_path), inputs={'export': str(export), 'see_through': 'x'},
+              packages={'see_through': ['/Game/SeeThrough/MPC_SeeThrough']}, outputs=['/Game/Cairo/' + name],
+              params={'args': {'action': 'material', 'name': name, 'dest': '/Game/Cairo', 'morphs': False, 'export': 'export',
+                               'textures': derived(), 'see_through': {'prefixes': ['M_Cairo'], 'collection': 'see_through'}},
+                      'settings': []})
+
+
+@pytest.mark.parametrize('name,expected', [('M_Cairo_Skin', ['recompile', 'collection', 'character', 'cut.save']),
+                                           ('M_Bokken', ['recompile', 'save'])])
+def test_material_owner_applies_the_original_see_through_patch(tmp_path, monkeypatch, name, expected):
+    calls = []
+    body.run(material_job(tmp_path, monkeypatch, name, calls))
+    assert calls == expected
+
+
+def test_see_through_refuses_another_collection(tmp_path, monkeypatch):
+    context = material_job(tmp_path, monkeypatch, 'M_Cairo_Skin', [])
+    context.packages['see_through'] = ['/Game/Other/MPC']
     with pytest.raises(ValueError):
         body.run(context)

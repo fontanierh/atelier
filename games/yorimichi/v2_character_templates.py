@@ -7,7 +7,8 @@ member; followers import and finish it (texture), author it (material) or import
 Skeleton with the shared compression (clip). The fixed units are the raw body import from the export's fbx/, the
 skeletal finish binding the derived materials, and DA_<Name>Base on the derived clips. Cloth is decided by the
 committed export hooks and the clip rates by the committed manifest; the projector refuses an export that differs.
-``natives = {compression: {unit, item, package}}``.
+``natives = {compression: {unit, item, package}, see_through: {unit, item, package}}`` (the shared MPC_SeeThrough,
+for characters whose character.toml names see_through material prefixes).
 """
 import ast
 from copy import deepcopy
@@ -28,6 +29,7 @@ EMITTER = 'platform/studio/atelier/build_v2/file_groups.py'
 OUT = 'build/yorimichi'
 EXTENSIONS = {'materials': ['.json'], 'textures': ['.jpg', '.png'], 'clips': ['.fbx']}
 RECIPE_OP = {'kind': 'recipe.python', 'version': '1'}
+SEE_THROUGH = '/Game/SeeThrough/MPC_SeeThrough'
 
 
 def _body(root):
@@ -200,12 +202,21 @@ def character_templates(rows, *, checkout, natives):
              'params': {'op': 'finish', 'kind': 'texture', 'source': 'raw', 'destination': f'{dest}/Textures/$piece',
                         'package_sources': {'raw': texture_raw}, 'properties': {}},
              'outputs': [_output('texture', f'{dest}/Textures/$piece', 'Texture')]}])
+        material_inputs, material_args = [export()], {}
+        prefixes = list(character.toml.get('see_through', ()))
+        if prefixes:
+            # unreal.see_through's patch, inside each matching material's own owner, on the shared collection.
+            shared = (natives or {}).get('see_through')
+            if not isinstance(shared, dict) or not {'unit', 'item', 'package'} <= set(shared) or shared['package'] != SEE_THROUGH:
+                raise Unsupported(f'{character.id}: see-through materials need the shared {SEE_THROUGH} owner Item')
+            material_inputs.append(_item('see_through', shared['unit'], shared['item']))
+            material_args['see_through'] = {'prefixes': prefixes, 'collection': 'see_through'}
         template('materials', [
             {'id': '$export.author', 'op': {'kind': 'unreal.author', 'version': '1'}, 'script': SCRIPT, 'code': code,
-             'inputs': [export()],
+             'inputs': material_inputs,
              'params': {'input_roots': {'export': dict(export_root)}, 'settings': [],
                         'args': {'action': 'material', 'name': '$piece', 'dest': dest, 'morphs': morphs, 'export': 'export',
-                                 'textures': deepcopy(textures)}},
+                                 'textures': deepcopy(textures), **material_args}},
              'outputs': [_output('asset', f'{dest}/$piece', 'Material')]}])
         for rate in clip_rates:
             fbx = {**CLIP_FBX, 'custom_sample_rate': rate}

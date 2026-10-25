@@ -19,6 +19,7 @@ COMPRESSION = '/Game/Japan/Animation/CharacterCompression'
 SCRIPTS = 'games/yorimichi/unreal/Scripts/'
 CLOTH_MAX_DISTANCE = 30.    # import_character.CLOTH_MAX_DISTANCE
 MORPH_CURVE_ERROR = .002    # import_character.MORPH_CURVE_ERROR
+SEE_THROUGH = '/Game/SeeThrough/MPC_SeeThrough'   # see_through.MPC
 
 
 def _package(value):
@@ -146,6 +147,17 @@ def material(context, unreal, args):
         if not M.connect_material_property(constant, '', prop):
             raise ValueError(field + ' not connected')
     M.recompile_material(mat)
+    see_through = args.get('see_through')
+    if see_through and args['name'].startswith(tuple(see_through['prefixes'])):
+        # import_see_through.main for this material: the shared collection read only, then the original patch.
+        if _selected(context, see_through['collection']) != SEE_THROUGH:
+            raise ValueError('See-through needs the shared ' + SEE_THROUGH)
+        cut = _module(context, 'see_through.py')
+        cut.collection()
+        if cut.character(mat):
+            if not cut.save(mat):
+                raise ValueError('See-through material failed to compile: ' + destination)
+            return mat
     if not unreal.EditorAssetLibrary.save_loaded_asset(mat, False):
         raise ValueError('Material save failed: ' + destination)
     return mat

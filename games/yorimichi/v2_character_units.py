@@ -55,7 +55,7 @@ def _code_closure(checkout):
     from atelier.source_imports import ImportScanner
     root = Path(checkout)
     found = set()
-    for helper in ('animation_compression.py', 'skin_morph_contacts.py'):
+    for helper in ('animation_compression.py', 'skin_morph_contacts.py', 'see_through.py'):
         found |= {p.relative_to(root).as_posix() for p in ImportScanner().local_imports(
             root / SCRIPTS / helper, (root / GAME / 'world', root / GAME / 'unreal/Scripts', root / 'platform/studio'))}
     return sorted({*_code(checkout), SCRIPT, *found})
