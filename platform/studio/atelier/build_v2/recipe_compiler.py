@@ -120,7 +120,9 @@ def compile_rows(rows, *, project, targets, install_roots=(), checkout=None, geo
     rows = deepcopy(list(rows))
     native = native or {'units': [], 'staged_inputs': {}, 'content_slots': {}, 'aliases': {}}
     aliases = native.get('aliases', {})
+    module_requirements = native.get('module_requirements', {})
     rows = [row for row in rows if row['id'] not in aliases]
+    rows.extend(deepcopy(native.get('rows', [])))
     for row in rows:
         for field in ('needs', 'after'):
             row[field] = list(dict.fromkeys(child for name in row[field] for child in aliases.get(name, (name,))))
@@ -276,6 +278,8 @@ def compile_rows(rows, *, project, targets, install_roots=(), checkout=None, geo
             errors.append(f'{name}: {error}')
     if errors:
         raise Unsupported('\n'.join(errors))
+    from .recipe_native_modules import attach
+    attach(units, rows, module_requirements, checkout=checkout, staged=staged, slots=slots)
     declaration = {'schema_version': 2, 'cache_version': 'v2-1', 'units': units}
     # Rust checks the complete global declaration before selecting these roots.
     return ControllerTarget(targets[0], project, declaration, staged, slots,
