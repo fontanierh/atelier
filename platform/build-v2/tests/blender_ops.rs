@@ -253,6 +253,12 @@ fn planner_contract_reserves_worker_visible_root_parent_and_bounds() {
 fn piece_contract_refuses_broad_extra_inputs_wrong_roles_formats_and_incomplete_auxiliary_sets() {
     let (_, unit, _) = prepared(b"planner", b"A", b"B");
     let spec = BlenderExportSpec::default();
+    let mut glb = unit.ingredients().clone();
+    glb.params.insert("format".into(), "glb".into());
+    glb.logical_outputs[0].files[0].path = "asset.glb".into();
+    assert!(spec.validate_ingredients(&glb).is_ok());
+    glb.params.insert("format".into(), "fbx".into());
+    assert!(spec.validate_ingredients(&glb).is_err());
     for (field, value) in [
         ("format", "glb"),
         ("payload_encoding", "mesh_set"),

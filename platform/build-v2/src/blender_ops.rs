@@ -44,6 +44,8 @@ pub fn blender_code_files(kind: &str) -> Result<Vec<&'static str>, String> {
             "platform/studio/atelier/build_v2/blender_geometry.py",
             "platform/studio/atelier/blender/__init__.py",
             "platform/studio/atelier/blender/fbx.py",
+            "platform/studio/atelier/blender/gltf.py",
+            "platform/studio/atelier/gltf.py",
         ]),
         _ => return Err("unsupported Blender op kind".into()),
     }
@@ -244,7 +246,8 @@ impl BlenderExportSpec {
     }
     /// @cc [owner:fontanierh,label:correctness] blender-piece-selected-contract
     /// A first-slice export MUST consume exactly one present MeshIR projection and own one complete
-    /// store-only FBX plus receipt. A planner key, roster or sibling MUST NOT become a child input.
+    /// store-only FBX or GLB plus receipt, matching its explicit format parameter. A planner key,
+    /// roster or sibling MUST NOT become a child input.
     /// Unsupported encodings, roles and formats MUST refuse, never silently drop materials/collision.
     /// See tests/blender_ops.rs and the Python decoder/contract fixtures.
     pub fn validate_ingredients(&self, ingredients: &IdentityIngredients) -> Result<(), String> {
@@ -269,7 +272,6 @@ impl BlenderExportSpec {
             return Err("piece exporter requires one selected Item directory".into());
         }
         for (name, expected) in [
-            ("format", "fbx"),
             ("payload_encoding", "mesh_ir"),
             ("payload_role", "geometry"),
         ] {
@@ -277,6 +279,12 @@ impl BlenderExportSpec {
                 return Err(format!("unsupported piece {name}; expected {expected}"));
             }
         }
+        let format = ingredients
+            .params
+            .get("format")
+            .and_then(Value::as_str)
+            .filter(|value| matches!(*value, "fbx" | "glb"))
+            .ok_or("unsupported piece export format")?;
         let member = ingredients
             .params
             .get("payload_member")
@@ -289,7 +297,12 @@ impl BlenderExportSpec {
         if ingredients.logical_outputs.len() != 1 {
             return Err("piece exporter owns exactly one Item".into());
         }
-        validate_export_item(&ingredients.logical_outputs[0])
+        let item = &ingredients.logical_outputs[0];
+        validate_export_item(item)?;
+        if !export_primary_path(item)?.ends_with(&format!(".{format}")) {
+            return Err("piece primary differs from its explicit export format".into());
+        }
+        Ok(())
     }
 }
 
@@ -323,7 +336,8 @@ fn export_primary_path(item: &Item) -> Result<&str, String> {
     let stem = primary
         .path
         .strip_suffix(".fbx")
-        .ok_or("primary must be FBX")?;
+        .or_else(|| primary.path.strip_suffix(".glb"))
+        .ok_or("primary must be FBX or GLB")?;
     if !atomic_name(stem) {
         return Err("FBX primary must be one canonical flat filename".into());
     }
@@ -831,6 +845,22 @@ pub fn validate_blender_export_outputs(
         primary.object.digest().as_hex(),
         &payload.digest,
     )?;
+    if primary_name.ends_with(".glb") {
+        let mut header = [0u8; 12];
+        primary
+            .object
+            .reader()
+            .map_err(|e| e.to_string())?
+            .read_exact(&mut header)
+            .map_err(|e| e.to_string())?;
+        if &header[..4] != b"glTF"
+            || u32::from_le_bytes(header[4..8].try_into().unwrap()) != 2
+            || u32::from_le_bytes(header[8..12].try_into().unwrap()) as u64 != primary.object.size()
+        {
+            return Err("frozen primary is not complete GLB2 framing".into());
+        }
+        return Ok(());
+    }
     let header = b"Kaydara FBX Binary  \x00\x1a\x00";
     let mut actual = vec![0; header.len()];
     primary
