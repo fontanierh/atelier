@@ -1615,7 +1615,8 @@ def unreal_steps(ctx):
                      out / 'hidamari' / 'north_crater.png', out / 'hidamari' / 'north_crater.json',
                      out / 'craterpark' / 'textures' / 'crater_floor.png', TOOLS / 'craterpark_textures.py',
                      *[SCRIPTS / n for n in ('import_hidamari.py', 'mountain_material.py', 'import_village.py', 'atmosphere.py', 'ground_grain.py', 'sea_look.py')]],
-             needs=['unreal.world', 'world.hidamari.north', 'world.craterpark_restyle'], heavy=True,
+             needs=['unreal.world', 'world.hidamari.north', 'world.craterpark_restyle'],
+             reads=['hidamari.north_masks'], heavy=True,
              about='/Game/Japan: the volcano (HD_North*), M_NorthMountains and its rock, snow and crater floor textures'),
         # The regions below place their own meshes with the world's materials, so they rerun when it is reimported.
         # Island pieces and their shared materials belong to unreal.island.

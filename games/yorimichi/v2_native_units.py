@@ -382,7 +382,7 @@ def lower(rows, geometry, *, checkout):
     elif 'unreal.materials' in selected:
         native = shared_materials(rows, checkout=checkout)
         native['aliases'] = {}
-    elif selected & {'unreal.treehouse', 'unreal.brinecove', 'unreal.sounds', 'unreal.crater_cloud', 'unreal.skate_board', 'unreal.fx', 'unreal.skate_data', 'unreal.kei', 'unreal.village', 'unreal.lake', 'unreal.houses', 'unreal.southwest', 'unreal.mega', 'unreal.swordcamp', 'unreal.kart', 'unreal.world', 'unreal.gondola', 'unreal.ferry'}:
+    elif selected & {'unreal.treehouse', 'unreal.brinecove', 'unreal.sounds', 'unreal.crater_cloud', 'unreal.skate_board', 'unreal.fx', 'unreal.skate_data', 'unreal.kei', 'unreal.village', 'unreal.lake', 'unreal.houses', 'unreal.southwest', 'unreal.mega', 'unreal.swordcamp', 'unreal.kart', 'unreal.world', 'unreal.gondola', 'unreal.ferry', 'unreal.north', 'unreal.megapark', 'unreal.desktop', 'data.stage'}:
         native = {'units': [], 'staged_inputs': {}, 'content_slots': {}, 'packages': {},
                   'targets': (), 'aliases': {}, 'missing_roles': []}
         if 'unreal.treehouse' in selected:
@@ -394,6 +394,10 @@ def lower(rows, geometry, *, checkout):
                 _append_family(native, shared)
     else:
         return None
+    if 'data.stage' in selected:
+        runtime = _family_module(checkout, 'v2_runtime_data_units').lower(rows, checkout=checkout)
+        native.setdefault('rows', []).extend(runtime['rows'])
+        native['aliases'].update(runtime['aliases'])
     native['aliases']['unreal.materials'] = tuple(unit['id'] for unit in native['units']
                                                 if unit['id'].startswith('unreal.materials.'))
     foliage_ids = [name for name in selected if name.startswith('unreal.foliage.')]
@@ -509,6 +513,36 @@ def lower(rows, geometry, *, checkout):
             fixed=family['packages'], prerequisites=data)
     if 'unreal.world' in selected:
         native = _join_world_parts(native, rows, native.get('geometry', geometry), checkout=checkout)
+    if 'unreal.north' in selected:
+        family = _family_module(checkout, 'v2_north_units').north_units(
+            rows, checkout=checkout, natives=_package_dependencies(native))
+        family['content_slots'] = {incoming['name']: False for unit in family['units']
+                                   for incoming in unit['inputs']}
+        _append_family(native, family)
+        native['aliases']['unreal.north'] = tuple(sorted({ref['unit'] for ref in family['packages'].values()}))
+    if 'unreal.megapark' in selected:
+        family = _family_module(checkout, 'v2_megapark_templates').megapark_templates(
+            rows, checkout=checkout, natives=_package_dependencies(native))
+        _append_family(native, family)
+        current = deepcopy(native.get('geometry', geometry))
+        current['groups'].update(family['groups'])
+        current['templates'].extend(family['templates'])
+        extended = _family_module(checkout, 'v2_megapark_units').attach_followers(
+            current, {**family['packages'], 'material_items': family['material_items']},
+            rows=rows, checkout=checkout)
+        native.setdefault('follower_module_requirements', {}).update(family.get('module_requirements', {}))
+        native['follower_module_requirements'].update(extended.pop('module_requirements', {}))
+        native['geometry'] = extended
+        native['aliases']['unreal.megapark'] = tuple(family['required_targets'])
+    if 'unreal.desktop' in selected and '/Game/Japan/Materials/M_NorthMountains' in native['packages']:
+        extended = _family_module(checkout, 'v2_city_units').attach_followers(
+            native.get('geometry', geometry), _package_dependencies(native), checkout=checkout)
+        _append_family(native, {key: extended.pop(key, {}) for key in
+            ('units', 'staged_inputs', 'content_slots', 'packages')})
+        native.setdefault('follower_module_requirements', {}).update(extended.pop('module_requirements', {}))
+        native['geometry'] = extended
+        _complete_mesh_family(native, extended, family='desktop', export_prefixes=('world.hidamari.export.',),
+            checkout=checkout, fixed={}, prerequisites=({'unit': 'unreal.world.complete', 'item': 'roster'},))
     if selected & {'unreal.treehouse', 'unreal.brinecove'}:
         native = _join_native_families(native, rows, geometry, selected, checkout=checkout)
     return native

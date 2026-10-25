@@ -162,7 +162,7 @@ def north_units(rows, *, checkout, natives):
     add({'id': 'unreal.north.material.MI_NorthRockCaps', 'op': {'kind': 'unreal.author', 'version': '1'}, 'script': SCRIPT,
          'code': code, 'params': {'args': {'action': 'rock', 'parent': _slot(mountains),
                                            'closure': [_slot(p) for p in closure]}, 'settings': list(SETTINGS)},
-         'outputs': [_output('asset', rock, 'MaterialInstanceConstant')]},
+         'outputs': [_output('asset', rock, 'MaterialInstance')]},
         [_item(_slot(mountains), owned[mountains]['unit'], 'asset'),
          *(_item(_slot(p), refs[p]['unit'], refs[p]['item']) for p in closure)],
         package=rock, closure=[mountains, *closure])

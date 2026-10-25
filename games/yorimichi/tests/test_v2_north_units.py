@@ -117,6 +117,7 @@ def test_materials_take_finished_textures_and_declared_metadata(north):
         assert {units.ORIGINAL, units.TABLE, 'games/yorimichi/unreal/Scripts/atmosphere.py',
                 'games/yorimichi/unreal/Scripts/ground_grain.py', 'games/yorimichi/unreal/Scripts/sea_look.py'} <= set(unit['code'])
     rock = found['unreal.north.material.MI_NorthRockCaps']
+    assert rock['outputs'][0]['class'] == 'MaterialInstance'  # Registered native class; SDK remains MaterialInstanceConstant.
     assert {i['name'] for i in rock['inputs']} == {i['name'] for i in mountains['inputs'][:6]} | {'native_Japan_Materials_M_NorthMountains'}
     assert [d['package'] for d in north['packages']['/Game/Japan/Materials/MI_NorthRockCaps']['dependencies']][0] == \
         '/Game/Japan/Materials/M_NorthMountains'
