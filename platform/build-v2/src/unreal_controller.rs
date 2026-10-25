@@ -175,8 +175,8 @@ pub struct PreparedUnrealLaunch {
 impl PreparedUnrealLaunch {
     /// Restrict the already-started editor before Hello; only fixed native jobs share it.
     pub fn enable_resident(&mut self) -> Result<(), String> {
-        if !matches!(self.request.op.kind.as_str(), RAW_IMPORT | FINISH | VERIFY) {
-            return Err("only fixed import/finish/verify operations may share an editor".into());
+        if !matches!(self.request.op.kind.as_str(), RAW_IMPORT | FINISH | AUTHOR | VERIFY) {
+            return Err("only registered import/finish/author/verify operations may share an editor".into());
         }
         if self.request.op.kind == VERIFY {
             use std::os::unix::fs::OpenOptionsExt;
