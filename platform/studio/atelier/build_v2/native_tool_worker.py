@@ -217,6 +217,7 @@ NATIVE_SOURCE_PREFIX = 'platform/build-v2/unreal/AtelierBuildWorker/'
 
 def native_source_digest(job, job_dir):
     rows = []
+    names = set()
     for name in sorted(job['code']):
         if not name.startswith(NATIVE_SOURCE_PREFIX):
             continue
@@ -227,7 +228,15 @@ def native_source_digest(job, job_dir):
             if path.is_symlink() or not path.is_file():
                 raise Refused('native exporter implementation source is missing or linked')
             rows.append(relative + '\0' + _digest(path) + '\n')
-    if not rows:
+            names.add(relative)
+    required = {'AtelierBuildWorker.uplugin', 'Source/AtelierBuildWorker/AtelierBuildWorker.Build.cs',
+                'Source/AtelierBuildWorker/Private/AtelierBuildWorkerLibrary.cpp',
+                'Source/AtelierBuildWorker/Private/AtelierBuildWorkerModule.cpp',
+                'Source/AtelierBuildWorker/Private/AtelierZenFinalise.cpp',
+                'Source/AtelierBuildWorker/Private/AtelierZenPackage.cpp',
+                'Source/AtelierBuildWorker/Public/AtelierBuildWorkerLibrary.h',
+                'Source/AtelierBuildWorker/Public/AtelierZenFinalise.h'}
+    if not required <= names:
         raise Refused('native source cook must key the complete exporter implementation')
     return hashlib.sha256(''.join(rows).encode()).hexdigest()
 
@@ -304,7 +313,7 @@ def source_cook(params, view, project, engine, source_key, state, job_dir, run, 
             or not set(record_outputs.values()) <= declared or params['cook_root'] not in declared
             or params['cook_root'] in record_outputs.values()):
         raise Refused('source-cook must declare each native CB and complete cook metadata output')
-    folder = job_dir / 'source-cook'
+    folder = job_dir / '.recipe-runtime/source-cook'
     folder.mkdir()
     callbacks, success = CookCallbacks(folder, engine, environment), False
     try:

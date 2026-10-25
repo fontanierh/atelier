@@ -76,7 +76,7 @@ pub fn validator_identity() -> crate::keys::ImplementationIdentity {
 }
 
 /// Exact current C3 implementation, independent of the cook writer's worker.
-fn verifier_worker_digest() -> Result<String, String> {
+pub(crate) fn verifier_worker_digest() -> Result<String, String> {
     let files = BTreeMap::from([
         (
             "protocol.py".into(),
@@ -299,6 +299,21 @@ enum SourceOrigin<'a> {
     },
 }
 impl<'a> SourceCookEvidence<'a> {
+    pub(crate) fn clone_metadata(&self, destination: &Path) -> Result<(), String> {
+        self.check()?;
+        let file = crate::native_verify::metadata_file(&self.result().result)?;
+        let digest =
+            crate::store::ObjectDigest::from_hex(&file.digest).map_err(|e| e.to_string())?;
+        match &self.origin {
+            SourceOrigin::Local(completion) => completion
+                .clone_to(&digest, destination)
+                .map_err(|e| e.to_string()),
+            SourceOrigin::Cached { transaction, .. } => transaction
+                .pinned_objects()
+                .clone_to(&digest, destination)
+                .map_err(|e| e.to_string()),
+        }
+    }
     pub fn from_local(completion: &'a FrozenCompletion) -> Result<Self, String> {
         let value = Self {
             origin: SourceOrigin::Local(completion),
@@ -350,6 +365,16 @@ impl<'a> SourceCookEvidence<'a> {
             &source.ingredients.worker_version,
             &source.ingredients.worker_digest,
         )?;
+        for (path, digest) in verifier_code_digests()
+            .into_iter()
+            .filter(|(path, _)| path != VERIFY_SCRIPT)
+        {
+            if source.ingredients.code.get(&path) != Some(&digest) {
+                return Err(
+                    "source cook did not key the actual native exporter implementation".into(),
+                );
+            }
+        }
         if !source
             .outputs
             .iter()
@@ -812,7 +837,13 @@ mod tests {
                     version: "1".into(),
                 },
                 script: "cook.py".into(),
-                code: vec!["cook.py".into()],
+                code: std::iter::once("cook.py".into())
+                    .chain(
+                        verifier_code_digests()
+                            .into_keys()
+                            .filter(|name| name != VERIFY_SCRIPT),
+                    )
+                    .collect(),
                 inputs: vec![crate::schema::Input::Content {
                     name: "record".into(),
                     source: crate::schema::ContentSource::Item {
@@ -1026,8 +1057,21 @@ mod tests {
                 conditional: None,
             }],
         };
-        let snapshot: SourceSnapshot =
+        let mut snapshot: SourceSnapshot =
             BTreeMap::from([("cook.py".into(), SnapshotEntry::File(b"fixed".to_vec()))]);
+        let checkout = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap();
+        for (name, expected) in verifier_code_digests()
+            .into_iter()
+            .filter(|(name, _)| name != VERIFY_SCRIPT)
+        {
+            let bytes = fs::read(checkout.join(&name)).unwrap();
+            assert_eq!(sha256(&bytes), expected);
+            snapshot.insert(name, SnapshotEntry::File(bytes));
+        }
         let worker = producer_worker_identity().unwrap();
         let validator = validator_identity();
         let context = KeyContext {

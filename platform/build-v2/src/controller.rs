@@ -115,6 +115,9 @@ impl ControllerRequest {
                 {
                     crate::recipe_ops::validate_params(&unit.params)?;
                 }
+                crate::native_verify::PACKAGE_OP | crate::unreal_controller::VERIFY
+                    if unit.output_groups.is_empty()
+                        && unit.script == crate::results::zen_cook::VERIFY_SCRIPT => {}
                 crate::unreal_controller::RAW_IMPORT
                 | crate::unreal_controller::FINISH
                 | crate::unreal_controller::AUTHOR
@@ -298,11 +301,14 @@ pub(crate) fn registry(request: &ControllerRequest) -> Result<crate::validate::O
                 crate::unreal_controller::RAW_IMPORT
                     | crate::unreal_controller::FINISH
                     | crate::unreal_controller::AUTHOR
+                    | crate::unreal_controller::VERIFY
+                    | crate::native_verify::PACKAGE_OP
             )
         })
     {
         crate::unreal_controller::register(&mut registry, &request.data_contract.content_slots)?;
     }
+    crate::native_verify::register(&mut registry, &request.data_contract.content_slots);
     crate::recipe_ops::register(&mut registry, &request.data_contract.content_slots)?;
     crate::native_tool_ops::register(&mut registry, &request.data_contract.content_slots)?;
     if let Some(unit) = request
@@ -416,6 +422,8 @@ pub fn prepare(request: &ControllerRequest) -> Result<PreparedController, String
                 crate::unreal_controller::RAW_IMPORT
                     | crate::unreal_controller::FINISH
                     | crate::unreal_controller::AUTHOR
+                    | crate::unreal_controller::VERIFY
+                    | crate::native_verify::PACKAGE_OP
             )
         })
     }) {
@@ -497,12 +505,21 @@ pub fn prepare(request: &ControllerRequest) -> Result<PreparedController, String
             crate::unreal_controller::RAW_IMPORT
                 | crate::unreal_controller::FINISH
                 | crate::unreal_controller::AUTHOR
+                | crate::unreal_controller::VERIFY
+                | crate::native_verify::PACKAGE_OP
         ) {
             (
                 crate::unreal_controller::worker_identity(
                     unreal_worker.as_ref().ok_or("missing Unreal worker")?,
                 ),
-                crate::unreal_controller::validator_identity(),
+                if matches!(
+                    unit.op.kind.as_str(),
+                    crate::native_verify::PACKAGE_OP | crate::unreal_controller::VERIFY
+                ) {
+                    crate::results::zen_cook::validator_identity()
+                } else {
+                    crate::unreal_controller::validator_identity()
+                },
                 "normal-unreal",
             )
         } else if unit.op.kind == crate::encoded_ops::KIND {
@@ -1245,6 +1262,8 @@ pub fn execute<L: WorkerLauncher + Send>(
                     crate::unreal_controller::RAW_IMPORT
                         | crate::unreal_controller::FINISH
                         | crate::unreal_controller::AUTHOR
+                        | crate::unreal_controller::VERIFY
+                        | crate::native_verify::PACKAGE_OP
                 ) {
                     return Err("unsupported derived consumer runtime".into());
                 }

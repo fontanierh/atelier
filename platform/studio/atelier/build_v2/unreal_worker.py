@@ -802,8 +802,8 @@ class Worker:
                 entry = runpy.run_path(str(job_dir / job['script']), run_name='atelier_native_verify')
                 if not callable(entry.get('run')):
                     raise JobRefused('protocol', 'fixed verifier has no run entry')
-                entry['run'](Context(job_dir, {}, {}, job['params'], [], self.content,
-                                     zen_request=request))
+                result = entry['run'](Context(job_dir, {}, {}, job['params'], [], self.content,
+                                              zen_request=request))
                 self.editor.finish_background_work()
                 saved = self.editor.saved_packages()
                 report = self.editor.read_report()
@@ -817,14 +817,19 @@ class Worker:
         if any(sha256(path) != digest for path, digest in before.items()):
             raise JobRefused('dependency', 'native verification changed its source record or lifetime metadata')
         output = job_dir / 'output'
-        if sorted(path.name for path in output.iterdir()) != ['zen-verified.json']:
+        if any(output.iterdir()):
             raise JobRefused('dependency', 'native verifier wrote an unexpected output')
+        if not isinstance(result, dict):
+            raise JobRefused('dependency', 'fixed native verifier did not return its report')
+        encoded = json.dumps(result, sort_keys=True, separators=(',', ':'), allow_nan=False).encode('utf-8')
+        if len(encoded) > 8 * 1024 * 1024:
+            raise JobRefused('dependency', 'native verification report exceeds its bound')
         target = output / 'zen-verified.json'
-        if target.is_symlink() or not target.is_file() or target.stat().st_nlink != 1:
-            raise JobRefused('dependency', 'native verifier report is linked or missing')
-        proof = json.loads(target.read_bytes())
+        proof = json.loads(encoded)
         if proof.get('record_sha256') != carrier['record_sha256']:
             raise JobRefused('dependency', 'native verification report binds another CB')
+        with target.open('xb') as frozen_report:
+            frozen_report.write(encoded)
         write_atomic(job_dir / READ_EVIDENCE, report)
         write_atomic(job_dir / IMPORT_EVIDENCE, {'version': EVIDENCE_VERSION, 'packages': []})
         return ['zen-verified.json']

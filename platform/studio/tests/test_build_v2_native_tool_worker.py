@@ -167,11 +167,10 @@ def test_mac_zip_validation_refuses_external_links_before_extract(tmp_path):
 def test_stock_cook_runs_before_fixed_native_capture_and_raw_record_publication(tmp_path, monkeypatch):
     from pathlib import Path
     request = job(tmp_path, 'unreal.cook.produce')
-    from atelier import paths
-    prefix = tool.NATIVE_SOURCE_PREFIX
-    for source in sorted((paths.REPO / prefix).rglob('*')):
-        if source.is_file() and (source.name.endswith('.uplugin') or source.suffix in ('.cs', '.cpp', '.h')):
-            name = source.relative_to(paths.REPO).as_posix()
+    checkout = Path(__file__).resolve().parents[3]
+    for source in sorted((checkout / tool.NATIVE_SOURCE_PREFIX).rglob('*')):
+        if source.is_file() and (source.name == 'AtelierBuildWorker.uplugin' or source.suffix in ('.cs', '.cpp', '.h')):
+            name = source.relative_to(checkout).as_posix()
             target = tmp_path / name
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(source.read_bytes())
@@ -196,6 +195,8 @@ def test_stock_cook_runs_before_fixed_native_capture_and_raw_record_publication(
             return
         assert '-run=pythonscript' in argv
         export = json.loads(Path(kwargs['env']['ATELIER_NATIVE_COOK_EXPORT']).read_bytes())
+        assert export['native_source_digest'] == tool.native_source_digest(request, tmp_path)
+        assert Path(kwargs['env']['ATELIER_NATIVE_COOK_EXPORT']).is_relative_to(tmp_path / '.recipe-runtime')
         reports = []
         for native in export['requests']:
             Path(native['record_path']).write_bytes(b'native retained CB')
@@ -211,6 +212,29 @@ def test_stock_cook_runs_before_fixed_native_capture_and_raw_record_publication(
     assert (tmp_path / 'output/record.cb').read_bytes() == b'native retained CB'
     assert '-run=cook' in calls[0] and '-run=pythonscript' in calls[1]
     assert (state / 'records' / ('a' * 64 + '.cb')).stat().st_mode & 0o777 == 0o444
+
+
+def test_source_cook_rejects_partial_native_implementation_before_sdk_launch(tmp_path):
+    request = job(tmp_path, 'unreal.cook.produce')
+    with pytest.raises(ValueError, match='complete exporter implementation'):
+        tool.native_source_digest(request, tmp_path)
+
+
+def test_native_capture_checks_actual_compiled_source_before_invoking_native_api(tmp_path, monkeypatch):
+    import sys
+    from types import SimpleNamespace
+    configuration = tmp_path / 'request.json'
+    configuration.write_text(json.dumps({'native_source_digest': 'a' * 64, 'requests': [],
+                                        'report': str(tmp_path / 'report.json')}))
+    monkeypatch.setenv('ATELIER_NATIVE_COOK_EXPORT', str(configuration))
+    calls = []
+    library = SimpleNamespace(native_context=lambda: json.dumps({'worker_source_digest': 'b' * 64}),
+                              zen_package_request=lambda raw: calls.append(raw))
+    monkeypatch.setitem(sys.modules, 'unreal', SimpleNamespace(AtelierBuildWorkerLibrary=library))
+    with pytest.raises(RuntimeError, match='keyed implementation source'):
+        exec(compile(tool.EXPORT_SOURCE, '<fixed-native-capture>', 'exec'), {})
+    assert calls == []
+    assert not (tmp_path / 'report.json').exists()
 
 
 @pytest.mark.skipif(__import__('sys').platform != 'darwin', reason='macOS ditto transport')

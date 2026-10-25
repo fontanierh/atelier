@@ -567,6 +567,7 @@ pub fn check_unit(unit: &PreparedUnit) -> Result<(), String> {
             || value.code != crate::results::zen_cook::verifier_code_digests()
             || !value.output_groups.is_empty()
             || value.logical_outputs.len() != 1
+            || value.logical_outputs[0].class != "JsonData"
             || value.logical_outputs[0].files.len() != 1
             || value.logical_outputs[0].files[0].path != crate::results::zen_cook::VERIFY_REPORT
             || !value.logical_outputs[0].files[0].required
@@ -1067,12 +1068,12 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
                             allow_absent_file: false,
                             allow_selector: true,
                             require_whole_reason: *broad,
-                            item_classes: BTreeSet::from(["CookedPackage".into(), "Data".into()]),
+                            item_classes: BTreeSet::from(["NativeCookRecord".into()]),
                         },
                     )
                 })
                 .collect(),
-            output_classes: BTreeSet::from(["Data".into()]),
+            output_classes: BTreeSet::from(["JsonData".into()]),
             params: BTreeMap::from([
                 (
                     "package".into(),
