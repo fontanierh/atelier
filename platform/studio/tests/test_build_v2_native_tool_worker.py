@@ -644,3 +644,106 @@ def test_compile_candidate_clones_new_declared_input_and_accepts_code_readonly_m
     assert view == old and protected == [str(old / 'new.cpp')]
     assert (old / 'new.cpp').read_bytes() == b'new declared source'
     assert (old / 'tools/check.py').read_bytes() == b'# frozen verifier'
+
+
+@pytest.fixture
+def relocated_modules(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    view, engine = tmp_path / 'view', tmp_path / 'sdk'
+    project = view / 'game/Game.uproject'; project.parent.mkdir(parents=True)
+    project.write_text(json.dumps({'AdditionalPluginDirectories': ['../platform/plugins']}))
+    binaries = project.parent / 'Binaries/Mac'; binaries.mkdir(parents=True)
+    images = [binaries / ('libUnrealEditor-' + name + '.dylib') for name in ('Game', 'Skate')]
+    for image in images: image.write_bytes(b'certified produced module')
+    def sdk(name, folder):
+        directory = engine / 'Engine' / folder; directory.mkdir(parents=True)
+        library = directory / ('libUnrealEditor-' + name + '.dylib'); library.write_bytes(b'installed SDK module')
+        manifest = directory / 'UnrealEditor.modules'
+        manifest.write_text(json.dumps({'BuildId': 'selected', 'Modules': {name: library.name}}))
+        return library, manifest
+    core, _ = sdk('Core', 'Binaries/Mac')
+    physics, physics_manifest = sdk('PhysicsControl', 'Plugins/Animation/PhysicsControl/Binaries/Mac')
+    unused, _ = sdk('Unused', 'Plugins/Unused/Binaries/Mac')
+    calls = []
+    def inspect(command, **options):
+        calls.append((command, options))
+        image = images[0] if command[-1] == str(images[0]) else images[1]
+        dependencies = [image.name, 'libUnrealEditor-Core.dylib', 'libUnrealEditor-PhysicsControl.dylib']
+        return SimpleNamespace(stdout=str(image) + ':\n' + ''.join(
+            '\t@rpath/' + name + ' (compatibility version 5.8.0)\n' for name in dependencies))
+    monkeypatch.setattr(tool.subprocess, 'run', inspect)
+    return dict(view=view, engine=engine, project=project, images=images, core=core, physics=physics,
+                manifest=physics_manifest, unused=unused, calls=calls, inspect=inspect)
+
+
+def test_relocated_declared_module_dependencies_select_only_exact_sdk_directories(relocated_modules):
+    r = relocated_modules; original = {'PATH': '/usr/bin:/bin'}
+    before = {image: image.read_bytes() for image in r['images']}
+    environment = tool.native_module_environment(r['engine'], r['view'], r['project'], original)
+    assert environment == original | {'DYLD_LIBRARY_PATH': ':'.join(sorted({str(r['core'].parent), str(r['physics'].parent)}))}
+    assert original == {'PATH': '/usr/bin:/bin'}
+    assert str(r['unused'].parent) not in environment['DYLD_LIBRARY_PATH']
+    assert len(r['calls']) == len(r['images'])
+    assert all(command[:4] == ['/usr/bin/otool', '-arch', tool.os.uname().machine, '-L'] and options['timeout'] == 5 and options['check']
+               for command, options in r['calls'])
+    assert before == {image: image.read_bytes() for image in r['images']}
+
+
+@pytest.mark.parametrize('change', ['missing', 'ambiguous', 'other_build', 'external_alias', 'manifest_alias'])
+def test_unknown_ambiguous_or_escaping_sdk_roles_refuse_before_native_launch(relocated_modules, change):
+    r = relocated_modules
+    if change == 'missing': r['physics'].unlink()
+    elif change == 'ambiguous':
+        folder = r['engine'] / 'Engine/Plugins/Copy/Binaries/Mac'; folder.mkdir(parents=True)
+        (folder / r['physics'].name).write_bytes(b'different image')
+        (folder / 'UnrealEditor.modules').write_bytes(r['manifest'].read_bytes())
+    elif change == 'other_build':
+        value = json.loads(r['manifest'].read_bytes()); value['BuildId'] = 'other'; r['manifest'].write_text(json.dumps(value))
+    elif change == 'external_alias':
+        external = r['engine'].parent / 'foreign.dylib'; external.write_bytes(b'foreign')
+        r['physics'].unlink(); r['physics'].symlink_to(external)
+    else:
+        external = r['engine'].parent / 'foreign.modules'; external.write_bytes(r['manifest'].read_bytes())
+        r['manifest'].unlink(); r['manifest'].symlink_to(external)
+    with pytest.raises(tool.Refused, match='SDK module'):
+        tool.native_module_environment(r['engine'], r['view'], r['project'], {})
+
+
+def test_native_loader_overrides_and_produced_aliases_never_become_search_paths(relocated_modules):
+    r = relocated_modules
+    with pytest.raises(tool.Refused, match='override'):
+        tool.native_module_environment(r['engine'], r['view'], r['project'], {'DYLD_LIBRARY_PATH': '/foreign'})
+    r['images'][0].unlink(); r['images'][0].symlink_to(r['physics'])
+    with pytest.raises(tool.Refused, match='regular file'):
+        tool.native_module_environment(r['engine'], r['view'], r['project'], {})
+
+
+def test_project_plugin_roots_cannot_escape_declared_view(relocated_modules):
+    r = relocated_modules; r['project'].write_text(json.dumps({'AdditionalPluginDirectories': ['../../../foreign']}))
+    with pytest.raises(tool.Refused, match='escapes'):
+        tool.native_module_environment(r['engine'], r['view'], r['project'], {})
+
+
+def test_unknown_module_and_failed_metadata_inspection_remain_attributable(relocated_modules, monkeypatch):
+    from types import SimpleNamespace
+    r = relocated_modules
+    monkeypatch.setattr(tool.subprocess, 'run', lambda command, **kw: SimpleNamespace(
+        stdout=command[-1]+':\n\t@rpath/libUnrealEditor-Unknown.dylib (version 1)\n'))
+    with pytest.raises(tool.Refused, match='unknown or ambiguous'):
+        tool.native_module_environment(r['engine'], r['view'], r['project'], {})
+    def failed(*a, **kw): raise tool.subprocess.TimeoutExpired('otool', 5)
+    monkeypatch.setattr(tool.subprocess, 'run', failed)
+    with pytest.raises(tool.Refused, match='inspection failed'):
+        tool.native_module_environment(r['engine'], r['view'], r['project'], {})
+
+
+def test_universal_metadata_header_binds_only_the_selected_native_architecture(relocated_modules, monkeypatch):
+    from types import SimpleNamespace
+    r = relocated_modules
+    def universal(command, **options):
+        assert command[1:4] == ['-arch', tool.os.uname().machine, '-L']
+        return SimpleNamespace(stdout=command[-1]+' (architecture '+tool.os.uname().machine+'):\n'
+            +'\t@rpath/libUnrealEditor-PhysicsControl.dylib (version 1)\n')
+    monkeypatch.setattr(tool.subprocess, 'run', universal)
+    x=tool.native_module_environment(r['engine'], r['view'], r['project'], {})
+    assert x['DYLD_LIBRARY_PATH'] == str(r['physics'].parent)
