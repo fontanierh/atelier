@@ -227,6 +227,20 @@ def test_compression_owner_is_made_by_the_original_helper(editor):
         body.run(context)
 
 
+@pytest.mark.parametrize('threshold', [.0001, .0002])
+def test_compression_threshold_compares_actual_unreal_float32_storage(editor, monkeypatch, threshold):
+    import struct
+    original = Asset.get_editor_property
+    monkeypatch.setattr(Asset, 'get_editor_property', lambda self, name:
+        struct.unpack('f', struct.pack('f', threshold))[0] if name == 'error_threshold' else original(self, name))
+    context = NS(job_dir=str(editor.root), inputs={}, packages={}, outputs=[body.COMPRESSION],
+                 params={'args': {'action': 'compression'}, 'settings': []})
+    if threshold == .0001:
+        assert body.run(context).path == body.COMPRESSION
+    else:
+        with pytest.raises(ValueError, match='threshold'): body.run(context)
+
+
 def test_clip_finish_duplicates_and_assigns_the_declared_compression(editor):
     skeleton = Asset('/Game/Paul/SK_Paul_Skeleton')
     settings = Asset(body.COMPRESSION)

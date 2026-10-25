@@ -183,6 +183,11 @@ def test_projection_members_and_selection(tmp_path):
     (image / 'Reference_Skin.json').write_bytes((tmp_path / 'members/images/Reference_Skin.json').read_bytes())
     members.select(image, tmp_path / 'image_member', tmp_path / 'image_meta', 'Reference_Skin')
     assert (tmp_path / 'image_member/Reference_Skin.png').read_bytes() == PNG
+    material = tmp_path / 'material'; material.mkdir()
+    (material / 'Reference_Skin.json').write_bytes((tmp_path / 'members/materials/Reference_Skin.json').read_bytes())
+    members.select(material, tmp_path / 'undeclared_member', tmp_path / 'material_meta', 'Reference_Skin')
+    assert not (tmp_path / 'undeclared_member').exists()
+    assert json.loads((tmp_path / 'material_meta/meta.json').read_bytes()) == skin
 
 
 def test_views_are_the_fixed_owners_sources(tmp_path):

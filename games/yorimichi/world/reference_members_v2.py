@@ -266,12 +266,12 @@ def select(selected=None, destination=None, metadata=None, piece=None):
     if member.get('name') != piece:
         raise ValueError('Reference selected member differs from its piece')
     meta = {key: value for key, value in member.items() if key not in ('glb', 'image', 'sha256')}
-    destination.mkdir(parents=True)
     for key, suffix in (('glb', '.glb'), ('image', None)):
         if key in member:
             data = base64.b64decode(member[key], validate=True)
             if hashlib.sha256(data).hexdigest() != member['sha256']:
                 raise ValueError('Reference selected member bytes differ from their checksum')
+            destination.mkdir(parents=True)
             name = piece + (suffix or ('.png' if member['mime'] == 'image/png' else '.jpg'))
             (destination / name).write_bytes(data)
             (destination / 'export.json').write_text(json.dumps({'primary': name, 'sha256': member['sha256']}, sort_keys=True) + '\n')

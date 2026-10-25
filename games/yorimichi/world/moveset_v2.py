@@ -142,7 +142,8 @@ def compression(context, unreal, args):
     settings = module._settings
     if settings is None or settings.get_path_name().split('.', 1)[0] != COMPRESSION:
         raise ValueError('Compression settings were not created at ' + COMPRESSION)
-    if settings.get_editor_property('error_threshold') != .0001:
+    import struct
+    if struct.pack('f', settings.get_editor_property('error_threshold')) != struct.pack('f', .0001):
         raise ValueError('Compression settings differ from the original threshold')
     return settings
 
