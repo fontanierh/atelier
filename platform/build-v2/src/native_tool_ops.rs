@@ -41,6 +41,8 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
         ("packages", ParamKind::Array, false),
         ("record_outputs", ParamKind::Object, false),
         ("cook_root", ParamKind::String, false),
+        ("native_global", ParamKind::String, false),
+        ("global_data", ParamKind::String, false),
     ] {
         definition
             .params
@@ -73,6 +75,11 @@ pub fn register(registry: &mut OpRegistry, slots: &BTreeMap<String, bool>) -> Re
     }
     for kind in KINDS {
         let mut op = definition.clone();
+        if kind == "unreal.package" {
+            for rule in op.inputs.values_mut() {
+                rule.item_classes.insert("CookedPackage".into());
+            }
+        }
         if kind == "unreal.cook.produce" {
             op.output_classes.insert("NativeCookRecord".into());
         }
@@ -94,10 +101,18 @@ pub fn validate_params(kind: &str, params: &BTreeMap<String, Value>) -> Result<(
                     | "packages"
                     | "record_outputs"
                     | "cook_root"
+                    | "native_global"
+                    | "global_data"
             )
         })
     {
         return Err("unknown native tool operation/parameter".into());
+    }
+    if params.contains_key("native_global") && kind != "unreal.package" {
+        return Err("native global selector is restricted to package composition".into());
+    }
+    if params.contains_key("global_data") && kind != "unreal.cook.produce" {
+        return Err("semantic global output is restricted to the fixed source cooker".into());
     }
     let recipe = params
         .get("recipe")
