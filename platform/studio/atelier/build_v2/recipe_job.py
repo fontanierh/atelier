@@ -150,10 +150,12 @@ def unpack_root(source, destination):
     return manifest
 
 
-def prepare_view(job, job_dir):
-    """Trusted outer worker materializes only frozen code and declared staged inputs."""
+def prepare_view(job, job_dir, *, reserved=()):
+    """Trusted outer worker materializes frozen inputs; reserved names are bootstrap-only roles."""
     root = Path(job_dir) / RUNTIME
-    if not root.is_dir() or root.is_symlink() or any(root.iterdir()):
+    if (not root.is_dir() or root.is_symlink()
+            or any(not isinstance(name, str) or relative(name) != name or '/' in name for name in reserved)
+            or {path.name for path in root.iterdir()} != set(reserved)):
         raise ValueError('recipe runtime is not a fresh reserved directory')
     view = root / 'view'
     view.mkdir()

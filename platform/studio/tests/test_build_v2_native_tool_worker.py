@@ -1,11 +1,83 @@
 """Fixed native TOOL routes; no native execution in these focused tests."""
 import io
 import json
+import hashlib
 
 import pytest
 
 from atelier.build_v2 import native_tool_worker as tool
 from atelier.build_v2 import protocol
+
+
+def package_carrier(tmp_path):
+    request = job(tmp_path, 'unreal.package')
+    request['params']['native_global'] = 'global'
+    root = tmp_path / '.recipe-runtime'
+    histories = root / 'native-histories'; histories.mkdir()
+    global_archive = root / 'global-metadata.tree.tar'
+    history = histories / 'texture.tree.tar'
+    for path in (global_archive, history):
+        path.write_bytes(b'certified immutable archive bytes')
+        path.chmod(0o444)
+    digest = hashlib.sha256(global_archive.read_bytes()).hexdigest()
+    carrier = {'version': 1, 'global_metadata_archive': str(global_archive),
+               'global_metadata_sha256': digest, 'packages': [{'slot': 'texture',
+               'metadata_archive': str(history), 'metadata_sha256': digest}]}
+    path = root / 'native-packages.json'
+    path.write_text(json.dumps(carrier)); path.chmod(0o400)
+    return request, root, carrier
+
+
+def test_package_private_carrier_survives_actual_view_bootstrap(tmp_path):
+    request, root, _ = package_carrier(tmp_path)
+    before = {p: p.read_bytes() for p in root.rglob('*') if p.is_file()}
+    with pytest.raises(ValueError, match='fresh reserved'):
+        tool.recipe_job.prepare_view(request, tmp_path)
+    reserved = tool.package_runtime(tmp_path)
+    view, _, _ = tool.recipe_job.prepare_view(request, tmp_path, reserved=reserved)
+    assert (view / 'Game.uproject').read_bytes() == b'{}'
+    assert (root / 'tmp').is_dir()
+    assert all(path.read_bytes() == raw for path, raw in before.items())
+    with pytest.raises(ValueError, match='fresh reserved'):
+        tool.recipe_job.prepare_view(request, tmp_path, reserved=reserved)
+
+
+def test_actual_package_dispatch_reaches_finalization_with_private_carrier(tmp_path, monkeypatch):
+    request, root, _ = package_carrier(tmp_path)
+    request['params']['archive'] = 'archive'
+    class Reached(Exception):
+        pass
+    def finalise(*args):
+        assert (root / 'view/Game.uproject').read_bytes() == b'{}'
+        assert (root / 'native-packages.json').is_file()
+        raise Reached
+    monkeypatch.setattr(tool, 'finalise_package', finalise)
+    with pytest.raises(Reached):
+        tool.dispatch(request, tmp_path, tmp_path / 'engine', lambda *a, **kw: None)
+
+
+@pytest.mark.parametrize('mutation', ['extra', 'history_extra', 'changed', 'writable', 'link', 'escape'])
+def test_package_bootstrap_rejects_unknown_changed_or_aliased_roles(tmp_path, mutation):
+    request, root, carrier = package_carrier(tmp_path)
+    archive = root / 'native-histories/texture.tree.tar'
+    if mutation == 'extra':
+        (root / 'unknown').write_bytes(b'unknown')
+    elif mutation == 'history_extra':
+        (archive.parent / 'unknown').write_bytes(b'unknown')
+    elif mutation == 'changed':
+        archive.chmod(0o644); archive.write_bytes(b'changed'); archive.chmod(0o444)
+    elif mutation == 'writable':
+        archive.chmod(0o644)
+    elif mutation == 'link':
+        archive.unlink(); archive.symlink_to(root / 'global-metadata.tree.tar')
+    elif mutation == 'escape':
+        carrier['packages'][0]['metadata_archive'] = str(tmp_path / 'outside.tree.tar')
+        path = root / 'native-packages.json'; path.chmod(0o600)
+        path.write_text(json.dumps(carrier)); path.chmod(0o400)
+    with pytest.raises((ValueError, OSError)):
+        reserved = tool.package_runtime(tmp_path)
+        tool.recipe_job.prepare_view(request, tmp_path, reserved=reserved)
+    assert not (root / 'view').exists()
 
 
 def job(tmp_path, kind='unreal.compile'):
