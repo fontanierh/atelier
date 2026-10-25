@@ -78,20 +78,22 @@ def attach(units, rows, requirements, *, checkout, staged, slots):
 
 
 def attach_followers(templates, units, rows, requirements, *, checkout, slots):
-    """Bind each requested finish template through the same produced-module path."""
+    """Bind every authored/finish stage of a requested template to produced modules."""
     remaining = set(requirements)
     for template in templates:
         prefix = template['unit_prefix']
         if prefix not in requirements:
             continue
         remaining.remove(prefix)
-        finishes = [follower for follower in template.get('followers', ())
-                    if follower['unit']['op']['kind'] == 'unreal.finish']
-        if len(finishes) != 1:
-            raise ValueError('native follower modules require exactly one finish: ' + prefix)
-        follower = finishes[0]
-        unit_id = follower['unit']['id']
-        attach([*units, follower['unit']], rows, {unit_id: requirements[prefix]},
-               checkout=checkout, staged={unit_id: follower['staged_inputs']}, slots=slots)
+        authored = [follower for follower in template.get('followers', ())
+                    if follower['unit']['op']['kind'] in ('unreal.finish', 'unreal.author')]
+        if not authored:
+            raise ValueError('native follower modules require an authored or finish stage: ' + prefix)
+        if len({follower['unit']['id'] for follower in authored}) != len(authored):
+            raise ValueError('native follower modules have duplicate stage identities: ' + prefix)
+        for follower in authored:
+            unit_id = follower['unit']['id']
+            attach([*units, follower['unit']], rows, {unit_id: requirements[prefix]},
+                   checkout=checkout, staged={unit_id: follower['staged_inputs']}, slots=slots)
     if remaining:
         raise ValueError('native module requirements name absent export templates: ' + ', '.join(sorted(remaining)))

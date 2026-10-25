@@ -99,6 +99,21 @@ def test_template_module_request_cannot_silently_omit_a_finish(tmp_path, broken)
     if broken == 'absent': templates.clear()
     elif broken == 'no_finish': templates[0]['followers'].clear()
     else: templates[0]['followers'].append(deepcopy(finish))
-    with pytest.raises(ValueError, match='absent|exactly one'):
+    with pytest.raises(ValueError, match='absent|authored or finish|duplicate stage'):
         attach_followers(templates, units, rows, {'world.example.export.Parent': required['pawn']},
                          checkout=tmp_path, slots=slots)
+
+
+def test_each_distinct_city_finish_and_material_author_binds_compiled_modules(tmp_path):
+    from atelier.build_v2.recipe_native_modules import attach_followers
+    rows, units, staged, slots, required = fixture(tmp_path)
+    followers = [{'unit': {'id': name, 'op': {'kind': kind, 'version': '1'}, 'inputs': [], 'params': {}},
+                  'staged_inputs': {}} for name, kind in [('$export.raw', 'unreal.raw_import'),
+                    ('$export.finish', 'unreal.finish'), ('$export.tree', 'unreal.finish'),
+                    ('$export.material', 'unreal.author')]]
+    attach_followers([{'unit_prefix': 'world.example.export.Parent', 'followers': followers}],
+        units, rows, {'world.example.export.Parent': required['pawn']}, checkout=tmp_path, slots=slots)
+    assert 'native_modules' not in followers[0]['unit']['params']
+    for follower in followers[1:]:
+        assert follower['unit']['params']['native_modules']['editor']['archive'] == 'outputs/0.tree.tar'
+        assert follower['unit']['inputs'][0]['source'] == {'kind': 'item', 'unit': 'editor', 'item': 'output0'}

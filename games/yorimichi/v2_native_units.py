@@ -447,7 +447,7 @@ def lower(rows, geometry, *, checkout):
     elif 'unreal.materials' in selected:
         native = shared_materials(rows, checkout=checkout)
         native['aliases'] = {}
-    elif selected & {'unreal.treehouse', 'unreal.brinecove', 'unreal.sounds', 'unreal.crater_cloud', 'unreal.skate_board', 'unreal.fx', 'unreal.skate_data', 'unreal.kei', 'unreal.village', 'unreal.lake', 'unreal.houses', 'unreal.southwest', 'unreal.mega', 'unreal.swordcamp', 'unreal.kart', 'unreal.world', 'unreal.gondola', 'unreal.ferry', 'unreal.north', 'unreal.megapark', 'unreal.desktop', 'unreal.adventure', 'data.stage'}:
+    elif selected & {'unreal.treehouse', 'unreal.brinecove', 'unreal.sounds', 'unreal.crater_cloud', 'unreal.skate_board', 'unreal.fx', 'unreal.skate_data', 'unreal.kei', 'unreal.village', 'unreal.lake', 'unreal.houses', 'unreal.southwest', 'unreal.mega', 'unreal.swordcamp', 'unreal.kart', 'unreal.world', 'unreal.gondola', 'unreal.ferry', 'unreal.north', 'unreal.megapark', 'unreal.desktop', 'unreal.adventure', 'unreal.craterpark', 'unreal.skatepark', 'unreal.forest', 'unreal.city_tree_lods', 'unreal.fox_hunter', 'data.stage'}:
         native = {'units': [], 'staged_inputs': {}, 'content_slots': {}, 'packages': {},
                   'targets': (), 'aliases': {}, 'missing_roles': []}
         if 'unreal.treehouse' in selected:
@@ -781,6 +781,104 @@ def lower(rows, geometry, *, checkout):
         native['rider_tokens'] = family['tokens']
     if selected & {'unreal.treehouse', 'unreal.brinecove'}:
         native = _join_native_families(native, rows, geometry, selected, checkout=checkout)
+    if 'unreal.craterpark' in selected:
+        from pathlib import Path
+        from atelier.build import Call, Step
+        from atelier.build_v2.recipe_dependencies import extract
+        root = Path(checkout)
+        family = _family_module(checkout, 'v2_craterpark_units').attach_followers(native['geometry'],
+            rows=rows, checkout=checkout)
+        current = family.pop('geometry')
+        requirements = family['module_requirements']
+        fixed = {unit['id'] for unit in family['units']}
+        family['module_requirements'] = {name: value for name, value in requirements.items() if name in fixed}
+        native.setdefault('follower_module_requirements', {}).update(
+            {name: value for name, value in requirements.items() if name not in fixed})
+        joined = family['source_join']
+        original, = [row for row in rows if row['id'] == joined['owner']]
+        body = _family_module(checkout, 'world/craterpark_assembly_v2')
+        body.assemble.__defaults__ = (root / 'build/yorimichi/craterpark-inputs', joined['selected_exports'],
+                                      root / 'build/yorimichi/craterpark')
+        authored, = extract([Step(joined['owner'], [Call('assemble selected CraterPark library', body.assemble)])],
+            checkout=root, build_root=root / 'build', import_roots=(root / 'platform/studio', root / 'games/yorimichi',
+                root / 'games/yorimichi/world', root / 'games/yorimichi/world/regions'))
+        replacement = deepcopy(original)
+        replacement.update(commands=authored['commands'], code=sorted(set(authored['code']) | set(original['code'])),
+            needs=['world.craterpark.inputs'], after=[], reads=[], references=[], deferred=[], verify=None)
+        required = [root / 'games/yorimichi/assets/craterpark/scene.json', root / 'games/yorimichi/assets/craterpark/drop-in.json',
+                    *_family_module(checkout, 'world/regions/craterpark/v2/v4_config').input_paths()]
+        for path in required:
+            if path.is_dir(): paths = sorted(member for member in path.rglob('*') if member.is_file())
+            else: paths = [path]
+            replacement['inputs'].extend({'path': path.relative_to(root).as_posix(), 'root': 'checkout', 'optional': False} for path in paths)
+        replacement['inputs'].append({'path': 'build/yorimichi/craterpark-inputs', 'root': 'checkout', 'optional': False})
+        native.setdefault('rows', []).append(replacement)
+        native['aliases'][joined['owner']] = (joined['owner'],)
+        _append_family(native, family)
+        native['geometry'] = current
+        native['aliases'].update(family['aliases'])
+    if 'unreal.skatepark' in selected:
+        family = _family_module(checkout, 'v2_skatepark_units').attach_followers(native['geometry'],
+            rows=rows, checkout=checkout, natives=_package_dependencies(native))
+        current = family.pop('geometry')
+        requirements = family.pop('module_requirements')
+        fixed = {unit['id'] for unit in family['units']}
+        family['module_requirements'] = {name: value for name, value in requirements.items() if name in fixed}
+        native.setdefault('follower_module_requirements', {}).update(
+            {name: value for name, value in requirements.items() if name not in fixed})
+        _append_family(native, family)
+        native['geometry'] = current
+        native['aliases'].update(family['aliases'])
+    if 'unreal.forest' in selected:
+        family = _family_module(checkout, 'v2_forest_units').forest_units(native['geometry'],
+            rows=rows, checkout=checkout, natives=_package_dependencies(native))
+        current = family.pop('geometry')
+        requirements = current.pop('module_requirements', {})
+        fixed = {unit['id'] for unit in family['units']}
+        family['module_requirements'] = {name: value for name, value in requirements.items() if name in fixed}
+        _append_family(native, family)
+        native['geometry'] = current
+        native['aliases'].update(family['aliases'])
+    if 'unreal.city_tree_lods' in selected:
+        family = _family_module(checkout, 'v2_city_tree_units').attach_followers(native['geometry'],
+            rows=rows, checkout=checkout, natives=_package_dependencies(native))
+        current = family.pop('geometry')
+        requirements = current.pop('module_requirements')
+        fixed = {unit['id'] for unit in family['units']}
+        family['module_requirements'] = {name: value for name, value in requirements.items() if name in fixed}
+        native.setdefault('follower_module_requirements', {}).update(
+            {name: value for name, value in requirements.items() if name not in fixed})
+        _append_family(native, family)
+        native['geometry'] = current
+        native['aliases'].update(family['aliases'])
+    if 'unreal.fox_hunter' in selected:
+        module = _family_module(checkout, 'v2_fox_units')
+        refs = _package_dependencies(native)
+        if module.COMPRESSION not in refs:
+            moveset = _family_module(checkout, 'v2_moveset_units')
+            compression = moveset.compression_unit(checkout=checkout)
+            native['units'].append(compression)
+            native['staged_inputs'][compression['id']] = {}
+            native['packages'][module.COMPRESSION] = {'unit': compression['id'], 'item': 'asset', 'package': module.COMPRESSION}
+            refs = _package_dependencies(native)
+        family = module.fox_units(rows, checkout=checkout, natives={'compression': refs[module.COMPRESSION]})
+        for unit in family['units']:
+            if unit['op']['kind'] in ('unreal.author', 'unreal.finish'):
+                kinds = ('images', 'materials') if unit['params'].get('args', {}).get('action') == 'mesh' else family['tokens']
+                unit['params'].setdefault('args', {})['closure'] = {
+                    key: deepcopy(family['tokens'][key]) for key in kinds}
+        for template in family['templates']:
+            if template['unit_prefix'].endswith(('.materials', '.clips')):
+                for follower in template['followers']:
+                    if follower['unit']['op']['kind'] in ('unreal.author', 'unreal.finish'):
+                        kinds = ('images',) if template['unit_prefix'].endswith('.materials') else ('images', 'materials')
+                        follower['unit']['params'].setdefault('args', {})['closure'] = {
+                            key: deepcopy(family['tokens'][key]) for key in kinds}
+        _append_family(native, family)
+        current = deepcopy(native['geometry'])
+        current['groups'].update(family['groups']); current['templates'].extend(family['templates'])
+        native['geometry'] = current
+        native['aliases'].update(family['aliases'])
     if 'unreal.horses' in selected:
         module = _family_module(checkout, 'v2_horse_units')
         refs = _package_dependencies(native)
