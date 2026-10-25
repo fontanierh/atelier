@@ -167,6 +167,15 @@ def test_mac_zip_validation_refuses_external_links_before_extract(tmp_path):
 def test_stock_cook_runs_before_fixed_native_capture_and_raw_record_publication(tmp_path, monkeypatch):
     from pathlib import Path
     request = job(tmp_path, 'unreal.cook.produce')
+    from atelier import paths
+    prefix = tool.NATIVE_SOURCE_PREFIX
+    for source in sorted((paths.REPO / prefix).rglob('*')):
+        if source.is_file() and (source.name.endswith('.uplugin') or source.suffix in ('.cs', '.cpp', '.h')):
+            name = source.relative_to(paths.REPO).as_posix()
+            target = tmp_path / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(source.read_bytes())
+            request['code'].append(name)
     request['params'].update(packages=['/Game/Asset'], record_outputs={'/Game/Asset': 'build/record.cb'},
                              cook_root='build/cook-metadata')
     request['params']['recipe']['outputs'] = [{'path': 'build/record.cb', 'file': 'record.cb'},

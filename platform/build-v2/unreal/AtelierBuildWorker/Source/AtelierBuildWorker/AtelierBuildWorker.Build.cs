@@ -29,6 +29,6 @@ public class AtelierBuildWorker : ModuleRules
         PrivateIncludePaths.Add(Path.Combine(EngineDirectory, "Source/Runtime/RenderCore/Internal"));
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
         PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine" });
-        PrivateDependencyModuleNames.AddRange(new string[] { "AssetRegistry", "DerivedDataCache", "InterchangeEngine", "Json", "IoStoreUtilities", "Zen", "RenderCore", "TargetPlatform", "CookMetadata", "Projects", "RHI", "UnrealEd" });
+        PrivateDependencyModuleNames.AddRange(new string[] { "Chaos", "PhysicsCore", "AssetRegistry", "DerivedDataCache", "InterchangeEngine", "Json", "IoStoreUtilities", "Zen", "RenderCore", "TargetPlatform", "CookMetadata", "Projects", "RHI", "UnrealEd" });
     }
 }

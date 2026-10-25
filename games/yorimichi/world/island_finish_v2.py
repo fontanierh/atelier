@@ -128,9 +128,9 @@ def run(context):
     mapping = params['args']['materials']
     if not isinstance(mapping, dict) or not set(receipt['metadata']['slots']) <= set(mapping):
         raise ValueError('Island material bindings differ from the original source table')
-    validator = getattr(getattr(unreal, 'CitySurfaceValidation', None), 'validate_collision', None)
+    validator = getattr(getattr(unreal, 'AtelierBuildWorkerLibrary', None), 'validate_mesh_collision', None)
     if not callable(validator):
-        raise ValueError('Required CitySurfaceValidation native module is unavailable')
+        raise ValueError('Required native mesh collision validator is unavailable')
     unreal.load_module('StaticMeshEditor')
     editor = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
     if editor is None:

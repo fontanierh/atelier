@@ -224,6 +224,18 @@ def compile_rows(rows, *, project, targets, install_roots=(), checkout=None, geo
                 tools.append({'kind': 'node.frontend', 'entry': entry,
                               'sources': [frontend + filename for filename in
                                           ('bridge.cjs', 'pieces.cjs', 'terrain.cjs')]})
+            media_scripts = {f'games/{project}/assets/audio/footsteps/slice.py',
+                             f'games/{project}/assets/audio/combat/slice.py'}
+            imported = sorted(source['path'] for source in row['inputs']
+                              if source['path'].startswith('build/v2-source-inputs/atelier-cache/'))
+            if imported:
+                for command in commands:
+                    if command['kind'] in ('python', 'blender'):
+                        command['env'] = [pair for pair in command['env'] if pair[0] != 'ATELIER_CACHE']
+                        command['env'].append(['ATELIER_CACHE', {'path': 'build/v2-source-inputs/atelier-cache'}])
+            if any(command.get('script') in media_scripts for command in commands):
+                tools.append({'kind': 'media.audio', 'inputs': imported,
+                              'writes': [f'build/{project}/audio/.tmp']})
             if tools:
                 unit['params']['recipe']['tools'] = tools
             units.append(unit)

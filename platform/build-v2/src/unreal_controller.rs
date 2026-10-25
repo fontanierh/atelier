@@ -528,7 +528,7 @@ pub fn check_unit(unit: &PreparedUnit) -> Result<(), String> {
         (FINISH, OP_VERSION) => "finish",
         _ => return Err("unsupported native operation/version".into()),
     };
-    if value.script != ENTRY || !value.code.contains_key(ENTRY) || !value.output_groups.is_empty() {
+    if (value.op.kind == RAW_IMPORT && value.script != ENTRY) || !value.code.contains_key(&value.script) || !value.output_groups.is_empty() {
         return Err("native unit has an unsupported body/group contract".into());
     }
     if value.params.get("op").and_then(|v| v.as_str()) != Some(action) {
@@ -687,7 +687,7 @@ pub fn prepare(
     let ingredients = unit.ingredients();
     if !matches!(ingredients.op.kind.as_str(), RAW_IMPORT | FINISH | AUTHOR)
         || ingredients.op.version != OP_VERSION
-        || ingredients.script != ENTRY
+        || (ingredients.op.kind == RAW_IMPORT && ingredients.script != ENTRY)
     {
         return Err("unsupported fixed native operation".into());
     }

@@ -83,7 +83,7 @@ def case(tmp_path, monkeypatch):
                  duplicate_asset=duplicate,save_loaded_asset=save)
     unreal = NS(StaticMesh=Mesh,MaterialInterface=Material,EditorAssetLibrary=library,StaticMeshEditorSubsystem=object(),
                 get_editor_subsystem=lambda _:editor,load_module=lambda name:events.append(('module',name)),
-                CollisionTraceFlag=NS(CTF_USE_COMPLEX_AS_SIMPLE='complex'),CitySurfaceValidation=NS(validate_collision=collision))
+                CollisionTraceFlag=NS(CTF_USE_COMPLEX_AS_SIMPLE='complex'),AtelierBuildWorkerLibrary=NS(validate_mesh_collision=collision))
     monkeypatch.setitem(sys.modules,'unreal',unreal)
     context = NS(job_dir=str(tmp_path),inputs={'raw':'raw-item','source_export':str(source),'ground':'ground-item','coast':'coast-item'},
                  packages={'raw':[RAW],'ground':['/Game/Japan/Materials/MI_Ground'],'coast':['/Game/Japan/Materials/MI_Coast']},outputs=[DEST],
@@ -117,7 +117,7 @@ def test_invalid_source_or_current_native_state_cannot_finish(case, failure):
     elif failure=='slot': state.raw.static_materials[0].values['imported_material_slot_name']='Foreign'
     elif failure=='missing_material': del context.params['args']['materials']['Ground']
     elif failure=='wrong_material_type': context.params['args']['materials']['Ground']='raw'
-    elif failure=='missing_validator': del unreal.CitySurfaceValidation
+    elif failure=='missing_validator': del unreal.AtelierBuildWorkerLibrary
     elif failure=='overlap': context.params['destination']=RAW;context.outputs=[RAW]
     elif failure=='ambiguous': context.packages['raw'].append('/Game/_Raw/Other')
     elif failure=='receipt_sha': (state.source / state.receipt['primary']).write_bytes(b'corrupt')

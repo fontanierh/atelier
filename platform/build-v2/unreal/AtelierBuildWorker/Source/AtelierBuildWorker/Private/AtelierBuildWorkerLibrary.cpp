@@ -1,5 +1,8 @@
 #include "AtelierBuildWorkerLibrary.h"
 #include "AtelierZenFinalise.h"
+#include "Engine/StaticMesh.h"
+#include "PhysicsEngine/BodySetup.h"
+#include "Chaos/TriangleMeshImplicitObject.h"
 
 #include "AssetCompilingManager.h"
 #include "HAL/FileManager.h"
@@ -539,4 +542,22 @@ void UAtelierBuildWorkerLibrary::ForgetFiles(const TArray<FString>& Files)
 FString UAtelierBuildWorkerLibrary::ZenFinaliseRequest(const FString& RequestJson)
 {
     return AtelierZenFinaliseRequest(RequestJson);
+}
+
+// This check is independent of any game's runtime module and creates no assets.
+bool UAtelierBuildWorkerLibrary::ValidateMeshCollision(UStaticMesh* Mesh, int32 ExpectedTriangles, bool HasAuthoredHulls)
+{
+    if (!Mesh || ExpectedTriangles < 1 || Mesh->LODForCollision != 0 || Mesh->ComplexCollisionMesh) return false;
+    const auto* Body = Mesh->GetBodySetup();
+    const auto Trace = HasAuthoredHulls ? CTF_UseSimpleAndComplex : CTF_UseComplexAsSimple;
+    if (!Body || Body->CollisionTraceFlag != Trace || Body->BuildScale3D != FVector::OneVector ||
+        Body->bNeverNeedsCookedCollisionData || !Body->bCreatedPhysicsMeshes || Body->bFailedToCreatePhysicsMeshes ||
+        Body->TriMeshGeometries.IsEmpty()) return false;
+    int64 Triangles = 0;
+    for (const auto& Geometry : Body->TriMeshGeometries)
+    {
+        if (!Geometry) return false;
+        Triangles += Geometry->Elements().GetNumTriangles();
+    }
+    return Triangles == ExpectedTriangles;
 }
