@@ -141,7 +141,7 @@ def select_member(root, members, member):
     return root / member
 
 
-def stage_inputs(job_dir, items, content_dir, *, runtime_dir, output_packages=()):
+def stage_inputs(job_dir, items, content_dir, *, runtime_dir, output_packages=(), root_bindings=None):
     """@cc [owner:fontanierh,label:correctness;safety] frozen-unreal-item-staging
     Every present Item MUST be inventoried without following links. Native Content
     copies MUST preserve exact source bytes and complete sidecars, never mutate
@@ -151,6 +151,18 @@ def stage_inputs(job_dir, items, content_dir, *, runtime_dir, output_packages=()
     Returned reads are declarations for actual bytes, never cache certification.
     """
     job_dir, content, runtime = _root(job_dir), _root(content_dir), _root(runtime_dir)
+    root_bindings = {} if root_bindings is None else root_bindings
+    if (not isinstance(root_bindings, dict)
+            or set(root_bindings) - {item['name'] for item in items}):
+        raise ValueError('ROOT binding names an undeclared input slot')
+    for binding in root_bindings.values():
+        if not isinstance(binding, dict) or set(binding) != {'archive_member', 'name'}:
+            raise ValueError('invalid explicit ROOT binding')
+        _relative(binding['archive_member'])
+        if not binding['archive_member'].endswith('.tree.tar'):
+            raise ValueError('ROOT binding must select an exact archive member')
+        if '/' in _relative(binding['name']):
+            raise ValueError('ROOT binding name must be one producer root basename')
     if (not runtime.is_relative_to(job_dir) or runtime == job_dir
             or content == job_dir or content.is_relative_to(runtime) or runtime.is_relative_to(content)):
         raise ValueError('runtime and Content must be distinct owned roots')
@@ -180,14 +192,25 @@ def stage_inputs(job_dir, items, content_dir, *, runtime_dir, output_packages=()
         inputs[name], packages[name] = None, []
         if not present:
             continue
-        original, _ = _inventory(source)
+        original, original_directories = _inventory(source)
         reads.update(source / member if member else source for member in original)
-        if source.name.endswith('.tree.tar'):
+        binding = root_bindings.get(name)
+        archive = None
+        destination = runtime / ('item-' + str(index))
+        if binding is not None:
+            if not original_directories or binding['archive_member'] not in original:
+                raise ValueError('explicit ROOT archive member is absent or not an Item file')
+            archive = source / binding['archive_member']
+            if os.path.lexists(destination):
+                raise ValueError('ROOT binding runtime parent is already occupied')
+            destination /= binding['name']
+        elif source.name.endswith('.tree.tar'):
             if set(original) != {''}:
                 raise ValueError('root archive input must be a regular file')
-            destination = runtime / ('item-' + str(index))
-            decoded = recipe_job.unpack_root(source, destination)
-            if _inventory(source)[0] != original:
+            archive = source
+        if archive is not None:
+            decoded = recipe_job.unpack_root(archive, destination)
+            if _inventory(source) != (original, original_directories):
                 raise ValueError('archive input changed during decode')
             if decoded['kind'] == 'absent':
                 continue

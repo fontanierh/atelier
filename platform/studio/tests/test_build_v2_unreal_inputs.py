@@ -142,3 +142,56 @@ def test_member_inventory_rejects_unexplained_empty_directories(roots):
 def test_noncanonical_input_locator_refuses(roots, path):
     with pytest.raises(ValueError, match='noncanonical'):
         stage(roots, [item('raw', path, 'absent')])
+
+
+def test_explicit_item_root_archive_preserves_raw_filename_extension(roots, tmp_path):
+    job, content, runtime = roots
+    png = put(tmp_path, 'producer/T_leaf_broad.png', b'png payload')
+    root = job / 'in/texture'; archive = root / 'products/0-0.tree.tar'; archive.parent.mkdir(parents=True)
+    recipe_job.pack_root(png, archive); put(root, 'products/other.tree.tar', b'not the selected archive')
+    archive.chmod(0o444); before = recipe_job.inventory(root)
+    binding = {'texture': {'archive_member': 'products/0-0.tree.tar', 'name': png.name}}
+    result = unreal_inputs.stage_inputs(job, [item('texture', 'in/texture')], content,
+                                       runtime_dir=runtime, root_bindings=binding)
+    decoded = Path(result['inputs']['texture'])
+    assert decoded == runtime / 'item-0/T_leaf_broad.png'
+    assert decoded.suffix == '.png' and decoded.read_bytes() == b'png payload'
+    assert archive in result['declared_reads'] and decoded in result['declared_reads']
+    assert result['packages']['texture'] == [] and recipe_job.inventory(root) == before
+
+
+def test_explicit_item_directory_root_is_named_and_stages_native_content(roots, tmp_path):
+    job, content, runtime = roots; producer = tmp_path / 'producer'
+    put(producer, 'content/Game/A.uasset')
+    archive = job / 'in/native/products/0-0.tree.tar'; archive.parent.mkdir(parents=True)
+    recipe_job.pack_root(producer, archive)
+    result = unreal_inputs.stage_inputs(job, [item('native', 'in/native')], content, runtime_dir=runtime,
+                                       root_bindings={'native': {'archive_member':'products/0-0.tree.tar','name':'NativeRoot'}})
+    assert result['inputs']['native'] == str(runtime / 'item-0/NativeRoot')
+    assert result['packages']['native'] == ['/Game/A']
+    assert (content / 'A.uasset').read_bytes() == b'bytes'
+
+
+@pytest.mark.parametrize('binding', [
+    {'missing': {'archive_member':'products/0-0.tree.tar','name':'T.png'}},
+    {'texture': {'archive_member':'products/missing.tree.tar','name':'T.png'}},
+    {'texture': {'archive_member':'../foreign.tree.tar','name':'T.png'}},
+    {'texture': {'archive_member':'products/0-0.tree.tar','name':'nested/T.png'}},
+    {'texture': {'archive_member':'products/0-0.tree.tar','name':'T.png','guess':True}},
+    {'texture': {'archive_member':'products/source.png','name':'T.png'}},
+])
+def test_unknown_or_malformed_explicit_archive_binding_refuses(roots, binding):
+    job, content, runtime = roots
+    put(job, 'in/texture/products/0-0.tree.tar', b'not decoded for a bad binding')
+    with pytest.raises(ValueError):
+        unreal_inputs.stage_inputs(job, [item('texture', 'in/texture')], content,
+                                   runtime_dir=runtime, root_bindings=binding)
+    assert not list(runtime.iterdir()) and not list(content.iterdir())
+
+
+def test_unbound_item_archive_member_is_not_guessed(roots):
+    job, _, runtime = roots; source = job / 'in/raw'
+    put(source, 'products/0-0.tree.tar', b'not decoded without an explicit binding')
+    result = stage(roots, [item('raw', 'in/raw')])
+    assert result['inputs']['raw'] == str(source)
+    assert not list(runtime.iterdir())
