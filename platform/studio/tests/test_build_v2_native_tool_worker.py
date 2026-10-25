@@ -493,3 +493,49 @@ def test_archive_consumes_the_produced_app_and_controller_key(tmp_path, monkeypa
     assert calls[0][-2:] == ['--revision', 'v2-' + 'f' * 64]
     assert '--cook-receipt' not in calls[0]
     assert archive.read_bytes() == b'produced app'
+
+
+def test_compile_candidate_revalidates_inputs_and_runs_current_ubt(tmp_path, monkeypatch):
+    from pathlib import Path
+    old_job = tmp_path / 'old/job'; old_job.mkdir(parents=True)
+    old = job(old_job)
+    old_view, _, _ = tool.recipe_job.prepare_view(old, old_job)
+    source = old_view / 'Source.cpp'; source.write_bytes(b'current source')
+    retained = old_view / 'Intermediate'; retained.mkdir(); (retained / 'compiled.pch').write_bytes(b'preserved')
+    cleanup = old_job.parent / 'guard/attempt-1/cleanup.json'; cleanup.parent.mkdir(parents=True)
+    cleanup.write_text('{"confirmed":true}')
+    fresh_job = tmp_path / 'fresh/job'; fresh_job.mkdir(parents=True)
+    current = job(fresh_job)
+    incoming = fresh_job / 'inputs/source'; incoming.parent.mkdir(); incoming.write_bytes(b'current source')
+    current['inputs'] = [{'name': 'source', 'path': 'inputs/source'}]
+    current['params']['recipe']['paths'] = {'Source.cpp': 'inputs/source'}
+    monkeypatch.setenv('ATELIER_V2_COMPILE_VIEW', str(old_view))
+    calls = []
+    def run(argv, *, cwd, **kwargs):
+        calls.append(cwd)
+        assert cwd == old_view and (cwd / 'Intermediate/compiled.pch').read_bytes() == b'preserved'
+        binaries = cwd / 'Binaries/Mac'; binaries.mkdir(parents=True)
+        (binaries / 'Game.dylib').write_bytes(b'current compiled bytes')
+        (binaries / 'UnrealEditor.modules').write_text(json.dumps({'BuildId': 'sdk', 'Modules': {'Game': 'Game.dylib'}}))
+        (binaries / 'GameEditor.target').write_text(json.dumps({'TargetName': 'GameEditor', 'Platform': 'Mac',
+            'Configuration': 'Development', 'BuildProducts': [{'Path': '$(ProjectDir)/Binaries/Mac/Game.dylib'}]}))
+    assert tool.dispatch(current, fresh_job, tmp_path / 'engine', run) == ['binaries.tree.tar']
+    assert calls == [old_view]
+    assert (old_job / 'Game.uproject').read_bytes() == b'{}'
+    assert (fresh_job / 'output/binaries.tree.tar').is_file()
+
+
+@pytest.mark.parametrize('broken', ['inputs', 'cleanup', 'link'])
+def test_compile_candidate_refuses_changed_inputs_and_unconfirmed_cleanup(tmp_path, broken):
+    candidate = tmp_path / 'previous/job/.recipe-runtime/view'; candidate.mkdir(parents=True)
+    cleanup = candidate.parents[2] / 'guard/attempt-1/cleanup.json'; cleanup.parent.mkdir(parents=True)
+    cleanup.write_text('{"confirmed":true}')
+    fresh = tmp_path / 'fresh'; fresh.mkdir()
+    (fresh / 'Source.cpp').write_bytes(b'new')
+    (candidate / 'Source.cpp').write_bytes(b'new' if broken != 'inputs' else b'old')
+    request = {'code': [], 'params': {'recipe': {'paths': {'Source.cpp': 'inputs/source'}}}}
+    if broken == 'cleanup': cleanup.write_text('{"confirmed":false}')
+    if broken == 'link':
+        alias = tmp_path / 'alias'; alias.symlink_to(candidate); candidate = alias
+    with pytest.raises(tool.Refused):
+        tool.compile_candidate(request, fresh, [str(fresh / 'Source.cpp')], candidate)

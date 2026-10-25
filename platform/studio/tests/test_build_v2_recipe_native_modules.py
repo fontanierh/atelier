@@ -30,12 +30,13 @@ def test_game_module_context_uses_actual_compiled_items_and_descriptor(tmp_path)
     unit = units[1]
     assert unit['inputs'] == [
         {'role': 'content', 'name': 'compiled_editor', 'source': {'kind': 'item', 'unit': 'editor', 'item': 'output0'}},
-        {'role': 'content', 'name': 'compiled_plugin_0', 'source': {'kind': 'item', 'unit': 'editor', 'item': 'product0'}},
+        {'role': 'content', 'name': 'compiled_plugin_0', 'source': {'kind': 'item', 'unit': 'editor', 'item': 'output0'}},
         {'role': 'content', 'name': 'compiled_descriptor_0', 'source': {'kind': 'file', 'path': 'platform/engine/Plugins/Tools/Tools.uplugin'}}]
     context = unit['params']['native_modules']
     assert context['editor'] == {'slot': 'compiled_editor', 'archive': 'outputs/0.tree.tar',
-        'modules': [{'name': 'Game', 'kind': 'Runtime', 'loading_phase': 'Default'}]}
-    assert context['plugins'][0]['archive'] == 'products/0-0.tree.tar'
+        'modules': [{'name': 'Game', 'kind': 'Runtime', 'loading_phase': 'Default'}], 'subset': True}
+    assert context['plugins'][0]['archive'] == 'outputs/0.tree.tar'
+    assert context['plugins'][0]['subset'] is True
     assert not (tmp_path / 'games/game/unreal/Binaries').exists()
     assert set(staged['pawn']) == set(slots)
 
@@ -46,7 +47,29 @@ def test_missing_or_ambiguous_module_roles_refuse(tmp_path, broken):
     if broken == 'producer': rows.clear()
     if broken == 'module': required['pawn'] = [{'name': 'Unknown'}]
     if broken == 'archive': units[0]['outputs'][0]['files'][0]['path'] = 'foreign.tree.tar'
-    if broken == 'plugin': rows[0]['products'].clear()
+    if broken == 'plugin':
+        plugin = tmp_path / 'platform/engine/Plugins/Tools/Tools.uplugin'
+        local = tmp_path / 'games/game/unreal/Plugins/Tools/Tools.uplugin'
+        local.parent.mkdir(parents=True); plugin.rename(local)
+        rows[0]['products'].clear()
     if broken == 'collision': staged['pawn']['compiled_editor'] = 'owned'
     with pytest.raises(ValueError):
         attach(units, rows, required, checkout=tmp_path, staged=staged, slots=slots)
+
+
+def test_shared_modules_need_no_nonexistent_plugin_product(tmp_path):
+    rows, units, staged, slots, required = fixture(tmp_path)
+    rows[0]['products'].clear()
+    attach(units, rows, required, checkout=tmp_path, staged=staged, slots=slots)
+    plugin = units[1]['params']['native_modules']['plugins'][0]
+    assert plugin['archive'] == 'outputs/0.tree.tar' and plugin['subset']
+
+
+def test_project_local_plugin_keeps_its_separate_compiled_product(tmp_path):
+    rows, units, staged, slots, required = fixture(tmp_path)
+    plugin = tmp_path / 'platform/engine/Plugins/Tools/Tools.uplugin'
+    local = tmp_path / 'games/game/unreal/Plugins/Tools/Tools.uplugin'
+    local.parent.mkdir(parents=True); plugin.rename(local)
+    attach(units, rows, required, checkout=tmp_path, staged=staged, slots=slots)
+    context = units[1]['params']['native_modules']['plugins'][0]
+    assert context['archive'] == 'products/0-0.tree.tar' and not context['subset']

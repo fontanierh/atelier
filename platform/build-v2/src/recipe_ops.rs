@@ -99,7 +99,7 @@ pub fn validate_params(params: &BTreeMap<String, Value>) -> Result<(), String> {
         serde_json::from_value(params.get("recipe").ok_or("missing recipe")?.clone())
             .map_err(|e| e.to_string())?;
     if recipe.version != 1
-        || recipe.commands.is_empty()
+        || (recipe.commands.is_empty() && recipe.file_group.is_none())
         || (recipe.outputs.is_empty() && recipe.file_group.is_none())
     {
         return Err("empty or unknown recipe".into());
@@ -345,6 +345,11 @@ mod file_set_tests {
             ("file_root".into(), "output/files".into()),
         ]);
         validate_params(&params).unwrap();
+        let mut projection = params.clone();
+        projection.get_mut("recipe").unwrap()["commands"] = serde_json::json!([]);
+        validate_params(&projection).unwrap();
+        projection.get_mut("recipe").unwrap().as_object_mut().unwrap().remove("file_group");
+        assert!(validate_params(&projection).is_err());
         for value in [
             serde_json::json!({"source":"../outside","parent":"Audio","extensions":[".wav"]}),
             serde_json::json!({"source":"generated/audio","parent":"Audio","extensions":[".wav",".wav"]}),

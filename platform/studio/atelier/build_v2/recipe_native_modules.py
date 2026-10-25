@@ -11,6 +11,8 @@ def attach(units, rows, requirements, *, checkout, staged, slots):
     binaries, infer a build success or use an ambient checkout binary locator.
     Complete declared project modules are loaded from the produced editor inventory;
     selected project plugins include their declared plugin dependency closure.
+    Shared additional plugins select their descriptor modules from the complete
+    produced editor ROOT; project-local plugins use their separate produced ROOT.
     """
     if not requirements:
         return
@@ -59,16 +61,17 @@ def attach(units, rows, requirements, *, checkout, staged, slots):
             stage[slot] = 'inputs/' + slot
             slots[slot] = False
         incoming('compiled_editor', {'kind': 'item', 'unit': compile_row['id'], 'item': editor_roots[0]['id']})
-        context = {'editor': {'slot': 'compiled_editor', 'archive': 'outputs/0.tree.tar', 'modules': deepcopy(modules)}, 'plugins': []}
+        context = {'editor': {'slot': 'compiled_editor', 'archive': 'outputs/0.tree.tar', 'modules': deepcopy(modules), 'subset': True}, 'plugins': []}
         for index, name in enumerate(sorted(enabled & available.keys())):
             product = compile_row['id'] + '.' + name
-            if product not in products:
+            shared = not available[name].is_relative_to(project.parent / 'Plugins')
+            if product not in products and not shared:
                 raise ValueError('selected native plugin has no compiled product: ' + name)
-            item = 'product' + str(products[product])
-            archive = f'products/{products[product]}-0.tree.tar'
+            item = editor_roots[0]['id'] if shared else 'product' + str(products[product])
+            archive = 'outputs/0.tree.tar' if shared else f'products/{products[product]}-0.tree.tar'
             binary_slot, descriptor_slot = 'compiled_plugin_' + str(index), 'compiled_descriptor_' + str(index)
             incoming(binary_slot, {'kind': 'item', 'unit': compile_row['id'], 'item': item})
             path = available[name].resolve().relative_to(root).as_posix()
             incoming(descriptor_slot, {'kind': 'file', 'path': path})
-            context['plugins'].append({'name': name, 'slot': binary_slot, 'archive': archive, 'descriptor_slot': descriptor_slot})
+            context['plugins'].append({'name': name, 'slot': binary_slot, 'archive': archive, 'descriptor_slot': descriptor_slot, 'subset': shared})
         unit['params']['native_modules'] = context
