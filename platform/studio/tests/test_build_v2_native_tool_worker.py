@@ -263,32 +263,37 @@ def test_semantic_global_projection_keeps_complete_shader_bytes_excludes_transpo
     from atelier.build_v2.native_tool_worker import semantic_global_data, Refused
     import pytest
     source = tmp_path / 'cooked'
-    content = source / 'Game/Content'
+    content = source / 'Game/Metadata/ShaderLibrarySource'
     content.mkdir(parents=True)
     roles = {'ShaderAssetInfo':'.assetinfo.json','ShaderArchive':'.ushaderbytecode','ShaderTypeInfo':'.stinfo'}
     expected = {}
-    for format_ in ('SF_METAL_SM5','SF_METAL_SM6'):
+    for format_ in ('SF_METAL_SM5-METAL_SM5','SF_METAL_SM6-METAL_SM6'):
         for prefix, suffix in roles.items():
             name = prefix + '-Global-' + format_ + suffix
             expected[name] = name.encode()
             (content / name).write_bytes(expected[name])
+    (source/'Engine').mkdir()
+    for platform in ('METAL_SM5','METAL_SM6'):
+        (source/'Engine'/('GlobalShaderCache-'+platform+'.bin')).write_bytes(platform.encode())
     (source / 'ue.projectstore').write_text('namespace A')
     (source / 'atelier-native-cook.json').write_text('transport only')
     (source / 'CookStats.txt').write_text('statistics')
+    staging=source/'Game/Content';staging.mkdir()
+    for name in expected: (staging/name).write_bytes(b'not the canonical source archive')
     first = tmp_path / 'first'
-    assert semantic_global_data(source, first) == ['SF_METAL_SM5','SF_METAL_SM6']
+    assert semantic_global_data(source, first, 'Game') == ['SF_METAL_SM5-METAL_SM5','SF_METAL_SM6-METAL_SM6']
     assert {p.name:p.read_bytes() for p in (first/'Content').iterdir()} == expected
-    assert {p.name for p in first.iterdir()} == {'Content'}
+    assert {p.name for p in first.iterdir()} == {'Content','Engine'}
     (source/'ue.projectstore').write_text('namespace B')
-    second=tmp_path/'second';semantic_global_data(source,second)
+    second=tmp_path/'second';semantic_global_data(source,second,'Game')
     assert {p.name:p.read_bytes() for p in (second/'Content').iterdir()} == expected
-    (content/'ShaderArchive-Global-SF_METAL_SM5.ushaderbytecode').unlink()
+    (content/'ShaderArchive-Global-SF_METAL_SM5-METAL_SM5.ushaderbytecode').unlink()
     with pytest.raises(Refused, match='complete Global'):
-        semantic_global_data(source,tmp_path/'missing')
+        semantic_global_data(source,tmp_path/'missing','Game')
     assert not (tmp_path/'missing').exists()
-    (content/'ShaderArchive-Global-SF_METAL_SM5.ushaderbytecode').symlink_to(content/'ShaderArchive-Global-SF_METAL_SM6.ushaderbytecode')
+    (content/'ShaderArchive-Global-SF_METAL_SM5-METAL_SM5.ushaderbytecode').symlink_to(content/'ShaderArchive-Global-SF_METAL_SM6-METAL_SM6.ushaderbytecode')
     with pytest.raises(Refused, match='alias'):
-        semantic_global_data(source,tmp_path/'alias')
+        semantic_global_data(source,tmp_path/'alias','Game')
 
 
 def test_global_cook_keeps_global_shader_saving_and_explicit_shader_archive_policy():
