@@ -644,7 +644,9 @@ def mover_export_steps(character, out):
     """
     k, threads = key(character), character.blender['threads']
     steps = [Step(f'characters.{k}', [body_export(character.id, threads=threads)], inputs=[character.folder, NAMES, PIPELINE],
-                  outputs=[out / character.output / 'export.json'], heavy=True,
+                  outputs=[out / character.output / 'export.json'],
+                  products=[Product(f'characters.{k}.export', tuple(out / character.output / name
+                                    for name in ('export.json', 'fbx', 'textures')))], heavy=True,
                   checkpoint_outputs=(out / character.output / 'fbx', out / character.output / 'textures', out / character.output / 'export.json'),
                   about=f"{character.name}'s body, textures and own clips, to FBX")]
     if character.playable:
@@ -720,7 +722,9 @@ def mover_adventure_steps(character, out):
         commands, needs = [retarget], ['characters.adventure', f'characters.{key(donor)}_adventure']
         outputs = [out / character.output / 'adventure' / 'export.json']
     return [
-        Step(f'characters.{k}_adventure', commands, inputs=retarget_inputs, needs=needs, outputs=outputs, heavy=True,
+        Step(f'characters.{k}_adventure', commands, inputs=retarget_inputs, needs=needs, outputs=outputs,
+             products=[Product(f'characters.{k}_adventure.export', tuple(out / character.output / 'adventure' / name
+                               for name in ('export.json', 'fbx')))], heavy=True,
              about=f'The merged move set retargeted onto {character.name}, to FBX'),
         Step(f'unreal.{k}_adventure', [importer], inputs=import_inputs, needs=[f'characters.{k}_adventure', f'unreal.{k}', 'unreal.adventure'],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / character.id / 'adventure.json'], heavy=True,
@@ -775,7 +779,9 @@ def adventure_steps(out):
     adventure = CHARS / 'adventure'
     return [
         Step('characters.adventure', [Python(adventure / 'export.py')], inputs=[adventure, *library.sources()],
-             outputs=[out / 'adventure' / 'export.json'], about='Merged motion reference and two props'),
+             outputs=[out / 'adventure' / 'export.json'],
+             products=[Product('characters.adventure.export', (out / 'adventure/export.json', out / 'adventure/glb'))],
+             about='Merged motion reference and two props'),
         Step('unreal.adventure', [UnrealScript(SCRIPTS / 'import_adventure.py', 'ADVENTURE IMPORT COMPLETE', null_rhi=True)],
              inputs=[SCRIPTS / 'import_adventure.py', SCRIPTS / 'animation_compression.py'], after=['unreal.world'],
              needs=['characters.adventure'], outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'adventure' / 'reference.json'],
