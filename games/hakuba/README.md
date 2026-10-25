@@ -26,6 +26,9 @@ trunk serve                  # browser, at http://127.0.0.1:8080
 cargo run                    # desktop
 ```
 
+In the game, `I` turns the inspect camera on and off: drag to spin around the character, scroll to zoom,
+shift + drag to move up and down.
+
 Test in the browser by default: what runs there almost always runs on desktop too, while the reverse is not
 true.
 
@@ -42,6 +45,7 @@ games/hakuba/
   crates/                   the game code, one crate per feature, each one Bevy plugin
     world/                  the map
     characters/             the playable characters
+    inspect/                the inspect camera, for checking models up close
   index.html                the page the browser build runs in, with the canvas the game draws into
   Trunk.toml                what the browser build copies next to the game
   assets/                   everything the game loads, each next to its sources (assets/README.md)

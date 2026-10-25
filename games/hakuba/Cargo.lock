@@ -3033,6 +3033,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "hakuba_characters",
+ "hakuba_inspect",
  "hakuba_world",
 ]
 
@@ -3054,6 +3055,13 @@ dependencies = [
  "serde_json",
  "sha2",
  "toml_edit",
+]
+
+[[package]]
+name = "hakuba_inspect"
+version = "0.1.0"
+dependencies = [
+ "bevy",
 ]
 
 [[package]]

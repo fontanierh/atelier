@@ -1,6 +1,7 @@
 use bevy::asset::AssetMetaCheck;
 use bevy::prelude::*;
 use hakuba_characters::CharactersPlugin;
+use hakuba_inspect::InspectPlugin;
 use hakuba_world::WorldPlugin;
 
 fn main() {
@@ -24,6 +25,6 @@ fn main() {
                     ..default()
                 }),
         )
-        .add_plugins((WorldPlugin, CharactersPlugin))
+        .add_plugins((WorldPlugin, CharactersPlugin, InspectPlugin))
         .run();
 }
