@@ -65,7 +65,7 @@ def test_assembly_capture_mismatches_refuse(change):
         gt.geometry_templates(rows, checkout=CHECKOUT)
 
 
-@pytest.mark.parametrize('suffix,encoding', [('.fbx', 'mesh_ir'), ('.glb', 'mesh_ir'), ('.glb', 'encoded_glb')])
+@pytest.mark.parametrize('suffix,encoding', [('.fbx', 'mesh_ir'), ('.glb', 'mesh_ir'), ('.glb', 'mesh_set'), ('.glb', 'encoded_glb')])
 def test_original_constructor_format_survives_dependency_rows_and_templates(monkeypatch, suffix, encoding):
     from types import SimpleNamespace
     import region_exports
@@ -92,7 +92,7 @@ def test_original_constructor_format_survives_dependency_rows_and_templates(monk
     assert group['format'] == suffix[1:]
     template = out['templates'][0]
     assert template['files'][0]['path'] == '$piece' + suffix
-    if encoding == 'mesh_ir':
+    if encoding in ('mesh_ir', 'mesh_set'):
         assert template['params'] == {'format': suffix[1:], 'options': {}}
 
 

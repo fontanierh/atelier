@@ -32,7 +32,7 @@ class LogicalAsset:
 
 def inventory(root, parent, *, encoding='mesh_ir'):
     """Read task identities only; the owning ordinary task verifies all geometry payloads."""
-    if encoding not in ('mesh_ir','encoded_glb'):raise ValueError('Unknown logical mesh encoding')
+    if encoding not in ('mesh_ir','mesh_set','encoded_glb'):raise ValueError('Unknown logical mesh encoding')
     suffix='.mesh' if encoding=='encoded_glb' else '.npz'
     root = Path(root)
     path = root / 'plan.json'
@@ -46,7 +46,8 @@ def inventory(root, parent, *, encoding='mesh_ir'):
     if (value.get('schema') != 1 or value.get('parent') != parent or value.get('complete') is not True
             or value.get('triangle_limit') != export_tasks.TRIANGLE_LIMIT or not value.get('pieces')):
         raise ValueError('Incomplete or foreign logical geometry plan')
-    if encoding=='encoded_glb' and value.get('kind')!='encoded_glb':raise ValueError('Wrong logical mesh data encoding')
+    if value.get('kind') != {'mesh_ir': None, 'mesh_set': 'mesh_set', 'encoded_glb': 'encoded_glb'}[encoding]:
+        raise ValueError('Wrong logical mesh data encoding')
     seen, rows = set(), []
     total = 0
     for row in value['pieces']:
@@ -79,7 +80,7 @@ def steps(ctx, *, region, assets, after=(), inputs=()):
     for asset in assets:
         if asset.suffix not in export_tasks.PRIMARY:
             raise ValueError('Unsupported atomic region format')
-        if asset.encoding not in ('mesh_ir','encoded_glb') or (asset.encoding=='encoded_glb' and asset.suffix!='.glb'):
+        if asset.encoding not in ('mesh_ir','mesh_set','encoded_glb') or (asset.encoding=='encoded_glb' and asset.suffix!='.glb'):
             raise ValueError('Unsupported logical source encoding/primary combination')
         encoded=asset.encoding=='encoded_glb'
         root = ctx.out / 'planned_exports' / region / asset.key

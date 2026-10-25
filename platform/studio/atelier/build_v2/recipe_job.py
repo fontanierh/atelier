@@ -318,7 +318,7 @@ def run(context):
     geometry = recipe.get('geometry')
     if geometry is not None:
         if (geometry.get('format') not in ('fbx', 'glb')
-                or geometry.get('encoding') not in ('mesh_ir', 'encoded_glb')
+                or geometry.get('encoding') not in ('mesh_ir', 'mesh_set', 'encoded_glb')
                 or (geometry['encoding'] == 'encoded_glb' and geometry['format'] != 'glb')):
             raise ValueError('Recipe geometry requires its declared encoding and exact export format')
     view = Path.cwd()
@@ -364,10 +364,10 @@ def run(context):
             root = view / relative(geometry['source'])
             if geometry['encoding'] == 'encoded_glb':
                 verify_encoded_plan(root, parent=geometry['parent'], limits=context.params['plan_limits'])
-            elif geometry['encoding'] == 'mesh_ir':
+            elif geometry['encoding'] in ('mesh_ir', 'mesh_set'):
                 from atelier.build_v2.blender_ops import verify_plan
                 verify_plan(root, parent=geometry['parent'], limits=context.params['plan_limits'],
-                            output_format=geometry['format'])
+                            output_format=geometry['format'], plan_encoding=geometry['encoding'])
             else:
                 raise ValueError('unsupported geometry encoding')
             shutil.copytree(root, output / 'geometry')
