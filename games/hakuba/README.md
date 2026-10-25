@@ -80,7 +80,6 @@ what the game loads; `src/` is how it is made and is never loaded or shipped.
     export.py               the script that writes the .glb (generated assets)
     params.toml             the numbers the script reads
     <asset-name>.blend      a hand-made source (hand-made assets)
-    concepts/               generated reference images, each with its prompt and model
 ```
 
 The whole tree:
@@ -122,7 +121,8 @@ Rules:
   the final files.
 - Binaries (`.glb`, `.blend`, `.ktx2`, `.png`) are stored in Git LFS (`.gitattributes`). The repository's
   pre-push hook uploads them.
-- Reference videos, old revisions and captures stay out of git, in the archive.
+- Concept images, reference videos, old revisions and captures stay out of git, in the archive. `asset.toml`
+  records what a source was made from.
 
 ### Exporting
 
