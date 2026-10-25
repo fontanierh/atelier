@@ -83,7 +83,8 @@ def island(rows, geometry, *, checkout):
 
 def _package_dependencies(native):
     classes = {'Texture', 'StaticMesh', 'SkeletalMesh', 'Skeleton', 'PhysicsAsset',
-               'Material', 'MaterialInstance', 'MaterialParameterCollection', 'Map', 'Sound', 'Animation', 'DataAsset'}
+               'Material', 'MaterialInstance', 'MaterialParameterCollection', 'Map', 'Sound', 'Animation', 'DataAsset', 'BlendSpace1D', 'AdventureMoveSet', 'AnimBoneCompressionSettings',
+               'WandererDefinition', 'SoundAttenuation'}
     by_id = {unit['id']: unit for unit in native['units']}
     result = {}
     for package, reference in native['packages'].items():
@@ -269,6 +270,36 @@ def _complete_mesh_family(native, geometry, *, family, export_prefixes, checkout
 
 
 
+def _join_world_parts(native, rows, geometry, *, checkout):
+    """Compose the actual World asset owners; completion waits for every callback family."""
+    source = _family_source_reference(rows, 'characters.wanderer', 'wanderer', 'build.json')
+    compression = _family_module(checkout, 'v2_moveset_units').compression_unit(checkout=checkout)
+    if not any(unit['id'] == compression['id'] for unit in native['units']):
+        native['units'].append(compression)
+        native['staged_inputs'][compression['id']] = {}
+        native['packages'][compression['outputs'][0]['logical_path']] = {
+            'unit': compression['id'], 'item': 'asset', 'package': compression['outputs'][0]['logical_path']}
+    wanderer = _family_module(checkout, 'v2_wanderer_units').wanderer_units(rows, checkout=checkout,
+        natives={'wanderer': {'unit': source['unit'], 'item': source['item'],
+            'root': {'archive_member': source['file'], 'name': 'wanderer'}},
+            'compression': {'unit': compression['id'], 'item': 'asset',
+                'package': compression['outputs'][0]['logical_path']}})
+    wanderer['content_slots'] = {incoming['name']: False for unit in wanderer['units']
+                                  for incoming in unit['inputs']}
+    _append_family(native, wanderer)
+    for family in ('props', 'sailboat', 'zeppelin'):
+        extended = _family_module(checkout, 'v2_' + family + '_units').attach_followers(
+            geometry, _package_dependencies(native), checkout=checkout)
+        if 'units' in extended:
+            _append_family(native, {key: extended.pop(key) for key in
+                ('units', 'staged_inputs', 'content_slots', 'packages')})
+        native.setdefault('follower_module_requirements', {}).update(extended.pop('module_requirements', {}))
+        geometry = extended
+    native['geometry'] = geometry
+    native.setdefault('missing_roles', []).append('world.hidamari_non_north_materials_and_props')
+    return native
+
+
 def _join_audio(native, rows, geometry, *, checkout):
     """Replace the six original sound imports with per-WAV owners and typed footsteps."""
     import ast
@@ -328,7 +359,7 @@ def lower(rows, geometry, *, checkout):
     elif 'unreal.materials' in selected:
         native = shared_materials(rows, checkout=checkout)
         native['aliases'] = {}
-    elif selected & {'unreal.treehouse', 'unreal.brinecove', 'unreal.sounds', 'unreal.crater_cloud', 'unreal.skate_board', 'unreal.fx', 'unreal.skate_data', 'unreal.kei', 'unreal.village', 'unreal.lake', 'unreal.houses', 'unreal.southwest', 'unreal.mega', 'unreal.swordcamp', 'unreal.kart'}:
+    elif selected & {'unreal.treehouse', 'unreal.brinecove', 'unreal.sounds', 'unreal.crater_cloud', 'unreal.skate_board', 'unreal.fx', 'unreal.skate_data', 'unreal.kei', 'unreal.village', 'unreal.lake', 'unreal.houses', 'unreal.southwest', 'unreal.mega', 'unreal.swordcamp', 'unreal.kart', 'unreal.world'}:
         native = {'units': [], 'staged_inputs': {}, 'content_slots': {}, 'packages': {},
                   'targets': (), 'aliases': {}, 'missing_roles': []}
         if 'unreal.treehouse' in selected:
@@ -367,7 +398,7 @@ def lower(rows, geometry, *, checkout):
             native['aliases'].update(family['aliases'])
     if 'unreal.sounds' in selected:
         native = _join_audio(native, rows, native.get('geometry', geometry), checkout=checkout)
-    if selected & {'unreal.kei', 'unreal.village', 'unreal.lake', 'unreal.houses', 'unreal.southwest', 'unreal.mega'}:
+    if selected & {'unreal.kei', 'unreal.village', 'unreal.lake', 'unreal.houses', 'unreal.southwest', 'unreal.mega', 'unreal.world'}:
         package = '/Game/Japan/Materials/M_Village'
         kei_module = _family_module(checkout, 'v2_kei_units')
         if 'unreal.kei' in selected:
@@ -445,6 +476,8 @@ def lower(rows, geometry, *, checkout):
         _complete_mesh_family(native, extended, family='kart',
             export_prefixes=('world.vehicle_kart.export.',), checkout=checkout,
             fixed=family['packages'], prerequisites=data)
+    if 'unreal.world' in selected:
+        native = _join_world_parts(native, rows, native.get('geometry', geometry), checkout=checkout)
     if selected & {'unreal.treehouse', 'unreal.brinecove'}:
         native = _join_native_families(native, rows, geometry, selected, checkout=checkout)
     return native
