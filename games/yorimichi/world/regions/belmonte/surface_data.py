@@ -5,6 +5,7 @@ from pathlib import Path
 import struct
 import tempfile
 
+from atelier.atomic_files import managed_temporary_parent
 from atelier.export_manifest import name,real_directory
 from atelier.gltf import glb_parts
 from atelier.gltf_partition import split
@@ -69,7 +70,7 @@ def write(path,entry,data,*,stage='final'):
     if path.is_symlink() or path.exists() and not path.is_file():raise ValueError('Final query must be regular')
     if path.exists() and path.read_bytes()==packet:return
     path.parent.mkdir(parents=True,exist_ok=True)
-    with tempfile.NamedTemporaryFile(prefix='.surface-',dir=path.parent,delete=False) as stream:
+    with tempfile.NamedTemporaryFile(prefix='.surface-',dir=managed_temporary_parent(path),delete=False) as stream:
         temporary=Path(stream.name);stream.write(packet)
     try:temporary.replace(path)
     finally:temporary.unlink(missing_ok=True)
