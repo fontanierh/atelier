@@ -250,6 +250,8 @@ def _complete_mesh_family(native, geometry, *, family, export_prefixes, checkout
     inputs.extend({'role': 'content', 'name': 'required' + str(index), 'source': {
         'kind': 'item', 'unit': ref['unit'], 'item': ref['item']}}
         for index, ref in enumerate(prerequisites))
+    for incoming in inputs:
+        incoming['whole'] = 'The complete finished Item is required to certify this family roster and runtime data.'
     output = 'build/yorimichi/' + family + '/import-report.json'
     unit = {'id': 'unreal.' + family + '.complete', 'op': {'kind': 'recipe.python', 'version': '1'},
         'script': 'platform/studio/atelier/build_v2/recipe_job.py',
@@ -302,7 +304,8 @@ def _join_audio(native, rows, geometry, *, checkout):
     index = {'id': 'unreal.sounds.complete', 'op': {'kind': 'recipe.python', 'version': '1'},
         'script': 'platform/studio/atelier/build_v2/recipe_job.py',
         'code': [script, 'platform/studio/atelier/build_v2/recipe_job.py'],
-        'inputs': [{'role': 'content', 'name': 'footsteps', 'source': {
+        'inputs': [{'role': 'content', 'name': 'footsteps',
+            'whole': 'The complete finished FootstepSet is part of the selected sound library.', 'source': {
             'kind': 'item', 'unit': 'unreal.footsteps.library', 'item': 'asset'}}],
         'params': {'recipe': {'version': 1, 'paths': {}, 'verify': None,
             'commands': [{'kind': 'call', 'call': {'source': script, 'qualname': 'write_index', 'line': line,

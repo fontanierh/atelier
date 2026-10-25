@@ -44,6 +44,9 @@ def test_roster_is_committed_actions_and_original_blendspaces():
 
 
 def test_units_per_asset_bundle_with_original_import_options(rows):
+    assert rows[0]['outputs'] == []
+    assert rows[0]['products'] == [{'id': 'characters.wanderer.export',
+        'paths': ['build/yorimichi/wanderer'], 'optional_paths': []}]
     result = units.wanderer_units(rows, checkout=ROOT, natives=natives())
     by_id = {u['id']: u for u in result['units']}
     clips = result['clips']
