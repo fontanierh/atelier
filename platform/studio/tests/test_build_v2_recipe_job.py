@@ -164,3 +164,13 @@ def test_complete_root_rejects_physical_hardlinks(tmp_path):
     os.link(source, tmp_path / 'alias')
     with pytest.raises(ValueError, match='hard link'):
         job.pack_root(source, tmp_path / 'out.tar')
+
+
+def test_recipe_worker_announces_the_selected_runtime_before_initializing_protocol_identity():
+    from atelier.build_v2.recipe_worker import RecipeWorker, BLENDER_VERSION, PYTHON_VERSION
+    blender = RecipeWorker(io.BytesIO(), io.BytesIO(), True, blender='/installed/Blender')
+    assert blender.version == BLENDER_VERSION
+    python = RecipeWorker(io.BytesIO(), io.BytesIO(), True)
+    assert python.version == PYTHON_VERSION
+    fixture = RecipeWorker(io.BytesIO(), io.BytesIO(), False, blender='/installed/Blender')
+    assert fixture.version == BLENDER_VERSION + '+unsandboxed-test'
