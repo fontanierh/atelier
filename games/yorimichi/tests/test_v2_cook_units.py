@@ -53,3 +53,34 @@ def test_package_ids_stable_independent_of_roster_and_order():
 def test_invalid_or_incomplete_native_owners_refuse(rows):
     with pytest.raises(ValueError):
         cook.author_units(rows, checkout=ROOT)
+
+
+def test_recipe_runs_actual_prepare_and_raw_cb_tree_export_consumers(tmp_path):
+    worker_spec = importlib.util.spec_from_file_location(
+        'cook_declaration_native_worker', ROOT / cook.SCRIPT)
+    worker = importlib.util.module_from_spec(worker_spec)
+    worker_spec.loader.exec_module(worker)
+    producer = cook.author_units([ref('/Game/A')], checkout=ROOT)['units'][0]
+    recipe = producer['params']['recipe']
+    assert [(row['kind'], row['required']) for row in recipe['outputs']] == [('file', True), ('tree', True)]
+    # Inputs are optional sidecar paths until staged; prepare_view skips absent
+    # paths using the real declared input-prefix contract.
+    job = {**producer, 'code': [], 'inputs': [{'path': 'inputs/native_0'}]}
+    (tmp_path / worker.recipe_job.RUNTIME).mkdir()
+    view, protected, writes = worker.recipe_job.prepare_view(job, tmp_path)
+    assert not protected
+    record = recipe['outputs'][0]['path']
+    (view / record).write_bytes(b'actual-raw-cb-transport')
+    cooked = view / cook.COOK_ROOT
+    cooked.mkdir()
+    (cooked / 'ue.projectstore').write_bytes(b'cook-metadata')
+    output = tmp_path / 'output'
+    output.mkdir()
+    def no_native_run(*args, **kwargs):
+        raise AssertionError('declaration export must not run native tools')
+    worker.export_outputs(recipe, view, output, no_native_run, raw_roots=(record,))
+    assert (output / record).read_bytes() == b'actual-raw-cb-transport'
+    restored = tmp_path / 'restored-cook'
+    worker.recipe_job.unpack_root(output / 'cook-root.tree.tar', restored)
+    assert (restored / 'ue.projectstore').read_bytes() == b'cook-metadata'
+    assert set(writes) == {str(view / record), str(cooked)}
