@@ -27,6 +27,7 @@ pub mod keys;
 pub mod launch;
 pub mod leases;
 pub mod native_chains;
+pub mod native_modules;
 pub mod native_tool_ops;
 pub mod native_tools;
 pub mod native_verify;
