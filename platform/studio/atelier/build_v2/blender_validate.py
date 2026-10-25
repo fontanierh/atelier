@@ -32,11 +32,20 @@ OPTION_ENUMS = dict(apply_scale_options={'FBX_SCALE_NONE', 'FBX_SCALE_UNITS', 'F
                     path_mode={'RELATIVE'}, batch_mode={'OFF'})
 
 
-def validate_mesh_options(options):
+def validate_mesh_options(options, *, output_format='fbx', finite_materials=False):
     """Admit only this route's typed finite settings before producer completion/native work."""
     if not hasattr(options, 'items'):
         raise ValueError('Export options must be an explicit object')
     result = dict(options)
+    if output_format == 'glb':
+        if (set(result) - {'export_apply', 'export_image_format'}
+                or type(result.get('export_apply', False)) is not bool
+                or result.get('export_image_format', 'AUTO' if finite_materials else 'NONE')
+                    != ('AUTO' if finite_materials else 'NONE')):
+            raise ValueError('Unsupported declared atomic GLB export option')
+        return result
+    if output_format != 'fbx' or finite_materials:
+        raise ValueError('Unsupported mesh export format')
     for key, value in result.items():
         if key in OPTION_BOOLEANS:
             valid = type(value) is bool
@@ -63,21 +72,25 @@ def validate_mesh_options(options):
     return result
 
 
-def mesh_facts(payload, *, expected_asset=None):
+def mesh_facts(payload, *, expected_asset=None, output_format='fbx'):
     """Decode the existing MeshIR, including its collision/material/channel validation.
 
     Only compact semantic facts leave this function. No arrays, original bytes, source locators,
     planner key, roster or siblings become selected-child metadata.
     """
-    return decode_mesh_payload(payload, expected_asset=expected_asset)[2]
+    return decode_mesh_payload(payload, expected_asset=expected_asset, output_format=output_format)[2]
 
 
-def decode_mesh_payload(payload, *, expected_asset=None):
+def decode_mesh_payload(payload, *, expected_asset=None, output_format='fbx'):
     """Return the fully checked existing decoder result and its compact facts, once."""
     meta, piece = mesh_ir.decode(payload)
-    if meta['schema'] != 2:
+    if output_format is None:
+        # Producer proof admits the existing finite encodings; it does not choose a child's exporter.
+        output_format = ('glb' if meta['schema'] == 3 or
+                         set(meta['options']) & {'export_apply', 'export_image_format'} else 'fbx')
+    if meta['schema'] != 2 and output_format != 'glb':
         raise ValueError('This FBX slice refuses material-graph payloads; their GLB route is pending')
-    validate_mesh_options(meta['options'])
+    validate_mesh_options(meta['options'], output_format=output_format, finite_materials=meta['schema'] == 3)
     if expected_asset is not None and meta['asset'] != name(expected_asset):
         raise ValueError('Selected payload belongs to another piece')
     positions = piece['positions'] @ np.asarray(meta['matrix'])[:3, :3].T + np.asarray(meta['matrix'])[:3, 3]

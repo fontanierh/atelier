@@ -62,6 +62,33 @@ def test_existing_decoder_and_in_job_plan_preserve_complete_corner_and_owner_dat
     assert facts['min'] == [0, 0, 0] and facts['max'] == [1, 1, 0]
 
 
+@pytest.mark.parametrize('material_graph', [False, True])
+def test_producer_checks_original_glb_settings_without_authorizing_fbx(tmp_path, material_graph):
+    from test_mesh_materials import spec
+    root, value = planned(tmp_path)
+    options = dict(export_apply=True, export_image_format='AUTO' if material_graph else 'NONE')
+    for row in value['pieces']:
+        path = root / row['payload']
+        meta, piece = mesh_ir.decode(path.read_bytes())
+        raw = mesh_ir.encode(piece, key=meta['asset'], slots=meta['slots'], matrix=meta['matrix'],
+                             options=options, material_specs=[spec()] if material_graph else None)
+        path.write_bytes(raw)
+        row['sha256'] = hashlib.sha256(raw).hexdigest()
+        assert mesh_facts(raw, output_format=None)['options'] == options
+        with pytest.raises(ValueError):
+            mesh_facts(raw)  # The FBX consumer still refuses GLB settings/materials.
+    (root / 'plan.json').write_text(json.dumps(value))
+    assert ops.verify_plan(root, parent='Whole', limits=LIMITS) == value
+
+
+@pytest.mark.parametrize('options', [dict(export_apply=1), dict(export_image_format='JPEG'),
+                                     dict(export_apply=True, global_scale=1), dict(filepath='foreign.glb')])
+def test_glb_options_remain_finite_and_do_not_mix_fbx_ownership(options):
+    from atelier.build_v2.blender_validate import validate_mesh_options
+    with pytest.raises(ValueError):
+        validate_mesh_options(options, output_format='glb')
+
+
 @pytest.mark.parametrize('fault', ['truncated', 'extra', 'missing', 'alias', 'overlap', 'bound', 'hash'])
 def test_producer_refuses_bad_emitted_inventory_and_bindings(tmp_path, fault):
     root, value = planned(tmp_path)
