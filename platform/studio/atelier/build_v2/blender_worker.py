@@ -86,9 +86,14 @@ BLENDER_READ_LITERALS = ('/Library/Preferences/.GlobalPreferences.plist',)
 BLENDER_RENDER_SERVICES = ('com.apple.windowserver.active',
                            'com.apple.coreservices.launchservicesd',
                            'com.apple.lsd.mapdb', 'com.apple.lsd.modifydb')
+BLENDER_METADATA_PATHS = ('/tmp', '/private/tmp', '/Applications/Xcode.app',
+                          '/private/var/db/.AppleSetupDone',
+                          '/Library/Application Support/Apple/Spotlight/MailUsesCoreSpotlight',
+                          '/Library/Keyboard Layouts')
 BLENDER_RULES = (
     '(allow iokit-open-user-client (iokit-user-client-class "AGXDeviceUserClient" "IOSurfaceRootUserClient"))',
-    '(allow file-read-metadata (literal "/tmp") (literal "/private/tmp") (literal "/Applications/Xcode.app") (literal "/private/var/db/.AppleSetupDone") (literal "/Library/Application Support/Apple/Spotlight/MailUsesCoreSpotlight"))',
+    '(allow file-read-metadata ' + ' '.join('(literal ' + python_worker._quote(path) + ')'
+                                          for path in BLENDER_METADATA_PATHS) + ')',
     # Native AppKit/Metal initialization reads the system eligibility policy. Keep this
     # exact startup role outside reads(), so staged Python receives no such data-read role.
     '(allow file-read-data (literal "/private/var/db/eligibilityd/eligibility.plist"))',
