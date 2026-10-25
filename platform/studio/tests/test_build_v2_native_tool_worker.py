@@ -386,7 +386,7 @@ def test_global_cook_keeps_global_shader_saving_and_explicit_shader_archive_poli
     assert {'-NoDefaultMaps', '-NoGameAlwaysCook', '-SkipHardReferences', '-SkipSoftReferences'} <= set(global_args)
     for args in (normal, global_args):
         assert '-ini:Game:[/Script/UnrealEd.ProjectPackagingSettings]:bShareMaterialShaderCode=True' in args
-        assert '-ini:Game:[/Script/UnrealEd.ProjectPackagingSettings]:bSharedMaterialNativeLibraries=False' in args
+        assert '-ini:Game:[/Script/UnrealEd.ProjectPackagingSettings]:bSharedMaterialNativeLibraries=True' in args
 
 
 def test_package_composes_verified_inputs_before_uat_without_reading_source_namespace(tmp_path, monkeypatch):
@@ -404,8 +404,8 @@ def test_package_composes_verified_inputs_before_uat_without_reading_source_name
         for stem, suffix in (('ShaderAssetInfo', '.assetinfo.json'), ('ShaderArchive', '.ushaderbytecode'),
                              ('ShaderTypeInfo', '.stinfo')):
             (content / (stem + '-' + name + '-SF_METAL_SM5-METAL_SM5' + suffix)).write_bytes(stem.encode())
-    source = tmp_path / 'transport'; shaders(source / 'Fixture/Content', 'Fixture')
-    metadata = source / 'Fixture/Metadata'; metadata.mkdir()
+    source = tmp_path / 'transport'; shaders(source / 'Fixture/Metadata/ShaderLibrarySource', 'Fixture')
+    metadata = source / 'Fixture/Metadata'
     for name in ('DevelopmentAssetRegistry.bin', 'CookMetadata.ucookmeta'):
         (metadata / name).write_bytes(name.encode())
     (source / 'ue.projectstore').write_bytes(b'actual namespace marker')
