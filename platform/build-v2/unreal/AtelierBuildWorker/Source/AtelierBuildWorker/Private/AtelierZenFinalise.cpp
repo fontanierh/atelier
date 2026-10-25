@@ -87,7 +87,7 @@ bool ShaderFile(const FHistory& History, const FString& Relative, TArray<uint8>&
         && SHA(Bytes) == Expected;
 }
 bool Membership(const FHistory& History, const FString& Library, const FString& Format,
-    FMembership& Assets, TArray<FShaderHash>& NativeHashes)
+    FMembership& Assets, TArray<FShaderHash>& NativeHashes, bool GlobalLibrary = false)
 {
     const FString Stem = TEXT("-") + Library + TEXT("-") + Format;
     TArray<uint8> Info, Code, Types;
@@ -106,27 +106,36 @@ bool Membership(const FHistory& History, const FString& Library, const FString& 
         const FString Hash = Text(Row, TEXT("ShaderMapHash"));
         const TArray<TSharedPtr<FJsonValue>>* Names = nullptr;
         if (Hash.Len() != 16 || Declared.Contains(Hash) || !Row->TryGetArrayField(TEXT("Assets"), Names)
-            || Names->IsEmpty()) return false;
+            || (!GlobalLibrary && Names->IsEmpty())) return false;
         Declared.Add(Hash);
         for (const auto& Value : *Names)
         {
             const FString Name = Value->AsString();
             // An unassociated/global map requires its own explicit global-library producer.
             // Never smuggle it into every package or merge the whole historical archive.
-            if (!FPackageName::IsValidLongPackageName(Name)) return false;
-            Assets.FindOrAdd(FName(*Name)).Add(Hash);
+            if (GlobalLibrary)
+            {
+                if (!Name.IsEmpty() && !FName(*Name).IsNone()) return false;
+            }
+            else
+            {
+                if (!FPackageName::IsValidLongPackageName(Name)) return false;
+                Assets.FindOrAdd(FName(*Name)).Add(Hash);
+            }
         }
     }
     FMemoryReader Reader(Code, true);
     if (!FSerializedShaderArchive::SerializeHeaderVersion(Reader)) return false;
     FSerializedShaderArchive Archive;
     Reader << Archive;
-    if (Reader.IsError() || Archive.ShaderMapHashes.Num() != Declared.Num()) return false;
+    if (Reader.IsError() || (!GlobalLibrary && Archive.ShaderMapHashes.Num() != Declared.Num())) return false;
+    TSet<FString> NativeSet;
     for (const FShaderHash& Hash : Archive.ShaderMapHashes)
     {
-        if (!Declared.Contains(Hash.ToString())) return false;
-        NativeHashes.Add(Hash);
+        if (NativeSet.Contains(Hash.ToString()) || (!GlobalLibrary && !Declared.Contains(Hash.ToString()))) return false;
+        NativeSet.Add(Hash.ToString()); NativeHashes.Add(Hash);
     }
+    for (const FString& Hash : Declared) if (!NativeSet.Contains(Hash)) return false;
     return true;
 }
 bool SameMembership(const FMembership& A, const FMembership& B)
@@ -259,17 +268,31 @@ FString AtelierZenFinaliseRequest(const FString& RequestJson)
     Report->SetStringField(TEXT("status"), TEXT("refused"));
     auto Fail = [&](const TCHAR* Why) { Report->SetStringField(TEXT("error"), Why); return Encode(Report); };
     FObject Request;
-    if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(RequestJson), Request)
-        || !Fields(Request, {TEXT("version"), TEXT("library"), TEXT("formats"), TEXT("histories"), TEXT("output_dir")}))
-        return Fail(TEXT("unknown_or_missing_request_fields"));
+    if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(RequestJson), Request) || !Request)
+        return Fail(TEXT("invalid_request_json"));
     double Version = 0;
+    bool GlobalLibrary = false, NativeLibraries = false;
+    if (!Request->TryGetNumberField(TEXT("version"), Version)) return Fail(TEXT("missing_request_version"));
+    if (Version == 1)
+    {
+        if (!Fields(Request, {TEXT("version"), TEXT("library"), TEXT("formats"), TEXT("histories"), TEXT("output_dir")}))
+            return Fail(TEXT("unknown_or_missing_request_fields"));
+    }
+    else if (Version == 2)
+    {
+        if (!Fields(Request, {TEXT("version"), TEXT("library"), TEXT("formats"), TEXT("histories"), TEXT("output_dir"), TEXT("global_library"), TEXT("native_libraries")})
+            || !Request->TryGetBoolField(TEXT("global_library"), GlobalLibrary)
+            || !Request->TryGetBoolField(TEXT("native_libraries"), NativeLibraries))
+            return Fail(TEXT("missing_explicit_shader_library_policy"));
+    }
+    else return Fail(TEXT("unsupported_request_version"));
     const FString Library = Text(Request, TEXT("library")), Output = Text(Request, TEXT("output_dir"));
     const TArray<TSharedPtr<FJsonValue>>* Formats = nullptr;
     const TArray<TSharedPtr<FJsonValue>>* Specs = nullptr;
-    if (!Request->TryGetNumberField(TEXT("version"), Version) || Version != 1 || !Token(Library)
+    if (!Token(Library)
         || FPaths::IsRelative(Output) || IFileManager::Get().DirectoryExists(*Output)
-        || !Request->TryGetArrayField(TEXT("formats"), Formats) || Formats->IsEmpty()
-        || !Request->TryGetArrayField(TEXT("histories"), Specs) || Specs->IsEmpty() || Specs->Num() > 4096)
+        || !Request->TryGetArrayField(TEXT("formats"), Formats) || Formats->IsEmpty() || Formats->Num() > 32
+        || !Request->TryGetArrayField(TEXT("histories"), Specs) || Specs->IsEmpty() || Specs->Num() > 4096 || (GlobalLibrary && Specs->Num() != 1))
         return Fail(TEXT("invalid_bounded_request_or_output_not_fresh"));
     TSet<FString> FormatNames;
     for (const auto& Value : *Formats)
@@ -286,13 +309,16 @@ FString AtelierZenFinaliseRequest(const FString& RequestJson)
     for (int32 Index = 0; Index < Specs->Num(); ++Index)
     {
         const FObject Spec = (*Specs)[Index]->AsObject();
-        if (!Fields(Spec, {TEXT("registry"), TEXT("metadata"), TEXT("content_dir"), TEXT("files"), TEXT("packages")}))
+        if (GlobalLibrary
+                ? !Fields(Spec, {TEXT("content_dir"), TEXT("files"), TEXT("packages")})
+                : !Fields(Spec, {TEXT("registry"), TEXT("metadata"), TEXT("content_dir"), TEXT("files"), TEXT("packages")}))
             return Fail(TEXT("unknown_history_fields"));
         TUniquePtr<FHistory> H = MakeUnique<FHistory>();
         H->Content = Text(Spec, TEXT("content_dir")); H->Files = Child(Spec, TEXT("files"));
         const TArray<TSharedPtr<FJsonValue>>* Packages = nullptr;
         if (FPaths::IsRelative(H->Content) || !H->Files || H->Files->Values.Num() != FormatNames.Num() * 3
-            || !Spec->TryGetArrayField(TEXT("packages"), Packages) || Packages->IsEmpty())
+            || !Spec->TryGetArrayField(TEXT("packages"), Packages)
+            || (GlobalLibrary ? !Packages->IsEmpty() : Packages->IsEmpty()))
             return Fail(TEXT("incomplete_history_roster"));
         TArray<FString> ActualContent;
         IFileManager::Get().FindFilesRecursive(ActualContent, *H->Content, TEXT("*"), true, false);
@@ -303,6 +329,7 @@ FString AtelierZenFinaliseRequest(const FString& RequestJson)
             FPaths::MakePathRelativeTo(Relative, *(H->Content + TEXT("/")));
             if (!H->Files->HasField(Relative)) return Fail(TEXT("unlisted_history_file"));
         }
+        if (GlobalLibrary) { Histories.Add(MoveTemp(H)); continue; }
         TArray<uint8> RegistryBytes, MetadataBytes;
         if (!Pinned(Child(Spec, TEXT("registry")), RegistryBytes) || !Pinned(Child(Spec, TEXT("metadata")), MetadataBytes))
             return Fail(TEXT("history_registry_or_metadata_hash_changed"));
@@ -355,13 +382,20 @@ FString AtelierZenFinaliseRequest(const FString& RequestJson)
         }
         Histories.Add(MoveTemp(H));
     }
+    TSet<FString> ExpectedFiles;
+    TSet<FAssetIdentifier> Visited;
+    if (!IFileManager::Get().MakeDirectory(*(Output / TEXT("Content")), true)
+        || !IFileManager::Get().MakeDirectory(*(Output / TEXT("Metadata/ShaderLibrarySource")), true)
+        || !IFileManager::Get().MakeDirectory(*(Output / TEXT("Metadata/PipelineCaches")), true))
+        return Fail(TEXT("output_directory_create_failed"));
+    if (!GlobalLibrary)
+    {
     // Copy outgoing dependency tuples from each selected package's actual history.
     // Restoring after pruning would have lost cross-history edges, so no pruning
     // or whole-history dependency union occurs here. Referencers are native-derived.
     TArray<FAssetIdentifier> Queue;
     for (const auto& Pair : Owner) Queue.Add(FAssetIdentifier(Pair.Key));
     for (const auto& Pair : PrimaryOwner) Queue.Add(Pair.Key);
-    TSet<FAssetIdentifier> Visited;
     TMap<FAssetIdentifier, TArray<FString>> ExpectedEdges;
     for (int32 Cursor = 0; Cursor < Queue.Num(); ++Cursor)
     {
@@ -392,10 +426,6 @@ FString AtelierZenFinaliseRequest(const FString& RequestJson)
         Combined.SetDependencies(Id, Native);
         for (const FAssetDependency& Dependency : Native) Queue.Add(Dependency.AssetId);
     }
-    if (!IFileManager::Get().MakeDirectory(*(Output / TEXT("Content")), true)
-        || !IFileManager::Get().MakeDirectory(*(Output / TEXT("Metadata/ShaderLibrarySource")), true)
-        || !IFileManager::Get().MakeDirectory(*(Output / TEXT("Metadata/PipelineCaches")), true))
-        return Fail(TEXT("output_directory_create_failed"));
     const ITargetPlatform* Mac = GetTargetPlatformManagerRef().FindTargetPlatform(TEXT("Mac"));
     if (!Mac) return Fail(TEXT("native_mac_platform_unavailable"));
     FAssetRegistrySerializationOptions Dev(UE::AssetRegistry::ESerializationTarget::ForDevelopment);
@@ -445,23 +475,39 @@ FString AtelierZenFinaliseRequest(const FString& RequestJson)
         || MetadataReadback.GetAssociatedDevelopmentAssetRegistryHash() != RegistryHash
         || MetadataReadback.GetAssociatedDevelopmentAssetRegistryHashPostWriteback() != 0)
         return Fail(TEXT("native_metadata_registry_linkage_readback_failed"));
-    TSet<FString> ExpectedFiles{TEXT("AssetRegistry.bin"), TEXT("Metadata/DevelopmentAssetRegistry.bin"),
-        TEXT("Metadata/") + UE::Cook::GetCookMetadataFilename()};
+    ExpectedFiles.Add(TEXT("AssetRegistry.bin"));
+    ExpectedFiles.Add(TEXT("Metadata/DevelopmentAssetRegistry.bin"));
+    ExpectedFiles.Add(TEXT("Metadata/") + UE::Cook::GetCookMetadataFilename());
+    }
     for (const FString& Format : FormatNames)
     {
         FEditorShaderCodeArchive Destination{FName(*Format)};
         Destination.OpenLibrary(Library);
         FMembership Expected;
+        TSet<FString> GlobalMaps;
         for (const auto& H : Histories)
         {
             FMembership SourceMembership; TArray<FShaderHash> Native;
-            if (!Membership(*H, Library, Format, SourceMembership, Native))
+            if (!Membership(*H, Library, Format, SourceMembership, Native, GlobalLibrary))
                 return Fail(TEXT("shader_membership_or_unassociated_global_input_unsupported"));
             for (const auto& Pair : SourceMembership) if (H->Packages.Contains(Pair.Key)) Expected.Add(Pair.Key, Pair.Value);
             FEditorShaderCodeArchive Source{FName(*Format)}; Source.OpenLibrary(Library);
             Source.AddShaderCodeLibraryFromDirectory(H->Content, ESource::PreviousIncremental);
             for (const FShaderHash& Hash : Native) if (!Source.HasShaderMap(Hash)) return Fail(TEXT("native_source_shader_map_load_incomplete"));
-            TUniquePtr<FEditorShaderCodeArchive> Chunk = Source.CreateNamedChunk(Library, H->Packages);
+            TUniquePtr<FEditorShaderCodeArchive> Chunk;
+            if (GlobalLibrary)
+            {
+                // A current global-library producer is one whole bounded item;
+                // it has no package associations and is never unioned with an
+                // older global archive. Keep its complete native shader roster.
+                Chunk = MakeUnique<FEditorShaderCodeArchive>(FName(*Format)); Chunk->OpenLibrary(Library);
+                for (int32 I = 0; I < Native.Num(); ++I)
+                {
+                    Chunk->AddShaderCode(I, Source, ESource::PreviousIncremental);
+                    GlobalMaps.Add(Native[I].ToString());
+                }
+            }
+            else Chunk = Source.CreateNamedChunk(Library, H->Packages);
             if (!Chunk) return Fail(TEXT("native_selected_shader_chunk_failed"));
             if (!Chunk->IsEmpty())
             {
@@ -477,7 +523,12 @@ FString AtelierZenFinaliseRequest(const FString& RequestJson)
                     return Fail(TEXT("native_selected_shader_append_failed"));
             }
         }
-        if (Destination.IsEmpty() || !Destination.SaveToDisk(Output / TEXT("Content"), Output / TEXT("Metadata/PipelineCaches"),
+        if (Destination.IsEmpty())
+        {
+            if (GlobalLibrary || !Expected.IsEmpty()) return Fail(TEXT("required_shader_archive_empty"));
+            continue;
+        }
+        if (!Destination.SaveToDisk(Output / TEXT("Content"), Output / TEXT("Metadata/PipelineCaches"),
                 ShaderCodeArchive::ESaveToDiskTarget::Staging, ShaderCodeArchive::ESaveToDiskSortOrder::ShaderHash))
             return Fail(TEXT("native_selected_shader_save_failed"));
         FHistory Candidate; Candidate.Content = Output / TEXT("Content"); Candidate.Files = MakeShared<FJsonObject>();
@@ -497,8 +548,35 @@ FString AtelierZenFinaliseRequest(const FString& RequestJson)
             ExpectedFiles.Add(TEXT("Metadata/ShaderLibrarySource/") + Name);
         }
         FMembership Actual; TArray<FShaderHash> Native;
-        if (!Membership(Candidate, Library, Format, Actual, Native) || !SameMembership(Expected, Actual))
+        if (!Membership(Candidate, Library, Format, Actual, Native, GlobalLibrary) || !SameMembership(Expected, Actual))
             return Fail(TEXT("selected_shader_membership_readback_differs"));
+        if (GlobalLibrary)
+        {
+            if (Native.Num() != GlobalMaps.Num()) return Fail(TEXT("global_shader_roster_size_differs"));
+            for (const FShaderHash& Hash : Native) if (!GlobalMaps.Contains(Hash.ToString())) return Fail(TEXT("global_shader_roster_differs"));
+        }
+        if (NativeLibraries)
+        {
+            if (!Destination.SupportsShaderArchives()) return Fail(TEXT("native_shader_archive_unsupported_by_loaded_format"));
+            TArray<FString> Packed;
+            if (!Destination.PackageNativeShaderLibrary(Output / TEXT("Content"), &Packed) || Packed.IsEmpty())
+                return Fail(TEXT("native_shader_library_packaging_failed"));
+            ExpectedFiles.Remove(TEXT("Content/ShaderArchive") + Stem + TEXT(".ushaderbytecode"));
+            for (const FString& File : Packed)
+            {
+                // Metal's stock writer lowercases the full .metalmap path. Use
+                // its observed filename with the owned output directory's case;
+                // do not let a case alias escape the actual output inventory.
+                if (!FPaths::IsSamePath(FPaths::GetPath(FPaths::ConvertRelativePathToFull(File)),
+                        FPaths::ConvertRelativePathToFull(Output / TEXT("Content"))))
+                    return Fail(TEXT("native_shader_library_wrote_outside_output"));
+                const FString Name = FPaths::GetCleanFilename(File);
+                const FString Relative = TEXT("Content/") + Name;
+                if (IFileManager::Get().FileSize(*(Output / Relative)) <= 0 || ExpectedFiles.Contains(Relative))
+                    return Fail(TEXT("native_shader_library_missing_empty_or_duplicate"));
+                ExpectedFiles.Add(Relative);
+            }
+        }
     }
     TArray<FString> Outputs; IFileManager::Get().FindFilesRecursive(Outputs, *Output, TEXT("*"), true, false);
     if (Outputs.Num() != ExpectedFiles.Num()) return Fail(TEXT("global_output_census_incomplete_or_contains_extra_files"));
@@ -514,6 +592,8 @@ FString AtelierZenFinaliseRequest(const FString& RequestJson)
         Row->SetNumberField(TEXT("bytes"), Bytes.Num()); Manifest.Add(MakeShared<FJsonValueObject>(Row));
     }
     Report->SetArrayField(TEXT("files"), Manifest);
+    Report->SetBoolField(TEXT("global_library"), GlobalLibrary);
+    Report->SetBoolField(TEXT("native_libraries"), NativeLibraries);
     Report->SetNumberField(TEXT("packages"), Owner.Num());
     Report->SetNumberField(TEXT("dependency_nodes"), Visited.Num());
     // Produces the exact native files; installing their EndCook descriptors remains
