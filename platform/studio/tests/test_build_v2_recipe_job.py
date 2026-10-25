@@ -214,10 +214,12 @@ def test_recipe_atomic_scope_reuses_bootstrap_held_scratch_and_resets_on_every_e
         assert os.fspath(path) != '/', 'scope must not reopen the filesystem root under PathGuard'
         return real_open(path, flags, *args, **kwargs)
     monkeypatch.setattr(os, 'open', without_root_anchor)
-    context = SimpleNamespace(output_dir=tmp_path / 'output',
-        _atomic_temporary=(scratch, descriptor, info.st_dev, info.st_ino),
-        params={'recipe': {'paths': {}, 'commands': [{'kind':'python','script':'body.py','args':[],'env':[],'threads':3}],
-                           'outputs':[], 'verify':None}})
+    from atelier.build_v2.python_job import JobContext
+    context = JobContext({}, [], {'recipe': {'paths': {}, 'commands': [{'kind':'python','script':'body.py','args':[],'env':[],'threads':3}],
+                           'outputs':[], 'verify':None}}, 0)
+    assert context._atomic_temporary is None
+    context.output_dir = tmp_path / 'output'
+    context._atomic_temporary = (scratch, descriptor, info.st_dev, info.st_ino)
     try:
         if raised:
             with pytest.raises(RuntimeError, match='original error'):
