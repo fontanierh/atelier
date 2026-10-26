@@ -1,6 +1,6 @@
 //! Nox: which of his bones plays each rig bone.
 
-use crate::characters::Character;
+use crate::rig::characters::Character;
 use crate::rig::{Bones, Skeleton};
 
 pub struct Nox;

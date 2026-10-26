@@ -1,7 +1,7 @@
 name: Hakuba
 
-# Fails when Hakuba's code is not laid out by cargo fmt, or an asset's committed export is out of date with its
-# inputs. Studio Python skips PRs that change only Hakuba, so the public-repository lint runs here for them.
+# Fails when Hakuba's code is not laid out by cargo fmt, clippy or the exporter's tests fail, or an asset's
+# committed export is out of date with its inputs. Studio Python skips PRs that change only Hakuba, so the public-repository lint runs here for them.
 on:
   pull_request:
     paths:
@@ -48,6 +48,11 @@ jobs:
       # rust-toolchain.toml picks the Rust version; cargo installs it on first use.
       - name: Check the code's layout
         run: cargo fmt --check
+      - name: Check the code for common mistakes
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      # The exporter's tests check that each kind uses only its own code, the shared code and its own assets.
+      - name: Test the exporter
+        run: cargo test -p hakuba_export
       - name: Check every asset's export is current
         run: cargo export --check assets
 

@@ -1,8 +1,17 @@
 //! The rig: the humanoid skeleton every clip is stored on, and the [`Skeleton`] trait that maps a model's bones to it.
+//! Its submodules are the two kinds made on it, `animation` and `character`, and what they share.
 //!
 //! A clip on the rig gives each rig bone's turn from the rig's rest pose, in the world's axes, and the pelvis's
 //! position in hip heights. The rest pose is a T-pose facing +Z, with the character's left at +X, the pelvis one unit
 //! above the floor and every bone's rest rotation the identity.
+
+pub mod animation;
+pub mod animations;
+pub mod character;
+pub mod characters;
+pub mod pose;
+pub mod pose_edit;
+pub mod retarget;
 
 /// One rig bone: its name, its parent's name and its rest position, in hip heights.
 pub struct RigBone {

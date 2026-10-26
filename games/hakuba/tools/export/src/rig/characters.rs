@@ -3,7 +3,7 @@
 
 use crate::rig::Skeleton;
 
-#[path = "../../../assets/characters/nox/src/nox.rs"]
+#[path = "../../../../assets/characters/nox/src/nox.rs"]
 mod nox;
 
 /// Every character.

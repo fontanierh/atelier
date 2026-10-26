@@ -14,29 +14,20 @@ use sha2::{Digest, Sha256};
 use super::Tile;
 use super::ground::Ground;
 use super::overlay::Overlay;
-use crate::{EXPORTER, files};
+use crate::EXPORTER;
 
 /// The file, under `tiles/`, holding each tile's checksum.
 pub const FILE: &str = "checksums.toml";
 
-/// The exporter's files that tiles are written by: `world/` but the regions list, whose regions' overlays a tile's
-/// checksum covers instead, the glTF writer, and the crate versions they are built with.
-fn tile_code() -> Result<Vec<PathBuf>> {
-    let root = Path::new(EXPORTER);
-    let mut code: Vec<PathBuf> =
-        files(&root.join("src/world"))?.into_iter().filter(|file| !file.ends_with("regions.rs")).collect();
-    code.extend([root.join("src/glb.rs"), root.join("Cargo.toml"), root.join("../../Cargo.lock")]);
-    Ok(code)
-}
-
-/// A checksum of the code that writes tiles, which goes into every tile's.
+/// A checksum of the code that writes tiles, which goes into every tile's: the world's code but the regions list,
+/// whose regions' overlays a tile's checksum covers instead, and the shared code but the command.
 pub fn code() -> Result<Vec<u8>> {
+    let code: Vec<PathBuf> = crate::code("src/world")?
+        .into_iter()
+        .filter(|file| !file.ends_with("src/world/regions.rs") && !file.ends_with("src/main.rs"))
+        .collect();
     let mut digest = Sha256::new();
-    for file in tile_code()? {
-        digest.update(file.strip_prefix(EXPORTER)?.to_string_lossy().as_bytes());
-        digest.update([0]);
-        digest.update(Sha256::digest(fs::read(&file).with_context(|| format!("reading {}", file.display()))?));
-    }
+    crate::add_files(&mut digest, Path::new(EXPORTER), &code)?;
     Ok(digest.finalize().to_vec())
 }
 

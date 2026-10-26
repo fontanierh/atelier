@@ -15,8 +15,8 @@
 use anyhow::{Result, bail};
 use glam::{DMat3, DVec3};
 
-use crate::pose::{Joint, Pose, UP, frame, halfway, level, place, smoothstep, swing};
-use crate::pose_edit::{Leg, bend};
+use crate::rig::pose::{Joint, Pose, UP, frame, halfway, level, place, smoothstep, swing};
+use crate::rig::pose_edit::{Leg, bend};
 use crate::rig::{self, RIG};
 
 /// The bones that keep the target's own rest posture.

@@ -7,7 +7,7 @@ a stance, a building) MUST NOT appear in the exporter until a second asset needs
 general method under a general name.
 
 @cc [owner:fontanierh,label:architecture] exporter-lists-are-the-only-names
-`animations.rs`, `characters.rs` and `world/regions.rs` are the only exporter files that name assets.
+`rig/animations.rs`, `rig/characters.rs` and `world/regions.rs` are the only exporter files that name assets.
 Each MUST do no more than compile in each asset's `.rs` file with `#[path]`, define the one trait every
 asset of its kind implements (`Animation`, `Character`, `Region`), and list the assets. The exporter MUST
 reach an asset only through that trait, never by matching on which asset it is, so adding an asset adds one
@@ -15,9 +15,20 @@ reach an asset only through that trait, never by matching on which asset it is, 
 entry in the list.
 
 @cc [owner:fontanierh,label:correctness] exports-follow-from-inputs
-An export MUST depend only on its asset's settings, its `src/`, the exporter's own files and the
-exports it declares it reads, so that the same inputs give byte-identical files. The inputs checksum
-MUST cover all of them, and the exporter MUST NOT read anything else.
+An export MUST depend only on its asset's settings, its `src/`, its kind's code (below) and the exports it
+declares it reads, so that the same inputs give byte-identical files. The inputs checksum MUST cover all of
+them, and the exporter MUST NOT read anything else. A read export is covered by its own recorded checksum and
+its bytes, so a change to the code that made it reaches the assets that read it. Docs and `CONTRACTS` files are
+never inputs.
+
+@cc [owner:fontanierh,label:architecture] each-kind-is-self-contained
+Each kind's code MUST live in its own folder under `src/` (`rig/` for animations and characters, `world/` for
+the world) and use only that folder, the shared code (`SHARED_CODE` in `main.rs`: `main.rs`, `glb.rs`, the
+crate's manifest, the lock file and the toolchain) and its own asset groups' `.rs` files. It MUST NOT use
+another kind's code, and the shared code MUST NOT use any kind's code; a method two kinds need moves into the
+shared code under a general name. A kind's checksum MUST cover exactly that code, so editing one kind never
+marks another kind's assets out of date. Every file in `src/` MUST be shared code or sit in a kind's folder.
+The exporter's tests check these rules, and CI runs them.
 
 @cc [owner:fontanierh,label:performance] an-edit-rebuilds-what-it-touches
 An export MUST rebuild only the parts an edit touches: a world export rewrites only the tiles whose own checksum

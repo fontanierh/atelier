@@ -8,10 +8,10 @@ use glam::DQuat;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use crate::animations::{self, Animation};
 use crate::glb::{Glb, Track};
-use crate::pose::{Pose, rig_nodes, rig_pose, rig_rest};
-use crate::retarget::retarget;
+use crate::rig::animations::{self, Animation};
+use crate::rig::pose::{Pose, rig_nodes, rig_pose, rig_rest};
+use crate::rig::retarget::retarget;
 use crate::rig::{self, Bones, RIG};
 
 #[derive(Serialize, Deserialize)]

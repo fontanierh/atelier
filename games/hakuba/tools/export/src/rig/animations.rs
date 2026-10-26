@@ -7,10 +7,10 @@ use anyhow::Result;
 use serde::Deserialize;
 use serde_json::Value;
 
-use crate::pose::Pose;
 use crate::rig::Bones;
+use crate::rig::pose::Pose;
 
-#[path = "../../../assets/animations/idle/src/idle.rs"]
+#[path = "../../../../assets/animations/idle/src/idle.rs"]
 mod idle;
 
 /// Every animation, each exported with every character.

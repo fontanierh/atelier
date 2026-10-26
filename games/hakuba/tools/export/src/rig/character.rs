@@ -9,12 +9,12 @@ use glam::DQuat;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::animation::{self, continuous};
-use crate::animations::{self, ANIMATIONS};
-use crate::characters::{self, Character};
 use crate::glb::{Glb, Track, Trs};
-use crate::pose::{Joint, Pose, rig_nodes, rig_pose, rig_rest};
-use crate::retarget::retarget;
+use crate::rig::animation::{self, continuous};
+use crate::rig::animations::{self, ANIMATIONS};
+use crate::rig::characters::{self, Character};
+use crate::rig::pose::{Joint, Pose, rig_nodes, rig_pose, rig_rest};
+use crate::rig::retarget::retarget;
 use crate::rig::{self, RIG};
 
 /// The furthest a bone may sit from where the fitted animation places it, in metres.

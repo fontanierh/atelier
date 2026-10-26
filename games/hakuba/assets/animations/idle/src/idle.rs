@@ -1,9 +1,9 @@
 //! The idle: the skeleton its source clip is on, and how a character changes it: its stance, which a character sets
 //! in its `asset.toml` under `[animations.idle]`.
 
-use crate::animations::Animation;
-use crate::pose::{Pose, UP};
-use crate::pose_edit::{Foot, Leg, bend_forward, body_left, plant, repose};
+use crate::rig::animations::Animation;
+use crate::rig::pose::{Pose, UP};
+use crate::rig::pose_edit::{Foot, Leg, bend_forward, body_left, plant, repose};
 use crate::rig::{self, Bones, Fingers, Limbs};
 use anyhow::{Result, bail};
 use serde::Deserialize;
@@ -52,7 +52,7 @@ impl Animation for Idle {
     }
 
     fn change(&self, changes: Option<&Value>, rest: &Pose, frames: &mut [Pose]) -> Result<()> {
-        apply(&crate::animations::changes(changes)?, rest, frames)
+        apply(&crate::rig::animations::changes(changes)?, rest, frames)
     }
 }
 

@@ -6,17 +6,11 @@
 //! ```
 //!
 //! An asset folder's `asset.toml` names its kind and that kind's settings ([`Asset`]). Exporting writes the folder's
-//! `<folder name>.glb` and records in `asset.toml` a checksum of the inputs: the settings, the folder's `src/` and
-//! this crate. A check reports a folder whose `.glb` is missing or whose inputs no longer match that checksum.
+//! `<folder name>.glb` and records in `asset.toml` a checksum of the inputs: the settings, the folder's `src/`, the
+//! exporter's code for that kind ([`code`]) and the assets it reads. A check reports a folder whose `.glb` is missing
+//! or whose inputs no longer match that checksum.
 
-mod animation;
-mod animations;
-mod character;
-mod characters;
 mod glb;
-mod pose;
-mod pose_edit;
-mod retarget;
 mod rig;
 mod world;
 
@@ -33,8 +27,8 @@ use toml_edit::DocumentMut;
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 enum Asset {
-    Animation(animation::Settings),
-    Character(character::Settings),
+    Animation(rig::animation::Settings),
+    Character(rig::character::Settings),
     World(world::Settings),
 }
 
@@ -43,7 +37,15 @@ impl Asset {
     fn reads(&self) -> Vec<String> {
         match self {
             Asset::Animation(_) | Asset::World(_) => Vec::new(),
-            Asset::Character(_) => animations::ANIMATIONS.into_iter().map(animations::folder).collect(),
+            Asset::Character(_) => rig::animations::ANIMATIONS.into_iter().map(rig::animations::folder).collect(),
+        }
+    }
+
+    /// The exporter's folder holding this kind's code, relative to the exporter.
+    fn code_folder(&self) -> &'static str {
+        match self {
+            Asset::Animation(_) | Asset::Character(_) => "src/rig",
+            Asset::World(_) => "src/world",
         }
     }
 }
@@ -51,8 +53,32 @@ impl Asset {
 /// The checksum `export` writes into `asset.toml`.
 const CHECKSUM: &str = "inputs_sha256";
 
-/// This crate's folder, whose files are inputs of every export.
+/// This crate's folder.
 const EXPORTER: &str = env!("CARGO_MANIFEST_DIR");
+
+/// The exporter's files that every kind is built from, relative to the exporter: the command, the glTF reader and
+/// writer, and the crate and Rust versions.
+const SHARED_CODE: [&str; 5] =
+    ["src/main.rs", "src/glb.rs", "Cargo.toml", "../../Cargo.lock", "../../rust-toolchain.toml"];
+
+/// The exporter's files that a kind is built from: [`SHARED_CODE`] and the `.rs` files in the kind's `folder`. Docs
+/// and other kinds' code are left out, so editing them marks no export of this kind out of date.
+fn code(folder: &str) -> Result<Vec<PathBuf>> {
+    let root = Path::new(EXPORTER);
+    let mut code: Vec<PathBuf> = SHARED_CODE.iter().map(|file| root.join(file)).collect();
+    code.extend(files(&root.join(folder))?.into_iter().filter(|file| file.extension().is_some_and(|e| e == "rs")));
+    Ok(code)
+}
+
+/// Adds each file to `digest`: its path relative to `base`, then a checksum of its bytes.
+fn add_files(digest: &mut Sha256, base: &Path, files: &[PathBuf]) -> Result<()> {
+    for file in files {
+        digest.update(file.strip_prefix(base)?.to_string_lossy().as_bytes());
+        digest.update([0]);
+        digest.update(Sha256::digest(fs::read(file).with_context(|| format!("reading {}", file.display()))?));
+    }
+    Ok(())
+}
 
 /// The game's `assets/` folder.
 const ASSETS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets");
@@ -88,18 +114,16 @@ impl Folder {
         let mut digest = Sha256::new();
         digest.update(serde_json::to_vec(&self.asset)?);
         digest.update([0]);
-        for root in [self.path.join("src"), PathBuf::from(EXPORTER)] {
-            let base = root.parent().expect("an input folder has a parent");
-            for file in files(&root)? {
-                digest.update(file.strip_prefix(base)?.to_string_lossy().as_bytes());
-                digest.update([0]);
-                digest.update(Sha256::digest(fs::read(&file)?));
-            }
-        }
+        add_files(&mut digest, &self.path, &files(&self.path.join("src"))?)?;
+        add_files(&mut digest, Path::new(EXPORTER), &code(self.asset.code_folder())?)?;
+        // An asset read covers its own code too, through its recorded checksum: a character runs each animation's.
         for folder in self.asset.reads() {
-            let output = Folder::read(&Path::new(ASSETS).join(&folder))?.output();
+            let read = Folder::read(&Path::new(ASSETS).join(&folder))?;
             digest.update(folder.as_bytes());
             digest.update([0]);
+            digest.update(read.recorded_checksum().unwrap_or_default().as_bytes());
+            digest.update([0]);
+            let output = read.output();
             digest.update(Sha256::digest(fs::read(&output).with_context(|| format!("reading {}", output.display()))?));
         }
         Ok(format!("{:x}", digest.finalize()))
@@ -125,8 +149,8 @@ impl Folder {
         }
         let output = self.output();
         match &self.asset {
-            Asset::Animation(settings) => animation::export(&self.path, settings, &output)?,
-            Asset::Character(settings) => character::export(&self.path, settings, &output)?,
+            Asset::Animation(settings) => rig::animation::export(&self.path, settings, &output)?,
+            Asset::Character(settings) => rig::character::export(&self.path, settings, &output)?,
             Asset::World(settings) => world::export(&self.path, settings, &output)?,
         }
         self.document[CHECKSUM] = toml_edit::value(self.inputs_checksum()?);
@@ -201,4 +225,81 @@ fn main() -> Result<ExitCode> {
         folder.export()?;
     }
     Ok(if stale == 0 { ExitCode::SUCCESS } else { ExitCode::FAILURE })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Each kind's code folder under `src/`, and the asset groups whose `.rs` files it compiles in.
+    const KINDS: [(&str, &[&str]); 2] = [("rig", &["animations", "characters"]), ("world", &["world"])];
+
+    /// The `.rs` files under `root`.
+    fn sources(root: &Path) -> Vec<PathBuf> {
+        files(root).unwrap().into_iter().filter(|file| file.extension().is_some_and(|e| e == "rs")).collect()
+    }
+
+    /// The kinds whose code `file` names, as `crate::<kind>` or `super::<kind>`.
+    fn kinds_named(file: &Path) -> Vec<&'static str> {
+        let text = fs::read_to_string(file).unwrap();
+        let names = |kind: &str| text.contains(&format!("crate::{kind}")) || text.contains(&format!("super::{kind}"));
+        KINDS.iter().map(|(kind, _)| *kind).filter(|kind| names(kind)).collect()
+    }
+
+    #[test]
+    fn every_file_beside_main_is_shared_code() {
+        for file in fs::read_dir(Path::new(EXPORTER).join("src")).unwrap() {
+            let path = file.unwrap().path();
+            let name = path.file_name().unwrap().to_string_lossy().into_owned();
+            if path.is_dir() {
+                assert!(KINDS.iter().any(|(kind, _)| *kind == name), "src/{name}/ is no kind's folder");
+            } else {
+                assert!(SHARED_CODE.contains(&format!("src/{name}").as_str()), "src/{name} is not in SHARED_CODE");
+            }
+        }
+    }
+
+    #[test]
+    fn shared_code_names_no_kind() {
+        let file = Path::new(EXPORTER).join("src/glb.rs");
+        assert!(kinds_named(&file).is_empty(), "{} uses a kind's code", file.display());
+    }
+
+    #[test]
+    fn each_kind_uses_only_its_own_code_and_the_shared_code() {
+        for (kind, groups) in KINDS {
+            let mut files = sources(&Path::new(EXPORTER).join("src").join(kind));
+            for group in groups {
+                files.extend(sources(&Path::new(ASSETS).join(group)));
+            }
+            for file in files {
+                for other in kinds_named(&file) {
+                    assert_eq!(other, kind, "{} is {kind} code but uses crate::{other}", file.display());
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn each_kind_compiles_in_only_its_own_assets() {
+        for (kind, groups) in KINDS {
+            let allowed: Vec<PathBuf> =
+                groups.iter().map(|g| fs::canonicalize(Path::new(ASSETS).join(g)).unwrap()).collect();
+            for file in sources(&Path::new(EXPORTER).join("src").join(kind)) {
+                for line in fs::read_to_string(&file).unwrap().lines() {
+                    let Some(path) = line.trim().strip_prefix("#[path = \"").and_then(|rest| rest.strip_suffix("\"]"))
+                    else {
+                        continue;
+                    };
+                    let target = fs::canonicalize(file.parent().unwrap().join(path)).unwrap();
+                    assert!(
+                        allowed.iter().any(|folder| target.starts_with(folder)),
+                        "{} compiles in {}, outside its kind's assets",
+                        file.display(),
+                        target.display()
+                    );
+                }
+            }
+        }
+    }
 }

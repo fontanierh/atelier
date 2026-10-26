@@ -3,7 +3,7 @@
 
 use glam::{DMat3, DVec3};
 
-use crate::pose::{Joint, Pose, hinge_frame, level, place, turn};
+use crate::rig::pose::{Joint, Pose, hinge_frame, level, place, turn};
 use crate::rig::{self, RIG};
 
 /// How far a leg may straighten, as a fraction of its full length: a straight leg has no bend to aim its knee by.

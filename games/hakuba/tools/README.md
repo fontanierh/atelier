@@ -18,7 +18,7 @@ cargo export --check assets            # list the exports whose inputs changed
 - **The export** (`<asset>.glb` and what sits beside it) is written by the exporter and never edited by hand.
 
 The exporter names assets in one place per kind, a list that compiles in each asset's `.rs` file:
-`animations.rs`, `characters.rs` and `world/regions.rs`. If a second asset would need the same code, it belongs in
+`rig/animations.rs`, `rig/characters.rs` and `world/regions.rs`. If a second asset would need the same code, it belongs in
 the exporter; if only this asset has it, it belongs in the asset.
 
 ```text
@@ -27,14 +27,16 @@ tools/
     Cargo.toml              the crate and its dependencies
     src/
       main.rs               the `export` command: reads asset.toml, runs its kind's exporter, records its inputs
-      rig.rs                the rig and the `Skeleton` trait
-      pose.rs               poses: each rig bone's world rotation and position
-      pose_edit.rs          turning bones, moving the body and bending legs, shared by the retarget and animations
-      retarget.rs           moving a clip from one skeleton onto another
-      animation.rs          the `animation` kind
-      animations.rs         every animation, and the `Animation` trait each implements
-      character.rs          the `character` kind
-      characters.rs         every character, and the `Character` trait each implements
+      glb.rs                reading, editing and writing .glb files, shared by every kind
+      rig/                  the rig, and the `animation` and `character` kinds made on it
+        mod.rs              the rig and the `Skeleton` trait
+        pose.rs             poses: each rig bone's world rotation and position
+        pose_edit.rs        turning bones, moving the body and bending legs, shared by the retarget and animations
+        retarget.rs         moving a clip from one skeleton onto another
+        animation.rs        the `animation` kind
+        animations.rs       every animation, and the `Animation` trait each implements
+        character.rs        the `character` kind
+        characters.rs       every character, and the `Character` trait each implements
       world/                the `world` kind
         mod.rs              the settings, and cutting the world into tiles
         regions.rs          every region, and the `Region` trait: what a region adds to the world
@@ -43,12 +45,11 @@ tools/
         overlay.rs          flat shapes laid over the ground, such as roads
         ribbon.rs           strips of even width along a curve, for regions to lay as overlays
         surface.rs          finding what lies under a point of a mesh, and cutting shapes along its triangles
-      glb.rs                reading, editing and writing .glb files
 ```
 
 ## The rig
 
-Every animation is made once on the rig, a 52-bone humanoid skeleton (`RIG` in `rig.rs`): the pelvis, spine,
+Every animation is made once on the rig, a 52-bone humanoid skeleton (`RIG` in `rig/mod.rs`): the pelvis, spine,
 neck and head, and per side the clavicle, arm, hand with five three-bone digits, leg, foot and toe. Its rest pose
 is a T-pose facing +Z with the character's left at +X, the pelvis one hip height above the ground, and every rest
 rotation the identity. Clips on the rig store each bone's world turn, and the pelvis's position in hip heights, so
@@ -109,9 +110,15 @@ overlay lies a few centimetres above the ground triangles under it; the export f
 
 ## Inputs checksum
 
-`inputs_sha256` in `asset.toml` covers the asset's settings, every file in its `src/`, every file in
-`tools/export/`, and the exports it reads (a character reads every animation). Changing any of them marks the
-export out of date until it is exported again. A character exports only after the animations it reads are current.
+`inputs_sha256` in `asset.toml` covers the asset's settings, every file in its `src/`, its kind's code, and the
+exports it reads (a character reads every animation, through each one's checksum and `.glb`). Changing any of them
+marks the export out of date until it is exported again. A character exports only after the animations it reads
+are current.
+
+A kind's code is its folder under `src/` (`rig/` or `world/`) and the shared code: `main.rs`, `glb.rs`,
+`Cargo.toml`, the lock file and the toolchain. Each kind uses only its own folder and the shared code, so editing
+the world's code never marks a character out of date, and editing the rig never marks the world. Docs and
+`CONTRACTS` files are not inputs. `cargo test -p hakuba_export` checks that no kind uses another's code.
 
 The world also keeps one checksum per tile, in `tiles/checksums.toml`. It covers the code that writes tiles
 (`world/` but the regions list, `glb.rs`, and the locked crate versions), the settings tiles use, the heights in and
