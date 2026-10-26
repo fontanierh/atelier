@@ -1,10 +1,13 @@
-# The world around the spawn: the ground and the road, cut into tiles 64 m wide.
-# src/heightmap.bin is the ground's shape, 600 m square, with the road already cut into it. src/layout.rs holds the
-# road's course, the spawn and the colours.
+# The world, cut into tiles 64 m wide.
+# src/ground/ holds the ground's heights in pages 512 m wide; src/regions/ holds one folder per region.
 kind = "world"
-heightmap = "src/heightmap.bin"
-heightmap_samples = 301
-heightmap_step_m = 2.0
+ground = "src/ground"
+south_west_m = [-4396.0, -1324.0]
+ground_step_m = 2.0
+page_steps = 256        # 512 m
 tile_steps = 32         # 64 m
-tiles = [[0, 2], [2, 4]]
-inputs_sha256 = "abc4dab36076ce2ab380ec3bfb78c5d6f2840d417f2d12dcb271f3ef821152e3"
+tiles = [[64, 18], [66, 20]]
+ground_colour = [0.40, 0.44, 0.20]
+spawn_m = [-255.26, -99.51]
+spawn_bearing_deg = 94.7
+inputs_sha256 = "1383a69f3fe4037ccdb665b8876419d703f51c5b9390998515ffb111c2dacf2c"

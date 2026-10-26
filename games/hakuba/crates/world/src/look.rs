@@ -1,5 +1,5 @@
-//! How the world looks, after Yorimichi: a painted sky dome, a low warm sun behind the traveller, a blue haze that
-//! thickens with distance, and the camera's colour grade (tone curve, bloom, vignette) and painterly filter.
+//! How the world looks: a sky dome, a low warm sun behind the traveller, a blue haze that thickens with distance,
+//! and the camera's colour grade (tone curve, bloom, vignette) and painterly filter.
 
 use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::mesh::VertexAttributeValues;
@@ -50,7 +50,7 @@ impl Plugin for LookPlugin {
     }
 }
 
-/// What the world's camera needs to look like Yorimichi.
+/// What the world's camera needs for the world's look.
 pub fn camera() -> impl Bundle {
     (
         Projection::Perspective(PerspectiveProjection { far: FAR_M, ..default() }),

@@ -1,5 +1,5 @@
-//! The world: the ground and the road from `assets/world`, the sea, Yorimichi's sky, sun and haze, and a camera
-//! that starts at the spawn and flies.
+//! The world: the ground and the road from `assets/world`, the sea, the sky, sun and haze, and a camera that
+//! starts at the spawn and flies.
 
 mod fly;
 mod look;

@@ -1,7 +1,7 @@
-//! The painterly filter, after Yorimichi: an eight-sector Kuwahara over the finished image. Around each pixel it
-//! looks at eight overlapping wedges, averages each, and keeps mostly the averages of the smoothest wedges, so flat
-//! areas turn into soft brush strokes while edges stay sharp. It reads 21 pixels within `RADIUS_PX`, and blends
-//! `STRENGTH` of the result over the image.
+//! The painterly filter: an eight-sector Kuwahara over the finished image. Around each pixel it looks at eight
+//! overlapping wedges, averages each, and keeps mostly the averages of the smoothest wedges, so flat areas turn into
+//! soft brush strokes while edges stay sharp. It reads 21 pixels within `RADIUS_PX`, and blends `STRENGTH` of the
+//! result over the image.
 
 use bevy::asset::embedded_asset;
 use bevy::core_pipeline::fullscreen_material::{FullscreenMaterial, FullscreenMaterialPlugin};
@@ -46,7 +46,7 @@ pub struct Painterly {
 }
 
 impl Default for Painterly {
-    /// Yorimichi's kernel. A tap at `p` (in units of √5 grid steps) weighs, in the wedge turned by `a`,
+    /// The kernel. A tap at `p` (in units of √5 grid steps) weighs, in the wedge turned by `a`,
     /// `max(0, x + 0.35 - 3.5 y²)² · exp(-2.5 |p|²)`, where (x, y) is `p` turned by `-a`; each wedge's weights then
     /// add up to one.
     fn default() -> Self {

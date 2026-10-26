@@ -1,6 +1,6 @@
 # world
 
-The world screen: the ground and the road from `assets/world`, the sea, Yorimichi's sky, sun and haze, and a camera
+The world screen: the ground and the road from `assets/world`, the sea, the sky, sun and haze, and a camera
 that starts at the spawn and flies (drag to look, W A S D to move, E and Q to rise and sink, shift for speed, scroll
 to change it).
 

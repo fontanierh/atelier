@@ -1,0 +1,195 @@
+//! The `world` kind: the ground, and each region's roads on it, cut into square tiles.
+//!
+//! The ground is one grid of heights across the world, stored in square pages under `src/ground/`. Each region
+//! lives in its own folder under `src/regions/`; its `layout.rs` says where its roads run (`regions.rs` lists them).
+//! Each tile is written twice under `tiles/`: `<column>_<row>.glb` in full detail, and `<column>_<row>.middle.glb` with a coarser ground for
+//! seeing from afar. The coarse ground keeps every fine point on the tile's edges, so neighbouring tiles meet exactly
+//! whichever version each one shows. `<folder name>.glb` holds one empty node per tile, named
+//! `tile <column> <row>` and placed at the tile's centre, and one named `spawn`, where the player starts.
+//!
+//! Pages and tiles count columns east and rows north from the world's south-west corner. The map's frame (x east,
+//! y north, z up) becomes the game's (x east, y up, z south).
+
+mod ground;
+mod regions;
+mod road;
+mod surface;
+
+use std::collections::HashMap;
+use std::fs;
+use std::path::{Path, PathBuf};
+
+use anyhow::{Context, Result, bail};
+use glam::{DQuat, DVec2, DVec3};
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+
+use crate::glb::{Glb, Mesh};
+use ground::Ground;
+use road::Road;
+use surface::Surface;
+
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Settings {
+    /// The folder of the ground's pages.
+    ground: PathBuf,
+    /// The world's south-west corner on the map, where the first page and the first tile start.
+    south_west_m: [f64; 2],
+    /// The distance between neighbouring heights, in metres.
+    ground_step_m: f64,
+    /// How many steps each page spans.
+    page_steps: usize,
+    /// How many steps each tile spans.
+    tile_steps: usize,
+    /// The first and the last tile exported, each as [column, row].
+    tiles: [[usize; 2]; 2],
+    /// The ground's colour, in sRGB.
+    ground_colour: [f64; 3],
+    /// Where the player starts, on the map.
+    spawn_m: [f64; 2],
+    /// Which way the player faces at the start, as a compass bearing east of north.
+    spawn_bearing_deg: f64,
+}
+
+/// How many fine steps one coarse step of a middle tile spans.
+const COARSE: usize = 4;
+
+pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
+    let [x, y] = settings.south_west_m;
+    let ground = Ground::read(&folder.join(&settings.ground), settings.page_steps, settings.ground_step_m, DVec2::new(x, y))?;
+    let mut roads = Vec::new();
+    for region in &regions::REGIONS {
+        for (k, plan) in region.roads.iter().enumerate() {
+            let name = format!("{} road {k}", region.name);
+            roads.push(Road::new(&name, plan, &ground).with_context(|| name.clone())?);
+        }
+    }
+    let [[first_column, first_row], [last_column, last_row]] = settings.tiles;
+
+    let tiles = folder.join("tiles");
+    if tiles.exists() {
+        fs::remove_dir_all(&tiles)?;
+    }
+    fs::create_dir(&tiles)?;
+    let mut index = Glb::from_json(json!({ "asset": { "version": "2.0" } }));
+    for column in first_column..=last_column {
+        for row in first_row..=last_row {
+            let span = |k: usize| (k * settings.tile_steps, (k + 1) * settings.tile_steps);
+            let tile = Tile { columns: span(column), rows: span(row) };
+            if !ground.covers(tile.columns, tile.rows) {
+                bail!("tile {column} {row} reaches past the ground");
+            }
+            for (detail, name) in [(Detail::Full, format!("{column}_{row}.glb")), (Detail::Middle, format!("{column}_{row}.middle.glb"))] {
+                tile.write(&ground, &roads, settings, detail, &tiles.join(name))?;
+            }
+            let centre = ground.at((tile.columns.0 + tile.columns.1) as f64 / 2.0, (tile.rows.0 + tile.rows.1) as f64 / 2.0);
+            index.add_marker(&format!("tile {column} {row}"), game(centre), DQuat::IDENTITY);
+        }
+    }
+    let [x, y] = settings.spawn_m;
+    let Some(height) = ground.height(DVec2::new(x, y)) else { bail!("the spawn is off the ground") };
+    let facing = DQuat::from_rotation_y(-settings.spawn_bearing_deg.to_radians());
+    index.add_marker("spawn", game(DVec3::new(x, y, height)), facing);
+    index.write(output)
+}
+
+#[derive(Clone, Copy, PartialEq)]
+enum Detail {
+    Full,
+    Middle,
+}
+
+/// One tile: the grid columns and rows it spans, first and last.
+struct Tile {
+    columns: (usize, usize),
+    rows: (usize, usize),
+}
+
+impl Tile {
+    fn write(&self, ground: &Ground, roads: &[Road], settings: &Settings, detail: Detail, path: &Path) -> Result<()> {
+        let mut glb = Glb::from_json(json!({ "asset": { "version": "2.0" } }));
+        let ground_material = glb.add_material("ground", linear(settings.ground_colour));
+        let ground_mesh = self.ground(ground, detail, ground_material);
+        let drawn = Surface::new(&ground_mesh);
+        glb.add_mesh("ground", &ground_mesh);
+        for road in roads {
+            let mut mesh = road.mesh(ground, &drawn);
+            if mesh.indices.is_empty() {
+                continue;
+            }
+            road::check_above(&drawn, &mesh).with_context(|| format!("writing {}", path.display()))?;
+            mesh.material = glb.add_material(&road.name, linear(road.colour));
+            glb.add_mesh(&road.name, &mesh);
+        }
+        glb.write(path)
+    }
+
+    /// The ground in this tile. In full detail every grid square is two triangles. In middle detail the squares are
+    /// `COARSE` steps wide; each is a fan around its centre through its corners and, on the tile's edges, every fine
+    /// point along them.
+    fn ground(&self, ground: &Ground, detail: Detail, material: usize) -> Mesh {
+        let mut mesh = Mesh { material, ..Mesh::default() };
+        let mut points: HashMap<(usize, usize), u32> = HashMap::new();
+        let vertex = |mesh: &mut Mesh, i: f64, j: f64| {
+            let p = ground.at(i, j);
+            mesh.positions.push(game(p).as_vec3().to_array());
+            mesh.normals.push(game_direction(ground.normal(p.truncate())).as_vec3().to_array());
+            (mesh.positions.len() - 1) as u32
+        };
+        let mut point = |mesh: &mut Mesh, i: usize, j: usize| *points.entry((i, j)).or_insert_with(|| vertex(mesh, i as f64, j as f64));
+        if detail == Detail::Full {
+            for j in self.rows.0..self.rows.1 {
+                for i in self.columns.0..self.columns.1 {
+                    let [a, b, c, d] = [(i, j), (i + 1, j), (i + 1, j + 1), (i, j + 1)].map(|(i, j)| point(&mut mesh, i, j));
+                    mesh.indices.extend([a, b, c, a, c, d]);
+                }
+            }
+            return mesh;
+        }
+        let coarse = |(first, last): (usize, usize)| {
+            let mut stops: Vec<usize> = (first..last).step_by(COARSE).collect();
+            stops.push(last);
+            stops
+        };
+        let (columns, rows) = (coarse(self.columns), coarse(self.rows));
+        for pair_j in rows.windows(2) {
+            for pair_i in columns.windows(2) {
+                let ((i0, i1), (j0, j1)) = ((pair_i[0], pair_i[1]), (pair_j[0], pair_j[1]));
+                // The square's outline, counter-clockwise seen from above, through every fine point on a tile edge.
+                let mut outline = Vec::new();
+                let side = |on_edge: bool, from: usize, to: usize| -> Vec<usize> {
+                    if !on_edge {
+                        return vec![from];
+                    }
+                    if from < to { (from..to).collect() } else { (to + 1..=from).rev().collect() }
+                };
+                outline.extend(side(j0 == self.rows.0, i0, i1).into_iter().map(|i| (i, j0)));
+                outline.extend(side(i1 == self.columns.1, j0, j1).into_iter().map(|j| (i1, j)));
+                outline.extend(side(j1 == self.rows.1, i1, i0).into_iter().map(|i| (i, j1)));
+                outline.extend(side(i0 == self.columns.0, j1, j0).into_iter().map(|j| (i0, j)));
+                let centre = vertex(&mut mesh, (i0 + i1) as f64 / 2.0, (j0 + j1) as f64 / 2.0);
+                let outline: Vec<u32> = outline.into_iter().map(|(i, j)| point(&mut mesh, i, j)).collect();
+                for k in 0..outline.len() {
+                    mesh.indices.extend([centre, outline[k], outline[(k + 1) % outline.len()]]);
+                }
+            }
+        }
+        mesh
+    }
+}
+
+/// A map position in the game's frame.
+pub fn game(p: DVec3) -> DVec3 {
+    DVec3::new(p.x, p.z, -p.y)
+}
+
+/// A map direction in the game's frame.
+pub fn game_direction(d: DVec3) -> DVec3 {
+    DVec3::new(d.x, d.z, -d.y)
+}
+
+/// An sRGB colour as the linear colour glTF stores.
+pub fn linear(srgb: [f64; 3]) -> [f32; 3] {
+    srgb.map(|c| (if c <= 0.04045 { c / 12.92 } else { ((c + 0.055) / 1.055).powf(2.4) }) as f32)
+}

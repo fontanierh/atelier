@@ -9,6 +9,18 @@ cargo export --check assets            # list the exports whose inputs changed
 
 `cargo export` is an alias in `../.cargo/config.toml` for running the `export` crate.
 
+## What lives here and what lives in an asset
+
+- **The exporter** holds how every asset of a kind is made: the methods, shared by all of them. It holds no asset's
+  own numbers or shapes.
+- **An asset's `src/`** holds what that asset is: its source files and its own choices, such as a character's
+  stance or a region's roads.
+- **The export** (`<asset>.glb` and what sits beside it) is written by the exporter and never edited by hand.
+
+The exporter names assets in one place per kind, a list that compiles in each asset's `.rs` file:
+`animations.rs`, `characters.rs` and `world/regions.rs`. If a second asset would need the same code, it belongs in
+the exporter; if only this asset has it, it belongs in the asset.
+
 ```text
 tools/
   export/
@@ -23,7 +35,12 @@ tools/
       animations.rs         every animation, each from its asset folder
       character.rs          the `character` kind and the `Character` trait
       characters.rs         every character
-      world.rs              the `world` kind
+      world/                the `world` kind
+        mod.rs              the settings, and cutting the world into tiles
+        regions.rs          every region, and what a region adds to the world
+        ground.rs           the ground's heights, read from its pages
+        road.rs             a road along its course, laid on the ground
+        surface.rs          finding what lies under a point of a mesh, and cutting shapes along its triangles
       glb.rs                reading, editing and writing .glb files
 ```
 
@@ -71,18 +88,22 @@ every animation fitted to it with the character's changes. Its rig bones are ren
 | `height_m`     | how tall the character stands in the game   |
 | `texture_size` | the largest side of any texture, in pixels  |
 
-**`world`** builds the ground from a heightmap and the road along the course in `src/layout.rs`, and cuts both
-into square tiles under `tiles/`. Each tile is written in full detail and in middle detail, for seeing from afar.
-The road lies a few centimetres above the ground triangles under it; the export fails if it comes closer anywhere.
-`<folder name>.glb` holds a node per tile, at its centre, and the spawn.
+**`world`** builds the ground from the height pages in `src/ground/` and each region's roads from its
+`src/regions/<region>/layout.rs`, and cuts them into square tiles under `tiles/`. Each tile is written in full
+detail and in middle detail, for seeing from afar. A road lies a few centimetres above the ground triangles under it;
+the export fails if it comes closer anywhere. `<folder name>.glb` holds a node per tile, at its centre, and the spawn.
 
-| Setting             | Meaning                                                           |
-|---------------------|-------------------------------------------------------------------|
-| `heightmap`         | the ground's heights, relative to the folder                       |
-| `heightmap_samples` | how many heights each row and column has                          |
-| `heightmap_step_m`  | the distance between neighbouring heights                         |
-| `tile_steps`        | how many heights apart tile edges are                             |
-| `tiles`             | the first and last tile exported, each as `[column, row]`         |
+| Setting             | Meaning                                                               |
+|---------------------|-----------------------------------------------------------------------|
+| `ground`            | the folder of the ground's height pages, relative to the asset folder |
+| `south_west_m`      | the world's south-west corner on the map, where pages and tiles start |
+| `ground_step_m`     | the distance between neighbouring heights                             |
+| `page_steps`        | how many heights apart page edges are                                 |
+| `tile_steps`        | how many heights apart tile edges are                                 |
+| `tiles`             | the first and last tile exported, each as `[column, row]`             |
+| `ground_colour`     | the ground's colour, in sRGB                                          |
+| `spawn_m`           | where the player starts, on the map                                   |
+| `spawn_bearing_deg` | which way the player faces there, as a compass bearing east of north  |
 
 ## Inputs checksum
 

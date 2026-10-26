@@ -8,7 +8,9 @@ assets/
     idle/                   the idle, on the rig
   characters/
     nox/                    Nox, the playable character, with every animation fitted to him
-  world/                    the ground and the road around the spawn, in tiles
+  world/                    the world, in tiles
+    src/ground/             the ground's heights, in pages 512 m wide
+    src/regions/            one folder per region, with its layout
 ```
 
 ## An asset folder
@@ -26,8 +28,8 @@ The game loads `<asset-name>.glb` and what the export writes beside it, such as 
 build copies the folder without `src/` and `asset.toml` (see `../Trunk.toml`).
 
 `src/` holds every input of the export, so a clone can export the `.glb` again exactly. A source made by hand, such
-as `characters/nox/src/model.glb`, is committed as it is. A `.rs` file in `src/` is part of the exporter: the
-exporter compiles it in (`../tools/README.md` says what each kind's file does).
+as `characters/nox/src/model.glb`, is committed as it is. A `.rs` file in `src/` holds the asset's own choices
+in code; the exporter compiles it in (`../tools/README.md` says what belongs in an asset and what in the exporter).
 
 `kind` in `asset.toml` picks the exporter, and the other keys are its settings (`../tools/README.md` lists them).
 The exporter writes `inputs_sha256`; do not edit it.
