@@ -57,9 +57,9 @@ optional; a skeleton without them gets them from its neighbours.
 
 ## Characters
 
-A character is a type that implements `Character`: `Skeleton`, plus one trait per animation (`Idle`, defined in
-`assets/animations/idle/src/idle.rs`). Each animation trait's methods are the character's changes to that animation,
-with defaults that change nothing. The character's file, `src/<name>.rs` in its asset folder, implements them, and
+A character is a type that implements `Character`: `Skeleton`, plus `Changes`, which `animations.rs` makes of one
+trait per animation, each defined in that animation's `src/<name>.rs`. Each animation trait's methods are the
+character's changes to that animation, with defaults that change nothing. The character's file, `src/<name>.rs` in its asset folder, implements them, and
 `characters.rs` includes it in the `Name` enum. If a character lacks one, the exporter fails to compile.
 
 ## Kinds
@@ -70,7 +70,8 @@ kind's settings. A missing, misspelled or unknown setting fails the export. Each
 
 **`animation`** retargets a clip onto the rig and writes the rig playing it, named after the folder. Its
 `src/<name>.rs` implements `Skeleton` for the clip's skeleton and defines the trait a character implements to
-change the animation; `animations.rs` includes it in the `Name` enum.
+change the animation, and how those changes apply to it. `animations.rs` includes it in the `Name` enum and in
+`Changes`, and passes each character's changes to it.
 
 | Setting     | Meaning                                         |
 |-------------|-------------------------------------------------|

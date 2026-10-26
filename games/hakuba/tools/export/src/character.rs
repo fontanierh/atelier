@@ -8,8 +8,7 @@ use glam::DQuat;
 use serde::{Deserialize, Serialize};
 
 use crate::animation::{self, continuous};
-use crate::animations::Name as Animation;
-use crate::animations::idle::{self, Idle};
+use crate::animations::{Changes, Name as Animation};
 use crate::characters;
 use crate::glb::{Glb, Track, Trs};
 use crate::pose::{Joint, Pose, rig_nodes, rig_pose, rig_rest};
@@ -17,12 +16,9 @@ use crate::retarget::retarget;
 use crate::rig::{self, RIG, Skeleton};
 
 /// A playable character: its skeleton and its changes to each animation.
-pub trait Character: Skeleton + Idle {}
+pub trait Character: Skeleton + Changes {}
 
-impl<T: Skeleton + Idle> Character for T {}
-
-/// The animations every character is exported with.
-pub const ANIMATIONS: [Animation; 1] = [Animation::Idle];
+impl<T: Skeleton + Changes> Character for T {}
 
 /// The furthest a bone may sit from where the fitted animation places it, in metres.
 const PLACEMENT_TOLERANCE: f64 = 0.001;
@@ -55,11 +51,13 @@ pub fn animate(glb: &mut Glb, character: &impl Character) -> Result<()> {
     let rest_locals = glb.rest()?;
     let rest = rig_pose(&glb.worlds(&rest_locals), &nodes);
 
-    let (fps, clip) = animation::read(Animation::Idle)?;
-    let mut frames = retarget(&rig_rest(), &clip, &rest)?;
-    idle::apply(&character.stance(), &rest, &mut frames)?;
-    let tracks = tracks(glb, &nodes, &rest_locals, &frames)?;
-    glb.add_animation("idle", fps, &tracks);
+    for animation in Animation::ALL {
+        let (fps, clip) = animation::read(animation)?;
+        let mut frames = retarget(&rig_rest(), &clip, &rest)?;
+        animation.change(character, &rest, &mut frames)?;
+        let tracks = tracks(glb, &nodes, &rest_locals, &frames)?;
+        glb.add_animation(animation.name(), fps, &tracks);
+    }
 
     for (bone, node) in RIG.iter().zip(&nodes) {
         if let Some(node) = node {

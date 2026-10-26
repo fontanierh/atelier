@@ -40,8 +40,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
 pub fn read(animation: Name) -> Result<(f64, Vec<Pose>)> {
     let glb = Glb::read(&animation.output())?;
     let nodes = rig_nodes(&glb, &Bones::rig())?;
-    let name = Path::new(animation.folder()).file_name().unwrap().to_string_lossy().into_owned();
-    let (fps, frames) = glb.sample(&name)?;
+    let (fps, frames) = glb.sample(animation.name())?;
     Ok((fps, frames.iter().map(|locals| rig_pose(&glb.worlds(locals), &nodes)).collect()))
 }
 

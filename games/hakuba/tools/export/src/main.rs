@@ -43,7 +43,7 @@ impl Asset {
     fn reads(&self) -> Vec<&'static str> {
         match self {
             Asset::Animation(_) | Asset::World(_) => Vec::new(),
-            Asset::Character(_) => character::ANIMATIONS.iter().map(|animation| animation.folder()).collect(),
+            Asset::Character(_) => animations::Name::ALL.iter().map(|animation| animation.folder()).collect(),
         }
     }
 }
