@@ -201,7 +201,7 @@ mod tests {
     /// below the cutoff, and is raised back above it, while clear parts stay clear.
     #[test]
     fn keeps_coverage() {
-        let opaque = |k: u32| k % 2 == 0 && (k / 8) % 2 == 0 && k % 8 < 4;
+        let opaque = |k: u32| k.is_multiple_of(2) && (k / 8).is_multiple_of(2) && k % 8 < 4;
         let rgba = (0..64).flat_map(|k| [0, 0, 0, if opaque(k) { 255 } else { 0 }]).collect();
         let full = Level { width: 8, height: 8, rgba };
         let mut level = full.halved().unwrap();

@@ -29,6 +29,8 @@ tools/
     src/
       main.rs               the `export` command: reads asset.toml, runs its kind's exporter, records its inputs
       glb.rs                reading, editing and writing .glb files, shared by every kind
+      shapes.rs             closed tubes, boxes and cards that meshes are built from, shared by every kind
+      random.rs             repeatable random numbers, shared by every kind
       rig/                  the rig, and the `animation` and `character` kinds made on it
         mod.rs              the rig and the `Skeleton` trait
         pose.rs             poses: each rig bone's world rotation and position
@@ -40,13 +42,19 @@ tools/
         characters.rs       every character, and the `Character` trait each implements
       texture/
         mod.rs              the `texture` kind
+      model/                still models: the `plant` and `prop` kinds
+        mod.rs              writing a model's versions and anchors
+        plant.rs            the `plant` kind
+        prop.rs             the `prop` kind
       world/                the `world` kind
         mod.rs              the settings, and cutting the world into tiles
         regions.rs          every region, and the `Region` trait: what a region adds to the world
         checksums.rs        what each tile is made from, so an export rebuilds only the tiles that changed
         ground.rs           the ground's heights, read from its pages
         overlay.rs          flat shapes laid over the ground, such as roads
+        curve.rs            a smooth curve through a course's points, sampled every metre
         ribbon.rs           strips of even width along a curve, for regions to lay as overlays
+        scenery.rs          the models, cables and rails regions stand on the ground, shared out between tiles
         surface.rs          finding what lies under a point of a mesh, and cutting shapes along its triangles
 ```
 
@@ -103,12 +111,44 @@ pixels opaque enough to show, so leaves stay as full far away as near. Its sides
 |----------|-----------------------------------------------|
 | `source` | the image, PNG or JPEG, relative to the folder |
 
+**`plant`** builds a tree, a bush or a tuft of grass from its settings alone, in its own frame (x and y level, z up,
+metres, its foot at the origin), and writes it as `<folder name>.glb`. A tree or bush is `wood`, a trunk of bark
+with a branch to each clump of leaves, and `leaves`, cards cut out of a leaf image scattered through those clumps.
+Grass is a `tuft` of curved blades coloured per vertex; it casts no shadow. Every model reaches below its foot, so
+it stands on sloping ground with no gap; the export fails if it does not. A plant with `middle_cards` also writes a
+lighter `middle` version for seeing from afar.
+
+| Setting  | Meaning                                                                                           |
+|----------|---------------------------------------------------------------------------------------------------|
+| `seed`   | the seed of every random draw                                                                     |
+| `wood`   | its bark's texture, its trunk's points and radii, and the radius of its branches                   |
+| `leaves` | its leaves' texture and tint, how many cards in each version and how wide, and its clumps of leaves |
+| `tuft`   | how many blades, their spread, height, width, curl and colours                                    |
+
+**`prop`** builds a made object, such as a pole, from closed tubes and boxes of plain colours, in the same frame as
+a plant, and writes it as `<folder name>.glb`. Its anchors are empty nodes `anchor 0`, `anchor 1` and so on, the
+points other things fasten to, such as cables.
+
+| Setting     | Meaning                                         |
+|-------------|-------------------------------------------------|
+| `materials` | each material's linear colour, by its name      |
+| `tubes`     | each tube's ends, radii, sides and material     |
+| `boxes`     | each box's centre, size and material            |
+| `anchors`   | the points other things fasten to               |
+
 **`world`** builds the ground from the height pages in `src/ground/`, lays over it what each region adds, and cuts
 them into square tiles under `tiles/`. Each region's `src/regions/<region>/layout.rs` implements `Region`, and
 `world/regions.rs` lists it. Each tile is written in full detail and in middle detail, for seeing from afar. The
 ground and each overlay show a texture asset, named by its folder: a tile points at the texture's `.ktx2` and never
 holds it, and the export fails if no such texture asset exists. An
-overlay lies a few centimetres above the ground triangles under it; the export fails if it comes closer anywhere. `<folder name>.glb` holds a node per tile, at its centre, and the spawn.
+overlay lies a few centimetres above the ground triangles under it; the export fails if it comes closer anywhere.
+
+A region also stands scenery on the ground: plant and prop models, each at a point with a turn and a scale, cables
+strung between two models' anchors, and rails run along a path. A tile names each model's `.glb` and lists where
+its copies stand, seated on the ground that tile draws; it never holds the model. The world reads the props whose
+anchors its cables fasten to, which each region declares. The export fails if a model asset does not exist, if a
+model stands on an overlay, or if a cable comes closer than 2 m to the ground. `<folder name>.glb` holds a node per
+tile, at its centre, and the spawn.
 
 | Setting             | Meaning                                                               |
 |---------------------|-----------------------------------------------------------------------|
@@ -126,17 +166,21 @@ overlay lies a few centimetres above the ground triangles under it; the export f
 ## Inputs checksum
 
 `inputs_sha256` in `asset.toml` covers the asset's settings, every file in its `src/`, its kind's code, and the
-exports it reads (a character reads every animation, through each one's checksum and `.glb`). Changing any of them
-marks the export out of date until it is exported again. A character exports only after the animations it reads
-are current, and `cargo export` on several folders exports each after those it reads.
+exports it reads (a character reads every animation, and the world reads the props its cables fasten to, through
+each one's checksum and `.glb`). Changing any of them marks the export out of date until it is exported again. An
+asset exports only after the assets it reads are current, and `cargo export` on several folders exports each after
+those it reads.
 
-A kind's code is its folder under `src/` (`rig/`, `texture/` or `world/`) and the shared code: `main.rs`, `glb.rs`,
-`Cargo.toml`, the lock file and the toolchain. Each kind uses only its own folder and the shared code, so editing
-the world's code never marks a character out of date, and editing the rig never marks the world. Docs and
-`CONTRACTS` files are not inputs. `cargo test -p hakuba_export` checks that no kind uses another's code.
+A kind's code is its folder under `src/` (`rig/`, `texture/`, `model/` or `world/`) and the shared code: `main.rs`,
+`glb.rs`, `shapes.rs`, `random.rs`, `Cargo.toml`, the lock file and the toolchain. Each kind uses only its own
+folder and the shared code, so editing the world's code never marks a character out of date, and editing the rig
+never marks the world. Docs and `CONTRACTS` files are not inputs. `cargo test -p hakuba_export` checks that no kind
+uses another's code.
 
 The world also keeps one checksum per tile, in `tiles/checksums.toml`. It covers the code that writes tiles
-(`world/` but the regions list, `glb.rs`, and the locked crate versions), the settings tiles use, the heights in and
-around the tile, and the overlay triangles that reach into it, with the names of the textures they show. An export
-rewrites only the tiles whose checksum changed, so moving a road rebuilds the tiles it crosses and nothing else.
-A tile names its textures rather than holding them, so repainting a texture rebuilds no tile.
+(`world/` but the regions list, the shared code but `main.rs`, and the locked crate versions), the settings tiles
+use, the heights in and around the tile, and the overlay triangles that reach into it, with the names of the
+textures they show, and its scenery: where each model stands in it, by the model's name, its pieces of rail, and the
+cables starting in it, with their ends. An export rewrites only the tiles whose checksum changed, so moving a road
+rebuilds the tiles it crosses and nothing else. A tile names its textures and models rather than holding them, so
+repainting a texture or reshaping a tree rebuilds no tile.

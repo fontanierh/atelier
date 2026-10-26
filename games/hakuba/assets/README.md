@@ -8,9 +8,25 @@ assets/
     idle/                   the idle, on the rig
   characters/
     nox/                    Nox, the playable character, with every animation fitted to him
+  plants/                   trees, bushes and grass, each built from its settings alone
+    maple-a/, maple-b/      maples
+    broad-a/, broad-b/      broadleaf trees
+    ginkgo-a/, ginkgo-b/    ginkgos
+    pine-a/, pine-b/        pines
+    cedar-a/, cedar-b/      cedars
+    green-bush-a/, -b/      green bushes
+    ochre-bush-a/, -b/      bushes of autumn leaves
+    flower-bush-a/, -b/     flowering bushes
+    grass-a/, grass-b/      tufts of grass
+  props/                    made objects, each built from its settings alone
+    utility-pole/           a concrete pole with insulators that cables fasten to
+    street-lamp/            a lamp's arm and head, standing on a utility pole
   textures/
     ground/                 the ground's grass and earth
     road/                   a road's asphalt and lines
+    bark/                   tree bark
+    maple-leaves/ ...       the leaves of each kind of plant: maple, ginkgo, ochre and small leaves, pine and
+                            cedar needles, and flowers
   world/                    the world, in tiles
     src/ground/             the ground's heights, in pages 512 m wide
     src/regions/            one folder per region, with its layout
@@ -25,15 +41,17 @@ Every asset is one folder, named in kebab case:
 <asset-name>/
   asset.toml                its kind, its settings, and the checksum of its inputs
   <asset-name>.glb          what the game loads, written by the exporter (`<asset-name>.ktx2` for a texture)
-  src/                      everything the export is made from
+  src/                      everything the export is made from, if it is made from more than its settings
 ```
 
-The game loads the export and what the export writes beside it, such as the world's `tiles/`. The browser
-build copies the folder without `src/`, `asset.toml` and the tile checksums (see `../Trunk.toml`).
+A plant or prop is made from its settings alone, so it has no `src/`. The game loads the export and what the export
+writes beside it, such as the world's `tiles/`. The browser build copies the folder without `src/`, `asset.toml` and
+the tile checksums (see `../Trunk.toml`).
 
-`src/` holds every input of the export, so a clone can export it again exactly. A source made by hand, such
-as `characters/nox/src/model.glb`, is committed as it is. A `.rs` file in `src/` holds the asset's own choices
-in code; the exporter compiles it in (`../tools/README.md` says what belongs in an asset and what in the exporter).
+`src/` holds every input of the export other than its settings, so a clone can export it again exactly. A source
+made by hand, such as `characters/nox/src/model.glb`, is committed as it is. A `.rs` file in `src/` holds the
+asset's own choices in code; the exporter compiles it in (`../tools/README.md` says what belongs in an asset and
+what in the exporter).
 
 `kind` in `asset.toml` picks the exporter, and the other keys are its settings (`../tools/README.md` lists them).
 The exporter writes `inputs_sha256`; do not edit it.

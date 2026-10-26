@@ -1,0 +1,14 @@
+# A round green bush, 2.8 m across.
+kind = "plant"
+seed = 8
+inputs_sha256 = "dbed35fed47b9429cce35cf631decb9b5d199f77eed673bf13f87b97ca9b17a1"
+
+[leaves]
+texture = "small-leaves"
+cards = 154
+middle_cards = 38
+card_m = 0.48
+normals_from = [0, 0, 0.28]
+vertical_bias = 0.35
+shell = 0.35
+lobes = [{ at = [0, 0, 0.91], radii = [1.4, 1.4, 0.98] }]

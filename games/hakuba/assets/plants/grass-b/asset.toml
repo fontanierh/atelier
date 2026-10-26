@@ -1,0 +1,19 @@
+# Another tuft of ten green blades, about 0.4 m high, drawn from another seed.
+kind = "plant"
+seed = 41
+inputs_sha256 = "38e7da77c30916b3b9c948b86056db1bd54cf0bfd00f9970905facc8c65e40c4"
+
+[tuft]
+blades = 10
+spread_m = [0.06, 0.2]
+height_m = [0.32, 0.53]
+width_m = [0.035, 0.06]
+curl_m = [0.14, 0.27]
+depth_m = 0.06
+root_shade = 0.6
+colours = [
+    { colour = [0.24, 0.35, 0.13], weight = 4 },
+    { colour = [0.30, 0.40, 0.16], weight = 4 },
+    { colour = [0.43, 0.45, 0.22], weight = 1 },
+    { colour = [0.49, 0.49, 0.26], weight = 1 },
+]

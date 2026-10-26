@@ -1,8 +1,8 @@
 @cc [owner:fontanierh,label:architecture] asset-folder-shape
-Every asset MUST be one folder, named in kebab case: `assets/<group>/<asset-name>/` (groups such as
-`characters/` and `animations/`), or `assets/world/` for the one world. It holds exactly:
-`asset.toml` (its kind, settings and inputs checksum), `src/` (every input of its export), and what its
-kind's exporter writes: `<asset-name>.glb` (`<asset-name>.ktx2` for a texture), plus the outputs that kind
+Every asset MUST be one folder, named in kebab case: `assets/<group>/<asset-name>/` (groups such as `characters/`
+and `animations/`), or `assets/world/` for the one world. It holds exactly: `asset.toml` (its kind, settings and
+inputs checksum), `src/` (every input of its export other than its settings, left out when there is none), and what
+its kind's exporter writes: `<asset-name>.glb` (`<asset-name>.ktx2` for a texture), plus the outputs that kind
 declares (the world's `tiles/`).
 Nothing else MAY sit in an asset folder. Folders inside `src/` follow the kind's layout (the world's
 `src/ground/` and `src/regions/<region>/`).

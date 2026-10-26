@@ -1,6 +1,7 @@
 //! Every region, each with its implementation of [`Region`] from its folder under the world's `src/regions/`.
 
 use super::overlay::Overlay;
+use super::scenery::{Land, Scenery};
 
 #[path = "../../../../assets/world/src/regions/momiji-coast/layout.rs"]
 mod momiji_coast;
@@ -12,6 +13,12 @@ pub trait Region {
 
     /// The flat shapes it lays over the ground.
     fn overlays(&self) -> Vec<Overlay>;
+
+    /// What it stands on `land` and runs along it.
+    fn scenery(&self, land: &Land) -> Scenery;
+
+    /// The models whose anchors its cables fasten to, by folder under `assets/`. The world reads their exports.
+    fn fastens_to(&self) -> Vec<&'static str>;
 }
 
 pub const REGIONS: [&dyn Region; 1] = [&momiji_coast::MomijiCoast];

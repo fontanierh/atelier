@@ -1,8 +1,16 @@
-//! Momiji coast: the coastal road, from west to east across the region.
+//! Momiji coast: the coastal road, from west to east across the region, the plants on the slopes around it
+//! (`planting.rs`) and what stands along it (`roadside.rs`).
+
+mod planting;
+mod roadside;
+
+use glam::DVec2;
 
 use super::Region;
+use crate::world::curve::curve;
 use crate::world::overlay::Overlay;
 use crate::world::ribbon::ribbon;
+use crate::world::scenery::{Land, Scenery};
 
 /// The points the road's centre line passes through, from its west end to its east end.
 const ROAD: [[f64; 2]; 11] = [
@@ -42,4 +50,22 @@ impl Region for MomijiCoast {
             triangles: ribbon(&ROAD, ROAD_WIDTH_M, ROAD_TEXTURE_M),
         }]
     }
+
+    fn scenery(&self, land: &Land) -> Scenery {
+        let road = curve(&ROAD);
+        let mut scenery = Scenery { placements: planting::plants(land, &road), ..Scenery::default() };
+        roadside::add(&mut scenery, land, &road);
+        scenery
+    }
+
+    fn fastens_to(&self) -> Vec<&'static str> {
+        vec![roadside::POLE]
+    }
+}
+
+/// Which side of the road at `at`, going along `direction`, rises: 1 for its left, -1 for its right, judged from the
+/// ground 12 m to each side.
+fn uphill(land: &Land, at: DVec2, direction: DVec2) -> f64 {
+    let side = |sign: f64| land.height(at + direction.perp() * 12.0 * sign).unwrap_or(f64::NEG_INFINITY);
+    if side(1.0) >= side(-1.0) { 1.0 } else { -1.0 }
 }

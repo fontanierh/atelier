@@ -1,0 +1,14 @@
+# A small round bush of ochre autumn leaves, 2.2 m across.
+kind = "plant"
+seed = 11
+inputs_sha256 = "37e63392ce9c86c40b8c6ebc9190bc8c0c0d69a22f6655fafc007df87a7bab3d"
+
+[leaves]
+texture = "ochre-leaves"
+cards = 121
+middle_cards = 30
+card_m = 0.48
+normals_from = [0, 0, 0.22]
+vertical_bias = 0.35
+shell = 0.35
+lobes = [{ at = [0, 0, 0.72], radii = [1.1, 1.1, 0.77] }]

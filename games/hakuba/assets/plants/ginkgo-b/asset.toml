@@ -1,0 +1,36 @@
+# A smaller ginkgo, 7 m high, its leaves turned autumn gold.
+kind = "plant"
+seed = 24
+inputs_sha256 = "2bcde3866025c9e2904de75eab6dc350e8096460c704d19d3c233d82fa1ea4ce"
+
+[wood]
+texture = "bark"
+trunk = [
+    { at = [0, 0, -0.25], radius = 0.32 },
+    { at = [0.19, 0.02, 1.39], radius = 0.243 },
+    { at = [0.15, 0.24, 3.08], radius = 0.16 },
+]
+branch_radius_m = 0.11
+
+[leaves]
+texture = "ginkgo-leaves"
+tint = [1.0, 0.72, 0.42]
+cards = 520
+middle_cards = 90
+card_m = 1.0
+normals_from = [0, 0, 4.34]
+vertical_bias = 0.3
+shell = 0.35
+lobes = [
+    { at = [0.15, 0.24, 5.81], radii = [1.02, 1.02, 1.05] },
+    { at = [1.16, 0.1, 4.66], radii = [0.78, 0.78, 1.05] },
+    { at = [0.59, 1.16, 4.21], radii = [0.88, 0.88, 1.05] },
+    { at = [-0.22, 1.19, 4.51], radii = [0.87, 0.87, 1.05] },
+    { at = [-0.86, 0.12, 4.38], radii = [0.9, 0.9, 1.05] },
+    { at = [-0.16, -0.73, 4.22], radii = [0.84, 0.84, 1.05] },
+    { at = [0.83, -0.53, 4.53], radii = [0.82, 0.82, 1.05] },
+    { at = [0.67, 0.55, 5.34], radii = [0.76, 0.76, 1.05] },
+    { at = [-0.27, 0.69, 5.28], radii = [0.77, 0.77, 1.05] },
+    { at = [-0.37, -0.08, 5.01], radii = [0.84, 0.84, 1.05] },
+    { at = [0.48, -0.28, 5.31], radii = [0.91, 0.91, 1.05] },
+]

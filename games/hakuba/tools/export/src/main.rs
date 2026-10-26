@@ -12,7 +12,10 @@
 //! whose export is missing or whose inputs no longer match that checksum.
 
 mod glb;
+mod model;
+mod random;
 mod rig;
+mod shapes;
 mod texture;
 mod world;
 
@@ -31,6 +34,8 @@ use toml_edit::DocumentMut;
 enum Asset {
     Animation(rig::animation::Settings),
     Character(rig::character::Settings),
+    Plant(model::plant::Settings),
+    Prop(model::prop::Settings),
     Texture(texture::Settings),
     World(world::Settings),
 }
@@ -39,8 +44,9 @@ impl Asset {
     /// The other assets whose exports this one reads, by folder relative to `assets/`.
     fn reads(&self) -> Vec<String> {
         match self {
-            Asset::Animation(_) | Asset::Texture(_) | Asset::World(_) => Vec::new(),
+            Asset::Animation(_) | Asset::Plant(_) | Asset::Prop(_) | Asset::Texture(_) => Vec::new(),
             Asset::Character(_) => rig::animations::ANIMATIONS.into_iter().map(rig::animation::folder).collect(),
+            Asset::World(_) => world::reads(),
         }
     }
 
@@ -48,6 +54,7 @@ impl Asset {
     fn code_folder(&self) -> &'static str {
         match self {
             Asset::Animation(_) | Asset::Character(_) => "src/rig",
+            Asset::Plant(_) | Asset::Prop(_) => "src/model",
             Asset::Texture(_) => "src/texture",
             Asset::World(_) => "src/world",
         }
@@ -56,7 +63,7 @@ impl Asset {
     /// The extension of the file this kind exports.
     fn extension(&self) -> &'static str {
         match self {
-            Asset::Animation(_) | Asset::Character(_) | Asset::World(_) => "glb",
+            Asset::Animation(_) | Asset::Character(_) | Asset::Plant(_) | Asset::Prop(_) | Asset::World(_) => "glb",
             Asset::Texture(_) => "ktx2",
         }
     }
@@ -69,9 +76,16 @@ const CHECKSUM: &str = "inputs_sha256";
 const EXPORTER: &str = env!("CARGO_MANIFEST_DIR");
 
 /// The exporter's files that every kind is built from, relative to the exporter: the command, the glTF reader and
-/// writer, and the crate and Rust versions.
-const SHARED_CODE: [&str; 5] =
-    ["src/main.rs", "src/glb.rs", "Cargo.toml", "../../Cargo.lock", "../../rust-toolchain.toml"];
+/// writer, the shapes meshes are built from, the seeded random numbers, and the crate and Rust versions.
+const SHARED_CODE: [&str; 7] = [
+    "src/main.rs",
+    "src/glb.rs",
+    "src/shapes.rs",
+    "src/random.rs",
+    "Cargo.toml",
+    "../../Cargo.lock",
+    "../../rust-toolchain.toml",
+];
 
 /// The exporter's files that a kind is built from: [`SHARED_CODE`] and the `.rs` files in the kind's `folder`. Docs
 /// and other kinds' code are left out, so editing them marks no export of this kind out of date.
@@ -94,6 +108,22 @@ fn add_files(digest: &mut Sha256, base: &Path, files: &[PathBuf]) -> Result<()> 
 
 /// The game's `assets/` folder.
 const ASSETS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets");
+
+/// Where an export two folders below `assets/`, such as a plant's or a tile's, finds the export of the asset `folder`
+/// (relative to `assets/`), whose file has the `extension`. Fails if there is no such asset.
+fn uri_of_asset(folder: &str, extension: &str) -> Result<String> {
+    if !Path::new(ASSETS).join(folder).join("asset.toml").is_file() {
+        bail!("there is no asset assets/{folder}/");
+    }
+    let name = folder.rsplit('/').next().unwrap_or(folder);
+    Ok(format!("../../{folder}/{name}.{extension}"))
+}
+
+/// Where an export two folders below `assets/` finds the texture `name`. An export names its textures and never holds
+/// them, so repainting a texture rebuilds nothing else. Fails if there is no such texture asset.
+fn uri_of_texture(name: &str) -> Result<String> {
+    uri_of_asset(&format!("textures/{name}"), "ktx2")
+}
 
 /// An asset folder's parsed `asset.toml`.
 struct Folder {
@@ -163,6 +193,8 @@ impl Folder {
         match &self.asset {
             Asset::Animation(settings) => rig::animation::export(&self.path, settings, &output)?,
             Asset::Character(settings) => rig::character::export(&self.path, settings, &output)?,
+            Asset::Plant(settings) => model::plant::export(settings, &output)?,
+            Asset::Prop(settings) => model::prop::export(settings, &output)?,
             Asset::Texture(settings) => texture::export(&self.path, settings, &output)?,
             Asset::World(settings) => world::export(&self.path, settings, &output)?,
         }
@@ -259,8 +291,12 @@ mod tests {
     use super::*;
 
     /// Each kind's code folder under `src/`, and the asset groups whose `.rs` files it compiles in.
-    const KINDS: [(&str, &[&str]); 3] =
-        [("rig", &["animations", "characters"]), ("texture", &["textures"]), ("world", &["world"])];
+    const KINDS: [(&str, &[&str]); 4] = [
+        ("model", &["plants", "props"]),
+        ("rig", &["animations", "characters"]),
+        ("texture", &["textures"]),
+        ("world", &["world"]),
+    ];
 
     /// The `.rs` files under `root`.
     fn sources(root: &Path) -> Vec<PathBuf> {

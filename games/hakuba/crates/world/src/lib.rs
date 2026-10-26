@@ -1,9 +1,10 @@
-//! The world: the ground and the road from `assets/world`, the sea, the sky, sun and haze, and a camera that
+//! The world: the ground, the road and what stands around it from `assets/world`, the sea, the sky, sun and haze, and a camera that
 //! starts at the spawn and flies.
 
 mod fly;
 mod look;
 mod painterly;
+mod scenery;
 mod tiles;
 
 use bevy::gltf::{Gltf, GltfNode};
@@ -26,9 +27,15 @@ pub struct WorldPlugin;
 
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((fly::FlyPlugin, look::LookPlugin, painterly::PainterlyPlugin, tiles::TilesPlugin))
-            .add_systems(OnEnter(Screen::World), spawn_world)
-            .add_systems(Update, read_index.run_if(in_state(Screen::World)));
+        app.add_plugins((
+            fly::FlyPlugin,
+            look::LookPlugin,
+            painterly::PainterlyPlugin,
+            scenery::SceneryPlugin,
+            tiles::TilesPlugin,
+        ))
+        .add_systems(OnEnter(Screen::World), spawn_world)
+        .add_systems(Update, read_index.run_if(in_state(Screen::World)));
     }
 }
 

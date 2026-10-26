@@ -1,0 +1,35 @@
+# A broadleaf, 8.5 m high, its low fork spreading into a round crown.
+kind = "plant"
+seed = 1
+inputs_sha256 = "16d6ef08bd14e021872cdb5a7b186106e017f87e7fcbe611a281c9488333213b"
+
+[wood]
+texture = "bark"
+trunk = [
+    { at = [0, 0, -0.25], radius = 0.48 },
+    { at = [0.03, 0.02, 0.99], radius = 0.365 },
+    { at = [-0.26, 0.24, 2.21], radius = 0.24 },
+]
+branch_radius_m = 0.23
+
+[leaves]
+texture = "small-leaves"
+cards = 520
+middle_cards = 90
+card_m = 1.0
+normals_from = [0, 0, 5.27]
+vertical_bias = 0.3
+shell = 0.35
+lobes = [
+    { at = [-0.26, 0.24, 7.05], radii = [1.38, 1.38, 1.78] },
+    { at = [1.11, 0.4, 4.72], radii = [1.13, 1.13, 1.78] },
+    { at = [0.46, 1.42, 4.92], radii = [1.19, 1.19, 1.78] },
+    { at = [-0.72, 1.54, 4.61], radii = [1.2, 1.2, 1.78] },
+    { at = [-1.64, 0.28, 4.98], radii = [1.01, 1.01, 1.78] },
+    { at = [-0.97, -0.93, 4.96], radii = [1.06, 1.06, 1.78] },
+    { at = [0.65, -0.79, 5.05], radii = [1.02, 1.02, 1.78] },
+    { at = [0.5, 0.58, 5.72], radii = [1.23, 1.23, 1.78] },
+    { at = [-0.71, 0.94, 5.55], radii = [1.11, 1.11, 1.78] },
+    { at = [-1.01, -0.1, 5.56], radii = [1.11, 1.11, 1.78] },
+    { at = [0.23, -0.43, 5.56], radii = [1.07, 1.07, 1.78] },
+]

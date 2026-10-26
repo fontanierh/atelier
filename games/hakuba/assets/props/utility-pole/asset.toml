@@ -1,0 +1,102 @@
+# A concrete utility pole, 11 m high, with two crossarms of insulators that cables fasten to. Its x runs along the
+# cables, and its y across them.
+kind = "prop"
+# The insulators' tops: three on the upper arm, two on the lower.
+anchors = [[0, -1.05, 10.58], [0, 0, 10.58], [0, 1.05, 10.58], [0, -0.85, 9.68], [0, 0.85, 9.68]]
+inputs_sha256 = "4a70eeb44a200b2eedabe27373e26975f5a5e22e6718a8e4a0a7c4bf1e98e854"
+
+[materials]
+concrete = [0.62, 0.61, 0.59]
+wood = [0.3, 0.2, 0.13]
+metal = [0.35, 0.35, 0.37]
+porcelain = [0.9, 0.9, 0.88]
+
+[[tubes]]
+from = [0, 0, -0.5]
+to = [0, 0, 11]
+radius_m = [0.17, 0.11]
+sides = 10
+material = "concrete"
+
+[[tubes]]
+from = [0, -0.96, 10.24]
+to = [0, 0, 9.6]
+radius_m = [0.025, 0.025]
+sides = 4
+material = "metal"
+
+[[tubes]]
+from = [0, 0.96, 10.24]
+to = [0, 0, 9.6]
+radius_m = [0.025, 0.025]
+sides = 4
+material = "metal"
+
+[[tubes]]
+from = [0, -1.05, 10.36]
+to = [0, -1.05, 10.58]
+radius_m = [0.05, 0.04]
+sides = 6
+material = "porcelain"
+
+[[tubes]]
+from = [0, 1.05, 10.36]
+to = [0, 1.05, 10.58]
+radius_m = [0.05, 0.04]
+sides = 6
+material = "porcelain"
+
+[[tubes]]
+from = [0, 0.0, 10.36]
+to = [0, 0.0, 10.58]
+radius_m = [0.05, 0.04]
+sides = 6
+material = "porcelain"
+
+[[tubes]]
+from = [0, -0.8, 9.34]
+to = [0, 0, 8.7]
+radius_m = [0.025, 0.025]
+sides = 4
+material = "metal"
+
+[[tubes]]
+from = [0, 0.8, 9.34]
+to = [0, 0, 8.7]
+radius_m = [0.025, 0.025]
+sides = 4
+material = "metal"
+
+[[tubes]]
+from = [0, -0.85, 9.46]
+to = [0, -0.85, 9.68]
+radius_m = [0.05, 0.04]
+sides = 6
+material = "porcelain"
+
+[[tubes]]
+from = [0, 0.85, 9.46]
+to = [0, 0.85, 9.68]
+radius_m = [0.05, 0.04]
+sides = 6
+material = "porcelain"
+
+[[boxes]]
+centre = [0, 0, 10.3]
+size = [0.12, 2.4, 0.12]
+material = "wood"
+
+[[boxes]]
+centre = [0, 0, 10.38]
+size = [0.16, 2.5, 0.05]
+material = "metal"
+
+[[boxes]]
+centre = [0, 0, 9.4]
+size = [0.12, 2.0, 0.12]
+material = "wood"
+
+[[boxes]]
+centre = [0, 0, 9.48]
+size = [0.16, 2.1, 0.05]
+material = "metal"

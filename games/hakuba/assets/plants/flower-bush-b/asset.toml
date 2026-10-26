@@ -1,0 +1,14 @@
+# A small round flowering bush, 1.8 m across.
+kind = "plant"
+seed = 35
+inputs_sha256 = "8f79c21b54e4067d061d135f368bd60f3968dc59f0703d7c53095f114f555848"
+
+[leaves]
+texture = "flowers"
+cards = 120
+middle_cards = 30
+card_m = 0.55
+normals_from = [0, 0, 0.23]
+vertical_bias = 0.35
+shell = 0.35
+lobes = [{ at = [0, 0, 0.63], radii = [0.9, 0.9, 0.63] }]

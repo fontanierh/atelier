@@ -1,4 +1,4 @@
 # Clusters of yellow fan-shaped ginkgo leaves, one in each quarter, on a clear ground.
 kind = "texture"
 source = "src/ginkgo-leaves.png"
-inputs_sha256 = "521e239085c6efa9ecc67e815ca8c3df44da4c60b773d1339c6a671e2d5388e1"
+inputs_sha256 = "6af528d420003275b3f0da17017bed3438b8faa32262676d0c99f60f470bac0f"

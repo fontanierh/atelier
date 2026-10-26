@@ -3091,6 +3091,8 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "hakuba_screens",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
