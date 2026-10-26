@@ -46,7 +46,7 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
-            painterly: 0.35,
+            painterly: 0.7,
             wind: 1.0,
             resolution: Resolution::Auto,
             shadows: Shadows::Near,

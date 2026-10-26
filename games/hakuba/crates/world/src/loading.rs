@@ -1,5 +1,6 @@
 //! A curtain over the world until it has loaded: the index, every tile in sight and every model standing in them, with
-//! their textures, so the world shows whole rather than filling in.
+//! their textures, so the world shows whole rather than filling in. What other crates add to the world holds the
+//! curtain too while it is [`Unready`], such as the player until their character stands on the ground.
 
 use bevy::asset::{RecursiveDependencyLoadState, UntypedAssetId};
 use bevy::prelude::*;
@@ -23,6 +24,11 @@ impl Plugin for LoadingPlugin {
 #[derive(Component)]
 struct Curtain;
 
+/// Holds the curtain down while any entity has it. The world draws under the curtain, so what is spawned meanwhile
+/// has its models loaded and its shaders compiled before the player sees it.
+#[derive(Component)]
+pub struct Unready;
+
 fn spawn(mut commands: Commands) {
     commands.spawn((
         Curtain,
@@ -41,7 +47,8 @@ fn spawn(mut commands: Commands) {
     ));
 }
 
-/// Lifts the curtain once every tile shows the version it needs and every model in them has spawned.
+/// Lifts the curtain once every tile shows the version it needs, every model in them has spawned and nothing else is
+/// [`Unready`].
 #[allow(clippy::too_many_arguments)]
 fn lift(
     mut commands: Commands,
@@ -52,6 +59,7 @@ fn lift(
     waiting: Query<(), With<Waiting>>,
     roots: Query<&WorldAssetRoot>,
     placed: Query<&Placed>,
+    unready: Query<(), With<Unready>>,
 ) {
     let loaded = |id: UntypedAssetId| {
         matches!(
@@ -59,7 +67,8 @@ fn lift(
             RecursiveDependencyLoadState::Loaded | RecursiveDependencyLoadState::Failed(_)
         )
     };
-    let ready = !tiles.is_empty()
+    let ready = unready.is_empty()
+        && !tiles.is_empty()
         && tiles.iter().all(Tile::shown)
         && spawning.is_empty()
         && waiting.is_empty()

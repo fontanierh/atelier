@@ -20,6 +20,7 @@ use hakuba_screens::Screen;
 use tiles::Tile;
 
 pub use ground::{Ground, Hit, SEA_LEVEL_M};
+pub use loading::Unready;
 
 /// The world's index: one node per tile, and the spawn.
 const INDEX: &str = "world/world.glb";
@@ -80,7 +81,13 @@ fn spawn_world(
         })),
     ));
     let drawn = pixels::spawn(&mut commands, &mut images);
-    commands.spawn((Name::new("Camera"), DespawnOnExit(Screen::World), Camera3d::default(), look::camera(), drawn));
+    commands.spawn((
+        Name::new("Camera"),
+        DespawnOnExit(Screen::World),
+        Camera3d::default(),
+        look::camera(&mut images),
+        drawn,
+    ));
 }
 
 /// Once the index has loaded: records the spawn, puts the camera there and adds a [`Tile`] for each tile.

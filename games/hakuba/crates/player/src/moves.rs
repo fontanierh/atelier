@@ -9,7 +9,7 @@
 
 use bevy::prelude::*;
 use hakuba_characters::{Clips, Play, Playing};
-use hakuba_world::{Ground, SEA_LEVEL_M};
+use hakuba_world::{Ground, Hit, SEA_LEVEL_M};
 
 use crate::input::Controls;
 use crate::{Body, Player};
@@ -17,9 +17,10 @@ use crate::{Body, Player};
 /// Gravity, in metres a second squared: Unreal's, 1.5 times as strong, as Yorimichi's player falls.
 const GRAVITY: f32 = 9.8 * 1.5;
 
-/// How fast a jump leaves the ground, and a double jump the air, in metres a second.
+/// How fast a jump leaves the ground, and a double jump the air, in metres a second. Yorimichi's double jump leaves at
+/// 6.5, rising 1.4 m; this one rises 2.2 m.
 const JUMP_SPEED: f32 = 4.9;
-const DOUBLE_JUMP_SPEED: f32 = 6.5;
+const DOUBLE_JUMP_SPEED: f32 = 8.0;
 
 /// How fast the player speeds up and slows down on foot, in metres a second squared, and how much of that the air
 /// allows.
@@ -37,12 +38,6 @@ const HOP_SPEED: f32 = 0.18 * 30.0;
 const HOP_HEIGHT: f32 = 0.8;
 const BACKFLIP_SPEED: f32 = 0.15 * 30.0;
 const BACKFLIP_HEIGHT: f32 = 1.11;
-
-/// The double jump's somersault: when the turn starts, how long it takes, and when the body is upright again, in
-/// seconds after the jump, as Yorimichi times Cairo's.
-const FLIP_START: f32 = 0.08;
-const FLIP_TURN: f32 = 0.52;
-const FLIP_DONE: f32 = 0.63;
 
 /// How long after leaving the ground a jump still counts as from the ground, and the double jump waits after walking
 /// off an edge, in seconds.
@@ -74,6 +69,9 @@ const WADE_M: f32 = 0.6;
 /// checks for them, in metres, from the ankles to the head: a guardrail's beam stops even a hop.
 const RADIUS_M: f32 = 0.3;
 const WALL_CHECKS_M: [f32; 5] = [0.15, 0.45, 0.8, 1.2, 1.6];
+
+/// How far the body is pushed out of a wall in one frame, at most, in metres.
+const MOST_PUSH_M: f32 = 0.02;
 
 /// A fall from higher than this lands hard, in metres.
 const HARD_LAND_M: f32 = 4.5;
@@ -107,9 +105,8 @@ pub enum Action {
     Jump,
     Hop(Side),
     Backflip,
-    /// The double jump's somersault, how long since it started, in seconds, and the point it turns about, in the
-    /// player's frame, once known.
-    Flip(f32, Option<Vec3>),
+    /// The double jump's somersault, until its clip ends.
+    Flip,
     Land,
     HopLand(Side),
     BackflipLand,
@@ -165,6 +162,11 @@ impl Motion {
     pub fn facing(yaw: f32) -> Self {
         Self { yaw, ..default() }
     }
+
+    /// How fast the paraglider turns, in radians a second toward the left: 0 off it.
+    pub fn glide_turn(&self) -> f32 {
+        if self.mode == Mode::Glide { self.glide_turn } else { 0.0 }
+    }
 }
 
 /// The way the camera looks over the ground: turned `camera_yaw` from +Z toward +X, looking along -Z when 0.
@@ -199,9 +201,6 @@ fn wanted_speed(controls: &Controls, clips: &Clips) -> f32 {
     }
 }
 
-/// What the moves read of the player's body, and its place.
-type BodyParts = (Entity, &'static Clips, &'static Playing, &'static mut Transform);
-
 /// Moves the player one frame.
 #[allow(clippy::too_many_arguments)]
 pub fn advance(
@@ -210,16 +209,14 @@ pub fn advance(
     time: Res<Time>,
     mut ground: Ground,
     mut players: Query<(&mut Player, &mut Transform)>,
-    mut bodies: Query<BodyParts, (With<Body>, Without<Player>)>,
-    pelvises: Query<(&Name, &GlobalTransform)>,
-    children: Query<&Children>,
+    bodies: Query<(Entity, &Clips, &Playing), With<Body>>,
 ) {
     let dt = time.delta_secs();
     if dt <= 0.0 {
         return;
     }
     for (mut player, mut transform) in &mut players {
-        let Ok((body, clips, playing, mut body_transform)) = bodies.get_mut(player.body) else { continue };
+        let Ok((body, clips, playing)) = bodies.get(player.body) else { continue };
         let camera_yaw = player.camera.yaw;
         let motion = &mut player.motion;
         let wish = wish(&controls, camera_yaw);
@@ -303,7 +300,6 @@ pub fn advance(
         transform.translation = at;
         transform.rotation = Quat::from_rotation_y(motion.yaw);
         animate(&mut commands, motion, body, clips, playing);
-        *body_transform = flip(motion, dt, body, &children, &pelvises, &transform);
     }
 }
 
@@ -314,11 +310,9 @@ fn walk(ground: &mut Ground, motion: &mut Motion, at: Vec3, dt: f32) -> Vec3 {
     if step.length() < 1e-5 {
         return at;
     }
-    if blocked(ground, at, step) {
-        motion.velocity = Vec3::ZERO;
-        return at;
-    }
-    let next = at + step;
+    let (moved, push) = slide(ground, at, step);
+    motion.velocity = moved / dt;
+    let next = at + moved + push;
     match ground.below(next, STEP_M, STEP_M) {
         Some(hit) => {
             let steep = hit.normal.y < STEEPEST_DEG.to_radians().cos() && hit.point.y > at.y;
@@ -340,14 +334,50 @@ fn walk(ground: &mut Ground, motion: &mut Motion, at: Vec3, dt: f32) -> Vec3 {
     }
 }
 
-/// Whether a wall, rail or slope too steep to climb stands in the way of moving the player by `step` from `at`.
-fn blocked(ground: &mut Ground, at: Vec3, step: Vec3) -> bool {
-    let Ok(direction) = Dir3::new(step) else { return false };
-    WALL_CHECKS_M.into_iter().any(|height| {
-        ground
-            .cast(at + Vec3::Y * height, direction, step.length() + RADIUS_M)
-            .is_some_and(|hit| hit.normal.y < STEEPEST_DEG.to_radians().cos())
-    })
+/// Moves the player's body from `at` by the horizontal `step`, sliding along any wall, rail or slope too steep to climb
+/// in the way. Returns how far the step carried it, and how far it is then pushed out of anything closer than its
+/// radius on any side: the push moves the body but adds nothing to its speed.
+fn slide(ground: &mut Ground, at: Vec3, step: Vec3) -> (Vec3, Vec3) {
+    let mut moved = Vec3::ZERO;
+    let mut left = step;
+    // A step that meets one wall slides along it; one that meets a second, in a corner, stops there.
+    for _ in 0..2 {
+        let Ok(direction) = Dir3::new(left) else { break };
+        let length = left.length();
+        let Some(hit) = sweep(ground, at + moved, direction, length + RADIUS_M) else {
+            moved += left;
+            break;
+        };
+        let free = (hit.distance - RADIUS_M).max(0.0).min(length);
+        moved += *direction * free;
+        let wall = hit.normal.with_y(0.0).normalize_or_zero();
+        let rest = left - *direction * free;
+        left = rest - wall * rest.dot(wall);
+    }
+    (moved, clear(ground, at + moved))
+}
+
+/// The nearest wall a ray from the body's checked heights meets along `direction` within `reach`.
+fn sweep(ground: &mut Ground, at: Vec3, direction: Dir3, reach: f32) -> Option<Hit> {
+    WALL_CHECKS_M
+        .into_iter()
+        .filter_map(|height| ground.cast(at + Vec3::Y * height, direction, reach))
+        .filter(|hit| hit.normal.y < STEEPEST_DEG.to_radians().cos())
+        .min_by(|a, b| a.distance.total_cmp(&b.distance))
+}
+
+/// How far to move the body at `at` so that no wall is closer than its radius, looking around it in eight directions,
+/// at most [`MOST_PUSH_M`] a frame.
+fn clear(ground: &mut Ground, at: Vec3) -> Vec3 {
+    let mut push = Vec3::ZERO;
+    for k in 0..8 {
+        let angle = k as f32 * std::f32::consts::TAU / 8.0;
+        let direction = Dir3::new_unchecked(Vec3::new(angle.sin(), 0.0, angle.cos()));
+        if let Some(hit) = sweep(ground, at, direction, RADIUS_M) {
+            push -= *direction * (RADIUS_M - hit.distance);
+        }
+    }
+    push.clamp_length_max(MOST_PUSH_M)
 }
 
 fn can_jump(motion: &Motion) -> bool {
@@ -394,8 +424,8 @@ fn double_jump(commands: &mut Commands, motion: &mut Motion, body: Entity, wish:
     motion.jumped = true;
     motion.leap = None;
     motion.fall_from = f32::NEG_INFINITY;
-    motion.action = Action::Flip(0.0, None);
-    commands.trigger(Play::once(body, "tuck").fading(0.08));
+    motion.action = Action::Flip;
+    commands.trigger(Play::once(body, "double-jump").fading(0.05));
 }
 
 /// A side hop when the stick points to the side of the camera, a backflip otherwise. The player first turns to face
@@ -459,19 +489,16 @@ fn fly(
         let target = wish.normalize_or_zero() * wanted_speed(controls, clips).max(flat.length());
         let steered = flat.move_towards(target, ACCELERATION * AIR_CONTROL * dt);
         motion.velocity = steered.with_y(motion.velocity.y);
-        if wish.length() > 0.05 && !matches!(motion.action, Action::Flip(..)) {
+        if wish.length() > 0.05 && !matches!(motion.action, Action::Flip) {
             motion.yaw = turn_toward(motion.yaw, yaw_of(wish), TURN_RATE * AIR_CONTROL * dt);
         }
     }
     let step = motion.velocity * dt;
-    let flat = step.with_y(0.0);
-    let mut next = *at + step;
-    if blocked(ground, *at, flat) {
-        next = *at + Vec3::Y * step.y;
-        motion.velocity = Vec3::new(0.0, motion.velocity.y, 0.0);
-        if let Some(leap) = motion.leap.as_mut() {
-            *leap = Vec3::ZERO;
-        }
+    let (moved, push) = slide(ground, *at, step.with_y(0.0));
+    let mut next = *at + moved + push + Vec3::Y * step.y;
+    motion.velocity = (moved / dt).with_y(motion.velocity.y);
+    if let Some(leap) = motion.leap.as_mut() {
+        *leap = moved / dt;
     }
     if motion.velocity.y <= 0.0
         && let Some(hit) = ground.below(next.with_y(at.y), 0.3, at.y - next.y)
@@ -548,11 +575,9 @@ fn glide(
     let facing = Vec3::new(motion.glide_yaw.sin(), 0.0, motion.glide_yaw.cos());
     motion.velocity = (facing * motion.glide_speed).with_y(motion.velocity.y);
     let step = motion.velocity * dt;
-    let mut next = *at + step;
-    if blocked(ground, *at, step.with_y(0.0)) {
-        next = *at + Vec3::Y * step.y;
-        motion.glide_speed *= 0.3;
-    }
+    let (moved, push) = slide(ground, *at, step.with_y(0.0));
+    let mut next = *at + moved + push + Vec3::Y * step.y;
+    motion.glide_speed = motion.glide_speed.min(moved.length() / dt);
     if let Some(hit) = ground.below(next.with_y(at.y), 0.3, at.y - next.y + 0.06) {
         next.y = hit.point.y;
         *at = next;
@@ -598,6 +623,10 @@ fn animate(commands: &mut Commands, motion: &mut Motion, body: Entity, clips: &C
             motion.action = Action::Free;
             commands.trigger(Play::once(body, "fall").fading(0.2));
         }
+        (Mode::Air, Action::Flip) if playing.finished => {
+            motion.action = Action::Free;
+            commands.trigger(Play::once(body, "fall").fading(0.15));
+        }
         (Mode::Glide, Action::GlideOpen) if playing.finished => motion.action = Action::Free,
         (Mode::Glide, Action::Free) => {
             let clip = if motion.glide_turn.abs() > 40f32.to_radians() {
@@ -613,38 +642,4 @@ fn animate(commands: &mut Commands, motion: &mut Motion, body: Entity, clips: &C
         }
         _ => {}
     }
-}
-
-/// The body's place in the player's frame: upright, or turning through the double jump's somersault about the middle
-/// of the tucked body.
-fn flip(
-    motion: &mut Motion,
-    dt: f32,
-    body: Entity,
-    children: &Query<&Children>,
-    pelvises: &Query<(&Name, &GlobalTransform)>,
-    player: &Transform,
-) -> Transform {
-    let Action::Flip(time, pivot) = &mut motion.action else { return Transform::IDENTITY };
-    *time += dt;
-    if motion.mode != Mode::Air {
-        return Transform::IDENTITY;
-    }
-    if pivot.is_none() && *time >= FLIP_START {
-        let pelvis = children
-            .iter_descendants(body)
-            .find_map(|node| pelvises.get(node).ok().filter(|(name, _)| name.as_str() == "pelvis"));
-        let at = pelvis
-            .map_or(Vec3::Y, |(_, global)| player.compute_affine().inverse().transform_point3(global.translation()));
-        *pivot = Some(at + Vec3::Y * 0.08);
-    }
-    if *time >= FLIP_DONE {
-        motion.action = Action::Free;
-        return Transform::IDENTITY;
-    }
-    let Some(pivot) = *pivot else { return Transform::IDENTITY };
-    let t = ((*time - FLIP_START) / FLIP_TURN).clamp(0.0, 1.0);
-    let angle = std::f32::consts::TAU * t * t * (3.0 - 2.0 * t);
-    let turn = Quat::from_rotation_x(angle);
-    Transform::from_translation(pivot - turn * pivot).with_rotation(turn)
 }

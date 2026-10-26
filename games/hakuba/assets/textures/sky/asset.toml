@@ -1,0 +1,6 @@
+# The sky: its colours from the zenith down to the horizon and below, with cumulus clouds above the horizon, painted
+# as Yorimichi paints its sky (games/yorimichi/world/gen_textures.py, `sky`), laid around the sky dome from its
+# zenith (top row) to its nadir.
+kind = "texture"
+source = "src/sky.png"
+inputs_sha256 = "139127e0c48342fb9083d86ba2c8123057726dc66190c4d7c73c1309e16703be"

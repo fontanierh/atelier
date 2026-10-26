@@ -1,7 +1,7 @@
 //! The playable characters. An entity given a [`Character`] gets that character's model and plays its idle in a loop;
 //! [`Clips`] then lists every clip the model has and how fast each carries it, [`Play`] switches to one, fading from
 //! the last, and [`Playing`] says which is playing and whether it has finished. The model's right hand holds what the
-//! character carries at its [`Grip`].
+//! character carries at its [`Grip`]; [`Hands`] finds both hands, for what it holds in two.
 
 use std::time::Duration;
 
@@ -54,6 +54,9 @@ const CLIPS_NODE: &str = "clips";
 /// The model's node in the right hand's palm, where it holds things.
 const GRIP_NODE: &str = "grip_r";
 
+/// The model's hand bones.
+const HAND_NODES: [&str; 2] = ["hand_l", "hand_r"];
+
 /// Every clip a character's model has, by name in alphabetical order, and how fast each carries it over the ground.
 /// Added once the model has loaded.
 #[derive(Component)]
@@ -62,6 +65,8 @@ pub struct Clips {
     clips: Vec<(String, AnimationNodeIndex)>,
     /// In metres a second, by clip; clips that stay in place are left out.
     speeds: HashMap<String, f32>,
+    /// How high the hips stand at rest, in metres, once the model has spawned.
+    pub hips_m: f32,
     /// The model's animation player, once the model has spawned.
     player: Option<Entity>,
 }
@@ -131,6 +136,13 @@ pub struct Grip {
     pub character: Entity,
 }
 
+/// A character's left and right hand bones, added once its model has spawned.
+#[derive(Component)]
+pub struct Hands {
+    pub left: Entity,
+    pub right: Entity,
+}
+
 /// A character whose model is loading.
 #[derive(Component)]
 struct Loading(Handle<Gltf>);
@@ -139,6 +151,7 @@ struct Loading(Handle<Gltf>);
 #[derive(Deserialize)]
 struct ClipExtras {
     speeds: HashMap<String, f32>,
+    hips_m: f32,
 }
 
 fn load_model(
@@ -164,14 +177,15 @@ fn spawn_models(
         let (graph, indices) = AnimationGraph::from_clips(named.iter().map(|(_, clip)| (*clip).clone()));
         let clips = named.iter().zip(indices).map(|((name, _), index)| (name.to_string(), index)).collect();
         commands.entity(entity).remove::<Loading>().insert((
-            Clips { graph: graphs.add(graph), clips, speeds: HashMap::default(), player: None },
+            Clips { graph: graphs.add(graph), clips, speeds: HashMap::default(), hips_m: 0.0, player: None },
             Playing::default(),
             WorldAssetRoot(gltf.scenes[0].clone()),
         ));
     }
 }
 
-/// Once the model has spawned: finds its animation player, reads its clips' speeds, marks its grip and plays the idle.
+/// Once the model has spawned: finds its animation player, reads its clips' speeds and its hips' height, marks its grip,
+/// finds its hands and plays the idle.
 fn start_animating(
     ready: On<WorldInstanceReady>,
     mut commands: Commands,
@@ -181,18 +195,27 @@ fn start_animating(
     names: Query<(&Name, Option<&GltfExtras>)>,
 ) {
     let Ok(mut clips) = characters.get_mut(ready.entity) else { return };
+    let mut hands = [None; 2];
     for node in children.iter_descendants(ready.entity) {
         let Ok((name, extras)) = names.get(node) else { continue };
         match name.as_str() {
             CLIPS_NODE => {
                 let read = extras.and_then(|extras| serde_json::from_str::<ClipExtras>(&extras.value).ok());
-                clips.speeds = read.expect("a character's clips node gives their speeds").speeds;
+                let read = read.expect("a character's clips node gives their speeds and its hips' height");
+                (clips.speeds, clips.hips_m) = (read.speeds, read.hips_m);
             }
             GRIP_NODE => {
                 commands.entity(node).insert(Grip { character: ready.entity });
             }
-            _ => {}
+            name => {
+                if let Some(side) = HAND_NODES.iter().position(|hand| *hand == name) {
+                    hands[side] = Some(node);
+                }
+            }
         }
+    }
+    if let [Some(left), Some(right)] = hands {
+        commands.entity(ready.entity).insert(Hands { left, right });
     }
     let Some(player) = children.iter_descendants(ready.entity).find(|child| players.contains(*child)) else { return };
     clips.player = Some(player);

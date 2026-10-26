@@ -18,15 +18,17 @@ way the spawn faces, with the camera behind it. It waits there until the tile un
 
 - `input.rs` reads the keyboard, mouse and controllers into `Controls`.
 - `moves.rs` moves the player, with Yorimichi's numbers: walking, running and sprinting at the speeds the export
-  measured for each clip; the jump; in the air a double jump with one forward somersault, then the paraglider; the
+  measured for each clip; the jump; in the air a double jump with Yorimichi's somersault, then the paraglider; the
   dodges, a side hop when the stick points to the side, a backflip otherwise; and the landings, hard from higher than
   4.5 m. The player stands on what `hakuba_world::Ground` calls solid, steps up and down 45 cm, and is stopped by
   walls, slopes steeper than 50° and water deeper than 60 cm. Falling into deep water puts the player back where they
   last stood.
 - `camera.rs` orbits the camera around the player, in front of anything solid between them.
-- `glider.rs` puts the paraglider in the character's hand, at its `Grip`, while the player glides.
+- `glider.rs` holds the paraglider above the character, between its hands, while the player glides, banking it into
+  turns. Each player has one from the start, too small to see while it is put away, so it opens without a stall.
 
-The moves use only the clips every character has and their measured speeds, and the paraglider sits at each
-character's own grip, so a new character moves the same way. Nothing here names a character.
+The player holds the world's loading curtain until they stand on the ground with the paraglider ready. The moves use
+only the clips every character has and their measured speeds, and the paraglider is scaled to each character's hips,
+so a new character moves the same way. Nothing here names a character.
 
 Nothing moves while the game is paused: the systems run only in `Pause::Playing`.
