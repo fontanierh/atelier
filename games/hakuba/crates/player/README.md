@@ -24,7 +24,7 @@ way the spawn faces, with the camera behind it. It waits there until the tile un
   walls, slopes steeper than 50° and water deeper than 60 cm. Falling into deep water puts the player back where they
   last stood.
 - `camera.rs` orbits the camera around the player, in front of anything solid between them.
-- `glider.rs` holds the paraglider above the character, between its hands, while the player glides, banking it into
+- `glider.rs` holds the paraglider above the character, between its palms, while the player glides, banking it into
   turns. Each player has one from the start, too small to see while it is put away, so it opens without a stall.
 
 The player holds the world's loading curtain until they stand on the ground with the paraglider ready. The moves use

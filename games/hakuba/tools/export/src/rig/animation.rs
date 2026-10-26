@@ -51,8 +51,11 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     let glb = Glb::read(&folder.join(&settings.source))?;
     let nodes = rig_nodes(&glb, &animation.source())?;
     let rest_worlds = glb.worlds(&glb.rest()?);
-    let rest = rig_pose(&rest_worlds, &nodes);
     let root = root_of(&glb, nodes[rig::index("pelvis")].unwrap());
+    // The skeleton's root stands on its floor, which need not be at the origin: heights are measured from it.
+    let floor = DVec3::Y * rest_worlds[root].w_axis.y;
+    let mut rest = rig_pose(&rest_worlds, &nodes);
+    rest.iter_mut().flatten().for_each(|joint| joint.position -= floor);
     let (fps, frames) = glb.sample(&settings.clip)?;
     // Each frame without its root motion, and that motion.
     let mut travel = Vec::with_capacity(frames.len());
@@ -63,7 +66,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
             let moved = (worlds[root].w_axis - rest_worlds[root].w_axis).truncate();
             travel.push(moved);
             let mut pose = rig_pose(&worlds, &nodes);
-            pose.iter_mut().flatten().for_each(|joint| joint.position -= moved);
+            pose.iter_mut().flatten().for_each(|joint| joint.position -= moved + floor);
             pose
         })
         .collect();

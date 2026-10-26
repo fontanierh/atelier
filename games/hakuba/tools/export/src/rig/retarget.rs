@@ -30,6 +30,9 @@ const GROUND: (f64, f64) = (0.25, 0.5);
 /// The furthest a solved ankle may sit from its goal, in metres.
 const ANKLE_TOLERANCE: f64 = 0.001;
 
+/// The lowest a standing skeleton's hips may be above its floor, in metres.
+const MIN_HIPS_M: f64 = 0.3;
+
 /// The bone after each limb or finger bone, which gives its direction.
 fn next(bone: &str) -> Option<String> {
     let (base, side) = bone.rsplit_once('_')?;
@@ -70,6 +73,14 @@ pub fn retarget(source_rest: &Pose, clip: &[Pose], target_rest: &Pose) -> Result
     let c = body(left(&t)) * body(left(&s)).transpose();
     let ci = c.transpose();
     let source_hips = s("pelvis").unwrap().y;
+    // Every move scales by the ratio of the hip heights: a skeleton standing off its floor would scale them wildly.
+    for (whose, hips) in [("source", source_hips), ("target", t("pelvis").unwrap().y)] {
+        if hips < MIN_HIPS_M {
+            bail!(
+                "the {whose}'s hips are {hips:.3} m above its floor; a standing skeleton's are at least {MIN_HIPS_M} m"
+            );
+        }
+    }
     let scale = t("pelvis").unwrap().y / source_hips;
 
     // Each bone's rest calibration X: the target bone turns by C S S_rest^-1 X T_rest.

@@ -1,5 +1,5 @@
 //! The paraglider: held in both hands above the character while the player glides, its cloth rippling in a loop, and
-//! put away as it lands. It sits on the body between the hands, scaled to the character's size, and banks into
+//! put away as it lands. It sits on the body between the palms, scaled to the character's size, and banks into
 //! turns. Each player has one from the start, drawn too small to see while it is put away, so its shaders are ready the
 //! first time it opens.
 
@@ -95,7 +95,7 @@ fn spawn_model(
     }
 }
 
-/// Shows the paraglider between the hands while the player glides and as it starts putting it away, banking into
+/// Shows the paraglider between the palms while the player glides and as it starts putting it away, banking into
 /// turns, and puts it away otherwise.
 pub fn show(
     time: Res<Time>,
@@ -109,13 +109,15 @@ pub fn show(
             continue;
         };
         let Ok((clips, playing, body_hands, body)) = bodies.get(player.body) else { continue };
-        let Ok([left, right]) = hands.get_many([body_hands.left, body_hands.right]) else { continue };
+        let (wrists, knuckles) = (body_hands.wrists, body_hands.knuckles);
+        let Ok(ends) = hands.get_many([wrists[0], knuckles[0], wrists[1], knuckles[1]]) else { continue };
         let motion = &player.motion;
         let held = motion.mode == Mode::Glide || (motion.action == Action::GlideClose && playing.time < PUT_AWAY_S);
         let most = MOST_BANK_DEG.to_radians();
         let bank = if held { (motion.glide_turn() * BANK_PER_TURN).clamp(-most, most) } else { 0.0 };
         glider.bank += (bank - glider.bank) * (BANK_RATE * time.delta_secs()).min(1.0);
-        let between = (left.translation() + right.translation()) * 0.5;
+        // Halfway between the palms' centres, each halfway from its wrist to its knuckle.
+        let between = ends.iter().map(|end| end.translation()).sum::<Vec3>() * 0.25;
         transform.translation = body.affine().inverse().transform_point3(between);
         transform.rotation = Quat::from_rotation_z(-glider.bank);
         let scale = if held { clips.hips_m / glider.holder_hips_m } else { AWAY_SCALE };

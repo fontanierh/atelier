@@ -9,4 +9,4 @@ holder = "src/holder.glb"
 pose = "Float_Float"
 held_at = "Weapon_R"
 scale = 0.8            # as Yorimichi draws it
-inputs_sha256 = "bd87817f1c26ecb6e92bdb1e3efde5b7ecdd47350bdd5c90fee4432fe79626da"
+inputs_sha256 = "7fec2417cc445f648dcbdd2e5a7b2a6ab0ef2e71b95176dad04b958429b220ea"
