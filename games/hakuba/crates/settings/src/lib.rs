@@ -1,4 +1,4 @@
-//! The settings: how the world looks and how fast the game draws. The game keeps them between visits, and holds
+//! The settings: how the world looks and sounds, and how fast the game draws. The game keeps them between visits, and holds
 //! itself to the chosen frame rate. The Settings screen, from the menu, shows the [`panel`] of them.
 
 mod panel;
@@ -41,6 +41,8 @@ pub struct Settings {
     pub anti_aliasing: AntiAliasing,
     pub detail: Detail,
     pub frame_rate: FrameRate,
+    /// How loud every sound plays, from 0 (silent) to 1 (as recorded).
+    pub volume: f32,
 }
 
 impl Default for Settings {
@@ -53,6 +55,7 @@ impl Default for Settings {
             anti_aliasing: AntiAliasing::Temporal,
             detail: Detail::Normal,
             frame_rate: FrameRate::Sixty,
+            volume: 1.0,
         }
     }
 }

@@ -1,0 +1,41 @@
+{
+  "looped": false,
+  "takes": [
+    {
+      "start": 0.0,
+      "seconds": 0.082
+    },
+    {
+      "start": 0.132,
+      "seconds": 0.09
+    },
+    {
+      "start": 0.272,
+      "seconds": 0.078
+    },
+    {
+      "start": 0.4,
+      "seconds": 0.108
+    },
+    {
+      "start": 0.558,
+      "seconds": 0.076
+    },
+    {
+      "start": 0.684,
+      "seconds": 0.074
+    },
+    {
+      "start": 0.808,
+      "seconds": 0.11
+    },
+    {
+      "start": 0.968,
+      "seconds": 0.11
+    },
+    {
+      "start": 1.128,
+      "seconds": 0.076
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+# The countryside around the player: birdsong, a breeze and a faint distant sea, a 40 s stereo loop.
+kind = "sound"
+takes = [
+    "src/rural-summer.wav",
+]
+looped = true
+quality = 0.1
+inputs_sha256 = "af2c7b28c2ce3cb9a3544b82bd69322ed1ffd040e933d1e6448a279c765b8e8b"

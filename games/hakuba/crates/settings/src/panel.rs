@@ -25,11 +25,20 @@ enum Row {
     AntiAliasing,
     Detail,
     FrameRate,
+    Volume,
 }
 
 impl Row {
-    const ALL: [Row; 7] =
-        [Row::Painterly, Row::Wind, Row::Resolution, Row::Shadows, Row::AntiAliasing, Row::Detail, Row::FrameRate];
+    const ALL: [Row; 8] = [
+        Row::Painterly,
+        Row::Wind,
+        Row::Resolution,
+        Row::Shadows,
+        Row::AntiAliasing,
+        Row::Detail,
+        Row::FrameRate,
+        Row::Volume,
+    ];
 
     fn name(self) -> &'static str {
         match self {
@@ -40,6 +49,7 @@ impl Row {
             Row::AntiAliasing => "Anti-aliasing",
             Row::Detail => "Detail",
             Row::FrameRate => "Frame rate",
+            Row::Volume => "Volume",
         }
     }
 
@@ -75,6 +85,7 @@ impl Row {
                 FrameRate::Unlimited => "Unlimited",
             }
             .into(),
+            Row::Volume => format!("{:.0} %", settings.volume * 100.0),
         }
     }
 
@@ -94,6 +105,7 @@ impl Row {
                 let all = [FrameRate::Thirty, FrameRate::Sixty, FrameRate::Unlimited];
                 settings.frame_rate = next(&all, settings.frame_rate, by);
             }
+            Row::Volume => settings.volume = stepped(settings.volume, by as f32 * 0.1, 0.0, 1.0),
         }
     }
 }

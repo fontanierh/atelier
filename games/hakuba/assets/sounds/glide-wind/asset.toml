@@ -1,0 +1,10 @@
+# Rushing air, at three speeds from slow to fast, each a seamless loop, for gliding.
+kind = "sound"
+takes = [
+    "src/wind-01.wav",
+    "src/wind-02.wav",
+    "src/wind-03.wav",
+]
+looped = true
+quality = 0.2
+inputs_sha256 = "c129ac817133fb8599118907558f3ef4bda68bd7814b49647c2c7383d2e4cb47"

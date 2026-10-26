@@ -12,10 +12,11 @@ the desktop.
 - **Anti-aliasing**: temporal, which keeps thin edges such as grass steady, SMAA, or none.
 - **Detail**: how far from the camera tiles show in full.
 - **Frame rate**: at most 30 or 60 frames a second, or as many as the machine draws.
+- **Volume**: how loud every sound plays, from silent to as recorded.
 
-`Settings` is the resource the other crates read; the world applies what it changes. `panel()` is the list of
-settings with a button on each side of its value to step through it, which both screens show. This crate also holds
-the game to its frame rate.
+`Settings` is the resource the other crates read; the world applies what it changes, and the audio crate the
+volume. `panel()` is the list of settings with a button on each side of its value to step through it, which both
+screens show. This crate also holds the game to its frame rate.
 
 ```text
 src/

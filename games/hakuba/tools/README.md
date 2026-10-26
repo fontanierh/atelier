@@ -43,6 +43,8 @@ tools/
         equipment.rs        the `equipment` kind
       texture/
         mod.rs              the `texture` kind
+      sound/
+        mod.rs              the `sound` kind
       model/                still models: the `plant` and `prop` kinds
         mod.rs              writing a model's versions and anchors
         plant.rs            the `plant` kind
@@ -146,6 +148,16 @@ pixels opaque enough to show, so leaves stay as full far away as near. Its sides
 |----------|-----------------------------------------------|
 | `source` | the image, PNG or JPEG, relative to the folder |
 
+**`sound`** writes a sound's takes, WAV files at one sample rate and channel count, one after the other with 50 ms of
+silence between, as `<folder name>.ogg` (Ogg Vorbis, which the browser and the desktop both decode), and where each
+take starts and how long it lasts as `<folder name>.takes.json`, which also says whether the takes loop.
+
+| Setting   | Meaning                                                          |
+|-----------|------------------------------------------------------------------|
+| `takes`   | each take, a WAV file relative to the folder                     |
+| `looped`  | whether the game loops each take; then each must loop seamlessly |
+| `quality` | the Vorbis quality, from -0.1 (smallest) to 1 (best)             |
+
 **`plant`** builds a tree, a bush or a tuft of grass from its settings alone, in its own frame (x and y level, z up,
 metres, its foot at the origin), and writes it as `<folder name>.glb`. A tree or bush is `wood`, a trunk of bark
 with a branch to each clump of leaves, and `leaves`, cards cut out of a leaf image scattered through those clumps.
@@ -213,7 +225,7 @@ asset exports only after the assets it reads are current, and `cargo export` on 
 those it reads.
 
 A kind's code is its folder under `src/` (`rig/` for the animation, character and equipment kinds, `texture/`,
-`model/` or `world/`) and the shared code: `main.rs`,
+`sound/`, `model/` or `world/`) and the shared code: `main.rs`,
 `glb.rs`, `shapes.rs`, `random.rs`, `Cargo.toml`, the lock file and the toolchain. Each kind uses only its own
 folder and the shared code, so editing the world's code never marks a character out of date, and editing the rig
 never marks the world. Docs and `CONTRACTS` files are not inputs. `cargo test -p hakuba_export` checks that no kind

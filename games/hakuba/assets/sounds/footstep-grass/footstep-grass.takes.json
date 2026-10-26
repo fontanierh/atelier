@@ -1,0 +1,53 @@
+{
+  "looped": false,
+  "takes": [
+    {
+      "start": 0.0,
+      "seconds": 0.102
+    },
+    {
+      "start": 0.152,
+      "seconds": 0.222
+    },
+    {
+      "start": 0.424,
+      "seconds": 0.198
+    },
+    {
+      "start": 0.672,
+      "seconds": 0.242
+    },
+    {
+      "start": 0.964,
+      "seconds": 0.21
+    },
+    {
+      "start": 1.224,
+      "seconds": 0.214
+    },
+    {
+      "start": 1.488,
+      "seconds": 0.24
+    },
+    {
+      "start": 1.778,
+      "seconds": 0.216
+    },
+    {
+      "start": 2.044,
+      "seconds": 0.198
+    },
+    {
+      "start": 2.292,
+      "seconds": 0.214
+    },
+    {
+      "start": 2.556,
+      "seconds": 0.222
+    },
+    {
+      "start": 2.828,
+      "seconds": 0.258
+    }
+  ]
+}

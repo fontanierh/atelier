@@ -49,6 +49,7 @@ games/hakuba/
     world/                  the world
     characters/             the playable characters: their models and clips
     viewer/                 the character viewer
+    audio/                  the sounds: footsteps, the moves, the paraglider's wind and the countryside
   index.html                the page the browser build runs in, with the canvas the game draws into
   Trunk.toml                what the browser build copies next to the game
   assets/                   everything the game loads, each next to its sources (assets/README.md)

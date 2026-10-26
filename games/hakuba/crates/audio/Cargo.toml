@@ -1,0 +1,15 @@
+# The sounds: the player's footsteps, landings and moves, the paraglider's wind and the countryside. See README.md.
+[package]
+name = "hakuba_audio"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+bevy.workspace = true
+hakuba_player.workspace = true
+hakuba_screens.workspace = true
+hakuba_settings.workspace = true
+hakuba_world.workspace = true
+serde.workspace = true
+serde_json.workspace = true

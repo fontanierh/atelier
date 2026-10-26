@@ -1,0 +1,19 @@
+# A footstep on a road: dirt and gravel, thirteen takes, the game picks one for each step.
+kind = "sound"
+takes = [
+    "src/dirt-gravel-single.wav",
+    "src/dirt-gravel-walk-04.wav",
+    "src/dirt-gravel-walk-12.wav",
+    "src/dirt-gravel-walk-20.wav",
+    "src/dirt-gravel-walk-28.wav",
+    "src/dirt-gravel-walk-36.wav",
+    "src/dirt-gravel-walk-44.wav",
+    "src/gravel-loafers-03.wav",
+    "src/gravel-loafers-08.wav",
+    "src/gravel-loafers-13.wav",
+    "src/gravel-loafers-18.wav",
+    "src/ground-walk-a.wav",
+    "src/ground-walk-b.wav",
+]
+quality = 0.3
+inputs_sha256 = "797c5acd05fad6ddfdf34bac079d87d7faf3d8e1fd1d247cd618b2816548d946"

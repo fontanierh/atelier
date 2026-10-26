@@ -34,6 +34,11 @@ assets/
   props/                    made objects, each built from its settings alone
     utility-pole/           a concrete pole with insulators that cables fasten to
     street-lamp/            a lamp's arm and head, standing on a utility pole
+  sounds/                   every sound the game plays, from Yorimichi's sound library (sounds/README.md)
+    footstep-grass/, ...    a footstep on grass, on gravel (`-gravel`) and on stone (`-stone`)
+    dash/                   a burst of cloth and air
+    countryside/            birdsong, a breeze and a faint sea, a loop
+    glide-wind/             rushing air at three speeds, loops
   textures/
     ground/                 the ground's grass and earth
     road/                   a road's asphalt and lines
@@ -54,7 +59,8 @@ Every asset is one folder, named in kebab case:
 ```text
 <asset-name>/
   asset.toml                its kind, its settings, and the checksum of its inputs
-  <asset-name>.glb          what the game loads, written by the exporter (`<asset-name>.ktx2` for a texture)
+  <asset-name>.glb          what the game loads, written by the exporter (`<asset-name>.ktx2` for a texture,
+                            `<asset-name>.ogg` and `<asset-name>.takes.json` for a sound)
   src/                      everything the export is made from, if it is made from more than its settings
 ```
 
@@ -93,4 +99,4 @@ cargo export --check assets            # lists every export whose inputs changed
 
 ## Storage
 
-`.glb`, `.bin` and `.ktx2` files are stored in Git LFS (`../.gitattributes`). `git push` uploads them.
+`.glb`, `.bin`, `.ktx2`, `.ogg` and `.wav` files are stored in Git LFS (`../.gitattributes`). `git push` uploads them.

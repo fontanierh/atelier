@@ -1,0 +1,18 @@
+# A footstep on grass and earth: twelve takes, the game picks one for each step.
+kind = "sound"
+takes = [
+    "src/dry-grass-single.wav",
+    "src/grass-run-03.wav",
+    "src/grass-run-10.wav",
+    "src/grass-run-17.wav",
+    "src/grass-run-24.wav",
+    "src/grass-run-31.wav",
+    "src/grass-run-38.wav",
+    "src/grass-run-45.wav",
+    "src/grass-run-52.wav",
+    "src/grass-run-59.wav",
+    "src/grass-run-66.wav",
+    "src/grass-single.wav",
+]
+quality = 0.3
+inputs_sha256 = "51a11a18e93a8cdc015712b89f05a3933a853100d2bddfe2707edfee7486b291"

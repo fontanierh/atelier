@@ -1,0 +1,15 @@
+# A footstep on stone, concrete or metal: nine takes, the game picks one for each step.
+kind = "sound"
+takes = [
+    "src/rocks-01.wav",
+    "src/rocks-02.wav",
+    "src/rocks-03.wav",
+    "src/rocks-04.wav",
+    "src/rocks-05.wav",
+    "src/rocks-06.wav",
+    "src/rocks-07.wav",
+    "src/rocks-08.wav",
+    "src/rocks-09.wav",
+]
+quality = 0.3
+inputs_sha256 = "2fbab5e5cdb582cd6a20de5518caf43cb4534e8c55448d4cc21cf3f6621389cb"

@@ -21,7 +21,7 @@ use hakuba_screens::Screen;
 
 use tiles::Tile;
 
-pub use ground::{Ground, Hit, SEA_LEVEL_M};
+pub use ground::{Ground, Hit, SEA_LEVEL_M, Surface};
 pub use loading::Unready;
 pub use push::PushesPlants;
 

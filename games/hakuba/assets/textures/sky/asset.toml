@@ -3,4 +3,4 @@
 # zenith (top row) to its nadir.
 kind = "texture"
 source = "src/sky.png"
-inputs_sha256 = "139127e0c48342fb9083d86ba2c8123057726dc66190c4d7c73c1309e16703be"
+inputs_sha256 = "ce44e52b8881c0e2bf743eaf900128de810801c84aedfd18ddfcd50e2dbcd41e"
