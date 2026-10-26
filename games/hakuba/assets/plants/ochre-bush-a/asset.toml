@@ -1,7 +1,7 @@
 # A round bush of ochre autumn leaves, 3 m across.
 kind = "plant"
 seed = 10
-inputs_sha256 = "244417ec109a1c214f55183d11e442995645f563f02a6b086e0f585d7979a48c"
+inputs_sha256 = "7630a61fff01d150d2c5ef93c094481ff7c0d56c0ebcef844cc7ed975f538de0"
 
 [leaves]
 texture = "ochre-leaves"

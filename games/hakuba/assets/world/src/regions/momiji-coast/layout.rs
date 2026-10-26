@@ -11,7 +11,7 @@ use crate::world::curve::curve;
 use crate::world::levelling::Strip;
 use crate::world::overlay::Overlay;
 use crate::world::ribbon::ribbon;
-use crate::world::scenery::{Land, Scenery};
+use crate::world::scenery::{Exclusion, Land, ScatterKind, Scenery};
 
 /// The points the road's centre line passes through, from its west end to its east end.
 const ROAD: [[f64; 2]; 11] = [
@@ -63,6 +63,14 @@ impl Region for MomijiCoast {
             shoulder_m: SHOULDER_M,
             smoothing_m: ROAD_SMOOTHING_M,
         }]
+    }
+
+    fn scatter_exclusions(&self) -> Vec<Exclusion> {
+        vec![
+            Exclusion::corridor(&ROAD, 8.5, &[ScatterKind::Tree]),
+            Exclusion::corridor(&ROAD, 4.3, &[ScatterKind::Bush]),
+            Exclusion::corridor(&ROAD, 3.2, &[ScatterKind::Grass]),
+        ]
     }
 
     /// The road, on its levelled strip.

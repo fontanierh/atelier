@@ -58,6 +58,78 @@ impl Strip {
     }
 }
 
+/// A rectangular footprint levelled to a declared plane. Its margin extends by one coarse ground cell so both
+/// full and middle tiles draw that plane over the complete footprint.
+pub struct Pad {
+    pub centre: [f64; 2],
+    pub half_size_m: [f64; 2],
+    /// Height at the centre and rise per metre east and north.
+    pub height_m: f64,
+    pub slope: [f64; 2],
+    pub shoulder_m: f64,
+}
+
+impl Pad {
+    fn bounds(&self, ground: &Ground) -> (DVec2, DVec2) {
+        let centre = DVec2::from_array(self.centre);
+        let reach = DVec2::from_array(self.half_size_m) + DVec2::splat(super::COARSE as f64 * ground.step);
+        (centre, reach)
+    }
+
+    /// Levels the footprint and its margin, easing the shoulder back into the original ground.
+    fn level(&self, ground: &mut Ground) -> Result<()> {
+        let (centre, flat) = self.bounds(ground);
+        if !centre.is_finite()
+            || !flat.is_finite()
+            || !self.height_m.is_finite()
+            || !DVec2::from_array(self.slope).is_finite()
+            || DVec2::from_array(self.half_size_m).min_element() <= 0.0
+            || !self.shoulder_m.is_finite()
+            || self.shoulder_m <= 0.0
+        {
+            bail!("invalid levelled pad");
+        }
+        let reach = flat + DVec2::splat(self.shoulder_m);
+        for offset in [DVec2::ZERO, reach, -reach, DVec2::new(reach.x, -reach.y), DVec2::new(-reach.x, reach.y)] {
+            if ground.height(centre + offset).is_none() {
+                bail!("a levelled pad runs off the ground at {}", centre + offset);
+            }
+        }
+        ground.reshape(|p, height| {
+            let outside = ((p - centre).abs() - flat).max(DVec2::ZERO);
+            let distance = outside.length();
+            if distance >= self.shoulder_m {
+                return height;
+            }
+            let u = distance / self.shoulder_m;
+            let ease = u * u * (3.0 - 2.0 * u);
+            let plane = self.height_m + (p - centre).dot(DVec2::from_array(self.slope));
+            plane + (height - plane) * ease
+        });
+        Ok(())
+    }
+}
+
+/// @cc [owner:fontanierh,label:correctness] pad-owns-final-ground
+/// A pad MUST be applied after strips, so its complete footprint is the declared plane in both tile versions.
+/// Pads MUST NOT overlap one another. Crossing strips use this final ground, not their superseded intermediate shape.
+/// The resulting ground, including crossings, still goes through the overlay checks.
+pub fn level_pads(ground: &mut Ground, pads: &[Pad]) -> Result<()> {
+    for (index, pad) in pads.iter().enumerate() {
+        let (centre, flat) = pad.bounds(ground);
+        let reach = flat + DVec2::splat(pad.shoulder_m);
+        for other in &pads[..index] {
+            let (other_centre, other_flat) = other.bounds(ground);
+            let other_reach = other_flat + DVec2::splat(other.shoulder_m);
+            if (centre - other_centre).abs().cmple(reach + other_reach).all() {
+                bail!("levelled pads overlap");
+            }
+        }
+        pad.level(ground)?;
+    }
+    Ok(())
+}
+
 /// `heights`, one a metre, each averaged with its neighbours under a bell curve spreading `spread` metres. Near the
 /// ends the bell is cut off, and the weights that remain still add up to one.
 fn smooth(heights: &[f64], spread: f64) -> Vec<f64> {
@@ -106,10 +178,88 @@ fn project(line: &[(DVec2, DVec2)], p: DVec2) -> (f64, f64) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::world::overlay::{Overlay, crease_deg};
+    use crate::world::overlay::{Overlay, check_smooth, crease_deg};
     use crate::world::ribbon::ribbon;
     use crate::world::surface::Surface;
     use crate::world::{Detail, Tile};
+
+    #[test]
+    fn pads_level_the_drawn_full_and_middle_footprint_and_leave_distant_ground() {
+        let original = Ground::page(64, 2.0, |i, j| (i as f32 * 0.13) + (j as f32 * 0.07));
+        let mut ground = Ground::page(64, 2.0, |i, j| (i as f32 * 0.13) + (j as f32 * 0.07));
+        let pad =
+            Pad { centre: [64.0, 64.0], half_size_m: [7.0, 5.0], height_m: 4.0, slope: [0.0, 0.055], shoulder_m: 6.0 };
+        level_pads(&mut ground, &[pad]).unwrap();
+        let tile = Tile { columns: (0, 64), rows: (0, 64) };
+        for detail in [Detail::Full, Detail::Middle] {
+            let surface = Surface::new(&tile.ground(&ground, detail, 0, 1.0));
+            for x in 57..=71 {
+                for y in 59..=69 {
+                    let height = surface.height(DVec2::new(x as f64, y as f64)).unwrap();
+                    let expected = 4.0 + 0.055 * (y as f64 - 64.0);
+                    assert!((height - expected).abs() < 1e-5, "footprint height {height} at {x}, {y}");
+                }
+            }
+        }
+        assert_eq!(ground.height(DVec2::new(4.0, 4.0)), original.height(DVec2::new(4.0, 4.0)));
+    }
+
+    #[test]
+    fn pads_reject_other_pads() {
+        let ground = || Ground::page(128, 2.0, |_, _| 0.0);
+        let pad =
+            || Pad { centre: [64.0, 64.0], half_size_m: [4.0, 4.0], height_m: 1.0, slope: [0.0, 0.0], shoulder_m: 4.0 };
+        let other = Pad { centre: [84.0, 64.0], ..pad() };
+        assert!(level_pads(&mut ground(), &[pad(), other]).is_err());
+    }
+
+    /// An approach crosses a sloping pad on one final surface. This is a geometry check, not a walk test.
+    #[test]
+    fn approach_crosses_a_shared_sloping_terrace() {
+        let mut ground = Ground::page(128, 2.0, |i, j| {
+            let (x, y) = (i as f32 * 2.0, j as f32 * 2.0);
+            5.0 + 0.055 * (y - 85.0) + 0.015 * (x - 100.0)
+        });
+        let course = [[10.0, 36.0], [35.0, 48.0], [55.0, 64.0], [75.0, 68.0], [90.0, 72.0], [100.0, 82.0]];
+        let strip = Strip { course: course.to_vec(), half_width_m: 4.0, shoulder_m: 10.0, smoothing_m: 8.0 };
+        strip.level(&mut ground).unwrap();
+        let pad = Pad {
+            centre: [100.0, 85.0],
+            half_size_m: [30.0, 25.0],
+            height_m: 5.0,
+            slope: [0.0, 0.055],
+            shoulder_m: 20.0,
+        };
+        level_pads(&mut ground, &[pad]).unwrap();
+        let tile = Tile { columns: (0, 128), rows: (0, 128) };
+        let drawn = Surface::new(&tile.ground(&ground, Detail::Full, 0, 1.0));
+        let overlay = Overlay { name: "approach".into(), texture: "t".into(), triangles: ribbon(&course, 2.6, 8.0) };
+        let mesh = overlay.mesh(&ground, &drawn);
+        // A narrow shoulder bends this approach too sharply: the ordinary export check must reject it.
+        let mut narrow = Ground::page(128, 2.0, |i, j| {
+            let (x, y) = (i as f32 * 2.0, j as f32 * 2.0);
+            5.0 + 0.055 * (y - 85.0) + 0.015 * (x - 100.0)
+        });
+        strip.level(&mut narrow).unwrap();
+        let narrow_pad = Pad {
+            centre: [100.0, 85.0],
+            half_size_m: [30.0, 25.0],
+            height_m: 5.0,
+            slope: [0.0, 0.055],
+            shoulder_m: 6.0,
+        };
+        level_pads(&mut narrow, &[narrow_pad]).unwrap();
+        let narrow_drawn = Surface::new(&tile.ground(&narrow, Detail::Full, 0, 1.0));
+        assert!(check_smooth(&overlay.mesh(&narrow, &narrow_drawn)).is_err());
+        let crease = crease_deg(&mesh);
+        assert!(crease < 1.5, "approach creases by {crease:.3}° at its terrace join");
+        let line = curve(&course);
+        for pair in line.windows(2) {
+            let h0 = drawn.height(pair[0].0).unwrap();
+            let h1 = drawn.height(pair[1].0).unwrap();
+            assert!((h1 - h0).abs() < 0.3, "approach changes height too sharply");
+        }
+    }
 
     /// A ground with a level cut 5 m wide running diagonally across it, its edges sharp and its banks rising 1 in 1,
     /// sampled on a 2 m grid: the cut's edges, and anything laid along them, staircase.

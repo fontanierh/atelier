@@ -62,6 +62,9 @@ its wind in the shadow, prepass and main passes.
 - **Merge small copies by square, not by tile.** Thousands of grass entities cost more to cull than their vertices cost
   to draw, so their copies merge, but a merged mesh is culled whole: one per 16 m square keeps what is out of view
   undrawn. A large model, such as a tree, is never merged; Bevy draws its copies together anyway.
+- **Keep ground rays to nearby solids.** Bevy's general mesh picker checked bounds on decorative meshes before the
+  solid filter. Ground now queries solid meshes directly, bounds each ray by its reach and uses Bevy's triangle
+  intersections. At the reference setting, walking rose from about 57 to 60 frames a second.
 - **Let the browser pace 60.** A frame cap's timer runs apart from the display's refreshes, so a 60 cap in the browser
   drew 14 and 28 ms frames by turns. In the browser a cap of 60 or more leaves the pacing to `requestAnimationFrame`.
 - **What did not pay**: hardware 2 × 2 shadow filtering (no gain), a 1024 shadow map (1.7 ms, visibly softer shadows).

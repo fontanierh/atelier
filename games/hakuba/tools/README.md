@@ -181,7 +181,7 @@ lighter `middle` version for seeing from afar.
 | `leaves` | its leaves' texture and tint, how many cards in each version and how wide, and its clumps of leaves |
 | `tuft`   | how many blades, their spread, height, width, curl and colours                                    |
 
-**`prop`** builds a made object, such as a pole, from closed tubes and boxes of plain colours, in the same frame as
+**`prop`** builds a made object, such as a pole, from closed tubes, boxes and convex prisms of plain colours, in the same frame as
 a plant, and writes it as `<folder name>.glb`. Its anchors are empty nodes `anchor 0`, `anchor 1` and so on, the
 points other things fasten to, such as cables.
 
@@ -190,6 +190,8 @@ points other things fasten to, such as cables.
 | `materials` | each material's linear colour, by its name      |
 | `tubes`     | each tube's ends, radii, sides and material     |
 | `boxes`     | each box's centre, size and material            |
+| `prisms`    | each closed prism: a strictly convex `profile` of `[x, z]` points in order, `y = [start, end]` with start less than end, and `material`, all coordinates in metres |
+| `solid`     | optional; when true, the full visual mesh is solid to scenery raycasts (default false) |
 | `anchors`   | the points other things fasten to               |
 
 **`world`** builds the ground from the height pages in `src/ground/`, lays over it what each region adds, and cuts
@@ -201,7 +203,12 @@ overlay lies a few centimetres above the ground triangles under it; the export f
 if in full detail it creases by more than 1.5° between two of its triangles. A region levels the ground under its
 overlays with levelled strips (`world/levelling.rs`): along a course, the ground within a half width is level across
 it and smooth along it, and a shoulder eases back to the ground without a crease. The strips change the heights once,
-after the pages are read, so the tiles, overlays and scenery all stand on the levelled ground.
+after the pages are read, so the tiles, overlays and scenery all stand on the levelled ground. A region can also
+declare rectangular pads at a given height and slope, with shoulders easing back to the ground. A pad's planar margin
+covers a coarse tile cell around its footprint, so the full and middle ground both draw the same plane. Pads apply
+after strips and own the final ground at crossings; the export rejects overlapping pads. Regions
+can declare corridors kept clear of scattered trees, bushes or grass. Scatter producers check these shared clearances;
+explicit placements and their cable indices are unchanged.
 
 A region also stands scenery on the ground: plant and prop models, each at a point with a turn and a scale, cables
 strung between two models' anchors, and rails run along a path. A rail and its posts show a texture asset tinted by

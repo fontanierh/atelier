@@ -160,7 +160,7 @@ pub fn export(settings: &Settings, output: &Path) -> Result<()> {
     }
     let has_middle = settings.leaves.as_ref().is_some_and(|leaves| leaves.middle_cards.is_some());
     // So many tufts cast no shadow: the ground under them is shaded anyway.
-    write(full, has_middle.then_some(middle), settings.tuft.is_none(), &[], output)
+    write(full, has_middle.then_some(middle), settings.tuft.is_none(), false, &[], output)
 }
 
 /// How high the plant reaches: the top of its crown, or of its trunk.

@@ -9,7 +9,7 @@ use glam::DVec2;
 use super::uphill;
 use crate::random::Random;
 use crate::world::curve::nearest;
-use crate::world::scenery::{Land, Placement};
+use crate::world::scenery::{Land, Placement, ScatterKind};
 
 /// Models, each with its weight in the mix.
 type Mix = [(&'static str, f64)];
@@ -80,8 +80,8 @@ const SHORE_M: f64 = 1.2;
 pub fn plants(land: &Land, road: &[(DVec2, DVec2)]) -> Vec<Placement> {
     let mut plants = Vec::new();
     // Each candidate, with its distance to the road.
-    let ground = |seed, side, jitter| {
-        land.scatter(seed, side, jitter).filter_map(|(at, random)| {
+    let ground = |seed, side, jitter, kind| {
+        land.scatter(seed, side, jitter, kind).filter_map(|(at, random)| {
             let height = land.height(at)?;
             (height >= SHORE_M).then(|| (at, height, nearest(road, at).0, random))
         })
@@ -90,8 +90,8 @@ pub fn plants(land: &Land, road: &[(DVec2, DVec2)]) -> Vec<Placement> {
         plants.push(Placement { model, at, yaw: random.range([0.0, TAU]), scale, afar })
     };
 
-    for (at, height, road_m, mut random) in ground(1, 5.0, 0.45) {
-        if road_m < 8.5 || land.slope(at) > 1.6 {
+    for (at, height, road_m, mut random) in ground(1, 5.0, 0.45, ScatterKind::Tree) {
+        if land.slope(at) > 1.6 {
             continue;
         }
         let (skip, mix) = match () {
@@ -107,7 +107,7 @@ pub fn plants(land: &Land, road: &[(DVec2, DVec2)]) -> Vec<Placement> {
         place(model, at, &mut random, scale, true);
     }
 
-    for (at, _, road_m, mut random) in ground(2, 3.2, 0.5) {
+    for (at, _, road_m, mut random) in ground(2, 3.2, 0.5, ScatterKind::Tree) {
         if road_m < 95.0 || land.slope(at) > 1.6 || random.unit() > 0.6 {
             continue;
         }
@@ -116,8 +116,8 @@ pub fn plants(land: &Land, road: &[(DVec2, DVec2)]) -> Vec<Placement> {
         place(model, at, &mut random, scale, true);
     }
 
-    for (at, _, road_m, mut random) in ground(3, 2.4, 0.45) {
-        if road_m < 4.3 || land.slope(at) > 1.8 {
+    for (at, _, road_m, mut random) in ground(3, 2.4, 0.45, ScatterKind::Bush) {
+        if land.slope(at) > 1.8 {
             continue;
         }
         let keep = match () {
@@ -133,13 +133,13 @@ pub fn plants(land: &Land, road: &[(DVec2, DVec2)]) -> Vec<Placement> {
         place(model, at, &mut random, scale, true);
     }
 
-    for (at, _, road_m, mut random) in ground(4, 0.85, 0.5) {
+    for (at, _, road_m, mut random) in ground(4, 0.85, 0.5, ScatterKind::Grass) {
         let keep = match () {
             _ if road_m < 40.0 => 1.0,
             _ if road_m < 90.0 => 0.4,
             _ => 0.08,
         };
-        if road_m < 3.2 || random.unit() > keep {
+        if random.unit() > keep {
             continue;
         }
         let model = random.pick(GRASS, |(_, w)| *w).0;
@@ -153,6 +153,9 @@ pub fn plants(land: &Land, road: &[(DVec2, DVec2)]) -> Vec<Placement> {
         for (n, offset) in [3.5, 4.8, 6.3, 8.0].into_iter().enumerate() {
             let mut random = Random::at(5, k as i64, n as i64);
             let at = centre + direction.perp() * side * (offset + random.range([-0.3, 0.3]));
+            if !land.allows_scatter(at, ScatterKind::Grass) {
+                continue;
+            }
             let Some(height) = land.height(at) else { continue };
             if offset > 5.0 && height < road_height + 0.3 {
                 continue;
@@ -164,6 +167,9 @@ pub fn plants(land: &Land, road: &[(DVec2, DVec2)]) -> Vec<Placement> {
         let mut random = Random::at(6, k as i64, 0);
         if random.unit() < 0.25 {
             let at = centre + direction.perp() * side * random.range([4.5, 8.5]);
+            if !land.allows_scatter(at, ScatterKind::Bush) {
+                continue;
+            }
             let model = random.pick(SMALL_BUSHES, |(_, w)| *w).0;
             let scale = random.range([0.6, 1.0]);
             place(model, at, &mut random, scale, true);
