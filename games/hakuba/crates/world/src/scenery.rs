@@ -129,6 +129,11 @@ fn spawn(
     mut swaying: SwayingMaterials,
 ) {
     'copies: for (entity, waiting) in &waiting {
+        // A model that fails to load, which the loading splash reports, is left out.
+        if assets.load_state(&waiting.model).is_failed() {
+            commands.entity(entity).remove::<Waiting>();
+            continue;
+        }
         let Some(gltf) = models.gltfs.get(&waiting.model) else { continue };
         let versions = match (waiting.middle, gltf.named_nodes.contains_key("middle")) {
             (true, true) => vec![("middle", Role::Both)],

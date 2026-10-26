@@ -118,14 +118,21 @@ fn load(mut commands: Commands, assets: Res<AssetServer>) {
     commands.insert_resource(Model(assets.load(MODEL)));
 }
 
+/// Spawns the paraglider's model under each paraglider once it has loaded. If it fails to, each stays put away and is
+/// ready, so it never holds up the game; the error is the asset server's.
 fn spawn_model(
     mut commands: Commands,
+    assets: Res<AssetServer>,
     model: Res<Model>,
     gltfs: Res<Assets<Gltf>>,
-    waiting: Query<Entity, (With<Glider>, Without<WorldAssetRoot>)>,
+    mut waiting: Query<(Entity, &mut Glider), Without<WorldAssetRoot>>,
 ) {
+    if assets.load_state(&model.0).is_failed() {
+        waiting.iter_mut().for_each(|(_, mut glider)| glider.spawned = true);
+        return;
+    }
     let Some(gltf) = gltfs.get(&model.0) else { return };
-    for glider in &waiting {
+    for (glider, _) in &waiting {
         commands.entity(glider).insert(WorldAssetRoot(gltf.scenes[0].clone()));
     }
 }

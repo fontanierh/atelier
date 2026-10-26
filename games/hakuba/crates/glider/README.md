@@ -10,9 +10,9 @@ in a loop. Whoever spawned it sets `held` and `bank`:
   together. It leans `bank` radians into the turn about that middle, and both hands hold its handles.
 - Put away, it is drawn too small to see, so its shaders are ready the first time it opens.
 
-`ready_for(character)` says whether it is that character's and its model has spawned. A model whose `holder` node
-does not say how it was held is reported as an error, and the paraglider stays put away rather than holding up the
-game.
+`ready_for(character)` says whether it is that character's and its model has spawned. A model that fails to load, or
+whose `holder` node does not say how it was held, is reported as an error, and the paraglider stays put away rather
+than holding up the game.
 
 - `src/lib.rs` loads and places the paraglider, and logs an error whenever a closed fist misses its handle: its
   cavity more than 1.5 cm off the handle's axis, its wrist more than 5 mm off the holder's, or its palm turned more than

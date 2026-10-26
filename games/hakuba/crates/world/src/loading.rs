@@ -2,8 +2,9 @@
 //! the index, every tile in sight and every model standing in them, every texture the materials use, and every shader
 //! the renderer needs to draw them, whichever way the camera turns. What other crates add to the world holds the splash
 //! too while it is [`Unready`], such as the player until their character stands on the ground. A file that fails to
-//! load is reported as an error and stops holding the splash, so a broken file shows as missing rather than hanging
-//! the game on the splash.
+//! load is reported as an error and named on the splash. What the world can show without, such as a texture, a tile, a
+//! plant or the paraglider, then stops holding it; what it cannot, such as its index or the player's character, keeps
+//! it up, saying which file failed.
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -162,7 +163,7 @@ fn lift(
     images: Res<Assets<Image>>,
     splash: Single<(Entity, &mut Splash)>,
     mut bar: Single<&mut Node, With<Bar>>,
-    mut stage: Single<&mut Text, With<Stage>>,
+    (mut stage, missing): (Single<&mut Text, With<Stage>>, Option<Res<Missing>>),
     tiles: Query<&Tile>,
     spawning: Query<(), With<Spawning>>,
     waiting: Query<(), With<Waiting>>,
@@ -205,8 +206,12 @@ fn lift(
         (true, false) => "Loading its textures",
         (true, true) => "Preparing its shaders",
     };
+    let says = match missing {
+        Some(missing) => format!("{says}. {} failed to load", missing.0),
+        None => says.to_string(),
+    };
     if stage.0 != says {
-        stage.0 = says.into();
+        stage.0 = says;
     }
 
     if splash.settled >= SETTLED_FRAMES {
@@ -230,11 +235,17 @@ fn watch(pipelines: Res<Pipelines>, mut loaded: ResMut<Loaded>) {
 }
 
 /// Reports each file that fails to load while the world shows: it no longer holds the splash, and is missing.
-fn report(mut failed: MessageReader<UntypedAssetLoadFailedEvent>) {
+fn report(mut commands: Commands, mut failed: MessageReader<UntypedAssetLoadFailedEvent>) {
     for failed in failed.read() {
-        error!("{} failed to load, so the world shows without it: {}", failed.path, failed.error);
+        error!("{} failed to load: {}", failed.path, failed.error);
+        commands.insert_resource(Missing(failed.path.to_string()));
     }
 }
+
+/// The last file that failed to load, which the splash names while it stays up: a file the world cannot show without,
+/// such as its index or the player's character, keeps it up.
+#[derive(Resource)]
+struct Missing(String);
 
 /// Whether every texture `material` uses has loaded, or failed to, which [`report`] says.
 fn textured(material: &StandardMaterial, images: &Assets<Image>, assets: &AssetServer) -> bool {
