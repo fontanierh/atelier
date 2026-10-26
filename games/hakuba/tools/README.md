@@ -209,8 +209,9 @@ after the pages are read, so the tiles, overlays and scenery all stand on the le
 declare rectangular pads at a given height and slope, with shoulders easing back to the ground. A pad's planar margin
 covers a coarse tile cell around its footprint, so the full and middle ground both draw the same plane. Pads apply
 after strips and own the final ground at crossings; the export rejects overlapping pads. Regions
-can declare corridors kept clear of scattered trees, bushes or grass. Scatter producers check these shared clearances;
-explicit placements and their cable indices are unchanged.
+can declare corridors kept clear of scattered trees, bushes or grass. Scatter candidates use an origin-anchored grid
+that includes boundary cells, so extending the exported area keeps candidates inside the old area unchanged. Scatter
+producers check these shared clearances; explicit placements and their cable indices are unchanged.
 
 A region also stands scenery on the ground: plant and prop models, each at a point with a turn and a scale, cables
 strung between two models' anchors, and rails run along a path. A rail and its posts show a texture asset tinted by

@@ -32,7 +32,13 @@ pub struct Profile {
 
 impl Profile {
     fn height(&self, at: f64, length: f64) -> f64 {
-        let t = (at / length).clamp(0.0, 1.0);
+        if at < 0.0 {
+            return self.heights[0] + at * self.grades[0];
+        }
+        if at > length {
+            return self.heights[1] + (at - length) * self.grades[1];
+        }
+        let t = at / length;
         let t2 = t * t;
         let t3 = t2 * t;
         (2.0 * t3 - 3.0 * t2 + 1.0) * self.heights[0]
@@ -44,8 +50,9 @@ impl Profile {
 
 impl Strip {
     /// @cc [owner:fontanierh,label:correctness] authored-strip-grade
-    /// An authored profile MUST use distance along the centre line and meet its declared endpoint heights and
-    /// grades. With no profile, the strip MUST retain its smoothed existing-ground height behavior.
+    /// The authored profile MUST use distance along the centre line and meet its declared endpoint heights and
+    /// grades. Terrain interpolates its sampled heights, so a nonlinear profile is approximate between vertices.
+    /// With no profile, the strip MUST retain its smoothed existing-ground height behavior.
     /// Levels `ground` along the strip. Fails if part of the centre line has no ground.
     pub fn level(&self, ground: &mut Ground) -> Result<()> {
         let line = curve(&self.course);
@@ -83,7 +90,16 @@ impl Strip {
             let t = along - k as f64;
             let next = (k + 1).min(heights.len() - 1);
             let level = match &self.profile {
-                Some(profile) => profile.height(distances[k] + (distances[next] - distances[k]) * t, length),
+                Some(profile) => {
+                    let distance = if along <= 0.0 {
+                        (p - line[0].0).dot(line[0].1).min(0.0)
+                    } else if along >= (line.len() - 1) as f64 {
+                        length + (p - line[line.len() - 1].0).dot(line[line.len() - 1].1).max(0.0)
+                    } else {
+                        distances[k] + (distances[next] - distances[k]) * t
+                    };
+                    profile.height(distance, length)
+                }
                 None => heights[k] + (heights[next] - heights[k]) * t,
             };
             if distance <= self.half_width_m {
@@ -259,6 +275,25 @@ mod tests {
             }
         }
         assert_eq!(ground.height(DVec2::new(4.0, 4.0)), original.height(DVec2::new(4.0, 4.0)));
+    }
+
+    #[test]
+    fn authored_endpoints_between_ground_vertices_meet_the_grade() {
+        let mut ground = Ground::page(64, 2.0, |_, _| 0.0);
+        let strip = Strip {
+            course: vec![[17.0, 64.0], [113.0, 64.0]],
+            half_width_m: 4.0,
+            shoulder_m: 10.0,
+            smoothing_m: 8.0,
+            profile: Some(Profile { heights: [3.0, 7.8], grades: [0.05, 0.05] }),
+        };
+        strip.level(&mut ground).unwrap();
+        let tile = Tile { columns: (0, 64), rows: (0, 64) };
+        let drawn = Surface::new(&tile.ground(&ground, Detail::Full, 0, 1.0));
+        for x in [16.0, 17.0, 18.0, 112.0, 113.0, 114.0] {
+            let height = drawn.height(DVec2::new(x, 64.0)).unwrap();
+            assert!((height - (3.0 + (x - 17.0) * 0.05)).abs() < 1e-5, "height at {x} was {height}");
+        }
     }
 
     #[test]
