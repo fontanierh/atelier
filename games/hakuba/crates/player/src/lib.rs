@@ -4,12 +4,12 @@
 
 mod camera;
 mod glider;
-mod grip;
 mod input;
 mod moves;
 
 use bevy::prelude::*;
 use hakuba_characters::Character;
+use hakuba_glider::Glider;
 use hakuba_screens::{Pause, Screen};
 use hakuba_world::{PushesPlants, Spawn, Unready};
 
@@ -21,11 +21,10 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<Controls>()
-            .add_plugins(glider::GliderPlugin)
-            .add_systems(Update, (spawn, arrive).run_if(in_state(Screen::World)))
+            .add_systems(Update, (spawn, glider::spawn, arrive).run_if(in_state(Screen::World)))
             .add_systems(
                 Update,
-                (input::read, moves::advance, camera::follow).chain().run_if(in_state(Pause::Playing)),
+                (input::read, moves::advance, glider::steer, camera::follow).chain().run_if(in_state(Pause::Playing)),
             );
     }
 }
@@ -70,9 +69,9 @@ fn spawn(mut commands: Commands, start: Option<Res<Spawn>>, players: Query<(), W
 }
 
 /// Lifts the player's hold on the splash once they stand on the ground with their paraglider ready.
-fn arrive(mut commands: Commands, players: Query<(Entity, &Player), With<Unready>>, gliders: Query<&glider::Glider>) {
+fn arrive(mut commands: Commands, players: Query<(Entity, &Player), With<Unready>>, gliders: Query<&Glider>) {
     for (entity, player) in &players {
-        if player.motion.mode != Mode::Arriving && gliders.iter().any(|glider| glider.of(player.body)) {
+        if player.motion.mode != Mode::Arriving && gliders.iter().any(|glider| glider.ready_for(player.body)) {
             commands.entity(entity).remove::<Unready>();
         }
     }

@@ -48,6 +48,8 @@ games/hakuba/
     menu/                   the menu the game opens on
     world/                  the world
     characters/             the playable characters: their models and clips
+    glider/                 the paraglider, and how a character holds it
+    player/                 the character the player controls in the world
     viewer/                 the character viewer
     audio/                  the sounds: footsteps, the moves, the paraglider's wind and the countryside
   index.html                the page the browser build runs in, with the canvas the game draws into

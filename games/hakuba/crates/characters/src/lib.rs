@@ -131,7 +131,7 @@ pub struct Playing {
     pub finished: bool,
 }
 
-/// The node in a character's right palm where it holds things, such as the paraglider: what it holds is a child of
+/// The node in a character's right palm where it holds things in one hand: what it holds is a child of
 /// this entity, placed as the holder in the motion library placed it.
 #[derive(Component)]
 pub struct Grip {
@@ -156,15 +156,6 @@ pub struct Arm {
     pub hand: Entity,
     /// Each finger's three bones from the knuckle out, the index, middle, ring and little fingers'.
     pub fingers: [[Entity; 3]; 4],
-}
-
-impl Arm {
-    /// The bones around the fist: the hand's and the middle finger's three. Roughly where the fist closes, between the
-    /// palm and the curled fingers, is the middle of the four.
-    pub fn fist(&self) -> [Entity; 4] {
-        let [a, b, c] = self.fingers[1];
-        [self.hand, a, b, c]
-    }
 }
 
 /// A character whose model is loading.

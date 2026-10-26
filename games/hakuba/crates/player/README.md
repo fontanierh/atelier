@@ -24,14 +24,8 @@ way the spawn faces, with the camera behind it. It waits there until the tile un
   walls, slopes steeper than 50° and water deeper than 60 cm. Falling into deep water puts the player back where they
   last stood.
 - `camera.rs` orbits the camera around the player, in front of anything solid between them.
-- `glider.rs` holds the paraglider above the character, between its fists, while the player glides, banking it into
-  turns. Each player has one from the start, too small to see while it is put away, so it opens without a stall.
-- `grip.rs` closes the fists round the paraglider's two handles, which its export gives in its own frame. Each arm
-  bends so its fist closes round its handle: the wrist goes where the space inside the fist, in front of the
-  knuckles, sits on the handle, the fist turned to run along it, thumb forward and palm facing in, and the elbow
-  bends the way the clip bends it. Then each finger curls until it lies on the handle. It works on the pose the
-  animation has just written, in the same frame the paraglider is placed, before either is drawn, so the hands never
-  trail the bar.
+- `glider.rs` gives each player a paraglider (`hakuba_glider`) from the start, put away, and holds it while the
+  player glides, banking it into turns.
 
 The player holds the world's loading splash until they stand on the ground with the paraglider ready. The moves use
 only the clips every character has and their measured speeds, and the paraglider is scaled to each character's hips,

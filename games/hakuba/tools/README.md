@@ -127,20 +127,23 @@ fitted stride is longer than the character's legs reach, the body lowers just en
 | `hold`         | where its right hand holds things: `offset_cm` and `turn_deg` from its palm's axes |
 
 **`equipment`** writes something a character holds, such as the paraglider, as `<folder name>.glb`, playing its one
-clip under the folder's name. It comes from the motion library with the skeleton that held it there, and its export
-is placed in that skeleton's body frame between its fists, each the middle of its wrist and its middle finger's three
-bones, so a character holds it between its own fists as the library's skeleton did. A node `holder` gives, in its
-extras, how high the skeleton's hips stand, and its two handles in the export's frame, left then right, each the
-stretch of tube a fist closes round from its back end to its front end, with the tube's radius, so a character can
-close its own fists round them. The export fails if the holder's fist closes more than 10 cm from its handle.
+clip under the folder's name. It comes from the motion library with the skeleton that held it there, and is drawn at
+its source's size, the size that skeleton held it at. Its export is placed in that skeleton's body frame between its
+fists, each the middle of its wrist and its middle finger's three bones, so a character holds it between its own fists
+as the library's skeleton did. A node `holder` gives, in its extras, in the export's frame, left then right: how high
+the skeleton's hips stand; its two handles, each the stretch of tube a fist closes round from its back end to its
+front end, with the tube's radius; and the skeleton's two palm frames as it held them (`pose::palm`), each its origin
+at the wrist and its rotation. A character puts each of its hands exactly there, turned so its own palm frame is that
+one, and closes its fingers round the handle. The export fails if a joint of the holder's fingers lies more than 2 cm
+off its handle's surface: then it did not hold that handle.
 
 | Setting            | Meaning                                                                    |
 |--------------------|----------------------------------------------------------------------------|
 | `source`           | the equipment, with its clip, relative to the folder                       |
 | `clip`             | the clip's name in that file                                               |
 | `holder`           | the skeleton that held it, at rest, relative to the folder                 |
+| `pose`             | the holder's clip whose first frame holds it                               |
 | `held_at`          | the holder's bone its root sits at                                         |
-| `scale`            | how much larger it is drawn than its source                                |
 | `handle_left_m`    | the left handle's stretch, back end then front end, in the source's frame  |
 | `handle_right_m`   | the right handle's                                                         |
 | `handle_radius_m`  | the handles' tube's radius in the source                                   |

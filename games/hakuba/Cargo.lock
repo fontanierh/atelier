@@ -3046,6 +3046,7 @@ dependencies = [
  "bevy",
  "hakuba_audio",
  "hakuba_characters",
+ "hakuba_glider",
  "hakuba_menu",
  "hakuba_player",
  "hakuba_screens",
@@ -3094,6 +3095,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "hakuba_glider"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "hakuba_characters",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "hakuba_menu"
 version = "0.1.0"
 dependencies = [
@@ -3107,10 +3118,9 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "hakuba_characters",
+ "hakuba_glider",
  "hakuba_screens",
  "hakuba_world",
- "serde",
- "serde_json",
 ]
 
 [[package]]
@@ -3137,6 +3147,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "hakuba_characters",
+ "hakuba_glider",
  "hakuba_screens",
 ]
 

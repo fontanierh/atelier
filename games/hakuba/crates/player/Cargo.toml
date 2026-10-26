@@ -8,7 +8,6 @@ publish.workspace = true
 [dependencies]
 bevy.workspace = true
 hakuba_characters.workspace = true
+hakuba_glider.workspace = true
 hakuba_screens.workspace = true
 hakuba_world.workspace = true
-serde.workspace = true
-serde_json.workspace = true
