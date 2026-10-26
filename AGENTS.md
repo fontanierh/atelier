@@ -46,6 +46,8 @@ uv run pytest path/to/test_file.py -q     # focused local tests; full suite runs
   deferred to final validation (owner 2026-10-23), so CI runs `quality` and the three Linux test jobs
   (studio, games 1/2, games 2/2) under the `Studio Python / Linux (macOS deferred)` check; that aggregate
   fails unless they pass. New tests are partitioned automatically; no per-file CI list needs updating.
+  PRs that change only `games/hakuba/` skip Studio Python; their `Hakuba` workflow (current exports, lint) must
+  pass instead.
   Before merging, run `uv run atelier lint` and `uv run atelier contracts check`, verify a successful
   `Studio Python / Linux (macOS deferred)` CI run on the exact final PR head, put the results in the review
   request, and get one other agent's approval on the

@@ -2,6 +2,9 @@ name: Studio Python
 
 on:
   pull_request:
+    # Hakuba builds with cargo alone and has its own workflow (hakuba.yml).
+    paths-ignore:
+      - 'games/hakuba/**'
   push:
     branches: [main]
 

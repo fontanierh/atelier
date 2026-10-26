@@ -44,7 +44,8 @@ completed for the captured commits, including its advisory finding count; it doe
 Owner notifications about edited contracts render as `cc @owner`; upstream ignores their body, which may be empty.
 They count as comments, not violations; violation comments must contain an explanation.
 Another agent's approval and `atelier lint` remain required. Verify a successful `Studio Python / Linux
-(macOS deferred)` run on the exact final PR head: this aggregate check fails unless `quality` and the two
+(macOS deferred)` run on the exact final PR head (for a PR that changes only `games/hakuba/`, the `Hakuba`
+workflow instead): this aggregate check fails unless `quality` and the two
 Linux test shards (studio, games) pass. The macOS-only board job and the macOS render hosts are deferred to
 final validation (owner 2026-10-23), so this check does not cover the darwin board server, macOS T0/T1a, APFS,
 the sandbox or libproc. CI supplies the full-suite result, with per-group test lists and timings. Locally, run focused tests
