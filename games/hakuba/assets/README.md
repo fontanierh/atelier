@@ -38,6 +38,7 @@ assets/
     ground/                 the ground's grass and earth
     road/                   a road's asphalt and lines
     bark/                   tree bark
+    painted-metal/          weathered white paint on sheet metal, for the guardrails
     maple-leaves/ ...       the leaves of each kind of plant: maple, ginkgo, ochre and small leaves, pine and
                             cedar needles, and flowers
   world/                    the world, in tiles

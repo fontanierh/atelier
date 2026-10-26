@@ -54,9 +54,9 @@ const CLIPS_NODE: &str = "clips";
 /// The model's node in the right hand's palm, where it holds things.
 const GRIP_NODE: &str = "grip_r";
 
-/// The model's hand bones, left then right, and their middle fingers' first bones, which start at the knuckles.
-const HAND_NODES: [&str; 2] = ["hand_l", "hand_r"];
-const KNUCKLE_NODES: [&str; 2] = ["middle_1_l", "middle_1_r"];
+/// The model's bones around each fist, left then right: the hand's, at the wrist, and the middle finger's three.
+const FIST_NODES: [[&str; 4]; 2] =
+    [["hand_l", "middle_1_l", "middle_2_l", "middle_3_l"], ["hand_r", "middle_1_r", "middle_2_r", "middle_3_r"]];
 
 /// Every clip a character's model has, by name in alphabetical order, and how fast each carries it over the ground.
 /// Added once the model has loaded.
@@ -137,13 +137,12 @@ pub struct Grip {
     pub character: Entity,
 }
 
-/// A character's hands, left then right, added once its model has spawned: each hand's bone, at the wrist, and its
-/// middle finger's first bone, at the knuckle. A palm's centre, where the hand closes on what it holds, is halfway
-/// between the two.
+/// A character's hands, left then right, added once its model has spawned: around each fist, the hand's bone, at the
+/// wrist, and its middle finger's three. Where a fist closes on what it holds, between the palm and the curled
+/// fingers, is the middle of the four.
 #[derive(Component)]
 pub struct Hands {
-    pub wrists: [Entity; 2],
-    pub knuckles: [Entity; 2],
+    pub fists: [[Entity; 4]; 2],
 }
 
 /// A character whose model is loading.
@@ -187,8 +186,8 @@ fn spawn_models(
     }
 }
 
-/// Once the model has spawned: finds its animation player, reads its clips' speeds and its hips' height, marks its grip,
-/// finds its hands and plays the idle.
+/// Once the model has spawned: finds its animation player, reads its clips' speeds and its hips' height, marks its
+/// grip, finds its hands and plays the idle.
 fn start_animating(
     ready: On<WorldInstanceReady>,
     mut commands: Commands,
@@ -198,7 +197,7 @@ fn start_animating(
     names: Query<(&Name, Option<&GltfExtras>)>,
 ) {
     let Ok(mut clips) = characters.get_mut(ready.entity) else { return };
-    let (mut wrists, mut knuckles) = ([None; 2], [None; 2]);
+    let mut fists = [[None; 4]; 2];
     for node in children.iter_descendants(ready.entity) {
         let Ok((name, extras)) = names.get(node) else { continue };
         match name.as_str() {
@@ -211,16 +210,16 @@ fn start_animating(
                 commands.entity(node).insert(Grip { character: ready.entity });
             }
             name => {
-                if let Some(side) = HAND_NODES.iter().position(|hand| *hand == name) {
-                    wrists[side] = Some(node);
-                } else if let Some(side) = KNUCKLE_NODES.iter().position(|knuckle| *knuckle == name) {
-                    knuckles[side] = Some(node);
+                for (side, bones) in FIST_NODES.iter().enumerate() {
+                    if let Some(k) = bones.iter().position(|bone| *bone == name) {
+                        fists[side][k] = Some(node);
+                    }
                 }
             }
         }
     }
-    if let ([Some(wrist_l), Some(wrist_r)], [Some(knuckle_l), Some(knuckle_r)]) = (wrists, knuckles) {
-        commands.entity(ready.entity).insert(Hands { wrists: [wrist_l, wrist_r], knuckles: [knuckle_l, knuckle_r] });
+    if let [[Some(a), Some(b), Some(c), Some(d)], [Some(e), Some(f), Some(g), Some(h)]] = fists {
+        commands.entity(ready.entity).insert(Hands { fists: [[a, b, c, d], [e, f, g, h]] });
     }
     let Some(player) = children.iter_descendants(ready.entity).find(|child| players.contains(*child)) else { return };
     clips.player = Some(player);

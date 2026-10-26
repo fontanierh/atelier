@@ -3,8 +3,9 @@
 //! bloom, vignette) and painterly filter. How far the sun casts shadows and how edges are smoothed are settings
 //! (`settings.rs` applies them). By default edges are smoothed by temporal anti-aliasing, as in Yorimichi: the camera
 //! shifts by part of a pixel each frame and each pixel blends the frames, so grass and other edges thinner than a
-//! pixel stay whole and steady as the camera moves. It costs about as little as no smoothing at all. By default shadows reach 60 m, in one cascade: the trees and bushes along the road. Further
-//! out, the haze and the painterly filter soften what shadows would show, and each cascade draws the world again.
+//! pixel stay whole and steady as the camera moves. It costs about as little as no smoothing at all. By default
+//! shadows reach 60 m, in one cascade: the trees and bushes along the road. Further out, the haze and the painterly
+//! filter soften what shadows would show, and each cascade draws the world again.
 
 use std::f32::consts::FRAC_PI_2;
 
@@ -33,8 +34,9 @@ const FAR_M: f32 = 30000.0;
 const SUN_ELEVATION_DEG: f32 = 26.0;
 const SUN_BEARING_DEG: f32 = 60.0;
 
-/// The sun's light, in lux, and its colour: Yorimichi's late-afternoon sun.
-const SUN_LUX: f32 = 6000.0;
+/// The sun's light, in lux, and its colour: Yorimichi's late-afternoon sun. Sunlit ground gets about four and a half
+/// times the light of ground in shade, as in Yorimichi, so shadows read.
+const SUN_LUX: f32 = 15000.0;
 const SUN_COLOUR: [f32; 3] = [1.0, 0.86, 0.68];
 
 /// The light that fills the shadows, linear: blue from the sky above, pale at the horizon and warm green from the
@@ -42,7 +44,7 @@ const SUN_COLOUR: [f32; 3] = [1.0, 0.86, 0.68];
 const SKY_LIGHT: [f32; 3] = [0.62, 0.78, 1.0];
 const HORIZON_LIGHT: [f32; 3] = [0.95, 0.96, 1.0];
 const GROUND_LIGHT: [f32; 3] = [0.42, 0.42, 0.24];
-const FILL_BRIGHTNESS: f32 = 1900.0;
+const FILL_BRIGHTNESS: f32 = 620.0;
 
 /// The haze's colour, linear, and how fast it thickens: at 9 km it hides 63 % of what is behind it.
 const HAZE: [f32; 3] = [0.0932, 0.2301, 0.5328];

@@ -2,11 +2,11 @@
 //! `<folder name>.glb` with its one clip under the folder's name.
 //!
 //! It comes from the motion library with the skeleton that held it there, posed as it held it. Its export is placed in
-//! that skeleton's body frame between its palms: the origin halfway between the palms' centres, each halfway from the
-//! wrist to the middle finger's knuckle, where a hand closes on what it holds; the axes those of the body (left +X,
-//! up +Y, forward +Z). A node `holder` carries, in its extras, how high the skeleton's hips stand at rest
-//! (`{"hips_m": 0.97}`), so a character can hold it between its own palms, scaled to its own size, however large
-//! its hands are.
+//! that skeleton's body frame between its fists: the origin halfway between them, each the middle of its wrist and its
+//! middle finger's three bones, where a fist closes on what it holds, between the palm and the curled fingers; the axes
+//! those of the body (left +X, up +Y, forward +Z). A node `holder` carries, in its extras, how high the skeleton's hips
+//! stand at rest (`{"hips_m": 0.97}`), so a character can hold it between its own fists, scaled to its own size,
+//! however large its hands are.
 
 use std::path::{Path, PathBuf};
 
@@ -45,10 +45,13 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     let worlds = holder.worlds(&frames[0]);
     let pose = rig_pose(&worlds, &nodes);
     let at = |bone: &str| pose[rig::index(bone)].map(|joint| joint.position);
-    let palm = |side: &str| Some((at(&format!("hand_{side}"))? + at(&format!("middle_1_{side}"))?) * 0.5);
-    let (Some(left), Some(right), Some(thigh_l), Some(thigh_r)) = (palm("l"), palm("r"), at("thigh_l"), at("thigh_r"))
+    let fist = |side: &str| {
+        let bones = ["hand", "middle_1", "middle_2", "middle_3"].map(|bone| at(&format!("{bone}_{side}")));
+        Some(bones.into_iter().sum::<Option<DVec3>>()? / 4.0)
+    };
+    let (Some(left), Some(right), Some(thigh_l), Some(thigh_r)) = (fist("l"), fist("r"), at("thigh_l"), at("thigh_r"))
     else {
-        bail!("the holder needs both hands, with their middle fingers, and both thighs")
+        bail!("the holder needs both hands, with their middle fingers' three bones, and both thighs")
     };
     let side = level(thigh_l - thigh_r).normalize();
     let body = DMat4::from_mat3_translation(DMat3::from_cols(side, UP, side.cross(UP)), (left + right) * 0.5);

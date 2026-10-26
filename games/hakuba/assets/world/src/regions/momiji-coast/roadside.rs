@@ -36,8 +36,9 @@ const SHORTEST_RAIL_M: usize = 6;
 /// The guardrail's W-shaped beam: each point's offset toward the road from the posts' centres, and its height.
 const RAIL_PROFILE: [[f64; 2]; 5] = [[0.05, 0.85], [0.11, 0.80], [0.05, 0.72], [0.11, 0.64], [0.05, 0.58]];
 
-/// The guardrail's white paint, and the cables' dark metal.
+/// The guardrail's white paint, which tints its weathered painted metal, and the cables' dark metal.
 const PAINT: [f64; 3] = [0.86, 0.86, 0.84];
+const METAL: &str = "painted-metal";
 const CABLE: [f64; 3] = [0.12, 0.12, 0.13];
 
 /// Adds the poles, lamps, cables and guardrails along `road` to `scenery`.
@@ -97,6 +98,7 @@ pub fn add(scenery: &mut Scenery, land: &Land, road: &[(DVec2, DVec2)]) {
             post_every: RAIL_POST_SPACING,
             post_radius_m: RAIL_POST_RADIUS_M,
             colour: PAINT,
+            texture: METAL,
         });
     }
 }
