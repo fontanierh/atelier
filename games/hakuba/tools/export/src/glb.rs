@@ -153,6 +153,48 @@ impl Glb {
         self.json["nodes"][node]["name"] = json!(name);
     }
 
+    /// The extras of the node named `name`, data an export left for the next.
+    pub fn extras(&self, name: &str) -> Result<&Value> {
+        Ok(&self.json["nodes"][self.node(name)?]["extras"])
+    }
+
+    /// Adds an empty node named `name` under `parent`, at `transform` from it, and returns its index.
+    pub fn add_child(&mut self, parent: usize, name: &str, transform: &Trs) -> usize {
+        let node = json!({
+            "name": name,
+            "translation": transform.translation.to_array(),
+            "rotation": transform.rotation.to_array(),
+            "scale": transform.scale.to_array(),
+        });
+        let node = push(&mut self.json, "nodes", node);
+        push(&mut self.json["nodes"][parent], "children", json!(node));
+        node
+    }
+
+    /// The default scene's root nodes.
+    pub fn roots(&self) -> Vec<usize> {
+        let scene = self.json["scene"].as_u64().unwrap_or(0) as usize;
+        items(&self.json["scenes"][scene], "nodes").map(index).collect()
+    }
+
+    /// Sets `node`'s transform relative to its parent.
+    pub fn set_transform(&mut self, node: usize, transform: &Trs) {
+        let node = self.json["nodes"][node].as_object_mut().unwrap();
+        node.remove("matrix");
+        node.insert("translation".into(), json!(transform.translation.to_array()));
+        node.insert("rotation".into(), json!(transform.rotation.to_array()));
+        node.insert("scale".into(), json!(transform.scale.to_array()));
+    }
+
+    /// Keeps only the animation named `name`, renamed `new_name`.
+    pub fn keep_animation(&mut self, name: &str, new_name: &str) -> Result<()> {
+        let animations = self.json.get_mut("animations").and_then(Value::as_array_mut).context("no animations")?;
+        animations.retain(|animation| animation["name"].as_str() == Some(name));
+        let animation = animations.first_mut().with_context(|| format!("no animation is named {name}"))?;
+        animation["name"] = json!(new_name);
+        Ok(())
+    }
+
     /// Each node's parent.
     pub fn parents(&self) -> Vec<Option<usize>> {
         let mut parents = vec![None; items(&self.json, "nodes").count()];

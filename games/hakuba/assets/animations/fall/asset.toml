@@ -1,0 +1,7 @@
+# Falling, held on its last frame.
+# src/source.glb holds the clip on the motion library's skeleton, baked from Yorimichi's motion library
+# (games/yorimichi/assets/characters/adventure); src/fall.rs names it.
+kind = "animation"
+source = "src/source.glb"
+clip = "Fall"
+inputs_sha256 = "11115e0561f5b71b91659cafc468f767f623c48a813cd8bef8386b2fb0ee3c85"

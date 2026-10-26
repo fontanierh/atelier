@@ -1,0 +1,8 @@
+# Opening the paraglider, from frame 4 as Yorimichi plays it.
+# src/source.glb holds the clip on the motion library's skeleton, baked from Yorimichi's motion library
+# (games/yorimichi/assets/characters/adventure); src/glide-open.rs names it.
+kind = "animation"
+source = "src/source.glb"
+clip = "Equip_Float_On"
+frames = [4.0, 30.0]
+inputs_sha256 = "89f6d019c034dbdd530ada3bcef0bbb34009cff334898f1fa4e43f76c5e2285f"

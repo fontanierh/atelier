@@ -1,0 +1,8 @@
+# The backflip, from frame 4 as Yorimichi plays it.
+# src/source.glb holds the clip on the motion library's skeleton, baked from Yorimichi's motion library
+# (games/yorimichi/assets/characters/adventure); src/backflip.rs names it.
+kind = "animation"
+source = "src/source.glb"
+clip = "Nml_Lockon_Jump_B_St"
+frames = [4.0, 30.0]
+inputs_sha256 = "4c6f3f04543ce2c1e27fdc36417ca1a05294f41fc17be921524c59c94c830486"

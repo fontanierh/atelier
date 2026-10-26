@@ -1,0 +1,7 @@
+# Landing from a run and running on.
+# src/source.glb holds the clip on the motion library's skeleton, baked from Yorimichi's motion library
+# (games/yorimichi/assets/characters/adventure); src/run-land.rs names it.
+kind = "animation"
+source = "src/source.glb"
+clip = "Nml_Move_Run_Land_ToRun_FootL"
+inputs_sha256 = "639d0bd764b2c209c29f712e708d58b83b9b27b7fb06a2712fc607bcb249c193"

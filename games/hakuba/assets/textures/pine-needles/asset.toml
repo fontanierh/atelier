@@ -1,4 +1,4 @@
 # Tufts of dark pine needles, one in each quarter, on a clear ground.
 kind = "texture"
 source = "src/pine-needles.png"
-inputs_sha256 = "575e21446b172e8e8ab50216394fe0b41ebd9093c4024a30b462ca7b06bfed3b"
+inputs_sha256 = "c57f4838e416f6fe319a334a65c190af66a3d5d6f75fd660ca17ffcc2f934a93"

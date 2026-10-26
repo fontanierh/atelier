@@ -97,7 +97,7 @@ pub fn plant(pose: &mut Pose, rest: &Pose, feet: &[Foot]) -> f64 {
 }
 
 /// Lowers the whole `pose` as far as the leg that needs it most must go to reach its goal, and no further.
-fn lower_to_reach(pose: &mut Pose, rest: &Pose, goals: &[(Leg, DVec3)]) {
+pub fn lower_to_reach(pose: &mut Pose, rest: &Pose, goals: &[(Leg, DVec3)]) {
     let mut drop: f64 = 0.0;
     for (leg, goal) in goals {
         let (upper, lower) = leg.lengths(rest);

@@ -1,0 +1,7 @@
+# Hanging under the paraglider, a loop.
+# src/source.glb holds the clip on the motion library's skeleton, baked from Yorimichi's motion library
+# (games/yorimichi/assets/characters/adventure); src/glide.rs names it.
+kind = "animation"
+source = "src/source.glb"
+clip = "Float_Float"
+inputs_sha256 = "60edba0a19bfc10584a348a0406f6d29eb800c33b92b01a7c9c5fad310fb130a"

@@ -1,0 +1,8 @@
+# The run, a loop, at 1.5 times its source's speed as Yorimichi plays it.
+# src/source.glb holds the clip on the motion library's skeleton, baked from Yorimichi's motion library
+# (games/yorimichi/assets/characters/adventure); src/run.rs names it.
+kind = "animation"
+source = "src/source.glb"
+clip = "Nml_Move_Run"
+rate = 1.5
+inputs_sha256 = "2c534b760983ed7177f9da620d4121efd7f4a9a165f93804dc6e80849b51b32f"

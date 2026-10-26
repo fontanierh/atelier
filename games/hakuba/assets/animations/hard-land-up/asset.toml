@@ -1,0 +1,7 @@
+# Standing up after a hard landing.
+# src/source.glb holds the clip on the motion library's skeleton, baked from Yorimichi's motion library
+# (games/yorimichi/assets/characters/adventure); src/hard-land-up.rs names it.
+kind = "animation"
+source = "src/source.glb"
+clip = "Nml_Damage_Land_Stand"
+inputs_sha256 = "df53edc1935e0934ae547efa7206187910a0377e1e77f8950404738c6c37a347"

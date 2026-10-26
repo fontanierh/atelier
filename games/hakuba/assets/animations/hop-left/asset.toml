@@ -1,0 +1,8 @@
+# The side hop to the left, from frame 4 as Yorimichi plays it.
+# src/source.glb holds the clip on the motion library's skeleton, baked from Yorimichi's motion library
+# (games/yorimichi/assets/characters/adventure); src/hop-left.rs names it.
+kind = "animation"
+source = "src/source.glb"
+clip = "Nml_Lockon_Step_L_St"
+frames = [4.0, 40.0]
+inputs_sha256 = "f90d0fc0e03b21a8adcc6e100af1fefb780270dcb9c4a629c39d9bcda19345fb"

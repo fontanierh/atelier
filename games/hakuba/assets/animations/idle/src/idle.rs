@@ -1,15 +1,15 @@
-//! The idle: the skeleton its source clip is on, and how a character changes it: its stance, which a character sets
-//! in its `asset.toml` under `[animations.idle]`.
+//! The idle, and how a character changes it: its stance, which a character sets in its `asset.toml` under
+//! `[animations.idle]`.
 
 use crate::rig::animations::Animation;
 use crate::rig::pose::{Pose, UP};
 use crate::rig::pose_edit::{Foot, Leg, bend_forward, body_left, plant, repose};
-use crate::rig::{self, Bones, Fingers, Limbs};
+use crate::rig::{self, Bones};
 use anyhow::{Result, bail};
 use serde::Deserialize;
 use serde_json::Value;
 
-/// The idle. Its source clip, in `source.glb`, is on a skeleton with no bone between its spine and chest.
+/// The idle.
 pub struct Idle;
 
 impl Animation for Idle {
@@ -18,37 +18,7 @@ impl Animation for Idle {
     }
 
     fn source(&self) -> Bones {
-        let limbs = |side: &str| {
-            let name = |bone: &str| format!("{bone}_{side}");
-            let digit = |letter: &str| [1, 2, 3].map(|k| name(&format!("Finger_{letter}_{k}")));
-            Limbs {
-                clavicle: name("Clavicle"),
-                upper_arm: name("Arm_1"),
-                forearm: name("Arm_2"),
-                hand: name("Wrist"),
-                fingers: Some(Fingers {
-                    thumb: digit("A"),
-                    index: digit("B"),
-                    middle: digit("C"),
-                    ring: digit("D"),
-                    pinky: digit("E"),
-                }),
-                thigh: name("Leg_1"),
-                shin: name("Leg_2"),
-                foot: name("Ankle"),
-                toe: name("Toe"),
-            }
-        };
-        Bones {
-            pelvis: "Waist".into(),
-            spine: "Spine_1".into(),
-            spine_mid: None,
-            chest: "Spine_2".into(),
-            neck: "Neck".into(),
-            head: "Head".into(),
-            left: limbs("L"),
-            right: limbs("R"),
-        }
+        Bones::library()
     }
 
     fn change(&self, changes: Option<&Value>, rest: &Pose, frames: &mut [Pose]) -> Result<()> {

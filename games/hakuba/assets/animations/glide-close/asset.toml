@@ -1,0 +1,7 @@
+# Closing the paraglider on landing.
+# src/source.glb holds the clip on the motion library's skeleton, baked from Yorimichi's motion library
+# (games/yorimichi/assets/characters/adventure); src/glide-close.rs names it.
+kind = "animation"
+source = "src/source.glb"
+clip = "Equip_Float_Off"
+inputs_sha256 = "b620f7ea44a095d9c2cbc7b4255c68a800b76049eea99baa445a0e114daf45dc"

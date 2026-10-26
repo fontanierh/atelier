@@ -1,0 +1,8 @@
+# The jump from a run, off the left foot, at 0.6 of its source's speed as Yorimichi plays it.
+# src/source.glb holds the clip on the motion library's skeleton, baked from Yorimichi's motion library
+# (games/yorimichi/assets/characters/adventure); src/run-jump.rs names it.
+kind = "animation"
+source = "src/source.glb"
+clip = "Nml_Move_Run_Jump_FootL"
+rate = 0.6
+inputs_sha256 = "bf79716badbcbcecfb76367c8afb01fb24308c683e8765c6793196b38c916d25"

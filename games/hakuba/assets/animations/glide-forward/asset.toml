@@ -1,0 +1,7 @@
+# Leaning forward under the paraglider, a loop.
+# src/source.glb holds the clip on the motion library's skeleton, baked from Yorimichi's motion library
+# (games/yorimichi/assets/characters/adventure); src/glide-forward.rs names it.
+kind = "animation"
+source = "src/source.glb"
+clip = "Float_Float_F"
+inputs_sha256 = "898a97cc91d980ff97f1b212570d39224676de103d5a77eb01fd779d7336b208"

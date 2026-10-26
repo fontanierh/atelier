@@ -34,6 +34,7 @@ use toml_edit::DocumentMut;
 enum Asset {
     Animation(rig::animation::Settings),
     Character(rig::character::Settings),
+    Equipment(rig::equipment::Settings),
     Plant(model::plant::Settings),
     Prop(model::prop::Settings),
     Texture(texture::Settings),
@@ -44,7 +45,9 @@ impl Asset {
     /// The other assets whose exports this one reads, by folder relative to `assets/`.
     fn reads(&self) -> Vec<String> {
         match self {
-            Asset::Animation(_) | Asset::Plant(_) | Asset::Prop(_) | Asset::Texture(_) => Vec::new(),
+            Asset::Animation(_) | Asset::Equipment(_) | Asset::Plant(_) | Asset::Prop(_) | Asset::Texture(_) => {
+                Vec::new()
+            }
             Asset::Character(_) => rig::animations::ANIMATIONS.into_iter().map(rig::animation::folder).collect(),
             Asset::World(_) => world::reads(),
         }
@@ -53,7 +56,7 @@ impl Asset {
     /// The exporter's folder holding this kind's code, relative to the exporter.
     fn code_folder(&self) -> &'static str {
         match self {
-            Asset::Animation(_) | Asset::Character(_) => "src/rig",
+            Asset::Animation(_) | Asset::Character(_) | Asset::Equipment(_) => "src/rig",
             Asset::Plant(_) | Asset::Prop(_) => "src/model",
             Asset::Texture(_) => "src/texture",
             Asset::World(_) => "src/world",
@@ -63,7 +66,12 @@ impl Asset {
     /// The extension of the file this kind exports.
     fn extension(&self) -> &'static str {
         match self {
-            Asset::Animation(_) | Asset::Character(_) | Asset::Plant(_) | Asset::Prop(_) | Asset::World(_) => "glb",
+            Asset::Animation(_)
+            | Asset::Character(_)
+            | Asset::Equipment(_)
+            | Asset::Plant(_)
+            | Asset::Prop(_)
+            | Asset::World(_) => "glb",
             Asset::Texture(_) => "ktx2",
         }
     }
@@ -193,6 +201,7 @@ impl Folder {
         match &self.asset {
             Asset::Animation(settings) => rig::animation::export(&self.path, settings, &output)?,
             Asset::Character(settings) => rig::character::export(&self.path, settings, &output)?,
+            Asset::Equipment(settings) => rig::equipment::export(&self.path, settings, &output)?,
             Asset::Plant(settings) => model::plant::export(settings, &output)?,
             Asset::Prop(settings) => model::prop::export(settings, &output)?,
             Asset::Texture(settings) => texture::export(&self.path, settings, &output)?,

@@ -40,6 +40,7 @@ tools/
         animations.rs       every animation, and the `Animation` trait each implements
         character.rs        the `character` kind
         characters.rs       every character, and the `Character` trait each implements
+        equipment.rs        the `equipment` kind
       texture/
         mod.rs              the `texture` kind
       model/                still models: the `plant` and `prop` kinds
@@ -67,12 +68,18 @@ rotation the identity. Clips on the rig store each bone's world turn, and the pe
 they fit any skeleton of any size.
 
 A skeleton implements `Skeleton`, naming its node for each rig bone. The spine's middle and the fingers are
-optional; a skeleton without them gets them from its neighbours.
+optional; a skeleton without them gets them from its neighbours. `Bones::library()` is the skeleton of Yorimichi's
+motion library, which every animation's clip comes from; `Bones::mixamo()` is Mixamo's.
+
+A hand's palm has a frame (`pose::palm`): its y axis from the wrist toward the knuckles, its z axis from the index
+finger toward the little finger. The retarget turns each hand so its palm faces as the source's does, so something
+held in the palm's frame sits in every character's hand as it did in the library's.
 
 ## Characters
 
 A character's file, `src/<name>.rs` in its asset folder, implements `Character`: its name and which of its bones
-plays each rig bone (`Skeleton`). `characters.rs` lists it in `CHARACTERS`. Its changes to the animations are numbers in its
+plays each rig bone (`Skeleton`). Every character gets every animation, so the whole move set works for any
+character whose skeleton maps to the rig. `characters.rs` lists it in `CHARACTERS`. Its changes to the animations are numbers in its
 `asset.toml`, one table per animation, such as `[animations.idle]`. Each animation's file defines what its table may
 hold; a character leaves out the animations and fields it does not change. A table for no animation, or an unknown
 field, fails the export.
@@ -87,20 +94,46 @@ kind's settings. A missing, misspelled or unknown setting fails the export. Each
 `src/<name>.rs` implements `Animation`: its name, the skeleton its clip is on, what a character may change in it
 and how those changes apply. `animations.rs` lists it in `ANIMATIONS`. The folder's name picks it there.
 
-| Setting  | Meaning                                           |
-|----------|---------------------------------------------------|
-| `source` | the file holding the clip, relative to the folder |
-| `clip`   | the clip's name in that file                      |
+The clip loses its root motion, the travel of its skeleton's top node: the game moves the character, so a run stays
+in place and a jump stays on the ground. A node `clip` beside the skeleton keeps how fast the root travelled over the
+ground, in hip heights a second (`{"speed": ...}`), for the character export.
+
+| Setting  | Meaning                                                                  |
+|----------|--------------------------------------------------------------------------|
+| `source` | the file holding the clip, relative to the folder                        |
+| `clip`   | the clip's name in that file                                             |
+| `rate`   | how fast it plays, as a share of its source's speed (1 if left out)      |
+| `frames` | the first and last source frames it plays (all of them if left out)      |
 
 **`character`** exports a character's model: scaled to its height, textures resized, morph targets removed, and
-every animation fitted to it with the character's changes. Its rig bones are renamed to the rig's names.
+every animation fitted to it with the character's changes. Its rig bones are renamed to the rig's names. Where a
+fitted stride is longer than the character's legs reach, the body lowers just enough. Beside the model, for the game:
 
-| Setting        | Meaning                                     |
-|----------------|---------------------------------------------|
-| `source`       | the model, relative to the asset folder     |
-| `height_m`     | how tall the character stands in the game   |
-| `texture_size` | the largest side of any texture, in pixels  |
-| `animations`   | its changes to each animation, by name      |
+- `grip_r`, an empty node under the right hand: its palm's frame at the wrist, moved and turned by `hold`. The game
+  puts what the character holds there, such as the paraglider.
+- `clips`, an empty node whose extras give how fast each clip carries the character over the ground, in metres a
+  second: the clip's speed on the rig times the character's hip height (`{"speeds": {"run": 5.1, ...}}`). Clips that
+  stay in place are left out.
+
+| Setting        | Meaning                                                                         |
+|----------------|---------------------------------------------------------------------------------|
+| `source`       | the model, relative to the asset folder                                         |
+| `height_m`     | how tall the character stands in the game                                       |
+| `texture_size` | the largest side of any texture, in pixels                                      |
+| `animations`   | its changes to each animation, by name                                          |
+| `hold`         | where its right hand holds things: `offset_cm` and `turn_deg` from its palm's axes |
+
+**`equipment`** writes something a character holds, such as the paraglider, as `<folder name>.glb`, playing its one
+clip under the folder's name. It comes from the motion library with the skeleton that held it there, and its export
+is placed in that skeleton's right palm frame, so a character holds it at `grip_r` as the library's skeleton did.
+
+| Setting   | Meaning                                                        |
+|-----------|----------------------------------------------------------------|
+| `source`  | the equipment, with its clip, relative to the folder           |
+| `clip`    | the clip's name in that file                                   |
+| `holder`  | the skeleton that held it, at rest, relative to the folder     |
+| `held_at` | the holder's bone its root sits at                             |
+| `scale`   | how much larger it is drawn than its source                    |
 
 **`texture`** writes an image as `<folder name>.ktx2`, with every mipmap level so it draws smoothly near and far.
 Each level averages the one above it in linear light, each colour weighted by its opacity, and is stored as 8-bit
@@ -171,7 +204,8 @@ each one's checksum and `.glb`). Changing any of them marks the export out of da
 asset exports only after the assets it reads are current, and `cargo export` on several folders exports each after
 those it reads.
 
-A kind's code is its folder under `src/` (`rig/`, `texture/`, `model/` or `world/`) and the shared code: `main.rs`,
+A kind's code is its folder under `src/` (`rig/` for the animation, character and equipment kinds, `texture/`,
+`model/` or `world/`) and the shared code: `main.rs`,
 `glb.rs`, `shapes.rs`, `random.rs`, `Cargo.toml`, the lock file and the toolchain. Each kind uses only its own
 folder and the shared code, so editing the world's code never marks a character out of date, and editing the rig
 never marks the world. Docs and `CONTRACTS` files are not inputs. `cargo test -p hakuba_export` checks that no kind

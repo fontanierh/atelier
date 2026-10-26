@@ -1,0 +1,8 @@
+# Landing from high up, knees buckling, from frame 4 as Yorimichi plays it.
+# src/source.glb holds the clip on the motion library's skeleton, baked from Yorimichi's motion library
+# (games/yorimichi/assets/characters/adventure); src/hard-land.rs names it.
+kind = "animation"
+source = "src/source.glb"
+clip = "Nml_Damage_Land"
+frames = [4.0, 40.0]
+inputs_sha256 = "fb9bfb3a3cfbc81e4f32fb3f7d59c66c5f86defc57fb991189cd291207b3714e"
