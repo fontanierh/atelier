@@ -1,0 +1,23 @@
+# A small timber bench seated separately on the final ground surface.
+kind = "prop"
+solid = true
+inputs_sha256 = "ac76d08967271741fb760e82268b48ddcaf1238f1c1b32da65e4511e3e26930a"
+
+[materials]
+wood = [0.00510317, 0.00185759, 0.00054180]
+wood_light = [0.03007410, 0.00758410, 0.00162539]
+
+[[boxes]]
+centre = [0, 0, 0.46]
+size = [1.7, 0.46, 0.12]
+material = "wood_light"
+
+[[boxes]]
+centre = [-0.595, 0, 0.145]
+size = [0.14, 0.37, 0.59]
+material = "wood"
+
+[[boxes]]
+centre = [0.595, 0, 0.145]
+size = [0.14, 0.37, 0.59]
+material = "wood"

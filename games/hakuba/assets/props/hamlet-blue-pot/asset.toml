@@ -1,0 +1,28 @@
+# A small pottery vessel seated separately on the final ground surface.
+kind = "prop"
+solid = true
+inputs_sha256 = "4a4cff5fc6fd008ffb981f68036a7665c2a4f2913870e7ebbde9b872db04318d"
+
+[materials]
+bluepot = [0.02721178, 0.05925352, 0.07323896]
+
+[[tubes]]
+from = [0, 0, -0.15]
+to = [0, 0, 0]
+radius_m = [0.13, 0.18]
+sides = 10
+material = "bluepot"
+
+[[tubes]]
+from = [0, 0, 0]
+to = [0, 0, 0.4]
+radius_m = [0.18, 0.25]
+sides = 10
+material = "bluepot"
+
+[[tubes]]
+from = [0, 0, 0.4]
+to = [0, 0, 0.46]
+radius_m = [0.25, 0.21]
+sides = 10
+material = "bluepot"

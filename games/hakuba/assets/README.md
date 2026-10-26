@@ -34,6 +34,10 @@ assets/
   props/                    made objects, each built from its settings alone
     utility-pole/           a concrete pole with insulators that cables fasten to
     street-lamp/            a lamp's arm and head, standing on a utility pole
+    hamlet-tea-house/, hamlet-cottage-a/, hamlet-cottage-b/  homes and a tea house
+    hamlet-workshop/, hamlet-storehouse/  a pottery workshop and storehouse
+    hamlet-well/, hamlet-waymark/, hamlet-gate/  the covered well, a wooden waymark and gate
+    hamlet-bench/, hamlet-clay-pot/, hamlet-blue-pot/  furniture outside the houses
   sounds/                   every sound the game plays (sounds/README.md)
     footstep-grass/, ...    a footstep on grass, on gravel (`-gravel`) and on stone (`-stone`)
     dash/                   a burst of cloth and air
@@ -42,13 +46,14 @@ assets/
   textures/
     ground/                 the ground's grass and earth
     road/                   a road's asphalt and lines
+    hamlet-path/            the hamlet's dirt lanes
     bark/                   tree bark
     painted-metal/          weathered white paint on sheet metal, for the guardrails
     maple-leaves/ ...       the leaves of each kind of plant: maple, ginkgo, ochre and small leaves, pine and
                             cedar needles, and flowers
   world/                    the world, in tiles
     src/ground/             the ground's heights, in pages 512 m wide
-    src/regions/            one folder per region, with its layout
+    src/regions/            the coast and hamlet, each with its layout
     tiles/                  each tile in full and middle detail, and `checksums.toml`: what each was made from
 ```
 

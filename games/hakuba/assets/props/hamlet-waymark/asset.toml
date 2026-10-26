@@ -1,0 +1,29 @@
+# A timber arrow waymark, its board pointing local +x, readable from either side.
+kind = "prop"
+solid = true
+inputs_sha256 = "ecc351100d955b1ffe5cbdeb94d97b9df3b2bae23835c6a6c99380763c9262a2"
+
+[materials]
+paper = [0.82757083, 0.29569980, 0.03968191]
+wood = [0.00510317, 0.00185759, 0.00054180]
+wood_light = [0.03007410, 0.00758410, 0.00162539]
+
+[[boxes]]
+centre = [0, 0, 0.75]
+size = [0.18, 0.18, 2.9]
+material = "wood"
+
+[[prisms]]
+profile = [[-0.6, 1.61], [0.42, 1.61], [0.75, 1.85], [0.42, 2.09], [-0.6, 2.09]]
+y = [-0.07, 0.07]
+material = "wood_light"
+
+[[boxes]]
+centre = [-0.2, -0.08, 1.83]
+size = [0.35, 0.04, 0.1]
+material = "paper"
+
+[[boxes]]
+centre = [-0.2, 0.08, 1.83]
+size = [0.35, 0.04, 0.1]
+material = "paper"

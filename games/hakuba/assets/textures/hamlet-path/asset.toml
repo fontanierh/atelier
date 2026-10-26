@@ -1,0 +1,4 @@
+# Warm packed earth and small stones shared by the hamlet approach, lanes and courtyard.
+kind = "texture"
+source = "src/path.png"
+inputs_sha256 = "e1ff4f6a2088f46a8a14a0c146f5fd1f293b8327566cc140e343c1a152d9538f"

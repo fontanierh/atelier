@@ -1,0 +1,233 @@
+# A timber-framed B cottage with a closed pitched roof and sheltered front; local +x faces the lane.
+kind = "prop"
+solid = true
+inputs_sha256 = "0986c3d0902aa28f5e8822bfb6b8b57c4def329c21d46ad20fe9053eb21d21fc"
+
+[materials]
+metal = [0.00785057, 0.00785057, 0.00657140]
+paper = [0.82757083, 0.29569980, 0.03968191]
+plaster = [0.17886750, 0.07828832, 0.01960665]
+roof = [0.00185759, 0.00278638, 0.00411827]
+roof_edge = [0.00100619, 0.00162539, 0.00239938]
+stone = [0.02721178, 0.02584288, 0.01532520]
+stone_light = [0.06372380, 0.05290079, 0.02721178]
+window = [0.10653922, 0.03310477, 0.00854038]
+wood = [0.00510317, 0.00185759, 0.00054180]
+wood_dark = [0.00201238, 0.00108359, 0.00061920]
+wood_light = [0.03007410, 0.00758410, 0.00162539]
+
+[[boxes]]
+centre = [0, 0, -0.22]
+size = [5.48, 6.18, 0.96]
+material = "stone"
+
+[[boxes]]
+centre = [0, 0, 1.755]
+size = [5.3, 6.0, 2.99]
+material = "plaster"
+
+[[boxes]]
+centre = [2.71, -3.0, 1.755]
+size = [0.12, 0.17, 2.99]
+material = "wood"
+
+[[boxes]]
+centre = [-2.71, -3.0, 1.755]
+size = [0.12, 0.17, 2.99]
+material = "wood"
+
+[[boxes]]
+centre = [2.71, 0, 1.755]
+size = [0.12, 0.17, 2.99]
+material = "wood"
+
+[[boxes]]
+centre = [-2.71, 0, 1.755]
+size = [0.12, 0.17, 2.99]
+material = "wood"
+
+[[boxes]]
+centre = [2.71, 3.0, 1.755]
+size = [0.12, 0.17, 2.99]
+material = "wood"
+
+[[boxes]]
+centre = [-2.71, 3.0, 1.755]
+size = [0.12, 0.17, 2.99]
+material = "wood"
+
+[[boxes]]
+centre = [2.72, 0, 0.36]
+size = [0.14, 6.2, 0.16]
+material = "wood"
+
+[[boxes]]
+centre = [-2.72, 0, 0.36]
+size = [0.14, 6.2, 0.16]
+material = "wood"
+
+[[boxes]]
+centre = [0, -3.05, 0.36]
+size = [5.3, 0.13, 0.16]
+material = "wood"
+
+[[boxes]]
+centre = [0, 3.05, 0.36]
+size = [5.3, 0.13, 0.16]
+material = "wood"
+
+[[boxes]]
+centre = [2.72, 0, 3.15]
+size = [0.14, 6.2, 0.16]
+material = "wood"
+
+[[boxes]]
+centre = [-2.72, 0, 3.15]
+size = [0.14, 6.2, 0.16]
+material = "wood"
+
+[[boxes]]
+centre = [0, -3.05, 3.15]
+size = [5.3, 0.13, 0.16]
+material = "wood"
+
+[[boxes]]
+centre = [0, 3.05, 3.15]
+size = [5.3, 0.13, 0.16]
+material = "wood"
+
+[[prisms]]
+profile = [[0, 5.0], [-3.33, 3.25], [-3.33, 3.11], [0, 4.86]]
+y = [-3.65, 3.65]
+material = "roof"
+
+[[prisms]]
+profile = [[0, 5.0], [3.33, 3.25], [3.33, 3.11], [0, 4.86]]
+y = [-3.65, 3.65]
+material = "roof"
+
+[[prisms]]
+profile = [[-2.65, 3.25], [2.65, 3.25], [2.65, 3.4674], [0, 4.86], [-2.65, 3.4674]]
+y = [-3.0, 3.0]
+material = "plaster"
+
+[[boxes]]
+centre = [3.33, 0, 3.28]
+size = [0.14, 7.35, 0.16]
+material = "roof_edge"
+
+[[boxes]]
+centre = [-3.33, 0, 3.28]
+size = [0.14, 7.35, 0.16]
+material = "roof_edge"
+
+[[boxes]]
+centre = [2.76, -1.6, 1.355]
+size = [0.1, 1.2, 2.15]
+material = "wood_light"
+
+[[boxes]]
+centre = [2.83, -2.2, 1.355]
+size = [0.1, 0.12, 2.25]
+material = "wood"
+
+[[boxes]]
+centre = [2.83, -1.0, 1.355]
+size = [0.1, 0.12, 2.25]
+material = "wood"
+
+[[boxes]]
+centre = [2.84, -1.6, 0.65]
+size = [0.08, 1.2, 0.11]
+material = "wood"
+
+[[boxes]]
+centre = [2.84, -1.6, 2.1]
+size = [0.08, 1.2, 0.11]
+material = "wood"
+
+[[boxes]]
+centre = [2.89, -1.264, 1.3]
+size = [0.07, 0.07, 0.2]
+material = "metal"
+
+[[boxes]]
+centre = [2.76, 0.85, 1.78]
+size = [0.07, 1.7, 1.35]
+material = "window"
+
+[[boxes]]
+centre = [2.815, 0.0, 1.78]
+size = [0.065, 0.1, 1.47]
+material = "wood_light"
+
+[[boxes]]
+centre = [2.815, 0.85, 1.78]
+size = [0.065, 0.1, 1.47]
+material = "wood_light"
+
+[[boxes]]
+centre = [2.815, 1.7, 1.78]
+size = [0.065, 0.1, 1.47]
+material = "wood_light"
+
+[[boxes]]
+centre = [2.815, 0.85, 1.105]
+size = [0.065, 1.8, 0.1]
+material = "wood_light"
+
+[[boxes]]
+centre = [2.815, 0.85, 1.78]
+size = [0.065, 1.8, 0.1]
+material = "wood_light"
+
+[[boxes]]
+centre = [2.815, 0.85, 2.455]
+size = [0.065, 1.8, 0.1]
+material = "wood_light"
+
+[[prisms]]
+profile = [[2.76, 2.84], [3.46, 2.6], [3.46, 2.52], [2.76, 2.76]]
+y = [-2.425, -0.775]
+material = "wood_light"
+
+[[boxes]]
+centre = [3.46, -1.6, 2.6]
+size = [0.1, 1.65, 0.12]
+material = "wood"
+
+[[prisms]]
+profile = [[2.76, 2.89], [3.26, 2.65], [3.26, 2.57], [2.76, 2.81]]
+y = [-0.15, 1.85]
+material = "wood_light"
+
+[[boxes]]
+centre = [3.26, 0.85, 2.65]
+size = [0.1, 2.0, 0.12]
+material = "wood"
+
+[[tubes]]
+from = [2.96, -2.5, 2.0]
+to = [2.96, -2.5, 2.5]
+radius_m = [0.19, 0.19]
+sides = 8
+material = "paper"
+
+[[tubes]]
+from = [2.96, -2.5, 1.985]
+to = [2.96, -2.5, 2.035]
+radius_m = [0.12, 0.12]
+sides = 8
+material = "wood_dark"
+
+[[tubes]]
+from = [2.96, -2.5, 2.465]
+to = [2.96, -2.5, 2.515]
+radius_m = [0.12, 0.12]
+sides = 8
+material = "wood_dark"
+
+[[boxes]]
+centre = [3.18, -1.6, 0.04]
+size = [0.85, 1.7, 0.4]
+material = "stone_light"

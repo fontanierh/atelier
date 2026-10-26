@@ -1,0 +1,28 @@
+# A small pottery vessel seated separately on the final ground surface.
+kind = "prop"
+solid = true
+inputs_sha256 = "0176cfeedfca6e0afedb70b0245a1bfc06f4e80cfcd2cf3fcaa60fc9578bb575"
+
+[materials]
+clay = [0.17886750, 0.04507641, 0.00785057]
+
+[[tubes]]
+from = [0, 0, -0.15]
+to = [0, 0, 0]
+radius_m = [0.13, 0.18]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [0, 0, 0]
+to = [0, 0, 0.4]
+radius_m = [0.18, 0.25]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [0, 0, 0.4]
+to = [0, 0, 0.46]
+radius_m = [0.25, 0.21]
+sides = 10
+material = "clay"

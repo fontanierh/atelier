@@ -1,0 +1,449 @@
+# A timber workshop with green awning and pottery shelves; local +x faces the lane.
+kind = "prop"
+solid = true
+inputs_sha256 = "693e18c1c9a76899524c1ea2ff9d6c215298e50da7383062b081dce0327db1fc"
+
+[materials]
+bluepot = [0.02721178, 0.05925352, 0.07323896]
+clay = [0.17886750, 0.04507641, 0.00785057]
+green = [0.01081638, 0.02198095, 0.00208978]
+paper = [0.82757083, 0.29569980, 0.03968191]
+plaster = [0.17886750, 0.07828832, 0.01960665]
+roof_edge = [0.00100619, 0.00162539, 0.00239938]
+stone = [0.02721178, 0.02584288, 0.01532520]
+wood = [0.00510317, 0.00185759, 0.00054180]
+wood_dark = [0.00201238, 0.00108359, 0.00061920]
+wood_light = [0.03007410, 0.00758410, 0.00162539]
+
+[[boxes]]
+centre = [0, 0, -0.22]
+size = [4.98, 6.38, 0.96]
+material = "stone"
+
+[[boxes]]
+centre = [0, 0, 1.63]
+size = [4.8, 6.2, 2.74]
+material = "wood_light"
+
+[[boxes]]
+centre = [2.46, -3.1, 1.63]
+size = [0.12, 0.17, 2.74]
+material = "wood"
+
+[[boxes]]
+centre = [-2.46, -3.1, 1.63]
+size = [0.12, 0.17, 2.74]
+material = "wood"
+
+[[boxes]]
+centre = [2.46, 0, 1.63]
+size = [0.12, 0.17, 2.74]
+material = "wood"
+
+[[boxes]]
+centre = [-2.46, 0, 1.63]
+size = [0.12, 0.17, 2.74]
+material = "wood"
+
+[[boxes]]
+centre = [2.46, 3.1, 1.63]
+size = [0.12, 0.17, 2.74]
+material = "wood"
+
+[[boxes]]
+centre = [-2.46, 3.1, 1.63]
+size = [0.12, 0.17, 2.74]
+material = "wood"
+
+[[boxes]]
+centre = [2.47, 0, 0.36]
+size = [0.14, 6.4, 0.16]
+material = "wood"
+
+[[boxes]]
+centre = [-2.47, 0, 0.36]
+size = [0.14, 6.4, 0.16]
+material = "wood"
+
+[[boxes]]
+centre = [0, -3.15, 0.36]
+size = [4.8, 0.13, 0.16]
+material = "wood"
+
+[[boxes]]
+centre = [0, 3.15, 0.36]
+size = [4.8, 0.13, 0.16]
+material = "wood"
+
+[[boxes]]
+centre = [2.47, 0, 2.9]
+size = [0.14, 6.4, 0.16]
+material = "wood"
+
+[[boxes]]
+centre = [-2.47, 0, 2.9]
+size = [0.14, 6.4, 0.16]
+material = "wood"
+
+[[boxes]]
+centre = [0, -3.15, 2.9]
+size = [4.8, 0.13, 0.16]
+material = "wood"
+
+[[boxes]]
+centre = [0, 3.15, 2.9]
+size = [4.8, 0.13, 0.16]
+material = "wood"
+
+[[prisms]]
+profile = [[0, 4.3], [-3.08, 3.0], [-3.08, 2.86], [0, 4.16]]
+y = [-3.75, 3.75]
+material = "green"
+
+[[prisms]]
+profile = [[0, 4.3], [3.08, 3.0], [3.08, 2.86], [0, 4.16]]
+y = [-3.75, 3.75]
+material = "green"
+
+[[prisms]]
+profile = [[-2.4, 3.0], [2.4, 3.0], [2.4, 3.147], [0, 4.16], [-2.4, 3.147]]
+y = [-3.1, 3.1]
+material = "plaster"
+
+[[boxes]]
+centre = [3.08, 0, 3.03]
+size = [0.14, 7.55, 0.16]
+material = "roof_edge"
+
+[[boxes]]
+centre = [-3.08, 0, 3.03]
+size = [0.14, 7.55, 0.16]
+material = "roof_edge"
+
+[[boxes]]
+centre = [2.6, 0, 1.5]
+size = [0.12, 5.2, 2.3]
+material = "wood_dark"
+
+[[boxes]]
+centre = [2.95, 0, 0.42]
+size = [0.58, 4.8, 0.12]
+material = "wood_light"
+
+[[boxes]]
+centre = [2.95, 0, 1.09]
+size = [0.58, 4.8, 0.12]
+material = "wood_light"
+
+[[boxes]]
+centre = [2.95, 0, 1.86]
+size = [0.58, 4.8, 0.12]
+material = "wood_light"
+
+[[boxes]]
+centre = [2.95, -2.3, 1.13]
+size = [0.58, 0.12, 2.0]
+material = "wood"
+
+[[boxes]]
+centre = [2.95, 0, 1.13]
+size = [0.58, 0.12, 2.0]
+material = "wood"
+
+[[boxes]]
+centre = [2.95, 2.3, 1.13]
+size = [0.58, 0.12, 2.0]
+material = "wood"
+
+[[tubes]]
+from = [2.97, -1.95, 0.5]
+to = [2.97, -1.95, 0.68]
+radius_m = [0.081, 0.1125]
+sides = 10
+material = "bluepot"
+
+[[tubes]]
+from = [2.97, -1.95, 0.68]
+to = [2.97, -1.95, 0.707]
+radius_m = [0.1125, 0.0945]
+sides = 10
+material = "bluepot"
+
+[[tubes]]
+from = [2.97, -1.17, 0.5]
+to = [2.97, -1.17, 0.68]
+radius_m = [0.081, 0.1125]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [2.97, -1.17, 0.68]
+to = [2.97, -1.17, 0.707]
+radius_m = [0.1125, 0.0945]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [2.97, -0.39, 0.5]
+to = [2.97, -0.39, 0.68]
+radius_m = [0.081, 0.1125]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [2.97, -0.39, 0.68]
+to = [2.97, -0.39, 0.707]
+radius_m = [0.1125, 0.0945]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [2.97, 0.39, 0.5]
+to = [2.97, 0.39, 0.68]
+radius_m = [0.081, 0.1125]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [2.97, 0.39, 0.68]
+to = [2.97, 0.39, 0.707]
+radius_m = [0.1125, 0.0945]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [2.97, 1.17, 0.5]
+to = [2.97, 1.17, 0.68]
+radius_m = [0.081, 0.1125]
+sides = 10
+material = "bluepot"
+
+[[tubes]]
+from = [2.97, 1.17, 0.68]
+to = [2.97, 1.17, 0.707]
+radius_m = [0.1125, 0.0945]
+sides = 10
+material = "bluepot"
+
+[[tubes]]
+from = [2.97, 1.95, 0.5]
+to = [2.97, 1.95, 0.68]
+radius_m = [0.081, 0.1125]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [2.97, 1.95, 0.68]
+to = [2.97, 1.95, 0.707]
+radius_m = [0.1125, 0.0945]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [2.97, -1.95, 1.17]
+to = [2.97, -1.95, 1.35]
+radius_m = [0.081, 0.1125]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [2.97, -1.95, 1.35]
+to = [2.97, -1.95, 1.377]
+radius_m = [0.1125, 0.0945]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [2.97, -1.17, 1.17]
+to = [2.97, -1.17, 1.35]
+radius_m = [0.081, 0.1125]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [2.97, -1.17, 1.35]
+to = [2.97, -1.17, 1.377]
+radius_m = [0.1125, 0.0945]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [2.97, -0.39, 1.17]
+to = [2.97, -0.39, 1.35]
+radius_m = [0.081, 0.1125]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [2.97, -0.39, 1.35]
+to = [2.97, -0.39, 1.377]
+radius_m = [0.1125, 0.0945]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [2.97, 0.39, 1.17]
+to = [2.97, 0.39, 1.35]
+radius_m = [0.081, 0.1125]
+sides = 10
+material = "bluepot"
+
+[[tubes]]
+from = [2.97, 0.39, 1.35]
+to = [2.97, 0.39, 1.377]
+radius_m = [0.1125, 0.0945]
+sides = 10
+material = "bluepot"
+
+[[tubes]]
+from = [2.97, 1.17, 1.17]
+to = [2.97, 1.17, 1.35]
+radius_m = [0.081, 0.1125]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [2.97, 1.17, 1.35]
+to = [2.97, 1.17, 1.377]
+radius_m = [0.1125, 0.0945]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [2.97, 1.95, 1.17]
+to = [2.97, 1.95, 1.35]
+radius_m = [0.081, 0.1125]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [2.97, 1.95, 1.35]
+to = [2.97, 1.95, 1.377]
+radius_m = [0.1125, 0.0945]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [2.97, -1.95, 1.94]
+to = [2.97, -1.95, 2.12]
+radius_m = [0.081, 0.1125]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [2.97, -1.95, 2.12]
+to = [2.97, -1.95, 2.147]
+radius_m = [0.1125, 0.0945]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [2.97, -1.17, 1.94]
+to = [2.97, -1.17, 2.12]
+radius_m = [0.081, 0.1125]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [2.97, -1.17, 2.12]
+to = [2.97, -1.17, 2.147]
+radius_m = [0.1125, 0.0945]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [2.97, -0.39, 1.94]
+to = [2.97, -0.39, 2.12]
+radius_m = [0.081, 0.1125]
+sides = 10
+material = "bluepot"
+
+[[tubes]]
+from = [2.97, -0.39, 2.12]
+to = [2.97, -0.39, 2.147]
+radius_m = [0.1125, 0.0945]
+sides = 10
+material = "bluepot"
+
+[[tubes]]
+from = [2.97, 0.39, 1.94]
+to = [2.97, 0.39, 2.12]
+radius_m = [0.081, 0.1125]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [2.97, 0.39, 2.12]
+to = [2.97, 0.39, 2.147]
+radius_m = [0.1125, 0.0945]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [2.97, 1.17, 1.94]
+to = [2.97, 1.17, 2.12]
+radius_m = [0.081, 0.1125]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [2.97, 1.17, 2.12]
+to = [2.97, 1.17, 2.147]
+radius_m = [0.1125, 0.0945]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [2.97, 1.95, 1.94]
+to = [2.97, 1.95, 2.12]
+radius_m = [0.081, 0.1125]
+sides = 10
+material = "clay"
+
+[[tubes]]
+from = [2.97, 1.95, 2.12]
+to = [2.97, 1.95, 2.147]
+radius_m = [0.1125, 0.0945]
+sides = 10
+material = "clay"
+
+[[prisms]]
+profile = [[2.52, 2.89], [3.87, 2.65], [3.87, 2.57], [2.52, 2.81]]
+y = [-3.6, 3.6]
+material = "green"
+
+[[boxes]]
+centre = [3.87, 0, 2.65]
+size = [0.1, 7.2, 0.12]
+material = "wood"
+
+[[boxes]]
+centre = [3.77, -3.3, 1.18]
+size = [0.16, 0.15, 2.9]
+material = "wood"
+
+[[boxes]]
+centre = [3.77, 3.3, 1.18]
+size = [0.16, 0.15, 2.9]
+material = "wood"
+
+[[tubes]]
+from = [3.74, -2.6, 1.85]
+to = [3.74, -2.6, 2.35]
+radius_m = [0.19, 0.19]
+sides = 8
+material = "paper"
+
+[[tubes]]
+from = [3.74, -2.6, 1.835]
+to = [3.74, -2.6, 1.885]
+radius_m = [0.12, 0.12]
+sides = 8
+material = "wood_dark"
+
+[[tubes]]
+from = [3.74, -2.6, 2.315]
+to = [3.74, -2.6, 2.365]
+radius_m = [0.12, 0.12]
+sides = 8
+material = "wood_dark"

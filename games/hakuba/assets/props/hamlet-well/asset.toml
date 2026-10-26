@@ -1,0 +1,57 @@
+# A compact stone well with water, timber supports and a closed pitched roof.
+kind = "prop"
+solid = true
+inputs_sha256 = "e87076d4bbb4257c949b0ed0c83606cabd8547173b039a62476635c722efc5f2"
+
+[materials]
+water = [0.00489631, 0.01738910, 0.00926431]
+well_cap = [0.11928019, 0.07828832, 0.03968191]
+well_stone = [0.07323896, 0.04507641, 0.01960665]
+wood_dark = [0.00201238, 0.00108359, 0.00061920]
+wood_light = [0.03007410, 0.00758410, 0.00162539]
+
+[[tubes]]
+from = [0, 0, -0.7]
+to = [0, 0, 0.88]
+radius_m = [0.82, 0.82]
+sides = 12
+material = "well_stone"
+
+[[tubes]]
+from = [0, 0, 0.88]
+to = [0, 0, 0.98]
+radius_m = [0.9, 0.9]
+sides = 12
+material = "well_cap"
+
+[[tubes]]
+from = [0, 0, 0.98]
+to = [0, 0, 0.99]
+radius_m = [0.63, 0.63]
+sides = 12
+material = "water"
+
+[[boxes]]
+centre = [-1.02, 0, 1.08]
+size = [0.16, 0.18, 2.8]
+material = "wood_light"
+
+[[boxes]]
+centre = [1.02, 0, 1.08]
+size = [0.16, 0.18, 2.8]
+material = "wood_light"
+
+[[boxes]]
+centre = [0, 0, 1.7]
+size = [2.3, 0.14, 0.14]
+material = "wood_dark"
+
+[[prisms]]
+profile = [[-1.34, 2.28], [1.34, 2.28], [0, 2.82]]
+y = [-0.97, 0.97]
+material = "wood_dark"
+
+[[boxes]]
+centre = [0, 0, 2.86]
+size = [0.16, 2.0, 0.13]
+material = "wood_light"

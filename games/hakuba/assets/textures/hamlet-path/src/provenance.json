@@ -1,0 +1,28 @@
+{
+  "prompt": "Seamlessly tileable square albedo texture for the packed dirt walking lanes of a small Japanese autumn hamlet in a painterly 3D game. Straight orthographic overhead view of the material, filling the whole image. Muted warm ochre and earth brown compacted soil, restrained tiny pale pebbles and fine gravel, a few small rusty orange maple leaf fragments, softly mottled hand-painted surface variation. The physical repeat covers about 4 metres. Small-scale details, fairly uniform overall colour and value, no large rocks, no ruts or cracks, no grass or plants, no road markings, no text, no borders, no perspective, no cast shadows or baked directional lighting, no vignette or central focal feature. Opposite edges must join naturally in both directions. Stylized brushwork should harmonize with softly painted grass, warm plaster and autumn maple foliage.",
+  "purpose": "Shared packed-earth lanes and courtyard",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/generations",
+  "prompt_sha256": "eaff7b512f5e8f179ba657ad2df2404a89ab6468a6f84bbff2df1613279fa095",
+  "status": "done",
+  "started_at": "2026-10-26T21:33:04.947761+00:00",
+  "output": "path.png",
+  "output_sha256": "2520a8777f017579d7e232b5a6c64515a3eea581c8d1a944c5ea101856d847e5",
+  "usage": {
+    "input_tokens": 183,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 183
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 1939
+  },
+  "elapsed_seconds": 54.2,
+  "finished_at": "2026-10-26T21:33:59.186696+00:00"
+}

@@ -7,6 +7,9 @@ use super::scenery::{Exclusion, Land, Scenery};
 #[path = "../../../../assets/world/src/regions/momiji-coast/layout.rs"]
 mod momiji_coast;
 
+#[path = "../../../../assets/world/src/regions/momiji-hamlet/layout.rs"]
+mod momiji_hamlet;
+
 /// What a region adds to the world. Positions are in metres, in the map's frame: x east, y north, z up.
 pub trait Region {
     /// The region's folder name.
@@ -36,4 +39,4 @@ pub trait Region {
     fn fastens_to(&self) -> Vec<&'static str>;
 }
 
-pub const REGIONS: [&dyn Region; 1] = [&momiji_coast::MomijiCoast];
+pub const REGIONS: [&dyn Region; 2] = [&momiji_coast::MomijiCoast, &momiji_hamlet::MomijiHamlet];
