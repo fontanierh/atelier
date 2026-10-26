@@ -1,9 +1,8 @@
-//! The wind: leaves and grass sway as two slow waves roll across the world, as in Yorimichi, so neighbouring plants
-//! lean together and far ones move out of step. A model's export says how far each vertex sways at a full gust, in
-//! metres, in its second texture coordinates: the tips of blades and the tops of crowns most, roots and trunks not at
-//! all. A part that sways is drawn with its own material and this vertex shader, in every pass, so its shadow sways
-//! with it and temporal anti-aliasing follows it. Yorimichi also pushed plants away from the player; Hakuba has no one
-//! walking yet.
+//! The wind, as in Yorimichi: its strength rises and falls with a quicker flutter, and two slow waves roll across the
+//! world, so neighbouring plants lean together and far ones move out of step. A model's export says how far each vertex
+//! sways, in metres, in its second texture coordinates: leaves and the tips of blades fully, roots and trunks not at
+//! all. A part that sways is drawn with its own material and the vertex shader in `wind.wesl`, in every pass, so its
+//! shadow sways with it. Yorimichi also pushed plants away from the player; Hakuba has no one walking yet.
 
 use bevy::asset::embedded_asset;
 use bevy::ecs::system::SystemParam;

@@ -1,7 +1,7 @@
 # A smaller maple, 5.2 m high, its crown a ring of clumps around a high one.
 kind = "plant"
 seed = 22
-inputs_sha256 = "44e3262236d17eb1e4f4cdbaea7cf66e1bdf72a334d91d69035fe2aa9c789882"
+inputs_sha256 = "8cf91734b65f1d6a0130670082cbcc30fb276bd1a19c73dfae6a77d38cec9bf8"
 
 [wood]
 texture = "bark"
@@ -20,7 +20,7 @@ card_m = 1.0
 normals_from = [0, 0, 3.22]
 vertical_bias = 0.3
 shell = 0.35
-sway_m = 0.22
+sway_m = 0.16
 lobes = [
     { at = [0.32, -0.25, 4.32], radii = [1.38, 1.38, 0.78] },
     { at = [1.67, -0.54, 3.53], radii = [1.05, 1.05, 0.78] },

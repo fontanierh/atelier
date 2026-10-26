@@ -19,11 +19,17 @@ import bevy_pbr::render::{mesh_functions, view_transformations::position_world_t
 // The way the wind blows, across the ground (x and z).
 const WIND: vec2<f32> = vec2<f32>(0.3, -0.95);
 
-// How far a vertex that sways `metres` at a full gust moves at `time`, at `at`: two slow waves rolling across the
-// world, as in Yorimichi, so neighbouring plants lean together and far ones out of step.
+// How far a vertex that sways `metres` moves at `time`, at `at`, as in Yorimichi: the wind's strength rises and falls
+// over seconds, about 1, with a quicker flutter, and two slow waves roll across the world on top of it, so
+// neighbouring plants lean together and far ones out of step. A vertex usually moves about half its `metres`, and at
+// the strongest gusts nearly three times as far.
 fn sway(at: vec3<f32>, time: f32, metres: f32) -> vec3<f32> {
+    let strength = max(
+        0.15,
+        1.0 + 0.45 * sin(0.37 * time + 0.04 * at.x) + 0.3 * sin(1.1 * time + 0.07 * at.z) + 0.15 * sin(2.9 * time),
+    );
     let gust = 0.6 * sin(0.28 * time + 0.11 * at.x + 0.16 * at.z) + 0.3 * sin(0.7 * time + 0.2 * at.y) + 0.5;
-    let along = normalize(WIND) * gust / 1.4 * metres;
+    let along = normalize(WIND) * strength * gust * metres;
     return vec3<f32>(along.x, 0.0, along.y);
 }
 
@@ -76,12 +82,14 @@ fn vertex(vertex_in: Vertex) -> VertexOutput {
         mesh_functions::mesh_tangent_local_to_world(world_from_local, vertex.tangent, vertex_in.instance_index);
     @if(VERTEX_COLORS)
     out.color = vertex.color;
-    // Where the vertex was last frame, swayed as it was then, so temporal anti-aliasing follows the leaves.
+    // Where the vertex was last frame, swayed as it is now: temporal anti-aliasing takes swaying leaves as still, as
+    // Yorimichi's did. It keeps blending many frames over them, so their cut-out edges stay smooth; following their
+    // motion, it would take a tenth of each new frame and their edges would flicker. A leaf's edge may soften a little
+    // in strong wind.
     @if(MOTION_VECTOR_PREPASS) {
         let previous_from_local = mesh_functions::get_previous_world_from_local(vertex_in.instance_index);
         let before = mesh_functions::mesh_position_local_to_world(previous_from_local, vec4<f32>(vertex.position, 1.0));
-        let then = globals.time - globals.delta_time;
-        out.previous_world_position = vec4<f32>(before.xyz + sway(before.xyz, then, vertex.uv_b.x), 1.0);
+        out.previous_world_position = vec4<f32>(before.xyz + sway(still.xyz, globals.time, vertex.uv_b.x), 1.0);
     }
     @if(VERTEX_OUTPUT_INSTANCE_INDEX)
     out.instance_index = vertex_in.instance_index;

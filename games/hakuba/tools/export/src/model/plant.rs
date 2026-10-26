@@ -69,8 +69,7 @@ struct Leaves {
     vertical_bias: f64,
     /// The share of cards pushed from a clump's inside out to its outer part, where they are seen.
     shell: f64,
-    /// How far the cards at the top of the crown sway in the wind at full gust, in metres. Lower cards sway less, in
-    /// proportion to their height; the wood stands still.
+    /// How far the cards sway in the wind, in metres: a usual gust moves them about half that. The wood stands still.
     sway_m: f64,
 }
 
@@ -100,7 +99,8 @@ struct Tuft {
     colours: Vec<Colour>,
     /// How much darker a blade is at its root than at its tip.
     root_shade: f64,
-    /// How far a blade's tip sways in the wind at full gust, in metres. Its root stands still.
+    /// How far a blade's tip sways in the wind, in metres: a usual gust moves it about half that. Its root stands
+    /// still.
     sway_m: f64,
 }
 
@@ -196,7 +196,6 @@ fn cards(leaves: &Leaves, count: usize, size: f64, random: &mut Random) -> Mesh 
     let total: f64 = volumes.iter().sum();
     let normals_from = DVec3::from_array(leaves.normals_from);
     let normal = |at: DVec3| (at - normals_from).normalize_or(DVec3::Z) + DVec3::Z * leaves.vertical_bias;
-    let top = leaves.lobes.iter().map(|lobe| lobe.at[2] + lobe.radii[2]).fold(0.0, f64::max);
     for (lobe, volume) in leaves.lobes.iter().zip(volumes) {
         let (centre, radii) = (DVec3::from_array(lobe.at), DVec3::from_array(lobe.radii));
         for _ in 0..(count as f64 * volume / total).round() as usize {
@@ -212,11 +211,8 @@ fn cards(leaves: &Leaves, count: usize, size: f64, random: &mut Random) -> Mesh 
             let low = DVec2::new((cell % 2) as f64 * 0.5, (cell / 2) as f64 * 0.5);
             // Cards deep inside the crown are darker, as the leaves around them shade them.
             let shade = 0.22 + 0.78 * p.length().min(1.0);
-            let at = centre + p * radii;
-            card(&mut mesh, at, width, turn, normal, (low, 0.5), shade);
-            // A card moves as one, so its leaves keep their shape.
-            let sway = (leaves.sway_m * (at.z / top).clamp(0.0, 1.0)) as f32;
-            mesh.sway.resize(mesh.positions.len(), sway);
+            card(&mut mesh, centre + p * radii, width, turn, normal, (low, 0.5), shade);
+            mesh.sway.resize(mesh.positions.len(), leaves.sway_m as f32);
         }
     }
     mesh

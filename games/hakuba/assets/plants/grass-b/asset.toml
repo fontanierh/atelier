@@ -1,7 +1,7 @@
 # Another tuft of eight green blades, about 0.4 m high, drawn from another seed.
 kind = "plant"
 seed = 41
-inputs_sha256 = "616b1935fdb5ce6030d4d682341b0774aaf32d60e4fc77923a1d9f275c6e8af0"
+inputs_sha256 = "1104e1f62dc6597e03e82d472ffcd54d16f860911de953a2df9207cbc610f0a2"
 
 [tuft]
 blades = 8
@@ -11,7 +11,7 @@ width_m = [0.055, 0.095]
 curl_m = [0.14, 0.27]
 depth_m = 0.06
 root_shade = 0.6
-sway_m = 0.1
+sway_m = 0.16
 colours = [
     { colour = [0.24, 0.35, 0.13], weight = 4 },
     { colour = [0.30, 0.40, 0.16], weight = 4 },
