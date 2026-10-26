@@ -1,8 +1,13 @@
 //! What the player stands on and walks into: every mesh of the tiles shown, the ground, roads and rails, but their
 //! cables, which hang overhead, and what each is made of. Models marked solid in their export use the same rays.
 
+use bevy::camera::primitives::Aabb;
+use bevy::camera::visibility::{InheritedVisibility, ViewVisibility};
 use bevy::ecs::system::SystemParam;
-use bevy::picking::mesh_picking::ray_cast::{MeshRayCast, MeshRayCastSettings, RayCastBackfaces, RayCastVisibility};
+use bevy::mesh::{Indices, PrimitiveTopology};
+use bevy::picking::mesh_picking::ray_cast::{
+    Backfaces, RayCastBackfaces, RayMeshHit, ray_aabb_intersection_3d, ray_mesh_intersection,
+};
 use bevy::prelude::*;
 use bevy::world_serialization::WorldInstanceReady;
 
@@ -101,30 +106,116 @@ pub struct Hit {
     pub surface: Surface,
 }
 
+type SolidMesh = (&'static Solid, &'static Mesh3d, &'static Aabb, &'static GlobalTransform, Has<RayCastBackfaces>);
+type RayVisible = (With<InheritedVisibility>, With<ViewVisibility>);
+
 /// Casting rays at what is solid.
 #[derive(SystemParam)]
 pub struct Ground<'w, 's> {
-    cast: MeshRayCast<'w, 's>,
-    solids: Query<'w, 's, &'static Solid>,
+    meshes: Res<'w, Assets<Mesh>>,
+    solids: Query<'w, 's, SolidMesh, RayVisible>,
 }
 
 impl Ground<'_, '_> {
+    /// @cc [owner:fontanierh,label:performance] bounded-solid-rays
+    /// Ground rays MUST consider only solid meshes and skip triangle tests for bounds beyond the requested reach.
+    ///
     /// The first solid thing a ray from `from` toward `direction` meets within `reach` metres.
     pub fn cast(&mut self, from: Vec3, direction: Dir3, reach: f32) -> Option<Hit> {
-        let solids = &self.solids;
-        let solid = |entity: Entity| solids.contains(entity);
-        let settings = MeshRayCastSettings::default()
-            .with_visibility(RayCastVisibility::Any)
-            .with_filter(&solid)
-            .always_early_exit();
-        let (entity, hit) = self.cast.cast_ray(Ray3d::new(from, direction), &settings).first()?;
-        let normal = if hit.normal.dot(*direction) > 0.0 { -hit.normal } else { hit.normal };
-        let surface = solids.get(*entity).map_or(Surface::Built, |solid| solid.0);
-        (hit.distance <= reach).then_some(Hit { point: hit.point, normal, distance: hit.distance, surface })
+        let ray = Ray3d::new(from, direction);
+        // Allow for rounding at the boundary; the final mesh hit still enforces the exact reach.
+        let margin = reach.abs().max(1.0) * 1e-5;
+        let mut candidates: Vec<_> = self
+            .solids
+            .iter()
+            .filter_map(|(solid, mesh, bounds, transform, backfaces)| {
+                let bounds = Aabb3d::new(bounds.center, bounds.half_extents);
+                ray_aabb_intersection_3d(ray, &bounds, &transform.affine())
+                    .filter(|distance| *distance <= reach + margin)
+                    .map(|distance| (distance, solid, mesh, transform, backfaces))
+            })
+            .collect();
+        candidates.sort_unstable_by(|a, b| a.0.total_cmp(&b.0));
+        let mut nearest: Option<Hit> = None;
+        for (entry, solid, mesh, transform, backfaces) in candidates {
+            if nearest.is_some_and(|hit| entry > hit.distance + margin) {
+                break;
+            }
+            let Some(mesh) = self.meshes.get(&mesh.0) else { continue };
+            let Some(hit) = intersect(mesh, transform, ray, backfaces) else { continue };
+            if hit.distance <= reach && nearest.is_none_or(|previous| hit.distance < previous.distance) {
+                let normal = if hit.normal.dot(*direction) > 0.0 { -hit.normal } else { hit.normal };
+                nearest = Some(Hit { point: hit.point, normal, distance: hit.distance, surface: solid.0 });
+            }
+        }
+        nearest
     }
 
     /// The solid ground below `at`, from up to `above` metres over it to `below` metres under it.
     pub fn below(&mut self, at: Vec3, above: f32, below: f32) -> Option<Hit> {
         self.cast(at + Vec3::Y * above, Dir3::NEG_Y, above + below)
+    }
+}
+
+/// Adapts Bevy's mesh data to its public triangle intersection routine.
+fn intersect(mesh: &Mesh, transform: &GlobalTransform, ray: Ray3d, backfaces: bool) -> Option<RayMeshHit> {
+    if mesh.primitive_topology() != PrimitiveTopology::TriangleList {
+        return None;
+    }
+    let positions = mesh.try_attribute(Mesh::ATTRIBUTE_POSITION).ok()?.as_float3()?;
+    let normals = mesh.try_attribute(Mesh::ATTRIBUTE_NORMAL).ok().and_then(|values| values.as_float3());
+    let cull = if backfaces { Backfaces::Include } else { Backfaces::Cull };
+    let transform = transform.affine();
+    match mesh.try_indices().ok() {
+        Some(Indices::U16(indices)) => {
+            ray_mesh_intersection(ray, &transform, positions, normals, Some(indices), None, cull)
+        }
+        Some(Indices::U32(indices)) => {
+            ray_mesh_intersection(ray, &transform, positions, normals, Some(indices), None, cull)
+        }
+        None => ray_mesh_intersection::<u32>(ray, &transform, positions, normals, None, None, cull),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bevy::ecs::system::RunSystemOnce;
+
+    #[test]
+    fn bounded_rays_keep_nearest_transformed_hits_and_reject_distant_ones() {
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins).init_resource::<Assets<Mesh>>();
+        let cube = app.world_mut().resource_mut::<Assets<Mesh>>().add(Mesh::from(Cuboid::new(1.0, 1.0, 1.0)));
+        let bounds = Aabb::from_min_max(Vec3::splat(-0.5), Vec3::splat(0.5));
+        let near = Transform::from_xyz(5.0, 0.0, 0.0)
+            .with_rotation(Quat::from_rotation_y(std::f32::consts::FRAC_PI_4))
+            .with_scale(Vec3::new(2.0, 1.0, 0.75));
+        let far = Transform::from_xyz(20.0, 0.0, 0.0);
+        for (transform, surface) in [(near, Surface::Built), (far, Surface::Road)] {
+            app.world_mut().spawn((
+                Mesh3d(cube.clone()),
+                transform,
+                GlobalTransform::from(transform),
+                bounds,
+                Visibility::default(),
+                Solid(surface),
+                RayCastBackfaces,
+            ));
+        }
+        app.world_mut()
+            .run_system_once(move |mut ground: Ground| {
+                let cast = |ground: &mut Ground, from, reach| ground.cast(from, Dir3::X, reach);
+                assert!(cast(&mut ground, Vec3::ZERO, 2.0).is_none());
+                let near_hit = cast(&mut ground, Vec3::ZERO, 10.0).expect("rotated and scaled solid is within reach");
+                assert_eq!(near_hit.surface, Surface::Built);
+                let long_hit = cast(&mut ground, Vec3::ZERO, 30.0).unwrap();
+                assert_eq!(long_hit.surface, near_hit.surface);
+                assert!((long_hit.distance - near_hit.distance).abs() < 1e-5);
+                assert!(cast(&mut ground, Vec3::new(12.0, 0.0, 0.0), 4.0).is_none());
+                assert_eq!(cast(&mut ground, Vec3::new(12.0, 0.0, 0.0), 10.0).unwrap().surface, Surface::Road);
+                assert_eq!(cast(&mut ground, near.translation, 3.0).unwrap().surface, Surface::Built);
+            })
+            .unwrap();
     }
 }
