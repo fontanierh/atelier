@@ -95,8 +95,9 @@ every animation fitted to it with the character's changes. Its rig bones are ren
 | `animations`   | its changes to each animation, by name      |
 
 **`texture`** writes an image as `<folder name>.ktx2`, with every mipmap level so it draws smoothly near and far.
-Each level averages the one above it in linear light and is stored as 8-bit sRGB, compressed with zstd. Its sides
-must be powers of two.
+Each level averages the one above it in linear light, each colour weighted by its opacity, and is stored as 8-bit
+sRGB, compressed with zstd. In an image with clear parts, such as leaves, every level keeps at least the share of
+pixels opaque enough to show, so leaves stay as full far away as near. Its sides must be powers of two.
 
 | Setting  | Meaning                                       |
 |----------|-----------------------------------------------|
