@@ -102,7 +102,7 @@ fn list_clips(
         commands.entity(*list).with_child((
             button(name),
             observe(move |_: On<Activate>, mut commands: Commands| {
-                commands.trigger(Play { entity: character, clip: clip.clone() });
+                commands.trigger(Play::looping(character, clip.clone()));
             }),
         ));
     }
