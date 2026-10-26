@@ -1,6 +1,8 @@
 //! The `texture` kind: an image other assets name, written as `<folder name>.ktx2` with every mipmap level, so it
-//! draws smoothly both near and far. Each level averages the one above it in linear light, and is stored as 8-bit
-//! sRGB, compressed with zstd. A texture's sides must be powers of two.
+//! draws smoothly both near and far. Each level averages the one above it in linear light, each colour weighted by
+//! its opacity so clear pixels add no colour, and is stored as 8-bit sRGB, compressed with zstd. In an image with
+//! clear parts, every level keeps at least the share of pixels at least as opaque as [`ALPHA_CUTOFF`], so leaves cut out at
+//! that cutoff cover as much far away as near. A texture's sides must be powers of two.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -29,9 +31,18 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     while let Some(smaller) = levels.last().unwrap().halved() {
         levels.push(smaller);
     }
+    let coverage = levels[0].coverage(1.0);
+    if coverage < 1.0 {
+        for level in &mut levels[1..] {
+            level.keep_coverage(coverage);
+        }
+    }
     fs::write(output, ktx2(width, height, &levels)?)?;
     Ok(())
 }
+
+/// The opacity at which a masked material cuts a pixel out: glTF's default, which every masked material uses.
+const ALPHA_CUTOFF: f32 = 0.5;
 
 /// One mipmap level: its size in pixels, and its pixels row by row, four sRGB bytes each.
 struct Level {
@@ -42,7 +53,7 @@ struct Level {
 
 impl Level {
     /// The next level, half as wide and high (a side already one pixel stays one), each pixel the average of those it
-    /// covers in linear light; none past one pixel.
+    /// covers in linear light, each colour weighted by its opacity; none past one pixel.
     fn halved(&self) -> Option<Level> {
         if self.width == 1 && self.height == 1 {
             return None;
@@ -52,19 +63,42 @@ impl Level {
         let mut rgba = Vec::with_capacity((width * height * 4) as usize);
         for y in 0..height {
             for x in 0..width {
-                let mut sum = [0.0f32; 4];
+                // The colours weighted by opacity, the plain colours (for a pixel clear all over), and the opacity.
+                let (mut weighted, mut plain, mut opacity) = ([0.0f32; 3], [0.0f32; 3], 0.0);
                 for (dx, dy) in (0..step_x).flat_map(|dx| (0..step_y).map(move |dy| (dx, dy))) {
                     let at = (((y * step_y + dy) * self.width + x * step_x + dx) * 4) as usize;
-                    for (c, total) in sum.iter_mut().enumerate() {
-                        let byte = self.rgba[at + c];
-                        *total += if c < 3 { linear(byte) } else { byte as f32 / 255.0 };
+                    let alpha = self.rgba[at + 3] as f32 / 255.0;
+                    for c in 0..3 {
+                        weighted[c] += linear(self.rgba[at + c]) * alpha;
+                        plain[c] += linear(self.rgba[at + c]);
                     }
+                    opacity += alpha;
                 }
                 let n = (step_x * step_y) as f32;
-                rgba.extend([srgb(sum[0] / n), srgb(sum[1] / n), srgb(sum[2] / n), (sum[3] / n * 255.0).round() as u8]);
+                let colour = |c: usize| if opacity > 0.0 { weighted[c] / opacity } else { plain[c] / n };
+                rgba.extend([srgb(colour(0)), srgb(colour(1)), srgb(colour(2)), (opacity / n * 255.0).round() as u8]);
             }
         }
         Some(Level { width, height, rgba })
+    }
+
+    /// The share of pixels at least as opaque as the cutoff once every opacity is multiplied by `scale`.
+    fn coverage(&self, scale: f32) -> f32 {
+        let pixels = self.rgba.len() / 4;
+        let covered = self.rgba.chunks(4).filter(|p| p[3] as f32 / 255.0 * scale >= ALPHA_CUTOFF).count();
+        covered as f32 / pixels as f32
+    }
+
+    /// Scales every opacity by the least factor that makes the level cover at least `share` of its pixels at the cutoff.
+    fn keep_coverage(&mut self, share: f32) {
+        let (mut low, mut high) = (0.0f32, 4.0f32);
+        for _ in 0..24 {
+            let middle = (low + high) / 2.0;
+            if self.coverage(middle) < share { low = middle } else { high = middle }
+        }
+        for pixel in self.rgba.chunks_mut(4) {
+            pixel[3] = (pixel[3] as f32 * high).round().min(255.0) as u8;
+        }
     }
 }
 
@@ -154,6 +188,27 @@ mod tests {
             let pixels: Vec<u8> = std::io::Read::bytes(pixels).map(|b| b.unwrap()).collect();
             assert_eq!(pixels, level.rgba);
         }
+    }
+
+    /// A clear pixel adds no colour to the level below it: an opaque red beside a clear white stays red.
+    #[test]
+    fn clear_pixels_add_no_colour() {
+        let level = Level { width: 2, height: 1, rgba: vec![255, 0, 0, 255, 255, 255, 255, 0] };
+        assert_eq!(level.halved().unwrap().rgba, [255, 0, 0, 128]);
+    }
+
+    /// A sparse cut-out does not fade away as it shrinks: one opaque pixel in four averages to a quarter opacity,
+    /// below the cutoff, and is raised back above it, while clear parts stay clear.
+    #[test]
+    fn keeps_coverage() {
+        let opaque = |k: u32| k.is_multiple_of(2) && (k / 8).is_multiple_of(2) && k % 8 < 4;
+        let rgba = (0..64).flat_map(|k| [0, 0, 0, if opaque(k) { 255 } else { 0 }]).collect();
+        let full = Level { width: 8, height: 8, rgba };
+        let mut level = full.halved().unwrap();
+        assert_eq!(level.coverage(1.0), 0.0);
+        level.keep_coverage(full.coverage(1.0));
+        assert!(level.coverage(1.0) >= full.coverage(1.0));
+        assert!(level.rgba.chunks(4).filter(|p| p[3] == 0).count() == 8);
     }
 
     /// A mipmap averages in linear light: black and white make a mid grey of 188, not 128.

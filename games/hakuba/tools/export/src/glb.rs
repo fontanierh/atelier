@@ -272,31 +272,63 @@ impl Glb {
         }
     }
 
-    /// Adds a matte material showing the image at `uri`, relative to the file, repeated across its mesh's texture
-    /// positions and smoothed between its mipmap levels. It reflects no light as a mirror would, even seen at a low
-    /// angle, so a far road keeps its colour rather than showing the sky.
-    pub fn add_texture_material(&mut self, name: &str, uri: &str) -> usize {
-        if self.json.get("samplers").is_none() {
+    /// Adds `material` and returns its index. Every material is matte: it reflects no light as a mirror would, even
+    /// seen at a low angle, so a far road keeps its colour rather than showing the sky. Images repeat across their
+    /// mesh's texture positions and are smoothed between their mipmap levels.
+    pub fn add_material(&mut self, material: &Material) -> usize {
+        if self.json.get("extensionsUsed").is_none() {
             push(&mut self.json, "extensionsUsed", json!("KHR_materials_specular"));
-            // Repeat both ways; linear magnification, and linear between and within mipmap levels.
-            push(
-                &mut self.json,
-                "samplers",
-                json!({ "wrapS": 10497, "wrapT": 10497, "magFilter": 9729, "minFilter": 9987 }),
-            );
         }
-        let image = push(&mut self.json, "images", json!({ "uri": uri }));
-        let texture = push(&mut self.json, "textures", json!({ "source": image, "sampler": 0 }));
-        let material = json!({
-            "name": name,
-            "pbrMetallicRoughness": { "baseColorTexture": { "index": texture }, "metallicFactor": 0.0, "roughnessFactor": 1.0 },
+        let mut colour = json!({});
+        if let Some(uri) = material.texture {
+            if self.json.get("samplers").is_none() {
+                // Repeat both ways; linear magnification, and linear between and within mipmap levels.
+                push(
+                    &mut self.json,
+                    "samplers",
+                    json!({ "wrapS": 10497, "wrapT": 10497, "magFilter": 9729, "minFilter": 9987 }),
+                );
+            }
+            let image = push(&mut self.json, "images", json!({ "uri": uri }));
+            let texture = push(&mut self.json, "textures", json!({ "source": image, "sampler": 0 }));
+            colour["baseColorTexture"] = json!({ "index": texture });
+        }
+        if material.colour != [1.0; 3] {
+            let [r, g, b] = material.colour;
+            colour["baseColorFactor"] = json!([r, g, b, 1.0]);
+        }
+        colour["metallicFactor"] = json!(0.0);
+        colour["roughnessFactor"] = json!(1.0);
+        let mut json = json!({
+            "name": material.name,
+            "pbrMetallicRoughness": colour,
             "extensions": { "KHR_materials_specular": { "specularFactor": 0.0 } },
         });
-        push(&mut self.json, "materials", material)
+        if material.cut_out {
+            json["alphaMode"] = json!("MASK");
+        }
+        if material.two_sided {
+            json["doubleSided"] = json!(true);
+        }
+        push(&mut self.json, "materials", json)
     }
 
-    /// Adds a mesh of triangles and a node in the default scene showing it.
-    pub fn add_mesh(&mut self, name: &str, mesh: &Mesh) {
+    /// Adds a mesh made of `parts`, each its own triangles and material, and a node named `name` in the default scene
+    /// showing it, and returns the node's index.
+    pub fn add_mesh(&mut self, name: &str, parts: &[&Mesh]) -> usize {
+        let primitives: Vec<Value> = parts.iter().map(|part| self.add_primitive(part)).collect();
+        let index = push(&mut self.json, "meshes", json!({ "name": name, "primitives": primitives }));
+        let node = push(&mut self.json, "nodes", json!({ "name": name, "mesh": index }));
+        self.add_to_scene(node);
+        node
+    }
+
+    /// Gives `node` `extras`, data for the game.
+    pub fn set_extras(&mut self, node: usize, extras: Value) {
+        self.json["nodes"][node]["extras"] = extras;
+    }
+
+    fn add_primitive(&mut self, mesh: &Mesh) -> Value {
         let mut attributes = json!({
             "POSITION": self.add_floats(&flat(&mesh.positions), "VEC3", true),
             "NORMAL": self.add_floats(&flat(&mesh.normals), "VEC3", false),
@@ -304,10 +336,19 @@ impl Glb {
         if !mesh.uvs.is_empty() {
             attributes["TEXCOORD_0"] = json!(self.add_floats(&flat(&mesh.uvs), "VEC2", false));
         }
+        if !mesh.colours.is_empty() {
+            attributes["COLOR_0"] = json!(self.add_floats(&flat(&mesh.colours), "VEC4", false));
+        }
+        if !mesh.sway.is_empty() {
+            attributes["TEXCOORD_1"] = json!(self.add_floats(&flat(&mesh.sway), "VEC2", false));
+        }
         let indices = self.add_indices(&mesh.indices);
-        let primitive = json!({ "attributes": attributes, "indices": indices, "material": mesh.material });
-        let index = push(&mut self.json, "meshes", json!({ "name": name, "primitives": [primitive] }));
-        let node = push(&mut self.json, "nodes", json!({ "name": name, "mesh": index }));
+        json!({ "attributes": attributes, "indices": indices, "material": mesh.material })
+    }
+
+    /// Adds an empty node named `name` carrying `extras`, data for the game, to the default scene.
+    pub fn add_data(&mut self, name: &str, extras: Value) {
+        let node = push(&mut self.json, "nodes", json!({ "name": name, "extras": extras }));
         self.add_to_scene(node);
     }
 
@@ -479,15 +520,46 @@ fn flat<const N: usize>(values: &[[f32; N]]) -> Vec<f32> {
     values.iter().flatten().copied().collect()
 }
 
-/// Triangles to add with [`Glb::add_mesh`]: per vertex a position, a normal, and optionally texture coordinates;
-/// three indices per triangle, counter-clockwise seen from the front.
-#[derive(Default)]
+/// Triangles to add with [`Glb::add_mesh`]: per vertex a position, a normal, and optionally texture coordinates and
+/// a linear colour that multiplies the material's; three indices per triangle, counter-clockwise seen from the front.
+#[derive(Clone, Default)]
 pub struct Mesh {
     pub positions: Vec<[f32; 3]>,
     pub normals: Vec<[f32; 3]>,
     pub uvs: Vec<[f32; 2]>,
+    pub colours: Vec<[f32; 4]>,
+    /// How each vertex moves in the wind, for a mesh that sways: how far it bends, in metres, and the phase of its
+    /// part (a leaf card or a blade), from 0 to 1, so neighbouring parts flutter out of step, or -1 for wood, which
+    /// does not flutter. Written as a second set
+    /// of texture coordinates, which the game's wind material reads.
+    pub sway: Vec<[f32; 2]>,
     pub indices: Vec<u32>,
     pub material: usize,
+}
+
+/// How a surface looks, for [`Glb::add_material`].
+pub struct Material<'a> {
+    pub name: &'a str,
+    /// The image it shows, by its URI relative to the file.
+    pub texture: Option<&'a str>,
+    /// Its linear colour, which multiplies the image.
+    pub colour: [f64; 3],
+    /// Whether it is cut out where its image is less than half opaque.
+    pub cut_out: bool,
+    /// Whether it shows from both sides.
+    pub two_sided: bool,
+}
+
+impl<'a> Material<'a> {
+    /// A material showing the image at `uri`, opaque and seen from the front.
+    pub fn textured(name: &'a str, uri: &'a str) -> Self {
+        Self { name, texture: Some(uri), colour: [1.0; 3], cut_out: false, two_sided: false }
+    }
+}
+
+/// A vector of a frame with z up (x east, y north) in glTF's, with y up (x east, z south).
+pub fn y_up(v: DVec3) -> DVec3 {
+    DVec3::new(v.x, v.z, -v.y)
 }
 
 fn items<'a>(value: &'a Value, key: &str) -> impl Iterator<Item = &'a Value> {

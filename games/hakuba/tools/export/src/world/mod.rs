@@ -14,10 +14,12 @@
 //! y north, z up) becomes the game's (x east, y up, z south).
 
 mod checksums;
+mod curve;
 mod ground;
 mod overlay;
 mod regions;
 mod ribbon;
+mod scenery;
 mod surface;
 
 use std::collections::{BTreeMap, HashMap};
@@ -29,9 +31,10 @@ use glam::{DQuat, DVec2, DVec3};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
-use crate::glb::{Glb, Mesh};
+use crate::glb::{Glb, Material, Mesh, y_up as game};
 use ground::Ground;
 use overlay::Overlay;
+use scenery::{Grid, Land, TileScenery};
 use surface::Surface;
 
 #[derive(Serialize, Deserialize)]
@@ -62,6 +65,15 @@ pub struct Settings {
 /// How many fine steps one coarse step of a middle tile spans.
 const COARSE: usize = 4;
 
+/// The assets the world reads: the models whose anchors the regions' cables fasten to.
+pub fn reads() -> Vec<String> {
+    let mut reads: Vec<String> =
+        regions::REGIONS.iter().flat_map(|region| region.fastens_to()).map(String::from).collect();
+    reads.sort();
+    reads.dedup();
+    reads
+}
+
 pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     let [x, y] = settings.south_west_m;
     let ground =
@@ -74,9 +86,25 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         }
     }
     for texture in overlays.iter().map(|overlay| &overlay.texture).chain([&settings.ground_texture]) {
-        texture_uri(texture)?;
+        crate::uri_of_texture(texture)?;
     }
     let [[first_column, first_row], [last_column, last_row]] = settings.tiles;
+    let span = |k: usize| (k * settings.tile_steps, (k + 1) * settings.tile_steps);
+    let whole =
+        Tile { columns: (span(first_column).0, span(last_column).1), rows: (span(first_row).0, span(last_row).1) };
+    if !ground.covers(whole.columns, whole.rows) {
+        bail!("the tiles reach past the ground");
+    }
+    let land = Land {
+        ground: &ground,
+        low: ground.position(whole.columns.0 as f64, whole.rows.0 as f64),
+        high: ground.position(whole.columns.1 as f64, whole.rows.1 as f64),
+    };
+    let grid = Grid { south_west: DVec2::new(x, y), tile_m: settings.tile_steps as f64 * settings.ground_step_m };
+    // The full tiles' ground across the whole exported map, which seats the cables' ends.
+    let drawn = Surface::new(&whole.ground(&ground, Detail::Full, 0, 1.0));
+    let sceneries = regions::REGIONS.iter().map(|region| (region.scenery(&land), region.fastens_to())).collect();
+    let mut scenery = scenery::share(sceneries, &land, &grid, &overlays, &drawn)?;
 
     let tiles = folder.join("tiles");
     fs::create_dir_all(&tiles)?;
@@ -94,20 +122,17 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     let mut index = Glb::from_json(json!({ "asset": { "version": "2.0" } }));
     for column in first_column..=last_column {
         for row in first_row..=last_row {
-            let span = |k: usize| (k * settings.tile_steps, (k + 1) * settings.tile_steps);
             let tile = Tile { columns: span(column), rows: span(row) };
-            if !ground.covers(tile.columns, tile.rows) {
-                bail!("tile {column} {row} reaches past the ground");
-            }
+            let tile_scenery = scenery.remove(&(column, row)).unwrap_or_default();
             let stem = format!("{column}_{row}");
             let files = [
                 (Detail::Full, tiles.join(format!("{stem}.glb"))),
                 (Detail::Middle, tiles.join(format!("{stem}.middle.glb"))),
             ];
-            let checksum = tile.checksum(&code, &tile_settings, &ground, &overlays);
+            let checksum = tile.checksum(&code, &tile_settings, &ground, &overlays, &tile_scenery);
             if previous.get(&stem) != Some(&checksum) || files.iter().any(|(_, file)| !file.is_file()) {
                 for (detail, file) in &files {
-                    tile.write(&ground, &overlays, settings, *detail, file)?;
+                    tile.write(&ground, &overlays, &tile_scenery, settings, *detail, file)?;
                 }
                 rebuilt += 1;
             }
@@ -153,16 +178,18 @@ impl Tile {
         &self,
         ground: &Ground,
         overlays: &[Overlay],
+        scenery: &TileScenery,
         settings: &Settings,
         detail: Detail,
         path: &Path,
     ) -> Result<()> {
         let mut glb = Glb::from_json(json!({ "asset": { "version": "2.0" } }));
-        let ground_material = glb.add_texture_material("ground", &texture_uri(&settings.ground_texture)?);
+        let ground_material =
+            glb.add_material(&Material::textured("ground", &crate::uri_of_texture(&settings.ground_texture)?));
         let texture_steps = settings.ground_texture_m / settings.ground_step_m;
         let ground_mesh = self.ground(ground, detail, ground_material, texture_steps);
         let drawn = Surface::new(&ground_mesh);
-        glb.add_mesh("ground", &ground_mesh);
+        glb.add_mesh("ground", &[&ground_mesh]);
         for overlay in overlays {
             let mut mesh = overlay.mesh(ground, &drawn);
             if mesh.indices.is_empty() {
@@ -170,9 +197,11 @@ impl Tile {
             }
             overlay::check_above(&drawn, &mesh)
                 .with_context(|| format!("writing {}: {}", path.display(), overlay.name))?;
-            mesh.material = glb.add_texture_material(&overlay.name, &texture_uri(&overlay.texture)?);
-            glb.add_mesh(&overlay.name, &mesh);
+            mesh.material =
+                glb.add_material(&Material::textured(&overlay.name, &crate::uri_of_texture(&overlay.texture)?));
+            glb.add_mesh(&overlay.name, &[&mesh]);
         }
+        scenery.write(&mut glb, &drawn, detail == Detail::Middle, path)?;
         glb.write(path)
     }
 
@@ -186,7 +215,7 @@ impl Tile {
         let vertex = |mesh: &mut Mesh, i: f64, j: f64| {
             let p = ground.at(i, j);
             mesh.positions.push(game(p).as_vec3().to_array());
-            mesh.normals.push(game_direction(ground.normal(p.truncate())).as_vec3().to_array());
+            mesh.normals.push(game(ground.normal(p.truncate())).as_vec3().to_array());
             mesh.uvs.push([(i / texture_steps) as f32, (-j / texture_steps) as f32]);
             (mesh.positions.len() - 1) as u32
         };
@@ -233,25 +262,6 @@ impl Tile {
         }
         mesh
     }
-}
-
-/// A map position in the game's frame.
-pub fn game(p: DVec3) -> DVec3 {
-    DVec3::new(p.x, p.z, -p.y)
-}
-
-/// A map direction in the game's frame.
-pub fn game_direction(d: DVec3) -> DVec3 {
-    DVec3::new(d.x, d.z, -d.y)
-}
-
-/// Where a tile finds the texture asset `name`, relative to its file. A tile names its textures and never holds
-/// them, so repainting a texture rebuilds no tile. Fails if there is no such texture asset.
-fn texture_uri(name: &str) -> Result<String> {
-    if !Path::new(crate::ASSETS).join("textures").join(name).join("asset.toml").is_file() {
-        bail!("there is no texture asset named {name} in assets/textures/");
-    }
-    Ok(format!("../../textures/{name}/{name}.ktx2"))
 }
 
 #[cfg(test)]

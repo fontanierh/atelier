@@ -1,7 +1,8 @@
 //! What each tile is made from, as one checksum per tile, so an export rebuilds only the tiles whose inputs changed.
 //!
 //! A tile's checksum covers the code that writes tiles, the settings it uses, the heights it reads (its own and one
-//! step around it, which its edge slopes read), and the overlay triangles that reach into it. The checksums are kept
+//! step around it, which its edge slopes read), the overlay triangles that reach into it, and its scenery: the models
+//! standing in it, its pieces of rails and the cables starting in it, with their ends. The checksums are kept
 //! in `tiles/checksums.toml`.
 
 use std::collections::BTreeMap;
@@ -14,6 +15,7 @@ use sha2::{Digest, Sha256};
 use super::Tile;
 use super::ground::Ground;
 use super::overlay::Overlay;
+use super::scenery::{self, TileScenery};
 use crate::EXPORTER;
 
 /// The file, under `tiles/`, holding each tile's checksum.
@@ -34,7 +36,14 @@ pub fn code() -> Result<Vec<u8>> {
 impl Tile {
     /// The checksum of everything this tile is made from. `code` is [`code`], and `settings` the settings that tiles
     /// use, serialized.
-    pub fn checksum(&self, code: &[u8], settings: &[u8], ground: &Ground, overlays: &[Overlay]) -> String {
+    pub fn checksum(
+        &self,
+        code: &[u8],
+        settings: &[u8],
+        ground: &Ground,
+        overlays: &[Overlay],
+        scenery: &TileScenery,
+    ) -> String {
         let mut digest = Sha256::new();
         digest.update(code);
         digest.update(settings);
@@ -76,6 +85,7 @@ impl Tile {
                 }
             }
         }
+        digest.update(scenery::checksum_bytes(scenery));
         format!("{:x}", digest.finalize())
     }
 }

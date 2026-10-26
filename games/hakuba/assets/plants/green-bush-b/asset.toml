@@ -1,0 +1,15 @@
+# A small round green bush, 2 m across.
+kind = "plant"
+seed = 9
+inputs_sha256 = "8b2e80fcebd74285b4c30a16f2f28be3083e099809c3f0c61a94239ac8454aca"
+
+[leaves]
+texture = "small-leaves"
+cards = 110
+middle_cards = 27
+card_m = 0.48
+normals_from = [0, 0, 0.2]
+vertical_bias = 0.35
+shell = 0.35
+sway_m = 0.12
+lobes = [{ at = [0, 0, 0.65], radii = [1.0, 1.0, 0.7] }]

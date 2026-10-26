@@ -1,0 +1,37 @@
+# A tall ginkgo, 9 m high, its leaves turned autumn gold.
+kind = "plant"
+seed = 23
+inputs_sha256 = "422e59ff51389d737c256a0ae83105f003c0ebbe149fb6fd0d96c8ef2c2dd29e"
+
+[wood]
+texture = "bark"
+trunk = [
+    { at = [0, 0, -0.25], radius = 0.32 },
+    { at = [0.25, 0.05, 1.78], radius = 0.243 },
+    { at = [0.3, 0.31, 3.96], radius = 0.16 },
+]
+branch_radius_m = 0.11
+
+[leaves]
+texture = "ginkgo-leaves"
+tint = [1.0, 0.72, 0.42]
+cards = 520
+middle_cards = 90
+card_m = 1.0
+normals_from = [0, 0, 5.58]
+vertical_bias = 0.3
+shell = 0.35
+sway_m = 0.3
+lobes = [
+    { at = [0.3, 0.31, 7.47], radii = [1.26, 1.26, 1.35] },
+    { at = [1.54, 0.53, 5.46], radii = [1.05, 1.05, 1.35] },
+    { at = [0.96, 1.38, 5.69], radii = [0.95, 0.95, 1.35] },
+    { at = [-0.18, 1.48, 5.64], radii = [0.97, 0.97, 1.35] },
+    { at = [-0.96, 0.34, 5.43], radii = [0.94, 0.94, 1.35] },
+    { at = [-0.23, -0.83, 5.63], radii = [1.03, 1.03, 1.35] },
+    { at = [1.04, -0.71, 5.6], radii = [0.94, 0.94, 1.35] },
+    { at = [0.85, 0.83, 6.61], radii = [1.06, 1.06, 1.35] },
+    { at = [-0.18, 0.9, 6.81], radii = [1.0, 1.0, 1.35] },
+    { at = [-0.26, -0.2, 6.5], radii = [1.04, 1.04, 1.35] },
+    { at = [0.78, -0.26, 6.48], radii = [0.94, 0.94, 1.35] },
+]

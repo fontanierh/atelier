@@ -45,6 +45,11 @@ impl Tile {
         Some(Self { column, row, centre, detail: None, showing: None })
     }
 
+    /// Whether it shows the version it needs, or nothing when it needs none.
+    pub fn shown(&self) -> bool {
+        self.detail.is_some() == self.showing.is_some()
+    }
+
     fn path(&self, detail: Detail) -> String {
         let suffix = if detail == Detail::Full { "" } else { ".middle" };
         format!("world/tiles/{}_{}{suffix}.glb", self.column, self.row)
@@ -53,7 +58,7 @@ impl Tile {
 
 /// A tile's version that is spawning, by its tile.
 #[derive(Component)]
-struct Spawning(Entity);
+pub struct Spawning(Entity);
 
 /// Picks each tile's detail from its distance to the camera, and starts spawning the version it needs.
 fn choose(

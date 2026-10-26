@@ -13,5 +13,13 @@
   </head>
   <body>
     <canvas id="hakuba"></canvas>
+    <script>
+      // The game draws with WebGPU: without it, say so rather than show a black page.
+      if (!navigator.gpu) {
+        document.body.innerHTML =
+          '<p style="color:#ddd;font:16px sans-serif;text-align:center;margin-top:40vh">' +
+          'Hakuba needs a browser with WebGPU: a recent Chrome, Edge or Safari.</p>';
+      }
+    </script>
   </body>
 </html>

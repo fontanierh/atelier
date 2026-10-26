@@ -1,10 +1,14 @@
-//! The world: the ground and the road from `assets/world`, the sea, the sky, sun and haze, and a camera that
+//! The world: the ground, the road and what stands around it from `assets/world`, the sea, the sky, sun and haze, and a camera that
 //! starts at the spawn and flies.
 
 mod fly;
+mod loading;
 mod look;
 mod painterly;
+mod pixels;
+mod scenery;
 mod tiles;
+mod wind;
 
 use bevy::gltf::{Gltf, GltfNode};
 use bevy::prelude::*;
@@ -26,9 +30,18 @@ pub struct WorldPlugin;
 
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((fly::FlyPlugin, look::LookPlugin, painterly::PainterlyPlugin, tiles::TilesPlugin))
-            .add_systems(OnEnter(Screen::World), spawn_world)
-            .add_systems(Update, read_index.run_if(in_state(Screen::World)));
+        app.add_plugins((
+            fly::FlyPlugin,
+            loading::LoadingPlugin,
+            look::LookPlugin,
+            painterly::PainterlyPlugin,
+            pixels::PixelsPlugin,
+            scenery::SceneryPlugin,
+            tiles::TilesPlugin,
+            wind::WindPlugin,
+        ))
+        .add_systems(OnEnter(Screen::World), spawn_world)
+        .add_systems(Update, read_index.run_if(in_state(Screen::World)));
     }
 }
 
@@ -41,6 +54,7 @@ fn spawn_world(
     assets: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut images: ResMut<Assets<Image>>,
 ) {
     commands.insert_resource(Index(assets.load(INDEX)));
     commands.spawn((
@@ -53,12 +67,14 @@ fn spawn_world(
             ..default()
         })),
     ));
+    let drawn = pixels::spawn(&mut commands, &mut images);
     commands.spawn((
         Name::new("Camera"),
         DespawnOnExit(Screen::World),
         Camera3d::default(),
         Fly::default(),
         look::camera(),
+        drawn,
     ));
 }
 

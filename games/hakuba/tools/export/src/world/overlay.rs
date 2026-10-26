@@ -3,9 +3,9 @@
 use anyhow::{Result, bail};
 use glam::{DVec2, DVec3};
 
+use super::game;
 use super::ground::Ground;
 use super::surface::{Surface, cut, weights};
-use super::{game, game_direction};
 use crate::glb::Mesh;
 
 /// How far an overlay sits above the ground under it.
@@ -43,7 +43,7 @@ impl Overlay {
                     let height = on_ground.x * under[0].z + on_ground.y * under[1].z + on_ground.z * under[2].z;
                     let uv = on_overlay.x * piece[0].1 + on_overlay.y * piece[1].1 + on_overlay.z * piece[2].1;
                     mesh.positions.push(game(p.extend(height + LIFT_M)).as_vec3().to_array());
-                    mesh.normals.push(game_direction(ground.normal(p)).as_vec3().to_array());
+                    mesh.normals.push(game(ground.normal(p)).as_vec3().to_array());
                     mesh.uvs.push(uv.as_vec2().to_array());
                 }
                 for n in 1..cut.len() as u32 - 1 {

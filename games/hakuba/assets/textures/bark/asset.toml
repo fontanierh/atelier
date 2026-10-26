@@ -1,0 +1,6 @@
+# Dark brown tree bark with vertical fibres. Its opposite edges match, so it repeats around and along a trunk. The
+# image was painted by gpt-image-2.5-sunburst at high quality, then its colour scaled in linear light to average a dark
+# brown.
+kind = "texture"
+source = "src/bark.jpg"
+inputs_sha256 = "e130162ddcf0f96f055a21fcd0a62d4d04efc4760f448135d0149459e2871251"

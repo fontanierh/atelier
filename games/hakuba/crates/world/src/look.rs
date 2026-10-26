@@ -1,7 +1,12 @@
 //! How the world looks: a sky dome, a low warm sun behind the traveller, a blue haze that thickens with distance,
-//! and the camera's colour grade (tone curve, bloom, vignette) and painterly filter.
+//! and the camera's colour grade (tone curve, bloom, vignette) and painterly filter. Edges are smoothed by temporal
+//! anti-aliasing, as in Yorimichi: the camera shifts by part of a pixel each frame and each pixel blends the frames, so
+//! grass and other edges thinner than a pixel stay whole and steady as the camera moves. It costs about as little as
+//! no smoothing at all.
 
+use bevy::anti_alias::taa::TemporalAntiAliasing;
 use bevy::core_pipeline::tonemapping::Tonemapping;
+use bevy::light::CascadeShadowConfigBuilder;
 use bevy::mesh::VertexAttributeValues;
 use bevy::pbr::{DistanceFog, FogFalloff};
 use bevy::post_process::bloom::Bloom;
@@ -29,6 +34,11 @@ const FAR_M: f32 = 30000.0;
 const SUN_ELEVATION_DEG: f32 = 26.0;
 const SUN_BEARING_DEG: f32 = 60.0;
 
+/// How far from the camera the sun casts shadows: the trees and bushes along the road. Further out, the haze and the
+/// painterly filter soften what shadows would show, and each metre more of shadow costs drawing more of the world again.
+/// One cascade covers it all, since each cascade draws the world again.
+const SHADOWS_M: f32 = 60.0;
+
 /// The sun's light, in lux, and its warm colour.
 const SUN_LUX: f32 = 6000.0;
 const SUN_COLOUR: [f32; 3] = [1.0, 0.76, 0.53];
@@ -55,6 +65,8 @@ pub fn camera() -> impl Bundle {
     (
         Projection::Perspective(PerspectiveProjection { far: FAR_M, ..default() }),
         Tonemapping::AcesFitted,
+        Msaa::Off,
+        TemporalAntiAliasing::default(),
         Bloom::NATURAL,
         Vignette { intensity: 0.16, ..default() },
         Painterly::default(),
@@ -104,6 +116,13 @@ fn spawn_sky_and_sun(
             ..default()
         },
         Transform::default().looking_to(shining, Vec3::Y),
+        CascadeShadowConfigBuilder {
+            num_cascades: 1,
+            maximum_distance: SHADOWS_M,
+            first_cascade_far_bound: SHADOWS_M,
+            ..default()
+        }
+        .build(),
     ));
 }
 
