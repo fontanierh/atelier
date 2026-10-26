@@ -1,8 +1,7 @@
 // The wind (wind.rs says what it does): Bevy's mesh vertex shaders for the main pass and the prepass, each moving a
 // vertex in the wind by how far it bends and its leaf's phase, its second texture coordinates, scaled by how strongly
 // the wind blows, its mesh's tag in thousandths, and leaning leaves and blades away from what pushes plants aside
-// (push.rs). Plants have no morph targets or skins, so those are left out. Its fragment shader lights only what a leaf
-// card does not cut away.
+// (push.rs). Plants have no morph targets or skins, so those are left out.
 
 @if(PREPASS_PIPELINE)
 import bevy_pbr::prepass::io::{Vertex, VertexOutput, decompress_vertex};
@@ -12,13 +11,6 @@ import bevy_render::globals::Globals;
 import bevy_pbr::render::forward_io::{Vertex, VertexOutput, decompress_vertex};
 @if(!PREPASS_PIPELINE)
 import bevy_pbr::render::mesh_view_bindings::globals;
-@if(!PREPASS_PIPELINE)
-import bevy_pbr::render::{
-    forward_io::FragmentOutput,
-    pbr_fragment::pbr_input_from_standard_material,
-    pbr_functions::{alpha_discard, apply_pbr_lighting, main_pass_post_lighting_processing},
-    pbr_types,
-};
 import bevy_pbr::render::{mesh_functions, view_transformations::position_world_to_clip};
 
 // The prepass binds the time at another place than the main pass.
@@ -177,26 +169,5 @@ fn vertex(vertex_in: Vertex) -> VertexOutput {
     @if(VISIBILITY_RANGE_DITHER)
     out.visibility_range_dither =
         mesh_functions::get_visibility_range_dither_level(vertex_in.instance_index, world_from_local[3]);
-    return out;
-}
-
-// Bevy's standard fragment shader for the main pass, but lighting only what stays. A leaf card's see-through texels are
-// discarded, yet in the browser a discarded fragment runs on to the end of the shader, so every card in front of what
-// shows would pay the whole lighting and the shadow lookups for nothing.
-@if(!PREPASS_PIPELINE)
-@fragment
-fn fragment(in: VertexOutput, @builtin(front_facing) is_front: bool) -> FragmentOutput {
-    var out: FragmentOutput;
-    var pbr_input = pbr_input_from_standard_material(in, is_front);
-    let flags = pbr_input.material.flags;
-    let masked = (flags & pbr_types::STANDARD_MATERIAL_FLAGS_ALPHA_MODE_RESERVED_BITS)
-        == pbr_types::STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK;
-    if masked && pbr_input.material.base_color.a < pbr_input.material.alpha_cutoff {
-        discard;
-    } else {
-        pbr_input.material.base_color =
-            alpha_discard(flags, pbr_input.material.alpha_cutoff, pbr_input.material.base_color);
-        out.color = main_pass_post_lighting_processing(pbr_input, apply_pbr_lighting(pbr_input));
-    }
     return out;
 }

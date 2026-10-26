@@ -4,12 +4,13 @@
 //! crown move most. A part that sways is drawn with its own material and the vertex shader in `wind.wesl`, in every
 //! pass, so its shadow sways with it. How strongly the wind blows, the Wind setting, reaches the shader as each swaying
 //! mesh's tag, in thousandths, so plants are still drawn together. Leaves and blades also lean away from whatever pushes
-//! plants (`push.rs`), however the wind blows. Its fragment shader lights only the texels a leaf card keeps.
+//! plants (`push.rs`), however the wind blows. Its fragment shader, in `leaves.wesl`, lights only the texels a leaf card
+//! keeps; anything else cut out with the standard material is reported, since it pays the lighting of every texel.
 
 use bevy::asset::embedded_asset;
 use bevy::ecs::system::SystemParam;
 use bevy::pbr::{ExtendedMaterial, MaterialExtension};
-use bevy::platform::collections::HashMap;
+use bevy::platform::collections::{HashMap, HashSet};
 use bevy::prelude::*;
 use bevy::render::render_resource::AsBindGroup;
 use bevy::render::storage::ShaderBuffer;
@@ -30,7 +31,10 @@ pub struct WindPlugin;
 impl Plugin for WindPlugin {
     fn build(&self, app: &mut App) {
         embedded_asset!(app, "wind.wesl");
-        app.add_plugins(MaterialPlugin::<Swaying>::default()).init_resource::<Made>();
+        embedded_asset!(app, "leaves.wesl");
+        app.add_plugins(MaterialPlugin::<Swaying>::default())
+            .init_resource::<Made>()
+            .add_systems(PostUpdate, cut_out_in_full);
     }
 }
 
@@ -52,7 +56,7 @@ impl MaterialExtension for Wind {
     }
 
     fn fragment_shader() -> ShaderRef {
-        "embedded://hakuba_world/wind.wesl".into()
+        "embedded://hakuba_world/leaves.wesl".into()
     }
 }
 
@@ -80,5 +84,24 @@ impl SwayingMaterials<'_> {
         let handle = self.swaying.add(Swaying { base, extension: Wind { pushers: self.pushers.0.clone() } });
         self.made.0.insert(material.id(), handle.clone());
         Some(handle)
+    }
+}
+
+/// Reports, once each, the standard materials that cut out what they draw: Bevy's shader lights every texel they
+/// discard in the browser, so anything cut out belongs with the plants' fragment shader.
+fn cut_out_in_full(
+    drawn: Query<&MeshMaterial3d<StandardMaterial>, Added<MeshMaterial3d<StandardMaterial>>>,
+    materials: Res<Assets<StandardMaterial>>,
+    mut reported: Local<HashSet<AssetId<StandardMaterial>>>,
+) {
+    for material in &drawn {
+        let cut_out =
+            materials.get(&material.0).is_some_and(|standard| matches!(standard.alpha_mode, AlphaMode::Mask(_)));
+        if cut_out && reported.insert(material.id()) {
+            error!(
+                "{:?} cuts out with the standard shader, which lights what it discards: draw it with the plants' material",
+                material.0.path()
+            );
+        }
     }
 }

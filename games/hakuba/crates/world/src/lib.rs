@@ -15,6 +15,7 @@ mod settings;
 mod tiles;
 mod wind;
 
+use bevy::camera::visibility::{VisibilityRange, VisibilitySystems};
 use bevy::gltf::{Gltf, GltfNode};
 use bevy::prelude::*;
 use hakuba_screens::Screen;
@@ -52,7 +53,8 @@ impl Plugin for WorldPlugin {
             wind::WindPlugin,
         ))
         .add_systems(OnEnter(Screen::World), spawn_world)
-        .add_systems(Update, read_index.run_if(in_state(Screen::World)));
+        .add_systems(Update, read_index.run_if(in_state(Screen::World)))
+        .add_systems(PostUpdate, no_crossfades.before(VisibilitySystems::CheckVisibility));
     }
 }
 
@@ -120,4 +122,18 @@ fn read_index(
         }
     }
     commands.remove_resource::<Index>();
+}
+
+/// Makes every visibility range in the game abrupt, saying so, should one crossfade: Bevy dithers a crossfade's pixels
+/// in screen space, which shimmers under temporal anti-aliasing, so it is never shown.
+fn no_crossfades(mut ranges: Query<(Entity, &mut VisibilityRange), Changed<VisibilityRange>>) {
+    for (entity, mut range) in &mut ranges {
+        if range.is_abrupt() {
+            continue;
+        }
+        error!("{entity} crossfades between versions, which shimmers: it swaps at once, halfway, instead");
+        let start = (range.start_margin.start + range.start_margin.end) / 2.0;
+        let end = (range.end_margin.start + range.end_margin.end) / 2.0;
+        *range = VisibilityRange::abrupt(start, end);
+    }
 }

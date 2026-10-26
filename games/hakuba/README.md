@@ -38,6 +38,7 @@ Test in the browser first: what works there almost always works on desktop, but 
 ```text
 games/hakuba/
   README.md                 this file
+  PERFORMANCE.md            the frame-rate target, how to measure it and what costs what
   Cargo.toml                the Rust workspace, its shared dependencies and the game program
   .cargo/config.toml        the `cargo export` alias
   Cargo.lock                the exact dependency versions
@@ -58,6 +59,7 @@ games/hakuba/
   tools/export/             the asset exporter, run with `cargo export` (tools/README.md)
   .gitattributes            which files Git LFS stores
   .gitignore                the build folders
+  CONTRACTS                 the rules every change keeps (crates/, assets/ and tools/export/ have their own)
 ```
 
 ## Conventions

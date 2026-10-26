@@ -10,7 +10,7 @@
 //! it, and casts the shadow of its middle version, which is never seen: the sun's shadow maps draw far fewer leaves.
 
 use bevy::asset::RenderAssetUsages;
-use bevy::camera::visibility::{RenderLayers, VisibilityRange, VisibilitySystems};
+use bevy::camera::visibility::RenderLayers;
 use bevy::ecs::system::SystemParam;
 use bevy::gltf::{Gltf, GltfExtras, GltfMesh, GltfNode};
 use bevy::light::NotShadowCaster;
@@ -38,8 +38,7 @@ pub struct SceneryPlugin;
 
 impl Plugin for SceneryPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (read, spawn).chain().in_set(Placing))
-            .add_systems(PostUpdate, no_crossfades.before(VisibilitySystems::CheckVisibility));
+        app.add_systems(Update, (read, spawn).chain().in_set(Placing));
     }
 }
 
@@ -206,20 +205,6 @@ enum Role {
     /// To cast its shadow only, never seen: a plant's middle version beside its full one. The sun's shadows are cast by
     /// far fewer leaves, and hold still as the camera moves.
     Shadow,
-}
-
-/// Makes every visibility range in the game abrupt, saying so, should one crossfade: Bevy dithers a crossfade's pixels
-/// in screen space, which shimmers under temporal anti-aliasing, so it is never shown.
-fn no_crossfades(mut ranges: Query<(Entity, &mut VisibilityRange), Changed<VisibilityRange>>) {
-    for (entity, mut range) in &mut ranges {
-        if range.is_abrupt() {
-            continue;
-        }
-        error!("{entity} crossfades between versions, which shimmers: it swaps at once, halfway, instead");
-        let start = (range.start_margin.start + range.start_margin.end) / 2.0;
-        let end = (range.end_margin.start + range.end_margin.end) / 2.0;
-        *range = VisibilityRange::abrupt(start, end);
-    }
 }
 
 /// `node`'s meshes, each with its look: a part whose vertices say how far they sway is drawn with the swaying version

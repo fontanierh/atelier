@@ -29,8 +29,7 @@ const SHADER: Handle<Shader> = uuid_handle!("5c0e6c43-2f0b-4b5e-9d3a-7a1f4f8f2a6
 
 impl Plugin for PainterlyPlugin {
     fn build(&self, app: &mut App) {
-        let source = include_str!("painterly.wgsl").replace("    // TAPS\n", &taps());
-        app.world_mut().resource_mut::<Assets<Shader>>().insert(&SHADER, Shader::from_wgsl(source, file!())).ok();
+        app.world_mut().resource_mut::<Assets<Shader>>().insert(&SHADER, Shader::from_wgsl(source(), file!())).ok();
         app.add_plugins(FullscreenMaterialPlugin::<Painterly>::default());
     }
 }
@@ -76,6 +75,16 @@ fn kernel() -> Vec<(IVec2, [f32; 8])> {
         taps.iter_mut().for_each(|(_, weights)| weights[k] /= total);
     }
     taps
+}
+
+/// Where the shader's source takes the taps.
+const TAPS_AT: &str = "    // TAPS\n";
+
+/// The shader's source, with its taps written where it says.
+fn source() -> String {
+    let source = include_str!("painterly.wgsl");
+    assert_eq!(source.matches(TAPS_AT).count(), 1, "painterly.wgsl marks where its taps go once, as `{TAPS_AT}`");
+    source.replace(TAPS_AT, &taps())
 }
 
 /// The shader's lines that read each tap and add it to the wedges it weighs in.

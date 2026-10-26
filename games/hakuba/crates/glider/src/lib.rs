@@ -59,7 +59,10 @@ pub struct Glider {
     pub held: bool,
     /// How far it leans into the turn, in radians, its left side up for a positive bank. It eases there.
     pub bank: f32,
-    /// How the skeleton that held it held it: `None` until its model has spawned.
+    /// Whether its model has spawned.
+    spawned: bool,
+    /// How the skeleton that held it held it: `None` until its model has spawned, or if the model does not say, when it
+    /// stays put away.
     holder: Option<HolderExtras>,
     /// How far it leans now.
     leaning: f32,
@@ -72,12 +75,21 @@ pub struct Glider {
 impl Glider {
     /// The paraglider of `character`, put away.
     pub fn of(character: Entity) -> Self {
-        Self { character, held: false, bank: 0.0, holder: None, leaning: 0.0, grip: 0.0, missed: [false; 2] }
+        Self {
+            character,
+            held: false,
+            bank: 0.0,
+            spawned: false,
+            holder: None,
+            leaning: 0.0,
+            grip: 0.0,
+            missed: [false; 2],
+        }
     }
 
     /// Whether this is `character`'s paraglider and its model has spawned.
     pub fn ready_for(&self, character: Entity) -> bool {
-        self.character == character && self.holder.is_some()
+        self.character == character && self.spawned
     }
 }
 
@@ -209,7 +221,13 @@ fn ripple(
         let (name, extras) = names.get(node).ok()?;
         (name.as_str() == HOLDER_NODE).then(|| serde_json::from_str::<HolderExtras>(&extras.value).ok()).flatten()
     });
-    glider.holder = Some(holder.expect("the paraglider's holder node gives its hips' height, handles and palms"));
+    glider.spawned = true;
+    glider.holder = holder;
+    if glider.holder.is_none() {
+        error!(
+            "the paraglider's {HOLDER_NODE} node does not say its hips' height, handles and palms: it stays put away"
+        );
+    }
     let Some(clip) = gltfs.get(&model.0).and_then(|gltf| gltf.named_animations.get(CLIP)) else { return };
     let Some(node) = children.iter_descendants(ready.entity).find(|node| players.contains(*node)) else { return };
     let (graph, index) = AnimationGraph::from_clip(clip.clone());
