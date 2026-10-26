@@ -1,5 +1,6 @@
 //! Every region, each with its implementation of [`Region`] from its folder under the world's `src/regions/`.
 
+use super::levelling::Strip;
 use super::overlay::Overlay;
 use super::scenery::{Land, Scenery};
 
@@ -10,6 +11,10 @@ mod momiji_coast;
 pub trait Region {
     /// The region's folder name.
     fn name(&self) -> &'static str;
+
+    /// The strips of ground it levels, as declared changes to the ground. Everything else the world holds, its
+    /// tiles, overlays and scenery, stands on the levelled ground.
+    fn levelled(&self) -> Vec<Strip>;
 
     /// The flat shapes it lays over the ground.
     fn overlays(&self) -> Vec<Overlay>;

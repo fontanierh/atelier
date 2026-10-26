@@ -52,6 +52,7 @@ tools/
         regions.rs          every region, and the `Region` trait: what a region adds to the world
         checksums.rs        what each tile is made from, so an export rebuilds only the tiles that changed
         ground.rs           the ground's heights, read from its pages
+        levelling.rs        strips of ground a region levels along a course, with shoulders easing back to the ground
         overlay.rs          flat shapes laid over the ground, such as roads
         curve.rs            a smooth curve through a course's points, sampled every metre
         ribbon.rs           strips of even width along a curve, for regions to lay as overlays
@@ -174,7 +175,11 @@ them into square tiles under `tiles/`. Each region's `src/regions/<region>/layou
 `world/regions.rs` lists it. Each tile is written in full detail and in middle detail, for seeing from afar. The
 ground and each overlay show a texture asset, named by its folder: a tile points at the texture's `.ktx2` and never
 holds it, and the export fails if no such texture asset exists. An
-overlay lies a few centimetres above the ground triangles under it; the export fails if it comes closer anywhere.
+overlay lies a few centimetres above the ground triangles under it; the export fails if it comes closer anywhere, or
+if in full detail it creases by more than 1.5° between two of its triangles. A region levels the ground under its
+overlays with levelled strips (`world/levelling.rs`): along a course, the ground within a half width is level across
+it and smooth along it, and a shoulder eases back to the ground without a crease. The strips change the heights once,
+after the pages are read, so the tiles, overlays and scenery all stand on the levelled ground.
 
 A region also stands scenery on the ground: plant and prop models, each at a point with a turn and a scale, cables
 strung between two models' anchors, and rails run along a path. A tile names each model's `.glb` and lists where

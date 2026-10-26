@@ -1,7 +1,9 @@
 //! The `world` kind: the ground, and what each region lays over it, cut into square tiles.
 //!
 //! The ground is one grid of heights across the world, stored in square pages under `src/ground/`. Each region
-//! lives in its own folder under `src/regions/`; its `layout.rs` says what it adds (`regions.rs` lists them). Each
+//! lives in its own folder under `src/regions/`; its `layout.rs` says what it adds (`regions.rs` lists them). The
+//! strips regions level are applied to the heights once, after reading the pages, so the tiles, the overlays and
+//! the scenery all stand on the same ground. Each
 //! tile is written twice under `tiles/`: `<column>_<row>.glb` in full detail, and `<column>_<row>.middle.glb` with a
 //! coarser ground for seeing from afar. The coarse ground keeps every fine point on the tile's edges, so neighbouring tiles meet exactly
 //! whichever version each one shows. `<folder name>.glb` holds one empty node per tile, named
@@ -16,6 +18,7 @@
 mod checksums;
 mod curve;
 mod ground;
+mod levelling;
 mod overlay;
 mod regions;
 mod ribbon;
@@ -76,8 +79,13 @@ pub fn reads() -> Vec<String> {
 
 pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     let [x, y] = settings.south_west_m;
-    let ground =
+    let mut ground =
         Ground::read(&folder.join(&settings.ground), settings.page_steps, settings.ground_step_m, DVec2::new(x, y))?;
+    for region in regions::REGIONS {
+        for strip in region.levelled() {
+            strip.level(&mut ground).with_context(|| format!("levelling {}", region.name()))?;
+        }
+    }
     let mut overlays = Vec::new();
     for region in regions::REGIONS {
         for mut overlay in region.overlays() {
@@ -197,6 +205,10 @@ impl Tile {
             }
             overlay::check_above(&drawn, &mesh)
                 .with_context(|| format!("writing {}: {}", path.display(), overlay.name))?;
+            if detail == Detail::Full {
+                overlay::check_smooth(&mesh)
+                    .with_context(|| format!("writing {}: {}", path.display(), overlay.name))?;
+            }
             mesh.material =
                 glb.add_material(&Material::textured(&overlay.name, &crate::uri_of_texture(&overlay.texture)?));
             glb.add_mesh(&overlay.name, &[&mesh]);
