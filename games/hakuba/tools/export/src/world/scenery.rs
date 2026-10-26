@@ -143,11 +143,12 @@ impl Land<'_> {
         })
     }
 
-    /// The squares of a grid of `side` metres, counted from the map's origin, whose lower-left corners lie in the
-    /// exported part of the map: each square's column, row and lower-left corner. A grid anchored at the origin
-    /// keeps every square in its place, however much of the map is exported.
+    /// @cc [owner:fontanierh,label:correctness] scatter-survives-map-expansion
+    /// Growing the exported map MUST preserve every origin-anchored grid cell intersecting the original bounds,
+    /// so candidates contained in those cells and clipped to the bounds stay the same.
+    /// Returns each cell's column, row and lower-left corner.
     pub fn squares(&self, side: f64) -> impl Iterator<Item = (i64, i64, DVec2)> {
-        let (low, high) = ((self.low / side).ceil(), (self.high / side).floor());
+        let (low, high) = ((self.low / side).floor(), (self.high / side).ceil());
         (low.y as i64..high.y as i64).flat_map(move |row| {
             (low.x as i64..high.x as i64).map(move |column| (column, row, DVec2::new(column as f64, row as f64) * side))
         })
@@ -545,6 +546,20 @@ mod tests {
         let after: Vec<_> =
             land.scatter(42, 5.0, 0.4, ScatterKind::Tree).filter(|(p, _)| p.y > 40.0).map(|(p, _)| p).collect();
         assert_eq!(before, after);
+    }
+
+    #[test]
+    fn expanding_map_preserves_scatter_inside_original_bounds() {
+        let ground = Ground::page(64, 2.0, |_, _| 0.0);
+        let small = Land { ground: &ground, low: DVec2::splat(11.0), high: DVec2::splat(93.0), exclusions: &[] };
+        let large = Land { ground: &ground, low: DVec2::ZERO, high: DVec2::splat(128.0), exclusions: &[] };
+        let within = |p: &DVec2| p.cmpge(small.low).all() && p.cmplt(small.high).all();
+        for side in [3.2, 5.0] {
+            let candidates = |land: &Land| {
+                land.scatter(42, side, 0.5, ScatterKind::Tree).map(|(p, _)| p).filter(within).collect::<Vec<_>>()
+            };
+            assert_eq!(candidates(&small), candidates(&large));
+        }
     }
 
     /// A rail over bumpy ground bends gently, while still following the ground's slope.

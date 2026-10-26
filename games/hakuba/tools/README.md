@@ -202,13 +202,16 @@ holds it, and the export fails if no such texture asset exists. An
 overlay lies a few centimetres above the ground triangles under it; the export fails if it comes closer anywhere, or
 if in full detail it creases by more than 1.5° between two of its triangles. A region levels the ground under its
 overlays with levelled strips (`world/levelling.rs`): along a course, the ground within a half width is level across
-it and smooth along it, and a shoulder eases back to the ground without a crease. The strips change the heights once,
+it and smooth along it, and a shoulder eases back to the ground without a crease. A strip can instead specify
+endpoint heights and grades; the exporter interpolates these along its sampled course. Curves include both authored
+endpoints, with a shorter final interval when needed. The strips change the heights once,
 after the pages are read, so the tiles, overlays and scenery all stand on the levelled ground. A region can also
 declare rectangular pads at a given height and slope, with shoulders easing back to the ground. A pad's planar margin
 covers a coarse tile cell around its footprint, so the full and middle ground both draw the same plane. Pads apply
 after strips and own the final ground at crossings; the export rejects overlapping pads. Regions
-can declare corridors kept clear of scattered trees, bushes or grass. Scatter producers check these shared clearances;
-explicit placements and their cable indices are unchanged.
+can declare corridors kept clear of scattered trees, bushes or grass. Scatter candidates use an origin-anchored grid
+that includes boundary cells, so extending the exported area keeps candidates inside the old area unchanged. Scatter
+producers check these shared clearances; explicit placements and their cable indices are unchanged.
 
 A region also stands scenery on the ground: plant and prop models, each at a point with a turn and a scale, cables
 strung between two models' anchors, and rails run along a path. A rail and its posts show a texture asset tinted by

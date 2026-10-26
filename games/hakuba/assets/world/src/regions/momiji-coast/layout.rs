@@ -62,6 +62,7 @@ impl Region for MomijiCoast {
             half_width_m: LEVEL_HALF_WIDTH_M,
             shoulder_m: SHOULDER_M,
             smoothing_m: ROAD_SMOOTHING_M,
+            profile: None,
         }]
     }
 
