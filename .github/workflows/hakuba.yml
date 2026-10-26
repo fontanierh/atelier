@@ -1,7 +1,7 @@
 name: Hakuba
 
-# Fails when a Hakuba asset's committed export is out of date with its inputs. Studio Python skips PRs that change
-# only Hakuba, so the public-repository lint runs here for them.
+# Fails when Hakuba's code is not laid out by cargo fmt, or an asset's committed export is out of date with its
+# inputs. Studio Python skips PRs that change only Hakuba, so the public-repository lint runs here for them.
 on:
   pull_request:
     paths:
@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   assets:
-    name: Hakuba / assets current
+    name: Hakuba / code layout and current assets
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
@@ -33,6 +33,9 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
+      # Hakuba's .glb and .bin files are in Git LFS, and the check reads their bytes.
+      - name: Fetch Hakuba's assets
+        run: git lfs pull --include='games/hakuba/assets/**'
       - name: Restore Rust dependencies
         continue-on-error: true
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0, Node 24
@@ -43,6 +46,8 @@ jobs:
             games/hakuba/target
           key: hakuba-export-${{ runner.os }}-${{ hashFiles('games/hakuba/Cargo.lock', 'games/hakuba/rust-toolchain.toml') }}
       # rust-toolchain.toml picks the Rust version; cargo installs it on first use.
+      - name: Check the code's layout
+        run: cargo fmt --check
       - name: Check every asset's export is current
         run: cargo export --check assets
 

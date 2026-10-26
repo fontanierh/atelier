@@ -75,8 +75,14 @@ impl Ground {
         let (i, j) = (f.x as usize, f.y as usize);
         let (u, v) = (f.x - i as f64, f.y - j as f64);
         // A corner that weighs nothing need not be on the ground, so the ground's last points have heights too.
-        let h = |i: usize, j: usize, weight: f64| if weight == 0.0 { Some(0.0) } else { Some(self.sample(i, j)? * weight) };
-        Some(h(i, j, (1.0 - u) * (1.0 - v))? + h(i + 1, j, u * (1.0 - v))? + h(i, j + 1, (1.0 - u) * v)? + h(i + 1, j + 1, u * v)?)
+        let h =
+            |i: usize, j: usize, weight: f64| if weight == 0.0 { Some(0.0) } else { Some(self.sample(i, j)? * weight) };
+        Some(
+            h(i, j, (1.0 - u) * (1.0 - v))?
+                + h(i + 1, j, u * (1.0 - v))?
+                + h(i, j + 1, (1.0 - u) * v)?
+                + h(i + 1, j + 1, u * v)?,
+        )
     }
 
     /// The ground's up direction at `p`. Where the ground stops on one side, the slope comes from the other.

@@ -26,7 +26,8 @@ impl Surface {
             let [x, y, z] = mesh.positions[k as usize].map(f64::from);
             DVec3::new(x, -z, y)
         };
-        let triangles: Vec<[DVec3; 3]> = mesh.indices.chunks(3).map(|t| [corner(t[0]), corner(t[1]), corner(t[2])]).collect();
+        let triangles: Vec<[DVec3; 3]> =
+            mesh.indices.chunks(3).map(|t| [corner(t[0]), corner(t[1]), corner(t[2])]).collect();
         let mut cells: HashMap<(i64, i64), Vec<usize>> = HashMap::new();
         for (n, triangle) in triangles.iter().enumerate() {
             for square in squares(triangle.map(DVec3::truncate)) {
@@ -38,7 +39,8 @@ impl Surface {
 
     /// The triangles that may lie under any part of `outline`.
     pub fn under(&self, outline: [DVec2; 3]) -> Vec<[DVec3; 3]> {
-        let mut found: Vec<usize> = squares(outline).filter_map(|square| self.cells.get(&square)).flatten().copied().collect();
+        let mut found: Vec<usize> =
+            squares(outline).filter_map(|square| self.cells.get(&square)).flatten().copied().collect();
         found.sort();
         found.dedup();
         found.into_iter().map(|n| self.triangles[n]).collect()
@@ -97,6 +99,8 @@ pub fn cut(mut polygon: Vec<DVec2>, triangle: [DVec2; 3]) -> Vec<DVec2> {
             break;
         }
     }
-    let area: f64 = (1..polygon.len().saturating_sub(1)).map(|n| (polygon[n] - polygon[0]).perp_dot(polygon[n + 1] - polygon[0])).sum();
+    let area: f64 = (1..polygon.len().saturating_sub(1))
+        .map(|n| (polygon[n] - polygon[0]).perp_dot(polygon[n + 1] - polygon[0]))
+        .sum();
     if area.abs() < 1e-8 { Vec::new() } else { polygon }
 }

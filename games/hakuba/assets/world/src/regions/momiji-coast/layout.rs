@@ -36,6 +36,10 @@ impl Region for MomijiCoast {
 
     /// The road. The ground already holds its cut.
     fn overlays(&self) -> Vec<Overlay> {
-        vec![Overlay { name: "road".into(), colour: ROAD_COLOUR, triangles: ribbon(&ROAD, ROAD_WIDTH_M, ROAD_TEXTURE_M) }]
+        vec![Overlay {
+            name: "road".into(),
+            colour: ROAD_COLOUR,
+            triangles: ribbon(&ROAD, ROAD_WIDTH_M, ROAD_TEXTURE_M),
+        }]
     }
 }

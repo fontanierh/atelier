@@ -1,4 +1,5 @@
-# The Rust version every checkout builds with, and the browser target (wasm32) installed alongside it.
+# The Rust version every checkout builds with, its formatter and linter, and the browser target (wasm32).
 [toolchain]
 channel = "1.97.1"
+components = ["rustfmt", "clippy"]
 targets = ["wasm32-unknown-unknown"]

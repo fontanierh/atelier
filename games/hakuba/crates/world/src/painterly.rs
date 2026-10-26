@@ -4,8 +4,8 @@
 //! result over the image.
 
 use bevy::asset::embedded_asset;
-use bevy::core_pipeline::fullscreen_material::{FullscreenMaterial, FullscreenMaterialPlugin};
 use bevy::core_pipeline::Core3dSystems;
+use bevy::core_pipeline::fullscreen_material::{FullscreenMaterial, FullscreenMaterialPlugin};
 use bevy::core_pipeline::tonemapping::tonemapping;
 use bevy::ecs::schedule::ScheduleConfigs;
 use bevy::ecs::system::BoxedSystem;

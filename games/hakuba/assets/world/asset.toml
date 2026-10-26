@@ -10,4 +10,4 @@ tiles = [[64, 18], [66, 20]]
 ground_colour = [0.40, 0.44, 0.20]
 spawn_m = [-255.26, -99.51]
 spawn_bearing_deg = 94.7
-inputs_sha256 = "82d97f27826bd0fcd8105b60378450c7035925db55bd6c26f478ba5e66267059"
+inputs_sha256 = "3dbe1537afbef499930e74205a08679645640001bfc76939cf0fc3d614da61a4"

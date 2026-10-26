@@ -1,0 +1,3 @@
+# How cargo fmt lays out the code: lines up to 120 columns, short forms kept on one line where they fit.
+max_width = 120
+use_small_heuristics = "Max"

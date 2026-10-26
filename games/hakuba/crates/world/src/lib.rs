@@ -53,7 +53,13 @@ fn spawn_world(
             ..default()
         })),
     ));
-    commands.spawn((Name::new("Camera"), DespawnOnExit(Screen::World), Camera3d::default(), Fly::default(), look::camera()));
+    commands.spawn((
+        Name::new("Camera"),
+        DespawnOnExit(Screen::World),
+        Camera3d::default(),
+        Fly::default(),
+        look::camera(),
+    ));
 }
 
 /// Once the index has loaded: puts the camera at the spawn and adds a [`Tile`] for each tile.
@@ -71,7 +77,13 @@ fn read_index(
         if &**name == "spawn" {
             **camera = node.transform.with_translation(node.transform.translation + Vec3::Y * EYE_HEIGHT_M);
         } else if let Some(tile) = Tile::named(name, node.transform.translation) {
-            commands.spawn((Name::new(name.to_string()), DespawnOnExit(Screen::World), tile, Transform::default(), Visibility::default()));
+            commands.spawn((
+                Name::new(name.to_string()),
+                DespawnOnExit(Screen::World),
+                tile,
+                Transform::default(),
+                Visibility::default(),
+            ));
         }
     }
     commands.remove_resource::<Index>();

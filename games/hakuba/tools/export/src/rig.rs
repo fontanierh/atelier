@@ -188,7 +188,8 @@ impl Bones {
         let mut pairs = vec![("pelvis", &self.pelvis), ("spine", &self.spine)];
         pairs.extend(self.spine_mid.iter().map(|bone| ("spine_mid", bone)));
         pairs.extend([("chest", &self.chest), ("neck", &self.neck), ("head", &self.head)]);
-        let mut named: Vec<(String, &str)> = pairs.into_iter().map(|(rig, bone)| (rig.to_string(), bone.as_str())).collect();
+        let mut named: Vec<(String, &str)> =
+            pairs.into_iter().map(|(rig, bone)| (rig.to_string(), bone.as_str())).collect();
         for (side, limbs) in [("l", &self.left), ("r", &self.right)] {
             let parts = [
                 ("clavicle", &limbs.clavicle),

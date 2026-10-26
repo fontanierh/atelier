@@ -25,10 +25,7 @@ fn main() {
                 })
                 // Load assets without looking for a .meta file next to each: in the browser, the server answers a
                 // missing file with index.html, which Bevy cannot read.
-                .set(AssetPlugin {
-                    meta_check: AssetMetaCheck::Never,
-                    ..default()
-                }),
+                .set(AssetPlugin { meta_check: AssetMetaCheck::Never, ..default() }),
         )
         .add_plugins((ScreensPlugin, MenuPlugin, WorldPlugin, CharactersPlugin, ViewerPlugin))
         .run();

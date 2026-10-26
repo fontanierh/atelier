@@ -89,7 +89,8 @@ impl Glb {
             };
             node["scale"] = json!(scale);
             if let Some(translation) = node.get_mut("translation") {
-                let moved: Vec<f64> = translation.as_array().unwrap().iter().map(|t| t.as_f64().unwrap() * factor).collect();
+                let moved: Vec<f64> =
+                    translation.as_array().unwrap().iter().map(|t| t.as_f64().unwrap() * factor).collect();
                 *translation = json!(moved);
             }
         }
@@ -113,7 +114,8 @@ impl Glb {
 
     /// Shrinks every embedded PNG larger than `size` pixels on a side, keeping its aspect ratio.
     pub fn resize_images(&mut self, size: u32) -> Result<()> {
-        let views: Vec<usize> = items(&self.json, "images").filter_map(|image| image.get("bufferView")).map(index).collect();
+        let views: Vec<usize> =
+            items(&self.json, "images").filter_map(|image| image.get("bufferView")).map(index).collect();
         for view in views {
             let reader = ImageReader::new(Cursor::new(self.view(view))).with_guessed_format()?;
             if reader.format() != Some(ImageFormat::Png) {
@@ -125,7 +127,11 @@ impl Glb {
             }
             let resized = picture.resize(size, size, imageops::FilterType::Lanczos3);
             let mut out = Vec::new();
-            resized.write_with_encoder(PngEncoder::new_with_quality(&mut out, CompressionType::Best, FilterType::Adaptive))?;
+            resized.write_with_encoder(PngEncoder::new_with_quality(
+                &mut out,
+                CompressionType::Best,
+                FilterType::Adaptive,
+            ))?;
             self.replaced.insert(view, out);
         }
         Ok(())
@@ -168,7 +174,11 @@ impl Glb {
                 let numbers = |key: &str, default: &[f64]| -> Vec<f64> {
                     node.get(key).map_or(default.to_vec(), |v| v.as_array().unwrap().iter().map(number).collect())
                 };
-                let (t, r, s) = (numbers("translation", &[0.0; 3]), numbers("rotation", &[0., 0., 0., 1.]), numbers("scale", &[1.0; 3]));
+                let (t, r, s) = (
+                    numbers("translation", &[0.0; 3]),
+                    numbers("rotation", &[0., 0., 0., 1.]),
+                    numbers("scale", &[1.0; 3]),
+                );
                 Ok(Trs {
                     translation: DVec3::from_slice(&t),
                     rotation: DQuat::from_slice(&r).normalize(),
@@ -244,8 +254,12 @@ impl Glb {
         let (mut samplers, mut channels) = (Vec::new(), Vec::new());
         for (node, track) in tracks {
             let (path, kind, values): (&str, &str, Vec<f32>) = match track {
-                Track::Translation(v) => ("translation", "VEC3", v.iter().flat_map(|p| p.to_array()).map(|x| x as f32).collect()),
-                Track::Rotation(v) => ("rotation", "VEC4", v.iter().flat_map(|q| q.to_array()).map(|x| x as f32).collect()),
+                Track::Translation(v) => {
+                    ("translation", "VEC3", v.iter().flat_map(|p| p.to_array()).map(|x| x as f32).collect())
+                }
+                Track::Rotation(v) => {
+                    ("rotation", "VEC4", v.iter().flat_map(|q| q.to_array()).map(|x| x as f32).collect())
+                }
             };
             let output = self.add_floats(&values, kind, false);
             channels.push(json!({ "sampler": samplers.len(), "target": { "node": node, "path": path } }));
@@ -300,9 +314,14 @@ impl Glb {
 
     fn add_indices(&mut self, indices: &[u32]) -> usize {
         let bytes: Vec<u8> = indices.iter().flat_map(|i| i.to_le_bytes()).collect();
-        let view = push(&mut self.json, "bufferViews", json!({ "buffer": 0, "byteLength": bytes.len(), "target": 34963 }));
+        let view =
+            push(&mut self.json, "bufferViews", json!({ "buffer": 0, "byteLength": bytes.len(), "target": 34963 }));
         self.replaced.insert(view, bytes);
-        push(&mut self.json, "accessors", json!({ "bufferView": view, "componentType": 5125, "count": indices.len(), "type": "SCALAR" }))
+        push(
+            &mut self.json,
+            "accessors",
+            json!({ "bufferView": view, "componentType": 5125, "count": indices.len(), "type": "SCALAR" }),
+        )
     }
 
     fn floats(&self, accessor: usize) -> Result<Vec<f32>> {
@@ -333,7 +352,8 @@ impl Glb {
             "VEC3" => 3,
             _ => 4,
         };
-        let mut accessor = json!({ "bufferView": view, "componentType": 5126, "count": values.len() / width, "type": kind });
+        let mut accessor =
+            json!({ "bufferView": view, "componentType": 5126, "count": values.len() / width, "type": kind });
         if bounds {
             let columns = |pick: fn(f32, f32) -> f32| -> Vec<f32> {
                 (0..width).map(|c| values.iter().skip(c).step_by(width).copied().reduce(pick).unwrap()).collect()
@@ -427,7 +447,8 @@ fn view_holders(gltf: &mut Value) -> impl Iterator<Item = &mut Value> {
     let mut holders = Vec::new();
     for (key, value) in object.iter_mut() {
         if key == "accessors" || key == "images" {
-            holders.extend(value.as_array_mut().unwrap().iter_mut().filter(|holder| holder.get("bufferView").is_some()));
+            holders
+                .extend(value.as_array_mut().unwrap().iter_mut().filter(|holder| holder.get("bufferView").is_some()));
         }
     }
     holders.into_iter()

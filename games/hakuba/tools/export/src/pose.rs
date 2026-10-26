@@ -31,7 +31,8 @@ pub type Pose = Vec<Option<Joint>>;
 pub fn place(i: usize, pose: &Pose, rest: &Pose) -> DVec3 {
     let parent = rig::parent(i).expect("only the pelvis has no parent");
     let (bone_rest, parent_rest, parent_now) = (rest[i].unwrap(), rest[parent].unwrap(), pose[parent].unwrap());
-    parent_now.position + parent_now.rotation * parent_rest.rotation.transpose() * (bone_rest.position - parent_rest.position)
+    parent_now.position
+        + parent_now.rotation * parent_rest.rotation.transpose() * (bone_rest.position - parent_rest.position)
 }
 
 /// The rotation whose Y axis is `y` and whose Z axis is `z`, made perpendicular to it.

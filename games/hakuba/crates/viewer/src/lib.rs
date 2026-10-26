@@ -54,9 +54,12 @@ fn show(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials:
     for character in Character::ALL {
         characters.with_child((button(character.name()), observe(show_character(character))));
     }
-    characters.with_child((button("Menu"), observe(|_: On<Activate>, mut next: ResMut<NextState<Screen>>| {
-        next.set(Screen::Menu);
-    })));
+    characters.with_child((
+        button("Menu"),
+        observe(|_: On<Activate>, mut next: ResMut<NextState<Screen>>| {
+            next.set(Screen::Menu);
+        }),
+    ));
     commands.spawn((
         on_screen.clone(),
         ClipList,
@@ -83,7 +86,11 @@ fn show_character(character: Character) -> impl Fn(On<Activate>, Commands, Query
 }
 
 /// Fills the clip column once a character's clips have loaded.
-fn list_clips(mut commands: Commands, loaded: Query<(Entity, &Clips), Added<Clips>>, list: Single<Entity, With<ClipList>>) {
+fn list_clips(
+    mut commands: Commands,
+    loaded: Query<(Entity, &Clips), Added<Clips>>,
+    list: Single<Entity, With<ClipList>>,
+) {
     let Some((character, clips)) = loaded.iter().next() else { return };
     commands.entity(*list).despawn_children().with_child(text("Clips", 24.0));
     for name in clips.names() {

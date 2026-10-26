@@ -89,7 +89,12 @@ fn choose(
 }
 
 /// When a tile's new version has spawned, removes the version it showed before.
-fn swap(ready: On<WorldInstanceReady>, mut commands: Commands, spawning: Query<&Spawning>, mut tiles: Query<&mut Tile>) {
+fn swap(
+    ready: On<WorldInstanceReady>,
+    mut commands: Commands,
+    spawning: Query<&Spawning>,
+    mut tiles: Query<&mut Tile>,
+) {
     let Ok(Spawning(tile)) = spawning.get(ready.entity) else { return };
     commands.entity(ready.entity).remove::<Spawning>();
     let Ok(mut tile) = tiles.get_mut(*tile) else { return };

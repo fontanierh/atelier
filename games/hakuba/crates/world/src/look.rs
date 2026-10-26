@@ -128,6 +128,9 @@ fn sky_dome() -> Mesh {
     mesh
 }
 
-fn follow_camera(camera: Single<&Transform, (With<Camera3d>, Without<Sky>)>, mut sky: Single<&mut Transform, With<Sky>>) {
+fn follow_camera(
+    camera: Single<&Transform, (With<Camera3d>, Without<Sky>)>,
+    mut sky: Single<&mut Transform, With<Sky>>,
+) {
     sky.translation = camera.translation;
 }

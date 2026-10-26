@@ -62,7 +62,8 @@ const COARSE: usize = 4;
 
 pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     let [x, y] = settings.south_west_m;
-    let ground = Ground::read(&folder.join(&settings.ground), settings.page_steps, settings.ground_step_m, DVec2::new(x, y))?;
+    let ground =
+        Ground::read(&folder.join(&settings.ground), settings.page_steps, settings.ground_step_m, DVec2::new(x, y))?;
     let mut overlays = Vec::new();
     for region in regions::REGIONS {
         for mut overlay in region.overlays() {
@@ -77,7 +78,12 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     let previous = checksums::read(&tiles)?;
     let mut current = BTreeMap::new();
     let code = checksums::code()?;
-    let tile_settings = serde_json::to_vec(&json!([settings.south_west_m, settings.ground_step_m, settings.tile_steps, settings.ground_colour]))?;
+    let tile_settings = serde_json::to_vec(&json!([
+        settings.south_west_m,
+        settings.ground_step_m,
+        settings.tile_steps,
+        settings.ground_colour
+    ]))?;
     let mut rebuilt = 0;
     let mut index = Glb::from_json(json!({ "asset": { "version": "2.0" } }));
     for column in first_column..=last_column {
@@ -88,7 +94,10 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
                 bail!("tile {column} {row} reaches past the ground");
             }
             let stem = format!("{column}_{row}");
-            let files = [(Detail::Full, tiles.join(format!("{stem}.glb"))), (Detail::Middle, tiles.join(format!("{stem}.middle.glb")))];
+            let files = [
+                (Detail::Full, tiles.join(format!("{stem}.glb"))),
+                (Detail::Middle, tiles.join(format!("{stem}.middle.glb"))),
+            ];
             let checksum = tile.checksum(&code, &tile_settings, &ground, &overlays);
             if previous.get(&stem) != Some(&checksum) || files.iter().any(|(_, file)| !file.is_file()) {
                 for (detail, file) in &files {
@@ -97,7 +106,8 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
                 rebuilt += 1;
             }
             current.insert(stem, checksum);
-            let centre = ground.at((tile.columns.0 + tile.columns.1) as f64 / 2.0, (tile.rows.0 + tile.rows.1) as f64 / 2.0);
+            let centre =
+                ground.at((tile.columns.0 + tile.columns.1) as f64 / 2.0, (tile.rows.0 + tile.rows.1) as f64 / 2.0);
             index.add_marker(&format!("tile {column} {row}"), game(centre), DQuat::IDENTITY);
         }
     }
@@ -133,7 +143,14 @@ struct Tile {
 }
 
 impl Tile {
-    fn write(&self, ground: &Ground, overlays: &[Overlay], settings: &Settings, detail: Detail, path: &Path) -> Result<()> {
+    fn write(
+        &self,
+        ground: &Ground,
+        overlays: &[Overlay],
+        settings: &Settings,
+        detail: Detail,
+        path: &Path,
+    ) -> Result<()> {
         let mut glb = Glb::from_json(json!({ "asset": { "version": "2.0" } }));
         let ground_material = glb.add_material("ground", linear(settings.ground_colour));
         let ground_mesh = self.ground(ground, detail, ground_material);
@@ -144,7 +161,8 @@ impl Tile {
             if mesh.indices.is_empty() {
                 continue;
             }
-            overlay::check_above(&drawn, &mesh).with_context(|| format!("writing {}: {}", path.display(), overlay.name))?;
+            overlay::check_above(&drawn, &mesh)
+                .with_context(|| format!("writing {}: {}", path.display(), overlay.name))?;
             mesh.material = glb.add_material(&overlay.name, linear(overlay.colour));
             glb.add_mesh(&overlay.name, &mesh);
         }
@@ -163,11 +181,14 @@ impl Tile {
             mesh.normals.push(game_direction(ground.normal(p.truncate())).as_vec3().to_array());
             (mesh.positions.len() - 1) as u32
         };
-        let mut point = |mesh: &mut Mesh, i: usize, j: usize| *points.entry((i, j)).or_insert_with(|| vertex(mesh, i as f64, j as f64));
+        let mut point = |mesh: &mut Mesh, i: usize, j: usize| {
+            *points.entry((i, j)).or_insert_with(|| vertex(mesh, i as f64, j as f64))
+        };
         if detail == Detail::Full {
             for j in self.rows.0..self.rows.1 {
                 for i in self.columns.0..self.columns.1 {
-                    let [a, b, c, d] = [(i, j), (i + 1, j), (i + 1, j + 1), (i, j + 1)].map(|(i, j)| point(&mut mesh, i, j));
+                    let [a, b, c, d] =
+                        [(i, j), (i + 1, j), (i + 1, j + 1), (i, j + 1)].map(|(i, j)| point(&mut mesh, i, j));
                     mesh.indices.extend([a, b, c, a, c, d]);
                 }
             }

@@ -9,10 +9,7 @@ pub struct CharactersPlugin;
 
 impl Plugin for CharactersPlugin {
     fn build(&self, app: &mut App) {
-        app.add_observer(load_model)
-            .add_observer(start_animating)
-            .add_observer(play)
-            .add_systems(Update, spawn_models);
+        app.add_observer(load_model).add_observer(start_animating).add_observer(play).add_systems(Update, spawn_models);
     }
 }
 
@@ -72,7 +69,12 @@ pub struct Play {
 #[derive(Component)]
 struct Loading(Handle<Gltf>);
 
-fn load_model(add: On<Add<Character>>, characters: Query<&Character>, assets: Res<AssetServer>, mut commands: Commands) {
+fn load_model(
+    add: On<Add<Character>>,
+    characters: Query<&Character>,
+    assets: Res<AssetServer>,
+    mut commands: Commands,
+) {
     let character = characters.get(add.entity).expect("the character was just added");
     commands.entity(add.entity).insert(Loading(assets.load(character.model())));
 }
@@ -89,10 +91,10 @@ fn spawn_models(
         named.sort_by_key(|(name, _)| name.to_string());
         let (graph, indices) = AnimationGraph::from_clips(named.iter().map(|(_, clip)| (*clip).clone()));
         let clips = named.iter().zip(indices).map(|((name, _), index)| (name.to_string(), index)).collect();
-        commands.entity(entity).remove::<Loading>().insert((
-            Clips { graph: graphs.add(graph), clips, player: None },
-            WorldAssetRoot(gltf.scenes[0].clone()),
-        ));
+        commands
+            .entity(entity)
+            .remove::<Loading>()
+            .insert((Clips { graph: graphs.add(graph), clips, player: None }, WorldAssetRoot(gltf.scenes[0].clone())));
     }
 }
 

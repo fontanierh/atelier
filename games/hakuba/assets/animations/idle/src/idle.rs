@@ -1,9 +1,9 @@
 //! The idle: the skeleton its source clip is on, and how a character changes it.
 
-use anyhow::{Result, bail};
 use crate::pose::{Pose, UP};
 use crate::pose_edit::{Foot, Leg, bend_forward, body_left, plant, repose};
 use crate::rig::{self, Bones, Fingers, Limbs, Skeleton};
+use anyhow::{Result, bail};
 
 /// The skeleton of `source.glb`: which of its bones plays each rig bone. It has no bone between its spine and chest.
 pub struct Source;
@@ -110,7 +110,8 @@ pub fn apply(stance: &Stance, rest: &Pose, frames: &mut [Pose]) -> Result<()> {
     ]
     .map(|(name, degrees)| bend_forward(&reference, rig::index(name), left, degrees));
     // Each leg, its side (1 on the left), and which way its knee points in the reference frame.
-    let legs = [(Leg::on("l"), 1.0), (Leg::on("r"), -1.0)].map(|(leg, side)| (leg, side, leg.knee_direction(&reference)));
+    let legs =
+        [(Leg::on("l"), 1.0), (Leg::on("r"), -1.0)].map(|(leg, side)| (leg, side, leg.knee_direction(&reference)));
     let pelvis = rig::index("pelvis");
     let reference_pelvis = reference[pelvis].unwrap().rotation;
 

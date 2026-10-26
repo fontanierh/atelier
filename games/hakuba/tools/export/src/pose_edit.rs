@@ -121,7 +121,8 @@ pub fn bend(pose: &mut Pose, rest: &Pose, leg: Leg, goal: DVec3, pole: DVec3) ->
     let (hip, knee_before) = (joint(pose, leg.thigh).position, joint(pose, leg.shin).position);
     let ankle_before = joint(pose, leg.foot).position;
     let reach = goal - hip;
-    let distance = reach.length().clamp((upper - lower).abs() + (upper + lower) * (1.0 - REACH), (upper + lower) * REACH);
+    let distance =
+        reach.length().clamp((upper - lower).abs() + (upper + lower) * (1.0 - REACH), (upper + lower) * REACH);
     let axis = reach.normalize();
     let pole = (pole - axis * pole.dot(axis)).normalize();
     let along = (upper * upper - lower * lower + distance * distance) / (2.0 * distance);

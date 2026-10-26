@@ -23,7 +23,8 @@ pub const FILE: &str = "checksums.toml";
 /// checksum covers instead, the glTF writer, and the crate versions they are built with.
 fn tile_code() -> Result<Vec<PathBuf>> {
     let root = Path::new(EXPORTER);
-    let mut code: Vec<PathBuf> = files(&root.join("src/world"))?.into_iter().filter(|file| !file.ends_with("regions.rs")).collect();
+    let mut code: Vec<PathBuf> =
+        files(&root.join("src/world"))?.into_iter().filter(|file| !file.ends_with("regions.rs")).collect();
     code.extend([root.join("src/glb.rs"), root.join("Cargo.toml"), root.join("../../Cargo.lock")]);
     Ok(code)
 }
@@ -54,14 +55,18 @@ impl Tile {
                 digest.update(ground.sample(i, j).unwrap_or(f64::NAN).to_bits().to_le_bytes());
             }
         }
-        let (low, high) = (ground.position(self.columns.0 as f64, self.rows.0 as f64), ground.position(self.columns.1 as f64, self.rows.1 as f64));
+        let (low, high) = (
+            ground.position(self.columns.0 as f64, self.rows.0 as f64),
+            ground.position(self.columns.1 as f64, self.rows.1 as f64),
+        );
         for overlay in overlays {
             let inside: Vec<_> = overlay
                 .triangles
                 .iter()
                 .filter(|triangle| {
                     let corners = triangle.map(|(p, _)| p);
-                    let (from, to) = (corners[0].min(corners[1]).min(corners[2]), corners[0].max(corners[1]).max(corners[2]));
+                    let (from, to) =
+                        (corners[0].min(corners[1]).min(corners[2]), corners[0].max(corners[1]).max(corners[2]));
                     from.cmple(high).all() && to.cmpge(low).all()
                 })
                 .collect();

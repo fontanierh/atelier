@@ -83,9 +83,8 @@ pub fn retarget(source_rest: &Pose, clip: &[Pose], target_rest: &Pose) -> Result
             };
             x[bone(&name("hand"))] = Some(palm(&s) * palm(&t).transpose());
         }
-        let foot = |p: &dyn Fn(&str) -> Option<DVec3>| {
-            frame(level(p(&name("toe")).unwrap() - p(&name("foot")).unwrap()), UP)
-        };
+        let foot =
+            |p: &dyn Fn(&str) -> Option<DVec3>| frame(level(p(&name("toe")).unwrap() - p(&name("foot")).unwrap()), UP);
         let feet = foot(&s) * foot(&t).transpose();
         x[bone(&name("foot"))] = Some(feet);
         x[bone(&name("toe"))] = Some(feet);
@@ -133,8 +132,10 @@ pub fn retarget(source_rest: &Pose, clip: &[Pose], target_rest: &Pose) -> Result
         }
 
         // Forward kinematics, the pelvis first.
-        let mut pose: Pose =
-            rotation.iter().map(|rotation| rotation.map(|rotation| Joint { rotation, position: DVec3::ZERO })).collect();
+        let mut pose: Pose = rotation
+            .iter()
+            .map(|rotation| rotation.map(|rotation| Joint { rotation, position: DVec3::ZERO }))
+            .collect();
         let pelvis = bone("pelvis");
         let source_move = |i: usize| c * (source[i].unwrap().position - source_rest[i].unwrap().position) * scale;
         pose[pelvis].as_mut().unwrap().position = rest_position(pelvis) + source_move(pelvis);

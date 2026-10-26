@@ -10,6 +10,10 @@ is here and how to build it; [ARCHITECTURE.md](ARCHITECTURE.md) says how the par
   sound cues). Platform files never name a game.
 - `games/<game>/`: `game.toml` (play profiles, fetches, stream), `build.py` (build steps), `unreal/`, `world/`,
   `assets/`, `scenarios/`, `docs/`. `yorimichi` is the full game; `sandbox` is the template for `atelier new`.
+- `games/hakuba/` is different: a Bevy game, all Rust, built with `cargo` and `trunk` and never through the
+  `atelier` command. It has no `game.toml` or `build.py`, and the Unreal, Blender, render-lock and build-cache rules
+  below do not apply to it. Follow [its README](games/hakuba/README.md) and its `CONTRACTS` files; the repository,
+  lint, commit and board rules still apply.
 
 ```sh
 uv run atelier build <game> [step ...]   # incremental; --list shows the steps
