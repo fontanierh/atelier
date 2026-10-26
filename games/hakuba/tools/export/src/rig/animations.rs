@@ -11,6 +11,8 @@ use crate::rig::pose::Pose;
 mod backflip;
 #[path = "../../../../assets/animations/backflip-land/src/backflip-land.rs"]
 mod backflip_land;
+#[path = "../../../../assets/animations/double-jump/src/double-jump.rs"]
+mod double_jump;
 #[path = "../../../../assets/animations/fall/src/fall.rs"]
 mod fall;
 #[path = "../../../../assets/animations/glide/src/glide.rs"]
@@ -55,8 +57,6 @@ mod run_jump;
 mod run_land;
 #[path = "../../../../assets/animations/sprint/src/sprint.rs"]
 mod sprint;
-#[path = "../../../../assets/animations/tuck/src/tuck.rs"]
-mod tuck;
 #[path = "../../../../assets/animations/walk/src/walk.rs"]
 mod walk;
 
@@ -79,7 +79,7 @@ pub const ANIMATIONS: [&dyn Animation; 26] = [
     &hop_right_land::HopRightLand,
     &backflip::Backflip,
     &backflip_land::BackflipLand,
-    &tuck::Tuck,
+    &double_jump::DoubleJump,
     &glide_open::GlideOpen,
     &glide_open_falling::GlideOpenFalling,
     &glide::Glide,

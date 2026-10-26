@@ -96,6 +96,21 @@ impl Glb {
         }
     }
 
+    /// Makes every material matte, as [`Glb::add_material`] does: no metal and no mirror-like reflection, whatever the
+    /// source asked. A model generator's strong specular otherwise shows the sky as a white sheen, over dark hair most.
+    pub fn make_matte(&mut self) {
+        let Some(materials) = self.json.get_mut("materials").and_then(Value::as_array_mut) else { return };
+        for material in materials {
+            material["pbrMetallicRoughness"]["metallicFactor"] = json!(0.0);
+            material["pbrMetallicRoughness"]["roughnessFactor"] = json!(1.0);
+            material["extensions"]["KHR_materials_specular"] = json!({ "specularFactor": 0.0 });
+        }
+        let used = self.json.get("extensionsUsed").and_then(Value::as_array);
+        if !used.is_some_and(|used| used.contains(&json!("KHR_materials_specular"))) {
+            push(&mut self.json, "extensionsUsed", json!("KHR_materials_specular"));
+        }
+    }
+
     pub fn remove_morph_targets(&mut self) {
         for mesh in items_mut(&mut self.json, "meshes") {
             let mesh = mesh.as_object_mut().unwrap();
@@ -246,7 +261,8 @@ impl Glb {
         (0..locals.len()).map(|i| world(i, locals, &parents, &mut worlds)).collect()
     }
 
-    /// The animation named `name`, one frame per key: its frame rate, and every node's transform in each frame.
+    /// The animation named `name`, one frame per key from its first: its frame rate, and every node's transform in each
+    /// frame.
     pub fn sample(&self, name: &str) -> Result<(f64, Vec<Vec<Trs>>)> {
         let animation = items(&self.json, "animations")
             .find(|animation| animation["name"].as_str() == Some(name))
@@ -265,7 +281,8 @@ impl Glb {
                 fps = ((times.len() - 1) as f64 / (times[times.len() - 1] - times[0]) as f64).round();
                 frames = vec![rest.clone(); times.len()];
             }
-            let evenly = times.iter().enumerate().all(|(k, &time)| (time as f64 - k as f64 / fps).abs() < 1e-4);
+            let evenly =
+                times.iter().enumerate().all(|(k, &time)| ((time - times[0]) as f64 - k as f64 / fps).abs() < 1e-4);
             if times.len() != frames.len() || !evenly {
                 bail!("{name}: every channel needs one key per frame");
             }

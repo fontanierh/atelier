@@ -13,14 +13,14 @@ assets/
     hard-land/, -up/        landing from high up, and standing up again
     hop-left/, -right/      the side hops that dodge, and their landings (`-land`)
     backflip/               the backflip that dodges, and its landing (`backflip-land/`)
-    tuck/                   the body tucked into a ball, which the game turns through the double jump
+    double-jump/            the double jump's tuck and forward somersault, from Yorimichi's Cairo
     glide-open/             opening the paraglider, and `glide-open-falling/` while falling fast
     glide/                  hanging under the paraglider, and leaning `-forward`, `-back`, `-left` and `-right`
     glide-close/            closing it on landing
   characters/
     nox/                    Nox, the playable character, with every animation fitted to him
   equipment/
-    glider/                 the paraglider, held in the right hand
+    glider/                 the paraglider, held in both hands above the head
   plants/                   trees, bushes and grass, each built from its settings alone
     maple-a/, maple-b/      maples
     broad-a/, broad-b/      broadleaf trees

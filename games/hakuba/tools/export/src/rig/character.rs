@@ -1,9 +1,10 @@
 //! The `character` kind: a character's model, scaled to its height, with smaller textures and no morph targets, its
 //! rig bones renamed to the rig's names, and every animation fitted to it.
 //!
-//! Beside the model, for the game: an empty node `grip_r` under the right hand, where it holds things such as the
-//! paraglider, and a node `clips` whose extras give, by clip, how fast the character's feet carry it over the ground,
-//! in metres a second (`{"speeds": {"run": 5.4, ...}}`; clips that stay in place are left out).
+//! Beside the model, for the game: an empty node `grip_r` under the right hand, where it holds things, and a node
+//! `clips` whose extras give, by clip, how fast the character's feet carry it over the ground, in metres a second, and
+//! how high its hips stand at rest (`{"speeds": {"run": 5.4, ...}, "hips_m": 0.97}`; clips that stay in place are left
+//! out). The rig bones keep the rig's names, so the game finds the hands as `hand_l` and `hand_r`.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -58,6 +59,7 @@ const STILL_SPEED: f64 = 0.01;
 pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     let mut glb = Glb::read(&folder.join(&settings.source))?;
     glb.remove_morph_targets();
+    glb.make_matte();
     glb.scale_to_height(settings.height_m);
     glb.resize_images(settings.texture_size)?;
     let name = folder.file_name().unwrap().to_string_lossy();
@@ -93,7 +95,7 @@ fn animate(glb: &mut Glb, character: &dyn Character, changes: &BTreeMap<String, 
             speeds.insert(name.into(), json!((speed * 1000.0).round() / 1000.0));
         }
     }
-    glb.add_data("clips", json!({ "speeds": speeds }));
+    glb.add_data("clips", json!({ "speeds": speeds, "hips_m": (hips * 1000.0).round() / 1000.0 }));
     grip(glb, &nodes, &rest, &rest_worlds, hold)?;
 
     for (bone, node) in RIG.iter().zip(&nodes) {

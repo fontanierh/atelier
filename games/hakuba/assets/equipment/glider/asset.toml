@@ -1,10 +1,12 @@
-# The paraglider, held in the right hand, with its cloth rippling in a loop.
-# src/glider.glb is the paraglider with its clip and src/holder.glb the skeleton that held it, at rest, both baked from
-# Yorimichi's motion library (games/yorimichi/assets/characters/adventure). Its root sits at the holder's Weapon_R bone.
+# The paraglider, held in both hands above the head, with its cloth rippling in a loop.
+# src/glider.glb is the paraglider with its clip and src/holder.glb the skeleton that held it, hanging under it in
+# Float_Float, both baked from Yorimichi's motion library (games/yorimichi/assets/characters/adventure). Its root sits
+# at the holder's Weapon_R bone.
 kind = "equipment"
 source = "src/glider.glb"
 clip = "Float"
 holder = "src/holder.glb"
+pose = "Float_Float"
 held_at = "Weapon_R"
 scale = 0.8            # as Yorimichi draws it
-inputs_sha256 = "6cf491bb729e031a81eccc46cd7ae95cc1eb911731af90ca9422678421e79563"
+inputs_sha256 = "bd87817f1c26ecb6e92bdb1e3efde5b7ecdd47350bdd5c90fee4432fe79626da"

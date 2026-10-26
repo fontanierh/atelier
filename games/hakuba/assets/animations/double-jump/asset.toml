@@ -1,0 +1,8 @@
+# The double jump: a compact tuck and one forward somersault about the middle of the body, opening upright into the
+# fall pose. It starts turning at 0.08 s, has turned once by 0.6 s and is upright at 0.633 s, in its 0.75 s.
+# src/source.glb holds the clip on Cairo's skeleton, from Yorimichi's Cairo (games/yorimichi/assets/characters/cairo,
+# action "DoubleJump · library"), which every Yorimichi character plays; src/double-jump.rs names his bones.
+kind = "animation"
+source = "src/source.glb"
+clip = "Animation"
+inputs_sha256 = "750192a1692728884e046753718f8dd575fadfc0bf35f2535bf7e97a259ca5f8"

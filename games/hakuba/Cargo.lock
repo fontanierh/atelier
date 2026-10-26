@@ -3083,6 +3083,8 @@ dependencies = [
  "hakuba_characters",
  "hakuba_screens",
  "hakuba_world",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

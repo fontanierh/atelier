@@ -1,7 +1,7 @@
 # A round flowering bush, 2.4 m across.
 kind = "plant"
 seed = 34
-inputs_sha256 = "9e2bb48618e2b1f6567456d30ec983e3bdd160af1c2a1cf6feee063adfd1a903"
+inputs_sha256 = "9fa86655a524bb54f7d026011d2e0fc9902d420eb595bd84a9e6a8a1090d2fa8"
 
 [leaves]
 texture = "flowers"

@@ -1,7 +1,0 @@
-# The body tucked into a ball, one pose, which the game turns through the double jump's somersault.
-# src/source.glb holds the clip on the motion library's skeleton, baked from Yorimichi's motion library
-# (games/yorimichi/assets/characters/adventure); src/tuck.rs names it.
-kind = "animation"
-source = "src/source.glb"
-clip = "Rolldown"
-inputs_sha256 = "f11aaac5866ba18aaeadad2dbe3ea00903753394f2099704ce93cdefa756d40c"

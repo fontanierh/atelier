@@ -2,4 +2,4 @@
 # world's settings say how often.
 kind = "texture"
 source = "src/ground.jpg"
-inputs_sha256 = "8bdfa637a3f25a32ab36bcbad476633915ecb907dfef28e36cb8d1e5879934f1"
+inputs_sha256 = "d94e16df2590d35204afc34e6f2eb69b60beb21122ce5df047e3b405a48d0a33"
