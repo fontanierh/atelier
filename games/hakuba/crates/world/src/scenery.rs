@@ -13,6 +13,7 @@ use bevy::prelude::*;
 use bevy::world_serialization::WorldAssetRoot;
 use serde::Deserialize;
 
+use crate::tiles::TILES;
 use crate::wind::{Swaying, SwayingMaterials};
 
 /// A model with fewer vertices than this has its copies merged.
@@ -69,15 +70,19 @@ fn read(
     roots: Query<&WorldAssetRoot>,
 ) {
     for (entity, extras) in &added {
+        // Only the tiles' data nodes: other models, such as the characters, carry extras of their own.
+        let Some(path) = parents.iter_ancestors(entity).find_map(|e| roots.get(e).ok()).and_then(|r| r.0.path()) else {
+            continue;
+        };
+        if !path.path().starts_with(TILES) {
+            continue;
+        }
         let copies: Copies = match serde_json::from_str(&extras.value) {
             Ok(copies) => copies,
             Err(error) => {
                 warn!("a tile's data node is not a model's copies: {error}");
                 continue;
             }
-        };
-        let Some(path) = parents.iter_ancestors(entity).find_map(|e| roots.get(e).ok()).and_then(|r| r.0.path()) else {
-            continue;
         };
         let model = match path.resolve_embed_str(&copies.model) {
             Ok(model) => model,

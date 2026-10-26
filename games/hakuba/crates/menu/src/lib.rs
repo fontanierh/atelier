@@ -1,4 +1,5 @@
-//! The menu the game opens on: go into the world, or into the character viewer.
+//! The menu the game opens on: go into the world, into the character viewer or to the settings. A controller's South
+//! button goes into the world.
 
 use bevy::prelude::*;
 use bevy::ui_widgets::{Activate, observe};
@@ -8,7 +9,7 @@ pub struct MenuPlugin;
 
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(Screen::Menu), show);
+        app.add_systems(OnEnter(Screen::Menu), show).add_systems(Update, play.run_if(in_state(Screen::Menu)));
     }
 }
 
@@ -30,10 +31,17 @@ fn show(mut commands: Commands) {
             text("Hakuba", 48.0),
             (button("World"), observe(go_to(Screen::World))),
             (button("Character viewer"), observe(go_to(Screen::Viewer))),
+            (button("Settings"), observe(go_to(Screen::Settings))),
         ],
     ));
 }
 
 fn go_to(screen: Screen) -> impl Fn(On<Activate>, ResMut<NextState<Screen>>) {
     move |_, mut next| next.set(screen)
+}
+
+fn play(gamepads: Query<&Gamepad>, mut next: ResMut<NextState<Screen>>) {
+    if gamepads.iter().any(|gamepad| gamepad.just_pressed(GamepadButton::South)) {
+        next.set(Screen::World);
+    }
 }

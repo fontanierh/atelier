@@ -1,6 +1,6 @@
 // The wind (wind.rs says what it does): Bevy's mesh vertex shaders for the main pass and the prepass, each moving a
-// vertex in the wind by how far it bends and its leaf's phase, its second texture coordinates. Plants have no morph
-// targets or skins, so those are left out.
+// vertex in the wind by how far it bends and its leaf's phase, its second texture coordinates, scaled by how strongly
+// the wind blows, its mesh's tag in thousandths. Plants have no morph targets or skins, so those are left out.
 
 @if(PREPASS_PIPELINE)
 import bevy_pbr::prepass::io::{Vertex, VertexOutput, decompress_vertex};
@@ -52,6 +52,11 @@ fn sway(at: vec3<f32>, time: f32, bend: f32, phase: f32) -> vec3<f32> {
     return (lean + branches + flutter) * bend;
 }
 
+// How strongly the wind blows on this mesh, its tag in thousandths: 1 is the usual wind.
+fn blowing(instance_index: u32) -> f32 {
+    return f32(mesh_functions::get_tag(instance_index)) / 1000.0;
+}
+
 @if(!PREPASS_PIPELINE)
 @vertex
 fn vertex(vertex_in: Vertex) -> VertexOutput {
@@ -59,7 +64,8 @@ fn vertex(vertex_in: Vertex) -> VertexOutput {
     let vertex = decompress_vertex(vertex_in, vertex_in.instance_index);
     let world_from_local = mesh_functions::get_world_from_local(vertex_in.instance_index);
     let still = mesh_functions::mesh_position_local_to_world(world_from_local, vec4<f32>(vertex.position, 1.0));
-    out.world_position = vec4<f32>(still.xyz + sway(still.xyz, globals.time, vertex.uv_b.x, vertex.uv_b.y), 1.0);
+    let bend = vertex.uv_b.x * blowing(vertex_in.instance_index);
+    out.world_position = vec4<f32>(still.xyz + sway(still.xyz, globals.time, bend, vertex.uv_b.y), 1.0);
     out.position = position_world_to_clip(out.world_position.xyz);
     out.world_normal = mesh_functions::mesh_normal_local_to_world(vertex.normal, vertex_in.instance_index);
     @if(VERTEX_UVS_A)
@@ -85,7 +91,8 @@ fn vertex(vertex_in: Vertex) -> VertexOutput {
     let vertex = decompress_vertex(vertex_in, vertex_in.instance_index);
     let world_from_local = mesh_functions::get_world_from_local(vertex_in.instance_index);
     let still = mesh_functions::mesh_position_local_to_world(world_from_local, vec4<f32>(vertex.position, 1.0));
-    out.world_position = vec4<f32>(still.xyz + sway(still.xyz, globals.time, vertex.uv_b.x, vertex.uv_b.y), 1.0);
+    let bend = vertex.uv_b.x * blowing(vertex_in.instance_index);
+    out.world_position = vec4<f32>(still.xyz + sway(still.xyz, globals.time, bend, vertex.uv_b.y), 1.0);
     out.position = position_world_to_clip(out.world_position.xyz);
     @if(UNCLIPPED_DEPTH_ORTHO_EMULATION) {
         out.unclipped_depth = out.position.z;
@@ -108,7 +115,7 @@ fn vertex(vertex_in: Vertex) -> VertexOutput {
     @if(MOTION_VECTOR_PREPASS) {
         let previous_from_local = mesh_functions::get_previous_world_from_local(vertex_in.instance_index);
         let before = mesh_functions::mesh_position_local_to_world(previous_from_local, vec4<f32>(vertex.position, 1.0));
-        let swayed = sway(still.xyz, globals.time, vertex.uv_b.x, vertex.uv_b.y);
+        let swayed = sway(still.xyz, globals.time, bend, vertex.uv_b.y);
         out.previous_world_position = vec4<f32>(before.xyz + swayed, 1.0);
     }
     @if(VERTEX_OUTPUT_INSTANCE_INDEX)

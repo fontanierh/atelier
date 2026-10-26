@@ -1,7 +1,7 @@
 //! The painterly filter: an eight-sector Kuwahara over the finished image. Around each pixel it looks at eight
 //! overlapping wedges, averages each, and keeps mostly the averages of the smoothest wedges, so flat areas turn into
-//! soft brush strokes while edges stay sharp. It reads 21 pixels within `RADIUS_PX`, and blends `STRENGTH` of the
-//! result over the image.
+//! soft brush strokes while edges stay sharp. It reads 21 pixels within `RADIUS_PX`, and blends the chosen share of
+//! the result over the image (the Painterly setting).
 
 use bevy::asset::embedded_asset;
 use bevy::core_pipeline::Core3dSystems;
@@ -14,9 +14,6 @@ use bevy::render::RenderApp;
 use bevy::render::extract_component::ExtractComponent;
 use bevy::render::render_resource::ShaderType;
 use bevy::shader::ShaderRef;
-
-/// How much of the filtered image shows over the original.
-const STRENGTH: f32 = 0.35;
 
 /// How far, in pixels, the farthest pixels it reads are.
 const RADIUS_PX: f32 = 2.0;
@@ -38,7 +35,8 @@ impl Plugin for PainterlyPlugin {
 #[derive(Component, ExtractComponent, Clone, Copy, ShaderType)]
 #[extract_app(RenderApp)]
 pub struct Painterly {
-    strength: f32,
+    /// How much of the filtered image shows over the original, from 0 to 1.
+    pub strength: f32,
     radius: f32,
     _padding: Vec2,
     offsets: [Vec4; TAPS],
@@ -77,7 +75,7 @@ impl Default for Painterly {
             packed[2 * n] = Vec4::from_slice(&tap[..4]);
             packed[2 * n + 1] = Vec4::from_slice(&tap[4..]);
         }
-        Self { strength: STRENGTH, radius: RADIUS_PX, _padding: Vec2::ZERO, offsets, weights: packed }
+        Self { strength: 0.0, radius: RADIUS_PX, _padding: Vec2::ZERO, offsets, weights: packed }
     }
 }
 

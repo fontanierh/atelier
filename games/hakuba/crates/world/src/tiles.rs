@@ -1,15 +1,16 @@
-//! The world's tiles: each shows its full version near the camera, its middle version further out, and nothing
-//! beyond. A tile keeps showing its old version until the new one has spawned, so nothing flickers in between.
+//! The world's tiles: each shows its full version near the camera, as far as the Detail setting says, its middle
+//! version further out, and nothing beyond. A tile keeps showing its old version until the new one has spawned, so nothing flickers in between.
 
 use bevy::prelude::*;
 use bevy::world_serialization::WorldInstanceReady;
 use hakuba_screens::Screen;
-
-/// Up to how far from the camera, to the tile's centre, a tile shows its full version.
-const FULL_M: f32 = 160.0;
+use hakuba_settings::Settings;
 
 /// Up to how far a tile shows its middle version.
 const MIDDLE_M: f32 = 2500.0;
+
+/// The folder of the tiles' models, under the assets.
+pub const TILES: &str = "world/tiles";
 
 pub struct TilesPlugin;
 
@@ -52,7 +53,7 @@ impl Tile {
 
     fn path(&self, detail: Detail) -> String {
         let suffix = if detail == Detail::Full { "" } else { ".middle" };
-        format!("world/tiles/{}_{}{suffix}.glb", self.column, self.row)
+        format!("{TILES}/{}_{}{suffix}.glb", self.column, self.row)
     }
 }
 
@@ -65,13 +66,14 @@ fn choose(
     mut commands: Commands,
     assets: Res<AssetServer>,
     camera: Single<&GlobalTransform, With<Camera3d>>,
+    settings: Res<Settings>,
     mut tiles: Query<(Entity, &mut Tile)>,
 ) {
     let eye = camera.translation();
     for (entity, mut tile) in &mut tiles {
         let distance = (tile.centre - eye).with_y(0.0).length();
         let detail = match distance {
-            d if d < FULL_M => Some(Detail::Full),
+            d if d < settings.detail.full_m() => Some(Detail::Full),
             d if d < MIDDLE_M => Some(Detail::Middle),
             _ => None,
         };

@@ -1,12 +1,15 @@
-//! The world: the ground, the road and what stands around it from `assets/world`, the sea, the sky, sun and haze, and a camera that
-//! starts at the spawn and flies.
+//! The world: the ground, the road and what stands around it from `assets/world`, the sea, the sky, sun and haze, and
+//! a camera that starts at the spawn. It publishes where the player starts ([`Spawn`]) and what the player can stand
+//! on ([`Ground`]); the player crate moves the camera.
 
-mod fly;
+mod ground;
 mod loading;
 mod look;
 mod painterly;
+mod pause;
 mod pixels;
 mod scenery;
+mod settings;
 mod tiles;
 mod wind;
 
@@ -14,8 +17,9 @@ use bevy::gltf::{Gltf, GltfNode};
 use bevy::prelude::*;
 use hakuba_screens::Screen;
 
-use fly::Fly;
 use tiles::Tile;
+
+pub use ground::{Ground, Hit, SEA_LEVEL_M};
 
 /// The world's index: one node per tile, and the spawn.
 const INDEX: &str = "world/world.glb";
@@ -31,12 +35,14 @@ pub struct WorldPlugin;
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
-            fly::FlyPlugin,
+            ground::GroundPlugin,
             loading::LoadingPlugin,
             look::LookPlugin,
             painterly::PainterlyPlugin,
+            pause::PausePlugin,
             pixels::PixelsPlugin,
             scenery::SceneryPlugin,
+            settings::SettingsPlugin,
             tiles::TilesPlugin,
             wind::WindPlugin,
         ))
@@ -49,6 +55,11 @@ impl Plugin for WorldPlugin {
 #[derive(Resource)]
 struct Index(Handle<Gltf>);
 
+/// Where the player starts, on the ground, facing the way the world's export says. Inserted once the world's index
+/// has loaded.
+#[derive(Resource, Clone, Copy)]
+pub struct Spawn(pub Transform);
+
 fn spawn_world(
     mut commands: Commands,
     assets: Res<AssetServer>,
@@ -57,6 +68,7 @@ fn spawn_world(
     mut images: ResMut<Assets<Image>>,
 ) {
     commands.insert_resource(Index(assets.load(INDEX)));
+    commands.remove_resource::<Spawn>();
     commands.spawn((
         Name::new("Sea"),
         DespawnOnExit(Screen::World),
@@ -68,29 +80,23 @@ fn spawn_world(
         })),
     ));
     let drawn = pixels::spawn(&mut commands, &mut images);
-    commands.spawn((
-        Name::new("Camera"),
-        DespawnOnExit(Screen::World),
-        Camera3d::default(),
-        Fly::default(),
-        look::camera(),
-        drawn,
-    ));
+    commands.spawn((Name::new("Camera"), DespawnOnExit(Screen::World), Camera3d::default(), look::camera(), drawn));
 }
 
-/// Once the index has loaded: puts the camera at the spawn and adds a [`Tile`] for each tile.
+/// Once the index has loaded: records the spawn, puts the camera there and adds a [`Tile`] for each tile.
 fn read_index(
     mut commands: Commands,
     index: Option<Res<Index>>,
     gltfs: Res<Assets<Gltf>>,
     nodes: Res<Assets<GltfNode>>,
-    mut camera: Single<&mut Transform, With<Fly>>,
+    mut camera: Single<&mut Transform, With<Camera3d>>,
 ) {
     let Some(index) = index else { return };
     let Some(gltf) = gltfs.get(&index.0) else { return };
     for (name, node) in &gltf.named_nodes {
         let node = nodes.get(node).expect("a loaded glTF's nodes are loaded");
         if &**name == "spawn" {
+            commands.insert_resource(Spawn(node.transform));
             **camera = node.transform.with_translation(node.transform.translation + Vec3::Y * EYE_HEIGHT_M);
         } else if let Some(tile) = Tile::named(name, node.transform.translation) {
             commands.spawn((

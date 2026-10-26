@@ -2,8 +2,9 @@
 //! own point in the swing, and their leaves flutter. A model's export says how far each vertex bends, in metres, and
 //! its leaf's phase, in its second texture coordinates: a plant bends from its foot, so its top and the outside of its
 //! crown move most. A part that sways is drawn with its own material and the vertex shader in `wind.wesl`, in every
-//! pass, so its shadow sways with it. Yorimichi also pushed plants away from the player; Hakuba has no one walking
-//! yet.
+//! pass, so its shadow sways with it. How strongly the wind blows, the Wind setting, reaches the shader as each swaying
+//! mesh's tag, in thousandths, so plants are still drawn together. Yorimichi also pushed plants away from the player;
+//! Hakuba does not yet.
 
 use bevy::asset::embedded_asset;
 use bevy::ecs::system::SystemParam;
@@ -12,6 +13,11 @@ use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use bevy::render::render_resource::AsBindGroup;
 use bevy::shader::ShaderRef;
+
+/// The mesh tag that tells the shader the wind blows `strength` times as strongly as usual.
+pub fn tag(strength: f32) -> u32 {
+    (strength.max(0.0) * 1000.0).round() as u32
+}
 
 /// A plant's material, swaying.
 pub type Swaying = ExtendedMaterial<StandardMaterial, Wind>;
