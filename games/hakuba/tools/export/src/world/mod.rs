@@ -49,8 +49,10 @@ pub struct Settings {
     tile_steps: usize,
     /// The first and the last tile exported, each as [column, row].
     tiles: [[usize; 2]; 2],
-    /// The ground's colour, in sRGB.
-    ground_colour: [f64; 3],
+    /// The texture the ground shows, by its folder name under `assets/textures/`.
+    ground_texture: String,
+    /// How far apart the ground's texture repeats, in metres.
+    ground_texture_m: f64,
     /// Where the player starts, on the map.
     spawn_m: [f64; 2],
     /// Which way the player faces at the start, as a compass bearing east of north.
@@ -71,6 +73,9 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
             overlays.push(overlay);
         }
     }
+    for texture in overlays.iter().map(|overlay| &overlay.texture).chain([&settings.ground_texture]) {
+        texture_uri(texture)?;
+    }
     let [[first_column, first_row], [last_column, last_row]] = settings.tiles;
 
     let tiles = folder.join("tiles");
@@ -82,7 +87,8 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         settings.south_west_m,
         settings.ground_step_m,
         settings.tile_steps,
-        settings.ground_colour
+        settings.ground_texture,
+        settings.ground_texture_m
     ]))?;
     let mut rebuilt = 0;
     let mut index = Glb::from_json(json!({ "asset": { "version": "2.0" } }));
@@ -152,8 +158,9 @@ impl Tile {
         path: &Path,
     ) -> Result<()> {
         let mut glb = Glb::from_json(json!({ "asset": { "version": "2.0" } }));
-        let ground_material = glb.add_material("ground", linear(settings.ground_colour));
-        let ground_mesh = self.ground(ground, detail, ground_material);
+        let ground_material = glb.add_texture_material("ground", &texture_uri(&settings.ground_texture)?);
+        let texture_steps = settings.ground_texture_m / settings.ground_step_m;
+        let ground_mesh = self.ground(ground, detail, ground_material, texture_steps);
         let drawn = Surface::new(&ground_mesh);
         glb.add_mesh("ground", &ground_mesh);
         for overlay in overlays {
@@ -163,7 +170,7 @@ impl Tile {
             }
             overlay::check_above(&drawn, &mesh)
                 .with_context(|| format!("writing {}: {}", path.display(), overlay.name))?;
-            mesh.material = glb.add_material(&overlay.name, linear(overlay.colour));
+            mesh.material = glb.add_texture_material(&overlay.name, &texture_uri(&overlay.texture)?);
             glb.add_mesh(&overlay.name, &mesh);
         }
         glb.write(path)
@@ -171,14 +178,16 @@ impl Tile {
 
     /// The ground in this tile. In full detail every grid square is two triangles. In middle detail the squares are
     /// `COARSE` steps wide; each is a fan around its centre through its corners and, on the tile's edges, every fine
-    /// point along them.
-    fn ground(&self, ground: &Ground, detail: Detail, material: usize) -> Mesh {
+    /// point along them. Its texture repeats every `texture_steps` grid steps, counted from the world's south-west
+    /// corner, so it runs on unbroken across tiles and both versions.
+    fn ground(&self, ground: &Ground, detail: Detail, material: usize, texture_steps: f64) -> Mesh {
         let mut mesh = Mesh { material, ..Mesh::default() };
         let mut points: HashMap<(usize, usize), u32> = HashMap::new();
         let vertex = |mesh: &mut Mesh, i: f64, j: f64| {
             let p = ground.at(i, j);
             mesh.positions.push(game(p).as_vec3().to_array());
             mesh.normals.push(game_direction(ground.normal(p.truncate())).as_vec3().to_array());
+            mesh.uvs.push([(i / texture_steps) as f32, (-j / texture_steps) as f32]);
             (mesh.positions.len() - 1) as u32
         };
         let mut point = |mesh: &mut Mesh, i: usize, j: usize| {
@@ -236,7 +245,11 @@ pub fn game_direction(d: DVec3) -> DVec3 {
     DVec3::new(d.x, d.z, -d.y)
 }
 
-/// An sRGB colour as the linear colour glTF stores.
-pub fn linear(srgb: [f64; 3]) -> [f32; 3] {
-    srgb.map(|c| (if c <= 0.04045 { c / 12.92 } else { ((c + 0.055) / 1.055).powf(2.4) }) as f32)
+/// Where a tile finds the texture asset `name`, relative to its file. A tile names its textures and never holds
+/// them, so repainting a texture rebuilds no tile. Fails if there is no such texture asset.
+fn texture_uri(name: &str) -> Result<String> {
+    if !Path::new(crate::ASSETS).join("textures").join(name).join("asset.toml").is_file() {
+        bail!("there is no texture asset named {name} in assets/textures/");
+    }
+    Ok(format!("../../textures/{name}/{name}.ktx2"))
 }

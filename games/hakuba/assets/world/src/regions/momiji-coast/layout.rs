@@ -24,8 +24,8 @@ const ROAD_WIDTH_M: f64 = 5.2;
 /// How often the road's texture repeats along it.
 const ROAD_TEXTURE_M: f64 = 8.0;
 
-/// The road's colour, in sRGB.
-const ROAD_COLOUR: [f64; 3] = [0.33, 0.33, 0.34];
+/// The road's texture: its width spans the road.
+const ROAD_TEXTURE: &str = "road";
 
 pub struct MomijiCoast;
 
@@ -38,7 +38,7 @@ impl Region for MomijiCoast {
     fn overlays(&self) -> Vec<Overlay> {
         vec![Overlay {
             name: "road".into(),
-            colour: ROAD_COLOUR,
+            texture: ROAD_TEXTURE.into(),
             triangles: ribbon(&ROAD, ROAD_WIDTH_M, ROAD_TEXTURE_M),
         }]
     }

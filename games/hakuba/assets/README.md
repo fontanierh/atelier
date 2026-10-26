@@ -8,6 +8,9 @@ assets/
     idle/                   the idle, on the rig
   characters/
     nox/                    Nox, the playable character, with every animation fitted to him
+  textures/
+    ground/                 the ground's grass and earth
+    road/                   a road's asphalt and lines
   world/                    the world, in tiles
     src/ground/             the ground's heights, in pages 512 m wide
     src/regions/            one folder per region, with its layout
@@ -21,32 +24,41 @@ Every asset is one folder, named in kebab case:
 ```text
 <asset-name>/
   asset.toml                its kind, its settings, and the checksum of its inputs
-  <asset-name>.glb          what the game loads, written by the exporter
-  src/                      everything the .glb is exported from
+  <asset-name>.glb          what the game loads, written by the exporter (`<asset-name>.ktx2` for a texture)
+  src/                      everything the export is made from
 ```
 
-The game loads `<asset-name>.glb` and what the export writes beside it, such as the world's `tiles/`. The browser
+The game loads the export and what the export writes beside it, such as the world's `tiles/`. The browser
 build copies the folder without `src/`, `asset.toml` and the tile checksums (see `../Trunk.toml`).
 
-`src/` holds every input of the export, so a clone can export the `.glb` again exactly. A source made by hand, such
+`src/` holds every input of the export, so a clone can export it again exactly. A source made by hand, such
 as `characters/nox/src/model.glb`, is committed as it is. A `.rs` file in `src/` holds the asset's own choices
 in code; the exporter compiles it in (`../tools/README.md` says what belongs in an asset and what in the exporter).
 
 `kind` in `asset.toml` picks the exporter, and the other keys are its settings (`../tools/README.md` lists them).
 The exporter writes `inputs_sha256`; do not edit it.
 
-The export does all the optimizing, such as shrinking textures, so the committed `.glb` is the final file.
+The export does all the optimizing, such as shrinking textures and building their mipmaps, so the committed export
+is the final file.
+
+## Textures
+
+A texture more than one asset shows is its own asset under `textures/`: an image in `src/`, exported as a `.ktx2`
+with every mipmap level. Other assets name it by its folder name, and their exports point at its file rather than
+holding a copy, so repainting a texture changes no other asset's export. A texture only one asset shows stays
+inside that asset, such as Nox's skin in his model.
 
 ## Exporting
 
-Each `.glb` is committed next to its sources, so a checkout runs the game without exporting anything. After
+Each export is committed next to its sources, so a checkout runs the game without exporting anything. After
 changing an asset's settings or sources, export it and commit both together:
 
 ```sh
 cargo export assets/characters/nox     # from games/hakuba
+cargo export assets                    # every asset, each after the assets it reads
 cargo export --check assets            # lists every export whose inputs changed
 ```
 
 ## Storage
 
-`.glb` and `.bin` files are stored in Git LFS (`../.gitattributes`). `git push` uploads them.
+`.glb`, `.bin` and `.ktx2` files are stored in Git LFS (`../.gitattributes`). `git push` uploads them.

@@ -2,16 +2,18 @@
 //!
 //! ```sh
 //! cargo export assets/characters/nox      # export it, record its inputs
-//! cargo export --check assets             # every asset folder under assets/
+//! cargo export assets                     # every asset folder under assets/, each after those it reads
+//! cargo export --check assets             # check every asset folder under assets/
 //! ```
 //!
 //! An asset folder's `asset.toml` names its kind and that kind's settings ([`Asset`]). Exporting writes the folder's
-//! `<folder name>.glb` and records in `asset.toml` a checksum of the inputs: the settings, the folder's `src/`, the
-//! exporter's code for that kind ([`code`]) and the assets it reads. A check reports a folder whose `.glb` is missing
-//! or whose inputs no longer match that checksum.
+//! `<folder name>.glb` (`.ktx2` for a texture) and records in `asset.toml` a checksum of the inputs: the settings, the
+//! folder's `src/`, the exporter's code for that kind ([`code`]) and the assets it reads. A check reports a folder
+//! whose export is missing or whose inputs no longer match that checksum.
 
 mod glb;
 mod rig;
+mod texture;
 mod world;
 
 use std::fs;
@@ -29,6 +31,7 @@ use toml_edit::DocumentMut;
 enum Asset {
     Animation(rig::animation::Settings),
     Character(rig::character::Settings),
+    Texture(texture::Settings),
     World(world::Settings),
 }
 
@@ -36,7 +39,7 @@ impl Asset {
     /// The other assets whose exports this one reads, by folder relative to `assets/`.
     fn reads(&self) -> Vec<String> {
         match self {
-            Asset::Animation(_) | Asset::World(_) => Vec::new(),
+            Asset::Animation(_) | Asset::Texture(_) | Asset::World(_) => Vec::new(),
             Asset::Character(_) => rig::animations::ANIMATIONS.into_iter().map(rig::animations::folder).collect(),
         }
     }
@@ -45,7 +48,16 @@ impl Asset {
     fn code_folder(&self) -> &'static str {
         match self {
             Asset::Animation(_) | Asset::Character(_) => "src/rig",
+            Asset::Texture(_) => "src/texture",
             Asset::World(_) => "src/world",
+        }
+    }
+
+    /// The extension of the file this kind exports.
+    fn extension(&self) -> &'static str {
+        match self {
+            Asset::Animation(_) | Asset::Character(_) | Asset::World(_) => "glb",
+            Asset::Texture(_) => "ktx2",
         }
     }
 }
@@ -103,7 +115,7 @@ impl Folder {
 
     fn output(&self) -> PathBuf {
         let name = self.path.file_name().expect("an asset folder has a name").to_string_lossy();
-        self.path.join(format!("{name}.glb"))
+        self.path.join(format!("{name}.{}", self.asset.extension()))
     }
 
     fn recorded_checksum(&self) -> Option<&str> {
@@ -151,6 +163,7 @@ impl Folder {
         match &self.asset {
             Asset::Animation(settings) => rig::animation::export(&self.path, settings, &output)?,
             Asset::Character(settings) => rig::character::export(&self.path, settings, &output)?,
+            Asset::Texture(settings) => texture::export(&self.path, settings, &output)?,
             Asset::World(settings) => world::export(&self.path, settings, &output)?,
         }
         self.document[CHECKSUM] = toml_edit::value(self.inputs_checksum()?);
@@ -208,11 +221,11 @@ fn main() -> Result<ExitCode> {
     let (mut stale, mut exports) = (0, Vec::new());
     for arg in &args {
         let path = fs::canonicalize(arg).with_context(|| format!("finding {arg}"))?;
-        if !check {
-            exports.push(Folder::read(&path)?);
-            continue;
-        }
         for folder in asset_folders(&path)? {
+            if !check {
+                exports.push(Folder::read(&folder)?);
+                continue;
+            }
             for problem in Folder::read(&folder)?.problems()? {
                 println!("{}: {problem}", folder.display());
                 stale += 1;
@@ -246,7 +259,8 @@ mod tests {
     use super::*;
 
     /// Each kind's code folder under `src/`, and the asset groups whose `.rs` files it compiles in.
-    const KINDS: [(&str, &[&str]); 2] = [("rig", &["animations", "characters"]), ("world", &["world"])];
+    const KINDS: [(&str, &[&str]); 3] =
+        [("rig", &["animations", "characters"]), ("texture", &["textures"]), ("world", &["world"])];
 
     /// The `.rs` files under `root`.
     fn sources(root: &Path) -> Vec<PathBuf> {

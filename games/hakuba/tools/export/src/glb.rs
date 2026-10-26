@@ -272,11 +272,25 @@ impl Glb {
         }
     }
 
-    /// Adds a material of one colour, with no shine.
-    pub fn add_material(&mut self, name: &str, colour: [f32; 3]) -> usize {
+    /// Adds a matte material showing the image at `uri`, relative to the file, repeated across its mesh's texture
+    /// positions and smoothed between its mipmap levels. It reflects no light as a mirror would, even seen at a low
+    /// angle, so a far road keeps its colour rather than showing the sky.
+    pub fn add_texture_material(&mut self, name: &str, uri: &str) -> usize {
+        if self.json.get("samplers").is_none() {
+            push(&mut self.json, "extensionsUsed", json!("KHR_materials_specular"));
+            // Repeat both ways; linear magnification, and linear between and within mipmap levels.
+            push(
+                &mut self.json,
+                "samplers",
+                json!({ "wrapS": 10497, "wrapT": 10497, "magFilter": 9729, "minFilter": 9987 }),
+            );
+        }
+        let image = push(&mut self.json, "images", json!({ "uri": uri }));
+        let texture = push(&mut self.json, "textures", json!({ "source": image, "sampler": 0 }));
         let material = json!({
             "name": name,
-            "pbrMetallicRoughness": { "baseColorFactor": [colour[0], colour[1], colour[2], 1.0], "metallicFactor": 0.0, "roughnessFactor": 1.0 },
+            "pbrMetallicRoughness": { "baseColorTexture": { "index": texture }, "metallicFactor": 0.0, "roughnessFactor": 1.0 },
+            "extensions": { "KHR_materials_specular": { "specularFactor": 0.0 } },
         });
         push(&mut self.json, "materials", material)
     }

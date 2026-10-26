@@ -1,0 +1,5 @@
+# The ground's painted grass and earth. Its opposite edges match, so it repeats across the ground without a seam; the
+# world's settings say how often.
+kind = "texture"
+source = "src/ground.jpg"
+inputs_sha256 = "7b3c17f4e5d6bd3c60084f885ea5522e2c552f64dea05f9d74ff2898fa98d04a"

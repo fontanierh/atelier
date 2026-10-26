@@ -66,9 +66,8 @@ impl Tile {
             }
             digest.update(overlay.name.as_bytes());
             digest.update([0]);
-            for c in overlay.colour {
-                digest.update(c.to_bits().to_le_bytes());
-            }
+            digest.update(overlay.texture.as_bytes());
+            digest.update([0]);
             for triangle in inside {
                 for (p, uv) in triangle {
                     for v in [p.x, p.y, uv.x, uv.y] {

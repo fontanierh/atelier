@@ -17,8 +17,8 @@ const CLEARANCE_M: f64 = 0.01;
 /// A flat shape laid over the ground: triangles on the map, each corner with its texture position.
 pub struct Overlay {
     pub name: String,
-    /// Its colour, in sRGB.
-    pub colour: [f64; 3],
+    /// The texture it shows, by its folder name under `assets/textures/`.
+    pub texture: String,
     pub triangles: Vec<[(DVec2, DVec2); 3]>,
 }
 

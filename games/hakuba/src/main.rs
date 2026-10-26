@@ -2,6 +2,8 @@
 //! menu (crates/menu).
 
 use bevy::asset::AssetMetaCheck;
+use bevy::gltf::GltfPlugin;
+use bevy::image::{ImageFilterMode, ImageSamplerDescriptor};
 use bevy::prelude::*;
 use hakuba_characters::CharactersPlugin;
 use hakuba_menu::MenuPlugin;
@@ -25,7 +27,19 @@ fn main() {
                 })
                 // Load assets without looking for a .meta file next to each: in the browser, the server answers a
                 // missing file with index.html, which Bevy cannot read.
-                .set(AssetPlugin { meta_check: AssetMetaCheck::Never, ..default() }),
+                .set(AssetPlugin { meta_check: AssetMetaCheck::Never, ..default() })
+                // The world's textures, named by its glTF files, are filtered across their mipmaps and along the view,
+                // so the ground and the road stay sharp as they recede. Anisotropic filtering needs every filter linear.
+                .set(GltfPlugin {
+                    default_sampler: ImageSamplerDescriptor {
+                        mag_filter: ImageFilterMode::Linear,
+                        min_filter: ImageFilterMode::Linear,
+                        mipmap_filter: ImageFilterMode::Linear,
+                        anisotropy_clamp: 16,
+                        ..default()
+                    },
+                    ..default()
+                }),
         )
         .add_plugins((ScreensPlugin, MenuPlugin, WorldPlugin, CharactersPlugin, ViewerPlugin))
         .run();

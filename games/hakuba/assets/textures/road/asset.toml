@@ -1,0 +1,5 @@
+# A road: dark grey asphalt with white edge lines and a dashed centre line. Its width spans the road, and its height runs
+# along it.
+kind = "texture"
+source = "src/road.jpg"
+inputs_sha256 = "4ee4c6b601317f5c2bbc9a79ee1447df7afe549716458ed82ec7a14f5fe53a40"

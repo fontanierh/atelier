@@ -2,7 +2,8 @@
 Every asset MUST be one folder, named in kebab case: `assets/<group>/<asset-name>/` (groups such as
 `characters/` and `animations/`), or `assets/world/` for the one world. It holds exactly:
 `asset.toml` (its kind, settings and inputs checksum), `src/` (every input of its export), and what its
-kind's exporter writes: `<asset-name>.glb`, plus the outputs that kind declares (the world's `tiles/`).
+kind's exporter writes: `<asset-name>.glb` (`<asset-name>.ktx2` for a texture), plus the outputs that kind
+declares (the world's `tiles/`).
 Nothing else MAY sit in an asset folder. Folders inside `src/` follow the kind's layout (the world's
 `src/ground/` and `src/regions/<region>/`).
 
@@ -21,3 +22,9 @@ with the settings and sources they were exported from, with a current inputs che
 The world's ground MUST be one grid of heights, in the pages under `assets/world/src/ground/`. A region
 MUST NOT bring its own ground. It adds to the world only through the exporter's `Region` trait: what it
 lays over the ground, and, as declared changes, how it reshapes the ground inside its own area.
+
+@cc [owner:fontanierh,label:performance] textures-are-named-not-copied
+A texture more than one asset shows MUST be its own asset under `assets/textures/<name>/`, exported as a `.ktx2`
+with every mipmap level. Another asset's export MUST point at that file by a relative path and never hold a copy,
+and its checksum MUST cover the texture's name but not its bytes, so repainting a texture rebuilds nothing else.
+A texture only one asset shows stays inside that asset.

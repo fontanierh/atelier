@@ -19,12 +19,12 @@ An export MUST depend only on its asset's settings, its `src/`, its kind's code 
 declares it reads, so that the same inputs give byte-identical files. The inputs checksum MUST cover all of
 them, and the exporter MUST NOT read anything else. A read export is covered by its own recorded checksum and
 its bytes, so a change to the code that made it reaches the assets that read it. Docs and `CONTRACTS` files are
-never inputs.
+never inputs. An export MAY check that an asset it names exists, without reading its files.
 
 @cc [owner:fontanierh,label:architecture] each-kind-is-self-contained
-Each kind's code MUST live in its own folder under `src/` (`rig/` for animations and characters, `world/` for
-the world) and use only that folder, the shared code (`SHARED_CODE` in `main.rs`: `main.rs`, `glb.rs`, the
-crate's manifest, the lock file and the toolchain) and its own asset groups' `.rs` files. It MUST NOT use
+Each kind's code MUST live in its own folder under `src/` (`rig/` for animations and characters, `texture/` for
+textures, `world/` for the world) and use only that folder, the shared code (`SHARED_CODE` in `main.rs`:
+`main.rs`, `glb.rs`, the crate's manifest, the lock file and the toolchain) and its own asset groups' `.rs` files. It MUST NOT use
 another kind's code, and the shared code MUST NOT use any kind's code; a method two kinds need moves into the
 shared code under a general name. A kind's checksum MUST cover exactly that code, so editing one kind never
 marks another kind's assets out of date. Every file in `src/` MUST be shared code or sit in a kind's folder.
@@ -33,7 +33,9 @@ The exporter's tests check these rules, and CI runs them.
 @cc [owner:fontanierh,label:performance] an-edit-rebuilds-what-it-touches
 An export MUST rebuild only the parts an edit touches: a world export rewrites only the tiles whose own checksum
 changed. A tile's checksum MUST cover everything its files depend on (the code that writes tiles, the settings it
-uses, the heights it reads, and every region's content that reaches into it) and nothing else, so an incremental
+uses, the heights it reads, and every region's content that reaches into it, with the names of the textures it
+shows) and nothing else, so an incremental
 export gives the same files as a full one. The bytes of a tile MUST depend only on code in `world/` other than
 `regions.rs`, on `glb.rs` and on the locked crate versions. Exporter code for another kind MUST NOT change the
-world's tiles, and a region MUST NOT make tiles it does not reach rebuild.
+world's tiles, a region MUST NOT make tiles it does not reach rebuild, and repainting a texture MUST NOT rebuild any
+tile.

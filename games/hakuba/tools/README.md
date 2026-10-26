@@ -4,6 +4,7 @@ The asset exporter (`../assets/README.md` describes an asset folder). Run it fro
 
 ```sh
 cargo export assets/characters/nox     # export one asset folder
+cargo export assets                    # export every asset folder, each after the assets it reads
 cargo export --check assets            # list the exports whose inputs changed
 ```
 
@@ -37,6 +38,8 @@ tools/
         animations.rs       every animation, and the `Animation` trait each implements
         character.rs        the `character` kind
         characters.rs       every character, and the `Character` trait each implements
+      texture/
+        mod.rs              the `texture` kind
       world/                the `world` kind
         mod.rs              the settings, and cutting the world into tiles
         regions.rs          every region, and the `Region` trait: what a region adds to the world
@@ -70,7 +73,7 @@ field, fails the export.
 
 `asset.toml` is read into the `Asset` enum in `main.rs`: `kind` picks the variant, and the other keys are that
 kind's settings. A missing, misspelled or unknown setting fails the export. Each kind is one module with a
-`Settings` struct and an `export` function that writes the folder's `.glb`.
+`Settings` struct and an `export` function that writes the folder's export.
 
 **`animation`** retargets a clip onto the rig and writes the rig playing it, named after the folder. Its
 `src/<name>.rs` implements `Animation`: its name, the skeleton its clip is on, what a character may change in it
@@ -91,9 +94,19 @@ every animation fitted to it with the character's changes. Its rig bones are ren
 | `texture_size` | the largest side of any texture, in pixels  |
 | `animations`   | its changes to each animation, by name      |
 
+**`texture`** writes an image as `<folder name>.ktx2`, with every mipmap level so it draws smoothly near and far.
+Each level averages the one above it in linear light and is stored as 8-bit sRGB, compressed with zstd. Its sides
+must be powers of two.
+
+| Setting  | Meaning                                       |
+|----------|-----------------------------------------------|
+| `source` | the image, PNG or JPEG, relative to the folder |
+
 **`world`** builds the ground from the height pages in `src/ground/`, lays over it what each region adds, and cuts
 them into square tiles under `tiles/`. Each region's `src/regions/<region>/layout.rs` implements `Region`, and
-`world/regions.rs` lists it. Each tile is written in full detail and in middle detail, for seeing from afar. An
+`world/regions.rs` lists it. Each tile is written in full detail and in middle detail, for seeing from afar. The
+ground and each overlay show a texture asset, named by its folder: a tile points at the texture's `.ktx2` and never
+holds it, and the export fails if no such texture asset exists. An
 overlay lies a few centimetres above the ground triangles under it; the export fails if it comes closer anywhere. `<folder name>.glb` holds a node per tile, at its centre, and the spawn.
 
 | Setting             | Meaning                                                               |
@@ -104,7 +117,8 @@ overlay lies a few centimetres above the ground triangles under it; the export f
 | `page_steps`        | how many heights apart page edges are                                 |
 | `tile_steps`        | how many heights apart tile edges are                                 |
 | `tiles`             | the first and last tile exported, each as `[column, row]`             |
-| `ground_colour`     | the ground's colour, in sRGB                                          |
+| `ground_texture`    | the texture the ground shows, by its folder under `assets/textures/`  |
+| `ground_texture_m`  | how far apart the ground's texture repeats                            |
 | `spawn_m`           | where the player starts, on the map                                   |
 | `spawn_bearing_deg` | which way the player faces there, as a compass bearing east of north  |
 
@@ -113,14 +127,15 @@ overlay lies a few centimetres above the ground triangles under it; the export f
 `inputs_sha256` in `asset.toml` covers the asset's settings, every file in its `src/`, its kind's code, and the
 exports it reads (a character reads every animation, through each one's checksum and `.glb`). Changing any of them
 marks the export out of date until it is exported again. A character exports only after the animations it reads
-are current.
+are current, and `cargo export` on several folders exports each after those it reads.
 
-A kind's code is its folder under `src/` (`rig/` or `world/`) and the shared code: `main.rs`, `glb.rs`,
+A kind's code is its folder under `src/` (`rig/`, `texture/` or `world/`) and the shared code: `main.rs`, `glb.rs`,
 `Cargo.toml`, the lock file and the toolchain. Each kind uses only its own folder and the shared code, so editing
 the world's code never marks a character out of date, and editing the rig never marks the world. Docs and
 `CONTRACTS` files are not inputs. `cargo test -p hakuba_export` checks that no kind uses another's code.
 
 The world also keeps one checksum per tile, in `tiles/checksums.toml`. It covers the code that writes tiles
 (`world/` but the regions list, `glb.rs`, and the locked crate versions), the settings tiles use, the heights in and
-around the tile, and the overlay triangles that reach into it. An export rewrites only the tiles whose checksum
-changed, so moving a road rebuilds the tiles it crosses and nothing else.
+around the tile, and the overlay triangles that reach into it, with the names of the textures they show. An export
+rewrites only the tiles whose checksum changed, so moving a road rebuilds the tiles it crosses and nothing else.
+A tile names its textures rather than holding them, so repainting a texture rebuilds no tile.
