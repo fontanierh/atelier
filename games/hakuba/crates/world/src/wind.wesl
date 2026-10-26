@@ -1,7 +1,8 @@
 // The wind (wind.rs says what it does): Bevy's mesh vertex shaders for the main pass and the prepass, each moving a
 // vertex in the wind by how far it bends and its leaf's phase, its second texture coordinates, scaled by how strongly
 // the wind blows, its mesh's tag in thousandths, and leaning leaves and blades away from what pushes plants aside
-// (push.rs). Plants have no morph targets or skins, so those are left out.
+// (push.rs). Plants have no morph targets or skins, so those are left out. Its fragment shader lights only what a leaf
+// card does not cut away.
 
 @if(PREPASS_PIPELINE)
 import bevy_pbr::prepass::io::{Vertex, VertexOutput, decompress_vertex};
@@ -11,7 +12,14 @@ import bevy_render::globals::Globals;
 import bevy_pbr::render::forward_io::{Vertex, VertexOutput, decompress_vertex};
 @if(!PREPASS_PIPELINE)
 import bevy_pbr::render::mesh_view_bindings::globals;
-import bevy_pbr::render::{mesh_functions, mesh_view_bindings::view, view_transformations::position_world_to_clip};
+@if(!PREPASS_PIPELINE)
+import bevy_pbr::render::{
+    forward_io::FragmentOutput,
+    pbr_fragment::pbr_input_from_standard_material,
+    pbr_functions::{alpha_discard, apply_pbr_lighting, main_pass_post_lighting_processing},
+    pbr_types,
+};
+import bevy_pbr::render::{mesh_functions, view_transformations::position_world_to_clip};
 
 // The prepass binds the time at another place than the main pass.
 @if(PREPASS_PIPELINE)
@@ -25,18 +33,6 @@ const TAU: f32 = 6.2831853;
 // What pushes plants aside, as push.rs writes it: how many there are, then for each where its feet are and its radius,
 // then its height.
 @group(constants::MATERIAL_BIND_GROUP) @binding(100) var<storage, read> pushers: array<vec4<f32>, 9>;
-
-// Where a plant swaps versions, as wind.rs sets it: from x metres from the camera, over y more.
-@group(constants::MATERIAL_BIND_GROUP) @binding(101) var<uniform> swap: vec4<f32>;
-
-// A mesh tag's bits, as wind.rs writes them: how strongly the wind blows, and whether the mesh is a plant's full
-// version going with distance or its middle one coming.
-const STRENGTH: u32 = 0x3fffffffu;
-const GOING: u32 = 0x40000000u;
-const COMING: u32 = 0x80000000u;
-
-// Where a vertex goes so as not to be drawn: outside the view, where a card whose corners all go is never drawn.
-const NOWHERE: vec4<f32> = vec4<f32>(2.0, 2.0, 2.0, 1.0);
 
 // How much nearer the main pass draws a vertex than the prepass, as a share of its depth (depth is reversed: nearer is
 // larger): about 1 mm at 10 m, far above the rounding the two passes may differ by, far below the gap between leaves.
@@ -106,26 +102,7 @@ fn push(at: vec3<f32>, phase: f32) -> vec3<f32> {
 
 // How strongly the wind blows on this mesh, its tag in thousandths: 1 is the usual wind.
 fn blowing(instance_index: u32) -> f32 {
-    return f32(mesh_functions::get_tag(instance_index) & STRENGTH) / 1000.0;
-}
-
-// Whether a card or blade of phase `phase`, of a mesh standing at `origin`, shows. A plant's full version gives way to
-// its middle one between swap's distances from the camera that picks detail: a whole card or blade at a time, each at
-// its own distance, set by its phase, so every frame shows whole cards and nothing shimmers under temporal
-// anti-aliasing. Wood, of phase below 0, swaps halfway. Shadows come from the middle version alone.
-fn shows(instance_index: u32, origin: vec3<f32>, phase: f32) -> bool {
-    let tag = mesh_functions::get_tag(instance_index);
-    if (tag & (GOING | COMING)) == 0u {
-        return true;
-    }
-    // The sun's shadow views are the only orthographic ones: they always draw the middle version, wherever the camera
-    // is, so a plant's shadows hold still as the camera moves, the sun's light falling on it as it would.
-    if view.clip_from_view[3][3] == 1.0 {
-        return (tag & COMING) != 0u;
-    }
-    let along = saturate((distance(origin, view.lod_view_world_position) - swap.x) / swap.y);
-    let at = select(phase, 0.5, phase < 0.0);
-    return select(along > at, along <= at, (tag & GOING) != 0u);
+    return f32(mesh_functions::get_tag(instance_index)) / 1000.0;
 }
 
 @if(!PREPASS_PIPELINE)
@@ -143,9 +120,6 @@ fn vertex(vertex_in: Vertex) -> VertexOutput {
     // error further than the depth the prepass wrote, fail the depth test and leave a hole showing the clear colour for
     // a frame: black leaves flickering in the wind.
     out.position.z *= DEPTH_MARGIN;
-    if !shows(vertex_in.instance_index, world_from_local[3].xyz, vertex.uv_b.y) {
-        out.position = NOWHERE;
-    }
     out.world_normal = mesh_functions::mesh_normal_local_to_world(vertex.normal, vertex_in.instance_index);
     @if(VERTEX_UVS_A)
     out.uv = vertex.uv;
@@ -174,9 +148,6 @@ fn vertex(vertex_in: Vertex) -> VertexOutput {
     let pushed = push(still.xyz, vertex.uv_b.y);
     out.world_position = vec4<f32>(still.xyz + pushed + sway(still.xyz, globals.time, bend, vertex.uv_b.y), 1.0);
     out.position = position_world_to_clip(out.world_position.xyz);
-    if !shows(vertex_in.instance_index, world_from_local[3].xyz, vertex.uv_b.y) {
-        out.position = NOWHERE;
-    }
     @if(UNCLIPPED_DEPTH_ORTHO_EMULATION) {
         out.unclipped_depth = out.position.z;
         out.position.z = min(out.position.z, 1.0);
@@ -206,5 +177,26 @@ fn vertex(vertex_in: Vertex) -> VertexOutput {
     @if(VISIBILITY_RANGE_DITHER)
     out.visibility_range_dither =
         mesh_functions::get_visibility_range_dither_level(vertex_in.instance_index, world_from_local[3]);
+    return out;
+}
+
+// Bevy's standard fragment shader for the main pass, but lighting only what stays. A leaf card's see-through texels are
+// discarded, yet in the browser a discarded fragment runs on to the end of the shader, so every card in front of what
+// shows would pay the whole lighting and the shadow lookups for nothing.
+@if(!PREPASS_PIPELINE)
+@fragment
+fn fragment(in: VertexOutput, @builtin(front_facing) is_front: bool) -> FragmentOutput {
+    var out: FragmentOutput;
+    var pbr_input = pbr_input_from_standard_material(in, is_front);
+    let flags = pbr_input.material.flags;
+    let masked = (flags & pbr_types::STANDARD_MATERIAL_FLAGS_ALPHA_MODE_RESERVED_BITS)
+        == pbr_types::STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK;
+    if masked && pbr_input.material.base_color.a < pbr_input.material.alpha_cutoff {
+        discard;
+    } else {
+        pbr_input.material.base_color =
+            alpha_discard(flags, pbr_input.material.alpha_cutoff, pbr_input.material.base_color);
+        out.color = main_pass_post_lighting_processing(pbr_input, apply_pbr_lighting(pbr_input));
+    }
     return out;
 }

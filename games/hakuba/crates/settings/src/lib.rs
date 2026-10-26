@@ -161,17 +161,15 @@ impl FrameRate {
     }
 }
 
-/// How much sooner than its period a capped frame is due. Its timer runs apart from the screen's refreshes and is
-/// then drawn at the next one: due exactly one period later, it often lands just past a refresh and waits for the next,
-/// so a 60 cap drew 35 to 45 frames a second.
-const DUE_EARLY: Duration = Duration::from_millis(3);
-
-/// The game draws at most about the chosen frames a second, even on faster screens, and only that many while in the
-/// background. Input waits for the next frame rather than drawing one of its own.
+/// The game draws at most the chosen frames a second, and only that many while in the background. Input waits for the
+/// next frame rather than drawing one of its own. In the browser, which draws every frame at a refresh of the screen,
+/// a cap of 60 or more lets the browser pace the frames: a cap's own timer runs apart from the refreshes, so some
+/// frames waited for a second refresh, and a 60 cap drew 14 and 28 ms frames by turns, or 35 to 45 a second.
 fn hold_frame_rate(settings: Res<Settings>, mut commands: Commands) {
-    let mode = match settings.frame_rate.most() {
+    let most = settings.frame_rate.most().filter(|&most| !cfg!(target_arch = "wasm32") || most < 60.0);
+    let mode = match most {
         Some(most) => UpdateMode::Reactive {
-            wait: Duration::from_secs_f64(1.0 / most).saturating_sub(DUE_EARLY),
+            wait: Duration::from_secs_f64(1.0 / most),
             react_to_device_events: false,
             react_to_user_events: false,
             react_to_window_events: false,

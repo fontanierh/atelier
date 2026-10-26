@@ -16,12 +16,13 @@ src/
   painterly.wgsl its shader
   pixels.rs      draws the world into an image of the resolution the settings ask and stretches it over the window
   tiles.rs       shows each tile in full detail near the camera and in middle detail further out
-  scenery.rs     spawns the trees, bushes, grass and poles a tile lists, merging the copies of small models;
-                 a tree or bush shows its full leaves only near the camera, its middle version beyond; makes any
-                 crossfading visibility range abrupt, since its dither shimmers
+  scenery.rs     spawns the trees, bushes, grass and poles a tile lists, merging the copies of small models
+                 per 16 m square; a tree or bush in a full tile shows its full version wherever the camera is and
+                 casts its middle version's shadow; makes any crossfading visibility range abrupt, since its dither
+                 shimmers
   wind.rs        sways leaves and grass in the wind, by how far the export says each vertex sways
-  wind.wesl      its vertex shader, which also leans leaves and blades away from what pushes plants aside and
-                 swaps a plant's full version for its middle one a card at a time
+  wind.wesl      its vertex shaders, which also lean leaves and blades away from what pushes plants aside, and
+                 its fragment shader, which lights only what a leaf card keeps
   push.rs        gives that shader where the things that push plants are, up to four, the nearest the camera
   settings.rs    applies the settings: the painterly filter, the wind, anti-aliasing and shadows
   pause.rs       the pause screen over the world, with the settings

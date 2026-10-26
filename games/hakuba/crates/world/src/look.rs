@@ -9,6 +9,7 @@
 
 use std::f32::consts::FRAC_PI_2;
 
+use bevy::camera::visibility::RenderLayers;
 use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::pbr::{DistanceFog, FogFalloff};
 use bevy::post_process::bloom::Bloom;
@@ -49,6 +50,10 @@ const FILL_BRIGHTNESS: f32 = 620.0;
 /// The haze's colour, linear, and how fast it thickens: at 9 km it hides 63 % of what is behind it.
 const HAZE: [f32; 3] = [0.0932, 0.2301, 0.5328];
 const HAZE_DENSITY: f32 = 1.0 / 9000.0;
+
+/// The render layer of what casts the sun's shadows without being seen: the camera draws only layer 0, the sun casts
+/// shadows from both.
+pub const SHADOW_ONLY: usize = 1;
 
 pub struct LookPlugin;
 
@@ -123,6 +128,7 @@ fn spawn_sky_and_sun(
             ..default()
         },
         Transform::default().looking_to(shining, Vec3::Y),
+        RenderLayers::from_layers(&[0, SHADOW_ONLY]),
     ));
 }
 

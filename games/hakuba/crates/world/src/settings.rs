@@ -10,7 +10,7 @@ use hakuba_screens::Screen;
 use hakuba_settings::{AntiAliasing, Settings};
 
 use crate::painterly::Painterly;
-use crate::wind::{self, Swap, Swaying};
+use crate::wind::{self, Swaying};
 
 pub struct SettingsPlugin;
 
@@ -64,16 +64,16 @@ fn look(
     }
 }
 
-/// Tells every swaying plant how strongly the wind blows, and how it swaps with distance, through its mesh tag, when the
-/// setting changes and as plants spawn.
+/// Tells every swaying plant how strongly the wind blows, through its mesh tag, when the setting changes and as plants
+/// spawn.
 fn blow(
     mut commands: Commands,
     settings: Res<Settings>,
-    all: Query<(Entity, Option<&Swap>), With<MeshMaterial3d<Swaying>>>,
-    added: Query<(Entity, Option<&Swap>), Added<MeshMaterial3d<Swaying>>>,
+    all: Query<Entity, With<MeshMaterial3d<Swaying>>>,
+    added: Query<Entity, Added<MeshMaterial3d<Swaying>>>,
 ) {
     let plants: Vec<_> = if settings.is_changed() { all.iter().collect() } else { added.iter().collect() };
-    for (plant, swap) in plants {
-        commands.entity(plant).insert(MeshTag::new(wind::tag(settings.wind, swap.copied())));
+    for plant in plants {
+        commands.entity(plant).insert(MeshTag::new(wind::tag(settings.wind)));
     }
 }

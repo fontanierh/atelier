@@ -1,24 +1,35 @@
 //! The models standing in the tiles: trees, bushes, grass and poles. A tile holds one data node per model, naming the
 //! model and listing where each copy stands. Once the model has loaded, each copy of a large model, such as a tree, is
 //! spawned with the model's own meshes and materials, shared by every copy, so Bevy draws them together, in one call
-//! across every tile. The copies of a small model, such as a tuft of grass, are merged into one mesh per tile
-//! instead: thousands of entities would cost more to cull one by one than their few vertices cost together. Merging a
-//! large model would not pay: each tile's merged mesh is drawn on its own.
+//! across every tile. The copies of a small model, such as a tuft of grass, are merged instead, into one mesh per
+//! square of [`MERGED_SQUARE_M`]: thousands of entities would cost more to cull one by one than their few vertices
+//! cost together, and squares out of view are not drawn. Merging a large model would not pay: each merged mesh is drawn
+//! on its own.
+//!
+//! A plant in a full tile shows its full version wherever the camera is, so it never changes as the player walks up to
+//! it, and casts the shadow of its middle version, which is never seen: the sun's shadow maps draw far fewer leaves.
 
 use bevy::asset::RenderAssetUsages;
-use bevy::camera::visibility::{VisibilityRange, VisibilitySystems};
+use bevy::camera::visibility::{RenderLayers, VisibilityRange, VisibilitySystems};
 use bevy::ecs::system::SystemParam;
 use bevy::gltf::{Gltf, GltfExtras, GltfMesh, GltfNode};
 use bevy::light::NotShadowCaster;
+use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use bevy::world_serialization::WorldAssetRoot;
 use serde::Deserialize;
 
+use crate::look::SHADOW_ONLY;
 use crate::tiles::TILES;
-use crate::wind::{FULL_UP_TO_M, SWAP_M, Swap, Swaying, SwayingMaterials};
+use crate::wind::{Swaying, SwayingMaterials};
 
 /// A model with fewer vertices than this has its copies merged.
 const MERGE_BELOW_VERTICES: usize = 256;
+
+/// The side of the squares whose copies of a small model are merged together, in metres: small enough that the camera
+/// sees few squares it does not need, since every vertex of grass costs its swaying in the prepass and the main pass,
+/// large enough to stay a few hundred meshes.
+const MERGED_SQUARE_M: f32 = 16.0;
 
 /// The most vertices one tile's merged copies of a model may hold: past this, merging costs more memory than it saves.
 const MERGED_AT_MOST_VERTICES: usize = 500_000;
@@ -108,8 +119,8 @@ struct Models<'w> {
 }
 
 /// Spawns the copies whose model has loaded. A middle tile shows the model's `middle` node, if it has one, and its
-/// `full` node otherwise. A full tile shows a model that has a `middle` node as both: the full version near the camera,
-/// giving way to the middle one from [`FULL_UP_TO_M`], so the leaves' detail is drawn only where it is seen up close.
+/// `full` node otherwise. A full tile shows the `full` node, and a model that has a `middle` node casts that one's
+/// shadow instead.
 fn spawn(
     mut commands: Commands,
     assets: Res<AssetServer>,
@@ -121,19 +132,19 @@ fn spawn(
     'copies: for (entity, waiting) in &waiting {
         let Some(gltf) = models.gltfs.get(&waiting.model) else { continue };
         let versions = match (waiting.middle, gltf.named_nodes.contains_key("middle")) {
-            (true, true) => vec![("middle", None)],
-            (false, true) => vec![("full", Some(Swap::Going)), ("middle", Some(Swap::Coming))],
-            (_, false) => vec![("full", None)],
+            (true, true) => vec![("middle", Role::Both)],
+            (false, true) => vec![("full", Role::Seen), ("middle", Role::Shadow)],
+            (_, false) => vec![("full", Role::Both)],
         };
         let mut shown = Vec::with_capacity(versions.len());
-        for (name, swap) in versions {
+        for (name, role) in versions {
             let Some(node) = gltf.named_nodes.get(name).and_then(|node| models.nodes.get(node)) else {
                 warn!("a model has no {name} node");
                 commands.entity(entity).remove::<Waiting>();
                 continue 'copies;
             };
             let Some(parts) = parts(&assets, &models, &meshes, &mut swaying, node) else { continue 'copies };
-            shown.push((node, parts, swap));
+            shown.push((node, parts, role));
         }
         commands.entity(entity).remove::<Waiting>().insert(Placed(waiting.model.clone()));
         let transforms: Vec<Transform> = waiting
@@ -144,37 +155,39 @@ fn spawn(
                 Transform::from_xyz(x, y, z).with_rotation(Quat::from_rotation_y(yaw)).with_scale(Vec3::splat(scale))
             })
             .collect();
-        for (node, parts, swap) in shown {
+        for (node, parts, role) in shown {
             let shadows = node
                 .extras
                 .as_ref()
                 .and_then(|extras| serde_json::from_str::<ModelExtras>(&extras.value).ok())
                 .is_none_or(|extras| extras.casts_shadows);
+            if matches!(role, Role::Shadow) && !shadows {
+                continue;
+            }
             let vertices = vertices(&models.meshes, &meshes, node);
-            // A merged mesh stands at the tile's origin, not at each copy, so copies that swap by distance stay apart.
-            let merge = swap.is_none()
-                && vertices < MERGE_BELOW_VERTICES
-                && vertices * transforms.len() <= MERGED_AT_MOST_VERTICES;
+            let merge = vertices < MERGE_BELOW_VERTICES && vertices * transforms.len() <= MERGED_AT_MOST_VERTICES;
             for (mesh, look) in &parts {
-                let shapes: Vec<(Handle<Mesh>, Transform)> =
-                    match merge.then(|| merged(&meshes, mesh, &transforms)).flatten() {
-                        Some(merged) => vec![(meshes.add(merged), Transform::IDENTITY)],
-                        None => transforms.iter().map(|&transform| (mesh.clone(), transform)).collect(),
-                    };
+                let shapes: Vec<(Handle<Mesh>, Transform)> = match merge {
+                    true => {
+                        let merged: Vec<Mesh> =
+                            squares(&transforms).filter_map(|square| merged(&meshes, mesh, &square)).collect();
+                        merged.into_iter().map(|merged| (meshes.add(merged), Transform::IDENTITY)).collect()
+                    }
+                    false => transforms.iter().map(|&transform| (mesh.clone(), transform)).collect(),
+                };
                 for (mesh, transform) in shapes {
                     let mut part = commands.spawn((Mesh3d(mesh), transform, ChildOf(entity)));
                     match look {
                         Look::Still(material) => part.insert(MeshMaterial3d(material.clone())),
                         Look::Swaying(material) => part.insert(MeshMaterial3d(material.clone())),
                     };
-                    let sways = matches!(look, Look::Swaying(_));
-                    if !shadows {
-                        part.insert(NotShadowCaster);
-                    }
-                    if let Some(swap) = swap {
-                        part.insert(range(swap, sways));
-                        if sways {
-                            part.insert(swap);
+                    match role {
+                        Role::Both if shadows => {}
+                        Role::Both | Role::Seen => {
+                            part.insert(NotShadowCaster);
+                        }
+                        Role::Shadow => {
+                            part.insert(RenderLayers::layer(SHADOW_ONLY));
                         }
                     }
                 }
@@ -183,17 +196,16 @@ fn spawn(
     }
 }
 
-/// Where a version that swaps by distance is drawn at all. A swaying part is drawn wherever it may show and its shader
-/// swaps it a card at a time (`wind.wesl`); its middle version is drawn everywhere, since it alone casts the plant's
-/// shadows, which so hold still as the camera moves. A still part swaps whole, halfway. Either way at once, never a
-/// crossfade: Bevy's dithers its pixels in screen space, which shimmers under temporal anti-aliasing.
-fn range(swap: Swap, sways: bool) -> VisibilityRange {
-    let halfway = FULL_UP_TO_M + SWAP_M / 2.0;
-    let (from, to) = if sways { (0.0, FULL_UP_TO_M + SWAP_M) } else { (halfway, halfway) };
-    match swap {
-        Swap::Going => VisibilityRange::abrupt(0.0, to),
-        Swap::Coming => VisibilityRange::abrupt(from, f32::MAX),
-    }
+/// What a version of a model is spawned for.
+#[derive(Clone, Copy)]
+enum Role {
+    /// To be seen and, if the model's extras let it, to cast its shadow.
+    Both,
+    /// To be seen only: a plant's full version, whose shadow its middle version casts.
+    Seen,
+    /// To cast its shadow only, never seen: a plant's middle version beside its full one. The sun's shadows are cast by
+    /// far fewer leaves, and hold still as the camera moves.
+    Shadow,
 }
 
 /// Makes every visibility range in the game abrupt, saying so, should one crossfade: Bevy dithers a crossfade's pixels
@@ -235,6 +247,16 @@ fn parts(
 fn vertices(gltf_meshes: &Assets<GltfMesh>, meshes: &Assets<Mesh>, node: &GltfNode) -> usize {
     let Some(mesh) = node.mesh.as_ref().and_then(|mesh| gltf_meshes.get(mesh)) else { return 0 };
     mesh.primitives.iter().filter_map(|primitive| meshes.get(&primitive.mesh)).map(Mesh::count_vertices).sum()
+}
+
+/// `transforms` grouped by the square of [`MERGED_SQUARE_M`] each stands in.
+fn squares(transforms: &[Transform]) -> impl Iterator<Item = Vec<Transform>> {
+    let mut squares: HashMap<IVec2, Vec<Transform>> = HashMap::default();
+    for &transform in transforms {
+        let square = (transform.translation.xz() / MERGED_SQUARE_M).floor().as_ivec2();
+        squares.entry(square).or_default().push(transform);
+    }
+    squares.into_values()
 }
 
 /// One mesh holding `mesh` once per transform, kept only on the GPU. None if the mesh is not loaded or cannot merge.
