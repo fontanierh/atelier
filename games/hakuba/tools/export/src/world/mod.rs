@@ -1,9 +1,9 @@
-//! The `world` kind: the ground, and each region's roads on it, cut into square tiles.
+//! The `world` kind: the ground, and what each region lays over it, cut into square tiles.
 //!
 //! The ground is one grid of heights across the world, stored in square pages under `src/ground/`. Each region
-//! lives in its own folder under `src/regions/`; its `layout.rs` says where its roads run (`regions.rs` lists them).
-//! Each tile is written twice under `tiles/`: `<column>_<row>.glb` in full detail, and `<column>_<row>.middle.glb` with a coarser ground for
-//! seeing from afar. The coarse ground keeps every fine point on the tile's edges, so neighbouring tiles meet exactly
+//! lives in its own folder under `src/regions/`; its `layout.rs` says what it adds (`regions.rs` lists them). Each
+//! tile is written twice under `tiles/`: `<column>_<row>.glb` in full detail, and `<column>_<row>.middle.glb` with a
+//! coarser ground for seeing from afar. The coarse ground keeps every fine point on the tile's edges, so neighbouring tiles meet exactly
 //! whichever version each one shows. `<folder name>.glb` holds one empty node per tile, named
 //! `tile <column> <row>` and placed at the tile's centre, and one named `spawn`, where the player starts.
 //!
@@ -11,8 +11,9 @@
 //! y north, z up) becomes the game's (x east, y up, z south).
 
 mod ground;
+mod overlay;
 mod regions;
-mod road;
+mod ribbon;
 mod surface;
 
 use std::collections::HashMap;
@@ -26,7 +27,7 @@ use serde_json::json;
 
 use crate::glb::{Glb, Mesh};
 use ground::Ground;
-use road::Road;
+use overlay::Overlay;
 use surface::Surface;
 
 #[derive(Serialize, Deserialize)]
@@ -58,11 +59,11 @@ const COARSE: usize = 4;
 pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     let [x, y] = settings.south_west_m;
     let ground = Ground::read(&folder.join(&settings.ground), settings.page_steps, settings.ground_step_m, DVec2::new(x, y))?;
-    let mut roads = Vec::new();
-    for region in &regions::REGIONS {
-        for (k, plan) in region.roads.iter().enumerate() {
-            let name = format!("{} road {k}", region.name);
-            roads.push(Road::new(&name, plan, &ground).with_context(|| name.clone())?);
+    let mut overlays = Vec::new();
+    for region in regions::REGIONS {
+        for mut overlay in region.overlays() {
+            overlay.name = format!("{} {}", region.name(), overlay.name);
+            overlays.push(overlay);
         }
     }
     let [[first_column, first_row], [last_column, last_row]] = settings.tiles;
@@ -81,7 +82,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
                 bail!("tile {column} {row} reaches past the ground");
             }
             for (detail, name) in [(Detail::Full, format!("{column}_{row}.glb")), (Detail::Middle, format!("{column}_{row}.middle.glb"))] {
-                tile.write(&ground, &roads, settings, detail, &tiles.join(name))?;
+                tile.write(&ground, &overlays, settings, detail, &tiles.join(name))?;
             }
             let centre = ground.at((tile.columns.0 + tile.columns.1) as f64 / 2.0, (tile.rows.0 + tile.rows.1) as f64 / 2.0);
             index.add_marker(&format!("tile {column} {row}"), game(centre), DQuat::IDENTITY);
@@ -107,20 +108,20 @@ struct Tile {
 }
 
 impl Tile {
-    fn write(&self, ground: &Ground, roads: &[Road], settings: &Settings, detail: Detail, path: &Path) -> Result<()> {
+    fn write(&self, ground: &Ground, overlays: &[Overlay], settings: &Settings, detail: Detail, path: &Path) -> Result<()> {
         let mut glb = Glb::from_json(json!({ "asset": { "version": "2.0" } }));
         let ground_material = glb.add_material("ground", linear(settings.ground_colour));
         let ground_mesh = self.ground(ground, detail, ground_material);
         let drawn = Surface::new(&ground_mesh);
         glb.add_mesh("ground", &ground_mesh);
-        for road in roads {
-            let mut mesh = road.mesh(ground, &drawn);
+        for overlay in overlays {
+            let mut mesh = overlay.mesh(ground, &drawn);
             if mesh.indices.is_empty() {
                 continue;
             }
-            road::check_above(&drawn, &mesh).with_context(|| format!("writing {}", path.display()))?;
-            mesh.material = glb.add_material(&road.name, linear(road.colour));
-            glb.add_mesh(&road.name, &mesh);
+            overlay::check_above(&drawn, &mesh).with_context(|| format!("writing {}: {}", path.display(), overlay.name))?;
+            mesh.material = glb.add_material(&overlay.name, linear(overlay.colour));
+            glb.add_mesh(&overlay.name, &mesh);
         }
         glb.write(path)
     }

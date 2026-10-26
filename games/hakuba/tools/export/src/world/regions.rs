@@ -1,22 +1,17 @@
-//! Every region, each with its layout from its folder under the world's `src/regions/`.
+//! Every region, each with its implementation of [`Region`] from its folder under the world's `src/regions/`.
+
+use super::overlay::Overlay;
 
 #[path = "../../../../assets/world/src/regions/momiji-coast/layout.rs"]
 mod momiji_coast;
 
 /// What a region adds to the world. Positions are in metres, in the map's frame: x east, y north, z up.
-pub struct Region {
+pub trait Region {
     /// The region's folder name.
-    pub name: &'static str,
-    pub roads: &'static [RoadPlan],
+    fn name(&self) -> &'static str;
+
+    /// The flat shapes it lays over the ground.
+    fn overlays(&self) -> Vec<Overlay>;
 }
 
-/// A road a region lays on the ground.
-pub struct RoadPlan {
-    /// The points its centre line passes through, in order.
-    pub course: &'static [[f64; 2]],
-    pub width_m: f64,
-    /// Its colour, in sRGB.
-    pub colour: [f64; 3],
-}
-
-pub const REGIONS: [Region; 1] = [momiji_coast::REGION];
+pub const REGIONS: [&dyn Region; 1] = [&momiji_coast::MomijiCoast];

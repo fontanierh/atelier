@@ -37,9 +37,10 @@ tools/
       characters.rs         every character
       world/                the `world` kind
         mod.rs              the settings, and cutting the world into tiles
-        regions.rs          every region, and what a region adds to the world
+        regions.rs          every region, and the `Region` trait: what a region adds to the world
         ground.rs           the ground's heights, read from its pages
-        road.rs             a road along its course, laid on the ground
+        overlay.rs          flat shapes laid over the ground, such as roads
+        ribbon.rs           strips of even width along a curve, for regions to lay as overlays
         surface.rs          finding what lies under a point of a mesh, and cutting shapes along its triangles
       glb.rs                reading, editing and writing .glb files
 ```
@@ -89,10 +90,10 @@ every animation fitted to it with the character's changes. Its rig bones are ren
 | `height_m`     | how tall the character stands in the game   |
 | `texture_size` | the largest side of any texture, in pixels  |
 
-**`world`** builds the ground from the height pages in `src/ground/` and each region's roads from its
-`src/regions/<region>/layout.rs`, and cuts them into square tiles under `tiles/`. Each tile is written in full
-detail and in middle detail, for seeing from afar. A road lies a few centimetres above the ground triangles under it;
-the export fails if it comes closer anywhere. `<folder name>.glb` holds a node per tile, at its centre, and the spawn.
+**`world`** builds the ground from the height pages in `src/ground/`, lays over it what each region adds, and cuts
+them into square tiles under `tiles/`. Each region's `src/regions/<region>/layout.rs` implements `Region`, and
+`world/regions.rs` lists it. Each tile is written in full detail and in middle detail, for seeing from afar. An
+overlay lies a few centimetres above the ground triangles under it; the export fails if it comes closer anywhere. `<folder name>.glb` holds a node per tile, at its centre, and the spawn.
 
 | Setting             | Meaning                                                               |
 |---------------------|-----------------------------------------------------------------------|
