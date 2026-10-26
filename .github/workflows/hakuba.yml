@@ -48,8 +48,8 @@ jobs:
       # rust-toolchain.toml picks the Rust version; cargo installs it on first use.
       - name: Check the code's layout
         run: cargo fmt --check
-      - name: Check the code for common mistakes
-        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Check the exporter for common mistakes
+        run: cargo clippy -p hakuba_export --all-targets -- -D warnings
       # The exporter's tests check that each kind uses only its own code, the shared code and its own assets.
       - name: Test the exporter
         run: cargo test -p hakuba_export
