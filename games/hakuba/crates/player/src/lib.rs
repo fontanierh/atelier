@@ -10,7 +10,7 @@ mod moves;
 use bevy::prelude::*;
 use hakuba_characters::Character;
 use hakuba_screens::{Pause, Screen};
-use hakuba_world::{Spawn, Unready};
+use hakuba_world::{PushesPlants, Spawn, Unready};
 
 pub use input::Controls;
 pub use moves::{Action, Mode};
@@ -63,6 +63,7 @@ fn spawn(mut commands: Commands, start: Option<Res<Spawn>>, players: Query<(), W
             Transform::from_translation(start.0.translation).with_rotation(Quat::from_rotation_y(yaw)),
             Visibility::default(),
             Unready,
+            PushesPlants::default(),
         ))
         .add_child(body);
 }

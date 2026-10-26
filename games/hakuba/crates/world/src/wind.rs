@@ -3,8 +3,8 @@
 //! its leaf's phase, in its second texture coordinates: a plant bends from its foot, so its top and the outside of its
 //! crown move most. A part that sways is drawn with its own material and the vertex shader in `wind.wesl`, in every
 //! pass, so its shadow sways with it. How strongly the wind blows, the Wind setting, reaches the shader as each swaying
-//! mesh's tag, in thousandths, so plants are still drawn together. Yorimichi also pushed plants away from the player;
-//! Hakuba does not yet.
+//! mesh's tag, in thousandths, so plants are still drawn together. Leaves and blades also lean away from whatever pushes
+//! plants (`push.rs`), however the wind blows.
 
 use bevy::asset::embedded_asset;
 use bevy::ecs::system::SystemParam;
@@ -12,7 +12,10 @@ use bevy::pbr::{ExtendedMaterial, MaterialExtension};
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use bevy::render::render_resource::AsBindGroup;
+use bevy::render::storage::ShaderBuffer;
 use bevy::shader::ShaderRef;
+
+use crate::push::Pushers;
 
 /// The mesh tag that tells the shader the wind blows `strength` times as strongly as usual.
 pub fn tag(strength: f32) -> u32 {
@@ -31,9 +34,13 @@ impl Plugin for WindPlugin {
     }
 }
 
-/// The wind's part of a swaying material: its vertex shader.
+/// The wind's part of a swaying material: its vertex shader, and where the things that push plants aside are, in a
+/// buffer every swaying material shares.
 #[derive(Asset, AsBindGroup, Reflect, Clone, Default)]
-pub struct Wind {}
+pub struct Wind {
+    #[storage(100, read_only)]
+    pushers: Handle<ShaderBuffer>,
+}
 
 impl MaterialExtension for Wind {
     fn vertex_shader() -> ShaderRef {
@@ -56,6 +63,7 @@ pub struct SwayingMaterials<'w> {
     made: ResMut<'w, Made>,
     standard: Res<'w, Assets<StandardMaterial>>,
     swaying: ResMut<'w, Assets<Swaying>>,
+    pushers: Res<'w, Pushers>,
 }
 
 impl SwayingMaterials<'_> {
@@ -65,7 +73,7 @@ impl SwayingMaterials<'_> {
             return Some(handle.clone());
         }
         let base = self.standard.get(material)?.clone();
-        let handle = self.swaying.add(Swaying { base, extension: Wind {} });
+        let handle = self.swaying.add(Swaying { base, extension: Wind { pushers: self.pushers.0.clone() } });
         self.made.0.insert(material.id(), handle.clone());
         Some(handle)
     }
