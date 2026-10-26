@@ -99,3 +99,13 @@ impl Ground {
         DVec3::new(-slope(DVec2::X * self.step), -slope(DVec2::Y * self.step), 1.0).normalize()
     }
 }
+
+#[cfg(test)]
+impl Ground {
+    /// A ground of one page, its height at each grid point given by `height`.
+    pub fn page(page_steps: usize, step: f64, height: impl Fn(usize, usize) -> f32) -> Self {
+        let samples = page_steps + 1;
+        let heights = (0..samples * samples).map(|k| height(k % samples, k / samples)).collect();
+        Self { pages: HashMap::from([((0, 0), heights)]), page_steps, step, south_west: DVec2::ZERO }
+    }
+}

@@ -52,7 +52,7 @@ impl Animation for Idle {
     }
 
     fn change(&self, changes: Option<&Value>, rest: &Pose, frames: &mut [Pose]) -> Result<()> {
-        apply(&crate::rig::animations::changes(changes)?, rest, frames)
+        apply(&crate::rig::animation::changes(changes)?, rest, frames)
     }
 }
 

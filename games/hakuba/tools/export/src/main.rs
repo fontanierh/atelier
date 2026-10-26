@@ -40,7 +40,7 @@ impl Asset {
     fn reads(&self) -> Vec<String> {
         match self {
             Asset::Animation(_) | Asset::Texture(_) | Asset::World(_) => Vec::new(),
-            Asset::Character(_) => rig::animations::ANIMATIONS.into_iter().map(rig::animations::folder).collect(),
+            Asset::Character(_) => rig::animations::ANIMATIONS.into_iter().map(rig::animation::folder).collect(),
         }
     }
 

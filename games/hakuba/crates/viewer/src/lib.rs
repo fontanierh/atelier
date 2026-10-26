@@ -9,6 +9,9 @@ use hakuba_characters::{Character, Clips, Play};
 use hakuba_screens::{Screen, button, text};
 use orbit::{Orbit, orbit};
 
+/// How thick the stage is, in metres; its top is the floor, at height 0.
+const STAGE_THICKNESS_M: f32 = 0.05;
+
 pub struct ViewerPlugin;
 
 impl Plugin for ViewerPlugin {
@@ -27,13 +30,14 @@ fn show(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials:
     commands.insert_resource(ClearColor(Color::srgb(0.22, 0.23, 0.25)));
     commands.spawn((
         on_screen.clone(),
-        Mesh3d(meshes.add(Circle::new(1.5))),
+        // A slab rather than a flat disc, so the camera sees it from below too.
+        Mesh3d(meshes.add(Cylinder::new(1.5, STAGE_THICKNESS_M))),
         MeshMaterial3d(materials.add(StandardMaterial {
             base_color: Color::srgb(0.4, 0.4, 0.42),
             perceptual_roughness: 1.0,
             ..default()
         })),
-        Transform::from_rotation(Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2)),
+        Transform::from_xyz(0.0, -STAGE_THICKNESS_M / 2.0, 0.0),
     ));
     commands.spawn((
         on_screen.clone(),

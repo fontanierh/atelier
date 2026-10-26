@@ -39,7 +39,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
 
 /// The animation's clip on the rig: its frame rate and the rig's pose in each frame.
 pub fn read(animation: &dyn Animation) -> Result<(f64, Vec<Pose>)> {
-    let glb = Glb::read(&animations::output(animation))?;
+    let glb = Glb::read(&output(animation))?;
     let nodes = rig_nodes(&glb, &Bones::rig())?;
     let (fps, frames) = glb.sample(animation.name())?;
     Ok((fps, frames.iter().map(|locals| rig_pose(&glb.worlds(locals), &nodes)).collect()))
@@ -89,4 +89,19 @@ pub fn continuous(mut keys: Vec<DQuat>) -> Vec<DQuat> {
         }
     }
     keys
+}
+
+/// The animation's asset folder, relative to `assets/`.
+pub fn folder(animation: &dyn Animation) -> String {
+    format!("animations/{}", animation.name())
+}
+
+/// The animation's exported clip on the rig.
+pub fn output(animation: &dyn Animation) -> PathBuf {
+    Path::new(crate::ASSETS).join(folder(animation)).join(format!("{}.glb", animation.name()))
+}
+
+/// A character's changes to one animation, read into the form that animation defines; no change if it has none.
+pub fn changes<T: Default + for<'de> Deserialize<'de>>(changes: Option<&Value>) -> Result<T> {
+    Ok(changes.map(T::deserialize).transpose()?.unwrap_or_default())
 }

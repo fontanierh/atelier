@@ -4,6 +4,7 @@ Game crates MUST load only exported files (each asset's `.glb` and its declared 
 depend on how the world is split into regions: the world is tiles and an index.
 
 @cc [owner:fontanierh,label:architecture] one-feature-per-crate
-Each crate MUST be one feature with one Bevy plugin. What several screens share lives in `screens`. A crate
+Each crate MUST be one feature, published as one Bevy plugin. That plugin MAY add private plugins for the
+feature's parts; no other crate adds them. What several screens share lives in `screens`. A crate
 MAY use another crate only for what that crate publishes for others (as the viewer uses `characters`),
 never for its internals.

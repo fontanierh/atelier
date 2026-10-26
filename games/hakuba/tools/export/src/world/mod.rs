@@ -253,3 +253,51 @@ fn texture_uri(name: &str) -> Result<String> {
     }
     Ok(format!("../../textures/{name}/{name}.ktx2"))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Neighbouring tiles meet exactly along their whole shared edge, whichever version each one shows: both draw
+    /// the same edges between the same points there, so there is no step, slit or sliver.
+    #[test]
+    fn neighbouring_tiles_meet_exactly() {
+        let steps = 2 * COARSE;
+        let ground = Ground::page(2 * steps, 2.0, |i, j| (i as f32 * 0.7).sin() * 3.0 + (j as f32 * 1.3).cos() * 2.0);
+        let span = |k: usize| (k * steps, (k + 1) * steps);
+        let tile = |column, row| Tile { columns: span(column), rows: span(row) };
+        // The edges a ground mesh draws along the line where `along` of a point (in the game's frame) is `at`.
+        let edges = |mesh: &Mesh, along: fn(&[f32; 3]) -> f32, at: f32| {
+            let mut edges: Vec<[[u32; 3]; 2]> = Vec::new();
+            for triangle in mesh.indices.chunks(3) {
+                for k in 0..3 {
+                    let [a, b] = [triangle[k], triangle[(k + 1) % 3]].map(|v| mesh.positions[v as usize]);
+                    if along(&a) == at && along(&b) == at {
+                        let mut edge = [a, b].map(|p| p.map(f32::to_bits));
+                        edge.sort();
+                        edges.push(edge);
+                    }
+                }
+            }
+            edges.sort();
+            edges
+        };
+        let x = |p: &[f32; 3]| p[0];
+        let z = |p: &[f32; 3]| p[2];
+        let east_edge = (steps as f64 * ground.step) as f32;
+        // The edge two tiles share runs north to south at x = east_edge in the game's frame, and west to east at
+        // z = -east_edge (north is -z).
+        let pairs =
+            [(tile(0, 0), tile(1, 0), x as fn(&[f32; 3]) -> f32, east_edge), (tile(0, 0), tile(0, 1), z, -east_edge)];
+        for (first, second, along, at) in pairs {
+            for a in [Detail::Full, Detail::Middle] {
+                for b in [Detail::Full, Detail::Middle] {
+                    let (one, other) = (first.ground(&ground, a, 0, 1.0), second.ground(&ground, b, 0, 1.0));
+                    let shared = edges(&one, along, at);
+                    assert_eq!(shared.len(), steps, "every fine step of the edge is drawn");
+                    assert_eq!(shared, edges(&other, along, at));
+                }
+            }
+        }
+    }
+}

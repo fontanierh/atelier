@@ -25,8 +25,9 @@ never inputs. An export MAY check that an asset it names exists, without reading
 Each kind's code MUST live in its own folder under `src/` (`rig/` for animations and characters, `texture/` for
 textures, `world/` for the world) and use only that folder, the shared code (`SHARED_CODE` in `main.rs`:
 `main.rs`, `glb.rs`, the crate's manifest, the lock file and the toolchain) and its own asset groups' `.rs` files. It MUST NOT use
-another kind's code, and the shared code MUST NOT use any kind's code; a method two kinds need moves into the
-shared code under a general name. A kind's checksum MUST cover exactly that code, so editing one kind never
+another kind's code, and the shared code MUST NOT use any kind's code, except where `main.rs` names each kind once
+to read its settings and hand its asset to it (`Asset`); a method two kinds need moves into the shared code under
+a general name. A kind's checksum MUST cover exactly that code, so editing one kind never
 marks another kind's assets out of date. Every file in `src/` MUST be shared code or sit in a kind's folder.
 The exporter's tests check these rules, and CI runs them.
 
