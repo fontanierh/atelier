@@ -3,12 +3,12 @@
 
 use std::path::{Path, PathBuf};
 
-use anyhow::Result;
+use anyhow::{Result, bail};
 use glam::DQuat;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use crate::animations::Name;
+use crate::animations::{self, Animation};
 use crate::glb::{Glb, Track};
 use crate::pose::{Pose, rig_nodes, rig_pose, rig_rest};
 use crate::retarget::retarget;
@@ -17,8 +17,6 @@ use crate::rig::{self, Bones, RIG};
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Settings {
-    /// Which animation this folder holds.
-    animation: Name,
     /// The file holding the source clip, relative to the asset folder.
     source: PathBuf,
     /// The source clip's name in that file.
@@ -26,19 +24,22 @@ pub struct Settings {
 }
 
 pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
+    let name = folder.file_name().unwrap().to_string_lossy();
+    let Some(animation) = animations::named(&name) else {
+        bail!("there is no animation named {name} in animations.rs")
+    };
     let glb = Glb::read(&folder.join(&settings.source))?;
-    let nodes = rig_nodes(&glb, &settings.animation.source_skeleton())?;
+    let nodes = rig_nodes(&glb, &animation.source())?;
     let rest = rig_pose(&glb.worlds(&glb.rest()?), &nodes);
     let (fps, frames) = glb.sample(&settings.clip)?;
     let clip: Vec<Pose> = frames.iter().map(|locals| rig_pose(&glb.worlds(locals), &nodes)).collect();
     let frames = retarget(&rest, &clip, &rig_rest())?;
-    let name = folder.file_name().unwrap().to_string_lossy();
     write(output, &name, fps, &frames)
 }
 
 /// The animation's clip on the rig: its frame rate and the rig's pose in each frame.
-pub fn read(animation: Name) -> Result<(f64, Vec<Pose>)> {
-    let glb = Glb::read(&animation.output())?;
+pub fn read(animation: &dyn Animation) -> Result<(f64, Vec<Pose>)> {
+    let glb = Glb::read(&animations::output(animation))?;
     let nodes = rig_nodes(&glb, &Bones::rig())?;
     let (fps, frames) = glb.sample(animation.name())?;
     Ok((fps, frames.iter().map(|locals| rig_pose(&glb.worlds(locals), &nodes)).collect()))

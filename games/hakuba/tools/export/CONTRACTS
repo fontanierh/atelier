@@ -8,9 +8,11 @@ general method under a general name.
 
 @cc [owner:fontanierh,label:architecture] exporter-lists-are-the-only-names
 `animations.rs`, `characters.rs` and `world/regions.rs` are the only exporter files that name assets.
-Each MUST do no more than compile in each asset's `.rs` file with `#[path]`, list the assets, and pass
-each asset's own code to the generic method that uses it. Adding an asset MUST NOT change any other
-exporter file.
+Each MUST do no more than compile in each asset's `.rs` file with `#[path]`, define the one trait every
+asset of its kind implements (`Animation`, `Character`, `Region`), and list the assets. The exporter MUST
+reach an asset only through that trait, never by matching on which asset it is, so adding an asset adds one
+`#[path]` module and one list entry, and changes no other exporter file. An asset's folder name picks its
+entry in the list.
 
 @cc [owner:fontanierh,label:correctness] exports-follow-from-inputs
 An export MUST depend only on its asset's settings, its `src/`, the exporter's own files and the

@@ -7,11 +7,11 @@ Nothing else MAY sit in an asset folder. Folders inside `src/` follow the kind's
 `src/ground/` and `src/regions/<region>/`).
 
 @cc [owner:fontanierh,label:architecture] asset-src-is-the-asset
-An asset's `src/` MUST hold what that asset is: its source files and its own numbers, shapes and choices.
-A `.rs` file there MUST express those choices through the exporter's traits, methods and helpers, and
+An asset's folder MUST hold what that asset is: its source files and code in `src/`, and its own numbers
+in `asset.toml`. A `.rs` file in `src/` MUST express those choices through the exporter's traits, methods and helpers, and
 MUST NOT define a general method another asset could use: that belongs in `tools/export/`. It MUST NOT
-read or change another asset's `src/`, except by implementing a trait an animation defines for every
-character.
+read or change another asset's `src/`. A character's changes to an animation MUST be numbers in its own
+`asset.toml`, in the table that animation's file defines, never code in the character or the animation.
 
 @cc [owner:fontanierh,label:correctness] exports-never-edited
 An asset's exports MUST be written only by `cargo export`, never by hand, and MUST be committed together

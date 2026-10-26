@@ -13,8 +13,8 @@ cargo export --check assets            # list the exports whose inputs changed
 
 - **The exporter** holds how every asset of a kind is made: the methods, shared by all of them. It holds no asset's
   own numbers or shapes.
-- **An asset's `src/`** holds what that asset is: its source files and its own choices, such as a character's
-  stance or a region's roads.
+- **An asset** holds what that asset is: its source files and code in `src/`, such as a region's roads, and its
+  own numbers in `asset.toml`, such as a character's stance.
 - **The export** (`<asset>.glb` and what sits beside it) is written by the exporter and never edited by hand.
 
 The exporter names assets in one place per kind, a list that compiles in each asset's `.rs` file:
@@ -32,9 +32,9 @@ tools/
       pose_edit.rs          turning bones, moving the body and bending legs, shared by the retarget and animations
       retarget.rs           moving a clip from one skeleton onto another
       animation.rs          the `animation` kind
-      animations.rs         every animation, each from its asset folder
-      character.rs          the `character` kind and the `Character` trait
-      characters.rs         every character
+      animations.rs         every animation, and the `Animation` trait each implements
+      character.rs          the `character` kind
+      characters.rs         every character, and the `Character` trait each implements
       world/                the `world` kind
         mod.rs              the settings, and cutting the world into tiles
         regions.rs          every region, and the `Region` trait: what a region adds to the world
@@ -59,10 +59,11 @@ optional; a skeleton without them gets them from its neighbours.
 
 ## Characters
 
-A character is a type that implements `Character`: `Skeleton`, plus `Changes`, which `animations.rs` makes of one
-trait per animation, each defined in that animation's `src/<name>.rs`. Each animation trait's methods are the
-character's changes to that animation, with defaults that change nothing. The character's file, `src/<name>.rs` in its asset folder, implements them, and
-`characters.rs` includes it in the `Name` enum. If a character lacks one, the exporter fails to compile.
+A character's file, `src/<name>.rs` in its asset folder, implements `Character`: its name and which of its bones
+plays each rig bone (`Skeleton`). `characters.rs` lists it in `CHARACTERS`. Its changes to the animations are numbers in its
+`asset.toml`, one table per animation, such as `[animations.idle]`. Each animation's file defines what its table may
+hold; a character leaves out the animations and fields it does not change. A table for no animation, or an unknown
+field, fails the export.
 
 ## Kinds
 
@@ -71,25 +72,23 @@ kind's settings. A missing, misspelled or unknown setting fails the export. Each
 `Settings` struct and an `export` function that writes the folder's `.glb`.
 
 **`animation`** retargets a clip onto the rig and writes the rig playing it, named after the folder. Its
-`src/<name>.rs` implements `Skeleton` for the clip's skeleton and defines the trait a character implements to
-change the animation, and how those changes apply to it. `animations.rs` includes it in the `Name` enum and in
-`Changes`, and passes each character's changes to it.
+`src/<name>.rs` implements `Animation`: its name, the skeleton its clip is on, what a character may change in it
+and how those changes apply. `animations.rs` lists it in `ANIMATIONS`. The folder's name picks it there.
 
-| Setting     | Meaning                                         |
-|-------------|-------------------------------------------------|
-| `animation` | which animation this is                         |
-| `source`    | the file holding the clip, relative to the folder |
-| `clip`      | the clip's name in that file                    |
+| Setting  | Meaning                                           |
+|----------|---------------------------------------------------|
+| `source` | the file holding the clip, relative to the folder |
+| `clip`   | the clip's name in that file                      |
 
 **`character`** exports a character's model: scaled to its height, textures resized, morph targets removed, and
 every animation fitted to it with the character's changes. Its rig bones are renamed to the rig's names.
 
 | Setting        | Meaning                                     |
 |----------------|---------------------------------------------|
-| `character`    | which character this is                     |
 | `source`       | the model, relative to the asset folder     |
 | `height_m`     | how tall the character stands in the game   |
 | `texture_size` | the largest side of any texture, in pixels  |
+| `animations`   | its changes to each animation, by name      |
 
 **`world`** builds the ground from the height pages in `src/ground/`, lays over it what each region adds, and cuts
 them into square tiles under `tiles/`. Each region's `src/regions/<region>/layout.rs` implements `Region`, and

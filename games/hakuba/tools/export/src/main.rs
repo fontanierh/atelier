@@ -40,10 +40,10 @@ enum Asset {
 
 impl Asset {
     /// The other assets whose exports this one reads, by folder relative to `assets/`.
-    fn reads(&self) -> Vec<&'static str> {
+    fn reads(&self) -> Vec<String> {
         match self {
             Asset::Animation(_) | Asset::World(_) => Vec::new(),
-            Asset::Character(_) => animations::Name::ALL.iter().map(|animation| animation.folder()).collect(),
+            Asset::Character(_) => animations::ANIMATIONS.into_iter().map(animations::folder).collect(),
         }
     }
 }
@@ -97,7 +97,7 @@ impl Folder {
             }
         }
         for folder in self.asset.reads() {
-            let output = Folder::read(&Path::new(ASSETS).join(folder))?.output();
+            let output = Folder::read(&Path::new(ASSETS).join(&folder))?.output();
             digest.update(folder.as_bytes());
             digest.update([0]);
             digest.update(Sha256::digest(fs::read(&output).with_context(|| format!("reading {}", output.display()))?));
@@ -118,7 +118,7 @@ impl Folder {
 
     fn export(mut self) -> Result<()> {
         for folder in self.asset.reads() {
-            let read = Folder::read(&Path::new(ASSETS).join(folder))?;
+            let read = Folder::read(&Path::new(ASSETS).join(&folder))?;
             if !read.problems()?.is_empty() {
                 bail!("{}: export assets/{folder} first, its export is out of date", self.path.display());
             }

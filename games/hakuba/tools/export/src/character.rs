@@ -1,24 +1,21 @@
 //! The `character` kind: a character's model, scaled to its height, with smaller textures and no morph targets, its
 //! rig bones renamed to the rig's names, and every animation fitted to it.
 
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
 use glam::DQuat;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use crate::animation::{self, continuous};
-use crate::animations::{Changes, Name as Animation};
-use crate::characters;
+use crate::animations::{self, ANIMATIONS};
+use crate::characters::{self, Character};
 use crate::glb::{Glb, Track, Trs};
 use crate::pose::{Joint, Pose, rig_nodes, rig_pose, rig_rest};
 use crate::retarget::retarget;
-use crate::rig::{self, RIG, Skeleton};
-
-/// A playable character: its skeleton and its changes to each animation.
-pub trait Character: Skeleton + Changes {}
-
-impl<T: Skeleton + Changes> Character for T {}
+use crate::rig::{self, RIG};
 
 /// The furthest a bone may sit from where the fitted animation places it, in metres.
 const PLACEMENT_TOLERANCE: f64 = 0.001;
@@ -26,14 +23,15 @@ const PLACEMENT_TOLERANCE: f64 = 0.001;
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Settings {
-    /// Which character this is.
-    character: characters::Name,
     /// The model, relative to the asset folder.
     source: PathBuf,
     /// How tall the character stands in the game, in metres.
     height_m: f64,
     /// The largest side of any texture, in pixels.
     texture_size: u32,
+    /// The character's changes to each animation, by animation name, in the form that animation reads.
+    #[serde(default)]
+    animations: BTreeMap<String, Value>,
 }
 
 pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
@@ -41,20 +39,29 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     glb.remove_morph_targets();
     glb.scale_to_height(settings.height_m);
     glb.resize_images(settings.texture_size)?;
-    settings.character.animate(&mut glb)?;
+    let name = folder.file_name().unwrap().to_string_lossy();
+    let Some(character) = characters::named(&name) else {
+        bail!("there is no character named {name} in characters.rs")
+    };
+    if let Some(name) = settings.animations.keys().find(|name| animations::named(name).is_none()) {
+        bail!("animations.{name}: there is no animation named {name}");
+    }
+    animate(&mut glb, character, &settings.animations)?;
     glb.write(output)
 }
 
-/// Fits every animation to `character` and adds it to its model, then renames its rig bones to the rig's names.
-pub fn animate(glb: &mut Glb, character: &impl Character) -> Result<()> {
+/// Fits every animation to `character`, with its `changes` to each, and adds it to its model, then renames its rig
+/// bones to the rig's names.
+fn animate(glb: &mut Glb, character: &dyn Character, changes: &BTreeMap<String, Value>) -> Result<()> {
     let nodes = rig_nodes(glb, &character.bones())?;
     let rest_locals = glb.rest()?;
     let rest = rig_pose(&glb.worlds(&rest_locals), &nodes);
 
-    for animation in Animation::ALL {
+    for animation in ANIMATIONS {
         let (fps, clip) = animation::read(animation)?;
         let mut frames = retarget(&rig_rest(), &clip, &rest)?;
-        animation.change(character, &rest, &mut frames)?;
+        let name = animation.name();
+        animation.change(changes.get(name), &rest, &mut frames).with_context(|| format!("animations.{name}"))?;
         let tracks = tracks(glb, &nodes, &rest_locals, &frames)?;
         glb.add_animation(animation.name(), fps, &tracks);
     }

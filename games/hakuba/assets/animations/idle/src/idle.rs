@@ -1,15 +1,23 @@
-//! The idle: the skeleton its source clip is on, and how a character changes it.
+//! The idle: the skeleton its source clip is on, and how a character changes it: its stance, which a character sets
+//! in its `asset.toml` under `[animations.idle]`.
 
+use crate::animations::Animation;
 use crate::pose::{Pose, UP};
 use crate::pose_edit::{Foot, Leg, bend_forward, body_left, plant, repose};
-use crate::rig::{self, Bones, Fingers, Limbs, Skeleton};
+use crate::rig::{self, Bones, Fingers, Limbs};
 use anyhow::{Result, bail};
+use serde::Deserialize;
+use serde_json::Value;
 
-/// The skeleton of `source.glb`: which of its bones plays each rig bone. It has no bone between its spine and chest.
-pub struct Source;
+/// The idle. Its source clip, in `source.glb`, is on a skeleton with no bone between its spine and chest.
+pub struct Idle;
 
-impl Skeleton for Source {
-    fn bones(&self) -> Bones {
+impl Animation for Idle {
+    fn name(&self) -> &'static str {
+        "idle"
+    }
+
+    fn source(&self) -> Bones {
         let limbs = |side: &str| {
             let name = |bone: &str| format!("{bone}_{side}");
             let digit = |letter: &str| [1, 2, 3].map(|k| name(&format!("Finger_{letter}_{k}")));
@@ -42,19 +50,16 @@ impl Skeleton for Source {
             right: limbs("R"),
         }
     }
-}
 
-/// A character's changes to the idle.
-pub trait Idle: Skeleton {
-    /// How the character stands in it.
-    fn stance(&self) -> Stance {
-        Stance::NONE
+    fn change(&self, changes: Option<&Value>, rest: &Pose, frames: &mut [Pose]) -> Result<()> {
+        apply(&crate::animations::changes(changes)?, rest, frames)
     }
 }
 
 /// A standing pose laid over the idle, which keeps its breathing. The feet stay where the idle plants them.
-/// Distances are in centimetres, angles in degrees.
-#[derive(PartialEq)]
+/// Distances are in centimetres, angles in degrees. A character leaves out what it does not change.
+#[derive(PartialEq, Deserialize)]
+#[serde(default, deny_unknown_fields)]
 pub struct Stance {
     /// How far the hips move forward.
     pub hips_forward_cm: f64,
@@ -80,6 +85,12 @@ impl Stance {
         knees_out_deg: 0.0,
         arm_swing_deg: [0.0; 2],
     };
+}
+
+impl Default for Stance {
+    fn default() -> Self {
+        Self::NONE
+    }
 }
 
 /// The frame the stance measures the body from: which way is left and forward, and which way each knee points.

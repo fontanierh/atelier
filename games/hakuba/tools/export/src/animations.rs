@@ -1,60 +1,50 @@
-//! Every animation, each from its asset folder's `src/<name>.rs`: the skeleton its source clip is on, and the trait a
-//! character implements to change it.
+//! Every animation: the [`Animation`] that each animation's asset folder implements in `src/<name>.rs`, listed in
+//! [`ANIMATIONS`].
 
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use serde_json::Value;
 
 use crate::pose::Pose;
-use crate::rig::{Bones, Skeleton};
+use crate::rig::Bones;
 
 #[path = "../../../assets/animations/idle/src/idle.rs"]
-pub mod idle;
+mod idle;
 
-#[derive(Clone, Copy, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum Name {
-    Idle,
+/// Every animation, each exported with every character.
+pub const ANIMATIONS: [&dyn Animation; 1] = [&idle::Idle];
+
+/// What the exporter needs from an animation's own code.
+pub trait Animation: Sync {
+    /// Its name: its asset folder's name under `animations/`, and the clip's name in every export.
+    fn name(&self) -> &'static str;
+
+    /// The skeleton its source clip is on.
+    fn source(&self) -> Bones;
+
+    /// Applies a character's `changes` to the animation's `frames`, fitted to the character's `rest` pose. `changes`
+    /// is the character's table for this animation in its `asset.toml`, if it has one; [`changes`] reads it.
+    fn change(&self, changes: Option<&Value>, rest: &Pose, frames: &mut [Pose]) -> Result<()>;
 }
 
-/// A character's changes to every animation: one trait per animation.
-pub trait Changes: idle::Idle {}
+/// The animation named `name`.
+pub fn named(name: &str) -> Option<&'static dyn Animation> {
+    ANIMATIONS.into_iter().find(|animation| animation.name() == name)
+}
 
-impl<T: idle::Idle> Changes for T {}
+/// The animation's asset folder, relative to `assets/`.
+pub fn folder(animation: &dyn Animation) -> String {
+    format!("animations/{}", animation.name())
+}
 
-impl Name {
-    /// Every animation, each exported with every character.
-    pub const ALL: [Name; 1] = [Name::Idle];
+/// The animation's exported clip on the rig.
+pub fn output(animation: &dyn Animation) -> PathBuf {
+    Path::new(crate::ASSETS).join(folder(animation)).join(format!("{}.glb", animation.name()))
+}
 
-    /// Applies `character`'s changes to the animation's `frames`, fitted to its `rest` pose.
-    pub fn change(self, character: &impl Changes, rest: &Pose, frames: &mut [Pose]) -> Result<()> {
-        match self {
-            Name::Idle => idle::apply(&character.stance(), rest, frames),
-        }
-    }
-
-    /// The skeleton the animation's source clip is on.
-    pub fn source_skeleton(self) -> Bones {
-        match self {
-            Name::Idle => idle::Source.bones(),
-        }
-    }
-
-    /// The animation's asset folder, relative to `assets/`.
-    pub fn folder(self) -> &'static str {
-        match self {
-            Name::Idle => "animations/idle",
-        }
-    }
-
-    /// The animation's name: its asset folder's name, and the clip's name in every export.
-    pub fn name(self) -> &'static str {
-        self.folder().rsplit('/').next().expect("a folder has a name")
-    }
-
-    /// The animation's exported clip on the rig.
-    pub fn output(self) -> PathBuf {
-        Path::new(crate::ASSETS).join(self.folder()).join(format!("{}.glb", self.name()))
-    }
+/// A character's changes to one animation, read into the form that animation defines; no change if it has none.
+pub fn changes<T: Default + for<'de> Deserialize<'de>>(changes: Option<&Value>) -> Result<T> {
+    Ok(changes.map(T::deserialize).transpose()?.unwrap_or_default())
 }
