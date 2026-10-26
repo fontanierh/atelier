@@ -29,6 +29,7 @@ from .build_products import Product
 from .build_deferred import DeferredInputs
 from .build_spatial import BBoxQuery
 from .build_cook import CookMode
+from .build_v2.controller_recipe import ControllerTarget, validate_markers
 from .play_limits import GAME_GIB, GAME_MAX_GIB
 from atelier.harness.safety import guarded
 from atelier.harness.safety.render_lock import GiB, slot_count
@@ -439,6 +440,7 @@ class Step:
     checkpoint_outputs: tuple = field(default=(), repr=False)  # complete additional output roots, never representative samples
     candidate_scope: object = field(default=None, repr=False, compare=False)  # generic compatibility candidates; native validation still required
     replan: bool = field(default=False, kw_only=True)  # reload recipe after a completed source planner
+    controller: ControllerTarget | None = field(default=None, kw_only=True)  # explicit Rust-owned execution, never a v1 stamp
 
 
 def outputs_present(step):
@@ -457,6 +459,8 @@ def check_source_launch(steps):
     tool-context inventory. This declaration check MUST NOT add fingerprint
     fields or change command representations.
     """
+    steps = tuple(steps)
+    validate_markers(steps, paths.REPO)
     for step in steps:
         if type(getattr(step, 'replan', False)) is not bool or (getattr(step, 'replan', False) and (not step.products or not step.commands
                 or any(not isinstance(c, (Call, Python, Blender)) for c in step.commands))):
@@ -471,6 +475,16 @@ def check_modules(steps):
     check_source_launch(steps)
     from .mesh_export_contract import check_steps
     check_steps(steps, Blender)
+    _check_module_declarations(steps)
+
+
+def check_declarations(steps):
+    """Global metadata preflight without inspecting unrelated actions' source closures."""
+    check_source_launch(steps)
+    _check_module_declarations(steps)
+
+
+def _check_module_declarations(steps):
     for step in steps:
         for command in step.commands:
             if isinstance(command, UnrealScript):
@@ -628,6 +642,8 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, 
     input bytes and named (Merkle) fingerprints MUST compute directly. The value MUST be exactly
     what the direct computation returned.
     """
+    if step.controller is not None:
+        raise ValueError(f'{step.name}: controller-owned step cannot use v1 fingerprint or stamp dispatch')
     named = bool(step.products or step.reads or step.references)
     if index is None or named or _input_bytes or getattr(index, 'verify', False):
         return _fingerprint_state(step, done, capture=capture, index=index, tool_cache=tool_cache,
@@ -990,6 +1006,30 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, veri
     if max_heavy_commands is not None and (type(max_heavy_commands) is not int or max_heavy_commands < 1):
         raise ValueError('max_heavy_commands must be a positive integer')
     from .build_snapshot import require_complete
+    from .build_v2.controller_entry import exact_selection, execute as execute_controller
+    from .build_v2 import legacy_entry
+    if not dry and legacy_entry.managed(game, wanted):
+        if (force or touch or cook_mode is not None or cook_reason is not None
+                or cook_memory_gib is not None or recover_cook is not None
+                or record_cook_recovery or rebuild_touched or rebuild_reason is not None):
+            raise ValueError('managed legacy discovery does not support mutation/recovery overrides')
+        discovery = legacy_entry.prepare_discovery(game, wanted, verify=verify,
+                                               max_heavy_commands=max_heavy_commands,
+                                               fail_fast=fail_fast)
+        return legacy_entry.execute(game, wanted, discovery_source=discovery, verify=verify,
+                                    max_heavy_commands=max_heavy_commands, fail_fast=fail_fast,
+                                    echo=echo)
+    controller = exact_selection(game, wanted)
+    if controller is not None:
+        if (force or touch or verify or cook_mode is not None or cook_reason is not None or cook_memory_gib is not None
+                or recover_cook is not None or record_cook_recovery or rebuild_touched or rebuild_reason is not None
+                or max_heavy_commands is not None or fail_fast):
+            raise ValueError('controller target does not support legacy force/touch/verify/cook/recovery flags')
+        require_complete(paths.build_root() / game, game=game)
+        if dry:
+            echo(f'{controller.name:34s} unknown (readonly controller/cache observation unavailable; no bootstrap performed)')
+            return 0
+        return execute_controller(controller, echo=echo)
     if dry:
         require_complete(paths.build_root() / game, game=game)
         from .build_plan import show
@@ -1029,6 +1069,8 @@ def _prepared_build(ctx, wanted, *, force, touch, echo, verify, rebuild_reason, 
             raise SystemExit('--force requires --rebuild-reason for checkpoint builds; normal builds restore matching results.')
         checkpoint_steps = load_recipe(game).steps(ctx)
         check_source_launch(checkpoint_steps)
+        if any(step.controller is not None for step in build_products.Graph(checkpoint_steps).select(wanted)):
+            raise ValueError('mixed v1/controller checkpoint and reader custody is not yet accepted; no checkpoint restoration started')
         unknown = sorted(set(ctx.rebuild_reasons) - {s.name for s in checkpoint_steps})
         if unknown:
             raise SystemExit(f'--rebuild-reason names unknown tasks: {", ".join(unknown)}')
@@ -1201,6 +1243,8 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
     rebuild_names = touched_targets(ctx, steps, wanted)
     check_modules(steps)
     plan = order(steps, list(wanted))
+    if any(step.controller is not None for step in plan):
+        raise ValueError('mixed v1/controller execution custody is not yet accepted; no v1 task dispatch started')
     from .build_cook import validate_selection
     validate_selection(ctx, plan, touch=touch)
     declared_products = {p.name: p for s in steps for p in s.products}
@@ -1786,11 +1830,23 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
 
 
 def list_steps(game, echo=print):
-    ctx = Context(game, create=False)
-    for s in load_recipe(game).steps(ctx):
+    """@cc [owner:fontanierh,label:correctness] readonly-controller-step-list
+    Controller-aware listing MUST use source-only declarations, validate global metadata
+    and explicitly report controller ownership with reuse unknown. It MUST NOT construct
+    a runtime Context, bootstrap a helper or create build/cache state. See
+    test_controller_list_is_explicit_without_runtime_context_or_bootstrap.
+    """
+    from .build_v2.controller_entry import discover, declaration_context
+    if discover(game):
+        steps = load_recipe(game).steps(declaration_context(game))
+        check_declarations(steps)
+    else:
+        steps = load_recipe(game).steps(Context(game, create=False))
+    for s in steps:
         needs = f'  (needs {", ".join(s.needs)})' if s.needs else ''
         needs += f'  (after {", ".join(s.after)})' if s.after else ''
         needs += f'  (products {", ".join(p.name for p in s.products)})' if s.products else ''
         needs += f'  (reads {", ".join(s.reads)})' if s.reads else ''
         needs += f'  (references {", ".join(s.references)})' if s.references else ''
-        echo(f'{s.name:34s} {s.about}{needs}')
+        marker = ' [controller; reuse unknown; no bootstrap]' if s.controller is not None else ''
+        echo(f'{s.name:34s} {s.about}{marker}{needs}')

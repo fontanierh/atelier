@@ -142,7 +142,12 @@ Each Python job MUST run in its own child of the job loop, in its staged folder,
 environment only, loading only installed platform modules and the unit's declared code; the checkout
 MUST NOT be on its import path. The child keeps `-P -s -S` and runs no `.pth` file: installed
 libraries come only from the loop's own purelib and platlib folders, passed in the child's private
-configuration and appended after the standard library, and the child MUST fail the job as
+configuration and appended after the standard library. The installed OpenSSL configuration MAY be
+read through the exact canonical literal /private/etc/ssl/openssl.cnf as platform context, not a
+new keyed game input; this MUST NOT grant neighboring files, an etc/ssl directory, Mach lookups,
+network access or an OPENSSL_CONF override. See the portable profile inspection in
+test_build_v2_python_worker.py; actual sandbox execution remains separate guarded evidence.
+The child MUST fail the job as
 `dependency` before running it when any such folder is missing, relative, not a folder, or resolves
 (symbolic links included) outside the approved platform roots. Installed libraries stay platform
 context and never enter a key. On macOS the child MUST run under a deny-default sandbox that lets
@@ -422,3 +427,67 @@ without claiming another semantic geometry decode or reading live producer files
 formats, roles, incomplete/aliased/linked outputs and ownership-widening settings MUST refuse.
 See tests/blender_ops.rs and platform/studio/tests/test_build_v2_blender_ops.py. Native geometry
 fidelity/determinism, dynamic dispatch and production activation remain separate pending acceptance.
+
+@cc [owner:fontanierh,label:correctness] bounded-private-failure-diagnostics
+Failure diagnostics MUST retain at most 4096 UTF8 bytes on the original unit attempt, mark
+truncation explicitly and preserve the first diagnostic of each attempt through later errors
+and retries. This metadata MUST NOT affect policy, custody, keys, cache or publication decisions.
+Flattened driver reports MUST preserve attempt association. Only failed post-driver observations
+MAY write a private 0600 no-replace diagnostic.json under their original owned guard parent;
+Completed MUST NOT write it. Diagnostic IO failure MUST NOT change or mask the original outcome.
+Missing diagnostics MUST stay explicitly unknown, never evidence of cleanup. Messages and private
+files MUST NOT be published as CI artifacts or added to the strict controller/A7 report wire.
+See session_lifecycle::diagnostic_tests, python_executor::production_tests failure diagnostic
+cases and test_build_v2_controller_entry.py failed-target locator test. Actual historical M1 call1
+cause remains unknown; no functional retry or fullmixed activation is certified by these tests.
+
+@cc [owner:fontanierh,label:safety] build-v2-continuous-legacy-authority
+The operational v2 legacy selection fence MUST remain continuously present across every task,
+frame, replan and Supersede. A real same-root build guard, EX guard and anchored writer lock
+MUST outlive the owned scheduler and uncertain shutdown. Only the captured reviewed semantic
+provider MAY qualify normal task/graph observations; JSON, metadata hashes, stamps, child reap
+and absent guard files MUST NOT issue semantic or cleanup authority. Permission MUST persist
+before ACK, source-fixed Supersede MUST retain all attempted-unsettled canonical claims and
+checked transition count, and guarded attempts MUST correlate to actual unique positive cleanup.
+One shared guard attempt MUST bind the complete member set, never fictitious per-member report
+copies. The single private channel MUST NOT reconnect or auto-retry; ambiguity permits no new
+work, and a lost terminal Finish ACK remains caller failure/unknown. The host MUST add no outer
+admission or aggregate descendant memory guard and MUST never signal a guard-containing group.
+See legacy_epoch/selection.rs and legacy_host.rs/legacy_host_launch.rs tests. Full production
+qualification, final graph streaming, all C7 child/reader coverage, pressure-requeue cleanup chains
+and actual mixed normal/repair acceptance remain coupled integration gates; source unit tests
+are not native or full-default activation proof. Existing v1/dormant state is never silently adopted.
+
+@cc [owner:fontanierh,label:correctness;safety] legacy-host-deadline-and-dirty-disposition
+Absolute deadlines MUST use the same explicit posix-clock-monotonic-v1 clock on both sides,
+resampled across IO and suspend, with cleanup time reserved before any further work permission.
+Owned protocol endpoints MUST be nonblocking; partial IO, EAGAIN and EINTR MUST retain the
+absolute bound. FD sanitization MUST cover actual descriptors above lowered soft limits, keep
+Rust's exec-error pipe open until exec and refuse unsupported/unknown enumeration results.
+A dirty file/directory claim MUST NOT clear on an incomplete descendant list or directory inode:
+its exact absence/file or complete bounded tree disposition MUST be independently checked.
+Guard-return capacity close remains an explicit captured-provider observation AND independently
+matched raw guards/custody; self-generated wrapper flags MUST NOT issue cleanup authority.
+See legacy_host_launch.rs and legacy_epoch/selection.rs corrective regressions. These source
+fixtures do not prove real native cleanup, current full-default support or Darwin activation.
+
+@cc [owner:fontanierh,label:correctness;safety] legacy-host-installed-startup-context
+The original lexical interpreter role MUST launch verbatim with -I -S and resolve to the pinned
+canonical interpreter image/hash. The captured constructor MUST supply its actual original
+installed-library context; child -S sysconfig, arbitrary metadata or assigning sys.executable
+MUST NOT substitute that provenance. Both purelib and platlib MUST remain explicit and retain
+their lexical roles while their real existing directories are checked under real vetted platform
+roots, following C2c. No site/.pth/editable-hook or environment fallback is allowed. The host
+MUST clear inherited environment and set only the closed original AGENT/CACHE/BUILD_ROOT/PATH
+operational context. Unknown fields/overrides, missing libraries, relative/empty PATH entries and
+retargeted interpreter roles MUST refuse before project discovery. No custody, deadline, key or
+controller fulfillment authority is added. See legacy_host::tests startup-context cases;
+full production entry/discovery and actual native acceptance remain separate hosted/integration proof.
+
+@cc [owner:fontanierh,label:correctness;safety] closed-issuer-file-count-policy
+Controller distribution verification MUST keep its fixed 256 named-file cap. Only the private
+game-issuer verification caller MAY use the fixed 512 named-file policy; no input/config limit
+or arbitrary authority is accepted. Both MUST keep the identical length/name/content digest,
+8 MiB per-file and 32 MiB total bounds, unique names, readonly/nofollow observations and actual
+byte checks. A larger finite issuer roster is not task, cleanup, repair or Graph authority.
+See legacy_host::tests::issuer_count_512_does_not_change_controller_256_or_named_byte_authority.

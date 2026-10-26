@@ -3,6 +3,8 @@
 //! A future qualified adapter must be reviewed before these private capabilities can be issued.
 #![allow(dead_code)]
 
+pub(crate) mod selection;
+
 use crate::checkout_locks::{BuildGuard, ContentWriteGuard, LEGACY_EPOCH};
 use crate::install_fs::{FileObservation, RootFs};
 use crate::paths::{Claims, claim, relative_path};
@@ -1140,7 +1142,7 @@ mod tests {
         }
     }
 
-    fn prepared() -> crate::keys::PreparedUnit {
+    pub(super) fn prepared() -> crate::keys::PreparedUnit {
         use crate::{keys::*, schema::*, source_hashes::SourceHashCache, validate::*};
         let declaration: Declaration = serde_json::from_value(serde_json::json!({
             "schema_version":2,"cache_version":"fixture","units":[{"id":"v2","op":{"kind":"blob","version":"1"},

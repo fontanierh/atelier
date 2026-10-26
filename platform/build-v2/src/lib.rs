@@ -7,6 +7,8 @@ pub mod checkout_locks;
 pub mod cleanup;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod completion;
+pub mod controller;
+pub mod controller_transport;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod demand;
 pub mod explain;
@@ -50,3 +52,6 @@ pub mod validate;
 pub mod verify;
 pub mod worker_lifecycle;
 pub mod worker_session;
+
+pub mod legacy_host;
+pub(crate) mod legacy_host_launch;

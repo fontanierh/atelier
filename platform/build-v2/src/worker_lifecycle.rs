@@ -55,6 +55,8 @@ pub struct AttemptRecord {
 pub struct Report {
     pub outcome: Outcome,
     pub attempts: Vec<AttemptRecord>,
+    /// Unit-attempt failure metadata, separate from guard/session attempt custody.
+    pub unit_attempts: Vec<crate::session_lifecycle::UnitAttemptRecord>,
     /// The worker's reported outputs, for downstream validation and publication.
     pub outputs: Option<JobOutputs>,
     /// Why the lifecycle gave up when no failure kind describes it (for example a launch error).
@@ -187,6 +189,7 @@ impl Lifecycle {
         Some(Report {
             outcome: unit.outcome,
             attempts: self.attempts(),
+            unit_attempts: unit.attempts,
             outputs: unit.outputs,
             abort: unit.abort,
         })
@@ -844,6 +847,7 @@ pub fn run_job_prepared<L: WorkerLauncher>(
     Ok(Report {
         outcome: unit.outcome,
         attempts: report.sessions,
+        unit_attempts: unit.attempts,
         outputs: unit.outputs,
         abort: unit.abort,
     })

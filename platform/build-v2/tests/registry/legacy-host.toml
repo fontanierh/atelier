@@ -1,0 +1,157 @@
+schema_version = 1
+
+[[scenarios]]
+id = "legacy-host.issuer_count_512_does_not_change_controller_256_or_named_byte_authority"
+tests = ["atelier-build-v2/legacy_host::tests::issuer_count_512_does_not_change_controller_256_or_named_byte_authority"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.startup_manifest_relays_exact_host_verified_issuer_roster_without_discovery"
+tests = ["atelier-build-v2/legacy_host::tests::startup_manifest_relays_exact_host_verified_issuer_roster_without_discovery"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.original_interpreter_role_is_preserved_and_retargeted_image_refuses"
+tests = ["atelier-build-v2/legacy_host::tests::original_interpreter_role_is_preserved_and_retargeted_image_refuses"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.installed_scheme_folders_keep_lexical_roles_but_require_real_vetted_containment"
+tests = ["atelier-build-v2/legacy_host::tests::installed_scheme_folders_keep_lexical_roles_but_require_real_vetted_containment"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.closed_operational_environment_sets_only_vetted_values_without_inheritance"
+tests = ["atelier-build-v2/legacy_host::tests::closed_operational_environment_sets_only_vetted_values_without_inheritance"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.continuous_selection_survives_each_durable_cut_and_finishes_only_after_fresh_validation"
+tests = ["atelier-build-v2/legacy_epoch::selection::tests::continuous_selection_survives_each_durable_cut_and_finishes_only_after_fresh_validation"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.source_fix_supersede_carries_exact_dirty_claims_count_and_no_settled_credit"
+tests = ["atelier-build-v2/legacy_epoch::selection::tests::source_fix_supersede_carries_exact_dirty_claims_count_and_no_settled_credit"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.prepared_only_shortcut_never_hides_prior_permission_across_frames"
+tests = ["atelier-build-v2/legacy_epoch::selection::tests::prepared_only_shortcut_never_hides_prior_permission_across_frames"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.missing_guard_cleanup_is_unknown_and_cannot_be_hidden_by_source_change"
+tests = ["atelier-build-v2/legacy_epoch::selection::tests::missing_guard_cleanup_is_unknown_and_cannot_be_hidden_by_source_change"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.strict_v2_state_caps_and_transition_overflow_refuse_without_removing_barrier"
+tests = ["atelier-build-v2/legacy_epoch::selection::tests::strict_v2_state_caps_and_transition_overflow_refuse_without_removing_barrier"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.closed_host_codec_refuses_duplicate_unknown_positional_and_unbound_launch_records"
+tests = ["atelier-build-v2/legacy_host::tests::closed_host_codec_refuses_duplicate_unknown_positional_and_unbound_launch_records"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.live_exact_duplicate_reuses_one_ack_without_reexecuting_or_cross_host_resumption"
+tests = ["atelier-build-v2/legacy_host::tests::live_exact_duplicate_reuses_one_ack_without_reexecuting_or_cross_host_resumption"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.capture_digest_checks_actual_readonly_named_bytes_and_changes_with_helper_bytes"
+tests = ["atelier-build-v2/legacy_host::tests::capture_digest_checks_actual_readonly_named_bytes_and_changes_with_helper_bytes"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.triple_custody_duplicates_keep_all_same_descriptions_locked_and_cloexec"
+tests = ["atelier-build-v2/legacy_host_launch::tests::triple_custody_duplicates_keep_all_same_descriptions_locked_and_cloexec"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.guard_receipt_requires_unique_correlated_cleanup_and_refuses_pressure_archive_chain"
+tests = ["atelier-build-v2/legacy_host_launch::tests::guard_receipt_requires_unique_correlated_cleanup_and_refuses_pressure_archive_chain"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.exact_identity_and_expired_absolute_deadline_never_become_fixture_authority"
+tests = ["atelier-build-v2/legacy_host_launch::tests::exact_identity_and_expired_absolute_deadline_never_become_fixture_authority"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.actual_ex_receipt_verifier_keeps_install_journal_and_short_permit_barriers"
+tests = ["atelier-build-v2/legacy_epoch::selection::tests::actual_ex_receipt_verifier_keeps_install_journal_and_short_permit_barriers"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.absolute_clock_domain_refuses_mach_origin_and_rechecks_after_elapsed_sleep"
+tests = ["atelier-build-v2/legacy_host_launch::tests::absolute_clock_domain_refuses_mach_origin_and_rechecks_after_elapsed_sleep"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.fresh_default_output_needs_no_plan_and_refuses_aliases_or_missing_overrides"
+tests = ["atelier-build-v2/legacy_host_launch::tests::fresh_default_output_needs_no_plan_and_refuses_aliases_or_missing_overrides"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.game_issuer_private_capsule_cannot_substitute_different_original_profile_bytes"
+tests = ["atelier-build-v2/legacy_host::tests::game_issuer_private_capsule_cannot_substitute_different_original_profile_bytes"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.dirty_directory_requires_complete_tree_or_exact_absence_not_one_child"
+tests = ["atelier-build-v2/legacy_epoch::selection::tests::dirty_directory_requires_complete_tree_or_exact_absence_not_one_child"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.fd_inventory_rejects_full_truncated_duplicate_and_unknown_rows"
+tests = ["atelier-build-v2/legacy_host_launch::tests::fd_inventory_rejects_full_truncated_duplicate_and_unknown_rows"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.child_sanitizer_covers_high_inheritable_fd_above_lowered_limit_and_preserves_exec_error"
+tests = ["atelier-build-v2/legacy_host_launch::tests::child_sanitizer_covers_high_inheritable_fd_above_lowered_limit_and_preserves_exec_error"]
+platforms = ["linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.nonblocking_reply_pipe_stopped_reader_cannot_cross_absolute_deadline"
+tests = ["atelier-build-v2/legacy_host_launch::tests::nonblocking_reply_pipe_stopped_reader_cannot_cross_absolute_deadline"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.partial_ack_closes_permission_before_reserved_drain_without_second_frame"
+tests = ["atelier-build-v2/legacy_host_launch::tests::partial_ack_closes_permission_before_reserved_drain_without_second_frame"]
+platforms = ["darwin", "linux"]
+tier = "t0"
+
+[[scenarios]]
+id = "legacy-host.complete_covering_directory_proves_deleted_old_dirty_child_without_fake_absent_member"
+tests = ["atelier-build-v2/legacy_epoch::selection::tests::complete_covering_directory_proves_deleted_old_dirty_child_without_fake_absent_member"]
+platforms = ["darwin", "linux"]
+tier = "t0"

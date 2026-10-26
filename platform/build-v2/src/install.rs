@@ -815,6 +815,27 @@ impl ReceiptReader {
         self.current_locked(unit)
     }
 
+    /// Exact v2-selection counterpart of receipt_status_exclusive; no SH reacquire,
+    /// caller receipt adoption or install-journal bypass.
+    pub(crate) fn receipt_status_selection(
+        &self,
+        guard: &BuildGuard,
+        writer: &crate::checkout_locks::ContentWriteGuard,
+        permit: &crate::legacy_epoch::selection::SelectionPermit<'_, '_>,
+        unit: &PreparedUnit,
+    ) -> Result<CurrentStatus, InstallError> {
+        self.guard_root(guard)?;
+        permit
+            .verify(guard, writer)
+            .map_err(|_| invalid("foreign or changed legacy selection permit"))?;
+        if self.fs.occupied(JOURNAL)? {
+            return Err(recovery(
+                "install journal blocks legacy selection observation",
+            ));
+        }
+        self.current_locked(unit)
+    }
+
     /// @cc [owner:fontanierh,label:correctness;safety] current-identity-observation-releases-custody
     /// Identity observation MUST reuse complete Current validation and retain no guard or FD.
     /// Returning metadata MUST NOT certify future byte availability; staging separately reacquires

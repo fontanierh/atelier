@@ -300,6 +300,8 @@ pub struct PythonTicket {
 }
 
 pub struct PythonInputs {
+    // Same open description as the existing build guard; monitor custody only.
+    pub(crate) custody: std::fs::File,
     pub(crate) staged: StagedJob,
     pub(crate) io: Rc<RefCell<PythonIo>>,
 }
@@ -714,6 +716,9 @@ impl Backend for PythonBackend<'_> {
         if ticket.local.is_some() {
             return Err(InputFailure::Invalid("job already staged".into()));
         }
+        let custody = self.guard.duplicate_for_custodian().map_err(|error| {
+            InputFailure::Invalid(format!("cannot duplicate build custody: {error}"))
+        })?;
         let identity = self.identity(unit).map_err(InputFailure::Invalid)?;
         ticket.local = Some(
             self.reader
@@ -803,6 +808,7 @@ impl Backend for PythonBackend<'_> {
         self.io.borrow_mut().staged_jobs += 1;
         Ok(StagedInputs {
             inputs: PythonInputs {
+                custody,
                 staged,
                 io: self.io.clone(),
             },

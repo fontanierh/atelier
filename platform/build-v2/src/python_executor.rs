@@ -1,12 +1,18 @@
-//! Static Python dispatch through the existing C5b lifecycle, with no independent process owner.
+//! Static Python dispatch through the existing C5c lifecycle, with no independent process owner.
 use crate::failure_policy::{CleanupState, End, Limits, Stop};
 use crate::guard_adapter::WorkerLauncher;
 use crate::python_backend::{PythonCompletion, PythonInputs, PythonIo, PythonTicket};
 use crate::python_worker::PythonWorkerBundle;
 use crate::scheduler::{Control, Event, Executor, Flow, Work};
+use crate::session_lifecycle::{SessionConfig, UnitPlan};
 use crate::worker_lifecycle::{self, Custody, JobSpec, SystemClock};
+use std::fs::File;
 use std::path::PathBuf;
 use std::time::Duration;
+
+#[cfg(test)]
+#[path = "../tests/support/python_dispatch_cases.rs"]
+mod production_tests;
 
 /// Only guard ChildStarted identities count, one per attempt (including retries).
 /// Missing reports/uncertain custody cannot certify zero or a complete count.
@@ -28,6 +34,47 @@ fn record_launches(io: &mut PythonIo, unit: &str, report: Option<&worker_lifecyc
             io.launches_by_unit.insert(unit.into(), count);
         }
     }
+}
+
+/// Private post-driver evidence only. It cannot certify policy, cleanup or publication.
+/// No replace: a later observer cannot overwrite the original invocation's retained record.
+fn retain_failure_diagnostics(
+    root: &std::path::Path,
+    unit: &str,
+    key: &str,
+    job: &str,
+    attempts: &[crate::session_lifecycle::UnitAttemptRecord],
+) -> std::io::Result<PathBuf> {
+    use std::io::Write;
+    use std::os::unix::fs::OpenOptionsExt;
+    let path = root.join("diagnostic.json");
+    let temporary = root.join(".diagnostic.pending");
+    let bytes = serde_json::to_vec(&serde_json::json!({
+        "version": 1, "unit": unit, "key": key, "job_id": job,
+        "diagnostic": if attempts.iter().any(|a| a.diagnostic.is_some()) {
+            "retained"
+        } else { "none retained" },
+        "attempts": attempts.iter().map(|a| serde_json::json!({
+            "attempt": a.attempt, "session": a.session, "diagnostic": a.diagnostic,
+        })).collect::<Vec<_>>(),
+    }))?;
+    let mut file = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .mode(0o600)
+        .custom_flags(libc::O_NOFOLLOW)
+        .open(&temporary)?;
+    // The private parent was reserved by this invocation before admission. Only this newly
+    // created temporary is removed; occupied destination/temporary names are never replaced.
+    let saved = (|| {
+        file.write_all(&bytes)?;
+        file.sync_all()?;
+        std::fs::hard_link(&temporary, &path)?;
+        File::open(root)?.sync_all()?;
+        Ok(path)
+    })();
+    let _ = std::fs::remove_file(&temporary);
+    saved
 }
 
 #[cfg(test)]
@@ -53,6 +100,7 @@ mod tests {
                 cleanup: CleanupState::NotNeeded,
             },
             attempts: vec![attempt],
+            unit_attempts: vec![],
             outputs: None,
             abort: Some("submission failed".into()),
         };
@@ -80,6 +128,325 @@ mod tests {
         record_launches(&mut io, "missing-report", None);
         assert!(!io.launches_by_unit.contains_key("missing-report"));
     }
+    #[test]
+    fn production_defaults_fit_after_startup_and_require_both_registrations() {
+        use crate::failure_policy::MonoTime;
+        use crate::guard_adapter::{AttemptEvent, LaunchEvent};
+        use crate::leases::ProcessIdentity;
+        use crate::session_lifecycle::{SessionCommand, SessionInput, SessionLifecycle};
+        use crate::worker_session::Event as WorkerEvent;
+        let limits = Limits {
+            job: Duration::from_secs(120),
+            cleanup: Duration::from_secs(30),
+            overall: Some(Duration::from_secs(1800)),
+        };
+        let config = production_config(limits).unwrap();
+        assert_eq!(config.lifetime, Duration::from_secs(150));
+        assert!(config.custodian);
+        assert!(config.quiescence.is_none());
+        let mut policy = SessionLifecycle::new(config);
+        let t = |seconds| MonoTime::from_elapsed(Duration::from_secs(seconds));
+        let mut on = |seconds, input| {
+            let commands = policy.on(t(seconds), input).unwrap();
+            assert!(
+                !commands
+                    .iter()
+                    .any(|cmd| matches!(cmd, SessionCommand::Refused { .. }))
+            );
+            commands
+        };
+        let submitted = on(
+            0,
+            SessionInput::Submit(UnitPlan {
+                id: "a".into(),
+                limits,
+            }),
+        );
+        assert!(
+            submitted
+                .iter()
+                .any(|cmd| matches!(cmd, SessionCommand::Submit { session: 1 }))
+        );
+        on(0, SessionInput::Close);
+        let worker = ProcessIdentity {
+            pid: 123,
+            boot: "fixture".into(),
+            started: "worker".into(),
+        };
+        let monitor = ProcessIdentity {
+            pid: 124,
+            boot: "fixture".into(),
+            started: "monitor".into(),
+        };
+        let launch = |event| SessionInput::Launch(AttemptEvent { attempt: 1, event });
+        on(1, launch(LaunchEvent::Admitted));
+        on(2, launch(LaunchEvent::ChildStarted { worker }));
+        on(
+            3,
+            SessionInput::Worker {
+                session: 1,
+                event: Ok(WorkerEvent::Ready {
+                    worker_version: "fixture".into(),
+                }),
+            },
+        );
+        let commands = on(
+            3,
+            SessionInput::Registered {
+                session: 1,
+                unit: "a".into(),
+                ok: true,
+            },
+        );
+        assert!(
+            !commands
+                .iter()
+                .any(|cmd| matches!(cmd, SessionCommand::Run { .. }))
+        );
+        on(
+            4,
+            launch(LaunchEvent::Monitor {
+                monitor,
+                invocation: "a".repeat(32),
+            }),
+        );
+        let commands = on(
+            4,
+            SessionInput::MonitorRegistered {
+                session: 1,
+                unit: "a".into(),
+                ok: true,
+            },
+        );
+        assert!(
+            commands
+                .iter()
+                .any(|cmd| matches!(cmd, SessionCommand::Run {unit,..} if unit=="a"))
+        );
+
+        let mut impossible = SessionLifecycle::new(SessionConfig {
+            lifetime: Duration::from_secs(119),
+            ..config
+        });
+        assert!(
+            impossible
+                .on(
+                    t(0),
+                    SessionInput::Submit(UnitPlan {
+                        id: "no".into(),
+                        limits
+                    })
+                )
+                .unwrap()
+                .iter()
+                .any(|cmd| matches!(cmd, SessionCommand::Refused { .. }))
+        );
+        for bad in [
+            Limits {
+                job: Duration::ZERO,
+                ..limits
+            },
+            Limits {
+                cleanup: Duration::ZERO,
+                ..limits
+            },
+            Limits {
+                overall: Some(Duration::ZERO),
+                ..limits
+            },
+            Limits {
+                overall: None,
+                ..limits
+            },
+            Limits {
+                overall: Some(Duration::from_secs(149)),
+                ..limits
+            },
+            Limits {
+                job: Duration::MAX,
+                ..limits
+            },
+        ] {
+            assert!(production_config(bad).is_err());
+        }
+    }
+
+    #[test]
+    fn sole_session_acceptance_requires_exact_terminal_and_positive_cleanup() {
+        use crate::failure_policy::Outcome;
+        use crate::leases::ProcessIdentity;
+        use crate::protocol::JobOutputs;
+        use crate::session_lifecycle::{UnitAttemptRecord, UnitRecord};
+        use crate::worker_lifecycle::{AttemptRecord, SessionReport};
+        let valid = SessionReport {
+            sessions: vec![AttemptRecord {
+                attempt: 1,
+                admitted: true,
+                worker: Some(ProcessIdentity {
+                    pid: 1,
+                    boot: "fixture".into(),
+                    started: "worker".into(),
+                }),
+                custody: Custody::Released,
+            }],
+            refused: vec![],
+            units: vec![UnitRecord {
+                unit: "a".into(),
+                outcome: Outcome {
+                    end: End::Completed,
+                    attempts: 1,
+                    cleanup: CleanupState::Finished,
+                },
+                attempts: vec![UnitAttemptRecord {
+                    attempt: 1,
+                    session: 1,
+                    custody: Custody::Released,
+                    quiescent: None,
+                    diagnostic: None,
+                }],
+                outputs: Some(JobOutputs {
+                    files: vec!["out.json".into()],
+                }),
+                abort: None,
+                refused: None,
+            }],
+        };
+        assert_eq!(
+            sole_released_report("a", valid.clone())
+                .unwrap()
+                .outcome
+                .end,
+            End::Completed
+        );
+        let mut bad = valid.clone();
+        bad.units.clear();
+        assert!(sole_released_report("a", bad).is_err());
+        let mut bad = valid.clone();
+        bad.units.push(bad.units[0].clone());
+        assert!(sole_released_report("a", bad).is_err());
+        assert!(sole_released_report("foreign", valid.clone()).is_err());
+        let mut bad = valid.clone();
+        bad.sessions[0].custody = Custody::Held("uncertain".into());
+        assert!(sole_released_report("a", bad).is_err());
+        let mut bad = valid.clone();
+        bad.units[0].attempts[0].quiescent = Some(1.0);
+        assert!(sole_released_report("a", bad).is_err());
+        let mut bad = valid.clone();
+        bad.units[0].outputs = None;
+        assert!(sole_released_report("a", bad).is_err());
+        let mut bad = valid.clone();
+        bad.sessions[0].worker = None;
+        assert!(sole_released_report("a", bad).is_err());
+        let mut bad = valid.clone();
+        bad.units[0].outcome.cleanup =
+            CleanupState::Unconfirmed(crate::failure_policy::Expiry::CleanupLimit);
+        assert!(sole_released_report("a", bad).is_err());
+    }
+}
+
+/// The production builder is shared with pure limits preflight. This is not a resident session:
+/// each unit waits for the full guard receipt, with no quiescence-based release.
+fn production_config(limits: Limits) -> Result<SessionConfig, String> {
+    let overall = limits
+        .overall
+        .ok_or("production Python requires a bounded overall limit")?;
+    if limits.job.is_zero() || limits.cleanup.is_zero() || overall.is_zero() {
+        return Err("production Python limits must be positive".into());
+    }
+    let lifetime = limits
+        .job
+        .checked_add(limits.cleanup)
+        .ok_or("production Python session lifetime overflow")?;
+    if overall < lifetime {
+        return Err("production Python overall limit cannot cover execution and cleanup".into());
+    }
+    Ok(SessionConfig {
+        custodian: true,
+        ..SessionConfig::single(limits.cleanup, lifetime)
+    })
+}
+
+fn production_spec(job: &JobSpec, custody: File) -> Result<worker_lifecycle::SessionSpec, String> {
+    use crate::worker_lifecycle::{
+        CustodyIdentity, JobSandbox, LockScope, SessionKey, SessionSpec,
+    };
+    let identity = CustodyIdentity::of(&custody, LockScope::Exclusive)
+        .map_err(|error| format!("cannot identify build custody: {error}"))?;
+    Ok(SessionSpec {
+        key: SessionKey {
+            worker_version: job.worker_version.clone(),
+            command: job.command.clone(),
+            memory_gib: job.memory_gib,
+            sandbox: JobSandbox::NoFork,
+            custody: std::collections::BTreeSet::from([identity]),
+        },
+        purpose: job.purpose.clone(),
+        config: production_config(job.limits)?,
+        report_root: job.report_root.clone(),
+        custody: vec![custody],
+    })
+}
+
+/// A streamed Completed is insufficient: this adapter owns one sole unit and waits for the
+/// entire session's positive cleanup before returning the same Work to publication.
+fn sole_released_report(
+    unit: &str,
+    mut report: worker_lifecycle::SessionReport,
+) -> Result<worker_lifecycle::Report, String> {
+    if !report.refused.is_empty()
+        || report.units.len() != 1
+        || report.units[0].unit != unit
+        || report.units[0].refused.is_some()
+    {
+        return Err("Python session omitted, refused or returned a foreign sole unit".into());
+    }
+    let record = report.units.remove(0);
+    let sessions: std::collections::BTreeSet<_> = report
+        .sessions
+        .iter()
+        .map(|attempt| attempt.attempt)
+        .collect();
+    let used: std::collections::BTreeSet<_> = record
+        .attempts
+        .iter()
+        .map(|attempt| attempt.session)
+        .collect();
+    if sessions.len() != report.sessions.len()
+        || used.len() != record.attempts.len()
+        || !used.is_subset(&sessions)
+    {
+        return Err("Python unit/session attempt evidence is inconsistent".into());
+    }
+    if matches!(record.outcome.cleanup, CleanupState::Unconfirmed(_))
+        || report
+            .sessions
+            .iter()
+            .any(|attempt| attempt.custody != Custody::Released)
+        || record
+            .attempts
+            .iter()
+            .any(|attempt| attempt.custody != Custody::Released || attempt.quiescent.is_some())
+    {
+        return Err("Python session cleanup remains held or unconfirmed".into());
+    }
+    if record.outcome.end == End::Completed
+        && (report.sessions.is_empty()
+            || record.attempts.is_empty()
+            || record.outputs.is_none()
+            || report
+                .sessions
+                .iter()
+                .any(|attempt| !attempt.admitted || attempt.worker.is_none()))
+    {
+        return Err("completed Python session omitted actual attempt/output evidence".into());
+    }
+    Ok(worker_lifecycle::Report {
+        outcome: record.outcome,
+        attempts: report.sessions,
+        unit_attempts: record.attempts,
+        outputs: record.outputs,
+        abort: record.abort,
+    })
 }
 
 pub struct PythonExecution {
@@ -97,8 +464,8 @@ pub struct PythonExecutor<L> {
 }
 
 impl<L> PythonExecutor<L> {
-    /// Production dispatch remains refused until C5c exposes actual before-Run custodian identity.
-    /// The ordinary constructor cannot enable a scripted/test registration bypass.
+    /// Production uses one real C5c session per unit, with the original build custody and leases.
+    /// The ordinary constructor never enables the scripted admission fixture.
     pub fn new(launcher: L, config: PythonExecution) -> Self {
         Self {
             launcher,
@@ -121,37 +488,28 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
     for PythonExecutor<L>
 {
     /// @cc [owner:fontanierh,label:safety] static-python-cleanup-before-publication
-    /// Dispatch MUST use C5b run_job and register the actual worker idempotently on both leases
+    /// Production dispatch MUST use one C5c session per Work and register the actual worker and
+    /// correlated custody monitor idempotently on both original leases
     /// before Run. Unconfirmed cleanup or any non-Released attempt MUST be fatal before publishing
     /// or starting more work. Cancellation MUST go through the existing lifecycle channel; every
     /// submitted handle MUST get a terminal event. Each leased guard report parent MUST be
     /// reserved before submission, and lifecycle abort diagnostics MUST remain failures rather
     /// than appear as user cancellation. See failed_submission_keeps_abort_reason_without_claiming_user_cancellation
     /// and actual_python_first_build_and_current_noop_have_real_zero_launch_and_write_evidence.
-    /// Production MUST refuse missing custodian
-    /// registration until C5c slice5 supplies it. Scripted fixture execution proves sandbox/I/O
-    /// only, never actual admission/monitor custody. See python_backend::tests (T1a pending).
+    /// Production limits MUST have positive job/cleanup and a bounded positive overall covering
+    /// their checked sum before admission; see production_defaults_fit_after_startup_and_require_both_registrations.
+    /// Production MUST retain exclusive build custody through the existing monitor and forbid Run
+    /// without both registrations. Retry preparation MUST refuse attempts after the first without
+    /// modifying partial bytes. Scripted fixture execution proves sandbox/I/O only, never actual
+    /// admission/monitor custody. See production_dispatch_registers_original_leases_and_waits_for_full_cleanup,
+    /// production_dispatch_missing_monitor_or_failed_registration_never_runs and
+    /// production_crash_retry_refuses_old_staging_before_a_second_run; MAC1 remains pending.
     fn batch(
         &mut self,
         work: Vec<Work<PythonTicket, PythonInputs>>,
         control: &dyn Control,
         emit: &mut dyn FnMut(Event<PythonTicket, PythonInputs, PythonCompletion>) -> Flow,
     ) -> Result<(), String> {
-        if !self.scripted_fixture {
-            // C5b currently registers only the loop. A caller cannot assert monitor custody by flag.
-            for work in work {
-                work.inputs()
-                    .io
-                    .borrow_mut()
-                    .launches_by_unit
-                    .insert(work.unit().into(), 0);
-                emit(Event::Failed {
-                    work,
-                    reason: "custodian registration unsupported until C5c slice5".into(),
-                });
-            }
-            return Err("actual custodian registration unavailable".into());
-        }
         let mut stopped = false;
         let mut fatal = None;
         for mut work in work {
@@ -207,30 +565,146 @@ impl<L: WorkerLauncher + Send> Executor<PythonTicket, PythonInputs, PythonComple
                 report_root,
                 custody: vec![], // Inputs are independent; no checkout read guard survives staging.
             };
-            let (cancel, inbox) = worker_lifecycle::job_channel();
+            let production = if self.scripted_fixture {
+                None
+            } else {
+                match work
+                    .inputs()
+                    .custody
+                    .try_clone()
+                    .map_err(|error| error.to_string())
+                    .and_then(|custody| production_spec(&spec, custody))
+                {
+                    Ok(spec) => Some(spec),
+                    Err(reason) => {
+                        stopped |= emit(Event::Failed { work, reason }) == Flow::Stop;
+                        continue;
+                    }
+                }
+            };
+            let unit = work.unit().to_string();
+            let (cancel, inbox) = worker_lifecycle::session_channel();
+            if let Some(session) = &production {
+                cancel.submit(worker_lifecycle::SessionUnit {
+                    plan: UnitPlan {
+                        id: unit.clone(),
+                        limits: spec.limits,
+                    },
+                    job: spec.job.clone(),
+                    key: session.key.clone(),
+                });
+                cancel.close();
+            }
+
+            let diagnostic_root = spec.report_root.clone();
+            let diagnostic_job = spec.job.job_id.clone();
+            // Compact metadata only, populated after the driver returns even if the adapter
+            // subsequently refuses held/inconsistent cleanup. No report field grants authority.
+            let diagnostics = std::sync::Mutex::new((false, Vec::new()));
             let result = std::thread::scope(|scope| {
                 let launcher = &mut self.launcher;
                 let ticket = work.ticket_mut();
+                let diagnostics = &diagnostics;
                 let driver = scope.spawn(move || {
-                    worker_lifecycle::run_job(
-                        launcher,
-                        &SystemClock::new(),
-                        &spec,
-                        inbox,
-                        &mut |identity| ticket.register(identity),
-                    )
+                    if let Some(session) = production {
+                        let expected = unit.clone();
+                        let job = spec.job.clone();
+                        let (published, _records) = std::sync::mpsc::channel();
+                        worker_lifecycle::run_session_prepared(
+                            launcher,
+                            &SystemClock::new(),
+                            &session,
+                            inbox,
+                            &mut |id, identity| {
+                                if id != &expected {
+                                    return Err("registration for foreign unit".into());
+                                }
+                                ticket.register(identity)
+                            },
+                            &mut |id, attempt| {
+                                if id != &unit {
+                                    return Err("preparation for foreign unit".into());
+                                }
+                                if attempt != 1 {
+                                    return Err(
+                                        "fresh retry staging is unsupported; prior output retained"
+                                            .into(),
+                                    );
+                                }
+                                Ok(job.clone())
+                            },
+                            published,
+                        )
+                        .map_err(|error| format!("{error:?}"))
+                        .and_then(|report| {
+                            if let Some(record) = report.units.iter().find(|r| r.unit == unit) {
+                                *diagnostics.lock().unwrap() = (
+                                    record.outcome.end == End::Completed,
+                                    record.attempts.clone(),
+                                );
+                            }
+                            sole_released_report(&unit, report)
+                        })
+                    } else {
+                        worker_lifecycle::run_job(
+                            launcher,
+                            &SystemClock::new(),
+                            &spec,
+                            inbox,
+                            &mut |identity| ticket.register(identity),
+                        )
+                        .inspect(|report| {
+                            *diagnostics.lock().unwrap() = (
+                                report.outcome.end == End::Completed,
+                                report.unit_attempts.clone(),
+                            );
+                        })
+                        .map_err(|error| format!("{error:?}"))
+                    }
                 });
                 while !driver.is_finished() {
                     if control.cancelled() {
-                        cancel.cancel();
+                        cancel.cancel_all();
                     }
                     std::thread::sleep(Duration::from_millis(5));
                 }
                 driver
                     .join()
                     .map_err(|_| "Python lifecycle driver panicked".to_string())?
-                    .map_err(|error| format!("{error:?}"))
             });
+            let (completed, diagnostics) = diagnostics.into_inner().unwrap_or_default();
+            if !completed
+                && !result
+                    .as_ref()
+                    .is_ok_and(|r| r.outcome.end == End::Completed)
+            {
+                match retain_failure_diagnostics(
+                    &diagnostic_root,
+                    work.unit(),
+                    work.prepared().key(),
+                    &diagnostic_job,
+                    &diagnostics,
+                ) {
+                    Ok(path) => {
+                        use std::io::Write;
+                        let status = if diagnostics.iter().any(|a| a.diagnostic.is_some()) {
+                            "retained"
+                        } else {
+                            "none retained"
+                        };
+                        let _ = writeln!(
+                            std::io::stderr().lock(),
+                            "Python failure diagnostic: {status}; {}",
+                            path.display()
+                        );
+                    }
+                    Err(error) => {
+                        use std::io::Write;
+                        let _ =
+                            writeln!(std::io::stderr().lock(), "diagnostic not retained: {error}");
+                    }
+                }
+            }
             record_launches(
                 &mut work.inputs().io.borrow_mut(),
                 work.unit(),

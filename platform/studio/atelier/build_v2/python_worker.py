@@ -50,7 +50,7 @@ SANDBOX_EXEC = '/usr/bin/sandbox-exec'
 # helpers). They are part of the installed execution platform, not project inputs.
 PLATFORM_READ_SUBPATHS = ('/System', '/usr/lib', '/usr/share/locale', '/private/var/db/timezone')
 PLATFORM_READ_LITERALS = ('/', '/etc', '/var', '/private/etc/passwd', '/private/etc/localtime',
-                          '/dev/dtracehelper', '/dev/null')
+                          '/private/etc/ssl/openssl.cnf', '/dev/dtracehelper', '/dev/null')
 SANDBOX_KILLED = 'the sandbox stopped the job: it read, checked, listed or connected to something undeclared'
 
 
@@ -158,7 +158,14 @@ class Platform:
 
 
 def sandbox_profile(job_dir, platform=None):
-    """A deny-default profile: reads of the platform and the job folder, writes to `output/` only."""
+    """@cc [owner:fontanierh,label:safety] exact-platform-openssl-config
+    The installed OpenSSL config MUST be an exact canonical read literal, never a directory
+    allowance or an environment override. Neighboring certs/hosts MUST remain outside data-read
+    grants. All other file/network, Mach, write and process rules MUST remain unchanged.
+    It is installed platform context, not a new game input. See the profile-only portable
+    test_openssl_platform_config_literal_never_grants_neighbor_data_reads; actual sandbox
+    execution is separate guarded evidence, not a claim made by that profile inspection.
+    """
     platform = platform or Platform()
     subpaths, literals = platform.reads()
     reads = subpaths + [job_dir] + _links(job_dir)

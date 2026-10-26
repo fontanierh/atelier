@@ -137,6 +137,32 @@ impl BuildGraph {
         targets: &[Target],
         snapshot: &SourceSnapshot,
     ) -> Result<SelectedGraph, String> {
+        let (roots, included) = self.scope(targets)?;
+        Ok(SelectedGraph {
+            roots,
+            validated: validate::observe_selected(
+                &self.declaration,
+                &self.structure,
+                snapshot,
+                &included,
+            )
+            .map_err(|error| error.to_string())?,
+            dependencies: self
+                .dependencies
+                .iter()
+                .filter(|edge| included.contains(&edge.consumer))
+                .cloned()
+                .collect(),
+        })
+    }
+
+    /// Source providers use the same selection policy before opening any files.
+    /// This is structural membership only, never observed availability or dispatch authority.
+    pub fn source_scope(&self, targets: &[Target]) -> Result<BTreeSet<String>, String> {
+        self.scope(targets).map(|(_, included)| included)
+    }
+
+    fn scope(&self, targets: &[Target]) -> Result<(BTreeSet<String>, BTreeSet<String>), String> {
         if targets.is_empty() {
             return Err("no targets selected".into());
         }
@@ -172,22 +198,7 @@ impl BuildGraph {
                 }
             }
         }
-        Ok(SelectedGraph {
-            roots,
-            validated: validate::observe_selected(
-                &self.declaration,
-                &self.structure,
-                snapshot,
-                &included,
-            )
-            .map_err(|error| error.to_string())?,
-            dependencies: self
-                .dependencies
-                .iter()
-                .filter(|edge| included.contains(&edge.consumer))
-                .cloned()
-                .collect(),
-        })
+        Ok((roots, included))
     }
 }
 

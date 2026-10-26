@@ -30,7 +30,7 @@ def test_common_ferry_scope_includes_complete_package_folders_and_shared_code(tm
 def test_explicit_forest_scope_keeps_lod_packages_and_sidecars(tmp_path):
     from atelier.checkpoint_candidates import select
     content = RECIPE.GAME / 'unreal/Content'
-    ctx = SimpleNamespace(out=tmp_path, uproject=content.parent / 'Yorimichi.uproject')
+    ctx = SimpleNamespace(game='yorimichi', out=tmp_path, uproject=content.parent / 'Yorimichi.uproject')
     forest = next(step for step in RECIPE.steps(ctx) if step.name == 'unreal.forest')
     assert forest.candidate_scope.directories == (content / 'Japan/Assets', content / 'Japan/FoliageLODs')
     members = {
