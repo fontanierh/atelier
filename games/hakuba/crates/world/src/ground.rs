@@ -1,6 +1,5 @@
 //! What the player stands on and walks into: every mesh of the tiles shown, the ground, roads and rails, but their
-//! cables, which hang overhead, and what each is made of. Trees and the other models standing in the tiles are not
-//! solid.
+//! cables, which hang overhead, and what each is made of. Models marked solid in their export use the same rays.
 
 use bevy::ecs::system::SystemParam;
 use bevy::picking::mesh_picking::ray_cast::{MeshRayCast, MeshRayCastSettings, RayCastBackfaces, RayCastVisibility};
@@ -54,6 +53,11 @@ impl Surface {
 /// A mesh the player stands on and cannot pass through, and what it is made of.
 #[derive(Component)]
 struct Solid(Surface);
+
+/// Marks a visible scenery mesh as built, including its back faces in ground rays.
+pub(crate) fn built_solid() -> impl Bundle {
+    (Solid(Surface::Built), RayCastBackfaces)
+}
 
 /// When a tile's version spawns, marks its meshes solid, but its cables, with what each is made of: what the nearest
 /// node above it that names a surface says, or built. Rays meet them from either side: a guardrail is a single sheet.

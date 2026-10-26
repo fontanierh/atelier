@@ -11,6 +11,7 @@
 
 use bevy::asset::RenderAssetUsages;
 use bevy::camera::visibility::RenderLayers;
+use bevy::ecs::system::EntityCommands;
 use bevy::ecs::system::SystemParam;
 use bevy::gltf::{Gltf, GltfExtras, GltfMesh, GltfNode};
 use bevy::light::NotShadowCaster;
@@ -19,6 +20,7 @@ use bevy::prelude::*;
 use bevy::world_serialization::WorldAssetRoot;
 use serde::Deserialize;
 
+use crate::ground::built_solid;
 use crate::look::SHADOW_ONLY;
 use crate::tiles::TILES;
 use crate::wind::{Swaying, SwayingMaterials};
@@ -55,10 +57,17 @@ struct Copies {
     instances: Vec<f32>,
 }
 
-/// A model's extras: whether it casts shadows.
+/// A model's extras: whether it casts shadows and whether its visible meshes are solid.
 #[derive(Deserialize)]
 struct ModelExtras {
+    #[serde(default = "default_shadows")]
     casts_shadows: bool,
+    #[serde(default)]
+    solid: bool,
+}
+
+fn default_shadows() -> bool {
+    true
 }
 
 /// Copies waiting for their model to load.
@@ -117,6 +126,10 @@ struct Models<'w> {
     meshes: Res<'w, Assets<GltfMesh>>,
 }
 
+/// @cc [owner:fontanierh,label:correctness] solid-scenery-matches-visible-mesh
+/// A model marked solid on its full node MUST collide with the meshes its tile shows, including merged copies, and
+/// MUST NOT collide with shadow-only copies. A model without that mark MUST remain non-solid.
+///
 /// Spawns the copies whose model has loaded. A middle tile shows the model's `middle` node, if it has one, and its
 /// `full` node otherwise. A full tile shows the `full` node, and a model that has a `middle` node casts that one's
 /// shadow instead.
@@ -135,6 +148,14 @@ fn spawn(
             continue;
         }
         let Some(gltf) = models.gltfs.get(&waiting.model) else { continue };
+        // Solidity belongs to the model's full node, even when a middle tile shows another version.
+        let Some(full_handle) = gltf.named_nodes.get("full") else {
+            warn!("a model has no full node");
+            commands.entity(entity).remove::<Waiting>();
+            continue;
+        };
+        let Some(full) = models.nodes.get(full_handle) else { continue };
+        let solid = model_extras(full).is_some_and(|extras| extras.solid);
         let versions = match (waiting.middle, gltf.named_nodes.contains_key("middle")) {
             (true, true) => vec![("middle", Role::Both)],
             (false, true) => vec![("full", Role::Seen), ("middle", Role::Shadow)],
@@ -160,11 +181,8 @@ fn spawn(
             })
             .collect();
         for (node, parts, role) in shown {
-            let shadows = node
-                .extras
-                .as_ref()
-                .and_then(|extras| serde_json::from_str::<ModelExtras>(&extras.value).ok())
-                .is_none_or(|extras| extras.casts_shadows);
+            let shadows = model_extras(node).is_none_or(|extras| extras.casts_shadows);
+            let solid = role.is_solid(solid);
             if matches!(role, Role::Shadow) && !shadows {
                 continue;
             }
@@ -174,13 +192,14 @@ fn spawn(
                 let shapes: Vec<(Handle<Mesh>, Transform)> = match merge {
                     true => {
                         let merged: Vec<Mesh> =
-                            squares(&transforms).filter_map(|square| merged(&meshes, mesh, &square)).collect();
+                            squares(&transforms).filter_map(|square| merged(&meshes, mesh, &square, solid)).collect();
                         merged.into_iter().map(|merged| (meshes.add(merged), Transform::IDENTITY)).collect()
                     }
                     false => transforms.iter().map(|&transform| (mesh.clone(), transform)).collect(),
                 };
                 for (mesh, transform) in shapes {
                     let mut part = commands.spawn((Mesh3d(mesh), transform, ChildOf(entity)));
+                    mark_solid(&mut part, solid);
                     match look {
                         Look::Still(material) => part.insert(MeshMaterial3d(material.clone())),
                         Look::Swaying(material) => part.insert(MeshMaterial3d(material.clone())),
@@ -200,6 +219,16 @@ fn spawn(
     }
 }
 
+fn model_extras(node: &GltfNode) -> Option<ModelExtras> {
+    node.extras.as_ref().and_then(|extras| serde_json::from_str(&extras.value).ok())
+}
+
+fn mark_solid(part: &mut EntityCommands, solid: bool) {
+    if solid {
+        part.insert(built_solid());
+    }
+}
+
 /// What a version of a model is spawned for.
 #[derive(Clone, Copy)]
 enum Role {
@@ -210,6 +239,12 @@ enum Role {
     /// To cast its shadow only, never seen: a plant's middle version beside its full one. The sun's shadows are cast by
     /// far fewer leaves, and hold still as the camera moves.
     Shadow,
+}
+
+impl Role {
+    fn is_solid(self, model_is_solid: bool) -> bool {
+        model_is_solid && !matches!(self, Role::Shadow)
+    }
 }
 
 /// `node`'s meshes, each with its look: a part whose vertices say how far they sway is drawn with the swaying version
@@ -249,14 +284,14 @@ fn squares(transforms: &[Transform]) -> impl Iterator<Item = Vec<Transform>> {
     squares.into_values()
 }
 
-/// One mesh holding `mesh` once per transform, kept only on the GPU. None if the mesh is not loaded or cannot merge.
-fn merged(meshes: &Assets<Mesh>, mesh: &Handle<Mesh>, transforms: &[Transform]) -> Option<Mesh> {
+/// One mesh holding `mesh` once per transform. Solid meshes also stay on the CPU for raycasts.
+fn merged(meshes: &Assets<Mesh>, mesh: &Handle<Mesh>, transforms: &[Transform], solid: bool) -> Option<Mesh> {
     let mesh = meshes.get(mesh)?;
     let mut merged = mesh.clone().transformed_by(*transforms.first()?);
     for &transform in &transforms[1..] {
         merged.merge(&mesh.clone().transformed_by(transform)).ok()?;
     }
-    merged.asset_usage = RenderAssetUsages::RENDER_WORLD;
+    merged.asset_usage = if solid { RenderAssetUsages::default() } else { RenderAssetUsages::RENDER_WORLD };
     Some(merged)
 }
 
@@ -271,4 +306,96 @@ fn standard_of(assets: &AssetServer, material: Option<&Handle<bevy::gltf::GltfMa
     let Some(path) = material.and_then(|material| material.path()) else { return Handle::default() };
     let label = format!("{}/std", path.label().unwrap_or_default());
     assets.load(path.clone().with_label(label))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ground::{Ground, Surface};
+    use bevy::camera::primitives::Aabb;
+    use bevy::ecs::system::RunSystemOnce;
+
+    #[test]
+    fn model_solidity_is_opt_in_and_independent_of_shadows() {
+        for (json, solid, shadows) in [
+            ("{}", false, true),
+            (r#"{"casts_shadows":false}"#, false, false),
+            (r#"{"solid":true}"#, true, true),
+            (r#"{"solid":true,"casts_shadows":false}"#, true, false),
+        ] {
+            let extras: ModelExtras = serde_json::from_str(json).unwrap();
+            assert_eq!((extras.solid, extras.casts_shadows), (solid, shadows));
+            assert_eq!(Role::Both.is_solid(extras.solid), solid);
+            assert_eq!(Role::Seen.is_solid(extras.solid), solid);
+            assert!(!Role::Shadow.is_solid(extras.solid));
+        }
+    }
+
+    #[test]
+    fn scenery_rays_hit_merged_and_transformed_visible_copies_only() {
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins).init_resource::<Assets<Mesh>>();
+        let mut meshes = app.world_mut().resource_mut::<Assets<Mesh>>();
+        let cube = meshes.add(Mesh::from(Cuboid::new(1.0, 1.0, 1.0)));
+        let copies = [Transform::from_xyz(4.0, 0.0, 0.0), Transform::from_xyz(6.0, 0.0, 0.0)];
+        let combined = merged(&meshes, &cube, &copies, true).unwrap();
+        assert!(combined.asset_usage.contains(RenderAssetUsages::MAIN_WORLD));
+        let combined = meshes.add(combined);
+        drop(meshes);
+
+        let mut commands = app.world_mut().commands();
+        for (mesh, transform, bounds, role, solid) in [
+            (
+                combined,
+                Transform::IDENTITY,
+                Aabb::from_min_max(Vec3::new(3.5, -0.5, -0.5), Vec3::new(6.5, 0.5, 0.5)),
+                Role::Both,
+                true,
+            ),
+            (
+                cube.clone(),
+                Transform::from_xyz(10.0, 0.0, 0.0),
+                Aabb::from_min_max(Vec3::splat(-0.5), Vec3::splat(0.5)),
+                Role::Seen,
+                true,
+            ),
+            (
+                cube.clone(),
+                Transform::from_xyz(14.0, 0.0, 0.0),
+                Aabb::from_min_max(Vec3::splat(-0.5), Vec3::splat(0.5)),
+                Role::Both,
+                false,
+            ),
+            (
+                cube,
+                Transform::from_xyz(18.0, 0.0, 0.0),
+                Aabb::from_min_max(Vec3::splat(-0.5), Vec3::splat(0.5)),
+                Role::Shadow,
+                true,
+            ),
+        ] {
+            let mut part = commands.spawn((
+                Mesh3d(mesh),
+                transform,
+                GlobalTransform::from(transform),
+                bounds,
+                Visibility::default(),
+            ));
+            mark_solid(&mut part, role.is_solid(solid));
+        }
+        app.world_mut().flush();
+        let hits = app
+            .world_mut()
+            .run_system_once(|mut ground: Ground| {
+                [4.0, 6.0, 10.0, 14.0, 18.0].map(|x| ground.cast(Vec3::new(x, 5.0, 0.0), Dir3::NEG_Y, 10.0))
+            })
+            .unwrap();
+        for hit in &hits[..3] {
+            let hit = hit.expect("visible solid copy should collide");
+            assert_eq!(hit.surface, Surface::Built);
+            assert!((hit.point.y - 0.5).abs() < 1e-5);
+        }
+        assert!(hits[3].is_none(), "non-solid copy must not collide");
+        assert!(hits[4].is_none(), "shadow-only copy must not collide");
+    }
 }

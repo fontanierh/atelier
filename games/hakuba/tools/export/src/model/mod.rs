@@ -4,7 +4,8 @@
 //!
 //! The export holds a node `full`, the model in detail, and may hold a node `middle`, a lighter model for seeing
 //! from afar. Each is one mesh, one part per material. A model that casts no shadow, such as grass, says so in each
-//! node's extras: `{ "casts_shadows": false }`. A prop may also hold empty nodes `anchor 0`, `anchor 1` and so on,
+//! node's extras: `{ "casts_shadows": false }`. A solid prop says `{ "solid": true }` in its full node's extras.
+//! A prop may also hold empty nodes `anchor 0`, `anchor 1` and so on,
 //! the points other things fasten to, such as cables.
 
 pub mod plant;
@@ -23,7 +24,14 @@ type Version<'a> = Vec<(Mesh, Material<'a>)>;
 
 /// Writes the model to `output`: `full`, then `middle` if any, then `anchors`. Fails if a version does not reach
 /// below the model's foot.
-fn write(full: Version, middle: Option<Version>, shadows: bool, anchors: &[DVec3], output: &Path) -> Result<()> {
+fn write(
+    full: Version,
+    middle: Option<Version>,
+    shadows: bool,
+    solid: bool,
+    anchors: &[DVec3],
+    output: &Path,
+) -> Result<()> {
     let mut glb = Glb::from_json(json!({ "asset": { "version": "2.0" } }));
     for (name, version) in [("full", Some(full)), ("middle", middle)] {
         let Some(mut version) = version else { continue };
@@ -36,8 +44,15 @@ fn write(full: Version, middle: Option<Version>, shadows: bool, anchors: &[DVec3
             mesh.material = glb.add_material(material);
         }
         let node = glb.add_mesh(name, &version.iter().map(|(mesh, _)| mesh).collect::<Vec<_>>());
+        let mut extras = serde_json::Map::new();
         if !shadows {
-            glb.set_extras(node, json!({ "casts_shadows": false }));
+            extras.insert("casts_shadows".into(), json!(false));
+        }
+        if solid && name == "full" {
+            extras.insert("solid".into(), json!(true));
+        }
+        if !extras.is_empty() {
+            glb.set_extras(node, extras.into());
         }
     }
     for (k, anchor) in anchors.iter().enumerate() {

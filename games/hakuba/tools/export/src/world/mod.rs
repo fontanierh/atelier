@@ -81,11 +81,13 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     let [x, y] = settings.south_west_m;
     let mut ground =
         Ground::read(&folder.join(&settings.ground), settings.page_steps, settings.ground_step_m, DVec2::new(x, y))?;
-    for region in regions::REGIONS {
-        for strip in region.levelled() {
-            strip.level(&mut ground).with_context(|| format!("levelling {}", region.name()))?;
-        }
+    let strips: Vec<_> = regions::REGIONS.iter().flat_map(|region| region.levelled()).collect();
+    let pads: Vec<_> = regions::REGIONS.iter().flat_map(|region| region.pads()).collect();
+    for strip in &strips {
+        strip.level(&mut ground).context("levelling a strip")?;
     }
+    levelling::level_pads(&mut ground, &pads).context("levelling pads")?;
+    let exclusions: Vec<_> = regions::REGIONS.iter().flat_map(|region| region.scatter_exclusions()).collect();
     let mut overlays = Vec::new();
     for region in regions::REGIONS {
         for mut overlay in region.overlays() {
@@ -107,6 +109,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         ground: &ground,
         low: ground.position(whole.columns.0 as f64, whole.rows.0 as f64),
         high: ground.position(whole.columns.1 as f64, whole.rows.1 as f64),
+        exclusions: &exclusions,
     };
     let grid = Grid { south_west: DVec2::new(x, y), tile_m: settings.tile_steps as f64 * settings.ground_step_m };
     // The full tiles' ground across the whole exported map, which seats the cables' ends.

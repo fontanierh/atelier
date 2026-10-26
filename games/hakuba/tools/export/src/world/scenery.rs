@@ -75,14 +75,46 @@ pub struct Rail {
     pub texture: &'static str,
 }
 
+/// The kind of scattered scenery a clearance applies to.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum ScatterKind {
+    Tree,
+    Bush,
+    Grass,
+}
+
+/// A clearance shared by regions. Courses use the same sampled curve and distance as scenery placement.
+pub struct Exclusion {
+    line: Vec<(DVec2, DVec2)>,
+    radius: f64,
+    kinds: Vec<ScatterKind>,
+}
+
+impl Exclusion {
+    pub fn corridor(course: &[[f64; 2]], radius: f64, kinds: &[ScatterKind]) -> Self {
+        assert!(course.len() >= 2 && radius.is_finite() && radius > 0.0);
+        Self { line: super::curve::curve(course), radius, kinds: kinds.to_vec() }
+    }
+
+    fn excludes(&self, at: DVec2, kind: ScatterKind) -> bool {
+        self.kinds.contains(&kind) && super::curve::nearest(&self.line, at).0 < self.radius
+    }
+}
+
 /// The land a region fills: the ground, and the part of the map the world exports.
 pub struct Land<'a> {
     pub ground: &'a Ground,
     pub low: DVec2,
     pub high: DVec2,
+    pub exclusions: &'a [Exclusion],
 }
 
 impl Land<'_> {
+    /// Whether scattered scenery of this kind may stand here; explicit placements do not use this test.
+    pub fn allows_scatter(&self, at: DVec2, kind: ScatterKind) -> bool {
+        !self.exclusions.iter().any(|exclusion| exclusion.excludes(at, kind))
+    }
+
     /// The ground's height at `p`, if there is ground there.
     pub fn height(&self, p: DVec2) -> Option<f64> {
         self.ground.height(p)
@@ -96,11 +128,18 @@ impl Land<'_> {
 
     /// A point scattered in each square of a grid of `side` metres (see [`Land::squares`]), up to `jitter` of a side
     /// from the square's centre either way, with the square's own stream of random numbers, drawn from `seed`.
-    pub fn scatter(&self, seed: u64, side: f64, jitter: f64) -> impl Iterator<Item = (DVec2, Random)> {
-        self.squares(side).map(move |(column, row, corner)| {
+    pub fn scatter(
+        &self,
+        seed: u64,
+        side: f64,
+        jitter: f64,
+        kind: ScatterKind,
+    ) -> impl Iterator<Item = (DVec2, Random)> {
+        self.squares(side).filter_map(move |(column, row, corner)| {
             let mut random = Random::at(seed, column, row);
             let offset = DVec2::new(random.range([-jitter, jitter]), random.range([-jitter, jitter]));
-            (corner + (DVec2::splat(0.5) + offset) * side, random)
+            let at = corner + (DVec2::splat(0.5) + offset) * side;
+            self.allows_scatter(at, kind).then_some((at, random))
         })
     }
 
@@ -491,6 +530,22 @@ pub fn checksum_bytes(scenery: &TileScenery) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn clearances_filter_only_the_named_scatter_kind_and_are_local() {
+        let ground = Ground::page(64, 2.0, |_, _| 0.0);
+        let exclusion = Exclusion::corridor(&[[10.0, 20.0], [100.0, 20.0]], 5.0, &[ScatterKind::Tree]);
+        let land = Land { ground: &ground, low: DVec2::ZERO, high: DVec2::splat(128.0), exclusions: &[exclusion] };
+        assert!(!land.allows_scatter(DVec2::new(40.0, 22.0), ScatterKind::Tree));
+        assert!(land.allows_scatter(DVec2::new(40.0, 22.0), ScatterKind::Bush));
+        assert!(land.allows_scatter(DVec2::new(40.0, 30.0), ScatterKind::Tree));
+        let clear = Land { exclusions: &[], ..land };
+        let before: Vec<_> =
+            clear.scatter(42, 5.0, 0.4, ScatterKind::Tree).filter(|(p, _)| p.y > 40.0).map(|(p, _)| p).collect();
+        let after: Vec<_> =
+            land.scatter(42, 5.0, 0.4, ScatterKind::Tree).filter(|(p, _)| p.y > 40.0).map(|(p, _)| p).collect();
+        assert_eq!(before, after);
+    }
 
     /// A rail over bumpy ground bends gently, while still following the ground's slope.
     #[test]

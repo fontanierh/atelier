@@ -1,8 +1,8 @@
 //! Every region, each with its implementation of [`Region`] from its folder under the world's `src/regions/`.
 
-use super::levelling::Strip;
+use super::levelling::{Pad, Strip};
 use super::overlay::Overlay;
-use super::scenery::{Land, Scenery};
+use super::scenery::{Exclusion, Land, Scenery};
 
 #[path = "../../../../assets/world/src/regions/momiji-coast/layout.rs"]
 mod momiji_coast;
@@ -15,6 +15,16 @@ pub trait Region {
     /// The strips of ground it levels, as declared changes to the ground. Everything else the world holds, its
     /// tiles, overlays and scenery, stands on the levelled ground.
     fn levelled(&self) -> Vec<Strip>;
+
+    /// Planar ground footprints and shoulders, applied after strips and owning their final surface at crossings.
+    fn pads(&self) -> Vec<Pad> {
+        Vec::new()
+    }
+
+    /// Areas kept clear of scattered scenery. Explicit placements are unaffected.
+    fn scatter_exclusions(&self) -> Vec<Exclusion> {
+        Vec::new()
+    }
 
     /// The flat shapes it lays over the ground.
     fn overlays(&self) -> Vec<Overlay>;
