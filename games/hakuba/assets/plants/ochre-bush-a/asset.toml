@@ -1,7 +1,7 @@
 # A round bush of ochre autumn leaves, 3 m across.
 kind = "plant"
 seed = 10
-inputs_sha256 = "23bac4bf82397020bb9f42ef5d2cac1dfc485a198bd1645a934f8d8533ec5720"
+inputs_sha256 = "19438ad35652e0abe4375d138492885ab9628a79bdaba8e51df1da09fb4f8413"
 
 [leaves]
 texture = "ochre-leaves"
@@ -11,4 +11,5 @@ card_m = 0.48
 normals_from = [0, 0, 0.3]
 vertical_bias = 0.35
 shell = 0.35
+sway_m = 0.1
 lobes = [{ at = [0, 0, 0.98], radii = [1.5, 1.5, 1.05] }]

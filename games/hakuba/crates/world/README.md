@@ -14,5 +14,7 @@ src/
   pixels.rs      draws the world into an image of at most 3 million pixels and stretches it over the window
   tiles.rs       shows each tile in full detail near the camera and in middle detail further out
   scenery.rs     spawns the trees, bushes, grass and poles a tile lists, merging the copies of small models
+  wind.rs        sways leaves and grass in the wind, by how far the export says each vertex sways
+  wind.wesl      its vertex shader
   fly.rs         the flying camera
 ```

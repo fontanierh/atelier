@@ -1,7 +1,7 @@
 # A smaller pine, 11 m high, its needles in clumps up its trunk.
 kind = "plant"
 seed = 5
-inputs_sha256 = "a418f0dec46723a4777e4a6fa61661f454e8fc3265860cfca99959d90227328f"
+inputs_sha256 = "66d4812324e85160d9a62a2327fe03457333c9c9ec3b714f2e19a7846dabb083"
 
 [wood]
 texture = "bark"
@@ -21,6 +21,7 @@ card_m = 1.0
 normals_from = [0, 0, 6.05]
 vertical_bias = 0.3
 shell = 0.35
+sway_m = 0.22
 lobes = [
     { at = [1.46, 0.17, 5.17], radii = [2.49, 2.49, 0.77] },
     { at = [-0.6, 1.36, 5.17], radii = [2.49, 2.49, 0.77] },

@@ -1,7 +1,7 @@
 # A broadleaf, 8.5 m high, its low fork spreading into a round crown.
 kind = "plant"
 seed = 1
-inputs_sha256 = "505e8a066dd96224da49f7dd053a5c781c05e367e19a5686b61a9d0bdcc0777c"
+inputs_sha256 = "ad0793a3875740901ce07be36fcab84dce278f659fe5e364da92e32bf3f0016a"
 
 [wood]
 texture = "bark"
@@ -20,6 +20,7 @@ card_m = 1.0
 normals_from = [0, 0, 5.27]
 vertical_bias = 0.3
 shell = 0.35
+sway_m = 0.22
 lobes = [
     { at = [-0.26, 0.24, 7.05], radii = [1.38, 1.38, 1.78] },
     { at = [1.11, 0.4, 4.72], radii = [1.13, 1.13, 1.78] },

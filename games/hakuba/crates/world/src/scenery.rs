@@ -6,11 +6,14 @@
 //! large model would not pay: each tile's merged mesh is drawn on its own.
 
 use bevy::asset::RenderAssetUsages;
+use bevy::ecs::system::SystemParam;
 use bevy::gltf::{Gltf, GltfExtras, GltfMesh, GltfNode};
 use bevy::light::NotShadowCaster;
 use bevy::prelude::*;
 use bevy::world_serialization::WorldAssetRoot;
 use serde::Deserialize;
+
+use crate::wind::{Swaying, SwayingMaterials};
 
 /// A model with fewer vertices than this has its copies merged.
 const MERGE_BELOW_VERTICES: usize = 256;
@@ -89,36 +92,53 @@ fn read(
     }
 }
 
+/// The models' parts, as Bevy loads them from glTF.
+#[derive(SystemParam)]
+struct Models<'w> {
+    gltfs: Res<'w, Assets<Gltf>>,
+    nodes: Res<'w, Assets<GltfNode>>,
+    meshes: Res<'w, Assets<GltfMesh>>,
+}
+
 /// Spawns the copies whose model has loaded: its `middle` node in a middle tile, if it has one, and its `full` node
 /// otherwise.
 fn spawn(
     mut commands: Commands,
     assets: Res<AssetServer>,
     waiting: Query<(Entity, &Waiting)>,
-    gltfs: Res<Assets<Gltf>>,
-    nodes: Res<Assets<GltfNode>>,
-    gltf_meshes: Res<Assets<GltfMesh>>,
+    models: Models,
     mut meshes: ResMut<Assets<Mesh>>,
+    mut swaying: SwayingMaterials,
 ) {
     for (entity, waiting) in &waiting {
-        let Some(gltf) = gltfs.get(&waiting.model) else { continue };
-        commands.entity(entity).remove::<Waiting>().insert(Placed(waiting.model.clone()));
+        let Some(gltf) = models.gltfs.get(&waiting.model) else { continue };
         let name = if waiting.middle && gltf.named_nodes.contains_key("middle") { "middle" } else { "full" };
-        let Some(node) = gltf.named_nodes.get(name).and_then(|node| nodes.get(node)) else {
+        let Some(node) = gltf.named_nodes.get(name).and_then(|node| models.nodes.get(node)) else {
             warn!("a model has no {name} node");
+            commands.entity(entity).remove::<Waiting>();
             continue;
         };
-        let Some(mesh) = node.mesh.as_ref().and_then(|mesh| gltf_meshes.get(mesh)) else { continue };
+        let Some(mesh) = node.mesh.as_ref().and_then(|mesh| models.meshes.get(mesh)) else { continue };
+        // A part whose vertices say how far they sway is drawn with the swaying version of its material.
+        let looks: Option<Vec<Look>> = mesh
+            .primitives
+            .iter()
+            .map(|primitive| {
+                let material = standard_of(&assets, primitive.material.as_ref());
+                let sways =
+                    meshes.get(&primitive.mesh).is_some_and(|mesh| mesh.contains_attribute(Mesh::ATTRIBUTE_UV_1));
+                if sways { swaying.of(&material).map(Look::Swaying) } else { Some(Look::Still(material)) }
+            })
+            .collect();
+        let Some(looks) = looks else { continue };
+        commands.entity(entity).remove::<Waiting>().insert(Placed(waiting.model.clone()));
         let shadows = node
             .extras
             .as_ref()
             .and_then(|extras| serde_json::from_str::<ModelExtras>(&extras.value).ok())
             .is_none_or(|extras| extras.casts_shadows);
-        let parts: Vec<(Handle<Mesh>, Handle<StandardMaterial>)> = mesh
-            .primitives
-            .iter()
-            .map(|primitive| (primitive.mesh.clone(), standard(&assets, primitive.material.as_ref())))
-            .collect();
+        let parts: Vec<(Handle<Mesh>, Look)> =
+            mesh.primitives.iter().map(|primitive| primitive.mesh.clone()).zip(looks).collect();
         let transforms: Vec<Transform> = waiting
             .instances
             .chunks_exact(5)
@@ -127,17 +147,20 @@ fn spawn(
                 Transform::from_xyz(x, y, z).with_rotation(Quat::from_rotation_y(yaw)).with_scale(Vec3::splat(scale))
             })
             .collect();
-        let vertices = vertices(&gltf_meshes, &meshes, node);
+        let vertices = vertices(&models.meshes, &meshes, node);
         let merge = vertices < MERGE_BELOW_VERTICES && vertices * transforms.len() <= MERGED_AT_MOST_VERTICES;
-        for (mesh, material) in &parts {
+        for (mesh, look) in &parts {
             let shapes: Vec<(Handle<Mesh>, Transform)> =
                 match merge.then(|| merged(&meshes, mesh, &transforms)).flatten() {
                     Some(merged) => vec![(meshes.add(merged), Transform::IDENTITY)],
                     None => transforms.iter().map(|&transform| (mesh.clone(), transform)).collect(),
                 };
             for (mesh, transform) in shapes {
-                let mut part =
-                    commands.spawn((Mesh3d(mesh), MeshMaterial3d(material.clone()), transform, ChildOf(entity)));
+                let mut part = commands.spawn((Mesh3d(mesh), transform, ChildOf(entity)));
+                match look {
+                    Look::Still(material) => part.insert(MeshMaterial3d(material.clone())),
+                    Look::Swaying(material) => part.insert(MeshMaterial3d(material.clone())),
+                };
                 if !shadows {
                     part.insert(NotShadowCaster);
                 }
@@ -163,8 +186,14 @@ fn merged(meshes: &Assets<Mesh>, mesh: &Handle<Mesh>, transforms: &[Transform]) 
     Some(merged)
 }
 
+/// How a part looks: its material as the model has it, or its swaying version.
+enum Look {
+    Still(Handle<StandardMaterial>),
+    Swaying(Handle<Swaying>),
+}
+
 /// The standard material Bevy made from a glTF material: the material's own asset, labelled `<label>/std`.
-fn standard(assets: &AssetServer, material: Option<&Handle<bevy::gltf::GltfMaterial>>) -> Handle<StandardMaterial> {
+fn standard_of(assets: &AssetServer, material: Option<&Handle<bevy::gltf::GltfMaterial>>) -> Handle<StandardMaterial> {
     let Some(path) = material.and_then(|material| material.path()) else { return Handle::default() };
     let label = format!("{}/std", path.label().unwrap_or_default());
     assets.load(path.clone().with_label(label))

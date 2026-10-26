@@ -8,6 +8,7 @@ mod painterly;
 mod pixels;
 mod scenery;
 mod tiles;
+mod wind;
 
 use bevy::gltf::{Gltf, GltfNode};
 use bevy::prelude::*;
@@ -37,6 +38,7 @@ impl Plugin for WorldPlugin {
             pixels::PixelsPlugin,
             scenery::SceneryPlugin,
             tiles::TilesPlugin,
+            wind::WindPlugin,
         ))
         .add_systems(OnEnter(Screen::World), spawn_world)
         .add_systems(Update, read_index.run_if(in_state(Screen::World)));

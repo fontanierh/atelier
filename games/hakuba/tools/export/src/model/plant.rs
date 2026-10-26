@@ -1,7 +1,8 @@
 //! The `plant` kind: a tree, bush or tuft of grass. A tree or bush is wood, a tube of bark from below the ground up
 //! with a branch to each clump of leaves, and leaves, square cards cut out of a leaf image and scattered through
-//! those clumps. Grass is a tuft of curved blades coloured per vertex, casting no shadow. A plant whose leaves set `middle_cards` also
-//! exports a `middle` version, its trunk and fewer, larger cards covering the same area, with no branches.
+//! those clumps. Grass is a tuft of curved blades coloured per vertex, casting no shadow. Leaves and blades carry how
+//! far each vertex sways in the wind; the wood stands still. A plant whose leaves set `middle_cards` also exports a
+//! `middle` version, its trunk and fewer, larger cards covering the same area, with no branches.
 
 use std::f64::consts::{PI, TAU};
 use std::path::Path;
@@ -68,6 +69,9 @@ struct Leaves {
     vertical_bias: f64,
     /// The share of cards pushed from a clump's inside out to its outer part, where they are seen.
     shell: f64,
+    /// How far the cards at the top of the crown sway in the wind at full gust, in metres. Lower cards sway less, in
+    /// proportion to their height; the wood stands still.
+    sway_m: f64,
 }
 
 /// One clump of leaves.
@@ -96,6 +100,8 @@ struct Tuft {
     colours: Vec<Colour>,
     /// How much darker a blade is at its root than at its tip.
     root_shade: f64,
+    /// How far a blade's tip sways in the wind at full gust, in metres. Its root stands still.
+    sway_m: f64,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -190,6 +196,7 @@ fn cards(leaves: &Leaves, count: usize, size: f64, random: &mut Random) -> Mesh 
     let total: f64 = volumes.iter().sum();
     let normals_from = DVec3::from_array(leaves.normals_from);
     let normal = |at: DVec3| (at - normals_from).normalize_or(DVec3::Z) + DVec3::Z * leaves.vertical_bias;
+    let top = leaves.lobes.iter().map(|lobe| lobe.at[2] + lobe.radii[2]).fold(0.0, f64::max);
     for (lobe, volume) in leaves.lobes.iter().zip(volumes) {
         let (centre, radii) = (DVec3::from_array(lobe.at), DVec3::from_array(lobe.radii));
         for _ in 0..(count as f64 * volume / total).round() as usize {
@@ -205,7 +212,11 @@ fn cards(leaves: &Leaves, count: usize, size: f64, random: &mut Random) -> Mesh 
             let low = DVec2::new((cell % 2) as f64 * 0.5, (cell / 2) as f64 * 0.5);
             // Cards deep inside the crown are darker, as the leaves around them shade them.
             let shade = 0.22 + 0.78 * p.length().min(1.0);
-            card(&mut mesh, centre + p * radii, width, turn, normal, (low, 0.5), shade);
+            let at = centre + p * radii;
+            card(&mut mesh, at, width, turn, normal, (low, 0.5), shade);
+            // A card moves as one, so its leaves keep their shape.
+            let sway = (leaves.sway_m * (at.z / top).clamp(0.0, 1.0)) as f32;
+            mesh.sway.resize(mesh.positions.len(), sway);
         }
     }
     mesh
@@ -249,6 +260,7 @@ fn blades(tuft: &Tuft, random: &mut Random) -> Mesh {
             let rgba = Some([shade.x, shade.y, shade.z, 1.0]);
             let left = vertex(&mut mesh, at - across * half, normal, DVec2::new(0.0, t), rgba);
             let right = vertex(&mut mesh, at + across * half, normal, DVec2::new(1.0, t), rgba);
+            mesh.sway.resize(mesh.positions.len(), (tuft.sway_m * t * t) as f32);
             rows.push((left, right));
         }
         for pair in rows.windows(2) {

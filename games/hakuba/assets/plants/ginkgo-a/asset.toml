@@ -1,7 +1,7 @@
 # A tall ginkgo, 9 m high, its leaves turned autumn gold.
 kind = "plant"
 seed = 23
-inputs_sha256 = "a0593859ead1b1471e4101c8052aca674be269b16b29cad66cb82fb2d2a99483"
+inputs_sha256 = "7c646c660c10d15a002daa341d26b672cc460c3948481fae2ecbba4cc2e069ef"
 
 [wood]
 texture = "bark"
@@ -21,6 +21,7 @@ card_m = 1.0
 normals_from = [0, 0, 5.58]
 vertical_bias = 0.3
 shell = 0.35
+sway_m = 0.22
 lobes = [
     { at = [0.3, 0.31, 7.47], radii = [1.26, 1.26, 1.35] },
     { at = [1.54, 0.53, 5.46], radii = [1.05, 1.05, 1.35] },
