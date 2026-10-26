@@ -62,6 +62,7 @@ fn spawn(mut commands: Commands, start: Option<Res<Spawn>>, players: Query<(), W
             Player { body, camera: camera::Orbit::behind(yaw), motion },
             Transform::from_translation(start.0.translation).with_rotation(Quat::from_rotation_y(yaw)),
             Visibility::default(),
+            hakuba_world::PushesPlants::default(),
         ))
         .add_child(body);
 }

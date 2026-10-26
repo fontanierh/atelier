@@ -1,6 +1,7 @@
 //! The world: the ground, the road and what stands around it from `assets/world`, the sea, the sky, sun and haze, and
 //! a camera that starts at the spawn. It publishes where the player starts ([`Spawn`]) and what the player can stand
-//! on ([`Ground`]); the player crate moves the camera.
+//! on ([`Ground`]), and [`PushesPlants`], which makes the plants around whatever carries it lean away; the player
+//! crate moves the camera.
 
 mod ground;
 mod loading;
@@ -8,6 +9,7 @@ mod look;
 mod painterly;
 mod pause;
 mod pixels;
+mod push;
 mod scenery;
 mod settings;
 mod tiles;
@@ -20,6 +22,7 @@ use hakuba_screens::Screen;
 use tiles::Tile;
 
 pub use ground::{Ground, Hit, SEA_LEVEL_M};
+pub use push::PushesPlants;
 
 /// The world's index: one node per tile, and the spawn.
 const INDEX: &str = "world/world.glb";
@@ -41,6 +44,7 @@ impl Plugin for WorldPlugin {
             painterly::PainterlyPlugin,
             pause::PausePlugin,
             pixels::PixelsPlugin,
+            push::PushPlugin,
             scenery::SceneryPlugin,
             settings::SettingsPlugin,
             tiles::TilesPlugin,
