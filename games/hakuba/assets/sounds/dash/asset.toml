@@ -1,0 +1,8 @@
+# A quick burst of cloth and air, for the double jump, the dodges and opening the paraglider: two takes.
+kind = "sound"
+takes = [
+    "src/action-swish.wav",
+    "src/fabric-whoosh.wav",
+]
+quality = 0.3
+inputs_sha256 = "f0d93370e3ccdd0c3f031f2227dab4396bb4089369b7ca99d87cda1048a091fd"

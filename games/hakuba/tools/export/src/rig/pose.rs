@@ -42,6 +42,14 @@ pub fn frame(y: DVec3, z: DVec3) -> DMat3 {
     DMat3::from_cols(y.cross(z), y, z)
 }
 
+/// The frame of the palm on `side` (`"l"` or `"r"`) in `pose`: its Y axis from the wrist toward the knuckles, its Z
+/// axis from the index finger's knuckle toward the little finger's. None for a hand without those fingers.
+pub fn palm(pose: &Pose, side: &str) -> Option<DMat3> {
+    let at = |part: &str| pose[rig::index(&format!("{part}_{side}"))].map(|joint| joint.position);
+    let (index, pinky, hand) = (at("index_1")?, at("pinky_1")?, at("hand")?);
+    Some(frame((index + pinky) * 0.5 - hand, pinky - index))
+}
+
 /// The rotation whose Y axis is `direction` and whose X axis is perpendicular to it and to `hinge`.
 pub fn hinge_frame(direction: DVec3, hinge: DVec3) -> DMat3 {
     let y = direction.normalize();

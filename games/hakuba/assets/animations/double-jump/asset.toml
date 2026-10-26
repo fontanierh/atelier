@@ -1,0 +1,7 @@
+# The double jump: a compact tuck and one forward somersault about the middle of the body, opening upright into the
+# fall pose. It starts turning at 0.08 s, has turned once by 0.6 s and is upright at 0.633 s, in its 0.75 s.
+# src/source.glb holds the clip on a Mixamo skeleton; src/double-jump.rs names its bones.
+kind = "animation"
+source = "src/source.glb"
+clip = "Animation"
+inputs_sha256 = "4ed7ded0a135b97cdaaca73c780ef421db614c7d6cb09bf24c3e7fa3b1add298"

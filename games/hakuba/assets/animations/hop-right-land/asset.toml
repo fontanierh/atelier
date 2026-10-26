@@ -1,0 +1,8 @@
+# Landing from the side hop to the right, frames 2 to 12 at 0.8 of their speed.
+# src/source.glb holds the clip on the motion library's skeleton; src/hop-right-land.rs names it.
+kind = "animation"
+source = "src/source.glb"
+clip = "Nml_Lockon_Step_R_Ed"
+rate = 0.8
+frames = [2.0, 12.0]
+inputs_sha256 = "defb18bab63a356ba39e53dbefa35aed06b48711be456b74f703ad15dbd4e70c"

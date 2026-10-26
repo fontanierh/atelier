@@ -15,3 +15,10 @@ MUST build, export and run Hakuba with plain `cargo` and `trunk`.
 @cc [owner:fontanierh,label:architecture] hakuba-everything-used-and-described
 Every committed file MUST be used by the game or by its exports. Every folder and file MUST say what it is
 for, in a README beside it or a header comment, describing only what is there now, in short, plain words.
+
+@cc [owner:fontanierh,label:performance] sixty-on-the-reference-setting
+The game MUST hold 60 frames a second in the browser on the reference setting `PERFORMANCE.md` names. A change that
+can cost GPU time (a pass, a shader or material, many more meshes or vertices, a default setting) MUST be measured
+there as that file says, with nothing else on the GPU, and its pull request MUST give the frame rate and the GPU time
+of each pass that moved, before and after. A fix for a cost MUST add a check of its kind where one can be written
+(as the errors for cut-out materials and crossfading ranges), so the next asset cannot bring it back.

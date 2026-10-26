@@ -40,8 +40,11 @@ tools/
         animations.rs       every animation, and the `Animation` trait each implements
         character.rs        the `character` kind
         characters.rs       every character, and the `Character` trait each implements
+        equipment.rs        the `equipment` kind
       texture/
         mod.rs              the `texture` kind
+      sound/
+        mod.rs              the `sound` kind
       model/                still models: the `plant` and `prop` kinds
         mod.rs              writing a model's versions and anchors
         plant.rs            the `plant` kind
@@ -51,6 +54,7 @@ tools/
         regions.rs          every region, and the `Region` trait: what a region adds to the world
         checksums.rs        what each tile is made from, so an export rebuilds only the tiles that changed
         ground.rs           the ground's heights, read from its pages
+        levelling.rs        strips of ground a region levels along a course, with shoulders easing back to the ground
         overlay.rs          flat shapes laid over the ground, such as roads
         curve.rs            a smooth curve through a course's points, sampled every metre
         ribbon.rs           strips of even width along a curve, for regions to lay as overlays
@@ -67,12 +71,18 @@ rotation the identity. Clips on the rig store each bone's world turn, and the pe
 they fit any skeleton of any size.
 
 A skeleton implements `Skeleton`, naming its node for each rig bone. The spine's middle and the fingers are
-optional; a skeleton without them gets them from its neighbours.
+optional; a skeleton without them gets them from its neighbours. `Bones::library()` is the skeleton of the motion
+library every animation's clip comes from; `Bones::mixamo()` is Mixamo's.
+
+A hand's palm has a frame (`pose::palm`): its y axis from the wrist toward the knuckles, its z axis from the index
+finger toward the little finger. The retarget turns each hand so its palm faces as the source's does, so something
+held in the palm's frame sits in every character's hand as it did in the library's.
 
 ## Characters
 
 A character's file, `src/<name>.rs` in its asset folder, implements `Character`: its name and which of its bones
-plays each rig bone (`Skeleton`). `characters.rs` lists it in `CHARACTERS`. Its changes to the animations are numbers in its
+plays each rig bone (`Skeleton`). Every character gets every animation, so the whole move set works for any
+character whose skeleton maps to the rig. `characters.rs` lists it in `CHARACTERS`. Its changes to the animations are numbers in its
 `asset.toml`, one table per animation, such as `[animations.idle]`. Each animation's file defines what its table may
 hold; a character leaves out the animations and fields it does not change. A table for no animation, or an unknown
 field, fails the export.
@@ -87,20 +97,56 @@ kind's settings. A missing, misspelled or unknown setting fails the export. Each
 `src/<name>.rs` implements `Animation`: its name, the skeleton its clip is on, what a character may change in it
 and how those changes apply. `animations.rs` lists it in `ANIMATIONS`. The folder's name picks it there.
 
-| Setting  | Meaning                                           |
-|----------|---------------------------------------------------|
-| `source` | the file holding the clip, relative to the folder |
-| `clip`   | the clip's name in that file                      |
+The clip loses its root motion, the travel of its skeleton's top node: the game moves the character, so a run stays
+in place and a jump stays on the ground. A node `clip` beside the skeleton keeps how fast the root travelled over the
+ground, in hip heights a second (`{"speed": ...}`), for the character export.
+
+| Setting  | Meaning                                                                  |
+|----------|--------------------------------------------------------------------------|
+| `source` | the file holding the clip, relative to the folder                        |
+| `clip`   | the clip's name in that file                                             |
+| `rate`   | how fast it plays, as a share of its source's speed (1 if left out)      |
+| `frames` | the first and last source frames it plays (all of them if left out)      |
 
 **`character`** exports a character's model: scaled to its height, textures resized, morph targets removed, and
-every animation fitted to it with the character's changes. Its rig bones are renamed to the rig's names.
+every animation fitted to it with the character's changes. Its rig bones are renamed to the rig's names. Where a
+fitted stride is longer than the character's legs reach, the body lowers just enough. Beside the model, for the game:
 
-| Setting        | Meaning                                     |
-|----------------|---------------------------------------------|
-| `source`       | the model, relative to the asset folder     |
-| `height_m`     | how tall the character stands in the game   |
-| `texture_size` | the largest side of any texture, in pixels  |
-| `animations`   | its changes to each animation, by name      |
+- `grip_r`, an empty node under the right hand: its palm's frame at the wrist, moved and turned by `hold`. The game
+  puts what the character holds there, such as the paraglider.
+- `clips`, an empty node whose extras give how fast each clip carries the character over the ground, in metres a
+  second: the clip's speed on the rig times the character's hip height (`{"speeds": {"run": 5.1, ...}}`). Clips that
+  stay in place are left out.
+
+| Setting        | Meaning                                                                         |
+|----------------|---------------------------------------------------------------------------------|
+| `source`       | the model, relative to the asset folder                                         |
+| `height_m`     | how tall the character stands in the game                                       |
+| `texture_size` | the largest side of any texture, in pixels                                      |
+| `animations`   | its changes to each animation, by name                                          |
+| `hold`         | where its right hand holds things: `offset_cm` and `turn_deg` from its palm's axes |
+
+**`equipment`** writes something a character holds, such as the paraglider, as `<folder name>.glb`, playing its one
+clip under the folder's name. It comes from the motion library with the skeleton that held it there, and is drawn at
+its source's size, the size that skeleton held it at. Its export is placed in that skeleton's body frame between its
+fists, each the middle of its wrist and its middle finger's three bones, so a character holds it between its own fists
+as the library's skeleton did. A node `holder` gives, in its extras, in the export's frame, left then right: how high
+the skeleton's hips stand; its two handles, each the stretch of tube a fist closes round from its back end to its
+front end, with the tube's radius; and the skeleton's two palm frames as it held them (`pose::palm`), each its origin
+at the wrist and its rotation. A character puts each of its hands exactly there, turned so its own palm frame is that
+one, and closes its fingers round the handle. The export fails if a joint of the holder's fingers lies more than 2 cm
+off its handle's surface: then it did not hold that handle.
+
+| Setting            | Meaning                                                                    |
+|--------------------|----------------------------------------------------------------------------|
+| `source`           | the equipment, with its clip, relative to the folder                       |
+| `clip`             | the clip's name in that file                                               |
+| `holder`           | the skeleton that held it, at rest, relative to the folder                 |
+| `pose`             | the holder's clip whose first frame holds it                               |
+| `held_at`          | the holder's bone its root sits at                                         |
+| `handle_left_m`    | the left handle's stretch, back end then front end, in the source's frame  |
+| `handle_right_m`   | the right handle's                                                         |
+| `handle_radius_m`  | the handles' tube's radius in the source                                   |
 
 **`texture`** writes an image as `<folder name>.ktx2`, with every mipmap level so it draws smoothly near and far.
 Each level averages the one above it in linear light, each colour weighted by its opacity, and is stored as 8-bit
@@ -110,6 +156,16 @@ pixels opaque enough to show, so leaves stay as full far away as near. Its sides
 | Setting  | Meaning                                       |
 |----------|-----------------------------------------------|
 | `source` | the image, PNG or JPEG, relative to the folder |
+
+**`sound`** writes a sound's takes, WAV files at one sample rate and channel count, one after the other with 50 ms of
+silence between, as `<folder name>.ogg` (Ogg Vorbis, which the browser and the desktop both decode), and where each
+take starts and how long it lasts as `<folder name>.takes.json`, which also says whether the takes loop.
+
+| Setting   | Meaning                                                          |
+|-----------|------------------------------------------------------------------|
+| `takes`   | each take, a WAV file relative to the folder                     |
+| `looped`  | whether the game loops each take; then each must loop seamlessly |
+| `quality` | the Vorbis quality, from -0.1 (smallest) to 1 (best)             |
 
 **`plant`** builds a tree, a bush or a tuft of grass from its settings alone, in its own frame (x and y level, z up,
 metres, its foot at the origin), and writes it as `<folder name>.glb`. A tree or bush is `wood`, a trunk of bark
@@ -141,14 +197,20 @@ them into square tiles under `tiles/`. Each region's `src/regions/<region>/layou
 `world/regions.rs` lists it. Each tile is written in full detail and in middle detail, for seeing from afar. The
 ground and each overlay show a texture asset, named by its folder: a tile points at the texture's `.ktx2` and never
 holds it, and the export fails if no such texture asset exists. An
-overlay lies a few centimetres above the ground triangles under it; the export fails if it comes closer anywhere.
+overlay lies a few centimetres above the ground triangles under it; the export fails if it comes closer anywhere, or
+if in full detail it creases by more than 1.5° between two of its triangles. A region levels the ground under its
+overlays with levelled strips (`world/levelling.rs`): along a course, the ground within a half width is level across
+it and smooth along it, and a shoulder eases back to the ground without a crease. The strips change the heights once,
+after the pages are read, so the tiles, overlays and scenery all stand on the levelled ground.
 
 A region also stands scenery on the ground: plant and prop models, each at a point with a turn and a scale, cables
-strung between two models' anchors, and rails run along a path. A tile names each model's `.glb` and lists where
-its copies stand, seated on the ground that tile draws; it never holds the model. The world reads the props whose
-anchors its cables fasten to, which each region declares. The export fails if a model asset does not exist, if a
-model stands on an overlay, or if a cable comes closer than 2 m to the ground. `<folder name>.glb` holds a node per
-tile, at its centre, and the spawn.
+strung between two models' anchors, and rails run along a path. A rail and its posts show a texture asset tinted by
+their colour, laid in metres: along the rail by the distance travelled, across it by the distance around its profile,
+and along and around each post, one repeat of the image to a metre. A tile names each model's `.glb` and each
+texture's `.ktx2` and lists where its copies stand, seated on the ground that tile draws; it never holds them. The
+world reads the props whose anchors its cables fasten to, which each region declares. The export fails if a model or
+texture asset does not exist, if a model stands on an overlay, or if a cable comes closer than 2 m to the ground.
+`<folder name>.glb` holds a node per tile, at its centre, and the spawn.
 
 | Setting             | Meaning                                                               |
 |---------------------|-----------------------------------------------------------------------|
@@ -171,7 +233,8 @@ each one's checksum and `.glb`). Changing any of them marks the export out of da
 asset exports only after the assets it reads are current, and `cargo export` on several folders exports each after
 those it reads.
 
-A kind's code is its folder under `src/` (`rig/`, `texture/`, `model/` or `world/`) and the shared code: `main.rs`,
+A kind's code is its folder under `src/` (`rig/` for the animation, character and equipment kinds, `texture/`,
+`sound/`, `model/` or `world/`) and the shared code: `main.rs`,
 `glb.rs`, `shapes.rs`, `random.rs`, `Cargo.toml`, the lock file and the toolchain. Each kind uses only its own
 folder and the shared code, so editing the world's code never marks a character out of date, and editing the rig
 never marks the world. Docs and `CONTRACTS` files are not inputs. `cargo test -p hakuba_export` checks that no kind

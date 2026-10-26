@@ -40,3 +40,9 @@ files as a full one. The bytes of a tile MUST depend only on code in `world/` ot
 code other than `main.rs` and on the locked crate versions. Exporter code for another kind MUST NOT change the
 world's tiles, a region MUST NOT make tiles it does not reach rebuild, and repainting a texture or reshaping a model
 MUST NOT rebuild any tile, though moving a prop's anchors rebuilds the tiles its cables start in.
+
+@cc [owner:fontanierh,label:correctness] equipment-says-how-it-was-held
+An `equipment` export MUST carry, in its `holder` node, how the skeleton that held it in the motion library held it:
+its hips' height, each handle and its radius, and each palm frame, in the export's own frame, so the game places it
+and the hands on it from those alone. The export MUST fail if any joint of that skeleton's fingers but the thumb
+lies more than 2 cm off its handle's surface: the source's grip is then wrong, and no game-side offset may hide it.

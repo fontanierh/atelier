@@ -1,0 +1,6 @@
+# Leaning forward under the paraglider, a loop.
+# src/source.glb holds the clip on the motion library's skeleton; src/glide-forward.rs names it.
+kind = "animation"
+source = "src/source.glb"
+clip = "Float_Float_F"
+inputs_sha256 = "b251358c1f442e938e888914f473e28bb56a1960c4337c92b4b52c0f86be4ea5"

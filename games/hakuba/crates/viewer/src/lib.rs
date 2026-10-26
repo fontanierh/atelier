@@ -1,11 +1,13 @@
 //! The character viewer: one character at a time on a plain stage, a camera that circles it, and buttons to pick the
-//! character and the clip it plays.
+//! character and the clip it plays. While a paraglider clip plays, the character holds the paraglider, through the
+//! same grip as in the world.
 
 mod orbit;
 
 use bevy::prelude::*;
 use bevy::ui_widgets::{Activate, observe};
-use hakuba_characters::{Character, Clips, Play};
+use hakuba_characters::{Character, Clips, Play, Playing};
+use hakuba_glider::Glider;
 use hakuba_screens::{Screen, button, text};
 use orbit::{Orbit, orbit};
 
@@ -17,7 +19,7 @@ pub struct ViewerPlugin;
 impl Plugin for ViewerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(Screen::Viewer), show)
-            .add_systems(Update, (orbit, list_clips).run_if(in_state(Screen::Viewer)));
+            .add_systems(Update, (orbit, list_clips, hold_glider).run_if(in_state(Screen::Viewer)));
     }
 }
 
@@ -76,7 +78,30 @@ fn show(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials:
             ..default()
         },
     ));
-    commands.spawn((on_screen, Character::ALL[0]));
+    spawn_character(&mut commands, Character::ALL[0]);
+}
+
+/// Puts `character` on the stage, with its paraglider put away.
+fn spawn_character(commands: &mut Commands, character: Character) {
+    let entity =
+        commands.spawn((DespawnOnExit(Screen::Viewer), character, Transform::default(), Visibility::default())).id();
+    commands.entity(entity).with_child(Glider::of(entity));
+}
+
+/// Whether the clip `name` hangs under the paraglider: every paraglider clip but closing it.
+fn holds_glider(name: &str) -> bool {
+    name.starts_with("glide") && name != "glide-close"
+}
+
+/// Holds the paraglider while the character plays a paraglider clip.
+fn hold_glider(characters: Query<(Entity, &Playing)>, mut gliders: Query<&mut Glider>) {
+    for (character, playing) in &characters {
+        for mut glider in &mut gliders {
+            if glider.ready_for(character) {
+                glider.held = holds_glider(&playing.clip);
+            }
+        }
+    }
 }
 
 /// Replaces the character on the stage with `character`.
@@ -85,7 +110,7 @@ fn show_character(character: Character) -> impl Fn(On<Activate>, Commands, Query
         for entity in &shown {
             commands.entity(entity).despawn();
         }
-        commands.spawn((DespawnOnExit(Screen::Viewer), character));
+        spawn_character(&mut commands, character);
     }
 }
 
@@ -102,7 +127,7 @@ fn list_clips(
         commands.entity(*list).with_child((
             button(name),
             observe(move |_: On<Activate>, mut commands: Commands| {
-                commands.trigger(Play { entity: character, clip: clip.clone() });
+                commands.trigger(Play::looping(character, clip.clone()));
             }),
         ));
     }

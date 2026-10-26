@@ -1,0 +1,6 @@
+# Closing the paraglider on landing.
+# src/source.glb holds the clip on the motion library's skeleton; src/glide-close.rs names it.
+kind = "animation"
+source = "src/source.glb"
+clip = "Equip_Float_Off"
+inputs_sha256 = "3bbfa86315aa3d0c5dcf67d694623f169da1b293c722e7754bcd4bfb41699389"

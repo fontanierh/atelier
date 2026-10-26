@@ -1,0 +1,7 @@
+# The walk, a loop, at 0.9 of its source's speed.
+# src/source.glb holds the clip on the motion library's skeleton; src/walk.rs names it.
+kind = "animation"
+source = "src/source.glb"
+clip = "Nml_Move_Walk"
+rate = 0.9
+inputs_sha256 = "1544f9a5b5c522ddf591771c29de1215ba02bb6eff4e84b8b03e32f61613ded3"

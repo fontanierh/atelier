@@ -1,0 +1,6 @@
+# The jump from standing.
+# src/source.glb holds the clip on the motion library's skeleton; src/jump.rs names it.
+kind = "animation"
+source = "src/source.glb"
+clip = "Nml_Wait_Jump"
+inputs_sha256 = "7765250d102cb554d3131c8f9ffe0a057ade5712c725c7aca3578f5e2cf86248"

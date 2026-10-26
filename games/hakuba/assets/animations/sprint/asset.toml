@@ -1,0 +1,7 @@
+# The sprint, a loop, at 1.75 times its source's speed.
+# src/source.glb holds the clip on the motion library's skeleton; src/sprint.rs names it.
+kind = "animation"
+source = "src/source.glb"
+clip = "Nml_Move_Dash"
+rate = 1.75
+inputs_sha256 = "74d0acb4c3287e808ede479935de7a5ef37c8374ed0419503c328dc9b433ee6b"

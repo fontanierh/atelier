@@ -1,21 +1,24 @@
-//! The world's tiles: each shows its full version near the camera, its middle version further out, and nothing
-//! beyond. A tile keeps showing its old version until the new one has spawned, so nothing flickers in between.
+//! The world's tiles: each shows its full version near the camera, as far as the Detail setting says, its middle
+//! version further out, and nothing beyond. A tile keeps showing its old version until the new one has spawned, so
+//! nothing flickers in between. A version that fails to load is dropped, and its tile stays as it is.
 
+use bevy::asset::LoadState;
 use bevy::prelude::*;
-use bevy::world_serialization::WorldInstanceReady;
+use bevy::world_serialization::{WorldAssetRoot, WorldInstanceReady};
 use hakuba_screens::Screen;
-
-/// Up to how far from the camera, to the tile's centre, a tile shows its full version.
-const FULL_M: f32 = 160.0;
+use hakuba_settings::Settings;
 
 /// Up to how far a tile shows its middle version.
 const MIDDLE_M: f32 = 2500.0;
+
+/// The folder of the tiles' models, under the assets.
+pub const TILES: &str = "world/tiles";
 
 pub struct TilesPlugin;
 
 impl Plugin for TilesPlugin {
     fn build(&self, app: &mut App) {
-        app.add_observer(swap).add_systems(Update, choose.run_if(in_state(Screen::World)));
+        app.add_observer(swap).add_systems(Update, (choose, give_up).run_if(in_state(Screen::World)));
     }
 }
 
@@ -35,6 +38,8 @@ pub struct Tile {
     detail: Option<Detail>,
     /// The version it shows.
     showing: Option<Entity>,
+    /// Whether a version of it failed to load: it then stays as it is, and holds nothing up.
+    failed: bool,
 }
 
 impl Tile {
@@ -42,17 +47,17 @@ impl Tile {
     pub fn named(name: &str, centre: Vec3) -> Option<Self> {
         let mut words = name.strip_prefix("tile ")?.split(' ');
         let (column, row) = (words.next()?.parse().ok()?, words.next()?.parse().ok()?);
-        Some(Self { column, row, centre, detail: None, showing: None })
+        Some(Self { column, row, centre, detail: None, showing: None, failed: false })
     }
 
-    /// Whether it shows the version it needs, or nothing when it needs none.
+    /// Whether it shows the version it needs, or nothing when it needs none, or has failed to load one.
     pub fn shown(&self) -> bool {
-        self.detail.is_some() == self.showing.is_some()
+        self.failed || self.detail.is_some() == self.showing.is_some()
     }
 
     fn path(&self, detail: Detail) -> String {
         let suffix = if detail == Detail::Full { "" } else { ".middle" };
-        format!("world/tiles/{}_{}{suffix}.glb", self.column, self.row)
+        format!("{TILES}/{}_{}{suffix}.glb", self.column, self.row)
     }
 }
 
@@ -65,17 +70,18 @@ fn choose(
     mut commands: Commands,
     assets: Res<AssetServer>,
     camera: Single<&GlobalTransform, With<Camera3d>>,
+    settings: Res<Settings>,
     mut tiles: Query<(Entity, &mut Tile)>,
 ) {
     let eye = camera.translation();
     for (entity, mut tile) in &mut tiles {
         let distance = (tile.centre - eye).with_y(0.0).length();
         let detail = match distance {
-            d if d < FULL_M => Some(Detail::Full),
+            d if d < settings.detail.full_m() => Some(Detail::Full),
             d if d < MIDDLE_M => Some(Detail::Middle),
             _ => None,
         };
-        if detail == tile.detail {
+        if detail == tile.detail || tile.failed {
             continue;
         }
         tile.detail = detail;
@@ -89,6 +95,24 @@ fn choose(
                     commands.entity(showing).despawn();
                 }
             }
+        }
+    }
+}
+
+/// Drops a tile's version that failed to load, which the loading splash reports, so the tile no longer waits for it.
+fn give_up(
+    mut commands: Commands,
+    assets: Res<AssetServer>,
+    spawning: Query<(Entity, &Spawning, &WorldAssetRoot)>,
+    mut tiles: Query<&mut Tile>,
+) {
+    for (entity, Spawning(tile), root) in &spawning {
+        if !matches!(assets.load_state(&root.0), LoadState::Failed(_)) {
+            continue;
+        }
+        commands.entity(entity).despawn();
+        if let Ok(mut tile) = tiles.get_mut(*tile) {
+            tile.failed = true;
         }
     }
 }

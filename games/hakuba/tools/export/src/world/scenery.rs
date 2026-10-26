@@ -7,9 +7,11 @@
 //! in the game's frame, yaw turning about y. A middle tile holds only the models seen from afar. Rails and cables are
 //! meshes of full tiles only: a rail follows the ground drawn under it, eased along its whole length so that it bends
 //! smoothly over the ground's small bumps, then is cut at each tile's edge; a cable
-//! belongs to the tile of the model it starts from.
+//! belongs to the tile of the model it starts from. A rail and its posts show a texture asset, named and never held,
+//! laid in metres: one repeat of its image is a metre a side.
 
 use std::collections::BTreeMap;
+use std::f64::consts::TAU;
 use std::path::Path;
 
 use anyhow::{Context, Result, bail};
@@ -66,8 +68,11 @@ pub struct Rail {
     pub profile: Vec<[f64; 2]>,
     pub post_every: usize,
     pub post_radius_m: f64,
-    /// Its linear colour, and its posts'.
+    /// Its linear colour, and its posts', which tints its texture.
     pub colour: [f64; 3],
+    /// The texture it and its posts show, by its folder under `assets/textures/`: along the rail by the distance
+    /// travelled and across it by the distance around its profile, and on a post along it and around it, in metres.
+    pub texture: &'static str,
 }
 
 /// The land a region fills: the ground, and the part of the map the world exports.
@@ -130,11 +135,18 @@ const POST_CAP_M: f64 = 0.03;
 /// A copy of a model: its foot's position, yaw, scale, and whether it shows afar.
 type Placed = ([f64; 2], f64, f64, bool);
 
-/// A piece of a rail: its points with the height of its foot, the rail's direction at each, its profile and colour.
-type RailPiece = (Vec<([f64; 3], [f64; 2])>, Vec<[f64; 2]>, [f64; 3]);
+/// A point of a rail: its foot, the rail's direction there in plan, and how far along the rail it is, in metres.
+type RailPoint = ([f64; 3], [f64; 2], f64);
 
-/// A piece of a path within one tile: the tile, and each point with the path's direction there, in plan.
-type PathPiece = ((usize, usize), Vec<(DVec3, DVec2)>);
+/// A piece of a rail: its points, its profile, its colour and its texture.
+type RailPiece = (Vec<RailPoint>, Vec<[f64; 2]>, [f64; 3], &'static str);
+
+/// A rail's post: its foot on the eased rail, its height above that, its radius, colour and texture.
+type Post = ([f64; 3], f64, f64, [f64; 3], &'static str);
+
+/// A piece of a path within one tile: the tile, and each point with the path's direction there, in plan, and how far
+/// along the whole path it is.
+type PathPiece = ((usize, usize), Vec<(DVec3, DVec2, f64)>);
 
 /// What one tile holds of the scenery, ready to write. Its checksum covers all of it.
 #[derive(Serialize, Default)]
@@ -143,9 +155,8 @@ pub struct TileScenery {
     models: BTreeMap<&'static str, Vec<Placed>>,
     /// The pieces of rails in the tile.
     rails: Vec<RailPiece>,
-    /// The rails' posts standing in the tile: each its foot on the eased rail, its height above that, its radius and
-    /// colour. Each reaches down past the ground the tile draws, wherever the rail runs.
-    posts: Vec<([f64; 3], f64, f64, [f64; 3])>,
+    /// The rails' posts standing in the tile. Each reaches down past the ground the tile draws, wherever the rail runs.
+    posts: Vec<Post>,
     /// The cables starting in the tile: each its points on the map, its radius and colour.
     cables: Vec<(Vec<[f64; 3]>, f64, [f64; 3])>,
 }
@@ -164,8 +175,9 @@ impl Grid {
 }
 
 /// Shares each region's scenery out between the tiles. `drawn` is the ground the full tiles draw, across the whole
-/// exported part of the map, which seats each cable's ends and the rails. Fails if a model has no asset, stands on an overlay or
-/// on no ground, or if a cable fastens to a model the world does not read or comes too close to the ground.
+/// exported part of the map, which seats each cable's ends and the rails. Fails if a model or a rail's texture has no
+/// asset, if a model stands on an overlay or on no ground, or if a cable fastens to a model the world does not read or
+/// comes too close to the ground.
 pub fn share(
     sceneries: Vec<(Scenery, Vec<&'static str>)>,
     land: &Land,
@@ -219,6 +231,7 @@ pub fn share(
             tiles.entry(grid.tile(ends[0].at)).or_default().cables.push((points, cable.radius_m, cable.colour));
         }
         for rail in &scenery.rails {
+            crate::uri_of_texture(rail.texture)?;
             // The rail is eased along each stretch with ground drawn under it: past the exported part of the map, it
             // is left out.
             for stretch in rail.path.chunk_by(|&p, &q| drawn.height(p).is_some() == drawn.height(q).is_some()) {
@@ -231,13 +244,14 @@ pub fn share(
                 let path: Vec<DVec3> = stretch.iter().zip(ease(stretch, &heights)).map(|(p, z)| p.extend(z)).collect();
                 let top = rail.profile.iter().map(|&[_, height]| height).fold(0.0, f64::max) + POST_CAP_M;
                 for &foot in path.iter().step_by(rail.post_every).filter(|foot| inside(foot.truncate())) {
-                    let post = (foot.to_array(), top, rail.post_radius_m, rail.colour);
+                    let post = (foot.to_array(), top, rail.post_radius_m, rail.colour, rail.texture);
                     tiles.entry(grid.tile(foot.truncate())).or_default().posts.push(post);
                 }
                 for (tile, piece) in cut(&path, grid) {
                     if inside(piece[0].0.truncate()) {
-                        let piece = piece.iter().map(|(p, d)| (p.to_array(), d.to_array())).collect();
-                        tiles.entry(tile).or_default().rails.push((piece, rail.profile.clone(), rail.colour));
+                        let piece = piece.iter().map(|(p, d, along)| (p.to_array(), d.to_array(), *along)).collect();
+                        let piece = (piece, rail.profile.clone(), rail.colour, rail.texture);
+                        tiles.entry(tile).or_default().rails.push(piece);
                     }
                 }
             }
@@ -302,13 +316,15 @@ fn ease(path: &[DVec2], heights: &[f64]) -> Vec<f64> {
 }
 
 /// `path` cut where it crosses a tile's edge, as pieces each within one tile: each point with the path's direction
-/// there, in plan. A point where the path crosses an edge ends one piece and starts the next, so the pieces meet
-/// exactly.
+/// there, in plan, and how far along the whole path it is. A point where the path crosses an edge ends one piece and
+/// starts the next, so the pieces meet exactly, and their distances along run on across the edge.
 fn cut(path: &[DVec3], grid: &Grid) -> Vec<PathPiece> {
     let direction = |k: usize| (path[(k + 1).min(path.len() - 1)] - path[k.saturating_sub(1)]).truncate().normalize();
     let mut pieces: Vec<PathPiece> = Vec::new();
+    let mut along = 0.0;
     for k in 0..path.len() - 1 {
         let (a, b) = (path[k], path[k + 1]);
+        let length = a.distance(b);
         // Where along a to b the segment crosses a line between tiles, and the point there, exactly on the line.
         let mut stops = vec![(0.0, a), (1.0, b)];
         for axis in 0..2 {
@@ -328,15 +344,16 @@ fn cut(path: &[DVec3], grid: &Grid) -> Vec<PathPiece> {
             let ((t0, start), (t1, end)) = (pair[0], pair[1]);
             let tile = grid.tile(start.lerp(end, 0.5).truncate());
             let at = |t: f64, p: DVec3| match t {
-                0.0 => (p, direction(k)),
-                1.0 => (p, direction(k + 1)),
-                _ => (p, (b - a).truncate().normalize()),
+                0.0 => (p, direction(k), along),
+                1.0 => (p, direction(k + 1), along + length),
+                _ => (p, (b - a).truncate().normalize(), along + t * length),
             };
             match pieces.last_mut() {
                 Some((last, points)) if *last == tile => points.push(at(t1, end)),
                 _ => pieces.push((tile, vec![at(t0, start), at(t1, end)])),
             }
         }
+        along += length;
     }
     pieces
 }
@@ -370,13 +387,13 @@ impl TileScenery {
         if middle {
             return Ok(());
         }
-        for (k, (piece, profile, colour)) in self.rails.iter().enumerate() {
+        for (k, (piece, profile, colour, texture)) in self.rails.iter().enumerate() {
             let mut mesh = Mesh::default();
             rail(&mut mesh, piece, profile, surface).with_context(|| path.display().to_string())?;
-            mesh.material = glb.add_material(&plain("rail", *colour, true));
+            mesh.material = glb.add_material(&painted("rail", *colour, &crate::uri_of_texture(texture)?, true));
             glb.add_mesh(&format!("rail {k}"), &[&mesh]);
         }
-        for (k, &(foot, top, radius, colour)) in self.posts.iter().enumerate() {
+        for (k, &(foot, top, radius, colour, texture)) in self.posts.iter().enumerate() {
             let foot = DVec3::from_array(foot);
             let at = foot.truncate();
             let ground = surface
@@ -384,7 +401,8 @@ impl TileScenery {
                 .with_context(|| format!("{}: a rail's post at {at} stands on no ground", path.display()))?;
             let mut mesh = Mesh::default();
             tube(&mut mesh, &[(at.extend(ground - POST_DEPTH_M), radius), (at.extend(foot.z + top), radius)], 6, 1.0);
-            mesh.material = glb.add_material(&plain("post", colour, false));
+            in_metres(&mut mesh, 6, radius);
+            mesh.material = glb.add_material(&painted("post", colour, &crate::uri_of_texture(texture)?, false));
             glb.add_mesh(&format!("post {k}"), &[&mesh]);
         }
         for (k, (points, radius, colour)) in self.cables.iter().enumerate() {
@@ -403,11 +421,37 @@ fn plain(name: &str, colour: [f64; 3], two_sided: bool) -> Material<'_> {
     Material { name, texture: None, colour, cut_out: false, two_sided }
 }
 
-/// Adds to `mesh` a rail through `piece`, its cross-section `profile` standing on each point's foot. Fails where the
-/// foot is more than [`RAIL_SETTLE_M`] from `surface`, the ground drawn under it.
-fn rail(mesh: &mut Mesh, piece: &[([f64; 3], [f64; 2])], profile: &[[f64; 2]], surface: &Surface) -> Result<()> {
+/// A matte material showing the image at `uri`, tinted by `colour`.
+fn painted<'a>(name: &'a str, colour: [f64; 3], uri: &'a str, two_sided: bool) -> Material<'a> {
+    Material { name, texture: Some(uri), colour, cut_out: false, two_sided }
+}
+
+/// Turns the texture positions of `mesh`, a straight two-ring [`tube`] with `sides` faces around and `radius`, into
+/// metres: its sides' run along it already, and wrap once around it, so they stretch to its circumference; its caps'
+/// span its diameter once, so they stretch to the diameter.
+fn in_metres(mesh: &mut Mesh, sides: usize, radius: f64) {
+    let rings = 2 * (sides + 1);
+    for (k, uv) in mesh.uvs.iter_mut().enumerate() {
+        if k < rings {
+            uv[0] *= (TAU * radius) as f32;
+        } else {
+            *uv = uv.map(|c| c * (2.0 * radius) as f32);
+        }
+    }
+}
+
+/// Adds to `mesh` a rail through `piece`, its cross-section `profile` standing on each point's foot. Its texture runs
+/// along it by each point's distance along the rail and across it by the distance around the profile, in metres, less
+/// the whole metres before the piece starts, so the numbers stay small and the texture runs on across a cut. Fails
+/// where the foot is more than [`RAIL_SETTLE_M`] from `surface`, the ground drawn under it.
+fn rail(mesh: &mut Mesh, piece: &[RailPoint], profile: &[[f64; 2]], surface: &Surface) -> Result<()> {
+    let start = piece[0].2.floor();
+    let mut around = vec![0.0];
+    for pair in profile.windows(2) {
+        around.push(around.last().unwrap() + DVec2::from_array(pair[0]).distance(DVec2::from_array(pair[1])));
+    }
     let mut rows = Vec::new();
-    for &(foot, direction) in piece {
+    for &(foot, direction, along) in piece {
         let (foot, direction) = (DVec3::from_array(foot), DVec2::from_array(direction));
         let (at, ground) = (foot.truncate(), foot.z);
         let drawn = surface.height(at).with_context(|| format!("a rail runs off the ground at {at}"))?;
@@ -424,7 +468,7 @@ fn rail(mesh: &mut Mesh, piece: &[([f64; 3], [f64; 2])], profile: &[[f64; 2]], s
                 let [o1, h1] = profile[(k + 1).min(profile.len() - 1)];
                 let normal = (left * (h1 - h0)).extend(o0 - o1);
                 let p = (at + left * offset).extend(ground + height);
-                let uv = DVec2::new(k as f64, 0.0);
+                let uv = DVec2::new(along - start, around[k]);
                 vertex(mesh, p, if normal == DVec3::ZERO { DVec3::Z } else { normal }, uv, None)
             })
             .collect();

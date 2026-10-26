@@ -4,10 +4,23 @@ Everything the game loads, each next to the sources it is exported from.
 
 ```text
 assets/
-  animations/
-    idle/                   the idle, on the rig
+  animations/               the move set, each clip on the rig, from a motion library
+    idle/                   standing
+    walk/, run/, sprint/    moving on foot, each a loop
+    jump/, run-jump/        jumping from standing and from a run
+    fall/                   falling
+    land/, run-land/        landing on the spot and running on
+    hard-land/, -up/        landing from high up, and standing up again
+    hop-left/, -right/      the side hops that dodge, and their landings (`-land`)
+    backflip/               the backflip that dodges, and its landing (`backflip-land/`)
+    double-jump/            the double jump's tuck and forward somersault
+    glide-open/             opening the paraglider, and `glide-open-falling/` while falling fast
+    glide/                  hanging under the paraglider, and leaning `-forward`, `-back`, `-left` and `-right`
+    glide-close/            closing it on landing
   characters/
     nox/                    Nox, the playable character, with every animation fitted to him
+  equipment/
+    glider/                 the paraglider, held in both hands above the head
   plants/                   trees, bushes and grass, each built from its settings alone
     maple-a/, maple-b/      maples
     broad-a/, broad-b/      broadleaf trees
@@ -21,10 +34,16 @@ assets/
   props/                    made objects, each built from its settings alone
     utility-pole/           a concrete pole with insulators that cables fasten to
     street-lamp/            a lamp's arm and head, standing on a utility pole
+  sounds/                   every sound the game plays (sounds/README.md)
+    footstep-grass/, ...    a footstep on grass, on gravel (`-gravel`) and on stone (`-stone`)
+    dash/                   a burst of cloth and air
+    countryside/            birdsong, a breeze and a faint sea, a loop
+    glide-wind/             rushing air at three speeds, loops
   textures/
     ground/                 the ground's grass and earth
     road/                   a road's asphalt and lines
     bark/                   tree bark
+    painted-metal/          weathered white paint on sheet metal, for the guardrails
     maple-leaves/ ...       the leaves of each kind of plant: maple, ginkgo, ochre and small leaves, pine and
                             cedar needles, and flowers
   world/                    the world, in tiles
@@ -40,7 +59,8 @@ Every asset is one folder, named in kebab case:
 ```text
 <asset-name>/
   asset.toml                its kind, its settings, and the checksum of its inputs
-  <asset-name>.glb          what the game loads, written by the exporter (`<asset-name>.ktx2` for a texture)
+  <asset-name>.glb          what the game loads, written by the exporter (`<asset-name>.ktx2` for a texture,
+                            `<asset-name>.ogg` and `<asset-name>.takes.json` for a sound)
   src/                      everything the export is made from, if it is made from more than its settings
 ```
 
@@ -79,4 +99,4 @@ cargo export --check assets            # lists every export whose inputs changed
 
 ## Storage
 
-`.glb`, `.bin` and `.ktx2` files are stored in Git LFS (`../.gitattributes`). `git push` uploads them.
+`.glb`, `.bin`, `.ktx2`, `.ogg` and `.wav` files are stored in Git LFS (`../.gitattributes`). `git push` uploads them.

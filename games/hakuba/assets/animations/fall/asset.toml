@@ -1,0 +1,6 @@
+# Falling, held on its last frame.
+# src/source.glb holds the clip on the motion library's skeleton; src/fall.rs names it.
+kind = "animation"
+source = "src/source.glb"
+clip = "Fall"
+inputs_sha256 = "ba1e899e3b4b9340bc086e5eac773d37dc1b31796cc6432fe44781d093183c0e"

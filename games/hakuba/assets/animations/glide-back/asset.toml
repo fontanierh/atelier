@@ -1,0 +1,6 @@
+# Leaning back under the paraglider to slow down, a loop.
+# src/source.glb holds the clip on the motion library's skeleton; src/glide-back.rs names it.
+kind = "animation"
+source = "src/source.glb"
+clip = "Float_Float_B"
+inputs_sha256 = "49b6868de244624dcfe6c8400a797e79e41b28a33406259ca49f7a1c7df74efd"

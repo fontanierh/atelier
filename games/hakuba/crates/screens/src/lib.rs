@@ -1,4 +1,5 @@
-//! What every screen shares: which screen is showing, Escape back to the menu, how buttons look and the frame rate.
+//! What every screen shares: which screen is showing, Escape back to the menu (or pausing the world), how buttons look
+//! and the frame rate.
 
 use bevy::picking::hover::Hovered;
 use bevy::prelude::*;
@@ -8,7 +9,12 @@ pub struct ScreensPlugin;
 
 impl Plugin for ScreensPlugin {
     fn build(&self, app: &mut App) {
-        app.init_state::<Screen>().add_systems(Startup, spawn_fps).add_systems(Update, (back_to_menu, hover, show_fps));
+        app.init_state::<Screen>()
+            .add_sub_state::<Pause>()
+            .add_systems(Startup, spawn_fps)
+            .add_systems(Update, (back, hover, show_fps))
+            .add_systems(OnEnter(Pause::Paused), |mut time: ResMut<Time<Virtual>>| time.pause())
+            .add_systems(OnExit(Pause::Paused), |mut time: ResMut<Time<Virtual>>| time.unpause());
     }
 }
 
@@ -19,6 +25,16 @@ pub enum Screen {
     Menu,
     World,
     Viewer,
+    Settings,
+}
+
+/// Whether the world is paused. While it is, its time stands still and the pause screen shows over it.
+#[derive(SubStates, Clone, Copy, PartialEq, Eq, Hash, Debug, Default)]
+#[source(Screen = Screen::World)]
+pub enum Pause {
+    #[default]
+    Playing,
+    Paused,
 }
 
 const BUTTON: Color = Color::srgb(0.15, 0.15, 0.17);
@@ -47,9 +63,25 @@ pub fn text(content: impl Into<String>, size: f32) -> impl Bundle {
     (Text::new(content), TextFont { font_size: FontSize::Px(size), ..default() }, TextColor(TEXT))
 }
 
-fn back_to_menu(keys: Res<ButtonInput<KeyCode>>, mut next: ResMut<NextState<Screen>>) {
-    if keys.just_pressed(KeyCode::Escape) {
-        next.set(Screen::Menu);
+/// Escape, or a controller's Start button: pauses or resumes the world, and from any other screen goes back to the
+/// menu.
+fn back(
+    keys: Res<ButtonInput<KeyCode>>,
+    gamepads: Query<&Gamepad>,
+    screen: Res<State<Screen>>,
+    pause: Option<Res<State<Pause>>>,
+    mut next_screen: ResMut<NextState<Screen>>,
+    mut next_pause: ResMut<NextState<Pause>>,
+) {
+    let start = gamepads.iter().any(|gamepad| gamepad.just_pressed(GamepadButton::Start));
+    if !keys.just_pressed(KeyCode::Escape) && !start {
+        return;
+    }
+    match (screen.get(), pause.map(|pause| *pause.get())) {
+        (Screen::World, Some(Pause::Playing)) => next_pause.set(Pause::Paused),
+        (Screen::World, _) => next_pause.set(Pause::Playing),
+        (Screen::Menu, _) => {}
+        _ => next_screen.set(Screen::Menu),
     }
 }
 

@@ -1,17 +1,14 @@
-//! How many pixels the world draws. The camera draws into an image with as many pixels as the window has, up to
-//! [`MAX_PIXELS`], and a second camera stretches that image over the window, with the interface on top. On a large or
-//! high-density screen the browser cannot shade every pixel of the world at 60 frames a second; the image it draws
-//! instead is a little softer.
+//! How many pixels the world draws. The camera draws into an image of as many pixels as the Resolution setting
+//! chooses, by default as many as the window has up to 3 million, and a second camera stretches that image over the
+//! window, with the interface on top. On a large or high-density screen the browser cannot shade every pixel of the
+//! world at 60 frames a second; the image it draws instead is a little softer.
 
 use bevy::camera::RenderTarget;
 use bevy::prelude::*;
 use bevy::render::render_resource::{Extent3d, TextureFormat};
 use bevy::window::PrimaryWindow;
 use hakuba_screens::Screen;
-
-/// The most pixels the world draws: a 2300 × 1300 window's worth, which holds a frame under 14 ms in a 1728 × 913
-/// retina window (6.3 million pixels), where drawing every pixel takes 24 ms.
-const MAX_PIXELS: f32 = 3.0e6;
+use hakuba_settings::Settings;
 
 pub struct PixelsPlugin;
 
@@ -39,11 +36,14 @@ pub fn spawn(commands: &mut Commands, images: &mut Assets<Image>) -> impl Bundle
     (Camera { order: -1, ..default() }, RenderTarget::Image(image.clone().into()), Drawn(image))
 }
 
-/// Keeps the image the window's shape, with as many pixels as the window or [`MAX_PIXELS`], whichever is fewer.
-fn fit(window: Single<&Window, With<PrimaryWindow>>, drawn: Single<&Drawn>, mut images: ResMut<Assets<Image>>) {
-    let window = window.physical_size().as_vec2();
-    let scale = (MAX_PIXELS / (window.x * window.y)).sqrt().min(1.0);
-    let size = (window * scale).round().as_uvec2().max(UVec2::ONE);
+/// Keeps the image the window's shape, with as many pixels as the Resolution setting chooses.
+fn fit(
+    window: Single<&Window, With<PrimaryWindow>>,
+    drawn: Single<&Drawn>,
+    settings: Res<Settings>,
+    mut images: ResMut<Assets<Image>>,
+) {
+    let size = settings.resolution.image_size(window.physical_size().as_vec2());
     if images.get(&drawn.0).is_some_and(|image| image.size() != size) {
         let mut image = images.get_mut(&drawn.0).expect("the drawn image exists");
         image.resize(Extent3d { width: size.x, height: size.y, depth_or_array_layers: 1 });

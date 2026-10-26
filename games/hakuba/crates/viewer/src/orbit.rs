@@ -3,6 +3,7 @@
 //! - drag: spin around it
 //! - scroll: zoom in and out
 //! - shift + drag: move the point up and down
+//! - the arrow keys: spin and tilt; page up and page down: move the point up and down
 
 use bevy::input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll, MouseScrollUnit};
 use bevy::prelude::*;
@@ -13,6 +14,11 @@ const SPIN_PER_WINDOW: f32 = 1.0;
 const DISTANCE_M: (f32, f32) = (0.2, 8.0);
 /// How high the point it circles may go, in metres.
 const HEIGHT_M: (f32, f32) = (0.0, 2.2);
+/// How fast the arrow keys spin and tilt the camera, in radians a second, and page up and down move the point, in
+/// metres a second.
+const KEY_SPIN: f32 = std::f32::consts::FRAC_PI_2;
+const KEY_TILT: f32 = std::f32::consts::FRAC_PI_4;
+const KEY_RISE_M: f32 = 0.5;
 /// How much one line of scrolling zooms, as a fraction of the distance.
 const ZOOM_PER_LINE: f32 = 0.12;
 /// Browsers scroll in pixels; this many make a line.
@@ -30,6 +36,7 @@ pub struct Orbit {
 }
 
 pub fn orbit(
+    time: Res<Time>,
     buttons: Res<ButtonInput<MouseButton>>,
     keys: Res<ButtonInput<KeyCode>>,
     motion: Res<AccumulatedMouseMotion>,
@@ -49,6 +56,12 @@ pub fn orbit(
             state.pitch = (state.pitch + motion.delta.y * radians_per_pixel).clamp(-1.5, 1.5);
         }
     }
+    let dt = time.delta_secs();
+    let key = |code: KeyCode| if keys.pressed(code) { dt } else { 0.0 };
+    state.yaw += (key(KeyCode::ArrowRight) - key(KeyCode::ArrowLeft)) * KEY_SPIN;
+    state.pitch = (state.pitch + (key(KeyCode::ArrowUp) - key(KeyCode::ArrowDown)) * KEY_TILT).clamp(-1.5, 1.5);
+    state.focus.y =
+        (state.focus.y + (key(KeyCode::PageUp) - key(KeyCode::PageDown)) * KEY_RISE_M).clamp(HEIGHT_M.0, HEIGHT_M.1);
     let lines = match scroll.unit {
         MouseScrollUnit::Line => scroll.delta.y,
         MouseScrollUnit::Pixel => scroll.delta.y / PIXELS_PER_LINE,

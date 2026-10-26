@@ -8,3 +8,52 @@ Each crate MUST be one feature, published as one Bevy plugin. That plugin MAY ad
 feature's parts; no other crate adds them. What several screens share lives in `screens`. A crate
 MAY use another crate only for what that crate publishes for others (as the viewer uses `characters`),
 never for its internals.
+
+@cc [owner:fontanierh,label:correctness] stable-under-temporal-anti-aliasing
+The world is drawn with temporal anti-aliasing, so what is drawn MUST NOT change from frame to frame in screen space
+unless it moves in the world: no screen-space dither, stochastic transparency or crossfading visibility range (the
+world crate makes any range abrupt and logs an error). Detail MUST swap whole primitives, as a tile's versions
+swap whole. A vertex shader that moves geometry MUST write motion vectors that say how it moved, or say on
+purpose that it stood still, as the wind's do. It MUST also draw the main pass no further than its prepass did (the
+wind's `DEPTH_MARGIN`): the two passes are compiled apart, and a vertex a rounding error further fails the depth test
+and leaves a hole showing the clear colour for a frame.
+
+@cc [owner:fontanierh,label:correctness] nothing-appears-after-loading
+The world MUST NOT show until all it draws is ready: its tiles, models and textures loaded and every pipeline made,
+whichever way the camera looks. What loads with the world MUST hold the splash until it is ready (the world's
+`Unready`, or a load the splash checks), and MUST be spawned, if hidden, so that it is drawn under it, as the
+paraglider is, too small to see. The game logs any pipeline made once the world has loaded. A file that fails to
+load MUST be reported as an error and named on the splash, never counted as ready in silence. What the world can show
+without (a texture, a tile, a plant, the paraglider) MUST then stop holding the splash; what it cannot (its index, the
+player's character) keeps it up, saying which file failed.
+
+@cc [owner:fontanierh,label:performance] cut-outs-light-only-what-stays
+A material that cuts out texels (alpha mask) MUST discard them before any lighting, as the plants' fragment shader
+`leaves.wesl` does: in the browser a discarded fragment runs on to the end of the shader, so Bevy's standard shader
+pays the full lighting and shadow lookups for every texel it throws away. Anything cut out MUST be drawn with that
+shader or one that branches the same way. The world logs an error for a standard material that cuts out; that error
+MUST stay silent.
+
+@cc [owner:fontanierh,label:correctness] detail-never-swaps-in-view
+Near the camera, in the tiles shown in full, a model MUST show the same version wherever the camera stands, so
+nothing changes as the player walks up to it. A cheaper version there MAY only cast the shadow, from the
+`SHADOW_ONLY` render layer the sun draws and the camera does not. Versions MAY change only where a whole tile changes
+its detail, in whole primitives.
+
+@cc [owner:fontanierh,label:performance] full-screen-passes-are-written-out
+A full-screen pass MUST read only the texels it uses, and a kernel that does not change while the game runs MUST be
+written into its shader as constants, leaving out the weights that are zero (as `painterly.rs` writes its taps). The
+code that writes it MUST fail at once if the shader no longer has the place it writes into.
+
+@cc [owner:fontanierh,label:correctness] the-browser-paces-sixty
+In the browser the game MUST NOT run its own timer for 60 frames a second or more: it runs apart from the display's
+refreshes and gives frames of one and two refreshes by turns. A cap of 60 or more leaves the pacing to the browser;
+only a lower cap waits on a timer.
+
+@cc [owner:fontanierh,label:correctness] held-things-follow-this-frames-pose
+What a character holds MUST be placed, and its hands put on it, from the pose the animation wrote this frame: in
+`PostUpdate` after `AnimationSystems` and before `TransformSystems::Propagate`, in the body's frame, never from last
+frame's global transforms, so the hands and what they hold never part for a frame. Where and how each hand holds it
+MUST come only from its export's `holder` node (the skeleton that held it, its handles and palms), scaled to the
+character's size, never from offsets tuned in the game. A fist that misses its handle MUST be logged as an error,
+and a model that does not say how it was held MUST be reported and stay put away, never hold up the game.

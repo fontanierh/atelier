@@ -1,0 +1,6 @@
+# Landing from a run and running on.
+# src/source.glb holds the clip on the motion library's skeleton; src/run-land.rs names it.
+kind = "animation"
+source = "src/source.glb"
+clip = "Nml_Move_Run_Land_ToRun_FootL"
+inputs_sha256 = "783fb1b0af9f6e4105d0a901febe3f73afa7d2a2a3a027ccd0ae06d107b7ecde"

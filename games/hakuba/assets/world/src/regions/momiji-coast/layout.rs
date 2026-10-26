@@ -8,6 +8,7 @@ use glam::DVec2;
 
 use super::Region;
 use crate::world::curve::curve;
+use crate::world::levelling::Strip;
 use crate::world::overlay::Overlay;
 use crate::world::ribbon::ribbon;
 use crate::world::scenery::{Land, Scenery};
@@ -29,6 +30,17 @@ const ROAD: [[f64; 2]; 11] = [
 
 const ROAD_WIDTH_M: f64 = 5.2;
 
+/// How far the ground is levelled either side of the road's centre: the road and a verge of 1.4 m, so the 2 m ground
+/// triangles under the road's edges lie on level ground, or barely reach into the shoulder.
+const LEVEL_HALF_WIDTH_M: f64 = 4.0;
+
+/// How wide the ground eases from the levelled road back into the banks it is cut into. At this width the banks get no
+/// steeper than they are.
+const SHOULDER_M: f64 = 10.0;
+
+/// How far along the road its height is smoothed, as the spread of the bell curve each height is averaged over.
+const ROAD_SMOOTHING_M: f64 = 8.0;
+
 /// How often the road's texture repeats along it.
 const ROAD_TEXTURE_M: f64 = 8.0;
 
@@ -42,7 +54,18 @@ impl Region for MomijiCoast {
         "momiji-coast"
     }
 
-    /// The road. The ground already holds its cut.
+    /// The ground under the road and its verges, levelled across the road and smooth along it, so the road and the
+    /// ground beside it run without a kink.
+    fn levelled(&self) -> Vec<Strip> {
+        vec![Strip {
+            course: ROAD.to_vec(),
+            half_width_m: LEVEL_HALF_WIDTH_M,
+            shoulder_m: SHOULDER_M,
+            smoothing_m: ROAD_SMOOTHING_M,
+        }]
+    }
+
+    /// The road, on its levelled strip.
     fn overlays(&self) -> Vec<Overlay> {
         vec![Overlay {
             name: "road".into(),

@@ -10,13 +10,14 @@
 //! lacks follows its parent. The pelvis moves as the source's does, scaled by the ratio of the two hip heights. Then
 //! each leg bends so its ankle goes where the source's does. Near the ground, the ankle moves as the source's does,
 //! scaled the same way, from the target's own stance, so planted feet stay planted. Higher up, it goes where the
-//! target's leg reaches when bent like the source's. Each knee keeps the direction it bends in.
+//! target's leg reaches when bent like the source's. Where a leg cannot reach its goal, as when a long stride meets
+//! shorter legs, the whole body lowers just enough. Each knee keeps the direction it bends in.
 
 use anyhow::{Result, bail};
 use glam::{DMat3, DVec3};
 
-use crate::rig::pose::{Joint, Pose, UP, frame, halfway, level, place, smoothstep, swing};
-use crate::rig::pose_edit::{Leg, bend};
+use crate::rig::pose::{Joint, Pose, UP, frame, halfway, level, palm, place, smoothstep, swing};
+use crate::rig::pose_edit::{Leg, bend, lower_to_reach};
 use crate::rig::{self, RIG};
 
 /// The bones that keep the target's own rest posture.
@@ -28,6 +29,9 @@ const GROUND: (f64, f64) = (0.25, 0.5);
 
 /// The furthest a solved ankle may sit from its goal, in metres.
 const ANKLE_TOLERANCE: f64 = 0.001;
+
+/// The lowest a standing skeleton's hips may be above its floor, in metres.
+const MIN_HIPS_M: f64 = 0.3;
 
 /// The bone after each limb or finger bone, which gives its direction.
 fn next(bone: &str) -> Option<String> {
@@ -69,19 +73,22 @@ pub fn retarget(source_rest: &Pose, clip: &[Pose], target_rest: &Pose) -> Result
     let c = body(left(&t)) * body(left(&s)).transpose();
     let ci = c.transpose();
     let source_hips = s("pelvis").unwrap().y;
+    // Every move scales by the ratio of the hip heights: a skeleton standing off its floor would scale them wildly.
+    for (whose, hips) in [("source", source_hips), ("target", t("pelvis").unwrap().y)] {
+        if hips < MIN_HIPS_M {
+            bail!(
+                "the {whose}'s hips are {hips:.3} m above its floor; a standing skeleton's are at least {MIN_HIPS_M} m"
+            );
+        }
+    }
     let scale = t("pelvis").unwrap().y / source_hips;
 
     // Each bone's rest calibration X: the target bone turns by C S S_rest^-1 X T_rest.
     let mut x: Vec<Option<DMat3>> = vec![None; RIG.len()];
     for side in ["l", "r"] {
         let name = |part: &str| format!("{part}_{side}");
-        if both(&name("index_1")) && both(&name("pinky_1")) {
-            let palm = |p: &dyn Fn(&str) -> Option<DVec3>| {
-                let (index, pinky, hand) =
-                    (p(&name("index_1")).unwrap(), p(&name("pinky_1")).unwrap(), p(&name("hand")).unwrap());
-                frame((index + pinky) * 0.5 - hand, pinky - index)
-            };
-            x[bone(&name("hand"))] = Some(palm(&s) * palm(&t).transpose());
+        if let (Some(source), Some(target)) = (palm(source_rest, side), palm(target_rest, side)) {
+            x[bone(&name("hand"))] = Some(source * target.transpose());
         }
         let foot =
             |p: &dyn Fn(&str) -> Option<DVec3>| frame(level(p(&name("toe")).unwrap() - p(&name("foot")).unwrap()), UP);
@@ -146,13 +153,20 @@ pub fn retarget(source_rest: &Pose, clip: &[Pose], target_rest: &Pose) -> Result
             }
         }
 
-        // The legs: each ankle to its goal, the knee kept in its current bend plane.
-        for leg in [Leg::on("l"), Leg::on("r")] {
-            let foot = leg.foot;
-            let rise = (source[foot].unwrap().position.y - source_rest[foot].unwrap().position.y) / source_hips;
-            let ground = rest_position(foot) + source_move(foot);
-            let w = 1.0 - smoothstep(GROUND.0, GROUND.1, rise.abs());
-            let goal = ground * w + pose[foot].unwrap().position * (1.0 - w);
+        // The legs: each ankle to its goal, the body lowered if a leg cannot reach it, and the knee kept in its
+        // current bend plane.
+        let goals: Vec<(Leg, DVec3)> = [Leg::on("l"), Leg::on("r")]
+            .into_iter()
+            .map(|leg| {
+                let foot = leg.foot;
+                let rise = (source[foot].unwrap().position.y - source_rest[foot].unwrap().position.y) / source_hips;
+                let ground = rest_position(foot) + source_move(foot);
+                let w = 1.0 - smoothstep(GROUND.0, GROUND.1, rise.abs());
+                (leg, ground * w + pose[foot].unwrap().position * (1.0 - w))
+            })
+            .collect();
+        lower_to_reach(&mut pose, target_rest, &goals);
+        for &(leg, goal) in &goals {
             let hip = pose[leg.thigh].unwrap().position;
             let (axis, bent) = ((goal - hip).normalize(), pose[leg.shin].unwrap().position - hip);
             let straight = (bent - axis * bent.dot(axis)).length() < 1e-6;

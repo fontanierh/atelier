@@ -257,6 +257,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "330a5ed07fa54e4702c9d6c4174f74427fc0ef6e214bbd677ae50a5099946470"
 
 [[package]]
+name = "aotuv_lancer_vorbis_sys"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5bc4fd1a61860d2f1198b60bedd30910eaffa978f1ee6214dfb24ac70d589225"
+dependencies = [
+ "cc",
+ "ogg_next_sys",
+]
+
+[[package]]
 name = "approx"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3034,11 +3044,28 @@ name = "hakuba"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "hakuba_audio",
  "hakuba_characters",
+ "hakuba_glider",
  "hakuba_menu",
+ "hakuba_player",
  "hakuba_screens",
+ "hakuba_settings",
  "hakuba_viewer",
  "hakuba_world",
+]
+
+[[package]]
+name = "hakuba_audio"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "hakuba_player",
+ "hakuba_screens",
+ "hakuba_settings",
+ "hakuba_world",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -3046,6 +3073,8 @@ name = "hakuba_characters"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -3054,6 +3083,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "glam",
+ "hound",
  "image",
  "ktx2",
  "ruzstd",
@@ -3061,6 +3091,17 @@ dependencies = [
  "serde_json",
  "sha2",
  "toml_edit",
+ "vorbis_rs",
+]
+
+[[package]]
+name = "hakuba_glider"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "hakuba_characters",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -3072,10 +3113,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "hakuba_player"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "hakuba_characters",
+ "hakuba_glider",
+ "hakuba_screens",
+ "hakuba_world",
+]
+
+[[package]]
 name = "hakuba_screens"
 version = "0.1.0"
 dependencies = [
  "bevy",
+]
+
+[[package]]
+name = "hakuba_settings"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "hakuba_screens",
+ "serde",
+ "serde_json",
+ "web-sys",
 ]
 
 [[package]]
@@ -3084,6 +3147,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "hakuba_characters",
+ "hakuba_glider",
  "hakuba_screens",
 ]
 
@@ -3093,6 +3157,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "hakuba_screens",
+ "hakuba_settings",
  "serde",
  "serde_json",
 ]
@@ -3190,6 +3255,12 @@ dependencies = [
  "glam",
  "tinyvec",
 ]
+
+[[package]]
+name = "hound"
+version = "3.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "62adaabb884c94955b19907d60019f4e145d091c75345379e70d1ee696f7854f"
 
 [[package]]
 name = "icu_collections"
@@ -4378,6 +4449,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6951b4e8bf21c8193da321bcce9c9dd2e13c858fe078bf9054a288b419ae5d6e"
 dependencies = [
  "byteorder",
+]
+
+[[package]]
+name = "ogg_next_sys"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ed2d7a48e247c2bb07e633aefb65a38648ea58c7eedd4e4408a5861721ab049b"
+dependencies = [
+ "cc",
 ]
 
 [[package]]
@@ -5615,6 +5695,20 @@ name = "version_check"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
+
+[[package]]
+name = "vorbis_rs"
+version = "0.5.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "49c5da94d280f7a27e8c937e9b73df2da3e23a2583f48471fd8fb4c72f9c1933"
+dependencies = [
+ "aotuv_lancer_vorbis_sys",
+ "errno",
+ "getrandom 0.4.3",
+ "ogg_next_sys",
+ "thiserror 2.0.21",
+ "tinyvec",
+]
 
 [[package]]
 name = "walkdir"

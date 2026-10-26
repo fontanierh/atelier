@@ -1,13 +1,10 @@
-// The painterly filter (painterly.rs says what it does). It works on gamma-encoded colours, as they show on screen.
-
-const TAPS: u32 = 21u;
+// The painterly filter (painterly.rs says what it does, and writes its taps where TAPS stands below). It works on
+// gamma-encoded colours, as they show on screen.
 
 struct Painterly {
     strength: f32,
     radius: f32,
     padding: vec2<f32>,
-    offsets: array<vec4<f32>, 21>,
-    weights: array<vec4<f32>, 42>,
 }
 
 @group(0) @binding(0) var screen: texture_2d<f32>;
@@ -25,17 +22,8 @@ fn fragment(@location(0) uv: vec2<f32>) -> @location(0) vec4<f32> {
     // Per wedge, the weighted mean and mean square of the colours.
     var means: array<vec3<f32>, 8>;
     var squares: array<vec3<f32>, 8>;
-    for (var n = 0u; n < TAPS; n++) {
-        let c = shown(clamp(uv + settings.offsets[n].xy * step, vec2(0.0), vec2(1.0)));
-        let low = settings.weights[2u * n];
-        let high = settings.weights[2u * n + 1u];
-        for (var k = 0u; k < 4u; k++) {
-            means[k] += c * low[k];
-            squares[k] += c * c * low[k];
-            means[k + 4u] += c * high[k];
-            squares[k + 4u] += c * c * high[k];
-        }
-    }
+    var c: vec3<f32>;
+    // TAPS
     // Smooth wedges count far more than busy ones.
     var sum = vec3(0.0);
     var total = 0.0;

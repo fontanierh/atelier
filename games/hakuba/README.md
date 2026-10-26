@@ -38,6 +38,7 @@ Test in the browser first: what works there almost always works on desktop, but 
 ```text
 games/hakuba/
   README.md                 this file
+  PERFORMANCE.md            the frame-rate target, how to measure it and what costs what
   Cargo.toml                the Rust workspace, its shared dependencies and the game program
   .cargo/config.toml        the `cargo export` alias
   Cargo.lock                the exact dependency versions
@@ -48,13 +49,17 @@ games/hakuba/
     menu/                   the menu the game opens on
     world/                  the world
     characters/             the playable characters: their models and clips
+    glider/                 the paraglider, and how a character holds it
+    player/                 the character the player controls in the world
     viewer/                 the character viewer
+    audio/                  the sounds: footsteps, the moves, the paraglider's wind and the countryside
   index.html                the page the browser build runs in, with the canvas the game draws into
   Trunk.toml                what the browser build copies next to the game
   assets/                   everything the game loads, each next to its sources (assets/README.md)
   tools/export/             the asset exporter, run with `cargo export` (tools/README.md)
   .gitattributes            which files Git LFS stores
   .gitignore                the build folders
+  CONTRACTS                 the rules every change keeps (crates/, assets/ and tools/export/ have their own)
 ```
 
 ## Conventions

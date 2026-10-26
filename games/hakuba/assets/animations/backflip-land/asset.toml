@@ -1,0 +1,7 @@
+# Landing from the backflip, from frame 5.
+# src/source.glb holds the clip on the motion library's skeleton; src/backflip-land.rs names it.
+kind = "animation"
+source = "src/source.glb"
+clip = "Nml_Lockon_Jump_B_Ed"
+frames = [5.0, 26.0]
+inputs_sha256 = "950e1405fe7bc52dad48c60fb86e4f0a17546a8b9f4bebdab48fdecb5e8b4d12"

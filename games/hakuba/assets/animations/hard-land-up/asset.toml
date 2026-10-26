@@ -1,0 +1,6 @@
+# Standing up after a hard landing.
+# src/source.glb holds the clip on the motion library's skeleton; src/hard-land-up.rs names it.
+kind = "animation"
+source = "src/source.glb"
+clip = "Nml_Damage_Land_Stand"
+inputs_sha256 = "89e59f9838fd0590e62d863db76f12a927a42aa8bda80ead8a9fb08750c055f9"

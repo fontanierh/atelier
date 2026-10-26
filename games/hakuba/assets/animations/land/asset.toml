@@ -1,0 +1,6 @@
+# Landing on the spot.
+# src/source.glb holds the clip on the motion library's skeleton; src/land.rs names it.
+kind = "animation"
+source = "src/source.glb"
+clip = "Nml_Wait_Land"
+inputs_sha256 = "d4410cd5872acde2f00c1a5faca133a2a6e787a2adb8dee5a37c8dbacea5a97a"

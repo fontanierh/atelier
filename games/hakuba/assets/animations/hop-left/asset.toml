@@ -1,0 +1,7 @@
+# The side hop to the left, from frame 4.
+# src/source.glb holds the clip on the motion library's skeleton; src/hop-left.rs names it.
+kind = "animation"
+source = "src/source.glb"
+clip = "Nml_Lockon_Step_L_St"
+frames = [4.0, 40.0]
+inputs_sha256 = "37d97d7ea69922666368ed0aae6a52df1881b04ef7a15f690f6f1ff0c2bb61d0"

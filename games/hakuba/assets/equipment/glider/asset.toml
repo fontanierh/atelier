@@ -1,0 +1,16 @@
+# The paraglider, held in both hands above the head, with its cloth rippling in a loop.
+# src/glider.glb is the paraglider with its clip and src/holder.glb the skeleton that held it, hanging under it in
+# Float_Float, both baked from the motion library. Its root sits
+# at the holder's Weapon_R bone, and it is drawn at the size the holder held it.
+kind = "equipment"
+source = "src/glider.glb"
+clip = "Float"
+holder = "src/holder.glb"
+pose = "Float_Float"
+held_at = "Weapon_R"
+# The straight tube at the bottom of each U-shaped handle, from back to front: the centres of its two vertex rings in
+# src/glider.glb, and their radius.
+handle_left_m = [[0.2537, 0.0156, -0.1423], [0.3011, 0.0099, 0.0290]]
+handle_right_m = [[-0.2479, 0.0119, -0.1416], [-0.3047, 0.0114, 0.0278]]
+handle_radius_m = 0.034
+inputs_sha256 = "81c2a37771fe7d592d9fa8092da5c511d6c21657853d8eac59755af2bd55e675"

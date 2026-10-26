@@ -7,15 +7,17 @@
 //! ```
 //!
 //! An asset folder's `asset.toml` names its kind and that kind's settings ([`Asset`]). Exporting writes the folder's
-//! `<folder name>.glb` (`.ktx2` for a texture) and records in `asset.toml` a checksum of the inputs: the settings, the
-//! folder's `src/`, the exporter's code for that kind ([`code`]) and the assets it reads. A check reports a folder
-//! whose export is missing or whose inputs no longer match that checksum.
+//! `<folder name>.glb` (`.ktx2` for a texture, `.ogg` and the list of its takes for a sound) and records in
+//! `asset.toml` a checksum of the inputs: the settings, the folder's `src/`, the exporter's code for that kind
+//! ([`code`]) and the assets it reads. A check reports a folder whose export is missing or whose inputs no longer
+//! match that checksum.
 
 mod glb;
 mod model;
 mod random;
 mod rig;
 mod shapes;
+mod sound;
 mod texture;
 mod world;
 
@@ -34,8 +36,10 @@ use toml_edit::DocumentMut;
 enum Asset {
     Animation(rig::animation::Settings),
     Character(rig::character::Settings),
+    Equipment(rig::equipment::Settings),
     Plant(model::plant::Settings),
     Prop(model::prop::Settings),
+    Sound(sound::Settings),
     Texture(texture::Settings),
     World(world::Settings),
 }
@@ -44,7 +48,12 @@ impl Asset {
     /// The other assets whose exports this one reads, by folder relative to `assets/`.
     fn reads(&self) -> Vec<String> {
         match self {
-            Asset::Animation(_) | Asset::Plant(_) | Asset::Prop(_) | Asset::Texture(_) => Vec::new(),
+            Asset::Animation(_)
+            | Asset::Equipment(_)
+            | Asset::Plant(_)
+            | Asset::Prop(_)
+            | Asset::Sound(_)
+            | Asset::Texture(_) => Vec::new(),
             Asset::Character(_) => rig::animations::ANIMATIONS.into_iter().map(rig::animation::folder).collect(),
             Asset::World(_) => world::reads(),
         }
@@ -53,8 +62,9 @@ impl Asset {
     /// The exporter's folder holding this kind's code, relative to the exporter.
     fn code_folder(&self) -> &'static str {
         match self {
-            Asset::Animation(_) | Asset::Character(_) => "src/rig",
+            Asset::Animation(_) | Asset::Character(_) | Asset::Equipment(_) => "src/rig",
             Asset::Plant(_) | Asset::Prop(_) => "src/model",
+            Asset::Sound(_) => "src/sound",
             Asset::Texture(_) => "src/texture",
             Asset::World(_) => "src/world",
         }
@@ -63,7 +73,13 @@ impl Asset {
     /// The extension of the file this kind exports.
     fn extension(&self) -> &'static str {
         match self {
-            Asset::Animation(_) | Asset::Character(_) | Asset::Plant(_) | Asset::Prop(_) | Asset::World(_) => "glb",
+            Asset::Animation(_)
+            | Asset::Character(_)
+            | Asset::Equipment(_)
+            | Asset::Plant(_)
+            | Asset::Prop(_)
+            | Asset::World(_) => "glb",
+            Asset::Sound(_) => "ogg",
             Asset::Texture(_) => "ktx2",
         }
     }
@@ -176,6 +192,10 @@ impl Folder {
         if !self.output().is_file() {
             found.push(format!("{} is missing", self.output().file_name().unwrap().to_string_lossy()));
         }
+        let takes = sound::takes_file(&self.output());
+        if matches!(self.asset, Asset::Sound(_)) && !takes.is_file() {
+            found.push(format!("{} is missing", takes.file_name().unwrap().to_string_lossy()));
+        }
         if self.recorded_checksum() != Some(self.inputs_checksum()?.as_str()) {
             found.push("its inputs changed since the last export".into());
         }
@@ -193,8 +213,10 @@ impl Folder {
         match &self.asset {
             Asset::Animation(settings) => rig::animation::export(&self.path, settings, &output)?,
             Asset::Character(settings) => rig::character::export(&self.path, settings, &output)?,
+            Asset::Equipment(settings) => rig::equipment::export(&self.path, settings, &output)?,
             Asset::Plant(settings) => model::plant::export(settings, &output)?,
             Asset::Prop(settings) => model::prop::export(settings, &output)?,
+            Asset::Sound(settings) => sound::export(&self.path, settings, &output)?,
             Asset::Texture(settings) => texture::export(&self.path, settings, &output)?,
             Asset::World(settings) => world::export(&self.path, settings, &output)?,
         }
@@ -291,9 +313,10 @@ mod tests {
     use super::*;
 
     /// Each kind's code folder under `src/`, and the asset groups whose `.rs` files it compiles in.
-    const KINDS: [(&str, &[&str]); 4] = [
+    const KINDS: [(&str, &[&str]); 5] = [
         ("model", &["plants", "props"]),
         ("rig", &["animations", "characters"]),
+        ("sound", &["sounds"]),
         ("texture", &["textures"]),
         ("world", &["world"]),
     ];

@@ -1,6 +1,7 @@
 // The wind (wind.rs says what it does): Bevy's mesh vertex shaders for the main pass and the prepass, each moving a
-// vertex in the wind by how far it bends and its leaf's phase, its second texture coordinates. Plants have no morph
-// targets or skins, so those are left out.
+// vertex in the wind by how far it bends and its leaf's phase, its second texture coordinates, scaled by how strongly
+// the wind blows, its mesh's tag in thousandths, and leaning leaves and blades away from what pushes plants aside
+// (push.rs). Plants have no morph targets or skins, so those are left out.
 
 @if(PREPASS_PIPELINE)
 import bevy_pbr::prepass::io::{Vertex, VertexOutput, decompress_vertex};
@@ -20,6 +21,21 @@ import bevy_pbr::render::{mesh_functions, view_transformations::position_world_t
 const WIND: vec2<f32> = vec2<f32>(0.3, -0.95);
 
 const TAU: f32 = 6.2831853;
+
+// What pushes plants aside, as push.rs writes it: how many there are, then for each where its feet are and its radius,
+// then its height.
+@group(constants::MATERIAL_BIND_GROUP) @binding(100) var<storage, read> pushers: array<vec4<f32>, 9>;
+
+// How much nearer the main pass draws a vertex than the prepass, as a share of its depth (depth is reversed: nearer is
+// larger): about 1 mm at 10 m, far above the rounding the two passes may differ by, far below the gap between leaves.
+const DEPTH_MARGIN: f32 = 1.0001;
+
+// How far a leaf or blade right beside a pusher leans away, across the ground, for each metre it stands above the
+// pusher's feet: about 24 degrees.
+const LEAN: f32 = 0.45;
+
+// How far above a pusher's height plants stop leaning, in metres.
+const FADE_ABOVE_M: f32 = 0.5;
 
 // How strongly the wind blows at `at` at `time`: about 1, rising and falling over several seconds in gusts that roll
 // across the world, so plants a few tens of metres apart are pushed at different times. Never below 0.1: the wind
@@ -52,6 +68,35 @@ fn sway(at: vec3<f32>, time: f32, bend: f32, phase: f32) -> vec3<f32> {
     return (lean + branches + flutter) * bend;
 }
 
+// How far a vertex at `at`, of a leaf or blade of phase `phase`, moves to lean away from the pushers: as if bent over
+// at the pusher's feet, so the higher it stands the further it goes, and it drops a little, keeping its length. A
+// plant leans most at a pusher's middle and not at all from its radius out, nor above its height; wood, of phase
+// below 0, stands still.
+fn push(at: vec3<f32>, phase: f32) -> vec3<f32> {
+    var moved = vec3<f32>(0.0);
+    if phase < 0.0 {
+        return moved;
+    }
+    let count = u32(pushers[0].x);
+    for (var i = 0u; i < count; i++) {
+        let feet = pushers[1u + 2u * i];
+        let height = pushers[2u + 2u * i].x;
+        let away = at.xz - feet.xz;
+        let far = length(away);
+        let up = at.y - feet.y;
+        let lean = LEAN * saturate(1.0 - far / feet.w) * saturate((height + FADE_ABOVE_M - up) / FADE_ABOVE_M);
+        let high = max(up, 0.0);
+        moved += vec3<f32>(away.x, 0.0, away.y) * (lean * high / max(far, 0.001))
+            - vec3<f32>(0.0, 0.5 * lean * lean * high, 0.0);
+    }
+    return moved;
+}
+
+// How strongly the wind blows on this mesh, its tag in thousandths: 1 is the usual wind.
+fn blowing(instance_index: u32) -> f32 {
+    return f32(mesh_functions::get_tag(instance_index)) / 1000.0;
+}
+
 @if(!PREPASS_PIPELINE)
 @vertex
 fn vertex(vertex_in: Vertex) -> VertexOutput {
@@ -59,8 +104,14 @@ fn vertex(vertex_in: Vertex) -> VertexOutput {
     let vertex = decompress_vertex(vertex_in, vertex_in.instance_index);
     let world_from_local = mesh_functions::get_world_from_local(vertex_in.instance_index);
     let still = mesh_functions::mesh_position_local_to_world(world_from_local, vec4<f32>(vertex.position, 1.0));
-    out.world_position = vec4<f32>(still.xyz + sway(still.xyz, globals.time, vertex.uv_b.x, vertex.uv_b.y), 1.0);
+    let bend = vertex.uv_b.x * blowing(vertex_in.instance_index);
+    let pushed = push(still.xyz, vertex.uv_b.y);
+    out.world_position = vec4<f32>(still.xyz + pushed + sway(still.xyz, globals.time, bend, vertex.uv_b.y), 1.0);
     out.position = position_world_to_clip(out.world_position.xyz);
+    // A hair nearer than the prepass put it. The two passes are compiled apart, so a moving vertex may land a rounding
+    // error further than the depth the prepass wrote, fail the depth test and leave a hole showing the clear colour for
+    // a frame: black leaves flickering in the wind.
+    out.position.z *= DEPTH_MARGIN;
     out.world_normal = mesh_functions::mesh_normal_local_to_world(vertex.normal, vertex_in.instance_index);
     @if(VERTEX_UVS_A)
     out.uv = vertex.uv;
@@ -85,7 +136,9 @@ fn vertex(vertex_in: Vertex) -> VertexOutput {
     let vertex = decompress_vertex(vertex_in, vertex_in.instance_index);
     let world_from_local = mesh_functions::get_world_from_local(vertex_in.instance_index);
     let still = mesh_functions::mesh_position_local_to_world(world_from_local, vec4<f32>(vertex.position, 1.0));
-    out.world_position = vec4<f32>(still.xyz + sway(still.xyz, globals.time, vertex.uv_b.x, vertex.uv_b.y), 1.0);
+    let bend = vertex.uv_b.x * blowing(vertex_in.instance_index);
+    let pushed = push(still.xyz, vertex.uv_b.y);
+    out.world_position = vec4<f32>(still.xyz + pushed + sway(still.xyz, globals.time, bend, vertex.uv_b.y), 1.0);
     out.position = position_world_to_clip(out.world_position.xyz);
     @if(UNCLIPPED_DEPTH_ORTHO_EMULATION) {
         out.unclipped_depth = out.position.z;
@@ -101,15 +154,15 @@ fn vertex(vertex_in: Vertex) -> VertexOutput {
         mesh_functions::mesh_tangent_local_to_world(world_from_local, vertex.tangent, vertex_in.instance_index);
     @if(VERTEX_COLORS)
     out.color = vertex.color;
-    // Where the vertex was last frame, swayed as it is now: temporal anti-aliasing takes swaying leaves as still, as
-    // Yorimichi's did. It keeps blending many frames over them, so their cut-out edges stay smooth; following their
-    // motion, it would take a tenth of each new frame and their edges would flicker. A leaf's edge may soften a little
-    // in strong wind.
+    // Where the vertex was last frame, swayed and pushed as it is now: temporal anti-aliasing takes swaying leaves as
+    // still. It keeps blending many frames over them, so their cut-out edges stay smooth; following their motion, it
+    // would take a tenth of each new frame and their edges would flicker. A leaf's edge may soften a little in strong
+    // wind, or as it is pushed aside.
     @if(MOTION_VECTOR_PREPASS) {
         let previous_from_local = mesh_functions::get_previous_world_from_local(vertex_in.instance_index);
         let before = mesh_functions::mesh_position_local_to_world(previous_from_local, vec4<f32>(vertex.position, 1.0));
-        let swayed = sway(still.xyz, globals.time, vertex.uv_b.x, vertex.uv_b.y);
-        out.previous_world_position = vec4<f32>(before.xyz + swayed, 1.0);
+        let swayed = sway(still.xyz, globals.time, bend, vertex.uv_b.y);
+        out.previous_world_position = vec4<f32>(before.xyz + pushed + swayed, 1.0);
     }
     @if(VERTEX_OUTPUT_INSTANCE_INDEX)
     out.instance_index = vertex_in.instance_index;

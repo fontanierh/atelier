@@ -96,6 +96,21 @@ impl Glb {
         }
     }
 
+    /// Makes every material matte, as [`Glb::add_material`] does: no metal and no mirror-like reflection, whatever the
+    /// source asked. A model generator's strong specular otherwise shows the sky as a white sheen, over dark hair most.
+    pub fn make_matte(&mut self) {
+        let Some(materials) = self.json.get_mut("materials").and_then(Value::as_array_mut) else { return };
+        for material in materials {
+            material["pbrMetallicRoughness"]["metallicFactor"] = json!(0.0);
+            material["pbrMetallicRoughness"]["roughnessFactor"] = json!(1.0);
+            material["extensions"]["KHR_materials_specular"] = json!({ "specularFactor": 0.0 });
+        }
+        let used = self.json.get("extensionsUsed").and_then(Value::as_array);
+        if !used.is_some_and(|used| used.contains(&json!("KHR_materials_specular"))) {
+            push(&mut self.json, "extensionsUsed", json!("KHR_materials_specular"));
+        }
+    }
+
     pub fn remove_morph_targets(&mut self) {
         for mesh in items_mut(&mut self.json, "meshes") {
             let mesh = mesh.as_object_mut().unwrap();
@@ -153,6 +168,48 @@ impl Glb {
         self.json["nodes"][node]["name"] = json!(name);
     }
 
+    /// The extras of the node named `name`, data an export left for the next.
+    pub fn extras(&self, name: &str) -> Result<&Value> {
+        Ok(&self.json["nodes"][self.node(name)?]["extras"])
+    }
+
+    /// Adds an empty node named `name` under `parent`, at `transform` from it, and returns its index.
+    pub fn add_child(&mut self, parent: usize, name: &str, transform: &Trs) -> usize {
+        let node = json!({
+            "name": name,
+            "translation": transform.translation.to_array(),
+            "rotation": transform.rotation.to_array(),
+            "scale": transform.scale.to_array(),
+        });
+        let node = push(&mut self.json, "nodes", node);
+        push(&mut self.json["nodes"][parent], "children", json!(node));
+        node
+    }
+
+    /// The default scene's root nodes.
+    pub fn roots(&self) -> Vec<usize> {
+        let scene = self.json["scene"].as_u64().unwrap_or(0) as usize;
+        items(&self.json["scenes"][scene], "nodes").map(index).collect()
+    }
+
+    /// Sets `node`'s transform relative to its parent.
+    pub fn set_transform(&mut self, node: usize, transform: &Trs) {
+        let node = self.json["nodes"][node].as_object_mut().unwrap();
+        node.remove("matrix");
+        node.insert("translation".into(), json!(transform.translation.to_array()));
+        node.insert("rotation".into(), json!(transform.rotation.to_array()));
+        node.insert("scale".into(), json!(transform.scale.to_array()));
+    }
+
+    /// Keeps only the animation named `name`, renamed `new_name`.
+    pub fn keep_animation(&mut self, name: &str, new_name: &str) -> Result<()> {
+        let animations = self.json.get_mut("animations").and_then(Value::as_array_mut).context("no animations")?;
+        animations.retain(|animation| animation["name"].as_str() == Some(name));
+        let animation = animations.first_mut().with_context(|| format!("no animation is named {name}"))?;
+        animation["name"] = json!(new_name);
+        Ok(())
+    }
+
     /// Each node's parent.
     pub fn parents(&self) -> Vec<Option<usize>> {
         let mut parents = vec![None; items(&self.json, "nodes").count()];
@@ -204,7 +261,8 @@ impl Glb {
         (0..locals.len()).map(|i| world(i, locals, &parents, &mut worlds)).collect()
     }
 
-    /// The animation named `name`, one frame per key: its frame rate, and every node's transform in each frame.
+    /// The animation named `name`, one frame per key from its first: its frame rate, and every node's transform in each
+    /// frame.
     pub fn sample(&self, name: &str) -> Result<(f64, Vec<Vec<Trs>>)> {
         let animation = items(&self.json, "animations")
             .find(|animation| animation["name"].as_str() == Some(name))
@@ -223,7 +281,8 @@ impl Glb {
                 fps = ((times.len() - 1) as f64 / (times[times.len() - 1] - times[0]) as f64).round();
                 frames = vec![rest.clone(); times.len()];
             }
-            let evenly = times.iter().enumerate().all(|(k, &time)| (time as f64 - k as f64 / fps).abs() < 1e-4);
+            let evenly =
+                times.iter().enumerate().all(|(k, &time)| ((time - times[0]) as f64 - k as f64 / fps).abs() < 1e-4);
             if times.len() != frames.len() || !evenly {
                 bail!("{name}: every channel needs one key per frame");
             }
