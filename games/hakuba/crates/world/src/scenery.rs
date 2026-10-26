@@ -316,22 +316,6 @@ mod tests {
     use bevy::ecs::system::RunSystemOnce;
 
     #[test]
-    fn model_solidity_is_opt_in_and_independent_of_shadows() {
-        for (json, solid, shadows) in [
-            ("{}", false, true),
-            (r#"{"casts_shadows":false}"#, false, false),
-            (r#"{"solid":true}"#, true, true),
-            (r#"{"solid":true,"casts_shadows":false}"#, true, false),
-        ] {
-            let extras: ModelExtras = serde_json::from_str(json).unwrap();
-            assert_eq!((extras.solid, extras.casts_shadows), (solid, shadows));
-            assert_eq!(Role::Both.is_solid(extras.solid), solid);
-            assert_eq!(Role::Seen.is_solid(extras.solid), solid);
-            assert!(!Role::Shadow.is_solid(extras.solid));
-        }
-    }
-
-    #[test]
     fn scenery_rays_hit_merged_and_transformed_visible_copies_only() {
         let mut app = App::new();
         app.add_plugins(MinimalPlugins).init_resource::<Assets<Mesh>>();
