@@ -29,6 +29,7 @@ pub fn curve(course: &[[f64; 2]]) -> Vec<(DVec2, DVec2)> {
     for pair in fine.windows(2) {
         lengths.push(lengths.last().unwrap() + pair[0].distance(pair[1]));
     }
+    assert!(*lengths.last().unwrap() > 0.0, "a curve must have nonzero length");
     let mut points = Vec::new();
     let mut segment = 0;
     let mut along = 0.0;
@@ -40,7 +41,7 @@ pub fn curve(course: &[[f64; 2]]) -> Vec<(DVec2, DVec2)> {
         points.push(fine[segment].lerp(fine[segment + 1], t));
         along += 1.0;
     }
-    if points.last().unwrap().distance(end) < 1e-4 {
+    if points.len() > 1 && points.last().unwrap().distance(end) < 1e-4 {
         *points.last_mut().unwrap() = end;
     } else {
         points.push(end);
@@ -51,13 +52,33 @@ pub fn curve(course: &[[f64; 2]]) -> Vec<(DVec2, DVec2)> {
         .collect()
 }
 
+/// How far `p` is from the nearest point of `curve`, and the index of that point.
+pub fn nearest(curve: &[(DVec2, DVec2)], p: DVec2) -> (f64, usize) {
+    curve
+        .iter()
+        .enumerate()
+        .map(|(k, (q, _))| (q.distance(p), k))
+        .min_by(|a, b| a.0.total_cmp(&b.0))
+        .expect("a curve has points")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
+    #[should_panic(expected = "a curve must have nonzero length")]
+    fn rejects_zero_length() {
+        curve(&[[1.0, 1.0], [1.0, 1.0]]);
+    }
+
+    #[test]
     fn sampling_keeps_endpoints_and_valid_spaced_segments() {
-        for course in [vec![[16.0, 64.0], [112.0, 64.0]], vec![[0.0, 0.0], [7.0, 11.0], [23.0, 8.0]]] {
+        for course in [
+            vec![[16.0, 64.0], [112.0, 64.0]],
+            vec![[0.0, 0.0], [7.0, 11.0], [23.0, 8.0]],
+            vec![[0.0, 0.0], [0.00001, 0.0]],
+        ] {
             let sampled = curve(&course);
             assert_eq!(sampled.first().unwrap().0, DVec2::from_array(course[0]));
             assert_eq!(sampled.last().unwrap().0, DVec2::from_array(*course.last().unwrap()));
@@ -70,14 +91,4 @@ mod tests {
             );
         }
     }
-}
-
-/// How far `p` is from the nearest point of `curve`, and the index of that point.
-pub fn nearest(curve: &[(DVec2, DVec2)], p: DVec2) -> (f64, usize) {
-    curve
-        .iter()
-        .enumerate()
-        .map(|(k, (q, _))| (q.distance(p), k))
-        .min_by(|a, b| a.0.total_cmp(&b.0))
-        .expect("a curve has points")
 }

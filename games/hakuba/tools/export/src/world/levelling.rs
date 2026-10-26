@@ -60,13 +60,12 @@ impl Strip {
             distances.push(distances.last().unwrap() + pair[0].0.distance(pair[1].0));
         }
         let length = *distances.last().unwrap();
-        if let Some(profile) = &self.profile {
-            if length <= 0.0
+        if let Some(profile) = &self.profile
+            && (length <= 0.0
                 || !length.is_finite()
-                || !profile.heights.iter().chain(&profile.grades).all(|v| v.is_finite())
-            {
-                bail!("invalid levelled strip profile");
-            }
+                || !profile.heights.iter().chain(&profile.grades).all(|v| v.is_finite()))
+        {
+            bail!("invalid levelled strip profile");
         }
         let reach = self.half_width_m + self.shoulder_m;
         let (low, high) =
