@@ -1,7 +1,7 @@
 # A tall cedar, 16 m high, its needles in tiers narrowing to its tip.
 kind = "plant"
 seed = 6
-inputs_sha256 = "72abda085d015d277e9548df01a03ff15b81e35ef8df213a2cb5d7d6ec5892a6"
+inputs_sha256 = "8f4f324a351933e5c47df2a3f3e827a844397395c276427e728fa7a8a3a5bfa9"
 
 [wood]
 texture = "bark"
@@ -21,7 +21,7 @@ card_m = 1.0
 normals_from = [0, 0, 8.8]
 vertical_bias = 0.3
 shell = 0.35
-sway_m = 0.16
+sway_m = 0.3
 lobes = [
     { at = [0.04, -0.01, 3.04], radii = [1.98, 1.98, 1.84] },
     { at = [-0.06, 0.1, 4.52], radii = [2.18, 2.18, 1.84] },

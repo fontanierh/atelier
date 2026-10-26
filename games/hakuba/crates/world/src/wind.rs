@@ -1,8 +1,9 @@
-//! The wind, as in Yorimichi: its strength rises and falls with a quicker flutter, and two slow waves roll across the
-//! world, so neighbouring plants lean together and far ones move out of step. A model's export says how far each vertex
-//! sways, in metres, in its second texture coordinates: leaves and the tips of blades fully, roots and trunks not at
-//! all. A part that sways is drawn with its own material and the vertex shader in `wind.wesl`, in every pass, so its
-//! shadow sways with it. Yorimichi also pushed plants away from the player; Hakuba has no one walking yet.
+//! The wind: plants lean downwind as gusts roll across the world, their branches sway around that, each part at its
+//! own point in the swing, and their leaves flutter. A model's export says how far each vertex bends, in metres, and
+//! its leaf's phase, in its second texture coordinates: a plant bends from its foot, so its top and the outside of its
+//! crown move most. A part that sways is drawn with its own material and the vertex shader in `wind.wesl`, in every
+//! pass, so its shadow sways with it. Yorimichi also pushed plants away from the player; Hakuba has no one walking
+//! yet.
 
 use bevy::asset::embedded_asset;
 use bevy::ecs::system::SystemParam;

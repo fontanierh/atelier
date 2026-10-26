@@ -340,8 +340,7 @@ impl Glb {
             attributes["COLOR_0"] = json!(self.add_floats(&flat(&mesh.colours), "VEC4", false));
         }
         if !mesh.sway.is_empty() {
-            let sway: Vec<[f32; 2]> = mesh.sway.iter().map(|&metres| [metres, 0.0]).collect();
-            attributes["TEXCOORD_1"] = json!(self.add_floats(&flat(&sway), "VEC2", false));
+            attributes["TEXCOORD_1"] = json!(self.add_floats(&flat(&mesh.sway), "VEC2", false));
         }
         let indices = self.add_indices(&mesh.indices);
         json!({ "attributes": attributes, "indices": indices, "material": mesh.material })
@@ -529,9 +528,11 @@ pub struct Mesh {
     pub normals: Vec<[f32; 3]>,
     pub uvs: Vec<[f32; 2]>,
     pub colours: Vec<[f32; 4]>,
-    /// How far each vertex sways in the wind at full gust, in metres, for a mesh that sways: written as the first
-    /// number of a second set of texture coordinates, which the game's wind material reads.
-    pub sway: Vec<f32>,
+    /// How each vertex moves in the wind, for a mesh that sways: how far it bends, in metres, and the phase of its
+    /// part (a leaf card or a blade), from 0 to 1, so neighbouring parts flutter out of step, or -1 for wood, which
+    /// does not flutter. Written as a second set
+    /// of texture coordinates, which the game's wind material reads.
+    pub sway: Vec<[f32; 2]>,
     pub indices: Vec<u32>,
     pub material: usize,
 }

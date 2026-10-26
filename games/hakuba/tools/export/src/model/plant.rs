@@ -1,8 +1,12 @@
 //! The `plant` kind: a tree, bush or tuft of grass. A tree or bush is wood, a tube of bark from below the ground up
 //! with a branch to each clump of leaves, and leaves, square cards cut out of a leaf image and scattered through
-//! those clumps. Grass is a tuft of curved blades coloured per vertex, casting no shadow. Leaves and blades carry how
-//! far each vertex sways in the wind; the wood stands still. A plant whose leaves set `middle_cards` also exports a
-//! `middle` version, its trunk and fewer, larger cards covering the same area, with no branches.
+//! those clumps. Grass is a tuft of curved blades coloured per vertex, casting no shadow. A plant whose leaves set
+//! `middle_cards` also exports a `middle` version, its trunk and fewer, larger cards covering the same area, with no
+//! branches.
+//!
+//! Each vertex carries how far it bends in the wind: a plant bends from its foot, so its top and the outside of its
+//! crown move most, and its foot and the inside of its crown hardly at all. A blade bends from its root. Each card and
+//! blade also carries its own phase, so neighbouring leaves flutter out of step.
 
 use std::f64::consts::{PI, TAU};
 use std::path::Path;
@@ -69,7 +73,8 @@ struct Leaves {
     vertical_bias: f64,
     /// The share of cards pushed from a clump's inside out to its outer part, where they are seen.
     shell: f64,
-    /// How far the cards sway in the wind, in metres: a usual gust moves them about half that. The wood stands still.
+    /// How far the top of the crown's outside bends in the wind, in metres, in a usual gust. The rest of the plant,
+    /// wood included, bends less the lower and further in it is.
     sway_m: f64,
 }
 
@@ -99,8 +104,7 @@ struct Tuft {
     colours: Vec<Colour>,
     /// How much darker a blade is at its root than at its tip.
     root_shade: f64,
-    /// How far a blade's tip sways in the wind, in metres: a usual gust moves it about half that. Its root stands
-    /// still.
+    /// How far a blade's tip bends in the wind, in metres, in a usual gust. Its root stands still.
     sway_m: f64,
 }
 
@@ -123,14 +127,18 @@ pub fn export(settings: &Settings, output: &Path) -> Result<()> {
     let (mut full, mut middle): (Version, Version) = (Vec::new(), Vec::new());
     let bark = settings.wood.as_ref().map(|wood| crate::uri_of_texture(&wood.texture)).transpose()?;
     let leaves = settings.leaves.as_ref().map(|leaves| crate::uri_of_texture(&leaves.texture)).transpose()?;
+    let sway_m = settings.leaves.as_ref().map_or(0.0, |leaves| leaves.sway_m);
     if let (Some(wood), Some(uri)) = (&settings.wood, &bark) {
         let trunk = points(&wood.trunk);
+        let top = top(wood, settings.leaves.as_ref());
         let mut mesh = Mesh::default();
         tube(&mut mesh, &trunk, 8, BARK_M);
+        bend(&mut mesh, sway_m, top);
         middle.push((mesh.clone(), Material::textured("bark", uri)));
         if let Some(leaves) = &settings.leaves {
             branches(&mut mesh, wood, &trunk, &leaves.lobes, &mut random);
         }
+        bend(&mut mesh, sway_m, top);
         full.push((mesh, Material::textured("bark", uri)));
     }
     if let (Some(leaves), Some(uri)) = (&settings.leaves, &leaves) {
@@ -153,6 +161,29 @@ pub fn export(settings: &Settings, output: &Path) -> Result<()> {
     let has_middle = settings.leaves.as_ref().is_some_and(|leaves| leaves.middle_cards.is_some());
     // So many tufts cast no shadow: the ground under them is shaded anyway.
     write(full, has_middle.then_some(middle), settings.tuft.is_none(), &[], output)
+}
+
+/// How high the plant reaches: the top of its crown, or of its trunk.
+fn top(wood: &Wood, leaves: Option<&Leaves>) -> f64 {
+    let crown = leaves.iter().flat_map(|leaves| &leaves.lobes).map(|lobe| lobe.at[2] + lobe.radii[2]);
+    wood.trunk.iter().map(|point| point.at[2]).chain(crown).fold(0.0, f64::max)
+}
+
+/// How far a point at height `z` of a plant `top` high bends, for a plant whose top bends `sway_m`: as a stem bends
+/// from its foot, with the square of its height.
+fn bending(sway_m: f64, z: f64, top: f64) -> f64 {
+    sway_m * (z.max(0.0) / top).min(1.0).powi(2)
+}
+
+/// Gives each vertex of the wood how far it bends. Wood does not flutter.
+fn bend(mesh: &mut Mesh, sway_m: f64, top: f64) {
+    // glTF's y is the plant's z.
+    mesh.sway = mesh.positions.iter().map(|p| [bending(sway_m, f64::from(p[1]), top) as f32, -1.0]).collect();
+}
+
+/// The phase of a plant's `k`th card or blade: the golden ratio's multiples spread any run of them evenly over 0 to 1.
+fn phase(k: usize) -> f32 {
+    (k as f64 * 0.618_034).fract() as f32
 }
 
 fn points(points: &[Point]) -> Vec<(DVec3, f64)> {
@@ -196,6 +227,7 @@ fn cards(leaves: &Leaves, count: usize, size: f64, random: &mut Random) -> Mesh 
     let total: f64 = volumes.iter().sum();
     let normals_from = DVec3::from_array(leaves.normals_from);
     let normal = |at: DVec3| (at - normals_from).normalize_or(DVec3::Z) + DVec3::Z * leaves.vertical_bias;
+    let top = leaves.lobes.iter().map(|lobe| lobe.at[2] + lobe.radii[2]).fold(0.0, f64::max);
     for (lobe, volume) in leaves.lobes.iter().zip(volumes) {
         let (centre, radii) = (DVec3::from_array(lobe.at), DVec3::from_array(lobe.radii));
         for _ in 0..(count as f64 * volume / total).round() as usize {
@@ -211,8 +243,12 @@ fn cards(leaves: &Leaves, count: usize, size: f64, random: &mut Random) -> Mesh 
             let low = DVec2::new((cell % 2) as f64 * 0.5, (cell / 2) as f64 * 0.5);
             // Cards deep inside the crown are darker, as the leaves around them shade them.
             let shade = 0.22 + 0.78 * p.length().min(1.0);
-            card(&mut mesh, centre + p * radii, width, turn, normal, (low, 0.5), shade);
-            mesh.sway.resize(mesh.positions.len(), leaves.sway_m as f32);
+            let at = centre + p * radii;
+            card(&mut mesh, at, width, turn, normal, (low, 0.5), shade);
+            // A card moves as one piece. One near the outside of its clump bends more than one deep inside.
+            let outside = 0.3 + 0.7 * p.length().min(1.0);
+            let sway = [(bending(leaves.sway_m, at.z, top) * outside) as f32, phase(mesh.positions.len() / 4)];
+            mesh.sway.resize(mesh.positions.len(), sway);
         }
     }
     mesh
@@ -237,7 +273,7 @@ fn blades(tuft: &Tuft, random: &mut Random) -> Mesh {
     // How a blade narrows: at height t, from 0 at the root to 1 at the tip, it keeps 1 - t^TAPER of its width.
     const TAPER: f64 = 1.7;
     let mut mesh = Mesh::default();
-    for _ in 0..tuft.blades {
+    for blade in 0..tuft.blades {
         let bearing = random.range([0.0, TAU]);
         let out = DVec2::from_angle(bearing).extend(0.0);
         // A blade faces mostly out from the centre, turned a little either way.
@@ -256,7 +292,7 @@ fn blades(tuft: &Tuft, random: &mut Random) -> Mesh {
             let rgba = Some([shade.x, shade.y, shade.z, 1.0]);
             let left = vertex(&mut mesh, at - across * half, normal, DVec2::new(0.0, t), rgba);
             let right = vertex(&mut mesh, at + across * half, normal, DVec2::new(1.0, t), rgba);
-            mesh.sway.resize(mesh.positions.len(), (tuft.sway_m * t * t) as f32);
+            mesh.sway.resize(mesh.positions.len(), [(tuft.sway_m * t * t) as f32, phase(blade)]);
             rows.push((left, right));
         }
         for pair in rows.windows(2) {

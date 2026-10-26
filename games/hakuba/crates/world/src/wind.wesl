@@ -1,5 +1,5 @@
 // The wind (wind.rs says what it does): Bevy's mesh vertex shaders for the main pass and the prepass, each moving a
-// vertex along the wind by how far it sways, the first of its second texture coordinates. Plants have no morph
+// vertex in the wind by how far it bends and its leaf's phase, its second texture coordinates. Plants have no morph
 // targets or skins, so those are left out.
 
 @if(PREPASS_PIPELINE)
@@ -19,18 +19,37 @@ import bevy_pbr::render::{mesh_functions, view_transformations::position_world_t
 // The way the wind blows, across the ground (x and z).
 const WIND: vec2<f32> = vec2<f32>(0.3, -0.95);
 
-// How far a vertex that sways `metres` moves at `time`, at `at`, as in Yorimichi: the wind's strength rises and falls
-// over seconds, about 1, with a quicker flutter, and two slow waves roll across the world on top of it, so
-// neighbouring plants lean together and far ones out of step. A vertex usually moves about half its `metres`, and at
-// the strongest gusts nearly three times as far.
-fn sway(at: vec3<f32>, time: f32, metres: f32) -> vec3<f32> {
-    let strength = max(
-        0.15,
-        1.0 + 0.45 * sin(0.37 * time + 0.04 * at.x) + 0.3 * sin(1.1 * time + 0.07 * at.z) + 0.15 * sin(2.9 * time),
+const TAU: f32 = 6.2831853;
+
+// How strongly the wind blows at `at` at `time`: about 1, rising and falling over several seconds in gusts that roll
+// across the world, so plants a few tens of metres apart are pushed at different times. Never below 0.1: the wind
+// pushes plants downwind and lets them spring back, rather than swinging them evenly both ways.
+fn gust(at: vec3<f32>, time: f32) -> f32 {
+    let slow = 0.45 * sin(0.31 * time + 0.031 * at.x + 0.017 * at.z);
+    let middle = 0.3 * sin(0.73 * time - 0.05 * at.z + 1.3);
+    let quick = 0.2 * sin(1.37 * time + 0.043 * at.x + 2.1);
+    return max(0.1, 1.0 + slow + middle + quick);
+}
+
+// How far a vertex at `at` moves at `time`, for one that bends `bend` metres in a usual gust and belongs to a leaf or
+// blade of phase `phase` (wood, below 0, does not flutter). Three motions add up, as in a real tree: the whole plant
+// leans downwind as the gusts come and go; its branches sway around that, each part at its own point in the swing,
+// along and across the wind; and each leaf flutters quickly on its own. All grow with the bend, so a plant's foot
+// and the inside of its crown stay nearly still.
+fn sway(at: vec3<f32>, time: f32, bend: f32, phase: f32) -> vec3<f32> {
+    let strength = gust(at, time);
+    let along = vec3<f32>(WIND.x, 0.0, WIND.y) / length(WIND);
+    let across = vec3<f32>(-along.z, 0.0, along.x);
+    let lean = along * strength;
+    let branches = 0.3 * strength * (along * sin(2.1 * time + dot(at, vec3<f32>(0.8, 0.7, 0.5)))
+        + across * 0.7 * sin(1.6 * time + dot(at, vec3<f32>(-0.4, 0.6, 0.9)) + 1.0));
+    let angle = TAU * phase;
+    let flutter = 0.12 * strength * step(0.0, phase) * vec3<f32>(
+        sin(13.0 * time + 3.0 * angle),
+        0.6 * sin(17.0 * time + 5.0 * angle),
+        sin(11.0 * time + 7.0 * angle),
     );
-    let gust = 0.6 * sin(0.28 * time + 0.11 * at.x + 0.16 * at.z) + 0.3 * sin(0.7 * time + 0.2 * at.y) + 0.5;
-    let along = normalize(WIND) * strength * gust * metres;
-    return vec3<f32>(along.x, 0.0, along.y);
+    return (lean + branches + flutter) * bend;
 }
 
 @if(!PREPASS_PIPELINE)
@@ -40,7 +59,7 @@ fn vertex(vertex_in: Vertex) -> VertexOutput {
     let vertex = decompress_vertex(vertex_in, vertex_in.instance_index);
     let world_from_local = mesh_functions::get_world_from_local(vertex_in.instance_index);
     let still = mesh_functions::mesh_position_local_to_world(world_from_local, vec4<f32>(vertex.position, 1.0));
-    out.world_position = vec4<f32>(still.xyz + sway(still.xyz, globals.time, vertex.uv_b.x), 1.0);
+    out.world_position = vec4<f32>(still.xyz + sway(still.xyz, globals.time, vertex.uv_b.x, vertex.uv_b.y), 1.0);
     out.position = position_world_to_clip(out.world_position.xyz);
     out.world_normal = mesh_functions::mesh_normal_local_to_world(vertex.normal, vertex_in.instance_index);
     @if(VERTEX_UVS_A)
@@ -66,7 +85,7 @@ fn vertex(vertex_in: Vertex) -> VertexOutput {
     let vertex = decompress_vertex(vertex_in, vertex_in.instance_index);
     let world_from_local = mesh_functions::get_world_from_local(vertex_in.instance_index);
     let still = mesh_functions::mesh_position_local_to_world(world_from_local, vec4<f32>(vertex.position, 1.0));
-    out.world_position = vec4<f32>(still.xyz + sway(still.xyz, globals.time, vertex.uv_b.x), 1.0);
+    out.world_position = vec4<f32>(still.xyz + sway(still.xyz, globals.time, vertex.uv_b.x, vertex.uv_b.y), 1.0);
     out.position = position_world_to_clip(out.world_position.xyz);
     @if(UNCLIPPED_DEPTH_ORTHO_EMULATION) {
         out.unclipped_depth = out.position.z;
@@ -89,7 +108,8 @@ fn vertex(vertex_in: Vertex) -> VertexOutput {
     @if(MOTION_VECTOR_PREPASS) {
         let previous_from_local = mesh_functions::get_previous_world_from_local(vertex_in.instance_index);
         let before = mesh_functions::mesh_position_local_to_world(previous_from_local, vec4<f32>(vertex.position, 1.0));
-        out.previous_world_position = vec4<f32>(before.xyz + sway(still.xyz, globals.time, vertex.uv_b.x), 1.0);
+        let swayed = sway(still.xyz, globals.time, vertex.uv_b.x, vertex.uv_b.y);
+        out.previous_world_position = vec4<f32>(before.xyz + swayed, 1.0);
     }
     @if(VERTEX_OUTPUT_INSTANCE_INDEX)
     out.instance_index = vertex_in.instance_index;
