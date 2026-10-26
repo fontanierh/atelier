@@ -1,6 +1,10 @@
 //! How the world looks: a sky dome, a low warm sun behind the traveller, a blue haze that thickens with distance,
-//! and the camera's colour grade (tone curve, bloom, vignette) and painterly filter.
+//! and the camera's colour grade (tone curve, bloom, vignette) and painterly filter. Edges are smoothed by temporal
+//! anti-aliasing, as in Yorimichi: the camera shifts by part of a pixel each frame and each pixel blends the frames, so
+//! grass and other edges thinner than a pixel stay whole and steady as the camera moves. It costs about as little as
+//! no smoothing at all.
 
+use bevy::anti_alias::taa::TemporalAntiAliasing;
 use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::light::CascadeShadowConfigBuilder;
 use bevy::mesh::VertexAttributeValues;
@@ -61,6 +65,8 @@ pub fn camera() -> impl Bundle {
     (
         Projection::Perspective(PerspectiveProjection { far: FAR_M, ..default() }),
         Tonemapping::AcesFitted,
+        Msaa::Off,
+        TemporalAntiAliasing::default(),
         Bloom::NATURAL,
         Vignette { intensity: 0.16, ..default() },
         Painterly::default(),

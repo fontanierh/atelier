@@ -221,10 +221,14 @@ fn in_ball(random: &mut Random) -> DVec3 {
     }
 }
 
-/// The blades of a tuft: each a strip from its root below the ground, narrowing to a point at its tip, bent out from
-/// the tuft's centre. Its normals lean up, so the tuft is lit as soft grass rather than as flat strips.
+/// The blades of a tuft: each a strip from its root below the ground, keeping most of its width until it narrows to a
+/// point near its tip, bent out from the tuft's centre. A blade narrowing evenly would be thinner than a pixel over its
+/// top half at any distance, and show as a fuzz of broken slivers. Its normals lean up, so the tuft is lit as soft grass
+/// rather than as flat strips.
 fn blades(tuft: &Tuft, random: &mut Random) -> Mesh {
     const SEGMENTS: usize = 4;
+    // How a blade narrows: at height t, from 0 at the root to 1 at the tip, it keeps 1 - t^TAPER of its width.
+    const TAPER: f64 = 1.7;
     let mut mesh = Mesh::default();
     for _ in 0..tuft.blades {
         let bearing = random.range([0.0, TAU]);
@@ -240,7 +244,7 @@ fn blades(tuft: &Tuft, random: &mut Random) -> Mesh {
         for k in 0..=SEGMENTS {
             let t = k as f64 / SEGMENTS as f64;
             let at = root + DVec3::Z * (height + tuft.depth_m) * t + out * curl * t * t;
-            let half = width / 2.0 * (1.0 - t);
+            let half = width / 2.0 * (1.0 - t.powf(TAPER));
             let shade = colour * (tuft.root_shade + (1.0 - tuft.root_shade) * t);
             let rgba = Some([shade.x, shade.y, shade.z, 1.0]);
             let left = vertex(&mut mesh, at - across * half, normal, DVec2::new(0.0, t), rgba);

@@ -1,13 +1,13 @@
-# A tuft of ten green blades, about 0.4 m high.
+# A tuft of eight green blades, about 0.4 m high.
 kind = "plant"
 seed = 40
-inputs_sha256 = "9190e48d9eb9a9e801c1591d7fef74cb2917cdc09fa87ad984197e56e06cb186"
+inputs_sha256 = "98637091c67259840e280430f199276c5ec4da1f795694aa4728cb1e6464f67a"
 
 [tuft]
-blades = 10
+blades = 8
 spread_m = [0.06, 0.2]
 height_m = [0.32, 0.53]
-width_m = [0.035, 0.06]
+width_m = [0.055, 0.095]
 curl_m = [0.14, 0.27]
 depth_m = 0.06
 root_shade = 0.6
