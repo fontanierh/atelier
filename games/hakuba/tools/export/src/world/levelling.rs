@@ -20,9 +20,32 @@ pub struct Strip {
     /// How far along the centre line its heights are smoothed: the spread, in metres, of the bell curve each
     /// height is averaged over.
     pub smoothing_m: f64,
+    /// A prescribed height and grade at each end, or the smoothed existing ground when absent.
+    pub profile: Option<Profile>,
+}
+
+/// Heights and signed grades at the start and end of a strip, in metres and metres per metre.
+pub struct Profile {
+    pub heights: [f64; 2],
+    pub grades: [f64; 2],
+}
+
+impl Profile {
+    fn height(&self, at: f64, length: f64) -> f64 {
+        let t = (at / length).clamp(0.0, 1.0);
+        let t2 = t * t;
+        let t3 = t2 * t;
+        (2.0 * t3 - 3.0 * t2 + 1.0) * self.heights[0]
+            + (t3 - 2.0 * t2 + t) * length * self.grades[0]
+            + (-2.0 * t3 + 3.0 * t2) * self.heights[1]
+            + (t3 - t2) * length * self.grades[1]
+    }
 }
 
 impl Strip {
+    /// @cc [owner:fontanierh,label:correctness] authored-strip-grade
+    /// An authored profile MUST use distance along the centre line and meet its declared endpoint heights and
+    /// grades. With no profile, the strip MUST retain its smoothed existing-ground height behavior.
     /// Levels `ground` along the strip. Fails if part of the centre line has no ground.
     pub fn level(&self, ground: &mut Ground) -> Result<()> {
         let line = curve(&self.course);
@@ -32,6 +55,19 @@ impl Strip {
             heights.push(height);
         }
         let heights = smooth(&heights, self.smoothing_m);
+        let mut distances = vec![0.0];
+        for pair in line.windows(2) {
+            distances.push(distances.last().unwrap() + pair[0].0.distance(pair[1].0));
+        }
+        let length = *distances.last().unwrap();
+        if let Some(profile) = &self.profile {
+            if length <= 0.0
+                || !length.is_finite()
+                || !profile.heights.iter().chain(&profile.grades).all(|v| v.is_finite())
+            {
+                bail!("invalid levelled strip profile");
+            }
+        }
         let reach = self.half_width_m + self.shoulder_m;
         let (low, high) =
             line.iter().fold((DVec2::INFINITY, DVec2::NEG_INFINITY), |(low, high), &(p, _)| (low.min(p), high.max(p)));
@@ -46,7 +82,11 @@ impl Strip {
             }
             let k = (along.floor() as usize).min(heights.len() - 1);
             let t = along - k as f64;
-            let level = heights[k] + (heights[(k + 1).min(heights.len() - 1)] - heights[k]) * t;
+            let next = (k + 1).min(heights.len() - 1);
+            let level = match &self.profile {
+                Some(profile) => profile.height(distances[k] + (distances[next] - distances[k]) * t, length),
+                None => heights[k] + (heights[next] - heights[k]) * t,
+            };
             if distance <= self.half_width_m {
                 return level;
             }
@@ -184,6 +224,45 @@ mod tests {
     use crate::world::{Detail, Tile};
 
     #[test]
+    fn authored_profile_preserves_a_plane_and_matches_endpoint_grades() {
+        let profile = Profile { heights: [3.0, 8.0], grades: [0.05, 0.05] };
+        for k in 0..=100 {
+            let x = k as f64;
+            assert!((profile.height(x, 100.0) - (3.0 + x * 0.05)).abs() < 1e-10);
+        }
+        let curved = Profile { heights: [2.0, 12.0], grades: [0.02, 0.08] };
+        let delta = 0.001;
+        let start = (curved.height(delta, 100.0) - curved.height(0.0, 100.0)) / delta;
+        let end = (curved.height(100.0, 100.0) - curved.height(100.0 - delta, 100.0)) / delta;
+        assert!((start - curved.grades[0]).abs() < 1e-5);
+        assert!((end - curved.grades[1]).abs() < 1e-5);
+    }
+
+    #[test]
+    fn authored_strip_draws_its_grade_over_rough_ground() {
+        let rough = |i: usize, j: usize| ((i as f32 * 0.7).sin() + (j as f32 * 0.4).cos()) * 2.0;
+        let original = Ground::page(64, 2.0, rough);
+        let mut ground = Ground::page(64, 2.0, rough);
+        let strip = Strip {
+            course: vec![[16.0, 64.0], [112.0, 64.0]],
+            half_width_m: 4.0,
+            shoulder_m: 10.0,
+            smoothing_m: 8.0,
+            profile: Some(Profile { heights: [3.0, 7.8], grades: [0.05, 0.05] }),
+        };
+        strip.level(&mut ground).unwrap();
+        let tile = Tile { columns: (0, 64), rows: (0, 64) };
+        let drawn = Surface::new(&tile.ground(&ground, Detail::Full, 0, 1.0));
+        for x in 20..=108 {
+            for y in 63..=65 {
+                let height = drawn.height(DVec2::new(x as f64, y as f64)).unwrap();
+                assert!((height - (3.0 + (x as f64 - 16.0) * 0.05)).abs() < 1e-5);
+            }
+        }
+        assert_eq!(ground.height(DVec2::new(4.0, 4.0)), original.height(DVec2::new(4.0, 4.0)));
+    }
+
+    #[test]
     fn pads_level_the_drawn_full_and_middle_footprint_and_leave_distant_ground() {
         let original = Ground::page(64, 2.0, |i, j| (i as f32 * 0.13) + (j as f32 * 0.07));
         let mut ground = Ground::page(64, 2.0, |i, j| (i as f32 * 0.13) + (j as f32 * 0.07));
@@ -221,7 +300,8 @@ mod tests {
             5.0 + 0.055 * (y - 85.0) + 0.015 * (x - 100.0)
         });
         let course = [[10.0, 36.0], [35.0, 48.0], [55.0, 64.0], [75.0, 68.0], [90.0, 72.0], [100.0, 82.0]];
-        let strip = Strip { course: course.to_vec(), half_width_m: 4.0, shoulder_m: 10.0, smoothing_m: 8.0 };
+        let strip =
+            Strip { course: course.to_vec(), half_width_m: 4.0, shoulder_m: 10.0, smoothing_m: 8.0, profile: None };
         strip.level(&mut ground).unwrap();
         let pad = Pad {
             centre: [100.0, 85.0],
@@ -288,7 +368,8 @@ mod tests {
     fn an_overlay_on_a_levelled_strip_does_not_crease() {
         let mut ground = cut_ground();
         assert!(draped(&ground) > 5.0, "the cut ground creases the overlay");
-        let strip = Strip { course: COURSE.to_vec(), half_width_m: 4.0, shoulder_m: 10.0, smoothing_m: 8.0 };
+        let strip =
+            Strip { course: COURSE.to_vec(), half_width_m: 4.0, shoulder_m: 10.0, smoothing_m: 8.0, profile: None };
         strip.level(&mut ground).unwrap();
         let crease = draped(&ground);
         assert!(crease < 1.0, "the overlay creases by {crease:.2}° on the levelled strip");
@@ -300,7 +381,8 @@ mod tests {
     fn a_strip_is_level_across_and_leaves_the_ground_beyond() {
         let before = cut_ground();
         let mut ground = cut_ground();
-        let strip = Strip { course: COURSE.to_vec(), half_width_m: 4.0, shoulder_m: 6.0, smoothing_m: 8.0 };
+        let strip =
+            Strip { course: COURSE.to_vec(), half_width_m: 4.0, shoulder_m: 6.0, smoothing_m: 8.0, profile: None };
         strip.level(&mut ground).unwrap();
         let line = curve(&COURSE);
         for &(at, direction) in &line[20..100] {

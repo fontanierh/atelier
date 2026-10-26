@@ -3,8 +3,9 @@
 
 use glam::DVec2;
 
-/// A point every metre along a Catmull-Rom curve through `course`, from its first point, each with the curve's
-/// direction there.
+/// @cc [owner:fontanierh,label:correctness] curve-keeps-authored-endpoints
+/// A sampled curve MUST include both authored endpoints.
+/// Samples are a metre apart, with a shorter final segment when needed, and carry the curve's direction there.
 pub fn curve(course: &[[f64; 2]]) -> Vec<(DVec2, DVec2)> {
     let control: Vec<DVec2> = course.iter().map(|&[x, y]| DVec2::new(x, y)).collect();
     let padded: Vec<DVec2> =
@@ -22,6 +23,8 @@ pub fn curve(course: &[[f64; 2]]) -> Vec<(DVec2, DVec2)> {
             );
         }
     }
+    let end = *control.last().unwrap();
+    fine.push(end);
     let mut lengths = vec![0.0];
     for pair in fine.windows(2) {
         lengths.push(lengths.last().unwrap() + pair[0].distance(pair[1]));
@@ -37,10 +40,36 @@ pub fn curve(course: &[[f64; 2]]) -> Vec<(DVec2, DVec2)> {
         points.push(fine[segment].lerp(fine[segment + 1], t));
         along += 1.0;
     }
+    if points.last().unwrap().distance(end) < 1e-4 {
+        *points.last_mut().unwrap() = end;
+    } else {
+        points.push(end);
+    }
     let last = points.len() - 1;
     (0..points.len())
         .map(|i| (points[i], (points[(i + 1).min(last)] - points[i.saturating_sub(1)]).normalize()))
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sampling_keeps_endpoints_and_valid_spaced_segments() {
+        for course in [vec![[16.0, 64.0], [112.0, 64.0]], vec![[0.0, 0.0], [7.0, 11.0], [23.0, 8.0]]] {
+            let sampled = curve(&course);
+            assert_eq!(sampled.first().unwrap().0, DVec2::from_array(course[0]));
+            assert_eq!(sampled.last().unwrap().0, DVec2::from_array(*course.last().unwrap()));
+            for pair in sampled.windows(2) {
+                let distance = pair[0].0.distance(pair[1].0);
+                assert!(distance > 0.0 && distance <= 1.001);
+            }
+            assert!(
+                sampled.iter().all(|(_, direction)| direction.is_finite() && (direction.length() - 1.0).abs() < 1e-10)
+            );
+        }
+    }
 }
 
 /// How far `p` is from the nearest point of `curve`, and the index of that point.
