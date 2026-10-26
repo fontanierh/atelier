@@ -28,7 +28,7 @@ impl Plugin for SceneryPlugin {
 
 /// Reading tiles' data nodes and spawning their copies.
 #[derive(SystemSet, Clone, PartialEq, Eq, Hash, Debug)]
-struct Placing;
+pub struct Placing;
 
 /// A tile's data node: the model, relative to the tile's file, the tile's version, and five numbers per copy: its
 /// position, its turn about y and its scale.
@@ -47,11 +47,15 @@ struct ModelExtras {
 
 /// Copies waiting for their model to load.
 #[derive(Component)]
-struct Waiting {
+pub struct Waiting {
     model: Handle<Gltf>,
     middle: bool,
     instances: Vec<f32>,
 }
+
+/// Copies spawned from their model, which may still be loading its textures.
+#[derive(Component)]
+pub struct Placed(pub Handle<Gltf>);
 
 /// Reads each data node of a tile as it spawns, and starts loading its model.
 fn read(
@@ -98,7 +102,7 @@ fn spawn(
 ) {
     for (entity, waiting) in &waiting {
         let Some(gltf) = gltfs.get(&waiting.model) else { continue };
-        commands.entity(entity).remove::<Waiting>();
+        commands.entity(entity).remove::<Waiting>().insert(Placed(waiting.model.clone()));
         let name = if waiting.middle && gltf.named_nodes.contains_key("middle") { "middle" } else { "full" };
         let Some(node) = gltf.named_nodes.get(name).and_then(|node| nodes.get(node)) else {
             warn!("a model has no {name} node");

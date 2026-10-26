@@ -29,6 +29,8 @@ cargo run                    # desktop
 The game opens on a menu: **World** enters the world, **Character viewer** shows each character and plays its clips.
 Escape goes back to the menu.
 
+The browser needs WebGPU: a recent Chrome, Edge or other Chromium browser, or Safari 26.
+
 Test in the browser first: what works there almost always works on desktop, but not always the other way round.
 
 ## Layout

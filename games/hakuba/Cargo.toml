@@ -26,7 +26,9 @@ edition.workspace = true
 publish.workspace = true
 
 [dependencies]
-bevy.workspace = true
+# In the browser the game draws with WebGPU rather than WebGL2: WebGL2 rebinds every texture of a material on every
+# draw, which cost two thirds of each frame.
+bevy = { workspace = true, features = ["webgpu"] }
 hakuba_characters.workspace = true
 hakuba_menu.workspace = true
 hakuba_screens.workspace = true

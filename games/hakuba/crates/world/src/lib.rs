@@ -2,8 +2,10 @@
 //! starts at the spawn and flies.
 
 mod fly;
+mod loading;
 mod look;
 mod painterly;
+mod pixels;
 mod scenery;
 mod tiles;
 
@@ -29,8 +31,10 @@ impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
             fly::FlyPlugin,
+            loading::LoadingPlugin,
             look::LookPlugin,
             painterly::PainterlyPlugin,
+            pixels::PixelsPlugin,
             scenery::SceneryPlugin,
             tiles::TilesPlugin,
         ))
@@ -48,6 +52,7 @@ fn spawn_world(
     assets: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut images: ResMut<Assets<Image>>,
 ) {
     commands.insert_resource(Index(assets.load(INDEX)));
     commands.spawn((
@@ -60,12 +65,14 @@ fn spawn_world(
             ..default()
         })),
     ));
+    let drawn = pixels::spawn(&mut commands, &mut images);
     commands.spawn((
         Name::new("Camera"),
         DespawnOnExit(Screen::World),
         Camera3d::default(),
         Fly::default(),
         look::camera(),
+        drawn,
     ));
 }
 
