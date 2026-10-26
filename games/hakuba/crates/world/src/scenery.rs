@@ -184,11 +184,12 @@ fn spawn(
 }
 
 /// Where a version that swaps by distance is drawn at all. A swaying part is drawn wherever it may show and its shader
-/// swaps it a card at a time (`wind.wesl`); a still one swaps whole, halfway. Either way at once, never a crossfade:
-/// Bevy's dithers its pixels in screen space, which shimmers under temporal anti-aliasing.
+/// swaps it a card at a time (`wind.wesl`); its middle version is drawn everywhere, since it alone casts the plant's
+/// shadows, which so hold still as the camera moves. A still part swaps whole, halfway. Either way at once, never a
+/// crossfade: Bevy's dithers its pixels in screen space, which shimmers under temporal anti-aliasing.
 fn range(swap: Swap, sways: bool) -> VisibilityRange {
     let halfway = FULL_UP_TO_M + SWAP_M / 2.0;
-    let (from, to) = if sways { (FULL_UP_TO_M, FULL_UP_TO_M + SWAP_M) } else { (halfway, halfway) };
+    let (from, to) = if sways { (0.0, FULL_UP_TO_M + SWAP_M) } else { (halfway, halfway) };
     match swap {
         Swap::Going => VisibilityRange::abrupt(0.0, to),
         Swap::Coming => VisibilityRange::abrupt(from, f32::MAX),

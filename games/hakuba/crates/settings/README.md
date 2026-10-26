@@ -8,7 +8,7 @@ the desktop.
 - **Wind**: how strongly the wind moves the plants, from still to twice the usual.
 - **Resolution**: how many pixels the world draws, as a share of the window's width and height, or **Auto**, the
   window's pixels up to 3 million.
-- **Shadows**: none, near (60 m around the camera) or far (150 m, in two cascades).
+- **Shadows**: none, near (60 m around the camera, in two cascades: sharp within 20 m) or far (150 m, in two cascades).
 - **Anti-aliasing**: temporal, which keeps thin edges such as grass steady, SMAA, or none.
 - **Detail**: how far from the camera tiles show in full.
 - **Frame rate**: at most 30 or 60 frames a second, or as many as the machine draws.

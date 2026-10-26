@@ -14,7 +14,9 @@ The world is drawn with temporal anti-aliasing, so what is drawn MUST NOT change
 unless it moves in the world: no screen-space dither, stochastic transparency or crossfading visibility range (the
 world crate makes any range abrupt and logs an error). Detail MUST swap whole primitives, as a plant's versions swap
 a card at a time. A vertex shader that moves geometry MUST write motion vectors that say how it moved, or say on
-purpose that it stood still, as the wind's do.
+purpose that it stood still, as the wind's do. It MUST also draw the main pass no further than its prepass did (the
+wind's `DEPTH_MARGIN`): the two passes are compiled apart, and a vertex a rounding error further fails the depth test
+and leaves a hole showing the clear colour for a frame.
 
 @cc [owner:fontanierh,label:correctness] nothing-appears-after-loading
 The world MUST NOT show until all it draws is ready: its tiles, models and textures loaded and every pipeline made,

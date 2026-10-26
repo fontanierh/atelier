@@ -28,9 +28,10 @@ way the spawn faces, with the camera behind it. It waits there until the tile un
   turns. Each player has one from the start, too small to see while it is put away, so it opens without a stall.
 - `grip.rs` closes the fists round the paraglider's two handles, which its export gives in its own frame. Each arm
   bends so its fist closes round its handle: the wrist goes where the space inside the fist, in front of the
-  knuckles, sits on the handle, the fist turned to run along it, thumb forward, and the elbow bends the way the clip
-  bends it. Then each finger curls until it lies on the handle. It works on the pose the animation has just written,
-  in the same frame the paraglider is placed, before either is drawn, so the hands never trail the bar.
+  knuckles, sits on the handle, the fist turned to run along it, thumb forward and palm facing in, and the elbow
+  bends the way the clip bends it. Then each finger curls until it lies on the handle. It works on the pose the
+  animation has just written, in the same frame the paraglider is placed, before either is drawn, so the hands never
+  trail the bar.
 
 The player holds the world's loading splash until they stand on the ground with the paraglider ready. The moves use
 only the clips every character has and their measured speeds, and the paraglider is scaled to each character's hips,

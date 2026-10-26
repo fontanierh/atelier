@@ -1,8 +1,8 @@
 //! Closing a character's fists round the paraglider's handles. Each arm is bent so its fist closes round its handle,
-//! the elbow bending the way the clip bends it, the fist turned to run along the handle, thumb forward; then each
-//! finger curls onto the handle. It works on the pose the animation has just written, in the body's frame, before
-//! that pose is carried to the screen, so the hands never trail the paraglider by a frame. It reads only bones every
-//! character has.
+//! the elbow bending the way the clip bends it, the fist turned to run along the handle, thumb forward, its palm
+//! facing in toward the body's middle; then each finger curls onto the handle. It works on the pose the animation has
+//! just written, in the body's frame, before that pose is carried to the screen, so the hands never trail the
+//! paraglider by a frame. It reads only bones every character has.
 
 use bevy::math::Affine3A;
 use bevy::prelude::*;
@@ -100,8 +100,9 @@ pub(crate) fn close(arm: &Arm, body: Entity, handle: &Bar, forward: Vec3, size: 
     }
     let cavity = middle + palm * (handle.radius + PALM_M * size);
 
-    // The fist turned so its axis runs along the handle, thumb forward, and rolled about the handle so the wrist lies
-    // between it and the elbow; the wrist then goes where that puts the cavity on the handle.
+    // The fist turned so its axis runs along the handle, thumb forward, and rolled about the handle so its palm faces
+    // in, toward the body's middle (where the body's x is 0); the wrist then goes where that puts the cavity on the
+    // handle.
     let mut along = (handle.to - handle.from).normalize_or_zero();
     if along.dot(forward) < 0.0 {
         along = -along;
@@ -109,8 +110,8 @@ pub(crate) fn close(arm: &Arm, body: Entity, handle: &Bar, forward: Vec3, size: 
     let on_handle = handle.nearest(cavity);
     let reach = cavity - w;
     let onto = Quat::from_rotation_arc(thumbward, along);
-    let turned = onto * across(reach, thumbward).normalize_or_zero();
-    let want = across(on_handle - e, along).normalize_or_zero();
+    let turned = across(onto * palm, along).normalize_or_zero();
+    let want = across(Vec3::new(-on_handle.x, 0.0, 0.0), along).normalize_or_zero();
     let roll = Quat::from_axis_angle(along, turned.cross(want).dot(along).atan2(turned.dot(want)));
     let fist_turn = hand_turn.slerp(roll * onto * hand_turn, weight);
     let target = w.lerp(on_handle - (roll * onto) * reach, weight);

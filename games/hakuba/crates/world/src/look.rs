@@ -4,8 +4,8 @@
 //! (`settings.rs` applies them). By default edges are smoothed by temporal anti-aliasing, as in Yorimichi: the camera
 //! shifts by part of a pixel each frame and each pixel blends the frames, so grass and other edges thinner than a
 //! pixel stay whole and steady as the camera moves. It costs about as little as no smoothing at all. By default
-//! shadows reach 60 m, in one cascade: the trees and bushes along the road. Further out, the haze and the painterly
-//! filter soften what shadows would show, and each cascade draws the world again.
+//! shadows reach 60 m, in two cascades: sharp within 20 m, then the trees and bushes along the road. Further out, the
+//! haze and the painterly filter soften what shadows would show, and each cascade draws the world again.
 
 use std::f32::consts::FRAC_PI_2;
 

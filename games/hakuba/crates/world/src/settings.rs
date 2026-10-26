@@ -3,7 +3,7 @@
 
 use bevy::anti_alias::smaa::Smaa;
 use bevy::anti_alias::taa::TemporalAntiAliasing;
-use bevy::light::CascadeShadowConfigBuilder;
+use bevy::light::{CascadeShadowConfigBuilder, ShadowFilteringMethod};
 use bevy::mesh::MeshTag;
 use bevy::prelude::*;
 use hakuba_screens::Screen;
@@ -43,6 +43,12 @@ fn look(
         AntiAliasing::Smaa => camera.remove::<TemporalAntiAliasing>().insert(Smaa::default()),
         AntiAliasing::Off => camera.remove::<(TemporalAntiAliasing, Smaa)>(),
     };
+    // Under temporal anti-aliasing, shadows' edges are sampled a little differently each frame and blended: soft and
+    // steady. Without it, that would shimmer, so they are blurred instead.
+    camera.insert(match settings.anti_aliasing {
+        AntiAliasing::Temporal => ShadowFilteringMethod::Temporal,
+        _ => ShadowFilteringMethod::Gaussian,
+    });
     light.shadow_maps_enabled = settings.shadows.reach().is_some();
     if let Some((reach, cascades)) = settings.shadows.reach() {
         let first = if cascades == 1 { reach } else { reach / 3.0 };

@@ -97,7 +97,7 @@ impl Resolution {
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
 pub enum Shadows {
     Off,
-    /// Over 60 m, in one cascade: the trees and bushes along the road.
+    /// Over 60 m, in two cascades: sharp within 20 m, then the trees and bushes along the road.
     Near,
     /// Over 150 m, in two cascades.
     Far,
@@ -108,7 +108,7 @@ impl Shadows {
     pub fn reach(self) -> Option<(f32, usize)> {
         match self {
             Shadows::Off => None,
-            Shadows::Near => Some((60.0, 1)),
+            Shadows::Near => Some((60.0, 2)),
             Shadows::Far => Some((150.0, 2)),
         }
     }
@@ -161,12 +161,17 @@ impl FrameRate {
     }
 }
 
-/// The game draws at most the chosen frames a second, even on faster screens, and only that many while in the
+/// How much sooner than its period a capped frame is due. Its timer runs apart from the screen's refreshes and is
+/// then drawn at the next one: due exactly one period later, it often lands just past a refresh and waits for the next,
+/// so a 60 cap drew 35 to 45 frames a second.
+const DUE_EARLY: Duration = Duration::from_millis(3);
+
+/// The game draws at most about the chosen frames a second, even on faster screens, and only that many while in the
 /// background. Input waits for the next frame rather than drawing one of its own.
 fn hold_frame_rate(settings: Res<Settings>, mut commands: Commands) {
     let mode = match settings.frame_rate.most() {
         Some(most) => UpdateMode::Reactive {
-            wait: Duration::from_secs_f64(1.0 / most),
+            wait: Duration::from_secs_f64(1.0 / most).saturating_sub(DUE_EARLY),
             react_to_device_events: false,
             react_to_user_events: false,
             react_to_window_events: false,
