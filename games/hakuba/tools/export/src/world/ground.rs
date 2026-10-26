@@ -39,6 +39,23 @@ impl Ground {
         Ok(Self { pages, page_steps, step, south_west })
     }
 
+    /// Gives every grid point with ground the height `change` returns for its map position and its height. A point
+    /// on a page's edge gets the same new height on every page that holds it.
+    pub fn reshape(&mut self, change: impl Fn(DVec2, f64) -> f64) {
+        let (samples, page_steps, step, south_west) =
+            (self.page_steps + 1, self.page_steps, self.step, self.south_west);
+        for (&(pi, pj), heights) in &mut self.pages {
+            for (k, height) in heights.iter_mut().enumerate() {
+                if height.is_nan() {
+                    continue;
+                }
+                let (i, j) = (pi * page_steps + k % samples, pj * page_steps + k / samples);
+                let p = south_west + DVec2::new(i as f64, j as f64) * step;
+                *height = change(p, *height as f64) as f32;
+            }
+        }
+    }
+
     /// The height at grid point (`i`, `j`), counted from the world's south-west corner, if there is ground there.
     pub fn sample(&self, i: usize, j: usize) -> Option<f64> {
         // A point on a page's edge is on both pages beside it.

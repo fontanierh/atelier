@@ -1,5 +1,7 @@
 //! Overlays: flat shapes that regions lay over the ground, such as roads and paths.
 
+use std::collections::HashMap;
+
 use anyhow::{Result, bail};
 use glam::{DVec2, DVec3};
 
@@ -53,6 +55,50 @@ impl Overlay {
         }
         mesh
     }
+}
+
+/// The sharpest crease an overlay may have over the full-detail ground, in degrees. An overlay is flat: laid on a
+/// levelled strip it creases by well under this, while one draped over a sharp cut on the 2 m grid kinks by tens of
+/// degrees at every ground triangle's edge.
+const CREASE_DEG: f64 = 1.5;
+
+/// Fails if `overlay` creases by more than `CREASE_DEG` anywhere: the ground under it needs levelling.
+pub fn check_smooth(overlay: &Mesh) -> Result<()> {
+    let crease = crease_deg(overlay);
+    if crease > CREASE_DEG {
+        bail!("it creases by {crease:.1}°: level the ground under it");
+    }
+    Ok(())
+}
+
+/// The sharpest crease in `overlay`: the largest angle, in degrees, between two of its triangles that meet at a
+/// corner. Slivers narrower than `SLIVER_M` are left out: their 32-bit corners give them no reliable slope.
+pub fn crease_deg(overlay: &Mesh) -> f64 {
+    const SLIVER_M: f64 = 0.05;
+    let mut normals: HashMap<[i64; 3], Vec<DVec3>> = HashMap::new();
+    for triangle in overlay.indices.chunks(3) {
+        let [a, b, c] = [0, 1, 2].map(|k| DVec3::from(overlay.positions[triangle[k] as usize].map(f64::from)));
+        let normal = (b - a).cross(c - a);
+        let longest = (b - a).length().max((c - b).length()).max((a - c).length());
+        if normal.length() < SLIVER_M * longest {
+            continue;
+        }
+        for p in [a, b, c] {
+            // Corners within a millimetre are one corner: pieces cut from neighbouring ground triangles compute their
+            // shared corners apart.
+            let key = (p * 1000.0).round().as_i64vec3().to_array();
+            normals.entry(key).or_default().push(normal.normalize());
+        }
+    }
+    let mut sharpest: f64 = 0.0;
+    for around in normals.values() {
+        for (n, a) in around.iter().enumerate() {
+            for b in &around[n + 1..] {
+                sharpest = sharpest.max(a.angle_between(*b).to_degrees());
+            }
+        }
+    }
+    sharpest
 }
 
 /// Fails if `overlay` comes closer than `CLEARANCE_M` to the ground drawn under it anywhere, checking points spread

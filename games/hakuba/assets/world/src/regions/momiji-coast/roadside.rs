@@ -5,7 +5,7 @@ use std::f64::consts::FRAC_PI_2;
 
 use glam::DVec2;
 
-use super::uphill;
+use super::{LEVEL_HALF_WIDTH_M, SHOULDER_M, uphill};
 use crate::world::scenery::{Cable, Land, Placement, Rail, Scenery};
 
 pub const POLE: &str = "props/utility-pole";
@@ -27,7 +27,7 @@ const RAIL_OFFSET_M: f64 = 3.1;
 const RAIL_POST_SPACING: usize = 2;
 const RAIL_POST_RADIUS_M: f64 = 0.05;
 
-/// The guardrail runs where the ground 9 m out from the road is this far below the road.
+/// The guardrail runs where the ground just past the levelled strip and its shoulder is this far below the road.
 const RAIL_DROP_M: f64 = 1.2;
 
 /// A guardrail is left out where it would run for fewer metres than this.
@@ -67,7 +67,10 @@ pub fn add(scenery: &mut Scenery, land: &Land, road: &[(DVec2, DVec2)]) {
     let mut runs: Vec<Vec<(usize, f64)>> = vec![Vec::new()];
     for (k, &(centre, direction)) in road.iter().enumerate() {
         let side = -uphill(land, centre, direction);
-        let drops = match (land.height(centre), land.height(centre + direction.perp() * side * 9.0)) {
+        let drops = match (
+            land.height(centre),
+            land.height(centre + direction.perp() * side * (LEVEL_HALF_WIDTH_M + SHOULDER_M)),
+        ) {
             (Some(road_height), Some(out)) => out < road_height - RAIL_DROP_M,
             _ => false,
         };
