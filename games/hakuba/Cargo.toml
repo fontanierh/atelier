@@ -1,0 +1,40 @@
+# The Rust workspace: the game program (src/main.rs), its feature crates (crates/*) and the asset exporter
+# (tools/export), with the dependency versions they share.
+[workspace]
+members = ["crates/*", "tools/export"]
+resolver = "3"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace.dependencies]
+bevy = "0.20.0"
+hakuba_characters = { path = "crates/characters" }
+hakuba_menu = { path = "crates/menu" }
+hakuba_screens = { path = "crates/screens" }
+hakuba_viewer = { path = "crates/viewer" }
+hakuba_world = { path = "crates/world" }
+
+[package]
+name = "hakuba"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+bevy.workspace = true
+hakuba_characters.workspace = true
+hakuba_menu.workspace = true
+hakuba_screens.workspace = true
+hakuba_viewer.workspace = true
+hakuba_world.workspace = true
+
+# Development builds: Hakuba's own code is lightly optimized so it compiles fast; the dependencies are compiled once,
+# fully optimized, so the game runs fast.
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3

@@ -1,0 +1,4 @@
+# .glb, .bin and .ktx2 files are stored in Git LFS: a checkout needs git-lfs installed to get the real files.
+*.glb filter=lfs diff=lfs merge=lfs -text
+*.bin filter=lfs diff=lfs merge=lfs -text
+*.ktx2 filter=lfs diff=lfs merge=lfs -text

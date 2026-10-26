@@ -10,6 +10,10 @@ is here and how to build it; [ARCHITECTURE.md](ARCHITECTURE.md) says how the par
   sound cues). Platform files never name a game.
 - `games/<game>/`: `game.toml` (play profiles, fetches, stream), `build.py` (build steps), `unreal/`, `world/`,
   `assets/`, `scenarios/`, `docs/`. `yorimichi` is the full game; `sandbox` is the template for `atelier new`.
+- `games/hakuba/` is different: a Bevy game, all Rust, built with `cargo` and `trunk` and never through the
+  `atelier` command. It has no `game.toml` or `build.py`, and the Unreal, Blender, render-lock and build-cache rules
+  below do not apply to it. Follow [its README](games/hakuba/README.md) and its `CONTRACTS` files; the repository,
+  lint, commit and board rules still apply.
 
 ```sh
 uv run atelier build <game> [step ...]   # incremental; --list shows the steps
@@ -46,6 +50,8 @@ uv run pytest path/to/test_file.py -q     # focused local tests; full suite runs
   deferred to final validation (owner 2026-10-23), so CI runs `quality` and the three Linux test jobs
   (studio, games 1/2, games 2/2) under the `Studio Python / Linux (macOS deferred)` check; that aggregate
   fails unless they pass. New tests are partitioned automatically; no per-file CI list needs updating.
+  PRs that change only `games/hakuba/` skip Studio Python; their `Hakuba` workflow (current exports, lint) must
+  pass instead.
   Before merging, run `uv run atelier lint` and `uv run atelier contracts check`, verify a successful
   `Studio Python / Linux (macOS deferred)` CI run on the exact final PR head, put the results in the review
   request, and get one other agent's approval on the

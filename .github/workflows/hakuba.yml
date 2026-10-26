@@ -1,0 +1,74 @@
+name: Hakuba
+
+# Fails when Hakuba's code is not laid out by cargo fmt, clippy or the exporter's tests fail, or an asset's
+# committed export is out of date with its inputs. Studio Python skips PRs that change only Hakuba, so the public-repository lint runs here for them.
+on:
+  pull_request:
+    paths:
+      - 'games/hakuba/**'
+      - '.github/workflows/hakuba.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'games/hakuba/**'
+      - '.github/workflows/hakuba.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  assets:
+    name: Hakuba / code layout and current assets
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: games/hakuba
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      # Hakuba's .glb and .bin files are in Git LFS, and the check reads their bytes.
+      - name: Fetch Hakuba's assets
+        run: git lfs pull --include='games/hakuba/assets/**'
+      - name: Restore Rust dependencies
+        continue-on-error: true
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0, Node 24
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            games/hakuba/target
+          key: hakuba-export-${{ runner.os }}-${{ hashFiles('games/hakuba/Cargo.lock', 'games/hakuba/rust-toolchain.toml') }}
+      # rust-toolchain.toml picks the Rust version; cargo installs it on first use.
+      - name: Check the code's layout
+        run: cargo fmt --check
+      - name: Check the exporter for common mistakes
+        run: cargo clippy -p hakuba_export --all-targets -- -D warnings
+      # The exporter's tests check that each kind uses only its own code, the shared code and its own assets.
+      - name: Test the exporter
+        run: cargo test -p hakuba_export
+      - name: Check every asset's export is current
+        run: cargo export --check assets
+
+  lint:
+    name: Hakuba / public-repository lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
+        with:
+          version: '0.10.0'
+          python-version: '3.12'
+          enable-cache: false
+      - run: uv sync --frozen --managed-python
+      - run: uv run atelier lint

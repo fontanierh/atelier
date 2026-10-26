@@ -1,0 +1,10 @@
+# The menu the game opens on. See README.md.
+[package]
+name = "hakuba_menu"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+bevy.workspace = true
+hakuba_screens.workspace = true

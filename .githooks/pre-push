@@ -1,0 +1,6 @@
+#!/bin/sh
+# Upload the Git LFS objects of the pushed commits before the commits themselves (games/hakuba keeps its binaries
+# in LFS). Without git-lfs a clone cannot make LFS pointers, so there is nothing to upload.
+if command -v git-lfs >/dev/null 2>&1; then
+  exec git lfs pre-push "$@"
+fi

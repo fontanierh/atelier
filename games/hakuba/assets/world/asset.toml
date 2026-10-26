@@ -1,0 +1,14 @@
+# The world, cut into tiles 64 m wide.
+# src/ground/ holds the ground's heights in pages 512 m wide; src/regions/ holds one folder per region.
+kind = "world"
+ground = "src/ground"
+south_west_m = [-4396.0, -1324.0]
+ground_step_m = 2.0
+page_steps = 256        # 512 m
+tile_steps = 32         # 64 m
+tiles = [[64, 18], [66, 20]]
+ground_texture = "ground"
+ground_texture_m = 24.0
+spawn_m = [-255.26, -99.51]
+spawn_bearing_deg = 94.7
+inputs_sha256 = "d1962d353cd8080723b5c7ec32c5cf4e503cc1d6589278d4cdf5607261002be9"

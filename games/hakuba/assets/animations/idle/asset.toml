@@ -1,0 +1,7 @@
+# The idle: a standing loop with breathing, 48 frames at 30 frames a second.
+# src/source.glb holds the clip on the skeleton it was made for. src/idle.rs maps that skeleton to the rig, and
+# defines the stance a character may set in its `asset.toml` to change the idle.
+kind = "animation"
+source = "src/source.glb"
+clip = "Nml_Wait"
+inputs_sha256 = "6c51f8faf646c28721e81c8ec6a5c51959bdad62b0f01db86fd5fcecc411b219"

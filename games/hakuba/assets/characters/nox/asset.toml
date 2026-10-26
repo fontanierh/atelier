@@ -1,0 +1,18 @@
+# Nox, a playable young adult in a black bomber and violet-patterned shirt, with an earring and rigged hair locks.
+# src/model.glb is his finished model: mesh, skeleton, skin weights and full-size textures. src/nox.rs maps his
+# skeleton to the rig, and [animations.idle] below is his stance in the idle. `cargo export` writes nox.glb from
+# them, the file the game loads: scaled to his game height, with smaller textures and his animations.
+kind = "character"
+source = "src/model.glb"
+height_m = 1.78        # the source stands about 1.08 m tall
+texture_size = 2048    # the source's 4K textures, halved for the browser download
+inputs_sha256 = "3f8480339cd5335024b9aa87007420ef8043ca94604eb49f2e8f9a67295f4b52"
+
+# Hips back, a slight forward lean with the upper back held up, narrower feet, knees out and arms back.
+[animations.idle]
+hips_forward_cm = -9.0
+foot_spacing_cm = -8.0
+lean_deg = 10.0
+upper_back_deg = -5.0
+knees_out_deg = 21.0
+arm_swing_deg = [-20.0, -20.0]
