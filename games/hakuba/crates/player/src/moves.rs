@@ -1,4 +1,4 @@
-//! The moves, as Yorimichi has them, with its numbers: walking, running and sprinting; the jump, and in the air a
+//! The moves: walking, running and sprinting; the jump, and in the air a
 //! double jump, a forward somersault, then the paraglider; the dodges, a side hop or a backflip; and the landings, hard
 //! from high up. The character is moved here, never by its clips: every clip stays in place, and the ground speed the
 //! export measured for each sets how fast its feet step.
@@ -14,11 +14,11 @@ use hakuba_world::{Ground, Hit, SEA_LEVEL_M};
 use crate::input::Controls;
 use crate::{Body, Player};
 
-/// Gravity, in metres a second squared: Unreal's, 1.5 times as strong, as Yorimichi's player falls.
+/// Gravity, in metres a second squared: 1.5 times the Earth's, so falls feel quick.
 const GRAVITY: f32 = 9.8 * 1.5;
 
-/// How fast a jump leaves the ground, and a double jump the air, in metres a second. Yorimichi's double jump leaves at
-/// 6.5, rising 1.4 m; this one rises 2.2 m.
+/// How fast a jump leaves the ground, and a double jump the air, in metres a second: a double jump
+/// rises 2.2 m.
 const JUMP_SPEED: f32 = 4.9;
 const DOUBLE_JUMP_SPEED: f32 = 8.0;
 
@@ -33,7 +33,7 @@ const TURN_RATE: f32 = 10.0;
 /// A stick tilted less than this walks; further, it runs.
 const WALK_TILT: f32 = 0.55;
 
-/// A side hop's speed and height, and a backflip's, from Yorimichi's motion library (SideStep and BackJump).
+/// A side hop's speed and height, and a backflip's, as the motion library's side step and back jump move.
 const HOP_SPEED: f32 = 0.18 * 30.0;
 const HOP_HEIGHT: f32 = 0.8;
 const BACKFLIP_SPEED: f32 = 0.15 * 30.0;

@@ -1,4 +1,4 @@
-//! The sprint, a loop, at 1.75 times its source's speed as Yorimichi plays it. A character cannot change it.
+//! The sprint, a loop, at 1.75 times its source's speed. A character cannot change it.
 
 use crate::rig::Bones;
 use crate::rig::animation::no_changes;

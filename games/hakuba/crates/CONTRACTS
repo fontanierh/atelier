@@ -22,7 +22,8 @@ and leaves a hole showing the clear colour for a frame.
 The world MUST NOT show until all it draws is ready: its tiles, models and textures loaded and every pipeline made,
 whichever way the camera looks. What loads with the world MUST hold the splash until it is ready (the world's
 `Unready`, or a load the splash checks), and MUST be spawned, if hidden, so that it is drawn under it, as the
-paraglider is, too small to see. The game logs any pipeline made once the world has loaded.
+paraglider is, too small to see. The game logs any pipeline made once the world has loaded. A file that fails to
+load MUST be reported as an error, never counted as ready in silence; it then stops holding the splash.
 
 @cc [owner:fontanierh,label:performance] cut-outs-light-only-what-stays
 A material that cuts out texels (alpha mask) MUST discard them before any lighting, as the plants' fragment shader

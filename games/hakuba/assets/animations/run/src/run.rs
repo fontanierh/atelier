@@ -1,4 +1,4 @@
-//! The run, a loop, at 1.5 times its source's speed as Yorimichi plays it. A character cannot change it.
+//! The run, a loop, at 1.5 times its source's speed. A character cannot change it.
 
 use crate::rig::Bones;
 use crate::rig::animation::no_changes;

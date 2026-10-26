@@ -1,12 +1,14 @@
 //! A splash over the world until it has loaded, so the player steps into a whole world rather than one filling in:
 //! the index, every tile in sight and every model standing in them, every texture the materials use, and every shader
 //! the renderer needs to draw them, whichever way the camera turns. What other crates add to the world holds the splash
-//! too while it is [`Unready`], such as the player until their character stands on the ground.
+//! too while it is [`Unready`], such as the player until their character stands on the ground. A file that fails to
+//! load is reported as an error and stops holding the splash, so a broken file shows as missing rather than hanging
+//! the game on the splash.
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use bevy::asset::{LoadState, RecursiveDependencyLoadState, UntypedAssetId};
+use bevy::asset::{LoadState, RecursiveDependencyLoadState, UntypedAssetId, UntypedAssetLoadFailedEvent};
 use bevy::camera::visibility::NoFrustumCulling;
 use bevy::prelude::*;
 use bevy::render::render_resource::PipelineCache;
@@ -34,6 +36,7 @@ impl Plugin for LoadingPlugin {
         app.insert_resource(pipelines.clone())
             .add_observer(uncull)
             .add_systems(OnEnter(Screen::World), spawn)
+            .add_systems(Update, report.run_if(in_state(Screen::World)))
             .add_systems(
                 Update,
                 (lift.after(Placing).run_if(any_with_component::<Splash>), watch.run_if(resource_exists::<Loaded>))
@@ -226,7 +229,14 @@ fn watch(pipelines: Res<Pipelines>, mut loaded: ResMut<Loaded>) {
     }
 }
 
-/// Whether every texture `material` uses has loaded, or failed to.
+/// Reports each file that fails to load while the world shows: it no longer holds the splash, and is missing.
+fn report(mut failed: MessageReader<UntypedAssetLoadFailedEvent>) {
+    for failed in failed.read() {
+        error!("{} failed to load, so the world shows without it: {}", failed.path, failed.error);
+    }
+}
+
+/// Whether every texture `material` uses has loaded, or failed to, which [`report`] says.
 fn textured(material: &StandardMaterial, images: &Assets<Image>, assets: &AssetServer) -> bool {
     [
         &material.base_color_texture,

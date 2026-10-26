@@ -1,4 +1,4 @@
-//! The backflip, from frame 4 as Yorimichi plays it. A character cannot change it.
+//! The backflip, from frame 4. A character cannot change it.
 
 use crate::rig::Bones;
 use crate::rig::animation::no_changes;

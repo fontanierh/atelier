@@ -1,8 +1,7 @@
-# The sprint, a loop, at 1.75 times its source's speed as Yorimichi plays it.
-# src/source.glb holds the clip on the motion library's skeleton, baked from Yorimichi's motion library
-# (games/yorimichi/assets/characters/adventure); src/sprint.rs names it.
+# The sprint, a loop, at 1.75 times its source's speed.
+# src/source.glb holds the clip on the motion library's skeleton; src/sprint.rs names it.
 kind = "animation"
 source = "src/source.glb"
 clip = "Nml_Move_Dash"
 rate = 1.75
-inputs_sha256 = "3bb31e678cd0944d049e0401f9c35c7b14a764a5ea5a93c8979636eb25119c21"
+inputs_sha256 = "74d0acb4c3287e808ede479935de7a5ef37c8374ed0419503c328dc9b433ee6b"

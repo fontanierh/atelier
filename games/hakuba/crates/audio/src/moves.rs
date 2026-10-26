@@ -1,8 +1,8 @@
-//! The player's sounds, with Yorimichi's numbers: a footstep each time a foot plants, on what it lands on; both feet at
+//! The player's sounds: a footstep each time a foot plants, on what it lands on; both feet at
 //! once on landing, louder the faster the fall; a burst of air for the double jump, the dodges and the paraglider
 //! opening; and rushing air while gliding, rising with the speed.
 //!
-//! A foot plants when, having swung clear of the ground, it comes back down, as Yorimichi hears it: the clips need no
+//! A foot plants when, having swung clear of the ground, it comes back down: the clips need no
 //! marks, and every clip, speed and character steps right. A footstep's sound is what the world says the foot landed
 //! on.
 
@@ -20,7 +20,7 @@ use crate::sound::{Dice, Sound, Takes};
 const FEET: [&str; 2] = ["foot_l", "foot_r"];
 
 /// A foot has swung clear once it is this high above where it rests, and planted again once it comes down to this
-/// height, in metres, as Yorimichi's footsteps have it.
+/// height, in metres.
 const CLEAR_M: f32 = 0.058;
 const PLANT_M: f32 = 0.023;
 
@@ -203,7 +203,7 @@ pub fn hear(
     }
 }
 
-/// The footstep on `surface`, as Yorimichi hears its materials: grass on the ground, gravel on a road, stone on
+/// The footstep on `surface`, by its material: grass on the ground, gravel on a road, stone on
 /// anything built.
 fn footstep(sounds: &mut Sounds, surface: Surface) -> &mut Sound {
     match surface {

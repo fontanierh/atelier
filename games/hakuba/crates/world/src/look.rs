@@ -1,7 +1,7 @@
 //! How the world looks: a sky dome painted with clouds, light from that sky above and from the ground below, a low
 //! warm sun behind the traveller, a blue haze that thickens with distance, and the camera's colour grade (tone curve,
 //! bloom, vignette) and painterly filter. How far the sun casts shadows and how edges are smoothed are settings
-//! (`settings.rs` applies them). By default edges are smoothed by temporal anti-aliasing, as in Yorimichi: the camera
+//! (`settings.rs` applies them). By default edges are smoothed by temporal anti-aliasing: the camera
 //! shifts by part of a pixel each frame and each pixel blends the frames, so grass and other edges thinner than a
 //! pixel stay whole and steady as the camera moves. It costs about as little as no smoothing at all. By default
 //! shadows reach 60 m, in two cascades: sharp within 20 m, then the trees and bushes along the road. Further out, the
@@ -35,13 +35,13 @@ const FAR_M: f32 = 30000.0;
 const SUN_ELEVATION_DEG: f32 = 26.0;
 const SUN_BEARING_DEG: f32 = 60.0;
 
-/// The sun's light, in lux, and its colour: Yorimichi's late-afternoon sun. Sunlit ground gets about four and a half
-/// times the light of ground in shade, as in Yorimichi, so shadows read.
+/// The sun's light, in lux, and its colour: a late-afternoon sun. Sunlit ground gets about four and a half times
+/// the light of ground in shade, so shadows read.
 const SUN_LUX: f32 = 15000.0;
 const SUN_COLOUR: [f32; 3] = [1.0, 0.86, 0.68];
 
 /// The light that fills the shadows, linear: blue from the sky above, pale at the horizon and warm green from the
-/// grass below, as Yorimichi's sky light captures its painted dome, and how bright it is.
+/// grass below, as the painted dome would light it, and how bright it is.
 const SKY_LIGHT: [f32; 3] = [0.62, 0.78, 1.0];
 const HORIZON_LIGHT: [f32; 3] = [0.95, 0.96, 1.0];
 const GROUND_LIGHT: [f32; 3] = [0.42, 0.42, 0.24];

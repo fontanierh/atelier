@@ -1,4 +1,4 @@
-//! Landing from the backflip, from frame 5 as Yorimichi plays it. A character cannot change it.
+//! Landing from the backflip, from frame 5. A character cannot change it.
 
 use crate::rig::Bones;
 use crate::rig::animation::no_changes;

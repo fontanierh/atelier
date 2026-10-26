@@ -4,7 +4,7 @@ Everything the game loads, each next to the sources it is exported from.
 
 ```text
 assets/
-  animations/               the move set, each clip on the rig, from Yorimichi's motion library
+  animations/               the move set, each clip on the rig, from a motion library
     idle/                   standing
     walk/, run/, sprint/    moving on foot, each a loop
     jump/, run-jump/        jumping from standing and from a run
@@ -13,7 +13,7 @@ assets/
     hard-land/, -up/        landing from high up, and standing up again
     hop-left/, -right/      the side hops that dodge, and their landings (`-land`)
     backflip/               the backflip that dodges, and its landing (`backflip-land/`)
-    double-jump/            the double jump's tuck and forward somersault, from Yorimichi's Cairo
+    double-jump/            the double jump's tuck and forward somersault
     glide-open/             opening the paraglider, and `glide-open-falling/` while falling fast
     glide/                  hanging under the paraglider, and leaning `-forward`, `-back`, `-left` and `-right`
     glide-close/            closing it on landing
@@ -34,7 +34,7 @@ assets/
   props/                    made objects, each built from its settings alone
     utility-pole/           a concrete pole with insulators that cables fasten to
     street-lamp/            a lamp's arm and head, standing on a utility pole
-  sounds/                   every sound the game plays, from Yorimichi's sound library (sounds/README.md)
+  sounds/                   every sound the game plays (sounds/README.md)
     footstep-grass/, ...    a footstep on grass, on gravel (`-gravel`) and on stone (`-stone`)
     dash/                   a burst of cloth and air
     countryside/            birdsong, a breeze and a faint sea, a loop

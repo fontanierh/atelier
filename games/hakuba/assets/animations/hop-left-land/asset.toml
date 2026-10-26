@@ -1,9 +1,8 @@
-# Landing from the side hop to the left, frames 2 to 12 at 0.8 of their speed as Yorimichi plays them.
-# src/source.glb holds the clip on the motion library's skeleton, baked from Yorimichi's motion library
-# (games/yorimichi/assets/characters/adventure); src/hop-left-land.rs names it.
+# Landing from the side hop to the left, frames 2 to 12 at 0.8 of their speed.
+# src/source.glb holds the clip on the motion library's skeleton; src/hop-left-land.rs names it.
 kind = "animation"
 source = "src/source.glb"
 clip = "Nml_Lockon_Step_L_Ed"
 rate = 0.8
 frames = [2.0, 12.0]
-inputs_sha256 = "9660c3204ea43abee385881a2e02d03c4129625b53aa2f7af9891e0ccc903bbc"
+inputs_sha256 = "95c72ad269e8895f5684b8e26f035db67d2e57fc022d2948de59218b43c25b10"

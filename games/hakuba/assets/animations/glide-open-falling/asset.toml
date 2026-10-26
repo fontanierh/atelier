@@ -1,8 +1,7 @@
-# Opening the paraglider while falling fast, from frame 4 as Yorimichi plays it.
-# src/source.glb holds the clip on the motion library's skeleton, baked from Yorimichi's motion library
-# (games/yorimichi/assets/characters/adventure); src/glide-open-falling.rs names it.
+# Opening the paraglider while falling fast, from frame 4.
+# src/source.glb holds the clip on the motion library's skeleton; src/glide-open-falling.rs names it.
 kind = "animation"
 source = "src/source.glb"
 clip = "Equip_Float_On_Fall"
 frames = [4.0, 60.0]
-inputs_sha256 = "81cfc9c38728d809059c263c3f48dc48a16e4e010746aa11fcc18062b096f17e"
+inputs_sha256 = "135cb145925151d41ea4f567bb416b553d6b2cb6512dcfe74b3d1dfcb556f92d"

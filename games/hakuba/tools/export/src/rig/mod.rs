@@ -161,7 +161,7 @@ impl Bones {
         }
     }
 
-    /// The skeleton of the motion library every animation's clip comes from, Yorimichi's: it has no bone between its
+    /// The skeleton of the motion library every animation's clip comes from: it has no bone between its
     /// spine and chest.
     pub fn library() -> Self {
         let limbs = |side: &str| {

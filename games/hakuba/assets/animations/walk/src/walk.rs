@@ -1,4 +1,4 @@
-//! The walk, a loop, at 0.9 of its source's speed as Yorimichi plays it. A character cannot change it.
+//! The walk, a loop, at 0.9 of its source's speed. A character cannot change it.
 
 use crate::rig::Bones;
 use crate::rig::animation::no_changes;

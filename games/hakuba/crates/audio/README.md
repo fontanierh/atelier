@@ -1,8 +1,6 @@
 # audio
 
-The sounds, as Yorimichi plays them, from `assets/sounds`, at the settings' **Volume**. Two are Hakuba's own: the
-step a jump pushes off with (Yorimichi's jump is silent), and the wind while gliding, which Yorimichi's kart hears and
-its paraglider does not.
+The sounds, from `assets/sounds`, at the settings' **Volume**.
 
 | sound | when | how loud |
 |---|---|---|

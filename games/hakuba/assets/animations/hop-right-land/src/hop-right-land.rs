@@ -1,4 +1,4 @@
-//! Landing from the side hop to the right, frames 2 to 12 at 0.8 of their speed as Yorimichi plays them. A character cannot change it.
+//! Landing from the side hop to the right, frames 2 to 12 at 0.8 of their speed. A character cannot change it.
 
 use crate::rig::Bones;
 use crate::rig::animation::no_changes;

@@ -94,11 +94,9 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     let (mut handles, mut palms) = (Vec::new(), Vec::new());
     for (handle, side) in [(settings.handle_left_m, "l"), (settings.handle_right_m, "r")] {
         let [from, to] = handle.map(|end| placed.transform_point3(DVec3::from_array(end)));
-        let along = (to - from).normalize();
-        let off_axis = |point: DVec3| {
-            let from_end = point - from;
-            (from_end - along * from_end.dot(along)).length()
-        };
+        let (along, length) = ((to - from).normalize(), (to - from).length());
+        // How far a point is from the handle's stretch of axis, between its ends.
+        let off_axis = |point: DVec3| (point - (from + along * (point - from).dot(along).clamp(0.0, length))).length();
         for finger in FINGERS {
             for joint in 1..=3 {
                 let bone = format!("{finger}_{joint}_{side}");

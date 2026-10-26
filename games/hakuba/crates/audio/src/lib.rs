@@ -1,4 +1,4 @@
-//! The sounds, as Yorimichi plays them: the player's footsteps on what each foot lands on, the landings, the bursts
+//! The sounds: the player's footsteps on what each foot lands on, the landings, the bursts
 //! of air of the double jump, the dodges and the paraglider opening, the wind while gliding, and the countryside
 //! around the world. Every sound is from `assets/sounds`, at the volume the settings choose.
 //!
@@ -33,8 +33,7 @@ impl Plugin for SoundsPlugin {
     }
 }
 
-/// The countryside around the player: birdsong, a breeze and a faint distant sea, at half its recorded loudness, as
-/// Yorimichi plays it (`WandererCharacter.cpp`).
+/// The countryside around the player: birdsong, a breeze and a faint distant sea, at half its recorded loudness.
 const COUNTRYSIDE_VOLUME: f32 = 0.5;
 
 /// Every sound the game plays.

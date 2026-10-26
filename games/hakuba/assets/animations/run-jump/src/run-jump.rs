@@ -1,4 +1,4 @@
-//! The jump from a run, off the left foot, at 0.6 of its source's speed as Yorimichi plays it. A character cannot change it.
+//! The jump from a run, off the left foot, at 0.6 of its source's speed. A character cannot change it.
 
 use crate::rig::Bones;
 use crate::rig::animation::no_changes;

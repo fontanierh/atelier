@@ -1,4 +1,4 @@
-//! Landing from high up, knees buckling, from frame 4 as Yorimichi plays it. A character cannot change it.
+//! Landing from high up, knees buckling, from frame 4. A character cannot change it.
 
 use crate::rig::Bones;
 use crate::rig::animation::no_changes;

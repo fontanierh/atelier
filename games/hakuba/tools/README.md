@@ -71,8 +71,8 @@ rotation the identity. Clips on the rig store each bone's world turn, and the pe
 they fit any skeleton of any size.
 
 A skeleton implements `Skeleton`, naming its node for each rig bone. The spine's middle and the fingers are
-optional; a skeleton without them gets them from its neighbours. `Bones::library()` is the skeleton of Yorimichi's
-motion library, which every animation's clip comes from; `Bones::mixamo()` is Mixamo's.
+optional; a skeleton without them gets them from its neighbours. `Bones::library()` is the skeleton of the motion
+library every animation's clip comes from; `Bones::mixamo()` is Mixamo's.
 
 A hand's palm has a frame (`pose::palm`): its y axis from the wrist toward the knuckles, its z axis from the index
 finger toward the little finger. The retarget turns each hand so its palm faces as the source's does, so something

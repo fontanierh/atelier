@@ -1,4 +1,4 @@
-//! The double jump's somersault, on Cairo's Mixamo skeleton. A character cannot change it.
+//! The double jump's somersault, on its source's Mixamo skeleton. A character cannot change it.
 
 use crate::rig::Bones;
 use crate::rig::animation::no_changes;

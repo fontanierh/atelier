@@ -17,8 +17,8 @@ way the spawn faces, with the camera behind it. It waits there until the tile un
 | pause | Escape | Start |
 
 - `input.rs` reads the keyboard, mouse and controllers into `Controls`.
-- `moves.rs` moves the player, with Yorimichi's numbers: walking, running and sprinting at the speeds the export
-  measured for each clip; the jump; in the air a double jump with Yorimichi's somersault, then the paraglider; the
+- `moves.rs` moves the player: walking, running and sprinting at the speeds the export
+  measured for each clip; the jump; in the air a double jump with a forward somersault, then the paraglider; the
   dodges, a side hop when the stick points to the side, a backflip otherwise; and the landings, hard from higher than
   4.5 m. The player stands on what `hakuba_world::Ground` calls solid, steps up and down 45 cm, and is stopped by
   walls, slopes steeper than 50° and water deeper than 60 cm. Falling into deep water puts the player back where they
