@@ -27,7 +27,7 @@ way the spawn faces, with the camera behind it. It waits there until the tile un
 - `glider.rs` holds the paraglider above the character, between its palms, while the player glides, banking it into
   turns. Each player has one from the start, too small to see while it is put away, so it opens without a stall.
 
-The player holds the world's loading curtain until they stand on the ground with the paraglider ready. The moves use
+The player holds the world's loading splash until they stand on the ground with the paraglider ready. The moves use
 only the clips every character has and their measured speeds, and the paraglider is scaled to each character's hips,
 so a new character moves the same way. Nothing here names a character.
 

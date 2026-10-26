@@ -11,7 +11,7 @@ import bevy_render::globals::Globals;
 import bevy_pbr::render::forward_io::{Vertex, VertexOutput, decompress_vertex};
 @if(!PREPASS_PIPELINE)
 import bevy_pbr::render::mesh_view_bindings::globals;
-import bevy_pbr::render::{mesh_functions, view_transformations::position_world_to_clip};
+import bevy_pbr::render::{mesh_functions, mesh_view_bindings::view, view_transformations::position_world_to_clip};
 
 // The prepass binds the time at another place than the main pass.
 @if(PREPASS_PIPELINE)
@@ -25,6 +25,18 @@ const TAU: f32 = 6.2831853;
 // What pushes plants aside, as push.rs writes it: how many there are, then for each where its feet are and its radius,
 // then its height.
 @group(constants::MATERIAL_BIND_GROUP) @binding(100) var<storage, read> pushers: array<vec4<f32>, 9>;
+
+// Where a plant swaps versions, as wind.rs sets it: from x metres from the camera, over y more.
+@group(constants::MATERIAL_BIND_GROUP) @binding(101) var<uniform> swap: vec4<f32>;
+
+// A mesh tag's bits, as wind.rs writes them: how strongly the wind blows, and whether the mesh is a plant's full
+// version going with distance or its middle one coming.
+const STRENGTH: u32 = 0x3fffffffu;
+const GOING: u32 = 0x40000000u;
+const COMING: u32 = 0x80000000u;
+
+// Where a vertex goes so as not to be drawn: outside the view, where a card whose corners all go is never drawn.
+const NOWHERE: vec4<f32> = vec4<f32>(2.0, 2.0, 2.0, 1.0);
 
 // How far a leaf or blade right beside a pusher leans away, across the ground, for each metre it stands above the
 // pusher's feet: about 24 degrees.
@@ -90,7 +102,21 @@ fn push(at: vec3<f32>, phase: f32) -> vec3<f32> {
 
 // How strongly the wind blows on this mesh, its tag in thousandths: 1 is the usual wind.
 fn blowing(instance_index: u32) -> f32 {
-    return f32(mesh_functions::get_tag(instance_index)) / 1000.0;
+    return f32(mesh_functions::get_tag(instance_index) & STRENGTH) / 1000.0;
+}
+
+// Whether a card or blade of phase `phase`, of a mesh standing at `origin`, shows. A plant's full version gives way to
+// its middle one between swap's distances from the camera that picks detail, the same in the shadows' passes: a whole
+// card or blade at a time, each at its own distance, set by its phase, so every frame shows whole cards and nothing
+// shimmers under temporal anti-aliasing. Wood, of phase below 0, swaps halfway.
+fn shows(instance_index: u32, origin: vec3<f32>, phase: f32) -> bool {
+    let tag = mesh_functions::get_tag(instance_index);
+    if (tag & (GOING | COMING)) == 0u {
+        return true;
+    }
+    let along = saturate((distance(origin, view.lod_view_world_position) - swap.x) / swap.y);
+    let at = select(phase, 0.5, phase < 0.0);
+    return select(along > at, along <= at, (tag & GOING) != 0u);
 }
 
 @if(!PREPASS_PIPELINE)
@@ -104,6 +130,9 @@ fn vertex(vertex_in: Vertex) -> VertexOutput {
     let pushed = push(still.xyz, vertex.uv_b.y);
     out.world_position = vec4<f32>(still.xyz + pushed + sway(still.xyz, globals.time, bend, vertex.uv_b.y), 1.0);
     out.position = position_world_to_clip(out.world_position.xyz);
+    if !shows(vertex_in.instance_index, world_from_local[3].xyz, vertex.uv_b.y) {
+        out.position = NOWHERE;
+    }
     out.world_normal = mesh_functions::mesh_normal_local_to_world(vertex.normal, vertex_in.instance_index);
     @if(VERTEX_UVS_A)
     out.uv = vertex.uv;
@@ -132,6 +161,9 @@ fn vertex(vertex_in: Vertex) -> VertexOutput {
     let pushed = push(still.xyz, vertex.uv_b.y);
     out.world_position = vec4<f32>(still.xyz + pushed + sway(still.xyz, globals.time, bend, vertex.uv_b.y), 1.0);
     out.position = position_world_to_clip(out.world_position.xyz);
+    if !shows(vertex_in.instance_index, world_from_local[3].xyz, vertex.uv_b.y) {
+        out.position = NOWHERE;
+    }
     @if(UNCLIPPED_DEPTH_ORTHO_EMULATION) {
         out.unclipped_depth = out.position.z;
         out.position.z = min(out.position.z, 1.0);

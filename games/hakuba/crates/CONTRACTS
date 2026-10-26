@@ -8,3 +8,16 @@ Each crate MUST be one feature, published as one Bevy plugin. That plugin MAY ad
 feature's parts; no other crate adds them. What several screens share lives in `screens`. A crate
 MAY use another crate only for what that crate publishes for others (as the viewer uses `characters`),
 never for its internals.
+
+@cc [owner:fontanierh,label:correctness] stable-under-temporal-anti-aliasing
+The world is drawn with temporal anti-aliasing, so what is drawn MUST NOT change from frame to frame in screen space
+unless it moves in the world: no screen-space dither, stochastic transparency or crossfading visibility range (the
+world crate makes any range abrupt and logs an error). Detail MUST swap whole primitives, as a plant's versions swap
+a card at a time. A vertex shader that moves geometry MUST write motion vectors that say how it moved, or say on
+purpose that it stood still, as the wind's do.
+
+@cc [owner:fontanierh,label:correctness] nothing-appears-after-loading
+The world MUST NOT show until all it draws is ready: its tiles, models and textures loaded and every pipeline made,
+whichever way the camera looks. What loads with the world MUST hold the splash until it is ready (the world's
+`Unready`, or a load the splash checks), and MUST be spawned, if hidden, so that it is drawn under it, as the
+paraglider is, too small to see. The game logs any pipeline made once the world has loaded.

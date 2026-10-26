@@ -44,7 +44,7 @@ pub struct Player {
 pub struct Body;
 
 /// Once the world knows where the player starts: spawns the first character there, facing the way the spawn faces,
-/// with the camera behind it. The player holds the curtain over the world until they have [arrived](arrive).
+/// with the camera behind it. The player holds the splash over the world until they have [arrived](arrive).
 fn spawn(mut commands: Commands, start: Option<Res<Spawn>>, players: Query<(), With<Player>>) {
     let Some(start) = start else { return };
     if !players.is_empty() {
@@ -68,7 +68,7 @@ fn spawn(mut commands: Commands, start: Option<Res<Spawn>>, players: Query<(), W
         .add_child(body);
 }
 
-/// Lifts the player's hold on the curtain once they stand on the ground with their paraglider ready.
+/// Lifts the player's hold on the splash once they stand on the ground with their paraglider ready.
 fn arrive(mut commands: Commands, players: Query<(Entity, &Player), With<Unready>>, gliders: Query<&glider::Glider>) {
     for (entity, player) in &players {
         if player.motion.mode != Mode::Arriving && gliders.iter().any(|glider| glider.of(player.body)) {

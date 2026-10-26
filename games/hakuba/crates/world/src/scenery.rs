@@ -6,7 +6,7 @@
 //! large model would not pay: each tile's merged mesh is drawn on its own.
 
 use bevy::asset::RenderAssetUsages;
-use bevy::camera::visibility::VisibilityRange;
+use bevy::camera::visibility::{VisibilityRange, VisibilitySystems};
 use bevy::ecs::system::SystemParam;
 use bevy::gltf::{Gltf, GltfExtras, GltfMesh, GltfNode};
 use bevy::light::NotShadowCaster;
@@ -15,7 +15,7 @@ use bevy::world_serialization::WorldAssetRoot;
 use serde::Deserialize;
 
 use crate::tiles::TILES;
-use crate::wind::{Swaying, SwayingMaterials};
+use crate::wind::{FULL_UP_TO_M, SWAP_M, Swap, Swaying, SwayingMaterials};
 
 /// A model with fewer vertices than this has its copies merged.
 const MERGE_BELOW_VERTICES: usize = 256;
@@ -23,17 +23,12 @@ const MERGE_BELOW_VERTICES: usize = 256;
 /// The most vertices one tile's merged copies of a model may hold: past this, merging costs more memory than it saves.
 const MERGED_AT_MOST_VERTICES: usize = 500_000;
 
-/// Up to how far from the camera, in metres, a model in a full tile shows its full version, and over how many more it
-/// crossfades into its middle one. A tree's hundreds of leaf cards cost most of a frame's drawing; beyond this, their
-/// detail is too small to see, so the middle version's few larger cards look the same for a sixth of the cost.
-const FULL_UP_TO_M: f32 = 20.0;
-const CROSSFADE_M: f32 = 6.0;
-
 pub struct SceneryPlugin;
 
 impl Plugin for SceneryPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (read, spawn).chain().in_set(Placing));
+        app.add_systems(Update, (read, spawn).chain().in_set(Placing))
+            .add_systems(PostUpdate, no_crossfades.before(VisibilitySystems::CheckVisibility));
     }
 }
 
@@ -114,7 +109,7 @@ struct Models<'w> {
 
 /// Spawns the copies whose model has loaded. A middle tile shows the model's `middle` node, if it has one, and its
 /// `full` node otherwise. A full tile shows a model that has a `middle` node as both: the full version near the camera,
-/// crossfading into the middle one from [`FULL_UP_TO_M`], so the leaves' detail is drawn only where it is seen up close.
+/// giving way to the middle one from [`FULL_UP_TO_M`], so the leaves' detail is drawn only where it is seen up close.
 fn spawn(
     mut commands: Commands,
     assets: Res<AssetServer>,
@@ -125,27 +120,20 @@ fn spawn(
 ) {
     'copies: for (entity, waiting) in &waiting {
         let Some(gltf) = models.gltfs.get(&waiting.model) else { continue };
-        let near = FULL_UP_TO_M..FULL_UP_TO_M + CROSSFADE_M;
         let versions = match (waiting.middle, gltf.named_nodes.contains_key("middle")) {
             (true, true) => vec![("middle", None)],
-            (false, true) => vec![
-                ("full", Some(VisibilityRange { start_margin: 0.0..0.0, end_margin: near.clone(), use_aabb: false })),
-                (
-                    "middle",
-                    Some(VisibilityRange { start_margin: near, end_margin: f32::MAX..f32::MAX, use_aabb: false }),
-                ),
-            ],
+            (false, true) => vec![("full", Some(Swap::Going)), ("middle", Some(Swap::Coming))],
             (_, false) => vec![("full", None)],
         };
         let mut shown = Vec::with_capacity(versions.len());
-        for (name, range) in versions {
+        for (name, swap) in versions {
             let Some(node) = gltf.named_nodes.get(name).and_then(|node| models.nodes.get(node)) else {
                 warn!("a model has no {name} node");
                 commands.entity(entity).remove::<Waiting>();
                 continue 'copies;
             };
             let Some(parts) = parts(&assets, &models, &meshes, &mut swaying, node) else { continue 'copies };
-            shown.push((node, parts, range));
+            shown.push((node, parts, swap));
         }
         commands.entity(entity).remove::<Waiting>().insert(Placed(waiting.model.clone()));
         let transforms: Vec<Transform> = waiting
@@ -156,14 +144,17 @@ fn spawn(
                 Transform::from_xyz(x, y, z).with_rotation(Quat::from_rotation_y(yaw)).with_scale(Vec3::splat(scale))
             })
             .collect();
-        for (node, parts, range) in shown {
+        for (node, parts, swap) in shown {
             let shadows = node
                 .extras
                 .as_ref()
                 .and_then(|extras| serde_json::from_str::<ModelExtras>(&extras.value).ok())
                 .is_none_or(|extras| extras.casts_shadows);
             let vertices = vertices(&models.meshes, &meshes, node);
-            let merge = vertices < MERGE_BELOW_VERTICES && vertices * transforms.len() <= MERGED_AT_MOST_VERTICES;
+            // A merged mesh stands at the tile's origin, not at each copy, so copies that swap by distance stay apart.
+            let merge = swap.is_none()
+                && vertices < MERGE_BELOW_VERTICES
+                && vertices * transforms.len() <= MERGED_AT_MOST_VERTICES;
             for (mesh, look) in &parts {
                 let shapes: Vec<(Handle<Mesh>, Transform)> =
                     match merge.then(|| merged(&meshes, mesh, &transforms)).flatten() {
@@ -176,15 +167,45 @@ fn spawn(
                         Look::Still(material) => part.insert(MeshMaterial3d(material.clone())),
                         Look::Swaying(material) => part.insert(MeshMaterial3d(material.clone())),
                     };
+                    let sways = matches!(look, Look::Swaying(_));
                     if !shadows {
                         part.insert(NotShadowCaster);
                     }
-                    if let Some(range) = &range {
-                        part.insert(range.clone());
+                    if let Some(swap) = swap {
+                        part.insert(range(swap, sways));
+                        if sways {
+                            part.insert(swap);
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+/// Where a version that swaps by distance is drawn at all. A swaying part is drawn wherever it may show and its shader
+/// swaps it a card at a time (`wind.wesl`); a still one swaps whole, halfway. Either way at once, never a crossfade:
+/// Bevy's dithers its pixels in screen space, which shimmers under temporal anti-aliasing.
+fn range(swap: Swap, sways: bool) -> VisibilityRange {
+    let halfway = FULL_UP_TO_M + SWAP_M / 2.0;
+    let (from, to) = if sways { (FULL_UP_TO_M, FULL_UP_TO_M + SWAP_M) } else { (halfway, halfway) };
+    match swap {
+        Swap::Going => VisibilityRange::abrupt(0.0, to),
+        Swap::Coming => VisibilityRange::abrupt(from, f32::MAX),
+    }
+}
+
+/// Makes every visibility range in the game abrupt, saying so, should one crossfade: Bevy dithers a crossfade's pixels
+/// in screen space, which shimmers under temporal anti-aliasing, so it is never shown.
+fn no_crossfades(mut ranges: Query<(Entity, &mut VisibilityRange), Changed<VisibilityRange>>) {
+    for (entity, mut range) in &mut ranges {
+        if range.is_abrupt() {
+            continue;
+        }
+        error!("{entity} crossfades between versions, which shimmers: it swaps at once, halfway, instead");
+        let start = (range.start_margin.start + range.start_margin.end) / 2.0;
+        let end = (range.end_margin.start + range.end_margin.end) / 2.0;
+        *range = VisibilityRange::abrupt(start, end);
     }
 }
 
