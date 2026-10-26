@@ -45,7 +45,7 @@ const INNER: [[f64; 2]; 6] = [[97.0, 62.8], [88.0, 70.0], [87.0, 83.0], [90.0, 9
 /// The short lane on the other side of the well, joining the main lane at both ends.
 const LOOP: [[f64; 2]; 7] =
     [[98.0, 62.0], [104.0, 66.0], [108.0, 72.0], [113.0, 78.0], [114.0, 84.0], [114.0, 89.0], [112.0, 95.0]];
-const WELL_APRON: [[f64; 2]; 2] = [[99.0, 81.9], [110.0, 80.0]];
+const WELL_APRON: [[f64; 2]; 2] = [[99.0, 81.9], [114.0, 80.0]];
 
 /// The road owns its centre and edge. Begin the dirt just beyond its edge, with a short ground verge.
 fn entrance_geometry() -> (DVec2, DVec2) {
@@ -227,6 +227,14 @@ mod tests {
                 assert!(cut(triangle.to_vec(), *other).is_empty(), "lane triangles overlap");
             }
         }
+        let lies_on = |point: DVec2, course: &[[f64; 2]], width| {
+            ribbon(course, width, 8.0)
+                .iter()
+                .any(|triangle| weights(triangle.map(|(p, _)| p), point).is_some_and(|w| w.min_element() >= -1e-7))
+        };
+        assert!(lies_on(DVec2::from_array(LOOP[0]), &approach(), 2.6));
+        assert!(lies_on(DVec2::from_array(LOOP[LOOP.len() - 1]), &INNER, 3.8));
+        assert!(lies_on(DVec2::from_array(WELL_APRON[1]), &LOOP, 3.8));
         for course in [approach(), INNER.to_vec(), LOOP.to_vec(), WELL_APRON.to_vec()] {
             for (point, _) in curve(&course) {
                 assert!(
