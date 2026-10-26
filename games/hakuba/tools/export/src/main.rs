@@ -219,12 +219,26 @@ fn main() -> Result<ExitCode> {
             }
         }
     }
-    // Animations first: characters read their exports.
-    exports.sort_by_key(|folder| !matches!(folder.asset, Asset::Animation(_)));
-    for folder in exports {
-        folder.export()?;
-    }
+    export_in_order(exports)?;
     Ok(if stale == 0 { ExitCode::SUCCESS } else { ExitCode::FAILURE })
+}
+
+/// Exports each folder after those among `pending` whose exports it reads.
+fn export_in_order(mut pending: Vec<Folder>) -> Result<()> {
+    let waits = |folder: &Folder, pending: &[Folder]| {
+        folder.asset.reads().iter().any(|read| {
+            let read = fs::canonicalize(Path::new(ASSETS).join(read)).ok();
+            pending.iter().any(|other| Some(&other.path) == read.as_ref())
+        })
+    };
+    while !pending.is_empty() {
+        let Some(next) = pending.iter().position(|folder| !waits(folder, &pending)) else {
+            let names: Vec<String> = pending.iter().map(|folder| folder.path.display().to_string()).collect();
+            bail!("these assets read each other's exports: {}", names.join(", "));
+        };
+        pending.remove(next).export()?;
+    }
+    Ok(())
 }
 
 #[cfg(test)]
