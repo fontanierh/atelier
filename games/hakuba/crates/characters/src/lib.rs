@@ -1,7 +1,7 @@
 //! The playable characters. An entity given a [`Character`] gets that character's model and plays its idle in a loop;
 //! [`Clips`] then lists every clip the model has and how fast each carries it, [`Play`] switches to one, fading from
 //! the last, and [`Playing`] says which is playing and whether it has finished. The model's right hand holds what the
-//! character carries at its [`Grip`]; [`Hands`] finds both hands, for what it holds in two.
+//! character carries at its [`Grip`]; [`Hands`] finds both arms' bones, for what it holds in two hands.
 
 use std::time::Duration;
 
@@ -54,9 +54,11 @@ const CLIPS_NODE: &str = "clips";
 /// The model's node in the right hand's palm, where it holds things.
 const GRIP_NODE: &str = "grip_r";
 
-/// The model's bones around each fist, left then right: the hand's, at the wrist, and the middle finger's three.
-const FIST_NODES: [[&str; 4]; 2] =
-    [["hand_l", "middle_1_l", "middle_2_l", "middle_3_l"], ["hand_r", "middle_1_r", "middle_2_r", "middle_3_r"]];
+/// The sides of the model's bones, left then right, as their names end.
+const SIDES: [&str; 2] = ["l", "r"];
+
+/// The model's fingers but the thumb, each three bones named `<finger>_1` to `<finger>_3` from the knuckle out.
+const FINGERS: [&str; 4] = ["index", "middle", "ring", "pinky"];
 
 /// Every clip a character's model has, by name in alphabetical order, and how fast each carries it over the ground.
 /// Added once the model has loaded.
@@ -137,12 +139,32 @@ pub struct Grip {
     pub character: Entity,
 }
 
-/// A character's hands, left then right, added once its model has spawned: around each fist, the hand's bone, at the
-/// wrist, and its middle finger's three. Where a fist closes on what it holds, between the palm and the curled
-/// fingers, is the middle of the four.
+/// A character's arms, left then right, added once its model has spawned, for what it holds in both hands.
 #[derive(Component)]
 pub struct Hands {
-    pub fists: [[Entity; 4]; 2],
+    pub arms: [Arm; 2],
+}
+
+/// One arm's bones, from the shoulder to the fingers.
+#[derive(Clone, Copy)]
+pub struct Arm {
+    /// The upper arm's bone, at the shoulder.
+    pub upper_arm: Entity,
+    /// The forearm's, at the elbow.
+    pub forearm: Entity,
+    /// The hand's, at the wrist.
+    pub hand: Entity,
+    /// Each finger's three bones from the knuckle out, the index, middle, ring and little fingers'.
+    pub fingers: [[Entity; 3]; 4],
+}
+
+impl Arm {
+    /// The bones around the fist: the hand's and the middle finger's three. Roughly where the fist closes, between the
+    /// palm and the curled fingers, is the middle of the four.
+    pub fn fist(&self) -> [Entity; 4] {
+        let [a, b, c] = self.fingers[1];
+        [self.hand, a, b, c]
+    }
 }
 
 /// A character whose model is loading.
@@ -197,7 +219,7 @@ fn start_animating(
     names: Query<(&Name, Option<&GltfExtras>)>,
 ) {
     let Ok(mut clips) = characters.get_mut(ready.entity) else { return };
-    let mut fists = [[None; 4]; 2];
+    let mut bones: HashMap<String, Entity> = HashMap::default();
     for node in children.iter_descendants(ready.entity) {
         let Ok((name, extras)) = names.get(node) else { continue };
         match name.as_str() {
@@ -210,16 +232,25 @@ fn start_animating(
                 commands.entity(node).insert(Grip { character: ready.entity });
             }
             name => {
-                for (side, bones) in FIST_NODES.iter().enumerate() {
-                    if let Some(k) = bones.iter().position(|bone| *bone == name) {
-                        fists[side][k] = Some(node);
-                    }
-                }
+                bones.insert(name.to_string(), node);
             }
         }
     }
-    if let [[Some(a), Some(b), Some(c), Some(d)], [Some(e), Some(f), Some(g), Some(h)]] = fists {
-        commands.entity(ready.entity).insert(Hands { fists: [[a, b, c, d], [e, f, g, h]] });
+    let arm = |side: &str| -> Option<Arm> {
+        let bone = |part: &str| bones.get(&format!("{part}_{side}")).copied();
+        let finger = |finger: &str| {
+            Some([bone(&format!("{finger}_1"))?, bone(&format!("{finger}_2"))?, bone(&format!("{finger}_3"))?])
+        };
+        let [index, middle, ring, pinky] = FINGERS.map(finger);
+        Some(Arm {
+            upper_arm: bone("upper_arm")?,
+            forearm: bone("forearm")?,
+            hand: bone("hand")?,
+            fingers: [index?, middle?, ring?, pinky?],
+        })
+    };
+    if let [Some(left), Some(right)] = SIDES.map(arm) {
+        commands.entity(ready.entity).insert(Hands { arms: [left, right] });
     }
     let Some(player) = children.iter_descendants(ready.entity).find(|child| players.contains(*child)) else { return };
     clips.player = Some(player);

@@ -4,6 +4,7 @@
 
 mod camera;
 mod glider;
+mod grip;
 mod input;
 mod moves;
 
@@ -24,7 +25,7 @@ impl Plugin for PlayerPlugin {
             .add_systems(Update, (spawn, arrive).run_if(in_state(Screen::World)))
             .add_systems(
                 Update,
-                (input::read, moves::advance, camera::follow, glider::show).chain().run_if(in_state(Pause::Playing)),
+                (input::read, moves::advance, camera::follow).chain().run_if(in_state(Pause::Playing)),
             );
     }
 }

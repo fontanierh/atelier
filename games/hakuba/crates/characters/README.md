@@ -11,8 +11,9 @@ its idle in a loop. Once the model has loaded, the entity gets:
 
 Triggering `Play` with one of those names makes the character play it, in a loop or once, at a speed, fading from the
 clip before. The node in the model's right palm gets `Grip`: what the character holds, such as the paraglider, is
-spawned as its child. `Hands` names each hand's fist bones, its wrist and middle finger: what it holds in both hands
-sits between the two fists' middles.
+spawned as its child. `Hands` names each arm's bones, for what it holds in both hands: the upper arm, forearm and
+hand, and the three bones of each finger but the thumb. `Arm::fist` gives the bones around a fist, the wrist and the
+middle finger: what it holds in both hands sits between the two fists' middles, and each arm reaches for its handle.
 
 Every character has every clip and its grip, so what works for one works for all. The screens that show a character
 spawn it.

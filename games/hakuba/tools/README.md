@@ -129,15 +129,21 @@ fitted stride is longer than the character's legs reach, the body lowers just en
 **`equipment`** writes something a character holds, such as the paraglider, as `<folder name>.glb`, playing its one
 clip under the folder's name. It comes from the motion library with the skeleton that held it there, and its export
 is placed in that skeleton's body frame between its fists, each the middle of its wrist and its middle finger's three
-bones, so a character holds it between its own fists as the library's skeleton did.
+bones, so a character holds it between its own fists as the library's skeleton did. A node `holder` gives, in its
+extras, how high the skeleton's hips stand, and its two handles in the export's frame, left then right, each the
+stretch of tube a fist closes round from its back end to its front end, with the tube's radius, so a character can
+close its own fists round them. The export fails if the holder's fist closes more than 10 cm from its handle.
 
-| Setting   | Meaning                                                        |
-|-----------|----------------------------------------------------------------|
-| `source`  | the equipment, with its clip, relative to the folder           |
-| `clip`    | the clip's name in that file                                   |
-| `holder`  | the skeleton that held it, at rest, relative to the folder     |
-| `held_at` | the holder's bone its root sits at                             |
-| `scale`   | how much larger it is drawn than its source                    |
+| Setting            | Meaning                                                                    |
+|--------------------|----------------------------------------------------------------------------|
+| `source`           | the equipment, with its clip, relative to the folder                       |
+| `clip`             | the clip's name in that file                                               |
+| `holder`           | the skeleton that held it, at rest, relative to the folder                 |
+| `held_at`          | the holder's bone its root sits at                                         |
+| `scale`            | how much larger it is drawn than its source                                |
+| `handle_left_m`    | the left handle's stretch, back end then front end, in the source's frame  |
+| `handle_right_m`   | the right handle's                                                         |
+| `handle_radius_m`  | the handles' tube's radius in the source                                   |
 
 **`texture`** writes an image as `<folder name>.ktx2`, with every mipmap level so it draws smoothly near and far.
 Each level averages the one above it in linear light, each colour weighted by its opacity, and is stored as 8-bit
