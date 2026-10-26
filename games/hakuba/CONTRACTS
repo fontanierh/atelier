@@ -1,0 +1,17 @@
+@cc [owner:fontanierh,label:architecture] hakuba-concerns-have-one-home
+Each concern MUST live in its one home, and nowhere else:
+- game code that runs when the game plays: `crates/<feature>/`, one Bevy plugin per crate;
+- wiring the plugins into the app: `src/main.rs`, which holds no game logic;
+- what an asset is (its source files and its own numbers, shapes and choices): that asset's `src/` under `assets/`;
+- how every asset of a kind is made: `tools/export/`;
+- what the game loads: the exports beside each asset's `src/`.
+Code that would sit in a second home MUST move to its home instead of being copied.
+
+@cc [owner:fontanierh,label:architecture] hakuba-is-self-contained
+Hakuba's code, assets, docs and comments MUST stay in `games/hakuba` and MUST NOT import, read, name or
+describe anything outside it, including other games and the `atelier` command. A clone of the repository
+MUST build, export and run Hakuba with plain `cargo` and `trunk`.
+
+@cc [owner:fontanierh,label:architecture] hakuba-everything-used-and-described
+Every committed file MUST be used by the game or by its exports. Every folder and file MUST say what it is
+for, in a README beside it or a header comment, describing only what is there now, in short, plain words.

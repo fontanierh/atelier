@@ -1,0 +1,18 @@
+@cc [owner:fontanierh,label:architecture] exporter-is-generic
+The exporter MUST hold only methods that serve every asset of their kind: retargeting, pose editing,
+tiling, laying overlays, shared shape helpers. It MUST NOT name a particular asset (a character, an
+animation, a region) or hold one asset's numbers, shapes, courses, colours or choices. Those belong in
+that asset's `src/`, which calls the exporter's methods and helpers. A concept only one asset uses (a road,
+a stance, a building) MUST NOT appear in the exporter until a second asset needs it, and then only as a
+general method under a general name.
+
+@cc [owner:fontanierh,label:architecture] exporter-lists-are-the-only-names
+`animations.rs`, `characters.rs` and `world/regions.rs` are the only exporter files that name assets.
+Each MUST do no more than compile in each asset's `.rs` file with `#[path]`, list the assets, and pass
+each asset's own code to the generic method that uses it. Adding an asset MUST NOT change any other
+exporter file.
+
+@cc [owner:fontanierh,label:correctness] exports-follow-from-inputs
+An export MUST depend only on its asset's settings, its `src/`, the exporter's own files and the
+exports it declares it reads, so that the same inputs give byte-identical files. The inputs checksum
+MUST cover all of them, and the exporter MUST NOT read anything else.

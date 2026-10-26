@@ -1,0 +1,9 @@
+@cc [owner:fontanierh,label:architecture] crates-load-only-exports
+Game crates MUST load only exported files (each asset's `.glb` and its declared outputs), never an asset's
+`src/` or `asset.toml`, and MUST NOT depend on how an export was made. They MUST NOT name a region or
+depend on how the world is split into regions: the world is tiles and an index.
+
+@cc [owner:fontanierh,label:architecture] one-feature-per-crate
+Each crate MUST be one feature with one Bevy plugin. What several screens share lives in `screens`. A crate
+MAY use another crate only for what that crate publishes for others (as the viewer uses `characters`),
+never for its internals.

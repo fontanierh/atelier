@@ -1,0 +1,23 @@
+@cc [owner:fontanierh,label:architecture] asset-folder-shape
+Every asset MUST be one folder, named in kebab case: `assets/<group>/<asset-name>/` (groups such as
+`characters/` and `animations/`), or `assets/world/` for the one world. It holds exactly:
+`asset.toml` (its kind, settings and inputs checksum), `src/` (every input of its export), and what its
+kind's exporter writes: `<asset-name>.glb`, plus the outputs that kind declares (the world's `tiles/`).
+Nothing else MAY sit in an asset folder. Folders inside `src/` follow the kind's layout (the world's
+`src/ground/` and `src/regions/<region>/`).
+
+@cc [owner:fontanierh,label:architecture] asset-src-is-the-asset
+An asset's `src/` MUST hold what that asset is: its source files and its own numbers, shapes and choices.
+A `.rs` file there MUST express those choices through the exporter's traits, methods and helpers, and
+MUST NOT define a general method another asset could use: that belongs in `tools/export/`. It MUST NOT
+read or change another asset's `src/`, except by implementing a trait an animation defines for every
+character.
+
+@cc [owner:fontanierh,label:correctness] exports-never-edited
+An asset's exports MUST be written only by `cargo export`, never by hand, and MUST be committed together
+with the settings and sources they were exported from, with a current inputs checksum.
+
+@cc [owner:fontanierh,label:architecture] world-ground-has-one-owner
+The world's ground MUST be one grid of heights, in the pages under `assets/world/src/ground/`. A region
+MUST NOT bring its own ground. It adds to the world only through the exporter's `Region` trait: what it
+lays over the ground, and, as declared changes, how it reshapes the ground inside its own area.
