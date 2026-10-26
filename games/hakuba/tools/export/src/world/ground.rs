@@ -40,7 +40,7 @@ impl Ground {
     }
 
     /// The height at grid point (`i`, `j`), counted from the world's south-west corner, if there is ground there.
-    fn sample(&self, i: usize, j: usize) -> Option<f64> {
+    pub fn sample(&self, i: usize, j: usize) -> Option<f64> {
         // A point on a page's edge is on both pages beside it.
         let pages = |k: usize| [k / self.page_steps, k.saturating_sub(1) / self.page_steps];
         pages(i).into_iter().flat_map(|pi| pages(j).map(|pj| (pi, pj))).find_map(|(pi, pj)| {

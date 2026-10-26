@@ -16,3 +16,11 @@ exporter file.
 An export MUST depend only on its asset's settings, its `src/`, the exporter's own files and the
 exports it declares it reads, so that the same inputs give byte-identical files. The inputs checksum
 MUST cover all of them, and the exporter MUST NOT read anything else.
+
+@cc [owner:fontanierh,label:performance] an-edit-rebuilds-what-it-touches
+An export MUST rebuild only the parts an edit touches: a world export rewrites only the tiles whose own checksum
+changed. A tile's checksum MUST cover everything its files depend on (the code that writes tiles, the settings it
+uses, the heights it reads, and every region's content that reaches into it) and nothing else, so an incremental
+export gives the same files as a full one. The bytes of a tile MUST depend only on code in `world/` other than
+`regions.rs`, on `glb.rs` and on the locked crate versions. Exporter code for another kind MUST NOT change the
+world's tiles, and a region MUST NOT make tiles it does not reach rebuild.

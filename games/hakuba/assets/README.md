@@ -11,6 +11,7 @@ assets/
   world/                    the world, in tiles
     src/ground/             the ground's heights, in pages 512 m wide
     src/regions/            one folder per region, with its layout
+    tiles/                  each tile in full and middle detail, and `checksums.toml`: what each was made from
 ```
 
 ## An asset folder
@@ -25,7 +26,7 @@ Every asset is one folder, named in kebab case:
 ```
 
 The game loads `<asset-name>.glb` and what the export writes beside it, such as the world's `tiles/`. The browser
-build copies the folder without `src/` and `asset.toml` (see `../Trunk.toml`).
+build copies the folder without `src/`, `asset.toml` and the tile checksums (see `../Trunk.toml`).
 
 `src/` holds every input of the export, so a clone can export the `.glb` again exactly. A source made by hand, such
 as `characters/nox/src/model.glb`, is committed as it is. A `.rs` file in `src/` holds the asset's own choices

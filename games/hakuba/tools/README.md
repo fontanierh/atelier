@@ -38,6 +38,7 @@ tools/
       world/                the `world` kind
         mod.rs              the settings, and cutting the world into tiles
         regions.rs          every region, and the `Region` trait: what a region adds to the world
+        checksums.rs        what each tile is made from, so an export rebuilds only the tiles that changed
         ground.rs           the ground's heights, read from its pages
         overlay.rs          flat shapes laid over the ground, such as roads
         ribbon.rs           strips of even width along a curve, for regions to lay as overlays
@@ -112,3 +113,8 @@ overlay lies a few centimetres above the ground triangles under it; the export f
 `inputs_sha256` in `asset.toml` covers the asset's settings, every file in its `src/`, every file in
 `tools/export/`, and the exports it reads (a character reads every animation). Changing any of them marks the
 export out of date until it is exported again. A character exports only after the animations it reads are current.
+
+The world also keeps one checksum per tile, in `tiles/checksums.toml`. It covers the code that writes tiles
+(`world/` but the regions list, `glb.rs`, and the locked crate versions), the settings tiles use, the heights in and
+around the tile, and the overlay triangles that reach into it. An export rewrites only the tiles whose checksum
+changed, so moving a road rebuilds the tiles it crosses and nothing else.
