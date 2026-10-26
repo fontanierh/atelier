@@ -6,6 +6,7 @@
 //! large model would not pay: each tile's merged mesh is drawn on its own.
 
 use bevy::asset::RenderAssetUsages;
+use bevy::camera::visibility::VisibilityRange;
 use bevy::ecs::system::SystemParam;
 use bevy::gltf::{Gltf, GltfExtras, GltfMesh, GltfNode};
 use bevy::light::NotShadowCaster;
@@ -21,6 +22,12 @@ const MERGE_BELOW_VERTICES: usize = 256;
 
 /// The most vertices one tile's merged copies of a model may hold: past this, merging costs more memory than it saves.
 const MERGED_AT_MOST_VERTICES: usize = 500_000;
+
+/// Up to how far from the camera, in metres, a model in a full tile shows its full version, and over how many more it
+/// crossfades into its middle one. A tree's hundreds of leaf cards cost most of a frame's drawing; beyond this, their
+/// detail is too small to see, so the middle version's few larger cards look the same for a sixth of the cost.
+const FULL_UP_TO_M: f32 = 20.0;
+const CROSSFADE_M: f32 = 6.0;
 
 pub struct SceneryPlugin;
 
@@ -105,8 +112,9 @@ struct Models<'w> {
     meshes: Res<'w, Assets<GltfMesh>>,
 }
 
-/// Spawns the copies whose model has loaded: its `middle` node in a middle tile, if it has one, and its `full` node
-/// otherwise.
+/// Spawns the copies whose model has loaded. A middle tile shows the model's `middle` node, if it has one, and its
+/// `full` node otherwise. A full tile shows a model that has a `middle` node as both: the full version near the camera,
+/// crossfading into the middle one from [`FULL_UP_TO_M`], so the leaves' detail is drawn only where it is seen up close.
 fn spawn(
     mut commands: Commands,
     assets: Res<AssetServer>,
@@ -115,35 +123,31 @@ fn spawn(
     mut meshes: ResMut<Assets<Mesh>>,
     mut swaying: SwayingMaterials,
 ) {
-    for (entity, waiting) in &waiting {
+    'copies: for (entity, waiting) in &waiting {
         let Some(gltf) = models.gltfs.get(&waiting.model) else { continue };
-        let name = if waiting.middle && gltf.named_nodes.contains_key("middle") { "middle" } else { "full" };
-        let Some(node) = gltf.named_nodes.get(name).and_then(|node| models.nodes.get(node)) else {
-            warn!("a model has no {name} node");
-            commands.entity(entity).remove::<Waiting>();
-            continue;
+        let near = FULL_UP_TO_M..FULL_UP_TO_M + CROSSFADE_M;
+        let versions = match (waiting.middle, gltf.named_nodes.contains_key("middle")) {
+            (true, true) => vec![("middle", None)],
+            (false, true) => vec![
+                ("full", Some(VisibilityRange { start_margin: 0.0..0.0, end_margin: near.clone(), use_aabb: false })),
+                (
+                    "middle",
+                    Some(VisibilityRange { start_margin: near, end_margin: f32::MAX..f32::MAX, use_aabb: false }),
+                ),
+            ],
+            (_, false) => vec![("full", None)],
         };
-        let Some(mesh) = node.mesh.as_ref().and_then(|mesh| models.meshes.get(mesh)) else { continue };
-        // A part whose vertices say how far they sway is drawn with the swaying version of its material.
-        let looks: Option<Vec<Look>> = mesh
-            .primitives
-            .iter()
-            .map(|primitive| {
-                let material = standard_of(&assets, primitive.material.as_ref());
-                let sways =
-                    meshes.get(&primitive.mesh).is_some_and(|mesh| mesh.contains_attribute(Mesh::ATTRIBUTE_UV_1));
-                if sways { swaying.of(&material).map(Look::Swaying) } else { Some(Look::Still(material)) }
-            })
-            .collect();
-        let Some(looks) = looks else { continue };
+        let mut shown = Vec::with_capacity(versions.len());
+        for (name, range) in versions {
+            let Some(node) = gltf.named_nodes.get(name).and_then(|node| models.nodes.get(node)) else {
+                warn!("a model has no {name} node");
+                commands.entity(entity).remove::<Waiting>();
+                continue 'copies;
+            };
+            let Some(parts) = parts(&assets, &models, &meshes, &mut swaying, node) else { continue 'copies };
+            shown.push((node, parts, range));
+        }
         commands.entity(entity).remove::<Waiting>().insert(Placed(waiting.model.clone()));
-        let shadows = node
-            .extras
-            .as_ref()
-            .and_then(|extras| serde_json::from_str::<ModelExtras>(&extras.value).ok())
-            .is_none_or(|extras| extras.casts_shadows);
-        let parts: Vec<(Handle<Mesh>, Look)> =
-            mesh.primitives.iter().map(|primitive| primitive.mesh.clone()).zip(looks).collect();
         let transforms: Vec<Transform> = waiting
             .instances
             .chunks_exact(5)
@@ -152,26 +156,57 @@ fn spawn(
                 Transform::from_xyz(x, y, z).with_rotation(Quat::from_rotation_y(yaw)).with_scale(Vec3::splat(scale))
             })
             .collect();
-        let vertices = vertices(&models.meshes, &meshes, node);
-        let merge = vertices < MERGE_BELOW_VERTICES && vertices * transforms.len() <= MERGED_AT_MOST_VERTICES;
-        for (mesh, look) in &parts {
-            let shapes: Vec<(Handle<Mesh>, Transform)> =
-                match merge.then(|| merged(&meshes, mesh, &transforms)).flatten() {
-                    Some(merged) => vec![(meshes.add(merged), Transform::IDENTITY)],
-                    None => transforms.iter().map(|&transform| (mesh.clone(), transform)).collect(),
-                };
-            for (mesh, transform) in shapes {
-                let mut part = commands.spawn((Mesh3d(mesh), transform, ChildOf(entity)));
-                match look {
-                    Look::Still(material) => part.insert(MeshMaterial3d(material.clone())),
-                    Look::Swaying(material) => part.insert(MeshMaterial3d(material.clone())),
-                };
-                if !shadows {
-                    part.insert(NotShadowCaster);
+        for (node, parts, range) in shown {
+            let shadows = node
+                .extras
+                .as_ref()
+                .and_then(|extras| serde_json::from_str::<ModelExtras>(&extras.value).ok())
+                .is_none_or(|extras| extras.casts_shadows);
+            let vertices = vertices(&models.meshes, &meshes, node);
+            let merge = vertices < MERGE_BELOW_VERTICES && vertices * transforms.len() <= MERGED_AT_MOST_VERTICES;
+            for (mesh, look) in &parts {
+                let shapes: Vec<(Handle<Mesh>, Transform)> =
+                    match merge.then(|| merged(&meshes, mesh, &transforms)).flatten() {
+                        Some(merged) => vec![(meshes.add(merged), Transform::IDENTITY)],
+                        None => transforms.iter().map(|&transform| (mesh.clone(), transform)).collect(),
+                    };
+                for (mesh, transform) in shapes {
+                    let mut part = commands.spawn((Mesh3d(mesh), transform, ChildOf(entity)));
+                    match look {
+                        Look::Still(material) => part.insert(MeshMaterial3d(material.clone())),
+                        Look::Swaying(material) => part.insert(MeshMaterial3d(material.clone())),
+                    };
+                    if !shadows {
+                        part.insert(NotShadowCaster);
+                    }
+                    if let Some(range) = &range {
+                        part.insert(range.clone());
+                    }
                 }
             }
         }
     }
+}
+
+/// `node`'s meshes, each with its look: a part whose vertices say how far they sway is drawn with the swaying version
+/// of its material. None while a mesh or material is still loading.
+fn parts(
+    assets: &AssetServer,
+    models: &Models,
+    meshes: &Assets<Mesh>,
+    swaying: &mut SwayingMaterials,
+    node: &GltfNode,
+) -> Option<Vec<(Handle<Mesh>, Look)>> {
+    let mesh = node.mesh.as_ref().and_then(|mesh| models.meshes.get(mesh))?;
+    mesh.primitives
+        .iter()
+        .map(|primitive| {
+            let material = standard_of(assets, primitive.material.as_ref());
+            let sways = meshes.get(&primitive.mesh).is_some_and(|mesh| mesh.contains_attribute(Mesh::ATTRIBUTE_UV_1));
+            let look = if sways { Look::Swaying(swaying.of(&material)?) } else { Look::Still(material) };
+            Some((primitive.mesh.clone(), look))
+        })
+        .collect()
 }
 
 /// How many vertices `node`'s meshes have, counting those loaded.

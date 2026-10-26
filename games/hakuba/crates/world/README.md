@@ -15,7 +15,8 @@ src/
   painterly.wgsl its shader
   pixels.rs      draws the world into an image of the resolution the settings ask and stretches it over the window
   tiles.rs       shows each tile in full detail near the camera and in middle detail further out
-  scenery.rs     spawns the trees, bushes, grass and poles a tile lists, merging the copies of small models
+  scenery.rs     spawns the trees, bushes, grass and poles a tile lists, merging the copies of small models;
+                 a tree or bush shows its full leaves only near the camera, its middle version beyond
   wind.rs        sways leaves and grass in the wind, by how far the export says each vertex sways
   wind.wesl      its vertex shader, which also leans leaves and blades away from what pushes plants aside
   push.rs        gives that shader where the things that push plants are, up to four, the nearest the camera
