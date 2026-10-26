@@ -1,7 +1,7 @@
 # A small round green bush, 2 m across.
 kind = "plant"
 seed = 9
-inputs_sha256 = "6683f9bd2b5982b8bdebbffbc5d6bc23ce36ff73bed50f356be9a107be21ef9e"
+inputs_sha256 = "91ceeeaa6036af659aaa3355b8f6afa4a2d7066098a9832b81d3941dc8c68470"
 
 [leaves]
 texture = "small-leaves"

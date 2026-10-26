@@ -7,4 +7,4 @@ clip = "Float"
 holder = "src/holder.glb"
 held_at = "Weapon_R"
 scale = 0.8            # as Yorimichi draws it
-inputs_sha256 = "9bdbe38e4984952934a85ef3d0eaee7d87ab0826a4510e1a890a19b2cd57a770"
+inputs_sha256 = "6cf491bb729e031a81eccc46cd7ae95cc1eb911731af90ca9422678421e79563"

@@ -1,7 +1,7 @@
 # A tuft of eight green blades, about 0.4 m high.
 kind = "plant"
 seed = 40
-inputs_sha256 = "f3c1eca1d21138a60b1870feb6ad74aded145350eacb4af1d3e761faf05fc3e7"
+inputs_sha256 = "07cd51e60100b4bd8c9a34552fe4f7de0a4de9bab121ea4eed57703166cb9ff7"
 
 [tuft]
 blades = 8

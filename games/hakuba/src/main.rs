@@ -5,16 +5,13 @@ use bevy::asset::AssetMetaCheck;
 use bevy::gltf::GltfPlugin;
 use bevy::image::{ImageFilterMode, ImageSamplerDescriptor};
 use bevy::prelude::*;
-use bevy::winit::{UpdateMode, WinitSettings};
 use hakuba_characters::CharactersPlugin;
 use hakuba_menu::MenuPlugin;
+use hakuba_player::PlayerPlugin;
 use hakuba_screens::ScreensPlugin;
+use hakuba_settings::SettingsPlugin;
 use hakuba_viewer::ViewerPlugin;
 use hakuba_world::WorldPlugin;
-use std::time::Duration;
-
-/// The most frames the game draws a second.
-const MAX_FPS: f64 = 60.0;
 
 fn main() {
     App::new()
@@ -46,19 +43,14 @@ fn main() {
                     ..default()
                 }),
         )
-        // The game draws at most MAX_FPS frames a second, even on faster screens, and only that many while in the
-        // background. Input waits for the next frame rather than drawing one of its own.
-        .insert_resource(WinitSettings { focused_mode: capped(), unfocused_mode: capped() })
-        .add_plugins((ScreensPlugin, MenuPlugin, WorldPlugin, CharactersPlugin, ViewerPlugin))
+        .add_plugins((
+            ScreensPlugin,
+            SettingsPlugin,
+            MenuPlugin,
+            WorldPlugin,
+            CharactersPlugin,
+            PlayerPlugin,
+            ViewerPlugin,
+        ))
         .run();
-}
-
-/// Updating once every 1 / MAX_FPS seconds, and on nothing else.
-fn capped() -> UpdateMode {
-    UpdateMode::Reactive {
-        wait: Duration::from_secs_f64(1.0 / MAX_FPS),
-        react_to_device_events: false,
-        react_to_user_events: false,
-        react_to_window_events: false,
-    }
 }

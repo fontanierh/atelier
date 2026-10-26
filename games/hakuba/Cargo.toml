@@ -13,7 +13,9 @@ publish = false
 bevy = "0.20.0"
 hakuba_characters = { path = "crates/characters" }
 hakuba_menu = { path = "crates/menu" }
+hakuba_player = { path = "crates/player" }
 hakuba_screens = { path = "crates/screens" }
+hakuba_settings = { path = "crates/settings" }
 hakuba_viewer = { path = "crates/viewer" }
 hakuba_world = { path = "crates/world" }
 serde = { version = "1.0.228", features = ["derive"] }
@@ -31,7 +33,9 @@ publish.workspace = true
 bevy = { workspace = true, features = ["webgpu"] }
 hakuba_characters.workspace = true
 hakuba_menu.workspace = true
+hakuba_player.workspace = true
 hakuba_screens.workspace = true
+hakuba_settings.workspace = true
 hakuba_viewer.workspace = true
 hakuba_world.workspace = true
 

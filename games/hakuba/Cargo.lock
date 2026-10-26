@@ -3036,7 +3036,9 @@ dependencies = [
  "bevy",
  "hakuba_characters",
  "hakuba_menu",
+ "hakuba_player",
  "hakuba_screens",
+ "hakuba_settings",
  "hakuba_viewer",
  "hakuba_world",
 ]
@@ -3046,6 +3048,8 @@ name = "hakuba_characters"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -3072,10 +3076,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "hakuba_player"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "hakuba_characters",
+ "hakuba_screens",
+ "hakuba_world",
+]
+
+[[package]]
 name = "hakuba_screens"
 version = "0.1.0"
 dependencies = [
  "bevy",
+]
+
+[[package]]
+name = "hakuba_settings"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "hakuba_screens",
+ "serde",
+ "serde_json",
+ "web-sys",
 ]
 
 [[package]]
@@ -3093,6 +3118,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "hakuba_screens",
+ "hakuba_settings",
  "serde",
  "serde_json",
 ]
