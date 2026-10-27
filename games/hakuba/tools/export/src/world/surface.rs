@@ -55,6 +55,18 @@ impl Surface {
             (w.min_element() >= -ON_TRIANGLE).then_some(w.x * a.z + w.y * b.z + w.z * c.z)
         })
     }
+
+    /// Whether a point lies on the actual stored triangles, without extending their boundaries.
+    pub fn contains_exact(&self, p: DVec2) -> bool {
+        let square = ((p.x / SURFACE_CELL_M).floor() as i64, (p.y / SURFACE_CELL_M).floor() as i64);
+        self.cells.get(&square).is_some_and(|triangles| {
+            triangles.iter().any(|&n| {
+                let [a, b, c] = self.triangles[n].map(DVec3::truncate);
+                let sides = [(a, b), (b, c), (c, a)].map(|(a, b)| (b - a).perp_dot(p - a));
+                (b - a).perp_dot(c - a) != 0.0 && (sides.iter().all(|s| *s >= 0.0) || sides.iter().all(|s| *s <= 0.0))
+            })
+        })
+    }
 }
 
 /// The squares of `SURFACE_CELL_M` that the box around `triangle` reaches into.

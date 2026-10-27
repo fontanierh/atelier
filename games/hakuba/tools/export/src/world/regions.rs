@@ -2,6 +2,7 @@
 
 use super::levelling::{Pad, Strip};
 use super::overlay::Overlay;
+use super::raised::Raised;
 use super::scenery::{Exclusion, Land, Scenery};
 
 #[path = "../../../../assets/world/src/regions/momiji-coast/layout.rs"]
@@ -28,6 +29,11 @@ pub trait Region {
 
     /// The flat shapes it lays over the ground.
     fn overlays(&self) -> Vec<Overlay>;
+
+    /// Planar surfaces that own their footprints above the ground.
+    fn raised(&self) -> Vec<Raised> {
+        Vec::new()
+    }
 
     /// What it stands on `land` and runs along it.
     fn scenery(&self, land: &Land) -> Scenery;
