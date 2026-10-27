@@ -60,8 +60,12 @@ its wind in the shadow, prepass and main passes.
   it looks the same and costs 0.7 ms instead of 2.0: with it the reference setting went from about 50 frames a second to
   a steady 60.
 - **Merge small copies by square, not by tile.** Thousands of grass entities cost more to cull than their vertices cost
-  to draw, so their copies merge, but a merged mesh is culled whole: one per 16 m square keeps what is out of view
-  undrawn. A large model, such as a tree, is never merged; Bevy draws its copies together anyway.
+  to draw, so their copies merge, but a merged mesh is culled whole: shadow-casting models use 16 m squares and
+  non-shadow-casting models use 32 m squares. A large model, such as a tree, is never merged; Bevy draws its copies
+  together anyway. Tile scenery is prepared over multiple updates, then the complete version replaces the old one.
+- **Keep presentation cameras out of 3D visibility work.** The window's 2D camera displays the world image and UI;
+  it has no 3D render layers or directional-light shadow view. Rigid GPU-built meshes also use a direct binding path, while
+  skinned, morphed, lightmapped and CPU-built meshes retain Bevy's original binding.
 - **Keep ground rays to nearby solids.** Bevy's general mesh picker checked bounds on decorative meshes before the
   solid filter. Ground now queries solid meshes directly, bounds each ray by its reach and uses Bevy's triangle
   intersections. At the reference setting, walking rose from about 57 to 60 frames a second.

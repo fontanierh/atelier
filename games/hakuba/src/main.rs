@@ -10,6 +10,7 @@ use hakuba_characters::CharactersPlugin;
 use hakuba_glider::GliderPlugin;
 use hakuba_menu::MenuPlugin;
 use hakuba_player::PlayerPlugin;
+use hakuba_rendering::RenderingPlugin;
 use hakuba_screens::ScreensPlugin;
 use hakuba_settings::SettingsPlugin;
 use hakuba_viewer::ViewerPlugin;
@@ -50,6 +51,7 @@ fn main() {
             SettingsPlugin,
             MenuPlugin,
             WorldPlugin,
+            RenderingPlugin,
             CharactersPlugin,
             GliderPlugin,
             PlayerPlugin,

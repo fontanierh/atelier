@@ -12,4 +12,4 @@ takes = [
     "src/rocks-09.wav",
 ]
 quality = 0.3
-inputs_sha256 = "d569a7664c223dd094b67f4e5b22e0b7fb14f0142ca0e79643d8ec9475267232"
+inputs_sha256 = "c077e6969acacc6b2444e2d2a6bbed1c124b689b5ec2ae6083e922c9a744638b"

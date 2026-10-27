@@ -2,12 +2,14 @@
 //! model and listing where each copy stands. Once the model has loaded, each copy of a large model, such as a tree, is
 //! spawned with the model's own meshes and materials, shared by every copy, so Bevy draws them together, in one call
 //! across every tile. The copies of a small model, such as a tuft of grass, are merged instead, into one mesh per
-//! square of [`MERGED_SQUARE_M`]: thousands of entities would cost more to cull one by one than their few vertices
-//! cost together, and squares out of view are not drawn. Merging a large model would not pay: each merged mesh is drawn
-//! on its own.
+//! square: shadow-casting models use 16 m squares and others use 32 m. Thousands of entities would cost more to cull
+//! one by one than their few vertices cost together, and squares out of view are not drawn. Merging a large model
+//! would not pay: each merged mesh is drawn on its own.
 //!
 //! A plant in a full tile shows its full version wherever the camera is, so it never changes as the player walks up to
 //! it, and casts the shadow of its middle version, which is never seen: the sun's shadow maps draw far fewer leaves.
+
+use std::collections::VecDeque;
 
 use bevy::asset::RenderAssetUsages;
 use bevy::camera::visibility::RenderLayers;
@@ -35,6 +37,9 @@ const MERGED_SQUARE_M: f32 = 16.0;
 
 /// The most vertices one tile's merged copies of a model may hold: past this, merging costs more memory than it saves.
 const MERGED_AT_MOST_VERTICES: usize = 500_000;
+/// Work issued to the renderer each update while tile scenery is being prepared.
+const MERGE_VERTICES_PER_UPDATE: usize = 20_000;
+const INSTANCES_PER_UPDATE: usize = 64;
 
 pub struct SceneryPlugin;
 
@@ -76,6 +81,19 @@ pub struct Waiting {
     model: Handle<Gltf>,
     middle: bool,
     instances: Vec<f32>,
+    jobs: Option<VecDeque<Job>>,
+}
+
+struct Job {
+    mesh: Handle<Mesh>,
+    look: Look,
+    role: Role,
+    shadows: bool,
+    solid: bool,
+    merge: bool,
+    vertices: usize,
+    transforms: Vec<Transform>,
+    cursor: usize,
 }
 
 /// Copies spawned from their model, which may still be loading its textures.
@@ -112,8 +130,12 @@ fn read(
                 continue;
             }
         };
-        let waiting =
-            Waiting { model: assets.load(model), middle: copies.detail == "middle", instances: copies.instances };
+        let waiting = Waiting {
+            model: assets.load(model),
+            middle: copies.detail == "middle",
+            instances: copies.instances,
+            jobs: None,
+        };
         commands.entity(entity).insert(waiting);
     }
 }
@@ -136,84 +158,156 @@ struct Models<'w> {
 fn spawn(
     mut commands: Commands,
     assets: Res<AssetServer>,
-    waiting: Query<(Entity, &Waiting)>,
+    mut waiting: Query<(Entity, &mut Waiting)>,
     models: Models,
     mut meshes: ResMut<Assets<Mesh>>,
     mut swaying: SwayingMaterials,
 ) {
-    'copies: for (entity, waiting) in &waiting {
-        // A model that fails to load, which the loading splash reports, is left out.
-        if assets.load_state(&waiting.model).is_failed() {
-            commands.entity(entity).remove::<Waiting>();
-            continue;
-        }
-        let Some(gltf) = models.gltfs.get(&waiting.model) else { continue };
-        // Solidity belongs to the model's full node, even when a middle tile shows another version.
-        let Some(full_handle) = gltf.named_nodes.get("full") else {
-            warn!("a model has no full node");
-            commands.entity(entity).remove::<Waiting>();
-            continue;
-        };
-        let Some(full) = models.nodes.get(full_handle) else { continue };
-        let solid = model_extras(full).is_some_and(|extras| extras.solid);
-        let versions = match (waiting.middle, gltf.named_nodes.contains_key("middle")) {
-            (true, true) => vec![("middle", Role::Both)],
-            (false, true) => vec![("full", Role::Seen), ("middle", Role::Shadow)],
-            (_, false) => vec![("full", Role::Both)],
-        };
-        let mut shown = Vec::with_capacity(versions.len());
-        for (name, role) in versions {
-            let Some(node) = gltf.named_nodes.get(name).and_then(|node| models.nodes.get(node)) else {
-                warn!("a model has no {name} node");
+    let mut budget = Budget { vertices: MERGE_VERTICES_PER_UPDATE, instances: INSTANCES_PER_UPDATE };
+    'copies: for (entity, mut waiting) in &mut waiting {
+        if waiting.jobs.is_none() {
+            if assets.load_state(&waiting.model).is_failed() {
                 commands.entity(entity).remove::<Waiting>();
-                continue 'copies;
-            };
-            let Some(parts) = parts(&assets, &models, &meshes, &mut swaying, node) else { continue 'copies };
-            shown.push((node, parts, role));
-        }
-        commands.entity(entity).remove::<Waiting>().insert(Placed(waiting.model.clone()));
-        let transforms: Vec<Transform> = waiting
-            .instances
-            .chunks_exact(5)
-            .map(|copy| {
-                let &[x, y, z, yaw, scale] = copy else { unreachable!() };
-                Transform::from_xyz(x, y, z).with_rotation(Quat::from_rotation_y(yaw)).with_scale(Vec3::splat(scale))
-            })
-            .collect();
-        for (node, parts, role) in shown {
-            let shadows = model_extras(node).is_none_or(|extras| extras.casts_shadows);
-            let solid = role.is_solid(solid);
-            if matches!(role, Role::Shadow) && !shadows {
                 continue;
             }
-            let vertices = vertices(&models.meshes, &meshes, node);
-            let merge = vertices < MERGE_BELOW_VERTICES && vertices * transforms.len() <= MERGED_AT_MOST_VERTICES;
-            for (mesh, look) in &parts {
-                let shapes: Vec<(Handle<Mesh>, Transform)> = match merge {
-                    true => {
-                        let merged: Vec<Mesh> =
-                            squares(&transforms).filter_map(|square| merged(&meshes, mesh, &square, solid)).collect();
-                        merged.into_iter().map(|merged| (meshes.add(merged), Transform::IDENTITY)).collect()
-                    }
-                    false => transforms.iter().map(|&transform| (mesh.clone(), transform)).collect(),
+            let Some(gltf) = models.gltfs.get(&waiting.model) else { continue };
+            let Some(full_handle) = gltf.named_nodes.get("full") else {
+                warn!("a model has no full node");
+                commands.entity(entity).remove::<Waiting>();
+                continue;
+            };
+            let Some(full) = models.nodes.get(full_handle) else { continue };
+            let solid = model_extras(full).is_some_and(|extras| extras.solid);
+            let versions = match (waiting.middle, gltf.named_nodes.contains_key("middle")) {
+                (true, true) => vec![("middle", Role::Both)],
+                (false, true) => vec![("full", Role::Seen), ("middle", Role::Shadow)],
+                (_, false) => vec![("full", Role::Both)],
+            };
+            let mut shown = Vec::with_capacity(versions.len());
+            for (name, role) in versions {
+                let Some(node) = gltf.named_nodes.get(name).and_then(|node| models.nodes.get(node)) else {
+                    warn!("a model has no {name} node");
+                    commands.entity(entity).remove::<Waiting>();
+                    continue 'copies;
                 };
-                for (mesh, transform) in shapes {
-                    let mut part = commands.spawn((Mesh3d(mesh), transform, ChildOf(entity)));
-                    mark_solid(&mut part, solid);
-                    match look {
-                        Look::Still(material) => part.insert(MeshMaterial3d(material.clone())),
-                        Look::Swaying(material) => part.insert(MeshMaterial3d(material.clone())),
-                    };
-                    match role {
-                        Role::Both if shadows => {}
-                        Role::Both | Role::Seen => {
-                            part.insert(NotShadowCaster);
+                let Some(parts) = parts(&assets, &models, &meshes, &mut swaying, node) else { continue 'copies };
+                shown.push((node, parts, role));
+            }
+            let transforms: Vec<Transform> = waiting
+                .instances
+                .chunks_exact(5)
+                .map(|copy| {
+                    let &[x, y, z, yaw, scale] = copy else { unreachable!() };
+                    Transform::from_xyz(x, y, z)
+                        .with_rotation(Quat::from_rotation_y(yaw))
+                        .with_scale(Vec3::splat(scale))
+                })
+                .collect();
+            let mut jobs = VecDeque::new();
+            for (node, parts, role) in shown {
+                let shadows = model_extras(node).is_none_or(|extras| extras.casts_shadows);
+                let solid = role.is_solid(solid);
+                if matches!(role, Role::Shadow) && !shadows {
+                    continue;
+                }
+                let vertices = vertices(&models.meshes, &meshes, node);
+                let merge = vertices < MERGE_BELOW_VERTICES && vertices * transforms.len() <= MERGED_AT_MOST_VERTICES;
+                for (mesh, look) in parts {
+                    let vertices = meshes.get(&mesh).map_or(0, Mesh::count_vertices).max(1);
+                    if merge {
+                        for square in squares(&transforms, if shadows { MERGED_SQUARE_M } else { 32.0 }) {
+                            jobs.push_back(Job {
+                                mesh: mesh.clone(),
+                                look: look.clone(),
+                                role,
+                                shadows,
+                                solid,
+                                merge,
+                                vertices,
+                                transforms: square,
+                                cursor: 0,
+                            });
                         }
-                        Role::Shadow => {
-                            part.insert(RenderLayers::layer(SHADOW_ONLY));
-                        }
+                    } else {
+                        jobs.push_back(Job {
+                            mesh,
+                            look,
+                            role,
+                            shadows,
+                            solid,
+                            merge,
+                            vertices,
+                            transforms: transforms.clone(),
+                            cursor: 0,
+                        });
                     }
                 }
+            }
+            waiting.jobs = Some(jobs);
+        }
+        let jobs = waiting.jobs.as_mut().unwrap();
+        place(jobs, entity, &mut meshes, &mut commands, &mut budget);
+        if jobs.is_empty() {
+            commands.entity(entity).remove::<Waiting>().insert(Placed(waiting.model.clone()));
+        }
+    }
+}
+
+/// @cc [owner:fontanierh,label:performance] bounded-scenery-placement
+/// Each update MUST share one budget across all waiting scenery nodes, limiting merged vertices and unmerged copies.
+/// Every valid queued copy MUST eventually be issued while its tile remains resident.
+struct Budget {
+    vertices: usize,
+    instances: usize,
+}
+
+/// Issues a bounded part of a node's prepared work; the owner keeps its Waiting until the queue is empty.
+fn place(
+    jobs: &mut VecDeque<Job>,
+    entity: Entity,
+    meshes: &mut Assets<Mesh>,
+    commands: &mut Commands,
+    budget: &mut Budget,
+) {
+    while let Some(job) = jobs.front_mut() {
+        if job.cursor == job.transforms.len() {
+            jobs.pop_front();
+            continue;
+        }
+        let (mesh, transform, count) = if job.merge {
+            let count = (budget.vertices / job.vertices).min(job.transforms.len() - job.cursor);
+            if count == 0 {
+                break;
+            }
+            let range = job.cursor..job.cursor + count;
+            let Some(combined) = merged(meshes, &job.mesh, &job.transforms[range], job.solid) else {
+                job.cursor += count;
+                budget.vertices -= count * job.vertices;
+                continue;
+            };
+            budget.vertices -= count * job.vertices;
+            (meshes.add(combined), Transform::IDENTITY, count)
+        } else {
+            if budget.instances == 0 {
+                break;
+            }
+            budget.instances -= 1;
+            (job.mesh.clone(), job.transforms[job.cursor], 1)
+        };
+        job.cursor += count;
+        let mut part = commands.spawn((Mesh3d(mesh), transform, ChildOf(entity)));
+        mark_solid(&mut part, job.solid);
+        match &job.look {
+            Look::Still(material) => part.insert(MeshMaterial3d(material.clone())),
+            Look::Swaying(material) => part.insert(MeshMaterial3d(material.clone())),
+        };
+        match job.role {
+            Role::Both if job.shadows => {}
+            Role::Both | Role::Seen => {
+                part.insert(NotShadowCaster);
+            }
+            Role::Shadow => {
+                part.insert(RenderLayers::layer(SHADOW_ONLY));
             }
         }
     }
@@ -261,7 +355,7 @@ fn parts(
         .iter()
         .map(|primitive| {
             let material = standard_of(assets, primitive.material.as_ref());
-            let sways = meshes.get(&primitive.mesh).is_some_and(|mesh| mesh.contains_attribute(Mesh::ATTRIBUTE_UV_1));
+            let sways = meshes.get(&primitive.mesh)?.contains_attribute(Mesh::ATTRIBUTE_UV_1);
             let look = if sways { Look::Swaying(swaying.of(&material)?) } else { Look::Still(material) };
             Some((primitive.mesh.clone(), look))
         })
@@ -274,11 +368,11 @@ fn vertices(gltf_meshes: &Assets<GltfMesh>, meshes: &Assets<Mesh>, node: &GltfNo
     mesh.primitives.iter().filter_map(|primitive| meshes.get(&primitive.mesh)).map(Mesh::count_vertices).sum()
 }
 
-/// `transforms` grouped by the square of [`MERGED_SQUARE_M`] each stands in.
-fn squares(transforms: &[Transform]) -> impl Iterator<Item = Vec<Transform>> {
+/// Groups transforms into squares of the requested side length.
+fn squares(transforms: &[Transform], side: f32) -> impl Iterator<Item = Vec<Transform>> {
     let mut squares: HashMap<IVec2, Vec<Transform>> = HashMap::default();
     for &transform in transforms {
-        let square = (transform.translation.xz() / MERGED_SQUARE_M).floor().as_ivec2();
+        let square = (transform.translation.xz() / side).floor().as_ivec2();
         squares.entry(square).or_default().push(transform);
     }
     squares.into_values()
@@ -296,6 +390,7 @@ fn merged(meshes: &Assets<Mesh>, mesh: &Handle<Mesh>, transforms: &[Transform], 
 }
 
 /// How a part looks: its material as the model has it, or its swaying version.
+#[derive(Clone)]
 enum Look {
     Still(Handle<StandardMaterial>),
     Swaying(Handle<Swaying>),
@@ -315,18 +410,109 @@ mod tests {
     use bevy::camera::primitives::Aabb;
     use bevy::ecs::system::RunSystemOnce;
 
+    #[derive(Component)]
+    struct TestJobs(VecDeque<Job>);
+
+    #[test]
+    fn placement_budget_spreads_real_geometry_without_losing_copies() {
+        for limit in [MERGE_VERTICES_PER_UPDATE / 2, MERGE_VERTICES_PER_UPDATE] {
+            let mut app = App::new();
+            app.add_plugins(MinimalPlugins).init_resource::<Assets<Mesh>>();
+            let mesh = app.world_mut().resource_mut::<Assets<Mesh>>().add(Mesh::from(Cuboid::new(1.0, 1.0, 1.0)));
+            let vertices = app.world().resource::<Assets<Mesh>>().get(&mesh).unwrap().count_vertices();
+            let transforms: Vec<_> = (0..1200).map(|x| Transform::from_xyz(x as f32, 0.0, 0.0)).collect();
+            let expected = merged(app.world().resource::<Assets<Mesh>>(), &mesh, &transforms, true).unwrap();
+            let jobs = VecDeque::from([Job {
+                mesh,
+                look: Look::Still(Handle::default()),
+                role: Role::Both,
+                shadows: true,
+                solid: true,
+                merge: true,
+                vertices,
+                transforms,
+                cursor: 0,
+            }]);
+            let owner = app.world_mut().spawn(TestJobs(jobs)).id();
+            let step = move |mut commands: Commands,
+                             mut meshes: ResMut<Assets<Mesh>>,
+                             mut nodes: Query<(Entity, &mut TestJobs)>| {
+                let mut budget = Budget { vertices: limit, instances: INSTANCES_PER_UPDATE };
+                for (entity, mut jobs) in &mut nodes {
+                    place(&mut jobs.0, entity, &mut meshes, &mut commands, &mut budget);
+                }
+            };
+            let mut updates = 0;
+            while !app.world().get::<TestJobs>(owner).unwrap().0.is_empty() {
+                app.world_mut().run_system_once(step).unwrap();
+                updates += 1;
+                assert!(updates <= 10, "placement must make progress");
+            }
+            assert!(updates > 1);
+            let mut positions = Vec::new();
+            for part in app.world().get::<Children>(owner).unwrap().iter() {
+                let mesh = app.world().get::<Mesh3d>(part).unwrap();
+                let chunk = app.world().resource::<Assets<Mesh>>().get(&mesh.0).unwrap();
+                assert!(chunk.count_vertices() <= limit);
+                positions.extend_from_slice(chunk.attribute(Mesh::ATTRIBUTE_POSITION).unwrap().as_float3().unwrap());
+            }
+            assert_eq!(positions, expected.attribute(Mesh::ATTRIBUTE_POSITION).unwrap().as_float3().unwrap());
+        }
+    }
+
+    #[test]
+    fn unmerged_copies_obey_shared_update_budget() {
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins).init_resource::<Assets<Mesh>>();
+        let mesh = app.world_mut().resource_mut::<Assets<Mesh>>().add(Mesh::from(Cuboid::new(1.0, 1.0, 1.0)));
+        let count = INSTANCES_PER_UPDATE * 2 + 3;
+        let transforms: Vec<_> = (0..count).map(|x| Transform::from_xyz(x as f32, 0.0, 0.0)).collect();
+        let jobs = VecDeque::from([Job {
+            mesh,
+            look: Look::Still(Handle::default()),
+            role: Role::Both,
+            shadows: true,
+            solid: false,
+            merge: false,
+            vertices: 1,
+            transforms,
+            cursor: 0,
+        }]);
+        let owner = app.world_mut().spawn(TestJobs(jobs)).id();
+        let step =
+            |mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut nodes: Query<(Entity, &mut TestJobs)>| {
+                let mut budget = Budget { vertices: MERGE_VERTICES_PER_UPDATE, instances: INSTANCES_PER_UPDATE };
+                for (entity, mut jobs) in &mut nodes {
+                    place(&mut jobs.0, entity, &mut meshes, &mut commands, &mut budget);
+                }
+            };
+        let mut previous = 0;
+        while !app.world().get::<TestJobs>(owner).unwrap().0.is_empty() {
+            app.world_mut().run_system_once(step).unwrap();
+            let current = app.world().get::<Children>(owner).map_or(0, |children| children.len());
+            assert!(current > previous && current - previous <= INSTANCES_PER_UPDATE);
+            previous = current;
+        }
+        assert_eq!(previous, count);
+        for (index, child) in app.world().get::<Children>(owner).unwrap().iter().enumerate() {
+            assert_eq!(app.world().get::<Transform>(child).unwrap().translation.x, index as f32);
+        }
+    }
+
     #[test]
     fn scenery_rays_hit_merged_and_transformed_visible_copies_only() {
         let mut app = App::new();
         app.add_plugins(MinimalPlugins).init_resource::<Assets<Mesh>>();
-        let mut meshes = app.world_mut().resource_mut::<Assets<Mesh>>();
-        let cube = meshes.add(Mesh::from(Cuboid::new(1.0, 1.0, 1.0)));
-        let copies = [Transform::from_xyz(4.0, 0.0, 0.0), Transform::from_xyz(6.0, 0.0, 0.0)];
-        let combined = merged(&meshes, &cube, &copies, true).unwrap();
-        assert!(combined.asset_usage.contains(RenderAssetUsages::MAIN_WORLD));
-        let combined = meshes.add(combined);
-        drop(meshes);
+        let (cube, combined) = {
+            let mut meshes = app.world_mut().resource_mut::<Assets<Mesh>>();
+            let cube = meshes.add(Mesh::from(Cuboid::new(1.0, 1.0, 1.0)));
+            let copies = [Transform::from_xyz(4.0, 0.0, 0.0), Transform::from_xyz(6.0, 0.0, 0.0)];
+            let combined = merged(&meshes, &cube, &copies, true).unwrap();
+            assert!(combined.asset_usage.contains(RenderAssetUsages::MAIN_WORLD));
+            (cube, meshes.add(combined))
+        };
 
+        let root = app.world_mut().spawn_empty().id();
         let mut commands = app.world_mut().commands();
         for (mesh, transform, bounds, role, solid) in [
             (
@@ -364,10 +550,20 @@ mod tests {
                 GlobalTransform::from(transform),
                 bounds,
                 Visibility::default(),
+                ChildOf(root),
             ));
             mark_solid(&mut part, role.is_solid(solid));
         }
         app.world_mut().flush();
+        app.world_mut()
+            .run_system_once(
+                move |mut commands: Commands,
+                      children: Query<&Children>,
+                      pending: Query<&crate::ground::PendingSolid>| {
+                    crate::ground::promote(root, &children, &pending, &mut commands);
+                },
+            )
+            .unwrap();
         let hits = app
             .world_mut()
             .run_system_once(|mut ground: Ground| {

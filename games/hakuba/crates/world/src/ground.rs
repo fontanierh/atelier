@@ -59,9 +59,26 @@ impl Surface {
 #[derive(Component)]
 struct Solid(Surface);
 
-/// Marks a visible scenery mesh as built, including its back faces in ground rays.
+/// A solid belonging to a hidden tile until its complete version is activated.
+#[derive(Component)]
+pub(crate) struct PendingSolid(Surface);
+
+pub(crate) fn promote(
+    root: Entity,
+    children: &Query<&Children>,
+    pending: &Query<&PendingSolid>,
+    commands: &mut Commands,
+) {
+    for entity in children.iter_descendants(root) {
+        if let Ok(surface) = pending.get(entity) {
+            commands.entity(entity).remove::<PendingSolid>().insert(Solid(surface.0));
+        }
+    }
+}
+
+/// Marks a scenery mesh as built when its tile activates, including back faces in ground rays.
 pub(crate) fn built_solid() -> impl Bundle {
-    (Solid(Surface::Built), RayCastBackfaces)
+    (PendingSolid(Surface::Built), RayCastBackfaces)
 }
 
 /// When a tile's version spawns, marks its meshes solid, but its cables, with what each is made of: what the nearest
@@ -90,7 +107,7 @@ fn mark(
                 .take_while(|above| *above != ready.entity)
                 .find_map(|above| names.get(above).ok().and_then(|name| Surface::named(name)))
                 .unwrap_or(Surface::Built);
-            commands.entity(node).insert((Solid(surface), RayCastBackfaces));
+            commands.entity(node).insert((PendingSolid(surface), RayCastBackfaces));
         }
     }
 }
