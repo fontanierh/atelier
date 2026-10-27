@@ -36,3 +36,8 @@ A static vertex-painted model may put a `vertex_paint` object in its `full` node
 Its untextured white material is opaque, and its linear RGBA vertex colours have zero alpha: alpha is reserved for
 motion, not transparency. The world reports nonzero weights and skinned or morphed meshes until that motion is
 supported. The profile uses its own depth haze, so it does not also receive the camera's distance fog.
+
+A tile node may instead carry `surface_paint` with `haze_start_m`, `haze_length_m` and `haze_colour`. Its static
+mesh uses positions, normals and UV0, with no vertex colours, and its opaque material supplies the texture and tint.
+The profile sets roughness to 1 and reflectance to 0, applies its own pre-light haze and haze-colour emission, and
+holds the tile until the material is ready. A failed profile leaves the previous tile visible.

@@ -118,6 +118,12 @@ fn read(
         if !path.path().starts_with(TILES) {
             continue;
         }
+        if serde_json::from_str::<serde_json::Value>(&extras.value)
+            .ok()
+            .is_some_and(|v| v.get("surface_paint").is_some())
+        {
+            continue;
+        }
         let copies: Copies = match serde_json::from_str(&extras.value) {
             Ok(copies) => copies,
             Err(error) => {
