@@ -1,7 +1,7 @@
 # A wide maple, 6.5 m high, its crown a ring of clumps around a high one.
 kind = "plant"
 seed = 21
-inputs_sha256 = "e12ca9d1437594bc338aa45716ab4b7cedf2d89564d2cda2049fcc7f95865744"
+inputs_sha256 = "a7e75de2fc1d725879a68d83216bdd2ad391cd1a8b8bdce17364a266db204265"
 
 [wood]
 texture = "bark"

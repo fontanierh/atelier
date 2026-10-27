@@ -1,7 +1,7 @@
 # A tall ginkgo, 9 m high, its leaves turned autumn gold.
 kind = "plant"
 seed = 23
-inputs_sha256 = "876c9ebb0a130deab1f9e3bdfb26f60c8c7409006884bd61937d7b36e64db2eb"
+inputs_sha256 = "c9041f1c318767411204a4ea681e4c361e702e57c29ee970c35988e7e9911481"
 
 [wood]
 texture = "bark"

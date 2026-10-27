@@ -123,6 +123,35 @@ fn slab(mesh: &mut Mesh, polygon: &[[f64; 3]], extrusion: [f64; 3]) -> Result<()
         }
     }
     let inside = (p.iter().copied().sum::<DVec3>() + q.iter().copied().sum::<DVec3>()) / (2 * p.len()) as f64;
+    // At very small depths, rounding can put the interior on the wrong side of a cap or twist a side. Check the
+    // same triangle fans the writer will emit, and require neighbouring faces to traverse shared edges oppositely.
+    let winding = |points: &[DVec3]| -> Result<f64> {
+        let side = (points[1] - points[0]).cross(points[2] - points[0]).dot(points[0] - inside);
+        if side == 0.0 || !side.is_finite() {
+            bail!("slab face collapses at GLB precision");
+        }
+        let mut points = points.to_vec();
+        if side < 0.0 {
+            points.reverse();
+        }
+        for i in 1..points.len() - 1 {
+            let n = (points[i] - points[0]).cross(points[i + 1] - points[0]);
+            if n.dot(points[0] - inside) <= 0.0 {
+                bail!("slab face folds at GLB precision");
+            }
+        }
+        Ok(side.signum())
+    };
+    let cap = winding(&p)?;
+    if winding(&q)? == cap {
+        bail!("slab caps do not enclose an interior at GLB precision");
+    }
+    for i in 0..p.len() {
+        let j = (i + 1) % p.len();
+        if winding(&[p[i], p[j], q[j], q[i]])? == cap {
+            bail!("slab side does not enclose an interior at GLB precision");
+        }
+    }
     closed_extrusion(mesh, &p, &q, inside);
     Ok(())
 }
@@ -325,6 +354,8 @@ mod tests {
         for extrusion in [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, f64::INFINITY]] {
             assert!(slab(&mut Mesh::default(), &valid, extrusion).is_err());
         }
+        let rounded = [[0.0, 0.0, 0.1], [2.0, 0.0, 0.3], [2.0, 2.0, 0.7], [0.0, 2.0, 0.5]];
+        assert!(slab(&mut Mesh::default(), &rounded, [1.0, 1.0, 0.30000001]).is_err());
         let sloped = [[0.0, 0.0, 0.0], [2.0, 0.0, 1.0], [2.0, 2.0, 1.0], [0.0, 2.0, 0.0]];
         assert!(slab(&mut Mesh::default(), &sloped, [2.0, 0.0, 1.0]).is_err());
         let high = [[0.0, 0.0, 1.0], [2.0, 0.0, 1.0], [2.0, 2.0, 1.0], [0.0, 2.0, 1.0]];
