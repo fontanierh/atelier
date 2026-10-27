@@ -23,18 +23,19 @@ fn fragment(input: VertexOutput, @builtin(front_facing) is_front: bool) -> Fragm
     let flags = surface.material.flags;
     let masked = (flags & pbr_types::STANDARD_MATERIAL_FLAGS_ALPHA_MODE_RESERVED_BITS)
         == pbr_types::STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK;
+    var out: FragmentOutput;
     if masked && surface.material.base_color.a < surface.material.alpha_cutoff {
         discard;
+    } else {
+        surface.material.base_color = alpha_discard(flags, surface.material.alpha_cutoff, surface.material.base_color);
+        let depth = max(-(view.view_from_world * input.world_position).z, 0.0);
+        let haze = 1.0 - exp(-max(depth - profile.push_haze.z, 0.0) / profile.push_haze.w);
+        var shade = 1.0;
+        @if(VERTEX_COLORS)
+        shade = 1.0 - profile.haze_colour.w * (1.0 - profile.direction.w) * (1.0 - input.color.g);
+        surface.material.base_color = vec4<f32>(surface.material.base_color.rgb * (1.0 - haze) * shade, surface.material.base_color.a);
+        surface.material.emissive = vec4<f32>(profile.haze_colour.xyz * haze, 1.0);
+        out.color = main_pass_post_lighting_processing(surface, apply_pbr_lighting(surface));
     }
-    surface.material.base_color = alpha_discard(flags, surface.material.alpha_cutoff, surface.material.base_color);
-    let depth = max(-(view.view_from_world * input.world_position).z, 0.0);
-    let haze = 1.0 - exp(-max(depth - profile.push_haze.z, 0.0) / profile.push_haze.w);
-    var shade = 1.0;
-    @if(VERTEX_COLORS)
-    shade = 1.0 - profile.haze_colour.w * (1.0 - profile.direction.w) * (1.0 - input.color.g);
-    surface.material.base_color = vec4<f32>(surface.material.base_color.rgb * (1.0 - haze) * shade, surface.material.base_color.a);
-    surface.material.emissive = vec4<f32>(profile.haze_colour.xyz * haze, 1.0);
-    var out: FragmentOutput;
-    out.color = main_pass_post_lighting_processing(surface, apply_pbr_lighting(surface));
     return out;
 }
