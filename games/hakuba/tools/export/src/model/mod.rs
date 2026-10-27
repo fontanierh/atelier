@@ -10,6 +10,7 @@
 
 pub mod plant;
 pub mod prop;
+mod source;
 
 use std::path::Path;
 
