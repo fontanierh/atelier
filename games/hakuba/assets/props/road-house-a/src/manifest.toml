@@ -1,0 +1,5 @@
+# Committed source geometry and its verified authoring input.
+path = "house.glb"
+sha256 = "9b7815d01d2d1c303113654b208c472f2268f04e894d7d73fba1a7bd453355aa"
+authoring_fbx_sha256 = "1e362594f12d93663d750f37600976628344d72f7ac4c05cd48ff9fed2b838d6"
+conversion = "Blender 5.2.1; original f32 normals and quantized color restored"

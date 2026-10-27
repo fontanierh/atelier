@@ -1,12 +1,15 @@
 //! Every region, each with its implementation of [`Region`] from its folder under the world's `src/regions/`.
 
 use super::levelling::{Pad, Strip};
+use super::openings::{Domain, Opening};
 use super::overlay::Overlay;
 use super::raised::Raised;
-use super::scenery::{Exclusion, Land, Scenery};
+use super::scenery::{Exclusion, Land, Placement, ScatterKind, Scenery};
 
 #[path = "../../../../assets/world/src/regions/momiji-coast/layout.rs"]
 mod momiji_coast;
+#[path = "../../../../assets/world/src/regions/roadside-houses/layout.rs"]
+mod roadside_houses;
 
 /// What a region adds to the world. Positions are in metres, in the map's frame: x east, y north, z up.
 pub trait Region {
@@ -27,6 +30,21 @@ pub trait Region {
         Vec::new()
     }
 
+    /// Whether a selected scatter candidate may stand here. Explicit placements are unaffected.
+    fn allows_scatter_candidate(&self, _kind: ScatterKind, _placement: &Placement) -> bool {
+        true
+    }
+
+    /// Named parameter domains this region publishes for others to request openings.
+    fn path_domains(&self) -> Vec<Domain> {
+        Vec::new()
+    }
+
+    /// Closed intervals to leave open on published parameter domains.
+    fn path_openings(&self) -> Vec<Opening> {
+        Vec::new()
+    }
+
     /// The flat shapes it lays over the ground.
     fn overlays(&self) -> Vec<Overlay>;
 
@@ -42,4 +60,4 @@ pub trait Region {
     fn fastens_to(&self) -> Vec<&'static str>;
 }
 
-pub const REGIONS: [&dyn Region; 1] = [&momiji_coast::MomijiCoast];
+pub const REGIONS: [&dyn Region; 2] = [&momiji_coast::MomijiCoast, &roadside_houses::RoadsideHouses];
