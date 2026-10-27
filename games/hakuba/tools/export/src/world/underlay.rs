@@ -1,4 +1,4 @@
-//! Private prototype: subtract a declared triangle footprint from an existing ground mesh.
+//! Remove a declared surface's footprint from the ground it owns.
 
 use super::surface::weights;
 use crate::glb::Mesh;
