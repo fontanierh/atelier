@@ -10,13 +10,14 @@ use hakuba_screens::Screen;
 use hakuba_settings::{AntiAliasing, Settings};
 
 use crate::painterly::Painterly;
+use crate::scenery::Placing;
 use crate::wind::{self, Swaying};
 
 pub struct SettingsPlugin;
 
 impl Plugin for SettingsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (look, blow).run_if(in_state(Screen::World)));
+        app.add_systems(Update, (look, blow.after(Placing)).run_if(in_state(Screen::World)));
     }
 }
 

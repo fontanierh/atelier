@@ -9,17 +9,18 @@ player with it and moves the camera. The settings change it as they change, and 
 src/
   lib.rs         the plugin: spawns the sea and the camera, then reads the world's index for the spawn and tiles;
                  makes any crossfading visibility range abrupt, since its dither shimmers
-  ground.rs      marks the tiles' meshes solid, but their cables, and casts rays at them and solid scenery
+  ground.rs      marks tile and scenery collision pending until a version activates, and casts rays at active solids
   loading.rs     a splash over the world until its tiles, models, textures and shaders are all ready, so nothing
                  appears after; says when the renderer makes a pipeline later
   look.rs        the sky dome, the sun, the haze, and the camera's colour grade
   painterly.rs   the painterly filter over the finished image
   painterly.wgsl its shader
   pixels.rs      draws the world into an image of the resolution the settings ask and stretches it over the window
-  tiles.rs       shows each tile in full detail near the camera and in middle detail further out
+  tiles.rs       prepares each new detail version hidden, then swaps its visibility and collision together
   scenery.rs     spawns the trees, bushes, grass and poles a tile lists, merging the copies of small models
-                 per 16 m square; a tree or bush in a full tile shows its full version wherever the camera is and
-                 casts its middle version's shadow; model exports can mark their visible meshes solid
+                 per 16 m square when they cast shadows or 32 m otherwise; preparation is spread across updates.
+                 A tree or bush in a full tile shows its full version and casts its middle version's shadow;
+                 model exports can mark their visible meshes solid
   wind.rs        sways leaves and grass in the wind, by how far the export says each vertex sways
   wind.wesl      its vertex shaders, which also lean leaves and blades away from what pushes plants aside
   leaves.wesl    its fragment shader, which lights only what a leaf card keeps

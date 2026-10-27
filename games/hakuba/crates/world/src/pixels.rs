@@ -4,6 +4,7 @@
 //! world at 60 frames a second; the image it draws instead is a little softer.
 
 use bevy::camera::RenderTarget;
+use bevy::camera::visibility::RenderLayers;
 use bevy::prelude::*;
 use bevy::render::render_resource::{Extent3d, TextureFormat};
 use bevy::window::PrimaryWindow;
@@ -25,7 +26,13 @@ pub struct Drawn(Handle<Image>);
 /// What the world camera needs to draw into a new image, and the camera and node that show that image in the window.
 pub fn spawn(commands: &mut Commands, images: &mut Assets<Image>) -> impl Bundle {
     let image = images.add(Image::new_target_texture(1, 1, TextureFormat::Rgba8UnormSrgb, None));
-    commands.spawn((Name::new("Window camera"), DespawnOnExit(Screen::World), Camera2d, IsDefaultUiCamera));
+    commands.spawn((
+        Name::new("Window camera"),
+        DespawnOnExit(Screen::World),
+        Camera2d,
+        IsDefaultUiCamera,
+        RenderLayers::none(),
+    ));
     commands.spawn((
         Name::new("World image"),
         DespawnOnExit(Screen::World),

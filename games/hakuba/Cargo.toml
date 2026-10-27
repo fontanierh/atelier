@@ -16,6 +16,7 @@ hakuba_characters = { path = "crates/characters" }
 hakuba_glider = { path = "crates/glider" }
 hakuba_menu = { path = "crates/menu" }
 hakuba_player = { path = "crates/player" }
+hakuba_rendering = { path = "crates/rendering" }
 hakuba_screens = { path = "crates/screens" }
 hakuba_settings = { path = "crates/settings" }
 hakuba_viewer = { path = "crates/viewer" }
@@ -38,6 +39,7 @@ hakuba_characters.workspace = true
 hakuba_glider.workspace = true
 hakuba_menu.workspace = true
 hakuba_player.workspace = true
+hakuba_rendering.workspace = true
 hakuba_screens.workspace = true
 hakuba_settings.workspace = true
 hakuba_viewer.workspace = true
@@ -49,4 +51,7 @@ hakuba_world.workspace = true
 opt-level = 1
 
 [profile.dev.package."*"]
+opt-level = 3
+
+[profile.dev.package.hakuba_rendering]
 opt-level = 3

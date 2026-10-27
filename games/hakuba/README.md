@@ -9,7 +9,7 @@ and in the browser.
 - Every change is reviewed by hand.
 - Every folder and file says what it is for, here, in its own README or in a header comment. Nothing is committed
   that the game or its exports do not use.
-- Hakuba is all Rust and builds with plain `cargo` and `trunk`, without the `atelier` command.
+- Hakuba is all Rust and builds with plain `cargo` and `trunk`.
 - Hakuba's code and assets stay in `games/hakuba`.
 
 ## Run
@@ -51,6 +51,7 @@ games/hakuba/
     characters/             the playable characters: their models and clips
     glider/                 the paraglider, and how a character holds it
     player/                 the character the player controls in the world
+    rendering/              shared rendering commands and 3D shadow views
     viewer/                 the character viewer
     audio/                  the sounds: footsteps, the moves, the paraglider's wind and the countryside
   index.html                the page the browser build runs in, with the canvas the game draws into
