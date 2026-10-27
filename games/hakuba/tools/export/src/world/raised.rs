@@ -109,6 +109,55 @@ impl<'a> Prepared<'a> {
         if self.needs_precision(p.truncate()) { p.as_vec3().as_dvec3() } else { p }
     }
 
+    /// Intervals split at every stored raised triangle boundary along a segment.
+    pub fn segment_intervals(&self, a: DVec2, b: DVec2) -> Vec<(f64, f64)> {
+        let direction = b - a;
+        let length2 = direction.length_squared();
+        if length2 == 0.0 {
+            return Vec::new();
+        }
+        let mut points = Vec::new();
+        let mut touches = false;
+        for surface in [&self.full, &self.middle].into_iter().flatten().flatten().map(|(_, surface)| surface) {
+            if surface.contains_exact(a) || surface.contains_exact(b) {
+                touches = true;
+            }
+            for triangle in surface.under([a, b, a]) {
+                let corners = triangle.map(DVec3::truncate);
+                for i in 0..3 {
+                    let c = corners[i];
+                    let edge = corners[(i + 1) % 3] - c;
+                    let denominator = direction.perp_dot(edge);
+                    if denominator == 0.0 {
+                        if (c - a).perp_dot(direction) == 0.0 {
+                            for p in [c, c + edge] {
+                                let t = (p - a).dot(direction) / length2;
+                                if (0.0..=1.0).contains(&t) {
+                                    points.push(t);
+                                    touches = true;
+                                }
+                            }
+                        }
+                    } else {
+                        let t = (c - a).perp_dot(edge) / denominator;
+                        let u = (c - a).perp_dot(direction) / denominator;
+                        if (0.0..=1.0).contains(&t) && (0.0..=1.0).contains(&u) {
+                            points.push(t);
+                            touches = true;
+                        }
+                    }
+                }
+            }
+        }
+        if !touches {
+            return Vec::new();
+        }
+        points.extend([0.0, 1.0]);
+        points.sort_by(f64::total_cmp);
+        points.dedup();
+        points.windows(2).map(|pair| (pair[0], pair[1])).collect()
+    }
+
     pub fn check_point(&self, p: DVec2) -> Result<()> {
         let (column, row) = self.tile(p);
         for dx in -1_isize..=1 {

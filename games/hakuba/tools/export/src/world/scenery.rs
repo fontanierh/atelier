@@ -281,6 +281,26 @@ pub fn share(
                 if !cable_is_clear(p, drawn, raised)? {
                     bail!("a cable from {} comes within {CABLE_CLEARANCE_M} m of the ground at {p}", ends[0].model);
                 }
+                if let Some(previous) = points.last().copied() {
+                    let previous = DVec3::from_array(previous).as_vec3().as_dvec3();
+                    let next = p.as_vec3().as_dvec3();
+                    for (start, end) in raised.segment_intervals(previous.truncate(), next.truncate()) {
+                        let middle = previous.lerp(next, (start + end) * 0.5);
+                        raised.check_point(middle.truncate())?;
+                        let owner = raised.height(middle.truncate(), |_| None);
+                        for t in [start, end] {
+                            let sample = previous.lerp(next, t);
+                            raised.check_point(sample.truncate())?;
+                            let boundary = raised.height(sample.truncate(), |_| None);
+                            if owner.into_iter().chain(boundary).any(|height| sample.z < height + CABLE_CLEARANCE_M) {
+                                bail!(
+                                    "a cable from {} crosses a raised surface without clearance at {sample}",
+                                    ends[0].model
+                                );
+                            }
+                        }
+                    }
+                }
                 points.push(p.to_array());
             }
             tiles.entry(grid.tile(effective_pose(raised, ends[0]).0)).or_default().cables.push((
@@ -316,6 +336,9 @@ pub fn share(
                     continue;
                 }
                 let path: Vec<DVec3> = stretch.iter().zip(ease(stretch, &heights)).map(|(p, z)| p.extend(z)).collect();
+                for pair in path.windows(2) {
+                    check_rail_segment(pair[0], pair[1], raised)?;
+                }
                 let top = rail.profile.iter().map(|&[_, height]| height).fold(0.0, f64::max) + POST_CAP_M;
                 for &foot in path.iter().step_by(rail.post_every).filter(|foot| inside(foot.truncate())) {
                     let post = (foot.to_array(), top, rail.post_radius_m, rail.colour, rail.texture);
@@ -339,6 +362,25 @@ fn cable_is_clear(p: DVec3, drawn: &Surface, raised: &Prepared<'_>) -> Result<bo
     let at = emitted.truncate();
     raised.check_point(at)?;
     Ok(emitted.z >= raised.height(at, |p| drawn.height(p)).unwrap_or(f64::NEG_INFINITY) + CABLE_CLEARANCE_M)
+}
+
+fn check_rail_segment(a: DVec3, b: DVec3, raised: &Prepared<'_>) -> Result<()> {
+    let [a, b] = [a, b].map(|p| p.as_vec3().as_dvec3());
+    for (start, end) in raised.segment_intervals(a.truncate(), b.truncate()) {
+        let middle = a.lerp(b, (start + end) * 0.5);
+        raised.check_point(middle.truncate())?;
+        let owner = raised.height(middle.truncate(), |_| None);
+        for t in [start, end] {
+            let foot = a.lerp(b, t);
+            let at = foot.truncate();
+            raised.check_point(at)?;
+            let boundary = raised.height(at, |_| None);
+            if owner.into_iter().chain(boundary).any(|height| (foot.z - height).abs() > RAIL_SETTLE_M) {
+                bail!("a rail crosses a raised surface at {at} away from its owning height");
+            }
+        }
+    }
+    Ok(())
 }
 
 /// The anchors of `model`, read from its export, in its own frame.
@@ -572,6 +614,9 @@ fn rail(
     surface: &Surface,
     raised: &Prepared<'_>,
 ) -> Result<()> {
+    for pair in piece.windows(2) {
+        check_rail_segment(DVec3::from_array(pair[0].0), DVec3::from_array(pair[1].0), raised)?;
+    }
     let start = piece[0].2.floor();
     let mut around = vec![0.0];
     for pair in profile.windows(2) {
@@ -650,6 +695,81 @@ mod tests {
         let empty = Prepared::new(&[], DVec2::ZERO, 8.0);
         assert_eq!(empty.emitted_at(at), at);
         assert!(cable_is_clear(at.extend(4.0), &drawn, &empty).unwrap());
+    }
+
+    #[test]
+    fn rail_cannot_cross_a_raised_owner_between_ground_endpoints() {
+        use crate::world::{Detail, Tile};
+        let ground = Ground::page(8, 1.0, |_, _| 0.0);
+        let drawn = Surface::new(&Tile { columns: (0, 8), rows: (0, 8) }.ground(&ground, Detail::Full, 0, 1.0));
+        let p = |x, y| (DVec2::new(x, y), DVec2::ZERO);
+        let raised = [Raised {
+            name: "paving".into(),
+            texture: "earth".into(),
+            ground: true,
+            height: 3.0,
+            clearance: 0.1,
+            triangles: vec![[p(3.0, 2.0), p(7.0, 2.0), p(7.0, 6.0)], [p(3.0, 2.0), p(7.0, 6.0), p(3.0, 6.0)]],
+        }];
+        let mut prepared = Prepared::new(&raised, DVec2::ZERO, 8.0);
+        prepared.add_tile((0, 0), &drawn, false).unwrap();
+        prepared.add_tile((0, 0), &drawn, true).unwrap();
+        let land =
+            Land { ground: &ground, raised: &prepared, low: DVec2::ZERO, high: DVec2::splat(8.0), exclusions: &[] };
+        let grid = Grid { south_west: DVec2::ZERO, tile_m: 8.0 };
+        let scene = |a, b, y| Scenery {
+            rails: vec![Rail {
+                path: vec![DVec2::new(a, y), DVec2::new(b, y)],
+                profile: vec![[0.0, 0.0], [0.0, 1.0]],
+                post_every: 1,
+                post_radius_m: 0.05,
+                colour: [1.0; 3],
+                texture: "road",
+            }],
+            ..Default::default()
+        };
+        let error = share(vec![(scene(1.0, 7.5, 4.0), vec![])], &land, &grid, &[], &prepared, &drawn).err().unwrap();
+        assert!(error.to_string().contains("rail crosses a raised surface"));
+        assert!(share(vec![(scene(4.0, 6.0, 4.0), vec![])], &land, &grid, &[], &prepared, &drawn).is_ok());
+        let error =
+            share(vec![(scene(1.0, 7.5, 2.0 - 1e-8), vec![])], &land, &grid, &[], &prepared, &drawn).err().unwrap();
+        assert!(error.to_string().contains("rail crosses a raised surface"));
+    }
+
+    #[test]
+    fn cable_cannot_cross_a_raised_owner_between_centerline_samples() {
+        use crate::world::{Detail, Tile};
+        let ground = Ground::page(8, 1.0, |_, _| 0.0);
+        let drawn = Surface::new(&Tile { columns: (0, 8), rows: (0, 8) }.ground(&ground, Detail::Full, 0, 1.0));
+        let p = |x, y| (DVec2::new(x, y), DVec2::ZERO);
+        let raised = [Raised {
+            name: "paving".into(),
+            texture: "earth".into(),
+            ground: true,
+            height: 10.0,
+            clearance: 0.1,
+            triangles: vec![[p(3.0, 3.5), p(3.1, 3.5), p(3.1, 4.5)], [p(3.0, 3.5), p(3.1, 4.5), p(3.0, 4.5)]],
+        }];
+        let mut prepared = Prepared::new(&raised, DVec2::ZERO, 8.0);
+        prepared.add_tile((0, 0), &drawn, false).unwrap();
+        prepared.add_tile((0, 0), &drawn, true).unwrap();
+        let land =
+            Land { ground: &ground, raised: &prepared, low: DVec2::ZERO, high: DVec2::splat(8.0), exclusions: &[] };
+        let grid = Grid { south_west: DVec2::ZERO, tile_m: 8.0 };
+        let scenery = |y| Scenery {
+            placements: vec![
+                Placement { model: "props/utility-pole", at: DVec2::new(1.0, y), yaw: 0.0, scale: 1.0, afar: true },
+                Placement { model: "props/utility-pole", at: DVec2::new(7.5, y), yaw: 0.0, scale: 1.0, afar: true },
+            ],
+            cables: vec![Cable { from: (0, 1), to: (1, 1), sag: 0.0, radius_m: 0.015, colour: [1.0; 3] }],
+            ..Default::default()
+        };
+        for y in [4.0, 3.5 - 1e-8] {
+            let error = share(vec![(scenery(y), vec!["props/utility-pole"])], &land, &grid, &[], &prepared, &drawn)
+                .err()
+                .unwrap();
+            assert!(error.to_string().contains("cable") && error.to_string().contains("raised surface"));
+        }
     }
 
     #[test]
