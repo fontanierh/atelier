@@ -227,8 +227,9 @@ A region also stands scenery on the ground: plant and prop models, each at a poi
 strung between two models' anchors, and rails run along a path. A rail and its posts show a texture asset tinted by
 their colour, laid in metres: along the rail by the distance travelled, across it by the distance around its profile,
 and along and around each post, one repeat of the image to a metre. A tile names each model's `.glb` and each
-texture's `.ktx2` and lists where its copies stand, seated on the ground that tile draws; it never holds them. The
-world reads the props whose anchors its cables fasten to, which each region declares. The export fails if a model or
+texture's `.ktx2` and lists where its copies stand, seated on the ground that tile draws; it never holds them. A
+placement may specify a signed origin offset from that ground; its model and intended embedment need an independent
+grounding check. The world reads the props whose anchors its cables fasten to, which each region declares. The export fails if a model or
 texture asset does not exist, if a model stands on an overlay, or if a cable comes closer than 2 m to the ground.
 `<folder name>.glb` holds a node per tile, at its centre, and the spawn.
 

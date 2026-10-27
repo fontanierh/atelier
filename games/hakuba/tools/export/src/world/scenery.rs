@@ -38,6 +38,11 @@ pub struct Scenery {
     pub rails: Vec<Rail>,
 }
 
+/// @cc [owner:fontanierh,label:correctness] placement-offset-is-authored
+/// An origin offset MUST be finite authored placement data relative to the drawn owning ground, and every consumer
+/// MUST use the same offset. An offset does not prove contact: the real model's grounding and declared embedment
+/// MUST be independently checked against its owning surface.
+///
 /// A model standing on the ground.
 pub struct Placement {
     /// The model, by its folder under `assets/`, such as `plants/maple-a`.
@@ -47,6 +52,8 @@ pub struct Placement {
     /// How far it is turned counter-clockwise seen from above, in radians.
     pub yaw: f64,
     pub scale: f64,
+    /// Signed authored origin offset from its owning ground, in metres.
+    pub origin_offset_m: f64,
     /// Whether middle tiles show it too.
     pub afar: bool,
 }
@@ -198,7 +205,7 @@ const POST_DEPTH_M: f64 = 0.4;
 const POST_CAP_M: f64 = 0.03;
 
 /// A copy of a model: its foot's position, yaw, scale, and whether it shows afar.
-type Placed = ([f64; 2], f64, f64, bool, bool);
+type Placed = ([f64; 2], f64, f64, bool, bool, f64);
 
 /// A point of a rail: its foot, the rail's direction there in plan, and how far along the rail it is, in metres.
 type RailPoint = ([f64; 3], [f64; 2], f64);
@@ -256,6 +263,17 @@ pub fn share(
     for (scenery, fastened) in sceneries {
         for placement in &scenery.placements {
             let (at, yaw, scale, precise) = effective_pose(raised, placement);
+            if !placement.origin_offset_m.is_finite()
+                || !(placement.origin_offset_m as f32).is_finite()
+                || !at.is_finite()
+                || !yaw.is_finite()
+                || !(yaw as f32).is_finite()
+                || !scale.is_finite()
+                || !(scale as f32).is_finite()
+                || scale <= 0.0
+            {
+                bail!("{} has an invalid scale or origin offset", placement.model);
+            }
             raised.check_point(at)?;
             if !precise {
                 raised.check_point(raised::stored((at * 1000.0).round() / 1000.0))?;
@@ -268,7 +286,7 @@ pub fn share(
                 bail!("{} at {} stands on the overlay {overlay}", placement.model, at);
             }
             let entry = tiles.entry(grid.tile(at)).or_default().models.entry(placement.model).or_default();
-            entry.push((at.to_array(), yaw, scale, placement.afar, precise));
+            entry.push((at.to_array(), yaw, scale, placement.afar, precise, placement.origin_offset_m));
         }
         let mut anchors: BTreeMap<&str, Vec<DVec3>> = BTreeMap::new();
         for model in &fastened {
@@ -421,6 +439,8 @@ fn effective_at(raised: &Prepared<'_>, at: DVec2) -> (DVec2, bool) {
 
 fn effective_pose(raised: &Prepared<'_>, placement: &Placement) -> (DVec2, f64, f64, bool) {
     let (at, precise) = effective_at(raised, placement.at);
+    let precise = precise || placement.origin_offset_m != 0.0;
+    let at = if precise { raised::stored(placement.at) } else { at };
     if precise {
         (at, placement.yaw as f32 as f64, placement.scale as f32 as f64, true)
     } else {
@@ -430,11 +450,16 @@ fn effective_pose(raised: &Prepared<'_>, placement: &Placement) -> (DVec2, f64, 
 
 /// The world position of a cable anchor, seated on the surface owning its placement.
 fn cable_anchor(placement: &Placement, local: DVec3, drawn: &Surface, raised: &Prepared<'_>) -> Result<DVec3> {
-    let (at, yaw, scale, _) = effective_pose(raised, placement);
+    let (at, yaw, scale, precise) = effective_pose(raised, placement);
     raised.check_point(at)?;
     let seat =
         raised.height(at, |p| drawn.height(p)).with_context(|| format!("{} stands on no ground", placement.model))?;
-    Ok(at.extend(seat) + DMat3::from_rotation_z(yaw) * local * scale)
+    let origin = seat + placement.origin_offset_m;
+    if !origin.is_finite() || (precise && !(origin as f32).is_finite()) {
+        bail!("{} has an invalid origin height", placement.model);
+    }
+    let origin = if precise && placement.origin_offset_m != 0.0 { origin as f32 as f64 } else { origin };
+    Ok(at.extend(origin) + DMat3::from_rotation_z(yaw) * local * scale)
 }
 
 /// The name of the overlay that covers `p`, if any.
@@ -534,7 +559,7 @@ impl TileScenery {
     ) -> Result<()> {
         for (model, instances) in &self.models {
             let mut numbers = Vec::new();
-            for &(at, yaw, scale, afar, precise) in instances {
+            for &(at, yaw, scale, afar, precise, origin_offset_m) in instances {
                 if middle && !afar {
                     continue;
                 }
@@ -543,7 +568,11 @@ impl TileScenery {
                 let seat = raised
                     .height(at, |p| surface.height(p))
                     .with_context(|| format!("{}: {model} at {at} stands on no ground", path.display()))?;
-                let p = game(at.extend(seat));
+                let origin = seat + origin_offset_m;
+                if !origin.is_finite() || (precise && !(origin as f32).is_finite()) {
+                    bail!("{model} has an invalid origin height");
+                }
+                let p = game(at.extend(origin));
                 let values = [p.x, p.y, p.z, yaw, scale];
                 numbers.extend(if precise {
                     values.map(|v| v as f32 as f64)
@@ -800,8 +829,22 @@ mod tests {
         let grid = Grid { south_west: DVec2::ZERO, tile_m: 8.0 };
         let scenery = |y| Scenery {
             placements: vec![
-                Placement { model: "props/utility-pole", at: DVec2::new(1.0, y), yaw: 0.0, scale: 1.0, afar: true },
-                Placement { model: "props/utility-pole", at: DVec2::new(7.5, y), yaw: 0.0, scale: 1.0, afar: true },
+                Placement {
+                    model: "props/utility-pole",
+                    at: DVec2::new(1.0, y),
+                    yaw: 0.0,
+                    scale: 1.0,
+                    origin_offset_m: 0.0,
+                    afar: true,
+                },
+                Placement {
+                    model: "props/utility-pole",
+                    at: DVec2::new(7.5, y),
+                    yaw: 0.0,
+                    scale: 1.0,
+                    origin_offset_m: 0.0,
+                    afar: true,
+                },
             ],
             cables: vec![Cable { from: (0, 1), to: (1, 1), sag: 0.0, radius_m: 0.015, colour: [1.0; 3] }],
             ..Default::default()
@@ -842,8 +885,22 @@ mod tests {
         let grid = Grid { south_west: DVec2::ZERO, tile_m: 8.0 };
         let scene = || Scenery {
             placements: vec![
-                Placement { model: "props/utility-pole", at: DVec2::new(8.1, 8.1), yaw: 0.37, scale: 1.0, afar: true },
-                Placement { model: "props/utility-pole", at: DVec2::new(9.1, 8.2), yaw: 0.37, scale: 1.0, afar: true },
+                Placement {
+                    model: "props/utility-pole",
+                    at: DVec2::new(8.1, 8.1),
+                    yaw: 0.37,
+                    scale: 1.0,
+                    origin_offset_m: 0.0,
+                    afar: true,
+                },
+                Placement {
+                    model: "props/utility-pole",
+                    at: DVec2::new(9.1, 8.2),
+                    yaw: 0.37,
+                    scale: 1.0,
+                    origin_offset_m: 0.0,
+                    afar: true,
+                },
             ],
             cables: vec![Cable { from: (0, 0), to: (1, 0), sag: 0.035, radius_m: 0.015, colour: [1.0; 3] }],
             rails: vec![Rail {
@@ -918,8 +975,18 @@ mod tests {
         let mut prepared = Prepared::new(&raised, DVec2::ZERO, 8.0);
         prepared.add_tile((0, 0), &drawn, false).unwrap();
         prepared.add_tile((0, 0), &drawn, true).unwrap();
-        let mut placement = Placement { model: "pole", at: DVec2::new(2.0, 2.0), yaw: 0.0, scale: 1.0, afar: true };
+        let mut placement = Placement {
+            model: "pole",
+            at: DVec2::new(2.0, 2.0),
+            yaw: 0.0,
+            scale: 1.0,
+            origin_offset_m: 0.0,
+            afar: true,
+        };
         assert_eq!(cable_anchor(&placement, DVec3::Z * 2.0, &drawn, &prepared).unwrap().z, 5.0);
+        placement.origin_offset_m = 0.03;
+        assert_eq!(cable_anchor(&placement, DVec3::Z * 2.0, &drawn, &prepared).unwrap().z, 3.03_f32 as f64 + 2.0);
+        placement.origin_offset_m = 0.0;
         placement.at = DVec2::new(6.0, 6.0);
         assert_eq!(cable_anchor(&placement, DVec3::Z * 2.0, &drawn, &prepared).unwrap().z, 2.0);
         placement.at = DVec2::new(0.9996, 1.0);
@@ -972,6 +1039,7 @@ mod tests {
                 at: DVec2::new(0.9996, 1.0),
                 yaw: -163.6_f64.to_radians(),
                 scale: 1.0,
+                origin_offset_m: 0.0,
                 afar: true,
             }],
             ..Default::default()
@@ -988,6 +1056,29 @@ mod tests {
         let numbers = glb.extras("props/utility-pole").unwrap()["instances"].as_array().unwrap();
         assert_eq!(numbers[0].as_f64().unwrap(), 0.9996_f32 as f64);
         assert_eq!(numbers[3].as_f64().unwrap(), (-163.6_f64.to_radians()) as f32 as f64);
+        let mut shifted = scenery();
+        shifted.placements[0].at = DVec2::new(2.0, 2.0);
+        shifted.placements[0].origin_offset_m = 0.03;
+        let shifted = share(vec![(shifted, vec![])], &land, &grid, &[], &prepared, &drawn).unwrap();
+        for middle in [false, true] {
+            let mut glb = Glb::from_json(json!({"asset": {"version": "2.0"}}));
+            shifted[&(2, 2)].write(&mut glb, &drawn, &prepared, middle, Path::new("test.glb")).unwrap();
+            let numbers = glb.extras("props/utility-pole").unwrap()["instances"].as_array().unwrap();
+            assert_eq!(numbers[1].as_f64().unwrap(), 3.03_f32 as f64);
+        }
+        let mut boundary = scenery();
+        boundary.placements[0].at = DVec2::new(7.0 - 1e-8, 1.0);
+        boundary.placements[0].origin_offset_m = -0.06;
+        let boundary = share(vec![(boundary, vec![])], &land, &grid, &[], &prepared, &drawn).unwrap();
+        let placed = &boundary[&(7, 1)].models["props/utility-pole"][0];
+        assert_eq!(placed.0[0], 7.0);
+        assert_eq!(placed.1, (-163.6_f64.to_radians()) as f32 as f64);
+        let mut invalid = scenery();
+        invalid.placements[0].origin_offset_m = f64::NAN;
+        assert!(share(vec![(invalid, vec![])], &land, &grid, &[], &prepared, &drawn).is_err());
+        let mut overflow = scenery();
+        overflow.placements[0].origin_offset_m = f64::MAX;
+        assert!(share(vec![(overflow, vec![])], &land, &grid, &[], &prepared, &drawn).is_err());
         let overlay = Overlay {
             name: "path".into(),
             texture: "earth".into(),
@@ -1035,6 +1126,7 @@ mod tests {
                 at: DVec2::new(1.0, 0.5),
                 yaw: 0.0,
                 scale: 1.0,
+                origin_offset_m: 0.0,
                 afar: true,
             }],
             ..Default::default()
