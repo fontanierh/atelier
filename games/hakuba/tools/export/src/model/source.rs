@@ -252,6 +252,7 @@ mod tests {
     use crate::glb::{Material, Mesh};
     use crate::shapes::cuboid;
     use glam::DVec3;
+    use std::sync::atomic::{AtomicUsize, Ordering};
 
     fn fixture(collision: bool) -> Vec<u8> {
         let mut glb = Glb::from_json(json!({"asset": {"version": "2.0"}}));
@@ -270,7 +271,9 @@ mod tests {
         if collision {
             glb.add_mesh("collision", &[&mesh]);
         }
-        let path = std::env::temp_dir().join(format!("hakuba-source-fixture-{}-{collision}.glb", std::process::id()));
+        static NEXT_FIXTURE: AtomicUsize = AtomicUsize::new(0);
+        let id = NEXT_FIXTURE.fetch_add(1, Ordering::Relaxed);
+        let path = std::env::temp_dir().join(format!("hakuba-source-fixture-{}-{id}.glb", std::process::id()));
         glb.write(&path).unwrap();
         let bytes = fs::read(&path).unwrap();
         fs::remove_file(path).unwrap();
