@@ -181,7 +181,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         }
     }
     let [x, y] = settings.spawn_m;
-    let spawn = spawn_position(DVec2::new(x, y), &ground, &raised, &prepared)?;
+    let spawn = spawn_position(DVec2::new(x, y), &ground, &prepared)?;
     let facing = DQuat::from_rotation_y(-settings.spawn_bearing_deg.to_radians());
     index.add_marker("spawn", game(spawn), facing);
 
@@ -200,8 +200,8 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
 }
 
 /// Match the runtime's stored XY before selecting a raised owner, retaining the old empty-world export.
-fn spawn_position(at: DVec2, ground: &Ground, raised: &[Raised], prepared: &raised::Prepared<'_>) -> Result<DVec3> {
-    let at = if raised.is_empty() { at } else { raised::stored(at) };
+fn spawn_position(at: DVec2, ground: &Ground, prepared: &raised::Prepared<'_>) -> Result<DVec3> {
+    let at = prepared.emitted_at(at);
     prepared.check_point(at)?;
     let Some(height) = prepared.height(at, |p| ground.height(p)) else { bail!("the spawn is off the ground") };
     Ok(at.extend(height))
@@ -344,9 +344,9 @@ mod tests {
         prepared.add_tile((0, 0), &drawn, false).unwrap();
         prepared.add_tile((0, 0), &drawn, true).unwrap();
         let at = DVec2::new(0.99999999, 0.25);
-        assert_eq!(spawn_position(at, &ground, &raised, &prepared).unwrap(), DVec3::new(1.0, 0.25, 3.0));
+        assert_eq!(spawn_position(at, &ground, &prepared).unwrap(), DVec3::new(1.0, 0.25, 3.0));
         let empty = raised::Prepared::new(&[], DVec2::ZERO, 8.0);
-        assert_eq!(spawn_position(at, &ground, &[], &empty).unwrap(), at.extend(0.0));
+        assert_eq!(spawn_position(at, &ground, &empty).unwrap(), at.extend(0.0));
     }
 
     /// Neighbouring tiles meet exactly along their whole shared edge, whichever version each one shows: both draw

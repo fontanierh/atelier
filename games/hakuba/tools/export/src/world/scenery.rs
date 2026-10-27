@@ -291,7 +291,11 @@ pub fn share(
         }
         for rail in &scenery.rails {
             let path: Vec<_> = rail.path.iter().map(|&p| raised.emitted_at(p)).collect();
-            if raised.has_surfaces() && path.windows(2).any(|pair| pair[0] == pair[1]) {
+            if path
+                .windows(2)
+                .zip(rail.path.windows(2))
+                .any(|(stored, original)| stored[0] == stored[1] && original[0] != original[1])
+            {
                 bail!("a rail has consecutive points that collapse at stored precision");
             }
             for &p in &path {
@@ -646,6 +650,83 @@ mod tests {
         let empty = Prepared::new(&[], DVec2::ZERO, 8.0);
         assert_eq!(empty.emitted_at(at), at);
         assert!(cable_is_clear(at.extend(4.0), &drawn, &empty).unwrap());
+    }
+
+    #[test]
+    fn distant_rail_checksum_is_unchanged_by_the_first_raised_surface() {
+        use crate::world::{Detail, Tile};
+        let ground = Ground::page(16, 1.0, |_, _| 0.0);
+        let whole = Surface::new(&Tile { columns: (0, 16), rows: (0, 16) }.ground(&ground, Detail::Full, 0, 1.0));
+        let p = |x, y| (DVec2::new(x, y), DVec2::ZERO);
+        let raised = [Raised {
+            name: "paving".into(),
+            texture: "earth".into(),
+            ground: true,
+            height: 3.0,
+            clearance: 0.1,
+            triangles: vec![[p(1.0, 1.0), p(3.0, 1.0), p(1.0, 3.0)]],
+        }];
+        let empty = Prepared::new(&[], DVec2::ZERO, 8.0);
+        let mut prepared = Prepared::new(&raised, DVec2::ZERO, 8.0);
+        for x in 0..2 {
+            for y in 0..2 {
+                let tile = Tile { columns: (8 * x, 8 * (x + 1)), rows: (8 * y, 8 * (y + 1)) };
+                let drawn = Surface::new(&tile.ground(&ground, Detail::Full, 0, 1.0));
+                prepared.add_tile((x, y), &drawn, false).unwrap();
+                prepared.add_tile((x, y), &drawn, true).unwrap();
+            }
+        }
+        let grid = Grid { south_west: DVec2::ZERO, tile_m: 8.0 };
+        let scene = || Scenery {
+            placements: vec![
+                Placement { model: "props/utility-pole", at: DVec2::new(8.1, 8.1), yaw: 0.37, scale: 1.0, afar: true },
+                Placement { model: "props/utility-pole", at: DVec2::new(9.1, 8.2), yaw: 0.37, scale: 1.0, afar: true },
+            ],
+            cables: vec![Cable { from: (0, 0), to: (1, 0), sag: 0.035, radius_m: 0.015, colour: [1.0; 3] }],
+            rails: vec![Rail {
+                path: vec![DVec2::new(8.1, 8.1), DVec2::new(9.1, 8.2)],
+                profile: vec![[0.0, 0.0], [0.0, 1.0]],
+                post_every: 1,
+                post_radius_m: 0.05,
+                colour: [1.0; 3],
+                texture: "road",
+            }],
+        };
+        let make = |owner| {
+            let land =
+                Land { ground: &ground, raised: owner, low: DVec2::ZERO, high: DVec2::splat(16.0), exclusions: &[] };
+            let candidates: Vec<_> = land
+                .scatter(123, 2.0, 0.4, ScatterKind::Tree)
+                .filter(|(at, _)| at.x > 8.0 && at.y > 8.0)
+                .map(|(at, _)| {
+                    (land.placement_at(at), land.height(land.placement_at(at)), land.slope(land.placement_at(at)))
+                })
+                .collect();
+            (share(vec![(scene(), vec!["props/utility-pole"])], &land, &grid, &[], owner, &whole).unwrap(), candidates)
+        };
+        let ((before, before_candidates), (after, after_candidates)) = (make(&empty), make(&prepared));
+        assert_eq!(before_candidates, after_candidates);
+        let (before, after) = (&before[&(1, 1)], &after[&(1, 1)]);
+        assert_eq!(checksum_bytes(before), checksum_bytes(after));
+        let tile = Tile { columns: (8, 16), rows: (8, 16) };
+        assert_eq!(
+            tile.checksum(&[], &[], &ground, &[], &[], before),
+            tile.checksum(&[], &[], &ground, &[], &raised, after)
+        );
+        let emit = |scenery: &TileScenery, owner, middle, suffix| {
+            let detail = if middle { Detail::Middle } else { Detail::Full };
+            let drawn = Surface::new(&tile.ground(&ground, detail, 0, 1.0));
+            let path = std::env::temp_dir().join(format!("raised-locality-{}-{suffix}.glb", std::process::id()));
+            let mut glb = Glb::from_json(json!({"asset": {"version": "2.0"}}));
+            scenery.write(&mut glb, &drawn, owner, middle, &path).unwrap();
+            glb.write(&path).unwrap();
+            let bytes = std::fs::read(&path).unwrap();
+            std::fs::remove_file(path).unwrap();
+            bytes
+        };
+        for middle in [false, true] {
+            assert_eq!(emit(before, &empty, middle, "before"), emit(after, &prepared, middle, "after"));
+        }
     }
 
     #[test]

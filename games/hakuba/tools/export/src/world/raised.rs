@@ -89,17 +89,24 @@ impl<'a> Prepared<'a> {
         self.owner(p, false).or_else(|| ground(p))
     }
 
-    /// Position used by emitted f32 geometry; keep old coordinates when no raised surfaces exist.
+    /// Position used by emitted f32 geometry where it can touch a raised owner.
     pub fn emitted_at(&self, p: DVec2) -> DVec2 {
-        if self.raised.is_empty() { p } else { stored(p) }
+        if self.needs_precision(p) { stored(p) } else { p }
     }
 
-    pub fn has_surfaces(&self) -> bool {
-        !self.raised.is_empty()
+    fn needs_precision(&self, p: DVec2) -> bool {
+        let touches =
+            |point: DVec2| {
+                let (column, row) = self.tile(point);
+                [&self.full, &self.middle].into_iter().flatten().flatten().any(|(id, tile)| {
+                    id.0.abs_diff(column) <= 1 && id.1.abs_diff(row) <= 1 && tile.contains_exact(point)
+                })
+            };
+        touches(p) || touches(stored(p))
     }
 
     pub fn emitted_point(&self, p: DVec3) -> DVec3 {
-        if self.raised.is_empty() { p } else { p.as_vec3().as_dvec3() }
+        if self.needs_precision(p.truncate()) { p.as_vec3().as_dvec3() } else { p }
     }
 
     pub fn check_point(&self, p: DVec2) -> Result<()> {
