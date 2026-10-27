@@ -445,7 +445,11 @@ fn settle_step(ground: &mut impl WalkingGround, at: Vec3) -> Option<Vec3> {
         return None;
     }
     if drop <= 1e-6
-        || matches!(ground.sweep_capsule(at, RADIUS_M, BODY_HEIGHT_M, Vec3::NEG_Y * drop), Ok(Some(hit)) if (hit.distance - drop).abs() <= STEP_CLEARANCE_M)
+        || match ground.sweep_capsule(at, RADIUS_M, BODY_HEIGHT_M, Vec3::NEG_Y * drop) {
+            Ok(None) => true,
+            Ok(Some(hit)) => (hit.distance - drop).abs() <= STEP_CLEARANCE_M,
+            Err(_) => false,
+        }
     {
         return Some(at.with_y(support.point.y));
     }
@@ -841,6 +845,7 @@ mod step_tests {
         steep: bool,
         block_return: bool,
         block_drop: bool,
+        clear_drop: bool,
     }
     fn hit(point: Vec3, normal: Vec3, distance: f32) -> Hit {
         Hit { point, normal, distance, surface: Surface::Built }
@@ -879,6 +884,9 @@ mod step_tests {
             if delta.x > 0.0 && feet.y < 2.0 + self.rise && feet.x + delta.x + RADIUS_M >= 0.3 {
                 return Ok(Some(hit(feet, Vec3::NEG_X, 0.0)));
             }
+            if delta.y < 0.0 && self.clear_drop {
+                return Ok(None);
+            }
             if delta.y < 0.0 {
                 let y = 2.0
                     + if feet.x >= 0.3 && feet.x <= 0.3 + self.depth && feet.z.abs() <= self.half_width {
@@ -903,6 +911,7 @@ mod step_tests {
             steep: false,
             block_return: false,
             block_drop: false,
+            clear_drop: false,
         }
     }
     fn drive(ground: &mut Fixture, motion: &mut Motion, mut at: Vec3, speed: f32, frames: usize) -> Vec3 {
@@ -916,6 +925,17 @@ mod step_tests {
         }
         at
     }
+    #[test]
+    fn clear_sweep_settles_onto_ray_confirmed_support() {
+        let mut ground = fixture(0.18);
+        ground.clear_drop = true;
+        let at = Vec3::new(0.35, 2.20, 0.0);
+        let settled = settle_step(&mut ground, at).unwrap();
+        assert!((settled.y - 2.18).abs() < 0.00001);
+        ground.block_drop = true;
+        assert!(settle_step(&mut ground, at).is_none());
+    }
+
     #[test]
     fn flat_walking_keeps_its_normal_frame_distance() {
         let mut ground = fixture(0.0);

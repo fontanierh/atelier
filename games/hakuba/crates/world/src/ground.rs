@@ -331,6 +331,32 @@ mod tests {
     use bevy::ecs::system::RunSystemOnce;
 
     #[test]
+    fn capsule_can_drop_clear_to_ray_confirmed_platform() {
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins).init_resource::<Assets<Mesh>>();
+        let mesh = app.world_mut().resource_mut::<Assets<Mesh>>().add(Mesh::from(Cuboid::new(4.0, 1.0, 4.0)));
+        let transform = Transform::from_xyz(52.272, 16.464, 28.365);
+        app.world_mut().spawn((
+            Mesh3d(mesh),
+            transform,
+            GlobalTransform::from(transform),
+            Aabb::from_min_max(Vec3::new(-2.0, -0.5, -2.0), Vec3::new(2.0, 0.5, 2.0)),
+            Visibility::default(),
+            Solid(Surface::Built),
+        ));
+        app.world_mut()
+            .run_system_once(|mut ground: Ground| {
+                let feet = Vec3::new(52.272, 16.966002, 28.365);
+                let support = ground.below(feet, 0.45, 0.452).unwrap();
+                let drop = feet.y - support.point.y;
+                assert!((drop - 0.002).abs() < 0.00001);
+                let sweep = ground.sweep_capsule(feet, 0.3, 1.9, Vec3::NEG_Y * drop).unwrap();
+                assert!(sweep.is_none_or(|hit| (hit.distance - drop).abs() <= 0.002), "{sweep:?}");
+            })
+            .unwrap();
+    }
+
+    #[test]
     fn capsule_can_lift_from_a_tangent_floor() {
         let mut app = App::new();
         app.add_plugins(MinimalPlugins).init_resource::<Assets<Mesh>>();
