@@ -1,5 +1,6 @@
 //! Every region, each with its implementation of [`Region`] from its folder under the world's `src/regions/`.
 
+use super::authored::AuthoredSurface;
 use super::levelling::{Pad, Strip};
 use super::openings::{Domain, Opening};
 use super::overlay::Overlay;
@@ -47,6 +48,11 @@ pub trait Region {
 
     /// The flat shapes it lays over the ground.
     fn overlays(&self) -> Vec<Overlay>;
+
+    /// Independent, source-authored triangle surfaces, including their source crossings with terrain.
+    fn authored_surfaces(&self) -> Vec<AuthoredSurface> {
+        Vec::new()
+    }
 
     /// Planar surfaces that own their footprints above the ground.
     fn raised(&self) -> Vec<Raised> {

@@ -234,7 +234,21 @@ fn project(line: &[(DVec2, DVec2)], p: DVec2) -> (f64, f64) {
 mod tests {
     use super::*;
     use crate::world::overlay::{Overlay, check_smooth, crease_deg};
-    use crate::world::ribbon::ribbon;
+    // Sample a path only for the existing strip/overlay geometry tests.
+    fn ribbon(course: &[[f64; 2]], width: f64, texture_m: f64) -> Vec<[(DVec2, DVec2); 3]> {
+        let points = curve(course);
+        let corner = |i: usize, u: f64| {
+            let (at, direction) = points[i];
+            (at + direction.perp() * width * (u - 0.5), DVec2::new(u, i as f64 / texture_m))
+        };
+        (0..points.len() - 1)
+            .flat_map(|k| {
+                let [right, left, next_right, next_left] =
+                    [corner(k, 0.0), corner(k, 1.0), corner(k + 1, 0.0), corner(k + 1, 1.0)];
+                [[next_right, next_left, left], [next_right, left, right]]
+            })
+            .collect()
+    }
     use crate::world::surface::Surface;
     use crate::world::{Detail, Tile};
 

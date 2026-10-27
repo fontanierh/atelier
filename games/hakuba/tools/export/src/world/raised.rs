@@ -19,7 +19,7 @@ pub struct SurfacePaint {
 }
 
 impl SurfacePaint {
-    fn valid(&self) -> bool {
+    pub(crate) fn valid(&self) -> bool {
         self.haze_start_m.is_finite()
             && self.haze_start_m >= 0.0
             && self.haze_length_m.is_finite()
@@ -157,6 +157,22 @@ impl<'a> Prepared<'a> {
 
     pub fn height_for_detail(&self, p: DVec2, middle: bool, ground: impl FnOnce(DVec2) -> Option<f64>) -> Option<f64> {
         self.owner(p, middle).or_else(|| if self.is_cut(p, middle) { self.cut_height(p, middle) } else { ground(p) })
+    }
+
+    /// An explicit crossing can cover retained cut-ground outside the raised footprint. The raised owner itself
+    /// still takes precedence; elsewhere, resolve the crossing over the exact terrain selected for this detail.
+    pub fn height_with_crossing(
+        &self,
+        p: DVec2,
+        middle: bool,
+        ground: impl FnOnce(DVec2) -> Option<f64>,
+        crossing: impl FnOnce(DVec2, Option<f64>) -> Option<f64>,
+    ) -> Option<f64> {
+        if let Some(owner) = self.owner(p, middle) {
+            return Some(owner);
+        }
+        let terrain = if self.is_cut(p, middle) { self.cut_height(p, middle) } else { ground(p) };
+        crossing(p, terrain)
     }
 
     pub fn owner_height(&self, p: DVec2) -> Option<f64> {
@@ -579,6 +595,21 @@ mod tests {
         assert!(prepared.is_cut(gap, false));
         assert!(prepared.owner_height(gap).is_none());
         assert!(prepared.height(gap, |_| Some(123.0)).is_none());
+        // The removed raw grid is not considered, but an explicit source crossing can cover the collar.
+        assert_eq!(
+            prepared.height_with_crossing(
+                gap,
+                false,
+                |_| Some(123.0),
+                |_, terrain| {
+                    assert_eq!(terrain, None);
+                    Some(2.0)
+                }
+            ),
+            Some(2.0)
+        );
+        let inside = DVec2::new(4.0, 3.0);
+        assert_eq!(prepared.height_with_crossing(inside, false, |_| Some(123.0), |_, _| Some(456.0)), Some(3.0));
         assert!(prepared.check_point(gap).is_err());
         let a = DVec2::new(3.0 - collar * 3.0, 3.0);
         let b = DVec2::new(3.0 + collar, 3.0);
@@ -881,7 +912,7 @@ mod tests {
         let far = Tile { columns: (8, 16), rows: (8, 16) };
         let scenery = TileScenery::default();
         let checksum =
-            |tile: &Tile, surfaces: &[Raised]| tile.checksum(&[], &[], &ground, &[], surfaces, (&scenery, &[]));
+            |tile: &Tile, surfaces: &[Raised]| tile.checksum(&[], &[], &ground, (&[], surfaces, &[]), (&scenery, &[]));
         assert_ne!(checksum(&near, &[]), checksum(&near, &[square()]));
         assert_eq!(checksum(&far, &[]), checksum(&far, &[square()]));
         let mut changed = square();
@@ -905,7 +936,7 @@ mod tests {
             }
         }
         let padded_checksum = |tile: &Tile, surfaces: &[Raised], collar| {
-            tile.checksum(&[], &[], &ground, &[], surfaces, (&scenery, &[collar]))
+            tile.checksum(&[], &[], &ground, (&[], surfaces, &[]), (&scenery, &[collar]))
         };
         let surfaces = [bordering];
         assert_ne!(padded_checksum(&near, &[], 0.000008), padded_checksum(&near, &surfaces, 0.000008));
@@ -920,9 +951,12 @@ mod tests {
         }
         let near_collar = super::super::underlay::owner_collar(&surfaces[0], 8.0).unwrap();
         let distant_collar = super::super::underlay::owner_collar(&distant, 8.0).unwrap();
-        let local = near.checksum(&[], &[], &ground, &[], &surfaces, (&scenery, &[near_collar]));
+        let local = near.checksum(&[], &[], &ground, (&[], &surfaces, &[]), (&scenery, &[near_collar]));
         let combined = [surfaces.into_iter().next().unwrap(), distant];
-        assert_eq!(local, near.checksum(&[], &[], &ground, &[], &combined, (&scenery, &[near_collar, distant_collar])));
+        assert_eq!(
+            local,
+            near.checksum(&[], &[], &ground, (&[], &combined, &[]), (&scenery, &[near_collar, distant_collar]))
+        );
         assert_eq!(square().node_name(), "ground");
         let mut built = square();
         built.ground = false;

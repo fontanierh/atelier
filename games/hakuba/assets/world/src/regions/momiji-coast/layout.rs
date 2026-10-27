@@ -7,11 +7,12 @@ mod roadside;
 use glam::DVec2;
 
 use super::Region;
+use crate::world::authored::AuthoredSurface;
 use crate::world::curve::curve;
 use crate::world::levelling::Strip;
 use crate::world::openings::Domain;
 use crate::world::overlay::Overlay;
-use crate::world::ribbon::ribbon;
+use crate::world::raised::SurfacePaint;
 use crate::world::scenery::{Exclusion, Land, ScatterKind, Scenery};
 
 /// The points the road's centre line passes through, from its west end to its east end.
@@ -29,25 +30,6 @@ const ROAD: [[f64; 2]; 11] = [
     [295.0, 60.0],
 ];
 
-const ROAD_WIDTH_M: f64 = 5.2;
-
-/// How far the ground is levelled either side of the road's centre: the road and a verge of 1.4 m, so the 2 m ground
-/// triangles under the road's edges lie on level ground, or barely reach into the shoulder.
-const LEVEL_HALF_WIDTH_M: f64 = 4.0;
-
-/// How wide the ground eases from the levelled road back into the banks it is cut into. At this width the banks get no
-/// steeper than they are.
-const SHOULDER_M: f64 = 10.0;
-
-/// How far along the road its height is smoothed, as the spread of the bell curve each height is averaged over.
-const ROAD_SMOOTHING_M: f64 = 8.0;
-
-/// How often the road's texture repeats along it.
-const ROAD_TEXTURE_M: f64 = 8.0;
-
-/// The road's texture: its width spans the road.
-const ROAD_TEXTURE: &str = "road";
-
 pub struct MomijiCoast;
 
 impl Region for MomijiCoast {
@@ -58,13 +40,7 @@ impl Region for MomijiCoast {
     /// The ground under the road and its verges, levelled across the road and smooth along it, so the road and the
     /// ground beside it run without a kink.
     fn levelled(&self) -> Vec<Strip> {
-        vec![Strip {
-            course: ROAD.to_vec(),
-            half_width_m: LEVEL_HALF_WIDTH_M,
-            shoulder_m: SHOULDER_M,
-            smoothing_m: ROAD_SMOOTHING_M,
-            profile: None,
-        }]
+        Vec::new()
     }
 
     fn scatter_exclusions(&self) -> Vec<Exclusion> {
@@ -79,12 +55,34 @@ impl Region for MomijiCoast {
         vec![Domain { id: roadside::RAIL_PATH, from: 0.0, to: (curve(&ROAD).len() - 1) as f64, step: 1.0 }]
     }
 
-    /// The road, on its levelled strip.
+    /// This region's road retains its source-authored three-dimensional triangles.
     fn overlays(&self) -> Vec<Overlay> {
-        vec![Overlay {
-            name: "road".into(),
-            texture: ROAD_TEXTURE.into(),
-            triangles: ribbon(&ROAD, ROAD_WIDTH_M, ROAD_TEXTURE_M),
+        Vec::new()
+    }
+
+    fn authored_surfaces(&self) -> Vec<AuthoredSurface> {
+        #[derive(serde::Deserialize)]
+        struct RoadSource {
+            triangles: Vec<crate::world::authored::Triangle>,
+        }
+        let mut source: RoadSource =
+            serde_json::from_str(include_str!("road-source.json")).expect("the committed source road is valid JSON");
+        // The FBX source UV convention is the inverse of glTF's vertical axis.
+        for triangle in &mut source.triangles {
+            for uv in &mut triangle.uv {
+                uv[1] = 1.0 - uv[1];
+            }
+        }
+        vec![AuthoredSurface {
+            name: "road",
+            texture: "road",
+            tint: [0.34, 0.33, 0.33],
+            paint: Some(SurfacePaint {
+                haze_start_m: 30.0,
+                haze_length_m: 9000.0,
+                haze_colour: [0.0932, 0.2301, 0.5328],
+            }),
+            triangles: source.triangles,
         }]
     }
 

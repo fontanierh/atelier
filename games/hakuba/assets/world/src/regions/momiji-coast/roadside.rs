@@ -5,7 +5,10 @@ use std::f64::consts::FRAC_PI_2;
 
 use glam::DVec2;
 
-use super::{LEVEL_HALF_WIDTH_M, SHOULDER_M, uphill};
+use super::uphill;
+
+// Preserve the existing downhill bank sampling distance.
+const RAIL_BANK_SAMPLE_M: f64 = 14.0;
 use crate::world::scenery::{Cable, Land, Placement, Rail, Scenery};
 
 /// The named one-metre sample domain along the downhill rail.
@@ -72,10 +75,7 @@ pub fn add(scenery: &mut Scenery, land: &Land, road: &[(DVec2, DVec2)]) {
     for (k, &(centre, direction)) in road.iter().enumerate() {
         let side = -uphill(land, centre, direction);
         let drops = !land.is_open(RAIL_PATH, k as f64).expect("the rail samples its published domain")
-            && match (
-                land.height(centre),
-                land.height(centre + direction.perp() * side * (LEVEL_HALF_WIDTH_M + SHOULDER_M)),
-            ) {
+            && match (land.height(centre), land.height(centre + direction.perp() * side * RAIL_BANK_SAMPLE_M)) {
                 (Some(road_height), Some(out)) => out < road_height - RAIL_DROP_M,
                 _ => false,
             };
@@ -121,6 +121,7 @@ mod tests {
         let openings = [Opening { id: RAIL_PATH, from: 86.2, to: 105.9 }];
         let land = Land {
             ground: &ground,
+            rendered: None,
             raised: &crate::world::raised::Prepared::new(&[], DVec2::ZERO, 8.0),
             low: DVec2::ZERO,
             high: DVec2::splat(256.0),
