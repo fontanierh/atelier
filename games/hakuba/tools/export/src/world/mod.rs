@@ -375,7 +375,6 @@ mod tests {
             name: "paving".into(),
             texture: "ground".into(),
             ground: true,
-            paint: None,
             height: 2.0,
             clearance: 0.1,
             paint: Some(raised::SurfacePaint {

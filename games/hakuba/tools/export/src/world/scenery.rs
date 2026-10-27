@@ -721,6 +721,7 @@ mod tests {
             name: "paving".into(),
             texture: "earth".into(),
             ground: true,
+            paint: None,
             height: 3.0,
             clearance: 0.1,
             triangles: vec![[p(3.0, 2.0), p(7.0, 2.0), p(7.0, 6.0)], [p(3.0, 2.0), p(7.0, 6.0), p(3.0, 6.0)]],
@@ -728,8 +729,14 @@ mod tests {
         let mut prepared = Prepared::new(&raised, DVec2::ZERO, 8.0);
         prepared.add_tile((0, 0), &drawn, false).unwrap();
         prepared.add_tile((0, 0), &drawn, true).unwrap();
-        let land =
-            Land { ground: &ground, raised: &prepared, low: DVec2::ZERO, high: DVec2::splat(8.0), exclusions: &[] };
+        let land = Land {
+            ground: &ground,
+            raised: &prepared,
+            low: DVec2::ZERO,
+            high: DVec2::splat(8.0),
+            exclusions: &[],
+            regions: &[],
+        };
         let grid = Grid { south_west: DVec2::ZERO, tile_m: 8.0 };
         let scene = |a, b, y| Scenery {
             rails: vec![Rail {
@@ -760,6 +767,7 @@ mod tests {
             name: "paving".into(),
             texture: "earth".into(),
             ground: true,
+            paint: None,
             height: 10.0,
             clearance: 0.1,
             triangles: vec![[p(3.0, 3.5), p(3.1, 3.5), p(3.1, 4.5)], [p(3.0, 3.5), p(3.1, 4.5), p(3.0, 4.5)]],
@@ -767,8 +775,14 @@ mod tests {
         let mut prepared = Prepared::new(&raised, DVec2::ZERO, 8.0);
         prepared.add_tile((0, 0), &drawn, false).unwrap();
         prepared.add_tile((0, 0), &drawn, true).unwrap();
-        let land =
-            Land { ground: &ground, raised: &prepared, low: DVec2::ZERO, high: DVec2::splat(8.0), exclusions: &[] };
+        let land = Land {
+            ground: &ground,
+            raised: &prepared,
+            low: DVec2::ZERO,
+            high: DVec2::splat(8.0),
+            exclusions: &[],
+            regions: &[],
+        };
         let grid = Grid { south_west: DVec2::ZERO, tile_m: 8.0 };
         let scenery = |y| Scenery {
             placements: vec![
