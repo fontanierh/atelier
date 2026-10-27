@@ -1,6 +1,6 @@
 # characters
 
-The playable characters.
+Character models and their animation playback.
 
 `Character` lists them. Give an entity a `Character` and it loads that character's model from `assets/` and plays
 its idle in a loop. Once the model has loaded, the entity gets:
@@ -14,5 +14,6 @@ clip before. The node in the model's right palm gets `Grip`: what the character 
 child. `Hands` names each arm's bones, for what it holds in both hands, such as the paraglider (`hakuba_glider`): the
 upper arm, forearm and hand, and the three bones of each finger but the thumb.
 
-Every character has every clip and its grip, so what works for one works for all. The screens that show a character
-spawn it.
+Playable characters use the shared clips and grip. A model with authored clips keeps its own skeleton and clips;
+its export can also request emission proportional to its vertex-tinted base colour. Models without that profile keep
+their original material.

@@ -1,7 +1,7 @@
 # A tall pine, 13 m high, its needles in clumps up its trunk.
 kind = "plant"
 seed = 4
-inputs_sha256 = "c7e5e4db5f87d9aef31e7e047002cb28ad1b96ff4f54f6a760574cbbc4210c50"
+inputs_sha256 = "02b40824aaf51e5434a755c0caa0194af7ff215b6267d67878e1127063c06f3d"
 
 [wood]
 texture = "bark"

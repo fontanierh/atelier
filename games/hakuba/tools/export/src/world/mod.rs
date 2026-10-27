@@ -16,13 +16,16 @@
 //! Pages and tiles count columns east and rows north from the world's south-west corner. The map's frame (x east,
 //! y north, z up) becomes the game's (x east, y up, z south).
 
+mod actors;
 mod authored;
 mod checksums;
 mod contact;
 mod curve;
+mod fixed;
 mod ground;
 mod levelling;
 mod overlay;
+mod published;
 mod raised;
 mod regions;
 mod scenery;
@@ -54,6 +57,12 @@ pub struct Settings {
     /// Measurements from the source models and source terrain, relative to this asset.
     #[serde(default)]
     grounding_reference: Option<PathBuf>,
+    /// Models whose geometry has an exact fixed-source witness instead of a foot contact.
+    #[serde(default)]
+    fixed_source_models: Vec<String>,
+    /// Fixed geometry poses, source triangles and world bounds.
+    #[serde(default)]
+    fixed_source_reference: Option<PathBuf>,
     /// The folder of the ground's pages.
     ground: PathBuf,
     /// Optional source-authored fine terrain diagonals, relative to this asset.
@@ -104,7 +113,9 @@ impl Settings {
             columns: (span(first_x)?, span(last_x.checked_add(1).context("tile bounds overflow")?)?),
             rows: (span(first_y)?, span(last_y.checked_add(1).context("tile bounds overflow")?)?),
         };
-        let Some(extent) = self.extent_m else { return Ok(full) };
+        let Some(extent) = self.extent_m else {
+            return Ok(full);
+        };
         let grid = |coordinate: f64, origin: f64| -> Result<usize> {
             let value = (coordinate - origin) / self.ground_step_m;
             if !value.is_finite() || value < 0.0 || value > usize::MAX as f64 || (value - value.round()).abs() > 1e-8 {
@@ -136,6 +147,7 @@ impl Settings {
 /// The model outputs whose contact geometry the world validates.
 pub fn reads(settings: &Settings) -> Vec<String> {
     let mut models: Vec<_> = settings.grounding.iter().flat_map(|p| p.models.iter().cloned()).collect();
+    models.extend(settings.fixed_source_models.iter().cloned());
     models.sort();
     models.dedup();
     models
@@ -182,7 +194,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         .iter()
         .map(|surface| Overlay {
             name: surface.name.into(),
-            texture: surface.texture.into(),
+            texture: surface.texture.unwrap_or_default().into(),
             triangles: surface
                 .triangles
                 .iter()
@@ -256,7 +268,9 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     let source_meshes: Vec<Mesh> = authored.iter().map(|surface| surface.mesh(low, high)).collect::<Result<_>>()?;
     let drawn = Surface::with_crossings(&whole_mesh, &source_meshes);
     for surface in &authored {
-        crate::uri_of_texture(surface.texture)?;
+        if let Some(texture) = surface.texture {
+            crate::uri_of_texture(texture)?;
+        }
     }
     let land = Land {
         ground: &ground,
@@ -270,6 +284,19 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     let grid = Grid { south_west: DVec2::new(x, y), tile_m: settings.tile_steps as f64 * settings.ground_step_m };
     let sceneries: Vec<_> = regions::REGIONS.iter().map(|region| region.scenery(&land)).collect();
     let contacts = contact::read(&settings.grounding)?;
+    let fixed = match &settings.fixed_source_reference {
+        Some(path) => fixed::FixedSources::read(&source_path(folder, path)?)?,
+        None if settings.fixed_source_models.is_empty() => fixed::FixedSources::empty(),
+        None => bail!("fixed source models need a source witness"),
+    };
+    let declared: std::collections::BTreeSet<_> = settings.fixed_source_models.iter().map(String::as_str).collect();
+    let witnessed: std::collections::BTreeSet<_> = fixed.models().collect();
+    if declared.len() != settings.fixed_source_models.len()
+        || declared != witnessed
+        || declared.iter().any(|name| contacts.contains_key(*name))
+    {
+        bail!("fixed source models must match their witnesses and be distinct from contact models");
+    }
     let reference_path = settings.grounding_reference.as_ref().context("world needs a source contact reference")?;
     let reference = contact::Reference::read(&source_path(folder, reference_path)?)?;
     // Validate contacts against the logical source domain, before streaming clips any tile. The same
@@ -291,7 +318,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         ground.native_extent().context("source contact validation needs native terrain bounds")?;
     let native_low = ground.position(native_first.0 as f64, native_first.1 as f64);
     let native_high = ground.position(native_last.0 as f64, native_last.1 as f64);
-    let radius = contact::footprint_radius(&sceneries, (land.low, land.high), &contacts)?;
+    let radius = contact::footprint_radius(&sceneries, (land.low, land.high), &contacts, &fixed)?;
     let needed_low = (land.low - DVec2::splat(radius)).max(native_low);
     let needed_high = (land.high + DVec2::splat(radius)).min(native_high);
     if needed_low.cmplt(logical_low).any() || needed_high.cmpgt(logical_high).any() {
@@ -357,11 +384,12 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         high: logical_high,
         regions: &regions::REGIONS,
     };
-    contact::validate(&sceneries, &logical_land, (land.low, land.high), &contacts, &reference)?;
+    contact::validate(&sceneries, &logical_land, (land.low, land.high), &contacts, &reference, &fixed)?;
+    fixed.validate(&sceneries, &logical_land, (land.low, land.high))?;
     if !settings.middle_uses_fine_ground {
         let middle_surface = Surface::with_crossings(&logical_middle, &logical_sources);
         let middle_land = Land { rendered: Some(&middle_surface), middle: true, ..logical_land };
-        contact::validate(&sceneries, &middle_land, (land.low, land.high), &contacts, &reference)?;
+        contact::validate(&sceneries, &middle_land, (land.low, land.high), &contacts, &reference, &fixed)?;
     }
     let mut scenery = scenery::share(sceneries, &land, &grid, &overlays, &prepared, &drawn)?;
 
@@ -419,6 +447,24 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     let spawn = spawn_position(DVec2::new(x, y), &ground, &prepared, (!authored.is_empty()).then_some(&drawn))?;
     let facing = DQuat::from_rotation_y(-settings.spawn_bearing_deg.to_radians());
     index.add_marker("spawn", game(spawn), facing);
+    for (i, actor) in regions::REGIONS.iter().flat_map(|region| region.actors()).enumerate() {
+        actor.validate()?;
+        let inside = |position: [f64; 3]| {
+            let [x, y, _] = position;
+            let [west, south] = settings.south_west_m;
+            let step = settings.ground_step_m;
+            x >= west + whole.columns.0 as f64 * step
+                && x <= west + whole.columns.1 as f64 * step
+                && y >= south + whole.rows.0 as f64 * step
+                && y <= south + whole.rows.1 as f64 * step
+        };
+        if inside(actor.position) {
+            if actor.route.as_ref().is_some_and(|route| !inside(route.destination)) {
+                bail!("actor route leaves the exported world");
+            }
+            index.add_data(&format!("actor {i}"), serde_json::to_value(actor)?);
+        }
+    }
 
     // Files of tiles no longer exported go.
     for entry in fs::read_dir(&tiles)? {
@@ -476,7 +522,9 @@ fn underlay_for_owner(
         for row in (first.y.max(0.0) as usize).saturating_sub(1)..=(last.y as usize).saturating_add(1).min(max_row) {
             let tile = Tile { columns: span(column), rows: span(row) };
             let tile = if settings.extent_m.is_some() {
-                let Some(tile) = settings.extent()?.clip_tile(tile.columns, tile.rows) else { continue };
+                let Some(tile) = settings.extent()?.clip_tile(tile.columns, tile.rows) else {
+                    continue;
+                };
                 tile
             } else {
                 tile
@@ -610,9 +658,10 @@ impl Tile {
                 continue;
             }
             let mut mesh = source_mesh.clone();
+            let texture = surface.texture.map(crate::uri_of_texture).transpose()?;
             mesh.material = glb.add_material(&Material {
                 name: surface.name,
-                texture: Some(&crate::uri_of_texture(surface.texture)?),
+                texture: texture.as_deref(),
                 colour: surface.tint,
                 cut_out: false,
                 two_sided: false,
@@ -620,6 +669,9 @@ impl Tile {
             let node = glb.add_mesh(surface.name, &[&mesh]);
             if let Some(paint) = &surface.paint {
                 glb.set_extras(node, json!({"surface_paint": paint}));
+            }
+            if let Some(paint) = &surface.vertex_paint {
+                glb.set_extras(node, json!({"vertex_paint": paint}));
             }
         }
         for surface in raised {
@@ -774,6 +826,8 @@ mod tests {
         let mut settings = Settings {
             grounding: Vec::new(),
             grounding_reference: None,
+            fixed_source_models: Vec::new(),
+            fixed_source_reference: None,
             terrain_diagonals: None,
             ground: PathBuf::new(),
             south_west_m: [0.0, 0.0],
@@ -815,6 +869,8 @@ mod tests {
         let settings = Settings {
             grounding: Vec::new(),
             grounding_reference: None,
+            fixed_source_models: Vec::new(),
+            fixed_source_reference: None,
             terrain_diagonals: None,
             ground: PathBuf::new(),
             south_west_m: [0.0, 0.0],
@@ -842,13 +898,15 @@ mod tests {
         }];
         let road = [authored::AuthoredSurface {
             name: "road",
-            texture: "road",
+            texture: Some("road"),
             tint: [1.0; 3],
             paint: None,
+            vertex_paint: None,
             triangles: vec![authored::Triangle {
                 xyz: [[13.0, 5.0, 1.0], [14.0, 5.0, 1.0], [13.0, 6.0, 1.0]],
                 uv: [[0.0; 2]; 3],
                 normal: [[0.0, 0.0, 1.0]; 3],
+                colour: None,
             }],
         }];
         let emit = |authored: &[authored::AuthoredSurface], tag: &str| {
@@ -896,13 +954,15 @@ mod tests {
         let far = Tile { columns: (16, 24), rows: (16, 24) };
         let authored = [authored::AuthoredSurface {
             name: "road",
-            texture: "road",
+            texture: Some("road"),
             tint: [1.0; 3],
             paint: None,
+            vertex_paint: None,
             triangles: vec![authored::Triangle {
                 xyz: [[1.0, 1.0, 0.0], [2.0, 1.0, 0.0], [1.0, 2.0, 0.0]],
                 uv: [[0.0; 2]; 3],
                 normal: [[0.0, 0.0, 1.0]; 3],
+                colour: None,
             }],
         }];
         assert!(near.detail_for(&ground, Detail::Middle, &authored, false) == Detail::Full);
@@ -921,6 +981,8 @@ mod tests {
         let settings = Settings {
             grounding: Vec::new(),
             grounding_reference: None,
+            fixed_source_models: Vec::new(),
+            fixed_source_reference: None,
             terrain_diagonals: None,
             ground: PathBuf::new(),
             south_west_m: [0.0, 0.0],
@@ -972,6 +1034,8 @@ mod tests {
                 let settings = Settings {
                     grounding: Vec::new(),
                     grounding_reference: None,
+                    fixed_source_models: Vec::new(),
+                    fixed_source_reference: None,
                     terrain_diagonals: None,
                     ground: PathBuf::new(),
                     south_west_m: [0.0, 0.0],
@@ -1066,6 +1130,8 @@ mod tests {
         let settings = Settings {
             grounding: Vec::new(),
             grounding_reference: None,
+            fixed_source_models: Vec::new(),
+            fixed_source_reference: None,
             terrain_diagonals: None,
             ground: PathBuf::new(),
             south_west_m: [0.0, 0.0],

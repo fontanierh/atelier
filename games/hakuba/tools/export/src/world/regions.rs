@@ -1,5 +1,6 @@
 //! Every region, each with its implementation of [`Region`] from its folder under the world's `src/regions/`.
 
+use super::actors::Actor;
 use super::authored::AuthoredSurface;
 use super::levelling::{Pad, Strip};
 use super::overlay::Overlay;
@@ -8,6 +9,8 @@ use super::scenery::{Land, Placement, ScatterKind, Scenery};
 
 #[path = "../../../../assets/world/src/regions/momiji-coast/layout.rs"]
 mod momiji_coast;
+#[path = "../../../../assets/world/src/regions/momiji-village/layout.rs"]
+mod momiji_village;
 #[path = "../../../../assets/world/src/regions/roadside-houses/layout.rs"]
 mod roadside_houses;
 
@@ -43,8 +46,14 @@ pub trait Region {
         Vec::new()
     }
 
+    /// Animated actors in this region.
+    fn actors(&self) -> Vec<Actor> {
+        Vec::new()
+    }
+
     /// What it stands on `land` and runs along it.
     fn scenery(&self, land: &Land) -> Scenery;
 }
 
-pub const REGIONS: [&dyn Region; 2] = [&momiji_coast::MomijiCoast, &roadside_houses::RoadsideHouses];
+pub const REGIONS: [&dyn Region; 3] =
+    [&momiji_coast::MomijiCoast, &roadside_houses::RoadsideHouses, &momiji_village::MomijiVillage];

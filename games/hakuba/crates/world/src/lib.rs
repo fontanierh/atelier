@@ -3,6 +3,7 @@
 //! on ([`Ground`]), and [`PushesPlants`], which makes the plants around whatever carries it lean away; the player
 //! crate moves the camera.
 
+mod actors;
 mod ground;
 mod loading;
 mod look;
@@ -41,6 +42,7 @@ pub struct WorldPlugin;
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
+            actors::ActorsPlugin,
             ground::GroundPlugin,
             loading::LoadingPlugin,
             look::LookPlugin,
@@ -59,6 +61,9 @@ impl Plugin for WorldPlugin {
         .add_systems(PostUpdate, no_crossfades.before(VisibilitySystems::CheckVisibility));
     }
 }
+
+#[derive(Component)]
+struct WorldCamera;
 
 /// The world's index, while it loads.
 #[derive(Resource)]
@@ -91,6 +96,7 @@ fn spawn_world(
     let drawn = pixels::spawn(&mut commands, &mut images);
     commands.spawn((
         Name::new("Camera"),
+        WorldCamera,
         DespawnOnExit(Screen::World),
         Camera3d::default(),
         look::camera(&mut images),
@@ -104,6 +110,7 @@ fn read_index(
     index: Option<Res<Index>>,
     gltfs: Res<Assets<Gltf>>,
     nodes: Res<Assets<GltfNode>>,
+    assets: Res<AssetServer>,
     mut camera: Single<&mut Transform, With<Camera3d>>,
 ) {
     let Some(index) = index else { return };
@@ -113,6 +120,14 @@ fn read_index(
         if &**name == "spawn" {
             commands.insert_resource(Spawn(node.transform));
             **camera = node.transform.with_translation(node.transform.translation + Vec3::Y * EYE_HEIGHT_M);
+        } else if name.starts_with("actor ") {
+            if let Some(actor) =
+                node.extras.as_ref().and_then(|extras| serde_json::from_str::<actors::Actor>(&extras.value).ok())
+            {
+                actors::spawn(&mut commands, &assets, actor);
+            } else {
+                error!("invalid actor declaration: {name}");
+            }
         } else if let Some(tile) = Tile::named(name, node.transform.translation) {
             commands.spawn((
                 Name::new(name.to_string()),

@@ -20,7 +20,7 @@ pub struct Model {
     triangles: Vec<[DVec3; 3]>,
 }
 
-fn key(placement: &Placement) -> String {
+pub(super) fn key(placement: &Placement) -> String {
     let mut hash = Sha256::new();
     hash.update(placement.model.as_bytes());
     hash.update([0]);
@@ -59,10 +59,14 @@ pub fn footprint_radius(
     scenery: &[Scenery],
     selection: (DVec2, DVec2),
     models: &BTreeMap<String, Model>,
+    fixed: &super::fixed::FixedSources,
 ) -> Result<f64> {
     let mut radius = 0.0_f64;
     for placement in scenery.iter().flat_map(|scene| &scene.placements) {
         if placement.at.cmplt(selection.0).any() || placement.at.cmpge(selection.1).any() {
+            continue;
+        }
+        if fixed.contains_model(placement.model) {
             continue;
         }
         let model =
@@ -167,8 +171,8 @@ fn verify_gap(name: &str, at: DVec2, gap: f64, expected: f64) -> Result<()> {
 }
 
 /// @cc [owner:fontanierh,label:correctness] source-contact-reference
-/// Every selected authored placement MUST have exactly one source measurement, and the transformed model's
-/// contact geometry MUST agree with it on the logical visible owner surface within the source tolerance.
+/// Every selected placement MUST have exactly one source witness. Grounded models MUST agree with their measured
+/// contact on the logical visible owner surface; explicitly fixed geometry MUST match its source pose and geometry.
 /// Validation MUST run on every export, including tile checksum hits, and MUST fail on missing or changed rows.
 /// Cropping tiles MUST NOT replace an owner with hidden terrain or change the reference surface.
 pub struct Reference {
@@ -218,6 +222,7 @@ pub fn validate(
     selection: (DVec2, DVec2),
     models: &BTreeMap<String, Model>,
     reference: &Reference,
+    fixed: &super::fixed::FixedSources,
 ) -> Result<()> {
     let (low, high) = selection;
     if low.cmplt(reference.low).any() || high.cmpgt(reference.high).any() {
@@ -236,6 +241,9 @@ pub fn validate(
         for placement in &scene.placements {
             let (at, yaw, scale, _) = effective_pose(land.raised, land.rendered, placement);
             if at.cmplt(low).any() || at.cmpge(high).any() {
+                continue;
+            }
+            if fixed.contains_model(placement.model) {
                 continue;
             }
             let id = key(placement);
@@ -442,18 +450,52 @@ mod tests {
         let models = BTreeMap::from([("test".to_string(), model)]);
         let scene = Scenery { placements: vec![a, b], ..Default::default() };
         assert!(
-            validate(std::slice::from_ref(&scene), &land, (DVec2::ZERO, DVec2::splat(2.0)), &models, &reference)
-                .is_ok()
+            validate(
+                std::slice::from_ref(&scene),
+                &land,
+                (DVec2::ZERO, DVec2::splat(2.0)),
+                &models,
+                &reference,
+                &super::super::fixed::FixedSources::empty()
+            )
+            .is_ok()
         );
         // The first triangle extends past the crop; it must still use the same owner surface.
         assert!(
-            validate(std::slice::from_ref(&scene), &land, (DVec2::ZERO, DVec2::splat(1.0)), &models, &reference)
-                .is_ok()
+            validate(
+                std::slice::from_ref(&scene),
+                &land,
+                (DVec2::ZERO, DVec2::splat(1.0)),
+                &models,
+                &reference,
+                &super::super::fixed::FixedSources::empty()
+            )
+            .is_ok()
         );
         let missing = Scenery::default();
-        assert!(validate(&[missing], &land, (DVec2::ZERO, DVec2::splat(1.0)), &models, &reference).is_err());
+        assert!(
+            validate(
+                &[missing],
+                &land,
+                (DVec2::ZERO, DVec2::splat(1.0)),
+                &models,
+                &reference,
+                &super::super::fixed::FixedSources::empty()
+            )
+            .is_err()
+        );
         let mut altered = scene;
         altered.placements[0].yaw = 0.1;
-        assert!(validate(&[altered], &land, (DVec2::ZERO, DVec2::splat(1.0)), &models, &reference).is_err());
+        assert!(
+            validate(
+                &[altered],
+                &land,
+                (DVec2::ZERO, DVec2::splat(1.0)),
+                &models,
+                &reference,
+                &super::super::fixed::FixedSources::empty()
+            )
+            .is_err()
+        );
     }
 }

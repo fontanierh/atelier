@@ -1,0 +1,704 @@
+[
+  {
+    "id": "0070e28c3335a77eb077a40c5d23a465f0b0ac72bedc643784ddbbf6ad5e6929",
+    "authoring_fbx_sha256": "b3a4471a816e31026ed2780edfa96f243f334f81e1d2bb9986922a4300362b0a",
+    "geometry_sha256": "2194b1e3024b7ebf249fa3794e239d759c1e1361815f0ed40c9761767de21e87",
+    "height": 31.0,
+    "model": "props/village-details-70-21",
+    "parent_glb_sha256": "549bea0cc5f7e19e6a91946e0c6e8cb6c28dfe72341a76fb77a6ceb3885b1883",
+    "scale": 1.0,
+    "source_sha256": "ba4e601020072f529b11d96febcb9c2652d4bfa71682d097afb95178bc098edb",
+    "triangle_vertices": 4920,
+    "world_bounds_m": [
+      [
+        112.42948913574219,
+        65.11774444580078,
+        28.71500015258789
+      ],
+      [
+        116.41789245605469,
+        72.99471282958984,
+        29.960599899291992
+      ]
+    ],
+    "x": 116.0,
+    "y": 52.0,
+    "yaw": 0.0
+  },
+  {
+    "id": "061f29ae4de5ed2412b715d93572e3761e2db239ca74e9a9201f9103c5f94acd",
+    "authoring_fbx_sha256": "79461aeb0b4455418eb98aa6044ab46d9a2e1000add847f2b3ec25886da71d98",
+    "geometry_sha256": "75bbd8227b42ea86d696eee7c228200520332faec8ef432651f0b03da3ab57c8",
+    "height": 33.0,
+    "model": "props/village-planting-cell-0-0-piece32-69-22",
+    "parent_glb_sha256": "a3296e5dcc9ee65aff3f8694718a2bb0a331c3d24932e89a0a8b69cac2160676",
+    "scale": 1.0,
+    "source_sha256": "9e2f0d18a039927f8f4b508b92c5ad96f68c9745d780c99278fb3757c2d84864",
+    "triangle_vertices": 4758,
+    "world_bounds_m": [
+      [
+        75.8199234008789,
+        102.11231231689453,
+        30.384050369262695
+      ],
+      [
+        83.99979400634766,
+        107.32626342773438,
+        31.208221435546875
+      ]
+    ],
+    "x": 52.0,
+    "y": 116.0,
+    "yaw": 0.0
+  },
+  {
+    "id": "09f3bc60f8f83d4f5ccb42cbda796aac6c7d88926f97b9359cedb714af0d01a2",
+    "authoring_fbx_sha256": "68585ad5d584b0bf6f71ee1c7d2025bf410ccaa572cc594e7ab83c2fca8546be",
+    "geometry_sha256": "40c1e5d80e839f0b70a57faa2e852c602a009cc35647a0c1e6bcf67b92b88584",
+    "height": 32.0,
+    "model": "props/village-edges-70-21",
+    "parent_glb_sha256": "12b17974e383d5ffe46a96e2a2a4d432ec7f49940f12608e4b9c402a6894c29a",
+    "scale": 1.0,
+    "source_sha256": "11d5047fe400511ece8ca3df6767303d92f94a05c730ca9cf26087dd70934531",
+    "triangle_vertices": 7140,
+    "world_bounds_m": [
+      [
+        124.79500579833984,
+        59.94786834716797,
+        28.189558029174805
+      ],
+      [
+        130.24000549316406,
+        84.0,
+        30.708541870117188
+      ]
+    ],
+    "x": 116.0,
+    "y": 52.0,
+    "yaw": 0.0
+  },
+  {
+    "id": "0d5b25dec8ae9d018172aa1ea6bd2a1b98b3400401fa296c1172fb519dc7f906",
+    "authoring_fbx_sha256": "684bbd3784a6bd4205d2eb1cccb38463983818aec1a3c08ccc66b8c455cbcc83",
+    "geometry_sha256": "6f77fe2530bbcfd9797b1d27ae091be2797e9b299751cbdfa7705d3731b40318",
+    "height": 31.0,
+    "model": "props/village-planting-cell-0-0-piece31-70-21",
+    "parent_glb_sha256": "9ce598cd2f5f4812a814ada22e56651fe948242f7bd7ca04774c85c7b1109b1c",
+    "scale": 1.0,
+    "source_sha256": "439543660b2c6d3a0f7cf25e43f7824e2f21e982393d3d13f1d2e572ae5d4723",
+    "triangle_vertices": 31164,
+    "world_bounds_m": [
+      [
+        95.7911605834961,
+        63.91477966308594,
+        27.70627784729004
+      ],
+      [
+        127.70018768310547,
+        84.0,
+        29.940956115722656
+      ]
+    ],
+    "x": 116.0,
+    "y": 52.0,
+    "yaw": 0.0
+  },
+  {
+    "id": "2b1ba6571fa79bcf0d9e353cf398f7c1c0906343cb8d8f9b59a0d63e8fa08713",
+    "authoring_fbx_sha256": "c22c4fdffaa0d6923f3f852cd8be3653852569a93d9456a46703e40457bd9b92",
+    "geometry_sha256": "ac6cd2987b484c5eecc8d3e2301b13c9ca2543a0f0a0cfa671f5ed22411aef21",
+    "height": 31.0,
+    "model": "props/village-planting-cell-0-0-piece30-70-21",
+    "parent_glb_sha256": "65481c1aaaa257dd89e5dc62c39de155a3f24c3f410c08fe185561d4c2a9456d",
+    "scale": 1.0,
+    "source_sha256": "17dd83cab877841e5bf2d143872cb414b3cf3ee4c49f02580b743d3c262e6796",
+    "triangle_vertices": 13503,
+    "world_bounds_m": [
+      [
+        84.0,
+        63.964962005615234,
+        28.410470962524414
+      ],
+      [
+        96.15521240234375,
+        84.0,
+        29.6569766998291
+      ]
+    ],
+    "x": 116.0,
+    "y": 52.0,
+    "yaw": 0.0
+  },
+  {
+    "id": "2bf72f4d67d45db899d5b1441a5423b9fa01a5c06831e5368ab2f11ae1fd8bac",
+    "authoring_fbx_sha256": "684bbd3784a6bd4205d2eb1cccb38463983818aec1a3c08ccc66b8c455cbcc83",
+    "geometry_sha256": "4f463a5edbe6b5e0693ffad0c6221a19f7f1a77700054562ce6fecc061989a61",
+    "height": 32.0,
+    "model": "props/village-planting-cell-0-0-piece31-70-22",
+    "parent_glb_sha256": "9ce598cd2f5f4812a814ada22e56651fe948242f7bd7ca04774c85c7b1109b1c",
+    "scale": 1.0,
+    "source_sha256": "bf0137275be2caba1b51342e9142c4825279100b8f0021a55fbb0bcf49b144f7",
+    "triangle_vertices": 24612,
+    "world_bounds_m": [
+      [
+        95.84556579589844,
+        84.0,
+        29.46327018737793
+      ],
+      [
+        128.0725555419922,
+        96.04219818115234,
+        30.618745803833008
+      ]
+    ],
+    "x": 116.0,
+    "y": 116.0,
+    "yaw": 0.0
+  },
+  {
+    "id": "2c20892649ad73db3834a5b7930c7bf13dc4e2cf7670c2bb9be100ceedcf668f",
+    "authoring_fbx_sha256": "b3a4471a816e31026ed2780edfa96f243f334f81e1d2bb9986922a4300362b0a",
+    "geometry_sha256": "c7c8b24254fa22bf887a0fe128499d018f8c527ce5892c02018740fe03d87a8d",
+    "height": 34.0,
+    "model": "props/village-details-69-21",
+    "parent_glb_sha256": "549bea0cc5f7e19e6a91946e0c6e8cb6c28dfe72341a76fb77a6ceb3885b1883",
+    "scale": 1.0,
+    "source_sha256": "7e03ad1427aadd79a862f3207f3bf4143f0eae216c9bc9887e6d46a7d3d56997",
+    "triangle_vertices": 8502,
+    "world_bounds_m": [
+      [
+        77.77904510498047,
+        73.19000244140625,
+        29.212499618530273
+      ],
+      [
+        83.0999984741211,
+        80.69000244140625,
+        32.06623077392578
+      ]
+    ],
+    "x": 52.0,
+    "y": 52.0,
+    "yaw": 0.0
+  },
+  {
+    "id": "3be2e02953387d12220f517343a85062a9a20df367cb7cfa68ae06aa4799e402",
+    "authoring_fbx_sha256": "f65f5cd50f54e9a91a0eab9b2a58b304548b9d9c60fa1cf172b2a956f92520bd",
+    "geometry_sha256": "3f5f4ab2b3f8902f47652dd042e9914037a56beafce2eac8541a958e55e54742",
+    "height": 36.0,
+    "model": "props/village-planting-cell-1-0-71-22",
+    "parent_glb_sha256": "64b3ed8bf3ea588ca2930098fe9e3b7cebad5c6a2e2cc75e8d41d51aabf4d0b0",
+    "scale": 1.0,
+    "source_sha256": "6c07f9ed1ca8cf9c1df65c2a6e4326427c960afc80aed22856f191362f46a10e",
+    "triangle_vertices": 1584,
+    "world_bounds_m": [
+      [
+        148.01104736328125,
+        115.43220520019531,
+        33.38134765625
+      ],
+      [
+        163.51181030273438,
+        128.05514526367188,
+        34.689170837402344
+      ]
+    ],
+    "x": 180.0,
+    "y": 116.0,
+    "yaw": 0.0
+  },
+  {
+    "id": "3f184c893ba9d38a5dc55d4c7bc93366887714efc80116c02c01513c727b0ffa",
+    "authoring_fbx_sha256": "c22c4fdffaa0d6923f3f852cd8be3653852569a93d9456a46703e40457bd9b92",
+    "geometry_sha256": "40c1a82c073e0962d93441bb97b9e7a898e885290afa774c69dcd9300d117332",
+    "height": 32.0,
+    "model": "props/village-planting-cell-0-0-piece30-69-22",
+    "parent_glb_sha256": "65481c1aaaa257dd89e5dc62c39de155a3f24c3f410c08fe185561d4c2a9456d",
+    "scale": 1.0,
+    "source_sha256": "c962756e3297ccdec68cf5717b2ccd8d547065bac41c0ad7f2c369bd4ac3fc6a",
+    "triangle_vertices": 6162,
+    "world_bounds_m": [
+      [
+        70.21381378173828,
+        84.0,
+        29.20787811279297
+      ],
+      [
+        84.0,
+        95.03052520751953,
+        30.41010856628418
+      ]
+    ],
+    "x": 52.0,
+    "y": 116.0,
+    "yaw": 0.0
+  },
+  {
+    "id": "5f34a29879c8d15c528153895db9b07c5a5c639ceac990807b92777051192737",
+    "authoring_fbx_sha256": "68585ad5d584b0bf6f71ee1c7d2025bf410ccaa572cc594e7ab83c2fca8546be",
+    "geometry_sha256": "e32dc6920a7753e02b27976829f932ad18c214ad9d6b60b903b72a3c210fc7b8",
+    "height": 34.0,
+    "model": "props/village-edges-70-22",
+    "parent_glb_sha256": "12b17974e383d5ffe46a96e2a2a4d432ec7f49940f12608e4b9c402a6894c29a",
+    "scale": 1.0,
+    "source_sha256": "37b2160cd1a34469e8fabb4b408873da7526c25588b3bfcb1cbc96d8e4ddcfd1",
+    "triangle_vertices": 6486,
+    "world_bounds_m": [
+      [
+        84.0,
+        84.0,
+        29.369373321533203
+      ],
+      [
+        130.24000549316406,
+        113.13785552978516,
+        32.408077239990234
+      ]
+    ],
+    "x": 116.0,
+    "y": 116.0,
+    "yaw": 0.0
+  },
+  {
+    "id": "6cdb03c7a345bbb95a41640e439d11213eb18b9abe26bdec94f03ec0e5597e7c",
+    "authoring_fbx_sha256": "6c44f59b6c202748bf2bd4010c4ba968653e1ae795dad7d618baa064bc033298",
+    "geometry_sha256": "be6667a19b40fa9b2d189862b83ff565182c5f7a1be249a5d252169f8bc573ac",
+    "height": 39.0,
+    "model": "props/village-planting-cell-1-1-71-23",
+    "parent_glb_sha256": "dd93afb802a5e95fa559093d1d403efd0975a9f3efc3b1065052f9892af4463c",
+    "scale": 1.0,
+    "source_sha256": "ce863680066989ce524d4fd6ebb41b62742d1f22f12d0be8a329609a98d4ddb1",
+    "triangle_vertices": 933,
+    "world_bounds_m": [
+      [
+        148.0,
+        148.0,
+        36.241615295410156
+      ],
+      [
+        156.1170196533203,
+        162.71832275390625,
+        37.63669967651367
+      ]
+    ],
+    "x": 180.0,
+    "y": 180.0,
+    "yaw": 0.0
+  },
+  {
+    "id": "7618a302426d6e2e798be0ab6e182d80202c2b18e8b920000c94e92f8586e999",
+    "authoring_fbx_sha256": "f65f5cd50f54e9a91a0eab9b2a58b304548b9d9c60fa1cf172b2a956f92520bd",
+    "geometry_sha256": "89155c196b95ce2fe6fced2e45bba5833bdd945660ca0a2ca6c3025d8ee69ca8",
+    "height": 35.0,
+    "model": "props/village-planting-cell-1-0-70-22",
+    "parent_glb_sha256": "64b3ed8bf3ea588ca2930098fe9e3b7cebad5c6a2e2cc75e8d41d51aabf4d0b0",
+    "scale": 1.0,
+    "source_sha256": "2ef2a81048ea72cf9a994165783aad75c4000f8fa2323c331b5c0cd5592d4512",
+    "triangle_vertices": 2832,
+    "world_bounds_m": [
+      [
+        127.92476654052734,
+        90.37609100341797,
+        29.946197509765625
+      ],
+      [
+        147.976318359375,
+        120.75131225585938,
+        33.46834182739258
+      ]
+    ],
+    "x": 116.0,
+    "y": 116.0,
+    "yaw": 0.0
+  },
+  {
+    "id": "76b54d5848f8146fce1e5327da15bf551502ebb263df43958e2c911c76aa3224",
+    "authoring_fbx_sha256": "090e1c720700aad85aee6f9d952fd2684a4ee5ea83c5450c691a3913cc56bfc1",
+    "geometry_sha256": "64fa5ca2391bf544a24bfec70bad04208034a37bc787ab98c1f8738cbd7418ea",
+    "height": 33.0,
+    "model": "props/village-planting-cell-0-0-piece33-70-22",
+    "parent_glb_sha256": "42fb0c6d065e9311ca4bfc4f96c2fc283e0d3b5baacb243fe5b7335dbf4a7adf",
+    "scale": 1.0,
+    "source_sha256": "4e96b47cb15e1ddff0f6a64fb2c5e4c5d23239e68503dd9838e6af65fcead0f8",
+    "triangle_vertices": 16770,
+    "world_bounds_m": [
+      [
+        95.8823471069336,
+        95.92894744873047,
+        30.120683670043945
+      ],
+      [
+        128.0626678466797,
+        114.00859069824219,
+        31.908985137939453
+      ]
+    ],
+    "x": 116.0,
+    "y": 116.0,
+    "yaw": 0.0
+  },
+  {
+    "id": "9335b2dd67b09c4300f59b16c5e89e462c9b2642eb21da46db5f51fb927dd522",
+    "authoring_fbx_sha256": "6c44f59b6c202748bf2bd4010c4ba968653e1ae795dad7d618baa064bc033298",
+    "geometry_sha256": "541a799cdea806108508f94d6e9b2426984f457fafd458033065281d173306d5",
+    "height": 38.0,
+    "model": "props/village-planting-cell-1-1-71-22",
+    "parent_glb_sha256": "dd93afb802a5e95fa559093d1d403efd0975a9f3efc3b1065052f9892af4463c",
+    "scale": 1.0,
+    "source_sha256": "96a4587aab71f8cca4d30891e637733ddc9b4bb4a91d176402cb5d7ccfe5ce57",
+    "triangle_vertices": 2283,
+    "world_bounds_m": [
+      [
+        148.82415008544922,
+        127.97213745117188,
+        34.56161117553711
+      ],
+      [
+        164.8919219970703,
+        148.0,
+        36.593997955322266
+      ]
+    ],
+    "x": 180.0,
+    "y": 116.0,
+    "yaw": 0.0
+  },
+  {
+    "id": "97428f9fb5f9ae5c32ce660cdd2619081997daaec8d79d371a85b5ff513c1c1d",
+    "authoring_fbx_sha256": "79461aeb0b4455418eb98aa6044ab46d9a2e1000add847f2b3ec25886da71d98",
+    "geometry_sha256": "596c21361051465f867798b507e2bc158e62ff6d1a34ed84e5df3ebb5b56bf7b",
+    "height": 33.0,
+    "model": "props/village-planting-cell-0-0-piece32-70-22",
+    "parent_glb_sha256": "a3296e5dcc9ee65aff3f8694718a2bb0a331c3d24932e89a0a8b69cac2160676",
+    "scale": 1.0,
+    "source_sha256": "c8ffb88b8f888c1020f06687428087d2aee9fef9c0a5b5c96d9c07ff6f987b8a",
+    "triangle_vertices": 2994,
+    "world_bounds_m": [
+      [
+        84.05561828613281,
+        95.99459075927734,
+        30.10211181640625
+      ],
+      [
+        96.2063980102539,
+        110.94934844970703,
+        31.12702178955078
+      ]
+    ],
+    "x": 116.0,
+    "y": 116.0,
+    "yaw": 0.0
+  },
+  {
+    "id": "9918841b20563bc61960b22e07a04216620b135356ed6889af864c79a2dfc74a",
+    "authoring_fbx_sha256": "84366894cb5e9f78fc62a692ac67279597af0442592bceda75f64b7135e694d6",
+    "geometry_sha256": "abd50b77371ac4f3c07a08e3910572e5544a57a6011e2f227f240e9ccd1ef57c",
+    "height": 22.0,
+    "model": "props/village-planting-cell-0-neg1-70-20",
+    "parent_glb_sha256": "33f09c83374984dda1c4d4ae75f57d2c9e18699f426a789255cb495eede71e5b",
+    "scale": 1.0,
+    "source_sha256": "91c6969b4f375df19e4a1bcb15c6f65a973a1d636c90a1015d0c71eafb871d74",
+    "triangle_vertices": 2364,
+    "world_bounds_m": [
+      [
+        86.1392822265625,
+        -19.804611206054688,
+        17.613889694213867
+      ],
+      [
+        100.67425537109375,
+        0.008514404296875,
+        20.1503963470459
+      ]
+    ],
+    "x": 116.0,
+    "y": -12.0,
+    "yaw": 0.0
+  },
+  {
+    "id": "9eaabe56cc2f5eb27ed5befee3bfe6e36e5a219caa16983a992816de7c8396a1",
+    "authoring_fbx_sha256": "6c44f59b6c202748bf2bd4010c4ba968653e1ae795dad7d618baa064bc033298",
+    "geometry_sha256": "b3b0ac8056f6c555ade1df77212a86f94948c2b5776b0ad1c5b10958f03b256b",
+    "height": 39.0,
+    "model": "props/village-planting-cell-1-1-70-23",
+    "parent_glb_sha256": "dd93afb802a5e95fa559093d1d403efd0975a9f3efc3b1065052f9892af4463c",
+    "scale": 1.0,
+    "source_sha256": "45ffa1ed1321e7c0df0d6749ea94028ef0eb60a69fa7664a23b5f489ceaf483c",
+    "triangle_vertices": 1032,
+    "world_bounds_m": [
+      [
+        141.7409210205078,
+        148.66729736328125,
+        36.681697845458984
+      ],
+      [
+        148.0,
+        166.21531677246094,
+        37.93320846557617
+      ]
+    ],
+    "x": 116.0,
+    "y": 180.0,
+    "yaw": 0.0
+  },
+  {
+    "id": "a1ee63366d3416b52dc4d8e7d156d977df1d7a67420b36505c750686d1053e83",
+    "authoring_fbx_sha256": "636f9768db8f30701a484782ad6ad609cbd91517fcee281528dcc5096ee8ac71",
+    "geometry_sha256": "9526470223c2f900fe042c365a90efa3f225ba9aef92df439063e37fb279a00b",
+    "height": 24.0,
+    "model": "props/village-planting-cell-0-0-piece1-69-20",
+    "parent_glb_sha256": "1865f9da3cdd2748b6b9bc80e44f14c2bc7eb8c07deceda97b7e8734a02a7820",
+    "scale": 1.0,
+    "source_sha256": "2395dd413c900d20edf19eefa153e26e9d12f3de158792c3e9d4293bb7f85358",
+    "triangle_vertices": 1596,
+    "world_bounds_m": [
+      [
+        76.61339569091797,
+        1.3882379531860352,
+        20.380090713500977
+      ],
+      [
+        84.0,
+        20.0,
+        22.178691864013672
+      ]
+    ],
+    "x": 52.0,
+    "y": -12.0,
+    "yaw": 0.0
+  },
+  {
+    "id": "a927afc71883f9fedd5b7192b9b424219dc4880ae6546632c9f345e93460fa83",
+    "authoring_fbx_sha256": "68585ad5d584b0bf6f71ee1c7d2025bf410ccaa572cc594e7ab83c2fca8546be",
+    "geometry_sha256": "bdb09128f0f2d7befe92248e1eaf04b463b1d404bd15c39cf6dd10ae72917094",
+    "height": 32.0,
+    "model": "props/village-edges-69-21",
+    "parent_glb_sha256": "12b17974e383d5ffe46a96e2a2a4d432ec7f49940f12608e4b9c402a6894c29a",
+    "scale": 1.0,
+    "source_sha256": "8bb1ae8c72f5250aca789f6aa84055e2168e5e8e7af8cd125ed8b46d3c060c0c",
+    "triangle_vertices": 5010,
+    "world_bounds_m": [
+      [
+        69.76000213623047,
+        67.0,
+        28.483320236206055
+      ],
+      [
+        70.23999786376953,
+        84.0,
+        30.82402229309082
+      ]
+    ],
+    "x": 52.0,
+    "y": 52.0,
+    "yaw": 0.0
+  },
+  {
+    "id": "b3483b20ae2bfddb7170215679f7a6b9eb242e38f87ba5fb9b736d4324d330a6",
+    "authoring_fbx_sha256": "b3a4471a816e31026ed2780edfa96f243f334f81e1d2bb9986922a4300362b0a",
+    "geometry_sha256": "5f9517a91a0b0883911e0220064158606984f0d868d65ed45c31a3433652f8bb",
+    "height": 33.0,
+    "model": "props/village-details-70-22",
+    "parent_glb_sha256": "549bea0cc5f7e19e6a91946e0c6e8cb6c28dfe72341a76fb77a6ceb3885b1883",
+    "scale": 1.0,
+    "source_sha256": "96528fa29fe686b35f5a2736f0c116c570a8bfe16fe73a173ea0978143d959c2",
+    "triangle_vertices": 5346,
+    "world_bounds_m": [
+      [
+        100.03781127929688,
+        87.54499816894531,
+        29.92249870300293
+      ],
+      [
+        119.65499877929688,
+        107.18571472167969,
+        31.975000381469727
+      ]
+    ],
+    "x": 116.0,
+    "y": 116.0,
+    "yaw": 0.0
+  },
+  {
+    "id": "bd96a9f0c81a7a1f2a549e531169a039bb0dc67320e2f789de1306db7a1ce75f",
+    "authoring_fbx_sha256": "68585ad5d584b0bf6f71ee1c7d2025bf410ccaa572cc594e7ab83c2fca8546be",
+    "geometry_sha256": "80563b20d4f242e4184e4b59ecfa61665257cad266daaa8f5e6fc7a7ed700be1",
+    "height": 34.0,
+    "model": "props/village-edges-69-22",
+    "parent_glb_sha256": "12b17974e383d5ffe46a96e2a2a4d432ec7f49940f12608e4b9c402a6894c29a",
+    "scale": 1.0,
+    "source_sha256": "f6865e27c87d518bf3ccba98666e57d8ac2cb60ce0d602a8a18d498d5f7ddb4d",
+    "triangle_vertices": 5556,
+    "world_bounds_m": [
+      [
+        69.76000213623047,
+        84.0,
+        29.384021759033203
+      ],
+      [
+        84.0,
+        110.18671417236328,
+        32.24898147583008
+      ]
+    ],
+    "x": 52.0,
+    "y": 116.0,
+    "yaw": 0.0
+  },
+  {
+    "id": "c39c6ba897f3aabda88d87dad2954de9ffd0b5b487978c7eeeba49eb399f4751",
+    "authoring_fbx_sha256": "b3a4471a816e31026ed2780edfa96f243f334f81e1d2bb9986922a4300362b0a",
+    "geometry_sha256": "bb4ecb525d9ab777df8e2ba85e044e1fcdeea056fc7dd230bfc522225fdf7ad0",
+    "height": 34.0,
+    "model": "props/village-details-69-22",
+    "parent_glb_sha256": "549bea0cc5f7e19e6a91946e0c6e8cb6c28dfe72341a76fb77a6ceb3885b1883",
+    "scale": 1.0,
+    "source_sha256": "d8bd8517431c42eb1d18cf270d5ad3963c45227daab435db06f494850b5ff1d6",
+    "triangle_vertices": 864,
+    "world_bounds_m": [
+      [
+        76.42910766601562,
+        99.60104370117188,
+        30.395000457763672
+      ],
+      [
+        81.73594665527344,
+        103.28153228759766,
+        32.89500045776367
+      ]
+    ],
+    "x": 52.0,
+    "y": 116.0,
+    "yaw": 0.0
+  },
+  {
+    "id": "d232d908cb41059f8cecbefb1fef0eda855a4711044a568d937a8c20c72b38c0",
+    "authoring_fbx_sha256": "636f9768db8f30701a484782ad6ad609cbd91517fcee281528dcc5096ee8ac71",
+    "geometry_sha256": "6612a8cede61feccfd28bb6d352ebc5dec648bdb3cb2811f4578d33926771c1d",
+    "height": 30.0,
+    "model": "props/village-planting-cell-0-0-piece1-69-21",
+    "parent_glb_sha256": "1865f9da3cdd2748b6b9bc80e44f14c2bc7eb8c07deceda97b7e8734a02a7820",
+    "scale": 1.0,
+    "source_sha256": "16ef453f9b2ababdc5927e76ed99f86b33c4383e30305c86b8b4bb71120ebf0d",
+    "triangle_vertices": 1062,
+    "world_bounds_m": [
+      [
+        76.72947692871094,
+        20.0,
+        22.085771560668945
+      ],
+      [
+        84.0,
+        63.7147216796875,
+        28.502382278442383
+      ]
+    ],
+    "x": 52.0,
+    "y": 52.0,
+    "yaw": 0.0
+  },
+  {
+    "id": "e1c30883f31021bab99291b7969f785889a29003c15a91a2b9105d2c53859aed",
+    "authoring_fbx_sha256": "636f9768db8f30701a484782ad6ad609cbd91517fcee281528dcc5096ee8ac71",
+    "geometry_sha256": "4ea2f6456ecfd38d5b7cabd327b133c2df76679a9c9b555301f696ff83f48757",
+    "height": 22.0,
+    "model": "props/village-planting-cell-0-0-piece1-70-20",
+    "parent_glb_sha256": "1865f9da3cdd2748b6b9bc80e44f14c2bc7eb8c07deceda97b7e8734a02a7820",
+    "scale": 1.0,
+    "source_sha256": "a08b398a0451026ed69e94c0261ee6e12cd5b43e3405c1f690c9ab38a45f88f4",
+    "triangle_vertices": 702,
+    "world_bounds_m": [
+      [
+        84.0,
+        -0.028458595275878906,
+        19.789453506469727
+      ],
+      [
+        91.96968078613281,
+        8.556400299072266,
+        20.873811721801758
+      ]
+    ],
+    "x": 116.0,
+    "y": -12.0,
+    "yaw": 0.0
+  },
+  {
+    "id": "ef20e904ceb9fb73a294439bff4f881c12d238bf764830fa4fb6afc26f26f533",
+    "authoring_fbx_sha256": "c22c4fdffaa0d6923f3f852cd8be3653852569a93d9456a46703e40457bd9b92",
+    "geometry_sha256": "bc3230cc283ddcbb11a3512bea11618fc113dcb410398fd0c43fbf2973e0a2a1",
+    "height": 31.0,
+    "model": "props/village-planting-cell-0-0-piece30-69-21",
+    "parent_glb_sha256": "65481c1aaaa257dd89e5dc62c39de155a3f24c3f410c08fe185561d4c2a9456d",
+    "scale": 1.0,
+    "source_sha256": "f13899d50073406f7b3311cb4dfe4484e74841f05e3077084e87b105afe673c4",
+    "triangle_vertices": 10782,
+    "world_bounds_m": [
+      [
+        70.34937286376953,
+        63.9675178527832,
+        28.511445999145508
+      ],
+      [
+        84.0,
+        84.0,
+        29.79119110107422
+      ]
+    ],
+    "x": 52.0,
+    "y": 52.0,
+    "yaw": 0.0
+  },
+  {
+    "id": "f480e5d02d0e14c1299754096e9ca777bae27fada3b70a87fa12f992f642c1a2",
+    "authoring_fbx_sha256": "c22c4fdffaa0d6923f3f852cd8be3653852569a93d9456a46703e40457bd9b92",
+    "geometry_sha256": "5ce2c22c4b2c67c7661a2662ca4213d98fef37df2bdcc762a3f1f26f863cdfbd",
+    "height": 32.0,
+    "model": "props/village-planting-cell-0-0-piece30-70-22",
+    "parent_glb_sha256": "65481c1aaaa257dd89e5dc62c39de155a3f24c3f410c08fe185561d4c2a9456d",
+    "scale": 1.0,
+    "source_sha256": "0104eda73150f46a65bd08d01d930e8ce7b5c69c3597ee02d474ba4b44602cd1",
+    "triangle_vertices": 6492,
+    "world_bounds_m": [
+      [
+        84.0,
+        84.0,
+        29.328767776489258
+      ],
+      [
+        96.16277313232422,
+        95.87437438964844,
+        30.42003059387207
+      ]
+    ],
+    "x": 116.0,
+    "y": 116.0,
+    "yaw": 0.0
+  },
+  {
+    "id": "fae49f6aabfb348c7e09bf8b54f6b87f5a4c53c630668df8ed8baf77c5fab3e9",
+    "authoring_fbx_sha256": "636f9768db8f30701a484782ad6ad609cbd91517fcee281528dcc5096ee8ac71",
+    "geometry_sha256": "7ae8198f42d4eecc374da36cee7a70a45aaf3815b909588cbe710a2b0233a6f4",
+    "height": 30.0,
+    "model": "props/village-planting-cell-0-0-piece1-70-21",
+    "parent_glb_sha256": "1865f9da3cdd2748b6b9bc80e44f14c2bc7eb8c07deceda97b7e8734a02a7820",
+    "scale": 1.0,
+    "source_sha256": "5029fadfe29c2150f74e39b257fd6850a58cd11b6ccabe00fd8b515f7a69ab87",
+    "triangle_vertices": 9513,
+    "world_bounds_m": [
+      [
+        84.0,
+        23.496339797973633,
+        22.63690948486328
+      ],
+      [
+        125.34507751464844,
+        64.1146469116211,
+        28.833877563476562
+      ]
+    ],
+    "x": 116.0,
+    "y": 52.0,
+    "yaw": 0.0
+  }
+]

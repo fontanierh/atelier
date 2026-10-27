@@ -12,11 +12,13 @@
 use std::collections::VecDeque;
 
 use bevy::asset::RenderAssetUsages;
+use bevy::camera::primitives::Aabb;
 use bevy::camera::visibility::RenderLayers;
 use bevy::ecs::system::EntityCommands;
 use bevy::ecs::system::SystemParam;
 use bevy::gltf::{Gltf, GltfExtras, GltfMesh, GltfNode};
 use bevy::light::NotShadowCaster;
+use bevy::mesh::{MeshTag, VertexAttributeValues};
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use bevy::world_serialization::WorldAssetRoot;
@@ -26,7 +28,9 @@ use crate::ground::built_solid;
 use crate::loading::Missing;
 use crate::look::SHADOW_ONLY;
 use crate::tiles::TILES;
-use crate::vertex_paint::{Painted, PaintedMaterials, Profile, SurfaceProfile};
+use crate::vertex_paint::{
+    MotionProfile, MovingPainted, MovingPaintedMaterials, Painted, PaintedMaterials, Profile, SurfaceProfile,
+};
 use crate::wind::{SourceFoliage, SourceProfile, Swaying, SwayingMaterials};
 
 /// A model with fewer vertices than this has its copies merged.
@@ -47,7 +51,12 @@ pub struct SceneryPlugin;
 
 impl Plugin for SceneryPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (read, spawn).chain().in_set(Placing));
+        app.add_systems(Update, (read, spawn).chain().in_set(Placing)).add_systems(
+            PostUpdate,
+            cull_shadows
+                .after(TransformSystems::Propagate)
+                .before(bevy::camera::visibility::VisibilitySystems::CheckVisibility),
+        );
     }
 }
 
@@ -93,6 +102,7 @@ struct Job {
     shadows: bool,
     solid: bool,
     merge: bool,
+    shadow_distance: Option<f32>,
     vertices: usize,
     transforms: Vec<Transform>,
     cursor: usize,
@@ -156,6 +166,12 @@ struct Models<'w> {
     meshes: Res<'w, Assets<GltfMesh>>,
 }
 
+#[derive(SystemParam)]
+struct PaintMaterials<'w> {
+    painted: PaintedMaterials<'w>,
+    moving: MovingPaintedMaterials<'w>,
+}
+
 /// @cc [owner:fontanierh,label:correctness] solid-scenery-matches-visible-mesh
 /// A model with an explicit collision node MUST use only that node for solid rays. Otherwise, a model marked solid
 /// on its full node MUST collide with its shown meshes, including merged copies, and never with shadow-only copies.
@@ -171,7 +187,7 @@ fn spawn(
     models: Models,
     mut meshes: ResMut<Assets<Mesh>>,
     mut swaying: SwayingMaterials,
-    mut painted: PaintedMaterials,
+    mut paint: PaintMaterials,
 ) {
     let mut budget = Budget { vertices: MERGE_VERTICES_PER_UPDATE, instances: INSTANCES_PER_UPDATE };
     'copies: for (entity, mut waiting) in &mut waiting {
@@ -221,7 +237,7 @@ fn spawn(
                     };
                     parts
                 } else {
-                    match parts(&assets, &models, &meshes, &mut swaying, &mut painted, node) {
+                    match parts(&assets, &models, &meshes, &mut swaying, &mut paint.painted, &mut paint.moving, node) {
                         Ok(Some(parts)) => parts,
                         Ok(None) => continue 'copies,
                         Err(reason) => {
@@ -248,6 +264,16 @@ fn spawn(
             let mut jobs = VecDeque::new();
             for (node, parts, role) in shown {
                 let shadows = model_extras(node).is_none_or(|extras| extras.casts_shadows);
+                let shadow_distance = match shadow_distance(node) {
+                    Ok(distance) => distance,
+                    Err(reason) => {
+                        let asset = waiting.model.path().map_or_else(|| "model".to_string(), |p| p.to_string());
+                        error!("invalid {asset} node: {reason}");
+                        commands.insert_resource(Missing(asset));
+                        commands.entity(entity).remove::<Waiting>();
+                        continue 'copies;
+                    }
+                };
                 let solid = matches!(role, Role::Collision) || role.is_solid(solid);
                 if matches!(role, Role::Shadow) && !shadows {
                     continue;
@@ -265,6 +291,7 @@ fn spawn(
                                 shadows,
                                 solid,
                                 merge,
+                                shadow_distance,
                                 vertices,
                                 transforms: square,
                                 cursor: 0,
@@ -278,6 +305,7 @@ fn spawn(
                             shadows,
                             solid,
                             merge,
+                            shadow_distance,
                             vertices,
                             transforms: transforms.clone(),
                             cursor: 0,
@@ -336,15 +364,49 @@ fn place(
             budget.instances -= 1;
             (job.mesh.clone(), job.transforms[job.cursor], 1)
         };
+        let shadow_bounds = if job.shadows && matches!(job.role, Role::Both | Role::Shadow) {
+            job.shadow_distance.and_then(|distance| {
+                let VertexAttributeValues::Float32x3(positions) =
+                    meshes.get(&mesh)?.attribute(Mesh::ATTRIBUTE_POSITION)?
+                else {
+                    return None;
+                };
+                Some(ShadowDistance {
+                    distance,
+                    bounds: Aabb::enclosing(positions.iter().copied().map(Vec3::from_array))?,
+                    motion: match &job.look {
+                        Look::SourceFoliage(_, profile) => {
+                            let VertexAttributeValues::Float32x4(colours) =
+                                meshes.get(&mesh)?.attribute(Mesh::ATTRIBUTE_COLOR)?
+                            else {
+                                return None;
+                            };
+                            let weight = colours.iter().map(|c| c[0].abs()).fold(0.0, f32::max);
+                            Some(profile.shadow_motion_bound(weight))
+                        }
+                        Look::Still(_) | Look::Painted(_) => Some((0.0, 0.0)),
+                        // Unbounded motion cannot safely be range-culled.
+                        Look::Swaying(_) | Look::MovingPainted(_) => return None,
+                    },
+                    world: None,
+                })
+            })
+        } else {
+            None
+        };
         job.cursor += count;
         let mut part = commands.spawn((Mesh3d(mesh), transform, ChildOf(entity)));
+        if let Some(bounds) = shadow_bounds {
+            part.insert(bounds);
+        }
         mark_solid(&mut part, job.solid);
         if !matches!(job.role, Role::Collision) {
             match &job.look {
                 Look::Still(material) => part.insert(MeshMaterial3d(material.clone())),
                 Look::Swaying(material) => part.insert(MeshMaterial3d(material.clone())),
-                Look::SourceFoliage(material) => part.insert(MeshMaterial3d(material.clone())),
+                Look::SourceFoliage(material, _) => part.insert(MeshMaterial3d(material.clone())),
                 Look::Painted(material) => part.insert(MeshMaterial3d(material.clone())),
+                Look::MovingPainted(material) => part.insert(MeshMaterial3d(material.clone())),
             };
         }
         match job.role {
@@ -365,6 +427,70 @@ fn place(
 
 fn model_extras(node: &GltfNode) -> Option<ModelExtras> {
     node.extras.as_ref().and_then(|extras| serde_json::from_str(&extras.value).ok())
+}
+
+fn shadow_distance(node: &GltfNode) -> Result<Option<f32>, String> {
+    let Some(extras) = &node.extras else { return Ok(None) };
+    let value: serde_json::Value = serde_json::from_str(&extras.value).map_err(|e| e.to_string())?;
+    let Some(raw) = value.get("shadow_distance_m") else { return Ok(None) };
+    let distance = raw.as_f64().ok_or("shadow distance must be a number")? as f32;
+    if !distance.is_finite() || distance <= 0.0 {
+        return Err("shadow distance must be positive and finite".into());
+    }
+    Ok(Some(distance))
+}
+
+/// A declared caster range, independent of visible geometry and detail.
+#[derive(Component)]
+struct ShadowDistance {
+    distance: f32,
+    bounds: Aabb,
+    // World-space horizontal motion: wind coefficient and maximum player push.
+    motion: Option<(f32, f32)>,
+    world: Option<(Vec3, Vec3)>,
+}
+
+type ShadowPart = (
+    Entity,
+    Ref<'static, GlobalTransform>,
+    &'static mut ShadowDistance,
+    Option<&'static MeshTag>,
+    Has<NotShadowCaster>,
+);
+
+/// @cc [owner:fontanierh,label:correctness] scenery-shadow-range
+/// A declared shadow range MUST affect only eligible casters, use the world camera and conservative world bounds,
+/// and leave all casters enabled while the splash prepares their pipelines.
+fn cull_shadows(
+    mut commands: Commands,
+    loaded: Option<Res<crate::loading::Loaded>>,
+    camera: Query<&GlobalTransform, With<crate::WorldCamera>>,
+    mut parts: Query<ShadowPart>,
+) {
+    let Ok(camera) = camera.single() else { return };
+    for (entity, transform, mut range, tag, disabled) in &mut parts {
+        if transform.is_changed() || range.world.is_none() {
+            let matrix = transform.affine();
+            let centre = matrix.transform_point3(Vec3::from(range.bounds.center));
+            let extent = Vec3::from(range.bounds.half_extents);
+            let world_extent = matrix.transform_vector3(Vec3::X * extent.x).abs()
+                + matrix.transform_vector3(Vec3::Y * extent.y).abs()
+                + matrix.transform_vector3(Vec3::Z * extent.z).abs();
+            range.world = Some((centre, world_extent));
+        }
+        let (centre, extent) = range.world.unwrap();
+        let (wind, push) = range.motion.unwrap_or((0.0, 0.0));
+        let strength = tag.map_or(0.0, |tag| tag.value as f32 / 1000.0);
+        let motion = wind * strength + push;
+        let extent = extent + Vec3::new(motion, 0.0, motion);
+        let outside = (camera.translation() - centre).abs() - extent;
+        let should_disable = loaded.is_some() && outside.max(Vec3::ZERO).length_squared() > range.distance.powi(2);
+        if should_disable && !disabled {
+            commands.entity(entity).insert(NotShadowCaster);
+        } else if !should_disable && disabled {
+            commands.entity(entity).remove::<NotShadowCaster>();
+        }
+    }
 }
 
 fn mark_solid(part: &mut EntityCommands, solid: bool) {
@@ -403,12 +529,19 @@ fn parts(
     meshes: &Assets<Mesh>,
     swaying: &mut SwayingMaterials,
     painted: &mut PaintedMaterials,
+    moving: &mut MovingPaintedMaterials,
     node: &GltfNode,
 ) -> Result<Option<Parts>, String> {
     let Some(mesh) = node.mesh.as_ref().and_then(|mesh| models.meshes.get(mesh)) else { return Ok(None) };
     let mut surface_profile = None;
+    let mut motion_profile = None;
     let profile = if let Some(extras) = &node.extras {
         let value: serde_json::Value = serde_json::from_str(&extras.value).map_err(|e| e.to_string())?;
+        motion_profile = value
+            .get("vertex_motion")
+            .map(|p| serde_json::from_value::<MotionProfile>(p.clone()))
+            .transpose()
+            .map_err(|e| e.to_string())?;
         surface_profile = value
             .get("surface_paint")
             .map(|p| serde_json::from_value::<SurfaceProfile>(p.clone()))
@@ -425,6 +558,9 @@ fn parts(
     };
     if profile.as_ref().is_some_and(|p| !p.valid()) {
         return Err("invalid vertex paint parameters".into());
+    }
+    if motion_profile.as_ref().is_some_and(|p| !p.valid()) || (motion_profile.is_some() && profile.is_none()) {
+        return Err("invalid painted motion parameters".into());
     }
     let source_foliage = if let Some(extras) = &node.extras {
         let value: serde_json::Value = serde_json::from_str(&extras.value).map_err(|e| e.to_string())?;
@@ -450,15 +586,21 @@ fn parts(
         let Some(source) = meshes.get(&primitive.mesh) else { return Ok(None) };
         let material = standard_of(assets, primitive.material.as_ref());
         let look = if let Some(profile) = &profile {
-            validate_static_paint(source)?;
-            let Some(material) = painted.of(&material, profile)? else { return Ok(None) };
-            Look::Painted(material)
+            if let Some(motion) = &motion_profile {
+                validate_paint(source, true)?;
+                let Some(material) = moving.of(painted, &material, profile, motion)? else { return Ok(None) };
+                Look::MovingPainted(material)
+            } else {
+                validate_static_paint(source)?;
+                let Some(material) = painted.of(&material, profile)? else { return Ok(None) };
+                Look::Painted(material)
+            }
         } else if let Some(profile) = &source_foliage {
             if !source.contains_attribute(Mesh::ATTRIBUTE_COLOR) || !source.contains_attribute(Mesh::ATTRIBUTE_UV_0) {
                 return Err("source foliage needs colors and UVs".into());
             }
             let Some(material) = swaying.source_of(&material, profile) else { return Ok(None) };
-            Look::SourceFoliage(material)
+            Look::SourceFoliage(material, profile.clone())
         } else if let Some(profile) = &surface_profile {
             if source.contains_attribute(Mesh::ATTRIBUTE_COLOR)
                 || source.contains_attribute(Mesh::ATTRIBUTE_UV_1)
@@ -481,13 +623,22 @@ fn parts(
 }
 
 /// Static painted assets must retain opaque RGB and cannot silently discard a motion-bearing alpha channel.
-fn validate_static_paint(source: &Mesh) -> Result<(), String> {
+pub(crate) fn validate_static_paint(source: &Mesh) -> Result<(), String> {
+    validate_paint(source, false)
+}
+
+fn validate_paint(source: &Mesh, motion: bool) -> Result<(), String> {
     use bevy::mesh::VertexAttributeValues;
     let Some(VertexAttributeValues::Float32x4(colors)) = source.attribute(Mesh::ATTRIBUTE_COLOR) else {
         return Err("vertex paint requires RGBA vertex colors".into());
     };
-    if colors.iter().any(|c| c[3] != 0.0 || c[..3].iter().any(|v| !v.is_finite() || !(0.0..=1.0).contains(v))) {
-        return Err("vertex paint requires static zero-weight alpha and RGB in [0, 1]".into());
+    if colors.iter().any(|c| {
+        (!motion && c[3] != 0.0)
+            || !c[3].is_finite()
+            || !(0.0..=1.0).contains(&c[3])
+            || c[..3].iter().any(|v| !v.is_finite() || !(0.0..=1.0).contains(v))
+    }) {
+        return Err("vertex paint requires valid RGB and declared motion weights in [0, 1]".into());
     }
     if !source.contains_attribute(Mesh::ATTRIBUTE_POSITION)
         || !source.contains_attribute(Mesh::ATTRIBUTE_NORMAL)
@@ -532,8 +683,9 @@ fn merged(meshes: &Assets<Mesh>, mesh: &Handle<Mesh>, transforms: &[Transform], 
 enum Look {
     Still(Handle<StandardMaterial>),
     Swaying(Handle<Swaying>),
-    SourceFoliage(Handle<SourceFoliage>),
+    SourceFoliage(Handle<SourceFoliage>, SourceProfile),
     Painted(Handle<Painted>),
+    MovingPainted(Handle<MovingPainted>),
 }
 
 /// The standard material Bevy made from a glTF material: the material's own asset, labelled `<label>/std`.
@@ -557,6 +709,11 @@ mod tests {
         colors[0][3] = 0.5;
         mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
         assert!(validate_static_paint(&mesh).is_err());
+        assert!(validate_paint(&mesh, true).is_ok());
+        let mut colors = vec![[0.25, 0.1, 0.05, 0.0]; count];
+        colors[0][3] = 1.5;
+        mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
+        assert!(validate_paint(&mesh, true).is_err());
         mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, vec![[0.25, 0.1, 0.05, 0.0]; count]);
         mesh.insert_attribute(Mesh::ATTRIBUTE_UV_1, vec![[0.5, 0.0]; count]);
         assert!(validate_static_paint(&mesh).is_err());
@@ -585,6 +742,7 @@ mod tests {
                 shadows: true,
                 solid: true,
                 merge: true,
+                shadow_distance: None,
                 vertices,
                 transforms,
                 cursor: 0,
@@ -617,6 +775,118 @@ mod tests {
     }
 
     #[test]
+    fn shadow_range_marks_only_shadow_casting_roles() {
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins).init_resource::<Assets<Mesh>>();
+        let mesh = app.world_mut().resource_mut::<Assets<Mesh>>().add(Mesh::from(Cuboid::new(1.0, 1.0, 1.0)));
+        let jobs = [Role::Seen, Role::Shadow, Role::Both]
+            .into_iter()
+            .map(|role| Job {
+                mesh: mesh.clone(),
+                look: Look::Still(Handle::default()),
+                role,
+                shadows: true,
+                solid: false,
+                merge: false,
+                shadow_distance: Some(80.0),
+                vertices: 24,
+                transforms: vec![Transform::IDENTITY],
+                cursor: 0,
+            })
+            .collect();
+        let owner = app.world_mut().spawn(TestJobs(jobs)).id();
+        app.world_mut()
+            .run_system_once(
+                |mut commands: Commands,
+                 mut meshes: ResMut<Assets<Mesh>>,
+                 mut nodes: Query<(Entity, &mut TestJobs)>| {
+                    let mut budget = Budget { vertices: MERGE_VERTICES_PER_UPDATE, instances: INSTANCES_PER_UPDATE };
+                    for (entity, mut jobs) in &mut nodes {
+                        place(&mut jobs.0, entity, &mut meshes, &mut commands, &mut budget);
+                    }
+                },
+            )
+            .unwrap();
+        let children = app.world().get::<Children>(owner).unwrap();
+        assert!(app.world().get::<NotShadowCaster>(children[0]).is_some());
+        assert!(app.world().get::<ShadowDistance>(children[0]).is_none());
+        for child in &children[1..] {
+            assert!(app.world().get::<ShadowDistance>(*child).is_some());
+            assert!(app.world().get::<NotShadowCaster>(*child).is_none());
+        }
+    }
+
+    #[test]
+    fn shadow_range_preserves_visibility_and_warms_before_culling() {
+        let mut app = App::new();
+        let camera = app.world_mut().spawn((crate::WorldCamera, GlobalTransform::IDENTITY)).id();
+        let bounds = Aabb { center: Vec3::new(2.0, 0.0, 0.0).into(), half_extents: Vec3::splat(1.0).into() };
+        let part = app
+            .world_mut()
+            .spawn((
+                ShadowDistance { distance: 80.0, bounds, motion: Some((0.0, 0.0)), world: None },
+                GlobalTransform::from(Transform::from_xyz(100.0, 0.0, 0.0)),
+                Visibility::Inherited,
+            ))
+            .id();
+        app.world_mut().run_system_once(cull_shadows).unwrap();
+        assert!(app.world().get::<NotShadowCaster>(part).is_none());
+        app.insert_resource(crate::loading::Loaded::default());
+        app.world_mut().run_system_once(cull_shadows).unwrap();
+        assert!(app.world().get::<NotShadowCaster>(part).is_some());
+        assert_eq!(*app.world().get::<Visibility>(part).unwrap(), Visibility::Inherited);
+        app.world_mut().entity_mut(camera).insert(GlobalTransform::from(Transform::from_xyz(25.0, 0.0, 0.0)));
+        app.world_mut().run_system_once(cull_shadows).unwrap();
+        assert!(app.world().get::<NotShadowCaster>(part).is_none());
+    }
+
+    #[test]
+    fn shadow_range_uses_transformed_bounds_and_motion_at_boundary() {
+        let mut app = App::new();
+        app.insert_resource(crate::loading::Loaded::default());
+        let camera = app.world_mut().spawn((crate::WorldCamera, GlobalTransform::IDENTITY)).id();
+        let part = app
+            .world_mut()
+            .spawn((
+                ShadowDistance {
+                    distance: 80.0,
+                    bounds: Aabb { center: Vec3::ZERO.into(), half_extents: Vec3::new(2.0, 1.0, 4.0).into() },
+                    motion: Some((1.0, 0.5)),
+                    world: None,
+                },
+                GlobalTransform::from(
+                    Transform::from_xyz(0.0, 0.0, 0.0)
+                        .with_rotation(Quat::from_rotation_y(std::f32::consts::FRAC_PI_2))
+                        .with_scale(Vec3::new(2.0, 1.0, 0.5)),
+                ),
+                MeshTag::new(1000),
+            ))
+            .id();
+        // Rotated extent along X is 2 m; wind and push add 1.5 m.
+        app.world_mut().entity_mut(camera).insert(GlobalTransform::from(Transform::from_xyz(83.5, 0.0, 0.0)));
+        app.world_mut().run_system_once(cull_shadows).unwrap();
+        assert!(app.world().get::<NotShadowCaster>(part).is_none());
+        app.world_mut().entity_mut(camera).insert(GlobalTransform::from(Transform::from_xyz(83.51, 0.0, 0.0)));
+        app.world_mut().run_system_once(cull_shadows).unwrap();
+        assert!(app.world().get::<NotShadowCaster>(part).is_some());
+        // Wind changes update the padding without changing the cached geometry.
+        app.world_mut().entity_mut(part).insert(MeshTag::new(2000));
+        app.world_mut().run_system_once(cull_shadows).unwrap();
+        assert!(app.world().get::<NotShadowCaster>(part).is_none());
+        app.world_mut().entity_mut(part).insert(MeshTag::new(1000));
+        app.world_mut().run_system_once(cull_shadows).unwrap();
+        assert!(app.world().get::<NotShadowCaster>(part).is_some());
+        // Changed transforms invalidate the cached bounds.
+        app.world_mut().entity_mut(part).insert(GlobalTransform::from(
+            Transform::from_xyz(1.0, 0.0, 0.0)
+                .with_rotation(Quat::from_rotation_y(std::f32::consts::FRAC_PI_2))
+                .with_scale(Vec3::new(2.0, 1.0, 0.5)),
+        ));
+        app.world_mut().run_system_once(cull_shadows).unwrap();
+        assert!(app.world().get::<NotShadowCaster>(part).is_none());
+    }
+
+    #[test]
     fn unmerged_copies_obey_shared_update_budget() {
         let mut app = App::new();
         app.add_plugins(MinimalPlugins).init_resource::<Assets<Mesh>>();
@@ -630,6 +900,7 @@ mod tests {
             shadows: true,
             solid: false,
             merge: false,
+            shadow_distance: None,
             vertices: 1,
             transforms,
             cursor: 0,
@@ -670,6 +941,7 @@ mod tests {
                     shadows: false,
                     solid: true,
                     merge,
+                    shadow_distance: None,
                     vertices: 24,
                     transforms: vec![Transform::from_xyz(4.0, 0.0, 0.0)],
                     cursor: 0,

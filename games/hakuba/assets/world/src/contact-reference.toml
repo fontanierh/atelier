@@ -1,11 +1,11 @@
 # Source contact measurements, in metres, for the authored instances and original terrain.
 format = "HCNT0001"
 path = "contact-reference.bin"
-sha256 = "770c9f7e50f6cf2d97f6279e6b39ce9e4a71da1cf010d3c61e895a1dc2852e69"
+sha256 = "331ab51b5623743971b5dd612ea2a84d03a6cd7d48bdf0fc5d6bdcc342e3ffd8"
 tolerance_m = 0.01
-placement_extent_m = [[-300, -172], [300, 84]]
-surface_extent_m = [[-300, -256], [300, 128]]
-method = "FBX SDK triangulation of source terrain, full-model contact triangles, authored crossing and raised-owner surfaces"
+placement_extent_m = [[-300, -172], [300, 212]]
+surface_extent_m = [[-300, -256], [300, 256]]
+method = "FBX SDK terrain and Village Ground triangles, full-model contact triangles, source crossing and raised-owner surfaces"
 
 [terrain_source_sha256]
 "Terrain_cell_-1_-1" = "2bd19c914df168760b93269388858abcfb336a6bf3fdd4aa8ac0409ffc5e1dc5"
@@ -27,6 +27,20 @@ method = "FBX SDK triangulation of source terrain, full-model contact triangles,
 "Terrain_cell_2_-2" = "a6f10693764ac1d73516b0d978398e756dfcd28f58e1b914e5a6e99718be2597"
 "Terrain_cell_2_0" = "7273f831ee43650a9ad843f3350e9cb727d5847fc59d05312d16bb131b69c5d4"
 
+"Terrain_cell_-1_1" = "7f4ee3f75b54f09c387b45273963bacd245470f73f0bf0eafd1ba3ed4c01d8de"
+"Terrain_cell_-1_2" = "d8910efb12cd6facd840c03d6c4618311ee095bba30c2a07541067bc27244dca"
+"Terrain_cell_-2_1" = "f9581171c23a243d70cd0850b9bda8fc278ae3fcdf856db112d28729a0383f0b"
+"Terrain_cell_-2_2" = "a29878f9f540b302d90a98c656d7ac01e200b3f334c5eee50015e1f6b072e8f6"
+"Terrain_cell_-3_1" = "c983b0bcda49e5a4015ecf29d71589101f622b6116db60535c04f9021e8bb48c"
+"Terrain_cell_-3_2" = "48ae0f626d9531649237c4eb84115da80a18efc8673db49873ebfa3f09453274"
+"Terrain_cell_0_1" = "024f42957424d4caa8322e4846721a0a7805dea996cde09c1cfaead9aee1e1f8"
+"Terrain_cell_0_2" = "2abe8b6a6c39d9ca17c1a8261e768fdf8ca22d74c42de27857b3e20c97a8185c"
+"Terrain_cell_1_1" = "9e451c01bcb0099d4f1b291c666a903ae761d33b7196ffa38e1eb47cc7dde967"
+"Terrain_cell_1_2" = "094e36233919f924154bf96fe8de1503658c141eb1ea40700dc31369f604dbab"
+"Terrain_cell_2_1" = "898385a2fabf721d143da58fe46e3fcac63e5f870d4aa49d4e0222f52605e4bb"
+"Terrain_cell_2_2" = "64dbd8bac7dc99ba2200c5ca9b20f56fed0ddd01e9ca82aaaae9d5725bf286b2"
+
+# Hashes of model exports used for the source measurements; later tree shadow metadata does not change geometry.
 [model_export_sha256]
 "plants/coast-broad-a" = "0d33255f5c7201470d3ed15ab24d94b7cb57f255aade3450243a6443b80ddf52"
 "plants/coast-broad-b" = "37c007e0376323b121cfa0afdaab9d3d2e08beb8f15130fd40ab4833705f283e"
@@ -60,3 +74,33 @@ method = "FBX SDK triangulation of source terrain, full-model contact triangles,
 "props/road-house-lot-4" = "382406dc01ae7d83fd05e032b7489c6a3d62ff254744f17610a85f2d63be1895"
 "props/road-house-lot-5" = "676dc41e6de7ec784961aada0f54fa8e2013df1eb609e9104c30e3a40ca191b5"
 "props/stone-lantern" = "ae2ccbd088a4e39bb7c301c5f20cdad754b9fd397ffa48e08b7a41529c10df7d"
+
+[village_ground_source]
+authoring_fbx_sha256 = "4a3604f443c622966ab0b6645c41204fb8febc5b375656d221789411693318db"
+restored_glb_sha256 = "0493a2f014df000ac40c7cf7155ba469f1256606895a00e2cf217eb1af3cdc74"
+triangles_sha256 = "b06c182713650ff224a5fed80c356e1a839b7df8cbf1911b9a2a3d3dcefe5507"
+
+[village_model_source_sha256]
+"props/village-cottage-a" = "4ce9c29e6089066e9ddc6d565c529d8d72ec386a6676c3eadbcb5ab6f4e4208a"
+"props/village-cottage-b" = "e3c29f3b08f0d799f26509cfad41f94baf7992dc4cac7716028f9f3e5b90615c"
+"props/village-garden" = "9193472ba4b6e08dd0c411d326c1dc18fc3772c5af26cec7568e8694d77509c0"
+"props/village-sign" = "3ef2a5bfcd664aab6da7d700a8636605cb2fe14ae478c712433d287ba7dae917"
+"props/village-storehouse" = "d33e87a1de37b3ee9cb9aeee49c66c7c3c8693c95a553618f6ffdf0889f12340"
+"props/village-tea-house" = "f3983c66822cb5fbdc4dc14e16b211bacf813676a2a2cfd9957eac2b728ecaa4"
+"props/village-threshold" = "4127f25088412eda41b68f99a13792f3a370e641ead4224ba62b2d731ba2df56"
+"props/village-workshop" = "68b580f3d47f980df7376719a3373a3cc7ab10d829b25e0f9640de49cc1cae21"
+
+# Fixed world geometry has an exact source triangle, pose and world-bounds witness.
+[fixed_source_reference]
+path = "fixed-source-reference.json"
+sha256 = "2b75724bb6c657ea0176ac1314eb50d4a32c48d80fcffedd821f68b1558f58f3"
+placements = 27
+
+# Restore original north terrain samples, including duplicated page-edge values.
+[northern_terrain_restore]
+source = "FBX SDK source terrain triangles"
+distinct_samples = 128
+visible_extent_samples = 8
+source_margin_samples = 120
+stored_page_values = 133
+coast_below_y_m = 84

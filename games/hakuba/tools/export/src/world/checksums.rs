@@ -86,12 +86,17 @@ impl Tile {
             }
             digest.update(surface.name.as_bytes());
             digest.update([0]);
-            digest.update(surface.texture.as_bytes());
+            if let Some(texture) = surface.texture {
+                digest.update(texture.as_bytes());
+            }
             digest.update([0]);
             for value in surface.tint {
                 digest.update(value.to_bits().to_le_bytes());
             }
             digest.update(serde_json::to_vec(&surface.paint).expect("paint serializes"));
+            if let Some(paint) = &surface.vertex_paint {
+                digest.update(serde_json::to_vec(paint).expect("vertex paint serializes"));
+            }
             digest.update(serde_json::to_vec(&triangles).expect("source triangles serialize"));
         }
         for overlay in overlays {

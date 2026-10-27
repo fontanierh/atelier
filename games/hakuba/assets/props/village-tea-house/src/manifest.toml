@@ -1,0 +1,5 @@
+# Source geometry and its verified authoring input.
+path = "model.glb"
+sha256 = "f3983c66822cb5fbdc4dc14e16b211bacf813676a2a2cfd9957eac2b728ecaa4"
+authoring_fbx_sha256 = "c559e99bc2eff9df3ccd04869618dc4cc44d8239e0433ae66b8c6ffecd3874c6"
+conversion = "UE 5.8 FBX SDK triangulation; Blender 5.2.1; source normals and normalized colors restored"

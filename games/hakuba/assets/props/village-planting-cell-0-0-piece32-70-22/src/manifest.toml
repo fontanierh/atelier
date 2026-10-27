@@ -1,0 +1,6 @@
+# Source geometry and the verified inputs from which it was partitioned.
+path = "model.glb"
+sha256 = "c8ffb88b8f888c1020f06687428087d2aee9fef9c0a5b5c96d9c07ff6f987b8a"
+authoring_fbx_sha256 = "79461aeb0b4455418eb98aa6044ab46d9a2e1000add847f2b3ec25886da71d98"
+parent_glb_sha256 = "a3296e5dcc9ee65aff3f8694718a2bb0a331c3d24932e89a0a8b69cac2160676"
+conversion = "UE 5.8 FBX SDK triangulation; Blender 5.2.1; source attributes restored and clipped at tile boundaries"

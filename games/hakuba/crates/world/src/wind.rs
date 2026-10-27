@@ -90,6 +90,22 @@ fn unit_wind() -> f32 {
 }
 
 impl SourceProfile {
+    /// Maximum horizontal source-shader displacement, as (wind coefficient, player push).
+    pub(crate) fn shadow_motion_bound(&self, weight: f32) -> (f32, f32) {
+        let gust = self.fast[3].abs() + self.slow[3].abs() + self.fast[2].abs();
+        let global = self.global_fast[3]
+            .abs()
+            .max(
+                self.global_slow[3].abs()
+                    + self.global_slow[2].abs()
+                    + self.global_fast[2].abs()
+                    + self.global_tail[1].abs(),
+            )
+            .max(1.0);
+        let scale = self.wind_scale * weight;
+        (scale * self.direction_amplitude_shade[2].abs() * gust * global, scale * self.push_haze[1].abs())
+    }
+
     pub fn valid(&self) -> bool {
         self.direction_amplitude_shade
             .iter()
@@ -227,5 +243,29 @@ fn cut_out_in_full(
                 material.0.path()
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod shadow_motion_tests {
+    use super::SourceProfile;
+
+    #[test]
+    fn source_shadow_motion_includes_gust_push_and_weight() {
+        let profile = SourceProfile {
+            direction_amplitude_shade: [1.0, 0.0, 0.2, 0.0],
+            slow: [0.0, 0.0, 0.0, 0.6],
+            fast: [0.0, 0.0, 0.3, 0.5],
+            global_slow: [0.0, 0.0, 0.45, 1.0],
+            global_fast: [0.0, 0.0, 0.3, 0.15],
+            global_tail: [0.0, 0.15, 0.0, 0.0],
+            push_haze: [1.0, 0.7, 0.0, 1.0],
+            haze_colour: [0.0; 3],
+            wind_scale: 2.0,
+            up_normal: false,
+        };
+        let (wind, push) = profile.shadow_motion_bound(0.5);
+        assert!((wind - 0.532).abs() < 1e-6);
+        assert!((push - 0.7).abs() < 1e-6);
     }
 }

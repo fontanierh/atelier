@@ -1,0 +1,5 @@
+# A painted structure with its source collision boxes.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "bca6a8e6f6b3b7f582105e2216d0e0cd4edfd5b4c7b88c2b3c69da5ac883dccc"

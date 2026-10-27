@@ -3243,6 +3243,7 @@ name = "hakuba_world"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "hakuba_characters",
  "hakuba_screens",
  "hakuba_settings",
  "parry3d",

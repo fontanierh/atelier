@@ -1,0 +1,5 @@
+# A tile-sized painted landscape mesh.
+kind = "prop"
+source = "src/model.glb"
+solid = true
+inputs_sha256 = "ee2dbc4d74947ebee7f0aa098cd663dcc35ec228a6754ce0da16c6b69a8ba0ed"

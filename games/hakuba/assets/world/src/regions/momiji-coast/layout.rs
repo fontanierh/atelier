@@ -44,13 +44,14 @@ impl Region for MomijiCoast {
         }
         vec![AuthoredSurface {
             name: "road",
-            texture: "road",
+            texture: Some("road"),
             tint: [0.34, 0.33, 0.33],
             paint: Some(SurfacePaint {
                 haze_start_m: 30.0,
                 haze_length_m: 9000.0,
                 haze_colour: [0.0932, 0.2301, 0.5328],
             }),
+            vertex_paint: None,
             triangles: source.triangles,
         }]
     }

@@ -1,8 +1,9 @@
 # Source foliage for roadside gardens.
 kind = "plant"
+shadow_distance_m = 80.0
 source = "src/model.glb"
 textures = ["garden-bark", "garden-cedar"]
-inputs_sha256 = "01066dd0a4a2467453e3e4c9276a5564eee00b245effa0f929abbdca136c5e75"
+inputs_sha256 = "46a13a319b094e9bc987c8fda186c89ca2a9a9ec5f24968dc8d292764d92cd3a"
 
 [source_profile]
 direction_amplitude_shade = [0.3, -0.95, 0.16, 0.5]

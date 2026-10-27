@@ -1,0 +1,7 @@
+{
+  "path": "ground-triangles.json",
+  "sha256": "b06c182713650ff224a5fed80c356e1a839b7df8cbf1911b9a2a3d3dcefe5507",
+  "source_glb_sha256": "0493a2f014df000ac40c7cf7155ba469f1256606895a00e2cf217eb1af3cdc74",
+  "authoring_fbx_sha256": "4a3604f443c622966ab0b6645c41204fb8febc5b375656d221789411693318db",
+  "conversion": "UE 5.8 FBX SDK triangulation; Blender 5.2.1; source f32 normals and quantized color restored"
+}
