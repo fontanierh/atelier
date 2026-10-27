@@ -707,6 +707,8 @@ mod tests {
             high: DVec2::splat(8.0),
             exclusions: &[],
             regions: &[],
+            domains: &[],
+            openings: &[],
         };
         let at = DVec2::new(0.99999999, 0.25);
         assert_eq!(land.placement_at(at), DVec2::new(1.0, 0.25));
@@ -744,6 +746,8 @@ mod tests {
             high: DVec2::splat(8.0),
             exclusions: &[],
             regions: &[],
+            domains: &[],
+            openings: &[],
         };
         let grid = Grid { south_west: DVec2::ZERO, tile_m: 8.0 };
         let scene = |a, b, y| Scenery {
@@ -790,6 +794,8 @@ mod tests {
             high: DVec2::splat(8.0),
             exclusions: &[],
             regions: &[],
+            domains: &[],
+            openings: &[],
         };
         let grid = Grid { south_west: DVec2::ZERO, tile_m: 8.0 };
         let scenery = |y| Scenery {
@@ -857,6 +863,8 @@ mod tests {
                 high: DVec2::splat(16.0),
                 exclusions: &[],
                 regions: &[],
+                domains: &[],
+                openings: &[],
             };
             let candidates: Vec<_> = land
                 .scatter(123, 2.0, 0.4, ScatterKind::Tree)
@@ -1017,6 +1025,8 @@ mod tests {
             high: DVec2::splat(2.0),
             exclusions: &[],
             regions: &[],
+            domains: &[],
+            openings: &[],
         };
         let grid = Grid { south_west: DVec2::ZERO, tile_m: 1.0 };
         let scenery = Scenery {

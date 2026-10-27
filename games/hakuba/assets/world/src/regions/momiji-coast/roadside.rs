@@ -121,7 +121,7 @@ mod tests {
         let openings = [Opening { id: RAIL_PATH, from: 86.2, to: 105.9 }];
         let land = Land {
             ground: &ground,
-            raised: &[],
+            raised: &crate::world::raised::Prepared::new(&[], DVec2::ZERO, 1.0),
             low: DVec2::ZERO,
             high: DVec2::splat(256.0),
             exclusions: &[],
