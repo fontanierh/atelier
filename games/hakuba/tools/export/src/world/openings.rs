@@ -4,14 +4,16 @@ use std::collections::BTreeSet;
 
 use anyhow::{Result, bail};
 
-/// A published path parameter domain, including both endpoints.
+/// A published path sample domain, starting at `from` with the declared spacing.
 pub struct Domain {
     pub id: &'static str,
     pub from: f64,
     pub to: f64,
+    /// Spacing of discrete samples from `from`.
+    pub step: f64,
 }
 
-/// A closed interval that another region leaves open on a published domain.
+/// A closed interval of sample parameters to omit; the producer splits its runs at omitted samples.
 pub struct Opening {
     pub id: &'static str,
     pub from: f64,
@@ -20,12 +22,15 @@ pub struct Opening {
 
 /// @cc [owner:fontanierh,label:correctness] openings-use-published-domains
 /// An opening MUST name exactly one finite published domain, stay within it, and use a finite ordered interval.
-/// Domain IDs MUST be unique; boundaries belong to the opening.
+/// Domain IDs MUST be unique; boundaries belong to the opening. Each opening MUST contain a published sample.
 pub fn check(domains: &[Domain], openings: &[Opening]) -> Result<()> {
     let mut ids = BTreeSet::new();
     for domain in domains {
         if domain.id.is_empty() || !domain.from.is_finite() || !domain.to.is_finite() || domain.from >= domain.to {
             bail!("invalid path domain {:?}", domain.id);
+        }
+        if !domain.step.is_finite() || domain.step <= 0.0 || !((domain.to - domain.from) / domain.step).is_finite() {
+            bail!("invalid sample spacing on {:?}", domain.id);
         }
         if !ids.insert(domain.id) {
             bail!("duplicate path domain {:?}", domain.id);
@@ -42,6 +47,11 @@ pub fn check(domains: &[Domain], openings: &[Opening]) -> Result<()> {
             || opening.to > domain.to
         {
             bail!("opening on {:?} lies outside its domain", opening.id);
+        }
+        let first = ((opening.from - domain.from) / domain.step).ceil();
+        let last = ((opening.to - domain.from) / domain.step).floor();
+        if !first.is_finite() || !last.is_finite() || first > last {
+            bail!("opening on {:?} contains no path sample", opening.id);
         }
     }
     Ok(())
@@ -62,7 +72,7 @@ mod tests {
 
     #[test]
     fn validates_domains_and_closed_openings() {
-        let domain = || Domain { id: "edge", from: 0.0, to: 200.0 };
+        let domain = || Domain { id: "edge", from: 0.0, to: 200.0, step: 1.0 };
         let opening = || Opening { id: "edge", from: 86.2, to: 105.9 };
         check(&[domain()], &[opening()]).unwrap();
         let open: Vec<usize> =
@@ -77,5 +87,7 @@ mod tests {
         assert!(check(&[domain()], &[Opening { from: 105.9, to: 86.2, ..opening() }]).is_err());
         assert!(check(&[domain()], &[Opening { from: -1.0, ..opening() }]).is_err());
         assert!(check(&[domain()], &[Opening { to: f64::INFINITY, ..opening() }]).is_err());
+        assert!(check(&[domain()], &[Opening { from: 86.2, to: 86.8, ..opening() }]).is_err());
+        assert!(check(&[Domain { step: 0.0, ..domain() }], &[]).is_err());
     }
 }

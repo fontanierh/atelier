@@ -76,7 +76,7 @@ impl Region for MomijiCoast {
     }
 
     fn path_domains(&self) -> Vec<Domain> {
-        vec![Domain { id: roadside::RAIL_PATH, from: 0.0, to: (curve(&ROAD).len() - 1) as f64 }]
+        vec![Domain { id: roadside::RAIL_PATH, from: 0.0, to: (curve(&ROAD).len() - 1) as f64, step: 1.0 }]
     }
 
     /// The road, on its levelled strip.

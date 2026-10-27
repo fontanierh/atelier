@@ -115,15 +115,15 @@ mod tests {
 
     #[test]
     fn declared_opening_splits_the_downhill_rail_without_changing_other_runs() {
-        let ground = Ground::page(64, 1.0, |_, j| 10.0 + j as f32 * 0.2);
-        let road: Vec<_> = (0..=45).map(|k| (DVec2::new(10.0 + k as f64, 32.0), DVec2::X)).collect();
-        let domains = [Domain { id: RAIL_PATH, from: 0.0, to: 45.0 }];
-        let openings = [Opening { id: RAIL_PATH, from: 12.2, to: 20.9 }];
+        let ground = Ground::page(256, 1.0, |_, j| 10.0 + j as f32 * 0.2);
+        let road: Vec<_> = (0..=120).map(|k| (DVec2::new(64.0 + k as f64, 128.0), DVec2::X)).collect();
+        let domains = [Domain { id: RAIL_PATH, from: 0.0, to: 120.0, step: 1.0 }];
+        let openings = [Opening { id: RAIL_PATH, from: 86.2, to: 105.9 }];
         let land = Land {
             ground: &ground,
             raised: &[],
             low: DVec2::ZERO,
-            high: DVec2::splat(64.0),
+            high: DVec2::splat(256.0),
             exclusions: &[],
             regions: &[],
             domains: &domains,
@@ -136,7 +136,7 @@ mod tests {
         let mut after = Scenery::default();
         add(&mut after, &opened, &road);
         assert_eq!(after.rails.len(), 2);
-        assert_eq!(after.rails[0].path, before.rails[0].path[..=12]);
-        assert_eq!(after.rails[1].path, before.rails[0].path[21..]);
+        assert_eq!(after.rails[0].path, before.rails[0].path[..=86]);
+        assert_eq!(after.rails[1].path, before.rails[0].path[106..]);
     }
 }
