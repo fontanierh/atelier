@@ -151,7 +151,7 @@ impl Land<'_> {
 
     /// How steep the ground is at `p`: how far it rises per metre across, going straight uphill.
     pub fn slope(&self, p: DVec2) -> f64 {
-        if self.raised.height(p, |_| None).is_some() {
+        if self.raised.owner_height(p).is_some() {
             return 0.0;
         }
         let up = self.ground.normal(p);
@@ -317,22 +317,7 @@ pub fn share(
                 if let Some(previous) = points.last().copied() {
                     let previous = DVec3::from_array(previous).as_vec3().as_dvec3();
                     let next = p.as_vec3().as_dvec3();
-                    for (start, end) in raised.segment_intervals(previous.truncate(), next.truncate()) {
-                        let middle = previous.lerp(next, (start + end) * 0.5);
-                        raised.check_point(middle.truncate())?;
-                        let owner = raised.height(middle.truncate(), |_| None);
-                        for t in [start, end] {
-                            let sample = previous.lerp(next, t);
-                            raised.check_point(sample.truncate())?;
-                            let boundary = raised.height(sample.truncate(), |_| None);
-                            if owner.into_iter().chain(boundary).any(|height| sample.z < height + CABLE_CLEARANCE_M) {
-                                bail!(
-                                    "a cable from {} crosses a raised surface without clearance at {sample}",
-                                    ends[0].model
-                                );
-                            }
-                        }
-                    }
+                    check_cable_segment(previous, next, raised, ends[0].model)?;
                 }
                 points.push(p.to_array());
             }
@@ -390,6 +375,33 @@ pub fn share(
     Ok(tiles)
 }
 
+fn check_cable_segment(previous: DVec3, next: DVec3, raised: &Prepared<'_>, model: &str) -> Result<()> {
+    for (start, end) in raised.segment_intervals(previous.truncate(), next.truncate()) {
+        let middle = previous.lerp(next, (start + end) * 0.5);
+        raised.check_point(middle.truncate())?;
+        let owner = raised.owner_height(middle.truncate());
+        let retained = [false, true].map(|detail| raised.retained_cut_at(middle.truncate(), detail));
+        for t in [start, end] {
+            let sample = previous.lerp(next, t);
+            raised.check_point(sample.truncate())?;
+            let boundary = raised.owner_height(sample.truncate());
+            if owner.into_iter().chain(boundary).any(|height| sample.z < height + CABLE_CLEARANCE_M) {
+                bail!("a cable from {model} crosses a raised surface without clearance at {sample}");
+            }
+            for (detail, active) in [false, true].into_iter().zip(retained) {
+                if active
+                    && raised
+                        .stored_cut_height(sample.truncate(), detail)
+                        .is_some_and(|height| sample.z < height + CABLE_CLEARANCE_M)
+                {
+                    bail!("a cable from {model} crosses retained ground without clearance at {sample}");
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 fn cable_is_clear(p: DVec3, drawn: &Surface, raised: &Prepared<'_>) -> Result<bool> {
     let emitted = raised.emitted_point(p);
     let at = emitted.truncate();
@@ -402,12 +414,12 @@ fn check_rail_segment(a: DVec3, b: DVec3, raised: &Prepared<'_>) -> Result<()> {
     for (start, end) in raised.segment_intervals(a.truncate(), b.truncate()) {
         let middle = a.lerp(b, (start + end) * 0.5);
         raised.check_point(middle.truncate())?;
-        let owner = raised.height(middle.truncate(), |_| None);
+        let owner = raised.owner_height(middle.truncate());
         for t in [start, end] {
             let foot = a.lerp(b, t);
             let at = foot.truncate();
             raised.check_point(at)?;
-            let boundary = raised.height(at, |_| None);
+            let boundary = raised.owner_height(at);
             if owner.into_iter().chain(boundary).any(|height| (foot.z - height).abs() > RAIL_SETTLE_M) {
                 bail!("a rail crosses a raised surface at {at} away from its owning height");
             }
@@ -433,7 +445,7 @@ fn read_anchors(model: &str) -> Result<Vec<DVec3>> {
 fn effective_at(raised: &Prepared<'_>, at: DVec2) -> (DVec2, bool) {
     let legacy = raised::stored((at * 1000.0).round() / 1000.0);
     let authored = raised::stored(at);
-    let precise = [at, legacy, authored].into_iter().any(|p| raised.height(p, |_| None).is_some());
+    let precise = [at, legacy, authored].into_iter().any(|p| raised.owner_height(p).is_some() || raised.touches_cut(p));
     (if precise { authored } else { at }, precise)
 }
 
@@ -710,6 +722,82 @@ pub fn checksum_bytes(scenery: &TileScenery) -> Vec<u8> {
 mod tests {
     use super::*;
     use crate::world::raised::Raised;
+    use geo::polygon;
+
+    fn cut_envelope() -> [Vec<crate::world::underlay::Underlay>; 2] {
+        let area = geo::MultiPolygon(vec![polygon![
+            (x: 3.7, y: 1.0), (x: 4.3, y: 1.0), (x: 4.3, y: 5.0),
+            (x: 3.7, y: 5.0), (x: 3.7, y: 1.0),
+        ]]);
+        std::array::from_fn(|_| vec![crate::world::underlay::Underlay { polygon: area.clone(), query: area.clone() }])
+    }
+
+    #[test]
+    fn cable_checks_retained_cut_ground_between_samples() {
+        use crate::world::{Detail, Tile};
+        let ground = Ground::page(8, 1.0, |_, _| 0.0);
+        let middle_ground = Ground::page(8, 1.0, |i, _| if i == 4 { 1.0 } else { 0.0 });
+        let tile = Tile { columns: (0, 8), rows: (0, 8) };
+        let drawn = Surface::new(&tile.ground(&ground, Detail::Full, 0, 1.0));
+        let middle = Surface::new(&tile.ground(&middle_ground, Detail::Full, 0, 1.0));
+        let mut prepared = Prepared::new(&[], DVec2::ZERO, 8.0);
+        prepared.set_underlays(&cut_envelope());
+        prepared.add_tile_with_cut((0, 0), &drawn, &drawn, false).unwrap();
+        prepared.add_tile_with_cut((0, 0), &drawn, &middle, true).unwrap();
+        let a = DVec3::new(3.8, 4.0, 2.9).as_vec3().as_dvec3();
+        let b = DVec3::new(4.2, 4.0, 2.9).as_vec3().as_dvec3();
+        assert!(cable_is_clear(a, &drawn, &prepared).unwrap());
+        assert!(cable_is_clear(b, &drawn, &prepared).unwrap());
+        assert!(check_cable_segment(a, b, &prepared, "pole").is_err());
+    }
+
+    #[test]
+    fn retained_cut_collar_uses_the_emitted_pose_and_tile() {
+        use crate::world::{Detail, Tile};
+        let ground = Ground::page(8, 1.0, |i, _| i as f32);
+        let mut prepared = Prepared::new(&[], DVec2::ZERO, 4.0);
+        prepared.set_underlays(&cut_envelope());
+        for x in 0..2 {
+            let tile = Tile { columns: (4 * x, 4 * x + 4), rows: (0, 4) };
+            for detail in [Detail::Full, Detail::Middle] {
+                let drawn = Surface::new(&tile.ground(&ground, detail, 0, 1.0));
+                prepared.add_tile_with_cut((x, 0), &drawn, &drawn, detail == Detail::Middle).unwrap();
+            }
+        }
+        let drawn = Surface::new(&Tile { columns: (0, 8), rows: (0, 8) }.ground(&ground, Detail::Full, 0, 1.0));
+        let land = Land {
+            ground: &ground,
+            raised: &prepared,
+            low: DVec2::ZERO,
+            high: DVec2::splat(8.0),
+            exclusions: &[],
+            regions: &[],
+            domains: &[],
+            openings: &[],
+        };
+        let at = DVec2::new(3.9996, 2.0);
+        let scenery = Scenery {
+            placements: vec![Placement {
+                model: "props/utility-pole",
+                at,
+                yaw: 0.0,
+                scale: 1.0,
+                origin_offset_m: 0.0,
+                afar: true,
+            }],
+            ..Default::default()
+        };
+        let grid = Grid { south_west: DVec2::ZERO, tile_m: 4.0 };
+        let tiles = share(vec![(scenery, vec![])], &land, &grid, &[], &prepared, &drawn).unwrap();
+        let placed = &tiles[&(0, 0)].models["props/utility-pole"][0];
+        assert!(placed.4);
+        assert_eq!(placed.0[0], 3.9996_f32 as f64);
+        let mut glb = Glb::from_json(json!({"asset": {"version": "2.0"}}));
+        tiles[&(0, 0)].write(&mut glb, &drawn, &prepared, false, Path::new("test.glb")).unwrap();
+        let numbers = glb.extras("props/utility-pole").unwrap()["instances"].as_array().unwrap();
+        assert_eq!(numbers[0].as_f64().unwrap(), 3.9996_f32 as f64);
+        assert_eq!(numbers[1].as_f64().unwrap(), 3.9996_f32 as f64);
+    }
 
     #[test]
     fn emitted_candidate_rail_and_cable_positions_select_the_owner() {
@@ -724,6 +812,7 @@ mod tests {
             paint: None,
             height: 3.0,
             clearance: 0.1,
+            cut_ground: false,
             triangles: vec![[p(1.0, 0.0), p(2.0, 0.0), p(1.0, 1.0)]],
         }];
         let mut prepared = Prepared::new(&raised, DVec2::ZERO, 8.0);
@@ -763,6 +852,7 @@ mod tests {
             paint: None,
             height: 3.0,
             clearance: 0.1,
+            cut_ground: false,
             triangles: vec![[p(3.0, 2.0), p(7.0, 2.0), p(7.0, 6.0)], [p(3.0, 2.0), p(7.0, 6.0), p(3.0, 6.0)]],
         }];
         let mut prepared = Prepared::new(&raised, DVec2::ZERO, 8.0);
@@ -811,6 +901,7 @@ mod tests {
             paint: None,
             height: 10.0,
             clearance: 0.1,
+            cut_ground: false,
             triangles: vec![[p(3.0, 3.5), p(3.1, 3.5), p(3.1, 4.5)], [p(3.0, 3.5), p(3.1, 4.5), p(3.0, 4.5)]],
         }];
         let mut prepared = Prepared::new(&raised, DVec2::ZERO, 8.0);
@@ -870,6 +961,7 @@ mod tests {
             paint: None,
             height: 3.0,
             clearance: 0.1,
+            cut_ground: false,
             triangles: vec![[p(1.0, 1.0), p(3.0, 1.0), p(1.0, 3.0)]],
         }];
         let empty = Prepared::new(&[], DVec2::ZERO, 8.0);
@@ -938,8 +1030,8 @@ mod tests {
         assert_eq!(checksum_bytes(before), checksum_bytes(after));
         let tile = Tile { columns: (8, 16), rows: (8, 16) };
         assert_eq!(
-            tile.checksum(&[], &[], &ground, &[], &[], before),
-            tile.checksum(&[], &[], &ground, &[], &raised, after)
+            tile.checksum(&[], &[], &ground, &[], &[], (before, &[])),
+            tile.checksum(&[], &[], &ground, &[], &raised, (after, &[]))
         );
         let emit = |scenery: &TileScenery, owner, middle, suffix| {
             let detail = if middle { Detail::Middle } else { Detail::Full };
@@ -970,6 +1062,7 @@ mod tests {
             paint: None,
             height: 3.0,
             clearance: 0.1,
+            cut_ground: false,
             triangles: vec![[p(1.0, 1.0), p(4.0, 1.0), p(1.0, 4.0)]],
         }];
         let mut prepared = Prepared::new(&raised, DVec2::ZERO, 8.0);
@@ -1013,6 +1106,7 @@ mod tests {
             paint: None,
             height: 3.0,
             clearance: 0.1,
+            cut_ground: false,
             triangles: vec![[p(1.0, 1.0), p(4.0, 1.0), p(1.0, 4.0)]],
         }];
         let mut prepared = Prepared::new(&raised, DVec2::ZERO, 1.0);
@@ -1099,6 +1193,7 @@ mod tests {
             paint: None,
             height: 3.0,
             clearance: 0.1,
+            cut_ground: false,
             triangles: vec![[p(0.2, 0.1), p(1.0, 0.1), p(1.0, 0.9)], [p(0.2, 0.1), p(1.0, 0.9), p(0.2, 0.9)]],
         }];
         let mut prepared = Prepared::new(&raised, DVec2::ZERO, 1.0);

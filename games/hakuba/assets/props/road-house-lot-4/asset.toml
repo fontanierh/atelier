@@ -1,0 +1,5 @@
+# The original roadside lot’s walls, yard, hedge and entrance details.
+kind = "prop"
+source = "src/lot.glb"
+solid = true
+inputs_sha256 = "87db587cbc85fa5c05429c749cab61190747dc65220863813530bfb61fc53884"

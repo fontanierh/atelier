@@ -1,5 +1,8 @@
 //! The roadside terrace: its surveyed frame, level and front edge.
 
+#[path = "lot4.rs"]
+mod lot4;
+
 use glam::DVec2;
 
 use super::Region;
@@ -154,6 +157,7 @@ pub fn top(texture: &str) -> Raised {
         paint: Some(SurfacePaint { haze_start_m: 30.0, haze_length_m: 9000.0, haze_colour: [0.0932, 0.2301, 0.5328] }),
         height: LEVEL,
         clearance: 0.01,
+        cut_ground: false,
         triangles,
     }
 }
@@ -179,7 +183,10 @@ impl Region for RoadsideHouses {
     }
 
     fn path_openings(&self) -> Vec<Opening> {
-        vec![Opening { id: "coastal-downhill-rail", from: 86.2, to: 105.9 }]
+        vec![
+            Opening { id: "coastal-downhill-rail", from: 86.2, to: 105.9 },
+            Opening { id: "coastal-downhill-rail", from: 316.9, to: 337.1 },
+        ]
     }
     fn levelled(&self) -> Vec<Strip> {
         Vec::new()
@@ -188,7 +195,7 @@ impl Region for RoadsideHouses {
         Vec::new()
     }
     fn raised(&self) -> Vec<Raised> {
-        vec![top("road-house-ground")]
+        vec![top("road-house-ground"), lot4::top()]
     }
     fn scenery(&self, _: &Land) -> Scenery {
         // The three source rocks have their authored origins six centimetres below the lot top.
@@ -202,21 +209,28 @@ impl Region for RoadsideHouses {
                     origin_offset_m: -0.06,
                     afar: true,
                 });
-        Scenery { placements: placements().into_iter().chain(rocks).collect(), ..Default::default() }
+        Scenery {
+            placements: placements().into_iter().chain(rocks).chain(lot4::placements()).collect(),
+            ..Default::default()
+        }
     }
     fn fastens_to(&self) -> Vec<&'static str> {
         Vec::new()
     }
     fn allows_scatter_candidate(&self, kind: ScatterKind, placement: &Placement) -> bool {
-        !blocked(kind, placement)
+        !blocked(kind, placement) && !lot4::blocked(kind, placement)
     }
 }
 
 /// Whether a selected plant's footprint, or a tree's crown, reaches the lot and its verge.
 fn blocked(kind: ScatterKind, plant: &Placement) -> bool {
-    let local = DVec2::from_angle(-YAW_DEG.to_radians()).rotate(plant.at - DVec2::from_array(CENTRE));
-    let x = local.x.clamp(FRONT[0][0], FRONT[FRONT.len() - 1][0]);
-    let edge = FRONT.windows(2).find(|pair| x <= pair[1][0]).unwrap_or(&FRONT[FRONT.len() - 2..]);
+    blocked_for(&FRONT, CENTRE, YAW_DEG, kind, plant)
+}
+
+fn blocked_for(frontage: &[[f64; 2]], centre: [f64; 2], yaw_deg: f64, kind: ScatterKind, plant: &Placement) -> bool {
+    let local = DVec2::from_angle(-yaw_deg.to_radians()).rotate(plant.at - DVec2::from_array(centre));
+    let x = local.x.clamp(frontage[0][0], frontage[frontage.len() - 1][0]);
+    let edge = frontage.windows(2).find(|pair| x <= pair[1][0]).unwrap_or(&frontage[frontage.len() - 2..]);
     let front = edge[0][1] + (edge[1][1] - edge[0][1]) * (x - edge[0][0]) / (edge[1][0] - edge[0][0]);
     let outside_x = (local.x.abs() - 9.5).max(0.0);
     let outside_y = (local.y - 6.8).max(front - local.y).max(0.0);
