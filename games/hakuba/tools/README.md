@@ -181,7 +181,7 @@ lighter `middle` version for seeing from afar.
 | `leaves` | its leaves' texture and tint, how many cards in each version and how wide, and its clumps of leaves |
 | `tuft`   | how many blades, their spread, height, width, curl and colours                                    |
 
-**`prop`** builds a made object, such as a pole, from closed tubes, boxes and convex prisms of plain colours, in the same frame as
+**`prop`** builds a made object, such as a pole, from closed tubes, boxes, convex prisms and extruded convex polygon slabs of plain colours, in the same frame as
 a plant, and writes it as `<folder name>.glb`. Its anchors are empty nodes `anchor 0`, `anchor 1` and so on, the
 points other things fasten to, such as cables.
 
@@ -191,8 +191,20 @@ points other things fasten to, such as cables.
 | `tubes`     | each tube's ends, radii, sides and material     |
 | `boxes`     | each box's centre, size and material            |
 | `prisms`    | each closed prism: a strictly convex `profile` of `[x, z]` points in order, `y = [start, end]` with start less than end, and `material`, all coordinates in metres |
+| `slabs`     | each `polygon` of at least three strictly convex coplanar `[x, y, z]` points, an `extrusion` vector that gives it nonzero volume, and a `material` |
 | `solid`     | optional; when true, the full visual mesh is solid to scenery raycasts (default false) |
 | `anchors`   | the points other things fasten to               |
+
+A slab's vertices run around its face in either direction. Its extrusion must leave that plane; the exporter checks
+the stored single-precision vertices, allowing a plane error of at most one millionth of the polygon extent, and
+closes both faces and every side. For example:
+
+```toml
+[[slabs]]
+polygon = [[0, 0, 1], [2, 0, 2], [2, 3, 2], [0, 3, 1]]
+extrusion = [0, 0, -0.16]
+material = "wood"
+```
 
 **`world`** builds the ground from the height pages in `src/ground/`, lays over it what each region adds, and cuts
 them into square tiles under `tiles/`. Each region's `src/regions/<region>/layout.rs` implements `Region`, and
