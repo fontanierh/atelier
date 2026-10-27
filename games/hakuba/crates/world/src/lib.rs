@@ -13,6 +13,7 @@ mod push;
 mod scenery;
 mod settings;
 mod tiles;
+mod vertex_paint;
 mod wind;
 
 use bevy::camera::visibility::{VisibilityRange, VisibilitySystems};
@@ -50,6 +51,7 @@ impl Plugin for WorldPlugin {
             scenery::SceneryPlugin,
             settings::SettingsPlugin,
             tiles::TilesPlugin,
+            vertex_paint::VertexPaintPlugin,
             wind::WindPlugin,
         ))
         .add_systems(OnEnter(Screen::World), spawn_world)
