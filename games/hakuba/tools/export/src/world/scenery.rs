@@ -721,13 +721,8 @@ mod tests {
             }],
             ..Default::default()
         };
-        let tiles = share(vec![(scenery, vec![])], &land, &grid, &[], &prepared, &whole).unwrap();
-        assert!(!tiles.contains_key(&(0, 0)));
-        let tile = &tiles[&(1, 0)];
-        let right = Surface::new(&Tile { columns: (1, 2), rows: (0, 1) }.ground(&ground, Detail::Full, 0, 1.0));
-        let mut glb = Glb::from_json(json!({"asset": {"version": "2.0"}}));
-        tile.write(&mut glb, &right, &prepared, false, Path::new("test.glb")).unwrap();
-        assert_eq!(glb.extras("props/utility-pole").unwrap()["instances"][1].as_f64(), Some(0.0));
+        let error = share(vec![(scenery, vec![])], &land, &grid, &[], &prepared, &whole).err().unwrap();
+        assert!(error.to_string().contains("raised ownership differs between adjacent tiles"));
     }
 
     #[test]

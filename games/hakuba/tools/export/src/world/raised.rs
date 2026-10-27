@@ -2,6 +2,7 @@
 
 use anyhow::{Result, bail};
 use glam::{DVec2, DVec3};
+use std::collections::BTreeSet;
 
 use super::game;
 use super::overlay::Overlay;
@@ -36,6 +37,7 @@ pub struct Prepared<'a> {
     raised: &'a [Raised],
     south_west: DVec2,
     tile_m: f64,
+    tiles: BTreeSet<(usize, usize)>,
     full: Vec<Vec<((usize, usize), Surface)>>,
     middle: Vec<Vec<((usize, usize), Surface)>>,
 }
@@ -46,12 +48,14 @@ impl<'a> Prepared<'a> {
             raised,
             south_west,
             tile_m,
+            tiles: BTreeSet::new(),
             full: (0..raised.len()).map(|_| Vec::new()).collect(),
             middle: (0..raised.len()).map(|_| Vec::new()).collect(),
         }
     }
 
     pub fn add_tile(&mut self, tile: (usize, usize), drawn: &Surface, middle: bool) -> Result<()> {
+        self.tiles.insert(tile);
         let target = if middle { &mut self.middle } else { &mut self.full };
         for (surface, prepared) in self.raised.iter().zip(target) {
             let mesh = surface.mesh(drawn, false)?;
@@ -67,14 +71,18 @@ impl<'a> Prepared<'a> {
         (k.x as usize, k.y as usize)
     }
 
-    fn owner(&self, p: DVec2, middle: bool) -> Option<f64> {
+    fn owner_at(&self, p: DVec2, middle: bool, id: (usize, usize)) -> Option<f64> {
         let triangles = if middle { &self.middle } else { &self.full };
         self.raised.iter().zip(triangles).find_map(|(raised, tiles)| {
             tiles
                 .iter()
-                .any(|(id, tile)| *id == self.tile(p) && tile.contains_exact(p))
+                .any(|(tile_id, tile)| *tile_id == id && tile.contains_exact(p))
                 .then_some(raised.height as f32 as f64)
         })
+    }
+
+    fn owner(&self, p: DVec2, middle: bool) -> Option<f64> {
+        self.owner_at(p, middle, self.tile(p))
     }
 
     pub fn height(&self, p: DVec2, ground: impl FnOnce(DVec2) -> Option<f64>) -> Option<f64> {
@@ -82,6 +90,31 @@ impl<'a> Prepared<'a> {
     }
 
     pub fn check_point(&self, p: DVec2) -> Result<()> {
+        let (column, row) = self.tile(p);
+        for dx in -1_isize..=1 {
+            for dy in -1_isize..=1 {
+                if dx == 0 && dy == 0 {
+                    continue;
+                }
+                let (Some(x), Some(y)) = (column.checked_add_signed(dx), row.checked_add_signed(dy)) else {
+                    continue;
+                };
+                let adjacent = (x, y);
+                if !self.tiles.contains(&adjacent) {
+                    continue;
+                }
+                for middle in [false, true] {
+                    let surfaces = if middle { &self.middle } else { &self.full };
+                    let owner = self.owner(p, middle);
+                    if self.raised.iter().zip(surfaces).any(|(raised, tiles)| {
+                        tiles.iter().any(|(id, tile)| *id == adjacent && tile.contains_exact(p))
+                            && Some(raised.height as f32 as f64) != owner
+                    }) {
+                        bail!("raised ownership differs between adjacent tiles at {p}");
+                    }
+                }
+            }
+        }
         for tiles in [&self.full, &self.middle] {
             let mut heights = self.raised.iter().zip(tiles).filter_map(|(raised, tiles)| {
                 tiles
@@ -349,6 +382,18 @@ mod tests {
         assert_eq!(prepared.height(DVec2::new(0.9, 0.5), |_| Some(0.0)), Some(3.0));
         let edge = DVec2::new(1.0, 0.5);
         assert_eq!(prepared.height(edge, |_| Some(0.0)), Some(0.0));
+        assert!(prepared.check_point(edge).is_err());
+        let mut crossing = square();
+        let p = |x, y| (DVec2::new(x, y), DVec2::ZERO);
+        crossing.triangles = vec![[p(0.2, 0.1), p(1.8, 0.1), p(1.8, 0.9)], [p(0.2, 0.1), p(1.8, 0.9), p(0.2, 0.9)]];
+        let raised = [crossing];
+        let mut prepared = Prepared::new(&raised, DVec2::ZERO, 1.0);
+        for x in 0..2 {
+            let drawn = Surface::new(&Tile { columns: (x, x + 1), rows: (0, 1) }.ground(&ground, Detail::Full, 0, 1.0));
+            prepared.add_tile((x, 0), &drawn, false).unwrap();
+            prepared.add_tile((x, 0), &drawn, true).unwrap();
+        }
+        assert_eq!(prepared.height(edge, |_| Some(0.0)), Some(3.0));
         prepared.check_point(edge).unwrap();
     }
 
