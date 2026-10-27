@@ -103,6 +103,8 @@ impl Tile {
             digest.update([0]);
             digest.update(surface.texture.as_bytes());
             digest.update([0]);
+            digest.update(surface.node_name().as_bytes());
+            digest.update([0]);
             digest.update(surface.height.to_bits().to_le_bytes());
             digest.update(surface.clearance.to_bits().to_le_bytes());
             for triangle in triangles {

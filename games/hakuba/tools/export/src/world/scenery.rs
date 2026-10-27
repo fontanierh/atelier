@@ -257,11 +257,7 @@ pub fn share(
                 })?;
                 let local =
                     model_anchors.get(anchor).with_context(|| format!("{} has no anchor {anchor}", placement.model))?;
-                let seat = raised::height(raised, placement.at, |p| drawn.height(p))
-                    .with_context(|| format!("{} stands on no ground", placement.model))?;
-                Ok::<_, anyhow::Error>(
-                    placement.at.extend(seat) + DMat3::from_rotation_z(placement.yaw) * *local * placement.scale,
-                )
+                cable_anchor(placement, *local, drawn, raised)
             });
             let (from, to) = (from?, to?);
             let span = from.distance(to);
@@ -327,6 +323,13 @@ fn read_anchors(model: &str) -> Result<Vec<DVec3>> {
         anchors.push(DVec3::new(p.x, -p.z, p.y));
     }
     Ok(anchors)
+}
+
+/// The world position of a cable anchor, seated on the surface owning its placement.
+fn cable_anchor(placement: &Placement, local: DVec3, drawn: &Surface, raised: &[Raised]) -> Result<DVec3> {
+    let seat = raised::height(raised, placement.at, |p| drawn.height(p))
+        .with_context(|| format!("{} stands on no ground", placement.model))?;
+    Ok(placement.at.extend(seat) + DMat3::from_rotation_z(placement.yaw) * local * placement.scale)
 }
 
 /// The name of the overlay that covers `p`, if any.
@@ -552,6 +555,26 @@ pub fn checksum_bytes(scenery: &TileScenery) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn cable_anchor_uses_the_declared_owner() {
+        use crate::world::{Detail, Tile};
+        let ground = Ground::page(8, 1.0, |_, _| 0.0);
+        let drawn = Surface::new(&Tile { columns: (0, 8), rows: (0, 8) }.ground(&ground, Detail::Full, 0, 1.0));
+        let p = |x, y| (DVec2::new(x, y), DVec2::ZERO);
+        let raised = [Raised {
+            name: "paving".into(),
+            texture: "earth".into(),
+            ground: true,
+            height: 3.0,
+            clearance: 0.1,
+            triangles: vec![[p(1.0, 1.0), p(4.0, 1.0), p(1.0, 4.0)]],
+        }];
+        let mut placement = Placement { model: "pole", at: DVec2::new(2.0, 2.0), yaw: 0.0, scale: 1.0, afar: true };
+        assert_eq!(cable_anchor(&placement, DVec3::Z * 2.0, &drawn, &raised).unwrap().z, 5.0);
+        placement.at = DVec2::new(6.0, 6.0);
+        assert_eq!(cable_anchor(&placement, DVec3::Z * 2.0, &drawn, &raised).unwrap().z, 2.0);
+    }
 
     #[test]
     fn clearances_filter_only_the_named_scatter_kind_and_are_local() {

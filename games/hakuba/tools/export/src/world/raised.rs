@@ -12,6 +12,8 @@ use crate::glb::Mesh;
 pub struct Raised {
     pub name: String,
     pub texture: String,
+    /// Whether footsteps use the ground sound, rather than the built-surface sound.
+    pub ground: bool,
     pub height: f64,
     /// Minimum separation from the drawn ground, in metres.
     pub clearance: f64,
@@ -19,6 +21,11 @@ pub struct Raised {
 }
 
 impl Raised {
+    /// The runtime identifies ground and built surfaces from the tile mesh name.
+    pub fn node_name(&self) -> String {
+        if self.ground { "ground".into() } else { format!("{} built", self.name) }
+    }
+
     /// Whether this footprint owns a point. Edges belong to the raised surface too.
     fn contains(&self, p: DVec2) -> bool {
         self.triangles
@@ -30,6 +37,7 @@ impl Raised {
     /// Both surfaces are planar on each intersection, so these vertices bound clearance everywhere in it.
     pub fn mesh(&self, drawn: &Surface, require_coverage: bool) -> Result<Mesh> {
         let mut mesh = Mesh::default();
+        let height = self.height as f32 as f64;
         for triangle in &self.triangles {
             let mut covered = 0.0;
             let outline = triangle.map(|(p, _)| p);
@@ -44,17 +52,17 @@ impl Raised {
                 for p in piece {
                     let g = weights(flat, p).expect("ground triangle has area");
                     let z = g.x * under[0].z + g.y * under[1].z + g.z * under[2].z;
-                    if self.height - z < self.clearance - 1e-6 {
+                    if height - z < self.clearance - 1e-6 {
                         bail!(
                             "{} is {:.3} m above ground at {p}, below its {:.3} m clearance",
                             self.name,
-                            self.height - z,
+                            height - z,
                             self.clearance
                         );
                     }
                     let w = weights(outline, p).expect("raised triangle has area");
                     let uv = w.x * triangle[0].1 + w.y * triangle[1].1 + w.z * triangle[2].1;
-                    mesh.positions.push(game(p.extend(self.height)).as_vec3().to_array());
+                    mesh.positions.push(game(p.extend(height)).as_vec3().to_array());
                     mesh.normals.push(game(DVec3::Z).as_vec3().to_array());
                     mesh.uvs.push(uv.as_vec2().to_array());
                 }
@@ -81,21 +89,57 @@ fn area(polygon: &[DVec2]) -> f64 {
 
 /// Select the declared owner first, then the caller's ground query. Never select by height.
 pub fn height(raised: &[Raised], p: DVec2, ground: impl FnOnce(DVec2) -> Option<f64>) -> Option<f64> {
-    raised.iter().find(|surface| surface.contains(p)).map(|surface| surface.height).or_else(|| ground(p))
+    raised.iter().find(|surface| surface.contains(p)).map(|surface| surface.height as f32 as f64).or_else(|| ground(p))
+}
+
+/// Whether closed triangle boundaries meet, including a shared corner or collinear edge.
+fn boundaries_touch(a: [DVec2; 3], b: [DVec2; 3]) -> bool {
+    fn segment(a: DVec2, b: DVec2, c: DVec2, d: DVec2) -> bool {
+        const EPS: f64 = 1e-9;
+        let cross = |p: DVec2, q: DVec2, r: DVec2| (q - p).perp_dot(r - p);
+        let on = |p: DVec2, q: DVec2, r: DVec2| {
+            cross(p, q, r).abs() <= EPS
+                && r.cmpge(p.min(q) - DVec2::splat(EPS)).all()
+                && r.cmple(p.max(q) + DVec2::splat(EPS)).all()
+        };
+        let (ab_c, ab_d, cd_a, cd_b) = (cross(a, b, c), cross(a, b, d), cross(c, d, a), cross(c, d, b));
+        (ab_c * ab_d < 0.0 && cd_a * cd_b < 0.0) || on(a, b, c) || on(a, b, d) || on(c, d, a) || on(c, d, b)
+    }
+    (0..3).any(|i| (0..3).any(|j| segment(a[i], a[(i + 1) % 3], b[j], b[(j + 1) % 3])))
 }
 
 /// Refuse invalid or overlapping ownership, including overlapping draped overlays.
 pub fn check(raised: &[Raised], overlays: &[Overlay]) -> Result<()> {
     for (i, surface) in raised.iter().enumerate() {
         if !surface.height.is_finite()
+            || !(surface.height as f32).is_finite()
             || !surface.clearance.is_finite()
             || surface.clearance <= 0.0
             || surface.triangles.is_empty()
         {
             bail!("{} has an invalid height, clearance or footprint", surface.name);
         }
+        for other in raised.iter().skip(i + 1) {
+            if surface.height as f32 != other.height as f32
+                && surface
+                    .triangles
+                    .iter()
+                    .any(|a| other.triangles.iter().any(|b| boundaries_touch(a.map(|(p, _)| p), b.map(|(p, _)| p))))
+            {
+                bail!("{} meets another raised surface at a different height", surface.name);
+            }
+        }
+        for overlay in overlays {
+            if surface
+                .triangles
+                .iter()
+                .any(|a| overlay.triangles.iter().any(|b| boundaries_touch(a.map(|(p, _)| p), b.map(|(p, _)| p))))
+            {
+                bail!("{} touches an overlay without a shared seam", surface.name);
+            }
+        }
         for (j, triangle) in surface.triangles.iter().enumerate() {
-            let outline = triangle.map(|(p, uv)| (p, uv));
+            let outline = *triangle;
             if outline.iter().any(|(p, uv)| !p.is_finite() || !uv.is_finite())
                 || weights(outline.map(|(p, _)| p), DVec2::ZERO).is_none()
             {
@@ -131,6 +175,7 @@ mod tests {
         Raised {
             name: "paving".into(),
             texture: "earth".into(),
+            ground: true,
             height: 3.0,
             clearance: 0.1,
             triangles: vec![[p(3.0, 2.0), p(7.0, 2.0), p(7.0, 6.0)], [p(3.0, 2.0), p(7.0, 6.0), p(3.0, 6.0)]],
@@ -174,6 +219,7 @@ mod tests {
         let surface = Raised {
             name: "paving".into(),
             texture: "earth".into(),
+            ground: true,
             height: 1.0,
             clearance: 0.1,
             triangles: vec![[p(1.2, 1.2), p(1.7, 1.2), p(1.7, 1.7)], [p(1.2, 1.2), p(1.7, 1.7), p(1.2, 1.7)]],
@@ -217,6 +263,47 @@ mod tests {
     #[test]
     fn overlapping_owners_are_rejected_and_checksums_stay_local() {
         assert!(check(&[square(), square()], &[]).is_err());
+        let mut adjoining = square();
+        for triangle in &mut adjoining.triangles {
+            for (p, _) in triangle {
+                p.x += 4.0;
+            }
+        }
+        let first = [square(), adjoining];
+        assert!(check(&first, &[]).is_ok());
+        let mut adjoining = square();
+        for triangle in &mut adjoining.triangles {
+            for (p, _) in triangle {
+                p.x += 4.0;
+            }
+        }
+        let reversed = [adjoining, square()];
+        let seam = DVec2::new(7.0, 3.0);
+        assert_eq!(height(&first, seam, |_| None), height(&reversed, seam, |_| None));
+        let mut adjoining = square();
+        adjoining.height += 1.0;
+        for triangle in &mut adjoining.triangles {
+            for (p, _) in triangle {
+                p.x += 4.0;
+            }
+        }
+        assert!(check(&[square(), adjoining], &[]).is_err());
+        let mut adjoining = square();
+        adjoining.height += 1.0;
+        for triangle in &mut adjoining.triangles {
+            for (p, _) in triangle {
+                p.x += 4.0;
+            }
+        }
+        assert!(check(&[adjoining, square()], &[]).is_err());
+        let mut touch = square();
+        for triangle in &mut touch.triangles {
+            for (p, _) in triangle {
+                p.x += 4.0;
+            }
+        }
+        let touching_overlay = Overlay { name: "path".into(), texture: "earth".into(), triangles: touch.triangles };
+        assert!(check(&[square()], &[touching_overlay]).is_err());
         let overlay = Overlay { name: "path".into(), texture: "earth".into(), triangles: square().triangles };
         assert!(check(&[square()], &[overlay]).is_err());
         let mut reversed = square();
@@ -229,5 +316,15 @@ mod tests {
         let checksum = |tile: &Tile, surfaces: &[Raised]| tile.checksum(&[], &[], &ground, &[], surfaces, &scenery);
         assert_ne!(checksum(&near, &[]), checksum(&near, &[square()]));
         assert_eq!(checksum(&far, &[]), checksum(&far, &[square()]));
+        let mut changed = square();
+        changed.height += 0.2;
+        assert_ne!(checksum(&near, &[square()]), checksum(&near, &[changed]));
+        let mut changed = square();
+        changed.height += 0.2;
+        assert_eq!(checksum(&far, &[square()]), checksum(&far, &[changed]));
+        assert_eq!(square().node_name(), "ground");
+        let mut built = square();
+        built.ground = false;
+        assert_eq!(built.node_name(), "paving built");
     }
 }

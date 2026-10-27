@@ -3,7 +3,8 @@
 //! The ground is one grid of heights across the world, stored in square pages under `src/ground/`. Each region
 //! lives in its own folder under `src/regions/`; its `layout.rs` says what it adds (`regions.rs` lists them). The
 //! strips regions level are applied to the heights once, after reading the pages, so the tiles, the overlays and
-//! the scenery all stand on the same ground. Each
+//! the scenery all stand on the same ground. Raised planar surfaces may own a footprint over that grid;
+//! their declared clearance keeps the underlying ground below them. Each
 //! tile is written twice under `tiles/`: `<column>_<row>.glb` in full detail, and `<column>_<row>.middle.glb` with a
 //! coarser ground for seeing from afar. The coarse ground keeps every fine point on the tile's edges, so neighbouring tiles meet exactly
 //! whichever version each one shows. `<folder name>.glb` holds one empty node per tile, named
@@ -156,7 +157,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
             let checksum = tile.checksum(&code, &tile_settings, &ground, &overlays, &raised, &tile_scenery);
             if previous.get(&stem) != Some(&checksum) || files.iter().any(|(_, file)| !file.is_file()) {
                 for (detail, file) in &files {
-                    tile.write(&ground, &overlays, &raised, &tile_scenery, settings, *detail, file)?;
+                    tile.write(&ground, (&overlays, &raised), &tile_scenery, settings, *detail, file)?;
                 }
                 rebuilt += 1;
             }
@@ -203,13 +204,13 @@ impl Tile {
     fn write(
         &self,
         ground: &Ground,
-        overlays: &[Overlay],
-        raised: &[Raised],
+        surfaces: (&[Overlay], &[Raised]),
         scenery: &TileScenery,
         settings: &Settings,
         detail: Detail,
         path: &Path,
     ) -> Result<()> {
+        let (overlays, raised) = surfaces;
         let mut glb = Glb::from_json(json!({ "asset": { "version": "2.0" } }));
         let ground_material =
             glb.add_material(&Material::textured("ground", &crate::uri_of_texture(&settings.ground_texture)?));
@@ -237,7 +238,7 @@ impl Tile {
             if !mesh.indices.is_empty() {
                 mesh.material =
                     glb.add_material(&Material::textured(&surface.name, &crate::uri_of_texture(&surface.texture)?));
-                glb.add_mesh(&surface.name, &[&mesh]);
+                glb.add_mesh(&surface.node_name(), &[&mesh]);
             }
         }
         scenery.write(&mut glb, &drawn, raised, detail == Detail::Middle, path)?;
