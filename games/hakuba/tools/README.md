@@ -191,8 +191,17 @@ points other things fasten to, such as cables.
 | `tubes`     | each tube's ends, radii, sides and material     |
 | `boxes`     | each box's centre, size and material            |
 | `prisms`    | each closed prism: a strictly convex `profile` of `[x, z]` points in order, `y = [start, end]` with start less than end, and `material`, all coordinates in metres |
-| `solid`     | optional; when true, the full visual mesh is solid to scenery raycasts (default false) |
+| `solid`     | optional; when true, the prop is solid to scenery raycasts (default false) |
 | `anchors`   | the points other things fasten to               |
+
+As an alternative to generated shapes, a prop may set `source` to an embedded GLB under its own `src/` folder.
+It cannot combine `source` with materials, shapes or anchors. The GLB has one identity-frame scene root named
+`full`, and may have a second root named `collision`. Both contain static, tightly packed indexed triangles with
+finite float positions and optional normals, UVs and colours; textures, animation and external buffers are not
+supported. The full mesh reaches below its foot. With `solid = true`, the full mesh supplies raycast collision unless
+the source has a `collision` root; that root then supplies the collision without being rendered or casting a shadow.
+Source extras on `full` are preserved. A static `vertex_paint` profile requires RGBA vertex colours with zero alpha
+(the motion weight) and an opaque material; this alpha is not opacity.
 
 **`world`** builds the ground from the height pages in `src/ground/`, lays over it what each region adds, and cuts
 them into square tiles under `tiles/`. Each region's `src/regions/<region>/layout.rs` implements `Region`, and

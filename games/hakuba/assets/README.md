@@ -64,7 +64,8 @@ Every asset is one folder, named in kebab case:
   src/                      everything the export is made from, if it is made from more than its settings
 ```
 
-A plant or prop is made from its settings alone, so it has no `src/`. The game loads the export and what the export
+A plant or generated prop is made from its settings alone, so it has no `src/`; an imported prop keeps its source GLB
+there. The game loads the export and what the export
 writes beside it, such as the world's `tiles/`. The browser build copies the folder without `src/`, `asset.toml` and
 the tile checksums (see `../Trunk.toml`).
 

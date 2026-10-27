@@ -149,8 +149,9 @@ struct Models<'w> {
 }
 
 /// @cc [owner:fontanierh,label:correctness] solid-scenery-matches-visible-mesh
-/// A model marked solid on its full node MUST collide with the meshes its tile shows, including merged copies, and
-/// MUST NOT collide with shadow-only copies. A model without that mark MUST remain non-solid.
+/// A model with an explicit collision node MUST use only that node for solid rays. Otherwise, a model marked solid
+/// on its full node MUST collide with its shown meshes, including merged copies, and never with shadow-only copies.
+/// A model without either declaration MUST remain non-solid.
 ///
 /// Spawns the copies whose model has loaded. A middle tile shows the model's `middle` node, if it has one, and its
 /// `full` node otherwise. A full tile shows the `full` node, and a model that has a `middle` node casts that one's
@@ -177,12 +178,16 @@ fn spawn(
                 continue;
             };
             let Some(full) = models.nodes.get(full_handle) else { continue };
-            let solid = model_extras(full).is_some_and(|extras| extras.solid);
-            let versions = match (waiting.middle, gltf.named_nodes.contains_key("middle")) {
+            let collision = gltf.named_nodes.contains_key("collision");
+            let solid = !collision && model_extras(full).is_some_and(|extras| extras.solid);
+            let mut versions = match (waiting.middle, gltf.named_nodes.contains_key("middle")) {
                 (true, true) => vec![("middle", Role::Both)],
                 (false, true) => vec![("full", Role::Seen), ("middle", Role::Shadow)],
                 (_, false) => vec![("full", Role::Both)],
             };
+            if collision {
+                versions.push(("collision", Role::Collision));
+            }
             let mut shown = Vec::with_capacity(versions.len());
             for (name, role) in versions {
                 let Some(node) = gltf.named_nodes.get(name).and_then(|node| models.nodes.get(node)) else {
@@ -190,7 +195,26 @@ fn spawn(
                     commands.entity(entity).remove::<Waiting>();
                     continue 'copies;
                 };
-                let Some(parts) = parts(&assets, &models, &meshes, &mut swaying, node) else { continue 'copies };
+                let parts = if matches!(role, Role::Collision) {
+                    let Some(mesh) = node.mesh.as_ref().and_then(|mesh| models.meshes.get(mesh)) else {
+                        continue 'copies;
+                    };
+                    let Some(parts) = mesh
+                        .primitives
+                        .iter()
+                        .map(|part| {
+                            meshes.get(&part.mesh)?;
+                            Some((part.mesh.clone(), Look::Still(Handle::default())))
+                        })
+                        .collect::<Option<Vec<_>>>()
+                    else {
+                        continue 'copies;
+                    };
+                    parts
+                } else {
+                    let Some(parts) = parts(&assets, &models, &meshes, &mut swaying, node) else { continue 'copies };
+                    parts
+                };
                 shown.push((node, parts, role));
             }
             let transforms: Vec<Transform> = waiting
@@ -206,7 +230,7 @@ fn spawn(
             let mut jobs = VecDeque::new();
             for (node, parts, role) in shown {
                 let shadows = model_extras(node).is_none_or(|extras| extras.casts_shadows);
-                let solid = role.is_solid(solid);
+                let solid = matches!(role, Role::Collision) || role.is_solid(solid);
                 if matches!(role, Role::Shadow) && !shadows {
                     continue;
                 }
@@ -297,10 +321,12 @@ fn place(
         job.cursor += count;
         let mut part = commands.spawn((Mesh3d(mesh), transform, ChildOf(entity)));
         mark_solid(&mut part, job.solid);
-        match &job.look {
-            Look::Still(material) => part.insert(MeshMaterial3d(material.clone())),
-            Look::Swaying(material) => part.insert(MeshMaterial3d(material.clone())),
-        };
+        if !matches!(job.role, Role::Collision) {
+            match &job.look {
+                Look::Still(material) => part.insert(MeshMaterial3d(material.clone())),
+                Look::Swaying(material) => part.insert(MeshMaterial3d(material.clone())),
+            };
+        }
         match job.role {
             Role::Both if job.shadows => {}
             Role::Both | Role::Seen => {
@@ -308,6 +334,10 @@ fn place(
             }
             Role::Shadow => {
                 part.insert(RenderLayers::layer(SHADOW_ONLY));
+            }
+            Role::Collision => {
+                // A mesh without a material is never drawn; visibility components allow active tile raycasts.
+                part.insert((Visibility::Inherited, NotShadowCaster));
             }
         }
     }
@@ -333,11 +363,13 @@ enum Role {
     /// To cast its shadow only, never seen: a plant's middle version beside its full one. The sun's shadows are cast by
     /// far fewer leaves, and hold still as the camera moves.
     Shadow,
+    /// An invisible, collision-only mesh, active only with its owning tile version.
+    Collision,
 }
 
 impl Role {
     fn is_solid(self, model_is_solid: bool) -> bool {
-        model_is_solid && !matches!(self, Role::Shadow)
+        model_is_solid && !matches!(self, Role::Shadow | Role::Collision)
     }
 }
 
@@ -496,6 +528,64 @@ mod tests {
         assert_eq!(previous, count);
         for (index, child) in app.world().get::<Children>(owner).unwrap().iter().enumerate() {
             assert_eq!(app.world().get::<Transform>(child).unwrap().translation.x, index as f32);
+        }
+    }
+
+    #[test]
+    fn collision_only_parts_are_invisible_and_follow_tile_activation() {
+        for merge in [false, true] {
+            let mut app = App::new();
+            app.add_plugins(MinimalPlugins).init_resource::<Assets<Mesh>>();
+            let mesh = app.world_mut().resource_mut::<Assets<Mesh>>().add(Mesh::from(Cuboid::new(1.0, 1.0, 1.0)));
+            let root = app
+                .world_mut()
+                .spawn(TestJobs(VecDeque::from([Job {
+                    mesh,
+                    look: Look::Still(Handle::default()),
+                    role: Role::Collision,
+                    shadows: false,
+                    solid: true,
+                    merge,
+                    vertices: 24,
+                    transforms: vec![Transform::from_xyz(4.0, 0.0, 0.0)],
+                    cursor: 0,
+                }])))
+                .id();
+            app.world_mut()
+                .run_system_once(
+                    |mut commands: Commands,
+                     mut meshes: ResMut<Assets<Mesh>>,
+                     mut owners: Query<(Entity, &mut TestJobs)>| {
+                        let mut budget =
+                            Budget { vertices: MERGE_VERTICES_PER_UPDATE, instances: INSTANCES_PER_UPDATE };
+                        for (owner, mut jobs) in &mut owners {
+                            place(&mut jobs.0, owner, &mut meshes, &mut commands, &mut budget);
+                        }
+                    },
+                )
+                .unwrap();
+            let part = app.world().get::<Children>(root).unwrap()[0];
+            assert!(app.world().get::<MeshMaterial3d<StandardMaterial>>(part).is_none());
+            assert!(app.world().get::<NotShadowCaster>(part).is_some());
+            assert!(app.world().get::<crate::ground::PendingSolid>(part).is_some());
+            let transform = *app.world().get::<Transform>(part).unwrap();
+            app.world_mut().entity_mut(part).insert(GlobalTransform::from(transform));
+            app.world_mut().run_system_once(bevy::camera::visibility::calculate_bounds).unwrap();
+            assert!(app.world().get::<Aabb>(part).is_some());
+            let cast = |mut ground: Ground| ground.cast(Vec3::new(4.0, 5.0, 0.0), Dir3::NEG_Y, 10.0);
+            assert!(app.world_mut().run_system_once(cast).unwrap().is_none());
+            app.world_mut()
+                .run_system_once(
+                    move |mut commands: Commands,
+                          children: Query<&Children>,
+                          pending: Query<&crate::ground::PendingSolid>| {
+                        crate::ground::promote(root, &children, &pending, &mut commands);
+                    },
+                )
+                .unwrap();
+            assert!(app.world_mut().run_system_once(cast).unwrap().is_some());
+            app.world_mut().entity_mut(root).despawn();
+            assert!(app.world_mut().run_system_once(cast).unwrap().is_none());
         }
     }
 
