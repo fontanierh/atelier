@@ -23,6 +23,7 @@ use super::game;
 use super::ground::Ground;
 use super::overlay::Overlay;
 use super::raised::{self, Prepared};
+use super::regions::Region;
 use super::surface::{Surface, weights};
 use crate::glb::{Glb, Material, Mesh};
 use crate::random::Random;
@@ -109,12 +110,18 @@ pub struct Land<'a> {
     pub low: DVec2,
     pub high: DVec2,
     pub exclusions: &'a [Exclusion],
+    pub regions: &'a [&'a dyn Region],
 }
 
 impl Land<'_> {
     /// Whether scattered scenery of this kind may stand here; explicit placements do not use this test.
     pub fn allows_scatter(&self, at: DVec2, kind: ScatterKind) -> bool {
         !self.exclusions.iter().any(|exclusion| exclusion.excludes(at, kind))
+    }
+
+    /// Whether every region permits an already-selected scatter candidate.
+    pub fn allows_candidate(&self, kind: ScatterKind, placement: &Placement) -> bool {
+        self.regions.iter().all(|region| region.allows_scatter_candidate(kind, placement))
     }
 
     /// The ground's height at `p`, if there is ground there.
@@ -677,6 +684,7 @@ mod tests {
             name: "paving".into(),
             texture: "earth".into(),
             ground: true,
+            paint: None,
             height: 3.0,
             clearance: 0.1,
             triangles: vec![[p(1.0, 0.0), p(2.0, 0.0), p(1.0, 1.0)]],
@@ -684,8 +692,14 @@ mod tests {
         let mut prepared = Prepared::new(&raised, DVec2::ZERO, 8.0);
         prepared.add_tile((0, 0), &drawn, false).unwrap();
         prepared.add_tile((0, 0), &drawn, true).unwrap();
-        let land =
-            Land { ground: &ground, raised: &prepared, low: DVec2::ZERO, high: DVec2::splat(8.0), exclusions: &[] };
+        let land = Land {
+            ground: &ground,
+            raised: &prepared,
+            low: DVec2::ZERO,
+            high: DVec2::splat(8.0),
+            exclusions: &[],
+            regions: &[],
+        };
         let at = DVec2::new(0.99999999, 0.25);
         assert_eq!(land.placement_at(at), DVec2::new(1.0, 0.25));
         assert_eq!(land.height(land.placement_at(at)), Some(3.0));
@@ -782,6 +796,7 @@ mod tests {
             name: "paving".into(),
             texture: "earth".into(),
             ground: true,
+            paint: None,
             height: 3.0,
             clearance: 0.1,
             triangles: vec![[p(1.0, 1.0), p(3.0, 1.0), p(1.0, 3.0)]],
@@ -813,8 +828,14 @@ mod tests {
             }],
         };
         let make = |owner| {
-            let land =
-                Land { ground: &ground, raised: owner, low: DVec2::ZERO, high: DVec2::splat(16.0), exclusions: &[] };
+            let land = Land {
+                ground: &ground,
+                raised: owner,
+                low: DVec2::ZERO,
+                high: DVec2::splat(16.0),
+                exclusions: &[],
+                regions: &[],
+            };
             let candidates: Vec<_> = land
                 .scatter(123, 2.0, 0.4, ScatterKind::Tree)
                 .filter(|(at, _)| at.x > 8.0 && at.y > 8.0)
@@ -859,6 +880,7 @@ mod tests {
             name: "paving".into(),
             texture: "earth".into(),
             ground: true,
+            paint: None,
             height: 3.0,
             clearance: 0.1,
             triangles: vec![[p(1.0, 1.0), p(4.0, 1.0), p(1.0, 4.0)]],
@@ -891,6 +913,7 @@ mod tests {
             name: "paving".into(),
             texture: "earth".into(),
             ground: true,
+            paint: None,
             height: 3.0,
             clearance: 0.1,
             triangles: vec![[p(1.0, 1.0), p(4.0, 1.0), p(1.0, 4.0)]],
@@ -902,8 +925,14 @@ mod tests {
                 prepared.add_tile((x, y), &drawn, true).unwrap();
             }
         }
-        let land =
-            Land { ground: &ground, raised: &prepared, low: DVec2::ZERO, high: DVec2::splat(8.0), exclusions: &[] };
+        let land = Land {
+            ground: &ground,
+            raised: &prepared,
+            low: DVec2::ZERO,
+            high: DVec2::splat(8.0),
+            exclusions: &[],
+            regions: &[],
+        };
         let grid = Grid { south_west: DVec2::ZERO, tile_m: 1.0 };
         let scenery = || Scenery {
             placements: vec![Placement {
@@ -944,6 +973,7 @@ mod tests {
             name: "paving".into(),
             texture: "earth".into(),
             ground: true,
+            paint: None,
             height: 3.0,
             clearance: 0.1,
             triangles: vec![[p(0.2, 0.1), p(1.0, 0.1), p(1.0, 0.9)], [p(0.2, 0.1), p(1.0, 0.9), p(0.2, 0.9)]],
@@ -956,8 +986,14 @@ mod tests {
             prepared.add_tile((x, 0), &drawn, true).unwrap();
         }
         let whole = Surface::new(&Tile { columns: (0, 2), rows: (0, 2) }.ground(&ground, Detail::Full, 0, 1.0));
-        let land =
-            Land { ground: &ground, raised: &prepared, low: DVec2::ZERO, high: DVec2::splat(2.0), exclusions: &[] };
+        let land = Land {
+            ground: &ground,
+            raised: &prepared,
+            low: DVec2::ZERO,
+            high: DVec2::splat(2.0),
+            exclusions: &[],
+            regions: &[],
+        };
         let grid = Grid { south_west: DVec2::ZERO, tile_m: 1.0 };
         let scenery = Scenery {
             placements: vec![Placement {
@@ -983,6 +1019,7 @@ mod tests {
             low: DVec2::ZERO,
             high: DVec2::splat(128.0),
             exclusions: &[exclusion],
+            regions: &[],
         };
         assert!(!land.allows_scatter(DVec2::new(40.0, 22.0), ScatterKind::Tree));
         assert!(land.allows_scatter(DVec2::new(40.0, 22.0), ScatterKind::Bush));
@@ -1004,6 +1041,7 @@ mod tests {
             low: DVec2::splat(11.0),
             high: DVec2::splat(93.0),
             exclusions: &[],
+            regions: &[],
         };
         let large = Land {
             ground: &ground,
@@ -1011,6 +1049,7 @@ mod tests {
             low: DVec2::ZERO,
             high: DVec2::splat(128.0),
             exclusions: &[],
+            regions: &[],
         };
         let within = |p: &DVec2| p.cmpge(small.low).all() && p.cmplt(small.high).all();
         for side in [3.2, 5.0] {

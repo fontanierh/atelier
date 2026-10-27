@@ -3,7 +3,7 @@
 use super::levelling::{Pad, Strip};
 use super::overlay::Overlay;
 use super::raised::Raised;
-use super::scenery::{Exclusion, Land, Scenery};
+use super::scenery::{Exclusion, Land, Placement, ScatterKind, Scenery};
 
 #[path = "../../../../assets/world/src/regions/momiji-coast/layout.rs"]
 mod momiji_coast;
@@ -25,6 +25,11 @@ pub trait Region {
     /// Areas kept clear of scattered scenery. Explicit placements are unaffected.
     fn scatter_exclusions(&self) -> Vec<Exclusion> {
         Vec::new()
+    }
+
+    /// Whether a selected scatter candidate may stand here. Explicit placements are unaffected.
+    fn allows_scatter_candidate(&self, _kind: ScatterKind, _placement: &Placement) -> bool {
+        true
     }
 
     /// The flat shapes it lays over the ground.
