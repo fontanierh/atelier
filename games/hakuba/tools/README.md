@@ -200,7 +200,8 @@ It cannot combine `source` with materials, shapes or anchors. The GLB has one id
 finite float positions and optional normals, UVs and colours; textures, animation and external buffers are not
 supported. The full mesh reaches below its foot. With `solid = true`, the full mesh supplies raycast collision unless
 the source has a `collision` root; that root then supplies the collision without being rendered or casting a shadow.
-Source extras on `full` are preserved. A static `vertex_paint` profile requires RGBA vertex colours with zero alpha
+Source extras on `full` are preserved except `solid`, which is set from the prop settings. A static `vertex_paint`
+profile requires RGBA vertex colours with zero alpha
 (the motion weight) and an opaque material; this alpha is not opacity.
 
 **`world`** builds the ground from the height pages in `src/ground/`, lays over it what each region adds, and cuts

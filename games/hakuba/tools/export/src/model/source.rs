@@ -11,13 +11,21 @@ use crate::glb::Glb;
 
 /// @cc [owner:fontanierh,label:correctness] static-source-prop
 /// A source prop MUST contain only embedded, finite static geometry in identity-frame full and optional collision
-/// nodes. The exporter MUST preserve the full mesh's attributes and extras and never make its collision mesh visible.
+/// nodes. The exporter MUST preserve the full mesh's attributes and extras except the solid flag, which settings own,
+/// and never make its collision mesh visible.
 pub(super) fn export(source: &str, solid: bool, output: &Path) -> Result<()> {
     let path = Path::new(source);
     ensure!(path.extension().is_some_and(|ext| ext == "glb"), "source must be a GLB in src/");
     let mut parts = path.components();
     ensure!(matches!(parts.next(), Some(Component::Normal(p)) if p == "src"), "source must be in src/");
     ensure!(parts.all(|part| matches!(part, Component::Normal(_))), "source path must stay in src/");
+    ensure!(
+        path.components().all(|part| match part {
+            Component::Normal(name) => name.to_str().is_some_and(|name| !name.starts_with('.') && name != "target"),
+            _ => false,
+        }),
+        "source path must be covered by the asset checksum"
+    );
     let folder = output.parent().context("source model has no asset folder")?;
     let asset = folder.canonicalize().context("reading asset folder")?;
     let root = folder.join("src").canonicalize().context("reading source folder")?;
@@ -348,6 +356,10 @@ mod tests {
         let root = std::env::temp_dir().join(format!("hakuba-source-path-{}", std::process::id()));
         fs::create_dir_all(root.join("src")).unwrap();
         assert!(export("src/../model.glb", true, &root.join("out.glb")).is_err());
+        for path in ["src/.hidden.glb", "src/target/model.glb", "src/.hidden/model.glb"] {
+            let error = export(path, true, &root.join("out.glb")).unwrap_err();
+            assert!(error.to_string().contains("checksum"));
+        }
         fs::remove_dir_all(root).unwrap();
     }
 
