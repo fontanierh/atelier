@@ -64,6 +64,10 @@ const SOURCE: [(&str, [f64; 2], f64, f64, f64); 55] = [
 pub fn placements(land: &Land) -> Vec<Placement> {
     SOURCE
         .into_iter()
+        .filter(|(_, at, _, _, _)| {
+            let at = DVec2::from_array(*at);
+            at.cmpge(land.low).all() && at.cmplt(land.high).all()
+        })
         .map(|(model, at, z, yaw, scale)| {
             let at = DVec2::from_array(at);
             // Preserve the published origin independently of terrain detail.
@@ -95,6 +99,15 @@ pub fn lantern_blocks(kind: ScatterKind, plant: &Placement) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn cropped_export_does_not_query_excluded_source_placements() {
+        let ground = crate::world::ground::Ground::page(8, 1.0, |_, _| 0.0);
+        let raised = crate::world::raised::Prepared::new(&[], DVec2::ZERO, 8.0);
+        let land =
+            Land { ground: &ground, rendered: None, raised: &raised, low: DVec2::ZERO, high: DVec2::ONE, regions: &[] };
+        assert!(placements(&land).is_empty());
+    }
     #[test]
     fn lantern_clearance_matches_original_footprints() {
         let cases = [
