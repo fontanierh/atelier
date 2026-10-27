@@ -1,0 +1,5 @@
+# A roadside lot's authored stones, yard, hedge and entrance details.
+kind = "prop"
+source = "src/lot.glb"
+solid = true
+inputs_sha256 = "708b7d9b1544616fc815340467d41e21316fd90a62a99b89b5b08148b752a72c"

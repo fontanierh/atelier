@@ -8,6 +8,8 @@ use super::scenery::{Exclusion, Land, Placement, ScatterKind, Scenery};
 
 #[path = "../../../../assets/world/src/regions/momiji-coast/layout.rs"]
 mod momiji_coast;
+#[path = "../../../../assets/world/src/regions/roadside-houses/layout.rs"]
+mod roadside_houses;
 
 /// What a region adds to the world. Positions are in metres, in the map's frame: x east, y north, z up.
 pub trait Region {
@@ -58,4 +60,4 @@ pub trait Region {
     fn fastens_to(&self) -> Vec<&'static str>;
 }
 
-pub const REGIONS: [&dyn Region; 1] = [&momiji_coast::MomijiCoast];
+pub const REGIONS: [&dyn Region; 2] = [&momiji_coast::MomijiCoast, &roadside_houses::RoadsideHouses];
