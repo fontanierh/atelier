@@ -115,9 +115,22 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     if !ground.covers(whole.columns, whole.rows) {
         bail!("the tiles reach past the ground");
     }
+    let mut prepared =
+        raised::Prepared::new(&raised, DVec2::new(x, y), settings.tile_steps as f64 * settings.ground_step_m);
+    if !raised.is_empty() {
+        for column in first_column..=last_column {
+            for row in first_row..=last_row {
+                let tile = Tile { columns: span(column), rows: span(row) };
+                for detail in [Detail::Full, Detail::Middle] {
+                    let drawn = Surface::new(&tile.ground(&ground, detail, 0, 1.0));
+                    prepared.add_tile((column, row), &drawn, detail == Detail::Middle)?;
+                }
+            }
+        }
+    }
     let land = Land {
         ground: &ground,
-        raised: &raised,
+        raised: &prepared,
         low: ground.position(whole.columns.0 as f64, whole.rows.0 as f64),
         high: ground.position(whole.columns.1 as f64, whole.rows.1 as f64),
         exclusions: &exclusions,
@@ -129,7 +142,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         surface.mesh(&drawn, true)?;
     }
     let sceneries = regions::REGIONS.iter().map(|region| (region.scenery(&land), region.fastens_to())).collect();
-    let mut scenery = scenery::share(sceneries, &land, &grid, &overlays, &raised, &drawn)?;
+    let mut scenery = scenery::share(sceneries, &land, &grid, &overlays, &prepared, &drawn)?;
 
     let tiles = folder.join("tiles");
     fs::create_dir_all(&tiles)?;
@@ -157,7 +170,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
             let checksum = tile.checksum(&code, &tile_settings, &ground, &overlays, &raised, &tile_scenery);
             if previous.get(&stem) != Some(&checksum) || files.iter().any(|(_, file)| !file.is_file()) {
                 for (detail, file) in &files {
-                    tile.write(&ground, (&overlays, &raised), &tile_scenery, settings, *detail, file)?;
+                    tile.write(&ground, (&overlays, &raised, &prepared), &tile_scenery, settings, *detail, file)?;
                 }
                 rebuilt += 1;
             }
@@ -168,7 +181,8 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         }
     }
     let [x, y] = settings.spawn_m;
-    let Some(height) = raised::height(&raised, DVec2::new(x, y), |p| ground.height(p)) else {
+    prepared.check_point(DVec2::new(x, y))?;
+    let Some(height) = prepared.height(DVec2::new(x, y), |p| ground.height(p)) else {
         bail!("the spawn is off the ground")
     };
     let facing = DQuat::from_rotation_y(-settings.spawn_bearing_deg.to_radians());
@@ -204,13 +218,13 @@ impl Tile {
     fn write(
         &self,
         ground: &Ground,
-        surfaces: (&[Overlay], &[Raised]),
+        surfaces: (&[Overlay], &[Raised], &raised::Prepared<'_>),
         scenery: &TileScenery,
         settings: &Settings,
         detail: Detail,
         path: &Path,
     ) -> Result<()> {
-        let (overlays, raised) = surfaces;
+        let (overlays, raised, prepared) = surfaces;
         let mut glb = Glb::from_json(json!({ "asset": { "version": "2.0" } }));
         let ground_material =
             glb.add_material(&Material::textured("ground", &crate::uri_of_texture(&settings.ground_texture)?));
@@ -241,7 +255,7 @@ impl Tile {
                 glb.add_mesh(&surface.node_name(), &[&mesh]);
             }
         }
-        scenery.write(&mut glb, &drawn, raised, detail == Detail::Middle, path)?;
+        scenery.write(&mut glb, &drawn, prepared, detail == Detail::Middle, path)?;
         glb.write(path)
     }
 
