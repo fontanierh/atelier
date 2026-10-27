@@ -34,6 +34,8 @@ pub struct Settings {
     source_profile: Option<SourceProfile>,
     /// For a source surface intentionally above its origin, its exact lowest height in metres.
     surface_height_m: Option<f32>,
+    /// Maximum source draw distance in metres, before conservative bounds padding.
+    draw_distance_m: Option<f32>,
     wood: Option<Wood>,
     leaves: Option<Leaves>,
     tuft: Option<Tuft>,
@@ -190,13 +192,20 @@ pub fn export(settings: &Settings, output: &Path) -> Result<()> {
         if !profile.valid() {
             bail!("invalid source foliage profile");
         }
+        if settings.draw_distance_m.is_some_and(|d| !d.is_finite() || d <= 0.0) {
+            bail!("source draw distance must be positive and finite");
+        }
         return super::source::export_foliage(
             source,
             &settings.textures,
             serde_json::to_value(profile)?,
             settings.surface_height_m,
+            settings.draw_distance_m,
             output,
         );
+    }
+    if settings.draw_distance_m.is_some() {
+        bail!("draw distance requires a source plant");
     }
     if settings.surface_height_m.is_some() {
         bail!("surface height requires a source plant");

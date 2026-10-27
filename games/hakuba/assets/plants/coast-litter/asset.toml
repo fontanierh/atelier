@@ -1,9 +1,10 @@
 # Source fallen leaf scatter.
 kind = "plant"
+draw_distance_m = 90.0
 source = "src/model.glb"
 textures = ["coast-litter"]
 surface_height_m = 0.02
-inputs_sha256 = "c8afdd8f4ff2acea62419b70cd5c6e0de9e1b4532a251a754a39493b630eee88"
+inputs_sha256 = "a95e38ba40f5162067bebe5aba63f7a90bc5a7d9f8a90885eccb61b8bf2017e6"
 
 [source_profile]
 direction_amplitude_shade = [0.3, -0.95, 0.16, 0.5]
