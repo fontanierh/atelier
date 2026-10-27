@@ -16,7 +16,11 @@ use crate::shapes::{cuboid, tube, vertex};
 #[serde(deny_unknown_fields)]
 pub struct Settings {
     /// Each material's linear colour, by its name.
+    #[serde(default)]
     materials: BTreeMap<String, [f64; 3]>,
+    /// An optional embedded static model under this asset's src folder.
+    #[serde(default)]
+    source: Option<String>,
     #[serde(default)]
     tubes: Vec<Tube>,
     #[serde(default)]
@@ -124,6 +128,17 @@ fn prism(mesh: &mut Mesh, profile: &[[f64; 2]], y: [f64; 2]) -> Result<()> {
 }
 
 pub fn export(settings: &Settings, output: &Path) -> Result<()> {
+    if let Some(source) = &settings.source {
+        if !settings.materials.is_empty()
+            || !settings.tubes.is_empty()
+            || !settings.boxes.is_empty()
+            || !settings.prisms.is_empty()
+            || !settings.anchors.is_empty()
+        {
+            bail!("a source model cannot also specify generated geometry, materials or anchors");
+        }
+        return super::source::export(source, settings.solid, output);
+    }
     // Each material's mesh, holding every part made of it.
     let mut meshes: BTreeMap<&str, Mesh> = BTreeMap::new();
     for t in &settings.tubes {
