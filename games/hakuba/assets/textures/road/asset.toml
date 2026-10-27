@@ -2,4 +2,4 @@
 # along it.
 kind = "texture"
 source = "src/road.jpg"
-inputs_sha256 = "63540f87f6d6f73ad857329f5c54433d4538e2009b8b9b1f93508216a3af666f"
+inputs_sha256 = "43a9128d0c553627c26b270864fa9d826b1cf2766c97092c2c75005620d7c12f"

@@ -7,6 +7,7 @@ use glam::{DVec2, DVec3};
 use crate::glb::Mesh;
 
 /// A mesh's triangles in the map's frame, to find what lies under a point.
+#[derive(Clone)]
 pub struct Surface {
     pub triangles: Vec<[DVec3; 3]>,
     /// The triangles that reach into each square of `SURFACE_CELL_M`, by square.
@@ -53,6 +54,15 @@ impl Surface {
             let [a, b, c] = self.triangles[n];
             let w = weights([a, b, c].map(DVec3::truncate), p)?;
             (w.min_element() >= -ON_TRIANGLE).then_some(w.x * a.z + w.y * b.z + w.z * c.z)
+        })
+    }
+
+    pub fn height_exact(&self, p: DVec2) -> Option<f64> {
+        let square = ((p.x / SURFACE_CELL_M).floor() as i64, (p.y / SURFACE_CELL_M).floor() as i64);
+        self.cells.get(&square)?.iter().find_map(|&n| {
+            let [a, b, c] = self.triangles[n];
+            let w = weights([a, b, c].map(DVec3::truncate), p)?;
+            (w.min_element() >= 0.0).then_some(w.x * a.z + w.y * b.z + w.z * c.z)
         })
     }
 

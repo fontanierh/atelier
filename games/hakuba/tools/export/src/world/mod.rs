@@ -27,6 +27,7 @@ mod regions;
 mod ribbon;
 mod scenery;
 mod surface;
+mod underlay;
 
 use std::collections::{BTreeMap, HashMap};
 use std::fs;
@@ -116,15 +117,31 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     if !ground.covers(whole.columns, whole.rows) {
         bail!("the tiles reach past the ground");
     }
+    let tile_m = settings.tile_steps as f64 * settings.ground_step_m;
+    let collars = raised.iter().map(|surface| underlay::owner_collar(surface, tile_m)).collect::<Result<Vec<_>>>()?;
+    let mut unions: [Vec<underlay::Underlay>; 2] = [Vec::new(), Vec::new()];
+    for (surface, &collar) in raised.iter().zip(&collars).filter(|(surface, _)| surface.cut_ground) {
+        for (di, detail) in [Detail::Full, Detail::Middle].into_iter().enumerate() {
+            if let Some(union) = underlay_for_owner(&ground, surface, settings, detail, collar)? {
+                unions[di].push(union);
+            }
+        }
+    }
     let mut prepared =
         raised::Prepared::new(&raised, DVec2::new(x, y), settings.tile_steps as f64 * settings.ground_step_m);
+    prepared.set_underlays(&unions);
     if !raised.is_empty() {
         for column in first_column..=last_column {
             for row in first_row..=last_row {
                 let tile = Tile { columns: span(column), rows: span(row) };
                 for detail in [Detail::Full, Detail::Middle] {
-                    let drawn = Surface::new(&tile.ground(&ground, detail, 0, 1.0));
-                    prepared.add_tile((column, row), &drawn, detail == Detail::Middle)?;
+                    let mesh = tile.ground(&ground, detail, 0, 1.0);
+                    let drawn = Surface::new(&mesh);
+                    let di = usize::from(detail == Detail::Middle);
+                    let cut_mesh =
+                        if unions[di].is_empty() { mesh } else { underlay::remove_covered(&mesh, &unions[di]) };
+                    let cut = Surface::new(&cut_mesh);
+                    prepared.add_tile_with_cut((column, row), &drawn, &cut, detail == Detail::Middle)?;
                 }
             }
         }
@@ -146,7 +163,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     // The full tiles' ground across the whole exported map, which seats the cables' ends.
     let drawn = Surface::new(&whole.ground(&ground, Detail::Full, 0, 1.0));
     for surface in &raised {
-        surface.mesh(&drawn, true)?;
+        surface.mesh_before_cut(&drawn, true)?;
     }
     let sceneries = regions::REGIONS.iter().map(|region| (region.scenery(&land), region.fastens_to())).collect();
     let mut scenery = scenery::share(sceneries, &land, &grid, &overlays, &prepared, &drawn)?;
@@ -174,10 +191,17 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
                 (Detail::Full, tiles.join(format!("{stem}.glb"))),
                 (Detail::Middle, tiles.join(format!("{stem}.middle.glb"))),
             ];
-            let checksum = tile.checksum(&code, &tile_settings, &ground, &overlays, &raised, &tile_scenery);
+            let checksum = tile.checksum(&code, &tile_settings, &ground, &overlays, &raised, (&tile_scenery, &collars));
             if previous.get(&stem) != Some(&checksum) || files.iter().any(|(_, file)| !file.is_file()) {
                 for (detail, file) in &files {
-                    tile.write(&ground, (&overlays, &raised, &prepared), &tile_scenery, settings, *detail, file)?;
+                    tile.write(
+                        &ground,
+                        (&overlays, &raised, &prepared, &unions[usize::from(*detail == Detail::Middle)]),
+                        &tile_scenery,
+                        settings,
+                        *detail,
+                        file,
+                    )?;
                 }
                 rebuilt += 1;
             }
@@ -206,6 +230,55 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     index.write(output)
 }
 
+// Prepare from the complete authored bounds and the fixed grid, independent of the exported tile range.
+fn underlay_for_owner(
+    ground: &Ground,
+    surface: &Raised,
+    settings: &Settings,
+    detail: Detail,
+    collar: f64,
+) -> Result<Option<underlay::Underlay>> {
+    let origin = DVec2::from_array(settings.south_west_m);
+    let (low, high) = surface
+        .triangles
+        .iter()
+        .flatten()
+        .map(|(p, _)| *p)
+        .fold((DVec2::splat(f64::INFINITY), DVec2::splat(f64::NEG_INFINITY)), |(low, high), p| {
+            (low.min(p), high.max(p))
+        });
+    let grid_low = (low - origin) / settings.ground_step_m;
+    let grid_high = (high - origin) / settings.ground_step_m;
+    let (max_x, max_y) = ground.max_steps().context("underlay requires finite loaded ground bounds")?;
+    if !grid_low.is_finite()
+        || !grid_high.is_finite()
+        || grid_low.min_element() < 0.0
+        || grid_high.x > max_x as f64
+        || grid_high.y > max_y as f64
+        || settings.tile_steps == 0
+        || max_x < settings.tile_steps
+        || max_y < settings.tile_steps
+    {
+        bail!("{} underlay is outside the loaded ground", surface.name);
+    }
+    let first = (grid_low / settings.tile_steps as f64).floor();
+    let last = (grid_high / settings.tile_steps as f64).floor();
+    let max_column = (max_x - 1) / settings.tile_steps;
+    let max_row = (max_y - 1) / settings.tile_steps;
+    let span = |k: usize| (k * settings.tile_steps, (k + 1) * settings.tile_steps);
+    let mut tops = Vec::new();
+    for column in (first.x.max(0.0) as usize).saturating_sub(1)..=(last.x as usize).saturating_add(1).min(max_column) {
+        for row in (first.y.max(0.0) as usize).saturating_sub(1)..=(last.y as usize).saturating_add(1).min(max_row) {
+            let tile = Tile { columns: span(column), rows: span(row) };
+            if ground.covers(tile.columns, tile.rows) {
+                let mesh = tile.ground(ground, detail, 0, 1.0);
+                tops.push(surface.mesh_before_cut(&Surface::new(&mesh), false)?);
+            }
+        }
+    }
+    Ok(underlay::union(&tops, collar))
+}
+
 /// Match the runtime's stored XY before selecting a raised owner, retaining the old empty-world export.
 fn spawn_position(at: DVec2, ground: &Ground, prepared: &raised::Prepared<'_>) -> Result<DVec3> {
     let at = prepared.emitted_at(at);
@@ -230,20 +303,22 @@ impl Tile {
     fn write(
         &self,
         ground: &Ground,
-        surfaces: (&[Overlay], &[Raised], &raised::Prepared<'_>),
+        surfaces: (&[Overlay], &[Raised], &raised::Prepared<'_>, &[underlay::Underlay]),
         scenery: &TileScenery,
         settings: &Settings,
         detail: Detail,
         path: &Path,
     ) -> Result<()> {
-        let (overlays, raised, prepared) = surfaces;
+        let (overlays, raised, prepared, underlay) = surfaces;
         let mut glb = Glb::from_json(json!({ "asset": { "version": "2.0" } }));
         let ground_material =
             glb.add_material(&Material::textured("ground", &crate::uri_of_texture(&settings.ground_texture)?));
         let texture_steps = settings.ground_texture_m / settings.ground_step_m;
         let ground_mesh = self.ground(ground, detail, ground_material, texture_steps);
         let drawn = Surface::new(&ground_mesh);
-        glb.add_mesh("ground", &[&ground_mesh]);
+        let cut_mesh = if underlay.is_empty() { ground_mesh } else { underlay::remove_covered(&ground_mesh, underlay) };
+        let cut = Surface::new(&cut_mesh);
+        glb.add_mesh("ground", &[&cut_mesh]);
         for overlay in overlays {
             let mut mesh = overlay.mesh(ground, &drawn);
             if mesh.indices.is_empty() {
@@ -260,7 +335,8 @@ impl Tile {
             glb.add_mesh(&overlay.name, &[&mesh]);
         }
         for surface in raised {
-            let mut mesh = surface.mesh(&drawn, false).with_context(|| format!("writing {}", path.display()))?;
+            let mut mesh =
+                surface.mesh_prepared(&drawn, &cut, false).with_context(|| format!("writing {}", path.display()))?;
             if !mesh.indices.is_empty() {
                 mesh.material =
                     glb.add_material(&Material::textured(&surface.name, &crate::uri_of_texture(&surface.texture)?));
@@ -338,6 +414,115 @@ mod tests {
     use super::*;
 
     #[test]
+    fn underlay_outside_loaded_ground_is_rejected() {
+        let ground = Ground::page(8, 1.0, |_, _| 0.0);
+        let settings = Settings {
+            ground: PathBuf::new(),
+            south_west_m: [0.0, 0.0],
+            ground_step_m: 1.0,
+            page_steps: 8,
+            tile_steps: 8,
+            tiles: [[0, 0], [0, 0]],
+            ground_texture: "ground".into(),
+            ground_texture_m: 6.0,
+            spawn_m: [0.0, 0.0],
+            spawn_bearing_deg: 0.0,
+        };
+        let p = |x, y| (DVec2::new(x, y), DVec2::ZERO);
+        let owner = Raised {
+            name: "outside".into(),
+            texture: "ground".into(),
+            ground: true,
+            paint: None,
+            height: 2.0,
+            clearance: 0.1,
+            cut_ground: true,
+            triangles: vec![[p(100.0, 1.0), p(101.0, 1.0), p(100.0, 2.0)]],
+        };
+        let collar = underlay::owner_collar(&owner, 8.0).unwrap();
+        assert!(underlay_for_owner(&ground, &owner, &settings, Detail::Full, collar).is_err());
+    }
+
+    #[test]
+    fn owner_local_cut_emits_identical_tiles_with_distant_owner_and_expanded_map() {
+        let ground = Ground::page(32, 1.0, |_, _| 0.0);
+        let tile = Tile { columns: (0, 8), rows: (0, 8) };
+        let owner = |x: f64| {
+            let p = |x, y| (DVec2::new(x, y), DVec2::ZERO);
+            Raised {
+                name: "terrace".into(),
+                texture: "ground".into(),
+                ground: true,
+                paint: None,
+                height: 2.0,
+                clearance: 0.1,
+                cut_ground: true,
+                triangles: vec![[p(x, 2.0), p(x + 3.0, 2.0), p(x, 5.0)]],
+            }
+        };
+        for detail in [Detail::Full, Detail::Middle] {
+            let emit = |expanded: bool| {
+                let settings = Settings {
+                    ground: PathBuf::new(),
+                    south_west_m: [0.0, 0.0],
+                    ground_step_m: 1.0,
+                    page_steps: 32,
+                    tile_steps: 8,
+                    tiles: [[0, 0], if expanded { [3, 3] } else { [0, 0] }],
+                    ground_texture: "ground".into(),
+                    ground_texture_m: 6.0,
+                    spawn_m: [0.0, 0.0],
+                    spawn_bearing_deg: 0.0,
+                };
+                let mut raised = vec![owner(6.0)];
+                if expanded {
+                    raised.push(owner(24.0));
+                }
+                let unions: [Vec<underlay::Underlay>; 2] = std::array::from_fn(|di| {
+                    raised
+                        .iter()
+                        .map(|surface| {
+                            let detail = if di == 0 { Detail::Full } else { Detail::Middle };
+                            underlay_for_owner(
+                                &ground,
+                                surface,
+                                &settings,
+                                detail,
+                                underlay::owner_collar(surface, 8.0).unwrap(),
+                            )
+                            .unwrap()
+                            .unwrap()
+                        })
+                        .collect()
+                });
+                let mut prepared = raised::Prepared::new(&raised, DVec2::ZERO, 8.0);
+                prepared.set_underlays(&unions);
+                for (di, d) in [Detail::Full, Detail::Middle].into_iter().enumerate() {
+                    let mesh = tile.ground(&ground, d, 0, 6.0);
+                    let drawn = Surface::new(&mesh);
+                    let cut = Surface::new(&underlay::remove_covered(&mesh, &unions[di]));
+                    prepared.add_tile_with_cut((0, 0), &drawn, &cut, di == 1).unwrap();
+                }
+                let di = usize::from(detail == Detail::Middle);
+                let path = std::env::temp_dir().join(format!("owner-local-{}-{di}-{expanded}.glb", std::process::id()));
+                tile.write(
+                    &ground,
+                    (&[], &raised, &prepared, &unions[di]),
+                    &TileScenery::default(),
+                    &settings,
+                    detail,
+                    &path,
+                )
+                .unwrap();
+                let bytes = std::fs::read(&path).unwrap();
+                std::fs::remove_file(path).unwrap();
+                bytes
+            };
+            assert_eq!(emit(false), emit(true));
+        }
+    }
+
+    #[test]
     fn spawn_selects_the_owner_at_its_runtime_position() {
         let ground = Ground::page(8, 1.0, |_, _| 0.0);
         let drawn = Surface::new(&Tile { columns: (0, 8), rows: (0, 8) }.ground(&ground, Detail::Full, 0, 1.0));
@@ -349,6 +534,7 @@ mod tests {
             paint: None,
             height: 3.0,
             clearance: 0.1,
+            cut_ground: false,
             triangles: vec![[p(1.0, 0.0), p(2.0, 0.0), p(1.0, 1.0)]],
         }];
         let mut prepared = raised::Prepared::new(&raised, DVec2::ZERO, 8.0);
@@ -383,6 +569,7 @@ mod tests {
             ground: true,
             height: 2.0,
             clearance: 0.1,
+            cut_ground: false,
             paint: Some(raised::SurfacePaint {
                 haze_start_m: 30.0,
                 haze_length_m: 9000.0,
@@ -396,7 +583,8 @@ mod tests {
         prepared.add_tile((0, 0), &drawn, true).unwrap();
         for (detail, suffix) in [(Detail::Full, "full"), (Detail::Middle, "middle")] {
             let path = std::env::temp_dir().join(format!("raised-paint-{}-{suffix}.glb", std::process::id()));
-            tile.write(&ground, (&[], &raised, &prepared), &TileScenery::default(), &settings, detail, &path).unwrap();
+            tile.write(&ground, (&[], &raised, &prepared, &[]), &TileScenery::default(), &settings, detail, &path)
+                .unwrap();
             let bytes = std::fs::read(&path).unwrap();
             std::fs::remove_file(&path).unwrap();
             let len = u32::from_le_bytes(bytes[12..16].try_into().unwrap()) as usize;

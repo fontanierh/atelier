@@ -10,6 +10,7 @@ name = "export"
 path = "src/main.rs"
 
 [dependencies]
+geo = { version = "=0.33.1", default-features = false, features = ["earcut"] }
 anyhow = "1.0.98"
 glam = "0.33.12"
 hound = "3.5.1"

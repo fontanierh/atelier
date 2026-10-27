@@ -39,6 +39,13 @@ impl Ground {
         Ok(Self { pages, page_steps, step, south_west })
     }
 
+    /// Upper grid bounds of the loaded pages, with overflow rejected.
+    pub fn max_steps(&self) -> Option<(usize, usize)> {
+        let x = self.pages.keys().map(|(x, _)| *x).max()?.checked_add(1)?.checked_mul(self.page_steps)?;
+        let y = self.pages.keys().map(|(_, y)| *y).max()?.checked_add(1)?.checked_mul(self.page_steps)?;
+        Some((x, y))
+    }
+
     /// Gives every grid point with ground the height `change` returns for its map position and its height. A point
     /// on a page's edge gets the same new height on every page that holds it.
     pub fn reshape(&mut self, change: impl Fn(DVec2, f64) -> f64) {

@@ -18,6 +18,7 @@ use super::overlay::Overlay;
 use super::raised::{Raised, stored};
 use super::scenery::{self, TileScenery};
 use crate::EXPORTER;
+use glam::DVec2;
 
 /// The file, under `tiles/`, holding each tile's checksum.
 pub const FILE: &str = "checksums.toml";
@@ -44,8 +45,9 @@ impl Tile {
         ground: &Ground,
         overlays: &[Overlay],
         raised: &[Raised],
-        scenery: &TileScenery,
+        scenery_and_collar: (&TileScenery, &[f64]),
     ) -> String {
+        let (scenery, collars) = scenery_and_collar;
         let mut digest = Sha256::new();
         digest.update(code);
         digest.update(settings);
@@ -87,13 +89,16 @@ impl Tile {
                 }
             }
         }
-        for surface in raised {
+        for (index, surface) in raised.iter().enumerate() {
+            let collar = collars.get(index).copied().unwrap_or(0.0);
             let triangles: Vec<_> = surface
                 .triangles
                 .iter()
                 .filter(|triangle| {
                     let [a, b, c] = triangle.map(|(p, _)| stored(p));
-                    a.min(b).min(c).cmple(high).all() && a.max(b).max(c).cmpge(low).all()
+                    let padding = if surface.cut_ground { collar * 4.0 } else { 0.0 };
+                    a.min(b).min(c).cmple(high + DVec2::splat(padding)).all()
+                        && a.max(b).max(c).cmpge(low - DVec2::splat(padding)).all()
                 })
                 .collect();
             if triangles.is_empty() {
@@ -108,6 +113,10 @@ impl Tile {
             digest.update(serde_json::to_vec(&surface.paint).expect("paint serializes"));
             digest.update(surface.height.to_bits().to_le_bytes());
             digest.update(surface.clearance.to_bits().to_le_bytes());
+            if surface.cut_ground {
+                digest.update([1]);
+                digest.update(collar.to_bits().to_le_bytes());
+            }
             for triangle in triangles {
                 for (p, uv) in triangle {
                     for value in [p.x, p.y, uv.x, uv.y] {
