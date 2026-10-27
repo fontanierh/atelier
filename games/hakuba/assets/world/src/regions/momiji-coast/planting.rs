@@ -86,8 +86,11 @@ pub fn plants(land: &Land, road: &[(DVec2, DVec2)]) -> Vec<Placement> {
             (height >= SHORE_M).then(|| (at, height, nearest(road, at).0, random))
         })
     };
-    let mut place = |model: &'static str, at, random: &mut Random, scale, afar| {
-        plants.push(Placement { model, at, yaw: random.range([0.0, TAU]), scale, afar })
+    let mut place = |kind, model: &'static str, at, random: &mut Random, scale, afar| {
+        let placement = Placement { model, at, yaw: random.range([0.0, TAU]), scale, afar };
+        if land.allows_candidate(kind, &placement) {
+            plants.push(placement);
+        }
     };
 
     for (at, height, road_m, mut random) in ground(1, 5.0, 0.45, ScatterKind::Tree) {
@@ -104,7 +107,7 @@ pub fn plants(land: &Land, road: &[(DVec2, DVec2)]) -> Vec<Placement> {
         }
         let model = random.pick(mix, |(_, w)| *w).0;
         let scale = random.range([0.85, 1.25]) * if road_m > 26.0 { 1.25 } else { 1.0 };
-        place(model, at, &mut random, scale, true);
+        place(ScatterKind::Tree, model, at, &mut random, scale, true);
     }
 
     for (at, _, road_m, mut random) in ground(2, 3.2, 0.5, ScatterKind::Tree) {
@@ -113,7 +116,7 @@ pub fn plants(land: &Land, road: &[(DVec2, DVec2)]) -> Vec<Placement> {
         }
         let model = random.pick(FAR_TREES, |(_, w)| *w).0;
         let scale = random.range([0.9, 1.3]);
-        place(model, at, &mut random, scale, true);
+        place(ScatterKind::Tree, model, at, &mut random, scale, true);
     }
 
     for (at, _, road_m, mut random) in ground(3, 2.4, 0.45, ScatterKind::Bush) {
@@ -130,7 +133,7 @@ pub fn plants(land: &Land, road: &[(DVec2, DVec2)]) -> Vec<Placement> {
         }
         let model = random.pick(BUSHES, |(_, w)| *w).0;
         let scale = random.range(if road_m < 6.5 { [0.6, 0.95] } else { [0.8, 1.3] });
-        place(model, at, &mut random, scale, true);
+        place(ScatterKind::Bush, model, at, &mut random, scale, true);
     }
 
     for (at, _, road_m, mut random) in ground(4, 0.85, 0.5, ScatterKind::Grass) {
@@ -144,7 +147,7 @@ pub fn plants(land: &Land, road: &[(DVec2, DVec2)]) -> Vec<Placement> {
         }
         let model = random.pick(GRASS, |(_, w)| *w).0;
         let scale = random.range([0.7, 1.25]) * if road_m < 6.0 { 1.25 } else { 1.0 };
-        place(model, at, &mut random, scale, false);
+        place(ScatterKind::Grass, model, at, &mut random, scale, false);
     }
 
     // The bank: thick grass, and now and then a small bush, on the rising side of the road, every metre along it.
@@ -162,7 +165,7 @@ pub fn plants(land: &Land, road: &[(DVec2, DVec2)]) -> Vec<Placement> {
             }
             let model = random.pick(GRASS, |(_, w)| *w).0;
             let scale = random.range([1.0, 1.4]);
-            place(model, at, &mut random, scale, false);
+            place(ScatterKind::Grass, model, at, &mut random, scale, false);
         }
         let mut random = Random::at(6, k as i64, 0);
         if random.unit() < 0.25 {
@@ -172,8 +175,77 @@ pub fn plants(land: &Land, road: &[(DVec2, DVec2)]) -> Vec<Placement> {
             }
             let model = random.pick(SMALL_BUSHES, |(_, w)| *w).0;
             let scale = random.range([0.6, 1.0]);
-            place(model, at, &mut random, scale, true);
+            place(ScatterKind::Bush, model, at, &mut random, scale, true);
         }
     }
     plants
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::world::ground::Ground;
+    use crate::world::levelling::Strip;
+    use crate::world::overlay::Overlay;
+    use crate::world::regions::Region;
+    use crate::world::scenery::Scenery;
+
+    struct Mask;
+    impl Region for Mask {
+        fn name(&self) -> &'static str {
+            "test"
+        }
+        fn levelled(&self) -> Vec<Strip> {
+            vec![]
+        }
+        fn overlays(&self) -> Vec<Overlay> {
+            vec![]
+        }
+        fn scenery(&self, _: &Land) -> Scenery {
+            Scenery::default()
+        }
+        fn fastens_to(&self) -> Vec<&'static str> {
+            vec![]
+        }
+        fn allows_scatter_candidate(&self, kind: ScatterKind, p: &Placement) -> bool {
+            !(kind == ScatterKind::Grass && p.model == "plants/grass-a" && p.scale > 1.0 && p.at.x < 32.0)
+        }
+    }
+
+    #[test]
+    fn selected_candidate_mask_keeps_other_placements_and_random_choices() {
+        let ground = Ground::page(64, 1.0, |_, _| 10.0);
+        let empty = Land {
+            ground: &ground,
+            raised: &[],
+            low: DVec2::splat(8.0),
+            high: DVec2::splat(56.0),
+            exclusions: &[],
+            regions: &[],
+            domains: &[],
+            openings: &[],
+        };
+        let mask = Mask;
+        let regions: [&dyn Region; 1] = [&mask];
+        let filtered = Land { regions: &regions, ..empty };
+        let road = crate::world::curve::curve(&[[0.0, 32.0], [64.0, 32.0]]);
+        let values = |plants: Vec<Placement>| {
+            plants.into_iter().map(|p| (p.model, p.at.to_array(), p.yaw, p.scale, p.afar)).collect::<Vec<_>>()
+        };
+        let all = plants(&empty, &road);
+        let expected = values(
+            plants(&empty, &road)
+                .into_iter()
+                .filter(|p| {
+                    mask.allows_scatter_candidate(
+                        if p.model.starts_with("plants/grass-") { ScatterKind::Grass } else { ScatterKind::Tree },
+                        p,
+                    )
+                })
+                .collect(),
+        );
+        let actual = values(plants(&filtered, &road));
+        assert!(actual.len() < all.len());
+        assert_eq!(actual, expected);
+    }
 }

@@ -1,8 +1,10 @@
 //! Every region, each with its implementation of [`Region`] from its folder under the world's `src/regions/`.
 
 use super::levelling::{Pad, Strip};
+use super::openings::{Domain, Opening};
 use super::overlay::Overlay;
-use super::scenery::{Exclusion, Land, Scenery};
+use super::raised::Raised;
+use super::scenery::{Exclusion, Land, Placement, ScatterKind, Scenery};
 
 #[path = "../../../../assets/world/src/regions/momiji-coast/layout.rs"]
 mod momiji_coast;
@@ -26,8 +28,28 @@ pub trait Region {
         Vec::new()
     }
 
+    /// Whether a selected scatter candidate may stand here. Explicit placements are unaffected.
+    fn allows_scatter_candidate(&self, _kind: ScatterKind, _placement: &Placement) -> bool {
+        true
+    }
+
+    /// Named parameter domains this region publishes for others to request openings.
+    fn path_domains(&self) -> Vec<Domain> {
+        Vec::new()
+    }
+
+    /// Closed intervals to leave open on published parameter domains.
+    fn path_openings(&self) -> Vec<Opening> {
+        Vec::new()
+    }
+
     /// The flat shapes it lays over the ground.
     fn overlays(&self) -> Vec<Overlay>;
+
+    /// Planar surfaces that own their footprints above the ground.
+    fn raised(&self) -> Vec<Raised> {
+        Vec::new()
+    }
 
     /// What it stands on `land` and runs along it.
     fn scenery(&self, land: &Land) -> Scenery;

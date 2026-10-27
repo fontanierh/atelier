@@ -10,7 +10,9 @@ use hakuba_screens::Screen;
 use hakuba_settings::Settings;
 
 use crate::ground::{self, PendingSolid};
+use crate::loading::Missing;
 use crate::scenery::{Placed, Placing, Waiting};
+use crate::vertex_paint::{SurfaceFailed, SurfaceWaiting};
 
 const MIDDLE_M: f32 = 2500.0;
 pub const TILES: &str = "world/tiles";
@@ -19,7 +21,10 @@ pub struct TilesPlugin;
 impl Plugin for TilesPlugin {
     fn build(&self, app: &mut App) {
         app.add_observer(scene_ready)
-            .add_systems(Update, (choose, give_up, prepare).chain().after(Placing).run_if(in_state(Screen::World)))
+            .add_systems(
+                Update,
+                (choose, give_up, failed_surface, prepare).chain().after(Placing).run_if(in_state(Screen::World)),
+            )
             .add_systems(
                 PostUpdate,
                 activate
@@ -140,6 +145,28 @@ fn give_up(
     }
 }
 
+fn failed_surface(
+    mut commands: Commands,
+    failed: Query<Entity, Added<SurfaceFailed>>,
+    parents: Query<&ChildOf>,
+    spawning: Query<(&Spawning, &WorldAssetRoot)>,
+    mut tiles: Query<&mut Tile>,
+) {
+    for entity in &failed {
+        if let Some((root, owner, scene)) =
+            parents.iter_ancestors(entity).find_map(|root| spawning.get(root).ok().map(|(s, scene)| (root, s.0, scene)))
+            && let Ok(mut tile) = tiles.get_mut(owner)
+            && tile.pending == Some(root)
+        {
+            tile.pending = None;
+            tile.failed = true;
+            let name = scene.0.path().map_or_else(|| format!("tile {root}"), |path| path.to_string());
+            commands.insert_resource(Missing(name));
+            commands.entity(root).despawn();
+        }
+    }
+}
+
 fn scene_ready(
     ready: On<WorldInstanceReady>,
     spawning: Query<&Spawning>,
@@ -152,6 +179,7 @@ fn scene_ready(
 }
 
 type PendingScene = (Entity, &'static SceneReady, &'static WorldAssetRoot);
+type WaitingForContent = Or<(With<Waiting>, With<SurfaceWaiting>)>;
 
 /// Only a later Update can observe every data node read by Placing after the scene-spawn schedule.
 fn prepare(
@@ -160,7 +188,7 @@ fn prepare(
     assets: Res<AssetServer>,
     roots: Query<PendingScene, (With<Spawning>, Without<Prepared>)>,
     children: Query<&Children>,
-    waiting: Query<(), With<Waiting>>,
+    waiting: Query<(), WaitingForContent>,
     placed: Query<&Placed>,
 ) {
     for (root, ready, scene) in &roots {
@@ -335,6 +363,33 @@ mod tests {
         assert_eq!(tile.showing, Some(old));
         assert!(tile.pending.is_none());
         assert!(app.world().get_entity(pending).is_err());
+    }
+
+    #[test]
+    fn invalid_surface_profile_fails_tile_and_reports_its_asset() {
+        use bevy::gltf::GltfExtras;
+        use bevy::world_serialization::WorldAsset;
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins).add_plugins(bevy::asset::AssetPlugin::default());
+        app.init_asset::<WorldAsset>();
+        let scene = app.world().resource::<AssetServer>().load("world/tiles/invalid-paint.glb");
+        let owner = app.world_mut().spawn(Tile::named("tile 1 2", Vec3::ZERO).unwrap()).id();
+        let old = app.world_mut().spawn((ChildOf(owner), Visibility::Inherited)).id();
+        let root = app.world_mut().spawn((ChildOf(owner), WorldAssetRoot(scene), Spawning(owner, Detail::Full))).id();
+        app.world_mut()
+            .spawn((ChildOf(root), GltfExtras { value: r#"{ "surface_paint": { "haze_length_m": 0 } }"#.into() }));
+        {
+            let mut tile = app.world_mut().get_mut::<Tile>(owner).unwrap();
+            tile.showing = Some(old);
+            tile.pending = Some(root);
+        }
+        app.world_mut().run_system_once(crate::vertex_paint::read_surfaces).unwrap();
+        app.world_mut().run_system_once(failed_surface).unwrap();
+        let tile = app.world().get::<Tile>(owner).unwrap();
+        assert_eq!(tile.showing, Some(old));
+        assert!(tile.failed && tile.pending.is_none());
+        assert!(app.world().get_entity(root).is_err());
+        assert!(app.world().resource::<Missing>().0.contains("invalid-paint.glb"));
     }
 
     #[test]

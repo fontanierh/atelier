@@ -8,6 +8,9 @@ use glam::DVec2;
 use super::{LEVEL_HALF_WIDTH_M, SHOULDER_M, uphill};
 use crate::world::scenery::{Cable, Land, Placement, Rail, Scenery};
 
+/// The named one-metre sample domain along the downhill rail.
+pub const RAIL_PATH: &str = "coastal-downhill-rail";
+
 pub const POLE: &str = "props/utility-pole";
 
 const LAMP: &str = "props/street-lamp";
@@ -68,13 +71,14 @@ pub fn add(scenery: &mut Scenery, land: &Land, road: &[(DVec2, DVec2)]) {
     let mut runs: Vec<Vec<(usize, f64)>> = vec![Vec::new()];
     for (k, &(centre, direction)) in road.iter().enumerate() {
         let side = -uphill(land, centre, direction);
-        let drops = match (
-            land.height(centre),
-            land.height(centre + direction.perp() * side * (LEVEL_HALF_WIDTH_M + SHOULDER_M)),
-        ) {
-            (Some(road_height), Some(out)) => out < road_height - RAIL_DROP_M,
-            _ => false,
-        };
+        let drops = !land.is_open(RAIL_PATH, k as f64).expect("the rail samples its published domain")
+            && match (
+                land.height(centre),
+                land.height(centre + direction.perp() * side * (LEVEL_HALF_WIDTH_M + SHOULDER_M)),
+            ) {
+                (Some(road_height), Some(out)) => out < road_height - RAIL_DROP_M,
+                _ => false,
+            };
         let run = runs.last_mut().unwrap();
         if drops && run.last().is_none_or(|&(last, last_side)| last + 1 == k && last_side == side) {
             run.push((k, side));
@@ -100,5 +104,39 @@ pub fn add(scenery: &mut Scenery, land: &Land, road: &[(DVec2, DVec2)]) {
             colour: PAINT,
             texture: METAL,
         });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::world::ground::Ground;
+    use crate::world::openings::{Domain, Opening};
+
+    #[test]
+    fn declared_opening_splits_the_downhill_rail_without_changing_other_runs() {
+        let ground = Ground::page(256, 1.0, |_, j| 10.0 + j as f32 * 0.2);
+        let road: Vec<_> = (0..=120).map(|k| (DVec2::new(64.0 + k as f64, 128.0), DVec2::X)).collect();
+        let domains = [Domain { id: RAIL_PATH, from: 0.0, to: 120.0, step: 1.0 }];
+        let openings = [Opening { id: RAIL_PATH, from: 86.2, to: 105.9 }];
+        let land = Land {
+            ground: &ground,
+            raised: &[],
+            low: DVec2::ZERO,
+            high: DVec2::splat(256.0),
+            exclusions: &[],
+            regions: &[],
+            domains: &domains,
+            openings: &[],
+        };
+        let mut before = Scenery::default();
+        add(&mut before, &land, &road);
+        assert_eq!(before.rails.len(), 1);
+        let opened = Land { openings: &openings, ..land };
+        let mut after = Scenery::default();
+        add(&mut after, &opened, &road);
+        assert_eq!(after.rails.len(), 2);
+        assert_eq!(after.rails[0].path, before.rails[0].path[..=86]);
+        assert_eq!(after.rails[1].path, before.rails[0].path[106..]);
     }
 }
