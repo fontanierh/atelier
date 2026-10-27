@@ -235,6 +235,7 @@ pub(crate) fn prepare_surfaces(
                 || !mesh.contains_attribute(Mesh::ATTRIBUTE_NORMAL)
                 || !mesh.contains_attribute(Mesh::ATTRIBUTE_UV_0)
                 || mesh.contains_attribute(Mesh::ATTRIBUTE_COLOR)
+                || mesh.contains_attribute(Mesh::ATTRIBUTE_UV_1)
                 || mesh.contains_attribute(Mesh::ATTRIBUTE_JOINT_INDEX)
                 || mesh.has_morph_targets()
             {
@@ -319,6 +320,38 @@ mod tests {
         assert_eq!(painted.base.reflectance, 0.0);
         assert!(!painted.base.fog_enabled);
         assert_eq!(world.get::<MeshMaterial3d<StandardMaterial>>(original).unwrap().0, source);
+    }
+
+    #[test]
+    fn surface_with_wind_weights_is_rejected() {
+        use bevy::asset::RenderAssetUsages;
+        use bevy::mesh::PrimitiveTopology;
+        let mut app = App::new();
+        app.add_plugins((MinimalPlugins, bevy::asset::AssetPlugin::default()));
+        app.init_resource::<Assets<Mesh>>()
+            .init_resource::<Assets<StandardMaterial>>()
+            .init_resource::<Assets<Painted>>()
+            .init_resource::<Made>();
+        let mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default())
+            .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vec![[0., 0., 0.]; 3])
+            .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[0., 1., 0.]; 3])
+            .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, vec![[0., 0.]; 3])
+            .with_inserted_attribute(Mesh::ATTRIBUTE_UV_1, vec![[0.5, 0.0]; 3]);
+        let mesh = app.world_mut().resource_mut::<Assets<Mesh>>().add(mesh);
+        let material = app.world_mut().resource_mut::<Assets<StandardMaterial>>().add(StandardMaterial::default());
+        let node = app
+            .world_mut()
+            .spawn((
+                Mesh3d(mesh),
+                MeshMaterial3d(material),
+                SurfaceWaiting(
+                    SurfaceProfile { haze_start_m: 30., haze_length_m: 9000., haze_colour: [0.1, 0.2, 0.3] }.profile(),
+                ),
+            ))
+            .id();
+        app.world_mut().run_system_once(prepare_surfaces).unwrap();
+        assert!(app.world().get::<SurfaceFailed>(node).is_some());
+        assert!(app.world().get::<MeshMaterial3d<Painted>>(node).is_none());
     }
 
     #[test]

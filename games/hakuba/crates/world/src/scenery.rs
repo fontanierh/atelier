@@ -417,6 +417,7 @@ fn validate_static_paint(source: &Mesh) -> Result<(), String> {
     }
     if !source.contains_attribute(Mesh::ATTRIBUTE_POSITION)
         || !source.contains_attribute(Mesh::ATTRIBUTE_NORMAL)
+        || source.contains_attribute(Mesh::ATTRIBUTE_UV_1)
         || source.contains_attribute(Mesh::ATTRIBUTE_JOINT_INDEX)
         || source.has_morph_targets()
     {
@@ -480,6 +481,9 @@ mod tests {
         let mut colors = vec![[0.25, 0.1, 0.05, 0.0]; count];
         colors[0][3] = 0.5;
         mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
+        assert!(validate_static_paint(&mesh).is_err());
+        mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, vec![[0.25, 0.1, 0.05, 0.0]; count]);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_UV_1, vec![[0.5, 0.0]; count]);
         assert!(validate_static_paint(&mesh).is_err());
     }
 
