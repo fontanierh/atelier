@@ -23,7 +23,7 @@ use super::game;
 use super::ground::Ground;
 use super::openings::{self, Domain, Opening};
 use super::overlay::Overlay;
-use super::raised::{self, Raised};
+use super::raised::{self, Prepared};
 use super::regions::Region;
 use super::surface::{Surface, weights};
 use crate::glb::{Glb, Material, Mesh};
@@ -38,6 +38,11 @@ pub struct Scenery {
     pub rails: Vec<Rail>,
 }
 
+/// @cc [owner:fontanierh,label:correctness] placement-offset-is-authored
+/// An origin offset MUST be finite authored placement data relative to the drawn owning ground, and every consumer
+/// MUST use the same offset. An offset does not prove contact: the real model's grounding and declared embedment
+/// MUST be independently checked against its owning surface.
+///
 /// A model standing on the ground.
 pub struct Placement {
     /// The model, by its folder under `assets/`, such as `plants/maple-a`.
@@ -47,6 +52,8 @@ pub struct Placement {
     /// How far it is turned counter-clockwise seen from above, in radians.
     pub yaw: f64,
     pub scale: f64,
+    /// Signed authored origin offset from its owning ground, in metres.
+    pub origin_offset_m: f64,
     /// Whether middle tiles show it too.
     pub afar: bool,
 }
@@ -107,7 +114,7 @@ impl Exclusion {
 /// The land a region fills: the ground, and the part of the map the world exports.
 pub struct Land<'a> {
     pub ground: &'a Ground,
-    pub raised: &'a [Raised],
+    pub raised: &'a Prepared<'a>,
     pub low: DVec2,
     pub high: DVec2,
     pub exclusions: &'a [Exclusion],
@@ -134,12 +141,17 @@ impl Land<'_> {
 
     /// The ground's height at `p`, if there is ground there.
     pub fn height(&self, p: DVec2) -> Option<f64> {
-        raised::height(self.raised, p, |p| self.ground.height(p))
+        self.raised.height(p, |p| self.ground.height(p))
+    }
+
+    /// The same effective position used when a candidate becomes a placement.
+    pub fn placement_at(&self, p: DVec2) -> DVec2 {
+        effective_at(self.raised, p).0
     }
 
     /// How steep the ground is at `p`: how far it rises per metre across, going straight uphill.
     pub fn slope(&self, p: DVec2) -> f64 {
-        if raised::height(self.raised, p, |_| None).is_some() {
+        if self.raised.height(p, |_| None).is_some() {
             return 0.0;
         }
         let up = self.ground.normal(p);
@@ -193,7 +205,7 @@ const POST_DEPTH_M: f64 = 0.4;
 const POST_CAP_M: f64 = 0.03;
 
 /// A copy of a model: its foot's position, yaw, scale, and whether it shows afar.
-type Placed = ([f64; 2], f64, f64, bool, bool);
+type Placed = ([f64; 2], f64, f64, bool, bool, f64);
 
 /// A point of a rail: its foot, the rail's direction there in plan, and how far along the rail it is, in metres.
 type RailPoint = ([f64; 3], [f64; 2], f64);
@@ -243,7 +255,7 @@ pub fn share(
     land: &Land,
     grid: &Grid,
     overlays: &[Overlay],
-    raised: &[Raised],
+    raised: &Prepared<'_>,
     drawn: &Surface,
 ) -> Result<BTreeMap<(usize, usize), TileScenery>> {
     let inside = |p: DVec2| p.cmpge(land.low).all() && p.cmplt(land.high).all();
@@ -251,6 +263,21 @@ pub fn share(
     for (scenery, fastened) in sceneries {
         for placement in &scenery.placements {
             let (at, yaw, scale, precise) = effective_pose(raised, placement);
+            if !placement.origin_offset_m.is_finite()
+                || !(placement.origin_offset_m as f32).is_finite()
+                || !at.is_finite()
+                || !yaw.is_finite()
+                || !(yaw as f32).is_finite()
+                || !scale.is_finite()
+                || !(scale as f32).is_finite()
+                || scale <= 0.0
+            {
+                bail!("{} has an invalid scale or origin offset", placement.model);
+            }
+            raised.check_point(at)?;
+            if !precise {
+                raised.check_point(raised::stored((at * 1000.0).round() / 1000.0))?;
+            }
             if !inside(at) {
                 continue;
             }
@@ -259,7 +286,7 @@ pub fn share(
                 bail!("{} at {} stands on the overlay {overlay}", placement.model, at);
             }
             let entry = tiles.entry(grid.tile(at)).or_default().models.entry(placement.model).or_default();
-            entry.push((at.to_array(), yaw, scale, placement.afar, precise));
+            entry.push((at.to_array(), yaw, scale, placement.afar, precise, placement.origin_offset_m));
         }
         let mut anchors: BTreeMap<&str, Vec<DVec3>> = BTreeMap::new();
         for model in &fastened {
@@ -284,10 +311,7 @@ pub fn share(
             for k in 0..=CABLE_PIECES {
                 let t = k as f64 / CABLE_PIECES as f64;
                 let p = from.lerp(to, t) - DVec3::Z * cable.sag * span * 4.0 * t * (1.0 - t);
-                if p.z
-                    < raised::height(raised, p.truncate(), |p| drawn.height(p)).unwrap_or(f64::NEG_INFINITY)
-                        + CABLE_CLEARANCE_M
-                {
+                if !cable_is_clear(p, drawn, raised)? {
                     bail!("a cable from {} comes within {CABLE_CLEARANCE_M} m of the ground at {p}", ends[0].model);
                 }
                 points.push(p.to_array());
@@ -299,17 +323,21 @@ pub fn share(
             ));
         }
         for rail in &scenery.rails {
+            let path: Vec<_> = rail.path.iter().map(|&p| raised.emitted_at(p)).collect();
+            if raised.has_surfaces() && path.windows(2).any(|pair| pair[0] == pair[1]) {
+                bail!("a rail has consecutive points that collapse at stored precision");
+            }
+            for &p in &path {
+                raised.check_point(p)?;
+            }
             crate::uri_of_texture(rail.texture)?;
             // The rail is eased along each stretch with ground drawn under it: past the exported part of the map, it
             // is left out.
-            for stretch in rail.path.chunk_by(|&p, &q| {
-                raised::height(raised, p, |p| drawn.height(p)).is_some()
-                    == raised::height(raised, q, |p| drawn.height(p)).is_some()
+            for stretch in path.chunk_by(|&p, &q| {
+                raised.height(p, |p| drawn.height(p)).is_some() == raised.height(q, |p| drawn.height(p)).is_some()
             }) {
-                let Some(heights) = stretch
-                    .iter()
-                    .map(|&p| raised::height(raised, p, |p| drawn.height(p)))
-                    .collect::<Option<Vec<f64>>>()
+                let Some(heights) =
+                    stretch.iter().map(|&p| raised.height(p, |p| drawn.height(p))).collect::<Option<Vec<f64>>>()
                 else {
                     continue;
                 };
@@ -335,6 +363,13 @@ pub fn share(
     Ok(tiles)
 }
 
+fn cable_is_clear(p: DVec3, drawn: &Surface, raised: &Prepared<'_>) -> Result<bool> {
+    let emitted = raised.emitted_point(p);
+    let at = emitted.truncate();
+    raised.check_point(at)?;
+    Ok(emitted.z >= raised.height(at, |p| drawn.height(p)).unwrap_or(f64::NEG_INFINITY) + CABLE_CLEARANCE_M)
+}
+
 /// The anchors of `model`, read from its export, in its own frame.
 fn read_anchors(model: &str) -> Result<Vec<DVec3>> {
     let name = model.rsplit('/').next().unwrap_or(model);
@@ -349,24 +384,36 @@ fn read_anchors(model: &str) -> Result<Vec<DVec3>> {
 }
 
 /// Preserve authored f32 poses near raised ownership; elsewhere keep the existing export behavior.
-fn effective_pose(raised: &[Raised], placement: &Placement) -> (DVec2, f64, f64, bool) {
-    let at = placement.at;
+fn effective_at(raised: &Prepared<'_>, at: DVec2) -> (DVec2, bool) {
     let legacy = raised::stored((at * 1000.0).round() / 1000.0);
     let authored = raised::stored(at);
-    let precise = [at, legacy, authored].into_iter().any(|p| raised::height(raised, p, |_| None).is_some());
+    let precise = [at, legacy, authored].into_iter().any(|p| raised.height(p, |_| None).is_some());
+    (if precise { authored } else { at }, precise)
+}
+
+fn effective_pose(raised: &Prepared<'_>, placement: &Placement) -> (DVec2, f64, f64, bool) {
+    let (at, precise) = effective_at(raised, placement.at);
+    let precise = precise || placement.origin_offset_m != 0.0;
+    let at = if precise { raised::stored(placement.at) } else { at };
     if precise {
-        (authored, placement.yaw as f32 as f64, placement.scale as f32 as f64, true)
+        (at, placement.yaw as f32 as f64, placement.scale as f32 as f64, true)
     } else {
         (at, placement.yaw, placement.scale, false)
     }
 }
 
 /// The world position of a cable anchor, seated on the surface owning its placement.
-fn cable_anchor(placement: &Placement, local: DVec3, drawn: &Surface, raised: &[Raised]) -> Result<DVec3> {
-    let (at, yaw, scale, _) = effective_pose(raised, placement);
-    let seat = raised::height(raised, at, |p| drawn.height(p))
-        .with_context(|| format!("{} stands on no ground", placement.model))?;
-    Ok(at.extend(seat) + DMat3::from_rotation_z(yaw) * local * scale)
+fn cable_anchor(placement: &Placement, local: DVec3, drawn: &Surface, raised: &Prepared<'_>) -> Result<DVec3> {
+    let (at, yaw, scale, precise) = effective_pose(raised, placement);
+    raised.check_point(at)?;
+    let seat =
+        raised.height(at, |p| drawn.height(p)).with_context(|| format!("{} stands on no ground", placement.model))?;
+    let origin = seat + placement.origin_offset_m;
+    if !origin.is_finite() || (precise && !(origin as f32).is_finite()) {
+        bail!("{} has an invalid origin height", placement.model);
+    }
+    let origin = if precise && placement.origin_offset_m != 0.0 { origin as f32 as f64 } else { origin };
+    Ok(at.extend(origin) + DMat3::from_rotation_z(yaw) * local * scale)
 }
 
 /// The name of the overlay that covers `p`, if any.
@@ -456,17 +503,30 @@ fn cut(path: &[DVec3], grid: &Grid) -> Vec<PathPiece> {
 
 impl TileScenery {
     /// Adds what the tile holds to `glb`, its models seated on `surface`, the ground this version draws.
-    pub fn write(&self, glb: &mut Glb, surface: &Surface, raised: &[Raised], middle: bool, path: &Path) -> Result<()> {
+    pub fn write(
+        &self,
+        glb: &mut Glb,
+        surface: &Surface,
+        raised: &Prepared<'_>,
+        middle: bool,
+        path: &Path,
+    ) -> Result<()> {
         for (model, instances) in &self.models {
             let mut numbers = Vec::new();
-            for &(at, yaw, scale, afar, precise) in instances {
+            for &(at, yaw, scale, afar, precise, origin_offset_m) in instances {
                 if middle && !afar {
                     continue;
                 }
                 let at = DVec2::from_array(at);
-                let seat = raised::height(raised, at, |p| surface.height(p))
+                raised.check_point(at)?;
+                let seat = raised
+                    .height(at, |p| surface.height(p))
                     .with_context(|| format!("{}: {model} at {at} stands on no ground", path.display()))?;
-                let p = game(at.extend(seat));
+                let origin = seat + origin_offset_m;
+                if !origin.is_finite() || (precise && !(origin as f32).is_finite()) {
+                    bail!("{model} has an invalid origin height");
+                }
+                let p = game(at.extend(origin));
                 let values = [p.x, p.y, p.z, yaw, scale];
                 numbers.extend(if precise {
                     values.map(|v| v as f32 as f64)
@@ -495,8 +555,10 @@ impl TileScenery {
         }
         for (k, &(foot, top, radius, colour, texture)) in self.posts.iter().enumerate() {
             let foot = DVec3::from_array(foot);
-            let at = foot.truncate();
-            let ground = raised::height(raised, at, |p| surface.height(p))
+            let at = raised.emitted_at(foot.truncate());
+            raised.check_point(at)?;
+            let ground = raised
+                .height(at, |p| surface.height(p))
                 .with_context(|| format!("{}: a rail's post at {at} stands on no ground", path.display()))?;
             let mut mesh = Mesh::default();
             tube(&mut mesh, &[(at.extend(ground - POST_DEPTH_M), radius), (at.extend(foot.z + top), radius)], 6, 1.0);
@@ -548,7 +610,7 @@ fn rail(
     piece: &[RailPoint],
     profile: &[[f64; 2]],
     surface: &Surface,
-    raised: &[Raised],
+    raised: &Prepared<'_>,
 ) -> Result<()> {
     let start = piece[0].2.floor();
     let mut around = vec![0.0];
@@ -558,9 +620,10 @@ fn rail(
     let mut rows = Vec::new();
     for &(foot, direction, along) in piece {
         let (foot, direction) = (DVec3::from_array(foot), DVec2::from_array(direction));
-        let (at, ground) = (foot.truncate(), foot.z);
-        let drawn = raised::height(raised, at, |p| surface.height(p))
-            .with_context(|| format!("a rail runs off the ground at {at}"))?;
+        let (at, ground) = (raised.emitted_at(foot.truncate()), foot.z);
+        raised.check_point(at)?;
+        let drawn =
+            raised.height(at, |p| surface.height(p)).with_context(|| format!("a rail runs off the ground at {at}"))?;
         if (ground - drawn).abs() > RAIL_SETTLE_M {
             bail!("a rail at {at} runs {:.2} m from the ground, past {RAIL_SETTLE_M} m", ground - drawn);
         }
@@ -597,6 +660,38 @@ pub fn checksum_bytes(scenery: &TileScenery) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::world::raised::Raised;
+
+    #[test]
+    fn emitted_candidate_rail_and_cable_positions_select_the_owner() {
+        use crate::world::{Detail, Tile};
+        let ground = Ground::page(8, 1.0, |_, _| 0.0);
+        let drawn = Surface::new(&Tile { columns: (0, 8), rows: (0, 8) }.ground(&ground, Detail::Full, 0, 1.0));
+        let p = |x, y| (DVec2::new(x, y), DVec2::ZERO);
+        let raised = [Raised {
+            name: "paving".into(),
+            texture: "earth".into(),
+            ground: true,
+            height: 3.0,
+            clearance: 0.1,
+            paint: None,
+            triangles: vec![[p(1.0, 0.0), p(2.0, 0.0), p(1.0, 1.0)]],
+        }];
+        let mut prepared = Prepared::new(&raised, DVec2::ZERO, 8.0);
+        prepared.add_tile((0, 0), &drawn, false).unwrap();
+        prepared.add_tile((0, 0), &drawn, true).unwrap();
+        let land =
+            Land { ground: &ground, raised: &prepared, low: DVec2::ZERO, high: DVec2::splat(8.0), exclusions: &[], regions: &[], domains: &[], openings: &[] };
+        let at = DVec2::new(0.99999999, 0.25);
+        assert_eq!(land.placement_at(at), DVec2::new(1.0, 0.25));
+        assert_eq!(land.height(land.placement_at(at)), Some(3.0));
+        let path = [(at.extend(0.0).to_array(), [0.0, 1.0], 0.0)];
+        assert!(rail(&mut Mesh::default(), &path, &[[0.0, 0.0], [0.0, 1.0]], &drawn, &prepared).is_err());
+        assert!(!cable_is_clear(at.extend(4.0), &drawn, &prepared).unwrap());
+        let empty = Prepared::new(&[], DVec2::ZERO, 8.0);
+        assert_eq!(empty.emitted_at(at), at);
+        assert!(cable_is_clear(at.extend(4.0), &drawn, &empty).unwrap());
+    }
 
     #[test]
     fn cable_anchor_uses_the_declared_owner() {
@@ -613,19 +708,32 @@ mod tests {
             clearance: 0.1,
             triangles: vec![[p(1.0, 1.0), p(4.0, 1.0), p(1.0, 4.0)]],
         }];
-        let mut placement = Placement { model: "pole", at: DVec2::new(2.0, 2.0), yaw: 0.0, scale: 1.0, afar: true };
-        assert_eq!(cable_anchor(&placement, DVec3::Z * 2.0, &drawn, &raised).unwrap().z, 5.0);
+        let mut prepared = Prepared::new(&raised, DVec2::ZERO, 8.0);
+        prepared.add_tile((0, 0), &drawn, false).unwrap();
+        prepared.add_tile((0, 0), &drawn, true).unwrap();
+        let mut placement = Placement {
+            model: "pole",
+            at: DVec2::new(2.0, 2.0),
+            yaw: 0.0,
+            scale: 1.0,
+            origin_offset_m: 0.0,
+            afar: true,
+        };
+        assert_eq!(cable_anchor(&placement, DVec3::Z * 2.0, &drawn, &prepared).unwrap().z, 5.0);
+        placement.origin_offset_m = 0.03;
+        assert_eq!(cable_anchor(&placement, DVec3::Z * 2.0, &drawn, &prepared).unwrap().z, 3.03_f32 as f64 + 2.0);
+        placement.origin_offset_m = 0.0;
         placement.at = DVec2::new(6.0, 6.0);
-        assert_eq!(cable_anchor(&placement, DVec3::Z * 2.0, &drawn, &raised).unwrap().z, 2.0);
+        assert_eq!(cable_anchor(&placement, DVec3::Z * 2.0, &drawn, &prepared).unwrap().z, 2.0);
         placement.at = DVec2::new(0.9996, 1.0);
         placement.yaw = -163.6_f64.to_radians();
-        let (at, yaw, _, precise) = effective_pose(&raised, &placement);
+        let (at, yaw, _, precise) = effective_pose(&prepared, &placement);
         assert!(precise);
         assert_eq!(at, raised::stored(placement.at));
         assert!(at.x < 1.0);
         assert_eq!(yaw, placement.yaw as f32 as f64);
-        assert_eq!(cable_anchor(&placement, DVec3::Z * 2.0, &drawn, &raised).unwrap().z, 2.0);
-        assert!(!effective_pose(&[], &placement).3);
+        assert_eq!(cable_anchor(&placement, DVec3::Z * 2.0, &drawn, &prepared).unwrap().z, 2.0);
+        assert!(!effective_pose(&Prepared::new(&[], DVec2::ZERO, 8.0), &placement).3);
     }
 
     #[test]
@@ -643,9 +751,16 @@ mod tests {
             clearance: 0.1,
             triangles: vec![[p(1.0, 1.0), p(4.0, 1.0), p(1.0, 4.0)]],
         }];
+        let mut prepared = Prepared::new(&raised, DVec2::ZERO, 1.0);
+        for x in 0..8 {
+            for y in 0..8 {
+                prepared.add_tile((x, y), &drawn, false).unwrap();
+                prepared.add_tile((x, y), &drawn, true).unwrap();
+            }
+        }
         let land = Land {
             ground: &ground,
-            raised: &raised,
+            raised: &prepared,
             low: DVec2::ZERO,
             high: DVec2::splat(8.0),
             exclusions: &[],
@@ -660,11 +775,12 @@ mod tests {
                 at: DVec2::new(0.9996, 1.0),
                 yaw: -163.6_f64.to_radians(),
                 scale: 1.0,
+                origin_offset_m: 0.0,
                 afar: true,
             }],
             ..Default::default()
         };
-        let tiles = share(vec![(scenery(), vec![])], &land, &grid, &[], &raised, &drawn).unwrap();
+        let tiles = share(vec![(scenery(), vec![])], &land, &grid, &[], &prepared, &drawn).unwrap();
         assert!(tiles.contains_key(&(0, 1)));
         assert!(!tiles.contains_key(&(1, 1)));
         let placed = &tiles[&(0, 1)].models["props/utility-pole"][0];
@@ -672,16 +788,87 @@ mod tests {
         assert_eq!(placed.1, (-163.6_f64.to_radians()) as f32 as f64);
         assert!(placed.4);
         let mut glb = Glb::from_json(json!({"asset": {"version": "2.0"}}));
-        tiles[&(0, 1)].write(&mut glb, &drawn, &raised, false, Path::new("test.glb")).unwrap();
+        tiles[&(0, 1)].write(&mut glb, &drawn, &prepared, false, Path::new("test.glb")).unwrap();
         let numbers = glb.extras("props/utility-pole").unwrap()["instances"].as_array().unwrap();
         assert_eq!(numbers[0].as_f64().unwrap(), 0.9996_f32 as f64);
         assert_eq!(numbers[3].as_f64().unwrap(), (-163.6_f64.to_radians()) as f32 as f64);
+        let mut shifted = scenery();
+        shifted.placements[0].at = DVec2::new(2.0, 2.0);
+        shifted.placements[0].origin_offset_m = 0.03;
+        let shifted = share(vec![(shifted, vec![])], &land, &grid, &[], &prepared, &drawn).unwrap();
+        for middle in [false, true] {
+            let mut glb = Glb::from_json(json!({"asset": {"version": "2.0"}}));
+            shifted[&(2, 2)].write(&mut glb, &drawn, &prepared, middle, Path::new("test.glb")).unwrap();
+            let numbers = glb.extras("props/utility-pole").unwrap()["instances"].as_array().unwrap();
+            assert_eq!(numbers[1].as_f64().unwrap(), 3.03_f32 as f64);
+        }
+        let mut boundary = scenery();
+        boundary.placements[0].at = DVec2::new(7.0 - 1e-8, 1.0);
+        boundary.placements[0].origin_offset_m = -0.06;
+        let boundary = share(vec![(boundary, vec![])], &land, &grid, &[], &prepared, &drawn).unwrap();
+        let placed = &boundary[&(7, 1)].models["props/utility-pole"][0];
+        assert_eq!(placed.0[0], 7.0);
+        assert_eq!(placed.1, (-163.6_f64.to_radians()) as f32 as f64);
+        let mut invalid = scenery();
+        invalid.placements[0].origin_offset_m = f64::NAN;
+        assert!(share(vec![(invalid, vec![])], &land, &grid, &[], &prepared, &drawn).is_err());
+        let mut overflow = scenery();
+        overflow.placements[0].origin_offset_m = f64::MAX;
+        assert!(share(vec![(overflow, vec![])], &land, &grid, &[], &prepared, &drawn).is_err());
         let overlay = Overlay {
             name: "path".into(),
             texture: "earth".into(),
             triangles: vec![[p(0.9, 1.0), p(1.0, 1.0), p(0.9, 2.0)]],
         };
-        assert!(share(vec![(scenery(), vec![])], &land, &grid, &[overlay], &raised, &drawn).is_err());
+        assert!(share(vec![(scenery(), vec![])], &land, &grid, &[overlay], &prepared, &drawn).is_err());
+    }
+
+    #[test]
+    fn boundary_placement_uses_its_streaming_tiles_surface() {
+        use crate::world::{Detail, Tile};
+        let ground = Ground::page(2, 1.0, |_, _| 0.0);
+        let p = |x, y| (DVec2::new(x, y), DVec2::ZERO);
+        let raised = [Raised {
+            name: "paving".into(),
+            texture: "earth".into(),
+            ground: true,
+            paint: None,
+            height: 3.0,
+            clearance: 0.1,
+            triangles: vec![[p(0.2, 0.1), p(1.0, 0.1), p(1.0, 0.9)], [p(0.2, 0.1), p(1.0, 0.9), p(0.2, 0.9)]],
+        }];
+        let mut prepared = Prepared::new(&raised, DVec2::ZERO, 1.0);
+        for x in 0..2 {
+            let tile = Tile { columns: (x, x + 1), rows: (0, 1) };
+            let drawn = Surface::new(&tile.ground(&ground, Detail::Full, 0, 1.0));
+            prepared.add_tile((x, 0), &drawn, false).unwrap();
+            prepared.add_tile((x, 0), &drawn, true).unwrap();
+        }
+        let whole = Surface::new(&Tile { columns: (0, 2), rows: (0, 2) }.ground(&ground, Detail::Full, 0, 1.0));
+        let land = Land {
+            ground: &ground,
+            raised: &prepared,
+            low: DVec2::ZERO,
+            high: DVec2::splat(2.0),
+            exclusions: &[],
+            regions: &[],
+            domains: &[],
+            openings: &[],
+        };
+        let grid = Grid { south_west: DVec2::ZERO, tile_m: 1.0 };
+        let scenery = Scenery {
+            placements: vec![Placement {
+                model: "props/utility-pole",
+                at: DVec2::new(1.0, 0.5),
+                yaw: 0.0,
+                scale: 1.0,
+                origin_offset_m: 0.0,
+                afar: true,
+            }],
+            ..Default::default()
+        };
+        let error = share(vec![(scenery, vec![])], &land, &grid, &[], &prepared, &whole).err().unwrap();
+        assert!(error.to_string().contains("raised ownership differs between adjacent tiles"));
     }
 
     #[test]
@@ -690,7 +877,7 @@ mod tests {
         let exclusion = Exclusion::corridor(&[[10.0, 20.0], [100.0, 20.0]], 5.0, &[ScatterKind::Tree]);
         let land = Land {
             ground: &ground,
-            raised: &[],
+            raised: &Prepared::new(&[], DVec2::ZERO, 8.0),
             low: DVec2::ZERO,
             high: DVec2::splat(128.0),
             exclusions: &[exclusion],
@@ -714,7 +901,7 @@ mod tests {
         let ground = Ground::page(64, 2.0, |_, _| 0.0);
         let small = Land {
             ground: &ground,
-            raised: &[],
+            raised: &Prepared::new(&[], DVec2::ZERO, 8.0),
             low: DVec2::splat(11.0),
             high: DVec2::splat(93.0),
             exclusions: &[],
@@ -724,7 +911,7 @@ mod tests {
         };
         let large = Land {
             ground: &ground,
-            raised: &[],
+            raised: &Prepared::new(&[], DVec2::ZERO, 8.0),
             low: DVec2::ZERO,
             high: DVec2::splat(128.0),
             exclusions: &[],

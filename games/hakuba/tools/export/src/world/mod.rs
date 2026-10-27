@@ -119,9 +119,22 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     let domains: Vec<_> = regions::REGIONS.iter().flat_map(|region| region.path_domains()).collect();
     let openings: Vec<_> = regions::REGIONS.iter().flat_map(|region| region.path_openings()).collect();
     openings::check(&domains, &openings)?;
+    let mut prepared =
+        raised::Prepared::new(&raised, DVec2::new(x, y), settings.tile_steps as f64 * settings.ground_step_m);
+    if !raised.is_empty() {
+        for column in first_column..=last_column {
+            for row in first_row..=last_row {
+                let tile = Tile { columns: span(column), rows: span(row) };
+                for detail in [Detail::Full, Detail::Middle] {
+                    let drawn = Surface::new(&tile.ground(&ground, detail, 0, 1.0));
+                    prepared.add_tile((column, row), &drawn, detail == Detail::Middle)?;
+                }
+            }
+        }
+    }
     let land = Land {
         ground: &ground,
-        raised: &raised,
+        raised: &prepared,
         low: ground.position(whole.columns.0 as f64, whole.rows.0 as f64),
         high: ground.position(whole.columns.1 as f64, whole.rows.1 as f64),
         exclusions: &exclusions,
@@ -136,7 +149,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         surface.mesh(&drawn, true)?;
     }
     let sceneries = regions::REGIONS.iter().map(|region| (region.scenery(&land), region.fastens_to())).collect();
-    let mut scenery = scenery::share(sceneries, &land, &grid, &overlays, &raised, &drawn)?;
+    let mut scenery = scenery::share(sceneries, &land, &grid, &overlays, &prepared, &drawn)?;
 
     let tiles = folder.join("tiles");
     fs::create_dir_all(&tiles)?;
@@ -164,7 +177,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
             let checksum = tile.checksum(&code, &tile_settings, &ground, &overlays, &raised, &tile_scenery);
             if previous.get(&stem) != Some(&checksum) || files.iter().any(|(_, file)| !file.is_file()) {
                 for (detail, file) in &files {
-                    tile.write(&ground, (&overlays, &raised), &tile_scenery, settings, *detail, file)?;
+                    tile.write(&ground, (&overlays, &raised, &prepared), &tile_scenery, settings, *detail, file)?;
                 }
                 rebuilt += 1;
             }
@@ -175,11 +188,9 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         }
     }
     let [x, y] = settings.spawn_m;
-    let Some(height) = raised::height(&raised, DVec2::new(x, y), |p| ground.height(p)) else {
-        bail!("the spawn is off the ground")
-    };
+    let spawn = spawn_position(DVec2::new(x, y), &ground, &raised, &prepared)?;
     let facing = DQuat::from_rotation_y(-settings.spawn_bearing_deg.to_radians());
-    index.add_marker("spawn", game(DVec3::new(x, y, height)), facing);
+    index.add_marker("spawn", game(spawn), facing);
 
     // Files of tiles no longer exported go.
     for entry in fs::read_dir(&tiles)? {
@@ -193,6 +204,14 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     checksums::write(&tiles, &current)?;
     println!("{}: rebuilt {rebuilt} of {} tiles", folder.display(), current.len());
     index.write(output)
+}
+
+/// Match the runtime's stored XY before selecting a raised owner, retaining the old empty-world export.
+fn spawn_position(at: DVec2, ground: &Ground, raised: &[Raised], prepared: &raised::Prepared<'_>) -> Result<DVec3> {
+    let at = if raised.is_empty() { at } else { raised::stored(at) };
+    prepared.check_point(at)?;
+    let Some(height) = prepared.height(at, |p| ground.height(p)) else { bail!("the spawn is off the ground") };
+    Ok(at.extend(height))
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -211,13 +230,13 @@ impl Tile {
     fn write(
         &self,
         ground: &Ground,
-        surfaces: (&[Overlay], &[Raised]),
+        surfaces: (&[Overlay], &[Raised], &raised::Prepared<'_>),
         scenery: &TileScenery,
         settings: &Settings,
         detail: Detail,
         path: &Path,
     ) -> Result<()> {
-        let (overlays, raised) = surfaces;
+        let (overlays, raised, prepared) = surfaces;
         let mut glb = Glb::from_json(json!({ "asset": { "version": "2.0" } }));
         let ground_material =
             glb.add_material(&Material::textured("ground", &crate::uri_of_texture(&settings.ground_texture)?));
@@ -251,7 +270,7 @@ impl Tile {
                 }
             }
         }
-        scenery.write(&mut glb, &drawn, raised, detail == Detail::Middle, path)?;
+        scenery.write(&mut glb, &drawn, prepared, detail == Detail::Middle, path)?;
         glb.write(path)
     }
 
@@ -348,9 +367,13 @@ mod tests {
             }),
             triangles: vec![[p(1.0, 1.0), p(3.0, 1.0), p(1.0, 3.0)]],
         }];
+        let drawn = Surface::new(&tile.ground(&ground, Detail::Full, 0, 1.0));
+        let mut prepared = raised::Prepared::new(&raised, DVec2::ZERO, 8.0);
+        prepared.add_tile((0, 0), &drawn, false).unwrap();
+        prepared.add_tile((0, 0), &drawn, true).unwrap();
         for (detail, suffix) in [(Detail::Full, "full"), (Detail::Middle, "middle")] {
             let path = std::env::temp_dir().join(format!("raised-paint-{}-{suffix}.glb", std::process::id()));
-            tile.write(&ground, (&[], &raised), &TileScenery::default(), &settings, detail, &path).unwrap();
+            tile.write(&ground, (&[], &raised, &prepared), &TileScenery::default(), &settings, detail, &path).unwrap();
             let bytes = std::fs::read(&path).unwrap();
             std::fs::remove_file(&path).unwrap();
             let len = u32::from_le_bytes(bytes[12..16].try_into().unwrap()) as usize;
@@ -366,6 +389,29 @@ mod tests {
             assert_eq!(painted[0]["extras"]["surface_paint"]["haze_start_m"], 30.0);
             assert_eq!(painted[0]["extras"]["surface_paint"]["haze_length_m"], 9000.0);
         }
+    }
+
+    #[test]
+    fn spawn_selects_the_owner_at_its_runtime_position() {
+        let ground = Ground::page(8, 1.0, |_, _| 0.0);
+        let drawn = Surface::new(&Tile { columns: (0, 8), rows: (0, 8) }.ground(&ground, Detail::Full, 0, 1.0));
+        let p = |x, y| (DVec2::new(x, y), DVec2::ZERO);
+        let raised = [Raised {
+            name: "paving".into(),
+            texture: "earth".into(),
+            ground: true,
+            height: 3.0,
+            clearance: 0.1,
+            paint: None,
+            triangles: vec![[p(1.0, 0.0), p(2.0, 0.0), p(1.0, 1.0)]],
+        }];
+        let mut prepared = raised::Prepared::new(&raised, DVec2::ZERO, 8.0);
+        prepared.add_tile((0, 0), &drawn, false).unwrap();
+        prepared.add_tile((0, 0), &drawn, true).unwrap();
+        let at = DVec2::new(0.99999999, 0.25);
+        assert_eq!(spawn_position(at, &ground, &raised, &prepared).unwrap(), DVec3::new(1.0, 0.25, 3.0));
+        let empty = raised::Prepared::new(&[], DVec2::ZERO, 8.0);
+        assert_eq!(spawn_position(at, &ground, &[], &empty).unwrap(), at.extend(0.0));
     }
 
     /// Neighbouring tiles meet exactly along their whole shared edge, whichever version each one shows: both draw

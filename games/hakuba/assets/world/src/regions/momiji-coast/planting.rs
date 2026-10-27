@@ -82,19 +82,19 @@ pub fn plants(land: &Land, road: &[(DVec2, DVec2)]) -> Vec<Placement> {
     // Each candidate, with its distance to the road.
     let ground = |seed, side, jitter, kind| {
         land.scatter(seed, side, jitter, kind).filter_map(|(at, random)| {
-            let height = land.height(at)?;
+            let height = land.height(land.placement_at(at))?;
             (height >= SHORE_M).then(|| (at, height, nearest(road, at).0, random))
         })
     };
     let mut place = |kind, model: &'static str, at, random: &mut Random, scale, afar| {
-        let placement = Placement { model, at, yaw: random.range([0.0, TAU]), scale, afar };
+        let placement = Placement { model, at, yaw: random.range([0.0, TAU]), scale, origin_offset_m: 0.0, afar };
         if land.allows_candidate(kind, &placement) {
             plants.push(placement);
         }
     };
 
     for (at, height, road_m, mut random) in ground(1, 5.0, 0.45, ScatterKind::Tree) {
-        if land.slope(at) > 1.6 {
+        if land.slope(land.placement_at(at)) > 1.6 {
             continue;
         }
         let (skip, mix) = match () {
@@ -111,7 +111,7 @@ pub fn plants(land: &Land, road: &[(DVec2, DVec2)]) -> Vec<Placement> {
     }
 
     for (at, _, road_m, mut random) in ground(2, 3.2, 0.5, ScatterKind::Tree) {
-        if road_m < 95.0 || land.slope(at) > 1.6 || random.unit() > 0.6 {
+        if road_m < 95.0 || land.slope(land.placement_at(at)) > 1.6 || random.unit() > 0.6 {
             continue;
         }
         let model = random.pick(FAR_TREES, |(_, w)| *w).0;
@@ -120,7 +120,7 @@ pub fn plants(land: &Land, road: &[(DVec2, DVec2)]) -> Vec<Placement> {
     }
 
     for (at, _, road_m, mut random) in ground(3, 2.4, 0.45, ScatterKind::Bush) {
-        if land.slope(at) > 1.8 {
+        if land.slope(land.placement_at(at)) > 1.8 {
             continue;
         }
         let keep = match () {
@@ -159,7 +159,7 @@ pub fn plants(land: &Land, road: &[(DVec2, DVec2)]) -> Vec<Placement> {
             if !land.allows_scatter(at, ScatterKind::Grass) {
                 continue;
             }
-            let Some(height) = land.height(at) else { continue };
+            let Some(height) = land.height(land.placement_at(at)) else { continue };
             if offset > 5.0 && height < road_height + 0.3 {
                 continue;
             }
@@ -217,7 +217,7 @@ mod tests {
         let ground = Ground::page(64, 1.0, |_, _| 10.0);
         let empty = Land {
             ground: &ground,
-            raised: &[],
+            raised: &crate::world::raised::Prepared::new(&[], DVec2::ZERO, 1.0),
             low: DVec2::splat(8.0),
             high: DVec2::splat(56.0),
             exclusions: &[],

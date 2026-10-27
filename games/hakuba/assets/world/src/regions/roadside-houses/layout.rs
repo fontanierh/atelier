@@ -165,6 +165,7 @@ pub fn placements() -> [Placement; 2] {
         at: DVec2::from_array(CENTRE),
         yaw: YAW_DEG.to_radians(),
         scale: 1.0,
+        origin_offset_m: 0.0,
         afar: true,
     })
 }
@@ -324,7 +325,7 @@ mod tests {
             ("plants/grass-b", ScatterKind::Grass, 0.0, 10.6, 1.0, false),
         ];
         for (model, kind, x, y, scale, expected) in cases {
-            let plant = Placement { model, at: world(DVec2::new(x, y)), yaw: 0.0, scale, afar: true };
+            let plant = Placement { model, at: world(DVec2::new(x, y)), yaw: 0.0, scale, origin_offset_m: 0.0, afar: true };
             assert_eq!(blocked(kind, &plant), expected, "{model} at ({x}, {y}) scale {scale}");
         }
     }

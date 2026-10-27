@@ -3,6 +3,7 @@
 use anyhow::{Result, bail};
 use glam::{DVec2, DVec3};
 use serde::Serialize;
+use std::collections::BTreeSet;
 
 use super::game;
 use super::overlay::Overlay;
@@ -28,6 +29,8 @@ impl SurfacePaint {
 }
 
 /// A planar surface, in map coordinates. Triangles share one height and carry their own texture coordinates.
+/// The declaring region must supply and verify any enclosing source geometry needed to keep the underside out of
+/// reachable camera views; the surface alone is only a one-sided top.
 pub struct Raised {
     pub name: String,
     pub texture: String,
@@ -45,13 +48,134 @@ pub fn stored(p: DVec2) -> DVec2 {
     p.as_vec2().as_dvec2()
 }
 
+/// @cc [owner:fontanierh,label:correctness] raised-owner-matches-stored-surface
+/// Before querying, `check` MUST reject invalid, overlapping or conflicting footprints at stored mesh precision;
+/// export MUST verify each drawn ground stays below its owner by the declared clearance in both tile details.
+/// Select the declared owner first, then the caller's ground query. Never select by height.
+/// Stored tile triangles used to select the same owner as the rendered geometry.
+pub struct Prepared<'a> {
+    raised: &'a [Raised],
+    south_west: DVec2,
+    tile_m: f64,
+    tiles: BTreeSet<(usize, usize)>,
+    full: Vec<Vec<((usize, usize), Surface)>>,
+    middle: Vec<Vec<((usize, usize), Surface)>>,
+}
+
+impl<'a> Prepared<'a> {
+    pub fn new(raised: &'a [Raised], south_west: DVec2, tile_m: f64) -> Self {
+        Self {
+            raised,
+            south_west,
+            tile_m,
+            tiles: BTreeSet::new(),
+            full: (0..raised.len()).map(|_| Vec::new()).collect(),
+            middle: (0..raised.len()).map(|_| Vec::new()).collect(),
+        }
+    }
+
+    pub fn add_tile(&mut self, tile: (usize, usize), drawn: &Surface, middle: bool) -> Result<()> {
+        self.tiles.insert(tile);
+        let target = if middle { &mut self.middle } else { &mut self.full };
+        for (surface, prepared) in self.raised.iter().zip(target) {
+            let mesh = surface.mesh(drawn, false)?;
+            if !mesh.indices.is_empty() {
+                prepared.push((tile, Surface::new(&mesh)));
+            }
+        }
+        Ok(())
+    }
+
+    fn tile(&self, p: DVec2) -> (usize, usize) {
+        let k = ((p - self.south_west) / self.tile_m).floor();
+        (k.x as usize, k.y as usize)
+    }
+
+    fn owner_at(&self, p: DVec2, middle: bool, id: (usize, usize)) -> Option<f64> {
+        let triangles = if middle { &self.middle } else { &self.full };
+        self.raised.iter().zip(triangles).find_map(|(raised, tiles)| {
+            tiles
+                .iter()
+                .any(|(tile_id, tile)| *tile_id == id && tile.contains_exact(p))
+                .then_some(raised.height as f32 as f64)
+        })
+    }
+
+    fn owner(&self, p: DVec2, middle: bool) -> Option<f64> {
+        self.owner_at(p, middle, self.tile(p))
+    }
+
+    pub fn height(&self, p: DVec2, ground: impl FnOnce(DVec2) -> Option<f64>) -> Option<f64> {
+        self.owner(p, false).or_else(|| ground(p))
+    }
+
+    /// Position used by emitted f32 geometry; keep old coordinates when no raised surfaces exist.
+    pub fn emitted_at(&self, p: DVec2) -> DVec2 {
+        if self.raised.is_empty() { p } else { stored(p) }
+    }
+
+    pub fn has_surfaces(&self) -> bool {
+        !self.raised.is_empty()
+    }
+
+    pub fn emitted_point(&self, p: DVec3) -> DVec3 {
+        if self.raised.is_empty() { p } else { p.as_vec3().as_dvec3() }
+    }
+
+    pub fn check_point(&self, p: DVec2) -> Result<()> {
+        let (column, row) = self.tile(p);
+        for dx in -1_isize..=1 {
+            for dy in -1_isize..=1 {
+                if dx == 0 && dy == 0 {
+                    continue;
+                }
+                let (Some(x), Some(y)) = (column.checked_add_signed(dx), row.checked_add_signed(dy)) else {
+                    continue;
+                };
+                let adjacent = (x, y);
+                if !self.tiles.contains(&adjacent) {
+                    continue;
+                }
+                for middle in [false, true] {
+                    let surfaces = if middle { &self.middle } else { &self.full };
+                    let owner = self.owner(p, middle);
+                    if self.raised.iter().zip(surfaces).any(|(raised, tiles)| {
+                        tiles.iter().any(|(id, tile)| *id == adjacent && tile.contains_exact(p))
+                            && Some(raised.height as f32 as f64) != owner
+                    }) {
+                        bail!("raised ownership differs between adjacent tiles at {p}");
+                    }
+                }
+            }
+        }
+        for tiles in [&self.full, &self.middle] {
+            let mut heights = self.raised.iter().zip(tiles).filter_map(|(raised, tiles)| {
+                tiles
+                    .iter()
+                    .any(|(id, tile)| *id == self.tile(p) && tile.contains_exact(p))
+                    .then_some(raised.height as f32)
+            });
+            if let Some(first) = heights.next()
+                && heights.any(|height| height != first)
+            {
+                bail!("stored raised surfaces disagree at {p}");
+            }
+        }
+        if self.owner(p, false) != self.owner(p, true) {
+            bail!("raised ownership differs between tile details at {p}");
+        }
+        Ok(())
+    }
+}
+
 impl Raised {
     /// The runtime identifies ground and built surfaces from the tile mesh name.
     pub fn node_name(&self) -> String {
         if self.ground { "ground".into() } else { format!("built {} built", self.name) }
     }
 
-    /// Whether this footprint owns a point. Edges belong to the raised surface too.
+    /// Whether this authored footprint owns a point, before it is clipped for export.
+    #[cfg(test)]
     fn contains(&self, p: DVec2) -> bool {
         self.triangles
             .iter()
@@ -137,11 +261,8 @@ fn area(polygon: &[DVec2]) -> f64 {
         * 0.5
 }
 
-/// @cc [owner:fontanierh,label:correctness] raised-owner-matches-stored-surface
-/// Before querying, `check` MUST reject invalid, overlapping or conflicting footprints at stored mesh precision;
-/// export MUST verify each drawn ground stays below its owner by the declared clearance in both tile details.
-/// Select the declared owner first, then the caller's ground query. Never select by height.
-pub fn height(raised: &[Raised], p: DVec2, ground: impl FnOnce(DVec2) -> Option<f64>) -> Option<f64> {
+#[cfg(test)]
+fn height(raised: &[Raised], p: DVec2, ground: impl FnOnce(DVec2) -> Option<f64>) -> Option<f64> {
     raised.iter().find(|surface| surface.contains(p)).map(|surface| surface.height as f32 as f64).or_else(|| ground(p))
 }
 
@@ -235,6 +356,82 @@ mod tests {
             clearance: 0.1,
             triangles: vec![[p(3.0, 2.0), p(7.0, 2.0), p(7.0, 6.0)], [p(3.0, 2.0), p(7.0, 6.0), p(3.0, 6.0)]],
         }
+    }
+
+    #[test]
+    fn owner_follows_the_stored_clipped_edge() {
+        let mut ground = Mesh::default();
+        for y in 0..=5 {
+            for x in 199..=204 {
+                ground.positions.push(game(DVec3::new(x as f64, y as f64, 0.0)).as_vec3().to_array());
+            }
+        }
+        for y in 0..5_u32 {
+            for x in 0..5_u32 {
+                let a = y * 6 + x;
+                ground.indices.extend([a, a + 1, a + 7, a, a + 7, a + 6]);
+            }
+        }
+        let drawn = Surface::new(&ground);
+        let p = |x, y| (DVec2::new(x, y), DVec2::ZERO);
+        let raised = [Raised {
+            name: "edge".into(),
+            texture: "earth".into(),
+            ground: true,
+            paint: None,
+            height: 3.0,
+            clearance: 0.1,
+            triangles: vec![[p(199.1, 0.1), p(203.2, 2.3), p(199.2, 4.7)]],
+        }];
+        let mut prepared = Prepared::new(&raised, DVec2::new(199.0, 0.0), 5.0);
+        prepared.add_tile((0, 0), &drawn, false).unwrap();
+        prepared.add_tile((0, 0), &drawn, true).unwrap();
+        let edge = DVec2::new(200.0, 0.5829246044158936);
+        assert!(!raised[0].contains(edge));
+        assert!(prepared.full[0].iter().flat_map(|(_, s)| &s.triangles).flatten().any(|p| p.truncate() == edge));
+        assert_eq!(prepared.height(edge, |_| Some(0.0)), Some(3.0));
+        prepared.check_point(edge).unwrap();
+        assert_eq!(prepared.height(DVec2::new(200.0, 0.5828), |_| Some(0.0)), Some(0.0));
+        let mut mismatched = Prepared::new(&raised, DVec2::new(199.0, 0.0), 5.0);
+        mismatched.add_tile((0, 0), &drawn, false).unwrap();
+        assert!(mismatched.check_point(edge).is_err());
+    }
+
+    #[test]
+    fn owner_uses_the_half_open_streaming_tile_at_a_boundary() {
+        let ground = Ground::page(2, 1.0, |_, _| 0.0);
+        let p = |x, y| (DVec2::new(x, y), DVec2::ZERO);
+        let raised = [Raised {
+            name: "edge".into(),
+            texture: "earth".into(),
+            ground: true,
+            paint: None,
+            height: 3.0,
+            clearance: 0.1,
+            triangles: vec![[p(0.2, 0.1), p(1.0, 0.1), p(1.0, 0.9)], [p(0.2, 0.1), p(1.0, 0.9), p(0.2, 0.9)]],
+        }];
+        let mut prepared = Prepared::new(&raised, DVec2::ZERO, 1.0);
+        for x in 0..2 {
+            let drawn = Surface::new(&Tile { columns: (x, x + 1), rows: (0, 1) }.ground(&ground, Detail::Full, 0, 1.0));
+            prepared.add_tile((x, 0), &drawn, false).unwrap();
+            prepared.add_tile((x, 0), &drawn, true).unwrap();
+        }
+        assert_eq!(prepared.height(DVec2::new(0.9, 0.5), |_| Some(0.0)), Some(3.0));
+        let edge = DVec2::new(1.0, 0.5);
+        assert_eq!(prepared.height(edge, |_| Some(0.0)), Some(0.0));
+        assert!(prepared.check_point(edge).is_err());
+        let mut crossing = square();
+        let p = |x, y| (DVec2::new(x, y), DVec2::ZERO);
+        crossing.triangles = vec![[p(0.2, 0.1), p(1.8, 0.1), p(1.8, 0.9)], [p(0.2, 0.1), p(1.8, 0.9), p(0.2, 0.9)]];
+        let raised = [crossing];
+        let mut prepared = Prepared::new(&raised, DVec2::ZERO, 1.0);
+        for x in 0..2 {
+            let drawn = Surface::new(&Tile { columns: (x, x + 1), rows: (0, 1) }.ground(&ground, Detail::Full, 0, 1.0));
+            prepared.add_tile((x, 0), &drawn, false).unwrap();
+            prepared.add_tile((x, 0), &drawn, true).unwrap();
+        }
+        assert_eq!(prepared.height(edge, |_| Some(0.0)), Some(3.0));
+        prepared.check_point(edge).unwrap();
     }
 
     #[test]

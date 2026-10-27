@@ -54,9 +54,9 @@ pub fn add(scenery: &mut Scenery, land: &Land, road: &[(DVec2, DVec2)]) {
         // A pole's y points to the road, so a lamp's arm reaches over it.
         let yaw = (-direction.perp() * side).to_angle() - FRAC_PI_2;
         let pole = scenery.placements.len();
-        scenery.placements.push(Placement { model: POLE, at, yaw, scale: 1.0, afar: true });
+        scenery.placements.push(Placement { model: POLE, at, yaw, scale: 1.0, origin_offset_m: 0.0, afar: true });
         if n % 3 == 1 {
-            scenery.placements.push(Placement { model: LAMP, at, yaw, scale: 1.0, afar: true });
+            scenery.placements.push(Placement { model: LAMP, at, yaw, scale: 1.0, origin_offset_m: 0.0, afar: true });
         }
         if let Some(before) = previous {
             for anchor in 0..POLE_ANCHORS {
@@ -121,7 +121,7 @@ mod tests {
         let openings = [Opening { id: RAIL_PATH, from: 86.2, to: 105.9 }];
         let land = Land {
             ground: &ground,
-            raised: &[],
+            raised: &crate::world::raised::Prepared::new(&[], DVec2::ZERO, 1.0),
             low: DVec2::ZERO,
             high: DVec2::splat(256.0),
             exclusions: &[],
