@@ -222,6 +222,8 @@ mod tests {
             high: DVec2::splat(56.0),
             exclusions: &[],
             regions: &[],
+            domains: &[],
+            openings: &[],
         };
         let mask = Mask;
         let regions: [&dyn Region; 1] = [&mask];

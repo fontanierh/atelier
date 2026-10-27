@@ -9,6 +9,7 @@ use glam::DVec2;
 use super::Region;
 use crate::world::curve::curve;
 use crate::world::levelling::Strip;
+use crate::world::openings::Domain;
 use crate::world::overlay::Overlay;
 use crate::world::ribbon::ribbon;
 use crate::world::scenery::{Exclusion, Land, ScatterKind, Scenery};
@@ -72,6 +73,10 @@ impl Region for MomijiCoast {
             Exclusion::corridor(&ROAD, 4.3, &[ScatterKind::Bush]),
             Exclusion::corridor(&ROAD, 3.2, &[ScatterKind::Grass]),
         ]
+    }
+
+    fn path_domains(&self) -> Vec<Domain> {
+        vec![Domain { id: roadside::RAIL_PATH, from: 0.0, to: (curve(&ROAD).len() - 1) as f64 }]
     }
 
     /// The road, on its levelled strip.

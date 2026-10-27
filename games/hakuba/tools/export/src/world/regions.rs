@@ -1,6 +1,7 @@
 //! Every region, each with its implementation of [`Region`] from its folder under the world's `src/regions/`.
 
 use super::levelling::{Pad, Strip};
+use super::openings::{Domain, Opening};
 use super::overlay::Overlay;
 use super::raised::Raised;
 use super::scenery::{Exclusion, Land, Placement, ScatterKind, Scenery};
@@ -30,6 +31,16 @@ pub trait Region {
     /// Whether a selected scatter candidate may stand here. Explicit placements are unaffected.
     fn allows_scatter_candidate(&self, _kind: ScatterKind, _placement: &Placement) -> bool {
         true
+    }
+
+    /// Named parameter domains this region publishes for others to request openings.
+    fn path_domains(&self) -> Vec<Domain> {
+        Vec::new()
+    }
+
+    /// Closed intervals to leave open on published parameter domains.
+    fn path_openings(&self) -> Vec<Opening> {
+        Vec::new()
     }
 
     /// The flat shapes it lays over the ground.

@@ -20,6 +20,7 @@ mod checksums;
 mod curve;
 mod ground;
 mod levelling;
+mod openings;
 mod overlay;
 mod raised;
 mod regions;
@@ -128,6 +129,9 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
             }
         }
     }
+    let domains: Vec<_> = regions::REGIONS.iter().flat_map(|region| region.path_domains()).collect();
+    let openings: Vec<_> = regions::REGIONS.iter().flat_map(|region| region.path_openings()).collect();
+    openings::check(&domains, &openings)?;
     let land = Land {
         ground: &ground,
         raised: &prepared,
@@ -135,6 +139,8 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         high: ground.position(whole.columns.1 as f64, whole.rows.1 as f64),
         exclusions: &exclusions,
         regions: &regions::REGIONS,
+        domains: &domains,
+        openings: &openings,
     };
     let grid = Grid { south_west: DVec2::new(x, y), tile_m: settings.tile_steps as f64 * settings.ground_step_m };
     // The full tiles' ground across the whole exported map, which seats the cables' ends.

@@ -21,6 +21,7 @@ use serde_json::json;
 
 use super::game;
 use super::ground::Ground;
+use super::openings::{self, Domain, Opening};
 use super::overlay::Overlay;
 use super::raised::{self, Prepared};
 use super::regions::Region;
@@ -111,6 +112,8 @@ pub struct Land<'a> {
     pub high: DVec2,
     pub exclusions: &'a [Exclusion],
     pub regions: &'a [&'a dyn Region],
+    pub domains: &'a [Domain],
+    pub openings: &'a [Opening],
 }
 
 impl Land<'_> {
@@ -122,6 +125,11 @@ impl Land<'_> {
     /// Whether every region permits an already-selected scatter candidate.
     pub fn allows_candidate(&self, kind: ScatterKind, placement: &Placement) -> bool {
         self.regions.iter().all(|region| region.allows_scatter_candidate(kind, placement))
+    }
+
+    /// Whether a published path parameter is in an opening; None if the path or parameter is invalid.
+    pub fn is_open(&self, id: &str, at: f64) -> Option<bool> {
+        openings::is_open(self.domains, self.openings, id, at)
     }
 
     /// The ground's height at `p`, if there is ground there.
@@ -946,6 +954,8 @@ mod tests {
             high: DVec2::splat(8.0),
             exclusions: &[],
             regions: &[],
+            domains: &[],
+            openings: &[],
         };
         let grid = Grid { south_west: DVec2::ZERO, tile_m: 1.0 };
         let scenery = || Scenery {
@@ -1034,6 +1044,8 @@ mod tests {
             high: DVec2::splat(128.0),
             exclusions: &[exclusion],
             regions: &[],
+            domains: &[],
+            openings: &[],
         };
         assert!(!land.allows_scatter(DVec2::new(40.0, 22.0), ScatterKind::Tree));
         assert!(land.allows_scatter(DVec2::new(40.0, 22.0), ScatterKind::Bush));
@@ -1056,6 +1068,8 @@ mod tests {
             high: DVec2::splat(93.0),
             exclusions: &[],
             regions: &[],
+            domains: &[],
+            openings: &[],
         };
         let large = Land {
             ground: &ground,
@@ -1064,6 +1078,8 @@ mod tests {
             high: DVec2::splat(128.0),
             exclusions: &[],
             regions: &[],
+            domains: &[],
+            openings: &[],
         };
         let within = |p: &DVec2| p.cmpge(small.low).all() && p.cmplt(small.high).all();
         for side in [3.2, 5.0] {
