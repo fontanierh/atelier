@@ -1,0 +1,5 @@
+# Source geometry from the authored Rock_B export.
+path = "rock.glb"
+sha256 = "91728e76cf29630379bd271527030252f86d9355cd11aecca9a5f8045d1cd93a"
+authoring_fbx_sha256 = "0e67e2bf78045461defe7026b4adb887d930beb2d1658bc9072bb9ccf2a6d8c7"
+conversion = "FBX SDK 2020.2 triangulation; Blender 5.2.1; source normals restored; linear COLOR_0 synthesized from Rock and Moss tints, alpha zero"

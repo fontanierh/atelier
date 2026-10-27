@@ -1,0 +1,5 @@
+# Source garden rock with separate stone and moss material sections.
+kind = "prop"
+source = "src/rock.glb"
+solid = false
+inputs_sha256 = "ce9be7153cb590c988927d5097984ec972767b77ba0617748d2d9996e25ebda9"

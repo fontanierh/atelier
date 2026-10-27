@@ -87,7 +87,7 @@ pub fn plants(land: &Land, road: &[(DVec2, DVec2)]) -> Vec<Placement> {
         })
     };
     let mut place = |kind, model: &'static str, at, random: &mut Random, scale, afar| {
-        let placement = Placement { model, at, yaw: random.range([0.0, TAU]), scale, afar };
+        let placement = Placement { model, at, yaw: random.range([0.0, TAU]), scale, origin_offset_m: 0.0, afar };
         if land.allows_candidate(kind, &placement) {
             plants.push(placement);
         }
