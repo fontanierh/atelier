@@ -176,6 +176,13 @@ impl Region for MomijiHamlet {
 
     fn scatter_exclusions(&self) -> Vec<Exclusion> {
         let mut exclusions = Vec::new();
+        // Clear the settlement itself as well as its lanes and buildings, leaving the surrounding woodland.
+        // This capsule approximates the original 62 by 66 m oval clearing.
+        exclusions.push(Exclusion::corridor(
+            &[[99.0, 83.0], [99.0, 87.0]],
+            31.0,
+            &[ScatterKind::Tree, ScatterKind::Bush, ScatterKind::Grass],
+        ));
         let approach = approach();
         for path in [&approach[..], &LANE[..], &LOOP[..], &WELL_APRON[..]] {
             exclusions.push(Exclusion::corridor(path, 8.0, &[ScatterKind::Tree]));
@@ -216,7 +223,23 @@ impl Region for MomijiHamlet {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::world::ground::Ground;
     use crate::world::surface::{cut, weights};
+
+    #[test]
+    fn clearing_removes_native_vegetation_without_clearing_the_surrounding_forest() {
+        let ground = Ground::page(64, 2.0, |_, _| 0.0);
+        let exclusions = MomijiHamlet.scatter_exclusions();
+        let land = Land { ground: &ground, low: DVec2::ZERO, high: DVec2::splat(200.0), exclusions: &exclusions };
+        for kind in [ScatterKind::Tree, ScatterKind::Bush, ScatterKind::Grass] {
+            for [x, y] in
+                [[99.0, 85.0], [69.0, 85.0], [129.0, 85.0], [99.0, 53.0], [99.0, 117.0], [78.0, 65.0], [120.0, 105.0]]
+            {
+                assert!(!land.allows_scatter(DVec2::new(x, y), kind));
+            }
+            assert!(land.allows_scatter(DVec2::new(160.0, 145.0), kind));
+        }
+    }
 
     #[test]
     fn lanes_join_without_overlapping_and_cover_each_route() {

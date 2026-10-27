@@ -87,5 +87,17 @@ pub fn make() -> Scenery {
         scale: 1.0,
         afar: true,
     });
+    // The original clearing's hand-placed edge trees; its eighth candidate is excluded by the workshop clearance.
+    for (model, x, y, yaw, scale) in [
+        ("plants/maple-a", 68.0, 75.0, 87.44757538_f64, 0.87919702),
+        ("plants/maple-a", 70.0, 95.0, 17.47955613, 1.01990732),
+        ("plants/pine-a", 77.0, 115.0, 112.25721183, 1.03206234),
+        ("plants/pine-a", 93.0, 119.0, 240.99400646, 0.96034478),
+        ("plants/pine-a", 115.0, 116.0, 66.17115333, 0.95816282),
+        ("plants/maple-a", 133.0, 98.0, 160.1036988, 0.91127997),
+        ("plants/maple-a", 127.0, 73.0, 245.32795517, 0.98160027),
+    ] {
+        scenery.placements.push(Placement { model, at: DVec2::new(x, y), yaw: yaw.to_radians(), scale, afar: true });
+    }
     scenery
 }
