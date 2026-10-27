@@ -69,6 +69,19 @@ const WADE_M: f32 = 0.6;
 /// checks for them, in metres, from the ankles to the head: a guardrail's beam stops even a hop.
 const RADIUS_M: f32 = 0.3;
 const WALL_CHECKS_M: [f32; 5] = [0.15, 0.45, 0.8, 1.2, 1.6];
+/// A capsule containing the existing 0.3 m radius at every checked height, including the 1.6 m head ray.
+const BODY_HEIGHT_M: f32 = WALL_CHECKS_M[4] + RADIUS_M;
+const STEP_CLEARANCE_M: f32 = 0.002;
+
+/// A checked step is crossed over several frames; its original foot position remains the cancellation point.
+#[derive(Clone, Copy)]
+struct StepCrossing {
+    direction: Vec3,
+    rise: f32,
+    distance: f32,
+    progress: f32,
+    returning: bool,
+}
 
 /// How far the body is pushed out of a wall in one frame, at most, in metres.
 const MOST_PUSH_M: f32 = 0.02;
@@ -138,6 +151,7 @@ pub struct Motion {
     pub mode: Mode,
     pub action: Action,
     pub velocity: Vec3,
+    step_crossing: Option<StepCrossing>,
     /// Which way the player faces, in radians about up, from +Z toward +X.
     pub yaw: f32,
     /// Seconds since the player last stood on the ground.
@@ -244,9 +258,14 @@ pub fn advance(
                         };
                     }
                 } else if controls.jump {
-                    jump(&mut commands, motion, body, clips);
+                    if leave_step_for_air(&ground, motion, at, JUMP_SPEED * JUMP_SPEED / (2.0 * GRAVITY)) {
+                        jump(&mut commands, motion, body, clips);
+                    }
                 } else if controls.dodge {
-                    dodge(&mut commands, motion, body, &controls, camera_yaw);
+                    let height = if is_side_dodge(&controls) { HOP_HEIGHT } else { BACKFLIP_HEIGHT };
+                    if leave_step_for_air(&ground, motion, at, height) {
+                        dodge(&mut commands, motion, body, &controls, camera_yaw);
+                    }
                 }
                 if motion.mode == Mode::Ground {
                     let held = motion.action.holds();
@@ -257,8 +276,8 @@ pub fn advance(
                     if !held && wish.length() > 0.05 {
                         motion.yaw = turn_toward(motion.yaw, yaw_of(wish), TURN_RATE * dt);
                     }
-                    at = walk(&mut ground, motion, at, dt);
-                    if motion.mode == Mode::Ground && at.y > SEA_LEVEL_M {
+                    at = walk(&mut ground, motion, at, wish, dt);
+                    if motion.mode == Mode::Ground && motion.step_crossing.is_none() && at.y > SEA_LEVEL_M {
                         motion.safe = at;
                     }
                 }
@@ -303,14 +322,56 @@ pub fn advance(
     }
 }
 
+trait WalkingGround {
+    fn cast(&mut self, from: Vec3, direction: Dir3, reach: f32) -> Option<Hit>;
+    fn below(&mut self, at: Vec3, above: f32, below: f32) -> Option<Hit>;
+    fn sweep_capsule(&self, feet: Vec3, radius: f32, height: f32, delta: Vec3) -> Result<Option<Hit>, &'static str>;
+}
+
+impl WalkingGround for Ground<'_, '_> {
+    fn cast(&mut self, from: Vec3, direction: Dir3, reach: f32) -> Option<Hit> {
+        Ground::cast(self, from, direction, reach)
+    }
+    fn below(&mut self, at: Vec3, above: f32, below: f32) -> Option<Hit> {
+        Ground::below(self, at, above, below)
+    }
+    fn sweep_capsule(&self, feet: Vec3, radius: f32, height: f32, delta: Vec3) -> Result<Option<Hit>, &'static str> {
+        Ground::sweep_capsule(self, feet, radius, height, delta)
+    }
+}
+
+/// Leaving a checked crossing for an air action must have room to rise to its usual height.
+fn leave_step_for_air(ground: &impl WalkingGround, motion: &mut Motion, at: Vec3, height: f32) -> bool {
+    if motion.step_crossing.is_none() {
+        return true;
+    }
+    if !matches!(ground.sweep_capsule(at, RADIUS_M, BODY_HEIGHT_M, Vec3::Y * height), Ok(None)) {
+        return false;
+    }
+    motion.step_crossing = None;
+    true
+}
+
 /// Walks the player from `at` by their velocity over one frame of `dt` seconds, on the ground or off its edge, and
 /// returns where they end up.
-fn walk(ground: &mut Ground, motion: &mut Motion, at: Vec3, dt: f32) -> Vec3 {
+fn walk(ground: &mut impl WalkingGround, motion: &mut Motion, at: Vec3, intent: Vec3, dt: f32) -> Vec3 {
     let step = motion.velocity.with_y(0.0) * dt;
+    if let Some(crossing) = motion.step_crossing {
+        return advance_step(ground, motion, crossing, at, step, intent, dt);
+    }
     if step.length() < 1e-5 {
         return at;
     }
     let (moved, push) = slide(ground, at, step);
+    if intent.length_squared() >= 0.0025
+        && intent.dot(step) > 0.00001
+        && moved.length_squared() + 1e-8 < step.length_squared()
+        && let Some(crossing) = prepare_step(ground, at, step)
+    {
+        let raised = at + Vec3::Y * crossing.rise;
+        motion.step_crossing = Some(crossing);
+        return advance_step(ground, motion, crossing, raised, step, intent, dt);
+    }
     motion.velocity = moved / dt;
     let next = at + moved + push;
     match ground.below(next, STEP_M, STEP_M) {
@@ -334,10 +395,128 @@ fn walk(ground: &mut Ground, motion: &mut Motion, at: Vec3, dt: f32) -> Vec3 {
     }
 }
 
+/// Checks the complete lift and approach before entering a step, without moving the character ahead.
+fn prepare_step(ground: &mut impl WalkingGround, at: Vec3, step: Vec3) -> Option<StepCrossing> {
+    let direction = step.with_y(0.0).normalize_or_zero();
+    if direction == Vec3::ZERO {
+        return None;
+    }
+    let distance = RADIUS_M + 0.05;
+    let landing = at + direction * distance;
+    let across = Vec3::new(-direction.z, 0.0, direction.x) * (RADIUS_M * 0.65);
+    let support = ground.below(landing, STEP_M, STEP_M)?;
+    let rise = support.point.y - at.y;
+    if !(0.001..=STEP_M).contains(&rise) || support.normal.y < STEEPEST_DEG.to_radians().cos() {
+        return None;
+    }
+    for point in [landing + across, landing - across, landing + direction * (RADIUS_M * 0.5)] {
+        let side = ground.below(point, STEP_M, STEP_M)?;
+        if (side.point.y - support.point.y).abs() > 0.01 || side.normal.y < STEEPEST_DEG.to_radians().cos() {
+            return None;
+        }
+    }
+    // Reject a sustained steep ramp: its slope cannot become walkable by repeatedly starting short steps.
+    let mut steep_samples = 0;
+    for k in 1..=7 {
+        let point = at + direction * (distance * k as f32 / 7.0);
+        let hit = ground.below(point, STEP_M, STEP_M)?;
+        if hit.point.y > at.y + 0.001 && hit.normal.y < STEEPEST_DEG.to_radians().cos() {
+            steep_samples += 1;
+            if steep_samples >= 2 {
+                return None;
+            }
+        } else {
+            steep_samples = 0;
+        }
+    }
+    let lift = rise + STEP_CLEARANCE_M;
+    let clear = |from, delta| matches!(ground.sweep_capsule(from, RADIUS_M, BODY_HEIGHT_M, delta), Ok(None));
+    if !clear(at, Vec3::Y * lift) || !clear(at + Vec3::Y * lift, direction * distance) {
+        return None;
+    }
+    Some(StepCrossing { direction, rise: lift, distance, progress: 0.0, returning: false })
+}
+
+/// Settles only when the centre is supported and the capsule can descend to that same surface.
+fn settle_step(ground: &mut impl WalkingGround, at: Vec3) -> Option<Vec3> {
+    let support = ground.below(at, STEP_M, STEP_M + STEP_CLEARANCE_M)?;
+    let drop = at.y - support.point.y;
+    if !(0.0..=STEP_M + STEP_CLEARANCE_M).contains(&drop) || support.normal.y < STEEPEST_DEG.to_radians().cos() {
+        return None;
+    }
+    if drop <= 1e-6
+        || matches!(ground.sweep_capsule(at, RADIUS_M, BODY_HEIGHT_M, Vec3::NEG_Y * drop), Ok(Some(hit)) if (hit.distance - drop).abs() <= STEP_CLEARANCE_M)
+    {
+        return Some(at.with_y(support.point.y));
+    }
+    None
+}
+
+/// Advances only by the requested frame's travel, or retraces the swept route if input is cancelled.
+fn advance_step(
+    ground: &mut impl WalkingGround,
+    motion: &mut Motion,
+    mut crossing: StepCrossing,
+    at: Vec3,
+    step: Vec3,
+    intent: Vec3,
+    dt: f32,
+) -> Vec3 {
+    let cancel = intent.length_squared() < 0.0025 || intent.dot(crossing.direction) <= 0.00001;
+    if cancel {
+        let forward_speed = motion.velocity.dot(crossing.direction).max(0.0);
+        motion.velocity -= crossing.direction * forward_speed;
+    }
+    if intent.length_squared() >= 0.0025 && intent.dot(crossing.direction) <= 0.00001 {
+        if let Some(settled) = settle_step(ground, at) {
+            motion.step_crossing = None;
+            return settled;
+        }
+        crossing.returning = true;
+    }
+    if intent.length_squared() < 0.0025 {
+        if let Some(settled) = settle_step(ground, at) {
+            motion.step_crossing = None;
+            return settled;
+        }
+        // A ledge may prevent a vertical drop before the centre is supported. Retrace the already swept path
+        // slowly, rather than leaving the player suspended or pushing them forward without input.
+        crossing.returning = true;
+    }
+    let amount = if crossing.returning {
+        let speed = if intent.length_squared() < 0.0025 { 0.5 * dt } else { step.length() };
+        -speed.min(crossing.progress)
+    } else {
+        step.dot(crossing.direction).max(0.0).min(crossing.distance - crossing.progress)
+    };
+    let delta = crossing.direction * amount;
+    if !matches!(ground.sweep_capsule(at, RADIUS_M, BODY_HEIGHT_M, delta), Ok(None)) {
+        motion.velocity = Vec3::ZERO;
+        motion.step_crossing = Some(crossing);
+        return at;
+    }
+    let next = at + delta;
+    crossing.progress += amount;
+    let finished = if crossing.returning {
+        crossing.progress <= 0.00001
+    } else {
+        crossing.progress >= crossing.distance - 0.00001
+    };
+    if finished {
+        if let Some(settled) = settle_step(ground, next) {
+            motion.step_crossing = None;
+            return settled;
+        }
+        crossing.returning = true;
+    }
+    motion.step_crossing = Some(crossing);
+    next
+}
+
 /// Moves the player's body from `at` by the horizontal `step`, sliding along any wall, rail or slope too steep to climb
 /// in the way. Returns how far the step carried it, and how far it is then pushed out of anything closer than its
 /// radius on any side: the push moves the body but adds nothing to its speed.
-fn slide(ground: &mut Ground, at: Vec3, step: Vec3) -> (Vec3, Vec3) {
+fn slide(ground: &mut impl WalkingGround, at: Vec3, step: Vec3) -> (Vec3, Vec3) {
     let mut moved = Vec3::ZERO;
     let mut left = step;
     // A step that meets one wall slides along it; one that meets a second, in a corner, stops there.
@@ -358,7 +537,7 @@ fn slide(ground: &mut Ground, at: Vec3, step: Vec3) -> (Vec3, Vec3) {
 }
 
 /// The nearest wall a ray from the body's checked heights meets along `direction` within `reach`.
-fn sweep(ground: &mut Ground, at: Vec3, direction: Dir3, reach: f32) -> Option<Hit> {
+fn sweep(ground: &mut impl WalkingGround, at: Vec3, direction: Dir3, reach: f32) -> Option<Hit> {
     WALL_CHECKS_M
         .into_iter()
         .filter_map(|height| ground.cast(at + Vec3::Y * height, direction, reach))
@@ -368,7 +547,7 @@ fn sweep(ground: &mut Ground, at: Vec3, direction: Dir3, reach: f32) -> Option<H
 
 /// How far to move the body at `at` so that no wall is closer than its radius, looking around it in eight directions,
 /// at most [`MOST_PUSH_M`] a frame.
-fn clear(ground: &mut Ground, at: Vec3) -> Vec3 {
+fn clear(ground: &mut impl WalkingGround, at: Vec3) -> Vec3 {
     let mut push = Vec3::ZERO;
     for k in 0..8 {
         let angle = k as f32 * std::f32::consts::TAU / 8.0;
@@ -428,6 +607,11 @@ fn double_jump(commands: &mut Commands, motion: &mut Motion, body: Entity, wish:
     commands.trigger(Play::once(body, "double-jump").fading(0.05));
 }
 
+fn is_side_dodge(controls: &Controls) -> bool {
+    let stick = controls.stick;
+    stick.x.abs() > 0.3 && stick.x.abs() >= stick.y.abs()
+}
+
 /// A side hop when the stick points to the side of the camera, a backflip otherwise. The player first turns to face
 /// the way the camera looks.
 fn dodge(commands: &mut Commands, motion: &mut Motion, body: Entity, controls: &Controls, camera_yaw: f32) {
@@ -435,7 +619,7 @@ fn dodge(commands: &mut Commands, motion: &mut Motion, body: Entity, controls: &
     let facing = Vec3::new(motion.yaw.sin(), 0.0, motion.yaw.cos());
     let left = Vec3::new(facing.z, 0.0, -facing.x);
     let stick = controls.stick;
-    let side = stick.x.abs() > 0.3 && stick.x.abs() >= stick.y.abs();
+    let side = is_side_dodge(controls);
     let (velocity, height, action, clip) = if side {
         let (direction, side, clip) =
             if stick.x < 0.0 { (left, Side::Left, "hop-left") } else { (-left, Side::Right, "hop-right") };
@@ -641,5 +825,234 @@ fn animate(commands: &mut Commands, motion: &mut Motion, body: Entity, clips: &C
             commands.trigger(Play::looping(body, clip).fading(0.3));
         }
         _ => {}
+    }
+}
+
+#[cfg(test)]
+mod step_tests {
+    use super::*;
+    use hakuba_world::Surface;
+
+    struct Fixture {
+        rise: f32,
+        half_width: f32,
+        depth: f32,
+        ceiling: bool,
+        steep: bool,
+        block_return: bool,
+        block_drop: bool,
+    }
+    fn hit(point: Vec3, normal: Vec3, distance: f32) -> Hit {
+        Hit { point, normal, distance, surface: Surface::Built }
+    }
+    impl WalkingGround for Fixture {
+        fn cast(&mut self, from: Vec3, direction: Dir3, reach: f32) -> Option<Hit> {
+            if direction.x > 0.0 && from.x <= 0.3 && from.y < 2.0 + self.rise && from.y >= 2.0 {
+                let distance = (0.3 - from.x) / direction.x;
+                (distance <= reach).then(|| hit(from + *direction * distance, Vec3::NEG_X, distance))
+            } else {
+                None
+            }
+        }
+        fn below(&mut self, at: Vec3, above: f32, below: f32) -> Option<Hit> {
+            let on_step = at.x >= 0.3 && at.x <= 0.3 + self.depth && at.z.abs() <= self.half_width;
+            let y = 2.0 + if on_step { self.rise } else { 0.0 };
+            let normal = if self.steep && at.x > 0.05 { Vec3::new(-0.9, 0.436, 0.0) } else { Vec3::Y };
+            (y <= at.y + above && y >= at.y - below).then(|| hit(at.with_y(y), normal, at.y + above - y))
+        }
+        fn sweep_capsule(
+            &self,
+            feet: Vec3,
+            _radius: f32,
+            _height: f32,
+            delta: Vec3,
+        ) -> Result<Option<Hit>, &'static str> {
+            if delta.x < 0.0 && self.block_return {
+                return Ok(Some(hit(feet, Vec3::X, 0.0)));
+            }
+            if delta.y < 0.0 && self.block_drop && feet.x > 0.001 {
+                return Ok(Some(hit(feet, Vec3::Y, 0.0)));
+            }
+            if delta.y > 0.0 && self.ceiling {
+                return Ok(Some(hit(feet, Vec3::NEG_Y, 0.0)));
+            }
+            if delta.x > 0.0 && feet.y < 2.0 + self.rise && feet.x + delta.x + RADIUS_M >= 0.3 {
+                return Ok(Some(hit(feet, Vec3::NEG_X, 0.0)));
+            }
+            if delta.y < 0.0 {
+                let y = 2.0
+                    + if feet.x >= 0.3 && feet.x <= 0.3 + self.depth && feet.z.abs() <= self.half_width {
+                        self.rise
+                    } else {
+                        0.0
+                    };
+                let d = feet.y - y;
+                if d >= 0.0 && d <= -delta.y {
+                    return Ok(Some(hit(feet.with_y(y), Vec3::Y, d)));
+                }
+            }
+            Ok(None)
+        }
+    }
+    fn fixture(rise: f32) -> Fixture {
+        Fixture {
+            rise,
+            half_width: 1.0,
+            depth: 1.0,
+            ceiling: false,
+            steep: false,
+            block_return: false,
+            block_drop: false,
+        }
+    }
+    fn drive(ground: &mut Fixture, motion: &mut Motion, mut at: Vec3, speed: f32, frames: usize) -> Vec3 {
+        for _ in 0..frames {
+            motion.velocity = Vec3::X * speed;
+            let crossing = motion.step_crossing.is_some();
+            let next = walk(ground, motion, at, Vec3::X * speed, 0.05);
+            let ordinary_push = if crossing || motion.step_crossing.is_some() { 0.0 } else { MOST_PUSH_M };
+            assert!((next.x - at.x).abs() <= speed.abs() * 0.05 + ordinary_push + 0.001);
+            at = next;
+        }
+        at
+    }
+    #[test]
+    fn flat_walking_keeps_its_normal_frame_distance() {
+        let mut ground = fixture(0.0);
+        let mut motion = Motion { mode: Mode::Ground, ..default() };
+        let end = drive(&mut ground, &mut motion, Vec3::Y * 2.0, 1.0, 4);
+        assert!((end.x - 0.2).abs() < 0.001 && (end.y - 2.0).abs() < 0.001);
+        assert!(motion.step_crossing.is_none());
+    }
+
+    #[test]
+    fn low_step_is_walked_both_ways_without_a_horizontal_jump() {
+        let mut ground = fixture(0.18);
+        let mut motion = Motion { mode: Mode::Ground, ..default() };
+        let end = drive(&mut ground, &mut motion, Vec3::Y * 2.0, 1.0, 8);
+        assert!(end.x > 0.3 && (end.y - 2.18).abs() < 0.001 && motion.step_crossing.is_none());
+        let back = drive(&mut ground, &mut motion, end, -1.0, 8);
+        assert!(back.x < 0.3 && (back.y - 2.0).abs() < 0.001 && motion.step_crossing.is_none());
+    }
+    #[test]
+    fn tall_wall_ceiling_narrow_ledge_and_steep_ramp_do_not_start_a_step() {
+        let mut high = fixture(0.6);
+        let mut ceiling = fixture(0.18);
+        ceiling.ceiling = true;
+        let mut narrow = fixture(0.18);
+        narrow.half_width = 0.1;
+        let mut lip = fixture(0.18);
+        lip.depth = 0.1;
+        let mut ramp = fixture(0.18);
+        ramp.steep = true;
+        for ground in [&mut high, &mut ceiling, &mut narrow, &mut lip, &mut ramp] {
+            assert!(prepare_step(ground, Vec3::Y * 2.0, Vec3::X * 0.05).is_none());
+        }
+    }
+    #[test]
+    fn cancelled_step_returns_to_its_start_without_snapping_forward() {
+        let mut ground = fixture(0.18);
+        let mut motion = Motion { mode: Mode::Ground, ..default() };
+        let raised = drive(&mut ground, &mut motion, Vec3::Y * 2.0, 1.0, 3);
+        assert!(motion.step_crossing.is_some());
+        ground.block_drop = true;
+        let returned = drive(&mut ground, &mut motion, raised, -1.0, 3);
+        assert!(returned.x.abs() < 0.001 && (returned.y - 2.0).abs() < 0.001 && motion.step_crossing.is_none());
+    }
+
+    #[test]
+    fn released_input_retraces_only_when_the_drop_is_blocked() {
+        let mut ground = fixture(0.18);
+        let mut motion = Motion { mode: Mode::Ground, ..default() };
+        let at = drive(&mut ground, &mut motion, Vec3::Y * 2.0, 1.0, 3);
+        ground.block_drop = true;
+        let mut current = at;
+        for _ in 0..10 {
+            // The stick is released while velocity may still be positive during deceleration.
+            motion.velocity = Vec3::X;
+            let next = walk(&mut ground, &mut motion, current, Vec3::ZERO, 0.05);
+            assert!(next.x <= current.x && current.x - next.x <= 0.026);
+            current = next;
+        }
+        assert!(current.x.abs() < 0.001 && (current.y - 2.0).abs() < 0.001);
+        assert!(motion.step_crossing.is_none());
+    }
+
+    #[test]
+    fn released_input_cannot_reenter_a_step_with_residual_velocity() {
+        let mut ground = fixture(0.18);
+        let mut motion = Motion { mode: Mode::Ground, ..default() };
+        let at = drive(&mut ground, &mut motion, Vec3::Y * 2.0, 1.0, 3);
+        motion.velocity = Vec3::X;
+        let settled = walk(&mut ground, &mut motion, at, Vec3::ZERO, 0.05);
+        assert!((settled.x - at.x).abs() < 0.001 && (settled.y - 2.0).abs() < 0.001);
+        assert!(motion.velocity.x.abs() < 1e-6 && motion.step_crossing.is_none());
+        let still = walk(&mut ground, &mut motion, settled, Vec3::ZERO, 0.05);
+        assert_eq!(still, settled);
+        assert!(motion.step_crossing.is_none());
+    }
+
+    #[test]
+    fn perpendicular_input_cancels_the_crossing_without_forward_motion() {
+        let mut ground = fixture(0.18);
+        let mut motion = Motion { mode: Mode::Ground, ..default() };
+        let at = drive(&mut ground, &mut motion, Vec3::Y * 2.0, 1.0, 3);
+        ground.block_drop = true;
+        motion.velocity = Vec3::Z;
+        let next = walk(&mut ground, &mut motion, at, Vec3::Z, 0.05);
+        assert!(next.x < at.x && next.z == at.z);
+        assert!(motion.step_crossing.is_some_and(|step| step.returning));
+    }
+
+    #[test]
+    fn sideways_or_reverse_input_settles_in_place_when_the_drop_is_clear() {
+        for intent in [Vec3::Z, Vec3::NEG_X] {
+            let mut ground = fixture(0.18);
+            let mut motion = Motion { mode: Mode::Ground, ..default() };
+            let at = drive(&mut ground, &mut motion, Vec3::Y * 2.0, 1.0, 3);
+            motion.velocity = intent;
+            let next = walk(&mut ground, &mut motion, at, intent, 0.05);
+            assert!((next.x - at.x).abs() < 0.001 && (next.y - 2.0).abs() < 0.001);
+            assert!(motion.step_crossing.is_none());
+        }
+    }
+
+    #[test]
+    fn cancellation_at_max_step_height_finds_the_original_floor() {
+        let mut ground = fixture(0.449);
+        let mut motion = Motion { mode: Mode::Ground, ..default() };
+        let mut at = drive(&mut ground, &mut motion, Vec3::Y * 2.0, 1.0, 3);
+        assert!(motion.step_crossing.is_some());
+        ground.block_drop = true;
+        for _ in 0..10 {
+            motion.velocity = Vec3::X;
+            at = walk(&mut ground, &mut motion, at, Vec3::ZERO, 0.05);
+        }
+        assert!(at.x.abs() < 0.001 && (at.y - 2.0).abs() < 0.001);
+        assert!(motion.step_crossing.is_none());
+    }
+
+    #[test]
+    fn low_ceiling_keeps_a_crossing_from_starting_an_air_action() {
+        let mut ground = fixture(0.18);
+        let mut motion = Motion { mode: Mode::Ground, ..default() };
+        let at = drive(&mut ground, &mut motion, Vec3::Y * 2.0, 1.0, 3);
+        ground.ceiling = true;
+        assert!(!leave_step_for_air(&ground, &mut motion, at, 0.8));
+        assert!(motion.step_crossing.is_some());
+    }
+
+    #[test]
+    fn blocked_rollback_can_be_left_by_jumping_when_headroom_is_clear() {
+        let mut ground = fixture(0.18);
+        let mut motion = Motion { mode: Mode::Ground, ..default() };
+        let at = drive(&mut ground, &mut motion, Vec3::Y * 2.0, 1.0, 3);
+        ground.block_return = true;
+        ground.block_drop = true;
+        motion.velocity = Vec3::NEG_X;
+        assert_eq!(walk(&mut ground, &mut motion, at, Vec3::NEG_X, 0.05), at);
+        assert!(motion.step_crossing.is_some());
+        assert!(leave_step_for_air(&ground, &mut motion, at, 0.8));
+        assert!(motion.step_crossing.is_none());
     }
 }

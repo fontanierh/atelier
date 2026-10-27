@@ -3,4 +3,4 @@
 kind = "animation"
 source = "src/source.glb"
 clip = "Nml_Move_Run_Land_ToRun_FootL"
-inputs_sha256 = "91d8692f4999680c5450398d0abb6d9e2b5ada2d8fd55daeaf46438eb59256c6"
+inputs_sha256 = "e0ab39cdf6db9366f0cc2587a741ffbc2cbf4f21c6060d2cb037dc45322e8f0b"

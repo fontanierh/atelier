@@ -98,12 +98,46 @@ pub fn check(model: &Model, name: &str, at: DVec2, yaw: f64, scale: f64, origin:
         for vertex in vertices {
             sample(vertex.truncate(), vertex.z);
         }
-        if super::surface::weights(outline, outline[0]).is_none() {
-            continue;
-        }
         let Some(surface) = land.rendered else { continue };
         let mut under = surface.all_under(outline);
         under.extend(land.raised.under(outline, land.middle));
+        if super::surface::weights(outline, outline[0]).is_none() {
+            // A vertical face projects to segments, whose interior can meet a peak missed by its vertices.
+            for i in 0..3 {
+                let a = vertices[i];
+                let b = vertices[(i + 1) % 3];
+                let direction = b.truncate() - a.truncate();
+                let length2 = direction.length_squared();
+                if length2 == 0.0 {
+                    continue;
+                }
+                for triangle in &under {
+                    for edge in 0..3 {
+                        let c = triangle[edge].truncate();
+                        let d = triangle[(edge + 1) % 3].truncate();
+                        let along = d - c;
+                        let denominator = direction.perp_dot(along);
+                        if denominator.abs() < 1e-12 {
+                            if (c - a.truncate()).perp_dot(direction).abs() < 1e-12 {
+                                for point in [c, d] {
+                                    let t = (point - a.truncate()).dot(direction) / length2;
+                                    if (0.0..=1.0).contains(&t) {
+                                        sample(a.truncate() + direction * t, a.z + (b.z - a.z) * t);
+                                    }
+                                }
+                            }
+                        } else {
+                            let t = (c - a.truncate()).perp_dot(along) / denominator;
+                            let u = (c - a.truncate()).perp_dot(direction) / denominator;
+                            if (0.0..=1.0).contains(&t) && (0.0..=1.0).contains(&u) {
+                                sample(a.truncate() + direction * t, a.z + (b.z - a.z) * t);
+                            }
+                        }
+                    }
+                }
+            }
+            continue;
+        }
         for ground in under {
             for xy in super::surface::cut(outline.to_vec(), ground.map(DVec3::truncate)) {
                 if let Some(weights) = super::surface::weights(outline, xy) {
@@ -272,6 +306,63 @@ mod tests {
         let moved = Model { triangles: model.triangles.iter().map(|t| t.map(|p| p + DVec3::Y * 0.4)).collect() };
         let changed_model = check(&moved, "test", DVec2::ZERO, 0.0, 1.0, 0.1, &land).unwrap();
         assert!(verify_gap("test", DVec2::ZERO, changed_model, expected).is_err());
+    }
+
+    #[test]
+    fn vertical_face_detects_a_peak_between_its_vertices() {
+        let ground = Ground::page(2, 1.0, |_, _| 0.0);
+        let raised = Prepared::new(&[], DVec2::ZERO, 2.0);
+        let surface = peak(0.2);
+        let land = Land {
+            ground: &ground,
+            rendered: Some(&surface),
+            raised: &raised,
+            middle: false,
+            low: DVec2::ZERO,
+            high: DVec2::splat(2.0),
+            regions: &[],
+        };
+        let model = Model {
+            triangles: vec![[DVec3::new(0.1, 0.0, -1.0), DVec3::new(1.9, 0.0, -1.0), DVec3::new(0.1, 1.0, -1.0)]],
+        };
+        let gap = check(&model, "wall", DVec2::ZERO, 0.0, 1.0, 0.1, &land).unwrap();
+        assert!((gap + 0.1).abs() < 1e-6, "peak must be sampled: {gap}");
+        let flat = peak(0.0);
+        let changed = Land { rendered: Some(&flat), ..land };
+        let flat_gap = check(&model, "wall", DVec2::ZERO, 0.0, 1.0, 0.1, &changed).unwrap();
+        assert!(verify_gap("wall", DVec2::ZERO, flat_gap, gap).is_err());
+    }
+
+    #[test]
+    fn vertical_face_detects_peak_on_collinear_surface_edges() {
+        let ground = Ground::page(2, 1.0, |_, _| 0.0);
+        let raised = Prepared::new(&[], DVec2::ZERO, 2.0);
+        let surface = Surface::new(&Mesh {
+            positions: vec![
+                [0., 0., 0.],
+                [2., 0., 0.],
+                [0., 0., -1.],
+                [1., 0.2, -1.],
+                [2., 0., -1.],
+                [0., 0., -2.],
+                [2., 0., -2.],
+            ],
+            indices: vec![0, 1, 3, 0, 3, 2, 1, 4, 3, 2, 3, 5, 3, 6, 5, 3, 4, 6],
+            ..Default::default()
+        });
+        let land = Land {
+            ground: &ground,
+            rendered: Some(&surface),
+            raised: &raised,
+            middle: false,
+            low: DVec2::ZERO,
+            high: DVec2::splat(2.0),
+            regions: &[],
+        };
+        let model =
+            Model { triangles: vec![[DVec3::new(0.1, 0., -1.), DVec3::new(1.9, 0., -1.), DVec3::new(0.1, 1., -1.)]] };
+        let gap = check(&model, "wall", DVec2::ZERO, 0.0, 1.0, 0.1, &land).unwrap();
+        assert!((gap + 0.1).abs() < 1e-6, "collinear peak must be sampled: {gap}");
     }
 
     #[test]

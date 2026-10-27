@@ -55,8 +55,9 @@ impl Tile {
         for k in [self.columns.0, self.columns.1, self.rows.0, self.rows.1] {
             digest.update((k as u64).to_le_bytes());
         }
-        for j in self.rows.0..self.rows.1 {
-            for i in self.columns.0..self.columns.1 {
+        // Overlay normals sample ground one step beyond the tile, including the diagonals there.
+        for j in self.rows.0.saturating_sub(1)..=self.rows.1 {
+            for i in self.columns.0.saturating_sub(1)..=self.columns.1 {
                 digest.update([u8::from(ground.alternate_diagonal(i, j))]);
             }
         }

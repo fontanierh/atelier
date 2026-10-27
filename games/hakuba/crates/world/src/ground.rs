@@ -10,6 +10,11 @@ use bevy::picking::mesh_picking::ray_cast::{
 };
 use bevy::prelude::*;
 use bevy::world_serialization::WorldInstanceReady;
+use parry3d::{
+    math::Pose,
+    query::{ShapeCastOptions, ShapeCastStatus, cast_shapes},
+    shape::{Capsule, Triangle},
+};
 
 use crate::tiles::Spawning;
 
@@ -125,15 +130,141 @@ pub struct Hit {
 
 type SolidMesh = (&'static Solid, &'static Mesh3d, &'static Aabb, &'static GlobalTransform, Has<RayCastBackfaces>);
 type RayVisible = (With<InheritedVisibility>, With<ViewVisibility>);
+type MaybeSolidMesh = (
+    &'static Solid,
+    Option<&'static Mesh3d>,
+    Option<&'static Aabb>,
+    Option<&'static GlobalTransform>,
+    Option<&'static InheritedVisibility>,
+    Option<&'static ViewVisibility>,
+);
 
 /// Casting rays at what is solid.
 #[derive(SystemParam)]
 pub struct Ground<'w, 's> {
     meshes: Res<'w, Assets<Mesh>>,
     solids: Query<'w, 's, SolidMesh, RayVisible>,
+    sweep_solids: Query<'w, 's, MaybeSolidMesh>,
 }
 
 impl Ground<'_, '_> {
+    /// @cc [owner:fontanierh,label:correctness] capsule-sweep-keeps-solid-geometry
+    /// A capsule sweep MUST use every intersecting solid triangle in its actual world transform and MUST fail closed
+    /// on unavailable, unsupported or invalid mesh data. The broad phase MUST NOT discard a possible swept contact.
+    ///
+    /// Sweeps a vertical capsule from its feet by `delta`. Unsupported collision data returns an error.
+    pub fn sweep_capsule(
+        &self,
+        feet: Vec3,
+        radius: f32,
+        height: f32,
+        delta: Vec3,
+    ) -> Result<Option<Hit>, &'static str> {
+        if !feet.is_finite()
+            || !delta.is_finite()
+            || !radius.is_finite()
+            || !height.is_finite()
+            || radius <= 0.0
+            || height < 2.0 * radius
+        {
+            return Err("invalid capsule");
+        }
+        let extent = Vec3::new(radius, height * 0.5, radius);
+        let centre = feet + Vec3::Y * (height * 0.5);
+        let margin = (centre.abs().max_element() + delta.abs().max_element() + height).max(1.0) * 1e-5;
+        let low = centre.min(centre + delta) - extent - Vec3::splat(margin);
+        let high = centre.max(centre + delta) + extent + Vec3::splat(margin);
+        if !centre.is_finite() || !low.is_finite() || !high.is_finite() {
+            return Err("invalid swept bounds");
+        }
+        let capsule = Capsule::new_y(height * 0.5 - radius, radius);
+        let pose = Pose::translation(centre.x, centre.y, centre.z);
+        let options = ShapeCastOptions { max_time_of_impact: 1.0, stop_at_penetration: false, ..Default::default() };
+        let overlaps = |a: Vec3, b: Vec3| a.cmple(high).all() && b.cmpge(low).all();
+        let mut best: Option<Hit> = None;
+        for (solid, mesh, bounds, transform, inherited, visible) in &self.sweep_solids {
+            let (Some(mesh), Some(bounds), Some(transform), Some(_), Some(_)) =
+                (mesh, bounds, transform, inherited, visible)
+            else {
+                return Err("solid missing collision components");
+            };
+            let affine = transform.affine();
+            let bounds_low = Vec3::from(bounds.center - bounds.half_extents);
+            let bounds_high = Vec3::from(bounds.center + bounds.half_extents);
+            let mut world_low = Vec3::splat(f32::INFINITY);
+            let mut world_high = Vec3::splat(f32::NEG_INFINITY);
+            for x in [bounds_low.x, bounds_high.x] {
+                for y in [bounds_low.y, bounds_high.y] {
+                    for z in [bounds_low.z, bounds_high.z] {
+                        let p = affine.transform_point3(Vec3::new(x, y, z));
+                        world_low = world_low.min(p);
+                        world_high = world_high.max(p);
+                    }
+                }
+            }
+            if !world_low.is_finite() || !world_high.is_finite() {
+                return Err("invalid solid transform");
+            }
+            if !overlaps(world_low, world_high) {
+                continue;
+            }
+            let mesh = self.meshes.get(&mesh.0).ok_or("solid mesh unavailable")?;
+            if mesh.primitive_topology() != PrimitiveTopology::TriangleList {
+                return Err("unsupported solid topology");
+            }
+            let positions = mesh
+                .try_attribute(Mesh::ATTRIBUTE_POSITION)
+                .ok()
+                .and_then(|v| v.as_float3())
+                .ok_or("unsupported solid positions")?;
+            let indices = mesh.try_indices_option().map_err(|_| "solid indices inaccessible")?;
+            let count = match indices {
+                Some(Indices::U16(v)) => v.len(),
+                Some(Indices::U32(v)) => v.len(),
+                None => positions.len(),
+            };
+            if count % 3 != 0 {
+                return Err("invalid triangle indices");
+            }
+            for first in (0..count).step_by(3) {
+                let mut p = [Vec3::ZERO; 3];
+                for i in 0..3 {
+                    let index = match indices {
+                        Some(Indices::U16(v)) => usize::from(v[first + i]),
+                        Some(Indices::U32(v)) => v[first + i] as usize,
+                        None => first + i,
+                    };
+                    p[i] = affine.transform_point3(Vec3::from_array(*positions.get(index).ok_or("invalid index")?));
+                    if !p[i].is_finite() {
+                        return Err("invalid solid vertex");
+                    }
+                }
+                let min = p[0].min(p[1]).min(p[2]);
+                let max = p[0].max(p[1]).max(p[2]);
+                if !overlaps(min, max) || (p[1] - p[0]).cross(p[2] - p[0]).length_squared() == 0.0 {
+                    continue;
+                }
+                let triangle = Triangle::new(p[0], p[1], p[2]);
+                let hit = cast_shapes(&pose, delta, &capsule, &Pose::IDENTITY, Vec3::ZERO, &triangle, options)
+                    .map_err(|_| "unsupported capsule collision")?;
+                if let Some(hit) = hit {
+                    if hit.status != ShapeCastStatus::Converged
+                        || !hit.time_of_impact.is_finite()
+                        || !(0.0..=1.0).contains(&hit.time_of_impact)
+                        || !hit.witness2.is_finite()
+                        || !hit.normal2.is_finite()
+                    {
+                        return Err("uncertain capsule contact");
+                    }
+                    let distance = hit.time_of_impact * delta.length();
+                    if best.is_none_or(|previous| distance < previous.distance) {
+                        best = Some(Hit { point: hit.witness2, normal: hit.normal2, distance, surface: solid.0 });
+                    }
+                }
+            }
+        }
+        Ok(best)
+    }
     /// @cc [owner:fontanierh,label:performance] bounded-solid-rays
     /// Ground rays MUST consider only solid meshes and skip triangle tests for bounds beyond the requested reach.
     ///
@@ -198,6 +329,144 @@ fn intersect(mesh: &Mesh, transform: &GlobalTransform, ray: Ray3d, backfaces: bo
 mod tests {
     use super::*;
     use bevy::ecs::system::RunSystemOnce;
+
+    #[test]
+    fn capsule_can_lift_from_a_tangent_floor() {
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins).init_resource::<Assets<Mesh>>();
+        let mesh = app.world_mut().resource_mut::<Assets<Mesh>>().add(Mesh::from(Cuboid::new(4.0, 1.0, 4.0)));
+        let transform = Transform::from_xyz(0.0, -0.5, 0.0);
+        app.world_mut().spawn((
+            Mesh3d(mesh),
+            transform,
+            GlobalTransform::from(transform),
+            Aabb::from_min_max(Vec3::new(-2.0, -0.5, -2.0), Vec3::new(2.0, 0.5, 2.0)),
+            Visibility::default(),
+            Solid(Surface::Ground),
+        ));
+        app.world_mut()
+            .run_system_once(|ground: Ground| {
+                assert!(matches!(ground.sweep_capsule(Vec3::ZERO, 0.3, 1.6, Vec3::Y * 0.2), Ok(None)));
+            })
+            .unwrap();
+    }
+
+    #[test]
+    fn capsule_can_lift_along_a_tangent_riser() {
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins).init_resource::<Assets<Mesh>>();
+        let mesh = app.world_mut().resource_mut::<Assets<Mesh>>().add(Mesh::from(Cuboid::new(1.0, 0.18, 2.0)));
+        let transform = Transform::from_xyz(0.8, 0.09, 0.0);
+        app.world_mut().spawn((
+            Mesh3d(mesh),
+            transform,
+            GlobalTransform::from(transform),
+            Aabb::from_min_max(Vec3::new(-0.5, -0.09, -1.0), Vec3::new(0.5, 0.09, 1.0)),
+            Visibility::default(),
+            Solid(Surface::Built),
+        ));
+        app.world_mut()
+            .run_system_once(|ground: Ground| {
+                assert!(matches!(ground.sweep_capsule(Vec3::ZERO, 0.3, 1.6, Vec3::Y * 0.2), Ok(None)));
+            })
+            .unwrap();
+    }
+
+    #[test]
+    fn capsule_drop_can_hit_a_ledge_before_its_centre_is_supported() {
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins).init_resource::<Assets<Mesh>>();
+        let mesh = app.world_mut().resource_mut::<Assets<Mesh>>().add(Mesh::from(Cuboid::new(1.0, 0.18, 2.0)));
+        let transform = Transform::from_xyz(0.8, 0.09, 0.0);
+        app.world_mut().spawn((
+            Mesh3d(mesh),
+            transform,
+            GlobalTransform::from(transform),
+            Aabb::from_min_max(Vec3::new(-0.5, -0.09, -1.0), Vec3::new(0.5, 0.09, 1.0)),
+            Visibility::default(),
+            Solid(Surface::Built),
+        ));
+        app.world_mut()
+            .run_system_once(|mut ground: Ground| {
+                let from = Vec3::new(0.1, 0.3, 0.0);
+                assert!(ground.sweep_capsule(from, 0.3, 1.6, Vec3::NEG_Y * 0.3).unwrap().is_some());
+                assert!(ground.below(from, 0.0, 0.3).is_none());
+            })
+            .unwrap();
+    }
+
+    #[test]
+    fn capsule_step_path_clears_a_low_block_but_hits_a_wall_and_ceiling() {
+        fn scene(block_height: f32, ceiling: bool) -> App {
+            let mut app = App::new();
+            app.add_plugins(MinimalPlugins).init_resource::<Assets<Mesh>>();
+            let mut add_box = |center: Vec3, size: Vec3| {
+                let mesh =
+                    app.world_mut().resource_mut::<Assets<Mesh>>().add(Mesh::from(Cuboid::new(size.x, size.y, size.z)));
+                let transform = Transform::from_translation(center);
+                app.world_mut().spawn((
+                    Mesh3d(mesh),
+                    transform,
+                    GlobalTransform::from(transform),
+                    Aabb::from_min_max(-size / 2.0, size / 2.0),
+                    Visibility::default(),
+                    Solid(Surface::Built),
+                ));
+            };
+            add_box(Vec3::new(0.8, block_height / 2.0, 0.0), Vec3::new(1.0, block_height, 2.0));
+            if ceiling {
+                add_box(Vec3::new(0.0, 1.85, 0.0), Vec3::new(1.0, 0.1, 2.0));
+            }
+            app
+        }
+        let feet = Vec3::new(-0.02, 0.01, 0.0);
+        let lift = Vec3::Y * 0.22;
+        let forward = Vec3::X * 0.4;
+        for (height, ceiling, lift_clear, forward_clear) in
+            [(0.18, false, true, true), (0.6, false, true, false), (0.18, true, false, true)]
+        {
+            let mut app = scene(height, ceiling);
+            app.world_mut()
+                .run_system_once(move |ground: Ground| {
+                    assert_eq!(ground.sweep_capsule(feet, 0.3, 1.6, lift).unwrap().is_none(), lift_clear);
+                    if lift_clear {
+                        assert_eq!(
+                            ground.sweep_capsule(feet + lift, 0.3, 1.6, forward).unwrap().is_none(),
+                            forward_clear
+                        );
+                    }
+                })
+                .unwrap();
+        }
+    }
+
+    #[test]
+    fn capsule_sweep_uses_transformed_solid_mesh_and_rejects_incomplete_solid() {
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins).init_resource::<Assets<Mesh>>();
+        let cube = app.world_mut().resource_mut::<Assets<Mesh>>().add(Mesh::from(Cuboid::new(1.0, 2.0, 1.0)));
+        let transform = Transform::from_xyz(3.0, 0.0, 0.0).with_scale(Vec3::new(2.0, 1.0, -0.5));
+        app.world_mut().spawn((
+            Mesh3d(cube),
+            transform,
+            GlobalTransform::from(transform),
+            Aabb::from_min_max(Vec3::new(-0.5, -1.0, -0.5), Vec3::new(0.5, 1.0, 0.5)),
+            Visibility::default(),
+            Solid(Surface::Built),
+        ));
+        app.world_mut()
+            .run_system_once(|ground: Ground| {
+                let hit = ground.sweep_capsule(Vec3::ZERO, 0.3, 1.6, Vec3::X * 4.0).unwrap().unwrap();
+                assert!((hit.distance - 1.7).abs() < 0.01, "{hit:?}");
+            })
+            .unwrap();
+        app.world_mut().spawn(Solid(Surface::Built));
+        app.world_mut()
+            .run_system_once(|ground: Ground| {
+                assert!(ground.sweep_capsule(Vec3::ZERO, 0.3, 1.6, Vec3::X).is_err());
+            })
+            .unwrap();
+    }
 
     #[test]
     fn bounded_rays_keep_nearest_transformed_hits_and_reject_distant_ones() {

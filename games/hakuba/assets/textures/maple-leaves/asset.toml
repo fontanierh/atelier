@@ -1,4 +1,4 @@
 # Clusters of red and orange maple leaves, one in each quarter, on a clear ground.
 kind = "texture"
 source = "src/maple-leaves.png"
-inputs_sha256 = "c8c3ecbb81bf07c94b83ca17931bca2bc39e4dda65533cc04ea091cc0360ac71"
+inputs_sha256 = "218c9e6068b309fea9b4316405cd6bb06cccf7f87f84f2221e7f3271deb0b488"

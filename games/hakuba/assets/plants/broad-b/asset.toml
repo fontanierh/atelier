@@ -1,7 +1,7 @@
 # A smaller broadleaf, 7 m high, its low fork spreading into a round crown.
 kind = "plant"
 seed = 2
-inputs_sha256 = "bc29f9a9909061f7982f83ee20105b6580b02577b61932a38766e136a9b673a0"
+inputs_sha256 = "e0796a6e1a86c0c0845610f80b050b7577494bf2306a592993f057b204ae135a"
 
 [wood]
 texture = "bark"

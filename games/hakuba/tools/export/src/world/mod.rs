@@ -732,6 +732,44 @@ mod tests {
     }
 
     #[test]
+    fn neighboring_diagonal_invalidates_edge_overlay_normal() {
+        let mut ground = Ground::page(8, 1.0, |i, j| if i == 5 && j == 3 { 1.0 } else { 0.0 });
+        let tile = Tile { columns: (2, 4), rows: (2, 4) };
+        let far = Tile { columns: (6, 7), rows: (6, 7) };
+        let overlay = Overlay {
+            name: "edge".into(),
+            texture: "ground".into(),
+            triangles: vec![[
+                (DVec2::new(3.75, 2.25), DVec2::ZERO),
+                (DVec2::new(3.5, 2.5), DVec2::X),
+                (DVec2::new(3.5, 2.25), DVec2::Y),
+            ]],
+        };
+        let path = std::env::temp_dir().join(format!("hakuba-edge-diagonals-{}.json", std::process::id()));
+        let load = |ground: &mut Ground, cells: &str| {
+            fs::write(&path, format!(r#"{{"extent_m":[[0,0],[8,8]],"native_extent_m":[[0,0],[8,8]],"step_m":1,"alternate_cells_m":{cells}}}"#)).unwrap();
+            ground.read_diagonals(&path).unwrap();
+        };
+        let checksum = |tile: &Tile, ground: &Ground| {
+            tile.checksum(&[], &[], ground, (std::slice::from_ref(&overlay), &[], &[]), (&TileScenery::default(), &[]))
+        };
+        let normals = |ground: &Ground| {
+            let surface = Surface::new(&tile.ground(ground, Detail::Full, 0, 1.0));
+            overlay.mesh(ground, &surface).normals
+        };
+        load(&mut ground, "[]");
+        let before = checksum(&tile, &ground);
+        let far_before = checksum(&far, &ground);
+        let before_normals = normals(&ground);
+        assert!(!before_normals.is_empty());
+        load(&mut ground, "[[4,2]]");
+        assert_ne!(before_normals, normals(&ground));
+        assert_ne!(before, checksum(&tile, &ground));
+        assert_eq!(far_before, checksum(&far, &ground));
+        fs::remove_file(path).unwrap();
+    }
+
+    #[test]
     fn aligned_extent_clips_boundary_tile_at_both_details() {
         let mut settings = Settings {
             grounding: Vec::new(),
