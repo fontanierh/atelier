@@ -15,6 +15,7 @@ use sha2::{Digest, Sha256};
 use super::Tile;
 use super::ground::Ground;
 use super::overlay::Overlay;
+use super::raised::Raised;
 use super::scenery::{self, TileScenery};
 use crate::EXPORTER;
 
@@ -42,6 +43,7 @@ impl Tile {
         settings: &[u8],
         ground: &Ground,
         overlays: &[Overlay],
+        raised: &[Raised],
         scenery: &TileScenery,
     ) -> String {
         let mut digest = Sha256::new();
@@ -81,6 +83,32 @@ impl Tile {
                 for (p, uv) in triangle {
                     for v in [p.x, p.y, uv.x, uv.y] {
                         digest.update(v.to_bits().to_le_bytes());
+                    }
+                }
+            }
+        }
+        for surface in raised {
+            let triangles: Vec<_> = surface
+                .triangles
+                .iter()
+                .filter(|triangle| {
+                    let [a, b, c] = triangle.map(|(p, _)| p);
+                    a.min(b).min(c).cmple(high).all() && a.max(b).max(c).cmpge(low).all()
+                })
+                .collect();
+            if triangles.is_empty() {
+                continue;
+            }
+            digest.update(surface.name.as_bytes());
+            digest.update([0]);
+            digest.update(surface.texture.as_bytes());
+            digest.update([0]);
+            digest.update(surface.height.to_bits().to_le_bytes());
+            digest.update(surface.clearance.to_bits().to_le_bytes());
+            for triangle in triangles {
+                for (p, uv) in triangle {
+                    for value in [p.x, p.y, uv.x, uv.y] {
+                        digest.update(value.to_bits().to_le_bytes());
                     }
                 }
             }

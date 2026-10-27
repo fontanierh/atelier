@@ -20,6 +20,7 @@ mod curve;
 mod ground;
 mod levelling;
 mod overlay;
+mod raised;
 mod regions;
 mod ribbon;
 mod scenery;
@@ -37,6 +38,7 @@ use serde_json::json;
 use crate::glb::{Glb, Material, Mesh, y_up as game};
 use ground::Ground;
 use overlay::Overlay;
+use raised::Raised;
 use scenery::{Grid, Land, TileScenery};
 use surface::Surface;
 
@@ -95,7 +97,14 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
             overlays.push(overlay);
         }
     }
-    for texture in overlays.iter().map(|overlay| &overlay.texture).chain([&settings.ground_texture]) {
+    let raised: Vec<_> = regions::REGIONS.iter().flat_map(|region| region.raised()).collect();
+    raised::check(&raised, &overlays)?;
+    for texture in overlays
+        .iter()
+        .map(|overlay| &overlay.texture)
+        .chain(raised.iter().map(|surface| &surface.texture))
+        .chain([&settings.ground_texture])
+    {
         crate::uri_of_texture(texture)?;
     }
     let [[first_column, first_row], [last_column, last_row]] = settings.tiles;
@@ -107,6 +116,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     }
     let land = Land {
         ground: &ground,
+        raised: &raised,
         low: ground.position(whole.columns.0 as f64, whole.rows.0 as f64),
         high: ground.position(whole.columns.1 as f64, whole.rows.1 as f64),
         exclusions: &exclusions,
@@ -114,8 +124,11 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     let grid = Grid { south_west: DVec2::new(x, y), tile_m: settings.tile_steps as f64 * settings.ground_step_m };
     // The full tiles' ground across the whole exported map, which seats the cables' ends.
     let drawn = Surface::new(&whole.ground(&ground, Detail::Full, 0, 1.0));
+    for surface in &raised {
+        surface.mesh(&drawn, true)?;
+    }
     let sceneries = regions::REGIONS.iter().map(|region| (region.scenery(&land), region.fastens_to())).collect();
-    let mut scenery = scenery::share(sceneries, &land, &grid, &overlays, &drawn)?;
+    let mut scenery = scenery::share(sceneries, &land, &grid, &overlays, &raised, &drawn)?;
 
     let tiles = folder.join("tiles");
     fs::create_dir_all(&tiles)?;
@@ -140,10 +153,10 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
                 (Detail::Full, tiles.join(format!("{stem}.glb"))),
                 (Detail::Middle, tiles.join(format!("{stem}.middle.glb"))),
             ];
-            let checksum = tile.checksum(&code, &tile_settings, &ground, &overlays, &tile_scenery);
+            let checksum = tile.checksum(&code, &tile_settings, &ground, &overlays, &raised, &tile_scenery);
             if previous.get(&stem) != Some(&checksum) || files.iter().any(|(_, file)| !file.is_file()) {
                 for (detail, file) in &files {
-                    tile.write(&ground, &overlays, &tile_scenery, settings, *detail, file)?;
+                    tile.write(&ground, &overlays, &raised, &tile_scenery, settings, *detail, file)?;
                 }
                 rebuilt += 1;
             }
@@ -154,7 +167,9 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         }
     }
     let [x, y] = settings.spawn_m;
-    let Some(height) = ground.height(DVec2::new(x, y)) else { bail!("the spawn is off the ground") };
+    let Some(height) = raised::height(&raised, DVec2::new(x, y), |p| ground.height(p)) else {
+        bail!("the spawn is off the ground")
+    };
     let facing = DQuat::from_rotation_y(-settings.spawn_bearing_deg.to_radians());
     index.add_marker("spawn", game(DVec3::new(x, y, height)), facing);
 
@@ -189,6 +204,7 @@ impl Tile {
         &self,
         ground: &Ground,
         overlays: &[Overlay],
+        raised: &[Raised],
         scenery: &TileScenery,
         settings: &Settings,
         detail: Detail,
@@ -216,7 +232,15 @@ impl Tile {
                 glb.add_material(&Material::textured(&overlay.name, &crate::uri_of_texture(&overlay.texture)?));
             glb.add_mesh(&overlay.name, &[&mesh]);
         }
-        scenery.write(&mut glb, &drawn, detail == Detail::Middle, path)?;
+        for surface in raised {
+            let mut mesh = surface.mesh(&drawn, false).with_context(|| format!("writing {}", path.display()))?;
+            if !mesh.indices.is_empty() {
+                mesh.material =
+                    glb.add_material(&Material::textured(&surface.name, &crate::uri_of_texture(&surface.texture)?));
+                glb.add_mesh(&surface.name, &[&mesh]);
+            }
+        }
+        scenery.write(&mut glb, &drawn, raised, detail == Detail::Middle, path)?;
         glb.write(path)
     }
 
