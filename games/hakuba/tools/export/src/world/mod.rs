@@ -20,6 +20,7 @@ mod checksums;
 mod curve;
 mod ground;
 mod levelling;
+mod openings;
 mod overlay;
 mod raised;
 mod regions;
@@ -128,12 +129,18 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
             }
         }
     }
+    let domains: Vec<_> = regions::REGIONS.iter().flat_map(|region| region.path_domains()).collect();
+    let openings: Vec<_> = regions::REGIONS.iter().flat_map(|region| region.path_openings()).collect();
+    openings::check(&domains, &openings)?;
     let land = Land {
         ground: &ground,
         raised: &prepared,
         low: ground.position(whole.columns.0 as f64, whole.rows.0 as f64),
         high: ground.position(whole.columns.1 as f64, whole.rows.1 as f64),
         exclusions: &exclusions,
+        regions: &regions::REGIONS,
+        domains: &domains,
+        openings: &openings,
     };
     let grid = Grid { south_west: DVec2::new(x, y), tile_m: settings.tile_steps as f64 * settings.ground_step_m };
     // The full tiles' ground across the whole exported map, which seats the cables' ends.
@@ -257,7 +264,10 @@ impl Tile {
             if !mesh.indices.is_empty() {
                 mesh.material =
                     glb.add_material(&Material::textured(&surface.name, &crate::uri_of_texture(&surface.texture)?));
-                glb.add_mesh(&surface.node_name(), &[&mesh]);
+                let node = glb.add_mesh(&surface.node_name(), &[&mesh]);
+                if let Some(paint) = &surface.paint {
+                    glb.set_extras(node, json!({"surface_paint": paint}));
+                }
             }
         }
         scenery.write(&mut glb, &drawn, prepared, detail == Detail::Middle, path)?;
@@ -336,6 +346,7 @@ mod tests {
             name: "paving".into(),
             texture: "earth".into(),
             ground: true,
+            paint: None,
             height: 3.0,
             clearance: 0.1,
             triangles: vec![[p(1.0, 0.0), p(2.0, 0.0), p(1.0, 1.0)]],
@@ -347,6 +358,60 @@ mod tests {
         assert_eq!(spawn_position(at, &ground, &prepared).unwrap(), DVec3::new(1.0, 0.25, 3.0));
         let empty = raised::Prepared::new(&[], DVec2::ZERO, 8.0);
         assert_eq!(spawn_position(at, &ground, &empty).unwrap(), at.extend(0.0));
+    }
+
+    #[test]
+    fn raised_paint_profile_is_written_on_both_surface_nodes() {
+        let ground = Ground::page(8, 1.0, |_, _| 0.0);
+        let tile = Tile { columns: (0, 8), rows: (0, 8) };
+        let settings = Settings {
+            ground: PathBuf::new(),
+            south_west_m: [0.0, 0.0],
+            ground_step_m: 1.0,
+            page_steps: 8,
+            tile_steps: 8,
+            tiles: [[0, 0], [0, 0]],
+            ground_texture: "ground".into(),
+            ground_texture_m: 6.0,
+            spawn_m: [0.0, 0.0],
+            spawn_bearing_deg: 0.0,
+        };
+        let p = |x, y| (DVec2::new(x, y), DVec2::new(x, y));
+        let raised = [Raised {
+            name: "paving".into(),
+            texture: "ground".into(),
+            ground: true,
+            height: 2.0,
+            clearance: 0.1,
+            paint: Some(raised::SurfacePaint {
+                haze_start_m: 30.0,
+                haze_length_m: 9000.0,
+                haze_colour: [0.0932, 0.2301, 0.5328],
+            }),
+            triangles: vec![[p(1.0, 1.0), p(3.0, 1.0), p(1.0, 3.0)]],
+        }];
+        let drawn = Surface::new(&tile.ground(&ground, Detail::Full, 0, 1.0));
+        let mut prepared = raised::Prepared::new(&raised, DVec2::ZERO, 8.0);
+        prepared.add_tile((0, 0), &drawn, false).unwrap();
+        prepared.add_tile((0, 0), &drawn, true).unwrap();
+        for (detail, suffix) in [(Detail::Full, "full"), (Detail::Middle, "middle")] {
+            let path = std::env::temp_dir().join(format!("raised-paint-{}-{suffix}.glb", std::process::id()));
+            tile.write(&ground, (&[], &raised, &prepared), &TileScenery::default(), &settings, detail, &path).unwrap();
+            let bytes = std::fs::read(&path).unwrap();
+            std::fs::remove_file(&path).unwrap();
+            let len = u32::from_le_bytes(bytes[12..16].try_into().unwrap()) as usize;
+            let value: serde_json::Value = serde_json::from_slice(&bytes[20..20 + len]).unwrap();
+            let painted: Vec<_> = value["nodes"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter(|node| node["extras"].get("surface_paint").is_some())
+                .collect();
+            assert_eq!(painted.len(), 1);
+            assert_eq!(painted[0]["name"], "ground");
+            assert_eq!(painted[0]["extras"]["surface_paint"]["haze_start_m"], 30.0);
+            assert_eq!(painted[0]["extras"]["surface_paint"]["haze_length_m"], 9000.0);
+        }
     }
 
     /// Neighbouring tiles meet exactly along their whole shared edge, whichever version each one shows: both draw

@@ -11,4 +11,4 @@ ground_texture = "ground"
 ground_texture_m = 24.0
 spawn_m = [-255.26, -99.51]
 spawn_bearing_deg = 94.7
-inputs_sha256 = "46058b49130374f223785e097ce12b78b0bbbb9cf08f17d6124553f7a9fff393"
+inputs_sha256 = "fe483e716dafaf3eef82a79b040c434e0c5fdcf44e208655f2b81beaf04a9b99"

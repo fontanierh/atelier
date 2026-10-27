@@ -1,0 +1,5 @@
+# A roadside house with its authored visual mesh and separate collision boxes.
+kind = "prop"
+source = "src/house.glb"
+solid = true
+inputs_sha256 = "928bf4712f4d4fd045407257c504cd62c684f3908c9bc45ce6b0ffef7276f197"

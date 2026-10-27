@@ -2,12 +2,31 @@
 
 use anyhow::{Result, bail};
 use glam::{DVec2, DVec3};
+use serde::Serialize;
 use std::collections::BTreeSet;
 
 use super::game;
 use super::overlay::Overlay;
 use super::surface::{Surface, cut, weights};
 use crate::glb::Mesh;
+
+/// The haze response of a textured surface, stored with its tile node.
+#[derive(Clone, Serialize)]
+pub struct SurfacePaint {
+    pub haze_start_m: f32,
+    pub haze_length_m: f32,
+    pub haze_colour: [f32; 3],
+}
+
+impl SurfacePaint {
+    fn valid(&self) -> bool {
+        self.haze_start_m.is_finite()
+            && self.haze_start_m >= 0.0
+            && self.haze_length_m.is_finite()
+            && self.haze_length_m > 0.0
+            && self.haze_colour.iter().all(|v| v.is_finite() && *v >= 0.0)
+    }
+}
 
 /// A planar surface, in map coordinates. Triangles share one height and carry their own texture coordinates.
 /// The declaring region must supply and verify any enclosing source geometry needed to keep the underside out of
@@ -17,6 +36,7 @@ pub struct Raised {
     pub texture: String,
     /// Whether footsteps use the ground sound, rather than the built-surface sound.
     pub ground: bool,
+    pub paint: Option<SurfacePaint>,
     pub height: f64,
     /// Minimum separation from the drawn ground, in metres.
     pub clearance: f64,
@@ -326,6 +346,7 @@ pub fn check(raised: &[Raised], overlays: &[Overlay]) -> Result<()> {
             || !surface.clearance.is_finite()
             || surface.clearance <= 0.0
             || surface.triangles.is_empty()
+            || surface.paint.as_ref().is_some_and(|paint| !paint.valid())
         {
             bail!("{} has an invalid height, clearance or footprint", surface.name);
         }
@@ -386,6 +407,7 @@ mod tests {
             name: "paving".into(),
             texture: "earth".into(),
             ground: true,
+            paint: None,
             height: 3.0,
             clearance: 0.1,
             triangles: vec![[p(3.0, 2.0), p(7.0, 2.0), p(7.0, 6.0)], [p(3.0, 2.0), p(7.0, 6.0), p(3.0, 6.0)]],
@@ -412,6 +434,7 @@ mod tests {
             name: "edge".into(),
             texture: "earth".into(),
             ground: true,
+            paint: None,
             height: 3.0,
             clearance: 0.1,
             triangles: vec![[p(199.1, 0.1), p(203.2, 2.3), p(199.2, 4.7)]],
@@ -438,6 +461,7 @@ mod tests {
             name: "edge".into(),
             texture: "earth".into(),
             ground: true,
+            paint: None,
             height: 3.0,
             clearance: 0.1,
             triangles: vec![[p(0.2, 0.1), p(1.0, 0.1), p(1.0, 0.9)], [p(0.2, 0.1), p(1.0, 0.9), p(0.2, 0.9)]],
@@ -504,6 +528,7 @@ mod tests {
             name: "paving".into(),
             texture: "earth".into(),
             ground: true,
+            paint: None,
             height: 1.0,
             clearance: 0.1,
             triangles: vec![[p(1.2, 1.2), p(1.7, 1.2), p(1.7, 1.7)], [p(1.2, 1.2), p(1.7, 1.7), p(1.2, 1.7)]],
@@ -574,6 +599,7 @@ mod tests {
             name: "first".into(),
             texture: "earth".into(),
             ground: true,
+            paint: None,
             height: 3.0,
             clearance: 0.1,
             triangles: vec![[p(199.0, 0.0), p(200.0, 0.0), p(200.0, 1.0)]],
@@ -582,6 +608,7 @@ mod tests {
             name: "second".into(),
             texture: "earth".into(),
             ground: true,
+            paint: None,
             height: 4.0,
             clearance: 0.1,
             triangles: vec![[p(200.000001, 0.0), p(201.0, 0.0), p(200.000001, 1.0)]],
@@ -592,6 +619,7 @@ mod tests {
             name: "shifted".into(),
             texture: "earth".into(),
             ground: true,
+            paint: None,
             height: 3.0,
             clearance: 0.1,
             triangles: vec![[p(200.000001, 0.0), p(201.0, 0.0), p(200.000001, 1.0)]],
@@ -675,6 +703,13 @@ mod tests {
         let mut changed = square();
         changed.height += 0.2;
         assert_ne!(checksum(&near, &[square()]), checksum(&near, &[changed]));
+        let mut painted = square();
+        painted.paint =
+            Some(SurfacePaint { haze_start_m: 30.0, haze_length_m: 9000.0, haze_colour: [0.0932, 0.2301, 0.5328] });
+        assert_ne!(checksum(&near, &[square()]), checksum(&near, &[painted]));
+        let mut invalid = square();
+        invalid.paint = Some(SurfacePaint { haze_start_m: 0.0, haze_length_m: 0.0, haze_colour: [0.0; 3] });
+        assert!(check(&[invalid], &[]).is_err());
         let mut changed = square();
         changed.height += 0.2;
         assert_eq!(checksum(&far, &[square()]), checksum(&far, &[changed]));
