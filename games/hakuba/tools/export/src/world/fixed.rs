@@ -90,20 +90,57 @@ impl FixedSources {
         self.geometry.contains_key(model)
     }
 
+    fn overlaps(min: DVec2, max: DVec2, selection: (DVec2, DVec2)) -> bool {
+        min.cmplt(selection.1).all() && max.cmpge(selection.0).all()
+    }
+
+    fn intersects(witness: &Witness, selection: (DVec2, DVec2)) -> bool {
+        let min = DVec2::new(witness.world_bounds_m[0][0], witness.world_bounds_m[0][1]);
+        let max = DVec2::new(witness.world_bounds_m[1][0], witness.world_bounds_m[1][1]);
+        Self::overlaps(min, max, selection)
+    }
+
+    pub fn selects_id(&self, id: &str, selection: (DVec2, DVec2)) -> Option<bool> {
+        self.entries.get(id).map(|witness| Self::intersects(witness, selection))
+    }
+
+    /// Known placements use the independent witness bounds. Unknown/moved placements use their actual
+    /// transformed bounds so moving new geometry into a crop cannot escape validation.
+    pub fn selects_placement(
+        &self,
+        placement: &super::scenery::Placement,
+        at: DVec2,
+        yaw: f64,
+        scale: f64,
+        selection: (DVec2, DVec2),
+    ) -> Result<bool> {
+        let id = super::contact::key(placement);
+        if let Some(selected) = self.selects_id(&id, selection) {
+            return Ok(selected);
+        }
+        if !at.is_finite() || !yaw.is_finite() || !scale.is_finite() || scale <= 0.0 {
+            bail!("invalid fixed source pose");
+        }
+        let rotation = DVec2::from_angle(yaw);
+        let mut min = DVec2::splat(f64::INFINITY);
+        let mut max = DVec2::splat(f64::NEG_INFINITY);
+        for point in self.geometry[placement.model].iter().flatten() {
+            let xy = at + rotation.rotate(DVec2::new(point.x, -point.z) * scale);
+            min = min.min(xy);
+            max = max.max(xy);
+        }
+        Ok(Self::overlaps(min, max, selection))
+    }
+
     pub fn validate(&self, scenery: &[Scenery], land: &Land<'_>, selection: (DVec2, DVec2)) -> Result<()> {
-        let (low, high) = selection;
-        let mut unseen: BTreeSet<&str> = self
-            .entries
-            .iter()
-            .filter(|(_, w)| DVec2::new(w.x, w.y).cmpge(low).all() && DVec2::new(w.x, w.y).cmplt(high).all())
-            .map(|(id, _)| id.as_str())
-            .collect();
+        let mut unseen: BTreeSet<&str> =
+            self.entries.iter().filter(|(_, w)| Self::intersects(w, selection)).map(|(id, _)| id.as_str()).collect();
         for placement in scenery.iter().flat_map(|scene| &scene.placements) {
             if !self.contains_model(placement.model) {
                 continue;
             }
             let (at, yaw, scale, _) = effective_pose(land.raised, land.rendered, placement);
-            if at.cmplt(low).any() || at.cmpge(high).any() {
+            if !self.selects_placement(placement, at, yaw, scale, selection)? {
                 continue;
             }
             let id = super::contact::key(placement);
@@ -139,6 +176,32 @@ impl FixedSources {
             bail!("{} fixed source placements are missing", unseen.len());
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+impl FixedSources {
+    pub(super) fn test_instance(
+        placement: &super::scenery::Placement,
+        triangles: Vec<[DVec3; 3]>,
+        bounds: [[f64; 3]; 2],
+    ) -> Self {
+        let id = super::contact::key(placement);
+        let witness = Witness {
+            id: id.clone(),
+            model: placement.model.into(),
+            x: placement.at.x,
+            y: placement.at.y,
+            height: placement.origin_height_m.unwrap(),
+            yaw: placement.yaw,
+            scale: placement.scale,
+            geometry_sha256: geometry_hash(&triangles),
+            world_bounds_m: bounds,
+        };
+        Self {
+            entries: BTreeMap::from([(id, witness)]),
+            geometry: BTreeMap::from([(placement.model.into(), triangles)]),
+        }
     }
 }
 
@@ -192,6 +255,10 @@ mod tests {
         assert!(fixed.validate(std::slice::from_ref(&scene), &land, (DVec2::splat(-2.0), DVec2::splat(2.0))).is_ok());
         assert!(fixed.validate(&[], &land, (DVec2::splat(-2.0), DVec2::splat(2.0))).is_err());
         assert!(fixed.validate(&[], &land, (DVec2::splat(2.0), DVec2::splat(3.0))).is_ok());
+        // The crop intersects geometry although the authored origin is outside it.
+        let crop = (DVec2::splat(0.5), DVec2::splat(1.5));
+        assert!(fixed.validate(std::slice::from_ref(&scene), &land, crop).is_ok());
+        assert!(fixed.validate(&[], &land, crop).is_err());
         let moved = Placement {
             model: "props/example",
             at: DVec2::X,

@@ -3,4 +3,4 @@ kind = "texture"
 source = "src/texture.png"
 alpha_cutoff = 0.4
 mip_colour = "average"
-inputs_sha256 = "fbe78c403d06e25cf4bd06da2f336b6a782c68feaf9171b9a05839e7020ed4c8"
+inputs_sha256 = "167afb8d9c2da1c730fdbb77e0914ecb98574282c909d68b23138f0a90e2cf9e"

@@ -130,7 +130,7 @@ fn read(
         }
         if serde_json::from_str::<serde_json::Value>(&extras.value)
             .ok()
-            .is_some_and(|v| v.get("surface_paint").is_some())
+            .is_some_and(|v| v.get("surface_paint").is_some() || v.get("vertex_paint").is_some())
         {
             continue;
         }

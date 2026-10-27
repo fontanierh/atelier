@@ -54,6 +54,13 @@ pub struct Settings {
     hold: Hold,
 }
 
+impl Settings {
+    /// Authored clips come from the model itself, without reading the shared animation exports.
+    pub fn uses_authored_clips(&self) -> bool {
+        !self.authored_clips.is_empty()
+    }
+}
+
 /// Where a hand holds things: its palm's frame, moved and turned. The palm's axes are x, out of the right palm; y,
 /// from the wrist toward the knuckles; and z, from the index finger toward the little finger.
 #[derive(Serialize, Deserialize, Default)]
@@ -81,7 +88,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     if let Some(name) = settings.animations.keys().find(|name| animations::named(name).is_none()) {
         bail!("animations.{name}: there is no animation named {name}");
     }
-    if settings.authored_clips.is_empty() {
+    if !settings.uses_authored_clips() {
         if settings.authored_pelvis.is_some() || !settings.authored_speeds.is_empty() {
             bail!("authored metadata requires authored clips");
         }

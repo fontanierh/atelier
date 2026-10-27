@@ -54,6 +54,7 @@ impl Asset {
             | Asset::Prop(_)
             | Asset::Sound(_)
             | Asset::Texture(_) => Vec::new(),
+            Asset::Character(settings) if settings.uses_authored_clips() => Vec::new(),
             Asset::Character(_) => rig::animations::ANIMATIONS.into_iter().map(rig::animation::folder).collect(),
             Asset::World(settings) => world::reads(settings),
         }
@@ -311,6 +312,16 @@ fn export_in_order(mut pending: Vec<Folder>) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn character_dependencies_follow_the_clip_source() {
+        let authored = Folder::read(&Path::new(ASSETS).join("characters/wanderer")).unwrap();
+        let shared = Folder::read(&Path::new(ASSETS).join("characters/nox")).unwrap();
+        assert!(authored.asset.reads().is_empty());
+        let expected: Vec<_> = rig::animations::ANIMATIONS.into_iter().map(rig::animation::folder).collect();
+        assert!(!expected.is_empty());
+        assert_eq!(shared.asset.reads(), expected);
+    }
 
     /// Each kind's code folder under `src/`, and the asset groups whose `.rs` files it compiles in.
     const KINDS: [(&str, &[&str]); 5] = [

@@ -1,4 +1,4 @@
 # The source coastal road asphalt texture.
 kind = "texture"
 source = "src/road.jpg"
-inputs_sha256 = "bc27b87243eb454951e56a6d48854492f47d8167e45aec5e4c71010bcaa96714"
+inputs_sha256 = "fad0fac214a0b281363ebcd9f9e48d2d0db9412142de92fe44a313e2f78b5792"

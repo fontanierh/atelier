@@ -4,4 +4,4 @@ kind = "animation"
 source = "src/source.glb"
 clip = "Nml_Move_Walk"
 rate = 0.9
-inputs_sha256 = "6ce4f32b0d7606599b472d379754f1d04bb9d4a8d5671e4bd2fdc2617f517c30"
+inputs_sha256 = "fbd5d59a900cf96d05c608fbeb02d672f9fc75314726edd2501f30ca6e2e9e78"

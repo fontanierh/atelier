@@ -1,7 +1,7 @@
 # Source contact measurements, in metres, for the authored instances and original terrain.
 format = "HCNT0001"
 path = "contact-reference.bin"
-sha256 = "331ab51b5623743971b5dd612ea2a84d03a6cd7d48bdf0fc5d6bdcc342e3ffd8"
+sha256 = "f0c5c481f5b0560f1f7b9745bebd13845270cc7931e61c5a5fc199389e74bf12"
 tolerance_m = 0.01
 placement_extent_m = [[-300, -172], [300, 212]]
 surface_extent_m = [[-300, -256], [300, 256]]
@@ -90,11 +90,14 @@ triangles_sha256 = "b06c182713650ff224a5fed80c356e1a839b7df8cbf1911b9a2a3d3dcefe
 "props/village-threshold" = "4127f25088412eda41b68f99a13792f3a370e641ead4224ba62b2d731ba2df56"
 "props/village-workshop" = "68b580f3d47f980df7376719a3373a3cc7ab10d829b25e0f9640de49cc1cae21"
 
-# Fixed world geometry has an exact source triangle, pose and world-bounds witness.
+# Fixed world geometry has an exact triangle, pose and bounds witness and an independent
+# SDK-surface minimum gap per placement. The minimum does not prove every footprint point.
 [fixed_source_reference]
 path = "fixed-source-reference.json"
 sha256 = "2b75724bb6c657ea0176ac1314eb50d4a32c48d80fcffedd821f68b1558f58f3"
 placements = 27
+sdk_terrain_glb_sha256 = "859bdef5ed4223577f00e9e3670071081103170430f0a895501303e39457fa1a"
+sdk_measurements_sha256 = "3698cb7a8c94d8070fd1a4c6712a7d630c509406742458b3263d1f2d0c9eac0c"
 
 # Restore original north terrain samples, including duplicated page-edge values.
 [northern_terrain_restore]

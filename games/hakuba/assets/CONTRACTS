@@ -19,9 +19,12 @@ An asset's exports MUST be written only by `cargo export`, never by hand, and MU
 with the settings and sources they were exported from, with a current inputs checksum.
 
 @cc [owner:fontanierh,label:architecture] world-ground-has-one-owner
-The world's ground MUST be one grid of heights, in the pages under `assets/world/src/ground/`. A region
-MUST NOT bring its own ground. It adds to the world only through the exporter's `Region` trait: what it
-lays over the ground, and, as declared changes, how it reshapes the ground inside its own area.
+The world's base terrain MUST be one shared grid of heights in the pages under `assets/world/src/ground/`.
+A region MUST NOT provide a private terrain height query; it contributes through the exporter's `Region` trait,
+including declared reshaping within its area. Source-authored lanes or crossings that cannot be represented faithfully
+by that grid MAY retain their exact source triangles through `Region::authored_surfaces`. These surfaces and the grid
+MUST use the shared clipping, overlap checks, visible-owner and contact queries; physical overlap is permitted where
+present in the source.
 
 @cc [owner:fontanierh,label:performance] textures-are-named-not-copied
 A texture more than one asset shows MUST be its own asset under `assets/textures/<name>/`, exported as a `.ktx2`

@@ -17,7 +17,7 @@ ground_texture = "ground"
 ground_texture_m = 24.0
 spawn_m = [-255.26, -99.51]
 spawn_bearing_deg = 94.7
-inputs_sha256 = "7be867e7473d579024c6f61d09694ecece71d667ea83abb9744c70d6d73f33ea"
+inputs_sha256 = "1a5184d04889e553868abb955ddfafe1cd86b7314eaa317358bf34076fa892c0"
 
 # Model-frame lower geometry considered for source contact; the reference records source gaps.
 [[grounding]]
@@ -35,3 +35,8 @@ band_m = 0.5
 [[grounding]]
 models = ["props/village-cottage-a", "props/village-cottage-b", "props/village-garden", "props/village-sign", "props/village-storehouse", "props/village-tea-house", "props/village-threshold", "props/village-workshop"]
 band_m = 0.1
+
+# Fixed source geometry uses all triangles for its independent minimum-gap witness.
+[[grounding]]
+models = ["props/village-details-70-21", "props/village-planting-cell-0-0-piece32-69-22", "props/village-edges-70-21", "props/village-planting-cell-0-0-piece31-70-21", "props/village-planting-cell-0-0-piece30-70-21", "props/village-planting-cell-0-0-piece31-70-22", "props/village-details-69-21", "props/village-planting-cell-1-0-71-22", "props/village-planting-cell-0-0-piece30-69-22", "props/village-edges-70-22", "props/village-planting-cell-1-1-71-23", "props/village-planting-cell-1-0-70-22", "props/village-planting-cell-0-0-piece33-70-22", "props/village-planting-cell-1-1-71-22", "props/village-planting-cell-0-0-piece32-70-22", "props/village-planting-cell-0-neg1-70-20", "props/village-planting-cell-1-1-70-23", "props/village-planting-cell-0-0-piece1-69-20", "props/village-edges-69-21", "props/village-details-70-22", "props/village-edges-69-22", "props/village-details-69-22", "props/village-planting-cell-0-0-piece1-69-21", "props/village-planting-cell-0-0-piece1-70-20", "props/village-planting-cell-0-0-piece30-69-21", "props/village-planting-cell-0-0-piece30-70-22", "props/village-planting-cell-0-0-piece1-70-21"]
+band_m = 0.0

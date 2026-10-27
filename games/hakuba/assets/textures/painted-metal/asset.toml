@@ -4,4 +4,4 @@
 # saturation halved, and its brightness scaled to average 0.75.
 kind = "texture"
 source = "src/painted-metal.jpg"
-inputs_sha256 = "ed427aed8d2801b1c489585adef5b506f7576f3dc0d4b0a503763f02aa788f06"
+inputs_sha256 = "a7dc715656d43e0ac224f31db749fdeabbb71f4ae86da6899a78673c8c759f39"

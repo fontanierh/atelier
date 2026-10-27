@@ -283,19 +283,19 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     };
     let grid = Grid { south_west: DVec2::new(x, y), tile_m: settings.tile_steps as f64 * settings.ground_step_m };
     let sceneries: Vec<_> = regions::REGIONS.iter().map(|region| region.scenery(&land)).collect();
-    let contacts = contact::read(&settings.grounding)?;
     let fixed = match &settings.fixed_source_reference {
         Some(path) => fixed::FixedSources::read(&source_path(folder, path)?)?,
         None if settings.fixed_source_models.is_empty() => fixed::FixedSources::empty(),
         None => bail!("fixed source models need a source witness"),
     };
+    let contacts = contact::read(&settings.grounding, &fixed)?;
     let declared: std::collections::BTreeSet<_> = settings.fixed_source_models.iter().map(String::as_str).collect();
     let witnessed: std::collections::BTreeSet<_> = fixed.models().collect();
     if declared.len() != settings.fixed_source_models.len()
         || declared != witnessed
-        || declared.iter().any(|name| contacts.contains_key(*name))
+        || declared.iter().any(|name| !contacts.contains_key(*name))
     {
-        bail!("fixed source models must match their witnesses and be distinct from contact models");
+        bail!("fixed source models must match their witnesses and have contact policies");
     }
     let reference_path = settings.grounding_reference.as_ref().context("world needs a source contact reference")?;
     let reference = contact::Reference::read(&source_path(folder, reference_path)?)?;
