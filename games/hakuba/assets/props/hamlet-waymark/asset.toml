@@ -1,7 +1,7 @@
 # A timber arrow waymark, its board pointing local +x, readable from either side.
 kind = "prop"
 solid = true
-inputs_sha256 = "ecc351100d955b1ffe5cbdeb94d97b9df3b2bae23835c6a6c99380763c9262a2"
+inputs_sha256 = "bd662e059aba152c79fc2633b0710914f93d779f5884d9a7caad304809ba8495"
 
 [materials]
 paper = [0.82757083, 0.29569980, 0.03968191]

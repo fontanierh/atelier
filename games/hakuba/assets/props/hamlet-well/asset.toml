@@ -1,7 +1,7 @@
 # A compact stone well with water, timber supports and a closed pitched roof.
 kind = "prop"
 solid = true
-inputs_sha256 = "e87076d4bbb4257c949b0ed0c83606cabd8547173b039a62476635c722efc5f2"
+inputs_sha256 = "edb2484e6399b1f42ffcc1c05790ac461d4c000e7f73be8a3beb62caa0c4ac20"
 
 [materials]
 water = [0.00489631, 0.01738910, 0.00926431]

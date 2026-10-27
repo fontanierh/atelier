@@ -1,7 +1,7 @@
 # A small pottery vessel seated separately on the final ground surface.
 kind = "prop"
 solid = true
-inputs_sha256 = "4a4cff5fc6fd008ffb981f68036a7665c2a4f2913870e7ebbde9b872db04318d"
+inputs_sha256 = "d099cdcfad09f7d854fc03b59b312eb8696818c40b7d40f5e83085255a2a5ad1"
 
 [materials]
 bluepot = [0.02721178, 0.05925352, 0.07323896]

@@ -1,7 +1,7 @@
 # A small pottery vessel seated separately on the final ground surface.
 kind = "prop"
 solid = true
-inputs_sha256 = "0176cfeedfca6e0afedb70b0245a1bfc06f4e80cfcd2cf3fcaa60fc9578bb575"
+inputs_sha256 = "ef8cc5ddd3e19c3a2d2d51ae778b8aca3cdc55b4ce60de5ff240195f356d8678"
 
 [materials]
 clay = [0.17886750, 0.04507641, 0.00785057]

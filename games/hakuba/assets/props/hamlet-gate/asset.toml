@@ -1,7 +1,7 @@
 # A timber village threshold with a clear local y passage; the origin is the left support foot.
 kind = "prop"
 solid = true
-inputs_sha256 = "9298aaacea7e11311e770ea36f7f390cf7f82636a2452ff20f7951e8fddbbb36"
+inputs_sha256 = "3c5531fd160abc424256679a4d94aeaeb3a9b19b3288ebc2fa5082f16d3f2cc6"
 
 [materials]
 paper = [0.82757083, 0.29569980, 0.03968191]

@@ -1,7 +1,7 @@
 # A timber workshop with green awning and pottery shelves; local +x faces the lane.
 kind = "prop"
 solid = true
-inputs_sha256 = "693e18c1c9a76899524c1ea2ff9d6c215298e50da7383062b081dce0327db1fc"
+inputs_sha256 = "f5a477bfc76e3b36baca3934e4986aae7a2b7f65712162ebe6038914d00d1420"
 
 [materials]
 bluepot = [0.02721178, 0.05925352, 0.07323896]

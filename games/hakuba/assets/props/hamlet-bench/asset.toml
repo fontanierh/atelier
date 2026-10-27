@@ -1,7 +1,7 @@
 # A small timber bench seated separately on the final ground surface.
 kind = "prop"
 solid = true
-inputs_sha256 = "ac76d08967271741fb760e82268b48ddcaf1238f1c1b32da65e4511e3e26930a"
+inputs_sha256 = "bec233d0861373e20be60788ad50941c0243a83804c06cc2f1a1ba91cb93776e"
 
 [materials]
 wood = [0.00510317, 0.00185759, 0.00054180]

@@ -1,7 +1,7 @@
 # A two-storey tea house with a tiled roof, front balcony, russet curtains and lanterns; local +x faces the lane.
 kind = "prop"
 solid = true
-inputs_sha256 = "4e6dbbf8d957c2b7a4fc0a49bff11cced7c8796388ba3bba5596fbbcbb21ef60"
+inputs_sha256 = "1c06a955c5559f43f0f58ce6ab930be6b9643c4b89109884f6679ad15af3c8a8"
 
 [materials]
 metal = [0.00785057, 0.00785057, 0.00657140]

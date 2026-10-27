@@ -1,7 +1,7 @@
 # A narrow timber-framed storehouse with its gable and door facing local -y.
 kind = "prop"
 solid = true
-inputs_sha256 = "ccd02a91ef963877e5d89943e9fe6151b2f209a86b937a45ba57b6968029f94e"
+inputs_sha256 = "c84d277430556aa30a2cedd48a829d972a72574b575476958af6ef888fc95a66"
 
 [materials]
 metal = [0.00785057, 0.00785057, 0.00657140]

@@ -1,7 +1,7 @@
 # A timber-framed A cottage with a closed pitched roof and sheltered front; local +x faces the lane.
 kind = "prop"
 solid = true
-inputs_sha256 = "098ca80f84f76c696d69cf0cda01076f244469d75e90dafa2da34006cc2fef21"
+inputs_sha256 = "448693b05f7e4816624da7e5e54ca962b0cace380b9e54ea370db79b6fe59818"
 
 [materials]
 metal = [0.00785057, 0.00785057, 0.00657140]
