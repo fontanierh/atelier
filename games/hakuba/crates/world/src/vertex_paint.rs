@@ -51,7 +51,7 @@ pub struct SurfaceProfile {
 }
 
 impl SurfaceProfile {
-    fn profile(&self) -> Profile {
+    pub(crate) fn profile(&self) -> Profile {
         Profile {
             fill: 0.0,
             glow: 0.0,
@@ -100,7 +100,7 @@ impl Plugin for VertexPaintPlugin {
     }
 }
 
-type MadeEntries = Vec<(Profile, bool, Handle<Painted>)>;
+type MadeEntries = Vec<(Profile, u8, Handle<Painted>)>;
 
 #[derive(Resource, Default)]
 struct Made(HashMap<AssetId<StandardMaterial>, MadeEntries>);
@@ -118,20 +118,25 @@ impl PaintedMaterials<'_> {
         material: &Handle<StandardMaterial>,
         profile: &Profile,
     ) -> Result<Option<Handle<Painted>>, String> {
-        self.make(material, profile, false)
+        self.make(material, profile, 0)
+    }
+
+    pub(crate) fn of_surface(
+        &mut self,
+        material: &Handle<StandardMaterial>,
+        profile: &Profile,
+    ) -> Result<Option<Handle<Painted>>, String> {
+        self.make(material, profile, 2)
     }
 
     fn make(
         &mut self,
         material: &Handle<StandardMaterial>,
         profile: &Profile,
-        textured: bool,
+        mode: u8,
     ) -> Result<Option<Handle<Painted>>, String> {
-        if let Some((_, _, handle)) = self
-            .made
-            .0
-            .get(&material.id())
-            .and_then(|items| items.iter().find(|(p, t, _)| p == profile && *t == textured))
+        if let Some((_, _, handle)) =
+            self.made.0.get(&material.id()).and_then(|items| items.iter().find(|(p, t, _)| p == profile && *t == mode))
         {
             return Ok(Some(handle.clone()));
         }
@@ -139,8 +144,9 @@ impl PaintedMaterials<'_> {
         if base.alpha_mode != AlphaMode::Opaque {
             return Err("vertex paint requires an opaque source material".into());
         }
-        if (!textured && (base.base_color.to_linear() != LinearRgba::WHITE || base.base_color_texture.is_some()))
-            || (textured && base.base_color_texture.is_none())
+        if (mode == 0 && (base.base_color.to_linear() != LinearRgba::WHITE || base.base_color_texture.is_some()))
+            || (mode == 1 && base.base_color_texture.is_none())
+            || (mode == 3 && base.base_color_texture.is_some())
             || base.emissive_texture.is_some()
             || base.metallic_roughness_texture.is_some()
             || base.normal_map_texture.is_some()
@@ -161,7 +167,7 @@ impl PaintedMaterials<'_> {
             colour: Vec3::from_array(profile.haze_colour).extend(0.0),
         };
         let handle = self.painted.add(Painted { base, extension: Paint { data } });
-        self.made.0.entry(material.id()).or_default().push((profile.clone(), textured, handle.clone()));
+        self.made.0.entry(material.id()).or_default().push((profile.clone(), mode, handle.clone()));
         Ok(Some(handle))
     }
 }
@@ -173,7 +179,7 @@ impl PaintedMaterials<'_> {
 ///
 /// A tile surface waits for its source material and mesh before receiving the shared paint response.
 #[derive(Component)]
-pub(crate) struct SurfaceWaiting(Profile);
+pub(crate) struct SurfaceWaiting(Profile, bool);
 
 #[derive(Component)]
 pub(crate) struct SurfaceFailed;
@@ -193,9 +199,18 @@ pub(crate) fn read_surfaces(
         }
         let Ok(value) = serde_json::from_str::<serde_json::Value>(&extras.value) else { continue };
         let Some(raw) = value.get("surface_paint") else { continue };
+        let untextured = match value.get("surface_untextured") {
+            None => false,
+            Some(serde_json::Value::Bool(value)) => *value,
+            _ => {
+                error!("invalid untextured surface flag on tile node {entity}");
+                commands.entity(entity).insert(SurfaceFailed);
+                continue;
+            }
+        };
         match serde_json::from_value::<SurfaceProfile>(raw.clone()) {
             Ok(profile) if profile.profile().valid() => {
-                commands.entity(entity).insert(SurfaceWaiting(profile.profile()));
+                commands.entity(entity).insert(SurfaceWaiting(profile.profile(), untextured));
             }
             _ => {
                 error!("invalid surface paint profile on tile node {entity}");
@@ -243,7 +258,7 @@ pub(crate) fn prepare_surfaces(
                 failed = true;
                 break;
             }
-            match painted.make(&material.0, &profile.0, true) {
+            match painted.make(&material.0, &profile.0, if profile.1 { 3 } else { 1 }) {
                 Ok(Some(handle)) => replacements.push((entity, handle)),
                 Ok(None) => {
                     if matches!(assets.load_state(&material.0), LoadState::Failed(_)) {
@@ -278,6 +293,39 @@ mod tests {
     use bevy::ecs::system::RunSystemOnce;
 
     #[test]
+    fn source_surface_preserves_textured_and_tinted_parts() {
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins)
+            .init_resource::<Assets<StandardMaterial>>()
+            .init_resource::<Assets<Painted>>()
+            .init_resource::<Made>();
+        let mut assets = app.world_mut().resource_mut::<Assets<StandardMaterial>>();
+        let texture = Handle::<Image>::default();
+        let concrete = assets.add(StandardMaterial { base_color_texture: Some(texture.clone()), ..default() });
+        let tint = Color::linear_rgb(0.18, 0.11, 0.07);
+        let wood = assets.add(StandardMaterial { base_color: tint, ..default() });
+        let c = concrete.clone();
+        let w = wood.clone();
+        let result = app
+            .world_mut()
+            .run_system_once(move |mut painted: PaintedMaterials| {
+                let profile =
+                    SurfaceProfile { haze_start_m: 30.0, haze_length_m: 9000.0, haze_colour: [0.1, 0.2, 0.3] }
+                        .profile();
+                assert!(painted.of(&w, &profile).is_err());
+                (painted.of_surface(&c, &profile).unwrap().unwrap(), painted.of_surface(&w, &profile).unwrap().unwrap())
+            })
+            .unwrap();
+        let assets = app.world().resource::<Assets<Painted>>();
+        let concrete = assets.get(&result.0).unwrap();
+        let wood = assets.get(&result.1).unwrap();
+        assert_eq!(concrete.base.base_color_texture, Some(texture));
+        assert_eq!(wood.base.base_color, tint);
+        assert_eq!(wood.base.reflectance, 0.0);
+        assert!(!wood.base.fog_enabled);
+    }
+
+    #[test]
     fn textured_tile_surface_replaces_only_its_own_material() {
         use bevy::asset::RenderAssetUsages;
         use bevy::mesh::PrimitiveTopology;
@@ -305,6 +353,7 @@ mod tests {
                 MeshMaterial3d(source.clone()),
                 SurfaceWaiting(
                     SurfaceProfile { haze_start_m: 30., haze_length_m: 9000., haze_colour: [0.1, 0.2, 0.3] }.profile(),
+                    false,
                 ),
             ))
             .id();
@@ -315,6 +364,53 @@ mod tests {
         let handle = &world.get::<MeshMaterial3d<Painted>>(surface).unwrap().0;
         let painted = world.resource::<Assets<Painted>>().get(handle).unwrap();
         assert_eq!(painted.base.base_color_texture, Some(Handle::<Image>::default()));
+        assert_eq!(painted.extension.data.lower.w, 0.0);
+        assert_eq!(painted.extension.data.upper.w, 0.0);
+        assert_eq!(painted.base.reflectance, 0.0);
+        assert!(!painted.base.fog_enabled);
+        assert_eq!(world.get::<MeshMaterial3d<StandardMaterial>>(original).unwrap().0, source);
+    }
+
+    #[test]
+    fn untextured_tile_surface_keeps_its_tint_and_receives_haze() {
+        use bevy::asset::RenderAssetUsages;
+        use bevy::mesh::PrimitiveTopology;
+        let mut app = App::new();
+        app.add_plugins((MinimalPlugins, bevy::asset::AssetPlugin::default()));
+        app.init_resource::<Assets<Mesh>>()
+            .init_resource::<Assets<StandardMaterial>>()
+            .init_resource::<Assets<Painted>>()
+            .init_resource::<Made>()
+            .add_systems(Update, prepare_surfaces);
+        let mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default())
+            .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vec![[0., 0., 0.]; 3])
+            .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[0., 1., 0.]; 3])
+            .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, vec![[0., 0.]; 3]);
+        let mesh = app.world_mut().resource_mut::<Assets<Mesh>>().add(mesh);
+        let source = app
+            .world_mut()
+            .resource_mut::<Assets<StandardMaterial>>()
+            .add(StandardMaterial { base_color: Color::linear_rgb(0.85, 0.85, 0.82), ..default() });
+        let original = app.world_mut().spawn((Mesh3d(mesh.clone()), MeshMaterial3d(source.clone()))).id();
+        let surface = app
+            .world_mut()
+            .spawn((
+                Mesh3d(mesh),
+                MeshMaterial3d(source.clone()),
+                SurfaceWaiting(
+                    SurfaceProfile { haze_start_m: 30., haze_length_m: 9000., haze_colour: [0.1, 0.2, 0.3] }.profile(),
+                    true,
+                ),
+            ))
+            .id();
+        app.update();
+        let world = app.world();
+        assert!(world.get::<SurfaceWaiting>(surface).is_none());
+        assert!(world.get::<MeshMaterial3d<StandardMaterial>>(surface).is_none());
+        let handle = &world.get::<MeshMaterial3d<Painted>>(surface).unwrap().0;
+        let painted = world.resource::<Assets<Painted>>().get(handle).unwrap();
+        assert_eq!(painted.base.base_color_texture, None);
+        assert_eq!(painted.base.base_color, Color::linear_rgb(0.85, 0.85, 0.82));
         assert_eq!(painted.extension.data.lower.w, 0.0);
         assert_eq!(painted.extension.data.upper.w, 0.0);
         assert_eq!(painted.base.reflectance, 0.0);
@@ -346,6 +442,7 @@ mod tests {
                 MeshMaterial3d(material),
                 SurfaceWaiting(
                     SurfaceProfile { haze_start_m: 30., haze_length_m: 9000., haze_colour: [0.1, 0.2, 0.3] }.profile(),
+                    false,
                 ),
             ))
             .id();
@@ -372,6 +469,7 @@ mod tests {
                 MeshMaterial3d(material),
                 SurfaceWaiting(
                     SurfaceProfile { haze_start_m: 30., haze_length_m: 9000., haze_colour: [0.1, 0.2, 0.3] }.profile(),
+                    false,
                 ),
             ))
             .id();

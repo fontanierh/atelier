@@ -1,0 +1,5 @@
+# Source-authored farmhouse with separate collision boxes.
+kind = "prop"
+source = "src/house.glb"
+solid = true
+inputs_sha256 = "cc89ec34aaf189e96b9ef4772254b5c1de86d06b95a3bfa6e1f5544b6f813957"

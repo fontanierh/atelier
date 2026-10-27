@@ -11,7 +11,7 @@ use hakuba_settings::{AntiAliasing, Settings};
 
 use crate::painterly::Painterly;
 use crate::scenery::Placing;
-use crate::wind::{self, Swaying};
+use crate::wind::{self, SourceFoliage, Swaying};
 
 pub struct SettingsPlugin;
 
@@ -65,16 +65,36 @@ fn look(
     }
 }
 
+type SwayingPlants = Or<(With<MeshMaterial3d<Swaying>>, With<MeshMaterial3d<SourceFoliage>>)>;
+type AddedSwayingPlants = Or<(Added<MeshMaterial3d<Swaying>>, Added<MeshMaterial3d<SourceFoliage>>)>;
+
 /// Tells every swaying plant how strongly the wind blows, through its mesh tag, when the setting changes and as plants
 /// spawn.
 fn blow(
     mut commands: Commands,
     settings: Res<Settings>,
-    all: Query<Entity, With<MeshMaterial3d<Swaying>>>,
-    added: Query<Entity, Added<MeshMaterial3d<Swaying>>>,
+    all: Query<Entity, SwayingPlants>,
+    added: Query<Entity, AddedSwayingPlants>,
 ) {
     let plants: Vec<_> = if settings.is_changed() { all.iter().collect() } else { added.iter().collect() };
     for plant in plants {
         commands.entity(plant).insert(MeshTag::new(wind::tag(settings.wind)));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn source_foliage_receives_wind_setting_and_updates() {
+        let mut app = App::new();
+        app.init_resource::<Settings>().add_systems(Update, blow);
+        let plant = app.world_mut().spawn(MeshMaterial3d::<SourceFoliage>(Handle::default())).id();
+        app.update();
+        assert_eq!(app.world().get::<MeshTag>(plant).unwrap().value, wind::tag(Settings::default().wind));
+        app.world_mut().resource_mut::<Settings>().wind = 0.25;
+        app.update();
+        assert_eq!(app.world().get::<MeshTag>(plant).unwrap().value, wind::tag(0.25));
     }
 }

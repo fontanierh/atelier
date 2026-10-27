@@ -1,5 +1,17 @@
 //! The roadside terrace: its surveyed frame, level and front edge.
 
+#[path = "dressing.rs"]
+mod dressing;
+
+#[path = "lot2.rs"]
+mod lot2;
+
+#[path = "lot3.rs"]
+mod lot3;
+
+#[path = "lot5.rs"]
+mod lot5;
+
 #[path = "lot4.rs"]
 mod lot4;
 
@@ -7,7 +19,6 @@ use glam::DVec2;
 
 use super::Region;
 use crate::world::levelling::Strip;
-use crate::world::openings::Opening;
 use crate::world::overlay::Overlay;
 
 use crate::world::raised::{Raised, SurfacePaint};
@@ -170,6 +181,7 @@ pub fn placements() -> [Placement; 2] {
         yaw: YAW_DEG.to_radians(),
         scale: 1.0,
         origin_offset_m: 0.0,
+        origin_height_m: None,
         afar: true,
     })
 }
@@ -182,12 +194,6 @@ impl Region for RoadsideHouses {
         "roadside-houses"
     }
 
-    fn path_openings(&self) -> Vec<Opening> {
-        vec![
-            Opening { id: "coastal-downhill-rail", from: 86.2, to: 105.9 },
-            Opening { id: "coastal-downhill-rail", from: 316.9, to: 337.1 },
-        ]
-    }
     fn levelled(&self) -> Vec<Strip> {
         Vec::new()
     }
@@ -195,39 +201,47 @@ impl Region for RoadsideHouses {
         Vec::new()
     }
     fn raised(&self) -> Vec<Raised> {
-        vec![top("road-house-ground"), lot4::top()]
+        vec![top("road-house-ground"), lot2::top(), lot3::top(), lot4::top(), lot5::top()]
     }
-    fn scenery(&self, _: &Land) -> Scenery {
-        // The three source rocks have their authored origins six centimetres below the lot top.
-        let rocks =
-            [([-192.88, -98.80], 108.1_f64, 0.30), ([-192.23, -99.23], 314.5, 0.22), ([-191.13, -100.16], 1.9, 0.26)]
-                .map(|(at, yaw, scale)| Placement {
-                    model: "props/garden-rock",
-                    at: DVec2::from_array(at),
-                    yaw: yaw.to_radians(),
-                    scale,
-                    origin_offset_m: -0.06,
-                    afar: true,
-                });
+    fn scenery(&self, land: &Land) -> Scenery {
         Scenery {
-            placements: placements().into_iter().chain(rocks).chain(lot4::placements()).collect(),
+            placements: placements()
+                .into_iter()
+                .chain(dressing::placements(land))
+                .chain(lot2::placements())
+                .chain(lot3::placements())
+                .chain(lot4::placements())
+                .chain(lot5::placements())
+                .collect(),
             ..Default::default()
         }
     }
-    fn fastens_to(&self) -> Vec<&'static str> {
-        Vec::new()
-    }
+
     fn allows_scatter_candidate(&self, kind: ScatterKind, placement: &Placement) -> bool {
-        !blocked(kind, placement) && !lot4::blocked(kind, placement)
+        !blocked(kind, placement)
+            && !lot2::blocked(kind, placement)
+            && !lot3::blocked(kind, placement)
+            && !lot4::blocked(kind, placement)
+            && !lot5::blocked(kind, placement)
+            && !dressing::lantern_blocks(kind, placement)
+            && !dressing::legacy_tree_blocks(kind, placement)
     }
 }
 
 /// Whether a selected plant's footprint, or a tree's crown, reaches the lot and its verge.
 fn blocked(kind: ScatterKind, plant: &Placement) -> bool {
-    blocked_for(&FRONT, CENTRE, YAW_DEG, kind, plant)
+    blocked_for(&FRONT, CENTRE, YAW_DEG, [-6.25, 6.25, -5.45, 4.15], 2.4, kind, plant)
 }
 
-fn blocked_for(frontage: &[[f64; 2]], centre: [f64; 2], yaw_deg: f64, kind: ScatterKind, plant: &Placement) -> bool {
+fn blocked_for(
+    frontage: &[[f64; 2]],
+    centre: [f64; 2],
+    yaw_deg: f64,
+    roof: [f64; 4],
+    verge_width: f64,
+    kind: ScatterKind,
+    plant: &Placement,
+) -> bool {
     let local = DVec2::from_angle(-yaw_deg.to_radians()).rotate(plant.at - DVec2::from_array(centre));
     let x = local.x.clamp(frontage[0][0], frontage[frontage.len() - 1][0]);
     let edge = frontage.windows(2).find(|pair| x <= pair[1][0]).unwrap_or(&frontage[frontage.len() - 2..]);
@@ -236,25 +250,31 @@ fn blocked_for(frontage: &[[f64; 2]], centre: [f64; 2], yaw_deg: f64, kind: Scat
     let outside_y = (local.y - 6.8).max(front - local.y).max(0.0);
     let inside = local.x.abs() <= 9.5 && local.y <= 6.8 && local.y >= front;
     let distance = DVec2::new(outside_x, outside_y).length();
-    let reach = match kind {
-        ScatterKind::Tree => {
-            let roof_x = (local.x.abs() - 6.25).max(0.0);
-            let roof_y = (local.y - 4.15).max(-5.45 - local.y).max(0.0);
-            return inside || distance < 3.0 || DVec2::new(roof_x, roof_y).length() < 5.5 * plant.scale * 0.6 + 0.5;
-        }
-        ScatterKind::Grass => 0.52 * plant.scale,
-        ScatterKind::Bush => match plant.model {
-            "plants/green-bush-a" => 1.88 * plant.scale + 0.18,
-            "plants/green-bush-b" => 1.48 * plant.scale + 0.18,
-            "plants/ochre-bush-a" => 1.98 * plant.scale + 0.18,
-            "plants/ochre-bush-b" => 1.58 * plant.scale + 0.18,
-            "plants/flower-bush-a" => 1.75 * plant.scale + 0.18,
-            "plants/flower-bush-b" => 1.45 * plant.scale + 0.18,
-            _ => panic!("no surveyed reach for bush {}", plant.model),
-        },
-    };
-    let verge = local.x.abs() <= 10.5 && local.y < front && local.y > front - 2.4 - reach;
+    if kind == ScatterKind::Tree {
+        let roof_x = (roof[0] - local.x).max(local.x - roof[1]).max(0.0);
+        let roof_y = (roof[2] - local.y).max(local.y - roof[3]).max(0.0);
+        return inside || distance < 3.0 || DVec2::new(roof_x, roof_y).length() < 5.5 * plant.scale * 0.6 + 0.5;
+    }
+    let reach = scatter_radius(kind, plant.model) * plant.scale + if kind == ScatterKind::Bush { 0.18 } else { 0.0 };
+    let verge = local.x.abs() <= 10.5 && local.y < front && local.y > front - verge_width - reach;
     inside || distance < 2.4 + reach || verge
+}
+
+/// Original individual species' foliage reaches, shared by lot and lantern clearances.
+fn scatter_radius(kind: ScatterKind, model: &str) -> f64 {
+    match kind {
+        ScatterKind::Tree => 5.5,
+        ScatterKind::Grass => 0.52,
+        ScatterKind::Bush => match model {
+            "plants/green-bush-a" | "plants/coast-green-a" => 1.88,
+            "plants/green-bush-b" | "plants/garden-green-b" => 1.48,
+            "plants/ochre-bush-a" | "plants/coast-ochre-a" => 1.98,
+            "plants/ochre-bush-b" | "plants/coast-ochre-b" => 1.58,
+            "plants/flower-bush-a" | "plants/coast-flower-a" => 1.75,
+            "plants/flower-bush-b" | "plants/garden-flower-b" => 1.45,
+            _ => panic!("no surveyed reach for bush {model}"),
+        },
+    }
 }
 
 #[cfg(test)]
@@ -347,8 +367,15 @@ mod tests {
             ("plants/grass-b", ScatterKind::Grass, 0.0, 10.6, 1.0, false),
         ];
         for (model, kind, x, y, scale, expected) in cases {
-            let plant =
-                Placement { model, at: world(DVec2::new(x, y)), yaw: 0.0, scale, origin_offset_m: 0.0, afar: true };
+            let plant = Placement {
+                model,
+                at: world(DVec2::new(x, y)),
+                yaw: 0.0,
+                scale,
+                origin_offset_m: 0.0,
+                origin_height_m: None,
+                afar: true,
+            };
             assert_eq!(blocked(kind, &plant), expected, "{model} at ({x}, {y}) scale {scale}");
         }
     }

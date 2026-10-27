@@ -26,8 +26,8 @@ use crate::ground::built_solid;
 use crate::loading::Missing;
 use crate::look::SHADOW_ONLY;
 use crate::tiles::TILES;
-use crate::vertex_paint::{Painted, PaintedMaterials, Profile};
-use crate::wind::{Swaying, SwayingMaterials};
+use crate::vertex_paint::{Painted, PaintedMaterials, Profile, SurfaceProfile};
+use crate::wind::{SourceFoliage, SourceProfile, Swaying, SwayingMaterials};
 
 /// A model with fewer vertices than this has its copies merged.
 const MERGE_BELOW_VERTICES: usize = 256;
@@ -343,6 +343,7 @@ fn place(
             match &job.look {
                 Look::Still(material) => part.insert(MeshMaterial3d(material.clone())),
                 Look::Swaying(material) => part.insert(MeshMaterial3d(material.clone())),
+                Look::SourceFoliage(material) => part.insert(MeshMaterial3d(material.clone())),
                 Look::Painted(material) => part.insert(MeshMaterial3d(material.clone())),
             };
         }
@@ -405,8 +406,15 @@ fn parts(
     node: &GltfNode,
 ) -> Result<Option<Parts>, String> {
     let Some(mesh) = node.mesh.as_ref().and_then(|mesh| models.meshes.get(mesh)) else { return Ok(None) };
+    let mut surface_profile = None;
     let profile = if let Some(extras) = &node.extras {
         let value: serde_json::Value = serde_json::from_str(&extras.value).map_err(|e| e.to_string())?;
+        surface_profile = value
+            .get("surface_paint")
+            .map(|p| serde_json::from_value::<SurfaceProfile>(p.clone()))
+            .transpose()
+            .map_err(|e| e.to_string())?
+            .map(|p| p.profile());
         value
             .get("vertex_paint")
             .map(|p| serde_json::from_value::<Profile>(p.clone()))
@@ -418,6 +426,25 @@ fn parts(
     if profile.as_ref().is_some_and(|p| !p.valid()) {
         return Err("invalid vertex paint parameters".into());
     }
+    let source_foliage = if let Some(extras) = &node.extras {
+        let value: serde_json::Value = serde_json::from_str(&extras.value).map_err(|e| e.to_string())?;
+        value
+            .get("source_foliage")
+            .map(|p| serde_json::from_value::<SourceProfile>(p.clone()))
+            .transpose()
+            .map_err(|e| e.to_string())?
+    } else {
+        None
+    };
+    if source_foliage.as_ref().is_some_and(|p| !p.valid()) {
+        return Err("invalid source foliage profile".into());
+    }
+    if surface_profile.as_ref().is_some_and(|p| !p.valid())
+        || [profile.is_some(), surface_profile.is_some(), source_foliage.is_some()].into_iter().filter(|v| *v).count()
+            > 1
+    {
+        return Err("invalid source surface paint parameters".into());
+    }
     let mut parts = Vec::with_capacity(mesh.primitives.len());
     for primitive in &mesh.primitives {
         let Some(source) = meshes.get(&primitive.mesh) else { return Ok(None) };
@@ -425,6 +452,22 @@ fn parts(
         let look = if let Some(profile) = &profile {
             validate_static_paint(source)?;
             let Some(material) = painted.of(&material, profile)? else { return Ok(None) };
+            Look::Painted(material)
+        } else if let Some(profile) = &source_foliage {
+            if !source.contains_attribute(Mesh::ATTRIBUTE_COLOR) || !source.contains_attribute(Mesh::ATTRIBUTE_UV_0) {
+                return Err("source foliage needs colors and UVs".into());
+            }
+            let Some(material) = swaying.source_of(&material, profile) else { return Ok(None) };
+            Look::SourceFoliage(material)
+        } else if let Some(profile) = &surface_profile {
+            if source.contains_attribute(Mesh::ATTRIBUTE_COLOR)
+                || source.contains_attribute(Mesh::ATTRIBUTE_UV_1)
+                || source.contains_attribute(Mesh::ATTRIBUTE_JOINT_INDEX)
+                || source.has_morph_targets()
+            {
+                return Err("source surface paint requires static uncoloured geometry".into());
+            }
+            let Some(material) = painted.of_surface(&material, profile)? else { return Ok(None) };
             Look::Painted(material)
         } else if source.contains_attribute(Mesh::ATTRIBUTE_UV_1) {
             let Some(material) = swaying.of(&material) else { return Ok(None) };
@@ -489,6 +532,7 @@ fn merged(meshes: &Assets<Mesh>, mesh: &Handle<Mesh>, transforms: &[Transform], 
 enum Look {
     Still(Handle<StandardMaterial>),
     Swaying(Handle<Swaying>),
+    SourceFoliage(Handle<SourceFoliage>),
     Painted(Handle<Painted>),
 }
 

@@ -8,14 +8,6 @@ impl Random {
         Self(seed)
     }
 
-    /// The stream for one cell of a grid, from its column and row: a place draws the same numbers however much of
-    /// the grid is filled, and whatever was drawn elsewhere.
-    pub fn at(seed: u64, column: i64, row: i64) -> Self {
-        let mut mix = Self(seed ^ (column as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15));
-        let mixed = mix.next() ^ (row as u64).wrapping_mul(0xC2B2_AE3D_27D4_EB4F);
-        Self(mixed)
-    }
-
     fn next(&mut self) -> u64 {
         self.0 = self.0.wrapping_add(0x9E37_79B9_7F4A_7C15);
         let mut z = self.0;

@@ -4,16 +4,42 @@ use std::fs;
 use std::path::{Component, Path};
 
 use anyhow::{Context, Result, bail, ensure};
-use glam::DVec3;
+use glam::{DQuat, DVec3};
 use serde_json::{Value, json};
 
-use crate::glb::Glb;
+use crate::glb::{Glb, y_up};
 
 /// @cc [owner:fontanierh,label:correctness] static-source-prop
-/// A source prop MUST contain only embedded, finite static geometry in identity-frame full and optional collision
-/// nodes. The exporter MUST preserve the full mesh's attributes and extras except the solid flag, which settings own,
-/// and never make its collision mesh visible.
-pub(super) fn export(source: &str, solid: bool, output: &Path) -> Result<()> {
+/// A source prop preserves its static geometry and only uses declared texture assets.
+pub(super) fn export(
+    source: &str,
+    solid: bool,
+    textures: &[String],
+    anchors: &[[f64; 3]],
+    output: &Path,
+) -> Result<()> {
+    export_inner(source, solid, textures, anchors, None, None, output)
+}
+
+pub(super) fn export_foliage(
+    source: &str,
+    textures: &[String],
+    profile: Value,
+    surface_height: Option<f32>,
+    output: &Path,
+) -> Result<()> {
+    export_inner(source, false, textures, &[], Some(profile), surface_height, output)
+}
+
+fn export_inner(
+    source: &str,
+    solid: bool,
+    textures: &[String],
+    anchors: &[[f64; 3]],
+    profile: Option<Value>,
+    surface_height: Option<f32>,
+    output: &Path,
+) -> Result<()> {
     let path = Path::new(source);
     ensure!(path.extension().is_some_and(|ext| ext == "glb"), "source must be a GLB in src/");
     let mut parts = path.components();
@@ -33,7 +59,18 @@ pub(super) fn export(source: &str, solid: bool, output: &Path) -> Result<()> {
     let file = folder.join(path).canonicalize().context("reading source model")?;
     ensure!(file.starts_with(root), "source path must stay in src/");
     let bytes = fs::read(&file).context("reading source model")?;
-    let (value, collision) = validate(&bytes)?;
+    let allowed: Vec<String> = textures
+        .iter()
+        .map(|name| {
+            ensure!(
+                !name.is_empty() && name.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-'),
+                "texture name must be kebab case"
+            );
+            crate::uri_of_texture(name)
+        })
+        .collect::<Result<_>>()?;
+    let foliage = profile.as_ref().map(|_| allowed.as_slice());
+    let (value, collision) = validate_kind(&bytes, foliage, surface_height, &allowed)?;
     ensure!(!collision || solid, "a collision mesh requires solid = true");
     let mut glb = Glb::read(&file)?;
     let full = glb.node("full")?;
@@ -42,12 +79,43 @@ pub(super) fn export(source: &str, solid: bool, output: &Path) -> Result<()> {
     if solid && !collision {
         extras.insert("solid".into(), json!(true));
     }
+    if foliage.is_some() {
+        extras.insert("source_foliage".into(), profile.clone().context("missing foliage profile")?);
+    }
     glb.set_extras(full, extras.into());
+    if foliage.is_some() && value["nodes"].as_array().is_some_and(|nodes| nodes.iter().any(|n| n["name"] == "middle")) {
+        let middle = glb.node("middle")?;
+        let mut extras = value["nodes"][middle]["extras"].as_object().cloned().unwrap_or_default();
+        extras.insert("source_foliage".into(), profile.clone().context("missing foliage profile")?);
+        glb.set_extras(middle, extras.into());
+    }
+    for (k, &anchor) in anchors.iter().enumerate() {
+        ensure!(
+            anchor.iter().all(|v| v.is_finite() && (*v as f32).is_finite()),
+            "source anchor must be finite at stored precision"
+        );
+        glb.add_marker(&format!("anchor {k}"), y_up(DVec3::from_array(anchor)), DQuat::IDENTITY);
+    }
     glb.write(output)
 }
 
 /// Reads the restricted static GLB layout accepted by source props, and checks actual bytes, not just bounds metadata.
+#[cfg(test)]
 fn validate(bytes: &[u8]) -> Result<(Value, bool)> {
+    validate_kind(bytes, None, None, &[])
+}
+
+#[cfg(test)]
+fn validate_with_textures(bytes: &[u8], allowed: &[String]) -> Result<(Value, bool)> {
+    validate_kind(bytes, None, None, allowed)
+}
+
+fn validate_kind(
+    bytes: &[u8],
+    foliage: Option<&[String]>,
+    surface_height: Option<f32>,
+    allowed: &[String],
+) -> Result<(Value, bool)> {
     let u32_at = |offset: usize| -> Result<usize> {
         let b = bytes.get(offset..offset + 4).context("truncated source GLB")?;
         Ok(u32::from_le_bytes(b.try_into().unwrap()) as usize)
@@ -73,14 +141,41 @@ fn validate(bytes: &[u8]) -> Result<(Value, bool)> {
     let buffer_len = buffers[0]["byteLength"].as_u64().context("source buffer needs a length")? as usize;
     ensure!(buffer_len <= binary.len() && binary.len() - buffer_len <= 3, "invalid source buffer length");
     let binary = &binary[..buffer_len];
-    ensure!(value.get("images").is_none() && value.get("textures").is_none(), "source textures are not supported");
+    if allowed.is_empty() {
+        ensure!(value.get("images").is_none() && value.get("textures").is_none(), "source textures are not supported");
+    } else {
+        let images = array("images")?;
+        ensure!(!images.is_empty(), "source needs named textures");
+        for image in images {
+            let uri = image["uri"].as_str().context("source texture needs an asset URI")?;
+            ensure!(image.get("bufferView").is_none(), "source texture must not embed image data");
+            ensure!(allowed.iter().any(|name| name == uri), "undeclared source texture: {uri}");
+        }
+        for texture in array("textures")? {
+            ensure!(texture["source"].as_u64().is_some_and(|i| (i as usize) < images.len()), "invalid source texture");
+        }
+    }
     ensure!(value.get("animations").is_none() && value.get("skins").is_none(), "source must be static");
     let nodes = array("nodes")?;
     let meshes = array("meshes")?;
     let materials = value.get("materials").and_then(Value::as_array);
     if let Some(materials) = materials {
         for material in materials {
-            ensure!(!has_texture(material), "source materials cannot refer to textures");
+            let mut other = material.clone();
+            if let Some(pbr) = other["pbrMetallicRoughness"].as_object_mut() {
+                let base = pbr.remove("baseColorTexture");
+                if foliage.is_some() {
+                    ensure!(base.is_some(), "foliage material needs a named base color texture");
+                }
+                if let Some(base) = base {
+                    let i = base["index"].as_u64().context("source texture needs an index")? as usize;
+                    ensure!(i < value["textures"].as_array().map_or(0, Vec::len), "invalid source material texture");
+                    ensure!(base.get("texCoord").is_none_or(|v| v.as_u64() == Some(0)), "source texture needs UV0");
+                }
+            } else {
+                ensure!(foliage.is_none(), "foliage material needs a named base color texture");
+            }
+            ensure!(!has_texture(&other), "unsupported source texture channel");
         }
     }
     let scenes = array("scenes")?;
@@ -103,7 +198,8 @@ fn validate(bytes: &[u8]) -> Result<(Value, bool)> {
             ensure!(node["extras"]["vertex_paint"].is_object(), "vertex paint extras must be an object");
         }
         ensure!(
-            (name == "full" || name == "collision") && !seen.contains(&name),
+            (name == "full" || (foliage.is_none() && name == "collision") || (foliage.is_some() && name == "middle"))
+                && !seen.contains(&name),
             "source roots must be full and optional collision"
         );
         seen.push(name);
@@ -129,15 +225,40 @@ fn validate(bytes: &[u8]) -> Result<(Value, bool)> {
                 let index = material.as_u64().context("invalid source material")? as usize;
                 ensure!(materials.is_some_and(|m| index < m.len()), "invalid source material");
                 let mode = materials.unwrap()[index]["alphaMode"].as_str().unwrap_or("OPAQUE");
-                ensure!(name != "full" || mode == "OPAQUE" || mode == "BLEND", "source cut-outs are unsupported");
+                ensure!(
+                    foliage.is_some() || name != "full" || mode == "OPAQUE" || mode == "BLEND",
+                    "source cut-outs are unsupported"
+                );
+                if foliage.is_some() {
+                    ensure!(mode == "OPAQUE" || mode == "MASK", "foliage must be opaque or masked");
+                    if mode == "MASK" {
+                        let mat = &materials.unwrap()[index];
+                        ensure!(
+                            mat["alphaCutoff"].as_f64().is_some_and(|x| x.is_finite() && x > 0.0 && x <= 1.0),
+                            "masked foliage needs a valid alpha cutoff"
+                        );
+                        ensure!(mat["doubleSided"].as_bool() == Some(true), "masked foliage must be double sided");
+                    }
+                }
                 if vertex_paint {
                     ensure!(mode == "OPAQUE", "static vertex paint needs an opaque material");
                 }
             } else {
-                ensure!(!vertex_paint, "vertex paint needs a material");
+                ensure!(!vertex_paint && foliage.is_none(), "source profile needs a material");
             }
             let attributes = primitive["attributes"].as_object().context("source needs vertex attributes")?;
+            if let Some(index) = primitive["material"].as_u64() {
+                let textured =
+                    materials.unwrap()[index as usize]["pbrMetallicRoughness"].get("baseColorTexture").is_some();
+                ensure!(!textured || attributes.contains_key("TEXCOORD_0"), "textured source needs UV0");
+            }
             ensure!(!vertex_paint || attributes.contains_key("COLOR_0"), "vertex paint requires source colors");
+            if foliage.is_some() {
+                ensure!(
+                    ["POSITION", "NORMAL", "TEXCOORD_0", "COLOR_0"].iter().all(|key| attributes.contains_key(*key)),
+                    "foliage needs position, normal, UV and colors"
+                );
+            }
             ensure!(
                 attributes.keys().all(|key| matches!(key.as_str(), "POSITION" | "NORMAL" | "TEXCOORD_0" | "COLOR_0")),
                 "unsupported source attribute"
@@ -163,7 +284,7 @@ fn validate(bytes: &[u8]) -> Result<(Value, bool)> {
                         && match key.as_str() {
                             "NORMAL" => kind.1 == "VEC3",
                             "TEXCOORD_0" => kind.1 == "VEC2",
-                            "COLOR_0" => kind.1 == "VEC3" || kind.1 == "VEC4",
+                            "COLOR_0" => kind.1 == "VEC4" || (foliage.is_none() && kind.1 == "VEC3"),
                             _ => false,
                         },
                     "unsupported source attribute format"
@@ -201,7 +322,13 @@ fn validate(bytes: &[u8]) -> Result<(Value, bool)> {
             }
         }
     }
-    ensure!(seen.contains(&"full") && lowest < 0.0, "full mesh must reach below its foot");
+    ensure!(seen.contains(&"full"), "source requires a full mesh");
+    if let Some(height) = surface_height {
+        ensure!(foliage.is_some() && height.is_finite() && height >= 0.0, "invalid surface height");
+        ensure!(lowest == f64::from(height), "source surface does not match its declared height");
+    } else {
+        ensure!(lowest < 0.0, "full mesh must reach below its foot");
+    }
     ensure!(seen_meshes.len() == meshes.len(), "source cannot contain unused meshes");
     let collision = seen.contains(&"collision");
     Ok((value, collision))
@@ -245,7 +372,7 @@ fn accessor<'a>(value: &'a Value, binary: &'a [u8], index: usize) -> Result<(&'a
     Ok((binary.get(first..last).context("source accessor exceeds its buffer")?, count, (component, kind)))
 }
 
-/// Materials may describe color and factors, but source textures are not yet part of this format.
+/// Whether a material contains any texture channel.
 fn has_texture(value: &Value) -> bool {
     match value {
         Value::Object(fields) => fields.iter().any(|(key, value)| key.ends_with("Texture") || has_texture(value)),
@@ -289,14 +416,56 @@ mod tests {
     }
 
     #[test]
+    fn foliage_needs_declared_textures_and_preserves_both_versions() {
+        let mut glb = Glb::from_json(json!({"asset": {"version": "2.0"}}));
+        let mut mesh = Mesh::default();
+        cuboid(&mut mesh, DVec3::ZERO, DVec3::splat(2.0));
+        mesh.colours = vec![[0.25, 0.5, 0.0, 1.0]; mesh.positions.len()];
+        mesh.material = glb.add_material(&Material::textured("leaf", "../../textures/a/a.ktx2"));
+        glb.add_mesh("full", &[&mesh]);
+        glb.add_mesh("middle", &[&mesh]);
+        static NEXT_FOLIAGE: AtomicUsize = AtomicUsize::new(0);
+        let id = NEXT_FOLIAGE.fetch_add(1, Ordering::Relaxed);
+        let path = std::env::temp_dir().join(format!("hakuba-foliage-fixture-{}-{id}.glb", std::process::id()));
+        glb.write(&path).unwrap();
+        let bytes = fs::read(&path).unwrap();
+        fs::remove_file(path).unwrap();
+        let allowed = vec!["../../textures/a/a.ktx2".to_string()];
+        assert!(validate_kind(&bytes, Some(&allowed), None, &allowed).is_ok());
+        assert!(validate_kind(&bytes, Some(&[]), None, &[]).is_err());
+        assert!(validate(&bytes).is_err());
+    }
+
+    #[test]
+    fn full_only_surface_requires_declared_stored_height() {
+        let mut glb = Glb::from_json(json!({"asset": {"version": "2.0"}}));
+        let mut mesh = Mesh::default();
+        cuboid(&mut mesh, DVec3::ZERO, DVec3::splat(2.0));
+        for point in &mut mesh.positions {
+            point[1] = if point[1] < 0.0 { 0.02 } else { 2.02 };
+        }
+        mesh.colours = vec![[0.0, 1.0, 0.0, 1.0]; mesh.positions.len()];
+        mesh.material = glb.add_material(&Material::textured("surface", "../../textures/a/a.ktx2"));
+        glb.add_mesh("full", &[&mesh]);
+        let path = std::env::temp_dir().join(format!("hakuba-foliage-surface-{}.glb", std::process::id()));
+        glb.write(&path).unwrap();
+        let bytes = fs::read(&path).unwrap();
+        fs::remove_file(path).unwrap();
+        let allowed = vec!["../../textures/a/a.ktx2".to_string()];
+        assert!(validate_kind(&bytes, Some(&allowed), None, &allowed).is_err());
+        assert!(validate_kind(&bytes, Some(&allowed), Some(0.02), &allowed).is_ok());
+        assert!(validate_kind(&bytes, Some(&allowed), Some(0.03), &allowed).is_err());
+    }
+
+    #[test]
     fn source_export_preserves_mesh_and_extras_with_separate_collision() {
         let root = std::env::temp_dir().join(format!("hakuba-source-export-{}", std::process::id()));
         fs::create_dir_all(root.join("src")).unwrap();
         let input = fixture(true);
         fs::write(root.join("src/model.glb"), &input).unwrap();
         let output = root.join("out.glb");
-        assert!(export("src/model.glb", false, &output).is_err());
-        export("src/model.glb", true, &output).unwrap();
+        assert!(export("src/model.glb", false, &[], &[], &output).is_err());
+        export("src/model.glb", true, &[], &[], &output).unwrap();
         let result = Glb::read(&output).unwrap();
         assert_eq!(result.extras("full").unwrap()["vertex_paint"]["fill"], 0.06);
         assert!(result.extras("full").unwrap().get("solid").is_none());
@@ -315,6 +484,41 @@ mod tests {
             let b = after["meshes"][0]["primitives"][0]["attributes"][attribute].as_u64().unwrap() as usize;
             assert_eq!(accessor(&before, binary(&input), a).unwrap().0, accessor(&after, binary(&out), b).unwrap().0);
         }
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn source_texture_must_be_declared_and_anchor_uses_model_frame() {
+        let mut glb = Glb::from_json(json!({"asset": {"version": "2.0"}}));
+        let mut mesh = Mesh::default();
+        cuboid(&mut mesh, DVec3::ZERO, DVec3::splat(2.0));
+        let uri = "../../textures/test-texture/test-texture.ktx2";
+        mesh.material = glb.add_material(&Material::textured("texture", uri));
+        glb.add_mesh("full", &[&mesh]);
+        let root = std::env::temp_dir().join(format!("hakuba-source-texture-{}", std::process::id()));
+        fs::create_dir_all(root.join("src")).unwrap();
+        let input = root.join("src/model.glb");
+        glb.write(&input).unwrap();
+        let bytes = fs::read(&input).unwrap();
+        assert!(validate_with_textures(&bytes, &[uri.into()]).is_ok());
+        assert!(validate_with_textures(&bytes, &["../../textures/other/other.ktx2".into()]).is_err());
+        assert!(validate(&bytes).is_err());
+        let mut missing_uv = Glb::from_json(json!({"asset": {"version": "2.0"}}));
+        mesh.uvs.clear();
+        mesh.material = missing_uv.add_material(&Material::textured("texture", uri));
+        missing_uv.add_mesh("full", &[&mesh]);
+        missing_uv.write(&input).unwrap();
+        assert!(validate_with_textures(&fs::read(&input).unwrap(), &[uri.into()]).is_err());
+        // An untextured source isolates the normal model-frame to glTF-frame anchor conversion.
+        fs::write(&input, fixture(false)).unwrap();
+        let output = root.join("out.glb");
+        export("src/model.glb", false, &[], &[[1.0, 2.0, 3.0]], &output).unwrap();
+        let result = fs::read(&output).unwrap();
+        let len = u32::from_le_bytes(result[12..16].try_into().unwrap()) as usize;
+        let json: Value = serde_json::from_slice(&result[20..20 + len]).unwrap();
+        let anchor = json["nodes"].as_array().unwrap().iter().find(|n| n["name"] == "anchor 0").unwrap();
+        assert_eq!(anchor["translation"], json!([1.0, 3.0, -2.0]));
+        assert!(export("src/model.glb", false, &[], &[[f64::MAX, 0.0, 0.0]], &output).is_err());
         fs::remove_dir_all(root).unwrap();
     }
 
@@ -355,9 +559,9 @@ mod tests {
         assert!(validate(&bytes).is_err());
         let root = std::env::temp_dir().join(format!("hakuba-source-path-{}", std::process::id()));
         fs::create_dir_all(root.join("src")).unwrap();
-        assert!(export("src/../model.glb", true, &root.join("out.glb")).is_err());
+        assert!(export("src/../model.glb", true, &[], &[], &root.join("out.glb")).is_err());
         for path in ["src/.hidden.glb", "src/target/model.glb", "src/.hidden/model.glb"] {
-            let error = export(path, true, &root.join("out.glb")).unwrap_err();
+            let error = export(path, true, &[], &[], &root.join("out.glb")).unwrap_err();
             assert!(error.to_string().contains("checksum"));
         }
         fs::remove_dir_all(root).unwrap();
@@ -407,7 +611,7 @@ mod tests {
         fs::create_dir_all(root.join("outside")).unwrap();
         fs::write(root.join("outside/model.glb"), fixture(false)).unwrap();
         symlink(root.join("outside"), root.join("asset/src")).unwrap();
-        assert!(export("src/model.glb", true, &root.join("asset/out.glb")).is_err());
+        assert!(export("src/model.glb", true, &[], &[], &root.join("asset/out.glb")).is_err());
         fs::remove_dir_all(root).unwrap();
     }
 }

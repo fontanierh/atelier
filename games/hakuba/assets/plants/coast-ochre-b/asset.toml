@@ -1,0 +1,15 @@
+# Source foliage for the coast.
+kind = "plant"
+source = "src/model.glb"
+textures = ["coast-ochre-leaves"]
+inputs_sha256 = "a3157627b1e5125bc6f355410f8b90af011a2c5a2e73ebe61a2cb828dac937d8"
+
+[source_profile]
+direction_amplitude_shade = [0.3, -0.95, 0.16, 0.5]
+slow = [0.28, 0.11, 0.16, 0.6]
+fast = [0.7, 0.2, 0.3, 0.5]
+global_slow = [0.37, 0.04, 0.45, 1.0]
+global_fast = [1.1, 0.07, 0.3, 0.15]
+global_tail = [2.9, 0.15, 0.0, 0.0]
+push_haze = [1.7, 0.7, 30.0, 9000.0]
+haze_colour = [0.0932, 0.2301, 0.5328]

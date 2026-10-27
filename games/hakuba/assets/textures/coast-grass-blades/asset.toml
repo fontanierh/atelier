@@ -1,0 +1,6 @@
+# Source texture for coastal grass.
+kind = "texture"
+source = "src/texture.png"
+alpha_cutoff = 0.4
+mip_colour = "average"
+inputs_sha256 = "355b95e8286f596b0a88b51645487f7b04c02c12fc8659db6a2eaeb3fdc9d4e6"

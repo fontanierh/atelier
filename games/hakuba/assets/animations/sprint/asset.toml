@@ -4,4 +4,4 @@ kind = "animation"
 source = "src/source.glb"
 clip = "Nml_Move_Dash"
 rate = 1.75
-inputs_sha256 = "6b96aa218ab4fb32ded334a18789e18ddb6ad882c82dae2ee1007ee133bca625"
+inputs_sha256 = "5492e37be07860d0d5e88e2670daff4e2dca9670d83a37e19085848daa8cc876"

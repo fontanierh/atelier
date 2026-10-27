@@ -224,12 +224,10 @@ that includes boundary cells, so extending the exported area keeps candidates in
 producers check these shared clearances; explicit placements and their cable indices are unchanged.
 
 A region also stands scenery on the ground: plant and prop models, each at a point with a turn and a scale, cables
-strung between two models' anchors, and rails run along a path. A rail and its posts show a texture asset tinted by
-their colour, laid in metres: along the rail by the distance travelled, across it by the distance around its profile,
-and along and around each post, one repeat of the image to a metre. A tile names each model's `.glb` and each
+between authored world endpoints, and rails along authored three-dimensional points. A tile names each model's `.glb` and each
 texture's `.ktx2` and lists where its copies stand, seated on the ground that tile draws; it never holds them. A
-placement may specify a signed origin offset from that ground; its model and intended embedment need an independent
-grounding check. The world reads the props whose anchors its cables fasten to, which each region declares. The export fails if a model or
+placement may specify a signed origin offset from that ground or an explicit authored world height shared by both
+detail versions; its model and intended embedment need an independent grounding check. The export fails if a model or
 texture asset does not exist, if a model stands on an overlay, or if a cable comes closer than 2 m to the ground.
 `<folder name>.glb` holds a node per tile, at its centre, and the spawn.
 
@@ -241,6 +239,8 @@ texture asset does not exist, if a model stands on an overlay, or if a cable com
 | `page_steps`        | how many heights apart page edges are                                 |
 | `tile_steps`        | how many heights apart tile edges are                                 |
 | `tiles`             | the first and last tile exported, each as `[column, row]`             |
+| `extent_m`          | optional ground-grid-aligned map rectangle clipping boundary tiles    |
+| `middle_uses_fine_ground` | whether middle tiles retain full-detail ground triangles       |
 | `ground_texture`    | the texture the ground shows, by its folder under `assets/textures/`  |
 | `ground_texture_m`  | how far apart the ground's texture repeats                            |
 | `spawn_m`           | where the player starts, on the map                                   |
@@ -249,8 +249,8 @@ texture asset does not exist, if a model stands on an overlay, or if a cable com
 ## Inputs checksum
 
 `inputs_sha256` in `asset.toml` covers the asset's settings, every file in its `src/`, its kind's code, and the
-exports it reads (a character reads every animation, and the world reads the props its cables fasten to, through
-each one's checksum and `.glb`). Changing any of them marks the export out of date until it is exported again. An
+exports it reads (a character reads every animation through each one's checksum and `.glb`). Changing any of them
+marks the export out of date until it is exported again. An
 asset exports only after the assets it reads are current, and `cargo export` on several folders exports each after
 those it reads.
 

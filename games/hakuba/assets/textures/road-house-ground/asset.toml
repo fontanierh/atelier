@@ -1,4 +1,4 @@
 # The repeating painted ground used by the roadside lot surface.
 kind = "texture"
 source = "src/ground.jpg"
-inputs_sha256 = "47aebbe54348854168698b7d81c1cfac9da004322ef23eb5f914a443371da424"
+inputs_sha256 = "7cf371ec9b2c1fa7ec23c8f8991263759f73ba0405a506aaa054afa661fd33a0"

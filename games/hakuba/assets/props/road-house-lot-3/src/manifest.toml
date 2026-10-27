@@ -1,0 +1,5 @@
+# Committed source geometry and its verified authoring input.
+path = "lot.glb"
+sha256 = "dfb4e3aef7f7842a888b814fec7afcb2181419ff2ea9a13023745642235404f2"
+authoring_fbx_sha256 = "61a411ed265f63ce732b0eb3278ec0095402d5dfe9e62834e71711fdaa257f45"
+conversion = "FBX SDK 2020.2 static triangulation; Blender 5.2.1; original f32 normals and quantized color restored"

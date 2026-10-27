@@ -1,0 +1,6 @@
+# Original foliage geometry and source detail levels.
+path = "model.glb"
+sha256 = "89d0e6c82f3e8d969ff0203d0582edc7a9998b2f346bcd89e5975c3d82402ce6"
+authoring_fbx_sha256 = "bc52d2a837e90c079dd69471cdce682f529801d45f9b6e9c7be297cc253384d7"
+authoring_lod1_fbx_sha256 = "6243fd007fa9537313852302421ad343e3a2aa3dc90b53ba840a756a132beb01"
+conversion = "FBX SDK 2020.2 triangulation; per-corner positions, normals, UVs and RGBA retained"

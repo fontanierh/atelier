@@ -1,0 +1,5 @@
+# The source-authored stones, yard, hedge and entrance of the second roadside lot.
+kind = "prop"
+source = "src/lot.glb"
+solid = true
+inputs_sha256 = "bab2e3f527cc9c0e15a97e80fec94e7f605014bee3aaf7ca65f67e99a4eb7f12"

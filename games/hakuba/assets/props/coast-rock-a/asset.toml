@@ -1,0 +1,5 @@
+# Source coast rock with stone and moss material sections.
+kind = "prop"
+source = "src/rock.glb"
+solid = false
+inputs_sha256 = "4bc3eb3902d1a19efdc00896fe03cd59f33155ffd4c915535765a3ef82810a95"

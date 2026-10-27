@@ -37,7 +37,7 @@ enum Asset {
     Animation(rig::animation::Settings),
     Character(rig::character::Settings),
     Equipment(rig::equipment::Settings),
-    Plant(model::plant::Settings),
+    Plant(Box<model::plant::Settings>),
     Prop(model::prop::Settings),
     Sound(sound::Settings),
     Texture(texture::Settings),
