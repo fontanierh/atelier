@@ -63,6 +63,15 @@ impl Surface {
         found.into_iter().map(|n| self.triangles[n]).collect()
     }
 
+    /// Candidate ground and authored crossing triangles touching an outline.
+    pub fn all_under(&self, outline: [DVec2; 3]) -> Vec<[DVec3; 3]> {
+        let mut triangles = self.under(outline);
+        if let Some(crossings) = &self.crossings {
+            triangles.extend(crossings.under(outline));
+        }
+        triangles
+    }
+
     /// The height of the triangle under `p`, if any.
     pub fn ground_height(&self, p: DVec2) -> Option<f64> {
         let square = ((p.x / SURFACE_CELL_M).floor() as i64, (p.y / SURFACE_CELL_M).floor() as i64);

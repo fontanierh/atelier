@@ -1,0 +1,6 @@
+# Original grass geometry and source detail levels.
+path = "model.glb"
+sha256 = "d98d4f615eaa0620d0328d1e9fdaf58dc02a771f28e92dfcaed6f79ad980c716"
+authoring_fbx_sha256 = "888b299d89f34fe935d14e7309358e0877dd260a3a7ae48705c1d8bcbb62f42f"
+authoring_lod1_fbx_sha256 = "ed5dba3e2d98416008281ef0298592094c96706eef0ddc47abc54ac35b398bb1"
+conversion = "FBX SDK 2020.2 triangulation; per-corner positions, normals, UVs and RGBA retained"

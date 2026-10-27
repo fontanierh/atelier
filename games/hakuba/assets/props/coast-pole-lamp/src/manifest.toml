@@ -1,0 +1,5 @@
+# Original utility pole geometry.
+path = "model.glb"
+sha256 = "38f23ba538783100ac5ee016d9483906fd9c2ac028196ac3fe1a2168a6d6f261"
+authoring_fbx_sha256 = "99e0fcdde708df3d4a6dfa2b7803a2710b62ebd6ff0905cb244fcdb865e5d3fd"
+conversion = "FBX SDK 2020.2 triangulation; per-corner positions, normals and UVs retained"

@@ -52,16 +52,6 @@ pub fn curve(course: &[[f64; 2]]) -> Vec<(DVec2, DVec2)> {
         .collect()
 }
 
-/// How far `p` is from the nearest point of `curve`, and the index of that point.
-pub fn nearest(curve: &[(DVec2, DVec2)], p: DVec2) -> (f64, usize) {
-    curve
-        .iter()
-        .enumerate()
-        .map(|(k, (q, _))| (q.distance(p), k))
-        .min_by(|a, b| a.0.total_cmp(&b.0))
-        .expect("a curve has points")
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -164,6 +164,122 @@ impl Glb {
             .with_context(|| format!("no node is named {name}"))
     }
 
+    /// Read the actual position values of a named static mesh, in the glTF frame.
+    pub fn node_triangles(&self, name: &str) -> Result<Vec<[DVec3; 3]>> {
+        let node = &self.json["nodes"][self.node(name)?];
+        let mesh = node["mesh"].as_u64().context("node needs a mesh")? as usize;
+        let primitives = self.json["meshes"]
+            .as_array()
+            .and_then(|meshes| meshes.get(mesh))
+            .and_then(|mesh| mesh["primitives"].as_array())
+            .context("mesh needs primitives")?;
+        let mut triangles = Vec::new();
+        for primitive in primitives {
+            let mut positions = Vec::new();
+            let index = primitive["attributes"]["POSITION"].as_u64().context("mesh needs positions")? as usize;
+            let accessor = self.json["accessors"]
+                .as_array()
+                .and_then(|accessors| accessors.get(index))
+                .context("invalid position accessor")?;
+            if accessor["componentType"].as_u64() != Some(5126)
+                || accessor["type"].as_str() != Some("VEC3")
+                || accessor.get("sparse").is_some()
+            {
+                bail!("positions must be non-sparse float vectors");
+            }
+            let count = accessor["count"].as_u64().context("positions need a count")? as usize;
+            let view_index = accessor["bufferView"].as_u64().context("positions need a buffer view")? as usize;
+            let view = self.json["bufferViews"]
+                .as_array()
+                .and_then(|views| views.get(view_index))
+                .context("invalid position buffer view")?;
+            if view["buffer"].as_u64() != Some(0) {
+                bail!("positions must use the embedded buffer");
+            }
+            let start = view["byteOffset"].as_u64().unwrap_or(0) as usize;
+            let length = view["byteLength"].as_u64().context("position view needs a length")? as usize;
+            let bytes = self
+                .bin
+                .get(start..start.checked_add(length).context("position view overflow")?)
+                .context("position view exceeds buffer")?;
+            let offset = accessor["byteOffset"].as_u64().unwrap_or(0) as usize;
+            let stride = view["byteStride"].as_u64().unwrap_or(12) as usize;
+            if stride < 12 {
+                bail!("invalid position stride");
+            }
+            for n in 0..count {
+                let at =
+                    n.checked_mul(stride).and_then(|n| n.checked_add(offset)).context("position offset overflow")?;
+                let b = bytes
+                    .get(at..at.checked_add(12).context("position offset overflow")?)
+                    .context("positions exceed their buffer view")?;
+                let value = DVec3::new(
+                    f32::from_le_bytes(b[0..4].try_into().unwrap()) as f64,
+                    f32::from_le_bytes(b[4..8].try_into().unwrap()) as f64,
+                    f32::from_le_bytes(b[8..12].try_into().unwrap()) as f64,
+                );
+                if !value.is_finite() {
+                    bail!("position must be finite");
+                }
+                positions.push(value);
+            }
+            let idx = primitive["indices"].as_u64().context("mesh needs triangle indices")? as usize;
+            let indices = self.json["accessors"]
+                .as_array()
+                .and_then(|accessors| accessors.get(idx))
+                .context("invalid index accessor")?;
+            if indices["type"].as_str() != Some("SCALAR") || indices.get("sparse").is_some() {
+                bail!("indices must be non-sparse scalars");
+            }
+            let width = match indices["componentType"].as_u64() {
+                Some(5123) => 2usize,
+                Some(5125) => 4usize,
+                _ => bail!("unsupported index component type"),
+            };
+            let count = indices["count"].as_u64().context("indices need a count")? as usize;
+            if !count.is_multiple_of(3) {
+                bail!("indices must form triangles");
+            }
+            let view_index = indices["bufferView"].as_u64().context("indices need a buffer view")? as usize;
+            let view = self.json["bufferViews"]
+                .as_array()
+                .and_then(|views| views.get(view_index))
+                .context("invalid index buffer view")?;
+            if view["buffer"].as_u64() != Some(0) {
+                bail!("indices must use the embedded buffer");
+            }
+            let start = view["byteOffset"].as_u64().unwrap_or(0) as usize;
+            let len = view["byteLength"].as_u64().context("index view needs a length")? as usize;
+            let bytes = self
+                .bin
+                .get(start..start.checked_add(len).context("index view overflow")?)
+                .context("index view exceeds buffer")?;
+            let offset = indices["byteOffset"].as_u64().unwrap_or(0) as usize;
+            let stride = view["byteStride"].as_u64().unwrap_or(width as u64) as usize;
+            if stride < width {
+                bail!("invalid index stride");
+            }
+            let mut corners = Vec::with_capacity(count);
+            for n in 0..count {
+                let at = n.checked_mul(stride).and_then(|x| x.checked_add(offset)).context("index offset overflow")?;
+                let bytes = bytes
+                    .get(at..at.checked_add(width).context("index offset overflow")?)
+                    .context("indices exceed their view")?;
+                let index = if width == 2 {
+                    u16::from_le_bytes(bytes.try_into().unwrap()) as usize
+                } else {
+                    u32::from_le_bytes(bytes.try_into().unwrap()) as usize
+                };
+                corners.push(*positions.get(index).context("index exceeds positions")?);
+            }
+            triangles.extend(corners.chunks_exact(3).map(|c| [c[0], c[1], c[2]]));
+        }
+        if triangles.is_empty() {
+            bail!("mesh needs triangles");
+        }
+        Ok(triangles)
+    }
+
     pub fn rename_node(&mut self, node: usize, name: &str) {
         self.json["nodes"][node]["name"] = json!(name);
     }

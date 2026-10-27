@@ -1,0 +1,5 @@
+# Source geometry from the authored Lantern export.
+path = "lantern.glb"
+sha256 = "3c5229d57f67c0ad3623300bc6dbdd0b77c523371dc86317f8d79b4a1db099fa"
+authoring_fbx_sha256 = "bb158afb9dfa46548acdff508f8627ee2e999b212bf5abcbb858c44102a6bb91"
+conversion = "FBX SDK 2020.2 triangulation; Blender 5.2.1; source normals restored; linear COLOR_0 synthesized from Stone tint, alpha zero"

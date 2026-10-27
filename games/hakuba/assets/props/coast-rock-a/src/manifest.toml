@@ -1,0 +1,5 @@
+# Original rock geometry.
+path = "rock.glb"
+sha256 = "e72b2f089b9f49927c8d45046b6da9526f6300b8011f3a95c3a7684b0164de0f"
+authoring_fbx_sha256 = "18ffce6da36616212061ec855198ef0010228051abc74d14078c9307c8dd6ea9"
+conversion = "FBX SDK 2020.2 triangulation; Blender 5.2.1; source normals restored; original linear Rock and Moss tints"

@@ -1,0 +1,5 @@
+# Source stone lantern with its buried footing.
+kind = "prop"
+source = "src/lantern.glb"
+solid = true
+inputs_sha256 = "d5d2333531134deded5c9e52f61d2516e9867c88dc518be720bf0baafaff9558"

@@ -1,0 +1,7 @@
+# Source utility pole and cable anchor positions.
+kind = "prop"
+source = "src/model.glb"
+textures = ["coast-concrete"]
+solid = true
+anchors = [[0, -1.05, 10.58], [0, 0, 10.58], [0, 1.05, 10.58], [0, -0.85, 9.68], [0, 0.85, 9.68]]
+inputs_sha256 = "bcfff945c3f1b1b672b6c6fddb6a824a97f9414ad9e944bd7425572b8f8c2d68"

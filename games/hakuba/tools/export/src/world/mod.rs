@@ -18,10 +18,10 @@
 
 mod authored;
 mod checksums;
+mod contact;
 mod curve;
 mod ground;
 mod levelling;
-mod openings;
 mod overlay;
 mod raised;
 mod regions;
@@ -45,11 +45,20 @@ use raised::Raised;
 use scenery::{Grid, Land, TileScenery};
 use surface::Surface;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Settings {
+    /// Ground-contact profiles for the actual models placed in this world.
+    #[serde(default)]
+    grounding: Vec<contact::Policy>,
+    /// Measurements from the source models and source terrain, relative to this asset.
+    #[serde(default)]
+    grounding_reference: Option<PathBuf>,
     /// The folder of the ground's pages.
     ground: PathBuf,
+    /// Optional source-authored fine terrain diagonals, relative to this asset.
+    #[serde(default)]
+    terrain_diagonals: Option<PathBuf>,
     /// The world's south-west corner on the map, where the first page and the first tile start.
     south_west_m: [f64; 2],
     /// The distance between neighbouring heights, in metres.
@@ -60,6 +69,12 @@ pub struct Settings {
     tile_steps: usize,
     /// The first and the last tile exported, each as [column, row].
     tiles: [[usize; 2]; 2],
+    /// Optional map rectangle, aligned to ground samples, clipping the boundary tiles.
+    #[serde(default)]
+    extent_m: Option<[[f64; 2]; 2]>,
+    /// Keep fine source terrain in middle detail as well as full detail.
+    #[serde(default)]
+    middle_uses_fine_ground: bool,
     /// The texture the ground shows, by its folder name under `assets/textures/`.
     ground_texture: String,
     /// How far apart the ground's texture repeats, in metres.
@@ -73,26 +88,84 @@ pub struct Settings {
 /// How many fine steps one coarse step of a middle tile spans.
 const COARSE: usize = 4;
 
-/// The assets the world reads: the models whose anchors the regions' cables fasten to.
-pub fn reads() -> Vec<String> {
-    let mut reads: Vec<String> =
-        regions::REGIONS.iter().flat_map(|region| region.fastens_to()).map(String::from).collect();
-    reads.sort();
-    reads.dedup();
-    reads
+impl Settings {
+    fn extent(&self) -> Result<Tile> {
+        let [[first_x, first_y], [last_x, last_y]] = self.tiles;
+        if first_x > last_x
+            || first_y > last_y
+            || self.tile_steps == 0
+            || !self.ground_step_m.is_finite()
+            || self.ground_step_m <= 0.0
+        {
+            bail!("invalid tile range or ground step");
+        }
+        let span = |k: usize| k.checked_mul(self.tile_steps).context("tile bounds overflow");
+        let full = Tile {
+            columns: (span(first_x)?, span(last_x.checked_add(1).context("tile bounds overflow")?)?),
+            rows: (span(first_y)?, span(last_y.checked_add(1).context("tile bounds overflow")?)?),
+        };
+        let Some(extent) = self.extent_m else { return Ok(full) };
+        let grid = |coordinate: f64, origin: f64| -> Result<usize> {
+            let value = (coordinate - origin) / self.ground_step_m;
+            if !value.is_finite() || value < 0.0 || value > usize::MAX as f64 || (value - value.round()).abs() > 1e-8 {
+                bail!("world extent must align with finite ground samples");
+            }
+            Ok(value.round() as usize)
+        };
+        let x0 = grid(extent[0][0], self.south_west_m[0])?;
+        let y0 = grid(extent[0][1], self.south_west_m[1])?;
+        let x1 = grid(extent[1][0], self.south_west_m[0])?;
+        let y1 = grid(extent[1][1], self.south_west_m[1])?;
+        if x0 < full.columns.0
+            || x1 > full.columns.1
+            || y0 < full.rows.0
+            || y1 > full.rows.1
+            || x0 >= span(first_x + 1)?
+            || x1 <= span(last_x)?
+            || y0 >= span(first_y + 1)?
+            || y1 <= span(last_y)?
+            || x0 >= x1
+            || y0 >= y1
+        {
+            bail!("world extent must intersect each declared tile");
+        }
+        Ok(Tile { columns: (x0, x1), rows: (y0, y1) })
+    }
+}
+
+/// The model outputs whose contact geometry the world validates.
+pub fn reads(settings: &Settings) -> Vec<String> {
+    let mut models: Vec<_> = settings.grounding.iter().flat_map(|p| p.models.iter().cloned()).collect();
+    models.sort();
+    models.dedup();
+    models
+}
+
+fn source_path(folder: &Path, path: &Path) -> Result<PathBuf> {
+    if !path.starts_with("src") || path.components().any(|part| matches!(part, std::path::Component::ParentDir)) {
+        bail!("world source file must be inside src/");
+    }
+    let root = folder.join("src").canonicalize().context("reading world src")?;
+    let file = folder.join(path).canonicalize().context("reading world source file")?;
+    if !file.starts_with(root) {
+        bail!("world source file must stay inside src/");
+    }
+    Ok(file)
 }
 
 pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     let [x, y] = settings.south_west_m;
     let mut ground =
         Ground::read(&folder.join(&settings.ground), settings.page_steps, settings.ground_step_m, DVec2::new(x, y))?;
+    if let Some(path) = &settings.terrain_diagonals {
+        ground.read_diagonals(&source_path(folder, path)?)?;
+    }
     let strips: Vec<_> = regions::REGIONS.iter().flat_map(|region| region.levelled()).collect();
     let pads: Vec<_> = regions::REGIONS.iter().flat_map(|region| region.pads()).collect();
     for strip in &strips {
         strip.level(&mut ground).context("levelling a strip")?;
     }
     levelling::level_pads(&mut ground, &pads).context("levelling pads")?;
-    let exclusions: Vec<_> = regions::REGIONS.iter().flat_map(|region| region.scatter_exclusions()).collect();
     let mut overlays = Vec::new();
     for region in regions::REGIONS {
         for mut overlay in region.overlays() {
@@ -136,8 +209,10 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     }
     let [[first_column, first_row], [last_column, last_row]] = settings.tiles;
     let span = |k: usize| (k * settings.tile_steps, (k + 1) * settings.tile_steps);
-    let whole =
-        Tile { columns: (span(first_column).0, span(last_column).1), rows: (span(first_row).0, span(last_row).1) };
+    let whole = settings.extent()?;
+    if !ground.covers_diagonals(whole.columns, whole.rows) {
+        bail!("world extent is outside the source terrain diagonal coverage");
+    }
     if !ground.covers(whole.columns, whole.rows) {
         bail!("the tiles reach past the ground");
     }
@@ -157,9 +232,14 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     if !raised.is_empty() {
         for column in first_column..=last_column {
             for row in first_row..=last_row {
-                let tile = Tile { columns: span(column), rows: span(row) };
+                let tile = whole.clip_tile(span(column), span(row)).expect("declared tiles intersect extent");
                 for detail in [Detail::Full, Detail::Middle] {
-                    let mesh = tile.ground(&ground, tile.detail_for(&ground, detail, &authored), 0, 1.0);
+                    let mesh = tile.ground(
+                        &ground,
+                        tile.detail_for(&ground, detail, &authored, settings.middle_uses_fine_ground),
+                        0,
+                        1.0,
+                    );
                     let drawn = Surface::new(&mesh);
                     let di = usize::from(detail == Detail::Middle);
                     let cut_mesh =
@@ -170,9 +250,6 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
             }
         }
     }
-    let domains: Vec<_> = regions::REGIONS.iter().flat_map(|region| region.path_domains()).collect();
-    let openings: Vec<_> = regions::REGIONS.iter().flat_map(|region| region.path_openings()).collect();
-    openings::check(&domains, &openings)?;
     let whole_mesh = whole.ground(&ground, Detail::Full, 0, 1.0);
     let low = ground.position(whole.columns.0 as f64, whole.rows.0 as f64);
     let high = ground.position(whole.columns.1 as f64, whole.rows.1 as f64);
@@ -185,19 +262,107 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         ground: &ground,
         rendered: (!authored.is_empty()).then_some(&drawn),
         raised: &prepared,
+        middle: false,
         low: ground.position(whole.columns.0 as f64, whole.rows.0 as f64),
         high: ground.position(whole.columns.1 as f64, whole.rows.1 as f64),
-        exclusions: &exclusions,
         regions: &regions::REGIONS,
-        domains: &domains,
-        openings: &openings,
     };
     let grid = Grid { south_west: DVec2::new(x, y), tile_m: settings.tile_steps as f64 * settings.ground_step_m };
-    // The full tiles' ground across the whole exported map, which seats the cables' ends.
-    for surface in &raised {
-        surface.mesh_before_cut(&drawn, true)?;
+    let sceneries: Vec<_> = regions::REGIONS.iter().map(|region| region.scenery(&land)).collect();
+    let contacts = contact::read(&settings.grounding)?;
+    let reference_path = settings.grounding_reference.as_ref().context("world needs a source contact reference")?;
+    let reference = contact::Reference::read(&source_path(folder, reference_path)?)?;
+    // Validate contacts against the logical source domain, before streaming clips any tile. The same
+    // owner footprints and cut underlays are prepared over this wider domain; hidden terrain is never used.
+    let (logical_first, logical_last) =
+        ground.diagonal_extent().context("source contact validation needs terrain coverage")?;
+    let logical = Tile { columns: (logical_first.0, logical_last.0), rows: (logical_first.1, logical_last.1) };
+    if !ground.covers(logical.columns, logical.rows) {
+        bail!("source contact domain reaches past ground");
     }
-    let sceneries = regions::REGIONS.iter().map(|region| (region.scenery(&land), region.fastens_to())).collect();
+    let mut logical_settings = settings.clone();
+    logical_settings.tiles = [
+        [logical.columns.0 / settings.tile_steps, logical.rows.0 / settings.tile_steps],
+        [(logical.columns.1 - 1) / settings.tile_steps, (logical.rows.1 - 1) / settings.tile_steps],
+    ];
+    let logical_low = ground.position(logical.columns.0 as f64, logical.rows.0 as f64);
+    let logical_high = ground.position(logical.columns.1 as f64, logical.rows.1 as f64);
+    let (native_first, native_last) =
+        ground.native_extent().context("source contact validation needs native terrain bounds")?;
+    let native_low = ground.position(native_first.0 as f64, native_first.1 as f64);
+    let native_high = ground.position(native_last.0 as f64, native_last.1 as f64);
+    let radius = contact::footprint_radius(&sceneries, (land.low, land.high), &contacts)?;
+    let needed_low = (land.low - DVec2::splat(radius)).max(native_low);
+    let needed_high = (land.high + DVec2::splat(radius)).min(native_high);
+    if needed_low.cmplt(logical_low).any() || needed_high.cmpgt(logical_high).any() {
+        bail!("source terrain coverage does not include the {radius:.2} m contact footprint margin");
+    }
+    logical_settings.extent_m = Some([logical_low.to_array(), logical_high.to_array()]);
+    let [[logical_first_column, logical_first_row], [logical_last_column, logical_last_row]] = logical_settings.tiles;
+    let mut logical_unions: [Vec<underlay::Underlay>; 2] = [Vec::new(), Vec::new()];
+    for (surface, &collar) in raised.iter().zip(&collars).filter(|(surface, _)| surface.cut_ground) {
+        for (di, detail) in [Detail::Full, Detail::Middle].into_iter().enumerate() {
+            if let Some(union) = underlay_for_owner(&ground, surface, &logical_settings, detail, collar, &authored)? {
+                logical_unions[di].push(union);
+            }
+        }
+    }
+    let mut logical_prepared = raised::Prepared::new(&raised, DVec2::new(x, y), tile_m);
+    logical_prepared.set_underlays(&logical_unions);
+    let mut logical_middle = Mesh::default();
+    for column in logical_first_column..=logical_last_column {
+        for row in logical_first_row..=logical_last_row {
+            let tile = logical.clip_tile(span(column), span(row)).expect("logical tiles intersect extent");
+            for detail in [Detail::Full, Detail::Middle] {
+                let mesh = tile.ground(
+                    &ground,
+                    tile.detail_for(&ground, detail, &authored, settings.middle_uses_fine_ground),
+                    0,
+                    1.0,
+                );
+                if detail == Detail::Middle && !settings.middle_uses_fine_ground {
+                    let base = logical_middle.positions.len() as u32;
+                    logical_middle.positions.extend_from_slice(&mesh.positions);
+                    logical_middle.indices.extend(mesh.indices.iter().map(|i| i + base));
+                }
+                let drawn = Surface::new(&mesh);
+                let di = usize::from(detail == Detail::Middle);
+                let cut_mesh = if logical_unions[di].is_empty() {
+                    mesh
+                } else {
+                    underlay::remove_covered(&mesh, &logical_unions[di])
+                };
+                logical_prepared.add_tile_with_cut(
+                    (column, row),
+                    &drawn,
+                    &Surface::new(&cut_mesh),
+                    detail == Detail::Middle,
+                )?;
+            }
+        }
+    }
+    let logical_ground = logical.ground(&ground, Detail::Full, 0, 1.0);
+    let logical_sources: Vec<Mesh> =
+        authored.iter().map(|surface| surface.mesh(logical_low, logical_high)).collect::<Result<_>>()?;
+    let logical_surface = Surface::with_crossings(&logical_ground, &logical_sources);
+    for surface in &raised {
+        surface.mesh_before_cut(&logical_surface, true)?;
+    }
+    let logical_land = Land {
+        ground: &ground,
+        rendered: Some(&logical_surface),
+        raised: &logical_prepared,
+        middle: false,
+        low: logical_low,
+        high: logical_high,
+        regions: &regions::REGIONS,
+    };
+    contact::validate(&sceneries, &logical_land, (land.low, land.high), &contacts, &reference)?;
+    if !settings.middle_uses_fine_ground {
+        let middle_surface = Surface::with_crossings(&logical_middle, &logical_sources);
+        let middle_land = Land { rendered: Some(&middle_surface), middle: true, ..logical_land };
+        contact::validate(&sceneries, &middle_land, (land.low, land.high), &contacts, &reference)?;
+    }
     let mut scenery = scenery::share(sceneries, &land, &grid, &overlays, &prepared, &drawn)?;
 
     let tiles = folder.join("tiles");
@@ -209,6 +374,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         settings.south_west_m,
         settings.ground_step_m,
         settings.tile_steps,
+        settings.middle_uses_fine_ground,
         settings.ground_texture,
         settings.ground_texture_m
     ]))?;
@@ -216,7 +382,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     let mut index = Glb::from_json(json!({ "asset": { "version": "2.0" } }));
     for column in first_column..=last_column {
         for row in first_row..=last_row {
-            let tile = Tile { columns: span(column), rows: span(row) };
+            let tile = whole.clip_tile(span(column), span(row)).expect("declared tiles intersect extent");
             let tile_scenery = scenery.remove(&(column, row)).unwrap_or_default();
             let stem = format!("{column}_{row}");
             let files = [
@@ -309,8 +475,19 @@ fn underlay_for_owner(
     for column in (first.x.max(0.0) as usize).saturating_sub(1)..=(last.x as usize).saturating_add(1).min(max_column) {
         for row in (first.y.max(0.0) as usize).saturating_sub(1)..=(last.y as usize).saturating_add(1).min(max_row) {
             let tile = Tile { columns: span(column), rows: span(row) };
+            let tile = if settings.extent_m.is_some() {
+                let Some(tile) = settings.extent()?.clip_tile(tile.columns, tile.rows) else { continue };
+                tile
+            } else {
+                tile
+            };
             if ground.covers(tile.columns, tile.rows) {
-                let mesh = tile.ground(ground, tile.detail_for(ground, detail, authored), 0, 1.0);
+                let mesh = tile.ground(
+                    ground,
+                    tile.detail_for(ground, detail, authored, settings.middle_uses_fine_ground),
+                    0,
+                    1.0,
+                );
                 tops.push(surface.mesh_before_cut(&Surface::new(&mesh), false)?);
             }
         }
@@ -356,10 +533,23 @@ struct Tile {
 }
 
 impl Tile {
+    /// Intersect a fixed-grid tile with the declared world extent, retaining its grid identity.
+    fn clip_tile(&self, columns: (usize, usize), rows: (usize, usize)) -> Option<Tile> {
+        let columns = (columns.0.max(self.columns.0), columns.1.min(self.columns.1));
+        let rows = (rows.0.max(self.rows.0), rows.1.min(self.rows.1));
+        (columns.0 < columns.1 && rows.0 < rows.1).then_some(Tile { columns, rows })
+    }
+
     /// Keep the source terrain's fine triangles wherever an authored crossing reaches the tile in either detail.
-    fn detail_for(&self, ground: &Ground, requested: Detail, authored: &[authored::AuthoredSurface]) -> Detail {
-        if requested == Detail::Full {
-            return requested;
+    fn detail_for(
+        &self,
+        ground: &Ground,
+        requested: Detail,
+        authored: &[authored::AuthoredSurface],
+        fine_middle: bool,
+    ) -> Detail {
+        if requested == Detail::Full || fine_middle {
+            return Detail::Full;
         }
         let low = ground.position(self.columns.0 as f64, self.rows.0 as f64);
         let high = ground.position(self.columns.1 as f64, self.rows.1 as f64);
@@ -386,8 +576,12 @@ impl Tile {
         let ground_material =
             glb.add_material(&Material::textured("ground", &crate::uri_of_texture(&settings.ground_texture)?));
         let texture_steps = settings.ground_texture_m / settings.ground_step_m;
-        let ground_mesh =
-            self.ground(ground, self.detail_for(ground, detail, authored), ground_material, texture_steps);
+        let ground_mesh = self.ground(
+            ground,
+            self.detail_for(ground, detail, authored, settings.middle_uses_fine_ground),
+            ground_material,
+            texture_steps,
+        );
         let drawn = Surface::new(&ground_mesh);
         let low = ground.position(self.columns.0 as f64, self.rows.0 as f64);
         let high = ground.position(self.columns.1 as f64, self.rows.1 as f64);
@@ -466,7 +660,11 @@ impl Tile {
                 for i in self.columns.0..self.columns.1 {
                     let [a, b, c, d] =
                         [(i, j), (i + 1, j), (i + 1, j + 1), (i, j + 1)].map(|(i, j)| point(&mut mesh, i, j));
-                    mesh.indices.extend([a, b, c, a, c, d]);
+                    if ground.alternate_diagonal(i, j) {
+                        mesh.indices.extend([a, b, d, b, c, d]);
+                    } else {
+                        mesh.indices.extend([a, b, c, a, c, d]);
+                    }
                 }
             }
             return mesh;
@@ -508,16 +706,124 @@ mod tests {
     use super::*;
 
     #[test]
+    fn authored_diagonal_drives_surface_query_and_local_checksum() {
+        let mut ground = Ground::page(4, 1.0, |i, j| if i == 1 && j == 1 { 1.0 } else { 0.0 });
+        let tile = Tile { columns: (0, 1), rows: (0, 1) };
+        let other = Tile { columns: (2, 3), rows: (2, 3) };
+        let checksum = |tile: &Tile, ground: &Ground| {
+            tile.checksum(&[], &[], ground, (&[], &[], &[]), (&TileScenery::default(), &[]))
+        };
+        let old = checksum(&tile, &ground);
+        let untouched = checksum(&other, &ground);
+        let path = std::env::temp_dir().join(format!("hakuba-diagonals-{}.json", std::process::id()));
+        fs::write(
+            &path,
+            r#"{"extent_m":[[0,0],[4,4]],"native_extent_m":[[0,0],[4,4]],"step_m":1,"alternate_cells_m":[[0,0]]}"#,
+        )
+        .unwrap();
+        ground.read_diagonals(&path).unwrap();
+        fs::remove_file(path).unwrap();
+        let at = DVec2::new(0.25, 0.25);
+        let surface = Surface::new(&tile.ground(&ground, Detail::Full, 0, 1.0));
+        assert_eq!(ground.height(at), Some(0.0));
+        assert_eq!(surface.ground_height(at), Some(0.0));
+        assert_ne!(checksum(&tile, &ground), old);
+        assert_eq!(checksum(&other, &ground), untouched);
+    }
+
+    #[test]
+    fn neighboring_diagonal_invalidates_edge_overlay_normal() {
+        let mut ground = Ground::page(8, 1.0, |i, j| if i == 5 && j == 3 { 1.0 } else { 0.0 });
+        let tile = Tile { columns: (2, 4), rows: (2, 4) };
+        let far = Tile { columns: (6, 7), rows: (6, 7) };
+        let overlay = Overlay {
+            name: "edge".into(),
+            texture: "ground".into(),
+            triangles: vec![[
+                (DVec2::new(3.75, 2.25), DVec2::ZERO),
+                (DVec2::new(3.5, 2.5), DVec2::X),
+                (DVec2::new(3.5, 2.25), DVec2::Y),
+            ]],
+        };
+        let path = std::env::temp_dir().join(format!("hakuba-edge-diagonals-{}.json", std::process::id()));
+        let load = |ground: &mut Ground, cells: &str| {
+            fs::write(&path, format!(r#"{{"extent_m":[[0,0],[8,8]],"native_extent_m":[[0,0],[8,8]],"step_m":1,"alternate_cells_m":{cells}}}"#)).unwrap();
+            ground.read_diagonals(&path).unwrap();
+        };
+        let checksum = |tile: &Tile, ground: &Ground| {
+            tile.checksum(&[], &[], ground, (std::slice::from_ref(&overlay), &[], &[]), (&TileScenery::default(), &[]))
+        };
+        let normals = |ground: &Ground| {
+            let surface = Surface::new(&tile.ground(ground, Detail::Full, 0, 1.0));
+            overlay.mesh(ground, &surface).normals
+        };
+        load(&mut ground, "[]");
+        let before = checksum(&tile, &ground);
+        let far_before = checksum(&far, &ground);
+        let before_normals = normals(&ground);
+        assert!(!before_normals.is_empty());
+        load(&mut ground, "[[4,2]]");
+        assert_ne!(before_normals, normals(&ground));
+        assert_ne!(before, checksum(&tile, &ground));
+        assert_eq!(far_before, checksum(&far, &ground));
+        fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn aligned_extent_clips_boundary_tile_at_both_details() {
+        let mut settings = Settings {
+            grounding: Vec::new(),
+            grounding_reference: None,
+            terrain_diagonals: None,
+            ground: PathBuf::new(),
+            south_west_m: [0.0, 0.0],
+            ground_step_m: 2.0,
+            page_steps: 64,
+            tile_steps: 32,
+            tiles: [[0, 0], [1, 0]],
+            extent_m: Some([[0.0, 0.0], [88.0, 64.0]]),
+            middle_uses_fine_ground: false,
+            ground_texture: "ground".into(),
+            ground_texture_m: 24.0,
+            spawn_m: [0.0, 0.0],
+            spawn_bearing_deg: 0.0,
+        };
+        let extent = settings.extent().unwrap();
+        let tile = extent.clip_tile((32, 64), (0, 32)).unwrap();
+        assert_eq!(tile.columns, (32, 44));
+        let ground = Ground::page(64, 2.0, |i, j| (i + j) as f32);
+        assert!(ground.covers(extent.columns, extent.rows));
+        let broken = Ground::page(64, 2.0, |i, j| if i == 40 && j == 8 { f32::NAN } else { 0.0 });
+        assert!(!broken.covers(extent.columns, extent.rows));
+        assert_eq!(ground.at(38.0, 16.0).x, 76.0); // centre of the actual partial tile
+        for detail in [Detail::Full, Detail::Middle] {
+            let mesh = tile.ground(&ground, detail, 0, 12.0);
+            assert!(mesh.positions.iter().all(|p| p[0] >= 64.0 && p[0] <= 88.0));
+            assert!(mesh.positions.iter().any(|p| p[0] == 88.0));
+            assert!(mesh.positions.iter().any(|p| p[0] == 64.0));
+        }
+        settings.extent_m = Some([[0.0, 0.0], [89.0, 64.0]]);
+        assert!(settings.extent().is_err());
+        settings.extent_m = Some([[0.0, 0.0], [64.0, 64.0]]);
+        assert!(settings.extent().is_err());
+    }
+
+    #[test]
     fn distant_crossing_detail_policy_does_not_change_neighboring_owner_tile() {
         let ground = Ground::page(32, 1.0, |i, j| ((i * i + j * j + i * j) % 17) as f32 / 100.0);
         let tile = Tile { columns: (0, 8), rows: (0, 8) };
         let settings = Settings {
+            grounding: Vec::new(),
+            grounding_reference: None,
+            terrain_diagonals: None,
             ground: PathBuf::new(),
             south_west_m: [0.0, 0.0],
             ground_step_m: 1.0,
             page_steps: 32,
             tile_steps: 8,
             tiles: [[0, 0], [1, 1]],
+            extent_m: None,
+            middle_uses_fine_ground: false,
             ground_texture: "ground".into(),
             ground_texture_m: 6.0,
             spawn_m: [0.0, 0.0],
@@ -553,7 +859,12 @@ mod tests {
             let mut prepared = raised::Prepared::new(&raised, DVec2::ZERO, 8.0);
             prepared.set_underlays(&unions);
             for (di, detail) in [Detail::Full, Detail::Middle].into_iter().enumerate() {
-                let mesh = tile.ground(&ground, tile.detail_for(&ground, detail, authored), 0, 1.0);
+                let mesh = tile.ground(
+                    &ground,
+                    tile.detail_for(&ground, detail, authored, settings.middle_uses_fine_ground),
+                    0,
+                    1.0,
+                );
                 let drawn = Surface::new(&mesh);
                 let cut = Surface::new(&underlay::remove_covered(&mesh, &unions[di]));
                 prepared.add_tile_with_cut((0, 0), &drawn, &cut, di == 1).unwrap();
@@ -594,11 +905,12 @@ mod tests {
                 normal: [[0.0, 0.0, 1.0]; 3],
             }],
         }];
-        assert!(near.detail_for(&ground, Detail::Middle, &authored) == Detail::Full);
-        assert!(far.detail_for(&ground, Detail::Middle, &authored) == Detail::Middle);
-        assert!(near.detail_for(&ground, Detail::Middle, &[]) == Detail::Middle);
+        assert!(near.detail_for(&ground, Detail::Middle, &authored, false) == Detail::Full);
+        assert!(far.detail_for(&ground, Detail::Middle, &authored, false) == Detail::Middle);
+        assert!(near.detail_for(&ground, Detail::Middle, &[], false) == Detail::Middle);
+        assert!(far.detail_for(&ground, Detail::Middle, &[], true) == Detail::Full);
         let full = near.ground(&ground, Detail::Full, 0, 1.0);
-        let effective = near.ground(&ground, near.detail_for(&ground, Detail::Middle, &authored), 0, 1.0);
+        let effective = near.ground(&ground, near.detail_for(&ground, Detail::Middle, &authored, false), 0, 1.0);
         assert_eq!(effective.positions, full.positions);
         assert_eq!(effective.indices, full.indices);
     }
@@ -607,12 +919,17 @@ mod tests {
     fn underlay_outside_loaded_ground_is_rejected() {
         let ground = Ground::page(8, 1.0, |_, _| 0.0);
         let settings = Settings {
+            grounding: Vec::new(),
+            grounding_reference: None,
+            terrain_diagonals: None,
             ground: PathBuf::new(),
             south_west_m: [0.0, 0.0],
             ground_step_m: 1.0,
             page_steps: 8,
             tile_steps: 8,
             tiles: [[0, 0], [0, 0]],
+            extent_m: None,
+            middle_uses_fine_ground: false,
             ground_texture: "ground".into(),
             ground_texture_m: 6.0,
             spawn_m: [0.0, 0.0],
@@ -653,12 +970,17 @@ mod tests {
         for detail in [Detail::Full, Detail::Middle] {
             let emit = |expanded: bool| {
                 let settings = Settings {
+                    grounding: Vec::new(),
+                    grounding_reference: None,
+                    terrain_diagonals: None,
                     ground: PathBuf::new(),
                     south_west_m: [0.0, 0.0],
                     ground_step_m: 1.0,
                     page_steps: 32,
                     tile_steps: 8,
                     tiles: [[0, 0], if expanded { [3, 3] } else { [0, 0] }],
+                    extent_m: None,
+                    middle_uses_fine_ground: false,
                     ground_texture: "ground".into(),
                     ground_texture_m: 6.0,
                     spawn_m: [0.0, 0.0],
@@ -742,12 +1064,17 @@ mod tests {
         let ground = Ground::page(8, 1.0, |_, _| 0.0);
         let tile = Tile { columns: (0, 8), rows: (0, 8) };
         let settings = Settings {
+            grounding: Vec::new(),
+            grounding_reference: None,
+            terrain_diagonals: None,
             ground: PathBuf::new(),
             south_west_m: [0.0, 0.0],
             ground_step_m: 1.0,
             page_steps: 8,
             tile_steps: 8,
             tiles: [[0, 0], [0, 0]],
+            extent_m: None,
+            middle_uses_fine_ground: false,
             ground_texture: "ground".into(),
             ground_texture_m: 6.0,
             spawn_m: [0.0, 0.0],

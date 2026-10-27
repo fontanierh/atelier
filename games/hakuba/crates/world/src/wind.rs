@@ -12,9 +12,10 @@ use bevy::ecs::system::SystemParam;
 use bevy::pbr::{ExtendedMaterial, MaterialExtension};
 use bevy::platform::collections::{HashMap, HashSet};
 use bevy::prelude::*;
-use bevy::render::render_resource::AsBindGroup;
+use bevy::render::render_resource::{AsBindGroup, ShaderType};
 use bevy::render::storage::ShaderBuffer;
 use bevy::shader::ShaderRef;
+use serde::{Deserialize, Serialize};
 
 use crate::push::Pushers;
 
@@ -26,13 +27,18 @@ pub fn tag(strength: f32) -> u32 {
 /// A plant's material, swaying.
 pub type Swaying = ExtendedMaterial<StandardMaterial, Wind>;
 
+/// Original per-vertex foliage weights, distinct from generated-plant bend and phase.
+pub type SourceFoliage = ExtendedMaterial<StandardMaterial, SourceWind>;
+
 pub struct WindPlugin;
 
 impl Plugin for WindPlugin {
     fn build(&self, app: &mut App) {
         embedded_asset!(app, "wind.wesl");
         embedded_asset!(app, "leaves.wesl");
-        app.add_plugins(MaterialPlugin::<Swaying>::default())
+        embedded_asset!(app, "source_foliage.wesl");
+        embedded_asset!(app, "source_leaves.wesl");
+        app.add_plugins((MaterialPlugin::<Swaying>::default(), MaterialPlugin::<SourceFoliage>::default()))
             .init_resource::<Made>()
             .add_systems(PostUpdate, cut_out_in_full);
     }
@@ -60,10 +66,91 @@ impl MaterialExtension for Wind {
     }
 }
 
+/// Asset-owned motion and atmospheric coefficients for a source foliage material.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct SourceProfile {
+    pub direction_amplitude_shade: [f32; 4],
+    pub slow: [f32; 4],
+    pub fast: [f32; 4],
+    pub global_slow: [f32; 4],
+    pub global_fast: [f32; 4],
+    /// Third global gust: frequency and amplitude; final two components are reserved.
+    pub global_tail: [f32; 4],
+    pub push_haze: [f32; 4],
+    pub haze_colour: [f32; 3],
+    #[serde(default = "unit_wind")]
+    pub wind_scale: f32,
+    #[serde(default)]
+    pub up_normal: bool,
+}
+
+fn unit_wind() -> f32 {
+    1.0
+}
+
+impl SourceProfile {
+    pub fn valid(&self) -> bool {
+        self.direction_amplitude_shade
+            .iter()
+            .chain(&self.slow)
+            .chain(&self.fast)
+            .chain(&self.global_slow)
+            .chain(&self.global_fast)
+            .chain(&self.global_tail)
+            .chain(&self.push_haze)
+            .chain(&self.haze_colour)
+            .all(|x| x.is_finite())
+            && (self.direction_amplitude_shade[0].powi(2) + self.direction_amplitude_shade[1].powi(2)) > 0.0
+            && self.global_tail[2] == 0.0
+            && self.global_tail[3] == 0.0
+            && self.wind_scale.is_finite()
+            && self.wind_scale >= 0.0
+            && self.push_haze[0] > 0.0
+            && self.push_haze[3] > 0.0
+    }
+}
+
+#[derive(Clone, Debug, Default, Reflect, ShaderType)]
+struct SourceUniform {
+    direction: Vec4,
+    slow: Vec4,
+    fast: Vec4,
+    global_slow: Vec4,
+    global_fast: Vec4,
+    global_tail: Vec4,
+    push_haze: Vec4,
+    haze_colour: Vec4,
+}
+
+/// Wind driven by source vertex colours, shared by the main and shadow passes.
+#[derive(Asset, AsBindGroup, Reflect, Clone, Default)]
+pub struct SourceWind {
+    #[storage(100, read_only)]
+    pushers: Handle<ShaderBuffer>,
+    #[uniform(101)]
+    profile: SourceUniform,
+}
+
+impl MaterialExtension for SourceWind {
+    fn vertex_shader() -> ShaderRef {
+        "embedded://hakuba_world/source_foliage.wesl".into()
+    }
+    fn prepass_vertex_shader() -> ShaderRef {
+        "embedded://hakuba_world/source_foliage.wesl".into()
+    }
+    fn fragment_shader() -> ShaderRef {
+        "embedded://hakuba_world/source_leaves.wesl".into()
+    }
+}
+
 /// The swaying version of each plant material, made once, so every copy of a plant shares it and is drawn with the
 /// others.
 #[derive(Resource, Default)]
-struct Made(HashMap<AssetId<StandardMaterial>, Handle<Swaying>>);
+struct Made {
+    generated: HashMap<AssetId<StandardMaterial>, Handle<Swaying>>,
+    source: HashMap<(AssetId<StandardMaterial>, String), Handle<SourceFoliage>>,
+}
 
 /// Makes the swaying versions of plant materials.
 #[derive(SystemParam)]
@@ -71,18 +158,55 @@ pub struct SwayingMaterials<'w> {
     made: ResMut<'w, Made>,
     standard: Res<'w, Assets<StandardMaterial>>,
     swaying: ResMut<'w, Assets<Swaying>>,
+    source: ResMut<'w, Assets<SourceFoliage>>,
     pushers: Res<'w, Pushers>,
 }
 
 impl SwayingMaterials<'_> {
+    /// The source-foliage material, or None while its base is loading.
+    pub fn source_of(
+        &mut self,
+        material: &Handle<StandardMaterial>,
+        profile: &SourceProfile,
+    ) -> Option<Handle<SourceFoliage>> {
+        let key = (material.id(), serde_json::to_string(profile).ok()?);
+        if let Some(handle) = self.made.source.get(&key) {
+            return Some(handle.clone());
+        }
+        let mut base = self.standard.get(material)?.clone();
+        base.fog_enabled = false;
+        base.reflectance = 0.0;
+        let moving = if matches!(base.alpha_mode, AlphaMode::Mask(_)) { 1.0 } else { 0.0 };
+        let params = SourceUniform {
+            direction: Vec4::from_array(profile.direction_amplitude_shade),
+            slow: Vec4::from_array(profile.slow),
+            fast: Vec4::from_array(profile.fast),
+            global_slow: Vec4::from_array(profile.global_slow),
+            global_fast: Vec4::from_array(profile.global_fast),
+            global_tail: Vec4::new(
+                profile.global_tail[0],
+                profile.global_tail[1],
+                profile.wind_scale,
+                if profile.up_normal { 1.0 } else { 0.0 },
+            ),
+            push_haze: Vec4::from_array(profile.push_haze),
+            haze_colour: Vec4::new(profile.haze_colour[0], profile.haze_colour[1], profile.haze_colour[2], moving),
+        };
+        let handle = self
+            .source
+            .add(SourceFoliage { base, extension: SourceWind { pushers: self.pushers.0.clone(), profile: params } });
+        self.made.source.insert(key, handle.clone());
+        Some(handle)
+    }
+
     /// The swaying version of `material`, or None while it is still loading.
     pub fn of(&mut self, material: &Handle<StandardMaterial>) -> Option<Handle<Swaying>> {
-        if let Some(handle) = self.made.0.get(&material.id()) {
+        if let Some(handle) = self.made.generated.get(&material.id()) {
             return Some(handle.clone());
         }
         let base = self.standard.get(material)?.clone();
         let handle = self.swaying.add(Swaying { base, extension: Wind { pushers: self.pushers.0.clone() } });
-        self.made.0.insert(material.id(), handle.clone());
+        self.made.generated.insert(material.id(), handle.clone());
         Some(handle)
     }
 }

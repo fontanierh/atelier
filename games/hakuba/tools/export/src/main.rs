@@ -37,7 +37,7 @@ enum Asset {
     Animation(rig::animation::Settings),
     Character(rig::character::Settings),
     Equipment(rig::equipment::Settings),
-    Plant(model::plant::Settings),
+    Plant(Box<model::plant::Settings>),
     Prop(model::prop::Settings),
     Sound(sound::Settings),
     Texture(texture::Settings),
@@ -55,7 +55,7 @@ impl Asset {
             | Asset::Sound(_)
             | Asset::Texture(_) => Vec::new(),
             Asset::Character(_) => rig::animations::ANIMATIONS.into_iter().map(rig::animation::folder).collect(),
-            Asset::World(_) => world::reads(),
+            Asset::World(settings) => world::reads(settings),
         }
     }
 

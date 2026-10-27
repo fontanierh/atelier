@@ -1,0 +1,5 @@
+# Original fallen leaf geometry.
+path = "model.glb"
+sha256 = "7c2680e1d12bc34c858541d6f0fbfa5868b5b0f949f68c64ebc73a810e25ba8e"
+authoring_fbx_sha256 = "ff5bcee8bfc6376092d2eb24d7138ec3bc8f94a5d02e2064a6d80a34657fe3e5"
+conversion = "FBX SDK 2020.2 triangulation; per-corner positions, normals, UVs and RGBA retained"

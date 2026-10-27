@@ -24,10 +24,64 @@ use crate::shapes::{card, tube, vertex};
 #[serde(deny_unknown_fields)]
 pub struct Settings {
     /// The seed of every random draw, so each export repeats exactly.
+    #[serde(default)]
     seed: u64,
+    /// Optional static source mesh with original per-vertex foliage weights.
+    source: Option<String>,
+    /// Named textures referenced by the source mesh.
+    #[serde(default)]
+    textures: Vec<String>,
+    source_profile: Option<SourceProfile>,
+    /// For a source surface intentionally above its origin, its exact lowest height in metres.
+    surface_height_m: Option<f32>,
     wood: Option<Wood>,
     leaves: Option<Leaves>,
     tuft: Option<Tuft>,
+}
+
+/// The source material's wind, push and atmospheric response.
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SourceProfile {
+    direction_amplitude_shade: [f32; 4],
+    slow: [f32; 4],
+    fast: [f32; 4],
+    global_slow: [f32; 4],
+    global_fast: [f32; 4],
+    /// Third global gust: frequency and amplitude; final two components are reserved.
+    global_tail: [f32; 4],
+    push_haze: [f32; 4],
+    haze_colour: [f32; 3],
+    #[serde(default = "unit_wind")]
+    wind_scale: f32,
+    #[serde(default)]
+    up_normal: bool,
+}
+
+fn unit_wind() -> f32 {
+    1.0
+}
+
+impl SourceProfile {
+    fn valid(&self) -> bool {
+        self.direction_amplitude_shade
+            .iter()
+            .chain(&self.slow)
+            .chain(&self.fast)
+            .chain(&self.global_slow)
+            .chain(&self.global_fast)
+            .chain(&self.global_tail)
+            .chain(&self.push_haze)
+            .chain(&self.haze_colour)
+            .all(|x| x.is_finite())
+            && (self.direction_amplitude_shade[0].powi(2) + self.direction_amplitude_shade[1].powi(2)) > 0.0
+            && self.global_tail[2] == 0.0
+            && self.global_tail[3] == 0.0
+            && self.wind_scale.is_finite()
+            && self.wind_scale >= 0.0
+            && self.push_haze[0] > 0.0
+            && self.push_haze[3] > 0.0
+    }
 }
 
 /// A trunk and its branches.
@@ -123,6 +177,36 @@ fn white() -> [f64; 3] {
 const BARK_M: f64 = 1.5;
 
 pub fn export(settings: &Settings, output: &Path) -> Result<()> {
+    if let Some(source) = &settings.source {
+        if settings.wood.is_some()
+            || settings.leaves.is_some()
+            || settings.tuft.is_some()
+            || settings.textures.is_empty()
+        {
+            bail!("a source plant needs declared textures and cannot specify generated geometry");
+        }
+        let profile =
+            settings.source_profile.as_ref().ok_or_else(|| anyhow::anyhow!("source plant needs a profile"))?;
+        if !profile.valid() {
+            bail!("invalid source foliage profile");
+        }
+        return super::source::export_foliage(
+            source,
+            &settings.textures,
+            serde_json::to_value(profile)?,
+            settings.surface_height_m,
+            output,
+        );
+    }
+    if settings.surface_height_m.is_some() {
+        bail!("surface height requires a source plant");
+    }
+    if settings.source_profile.is_some() {
+        bail!("source profile requires a source plant");
+    }
+    if !settings.textures.is_empty() {
+        bail!("named source textures require a source plant");
+    }
     let mut random = Random::new(settings.seed);
     let (mut full, mut middle): (Version, Version) = (Vec::new(), Vec::new());
     let bark = settings.wood.as_ref().map(|wood| crate::uri_of_texture(&wood.texture)).transpose()?;

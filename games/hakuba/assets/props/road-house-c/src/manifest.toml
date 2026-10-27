@@ -1,0 +1,5 @@
+# Committed source geometry and its verified authoring input.
+path = "house.glb"
+sha256 = "550235676ddcc3287ecb30d3692cb70dab8c91999123717ab23c683f9b1779ed"
+authoring_fbx_sha256 = "ecd754709c0bdc9c7279dbabb3f1f1567e491852e4c2996d7a0b0c2c4770fb36"
+conversion = "FBX SDK 2020.2 static triangulation; Blender 5.2.1; original f32 normals and quantized color restored"

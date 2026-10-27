@@ -1,0 +1,5 @@
+# Ground faces are authored as the world surface; this GLB retains the other original faces.
+path = "lot.glb"
+sha256 = "b6ba79f7d8e53701cacc5421387b4fa184a3e3e25f77c40e804441a134a6550b"
+authoring_fbx_sha256 = "12766fcb2a1b1760328c502426d1edf8237c2306696c29fb631311c90da43236"
+conversion = "FBX SDK 2020.2 static triangulation; Blender 5.2.1; original f32 normals and quantized color restored"

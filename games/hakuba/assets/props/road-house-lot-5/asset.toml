@@ -1,0 +1,5 @@
+# Original source-authored roadside geometry.
+kind = "prop"
+source = "src/lot.glb"
+solid = true
+inputs_sha256 = "c4cc497810579d2894c420dd8b5823a72cfd8ebd879b675b9acf2a91bb7ee389"

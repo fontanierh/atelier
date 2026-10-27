@@ -160,13 +160,14 @@ pub fn placements() -> [Placement; 2] {
         yaw: YAW_DEG.to_radians(),
         scale: 1.0,
         origin_offset_m: 0.0,
+        origin_height_m: None,
         afar: true,
     })
 }
 
 /// Apply the surveyed lot boundary and original scatter reach rules.
 pub fn blocked(kind: ScatterKind, plant: &Placement) -> bool {
-    super::blocked_for(&FRONT, CENTRE, YAW_DEG, kind, plant)
+    super::blocked_for(&FRONT, CENTRE, YAW_DEG, [-6.25, 6.25, -5.45, 4.15], 2.4, kind, plant)
 }
 
 #[cfg(test)]
@@ -258,8 +259,15 @@ mod tests {
             ("plants/grass-b", ScatterKind::Grass, 0.0, 10.6, 1.0, false),
         ];
         for (model, kind, x, y, scale, expected) in cases {
-            let plant =
-                Placement { model, at: world(DVec2::new(x, y)), yaw: 0.0, scale, origin_offset_m: 0.0, afar: true };
+            let plant = Placement {
+                model,
+                at: world(DVec2::new(x, y)),
+                yaw: 0.0,
+                scale,
+                origin_offset_m: 0.0,
+                origin_height_m: None,
+                afar: true,
+            };
             assert_eq!(blocked(kind, &plant), expected, "{model} at ({x},{y}) scale {scale}");
         }
     }
