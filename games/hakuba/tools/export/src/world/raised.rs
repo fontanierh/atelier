@@ -152,7 +152,11 @@ impl<'a> Prepared<'a> {
     }
 
     pub fn height(&self, p: DVec2, ground: impl FnOnce(DVec2) -> Option<f64>) -> Option<f64> {
-        self.owner(p, false).or_else(|| if self.is_cut(p, false) { self.cut_height(p, false) } else { ground(p) })
+        self.height_for_detail(p, false, ground)
+    }
+
+    pub fn height_for_detail(&self, p: DVec2, middle: bool, ground: impl FnOnce(DVec2) -> Option<f64>) -> Option<f64> {
+        self.owner(p, middle).or_else(|| if self.is_cut(p, middle) { self.cut_height(p, middle) } else { ground(p) })
     }
 
     pub fn owner_height(&self, p: DVec2) -> Option<f64> {

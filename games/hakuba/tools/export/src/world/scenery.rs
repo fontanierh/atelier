@@ -578,7 +578,7 @@ impl TileScenery {
                 let at = DVec2::from_array(at);
                 raised.check_point(at)?;
                 let seat = raised
-                    .height(at, |p| surface.height(p))
+                    .height_for_detail(at, middle, |p| surface.height(p))
                     .with_context(|| format!("{}: {model} at {at} stands on no ground", path.display()))?;
                 let origin = seat + origin_offset_m;
                 if !origin.is_finite() || (precise && !(origin as f32).is_finite()) {
@@ -749,6 +749,28 @@ mod tests {
         assert!(cable_is_clear(a, &drawn, &prepared).unwrap());
         assert!(cable_is_clear(b, &drawn, &prepared).unwrap());
         assert!(check_cable_segment(a, b, &prepared, "pole").is_err());
+    }
+
+    #[test]
+    fn placement_uses_retained_ground_of_emitted_detail() {
+        use crate::world::{Detail, Tile};
+        let full_ground = Ground::page(8, 1.0, |_, _| 2.0);
+        let middle_ground = Ground::page(8, 1.0, |_, _| 1.0);
+        let tile = Tile { columns: (0, 8), rows: (0, 8) };
+        let full = Surface::new(&tile.ground(&full_ground, Detail::Full, 0, 1.0));
+        let middle = Surface::new(&tile.ground(&middle_ground, Detail::Full, 0, 1.0));
+        let mut prepared = Prepared::new(&[], DVec2::ZERO, 8.0);
+        prepared.set_underlays(&cut_envelope());
+        prepared.add_tile_with_cut((0, 0), &full, &full, false).unwrap();
+        prepared.add_tile_with_cut((0, 0), &middle, &middle, true).unwrap();
+        let mut scenery = TileScenery::default();
+        scenery.models.insert("props/utility-pole", vec![([4.0, 2.0], 0.0, 1.0, true, true, 0.25)]);
+        for (is_middle, surface, expected) in [(false, &full, 2.25), (true, &middle, 1.25)] {
+            let mut glb = Glb::from_json(json!({"asset": {"version": "2.0"}}));
+            scenery.write(&mut glb, surface, &prepared, is_middle, Path::new("test.glb")).unwrap();
+            let instances = glb.extras("props/utility-pole").unwrap()["instances"].as_array().unwrap();
+            assert_eq!(instances[1].as_f64().unwrap(), expected);
+        }
     }
 
     #[test]
