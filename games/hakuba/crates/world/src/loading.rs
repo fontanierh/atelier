@@ -245,7 +245,7 @@ fn report(mut commands: Commands, mut failed: MessageReader<UntypedAssetLoadFail
 /// The last file that failed to load, which the splash names while it stays up: a file the world cannot show without,
 /// such as its index or the player's character, keeps it up.
 #[derive(Resource)]
-struct Missing(String);
+pub(crate) struct Missing(pub String);
 
 /// Whether every texture `material` uses has loaded, or failed to, which [`report`] says.
 fn textured(material: &StandardMaterial, images: &Assets<Image>, assets: &AssetServer) -> bool {

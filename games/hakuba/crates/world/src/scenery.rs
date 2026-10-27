@@ -23,8 +23,10 @@ use bevy::world_serialization::WorldAssetRoot;
 use serde::Deserialize;
 
 use crate::ground::built_solid;
+use crate::loading::Missing;
 use crate::look::SHADOW_ONLY;
 use crate::tiles::TILES;
+use crate::vertex_paint::{Painted, PaintedMaterials, Profile};
 use crate::wind::{Swaying, SwayingMaterials};
 
 /// A model with fewer vertices than this has its copies merged.
@@ -162,6 +164,7 @@ fn spawn(
     models: Models,
     mut meshes: ResMut<Assets<Mesh>>,
     mut swaying: SwayingMaterials,
+    mut painted: PaintedMaterials,
 ) {
     let mut budget = Budget { vertices: MERGE_VERTICES_PER_UPDATE, instances: INSTANCES_PER_UPDATE };
     'copies: for (entity, mut waiting) in &mut waiting {
@@ -190,7 +193,17 @@ fn spawn(
                     commands.entity(entity).remove::<Waiting>();
                     continue 'copies;
                 };
-                let Some(parts) = parts(&assets, &models, &meshes, &mut swaying, node) else { continue 'copies };
+                let parts = match parts(&assets, &models, &meshes, &mut swaying, &mut painted, node) {
+                    Ok(Some(parts)) => parts,
+                    Ok(None) => continue 'copies,
+                    Err(reason) => {
+                        let asset = waiting.model.path().map_or_else(|| "model".to_string(), |p| p.to_string());
+                        error!("invalid {asset} node {name}: {reason}");
+                        commands.insert_resource(Missing(asset));
+                        commands.entity(entity).remove::<Waiting>();
+                        continue 'copies;
+                    }
+                };
                 shown.push((node, parts, role));
             }
             let transforms: Vec<Transform> = waiting
@@ -300,6 +313,7 @@ fn place(
         match &job.look {
             Look::Still(material) => part.insert(MeshMaterial3d(material.clone())),
             Look::Swaying(material) => part.insert(MeshMaterial3d(material.clone())),
+            Look::Painted(material) => part.insert(MeshMaterial3d(material.clone())),
         };
         match job.role {
             Role::Both if job.shadows => {}
@@ -341,6 +355,8 @@ impl Role {
     }
 }
 
+type Parts = Vec<(Handle<Mesh>, Look)>;
+
 /// `node`'s meshes, each with its look: a part whose vertices say how far they sway is drawn with the swaying version
 /// of its material. None while a mesh or material is still loading.
 fn parts(
@@ -348,18 +364,59 @@ fn parts(
     models: &Models,
     meshes: &Assets<Mesh>,
     swaying: &mut SwayingMaterials,
+    painted: &mut PaintedMaterials,
     node: &GltfNode,
-) -> Option<Vec<(Handle<Mesh>, Look)>> {
-    let mesh = node.mesh.as_ref().and_then(|mesh| models.meshes.get(mesh))?;
-    mesh.primitives
-        .iter()
-        .map(|primitive| {
-            let material = standard_of(assets, primitive.material.as_ref());
-            let sways = meshes.get(&primitive.mesh)?.contains_attribute(Mesh::ATTRIBUTE_UV_1);
-            let look = if sways { Look::Swaying(swaying.of(&material)?) } else { Look::Still(material) };
-            Some((primitive.mesh.clone(), look))
-        })
-        .collect()
+) -> Result<Option<Parts>, String> {
+    let Some(mesh) = node.mesh.as_ref().and_then(|mesh| models.meshes.get(mesh)) else { return Ok(None) };
+    let profile = if let Some(extras) = &node.extras {
+        let value: serde_json::Value = serde_json::from_str(&extras.value).map_err(|e| e.to_string())?;
+        value
+            .get("vertex_paint")
+            .map(|p| serde_json::from_value::<Profile>(p.clone()))
+            .transpose()
+            .map_err(|e| e.to_string())?
+    } else {
+        None
+    };
+    if profile.as_ref().is_some_and(|p| !p.valid()) {
+        return Err("invalid vertex paint parameters".into());
+    }
+    let mut parts = Vec::with_capacity(mesh.primitives.len());
+    for primitive in &mesh.primitives {
+        let Some(source) = meshes.get(&primitive.mesh) else { return Ok(None) };
+        let material = standard_of(assets, primitive.material.as_ref());
+        let look = if let Some(profile) = &profile {
+            validate_static_paint(source)?;
+            let Some(material) = painted.of(&material, profile)? else { return Ok(None) };
+            Look::Painted(material)
+        } else if source.contains_attribute(Mesh::ATTRIBUTE_UV_1) {
+            let Some(material) = swaying.of(&material) else { return Ok(None) };
+            Look::Swaying(material)
+        } else {
+            Look::Still(material)
+        };
+        parts.push((primitive.mesh.clone(), look));
+    }
+    Ok(Some(parts))
+}
+
+/// Static painted assets must retain opaque RGB and cannot silently discard a motion-bearing alpha channel.
+fn validate_static_paint(source: &Mesh) -> Result<(), String> {
+    use bevy::mesh::VertexAttributeValues;
+    let Some(VertexAttributeValues::Float32x4(colors)) = source.attribute(Mesh::ATTRIBUTE_COLOR) else {
+        return Err("vertex paint requires RGBA vertex colors".into());
+    };
+    if colors.iter().any(|c| c[3] != 0.0 || c[..3].iter().any(|v| !v.is_finite() || !(0.0..=1.0).contains(v))) {
+        return Err("vertex paint requires static zero-weight alpha and RGB in [0, 1]".into());
+    }
+    if !source.contains_attribute(Mesh::ATTRIBUTE_POSITION)
+        || !source.contains_attribute(Mesh::ATTRIBUTE_NORMAL)
+        || source.contains_attribute(Mesh::ATTRIBUTE_JOINT_INDEX)
+        || source.has_morph_targets()
+    {
+        return Err("vertex paint requires static meshes with positions and normals".into());
+    }
+    Ok(())
 }
 
 /// How many vertices `node`'s meshes have, counting those loaded.
@@ -394,6 +451,7 @@ fn merged(meshes: &Assets<Mesh>, mesh: &Handle<Mesh>, transforms: &[Transform], 
 enum Look {
     Still(Handle<StandardMaterial>),
     Swaying(Handle<Swaying>),
+    Painted(Handle<Painted>),
 }
 
 /// The standard material Bevy made from a glTF material: the material's own asset, labelled `<label>/std`.
@@ -406,6 +464,19 @@ fn standard_of(assets: &AssetServer, material: Option<&Handle<bevy::gltf::GltfMa
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn static_paint_keeps_zero_weight_and_rejects_cloth() {
+        let mut mesh = Mesh::from(Cuboid::new(1.0, 1.0, 1.0));
+        let count = mesh.count_vertices();
+        mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, vec![[0.25, 0.1, 0.05, 0.0]; count]);
+        assert!(validate_static_paint(&mesh).is_ok());
+        let mut colors = vec![[0.25, 0.1, 0.05, 0.0]; count];
+        colors[0][3] = 0.5;
+        mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
+        assert!(validate_static_paint(&mesh).is_err());
+    }
+
     use crate::ground::{Ground, Surface};
     use bevy::camera::primitives::Aabb;
     use bevy::ecs::system::RunSystemOnce;
