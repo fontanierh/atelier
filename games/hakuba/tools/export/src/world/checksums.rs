@@ -13,6 +13,7 @@ use anyhow::{Context, Result};
 use sha2::{Digest, Sha256};
 
 use super::Tile;
+use super::authored::AuthoredSurface;
 use super::ground::Ground;
 use super::overlay::Overlay;
 use super::raised::{Raised, stored};
@@ -43,11 +44,11 @@ impl Tile {
         code: &[u8],
         settings: &[u8],
         ground: &Ground,
-        overlays: &[Overlay],
-        raised: &[Raised],
+        surfaces: (&[Overlay], &[Raised], &[AuthoredSurface]),
         scenery_and_collar: (&TileScenery, &[f64]),
     ) -> String {
         let (scenery, collars) = scenery_and_collar;
+        let (overlays, raised, authored) = surfaces;
         let mut digest = Sha256::new();
         digest.update(code);
         digest.update(settings);
@@ -63,6 +64,30 @@ impl Tile {
             ground.position(self.columns.0 as f64, self.rows.0 as f64),
             ground.position(self.columns.1 as f64, self.rows.1 as f64),
         );
+        for surface in authored {
+            let triangles: Vec<_> = surface
+                .triangles
+                .iter()
+                .filter(|triangle| {
+                    let points = triangle.xyz.map(|p| DVec2::new(p[0], p[1]));
+                    let from = points[0].min(points[1]).min(points[2]);
+                    let to = points[0].max(points[1]).max(points[2]);
+                    from.cmple(high).all() && to.cmpge(low).all()
+                })
+                .collect();
+            if triangles.is_empty() {
+                continue;
+            }
+            digest.update(surface.name.as_bytes());
+            digest.update([0]);
+            digest.update(surface.texture.as_bytes());
+            digest.update([0]);
+            for value in surface.tint {
+                digest.update(value.to_bits().to_le_bytes());
+            }
+            digest.update(serde_json::to_vec(&surface.paint).expect("paint serializes"));
+            digest.update(serde_json::to_vec(&triangles).expect("source triangles serialize"));
+        }
         for overlay in overlays {
             let inside: Vec<_> = overlay
                 .triangles

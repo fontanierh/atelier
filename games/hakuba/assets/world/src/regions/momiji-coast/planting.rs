@@ -217,6 +217,7 @@ mod tests {
         let ground = Ground::page(64, 1.0, |_, _| 10.0);
         let empty = Land {
             ground: &ground,
+            rendered: None,
             raised: &crate::world::raised::Prepared::new(&[], DVec2::ZERO, 8.0),
             low: DVec2::splat(8.0),
             high: DVec2::splat(56.0),

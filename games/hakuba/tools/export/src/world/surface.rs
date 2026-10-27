@@ -12,6 +12,7 @@ pub struct Surface {
     pub triangles: Vec<[DVec3; 3]>,
     /// The triangles that reach into each square of `SURFACE_CELL_M`, by square.
     cells: HashMap<(i64, i64), Vec<usize>>,
+    crossings: Option<Box<Surface>>,
 }
 
 /// The side of the squares a [`Surface`] sorts its triangles into.
@@ -35,7 +36,22 @@ impl Surface {
                 cells.entry(square).or_default().push(n);
             }
         }
-        Self { triangles, cells }
+        Self { triangles, cells, crossings: None }
+    }
+
+    /// A terrain and explicit authored crossings: a vertical query returns the first rendered surface.
+    pub fn with_crossings(ground: &Mesh, authored: &[Mesh]) -> Self {
+        let mut surface = Self::new(ground);
+        let mut combined = Mesh::default();
+        for mesh in authored {
+            let start = combined.positions.len() as u32;
+            combined.positions.extend_from_slice(&mesh.positions);
+            combined.indices.extend(mesh.indices.iter().map(|i| i + start));
+        }
+        if !combined.indices.is_empty() {
+            surface.crossings = Some(Box::new(Self::new(&combined)));
+        }
+        surface
     }
 
     /// The triangles that may lie under any part of `outline`.
@@ -48,13 +64,64 @@ impl Surface {
     }
 
     /// The height of the triangle under `p`, if any.
-    pub fn height(&self, p: DVec2) -> Option<f64> {
+    pub fn ground_height(&self, p: DVec2) -> Option<f64> {
         let square = ((p.x / SURFACE_CELL_M).floor() as i64, (p.y / SURFACE_CELL_M).floor() as i64);
-        self.cells.get(&square)?.iter().find_map(|&n| {
-            let [a, b, c] = self.triangles[n];
-            let w = weights([a, b, c].map(DVec3::truncate), p)?;
-            (w.min_element() >= -ON_TRIANGLE).then_some(w.x * a.z + w.y * b.z + w.z * c.z)
+        self.cells.get(&square).and_then(|cells| {
+            cells.iter().find_map(|&n| {
+                let [a, b, c] = self.triangles[n];
+                let w = weights([a, b, c].map(DVec3::truncate), p)?;
+                (w.min_element() >= -ON_TRIANGLE).then_some(w.x * a.z + w.y * b.z + w.z * c.z)
+            })
         })
+    }
+
+    /// Whether an exact stored point is inside an explicitly authored crossing.
+    pub fn crossing_contains(&self, p: DVec2) -> bool {
+        self.crossings.as_ref().is_some_and(|surface| surface.first_visible(p).is_some())
+    }
+
+    /// Apply only this surface's explicitly authored crossing to the retained terrain height.
+    pub fn crossing_over(&self, p: DVec2, ground: Option<f64>) -> Option<f64> {
+        let authored = self.crossings.as_ref().and_then(|surface| surface.first_visible(p));
+        match (ground, authored) {
+            (Some(g), Some(a)) if a > g => Some(a),
+            (Some(g), _) => Some(g),
+            (None, Some(a)) => Some(a),
+            (None, None) => None,
+        }
+    }
+
+    pub fn height(&self, p: DVec2) -> Option<f64> {
+        self.crossing_over(p, self.ground_height(p))
+    }
+
+    /// Height reached first by a vertical ray over this explicitly crossing source surface.
+    pub fn first_visible(&self, p: DVec2) -> Option<f64> {
+        self.first_visible_face(p).map(|(height, _)| height)
+    }
+
+    fn first_visible_face(&self, p: DVec2) -> Option<(f64, [DVec3; 3])> {
+        let square = ((p.x / SURFACE_CELL_M).floor() as i64, (p.y / SURFACE_CELL_M).floor() as i64);
+        self.cells
+            .get(&square)?
+            .iter()
+            .filter_map(|&n| {
+                let triangle = self.triangles[n];
+                let [a, b, c] = triangle;
+                let w = weights([a, b, c].map(DVec3::truncate), p)?;
+                (w.min_element() >= 0.0).then_some((w.x * a.z + w.y * b.z + w.z * c.z, triangle))
+            })
+            .max_by(|a, b| a.0.total_cmp(&b.0))
+    }
+
+    /// Slope of the source crossing only when that stored triangle is actually visible above retained terrain.
+    pub fn crossing_slope_over(&self, p: DVec2, ground: Option<f64>) -> Option<f64> {
+        let (height, [a, b, c]) = self.crossings.as_ref()?.first_visible_face(p)?;
+        if ground.is_some_and(|g| g >= height) {
+            return None;
+        }
+        let normal = (b - a).cross(c - a);
+        (normal.z > 0.0).then_some(normal.truncate().length() / normal.z)
     }
 
     pub fn height_exact(&self, p: DVec2) -> Option<f64> {

@@ -16,6 +16,7 @@
 //! Pages and tiles count columns east and rows north from the world's south-west corner. The map's frame (x east,
 //! y north, z up) becomes the game's (x east, y up, z south).
 
+mod authored;
 mod checksums;
 mod curve;
 mod ground;
@@ -24,7 +25,6 @@ mod openings;
 mod overlay;
 mod raised;
 mod regions;
-mod ribbon;
 mod scenery;
 mod surface;
 mod underlay;
@@ -100,7 +100,31 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
             overlays.push(overlay);
         }
     }
+    let authored: Vec<_> = regions::REGIONS.iter().flat_map(|region| region.authored_surfaces()).collect();
+    for surface in &authored {
+        surface.validate()?;
+    }
     let raised: Vec<_> = regions::REGIONS.iter().flat_map(|region| region.raised()).collect();
+    let authored_footprints: Vec<Overlay> = authored
+        .iter()
+        .map(|surface| Overlay {
+            name: surface.name.into(),
+            texture: surface.texture.into(),
+            triangles: surface
+                .triangles
+                .iter()
+                .map(|triangle| {
+                    std::array::from_fn(|i| {
+                        (DVec2::new(triangle.xyz[i][0], triangle.xyz[i][1]), DVec2::from_array(triangle.uv[i]))
+                    })
+                })
+                .collect(),
+        })
+        .collect();
+    // Existing overlay/raised ownership rules still apply to the source surface's footprint.
+    for footprint in &authored_footprints {
+        raised::check(&raised, std::slice::from_ref(footprint))?;
+    }
     raised::check(&raised, &overlays)?;
     for texture in overlays
         .iter()
@@ -122,7 +146,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     let mut unions: [Vec<underlay::Underlay>; 2] = [Vec::new(), Vec::new()];
     for (surface, &collar) in raised.iter().zip(&collars).filter(|(surface, _)| surface.cut_ground) {
         for (di, detail) in [Detail::Full, Detail::Middle].into_iter().enumerate() {
-            if let Some(union) = underlay_for_owner(&ground, surface, settings, detail, collar)? {
+            if let Some(union) = underlay_for_owner(&ground, surface, settings, detail, collar, &authored)? {
                 unions[di].push(union);
             }
         }
@@ -135,7 +159,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
             for row in first_row..=last_row {
                 let tile = Tile { columns: span(column), rows: span(row) };
                 for detail in [Detail::Full, Detail::Middle] {
-                    let mesh = tile.ground(&ground, detail, 0, 1.0);
+                    let mesh = tile.ground(&ground, tile.detail_for(&ground, detail, &authored), 0, 1.0);
                     let drawn = Surface::new(&mesh);
                     let di = usize::from(detail == Detail::Middle);
                     let cut_mesh =
@@ -149,8 +173,17 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     let domains: Vec<_> = regions::REGIONS.iter().flat_map(|region| region.path_domains()).collect();
     let openings: Vec<_> = regions::REGIONS.iter().flat_map(|region| region.path_openings()).collect();
     openings::check(&domains, &openings)?;
+    let whole_mesh = whole.ground(&ground, Detail::Full, 0, 1.0);
+    let low = ground.position(whole.columns.0 as f64, whole.rows.0 as f64);
+    let high = ground.position(whole.columns.1 as f64, whole.rows.1 as f64);
+    let source_meshes: Vec<Mesh> = authored.iter().map(|surface| surface.mesh(low, high)).collect::<Result<_>>()?;
+    let drawn = Surface::with_crossings(&whole_mesh, &source_meshes);
+    for surface in &authored {
+        crate::uri_of_texture(surface.texture)?;
+    }
     let land = Land {
         ground: &ground,
+        rendered: (!authored.is_empty()).then_some(&drawn),
         raised: &prepared,
         low: ground.position(whole.columns.0 as f64, whole.rows.0 as f64),
         high: ground.position(whole.columns.1 as f64, whole.rows.1 as f64),
@@ -161,7 +194,6 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     };
     let grid = Grid { south_west: DVec2::new(x, y), tile_m: settings.tile_steps as f64 * settings.ground_step_m };
     // The full tiles' ground across the whole exported map, which seats the cables' ends.
-    let drawn = Surface::new(&whole.ground(&ground, Detail::Full, 0, 1.0));
     for surface in &raised {
         surface.mesh_before_cut(&drawn, true)?;
     }
@@ -191,12 +223,18 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
                 (Detail::Full, tiles.join(format!("{stem}.glb"))),
                 (Detail::Middle, tiles.join(format!("{stem}.middle.glb"))),
             ];
-            let checksum = tile.checksum(&code, &tile_settings, &ground, &overlays, &raised, (&tile_scenery, &collars));
+            let checksum = tile.checksum(
+                &code,
+                &tile_settings,
+                &ground,
+                (&overlays, &raised, &authored),
+                (&tile_scenery, &collars),
+            );
             if previous.get(&stem) != Some(&checksum) || files.iter().any(|(_, file)| !file.is_file()) {
                 for (detail, file) in &files {
                     tile.write(
                         &ground,
-                        (&overlays, &raised, &prepared, &unions[usize::from(*detail == Detail::Middle)]),
+                        (&overlays, &raised, &prepared, &unions[usize::from(*detail == Detail::Middle)], &authored),
                         &tile_scenery,
                         settings,
                         *detail,
@@ -212,7 +250,7 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         }
     }
     let [x, y] = settings.spawn_m;
-    let spawn = spawn_position(DVec2::new(x, y), &ground, &prepared)?;
+    let spawn = spawn_position(DVec2::new(x, y), &ground, &prepared, (!authored.is_empty()).then_some(&drawn))?;
     let facing = DQuat::from_rotation_y(-settings.spawn_bearing_deg.to_radians());
     index.add_marker("spawn", game(spawn), facing);
 
@@ -237,6 +275,7 @@ fn underlay_for_owner(
     settings: &Settings,
     detail: Detail,
     collar: f64,
+    authored: &[authored::AuthoredSurface],
 ) -> Result<Option<underlay::Underlay>> {
     let origin = DVec2::from_array(settings.south_west_m);
     let (low, high) = surface
@@ -271,7 +310,7 @@ fn underlay_for_owner(
         for row in (first.y.max(0.0) as usize).saturating_sub(1)..=(last.y as usize).saturating_add(1).min(max_row) {
             let tile = Tile { columns: span(column), rows: span(row) };
             if ground.covers(tile.columns, tile.rows) {
-                let mesh = tile.ground(ground, detail, 0, 1.0);
+                let mesh = tile.ground(ground, tile.detail_for(ground, detail, authored), 0, 1.0);
                 tops.push(surface.mesh_before_cut(&Surface::new(&mesh), false)?);
             }
         }
@@ -280,10 +319,27 @@ fn underlay_for_owner(
 }
 
 /// Match the runtime's stored XY before selecting a raised owner, retaining the old empty-world export.
-fn spawn_position(at: DVec2, ground: &Ground, prepared: &raised::Prepared<'_>) -> Result<DVec3> {
+fn spawn_position(
+    at: DVec2,
+    ground: &Ground,
+    prepared: &raised::Prepared<'_>,
+    rendered: Option<&Surface>,
+) -> Result<DVec3> {
     let at = prepared.emitted_at(at);
     prepared.check_point(at)?;
-    let Some(height) = prepared.height(at, |p| ground.height(p)) else { bail!("the spawn is off the ground") };
+    let Some(height) = rendered.map_or_else(
+        || prepared.height(at, |p| ground.height(p)),
+        |surface| {
+            prepared.height_with_crossing(
+                at,
+                false,
+                |p| surface.ground_height(p),
+                |p, base| surface.crossing_over(p, base),
+            )
+        },
+    ) else {
+        bail!("the spawn is off the ground")
+    };
     Ok(at.extend(height))
 }
 
@@ -300,22 +356,43 @@ struct Tile {
 }
 
 impl Tile {
+    /// Keep the source terrain's fine triangles wherever an authored crossing reaches the tile in either detail.
+    fn detail_for(&self, ground: &Ground, requested: Detail, authored: &[authored::AuthoredSurface]) -> Detail {
+        if requested == Detail::Full {
+            return requested;
+        }
+        let low = ground.position(self.columns.0 as f64, self.rows.0 as f64);
+        let high = ground.position(self.columns.1 as f64, self.rows.1 as f64);
+        let touches = authored.iter().flat_map(|surface| &surface.triangles).any(|triangle| {
+            let p = triangle.xyz.map(|p| DVec2::new(p[0], p[1]));
+            let min = p[0].min(p[1]).min(p[2]);
+            let max = p[0].max(p[1]).max(p[2]);
+            min.cmple(high).all() && max.cmpge(low).all()
+        });
+        if touches { Detail::Full } else { requested }
+    }
+
     fn write(
         &self,
         ground: &Ground,
-        surfaces: (&[Overlay], &[Raised], &raised::Prepared<'_>, &[underlay::Underlay]),
+        surfaces: (&[Overlay], &[Raised], &raised::Prepared<'_>, &[underlay::Underlay], &[authored::AuthoredSurface]),
         scenery: &TileScenery,
         settings: &Settings,
         detail: Detail,
         path: &Path,
     ) -> Result<()> {
-        let (overlays, raised, prepared, underlay) = surfaces;
+        let (overlays, raised, prepared, underlay, authored) = surfaces;
         let mut glb = Glb::from_json(json!({ "asset": { "version": "2.0" } }));
         let ground_material =
             glb.add_material(&Material::textured("ground", &crate::uri_of_texture(&settings.ground_texture)?));
         let texture_steps = settings.ground_texture_m / settings.ground_step_m;
-        let ground_mesh = self.ground(ground, detail, ground_material, texture_steps);
+        let ground_mesh =
+            self.ground(ground, self.detail_for(ground, detail, authored), ground_material, texture_steps);
         let drawn = Surface::new(&ground_mesh);
+        let low = ground.position(self.columns.0 as f64, self.rows.0 as f64);
+        let high = ground.position(self.columns.1 as f64, self.rows.1 as f64);
+        let source_meshes: Vec<Mesh> = authored.iter().map(|surface| surface.mesh(low, high)).collect::<Result<_>>()?;
+        let visible = Surface::with_crossings(&ground_mesh, &source_meshes);
         let cut_mesh = if underlay.is_empty() { ground_mesh } else { underlay::remove_covered(&ground_mesh, underlay) };
         let cut = Surface::new(&cut_mesh);
         glb.add_mesh("ground", &[&cut_mesh]);
@@ -334,6 +411,23 @@ impl Tile {
                 glb.add_material(&Material::textured(&overlay.name, &crate::uri_of_texture(&overlay.texture)?));
             glb.add_mesh(&overlay.name, &[&mesh]);
         }
+        for (surface, source_mesh) in authored.iter().zip(&source_meshes) {
+            if source_mesh.indices.is_empty() {
+                continue;
+            }
+            let mut mesh = source_mesh.clone();
+            mesh.material = glb.add_material(&Material {
+                name: surface.name,
+                texture: Some(&crate::uri_of_texture(surface.texture)?),
+                colour: surface.tint,
+                cut_out: false,
+                two_sided: false,
+            });
+            let node = glb.add_mesh(surface.name, &[&mesh]);
+            if let Some(paint) = &surface.paint {
+                glb.set_extras(node, json!({"surface_paint": paint}));
+            }
+        }
         for surface in raised {
             let mut mesh =
                 surface.mesh_prepared(&drawn, &cut, false).with_context(|| format!("writing {}", path.display()))?;
@@ -346,7 +440,7 @@ impl Tile {
                 }
             }
         }
-        scenery.write(&mut glb, &drawn, prepared, detail == Detail::Middle, path)?;
+        scenery.write(&mut glb, &visible, prepared, detail == Detail::Middle, path)?;
         glb.write(path)
     }
 
@@ -414,6 +508,102 @@ mod tests {
     use super::*;
 
     #[test]
+    fn distant_crossing_detail_policy_does_not_change_neighboring_owner_tile() {
+        let ground = Ground::page(32, 1.0, |i, j| ((i * i + j * j + i * j) % 17) as f32 / 100.0);
+        let tile = Tile { columns: (0, 8), rows: (0, 8) };
+        let settings = Settings {
+            ground: PathBuf::new(),
+            south_west_m: [0.0, 0.0],
+            ground_step_m: 1.0,
+            page_steps: 32,
+            tile_steps: 8,
+            tiles: [[0, 0], [1, 1]],
+            ground_texture: "ground".into(),
+            ground_texture_m: 6.0,
+            spawn_m: [0.0, 0.0],
+            spawn_bearing_deg: 0.0,
+        };
+        let p = |x, y| (DVec2::new(x, y), DVec2::ZERO);
+        let raised = [Raised {
+            name: "owner".into(),
+            texture: "ground".into(),
+            ground: true,
+            paint: None,
+            height: 2.0,
+            clearance: 0.1,
+            cut_ground: true,
+            triangles: vec![[p(6.0, 2.0), p(10.0, 2.0), p(6.0, 5.0)]],
+        }];
+        let road = [authored::AuthoredSurface {
+            name: "road",
+            texture: "road",
+            tint: [1.0; 3],
+            paint: None,
+            triangles: vec![authored::Triangle {
+                xyz: [[13.0, 5.0, 1.0], [14.0, 5.0, 1.0], [13.0, 6.0, 1.0]],
+                uv: [[0.0; 2]; 3],
+                normal: [[0.0, 0.0, 1.0]; 3],
+            }],
+        }];
+        let emit = |authored: &[authored::AuthoredSurface], tag: &str| {
+            let collar = underlay::owner_collar(&raised[0], 8.0).unwrap();
+            let unions = [Detail::Full, Detail::Middle].map(|detail| {
+                vec![underlay_for_owner(&ground, &raised[0], &settings, detail, collar, authored).unwrap().unwrap()]
+            });
+            let mut prepared = raised::Prepared::new(&raised, DVec2::ZERO, 8.0);
+            prepared.set_underlays(&unions);
+            for (di, detail) in [Detail::Full, Detail::Middle].into_iter().enumerate() {
+                let mesh = tile.ground(&ground, tile.detail_for(&ground, detail, authored), 0, 1.0);
+                let drawn = Surface::new(&mesh);
+                let cut = Surface::new(&underlay::remove_covered(&mesh, &unions[di]));
+                prepared.add_tile_with_cut((0, 0), &drawn, &cut, di == 1).unwrap();
+            }
+            let path = std::env::temp_dir().join(format!("authored-neighbor-{}-{tag}.glb", std::process::id()));
+            tile.write(
+                &ground,
+                (&[], &raised, &prepared, &unions[1], authored),
+                &TileScenery::default(),
+                &settings,
+                Detail::Middle,
+                &path,
+            )
+            .unwrap();
+            let bytes = std::fs::read(&path).unwrap();
+            std::fs::remove_file(path).unwrap();
+            (bytes, tile.checksum(&[], &[], &ground, (&[], &raised, authored), (&TileScenery::default(), &[collar])))
+        };
+        let (without, checksum_without) = emit(&[], "without");
+        let (with, checksum_with) = emit(&road, "with");
+        assert_eq!(without, with, "road far in neighboring tile changed owner output");
+        assert_eq!(checksum_without, checksum_with);
+    }
+
+    #[test]
+    fn authored_crossings_keep_fine_ground_only_in_touched_middle_tiles() {
+        let ground = Ground::page(24, 1.0, |i, j| (i * j) as f32 / 100.0);
+        let near = Tile { columns: (0, 8), rows: (0, 8) };
+        let far = Tile { columns: (16, 24), rows: (16, 24) };
+        let authored = [authored::AuthoredSurface {
+            name: "road",
+            texture: "road",
+            tint: [1.0; 3],
+            paint: None,
+            triangles: vec![authored::Triangle {
+                xyz: [[1.0, 1.0, 0.0], [2.0, 1.0, 0.0], [1.0, 2.0, 0.0]],
+                uv: [[0.0; 2]; 3],
+                normal: [[0.0, 0.0, 1.0]; 3],
+            }],
+        }];
+        assert!(near.detail_for(&ground, Detail::Middle, &authored) == Detail::Full);
+        assert!(far.detail_for(&ground, Detail::Middle, &authored) == Detail::Middle);
+        assert!(near.detail_for(&ground, Detail::Middle, &[]) == Detail::Middle);
+        let full = near.ground(&ground, Detail::Full, 0, 1.0);
+        let effective = near.ground(&ground, near.detail_for(&ground, Detail::Middle, &authored), 0, 1.0);
+        assert_eq!(effective.positions, full.positions);
+        assert_eq!(effective.indices, full.indices);
+    }
+
+    #[test]
     fn underlay_outside_loaded_ground_is_rejected() {
         let ground = Ground::page(8, 1.0, |_, _| 0.0);
         let settings = Settings {
@@ -440,7 +630,7 @@ mod tests {
             triangles: vec![[p(100.0, 1.0), p(101.0, 1.0), p(100.0, 2.0)]],
         };
         let collar = underlay::owner_collar(&owner, 8.0).unwrap();
-        assert!(underlay_for_owner(&ground, &owner, &settings, Detail::Full, collar).is_err());
+        assert!(underlay_for_owner(&ground, &owner, &settings, Detail::Full, collar, &[]).is_err());
     }
 
     #[test]
@@ -489,6 +679,7 @@ mod tests {
                                 &settings,
                                 detail,
                                 underlay::owner_collar(surface, 8.0).unwrap(),
+                                &[],
                             )
                             .unwrap()
                             .unwrap()
@@ -507,7 +698,7 @@ mod tests {
                 let path = std::env::temp_dir().join(format!("owner-local-{}-{di}-{expanded}.glb", std::process::id()));
                 tile.write(
                     &ground,
-                    (&[], &raised, &prepared, &unions[di]),
+                    (&[], &raised, &prepared, &unions[di], &[]),
                     &TileScenery::default(),
                     &settings,
                     detail,
@@ -541,9 +732,9 @@ mod tests {
         prepared.add_tile((0, 0), &drawn, false).unwrap();
         prepared.add_tile((0, 0), &drawn, true).unwrap();
         let at = DVec2::new(0.99999999, 0.25);
-        assert_eq!(spawn_position(at, &ground, &prepared).unwrap(), DVec3::new(1.0, 0.25, 3.0));
+        assert_eq!(spawn_position(at, &ground, &prepared, None).unwrap(), DVec3::new(1.0, 0.25, 3.0));
         let empty = raised::Prepared::new(&[], DVec2::ZERO, 8.0);
-        assert_eq!(spawn_position(at, &ground, &empty).unwrap(), at.extend(0.0));
+        assert_eq!(spawn_position(at, &ground, &empty, None).unwrap(), at.extend(0.0));
     }
 
     #[test]
@@ -583,7 +774,7 @@ mod tests {
         prepared.add_tile((0, 0), &drawn, true).unwrap();
         for (detail, suffix) in [(Detail::Full, "full"), (Detail::Middle, "middle")] {
             let path = std::env::temp_dir().join(format!("raised-paint-{}-{suffix}.glb", std::process::id()));
-            tile.write(&ground, (&[], &raised, &prepared, &[]), &TileScenery::default(), &settings, detail, &path)
+            tile.write(&ground, (&[], &raised, &prepared, &[], &[]), &TileScenery::default(), &settings, detail, &path)
                 .unwrap();
             let bytes = std::fs::read(&path).unwrap();
             std::fs::remove_file(&path).unwrap();

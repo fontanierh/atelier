@@ -1,5 +1,4 @@
-# A road: dark grey asphalt with white edge lines and a dashed centre line. Its width spans the road, and its height runs
-# along it.
+# The source coastal road asphalt texture.
 kind = "texture"
 source = "src/road.jpg"
-inputs_sha256 = "43a9128d0c553627c26b270864fa9d826b1cf2766c97092c2c75005620d7c12f"
+inputs_sha256 = "0c15e5969a130fb7f3072c074ff62e7680a4c206a05ae2dffe934fc308010416"
