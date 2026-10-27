@@ -15,7 +15,7 @@ use sha2::{Digest, Sha256};
 use super::Tile;
 use super::ground::Ground;
 use super::overlay::Overlay;
-use super::raised::Raised;
+use super::raised::{Raised, stored};
 use super::scenery::{self, TileScenery};
 use crate::EXPORTER;
 
@@ -92,7 +92,7 @@ impl Tile {
                 .triangles
                 .iter()
                 .filter(|triangle| {
-                    let [a, b, c] = triangle.map(|(p, _)| p);
+                    let [a, b, c] = triangle.map(|(p, _)| stored(p));
                     a.min(b).min(c).cmple(high).all() && a.max(b).max(c).cmpge(low).all()
                 })
                 .collect();
