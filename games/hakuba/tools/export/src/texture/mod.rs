@@ -39,7 +39,7 @@ fn default_cutoff() -> f32 {
 }
 
 pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
-    if !settings.alpha_cutoff.is_finite() || !(0.0 < settings.alpha_cutoff && settings.alpha_cutoff <= 1.0) {
+    if !(settings.alpha_cutoff.is_finite() && 0.0 < settings.alpha_cutoff && settings.alpha_cutoff <= 1.0) {
         bail!("alpha cutoff must be finite and greater than 0 and at most 1");
     }
     let file = folder.join(&settings.source);

@@ -1,6 +1,6 @@
 //! The ground's heights, read from square pages.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
 
@@ -18,6 +18,9 @@ pub struct Ground {
     pub step: f64,
     /// Where the grid's first height is, on the map.
     south_west: DVec2,
+    alternate_diagonals: HashSet<(usize, usize)>,
+    diagonal_extent: Option<((usize, usize), (usize, usize))>,
+    native_extent: Option<((usize, usize), (usize, usize))>,
 }
 
 impl Ground {
@@ -27,6 +30,9 @@ impl Ground {
         let mut pages = HashMap::new();
         for entry in fs::read_dir(folder).with_context(|| format!("reading {}", folder.display()))? {
             let path = entry?.path();
+            if path.is_dir() {
+                continue;
+            }
             let name = path.file_stem().unwrap_or_default().to_string_lossy();
             let page = name.split_once('_').and_then(|(c, r)| Some((c.parse().ok()?, r.parse().ok()?)));
             let Some(page) = page else { bail!("{}: expected a <column>_<row>.bin page", path.display()) };
@@ -36,7 +42,80 @@ impl Ground {
             }
             pages.insert(page, bytes.chunks(4).map(|b| f32::from_le_bytes(b.try_into().unwrap())).collect());
         }
-        Ok(Self { pages, page_steps, step, south_west })
+        Ok(Self {
+            pages,
+            page_steps,
+            step,
+            south_west,
+            alternate_diagonals: HashSet::new(),
+            diagonal_extent: None,
+            native_extent: None,
+        })
+    }
+
+    /// Load the explicitly authored alternate triangle diagonals, on the same ground grid.
+    pub fn read_diagonals(&mut self, path: &Path) -> Result<()> {
+        #[derive(serde::Deserialize)]
+        #[serde(deny_unknown_fields)]
+        struct Input {
+            extent_m: [[f64; 2]; 2],
+            native_extent_m: [[f64; 2]; 2],
+            step_m: f64,
+            alternate_cells_m: Vec<[f64; 2]>,
+        }
+        let input: Input =
+            serde_json::from_slice(&fs::read(path).with_context(|| format!("reading {}", path.display()))?)?;
+        if input.step_m != self.step {
+            bail!("terrain diagonal grid step differs from ground");
+        }
+        let index = |p: [f64; 2]| -> Result<(usize, usize)> {
+            let p = (DVec2::from_array(p) - self.south_west) / self.step;
+            if !p.is_finite()
+                || p.min_element() < 0.0
+                || p.max_element() > usize::MAX as f64
+                || (p - p.round()).abs().max_element() > 1e-8
+            {
+                bail!("terrain diagonal coordinates must align with the ground grid");
+            }
+            Ok((p.x.round() as usize, p.y.round() as usize))
+        };
+        let (first, last) = (index(input.extent_m[0])?, index(input.extent_m[1])?);
+        let (native_first, native_last) = (index(input.native_extent_m[0])?, index(input.native_extent_m[1])?);
+        if first.0 >= last.0 || first.1 >= last.1 {
+            bail!("invalid terrain diagonal extent");
+        }
+        if native_first.0 > first.0 || native_first.1 > first.1 || native_last.0 < last.0 || native_last.1 < last.1 {
+            bail!("terrain diagonal extent exceeds native source extent");
+        }
+        let mut cells = HashSet::new();
+        for cell in input.alternate_cells_m {
+            let cell = index(cell)?;
+            if cell.0 < first.0 || cell.0 >= last.0 || cell.1 < first.1 || cell.1 >= last.1 || !cells.insert(cell) {
+                bail!("invalid or repeated terrain diagonal cell");
+            }
+        }
+        self.alternate_diagonals = cells;
+        self.diagonal_extent = Some((first, last));
+        self.native_extent = Some((native_first, native_last));
+        Ok(())
+    }
+
+    pub fn alternate_diagonal(&self, i: usize, j: usize) -> bool {
+        self.alternate_diagonals.contains(&(i, j))
+    }
+
+    pub fn covers_diagonals(&self, columns: (usize, usize), rows: (usize, usize)) -> bool {
+        self.diagonal_extent.is_none_or(|(first, last)| {
+            columns.0 >= first.0 && columns.1 <= last.0 && rows.0 >= first.1 && rows.1 <= last.1
+        })
+    }
+
+    pub fn diagonal_extent(&self) -> Option<((usize, usize), (usize, usize))> {
+        self.diagonal_extent
+    }
+
+    pub fn native_extent(&self) -> Option<((usize, usize), (usize, usize))> {
+        self.native_extent
     }
 
     /// Upper grid bounds of the loaded pages, with overflow rejected.
@@ -101,6 +180,16 @@ impl Ground {
         // A corner that weighs nothing need not be on the ground, so the ground's last points have heights too.
         let h =
             |i: usize, j: usize, weight: f64| if weight == 0.0 { Some(0.0) } else { Some(self.sample(i, j)? * weight) };
+        if self.diagonal_extent.is_some() {
+            let (a, b, c, d) = if self.alternate_diagonal(i, j) {
+                if u + v <= 1.0 { (1.0 - u - v, u, 0.0, v) } else { (0.0, 1.0 - v, u + v - 1.0, 1.0 - u) }
+            } else if u >= v {
+                (1.0 - u, u - v, v, 0.0)
+            } else {
+                (1.0 - v, 0.0, u, v - u)
+            };
+            return Some(h(i, j, a)? + h(i + 1, j, b)? + h(i + 1, j + 1, c)? + h(i, j + 1, d)?);
+        }
         Some(
             h(i, j, (1.0 - u) * (1.0 - v))?
                 + h(i + 1, j, u * (1.0 - v))?
@@ -130,6 +219,14 @@ impl Ground {
     pub fn page(page_steps: usize, step: f64, height: impl Fn(usize, usize) -> f32) -> Self {
         let samples = page_steps + 1;
         let heights = (0..samples * samples).map(|k| height(k % samples, k / samples)).collect();
-        Self { pages: HashMap::from([((0, 0), heights)]), page_steps, step, south_west: DVec2::ZERO }
+        Self {
+            pages: HashMap::from([((0, 0), heights)]),
+            page_steps,
+            step,
+            south_west: DVec2::ZERO,
+            alternate_diagonals: HashSet::new(),
+            diagonal_extent: None,
+            native_extent: None,
+        }
     }
 }

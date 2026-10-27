@@ -2,6 +2,8 @@
 # src/ground/ holds the ground's heights in pages 512 m wide; src/regions/ holds one folder per region.
 kind = "world"
 ground = "src/ground"
+terrain_diagonals = "src/ground/triangulation/diagonals.json"
+grounding_reference = "src/contact-reference.bin"
 south_west_m = [-4396.0, -1324.0]
 ground_step_m = 2.0
 page_steps = 256        # 512 m
@@ -13,4 +15,17 @@ ground_texture = "ground"
 ground_texture_m = 24.0
 spawn_m = [-255.26, -99.51]
 spawn_bearing_deg = 94.7
-inputs_sha256 = "cf36be98742769dc742b088e488be1e1b3aca0ebb48bed8fee77769c134ce630"
+inputs_sha256 = "137a38498ce5f0767157d49ba19cf0e8650b907bd144d6d986d934a721ebc3ac"
+
+# Model-frame lower geometry considered for source contact; the reference records source gaps.
+[[grounding]]
+models = ["plants/coast-broad-a", "plants/coast-broad-b", "plants/coast-cedar-a", "plants/coast-flower-a", "plants/coast-ginkgo", "plants/coast-green-a", "plants/coast-litter", "plants/coast-ochre-b", "plants/garden-cedar-b", "plants/garden-flower-b", "plants/garden-green-b", "plants/garden-maple-a", "plants/garden-maple-b", "plants/garden-pine-a", "plants/garden-pine-b", "props/coast-rock-a", "props/coast-rock-c", "props/garden-rock", "props/coast-pole", "props/coast-pole-lamp", "props/stone-lantern", "props/road-house-a", "props/road-house-b", "props/road-house-c", "props/road-house-lot-1", "props/road-house-lot-2", "props/road-house-lot-3", "props/road-house-lot-4", "props/road-house-lot-5"]
+band_m = 0.1
+
+[[grounding]]
+models = ["plants/coast-ochre-a"]
+band_m = 0.5
+
+[[grounding]]
+models = ["plants/coast-grass-a", "plants/coast-grass-b"]
+band_m = 0.5

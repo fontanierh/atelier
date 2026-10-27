@@ -1,9 +1,8 @@
 # Source coastal grass.
 kind = "plant"
-draw_distance_m = 80.0
 source = "src/model.glb"
 textures = ["coast-grass-blades"]
-inputs_sha256 = "f2d972dcc67957de3118fce2cbc180a916157bf91f13d6b09828b04f8a1a8ad4"
+inputs_sha256 = "0bb2493976312b7c364ad978e12a90d21579c81ccd664c54e95d5e478395c21c"
 
 [source_profile]
 direction_amplitude_shade = [0.3, -0.95, 0.16, 0.5]

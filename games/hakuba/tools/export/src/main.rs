@@ -55,7 +55,7 @@ impl Asset {
             | Asset::Sound(_)
             | Asset::Texture(_) => Vec::new(),
             Asset::Character(_) => rig::animations::ANIMATIONS.into_iter().map(rig::animation::folder).collect(),
-            Asset::World(_) => world::reads(),
+            Asset::World(settings) => world::reads(settings),
         }
     }
 

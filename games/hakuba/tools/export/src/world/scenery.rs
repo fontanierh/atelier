@@ -92,6 +92,7 @@ pub struct Land<'a> {
     pub ground: &'a Ground,
     pub rendered: Option<&'a Surface>,
     pub raised: &'a Prepared<'a>,
+    pub middle: bool,
     pub low: DVec2,
     pub high: DVec2,
     pub regions: &'a [&'a dyn Region],
@@ -108,11 +109,11 @@ impl Land<'_> {
         match self.rendered {
             Some(surface) => self.raised.height_with_crossing(
                 p,
-                false,
+                self.middle,
                 |p| surface.ground_height(p),
                 |p, base| surface.crossing_over(p, base),
             ),
-            None => self.raised.height(p, |p| self.ground.height(p)),
+            None => self.raised.height_for_detail(p, self.middle, |p| self.ground.height(p)),
         }
     }
 
@@ -409,7 +410,11 @@ fn effective_at(raised: &Prepared<'_>, rendered: Option<&Surface>, at: DVec2) ->
     (if precise { authored } else { at }, precise)
 }
 
-fn effective_pose(raised: &Prepared<'_>, rendered: Option<&Surface>, placement: &Placement) -> (DVec2, f64, f64, bool) {
+pub(super) fn effective_pose(
+    raised: &Prepared<'_>,
+    rendered: Option<&Surface>,
+    placement: &Placement,
+) -> (DVec2, f64, f64, bool) {
     let (at, precise) = effective_at(raised, rendered, placement.at);
     let precise = precise || placement.origin_offset_m != 0.0 || placement.origin_height_m.is_some();
     let at = if precise { raised::stored(placement.at) } else { at };
@@ -568,7 +573,7 @@ fn fixed_wire(mesh: &mut Mesh, points: &[DVec3], radius: f64) {
     for pair in rows.windows(2) {
         for k in 0..4 {
             let (a, b, c, d) = (pair[0][k], pair[0][(k + 1) % 4], pair[1][(k + 1) % 4], pair[1][k]);
-            mesh.indices.extend([a, b, c, a, c, d]);
+            mesh.indices.extend([a, c, b, a, d, c]);
         }
     }
 }
@@ -629,6 +634,17 @@ pub fn checksum_bytes(scenery: &TileScenery) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn cable_faces_wind_outward() {
+        let mut mesh = Mesh::default();
+        fixed_wire(&mut mesh, &[DVec3::ZERO, DVec3::new(4.0, 1.0, -0.2)], 0.03);
+        for triangle in mesh.indices.chunks_exact(3) {
+            let [a, b, c] = std::array::from_fn(|k| glam::Vec3::from_array(mesh.positions[triangle[k] as usize]));
+            let normal = glam::Vec3::from_array(mesh.normals[triangle[0] as usize]);
+            assert!((b - a).cross(c - a).dot(normal) > 0.0);
+        }
+    }
     use crate::world::raised::Raised;
     use geo::polygon;
 
@@ -757,6 +773,7 @@ mod tests {
             ground: &ground,
             rendered: None,
             raised: &prepared,
+            middle: false,
             low: DVec2::ZERO,
             high: DVec2::splat(8.0),
             regions: &[],
@@ -809,6 +826,7 @@ mod tests {
             ground: &ground,
             rendered: None,
             raised: &prepared,
+            middle: false,
             low: DVec2::ZERO,
             high: DVec2::splat(8.0),
             regions: &[],
@@ -893,6 +911,7 @@ mod tests {
             ground: &ground,
             rendered: None,
             raised: &prepared,
+            middle: false,
             low: DVec2::ZERO,
             high: DVec2::splat(8.0),
             regions: &[],
@@ -980,6 +999,7 @@ mod tests {
             ground: &ground,
             rendered: None,
             raised: &prepared,
+            middle: false,
             low: DVec2::ZERO,
             high: DVec2::splat(2.0),
             regions: &[],

@@ -18,7 +18,7 @@ pub(super) fn export(
     anchors: &[[f64; 3]],
     output: &Path,
 ) -> Result<()> {
-    export_inner(source, solid, textures, anchors, None, output)
+    export_inner(source, solid, textures, anchors, None, None, output)
 }
 
 pub(super) fn export_foliage(
@@ -26,16 +26,9 @@ pub(super) fn export_foliage(
     textures: &[String],
     profile: Value,
     surface_height: Option<f32>,
-    draw_distance: Option<f32>,
     output: &Path,
 ) -> Result<()> {
-    export_inner(source, false, textures, &[], Some(FoliageExport { profile, surface_height, draw_distance }), output)
-}
-
-struct FoliageExport {
-    profile: Value,
-    surface_height: Option<f32>,
-    draw_distance: Option<f32>,
+    export_inner(source, false, textures, &[], Some(profile), surface_height, output)
 }
 
 fn export_inner(
@@ -43,7 +36,8 @@ fn export_inner(
     solid: bool,
     textures: &[String],
     anchors: &[[f64; 3]],
-    profile: Option<FoliageExport>,
+    profile: Option<Value>,
+    surface_height: Option<f32>,
     output: &Path,
 ) -> Result<()> {
     let path = Path::new(source);
@@ -76,7 +70,6 @@ fn export_inner(
         })
         .collect::<Result<_>>()?;
     let foliage = profile.as_ref().map(|_| allowed.as_slice());
-    let surface_height = profile.as_ref().and_then(|p| p.surface_height);
     let (value, collision) = validate_kind(&bytes, foliage, surface_height, &allowed)?;
     ensure!(!collision || solid, "a collision mesh requires solid = true");
     let mut glb = Glb::read(&file)?;
@@ -87,21 +80,13 @@ fn export_inner(
         extras.insert("solid".into(), json!(true));
     }
     if foliage.is_some() {
-        let settings = profile.as_ref().context("missing foliage profile")?;
-        extras.insert("source_foliage".into(), settings.profile.clone());
-        if let Some(distance) = settings.draw_distance {
-            extras.insert("draw_distance_m".into(), json!(distance));
-        }
+        extras.insert("source_foliage".into(), profile.clone().context("missing foliage profile")?);
     }
     glb.set_extras(full, extras.into());
     if foliage.is_some() && value["nodes"].as_array().is_some_and(|nodes| nodes.iter().any(|n| n["name"] == "middle")) {
         let middle = glb.node("middle")?;
         let mut extras = value["nodes"][middle]["extras"].as_object().cloned().unwrap_or_default();
-        let settings = profile.as_ref().context("missing foliage profile")?;
-        extras.insert("source_foliage".into(), settings.profile.clone());
-        if let Some(distance) = settings.draw_distance {
-            extras.insert("draw_distance_m".into(), json!(distance));
-        }
+        extras.insert("source_foliage".into(), profile.clone().context("missing foliage profile")?);
         glb.set_extras(middle, extras.into());
     }
     for (k, &anchor) in anchors.iter().enumerate() {

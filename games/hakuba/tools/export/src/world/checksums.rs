@@ -55,6 +55,11 @@ impl Tile {
         for k in [self.columns.0, self.columns.1, self.rows.0, self.rows.1] {
             digest.update((k as u64).to_le_bytes());
         }
+        for j in self.rows.0..self.rows.1 {
+            for i in self.columns.0..self.columns.1 {
+                digest.update([u8::from(ground.alternate_diagonal(i, j))]);
+            }
+        }
         for j in self.rows.0.saturating_sub(1)..=self.rows.1 + 1 {
             for i in self.columns.0.saturating_sub(1)..=self.columns.1 + 1 {
                 digest.update(ground.sample(i, j).unwrap_or(f64::NAN).to_bits().to_le_bytes());

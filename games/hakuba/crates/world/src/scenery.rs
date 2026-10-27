@@ -12,13 +12,11 @@
 use std::collections::VecDeque;
 
 use bevy::asset::RenderAssetUsages;
-use bevy::camera::primitives::Aabb;
-use bevy::camera::visibility::{RenderLayers, VisibilityRange};
+use bevy::camera::visibility::RenderLayers;
 use bevy::ecs::system::EntityCommands;
 use bevy::ecs::system::SystemParam;
 use bevy::gltf::{Gltf, GltfExtras, GltfMesh, GltfNode};
 use bevy::light::NotShadowCaster;
-use bevy::mesh::VertexAttributeValues;
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use bevy::world_serialization::WorldAssetRoot;
@@ -95,7 +93,6 @@ struct Job {
     shadows: bool,
     solid: bool,
     merge: bool,
-    draw_distance: Option<f32>,
     vertices: usize,
     transforms: Vec<Transform>,
     cursor: usize,
@@ -251,16 +248,6 @@ fn spawn(
             let mut jobs = VecDeque::new();
             for (node, parts, role) in shown {
                 let shadows = model_extras(node).is_none_or(|extras| extras.casts_shadows);
-                let draw_distance = match draw_distance(node) {
-                    Ok(distance) => distance,
-                    Err(reason) => {
-                        let asset = waiting.model.path().map_or_else(|| "model".to_string(), |p| p.to_string());
-                        error!("invalid {asset} node: {reason}");
-                        commands.insert_resource(Missing(asset));
-                        commands.entity(entity).remove::<Waiting>();
-                        continue 'copies;
-                    }
-                };
                 let solid = matches!(role, Role::Collision) || role.is_solid(solid);
                 if matches!(role, Role::Shadow) && !shadows {
                     continue;
@@ -278,7 +265,6 @@ fn spawn(
                                 shadows,
                                 solid,
                                 merge,
-                                draw_distance,
                                 vertices,
                                 transforms: square,
                                 cursor: 0,
@@ -292,7 +278,6 @@ fn spawn(
                             shadows,
                             solid,
                             merge,
-                            draw_distance,
                             vertices,
                             transforms: transforms.clone(),
                             cursor: 0,
@@ -351,27 +336,8 @@ fn place(
             budget.instances -= 1;
             (job.mesh.clone(), job.transforms[job.cursor], 1)
         };
-        let range = job.draw_distance.and_then(|distance| {
-            let positions = match meshes.get(&mesh)?.attribute(Mesh::ATTRIBUTE_POSITION)? {
-                VertexAttributeValues::Float32x3(positions) => positions,
-                _ => return None,
-            };
-            let bounds = Aabb::enclosing(positions.iter().copied().map(Vec3::from_array))?;
-            let center = transform.transform_point(Vec3::from(bounds.center));
-            let radius = (Vec3::from(bounds.half_extents) * transform.scale.abs()).length();
-            let radius = job.transforms[job.cursor..job.cursor + count]
-                .iter()
-                .map(|instance| instance.translation.distance(center))
-                .fold(radius, f32::max);
-            let mut visibility = VisibilityRange::abrupt(0.0, distance + radius + 0.001);
-            visibility.use_aabb = true;
-            Some((bounds, visibility))
-        });
         job.cursor += count;
         let mut part = commands.spawn((Mesh3d(mesh), transform, ChildOf(entity)));
-        if let Some(range) = range {
-            part.insert(range);
-        }
         mark_solid(&mut part, job.solid);
         if !matches!(job.role, Role::Collision) {
             match &job.look {
@@ -399,18 +365,6 @@ fn place(
 
 fn model_extras(node: &GltfNode) -> Option<ModelExtras> {
     node.extras.as_ref().and_then(|extras| serde_json::from_str(&extras.value).ok())
-}
-
-/// The optional source draw distance, validated before any copies of the model are spawned.
-fn draw_distance(node: &GltfNode) -> Result<Option<f32>, String> {
-    let Some(extras) = &node.extras else { return Ok(None) };
-    let value: serde_json::Value = serde_json::from_str(&extras.value).map_err(|e| e.to_string())?;
-    let Some(raw) = value.get("draw_distance_m") else { return Ok(None) };
-    let distance = raw.as_f64().ok_or("draw distance must be a number")? as f32;
-    if !distance.is_finite() || distance <= 0.0 {
-        return Err("draw distance must be positive and finite".into());
-    }
-    Ok(Some(distance))
 }
 
 fn mark_solid(part: &mut EntityCommands, solid: bool) {
@@ -631,7 +585,6 @@ mod tests {
                 shadows: true,
                 solid: true,
                 merge: true,
-                draw_distance: None,
                 vertices,
                 transforms,
                 cursor: 0,
@@ -664,51 +617,6 @@ mod tests {
     }
 
     #[test]
-    fn draw_distance_keeps_both_ends_of_a_merged_patch() {
-        let mut app = App::new();
-        app.add_plugins(MinimalPlugins).init_resource::<Assets<Mesh>>();
-        let mesh = app.world_mut().resource_mut::<Assets<Mesh>>().add(Mesh::from(Cuboid::new(1.0, 1.0, 1.0)));
-        let vertices = app.world().resource::<Assets<Mesh>>().get(&mesh).unwrap().count_vertices();
-        let transforms = vec![Transform::from_xyz(0.0, 0.0, 0.0), Transform::from_xyz(30.0, 0.0, 0.0)];
-        let owner = app
-            .world_mut()
-            .spawn(TestJobs(VecDeque::from([Job {
-                mesh,
-                look: Look::Still(Handle::default()),
-                role: Role::Both,
-                shadows: false,
-                solid: false,
-                merge: true,
-                draw_distance: Some(80.0),
-                vertices,
-                transforms,
-                cursor: 0,
-            }])))
-            .id();
-        app.world_mut()
-            .run_system_once(
-                |mut commands: Commands,
-                 mut meshes: ResMut<Assets<Mesh>>,
-                 mut nodes: Query<(Entity, &mut TestJobs)>| {
-                    let mut budget = Budget { vertices: MERGE_VERTICES_PER_UPDATE, instances: INSTANCES_PER_UPDATE };
-                    for (entity, mut jobs) in &mut nodes {
-                        place(&mut jobs.0, entity, &mut meshes, &mut commands, &mut budget);
-                    }
-                },
-            )
-            .unwrap();
-        let child = app.world().get::<Children>(owner).unwrap()[0];
-        let bounds = app.world().get::<Aabb>(child).unwrap();
-        let range = app.world().get::<VisibilityRange>(child).unwrap();
-        assert!(range.use_aabb && range.is_abrupt());
-        let centre = Vec3::from(bounds.center);
-        for camera in [Vec3::new(-79.0, 0.0, 0.0), Vec3::new(109.0, 0.0, 0.0)] {
-            assert!(range.is_visible_at_all(camera.distance(centre)));
-        }
-        assert!(!range.is_visible_at_all(Vec3::new(200.0, 0.0, 0.0).distance(centre)));
-    }
-
-    #[test]
     fn unmerged_copies_obey_shared_update_budget() {
         let mut app = App::new();
         app.add_plugins(MinimalPlugins).init_resource::<Assets<Mesh>>();
@@ -722,7 +630,6 @@ mod tests {
             shadows: true,
             solid: false,
             merge: false,
-            draw_distance: None,
             vertices: 1,
             transforms,
             cursor: 0,
@@ -763,7 +670,6 @@ mod tests {
                     shadows: false,
                     solid: true,
                     merge,
-                    draw_distance: None,
                     vertices: 24,
                     transforms: vec![Transform::from_xyz(4.0, 0.0, 0.0)],
                     cursor: 0,
