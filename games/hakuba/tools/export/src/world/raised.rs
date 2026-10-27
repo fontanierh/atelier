@@ -89,6 +89,19 @@ impl<'a> Prepared<'a> {
         self.owner(p, false).or_else(|| ground(p))
     }
 
+    /// Position used by emitted f32 geometry; keep old coordinates when no raised surfaces exist.
+    pub fn emitted_at(&self, p: DVec2) -> DVec2 {
+        if self.raised.is_empty() { p } else { stored(p) }
+    }
+
+    pub fn has_surfaces(&self) -> bool {
+        !self.raised.is_empty()
+    }
+
+    pub fn emitted_point(&self, p: DVec3) -> DVec3 {
+        if self.raised.is_empty() { p } else { p.as_vec3().as_dvec3() }
+    }
+
     pub fn check_point(&self, p: DVec2) -> Result<()> {
         let (column, row) = self.tile(p);
         for dx in -1_isize..=1 {

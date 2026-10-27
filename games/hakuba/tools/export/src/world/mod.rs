@@ -181,12 +181,9 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
         }
     }
     let [x, y] = settings.spawn_m;
-    prepared.check_point(DVec2::new(x, y))?;
-    let Some(height) = prepared.height(DVec2::new(x, y), |p| ground.height(p)) else {
-        bail!("the spawn is off the ground")
-    };
+    let spawn = spawn_position(DVec2::new(x, y), &ground, &raised, &prepared)?;
     let facing = DQuat::from_rotation_y(-settings.spawn_bearing_deg.to_radians());
-    index.add_marker("spawn", game(DVec3::new(x, y, height)), facing);
+    index.add_marker("spawn", game(spawn), facing);
 
     // Files of tiles no longer exported go.
     for entry in fs::read_dir(&tiles)? {
@@ -200,6 +197,14 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     checksums::write(&tiles, &current)?;
     println!("{}: rebuilt {rebuilt} of {} tiles", folder.display(), current.len());
     index.write(output)
+}
+
+/// Match the runtime's stored XY before selecting a raised owner, retaining the old empty-world export.
+fn spawn_position(at: DVec2, ground: &Ground, raised: &[Raised], prepared: &raised::Prepared<'_>) -> Result<DVec3> {
+    let at = if raised.is_empty() { at } else { raised::stored(at) };
+    prepared.check_point(at)?;
+    let Some(height) = prepared.height(at, |p| ground.height(p)) else { bail!("the spawn is off the ground") };
+    Ok(at.extend(height))
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -321,6 +326,28 @@ impl Tile {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn spawn_selects_the_owner_at_its_runtime_position() {
+        let ground = Ground::page(8, 1.0, |_, _| 0.0);
+        let drawn = Surface::new(&Tile { columns: (0, 8), rows: (0, 8) }.ground(&ground, Detail::Full, 0, 1.0));
+        let p = |x, y| (DVec2::new(x, y), DVec2::ZERO);
+        let raised = [Raised {
+            name: "paving".into(),
+            texture: "earth".into(),
+            ground: true,
+            height: 3.0,
+            clearance: 0.1,
+            triangles: vec![[p(1.0, 0.0), p(2.0, 0.0), p(1.0, 1.0)]],
+        }];
+        let mut prepared = raised::Prepared::new(&raised, DVec2::ZERO, 8.0);
+        prepared.add_tile((0, 0), &drawn, false).unwrap();
+        prepared.add_tile((0, 0), &drawn, true).unwrap();
+        let at = DVec2::new(0.99999999, 0.25);
+        assert_eq!(spawn_position(at, &ground, &raised, &prepared).unwrap(), DVec3::new(1.0, 0.25, 3.0));
+        let empty = raised::Prepared::new(&[], DVec2::ZERO, 8.0);
+        assert_eq!(spawn_position(at, &ground, &[], &empty).unwrap(), at.extend(0.0));
+    }
 
     /// Neighbouring tiles meet exactly along their whole shared edge, whichever version each one shows: both draw
     /// the same edges between the same points there, so there is no step, slit or sliver.

@@ -122,6 +122,11 @@ impl Land<'_> {
         self.raised.height(p, |p| self.ground.height(p))
     }
 
+    /// The same effective position used when a candidate becomes a placement.
+    pub fn placement_at(&self, p: DVec2) -> DVec2 {
+        effective_at(self.raised, p).0
+    }
+
     /// How steep the ground is at `p`: how far it rises per metre across, going straight uphill.
     pub fn slope(&self, p: DVec2) -> f64 {
         if self.raised.height(p, |_| None).is_some() {
@@ -273,10 +278,7 @@ pub fn share(
             for k in 0..=CABLE_PIECES {
                 let t = k as f64 / CABLE_PIECES as f64;
                 let p = from.lerp(to, t) - DVec3::Z * cable.sag * span * 4.0 * t * (1.0 - t);
-                raised.check_point(p.truncate())?;
-                if p.z
-                    < raised.height(p.truncate(), |p| drawn.height(p)).unwrap_or(f64::NEG_INFINITY) + CABLE_CLEARANCE_M
-                {
+                if !cable_is_clear(p, drawn, raised)? {
                     bail!("a cable from {} comes within {CABLE_CLEARANCE_M} m of the ground at {p}", ends[0].model);
                 }
                 points.push(p.to_array());
@@ -288,13 +290,17 @@ pub fn share(
             ));
         }
         for rail in &scenery.rails {
-            for &p in &rail.path {
+            let path: Vec<_> = rail.path.iter().map(|&p| raised.emitted_at(p)).collect();
+            if raised.has_surfaces() && path.windows(2).any(|pair| pair[0] == pair[1]) {
+                bail!("a rail has consecutive points that collapse at stored precision");
+            }
+            for &p in &path {
                 raised.check_point(p)?;
             }
             crate::uri_of_texture(rail.texture)?;
             // The rail is eased along each stretch with ground drawn under it: past the exported part of the map, it
             // is left out.
-            for stretch in rail.path.chunk_by(|&p, &q| {
+            for stretch in path.chunk_by(|&p, &q| {
                 raised.height(p, |p| drawn.height(p)).is_some() == raised.height(q, |p| drawn.height(p)).is_some()
             }) {
                 let Some(heights) =
@@ -324,6 +330,13 @@ pub fn share(
     Ok(tiles)
 }
 
+fn cable_is_clear(p: DVec3, drawn: &Surface, raised: &Prepared<'_>) -> Result<bool> {
+    let emitted = raised.emitted_point(p);
+    let at = emitted.truncate();
+    raised.check_point(at)?;
+    Ok(emitted.z >= raised.height(at, |p| drawn.height(p)).unwrap_or(f64::NEG_INFINITY) + CABLE_CLEARANCE_M)
+}
+
 /// The anchors of `model`, read from its export, in its own frame.
 fn read_anchors(model: &str) -> Result<Vec<DVec3>> {
     let name = model.rsplit('/').next().unwrap_or(model);
@@ -338,13 +351,17 @@ fn read_anchors(model: &str) -> Result<Vec<DVec3>> {
 }
 
 /// Preserve authored f32 poses near raised ownership; elsewhere keep the existing export behavior.
-fn effective_pose(raised: &Prepared<'_>, placement: &Placement) -> (DVec2, f64, f64, bool) {
-    let at = placement.at;
+fn effective_at(raised: &Prepared<'_>, at: DVec2) -> (DVec2, bool) {
     let legacy = raised::stored((at * 1000.0).round() / 1000.0);
     let authored = raised::stored(at);
     let precise = [at, legacy, authored].into_iter().any(|p| raised.height(p, |_| None).is_some());
+    (if precise { authored } else { at }, precise)
+}
+
+fn effective_pose(raised: &Prepared<'_>, placement: &Placement) -> (DVec2, f64, f64, bool) {
+    let (at, precise) = effective_at(raised, placement.at);
     if precise {
-        (authored, placement.yaw as f32 as f64, placement.scale as f32 as f64, true)
+        (at, placement.yaw as f32 as f64, placement.scale as f32 as f64, true)
     } else {
         (at, placement.yaw, placement.scale, false)
     }
@@ -494,7 +511,7 @@ impl TileScenery {
         }
         for (k, &(foot, top, radius, colour, texture)) in self.posts.iter().enumerate() {
             let foot = DVec3::from_array(foot);
-            let at = foot.truncate();
+            let at = raised.emitted_at(foot.truncate());
             raised.check_point(at)?;
             let ground = raised
                 .height(at, |p| surface.height(p))
@@ -559,7 +576,7 @@ fn rail(
     let mut rows = Vec::new();
     for &(foot, direction, along) in piece {
         let (foot, direction) = (DVec3::from_array(foot), DVec2::from_array(direction));
-        let (at, ground) = (foot.truncate(), foot.z);
+        let (at, ground) = (raised.emitted_at(foot.truncate()), foot.z);
         raised.check_point(at)?;
         let drawn =
             raised.height(at, |p| surface.height(p)).with_context(|| format!("a rail runs off the ground at {at}"))?;
@@ -600,6 +617,36 @@ pub fn checksum_bytes(scenery: &TileScenery) -> Vec<u8> {
 mod tests {
     use super::*;
     use crate::world::raised::Raised;
+
+    #[test]
+    fn emitted_candidate_rail_and_cable_positions_select_the_owner() {
+        use crate::world::{Detail, Tile};
+        let ground = Ground::page(8, 1.0, |_, _| 0.0);
+        let drawn = Surface::new(&Tile { columns: (0, 8), rows: (0, 8) }.ground(&ground, Detail::Full, 0, 1.0));
+        let p = |x, y| (DVec2::new(x, y), DVec2::ZERO);
+        let raised = [Raised {
+            name: "paving".into(),
+            texture: "earth".into(),
+            ground: true,
+            height: 3.0,
+            clearance: 0.1,
+            triangles: vec![[p(1.0, 0.0), p(2.0, 0.0), p(1.0, 1.0)]],
+        }];
+        let mut prepared = Prepared::new(&raised, DVec2::ZERO, 8.0);
+        prepared.add_tile((0, 0), &drawn, false).unwrap();
+        prepared.add_tile((0, 0), &drawn, true).unwrap();
+        let land =
+            Land { ground: &ground, raised: &prepared, low: DVec2::ZERO, high: DVec2::splat(8.0), exclusions: &[] };
+        let at = DVec2::new(0.99999999, 0.25);
+        assert_eq!(land.placement_at(at), DVec2::new(1.0, 0.25));
+        assert_eq!(land.height(land.placement_at(at)), Some(3.0));
+        let path = [(at.extend(0.0).to_array(), [0.0, 1.0], 0.0)];
+        assert!(rail(&mut Mesh::default(), &path, &[[0.0, 0.0], [0.0, 1.0]], &drawn, &prepared).is_err());
+        assert!(!cable_is_clear(at.extend(4.0), &drawn, &prepared).unwrap());
+        let empty = Prepared::new(&[], DVec2::ZERO, 8.0);
+        assert_eq!(empty.emitted_at(at), at);
+        assert!(cable_is_clear(at.extend(4.0), &drawn, &empty).unwrap());
+    }
 
     #[test]
     fn cable_anchor_uses_the_declared_owner() {
