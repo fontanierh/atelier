@@ -1,0 +1,19 @@
+# The visitor's textured body and original idle and practice poses, with a role-specific coat tint.
+kind = "character"
+source = "src/model.glb"
+height_m = 1.68
+texture_size = 4096
+authored_clips = ["Nml_Wait", "A_Pose_Sword_Wait", "Sword_Attack_S1"]
+authored_pelvis = "pelvis"
+inputs_sha256 = "0ec6a507bca14bb4dfe339fe4d9170aab26fafafe48035bcd270e2cfbc6c9c92"
+
+[texture_dye]
+mesh = "SwordTrainer_body"
+mask = [2.15, 0.02, 18.0, 0.18]
+luma = [0.299, 0.587, 0.114]
+green_scale = 16.0
+reference = 0.11
+exponent = 1.35
+emission = 0.3
+roughness = 0.7
+reflectance = 0.38729835

@@ -34,10 +34,14 @@ pub fn code() -> Result<Vec<u8>> {
 }
 
 fn tile_code(code: Vec<PathBuf>) -> Vec<PathBuf> {
-    let schema = Path::new(EXPORTER).join("../../schemas/water");
+    let water_schema = Path::new(EXPORTER).join("../../schemas/water");
+    let actor_schema = Path::new(EXPORTER).join("../../schemas/actor");
     code.into_iter()
         .filter(|file| {
-            !file.ends_with("src/world/regions.rs") && !file.ends_with("src/main.rs") && !file.starts_with(&schema)
+            !file.ends_with("src/world/regions.rs")
+                && !file.ends_with("src/main.rs")
+                && !file.starts_with(&water_schema)
+                && !file.starts_with(&actor_schema)
         })
         .collect()
 }
@@ -193,6 +197,15 @@ pub fn write(tiles: &Path, checksums: &BTreeMap<String, String>) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn actor_schema_invalidates_world_input_but_not_tile_code() {
+        let world = crate::code("src/world").unwrap();
+        let schema = Path::new(EXPORTER).join("../../schemas/actor/src/lib.rs");
+        assert!(world.contains(&schema));
+        assert!(!tile_code(world).contains(&schema));
+        assert!(!crate::code("src/model").unwrap().contains(&schema));
+    }
 
     #[test]
     fn water_schema_invalidates_world_input_but_not_tile_code() {

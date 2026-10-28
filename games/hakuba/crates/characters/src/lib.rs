@@ -3,9 +3,11 @@
 //! the last, and [`Playing`] says which is playing and whether it has finished. The model's right hand holds what the
 //! character carries at its [`Grip`]; [`Hands`] finds both arms' bones, for what it holds in two hands.
 
+mod attachment;
 mod emission;
 
-pub use emission::{MaterialFailed, MaterialReady};
+pub use attachment::AttachmentPose;
+pub use emission::{DyeReady, DyeTint, MaterialFailed, MaterialReady};
 
 use std::time::Duration;
 
@@ -82,6 +84,11 @@ pub struct Clips {
 }
 
 impl Clips {
+    /// Whether the scene's animation player is ready to accept clip requests.
+    pub fn is_ready(&self) -> bool {
+        self.player.is_some()
+    }
+
     pub fn names(&self) -> impl Iterator<Item = &str> {
         self.clips.iter().map(|(name, _)| name.as_str())
     }

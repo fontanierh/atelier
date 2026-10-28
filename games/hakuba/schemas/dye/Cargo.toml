@@ -1,0 +1,9 @@
+# Character texture dye metadata shared by the exporter and runtime.
+[package]
+name = "hakuba_dye_schema"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde.workspace = true

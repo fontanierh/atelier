@@ -196,17 +196,20 @@ points other things fasten to, such as cables.
 | `boxes`     | each box's centre, size and material            |
 | `prisms`    | each closed prism: a strictly convex `profile` of `[x, z]` points in order, `y = [start, end]` with start less than end, and `material`, all coordinates in metres |
 | `solid`     | optional; when true, the prop is solid to scenery raycasts (default false) |
+| `mountable` | optional; preserve a source model's attachment origin without requiring ground contact |
 | `anchors`   | the points other things fasten to               |
 
 As an alternative to generated shapes, a prop may set `source` to an embedded GLB under its own `src/` folder.
-It cannot combine `source` with materials, shapes or anchors. The GLB has one identity-frame scene root named
+It cannot combine `source` with generated materials or shapes. The GLB has one identity-frame scene root named
 `full`, and may have a second root named `collision`. Both contain static, tightly packed indexed triangles with
-finite float positions and optional normals, UVs and colours; textures, animation and external buffers are not
-supported. The full mesh reaches below its foot. With `solid = true`, the full mesh supplies raycast collision unless
+finite float positions and optional normals, UVs and colours. A source may use named texture assets through its
+`textures` setting and declare anchors; animation and external buffers are not supported. The full mesh reaches below
+its foot. With `solid = true`, the full mesh supplies raycast collision unless
 the source has a `collision` root; that root then supplies the collision without being rendered or casting a shadow.
-Source extras on `full` are preserved except `solid`, which is set from the prop settings. A static `vertex_paint`
-profile requires RGBA vertex colours with zero alpha
-(the motion weight) and an opaque material; this alpha is not opacity.
+Source extras on `full` are preserved except `solid`, which is set from the prop settings. `vertex_paint` can set
+`texture_mask = true` to use a named base texture and UV0, with vertex red as its glow mask and alpha as the motion
+weight. Its optional `reflectance` chooses the material reflectance. The texture, RGBA and opaque material are required;
+`vertex_motion` declares any nonzero motion weights. Without it, the alpha weights must be zero; alpha is not opacity.
 
 **`world`** builds the ground from the height pages in `src/ground/`, lays over it what each region adds, and cuts
 them into square tiles under `tiles/`. Each region's `src/regions/<region>/layout.rs` implements `Region`, and

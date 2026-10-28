@@ -13,6 +13,8 @@ mod momiji_coast;
 mod momiji_village;
 #[path = "../../../../assets/world/src/regions/roadside-houses/layout.rs"]
 mod roadside_houses;
+#[path = "../../../../assets/world/src/regions/sword-camp/layout.rs"]
+mod sword_camp;
 #[path = "../../../../assets/world/src/regions/woodland/layout.rs"]
 mod woodland;
 
@@ -62,5 +64,10 @@ pub trait Region {
     fn scenery(&self, land: &Land) -> Scenery;
 }
 
-pub const REGIONS: [&dyn Region; 4] =
-    [&momiji_coast::MomijiCoast, &roadside_houses::RoadsideHouses, &momiji_village::MomijiVillage, &woodland::Woodland];
+pub const REGIONS: [&dyn Region; 5] = [
+    &momiji_coast::MomijiCoast,
+    &roadside_houses::RoadsideHouses,
+    &momiji_village::MomijiVillage,
+    &woodland::Woodland,
+    &sword_camp::SwordCamp,
+];

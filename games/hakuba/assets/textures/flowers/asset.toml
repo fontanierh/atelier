@@ -1,4 +1,4 @@
 # Small green leaves with blossoms, pink, white, red and yellow, one colour in each quarter, on a clear ground.
 kind = "texture"
 source = "src/flowers.png"
-inputs_sha256 = "61d3909b75524c03d14c42b3c45865b839e59c184af27ca2920b8dc2e9733f08"
+inputs_sha256 = "ca1fde324a0232c13a0b2756dff5441dafe9cc709f6123bfe49c4acd095bc16e"

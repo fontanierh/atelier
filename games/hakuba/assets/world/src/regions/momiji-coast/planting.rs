@@ -1,4 +1,4 @@
-//! Published source vegetation and stones, after the original region and garden clearances.
+//! Published vegetation and stones, after the garden and roadside camp clearances.
 
 use std::collections::BTreeMap;
 

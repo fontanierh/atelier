@@ -1,0 +1,8 @@
+# Original skinned body and two retargeted idle clips and the source practice clip, with the packed colour texture.
+path = "model.glb"
+sha256 = "45605cb86787029df8037b4f635da82860564de11e5206ffc8bb77a2d8b3d54b"
+texture_sha256 = "5f15b3cf4924df33f353541c2209b24c21e7b4ce7a73a5b51cd300fc709559af"
+body_source_sha256 = "c83abba40d047f34852108485645b8e35a3207edb1159432dfe49c796313e0c6"
+reference_rig_sha256 = "d5109b6940512f7305aec3ab855dc649b81ff6fe72d568710bd76801f99098a6"
+reference_curves_sha256 = "56ab2d1a6bb953ceca654c0ba7ce3b45e59467eb9a62168729200a5b482bb9f0"
+conversion = "Source body and packed PNG with production-retargeted Nml_Wait, A_Pose_Sword_Wait and Sword_Attack_S1"

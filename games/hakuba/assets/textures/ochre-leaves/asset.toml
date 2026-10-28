@@ -1,4 +1,4 @@
 # Clusters of small ochre and rust leaves, one in each quarter, on a clear ground.
 kind = "texture"
 source = "src/ochre-leaves.png"
-inputs_sha256 = "628ebcfc16a6daf7b2c3058dfd4c2d68266548876641a4b9c7e499e124f8bba1"
+inputs_sha256 = "b8a29d2a0dbdc371a51d2bc888d9be5ed65c1bb677c27061faa7ae87a2869981"

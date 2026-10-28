@@ -11,38 +11,8 @@ use bevy::prelude::*;
 use bevy::render::render_resource::{AsBindGroup, ShaderType};
 use bevy::shader::ShaderRef;
 use bevy::world_serialization::WorldAssetRoot;
+pub use hakuba_paint_schema::{MotionProfile, Profile};
 use serde::Deserialize;
-
-/// @cc [owner:fontanierh,label:correctness] vertex-paint-preserves-static-colour
-/// A painted model MUST use its linear vertex RGB and asset-owned profile. Alpha is a motion weight, never opacity;
-/// nonzero weights without valid declared motion and unsupported animated meshes MUST be reported instead of silently
-/// made static. Declared motion MUST agree across visible and prepass vertices. Its profile MUST apply its haze once,
-/// while models without a profile keep their existing material path.
-#[derive(Clone, Debug, Deserialize, PartialEq)]
-pub struct Profile {
-    pub fill: f32,
-    pub glow: f32,
-    pub glow_min: [f32; 3],
-    pub glow_max: [f32; 3],
-    pub haze_start_m: f32,
-    pub haze_length_m: f32,
-    pub haze_colour: [f32; 3],
-}
-
-impl Profile {
-    pub fn valid(&self) -> bool {
-        self.fill.is_finite()
-            && self.fill >= 0.0
-            && self.glow.is_finite()
-            && self.glow >= 0.0
-            && self.haze_start_m.is_finite()
-            && self.haze_start_m >= 0.0
-            && self.haze_length_m.is_finite()
-            && self.haze_length_m > 0.0
-            && self.haze_colour.iter().all(|v| v.is_finite() && *v >= 0.0)
-            && self.glow_min.iter().zip(self.glow_max).all(|(a, b)| a.is_finite() && b.is_finite() && *a <= b)
-    }
-}
 
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 pub struct SurfaceProfile {
@@ -54,6 +24,8 @@ pub struct SurfaceProfile {
 impl SurfaceProfile {
     pub(crate) fn profile(&self) -> Profile {
         Profile {
+            texture_mask: false,
+            reflectance: None,
             fill: 0.0,
             glow: 0.0,
             glow_min: [0.0; 3],
@@ -73,6 +45,12 @@ struct PaintUniform {
     colour: Vec4,
 }
 
+/// @cc [owner:fontanierh,label:correctness] vertex-paint-preserves-static-colour
+/// A painted model MUST use its asset-owned profile: linear vertex RGB or a texture with vertex red as a glow mask.
+/// Alpha is a motion weight, never opacity;
+/// nonzero weights without valid declared motion and unsupported animated meshes MUST be reported instead of silently
+/// made static. Declared motion MUST agree across visible and prepass vertices. Its profile MUST apply its haze once,
+/// while models without a profile keep their existing material path.
 #[derive(Asset, AsBindGroup, Reflect, Clone)]
 pub struct Paint {
     #[uniform(100)]
@@ -90,29 +68,6 @@ impl MaterialExtension for Paint {
 }
 
 pub type Painted = ExtendedMaterial<StandardMaterial, Paint>;
-
-/// Source-authored motion of a painted vertex, in world metres.
-#[derive(Clone, Debug, Deserialize, PartialEq)]
-#[serde(deny_unknown_fields)]
-pub struct MotionProfile {
-    pub spatial: [f32; 2],
-    pub rate: f32,
-    pub amplitude: [f32; 3],
-    pub harmonic: [f32; 3],
-}
-
-impl MotionProfile {
-    pub fn valid(&self) -> bool {
-        self.rate.is_finite()
-            && self.rate.abs() <= 10_000.0
-            && self
-                .spatial
-                .iter()
-                .chain(&self.amplitude)
-                .chain(&self.harmonic)
-                .all(|x| x.is_finite() && x.abs() <= 10_000.0)
-    }
-}
 
 #[derive(Clone, Default, ShaderType)]
 struct MovingUniform {
@@ -245,7 +200,9 @@ impl PaintedMaterials<'_> {
         if base.alpha_mode != AlphaMode::Opaque {
             return Err("vertex paint requires an opaque source material".into());
         }
-        if (mode == 0 && (base.base_color.to_linear() != LinearRgba::WHITE || base.base_color_texture.is_some()))
+        if (mode == 0
+            && (base.base_color.to_linear() != LinearRgba::WHITE
+                || base.base_color_texture.is_some() != profile.texture_mask))
             || (mode == 1 && base.base_color_texture.is_none())
             || (mode == 3 && base.base_color_texture.is_some())
             || base.emissive_texture.is_some()
@@ -259,12 +216,19 @@ impl PaintedMaterials<'_> {
         base.alpha_mode = AlphaMode::Opaque;
         base.metallic = 0.0;
         base.fog_enabled = false;
-        base.perceptual_roughness = 1.0;
-        base.reflectance = 0.0;
+        if !profile.texture_mask {
+            base.perceptual_roughness = 1.0;
+        }
+        base.reflectance = profile.reflectance.unwrap_or(0.0);
         let data = PaintUniform {
             lower: Vec3::from_array(profile.glow_min).extend(profile.fill),
             upper: Vec3::from_array(profile.glow_max).extend(profile.glow),
-            haze: Vec4::new(profile.haze_start_m, profile.haze_length_m, 0.0, 0.0),
+            haze: Vec4::new(
+                profile.haze_start_m,
+                profile.haze_length_m,
+                if profile.texture_mask { 1.0 } else { 0.0 },
+                0.0,
+            ),
             colour: Vec3::from_array(profile.haze_colour).extend(0.0),
         };
         let handle = self.painted.add(Painted { base, extension: Paint { data } });
@@ -373,6 +337,11 @@ pub(crate) fn prepare_surfaces(
                     failed = true;
                     break;
                 }
+                if profile.0.texture_mask && !mesh.contains_attribute(Mesh::ATTRIBUTE_UV_0) {
+                    error!("textured vertex paint requires UV0");
+                    failed = true;
+                    break;
+                }
             } else if !mesh.contains_attribute(Mesh::ATTRIBUTE_POSITION)
                 || !mesh.contains_attribute(Mesh::ATTRIBUTE_NORMAL)
                 || !mesh.contains_attribute(Mesh::ATTRIBUTE_UV_0)
@@ -431,6 +400,8 @@ mod tests {
             .init_resource::<Made>();
         let material = app.world_mut().resource_mut::<Assets<StandardMaterial>>().add(StandardMaterial::default());
         let profile = Profile {
+            texture_mask: false,
+            reflectance: None,
             fill: 0.06,
             glow: 0.8,
             glow_min: [0.8, 0.35, 0.0],
@@ -458,6 +429,56 @@ mod tests {
     }
 
     #[test]
+    fn shared_painted_part_requires_declared_wind_and_reuses_material() {
+        use crate::scenery::{PaintedPart, painted_part};
+        use bevy::asset::RenderAssetUsages;
+        use bevy::ecs::system::SystemState;
+        use bevy::mesh::PrimitiveTopology;
+        let mut world = World::new();
+        world.insert_resource(Assets::<StandardMaterial>::default());
+        world.insert_resource(Assets::<Painted>::default());
+        world.insert_resource(Assets::<MovingPainted>::default());
+        world.insert_resource(Made::default());
+        world.insert_resource(MovingMade::default());
+        let source = world.resource_mut::<Assets<StandardMaterial>>().add(StandardMaterial::default());
+        let mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default())
+            .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vec![[0.0, 0.0, 0.0]; 3])
+            .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[0.0, 1.0, 0.0]; 3])
+            .with_inserted_attribute(Mesh::ATTRIBUTE_COLOR, vec![[0.0, 1.0, 1.0, 0.5]; 3]);
+        let profile = Profile {
+            texture_mask: false,
+            reflectance: None,
+            fill: 0.06,
+            glow: 0.95,
+            glow_min: [0.0; 3],
+            glow_max: [1.0; 3],
+            haze_start_m: 30.0,
+            haze_length_m: 9000.0,
+            haze_colour: [0.1, 0.2, 0.5],
+        };
+        let motion = MotionProfile {
+            spatial: [0.3, 0.4],
+            rate: 2.1,
+            amplitude: [0.024, 0.005, 0.016],
+            harmonic: [1.0, 1.4, 0.85],
+        };
+        let mut state = SystemState::<(PaintedMaterials, MovingPaintedMaterials)>::new(&mut world);
+        let (mut painted, mut moving) = state.get_mut(&mut world).unwrap();
+        assert!(painted_part(&mesh, &source, &profile, None, &mut painted, &mut moving).is_err());
+        let Some(PaintedPart::Moving(first, _)) =
+            painted_part(&mesh, &source, &profile, Some(&motion), &mut painted, &mut moving).unwrap()
+        else {
+            panic!("expected moving material")
+        };
+        let Some(PaintedPart::Moving(second, _)) =
+            painted_part(&mesh, &source, &profile, Some(&motion), &mut painted, &mut moving).unwrap()
+        else {
+            panic!("expected cached material")
+        };
+        assert_eq!(first, second);
+    }
+
+    #[test]
     fn moving_paint_uses_the_same_material_response_and_declared_motion() {
         use bevy::ecs::system::SystemState;
         let mut world = World::new();
@@ -468,6 +489,8 @@ mod tests {
         world.insert_resource(MovingMade::default());
         let source = world.resource_mut::<Assets<StandardMaterial>>().add(StandardMaterial::default());
         let profile = Profile {
+            texture_mask: false,
+            reflectance: None,
             fill: 0.06,
             glow: 0.8,
             glow_min: [0.8, 0.35, 0.0],
@@ -498,6 +521,56 @@ mod tests {
         assert_eq!(material.extension.data.phase, Vec4::new(0.2, 0.3, 1.7, 0.0));
         assert_eq!(material.extension.data.amplitude, Vec4::new(0.022, 0.004, 0.013, 0.0));
         assert!(!MotionProfile { rate: f32::NAN, ..motion }.valid());
+    }
+
+    #[test]
+    fn textured_mask_preserves_source_material_and_rejects_missing_texture() {
+        use bevy::ecs::system::SystemState;
+        let mut world = World::new();
+        world.insert_resource(Assets::<StandardMaterial>::default());
+        world.insert_resource(Assets::<Painted>::default());
+        world.insert_resource(Assets::<MovingPainted>::default());
+        world.insert_resource(Made::default());
+        world.insert_resource(MovingMade::default());
+        let source = world.resource_mut::<Assets<StandardMaterial>>().add(StandardMaterial {
+            base_color_texture: Some(Handle::<Image>::default()),
+            perceptual_roughness: 0.92,
+            cull_mode: None,
+            ..default()
+        });
+        let missing = world.resource_mut::<Assets<StandardMaterial>>().add(StandardMaterial::default());
+        let profile = Profile {
+            texture_mask: true,
+            reflectance: Some(0.14142136),
+            fill: 0.06,
+            glow: 0.95,
+            glow_min: [0.0; 3],
+            glow_max: [1.0; 3],
+            haze_start_m: 30.0,
+            haze_length_m: 9000.0,
+            haze_colour: [0.0932, 0.2301, 0.5328],
+        };
+        let motion = MotionProfile {
+            spatial: [0.3, 0.4],
+            rate: 2.1,
+            amplitude: [0.024, 0.005, 0.016],
+            harmonic: [1.0, 1.4, 0.85],
+        };
+        let mut state = SystemState::<(PaintedMaterials, MovingPaintedMaterials)>::new(&mut world);
+        let handle = {
+            let (mut painted, mut moving) = state.get_mut(&mut world).unwrap();
+            assert!(painted.of(&missing, &profile).is_err());
+            moving.of(&mut painted, &source, &profile, &motion).unwrap().unwrap()
+        };
+        let material = world.resource::<Assets<MovingPainted>>().get(&handle).unwrap();
+        assert_eq!(material.base.perceptual_roughness, 0.92);
+        assert_eq!(material.base.reflectance, 0.14142136);
+        assert!(material.base.cull_mode.is_none());
+        assert_eq!(material.base.alpha_mode, AlphaMode::Opaque);
+        assert_eq!(material.extension.data.haze.z, 1.0);
+        assert_eq!(material.extension.data.lower.w, 0.06);
+        assert_eq!(material.extension.data.upper.w, 0.95);
+        assert_eq!(material.extension.data.phase, Vec4::new(0.3, 0.4, 2.1, 0.0));
     }
 
     #[test]
@@ -695,6 +768,8 @@ mod tests {
     #[test]
     fn profile_rejects_nonfinite_or_invalid_haze_and_thresholds() {
         let mut profile = Profile {
+            texture_mask: false,
+            reflectance: None,
             fill: 0.06,
             glow: 0.8,
             glow_min: [0.8, 0.35, 0.0],
@@ -719,6 +794,8 @@ mod tests {
         world.insert_resource(Made::default());
         let source = world.resource_mut::<Assets<StandardMaterial>>().add(StandardMaterial::default());
         let profile = Profile {
+            texture_mask: false,
+            reflectance: None,
             fill: 0.06,
             glow: 0.8,
             glow_min: [0.8, 0.35, 0.0],

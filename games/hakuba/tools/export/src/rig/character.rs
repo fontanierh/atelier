@@ -12,6 +12,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 use glam::{DMat3, DMat4, DQuat, DVec3, EulerRot};
+use hakuba_dye_schema::TextureDye;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
 
@@ -49,6 +50,9 @@ pub struct Settings {
     /// How much of the vertex-tinted base colour the material emits.
     #[serde(default)]
     vertex_emission: Option<f64>,
+    /// Optional texture-sampled dye for a named body mesh.
+    #[serde(default)]
+    texture_dye: Option<TextureDye>,
     /// Where its right hand holds things, from its palm.
     #[serde(default)]
     hold: Hold,
@@ -77,6 +81,12 @@ const STILL_SPEED: f64 = 0.01;
 
 pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     let mut glb = Glb::read(&folder.join(&settings.source))?;
+    if let Some(profile) = &settings.texture_dye {
+        if !profile.valid() || settings.vertex_emission.is_some() {
+            bail!("texture dye must be valid and cannot be combined with vertex emission");
+        }
+        validate_texture_dye_mesh(glb.document(), &profile.mesh)?;
+    }
     glb.remove_morph_targets();
     glb.make_matte();
     glb.scale_to_height(settings.height_m);
@@ -114,6 +124,9 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
             bail!("authored pelvis must stand above the model origin");
         }
         glb.add_data("clips", json!({ "speeds": settings.authored_speeds, "hips_m": hips }));
+    }
+    if let Some(profile) = &settings.texture_dye {
+        glb.add_data("texture_dye", serde_json::to_value(profile)?);
     }
     if let Some(factor) = settings.vertex_emission {
         if !factor.is_finite() || factor < 0.0 {
@@ -244,4 +257,119 @@ fn depth_order(parents: &[Option<usize>]) -> Vec<usize> {
     let mut order: Vec<usize> = (0..parents.len()).collect();
     order.sort_by_key(|&node| depth(node));
     order
+}
+
+/// Checks the inputs needed to dye a sampled, untinted opaque texture on a unique mesh node.
+fn validate_texture_dye_mesh(document: &Value, name: &str) -> Result<()> {
+    let nodes: Vec<_> =
+        document["nodes"].as_array().into_iter().flatten().filter(|node| node["name"].as_str() == Some(name)).collect();
+    if nodes.len() != 1 {
+        bail!("texture dye target {name:?} must occur exactly once");
+    }
+    let mesh = nodes[0]["mesh"].as_u64().context("texture dye target must have a mesh")? as usize;
+    let primitives = document["meshes"]
+        .get(mesh)
+        .and_then(|mesh| mesh["primitives"].as_array())
+        .context("texture dye target needs mesh primitives")?;
+    if primitives.is_empty() {
+        bail!("texture dye target needs mesh primitives");
+    }
+    for primitive in primitives {
+        let attrs = &primitive["attributes"];
+        if attrs["TEXCOORD_0"].as_u64().and_then(|i| document["accessors"].get(i as usize)).is_none()
+            || attrs.get("COLOR_0").is_some()
+        {
+            bail!("texture dye needs UV0 and no vertex colours");
+        }
+        let material = primitive["material"]
+            .as_u64()
+            .and_then(|i| document["materials"].get(i as usize))
+            .context("texture dye needs a material")?;
+        let pbr = &material["pbrMetallicRoughness"];
+        let texture = &pbr["baseColorTexture"];
+        let texture_index = texture["index"].as_u64().context("texture dye needs a base colour texture")? as usize;
+        if document["textures"]
+            .get(texture_index)
+            .and_then(|t| t["source"].as_u64())
+            .and_then(|i| document["images"].get(i as usize))
+            .is_none()
+            || pbr.get("metallicRoughnessTexture").is_some()
+            || ["normalTexture", "occlusionTexture", "emissiveTexture"].iter().any(|key| material.get(*key).is_some())
+            || material.get("extensions").is_some_and(|v| v.as_object().is_none_or(|o| !o.is_empty()))
+            || texture["texCoord"].as_u64().unwrap_or(0) != 0
+            || texture.get("extensions").is_some()
+            || pbr
+                .get("baseColorFactor")
+                .is_some_and(|v| v.as_array().is_none_or(|a| a.len() != 4 || a.iter().any(|x| x.as_f64() != Some(1.0))))
+            || material["alphaMode"].as_str().unwrap_or("OPAQUE") != "OPAQUE"
+            || material["doubleSided"].as_bool().unwrap_or(false)
+            || material["extensions"].get("KHR_materials_unlit").is_some()
+        {
+            bail!("texture dye requires an untinted UV0 texture and opaque, single-sided lit material");
+        }
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod texture_dye_tests {
+    use super::*;
+
+    fn source() -> Value {
+        json!({"nodes":[{"name":"body","mesh":0}], "meshes":[{"primitives":[{
+            "attributes":{"TEXCOORD_0":0}, "material":0
+        }]}], "materials":[{"pbrMetallicRoughness":{"baseColorTexture":{"index":0}}}],
+        "textures":[{"source":0}], "images":[{}], "accessors":[{}]})
+    }
+
+    #[test]
+    fn dye_rejects_ambiguous_targets_and_incompatible_inputs() {
+        let valid = source();
+        assert!(validate_texture_dye_mesh(&valid, "body").is_ok());
+        let mut cases = Vec::new();
+        let mut v = valid.clone();
+        v["nodes"].as_array_mut().unwrap().push(json!({"name":"body"}));
+        cases.push(v);
+        let mut v = valid.clone();
+        v["nodes"][0].as_object_mut().unwrap().remove("mesh");
+        cases.push(v);
+        let mut v = valid.clone();
+        v["meshes"][0]["primitives"][0]["attributes"]["COLOR_0"] = json!(1);
+        cases.push(v);
+        let mut v = valid.clone();
+        v["meshes"][0]["primitives"][0]["attributes"].as_object_mut().unwrap().remove("TEXCOORD_0");
+        cases.push(v);
+        let mut v = valid.clone();
+        v["materials"][0]["pbrMetallicRoughness"]["baseColorFactor"] = json!([0.5, 1, 1, 1]);
+        cases.push(v);
+        let mut v = valid.clone();
+        v["materials"][0]["pbrMetallicRoughness"].as_object_mut().unwrap().remove("baseColorTexture");
+        cases.push(v);
+        let mut v = valid.clone();
+        v["materials"][0]["alphaMode"] = json!("BLEND");
+        cases.push(v);
+        let mut v = valid.clone();
+        v["materials"][0]["extensions"]["KHR_materials_unlit"] = json!({});
+        cases.push(v);
+        let mut v = valid.clone();
+        v["materials"][0]["doubleSided"] = json!(true);
+        cases.push(v);
+        let mut v = valid.clone();
+        v["textures"][0]["source"] = json!(99);
+        cases.push(v);
+        for key in ["normalTexture", "occlusionTexture", "emissiveTexture"] {
+            let mut v = valid.clone();
+            v["materials"][0][key] = json!({"index": 0});
+            cases.push(v);
+        }
+        let mut v = valid.clone();
+        v["materials"][0]["pbrMetallicRoughness"]["metallicRoughnessTexture"] = json!({"index": 0});
+        cases.push(v);
+        let mut v = valid.clone();
+        v["materials"][0]["extensions"]["KHR_materials_clearcoat"] = json!({});
+        cases.push(v);
+        for case in cases {
+            assert!(validate_texture_dye_mesh(&case, "body").is_err());
+        }
+    }
 }

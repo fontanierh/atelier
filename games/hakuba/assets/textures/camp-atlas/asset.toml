@@ -1,4 +1,6 @@
 # Shared camp cloth, timber, stone, straw, metal and ember texture atlas.
+# A 2048 px composite of reused high-quality gpt-image-2.5-sunburst images,
+# cropped and resized with material swatches; it was not newly generated.
 kind = "texture"
 source = "src/texture.jpg"
-inputs_sha256 = "96363de87b6febe9f5c74c9343a76d6a4f4c02996e9ef4578371e9d1866a1ccf"
+inputs_sha256 = "e983ef9a8794e7733a10997f01a7ff085a3dd83d63be6db1b7e7b787d6176d6f"

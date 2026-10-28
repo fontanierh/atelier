@@ -3,13 +3,15 @@
 
 use crate::rig::Skeleton;
 
+#[path = "../../../../assets/characters/camp-visitor/src/camp_visitor.rs"]
+mod camp_visitor;
 #[path = "../../../../assets/characters/nox/src/nox.rs"]
 mod nox;
 #[path = "../../../../assets/characters/wanderer/src/wanderer.rs"]
 mod wanderer;
 
 /// Every character.
-pub const CHARACTERS: [&dyn Character; 2] = [&nox::Nox, &wanderer::Wanderer];
+pub const CHARACTERS: [&dyn Character; 3] = [&camp_visitor::CampVisitor, &nox::Nox, &wanderer::Wanderer];
 
 /// What the exporter needs from a character's own code: its name, and which of its bones plays each rig bone.
 pub trait Character: Sync {

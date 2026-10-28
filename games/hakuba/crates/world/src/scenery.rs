@@ -291,6 +291,7 @@ fn spawn(
                 let vertices = vertices(&models.meshes, &meshes, node);
                 let merge = vertices < MERGE_BELOW_VERTICES && vertices * transforms.len() <= MERGED_AT_MOST_VERTICES;
                 for (mesh, look) in parts {
+                    let merge = merge && look.can_merge();
                     let shadows = shadows && !matches!(look, Look::Water(_));
                     let vertices = meshes.get(&mesh).map_or(0, Mesh::count_vertices).max(1);
                     if merge {
@@ -397,7 +398,7 @@ fn place(
                         }
                         Look::Still(_) | Look::Painted(_) | Look::Water(_) => Some((0.0, 0.0)),
                         // Unbounded motion cannot safely be range-culled.
-                        Look::Swaying(_) | Look::MovingPainted(_) => return None,
+                        Look::Swaying(_) | Look::MovingPainted(_, _) => return None,
                     },
                     world: None,
                 })
@@ -410,6 +411,16 @@ fn place(
         if let Some(bounds) = shadow_bounds {
             part.insert(bounds);
         }
+        if let Look::MovingPainted(_, motion) = &job.look
+            && let Some(VertexAttributeValues::Float32x3(positions)) =
+                meshes.get(&job.mesh).and_then(|mesh| mesh.attribute(Mesh::ATTRIBUTE_POSITION))
+            && let Some(mut bounds) = Aabb::enclosing(positions.iter().copied().map(Vec3::from_array))
+        {
+            // Motion is world-space; bound every direction in local space despite rotation and scale.
+            let radius = Vec3::from_array(motion.amplitude).length() / transform.scale.abs().min_element();
+            bounds.half_extents += radius;
+            part.insert(bounds);
+        }
         mark_solid(&mut part, job.solid);
         if !matches!(job.role, Role::Collision) {
             match &job.look {
@@ -418,7 +429,7 @@ fn place(
                 Look::SourceFoliage(material, _) => part.insert(MeshMaterial3d(material.clone())),
                 Look::ShadowFoliage(material, _) => part.insert(MeshMaterial3d(material.clone())),
                 Look::Painted(material) => part.insert(MeshMaterial3d(material.clone())),
-                Look::MovingPainted(material) => part.insert(MeshMaterial3d(material.clone())),
+                Look::MovingPainted(material, _) => part.insert(MeshMaterial3d(material.clone())),
                 Look::Water(material) => part.insert(MeshMaterial3d(material.clone())),
             };
         }
@@ -612,16 +623,20 @@ fn parts(
         let Some(source) = meshes.get(&primitive.mesh) else { return Ok(None) };
         let material = standard_of(assets, primitive.material.as_ref());
         let look = if let Some(profile) = &profile {
-            if let Some(motion) = &motion_profile {
-                validate_paint(source, true)?;
-                let Some(material) = materials.moving.of(&mut materials.painted, &material, profile, motion)? else {
-                    return Ok(None);
-                };
-                Look::MovingPainted(material)
-            } else {
-                validate_static_paint(source)?;
-                let Some(material) = materials.painted.of(&material, profile)? else { return Ok(None) };
-                Look::Painted(material)
+            let Some(painted) = painted_part(
+                source,
+                &material,
+                profile,
+                motion_profile.as_ref(),
+                &mut materials.painted,
+                &mut materials.moving,
+            )?
+            else {
+                return Ok(None);
+            };
+            match painted {
+                PaintedPart::Static(material) => Look::Painted(material),
+                PaintedPart::Moving(material, motion) => Look::MovingPainted(material, motion),
             }
         } else if let Some(profile) = &source_foliage {
             if !source.contains_attribute(Mesh::ATTRIBUTE_COLOR) || !source.contains_attribute(Mesh::ATTRIBUTE_UV_0) {
@@ -663,6 +678,35 @@ fn parts(
         parts.push((primitive.mesh.clone(), look));
     }
     Ok(Some(parts))
+}
+
+/// A source-painted mesh and its shared material, with optional authored motion.
+pub(crate) enum PaintedPart {
+    Static(Handle<Painted>),
+    Moving(Handle<MovingPainted>, MotionProfile),
+}
+
+/// Prepare the same painted surface for scenery and attachments, waiting for its source material.
+pub(crate) fn painted_part(
+    mesh: &Mesh,
+    material: &Handle<StandardMaterial>,
+    profile: &Profile,
+    motion: Option<&MotionProfile>,
+    painted: &mut PaintedMaterials,
+    moving: &mut MovingPaintedMaterials,
+) -> Result<Option<PaintedPart>, String> {
+    if !profile.valid() || motion.is_some_and(|value| !value.valid()) {
+        return Err("invalid painted surface or motion profile".into());
+    }
+    if profile.texture_mask && !mesh.contains_attribute(Mesh::ATTRIBUTE_UV_0) {
+        return Err("textured vertex paint requires UV0".into());
+    }
+    validate_paint(mesh, motion.is_some())?;
+    if let Some(motion) = motion {
+        Ok(moving.of(painted, material, profile, motion)?.map(|handle| PaintedPart::Moving(handle, motion.clone())))
+    } else {
+        Ok(painted.of(material, profile)?.map(PaintedPart::Static))
+    }
 }
 
 /// Static painted assets must retain opaque RGB and cannot silently discard a motion-bearing alpha channel.
@@ -729,12 +773,22 @@ enum Look {
     SourceFoliage(Handle<SourceFoliage>, SourceProfile),
     ShadowFoliage(Handle<ShadowFoliage>, SourceProfile),
     Painted(Handle<Painted>),
-    MovingPainted(Handle<MovingPainted>),
+    MovingPainted(Handle<MovingPainted>, MotionProfile),
     Water(Handle<WaterMaterial>),
 }
 
+impl Look {
+    /// World-space vertex motion must keep its instance transform and phase.
+    fn can_merge(&self) -> bool {
+        !matches!(self, Self::MovingPainted(_, _))
+    }
+}
+
 /// The standard material Bevy made from a glTF material: the material's own asset, labelled `<label>/std`.
-fn standard_of(assets: &AssetServer, material: Option<&Handle<bevy::gltf::GltfMaterial>>) -> Handle<StandardMaterial> {
+pub(crate) fn standard_of(
+    assets: &AssetServer,
+    material: Option<&Handle<bevy::gltf::GltfMaterial>>,
+) -> Handle<StandardMaterial> {
     let Some(path) = material.and_then(|material| material.path()) else { return Handle::default() };
     let label = format!("{}/std", path.label().unwrap_or_default());
     assets.load(path.clone().with_label(label))
@@ -743,6 +797,53 @@ fn standard_of(assets: &AssetServer, material: Option<&Handle<bevy::gltf::GltfMa
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn moving_paint_keeps_instances_and_expands_bounds() {
+        let motion = MotionProfile {
+            spatial: [0.3, 0.4],
+            rate: 2.1,
+            amplitude: [0.024, 0.005, 0.016],
+            harmonic: [1.0, 1.4, 0.85],
+        };
+        let look = Look::MovingPainted(Handle::default(), motion.clone());
+        assert!(!look.can_merge());
+        assert!(Look::Still(Handle::default()).can_merge());
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins).init_resource::<Assets<Mesh>>();
+        let mesh = app.world_mut().resource_mut::<Assets<Mesh>>().add(Mesh::from(Cuboid::new(1.0, 1.0, 1.0)));
+        let jobs = VecDeque::from([Job {
+            mesh,
+            look,
+            role: Role::Both,
+            shadows: true,
+            solid: false,
+            merge: false,
+            shadow_distance: None,
+            vertices: 24,
+            transforms: vec![Transform::from_scale(Vec3::splat(0.5))],
+            cursor: 0,
+        }]);
+        let owner = app.world_mut().spawn(TestJobs(jobs)).id();
+        app.world_mut()
+            .run_system_once(
+                |mut commands: Commands,
+                 mut meshes: ResMut<Assets<Mesh>>,
+                 mut nodes: Query<(Entity, &mut TestJobs)>| {
+                    let mut budget = Budget { vertices: MERGE_VERTICES_PER_UPDATE, instances: INSTANCES_PER_UPDATE };
+                    for (entity, mut jobs) in &mut nodes {
+                        place(&mut jobs.0, entity, &mut meshes, &mut commands, &mut budget);
+                    }
+                },
+            )
+            .unwrap();
+        let child = app.world().get::<Children>(owner).unwrap()[0];
+        let bound = app.world().get::<Aabb>(child).unwrap();
+        let radius = Vec3::from_array(motion.amplitude).length() / 0.5;
+        assert!((bound.half_extents.x - (0.5 + radius)).abs() < 1e-6);
+        assert!((bound.half_extents.y - (0.5 + radius)).abs() < 1e-6);
+        assert!((bound.half_extents.z - (0.5 + radius)).abs() < 1e-6);
+    }
 
     #[test]
     fn static_paint_keeps_zero_weight_and_rejects_cloth() {

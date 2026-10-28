@@ -1,0 +1,9 @@
+# Actor metadata shared by world exports and runtime.
+[package]
+name = "hakuba_actor_schema"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde.workspace = true

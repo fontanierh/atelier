@@ -18,7 +18,9 @@ assets/
     glide/                  hanging under the paraglider, and leaning `-forward`, `-back`, `-left` and `-right`
     glide-close/            closing it on landing
   characters/
+    camp-visitor/           a textured camp visitor with idle and practice poses
     nox/                    Nox, the playable character, with every animation fitted to him
+    wanderer/               a villager with authored idle, walk and interaction clips
   equipment/
     glider/                 the paraglider, held in both hands above the head
   plants/                   trees, bushes and grass, each built from its settings alone

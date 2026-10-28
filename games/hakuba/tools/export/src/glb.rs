@@ -164,6 +164,11 @@ impl Glb {
             .with_context(|| format!("no node is named {name}"))
     }
 
+    /// The parsed glTF document, for kind-specific validation.
+    pub fn document(&self) -> &Value {
+        &self.json
+    }
+
     /// Read the actual position values of a named static mesh, in the glTF frame.
     pub fn node_triangles(&self, name: &str) -> Result<Vec<[DVec3; 3]>> {
         let node = &self.json["nodes"][self.node(name)?];

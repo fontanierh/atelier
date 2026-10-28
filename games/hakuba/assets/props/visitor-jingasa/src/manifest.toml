@@ -1,0 +1,6 @@
+# Source attachment geometry and shared atlas identity.
+path = "model.glb"
+sha256 = "e635e58e569e83d92393e982f36ff81b796b6eb200fb58b784fbe9a0d5f0fec5"
+source_glb_sha256 = "48195007bd09733c7c89ca4b47b9689a97ddc08a5cee20a530dea51133edaff6"
+atlas_sha256 = "8669a9d5ac484ee3aac7c4adb9d178c145810e4ed69d0350ad3c89b0bf08a9a7"
+conversion = "Normalized 16-bit vertex colours decoded to float; atlas externalized; original mesh frame retained"

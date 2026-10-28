@@ -21,7 +21,10 @@ hakuba_screens = { path = "crates/screens" }
 hakuba_settings = { path = "crates/settings" }
 hakuba_viewer = { path = "crates/viewer" }
 hakuba_world = { path = "crates/world" }
+hakuba_actor_schema = { path = "schemas/actor" }
+hakuba_dye_schema = { path = "schemas/dye" }
 hakuba_water_schema = { path = "schemas/water" }
+hakuba_paint_schema = { path = "schemas/paint" }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 

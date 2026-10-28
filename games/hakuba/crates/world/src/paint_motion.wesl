@@ -46,8 +46,11 @@ fn vertex(input: Vertex) -> VertexOutput {
     out.uv_b = v.uv_b;
     @if(VERTEX_TANGENTS)
     out.world_tangent = mesh_functions::mesh_tangent_local_to_world(transform, v.tangent, input.instance_index);
-    @if(VERTEX_COLORS)
-    out.color = vec4<f32>(encode(v.color.rgb), 1.0);
+    @if(VERTEX_COLORS) {
+        var colour = v.color.rgb;
+        if paint.haze.z <= 0.5 { colour = encode(colour); }
+        out.color = vec4<f32>(colour, 1.0);
+    }
     @if(VERTEX_OUTPUT_INSTANCE_INDEX)
     out.instance_index = input.instance_index;
     @if(VISIBILITY_RANGE_DITHER)
@@ -77,8 +80,11 @@ fn vertex(input: Vertex) -> VertexOutput {
     out.world_normal = mesh_functions::mesh_normal_local_to_world(v.normal, input.instance_index);
     @if(NORMAL_PREPASS_OR_DEFERRED_PREPASS && VERTEX_TANGENTS)
     out.world_tangent = mesh_functions::mesh_tangent_local_to_world(transform, v.tangent, input.instance_index);
-    @if(VERTEX_COLORS)
-    out.color = vec4<f32>(encode(v.color.rgb), 1.0);
+    @if(VERTEX_COLORS) {
+        var colour = v.color.rgb;
+        if paint.haze.z <= 0.5 { colour = encode(colour); }
+        out.color = vec4<f32>(colour, 1.0);
+    }
     @if(MOTION_VECTOR_PREPASS) {
         let previous = mesh_functions::get_previous_world_from_local(input.instance_index);
         let before = mesh_functions::mesh_position_local_to_world(previous, vec4<f32>(v.position, 1.0));

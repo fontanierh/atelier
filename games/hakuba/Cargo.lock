@@ -3135,6 +3135,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "hakuba_actor_schema"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "hakuba_audio"
 version = "0.1.0"
 dependencies = [
@@ -3152,8 +3159,16 @@ name = "hakuba_characters"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "hakuba_dye_schema",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "hakuba_dye_schema"
+version = "0.1.0"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
@@ -3163,6 +3178,9 @@ dependencies = [
  "anyhow",
  "geo",
  "glam",
+ "hakuba_actor_schema",
+ "hakuba_dye_schema",
+ "hakuba_paint_schema",
  "hakuba_water_schema",
  "hound",
  "image",
@@ -3191,6 +3209,13 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "hakuba_screens",
+]
+
+[[package]]
+name = "hakuba_paint_schema"
+version = "0.1.0"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
@@ -3251,7 +3276,10 @@ name = "hakuba_world"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "fastrand",
+ "hakuba_actor_schema",
  "hakuba_characters",
+ "hakuba_paint_schema",
  "hakuba_screens",
  "hakuba_settings",
  "hakuba_water_schema",

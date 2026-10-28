@@ -34,8 +34,11 @@ fn vertex(input: Vertex) -> VertexOutput {
     out.uv_b = v.uv_b;
     @if(VERTEX_TANGENTS)
     out.world_tangent = mesh_functions::mesh_tangent_local_to_world(transform, v.tangent, input.instance_index);
-    @if(VERTEX_COLORS)
-    out.color = vec4<f32>(encode(v.color.rgb), 1.0);
+    @if(VERTEX_COLORS) {
+        var colour = v.color.rgb;
+        if paint.haze.z <= 0.5 { colour = encode(colour); }
+        out.color = vec4<f32>(colour, 1.0);
+    }
     @if(VERTEX_OUTPUT_INSTANCE_INDEX)
     out.instance_index = input.instance_index;
     @if(VISIBILITY_RANGE_DITHER)
@@ -46,12 +49,18 @@ fn vertex(input: Vertex) -> VertexOutput {
 @fragment
 fn fragment(input: VertexOutput, @builtin(front_facing) is_front: bool) -> FragmentOutput {
     var decoded = input;
-    @if(VERTEX_COLORS)
-    decoded.color = vec4<f32>(decode(input.color.rgb), 1.0);
+    @if(VERTEX_COLORS) {
+        var colour = vec3<f32>(1.0);
+        if paint.haze.z <= 0.5 { colour = decode(input.color.rgb); }
+        decoded.color = vec4<f32>(colour, 1.0);
+    }
     var surface = pbr_input_from_standard_material(decoded, is_front);
     let color = surface.material.base_color.rgb;
     let within = step(paint.lower.xyz, color) * step(color, paint.upper.xyz);
-    let glow = within.x * within.y * within.z;
+    var glow = within.x * within.y * within.z;
+    @if(VERTEX_COLORS) {
+        glow = select(glow, clamp(input.color.r, 0.0, 1.0), paint.haze.z > 0.5);
+    }
     let depth = max(-(view.view_from_world * input.world_position).z, 0.0);
     let haze = 1.0 - exp(-max(depth - paint.haze.x, 0.0) / paint.haze.y);
     surface.material.base_color = vec4<f32>(color * (1.0 - haze), 1.0);

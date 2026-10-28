@@ -135,8 +135,30 @@ fn code(folder: &str) -> Result<Vec<PathBuf>> {
     let root = Path::new(EXPORTER);
     let mut code: Vec<PathBuf> = SHARED_CODE.iter().map(|file| root.join(file)).collect();
     code.extend(files(&root.join(folder))?.into_iter().filter(|file| file.extension().is_some_and(|e| e == "rs")));
+    if folder == "src/model" {
+        code.push(root.join("../../schemas/paint/Cargo.toml"));
+        code.extend(
+            files(&root.join("../../schemas/paint/src"))?
+                .into_iter()
+                .filter(|p| p.extension().is_some_and(|e| e == "rs")),
+        );
+    }
+    if folder == "src/rig" {
+        code.push(root.join("../../schemas/dye/Cargo.toml"));
+        code.extend(
+            files(&root.join("../../schemas/dye/src"))?
+                .into_iter()
+                .filter(|p| p.extension().is_some_and(|e| e == "rs")),
+        );
+    }
     if folder == "src/world" {
-        // Only world metadata uses this shared schema; its edits must invalidate the world export.
+        // Only world metadata uses these schemas; their edits must invalidate the world export.
+        code.push(root.join("../../schemas/actor/Cargo.toml"));
+        code.extend(
+            files(&root.join("../../schemas/actor/src"))?
+                .into_iter()
+                .filter(|p| p.extension().is_some_and(|e| e == "rs")),
+        );
         code.push(root.join("../../schemas/water/Cargo.toml"));
         code.extend(
             files(&root.join("../../schemas/water/src"))?
@@ -423,6 +445,15 @@ mod tests {
     fn shared_code_names_no_kind() {
         let file = Path::new(EXPORTER).join("src/glb.rs");
         assert!(kinds_named(&file).is_empty(), "{} uses a kind's code", file.display());
+    }
+
+    #[test]
+    fn paint_schema_is_an_input_of_models_only() {
+        let schema = Path::new(EXPORTER).join("../../schemas/paint/src/lib.rs");
+        assert!(code("src/model").unwrap().contains(&schema));
+        for kind in ["src/world", "src/texture", "src/rig", "src/sound"] {
+            assert!(!code(kind).unwrap().contains(&schema));
+        }
     }
 
     #[test]

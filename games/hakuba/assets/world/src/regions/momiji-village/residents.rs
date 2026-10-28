@@ -14,6 +14,9 @@ pub fn residents() -> Vec<Actor> {
             phase_s: 0.0,
             colour: [0.055, 0.1, 0.18],
             cloth: [1.01, 1.25, 0.30, 0.4],
+            attachments: Vec::new(),
+            scan: None,
+            practice: None,
             route: None,
         },
         Actor {
@@ -26,6 +29,9 @@ pub fn residents() -> Vec<Actor> {
             phase_s: 0.4,
             colour: [0.34, 0.16, 0.045],
             cloth: [1.01, 1.25, 0.30, 0.4],
+            attachments: Vec::new(),
+            scan: None,
+            practice: None,
             route: None,
         },
         Actor {
@@ -38,6 +44,9 @@ pub fn residents() -> Vec<Actor> {
             phase_s: 0.0,
             colour: [0.16, 0.075, 0.11],
             cloth: [1.01, 1.25, 0.30, 0.4],
+            attachments: Vec::new(),
+            scan: None,
+            practice: None,
             route: Some(Route {
                 destination: [84.59619407771255, 96.6665476220844, 30.545],
                 half_cycle_s: 20.0,

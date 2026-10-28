@@ -17,7 +17,7 @@ ground_texture = "ground"
 ground_texture_m = 24.0
 spawn_m = [-255.26, -99.51]
 spawn_bearing_deg = 94.7
-inputs_sha256 = "86332193fee887ed190910a1ea9ce046a8eac7e48379030856f655aaace27523"
+inputs_sha256 = "c795ca63039546583e816c68396f1bbefb33a8f05de296b194bcd31c6d088c3f"
 
 # Model-frame lower geometry considered for source contact; the reference records source gaps.
 [[grounding]]
@@ -48,3 +48,8 @@ band_m = 0.1
 [[grounding]]
 models = ["props/woodland-lake-cabin", "props/woodland-lake-plants-66-23", "props/woodland-lake-plants-66-24", "props/woodland-lake-plants-67-23", "props/woodland-lake-plants-67-24", "props/woodland-lake-shore-66-24", "props/woodland-lake-shore-67-23", "props/woodland-lake-shore-67-24", "props/woodland-lake-trail-67-23", "props/woodland-lake-trail-67-24", "props/woodland-lake-trail-68-23", "props/woodland-lake-trail-68-24", "props/woodland-lake-trail-69-24", "props/woodland-lake-water-66-24", "props/woodland-lake-water-67-23", "props/woodland-lake-water-67-24", "props/woodland-mega-ramp", "props/woodland-mega-trail-69-24", "props/woodland-mega-trail-70-23", "props/woodland-mega-trail-70-24", "props/woodland-mega-trail-71-23", "props/woodland-mega-trail-71-24", "props/woodland-mega-trim"]
 band_m = 0.0
+
+# Camp reference gaps are measured against source terrain; original visibility-trace owners remain unverified.
+[[grounding]]
+models = ["props/camp-firepit", "props/camp-jinmaku", "props/camp-weapon-rack", "props/camp-bales"]
+band_m = 0.1

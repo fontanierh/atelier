@@ -15,11 +15,12 @@ use crate::glb::{Glb, y_up};
 pub(super) fn export(
     source: &str,
     solid: bool,
+    mountable: bool,
     textures: &[String],
     anchors: &[[f64; 3]],
     output: &Path,
 ) -> Result<()> {
-    export_inner(source, solid, textures, anchors, None, output)
+    export_inner(source, solid, mountable, textures, anchors, None, output)
 }
 
 pub(super) fn export_foliage(
@@ -30,7 +31,15 @@ pub(super) fn export_foliage(
     shadow_distance: Option<f32>,
     output: &Path,
 ) -> Result<()> {
-    export_inner(source, false, textures, &[], Some(FoliageExport { profile, surface_height, shadow_distance }), output)
+    export_inner(
+        source,
+        false,
+        false,
+        textures,
+        &[],
+        Some(FoliageExport { profile, surface_height, shadow_distance }),
+        output,
+    )
 }
 
 struct FoliageExport {
@@ -42,6 +51,7 @@ struct FoliageExport {
 fn export_inner(
     source: &str,
     solid: bool,
+    mountable: bool,
     textures: &[String],
     anchors: &[[f64; 3]],
     profile: Option<FoliageExport>,
@@ -78,7 +88,8 @@ fn export_inner(
         .collect::<Result<_>>()?;
     let foliage = profile.as_ref().map(|_| allowed.as_slice());
     let surface_height = profile.as_ref().and_then(|p| p.surface_height);
-    let (value, collision) = validate_kind(&bytes, foliage, surface_height, &allowed)?;
+    let (value, collision) = validate_kind(&bytes, foliage, surface_height, &allowed, mountable)?;
+    ensure!(!mountable || !collision, "a mountable model cannot have scenery collision");
     ensure!(!collision || solid, "a collision mesh requires solid = true");
     let mut glb = Glb::read(&file)?;
     let full = glb.node("full")?;
@@ -149,12 +160,12 @@ pub(super) fn shadow_alpha_textures(value: &Value, node: usize) -> Result<Value>
 /// Reads the restricted static GLB layout accepted by source props, and checks actual bytes, not just bounds metadata.
 #[cfg(test)]
 fn validate(bytes: &[u8]) -> Result<(Value, bool)> {
-    validate_kind(bytes, None, None, &[])
+    validate_kind(bytes, None, None, &[], false)
 }
 
 #[cfg(test)]
 fn validate_with_textures(bytes: &[u8], allowed: &[String]) -> Result<(Value, bool)> {
-    validate_kind(bytes, None, None, allowed)
+    validate_kind(bytes, None, None, allowed, false)
 }
 
 fn validate_kind(
@@ -162,6 +173,7 @@ fn validate_kind(
     foliage: Option<&[String]>,
     surface_height: Option<f32>,
     allowed: &[String],
+    mountable: bool,
 ) -> Result<(Value, bool)> {
     let u32_at = |offset: usize| -> Result<usize> {
         let b = bytes.get(offset..offset + 4).context("truncated source GLB")?;
@@ -241,12 +253,20 @@ fn validate_kind(
         ensure!(node.get("extras").is_none_or(Value::is_object), "source extras must be an object");
         let name = node["name"].as_str().context("source root needs a name")?;
         let vertex_paint = name == "full" && node["extras"].get("vertex_paint").is_some();
+        let mask = if vertex_paint {
+            match node["extras"]["vertex_paint"].get("texture_mask") {
+                None => false,
+                Some(value) => value.as_bool().context("texture mask must be a boolean")?,
+            }
+        } else {
+            false
+        };
         let motion = node["extras"].get("vertex_motion");
         if let Some(motion) = motion {
             ensure!(vertex_paint && valid_motion(motion), "painted motion needs valid parameters on the full node");
         }
         if vertex_paint {
-            ensure!(node["extras"]["vertex_paint"].is_object(), "vertex paint extras must be an object");
+            ensure!(valid_paint(&node["extras"]["vertex_paint"]), "invalid vertex paint profile");
         }
         ensure!(
             (name == "full" || (foliage.is_none() && name == "collision") || (foliage.is_some() && name == "middle"))
@@ -292,7 +312,21 @@ fn validate_kind(
                     }
                 }
                 if vertex_paint {
-                    ensure!(mode == "OPAQUE", "static vertex paint needs an opaque material");
+                    ensure!(mode == "OPAQUE", "vertex paint needs an opaque material");
+                    let textured = materials.unwrap()[index]["pbrMetallicRoughness"].get("baseColorTexture").is_some();
+                    ensure!(textured == mask, "vertex paint texture must match its mask profile");
+                    let material = &materials.unwrap()[index];
+                    let factor = material["pbrMetallicRoughness"].get("baseColorFactor");
+                    ensure!(
+                        factor.is_none_or(|v| v
+                            .as_array()
+                            .is_some_and(|a| a.len() == 4 && a.iter().all(|c| c.as_f64() == Some(1.0)))),
+                        "vertex paint requires white base color"
+                    );
+                    ensure!(
+                        material["extensions"].get("KHR_materials_unlit").is_none(),
+                        "vertex paint requires a lit material"
+                    );
                 }
             } else {
                 ensure!(!vertex_paint && foliage.is_none(), "source profile needs a material");
@@ -303,7 +337,11 @@ fn validate_kind(
                     materials.unwrap()[index as usize]["pbrMetallicRoughness"].get("baseColorTexture").is_some();
                 ensure!(!textured || attributes.contains_key("TEXCOORD_0"), "textured source needs UV0");
             }
-            ensure!(!vertex_paint || attributes.contains_key("COLOR_0"), "vertex paint requires source colors");
+            ensure!(
+                !vertex_paint || (attributes.contains_key("COLOR_0") && attributes.contains_key("NORMAL")),
+                "vertex paint requires source normals and colors"
+            );
+            ensure!(!mask || attributes.contains_key("TEXCOORD_0"), "textured vertex paint requires UV0");
             if foliage.is_some() {
                 ensure!(
                     ["POSITION", "NORMAL", "TEXCOORD_0", "COLOR_0"].iter().all(|key| attributes.contains_key(*key)),
@@ -349,11 +387,14 @@ fn validate_kind(
                         kind.1 == "VEC4"
                             && data.chunks_exact(16).all(|v| {
                                 let weight = f32::from_le_bytes(v[12..16].try_into().unwrap());
-                                weight.is_finite()
+                                v[..12]
+                                    .chunks_exact(4)
+                                    .all(|c| (0.0..=1.0).contains(&f32::from_le_bytes(c.try_into().unwrap())))
+                                    && weight.is_finite()
                                     && (0.0..=1.0).contains(&weight)
                                     && (motion.is_some() || weight == 0.0)
                             }),
-                        "vertex paint needs valid alpha weights and an explicit motion profile"
+                        "vertex paint needs valid RGB, alpha weights and an explicit motion profile"
                     );
                 }
             }
@@ -382,7 +423,7 @@ fn validate_kind(
     if let Some(height) = surface_height {
         ensure!(foliage.is_some() && height.is_finite() && height >= 0.0, "invalid surface height");
         ensure!(lowest == f64::from(height), "source surface does not match its declared height");
-    } else {
+    } else if !mountable {
         ensure!(lowest < 0.0, "full mesh must reach below its foot");
     }
     ensure!(seen_meshes.len() == meshes.len(), "source cannot contain unused meshes");
@@ -390,16 +431,12 @@ fn validate_kind(
     Ok((value, collision))
 }
 
+fn valid_paint(value: &Value) -> bool {
+    serde_json::from_value::<hakuba_paint_schema::Profile>(value.clone()).is_ok_and(|profile| profile.valid())
+}
+
 fn valid_motion(value: &Value) -> bool {
-    let Some(object) = value.as_object() else { return false };
-    if object.len() != 4 {
-        return false;
-    }
-    let finite = |v: &Value| v.as_f64().is_some_and(|x| x.is_finite() && x.abs() <= 10_000.0);
-    let array = |name: &str, size: usize| {
-        object.get(name).and_then(Value::as_array).is_some_and(|v| v.len() == size && v.iter().all(finite))
-    };
-    object.get("rate").is_some_and(finite) && array("spatial", 2) && array("amplitude", 3) && array("harmonic", 3)
+    serde_json::from_value::<hakuba_paint_schema::MotionProfile>(value.clone()).is_ok_and(|profile| profile.valid())
 }
 
 fn accessor<'a>(value: &'a Value, binary: &'a [u8], index: usize) -> Result<(&'a [u8], usize, (u64, &'a str))> {
@@ -479,12 +516,12 @@ mod tests {
         mesh.material = glb.add_material(&Material {
             name: "paint",
             texture: None,
-            colour: [0.2, 0.3, 0.4],
+            colour: [1.0, 1.0, 1.0],
             cut_out: false,
             two_sided: false,
         });
         let node = glb.add_mesh("full", &[&mesh]);
-        glb.set_extras(node, json!({"vertex_paint": {"fill": 0.06}}));
+        glb.set_extras(node, json!({"vertex_paint": {"fill": 0.06, "glow": 0.8, "glow_min": [0.8, 0.35, 0.0], "glow_max": [1.0, 0.72, 0.3], "haze_start_m": 30.0, "haze_length_m": 9000.0, "haze_colour": [0.0932, 0.2301, 0.5328]}}));
         if collision {
             glb.add_mesh("collision", &[&mesh]);
         }
@@ -495,6 +532,28 @@ mod tests {
         let bytes = fs::read(&path).unwrap();
         fs::remove_file(path).unwrap();
         bytes
+    }
+
+    #[test]
+    fn mountable_source_keeps_an_above_origin_mesh_while_scenery_rejects_it() {
+        let mut glb = Glb::from_json(json!({"asset": {"version": "2.0"}}));
+        let mut mesh = Mesh::default();
+        cuboid(&mut mesh, DVec3::splat(2.0), DVec3::splat(1.0));
+        mesh.material = glb.add_material(&Material {
+            name: "mount",
+            texture: None,
+            colour: [1.0; 3],
+            cut_out: false,
+            two_sided: false,
+        });
+        glb.add_mesh("full", &[&mesh]);
+        let path = std::env::temp_dir().join(format!("hakuba-mount-fixture-{}.glb", std::process::id()));
+        glb.write(&path).unwrap();
+        let bytes = fs::read(&path).unwrap();
+        fs::remove_file(path).unwrap();
+        let error = validate_kind(&bytes, None, None, &[], false).unwrap_err();
+        assert!(error.to_string().contains("reach below its foot"), "unexpected rejection: {error:#}");
+        validate_kind(&bytes, None, None, &[], true).expect("above-origin geometry is valid when mounted");
     }
 
     #[test]
@@ -513,8 +572,8 @@ mod tests {
         let bytes = fs::read(&path).unwrap();
         fs::remove_file(path).unwrap();
         let allowed = vec!["../../textures/a/a.ktx2".to_string()];
-        assert!(validate_kind(&bytes, Some(&allowed), None, &allowed).is_ok());
-        assert!(validate_kind(&bytes, Some(&[]), None, &[]).is_err());
+        assert!(validate_kind(&bytes, Some(&allowed), None, &allowed, false).is_ok());
+        assert!(validate_kind(&bytes, Some(&[]), None, &[], false).is_err());
         assert!(validate(&bytes).is_err());
     }
 
@@ -534,9 +593,9 @@ mod tests {
         let bytes = fs::read(&path).unwrap();
         fs::remove_file(path).unwrap();
         let allowed = vec!["../../textures/a/a.ktx2".to_string()];
-        assert!(validate_kind(&bytes, Some(&allowed), None, &allowed).is_err());
-        assert!(validate_kind(&bytes, Some(&allowed), Some(0.02), &allowed).is_ok());
-        assert!(validate_kind(&bytes, Some(&allowed), Some(0.03), &allowed).is_err());
+        assert!(validate_kind(&bytes, Some(&allowed), None, &allowed, false).is_err());
+        assert!(validate_kind(&bytes, Some(&allowed), Some(0.02), &allowed, false).is_ok());
+        assert!(validate_kind(&bytes, Some(&allowed), Some(0.03), &allowed, false).is_err());
     }
 
     #[test]
@@ -546,8 +605,8 @@ mod tests {
         let input = fixture(true);
         fs::write(root.join("src/model.glb"), &input).unwrap();
         let output = root.join("out.glb");
-        assert!(export("src/model.glb", false, &[], &[], &output).is_err());
-        export("src/model.glb", true, &[], &[], &output).unwrap();
+        assert!(export("src/model.glb", false, false, &[], &[], &output).is_err());
+        export("src/model.glb", true, false, &[], &[], &output).unwrap();
         let result = Glb::read(&output).unwrap();
         assert_eq!(result.extras("full").unwrap()["vertex_paint"]["fill"], 0.06);
         assert!(result.extras("full").unwrap().get("solid").is_none());
@@ -594,14 +653,59 @@ mod tests {
         // An untextured source isolates the normal model-frame to glTF-frame anchor conversion.
         fs::write(&input, fixture(false)).unwrap();
         let output = root.join("out.glb");
-        export("src/model.glb", false, &[], &[[1.0, 2.0, 3.0]], &output).unwrap();
+        export("src/model.glb", false, false, &[], &[[1.0, 2.0, 3.0]], &output).unwrap();
         let result = fs::read(&output).unwrap();
         let len = u32::from_le_bytes(result[12..16].try_into().unwrap()) as usize;
         let json: Value = serde_json::from_slice(&result[20..20 + len]).unwrap();
         let anchor = json["nodes"].as_array().unwrap().iter().find(|n| n["name"] == "anchor 0").unwrap();
         assert_eq!(anchor["translation"], json!([1.0, 3.0, -2.0]));
-        assert!(export("src/model.glb", false, &[], &[[f64::MAX, 0.0, 0.0]], &output).is_err());
+        assert!(export("src/model.glb", false, false, &[], &[[f64::MAX, 0.0, 0.0]], &output).is_err());
         fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn painted_source_requires_normals_and_bounded_rgb() {
+        let path = std::env::temp_dir().join(format!("hakuba-paint-validation-{}.glb", std::process::id()));
+        let mut mesh = Mesh::default();
+        cuboid(&mut mesh, DVec3::ZERO, DVec3::splat(2.0));
+        mesh.colours = vec![[0.2, 0.3, 0.4, 0.0]; mesh.positions.len()];
+        let make = |mesh: &Mesh| {
+            let mut glb = Glb::from_json(json!({"asset": {"version": "2.0"}}));
+            let mut mesh = mesh.clone();
+            mesh.material = glb.add_material(&Material {
+                name: "paint",
+                texture: None,
+                colour: [1.0, 1.0, 1.0],
+                cut_out: false,
+                two_sided: false,
+            });
+            let node = glb.add_mesh("full", &[&mesh]);
+            glb.set_extras(node, json!({"vertex_paint": {"fill": 0.06, "glow": 0.8, "glow_min": [0.8, 0.35, 0.0], "glow_max": [1.0, 0.72, 0.3], "haze_start_m": 30.0, "haze_length_m": 9000.0, "haze_colour": [0.0932, 0.2301, 0.5328]}}));
+            glb.write(&path).unwrap();
+            validate(&fs::read(&path).unwrap()).is_ok()
+        };
+        assert!(make(&mesh));
+        let original = fs::read(&path).unwrap();
+        let json_len = u32::from_le_bytes(original[12..16].try_into().unwrap()) as usize;
+        let mut doc: Value = serde_json::from_slice(&original[20..20 + json_len]).unwrap();
+        doc["meshes"][0]["primitives"][0]["attributes"].as_object_mut().unwrap().remove("NORMAL");
+        let mut json = serde_json::to_vec(&doc).unwrap();
+        while !json.len().is_multiple_of(4) {
+            json.push(b' ');
+        }
+        let rest = &original[20 + json_len..];
+        let mut missing = original[..12].to_vec();
+        missing[8..12].copy_from_slice(&((12 + 8 + json.len() + rest.len()) as u32).to_le_bytes());
+        missing.extend_from_slice(&(json.len() as u32).to_le_bytes());
+        missing.extend_from_slice(b"JSON");
+        missing.extend_from_slice(&json);
+        missing.extend_from_slice(rest);
+        assert!(validate(&missing).is_err());
+        mesh.colours[0][0] = 1.01;
+        assert!(!make(&mesh));
+        mesh.colours[0][0] = -0.01;
+        assert!(!make(&mesh));
+        fs::remove_file(path).unwrap();
     }
 
     #[test]
@@ -631,21 +735,49 @@ mod tests {
         mesh.material = glb.add_material(&Material {
             name: "paint",
             texture: None,
-            colour: [1.0; 3],
+            colour: [1.0, 1.0, 1.0],
             cut_out: false,
             two_sided: false,
         });
         let node = glb.add_mesh("full", &[&mesh]);
         let profile = json!({"spatial": [0.2, 0.3], "rate": 1.7, "amplitude": [0.022, 0.004, 0.013], "harmonic": [1.0, 1.3, 0.81]});
-        glb.set_extras(node, json!({"vertex_paint": {"fill": 0.06}, "vertex_motion": profile}));
+        glb.set_extras(node, json!({"vertex_paint": {"fill": 0.06, "glow": 0.8, "glow_min": [0.8, 0.35, 0.0], "glow_max": [1.0, 0.72, 0.3], "haze_start_m": 30.0, "haze_length_m": 9000.0, "haze_colour": [0.0932, 0.2301, 0.5328]}, "vertex_motion": profile}));
         static NEXT_MOTION: AtomicUsize = AtomicUsize::new(0);
         let id = NEXT_MOTION.fetch_add(1, Ordering::Relaxed);
         let path = std::env::temp_dir().join(format!("hakuba-source-motion-{}-{id}.glb", std::process::id()));
         glb.write(&path).unwrap();
         assert!(validate(&fs::read(&path).unwrap()).is_ok());
-        glb.set_extras(node, json!({"vertex_paint": {"fill": 0.06}, "vertex_motion": {"rate": 1.7}}));
+        glb.set_extras(node, json!({"vertex_paint": {"fill": 0.06, "glow": 0.8, "glow_min": [0.8, 0.35, 0.0], "glow_max": [1.0, 0.72, 0.3], "haze_start_m": 30.0, "haze_length_m": 9000.0, "haze_colour": [0.0932, 0.2301, 0.5328]}, "vertex_motion": {"rate": 1.7}}));
         glb.write(&path).unwrap();
         assert!(validate(&fs::read(&path).unwrap()).is_err());
+        fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn textured_paint_requires_declared_texture_and_mask() {
+        let mut glb = Glb::from_json(json!({"asset": {"version": "2.0"}}));
+        let mut mesh = Mesh::default();
+        cuboid(&mut mesh, DVec3::ZERO, DVec3::splat(2.0));
+        mesh.colours = vec![[0.0, 1.0, 1.0, 0.0]; mesh.positions.len()];
+        mesh.material = glb.add_material(&Material::textured("surface", "../../textures/a/a.ktx2"));
+        let node = glb.add_mesh("full", &[&mesh]);
+        let path = std::env::temp_dir().join(format!("hakuba-textured-paint-{}.glb", std::process::id()));
+        let allowed = vec!["../../textures/a/a.ktx2".to_string()];
+        glb.set_extras(node, json!({"vertex_paint": {"texture_mask": true, "fill": 0.06, "glow": 0.95, "glow_min": [0.0, 0.0, 0.0], "glow_max": [1.0, 1.0, 1.0], "haze_start_m": 30.0, "haze_length_m": 9000.0, "haze_colour": [0.1, 0.2, 0.3]}}));
+        glb.write(&path).unwrap();
+        assert!(validate_with_textures(&fs::read(&path).unwrap(), &allowed).is_ok());
+        glb.set_extras(node, json!({"vertex_paint": {"texture_mask": false, "fill": 0.06, "glow": 0.95, "glow_min": [0.0, 0.0, 0.0], "glow_max": [1.0, 1.0, 1.0], "haze_start_m": 30.0, "haze_length_m": 9000.0, "haze_colour": [0.1, 0.2, 0.3]}}));
+        glb.write(&path).unwrap();
+        assert!(validate_with_textures(&fs::read(&path).unwrap(), &allowed).is_err());
+        glb.set_extras(node, json!({"vertex_paint": {"texture_mask": true}}));
+        glb.write(&path).unwrap();
+        assert!(validate_with_textures(&fs::read(&path).unwrap(), &allowed).is_err());
+        glb.set_extras(node, json!({"vertex_paint": {"texture_mask": true, "reflectance": 2.0, "fill": 0.06, "glow": 0.95, "glow_min": [0.0, 0.0, 0.0], "glow_max": [1.0, 1.0, 1.0], "haze_start_m": 30.0, "haze_length_m": 9000.0, "haze_colour": [0.1, 0.2, 0.3]}}));
+        glb.write(&path).unwrap();
+        assert!(validate_with_textures(&fs::read(&path).unwrap(), &allowed).is_err());
+        glb.set_extras(node, json!({"vertex_paint": {"texture_mask": "yes"}}));
+        glb.write(&path).unwrap();
+        assert!(validate_with_textures(&fs::read(&path).unwrap(), &allowed).is_err());
         fs::remove_file(path).unwrap();
     }
 
@@ -668,9 +800,9 @@ mod tests {
         assert!(validate(&bytes).is_err());
         let root = std::env::temp_dir().join(format!("hakuba-source-path-{}", std::process::id()));
         fs::create_dir_all(root.join("src")).unwrap();
-        assert!(export("src/../model.glb", true, &[], &[], &root.join("out.glb")).is_err());
+        assert!(export("src/../model.glb", true, false, &[], &[], &root.join("out.glb")).is_err());
         for path in ["src/.hidden.glb", "src/target/model.glb", "src/.hidden/model.glb"] {
-            let error = export(path, true, &[], &[], &root.join("out.glb")).unwrap_err();
+            let error = export(path, true, false, &[], &[], &root.join("out.glb")).unwrap_err();
             assert!(error.to_string().contains("checksum"));
         }
         fs::remove_dir_all(root).unwrap();
@@ -720,7 +852,7 @@ mod tests {
         fs::create_dir_all(root.join("outside")).unwrap();
         fs::write(root.join("outside/model.glb"), fixture(false)).unwrap();
         symlink(root.join("outside"), root.join("asset/src")).unwrap();
-        assert!(export("src/model.glb", true, &[], &[], &root.join("asset/out.glb")).is_err());
+        assert!(export("src/model.glb", true, false, &[], &[], &root.join("asset/out.glb")).is_err());
         fs::remove_dir_all(root).unwrap();
     }
 }

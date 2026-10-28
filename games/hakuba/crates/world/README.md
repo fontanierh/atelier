@@ -21,7 +21,7 @@ src/
                  per 16 m square when they cast shadows or 32 m otherwise; preparation is spread across updates.
                  A tree or bush in a full tile shows its full version and casts its middle version's shadow;
                  model exports can mark their visible meshes solid
-  vertex_paint.rs an opaque static vertex-colour material with asset-owned fill, glow bounds and haze
+  vertex_paint.rs opaque painted materials with asset-owned colour or texture, glow and haze
   vertex_paint.wesl its colour, emission and aerial-perspective shaders
   wind.rs        sways leaves and grass in the wind, by how far the export says each vertex sways
   wind.wesl      its vertex shaders, which also lean leaves and blades away from what pushes plants aside
@@ -31,11 +31,11 @@ src/
   pause.rs       the pause screen over the world, with the settings
 ```
 
-A static vertex-painted model may put a `vertex_paint` object in its `full` node extras. Its `fill`, `glow`,
+A vertex-painted model may put a `vertex_paint` object in its `full` node extras. Its `fill`, `glow`,
 `glow_min`, `glow_max`, `haze_start_m`, `haze_length_m` and `haze_colour` are its authored material values.
-Its untextured white material is opaque, and its linear RGBA vertex colours have zero alpha: alpha is reserved for
-motion, not transparency. The world reports nonzero weights and skinned or morphed meshes until that motion is
-supported. The profile uses its own depth haze, so it does not also receive the camera's distance fog.
+Its opaque material is white. With `texture_mask`, the named base texture supplies colour and vertex red selects
+the glow; otherwise linear vertex RGB supplies colour. Alpha is a motion weight, not transparency: nonzero weights
+require a `vertex_motion` profile. The world reports unsupported skinned or morphed meshes. The profile uses its own depth haze, so it does not also receive the camera's distance fog.
 
 A tile node may instead carry `surface_paint` with `haze_start_m`, `haze_length_m` and `haze_colour`. Its static
 mesh uses positions, normals and UV0, with no vertex colours, and its opaque material supplies the texture and tint.

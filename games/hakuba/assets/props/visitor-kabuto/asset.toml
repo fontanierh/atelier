@@ -1,0 +1,6 @@
+# Source-painted attachment in its original local frame.
+kind = "prop"
+source = "src/model.glb"
+textures = ["camp-atlas"]
+mountable = true
+inputs_sha256 = "ab532840aa96d0e7483f28e01269060364aa9546fbd717b5d0dae2cd03bc9989"

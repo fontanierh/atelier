@@ -21,6 +21,9 @@ pub struct Settings {
     /// An optional embedded static model under this asset's src folder.
     #[serde(default)]
     source: Option<String>,
+    /// A source model whose origin is an attachment frame rather than a ground contact.
+    #[serde(default)]
+    mountable: bool,
     /// Texture assets referenced by the source model.
     #[serde(default)]
     textures: Vec<String>,
@@ -139,7 +142,20 @@ pub fn export(settings: &Settings, output: &Path) -> Result<()> {
         {
             bail!("a source model cannot also specify generated geometry or materials");
         }
-        return super::source::export(source, settings.solid, &settings.textures, &settings.anchors, output);
+        if settings.mountable && settings.solid {
+            bail!("a mountable model cannot have scenery collision");
+        }
+        return super::source::export(
+            source,
+            settings.solid,
+            settings.mountable,
+            &settings.textures,
+            &settings.anchors,
+            output,
+        );
+    }
+    if settings.mountable {
+        bail!("mountable models require a source");
     }
     if !settings.textures.is_empty() {
         bail!("named textures require a source model");
