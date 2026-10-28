@@ -338,3 +338,52 @@ def test_unwitnessed_service_binding_is_rechecked_after_censuses(unwitnessed_cas
     with pytest.raises(wire.CapacityError,match='service identities changed'):
         recover(unwitnessed_case,unwitnessed=True,service=service)
     assert calls == 2
+
+
+@pytest.mark.parametrize('bad', [None,'parent','path','owner','writable','sip','signature','timeout','stat-error'])
+def test_unwitnessed_indexer_is_exact_and_cryptographically_verified(monkeypatch,bad):
+    from types import SimpleNamespace
+    row=dict(parent=1,executable=abandon.SYSTEM_INDEXER)
+    if bad=='parent':row['parent']=2
+    if bad=='path':row['executable']='/usr/bin/true'
+    info=SimpleNamespace(st_uid=501 if bad=='owner' else 0,
+                         st_mode=0o777 if bad=='writable' else 0o755,
+                         st_flags=0 if bad=='sip' else 0x80000)
+    def stat():
+        if bad=='stat-error':raise OSError('unavailable')
+        return info
+    monkeypatch.setattr(abandon,'Path',lambda path:SimpleNamespace(stat=stat))
+    def verify(command,**kwargs):
+        assert command==['/usr/bin/codesign','--verify','-R=anchor apple',abandon.SYSTEM_INDEXER]
+        if bad=='timeout':raise abandon.subprocess.TimeoutExpired(command,.5)
+        return SimpleNamespace(returncode=1 if bad=='signature' else 0)
+    monkeypatch.setattr(abandon.subprocess,'run',verify)
+    assert abandon.unwitnessed_system_indexer(row) is (bad is None)
+
+
+def test_indexer_exception_is_only_explicit_unwitnessed_recovery(unwitnessed_case,monkeypatch):
+    record,evidence,rows=unwitnessed_case
+    rows[45]=dict(pid=45,started=120,parent=1,executable=abandon.SYSTEM_INDEXER)
+    monkeypatch.setattr(abandon,'unwitnessed_system_indexer',lambda row:row['pid']==45)
+    with pytest.raises(wire.CapacityError):abandon.validate_snapshot(rows,record,set())
+    with pytest.raises(wire.CapacityError):abandon.validate_snapshot(rows,record,set(),completed=True)
+    witness=recover(unwitnessed_case,unwitnessed=True)
+    assert len(witness['system_indexer_exemptions'])==2
+    assert witness['root_exit_observed'] is False and witness['output_certified'] is False
+    assert all(row['pid']==45 for row in witness['system_indexer_exemptions'])
+    record['roster'].append([45,120])
+    with pytest.raises(wire.CapacityError):recover(unwitnessed_case,unwitnessed=True)
+
+
+def test_indexer_signature_failure_in_second_census_refuses(unwitnessed_case,monkeypatch):
+    unwitnessed_case[2][45]=dict(pid=45,started=120,parent=1,executable=abandon.SYSTEM_INDEXER)
+    calls=0
+    def verified(row):
+        nonlocal calls
+        if row['pid']!=45:return False
+        calls+=1
+        return calls==1
+    monkeypatch.setattr(abandon,'unwitnessed_system_indexer',verified)
+    with pytest.raises(wire.CapacityError,match='Unclassified'):
+        recover(unwitnessed_case,unwitnessed=True)
+    assert calls==2

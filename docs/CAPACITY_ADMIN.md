@@ -173,7 +173,12 @@ administrative fields above, exact `guards` bindings, `report_sha256` for both o
 and `acknowledge_missing_root_exit: true`. It requires healthy compatibility, no other charged
 work, strictly absent root/controller/guards/all retained PID/start identities, two complete
 same-user kernel censuses and unchanged reports. It uses the stricter interrupted-compile census:
-no unavailable executable paths or completed-job XPC exception. Each explicit launchd service
+no unavailable executable paths or completed-job XPC exception. Its only additional system-service
+exception is the exact Spotlight knowledge indexer executable, with PPID 1, root ownership, no
+group/other write permission, SIP protection and a verified Apple-anchor signature. Both kernel
+observations must pass validation; the witness records these exclusions separately. This does not
+exempt arbitrary Apple processes, command-line tools or retained identities.
+Each explicit launchd service
 exemption is revalidated after the censuses. Live build/render/compiler work, recent unexplained
 orphans, incomplete observations and query errors refuse. Finish independent native work and close
 unclassified remote login processes before recovery; never exempt them merely to force admission.
