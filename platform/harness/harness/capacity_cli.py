@@ -3,7 +3,7 @@
 
 def configure(sub):
     p = sub.add_parser('capacity', help='inspect capacity or run the supervised admission broker')
-    p.add_argument('action', choices=['plan', 'history', 'observe-cpu', 'shadow', 'probe', 'serve', 'status', 'reconcile', 'abandon-interrupted', 'abandon-completed',
+    p.add_argument('action', choices=['plan', 'history', 'observe-cpu', 'shadow', 'probe', 'serve', 'status', 'reconcile', 'abandon-interrupted', 'abandon-completed', 'abandon-unwitnessed',
                                     'supervise', 'prepare-cutover', 'activate-cutover', 'migrate-volume-seal', 'promote-prior-boot'])
     p.add_argument('path', help='snapshot, guard directory, experiment database, broker config, or status socket')
     p.add_argument('--state', help='explicit absolute simulation database path (shadow only)')
@@ -17,15 +17,16 @@ def configure(sub):
 
 
 def main(args):
-    if args.action in ('abandon-interrupted', 'abandon-completed'):
+    if args.action in ('abandon-interrupted', 'abandon-completed', 'abandon-unwitnessed'):
         if not args.administrative_evidence or any(v is not None for v in
                 (args.state, args.request_id, args.preserved_terminal, args.output, args.seconds, args.interval)):
             raise SystemExit(f'{args.action} requires only --administrative-evidence and the installed socket')
         import json
         from atelier.harness import capacity_protocol as wire
-        from atelier.harness.capacity_client import abandon_interrupted, abandon_completed
+        from atelier.harness.capacity_client import abandon_interrupted, abandon_completed, abandon_unwitnessed
         evidence = wire.decode(wire.private_file(args.administrative_evidence, limit=wire.MAX_FRAME))
-        action = abandon_completed if args.action == 'abandon-completed' else abandon_interrupted
+        action = {'abandon-interrupted': abandon_interrupted, 'abandon-completed': abandon_completed,
+                  'abandon-unwitnessed': abandon_unwitnessed}[args.action]
         print(json.dumps(action(args.path, evidence), indent=2))
         return 0
     if args.administrative_evidence is not None:

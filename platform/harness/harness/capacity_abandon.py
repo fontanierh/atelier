@@ -153,12 +153,15 @@ def validate_snapshot(rows, record, services, *, completed=False):
             raise wire.CapacityError(f'Unclassified process {row["pid"]} born after the workload prevents administrative release')
 
 
-def recover(record, evidence, *, principal, boot, epoch, scan=None, missing=None, service=None, completed=False):
+def recover(record, evidence, *, principal, boot, epoch, scan=None, missing=None, service=None, completed=False, unwitnessed=False):
     """@cc [owner:fontanierh,label:safety] administrative-interrupted-compile-release
     The default action MAY abandon only an uncertain exclusive compile. The separate completed-job
     action MAY abandon a nonexclusive job only with its exact bound normal empty terminal receipt,
-    monitor bindings and original report hashes. Both MUST require a positive root exit, absent
-    controller/guards/retained identities and fresh
+    monitor bindings and original report hashes. Both MUST require a positive root exit. Only the
+    separate unwitnessed-compile action MAY release without that exit, requiring explicit missing-exit
+    acknowledgement and exact monitor/report fences for an uncertain exclusive compile. It MUST
+    preserve the missing exit, reject combined completed/unwitnessed modes, and record that no root
+    exit was observed. All actions MUST require absent root/controller/guards/retained identities and fresh
     complete same-user censuses. Unknown or live workload identities MUST refuse. A recent
     orphan MUST refuse unless it is an exact independently reviewed live launchd service or
     specialized OS worker. Only completed-job recovery MAY additionally exclude the exact
@@ -169,10 +172,13 @@ def recover(record, evidence, *, principal, boot, epoch, scan=None, missing=None
     Normal close/reconcile MUST NOT use this policy. The witness
     MUST retain the original evidence hashes and operation binding, and MUST NOT certify outputs.
     """
+    if completed and unwitnessed:
+        raise wire.CapacityError('Administrative recovery modes cannot be combined')
     scan = scan or ((lambda: census(before_root=record['child'][1])) if completed else census)
     missing, service = missing or absent, service or service_pin
     required = ('id', 'nonce', 'epoch', 'boot_id', 'operator_reference', 'administrator', 'services')
-    wire.fields(evidence, required + (('guards', 'report_sha256') if completed else ()))
+    wire.fields(evidence, required + (('guards', 'report_sha256') if completed or unwitnessed else ())
+                + (('acknowledge_missing_root_exit',) if unwitnessed else ()))
     request = record['request']
     if (evidence['id'] != request['id'] or evidence['nonce'] != record.get('nonce')
             or evidence['epoch'] != epoch or evidence['boot_id'] != boot):
@@ -183,12 +189,16 @@ def recover(record, evidence, *, principal, boot, epoch, scan=None, missing=None
         raise wire.CapacityError('Administrative recovery owner cannot administratively release itself')
     eligible = (request.get('phase') == 'job' and request.get('performance') is False if completed
                 else request.get('phase') == 'compile' and request.get('performance') is True)
+    root = wire.identity(record.get('child'))
+    root_exited = list(root) in record.get('exited', [])
     if (record['state'] != 'uncertain' or not eligible
-            or record.get('child') not in record.get('exited', [])):
+            or (not root_exited and not unwitnessed)):
         raise wire.CapacityError('Administrative recovery requires an eligible uncertain job with root exit')
-    if completed and evidence['guards'] != record['guards']:
-        raise wire.CapacityError('Completed job monitor binding changed')
-    pins = set(map(tuple, record['roster'])) | {tuple(record['principal'])}
+    if unwitnessed and (root_exited or evidence['acknowledge_missing_root_exit'] is not True):
+        raise wire.CapacityError('Unwitnessed compile requires explicit acknowledgement of its missing root exit')
+    if (completed or unwitnessed) and evidence['guards'] != record['guards']:
+        raise wire.CapacityError('Administrative recovery monitor binding changed')
+    pins = set(map(tuple, record['roster'])) | {tuple(record['principal']), root}
     pins.update((g['pid'], g['start']) for g in record['guards'].values())
     if any(not missing(pin) for pin in pins):
         raise wire.CapacityError('Administrative recovery still has a live controller, guard or retained process')
@@ -200,9 +210,9 @@ def recover(record, evidence, *, principal, boot, epoch, scan=None, missing=None
     for kind, guard in record['guards'].items():
         raw = wire.private_file(guard['report'], limit=wire.MAX_FRAME, private=False)
         reports[kind] = hashlib.sha256(raw).hexdigest()
+    if (completed or unwitnessed) and evidence['report_sha256'] != reports:
+        raise wire.CapacityError('Administrative recovery report binding changed')
     if completed:
-        if evidence['report_sha256'] != reports:
-            raise wire.CapacityError('Completed job report binding changed')
         terminal = wire.decode(wire.private_file(record['guards']['tree_guard']['report'], limit=wire.MAX_FRAME, private=False))
         validate_completed_terminal(record, terminal)
     observations = []
@@ -217,8 +227,12 @@ def recover(record, evidence, *, principal, boot, epoch, scan=None, missing=None
         raw = wire.private_file(guard['report'], limit=wire.MAX_FRAME, private=False)
         if hashlib.sha256(raw).hexdigest() != reports[kind]:
             raise wire.CapacityError('Original workload reports changed during recovery')
+    if unwitnessed and {service(item) for item in items} != services:
+        raise wire.CapacityError('Recovery service identities changed during recovery')
     digest = hashlib.sha256(json.dumps(observations, sort_keys=True).encode()).hexdigest()
-    return dict(kind='administrative-completed-job' if completed else 'administrative-interruption', coverage='current-observed-quiescence',
+    return dict(kind=('administrative-unwitnessed-compile' if unwitnessed else
+                      'administrative-completed-job' if completed else 'administrative-interruption'),
+        root_exit_observed=root_exited, coverage='current-observed-quiescence',
         operator_reference=reference, administrator=administrator, administrative_principal=list(principal),
         nonce=record['nonce'], request_id=request['id'], epoch=epoch, boot_id=boot, observed_at=time.time(),
         checked_identities=len(pins), missing_historical_exits=len(set(map(tuple,record['roster']))-set(map(tuple,record['exited']))),
