@@ -1,0 +1,5 @@
+# Original lake water surface in one world tile.
+kind = "prop"
+source = "src/source.glb"
+solid = false
+inputs_sha256 = "38c319bf35c967cac51ff9e06bdf3ab157c290f40df1ceb82a124d6e15aeb6ee"

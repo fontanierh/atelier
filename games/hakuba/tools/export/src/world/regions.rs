@@ -13,6 +13,8 @@ mod momiji_coast;
 mod momiji_village;
 #[path = "../../../../assets/world/src/regions/roadside-houses/layout.rs"]
 mod roadside_houses;
+#[path = "../../../../assets/world/src/regions/woodland/layout.rs"]
+mod woodland;
 
 /// What a region adds to the world. Positions are in metres, in the map's frame: x east, y north, z up.
 pub trait Region {
@@ -51,9 +53,14 @@ pub trait Region {
         Vec::new()
     }
 
+    /// Bounded water bodies and their shared material and recovery settings, in map coordinates.
+    fn water(&self) -> Vec<serde_json::Value> {
+        Vec::new()
+    }
+
     /// What it stands on `land` and runs along it.
     fn scenery(&self, land: &Land) -> Scenery;
 }
 
-pub const REGIONS: [&dyn Region; 3] =
-    [&momiji_coast::MomijiCoast, &roadside_houses::RoadsideHouses, &momiji_village::MomijiVillage];
+pub const REGIONS: [&dyn Region; 4] =
+    [&momiji_coast::MomijiCoast, &roadside_houses::RoadsideHouses, &momiji_village::MomijiVillage, &woodland::Woodland];

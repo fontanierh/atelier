@@ -1,6 +1,7 @@
 @cc [owner:fontanierh,label:architecture] hakuba-concerns-have-one-home
 Each concern MUST live in its one home, and nowhere else:
 - game code that runs when the game plays: `crates/<feature>/`, one Bevy plugin per crate;
+- data schemas shared by the exporter and game: `schemas/<schema>/`, independent of Bevy;
 - wiring the plugins into the app: `src/main.rs`, which holds no game logic;
 - what an asset is (its source files and its own numbers, shapes and choices): that asset's `src/` under `assets/`;
 - how every asset of a kind is made: `tools/export/`;

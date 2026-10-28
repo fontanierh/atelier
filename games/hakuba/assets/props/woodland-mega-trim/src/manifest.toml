@@ -1,0 +1,8 @@
+# Original source mesh and its recorded conversion.
+path = "source.glb"
+sha256 = "da45173320596e3d9babd57b191ddabb594abd7ad38661c41dc59cdb324230d6"
+authoring_fbx_sha256 = "c6f0c465ff6b70e33f20e7958e8a01b901bda43239c83106b1a1f1f138e017c0"
+conversion = "FBX SDK 2020.2 triangulation; Blender 5.2.1; source colours quantized; Blender normals retained within measured tolerance"
+source_origin_m = [65.0, 242.0, 66.8]
+export_origin_m = [65.0, 242.0, 67.8]
+origin_conversion = "Local vertices shifted down 1 m; placement raised 1 m, preserving world geometry"

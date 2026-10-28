@@ -1,0 +1,6 @@
+# Original crimson canopy foliage texture.
+kind = "texture"
+source = "src/texture.png"
+alpha_cutoff = 0.4
+mip_colour = "average"
+inputs_sha256 = "3841747baee9aa806b551851d6dc304c50f0b54436d35100079225e78692f580"

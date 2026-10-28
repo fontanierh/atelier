@@ -54,6 +54,7 @@ games/hakuba/
     rendering/              shared rendering commands and 3D shadow views
     viewer/                 the character viewer
     audio/                  the sounds: footsteps, the moves, the paraglider's wind and the countryside
+  schemas/                  data formats shared by the exporter and game, without Bevy dependencies
   index.html                the page the browser build runs in, with the canvas the game draws into
   Trunk.toml                what the browser build copies next to the game
   assets/                   everything the game loads, each next to its sources (assets/README.md)

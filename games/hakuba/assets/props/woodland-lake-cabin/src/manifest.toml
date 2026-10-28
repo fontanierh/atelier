@@ -1,0 +1,5 @@
+# Original source mesh, recentered at the cabin.
+path = "source.glb"
+sha256 = "7a681d5ceb93c2673f15195be96170e841f01c78a4af35d0bfc1c8d2b4658fa5"
+authoring_fbx_sha256 = "95e400526332a68bdaee9ba9906fd903569ffadeac2ac2942e06e8945189a60f"
+conversion = "FBX SDK 2020.2 triangulation; Blender 5.2.1; recentered at (-56, 215, 75.65) metres"

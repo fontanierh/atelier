@@ -15,6 +15,7 @@ mod scenery;
 mod settings;
 mod tiles;
 mod vertex_paint;
+mod water;
 mod wind;
 
 use bevy::camera::visibility::{VisibilityRange, VisibilitySystems};
@@ -27,6 +28,7 @@ use tiles::Tile;
 pub use ground::{Ground, Hit, SEA_LEVEL_M, Surface};
 pub use loading::Unready;
 pub use push::PushesPlants;
+pub use water::WaterBodies;
 
 /// The world's index: one node per tile, and the spawn.
 const INDEX: &str = "world/world.glb";
@@ -54,6 +56,7 @@ impl Plugin for WorldPlugin {
             settings::SettingsPlugin,
             tiles::TilesPlugin,
             vertex_paint::VertexPaintPlugin,
+            water::WaterPlugin,
             wind::WindPlugin,
         ))
         .add_systems(OnEnter(Screen::World), spawn_world)
@@ -83,6 +86,7 @@ fn spawn_world(
 ) {
     commands.insert_resource(Index(assets.load(INDEX)));
     commands.remove_resource::<Spawn>();
+    commands.remove_resource::<WaterBodies>();
     commands.spawn((
         Name::new("Sea"),
         DespawnOnExit(Screen::World),
@@ -115,6 +119,24 @@ fn read_index(
 ) {
     let Some(index) = index else { return };
     let Some(gltf) = gltfs.get(&index.0) else { return };
+    if let Some(handle) = gltf.named_nodes.get("water bodies") {
+        let node = nodes.get(handle).expect("a loaded glTF's nodes are loaded");
+        let water = node.extras.as_ref().and_then(|e| {
+            let raw: serde_json::Value = serde_json::from_str(&e.value).ok()?;
+            hakuba_water_schema::validate(raw.get("waters")?.as_array()?).ok()?;
+            serde_json::from_value::<WaterBodies>(raw).ok()
+        });
+        match water {
+            Some(water) => commands.insert_resource(water),
+            _ => {
+                error!("invalid bounded water in the world's index");
+                commands.insert_resource(loading::Missing(INDEX.to_owned()));
+                commands.spawn((Name::new("Invalid water metadata"), Unready, DespawnOnExit(Screen::World)));
+                commands.remove_resource::<Index>();
+                return;
+            }
+        }
+    }
     for (name, node) in &gltf.named_nodes {
         let node = nodes.get(node).expect("a loaded glTF's nodes are loaded");
         if &**name == "spawn" {

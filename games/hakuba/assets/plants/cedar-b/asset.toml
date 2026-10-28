@@ -1,7 +1,7 @@
 # A smaller cedar, 13 m high, its needles in tiers narrowing to its tip.
 kind = "plant"
 seed = 7
-inputs_sha256 = "bd1c42682bf42665daaf046093c7218078bd2ae7a316bdaf38eb41d00e7446d0"
+inputs_sha256 = "da15482d8139d12a37005a558e98abeab1ca375d8d256f836fefa0c6ef59c3da"
 
 [wood]
 texture = "bark"

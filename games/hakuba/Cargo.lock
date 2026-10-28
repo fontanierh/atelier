@@ -3163,6 +3163,7 @@ dependencies = [
  "anyhow",
  "geo",
  "glam",
+ "hakuba_water_schema",
  "hound",
  "image",
  "ktx2",
@@ -3239,6 +3240,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "hakuba_water_schema"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+]
+
+[[package]]
 name = "hakuba_world"
 version = "0.1.0"
 dependencies = [
@@ -3246,6 +3254,7 @@ dependencies = [
  "hakuba_characters",
  "hakuba_screens",
  "hakuba_settings",
+ "hakuba_water_schema",
  "parry3d",
  "serde",
  "serde_json",

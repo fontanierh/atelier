@@ -1,0 +1,5 @@
+# Original ramp seam and coping detail; it has no collision.
+kind = "prop"
+source = "src/source.glb"
+solid = false
+inputs_sha256 = "78cc698f3802cf1c8735b0308a1e3c0ad3b393d953a39a0c6eb47d9dd6d6c6f2"

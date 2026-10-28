@@ -13,4 +13,4 @@ held_at = "Weapon_R"
 handle_left_m = [[0.2537, 0.0156, -0.1423], [0.3011, 0.0099, 0.0290]]
 handle_right_m = [[-0.2479, 0.0119, -0.1416], [-0.3047, 0.0114, 0.0278]]
 handle_radius_m = 0.034
-inputs_sha256 = "d543a0e134561784eef6ad6bd9b1c62153f741c266150c644c4c672f2d907ae8"
+inputs_sha256 = "260412d7d906e0e1709317d6b136d90635df98cc6bef6b9c6aaf2b3bcf5f2e91"

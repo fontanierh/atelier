@@ -5,19 +5,19 @@ ground = "src/ground"
 terrain_diagonals = "src/ground/triangulation/diagonals.json"
 grounding_reference = "src/contact-reference.bin"
 fixed_source_reference = "src/fixed-source-reference.json"
-fixed_source_models = ["props/village-details-69-21", "props/village-details-69-22", "props/village-details-70-21", "props/village-details-70-22", "props/village-edges-69-21", "props/village-edges-69-22", "props/village-edges-70-21", "props/village-edges-70-22", "props/village-planting-cell-0-0-piece1-69-20", "props/village-planting-cell-0-0-piece1-69-21", "props/village-planting-cell-0-0-piece1-70-20", "props/village-planting-cell-0-0-piece1-70-21", "props/village-planting-cell-0-0-piece30-69-21", "props/village-planting-cell-0-0-piece30-69-22", "props/village-planting-cell-0-0-piece30-70-21", "props/village-planting-cell-0-0-piece30-70-22", "props/village-planting-cell-0-0-piece31-70-21", "props/village-planting-cell-0-0-piece31-70-22", "props/village-planting-cell-0-0-piece32-69-22", "props/village-planting-cell-0-0-piece32-70-22", "props/village-planting-cell-0-0-piece33-70-22", "props/village-planting-cell-0-neg1-70-20", "props/village-planting-cell-1-0-70-22", "props/village-planting-cell-1-0-71-22", "props/village-planting-cell-1-1-70-23", "props/village-planting-cell-1-1-71-22", "props/village-planting-cell-1-1-71-23"]
+fixed_source_models = ["props/village-details-69-21", "props/village-details-69-22", "props/village-details-70-21", "props/village-details-70-22", "props/village-edges-69-21", "props/village-edges-69-22", "props/village-edges-70-21", "props/village-edges-70-22", "props/village-planting-cell-0-0-piece1-69-20", "props/village-planting-cell-0-0-piece1-69-21", "props/village-planting-cell-0-0-piece1-70-20", "props/village-planting-cell-0-0-piece1-70-21", "props/village-planting-cell-0-0-piece30-69-21", "props/village-planting-cell-0-0-piece30-69-22", "props/village-planting-cell-0-0-piece30-70-21", "props/village-planting-cell-0-0-piece30-70-22", "props/village-planting-cell-0-0-piece31-70-21", "props/village-planting-cell-0-0-piece31-70-22", "props/village-planting-cell-0-0-piece32-69-22", "props/village-planting-cell-0-0-piece32-70-22", "props/village-planting-cell-0-0-piece33-70-22", "props/village-planting-cell-0-neg1-70-20", "props/village-planting-cell-1-0-70-22", "props/village-planting-cell-1-0-71-22", "props/village-planting-cell-1-1-70-23", "props/village-planting-cell-1-1-71-22", "props/village-planting-cell-1-1-71-23", "props/woodland-lake-cabin", "props/woodland-lake-plants-66-23", "props/woodland-lake-plants-66-24", "props/woodland-lake-plants-67-23", "props/woodland-lake-plants-67-24", "props/woodland-lake-shore-66-24", "props/woodland-lake-shore-67-23", "props/woodland-lake-shore-67-24", "props/woodland-lake-trail-67-23", "props/woodland-lake-trail-67-24", "props/woodland-lake-trail-68-23", "props/woodland-lake-trail-68-24", "props/woodland-lake-trail-69-24", "props/woodland-lake-water-66-24", "props/woodland-lake-water-67-23", "props/woodland-lake-water-67-24", "props/woodland-mega-ramp", "props/woodland-mega-trail-69-24", "props/woodland-mega-trail-70-23", "props/woodland-mega-trail-70-24", "props/woodland-mega-trail-71-23", "props/woodland-mega-trail-71-24", "props/woodland-mega-trim"]
 south_west_m = [-4396.0, -1324.0]
 ground_step_m = 2.0
 page_steps = 256        # 512 m
 tile_steps = 32         # 64 m
-tiles = [[64, 18], [73, 23]]
-extent_m = [[-300.0, -172.0], [300.0, 212.0]]
+tiles = [[64, 18], [73, 25]]
+extent_m = [[-300.0, -172.0], [300.0, 300.0]]
 middle_uses_fine_ground = true
 ground_texture = "ground"
 ground_texture_m = 24.0
 spawn_m = [-255.26, -99.51]
 spawn_bearing_deg = 94.7
-inputs_sha256 = "f56468c65996d9c58b33b58921264a82f602a07976ff68afcaa2c088b5c65675"
+inputs_sha256 = "791d3ed95ba9b2b6ba07c726d343148990b5d712a4ba577304875694c91eb0e0"
 
 # Model-frame lower geometry considered for source contact; the reference records source gaps.
 [[grounding]]
@@ -39,4 +39,12 @@ band_m = 0.1
 # Fixed source geometry uses all triangles for its independent minimum-gap witness.
 [[grounding]]
 models = ["props/village-details-70-21", "props/village-planting-cell-0-0-piece32-69-22", "props/village-edges-70-21", "props/village-planting-cell-0-0-piece31-70-21", "props/village-planting-cell-0-0-piece30-70-21", "props/village-planting-cell-0-0-piece31-70-22", "props/village-details-69-21", "props/village-planting-cell-1-0-71-22", "props/village-planting-cell-0-0-piece30-69-22", "props/village-edges-70-22", "props/village-planting-cell-1-1-71-23", "props/village-planting-cell-1-0-70-22", "props/village-planting-cell-0-0-piece33-70-22", "props/village-planting-cell-1-1-71-22", "props/village-planting-cell-0-0-piece32-70-22", "props/village-planting-cell-0-neg1-70-20", "props/village-planting-cell-1-1-70-23", "props/village-planting-cell-0-0-piece1-69-20", "props/village-edges-69-21", "props/village-details-70-22", "props/village-edges-69-22", "props/village-details-69-22", "props/village-planting-cell-0-0-piece1-69-21", "props/village-planting-cell-0-0-piece1-70-20", "props/village-planting-cell-0-0-piece30-69-21", "props/village-planting-cell-0-0-piece30-70-22", "props/village-planting-cell-0-0-piece1-70-21"]
+band_m = 0.0
+
+[[grounding]]
+models = ["plants/woodland-canopy-maple", "plants/woodland-canopy-crimson", "plants/woodland-canopy-amber", "plants/woodland-canopy-ginkgo"]
+band_m = 0.1
+
+[[grounding]]
+models = ["props/woodland-lake-cabin", "props/woodland-lake-plants-66-23", "props/woodland-lake-plants-66-24", "props/woodland-lake-plants-67-23", "props/woodland-lake-plants-67-24", "props/woodland-lake-shore-66-24", "props/woodland-lake-shore-67-23", "props/woodland-lake-shore-67-24", "props/woodland-lake-trail-67-23", "props/woodland-lake-trail-67-24", "props/woodland-lake-trail-68-23", "props/woodland-lake-trail-68-24", "props/woodland-lake-trail-69-24", "props/woodland-lake-water-66-24", "props/woodland-lake-water-67-23", "props/woodland-lake-water-67-24", "props/woodland-mega-ramp", "props/woodland-mega-trail-69-24", "props/woodland-mega-trail-70-23", "props/woodland-mega-trail-70-24", "props/woodland-mega-trail-71-23", "props/woodland-mega-trail-71-24", "props/woodland-mega-trim"]
 band_m = 0.0

@@ -3,7 +3,7 @@ kind = "plant"
 source = "src/model.glb"
 textures = ["coast-litter"]
 surface_height_m = 0.02
-inputs_sha256 = "44f847596248ecea2182ea756715fad457f90eb1e9db54bb2138ef7b6e1b9b9c"
+inputs_sha256 = "16141841deb76578ee88c6600084e0ca6309af8de48f1f7ae7025c1a64f33b70"
 
 [source_profile]
 direction_amplitude_shade = [0.3, -0.95, 0.16, 0.5]

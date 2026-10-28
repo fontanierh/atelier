@@ -31,6 +31,7 @@ use crate::tiles::TILES;
 use crate::vertex_paint::{
     MotionProfile, MovingPainted, MovingPaintedMaterials, Painted, PaintedMaterials, Profile, SurfaceProfile,
 };
+use crate::water::{WaterMaterial, WaterMaterials};
 use crate::wind::{SourceFoliage, SourceProfile, Swaying, SwayingMaterials};
 
 /// A model with fewer vertices than this has its copies merged.
@@ -167,9 +168,11 @@ struct Models<'w> {
 }
 
 #[derive(SystemParam)]
-struct PaintMaterials<'w> {
+struct Materials<'w> {
+    swaying: SwayingMaterials<'w>,
     painted: PaintedMaterials<'w>,
     moving: MovingPaintedMaterials<'w>,
+    water: WaterMaterials<'w>,
 }
 
 /// @cc [owner:fontanierh,label:correctness] solid-scenery-matches-visible-mesh
@@ -186,8 +189,7 @@ fn spawn(
     mut waiting: Query<(Entity, &mut Waiting)>,
     models: Models,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut swaying: SwayingMaterials,
-    mut paint: PaintMaterials,
+    mut materials: Materials,
 ) {
     let mut budget = Budget { vertices: MERGE_VERTICES_PER_UPDATE, instances: INSTANCES_PER_UPDATE };
     'copies: for (entity, mut waiting) in &mut waiting {
@@ -220,7 +222,7 @@ fn spawn(
                     commands.entity(entity).remove::<Waiting>();
                     continue 'copies;
                 };
-                let parts = if matches!(role, Role::Collision) {
+                let mut parts = if matches!(role, Role::Collision) {
                     let Some(mesh) = node.mesh.as_ref().and_then(|mesh| models.meshes.get(mesh)) else {
                         continue 'copies;
                     };
@@ -237,7 +239,15 @@ fn spawn(
                     };
                     parts
                 } else {
-                    match parts(&assets, &models, &meshes, &mut swaying, &mut paint.painted, &mut paint.moving, node) {
+                    match parts(
+                        &assets,
+                        &models,
+                        &meshes,
+                        &mut materials.swaying,
+                        &mut materials.painted,
+                        &mut materials.moving,
+                        node,
+                    ) {
                         Ok(Some(parts)) => parts,
                         Ok(None) => continue 'copies,
                         Err(reason) => {
@@ -249,6 +259,14 @@ fn spawn(
                         }
                     }
                 };
+                if !matches!(role, Role::Collision)
+                    && let Some(material) =
+                        waiting.model.path().and_then(|path| materials.water.for_model(&path.path().to_string_lossy()))
+                {
+                    for (_, look) in &mut parts {
+                        *look = Look::Water(material.clone());
+                    }
+                }
                 shown.push((node, parts, role));
             }
             let transforms: Vec<Transform> = waiting
@@ -281,6 +299,7 @@ fn spawn(
                 let vertices = vertices(&models.meshes, &meshes, node);
                 let merge = vertices < MERGE_BELOW_VERTICES && vertices * transforms.len() <= MERGED_AT_MOST_VERTICES;
                 for (mesh, look) in parts {
+                    let shadows = shadows && !matches!(look, Look::Water(_));
                     let vertices = meshes.get(&mesh).map_or(0, Mesh::count_vertices).max(1);
                     if merge {
                         for square in squares(&transforms, if shadows { MERGED_SQUARE_M } else { 32.0 }) {
@@ -384,7 +403,7 @@ fn place(
                             let weight = colours.iter().map(|c| c[0].abs()).fold(0.0, f32::max);
                             Some(profile.shadow_motion_bound(weight))
                         }
-                        Look::Still(_) | Look::Painted(_) => Some((0.0, 0.0)),
+                        Look::Still(_) | Look::Painted(_) | Look::Water(_) => Some((0.0, 0.0)),
                         // Unbounded motion cannot safely be range-culled.
                         Look::Swaying(_) | Look::MovingPainted(_) => return None,
                     },
@@ -407,6 +426,7 @@ fn place(
                 Look::SourceFoliage(material, _) => part.insert(MeshMaterial3d(material.clone())),
                 Look::Painted(material) => part.insert(MeshMaterial3d(material.clone())),
                 Look::MovingPainted(material) => part.insert(MeshMaterial3d(material.clone())),
+                Look::Water(material) => part.insert(MeshMaterial3d(material.clone())),
             };
         }
         match job.role {
@@ -686,6 +706,7 @@ enum Look {
     SourceFoliage(Handle<SourceFoliage>, SourceProfile),
     Painted(Handle<Painted>),
     MovingPainted(Handle<MovingPainted>),
+    Water(Handle<WaterMaterial>),
 }
 
 /// The standard material Bevy made from a glTF material: the material's own asset, labelled `<label>/std`.

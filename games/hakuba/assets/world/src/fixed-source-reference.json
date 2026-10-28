@@ -104,6 +104,103 @@
     "yaw": 0.0
   },
   {
+    "id": "1baec98155f731a379849ac10177296cd44f7be0131f59afb47b47d46640c557",
+    "model": "props/woodland-lake-trail-67-23",
+    "x": -76,
+    "y": 180,
+    "height": 77,
+    "yaw": 0.0,
+    "scale": 1.0,
+    "geometry_sha256": "21bbf13743a08a314c3239ac315eecb561bc0ed4a7dac968c0463cf731ca8c82",
+    "world_bounds_m": [
+      [
+        -46.116458892822266,
+        211.2829990386963,
+        75.17490804195404
+      ],
+      [
+        -44.0,
+        212.0,
+        75.20841217041016
+      ]
+    ],
+    "source_sha256": "454671ca3c6bd16ffe72c229ec9657721361bf51c808dd23c4e2abba58a43559"
+  },
+  {
+    "id": "1d6953773824763cb319a6fb4fdbb9d8f971c4db50ddf22d548b0531865641cc",
+    "model": "props/woodland-mega-trim",
+    "x": 65.0,
+    "y": 242.0,
+    "height": 67.8,
+    "yaw": 0.0,
+    "scale": 1.0,
+    "geometry_sha256": "3e171a61af49f1c4cfa4b99b7a0ab2c47e36177c2c93f10dae4765de6e7c8fcf",
+    "world_bounds_m": [
+      [
+        61.99600005149841,
+        238.0,
+        67.2536406993866
+      ],
+      [
+        126.68250274658203,
+        246.0,
+        77.50100021362304
+      ]
+    ],
+    "source_sha256": "da45173320596e3d9babd57b191ddabb594abd7ad38661c41dc59cdb324230d6",
+    "source_origin_m": [
+      65.0,
+      242.0,
+      66.8
+    ]
+  },
+  {
+    "id": "22160e1e88d69242db6377474ea9530748bd58460828b5cef0f1f6a6a41ddaf2",
+    "model": "props/woodland-lake-water-66-24",
+    "x": -140,
+    "y": 244,
+    "height": 76,
+    "yaw": 0.0,
+    "scale": 1.0,
+    "geometry_sha256": "a0471557a8ea8524bf4a9e9ddc75f63683d31ffc03bec9086bd455798073645a",
+    "world_bounds_m": [
+      [
+        -122.74436950683594,
+        216.59325218200684,
+        75.0
+      ],
+      [
+        -108.0,
+        253.7689332962036,
+        75.0
+      ]
+    ],
+    "source_sha256": "f3faabc186615b582299f3164542c5dd436d52fbfe77dd8163cd85522876b77b"
+  },
+  {
+    "id": "285e27ad6424694186fe754ea8783790d676cfb7efa82224b3c6b60e2b50f246",
+    "model": "props/woodland-lake-shore-67-23",
+    "x": -76,
+    "y": 180,
+    "height": 78,
+    "yaw": 0.0,
+    "scale": 1.0,
+    "geometry_sha256": "949f1bc95aa3c52ab8b7430bd4a0c7dc32935d05376f6eb8bcb1b632015e214e",
+    "world_bounds_m": [
+      [
+        -99.49327659606934,
+        210.47698974609375,
+        75.05795288085938
+      ],
+      [
+        -77.40555322170258,
+        212.0,
+        76.10704004764557
+      ]
+    ],
+    "source_sha256": "ab5a5f670fbfaf67e9570ecc94a8b17c04e0579bf465374d3948be7271e00bb1"
+  },
+  {
     "id": "2b1ba6571fa79bcf0d9e353cf398f7c1c0906343cb8d8f9b59a0d63e8fa08713",
     "authoring_fbx_sha256": "c22c4fdffaa0d6923f3f852cd8be3653852569a93d9456a46703e40457bd9b92",
     "geometry_sha256": "ac6cd2987b484c5eecc8d3e2301b13c9ca2543a0f0a0cfa671f5ed22411aef21",
@@ -182,6 +279,98 @@
     "yaw": 0.0
   },
   {
+    "id": "2d72ee126644c91051e94b29f5c25ffff7535108fb9d0378f0a9c106af91cf86",
+    "model": "props/woodland-mega-trail-69-24",
+    "x": 52,
+    "y": 244,
+    "height": 68,
+    "yaw": 0.0,
+    "scale": 1.0,
+    "geometry_sha256": "ac45f6593d3ec7d5e20fd9b4d7bf9ef01194f63a05cae53fc5bca2fe6c29a2af",
+    "world_bounds_m": [
+      [
+        59.36005401611328,
+        217.26461791992188,
+        63.20490837097168
+      ],
+      [
+        84.0,
+        235.18869018554688,
+        66.79942321777344
+      ]
+    ],
+    "source_sha256": "cc4d362b2e55010c57361f80f0e9e9da1b92c2f28d470fdf4a5e4aa79eb998dd"
+  },
+  {
+    "id": "309df2cfa30244a2470cb8b41ce3291c1eadbaacbf3e581f0061f5f480b0b2e4",
+    "model": "props/woodland-lake-cabin",
+    "x": -56.0,
+    "y": 215.0,
+    "height": 75.65,
+    "yaw": 0.0,
+    "scale": 1.0,
+    "geometry_sha256": "00e003aa48002d0e5c154d5a5765a0bc5a3bc28f9f39d2add15b96a39a871354",
+    "world_bounds_m": [
+      [
+        -67.84226989746094,
+        209.75291442871094,
+        73.70000460147858
+      ],
+      [
+        -50.75290298461914,
+        229.4698486328125,
+        80.84000387191773
+      ]
+    ],
+    "source_sha256": "7a681d5ceb93c2673f15195be96170e841f01c78a4af35d0bfc1c8d2b4658fa5"
+  },
+  {
+    "id": "35cf58b709bdf39551f846a3e43c171db53c8f34c19ad02db6a839d3f056f219",
+    "model": "props/woodland-lake-shore-66-24",
+    "x": -140,
+    "y": 244,
+    "height": 78,
+    "yaw": 0.0,
+    "scale": 1.0,
+    "geometry_sha256": "819b1e429c819f99ae484ac61aecf143610e1668a72428c1a1ad879c8213778c",
+    "world_bounds_m": [
+      [
+        -126.7830810546875,
+        214.9115447998047,
+        74.44999694824219
+      ],
+      [
+        -108.0,
+        256.02301025390625,
+        76.54969024658203
+      ]
+    ],
+    "source_sha256": "7403a802899857c6fe49cc14f75650e10b6612404160110346ef06732aa44a2b"
+  },
+  {
+    "id": "3a77a1dc9b1c8f9f680435237c13eef3944c3d2961610927bb04396d5a6f91a6",
+    "model": "props/woodland-lake-plants-67-24",
+    "x": -76,
+    "y": 244,
+    "height": 78,
+    "yaw": 0.0,
+    "scale": 1.0,
+    "geometry_sha256": "20029b615db14a433c9342da8a01e4d46779ab7555717d15cb8314a6f73471d2",
+    "world_bounds_m": [
+      [
+        -107.41925048828125,
+        212.0,
+        74.84700775146484
+      ],
+      [
+        -45.61207962036133,
+        262.7447204589844,
+        76.58871459960938
+      ]
+    ],
+    "source_sha256": "5de791706739ba3b2898feb918e365c1439e1762cc895306312229427c716d45"
+  },
+  {
     "id": "3be2e02953387d12220f517343a85062a9a20df367cb7cfa68ae06aa4799e402",
     "authoring_fbx_sha256": "f65f5cd50f54e9a91a0eab9b2a58b304548b9d9c60fa1cf172b2a956f92520bd",
     "geometry_sha256": "3f5f4ab2b3f8902f47652dd042e9914037a56beafce2eac8541a958e55e54742",
@@ -234,6 +423,52 @@
     "yaw": 0.0
   },
   {
+    "id": "4a404f3fa6c6041ba9b61fc7cd2d821ae105093df4cc4272b51f567d71351a0d",
+    "model": "props/woodland-mega-trail-70-23",
+    "x": 116,
+    "y": 180,
+    "height": 64,
+    "yaw": 0.0,
+    "scale": 1.0,
+    "geometry_sha256": "1bd8d586cc2307b7b0b2b40784d8fadc2376b0df2e8eb23fa7498020358587ef",
+    "world_bounds_m": [
+      [
+        88.25555801391602,
+        165.92308044433594,
+        37.91828155517578
+      ],
+      [
+        148.0,
+        212.0,
+        62.3968266248703
+      ]
+    ],
+    "source_sha256": "048df486191e55b846a4076190921ef412b701e68627e17b7cea40aface8edb9"
+  },
+  {
+    "id": "5779879e18ed729c011c00b6b8fdc9ee69b3e97b4909aa885208e9a0f5344264",
+    "model": "props/woodland-lake-water-67-24",
+    "x": -76,
+    "y": 244,
+    "height": 76,
+    "yaw": 0.0,
+    "scale": 1.0,
+    "geometry_sha256": "12dbeed5b7f05071c174a067e94eb2d1dda76b1d5df72853bba3f67ea2ca21df",
+    "world_bounds_m": [
+      [
+        -108.0,
+        212.0,
+        75.0
+      ],
+      [
+        -55.53639602661133,
+        256.8112487792969,
+        75.0
+      ]
+    ],
+    "source_sha256": "d66b974f6cdbc11fecb8329ea71fa776a4a49f27ae4d086d4a643059aa1c4f41"
+  },
+  {
     "id": "5f34a29879c8d15c528153895db9b07c5a5c639ceac990807b92777051192737",
     "authoring_fbx_sha256": "68585ad5d584b0bf6f71ee1c7d2025bf410ccaa572cc594e7ab83c2fca8546be",
     "geometry_sha256": "e32dc6920a7753e02b27976829f932ad18c214ad9d6b60b903b72a3c210fc7b8",
@@ -260,6 +495,29 @@
     "yaw": 0.0
   },
   {
+    "id": "63e37e3e420a1e6931ab41a2f8324452368b3ee93f14edd535a4f7f7ede2762d",
+    "model": "props/woodland-lake-trail-68-23",
+    "x": -12,
+    "y": 180,
+    "height": 77,
+    "yaw": 0.0,
+    "scale": 1.0,
+    "geometry_sha256": "35cfce0fa9243a6166ca4077903c440b6366fd13adc6a656f39d15fb920743ea",
+    "world_bounds_m": [
+      [
+        -44.0,
+        211.11875915527344,
+        74.76478958129883
+      ],
+      [
+        -38.82399940490723,
+        212.0,
+        75.18581485748291
+      ]
+    ],
+    "source_sha256": "1dc3fcbd6cc623f27d74f6376598d4646db929d52e66914958391d0dd118c583"
+  },
+  {
     "id": "6cdb03c7a345bbb95a41640e439d11213eb18b9abe26bdec94f03ec0e5597e7c",
     "authoring_fbx_sha256": "6c44f59b6c202748bf2bd4010c4ba968653e1ae795dad7d618baa064bc033298",
     "geometry_sha256": "be6667a19b40fa9b2d189862b83ff565182c5f7a1be249a5d252169f8bc573ac",
@@ -284,6 +542,75 @@
     "x": 180.0,
     "y": 180.0,
     "yaw": 0.0
+  },
+  {
+    "id": "700654fa30572d36490e0984ebc5f8617b492bfe287f2ea189aa38c2bbee3382",
+    "model": "props/woodland-mega-ramp",
+    "x": 65.0,
+    "y": 242.0,
+    "height": 66.8,
+    "yaw": 0.0,
+    "scale": 1.0,
+    "geometry_sha256": "7ef5760b027e4ac12321ddfd8826452c616f50da782f3195044eb0f3a0155acc",
+    "world_bounds_m": [
+      [
+        56.375,
+        228.7391710281372,
+        66.63499999344349
+      ],
+      [
+        129.4499969482422,
+        246.09999990463257,
+        78.7050006866455
+      ]
+    ],
+    "source_sha256": "45db9a71ca24f6e64f5d8fcd7cf18317e6c9576d0e710ba9159f77a1ba835b83"
+  },
+  {
+    "id": "746aff86cf4eee3fa02192b2cbdc0d714ddc0daf816d87d7997af8a523e6b777",
+    "model": "props/woodland-lake-plants-66-24",
+    "x": -140,
+    "y": 244,
+    "height": 79,
+    "yaw": 0.0,
+    "scale": 1.0,
+    "geometry_sha256": "b81ab7544fbb9a62242a50ad92461866126dbac302e3043d5e03f47a0de264e6",
+    "world_bounds_m": [
+      [
+        -131.021240234375,
+        212.6042022705078,
+        74.91725158691406
+      ],
+      [
+        -108.11373901367188,
+        258.4795227050781,
+        77.05999755859375
+      ]
+    ],
+    "source_sha256": "d236e4b6906c020a68bd0d6b8f2b4e52f572e2a85a19506b841d5bcb675508c6"
+  },
+  {
+    "id": "751876ebca4215b55aa5ade10575d5fe2a751f4c6868fa71ccb569aa014397fb",
+    "model": "props/woodland-lake-trail-69-24",
+    "x": 52,
+    "y": 244,
+    "height": 70,
+    "yaw": 0.0,
+    "scale": 1.0,
+    "geometry_sha256": "b466a8783c638d9147f2d3d7fa97d8061a411a5d1f3c78d711f1ea4fa7e810a3",
+    "world_bounds_m": [
+      [
+        20.0,
+        223.58779907226562,
+        66.84553527832031
+      ],
+      [
+        55.4925537109375,
+        235.14886474609375,
+        68.44446969032288
+      ]
+    ],
+    "source_sha256": "3ce0c1442a23f3245d670291b430f1acd2bfde14beb668dc8c6115d170effc24"
   },
   {
     "id": "7618a302426d6e2e798be0ab6e182d80202c2b18e8b920000c94e92f8586e999",
@@ -336,6 +663,29 @@
     "x": 116.0,
     "y": 116.0,
     "yaw": 0.0
+  },
+  {
+    "id": "89b7c264a63d143b4175259da7863ea42485e12c8a320d480bab81a32a1dbfab",
+    "model": "props/woodland-lake-plants-66-23",
+    "x": -140,
+    "y": 180,
+    "height": 77,
+    "yaw": 0.0,
+    "scale": 1.0,
+    "geometry_sha256": "80b7b189a05d9707503f0b4a9056a6e62b1c38d792907497a6c6b2c2b0d099c1",
+    "world_bounds_m": [
+      [
+        -112.24873352050781,
+        210.5978240966797,
+        75.71340942382812
+      ],
+      [
+        -111.92731475830078,
+        210.79066467285156,
+        75.7214126586914
+      ]
+    ],
+    "source_sha256": "a655b270de8a1d1e61d26e531092983f74aa6572762182d866e80738b8bfc43a"
   },
   {
     "id": "9335b2dd67b09c4300f59b16c5e89e462c9b2642eb21da46db5f51fb927dd522",
@@ -468,6 +818,29 @@
     "yaw": 0.0
   },
   {
+    "id": "a3cc793193ecbe99cd876c27fdb349dd0ae185b8665ac0f15306cced158fa91b",
+    "model": "props/woodland-lake-shore-67-24",
+    "x": -76,
+    "y": 244,
+    "height": 78,
+    "yaw": 0.0,
+    "scale": 1.0,
+    "geometry_sha256": "808221ffaf0991c95fbce83641481b86d160318b033bafe0ea7dae3eafe5e929",
+    "world_bounds_m": [
+      [
+        -108.0,
+        212.0,
+        74.44999694824219
+      ],
+      [
+        -52.66358947753906,
+        259.6201477050781,
+        76.5573959350586
+      ]
+    ],
+    "source_sha256": "0fa95d66703ebdda2eda6fe400d6ba80342881d0104538985c14c71dbf28d58f"
+  },
+  {
     "id": "a927afc71883f9fedd5b7192b9b424219dc4880ae6546632c9f345e93460fa83",
     "authoring_fbx_sha256": "68585ad5d584b0bf6f71ee1c7d2025bf410ccaa572cc594e7ab83c2fca8546be",
     "geometry_sha256": "bdb09128f0f2d7befe92248e1eaf04b463b1d404bd15c39cf6dd10ae72917094",
@@ -492,6 +865,29 @@
     "x": 52.0,
     "y": 52.0,
     "yaw": 0.0
+  },
+  {
+    "id": "b2a77b169e90d9d245f9ff7e30acb56d45db6bc6fb49d8e85ced378d27cba177",
+    "model": "props/woodland-mega-trail-70-24",
+    "x": 116,
+    "y": 244,
+    "height": 65,
+    "yaw": 0.0,
+    "scale": 1.0,
+    "geometry_sha256": "9aaa2d717b83f781fd1ab115d2888a7e3ded03f2bc2e3f529333b759685d7fc6",
+    "world_bounds_m": [
+      [
+        84.0,
+        212.0,
+        62.099934339523315
+      ],
+      [
+        91.91191673278809,
+        221.30028915405273,
+        63.561540603637695
+      ]
+    ],
+    "source_sha256": "ca46865331370a4def7e76df04ebbaf98bd51fc92b8bf112b4ba655dcf4f4207"
   },
   {
     "id": "b3483b20ae2bfddb7170215679f7a6b9eb242e38f87ba5fb9b736d4324d330a6",
@@ -572,6 +968,29 @@
     "yaw": 0.0
   },
   {
+    "id": "c508315a8571bfb2c5a5901298862864b6e90ddb0505d05f40b888b9cccac7b9",
+    "model": "props/woodland-lake-water-67-23",
+    "x": -76,
+    "y": 180,
+    "height": 76,
+    "yaw": 0.0,
+    "scale": 1.0,
+    "geometry_sha256": "38bcb1ffefc41ce731387681fe09686d4552c18a34bf93ecd887b2b90a48b97f",
+    "world_bounds_m": [
+      [
+        -92.85524368286133,
+        211.3572235107422,
+        75.0
+      ],
+      [
+        -80.49946737289429,
+        212.0,
+        75.0
+      ]
+    ],
+    "source_sha256": "e9f7da6a39c60be83872db4647780924905c6d9b540d37a4ca3a98dcf06a4783"
+  },
+  {
     "id": "d232d908cb41059f8cecbefb1fef0eda855a4711044a568d937a8c20c72b38c0",
     "authoring_fbx_sha256": "636f9768db8f30701a484782ad6ad609cbd91517fcee281528dcc5096ee8ac71",
     "geometry_sha256": "6612a8cede61feccfd28bb6d352ebc5dec648bdb3cb2811f4578d33926771c1d",
@@ -598,6 +1017,52 @@
     "yaw": 0.0
   },
   {
+    "id": "d4ab88b7cae2d95b9a1289e9fa170775fb1173b8fd23177cf95f5e9d4666fb45",
+    "model": "props/woodland-lake-trail-67-24",
+    "x": -76,
+    "y": 244,
+    "height": 77,
+    "yaw": 0.0,
+    "scale": 1.0,
+    "geometry_sha256": "aa64915b182f0425b92e82a154c4127869f33d451ce7c15c423b11a74b8b1a76",
+    "world_bounds_m": [
+      [
+        -58.5437126159668,
+        212.0,
+        75.15825939178467
+      ],
+      [
+        -44.0,
+        224.27273559570312,
+        75.69503021240234
+      ]
+    ],
+    "source_sha256": "45cec444b3bb483e4e3f8a3029731fa55dfa26ce10a364db9641156e4db489aa"
+  },
+  {
+    "id": "d857e761fd53212d92b34319709e6df2b3225df56ba54aca21541283f0f2f650",
+    "model": "props/woodland-lake-trail-68-24",
+    "x": -12,
+    "y": 244,
+    "height": 77,
+    "yaw": 0.0,
+    "scale": 1.0,
+    "geometry_sha256": "e63ceb10a026da310cd58cb0d673f98eb1e2a888083ced85fda005b678ed187d",
+    "world_bounds_m": [
+      [
+        -44.0,
+        212.0,
+        68.3860092163086
+      ],
+      [
+        20.0,
+        240.2977294921875,
+        75.17543268203735
+      ]
+    ],
+    "source_sha256": "84c32b9c2226f10d11f925426e49213f6c292d85be375018f43f27b8e8565e1f"
+  },
+  {
     "id": "e1c30883f31021bab99291b7969f785889a29003c15a91a2b9105d2c53859aed",
     "authoring_fbx_sha256": "636f9768db8f30701a484782ad6ad609cbd91517fcee281528dcc5096ee8ac71",
     "geometry_sha256": "4ea2f6456ecfd38d5b7cabd327b133c2df76679a9c9b555301f696ff83f48757",
@@ -622,6 +1087,75 @@
     "x": 116.0,
     "y": -12.0,
     "yaw": 0.0
+  },
+  {
+    "id": "e75be45b2936a13614c5b1c8ccfaa04369e364bd7c9a794531dcd1e748801a43",
+    "model": "props/woodland-mega-trail-71-24",
+    "x": 180,
+    "y": 244,
+    "height": 53,
+    "yaw": 0.0,
+    "scale": 1.0,
+    "geometry_sha256": "73bb900406c9caf50c53e45a666b281efd9d08070aae4d0c6d62772a8785f0ec",
+    "world_bounds_m": [
+      [
+        163.69809913635254,
+        212.0,
+        48.048651695251465
+      ],
+      [
+        190.6871976852417,
+        216.35357666015625,
+        51.316057205200195
+      ]
+    ],
+    "source_sha256": "945bb201a753925fad0a2d820fe4d65429adf430b4d7f6e187c0c82cb239c3e5"
+  },
+  {
+    "id": "e814d0af242d1d28b2f899274d2b8680754fea05bb5a687cfa657f0b188210b9",
+    "model": "props/woodland-mega-trail-71-23",
+    "x": 180,
+    "y": 180,
+    "height": 55,
+    "yaw": 0.0,
+    "scale": 1.0,
+    "geometry_sha256": "08cf02e52ca5bf8e6962f36741e409a630aec17db715a72f3ee58e1db9e96a4e",
+    "world_bounds_m": [
+      [
+        148.0,
+        168.6220417022705,
+        38.52498817443848
+      ],
+      [
+        199.87246704101562,
+        212.0,
+        53.94153571128845
+      ]
+    ],
+    "source_sha256": "d0200a30421dd1967e6160934fe8c3087b37566fbbe3ff4cbac20d6c9a0e5f15"
+  },
+  {
+    "id": "ed209d3ea0287d9f21deaffb72e6e1ba3ff92786ef9043db7a74d7df9e7f39a0",
+    "model": "props/woodland-lake-plants-67-23",
+    "x": -76,
+    "y": 180,
+    "height": 78,
+    "yaw": 0.0,
+    "scale": 1.0,
+    "geometry_sha256": "a2f594a6ecae142dd70d6a13d0abc461ab6c403c6710650c12a0d1efed6b63b5",
+    "world_bounds_m": [
+      [
+        -106.95836639404297,
+        204.29380798339844,
+        75.10852813720703
+      ],
+      [
+        -69.01776885986328,
+        212.0,
+        76.63223266601562
+      ]
+    ],
+    "source_sha256": "7738ce9898a66986914c142444fb144817fd237791051ebc7c5252b4df8f25f7"
   },
   {
     "id": "ef20e904ceb9fb73a294439bff4f881c12d238bf764830fa4fb6afc26f26f533",

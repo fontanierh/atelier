@@ -1,4 +1,4 @@
 # Clusters of small green leaves, one in each quarter, on a clear ground.
 kind = "texture"
 source = "src/small-leaves.png"
-inputs_sha256 = "013355605b3a26b29b4423646ebde3c1f898d053a9098f982421f35a6843727a"
+inputs_sha256 = "f9a44729c2e1febbe4625d23f77eda22b673c6604ac1eaa9e7b825bba9714989"

@@ -297,6 +297,10 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     {
         bail!("fixed source models must match their witnesses and have contact policies");
     }
+    let waters: Vec<_> = regions::REGIONS.iter().flat_map(|region| region.water()).collect();
+    hakuba_water_schema::validate(&waters).map_err(anyhow::Error::msg)?;
+    validate_water_models(&waters, sceneries.iter().flat_map(|s| s.placements.iter().map(|p| p.model)))?;
+
     let reference_path = settings.grounding_reference.as_ref().context("world needs a source contact reference")?;
     let reference = contact::Reference::read(&source_path(folder, reference_path)?)?;
     // Validate contacts against the logical source domain, before streaming clips any tile. The same
@@ -408,6 +412,9 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     ]))?;
     let mut rebuilt = 0;
     let mut index = Glb::from_json(json!({ "asset": { "version": "2.0" } }));
+    if !waters.is_empty() {
+        index.add_data("water bodies", json!({ "waters": waters }));
+    }
     for column in first_column..=last_column {
         for row in first_row..=last_row {
             let tile = whole.clip_tile(span(column), span(row)).expect("declared tiles intersect extent");
@@ -478,6 +485,32 @@ pub fn export(folder: &Path, settings: &Settings, output: &Path) -> Result<()> {
     checksums::write(&tiles, &current)?;
     println!("{}: rebuilt {rebuilt} of {} tiles", folder.display(), current.len());
     index.write(output)
+}
+
+/// @cc [owner:fontanierh,label:correctness] water-model-association
+/// Every water material association MUST name placed scenery. Missing associations MUST fail the export rather than
+/// silently render an ordinary material. The shared water schema rejects ambiguous body associations.
+fn validate_water_models<'a>(waters: &[serde_json::Value], placements: impl Iterator<Item = &'a str>) -> Result<()> {
+    let placed: std::collections::HashSet<_> = placements.collect();
+    for water in waters {
+        let models = water
+            .get("water_models")
+            .and_then(serde_json::Value::as_array)
+            .context("bounded water needs its model associations")?;
+        if models.is_empty() {
+            bail!("bounded water has no model associations");
+        }
+        for entry in models {
+            let model = entry
+                .get("model")
+                .and_then(serde_json::Value::as_str)
+                .context("bounded water has an invalid model association")?;
+            if !placed.contains(model) {
+                bail!("bounded water model {model} has no scenery placement");
+            }
+        }
+    }
+    Ok(())
 }
 
 // Prepare from the complete authored bounds and the fixed grid, independent of the exported tile range.
@@ -756,6 +789,15 @@ impl Tile {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn bounded_water_requires_placed_models() {
+        let water = json!({"water_models": [{"model": "props/water-a"}, {"model": "props/water-b"}]});
+        assert!(
+            validate_water_models(std::slice::from_ref(&water), ["props/water-a", "props/water-b"].into_iter()).is_ok()
+        );
+        assert!(validate_water_models(std::slice::from_ref(&water), ["props/water-a"].into_iter()).is_err());
+    }
 
     #[test]
     fn authored_diagonal_drives_surface_query_and_local_checksum() {

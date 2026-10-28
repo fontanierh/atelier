@@ -1,0 +1,52 @@
+# Woodland ground grid compared against independently SDK-triangulated retained source terrain.
+extent_m = [[-300, 212], [300, 300]]
+step_m = 2
+samples = 13545
+base_mismatches_over_1mm = 250
+village_baseline_mismatches_over_1mm = 126
+repaired_mismatches_over_1mm = 0
+maximum_error_m = 0.0
+
+[village_baseline_page_sha256]
+"8_2.bin" = "3131f375ac25a828781d836855471f264453858f74c79652bfaa766a62f84f66"
+"8_3.bin" = "9a11ef190fe213d4eaf9391dcb80a320f3fb74c162af19d4bb20390a8bad3cda"
+"9_2.bin" = "fb84842a8ba02fc20294a6c9e2325f7ac91aefc4b6529d4b99b784fe5bf9a5a4"
+"9_3.bin" = "427946775f213b25e5272f9271007683bbf0cc60a879eea331715ca1bdf79879"
+
+[result_page_sha256]
+"8_2.bin" = "3131f375ac25a828781d836855471f264453858f74c79652bfaa766a62f84f66"
+"8_3.bin" = "63edc14296b34a227ca803d7a17004964e5d3e71f504b30bea0546c5bb548f4b"
+"9_2.bin" = "fb84842a8ba02fc20294a6c9e2325f7ac91aefc4b6529d4b99b784fe5bf9a5a4"
+"9_3.bin" = "427946775f213b25e5272f9271007683bbf0cc60a879eea331715ca1bdf79879"
+
+[triangulated_source_fbx_sha256]
+"Terrain_cell_-1_-1.fbx" = "0dead80ee63a03a5476407c46655089c84daec45637bff0dc6c78bda144aef23"
+"Terrain_cell_-1_-2.fbx" = "7998a663c9beeb9a06ac389bede634bc0b602755bc0212f1904a15157901d9d9"
+"Terrain_cell_-1_0.fbx" = "67c6f06f4b82b460d4a8ffc79ac2a67b503e89729841f64fd5005dde7688e03b"
+"Terrain_cell_-1_1.fbx" = "e2081456bd66af7b5d27e1b00f04d95fb0fc9d1a3d9166276fd131e17d7e254f"
+"Terrain_cell_-1_2.fbx" = "a40d1b4da45cddcd81858de8f81d782cd4f657a51d4b2c8f22ee6b55ce37c02b"
+"Terrain_cell_-2_-1.fbx" = "6a6ad0b328803bf7a9d5d0e42a9de11e06cb0c3016b55b5f5e8cf0ef1bccba18"
+"Terrain_cell_-2_-2.fbx" = "3f930a7fc20247696cd3584f3ffcad894ede559108113cf4e704bace44e6e42c"
+"Terrain_cell_-2_0.fbx" = "bb77fc90311a124420c0789782944dc3e1dda486272f06b403f4308f77fae512"
+"Terrain_cell_-2_1.fbx" = "284a66dfcd175f96eff86008490eb2cf2319b3a217052cf06f409841ee363d04"
+"Terrain_cell_-2_2.fbx" = "9729049c6baa53a92229ca460f2439e60ea66aa20944d147e2d7a695eae6455c"
+"Terrain_cell_-3_-1.fbx" = "469f82aa93b34dc7bd61275e031883aaa411d966f30b1137b679fd42660a3342"
+"Terrain_cell_-3_-2.fbx" = "125d2e1b087a92df07164c17bc8db562d7a4a86cfc4b28fc8d73460a43f854b5"
+"Terrain_cell_-3_0.fbx" = "9b8550120915838c9dc44a9523782fa595ccbe7fa35593beeb90ad59b4b295b2"
+"Terrain_cell_-3_1.fbx" = "0b7526a148af9a2348845414620d175b8c170b9d5b4d8e8bab06d82093ec7ebd"
+"Terrain_cell_-3_2.fbx" = "c420880cd37b1532d26ac5f9d1ba7a9babeecc18bac0a5bacb07a7802cbd21cd"
+"Terrain_cell_0_-1.fbx" = "8dcb57fe27d7b0184d2cf0794b9285503cc9e21fc0c2ee7c4acd733a7467bf58"
+"Terrain_cell_0_-2.fbx" = "5770938de867db81f7d15ecb2db33b9691d4a355f25086c49226b5ef73b87937"
+"Terrain_cell_0_0.fbx" = "b90341097394bbc1226a8297e5627f8b945751d1142729c2199a4eba777014ab"
+"Terrain_cell_0_1.fbx" = "9ef3e52830b6dbbd39351453fc931044653771f11989237cbdbe98cf9edc7247"
+"Terrain_cell_0_2.fbx" = "e4c2bb093d72231a6b427b648ea000de119d9ed2f4fbaa95d63b3d71323b7f54"
+"Terrain_cell_1_-1.fbx" = "afa066989723533d2d6b09414d3d689f5cb57a7481f821f9619d31d26e6f81fe"
+"Terrain_cell_1_-2.fbx" = "100dd2985f4da7f2331a5764cd396d529532ce4a51ac455979d72e87e78ef96a"
+"Terrain_cell_1_0.fbx" = "eee723a21470230ebeefe85514d53bb3526211bc046729fc9e67b4bf0cc67faf"
+"Terrain_cell_1_1.fbx" = "783ee213ab912b1c9bf91f3be8424e29e8edbb21df5bb20ca5ce565b5aa1760a"
+"Terrain_cell_1_2.fbx" = "07ad88bdbc8c16d2e64cb106bda88b6cbc72501c4aa95d5521e3b283d5d0b57a"
+"Terrain_cell_2_-1.fbx" = "9b7fa3fed0aed852288e673ccedd26bf3e441175697d0695c733faf8ce87c853"
+"Terrain_cell_2_-2.fbx" = "6f4251bdcdd83638cba83353d2358c17e40d18f2a8cc50888166553839d206c2"
+"Terrain_cell_2_0.fbx" = "f50ea0141f92e625c2cf6035583743f282371a22ba1c8757eb4a10308332c62c"
+"Terrain_cell_2_1.fbx" = "81789a35db4da4e8ff904959cac55b1516b7785c1fa6d169bebc46aa22f53c11"
+"Terrain_cell_2_2.fbx" = "aa0ecff8af4cad6dfdfd2ccab03ddb9fd9e7d89556b6742faa884a66be731ea8"
