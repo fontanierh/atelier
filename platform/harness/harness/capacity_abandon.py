@@ -20,6 +20,7 @@ from atelier.harness import capacity_protocol as wire
 INDEXER = '/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared'
 OS_SERVICES = frozenset((INDEXER, '/System/Library/PrivateFrameworks/HelpData.framework/Versions/A/Resources/helpd'))
 COMPLETED_XPC = '/System/Library/PrivateFrameworks/AOSKit.framework/Versions/A/XPCServices/com.apple.iCloudHelper.xpc/Contents/MacOS/com.apple.iCloudHelper'
+SYSTEM_INDEXER = '/System/Library/Frameworks/CoreSpotlight.framework/spotlightknowledged'
 BUILD_NAMES = frozenset(('Blender', 'blender', 'UnrealEditor', 'UnrealEditor-Cmd', 'ShaderCompileWorker',
     'dotnet', 'mono', 'UnrealBuildTool', 'AutomationTool', 'xcodebuild', 'make', 'ninja', 'cmake', 'cargo', 'rustc'))
 
@@ -107,23 +108,32 @@ def service_pin(item):
     return pin
 
 
-def completed_system_service(row):
-    """Only the exact Apple XPC service, on the protected system volume, may be excluded."""
-    if row['parent'] != 1 or row['executable'] != COMPLETED_XPC:
+def protected_apple_service(row, executable):
+    """Verify an exact independently reviewed service on the protected system volume."""
+    if row['parent'] != 1 or row['executable'] != executable:
         return False
     try:
-        info = Path(COMPLETED_XPC).stat()
+        info = Path(executable).stat()
         # SF_RESTRICTED from Darwin sys/stat.h: protected by System Integrity Protection.
         if info.st_uid != 0 or info.st_mode & 0o022 or not info.st_flags & 0x00080000:
             return False
-        checked = subprocess.run(['/usr/bin/codesign', '--verify', '-R=anchor apple', COMPLETED_XPC],
+        checked = subprocess.run(['/usr/bin/codesign', '--verify', '-R=anchor apple', executable],
                                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=.5)
         return checked.returncode == 0
     except (OSError, subprocess.SubprocessError):
         return False
 
 
-def validate_snapshot(rows, record, services, *, completed=False):
+def completed_system_service(row):
+    return protected_apple_service(row, COMPLETED_XPC)
+
+
+def unwitnessed_system_service(row):
+    return any(protected_apple_service(row, executable)
+               for executable in (SYSTEM_INDEXER, COMPLETED_XPC))
+
+
+def validate_snapshot(rows, record, services, *, completed=False, unwitnessed=False):
     root = tuple(record['child'])
     retained = set(map(tuple, record['roster']))
     for row in rows.values():
@@ -135,6 +145,9 @@ def validate_snapshot(rows, record, services, *, completed=False):
             continue
         if completed and completed_system_service(row):
             row['verified_completed_system_service'] = True
+            continue
+        if unwitnessed and unwitnessed_system_service(row):
+            row['verified_unwitnessed_system_service'] = True
             continue
         # Current positive ancestry to a process predating this launch excludes an
         # orphan of the compile. launchd itself is never such an exemption.
@@ -164,11 +177,14 @@ def recover(record, evidence, *, principal, boot, epoch, scan=None, missing=None
     exit was observed. All actions MUST require absent root/controller/guards/retained identities and fresh
     complete same-user censuses. Unknown or live workload identities MUST refuse. A recent
     orphan MUST refuse unless it is an exact independently reviewed live launchd service or
-    specialized OS worker. Only completed-job recovery MAY additionally exclude the exact
+    specialized OS worker. Completed-job recovery MAY additionally exclude the exact
     iCloudHelper XPC executable with PPID 1, root ownership, no group/other write permission,
     SIP protection and verified Apple signature, recording that exclusion. Its census MAY
     record unavailable executable paths only with stable kernel birth/PID/parent/UID observations
     strictly predating the root. All newer identity/query failures MUST refuse.
+    Unwitnessed-compile recovery MAY exclude only the exact Spotlight knowledge indexer and
+    iCloudHelper XPC service with PPID 1, root ownership, no group/other write permission, SIP
+    protection and verified Apple signature. It MUST record that exclusion; arbitrary Apple services remain ineligible.
     Normal close/reconcile MUST NOT use this policy. The witness
     MUST retain the original evidence hashes and operation binding, and MUST NOT certify outputs.
     """
@@ -218,7 +234,7 @@ def recover(record, evidence, *, principal, boot, epoch, scan=None, missing=None
     observations = []
     for _ in range(2):
         rows = scan()
-        validate_snapshot(rows, record, services, completed=completed)
+        validate_snapshot(rows, record, services, completed=completed, unwitnessed=unwitnessed)
         observations.append(rows)
     # Recheck every exact identity after the complete observations, still in this actor turn.
     if any(not missing(pin) for pin in pins):
@@ -241,7 +257,9 @@ def recover(record, evidence, *, principal, boot, epoch, scan=None, missing=None
         pre_root_path_exemptions=[row for snapshot in observations for row in snapshot.values()
                                   if row.get('executable_unavailable_before_root') is True],
         system_service_exemptions=[row for snapshot in observations for row in snapshot.values()
-                                   if row.get('verified_completed_system_service') is True])
+                                   if row.get('verified_completed_system_service') is True],
+        unwitnessed_system_service_exemptions=[row for snapshot in observations for row in snapshot.values()
+                                   if row.get('verified_unwitnessed_system_service') is True])
 
 
 def validate_completed_terminal(record, receipt):
