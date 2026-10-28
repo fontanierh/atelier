@@ -248,7 +248,16 @@ impl SwayingMaterials<'_> {
         let alpha = if let Some(handle) = self.made.alpha_images.get(&image_key) {
             handle.clone()
         } else {
-            let Some(image) = self.images.get(texture) else { return Ok(None) };
+            let Some(image) = self.images.get(texture) else {
+                if matches!(self.assets.load_state(texture), LoadState::Failed(_)) {
+                    let name = self
+                        .assets
+                        .get_path(texture.id())
+                        .map_or_else(|| format!("{:?}", texture.id()), |p| p.to_string());
+                    return Err(format!("foliage colour texture failed to load: {name}"));
+                }
+                return Ok(None);
+            };
             let companion = companion(&mut self.made, &self.assets, uri)?;
             let Some(shadow) = self.images.get(&companion) else { return Ok(None) };
             if !alpha_matches(image, shadow) {
@@ -413,6 +422,49 @@ mod shadow_motion_tests {
             assert!(error.contains(URI), "{error}");
             assert!(matches!(app.world().resource::<AssetServer>().load_state(&handle), LoadState::Failed(_)));
         }
+    }
+
+    #[test]
+    fn missing_original_foliage_texture_reports_its_name() {
+        use super::{ShadowFoliage, SourceFoliage, SourceWind, Swaying, SwayingMaterials};
+        use crate::push::Pushers;
+        use bevy::asset::{AssetApp, AssetPlugin, AssetServer, Assets, LoadState};
+        use bevy::ecs::system::RunSystemOnce;
+        use bevy::prelude::{AlphaMode, App, Handle, MinimalPlugins, StandardMaterial};
+        const URI: &str = "textures/missing-colour/missing.ktx2";
+        let mut app = App::new();
+        app.add_plugins((MinimalPlugins, AssetPlugin::default()))
+            .init_asset::<Image>()
+            .init_resource::<Made>()
+            .init_resource::<Assets<StandardMaterial>>()
+            .init_resource::<Assets<Swaying>>()
+            .init_resource::<Assets<SourceFoliage>>()
+            .init_resource::<Assets<ShadowFoliage>>()
+            .insert_resource(Pushers(Handle::default()));
+        let texture: Handle<Image> = app.world().resource::<AssetServer>().load(URI);
+        let source = app.world_mut().resource_mut::<Assets<SourceFoliage>>().add(SourceFoliage {
+            base: StandardMaterial {
+                base_color_texture: Some(texture.clone()),
+                alpha_mode: AlphaMode::Mask(0.5),
+                ..Default::default()
+            },
+            extension: SourceWind::default(),
+        });
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
+        while !matches!(app.world().resource::<AssetServer>().load_state(&texture), LoadState::Failed(_)) {
+            assert!(std::time::Instant::now() < deadline);
+            app.update();
+            std::thread::sleep(std::time::Duration::from_millis(1));
+        }
+        let error = app
+            .world_mut()
+            .run_system_once(move |mut materials: SwayingMaterials| {
+                materials.shadow_of(&source, "textures/missing-colour/missing.alpha.ktx2").map(|v| v.is_some())
+            })
+            .unwrap()
+            .unwrap_err();
+        assert!(error.contains(URI), "{error}");
+        assert!(app.world().resource::<Made>().companions.is_empty());
     }
     use super::SourceProfile;
 
