@@ -1,0 +1,6 @@
+# Source camp scenery and collision, seated 2 cm below ground.
+kind = "prop"
+source = "src/model.glb"
+textures = ["camp-atlas"]
+solid = true
+inputs_sha256 = "d7e76c6665840170a408cde4e6d89262ad6f5380d78a03bd62c56a6d00317128"

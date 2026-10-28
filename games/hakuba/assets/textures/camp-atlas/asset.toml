@@ -1,0 +1,4 @@
+# Shared camp cloth, timber, stone, straw, metal and ember texture atlas.
+kind = "texture"
+source = "src/texture.jpg"
+inputs_sha256 = "96363de87b6febe9f5c74c9343a76d6a4f4c02996e9ef4578371e9d1866a1ccf"
