@@ -253,3 +253,88 @@ def test_xpc_exclusion_does_not_change_interrupted_compile_policy(completed_case
     with pytest.raises(wire.CapacityError):abandon.validate_snapshot(rows,record,set())
     witness=recover(completed_case,completed=True)
     assert len(witness['system_service_exemptions'])==2
+
+
+@pytest.fixture
+def unwitnessed_case(case):
+    record, evidence, _ = case
+    record['exited'] = []
+    evidence.update(guards=copy.deepcopy(record['guards']), acknowledge_missing_root_exit=True,
+        report_sha256={k:hashlib.sha256(Path(g['report']).read_bytes()).hexdigest()
+                       for k,g in record['guards'].items()})
+    return case
+
+
+def test_missing_root_exit_requires_separate_acknowledged_recovery(unwitnessed_case):
+    before = copy.deepcopy(unwitnessed_case[0])
+    with pytest.raises(wire.CapacityError):recover(unwitnessed_case)
+    witness = recover(unwitnessed_case, unwitnessed=True)
+    assert witness['kind'] == 'administrative-unwitnessed-compile'
+    assert witness['root_exit_observed'] is False
+    assert witness['output_certified'] is False and witness['missing_historical_exits'] == 2
+    assert unwitnessed_case[0] == before
+    assert witness['original_report_sha256'] == unwitnessed_case[1]['report_sha256']
+
+
+@pytest.mark.parametrize('change', ['ack', 'root-exit', 'monitor', 'hash', 'job', 'nonexclusive',
+                                   'owner', 'controller', 'combined', 'epoch', 'boot', 'nonce'])
+def test_unwitnessed_recovery_keeps_scope_and_fences(unwitnessed_case, change):
+    record, evidence, _ = unwitnessed_case
+    options = dict(unwitnessed=True)
+    if change == 'ack':evidence['acknowledge_missing_root_exit'] = False
+    if change == 'root-exit':record['exited'] = [record['child']]
+    if change == 'monitor':evidence['guards']['tree_guard']['start'] += 1
+    if change == 'hash':evidence['report_sha256']['tree_guard'] = '0'*64
+    if change == 'job':record['request']['phase'] = 'job'
+    if change == 'nonexclusive':record['request']['performance'] = False
+    if change == 'owner':evidence['administrator'] = 'worker'
+    if change == 'controller':record['principal'] = [31,300]
+    if change == 'combined':options['completed'] = True
+    if change == 'epoch':evidence['epoch'] += 1
+    if change == 'boot':evidence['boot_id'] = 'new'
+    if change == 'nonce':evidence['nonce'] = 'new'
+    with pytest.raises(wire.CapacityError):recover(unwitnessed_case, **options)
+
+
+@pytest.mark.parametrize('pin', [(10,100),(12,110),(11,90),(20,200),(21,201)])
+def test_unwitnessed_live_identity_refuses_even_root_omitted_from_roster(unwitnessed_case,pin):
+    record,evidence,rows = unwitnessed_case
+    record['roster'] = [[12,110]]
+    with pytest.raises(wire.CapacityError,match='live controller'):
+        abandon.recover(record,evidence,principal=(31,300),boot='boot',epoch=18,
+            scan=lambda:rows,missing=lambda observed:observed!=pin,unwitnessed=True)
+
+
+@pytest.mark.parametrize('fault', ['new-orphan', 'compiler', 'query', 'root-reappears', 'report-change'])
+def test_unwitnessed_second_observation_must_stay_quiescent(unwitnessed_case, fault):
+    record,evidence,rows = unwitnessed_case
+    calls = 0
+    def scan():
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            if fault == 'new-orphan':rows[45]=dict(pid=45,started=120,parent=1,executable='/usr/bin/python')
+            if fault == 'compiler':rows[45]=dict(pid=45,started=2,parent=1,executable='/tools/cargo')
+            if fault == 'query':raise wire.CapacityError('kernel observation failed')
+            if fault == 'report-change':Path(record['guards']['tree_guard']['report']).write_text('{}')
+        return copy.deepcopy(rows)
+    def missing(pin):
+        return not (fault == 'root-reappears' and calls == 2 and pin == (10,100))
+    with pytest.raises(wire.CapacityError):
+        abandon.recover(record,evidence,principal=(31,300),boot='boot',epoch=18,
+            scan=scan,missing=missing,unwitnessed=True)
+    assert calls == 2
+
+
+def test_unwitnessed_service_binding_is_rechecked_after_censuses(unwitnessed_case):
+    record,evidence,rows = unwitnessed_case
+    rows[45]=dict(pid=45,started=120,parent=1,executable='/usr/bin/python')
+    evidence['services']=[dict(pid=45,started=120,label='viewer',plist_sha256='reviewed')]
+    calls = 0
+    def service(item):
+        nonlocal calls
+        calls += 1
+        return (45,120 if calls == 1 else 121)
+    with pytest.raises(wire.CapacityError,match='service identities changed'):
+        recover(unwitnessed_case,unwitnessed=True,service=service)
+    assert calls == 2

@@ -160,6 +160,33 @@ is one-use; a repeated action or stale binding refuses. No outputs, stamps or bu
 certified. Rerun the interrupted step normally after release. Games, imports and nonexclusive jobs are
 not eligible. Do not edit SQLite, compatibility files or profiles to recover a reservation.
 
+### Interrupted compiler with a lost root exit
+
+Disk exhaustion or observer loss can also destroy the root's exit notification. Restarting only
+this daemon cannot reconstruct it. After independent review, an operator may explicitly direct
+`atelier capacity abandon-unwitnessed SOCKET --administrative-evidence ABSOLUTE_JSON`.
+The original `abandon-interrupted`, automatic cleanup and reconciliation still require their
+original exit evidence; they never select this action.
+
+This action accepts only an uncertain exclusive compile whose root exit is **missing**. Supply the
+administrative fields above, exact `guards` bindings, `report_sha256` for both original reports,
+and `acknowledge_missing_root_exit: true`. It requires healthy compatibility, no other charged
+work, strictly absent root/controller/guards/all retained PID/start identities, two complete
+same-user kernel censuses and unchanged reports. It uses the stricter interrupted-compile census:
+no unavailable executable paths or completed-job XPC exception. Each explicit launchd service
+exemption is revalidated after the censuses. Live build/render/compiler work, recent unexplained
+orphans, incomplete observations and query errors refuse. Finish independent native work and close
+unclassified remote login processes before recovery; never exempt them merely to force admission.
+
+The distinct `administrative-unwitnessed-compile` witness records `root_exit_observed: false`,
+original report hashes, operation fences, administrator/reference, census digest and reviewed
+service exceptions. This is current observed quiescence, not a historical exit or universal lineage
+proof: work delegated over IPC to an older daemon cannot be excluded by ancestry alone. The
+operator's independent incident review remains necessary. Missing exits, failed reports and
+uncertain ancestry remain intact. No process is signalled, no successful build is certified, and
+SQLite, profiles and compatibility seals must not be edited. Retry the failed step normally only
+after recovery. Replay and stale bindings refuse.
+
 ### Completed nonexclusive job with a missed helper exit
 
 A short-lived helper can exit before the broker binds its kernel watch. A completed normal

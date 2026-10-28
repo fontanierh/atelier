@@ -48,5 +48,6 @@ def test_unknown_diagnostic_actions_never_echo_input(value):
     assert wire.action_name(value) == 'invalid'
 
 
-def test_known_diagnostic_action():
-    assert wire.action_name({'action': 'check', 'nonce': 'private'}) == 'check'
+@pytest.mark.parametrize('action', ['check', 'abandon-interrupted', 'abandon-completed', 'abandon-unwitnessed'])
+def test_known_diagnostic_action(action):
+    assert wire.action_name({'action': action, 'nonce': 'private'}) == action

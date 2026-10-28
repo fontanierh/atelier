@@ -25,7 +25,7 @@ MAX_FRAME = 65536
 MAX_ROSTER = 512
 MAX_RETAINED = 8192  # Cumulative identities, independent of live-report and RPC batch limits.
 RESOURCE_FIELDS = frozenset(Resources.__dataclass_fields__)
-_ACTION_NAMES = frozenset(('status', 'reconcile', 'abandon-interrupted', 'owned', 'offer', 'gate', 'start', 'check', 'replace', 'close'))
+_ACTION_NAMES = frozenset(('status', 'reconcile', 'abandon-interrupted', 'abandon-completed', 'abandon-unwitnessed', 'owned', 'offer', 'gate', 'start', 'check', 'replace', 'close'))
 
 
 def action_name(message):
