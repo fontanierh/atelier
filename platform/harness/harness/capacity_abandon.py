@@ -128,8 +128,9 @@ def completed_system_service(row):
     return protected_apple_service(row, COMPLETED_XPC)
 
 
-def unwitnessed_system_indexer(row):
-    return protected_apple_service(row, SYSTEM_INDEXER)
+def unwitnessed_system_service(row):
+    return any(protected_apple_service(row, executable)
+               for executable in (SYSTEM_INDEXER, COMPLETED_XPC))
 
 
 def validate_snapshot(rows, record, services, *, completed=False, unwitnessed=False):
@@ -145,8 +146,8 @@ def validate_snapshot(rows, record, services, *, completed=False, unwitnessed=Fa
         if completed and completed_system_service(row):
             row['verified_completed_system_service'] = True
             continue
-        if unwitnessed and unwitnessed_system_indexer(row):
-            row['verified_unwitnessed_system_indexer'] = True
+        if unwitnessed and unwitnessed_system_service(row):
+            row['verified_unwitnessed_system_service'] = True
             continue
         # Current positive ancestry to a process predating this launch excludes an
         # orphan of the compile. launchd itself is never such an exemption.
@@ -176,14 +177,14 @@ def recover(record, evidence, *, principal, boot, epoch, scan=None, missing=None
     exit was observed. All actions MUST require absent root/controller/guards/retained identities and fresh
     complete same-user censuses. Unknown or live workload identities MUST refuse. A recent
     orphan MUST refuse unless it is an exact independently reviewed live launchd service or
-    specialized OS worker. Only completed-job recovery MAY additionally exclude the exact
+    specialized OS worker. Completed-job recovery MAY additionally exclude the exact
     iCloudHelper XPC executable with PPID 1, root ownership, no group/other write permission,
     SIP protection and verified Apple signature, recording that exclusion. Its census MAY
     record unavailable executable paths only with stable kernel birth/PID/parent/UID observations
     strictly predating the root. All newer identity/query failures MUST refuse.
-    Only unwitnessed-compile recovery MAY exclude the exact Spotlight knowledge indexer with
-    PPID 1, root ownership, no group/other write permission, SIP protection and verified Apple
-    signature. It MUST record that exclusion; arbitrary Apple services remain ineligible.
+    Unwitnessed-compile recovery MAY exclude only the exact Spotlight knowledge indexer and
+    iCloudHelper XPC service with PPID 1, root ownership, no group/other write permission, SIP
+    protection and verified Apple signature. It MUST record that exclusion; arbitrary Apple services remain ineligible.
     Normal close/reconcile MUST NOT use this policy. The witness
     MUST retain the original evidence hashes and operation binding, and MUST NOT certify outputs.
     """
@@ -257,8 +258,8 @@ def recover(record, evidence, *, principal, boot, epoch, scan=None, missing=None
                                   if row.get('executable_unavailable_before_root') is True],
         system_service_exemptions=[row for snapshot in observations for row in snapshot.values()
                                    if row.get('verified_completed_system_service') is True],
-        system_indexer_exemptions=[row for snapshot in observations for row in snapshot.values()
-                                   if row.get('verified_unwitnessed_system_indexer') is True])
+        unwitnessed_system_service_exemptions=[row for snapshot in observations for row in snapshot.values()
+                                   if row.get('verified_unwitnessed_system_service') is True])
 
 
 def validate_completed_terminal(record, receipt):

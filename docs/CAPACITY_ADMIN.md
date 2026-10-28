@@ -173,8 +173,8 @@ administrative fields above, exact `guards` bindings, `report_sha256` for both o
 and `acknowledge_missing_root_exit: true`. It requires healthy compatibility, no other charged
 work, strictly absent root/controller/guards/all retained PID/start identities, two complete
 same-user kernel censuses and unchanged reports. It uses the stricter interrupted-compile census:
-no unavailable executable paths or completed-job XPC exception. Its only additional system-service
-exception is the exact Spotlight knowledge indexer executable, with PPID 1, root ownership, no
+no unavailable executable paths. Its only additional system-service exceptions are the exact
+Spotlight knowledge indexer and the existing completed-job iCloudHelper XPC executable, with PPID 1, root ownership, no
 group/other write permission, SIP protection and a verified Apple-anchor signature. Both kernel
 observations must pass validation; the witness records these exclusions separately. This does not
 exempt arbitrary Apple processes, command-line tools or retained identities.
@@ -214,7 +214,8 @@ stable kernel birth/parent/user observations positively place it before the work
 The witness lists these exclusions. The exact system `com.apple.iCloudHelper` XPC executable
 may also be excluded only with PPID 1, root ownership, no group/other write permission, the
 macOS SIP restricted flag and a successful Apple-anchor signature check. This exception is
-recorded and applies only to completed-job recovery; Apple command-line tools are not exempt.
+recorded for completed-job recovery and the separate unwitnessed-compile policy above; ordinary
+interrupted recovery still refuses it. Apple command-line tools are not exempt.
 Newer unknown processes and all identity/query errors still
 refuse. Positive current ancestry can exclude independent work; a reparented unexplained process
 born after the root refuses. This is current quiescence evidence: lineage cannot detect work
